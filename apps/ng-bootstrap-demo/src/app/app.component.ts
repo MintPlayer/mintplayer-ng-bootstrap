@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { Color } from '@mintplayer/ng-bootstrap';
 
 @Component({
   selector: 'mintplayer-ng-bootstrap-root',
@@ -7,4 +8,5 @@ import { Component } from '@angular/core';
 })
 export class AppComponent {
   title = 'ng-bootstrap-demo';
+  colors = Color;
 }
