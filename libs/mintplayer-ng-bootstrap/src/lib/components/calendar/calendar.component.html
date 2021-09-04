@@ -1,0 +1,32 @@
+<table class="table w-auto">
+    <tr class="text-center">
+        <td>
+            <button class="btn btn-default" (click)="previousMonth()">
+                <i class="bi bi-chevron-left fw-bolder"></i>
+            </button>
+        </td>
+        <td colspan="6" class="fw-bolder">
+            {{ month | monthName | ucFirst }}
+            {{ month.getFullYear() }}
+        </td>
+        <td>
+            <button class="btn btn-default border-bottom-0" (click)="nextMonth()">
+                <i class="bi bi-chevron-right fw-bolder"></i>
+            </button>
+        </td>
+    </tr>
+    <tr>
+        <th></th>
+        <th *ngFor="let dayOfWeek of daysOfWeek">
+            {{ dayOfWeek }}
+        </th>
+    </tr>
+    <tr *ngFor="let week of weeks">
+        <th>
+            {{ week.number }}
+        </th>
+        <td class="text-center" [class.selected]="day === null ? false : isSameDate(selectedDate, day.date)" *ngFor="let day of week.week" (click)="day && selectedDate = day.date">
+            <span *ngIf="day !== null">{{ day.dayOfMonth }}</span>
+        </td>
+    </tr>
+</table>

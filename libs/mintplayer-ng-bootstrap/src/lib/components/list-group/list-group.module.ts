@@ -14,4 +14,4 @@ import { ListGroupItemComponent } from './list-group-item/list-group-item.compon
     ListGroupItemComponent
   ]
 })
-export class NgBootstrapListGroupModule {}
+export class BsListGroupModule {}

@@ -1,0 +1,36 @@
+@import "~bootstrap/scss/functions";
+@import "~bootstrap/scss/variables";
+@import "~bootstrap/scss/mixins";
+@import "~bootstrap/scss/utilities";
+
+@import '~bootstrap/scss/buttons';
+@import '~bootstrap/scss/tables';
+
+@import "~bootstrap/scss/utilities/api";
+@import "~bootstrap-icons/font/bootstrap-icons";
+
+$cell-size: 40px;
+
+table {
+    border-collapse: collapse;
+    border: 1px solid $list-group-border-color;
+    td, th {
+        width: $cell-size;
+        height: $cell-size;
+        border: 1px solid $list-group-border-color;
+
+        span {
+            cursor: pointer;
+            white-space: nowrap;
+        }
+    }
+
+    td.selected {
+        background-color: $primary;
+        color: $white;
+    }
+
+    th {
+        background-color: $light;
+    }
+}

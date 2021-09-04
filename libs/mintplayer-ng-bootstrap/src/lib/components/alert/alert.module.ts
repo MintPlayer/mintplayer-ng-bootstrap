@@ -14,4 +14,4 @@ import { AlertCloseComponent } from './alert-close/alert-close.component';
     AlertCloseComponent
   ]
 })
-export class NgBootstrapAlertModule {}
+export class BsAlertModule {}

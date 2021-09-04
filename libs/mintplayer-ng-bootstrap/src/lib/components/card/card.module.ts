@@ -11,4 +11,4 @@ import { CardComponent } from './card.component';
     CardComponent
   ]
 })
-export class NgBootstrapCardModule {}
+export class BsCardModule {}
