@@ -1,0 +1,10 @@
+<div class="card">
+    <div class="card-header" (click)="headerClicked($event)">
+        {{ title }}
+    </div>
+    <div class="card-block overflow-hidden" [@slideUpDown]="(accordion.activeTab === this) ? 'down' : 'up'">
+        <div>
+            <ng-content></ng-content>
+        </div>
+    </div>
+</div>

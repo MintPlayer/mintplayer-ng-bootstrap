@@ -27,6 +27,9 @@
     ]
   },
   "projects": {
+    "mintplayer-ng-animations": {
+      "tags": []
+    },
     "mintplayer-ng-bootstrap": {
       "tags": []
     },

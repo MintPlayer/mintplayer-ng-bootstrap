@@ -17,6 +17,7 @@ table {
     td, th {
         width: $cell-size;
         height: $cell-size;
+        text-align: center;
 
         span {
             cursor: pointer;

@@ -3,6 +3,19 @@
 @import "~bootstrap/scss/mixins";
 @import "~bootstrap/scss/utilities";
 
-@import '~bootstrap/scss/alert';
+@import '~bootstrap/scss/card';
+
+.card, .card-header, .card-block {
+    border-radius: 0;
+}
+.card {
+    margin-bottom: -1px;
+
+    .card-header {
+        cursor: pointer;
+    }
+}
+
+
 
 @import "~bootstrap/scss/utilities/api";

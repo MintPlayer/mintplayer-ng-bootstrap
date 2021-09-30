@@ -15,6 +15,9 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
+      "@mintplayer/ng-animations": [
+        "libs/mintplayer-ng-animations/src/index.ts"
+      ],
       "@mintplayer/ng-bootstrap": [
         "libs/mintplayer-ng-bootstrap/src/index.ts"
       ]

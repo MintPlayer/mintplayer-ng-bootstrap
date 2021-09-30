@@ -1,1 +1,10 @@
-/* You can add global styles to this file, and also import other style files */
+// Configuration
+@import "~bootstrap/scss/functions";
+@import "~bootstrap/scss/variables";
+@import "~bootstrap/scss/mixins";
+
+// Layout & components
+@import "~bootstrap/scss/root";
+@import "~bootstrap/scss/reboot";
+
+body { padding: 1rem 5rem; }
