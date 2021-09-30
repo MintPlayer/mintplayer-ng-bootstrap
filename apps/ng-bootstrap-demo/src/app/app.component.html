@@ -12,6 +12,9 @@
     <bs-alert-close></bs-alert-close>
   </bs-alert>
   <bs-card>
+    <bs-card-header>
+      List of elements
+    </bs-card-header>
     <bs-list-group>
       <bs-list-group-item>Cras justo odio</bs-list-group-item>
       <bs-list-group-item>Dapibus ac facilisis in</bs-list-group-item>
@@ -22,13 +25,25 @@
   </bs-card>
   <bs-calendar></bs-calendar>
   <bs-accordion>
-    <bs-accordion-tab [title]="'Profile'">
+    <bs-accordion-tab>
+      <bs-accordion-tab-header>
+        <span class="triangle mr-2"></span>
+        Profile
+      </bs-accordion-tab-header>
       <span class="d-block p-2">Label 1</span>
     </bs-accordion-tab>
-    <bs-accordion-tab [title]="'Sign in'">
+    <bs-accordion-tab>
+      <bs-accordion-tab-header>
+        <span class="triangle mr-2"></span>
+        Sign in
+      </bs-accordion-tab-header>
       <span class="d-block p-2">Label 2</span>
     </bs-accordion-tab>
-    <bs-accordion-tab [title]="'Payment'">
+    <bs-accordion-tab>
+      <bs-accordion-tab-header>
+        <span class="triangle mr-2"></span>
+        Payment
+      </bs-accordion-tab-header>
       <span class="d-block p-2">Label 3</span>
     </bs-accordion-tab>
   </bs-accordion>

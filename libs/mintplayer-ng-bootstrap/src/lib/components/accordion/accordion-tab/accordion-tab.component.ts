@@ -18,16 +18,6 @@ export class AccordionTabComponent implements OnInit {
   ngOnInit() {
   }
 
-  //#region Title
-  private _title: string = '';
-  public get title() {
-    return this._title;
-  }
-  @Input() public set title(value: string) {
-    this._title = value;
-  }
-  //#endregion
-
   headerClicked(event: MouseEvent) {
     if (this.accordion.activeTab === this) {
       this.accordion.activeTab = null;

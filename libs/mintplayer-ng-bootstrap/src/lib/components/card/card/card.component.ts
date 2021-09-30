@@ -1,11 +1,13 @@
+import { AfterViewInit, ContentChild } from '@angular/core';
 import { Component, OnInit } from '@angular/core';
+import { CardHeaderComponent } from '../card-header/card-header.component';
 
 @Component({
   selector: 'bs-card',
   templateUrl: './card.component.html',
   styleUrls: ['./card.component.scss']
 })
-export class CardComponent implements OnInit {
+export class CardComponent implements OnInit, AfterViewInit {
 
   constructor() {
   }
@@ -13,4 +15,9 @@ export class CardComponent implements OnInit {
   ngOnInit() {
   }
 
+  ngAfterViewInit() {
+    // console.log('header', this.header);
+  }
+
+  // @ContentChild(CardHeaderComponent) header!: CardHeaderComponent;
 }
