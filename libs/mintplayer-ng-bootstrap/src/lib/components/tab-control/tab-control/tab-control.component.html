@@ -1,7 +1,7 @@
 <ul class="nav nav-tabs">
   <ng-container *ngFor="let tab of tabPages">
     test
-    <ng-content select="bs-tab-page head"></ng-content>
+    <ng-container *ngIf="!!tab.headerTemplate" [ngTemplateOutlet]="tab.headerTemplate"></ng-container>
   </ng-container>
     <!-- <li class="nav-item">
       <a class="nav-link active" aria-current="page" href="#">Active</a>

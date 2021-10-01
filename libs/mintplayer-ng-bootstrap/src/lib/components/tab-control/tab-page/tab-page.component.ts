@@ -1,4 +1,4 @@
-import { Component, OnInit, ContentChild } from '@angular/core';
+import { Component, OnInit, ContentChild, TemplateRef } from '@angular/core';
 import { BsTabControlComponent } from '../tab-control/tab-control.component';
 import { BsTabPageHeaderComponent } from '../tab-page-header/tab-page-header.component';
 
@@ -14,7 +14,7 @@ export class BsTabPageComponent implements OnInit {
     this.tabControl = tabControl;
   }
 
-  @ContentChild(BsTabPageHeaderComponent) header!: BsTabPageHeaderComponent;
+  headerTemplate?: TemplateRef<any>;
 
   ngOnInit() {
   }

@@ -1,4 +1,4 @@
-import { Directive } from '@angular/core';
+import { Directive, TemplateRef } from '@angular/core';
 import { BsTabPageComponent } from '../tab-page/tab-page.component';
 
 @Directive({
@@ -6,8 +6,8 @@ import { BsTabPageComponent } from '../tab-page/tab-page.component';
 })
 export class TabPageHeaderDirective {
 
-  constructor(private tabPage: BsTabPageComponent) {
-    
+  constructor(tabPage: BsTabPageComponent, templateRef: TemplateRef<any>) {
+    tabPage.headerTemplate = templateRef;
   }
 
 }

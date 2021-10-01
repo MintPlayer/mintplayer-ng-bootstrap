@@ -18,7 +18,8 @@ import { TabPageHeaderDirective } from './tab-page-header-directive/tab-page-hea
   exports: [
     BsTabControlComponent,
     BsTabPageComponent,
-    BsTabPageHeaderComponent
+    BsTabPageHeaderComponent,
+    TabPageHeaderDirective
   ]
 })
 export class BsTabControlModule { }
