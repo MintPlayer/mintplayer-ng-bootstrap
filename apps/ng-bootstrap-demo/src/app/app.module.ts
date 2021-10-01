@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import { BsAccordionModule, BsAlertModule, BsCalendarModule, BsCardModule, BsListGroupModule } from '@mintplayer/ng-bootstrap';
+import { BsAccordionModule, BsAlertModule, BsCalendarModule, BsCardModule, BsListGroupModule, BsTabControlModule } from '@mintplayer/ng-bootstrap';
 
 import { AppComponent } from './app.component';
 
@@ -12,7 +12,8 @@ import { AppComponent } from './app.component';
     BsCalendarModule,
     BsCardModule,
     BsListGroupModule,
-    BsAccordionModule
+    BsAccordionModule,
+    BsTabControlModule
   ],
   providers: [],
   bootstrap: [AppComponent],
