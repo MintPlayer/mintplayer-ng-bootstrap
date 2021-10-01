@@ -1,5 +1,4 @@
-import { AfterViewInit, Component, ContentChildren, OnInit } from '@angular/core';
-import { BsTabPageHeaderComponent } from '../tab-page-header/tab-page-header.component';
+import { Component, ContentChildren, OnInit } from '@angular/core';
 import { BsTabPageComponent } from '../tab-page/tab-page.component';
 
 @Component({
@@ -7,7 +6,7 @@ import { BsTabPageComponent } from '../tab-page/tab-page.component';
   templateUrl: './tab-control.component.html',
   styleUrls: ['./tab-control.component.scss']
 })
-export class BsTabControlComponent implements OnInit, AfterViewInit {
+export class BsTabControlComponent implements OnInit {
 
   constructor() {
   }
@@ -15,11 +14,13 @@ export class BsTabControlComponent implements OnInit, AfterViewInit {
   ngOnInit() {
   }
 
-  ngAfterViewInit() {
-    console.log('headers', this.tabPageHeaders);
+  setActiveTab(tab: BsTabPageComponent) {
+    if (!tab.disabled) {
+      this.activeTab = tab;
+    }
+    return false;
   }
 
   @ContentChildren(BsTabPageComponent) tabPages!: BsTabPageComponent[];
-  @ContentChildren(BsTabPageHeaderComponent, { descendants: true }) tabPageHeaders!: BsTabPageHeaderComponent[];
   activeTab: BsTabPageComponent | null = null;
 }

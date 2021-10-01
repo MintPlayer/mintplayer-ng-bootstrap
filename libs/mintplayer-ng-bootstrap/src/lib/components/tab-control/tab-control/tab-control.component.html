@@ -1,18 +1,12 @@
 <ul class="nav nav-tabs">
   <ng-container *ngFor="let tab of tabPages">
-    test
-    <ng-container *ngIf="!!tab.headerTemplate" [ngTemplateOutlet]="tab.headerTemplate"></ng-container>
+    <li class="nav-item" (click)="setActiveTab(tab)" *ngIf="!!tab.headerTemplate">
+      <a class="nav-link" [class.active]="activeTab === tab" [class.disabled]="tab.disabled" [attr.aria-current]="activeTab === tab ? 'page' : null" [attr.aria-disabled]="tab.disabled" href="">
+        <ng-container [ngTemplateOutlet]="tab.headerTemplate"></ng-container>
+      </a>
+    </li>
   </ng-container>
-    <!-- <li class="nav-item">
-      <a class="nav-link active" aria-current="page" href="#">Active</a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link" href="#">Link</a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link" href="#">Link</a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">Disabled</a>
-    </li> -->
-  </ul>
+</ul>
+<!-- <div class="container"> -->
+  <ng-content></ng-content>
+<!-- </div> -->

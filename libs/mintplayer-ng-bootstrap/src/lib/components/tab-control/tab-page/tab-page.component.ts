@@ -1,6 +1,5 @@
-import { Component, OnInit, ContentChild, TemplateRef } from '@angular/core';
+import { Component, OnInit, ContentChild, TemplateRef, Input } from '@angular/core';
 import { BsTabControlComponent } from '../tab-control/tab-control.component';
-import { BsTabPageHeaderComponent } from '../tab-page-header/tab-page-header.component';
 
 @Component({
   selector: 'bs-tab-page',
@@ -14,7 +13,9 @@ export class BsTabPageComponent implements OnInit {
     this.tabControl = tabControl;
   }
 
-  headerTemplate?: TemplateRef<any>;
+  @ContentChild(TemplateRef) headerTemplate!: TemplateRef<any>;
+
+  @Input() disabled: boolean = false;
 
   ngOnInit() {
   }

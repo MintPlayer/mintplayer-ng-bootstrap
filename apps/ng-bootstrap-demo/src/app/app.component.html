@@ -24,7 +24,7 @@
     </bs-list-group>
   </bs-card>
   <bs-calendar></bs-calendar>
-  <bs-accordion>
+  <bs-accordion class="d-block mb-3">
     <bs-accordion-tab>
       <bs-accordion-tab-header>
         <span class="triangle mr-2"></span>
@@ -62,7 +62,7 @@
       </ng-template>
       This is tab 2
     </bs-tab-page>
-    <bs-tab-page>
+    <bs-tab-page [disabled]="true">
       <ng-template tabPageHeader>
         <span class="triangle mr-2"></span>
         Tab 3
