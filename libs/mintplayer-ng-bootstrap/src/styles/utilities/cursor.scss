@@ -1,4 +1,4 @@
-@import "~bootstrap/scss/bootstrap-utilities";
+@import "~bootstrap/scss/bootstrap-utilities.scss";
 
 //Generate utilites for Cursor
 $utilities: map-merge(
@@ -11,4 +11,4 @@ $utilities: map-merge(
   )
 );
 
-@import '~bootstrap/scss/bootstrap';
+@import "~bootstrap/scss/bootstrap.scss";

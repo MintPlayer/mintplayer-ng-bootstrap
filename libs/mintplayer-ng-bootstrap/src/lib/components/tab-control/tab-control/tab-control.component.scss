@@ -1,11 +1,11 @@
 // scss-docs-start import-stack
 // Configuration
-@import "~bootstrap/scss/functions";
-@import "~bootstrap/scss/variables";
-@import "~bootstrap/scss/mixins";
-@import "~bootstrap/scss/utilities";
+@import "~bootstrap/scss/_functions.scss";
+@import "~bootstrap/scss/_variables.scss";
+@import "~bootstrap/scss/_mixins.scss";
+@import "~bootstrap/scss/_utilities.scss";
 
-@import "~bootstrap/scss/nav";
+@import "~bootstrap/scss/_nav.scss";
 
 // Utilities
-@import "~bootstrap/scss/utilities/api";
+@import "~bootstrap/scss/utilities/_api.scss";

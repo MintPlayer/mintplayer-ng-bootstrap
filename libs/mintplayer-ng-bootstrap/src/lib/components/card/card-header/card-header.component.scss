@@ -1,8 +1,8 @@
-@import "~bootstrap/scss/functions";
-@import "~bootstrap/scss/variables";
-@import "~bootstrap/scss/mixins";
-@import "~bootstrap/scss/utilities";
+@import "~bootstrap/scss/_functions.scss";
+@import "~bootstrap/scss/_variables.scss";
+@import "~bootstrap/scss/_mixins.scss";
+@import "~bootstrap/scss/_utilities.scss";
 
-@import '~bootstrap/scss/card';
+@import "~bootstrap/scss/_card.scss";
 
-@import "~bootstrap/scss/utilities/api";
+@import "~bootstrap/scss/utilities/_api.scss";
