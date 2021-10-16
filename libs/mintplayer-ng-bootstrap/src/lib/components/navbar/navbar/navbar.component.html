@@ -2,11 +2,11 @@
     <div class="container-fluid">
         <!-- <div class="w-100"> -->
             <a class="navbar-brand mx-auto" href="#">Navbar 2</a>
-            <button class="navbar-toggler align-self-end" type="button" data-toggle="collapse">
+            <button (click)="isExpanded = !isExpanded" class="navbar-toggler align-self-end" type="button" data-toggle="collapse">
                 <span class="navbar-toggler-icon"></span>
             </button>
         <!-- </div> -->
-        <div class="navbar-collapse collapse w-100" [class.show]="false">
+        <div class="navbar-collapse collapse w-100 show" [@slideUpDown]="isExpanded ? 'down' : 'up'">
             <ul class="navbar-nav mr-auto">
                 <li class="nav-item active">
                     <a class="nav-link" href="#">Left</a>
@@ -25,7 +25,7 @@
                 </li>
             </ul>
         </div>
-        <div class="navbar-collapse collapse justify-content-end w-100" [class.show]="false">
+        <div class="navbar-collapse collapse justify-content-end w-100 show" [@slideUpDown]="isExpanded ? 'down' : 'up'">
             <ul class="navbar-nav ml-auto">
                 <li class="nav-item">
                     <a class="nav-link" href="#">Right</a>

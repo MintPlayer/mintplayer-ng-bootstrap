@@ -103,7 +103,10 @@
               "apps/ng-bootstrap-demo/src/favicon.ico",
               "apps/ng-bootstrap-demo/src/assets"
             ],
-            "styles": ["apps/ng-bootstrap-demo/src/styles.scss"],
+            "styles": [
+              "node_modules/bootstrap/scss/bootstrap.scss",
+              "apps/ng-bootstrap-demo/src/styles.scss"
+            ],
             "scripts": []
           },
           "configurations": {
