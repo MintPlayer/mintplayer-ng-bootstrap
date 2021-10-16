@@ -104,7 +104,7 @@
               "apps/ng-bootstrap-demo/src/assets"
             ],
             "styles": [
-              "node_modules/bootstrap/scss/bootstrap.scss",
+              "libs/mintplayer-ng-bootstrap/src/bootstrap.scss",
               "apps/ng-bootstrap-demo/src/styles.scss"
             ],
             "scripts": []
