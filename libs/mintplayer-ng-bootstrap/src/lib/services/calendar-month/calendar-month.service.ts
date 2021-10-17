@@ -6,7 +6,7 @@ import { Week } from '../../interfaces/week';
 @Injectable({
   providedIn: 'root'
 })
-export class CalendarMonthService {
+export class BsCalendarMonthService {
 
   constructor() {
   }

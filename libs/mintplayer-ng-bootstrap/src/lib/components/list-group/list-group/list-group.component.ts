@@ -1,12 +1,12 @@
 import { Component, ContentChildren, OnInit, QueryList } from '@angular/core';
-import { ListGroupItemComponent } from '../list-group-item/list-group-item.component';
+import { BsListGroupItemComponent } from '../list-group-item/list-group-item.component';
 
 @Component({
   selector: 'bs-list-group',
   templateUrl: './list-group.component.html',
   styleUrls: ['./list-group.component.scss']
 })
-export class ListGroupComponent implements OnInit {
+export class BsListGroupComponent implements OnInit {
 
   constructor() {
   }
@@ -14,6 +14,6 @@ export class ListGroupComponent implements OnInit {
   ngOnInit() {
   }
 
-  @ContentChildren(ListGroupItemComponent) items!: QueryList<ListGroupItemComponent>;
+  @ContentChildren(BsListGroupItemComponent) items!: QueryList<BsListGroupItemComponent>;
 
 }

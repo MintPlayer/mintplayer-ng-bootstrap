@@ -1,13 +1,13 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { CalendarComponent } from './calendar.component';
+import { BsCalendarComponent } from './calendar.component';
 import { BsMonthNamePipeModule } from '../../pipes/month-name/month-name.module';
 import { BsUcFirstPipeModule } from '../../pipes/uc-first/uc-first.module';
 import { BsWeekdayNameModule } from '../../pipes/weekday-name/weekday-name.module';
 
 @NgModule({
   declarations: [
-    CalendarComponent
+    BsCalendarComponent
   ],
   imports: [
     CommonModule,
@@ -16,7 +16,7 @@ import { BsWeekdayNameModule } from '../../pipes/weekday-name/weekday-name.modul
     BsWeekdayNameModule
   ],
   exports: [
-    CalendarComponent
+    BsCalendarComponent
   ]
 })
 export class BsCalendarModule { }

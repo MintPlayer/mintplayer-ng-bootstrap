@@ -1,15 +1,15 @@
 import { Component, OnInit } from '@angular/core';
 import { Week } from '../../interfaces/week';
-import { CalendarMonthService } from '../../services/calendar-month/calendar-month.service';
+import { BsCalendarMonthService } from '../../services/calendar-month/calendar-month.service';
 
 @Component({
   selector: 'bs-calendar',
   templateUrl: './calendar.component.html',
   styleUrls: ['./calendar.component.scss']
 })
-export class CalendarComponent implements OnInit {
+export class BsCalendarComponent implements OnInit {
 
-  constructor(private calendarMonthService: CalendarMonthService) {
+  constructor(private calendarMonthService: BsCalendarMonthService) {
   }
 
   daysOfWeek: string[] = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];

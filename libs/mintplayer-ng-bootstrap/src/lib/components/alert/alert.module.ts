@@ -1,17 +1,17 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AlertComponent } from './alert/alert.component';
-import { AlertCloseComponent } from './alert-close/alert-close.component';
+import { BsAlertComponent } from './alert/alert.component';
+import { BsAlertCloseComponent } from './alert-close/alert-close.component';
 
 @NgModule({
   imports: [CommonModule],
   declarations: [
-    AlertComponent,
-    AlertCloseComponent
+    BsAlertComponent,
+    BsAlertCloseComponent
   ],
   exports: [
-    AlertComponent,
-    AlertCloseComponent
+    BsAlertComponent,
+    BsAlertCloseComponent
   ]
 })
 export class BsAlertModule {}

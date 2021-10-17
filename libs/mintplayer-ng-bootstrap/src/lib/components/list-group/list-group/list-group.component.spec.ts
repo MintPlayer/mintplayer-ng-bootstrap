@@ -1,20 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { ListGroupComponent } from './list-group.component';
+import { BsListGroupComponent } from './list-group.component';
 
-describe('ListGroupComponent', () => {
-  let component: ListGroupComponent;
-  let fixture: ComponentFixture<ListGroupComponent>;
+describe('BsListGroupComponent', () => {
+  let component: BsListGroupComponent;
+  let fixture: ComponentFixture<BsListGroupComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ ListGroupComponent ]
+      declarations: [ BsListGroupComponent ]
     })
     .compileComponents();
   });
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(ListGroupComponent);
+    fixture = TestBed.createComponent(BsListGroupComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

@@ -6,7 +6,7 @@ import { Color } from '../../../enums';
   templateUrl: './alert.component.html',
   styleUrls: ['./alert.component.scss']
 })
-export class AlertComponent implements OnInit {
+export class BsAlertComponent implements OnInit {
 
   constructor() {
   }

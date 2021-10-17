@@ -1,20 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { AlertCloseComponent } from './alert-close.component';
+import { BsAlertCloseComponent } from './alert-close.component';
 
 describe('AlertCloseComponent', () => {
-  let component: AlertCloseComponent;
-  let fixture: ComponentFixture<AlertCloseComponent>;
+  let component: BsAlertCloseComponent;
+  let fixture: ComponentFixture<BsAlertCloseComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ AlertCloseComponent ]
+      declarations: [ BsAlertCloseComponent ]
     })
     .compileComponents();
   });
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(AlertCloseComponent);
+    fixture = TestBed.createComponent(BsAlertCloseComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

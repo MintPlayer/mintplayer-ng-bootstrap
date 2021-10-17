@@ -1,20 +1,31 @@
+import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { AccordionComponent } from './accordion.component';
+import { BsAccordionComponent } from './accordion.component';
 
-describe('AccordionComponent', () => {
-  let component: AccordionComponent;
-  let fixture: ComponentFixture<AccordionComponent>;
+describe('BsAccordionComponent', () => {
+  let component: BsAccordionComponent;
+  let fixture: ComponentFixture<BsAccordionComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ AccordionComponent ]
+      declarations: [
+        // Component to test
+        BsAccordionComponent,
+
+        // Testbench
+        BsAccordionTestComponent,
+
+        // Mock components
+        BsAccordionTabMockComponent,
+        BsAccordionTabHeaderMockComponent,
+      ]
     })
     .compileComponents();
   });
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(AccordionComponent);
+    fixture = TestBed.createComponent(BsAccordionComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
@@ -23,3 +34,42 @@ describe('AccordionComponent', () => {
     expect(component).toBeTruthy();
   });
 });
+
+@Component({
+  selector: 'bs-accordion-test',
+  template: `
+  <bs-accordion>
+    <bs-accordion-tab>
+      <bs-accordion-tab-header>
+      </bs-accordion-tab-header>
+    </bs-accordion-tab>
+  </bs-accordion>`
+})
+class BsAccordionTestComponent {
+
+  ngOnInit() {
+  }
+
+}
+
+@Component({
+  selector: 'bs-accordion-tab',
+  template: 'accordion-tab works'
+})
+class BsAccordionTabMockComponent {
+
+  ngOnInit() {
+  }
+
+}
+
+@Component({
+  selector: 'bs-accordion-tab-header',
+  template: 'accordion-tab-header works'
+})
+class BsAccordionTabHeaderMockComponent {
+
+  ngOnInit() {
+  }
+
+}

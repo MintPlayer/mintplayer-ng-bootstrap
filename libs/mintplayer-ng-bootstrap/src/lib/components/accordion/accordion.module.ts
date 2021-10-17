@@ -1,24 +1,24 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { AccordionComponent } from './accordion/accordion.component';
-import { AccordionTabComponent } from './accordion-tab/accordion-tab.component';
-import { AccordionTabHeaderComponent } from './accordion-tab-header/accordion-tab-header.component';
+import { BsAccordionComponent } from './accordion/accordion.component';
+import { BsAccordionTabComponent } from './accordion-tab/accordion-tab.component';
+import { BsAccordionTabHeaderComponent } from './accordion-tab-header/accordion-tab-header.component';
 
 @NgModule({
   declarations: [
-    AccordionComponent,
-    AccordionTabComponent,
-    AccordionTabHeaderComponent
+    BsAccordionComponent,
+    BsAccordionTabComponent,
+    BsAccordionTabHeaderComponent
   ],
   imports: [
     CommonModule,
     BrowserAnimationsModule
   ],
   exports: [
-    AccordionComponent,
-    AccordionTabComponent,
-    AccordionTabHeaderComponent
+    BsAccordionComponent,
+    BsAccordionTabComponent,
+    BsAccordionTabHeaderComponent
   ]
 })
 export class BsAccordionModule { }

@@ -1,6 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
-import { AccordionComponent } from '../accordion/accordion.component';
+import { BsAccordionComponent } from '../accordion/accordion.component';
 
 @Component({
   selector: 'bs-accordion-tab',
@@ -8,10 +8,10 @@ import { AccordionComponent } from '../accordion/accordion.component';
   styleUrls: ['./accordion-tab.component.scss'],
   animations: [SlideUpDownAnimation]
 })
-export class AccordionTabComponent implements OnInit {
+export class BsAccordionTabComponent implements OnInit {
 
-  accordion: AccordionComponent;
-  constructor(accordion: AccordionComponent) {
+  accordion: BsAccordionComponent;
+  constructor(accordion: BsAccordionComponent) {
     this.accordion = accordion;
   }
 

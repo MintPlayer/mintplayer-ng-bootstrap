@@ -5,7 +5,7 @@ import { Component, OnInit } from '@angular/core';
   templateUrl: './list-group-item.component.html',
   styleUrls: ['./list-group-item.component.scss']
 })
-export class ListGroupItemComponent implements OnInit {
+export class BsListGroupItemComponent implements OnInit {
 
   constructor() {
   }

@@ -1,20 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { NavbarDropdownComponent } from './navbar-dropdown.component';
+import { BsNavbarDropdownComponent } from './navbar-dropdown.component';
 
-describe('NavbarDropdownComponent', () => {
-  let component: NavbarDropdownComponent;
-  let fixture: ComponentFixture<NavbarDropdownComponent>;
+describe('BsNavbarDropdownComponent', () => {
+  let component: BsNavbarDropdownComponent;
+  let fixture: ComponentFixture<BsNavbarDropdownComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ NavbarDropdownComponent ]
+      declarations: [ BsNavbarDropdownComponent ]
     })
     .compileComponents();
   });
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(NavbarDropdownComponent);
+    fixture = TestBed.createComponent(BsNavbarDropdownComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

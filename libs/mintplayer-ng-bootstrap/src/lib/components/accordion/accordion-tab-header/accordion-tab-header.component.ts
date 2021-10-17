@@ -1,15 +1,15 @@
 import { Component, OnInit } from '@angular/core';
-import { AccordionTabComponent } from '../accordion-tab/accordion-tab.component';
-import { AccordionComponent } from '../accordion/accordion.component';
+import { BsAccordionTabComponent } from '../accordion-tab/accordion-tab.component';
+import { BsAccordionComponent } from '../accordion/accordion.component';
 
 @Component({
   selector: 'bs-accordion-tab-header',
   templateUrl: './accordion-tab-header.component.html',
   styleUrls: ['./accordion-tab-header.component.scss']
 })
-export class AccordionTabHeaderComponent implements OnInit {
+export class BsAccordionTabHeaderComponent implements OnInit {
 
-  constructor(private accordionTab: AccordionTabComponent, private accordion: AccordionComponent) {
+  constructor(private accordionTab: BsAccordionTabComponent, private accordion: BsAccordionComponent) {
   }
 
   ngOnInit() {

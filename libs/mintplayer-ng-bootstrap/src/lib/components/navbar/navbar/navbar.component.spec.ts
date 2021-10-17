@@ -1,20 +1,27 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
-import { NavbarComponent } from './navbar.component';
+import { BsNavbarComponent } from './navbar.component';
 
-describe('NavbarComponent', () => {
-  let component: NavbarComponent;
-  let fixture: ComponentFixture<NavbarComponent>;
+describe('BsNavbarComponent', () => {
+  let component: BsNavbarComponent;
+  let fixture: ComponentFixture<BsNavbarComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ NavbarComponent ]
+      imports: [
+        NoopAnimationsModule,
+      ],
+      declarations: [
+        // Component to test
+        BsNavbarComponent,
+      ]
     })
     .compileComponents();
   });
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(NavbarComponent);
+    fixture = TestBed.createComponent(BsNavbarComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
