@@ -1,6 +1,11 @@
 {
   "name": "@mintplayer/ng-bootstrap",
+  "private": false,
   "version": "12.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MintPlayer/mintplayer-ng-bootstrap"
+  },
   "peerDependencies": {
     "@angular/common": "^12.1.0",
     "@angular/core": "^12.1.0",
