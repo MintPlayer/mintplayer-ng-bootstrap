@@ -1,4 +1,4 @@
-import { Component, ContentChildren, ElementRef, Input, OnInit, QueryList } from '@angular/core';
+import { Component, ContentChildren, ElementRef, Input, OnInit, Optional, QueryList } from '@angular/core';
 import { BsNavbarDropdownComponent } from '@mintplayer/ng-bootstrap';
 
 @Component({
@@ -8,8 +8,11 @@ import { BsNavbarDropdownComponent } from '@mintplayer/ng-bootstrap';
 })
 export class BsNavbarItemComponent implements OnInit {
 
-  constructor() {
+  constructor(@Optional() parentDropdown: BsNavbarDropdownComponent) {
+    this.parentDropdown = parentDropdown;
   }
+
+  parentDropdown: BsNavbarDropdownComponent;
 
   ngOnInit(): void {
   }
