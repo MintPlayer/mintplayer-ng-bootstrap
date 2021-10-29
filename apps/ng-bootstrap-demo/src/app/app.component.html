@@ -2,7 +2,14 @@
 <bs-navbar>
   <bs-navbar-nav [collapse]="true">
     <bs-navbar-item>
-      <a [routerLink]='["/a", "b", "c"]' class="nav-link">Navbar item</a>
+      <a [routerLink]='["/a", "b", "c"]'>Left</a>
+    </bs-navbar-item>
+    <bs-navbar-item>
+      <a [routerLink]='["/a", "b", "c"]'>Link</a>
+    </bs-navbar-item>
+    <bs-navbar-item>
+      <a [routerLink]='[]'>Dropdown</a>
+      <bs-navbar-dropdown></bs-navbar-dropdown>
     </bs-navbar-item>
   </bs-navbar-nav>
 </bs-navbar>
