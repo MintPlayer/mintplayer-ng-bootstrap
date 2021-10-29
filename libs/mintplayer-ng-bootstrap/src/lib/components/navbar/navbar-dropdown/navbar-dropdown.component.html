@@ -1,7 +1,6 @@
-<ul class="dropdown-menu show" aria-labelledby="navbarDropdown">
+<ul class="dropdown-menu show" [class.submenu]="!!parentDropdown" aria-labelledby="navbarDropdown">
     <ng-content></ng-content>
-    <li class="position-relative">
-        <a class="dropdown-item" href="#">Another action</a>
+    <!-- <li class="position-relative">
         <ul class="submenu dropdown-menu show">
             <li><a class="dropdown-item" href="#">Multi level 2</a></li>
             <li class="position-relative">
@@ -12,7 +11,7 @@
                 </ul>
             </li>
         </ul>
-    </li>
+    </li> -->
     <li>
         <hr class="dropdown-divider">
     </li>

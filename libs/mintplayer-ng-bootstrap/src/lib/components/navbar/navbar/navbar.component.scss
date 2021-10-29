@@ -8,3 +8,14 @@ nav {
     right: 0;
     z-index: 1;
 }
+
+@media (min-width: 768px) {
+    .mx-md-unset {
+        margin-left: 0 !important;    
+        margin-right: 0 !important;    
+    }
+
+    .w-md-auto {
+        width: auto !important;
+    }
+}

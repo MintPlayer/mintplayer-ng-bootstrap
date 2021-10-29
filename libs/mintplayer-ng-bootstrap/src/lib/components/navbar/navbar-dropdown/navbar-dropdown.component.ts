@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Host, OnInit, Optional, SkipSelf } from '@angular/core';
 
 @Component({
   selector: 'bs-navbar-dropdown',
@@ -7,7 +7,11 @@ import { Component, OnInit } from '@angular/core';
 })
 export class BsNavbarDropdownComponent implements OnInit {
 
-  constructor() { }
+  constructor(@SkipSelf() @Host() @Optional() parentDropdown: BsNavbarDropdownComponent) {
+    this.parentDropdown = parentDropdown;
+  }
+
+  parentDropdown: BsNavbarDropdownComponent;
 
   ngOnInit(): void {
   }

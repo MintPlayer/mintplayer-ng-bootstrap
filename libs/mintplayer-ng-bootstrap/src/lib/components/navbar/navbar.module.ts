@@ -6,6 +6,7 @@ import { BsNavbarNavComponent } from './navbar-nav/navbar-nav.component';
 import { BsNavbarDropdownComponent } from './navbar-dropdown/navbar-dropdown.component';
 import { BsNavbarItemComponent } from './navbar-item/navbar-item.component';
 import { NavLinkDirective } from './nav-link/nav-link.directive';
+import { DropdownToggleDirective } from './dropdown-toggle/dropdown-toggle.directive';
 
 
 
@@ -15,7 +16,8 @@ import { NavLinkDirective } from './nav-link/nav-link.directive';
     BsNavbarNavComponent,
     BsNavbarDropdownComponent,
     BsNavbarItemComponent,
-    NavLinkDirective
+    NavLinkDirective,
+    DropdownToggleDirective
   ],
   imports: [
     CommonModule,
@@ -26,7 +28,8 @@ import { NavLinkDirective } from './nav-link/nav-link.directive';
     BsNavbarNavComponent,
     BsNavbarDropdownComponent,
     BsNavbarItemComponent,
-    NavLinkDirective
+    NavLinkDirective,
+    DropdownToggleDirective
   ]
 })
 export class BsNavbarModule { }

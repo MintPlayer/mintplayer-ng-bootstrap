@@ -1,3 +1,10 @@
+@media (max-width: 767px) {
+    .submenu {
+        margin-left: 0.5rem;
+        margin-right: 0.5rem;
+    }
+}
+
 @media (min-width: 768px) {
     .submenu {
         position: absolute;
