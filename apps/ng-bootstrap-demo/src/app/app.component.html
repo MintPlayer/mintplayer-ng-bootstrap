@@ -1,5 +1,11 @@
 <h1>Welcome to {{ title }}!</h1>
-<bs-navbar></bs-navbar>
+<bs-navbar>
+  <bs-navbar-nav [collapse]="true">
+    <bs-navbar-item [routerLink]='["/a", "b", "c"]'>
+      
+    </bs-navbar-item>
+  </bs-navbar-nav>
+</bs-navbar>
 <div>
   <bs-alert [type]="colors.warning">
     Cras justo odio

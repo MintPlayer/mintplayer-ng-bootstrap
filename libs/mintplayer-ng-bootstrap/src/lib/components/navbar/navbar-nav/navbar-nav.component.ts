@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 
 @Component({
   selector: 'bs-navbar-nav',
@@ -12,4 +12,13 @@ export class BsNavbarNavComponent implements OnInit {
   ngOnInit(): void {
   }
 
+  //#region collapse
+  private _collapse: boolean = true;
+  @Input() public set collapse(value: boolean) {
+    this._collapse = value;
+  }
+  public get collapse() {
+    return this._collapse;
+  }
+  //#endregion
 }
