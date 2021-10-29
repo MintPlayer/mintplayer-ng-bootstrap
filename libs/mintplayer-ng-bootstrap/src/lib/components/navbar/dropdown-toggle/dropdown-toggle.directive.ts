@@ -18,10 +18,6 @@ export class DropdownToggleDirective implements AfterContentInit {
   ) {
     console.log('elementRef', elementRef);
     console.log('navbar item', bsNavbarItem);
-    
-    // if (bsNavbarItem..length > 0) {
-    //   elementRef.nativeElement.classList.add('dropdown-toggle')
-    // }
   }
 
   childDropdowns!: QueryList<BsNavbarDropdownComponent>;
@@ -30,5 +26,9 @@ export class DropdownToggleDirective implements AfterContentInit {
     // setTimeout(() => {
       console.log('child dropdowns', this.childDropdowns.length);
     // }, 50);
+    
+    if (this.bsNavbarItem.dropdowns.length > 0) {
+      this.bsNavbarItem.hasDropdown = true;
+    }
   }
 }
