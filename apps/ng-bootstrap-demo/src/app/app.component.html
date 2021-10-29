@@ -1,8 +1,8 @@
 <h1>Welcome to {{ title }}!</h1>
 <bs-navbar>
   <bs-navbar-nav [collapse]="true">
-    <bs-navbar-item [routerLink]='["/a", "b", "c"]'>
-      
+    <bs-navbar-item>
+      <a [routerLink]='["/a", "b", "c"]' class="nav-link">Navbar item</a>
     </bs-navbar-item>
   </bs-navbar-nav>
 </bs-navbar>

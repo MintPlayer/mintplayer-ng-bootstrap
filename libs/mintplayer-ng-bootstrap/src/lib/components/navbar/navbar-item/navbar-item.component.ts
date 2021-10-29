@@ -12,6 +12,4 @@ export class BsNavbarItemComponent implements OnInit {
   ngOnInit(): void {
   }
 
-  @Input() routerLink: any[] | null = null;
-
 }
