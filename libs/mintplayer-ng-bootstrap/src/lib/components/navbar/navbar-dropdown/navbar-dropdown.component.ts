@@ -1,4 +1,4 @@
-import { Component, Host, OnInit, Optional, SkipSelf } from '@angular/core';
+import { Component, ContentChildren, Host, OnInit, Optional, QueryList, SkipSelf } from '@angular/core';
 
 @Component({
   selector: 'bs-navbar-dropdown',
@@ -11,9 +11,11 @@ export class BsNavbarDropdownComponent implements OnInit {
     this.parentDropdown = parentDropdown;
   }
 
+  isVisible: boolean = false;
   parentDropdown: BsNavbarDropdownComponent;
 
   ngOnInit(): void {
   }
 
+  @ContentChildren(BsNavbarDropdownComponent, { descendants: true }) childDropdowns!: QueryList<BsNavbarDropdownComponent>;
 }

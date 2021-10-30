@@ -14,19 +14,19 @@
           <a [routerLink]='["/a", "b", "c"]'>Action</a>
         </bs-navbar-item>
         <bs-navbar-item>
-          <a [routerLink]='["/a", "b", "c"]'>Another action</a>
+          <a [routerLink]='[]'>Another action</a>
           <bs-navbar-dropdown>
             <bs-navbar-item>
               <a [routerLink]='["/a", "b", "c"]'>Action</a>
             </bs-navbar-item>
             <bs-navbar-item>
-              <a [routerLink]='["/a", "b", "c"]'>Something else here</a>
+              <a [routerLink]='[]'>Something else here</a>
               <bs-navbar-dropdown>
                 <bs-navbar-item>
                   <a [routerLink]='["/a", "b", "c"]'>Action</a>
                 </bs-navbar-item>
                 <bs-navbar-item>
-                  <a [routerLink]='["/a", "b", "c"]'>Something else here</a>
+                  <a [routerLink]='[]'>Something else here</a>
                   <bs-navbar-dropdown>
                     <bs-navbar-item>
                       <a [routerLink]='["/a", "b", "c"]'>Action</a>
@@ -44,14 +44,14 @@
     </bs-navbar-item>
     <bs-navbar-item>
       <a [routerLink]='[]'>Dropdown</a>
-      <!-- <bs-navbar-dropdown>
+      <bs-navbar-dropdown>
         <bs-navbar-item>
           <a [routerLink]='["/a", "b", "c"]'>Action</a>
         </bs-navbar-item>
         <bs-navbar-item>
           <a [routerLink]='["/a", "b", "c"]'>Another action</a>
         </bs-navbar-item>
-      </bs-navbar-dropdown> -->
+      </bs-navbar-dropdown>
     </bs-navbar-item>
   </bs-navbar-nav>
   <bs-navbar-nav [collapse]="true">

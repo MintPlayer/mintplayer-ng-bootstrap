@@ -1,4 +1,4 @@
-<ul class="dropdown-menu show" [class.submenu]="!!parentDropdown" aria-labelledby="navbarDropdown">
+<ul class="dropdown-menu" [class.show]="isVisible" [class.submenu]="!!parentDropdown" (clickOutside)="isVisible = false" [exclude]="'.nav-item.dropdown'" aria-labelledby="navbarDropdown">
     <ng-content></ng-content>
     <!-- <li class="position-relative">
         <ul class="submenu dropdown-menu show">

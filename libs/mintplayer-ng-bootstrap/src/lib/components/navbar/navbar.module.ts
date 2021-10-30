@@ -7,6 +7,7 @@ import { BsNavbarDropdownComponent } from './navbar-dropdown/navbar-dropdown.com
 import { BsNavbarItemComponent } from './navbar-item/navbar-item.component';
 import { NavLinkDirective } from './nav-link/nav-link.directive';
 import { DropdownToggleDirective } from './dropdown-toggle/dropdown-toggle.directive';
+import { ClickOutsideModule } from 'ng-click-outside';
 
 
 
@@ -21,7 +22,8 @@ import { DropdownToggleDirective } from './dropdown-toggle/dropdown-toggle.direc
   ],
   imports: [
     CommonModule,
-    RouterModule
+    RouterModule,
+    ClickOutsideModule
   ],
   exports: [
     BsNavbarComponent,
