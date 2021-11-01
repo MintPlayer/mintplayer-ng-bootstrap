@@ -1,6 +1,4 @@
-import { AfterContentInit, AfterViewInit, Directive, ElementRef, Input, OnDestroy } from '@angular/core';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { AfterViewInit, Directive, ElementRef, Input, OnDestroy } from '@angular/core';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 
 @Directive({
@@ -9,28 +7,24 @@ import { BsNavbarComponent } from '../navbar/navbar.component';
 export class NavbarContentDirective implements AfterViewInit, OnDestroy {
 
   constructor(private element: ElementRef) {
+    this.resizeObserver = new ResizeObserver((entries) => {
+      let height = entries[0].contentRect.height;
+      this.element.nativeElement.style.paddingTop = (this.initialPadding + height) + 'px';
+    });
   }
 
   @Input('navbarContent') navbar!: BsNavbarComponent;
-  private el!: HTMLElement;
 
   ngAfterViewInit() {
-    this.el = this.element.nativeElement;
-    console.log('navbarContent', { element: this.element, navbar: this.navbar });
-    this.navbar.heightChange.pipe(takeUntil(this.destroyed$)).subscribe(this.onHeightChange);
+    let p = parseInt(this.element.nativeElement.style.paddingTop.replace(/px$/, ''));
+    this.initialPadding = isNaN(p) ? 0 : p;
+    this.resizeObserver.observe(this.navbar.nav.nativeElement);
   }
 
-  private destroyed$ = new Subject();
   ngOnDestroy() {
-    this.destroyed$.next(true);
+    this.resizeObserver.unobserve(this.navbar.nav.nativeElement);
   }
 
-  private onHeightChange(height: number) {
-    console.log('element', this.el);
-    if (!!this.el) {
-      this.el.style.paddingTop = height + 'px';
-    } else {
-      console.log('nothing happens');
-    }
-  }
+  resizeObserver: ResizeObserver;
+  initialPadding: number = 0;
 }

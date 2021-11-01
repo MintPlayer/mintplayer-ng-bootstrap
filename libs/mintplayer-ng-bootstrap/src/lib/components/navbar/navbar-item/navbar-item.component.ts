@@ -31,7 +31,6 @@ export class BsNavbarItemComponent implements OnInit, AfterContentChecked {
           // Normally there should be only one dropdown in this list
           this.dropdowns.forEach((dropdown) => {
             if (!(dropdown.isVisible = !dropdown.isVisible)) {
-              console.log('child dropdowns', dropdown.childDropdowns);
               dropdown.childDropdowns.forEach((child) => {
                 child.isVisible = false;
               });
