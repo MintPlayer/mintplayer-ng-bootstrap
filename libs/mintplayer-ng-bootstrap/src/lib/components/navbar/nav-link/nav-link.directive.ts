@@ -1,5 +1,5 @@
 import { Directive, ElementRef, Optional } from '@angular/core';
-import { BsNavbarDropdownComponent } from '../../components/navbar/navbar-dropdown/navbar-dropdown.component';
+import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
 
 @Directive({
   selector: 'bs-navbar-item > a[routerLink]'

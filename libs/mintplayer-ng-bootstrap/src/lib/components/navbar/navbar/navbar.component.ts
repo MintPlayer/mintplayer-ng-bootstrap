@@ -1,4 +1,4 @@
-import { Component, ContentChildren, OnInit, QueryList } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 
 @Component({
   selector: 'bs-navbar',
@@ -13,8 +13,13 @@ export class BsNavbarComponent implements OnInit {
   ngOnInit() {
   }
 
+  onResized(event: Event) {
+    console.log('resized', event);
+  }
+
   isExpanded = false;
   toggleExpanded() {
     this.isExpanded = !this.isExpanded;
   }
+
 }

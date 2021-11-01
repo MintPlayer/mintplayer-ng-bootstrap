@@ -6,13 +6,18 @@ import { BsNavbarComponent } from './navbar/navbar.component';
 import { BsNavbarNavComponent } from './navbar-nav/navbar-nav.component';
 import { BsNavbarDropdownComponent } from './navbar-dropdown/navbar-dropdown.component';
 import { BsNavbarItemComponent } from './navbar-item/navbar-item.component';
+import { DropdownToggleDirective } from './dropdown-toggle/dropdown-toggle.directive';
+import { NavLinkDirective } from './nav-link/nav-link.directive';
 
 @NgModule({
   declarations: [
     BsNavbarComponent,
     BsNavbarNavComponent,
     BsNavbarDropdownComponent,
-    BsNavbarItemComponent
+    BsNavbarItemComponent,
+
+    DropdownToggleDirective,
+    NavLinkDirective
   ],
   imports: [
     CommonModule,
@@ -23,7 +28,10 @@ import { BsNavbarItemComponent } from './navbar-item/navbar-item.component';
     BsNavbarComponent,
     BsNavbarNavComponent,
     BsNavbarDropdownComponent,
-    BsNavbarItemComponent
+    BsNavbarItemComponent,
+
+    DropdownToggleDirective,
+    NavLinkDirective
   ]
 })
 export class BsNavbarModule { }

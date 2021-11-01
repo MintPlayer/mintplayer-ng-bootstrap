@@ -6,4 +6,8 @@
     :host {
         width: 100% !important;
     }
+
+    .navbar-collapse.collapse {
+        overflow: hidden;
+    }
 } 
