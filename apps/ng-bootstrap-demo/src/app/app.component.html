@@ -1,4 +1,4 @@
-<bs-navbar>
+<bs-navbar #nav>
   <bs-navbar-nav [collapse]="true">
     <bs-navbar-item>
       <a [routerLink]='["/a", "b", "c"]'>Left</a>
@@ -59,8 +59,8 @@
     </bs-navbar-item>
   </bs-navbar-nav>
 </bs-navbar>
-<h1>Welcome to {{ title }}!</h1>
-<div>
+<div [navbarContent]="nav">
+  <h1>Welcome to {{ title }}!</h1>
   <bs-alert [type]="colors.warning">
     Cras justo odio
     <bs-alert-close></bs-alert-close>
