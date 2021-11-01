@@ -27,10 +27,10 @@ jobs:
       run: npm install
     
     - name: Build
-      run: npm run build
+      run: npm run nx run-many -- --target=build --projects=click-outside-demo --configuration production --with-deps
 
     - name: Test
-      run: npm run test
+      run: npm run nx run-many -- --target=test --projects=click-outside-demo --with-deps  --watch=false --browsers=ChromeHeadless
 
     - name: Upload code coverage report
       uses: codecov/codecov-action@v1
