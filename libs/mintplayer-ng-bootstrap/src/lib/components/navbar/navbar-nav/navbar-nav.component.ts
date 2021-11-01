@@ -1,5 +1,5 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { BsNavbarComponent } from '@mintplayer/ng-bootstrap';
+import { BsNavbarComponent } from '../navbar/navbar.component';
 import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
 
 @Component({

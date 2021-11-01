@@ -1,6 +1,6 @@
 import { AfterContentInit, ContentChildren, Directive, ElementRef, Inject, Optional, QueryList } from '@angular/core';
-import { BsNavbarItemComponent } from '@mintplayer/ng-bootstrap';
-import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
+import { BsNavbarItemComponent } from '../../components/navbar/navbar-item/navbar-item.component';
+import { BsNavbarDropdownComponent } from '../../components/navbar/navbar-dropdown/navbar-dropdown.component';
 
 @Directive({
   // selector: 'bs-navbar-item > a[routerLink]',

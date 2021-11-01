@@ -1,5 +1,5 @@
 import { Component, ContentChildren, ElementRef, Host, OnInit, Optional, QueryList, SkipSelf } from '@angular/core';
-import { BsNavbarItemComponent } from '@mintplayer/ng-bootstrap';
+import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
 
 @Component({
   selector: 'bs-navbar-dropdown',
