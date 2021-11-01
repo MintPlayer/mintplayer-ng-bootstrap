@@ -14,6 +14,7 @@ export class BsNavbarItemComponent implements OnInit, AfterContentChecked {
 
   parentDropdown: BsNavbarDropdownComponent;
   hasDropdown: boolean = false;
+  anchorTag: HTMLAnchorElement | null = null;
 
   ngOnInit(): void {
   }
@@ -21,11 +22,11 @@ export class BsNavbarItemComponent implements OnInit, AfterContentChecked {
   ngAfterContentChecked() {
     if (this.hasDropdown) {
       (<any>window).element = this.element.nativeElement;
-      this.element.nativeElement.querySelector('li a').classList.add('dropdown-toggle');
+      this.anchorTag = this.element.nativeElement.querySelector('li a');
+      (this.anchorTag) && this.anchorTag.classList.add('dropdown-toggle');
 
-      let link = this.element.nativeElement.querySelector('li a');
-      if (!link.onclick) {
-        link.onclick = (ev: Event) => {
+      if (this.anchorTag && !this.anchorTag.onclick) {
+        this.anchorTag.onclick = (ev: Event) => {
           ev.preventDefault();
           // Normally there should be only one dropdown in this list
           this.dropdowns.forEach((dropdown) => {

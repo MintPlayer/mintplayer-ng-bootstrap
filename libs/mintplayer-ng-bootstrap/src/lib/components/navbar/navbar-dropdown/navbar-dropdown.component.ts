@@ -1,4 +1,5 @@
-import { Component, ContentChildren, Host, OnInit, Optional, QueryList, SkipSelf } from '@angular/core';
+import { Component, ContentChildren, ElementRef, Host, OnInit, Optional, QueryList, SkipSelf } from '@angular/core';
+import { BsNavbarItemComponent } from '@mintplayer/ng-bootstrap';
 
 @Component({
   selector: 'bs-navbar-dropdown',
@@ -7,12 +8,18 @@ import { Component, ContentChildren, Host, OnInit, Optional, QueryList, SkipSelf
 })
 export class BsNavbarDropdownComponent implements OnInit {
 
-  constructor(@SkipSelf() @Host() @Optional() parentDropdown: BsNavbarDropdownComponent) {
+  constructor(@SkipSelf() @Host() @Optional() parentDropdown: BsNavbarDropdownComponent, @Host() navbarItem: BsNavbarItemComponent) {
     this.parentDropdown = parentDropdown;
+    this.navbarItem = navbarItem;
   }
 
   isVisible: boolean = false;
+  navbarItem: BsNavbarItemComponent;
   parentDropdown: BsNavbarDropdownComponent;
+
+  get elementsToExclude() {
+    return [this.navbarItem.anchorTag].filter((a) => a).map((a) => <HTMLElement>a);
+  }
 
   ngOnInit(): void {
   }
