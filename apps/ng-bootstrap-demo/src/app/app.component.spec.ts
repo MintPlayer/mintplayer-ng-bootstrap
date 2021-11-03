@@ -19,18 +19,18 @@ describe('AppComponent', () => {
         BsNavbarItemComponent,
         BsNavbarDropdownComponent,
         BsNavbarContentDirective,
-        BsAlertComponent,
-        BsAlertCloseComponent,
-        BsCardComponent,
-        BsCardHeaderComponent,
-        BsListGroupComponent,
-        BsListGroupItemComponent,
-        BsCalendarComponent,
-        BsAccordionComponent,
-        BsAccordionTabComponent,
-        BsAccordionTabHeaderComponent,
-        BsTabControlComponent,
-        BsTabPageComponent,
+        // BsAlertComponent,
+        // BsAlertCloseComponent,
+        // BsCardComponent,
+        // BsCardHeaderComponent,
+        // BsListGroupComponent,
+        // BsListGroupItemComponent,
+        // BsCalendarComponent,
+        // BsAccordionComponent,
+        // BsAccordionTabComponent,
+        // BsAccordionTabHeaderComponent,
+        // BsTabControlComponent,
+        // BsTabPageComponent,
       ],
       imports: [
         RouterTestingModule
@@ -46,38 +46,38 @@ describe('AppComponent', () => {
     expect(app).toBeTruthy();
   });
 
-  it(`should have as title 'ng-bootstrap-demo'`, () => {
-    fixture = TestBed.createComponent(AppComponent);
-    fixture.detectChanges();
+  // it(`should have as title 'ng-bootstrap-demo'`, () => {
+  //   fixture = TestBed.createComponent(AppComponent);
+  //   fixture.detectChanges();
     
-    const app = fixture.componentInstance;
-    expect(app.title).toEqual('ng-bootstrap-demo');
-  });
+  //   const app = fixture.componentInstance;
+  //   expect(app.title).toEqual('ng-bootstrap-demo');
+  // });
 
-  it('should render title', () => {
-    fixture = TestBed.createComponent(AppComponent);
-    fixture.detectChanges();
+  // it('should render title', () => {
+  //   fixture = TestBed.createComponent(AppComponent);
+  //   fixture.detectChanges();
     
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain(
-      'Welcome to ng-bootstrap-demo!'
-    );
-  });
+  //   const compiled = fixture.nativeElement as HTMLElement;
+  //   expect(compiled.querySelector('h1')?.textContent).toContain(
+  //     'Welcome to ng-bootstrap-demo!'
+  //   );
+  // });
 });
 
-enum Color {
-  primary,
-  secondary,
-  success,
-  danger,
-  warning,
-  info,
-  light,
-  dark,
-  body,
-  white,
-  transparent
-}
+// enum Color {
+//   primary,
+//   secondary,
+//   success,
+//   danger,
+//   warning,
+//   info,
+//   light,
+//   dark,
+//   body,
+//   white,
+//   transparent
+// }
 
 @Component({
   selector: 'bs-navbar',
@@ -134,126 +134,126 @@ class BsNavbarContentDirective {
 }
 
 
-@Component({
-  selector: 'bs-alert',
-  template: 'alert works'
-})
-// class BsAlertMockComponent {
-class BsAlertComponent {
-  constructor() {
-  }
+// @Component({
+//   selector: 'bs-alert',
+//   template: 'alert works'
+// })
+// // class BsAlertMockComponent {
+// class BsAlertComponent {
+//   constructor() {
+//   }
   
-  @Input() public type: Color = Color.primary;
-}
+//   @Input() public type: Color = Color.primary;
+// }
 
-@Component({
-  selector: 'bs-alert-close',
-  template: 'alert-close works'
-})
-// class BsAlertCloseMockComponent {
-class BsAlertCloseComponent {
-  constructor() {
-  }
-}
+// @Component({
+//   selector: 'bs-alert-close',
+//   template: 'alert-close works'
+// })
+// // class BsAlertCloseMockComponent {
+// class BsAlertCloseComponent {
+//   constructor() {
+//   }
+// }
 
-@Component({
-  selector: 'bs-card',
-  template: 'card works'
-})
-// class BsCardMockComponent {
-class BsCardComponent {
-  constructor() {
-  }
-}
+// @Component({
+//   selector: 'bs-card',
+//   template: 'card works'
+// })
+// // class BsCardMockComponent {
+// class BsCardComponent {
+//   constructor() {
+//   }
+// }
 
-@Component({
-  selector: 'bs-card-header',
-  template: 'card-header works'
-})
-// class BsCardHeaderMockComponent {
-class BsCardHeaderComponent {
-  constructor() {
-  }
-}
+// @Component({
+//   selector: 'bs-card-header',
+//   template: 'card-header works'
+// })
+// // class BsCardHeaderMockComponent {
+// class BsCardHeaderComponent {
+//   constructor() {
+//   }
+// }
 
-@Component({
-  selector: 'bs-list-group',
-  template: 'list-group works'
-})
-// class BsListGroupMockComponent {
-class BsListGroupComponent {
-  constructor() {
-  }
-}
+// @Component({
+//   selector: 'bs-list-group',
+//   template: 'list-group works'
+// })
+// // class BsListGroupMockComponent {
+// class BsListGroupComponent {
+//   constructor() {
+//   }
+// }
 
-@Component({
-  selector: 'bs-list-group-item',
-  template: 'list-group-item works'
-})
-// class BsListGroupItemMockComponent {
-class BsListGroupItemComponent {
-  constructor() {
-  }
-}
+// @Component({
+//   selector: 'bs-list-group-item',
+//   template: 'list-group-item works'
+// })
+// // class BsListGroupItemMockComponent {
+// class BsListGroupItemComponent {
+//   constructor() {
+//   }
+// }
 
-@Component({
-  selector: 'bs-calendar',
-  template: 'calendar works'
-})
-// class BsCalendarMockComponent {
-class BsCalendarComponent {
-  constructor() {
-  }
-}
+// @Component({
+//   selector: 'bs-calendar',
+//   template: 'calendar works'
+// })
+// // class BsCalendarMockComponent {
+// class BsCalendarComponent {
+//   constructor() {
+//   }
+// }
 
-@Component({
-  selector: 'bs-accordion',
-  template: 'accordion works'
-})
-// class BsAccordionMockComponent {
-class BsAccordionComponent {
-  constructor() {
-  }
-}
+// @Component({
+//   selector: 'bs-accordion',
+//   template: 'accordion works'
+// })
+// // class BsAccordionMockComponent {
+// class BsAccordionComponent {
+//   constructor() {
+//   }
+// }
 
-@Component({
-  selector: 'bs-accordion-tab',
-  template: 'accordion-tab works'
-})
-// class BsAccordionTabMockComponent {
-class BsAccordionTabComponent {
-  constructor() {
-  }
-}
+// @Component({
+//   selector: 'bs-accordion-tab',
+//   template: 'accordion-tab works'
+// })
+// // class BsAccordionTabMockComponent {
+// class BsAccordionTabComponent {
+//   constructor() {
+//   }
+// }
 
-@Component({
-  selector: 'bs-accordion-tab-header',
-  template: 'accordion-tab-header works'
-})
-// class BsAccordionTabHeaderMockComponent {
-class BsAccordionTabHeaderComponent {
-  constructor() {
-  }
-}
+// @Component({
+//   selector: 'bs-accordion-tab-header',
+//   template: 'accordion-tab-header works'
+// })
+// // class BsAccordionTabHeaderMockComponent {
+// class BsAccordionTabHeaderComponent {
+//   constructor() {
+//   }
+// }
 
-@Component({
-  selector: 'bs-tab-control',
-  template: 'tab-control works'
-})
-// class BsTabControlMockComponent {
-class BsTabControlComponent {
-  constructor() {
-  }
-}
+// @Component({
+//   selector: 'bs-tab-control',
+//   template: 'tab-control works'
+// })
+// // class BsTabControlMockComponent {
+// class BsTabControlComponent {
+//   constructor() {
+//   }
+// }
 
-@Component({
-  selector: 'bs-tab-page',
-  template: 'tab-page works'
-})
-// class BsTabPageMockComponent {
-class BsTabPageComponent {
-  constructor() {
-  }
+// @Component({
+//   selector: 'bs-tab-page',
+//   template: 'tab-page works'
+// })
+// // class BsTabPageMockComponent {
+// class BsTabPageComponent {
+//   constructor() {
+//   }
   
-  @Input() disabled: boolean = false;
-}
+//   @Input() disabled: boolean = false;
+// }

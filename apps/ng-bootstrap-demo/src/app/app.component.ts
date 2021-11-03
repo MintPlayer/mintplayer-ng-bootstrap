@@ -8,5 +8,5 @@ import { Color } from '@mintplayer/ng-bootstrap';
 })
 export class AppComponent {
   title = 'ng-bootstrap-demo';
-  colors = Color;
+  // colors = Color;
 }
