@@ -16,9 +16,9 @@ describe('AppComponent', () => {
         // Mock components
         BsNavbarComponent,
         BsNavbarNavComponent,
-        BsNavbarItemComponent,
-        BsNavbarDropdownComponent,
-        BsNavbarContentDirective,
+        BsNavbarItemMockComponent,
+        BsNavbarDropdownMockComponent,
+        BsNavbarContentMockDirective,
         // BsAlertComponent,
         // BsAlertCloseComponent,
         // BsCardComponent,
@@ -105,8 +105,8 @@ class BsNavbarNavComponent {
   selector: 'bs-navbar-dropdown',
   template: 'navbar-dropdown works'
 })
-//class BsNavbarDropdownMockComponent {
-class BsNavbarDropdownComponent {
+class BsNavbarDropdownMockComponent {
+// class BsNavbarDropdownComponent {
   constructor() {
   }
 }
@@ -115,19 +115,19 @@ class BsNavbarDropdownComponent {
   selector: 'bs-navbar-item',
   template: 'navbar-item works'
 })
-// class BsNavbarItemMockComponent {
-class BsNavbarItemComponent {
+class BsNavbarItemMockComponent {
+// class BsNavbarItemComponent {
   constructor() {
   }
 
-  // @ContentChildren(BsNavbarDropdownComponent) dropdowns!: QueryList<BsNavbarDropdownComponent>;
+  @ContentChildren(BsNavbarDropdownMockComponent) dropdowns!: QueryList<BsNavbarDropdownMockComponent>;
 }
 
 @Directive({
   selector: '[navbarContent]'
 })
-// class BsNavbarContentMockDirective {
-class BsNavbarContentDirective {
+class BsNavbarContentMockDirective {
+// class BsNavbarContentDirective {
 
   @Input('navbarContent') navbar!: BsNavbarComponent;
 
