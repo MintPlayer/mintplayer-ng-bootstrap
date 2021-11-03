@@ -4,7 +4,7 @@ import { BsNavbarComponent } from '../navbar/navbar.component';
 @Directive({
   selector: '[navbarContent]'
 })
-export class NavbarContentDirective implements AfterViewInit, OnDestroy {
+export class BsNavbarContentDirective implements AfterViewInit, OnDestroy {
 
   constructor(private element: ElementRef) {
     this.resizeObserver = new ResizeObserver((entries) => {
