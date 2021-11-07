@@ -1,5 +1,18 @@
 import { Component } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
+// export enum Color {
+//   primary,
+//   secondary,
+//   success,
+//   danger,
+//   warning,
+//   info,
+//   light,
+//   dark,
+//   body,
+//   white,
+//   transparent
+// }
 
 @Component({
   selector: 'mintplayer-ng-bootstrap-root',
@@ -8,5 +21,5 @@ import { Color } from '@mintplayer/ng-bootstrap';
 })
 export class AppComponent {
   title = 'ng-bootstrap-demo';
-  // colors = Color;
+  colors = Color;
 }
