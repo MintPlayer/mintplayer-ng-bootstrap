@@ -12,24 +12,24 @@ describe('AppComponent', () => {
         // Component to test
         AppComponent,
       
-        // Mock components
-        BsNavbarComponent,
-        BsNavbarNavComponent,
-        BsNavbarItemMockComponent,
-        BsNavbarDropdownMockComponent,
-        BsNavbarContentMockDirective,
-        // BsAlertComponent,
-        // BsAlertCloseComponent,
-        // BsCardComponent,
-        // BsCardHeaderComponent,
-        // BsListGroupComponent,
-        // BsListGroupItemComponent,
-        // BsCalendarComponent,
-        // BsAccordionComponent,
-        // BsAccordionTabComponent,
-        // BsAccordionTabHeaderComponent,
-        // BsTabControlComponent,
-        // BsTabPageComponent,
+        //  components
+        // BsNavbarComponent,
+        // BsNavbarNavComponent,
+        // BsNavbarItemComponent,
+        // BsNavbarDropdownComponent,
+        // BsNavbarContentDirective,
+        BsAlertComponent,
+        BsAlertCloseComponent,
+        BsCardComponent,
+        BsCardHeaderComponent,
+        BsListGroupComponent,
+        BsListGroupItemComponent,
+        BsCalendarComponent,
+        BsAccordionComponent,
+        BsAccordionTabComponent,
+        BsAccordionTabHeaderComponent,
+        BsTabControlComponent,
+        BsTabPageComponent,
       ],
       imports: [
         RouterTestingModule
@@ -67,196 +67,184 @@ describe('AppComponent', () => {
   // });
 });
 
-// enum Color {
-//   primary,
-//   secondary,
-//   success,
-//   danger,
-//   warning,
-//   info,
-//   light,
-//   dark,
-//   body,
-//   white,
-//   transparent
+enum Color {
+  primary,
+  secondary,
+  success,
+  danger,
+  warning,
+  info,
+  light,
+  dark,
+  body,
+  white,
+  transparent
+}
+
+// @Component({
+//   selector: 'bs-navbar',
+//   template: 'navbar works'
+// })
+// // class BsNavbarComponent {
+// class BsNavbarComponent {
+//   constructor() {
+//   }
 // }
 
-@Component({
-  selector: 'bs-navbar',
-  template: 'navbar works'
-})
-// class BsNavbarMockComponent {
-class BsNavbarComponent {
-  constructor() {
-  }
-}
+// @Component({
+//   selector: 'bs-navbar-nav',
+//   template: 'navbar-nav works'
+// })
+// // class BsNavbarNavComponent {
+// class BsNavbarNavComponent {
+//   constructor() {
+//   }
 
-@Component({
-  selector: 'bs-navbar-nav',
-  template: 'navbar-nav works'
-})
-// class BsNavbarNavMockComponent {
-class BsNavbarNavComponent {
-  constructor() {
-  }
+//   @Input() collapse: boolean = false;
+// }
 
-  @Input() collapse: boolean = false;
-}
-
-@Component({
-  selector: 'bs-navbar-dropdown',
-  template: 'navbar-dropdown works'
-})
-class BsNavbarDropdownMockComponent {
+// @Component({
+//   selector: 'bs-navbar-dropdown',
+//   template: 'navbar-dropdown works'
+// })
 // class BsNavbarDropdownComponent {
+// // class BsNavbarDropdownComponent {
+//   constructor() {
+//   }
+// }
+
+// @Component({
+//   selector: 'bs-navbar-item',
+//   template: 'navbar-item works'
+// })
+// class BsNavbarItemComponent {
+// // class BsNavbarItemComponent {
+//   constructor() {
+//   }
+
+
+//   @ContentChildren(BsNavbarDropdownComponent) dropdowns!: QueryList<BsNavbarDropdownComponent>;
+// }
+
+// @Directive({
+//   selector: '[navbarContent]'
+// })
+// class BsNavbarContentDirective {
+// // class BsNavbarContentDirective {
+
+//   @Input('navbarContent') navbar!: BsNavbarComponent;
+
+// }
+
+
+@Component({
+  selector: 'bs-alert',
+  template: 'alert works'
+})
+class BsAlertComponent {
+  constructor() {
+  }
+  
+  @Input() public type: Color = Color.primary;
+}
+
+@Component({
+  selector: 'bs-alert-close',
+  template: 'alert-close works'
+})
+class BsAlertCloseComponent {
   constructor() {
   }
 }
 
 @Component({
-  selector: 'bs-navbar-item',
-  template: 'navbar-item works'
+  selector: 'bs-card',
+  template: 'card works'
 })
-class BsNavbarItemMockComponent {
-// class BsNavbarItemComponent {
+class BsCardComponent {
   constructor() {
   }
-
-
-  @ContentChildren(BsNavbarDropdownMockComponent) dropdowns!: QueryList<BsNavbarDropdownMockComponent>;
 }
 
-@Directive({
-  selector: '[navbarContent]'
+@Component({
+  selector: 'bs-card-header',
+  template: 'card-header works'
 })
-class BsNavbarContentMockDirective {
-// class BsNavbarContentDirective {
-
-  @Input('navbarContent') navbar!: BsNavbarComponent;
-
+class BsCardHeaderComponent {
+  constructor() {
+  }
 }
 
+@Component({
+  selector: 'bs-list-group',
+  template: 'list-group works'
+})
+class BsListGroupComponent {
+  constructor() {
+  }
+}
 
-// @Component({
-//   selector: 'bs-alert',
-//   template: 'alert works'
-// })
-// // class BsAlertMockComponent {
-// class BsAlertComponent {
-//   constructor() {
-//   }
+@Component({
+  selector: 'bs-list-group-item',
+  template: 'list-group-item works'
+})
+class BsListGroupItemComponent {
+  constructor() {
+  }
+}
+
+@Component({
+  selector: 'bs-calendar',
+  template: 'calendar works'
+})
+class BsCalendarComponent {
+  constructor() {
+  }
+}
+
+@Component({
+  selector: 'bs-accordion',
+  template: 'accordion works'
+})
+class BsAccordionComponent {
+  constructor() {
+  }
+}
+
+@Component({
+  selector: 'bs-accordion-tab',
+  template: 'accordion-tab works'
+})
+class BsAccordionTabComponent {
+  constructor() {
+  }
+}
+
+@Component({
+  selector: 'bs-accordion-tab-header',
+  template: 'accordion-tab-header works'
+})
+class BsAccordionTabHeaderComponent {
+  constructor() {
+  }
+}
+
+@Component({
+  selector: 'bs-tab-control',
+  template: 'tab-control works'
+})
+class BsTabControlComponent {
+  constructor() {
+  }
+}
+
+@Component({
+  selector: 'bs-tab-page',
+  template: 'tab-page works'
+})
+class BsTabPageComponent {
+  constructor() {
+  }
   
-//   @Input() public type: Color = Color.primary;
-// }
-
-// @Component({
-//   selector: 'bs-alert-close',
-//   template: 'alert-close works'
-// })
-// // class BsAlertCloseMockComponent {
-// class BsAlertCloseComponent {
-//   constructor() {
-//   }
-// }
-
-// @Component({
-//   selector: 'bs-card',
-//   template: 'card works'
-// })
-// // class BsCardMockComponent {
-// class BsCardComponent {
-//   constructor() {
-//   }
-// }
-
-// @Component({
-//   selector: 'bs-card-header',
-//   template: 'card-header works'
-// })
-// // class BsCardHeaderMockComponent {
-// class BsCardHeaderComponent {
-//   constructor() {
-//   }
-// }
-
-// @Component({
-//   selector: 'bs-list-group',
-//   template: 'list-group works'
-// })
-// // class BsListGroupMockComponent {
-// class BsListGroupComponent {
-//   constructor() {
-//   }
-// }
-
-// @Component({
-//   selector: 'bs-list-group-item',
-//   template: 'list-group-item works'
-// })
-// // class BsListGroupItemMockComponent {
-// class BsListGroupItemComponent {
-//   constructor() {
-//   }
-// }
-
-// @Component({
-//   selector: 'bs-calendar',
-//   template: 'calendar works'
-// })
-// // class BsCalendarMockComponent {
-// class BsCalendarComponent {
-//   constructor() {
-//   }
-// }
-
-// @Component({
-//   selector: 'bs-accordion',
-//   template: 'accordion works'
-// })
-// // class BsAccordionMockComponent {
-// class BsAccordionComponent {
-//   constructor() {
-//   }
-// }
-
-// @Component({
-//   selector: 'bs-accordion-tab',
-//   template: 'accordion-tab works'
-// })
-// // class BsAccordionTabMockComponent {
-// class BsAccordionTabComponent {
-//   constructor() {
-//   }
-// }
-
-// @Component({
-//   selector: 'bs-accordion-tab-header',
-//   template: 'accordion-tab-header works'
-// })
-// // class BsAccordionTabHeaderMockComponent {
-// class BsAccordionTabHeaderComponent {
-//   constructor() {
-//   }
-// }
-
-// @Component({
-//   selector: 'bs-tab-control',
-//   template: 'tab-control works'
-// })
-// // class BsTabControlMockComponent {
-// class BsTabControlComponent {
-//   constructor() {
-//   }
-// }
-
-// @Component({
-//   selector: 'bs-tab-page',
-//   template: 'tab-page works'
-// })
-// // class BsTabPageMockComponent {
-// class BsTabPageComponent {
-//   constructor() {
-//   }
-  
-//   @Input() disabled: boolean = false;
-// }
+  @Input() disabled: boolean = false;
+}

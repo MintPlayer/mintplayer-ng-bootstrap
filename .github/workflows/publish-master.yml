@@ -7,7 +7,7 @@ on:
 jobs:
   build:
   
-    name: npm-publish
+    name: publish-master
     runs-on: ubuntu-latest
     
     permissions: 

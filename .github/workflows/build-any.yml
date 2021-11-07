@@ -9,7 +9,7 @@ on:
 jobs:
   build:
   
-    name: npm-publish
+    name: build-any
     runs-on: ubuntu-latest
     
     permissions: 
