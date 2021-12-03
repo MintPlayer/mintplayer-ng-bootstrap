@@ -2,24 +2,11 @@ import { trigger, state, style, transition, group, animate } from '@angular/anim
 
 export const FadeInOutAnimation =
   trigger('fadeInOut', [
-    state('in', style({
-      'opacity': '1',
-    })),
-    state('out', style({
-      'opacity': '0',
-    })),
-    transition('in => out', [
-      group([
-        animate('600ms ease-in-out', style({
-          'opacity': '0'
-        })),
-      ])
+    transition(':enter', [
+      style({ opacity: 0 }),
+      animate('200ms', style({ opacity: 1 })),
     ]),
-    transition('out => in', [
-      group([
-        animate('600ms ease-in-out', style({
-          'opacity': '1'
-        })),
-      ])
+    transition(':leave', [
+      animate('200ms', style({ opacity: 0 }))
     ]),
   ]);

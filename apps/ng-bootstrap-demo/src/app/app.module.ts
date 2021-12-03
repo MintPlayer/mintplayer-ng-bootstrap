@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { RouterModule } from '@angular/router';
-import { BsAccordionModule, BsAlertModule, BsCalendarModule, BsCardModule, BsListGroupModule, BsNavbarModule, BsTabControlModule } from '@mintplayer/ng-bootstrap';
+import { BsAccordionModule, BsAlertModule, BsCalendarModule, BsCardModule, BsCarouselModule, BsListGroupModule, BsNavbarModule, BsTabControlModule } from '@mintplayer/ng-bootstrap';
 
 import { AppComponent } from './app.component';
 
@@ -12,6 +12,7 @@ import { AppComponent } from './app.component';
     BsAlertModule,
     BsCalendarModule,
     BsCardModule,
+    BsCarouselModule,
     BsListGroupModule,
     BsAccordionModule,
     BsTabControlModule,

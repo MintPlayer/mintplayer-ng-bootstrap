@@ -1,0 +1,23 @@
+<div class="carousel slide">
+    <div class="carousel-indicators">
+        <button *ngFor="let image of images; let i = index" type="button" (click)="setCurrentImage(i)" data-bs-target
+            [class.active]="currentImage === image.nativeElement"
+            [attr.aria-current]="currentImage === image.nativeElement ? true : null"
+            [attr.aria-label]="'Slide ' + i"></button>
+    </div>
+    <div class="carousel-inner">
+        <ng-container *ngFor="let image of images">
+            <div class="carousel-item" [class.active]="true" @fadeInOut *ngIf="shownImages.indexOf(image.nativeElement) > -1">
+                <img [src]="image.nativeElement.src" class="d-block" [attr.alt]="image.nativeElement.alt" [class.w-100]="true">
+            </div>
+        </ng-container>
+    </div>
+    <button class="carousel-control-prev" type="button" (click)="previousImage()">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Previous</span>
+    </button>
+    <button class="carousel-control-next" type="button" (click)="nextImage()">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Next</span>
+    </button>
+</div>
