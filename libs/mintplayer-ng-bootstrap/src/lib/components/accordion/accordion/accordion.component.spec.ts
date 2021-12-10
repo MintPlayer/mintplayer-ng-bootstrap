@@ -46,10 +46,6 @@ describe('BsAccordionComponent', () => {
   </bs-accordion>`
 })
 class BsAccordionTestComponent {
-
-  ngOnInit() {
-  }
-
 }
 
 @Component({
@@ -57,10 +53,6 @@ class BsAccordionTestComponent {
   template: 'accordion-tab works'
 })
 class BsAccordionTabMockComponent {
-
-  ngOnInit() {
-  }
-
 }
 
 @Component({
@@ -68,8 +60,4 @@ class BsAccordionTabMockComponent {
   template: 'accordion-tab-header works'
 })
 class BsAccordionTabHeaderMockComponent {
-
-  ngOnInit() {
-  }
-
 }

@@ -21,7 +21,7 @@ describe('AppComponent', () => {
         BsNavbarDropdownMockComponent,
         BsNavbarItemMockComponent,
         NavbarContentMockDirective,
-        // BsCarouselMockComponent,
+        BsCarouselMockComponent,
         // BsAlertMockComponent,
         // BsAlertCloseMockComponent,
         // BsCardMockComponent,
@@ -134,14 +134,14 @@ class NavbarContentMockDirective {
   @Input('navbarContent') navbar!: BsNavbarMockComponent;
 }
 
-// @Component({
-//   selector: 'bs-carousel',
-//   template: 'carousel works'
-// })
-// class BsCarouselMockComponent {
-//   constructor() {
-//   }
-// }
+@Component({
+  selector: 'bs-carousel',
+  template: 'carousel works'
+})
+class BsCarouselMockComponent {
+  constructor() {
+  }
+}
 
 // @Component({
 //   selector: 'bs-alert',

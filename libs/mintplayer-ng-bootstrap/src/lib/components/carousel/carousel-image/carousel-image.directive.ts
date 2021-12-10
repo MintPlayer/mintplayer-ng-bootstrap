@@ -1,7 +1,7 @@
 import { Directive } from '@angular/core';
 
 @Directive({
-  selector: '[bsCarouselImage]'
+  selector: 'img[bsCarouselImage]'
 })
 export class BsCarouselImageDirective {
 

@@ -1,4 +1,4 @@
-import { Directive, ElementRef, Optional } from '@angular/core';
+import { Component, Directive, ElementRef, forwardRef, Inject, Optional } from '@angular/core';
 import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
 
 @Directive({
@@ -6,7 +6,10 @@ import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.co
 })
 export class NavLinkDirective {
 
-  constructor(private elementRef: ElementRef<HTMLAnchorElement>, @Optional() parentDropdown: BsNavbarDropdownComponent) {
+  constructor(
+    private elementRef: ElementRef<HTMLAnchorElement>,
+    @Optional() /*@Inject(forwardRef(() => BsNavbarDropdownComponent))*/ parentDropdown: BsNavbarDropdownComponent
+  ) {
     if (parentDropdown == null) {
       this.elementRef.nativeElement.classList.add('nav-link');
     } else {

@@ -8,7 +8,10 @@ import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
 })
 export class BsNavbarDropdownComponent implements OnInit {
 
-  constructor(@SkipSelf() @Host() @Optional() parentDropdown: BsNavbarDropdownComponent, @Host() navbarItem: BsNavbarItemComponent) {
+  constructor(
+    @SkipSelf() @Host() @Optional() parentDropdown: BsNavbarDropdownComponent,
+    @Host() navbarItem: BsNavbarItemComponent
+  ) {
     this.parentDropdown = parentDropdown;
     this.navbarItem = navbarItem;
   }
