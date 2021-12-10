@@ -1,12 +1,12 @@
 import { AfterContentInit, Component, ContentChildren, ElementRef, OnInit, QueryList } from '@angular/core';
-import { FadeInOutAnimation } from '@mintplayer/ng-animations';
+import { FadeInOutAnimation, CarouselSlideAnimation } from '@mintplayer/ng-animations';
 import { BsCarouselImageDirective } from '../carousel-image/carousel-image.directive';
 
 @Component({
   selector: 'bs-carousel',
   templateUrl: './carousel.component.html',
   styleUrls: ['./carousel.component.scss'],
-  animations: [FadeInOutAnimation]
+  animations: [FadeInOutAnimation, CarouselSlideAnimation]
 })
 export class BsCarouselComponent implements OnInit, AfterContentInit {
 
