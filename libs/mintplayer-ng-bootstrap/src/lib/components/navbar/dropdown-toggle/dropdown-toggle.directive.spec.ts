@@ -1,9 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, ContentChildren, forwardRef, QueryList } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
 import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
-import { BsNavbarComponent } from '../navbar/navbar.component';
 import { DropdownToggleDirective } from './dropdown-toggle.directive';
 
 describe('DropdownToggleDirective', () => {
@@ -120,6 +119,7 @@ class BsNavbarDropdownMockComponent {
 </li>`
 })
 class BsNavbarItemMockComponent {
+  @ContentChildren(forwardRef(() => BsNavbarDropdownMockComponent)) dropdowns!: QueryList<BsNavbarDropdownMockComponent>;
 }
 
 @Component({

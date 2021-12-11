@@ -1,4 +1,4 @@
-import { AfterContentChecked, Component, ContentChildren, ElementRef, Input, OnInit, Optional, QueryList } from '@angular/core';
+import { AfterContentChecked, Component, ContentChildren, ElementRef, forwardRef, Input, OnInit, Optional, QueryList } from '@angular/core';
 import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
 
 @Component({
@@ -42,5 +42,5 @@ export class BsNavbarItemComponent implements OnInit, AfterContentChecked {
     }
   }
 
-  @ContentChildren(BsNavbarDropdownComponent) dropdowns!: QueryList<BsNavbarDropdownComponent>;
+  @ContentChildren(forwardRef(() => BsNavbarDropdownComponent)) dropdowns!: QueryList<BsNavbarDropdownComponent>;
 }

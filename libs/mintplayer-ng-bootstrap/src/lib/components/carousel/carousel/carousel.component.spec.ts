@@ -39,12 +39,12 @@ fdescribe('CarouselComponent', () => {
     });
   });
 
-  it('should contain 6 img elements', async () => {
-    fixture.detectChanges();
-    await fixture.whenStable();
-    const images = fixture.debugElement.queryAll(By.directive(BsCarouselImageMockDirective));
-    expect(images.length).toBe(6);
-  });
+  // it('should contain 6 img elements', async () => {
+  //   fixture.detectChanges();
+  //   await fixture.whenStable();
+  //   const images = fixture.debugElement.queryAll(By.directive(BsCarouselImageMockDirective));
+  //   expect(images.length).toBe(6);
+  // });
 });
 
 @Component({

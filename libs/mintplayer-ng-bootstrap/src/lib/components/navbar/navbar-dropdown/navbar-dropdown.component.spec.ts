@@ -1,11 +1,11 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
-import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
+// import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
 
 import { BsNavbarDropdownComponent } from './navbar-dropdown.component';
 
-fdescribe('BsNavbarDropdownComponent', () => {
+describe('BsNavbarDropdownComponent', () => {
   let component: BsNavbarDropdownTestComponent;
   let fixture: ComponentFixture<BsNavbarDropdownTestComponent>;
 
@@ -26,7 +26,8 @@ fdescribe('BsNavbarDropdownComponent', () => {
         // Mock components
         BsNavbarMockComponent,
         BsNavbarNavMockComponent,
-        BsNavbarItemMockComponent,
+        BsNavbarItemComponent,
+        //BsNavbarItemMockComponent,
 
         // Pages
         PageAComponent,
@@ -36,7 +37,7 @@ fdescribe('BsNavbarDropdownComponent', () => {
         BsNavbarDropdownTestComponent
       ],
       providers: [
-        { provide: BsNavbarItemComponent, useClass: BsNavbarItemMockComponent }
+        //{ provide: BsNavbarItemComponent, useClass: BsNavbarItemMockComponent }
       ]
     })
     .compileComponents();
@@ -106,7 +107,8 @@ class BsNavbarNavMockComponent {
     <ng-content></ng-content>
 </li>`
 })
-class BsNavbarItemMockComponent {
+// class BsNavbarItemMockComponent {
+class BsNavbarItemComponent {
 }
 
 @Component({
