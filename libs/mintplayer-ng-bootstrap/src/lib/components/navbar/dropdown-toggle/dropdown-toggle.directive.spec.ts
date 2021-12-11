@@ -37,10 +37,10 @@ describe('DropdownToggleDirective', () => {
         // Testbench
         BsDropdownToggleTestComponent,
       ],
-      // providers: [
-      //   { provide: BsNavbarItemComponent, useClass: BsNavbarItemMockComponent },
-      //   { provide: BsNavbarDropdownComponent, useClass: BsNavbarDropdownMockComponent }
-      // ]
+      providers: [
+        { provide: BsNavbarItemComponent, useClass: BsNavbarItemMockComponent },
+        { provide: BsNavbarDropdownComponent, useClass: BsNavbarDropdownMockComponent }
+      ]
     })
     .compileComponents();
   });

@@ -5,7 +5,7 @@ import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
 
 import { BsNavbarDropdownComponent } from './navbar-dropdown.component';
 
-describe('BsNavbarDropdownComponent', () => {
+fdescribe('BsNavbarDropdownComponent', () => {
   let component: BsNavbarDropdownTestComponent;
   let fixture: ComponentFixture<BsNavbarDropdownTestComponent>;
 

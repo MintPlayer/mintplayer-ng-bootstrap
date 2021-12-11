@@ -14,7 +14,7 @@ export class DropdownToggleDirective implements AfterContentInit {
   constructor(
     private elementRef: ElementRef<HTMLAnchorElement>,
     @Inject(forwardRef(() => BsNavbarItemComponent)) private bsNavbarItem: BsNavbarItemComponent,
-    @Optional() /*@Inject(forwardRef(() => BsNavbarDropdownComponent))*/ parentDropdown: BsNavbarDropdownComponent
+    @Optional() @Inject(forwardRef(() => BsNavbarDropdownComponent)) parentDropdown: BsNavbarDropdownComponent
   ) {
   }
 

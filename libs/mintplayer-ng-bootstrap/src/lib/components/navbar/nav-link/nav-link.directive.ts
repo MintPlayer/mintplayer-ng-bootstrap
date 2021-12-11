@@ -8,7 +8,7 @@ export class NavLinkDirective {
 
   constructor(
     private elementRef: ElementRef<HTMLAnchorElement>,
-    @Optional() /*@Inject(forwardRef(() => BsNavbarDropdownComponent))*/ parentDropdown: BsNavbarDropdownComponent
+    @Optional() @Inject(forwardRef(() => BsNavbarDropdownComponent)) parentDropdown: BsNavbarDropdownComponent
   ) {
     if (parentDropdown == null) {
       this.elementRef.nativeElement.classList.add('nav-link');
