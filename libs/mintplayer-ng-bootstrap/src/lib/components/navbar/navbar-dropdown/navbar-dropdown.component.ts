@@ -1,4 +1,4 @@
-import { Component, ContentChildren, ElementRef, Host, OnInit, Optional, QueryList, SkipSelf } from '@angular/core';
+import { Component, ContentChildren, ElementRef, forwardRef, Host, Inject, OnInit, Optional, QueryList, SkipSelf } from '@angular/core';
 import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
 
 @Component({
@@ -10,7 +10,7 @@ export class BsNavbarDropdownComponent implements OnInit {
 
   constructor(
     @SkipSelf() @Host() @Optional() parentDropdown: BsNavbarDropdownComponent,
-    @Host() navbarItem: BsNavbarItemComponent
+    @Host() @Inject(forwardRef(() => BsNavbarItemComponent)) navbarItem: BsNavbarItemComponent
   ) {
     this.parentDropdown = parentDropdown;
     this.navbarItem = navbarItem;
@@ -27,5 +27,6 @@ export class BsNavbarDropdownComponent implements OnInit {
   ngOnInit(): void {
   }
 
-  @ContentChildren(BsNavbarDropdownComponent, { descendants: true }) childDropdowns!: QueryList<BsNavbarDropdownComponent>;
+  // @ContentChildren(BsNavbarDropdownComponent, { descendants: true }) childDropdowns!: QueryList<BsNavbarDropdownComponent>;
+  @ContentChildren(forwardRef(() => BsNavbarDropdownComponent), { descendants: true }) childDropdowns!: QueryList<BsNavbarDropdownComponent>;
 }
