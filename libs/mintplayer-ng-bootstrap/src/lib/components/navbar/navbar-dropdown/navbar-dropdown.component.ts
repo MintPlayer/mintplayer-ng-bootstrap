@@ -1,4 +1,4 @@
-import { Component, ContentChildren, ElementRef, forwardRef, Host, Inject, OnInit, Optional, QueryList, SkipSelf } from '@angular/core';
+import { Component, forwardRef, Host, Inject } from '@angular/core';
 import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
 
 @Component({
@@ -9,11 +9,11 @@ import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
 export class BsNavbarDropdownComponent {
 
   constructor(
-    @Host() @Inject(forwardRef(() => 'bniComponent')) navbarItem: BsNavbarItemComponent
+    @Host() @Inject(forwardRef(() => BsNavbarItemComponent)) navbarItem: BsNavbarItemComponent
   ) {
     this.navbarItem = navbarItem;
   }
 
   navbarItem: BsNavbarItemComponent;
-  
+
 }

@@ -20,9 +20,6 @@ import { BsNavbarItemComponent } from './navbar-item/navbar-item.component';
   exports: [
     BsNavbarDropdownComponent,
     BsNavbarItemComponent,
-  ],
-  providers: [
-    { provide: 'bniComponent', useClass: BsNavbarItemComponent }
   ]
 })
 export class BsNavbarModule { }

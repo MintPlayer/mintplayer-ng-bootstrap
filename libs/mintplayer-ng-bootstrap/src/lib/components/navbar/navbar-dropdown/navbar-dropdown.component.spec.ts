@@ -25,7 +25,7 @@ describe('BsNavbarDropdownComponent', () => {
         BsNavbarDropdownTestComponent
       ],
       providers: [
-        { provide: 'bniComponent', useClass: BsNavbarItemMockComponent }
+        { provide: BsNavbarItemComponent, useClass: BsNavbarItemMockComponent }
       ]
     })
     .compileComponents();
@@ -62,8 +62,7 @@ class BsNavbarDropdownTestComponent {
   template: `
   <li>
     <ng-content></ng-content>
-</li>`
+  </li>`
 })
 class BsNavbarItemMockComponent {
-// class BsNavbarItemComponent {
 }
