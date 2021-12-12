@@ -12,32 +12,20 @@ describe('BsNavbarDropdownComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        RouterTestingModule.withRoutes([
-          { path: 'a', component: PageAComponent },
-          { path: 'b', children: [
-            { path: 'c', component: PageBCComponent }
-          ]}
-        ])
+        RouterTestingModule.withRoutes([])
       ],
       declarations: [
         // Component to test
         BsNavbarDropdownComponent,
 
         // Mock components
-        BsNavbarMockComponent,
-        BsNavbarNavMockComponent,
-        // BsNavbarItemComponent,
         BsNavbarItemMockComponent,
-
-        // Pages
-        PageAComponent,
-        PageBCComponent,
 
         // Testbench
         BsNavbarDropdownTestComponent
       ],
       providers: [
-        // { provide: BsNavbarItemComponent, useClass: BsNavbarItemMockComponent }
+        { provide: BsNavbarItemComponent, useClass: BsNavbarItemMockComponent }
       ]
     })
     .compileComponents();
@@ -57,47 +45,16 @@ describe('BsNavbarDropdownComponent', () => {
 @Component({
   selector: 'bs-navbar-test',
   template: `
-  <bs-navbar>
-    <bs-navbar-nav>
-      <bs-navbar-item>
-        <a [routerLink]='["/a"]'>a</a>
-      </bs-navbar-item>
-      <bs-navbar-item>
-        <a [routerLink]='[]'>dropdown</a>
-        <bs-navbar-dropdown>
-          <bs-navbar-item>
-            <a [routerLink]='["/b", "c"]'>bc</a>
-          </bs-navbar-item>
-        </bs-navbar-dropdown>
-      </bs-navbar-item>
-    </bs-navbar-nav>
-  </bs-navbar>`
+    <bs-navbar-item>
+      <a [routerLink]='[]'>dropdown</a>
+      <bs-navbar-dropdown>
+        <bs-navbar-item>
+          <a [routerLink]='["/b", "c"]'>bc</a>
+        </bs-navbar-item>
+      </bs-navbar-dropdown>
+    </bs-navbar-item>`
 })
 class BsNavbarDropdownTestComponent {
-}
-
-@Component({
-  selector: 'bs-navbar',
-  template: `
-  <nav>
-    <div>
-      <ng-content></ng-content>
-    </div>  
-  </nav>`
-})
-class BsNavbarMockComponent {
-}
-
-@Component({
-  selector: 'bs-navbar-nav',
-  template: `
-  <div>
-    <ul>
-      <ng-content></ng-content>
-    </ul>  
-  </div>`
-})
-class BsNavbarNavMockComponent {
 }
 
 @Component({
@@ -109,20 +66,4 @@ class BsNavbarNavMockComponent {
 })
 class BsNavbarItemMockComponent {
 // class BsNavbarItemComponent {
-}
-
-@Component({
-  selector: 'page-a',
-  template: `
-  <div>Page A</div>`
-})
-class PageAComponent {
-}
-
-@Component({
-  selector: 'page-bc',
-  template: `
-  <div>Page B - C</div>`
-})
-class PageBCComponent {
 }

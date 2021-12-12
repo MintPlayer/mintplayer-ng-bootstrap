@@ -1,64 +1,8 @@
-<bs-navbar #nav>
-  <bs-navbar-nav [collapse]="true">
+<bs-navbar-item>
+  <a [routerLink]='[]'>Dropdown</a>
+  <bs-navbar-dropdown>
     <bs-navbar-item>
-      <a [routerLink]='["/a", "b", "c"]'>Left</a>
+      <a [routerLink]='["/a", "b", "c"]'>Action</a>
     </bs-navbar-item>
-    <bs-navbar-item>
-      <a [routerLink]='["/a", "b", "c"]'>Link</a>
-    </bs-navbar-item>
-    <bs-navbar-item>
-      <a [routerLink]='[]'>Dropdown</a>
-      <bs-navbar-dropdown>
-        <bs-navbar-item>
-          <a [routerLink]='["/a", "b", "c"]'>Action</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='[]'>Another action</a>
-          <bs-navbar-dropdown>
-            <bs-navbar-item>
-              <a [routerLink]='["/a", "b", "c"]'>Action</a>
-            </bs-navbar-item>
-            <bs-navbar-item>
-              <a [routerLink]='[]'>Something else here</a>
-              <bs-navbar-dropdown>
-                <bs-navbar-item>
-                  <a [routerLink]='["/a", "b", "c"]'>Action</a>
-                </bs-navbar-item>
-                <bs-navbar-item>
-                  <a [routerLink]='[]'>Something else here</a>
-                  <bs-navbar-dropdown>
-                    <bs-navbar-item>
-                      <a [routerLink]='["/a", "b", "c"]'>Action</a>
-                    </bs-navbar-item>
-                    <bs-navbar-item>
-                      <a [routerLink]='["/a", "b", "c"]'>Something else here</a>
-                    </bs-navbar-item>
-                  </bs-navbar-dropdown>
-                </bs-navbar-item>
-              </bs-navbar-dropdown>
-            </bs-navbar-item>
-          </bs-navbar-dropdown>
-        </bs-navbar-item>
-      </bs-navbar-dropdown>
-    </bs-navbar-item>
-    <bs-navbar-item>
-      <a [routerLink]='[]'>Dropdown</a>
-      <bs-navbar-dropdown>
-        <bs-navbar-item>
-          <a [routerLink]='["/a", "b", "c"]'>Action</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/a", "b", "c"]'>Another action</a>
-        </bs-navbar-item>
-      </bs-navbar-dropdown>
-    </bs-navbar-item>
-  </bs-navbar-nav>
-  <bs-navbar-nav [collapse]="true">
-    <bs-navbar-item>
-      <a [routerLink]='["/a", "b", "c"]'>Right</a>
-    </bs-navbar-item>
-  </bs-navbar-nav>
-</bs-navbar>
-<div [navbarContent]="nav" style="padding-top:50px">
-  <h1>Welcome to {{ title }}!</h1>
-</div>
+  </bs-navbar-dropdown>
+</bs-navbar-item>
