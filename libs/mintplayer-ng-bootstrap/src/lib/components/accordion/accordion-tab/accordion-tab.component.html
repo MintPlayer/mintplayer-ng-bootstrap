@@ -1,6 +1,0 @@
-<div class="card">
-    <ng-content select="bs-accordion-tab-header"></ng-content>
-    <div class="card-block overflow-hidden" [@slideUpDown]="(accordion.activeTab === this) ? 'down' : 'up'">
-        <ng-content></ng-content>
-    </div>
-</div>

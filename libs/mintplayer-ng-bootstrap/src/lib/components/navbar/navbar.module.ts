@@ -9,6 +9,7 @@ import { BsNavbarItemComponent } from './navbar-item/navbar-item.component';
 import { DropdownToggleDirective } from './dropdown-toggle/dropdown-toggle.directive';
 import { NavLinkDirective } from './nav-link/nav-link.directive';
 import { NavbarContentDirective } from './navbar-content/navbar-content.directive';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 @NgModule({
   declarations: [
@@ -24,6 +25,7 @@ import { NavbarContentDirective } from './navbar-content/navbar-content.directiv
   imports: [
     CommonModule,
     RouterModule,
+    BrowserAnimationsModule,
     ClickOutsideModule
   ],
   exports: [
