@@ -17,7 +17,7 @@ import { AppComponent } from './app.component';
     BsAccordionModule,
     BsTabControlModule,
     BsNavbarModule,
-    RouterModule.forRoot([])
+    RouterModule.forRoot([], { initialNavigation: 'enabledBlocking' })
   ],
   providers: [],
   bootstrap: [AppComponent],

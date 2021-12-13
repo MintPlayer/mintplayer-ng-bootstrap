@@ -28,7 +28,7 @@ jobs:
       run: npm install
     
     - name: Build
-      run: npm run nx run-many -- --target=build --projects=ng-bootstrap-demo --configuration=production --with-deps
+      run: npm run nx run-many -- --target=build --projects=ng-bootstrap-demo --configuration=production
 
     - name: Test
-      run: npm run nx run-many -- --target=test --projects=ng-bootstrap-demo --with-deps  --watch=false --browsers=ChromeHeadless
+      run: npm run nx run-many -- --target=test --projects=ng-bootstrap-demo --watch=false --browsers=ChromeHeadless

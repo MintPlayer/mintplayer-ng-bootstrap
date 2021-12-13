@@ -1,0 +1,28 @@
+{
+  "root": "apps/ng-bootstrap-demo-e2e",
+  "sourceRoot": "apps/ng-bootstrap-demo-e2e/src",
+  "projectType": "application",
+  "targets": {
+    "e2e": {
+      "executor": "@nrwl/cypress:cypress",
+      "options": {
+        "cypressConfig": "apps/ng-bootstrap-demo-e2e/cypress.json",
+        "devServerTarget": "ng-bootstrap-demo:serve:development"
+      },
+      "configurations": {
+        "production": {
+          "devServerTarget": "ng-bootstrap-demo:serve:production"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["apps/ng-bootstrap-demo-e2e/**/*.{js,ts}"]
+      }
+    }
+  },
+  "tags": [],
+  "implicitDependencies": ["ng-bootstrap-demo"]
+}

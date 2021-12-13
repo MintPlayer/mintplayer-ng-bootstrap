@@ -1,0 +1,42 @@
+{
+  "projectType": "library",
+  "root": "libs/mintplayer-ng-bootstrap",
+  "sourceRoot": "libs/mintplayer-ng-bootstrap/src",
+  "prefix": "mintplayer-ng-bootstrap",
+  "targets": {
+    "build": {
+      "executor": "@nrwl/angular:package",
+      "outputs": ["dist/libs/mintplayer-ng-bootstrap"],
+      "options": {
+        "project": "libs/mintplayer-ng-bootstrap/ng-package.json"
+      },
+      "configurations": {
+        "production": {
+          "tsConfig": "libs/mintplayer-ng-bootstrap/tsconfig.lib.prod.json"
+        },
+        "development": {
+          "tsConfig": "libs/mintplayer-ng-bootstrap/tsconfig.lib.json"
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "test": {
+      "executor": "@nrwl/jest:jest",
+      "outputs": ["coverage/libs/mintplayer-ng-bootstrap"],
+      "options": {
+        "jestConfig": "libs/mintplayer-ng-bootstrap/jest.config.js",
+        "passWithNoTests": true
+      }
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "options": {
+        "lintFilePatterns": [
+          "libs/mintplayer-ng-bootstrap/src/**/*.ts",
+          "libs/mintplayer-ng-bootstrap/src/**/*.html"
+        ]
+      }
+    }
+  },
+  "tags": []
+}

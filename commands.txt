@@ -1,0 +1,17 @@
+npm install -g @angular/cli@latest
+npm install -g npx@latest
+npm install -g nx@latest
+npx create-nx-workspace
+> mintplayer-ng-bootstrap
+> angular
+> ng-bootstrap-demo
+> SASS
+> No
+cd mintplayer-ng-bootstrap
+# Remove the library folders
+# Remove the application folders
+# Open the angular.json, remove all projects, set "version":2
+nx g @nrwl/angular:lib mintplayer-ng-animations --buildable --publishable --import-path @mintplayer/ng-animations
+nx g @nrwl/angular:lib mintplayer-ng-bootstrap --buildable --publishable --import-path @mintplayer/ng-bootstrap
+nx g @nrwl/angular:application ng-bootstrap-demo --routing --style=scss
+code .

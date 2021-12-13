@@ -1,0 +1,97 @@
+{
+  "projectType": "application",
+  "root": "apps/ng-bootstrap-demo",
+  "sourceRoot": "apps/ng-bootstrap-demo/src",
+  "prefix": "mintplayer-ng-bootstrap",
+  "targets": {
+    "build": {
+      "executor": "@angular-devkit/build-angular:browser",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/ng-bootstrap-demo",
+        "index": "apps/ng-bootstrap-demo/src/index.html",
+        "main": "apps/ng-bootstrap-demo/src/main.ts",
+        "polyfills": "apps/ng-bootstrap-demo/src/polyfills.ts",
+        "tsConfig": "apps/ng-bootstrap-demo/tsconfig.app.json",
+        "inlineStyleLanguage": "scss",
+        "assets": [
+          "apps/ng-bootstrap-demo/src/favicon.ico",
+          "apps/ng-bootstrap-demo/src/assets"
+        ],
+        "styles": [
+          "libs/mintplayer-ng-bootstrap/src/bootstrap.scss",
+          "apps/ng-bootstrap-demo/src/styles.scss"
+        ],
+        "scripts": []
+      },
+      "configurations": {
+        "production": {
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "500kb",
+              "maximumError": "1mb"
+            },
+            {
+              "type": "anyComponentStyle",
+              "maximumWarning": "2kb",
+              "maximumError": "4kb"
+            }
+          ],
+          "fileReplacements": [
+            {
+              "replace": "apps/ng-bootstrap-demo/src/environments/environment.ts",
+              "with": "apps/ng-bootstrap-demo/src/environments/environment.prod.ts"
+            }
+          ],
+          "outputHashing": "all"
+        },
+        "development": {
+          "buildOptimizer": false,
+          "optimization": false,
+          "vendorChunk": true,
+          "extractLicenses": false,
+          "sourceMap": true,
+          "namedChunks": true
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "serve": {
+      "executor": "@angular-devkit/build-angular:dev-server",
+      "configurations": {
+        "production": {
+          "browserTarget": "ng-bootstrap-demo:build:production"
+        },
+        "development": {
+          "browserTarget": "ng-bootstrap-demo:build:development"
+        }
+      },
+      "defaultConfiguration": "development"
+    },
+    "extract-i18n": {
+      "executor": "@angular-devkit/build-angular:extract-i18n",
+      "options": {
+        "browserTarget": "ng-bootstrap-demo:build"
+      }
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "options": {
+        "lintFilePatterns": [
+          "apps/ng-bootstrap-demo/src/**/*.ts",
+          "apps/ng-bootstrap-demo/src/**/*.html"
+        ]
+      }
+    },
+    "test": {
+      "executor": "@nrwl/jest:jest",
+      "outputs": ["coverage/apps/ng-bootstrap-demo"],
+      "options": {
+        "jestConfig": "apps/ng-bootstrap-demo/jest.config.js",
+        "passWithNoTests": true
+      }
+    }
+  },
+  "tags": []
+}
