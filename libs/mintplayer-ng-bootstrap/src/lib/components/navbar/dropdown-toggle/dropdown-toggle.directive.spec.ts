@@ -36,10 +36,10 @@ describe('DropdownToggleDirective', () => {
         // Testbench
         BsDropdownToggleTestComponent,
       ],
-      providers: [
-        { provide: BsNavbarItemComponent, useClass: BsNavbarItemMockComponent },
-        { provide: BsNavbarDropdownComponent, useClass: BsNavbarDropdownMockComponent }
-      ]
+      // providers: [
+      //   // { provide: BsNavbarItemComponent, useClass: BsNavbarItemMockComponent },
+      //   //{ provide: BsNavbarDropdownComponent, useClass: BsNavbarDropdownMockComponent }
+      // ]
     })
     .compileComponents();
   });
@@ -106,7 +106,10 @@ class BsNavbarNavMockComponent {
   template: `
   <ul>
     <ng-content></ng-content>
-</ul>`
+  </ul>`,
+  providers: [
+    { provide: BsNavbarDropdownComponent, useExisting: BsNavbarDropdownMockComponent }
+  ]
 })
 class BsNavbarDropdownMockComponent {
 }
@@ -116,7 +119,10 @@ class BsNavbarDropdownMockComponent {
   template: `
   <li>
     <ng-content></ng-content>
-</li>`
+  </li>`,
+  providers: [
+    { provide: BsNavbarItemComponent, useExisting: BsNavbarItemMockComponent }
+  ]
 })
 class BsNavbarItemMockComponent {
   @ContentChildren(forwardRef(() => BsNavbarDropdownMockComponent)) dropdowns!: QueryList<BsNavbarDropdownMockComponent>;

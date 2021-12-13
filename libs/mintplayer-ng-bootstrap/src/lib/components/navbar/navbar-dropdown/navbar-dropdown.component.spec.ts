@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, Directive, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
@@ -26,8 +26,8 @@ describe('BsNavbarDropdownComponent', () => {
         // Mock components
         BsNavbarMockComponent,
         BsNavbarNavMockComponent,
-        // BsNavbarItemComponent,
         BsNavbarItemMockComponent,
+        ClickOutsideDirective,
 
         // Pages
         PageAComponent,
@@ -35,9 +35,6 @@ describe('BsNavbarDropdownComponent', () => {
 
         // Testbench
         BsNavbarDropdownTestComponent
-      ],
-      providers: [
-        { provide: BsNavbarItemComponent, useClass: BsNavbarItemMockComponent }
       ]
     })
     .compileComponents();
@@ -105,10 +102,12 @@ class BsNavbarNavMockComponent {
   template: `
   <li>
     <ng-content></ng-content>
-</li>`
+  </li>`,
+  providers: [
+    { provide: BsNavbarItemComponent, useExisting: BsNavbarItemMockComponent }
+  ]
 })
 class BsNavbarItemMockComponent {
-// class BsNavbarItemComponent {
 }
 
 @Component({
@@ -125,4 +124,11 @@ class PageAComponent {
   <div>Page B - C</div>`
 })
 class PageBCComponent {
+}
+
+@Directive({
+  selector: '[clickOutside]'
+})
+class ClickOutsideDirective {
+  @Input() exclude: HTMLElement[] = [];
 }
