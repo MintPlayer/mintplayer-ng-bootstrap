@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { BsAlertComponent } from '@mintplayer/ng-bootstrap';
+import { BsAlertComponent } from '../alert/alert.component';
 
 @Component({
   selector: 'bs-alert-close',
