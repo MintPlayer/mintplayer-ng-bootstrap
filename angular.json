@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "projects": {
     "mintplayer-ng-animations": "libs/mintplayer-ng-animations",
     "mintplayer-ng-bootstrap": "libs/mintplayer-ng-bootstrap",
