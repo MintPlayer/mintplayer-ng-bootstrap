@@ -1,159 +1,170 @@
 <bs-navbar #nav>
-    <bs-navbar-nav [collapse]="true">
-      <bs-navbar-item>
-        <a [routerLink]='["/a", "b", "c"]'>Left</a>
-      </bs-navbar-item>
-      <bs-navbar-item>
-        <a [routerLink]='["/a", "b", "c"]'>Link</a>
-      </bs-navbar-item>
-      <bs-navbar-item>
-        <a [routerLink]='[]'>Dropdown</a>
-        <bs-navbar-dropdown>
-          <bs-navbar-item>
-            <a [routerLink]='["/a", "b", "c"]'>Action</a>
-          </bs-navbar-item>
-          <bs-navbar-item>
-            <a [routerLink]='[]'>Another action</a>
-            <bs-navbar-dropdown>
-              <bs-navbar-item>
-                <a [routerLink]='["/a", "b", "c"]'>Action</a>
-              </bs-navbar-item>
-              <bs-navbar-item>
-                <a [routerLink]='[]'>Something else here</a>
-                <bs-navbar-dropdown>
-                  <bs-navbar-item>
-                    <a [routerLink]='["/a", "b", "c"]'>Action</a>
-                  </bs-navbar-item>
-                  <bs-navbar-item>
-                    <a [routerLink]='[]'>Something else here</a>
-                    <bs-navbar-dropdown>
-                      <bs-navbar-item>
-                        <a [routerLink]='["/a", "b", "c"]'>Action</a>
-                      </bs-navbar-item>
-                      <bs-navbar-item>
-                        <a [routerLink]='["/a", "b", "c"]'>Something else here</a>
-                      </bs-navbar-item>
-                    </bs-navbar-dropdown>
-                  </bs-navbar-item>
-                </bs-navbar-dropdown>
-              </bs-navbar-item>
-            </bs-navbar-dropdown>
-          </bs-navbar-item>
-        </bs-navbar-dropdown>
-      </bs-navbar-item>
-      <bs-navbar-item>
-        <a [routerLink]='[]'>Dropdown</a>
-        <bs-navbar-dropdown>
-          <bs-navbar-item>
-            <a [routerLink]='["/a", "b", "c"]'>Action</a>
-          </bs-navbar-item>
-          <bs-navbar-item>
-            <a [routerLink]='["/a", "b", "c"]'>Another action</a>
-          </bs-navbar-item>
-        </bs-navbar-dropdown>
-      </bs-navbar-item>
-    </bs-navbar-nav>
-    <bs-navbar-nav [collapse]="true">
-      <bs-navbar-item>
-        <a [routerLink]='["/a", "b", "c"]'>Right</a>
-      </bs-navbar-item>
-    </bs-navbar-nav>
-  </bs-navbar>
-  <div [navbarContent]="nav" style="padding-top:50px">
-    <h1>Welcome to {{ title }}!</h1>
-    <!-- <bs-alert [type]="colors.warning">
-      Cras justo odio
-      <bs-alert-close></bs-alert-close>
-    </bs-alert>
-    <bs-alert [type]="colors.danger">
-      Cras justo odio
-      <bs-alert-close></bs-alert-close>
-    </bs-alert>
-    <bs-alert>
-      Cras justo odio
-      <bs-alert-close></bs-alert-close>
-    </bs-alert>-->
-    <div class="container">
-      <div class="row">
-        <div class="col-md-6">
-  
-        </div>
-        <div class="col-md-6">
-          <bs-carousel>
-            <img bsCarouselImage src="/assets/resized/deer.png">
-            <img bsCarouselImage src="/assets/resized/duck.png">
-            <img bsCarouselImage src="/assets/resized/leopard.png">
-            <img bsCarouselImage src="/assets/resized/lion.png">
-            <img bsCarouselImage src="/assets/resized/peacock.png">
-            <img bsCarouselImage src="/assets/resized/tiger.png">
-          </bs-carousel>
-        </div>
+  <bs-navbar-nav [collapse]="true">
+    <bs-navbar-item>
+      <a [routerLink]='["/a", "b", "c"]'>Left</a>
+    </bs-navbar-item>
+    <bs-navbar-item>
+      <a [routerLink]='["/a", "b", "c"]'>Link</a>
+    </bs-navbar-item>
+    <bs-navbar-item>
+      <a [routerLink]='[]'>Dropdown</a>
+      <bs-navbar-dropdown>
+        <bs-navbar-item>
+          <a [routerLink]='["/a", "b", "c"]'>Action</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='[]'>Another action</a>
+          <bs-navbar-dropdown>
+            <bs-navbar-item>
+              <a [routerLink]='["/a", "b", "c"]'>Action</a>
+            </bs-navbar-item>
+            <bs-navbar-item>
+              <a [routerLink]='[]'>Something else here</a>
+              <bs-navbar-dropdown>
+                <bs-navbar-item>
+                  <a [routerLink]='["/a", "b", "c"]'>Action</a>
+                </bs-navbar-item>
+                <bs-navbar-item>
+                  <a [routerLink]='[]'>Something else here</a>
+                  <bs-navbar-dropdown>
+                    <bs-navbar-item>
+                      <a [routerLink]='["/a", "b", "c"]'>Action</a>
+                    </bs-navbar-item>
+                    <bs-navbar-item>
+                      <a [routerLink]='["/a", "b", "c"]'>Something else here</a>
+                    </bs-navbar-item>
+                  </bs-navbar-dropdown>
+                </bs-navbar-item>
+              </bs-navbar-dropdown>
+            </bs-navbar-item>
+          </bs-navbar-dropdown>
+        </bs-navbar-item>
+      </bs-navbar-dropdown>
+    </bs-navbar-item>
+    <bs-navbar-item>
+      <a [routerLink]='[]'>Dropdown</a>
+      <bs-navbar-dropdown>
+        <bs-navbar-item>
+          <a [routerLink]='["/a", "b", "c"]'>Action</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/a", "b", "c"]'>Another action</a>
+        </bs-navbar-item>
+      </bs-navbar-dropdown>
+    </bs-navbar-item>
+  </bs-navbar-nav>
+  <bs-navbar-nav [collapse]="true">
+    <bs-navbar-item>
+      <a [routerLink]='["/a", "b", "c"]'>Right</a>
+    </bs-navbar-item>
+  </bs-navbar-nav>
+</bs-navbar>
+<div [navbarContent]="nav" style="padding-top:50px">
+  <h1>Welcome to {{ title }}!</h1>
+  <bs-alert [type]="colors.warning">
+    Cras justo odio
+    <bs-alert-close></bs-alert-close>
+  </bs-alert>
+  <bs-alert [type]="colors.danger">
+    Cras justo odio
+    <bs-alert-close></bs-alert-close>
+  </bs-alert>
+  <bs-alert>
+    Cras justo odio
+    <bs-alert-close></bs-alert-close>
+  </bs-alert>
+  <div class="container">
+    <div class="row">
+      <div class="col-md-6">
+        <bs-calendar></bs-calendar>
+      </div>
+      <div class="col-md-6">
+        <bs-carousel>
+          <img bsCarouselImage src="/assets/resized/deer.png">
+          <img bsCarouselImage src="/assets/resized/duck.png">
+          <img bsCarouselImage src="/assets/resized/leopard.png">
+          <img bsCarouselImage src="/assets/resized/lion.png">
+          <img bsCarouselImage src="/assets/resized/peacock.png">
+          <img bsCarouselImage src="/assets/resized/tiger.png">
+        </bs-carousel>
       </div>
     </div>
-    <!--<bs-card>
-      <bs-card-header>
-        List of elements
-      </bs-card-header>
-      <bs-list-group>
-        <bs-list-group-item>Cras justo odio</bs-list-group-item>
-        <bs-list-group-item>Dapibus ac facilisis in</bs-list-group-item>
-        <bs-list-group-item>Morbi leo risus</bs-list-group-item>
-        <bs-list-group-item>Porta ac consectetur ac</bs-list-group-item>
-        <bs-list-group-item>Vestibulum at eros</bs-list-group-item>
-      </bs-list-group>
-    </bs-card>
-    <bs-calendar></bs-calendar>
-    <bs-accordion class="d-block mb-3">
-      <bs-accordion-tab>
-        <bs-accordion-tab-header>
-          <span class="triangle mr-2"></span>
-          Profile
-        </bs-accordion-tab-header>
-        <span class="d-block p-2">Label 1</span>
-      </bs-accordion-tab>
-      <bs-accordion-tab>
-        <bs-accordion-tab-header>
-          <span class="triangle mr-2"></span>
-          Sign in
-        </bs-accordion-tab-header>
-        <span class="d-block p-2">Label 2</span>
-      </bs-accordion-tab>
-      <bs-accordion-tab>
-        <bs-accordion-tab-header>
-          <span class="triangle mr-2"></span>
-          Payment
-        </bs-accordion-tab-header>
-        <span class="d-block p-2">Label 3</span>
-      </bs-accordion-tab>
-    </bs-accordion>
-    <bs-tab-control>
-      <bs-tab-page>
-        <ng-template>
-          <span class="triangle mr-2"></span>
-          Tab 1
-        </ng-template>
-        This is tab 1
-      </bs-tab-page>
-      <bs-tab-page>
-        <ng-template>
-          <span class="triangle mr-2"></span>
-          Tab 2
-        </ng-template>
-        This is tab 2
-      </bs-tab-page>
-      <bs-tab-page [disabled]="true">
-        <ng-template>
-          <span class="triangle mr-2"></span>
-          Tab 3
-        </ng-template>
-        This is tab 3
-      </bs-tab-page>
-      <bs-tab-page>
-        <ng-template>
-          <span class="triangle mr-2"></span>
-          Tab 4
-        </ng-template>
-        This is tab 4
-      </bs-tab-page>
-    </bs-tab-control> -->
+    <div class="row">
+      <div class="col-md-12">
+        <bs-accordion class="d-block mb-3">
+          <bs-accordion-tab>
+            <bs-accordion-tab-header>
+              <span class="triangle mr-2"></span>
+              Profile
+            </bs-accordion-tab-header>
+            <span class="d-block p-2">Label 1</span>
+          </bs-accordion-tab>
+          <bs-accordion-tab>
+            <bs-accordion-tab-header>
+              <span class="triangle mr-2"></span>
+              Sign in
+            </bs-accordion-tab-header>
+            <span class="d-block p-2">Label 2</span>
+          </bs-accordion-tab>
+          <bs-accordion-tab>
+            <bs-accordion-tab-header>
+              <span class="triangle mr-2"></span>
+              Payment
+            </bs-accordion-tab-header>
+            <span class="d-block p-2">Label 3</span>
+          </bs-accordion-tab>
+        </bs-accordion>
+      </div>
+    </div>
   </div>
+  <div class="container">
+    <div class="row">
+      <div class="col-md-4">
+        <bs-card>
+          <bs-card-header>
+            List of elements
+          </bs-card-header>
+          <bs-list-group>
+            <bs-list-group-item>Cras justo odio</bs-list-group-item>
+            <bs-list-group-item>Dapibus ac facilisis in</bs-list-group-item>
+            <bs-list-group-item>Morbi leo risus</bs-list-group-item>
+            <bs-list-group-item>Porta ac consectetur ac</bs-list-group-item>
+            <bs-list-group-item>Vestibulum at eros</bs-list-group-item>
+          </bs-list-group>
+        </bs-card>
+      </div>
+      <div class="col-md-8">
+        <bs-tab-control>
+          <bs-tab-page>
+            <ng-template>
+              <span class="triangle mr-2"></span>
+              Tab 1
+            </ng-template>
+            This is tab 1
+          </bs-tab-page>
+          <bs-tab-page>
+            <ng-template>
+              <span class="triangle mr-2"></span>
+              Tab 2
+            </ng-template>
+            This is tab 2
+          </bs-tab-page>
+          <bs-tab-page [disabled]="true">
+            <ng-template>
+              <span class="triangle mr-2"></span>
+              Tab 3
+            </ng-template>
+            This is tab 3
+          </bs-tab-page>
+          <bs-tab-page>
+            <ng-template>
+              <span class="triangle mr-2"></span>
+              Tab 4
+            </ng-template>
+            This is tab 4
+          </bs-tab-page>
+        </bs-tab-control>
+      </div>
+    </div>
+  </div>
+</div>

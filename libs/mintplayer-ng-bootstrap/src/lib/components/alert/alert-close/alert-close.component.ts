@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { BsAlertComponent } from '@mintplayer/ng-bootstrap';
 
 @Component({
   selector: 'bs-alert-close',
@@ -7,10 +8,14 @@ import { Component, OnInit } from '@angular/core';
 })
 export class BsAlertCloseComponent implements OnInit {
 
-  constructor() {
+  constructor(private alert: BsAlertComponent) {
   }
 
-  ngOnInit(): void {
+  ngOnInit() {
   }
 
+  closeAlert() {
+    this.alert.isVisible = false;
+  }
+  
 }

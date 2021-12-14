@@ -1,3 +1,5 @@
-<div class="alert" [ngClass]="'alert-' + colors[type]">
-    <ng-content></ng-content>
+<div class="mb-3 overflow-hidden" *ngIf="isVisible" [@fadeInOut]>
+    <div class="alert mb-0" [ngClass]="'alert-' + colors[type]">
+        <ng-content></ng-content>
+    </div>
 </div>
