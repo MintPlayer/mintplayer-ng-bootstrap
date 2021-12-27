@@ -1,17 +1,7 @@
-import { trigger, state, style, transition, group, animate, query } from '@angular/animations';
+import { trigger, style, transition, group, animate, query } from '@angular/animations';
 
 export const CarouselSlideAnimation =
   trigger('carouselSlide', [
-    // One time initial load. Move page from left -100% to 0%
-    transition('-1 => *', [
-      query(':enter', [
-        style({ width: '100%', transform: 'translateX(-100%)' }),
-        animate(
-          '500ms ease',
-          style({ opacity: 1, transform: 'translateX(0%)' }),
-        ),
-      ]),
-    ]),
 
     // Previous, slide left to right to show left page
     transition(':decrement', [

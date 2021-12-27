@@ -5,7 +5,7 @@
             [attr.aria-current]="(currentImageIndex$ | async) === i ? true : null"
             [attr.aria-label]="'Slide ' + i"></button>
     </div>
-    <div class="carousel-inner" [@carouselSlide]="currentImageIndex$ | async">
+    <div class="carousel-inner" [@carouselSlide]="currentImageCounter$ | async">
         <ng-container *ngFor="let image of images; let i = index">
             <!-- @fadeInOut -->
             <div class="carousel-item" [class.active]="true" *ngIf="(currentImageIndex$ | async) === i">

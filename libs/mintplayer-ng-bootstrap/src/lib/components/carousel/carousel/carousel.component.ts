@@ -13,6 +13,12 @@ import { BsCarouselImageDirective } from '../carousel-image/carousel-image.direc
 export class BsCarouselComponent implements OnInit, OnDestroy, AfterContentInit {
 
   constructor() {
+    this.currentImageIndex$ = this.currentImageCounter$
+      .pipe(map((counter) => {
+        const l = this.images.length;
+        return ((counter % l) + l) % l;
+      }))
+      .pipe(takeUntil(this.destroyed$));
     this.currentImage$ = this.currentImageIndex$
       .pipe(map((index) => this.images.get(index) ?? null))
       .pipe(takeUntil(this.destroyed$));
@@ -26,42 +32,35 @@ export class BsCarouselComponent implements OnInit, OnDestroy, AfterContentInit 
 
   ngAfterContentInit() {
     if (this.images.length > 0) {
-      this.currentImageIndex$.next(0);
+      this.currentImageCounter$.next(0);
     } else {
-      this.currentImageIndex$.next(-1);
+      this.currentImageCounter$.next(-1);
     }
   }
 
   destroyed$ = new Subject();
-  currentImageIndex$ = new BehaviorSubject<number>(-1);
+  currentImageCounter$ = new BehaviorSubject<number>(-1);
+  currentImageIndex$: Observable<number>;
   currentImage$: Observable<ElementRef<HTMLImageElement> | null>;
 
   previousImage() {
-    this.currentImageIndex$
+    this.currentImageCounter$
       .pipe(take(1))
-      .subscribe((currentImageIndex) => {
-        if (currentImageIndex === 0) {
-          this.currentImageIndex$.next(this.images.length - 1);
-        } else {
-          this.currentImageIndex$.next(currentImageIndex - 1);
-        }
+      .subscribe((currentImageCounter) => {
+        this.currentImageCounter$.next(currentImageCounter - 1);
       });
   }
 
   nextImage() {
-    this.currentImageIndex$
+    this.currentImageCounter$
       .pipe(take(1))
-      .subscribe((currentImageIndex) => {
-        if (currentImageIndex >= this.images.length - 1) {
-          this.currentImageIndex$.next(0);
-        } else {
-          this.currentImageIndex$.next(currentImageIndex + 1);
-        }
+      .subscribe((currentImageCounter) => {
+        this.currentImageCounter$.next(currentImageCounter + 1);
       });
   }
 
   setCurrentImage(index: number) {
-    this.currentImageIndex$.next(index);
+    this.currentImageCounter$.next(index);
   }
 
   @ContentChildren(BsCarouselImageDirective, { read: ElementRef }) images!: QueryList<ElementRef<HTMLImageElement>>;
