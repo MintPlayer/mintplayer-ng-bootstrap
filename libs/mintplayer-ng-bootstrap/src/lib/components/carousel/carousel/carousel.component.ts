@@ -1,4 +1,4 @@
-import { AfterContentInit, Component, ContentChildren, ElementRef, HostBinding, Input, OnDestroy, OnInit, QueryList } from '@angular/core';
+import { AfterContentInit, Component, ContentChildren, ElementRef, HostBinding, Input, OnDestroy, OnInit, QueryList, TemplateRef } from '@angular/core';
 import { FadeInOutAnimation, CarouselSlideAnimation } from '@mintplayer/ng-animations';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { map, take, takeUntil } from 'rxjs/operators';
@@ -20,7 +20,7 @@ export class BsCarouselComponent implements OnInit, OnDestroy, AfterContentInit 
       }))
       .pipe(takeUntil(this.destroyed$));
     this.currentImage$ = this.currentImageIndex$
-      .pipe(map((index) => this.images.get(index) ?? null))
+      .pipe(map((index) => this.images.get(index)?.itemTemplate ?? null))
       .pipe(takeUntil(this.destroyed$));
   }
 
@@ -46,7 +46,7 @@ export class BsCarouselComponent implements OnInit, OnDestroy, AfterContentInit 
   destroyed$ = new Subject();
   currentImageCounter$ = new BehaviorSubject<number>(-1);
   currentImageIndex$: Observable<number>;
-  currentImage$: Observable<ElementRef<HTMLImageElement> | null>;
+  currentImage$: Observable<TemplateRef<any> | null>;
 
   previousImage() {
     this.currentImageCounter$
@@ -68,6 +68,6 @@ export class BsCarouselComponent implements OnInit, OnDestroy, AfterContentInit 
     this.currentImageCounter$.next(index);
   }
 
-  @ContentChildren(BsCarouselImageDirective, { read: ElementRef }) images!: QueryList<ElementRef<HTMLImageElement>>;
+  @ContentChildren(BsCarouselImageDirective) images!: QueryList<BsCarouselImageDirective>;
 
 }

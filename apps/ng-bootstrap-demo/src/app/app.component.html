@@ -80,12 +80,12 @@
       </div>
       <div class="col-md-6">
         <bs-carousel [animation]="mode">
-          <img bsCarouselImage src="/assets/resized/deer.png">
-          <img bsCarouselImage src="/assets/resized/duck.png">
-          <img bsCarouselImage src="/assets/resized/leopard.png">
-          <img bsCarouselImage src="/assets/resized/lion.png">
-          <img bsCarouselImage src="/assets/resized/peacock.png">
-          <img bsCarouselImage src="/assets/resized/tiger.png">
+          <img class="w-100" *bsCarouselImage src="/assets/resized/deer.png">
+          <img class="w-100" *bsCarouselImage src="/assets/resized/duck.png">
+          <img class="w-100" *bsCarouselImage src="/assets/resized/leopard.png">
+          <img class="w-100" *bsCarouselImage src="/assets/resized/lion.png">
+          <img class="w-100" *bsCarouselImage src="/assets/resized/peacock.png">
+          <img class="w-100" *bsCarouselImage src="/assets/resized/tiger.png">
         </bs-carousel>
         <select [ngModel]="mode" (ngModelChange)="onModeChange($event)">
           <option value="slide">Slide</option>

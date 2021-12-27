@@ -12,14 +12,14 @@
     <div class="carousel-inner" [@carouselSlide]="currentImageCounter$ | async" *ngIf="animation === 'slide'">
         <ng-container *ngFor="let image of images; let i = index">
             <div class="carousel-item" [class.active]="true" *ngIf="(currentImageIndex$ | async) === i">
-                <img [src]="image.nativeElement.src" class="d-block" [attr.alt]="image.nativeElement.alt" [class.w-100]="true">
+                <ng-container [ngTemplateOutlet]="image.itemTemplate"></ng-container>    
             </div>
         </ng-container>
     </div>
     <div class="carousel-inner" *ngIf="animation === 'fade'">
         <ng-container *ngFor="let image of images; let i = index">
             <div class="carousel-item" [class.active]="true" @fadeInOut *ngIf="(currentImageIndex$ | async) === i">
-                <img [src]="image.nativeElement.src" class="d-block" [attr.alt]="image.nativeElement.alt" [class.w-100]="true">
+                <ng-container [ngTemplateOutlet]="image.itemTemplate"></ng-container>    
             </div>
         </ng-container>
     </div>
