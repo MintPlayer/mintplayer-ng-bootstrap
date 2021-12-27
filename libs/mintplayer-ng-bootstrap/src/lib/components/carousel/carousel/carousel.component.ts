@@ -1,4 +1,4 @@
-import { AfterContentInit, Component, ContentChildren, ElementRef, OnDestroy, OnInit, QueryList } from '@angular/core';
+import { AfterContentInit, Component, ContentChildren, ElementRef, HostBinding, Input, OnDestroy, OnInit, QueryList } from '@angular/core';
 import { FadeInOutAnimation, CarouselSlideAnimation } from '@mintplayer/ng-animations';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { map, take, takeUntil } from 'rxjs/operators';
@@ -37,6 +37,11 @@ export class BsCarouselComponent implements OnInit, OnDestroy, AfterContentInit 
       this.currentImageCounter$.next(-1);
     }
   }
+  
+  // @HostBinding('@.disabled')
+  // public animationsDisabled = false;
+
+  @Input() public animation: 'fade' | 'slide' = 'slide';
 
   destroyed$ = new Subject();
   currentImageCounter$ = new BehaviorSubject<number>(-1);

@@ -79,7 +79,7 @@
         <bs-calendar></bs-calendar>
       </div>
       <div class="col-md-6">
-        <bs-carousel>
+        <bs-carousel [animation]="mode">
           <img bsCarouselImage src="/assets/resized/deer.png">
           <img bsCarouselImage src="/assets/resized/duck.png">
           <img bsCarouselImage src="/assets/resized/leopard.png">
@@ -87,6 +87,10 @@
           <img bsCarouselImage src="/assets/resized/peacock.png">
           <img bsCarouselImage src="/assets/resized/tiger.png">
         </bs-carousel>
+        <select [ngModel]="mode" (ngModelChange)="onModeChange($event)">
+          <option value="slide">Slide</option>
+          <option value="fade">Fade</option>
+        </select>
       </div>
     </div>
     <div class="row">

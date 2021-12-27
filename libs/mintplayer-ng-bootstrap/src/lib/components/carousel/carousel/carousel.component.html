@@ -5,14 +5,27 @@
             [attr.aria-current]="(currentImageIndex$ | async) === i ? true : null"
             [attr.aria-label]="'Slide ' + i"></button>
     </div>
-    <div class="carousel-inner" [@carouselSlide]="currentImageCounter$ | async">
+
+
+
+    <!-- [@carouselSlide]="currentImageCounter$ | async" -->
+    <div class="carousel-inner" [@carouselSlide]="currentImageCounter$ | async" *ngIf="animation === 'slide'">
         <ng-container *ngFor="let image of images; let i = index">
-            <!-- @fadeInOut -->
             <div class="carousel-item" [class.active]="true" *ngIf="(currentImageIndex$ | async) === i">
                 <img [src]="image.nativeElement.src" class="d-block" [attr.alt]="image.nativeElement.alt" [class.w-100]="true">
             </div>
         </ng-container>
     </div>
+    <div class="carousel-inner" *ngIf="animation === 'fade'">
+        <ng-container *ngFor="let image of images; let i = index">
+            <div class="carousel-item" [class.active]="true" @fadeInOut *ngIf="(currentImageIndex$ | async) === i">
+                <img [src]="image.nativeElement.src" class="d-block" [attr.alt]="image.nativeElement.alt" [class.w-100]="true">
+            </div>
+        </ng-container>
+    </div>
+
+
+
     <button class="carousel-control-prev" type="button" (click)="previousImage()">
         <span class="carousel-control-prev-icon" aria-hidden="true"></span>
         <span class="visually-hidden">Previous</span>
