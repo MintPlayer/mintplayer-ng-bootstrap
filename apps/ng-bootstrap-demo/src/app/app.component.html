@@ -59,116 +59,128 @@
     </bs-navbar-item>
   </bs-navbar-nav>
 </bs-navbar>
-<div [navbarContent]="nav" style="padding-top:50px">
-  <h1>Welcome to {{ title }}!</h1>
-  <bs-alert [type]="colors.warning">
-    Cras justo odio
-    <bs-alert-close></bs-alert-close>
-  </bs-alert>
-  <bs-alert [type]="colors.danger">
-    Cras justo odio
-    <bs-alert-close></bs-alert-close>
-  </bs-alert>
-  <bs-alert>
-    Cras justo odio
-    <bs-alert-close></bs-alert-close>
-  </bs-alert>
-  <div class="container">
-    <div class="row">
-      <div class="col-md-6">
-        <bs-calendar></bs-calendar>
+<bs-scrollspy [navbarContent]="nav" style="padding-top:50px">
+  <div>
+    <h1 bsScrollspy>Welcome to {{ title }}!</h1>
+
+    <h2 bsScrollspy>Alert</h2>
+    <bs-alert [type]="colors.warning">
+      Cras justo odio
+      <bs-alert-close></bs-alert-close>
+    </bs-alert>
+    <bs-alert [type]="colors.danger">
+      Cras justo odio
+      <bs-alert-close></bs-alert-close>
+    </bs-alert>
+    <bs-alert>
+      Cras justo odio
+      <bs-alert-close></bs-alert-close>
+    </bs-alert>
+    
+    <h2 bsScrollspy>Calendar</h2>
+    <bs-calendar></bs-calendar>
+
+    <h2 bsScrollspy>Carousel</h2>
+    <bs-carousel [animation]="mode">
+      <div class="w-100" *bsCarouselImage>
+        <img src="/assets/resized/deer.png" class="w-100">
       </div>
-      <div class="col-md-6">
-        <bs-carousel [animation]="mode">
-          <img class="w-100" *bsCarouselImage src="/assets/resized/deer.png">
-          <img class="w-100" *bsCarouselImage src="/assets/resized/duck.png">
-          <img class="w-100" *bsCarouselImage src="/assets/resized/leopard.png">
-          <img class="w-100" *bsCarouselImage src="/assets/resized/lion.png">
-          <img class="w-100" *bsCarouselImage src="/assets/resized/peacock.png">
-          <img class="w-100" *bsCarouselImage src="/assets/resized/tiger.png">
-        </bs-carousel>
-        <select [ngModel]="mode" (ngModelChange)="onModeChange($event)">
-          <option value="slide">Slide</option>
-          <option value="fade">Fade</option>
-        </select>
+      <div class="w-100" *bsCarouselImage>
+        <img src="/assets/resized/duck.png" class="w-100">
       </div>
-    </div>
-    <div class="row">
-      <div class="col-md-12">
-        <bs-accordion class="d-block mb-3">
-          <bs-accordion-tab>
-            <bs-accordion-tab-header>
-              <span class="triangle mr-2"></span>
-              Profile
-            </bs-accordion-tab-header>
-            <span class="d-block p-2">Label 1</span>
-          </bs-accordion-tab>
-          <bs-accordion-tab>
-            <bs-accordion-tab-header>
-              <span class="triangle mr-2"></span>
-              Sign in
-            </bs-accordion-tab-header>
-            <span class="d-block p-2">Label 2</span>
-          </bs-accordion-tab>
-          <bs-accordion-tab>
-            <bs-accordion-tab-header>
-              <span class="triangle mr-2"></span>
-              Payment
-            </bs-accordion-tab-header>
-            <span class="d-block p-2">Label 3</span>
-          </bs-accordion-tab>
-        </bs-accordion>
+      <div class="w-100" *bsCarouselImage>
+        <img src="/assets/resized/leopard.png" class="w-100">
       </div>
-    </div>
+      <div class="w-100" *bsCarouselImage>
+        <img src="/assets/resized/lion.png" class="w-100">
+      </div>
+      <div class="w-100" *bsCarouselImage>
+        <img src="/assets/resized/peacock.png" class="w-100">
+      </div>
+      <div class="w-100" *bsCarouselImage>
+        <img src="/assets/resized/tiger.png" class="w-100">
+      </div>
+      <!-- <img class="w-100" *bsCarouselImage src="/assets/resized/deer.png">
+      <img class="w-100" *bsCarouselImage src="/assets/resized/duck.png">
+      <img class="w-100" *bsCarouselImage src="/assets/resized/leopard.png">
+      <img class="w-100" *bsCarouselImage src="/assets/resized/lion.png">
+      <img class="w-100" *bsCarouselImage src="/assets/resized/peacock.png">
+      <img class="w-100" *bsCarouselImage src="/assets/resized/tiger.png"> -->
+    </bs-carousel>
+    <select [ngModel]="mode" (ngModelChange)="onModeChange($event)">
+      <option value="slide">Slide</option>
+      <option value="fade">Fade</option>
+    </select>
+    
+    <h2 bsScrollspy>Accordion</h2>
+    <bs-accordion class="d-block mb-3">
+      <bs-accordion-tab>
+        <bs-accordion-tab-header>
+          <span class="triangle mr-2"></span>
+          Profile
+        </bs-accordion-tab-header>
+        <span class="d-block p-2">Label 1</span>
+      </bs-accordion-tab>
+      <bs-accordion-tab>
+        <bs-accordion-tab-header>
+          <span class="triangle mr-2"></span>
+          Sign in
+        </bs-accordion-tab-header>
+        <span class="d-block p-2">Label 2</span>
+      </bs-accordion-tab>
+      <bs-accordion-tab>
+        <bs-accordion-tab-header>
+          <span class="triangle mr-2"></span>
+          Payment
+        </bs-accordion-tab-header>
+        <span class="d-block p-2">Label 3</span>
+      </bs-accordion-tab>
+    </bs-accordion>
+    
+    <h2 bsScrollspy>Card</h2>
+    <bs-card>
+      <bs-card-header>
+        List of elements
+      </bs-card-header>
+      <bs-list-group>
+        <bs-list-group-item>Cras justo odio</bs-list-group-item>
+        <bs-list-group-item>Dapibus ac facilisis in</bs-list-group-item>
+        <bs-list-group-item>Morbi leo risus</bs-list-group-item>
+        <bs-list-group-item>Porta ac consectetur ac</bs-list-group-item>
+        <bs-list-group-item>Vestibulum at eros</bs-list-group-item>
+      </bs-list-group>
+    </bs-card>
+    
+    <h2 bsScrollspy>Tab control</h2>
+    <bs-tab-control>
+      <bs-tab-page>
+        <ng-template>
+          <span class="triangle mr-2"></span>
+          Tab 1
+        </ng-template>
+        This is tab 1
+      </bs-tab-page>
+      <bs-tab-page>
+        <ng-template>
+          <span class="triangle mr-2"></span>
+          Tab 2
+        </ng-template>
+        This is tab 2
+      </bs-tab-page>
+      <bs-tab-page [disabled]="true">
+        <ng-template>
+          <span class="triangle mr-2"></span>
+          Tab 3
+        </ng-template>
+        This is tab 3
+      </bs-tab-page>
+      <bs-tab-page>
+        <ng-template>
+          <span class="triangle mr-2"></span>
+          Tab 4
+        </ng-template>
+        This is tab 4
+      </bs-tab-page>
+    </bs-tab-control>
   </div>
-  <div class="container">
-    <div class="row">
-      <div class="col-md-4">
-        <bs-card>
-          <bs-card-header>
-            List of elements
-          </bs-card-header>
-          <bs-list-group>
-            <bs-list-group-item>Cras justo odio</bs-list-group-item>
-            <bs-list-group-item>Dapibus ac facilisis in</bs-list-group-item>
-            <bs-list-group-item>Morbi leo risus</bs-list-group-item>
-            <bs-list-group-item>Porta ac consectetur ac</bs-list-group-item>
-            <bs-list-group-item>Vestibulum at eros</bs-list-group-item>
-          </bs-list-group>
-        </bs-card>
-      </div>
-      <div class="col-md-8">
-        <bs-tab-control>
-          <bs-tab-page>
-            <ng-template>
-              <span class="triangle mr-2"></span>
-              Tab 1
-            </ng-template>
-            This is tab 1
-          </bs-tab-page>
-          <bs-tab-page>
-            <ng-template>
-              <span class="triangle mr-2"></span>
-              Tab 2
-            </ng-template>
-            This is tab 2
-          </bs-tab-page>
-          <bs-tab-page [disabled]="true">
-            <ng-template>
-              <span class="triangle mr-2"></span>
-              Tab 3
-            </ng-template>
-            This is tab 3
-          </bs-tab-page>
-          <bs-tab-page>
-            <ng-template>
-              <span class="triangle mr-2"></span>
-              Tab 4
-            </ng-template>
-            This is tab 4
-          </bs-tab-page>
-        </bs-tab-control>
-      </div>
-    </div>
-  </div>
-</div>
+</bs-scrollspy>

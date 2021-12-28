@@ -1,7 +1,7 @@
 import { AfterContentInit, Component, ContentChildren, ElementRef, HostBinding, Input, OnDestroy, OnInit, QueryList, TemplateRef } from '@angular/core';
 import { FadeInOutAnimation, CarouselSlideAnimation } from '@mintplayer/ng-animations';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
-import { map, take, takeUntil } from 'rxjs/operators';
+import { map, tap, take, takeUntil } from 'rxjs/operators';
 import { BsCarouselImageDirective } from '../carousel-image/carousel-image.directive';
 
 @Component({
@@ -65,7 +65,11 @@ export class BsCarouselComponent implements OnInit, OnDestroy, AfterContentInit 
   }
 
   setCurrentImage(index: number) {
-    this.currentImageCounter$.next(index);
+    const currentValue = this.currentImageCounter$.value;
+    const l = this.images.length;
+    const counterMod = ((currentValue % l) + l) % l;
+    const newValue = currentValue - counterMod + index;
+    this.currentImageCounter$.next(newValue);
   }
 
   @ContentChildren(BsCarouselImageDirective) images!: QueryList<BsCarouselImageDirective>;

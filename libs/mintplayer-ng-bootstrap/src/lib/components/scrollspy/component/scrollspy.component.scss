@@ -1,0 +1,52 @@
+$spywidth: 250px;
+
+:host {
+    display: block;
+}
+
+.spy {
+    > ul {
+        list-style-type: none;
+        padding-left: 0;
+
+        > li:hover {
+            color: rgba(var(--bs-dark-rgb), var(--bs-text-opacity)) !important;
+        }
+    }
+}
+
+@media (min-width: 768px) {
+    :host {
+        display: grid;
+        grid-template-areas: "content toc";
+        grid-template-columns: auto 200px;
+        grid-template-rows: auto;
+        gap: inherit;
+        grid-area: main;
+    }
+
+    .spy {
+        position: sticky;
+        top: 5rem;
+        right: 0;
+        z-index: 2;
+        height: calc(100% - 60rem); // This determines how long the stick remains
+        overflow-y: auto;
+        grid-area: toc;
+        
+        > ul {
+            padding-left: 2rem;
+
+            > li {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+        }
+    }
+}
+
+$tabsize: 20px;
+.navH2 { margin-left: 1 * $tabsize; }
+.navH3 { margin-left: 2 * $tabsize; }
+.navH4 { margin-left: 3 * $tabsize; }
