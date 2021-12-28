@@ -11,12 +11,4 @@ export class BsScrollspyDirective {
 
   element: ElementRef;
 
-  // ngOnInit() {
-  //   this.scrollspyService.scrollspyDirectives.push(this);
-  // }
-
-  // ngOnDestroy() {
-  //   this.scrollspyService.scrollspyDirectives.splice(this.scrollspyService.scrollspyDirectives.indexOf(this), 1);
-  // }
-
 }

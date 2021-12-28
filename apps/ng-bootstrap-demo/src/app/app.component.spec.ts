@@ -1,5 +1,6 @@
-import { Component, ContentChildren, Directive, Input, QueryList } from '@angular/core';
+import { Component, ContentChildren, Directive, ElementRef, Input, QueryList } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { FormsModule } from '@angular/forms';
 import { RouterTestingModule } from '@angular/router/testing';
 import { AppComponent } from './app.component';
 
@@ -7,9 +8,10 @@ describe('AppComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
+        FormsModule,
         RouterTestingModule.withRoutes([
           { path: 'a/b/c', component: PageAbcComponent }
-        ])
+        ]),
       ],
       declarations: [
         // Component to test
@@ -34,6 +36,8 @@ describe('AppComponent', () => {
         BsAccordionTabHeaderMockComponent,
         BsTabControlMockComponent,
         BsTabPageMockComponent,
+        BsScrollspyMockComponent,
+        BsScrollspyMockDirective,
 
         // Mock pages
         PageAbcComponent
@@ -139,8 +143,9 @@ class NavbarContentMockDirective {
   template: 'carousel works'
 })
 class BsCarouselMockComponent {
-  constructor() {
-  }
+
+  @Input() public animation: 'fade' | 'slide' = 'slide';
+
 }
 
 @Component({
@@ -253,4 +258,29 @@ class BsTabPageMockComponent {
   }
   
   @Input() disabled: boolean = false;
+}
+
+@Directive({
+  selector: '[bsScrollspy]'
+})
+class BsScrollspyMockDirective {
+  constructor(element: ElementRef) {
+    this.element = element;
+  }
+
+  element: ElementRef;
+}
+
+@Component({
+  selector: 'bs-scrollspy',
+  template: `
+    <div>
+      <ng-content></ng-content>
+    </div>`
+})
+class BsScrollspyMockComponent {
+  @Input() animation: 'slide' | 'fade' = 'slide';
+
+  @ContentChildren(BsScrollspyMockDirective, { descendants: true })
+  directives!: QueryList<BsScrollspyMockDirective>;
 }
