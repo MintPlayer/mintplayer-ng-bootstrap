@@ -59,7 +59,7 @@
     </bs-navbar-item>
   </bs-navbar-nav>
 </bs-navbar>
-<!-- <bs-scrollspy [navbarContent]="nav" style="padding-top:50px"> -->
+<bs-scrollspy [navbarContent]="nav" style="padding-top:50px">
   <div>
     <h1 bsScrollspy>Welcome to {{ title }}!</h1>
 
@@ -100,12 +100,6 @@
       <div class="w-100" *bsCarouselImage>
         <img src="/assets/resized/tiger.png" class="w-100">
       </div>
-      <!-- <img class="w-100" *bsCarouselImage src="/assets/resized/deer.png">
-      <img class="w-100" *bsCarouselImage src="/assets/resized/duck.png">
-      <img class="w-100" *bsCarouselImage src="/assets/resized/leopard.png">
-      <img class="w-100" *bsCarouselImage src="/assets/resized/lion.png">
-      <img class="w-100" *bsCarouselImage src="/assets/resized/peacock.png">
-      <img class="w-100" *bsCarouselImage src="/assets/resized/tiger.png"> -->
     </bs-carousel>
     <select [ngModel]="mode" (ngModelChange)="onModeChange($event)">
       <option value="slide">Slide</option>
@@ -183,4 +177,4 @@
       </bs-tab-page>
     </bs-tab-control>
   </div>
-<!-- </bs-scrollspy> -->
+</bs-scrollspy>
