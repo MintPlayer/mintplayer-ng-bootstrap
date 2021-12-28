@@ -80,12 +80,24 @@
       </div>
       <div class="col-md-6">
         <bs-carousel>
-          <img bsCarouselImage src="/assets/resized/deer.png">
-          <img bsCarouselImage src="/assets/resized/duck.png">
-          <img bsCarouselImage src="/assets/resized/leopard.png">
-          <img bsCarouselImage src="/assets/resized/lion.png">
-          <img bsCarouselImage src="/assets/resized/peacock.png">
-          <img bsCarouselImage src="/assets/resized/tiger.png">
+          <div *bsCarouselSlide>
+            <img src="/assets/resized/deer.png" class="w-100">
+          </div>
+          <div *bsCarouselSlide>
+            <img src="/assets/resized/duck.png" class="w-100">
+          </div>
+          <div *bsCarouselSlide>
+            <img src="/assets/resized/leopard.png" class="w-100">
+          </div>
+          <div *bsCarouselSlide>
+            <img src="/assets/resized/lion.png" class="w-100">
+          </div>
+          <div *bsCarouselSlide>
+            <img src="/assets/resized/peacock.png" class="w-100">
+          </div>
+          <div *bsCarouselSlide>
+            <img src="/assets/resized/tiger.png" class="w-100">
+          </div>
         </bs-carousel>
       </div>
     </div>
@@ -164,6 +176,18 @@
             This is tab 4
           </bs-tab-page>
         </bs-tab-control>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-6">
+        <div bsDropdown>
+          <button bsDropdownToggle>
+            Open dropdown
+          </button>
+          <div bsDropdownMenu>
+            Hello world
+          </div>
+        </div>
       </div>
     </div>
   </div>

@@ -1,8 +1,9 @@
-import { AfterContentInit, Component, ContentChildren, ElementRef, OnDestroy, OnInit, QueryList } from '@angular/core';
+import { AfterContentInit, Component, ContentChildren, ElementRef, OnDestroy, OnInit, QueryList, TemplateRef } from '@angular/core';
 import { FadeInOutAnimation, CarouselSlideAnimation } from '@mintplayer/ng-animations';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { map, take, takeUntil } from 'rxjs/operators';
-import { BsCarouselImageDirective } from '../carousel-image/carousel-image.directive';
+import { ModuloService } from '../../../services/modulo/modulo.service';
+import { BsCarouselSlideDirective } from '../carousel-slide/carousel-slide.directive';
 
 @Component({
   selector: 'bs-carousel',
@@ -12,9 +13,9 @@ import { BsCarouselImageDirective } from '../carousel-image/carousel-image.direc
 })
 export class BsCarouselComponent implements OnInit, OnDestroy, AfterContentInit {
 
-  constructor() {
-    this.currentImage$ = this.currentImageIndex$
-      .pipe(map((index) => this.images.get(index) ?? null))
+  constructor(private moduloService: ModuloService) {
+    this.currentSlideIndex$ = this.currentSlideCounter$
+      .pipe(map((index) => moduloService.modulo(index, this.slides.length)))
       .pipe(takeUntil(this.destroyed$));
   }
 
@@ -25,45 +26,37 @@ export class BsCarouselComponent implements OnInit, OnDestroy, AfterContentInit 
   }
 
   ngAfterContentInit() {
-    if (this.images.length > 0) {
-      this.currentImageIndex$.next(0);
+    if (this.slides.length > 0) {
+      this.currentSlideCounter$.next(0);
     } else {
-      this.currentImageIndex$.next(-1);
+      this.currentSlideCounter$.next(-1);
     }
   }
 
   destroyed$ = new Subject();
-  currentImageIndex$ = new BehaviorSubject<number>(-1);
-  currentImage$: Observable<ElementRef<HTMLImageElement> | null>;
+  currentSlideCounter$ = new BehaviorSubject<number>(Number.NaN);
+  currentSlideIndex$: Observable<number>;
 
-  previousImage() {
-    this.currentImageIndex$
+  previousSlide() {
+    this.currentSlideCounter$
       .pipe(take(1))
-      .subscribe((currentImageIndex) => {
-        if (currentImageIndex === 0) {
-          this.currentImageIndex$.next(this.images.length - 1);
-        } else {
-          this.currentImageIndex$.next(currentImageIndex - 1);
-        }
+      .subscribe((currentSlideCounter) => {
+        this.currentSlideCounter$.next(currentSlideCounter - 1);
       });
   }
 
-  nextImage() {
-    this.currentImageIndex$
+  nextSlide() {
+    this.currentSlideCounter$
       .pipe(take(1))
-      .subscribe((currentImageIndex) => {
-        if (currentImageIndex >= this.images.length - 1) {
-          this.currentImageIndex$.next(0);
-        } else {
-          this.currentImageIndex$.next(currentImageIndex + 1);
-        }
+      .subscribe((currentSlideCounter) => {
+        this.currentSlideCounter$.next(currentSlideCounter + 1);
       });
   }
 
-  setCurrentImage(index: number) {
-    this.currentImageIndex$.next(index);
+  setcurrentSlide(index: number) {
+    this.currentSlideCounter$.next(index);
   }
 
-  @ContentChildren(BsCarouselImageDirective, { read: ElementRef }) images!: QueryList<ElementRef<HTMLImageElement>>;
+  @ContentChildren(BsCarouselSlideDirective) slides!: QueryList<BsCarouselSlideDirective>;
 
 }
