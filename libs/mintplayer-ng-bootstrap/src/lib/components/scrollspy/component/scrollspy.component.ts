@@ -1,6 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { AfterViewInit, Component, ContentChildren, ElementRef, HostListener, Inject, OnInit, QueryList } from '@angular/core';
-import { BsScrollspyDirective } from '..';
+import { BsScrollspyDirective } from '../directives/scrollspy.directive';
 
 @Component({
   selector: 'bs-scrollspy',
