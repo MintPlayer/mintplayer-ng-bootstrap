@@ -1,0 +1,30 @@
+<div class="table-responsive mb-3">
+    <table class="table table-striped table-hover w-100 mb-0" cellspacing="0" role="grid">
+        <thead>
+            <tr>
+                <th *ngFor="let column of columns" class="text-nowrap"
+                    [ngClass]="{'sort': column.sortable, 'sort-asc': column.sortable && (settings.sortProperty == column.name) && (settings.sortDirection == 'ascending'),'sort-desc': column.sortable && (settings.sortProperty == column.name) && (settings.sortDirection == 'descending')}"
+                    (click)="columnHeaderClicked(column)">{{ column.title }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            <ng-container *ngIf="!!data && !!rowTemplate">
+                <ng-container *ngFor="let item of data.data">
+                    <ng-container *ngTemplateOutlet="rowTemplate; context: { $implicit: item }"></ng-container>
+                </ng-container>
+            </ng-container>
+        </tbody>
+    </table>
+</div>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <bs-pagination class="float-start" [pageNumbers]="settings.perPage.values"
+                [(selectedPageNumber)]="settings.perPage.selected" (selectedPageNumberChange)="onReloadData.emit()"
+                [showArrows]="false"></bs-pagination>
+            <bs-pagination class="float-end" [pageNumbers]="settings.page.values"
+                [(selectedPageNumber)]="settings.page.selected" (selectedPageNumberChange)="onReloadData.emit()"
+                [showArrows]="true"></bs-pagination>
+        </div>
+    </div>
+</div>

@@ -1,8 +1,11 @@
+import { HttpClientModule } from '@angular/common/http';
 import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BrowserModule } from '@angular/platform-browser';
 import { RouterModule } from '@angular/router';
-import { BsAccordionModule, BsAlertModule, BsCalendarModule, BsCardModule, BsCarouselModule, BsListGroupModule, BsNavbarModule, BsScrollspyModule, BsTabControlModule } from '@mintplayer/ng-bootstrap';
+import { BsAccordionModule, BsAlertModule, BsCalendarModule, BsCardModule, BsCarouselModule, BsDatatableModule, BsListGroupModule, BsNavbarModule, BsScrollspyModule, BsTabControlModule } from '@mintplayer/ng-bootstrap';
+import { BASE_URL } from '@mintplayer/ng-base-url';
+import { API_VERSION } from '@mintplayer/ng-client';
 
 import { AppComponent } from './app.component';
 
@@ -15,14 +18,19 @@ import { AppComponent } from './app.component';
     BsCalendarModule,
     BsCardModule,
     BsCarouselModule,
+    BsDatatableModule,
     BsListGroupModule,
     BsAccordionModule,
     BsTabControlModule,
     BsNavbarModule,
     BsScrollspyModule,
+    HttpClientModule,
     RouterModule.forRoot([], { initialNavigation: 'enabledBlocking' })
   ],
-  providers: [],
+  providers: [
+    { provide: BASE_URL, useValue: 'https://mintplayer.com' },
+    { provide: API_VERSION, useValue: 'v3' }
+  ],
   bootstrap: [AppComponent],
 })
 export class AppModule {}

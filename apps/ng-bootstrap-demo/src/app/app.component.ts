@@ -1,18 +1,52 @@
-import { Component } from '@angular/core';
-import { Color } from '@mintplayer/ng-bootstrap';
+import { Component, OnInit } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Color, DatatableSettings } from '@mintplayer/ng-bootstrap';
+import { PaginationResponse } from '@mintplayer/ng-pagination';
+import { Artist, ArtistService } from '@mintplayer/ng-client';
 
 @Component({
   selector: 'mintplayer-ng-bootstrap-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   title = 'ng-bootstrap-demo';
   colors = Color;
   mode: 'slide' | 'fade' = 'slide';
+
+  constructor(private artistService: ArtistService) {}
+
+  ngOnInit() {
+    this.loadArtists();
+  }
 
   onModeChange(value: any) {
     console.log('value change', value);
     this.mode = value;
   }
+
+  artists?: PaginationResponse<Artist>;
+  settings: DatatableSettings = new DatatableSettings({
+    sortProperty: 'YearStarted',
+    sortDirection: 'ascending',
+    perPage: {
+      values: [10, 20, 50],
+      selected: 20
+    },
+    page: {
+      values: [1],
+      selected: 1
+    }
+  });
+  loadArtists() {
+    console.log('reload data');
+    this.artistService.pageArtists(this.settings.toPagination())
+      .then((response) => {
+        this.artists = response;
+        if (response) {
+          this.settings.page.values = Array.from(Array(response.totalPages).keys()).map((p) => p + 1);
+        }
+      });
+  }
+
 }

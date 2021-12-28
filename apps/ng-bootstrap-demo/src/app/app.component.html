@@ -63,6 +63,23 @@
   <div>
     <h1 bsScrollspy>Welcome to {{ title }}!</h1>
 
+    <h2>Datatable</h2>
+    {{ settings | json }}
+    <bs-datatable #tabel [settings]="settings" [data]="artists" (onReloadData)="loadArtists()">
+      <bs-datatable-column title="Artist" name="Name" [sortable]="true"></bs-datatable-column>
+      <bs-datatable-column title="Year started" name="YearStarted" [sortable]="true"></bs-datatable-column>
+      <bs-datatable-column title="Year quit" name="YearQuit" [sortable]="true"></bs-datatable-column>
+      
+      <ng-template rowTemplate let-artist>
+        <tr>
+          <td class="text-nowrap">{{ artist.name }}</td>
+          <td class="text-nowrap">{{ artist.yearStarted }}</td>
+          <td class="text-nowrap">{{ artist.yearQuit }}</td>
+        </tr>
+      </ng-template>
+    </bs-datatable>
+
+
     <h2 bsScrollspy>Alert</h2>
     <bs-alert [type]="colors.warning">
       Cras justo odio
