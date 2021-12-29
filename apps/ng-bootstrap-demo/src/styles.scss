@@ -1,1 +1,5 @@
-body { padding: 1rem 5rem; }
+body { padding: 1rem; }
+
+@media (min-width: 768px) {
+    body { padding: 1rem 5rem; }
+}

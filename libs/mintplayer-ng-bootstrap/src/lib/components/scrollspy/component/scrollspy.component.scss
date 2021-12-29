@@ -15,6 +15,12 @@ $spywidth: 250px;
     }
 }
 
+.spy > ul > li {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 @media (min-width: 768px) {
     :host {
         display: grid;
@@ -36,12 +42,6 @@ $spywidth: 250px;
         
         > ul {
             padding-left: 2rem;
-
-            > li {
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-            }
         }
     }
 }

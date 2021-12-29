@@ -6,8 +6,8 @@
             </button>
         </td>
         <td colspan="6" class="fw-bolder">
-            {{ month | monthName | ucFirst }}
-            {{ month.getFullYear() }}
+            {{ month$ | async | monthName | ucFirst }}
+            {{ (month$ | async)?.getFullYear() }}
         </td>
         <td>
             <button class="btn btn-default border-bottom-0" (click)="nextMonth()">
@@ -21,11 +21,11 @@
             {{ dayOfWeek }}
         </th>
     </tr>
-    <tr *ngFor="let week of weeks">
+    <tr *ngFor="let week of (weeks$ | async)">
         <th>
             {{ week.number }}
         </th>
-        <td [class.selected]="day === null ? false : isSameDate(selectedDate, day.date)" *ngFor="let day of week.week" (click)="day && selectedDate = day.date">
+        <td [class.selected]="day === null ? false : isSameDate(selectedDate$ | async, day.date)" *ngFor="let day of week.week" (click)="goto(day)">
             <span *ngIf="day !== null">{{ day.dayOfMonth }}</span>
         </td>
     </tr>

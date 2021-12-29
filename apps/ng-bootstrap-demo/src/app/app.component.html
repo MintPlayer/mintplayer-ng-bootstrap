@@ -63,6 +63,14 @@
   <div>
     <h1 bsScrollspy>Welcome to {{ title }}!</h1>
 
+    <h2 bsScrollspy>Dropdown</h2>
+    <div bsDropdown>
+      <button bsDropdownToggle class="btn btn-primary">Dropdown</button>
+      <div *bsDropdownMenu>
+        <bs-calendar></bs-calendar>
+      </div>
+    </div>
+
     <h2 bsScrollspy>Datatable</h2>
     <bs-datatable #tabel [settings]="settings" [data]="artists" (onReloadData)="loadArtists()">
       <div *bsDatatableColumn="{ sortable: true, name: 'Name' }">
@@ -100,7 +108,7 @@
     </bs-alert>
 
     <h2 bsScrollspy>Calendar</h2>
-    <bs-calendar></bs-calendar>
+    <!-- <bs-calendar></bs-calendar> -->
 
     <h2 bsScrollspy>Carousel</h2>
     <bs-carousel [animation]="mode">

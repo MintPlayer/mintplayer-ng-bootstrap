@@ -6,6 +6,8 @@ $cell-size: 40px;
 table {
     border-collapse: collapse;
     border: 1px solid $list-group-border-color;
+    background: $white;
+    
     td, th {
         width: $cell-size;
         height: $cell-size;
