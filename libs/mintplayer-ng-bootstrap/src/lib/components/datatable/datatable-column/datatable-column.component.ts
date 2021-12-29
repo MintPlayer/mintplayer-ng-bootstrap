@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, TemplateRef } from '@angular/core';
 
 @Component({
   selector: 'bs-datatable-column',
@@ -7,12 +7,15 @@ import { Component, Input, OnInit } from '@angular/core';
 })
 export class BsDatatableColumnComponent implements OnInit {
 
-  constructor() {
+  constructor(private templateRef: TemplateRef<any>) {
+    this.columnTemplate = templateRef;
   }
 
+  public columnTemplate: TemplateRef<any>;
   @Input() name: string = 'column';
-  @Input() title: string = '';
+  // @Input() title: string = '';
   @Input() sortable: boolean = true;
+
 
   ngOnInit(): void {
   }

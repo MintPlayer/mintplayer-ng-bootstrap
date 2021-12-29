@@ -66,9 +66,15 @@
     <h2>Datatable</h2>
     {{ settings | json }}
     <bs-datatable #tabel [settings]="settings" [data]="artists" (onReloadData)="loadArtists()">
-      <bs-datatable-column title="Artist" name="Name" [sortable]="true"></bs-datatable-column>
-      <bs-datatable-column title="Year started" name="YearStarted" [sortable]="true"></bs-datatable-column>
-      <bs-datatable-column title="Year quit" name="YearQuit" [sortable]="true"></bs-datatable-column>
+      <bs-datatable-column name="Name" [sortable]="true">
+        1. Artist
+      </bs-datatable-column>
+      <bs-datatable-column name="YearStarted" [sortable]="true">
+        2. Year started
+      </bs-datatable-column>
+      <bs-datatable-column name="YearQuit" [sortable]="true">
+        3. Year quit
+      </bs-datatable-column>
       
       <ng-template rowTemplate let-artist>
         <tr>

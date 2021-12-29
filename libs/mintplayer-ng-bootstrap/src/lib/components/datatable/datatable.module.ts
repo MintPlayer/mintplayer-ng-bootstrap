@@ -4,6 +4,7 @@ import { BsDatatableComponent } from './datatable/datatable.component';
 import { BsDatatableColumnComponent } from './datatable-column/datatable-column.component';
 import { BsRowTemplateDirective } from './row-template/row-template.directive';
 import { BsPaginationModule } from '../pagination/pagination.module';
+import { BsDirectivesModule } from '../../directives/directives.module';
 
 
 
@@ -15,6 +16,7 @@ import { BsPaginationModule } from '../pagination/pagination.module';
   ],
   imports: [
     CommonModule,
+    BsDirectivesModule,
     BsPaginationModule
   ],
   exports: [
