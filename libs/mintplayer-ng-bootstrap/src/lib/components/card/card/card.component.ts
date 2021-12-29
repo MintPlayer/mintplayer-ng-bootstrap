@@ -16,7 +16,6 @@ export class BsCardComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit() {
-    // console.log('header', this.header);
   }
 
   // @ContentChild(CardHeaderComponent) header!: CardHeaderComponent;

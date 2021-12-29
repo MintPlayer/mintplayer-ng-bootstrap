@@ -30,7 +30,7 @@ $spywidth: 250px;
         top: 5rem;
         right: 0;
         z-index: 2;
-        height: calc(100% - 60rem); // This determines how long the stick remains
+        height: 25%; // This determines how long the stick remains
         overflow-y: auto;
         grid-area: toc;
         

@@ -1,7 +1,12 @@
-import { Component, ContentChildren, Directive, ElementRef, Input, QueryList } from '@angular/core';
+import { HttpClientModule } from '@angular/common/http';
+import { Component, ContentChildren, Directive, ElementRef, EventEmitter, Input, Output, QueryList } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { RouterTestingModule } from '@angular/router/testing';
+import { BASE_URL } from '@mintplayer/ng-base-url';
+import { DatatableSettings } from '@mintplayer/ng-bootstrap';
+import { API_VERSION } from '@mintplayer/ng-client';
+import { PaginationResponse } from '@mintplayer/ng-pagination';
 import { AppComponent } from './app.component';
 
 describe('AppComponent', () => {
@@ -9,6 +14,7 @@ describe('AppComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         FormsModule,
+        HttpClientModule,
         RouterTestingModule.withRoutes([
           { path: 'a/b/c', component: PageAbcComponent }
         ]),
@@ -38,9 +44,15 @@ describe('AppComponent', () => {
         BsTabPageMockComponent,
         BsScrollspyMockComponent,
         BsScrollspyMockDirective,
+        BsDatatableMockComponent,
+        BsDatatableColumnDirective,
 
         // Mock pages
         PageAbcComponent
+      ],
+      providers: [
+        { provide: BASE_URL, useValue: 'https://mintplayer.com' },
+        { provide: API_VERSION, useValue: 'v3' }
       ],
     }).compileComponents();
   });
@@ -283,4 +295,37 @@ class BsScrollspyMockComponent {
 
   @ContentChildren(BsScrollspyMockDirective, { descendants: true })
   directives!: QueryList<BsScrollspyMockDirective>;
+}
+
+
+@Component({
+  selector: 'bs-datatable',
+  template: ``
+})
+class BsDatatableMockComponent {
+
+  constructor() {
+    this.settings = new DatatableSettings();
+    this.settings.sortProperty = '';
+    this.settings.sortDirection = 'ascending';
+    this.settings.perPage = { values: [10, 20, 50], selected: 20 };
+    this.settings.page = { values: [1], selected: 1 };
+  }
+
+  @Input() settings: DatatableSettings;
+  @Input() data?: PaginationResponse<any>;
+  @Output() onReloadData: EventEmitter<any> = new EventEmitter();
+
+}
+
+@Directive({
+  selector: '[bsDatatableColumn]'
+})
+class BsDatatableColumnDirective {
+  @Input() public bsDatatableColumn: DatatableColumnMetadata = { name: '', sortable: true };
+}
+
+interface DatatableColumnMetadata {
+  name: string;
+  sortable: boolean;
 }

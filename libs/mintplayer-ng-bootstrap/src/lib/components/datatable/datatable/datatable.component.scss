@@ -1,3 +1,33 @@
 .overflow-y-hidden {
     overflow-y: hidden;
 }
+
+.table thead th.sort {
+    position: relative;
+    cursor: pointer;
+  
+    &:before, &:after {
+      position: absolute;
+      display: block;
+      opacity: 0.3;
+      bottom: 0.5em;
+    }
+  
+    &:before {
+      content: "\2191";
+      right: 1em;
+    }
+  
+    &:after {
+      content: "\2193";
+      right: 0.5em;
+    }
+  
+    &.sort-asc:after {
+      opacity: 1;
+    }
+  
+    &.sort-desc:before {
+        opacity: 1;
+    }
+}

@@ -3,10 +3,11 @@
         <thead>
             <tr>
                 <th *ngFor="let column of columns" class="text-nowrap"
-                    [ngClass]="{'sort': column.sortable, 'sort-asc': column.sortable && (settings.sortProperty == column.name) && (settings.sortDirection == 'ascending'),'sort-desc': column.sortable && (settings.sortProperty == column.name) && (settings.sortDirection == 'descending')}"
+                    [class.sort]="column.bsDatatableColumn.sortable"
+                    [class.sort-asc]="column.bsDatatableColumn.sortable && (settings.sortProperty === column.bsDatatableColumn.name) && (settings.sortDirection === 'ascending')"
+                    [class.sort-desc]="column.bsDatatableColumn.sortable && (settings.sortProperty === column.bsDatatableColumn.name) && (settings.sortDirection === 'descending')"
                     (click)="columnHeaderClicked(column)">
-                    <ng-container *ngTemplateOutlet="{ elementRef: column }"></ng-container>
-                    <!-- <ng-content select="column"></ng-content> -->
+                    <ng-container *ngTemplateOutlet="column.templateRef"></ng-container>
                 </th>
             </tr>
         </thead>

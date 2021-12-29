@@ -21,7 +21,6 @@ export class AppComponent implements OnInit {
   }
 
   onModeChange(value: any) {
-    console.log('value change', value);
     this.mode = value;
   }
 
@@ -39,7 +38,6 @@ export class AppComponent implements OnInit {
     }
   });
   loadArtists() {
-    console.log('reload data');
     this.artistService.pageArtists(this.settings.toPagination())
       .then((response) => {
         this.artists = response;

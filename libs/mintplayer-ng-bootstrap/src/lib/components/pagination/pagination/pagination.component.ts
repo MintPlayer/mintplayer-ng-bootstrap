@@ -33,7 +33,7 @@ export class BsPaginationComponent implements OnInit, OnDestroy {
         .pipe(map(([pageNumbers, selectedPageNumber, visibleNumberOfNumberBoxes]) => {
           let startIndex = 0;
           
-          let half = Math.round((visibleNumberOfNumberBoxes - 1) / 2);
+          const half = Math.round((visibleNumberOfNumberBoxes - 1) / 2);
           if (pageNumbers.indexOf(selectedPageNumber) < half) {
             startIndex = 0;
           } else if (pageNumbers.indexOf(selectedPageNumber) >= (pageNumbers.length - half)) {

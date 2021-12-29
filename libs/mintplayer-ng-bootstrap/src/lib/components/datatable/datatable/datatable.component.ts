@@ -1,6 +1,6 @@
 import { Component, ContentChildren, EventEmitter, Input, OnInit, Output, TemplateRef } from '@angular/core';
-import { BsDatatableColumnComponent } from '@mintplayer/ng-bootstrap';
 import { PaginationResponse } from '@mintplayer/ng-pagination';
+import { BsDatatableColumnDirective } from '../datatable-column/datatable-column.directive';
 import { DatatableSettings } from '../datatable-settings';
 
 @Component({
@@ -18,16 +18,16 @@ export class BsDatatableComponent implements OnInit {
     this.settings.page = { values: [1], selected: 1 };
   }
 
-  @ContentChildren(BsDatatableColumnComponent) columns: BsDatatableColumnComponent[] = [];
+  @ContentChildren(BsDatatableColumnDirective) columns: BsDatatableColumnDirective[] = [];
   @Input() settings: DatatableSettings;
   @Input() data?: PaginationResponse<any>;
   rowTemplate?: TemplateRef<any>;
   @Output() onReloadData: EventEmitter<any> = new EventEmitter();
 
-  columnHeaderClicked(column: BsDatatableColumnComponent) {
-    if (column.sortable) {
-      if (this.settings.sortProperty !== column.name) {
-        this.settings.sortProperty = column.name;
+  columnHeaderClicked(column: BsDatatableColumnDirective) {
+    if (column.bsDatatableColumn.sortable) {
+      if (this.settings.sortProperty !== column.bsDatatableColumn.name) {
+        this.settings.sortProperty = column.bsDatatableColumn.name;
         this.settings.sortDirection = 'ascending';
       } else if (this.settings.sortDirection === 'descending') {
         this.settings.sortDirection = 'ascending';

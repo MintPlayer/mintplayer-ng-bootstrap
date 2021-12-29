@@ -31,11 +31,12 @@ export class DatatableSettings {
     public page: { values: number[], selected: number };
 
     public toPagination() {
-        return <PaginationRequest>{
+        const res = <PaginationRequest>{
             sortProperty: this.sortProperty,
             sortDirection: this.sortDirection,
             perPage: this.perPage.selected,
             page: this.page.selected
         };
+        return res;
     }
 }
