@@ -63,14 +63,6 @@
   <div>
     <h1 bsScrollspy>Welcome to {{ title }}!</h1>
 
-    <h2 bsScrollspy>Dropdown</h2>
-    <div bsDropdown>
-      <button bsDropdownToggle class="btn btn-primary">Dropdown</button>
-      <div *bsDropdownMenu>
-        <bs-calendar></bs-calendar>
-      </div>
-    </div>
-
     <h2 bsScrollspy>Datatable</h2>
     <bs-datatable #tabel [settings]="settings" [data]="artists" (onReloadData)="loadArtists()">
       <div *bsDatatableColumn="{ sortable: true, name: 'Name' }">
@@ -206,5 +198,14 @@
         This is tab 4
       </bs-tab-page>
     </bs-tab-control>
+    
+    <h2 bsScrollspy>Dropdown</h2>
+    <div bsDropdown>
+      <button bsDropdownToggle class="btn btn-primary">Dropdown</button>
+      <div *bsDropdownMenu>
+        <bs-calendar></bs-calendar>
+      </div>
+    </div>
+
   </div>
 </bs-scrollspy>

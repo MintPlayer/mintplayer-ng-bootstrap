@@ -1,6 +1,7 @@
 import { ContentChild, Directive } from '@angular/core';
-import { BsDropdownMenuDirective, BsDropdownToggleDirective } from '@mintplayer/ng-bootstrap';
 import { BehaviorSubject } from 'rxjs';
+import { BsDropdownMenuDirective } from '../dropdown-menu/dropdown-menu.directive';
+import { BsDropdownToggleDirective } from '../dropdown-toggle/dropdown-toggle.directive';
 
 @Directive({
   selector: '[bsDropdown]'

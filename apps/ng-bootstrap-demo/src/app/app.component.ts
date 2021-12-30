@@ -1,6 +1,5 @@
-import { Component, OnInit, ViewContainerRef } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { BsDropdownService, Color, DatatableSettings } from '@mintplayer/ng-bootstrap';
+import { Component, OnInit } from '@angular/core';
+import { Color, DatatableSettings } from '@mintplayer/ng-bootstrap';
 import { PaginationResponse } from '@mintplayer/ng-pagination';
 import { Artist, ArtistService } from '@mintplayer/ng-client';
 
@@ -14,8 +13,7 @@ export class AppComponent implements OnInit {
   colors = Color;
   mode: 'slide' | 'fade' = 'slide';
 
-  constructor(private artistService: ArtistService, dropdownService: BsDropdownService, viewContainerRef: ViewContainerRef) {
-    dropdownService.setRootViewContainerRef(viewContainerRef);
+  constructor(private artistService: ArtistService) {
   }
 
   ngOnInit() {
