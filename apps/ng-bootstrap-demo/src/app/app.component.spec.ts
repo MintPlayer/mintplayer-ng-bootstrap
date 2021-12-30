@@ -46,6 +46,9 @@ describe('AppComponent', () => {
         BsScrollspyMockDirective,
         BsDatatableMockComponent,
         BsDatatableColumnDirective,
+        BsDatepickerMockComponent,
+        BsMultiselectComponent,
+        BsDropdownMockDirective,
 
         // Mock pages
         PageAbcComponent
@@ -328,4 +331,30 @@ class BsDatatableColumnDirective {
 interface DatatableColumnMetadata {
   name: string;
   sortable: boolean;
+}
+
+@Component({
+  selector: 'bs-datepicker',
+  template: 'Date picker'
+})
+class BsDatepickerMockComponent {
+}
+
+@Component({
+  selector: 'bs-multiselect',
+  template: 'multiselect'
+})
+class BsMultiselectComponent {
+
+  @Input() public items: any[] = [];
+  @Input() public selectedItems: any[] = [];
+
+}
+
+@Directive({
+  selector: '[bsDropdown]'
+})
+class BsDropdownMockDirective {
+  @Input() public hasBackdrop = false;
+  @Input() public closeOnClickOutside = false;
 }

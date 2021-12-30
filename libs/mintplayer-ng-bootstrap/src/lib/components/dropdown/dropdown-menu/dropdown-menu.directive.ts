@@ -13,14 +13,11 @@ import { TemplatePortal } from '@angular/cdk/portal';
 })
 export class BsDropdownMenuDirective {
   constructor(
-    @Inject(forwardRef(() => BsDropdownDirective))
-    private dropdown: BsDropdownDirective,
+    @Inject(forwardRef(() => BsDropdownDirective)) private dropdown: BsDropdownDirective,
     @Inject(DOCUMENT) document: any,
-    private renderer: Renderer2,
     private viewContainerRef: ViewContainerRef,
     private templateRef: TemplateRef<any>,
-    private overlay: Overlay,
-    private elementRef: ElementRef
+    private overlay: Overlay
   ) {
     this.document = <Document>document;
     this.dropdown.isOpen$
@@ -28,20 +25,24 @@ export class BsDropdownMenuDirective {
       .subscribe((isOpen) => {
         if (isOpen) {
           this.overlayRef = this.overlay.create({
-            hasBackdrop: false,
+            hasBackdrop: this.dropdown.hasBackdrop,
             scrollStrategy: this.overlay.scrollStrategies.reposition(),
             positionStrategy: this.overlay.position()
               .flexibleConnectedTo(this.dropdown.toggle.toggleButton)
               .withPositions([
-                { originX: "end", "originY": "bottom", overlayX: "start", overlayY: "top", offsetY: 8}
-              ])
+                { originX: "start", "originY": "bottom", overlayX: "start", overlayY: "top", offsetY: 0 },
+                { originX: "start", "originY": "top", overlayX: "start", overlayY: "bottom", offsetY: 0 },
+              ]),
           });
+
+          this.overlayRef.backdropClick().subscribe(() => this.dropdown.isOpen$.next(false));
       
           this.templatePortal = new TemplatePortal(this.templateRef, this.viewContainerRef);
           this.overlayRef.attach(this.templatePortal);
         } else {
           if (this.overlayRef) {
             this.overlayRef.detach();
+            this.overlayRef.dispose();
           }
         }
       });

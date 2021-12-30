@@ -1,4 +1,4 @@
-import { ContentChild, Directive } from '@angular/core';
+import { ContentChild, Directive, Input } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { BsDropdownMenuDirective } from '../dropdown-menu/dropdown-menu.directive';
 import { BsDropdownToggleDirective } from '../dropdown-toggle/dropdown-toggle.directive';
@@ -13,4 +13,6 @@ export class BsDropdownDirective {
   @ContentChild(BsDropdownMenuDirective, {static: false}) menu!: BsDropdownMenuDirective;
   @ContentChild(BsDropdownToggleDirective, {static: false}) toggle!: BsDropdownToggleDirective;
   
+  @Input() public hasBackdrop = false;
+  @Input() public closeOnClickOutside = false;
 }

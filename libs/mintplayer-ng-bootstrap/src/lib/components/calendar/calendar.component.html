@@ -1,4 +1,4 @@
-<table class="table w-auto">
+<table class="table w-auto mb-0">
     <tr>
         <td>
             <button class="btn btn-default" (click)="previousMonth()">
@@ -6,8 +6,8 @@
             </button>
         </td>
         <td colspan="6" class="fw-bolder">
-            {{ month$ | async | monthName | ucFirst }}
-            {{ (month$ | async)?.getFullYear() }}
+            {{ currentMonth$ | async | monthName | ucFirst }}
+            {{ (currentMonth$ | async)?.getFullYear() }}
         </td>
         <td>
             <button class="btn btn-default border-bottom-0" (click)="nextMonth()">

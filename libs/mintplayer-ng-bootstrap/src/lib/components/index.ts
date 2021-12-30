@@ -9,3 +9,5 @@ export * from './accordion';
 export * from './tab-control';
 export * from './scrollspy';
 export * from './dropdown';
+export * from './datepicker';
+export * from './multiselect';

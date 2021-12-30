@@ -1,0 +1,6 @@
+<div bsDropdown [hasBackdrop]="true" [closeOnClickOutside]="true">
+    <button bsDropdownToggle class="btn btn-primary">{{ selectedDate | date }}</button>
+    <div *bsDropdownMenu>
+        <bs-calendar [(selectedDate)]="selectedDate" [(currentMonth)]="currentMonth"></bs-calendar>
+    </div>
+</div>

@@ -42,7 +42,7 @@ class BsCarouselImageTestComponent {
     </div>
   </div>`
 })
-class BsCarouselComponent {
+class BsCarouselMockComponent {
 }
 
 describe('CarouselImageDirective', () => {
@@ -57,7 +57,7 @@ describe('CarouselImageDirective', () => {
         BsCarouselImageDirective,
 
         // Mock components
-        BsCarouselComponent,
+        BsCarouselMockComponent,
 
         // Testbench
         BsCarouselImageTestComponent

@@ -12,6 +12,7 @@ export class AppComponent implements OnInit {
   title = 'ng-bootstrap-demo';
   colors = Color;
   mode: 'slide' | 'fade' = 'slide';
+  multiselectItems = ['Blue', 'Red', 'Green', 'Yellow', 'Orange', 'Purple', 'Pink'];
 
   constructor(private artistService: ArtistService) {
   }

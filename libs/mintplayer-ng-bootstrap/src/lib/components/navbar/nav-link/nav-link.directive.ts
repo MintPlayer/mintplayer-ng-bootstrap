@@ -1,4 +1,4 @@
-import { Component, Directive, ElementRef, forwardRef, Inject, Optional } from '@angular/core';
+import { Directive, ElementRef, forwardRef, Inject, Optional } from '@angular/core';
 import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
 
 @Directive({

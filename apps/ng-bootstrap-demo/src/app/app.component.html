@@ -62,7 +62,7 @@
 <bs-scrollspy [navbarContent]="nav" style="padding-top:50px">
   <div>
     <h1 bsScrollspy>Welcome to {{ title }}!</h1>
-
+    
     <h2 bsScrollspy>Datatable</h2>
     <bs-datatable #tabel [settings]="settings" [data]="artists" (onReloadData)="loadArtists()">
       <div *bsDatatableColumn="{ sortable: true, name: 'Name' }">
@@ -84,6 +84,16 @@
       </ng-template>
     </bs-datatable>
 
+    <h2 bsScrollspy>Dropdown</h2>
+    <div bsDropdown [closeOnClickOutside]="true">
+      <button bsDropdownToggle class="btn btn-primary">Dropdown</button>
+      <div *bsDropdownMenu>
+        <bs-calendar></bs-calendar>
+      </div>
+    </div>
+
+    <h2 bsScrollspy>Datepicker</h2>
+    <bs-datepicker></bs-datepicker>
 
     <h2 bsScrollspy>Alert</h2>
     <bs-alert [type]="colors.warning">
@@ -100,7 +110,7 @@
     </bs-alert>
 
     <h2 bsScrollspy>Calendar</h2>
-    <!-- <bs-calendar></bs-calendar> -->
+    <bs-calendar></bs-calendar>
 
     <h2 bsScrollspy>Carousel</h2>
     <bs-carousel [animation]="mode">
@@ -198,14 +208,8 @@
         This is tab 4
       </bs-tab-page>
     </bs-tab-control>
-    
-    <h2 bsScrollspy>Dropdown</h2>
-    <div bsDropdown>
-      <button bsDropdownToggle class="btn btn-primary">Dropdown</button>
-      <div *bsDropdownMenu>
-        <bs-calendar></bs-calendar>
-      </div>
-    </div>
 
+    <h2 bsScrollspy>Multiselect dropdown</h2>
+    <bs-multiselect [items]="multiselectItems"></bs-multiselect>
   </div>
 </bs-scrollspy>
