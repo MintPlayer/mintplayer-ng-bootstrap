@@ -11,6 +11,9 @@ export class BsTypeaheadComponent {
 
   //#region IsOpen
   dropdownVisible = false;
+  clickedOutside() {
+    this.dropdownVisible = false;
+  }
   //#endregion
 
   onProvideSuggestions(value: string) {

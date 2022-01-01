@@ -1,8 +1,8 @@
 import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { BsDropdownModule } from '../dropdown/dropdown.module';
 import { BsTypeaheadComponent } from './typeahead.component';
+import { ClickOutsideModule } from '../click-outside/click-outside.module';
 
 
 
@@ -13,7 +13,7 @@ import { BsTypeaheadComponent } from './typeahead.component';
   imports: [
     CommonModule,
     FormsModule,
-    BsDropdownModule
+    ClickOutsideModule
   ],
   exports: [
     BsTypeaheadComponent
