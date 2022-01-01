@@ -18,7 +18,6 @@ export class BsDropdownToggleDirective {
 
   @HostListener('click')
   onClick() {
-    console.log('clicked');
     this.dropdown.isOpen$.pipe(take(1)).subscribe((isOpen) => {
       this.dropdown.isOpen$.next(!isOpen);
     });

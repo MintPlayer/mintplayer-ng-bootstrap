@@ -4,6 +4,7 @@ import { OverlayModule } from '@angular/cdk/overlay';
 import { BsDropdownDirective } from './dropdown/dropdown.directive';
 import { BsDropdownMenuDirective } from './dropdown-menu/dropdown-menu.directive';
 import { BsDropdownToggleDirective } from './dropdown-toggle/dropdown-toggle.directive';
+import { ClickOutsideModule } from '../click-outside/click-outside.module';
 
 
 
@@ -15,7 +16,8 @@ import { BsDropdownToggleDirective } from './dropdown-toggle/dropdown-toggle.dir
   ],
   imports: [
     CommonModule,
-    OverlayModule
+    OverlayModule,
+    ClickOutsideModule
   ],
   exports: [
     BsDropdownDirective,

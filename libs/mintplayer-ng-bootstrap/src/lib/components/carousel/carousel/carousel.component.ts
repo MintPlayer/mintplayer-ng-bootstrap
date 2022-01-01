@@ -38,10 +38,22 @@ export class BsCarouselComponent implements OnInit, OnDestroy, AfterContentInit 
     }
   }
   
-  // @HostBinding('@.disabled')
-  // public animationsDisabled = false;
+  @HostBinding('@.disabled')
+  public animationsDisabled = false;
 
-  @Input() public animation: 'fade' | 'slide' = 'slide';
+  //#region Animation
+  private _animation: 'fade' | 'slide' = 'slide';
+  @Input() public set animation(value: 'fade' | 'slide') {
+    this.animationsDisabled = true;
+    this._animation = value;
+    setTimeout(() => {
+      this.animationsDisabled = false;
+    }, 20);
+  }
+  public get animation() {
+    return this._animation;
+  }
+  //#endregion
 
   destroyed$ = new Subject();
   currentImageCounter$ = new BehaviorSubject<number>(-1);

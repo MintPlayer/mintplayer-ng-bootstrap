@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, ContentChild, Input, OnInit, TemplateRef } from '@angular/core';
 
 @Component({
   selector: 'bs-multiselect',
@@ -7,8 +7,10 @@ import { Component, Input, OnInit } from '@angular/core';
 })
 export class BsMultiselectComponent implements OnInit {
 
-  constructor() { }
+  constructor() {
+  }
 
+  @ContentChild(TemplateRef) template!: TemplateRef<any>;
   @Input() public items: any[] = [];
   @Input() public selectedItems: any[] = [];
 

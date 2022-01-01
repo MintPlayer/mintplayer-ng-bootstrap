@@ -1,6 +1,6 @@
 
 
-# MintplayerNgBootstrap
+# @mintplayer/ng-bootstrap
 
 This project was generated using [Nx](https://nx.dev).
 

@@ -24,6 +24,7 @@
     "@mintplayer/ng-base-url": "^13.1.1",
     "@mintplayer/ng-click-outside": "^13.0.0",
     "@mintplayer/ng-client": "^13.1.0",
+    "@mintplayer/ng-focus-on-load": "^13.1.0",
     "@mintplayer/ng-pagination": "^13.1.0",
     "@mintplayer/ng-server-side": "^13.1.0",
     "@nrwl/angular": "13.4.1",

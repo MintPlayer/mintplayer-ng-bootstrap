@@ -210,6 +210,10 @@
     </bs-tab-control>
 
     <h2 bsScrollspy>Multiselect dropdown</h2>
-    <bs-multiselect [items]="multiselectItems"></bs-multiselect>
+    <bs-multiselect [items]="multiselectItems">
+      <ng-template>
+        <input type="text" class="form-control" autofocus>
+      </ng-template>
+    </bs-multiselect>
   </div>
 </bs-scrollspy>

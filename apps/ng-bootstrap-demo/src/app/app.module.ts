@@ -8,6 +8,7 @@ import { BASE_URL } from '@mintplayer/ng-base-url';
 import { API_VERSION } from '@mintplayer/ng-client';
 
 import { AppComponent } from './app.component';
+import { FocusOnLoadModule } from '@mintplayer/ng-focus-on-load';
 
 @NgModule({
   declarations: [AppComponent],
@@ -28,6 +29,7 @@ import { AppComponent } from './app.component';
     BsDropdownModule,
     BsMultiselectModule,
     HttpClientModule,
+    FocusOnLoadModule,
     RouterModule.forRoot([], { initialNavigation: 'enabledBlocking' })
   ],
   providers: [
