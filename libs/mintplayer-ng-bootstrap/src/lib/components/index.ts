@@ -11,3 +11,4 @@ export * from './scrollspy';
 export * from './dropdown';
 export * from './datepicker';
 export * from './multiselect';
+export * from './typeahead';

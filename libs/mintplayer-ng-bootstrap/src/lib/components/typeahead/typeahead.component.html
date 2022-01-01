@@ -1,0 +1,18 @@
+<div bsDropdown [(isOpen)]="dropdownVisible" [closeOnClickOutside]="true">
+    <input type="text" class="form-control" #textbox [ngModel]="searchterm"
+        (focus)="dropdownVisible = true" (ngModelChange)="onProvideSuggestions($event)" (keyup.enter)="onSubmit()" />
+    <ul class="dropdown-menu d-block w-100" *bsDropdownMenu>
+        <ng-container *ngIf="suggestions.length === 0">
+            <li *ngIf="!!searchterm">
+                <a class="dropdown-item disabled">No items found</a>
+            </li>
+            <li *ngIf="!searchterm">
+                <a class="dropdown-item disabled">Start typing...</a>
+            </li>
+        </ng-container>
+        
+        <li *ngFor="let suggestion of suggestions" (click)="suggestionClicked(suggestion)" class="cursor-pointer">
+            <a class="dropdown-item">{{ suggestion.text }}</a>
+        </li>
+    </ul>
+</div>

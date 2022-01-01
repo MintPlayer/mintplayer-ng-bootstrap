@@ -38,7 +38,7 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
             hasBackdrop: this.dropdown.hasBackdrop,
             scrollStrategy: this.overlay.scrollStrategies.reposition(),
             positionStrategy: this.overlay.position()
-              .flexibleConnectedTo(this.dropdown.toggle.toggleButton)
+              .flexibleConnectedTo(!this.dropdown.toggle ? dropdown.elementRef : this.dropdown.toggle.toggleButton)
               .withPositions([
                 { originX: "start", "originY": "bottom", overlayX: "start", overlayY: "top", offsetY: 0 },
                 { originX: "start", "originY": "top", overlayX: "start", overlayY: "bottom", offsetY: 0 },
@@ -46,10 +46,13 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
           });
 
           if (this.dropdown.hasBackdrop && this.dropdown.closeOnClickOutside) {
-            this.overlayRef.backdropClick().subscribe(() => this.dropdown.isOpen$.next(false));
+            this.overlayRef.backdropClick().subscribe(() => {
+              console.log('close dropdown');
+              this.dropdown.isOpen$.next(false);
+            });
           }
       
-          this.templatePortal = new TemplatePortal(this.templateRef, this.viewContainerRef);
+          (<any>window).portal = this.templatePortal = new TemplatePortal(this.templateRef, this.viewContainerRef);
           this.overlayRef.attach(this.templatePortal);
         } else {
           if (this.overlayRef) {
@@ -61,14 +64,15 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
       });
   }
 
-  @HostListener('clickOutside') clickedOutside() {
-    console.log('wait', this.wait);
+  @HostListener('clickOutside', ['$event']) clickedOutside(ev: MouseEvent) {
     if (!this.wait) {
-      this.dropdown.isOpen$.pipe(take(1)).subscribe((isOpen) => {
-        if (isOpen && !this.dropdown.hasBackdrop && this.dropdown.closeOnClickOutside) {
-          this.dropdown.isOpen$.next(false);
-        }
-      });
+      if (!this.overlayRef?.overlayElement.contains(<any>ev.target)) {
+        this.dropdown.isOpen$.pipe(take(1)).subscribe((isOpen) => {
+          if (isOpen && !this.dropdown.hasBackdrop && this.dropdown.closeOnClickOutside) {
+            this.dropdown.isOpen$.next(false);
+          }
+        });
+      }
     }
   }
 

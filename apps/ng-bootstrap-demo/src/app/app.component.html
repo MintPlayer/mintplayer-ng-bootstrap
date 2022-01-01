@@ -177,6 +177,9 @@
       </bs-list-group>
     </bs-card>
 
+    <h2 bsScrollspy>Typeahead</h2>
+    <bs-typeahead [(searchterm)]="searchterm" (provideSuggestions)="provideSuggestions($event)" [suggestions]="(suggestions$ | async) || []" (submit)="doSearch($event)" (suggestionSelected)="gotoArtist($event)"></bs-typeahead>  
+    
     <h2 bsScrollspy>Tab control</h2>
     <bs-tab-control>
       <bs-tab-page>

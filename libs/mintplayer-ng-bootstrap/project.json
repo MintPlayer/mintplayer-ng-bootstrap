@@ -2,7 +2,7 @@
   "projectType": "library",
   "root": "libs/mintplayer-ng-bootstrap",
   "sourceRoot": "libs/mintplayer-ng-bootstrap/src",
-  "prefix": "mintplayer-ng-bootstrap",
+  "prefix": "bs",
   "targets": {
     "build": {
       "executor": "@nrwl/angular:package",

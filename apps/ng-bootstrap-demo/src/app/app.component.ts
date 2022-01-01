@@ -1,7 +1,9 @@
+import { JsonPipe } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { Color, DatatableSettings } from '@mintplayer/ng-bootstrap';
 import { PaginationResponse } from '@mintplayer/ng-pagination';
 import { Artist, ArtistService } from '@mintplayer/ng-client';
+import { BehaviorSubject, Subject } from 'rxjs';
 
 @Component({
   selector: 'mintplayer-ng-bootstrap-root',
@@ -14,7 +16,7 @@ export class AppComponent implements OnInit {
   mode: 'slide' | 'fade' = 'slide';
   multiselectItems = ['Blue', 'Red', 'Green', 'Yellow', 'Orange', 'Purple', 'Pink'];
 
-  constructor(private artistService: ArtistService) {
+  constructor(private artistService: ArtistService, private jsonPipe: JsonPipe) {
   }
 
   ngOnInit() {
@@ -46,6 +48,24 @@ export class AppComponent implements OnInit {
           this.settings.page.values = Array.from(Array(response.totalPages).keys()).map((p) => p + 1);
         }
       });
+  }
+
+  items: any[] = [
+    { id: 1, firstName: 'Michael', lastName: 'Jackson', text: 'Michael Jackson' },
+    { id: 2, firstName: 'Paul', lastName: 'Spencer', text: 'Paul Spencer' },
+    { id: 3, firstName: 'Noel', lastName: 'Gallagher', text: 'Noel Gallagher' },
+    { id: 4, firstName: 'Chris', lastName: 'Martin', text: 'Chris Martin' }
+  ];
+  searchterm: string = '';
+  suggestions$ = new BehaviorSubject<any[]>([]);
+  provideSuggestions(searchTerm: string) {
+    this.suggestions$.next(this.items.filter(i => (i.firstName + ' ' + i.lastName).indexOf(searchTerm) > -1));
+  }
+  gotoArtist(suggestion: any) {
+    alert('Selected value:\r\n' + this.jsonPipe.transform(suggestion));
+  }
+  doSearch(searchTerm: string) {
+    alert(`Search for ${searchTerm} now`);
   }
 
 }

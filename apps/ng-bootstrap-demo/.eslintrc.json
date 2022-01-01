@@ -21,7 +21,7 @@
           "error",
           {
             "type": "element",
-            "prefix": "mintplayer-ng-bootstrap",
+            "prefix": "bs",
             "style": "kebab-case"
           }
         ]
