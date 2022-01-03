@@ -4,12 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { CommonModule, JsonPipe } from '@angular/common';
 import { BrowserModule } from '@angular/platform-browser';
 import { RouterModule } from '@angular/router';
-import { BsAccordionModule, BsAlertModule, BsCalendarModule, BsCardModule, BsCarouselModule, BsDatatableModule, BsDatepickerModule, BsDropdownModule, BsListGroupModule, BsMultiselectModule, BsNavbarModule, BsScrollspyModule, BsTabControlModule, BsTypeaheadModule } from '@mintplayer/ng-bootstrap';
+import { BsAccordionModule, BsAlertModule, BsCalendarModule, BsCardModule, BsCarouselModule, BsContextMenuModule, BsDatatableModule, BsDatepickerModule, BsDropdownModule, BsListGroupModule, BsMultiselectModule, BsNavbarModule, BsProgressBarModule, BsScrollspyModule, BsTabControlModule, BsTooltipModule, BsTypeaheadModule } from '@mintplayer/ng-bootstrap';
 import { BASE_URL } from '@mintplayer/ng-base-url';
 import { API_VERSION } from '@mintplayer/ng-client';
+import { FocusOnLoadModule } from '@mintplayer/ng-focus-on-load';
 
 import { AppComponent } from './app.component';
-import { FocusOnLoadModule } from '@mintplayer/ng-focus-on-load';
 
 @NgModule({
   declarations: [AppComponent],
@@ -30,10 +30,13 @@ import { FocusOnLoadModule } from '@mintplayer/ng-focus-on-load';
     BsScrollspyModule,
     BsDropdownModule,
     BsMultiselectModule,
+    BsProgressBarModule,
     BsTypeaheadModule,
+    BsContextMenuModule,
+    BsTooltipModule,
     HttpClientModule,
     FocusOnLoadModule,
-    RouterModule.forRoot([], { initialNavigation: 'enabledBlocking' })
+    RouterModule.forRoot([], { initialNavigation: 'enabledBlocking', scrollOffset: [0, 56] })
   ],
   providers: [
     { provide: BASE_URL, useValue: 'https://mintplayer.com' },

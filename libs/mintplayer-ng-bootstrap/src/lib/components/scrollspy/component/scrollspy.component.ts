@@ -1,5 +1,6 @@
 import { DOCUMENT } from '@angular/common';
-import { AfterViewInit, Component, ContentChildren, ElementRef, HostListener, Inject, OnInit, QueryList } from '@angular/core';
+import { AfterViewInit, Component, ContentChildren, HostListener, Inject, QueryList } from '@angular/core';
+import { BsScrollOffsetService } from '../../../services/scroll-offset/scroll-offset.service';
 import { BsScrollspyDirective } from '../directives/scrollspy.directive';
 
 @Component({
@@ -7,9 +8,11 @@ import { BsScrollspyDirective } from '../directives/scrollspy.directive';
   templateUrl: './scrollspy.component.html',
   styleUrls: ['./scrollspy.component.scss']
 })
-export class BsScrollspyComponent implements OnInit, AfterViewInit {
+export class BsScrollspyComponent implements AfterViewInit {
 
-  constructor(@Inject(DOCUMENT) document: any) {
+  constructor(
+    private scrollOffsetService: BsScrollOffsetService,
+    @Inject(DOCUMENT) document: any) {
     this.doc = <Document>document;
   }
 
@@ -19,16 +22,14 @@ export class BsScrollspyComponent implements OnInit, AfterViewInit {
   doc: Document;
   activeDirective: BsScrollspyDirective | null = null;
 
-  ngOnInit() {
-  }
-
   ngAfterViewInit() {
     this.onWindowScroll();
   }
   
   @HostListener('window:scroll', ['$event'])
   onWindowScroll() {
-    const dirs = this.directives.filter((d) => d.element.nativeElement.getBoundingClientRect().y <= 0);
+    const offsetY = this.scrollOffsetService.getScrollOffset()[1];
+    const dirs = this.directives.filter((d) => d.element.nativeElement.getBoundingClientRect().y < offsetY);
     if (this.directives.length === 0) {
       this.activeDirective = null;
     } else if (dirs.length === 0) {
@@ -40,7 +41,9 @@ export class BsScrollspyComponent implements OnInit, AfterViewInit {
   
   scrollToHeader(directive: BsScrollspyDirective) {
     const header = directive.element.nativeElement;
-    header.scrollIntoView();
+    const offsetY = this.scrollOffsetService.getScrollOffset()[1];
+    const y = header.getBoundingClientRect().top + window.scrollY - offsetY + 1;
+    window.scrollTo({top: y, behavior: 'smooth'});
   }
 
 }

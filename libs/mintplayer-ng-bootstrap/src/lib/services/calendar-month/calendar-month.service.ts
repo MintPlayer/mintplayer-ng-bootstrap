@@ -8,13 +8,10 @@ import { Week } from '../../interfaces/week';
 })
 export class BsCalendarMonthService {
 
-  constructor() {
-  }
-
   public getWeeks(month: Date) {
-    let firstAndLast = this.getFirstAndLastDayOfMonth(month);
-    let days = this.dateDiff(firstAndLast.first, firstAndLast.last) + 1;
-    let allDays: (DateDayOfMonth | null)[] = [
+    const firstAndLast = this.getFirstAndLastDayOfMonth(month);
+    const days = this.dateDiff(firstAndLast.first, firstAndLast.last) + 1;
+    const allDays: (DateDayOfMonth | null)[] = [
       ...this.generateList(this.dayOfWeekMondayBased(firstAndLast.first)).map(d => null),
       ...this.generateList(days).map(d => {
         return {
@@ -24,8 +21,8 @@ export class BsCalendarMonthService {
       }),
       ...this.generateList(6 - this.dayOfWeekMondayBased(firstAndLast.last)).map(d => null),
     ];
-    let weeks = this.chunk(allDays, 7);
-    let weeksMapped = weeks.map<Week>((w, i) => {
+    const weeks = this.chunk(allDays, 7);
+    const weeksMapped = weeks.map<Week>((w, i) => {
       return {
         number: this.weekOfYear(new Date(month.getFullYear(), month.getMonth(), w.find(d => d !== null)?.dayOfMonth)),
         week: w
@@ -39,7 +36,7 @@ export class BsCalendarMonthService {
   }
 
   dayOfWeekMondayBased(date: Date) {
-    let d = date.getDay() - 1;
+    const d = date.getDay() - 1;
     if (d < 0) {
       return 6;
     } else {
@@ -48,10 +45,10 @@ export class BsCalendarMonthService {
   }
 
   weekOfYear(date: Date) {
-    let dateClone = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dateClone = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
     dateClone.setUTCDate(dateClone.getUTCDate() + 4 - (dateClone.getUTCDay() || 7));
-    let yearStart = new Date(Date.UTC(dateClone.getUTCFullYear(), 0, 1));
-    let utcDiff = this.toUTC(dateClone) - this.toUTC(yearStart);
+    const yearStart = new Date(Date.UTC(dateClone.getUTCFullYear(), 0, 1));
+    const utcDiff = this.toUTC(dateClone) - this.toUTC(yearStart);
     return Math.ceil((utcDiff / (1000 * 60 * 60 * 24) + 1) / 7);
   }
 
@@ -79,7 +76,7 @@ export class BsCalendarMonthService {
   }
 
   chunk<T>(items: T[], size: number) {
-    let result: T[][] = [];
+    const result: T[][] = [];
     for (let i = 0; i < items.length; i += size) {
       result.push(items.slice(i, i + size));
     }

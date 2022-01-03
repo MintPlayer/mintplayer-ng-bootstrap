@@ -2,9 +2,9 @@ import { DOCUMENT } from '@angular/common';
 import { Directive, ElementRef, forwardRef, HostListener, Inject, NgZone, PLATFORM_ID, TemplateRef, ViewContainerRef } from '@angular/core';
 import { TemplatePortal } from '@angular/cdk/portal';
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
+import { ClickOutsideDirective } from '@mintplayer/ng-click-outside';
 import { Subject, take, takeUntil } from 'rxjs';
 import { BsDropdownDirective } from '../dropdown/dropdown.directive';
-import { ClickOutsideDirective } from '../../click-outside/click-outside.directive';
 
 @Directive({
   selector: '[bsDropdownMenu]',
@@ -40,19 +40,18 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
             positionStrategy: this.overlay.position()
               .flexibleConnectedTo(!this.dropdown.toggle ? dropdown.elementRef : this.dropdown.toggle.toggleButton)
               .withPositions([
-                { originX: "start", "originY": "bottom", overlayX: "start", overlayY: "top", offsetY: 0 },
-                { originX: "start", "originY": "top", overlayX: "start", overlayY: "bottom", offsetY: 0 },
+                { originX: "start", originY: "bottom", overlayX: "start", overlayY: "top", offsetY: 0 },
+                { originX: "start", originY: "top", overlayX: "start", overlayY: "bottom", offsetY: 0 },
               ]),
           });
 
           if (this.dropdown.hasBackdrop && this.dropdown.closeOnClickOutside) {
             this.overlayRef.backdropClick().subscribe(() => {
-              console.log('close dropdown');
               this.dropdown.isOpen$.next(false);
             });
           }
       
-          (<any>window).portal = this.templatePortal = new TemplatePortal(this.templateRef, this.viewContainerRef);
+          this.templatePortal = new TemplatePortal(this.templateRef, this.viewContainerRef);
           this.overlayRef.attach(this.templatePortal);
         } else {
           if (this.overlayRef) {

@@ -1,9 +1,9 @@
 import { JsonPipe } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { Color, DatatableSettings } from '@mintplayer/ng-bootstrap';
+import { Color, DatatableSettings, Position } from '@mintplayer/ng-bootstrap';
 import { PaginationResponse } from '@mintplayer/ng-pagination';
 import { Artist, ArtistService } from '@mintplayer/ng-client';
-import { BehaviorSubject, Subject } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 
 @Component({
   selector: 'mintplayer-ng-bootstrap-root',
@@ -49,6 +49,8 @@ export class AppComponent implements OnInit {
         }
       });
   }
+
+  tooltipPosition = Position;
 
   items: any[] = [
     { id: 1, firstName: 'Michael', lastName: 'Jackson', text: 'Michael Jackson' },

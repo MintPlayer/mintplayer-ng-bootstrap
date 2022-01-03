@@ -16,10 +16,15 @@ export class BsAccordionTabHeaderComponent implements OnInit {
   }
 
   headerClicked(event: MouseEvent) {
+    event.preventDefault();
     if (this.accordion.activeTab === this.accordionTab) {
       this.accordion.activeTab = null;
     } else {
       this.accordion.activeTab = this.accordionTab;
     }
+  }
+
+  foo(event: MouseEvent) {
+    event.preventDefault();
   }
 }
