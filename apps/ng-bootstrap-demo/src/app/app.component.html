@@ -112,6 +112,16 @@
 
     </div>
 
+    <h2 bsScrollspy>Toggle button</h2>
+    <div class="container">
+      <div class="row">
+        <div class="col-sm-6">Use dark mode</div>
+        <div class="col-sm-6">
+          <bs-toggle-button [(isToggled)]="darkMode" [round]="false"></bs-toggle-button>
+        </div>
+      </div>
+    </div>
+
     <h2 bsScrollspy>Datatable</h2>
     <bs-datatable #tabel [settings]="settings" [data]="artists" (onReloadData)="loadArtists()">
       <div *bsDatatableColumn="{ sortable: true, name: 'Name' }">

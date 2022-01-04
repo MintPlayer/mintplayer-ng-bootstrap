@@ -15,6 +15,7 @@ export class AppComponent implements OnInit {
   colors = Color;
   mode: 'slide' | 'fade' = 'slide';
   multiselectItems = ['Blue', 'Red', 'Green', 'Yellow', 'Orange', 'Purple', 'Pink'];
+  darkMode: boolean | null = true;
 
   constructor(private artistService: ArtistService, private jsonPipe: JsonPipe) {
   }

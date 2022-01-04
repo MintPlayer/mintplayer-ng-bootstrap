@@ -1,21 +1,5 @@
-import {
-  ChangeDetectorRef,
-  Component,
-  EventEmitter,
-  Input,
-  OnDestroy,
-  OnInit,
-  Output,
-} from '@angular/core';
-import {
-  BehaviorSubject,
-  filter,
-  map,
-  Observable,
-  Subject,
-  take,
-  takeUntil,
-} from 'rxjs';
+import { ChangeDetectorRef, Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
+import { BehaviorSubject, filter, map, Observable, Subject, take, takeUntil } from 'rxjs';
 import { DateDayOfMonth } from '../../interfaces/date-day-of-month';
 import { Week } from '../../interfaces/week';
 import { BsCalendarMonthService } from '../../services/calendar-month/calendar-month.service';
