@@ -28,9 +28,10 @@ export class BsDropdownDirective {
   }
   @Output() public isOpenChange = new EventEmitter<boolean>();
   @Input() public set isOpen(value: boolean) {
-    console.log('set isOpen', value);
-    this.isOpen$.next(value);
-    this.isOpenChange.emit(value);
+    if (this.isOpen$.value !== value) {
+      this.isOpen$.next(value);
+      this.isOpenChange.emit(value);
+    }
   }
   //#endregion
 }

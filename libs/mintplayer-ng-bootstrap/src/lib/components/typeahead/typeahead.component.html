@@ -1,8 +1,7 @@
-<div class="dropdown">
-    <input type="text" class="form-control" #textbox [ngModel]="searchterm" (ngModelChange)="onProvideSuggestions($event)" (keyup.enter)="onSubmit()" />
-    <!-- must be replaced by overlay -->
-    <ng-template #dropdownTemplate>
-        <ul class="dropdown-menu d-block position-static" [style.width.px.important]="hostWidth$ | async" *ngIf="dropdownVisible$ | async" (clickOutside)="clickedOutside()">
+<div bsDropdown [(isOpen)]="isOpen" [hasBackdrop]="false" [closeOnClickOutside]="true">
+    <input type="text" class="form-control" #textbox [(ngModel)]="searchterm" (ngModelChange)="onProvideSuggestions($event)" (keyup.enter)="onSubmit()" />
+    <div *bsDropdownMenu>
+        <ul class="dropdown-menu d-block position-static" [style.width.px]="hostWidth$ | async">
             <bs-progress *ngIf="isLoading$ | async" [height]="2" [isIndeterminate]="true"></bs-progress>
             <li *ngIf="isLoading$ | async">
                 <a class="dropdown-item disabled">{{ isLoadingText }}</a>
@@ -16,5 +15,5 @@
                 </li>
             </ng-container>
         </ul>
-    </ng-template>
+    </div>
 </div>

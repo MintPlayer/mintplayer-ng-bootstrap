@@ -1,6 +1,6 @@
 import { ConnectedPosition, Overlay, OverlayRef } from '@angular/cdk/overlay';
-import { ComponentPortal, TemplatePortal } from '@angular/cdk/portal';
-import { AfterViewInit, ComponentFactoryResolver, ComponentRef, Directive, ElementRef, Host, Injector, Input, OnInit, Renderer2, SkipSelf, TemplateRef, ViewContainerRef } from '@angular/core';
+import { ComponentPortal } from '@angular/cdk/portal';
+import { ComponentFactoryResolver, Directive, ElementRef, Host, Injector, Input, SkipSelf, TemplateRef, ViewContainerRef } from '@angular/core';
 import { Position } from '../../../enums/position.enum';
 import { BsTooltipComponent } from '../component/tooltip.component';
 import { TOOLTIP_CONTENT } from '../providers/tooltip-content.provider';
@@ -13,7 +13,6 @@ export class BsTooltipDirective {
   constructor(
     private overlay: Overlay,
     private templateRef: TemplateRef<any>,
-    viewContainerRef: ViewContainerRef,
     componentFactoryResolver: ComponentFactoryResolver,
     private parentInjector: Injector,
     @Host() @SkipSelf() private parent: ElementRef
@@ -22,7 +21,7 @@ export class BsTooltipDirective {
       providers: [{ provide: TOOLTIP_CONTENT, useValue: this.templateRef }],
       parent: this.parentInjector
     });
-    this.portal = new ComponentPortal(BsTooltipComponent, viewContainerRef, this.injector, componentFactoryResolver);
+    this.portal = new ComponentPortal(BsTooltipComponent, null, this.injector, componentFactoryResolver);
 
     parent.nativeElement.onmouseenter = () => {
       this.showTooltip();
@@ -37,7 +36,6 @@ export class BsTooltipDirective {
   private injector: Injector;
   private portal: ComponentPortal<any>;
   private overlayRef: OverlayRef | null = null;
-  // private tooltip!: ComponentRef<BsTooltipComponent>;
 
   showTooltip() {
     const positions: ConnectedPosition[] = [];

@@ -1,7 +1,7 @@
 <div class="spy">
     <ul class="text-muted">
-        <li *ngFor="let dir of directives">
-            <span class="cursor-pointer" [ngClass]="'nav' + dir.element.nativeElement.tagName" [class.fw-bold]="activeDirective?.element === dir.element" (click)="scrollToHeader(dir)" [title]="dir.element.nativeElement.textContent">
+        <li *ngFor="let dir of directives; let i = index">
+            <span [attr.data-index]="i" class="cursor-pointer" [ngClass]="'nav' + dir.element.nativeElement.tagName" [class.fw-bold]="activeDirective?.element === dir.element" (click)="scrollToHeader(dir)" [title]="dir.element.nativeElement.textContent" #anchor>
                 {{ dir.element.nativeElement.textContent }}
             </span>
         </li>

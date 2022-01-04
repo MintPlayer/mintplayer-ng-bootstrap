@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { AfterViewInit, Component, ContentChildren, HostListener, Inject, QueryList } from '@angular/core';
+import { AfterViewInit, Component, ContentChildren, ElementRef, HostListener, Inject, QueryList, ViewChildren } from '@angular/core';
 import { BsScrollOffsetService } from '../../../services/scroll-offset/scroll-offset.service';
 import { BsScrollspyDirective } from '../directives/scrollspy.directive';
 
@@ -16,8 +16,8 @@ export class BsScrollspyComponent implements AfterViewInit {
     this.doc = <Document>document;
   }
 
-  @ContentChildren(BsScrollspyDirective, { descendants: true })
-  directives!: QueryList<BsScrollspyDirective>;
+  @ContentChildren(BsScrollspyDirective, { descendants: true }) directives!: QueryList<BsScrollspyDirective>;
+  @ViewChildren('anchor') anchors!: QueryList<ElementRef<HTMLSpanElement>>;
 
   doc: Document;
   activeDirective: BsScrollspyDirective | null = null;
@@ -36,6 +36,16 @@ export class BsScrollspyComponent implements AfterViewInit {
       this.activeDirective = this.directives.get(0) ?? null;
     } else {
       this.activeDirective = dirs[dirs.length - 1];
+    }
+
+    if (window && (window.innerWidth >= 768)) {
+      if (this.activeDirective) {
+        const index = this.directives.toArray().findIndex((v, i) => v === this.activeDirective);
+        const anchor = this.anchors.get(index);
+        if (anchor && anchor.nativeElement.parentElement) {
+          anchor.nativeElement.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        }
+      }
     }
   }
   

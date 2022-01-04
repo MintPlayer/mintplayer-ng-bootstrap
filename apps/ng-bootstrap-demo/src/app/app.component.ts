@@ -1,9 +1,10 @@
 import { JsonPipe } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
-import { Color, DatatableSettings, Position } from '@mintplayer/ng-bootstrap';
+import { Component, ElementRef, OnInit, QueryList, TemplateRef, ViewChildren, ViewContainerRef } from '@angular/core';
+import { BsSnackbarCloseDirective, BsSnackbarComponent, BsSnackbarService, Color, DatatableSettings, Position } from '@mintplayer/ng-bootstrap';
 import { PaginationResponse } from '@mintplayer/ng-pagination';
-import { Artist, ArtistService } from '@mintplayer/ng-client';
+import { Artist, ArtistService, SubjectService, SubjectType, Tag, TagService } from '@mintplayer/ng-client';
 import { BehaviorSubject } from 'rxjs';
+import { SnackbarAnimationMeta } from '@mintplayer/ng-bootstrap';
 
 @Component({
   selector: 'mintplayer-ng-bootstrap-root',
@@ -17,15 +18,46 @@ export class AppComponent implements OnInit {
   multiselectItems = ['Blue', 'Red', 'Green', 'Yellow', 'Orange', 'Purple', 'Pink'];
   darkMode: boolean | null = true;
 
-  constructor(private artistService: ArtistService, private jsonPipe: JsonPipe) {
-  }
-
+  constructor(
+    private artistService: ArtistService,
+    private subjectService: SubjectService,
+    private tagService: TagService,
+    private jsonPipe: JsonPipe,
+    private snackbarService: BsSnackbarService,
+  ) { }
+  
   ngOnInit() {
     this.loadArtists();
   }
 
   onModeChange(value: any) {
     this.mode = value;
+  }
+
+
+  artistSuggestions: Artist[] = [];
+  onProvideArtistSuggestions(search: string) {
+    this.subjectService.suggest(search, [SubjectType.artist]).then((artists) => {
+      this.artistSuggestions = <Artist[]>artists;
+    })
+  }
+  tagSuggestions: Tag[] = [];
+  onProvideTagSuggestions(search: string) {
+    this.tagService.suggestTags(search, true).then((tags) => {
+      if (tags) {
+        this.tagSuggestions = tags;
+      }
+    })
+  }
+
+  snackbar: BsSnackbarComponent | null = null;
+  showSnackbar(template: TemplateRef<any>) {
+     this.snackbar = this.snackbarService.show(template);
+  }
+  hideSnackbar() {
+    if (this.snackbar) {
+      this.snackbarService.hide(this.snackbar);
+    }
   }
 
   artists?: PaginationResponse<Artist>;

@@ -1,9 +1,9 @@
 import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { ClickOutsideModule } from '@mintplayer/ng-click-outside';
 import { BsTypeaheadComponent } from './typeahead.component';
 import { BsProgressBarModule } from '../progress-bar/progress-bar.module';
+import { BsDropdownModule } from '../dropdown/dropdown.module';
 
 
 
@@ -14,7 +14,7 @@ import { BsProgressBarModule } from '../progress-bar/progress-bar.module';
   imports: [
     CommonModule,
     FormsModule,
-    ClickOutsideModule,
+    BsDropdownModule,
     BsProgressBarModule
   ],
   exports: [

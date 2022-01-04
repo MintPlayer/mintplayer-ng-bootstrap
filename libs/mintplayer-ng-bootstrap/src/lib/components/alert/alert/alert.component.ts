@@ -1,12 +1,12 @@
-import { Component, HostBinding, Input, OnInit } from '@angular/core';
-import { SlideUpDownAnimation, FadeInOutAnimation } from '@mintplayer/ng-animations';
+import { Component, Input, OnInit } from '@angular/core';
+import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Color } from '../../../enums';
 
 @Component({
   selector: 'bs-alert',
   templateUrl: './alert.component.html',
   styleUrls: ['./alert.component.scss'],
-  animations: [ SlideUpDownAnimation, FadeInOutAnimation ]
+  animations: [ FadeInOutAnimation ]
 })
 export class BsAlertComponent implements OnInit {
 

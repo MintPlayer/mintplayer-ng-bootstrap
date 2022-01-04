@@ -1,4 +1,4 @@
-import { Component, ContentChild, Directive, ElementRef, forwardRef, Inject, Input } from '@angular/core';
+import { Component, ContentChild, Directive, ElementRef, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsDropdownDirective } from '../dropdown/dropdown.directive';
 import { BehaviorSubject } from 'rxjs';

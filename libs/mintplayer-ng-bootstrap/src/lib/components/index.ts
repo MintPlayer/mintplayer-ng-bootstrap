@@ -14,6 +14,7 @@ export * from './pagination';
 export * from './progress-bar';
 export * from './scrollspy';
 export * from './select2';
+export * from './snackbar';
 export * from './tab-control';
 export * from './toggle-button';
 export * from './tooltip';

@@ -12,11 +12,7 @@ import { BsTooltipComponent } from './component/tooltip.component';
     CommonModule
   ],
   exports: [
-    BsTooltipDirective,
-    BsTooltipComponent
-  ],
-  entryComponents: [
-    BsTooltipComponent
+    BsTooltipDirective
   ]
 })
 export class BsTooltipModule { }

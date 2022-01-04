@@ -47,7 +47,7 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
 
           if (this.dropdown.hasBackdrop && this.dropdown.closeOnClickOutside) {
             this.overlayRef.backdropClick().subscribe(() => {
-              this.dropdown.isOpen$.next(false);
+              this.dropdown.isOpen = false;
             });
           }
       
@@ -68,7 +68,7 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
       if (!this.overlayRef?.overlayElement.contains(<any>ev.target)) {
         this.dropdown.isOpen$.pipe(take(1)).subscribe((isOpen) => {
           if (isOpen && !this.dropdown.hasBackdrop && this.dropdown.closeOnClickOutside) {
-            this.dropdown.isOpen$.next(false);
+            this.dropdown.isOpen = false;
           }
         });
       }
