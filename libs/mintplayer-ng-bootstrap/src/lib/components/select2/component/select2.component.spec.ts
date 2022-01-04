@@ -1,5 +1,6 @@
 import { Directive, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { FormsModule } from '@angular/forms';
 
 import { BsSelect2Component } from './select2.component';
 
@@ -15,7 +16,7 @@ class BsDropdownMenuMockDirective extends ClickOutsideMockDirective {
 class BsDropdownMockDirective {
   
   //#region IsOpen
-  public isOpen = false;
+  @Input() public isOpen = false;
   @Output() public isOpenChange = new EventEmitter<boolean>();
   //#endregion
 
@@ -37,6 +38,9 @@ describe('BsSelect2Component', () => {
         ClickOutsideMockDirective,
         BsDropdownMenuMockDirective,
         BsDropdownMockDirective,
+      ],
+      imports: [
+        FormsModule
       ]
     })
     .compileComponents();

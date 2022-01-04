@@ -17,7 +17,7 @@ class BsDropdownMenuMockDirective extends ClickOutsideMockDirective {
 class BsDropdownMockDirective {
   
   //#region IsOpen
-  public isOpen = false;
+  @Input() public isOpen = false;
   @Output() public isOpenChange = new EventEmitter<boolean>();
   //#endregion
 

@@ -1,5 +1,7 @@
+import { Overlay, OverlayModule } from '@angular/cdk/overlay';
+import { JsonPipe } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
-import { Component, ContentChildren, Directive, ElementRef, EventEmitter, Input, Output, QueryList } from '@angular/core';
+import { Component, ContentChildren, Directive, ElementRef, EventEmitter, Input, Output, Pipe, PipeTransform, QueryList } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -14,6 +16,7 @@ describe('AppComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         FormsModule,
+        OverlayModule,
         HttpClientModule,
         RouterTestingModule.withRoutes([
           { path: 'a/b/c', component: PageAbcComponent }
@@ -47,15 +50,22 @@ describe('AppComponent', () => {
         BsDatatableMockComponent,
         BsDatatableColumnDirective,
         BsDatepickerMockComponent,
-        BsMultiselectComponent,
+        BsSelect2MockComponent,
+        BsMultiselectMockComponent,
+        BsTypeaheadMockComponent,
+        BsProgressMockComponent,
+        BsToggleButtonMockComponent,
+        BsProgressbarMockComponent,
         BsDropdownMockDirective,
+        BsTooltipMockDirective,
 
         // Mock pages
         PageAbcComponent
       ],
       providers: [
         { provide: BASE_URL, useValue: 'https://mintplayer.com' },
-        { provide: API_VERSION, useValue: 'v3' }
+        { provide: API_VERSION, useValue: 'v3' },
+        { provide: JsonPipe, useClass: JsonPipe },
       ],
     }).compileComponents();
   });
@@ -95,6 +105,13 @@ enum Color {
   white,
   transparent
 }
+
+// @Pipe({
+//   name: 'json'
+// })
+// class JsonMockPipe implements PipeTransform {
+
+// }
 
 @Component({
   selector: 'a-b-c',
@@ -341,14 +358,66 @@ class BsDatepickerMockComponent {
 }
 
 @Component({
+  selector: 'bs-typeahead',
+  template: 'typeahead'
+})
+class BsTypeaheadMockComponent {
+  @Input() searchterm = '';
+  @Output() searchtermChange = new EventEmitter<string>();
+  @Output() public provideSuggestions = new EventEmitter<string>();
+  @Input() suggestions: any[] = [];
+  @Output() submitted = new EventEmitter<string>();
+  @Output() suggestionSelected = new EventEmitter<any>();
+}
+
+@Component({
+  selector: 'bs-toggle-button',
+  template: 'toggle-button'
+})
+class BsToggleButtonMockComponent {
+  @Output() public isToggledChange = new EventEmitter<boolean | null>();
+  @Input() public isToggled: boolean | null = false;
+  @Input() public round = true;
+}
+
+@Component({
+  selector: 'bs-progress',
+  template: 'progress'
+})
+class BsProgressMockComponent {
+  @Input() public height = 30;
+  @Input() public isIndeterminate = false;
+}
+
+@Component({
+  selector: 'bs-progress-bar',
+  template: 'progressbar'
+})
+class BsProgressbarMockComponent {
+  @Input() public minimum = 0;
+  @Input() public maximum = 100;
+  @Input() public value = 50;
+  @Input() public color = Color;
+  @Input() public striped = false;
+  @Input() public animated = false;
+}
+
+@Component({
   selector: 'bs-multiselect',
   template: 'multiselect'
 })
-class BsMultiselectComponent {
-
+class BsMultiselectMockComponent {
   @Input() public items: any[] = [];
   @Input() public selectedItems: any[] = [];
+}
 
+@Component({
+  selector: 'bs-select2',
+  template: 'select2'
+})
+class BsSelect2MockComponent {
+  @Input() public selectedItems: any[] = [];
+  @Input() public suggestions: any[] = [];
 }
 
 @Directive({
@@ -358,3 +427,12 @@ class BsDropdownMockDirective {
   @Input() public hasBackdrop = false;
   @Input() public closeOnClickOutside = false;
 }
+
+@Directive({
+  selector: '*[bsTooltip]'
+})
+class BsTooltipMockDirective {
+  @Input() bsTooltip: Position = Position.bottom;
+}
+
+enum Position { top, left, bottom, right }

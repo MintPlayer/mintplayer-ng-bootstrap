@@ -6,11 +6,8 @@ import { BsSnackbarCloseDirective } from './snackbar-close.directive';
 @Component({
   selector: 'snackbar-close-test-component',
   template: `
-    <select2>
-      <ng-template itemTemplate>
-        <span>item template</span>
-      </ng-template>
-    </select2>`
+    <div>
+    </div>`
 })
 class BsSnackbarCloseTestComponent { }
 
