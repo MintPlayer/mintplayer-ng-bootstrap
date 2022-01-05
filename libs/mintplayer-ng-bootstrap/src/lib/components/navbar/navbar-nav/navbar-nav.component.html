@@ -1,4 +1,4 @@
-<div class="navbar-collapse collapse w-100 show" *ngIf="bsNavbar.isExpanded" [@slideUpDown]>
+<div class="navbar-collapse w-100 show" [class.collapse]="collapse$ | async" *ngIf="showNavs$ | async" [@slideUpDown] [@.disabled]="isResizing$ | async">
     <ul class="navbar-nav mr-auto">
         <ng-content></ng-content>
     </ul>

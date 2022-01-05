@@ -1,4 +1,5 @@
 import { Component, ElementRef, ViewChild } from '@angular/core';
+import { BehaviorSubject, take } from 'rxjs';
 
 @Component({
   selector: 'bs-navbar',
@@ -7,13 +8,13 @@ import { Component, ElementRef, ViewChild } from '@angular/core';
 })
 export class BsNavbarComponent {
 
-  constructor() {
-  }
-
-  isExpanded = false;
-  toggleExpanded() {
-    this.isExpanded = !this.isExpanded;
-  }
-
   @ViewChild('nav') nav!: ElementRef;
+
+  isExpanded$ = new BehaviorSubject<boolean>(false);
+  toggleExpanded() {
+    this.isExpanded$.pipe(take(1)).subscribe((isExpanded) => {
+      this.isExpanded$.next(!isExpanded);
+    });
+  }
+
 }
