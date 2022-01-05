@@ -7,6 +7,8 @@ export * from './context-menu';
 export * from './datatable';
 export * from './datepicker';
 export * from './dropdown';
+export * from './file-upload';
+export * from './for';
 export * from './list-group';
 export * from './multiselect';
 export * from './navbar';

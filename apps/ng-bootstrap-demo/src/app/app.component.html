@@ -147,6 +147,15 @@
       </div>
     </div>
 
+    <h2 bsScrollspy>File upload</h2>
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12 text-center">
+          <bs-file-upload></bs-file-upload>
+        </div>
+      </div>
+    </div>
+
     <h2 bsScrollspy>Datatable</h2>
     <bs-datatable #tabel [settings]="settings" [data]="artists" (onReloadData)="loadArtists()">
       <div *bsDatatableColumn="{ sortable: true, name: 'Name' }">
