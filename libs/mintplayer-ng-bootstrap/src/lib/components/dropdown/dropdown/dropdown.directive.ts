@@ -1,4 +1,4 @@
-import { ContentChild, Directive, ElementRef, EventEmitter, Input, Output } from '@angular/core';
+import { ContentChild, Directive, ElementRef, EventEmitter, HostListener, Input, Output } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { BsDropdownMenuDirective } from '../dropdown-menu/dropdown-menu.directive';
 import { BsDropdownToggleDirective } from '../dropdown-toggle/dropdown-toggle.directive';
@@ -34,4 +34,9 @@ export class BsDropdownDirective {
     }
   }
   //#endregion
+
+  @HostListener('window:blur') private onBlur() {
+    this.isOpen = false;
+  }
+
 }

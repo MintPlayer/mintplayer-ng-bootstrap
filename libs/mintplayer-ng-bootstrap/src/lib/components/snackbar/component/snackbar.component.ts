@@ -1,8 +1,7 @@
 import { AnimationEvent } from '@angular/animations';
-import { Component, ContentChildren, ElementRef, EventEmitter, HostBinding, Inject, OnInit, QueryList, TemplateRef } from '@angular/core';
+import { Component, EventEmitter, HostBinding, Inject, TemplateRef } from '@angular/core';
 import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
 import { SnackbarAnimationMeta } from '../interfaces/snackbar-animation-meta';
-import { BsSnackbarCloseDirective } from '../directives/snackbar-close/snackbar-close.directive';
 import { SNACKBAR_CONTENT } from '../providers/snackbar-content.provider';
 
 @Component({
@@ -21,7 +20,7 @@ export class BsSnackbarComponent {
   @HostBinding('class.w-100') width100 = true;
   content: TemplateRef<any>;
 
-  protected instance: SnackbarAnimationMeta | null = null;
+  private instance: SnackbarAnimationMeta | null = null;
 
   //#region Monitor @slideUpDown hooks
   animationState = '';

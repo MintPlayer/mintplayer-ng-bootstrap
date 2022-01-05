@@ -7,7 +7,6 @@ import { BsSelect2Component } from '../component/select2.component';
 export class BsItemTemplateDirective {
 
   constructor(private select2component: BsSelect2Component, templateRef: TemplateRef<any>) {
-    console.log('template', templateRef);
     this.select2component.itemTemplate = templateRef;
   }
 

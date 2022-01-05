@@ -33,13 +33,17 @@ export class BsContextMenuDirective {
     this.checkAndCloseExisting(ev);
   }
 
-  private checkAndCloseExisting(ev: MouseEvent) {
+  @HostListener('window:blur') private close() {
     if (this.overlayRef) {
-      if (!this.overlayRef.overlayElement.contains(<any>ev.target)) {
-        this.overlayRef.detach();
-        this.overlayRef.dispose();
-        this.overlayRef = null;
-      }
+      this.overlayRef.detach();
+      this.overlayRef.dispose();
+      this.overlayRef = null;
+    }
+  }
+
+  private checkAndCloseExisting(ev: MouseEvent) {
+    if (this.overlayRef && !this.overlayRef.overlayElement.contains(<any>ev.target)) {
+      this.close();
     }
   }
 

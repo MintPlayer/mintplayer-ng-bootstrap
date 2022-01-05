@@ -1,10 +1,9 @@
 import { JsonPipe } from '@angular/common';
-import { Component, ElementRef, OnInit, QueryList, TemplateRef, ViewChildren, ViewContainerRef } from '@angular/core';
-import { BsSnackbarCloseDirective, BsSnackbarComponent, BsSnackbarService, Color, DatatableSettings, Position } from '@mintplayer/ng-bootstrap';
+import { Component, OnInit, TemplateRef } from '@angular/core';
+import { BsSnackbarComponent, BsSnackbarService, Color, DatatableSettings, Position } from '@mintplayer/ng-bootstrap';
 import { PaginationResponse } from '@mintplayer/ng-pagination';
 import { Artist, ArtistService, SubjectService, SubjectType, Tag, TagService } from '@mintplayer/ng-client';
 import { BehaviorSubject } from 'rxjs';
-import { SnackbarAnimationMeta } from '@mintplayer/ng-bootstrap';
 
 @Component({
   selector: 'mintplayer-ng-bootstrap-root',

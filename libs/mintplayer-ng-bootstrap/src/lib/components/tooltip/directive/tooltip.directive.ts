@@ -1,6 +1,6 @@
 import { ConnectedPosition, Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { ComponentFactoryResolver, Directive, ElementRef, Host, Injector, Input, SkipSelf, TemplateRef, ViewContainerRef } from '@angular/core';
+import { ComponentFactoryResolver, Directive, ElementRef, Host, HostListener, Injector, Input, SkipSelf, TemplateRef, ViewContainerRef } from '@angular/core';
 import { Position } from '../../../enums/position.enum';
 import { BsTooltipComponent } from '../component/tooltip.component';
 import { TOOLTIP_CONTENT } from '../providers/tooltip-content.provider';
@@ -29,6 +29,10 @@ export class BsTooltipDirective {
     parent.nativeElement.onmouseleave = () => {
       this.hideTooltip();
     }
+  }
+
+  @HostListener('window:blur') private onBlur() {
+    this.hideTooltip();
   }
 
   @Input() public bsTooltip: Position = Position.bottom;

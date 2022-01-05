@@ -1,4 +1,4 @@
-import { Overlay, OverlayRef } from '@angular/cdk/overlay';
+import { Overlay } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { ComponentFactoryResolver, Injectable, Injector, TemplateRef } from '@angular/core';
 import { filter, take } from 'rxjs';
@@ -32,8 +32,6 @@ export class BsSnackbarService {
     });
 
     const componentInstance = overlayRef.attach<BsSnackbarComponent>(portal);
-    
-    // componentInstance.
     
     componentInstance.instance['instance'] = <SnackbarAnimationMeta>{
       component: componentInstance,
