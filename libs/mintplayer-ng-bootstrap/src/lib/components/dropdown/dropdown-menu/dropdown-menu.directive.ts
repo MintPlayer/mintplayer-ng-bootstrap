@@ -40,7 +40,9 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
             positionStrategy: this.overlay.position()
               .flexibleConnectedTo(!this.dropdown.toggle ? dropdown.elementRef : this.dropdown.toggle.toggleButton)
               .withPositions([
+                // element: BottomLeft - dropdown: TopLeft
                 { originX: "start", originY: "bottom", overlayX: "start", overlayY: "top", offsetY: 0 },
+                // element: TopLeft - dropdown: BottomLeft
                 { originX: "start", originY: "top", overlayX: "start", overlayY: "bottom", offsetY: 0 },
               ]),
           });

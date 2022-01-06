@@ -151,7 +151,23 @@
     <div class="container">
       <div class="row">
         <div class="col-md-12 text-center">
-          <bs-file-upload></bs-file-upload>
+          <!-- If you wish to manipulate the files list from outside the component, add this: -->
+          <!-- files: FileUpload[] = []; --><!-- [files]="files" -->
+          <bs-file-upload (filesDropped)="logFilesForUpload($event)">
+            <!-- <ng-template bsFileUploadTemplate let-upload>
+              <div class="d-flex flex-row mx-auto">
+                  <div class="file-img"></div>
+                  <div class="flex-grow-1 text-start px-2">
+                      <span class="d-block text-truncate text-secondary">{{ upload.file.name }}</span>
+                      <span class="d-block text-grey mb-0">{{ upload.file.size | bsFormatBytes }}</span>
+                      <bs-progress [height]="4">
+                          <bs-progress-bar [minimum]="0" [maximum]="upload.file.size" [value]="upload.progress" [color]="colors.danger"></bs-progress-bar>
+                      </bs-progress>
+                  </div>
+                  <button class="btn file-remove">Remove</button>
+              </div>
+            </ng-template> -->
+          </bs-file-upload>
         </div>
       </div>
     </div>
@@ -176,17 +192,6 @@
         </tr>
       </ng-template>
     </bs-datatable>
-
-    <h2 bsScrollspy>Dropdown</h2>
-    <div bsDropdown [closeOnClickOutside]="true">
-      <button bsDropdownToggle class="btn btn-primary">Dropdown</button>
-      <div *bsDropdownMenu>
-        <bs-calendar></bs-calendar>
-      </div>
-    </div>
-
-    <h2 bsScrollspy>Datepicker</h2>
-    <bs-datepicker></bs-datepicker>
 
     <h2 bsScrollspy>Alert</h2>
     <bs-alert [type]="colors.warning">
@@ -230,6 +235,28 @@
       <option value="slide">Slide</option>
       <option value="fade">Fade</option>
     </select>
+
+    <h2 bsScrollspy>Dropdown</h2>
+    <div bsDropdown [closeOnClickOutside]="true">
+      <button bsDropdownToggle class="btn btn-primary">Dropdown</button>
+      <div *bsDropdownMenu>
+        <bs-calendar></bs-calendar>
+      </div>
+    </div>
+
+    <h2 bsScrollspy>Datepicker</h2>
+    <bs-datepicker></bs-datepicker>
+
+    <h2 bsScrollspy>Context menu</h2>
+    <div class="has-custom-context-menu w-100">
+      <ul class="dropdown-menu show" *bsContextMenu>
+        <li class="dropdown-item cursor-pointer py-1">Item 1</li>
+        <li class="dropdown-item cursor-pointer py-1">Item 2</li>
+        <li class="dropdown-item cursor-pointer py-1">Item 3</li>
+        <li class="dropdown-item cursor-pointer py-1">Item 4</li>
+        <li class="dropdown-item cursor-pointer py-1">Item 5</li>
+      </ul>
+    </div>
 
     <h2 bsScrollspy>Accordion</h2>
     <bs-accordion class="d-block mb-3">
@@ -302,17 +329,6 @@
         </span>
       </ng-template>
     </bs-select2>
-
-    <h2 bsScrollspy>Context menu</h2>
-    <div class="has-custom-context-menu">
-      <ul class="dropdown-menu show" *bsContextMenu>
-        <li class="dropdown-item cursor-pointer py-1">Item 1</li>
-        <li class="dropdown-item cursor-pointer py-1">Item 2</li>
-        <li class="dropdown-item cursor-pointer py-1">Item 3</li>
-        <li class="dropdown-item cursor-pointer py-1">Item 4</li>
-        <li class="dropdown-item cursor-pointer py-1">Item 5</li>
-      </ul>
-    </div>
 
     <h2 bsScrollspy>Tab control</h2>
     <bs-tab-control>

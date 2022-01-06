@@ -10,6 +10,7 @@ import { API_VERSION } from '@mintplayer/ng-client';
 import { FocusOnLoadModule } from '@mintplayer/ng-focus-on-load';
 
 import { AppComponent } from './app.component';
+import { BsFormatBytesModule } from 'libs/mintplayer-ng-bootstrap/src/lib/pipes/format-bytes/format-bytes.module';
 
 @NgModule({
   declarations: [AppComponent],
@@ -41,6 +42,7 @@ import { AppComponent } from './app.component';
     BsFileUploadModule,
     HttpClientModule,
     FocusOnLoadModule,
+    BsFormatBytesModule,
     RouterModule.forRoot([], { initialNavigation: 'enabledBlocking', scrollOffset: [0, 56] })
   ],
   providers: [

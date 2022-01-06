@@ -1,6 +1,6 @@
 import { JsonPipe } from '@angular/common';
 import { Component, OnInit, TemplateRef } from '@angular/core';
-import { BsSnackbarComponent, BsSnackbarService, Color, DatatableSettings, Position } from '@mintplayer/ng-bootstrap';
+import { BsSnackbarComponent, BsSnackbarService, Color, DatatableSettings, FileUpload, Position } from '@mintplayer/ng-bootstrap';
 import { PaginationResponse } from '@mintplayer/ng-pagination';
 import { Artist, ArtistService, SubjectService, SubjectType, Tag, TagService } from '@mintplayer/ng-client';
 import { BehaviorSubject } from 'rxjs';
@@ -100,6 +100,10 @@ export class AppComponent implements OnInit {
   }
   doSearch(searchTerm: string) {
     alert(`Search for ${searchTerm} now`);
+  }
+
+  logFilesForUpload(files: FileUpload[]) {
+    console.log('Now we must upload following files to the server', files);
   }
 
 }

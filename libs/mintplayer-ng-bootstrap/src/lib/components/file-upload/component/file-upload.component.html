@@ -1,0 +1,24 @@
+<div class="dropzone border position-relative p-5" [class.dragging]="isDraggingFile">
+    <input type="file" multiple #fileUpload (change)="onChange($event)" [title]="placeholder" [placeholder]="placeholder" class="position-absolute w-100 h-100">
+    <!-- <img src="/assets/ic-file-upload.svg" [alt]="placeholder"> -->
+    <span class="h3 d-block">{{ dropFilesCaption }}</span>
+    <label class="btn btn-primary position-relative" [bsFor]="fileUpload">{{ browseFilesCaption }}</label>
+</div>
+<ul class="list-group files-list">
+    <li class="list-group-item" *ngFor="let upload of files">
+        <ng-container *ngTemplateOutlet="fileTemplate ?? defaultFileTemplate; context: { $implicit: upload }"></ng-container>
+    </li>
+</ul>
+
+<ng-template #defaultFileTemplate let-upload>
+    <div class="d-flex flex-row mx-auto">
+        <div class="file-img"></div>
+        <div class="flex-grow-1 text-start px-2">
+            <span class="d-block text-truncate text-secondary">{{ upload.file.name }}</span>
+            <span class="d-block text-grey mb-0">{{ upload.file.size | bsFormatBytes }}</span>
+            <bs-progress [height]="4">
+                <bs-progress-bar [minimum]="0" [maximum]="upload.file.size" [value]="upload.progress"></bs-progress-bar>
+            </bs-progress>
+        </div>
+    </div>
+</ng-template>

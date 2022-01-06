@@ -1,6 +1,0 @@
-<div class="dropzone border position-relative">
-    <input type="file" multiple #fileUpload (change)="fileAddedRemoved($event)" [title]="placeholder" [placeholder]="placeholder" class="position-absolute w-100 h-100">
-    <img src="/assets/ic-file-upload.svg" [alt]="placeholder">
-    <span class="h3">{{ dropFilesCaption }}</span>
-    <label class="btn btn-primary position-relative" [bsFor]="fileUpload">{{ browseFilesCaption }}</label>
-</div>
