@@ -1,4 +1,4 @@
-import { Overlay, OverlayModule } from '@angular/cdk/overlay';
+import { OverlayModule } from '@angular/cdk/overlay';
 import { JsonPipe } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 import { Component, ContentChildren, Directive, ElementRef, EventEmitter, Input, Output, Pipe, PipeTransform, QueryList } from '@angular/core';
@@ -58,6 +58,7 @@ describe('AppComponent', () => {
         BsProgressbarMockComponent,
         BsDropdownMockDirective,
         BsTooltipMockDirective,
+        BsFileUploadMockComponent,
 
         // Mock pages
         PageAbcComponent
@@ -216,6 +217,14 @@ class BsCardMockComponent {
 class BsCardHeaderMockComponent {
   constructor() {
   }
+}
+
+@Component({
+  selector: 'bs-file-upload',
+  template: `file-upload works`
+})
+class BsFileUploadMockComponent {
+  @Input() files!: any[];
 }
 
 @Component({
