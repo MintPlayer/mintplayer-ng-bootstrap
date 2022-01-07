@@ -153,8 +153,8 @@
         <div class="col-md-12 text-center">
           <!-- If you wish to manipulate the files list from outside the component, add this: -->
           <!-- files: FileUpload[] = []; --><!-- [files]="files" -->
-          <bs-file-upload (filesDropped)="logFilesForUpload($event)">
-            <!-- <ng-template bsFileUploadTemplate let-upload>
+          <bs-file-upload [files]="files" (filesDropped)="logFilesForUpload($event)">
+            <ng-template bsFileUploadTemplate let-upload>
               <div class="d-flex flex-row mx-auto">
                   <div class="file-img"></div>
                   <div class="flex-grow-1 text-start px-2">
@@ -164,9 +164,9 @@
                           <bs-progress-bar [minimum]="0" [maximum]="upload.file.size" [value]="upload.progress" [color]="colors.danger"></bs-progress-bar>
                       </bs-progress>
                   </div>
-                  <button class="btn file-remove">Remove</button>
+                  <button class="btn file-remove" (click)="removeFile(upload)">Remove</button>
               </div>
-            </ng-template> -->
+            </ng-template>
           </bs-file-upload>
         </div>
       </div>

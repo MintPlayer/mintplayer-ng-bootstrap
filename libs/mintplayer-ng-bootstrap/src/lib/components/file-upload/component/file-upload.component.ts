@@ -1,5 +1,5 @@
 import { Component, EventEmitter, HostListener, Input, Output, TemplateRef } from '@angular/core';
-import { FileUpload } from '@mintplayer/ng-bootstrap';
+import { FileUpload } from '../file-upload';
 
 @Component({
   selector: 'bs-file-upload',
@@ -62,7 +62,7 @@ export class BsFileUploadComponent {
     const newFiles = [...Array(fileList.length).keys()]
       .map(i => fileList.item(i))
       .filter(f => !!f)
-      .map(f => <FileUpload>{ file: f, progress: 400 });
+      .map(f => <FileUpload>{ file: f, progress: 0 });
     
     this.files.push(...newFiles);
     this.filesDropped.emit(newFiles);

@@ -104,6 +104,21 @@ export class AppComponent implements OnInit {
 
   logFilesForUpload(files: FileUpload[]) {
     console.log('Now we must upload following files to the server', files);
+    files.forEach((upload) => {
+      this.incrementProgress(upload);
+    });
+  }
+  incrementProgress(file: FileUpload) {
+    if (file.progress < file.file.size) {
+      file.progress += 10;
+      setTimeout(() => {
+        this.incrementProgress(file);
+      }, 1000);
+    }
   }
 
+  files: FileUpload[] = [];
+  removeFile(file: FileUpload) {
+    this.files.splice(this.files.indexOf(file), 1);
+  }
 }

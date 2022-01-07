@@ -3,5 +3,9 @@
   "dest": "../../dist/libs/mintplayer-ng-bootstrap",
   "lib": {
     "entryFile": "src/index.ts"
-  }
+  },
+  "assets": [
+    "./src/assets/**",
+    "./src/styles/**"
+  ]
 }
