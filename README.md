@@ -16,7 +16,7 @@ Update your `angular.json`:
 
 Or add the stylesheet in your `styles.scss`
 
-    @import 'node_modules/@mintplayer/ng-bootstrap/_bootstrap.scss';
+    @import 'node_modules/@mintplayer/ng-bootstrap/bootstrap';
 
 ## Components
 All components are showcased in the angular app included in the project. You can simply run
