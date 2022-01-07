@@ -18,10 +18,5 @@
   },
   "dependencies": {
     "tslib": "^2.3.0"
-  },
-  "exports": {
-    ".": {
-      "import": "./src/styles/bootstrap.scss"
-    }
   }
 }
