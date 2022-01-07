@@ -6,6 +6,7 @@
   },
   "assets": [
     "./src/assets/**",
-    "./src/styles/**"
+    "./src/styles/**",
+    "./_bootstrap.scss"
   ]
 }
