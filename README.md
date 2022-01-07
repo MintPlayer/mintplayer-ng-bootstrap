@@ -14,7 +14,7 @@ Update your `angular.json`:
       "src/styles.scss"
     ],
 
-Add the stylesheet in your `styles.scss`
+Or add the stylesheet in your `styles.scss`
 
     @import 'node_modules/@mintplayer/ng-bootstrap/_bootstrap.scss';
 
