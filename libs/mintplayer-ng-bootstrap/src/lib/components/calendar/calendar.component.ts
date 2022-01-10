@@ -19,12 +19,12 @@ export class BsCalendarComponent implements OnDestroy {
       .pipe(takeUntil(this.destroyed$));
     this.daysOfWeek$ = this.weeks$
       .pipe(filter((weeks) => weeks.length > 1))
-      .pipe(map((weeks) => weeks[1].week))
+      .pipe(map((weeks) => weeks[1].days))
       .pipe(
-        map((week) => {
-          const firstDay = week[0];
+        map((days) => {
+          const firstDay = days[0];
           if (firstDay) {
-            return week.map((d) => {
+            return days.map((d) => {
               const date = new Date(
                 firstDay.date.getFullYear(),
                 firstDay.date.getMonth(),

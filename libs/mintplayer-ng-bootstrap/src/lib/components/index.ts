@@ -10,6 +10,7 @@ export * from './dropdown';
 export * from './file-upload';
 export * from './for';
 export * from './list-group';
+export * from './modal';
 export * from './multiselect';
 export * from './navbar';
 export * from './pagination';

@@ -1,6 +1,10 @@
 @import "~bootstrap/scss/_functions.scss";
 @import "~bootstrap/scss/_variables.scss";
 
+.text-muted {
+    color: #9ea7af !important;
+}
+
 $cell-size: 40px;
 
 table {

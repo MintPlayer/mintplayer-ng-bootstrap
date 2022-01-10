@@ -10,22 +10,24 @@ export class BsCalendarMonthService {
 
   public getWeeks(month: Date) {
     const firstAndLast = this.getFirstAndLastDayOfMonth(month);
-    const days = this.dateDiff(firstAndLast.first, firstAndLast.last) + 1;
-    const allDays: (DateDayOfMonth | null)[] = [
-      ...this.generateList(this.dayOfWeekMondayBased(firstAndLast.first)).map(d => null),
-      ...this.generateList(days).map(d => {
-        return {
-          date: new Date(firstAndLast.first.getFullYear(), firstAndLast.first.getMonth(), firstAndLast.first.getDate() + d),
-          dayOfMonth: d + 1,
-        };
-      }),
-      ...this.generateList(6 - this.dayOfWeekMondayBased(firstAndLast.last)).map(d => null),
-    ];
+    const firstOfMonth = this.getMondayBefore(firstAndLast.first);
+    const lastOfMonth = this.getSundayAfter(firstAndLast.last);
+    const days = this.dateDiff(firstOfMonth, lastOfMonth) + 1;
+    const firstDayOffset = (firstAndLast.first.getDay() + 7 - 1) % 7;
+    const allDays = this.generateList(days).map(d => d - firstDayOffset).map(d => {
+      const wrongDate = new Date(firstAndLast.first.getFullYear(), firstAndLast.first.getMonth(), firstAndLast.first.getDate() + d);
+      const correctDate = new Date(wrongDate.getFullYear(), wrongDate.getMonth(), wrongDate.getDate());
+      return {
+        date: correctDate,
+        dayOfMonth: correctDate.getDate(),
+        isInMonth: (correctDate.getFullYear() === month.getFullYear()) && (correctDate.getMonth() === month.getMonth())
+      };
+    });
     const weeks = this.chunk(allDays, 7);
     const weeksMapped = weeks.map<Week>((w, i) => {
       return {
-        number: this.weekOfYear(new Date(month.getFullYear(), month.getMonth(), w.find(d => d !== null)?.dayOfMonth)),
-        week: w
+        number: this.weekOfYear(new Date(month.getFullYear(), month.getMonth(), w.find(d => d.isInMonth)?.dayOfMonth)),
+        days: w
       }
     });
     return weeksMapped;
@@ -53,10 +55,9 @@ export class BsCalendarMonthService {
   }
 
   getFirstAndLastDayOfMonth(date: Date) {
-    return <FirstAndLastDate>{
-      first: new Date(date.getFullYear(), date.getMonth(), 1),
-      last: new Date(date.getFullYear(), date.getMonth() + 1, 0)
-    };
+    const first = new Date(date.getFullYear(), date.getMonth(), 1);
+    const last = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+    return <FirstAndLastDate>{ first, last };
   }
 
   dateDiff(date1: Date, date2: Date) {
@@ -81,5 +82,22 @@ export class BsCalendarMonthService {
       result.push(items.slice(i, i + size));
     }
     return result;
+  }
+
+  getMondayBefore(date: Date) {
+    const day = date.getDay(), diff = date.getDate() - day + (day == 0 ? -6 : 1); // adjust when day is sunday
+    const monday = new Date(date);
+    monday.setDate(diff);
+    return monday;
+  }
+
+  getSundayAfter(date: Date) {
+    const day = date.getDay();
+    const sunday = new Date(date);
+    if (day !== 0) {
+      const diff = date.getDate() + 7 - day;
+      sunday.setDate(diff);
+    }
+    return sunday;
   }
 }

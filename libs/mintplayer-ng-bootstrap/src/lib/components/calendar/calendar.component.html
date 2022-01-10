@@ -25,8 +25,8 @@
         <th>
             {{ week.number }}
         </th>
-        <td [class.selected]="day === null ? false : isSameDate(selectedDate$ | async, day.date)" *ngFor="let day of week.week" (click)="goto(day)">
-            <span *ngIf="day !== null">{{ day.dayOfMonth }}</span>
+        <td [class.selected]="day === null ? false : isSameDate(selectedDate$ | async, day.date)" *ngFor="let day of week.days" (click)="goto(day)">
+            <span *ngIf="day !== null" [class.text-muted]="!day.isInMonth">{{ day.dayOfMonth }}</span>
         </td>
     </tr>
 </table>

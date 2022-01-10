@@ -1,6 +1,6 @@
 import { JsonPipe } from '@angular/common';
 import { Component, OnInit, TemplateRef } from '@angular/core';
-import { BsSnackbarComponent, BsSnackbarService, Color, DatatableSettings, FileUpload, Position } from '@mintplayer/ng-bootstrap';
+import { BsModalComponent, BsModalService, BsSnackbarComponent, BsSnackbarService, Color, DatatableSettings, FileUpload, Position } from '@mintplayer/ng-bootstrap';
 import { PaginationResponse } from '@mintplayer/ng-pagination';
 import { Artist, ArtistService, SubjectService, SubjectType, Tag, TagService } from '@mintplayer/ng-client';
 import { BehaviorSubject } from 'rxjs';
@@ -23,6 +23,7 @@ export class AppComponent implements OnInit {
     private tagService: TagService,
     private jsonPipe: JsonPipe,
     private snackbarService: BsSnackbarService,
+    private modalService: BsModalService
   ) { }
   
   ngOnInit() {
@@ -47,6 +48,11 @@ export class AppComponent implements OnInit {
         this.tagSuggestions = tags;
       }
     })
+  }
+
+  modal: BsModalComponent | null = null;
+  showModal(template: TemplateRef<any>) {
+    this.modal = this.modalService.show(template);
   }
 
   snackbar: BsSnackbarComponent | null = null;

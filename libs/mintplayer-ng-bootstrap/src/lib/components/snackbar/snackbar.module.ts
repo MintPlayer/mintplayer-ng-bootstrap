@@ -1,4 +1,4 @@
-import { forwardRef, NgModule } from '@angular/core';
+import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BsSnackbarComponent } from './component/snackbar.component';
 import { BsSnackbarCloseDirective } from './directives/snackbar-close/snackbar-close.directive';
