@@ -4,13 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { CommonModule, JsonPipe } from '@angular/common';
 import { BrowserModule } from '@angular/platform-browser';
 import { RouterModule } from '@angular/router';
-import { BsAccordionModule, BsAlertModule, BsCalendarModule, BsCardModule, BsCarouselModule, BsContextMenuModule, BsDatatableModule, BsDatepickerModule, BsDropdownModule, BsFileUploadModule, BsFontColorPipeModule, BsListGroupModule, BsMultiselectModule, BsNavbarModule, BsProgressBarModule, BsScrollspyModule, BsSelect2Module, BsSnackbarModule, BsTabControlModule, BsToggleButtonModule, BsTooltipModule, BsTypeaheadModule } from '@mintplayer/ng-bootstrap';
+import { BsFormatBytesModule, BsAccordionModule, BsAlertModule, BsCalendarModule, BsCardModule, BsCarouselModule, BsContextMenuModule, BsDatatableModule, BsDatepickerModule, BsDropdownModule, BsFileUploadModule, BsFontColorPipeModule, BsListGroupModule, BsMultiselectModule, BsNavbarModule, BsProgressBarModule, BsScrollspyModule, BsSelect2Module, BsSnackbarModule, BsTabControlModule, BsToggleButtonModule, BsTooltipModule, BsTypeaheadModule, BsModalModule } from '@mintplayer/ng-bootstrap';
 import { BASE_URL } from '@mintplayer/ng-base-url';
 import { API_VERSION } from '@mintplayer/ng-client';
 import { FocusOnLoadModule } from '@mintplayer/ng-focus-on-load';
 
 import { AppComponent } from './app.component';
-import { BsFormatBytesModule } from 'libs/mintplayer-ng-bootstrap/src/lib/pipes/format-bytes/format-bytes.module';
 
 @NgModule({
   declarations: [AppComponent],
@@ -31,6 +30,7 @@ import { BsFormatBytesModule } from 'libs/mintplayer-ng-bootstrap/src/lib/pipes/
     BsScrollspyModule,
     BsSnackbarModule,
     BsDropdownModule,
+    BsModalModule,
     BsMultiselectModule,
     BsProgressBarModule,
     BsTypeaheadModule,

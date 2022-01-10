@@ -1,16 +1,16 @@
 import { AnimationEvent } from '@angular/animations';
-import { Component, EventEmitter, Inject, TemplateRef } from '@angular/core';
+import { AfterContentInit, AfterViewInit, Component, ElementRef, EventEmitter, Inject, TemplateRef, ViewChild } from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
-import { ModalAnimationMeta } from '../interfaces/modal-animation-meta';
-import { MODAL_CONTENT } from '../providers/modal-content.provider';
+import { ModalAnimationMeta } from '../../interfaces/modal-animation-meta';
+import { MODAL_CONTENT } from '../../providers/modal-content.provider';
 
 @Component({
-  selector: 'bs-modal',
-  templateUrl: './modal.component.html',
-  styleUrls: ['./modal.component.scss'],
+  selector: 'bs-modal-presenter',
+  templateUrl: './modal-presenter.component.html',
+  styleUrls: ['./modal-presenter.component.scss'],
   animations: [FadeInOutAnimation]
 })
-export class BsModalComponent {
+export class BsModalPresenterComponent {
 
   constructor(@Inject(MODAL_CONTENT) content: TemplateRef<any>) {
     this.content = content;
@@ -27,4 +27,5 @@ export class BsModalComponent {
     this.animationStateChanged.emit(event);
   }
   //#endregion
+
 }
