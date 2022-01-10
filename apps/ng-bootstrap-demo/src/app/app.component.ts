@@ -54,6 +54,9 @@ export class AppComponent implements OnInit {
   showModal(template: TemplateRef<any>) {
     this.modal = this.modalService.show(template);
   }
+  hideModal(modal: BsModalComponent) {
+    this.modalService.hide(modal);
+  }
 
   snackbar: BsSnackbarComponent | null = null;
   showSnackbar(template: TemplateRef<any>) {

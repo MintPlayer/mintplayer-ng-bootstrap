@@ -27,7 +27,8 @@ export class BsModalService {
     const overlayRef = this.overlay.create({
       scrollStrategy: this.overlay.scrollStrategies.reposition(),
       positionStrategy: this.overlay.position()
-        .global().centerHorizontally().bottom('0').top('0').left('0').right('0')
+        .global().centerHorizontally().bottom('0').top('0').left('0').right('0'),
+      hasBackdrop: true
     });
 
     const componentInstance = overlayRef.attach<BsModalComponent>(portal);

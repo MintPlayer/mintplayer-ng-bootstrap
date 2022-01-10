@@ -71,7 +71,7 @@
           <ng-template #modalTemplate let-modal>
             <div class="text-nowrap p-2 d-flex flex-row align-items-center justify-content-between">
               <span>This is a modal</span>
-              <button class="btn btn-secondary flex-end">Close</button>
+              <button (click)="hideModal(modal)" class="btn btn-secondary flex-end">Close</button>
             </div>
           </ng-template>
         </div>
