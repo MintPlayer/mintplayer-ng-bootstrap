@@ -15,6 +15,7 @@ export * from './multiselect';
 export * from './navbar';
 export * from './pagination';
 export * from './progress-bar';
+export * from './rating';
 export * from './scrollspy';
 export * from './select2';
 export * from './snackbar';

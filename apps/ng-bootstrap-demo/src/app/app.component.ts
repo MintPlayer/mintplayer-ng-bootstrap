@@ -18,6 +18,8 @@ export class AppComponent implements OnInit {
   mode: 'slide' | 'fade' = 'slide';
   multiselectItems = ['Blue', 'Red', 'Green', 'Yellow', 'Orange', 'Purple', 'Pink'];
   darkMode: boolean | null = true;
+  ratingValue = 3;
+  previewValue = 3;
 
   constructor(
     private artistService: ArtistService,
@@ -35,7 +37,6 @@ export class AppComponent implements OnInit {
   onModeChange(value: any) {
     this.mode = value;
   }
-
 
   artistSuggestions: Artist[] = [];
   onProvideArtistSuggestions(search: string) {

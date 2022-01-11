@@ -375,17 +375,6 @@
         </span>
       </ng-template>
     </bs-select2>
-    <!-- <ul>
-      <li *ngFor="let tag of "
-    </ul> -->
-    <!-- <bs-select2 (provideSuggestions)="onProvideTagSuggestions($event)" [suggestions]="tagSuggestions">
-      <ng-template bsItemTemplate let-item="item" let-select2="select2">
-        <span class="select2-item" [style.background]="item.category.color" [style.color]="item.category.color | bsFontColor">
-          <span [style.color]="item.category.color | bsFontColor" (click)="select2.onRemoveItem(item,$event)">×</span>
-          {{ item.text }}
-        </span>
-      </ng-template>
-    </bs-select2> -->
 
     <h2 bsScrollspy>Tab control</h2>
     <bs-tab-control>
@@ -425,8 +414,18 @@
         <input type="text" class="form-control" autofocus>
       </ng-template>
     </bs-multiselect>
+
+    <h2 bsScrollspy>Rating</h2>
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <bs-rating [maximum]="10" [(value)]="ratingValue" (starsChange)="previewValue = $event"></bs-rating>
+          <span>{{ previewValue }}</span>
+        </div>
+      </div>
+    </div>
     
-    <p>The following demos do not require javascript, but are included as example.</p>
+    <p>The following demos do not require additional javascript, but are included as example.</p>
 
     <h2 bsScrollspy>Collapse</h2>
     <div class="d-block mb-3">

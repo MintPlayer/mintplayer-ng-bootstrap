@@ -1,0 +1,3 @@
+<span class="cursor-pointer" *ngFor="let star of (stars$ | async), let i = index" (mouseenter)="hoverValue(i)" (click)="selectValue(i)">
+    {{ star ? '&#9733;' : '&#9734;' }}
+</span>
