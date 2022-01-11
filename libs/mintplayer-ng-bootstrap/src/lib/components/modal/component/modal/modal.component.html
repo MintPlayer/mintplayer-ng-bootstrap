@@ -1,13 +1,13 @@
 <div class="modal-dialog">
     <div class="modal-content">
         <div class="modal-header">
-            <ng-content select="bs-modal-header"></ng-content>
+            <ng-container *ngTemplateOutlet="header"></ng-container>
         </div>
         <div class="modal-body">
-            <ng-content></ng-content>
+            <ng-container *ngTemplateOutlet="body"></ng-container>
         </div>
         <div class="modal-footer">
-            <ng-content select="bs-modal-footer"></ng-content>
+            <ng-container *ngTemplateOutlet="footer"></ng-container>
         </div>
     </div>
 </div>

@@ -1,23 +1,22 @@
 import { AnimationEvent } from '@angular/animations';
-import { AfterContentInit, AfterViewInit, Component, ElementRef, EventEmitter, Inject, TemplateRef, ViewChild } from '@angular/core';
+import { Component, EventEmitter, HostBinding, Inject, TemplateRef } from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
-import { ModalAnimationMeta } from '../../interfaces/modal-animation-meta';
+import { ModalAnimationMeta } from '../../interfaces';
 import { MODAL_CONTENT } from '../../providers/modal-content.provider';
 
 @Component({
-  selector: 'bs-modal-presenter',
-  templateUrl: './modal-presenter.component.html',
-  styleUrls: ['./modal-presenter.component.scss'],
+  selector: 'bs-modal-content',
+  templateUrl: './modal-content.component.html',
+  styleUrls: ['./modal-content.component.scss'],
   animations: [FadeInOutAnimation]
 })
-export class BsModalPresenterComponent {
+export class BsModalContentComponent {
 
   constructor(@Inject(MODAL_CONTENT) content: TemplateRef<any>) {
     this.content = content;
   }
-
   content: TemplateRef<any>;
-
+  
   private instance: ModalAnimationMeta | null = null;
 
   //#region Monitor @slideUpDown hooks
@@ -27,5 +26,4 @@ export class BsModalPresenterComponent {
     this.animationStateChanged.emit(event);
   }
   //#endregion
-
 }

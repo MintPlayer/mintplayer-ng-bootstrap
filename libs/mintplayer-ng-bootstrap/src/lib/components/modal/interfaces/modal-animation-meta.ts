@@ -1,8 +1,8 @@
 import { OverlayRef } from "@angular/cdk/overlay";
 import { ComponentRef } from "@angular/core";
-import { BsModalPresenterComponent } from "../component/modal-presenter/modal-presenter.component";
+import { BsModalContentComponent } from "../component/modal-content/modal-content.component";
 
 export interface ModalAnimationMeta {
-    component: ComponentRef<BsModalPresenterComponent>;
+    component: ComponentRef<BsModalContentComponent>;
     overlay: OverlayRef;
 }

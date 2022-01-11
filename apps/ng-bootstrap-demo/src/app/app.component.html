@@ -70,16 +70,16 @@
           <button class="btn btn-primary" (click)="showModal(modalTemplate)">Show modal</button>
           <ng-template #modalTemplate let-modal>
             <bs-modal>
-              <bs-modal-header>
+              <div *bsModalHeader>
                 <h5 class="modal-title">Modal title</h5>
-              </bs-modal-header>
-              <div class="text-nowrap p-2 d-flex flex-row align-items-center justify-content-between">
+              </div>
+              <div *bsModalBody class="text-nowrap p-2 d-flex flex-row align-items-center justify-content-between">
                 <span>This is a modal</span>
                 <button (click)="hideModal(modal)" class="btn btn-secondary flex-end">Close</button>
               </div>
-              <bs-modal-footer>
-                <button type="button" class="btn btn-default" aria-label="Close">Close</button>
-              </bs-modal-footer>
+              <div *bsModalFooter>
+                <button type="button" (click)="hideModal(modal)" class="btn btn-default" aria-label="Close">Close</button>
+              </div>
             </bs-modal>
           </ng-template>
         </div>

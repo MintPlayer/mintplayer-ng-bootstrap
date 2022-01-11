@@ -1,6 +1,6 @@
 import { JsonPipe } from '@angular/common';
 import { Component, OnInit, TemplateRef } from '@angular/core';
-import { BsModalComponent, BsModalPresenterComponent, BsModalService, BsSnackbarComponent, BsSnackbarService, Color, DatatableSettings, FileUpload, Position } from '@mintplayer/ng-bootstrap';
+import { BsModalContentComponent, BsModalService, BsSnackbarComponent, BsSnackbarService, Color, DatatableSettings, FileUpload, Position } from '@mintplayer/ng-bootstrap';
 import { PaginationResponse } from '@mintplayer/ng-pagination';
 import { Artist, ArtistService, SubjectService, SubjectType, Tag, TagService } from '@mintplayer/ng-client';
 import { BehaviorSubject } from 'rxjs';
@@ -50,12 +50,15 @@ export class AppComponent implements OnInit {
     })
   }
 
-  modal: BsModalPresenterComponent | null = null;
+  modal: BsModalContentComponent | null = null;
   showModal(template: TemplateRef<any>) {
     this.modal = this.modalService.show(template);
   }
-  hideModal(modal: BsModalPresenterComponent) {
-    this.modalService.hide(modal);
+  hideModal(modal: BsModalContentComponent) {
+    console.log('hide modal');
+    if (modal) {
+      this.modalService.hide(modal);
+    }
   }
 
   snackbar: BsSnackbarComponent | null = null;
@@ -66,6 +69,9 @@ export class AppComponent implements OnInit {
     if (this.snackbar) {
       this.snackbarService.hide(this.snackbar);
     }
+  }
+  showAlert() {
+    alert('working');
   }
 
   artists?: PaginationResponse<Artist>;

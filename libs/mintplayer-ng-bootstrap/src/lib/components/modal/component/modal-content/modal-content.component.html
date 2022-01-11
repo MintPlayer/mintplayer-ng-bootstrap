@@ -1,0 +1,8 @@
+<div class="modal d-block" tabindex="-1"
+     [@fadeInOut]="animationState"
+     (@fadeInOut.start)="onAnimationChanged($event)"
+     (@fadeInOut.done)="onAnimationChanged($event)">
+
+    <ng-container *ngTemplateOutlet="content; context: { $implicit: this }" ></ng-container>
+
+</div>

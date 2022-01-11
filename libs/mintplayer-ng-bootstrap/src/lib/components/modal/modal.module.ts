@@ -1,28 +1,27 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BsModalComponent } from './component/modal/modal.component';
-import { BsModalDirective } from './directive/modal.directive';
-import { BsModalHeaderComponent } from './component/modal-header/modal-header.component';
-import { BsModalFooterComponent } from './component/modal-footer/modal-footer.component';
-import { BsModalPresenterComponent } from './component/modal-presenter/modal-presenter.component';
+import { BsModalHeaderDirective } from './directives/modal-header/modal-header.directive';
+import { BsModalBodyDirective } from './directives/modal-body/modal-body.directive';
+import { BsModalFooterDirective } from './directives/modal-footer/modal-footer.directive';
+import { BsModalContentComponent } from './component/modal-content/modal-content.component';
+import { BsModalComponent } from '../modal/component/modal/modal.component';
 
 @NgModule({
   declarations: [
+    BsModalHeaderDirective,
+    BsModalBodyDirective,
+    BsModalFooterDirective,
     BsModalComponent,
-    BsModalDirective,
-    BsModalHeaderComponent,
-    BsModalFooterComponent,
-    BsModalPresenterComponent
+    BsModalContentComponent
   ],
   imports: [
     CommonModule
   ],
   exports: [
-    BsModalComponent,
-    BsModalDirective,
-    BsModalHeaderComponent,
-    BsModalFooterComponent,
-    BsModalPresenterComponent
+    BsModalHeaderDirective,
+    BsModalBodyDirective,
+    BsModalFooterDirective,
+    BsModalComponent
   ]
 })
 export class BsModalModule { }

@@ -1,18 +1,29 @@
-import { Component, OnInit } from '@angular/core';
-import { BsModalPresenterComponent } from '../modal-presenter/modal-presenter.component';
+import { Component, TemplateRef } from "@angular/core";
 
 @Component({
   selector: 'bs-modal',
   templateUrl: './modal.component.html',
   styleUrls: ['./modal.component.scss']
 })
-export class BsModalComponent implements OnInit {
+export class BsModalComponent {
 
-  constructor(private presenter: BsModalPresenterComponent) {
-    console.log('presenter', presenter);
-  }
+  // constructor(@Inject(MODAL_CONTENT) content: TemplateRef<any>) {
+  //   this.content = content;
+  // }
+  // content: TemplateRef<any>;
+  
+  header!: TemplateRef<any>;
+  body!: TemplateRef<any>;
+  footer!: TemplateRef<any>;
 
-  ngOnInit(): void {
-  }
+  // private instance: ModalAnimationMeta | null = null;
+
+  // //#region Monitor @slideUpDown hooks
+  // animationState = '';
+  // animationStateChanged = new EventEmitter<AnimationEvent>();
+  // onAnimationChanged(event: AnimationEvent) {
+  //   this.animationStateChanged.emit(event);
+  // }
+  // //#endregion
 
 }
