@@ -7,23 +7,10 @@ import { Component, TemplateRef } from "@angular/core";
 })
 export class BsModalComponent {
 
-  // constructor(@Inject(MODAL_CONTENT) content: TemplateRef<any>) {
-  //   this.content = content;
-  // }
-  // content: TemplateRef<any>;
-  
+  constructor() {}
+
   header!: TemplateRef<any>;
   body!: TemplateRef<any>;
   footer!: TemplateRef<any>;
-
-  // private instance: ModalAnimationMeta | null = null;
-
-  // //#region Monitor @slideUpDown hooks
-  // animationState = '';
-  // animationStateChanged = new EventEmitter<AnimationEvent>();
-  // onAnimationChanged(event: AnimationEvent) {
-  //   this.animationStateChanged.emit(event);
-  // }
-  // //#endregion
 
 }

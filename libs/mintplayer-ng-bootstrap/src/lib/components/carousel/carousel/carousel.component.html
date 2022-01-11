@@ -1,5 +1,5 @@
 <div class="carousel slide">
-    <div class="carousel-indicators">
+    <div *ngIf="indicators" class="carousel-indicators">
         <button *ngFor="let image of images; let i = index" type="button" (click)="setCurrentImage(i)"
             [class.active]="(currentImageIndex$ | async) === i" data-bs-target
             [attr.aria-current]="(currentImageIndex$ | async) === i ? true : null"

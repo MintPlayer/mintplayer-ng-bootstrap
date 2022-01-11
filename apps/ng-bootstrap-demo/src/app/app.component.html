@@ -74,8 +74,25 @@
                 <h5 class="modal-title">Modal title</h5>
               </div>
               <div *bsModalBody class="text-nowrap p-2 d-flex flex-row align-items-center justify-content-between">
-                <span>This is a modal</span>
-                <button (click)="hideModal(modal)" class="btn btn-secondary flex-end">Close</button>
+                <div class="container">
+                  <div class="form-group row">
+                    <div class="col-md-12">
+                      <span class="col-form-label">Search for tags</span>
+                    </div>
+                  </div>
+                  <div class="form-group row">
+                    <div class="col-md-12">
+                      <bs-select2 (provideSuggestions)="onProvideTagSuggestions($event)" [suggestions]="tagSuggestions" [selectedItems]="selectedTags">
+                        <ng-template bsItemTemplate let-item="item" let-select2="select2">
+                          <span class="select2-item" [style.background]="item.category.color" [style.color]="item.category.color | bsFontColor">
+                            <span [style.color]="item.category.color | bsFontColor" (click)="select2.onRemoveItem(item,$event)">×</span>
+                            {{ item.text }}
+                          </span>
+                        </ng-template>
+                      </bs-select2>
+                    </div>
+                  </div>
+                </div>
               </div>
               <div *bsModalFooter>
                 <button type="button" (click)="hideModal(modal)" class="btn btn-default" aria-label="Close">Close</button>
@@ -163,9 +180,15 @@
     <h2 bsScrollspy>Toggle button</h2>
     <div class="container">
       <div class="row">
-        <div class="col-sm-6">Use dark mode</div>
-        <div class="col-sm-6">
-          <bs-toggle-button [(isToggled)]="darkMode" [round]="false"></bs-toggle-button>
+        <div class="col-sm-3">Use dark mode</div>
+        <div class="col-sm-3">
+          <bs-toggle-button [(isToggled)]="darkMode">{{ darkMode ? 'dark' : 'light' }}</bs-toggle-button>
+        </div>
+        <div class="col-sm-3">
+          <bs-toggle-button [(isToggled)]="darkMode">{{ darkMode ? 'dark' : 'light' }}</bs-toggle-button>
+        </div>
+        <div class="col-sm-3">
+          <bs-toggle-button [(isToggled)]="darkMode" [disabled]="true">{{ darkMode ? 'dark' : 'light' }}</bs-toggle-button>
         </div>
       </div>
     </div>
@@ -344,7 +367,7 @@
     <div class="d-block">Select2 with default template</div>
     <bs-select2 (provideSuggestions)="onProvideArtistSuggestions($event)" [suggestions]="artistSuggestions"></bs-select2>
     <div class="d-block">Select2 with custom template</div>
-    <bs-select2 (provideSuggestions)="onProvideTagSuggestions($event)" [suggestions]="tagSuggestions">
+    <bs-select2 (provideSuggestions)="onProvideTagSuggestions($event)" [suggestions]="tagSuggestions" [selectedItems]="selectedTags">
       <ng-template bsItemTemplate let-item="item" let-select2="select2">
         <span class="select2-item" [style.background]="item.category.color" [style.color]="item.category.color | bsFontColor">
           <span [style.color]="item.category.color | bsFontColor" (click)="select2.onRemoveItem(item,$event)">×</span>
@@ -352,6 +375,17 @@
         </span>
       </ng-template>
     </bs-select2>
+    <!-- <ul>
+      <li *ngFor="let tag of "
+    </ul> -->
+    <!-- <bs-select2 (provideSuggestions)="onProvideTagSuggestions($event)" [suggestions]="tagSuggestions">
+      <ng-template bsItemTemplate let-item="item" let-select2="select2">
+        <span class="select2-item" [style.background]="item.category.color" [style.color]="item.category.color | bsFontColor">
+          <span [style.color]="item.category.color | bsFontColor" (click)="select2.onRemoveItem(item,$event)">×</span>
+          {{ item.text }}
+        </span>
+      </ng-template>
+    </bs-select2> -->
 
     <h2 bsScrollspy>Tab control</h2>
     <bs-tab-control>
@@ -391,5 +425,41 @@
         <input type="text" class="form-control" autofocus>
       </ng-template>
     </bs-multiselect>
+    
+    <p>The following demos do not require javascript, but are included as example.</p>
+
+    <h2 bsScrollspy>Collapse</h2>
+    <div class="d-block mb-3">
+      <button (click)="collapseVisible = !collapseVisible" class="btn btn-primary">Expand/collapse</button>
+    </div>
+    <div class="container overflow-hidden" *ngIf="collapseVisible" [@slideUpDown]>
+      <div class="row">
+        <div class="col-md-12">
+          <bs-alert [type]="colors.warning">Cras justo odio</bs-alert>
+          <bs-alert [type]="colors.danger">Cras justo odio</bs-alert>
+          <bs-alert>Cras justo odio</bs-alert>
+        </div>
+      </div>
+    </div>
+
+    <h2 bsScrollspy>Range</h2>
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <input type="range" min="0" max="5" step="0.5" class="form-range">
+        </div>
+      </div>
+    </div>
+
+    <h2 bsScrollspy>Floating labels</h2>
+    <div class="form-floating mb-3">
+      <input type="email" class="form-control" id="floatingInput" placeholder="name@example.com">
+      <label for="floatingInput">Email address</label>
+    </div>
+    <div class="form-floating">
+      <input type="password" class="form-control" id="floatingPassword" placeholder="Password">
+      <label for="floatingPassword">Password</label>
+    </div>
+
   </div>
 </bs-scrollspy>

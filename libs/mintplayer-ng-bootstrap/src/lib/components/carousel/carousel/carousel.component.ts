@@ -41,6 +41,7 @@ export class BsCarouselComponent implements OnInit, OnDestroy, AfterContentInit 
   @HostBinding('@.disabled')
   public animationsDisabled = false;
 
+  @Input() public indicators = true;
   //#region Animation
   private _animation: 'fade' | 'slide' = 'slide';
   @Input() public set animation(value: 'fade' | 'slide') {

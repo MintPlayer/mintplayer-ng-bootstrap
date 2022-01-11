@@ -16,6 +16,7 @@ export class BsToggleButtonComponent implements AfterViewInit {
 
   //#region isToggled
   _isToggled: boolean | null = false;
+  @Output() public change = new EventEmitter<boolean | null>();
   @Output() public isToggledChange = new EventEmitter<boolean | null>();
   public get isToggled() {
     return this._isToggled;
@@ -26,8 +27,14 @@ export class BsToggleButtonComponent implements AfterViewInit {
   }
   //#endregion
 
-  @Input() public offColor = '#CCCCCC';
-  @Input() public onColor = '#2196F3';
-  @Input() public round = true;
+  //#region disabled
+  @Input() public disabled = false;
+  //#endregion
+
+  onChange(event: Event) {
+    const val = (<any>event.target).checked;
+    this.isToggled = val;
+    this.change.emit(val);
+  }
 
 }

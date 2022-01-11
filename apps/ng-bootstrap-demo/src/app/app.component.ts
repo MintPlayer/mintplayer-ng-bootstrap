@@ -4,11 +4,13 @@ import { BsModalContentComponent, BsModalService, BsSnackbarComponent, BsSnackba
 import { PaginationResponse } from '@mintplayer/ng-pagination';
 import { Artist, ArtistService, SubjectService, SubjectType, Tag, TagService } from '@mintplayer/ng-client';
 import { BehaviorSubject } from 'rxjs';
+import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
 
 @Component({
   selector: 'mintplayer-ng-bootstrap-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
+  animations: [SlideUpDownAnimation]
 })
 export class AppComponent implements OnInit {
   title = 'ng-bootstrap-demo';
@@ -42,6 +44,7 @@ export class AppComponent implements OnInit {
     })
   }
   tagSuggestions: Tag[] = [];
+  selectedTags: Tag[] = [];
   onProvideTagSuggestions(search: string) {
     this.tagService.suggestTags(search, true).then((tags) => {
       if (tags) {
@@ -136,4 +139,6 @@ export class AppComponent implements OnInit {
   removeFile(file: FileUpload) {
     this.files.splice(this.files.indexOf(file), 1);
   }
+
+  collapseVisible = false;
 }

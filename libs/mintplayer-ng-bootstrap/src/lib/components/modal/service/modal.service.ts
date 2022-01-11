@@ -18,7 +18,6 @@ export class BsModalService {
   ) { }
 
   public show(template: TemplateRef<any>) {
-    console.log('show modal');
     const injector = Injector.create({
       providers: [{ provide: MODAL_CONTENT, useValue: template }],
       parent: this.parentInjector
@@ -34,7 +33,7 @@ export class BsModalService {
     });
 
     const componentInstance = overlayRef.attach<BsModalContentComponent>(portal);
-    
+    console.log('instance', componentInstance);
     componentInstance.instance['instance'] = <ModalAnimationMeta>{
       component: componentInstance,
       overlay: overlayRef

@@ -1,5 +1,5 @@
 import { AnimationEvent } from '@angular/animations';
-import { Component, EventEmitter, HostBinding, Inject, TemplateRef } from '@angular/core';
+import { Component, EventEmitter, Inject, TemplateRef } from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { ModalAnimationMeta } from '../../interfaces';
 import { MODAL_CONTENT } from '../../providers/modal-content.provider';
