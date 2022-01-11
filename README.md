@@ -5,6 +5,19 @@
 
 This should also install the peerDependencies in your project.
 
+Now you should import the `bootstrap` stylesheet in the application. To do so, you have 2 options:
+
+Update your `angular.json`:
+
+    "styles": [
+      "node_modules/@mintplayer/ng-bootstrap/_bootstrap.scss",
+      "src/styles.scss"
+    ],
+
+Or add the stylesheet in your `styles.scss`
+
+    @import 'node_modules/@mintplayer/ng-bootstrap/_bootstrap.scss';
+
 ## Components
 All components are showcased in the angular app included in the project. You can simply run
 
