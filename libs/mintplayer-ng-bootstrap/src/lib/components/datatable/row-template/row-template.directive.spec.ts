@@ -8,7 +8,7 @@ describe('BsRowTemplateDirective', () => {
   let fixture: ComponentFixture<BsRowTemplateTestComponent>;
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({
+    const testbed = TestBed.configureTestingModule({
       imports: [],
       declarations: [
         // Directive to test
@@ -21,14 +21,12 @@ describe('BsRowTemplateDirective', () => {
         BsRowTemplateTestComponent,
       ],
       providers: []
-    })
-      .compileComponents();
-  });
-
-  beforeEach(() => {
+    });
+    await testbed.compileComponents();
     fixture = TestBed.createComponent(BsRowTemplateTestComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
+    await fixture.whenStable();
   });
 
   it('should create', () => {
@@ -52,7 +50,7 @@ interface Artist {
   selector: 'bs-row-template-test',
   template: `
     <bs-datatable #table [data]="artists">
-      <ng-template rowTemplate let-artist>
+      <ng-template bsRowTemplate let-artist>
         <tr>
           <td class="text-nowrap">{{ artist.name }}</td>
           <td class="text-nowrap">{{ artist.yearStarted }}</td>

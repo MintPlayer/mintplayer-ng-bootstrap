@@ -1,0 +1,13 @@
+<h1 bsScrollspy>Collapse</h1>
+<div class="d-block mb-3">
+    <button (click)="collapseVisible = !collapseVisible" class="btn btn-primary">Expand/collapse</button>
+</div>
+<div class="container overflow-hidden" *ngIf="collapseVisible" [@slideUpDown]>
+    <div class="row">
+        <div class="col-md-12">
+            <bs-alert [type]="colors.warning">Cras justo odio</bs-alert>
+            <bs-alert [type]="colors.danger">Cras justo odio</bs-alert>
+            <bs-alert>Cras justo odio</bs-alert>
+        </div>
+    </div>
+</div>

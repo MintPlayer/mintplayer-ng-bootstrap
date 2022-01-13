@@ -1,0 +1,26 @@
+<div class="container">
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <span class="col-form-label" [bsFor]="firstName">First name</span>
+        </div>
+        <div class="col-md-8">
+            <input type="text" #firstName class="form-control">
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <span class="col-form-label" [bsFor]="lastName">Last name</span>
+        </div>
+        <div class="col-md-8">
+            <input type="text" #lastName class="form-control">
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <span class="col-form-label" [bsFor]="birthDate">Birth date</span>
+        </div>
+        <div class="col-md-8">
+            <input type="date" #birthDate class="form-control">
+        </div>
+    </div>
+</div>

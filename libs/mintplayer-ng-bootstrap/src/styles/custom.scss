@@ -2,3 +2,11 @@ body.modal-open {
     overflow: hidden;
     padding-right: 17px;
 }
+
+@media (max-width: 767px) {
+    nav.position-fixed {
+        max-height: 100%;
+        overflow-y: scroll;
+        margin-right: -17px;
+    }
+}

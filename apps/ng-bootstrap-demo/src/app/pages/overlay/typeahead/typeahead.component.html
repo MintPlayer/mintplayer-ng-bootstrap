@@ -1,0 +1,4 @@
+<h2 bsScrollspy>Typeahead</h2>
+<bs-typeahead [(searchterm)]="searchterm" (provideSuggestions)="provideSuggestions($event)"
+    [suggestions]="(suggestions$ | async) || []" (submitted)="doSearch($event)"
+    (suggestionSelected)="gotoArtist($event)"></bs-typeahead>

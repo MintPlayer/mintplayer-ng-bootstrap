@@ -5,4 +5,10 @@
 
 @import "./src/styles/custom.scss";
 
+// Import our own utilities
+@import "~bootstrap/scss/bootstrap-utilities.scss";
 @import './src/styles/utilities/cursor.scss';
+@import './src/styles/utilities/white-space.scss';
+
+// Finally import the bootstrap
+@import "~bootstrap/scss/bootstrap.scss";

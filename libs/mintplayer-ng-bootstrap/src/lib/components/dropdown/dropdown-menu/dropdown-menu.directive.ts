@@ -1,5 +1,4 @@
-import { DOCUMENT } from '@angular/common';
-import { Directive, ElementRef, forwardRef, HostListener, Inject, NgZone, PLATFORM_ID, TemplateRef, ViewContainerRef } from '@angular/core';
+import { Directive, ElementRef, forwardRef, HostBinding, HostListener, Inject, NgZone, PLATFORM_ID, TemplateRef, ViewContainerRef } from '@angular/core';
 import { TemplatePortal } from '@angular/cdk/portal';
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ClickOutsideDirective } from '@mintplayer/ng-click-outside';
@@ -7,26 +6,21 @@ import { Subject, take, takeUntil } from 'rxjs';
 import { BsDropdownDirective } from '../dropdown/dropdown.directive';
 
 @Directive({
-  selector: '[bsDropdownMenu]',
-  host: {
-    '[class.show]': 'dropdown.isOpen',
-  },
+  selector: '[bsDropdownMenu]'
 })
 export class BsDropdownMenuDirective extends ClickOutsideDirective {
   constructor(
     @Inject(forwardRef(() => BsDropdownDirective)) private dropdown: BsDropdownDirective,
-    @Inject(DOCUMENT) document: any,
     private viewContainerRef: ViewContainerRef,
     private templateRef: TemplateRef<any>,
     private overlay: Overlay,
 
     elementRef: ElementRef<any>,
     zone: NgZone,
-    @Inject(PLATFORM_ID) platformId: Object
+    @Inject(PLATFORM_ID) platformId: any
   ) {
     super(elementRef, zone, platformId);
 
-    this.document = <Document>document;
     this.dropdown.isOpen$
       .pipe(takeUntil(this.destroyed$))
       .subscribe((isOpen) => {
@@ -65,6 +59,12 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
       });
   }
 
+  private wait = false;
+  private destroyed$ = new Subject();
+  private overlayRef: OverlayRef | null = null;
+  private templatePortal: TemplatePortal<any> | null = null;
+
+  @HostBinding('class.show') get show() { return this.dropdown.isOpen; }
   @HostListener('clickOutside', ['$event']) clickedOutside(ev: MouseEvent) {
     if (!this.wait) {
       if (!this.overlayRef?.overlayElement.contains(<any>ev.target)) {
@@ -76,11 +76,5 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
       }
     }
   }
-
-  private wait: boolean = false;
-  private document: Document;
-  private destroyed$ = new Subject();
-  private overlayRef: OverlayRef | null = null;
-  private templatePortal: TemplatePortal<any> | null = null;
 
 }

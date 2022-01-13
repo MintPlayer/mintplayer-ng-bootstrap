@@ -12,10 +12,13 @@ describe('BsSnackbarService', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [{
-        provide: Overlay,
-        useClass: OverlayMock
-      }]
+      providers: [
+        {
+          provide: Overlay,
+          useClass: OverlayMock
+        },
+        BsSnackbarService
+      ]
     });
     service = TestBed.inject(BsSnackbarService);
   });

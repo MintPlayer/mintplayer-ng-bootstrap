@@ -1,0 +1,13 @@
+<h1>Multiselect dropdown</h1>
+<bs-multiselect [items]="availableItems" [selectedItems]="selectedItems">
+    <div *bsHeaderTemplate>
+        <input type="text" class="form-control" autofocus>
+    </div>
+    <div *bsFooterTemplate>
+        <input type="text" class="form-control" autofocus>
+    </div>
+    <ng-template bsButtonTemplate let-count>
+        {{ count }} geselecteerd
+    </ng-template>
+</bs-multiselect>
+Selected items: <span *ngFor="let item of selectedItems">{{ item }}, </span>

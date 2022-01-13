@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, EventEmitter, HostBinding, HostListener, Input, OnInit, Output, TemplateRef, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, EventEmitter, HostBinding, HostListener, Input, Output, TemplateRef, ViewChild } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 
 @Component({
@@ -6,7 +6,7 @@ import { BehaviorSubject } from 'rxjs';
   templateUrl: './select2.component.html',
   styleUrls: ['./select2.component.scss']
 })
-export class BsSelect2Component implements OnInit, AfterViewInit {
+export class BsSelect2Component implements AfterViewInit {
 
   isOpen = false;
   
@@ -14,6 +14,7 @@ export class BsSelect2Component implements OnInit, AfterViewInit {
   isLoading$ = new BehaviorSubject<boolean>(false);
   hostWidth$ = new BehaviorSubject<number>(200);
 
+  @ViewChild('defaultItemTemplate', { static: true }) defaultItemTemplate!: TemplateRef<any>;
   @ViewChild('searchBox') searchBox!: ElementRef<HTMLInputElement>;
   @ViewChild('itemsBox') itemsBox!: ElementRef<HTMLDivElement>;
   @Input() searchterm = '';
@@ -24,8 +25,8 @@ export class BsSelect2Component implements OnInit, AfterViewInit {
 
   private charWidth = 10;
   searchWidth = 20;
+  itemTemplate?: TemplateRef<any>;
 
-  constructor() { }
 
   ngAfterViewInit() {
     this.onResize();
@@ -61,9 +62,6 @@ export class BsSelect2Component implements OnInit, AfterViewInit {
     this.focus();
   }
 
-  ngOnInit(): void {
-  }
-
   @HostListener('window:resize')
   onResize() {
     this.hostWidth$.next(this.itemsBox.nativeElement.offsetWidth);
@@ -74,8 +72,4 @@ export class BsSelect2Component implements OnInit, AfterViewInit {
     this.searchBox.nativeElement.focus();
   }
   
-  @ViewChild('defaultItemTemplate', { static: true }) defaultItemTemplate!: TemplateRef<any>;
-  itemTemplate?: TemplateRef<any>;
-
-
 }

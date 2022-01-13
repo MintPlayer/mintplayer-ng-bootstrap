@@ -12,7 +12,7 @@ export class BsDropdownDirective {
     this.elementRef = elementRef;
   }
 
-  public isOpen$ = new BehaviorSubject<boolean>(false);
+  isOpen$ = new BehaviorSubject<boolean>(false);
 
   elementRef: ElementRef<any>;
   @ContentChild(BsDropdownMenuDirective, {static: false}) menu!: BsDropdownMenuDirective;

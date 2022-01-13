@@ -1,0 +1,25 @@
+<h1>Carousel</h1>
+<bs-carousel [animation]="mode" [indicators]="true">
+    <div class="w-100" *bsCarouselImage>
+        <img src="/assets/resized/deer.png" class="w-100">
+    </div>
+    <div class="w-100" *bsCarouselImage>
+        <img src="/assets/resized/duck.png" class="w-100">
+    </div>
+    <div class="w-100" *bsCarouselImage>
+        <img src="/assets/resized/leopard.png" class="w-100">
+    </div>
+    <div class="w-100" *bsCarouselImage>
+        <img src="/assets/resized/lion.png" class="w-100">
+    </div>
+    <div class="w-100" *bsCarouselImage>
+        <img src="/assets/resized/peacock.png" class="w-100">
+    </div>
+    <div class="w-100" *bsCarouselImage>
+        <img src="/assets/resized/tiger.png" class="w-100">
+    </div>
+</bs-carousel>
+<select [ngModel]="mode" (ngModelChange)="onModeChange($event)">
+  <option value="slide">Slide</option>
+  <option value="fade">Fade</option>
+</select>

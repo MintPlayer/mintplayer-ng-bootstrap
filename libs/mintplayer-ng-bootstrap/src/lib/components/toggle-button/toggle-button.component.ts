@@ -10,9 +10,6 @@ import { ColorTransitionAnimation } from '@mintplayer/ng-animations';
 export class BsToggleButtonComponent implements AfterViewInit {
 
   disableAnimations = true;
-  ngAfterViewInit() {
-    this.disableAnimations = false;
-  }
 
   //#region isToggled
   _isToggled: boolean | null = false;
@@ -35,6 +32,10 @@ export class BsToggleButtonComponent implements AfterViewInit {
     const val = (<any>event.target).checked;
     this.isToggled = val;
     this.change.emit(val);
+  }
+  
+  ngAfterViewInit() {
+    this.disableAnimations = false;
   }
 
 }

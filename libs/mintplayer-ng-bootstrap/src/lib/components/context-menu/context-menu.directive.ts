@@ -43,6 +43,9 @@ export class BsContextMenuDirective {
     };
   }
 
+  private overlayRef: OverlayRef | null = null;
+  private templatePortal: TemplatePortal<any> | null = null;
+
   @HostListener('document:click', ['$event']) clickAnywhere(ev: MouseEvent) {
     this.checkAndCloseExisting(ev);
   }
@@ -65,8 +68,5 @@ export class BsContextMenuDirective {
       this.close();
     }
   }
-
-  private overlayRef: OverlayRef | null = null;
-  private templatePortal: TemplatePortal<any> | null = null;
 
 }

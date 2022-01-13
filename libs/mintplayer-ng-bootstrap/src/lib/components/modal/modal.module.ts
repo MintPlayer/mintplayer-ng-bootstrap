@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { OverlayModule } from '@angular/cdk/overlay';
 import { BsModalHeaderDirective } from './directives/modal-header/modal-header.directive';
 import { BsModalBodyDirective } from './directives/modal-body/modal-body.directive';
 import { BsModalFooterDirective } from './directives/modal-footer/modal-footer.directive';
@@ -15,7 +16,8 @@ import { BsModalComponent } from '../modal/component/modal/modal.component';
     BsModalContentComponent
   ],
   imports: [
-    CommonModule
+    CommonModule,
+    OverlayModule
   ],
   exports: [
     BsModalHeaderDirective,

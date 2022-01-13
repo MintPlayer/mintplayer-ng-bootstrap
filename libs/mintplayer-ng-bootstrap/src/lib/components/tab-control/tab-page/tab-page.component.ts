@@ -1,4 +1,4 @@
-import { Component, OnInit, ContentChild, TemplateRef, Input } from '@angular/core';
+import { Component, ContentChild, TemplateRef, Input } from '@angular/core';
 import { BsTabControlComponent } from '../tab-control/tab-control.component';
 
 @Component({
@@ -6,18 +6,14 @@ import { BsTabControlComponent } from '../tab-control/tab-control.component';
   templateUrl: './tab-page.component.html',
   styleUrls: ['./tab-page.component.scss']
 })
-export class BsTabPageComponent implements OnInit {
+export class BsTabPageComponent {
 
   tabControl: BsTabControlComponent;
   constructor(tabControl: BsTabControlComponent) {
     this.tabControl = tabControl;
   }
 
+  @Input() disabled = false;
   @ContentChild(TemplateRef) headerTemplate!: TemplateRef<any>;
-
-  @Input() disabled: boolean = false;
-
-  ngOnInit() {
-  }
 
 }

@@ -1,4 +1,4 @@
-import { Component, ContentChildren, EventEmitter, Input, OnInit, Output, TemplateRef } from '@angular/core';
+import { Component, ContentChildren, EventEmitter, Input, Output, TemplateRef } from '@angular/core';
 import { PaginationResponse } from '@mintplayer/ng-pagination';
 import { BsDatatableColumnDirective } from '../datatable-column/datatable-column.directive';
 import { DatatableSettings } from '../datatable-settings';
@@ -8,7 +8,7 @@ import { DatatableSettings } from '../datatable-settings';
   templateUrl: './datatable.component.html',
   styleUrls: ['./datatable.component.scss']
 })
-export class BsDatatableComponent implements OnInit {
+export class BsDatatableComponent {
 
   constructor() {
     this.settings = new DatatableSettings();
@@ -22,7 +22,7 @@ export class BsDatatableComponent implements OnInit {
   @Input() settings: DatatableSettings;
   @Input() data?: PaginationResponse<any>;
   rowTemplate?: TemplateRef<any>;
-  @Output() onReloadData: EventEmitter<any> = new EventEmitter();
+  @Output() reloadData: EventEmitter<any> = new EventEmitter();
 
   columnHeaderClicked(column: BsDatatableColumnDirective) {
     if (column.bsDatatableColumn.sortable) {
@@ -34,11 +34,8 @@ export class BsDatatableComponent implements OnInit {
       } else {
         this.settings.sortDirection = 'descending';
       }
-      this.onReloadData.emit();
+      this.reloadData.emit();
     }
   }
 
-  ngOnInit() {
-  }
-  
 }

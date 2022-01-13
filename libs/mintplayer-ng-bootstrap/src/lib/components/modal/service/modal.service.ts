@@ -2,12 +2,13 @@ import { Overlay } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { ComponentFactoryResolver, Injectable, Injector, TemplateRef } from '@angular/core';
 import { filter, take } from 'rxjs';
+import { BsModalModule } from '../modal.module';
 import { BsModalContentComponent } from '../component/modal-content/modal-content.component';
 import { ModalAnimationMeta } from '../interfaces';
 import { MODAL_CONTENT } from '../providers/modal-content.provider';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: BsModalModule
 })
 export class BsModalService {
 

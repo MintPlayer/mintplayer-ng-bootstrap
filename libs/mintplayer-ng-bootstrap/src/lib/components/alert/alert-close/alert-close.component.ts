@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { BsAlertComponent } from '../alert/alert.component';
 
 @Component({
@@ -6,12 +6,9 @@ import { BsAlertComponent } from '../alert/alert.component';
   templateUrl: './alert-close.component.html',
   styleUrls: ['./alert-close.component.scss']
 })
-export class BsAlertCloseComponent implements OnInit {
+export class BsAlertCloseComponent {
 
   constructor(private alert: BsAlertComponent) {
-  }
-
-  ngOnInit() {
   }
 
   closeAlert() {

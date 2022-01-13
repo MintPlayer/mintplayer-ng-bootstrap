@@ -5,8 +5,6 @@ import { BsRowTemplateDirective } from './row-template/row-template.directive';
 import { BsPaginationModule } from '../pagination/pagination.module';
 import { BsDatatableColumnDirective } from './datatable-column/datatable-column.directive';
 
-
-
 @NgModule({
   declarations: [
     BsDatatableComponent,

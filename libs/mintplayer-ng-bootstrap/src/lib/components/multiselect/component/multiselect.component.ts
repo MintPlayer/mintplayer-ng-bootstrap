@@ -1,29 +1,27 @@
-import { Component, ContentChild, Input, OnInit, TemplateRef } from '@angular/core';
+import { Component, Input, TemplateRef, ViewChild } from '@angular/core';
 
 @Component({
   selector: 'bs-multiselect',
   templateUrl: './multiselect.component.html',
   styleUrls: ['./multiselect.component.scss']
 })
-export class BsMultiselectComponent implements OnInit {
+export class BsMultiselectComponent {
 
-  constructor() {
-  }
+  headerTemplate!: TemplateRef<any>;
+  footerTemplate!: TemplateRef<any>;
+  buttonTemplate!: TemplateRef<any>;
 
-  @ContentChild(TemplateRef) template!: TemplateRef<any>;
+
   @Input() public items: any[] = [];
   @Input() public selectedItems: any[] = [];
+  @ViewChild('defaultButtonTemplate') defaultButtonTemplate!: TemplateRef<any>;
 
   itemChange(item: any, event: Event) {
-    if (!!(<any>event.target).checked) {
+    if ((<any>event.target).checked) {
       this.selectedItems.push(item);
     } else {
       this.selectedItems.splice(this.selectedItems.findIndex((i) => i === item), 1);
     }
   }
   
-  ngOnInit(): void {
-  }
-
-
 }

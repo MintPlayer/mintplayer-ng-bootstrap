@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Color } from '../../../enums';
 
@@ -8,16 +8,10 @@ import { Color } from '../../../enums';
   styleUrls: ['./alert.component.scss'],
   animations: [ FadeInOutAnimation ]
 })
-export class BsAlertComponent implements OnInit {
-
-  constructor() {
-  }
-
-  ngOnInit(): void {
-  }
+export class BsAlertComponent {
 
   @Input() public type: Color = Color.primary;
   colors = Color;
 
-  isVisible: boolean = true;
+  isVisible = true;
 }

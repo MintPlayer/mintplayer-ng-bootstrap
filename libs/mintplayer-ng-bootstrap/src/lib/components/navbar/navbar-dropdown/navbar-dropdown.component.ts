@@ -1,4 +1,4 @@
-import { Component, ContentChildren, ElementRef, forwardRef, Host, Inject, OnInit, Optional, QueryList, SkipSelf } from '@angular/core';
+import { Component, ContentChildren, forwardRef, Host, Inject, Input, Optional, QueryList, SkipSelf } from '@angular/core';
 import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
 
 @Component({
@@ -6,7 +6,7 @@ import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
   templateUrl: './navbar-dropdown.component.html',
   styleUrls: ['./navbar-dropdown.component.scss']
 })
-export class BsNavbarDropdownComponent implements OnInit {
+export class BsNavbarDropdownComponent {
 
   constructor(
     @SkipSelf() @Host() @Optional() parentDropdown: BsNavbarDropdownComponent,
@@ -16,7 +16,8 @@ export class BsNavbarDropdownComponent implements OnInit {
     this.navbarItem = navbarItem;
   }
 
-  isVisible: boolean = false;
+  @Input() public autoclose = true;
+  isVisible = false;
   navbarItem: BsNavbarItemComponent;
   parentDropdown: BsNavbarDropdownComponent;
 
@@ -24,9 +25,5 @@ export class BsNavbarDropdownComponent implements OnInit {
     return [this.navbarItem.anchorTag].filter((a) => a).map((a) => <HTMLElement>a);
   }
 
-  ngOnInit(): void {
-  }
-
-  // @ContentChildren(BsNavbarDropdownComponent, { descendants: true }) childDropdowns!: QueryList<BsNavbarDropdownComponent>;
   @ContentChildren(forwardRef(() => BsNavbarDropdownComponent), { descendants: true }) childDropdowns!: QueryList<BsNavbarDropdownComponent>;
 }

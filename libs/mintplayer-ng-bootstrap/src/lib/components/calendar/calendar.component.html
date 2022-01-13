@@ -17,8 +17,8 @@
     </tr>
     <tr>
         <th></th>
-        <th *ngFor="let dayOfWeek of daysOfWeek">
-            {{ dayOfWeek }}
+        <th *ngFor="let dayOfWeek of daysOfWeek$ | async" [title]="dayOfWeek.long">
+            {{ dayOfWeek.short }}
         </th>
     </tr>
     <tr *ngFor="let week of (weeks$ | async)">

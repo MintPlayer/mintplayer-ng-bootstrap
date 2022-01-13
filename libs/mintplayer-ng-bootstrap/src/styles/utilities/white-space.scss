@@ -1,0 +1,10 @@
+//Generate utilites for white-space
+$utilities: map-merge(
+  $utilities,
+  (
+    "white-space": (
+      property: white-space,
+      values: break-spaces none normal nowrap pre pre-line pre-wrap revert
+    ),
+  )
+);

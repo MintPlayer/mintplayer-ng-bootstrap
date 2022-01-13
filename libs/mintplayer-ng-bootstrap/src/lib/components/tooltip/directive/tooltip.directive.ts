@@ -31,15 +31,15 @@ export class BsTooltipDirective {
     }
   }
 
-  @HostListener('window:blur') private onBlur() {
-    this.hideTooltip();
-  }
-
   @Input() public bsTooltip: Position = Position.bottom;
 
   private injector: Injector;
   private portal: ComponentPortal<any>;
   private overlayRef: OverlayRef | null = null;
+
+  @HostListener('window:blur') private onBlur() {
+    this.hideTooltip();
+  }
 
   showTooltip() {
     const positions: ConnectedPosition[] = [];

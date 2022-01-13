@@ -24,10 +24,10 @@
     <div class="row">
         <div class="col-md-12">
             <bs-pagination class="float-start" [pageNumbers]="settings.perPage.values"
-                [(selectedPageNumber)]="settings.perPage.selected" (selectedPageNumberChange)="onReloadData.emit()"
+                [(selectedPageNumber)]="settings.perPage.selected" (selectedPageNumberChange)="reloadData.emit()"
                 [showArrows]="false"></bs-pagination>
             <bs-pagination class="float-end" [pageNumbers]="settings.page.values"
-                [(selectedPageNumber)]="settings.page.selected" (selectedPageNumberChange)="onReloadData.emit()"
+                [(selectedPageNumber)]="settings.page.selected" (selectedPageNumberChange)="reloadData.emit()"
                 [showArrows]="true"></bs-pagination>
         </div>
     </div>

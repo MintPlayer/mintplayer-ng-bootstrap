@@ -1,4 +1,4 @@
-import { AfterContentChecked, Component, ContentChildren, ElementRef, forwardRef, Input, OnInit, Optional, QueryList } from '@angular/core';
+import { AfterContentChecked, Component, ContentChildren, ElementRef, forwardRef, Optional, QueryList } from '@angular/core';
 import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
 
 @Component({
@@ -6,23 +6,21 @@ import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.co
   templateUrl: './navbar-item.component.html',
   styleUrls: ['./navbar-item.component.scss']
 })
-export class BsNavbarItemComponent implements OnInit, AfterContentChecked {
+export class BsNavbarItemComponent implements AfterContentChecked {
 
   constructor(@Optional() parentDropdown: BsNavbarDropdownComponent, private element: ElementRef) {
     this.parentDropdown = parentDropdown;
   }
 
   parentDropdown: BsNavbarDropdownComponent;
-  hasDropdown: boolean = false;
+  hasDropdown = false;
   anchorTag: HTMLAnchorElement | null = null;
-
-  ngOnInit(): void {
-  }
+  @ContentChildren(forwardRef(() => BsNavbarDropdownComponent)) dropdowns!: QueryList<BsNavbarDropdownComponent>;
 
   ngAfterContentChecked() {
+    this.anchorTag = this.element.nativeElement.querySelector('li a');
+
     if (this.hasDropdown) {
-      (<any>window).element = this.element.nativeElement;
-      this.anchorTag = this.element.nativeElement.querySelector('li a');
       (this.anchorTag) && this.anchorTag.classList.add('dropdown-toggle');
 
       if (this.anchorTag && !this.anchorTag.onclick) {
@@ -39,8 +37,21 @@ export class BsNavbarItemComponent implements OnInit, AfterContentChecked {
           return false;
         }
       }
+    } else {
+
+      // Close if this is a link
+      if (this.parentDropdown && this.dropdowns.length === 0) {
+        if (this.anchorTag && !this.anchorTag.onclick) {
+          this.anchorTag.onclick = (ev: Event) => {
+            let d = this.parentDropdown;
+            while (d && d.autoclose) {
+              d.isVisible = false;
+              d = d.parentDropdown;
+            }
+          };
+        }
+      }
+
     }
   }
-
-  @ContentChildren(forwardRef(() => BsNavbarDropdownComponent)) dropdowns!: QueryList<BsNavbarDropdownComponent>;
 }

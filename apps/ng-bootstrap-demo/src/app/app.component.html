@@ -1,464 +1,130 @@
 <bs-navbar #nav>
+  <bs-navbar-brand [routerLink]='["/"]'>ng-bootstrap</bs-navbar-brand>
   <bs-navbar-nav [collapse]="true">
     <bs-navbar-item>
-      <a [routerLink]='["/a", "b", "c"]'>Left</a>
+      <a [routerLink]='["/"]'>Home</a>
     </bs-navbar-item>
     <bs-navbar-item>
-      <a [routerLink]='["/a", "b", "c"]'>Link</a>
-    </bs-navbar-item>
-    <bs-navbar-item>
-      <a [routerLink]='[]'>Dropdown</a>
+      <a [routerLink]='[]'>Basic</a>
       <bs-navbar-dropdown>
         <bs-navbar-item>
-          <a [routerLink]='["/a", "b", "c"]'>Action</a>
+          <a [routerLink]='["/basic"]'>Overview</a>
         </bs-navbar-item>
         <bs-navbar-item>
-          <a [routerLink]='[]'>Another action</a>
-          <bs-navbar-dropdown>
-            <bs-navbar-item>
-              <a [routerLink]='["/a", "b", "c"]'>Action</a>
-            </bs-navbar-item>
-            <bs-navbar-item>
-              <a [routerLink]='[]'>Something else here</a>
-              <bs-navbar-dropdown>
-                <bs-navbar-item>
-                  <a [routerLink]='["/a", "b", "c"]'>Action</a>
-                </bs-navbar-item>
-                <bs-navbar-item>
-                  <a [routerLink]='[]'>Something else here</a>
-                  <bs-navbar-dropdown>
-                    <bs-navbar-item>
-                      <a [routerLink]='["/a", "b", "c"]'>Action</a>
-                    </bs-navbar-item>
-                    <bs-navbar-item>
-                      <a [routerLink]='["/a", "b", "c"]'>Something else here</a>
-                    </bs-navbar-item>
-                  </bs-navbar-dropdown>
-                </bs-navbar-item>
-              </bs-navbar-dropdown>
-            </bs-navbar-item>
-          </bs-navbar-dropdown>
+          <a [routerLink]='["/basic", "toggle-button"]'>Toggle button</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "alert"]'>Alert</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "rating"]'>Rating</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "calendar"]'>Calendar</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "card"]'>Card</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "list-group"]'>List group</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "carousel"]'>Carousel</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "datepicker"]'>Datepicker</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "accordion"]'>Accordion</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "progress-bar"]'>Progress bar</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "tab-control"]'>Tab control</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "for-directive"]'>For directive</a>
         </bs-navbar-item>
       </bs-navbar-dropdown>
     </bs-navbar-item>
     <bs-navbar-item>
-      <a [routerLink]='[]'>Dropdown</a>
+      <a [routerLink]='[]'>Overlays</a>
       <bs-navbar-dropdown>
         <bs-navbar-item>
-          <a [routerLink]='["/a", "b", "c"]'>Action</a>
+          <a [routerLink]='["/overlays"]'>Overview</a>
         </bs-navbar-item>
         <bs-navbar-item>
-          <a [routerLink]='["/a", "b", "c"]'>Another action</a>
+          <a [routerLink]='["/overlays", "modals"]'>Modals</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/overlays", "snackbar"]'>Snackbar</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/overlays", "tooltip"]'>Tooltip</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/overlays", "dropdown"]'>Dropdown</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/overlays", "multiselect-dropdown"]'>Multiselect dropdown</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/overlays", "typeahead"]'>Typeahead</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/overlays", "context-menu"]'>Context menu</a>
         </bs-navbar-item>
       </bs-navbar-dropdown>
     </bs-navbar-item>
-  </bs-navbar-nav>
-  <bs-navbar-nav [collapse]="true">
     <bs-navbar-item>
-      <a [routerLink]='["/a", "b", "c"]'>Right</a>
+      <a [routerLink]='[]'>Advanced</a>
+      <bs-navbar-dropdown>
+        <bs-navbar-item>
+          <a [routerLink]='["/advanced"]'>Overview</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/advanced", "copy"]'>Copy</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/advanced", "code-snippet"]'>Code snippet</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/advanced", "autofocus"]'>Autofocus</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/advanced", "scrollspy"]'>Scrollspy</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/advanced", "select2"]'>Select2</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/advanced", "datatables"]'>Datatables</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/advanced", "file-upload"]'>File upload</a>
+        </bs-navbar-item>
+      </bs-navbar-dropdown>
+    </bs-navbar-item>
+    <bs-navbar-item>
+      <a [routerLink]='[]'>Additional samples</a>
+      <bs-navbar-dropdown>
+        <bs-navbar-item>
+          <a [routerLink]='["/additional-samples"]'>Overview</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/additional-samples", "collapse"]'>Collapse</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/additional-samples", "range"]'>Range</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/additional-samples", "floating-labels"]'>Floating labels</a>
+        </bs-navbar-item>
+      </bs-navbar-dropdown>
     </bs-navbar-item>
   </bs-navbar-nav>
 </bs-navbar>
-<bs-scrollspy [navbarContent]="nav" style="padding-top:50px">
-  <div>
-    <h1 bsScrollspy>Welcome to {{ title }}!</h1>
-
-    <h2 bsScrollspy>Modal</h2>
-    <div class="container text-center">
-      <div class="row">
-        <div class="col-md-12 text-center">
-          <button class="btn btn-primary" (click)="showModal(modalTemplate)">Show modal</button>
-          <ng-template #modalTemplate let-modal>
-            <bs-modal>
-              <div *bsModalHeader>
-                <h5 class="modal-title">Modal title</h5>
-              </div>
-              <div *bsModalBody class="text-nowrap p-2 d-flex flex-row align-items-center justify-content-between">
-                <div class="container">
-                  <div class="form-group row">
-                    <div class="col-md-12">
-                      <span class="col-form-label">Search for tags</span>
-                    </div>
-                  </div>
-                  <div class="form-group row">
-                    <div class="col-md-12">
-                      <bs-select2 (provideSuggestions)="onProvideTagSuggestions($event)" [suggestions]="tagSuggestions" [selectedItems]="selectedTags">
-                        <ng-template bsItemTemplate let-item="item" let-select2="select2">
-                          <span class="select2-item" [style.background]="item.category.color" [style.color]="item.category.color | bsFontColor">
-                            <span [style.color]="item.category.color | bsFontColor" (click)="select2.onRemoveItem(item,$event)">×</span>
-                            {{ item.text }}
-                          </span>
-                        </ng-template>
-                      </bs-select2>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div *bsModalFooter>
-                <button type="button" (click)="hideModal(modal)" class="btn btn-default" aria-label="Close">Close</button>
-              </div>
-            </bs-modal>
-          </ng-template>
-        </div>
-      </div>
-    </div>
-
-    <h2 bsScrollspy>Snackbar</h2>
-    <div class="container text-center">
-      <div class="row">
-        <div class="col-md-12 text-center">
-          <button class="btn btn-primary" (click)="showSnackbar(snackbarTemplate)">Show snackbar</button>
-          <button class="btn btn-primary" (click)="hideSnackbar()">Hide snackbar</button>
-          <ng-template #snackbarTemplate let-snackbar>
-            <div class="text-nowrap p-2 d-flex flex-row align-items-center justify-content-between">
-              <span class="">You have new notifications</span>
-              <button class="btn btn-secondary flex-end">
-                Open
-                <br>
-                dashboard
-                <br>
-                Newline
-              </button>
-              <button [bsSnackbarClose]="snackbar" class="btn btn-secondary flex-end">Close</button>
-            </div>
-          </ng-template>
-        </div>
-      </div>
-    </div>
-
-    <h2 bsScrollspy>Tooltip</h2>
-    <!-- Just to demonstrate that nothing is being cut-off, -->
-    <!-- we're having position:relative;overflow:hidden on the containers. -->
-    <div class="container text-center">
-      <div class="row mb-3">
-        <div class="col-md-3 offset-md-3 position-relative overflow-hidden">
-          <button class="btn btn-primary">
-            Left
-            <div class="text-nowrap" *bsTooltip="tooltipPosition.left">
-              Hello <b>world</b>
-              <br>
-              This is me
-            </div>
-          </button>
-        </div>
-        <div class="col-md-3 position-relative overflow-hidden">
-          <button class="btn btn-primary">
-            Top
-            <div class="text-nowrap" *bsTooltip="tooltipPosition.top">
-              Hello <b>world</b>
-              <br>
-              This is me
-            </div>
-          </button>
-        </div>
-      </div>
-      <div class="row">
-        <div class="col-md-3 offset-md-3 position-relative overflow-hidden">
-          <button class="btn btn-primary">
-            Bottom
-            <div class="text-nowrap" *bsTooltip="tooltipPosition.bottom">
-              Hello <b>world</b>
-              <br>
-              This is me
-            </div>
-          </button>
-        </div>
-        <div class="col-md-3 position-relative overflow-hidden">
-          <button class="btn btn-primary">
-            Right
-            <div class="text-nowrap" *bsTooltip="tooltipPosition.right">
-              Hello <b>world</b>
-              <br>
-              This is me
-            </div>
-          </button>
-        </div>
-      </div>
-
-    </div>
-
-    <h2 bsScrollspy>Toggle button</h2>
-    <div class="container">
-      <div class="row">
-        <div class="col-sm-3">Use dark mode</div>
-        <div class="col-sm-3">
-          <bs-toggle-button [(isToggled)]="darkMode">{{ darkMode ? 'dark' : 'light' }}</bs-toggle-button>
-        </div>
-        <div class="col-sm-3">
-          <bs-toggle-button [(isToggled)]="darkMode">{{ darkMode ? 'dark' : 'light' }}</bs-toggle-button>
-        </div>
-        <div class="col-sm-3">
-          <bs-toggle-button [(isToggled)]="darkMode" [disabled]="true">{{ darkMode ? 'dark' : 'light' }}</bs-toggle-button>
-        </div>
-      </div>
-    </div>
-
-    <h2 bsScrollspy>File upload</h2>
-    <div class="container">
-      <div class="row">
-        <div class="col-md-12 text-center">
-          <!-- If you wish to manipulate the files list from outside the component, add this: -->
-          <!-- files: FileUpload[] = []; --><!-- [files]="files" -->
-          <bs-file-upload [files]="files" (filesDropped)="logFilesForUpload($event)">
-            <ng-template bsFileUploadTemplate let-upload>
-              <div class="d-flex flex-row mx-auto">
-                  <div class="file-img"></div>
-                  <div class="flex-grow-1 text-start px-2">
-                      <span class="d-block text-truncate text-secondary">{{ upload.file.name }}</span>
-                      <span class="d-block text-grey mb-0">{{ upload.file.size | bsFormatBytes }}</span>
-                      <bs-progress [height]="4">
-                          <bs-progress-bar [minimum]="0" [maximum]="upload.file.size" [value]="upload.progress" [color]="colors.danger"></bs-progress-bar>
-                      </bs-progress>
-                  </div>
-                  <button class="btn file-remove" (click)="removeFile(upload)">Remove</button>
-              </div>
-            </ng-template>
-          </bs-file-upload>
-        </div>
-      </div>
-    </div>
-
-    <h2 bsScrollspy>Datatable</h2>
-    <bs-datatable #tabel [settings]="settings" [data]="artists" (onReloadData)="loadArtists()">
-      <div *bsDatatableColumn="{ sortable: true, name: 'Name' }">
-        1. Artist
-      </div>
-      <div *bsDatatableColumn="{ sortable: true, name: 'YearStarted' }">
-        2. Year started
-      </div>
-      <div *bsDatatableColumn="{ sortable: true, name: 'YearQuit' }">
-        3. Year quit
-      </div>
-
-      <ng-template rowTemplate let-artist>
-        <tr>
-          <td class="text-nowrap">{{ artist.name }}</td>
-          <td class="text-nowrap">{{ artist.yearStarted }}</td>
-          <td class="text-nowrap">{{ artist.yearQuit }}</td>
-        </tr>
-      </ng-template>
-    </bs-datatable>
-
-    <h2 bsScrollspy>Alert</h2>
-    <bs-alert [type]="colors.warning">
-      Cras justo odio
-      <bs-alert-close></bs-alert-close>
-    </bs-alert>
-    <bs-alert [type]="colors.danger">
-      Cras justo odio
-      <bs-alert-close></bs-alert-close>
-    </bs-alert>
-    <bs-alert>
-      Cras justo odio
-      <bs-alert-close></bs-alert-close>
-    </bs-alert>
-
-    <h2 bsScrollspy>Calendar</h2>
-    <bs-calendar></bs-calendar>
-
-    <h2 bsScrollspy>Carousel</h2>
-    <bs-carousel [animation]="mode">
-      <div class="w-100" *bsCarouselImage>
-        <img src="/assets/resized/deer.png" class="w-100">
-      </div>
-      <div class="w-100" *bsCarouselImage>
-        <img src="/assets/resized/duck.png" class="w-100">
-      </div>
-      <div class="w-100" *bsCarouselImage>
-        <img src="/assets/resized/leopard.png" class="w-100">
-      </div>
-      <div class="w-100" *bsCarouselImage>
-        <img src="/assets/resized/lion.png" class="w-100">
-      </div>
-      <div class="w-100" *bsCarouselImage>
-        <img src="/assets/resized/peacock.png" class="w-100">
-      </div>
-      <div class="w-100" *bsCarouselImage>
-        <img src="/assets/resized/tiger.png" class="w-100">
-      </div>
-    </bs-carousel>
-    <select [ngModel]="mode" (ngModelChange)="onModeChange($event)">
-      <option value="slide">Slide</option>
-      <option value="fade">Fade</option>
-    </select>
-
-    <h2 bsScrollspy>Dropdown</h2>
-    <div bsDropdown [closeOnClickOutside]="true">
-      <button bsDropdownToggle class="btn btn-primary">Dropdown</button>
-      <div *bsDropdownMenu>
-        <bs-calendar></bs-calendar>
-      </div>
-    </div>
-
-    <h2 bsScrollspy>Datepicker</h2>
-    <bs-datepicker></bs-datepicker>
-
-    <h2 bsScrollspy>Context menu</h2>
-    <div class="has-custom-context-menu w-100">
-      <ul class="dropdown-menu show" *bsContextMenu>
-        <li class="dropdown-item cursor-pointer py-1">Item 1</li>
-        <li class="dropdown-item cursor-pointer py-1">Item 2</li>
-        <li class="dropdown-item cursor-pointer py-1">Item 3</li>
-        <li class="dropdown-item cursor-pointer py-1">Item 4</li>
-        <li class="dropdown-item cursor-pointer py-1">Item 5</li>
-      </ul>
-    </div>
-
-    <h2 bsScrollspy>Accordion</h2>
-    <bs-accordion class="d-block mb-3">
-      <bs-accordion-tab>
-        <bs-accordion-tab-header>
-          <span class="triangle mr-2"></span>
-          Profile
-        </bs-accordion-tab-header>
-        <span class="d-block p-2">Label 1</span>
-      </bs-accordion-tab>
-      <bs-accordion-tab>
-        <bs-accordion-tab-header>
-          <span class="triangle mr-2"></span>
-          Sign in
-        </bs-accordion-tab-header>
-        <span class="d-block p-2">Label 2</span>
-      </bs-accordion-tab>
-      <bs-accordion-tab>
-        <bs-accordion-tab-header>
-          <span class="triangle mr-2"></span>
-          Payment
-        </bs-accordion-tab-header>
-        <span class="d-block p-2">Label 3</span>
-      </bs-accordion-tab>
-    </bs-accordion>
-
-    <h2 bsScrollspy>Card</h2>
-    <bs-card>
-      <bs-card-header>
-        List of elements
-      </bs-card-header>
-      <bs-list-group>
-        <bs-list-group-item>Cras justo odio</bs-list-group-item>
-        <bs-list-group-item>Dapibus ac facilisis in</bs-list-group-item>
-        <bs-list-group-item>Morbi leo risus</bs-list-group-item>
-        <bs-list-group-item>Porta ac consectetur ac</bs-list-group-item>
-        <bs-list-group-item>Vestibulum at eros</bs-list-group-item>
-      </bs-list-group>
-    </bs-card>
-
-    <h2 bsScrollspy>Progress bar</h2>
-    <bs-progress class="mb-2">
-      <bs-progress-bar [minimum]="0" [maximum]="100" [value]="15"></bs-progress-bar>
-      <bs-progress-bar [minimum]="0" [maximum]="100" [value]="30" [color]="colors.warning" [striped]="true"></bs-progress-bar>
-      <bs-progress-bar [minimum]="0" [maximum]="100" [value]="20" [color]="colors.info"></bs-progress-bar>
-    </bs-progress>
-    <bs-progress class="mb-2" [height]="1">
-      <bs-progress-bar [minimum]="0" [maximum]="100" [value]="15"></bs-progress-bar>
-      <bs-progress-bar [minimum]="0" [maximum]="100" [value]="30" [color]="colors.warning" [striped]="true"></bs-progress-bar>
-      <bs-progress-bar [minimum]="0" [maximum]="100" [value]="20" [color]="colors.info"></bs-progress-bar>
-    </bs-progress>
-    <bs-progress class="mb-2" [isIndeterminate]="true">
-      <bs-progress-bar [minimum]="0" [maximum]="100" [value]="15"></bs-progress-bar>
-      <bs-progress-bar [minimum]="0" [maximum]="100" [value]="30" [color]="colors.warning" [striped]="true"></bs-progress-bar>
-      <bs-progress-bar [minimum]="0" [maximum]="100" [value]="20" [color]="colors.info" [striped]="true" [animated]="true"></bs-progress-bar>
-    </bs-progress>
-
-    <h2 bsScrollspy>Typeahead</h2>
-    <bs-typeahead [(searchterm)]="searchterm" (provideSuggestions)="provideSuggestions($event)" [suggestions]="(suggestions$ | async) || []" (submitted)="doSearch($event)" (suggestionSelected)="gotoArtist($event)"></bs-typeahead>  
-    
-    <h2 bsScrollspy>Select2</h2>
-    <div class="d-block">Select2 with default template</div>
-    <bs-select2 (provideSuggestions)="onProvideArtistSuggestions($event)" [suggestions]="artistSuggestions"></bs-select2>
-    <div class="d-block">Select2 with custom template</div>
-    <bs-select2 (provideSuggestions)="onProvideTagSuggestions($event)" [suggestions]="tagSuggestions" [selectedItems]="selectedTags">
-      <ng-template bsItemTemplate let-item="item" let-select2="select2">
-        <span class="select2-item" [style.background]="item.category.color" [style.color]="item.category.color | bsFontColor">
-          <span [style.color]="item.category.color | bsFontColor" (click)="select2.onRemoveItem(item,$event)">×</span>
-          {{ item.text }}
-        </span>
-      </ng-template>
-    </bs-select2>
-
-    <h2 bsScrollspy>Tab control</h2>
-    <bs-tab-control>
-      <bs-tab-page>
-        <ng-template>
-          <span class="triangle mr-2"></span>
-          Tab 1
-        </ng-template>
-        This is tab 1
-      </bs-tab-page>
-      <bs-tab-page>
-        <ng-template>
-          <span class="triangle mr-2"></span>
-          Tab 2
-        </ng-template>
-        This is tab 2
-      </bs-tab-page>
-      <bs-tab-page [disabled]="true">
-        <ng-template>
-          <span class="triangle mr-2"></span>
-          Tab 3
-        </ng-template>
-        This is tab 3
-      </bs-tab-page>
-      <bs-tab-page>
-        <ng-template>
-          <span class="triangle mr-2"></span>
-          Tab 4
-        </ng-template>
-        This is tab 4
-      </bs-tab-page>
-    </bs-tab-control>
-
-    <h2 bsScrollspy>Multiselect dropdown</h2>
-    <bs-multiselect [items]="multiselectItems">
-      <ng-template>
-        <input type="text" class="form-control" autofocus>
-      </ng-template>
-    </bs-multiselect>
-
-    <h2 bsScrollspy>Rating</h2>
-    <div class="container">
-      <div class="row">
-        <div class="col-md-12">
-          <bs-rating [maximum]="10" [(value)]="ratingValue" (starsChange)="previewValue = $event"></bs-rating>
-          <span>{{ previewValue }}</span>
-        </div>
-      </div>
-    </div>
-    
-    <p>The following demos do not require additional javascript, but are included as example.</p>
-
-    <h2 bsScrollspy>Collapse</h2>
-    <div class="d-block mb-3">
-      <button (click)="collapseVisible = !collapseVisible" class="btn btn-primary">Expand/collapse</button>
-    </div>
-    <div class="container overflow-hidden" *ngIf="collapseVisible" [@slideUpDown]>
-      <div class="row">
-        <div class="col-md-12">
-          <bs-alert [type]="colors.warning">Cras justo odio</bs-alert>
-          <bs-alert [type]="colors.danger">Cras justo odio</bs-alert>
-          <bs-alert>Cras justo odio</bs-alert>
-        </div>
-      </div>
-    </div>
-
-    <h2 bsScrollspy>Range</h2>
-    <div class="container">
-      <div class="row">
-        <div class="col-md-12">
-          <input type="range" min="0" max="5" step="0.5" class="form-range">
-        </div>
-      </div>
-    </div>
-
-    <h2 bsScrollspy>Floating labels</h2>
-    <div class="form-floating mb-3">
-      <input type="email" class="form-control" id="floatingInput" placeholder="name@example.com">
-      <label for="floatingInput">Email address</label>
-    </div>
-    <div class="form-floating">
-      <input type="password" class="form-control" id="floatingPassword" placeholder="Password">
-      <label for="floatingPassword">Password</label>
-    </div>
-
-  </div>
-</bs-scrollspy>
+<div [navbarContent]="nav" style="padding-top:50px">
+  <router-outlet></router-outlet>
+</div>

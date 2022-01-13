@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
 import { BsAccordionComponent } from '../accordion/accordion.component';
 
@@ -8,21 +8,10 @@ import { BsAccordionComponent } from '../accordion/accordion.component';
   styleUrls: ['./accordion-tab.component.scss'],
   animations: [SlideUpDownAnimation]
 })
-export class BsAccordionTabComponent implements OnInit {
+export class BsAccordionTabComponent {
 
   accordion: BsAccordionComponent;
   constructor(accordion: BsAccordionComponent) {
     this.accordion = accordion;
-  }
-
-  ngOnInit() {
-  }
-
-  headerClicked(event: MouseEvent) {
-    if (this.accordion.activeTab === this) {
-      this.accordion.activeTab = null;
-    } else {
-      this.accordion.activeTab = this;
-    }
   }
 }

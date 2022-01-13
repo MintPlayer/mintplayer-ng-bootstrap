@@ -25,7 +25,7 @@ export class DatatableSettings {
         }
     }
 
-    public sortProperty: string = '';
+    public sortProperty = '';
     public sortDirection: 'ascending' | 'descending' = 'ascending';
     public perPage: { values: number[], selected: number };
     public page: { values: number[], selected: number };

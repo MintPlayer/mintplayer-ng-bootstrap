@@ -1,9 +1,11 @@
-import { Directive, HostListener, Input } from '@angular/core';
+import { Directive, HostBinding, HostListener, Input } from '@angular/core';
 
 @Directive({
   selector: '[bsFor]'
 })
 export class BsForDirective {
+
+  @HostBinding('class.cursor-default') defaultCursor = true;
 
   @Input() bsFor: any;
   @HostListener('click') onMouseClick() {

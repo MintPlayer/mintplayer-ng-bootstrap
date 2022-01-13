@@ -1,7 +1,8 @@
-import { ChangeDetectorRef, Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnDestroy, Output } from '@angular/core';
 import { BehaviorSubject, filter, map, Observable, Subject, take, takeUntil } from 'rxjs';
 import { DateDayOfMonth } from '../../interfaces/date-day-of-month';
 import { Week } from '../../interfaces/week';
+import { WeekDay } from '../../interfaces/weekday';
 import { BsCalendarMonthService } from '../../services/calendar-month/calendar-month.service';
 
 @Component({
@@ -10,10 +11,7 @@ import { BsCalendarMonthService } from '../../services/calendar-month/calendar-m
   styleUrls: ['./calendar.component.scss'],
 })
 export class BsCalendarComponent implements OnDestroy {
-  constructor(
-    private calendarMonthService: BsCalendarMonthService,
-    private ref: ChangeDetectorRef
-  ) {
+  constructor(private calendarMonthService: BsCalendarMonthService) {
     this.weeks$ = this.currentMonth$
       .pipe(map((month) => this.calendarMonthService.getWeeks(month)))
       .pipe(takeUntil(this.destroyed$));
@@ -30,7 +28,10 @@ export class BsCalendarComponent implements OnDestroy {
                 firstDay.date.getMonth(),
                 d?.dayOfMonth
               );
-              return date.toLocaleString('default', { weekday: 'short' });
+              return <WeekDay>{
+                short: date.toLocaleString('default', { weekday: 'short' }),
+                long: date.toLocaleString('default', { weekday: 'long' })
+              };
             });
           } else {
             return [];
@@ -47,7 +48,7 @@ export class BsCalendarComponent implements OnDestroy {
 
   private destroyed$ = new Subject();
   weeks$: Observable<Week[]>;
-  daysOfWeek$: Observable<string[]>;
+  daysOfWeek$: Observable<WeekDay[]>;
 
   //#region CurrentMonth
   currentMonth$ = new BehaviorSubject<Date>(new Date());
@@ -69,8 +70,6 @@ export class BsCalendarComponent implements OnDestroy {
     this.selectedDate$.next(value);
   }
   //#endregion
-
-  daysOfWeek: string[] = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 
   ngOnDestroy() {
     this.destroyed$.next(true);

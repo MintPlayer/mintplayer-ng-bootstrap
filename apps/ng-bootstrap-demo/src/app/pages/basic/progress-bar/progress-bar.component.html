@@ -1,0 +1,30 @@
+<h1>Progress bar</h1>
+<h2>Simple</h2>
+<bs-progress class="mb-2">
+    <bs-progress-bar [minimum]="0" [maximum]="100" [value]="15"></bs-progress-bar>
+</bs-progress>
+<h2>Striped</h2>
+<bs-progress class="mb-2">
+    <bs-progress-bar [minimum]="0" [maximum]="100" [value]="30" [color]="colors.warning" [striped]="true"></bs-progress-bar>
+</bs-progress>
+<h2>Animated</h2>
+<bs-progress class="mb-2">
+    <bs-progress-bar [minimum]="0" [maximum]="100" [value]="20" [color]="colors.info" [striped]="true" [animated]="true"></bs-progress-bar>
+</bs-progress>
+<h2>Stacked</h2>
+<bs-progress class="mb-2">
+    <bs-progress-bar [minimum]="0" [maximum]="100" [value]="15"></bs-progress-bar>
+    <bs-progress-bar [minimum]="0" [maximum]="100" [value]="30" [color]="colors.warning" [striped]="true"></bs-progress-bar>
+    <bs-progress-bar [minimum]="0" [maximum]="100" [value]="20" [color]="colors.info"></bs-progress-bar>
+</bs-progress>
+<bs-progress class="mb-2" [height]="1">
+    <bs-progress-bar [minimum]="0" [maximum]="100" [value]="15"></bs-progress-bar>
+    <bs-progress-bar [minimum]="0" [maximum]="100" [value]="30" [color]="colors.warning" [striped]="true"></bs-progress-bar>
+    <bs-progress-bar [minimum]="0" [maximum]="100" [value]="20" [color]="colors.info"></bs-progress-bar>
+</bs-progress>
+<h2>Infinite</h2>
+<bs-progress class="mb-2" [isIndeterminate]="true">
+    <bs-progress-bar [minimum]="0" [maximum]="100" [value]="15"></bs-progress-bar>
+    <bs-progress-bar [minimum]="0" [maximum]="100" [value]="30" [color]="colors.warning" [striped]="true"></bs-progress-bar>
+    <bs-progress-bar [minimum]="0" [maximum]="100" [value]="20" [color]="colors.info" [striped]="true" [animated]="true"></bs-progress-bar>
+</bs-progress>

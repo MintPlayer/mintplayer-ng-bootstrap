@@ -1,7 +1,7 @@
-import { AfterContentInit, Component, ContentChildren, ElementRef, HostBinding, Input, OnDestroy, OnInit, QueryList, TemplateRef } from '@angular/core';
+import { AfterContentInit, Component, ContentChildren, HostBinding, Input, OnDestroy, OnInit, QueryList, TemplateRef } from '@angular/core';
 import { FadeInOutAnimation, CarouselSlideAnimation } from '@mintplayer/ng-animations';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
-import { map, tap, take, takeUntil } from 'rxjs/operators';
+import { map, take, takeUntil } from 'rxjs/operators';
 import { BsCarouselImageDirective } from '../carousel-image/carousel-image.directive';
 
 @Component({
@@ -10,7 +10,7 @@ import { BsCarouselImageDirective } from '../carousel-image/carousel-image.direc
   styleUrls: ['./carousel.component.scss'],
   animations: [FadeInOutAnimation, CarouselSlideAnimation]
 })
-export class BsCarouselComponent implements OnInit, OnDestroy, AfterContentInit {
+export class BsCarouselComponent implements OnDestroy, AfterContentInit {
 
   constructor() {
     this.currentImageIndex$ = this.currentImageCounter$
@@ -24,7 +24,16 @@ export class BsCarouselComponent implements OnInit, OnDestroy, AfterContentInit 
       .pipe(takeUntil(this.destroyed$));
   }
 
-  ngOnInit(): void { }
+  @HostBinding('@.disabled') public animationsDisabled = false;
+  @Input() public indicators = true;
+  @ContentChildren(BsCarouselImageDirective) images!: QueryList<BsCarouselImageDirective>;
+  
+  private _animation: 'fade' | 'slide' = 'slide';
+
+  destroyed$ = new Subject();
+  currentImageCounter$ = new BehaviorSubject<number>(-1);
+  currentImageIndex$: Observable<number>;
+  currentImage$: Observable<TemplateRef<any> | null>;
 
   ngOnDestroy() {
     this.destroyed$.next(true);
@@ -38,12 +47,7 @@ export class BsCarouselComponent implements OnInit, OnDestroy, AfterContentInit 
     }
   }
   
-  @HostBinding('@.disabled')
-  public animationsDisabled = false;
-
-  @Input() public indicators = true;
   //#region Animation
-  private _animation: 'fade' | 'slide' = 'slide';
   @Input() public set animation(value: 'fade' | 'slide') {
     this.animationsDisabled = true;
     this._animation = value;
@@ -55,11 +59,6 @@ export class BsCarouselComponent implements OnInit, OnDestroy, AfterContentInit 
     return this._animation;
   }
   //#endregion
-
-  destroyed$ = new Subject();
-  currentImageCounter$ = new BehaviorSubject<number>(-1);
-  currentImageIndex$: Observable<number>;
-  currentImage$: Observable<TemplateRef<any> | null>;
 
   previousImage() {
     this.currentImageCounter$
@@ -84,7 +83,5 @@ export class BsCarouselComponent implements OnInit, OnDestroy, AfterContentInit 
     const newValue = currentValue - counterMod + index;
     this.currentImageCounter$.next(newValue);
   }
-
-  @ContentChildren(BsCarouselImageDirective) images!: QueryList<BsCarouselImageDirective>;
 
 }

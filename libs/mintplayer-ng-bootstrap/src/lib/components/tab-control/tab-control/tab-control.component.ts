@@ -1,4 +1,4 @@
-import { Component, ContentChildren, OnInit } from '@angular/core';
+import { Component, ContentChildren, Input } from '@angular/core';
 import { BsTabPageComponent } from '../tab-page/tab-page.component';
 
 @Component({
@@ -6,13 +6,11 @@ import { BsTabPageComponent } from '../tab-page/tab-page.component';
   templateUrl: './tab-control.component.html',
   styleUrls: ['./tab-control.component.scss']
 })
-export class BsTabControlComponent implements OnInit {
+export class BsTabControlComponent {
 
-  constructor() {
-  }
-
-  ngOnInit() {
-  }
+  @ContentChildren(BsTabPageComponent) tabPages!: BsTabPageComponent[];
+  @Input() public border = true;
+  activeTab: BsTabPageComponent | null = null;
 
   setActiveTab(tab: BsTabPageComponent) {
     if (!tab.disabled) {
@@ -21,6 +19,4 @@ export class BsTabControlComponent implements OnInit {
     return false;
   }
 
-  @ContentChildren(BsTabPageComponent) tabPages!: BsTabPageComponent[];
-  activeTab: BsTabPageComponent | null = null;
 }

@@ -1,0 +1,18 @@
+<div bsDropdown [hasBackdrop]="true" [closeOnClickOutside]="true">
+    <button bsDropdownToggle class="btn btn-primary">
+        <ng-container *ngTemplateOutlet="buttonTemplate ?? defaultButtonTemplate; context: { $implicit: selectedItems.length }"></ng-container>
+    </button>
+    <div *bsDropdownMenu class="bg-white mw-250px p-3 border rounded shadow">
+        <ng-container *ngTemplateOutlet="headerTemplate"></ng-container>
+        <hr class="my-2" *ngIf="headerTemplate">
+        <label *ngFor="let item of items" class="form-check">
+            <input type="checkbox" [checked]="selectedItems.indexOf(item) > -1" (change)="itemChange(item, $event)" class="form-check-input">
+            <span class="form-check-label">{{ item }}</span>
+        </label>
+        <hr class="my-2" *ngIf="footerTemplate">
+        <ng-container *ngTemplateOutlet="footerTemplate"></ng-container>
+    </div>
+</div>
+<ng-template #defaultButtonTemplate let-count>
+    {{ count }} selected
+</ng-template>

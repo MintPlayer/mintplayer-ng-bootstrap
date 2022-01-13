@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { BsAccordionTabComponent } from '../accordion-tab/accordion-tab.component';
 import { BsAccordionComponent } from '../accordion/accordion.component';
 
@@ -7,12 +7,9 @@ import { BsAccordionComponent } from '../accordion/accordion.component';
   templateUrl: './accordion-tab-header.component.html',
   styleUrls: ['./accordion-tab-header.component.scss']
 })
-export class BsAccordionTabHeaderComponent implements OnInit {
+export class BsAccordionTabHeaderComponent {
 
   constructor(private accordionTab: BsAccordionTabComponent, private accordion: BsAccordionComponent) {
-  }
-
-  ngOnInit() {
   }
 
   headerClicked(event: MouseEvent) {
@@ -22,9 +19,5 @@ export class BsAccordionTabHeaderComponent implements OnInit {
     } else {
       this.accordion.activeTab = this.accordionTab;
     }
-  }
-
-  foo(event: MouseEvent) {
-    event.preventDefault();
   }
 }

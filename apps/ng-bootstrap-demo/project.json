@@ -1,8 +1,13 @@
 {
   "projectType": "application",
+  "schematics": {
+    "@schematics/angular:component": {
+      "style": "scss"
+    }
+  },
   "root": "apps/ng-bootstrap-demo",
   "sourceRoot": "apps/ng-bootstrap-demo/src",
-  "prefix": "mintplayer-ng-bootstrap",
+  "prefix": "demo",
   "targets": {
     "build": {
       "executor": "@angular-devkit/build-angular:browser",

@@ -1,0 +1,11 @@
+<div class="position-relative">
+    <button #copyBtn [bsCopy]="htmlToCopy" (bsCopied)="copiedHtml()" class="btn btn-link rounded-0 text-light position-absolute copy-btn">
+        Copy html
+    </button>
+    <pre class="white-space-normal">
+        <code class="d-block white-space-pre" [highlight]="htmlToCopy"></code>
+    </pre>
+    <ng-template #copiedTemplate>
+        <div class="p-3">Copied!</div>
+    </ng-template>
+</div>

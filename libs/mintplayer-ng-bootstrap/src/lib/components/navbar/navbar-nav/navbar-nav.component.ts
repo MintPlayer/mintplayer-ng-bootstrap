@@ -1,7 +1,7 @@
-import { Component, HostListener, Inject, Input, OnDestroy } from '@angular/core';
+import { Component, HostListener, Input, OnDestroy } from '@angular/core';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
-import { BehaviorSubject, combineLatest, debounceTime, exhaustAll, filter, map, Observable, Subject, takeUntil } from 'rxjs';
+import { BehaviorSubject, combineLatest, debounceTime, filter, map, Observable, Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'bs-navbar-nav',

@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { OverlayModule } from '@angular/cdk/overlay';
 import { BsSnackbarComponent } from './component/snackbar.component';
 import { BsSnackbarCloseDirective } from './directives/snackbar-close/snackbar-close.directive';
 
@@ -9,7 +10,8 @@ import { BsSnackbarCloseDirective } from './directives/snackbar-close/snackbar-c
     BsSnackbarCloseDirective
   ],
   imports: [
-    CommonModule
+    CommonModule,
+    OverlayModule
   ],
   exports: [
     BsSnackbarComponent,

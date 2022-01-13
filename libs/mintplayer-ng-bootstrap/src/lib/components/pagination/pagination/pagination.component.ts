@@ -1,21 +1,37 @@
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
-import { BehaviorSubject, combineLatest, map, Observable, Subject, takeUntil } from 'rxjs';
+import {
+  Component,
+  EventEmitter,
+  Input,
+  OnDestroy,
+  Output,
+} from '@angular/core';
+import {
+  BehaviorSubject,
+  combineLatest,
+  map,
+  Observable,
+  Subject,
+  takeUntil,
+} from 'rxjs';
 import { PageWithSelection } from '../../../interfaces/page-with-selection';
 
 @Component({
   selector: 'bs-pagination',
   templateUrl: './pagination.component.html',
-  styleUrls: ['./pagination.component.scss']
+  styleUrls: ['./pagination.component.scss'],
 })
-export class BsPaginationComponent implements OnInit, OnDestroy {
-
+export class BsPaginationComponent implements OnDestroy {
   constructor() {
     this.destroyed$ = new Subject();
 
-    this.visibleNumberOfNumberBoxes$ =
-      combineLatest([this.numberOfBoxes$, this.pageNumbers$, this.showArrows$])
-        .pipe(takeUntil(this.destroyed$))
-        .pipe(map(([numberOfBoxes, pageNumbers, showArrows]) => {
+    this.visibleNumberOfNumberBoxes$ = combineLatest([
+      this.numberOfBoxes$,
+      this.pageNumbers$,
+      this.showArrows$,
+    ])
+      .pipe(takeUntil(this.destroyed$))
+      .pipe(
+        map(([numberOfBoxes, pageNumbers, showArrows]) => {
           if (numberOfBoxes <= 0) {
             return pageNumbers.length;
           } else if (!showArrows) {
@@ -25,72 +41,67 @@ export class BsPaginationComponent implements OnInit, OnDestroy {
           } else {
             return Math.min(numberOfBoxes - 2, pageNumbers.length);
           }
-        }));
+        })
+      );
 
-    this.shownPageNumbers$ = 
-      combineLatest([this.pageNumbers$, this.selectedPageNumber$, this.visibleNumberOfNumberBoxes$])
-        .pipe(takeUntil(this.destroyed$))
-        .pipe(map(([pageNumbers, selectedPageNumber, visibleNumberOfNumberBoxes]) => {
+    this.shownPageNumbers$ = combineLatest([
+      this.pageNumbers$,
+      this.selectedPageNumber$,
+      this.visibleNumberOfNumberBoxes$,
+    ])
+      .pipe(takeUntil(this.destroyed$))
+      .pipe(
+        map(([pageNumbers, selectedPageNumber, visibleNumberOfNumberBoxes]) => {
           let startIndex = 0;
-          
+
           const half = Math.round((visibleNumberOfNumberBoxes - 1) / 2);
           if (pageNumbers.indexOf(selectedPageNumber) < half) {
             startIndex = 0;
-          } else if (pageNumbers.indexOf(selectedPageNumber) >= (pageNumbers.length - half)) {
+          } else if (
+            pageNumbers.indexOf(selectedPageNumber) >=
+            pageNumbers.length - half
+          ) {
             startIndex = pageNumbers.length - visibleNumberOfNumberBoxes;
           } else {
             startIndex = pageNumbers.indexOf(selectedPageNumber) - half;
           }
 
           return [...Array(visibleNumberOfNumberBoxes).keys()]
-            .map(p => p + startIndex)
-            .map(p => <PageWithSelection>{
+            .map((p) => p + startIndex)
+            .map((p) =><PageWithSelection>{
               page: pageNumbers[p],
-              selected: pageNumbers[p] === selectedPageNumber
+              selected: pageNumbers[p] === selectedPageNumber,
             });
-        }));
+        })
+      );
 
-    this.isFirstPage$ =
-      combineLatest([this.pageNumbers$, this.selectedPageNumber$])
-        .pipe(takeUntil(this.destroyed$))
-        .pipe(map(([pageNumbers, selectedPageNumber]) => {
+    this.isFirstPage$ = combineLatest([
+      this.pageNumbers$,
+      this.selectedPageNumber$,
+    ])
+      .pipe(takeUntil(this.destroyed$))
+      .pipe(
+        map(([pageNumbers, selectedPageNumber]) => {
           return pageNumbers.indexOf(selectedPageNumber) === 0;
-        }));
-        
-    this.isLastPage$ =
-      combineLatest([this.pageNumbers$, this.selectedPageNumber$])
-        .pipe(takeUntil(this.destroyed$))
-        .pipe(map(([pageNumbers, selectedPageNumber]) => {
-          return pageNumbers.indexOf(selectedPageNumber) === (pageNumbers.length - 1);
-        }));
-    
+        })
+      );
+
+    this.isLastPage$ = combineLatest([
+      this.pageNumbers$,
+      this.selectedPageNumber$,
+    ])
+      .pipe(takeUntil(this.destroyed$))
+      .pipe(
+        map(([pageNumbers, selectedPageNumber]) => {
+          return (pageNumbers.indexOf(selectedPageNumber) === pageNumbers.length - 1);
+        })
+      );
+
     this.selectedPageNumber$
       .pipe(takeUntil(this.destroyed$))
       .subscribe((selectedPageNumber) => {
         this.selectedPageNumberChange.emit(selectedPageNumber);
       });
-  }
-
-  ngOnInit() {
-  }
-
-  ngOnDestroy() {
-    this.destroyed$.next(true);
-  }
-
-  onSelectPage(event: MouseEvent, page: number) {
-    this.selectedPageNumber$.next(page);
-    return false;
-  }
-
-  onPrevious() {
-    this.selectedPageNumber$.next(this.selectedPageNumber$.value - 1);
-    return false;
-  }
-
-  onNext() {
-    this.selectedPageNumber$.next(this.selectedPageNumber$.value + 1);
-    return false;
   }
 
   /** All page numbers. */
@@ -113,9 +124,12 @@ export class BsPaginationComponent implements OnInit, OnDestroy {
   /** Monitor OnDestroyed hook. */
   private destroyed$: Subject<any>;
 
+  private _selectedPageNumber = 0;
+  private _numberOfBoxes = 0;
+  private _pageNumbers: number[] = [];
+  private _showArrows = true;
 
-  
-  private _selectedPageNumber: number = 0;
+  //#region SelectedPageNumber
   @Output() public selectedPageNumberChange = new EventEmitter<number>();
   @Input() set selectedPageNumber(value: number) {
     this._selectedPageNumber = value;
@@ -124,8 +138,9 @@ export class BsPaginationComponent implements OnInit, OnDestroy {
   get selectedPageNumber() {
     return this._selectedPageNumber;
   }
-  
-  private _numberOfBoxes: number = 0;
+  //#endregion
+
+  //#region NumberOfBoxes
   @Input() set numberOfBoxes(value: number) {
     this._numberOfBoxes = value;
     this.numberOfBoxes$.next(value);
@@ -133,8 +148,9 @@ export class BsPaginationComponent implements OnInit, OnDestroy {
   get numberOfBoxes() {
     return this._numberOfBoxes;
   }
-  
-  private _pageNumbers: number[] = [];
+  //#endregion
+
+  //#region PageNumbers
   @Input() set pageNumbers(value: number[]) {
     this._pageNumbers = value;
     this.pageNumbers$.next(value);
@@ -142,8 +158,9 @@ export class BsPaginationComponent implements OnInit, OnDestroy {
   get pageNumbers() {
     return this._pageNumbers;
   }
-  
-  private _showArrows: boolean = true;
+  //#endregion
+
+  //#region ShowArrows
   @Input() set showArrows(value: boolean) {
     this._showArrows = value;
     this.showArrows$.next(value);
@@ -151,5 +168,24 @@ export class BsPaginationComponent implements OnInit, OnDestroy {
   get showArrows() {
     return this._showArrows;
   }
+  //#endregion
 
+  ngOnDestroy() {
+    this.destroyed$.next(true);
+  }
+
+  onSelectPage(event: MouseEvent, page: number) {
+    this.selectedPageNumber$.next(page);
+    return false;
+  }
+
+  onPrevious() {
+    this.selectedPageNumber$.next(this.selectedPageNumber$.value - 1);
+    return false;
+  }
+
+  onNext() {
+    this.selectedPageNumber$.next(this.selectedPageNumber$.value + 1);
+    return false;
+  }
 }

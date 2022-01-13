@@ -2,12 +2,13 @@ import { Overlay } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { ComponentFactoryResolver, Injectable, Injector, TemplateRef } from '@angular/core';
 import { filter, take } from 'rxjs';
+import { BsSnackbarModule } from '../snackbar.module';
 import { BsSnackbarComponent } from '../component/snackbar.component';
 import { SnackbarAnimationMeta } from '../interfaces/snackbar-animation-meta';
 import { SNACKBAR_CONTENT } from '../providers/snackbar-content.provider';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: BsSnackbarModule
 })
 export class BsSnackbarService {
 

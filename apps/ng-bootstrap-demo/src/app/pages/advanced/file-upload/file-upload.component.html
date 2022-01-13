@@ -1,0 +1,22 @@
+<h2>File upload</h2>
+<div class="container">
+    <div class="row">
+        <div class="col-md-12 text-center">
+            <bs-file-upload [files]="files" (filesDropped)="logFilesForUpload($event)">
+                <ng-template bsFileUploadTemplate let-upload>
+                    <div class="d-flex flex-row mx-auto">
+                        <div class="file-img"></div>
+                        <div class="flex-grow-1 text-start px-2">
+                            <span class="d-block text-truncate text-secondary">{{ upload.file.name }}</span>
+                            <span class="d-block text-grey mb-0">{{ upload.file.size | bsFormatBytes }}</span>
+                            <bs-progress [height]="4">
+                                <bs-progress-bar [minimum]="0" [maximum]="upload.file.size" [value]="upload.progress" [color]="colors.danger"></bs-progress-bar>
+                            </bs-progress>
+                        </div>
+                        <button class="btn file-remove" (click)="removeFile(upload)">Remove</button>
+                    </div>
+                </ng-template>
+            </bs-file-upload>
+        </div>
+    </div>
+</div>

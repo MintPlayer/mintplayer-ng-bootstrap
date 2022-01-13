@@ -1,4 +1,4 @@
-import { Component, ContentChildren, OnInit } from '@angular/core';
+import { Component, ContentChildren } from '@angular/core';
 import { BsAccordionTabComponent } from '../accordion-tab/accordion-tab.component';
 
 @Component({
@@ -6,14 +6,9 @@ import { BsAccordionTabComponent } from '../accordion-tab/accordion-tab.componen
   templateUrl: './accordion.component.html',
   styleUrls: ['./accordion.component.scss']
 })
-export class BsAccordionComponent implements OnInit {
-
-  constructor() {
-  }
-
-  ngOnInit() {
-  }
+export class BsAccordionComponent {
 
   @ContentChildren(BsAccordionTabComponent) tabPages!: BsAccordionTabComponent[];
   activeTab: BsAccordionTabComponent | null = null;
+  
 }
