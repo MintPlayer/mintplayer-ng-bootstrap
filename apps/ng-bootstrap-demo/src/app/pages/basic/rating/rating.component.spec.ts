@@ -1,6 +1,14 @@
+import { Component, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { RatingComponent } from './rating.component';
+
+@Component({
+  selector: 'bs-rating'
+})
+class BsRatingMockComponent {
+  @Input() maximum = 5;
+  @Input() value = 0;
+}
 
 describe('RatingComponent', () => {
   let component: RatingComponent;
@@ -8,7 +16,13 @@ describe('RatingComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ RatingComponent ]
+      declarations: [
+        // Unit to test
+        RatingComponent,
+      
+        // Mock dependencies
+        BsRatingMockComponent
+      ]
     })
     .compileComponents();
   });

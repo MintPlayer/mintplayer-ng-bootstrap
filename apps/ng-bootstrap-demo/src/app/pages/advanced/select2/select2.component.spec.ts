@@ -1,7 +1,33 @@
 import { HttpClientModule } from '@angular/common/http';
+import { Component, Injectable, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { SubjectService, TagService } from '@mintplayer/ng-client';
 
 import { Select2Component } from './select2.component';
+
+@Injectable({
+  providedIn: 'root'
+})
+class SubjectMockService {
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+class TagMockService {
+}
+
+@Component({
+  selector: 'bs-select2',
+  template: `
+    <div>
+      Select2 works
+    </div>`
+})
+class BsSelect2MockComponent {
+  @Input() suggestions: any[] = [];
+  @Input() selectedItems: any[] = [];
+}
 
 describe('Select2Component', () => {
   let component: Select2Component;
@@ -14,7 +40,14 @@ describe('Select2Component', () => {
       ],
       declarations: [
         // Unit to test
-        Select2Component
+        Select2Component,
+
+        // Mock dependencies
+        BsSelect2MockComponent
+      ],
+      providers: [
+        { provide: SubjectService, useClass: SubjectMockService },
+        { provide: TagService, useClass: TagMockService }
       ]
     })
     .compileComponents();

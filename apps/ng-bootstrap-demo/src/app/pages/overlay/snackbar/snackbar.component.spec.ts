@@ -20,7 +20,8 @@ describe('SnackbarComponent', () => {
         SnackbarComponent
       ],
       providers: [
-        { provide: BsSnackbarService, useClass: BsSnackbarMockService }
+        { provide: BsSnackbarService, useClass: BsSnackbarMockService },
+        { provide: 'GIT_REPO', useValue: 'https://github.com/MintPlayer/mintplayer-ng-bootstrap/apps/ng-bootstrap-demo/src/app/' },
       ]
     })
     .compileComponents();

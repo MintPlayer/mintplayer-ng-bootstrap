@@ -1,7 +1,30 @@
-import { HttpClientModule } from '@angular/common/http';
+import { Component, EventEmitter, Injectable, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
+import { SubjectService, TagService } from '@mintplayer/ng-client';
 import { AutofocusComponent } from './autofocus.component';
+
+@Injectable({
+  providedIn: 'root'
+})
+class SubjectMockService {
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+class TagMockService {
+}
+
+
+@Component({
+  selector: 'bs-select2',
+  template: 'select2'
+})
+class BsSelect2MockComponent {
+  @Input() public selectedItems: any[] = [];
+  @Input() public suggestions: any[] = [];
+  @Output() public provideSuggestions = new EventEmitter<string>();
+}
 
 describe('AutofocusComponent', () => {
   let component: AutofocusComponent;
@@ -9,12 +32,17 @@ describe('AutofocusComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [
-        HttpClientModule
-      ],
+      imports: [],
       declarations: [
         // Unit to test
-        AutofocusComponent
+        AutofocusComponent,
+
+        // Mock dependencies
+        BsSelect2MockComponent
+      ],
+      providers: [
+        { provide: SubjectService, useClass: SubjectMockService },
+        { provide: TagService, useClass: TagMockService }
       ]
     })
     .compileComponents();

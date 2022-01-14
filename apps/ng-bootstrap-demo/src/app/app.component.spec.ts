@@ -6,7 +6,6 @@ import { TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { RouterTestingModule } from '@angular/router/testing';
 import { BASE_URL } from '@mintplayer/ng-base-url';
-import { DatatableSettings } from '@mintplayer/ng-bootstrap';
 import { API_VERSION } from '@mintplayer/ng-client';
 import { PaginationResponse } from '@mintplayer/ng-pagination';
 import { AppComponent } from './app.component';
@@ -32,30 +31,12 @@ describe('AppComponent', () => {
         BsNavbarDropdownMockComponent,
         BsNavbarItemMockComponent,
         NavbarContentMockDirective,
-        BsCarouselMockComponent,
-        BsCardMockComponent,
-        BsCardHeaderMockComponent,
-        BsListGroupMockComponent,
-        BsListGroupItemMockComponent,
-        BsCalendarMockComponent,
-        BsAccordionMockComponent,
-        BsAccordionTabMockComponent,
-        BsAccordionTabHeaderMockComponent,
-        BsTabControlMockComponent,
-        BsTabPageMockComponent,
         BsScrollspyMockComponent,
         BsScrollspyMockDirective,
-        BsDatatableMockComponent,
-        BsDatatableColumnDirective,
-        BsDatepickerMockComponent,
         BsSelect2MockComponent,
-        BsMultiselectMockComponent,
         BsTypeaheadMockComponent,
         BsProgressMockComponent,
-        BsToggleButtonMockComponent,
         BsProgressbarMockComponent,
-        BsDropdownMockDirective,
-        BsTooltipMockDirective,
         BsFileUploadMockComponent,
 
         // Mock pages
@@ -149,77 +130,11 @@ class NavbarContentMockDirective {
 }
 
 @Component({
-  selector: 'bs-carousel',
-  template: 'carousel works'
-})
-class BsCarouselMockComponent {
-
-  @Input() public animation: 'fade' | 'slide' = 'slide';
-
-}
-
-@Component({
   selector: 'bs-file-upload',
   template: `file-upload works`
 })
 class BsFileUploadMockComponent {
   @Input() files!: any[];
-}
-
-@Component({
-  selector: 'bs-calendar',
-  template: 'calendar works'
-})
-class BsCalendarMockComponent {
-  constructor() {
-  }
-}
-
-@Component({
-  selector: 'bs-accordion',
-  template: 'accordion works'
-})
-class BsAccordionMockComponent {
-  constructor() {
-  }
-}
-
-@Component({
-  selector: 'bs-accordion-tab',
-  template: 'accordion-tab works'
-})
-class BsAccordionTabMockComponent {
-  constructor() {
-  }
-}
-
-@Component({
-  selector: 'bs-accordion-tab-header',
-  template: 'accordion-tab-header works'
-})
-class BsAccordionTabHeaderMockComponent {
-  constructor() {
-  }
-}
-
-@Component({
-  selector: 'bs-tab-control',
-  template: 'tab-control works'
-})
-class BsTabControlMockComponent {
-  constructor() {
-  }
-}
-
-@Component({
-  selector: 'bs-tab-page',
-  template: 'tab-page works'
-})
-class BsTabPageMockComponent {
-  constructor() {
-  }
-  
-  @Input() disabled: boolean = false;
 }
 
 @Directive({
@@ -247,46 +162,6 @@ class BsScrollspyMockComponent {
   directives!: QueryList<BsScrollspyMockDirective>;
 }
 
-
-@Component({
-  selector: 'bs-datatable',
-  template: ``
-})
-class BsDatatableMockComponent {
-
-  constructor() {
-    this.settings = new DatatableSettings();
-    this.settings.sortProperty = '';
-    this.settings.sortDirection = 'ascending';
-    this.settings.perPage = { values: [10, 20, 50], selected: 20 };
-    this.settings.page = { values: [1], selected: 1 };
-  }
-
-  @Input() settings: DatatableSettings;
-  @Input() data?: PaginationResponse<any>;
-  @Output() onReloadData: EventEmitter<any> = new EventEmitter();
-
-}
-
-@Directive({
-  selector: '[bsDatatableColumn]'
-})
-class BsDatatableColumnDirective {
-  @Input() public bsDatatableColumn: DatatableColumnMetadata = { name: '', sortable: true };
-}
-
-interface DatatableColumnMetadata {
-  name: string;
-  sortable: boolean;
-}
-
-@Component({
-  selector: 'bs-datepicker',
-  template: 'Date picker'
-})
-class BsDatepickerMockComponent {
-}
-
 @Component({
   selector: 'bs-typeahead',
   template: 'typeahead'
@@ -298,16 +173,6 @@ class BsTypeaheadMockComponent {
   @Input() suggestions: any[] = [];
   @Output() submitted = new EventEmitter<string>();
   @Output() suggestionSelected = new EventEmitter<any>();
-}
-
-@Component({
-  selector: 'bs-toggle-button',
-  template: 'toggle-button'
-})
-class BsToggleButtonMockComponent {
-  @Output() public isToggledChange = new EventEmitter<boolean | null>();
-  @Input() public isToggled: boolean | null = false;
-  @Input() public round = true;
 }
 
 @Component({
@@ -333,15 +198,6 @@ class BsProgressbarMockComponent {
 }
 
 @Component({
-  selector: 'bs-multiselect',
-  template: 'multiselect'
-})
-class BsMultiselectMockComponent {
-  @Input() public items: any[] = [];
-  @Input() public selectedItems: any[] = [];
-}
-
-@Component({
   selector: 'bs-select2',
   template: 'select2'
 })
@@ -349,20 +205,3 @@ class BsSelect2MockComponent {
   @Input() public selectedItems: any[] = [];
   @Input() public suggestions: any[] = [];
 }
-
-@Directive({
-  selector: '[bsDropdown]'
-})
-class BsDropdownMockDirective {
-  @Input() public hasBackdrop = false;
-  @Input() public closeOnClickOutside = false;
-}
-
-@Directive({
-  selector: '*[bsTooltip]'
-})
-class BsTooltipMockDirective {
-  @Input() bsTooltip: Position = Position.bottom;
-}
-
-enum Position { top, left, bottom, right }

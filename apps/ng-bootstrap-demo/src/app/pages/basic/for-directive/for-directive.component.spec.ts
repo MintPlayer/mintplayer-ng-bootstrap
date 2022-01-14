@@ -1,6 +1,15 @@
+import { Directive, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { ForDirectiveComponent } from './for-directive.component';
+
+@Directive({
+  selector: '[bsFor]'
+})
+class BsForDirective {
+
+  @Input() bsFor: any;
+
+}
 
 describe('ForDirectiveComponent', () => {
   let component: ForDirectiveComponent;
@@ -8,7 +17,13 @@ describe('ForDirectiveComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ ForDirectiveComponent ]
+      declarations: [
+        // Unit to test
+        ForDirectiveComponent,
+        
+        // Mock dependencies
+        BsForDirective
+      ]
     })
     .compileComponents();
   });

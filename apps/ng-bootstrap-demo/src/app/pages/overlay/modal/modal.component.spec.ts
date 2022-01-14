@@ -1,12 +1,19 @@
 import { Injectable } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsModalService } from '@mintplayer/ng-bootstrap';
+import { TagService } from '@mintplayer/ng-client';
 import { ModalComponent } from './modal.component';
 
 @Injectable({
   providedIn: 'root'
 })
 class BsModalMockService {
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+class TagMockService {
 }
 
 describe('ModalComponent', () => {
@@ -20,7 +27,9 @@ describe('ModalComponent', () => {
         ModalComponent
       ],
       providers: [
-        { provide: BsModalService, useClass: BsModalMockService }
+        { provide: 'GIT_REPO', useValue: 'https://github.com/MintPlayer/mintplayer-ng-bootstrap/apps/ng-bootstrap-demo/src/app/' },
+        { provide: BsModalService, useClass: BsModalMockService },
+        { provide: TagService, useClass: TagMockService }
       ]
     })
     .compileComponents();

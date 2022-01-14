@@ -17,6 +17,15 @@ enum Color {
 }
 
 @Component({
+  selector: 'bs-progress',
+  template: 'progress'
+})
+class BsProgressMockComponent {
+  @Input() public height = 30;
+  @Input() public isIndeterminate = false;
+}
+
+@Component({
   selector: 'bs-progress-bar',
   template: 'progressbar'
 })
@@ -40,6 +49,7 @@ describe('ProgressBarComponent', () => {
         ProgressBarComponent,
         
         // Mock dependencies
+        BsProgressMockComponent,
         BsProgressbarMockComponent
       ]
     })

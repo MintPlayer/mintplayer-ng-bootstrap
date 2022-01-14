@@ -6,19 +6,25 @@ import { CardComponent } from './card.component';
   selector: 'bs-card',
   template: 'card works'
 })
-class BsCardMockComponent {
-  constructor() {
-  }
-}
+class BsCardMockComponent {}
 
 @Component({
   selector: 'bs-card-header',
   template: 'card-header works'
 })
-class BsCardHeaderMockComponent {
-  constructor() {
-  }
-}
+class BsCardHeaderMockComponent {}
+
+@Component({
+  selector: 'bs-list-group',
+  template: 'list-group works'
+})
+class BsListGroupMockComponent {}
+
+@Component({
+  selector: 'bs-list-group-item',
+  template: 'list-group-item works'
+})
+class BsListGroupItemMockComponent {}
 
 
 describe('CardComponent', () => {
@@ -33,7 +39,9 @@ describe('CardComponent', () => {
         
         // Mock dependencies
         BsCardMockComponent,
-        BsCardHeaderMockComponent
+        BsCardHeaderMockComponent,
+        BsListGroupMockComponent,
+        BsListGroupItemMockComponent
       ]
     })
     .compileComponents();

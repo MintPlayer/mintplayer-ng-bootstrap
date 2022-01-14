@@ -1,6 +1,24 @@
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { DatepickerComponent } from './datepicker.component';
+
+@Component({
+  selector: 'bs-datepicker',
+  template: 'Date picker'
+})
+class BsDatepickerMockComponent {
+  
+  _selectedDate = new Date();
+  @Output() public selectedDateChange = new EventEmitter<Date>();
+  get selectedDate() {
+    return this._selectedDate;
+  }
+  @Input() set selectedDate(value: Date) {
+    this._selectedDate = value;
+    this.selectedDateChange.emit(value);
+  }
+
+}
 
 describe('DatepickerComponent', () => {
   let component: DatepickerComponent;
@@ -8,7 +26,13 @@ describe('DatepickerComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ DatepickerComponent ]
+      declarations: [
+        // Unit to test
+        DatepickerComponent,
+      
+        // Mock dependencies
+        BsDatepickerMockComponent
+      ]
     })
     .compileComponents();
   });

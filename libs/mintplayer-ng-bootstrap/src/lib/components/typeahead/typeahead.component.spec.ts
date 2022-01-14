@@ -36,7 +36,7 @@ describe('TypeaheadComponent', () => {
         // Unit to test
         BsTypeaheadComponent,
       
-        // Mock dependencies
+        // // Mock dependencies
         ClickOutsideMockDirective,
         BsDropdownMenuMockDirective,
         BsDropdownMockDirective,

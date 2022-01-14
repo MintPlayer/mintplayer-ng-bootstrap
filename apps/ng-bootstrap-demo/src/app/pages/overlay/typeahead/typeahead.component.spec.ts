@@ -1,4 +1,5 @@
-import { Pipe, PipeTransform } from '@angular/core';
+import { JsonPipe } from '@angular/common';
+import { Component, EventEmitter, Input, Output, Pipe, PipeTransform } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TypeaheadComponent } from './typeahead.component';
 
@@ -11,6 +12,22 @@ class JsonMockPipe implements PipeTransform {
   }
 }
 
+@Component({
+  selector: 'bs-typeahead',
+  template: `
+    <div>
+      <input type="text">
+    </div>`
+})
+class BsTypeaheadMockComponent {
+  @Input() searchterm = '';
+  @Output() searchtermChange = new EventEmitter<string>();
+  @Output() provideSuggestions = new EventEmitter<string>();
+  @Input() suggestions: any[] = [];
+  @Output() submitted = new EventEmitter<string>();
+  @Output() suggestionSelected = new EventEmitter<any>();
+}
+
 describe('TypeaheadComponent', () => {
   let component: TypeaheadComponent;
   let fixture: ComponentFixture<TypeaheadComponent>;
@@ -20,10 +37,13 @@ describe('TypeaheadComponent', () => {
       declarations: [
         // Unit to test
         TypeaheadComponent,
+
+        // Mock dependencies
+        BsTypeaheadMockComponent
       ],
       providers: [
         // Mock dependencies
-        JsonMockPipe
+        { provide: JsonPipe, useClass: JsonMockPipe }
       ]
     })
     .compileComponents();

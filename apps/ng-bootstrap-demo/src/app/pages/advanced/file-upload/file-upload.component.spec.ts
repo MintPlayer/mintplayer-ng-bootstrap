@@ -17,6 +17,15 @@ enum Color {
 }
 
 @Component({
+  selector: 'bs-progress',
+  template: 'progress'
+})
+class BsProgressMockComponent {
+  @Input() public height = 30;
+  @Input() public isIndeterminate = false;
+}
+
+@Component({
   selector: 'bs-progress-bar',
   template: 'progressbar'
 })
@@ -29,6 +38,18 @@ class BsProgressbarMockComponent {
   @Input() public animated = false;
 }
 
+interface FileUpload {
+  file: File;
+  progress: number;
+}
+
+@Component({
+  selector: 'bs-file-upload',
+  template: 'File-upload works'
+})
+class BsFileUploadMockComponent {
+  @Input() files: FileUpload[] = [];
+}
 
 describe('FileUploadComponent', () => {
   let component: FileUploadComponent;
@@ -41,7 +62,9 @@ describe('FileUploadComponent', () => {
         FileUploadComponent,
       
         // Mock dependencies
-        BsProgressbarMockComponent
+        BsProgressMockComponent,
+        BsProgressbarMockComponent,
+        BsFileUploadMockComponent
       ]
     })
     .compileComponents();
