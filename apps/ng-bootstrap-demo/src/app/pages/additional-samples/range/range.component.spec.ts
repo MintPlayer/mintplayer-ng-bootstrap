@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { FormsModule } from '@angular/forms';
 
 import { RangeComponent } from './range.component';
 
@@ -8,7 +9,13 @@ describe('RangeComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ RangeComponent ]
+      imports: [
+        FormsModule
+      ],
+      declarations: [
+        // Unit to test
+        RangeComponent
+      ]
     })
     .compileComponents();
   });

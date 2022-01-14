@@ -1,4 +1,4 @@
-import { Directive, Input, Pipe, PipeTransform } from '@angular/core';
+import { Component, Directive, Input, Pipe, PipeTransform } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsFileUploadComponent } from './file-upload.component';
 
@@ -18,6 +18,33 @@ class BsFormatBytesMockPipe implements PipeTransform {
   }
 }
 
+enum Color {
+  primary,
+  secondary,
+  success,
+  danger,
+  warning,
+  info,
+  light,
+  dark,
+  body,
+  white,
+  transparent
+}
+
+@Component({
+  selector: 'bs-progress-bar',
+  template: 'progressbar'
+})
+class BsProgressbarMockComponent {
+  @Input() public minimum = 0;
+  @Input() public maximum = 100;
+  @Input() public value = 50;
+  @Input() public color = Color;
+  @Input() public striped = false;
+  @Input() public animated = false;
+}
+
 describe('BsFileUploadComponent', () => {
   let component: BsFileUploadComponent;
   let fixture: ComponentFixture<BsFileUploadComponent>;
@@ -30,7 +57,8 @@ describe('BsFileUploadComponent', () => {
 
         // Mock dependencies
         BsForMockDirective,
-        BsFormatBytesMockPipe
+        BsFormatBytesMockPipe,
+        BsProgressbarMockComponent
       ]
     })
     .compileComponents();

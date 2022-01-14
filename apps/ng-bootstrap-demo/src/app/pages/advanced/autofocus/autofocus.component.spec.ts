@@ -1,3 +1,4 @@
+import { HttpClientModule } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { AutofocusComponent } from './autofocus.component';
@@ -8,7 +9,13 @@ describe('AutofocusComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ AutofocusComponent ]
+      imports: [
+        HttpClientModule
+      ],
+      declarations: [
+        // Unit to test
+        AutofocusComponent
+      ]
     })
     .compileComponents();
   });

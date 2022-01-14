@@ -33,8 +33,6 @@ describe('AppComponent', () => {
         BsNavbarItemMockComponent,
         NavbarContentMockDirective,
         BsCarouselMockComponent,
-        BsAlertMockComponent,
-        BsAlertCloseMockComponent,
         BsCardMockComponent,
         BsCardHeaderMockComponent,
         BsListGroupMockComponent,
@@ -77,20 +75,6 @@ describe('AppComponent', () => {
     expect(app).toBeTruthy();
   });
 
-  it(`should have as title 'ng-bootstrap-demo'`, () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    const app = fixture.componentInstance;
-    expect(app.title).toEqual('ng-bootstrap-demo');
-  });
-
-  it('should render title', () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    fixture.detectChanges();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain(
-      'Welcome to ng-bootstrap-demo!'
-    );
-  });
 });
 
 enum Color {
@@ -106,13 +90,6 @@ enum Color {
   white,
   transparent
 }
-
-// @Pipe({
-//   name: 'json'
-// })
-// class JsonMockPipe implements PipeTransform {
-
-// }
 
 @Component({
   selector: 'a-b-c',
@@ -182,67 +159,11 @@ class BsCarouselMockComponent {
 }
 
 @Component({
-  selector: 'bs-alert',
-  template: 'alert works'
-})
-class BsAlertMockComponent {
-  constructor() {
-  }
-  
-  @Input() public type: Color = Color.primary;
-}
-
-@Component({
-  selector: 'bs-alert-close',
-  template: 'alert-close works'
-})
-class BsAlertCloseMockComponent {
-  constructor() {
-  }
-}
-
-@Component({
-  selector: 'bs-card',
-  template: 'card works'
-})
-class BsCardMockComponent {
-  constructor() {
-  }
-}
-
-@Component({
-  selector: 'bs-card-header',
-  template: 'card-header works'
-})
-class BsCardHeaderMockComponent {
-  constructor() {
-  }
-}
-
-@Component({
   selector: 'bs-file-upload',
   template: `file-upload works`
 })
 class BsFileUploadMockComponent {
   @Input() files!: any[];
-}
-
-@Component({
-  selector: 'bs-list-group',
-  template: 'list-group works'
-})
-class BsListGroupMockComponent {
-  constructor() {
-  }
-}
-
-@Component({
-  selector: 'bs-list-group-item',
-  template: 'list-group-item works'
-})
-class BsListGroupItemMockComponent {
-  constructor() {
-  }
 }
 
 @Component({

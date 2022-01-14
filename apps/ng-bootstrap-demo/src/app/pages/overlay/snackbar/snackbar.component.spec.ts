@@ -1,6 +1,13 @@
+import { Injectable } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
+import { BsSnackbarService } from '@mintplayer/ng-bootstrap';
 import { SnackbarComponent } from './snackbar.component';
+
+@Injectable({
+  providedIn: 'root'
+})
+class BsSnackbarMockService {
+}
 
 describe('SnackbarComponent', () => {
   let component: SnackbarComponent;
@@ -8,7 +15,13 @@ describe('SnackbarComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ SnackbarComponent ]
+      declarations: [
+        // Unit to test
+        SnackbarComponent
+      ],
+      providers: [
+        { provide: BsSnackbarService, useClass: BsSnackbarMockService }
+      ]
     })
     .compileComponents();
   });

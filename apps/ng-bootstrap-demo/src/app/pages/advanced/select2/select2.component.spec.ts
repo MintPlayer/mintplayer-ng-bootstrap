@@ -1,3 +1,4 @@
+import { HttpClientModule } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { Select2Component } from './select2.component';
@@ -8,7 +9,13 @@ describe('Select2Component', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ Select2Component ]
+      imports: [
+        HttpClientModule
+      ],
+      declarations: [
+        // Unit to test
+        Select2Component
+      ]
     })
     .compileComponents();
   });

@@ -1,3 +1,4 @@
+import { HttpClientModule } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { DatatablesComponent } from './datatables.component';
@@ -8,7 +9,13 @@ describe('DatatablesComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ DatatablesComponent ]
+      imports: [
+        HttpClientModule
+      ],
+      declarations: [
+        // Unit to test
+        DatatablesComponent
+      ]
     })
     .compileComponents();
   });

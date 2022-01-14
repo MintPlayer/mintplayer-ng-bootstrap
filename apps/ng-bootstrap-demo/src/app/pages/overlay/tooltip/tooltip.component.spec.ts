@@ -8,7 +8,13 @@ describe('TooltipComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ TooltipComponent ]
+      declarations: [
+        // Unit to test
+        TooltipComponent
+      ],
+      providers: [
+        { provide: 'GIT_REPO', useValue: 'https://github.com' }
+      ]
     })
     .compileComponents();
   });
