@@ -1,7 +1,8 @@
 <h2>Typeahead</h2>
-<bs-typeahead></bs-typeahead>
-<!-- [(searchterm)]="searchterm" -->
-<!-- (provideSuggestions)="provideSuggestions($event)" -->
-<!-- [suggestions]="(suggestions$ | async) || []" -->
-<!-- (submitted)="doSearch($event)" -->
-<!-- (suggestionSelected)="gotoArtist($event)" -->
+<bs-typeahead
+    [(searchterm)]="searchterm"
+    (provideSuggestions)="provideSuggestions($event)"
+    [suggestions]="(suggestions$ | async) || []"
+    (submitted)="doSearch($event)"
+    (suggestionSelected)="gotoArtist($event)"
+></bs-typeahead>
