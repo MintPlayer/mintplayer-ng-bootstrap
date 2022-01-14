@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, HostBinding, Input } from '@angular/core';
 
 @Component({
   selector: 'bs-navbar-brand',
@@ -7,4 +7,5 @@ import { Component, Input } from '@angular/core';
 })
 export class BsNavbarBrandComponent {
   @Input() public routerLink: any[] = [];
+  @HostBinding('class.mx-auto') mxAuto = true;
 }
