@@ -60,6 +60,8 @@ export class BsNavbarNavComponent implements OnDestroy {
   @HostListener('window:resize')
   onWindowResize() {
     this.isResizing$.next(true);
-    this.windowWidth$.next(window.innerWidth);
+    if (typeof window !== 'undefined') {
+      this.windowWidth$.next(window.innerWidth);
+    }
   }
 }

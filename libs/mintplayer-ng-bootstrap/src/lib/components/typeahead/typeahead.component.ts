@@ -69,7 +69,9 @@ export class BsTypeaheadComponent implements AfterViewInit {
 
   @HostListener('window:resize')
   onResize() {
-    this.hostWidth$.next(this.textbox.nativeElement.offsetWidth);
+    if (typeof window !== 'undefined') {
+      this.hostWidth$.next(this.textbox.nativeElement.offsetWidth);
+    }
   }
 
 }

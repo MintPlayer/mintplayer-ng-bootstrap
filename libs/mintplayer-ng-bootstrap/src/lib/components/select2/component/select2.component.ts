@@ -64,7 +64,9 @@ export class BsSelect2Component implements AfterViewInit {
 
   @HostListener('window:resize')
   onResize() {
-    this.hostWidth$.next(this.itemsBox.nativeElement.offsetWidth);
+    if (typeof window !== 'undefined') {
+      this.hostWidth$.next(this.itemsBox.nativeElement.offsetWidth);
+    }
   }
 
   @HostListener('click')

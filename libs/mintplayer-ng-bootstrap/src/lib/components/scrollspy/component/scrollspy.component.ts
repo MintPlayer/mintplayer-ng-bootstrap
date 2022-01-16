@@ -67,7 +67,7 @@ export class BsScrollspyComponent implements AfterViewInit, AfterContentInit, On
   }
 
   scrollToCurrentInSpy() {
-    if (window && (window.innerWidth >= 768)) {
+    if ((typeof window !== 'undefined') && (window.innerWidth >= 768)) {
       if (this.activeDirective) {
         const index = this.directives.toArray().findIndex((v, i) => v === this.activeDirective);
         const anchor = this.anchors.get(index);
@@ -79,10 +79,12 @@ export class BsScrollspyComponent implements AfterViewInit, AfterContentInit, On
   }
   
   scrollToHeader(directive: BsScrollspyDirective) {
-    const header = directive.element.nativeElement;
-    const offsetY = this.scrollOffsetService.getScrollOffset()[1];
-    const y = header.getBoundingClientRect().top + window.scrollY - offsetY + 1;
-    window.scrollTo({top: y, behavior: 'smooth'});
+    if (typeof window !== 'undefined') {
+      const header = directive.element.nativeElement;
+      const offsetY = this.scrollOffsetService.getScrollOffset()[1];
+      const y = header.getBoundingClientRect().top + window.scrollY - offsetY + 1;
+      window.scrollTo({top: y, behavior: 'smooth'});
+    }
   }
 
 }
