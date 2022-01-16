@@ -5,7 +5,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
   templateUrl: './navbar-toggler.component.html',
   styleUrls: ['./navbar-toggler.component.scss']
 })
-export class NavbarTogglerComponent {
+export class BsNavbarTogglerComponent {
 
   //#region State
   _state: 'open' | 'closed' = 'closed';

@@ -11,7 +11,7 @@ import { NavLinkDirective } from './nav-link/nav-link.directive';
 import { NavbarContentDirective } from './navbar-content/navbar-content.directive';
 import { BsNavbarBrandComponent } from './navbar-brand/navbar-brand.component';
 import { BsExpandButtonDirective } from './expand-button/expand-button.directive';
-import { NavbarTogglerComponent } from './navbar-toggler/navbar-toggler.component';
+import { BsNavbarTogglerComponent } from './navbar-toggler/navbar-toggler.component';
 
 @NgModule({
   declarations: [
@@ -25,7 +25,7 @@ import { NavbarTogglerComponent } from './navbar-toggler/navbar-toggler.componen
     NavbarContentDirective,
     BsNavbarBrandComponent,
     BsExpandButtonDirective,
-    NavbarTogglerComponent
+    BsNavbarTogglerComponent
   ],
   imports: [
     CommonModule,
@@ -43,7 +43,7 @@ import { NavbarTogglerComponent } from './navbar-toggler/navbar-toggler.componen
     NavbarContentDirective,
     BsNavbarBrandComponent,
     BsExpandButtonDirective,
-    NavbarTogglerComponent
+    BsNavbarTogglerComponent
   ]
 })
 export class BsNavbarModule { }

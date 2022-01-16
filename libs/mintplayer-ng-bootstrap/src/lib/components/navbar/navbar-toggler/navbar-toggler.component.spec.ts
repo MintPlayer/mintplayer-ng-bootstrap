@@ -1,20 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { NavbarTogglerComponent } from './navbar-toggler.component';
+import { BsNavbarTogglerComponent } from './navbar-toggler.component';
 
-describe('NavbarTogglerComponent', () => {
-  let component: NavbarTogglerComponent;
-  let fixture: ComponentFixture<NavbarTogglerComponent>;
+describe('BsNavbarTogglerComponent', () => {
+  let component: BsNavbarTogglerComponent;
+  let fixture: ComponentFixture<BsNavbarTogglerComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ NavbarTogglerComponent ]
+      declarations: [ BsNavbarTogglerComponent ]
     })
     .compileComponents();
   });
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(NavbarTogglerComponent);
+    fixture = TestBed.createComponent(BsNavbarTogglerComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
