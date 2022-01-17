@@ -9,7 +9,8 @@ import { BehaviorSubject, take } from 'rxjs';
 export class BsNavbarComponent {
 
   @ViewChild('nav') nav!: ElementRef;
-  
+  @Input() autoclose = true;
+
   expandButtonTemplate: TemplateRef<any> | null = null;
   
   isExpanded$ = new BehaviorSubject<boolean>(false);
@@ -19,5 +20,5 @@ export class BsNavbarComponent {
     });
   }
 
-
+  
 }

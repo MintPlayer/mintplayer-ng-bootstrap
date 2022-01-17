@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, HostListener, Input, Output } from '@angular/core';
 
 @Component({
   selector: 'bs-navbar-toggler',
@@ -19,7 +19,8 @@ export class BsNavbarTogglerComponent {
   }
   //#endregion
   
-  toggleState() {
+  @HostListener('click', ['$event'])
+  toggleState(ev: MouseEvent) {
     switch (this._state) {
       case 'open':
         this.state = 'closed';

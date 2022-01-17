@@ -1,4 +1,5 @@
 import { AfterContentChecked, Component, ContentChildren, ElementRef, forwardRef, Optional, QueryList } from '@angular/core';
+import { BsNavbarComponent } from '../../navbar/navbar/navbar.component';
 import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
 
 @Component({
@@ -8,7 +9,7 @@ import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.co
 })
 export class BsNavbarItemComponent implements AfterContentChecked {
 
-  constructor(@Optional() parentDropdown: BsNavbarDropdownComponent, private element: ElementRef) {
+  constructor(private navbar: BsNavbarComponent, @Optional() parentDropdown: BsNavbarDropdownComponent, private element: ElementRef) {
     this.parentDropdown = parentDropdown;
   }
 
@@ -40,13 +41,16 @@ export class BsNavbarItemComponent implements AfterContentChecked {
     } else {
 
       // Close if this is a link
-      if (this.parentDropdown && this.dropdowns.length === 0) {
+      if (this.dropdowns.length === 0) {
         if (this.anchorTag && !this.anchorTag.onclick) {
           this.anchorTag.onclick = (ev: Event) => {
             let d = this.parentDropdown;
             while (d && d.autoclose) {
               d.isVisible = false;
               d = d.parentDropdown;
+            }
+            if (this.navbar.autoclose) {
+              this.navbar.isExpanded$.next(false);
             }
           };
         }
