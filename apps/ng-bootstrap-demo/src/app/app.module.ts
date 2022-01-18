@@ -28,7 +28,7 @@ import { AppRoutingModule } from './app-routing.module';
     } },
     { provide: BASE_URL, useValue: 'https://mintplayer.com' },
     { provide: API_VERSION, useValue: 'v3' },
-    { provide: 'GIT_REPO', useValue: 'https://github.com/MintPlayer/mintplayer-ng-bootstrap/apps/ng-bootstrap-demo/src/app/' },
+    { provide: 'GIT_REPO', useValue: 'https://github.com/MintPlayer/mintplayer-ng-bootstrap/tree/master/apps/ng-bootstrap-demo/src/app/' },
     JsonPipe
   ],
   bootstrap: [AppComponent],

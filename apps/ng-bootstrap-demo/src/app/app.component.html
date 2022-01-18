@@ -2,7 +2,11 @@
   <ng-template bsExpandButton let-state>
     <bs-navbar-toggler [state]="state"></bs-navbar-toggler>
   </ng-template>
-  <bs-navbar-brand [routerLink]='["/"]'>ng-bootstrap</bs-navbar-brand>
+  <bs-navbar-brand [routerLink]='["/"]'>
+    <span class="brand d-block py-3">
+      ng-bootstrap
+    </span>
+  </bs-navbar-brand>
   <bs-navbar-nav [collapse]="true">
     <bs-navbar-item>
       <a [routerLink]='["/"]'>Home</a>
