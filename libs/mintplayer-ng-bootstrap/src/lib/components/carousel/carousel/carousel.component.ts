@@ -2,6 +2,7 @@ import { AfterContentInit, Component, ContentChildren, HostBinding, Input, OnDes
 import { FadeInOutAnimation, CarouselSlideAnimation } from '@mintplayer/ng-animations';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { map, take, takeUntil } from 'rxjs/operators';
+import { BsCarouselConfig } from '../carousel-config';
 import { BsCarouselImageDirective } from '../carousel-image/carousel-image.directive';
 
 @Component({
@@ -26,6 +27,7 @@ export class BsCarouselComponent implements OnDestroy, AfterContentInit {
 
   @HostBinding('@.disabled') public animationsDisabled = false;
   @Input() public indicators = true;
+  @Input() public configuration: Partial<BsCarouselConfig> = { slideDuration: 300, fadeDuration: 300 };
   @ContentChildren(BsCarouselImageDirective) images!: QueryList<BsCarouselImageDirective>;
   
   private _animation: 'fade' | 'slide' = 'slide';

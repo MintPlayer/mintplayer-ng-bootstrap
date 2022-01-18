@@ -59,6 +59,10 @@
           "namedChunks": true
         }
       },
+      "dependsOn": [{
+        "target": "build",
+        "projects": "dependencies"
+      }],
       "defaultConfiguration": "production"
     },
     "serve": {

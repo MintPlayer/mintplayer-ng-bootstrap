@@ -6,7 +6,7 @@
             [attr.aria-label]="'Slide ' + i"></button>
     </div>
 
-    <div class="carousel-inner" [@carouselSlide]="currentImageCounter$ | async" *ngIf="animation === 'slide'">
+    <div class="carousel-inner" [@carouselSlide]="{ value: currentImageCounter$ | async, params: { duration: (configuration?.slideDuration ? configuration?.slideDuration?.toString() + 'ms' : '.4s') } }" *ngIf="animation === 'slide'">
         <ng-container *ngFor="let image of images; let i = index">
             <div class="carousel-item" [class.active]="true" *ngIf="(currentImageIndex$ | async) === i">
                 <ng-container [ngTemplateOutlet]="image.itemTemplate"></ng-container>    
@@ -30,3 +30,4 @@
         <span class="visually-hidden">Next</span>
     </button>
 </div>
+{{ (configuration?.slideDuration ? configuration?.slideDuration?.toString() + 'ms' : '.4s') }}

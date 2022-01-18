@@ -18,6 +18,10 @@
           "tsConfig": "libs/mintplayer-ng-bootstrap/tsconfig.lib.json"
         }
       },
+      "dependsOn": [{
+        "target": "build",
+        "projects": "dependencies"
+      }],
       "defaultConfiguration": "production"
     },
     "test": {
