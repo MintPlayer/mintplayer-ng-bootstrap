@@ -1,27 +1,38 @@
-<table class="table d-flex w-100 overflow-y-auto" [style.max-height.px]="400">
-    <thead>
-        <tr class="w-100 d-table">
-            <th>
-                <div class="d-flex justify-content-between">
-                    <button class="btn btn-default flex-start" (click)="onPreviousWeek()">&lt;</button>
-                    <button class="btn btn-default flex-end" (click)="onNextWeek()">&gt;</button>
-                </div>
-            </th>
-            <th *ngFor="let day of (daysOfWeek$ | async)">
-                <span class="d-flex col-form-label text-center">
+<div class="table d-flex w-100 overflow-y-auto" [style.max-height.px]="400">
+    <div class="calendar-head">
+        <div class="w-100 d-flex flex-row">
+            <div class="d-flex calendar-left justify-content-between">
+                <button class="btn btn-default flex-start" (click)="onPreviousWeek()">&lt;</button>
+                <button class="btn btn-default flex-end" (click)="onNextWeek()">&gt;</button>
+            </div>
+            <div class="flex-grow-1" *ngFor="let day of (daysOfWeek$ | async)">
+                <span class="d-block col-form-label text-center">
                     {{ day | date: 'dd-MM-yyyy' }}
                 </span>
-            </th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr *ngFor="let timeslots of (timeSlots$ | async)" class="w-100 d-table timeslot">
-            <td class="align-top py-0">{{ timeslots[0].start | date: 'HH:mm:ss' }}</td>
-            <td *ngFor="let slot of timeslots" (mousedown)="onCreateEvent($event, slot)"></td>
-        </tr>
-    </tbody>
-    <div></div>
-</table>
+            </div>
+        </div>
+    </div>
+    <div class="calendar-body">
+        <div class="position-relative">
+            <!-- Timeslots -->
+            <div *ngFor="let timeslots of (timeSlots$ | async); let i = index" class="d-flex flex-row p-0 timeslot">
+                <div class="calendar-cell calendar-left align-top py-0">{{ timeslots[0].start | date: 'HH:mm:ss' }}</div>
+                <div class="calendar-cell flex-grow-1" *ngFor="let slot of timeslots; let j = index" #slot (mousedown)="onCreateEvent($event, slot)" [attr.data-row]="i" [attr.data-column]="j"></div>
+            </div>
+            
+            <!-- Events -->
+            <ng-container *ngIf="(timeSlotDuration$ | async) as timeSlotDuration">
+                <ng-container *ngFor="let eventWithParts of (eventParts$ | async)">
+                    <div *ngFor="let eventPart of eventWithParts.parts" class="position-absolute event"
+                        [style.top.px]="(eventPart | bsSecondsTodayOffset) / timeSlotDuration * 40"
+                        [style.height.px]="(eventPart | bsSecondsTimespan) / timeSlotDuration * 40"
+                        [style.left]="'calc(90px + ((100% - 90px) / 7 * ' + ((eventPart | dayOfWeek) - 1) + '))'">
+                    </div>
+                </ng-container>
+            </ng-container>
+        </div>
+    </div>
+</div>
 
 <ng-container *ngIf="(events$ | async ) as events">
     <h2>{{ events.length }} events</h2>

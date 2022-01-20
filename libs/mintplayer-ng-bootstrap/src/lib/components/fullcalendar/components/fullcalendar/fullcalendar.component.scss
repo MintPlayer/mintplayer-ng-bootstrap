@@ -9,34 +9,34 @@
 .table {
     flex-flow: column;
 
-    thead {
+    .calendar-head {
         flex: 0 0 auto;
-
-        th {
-            position: sticky;
-            top: 0;
-            z-index: 1;
+        
+        > div {
+            padding-right: 18px;
         }
     }
 
-    tbody {
+    .calendar-body {
         flex: 1 1 auto;
         display: block;
-        overflow-y: auto;
+        overflow-y: visible;
         overflow-x: hidden;
 
-        td {
-            border-right-width: 1px;
+        .calendar-cell {
+            border-right: 1px solid #DEE2E6;
+            border-bottom: 1px solid #DEE2E6;
         }
     }
-
-    tr {
-        table-layout: fixed;
+    
+    .calendar-left {
+        width: 90px;
     }
 }
 
 .event {
-    width: 100px;
+    z-index: 5;
+    width: calc((100% - 90px) / 7);
     height: 100px;
     background-color: red;
 }
