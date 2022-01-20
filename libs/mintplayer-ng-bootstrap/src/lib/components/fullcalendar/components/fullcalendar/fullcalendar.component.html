@@ -1,0 +1,44 @@
+<table class="table d-flex w-100 overflow-y-auto" [style.max-height.px]="400">
+    <thead>
+        <tr class="w-100 d-table">
+            <th>
+                <div class="d-flex justify-content-between">
+                    <button class="btn btn-default flex-start" (click)="onPreviousWeek()">&lt;</button>
+                    <button class="btn btn-default flex-end" (click)="onNextWeek()">&gt;</button>
+                </div>
+            </th>
+            <th *ngFor="let day of (daysOfWeek$ | async)">
+                <span class="d-flex col-form-label text-center">
+                    {{ day | date: 'dd-MM-yyyy' }}
+                </span>
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr *ngFor="let timeslots of (timeSlots$ | async)" class="w-100 d-table timeslot">
+            <td class="align-top py-0">{{ timeslots[0].start | date: 'HH:mm:ss' }}</td>
+            <td *ngFor="let slot of timeslots" (mousedown)="onCreateEvent($event, slot)"></td>
+        </tr>
+    </tbody>
+    <div></div>
+</table>
+
+<ng-container *ngIf="(events$ | async ) as events">
+    <h2>{{ events.length }} events</h2>
+    <ul>
+        <li *ngFor="let event of events">
+            {{ event.description }}
+            -
+            {{ event.start | date: 'dd-MM-yyyy HH:mm:ss' }}
+            -
+            {{ event.end | date: 'dd-MM-yyyy HH:mm:ss' }}
+        </li>
+    </ul>
+</ng-container>
+<ng-container *ngIf="(eventParts$ | async ) as eventParts">
+    <h2>{{ eventParts.length }} event parts</h2>
+    {{ eventParts | json }}
+    <ul>
+        <li *ngFor="let eventPart of eventParts">{{ eventPart.event.start | date: 'dd/mm/yyyy' }}</li>
+    </ul>
+</ng-container>

@@ -11,6 +11,7 @@ const routes: Routes = [
   { path: 'autofocus', loadChildren: () => import('./autofocus/autofocus.module').then(m => m.AutofocusModule) },
   { path: 'scrollspy', loadChildren: () => import('./scrollspy/scrollspy.module').then(m => m.ScrollspyModule) },
   { path: 'code-snippet', loadChildren: () => import('./code-snippet/code-snippet.module').then(m => m.CodeSnippetModule) },
+  { path: 'full-calendar', loadChildren: () => import('./fullcalendar/fullcalendar.module').then(m => m.FullcalendarModule) },
 ];
 
 @NgModule({

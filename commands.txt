@@ -1,3 +1,4 @@
+npm update -g npm@latest
 npm install -g @angular/cli@latest
 npm install -g npx@latest
 npm install -g nx@latest

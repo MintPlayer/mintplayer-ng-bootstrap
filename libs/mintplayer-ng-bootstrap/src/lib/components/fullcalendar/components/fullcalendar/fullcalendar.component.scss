@@ -1,0 +1,42 @@
+:host {
+    display: block;
+}
+
+.timeslot {
+    height: 40px;
+}
+
+.table {
+    flex-flow: column;
+
+    thead {
+        flex: 0 0 auto;
+
+        th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+    }
+
+    tbody {
+        flex: 1 1 auto;
+        display: block;
+        overflow-y: auto;
+        overflow-x: hidden;
+
+        td {
+            border-right-width: 1px;
+        }
+    }
+
+    tr {
+        table-layout: fixed;
+    }
+}
+
+.event {
+    width: 100px;
+    height: 100px;
+    background-color: red;
+}

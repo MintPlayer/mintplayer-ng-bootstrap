@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import { DateDayOfMonth } from '../../interfaces/date-day-of-month';
 import { FirstAndLastDate } from '../../interfaces/first-and-last-date';
 import { Week } from '../../interfaces/week';
 
