@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, OnDestroy, QueryList, ViewChildren } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, HostListener, NgZone, OnDestroy, QueryList, ViewChildren } from '@angular/core';
 import { BsCalendarMonthService } from '../../../../services/calendar-month/calendar-month.service';
 import { BehaviorSubject, combineLatest, map, Observable, Subject, take, tap } from 'rxjs';
 import { FullcalendarEvent } from '../../interfaces/fullcalendar-event';
@@ -13,7 +13,7 @@ import { TimeSlot } from '../../interfaces/time-slot';
 })
 export class BsFullcalendarComponent implements OnDestroy {
 
-  constructor(private calendarMonthService: BsCalendarMonthService) {
+  constructor(private calendarMonthService: BsCalendarMonthService, private zone: NgZone, private ref: ChangeDetectorRef) {
     const monday = this.calendarMonthService.getMondayBefore(new Date());
     this.currentWeek$ = new BehaviorSubject<Date>(monday);
 
@@ -23,6 +23,7 @@ export class BsFullcalendarComponent implements OnDestroy {
         return Array.from(Array(7).keys()).map((x) => this.addDays(weekMonday, x));
       }));
 
+    this.events$ = new BehaviorSubject<FullcalendarEvent[]>([]);
     this.eventParts$ = this.events$
       .pipe(map((events) => {
         return events.map((ev) => {
@@ -100,12 +101,13 @@ export class BsFullcalendarComponent implements OnDestroy {
       }));
   }
 
-  events$ = new BehaviorSubject<FullcalendarEvent[]>([]);
+  events$: BehaviorSubject<FullcalendarEvent[]>;
   eventParts$: Observable<FullcalendarEventWithParts[]>;
   currentWeek$: BehaviorSubject<Date>;
   daysOfWeek$: Observable<Date[]>;
   timeSlotDuration$ = new BehaviorSubject<number>(1800);
   timeSlots$: Observable<TimeSlot[][]>;
+  mouseState$ = new BehaviorSubject<boolean>(false);
   hoveredTimeSlot$ = new BehaviorSubject<TimeSlot | null>(null);
   destroyed$ = new Subject();
   
@@ -137,64 +139,71 @@ export class BsFullcalendarComponent implements OnDestroy {
   dragStartTimeslot: TimeSlot | null = null;
   onCreateEvent(ev: MouseEvent, slot: TimeSlot) {
     ev.preventDefault();
+    this.mouseState$.next(true);
     this.dragStartTimeslot = slot;
     this.newEvent = { start: slot.start, end: slot.end, color: '#F00', description: 'Test event' }
+    this.events$.next([...this.events$.value, this.newEvent]);
+  }
 
-    this.events$
-      .pipe(take(1))
-      .pipe(map((events) => {
-        if (this.newEvent) {
-          events.push(this.newEvent);
-        }
-        return events;
-      })).subscribe((events) => {
-        this.events$.next(events);
-      });
+  //#region hoveredTimeslot$
+  private getHoveredTimeslot(ev: MouseEvent, timeSlots: TimeSlot[][]) {
+    const hoveredSlots = this.timeSlotElements.filter((el) => {
+      const rct = el.nativeElement.getBoundingClientRect();
+      if ((rct.left <= ev.x) && (ev.x <= rct.right) && (rct.top <= ev.y) && (ev.y <= rct.bottom)) {
+        return true;
+      } else {
+        return false;
+      }
+    });
+    
+    if (!hoveredSlots || (hoveredSlots.length === 0)) {
+      return null;
+    }
+
+    const slotElement = hoveredSlots[0].nativeElement;
+
+    const strRow = slotElement.getAttribute('data-row');
+    if (!strRow) {
+      return null;
+    }
+    const row = parseInt(strRow);
+
+    const strColumn = slotElement.getAttribute('data-column');
+    if (!strColumn) {
+      return null;
+    }
+    const column = parseInt(strColumn);
+
+    const slot = timeSlots[row][column];
+    return slot;
   }
 
   @HostListener('mousemove', ['$event'])
   onMousemove(ev: MouseEvent) {
-    if (this.newEvent) {
-      const hoveredSlots = this.timeSlotElements.filter((el) => {
-        const rct = el.nativeElement.getBoundingClientRect();
-        if ((rct.left <= ev.x) && (ev.x <= rct.right) && (rct.top <= ev.y) && (ev.y <= rct.bottom)) {
-          // el.nativeElement.style.backgroundColor = '#FF0';
-          return true;
-        } else {
-          // el.nativeElement.style.backgroundColor = '';
-          return false;
-        }
+
+    this.timeSlots$.pipe(take(1))
+      .subscribe((timeSlots) => {
+        const hovered = this.getHoveredTimeslot(ev, timeSlots);
+        this.hoveredTimeSlot$.next(hovered);
+        
+        // this.zone.run(() => {
+          if (this.newEvent && hovered) {
+            this.newEvent.end = hovered.end;
+          }
+        // });
       });
 
-      if (hoveredSlots.length > 0) {
-        this.timeSlots$.pipe(take(1))
-          .subscribe((timeSlots) => {
-            const slotElement = hoveredSlots[0];
+    // if (this.newEvent) {
+    // }
+  }
+  //#endregion
 
-            const strRow = slotElement.nativeElement.getAttribute('data-row');
-            if (!strRow) return;
-            const row = parseInt(strRow);
-
-            const strColumn = slotElement.nativeElement.getAttribute('data-column');
-            if (!strColumn) return;
-            const column = parseInt(strColumn);
-
-            const slot = timeSlots[row][column];
-            if (this.newEvent) {
-              console.log('hovered slot', slot);
-              this.newEvent.end = slot.end;
-            }
-          });
-      }
-
+  @HostListener('mouseup', ['$event'])
+  onMouseUp(ev: MouseEvent) {
+    if (this.newEvent) {
+      this.newEvent = null;
     }
   }
-
-  // onHoverSlot(event: MouseEvent, slot: TimeSlot) {
-  //   console.log('hover slot', slot);
-  //   let el: HTMLElement;
-  //   if (el.getBoundingClientRect().)
-  // }
 
   ngOnDestroy() {
     this.destroyed$.next(true);

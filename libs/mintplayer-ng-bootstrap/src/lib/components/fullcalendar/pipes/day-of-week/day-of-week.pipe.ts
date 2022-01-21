@@ -1,4 +1,5 @@
 import { Pipe, PipeTransform } from '@angular/core';
+import { FullcalendarEvent } from '../../interfaces/fullcalendar-event';
 import { FullCalendarEventPart } from '../../interfaces/fullcalendar-event-part';
 
 @Pipe({
@@ -6,7 +7,7 @@ import { FullCalendarEventPart } from '../../interfaces/fullcalendar-event-part'
 })
 export class DayOfWeekPipe implements PipeTransform {
 
-  transform(value: FullCalendarEventPart) {
+  transform(value: FullCalendarEventPart | FullcalendarEvent) {
     const dayOfWeek = value.start.getDay();
     if (dayOfWeek === 0) {
       return 7;

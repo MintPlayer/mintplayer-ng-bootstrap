@@ -1,4 +1,5 @@
 import { Pipe, PipeTransform } from '@angular/core';
+import { FullcalendarEvent } from '../../interfaces/fullcalendar-event';
 import { FullCalendarEventPart } from '../../interfaces/fullcalendar-event-part';
 
 @Pipe({
@@ -6,7 +7,7 @@ import { FullCalendarEventPart } from '../../interfaces/fullcalendar-event-part'
 })
 export class BsSecondsTodayOffsetPipe implements PipeTransform {
 
-  transform(value: FullCalendarEventPart) {
+  transform(value: FullCalendarEventPart | FullcalendarEvent) {
     const today = new Date(value.start);
     today.setHours(0); today.setMinutes(0); today.setSeconds(0);
 
