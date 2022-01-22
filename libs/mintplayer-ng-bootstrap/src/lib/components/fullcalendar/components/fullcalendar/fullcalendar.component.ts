@@ -167,21 +167,21 @@ export class BsFullcalendarComponent implements DoCheck, OnDestroy {
   >;
 
   ngDoCheck() {
-    // const eventListChanges = this.eventListDiffer.diff(this.events$.value);
-    // if (eventListChanges) {
-    //   console.log('Events changed', eventListChanges);
-    //   eventListChanges.forEachAddedItem((item) => {
-    //     const eventDiffer = this.keyValueDiffers.find(item.item).create<any, any>();
-    //     this.eventDiffers.push({ ev: item.item, differ: eventDiffer });
-    //   });
-    // }
-    // for (const eventDiffer of this.eventDiffers) {
-    //   const eventChanges = eventDiffer.differ.diff(eventDiffer.ev);
-    //   if (eventChanges) {
-    //     console.log('An event changed', eventChanges);
-    //     this.ref.detectChanges();
-    //   }
-    // }
+    const eventListChanges = this.eventListDiffer.diff(this.events$.value);
+    if (eventListChanges) {
+      console.log('Events changed', eventListChanges);
+      eventListChanges.forEachAddedItem((item) => {
+        const eventDiffer = this.keyValueDiffers.find(item.item).create<any, any>();
+        this.eventDiffers.push({ ev: item.item, differ: eventDiffer });
+      });
+    }
+    for (const eventDiffer of this.eventDiffers) {
+      const eventChanges = eventDiffer.differ.diff(eventDiffer.ev);
+      if (eventChanges) {
+        console.log('An event changed', eventChanges);
+        this.ref.detectChanges();
+      }
+    }
   }
 
   private dateEquals(date1: Date, date2: Date) {
