@@ -1,7 +1,7 @@
-// import { FullcalendarEvent } from "./fullcalendar-event";
+import { FullcalendarEvent } from "./fullcalendar-event";
 
 export interface FullCalendarEventPart {
     start: Date;
     end: Date;
-    // event: FullcalendarEvent;
+    event: FullcalendarEvent;
 }
