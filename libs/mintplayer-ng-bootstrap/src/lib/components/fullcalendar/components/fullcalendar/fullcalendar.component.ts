@@ -1,6 +1,28 @@
-import { ChangeDetectorRef, Component, ElementRef, HostListener, NgZone, OnDestroy, QueryList, ViewChildren } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  DoCheck,
+  ElementRef,
+  HostListener,
+  IterableDiffer,
+  IterableDiffers,
+  KeyValueDiffer,
+  KeyValueDiffers,
+  NgZone,
+  OnDestroy,
+  QueryList,
+  ViewChildren,
+} from '@angular/core';
 import { BsCalendarMonthService } from '../../../../services/calendar-month/calendar-month.service';
-import { BehaviorSubject, combineLatest, map, Observable, Subject, take, tap } from 'rxjs';
+import {
+  BehaviorSubject,
+  combineLatest,
+  map,
+  Observable,
+  Subject,
+  take,
+  tap,
+} from 'rxjs';
 import { FullcalendarEvent } from '../../interfaces/fullcalendar-event';
 import { FullCalendarEventPart } from '../../interfaces/fullcalendar-event-part';
 import { FullcalendarEventWithParts } from '../../interfaces/fullcalendar-event-with-parts';
@@ -9,33 +31,50 @@ import { TimeSlot } from '../../interfaces/time-slot';
 @Component({
   selector: 'bs-fullcalendar',
   templateUrl: './fullcalendar.component.html',
-  styleUrls: ['./fullcalendar.component.scss']
+  styleUrls: ['./fullcalendar.component.scss'],
 })
-export class BsFullcalendarComponent implements OnDestroy {
-
-  constructor(private calendarMonthService: BsCalendarMonthService, private zone: NgZone, private ref: ChangeDetectorRef) {
+export class BsFullcalendarComponent implements DoCheck, OnDestroy {
+  constructor(
+    private calendarMonthService: BsCalendarMonthService,
+    private zone: NgZone,
+    private ref: ChangeDetectorRef,
+    private iterableDiffers: IterableDiffers,
+    private keyValueDiffers: KeyValueDiffers
+  ) {
     const monday = this.calendarMonthService.getMondayBefore(new Date());
     this.currentWeek$ = new BehaviorSubject<Date>(monday);
 
-    this.daysOfWeek$ = this.currentWeek$
-      .pipe(map((weekMonday) => {
-        weekMonday.setHours(0); weekMonday.setMinutes(0); weekMonday.setSeconds(0);
-        return Array.from(Array(7).keys()).map((x) => this.addDays(weekMonday, x));
-      }));
+    this.daysOfWeek$ = this.currentWeek$.pipe(
+      map((weekMonday) => {
+        weekMonday.setHours(0);
+        weekMonday.setMinutes(0);
+        weekMonday.setSeconds(0);
+        return Array.from(Array(7).keys()).map((x) =>
+          this.addDays(weekMonday, x)
+        );
+      })
+    );
 
     this.events$ = new BehaviorSubject<FullcalendarEvent[]>([]);
-    this.eventParts$ = this.events$
-      .pipe(map((events) => {
+    this.eventParts$ = this.events$.pipe(
+      map((events) => {
         return events.map((ev) => {
           let startTime = ev.start;
           console.log(`startTime: ${startTime}, end: ${ev.end}`);
           const result: FullCalendarEventPart[] = [];
           while (!this.dateEquals(startTime, ev.end)) {
-            const end = new Date(startTime.getFullYear(), startTime.getMonth(), startTime.getDate() + 1, 0, 0, 0);
+            const end = new Date(
+              startTime.getFullYear(),
+              startTime.getMonth(),
+              startTime.getDate() + 1,
+              0,
+              0,
+              0
+            );
             result.push({
               start: startTime,
               end: end,
-              event: ev
+              //event: ev
             });
             startTime = end;
           }
@@ -43,26 +82,33 @@ export class BsFullcalendarComponent implements OnDestroy {
             result.push({
               start: startTime,
               end: ev.end,
-              event: ev
+              //event: ev
             });
           }
 
           return <FullcalendarEventWithParts>{
             event: ev,
-            parts: result
+            parts: result,
           };
         });
-      }));
+      })
+    );
 
-    this.timeSlots$ = combineLatest([this.daysOfWeek$, this.timeSlotDuration$]) 
-      .pipe(map(([daysOfWeek, duration]) => {
+    this.timeSlots$ = combineLatest([
+      this.daysOfWeek$,
+      this.timeSlotDuration$,
+    ]).pipe(
+      map(([daysOfWeek, duration]) => {
         const timeSlotsPerDay = Math.floor((60 * 60 * 24) / duration);
 
         return Array.from(Array(timeSlotsPerDay).keys()).map((index) => {
+          const timeSlotStart = new Date(daysOfWeek[0]);
+          timeSlotStart.setSeconds(
+            timeSlotStart.getSeconds() + index * duration
+          );
+          const timeSlotEnd = new Date(timeSlotStart);
+          timeSlotEnd.setSeconds(timeSlotEnd.getSeconds() + duration);
 
-          const timeSlotStart = new Date(daysOfWeek[0]); timeSlotStart.setSeconds(timeSlotStart.getSeconds() + index * duration);
-          const timeSlotEnd = new Date(timeSlotStart); timeSlotEnd.setSeconds(timeSlotEnd.getSeconds() + duration);
-          
           return daysOfWeek.map((day) => {
             const start = new Date(day);
             start.setHours(timeSlotStart.getHours());
@@ -79,8 +125,6 @@ export class BsFullcalendarComponent implements OnDestroy {
               end,
             };
           });
-          
-
         });
 
         // const allTimeSlots = daysOfWeek.map((day) => {
@@ -98,7 +142,10 @@ export class BsFullcalendarComponent implements OnDestroy {
         // });
 
         // return allTimeSlots.reduce((a, b) => a.concat(b), []);
-      }));
+      })
+    );
+
+    this.eventListDiffer = iterableDiffers.find([]).create<FullcalendarEvent>();
   }
 
   events$: BehaviorSubject<FullcalendarEvent[]>;
@@ -110,11 +157,39 @@ export class BsFullcalendarComponent implements OnDestroy {
   mouseState$ = new BehaviorSubject<boolean>(false);
   hoveredTimeSlot$ = new BehaviorSubject<TimeSlot | null>(null);
   destroyed$ = new Subject();
-  
-  @ViewChildren('slot') timeSlotElements!: QueryList<ElementRef<HTMLDivElement>>;
+
+  eventListDiffer: IterableDiffer<FullcalendarEvent>;
+  eventDiffers: { ev: FullcalendarEvent; differ: KeyValueDiffer<any, any> }[] =
+    [];
+
+  @ViewChildren('slot') timeSlotElements!: QueryList<
+    ElementRef<HTMLDivElement>
+  >;
+
+  ngDoCheck() {
+    // const eventListChanges = this.eventListDiffer.diff(this.events$.value);
+    // if (eventListChanges) {
+    //   console.log('Events changed', eventListChanges);
+    //   eventListChanges.forEachAddedItem((item) => {
+    //     const eventDiffer = this.keyValueDiffers.find(item.item).create<any, any>();
+    //     this.eventDiffers.push({ ev: item.item, differ: eventDiffer });
+    //   });
+    // }
+    // for (const eventDiffer of this.eventDiffers) {
+    //   const eventChanges = eventDiffer.differ.diff(eventDiffer.ev);
+    //   if (eventChanges) {
+    //     console.log('An event changed', eventChanges);
+    //     this.ref.detectChanges();
+    //   }
+    // }
+  }
 
   private dateEquals(date1: Date, date2: Date) {
-    return (date1.getFullYear() === date2.getFullYear()) && (date1.getMonth() === date2.getMonth()) && (date1.getDate() === date2.getDate());
+    return (
+      date1.getFullYear() === date2.getFullYear() &&
+      date1.getMonth() === date2.getMonth() &&
+      date1.getDate() === date2.getDate()
+    );
   }
 
   private addDays(date: Date, days: number) {
@@ -125,13 +200,19 @@ export class BsFullcalendarComponent implements OnDestroy {
 
   onPreviousWeek() {
     this.currentWeek$
-      .pipe(map((w) => this.addDays(w, -7)), take(1))
+      .pipe(
+        map((w) => this.addDays(w, -7)),
+        take(1)
+      )
       .subscribe((w) => this.currentWeek$.next(w));
   }
 
   onNextWeek() {
     this.currentWeek$
-      .pipe(map((w) => this.addDays(w, 7)), take(1))
+      .pipe(
+        map((w) => this.addDays(w, 7)),
+        take(1)
+      )
       .subscribe((w) => this.currentWeek$.next(w));
   }
 
@@ -141,7 +222,12 @@ export class BsFullcalendarComponent implements OnDestroy {
     ev.preventDefault();
     this.mouseState$.next(true);
     this.dragStartTimeslot = slot;
-    this.newEvent = { start: slot.start, end: slot.end, color: '#F00', description: 'Test event' }
+    this.newEvent = {
+      start: slot.start,
+      end: slot.end,
+      color: '#F00',
+      description: 'Test event',
+    };
     this.events$.next([...this.events$.value, this.newEvent]);
   }
 
@@ -149,14 +235,19 @@ export class BsFullcalendarComponent implements OnDestroy {
   private getHoveredTimeslot(ev: MouseEvent, timeSlots: TimeSlot[][]) {
     const hoveredSlots = this.timeSlotElements.filter((el) => {
       const rct = el.nativeElement.getBoundingClientRect();
-      if ((rct.left <= ev.x) && (ev.x <= rct.right) && (rct.top <= ev.y) && (ev.y <= rct.bottom)) {
+      if (
+        rct.left <= ev.x &&
+        ev.x <= rct.right &&
+        rct.top <= ev.y &&
+        ev.y <= rct.bottom
+      ) {
         return true;
       } else {
         return false;
       }
     });
-    
-    if (!hoveredSlots || (hoveredSlots.length === 0)) {
+
+    if (!hoveredSlots || hoveredSlots.length === 0) {
       return null;
     }
 
@@ -180,18 +271,24 @@ export class BsFullcalendarComponent implements OnDestroy {
 
   @HostListener('mousemove', ['$event'])
   onMousemove(ev: MouseEvent) {
+    this.timeSlots$.pipe(take(1)).subscribe((timeSlots) => {
+      const hovered = this.getHoveredTimeslot(ev, timeSlots);
+      this.hoveredTimeSlot$.next(hovered);
 
-    this.timeSlots$.pipe(take(1))
-      .subscribe((timeSlots) => {
-        const hovered = this.getHoveredTimeslot(ev, timeSlots);
-        this.hoveredTimeSlot$.next(hovered);
-        
-        // this.zone.run(() => {
-          if (this.newEvent && hovered) {
+      if (
+        this.newEvent &&
+        hovered &&
+        this.newEvent.end.getTime() != hovered.end.getTime()
+      ) {
+        // console.log('set event.end', { old: this.newEvent.end, new: hovered.end });
+        this.zone.run(() => {
+          if (this.newEvent) {
             this.newEvent.end = hovered.end;
+            this.ref.detectChanges();
           }
-        // });
-      });
+        });
+      }
+    });
 
     // if (this.newEvent) {
     // }
@@ -208,5 +305,4 @@ export class BsFullcalendarComponent implements OnDestroy {
   ngOnDestroy() {
     this.destroyed$.next(true);
   }
-
 }
