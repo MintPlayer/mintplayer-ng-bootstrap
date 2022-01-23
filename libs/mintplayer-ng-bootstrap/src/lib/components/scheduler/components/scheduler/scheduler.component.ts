@@ -1,6 +1,8 @@
 import { Component, ElementRef, EventEmitter, HostListener, Input, OnDestroy, Output, QueryList, ViewChildren } from '@angular/core';
 import { BehaviorSubject, combineLatest, map, Observable, Subject, take, takeUntil } from 'rxjs';
 import { BsCalendarMonthService } from '../../../../services/calendar-month/calendar-month.service';
+import { EDragOperation } from '../../enums/drag-operation';
+import { DragOperation } from '../../interfaces/drag-operation';
 import { SchedulerEvent } from '../../interfaces/scheduler-event';
 import { SchedulerEventPart } from '../../interfaces/scheduler-event-part';
 import { SchedulerEventWithParts } from '../../interfaces/scheduler-event-with-parts';
@@ -151,19 +153,22 @@ export class BsSchedulerComponent implements OnDestroy {
       .subscribe((w) => this.currentWeek$.next(w));
   }
 
-  newEvent: SchedulerEvent | null = null;
+  operation: DragOperation | null = null;
   dragStartTimeslot: TimeSlot | null = null;
   onCreateEvent(ev: MouseEvent, slot: TimeSlot) {
     ev.preventDefault();
     this.mouseState$.next(true);
     this.dragStartTimeslot = slot;
-    this.newEvent = {
-      start: slot.start,
-      end: slot.end,
-      color: '#F00',
-      description: 'Test event',
+    this.operation = {
+      operation: EDragOperation.createEvent,
+      event: {
+        start: slot.start,
+        end: slot.end,
+        color: '#F00',
+        description: 'Test event',
+      }
     };
-    this.events$.next([...this.events$.value, this.newEvent]);
+    this.events$.next([...this.events$.value, this.operation.event]);
   }
 
   //#region hoveredTimeslot$
@@ -205,31 +210,44 @@ export class BsSchedulerComponent implements OnDestroy {
       const hovered = this.getHoveredTimeslot(ev, timeSlots);
       this.hoveredTimeSlot$.next(hovered);
 
-      if (this.newEvent && this.dragStartTimeslot && hovered && (this.newEvent.end.getTime() != hovered.end.getTime())) {
-        if (this.dragStartTimeslot.start.getTime() === hovered.start.getTime()) {
-          // 1 slot
-        } else if (this.dragStartTimeslot.start.getTime() < hovered.start.getTime()) {
-          // Drag down
-          this.newEvent.start = this.dragStartTimeslot.start;
-          this.newEvent.end = hovered.end;
-          this.events$.next(this.events$.value);
-        } else if (this.dragStartTimeslot.start.getTime() > hovered.start.getTime()) {
-          // Drag up
-          this.newEvent.start = hovered.start;
-          this.newEvent.end = this.dragStartTimeslot.end;
-          this.events$.next(this.events$.value);
+      if (this.operation) {
+        switch (this.operation.operation) {
+          case EDragOperation.createEvent: {
+            if (this.operation.event && this.dragStartTimeslot && hovered && (this.operation.event.end.getTime() != hovered.end.getTime())) {
+              if (this.dragStartTimeslot.start.getTime() === hovered.start.getTime()) {
+                // 1 slot
+              } else if (this.dragStartTimeslot.start.getTime() < hovered.start.getTime()) {
+                // Drag down
+                this.operation.event.start = this.dragStartTimeslot.start;
+                this.operation.event.end = hovered.end;
+                this.events$.next(this.events$.value);
+              } else if (this.dragStartTimeslot.start.getTime() > hovered.start.getTime()) {
+                // Drag up
+                this.operation.event.start = hovered.start;
+                this.operation.event.end = this.dragStartTimeslot.end;
+                this.events$.next(this.events$.value);
+              }
+              
+            }
+          } break;
         }
-        
       }
+
     });
   }
   //#endregion
 
   @HostListener('mouseup', ['$event'])
   onMouseUp(ev: MouseEvent) {
-    if (this.newEvent) {
-      this.newEvent = null;
-      this.dragStartTimeslot = null;
+    if (this.operation) {
+      switch (this.operation.operation) {
+        case EDragOperation.createEvent: {
+          if (this.operation.event) {
+            this.operation = null;
+            this.dragStartTimeslot = null;
+          }
+        } break;
+      }
     }
   }
 
