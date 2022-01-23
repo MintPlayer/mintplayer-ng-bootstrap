@@ -1,7 +1,7 @@
-import { FullcalendarEvent } from "./fullcalendar-event";
-import { FullCalendarEventPart } from "./fullcalendar-event-part";
+import { SchedulerEvent } from "./scheduler-event";
+import { SchedulerEventPart } from "./scheduler-event-part";
 
-export interface FullcalendarEventWithParts {
-    event: FullcalendarEvent;
-    parts: FullCalendarEventPart[];
+export interface SchedulerEventWithParts {
+    event: SchedulerEvent;
+    parts: SchedulerEventPart[];
 }

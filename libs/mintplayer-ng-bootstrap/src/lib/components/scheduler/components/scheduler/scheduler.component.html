@@ -1,3 +1,4 @@
+{{ unitHeight$ | async }}
 <div class="table d-flex w-100 overflow-y-auto" [style.max-height.px]="400">
     <div class="calendar-head">
         <div class="w-100 d-flex flex-row">
@@ -15,7 +16,7 @@
     <div class="calendar-body">
         <div class="position-relative">
             <!-- Timeslots -->
-            <div *ngFor="let timeslots of (timeSlots$ | async); let i = index" class="d-flex flex-row p-0 timeslot">
+            <div *ngFor="let timeslots of (timeSlots$ | async); let i = index" class="d-flex flex-row p-0 timeslot" [style.height.px]="unitHeight$ | async">
                 <div class="calendar-cell calendar-left align-top py-0">{{ timeslots[0].start | date: 'HH:mm:ss' }}</div>
                 <div class="calendar-cell flex-grow-1" *ngFor="let slot of timeslots; let j = index" #slot (mousedown)="onCreateEvent($event, slot)" [attr.data-row]="i" [attr.data-column]="j"></div>
             </div>
@@ -24,10 +25,10 @@
             <ng-container *ngIf="(timeSlotDuration$ | async) as timeSlotDuration">
 
                 <div *ngFor="let eventPart of (eventPartsForThisWeek$ | async)" class="position-absolute event"
-                    [style.top.px]="(eventPart | bsSecondsTodayOffset) / timeSlotDuration * 40"
-                    [style.height.px]="(eventPart | bsSecondsTimespan) / timeSlotDuration * 40"
+                    [style.top.px]="(eventPart | bsSecondsTodayOffset) / timeSlotDuration * (unitHeight$ | async)!"
+                    [style.height.px]="(eventPart | bsSecondsTimespan) / timeSlotDuration * (unitHeight$ | async)!"
                     [style.left]="'calc(90px + ((100% - 90px) / 7 * ' + ((eventPart | dayOfWeek) - 1) + '))'">
-                    <div class="event-inner">
+                    <div class="event-inner" (mousedown)="onStartDragEvent($event)">
                         {{ eventPart.start | date: 'HH:mm:ss' }} - {{ eventPart.end | date: 'HH:mm:ss' }}
                     </div>
                 </div>
@@ -47,25 +48,3 @@
         </div>
     </div>
 </div>
-
-<ng-container *ngIf="(hoveredTimeSlot$ | async) as timeslot">
-    <h2>Hovered</h2>
-    {{ timeslot.start | date:'dd-MM-yyyy HH:mm:ss' }} - {{ timeslot.end | date:'dd-MM-yyyy HH:mm:ss' }}
-</ng-container>
-
-<ng-container *ngIf="(events$ | async ) as events">
-    <h2>{{ events.length }} events</h2>
-    <ul>
-        <li *ngFor="let event of events">
-            {{ event.description }}
-            -
-            {{ event.start | date: 'dd-MM-yyyy HH:mm:ss' }}
-            -
-            {{ event.end | date: 'dd-MM-yyyy HH:mm:ss' }}
-        </li>
-    </ul>
-</ng-container>
-<ng-container *ngIf="(eventParts$ | async ) as eventParts">
-    <h2>{{ eventParts.length }} event parts</h2>
-    <pre>{{ eventParts | json }}</pre>
-</ng-container>

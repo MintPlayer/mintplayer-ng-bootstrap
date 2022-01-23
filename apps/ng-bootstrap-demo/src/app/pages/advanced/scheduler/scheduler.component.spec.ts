@@ -1,20 +1,38 @@
+import { Component, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { FormsModule } from '@angular/forms';
+import { SchedulerComponent } from './scheduler.component';
 
-import { FullcalendarComponent } from './fullcalendar.component';
+@Component({
+  selector: 'bs-scheduler',
+  template: `<div>Scheduler works</div>`
+})
+class SchedulerMockComponent {
+  @Input() unitHeight = 40;
+}
 
-describe('FullcalendarComponent', () => {
-  let component: FullcalendarComponent;
-  let fixture: ComponentFixture<FullcalendarComponent>;
+describe('SchedulerComponent', () => {
+  let component: SchedulerComponent;
+  let fixture: ComponentFixture<SchedulerComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ FullcalendarComponent ]
+      imports: [
+        FormsModule,
+      ],
+      declarations: [
+        // Unit to test
+        SchedulerComponent,
+      
+        // Mock dependencies
+        SchedulerMockComponent
+      ]
     })
     .compileComponents();
   });
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(FullcalendarComponent);
+    fixture = TestBed.createComponent(SchedulerComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

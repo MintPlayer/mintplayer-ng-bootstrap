@@ -1,7 +1,7 @@
-import { FullcalendarEvent } from "./fullcalendar-event";
+import { SchedulerEvent } from "./scheduler-event";
 
-export interface FullCalendarEventPart {
+export interface SchedulerEventPart {
     start: Date;
     end: Date;
-    event: FullcalendarEvent;
+    event: SchedulerEvent;
 }

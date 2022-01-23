@@ -1,2 +1,2 @@
 export * from './components';
-export * from './fullcalendar.module';
+export * from './scheduler.module';

@@ -1,19 +1,21 @@
 import { NgModule } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { BsFullcalendarModule } from '@mintplayer/ng-bootstrap';
+import { BsSchedulerModule } from '@mintplayer/ng-bootstrap';
 
-import { FullcalendarRoutingModule } from './fullcalendar-routing.module';
-import { FullcalendarComponent } from './fullcalendar.component';
+import { SchedulerComponent } from './scheduler.component';
+import { SchedulerRoutingModule } from './scheduler-routing.module';
 
 
 @NgModule({
   declarations: [
-    FullcalendarComponent
+    SchedulerComponent
   ],
   imports: [
     CommonModule,
-    BsFullcalendarModule,
-    FullcalendarRoutingModule
+    FormsModule,
+    BsSchedulerModule,
+    SchedulerRoutingModule
   ]
 })
-export class FullcalendarModule { }
+export class SchedulerModule { }

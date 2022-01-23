@@ -1,15 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 
 @Component({
-  selector: 'demo-fullcalendar',
-  templateUrl: './fullcalendar.component.html',
-  styleUrls: ['./fullcalendar.component.scss']
+  selector: 'demo-scheduler',
+  templateUrl: './scheduler.component.html',
+  styleUrls: ['./scheduler.component.scss']
 })
-export class FullcalendarComponent implements OnInit {
-
-  constructor() { }
-
-  ngOnInit(): void {
-  }
-
+export class SchedulerComponent {
+  unitHeight = 60;
 }

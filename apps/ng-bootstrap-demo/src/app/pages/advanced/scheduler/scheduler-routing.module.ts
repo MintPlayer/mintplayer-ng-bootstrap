@@ -1,11 +1,11 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { FullcalendarComponent } from './fullcalendar.component';
+import { SchedulerComponent } from './scheduler.component';
 
-const routes: Routes = [{ path: '', component: FullcalendarComponent }];
+const routes: Routes = [{ path: '', component: SchedulerComponent }];
 
 @NgModule({
   imports: [RouterModule.forChild(routes)],
   exports: [RouterModule]
 })
-export class FullcalendarRoutingModule { }
+export class SchedulerRoutingModule { }

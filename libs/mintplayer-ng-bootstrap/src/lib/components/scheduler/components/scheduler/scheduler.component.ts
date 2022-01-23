@@ -1,17 +1,17 @@
-import { Component, ElementRef, HostListener, OnDestroy, QueryList, ViewChildren } from '@angular/core';
-import { BehaviorSubject, combineLatest, map, mergeAll, Observable, Subject, take, takeUntil } from 'rxjs';
+import { Component, ElementRef, EventEmitter, HostListener, Input, OnDestroy, Output, QueryList, ViewChildren } from '@angular/core';
+import { BehaviorSubject, combineLatest, map, Observable, Subject, take, takeUntil } from 'rxjs';
 import { BsCalendarMonthService } from '../../../../services/calendar-month/calendar-month.service';
-import { FullcalendarEvent } from '../../interfaces/fullcalendar-event';
-import { FullCalendarEventPart } from '../../interfaces/fullcalendar-event-part';
-import { FullcalendarEventWithParts } from '../../interfaces/fullcalendar-event-with-parts';
+import { SchedulerEvent } from '../../interfaces/scheduler-event';
+import { SchedulerEventPart } from '../../interfaces/scheduler-event-part';
+import { SchedulerEventWithParts } from '../../interfaces/scheduler-event-with-parts';
 import { TimeSlot } from '../../interfaces/time-slot';
 
 @Component({
-  selector: 'bs-fullcalendar',
-  templateUrl: './fullcalendar.component.html',
-  styleUrls: ['./fullcalendar.component.scss'],
+  selector: 'bs-scheduler',
+  templateUrl: './scheduler.component.html',
+  styleUrls: ['./scheduler.component.scss'],
 })
-export class BsFullcalendarComponent implements OnDestroy {
+export class BsSchedulerComponent implements OnDestroy {
   constructor(private calendarMonthService: BsCalendarMonthService) {
     const monday = this.calendarMonthService.getMondayBefore(new Date());
     this.currentWeek$ = new BehaviorSubject<Date>(monday);
@@ -25,12 +25,12 @@ export class BsFullcalendarComponent implements OnDestroy {
       })
     );
 
-    this.events$ = new BehaviorSubject<FullcalendarEvent[]>([]);
+    this.events$ = new BehaviorSubject<SchedulerEvent[]>([]);
     this.eventParts$ = this.events$.pipe(
       map((events) => {
         return events.map((ev) => {
           let startTime = ev.start;
-          const result: FullCalendarEventPart[] = [];
+          const result: SchedulerEventPart[] = [];
           while (!this.dateEquals(startTime, ev.end)) {
             const end = new Date(startTime.getFullYear(), startTime.getMonth(), startTime.getDate() + 1, 0, 0, 0);
             result.push({ start: startTime, end: end, event: ev });
@@ -40,7 +40,7 @@ export class BsFullcalendarComponent implements OnDestroy {
             result.push({ start: startTime, end: ev.end, event: ev });
           }
 
-          return <FullcalendarEventWithParts>{ event: ev, parts: result };
+          return <SchedulerEventWithParts>{ event: ev, parts: result };
         });
       })
     );
@@ -93,11 +93,17 @@ export class BsFullcalendarComponent implements OnDestroy {
         });
 
       }));
+    
+    this.unitHeight$
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe((unitHeight) => {
+        this.unitHeightChange.emit(unitHeight);
+      })
   }
 
-  events$: BehaviorSubject<FullcalendarEvent[]>;
-  eventParts$: Observable<FullcalendarEventWithParts[]>;
-  eventPartsForThisWeek$ = new BehaviorSubject<FullCalendarEventPart[]>([]);
+  events$: BehaviorSubject<SchedulerEvent[]>;
+  eventParts$: Observable<SchedulerEventWithParts[]>;
+  eventPartsForThisWeek$ = new BehaviorSubject<SchedulerEventPart[]>([]);
   currentWeek$: BehaviorSubject<Date>;
   daysOfWeek$: Observable<Date[]>;
   timeSlotDuration$ = new BehaviorSubject<number>(1800);
@@ -107,6 +113,17 @@ export class BsFullcalendarComponent implements OnDestroy {
   destroyed$ = new Subject();
 
   @ViewChildren('slot') timeSlotElements!: QueryList<ElementRef<HTMLDivElement>>;
+
+  //#region UnitHeight
+  unitHeight$ = new BehaviorSubject<number>(40);
+  @Output() public unitHeightChange = new EventEmitter<number>();
+  public get unitHeight() {
+    return this.unitHeight$.value;
+  }
+  @Input() public set unitHeight(value: number) {
+    this.unitHeight$.next(value);
+  }
+  //#endregion
 
   private dateEquals(date1: Date, date2: Date) {
     return (
@@ -134,7 +151,7 @@ export class BsFullcalendarComponent implements OnDestroy {
       .subscribe((w) => this.currentWeek$.next(w));
   }
 
-  newEvent: FullcalendarEvent | null = null;
+  newEvent: SchedulerEvent | null = null;
   dragStartTimeslot: TimeSlot | null = null;
   onCreateEvent(ev: MouseEvent, slot: TimeSlot) {
     ev.preventDefault();
@@ -214,6 +231,10 @@ export class BsFullcalendarComponent implements OnDestroy {
       this.newEvent = null;
       this.dragStartTimeslot = null;
     }
+  }
+
+  onStartDragEvent(ev: MouseEvent) {
+    ev.preventDefault();
   }
 
   ngOnDestroy() {

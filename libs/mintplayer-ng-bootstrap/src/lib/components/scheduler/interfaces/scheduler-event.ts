@@ -1,4 +1,4 @@
-export interface FullcalendarEvent {
+export interface SchedulerEvent {
     start: Date;
     end: Date;
     color: string;

@@ -2,10 +2,6 @@
     display: block;
 }
 
-.timeslot {
-    height: 40px;
-}
-
 .table {
     flex-flow: column;
 
@@ -26,6 +22,11 @@
         .calendar-cell {
             border-right: 1px solid #DEE2E6;
             border-bottom: 1px solid #DEE2E6;
+            cursor: default;
+
+            &.hover {
+                border-top-width: 3px;
+            }
         }
     }
     
@@ -40,7 +41,7 @@
     height: 100px;
     overflow: hidden;
     position: relative;
-    background: #222;
+    // background: #222;
     user-select: none;
 
     .event-inner {

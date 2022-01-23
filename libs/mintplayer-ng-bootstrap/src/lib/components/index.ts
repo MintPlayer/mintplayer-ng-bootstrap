@@ -11,7 +11,7 @@ export * from './datepicker';
 export * from './dropdown';
 export * from './file-upload';
 export * from './for';
-export * from './fullcalendar';
+export * from './scheduler';
 export * from './list-group';
 export * from './modal';
 export * from './multiselect';

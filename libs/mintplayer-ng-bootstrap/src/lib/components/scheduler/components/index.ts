@@ -1,1 +1,1 @@
-export * from './fullcalendar/fullcalendar.component';
+export * from './scheduler/scheduler.component';
