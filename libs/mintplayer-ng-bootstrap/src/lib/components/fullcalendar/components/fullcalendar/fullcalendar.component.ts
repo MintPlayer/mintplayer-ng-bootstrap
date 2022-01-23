@@ -188,11 +188,21 @@ export class BsFullcalendarComponent implements OnDestroy {
       const hovered = this.getHoveredTimeslot(ev, timeSlots);
       this.hoveredTimeSlot$.next(hovered);
 
-      if (this.newEvent && hovered && this.newEvent.end.getTime() != hovered.end.getTime()) {
-        if (this.newEvent) {
+      if (this.newEvent && this.dragStartTimeslot && hovered && (this.newEvent.end.getTime() != hovered.end.getTime())) {
+        if (this.dragStartTimeslot.start.getTime() === hovered.start.getTime()) {
+          // 1 slot
+        } else if (this.dragStartTimeslot.start.getTime() < hovered.start.getTime()) {
+          // Drag down
+          this.newEvent.start = this.dragStartTimeslot.start;
           this.newEvent.end = hovered.end;
           this.events$.next(this.events$.value);
+        } else if (this.dragStartTimeslot.start.getTime() > hovered.start.getTime()) {
+          // Drag up
+          this.newEvent.start = hovered.start;
+          this.newEvent.end = this.dragStartTimeslot.end;
+          this.events$.next(this.events$.value);
         }
+        
       }
     });
   }
@@ -202,6 +212,7 @@ export class BsFullcalendarComponent implements OnDestroy {
   onMouseUp(ev: MouseEvent) {
     if (this.newEvent) {
       this.newEvent = null;
+      this.dragStartTimeslot = null;
     }
   }
 
