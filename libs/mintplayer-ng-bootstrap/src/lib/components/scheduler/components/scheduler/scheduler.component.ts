@@ -171,6 +171,17 @@ export class BsSchedulerComponent implements OnDestroy {
     this.events$.next([...this.events$.value, this.operation.event]);
   }
 
+  onStartDragEvent(eventPart: SchedulerEventPart, ev: MouseEvent) {
+    ev.preventDefault();
+    this.hoveredTimeSlot$.pipe(take(1)).subscribe((hoveredTimeSlot) => {
+      this.dragStartTimeslot = hoveredTimeSlot;
+      this.operation = {
+        operation: EDragOperation.moveEvent,
+        event: eventPart.event
+      }
+    });
+  }
+
   //#region hoveredTimeslot$
   private getHoveredTimeslot(ev: MouseEvent, timeSlots: TimeSlot[][]) {
     const hoveredSlots = this.timeSlotElements.filter((el) => {
@@ -204,7 +215,7 @@ export class BsSchedulerComponent implements OnDestroy {
     return slot;
   }
 
-  @HostListener('mousemove', ['$event'])
+  @HostListener('document:mousemove', ['$event'])
   onMousemove(ev: MouseEvent) {
     this.timeSlots$.pipe(take(1)).subscribe((timeSlots) => {
       const hovered = this.getHoveredTimeslot(ev, timeSlots);
@@ -230,6 +241,14 @@ export class BsSchedulerComponent implements OnDestroy {
               
             }
           } break;
+          case EDragOperation.moveEvent: {
+            if (hovered && this.dragStartTimeslot) {
+              this.operation.event.start.setTime(this.operation.event.start.getTime() + hovered.start.getTime() - this.dragStartTimeslot.start.getTime());
+              this.operation.event.end.setTime(this.operation.event.end.getTime() + hovered.start.getTime() - this.dragStartTimeslot.start.getTime());
+              this.dragStartTimeslot = hovered;
+              this.events$.next(this.events$.value);
+            }
+          } break;
         }
       }
 
@@ -237,7 +256,7 @@ export class BsSchedulerComponent implements OnDestroy {
   }
   //#endregion
 
-  @HostListener('mouseup', ['$event'])
+  @HostListener('document:mouseup', ['$event'])
   onMouseUp(ev: MouseEvent) {
     if (this.operation) {
       switch (this.operation.operation) {
@@ -247,12 +266,12 @@ export class BsSchedulerComponent implements OnDestroy {
             this.dragStartTimeslot = null;
           }
         } break;
+        case EDragOperation.moveEvent: {
+          this.operation = null;
+          this.dragStartTimeslot = null;
+        } break;
       }
     }
-  }
-
-  onStartDragEvent(ev: MouseEvent) {
-    ev.preventDefault();
   }
 
   ngOnDestroy() {

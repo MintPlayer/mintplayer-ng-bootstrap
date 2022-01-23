@@ -28,8 +28,12 @@
                     [style.top.px]="(eventPart | bsSecondsTodayOffset) / timeSlotDuration * (unitHeight$ | async)!"
                     [style.height.px]="(eventPart | bsSecondsTimespan) / timeSlotDuration * (unitHeight$ | async)!"
                     [style.left]="'calc(90px + ((100% - 90px) / 7 * ' + ((eventPart | dayOfWeek) - 1) + '))'">
-                    <div class="event-inner" (mousedown)="onStartDragEvent($event)">
-                        {{ eventPart.start | date: 'HH:mm:ss' }} - {{ eventPart.end | date: 'HH:mm:ss' }}
+                    <div class="event-inner" [style.background-color]="eventPart.event.color" (mousedown)="onStartDragEvent(eventPart, $event)">
+                        {{ eventPart.event.description }}
+                        <br>
+                        {{ eventPart.start | date: 'HH:mm:ss' }}
+                        <br>
+                        {{ eventPart.end | date: 'HH:mm:ss' }}
                     </div>
                 </div>
                 
