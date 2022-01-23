@@ -22,22 +22,28 @@
             
             <!-- Events -->
             <ng-container *ngIf="(timeSlotDuration$ | async) as timeSlotDuration">
-                <ng-container *ngFor="let eventWithParts of (eventParts$ | async)">
+
+                <div *ngFor="let eventPart of (eventPartsForThisWeek$ | async)" class="position-absolute event"
+                    [style.top.px]="(eventPart | bsSecondsTodayOffset) / timeSlotDuration * 40"
+                    [style.height.px]="(eventPart | bsSecondsTimespan) / timeSlotDuration * 40"
+                    [style.left]="'calc(90px + ((100% - 90px) / 7 * ' + ((eventPart | dayOfWeek) - 1) + '))'">
+                    <div class="event-inner">
+                        {{ eventPart.start | date: 'HH:mm:ss' }} - {{ eventPart.end | date: 'HH:mm:ss' }}
+                    </div>
+                </div>
+                
+                <!-- <ng-container *ngFor="let eventWithParts of (eventParts$ | async)">
                     <div *ngFor="let eventPart of eventWithParts.parts" class="position-absolute event"
                         [style.top.px]="(eventPart | bsSecondsTodayOffset) / timeSlotDuration * 40"
                         [style.height.px]="(eventPart | bsSecondsTimespan) / timeSlotDuration * 40"
                         [style.left]="'calc(90px + ((100% - 90px) / 7 * ' + ((eventPart | dayOfWeek) - 1) + '))'">
-                        {{ eventPart.start | date: 'HH:mm:ss' }} - {{ eventPart.end | date: 'HH:mm:ss' }}
+                        <div class="event-inner">
+                            {{ eventPart.start | date: 'HH:mm:ss' }} - {{ eventPart.end | date: 'HH:mm:ss' }}
+                        </div>
                     </div>
-                </ng-container>
+                </ng-container> -->
+                
             </ng-container>
-            <!-- <ng-container *ngIf="(timeSlotDuration$ | async) as timeSlotDuration">
-                <div *ngFor="let event of (events$ | async)" class="position-absolute event"
-                    [style.top.px]="(event | bsSecondsTodayOffset) / timeSlotDuration * 40"
-                    [style.height.px]="(event | bsSecondsTimespan) / timeSlotDuration * 40"
-                    [style.left]="'calc(90px + ((100% - 90px) / 7 * ' + ((event | dayOfWeek) - 1) + '))'">
-                </div>
-            </ng-container> -->
         </div>
     </div>
 </div>

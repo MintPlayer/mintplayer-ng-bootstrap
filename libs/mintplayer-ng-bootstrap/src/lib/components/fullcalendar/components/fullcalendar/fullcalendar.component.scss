@@ -38,6 +38,18 @@
     z-index: 5;
     width: calc((100% - 90px) / 7);
     height: 100px;
-    background-color: red;
     overflow: hidden;
+    position: relative;
+    background: #222;
+    user-select: none;
+
+    .event-inner {
+        background-color: red;
+        position: absolute;
+        left: 4px;
+        right: 5px;
+        top: 4px;
+        bottom: 5px;
+        cursor: move;  
+    }
 }

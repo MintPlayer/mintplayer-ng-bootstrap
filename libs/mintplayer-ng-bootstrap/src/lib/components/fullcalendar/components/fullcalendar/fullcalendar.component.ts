@@ -1,5 +1,5 @@
 import { Component, ElementRef, HostListener, OnDestroy, QueryList, ViewChildren } from '@angular/core';
-import { BehaviorSubject, combineLatest, map, Observable, Subject, take } from 'rxjs';
+import { BehaviorSubject, combineLatest, map, mergeAll, Observable, Subject, take, takeUntil } from 'rxjs';
 import { BsCalendarMonthService } from '../../../../services/calendar-month/calendar-month.service';
 import { FullcalendarEvent } from '../../interfaces/fullcalendar-event';
 import { FullCalendarEventPart } from '../../interfaces/fullcalendar-event-part';
@@ -30,7 +30,6 @@ export class BsFullcalendarComponent implements OnDestroy {
       map((events) => {
         return events.map((ev) => {
           let startTime = ev.start;
-          console.log(`startTime: ${startTime}, end: ${ev.end}`);
           const result: FullCalendarEventPart[] = [];
           while (!this.dateEquals(startTime, ev.end)) {
             const end = new Date(startTime.getFullYear(), startTime.getMonth(), startTime.getDate() + 1, 0, 0, 0);
@@ -45,6 +44,28 @@ export class BsFullcalendarComponent implements OnDestroy {
         });
       })
     );
+
+    combineLatest([
+        this.daysOfWeek$
+          .pipe(map((daysOfWeek) => {
+            return { start: daysOfWeek[0].getTime(), end: daysOfWeek[daysOfWeek.length - 1].getTime() + 24 * 60 * 60 * 1000 };
+          })),
+        this.eventParts$
+          .pipe(map(eventParts => eventParts.map(evp => evp.parts)))
+          .pipe(map(jaggedParts => {
+            return jaggedParts.reduce((flat, toFlatten) => flat.concat(toFlatten), []);
+          })),
+        this.eventParts$
+      ])
+      .pipe(map(([startAndEnd, eventParts, originalEventParts]) => {
+        return eventParts.filter(eventPart => {
+          return !((eventPart.end.getTime() < startAndEnd.start) || (eventPart.start.getTime() > startAndEnd.end));
+        });
+      }))
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe((eventPartsForThisWeek) => {
+        this.eventPartsForThisWeek$.next(eventPartsForThisWeek);
+      });
 
     this.timeSlots$ = combineLatest([this.daysOfWeek$, this.timeSlotDuration$])
       .pipe(map(([daysOfWeek, duration]) => {
@@ -72,12 +93,11 @@ export class BsFullcalendarComponent implements OnDestroy {
         });
 
       }));
-
-    // this.eventListDiffer = iterableDiffers.find([]).create<FullcalendarEvent>();
   }
 
   events$: BehaviorSubject<FullcalendarEvent[]>;
   eventParts$: Observable<FullcalendarEventWithParts[]>;
+  eventPartsForThisWeek$ = new BehaviorSubject<FullCalendarEventPart[]>([]);
   currentWeek$: BehaviorSubject<Date>;
   daysOfWeek$: Observable<Date[]>;
   timeSlotDuration$ = new BehaviorSubject<number>(1800);
@@ -86,28 +106,7 @@ export class BsFullcalendarComponent implements OnDestroy {
   hoveredTimeSlot$ = new BehaviorSubject<TimeSlot | null>(null);
   destroyed$ = new Subject();
 
-  // eventListDiffer: IterableDiffer<FullcalendarEvent>;
-  // eventDiffers: { ev: FullcalendarEvent; differ: KeyValueDiffer<any, any> }[] = [];
-
   @ViewChildren('slot') timeSlotElements!: QueryList<ElementRef<HTMLDivElement>>;
-
-  // ngDoCheck() {
-  //   const eventListChanges = this.eventListDiffer.diff(this.events$.value);
-  //   if (eventListChanges) {
-  //     console.log('Events changed', eventListChanges);
-  //     eventListChanges.forEachAddedItem((item) => {
-  //       const eventDiffer = this.keyValueDiffers.find(item.item).create<any, any>();
-  //       this.eventDiffers.push({ ev: item.item, differ: eventDiffer });
-  //     });
-  //   }
-  //   for (const eventDiffer of this.eventDiffers) {
-  //     const eventChanges = eventDiffer.differ.diff(eventDiffer.ev);
-  //     if (eventChanges) {
-  //       console.log('An event changed', eventChanges);
-  //       this.ref.detectChanges();
-  //     }
-  //   }
-  // }
 
   private dateEquals(date1: Date, date2: Date) {
     return (
