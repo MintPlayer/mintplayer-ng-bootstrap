@@ -1,0 +1,42 @@
+{
+  "projectType": "library",
+  "root": "libs/mintplayer-ng-focus-on-load",
+  "sourceRoot": "libs/mintplayer-ng-focus-on-load/src",
+  "prefix": "mintplayer-ng-bootstrap",
+  "targets": {
+    "build": {
+      "executor": "@nrwl/angular:package",
+      "outputs": ["dist/libs/mintplayer-ng-focus-on-load"],
+      "options": {
+        "project": "libs/mintplayer-ng-focus-on-load/ng-package.json"
+      },
+      "configurations": {
+        "production": {
+          "tsConfig": "libs/mintplayer-ng-focus-on-load/tsconfig.lib.prod.json"
+        },
+        "development": {
+          "tsConfig": "libs/mintplayer-ng-focus-on-load/tsconfig.lib.json"
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "test": {
+      "executor": "@nrwl/jest:jest",
+      "outputs": ["coverage/libs/mintplayer-ng-focus-on-load"],
+      "options": {
+        "jestConfig": "libs/mintplayer-ng-focus-on-load/jest.config.js",
+        "passWithNoTests": true
+      }
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "options": {
+        "lintFilePatterns": [
+          "libs/mintplayer-ng-focus-on-load/src/**/*.ts",
+          "libs/mintplayer-ng-focus-on-load/src/**/*.html"
+        ]
+      }
+    }
+  },
+  "tags": []
+}

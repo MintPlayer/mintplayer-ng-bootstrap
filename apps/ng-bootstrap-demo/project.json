@@ -1,6 +1,6 @@
 {
   "projectType": "application",
-  "schematics": {
+  "generators": {
     "@schematics/angular:component": {
       "style": "scss"
     }
@@ -23,9 +23,7 @@
           "apps/ng-bootstrap-demo/src/favicon.ico",
           "apps/ng-bootstrap-demo/src/assets"
         ],
-        "styles": [
-          "apps/ng-bootstrap-demo/src/styles.scss"
-        ],
+        "styles": ["apps/ng-bootstrap-demo/src/styles.scss"],
         "scripts": []
       },
       "configurations": {

@@ -7,6 +7,7 @@ import { SchedulerEvent } from '../../interfaces/scheduler-event';
 import { SchedulerEventPart } from '../../interfaces/scheduler-event-part';
 import { SchedulerEventWithParts } from '../../interfaces/scheduler-event-with-parts';
 import { TimeSlot } from '../../interfaces/time-slot';
+import { BsTimelineService } from '../../services/timeline/timeline.service';
 
 @Component({
   selector: 'bs-scheduler',
@@ -14,7 +15,7 @@ import { TimeSlot } from '../../interfaces/time-slot';
   styleUrls: ['./scheduler.component.scss'],
 })
 export class BsSchedulerComponent implements OnDestroy {
-  constructor(private calendarMonthService: BsCalendarMonthService) {
+  constructor(private calendarMonthService: BsCalendarMonthService, private timelineService: BsTimelineService) {
     const monday = this.calendarMonthService.getMondayBefore(new Date());
     this.currentWeek$ = new BehaviorSubject<Date>(monday);
 
@@ -23,6 +24,7 @@ export class BsSchedulerComponent implements OnDestroy {
         weekMonday.setHours(0);
         weekMonday.setMinutes(0);
         weekMonday.setSeconds(0);
+        weekMonday.setMilliseconds(0);
         return Array.from(Array(7).keys()).map((x) => this.addDays(weekMonday, x));
       })
     );
@@ -47,7 +49,7 @@ export class BsSchedulerComponent implements OnDestroy {
       })
     );
 
-    combineLatest([
+    this.eventPartsForThisWeek$ = combineLatest([
         this.daysOfWeek$
           .pipe(map((daysOfWeek) => {
             return { start: daysOfWeek[0].getTime(), end: daysOfWeek[daysOfWeek.length - 1].getTime() + 24 * 60 * 60 * 1000 };
@@ -56,18 +58,37 @@ export class BsSchedulerComponent implements OnDestroy {
           .pipe(map(eventParts => eventParts.map(evp => evp.parts)))
           .pipe(map(jaggedParts => {
             return jaggedParts.reduce((flat, toFlatten) => flat.concat(toFlatten), []);
-          })),
-        this.eventParts$
+          }))
       ])
-      .pipe(map(([startAndEnd, eventParts, originalEventParts]) => {
+      .pipe(map(([startAndEnd, eventParts]) => {
         return eventParts.filter(eventPart => {
-          return !((eventPart.end.getTime() < startAndEnd.start) || (eventPart.start.getTime() > startAndEnd.end));
+          return !((eventPart.end.getTime() <= startAndEnd.start) || (eventPart.start.getTime() >= startAndEnd.end));
         });
+      }));
+
+    this.timelinedEventPartsForThisWeek$ = this.eventPartsForThisWeek$
+      .pipe(map(eventParts => {
+        // We'll only use the events for this week
+        const events = eventParts.map(ep => ep.event);
+        const timeline = this.timelineService.getTimeline(events);
+
+        const result = timeline.map(track => {
+          return track.events.map(ev => {
+            return { event: ev, index: track.index };
+          });
+        })
+        .reduce((flat, toFlatten) => flat.concat(toFlatten), [])
+        .map((evi) => eventParts.filter(p => p.event === evi.event).map(p => {
+            return { part: p, index: evi.index };
+          })
+        )
+        .reduce((flat, toFlatten) => flat.concat(toFlatten), []);
+
+        return {
+          total: timeline.length,
+          parts: result
+        };
       }))
-      .pipe(takeUntil(this.destroyed$))
-      .subscribe((eventPartsForThisWeek) => {
-        this.eventPartsForThisWeek$.next(eventPartsForThisWeek);
-      });
 
     this.timeSlots$ = combineLatest([this.daysOfWeek$, this.timeSlotDuration$])
       .pipe(map(([daysOfWeek, duration]) => {
@@ -84,11 +105,13 @@ export class BsSchedulerComponent implements OnDestroy {
             start.setHours(timeSlotStart.getHours());
             start.setMinutes(timeSlotStart.getMinutes());
             start.setSeconds(timeSlotStart.getSeconds());
+            start.setMilliseconds(timeSlotStart.getMilliseconds());
 
             const end = new Date(day);
             end.setHours(timeSlotEnd.getHours());
             end.setMinutes(timeSlotEnd.getMinutes());
             end.setSeconds(timeSlotEnd.getSeconds());
+            end.setMilliseconds(timeSlotEnd.getMilliseconds());
 
             return <TimeSlot>{ start, end };
           });
@@ -105,7 +128,8 @@ export class BsSchedulerComponent implements OnDestroy {
 
   events$: BehaviorSubject<SchedulerEvent[]>;
   eventParts$: Observable<SchedulerEventWithParts[]>;
-  eventPartsForThisWeek$ = new BehaviorSubject<SchedulerEventPart[]>([]);
+  eventPartsForThisWeek$: Observable<SchedulerEventPart[]>;
+  timelinedEventPartsForThisWeek$: Observable<{ total: number, parts: { part: SchedulerEventPart, index: number}[] }>;
   currentWeek$: BehaviorSubject<Date>;
   daysOfWeek$: Observable<Date[]>;
   timeSlotDuration$ = new BehaviorSubject<number>(1800);

@@ -1,0 +1,42 @@
+{
+  "projectType": "library",
+  "root": "libs/mintplayer-ng-click-outside",
+  "sourceRoot": "libs/mintplayer-ng-click-outside/src",
+  "prefix": "mintplayer-ng-bootstrap",
+  "targets": {
+    "build": {
+      "executor": "@nrwl/angular:package",
+      "outputs": ["dist/libs/mintplayer-ng-click-outside"],
+      "options": {
+        "project": "libs/mintplayer-ng-click-outside/ng-package.json"
+      },
+      "configurations": {
+        "production": {
+          "tsConfig": "libs/mintplayer-ng-click-outside/tsconfig.lib.prod.json"
+        },
+        "development": {
+          "tsConfig": "libs/mintplayer-ng-click-outside/tsconfig.lib.json"
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "test": {
+      "executor": "@nrwl/jest:jest",
+      "outputs": ["coverage/libs/mintplayer-ng-click-outside"],
+      "options": {
+        "jestConfig": "libs/mintplayer-ng-click-outside/jest.config.js",
+        "passWithNoTests": true
+      }
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "options": {
+        "lintFilePatterns": [
+          "libs/mintplayer-ng-click-outside/src/**/*.ts",
+          "libs/mintplayer-ng-click-outside/src/**/*.html"
+        ]
+      }
+    }
+  },
+  "tags": []
+}

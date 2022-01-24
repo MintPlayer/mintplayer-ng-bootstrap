@@ -1,0 +1,59 @@
+<div class="container">
+    <div class="row">
+        <div class="col-sm-4">
+            To do
+        </div>
+        <div class="col-sm-4">
+            In progress
+        </div>
+        <div class="col-sm-4">
+            Done
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-4">
+            <div cdkDropList #toDoList="cdkDropList"
+                [cdkDropListData]="toDoItems"
+                [cdkDropListConnectedTo]="[inProgressList]"
+                (cdkDropListDropped)="taskDropped($event)"
+                class="task-list">
+                <div>
+                    <div class="task-item d-flex flex-row" *ngFor="let task of toDoItems" cdkDrag>
+                        <label class="flex-grow-1">{{ task }}</label>
+                        <div cdkDragHandle></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div cdkDropList #inProgressList="cdkDropList"
+                [cdkDropListData]="inProgressItems"
+                [cdkDropListConnectedTo]="[toDoList,doneList]"
+                (cdkDropListDropped)="taskDropped($event)"
+                class="task-list">
+                
+                <div>
+                    <div class="task-item d-flex flex-row" *ngFor="let task of inProgressItems" cdkDrag>
+                        <label class="flex-grow-1">{{ task }}</label>
+                        <div cdkDragHandle></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div cdkDropList #doneList="cdkDropList"
+                [cdkDropListData]="doneItems"
+                [cdkDropListConnectedTo]="[inProgressList]"
+                (cdkDropListDropped)="taskDropped($event)"
+                class="task-list">
+                
+                <div>
+                    <div class="task-item d-flex flex-row" *ngFor="let task of doneItems" cdkDrag>
+                        <label class="flex-grow-1">{{ task }}</label>
+                        <div cdkDragHandle></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

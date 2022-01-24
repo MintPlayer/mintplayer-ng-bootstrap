@@ -3,6 +3,8 @@
   "projects": {
     "mintplayer-ng-animations": "libs/mintplayer-ng-animations",
     "mintplayer-ng-bootstrap": "libs/mintplayer-ng-bootstrap",
+    "mintplayer-ng-click-outside": "libs/mintplayer-ng-click-outside",
+    "mintplayer-ng-focus-on-load": "libs/mintplayer-ng-focus-on-load",
     "ng-bootstrap-demo": "apps/ng-bootstrap-demo",
     "ng-bootstrap-demo-e2e": "apps/ng-bootstrap-demo-e2e"
   }

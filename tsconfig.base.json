@@ -20,6 +20,12 @@
       ],
       "@mintplayer/ng-bootstrap": [
         "libs/mintplayer-ng-bootstrap/src/index.ts"
+      ],
+      "@mintplayer/ng-click-outside": [
+        "libs/mintplayer-ng-click-outside/src/index.ts"
+      ],
+      "@mintplayer/ng-focus-on-load": [
+        "libs/mintplayer-ng-focus-on-load/src/index.ts"
       ]
     }
   },
