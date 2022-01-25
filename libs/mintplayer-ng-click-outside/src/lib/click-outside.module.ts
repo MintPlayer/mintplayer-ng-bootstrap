@@ -11,4 +11,4 @@ import { ClickOutsideDirective } from './directives/click-outside/click-outside.
     ClickOutsideDirective
   ],
 })
-export class MintplayerNgClickOutsideModule {}
+export class ClickOutsideModule {}
