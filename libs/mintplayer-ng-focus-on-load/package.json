@@ -1,7 +1,7 @@
 {
   "name": "@mintplayer/ng-focus-on-load",
   "private": false,
-  "version": "13.1.1",
+  "version": "13.1.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/MintPlayer/mintplayer-ng-bootstrap"
