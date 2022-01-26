@@ -1,5 +1,9 @@
 import { Component } from '@angular/core';
-import { Artist, SubjectService, SubjectType, Tag, TagService } from '@mintplayer/ng-client';
+import { Artist } from '../../../entities/artist';
+import { Tag } from '../../../entities/tag';
+import { ESubjectType } from '../../../enums/subject-type';
+import { SubjectService } from '../../../services/subject/subject.service';
+import { TagService } from '../../../services/tag/tag.service';
 
 @Component({
   selector: 'demo-autofocus',
@@ -15,7 +19,7 @@ export class AutofocusComponent {
   selectedTags: Tag[] = [];
 
   onProvideArtistSuggestions(search: string) {
-    this.subjectService.suggest(search, [SubjectType.artist]).then((artists) => {
+    this.subjectService.suggest(search, [ESubjectType.artist]).then((artists) => {
       this.artistSuggestions = <Artist[]>artists;
     })
   }

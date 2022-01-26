@@ -11,7 +11,7 @@ export class ArtistService {
   constructor(private httpClient: HttpClient) {
   }
 
-  private baseUrl = 'https://mintplayer.com'
+  private baseUrl = 'https://mintplayer.com';
 
   public pageArtists(request: PaginationRequest) {
     return this.httpClient.post<PaginationResponse<Artist>>(`${this.baseUrl}/api/v1/artist/page`, request).toPromise();
