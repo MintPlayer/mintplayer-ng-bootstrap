@@ -21,7 +21,8 @@
         "inlineStyleLanguage": "scss",
         "assets": [
           "apps/ng-bootstrap-demo/src/favicon.ico",
-          "apps/ng-bootstrap-demo/src/assets"
+          "apps/ng-bootstrap-demo/src/assets",
+          "apps/ng-bootstrap-demo/src/web.config"
         ],
         "styles": ["apps/ng-bootstrap-demo/src/styles.scss"],
         "scripts": []

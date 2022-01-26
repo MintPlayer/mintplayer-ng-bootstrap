@@ -1,6 +1,20 @@
+import { Directive, Injectable, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
+import { BsModalService } from '@mintplayer/ng-bootstrap';
 import { FocusTrapComponent } from './focus-trap.component';
+
+@Injectable({
+  providedIn: 'root'
+})
+class BsModalMockService {
+}
+
+@Directive({
+  selector: '[bsFor]'
+})
+class BsForMockDirective {
+  @Input() bsFor!: any;
+}
 
 describe('FocusTrapComponent', () => {
   let component: FocusTrapComponent;
@@ -8,7 +22,16 @@ describe('FocusTrapComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ FocusTrapComponent ]
+      declarations: [
+        // Unit to test
+        FocusTrapComponent,
+
+        // Mock dependencies
+        BsForMockDirective
+      ],
+      providers: [
+        { provide: BsModalService, useClass: BsModalMockService }
+      ]
     })
     .compileComponents();
   });

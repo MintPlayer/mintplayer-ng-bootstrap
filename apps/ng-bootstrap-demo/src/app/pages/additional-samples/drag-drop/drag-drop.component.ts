@@ -8,7 +8,7 @@ import { Component } from '@angular/core';
 })
 export class DragDropComponent {
 
-  toDoItems: string[] = ['Dusting off', 'Vacuuming', 'Mopping', 'Scrubbing', 'Gardening', 'Planking', 'Owling', 'Faith hilling', 'Tebowing', 'Taylor Swifting'];
+  toDoItems: string[] = ['Faith Hilling', 'Planking', 'Owling', 'Bradying', 'Tebowing', 'Poodle Fisting', 'Taylor Swifting', 'Cat Breading', 'Fonzying', 'Mustaching', 'Reporting'];
   inProgressItems: string[] = [];
   doneItems: string[] = [];
 

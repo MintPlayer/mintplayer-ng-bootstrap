@@ -21,7 +21,6 @@ export class ModalComponent {
     this.modal = this.modalService.show(template);
   }
   hideModal(modal: BsModalContentComponent) {
-    console.log('hide modal');
     if (modal) {
       this.modalService.hide(modal);
     }

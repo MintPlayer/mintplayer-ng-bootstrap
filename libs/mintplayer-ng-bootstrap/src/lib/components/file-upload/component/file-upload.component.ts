@@ -18,8 +18,6 @@ export class BsFileUploadComponent {
   @Output() public filesDropped = new EventEmitter<FileUpload[]>();
 
   onChange(event: Event) {
-    console.log('event', event);
-
     if (!event.target) return;
     if (!('files' in event.target)) return;
     if (!event.target['files']) return;

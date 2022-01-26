@@ -34,7 +34,6 @@ export class BsModalService {
     });
 
     const componentInstance = overlayRef.attach<BsModalContentComponent>(portal);
-    console.log('instance', componentInstance);
     componentInstance.instance['instance'] = <ModalAnimationMeta>{
       component: componentInstance,
       overlay: overlayRef

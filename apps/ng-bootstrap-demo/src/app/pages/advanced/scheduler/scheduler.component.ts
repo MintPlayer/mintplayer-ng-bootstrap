@@ -6,5 +6,5 @@ import { Component } from '@angular/core';
   styleUrls: ['./scheduler.component.scss']
 })
 export class SchedulerComponent {
-  unitHeight = 60;
+  unitHeight = 30;
 }

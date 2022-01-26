@@ -17,7 +17,6 @@ export class BsContextMenuDirective {
       ev.preventDefault();
       this.checkAndCloseExisting(ev);
 
-      console.log('d', element.nativeElement);
       this.overlayRef = this.overlay.create({
         hasBackdrop: false,
         scrollStrategy: this.overlay.scrollStrategies.reposition(),

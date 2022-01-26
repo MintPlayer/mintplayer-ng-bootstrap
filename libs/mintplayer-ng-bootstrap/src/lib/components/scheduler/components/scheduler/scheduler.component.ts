@@ -1,8 +1,9 @@
 import { Component, ElementRef, EventEmitter, HostListener, Input, OnDestroy, Output, QueryList, ViewChildren } from '@angular/core';
-import { BehaviorSubject, combineLatest, map, Observable, Subject, take, takeUntil } from 'rxjs';
+import { BehaviorSubject, combineLatest, filter, map, Observable, Subject, take, takeUntil } from 'rxjs';
 import { BsCalendarMonthService } from '../../../../services/calendar-month/calendar-month.service';
 import { EDragOperation } from '../../enums/drag-operation';
 import { DragOperation } from '../../interfaces/drag-operation';
+import { PreviewEvent } from '../../interfaces/preview-event';
 import { SchedulerEvent } from '../../interfaces/scheduler-event';
 import { SchedulerEventPart } from '../../interfaces/scheduler-event-part';
 import { SchedulerEventWithParts } from '../../interfaces/scheduler-event-with-parts';
@@ -29,36 +30,22 @@ export class BsSchedulerComponent implements OnDestroy {
       })
     );
 
-    this.events$ = new BehaviorSubject<SchedulerEvent[]>([]);
-    this.eventParts$ = this.events$.pipe(
-      map((events) => {
-        return events.map((ev) => {
-          let startTime = ev.start;
-          const result: SchedulerEventPart[] = [];
-          while (!this.dateEquals(startTime, ev.end)) {
-            const end = new Date(startTime.getFullYear(), startTime.getMonth(), startTime.getDate() + 1, 0, 0, 0);
-            result.push({ start: startTime, end: end, event: ev });
-            startTime = end;
-          }
-          if (startTime != ev.end) {
-            result.push({ start: startTime, end: ev.end, event: ev });
-          }
+    this.daysOfWeekWithTimestamps$ = this.daysOfWeek$
+      .pipe(map((daysOfWeek) => {
+        return { start: daysOfWeek[0].getTime(), end: daysOfWeek[daysOfWeek.length - 1].getTime() + 24 * 60 * 60 * 1000 };
+      }));
 
-          return <SchedulerEventWithParts>{ event: ev, parts: result };
-        });
-      })
+    this.eventParts$ = this.events$.pipe(
+      map((events) =>  events.map((ev) => this.timelineService.splitInParts(ev)))
     );
 
     this.eventPartsForThisWeek$ = combineLatest([
-        this.daysOfWeek$
-          .pipe(map((daysOfWeek) => {
-            return { start: daysOfWeek[0].getTime(), end: daysOfWeek[daysOfWeek.length - 1].getTime() + 24 * 60 * 60 * 1000 };
-          })),
-        this.eventParts$
-          .pipe(map(eventParts => eventParts.map(evp => evp.parts)))
-          .pipe(map(jaggedParts => {
-            return jaggedParts.reduce((flat, toFlatten) => flat.concat(toFlatten), []);
-          }))
+      this.daysOfWeekWithTimestamps$,
+      this.eventParts$
+        .pipe(map(eventParts => eventParts.map(evp => evp.parts)))
+        .pipe(map(jaggedParts => {
+          return jaggedParts.reduce((flat, toFlatten) => flat.concat(toFlatten), []);
+        }))
       ])
       .pipe(map(([startAndEnd, eventParts]) => {
         return eventParts.filter(eventPart => {
@@ -66,10 +53,33 @@ export class BsSchedulerComponent implements OnDestroy {
         });
       }));
 
+    this.previewEventParts$ = this.previewEvent$.pipe(
+      map((event) => {
+        if (event) {
+          return this.timelineService.splitInParts(event)
+        } else {
+          return null;
+        }
+      })
+    );
+    this.previewEventPartsForThisWeek$ = combineLatest([this.daysOfWeekWithTimestamps$, this.previewEventParts$])
+      .pipe(map(([startAndEnd, previewEventParts]) => {
+        if (previewEventParts) {
+          return previewEventParts.parts.filter(eventPart => {
+            return !((eventPart.end.getTime() <= startAndEnd.start) || (eventPart.start.getTime() >= startAndEnd.end));
+          });
+        } else {
+          return [];
+        }
+      }));
+
     this.timelinedEventPartsForThisWeek$ = this.eventPartsForThisWeek$
       .pipe(map(eventParts => {
         // We'll only use the events for this week
-        const events = eventParts.map(ep => ep.event);
+        const events = eventParts.map(ep => ep.event)
+          .filter((e, i, list) => list.indexOf(e) === i)
+          .filter((e) => !!e)
+          .map((e) => <SchedulerEvent>e);
         const timeline = this.timelineService.getTimeline(events);
 
         const result = timeline.map(track => {
@@ -126,12 +136,18 @@ export class BsSchedulerComponent implements OnDestroy {
       })
   }
 
-  events$: BehaviorSubject<SchedulerEvent[]>;
+  events$ = new BehaviorSubject<SchedulerEvent[]>([]);
   eventParts$: Observable<SchedulerEventWithParts[]>;
   eventPartsForThisWeek$: Observable<SchedulerEventPart[]>;
   timelinedEventPartsForThisWeek$: Observable<{ total: number, parts: { part: SchedulerEventPart, index: number}[] }>;
+  
+  previewEvent$ = new BehaviorSubject<PreviewEvent | null>(null);
+  previewEventParts$: Observable<SchedulerEventWithParts | null>;
+  previewEventPartsForThisWeek$: Observable<SchedulerEventPart[]>;
+  
   currentWeek$: BehaviorSubject<Date>;
   daysOfWeek$: Observable<Date[]>;
+  daysOfWeekWithTimestamps$: Observable<{start: number, end: number}>;
   timeSlotDuration$ = new BehaviorSubject<number>(1800);
   timeSlots$: Observable<TimeSlot[][]>;
   mouseState$ = new BehaviorSubject<boolean>(false);
@@ -150,14 +166,6 @@ export class BsSchedulerComponent implements OnDestroy {
     this.unitHeight$.next(value);
   }
   //#endregion
-
-  private dateEquals(date1: Date, date2: Date) {
-    return (
-      date1.getFullYear() === date2.getFullYear() &&
-      date1.getMonth() === date2.getMonth() &&
-      date1.getDate() === date2.getDate()
-    );
-  }
 
   private addDays(date: Date, days: number) {
     const result = new Date(date);
@@ -188,20 +196,25 @@ export class BsSchedulerComponent implements OnDestroy {
       event: {
         start: slot.start,
         end: slot.end,
-        color: '#F00',
+        color: '#5AC8FA',
         description: 'Test event',
       }
     };
-    this.events$.next([...this.events$.value, this.operation.event]);
+    this.previewEvent$.next({ start: slot.start, end: slot.end });
+
+    // this.events$.next([...this.events$.value, this.operation.event]);
   }
 
   onStartDragEvent(eventPart: SchedulerEventPart, ev: MouseEvent) {
     ev.preventDefault();
     this.hoveredTimeSlot$.pipe(take(1)).subscribe((hoveredTimeSlot) => {
-      this.dragStartTimeslot = hoveredTimeSlot;
-      this.operation = {
-        operation: EDragOperation.moveEvent,
-        event: eventPart.event
+      if (eventPart.event) {
+        this.dragStartTimeslot = hoveredTimeSlot;
+        this.operation = {
+          operation: EDragOperation.moveEvent,
+          event: eventPart.event,
+        };
+        this.previewEvent$.next({ start: eventPart.event.start, end: eventPart.event.end });
       }
     });
   }
@@ -253,24 +266,58 @@ export class BsSchedulerComponent implements OnDestroy {
                 // 1 slot
               } else if (this.dragStartTimeslot.start.getTime() < hovered.start.getTime()) {
                 // Drag down
-                this.operation.event.start = this.dragStartTimeslot.start;
-                this.operation.event.end = hovered.end;
-                this.events$.next(this.events$.value);
+                // this.operation.event.start = this.dragStartTimeslot.start;
+                // this.operation.event.end = hovered.end;
+                // this.events$.next(this.events$.value);
+                this.previewEvent$
+                  .pipe(filter((ev) => !!ev && !!this.dragStartTimeslot))
+                  .pipe(map((ev) => {
+                    if (ev && this.dragStartTimeslot) {
+                      ev.start = this.dragStartTimeslot.start;
+                      ev.end = hovered.end;
+                    }
+                    return ev;
+                  }))
+                  .pipe(take(1))
+                  .subscribe((ev) => this.previewEvent$.next(ev));
               } else if (this.dragStartTimeslot.start.getTime() > hovered.start.getTime()) {
                 // Drag up
-                this.operation.event.start = hovered.start;
-                this.operation.event.end = this.dragStartTimeslot.end;
-                this.events$.next(this.events$.value);
+                // this.operation.event.start = hovered.start;
+                // this.operation.event.end = this.dragStartTimeslot.end;
+                // this.events$.next(this.events$.value);
+                this.previewEvent$
+                  .pipe(filter((ev) => !!ev && !!this.dragStartTimeslot))
+                  .pipe(map((ev) => {
+                    if (ev && this.dragStartTimeslot) {
+                      ev.start = hovered.start;
+                      ev.end = this.dragStartTimeslot.end;
+                    }
+                    return ev;
+                  }))
+                  .pipe(take(1))
+                  .subscribe((ev) => this.previewEvent$.next(ev));
               }
-              
             }
           } break;
           case EDragOperation.moveEvent: {
             if (hovered && this.dragStartTimeslot) {
-              this.operation.event.start.setTime(this.operation.event.start.getTime() + hovered.start.getTime() - this.dragStartTimeslot.start.getTime());
-              this.operation.event.end.setTime(this.operation.event.end.getTime() + hovered.start.getTime() - this.dragStartTimeslot.start.getTime());
-              this.dragStartTimeslot = hovered;
-              this.events$.next(this.events$.value);
+              // this.operation.event.start.setTime(this.operation.event.start.getTime() + hovered.start.getTime() - this.dragStartTimeslot.start.getTime());
+              // this.operation.event.end.setTime(this.operation.event.end.getTime() + hovered.start.getTime() - this.dragStartTimeslot.start.getTime());
+              // this.dragStartTimeslot = hovered;
+              // // this.events$.next(this.events$.value);
+
+              this.previewEvent$
+                .pipe(filter((ev) => !!ev && !!this.dragStartTimeslot))
+                .pipe(map((ev) => {
+                  if (ev && this.dragStartTimeslot) {
+                    ev.start.setTime(ev.start.getTime() + hovered.start.getTime() - this.dragStartTimeslot.start.getTime());
+                    ev.end.setTime(ev.end.getTime() + hovered.start.getTime() - this.dragStartTimeslot.start.getTime());
+                    this.dragStartTimeslot = hovered;
+                  }
+                  return ev;
+                }))
+                .pipe(take(1))
+                .subscribe((ev) => this.previewEvent$.next(ev));
             }
           } break;
         }
@@ -285,14 +332,36 @@ export class BsSchedulerComponent implements OnDestroy {
     if (this.operation) {
       switch (this.operation.operation) {
         case EDragOperation.createEvent: {
-          if (this.operation.event) {
-            this.operation = null;
-            this.dragStartTimeslot = null;
-          }
+          combineLatest([this.previewEvent$])
+            .pipe(take(1))
+            .subscribe(([previewEvent]) => {
+              if (previewEvent) {
+                this.operation = null;
+                this.dragStartTimeslot = null;
+                this.events$.next([...this.events$.value, {
+                  start: previewEvent.start,
+                  end: previewEvent.end,
+                  color: '#F00',
+                  description: 'New event'
+                }]);
+                this.previewEvent$.next(null);
+              }
+            });
         } break;
         case EDragOperation.moveEvent: {
-          this.operation = null;
-          this.dragStartTimeslot = null;
+          this.previewEvent$
+            .pipe(filter((ev) => !!ev))
+            .pipe(take(1))
+            .subscribe((previewEvent) => {
+              if (this.operation && this.operation.event && previewEvent) {
+                this.operation.event.start = previewEvent.start;
+                this.operation.event.end = previewEvent.end;
+                this.operation = null;
+                this.dragStartTimeslot = null;
+                this.events$.next(this.events$.value);
+                this.previewEvent$.next(null);
+              }
+            });
         } break;
       }
     }

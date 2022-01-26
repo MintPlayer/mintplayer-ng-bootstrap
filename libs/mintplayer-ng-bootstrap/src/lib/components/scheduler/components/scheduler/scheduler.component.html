@@ -1,4 +1,3 @@
-{{ unitHeight$ | async }}
 <div class="table d-flex w-100 overflow-y-auto" [style.max-height.px]="null">
     <div class="calendar-head">
         <div class="w-100 d-flex flex-row">
@@ -24,17 +23,29 @@
             <!-- Events -->
             <ng-container *ngIf="(timeSlotDuration$ | async) as timeSlotDuration">
                 <ng-container *ngIf="(timelinedEventPartsForThisWeek$ | async) as partData">
-                    <div *ngFor="let eventPart of partData.parts" class="position-absolute event"
+                    <div *ngFor="let eventPart of partData.parts" class="event p-0"
                         [style.top.px]="(eventPart.part | bsSecondsTodayOffset) / timeSlotDuration * (unitHeight$ | async)!"
                         [style.height.px]="(eventPart.part | bsSecondsTimespan) / timeSlotDuration * (unitHeight$ | async)!"
                         [style.left]="'calc(90px + ((100% - 90px) / 7 * ' + ((eventPart.part | dayOfWeek) - 1) + '))'">
                         <div class="event-inner"
                              [style.width]="'calc(100% / ' + partData.total + ')'"
+                             [style.height.px]="(eventPart.part | bsSecondsTimespan) / timeSlotDuration * (unitHeight$ | async)!"
                              [style.margin-left]="'calc(100% / ' + partData.total + ' * ' + eventPart.index + ')'"
-                             [style.background-color]="eventPart.part.event.color"
                              (mousedown)="onStartDragEvent(eventPart.part, $event)">
-                            {{ eventPart.part.event.description }}
+                            <div class="event-border"></div>
+                            <ng-container *ngIf="eventPart.part.event">
+                                <div class="event-bg" [style.background-color]="eventPart.part.event.color"></div>
+                                <div class="event-label">{{ eventPart.part.event.description }}</div>
+                            </ng-container>
                         </div>
+                    </div>
+                </ng-container>
+                <ng-container *ngIf="(previewEventPartsForThisWeek$ | async) as previewPartData">
+                    <div *ngFor="let eventPart of previewPartData" class="event preview p-0"
+                        [style.top.px]="(eventPart | bsSecondsTodayOffset) / timeSlotDuration * (unitHeight$ | async)!"
+                        [style.height.px]="(eventPart | bsSecondsTimespan) / timeSlotDuration * (unitHeight$ | async)!"
+                        [style.left]="'calc(90px + ((100% - 90px) / 7 * ' + ((eventPart | dayOfWeek) - 1) + '))'">
+                        <div class="event-inner w-100" [style.height.px]="(eventPart | bsSecondsTimespan) / timeSlotDuration * (unitHeight$ | async)!"></div>
                     </div>
                 </ng-container>
             </ng-container>

@@ -40,16 +40,51 @@
     width: calc((100% - 90px) / 7);
     height: 100px;
     overflow: hidden;
-    position: relative;
-    // background: #222;
+    position: absolute;
     user-select: none;
+    pointer-events: none;
+
+    &.preview {
+        background: #666;
+        opacity: .6;
+    }
+
+    .event-border {
+        background: black;
+        top: 0; left: 0; bottom: 3px; width: 3px;
+        position: absolute;
+        z-index: 10;
+        opacity: .3;
+    }
 
     .event-inner {
-        position: absolute;
-        left: 4px;
+        position: relative;
+        left: 0px;
         right: 5px;
-        top: 4px;
+        top: 0px;
         bottom: 5px;
         cursor: move;  
+        pointer-events: all;
+
+        .event-bg {
+            opacity: .5;
+            width: calc(100% - 2px);
+            margin: 1px auto 1px 0;
+            height: calc(100% - 3px);
+            transition: opacity .15s ease-in-out;
+        }
+
+        .event-label {
+            position: absolute;
+            top: 0;
+            font-size: 12px;
+            font-weight: 600;
+            // margin-left: 4px;
+            padding: 4px;
+        }
+
+        &:hover .event-bg {
+            opacity: .7;
+        }
     }
 }

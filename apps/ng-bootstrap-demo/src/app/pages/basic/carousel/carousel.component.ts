@@ -11,4 +11,8 @@ export class CarouselComponent {
   onModeChange(value: any) {
     this.mode = value;
   }
+
+  log() {
+    console.log('loadeddata');
+  }
 }
