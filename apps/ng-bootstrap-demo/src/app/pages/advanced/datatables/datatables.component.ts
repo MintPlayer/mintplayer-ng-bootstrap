@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { DatatableSettings } from '@mintplayer/ng-bootstrap';
-import { Artist, ArtistService } from '@mintplayer/ng-client';
 import { PaginationResponse } from '@mintplayer/ng-pagination';
+import { Artist } from '../../../entities/artist';
+import { ArtistService } from '../../../services/artist/artist.service';
 
 @Component({
   selector: 'demo-datatables',
