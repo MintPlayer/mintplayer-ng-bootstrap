@@ -5,11 +5,11 @@
             [attr.aria-current]="(currentImageIndex$ | async) === i ? true : null"
             [attr.aria-label]="'Slide ' + i"></button>
     </div>
-
-    <div class="carousel-inner" [@carouselSlide]="currentImageCounter$ | async" *ngIf="animation === 'slide'">
+    <!-- <img [src]="" -->
+    <div class="carousel-inner" [@carouselSlide]="loadedCurrentImageCounter$ | async" *ngIf="animation === 'slide'">
         <ng-container *ngFor="let image of images; let i = index">
             <div class="carousel-item" [class.active]="true" *ngIf="(currentImageIndex$ | async) === i">
-                <ng-container [ngTemplateOutlet]="image.itemTemplate"></ng-container>    
+                <ng-container [bsTemplateOutlet]="image.itemTemplate" (bsTemplateImagesLoaded)="logImagesLoaded()"></ng-container>    
             </div>
         </ng-container>
     </div>

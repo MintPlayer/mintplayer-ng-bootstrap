@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BsCarouselComponent } from './carousel/carousel.component';
 import { BsCarouselImageDirective } from './carousel-image/carousel-image.directive';
+import { CustomTemplateOutletModule } from '../../directives/custom-template-outlet/custom-template-outlet.module';
 
 @NgModule({
   declarations: [
@@ -9,7 +10,8 @@ import { BsCarouselImageDirective } from './carousel-image/carousel-image.direct
     BsCarouselImageDirective
   ],
   imports: [
-    CommonModule
+    CommonModule,
+    CustomTemplateOutletModule
   ],
   exports: [
     BsCarouselComponent,

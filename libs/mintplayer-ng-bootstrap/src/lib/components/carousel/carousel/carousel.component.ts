@@ -13,7 +13,7 @@ import { BsCarouselImageDirective } from '../carousel-image/carousel-image.direc
 export class BsCarouselComponent implements OnDestroy, AfterContentInit {
 
   constructor() {
-    this.currentImageIndex$ = this.currentImageCounter$
+    this.currentImageIndex$ = this.loadedCurrentImageCounter$
       .pipe(map((counter) => {
         const l = this.images.length;
         return ((counter % l) + l) % l;
@@ -22,6 +22,14 @@ export class BsCarouselComponent implements OnDestroy, AfterContentInit {
     this.currentImage$ = this.currentImageIndex$
       .pipe(map((index) => this.images.get(index)?.itemTemplate ?? null))
       .pipe(takeUntil(this.destroyed$));
+    this.currentImageCounter$
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe((counter) => {
+        // const l = this.images.length;
+        // const index = ((counter % l) + l) % l;
+        // this.imageToPreload$.next()
+        this.loadedCurrentImageCounter$.next(counter);
+      });
   }
 
   @HostBinding('@.disabled') public animationsDisabled = false;
@@ -35,6 +43,11 @@ export class BsCarouselComponent implements OnDestroy, AfterContentInit {
   currentImageIndex$: Observable<number>;
   currentImage$: Observable<TemplateRef<any> | null>;
 
+  //#region Preload images
+  loadedCurrentImageCounter$ = new BehaviorSubject<number>(-1);
+  imageToPreload$ = new BehaviorSubject<string | null>(null);
+  //#endregion
+
   ngOnDestroy() {
     this.destroyed$.next(true);
   }
@@ -45,6 +58,10 @@ export class BsCarouselComponent implements OnDestroy, AfterContentInit {
     } else {
       this.currentImageCounter$.next(-1);
     }
+  }
+
+  logImagesLoaded() {
+    console.log('images loaded');
   }
   
   //#region Animation
