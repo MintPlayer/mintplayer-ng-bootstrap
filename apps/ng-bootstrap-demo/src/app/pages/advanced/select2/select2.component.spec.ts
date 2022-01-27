@@ -1,7 +1,8 @@
 import { HttpClientModule } from '@angular/common/http';
 import { Component, Injectable, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { SubjectService, TagService } from '@mintplayer/ng-client';
+import { SubjectService } from '../../../services/subject/subject.service';
+import { TagService } from '../../../services/tag/tag.service';
 
 import { Select2Component } from './select2.component';
 

@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Injectable, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { SubjectService, TagService } from '@mintplayer/ng-client';
+import { SubjectService } from '../../../services/subject/subject.service';
+import { TagService } from '../../../services/tag/tag.service';
 import { AutofocusComponent } from './autofocus.component';
 
 @Injectable({

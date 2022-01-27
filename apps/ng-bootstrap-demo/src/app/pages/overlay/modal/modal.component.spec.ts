@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsModalService } from '@mintplayer/ng-bootstrap';
-import { TagService } from '@mintplayer/ng-client';
+import { TagService } from '../../../services/tag/tag.service';
 import { ModalComponent } from './modal.component';
 
 @Injectable({

@@ -2,9 +2,20 @@ import { HttpClientModule } from '@angular/common/http';
 import { Component, Directive, EventEmitter, Injectable, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DatatableSettings } from '@mintplayer/ng-bootstrap';
-import { Artist, ArtistService } from '@mintplayer/ng-client';
 import { PaginationResponse } from '@mintplayer/ng-pagination';
+import { ArtistService } from '../../../services/artist/artist.service';
 import { DatatablesComponent } from './datatables.component';
+
+interface Subject {
+  id: number;
+  text: string;
+}
+
+interface Artist extends Subject {
+  name: string;
+  yearStarted: number;
+  yearQuit: number;
+}
 
 interface PaginationMockRequest {
   sortProperty: string;

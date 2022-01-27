@@ -1,13 +1,10 @@
 import { OverlayModule } from '@angular/cdk/overlay';
 import { JsonPipe } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
-import { Component, ContentChildren, Directive, ElementRef, EventEmitter, Input, Output, Pipe, PipeTransform, QueryList } from '@angular/core';
+import { Component, ContentChildren, Directive, ElementRef, EventEmitter, Input, Output, QueryList } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { RouterTestingModule } from '@angular/router/testing';
-import { BASE_URL } from '@mintplayer/ng-base-url';
-import { API_VERSION } from '@mintplayer/ng-client';
-import { PaginationResponse } from '@mintplayer/ng-pagination';
 import { AppComponent } from './app.component';
 
 describe('AppComponent', () => {
@@ -43,8 +40,6 @@ describe('AppComponent', () => {
         PageAbcComponent
       ],
       providers: [
-        { provide: BASE_URL, useValue: 'https://mintplayer.com' },
-        { provide: API_VERSION, useValue: 'v3' },
         { provide: JsonPipe, useClass: JsonPipe },
       ],
     }).compileComponents();
