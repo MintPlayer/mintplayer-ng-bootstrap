@@ -1,5 +1,5 @@
 import { Component, ElementRef, EventEmitter, HostListener, Input, OnDestroy, Output, QueryList, ViewChildren } from '@angular/core';
-import { BehaviorSubject, combineLatest, filter, map, Observable, Subject, take, takeUntil } from 'rxjs';
+import { BehaviorSubject, combineLatest, filter, map, Observable, Subject, take, takeUntil, tap } from 'rxjs';
 import { BsCalendarMonthService } from '../../../../services/calendar-month/calendar-month.service';
 import { EDragOperation } from '../../enums/drag-operation';
 import { DragOperation } from '../../interfaces/drag-operation';
@@ -100,15 +100,15 @@ export class BsSchedulerComponent implements OnDestroy {
         };
       }))
 
-    this.timeSlots$ = combineLatest([this.daysOfWeek$, this.timeSlotDuration$])
+    // this.timeSlots$ = 
+    combineLatest([this.daysOfWeek$, this.timeSlotDuration$])
       .pipe(map(([daysOfWeek, duration]) => {
         const timeSlotsPerDay = Math.floor((60 * 60 * 24) / duration);
-
         return Array.from(Array(timeSlotsPerDay).keys()).map((index) => {
           const timeSlotStart = new Date(daysOfWeek[0]);
-          timeSlotStart.setSeconds(timeSlotStart.getSeconds() + index * duration);
+          timeSlotStart.setTime(+timeSlotStart.getTime() + index * duration * 1000);
           const timeSlotEnd = new Date(timeSlotStart);
-          timeSlotEnd.setSeconds(timeSlotEnd.getSeconds() + duration);
+          timeSlotEnd.setTime(+timeSlotEnd.getTime() + duration * 1000);
 
           return daysOfWeek.map((day) => {
             const start = new Date(day);
@@ -122,12 +122,16 @@ export class BsSchedulerComponent implements OnDestroy {
             end.setMinutes(timeSlotEnd.getMinutes());
             end.setSeconds(timeSlotEnd.getSeconds());
             end.setMilliseconds(timeSlotEnd.getMilliseconds());
+            end.setDate(end.getDate() + timeSlotEnd.getDate() - timeSlotStart.getDate());
 
             return <TimeSlot>{ start, end };
           });
         });
-
-      }));
+      }))
+      .subscribe((timeslots) => {
+        // For performance reasons, we're not using an observable here, but persist the timeslots in a BehaviorSubject.
+        this.timeSlots$.next(timeslots);
+      });
     
     this.unitHeight$
       .pipe(takeUntil(this.destroyed$))
@@ -149,7 +153,8 @@ export class BsSchedulerComponent implements OnDestroy {
   daysOfWeek$: Observable<Date[]>;
   daysOfWeekWithTimestamps$: Observable<{start: number, end: number}>;
   timeSlotDuration$ = new BehaviorSubject<number>(1800);
-  timeSlots$: Observable<TimeSlot[][]>;
+  timeSlots$ = new BehaviorSubject<TimeSlot[][]>([]);
+  // timeSlots$: Observable<TimeSlot[][]>;
   mouseState$ = new BehaviorSubject<boolean>(false);
   hoveredTimeSlot$ = new BehaviorSubject<TimeSlot | null>(null);
   destroyed$ = new Subject();
@@ -196,13 +201,22 @@ export class BsSchedulerComponent implements OnDestroy {
       event: {
         start: slot.start,
         end: slot.end,
-        color: '#5AC8FA',
+        color: '#F00',
         description: 'Test event',
       }
     };
     this.previewEvent$.next({ start: slot.start, end: slot.end });
+  }
 
-    // this.events$.next([...this.events$.value, this.operation.event]);
+  randomColor() {
+    const brightness = 128;
+    return '#' + this.randomChannel(brightness) + this.randomChannel(brightness) + this.randomChannel(brightness);
+  }
+  randomChannel(brightness: number){
+    const r = 255-brightness;
+    const n = 0|((Math.random() * r) + brightness);
+    const s = n.toString(16);
+    return (s.length==1) ? '0'+s : s;
   }
 
   onStartDragEvent(eventPart: SchedulerEventPart, ev: MouseEvent) {
@@ -266,9 +280,6 @@ export class BsSchedulerComponent implements OnDestroy {
                 // 1 slot
               } else if (this.dragStartTimeslot.start.getTime() < hovered.start.getTime()) {
                 // Drag down
-                // this.operation.event.start = this.dragStartTimeslot.start;
-                // this.operation.event.end = hovered.end;
-                // this.events$.next(this.events$.value);
                 this.previewEvent$
                   .pipe(filter((ev) => !!ev && !!this.dragStartTimeslot))
                   .pipe(map((ev) => {
@@ -282,9 +293,6 @@ export class BsSchedulerComponent implements OnDestroy {
                   .subscribe((ev) => this.previewEvent$.next(ev));
               } else if (this.dragStartTimeslot.start.getTime() > hovered.start.getTime()) {
                 // Drag up
-                // this.operation.event.start = hovered.start;
-                // this.operation.event.end = this.dragStartTimeslot.end;
-                // this.events$.next(this.events$.value);
                 this.previewEvent$
                   .pipe(filter((ev) => !!ev && !!this.dragStartTimeslot))
                   .pipe(map((ev) => {
@@ -310,14 +318,22 @@ export class BsSchedulerComponent implements OnDestroy {
                 .pipe(filter((ev) => !!ev && !!this.dragStartTimeslot))
                 .pipe(map((ev) => {
                   if (ev && this.dragStartTimeslot) {
-                    ev.start.setTime(ev.start.getTime() + hovered.start.getTime() - this.dragStartTimeslot.start.getTime());
-                    ev.end.setTime(ev.end.getTime() + hovered.start.getTime() - this.dragStartTimeslot.start.getTime());
+                    const result =  <PreviewEvent>{
+                      start: new Date(ev.start.getTime() + hovered.start.getTime() - this.dragStartTimeslot.start.getTime()),
+                      end: new Date(ev.end.getTime() + hovered.start.getTime() - this.dragStartTimeslot.start.getTime())
+                    };
+                    
                     this.dragStartTimeslot = hovered;
+
+                    return result;
+                  } else {
+                    return ev;
                   }
-                  return ev;
                 }))
                 .pipe(take(1))
-                .subscribe((ev) => this.previewEvent$.next(ev));
+                .subscribe((ev) => {
+                  this.previewEvent$.next(ev);
+                });
             }
           } break;
         }
@@ -341,7 +357,7 @@ export class BsSchedulerComponent implements OnDestroy {
                 this.events$.next([...this.events$.value, {
                   start: previewEvent.start,
                   end: previewEvent.end,
-                  color: '#F00',
+                  color: this.randomColor(),
                   description: 'New event'
                 }]);
                 this.previewEvent$.next(null);

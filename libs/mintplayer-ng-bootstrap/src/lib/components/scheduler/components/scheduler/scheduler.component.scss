@@ -65,6 +65,7 @@
         bottom: 5px;
         cursor: move;  
         pointer-events: all;
+        overflow-x: hidden;
 
         .event-bg {
             opacity: .5;
