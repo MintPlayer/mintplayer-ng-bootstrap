@@ -1,6 +1,7 @@
 import { Component, Inject, TemplateRef } from '@angular/core';
 import { BsModalContentComponent, BsModalService } from '@mintplayer/ng-bootstrap';
-import { Tag, TagService } from '@mintplayer/ng-client';
+import { Tag } from '../../../entities/tag';
+import { TagService } from '../../../services/tag/tag.service';
 
 @Component({
   selector: 'demo-modal',
