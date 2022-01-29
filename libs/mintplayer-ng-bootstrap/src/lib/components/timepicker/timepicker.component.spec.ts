@@ -1,20 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { TimepickerComponent } from './timepicker.component';
+import { BsTimepickerComponent } from './timepicker.component';
 
-describe('TimepickerComponent', () => {
-  let component: TimepickerComponent;
-  let fixture: ComponentFixture<TimepickerComponent>;
+describe('BsTimepickerComponent', () => {
+  let component: BsTimepickerComponent;
+  let fixture: ComponentFixture<BsTimepickerComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ TimepickerComponent ]
+      declarations: [ BsTimepickerComponent ]
     })
     .compileComponents();
   });
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(TimepickerComponent);
+    fixture = TestBed.createComponent(BsTimepickerComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
