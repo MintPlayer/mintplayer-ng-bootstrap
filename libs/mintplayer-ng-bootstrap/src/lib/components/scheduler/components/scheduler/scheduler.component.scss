@@ -1,3 +1,5 @@
+$min-cell-width: 180px;
+
 :host {
     display: block;
 }
@@ -11,12 +13,16 @@
         > div {
             padding-right: 18px;
         }
+        
+        // .calendar-head-cell {
+        //     min-width: $min-cell-width;
+        // }
     }
 
     .calendar-body {
         flex: 1 1 auto;
         display: block;
-        overflow-y: visible;
+        overflow-y: scroll; // Always show the scrollbar, since the head always has a padding
         overflow-x: hidden;
 
         .calendar-cell {
@@ -28,6 +34,10 @@
                 border-top-width: 3px;
             }
         }
+
+        // .calendar-cell:not(.calendar-left) {
+        //     min-width: $min-cell-width;
+        // }
     }
     
     .calendar-left {
@@ -65,27 +75,56 @@
         bottom: 5px;
         cursor: move;  
         pointer-events: all;
-        overflow-x: hidden;
+        overflow: hidden;
 
-        .event-bg {
-            opacity: .5;
+        .event-wrapper {
             width: calc(100% - 2px);
             margin: 1px auto 1px 0;
             height: calc(100% - 3px);
-            transition: opacity .15s ease-in-out;
+
+            .event-bg {
+                opacity: .5;
+                height: 100%;
+                transition: opacity .15s ease-in-out;
+            }
+
+            .event-label {
+                position: absolute;
+                top: 0;
+                font-size: 12px;
+                font-weight: 600;
+                // margin-left: 4px;
+                padding: 4px;
+            }
         }
 
-        .event-label {
+        .event-resize {
             position: absolute;
-            top: 0;
-            font-size: 12px;
-            font-weight: 600;
-            // margin-left: 4px;
-            padding: 4px;
+            cursor: ns-resize;
+            height: 4px;
+            left: 0; right: 0;
+            z-index: 400;
+
+            &.top {
+                top: 0;
+            }
+            &.bottom {
+                bottom: 0;
+            }
+            &:hover {
+                background: #DDD;
+            }
         }
 
-        &:hover .event-bg {
-            opacity: .7;
+        &.hover .event-bg {
+            opacity: .7 !important;
         }
+    }
+}
+
+@media (max-width: 767px) {
+    .table .calendar-head .calendar-head-cell {
+        text-orientation: sideways;
+        writing-mode: vertical-rl;
     }
 }

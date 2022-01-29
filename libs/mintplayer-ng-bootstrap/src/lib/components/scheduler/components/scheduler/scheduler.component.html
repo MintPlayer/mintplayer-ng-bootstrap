@@ -5,18 +5,18 @@
                 <button class="btn btn-default flex-start" (click)="onPreviousWeek()">&lt;</button>
                 <button class="btn btn-default flex-end" (click)="onNextWeek()">&gt;</button>
             </div>
-            <div class="flex-grow-1" *ngFor="let day of (daysOfWeek$ | async)">
+            <div class="flex-grow-1 calendar-head-cell" *ngFor="let day of (daysOfWeek$ | async)">
                 <span class="d-block col-form-label text-center">
-                    {{ day | date: 'dd-MM-yyyy' }}
+                    <span>{{ day | date: 'dd-MM' }}</span><span class="d-none d-lg-inline-block">-{{ day | date: 'yyyy' }}</span>
                 </span>
             </div>
         </div>
     </div>
-    <div class="calendar-body">
+    <div class="calendar-body" [style.height.px]="maxInnerHeight">
         <div class="position-relative">
             <!-- Timeslots -->
             <div *ngFor="let timeslots of (timeSlots$ | async); let i = index" class="d-flex flex-row p-0 timeslot" [style.height.px]="unitHeight$ | async">
-                <div class="calendar-cell calendar-left align-top py-0">{{ timeslots[0].start | date: 'HH:mm:ss' }}</div>
+                <div class="calendar-cell calendar-left align-top px-2 py-0">{{ timeslots[0].start | date: 'HH:mm:ss' }}</div>
                 <div class="calendar-cell flex-grow-1" *ngFor="let slot of timeslots; let j = index" #slot (mousedown)="onCreateEvent($event, slot)" [attr.data-row]="i" [attr.data-column]="j"></div>
             </div>
             
@@ -29,15 +29,21 @@
                             [style.height.px]="(eventPart.part | bsSecondsTimespan) / timeSlotDuration * unitHeight"
                             [style.left]="'calc(90px + ((100% - 90px) / 7 * ' + ((eventPart.part | dayOfWeek) - 1) + '))'">
                             <div class="event-inner"
+                                [class.hover]="(hoveredEvent$ | async) === eventPart.part.event"
                                 [style.width]="'calc(100% / ' + partData.total + ')'"
                                 [style.height.px]="(eventPart.part | bsSecondsTimespan) / timeSlotDuration * unitHeight"
-                                [style.margin-left]="'calc(100% / ' + partData.total + ' * ' + eventPart.index + ')'"
-                                (mousedown)="onStartDragEvent(eventPart.part, $event)">
+                                [style.margin-left]="'calc(100% / ' + partData.total + ' * ' + eventPart.index + ')'">
+
+                                <div class="event-resize top" *ngIf="eventPart.part.start === eventPart.part.event?.start" (mousedown)="onStartResizeEvent(eventPart.part.event, 'top')"></div>
                                 <div class="event-border"></div>
-                                <ng-container *ngIf="eventPart.part.event">
+                                <div class="event-wrapper" *ngIf="eventPart.part.event"
+                                    (mousedown)="onStartDragEvent(eventPart.part, $event)"
+                                    (mouseenter)="onHoverEvent(eventPart.part.event)"
+                                    (mouseleave)="onLeaveEvent(eventPart.part.event)">
                                     <div class="event-bg" [style.background-color]="eventPart.part.event.color"></div>
                                     <div class="event-label">{{ eventPart.part.event.description }}</div>
-                                </ng-container>
+                                </div>
+                                <div class="event-resize bottom" *ngIf="eventPart.part.end === eventPart.part.event?.end" (mousedown)="onStartResizeEvent(eventPart.part.event, 'bottom')"></div>
                             </div>
                         </div>
                     </ng-container>

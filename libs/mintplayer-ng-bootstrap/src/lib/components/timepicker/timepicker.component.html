@@ -1,0 +1,21 @@
+<div bsDropdown [(isOpen)]="isOpen" [closeOnClickOutside]="true">
+    <span class="input-group">
+        <span class="form-control d-flex" [class.focus]="isFocused">
+            <div class="flex-grow-1">
+                <input type="number" [min]="0" [max]="23" (input)="setNumber($event, 23, minuteBox)" bsEnhancedPaste [(ngModel)]="hours" (focus)="selectAll(hourBox)" (blur)="isFocused = false" #hourBox class="w-100 border-0 bg-transparent text-end">
+            </div>
+            <span class="px-1">:</span>
+            <div class="flex-grow-1">
+                <input type="number" [min]="0" [max]="59" (input)="setNumber($event, 59, null)" bsEnhancedPaste [(ngModel)]="minutes"  (focus)="selectAll(minuteBox)" (blur)="isFocused = false" #minuteBox class="w-100 border-0 bg-transparent">
+            </div>
+        </span>
+        <button class="btn btn-default" *bsDropdownToggle>
+            <i class="bi bi-clock"></i>
+        </button>
+    </span>
+    <ul class="list-group" *bsDropdownMenu>
+        <li class="list-group-item" *ngFor="let timestamp of presetTimestamps">
+            {{ timestamp | date: 'HH:mm' }}
+        </li>
+    </ul>
+</div>

@@ -1,0 +1,28 @@
+:host {
+    display: inline-block;
+}
+
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type=number] {
+  -moz-appearance: textfield;
+  outline: 0px !important;
+}
+
+.form-control {
+    transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+    
+    &.focus {
+        color: #495057;
+        background-color: #fff;
+        border-color: #80bdff !important;
+        outline: 0;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+}

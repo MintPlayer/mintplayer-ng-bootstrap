@@ -100,7 +100,6 @@ export class BsSchedulerComponent implements OnDestroy {
         };
       }))
 
-    // this.timeSlots$ = 
     combineLatest([this.daysOfWeek$, this.timeSlotDuration$])
       .pipe(map(([daysOfWeek, duration]) => {
         const timeSlotsPerDay = Math.floor((60 * 60 * 24) / duration);
@@ -154,9 +153,9 @@ export class BsSchedulerComponent implements OnDestroy {
   daysOfWeekWithTimestamps$: Observable<{start: number, end: number}>;
   timeSlotDuration$ = new BehaviorSubject<number>(1800);
   timeSlots$ = new BehaviorSubject<TimeSlot[][]>([]);
-  // timeSlots$: Observable<TimeSlot[][]>;
   mouseState$ = new BehaviorSubject<boolean>(false);
   hoveredTimeSlot$ = new BehaviorSubject<TimeSlot | null>(null);
+  hoveredEvent$ = new BehaviorSubject<SchedulerEvent | null>(null);
   destroyed$ = new Subject();
 
   @ViewChildren('slot') timeSlotElements!: QueryList<ElementRef<HTMLDivElement>>;
@@ -170,6 +169,9 @@ export class BsSchedulerComponent implements OnDestroy {
   @Input() public set unitHeight(value: number) {
     this.unitHeight$.next(value);
   }
+  //#endregion
+  //#region maxInnerHeight
+  @Input() public maxInnerHeight: number | null = null;
   //#endregion
 
   private addDays(date: Date, days: number) {
@@ -190,6 +192,15 @@ export class BsSchedulerComponent implements OnDestroy {
       .subscribe((w) => this.currentWeek$.next(w));
   }
 
+  onHoverEvent(ev: SchedulerEvent | null) {
+    console.log('hovered', ev);
+    this.hoveredEvent$.next(ev);
+  }
+
+  onLeaveEvent(ev: SchedulerEvent | null) {
+    this.hoveredEvent$.next(null);
+  }
+
   operation: DragOperation | null = null;
   dragStartTimeslot: TimeSlot | null = null;
   onCreateEvent(ev: MouseEvent, slot: TimeSlot) {
@@ -203,7 +214,8 @@ export class BsSchedulerComponent implements OnDestroy {
         end: slot.end,
         color: '#F00',
         description: 'Test event',
-      }
+      },
+      meta: null,
     };
     this.previewEvent$.next({ start: slot.start, end: slot.end });
   }
@@ -227,10 +239,34 @@ export class BsSchedulerComponent implements OnDestroy {
         this.operation = {
           operation: EDragOperation.moveEvent,
           event: eventPart.event,
+          meta: null,
         };
         this.previewEvent$.next({ start: eventPart.event.start, end: eventPart.event.end });
       }
     });
+  }
+
+  onStartResizeEvent(event: SchedulerEvent | null, position: 'top' | 'bottom') {
+    if (event) {
+      switch (position) {
+        case 'top': {
+          this.operation = {
+            operation: EDragOperation.resizeEvent,
+            event: event,
+            meta: { position },
+          }
+          this.previewEvent$.next({ start: event.start, end: event.end });
+        } break;
+        case 'bottom': {
+          this.operation = {
+            operation: EDragOperation.resizeEvent,
+            event: event,
+            meta: { position },
+          }
+          this.previewEvent$.next({ start: event.start, end: event.end });
+        } break;
+      }
+    }
   }
 
   //#region hoveredTimeslot$
@@ -309,11 +345,6 @@ export class BsSchedulerComponent implements OnDestroy {
           } break;
           case EDragOperation.moveEvent: {
             if (hovered && this.dragStartTimeslot) {
-              // this.operation.event.start.setTime(this.operation.event.start.getTime() + hovered.start.getTime() - this.dragStartTimeslot.start.getTime());
-              // this.operation.event.end.setTime(this.operation.event.end.getTime() + hovered.start.getTime() - this.dragStartTimeslot.start.getTime());
-              // this.dragStartTimeslot = hovered;
-              // // this.events$.next(this.events$.value);
-
               this.previewEvent$
                 .pipe(filter((ev) => !!ev && !!this.dragStartTimeslot))
                 .pipe(map((ev) => {
@@ -331,9 +362,27 @@ export class BsSchedulerComponent implements OnDestroy {
                   }
                 }))
                 .pipe(take(1))
-                .subscribe((ev) => {
-                  this.previewEvent$.next(ev);
-                });
+                .subscribe(ev => this.previewEvent$.next(ev));
+            }
+          } break;
+          case EDragOperation.resizeEvent: {
+            if (hovered) {
+              this.previewEvent$
+                .pipe(filter((ev) => !!ev))
+                .pipe(map((ev) => {
+                  if (ev && this.operation && this.operation.event) {
+                    if (this.operation.meta.position === 'top') {
+                      ev.start = hovered.start;
+                      ev.end = this.operation.event.end;
+                    } else if (this.operation.meta.position === 'bottom') {
+                      ev.start = this.operation.event.start;
+                      ev.end = hovered.end;
+                    }
+                  }
+                  return ev;
+                }))
+                .pipe(take(1))
+                .subscribe((ev) => this.previewEvent$.next(ev));
             }
           } break;
         }
@@ -364,7 +413,8 @@ export class BsSchedulerComponent implements OnDestroy {
               }
             });
         } break;
-        case EDragOperation.moveEvent: {
+        case EDragOperation.moveEvent:
+        case EDragOperation.resizeEvent: {
           this.previewEvent$
             .pipe(filter((ev) => !!ev))
             .pipe(take(1))

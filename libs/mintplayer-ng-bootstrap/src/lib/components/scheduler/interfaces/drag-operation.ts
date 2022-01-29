@@ -4,4 +4,5 @@ import { SchedulerEvent } from "./scheduler-event";
 export interface DragOperation {
     operation: EDragOperation;
     event: SchedulerEvent;
+    meta: any;
 }
