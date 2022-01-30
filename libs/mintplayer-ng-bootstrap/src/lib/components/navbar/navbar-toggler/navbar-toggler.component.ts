@@ -1,12 +1,17 @@
-import { Component, EventEmitter, HostListener, Input, Output } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  HostListener,
+  Input,
+  Output,
+} from '@angular/core';
 
 @Component({
   selector: 'bs-navbar-toggler',
   templateUrl: './navbar-toggler.component.html',
-  styleUrls: ['./navbar-toggler.component.scss']
+  styleUrls: ['./navbar-toggler.component.scss'],
 })
 export class BsNavbarTogglerComponent {
-
   //#region State
   _state: 'open' | 'closed' = 'closed';
   @Output() public stateChange = new EventEmitter<'open' | 'closed'>();
@@ -18,16 +23,20 @@ export class BsNavbarTogglerComponent {
     this.stateChange.emit(this._state);
   }
   //#endregion
-  
+
+  @Input() public toggleOnClick = true;
+
   @HostListener('click', ['$event'])
   toggleState(ev: MouseEvent) {
-    switch (this._state) {
-      case 'open':
-        this.state = 'closed';
-        break;
-      default:
-        this.state = 'open';
-        break;
+    if (this.toggleOnClick) {
+      switch (this._state) {
+        case 'open':
+          this.state = 'closed';
+          break;
+        default:
+          this.state = 'open';
+          break;
+      }
     }
   }
 }

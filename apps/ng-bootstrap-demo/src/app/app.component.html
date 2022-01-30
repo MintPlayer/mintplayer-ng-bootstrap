@@ -1,6 +1,6 @@
 <bs-navbar #nav>
   <ng-template bsExpandButton let-state>
-    <bs-navbar-toggler [state]="state"></bs-navbar-toggler>
+    <bs-navbar-toggler [state]="state" [toggleOnClick]="false"></bs-navbar-toggler>
   </ng-template>
   <bs-navbar-brand [routerLink]='["/"]'>
     <span class="brand d-block px-3 pb-3 pt-3">
