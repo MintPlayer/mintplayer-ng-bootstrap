@@ -15,6 +15,8 @@ For me, having the following `.browserlistrc` in the angular application fixes t
     Firefox ESR
     not ios_saf 15.2-15.3
     not safari 15.2-15.3
+    
+[See also](https://github.com/alexthelion/keycloak-login-theme-angular/commit/e647a5ce5e6cc775d8433e31db5163edd7a114c4)
 
 ## Version info
 
