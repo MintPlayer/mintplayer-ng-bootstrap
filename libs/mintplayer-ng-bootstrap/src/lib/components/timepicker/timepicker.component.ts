@@ -1,5 +1,4 @@
-import { ChangeDetectorRef, Component, NgZone, OnChanges, Renderer2, SimpleChanges } from '@angular/core';
-import { NgModel } from '@angular/forms';
+import { ChangeDetectorRef, Component, EventEmitter, Input, NgZone, Output, Renderer2 } from '@angular/core';
 
 @Component({
   selector: 'bs-timepicker',
@@ -36,10 +35,10 @@ export class BsTimepickerComponent {
     const input = <HTMLInputElement>event.target;
     const val = parseInt(input.value);
     if (isNaN(val)) {
-      input.value = '0';
+      input.value = '00';
     } else {
       const result = Math.min(max, Math.abs(val));
-      input.value = result.toString();
+      input.value = result.toString().padStart(2, '0');
 
       if (nextInput) {
         // const maxAllowedNumberOfDigits = input.max.length;
@@ -50,58 +49,56 @@ export class BsTimepickerComponent {
     }
   }
 
-  // filterInput(value: any, max: number) {
-  //   const val = parseInt(value);
-  //   if (isNaN(val)) {
-  //     return 0;
-  //   } else {
-  //     return Math.min(max, Math.abs(val));
-  //   }
-  // }
+  setTime(time: Date) {
+    this.selectedTime = time;
+    this.isOpen = false;
+  }
 
-  // onPaste(event: ClipboardEvent, max: number) {
-  //   // event.preventDefault();
-  //   const data = event.clipboardData || (<any>window).clipboardData;
-  //   const contents = data.getData('text');
-  //   const filtered = this.filterInput(contents, max);
-  //   // this.zone.run(() => {
-  //   //   (<any>event.target).value = filtered;
-  //   //   this.ref.detectChanges();
-  //   // });
-  //   // if (max == 59) {
-  //   //   this.minutes = filtered;
-  //   // } else {
-  //   //   this.hours = filtered;
-  //   // }
-  //   // setTimeout(() => {
-  //   //   (<any>event.target).value = filtered;
-  //   // }, 2000);
-  //   this.renderer.setValue(event.target, filtered.toString());
-  //   this.model.valueAccessor?.writeValue(filtered.toString());
-  // }
-
-  // ngOnChanges(changes: SimpleChanges): void {
-  //   console.log('changes', changes);
-  // }
+  //#region SelectedTime
+  private _selectedTime = new Date();
+  @Output() public selectedTimeChange = new EventEmitter<Date>();
+  public get selectedTime() {
+    return this._selectedTime;
+  }
+  @Input() public set selectedTime(value: Date) {
+    // this.hours = value.getHours();
+    // this.minutes = value.getMinutes();
+    this._selectedTime = value;
+    this.selectedTimeChange.emit(this._selectedTime);
+  }
+  //#endregion
 
   //#region Hours
-  private _hours = 0;
+  // private _hours = 0;
   get hours() {
-    return this._hours;
+    // return this._hours;
+    return this.selectedTime.getHours();
   }
   set hours(value: number) {
-    this._hours = value;
+    // this._hours = value;
+    const clone = new Date(this.selectedTime);
+    clone.setHours(value);
+    this.selectedTime = clone;
   }
   // hours = 0;
   //#endregion
   //#region Minutes
-  private _minutes = 0;
+  // private _minutes = 0;
   get minutes() {
-    return this._minutes;
+    // return this._minutes;
+    return this.selectedTime.getMinutes();
   }
   set minutes(value: number) {
-    this._minutes = value;
+    // this._minutes = value;
+    // this.selectedTime.setMinutes(value);
+    const clone = new Date(this.selectedTime);
+    clone.setMinutes(value);
+    this.selectedTime = clone;
   }
   //#endregion
+
+  timesEqual(time1: Date, time2: Date) {
+    return (time1.getHours() === time2.getHours()) && (time1.getMinutes() === time2.getMinutes());
+  }
 
 }

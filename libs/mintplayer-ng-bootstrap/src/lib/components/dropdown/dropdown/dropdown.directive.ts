@@ -21,6 +21,7 @@ export class BsDropdownDirective {
   @Input() public hasBackdrop = false;
   @Input() public sameWidth = false;
   @Input() public closeOnClickOutside = false;
+  @Input() public sameDropdownWidth = false;
 
   //#region IsOpen
   public get isOpen() {

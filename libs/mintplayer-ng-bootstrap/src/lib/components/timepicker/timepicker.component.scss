@@ -26,3 +26,12 @@ input[type=number] {
         box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
     }
 }
+
+.list-group {
+  max-height: 250px;
+  overflow-y: auto;
+
+  .list-group-item-action {
+    cursor: pointer;
+  }
+}

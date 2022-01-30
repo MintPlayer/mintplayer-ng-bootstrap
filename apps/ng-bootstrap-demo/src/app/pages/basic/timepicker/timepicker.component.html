@@ -1,3 +1,20 @@
 <h1>Timepicker</h1>
-<bs-timepicker></bs-timepicker>
+<div class="container">
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <bs-timepicker [(selectedTime)]="selectedTime"></bs-timepicker>
+        </div>
+        <div class="col-md-6">
+            <bs-timepicker [(selectedTime)]="selectedTime"></bs-timepicker>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-6">
+            Selected time    
+        </div>
+        <div class="col-md-6">
+            <span class="px-3">{{ selectedTime | date: 'HH:mm' }}</span>
+        </div>
+    </div>
+</div>
 <input type="text" class="form-control">

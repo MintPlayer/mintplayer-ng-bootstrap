@@ -1,15 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 
 @Component({
   selector: 'demo-timepicker',
   templateUrl: './timepicker.component.html',
   styleUrls: ['./timepicker.component.scss']
 })
-export class TimepickerComponent implements OnInit {
+export class TimepickerComponent {
 
-  constructor() { }
-
-  ngOnInit(): void {
-  }
+  selectedTime = new Date();
 
 }

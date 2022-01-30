@@ -48,7 +48,12 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
           }
       
           this.templatePortal = new TemplatePortal(this.templateRef, this.viewContainerRef);
-          this.overlayRef.attach(this.templatePortal);
+          const view = this.overlayRef.attach(this.templatePortal);
+          
+          if (this.dropdown.sameDropdownWidth) {
+            const width = this.dropdown.elementRef.nativeElement.offsetWidth;
+            view.rootNodes[0].style.width = width + 'px';
+          }
         } else {
           if (this.overlayRef) {
             this.overlayRef.detach();

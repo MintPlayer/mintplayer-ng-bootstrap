@@ -1,20 +1,20 @@
-<div bsDropdown [(isOpen)]="isOpen" [closeOnClickOutside]="true">
+<div bsDropdown [(isOpen)]="isOpen" [closeOnClickOutside]="true" [sameDropdownWidth]="true">
     <span class="input-group">
         <span class="form-control d-flex" [class.focus]="isFocused">
             <div class="flex-grow-1">
-                <input type="number" [min]="0" [max]="23" (input)="setNumber($event, 23, minuteBox)" bsEnhancedPaste [(ngModel)]="hours" (focus)="selectAll(hourBox)" (blur)="isFocused = false" #hourBox class="w-100 border-0 bg-transparent text-end">
+                <input type="number" [min]="0" [max]="23" (input)="setNumber($event, 23, minuteBox)" bsEnhancedPaste [ngModel]="hours | number: '2.0'" (ngModelChange)="hours = $event" (focus)="selectAll(hourBox)" (blur)="isFocused = false" #hourBox class="w-100 border-0 bg-transparent text-end">
             </div>
             <span class="px-1">:</span>
             <div class="flex-grow-1">
-                <input type="number" [min]="0" [max]="59" (input)="setNumber($event, 59, null)" bsEnhancedPaste [(ngModel)]="minutes"  (focus)="selectAll(minuteBox)" (blur)="isFocused = false" #minuteBox class="w-100 border-0 bg-transparent">
+                <input type="number" [min]="0" [max]="59" (input)="setNumber($event, 59, null)" bsEnhancedPaste [ngModel]="minutes | number: '2.0'" (ngModelChange)="minutes = $event"  (focus)="selectAll(minuteBox)" (blur)="isFocused = false" #minuteBox class="w-100 border-0 bg-transparent">
             </div>
         </span>
-        <button class="btn btn-default" *bsDropdownToggle>
+        <button class="btn btn-secondary" (click)="isOpen = !isOpen">
             <i class="bi bi-clock"></i>
         </button>
     </span>
     <ul class="list-group" *bsDropdownMenu>
-        <li class="list-group-item" *ngFor="let timestamp of presetTimestamps">
+        <li class="list-group-item list-group-item-action" [class.active]="timesEqual(selectedTime, timestamp)" *ngFor="let timestamp of presetTimestamps" (click)="setTime(timestamp)">
             {{ timestamp | date: 'HH:mm' }}
         </li>
     </ul>
