@@ -24,8 +24,9 @@ export class BsNavbarItemComponent implements AfterContentChecked {
     if (this.hasDropdown) {
       (this.anchorTag) && this.anchorTag.classList.add('dropdown-toggle');
 
-      if (this.anchorTag && !this.anchorTag.onclick) {
-        this.anchorTag.onclick = (ev: Event) => {
+      if (this.anchorTag && !this.anchorTag.getAttribute('close-init-b')) {
+        this.anchorTag.setAttribute('close-init-b', '1');
+        this.anchorTag.addEventListener('click', (ev: MouseEvent) => {
           ev.preventDefault();
           // Normally there should be only one dropdown in this list
           this.dropdowns.forEach((dropdown) => {
@@ -36,24 +37,23 @@ export class BsNavbarItemComponent implements AfterContentChecked {
             }
           });
           return false;
-        }
+        });
       }
     } else {
 
       // Close if this is a link
-      if (this.dropdowns.length === 0) {
-        if (this.anchorTag && !this.anchorTag.onclick) {
-          this.anchorTag.onclick = (ev: Event) => {
-            let d = this.parentDropdown;
-            while (d && d.autoclose) {
-              d.isVisible = false;
-              d = d.parentDropdown;
-            }
-            if (this.navbar.autoclose) {
-              this.navbar.isExpanded$.next(false);
-            }
-          };
-        }
+      if ((this.dropdowns.length === 0) && this.anchorTag && !this.anchorTag.getAttribute('close-init-a')) {
+        this.anchorTag.setAttribute('close-init-a', '1');
+        this.anchorTag.addEventListener('click', (ev: MouseEvent) => {
+          let d = this.parentDropdown;
+          while (d && d.autoclose) {
+            d.isVisible = false;
+            d = d.parentDropdown;
+          }
+          if (this.navbar.autoclose) {
+            this.navbar.isExpanded$.next(false);
+          }
+        });
       }
 
     }
