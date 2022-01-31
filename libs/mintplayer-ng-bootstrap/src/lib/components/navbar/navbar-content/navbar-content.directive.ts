@@ -19,7 +19,10 @@ export class NavbarContentDirective implements AfterViewInit, OnDestroy {
         if (!isPlatformServer(platformId)) {
           // Initialize the ResizeObserver
           this.resizeObserver = new ResizeObserver((entries) => {
-            const height = entries[0].contentRect.height;
+            const height = navbar
+              ? navbar.nav.nativeElement.offsetHeight
+              : entries[0].contentRect.height;
+
             this.element.nativeElement.style.paddingTop = (this.initialPadding + height) + 'px';
           });
 
