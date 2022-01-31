@@ -27,7 +27,8 @@ export class NavbarContentDirective implements AfterViewInit, OnDestroy {
           });
 
           // Monitor the size
-          const pt = parseInt(this.element.nativeElement.style.paddingTop.replace(/px$/, ''));
+          const px = getComputedStyle(this.element.nativeElement).getPropertyValue('padding-top');
+          const pt = parseInt(px.replace(/px$/, ''));
           this.initialPadding = isNaN(pt) ? 0 : pt;
           if (this.resizeObserver && navbar) {
             this.resizeObserver.observe(navbar.nav.nativeElement);
