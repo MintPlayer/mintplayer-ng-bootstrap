@@ -1,2 +1,7 @@
 <input type="number" [(ngModel)]="unitHeight">
-<bs-scheduler [(unitHeight)]="unitHeight"></bs-scheduler>
+<select [(ngModel)]="mode">
+    <option [ngValue]="modes.week">Week</option>
+    <option [ngValue]="modes.timeline">Timeline</option>
+</select>
+<hr>
+<bs-scheduler [(unitHeight)]="unitHeight" [(mode)]="mode"></bs-scheduler>

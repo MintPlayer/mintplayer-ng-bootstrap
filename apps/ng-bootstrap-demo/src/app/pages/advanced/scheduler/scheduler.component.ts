@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { ESchedulerMode } from '@mintplayer/ng-bootstrap';
 
 @Component({
   selector: 'demo-scheduler',
@@ -7,4 +8,6 @@ import { Component } from '@angular/core';
 })
 export class SchedulerComponent {
   unitHeight = 30;
+  modes = ESchedulerMode;
+  mode = ESchedulerMode.week;
 }

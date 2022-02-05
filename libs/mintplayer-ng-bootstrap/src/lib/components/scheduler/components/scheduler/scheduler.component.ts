@@ -1,5 +1,6 @@
 import { Component, ElementRef, EventEmitter, HostListener, Input, OnDestroy, Output, QueryList, ViewChildren } from '@angular/core';
 import { BehaviorSubject, combineLatest, filter, map, Observable, Subject, take, takeUntil, tap } from 'rxjs';
+import { ESchedulerMode } from '../../enums/scheduler-mode';
 import { BsCalendarMonthService } from '../../../../services/calendar-month/calendar-month.service';
 import { EDragOperation } from '../../enums/drag-operation';
 import { DragOperation } from '../../interfaces/drag-operation';
@@ -160,6 +161,17 @@ export class BsSchedulerComponent implements OnDestroy {
 
   @ViewChildren('slot') timeSlotElements!: QueryList<ElementRef<HTMLDivElement>>;
 
+  //#region Mode
+  modes = ESchedulerMode;
+  mode$ = new BehaviorSubject<ESchedulerMode>(ESchedulerMode.week);
+  @Output() public modeChange = new EventEmitter<ESchedulerMode>();
+  public get mode() {
+    return this.mode$.value;
+  }
+  @Input() public set mode(value: ESchedulerMode) {
+    this.mode$.next(value);
+  }
+  //#endregion
   //#region UnitHeight
   unitHeight$ = new BehaviorSubject<number>(40);
   @Output() public unitHeightChange = new EventEmitter<number>();

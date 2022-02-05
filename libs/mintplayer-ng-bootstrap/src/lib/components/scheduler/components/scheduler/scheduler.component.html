@@ -1,4 +1,4 @@
-<div class="table d-flex w-100 overflow-y-auto" [style.max-height.px]="null">
+<div class="table d-flex w-100 overflow-y-auto week-schedule" [style.max-height.px]="null" *ngIf="(mode$ | async) === modes.week">
     <div class="calendar-head">
         <div class="w-100 d-flex flex-row">
             <div class="d-flex calendar-left justify-content-between">
@@ -59,4 +59,7 @@
             </ng-container>
         </div>
     </div>
+</div>
+<div class="table" *ngIf="(mode$ | async) === modes.timeline">
+    
 </div>
