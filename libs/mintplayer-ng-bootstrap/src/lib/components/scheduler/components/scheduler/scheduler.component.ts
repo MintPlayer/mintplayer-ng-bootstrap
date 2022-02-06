@@ -10,6 +10,8 @@ import { SchedulerEventPart } from '../../interfaces/scheduler-event-part';
 import { SchedulerEventWithParts } from '../../interfaces/scheduler-event-with-parts';
 import { TimeSlot } from '../../interfaces/time-slot';
 import { BsTimelineService } from '../../services/timeline/timeline.service';
+import { ResourceGroup } from '../../interfaces/resource-group';
+import { Resource } from '../../interfaces';
 
 @Component({
   selector: 'bs-scheduler',
@@ -35,7 +37,14 @@ export class BsSchedulerComponent implements OnDestroy {
       .pipe(map((daysOfWeek) => {
         return { start: daysOfWeek[0].getTime(), end: daysOfWeek[daysOfWeek.length - 1].getTime() + 24 * 60 * 60 * 1000 };
       }));
+    
+    this.events$ = this.resources$
+      .pipe(map((resourcesOrGroups) => resourcesOrGroups.map(resOrGroup => this.getResourcesForGroup(resOrGroup))))
+      .pipe(map(jaggedResources => jaggedResources.reduce((flat, toFlatten) => flat.concat(toFlatten), [])))
+      .pipe(map(resources => resources.map(res => res.events)))
+      .pipe(map(jaggedEvents => jaggedEvents.reduce((flat, toFlatten) => flat.concat(toFlatten), [])));
 
+      // groups.reduce((flat, toFlatten) => flat.concat(toFlatten.children), [])
     this.eventParts$ = this.events$.pipe(
       map((events) =>  events.map((ev) => this.timelineService.splitInParts(ev)))
     );
@@ -44,9 +53,7 @@ export class BsSchedulerComponent implements OnDestroy {
       this.daysOfWeekWithTimestamps$,
       this.eventParts$
         .pipe(map(eventParts => eventParts.map(evp => evp.parts)))
-        .pipe(map(jaggedParts => {
-          return jaggedParts.reduce((flat, toFlatten) => flat.concat(toFlatten), []);
-        }))
+        .pipe(map(jaggedParts =>  jaggedParts.reduce((flat, toFlatten) => flat.concat(toFlatten), [])))
       ])
       .pipe(map(([startAndEnd, eventParts]) => {
         return eventParts.filter(eventPart => {
@@ -99,7 +106,7 @@ export class BsSchedulerComponent implements OnDestroy {
           total: timeline.length,
           parts: result
         };
-      }))
+      }));
 
     combineLatest([this.daysOfWeek$, this.timeSlotDuration$])
       .pipe(map(([daysOfWeek, duration]) => {
@@ -140,7 +147,8 @@ export class BsSchedulerComponent implements OnDestroy {
       })
   }
 
-  events$ = new BehaviorSubject<SchedulerEvent[]>([]);
+  resources$ = new BehaviorSubject<(Resource | ResourceGroup)[]>([]);
+  events$: Observable<SchedulerEvent[]>;
   eventParts$: Observable<SchedulerEventWithParts[]>;
   eventPartsForThisWeek$: Observable<SchedulerEventPart[]>;
   timelinedEventPartsForThisWeek$: Observable<{ total: number, parts: { part: SchedulerEventPart, index: number}[] }>;
@@ -160,6 +168,40 @@ export class BsSchedulerComponent implements OnDestroy {
   destroyed$ = new Subject();
 
   @ViewChildren('slot') timeSlotElements!: QueryList<ElementRef<HTMLDivElement>>;
+
+  // flatten(resourceGroup: ResourceGroup, reducer: () => any, result: Resource[]) {
+  //   result = result || [];
+  //   if (resourceGroup) {
+  //     return this.flatten(resourceGroup.children, (item) => {
+  //       return item;
+  //     })
+  //   } else {
+  //     return result;
+  //   }
+  // }
+
+  // flatten(resourceGroup: ResourceGroup) {
+  //   const thisResources = resourceGroup.children
+  //     .filter(child => ('children' in child))
+  //     .map(child => (<ResourceGroup>child).children);
+  //   const children: Resource[] = resourceGroup.children
+  //     .filter((child) => ('children' in child))
+  //     .map((child) => <ResourceGroup>child)
+  //     .map((childGroup) => this.flatten(childGroup))
+  //     .reduce((flat, toFlatten) => flat.concat(toFlatten), []);
+
+  //   return thisResources.concat(children);
+  // }
+
+  getResourcesForGroup(resourceOrGroup: Resource | ResourceGroup) : Resource[] {
+    if ('children' in resourceOrGroup) {
+      return resourceOrGroup.children
+        .map((child) => this.getResourcesForGroup(child))
+        .reduce((flat, toFlatten) => flat.concat(toFlatten), []);
+    } else {
+      return [resourceOrGroup];
+    }
+  }
 
   //#region Mode
   modes = ESchedulerMode;
@@ -415,12 +457,18 @@ export class BsSchedulerComponent implements OnDestroy {
               if (previewEvent) {
                 this.operation = null;
                 this.dragStartTimeslot = null;
-                this.events$.next([...this.events$.value, {
-                  start: previewEvent.start,
-                  end: previewEvent.end,
-                  color: this.randomColor(),
-                  description: 'New event'
-                }]);
+                this.resources$.next([
+                  ...this.resources$.value,
+                  <Resource>{
+                    description: 'New resource group',
+                    events: [{
+                      start: previewEvent.start,
+                      end: previewEvent.end,
+                      color: this.randomColor(),
+                      description: 'New event'
+                    }]
+                  }
+                ]);
                 this.previewEvent$.next(null);
               }
             });
@@ -436,7 +484,7 @@ export class BsSchedulerComponent implements OnDestroy {
                 this.operation.event.end = previewEvent.end;
                 this.operation = null;
                 this.dragStartTimeslot = null;
-                this.events$.next(this.events$.value);
+                this.resources$.next(this.resources$.value);
                 this.previewEvent$.next(null);
               }
             });
