@@ -4,127 +4,129 @@ $min-cell-width: 180px;
     display: block;
 }
 
-.table {
-    flex-flow: column;
+.week-schedule {
+    &.table {
+        flex-flow: column;
 
-    .calendar-head {
-        flex: 0 0 auto;
-        
-        > div {
-            padding-right: 18px;
-        }
-        
-        // .calendar-head-cell {
-        //     min-width: $min-cell-width;
-        // }
-    }
-
-    .calendar-body {
-        flex: 1 1 auto;
-        display: block;
-        overflow-y: scroll; // Always show the scrollbar, since the head always has a padding
-        overflow-x: hidden;
-
-        .calendar-cell {
-            border-right: 1px solid #DEE2E6;
-            border-bottom: 1px solid #DEE2E6;
-            cursor: default;
-
-            &.hover {
-                border-top-width: 3px;
+        .calendar-head {
+            flex: 0 0 auto;
+            
+            > div {
+                padding-right: 18px;
             }
+            
+            // .calendar-head-cell {
+            //     min-width: $min-cell-width;
+            // }
         }
 
-        // .calendar-cell:not(.calendar-left) {
-        //     min-width: $min-cell-width;
-        // }
-    }
-    
-    .calendar-left {
-        width: 90px;
-    }
-}
+        .calendar-body {
+            flex: 1 1 auto;
+            display: block;
+            overflow-y: scroll; // Always show the scrollbar, since the head always has a padding
+            overflow-x: hidden;
 
-.event {
-    z-index: 5;
-    width: calc((100% - 90px) / 7);
-    height: 100px;
-    overflow: hidden;
-    position: absolute;
-    user-select: none;
-    pointer-events: none;
+            .calendar-cell {
+                border-right: 1px solid #DEE2E6;
+                border-bottom: 1px solid #DEE2E6;
+                cursor: default;
 
-    &.preview {
-        background: #666;
-        opacity: .6;
-    }
+                &.hover {
+                    border-top-width: 3px;
+                }
+            }
 
-    .event-border {
-        background: black;
-        top: 0; left: 0; bottom: 3px; width: 3px;
-        position: absolute;
-        z-index: 10;
-        opacity: .3;
+            // .calendar-cell:not(.calendar-left) {
+            //     min-width: $min-cell-width;
+            // }
+        }
+        
+        .calendar-left {
+            width: 90px;
+        }
     }
 
-    .event-inner {
-        position: relative;
-        left: 0px;
-        right: 5px;
-        top: 0px;
-        bottom: 5px;
-        cursor: move;  
-        pointer-events: all;
+    .event {
+        z-index: 5;
+        width: calc((100% - 90px) / 7);
+        height: 100px;
         overflow: hidden;
+        position: absolute;
+        user-select: none;
+        pointer-events: none;
 
-        .event-wrapper {
-            width: calc(100% - 2px);
-            margin: 1px auto 1px 0;
-            height: calc(100% - 3px);
-
-            .event-bg {
-                opacity: .5;
-                height: 100%;
-                transition: opacity .15s ease-in-out;
-            }
-
-            .event-label {
-                position: absolute;
-                top: 0;
-                font-size: 12px;
-                font-weight: 600;
-                // margin-left: 4px;
-                padding: 4px;
-            }
+        &.preview {
+            background: #666;
+            opacity: .6;
         }
 
-        .event-resize {
+        .event-border {
+            background: black;
+            top: 0; left: 0; bottom: 3px; width: 3px;
             position: absolute;
-            cursor: ns-resize;
-            height: 4px;
-            left: 0; right: 0;
-            z-index: 400;
-
-            &.top {
-                top: 0;
-            }
-            &.bottom {
-                bottom: 0;
-            }
-            &:hover {
-                background: #DDD;
-            }
+            z-index: 10;
+            opacity: .3;
         }
 
-        &.hover .event-bg {
-            opacity: .7 !important;
+        .event-inner {
+            position: relative;
+            left: 0px;
+            right: 5px;
+            top: 0px;
+            bottom: 5px;
+            cursor: move;  
+            pointer-events: all;
+            overflow: hidden;
+
+            .event-wrapper {
+                width: calc(100% - 2px);
+                margin: 1px auto 1px 0;
+                height: calc(100% - 3px);
+
+                .event-bg {
+                    opacity: .5;
+                    height: 100%;
+                    transition: opacity .15s ease-in-out;
+                }
+
+                .event-label {
+                    position: absolute;
+                    top: 0;
+                    font-size: 12px;
+                    font-weight: 600;
+                    // margin-left: 4px;
+                    padding: 4px;
+                }
+            }
+
+            .event-resize {
+                position: absolute;
+                cursor: ns-resize;
+                height: 4px;
+                left: 0; right: 0;
+                z-index: 400;
+
+                &.top {
+                    top: 0;
+                }
+                &.bottom {
+                    bottom: 0;
+                }
+                &:hover {
+                    background: #DDD;
+                }
+            }
+
+            &.hover .event-bg {
+                opacity: .7 !important;
+            }
         }
     }
-}
 
-@media (max-width: 767px) {
-    .table .calendar-head .calendar-head-cell {
-        text-orientation: sideways;
-        writing-mode: vertical-rl;
+    @media (max-width: 767px) {
+        &.table .calendar-head .calendar-head-cell {
+            text-orientation: sideways;
+            writing-mode: vertical-rl;
+        }
     }
 }
