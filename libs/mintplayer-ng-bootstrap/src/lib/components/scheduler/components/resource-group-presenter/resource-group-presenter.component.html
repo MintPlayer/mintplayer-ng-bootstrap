@@ -1,0 +1,37 @@
+<ng-container *ngIf="(data$ | async) as data">
+
+    <!-- Data is a resource group -->
+    <ng-container *ngIf="data.resourceGroup">
+        <!-- Header -->
+        <tr class="p-0 cursor-pointer" *ngIf="(timeSlots$ | async) as timeSlots">
+            <td class="p-2 cursor-pointer" [colSpan]="(timeSlots | jaggedLength) + 1" (click)="toggleExpanded()">
+                <span class="pr-2 py-2 align-middle" [style.padding-left.px]="level * 20">
+                    <i class="bi bi-chevron-down" *ngIf="isExpanded$ | async"></i>
+                    <i class="bi bi-chevron-right" *ngIf="(isExpanded$ | async) === false"></i>
+                    {{ data.resourceGroup.description }}
+                </span>
+            </td>
+        </tr>
+
+        <!-- Subgroups or resources -->
+        <ng-container *ngIf="isExpanded$ | async">
+            <ng-container *ngIf="(timeSlots$ | async) as timeSlots">
+                <ng-container *ngFor="let child of data.resourceGroup.children">
+                    <bs-resource-group-presenter [resourceGroup]="child" [timeSlots]="timeSlots" [level]="level + 1"></bs-resource-group-presenter>
+                </ng-container>
+            </ng-container>
+        </ng-container>
+    </ng-container>
+
+    <!-- Data is a resource -->
+    <tr *ngIf="data.resource" class="p-0" [title]="data.resource.description">
+        <td class="p-0 bg-white">
+            <div class="p-2">{{ data.resource.description }}</div>
+        </td>
+        <ng-container *ngFor="let slots of (timeSlots$ | async)">
+            <td class="bg-white" *ngFor="let slot of slots">
+                <!-- {{ slot.start | date: 'dd/MM/yyyy HH:mm:ss' }} -->
+            </td>
+        </ng-container>
+    </tr>
+</ng-container>

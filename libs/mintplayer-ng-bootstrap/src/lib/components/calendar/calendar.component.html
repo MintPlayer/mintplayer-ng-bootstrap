@@ -17,7 +17,7 @@
     </tr>
     <tr>
         <th></th>
-        <th *ngFor="let dayOfWeek of daysOfWeek$ | async" [title]="dayOfWeek.long">
+        <th *ngFor="let dayOfWeek of shownDays$ | async" [title]="dayOfWeek.long">
             {{ dayOfWeek.short }}
         </th>
     </tr>

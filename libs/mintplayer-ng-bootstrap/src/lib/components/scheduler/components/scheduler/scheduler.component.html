@@ -1,11 +1,15 @@
-<div class="table d-flex w-100 overflow-y-auto week-schedule" [style.max-height.px]="null" *ngIf="(mode$ | async) === modes.week">
+<div class="table d-flex w-100 overflow-y-auto mb-0 week-schedule" [style.max-height.px]="null" *ngIf="(mode$ | async) === modes.week">
     <div class="calendar-head">
         <div class="w-100 d-flex flex-row">
             <div class="d-flex calendar-left justify-content-between">
-                <button class="btn btn-default flex-start" (click)="onPreviousWeek()">&lt;</button>
-                <button class="btn btn-default flex-end" (click)="onNextWeek()">&gt;</button>
+                <button class="btn btn-default flex-start" (click)="onPreviousWeekOrMonth()">
+                    <i class="bi-chevron-left px-0"></i>
+                </button>
+                <button class="btn btn-default flex-end" (click)="onNextWeekOrMonth()">
+                    <i class="bi-chevron-right px-0"></i>
+                </button>
             </div>
-            <div class="flex-grow-1 calendar-head-cell" *ngFor="let day of (daysOfWeek$ | async)">
+            <div class="flex-grow-1 calendar-head-cell" *ngFor="let day of (shownDays$ | async)">
                 <span class="d-block col-form-label text-center">
                     <span>{{ day | date: 'dd-MM' }}</span><span class="d-none d-lg-inline-block">-{{ day | date: 'yyyy' }}</span>
                 </span>
@@ -60,6 +64,26 @@
         </div>
     </div>
 </div>
-<div class="table" *ngIf="(mode$ | async) === modes.timeline">
-    
+<div class="table d-flex w-100 overflow-y-auto mb-0 bg-white timeline" *ngIf="(mode$ | async) === modes.timeline">
+    <div class="calendar-head d-flex">
+        <button class="btn flex-start" (click)="onPreviousWeekOrMonth()">
+            <i class="bi-chevron-left px-0"></i>
+        </button>
+        <div class="flex-grow-1 h3 py-2 mb-0 text-center">{{ currentWeekOrMonth$ | async | date: 'MMMM yyyy' }}</div>
+        <button class="btn flex-start" (click)="onNextWeekOrMonth()">
+            <i class="bi-chevron-right px-0"></i>
+        </button>
+    </div>
+    <div class="calendar-body table-responsive overflow-x-auto">
+        <table class="table mb-0">
+            <tr>
+                <td></td>
+                <td *ngFor="let day of (shownDays$ | async)" class="text-center px-2">{{ day | date: 'd EE' }}</td>
+            </tr>
+            <ng-container *ngIf="(timeSlots$ | async) as timeSlots">
+                <bs-resource-group-presenter *ngFor="let group of (resources$ | async)" [resourceGroup]="group" [timeSlots]="timeSlots"></bs-resource-group-presenter>
+            </ng-container>
+        </table>
+    </div>
 </div>
+<button (click)="fillData()" class="btn btn-primary">Fill with some data</button>

@@ -1,0 +1,10 @@
+//Generate utilites for white-space
+$utilities: map-merge(
+  $utilities,
+  (
+    "overflow-x": (
+      property: overflow-x,
+      values: auto clip hidden overlay revert scroll unset visible
+    ),
+  )
+);

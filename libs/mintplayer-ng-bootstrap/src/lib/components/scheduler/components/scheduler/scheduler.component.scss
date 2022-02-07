@@ -1,7 +1,29 @@
 $min-cell-width: 180px;
+$border-radius: 10px;
 
+// GENERAL STYLING
 :host {
     display: block;
+    border: 1px solid #333;
+    border-top-right-radius: $border-radius;
+    border-top-left-radius: $border-radius;
+    overflow: hidden;
+}
+
+.calendar-head {
+    background: #F7F7F7;
+    color: #007AFF;
+}
+
+.table {
+    .calendar-head {
+        flex: 0 0 auto;
+    }
+    
+    .calendar-body {
+        display: block;
+        flex: 1 1 auto;
+    }
 }
 
 .week-schedule {
@@ -9,8 +31,7 @@ $min-cell-width: 180px;
         flex-flow: column;
 
         .calendar-head {
-            flex: 0 0 auto;
-            
+
             > div {
                 padding-right: 18px;
             }
@@ -21,8 +42,6 @@ $min-cell-width: 180px;
         }
 
         .calendar-body {
-            flex: 1 1 auto;
-            display: block;
             overflow-y: scroll; // Always show the scrollbar, since the head always has a padding
             overflow-x: hidden;
 
@@ -127,6 +146,25 @@ $min-cell-width: 180px;
         &.table .calendar-head .calendar-head-cell {
             text-orientation: sideways;
             writing-mode: vertical-rl;
+        }
+    }
+}
+
+.timeline {
+    &.table {
+        flex-flow: column;
+    }
+
+    .calendar-body .table {
+        background-color: #F7F7F7;
+
+        tr:first-child {
+            td {
+                background-color: #FFF;
+            }
+            td:first-child {
+                min-width: 10rem;
+            }
         }
     }
 }

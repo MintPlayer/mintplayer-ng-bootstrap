@@ -15,7 +15,7 @@ export class BsCalendarComponent implements OnDestroy {
     this.weeks$ = this.currentMonth$
       .pipe(map((month) => this.calendarMonthService.getWeeks(month)))
       .pipe(takeUntil(this.destroyed$));
-    this.daysOfWeek$ = this.weeks$
+    this.shownDays$ = this.weeks$
       .pipe(filter((weeks) => weeks.length > 1))
       .pipe(map((weeks) => weeks[1].days))
       .pipe(
@@ -48,7 +48,7 @@ export class BsCalendarComponent implements OnDestroy {
 
   private destroyed$ = new Subject();
   weeks$: Observable<Week[]>;
-  daysOfWeek$: Observable<WeekDay[]>;
+  shownDays$: Observable<WeekDay[]>;
 
   //#region CurrentMonth
   currentMonth$ = new BehaviorSubject<Date>(new Date());

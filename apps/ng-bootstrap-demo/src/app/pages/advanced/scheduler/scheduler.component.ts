@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ESchedulerMode } from '@mintplayer/ng-bootstrap';
 
 @Component({

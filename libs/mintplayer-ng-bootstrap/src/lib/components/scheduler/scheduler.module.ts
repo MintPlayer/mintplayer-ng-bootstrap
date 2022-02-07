@@ -5,6 +5,8 @@ import { BsSecondsTodayOffsetPipe } from './pipes/bs-seconds-today-offset/bs-sec
 import { DateOffsetPipe } from './pipes/date-offset/date-offset.pipe';
 import { DayOfWeekPipe } from './pipes/day-of-week/day-of-week.pipe';
 import { BsSchedulerComponent } from './components/scheduler/scheduler.component';
+import { ResourceGroupPresenterComponent } from './components/resource-group-presenter/resource-group-presenter.component';
+import { JaggedLengthPipe } from './pipes/jagged-length/jagged-length.pipe';
 
 @NgModule({
   declarations: [
@@ -12,13 +14,16 @@ import { BsSchedulerComponent } from './components/scheduler/scheduler.component
     BsSecondsTimespanPipe,
     BsSecondsTodayOffsetPipe,
     DateOffsetPipe,
-    DayOfWeekPipe
+    DayOfWeekPipe,
+    ResourceGroupPresenterComponent,
+    JaggedLengthPipe
   ],
   imports: [
     CommonModule
   ],
   exports: [
-    BsSchedulerComponent
+    BsSchedulerComponent,
+    ResourceGroupPresenterComponent
   ]
 })
 export class BsSchedulerModule { }

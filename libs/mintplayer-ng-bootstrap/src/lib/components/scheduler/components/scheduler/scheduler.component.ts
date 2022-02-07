@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, HostListener, Input, OnDestroy, Output, QueryList, ViewChildren } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostListener, Input, OnDestroy, OnInit, Output, QueryList, ViewChildren } from '@angular/core';
 import { BehaviorSubject, combineLatest, filter, map, Observable, Subject, take, takeUntil, tap } from 'rxjs';
 import { ESchedulerMode } from '../../enums/scheduler-mode';
 import { BsCalendarMonthService } from '../../../../services/calendar-month/calendar-month.service';
@@ -12,30 +12,41 @@ import { TimeSlot } from '../../interfaces/time-slot';
 import { BsTimelineService } from '../../services/timeline/timeline.service';
 import { ResourceGroup } from '../../interfaces/resource-group';
 import { Resource } from '../../interfaces';
+import { SchedulerScale } from '../../interfaces/scheduler-schale';
+import { availableScales } from '../../constants/available-scales';
 
 @Component({
   selector: 'bs-scheduler',
   templateUrl: './scheduler.component.html',
   styleUrls: ['./scheduler.component.scss'],
 })
-export class BsSchedulerComponent implements OnDestroy {
+export class BsSchedulerComponent implements OnInit, OnDestroy {
   constructor(private calendarMonthService: BsCalendarMonthService, private timelineService: BsTimelineService) {
     const monday = this.calendarMonthService.getMondayBefore(new Date());
-    this.currentWeek$ = new BehaviorSubject<Date>(monday);
+    this.currentWeekOrMonth$ = new BehaviorSubject<Date>(monday);
 
-    this.daysOfWeek$ = this.currentWeek$.pipe(
-      map((weekMonday) => {
-        weekMonday.setHours(0);
-        weekMonday.setMinutes(0);
-        weekMonday.setSeconds(0);
-        weekMonday.setMilliseconds(0);
-        return Array.from(Array(7).keys()).map((x) => this.addDays(weekMonday, x));
+    this.shownDays$ = combineLatest([this.currentWeekOrMonth$, this.mode$])
+      .pipe(map(([currentDay, mode]) => {
+        currentDay.setHours(0);
+        currentDay.setMinutes(0);
+        currentDay.setSeconds(0);
+        currentDay.setMilliseconds(0);
+        switch (mode) {
+          case ESchedulerMode.week: {
+            return Array.from(Array(7).keys()).map((x) => this.addDays(currentDay, x));
+          }
+          case ESchedulerMode.timeline: {
+            const firstDay = new Date(currentDay.getFullYear(), currentDay.getMonth(), 1);
+            const daysOfMonth = new Date(currentDay.getFullYear(), currentDay.getMonth() + 1, 0).getDate();
+            return Array.from(Array(daysOfMonth).keys()).map((x) => this.addDays(firstDay, x));
+          }
+        }
       })
     );
 
-    this.daysOfWeekWithTimestamps$ = this.daysOfWeek$
-      .pipe(map((daysOfWeek) => {
-        return { start: daysOfWeek[0].getTime(), end: daysOfWeek[daysOfWeek.length - 1].getTime() + 24 * 60 * 60 * 1000 };
+    this.daysOfWeekWithTimestamps$ = this.shownDays$
+      .pipe(map((shownDays) => {
+        return { start: shownDays[0].getTime(), end: shownDays[shownDays.length - 1].getTime() + 24 * 60 * 60 * 1000 };
       }));
     
     this.events$ = this.resources$
@@ -108,32 +119,46 @@ export class BsSchedulerComponent implements OnDestroy {
         };
       }));
 
-    combineLatest([this.daysOfWeek$, this.timeSlotDuration$])
-      .pipe(map(([daysOfWeek, duration]) => {
-        const timeSlotsPerDay = Math.floor((60 * 60 * 24) / duration);
-        return Array.from(Array(timeSlotsPerDay).keys()).map((index) => {
-          const timeSlotStart = new Date(daysOfWeek[0]);
-          timeSlotStart.setTime(+timeSlotStart.getTime() + index * duration * 1000);
-          const timeSlotEnd = new Date(timeSlotStart);
-          timeSlotEnd.setTime(+timeSlotEnd.getTime() + duration * 1000);
+    combineLatest([this.mode$, this.shownDays$, this.timeSlotDuration$])
+      .pipe(filter(([mode, shownDays, duration]) => mode !== null))
+      .pipe(map(([mode, shownDays, duration]) => {
+        switch (mode) {
+          case ESchedulerMode.week: {
+            const timeSlotsPerDay = Math.floor((60 * 60 * 24) / duration);
+            return Array.from(Array(timeSlotsPerDay).keys()).map((index) => {
+              const timeslotForMonday = this.createTimeslot(shownDays[0], index, duration);
 
-          return daysOfWeek.map((day) => {
-            const start = new Date(day);
-            start.setHours(timeSlotStart.getHours());
-            start.setMinutes(timeSlotStart.getMinutes());
-            start.setSeconds(timeSlotStart.getSeconds());
-            start.setMilliseconds(timeSlotStart.getMilliseconds());
-
-            const end = new Date(day);
-            end.setHours(timeSlotEnd.getHours());
-            end.setMinutes(timeSlotEnd.getMinutes());
-            end.setSeconds(timeSlotEnd.getSeconds());
-            end.setMilliseconds(timeSlotEnd.getMilliseconds());
-            end.setDate(end.getDate() + timeSlotEnd.getDate() - timeSlotStart.getDate());
-
-            return <TimeSlot>{ start, end };
-          });
-        });
+              return shownDays.map((day) => {
+                const start = new Date(day);
+                start.setHours(timeslotForMonday.start.getHours());
+                start.setMinutes(timeslotForMonday.start.getMinutes());
+                start.setSeconds(timeslotForMonday.start.getSeconds());
+                start.setMilliseconds(timeslotForMonday.start.getMilliseconds());
+    
+                const end = new Date(day);
+                end.setHours(timeslotForMonday.end.getHours());
+                end.setMinutes(timeslotForMonday.end.getMinutes());
+                end.setSeconds(timeslotForMonday.end.getSeconds());
+                end.setMilliseconds(timeslotForMonday.end.getMilliseconds());
+                end.setDate(end.getDate() + timeslotForMonday.end.getDate() - timeslotForMonday.start.getDate());
+    
+                return <TimeSlot>{ start, end };
+              });
+            });
+          }
+          case ESchedulerMode.timeline: {
+            const totalTimeslots = (24 * 60 * 60) / duration;
+            return shownDays.map((day) => {
+              return Array.from(Array(totalTimeslots).keys())
+                .map((index) => {
+                  return this.createTimeslot(day, index, duration);
+                })
+            });
+          }
+          default: {
+            throw 'Unknown value for Mode: ' + mode;
+          }
+        }
       }))
       .subscribe((timeslots) => {
         // For performance reasons, we're not using an observable here, but persist the timeslots in a BehaviorSubject.
@@ -145,6 +170,10 @@ export class BsSchedulerComponent implements OnDestroy {
       .subscribe((unitHeight) => {
         this.unitHeightChange.emit(unitHeight);
       })
+
+    // combineLatest([this.mode$, this.scale$])
+    //   .pipe(filter(([mode, scale]) => mode === ESchedulerMode.timeline))
+
   }
 
   resources$ = new BehaviorSubject<(Resource | ResourceGroup)[]>([]);
@@ -157,8 +186,8 @@ export class BsSchedulerComponent implements OnDestroy {
   previewEventParts$: Observable<SchedulerEventWithParts | null>;
   previewEventPartsForThisWeek$: Observable<SchedulerEventPart[]>;
   
-  currentWeek$: BehaviorSubject<Date>;
-  daysOfWeek$: Observable<Date[]>;
+  currentWeekOrMonth$: BehaviorSubject<Date>;
+  shownDays$: Observable<Date[]>;
   daysOfWeekWithTimestamps$: Observable<{start: number, end: number}>;
   timeSlotDuration$ = new BehaviorSubject<number>(1800);
   timeSlots$ = new BehaviorSubject<TimeSlot[][]>([]);
@@ -169,29 +198,14 @@ export class BsSchedulerComponent implements OnDestroy {
 
   @ViewChildren('slot') timeSlotElements!: QueryList<ElementRef<HTMLDivElement>>;
 
-  // flatten(resourceGroup: ResourceGroup, reducer: () => any, result: Resource[]) {
-  //   result = result || [];
-  //   if (resourceGroup) {
-  //     return this.flatten(resourceGroup.children, (item) => {
-  //       return item;
-  //     })
-  //   } else {
-  //     return result;
-  //   }
-  // }
+  createTimeslot(date: Date, index: number, duration: number) {
+    const timeSlotStart = new Date(date);
+    timeSlotStart.setTime(+timeSlotStart.getTime() + index * duration * 1000);
+    const timeSlotEnd = new Date(timeSlotStart);
+    timeSlotEnd.setTime(+timeSlotEnd.getTime() + duration * 1000);
 
-  // flatten(resourceGroup: ResourceGroup) {
-  //   const thisResources = resourceGroup.children
-  //     .filter(child => ('children' in child))
-  //     .map(child => (<ResourceGroup>child).children);
-  //   const children: Resource[] = resourceGroup.children
-  //     .filter((child) => ('children' in child))
-  //     .map((child) => <ResourceGroup>child)
-  //     .map((childGroup) => this.flatten(childGroup))
-  //     .reduce((flat, toFlatten) => flat.concat(toFlatten), []);
-
-  //   return thisResources.concat(children);
-  // }
+    return <TimeSlot>{ start: timeSlotStart, end: timeSlotEnd };
+  }
 
   getResourcesForGroup(resourceOrGroup: Resource | ResourceGroup) : Resource[] {
     if ('children' in resourceOrGroup) {
@@ -214,6 +228,16 @@ export class BsSchedulerComponent implements OnDestroy {
     this.mode$.next(value);
   }
   //#endregion
+  // //#region Scale
+  // scale$ = new BehaviorSubject<SchedulerScale>(availableScales[4]);
+  // @Output() public scaleChange = new EventEmitter<SchedulerScale>();
+  // public get scale() {
+  //   return this.scale$.value;
+  // }
+  // @Input() public set scale(value: SchedulerScale) {
+  //   this.scale$.next(value);
+  // }
+  // //#endregion
   //#region UnitHeight
   unitHeight$ = new BehaviorSubject<number>(40);
   @Output() public unitHeightChange = new EventEmitter<number>();
@@ -234,16 +258,27 @@ export class BsSchedulerComponent implements OnDestroy {
     return result;
   }
 
-  onPreviousWeek() {
-    this.currentWeek$
-      .pipe(map((w) => this.addDays(w, -7)), take(1))
-      .subscribe((w) => this.currentWeek$.next(w));
+  onPreviousWeekOrMonth() {
+    this.onChangeWeekOrMonth(false);
   }
 
-  onNextWeek() {
-    this.currentWeek$
-      .pipe(map((w) => this.addDays(w, 7)), take(1))
-      .subscribe((w) => this.currentWeek$.next(w));
+  onNextWeekOrMonth() {
+    this.onChangeWeekOrMonth(true);
+  }
+
+  private onChangeWeekOrMonth(next: boolean) {
+    combineLatest([this.currentWeekOrMonth$, this.mode$])
+      .pipe(map(([currentWeekOrMonth, mode]) => {
+        switch (mode) {
+          case ESchedulerMode.week: {
+            return this.addDays(currentWeekOrMonth, (next ? 7 : -7));
+          }
+          case ESchedulerMode.timeline: {
+            return new Date(currentWeekOrMonth.getFullYear(), currentWeekOrMonth.getMonth() + (next ? 1 : -1), 1);
+          }
+        }
+      }), take(1))
+      .subscribe((w) => this.currentWeekOrMonth$.next(w));
   }
 
   onHoverEvent(ev: SchedulerEvent | null) {
@@ -491,6 +526,129 @@ export class BsSchedulerComponent implements OnDestroy {
         } break;
       }
     }
+  }
+
+  fillData() {
+    this.resources$.next([
+      <ResourceGroup>{
+        description: 'Machines',
+        children: [
+          <ResourceGroup>{
+            description: 'Lasercutters',
+            children: [
+              <Resource>{
+                description: 'Lasercutter 1',
+                events: [{
+                  color: 'red',
+                  description: 'Siel',
+                  start: new Date(2022, 1, 2, 0, 0, 0),
+                  end: new Date(2022, 1, 5, 23, 59, 59)
+                }]
+              },
+              <Resource>{
+                description: 'Lasercutter 2',
+                events: [{
+                  color: 'red',
+                  description: 'Siel',
+                  start: new Date(2022, 1, 2, 0, 0, 0),
+                  end: new Date(2022, 1, 5, 23, 59, 59)
+                }]
+              },
+              <Resource>{
+                description: 'Lasercutter 3',
+                events: [{
+                  color: 'red',
+                  description: 'Siel',
+                  start: new Date(2022, 1, 2, 0, 0, 0),
+                  end: new Date(2022, 1, 5, 23, 59, 59)
+                }]
+              }
+            ]
+          },
+          <ResourceGroup>{
+            description: 'Waterjets',
+            children: [
+              <Resource>{
+                description: 'Waterjet 1',
+                events: [{
+                  color: 'blue',
+                  description: 'Jonas',
+                  start: new Date(2022, 1, 3, 0, 0, 0),
+                  end: new Date(2022, 1, 3, 23, 59, 59)
+                }]
+              },
+              <Resource>{
+                description: 'Waterjet 2',
+                events: [{
+                  color: 'blue',
+                  description: 'Jonas',
+                  start: new Date(2022, 1, 3, 0, 0, 0),
+                  end: new Date(2022, 1, 3, 23, 59, 59)
+                }]
+              },
+              <Resource>{
+                description: 'Waterjet 3',
+                events: [{
+                  color: 'blue',
+                  description: 'Jonas',
+                  start: new Date(2022, 1, 3, 0, 0, 0),
+                  end: new Date(2022, 1, 3, 23, 59, 59)
+                }]
+              },
+            ]
+          },
+          <ResourceGroup>{
+            description: 'Column drills',
+            children: [
+              <Resource>{
+                description: 'Column drill 1',
+                events: [{
+                  color: 'yellow',
+                  description: 'Pieterjan',
+                  start: new Date(2022, 1, 7, 0, 0, 0),
+                  end: new Date(2022, 1, 7, 23, 59, 59)
+                }]
+              },
+              <Resource>{
+                description: 'Column drill 2',
+                events: [{
+                  color: 'yellow',
+                  description: 'Pieterjan',
+                  start: new Date(2022, 1, 7, 0, 0, 0),
+                  end: new Date(2022, 1, 7, 23, 59, 59)
+                }]
+              },
+              <Resource>{
+                description: 'Column drill 3',
+                events: [{
+                  color: 'yellow',
+                  description: 'Pieterjan',
+                  start: new Date(2022, 1, 7, 0, 0, 0),
+                  end: new Date(2022, 1, 7, 23, 59, 59)
+                }]
+              },
+            ]
+          }
+        ]
+      },
+      <ResourceGroup>{
+        description: 'Employees',
+        children: [
+          <Resource>{
+            description: 'Pieterjan',
+            events: [{
+              color: 'grey',
+              description: 'Present',
+              start: new Date(2022, 0, 31, 0, 0, 0),
+              end: new Date(2022, 1, 4, 23, 59, 59)
+            }]
+          }
+        ]
+    }])
+  }
+
+  ngOnInit() {
+    this.fillData();
   }
 
   ngOnDestroy() {
