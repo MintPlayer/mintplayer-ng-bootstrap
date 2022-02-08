@@ -1,7 +1,8 @@
-<input type="number" [(ngModel)]="unitHeight">
+<input type="number" [(ngModel)]="weekOptions.unitHeight">
 <select [(ngModel)]="mode">
     <option [ngValue]="modes.week">Week</option>
     <option [ngValue]="modes.timeline">Timeline</option>
 </select>
+<button (click)="fillData()" class="btn btn-primary">Fill data</button>
 <hr>
-<bs-scheduler [(unitHeight)]="unitHeight" [(mode)]="mode"></bs-scheduler>
+<bs-scheduler [(weekOptions)]="weekOptions" [(timelineOptions)]="timelineOptions" [(mode)]="mode" [resources]="resources"></bs-scheduler>

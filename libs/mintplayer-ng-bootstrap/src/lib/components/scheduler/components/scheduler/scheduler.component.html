@@ -19,23 +19,23 @@
     </div>
     <div class="calendar-body" [style.height.px]="maxInnerHeight">
         <div class="position-relative" *ngIf="(timeSlots$ | async) as row">
-            <!-- Timeslots -->
-            <div *ngFor="let timeslots of row; let i = index" class="d-flex flex-row p-0 timeslot" [style.height.px]="unitHeight$ | async">
-                <div class="calendar-cell calendar-left align-top px-2 py-0">{{ timeslots.slots[0].start | date: 'HH:mm:ss' }}</div>
-                <div class="calendar-cell flex-grow-1" *ngFor="let slot of timeslots.slots; let j = index" #slot (mousedown)="onCreateEvent($event, slot)" [attr.data-row]="i" [attr.data-column]="j"></div>
-            </div>
+            <ng-container *ngIf="(weekOptions$ | async) as weekOptions">
+                <!-- Timeslots -->
+                <div *ngFor="let timeslots of row; let i = index" class="d-flex flex-row p-0 timeslot" [style.height.px]="weekOptions.unitHeight">
+                    <div class="calendar-cell calendar-left align-top px-2 py-0">{{ timeslots.slots[0].start | date: 'HH:mm:ss' }}</div>
+                    <div class="calendar-cell flex-grow-1" *ngFor="let slot of timeslots.slots; let j = index" #slot (mousedown)="onCreateEvent($event, slot)" [attr.data-row]="i" [attr.data-column]="j"></div>
+                </div>
 
-            <!-- Events -->
-            <ng-container *ngIf="(timeSlotDuration$ | async) as timeSlotDuration">
-                <ng-container *ngIf="(unitHeight$ | async) as unitHeight">
+                <!-- Events -->
+                <ng-container *ngIf="(timeSlotDuration$ | async) as timeSlotDuration">
                     <ng-container *ngIf="(timelinedEventPartsForThisWeek$ | async) as partData">
                         <div *ngFor="let eventPart of partData.parts" class="event p-0"
-                            [style.top.px]="(eventPart.part | bsSecondsTodayOffset) / timeSlotDuration * unitHeight"
-                            [style.height.px]="(eventPart.part | bsSecondsTimespan) / timeSlotDuration * unitHeight"
+                            [style.top.px]="(eventPart.part | bsSecondsTodayOffset) / timeSlotDuration * weekOptions.unitHeight"
+                            [style.height.px]="(eventPart.part | bsSecondsTimespan) / timeSlotDuration * weekOptions.unitHeight"
                             [style.left]="'calc(90px + ((100% - 90px) / 7 * ' + ((eventPart.part | dayOfWeek) - 1) + '))'">
                             <div class="event-inner" [class.hover]="(hoveredEvent$ | async) === eventPart.part.event"
                                 [style.width]="'calc(100% / ' + partData.total + ')'"
-                                [style.height.px]="(eventPart.part | bsSecondsTimespan) / timeSlotDuration * unitHeight"
+                                [style.height.px]="(eventPart.part | bsSecondsTimespan) / timeSlotDuration * weekOptions.unitHeight"
                                 [style.margin-left]="'calc(100% / ' + partData.total + ' * ' + eventPart.index + ')'">
 
                                 <div class="event-resize top"
@@ -57,11 +57,11 @@
                     </ng-container>
                     <ng-container *ngIf="(previewEventPartsForThisWeek$ | async) as previewPartData">
                         <div *ngFor="let eventPart of previewPartData" class="event preview p-0"
-                            [style.top.px]="(eventPart | bsSecondsTodayOffset) / timeSlotDuration * unitHeight"
-                            [style.height.px]="(eventPart | bsSecondsTimespan) / timeSlotDuration * unitHeight"
+                            [style.top.px]="(eventPart | bsSecondsTodayOffset) / timeSlotDuration * weekOptions.unitHeight"
+                            [style.height.px]="(eventPart | bsSecondsTimespan) / timeSlotDuration * weekOptions.unitHeight"
                             [style.left]="'calc(90px + ((100% - 90px) / 7 * ' + ((eventPart | dayOfWeek) - 1) + '))'">
                             <div class="event-inner w-100"
-                                [style.height.px]="(eventPart | bsSecondsTimespan) / timeSlotDuration * unitHeight">
+                                [style.height.px]="(eventPart | bsSecondsTimespan) / timeSlotDuration * weekOptions.unitHeight">
                             </div>
                         </div>
                     </ng-container>
@@ -91,10 +91,14 @@
                 </tr>
                 <tr>
                     <td></td>
-                    <ng-container *ngFor="let day of timeSlots">
-                        <td *ngFor="let slot of day.slots">
-                            {{ slot.start | date: 'HH:mm' }}
-                        </td>
+                    <ng-container *ngIf="(timelineOptions$ | async) as timelineOptions">
+                        <ng-container *ngFor="let day of timeSlots">
+                            <td *ngFor="let slot of day.slots">
+                                <span class="d-block p-0 text-center" [style.width.px]="timelineOptions.unitWidth">
+                                    {{ slot.start | date: 'HH:mm' }}
+                                </span>
+                            </td>
+                        </ng-container>
                     </ng-container>
                 </tr>
                 <bs-resource-group-presenter *ngFor="let group of (resources$ | async)" [resourceGroup]="group" [timeSlots]="timeSlots"></bs-resource-group-presenter>
@@ -102,4 +106,3 @@
         </table>
     </div>
 </div>
-<button (click)="fillData()" class="btn btn-primary">Fill with some data</button>

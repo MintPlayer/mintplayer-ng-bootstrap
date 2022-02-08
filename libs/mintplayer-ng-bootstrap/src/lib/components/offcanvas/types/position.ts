@@ -1,0 +1,1 @@
+export type OffcanvasPosition = 'top' | 'bottom' | 'start' | 'end';

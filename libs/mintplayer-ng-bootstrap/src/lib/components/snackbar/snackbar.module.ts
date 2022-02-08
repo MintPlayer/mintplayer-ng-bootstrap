@@ -16,10 +16,6 @@ import { BsSnackbarCloseDirective } from './directives/snackbar-close/snackbar-c
   exports: [
     BsSnackbarComponent,
     BsSnackbarCloseDirective
-  ],
-  providers: [
-    // { provide: BsSnackbarComponent, useExisting: forwardRef(() => BsSnackbarComponent) }
-    // { provide: BsSnackbarComponent, useClass: BsSnackbarComponent }
   ]
 })
 export class BsSnackbarModule { }

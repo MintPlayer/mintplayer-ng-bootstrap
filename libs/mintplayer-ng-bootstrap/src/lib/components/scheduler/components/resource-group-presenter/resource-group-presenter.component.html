@@ -3,7 +3,7 @@
     <!-- Data is a resource group -->
     <ng-container *ngIf="data.resourceGroup">
         <!-- Header -->
-        <tr class="p-0 cursor-pointer" *ngIf="(timeSlots$ | async) as timeSlots">
+        <tr class="p-0 cursor-pointer" *ngIf="(timeSlots$ | async) as timeSlots" [title]="data.resourceGroup.description">
             <ng-container *ngIf="(colSpan$ | async) as colspan">
                 <td class="p-2 cursor-pointer" [colSpan]="colspan + 1" (click)="toggleExpanded()">
                     <span class="p-2 align-middle position-sticky">

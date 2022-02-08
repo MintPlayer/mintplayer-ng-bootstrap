@@ -1,6 +1,6 @@
 import { Overlay } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { ComponentFactoryResolver, Injectable, Injector, TemplateRef } from '@angular/core';
+import { Injectable, Injector, TemplateRef } from '@angular/core';
 import { filter, take } from 'rxjs';
 import { BsSnackbarModule } from '../snackbar.module';
 import { BsSnackbarComponent } from '../component/snackbar.component';
@@ -15,7 +15,6 @@ export class BsSnackbarService {
   constructor(
     private overlay: Overlay,
     private parentInjector: Injector,
-    private componentFactoryResolver: ComponentFactoryResolver,
   ) { }
 
   public show(template: TemplateRef<any>) {
@@ -23,7 +22,7 @@ export class BsSnackbarService {
       providers: [{ provide: SNACKBAR_CONTENT, useValue: template }],
       parent: this.parentInjector
     });
-    const portal = new ComponentPortal(BsSnackbarComponent, null, injector, this.componentFactoryResolver);
+    const portal = new ComponentPortal(BsSnackbarComponent, null, injector);
 
     const overlayRef = this.overlay.create({
       scrollStrategy: this.overlay.scrollStrategies.reposition(),

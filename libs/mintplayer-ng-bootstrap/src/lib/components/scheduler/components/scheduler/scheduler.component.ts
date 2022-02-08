@@ -1,5 +1,5 @@
-import { Component, ElementRef, EventEmitter, HostListener, Input, OnDestroy, OnInit, Output, QueryList, ViewChildren } from '@angular/core';
-import { BehaviorSubject, combineLatest, filter, map, Observable, Subject, take, takeUntil, tap } from 'rxjs';
+import { Component, ElementRef, EventEmitter, HostListener, Input, OnDestroy, Output, QueryList, ViewChildren } from '@angular/core';
+import { BehaviorSubject, combineLatest, filter, map, Observable, Subject, take, takeUntil } from 'rxjs';
 import { ESchedulerMode } from '../../enums/scheduler-mode';
 import { BsCalendarMonthService } from '../../../../services/calendar-month/calendar-month.service';
 import { EDragOperation } from '../../enums/drag-operation';
@@ -12,16 +12,16 @@ import { TimeSlot } from '../../interfaces/time-slot';
 import { BsTimelineService } from '../../services/timeline/timeline.service';
 import { ResourceGroup } from '../../interfaces/resource-group';
 import { Resource } from '../../interfaces';
-import { SchedulerScale } from '../../interfaces/scheduler-schale';
-import { availableScales } from '../../constants/available-scales';
 import { SchedulerStampWithSlots } from '../../interfaces/scheduler-stamp-with-slots';
+import { WeekOptions } from '../../interfaces/week-options';
+import { TimelineOptions } from '../../interfaces/timeline-options';
 
 @Component({
   selector: 'bs-scheduler',
   templateUrl: './scheduler.component.html',
   styleUrls: ['./scheduler.component.scss'],
 })
-export class BsSchedulerComponent implements OnInit, OnDestroy {
+export class BsSchedulerComponent implements OnDestroy {
   constructor(private calendarMonthService: BsCalendarMonthService, private timelineService: BsTimelineService) {
     const monday = this.calendarMonthService.getMondayBefore(new Date());
     this.currentWeekOrMonth$ = new BehaviorSubject<Date>(monday);
@@ -172,11 +172,16 @@ export class BsSchedulerComponent implements OnInit, OnDestroy {
         this.timeSlots$.next(timeslots);
       });
     
-    this.unitHeight$
+      this.weekOptions$
       .pipe(takeUntil(this.destroyed$))
-      .subscribe((unitHeight) => {
-        this.unitHeightChange.emit(unitHeight);
-      })
+      .subscribe((weekOptions) => {
+        this.weekOptionsChange.emit(weekOptions);
+      });
+    this.timelineOptions$
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe((timelineOptions) => {
+        this.timelineOptionsChange.emit(timelineOptions);
+      });
 
     // combineLatest([this.mode$, this.scale$])
     //   .pipe(filter(([mode, scale]) => mode === ESchedulerMode.timeline))
@@ -188,6 +193,8 @@ export class BsSchedulerComponent implements OnInit, OnDestroy {
   eventParts$: Observable<SchedulerEventWithParts[]>;
   eventPartsForThisWeek$: Observable<SchedulerEventPart[]>;
   timelinedEventPartsForThisWeek$: Observable<{ total: number, parts: { part: SchedulerEventPart, index: number}[] }>;
+  weekOptions$ = new BehaviorSubject<WeekOptions>({ unitHeight: 30 });
+  timelineOptions$ = new BehaviorSubject<TimelineOptions>({ unitWidth: 50 });
   
   previewEvent$ = new BehaviorSubject<PreviewEvent | null>(null);
   previewEventParts$: Observable<SchedulerEventWithParts | null>;
@@ -245,18 +252,34 @@ export class BsSchedulerComponent implements OnInit, OnDestroy {
   //   this.scale$.next(value);
   // }
   // //#endregion
-  //#region UnitHeight
-  unitHeight$ = new BehaviorSubject<number>(40);
-  @Output() public unitHeightChange = new EventEmitter<number>();
-  public get unitHeight() {
-    return this.unitHeight$.value;
+  //#region WeekOptions
+  @Output() public weekOptionsChange = new EventEmitter<WeekOptions>();
+  public get weekOptions() {
+    return this.weekOptions$.value;
   }
-  @Input() public set unitHeight(value: number) {
-    this.unitHeight$.next(value);
+  @Input() public set weekOptions(value: WeekOptions) {
+    this.weekOptions$.next(value);
+  }
+  //#endregion
+  //#region TimelineOptions
+  @Output() public timelineOptionsChange = new EventEmitter<TimelineOptions>();
+  public get timelineOptions() {
+    return this.timelineOptions$.value;
+  }
+  @Input() public set timelineOptions(value: TimelineOptions) {
+    this.timelineOptions$.next(value);
   }
   //#endregion
   //#region maxInnerHeight
   @Input() public maxInnerHeight: number | null = null;
+  //#endregion
+  //#region Resources
+  public get resources() {
+    return this.resources$.value;
+  }
+  @Input() public set resources(value: (Resource | ResourceGroup)[]) {
+    this.resources$.next(value);
+  }
   //#endregion
 
   private addDays(date: Date, days: number) {
@@ -533,129 +556,6 @@ export class BsSchedulerComponent implements OnInit, OnDestroy {
         } break;
       }
     }
-  }
-
-  fillData() {
-    this.resources$.next([
-      <ResourceGroup>{
-        description: 'Machines',
-        children: [
-          <ResourceGroup>{
-            description: 'Lasercutters',
-            children: [
-              <Resource>{
-                description: 'Lasercutter 1',
-                events: [{
-                  color: 'red',
-                  description: 'Siel',
-                  start: new Date(2022, 1, 2, 0, 0, 0),
-                  end: new Date(2022, 1, 5, 23, 59, 59)
-                }]
-              },
-              <Resource>{
-                description: 'Lasercutter 2',
-                events: [{
-                  color: 'red',
-                  description: 'Siel',
-                  start: new Date(2022, 1, 2, 0, 0, 0),
-                  end: new Date(2022, 1, 5, 23, 59, 59)
-                }]
-              },
-              <Resource>{
-                description: 'Lasercutter 3',
-                events: [{
-                  color: 'red',
-                  description: 'Siel',
-                  start: new Date(2022, 1, 2, 0, 0, 0),
-                  end: new Date(2022, 1, 5, 23, 59, 59)
-                }]
-              }
-            ]
-          },
-          <ResourceGroup>{
-            description: 'Waterjets',
-            children: [
-              <Resource>{
-                description: 'Waterjet 1',
-                events: [{
-                  color: 'blue',
-                  description: 'Jonas',
-                  start: new Date(2022, 1, 3, 0, 0, 0),
-                  end: new Date(2022, 1, 3, 23, 59, 59)
-                }]
-              },
-              <Resource>{
-                description: 'Waterjet 2',
-                events: [{
-                  color: 'blue',
-                  description: 'Jonas',
-                  start: new Date(2022, 1, 3, 0, 0, 0),
-                  end: new Date(2022, 1, 3, 23, 59, 59)
-                }]
-              },
-              <Resource>{
-                description: 'Waterjet 3',
-                events: [{
-                  color: 'blue',
-                  description: 'Jonas',
-                  start: new Date(2022, 1, 3, 0, 0, 0),
-                  end: new Date(2022, 1, 3, 23, 59, 59)
-                }]
-              },
-            ]
-          },
-          <ResourceGroup>{
-            description: 'Column drills',
-            children: [
-              <Resource>{
-                description: 'Column drill 1',
-                events: [{
-                  color: 'yellow',
-                  description: 'Pieterjan',
-                  start: new Date(2022, 1, 7, 0, 0, 0),
-                  end: new Date(2022, 1, 7, 23, 59, 59)
-                }]
-              },
-              <Resource>{
-                description: 'Column drill 2',
-                events: [{
-                  color: 'yellow',
-                  description: 'Pieterjan',
-                  start: new Date(2022, 1, 7, 0, 0, 0),
-                  end: new Date(2022, 1, 7, 23, 59, 59)
-                }]
-              },
-              <Resource>{
-                description: 'Column drill 3',
-                events: [{
-                  color: 'yellow',
-                  description: 'Pieterjan',
-                  start: new Date(2022, 1, 7, 0, 0, 0),
-                  end: new Date(2022, 1, 7, 23, 59, 59)
-                }]
-              },
-            ]
-          }
-        ]
-      },
-      <ResourceGroup>{
-        description: 'Employees',
-        children: [
-          <Resource>{
-            description: 'Pieterjan',
-            events: [{
-              color: 'grey',
-              description: 'Present',
-              start: new Date(2022, 0, 31, 0, 0, 0),
-              end: new Date(2022, 1, 4, 23, 59, 59)
-            }]
-          }
-        ]
-    }])
-  }
-
-  ngOnInit() {
-    this.fillData();
   }
 
   ngOnDestroy() {

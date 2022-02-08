@@ -1,0 +1,6 @@
+<div class="offcanvas" [class]="offcanvasClass$ | async"
+     [class.show]="show"
+     [class.h-100]="offcanvasHeight100$ | async"
+     [style.height.px]="size">
+    <ng-container *ngTemplateOutlet="content; context: { $implicit: this }" ></ng-container>
+</div>

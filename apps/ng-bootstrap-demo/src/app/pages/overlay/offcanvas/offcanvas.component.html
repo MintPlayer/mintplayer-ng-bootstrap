@@ -1,0 +1,33 @@
+<h1>Offcanvas</h1>
+<h2>Demo</h2>
+<div class="container text-center">
+    <div class="row">
+        <div class="col-md-12 text-center">
+            <span class="mx-5">Show offcanvas</span>
+            <button class="btn btn-primary" (click)="showOffcanvas(offcanvasTemplate, 'top')">Top</button>
+            <button class="btn btn-primary" (click)="showOffcanvas(offcanvasTemplate, 'bottom')">Bottom</button>
+            <button class="btn btn-primary" (click)="showOffcanvas(offcanvasTemplate, 'start')">Left</button>
+            <button class="btn btn-primary" (click)="showOffcanvas(offcanvasTemplate, 'end')">Right</button>
+            <br>
+            <button class="btn btn-primary" (click)="hideOffcanvas()">Hide offcanvas</button>
+            <ng-template #offcanvasTemplate let-offcanvas>
+                <div class="text-nowrap p-2 d-flex flex-row align-items-center justify-content-between">
+                    <span class="">You have new notifications</span>
+                    <button class="btn btn-secondary flex-end">
+                        Open
+                        <br>
+                        dashboard
+                        <br>
+                        Newline
+                    </button>
+                    <button [bsOffcanvasClose]="offcanvas" class="btn btn-secondary flex-end">Close</button>
+                </div>
+            </ng-template>
+        </div>
+    </div>
+</div>
+
+<h2>Code</h2>
+<p>
+    The code is available <a [href]="gitRepo + 'pages/overlay/offcanvas'" target="_blank">here</a>.
+</p>

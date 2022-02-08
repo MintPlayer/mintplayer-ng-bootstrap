@@ -1,0 +1,9 @@
+.offcanvas {
+    position: relative;
+    visibility: unset;
+
+    &.offcanvas-bottom, &.offcanvas-top {
+        // transform: none !important;
+        height: auto;
+    }
+}

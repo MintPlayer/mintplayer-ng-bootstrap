@@ -16,6 +16,7 @@ export * from './list-group';
 export * from './modal';
 export * from './multiselect';
 export * from './navbar';
+export * from './offcanvas';
 export * from './pagination';
 export * from './progress-bar';
 export * from './rating';
