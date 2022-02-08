@@ -2,6 +2,7 @@ import { Component, Input, OnDestroy } from '@angular/core';
 import { BehaviorSubject, filter, map, Observable, Subject, take, takeUntil } from 'rxjs';
 import { Resource, ResourceGroup } from '../../interfaces';
 import { ResourceOrGroup } from '../../interfaces/resource-or-group';
+import { SchedulerStampWithSlots } from '../../interfaces/scheduler-stamp-with-slots';
 import { TimeSlot } from '../../interfaces/time-slot';
 
 @Component({
@@ -30,15 +31,21 @@ export class ResourceGroupPresenterComponent implements OnDestroy {
         }
       }))
       .pipe(filter((resourceOrGroup) => !!resourceOrGroup))
-      .pipe(map((resourceOrGroup) => <ResourceOrGroup>resourceOrGroup))
-      .pipe(takeUntil(this.destroyed$));
+      .pipe(map((resourceOrGroup) => <ResourceOrGroup>resourceOrGroup));
+
+    this.colSpan$ = this.timeSlots$
+      .pipe(map(timeSlots => timeSlots
+        .map(timeslot => timeslot.slots.length)
+        .reduce((sum, current) => sum + current, 0)
+      ));
   }
 
   @Input() level = 0;
   resourceOrGroup$ = new BehaviorSubject<Resource | ResourceGroup | null>(null);
-  timeSlots$ = new BehaviorSubject<TimeSlot[][]>([]);
+  timeSlots$ = new BehaviorSubject<SchedulerStampWithSlots[]>([]);
   isExpanded$ = new BehaviorSubject<boolean>(false);
   data$: Observable<ResourceOrGroup>;
+  colSpan$: Observable<number>;
   destroyed$ = new Subject();
 
   //#region resourceOrGroup
@@ -54,7 +61,7 @@ export class ResourceGroupPresenterComponent implements OnDestroy {
   public get timeSlots() {
     return this.timeSlots$.value;
   }
-  @Input() public set timeSlots(value: TimeSlot[][]) {
+  @Input() public set timeSlots(value: SchedulerStampWithSlots[]) {
     this.timeSlots$.next(value);
   }
   //#endregion

@@ -14,6 +14,7 @@ import { ResourceGroup } from '../../interfaces/resource-group';
 import { Resource } from '../../interfaces';
 import { SchedulerScale } from '../../interfaces/scheduler-schale';
 import { availableScales } from '../../constants/available-scales';
+import { SchedulerStampWithSlots } from '../../interfaces/scheduler-stamp-with-slots';
 
 @Component({
   selector: 'bs-scheduler',
@@ -128,31 +129,37 @@ export class BsSchedulerComponent implements OnInit, OnDestroy {
             return Array.from(Array(timeSlotsPerDay).keys()).map((index) => {
               const timeslotForMonday = this.createTimeslot(shownDays[0], index, duration);
 
-              return shownDays.map((day) => {
-                const start = new Date(day);
-                start.setHours(timeslotForMonday.start.getHours());
-                start.setMinutes(timeslotForMonday.start.getMinutes());
-                start.setSeconds(timeslotForMonday.start.getSeconds());
-                start.setMilliseconds(timeslotForMonday.start.getMilliseconds());
-    
-                const end = new Date(day);
-                end.setHours(timeslotForMonday.end.getHours());
-                end.setMinutes(timeslotForMonday.end.getMinutes());
-                end.setSeconds(timeslotForMonday.end.getSeconds());
-                end.setMilliseconds(timeslotForMonday.end.getMilliseconds());
-                end.setDate(end.getDate() + timeslotForMonday.end.getDate() - timeslotForMonday.start.getDate());
-    
-                return <TimeSlot>{ start, end };
-              });
+              return <SchedulerStampWithSlots>{
+                slots: shownDays.map((day) => {
+                  const start = new Date(day);
+                  start.setHours(timeslotForMonday.start.getHours());
+                  start.setMinutes(timeslotForMonday.start.getMinutes());
+                  start.setSeconds(timeslotForMonday.start.getSeconds());
+                  start.setMilliseconds(timeslotForMonday.start.getMilliseconds());
+      
+                  const end = new Date(day);
+                  end.setHours(timeslotForMonday.end.getHours());
+                  end.setMinutes(timeslotForMonday.end.getMinutes());
+                  end.setSeconds(timeslotForMonday.end.getSeconds());
+                  end.setMilliseconds(timeslotForMonday.end.getMilliseconds());
+                  end.setDate(end.getDate() + timeslotForMonday.end.getDate() - timeslotForMonday.start.getDate());
+      
+                  return <TimeSlot>{ start, end };
+                }),
+                stamp: timeslotForMonday.start
+              };
             });
           }
           case ESchedulerMode.timeline: {
             const totalTimeslots = (24 * 60 * 60) / duration;
             return shownDays.map((day) => {
-              return Array.from(Array(totalTimeslots).keys())
-                .map((index) => {
-                  return this.createTimeslot(day, index, duration);
-                })
+              return <SchedulerStampWithSlots>{
+                slots: Array.from(Array(totalTimeslots).keys())
+                  .map((index) => {
+                    return this.createTimeslot(day, index, duration);
+                  }),
+                stamp: day
+              } 
             });
           }
           default: {
@@ -190,7 +197,7 @@ export class BsSchedulerComponent implements OnInit, OnDestroy {
   shownDays$: Observable<Date[]>;
   daysOfWeekWithTimestamps$: Observable<{start: number, end: number}>;
   timeSlotDuration$ = new BehaviorSubject<number>(1800);
-  timeSlots$ = new BehaviorSubject<TimeSlot[][]>([]);
+  timeSlots$ = new BehaviorSubject<SchedulerStampWithSlots[]>([]);
   mouseState$ = new BehaviorSubject<boolean>(false);
   hoveredTimeSlot$ = new BehaviorSubject<TimeSlot | null>(null);
   hoveredEvent$ = new BehaviorSubject<SchedulerEvent | null>(null);
@@ -359,7 +366,7 @@ export class BsSchedulerComponent implements OnInit, OnDestroy {
   }
 
   //#region hoveredTimeslot$
-  private getHoveredTimeslot(ev: MouseEvent, timeSlots: TimeSlot[][]) {
+  private getHoveredTimeslot(ev: MouseEvent, timeSlots: SchedulerStampWithSlots[]) {
     const hoveredSlots = this.timeSlotElements.filter((el) => {
       const rct = el.nativeElement.getBoundingClientRect();
       if (rct.left <= ev.x && ev.x <= rct.right && rct.top <= ev.y && ev.y <= rct.bottom) {
@@ -387,7 +394,7 @@ export class BsSchedulerComponent implements OnInit, OnDestroy {
     }
     const column = parseInt(strColumn);
 
-    const slot = timeSlots[row][column];
+    const slot = timeSlots[row].slots[column];
     return slot;
   }
 

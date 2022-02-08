@@ -5,6 +5,17 @@
 tr {
     border-bottom-width: 1px;
 
+    // &.bordered td {
+    //     border-top-width: 1px;
+    //     border-bottom-width: 1px;
+    //     border-color: inherit;
+    // }
+
+    &:not(.bordered) td span.position-sticky {
+        left: 0;
+        right: 0;
+    }
+
     // &.grey {
     //     // background-color: rgba(0, 0, 0, 0.03);
     // }
