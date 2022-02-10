@@ -1,13 +1,17 @@
+import { OverlayModule } from '@angular/cdk/overlay';
 import { TestBed } from '@angular/core/testing';
 
-import { OffcanvasService } from './offcanvas.service';
+import { BsOffcanvasService } from './offcanvas.service';
 
-describe('OffcanvasService', () => {
-  let service: OffcanvasService;
+describe('BsOffcanvasService', () => {
+  let service: BsOffcanvasService;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
-    service = TestBed.inject(OffcanvasService);
+    TestBed.configureTestingModule({
+      imports: [ OverlayModule ],
+      providers: [ BsOffcanvasService ]
+    });
+    service = TestBed.inject(BsOffcanvasService);
   });
 
   it('should be created', () => {

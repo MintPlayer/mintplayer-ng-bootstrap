@@ -56,7 +56,7 @@ export class BsOffcanvasService {
   
     const componentInstance = overlayRef.attach<BsOffcanvasComponent>(portal);
     componentInstance.instance.position = position;
-    setTimeout(() => componentInstance.instance.show = true);
+    setTimeout(() => componentInstance.instance.show$.next(true));
     
     componentInstance.instance['instance'] = <OffcanvasAnimationMeta>{
       component: componentInstance,
@@ -71,7 +71,7 @@ export class BsOffcanvasService {
   }
 
   public hide(offcanvas: BsOffcanvasComponent) {
-    offcanvas.show = false;
+    offcanvas.show$.next(false);
     setTimeout(() => offcanvas['instance']?.overlay.dispose(), 300);
   }
 

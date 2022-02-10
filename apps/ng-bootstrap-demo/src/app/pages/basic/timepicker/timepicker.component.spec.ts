@@ -1,6 +1,14 @@
+import { Component, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { TimepickerComponent } from './timepicker.component';
+
+@Component({
+  selector: 'bs-timepicker',
+  template: `<span>Time picker</span>`
+})
+class BsTimepickerMockComponent {
+  @Input() selectedTime = new Date();
+}
 
 describe('TimepickerComponent', () => {
   let component: TimepickerComponent;
@@ -8,7 +16,13 @@ describe('TimepickerComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ TimepickerComponent ]
+      declarations: [
+        // Unit to test  
+        TimepickerComponent,
+      
+        // Mock dependencies
+        BsTimepickerMockComponent
+      ]
     })
     .compileComponents();
   });

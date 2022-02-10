@@ -41,8 +41,8 @@ export class BsOffcanvasComponent {
   
   content: TemplateRef<any>;
   private instance: OffcanvasAnimationMeta | null = null;
-  show = false;
-
+  
+  show$ = new BehaviorSubject<boolean>(false);
   position$ = new BehaviorSubject<OffcanvasPosition>('bottom');
   offcanvasClass$: Observable<string>;
   offcanvasHeight100$: Observable<boolean>;

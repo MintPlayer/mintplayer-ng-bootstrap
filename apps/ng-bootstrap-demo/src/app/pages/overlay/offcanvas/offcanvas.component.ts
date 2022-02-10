@@ -15,7 +15,7 @@ export class OffcanvasComponent {
   gitRepo: string;
   offcanvas: BsOffcanvasComponent | null = null;
   showOffcanvas(template: TemplateRef<any>, position: OffcanvasPosition) {
-    this.offcanvas = this.offcanvasService.show(template, position, true, (offcanvas) => this.offcanvasService.hide(offcanvas));
+    this.offcanvas = this.offcanvasService.show(template, position, ['start', 'end'].includes(position), (offcanvas) => this.offcanvasService.hide(offcanvas));
   }
   hideOffcanvas() {
     if (this.offcanvas) {
