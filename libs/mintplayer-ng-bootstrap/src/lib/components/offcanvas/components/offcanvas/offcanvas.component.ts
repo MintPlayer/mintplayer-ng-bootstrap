@@ -30,7 +30,8 @@ export class BsOffcanvasComponent {
   @Input() public size: number | null = null;
   @HostBinding('class.d-block') displayBlock = true;
   @HostBinding('class.position-absolute') positionAbsolute = true;
-  
+  @HostBinding('class.w-100') width100 = true;
+
   content: TemplateRef<any>;
   private instance: OffcanvasAnimationMeta | null = null;
   
