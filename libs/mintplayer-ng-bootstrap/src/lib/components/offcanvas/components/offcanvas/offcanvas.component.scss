@@ -1,9 +1,20 @@
 .offcanvas {
-    position: relative;
+    &.oc-max-width {
+        max-width: calc(100% - 40px);
+    }
+    &.oc-max-height {
+        max-height: calc(100% - 40px);
+    }
+}
+
+.offcanvas {
     visibility: unset;
 
     &.offcanvas-bottom, &.offcanvas-top {
-        // transform: none !important;
         height: auto;
+    }
+    
+    &.offcanvas-top {
+        position:initial;
     }
 }

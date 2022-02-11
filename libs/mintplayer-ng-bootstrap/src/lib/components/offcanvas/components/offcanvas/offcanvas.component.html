@@ -1,6 +1,8 @@
-<div class="offcanvas" [class]="offcanvasClass$ | async"
+<div class="offcanvas overflow-hidden" [class]="offcanvasClass$ | async"
      [class.show]="show$ | async"
      [class.h-100]="offcanvasHeight100$ | async"
-     [style.height.px]="size">
+     [style.height.px]="size"
+     [class.oc-max-width]="['start', 'end'].includes(position)"
+     [class.oc-max-height]="['top', 'bottom'].includes(position)">
     <ng-container *ngTemplateOutlet="content; context: { $implicit: this }" ></ng-container>
 </div>

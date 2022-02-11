@@ -29,15 +29,7 @@ export class BsOffcanvasComponent {
 
   @Input() public size: number | null = null;
   @HostBinding('class.d-block') displayBlock = true;
-  @HostBinding('class.w-100') get width100() {
-    switch (this.position) {
-      case 'top':
-      case 'bottom':
-        return true;
-      default:
-        return false;
-    }
-  };
+  @HostBinding('class.position-absolute') positionAbsolute = true;
   
   content: TemplateRef<any>;
   private instance: OffcanvasAnimationMeta | null = null;
