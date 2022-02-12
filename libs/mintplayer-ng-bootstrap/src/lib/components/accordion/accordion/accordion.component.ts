@@ -9,6 +9,20 @@ import { BsAccordionTabComponent } from '../accordion-tab/accordion-tab.componen
 export class BsAccordionComponent {
 
   @ContentChildren(BsAccordionTabComponent) tabPages!: BsAccordionTabComponent[];
-  activeTab: BsAccordionTabComponent | null = null;
+  
+  //#region ActiveTab
+  private _activeTab: BsAccordionTabComponent | null = null;
+  public get activeTab() {
+    return this._activeTab;
+  }
+  public set activeTab(value: BsAccordionTabComponent | null) {
+    this._activeTab = value;
+    this.tabPages.filter((tab) => tab !== value).forEach((tab) => {
+      tab.childAccordions.forEach((acc) => {
+        acc.activeTab = null;
+      });
+    });
+  }
+  //#endregion
   
 }

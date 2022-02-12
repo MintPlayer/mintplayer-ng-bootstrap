@@ -1,0 +1,27 @@
+.multi-level {
+    background-color: red;
+
+    bs-accordion-tab {
+        ::ng-deep .card {
+            background-color: #333;
+            color: #FFF;
+        }
+
+        bs-accordion-tab {
+            ::ng-deep .card {
+                background-color: #666;
+                color: #FFF;
+            }
+            
+            bs-accordion-tab {
+                ::ng-deep .card {
+                    background-color: #999;
+                }
+                
+                ::ng-deep .card-block {
+                    background-color: #CCC;
+                }
+            }
+        }
+    }
+}

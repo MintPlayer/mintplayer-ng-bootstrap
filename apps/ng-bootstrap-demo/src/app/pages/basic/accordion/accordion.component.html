@@ -1,5 +1,6 @@
 <h1>Accordion</h1>
 Requires the <b>BrowserAnimationsModule</b> to be imported in the AppModule.
+<h2>Single-level</h2>
 <bs-accordion class="d-block mb-3">
     <bs-accordion-tab>
         <bs-accordion-tab-header>
@@ -7,6 +8,78 @@ Requires the <b>BrowserAnimationsModule</b> to be imported in the AppModule.
             Profile
         </bs-accordion-tab-header>
         <span class="d-block p-2">Label 1</span>
+    </bs-accordion-tab>
+    <bs-accordion-tab>
+        <bs-accordion-tab-header>
+            <span class="triangle mr-2"></span>
+            Sign in
+        </bs-accordion-tab-header>
+        <span class="d-block p-2">Label 2</span>
+    </bs-accordion-tab>
+    <bs-accordion-tab>
+        <bs-accordion-tab-header>
+            <span class="triangle mr-2"></span>
+            Payment
+        </bs-accordion-tab-header>
+        <span class="d-block p-2">Label 3</span>
+    </bs-accordion-tab>
+</bs-accordion>
+<h2>Multi-level</h2>
+<bs-accordion class="d-block mb-3 multi-level">
+    <bs-accordion-tab>
+        <bs-accordion-tab-header>
+            <span class="triangle mr-2"></span>
+            Profile
+        </bs-accordion-tab-header>
+
+        <bs-accordion class="d-block">
+            <bs-accordion-tab>
+                <bs-accordion-tab-header>
+                    <span class="triangle mr-2"></span>
+                    Email address
+                </bs-accordion-tab-header>
+                
+                <bs-accordion class="d-block">
+                    <bs-accordion-tab>
+                        <bs-accordion-tab-header>
+                            <span class="triangle mr-2"></span>
+                            Email address
+                        </bs-accordion-tab-header>
+                        <span class="d-block p-2">info@mintplayer.com</span>
+                    </bs-accordion-tab>
+                    <bs-accordion-tab>
+                        <bs-accordion-tab-header>
+                            <span class="triangle mr-2"></span>
+                            Username
+                        </bs-accordion-tab-header>
+                        <span class="d-block p-2">Pieterjan</span>
+                    </bs-accordion-tab>
+                    <bs-accordion-tab>
+                        <bs-accordion-tab-header>
+                            <span class="triangle mr-2"></span>
+                            Password
+                        </bs-accordion-tab-header>
+                        <span class="d-block p-2">Change it here</span>
+                    </bs-accordion-tab>
+                </bs-accordion>
+
+            </bs-accordion-tab>
+            <bs-accordion-tab>
+                <bs-accordion-tab-header>
+                    <span class="triangle mr-2"></span>
+                    Username
+                </bs-accordion-tab-header>
+                <span class="d-block p-2">Pieterjan</span>
+            </bs-accordion-tab>
+            <bs-accordion-tab>
+                <bs-accordion-tab-header>
+                    <span class="triangle mr-2"></span>
+                    Password
+                </bs-accordion-tab-header>
+                <span class="d-block p-2">Change it here</span>
+            </bs-accordion-tab>
+        </bs-accordion>
+
     </bs-accordion-tab>
     <bs-accordion-tab>
         <bs-accordion-tab-header>
