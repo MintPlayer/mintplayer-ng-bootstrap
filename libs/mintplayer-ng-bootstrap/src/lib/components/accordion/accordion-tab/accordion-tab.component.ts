@@ -1,4 +1,4 @@
-import { Component, ContentChildren, ElementRef, QueryList } from '@angular/core';
+import { Component, ContentChildren, forwardRef, QueryList } from '@angular/core';
 import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
 import { BsAccordionComponent } from '../accordion/accordion.component';
 
@@ -11,7 +11,7 @@ import { BsAccordionComponent } from '../accordion/accordion.component';
 export class BsAccordionTabComponent {
 
   accordion: BsAccordionComponent;
-  @ContentChildren(BsAccordionComponent) childAccordions!: QueryList<BsAccordionComponent>;
+  @ContentChildren(() => forwardRef(() => BsAccordionComponent)) childAccordions!: QueryList<BsAccordionComponent>;
   constructor(accordion: BsAccordionComponent) {
     this.accordion = accordion;
   }

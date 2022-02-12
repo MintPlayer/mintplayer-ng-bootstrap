@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ContentChildren, forwardRef, QueryList } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { BsAccordionComponent } from './accordion.component';
@@ -53,6 +53,7 @@ class BsAccordionTestComponent {
   template: 'accordion-tab works'
 })
 class BsAccordionTabMockComponent {
+  @ContentChildren(() => forwardRef(() => BsAccordionComponent)) childAccordions!: QueryList<BsAccordionComponent>;
 }
 
 @Component({

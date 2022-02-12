@@ -4,7 +4,7 @@ import { BsModalService } from '@mintplayer/ng-bootstrap';
 import { FocusTrapComponent } from './focus-trap.component';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 class BsModalMockService {
 }
