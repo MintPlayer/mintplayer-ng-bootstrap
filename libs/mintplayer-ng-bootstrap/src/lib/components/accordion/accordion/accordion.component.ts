@@ -17,11 +17,12 @@ export class BsAccordionComponent {
   }
   public set activeTab(value: BsAccordionTabComponent | null) {
     this._activeTab = value;
-    // this.tabPages.filter((tab) => tab !== value).forEach((tab) => {
-    //   tab.childAccordions.forEach((acc) => {
-    //     acc.activeTab = null;
-    //   });
-    // });
+    this.tabPages.filter((tab) => tab !== value).forEach((tab) => {
+      console.log('children', tab.childAccordions);
+      tab.childAccordions.forEach((acc) => {
+        acc.activeTab = null;
+      });
+    });
   }
   //#endregion
   

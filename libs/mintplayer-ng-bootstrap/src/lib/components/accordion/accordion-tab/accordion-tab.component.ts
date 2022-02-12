@@ -11,7 +11,7 @@ import { BsAccordionComponent } from '../accordion/accordion.component';
 export class BsAccordionTabComponent {
 
   accordion: BsAccordionComponent;
-  @ContentChildren(() => forwardRef(() => BsAccordionComponent)) childAccordions!: QueryList<BsAccordionComponent>;
+  @ContentChildren(forwardRef(() => BsAccordionComponent)) childAccordions!: QueryList<BsAccordionComponent>;
   constructor(accordion: BsAccordionComponent) {
     this.accordion = accordion;
   }
