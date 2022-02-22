@@ -6,7 +6,7 @@
             <span class="mx-5">Show offcanvas</span>
             <button class="btn btn-primary" (click)="showOffcanvas(offcanvasTemplate, 'top')">Top</button>
             <button class="btn btn-primary" (click)="showOffcanvas(offcanvasTemplate, 'bottom')">Bottom</button>
-            <button class="btn btn-primary" (click)="showOffcanvas(offcanvasTemplate, 'start')">Left</button>
+            <button class="btn btn-primary" (click)="showSidebar(sidebarTemplate)">Left</button>
             <button class="btn btn-primary" (click)="showOffcanvas(offcanvasTemplate, 'end')">Right</button>
             <br>
             <button class="btn btn-primary" (click)="hideOffcanvas()">Hide offcanvas</button>
@@ -22,6 +22,58 @@
                     </button>
                     <button [bsOffcanvasClose]="offcanvas" class="btn btn-secondary flex-end">Close</button>
                 </div>
+            </ng-template>
+            <ng-template #sidebarTemplate let-offcanvas>
+                <bs-accordion class="d-block">
+                    <bs-accordion-tab>
+                        <!-- Header -->
+                        <bs-accordion-tab-header>Dishes</bs-accordion-tab-header>
+
+                        <bs-accordion class="d-block">
+                            <bs-accordion-tab>
+                                <bs-accordion-tab-header>Pre-dinner</bs-accordion-tab-header>
+                                <bs-accordion class="d-block">
+                                    <a [routerLink]='[]' class="d-block p-2">Shrimp salad</a>
+                                    <a [routerLink]='[]' class="d-block p-2">Cucumber salad</a>
+                                    <a [routerLink]='[]' class="d-block p-2">Egg salad</a>
+                                </bs-accordion>
+                            </bs-accordion-tab>
+                            <bs-accordion-tab>
+                                <bs-accordion-tab-header>First course</bs-accordion-tab-header>
+                                <bs-accordion class="d-block">
+                                    <a [routerLink]='[]' class="d-block p-2">Croque monsieur</a>
+                                    <a [routerLink]='[]' class="d-block p-2">Mini pizzas</a>
+                                </bs-accordion>
+                            </bs-accordion-tab>
+                            <bs-accordion-tab>
+                                <bs-accordion-tab-header>Main course</bs-accordion-tab-header>
+                                <bs-accordion class="d-block">
+                                    <a [routerLink]='[]' class="d-block p-2">Macaroni</a>
+                                    <a [routerLink]='[]' class="d-block p-2">Lasagne Bolognaise</a>
+                                    <a [routerLink]='[]' class="d-block p-2">Gratin</a>
+                                </bs-accordion>
+                            </bs-accordion-tab>
+                            <bs-accordion-tab>
+                                <bs-accordion-tab-header>Dessert</bs-accordion-tab-header>
+                                <bs-accordion class="d-block">
+                                    <a [routerLink]='[]' class="d-block p-2">Chocolate mousse</a>
+                                    <a [routerLink]='[]' class="d-block p-2">Chocolate cake</a>
+                                    <a [routerLink]='[]' class="d-block p-2">Chocolate ice cream</a>
+                                </bs-accordion>
+                            </bs-accordion-tab>
+                        </bs-accordion>
+                    </bs-accordion-tab>
+                    <bs-accordion-tab>
+                        <!-- Header -->
+                        <bs-accordion-tab-header>Management</bs-accordion-tab-header>
+                        <bs-accordion class="d-block">
+                            <!-- <bs-accordion-tab> -->
+                                <a [routerLink]='[]' class="d-block p-2">Manage categories</a>
+                                <a [routerLink]='[]' class="d-block p-2">Manage dishes</a>
+                            <!-- </bs-accordion-tab> -->
+                        </bs-accordion>
+                    </bs-accordion-tab>
+                </bs-accordion>
             </ng-template>
         </div>
     </div>

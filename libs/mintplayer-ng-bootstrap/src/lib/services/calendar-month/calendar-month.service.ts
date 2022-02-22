@@ -23,12 +23,10 @@ export class BsCalendarMonthService {
       };
     });
     const weeks = this.chunk(allDays, 7);
-    const weeksMapped = weeks.map<Week>((w, i) => {
-      return {
-        number: this.weekOfYear(new Date(month.getFullYear(), month.getMonth(), w.find(d => d.isInMonth)?.dayOfMonth)),
-        days: w
-      }
-    });
+    const weeksMapped = weeks.map<Week>((w, i) => ({
+      number: this.weekOfYear(new Date(month.getFullYear(), month.getMonth(), w.find(d => d.isInMonth)?.dayOfMonth)),
+      days: w
+    }));
     return weeksMapped;
   }
   

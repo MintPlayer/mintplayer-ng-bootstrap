@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BsOffcanvasModule } from '@mintplayer/ng-bootstrap';
+import { BsAccordionModule, BsOffcanvasModule } from '@mintplayer/ng-bootstrap';
 
 import { OffcanvasRoutingModule } from './offcanvas-routing.module';
 import { OffcanvasComponent } from './offcanvas.component';
@@ -13,6 +13,7 @@ import { OffcanvasComponent } from './offcanvas.component';
   imports: [
     CommonModule,
     BsOffcanvasModule,
+    BsAccordionModule,
     OffcanvasRoutingModule
   ]
 })

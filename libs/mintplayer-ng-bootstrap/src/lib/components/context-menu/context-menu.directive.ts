@@ -17,23 +17,35 @@ export class BsContextMenuDirective {
       ev.preventDefault();
       this.checkAndCloseExisting(ev);
 
+      const target = {
+        getBoundingClientRect: () => {
+          console.log('getBoundingClientRect', {
+            clientX: ev.clientX,
+            clientY: ev.clientY,
+            scrollY: window.scrollY,
+          });
+          return  ({
+            width: 0,
+            height: 0,
+            top: ev.clientY + window.scrollY,
+            left: ev.clientX,
+            bottom: ev.clientY + window.scrollY,
+            right: ev.clientX,
+          });
+        },
+      };
+      const element = new ElementRef(target);
+
       this.overlayRef = this.overlay.create({
         hasBackdrop: false,
         scrollStrategy: this.overlay.scrollStrategies.reposition(),
         positionStrategy: this.overlay.position()
-        // .flexibleConnectedTo({ x: ev.x, y: ev.y })
-        .flexibleConnectedTo(this.element)
+        .flexibleConnectedTo(element)
         .withPositions([
-          // element: TopLeft - dropdown: TopLeft
-          { originX: "start", originY: "top", overlayX: "start", overlayY: "top", offsetX: ev.offsetX, offsetY: ev.offsetY },
-          // // element: TopLeft - dropdown: BottomLeft
-          // { originX: "start", originY: "top", overlayX: "start", overlayY: "bottom", offsetX: ev.offsetX, offsetY: ev.offsetY },
-          
-          // // element: TopLeft - dropdown: TopRight
-          // { originX: "start", originY: "top", overlayX: "end", overlayY: "top", offsetX: ev.offsetX, offsetY: ev.offsetY },
-          // // element: TopLeft - dropdown: BottomRight
-          // { originX: "start", originY: "top", overlayX: "end", overlayY: "bottom", offsetX: ev.offsetX, offsetY: ev.offsetY },
-
+          { originX: "end", originY: "top", overlayX: "start", overlayY: "top" },
+          { originX: "end", originY: "bottom", overlayX: "start", overlayY: "bottom" },
+          { originX: "start", originY: "top", overlayX: "end", overlayY: "top" },
+          { originX: "start", originY: "bottom", overlayX: "end", overlayY: "bottom" },
         ])
       });
       this.templatePortal = new TemplatePortal(this.templateRef, this.viewContainerRef);

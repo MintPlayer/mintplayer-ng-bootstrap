@@ -17,6 +17,9 @@ export class OffcanvasComponent {
   showOffcanvas(template: TemplateRef<any>, position: OffcanvasPosition) {
     this.offcanvas = this.offcanvasService.show(template, position, ['start', 'end'].includes(position), (offcanvas) => this.offcanvasService.hide(offcanvas));
   }
+  showSidebar(template: TemplateRef<any>) {
+    this.offcanvas = this.offcanvasService.show(template, 'start', true, (offcanvas) => this.offcanvasService.hide(offcanvas));
+  }
   hideOffcanvas() {
     if (this.offcanvas) {
       this.offcanvasService.hide(this.offcanvas);

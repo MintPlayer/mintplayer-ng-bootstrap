@@ -46,9 +46,7 @@ export class BsSchedulerComponent implements OnDestroy {
     );
 
     this.daysOfWeekWithTimestamps$ = this.shownDays$
-      .pipe(map((shownDays) => {
-        return { start: shownDays[0].getTime(), end: shownDays[shownDays.length - 1].getTime() + 24 * 60 * 60 * 1000 };
-      }));
+      .pipe(map((shownDays) => ({ start: shownDays[0].getTime(), end: shownDays[shownDays.length - 1].getTime() + 24 * 60 * 60 * 1000 })));
     
     this.events$ = this.resources$
       .pipe(map((resourcesOrGroups) => resourcesOrGroups.map(resOrGroup => this.getResourcesForGroup(resOrGroup))))
@@ -102,17 +100,10 @@ export class BsSchedulerComponent implements OnDestroy {
           .map((e) => <SchedulerEvent>e);
         const timeline = this.timelineService.getTimeline(events);
 
-        const result = timeline.map(track => {
-          return track.events.map(ev => {
-            return { event: ev, index: track.index };
-          });
-        })
-        .reduce((flat, toFlatten) => flat.concat(toFlatten), [])
-        .map((evi) => eventParts.filter(p => p.event === evi.event).map(p => {
-            return { part: p, index: evi.index };
-          })
-        )
-        .reduce((flat, toFlatten) => flat.concat(toFlatten), []);
+        const result = timeline.map(track => track.events.map(ev => ({ event: ev, index: track.index })))
+          .reduce((flat, toFlatten) => flat.concat(toFlatten), [])
+          .map((evi) => eventParts.filter(p => p.event === evi.event).map(p => ({ part: p, index: evi.index })))
+          .reduce((flat, toFlatten) => flat.concat(toFlatten), []);
 
         return {
           total: timeline.length,
