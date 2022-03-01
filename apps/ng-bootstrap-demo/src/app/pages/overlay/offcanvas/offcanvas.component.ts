@@ -11,7 +11,11 @@ export class OffcanvasComponent {
   constructor(private offcanvasService: BsOffcanvasService, @Inject('GIT_REPO') gitRepo: string) {
     this.gitRepo = gitRepo;
   }
-
+  
+  level1Menu: string | null = null;
+  level2Menu: string | null = null;
+  level3Menu: string | null = null;
+  
   gitRepo: string;
   offcanvas: BsOffcanvasComponent | null = null;
   showOffcanvas(template: TemplateRef<any>, position: OffcanvasPosition) {

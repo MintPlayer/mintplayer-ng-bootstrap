@@ -1,4 +1,4 @@
-import { Component, TemplateRef } from "@angular/core";
+import { Component, HostListener, TemplateRef } from "@angular/core";
 
 @Component({
   selector: 'bs-modal',

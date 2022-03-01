@@ -1,8 +1,10 @@
 import { AnimationEvent } from '@angular/animations';
-import { Component, EventEmitter, Inject, TemplateRef } from '@angular/core';
+import { Component, ContentChild, EventEmitter, HostListener, Inject, TemplateRef } from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
+import { filter, take } from 'rxjs';
 import { ModalAnimationMeta } from '../../interfaces';
 import { MODAL_CONTENT } from '../../providers/modal-content.provider';
+import { BsModalComponent } from '../../component/modal/modal.component';
 
 @Component({
   selector: 'bs-modal-content',
@@ -18,12 +20,25 @@ export class BsModalContentComponent {
   content: TemplateRef<any>;
   
   private instance: ModalAnimationMeta | null = null;
+  closeOnEscape = false;
 
-  //#region Monitor @slideUpDown hooks
+  //#region Monitor @fadeInOut hooks
   animationState = '';
   animationStateChanged = new EventEmitter<AnimationEvent>();
   onAnimationChanged(event: AnimationEvent) {
     this.animationStateChanged.emit(event);
   }
   //#endregion
+
+  @HostListener('keydown', ['$event'])
+  private onKeyDown(ev: KeyboardEvent) {
+    if (this.closeOnEscape && ev.code === 'Escape') {
+      this.animationStateChanged.pipe(
+        filter(ev => ev.phaseName === 'done' && ev.toState === 'void'),
+        take(1)
+      ).subscribe(() => this.instance?.overlay.dispose());
+  
+      this.animationState = 'void';
+    }
+  }
 }

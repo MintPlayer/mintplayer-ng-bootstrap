@@ -19,7 +19,7 @@ export class ModalComponent {
   selectedTags: Tag[] = [];
 
   showModal(template: TemplateRef<any>) {
-    this.modal = this.modalService.show(template);
+    this.modal = this.modalService.show(template, true);
   }
   hideModal(modal: BsModalContentComponent) {
     if (modal) {

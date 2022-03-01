@@ -18,7 +18,7 @@ export class BsModalService {
     private componentFactoryResolver: ComponentFactoryResolver,
   ) { }
 
-  public show(template: TemplateRef<any>) {
+  public show(template: TemplateRef<any>, closeOnEscape = false) {
     const injector = Injector.create({
       providers: [{ provide: MODAL_CONTENT, useValue: template }],
       parent: this.parentInjector
@@ -38,6 +38,7 @@ export class BsModalService {
       component: componentInstance,
       overlay: overlayRef
     };
+    componentInstance.instance.closeOnEscape = closeOnEscape;
 
     return componentInstance.instance;
   }
