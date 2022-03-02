@@ -1,4 +1,4 @@
-import { Component, ContentChildren, EventEmitter, Input, Output, QueryList } from '@angular/core';
+import { Component, ContentChildren, QueryList } from '@angular/core';
 import { BsAccordionTabComponent } from '../accordion-tab/accordion-tab.component';
 
 @Component({
