@@ -27,6 +27,7 @@ export class BsFromOverlayIdDirective implements OnDestroy {
 
   //#region bsFromOverlayId
   private _bsFromOverlayId!: string;
+  /** String value containing the accordion tab identifier. */
   public get bsFromOverlayId() {
     return this._bsFromOverlayId;
   }

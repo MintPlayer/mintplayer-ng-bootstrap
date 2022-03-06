@@ -32,6 +32,8 @@ export class BsFromOverlayDirective implements AfterContentInit, OnDestroy {
 
   @Output() public bsFromOverlayChange = new EventEmitter<string | null>();
   private _bsFromOverlay: string | null = null;
+
+  /** Binds the active tab of an accordion to a field, in case the accordion is rendered in an overlay. */
   public get bsFromOverlay() {
     return this._bsFromOverlay;
   }
