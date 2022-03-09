@@ -82,7 +82,6 @@ export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
     this.component.instance.backdropClick
       .pipe(takeUntil(this.destroyed$))
       .subscribe((ev) => {
-        console.log(2);
         this.backdropClick.emit(ev);
       });
 

@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, Directive, Inject, TemplateRef } from '@angular/core';
+import { Component, Inject, Input, TemplateRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { OverlayModule } from '@angular/cdk/overlay';
 import { BsOffcanvasContentDirective } from './offcanvas-content.directive';
+import { BsOffcanvasHostComponent } from '../../components/offcanvas-host/offcanvas-host.component';
 
 
 describe('BsOffcanvasContentDirective', () => {
@@ -30,7 +31,7 @@ describe('BsOffcanvasContentDirective', () => {
   });
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(BsOffcanvasHostComponent);
+    fixture = TestBed.createComponent(BsOffcanvasTestComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
@@ -61,12 +62,17 @@ class BsOffcanvasTestComponent {
   position: OffcanvasPosition = 'start';
 }
 
-@Directive({ selector: '[bsOffcanvasContent]' })
-class BsOffcanvasContentMockDirective {
-  constructor(offcanvasHost: BsOffcanvasHostComponent, template: TemplateRef<any>) {
-    offcanvasHost.content = template;
-  }
+@Component({
+  selector: 'bs-offcanvas',
+  template: ``,
+  providers: [{ provide: BsOffcanvasHostComponent, useExisting: BsOffcanvasHostMockComponent }]
+})
+class BsOffcanvasHostMockComponent {
+  @Input() show = false;
+  @Input() position: OffcanvasPosition = 'bottom';
+  @Input() hasBackdrop = true;
 }
+
 
 @Component({
   selector: 'bs-offcanvas-holder',

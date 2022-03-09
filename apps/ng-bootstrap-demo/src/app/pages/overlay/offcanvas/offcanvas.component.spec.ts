@@ -5,12 +5,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { OffcanvasComponent } from './offcanvas.component';
 
-@Injectable({
-  providedIn: 'root'
-})
-class BsOffcanvasMockService {
-}
-
 @Component({
   selector: 'bs-offcanvas-holder',
   template: `<ng-container *ngTemplateOutlet="content; context: { $implicit: this }"></ng-container>`
@@ -64,9 +58,6 @@ describe('OffcanvasComponent', () => {
 
         // Testbench
         OffcanvasTestComponent
-      ],
-      providers: [
-        { provide: BsOffcanvasService, useClass: BsOffcanvasMockService }
       ]
     })
     .compileComponents();
