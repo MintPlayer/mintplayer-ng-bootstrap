@@ -2,15 +2,8 @@ import { Overlay, OverlayModule } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { Component, Injectable, Injector, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsOffcanvasService } from '../../services/offcanvas/offcanvas.service';
 import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
 import { BsOffcanvasComponent } from './offcanvas.component';
-
-@Injectable({
-  providedIn: 'root'
-})
-class BsOffcanvasMockService {
-}
 
 @Component({
   selector: 'offcanvas-test-component',
@@ -50,9 +43,6 @@ describe('BsOffcanvasComponent', () => {
       
         // Testbench
         OffcanvasTestComponent
-      ],
-      providers: [
-        { provide: BsOffcanvasService, useClass: BsOffcanvasMockService }
       ]
     })
     .compileComponents();

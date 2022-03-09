@@ -27,9 +27,9 @@ export class BsContextMenuDirective {
           return  ({
             width: 0,
             height: 0,
-            top: ev.clientY + window.scrollY,
+            top: ev.clientY,
             left: ev.clientX,
-            bottom: ev.clientY + window.scrollY,
+            bottom: ev.clientY,
             right: ev.clientX,
           });
         },

@@ -2,11 +2,10 @@ import { Overlay, OverlayModule } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { Component, Inject, Injectable, Injector, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsOffcanvasService } from '../../services/offcanvas/offcanvas.service';
 import { BsOffcanvasCloseDirective } from './offcanvas-close.directive';
 
 @Component({
-  selector: 'bs-offcanvas',
+  selector: 'bs-offcanvas-holder',
   template: `<ng-container *ngTemplateOutlet="content; context: { $implicit: this }"></ng-container>`
 })
 class BsOffcanvasMockComponent {
@@ -15,12 +14,6 @@ class BsOffcanvasMockComponent {
   }
 
   content: TemplateRef<any>;
-}
-
-@Injectable({
-  providedIn: 'root'
-})
-class BsOffcanvasMockService {
 }
 
 @Component({
@@ -69,9 +62,6 @@ describe('BsOffcanvasCloseDirective', () => {
 
         // Testbench
         OffcanvasCloseTestComponent
-      ],
-      providers: [
-        { provide: BsOffcanvasService, useClass: BsOffcanvasMockService }
       ]
     }).compileComponents();
   });

@@ -2,7 +2,6 @@ import { Overlay, OverlayModule } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { Component, Inject, Injectable, Injector, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsOffcanvasService } from '@mintplayer/ng-bootstrap';
 
 import { OffcanvasComponent } from './offcanvas.component';
 
@@ -13,7 +12,7 @@ class BsOffcanvasMockService {
 }
 
 @Component({
-  selector: 'bs-offcanvas',
+  selector: 'bs-offcanvas-holder',
   template: `<ng-container *ngTemplateOutlet="content; context: { $implicit: this }"></ng-container>`
 })
 class BsOffcanvasMockComponent {

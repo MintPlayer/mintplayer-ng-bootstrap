@@ -1,16 +1,13 @@
-import { Directive, HostListener, Input } from '@angular/core';
-import { BsOffcanvasComponent } from '../../components/offcanvas/offcanvas.component';
-import { BsOffcanvasService } from '../../services/offcanvas/offcanvas.service';
+import { Directive, HostListener } from '@angular/core';
+import { BsOffcanvasHostComponent } from '../../components/offcanvas-host/offcanvas-host.component';
 
 @Directive({
   selector: '[bsOffcanvasClose]'
 })
 export class BsOffcanvasCloseDirective {
-  constructor(private offcanvasService: BsOffcanvasService) { }
-
-  @Input() public bsOffcanvasClose!: BsOffcanvasComponent;
+  constructor(private offcanvas: BsOffcanvasHostComponent) { }
 
   @HostListener('click') onClick() {
-    this.offcanvasService.hide(this.bsOffcanvasClose);
+    this.offcanvas.show = false;
   }
 }

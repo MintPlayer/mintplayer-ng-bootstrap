@@ -5,7 +5,7 @@ import { Component, OnInit } from '@angular/core';
   templateUrl: './offcanvas-header.component.html',
   styleUrls: ['./offcanvas-header.component.scss']
 })
-export class BsOffcanvasHeaderComponent implements OnInit {
+export class OffcanvasHeaderComponent implements OnInit {
 
   constructor() { }
 

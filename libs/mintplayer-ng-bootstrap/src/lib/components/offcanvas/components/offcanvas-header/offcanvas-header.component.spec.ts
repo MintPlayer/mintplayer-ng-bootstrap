@@ -1,20 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { BsOffcanvasHeaderComponent } from './offcanvas-header.component';
+import { OffcanvasHeaderComponent } from './offcanvas-header.component';
 
-describe('BsOffcanvasHeaderComponent', () => {
-  let component: BsOffcanvasHeaderComponent;
-  let fixture: ComponentFixture<BsOffcanvasHeaderComponent>;
+describe('OffcanvasHeaderComponent', () => {
+  let component: OffcanvasHeaderComponent;
+  let fixture: ComponentFixture<OffcanvasHeaderComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ BsOffcanvasHeaderComponent ]
+      declarations: [ OffcanvasHeaderComponent ]
     })
     .compileComponents();
   });
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(BsOffcanvasHeaderComponent);
+    fixture = TestBed.createComponent(OffcanvasHeaderComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

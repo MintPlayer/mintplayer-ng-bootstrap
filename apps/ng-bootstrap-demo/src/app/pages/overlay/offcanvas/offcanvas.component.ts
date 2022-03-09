@@ -1,5 +1,6 @@
-import { Component, Inject, TemplateRef } from '@angular/core';
-import { BsOffcanvasComponent, BsOffcanvasService, OffcanvasPosition } from '@mintplayer/ng-bootstrap';
+import { Component, Inject } from '@angular/core';
+import { BsOffcanvasComponent, OffcanvasPosition } from '@mintplayer/ng-bootstrap';
+import { BehaviorSubject } from 'rxjs';
 
 @Component({
   selector: 'demo-offcanvas',
@@ -8,26 +9,21 @@ import { BsOffcanvasComponent, BsOffcanvasService, OffcanvasPosition } from '@mi
 })
 export class OffcanvasComponent {
 
-  constructor(private offcanvasService: BsOffcanvasService, @Inject('GIT_REPO') gitRepo: string) {
+  constructor(@Inject('GIT_REPO') gitRepo: string) {
     this.gitRepo = gitRepo;
   }
   
   level1Menu: string | null = null;
   level2Menu: string | null = null;
   level3Menu: string | null = null;
+  position$ = new BehaviorSubject<OffcanvasPosition>('start');
+  isOffcanvasVisible = false;
+  isSidebarVisible = false;
   
   gitRepo: string;
   offcanvas: BsOffcanvasComponent | null = null;
-  showOffcanvas(template: TemplateRef<any>, position: OffcanvasPosition) {
-    this.offcanvas = this.offcanvasService.show(template, position, ['start', 'end'].includes(position), (offcanvas) => this.offcanvasService.hide(offcanvas));
+  showOffcanvas(position: OffcanvasPosition) {
+    this.position$.next(position);
+    setTimeout(() => this.isOffcanvasVisible = true);
   }
-  showSidebar(template: TemplateRef<any>) {
-    this.offcanvas = this.offcanvasService.show(template, 'start', true, (offcanvas) => this.offcanvasService.hide(offcanvas));
-  }
-  hideOffcanvas() {
-    if (this.offcanvas) {
-      this.offcanvasService.hide(this.offcanvas);
-    }
-  }
-
 }

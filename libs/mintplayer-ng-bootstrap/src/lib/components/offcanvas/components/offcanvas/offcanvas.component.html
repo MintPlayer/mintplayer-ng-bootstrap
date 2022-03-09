@@ -1,8 +1,12 @@
-<div class="offcanvas overflow-hidden" [class]="offcanvasClass$ | async"
-     [class.show]="show$ | async"
-     [class.h-100]="offcanvasHeight100$ | async"
-     [style.height.px]="size"
-     [class.oc-max-width]="['start', 'end'].includes(position)"
-     [class.oc-max-height]="['top', 'bottom'].includes(position)">
-    <ng-container *ngTemplateOutlet="content; context: { $implicit: this }" ></ng-container>
+<div [@fadeInOut]="{value: ':leave', params: {duration: '300ms'} }" *ngIf="showBackdrop$ | async">
+    <div class="modal-backdrop show" (click)="onBackdropClick($event)"></div>
+</div>
+
+<div class="offcanvas overflow-hidden"
+    [class.show]="show$ | async"
+    [class.disable-transition]="disableTransition$ | async"
+    [class]="offcanvasClass$ | async"
+    [style.height.px]="height$ | async"
+    [style.width.px]="width$ | async">
+    <ng-container *ngTemplateOutlet="contentTemplate"></ng-container>
 </div>

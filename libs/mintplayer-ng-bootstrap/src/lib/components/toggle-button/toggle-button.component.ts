@@ -1,11 +1,9 @@
 import { AfterViewInit, Component, EventEmitter, Input, Output } from '@angular/core';
-import { ColorTransitionAnimation } from '@mintplayer/ng-animations';
 
 @Component({
   selector: 'bs-toggle-button',
   templateUrl: './toggle-button.component.html',
-  styleUrls: ['./toggle-button.component.scss'],
-  animations: [ ColorTransitionAnimation ]
+  styleUrls: ['./toggle-button.component.scss']
 })
 export class BsToggleButtonComponent implements AfterViewInit {
 
