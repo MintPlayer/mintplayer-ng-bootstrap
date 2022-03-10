@@ -38,7 +38,7 @@ export class BsContextMenuDirective {
 
       this.overlayRef = this.overlay.create({
         hasBackdrop: false,
-        scrollStrategy: this.overlay.scrollStrategies.reposition(),
+        scrollStrategy: this.overlay.scrollStrategies.close(),
         positionStrategy: this.overlay.position()
         .flexibleConnectedTo(element)
         .withPositions([
