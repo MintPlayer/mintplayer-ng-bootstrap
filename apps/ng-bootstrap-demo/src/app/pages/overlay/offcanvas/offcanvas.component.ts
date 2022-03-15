@@ -13,9 +13,6 @@ export class OffcanvasComponent {
     this.gitRepo = gitRepo;
   }
   
-  level1Menu: string | null = null;
-  level2Menu: string | null = null;
-  level3Menu: string | null = null;
   position$ = new BehaviorSubject<OffcanvasPosition>('start');
   isOffcanvasVisible = false;
   isSidebarVisible = false;
