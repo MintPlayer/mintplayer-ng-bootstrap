@@ -1,6 +1,6 @@
 import { Overlay } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { AfterViewInit, Component, ComponentRef, ElementRef, EventEmitter, Inject, Injector, Input, OnDestroy, Output, StaticProvider, TemplateRef, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ComponentRef, EventEmitter, Inject, Injector, Input, OnDestroy, Output, TemplateRef } from '@angular/core';
 import { BehaviorSubject, combineLatest, filter, Subject, takeUntil } from 'rxjs';
 import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';

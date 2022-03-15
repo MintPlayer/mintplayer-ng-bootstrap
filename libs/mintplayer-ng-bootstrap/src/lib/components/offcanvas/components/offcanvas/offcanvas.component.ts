@@ -1,9 +1,7 @@
-import { AfterViewInit, Component, EventEmitter, HostBinding, Inject, Input, OnDestroy, Output, TemplateRef } from '@angular/core';
+import { Component, EventEmitter, Inject, Input, OnDestroy, Output, TemplateRef } from '@angular/core';
 import { BehaviorSubject, combineLatest, delayWhen, interval, map, Observable, of, Subject, takeUntil } from 'rxjs';
-import { OffcanvasPosition } from '../../types/position';
-import { OffcanvasAnimationMeta } from '../../interfaces';
-import { ComponentPortal } from '@angular/cdk/portal';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
+import { OffcanvasPosition } from '../../types/position';
 import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
 
 @Component({
