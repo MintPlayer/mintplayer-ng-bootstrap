@@ -1,6 +1,7 @@
 import { Overlay } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { AfterViewInit, Component, ComponentRef, EventEmitter, Inject, Injector, Input, OnDestroy, Output, TemplateRef } from '@angular/core';
+import { BsViewState } from '../../../../types/view-state.type';
 import { BehaviorSubject, combineLatest, filter, Subject, takeUntil } from 'rxjs';
 import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
@@ -15,12 +16,12 @@ import { BsOffcanvasComponent } from '../offcanvas/offcanvas.component';
 export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
 
   constructor(private overlayService: Overlay, private rootInjector: Injector, @Inject(PORTAL_FACTORY) private portalFactory: (injector: Injector) => ComponentPortal<any>) {
-    this.show$
+    this.state$
       .pipe(takeUntil(this.destroyed$))
-      .subscribe((show) => {
+      .subscribe((state) => {
         if (this.component) {
-          this.showChange.emit(show);
-          this.component.instance.show$.next(show);
+          this.stateChange.emit(state);
+          this.component.instance.state$.next(state);
         }
       });
 
@@ -55,7 +56,7 @@ export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
   content!: TemplateRef<any>;
   component!: ComponentRef<BsOffcanvasComponent>;
   viewInited$ = new BehaviorSubject<boolean>(false);
-  show$ = new BehaviorSubject<boolean>(false);
+  state$ = new BehaviorSubject<BsViewState>('closed');
   size$ = new BehaviorSubject<number | null>(null);
   position$ = new BehaviorSubject<OffcanvasPosition>('bottom');
   hasBackdrop$ = new BehaviorSubject<boolean>(false);
@@ -94,13 +95,13 @@ export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
     this.destroyed$.next(true);
   }
 
-  //#region Show
-  @Output() public showChange = new EventEmitter<boolean>();
-  @Input() public set show(value: boolean) {
-    this.show$.next(value);
+  //#region State
+  @Output() public stateChange = new EventEmitter<BsViewState>();
+  @Input() public set state(value: BsViewState) {
+    this.state$.next(value);
   }
-  public get show() {
-    return this.show$.value;
+  public get state() {
+    return this.state$.value;
   }
   //#endregion
 

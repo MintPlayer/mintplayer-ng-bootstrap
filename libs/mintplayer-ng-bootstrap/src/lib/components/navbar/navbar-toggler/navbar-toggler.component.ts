@@ -1,10 +1,5 @@
-import {
-  Component,
-  EventEmitter,
-  HostListener,
-  Input,
-  Output,
-} from '@angular/core';
+import { Component, EventEmitter, HostListener, Input, Output } from '@angular/core';
+import { BsViewState } from '../../../types/view-state.type';
 
 @Component({
   selector: 'bs-navbar-toggler',
@@ -13,12 +8,12 @@ import {
 })
 export class BsNavbarTogglerComponent {
   //#region State
-  _state: 'open' | 'closed' = 'closed';
-  @Output() public stateChange = new EventEmitter<'open' | 'closed'>();
+  _state: BsViewState = 'closed';
+  @Output() public stateChange = new EventEmitter<BsViewState>();
   public get state() {
     return this._state;
   }
-  @Input() public set state(value: 'open' | 'closed') {
+  @Input() public set state(value: BsViewState) {
     this._state = value;
     this.stateChange.emit(this._state);
   }

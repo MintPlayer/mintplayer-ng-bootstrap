@@ -3,6 +3,7 @@ import { BehaviorSubject, combineLatest, delayWhen, interval, map, Observable, o
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { OffcanvasPosition } from '../../types/position';
 import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
+import { BsViewState } from '../../../../types/view-state.type';
 
 @Component({
   selector: 'bs-offcanvas-holder',
@@ -15,7 +16,7 @@ export class BsOffcanvasComponent implements OnDestroy {
   constructor(@Inject(OFFCANVAS_CONTENT) contentTemplate: TemplateRef<any>) {
     this.contentTemplate = contentTemplate;
 
-    this.visibility$ = this.show$
+    this.visibility$ = this.state$
       .pipe(delayWhen((val, i) => val ? of(0) : interval(300)))
       .pipe(map((val) => val ? 'visible' : 'hidden'));
 
@@ -45,8 +46,11 @@ export class BsOffcanvasComponent implements OnDestroy {
         }
       }));
 
-    this.showBackdrop$ = combineLatest([this.hasBackdrop$, this.show$])
-      .pipe(map(([hasBackdrop, show]) => hasBackdrop && show));
+    this.showBackdrop$ = combineLatest([this.hasBackdrop$, this.state$])
+      .pipe(map(([hasBackdrop, state]) => hasBackdrop && (state === 'open')));
+
+    this.show$ = this.state$
+      .pipe(map((state) => state === 'open'));
   }
 
   contentTemplate: TemplateRef<any>;
@@ -58,6 +62,7 @@ export class BsOffcanvasComponent implements OnDestroy {
   width$: Observable<number | null>;
   height$: Observable<number | null>;
   hasBackdrop$ = new BehaviorSubject<boolean>(false);
+  show$: Observable<boolean>;
   showBackdrop$: Observable<boolean>;
 
   //#region Position
@@ -80,14 +85,14 @@ export class BsOffcanvasComponent implements OnDestroy {
   }
   //#endregion
 
-  //#region Show
-  show$ = new BehaviorSubject<boolean>(false);
-  @Output() public showChange = new EventEmitter<boolean>();
-  @Input() public set show(value: boolean) {
-    this.show$.next(value);
+  //#region State
+  state$ = new BehaviorSubject<BsViewState>('closed');
+  @Output() public stateChange = new EventEmitter<boolean>();
+  @Input() public set state(value: BsViewState) {
+    this.state$.next(value);
   }
-  public get show() {
-    return this.show$.value;
+  public get state() {
+    return this.state$.value;
   }
   //#endregion
 

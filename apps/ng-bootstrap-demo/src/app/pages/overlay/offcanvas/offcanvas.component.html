@@ -6,12 +6,12 @@
             <span class="mx-5">Show offcanvas</span>
             <button class="btn btn-primary" (click)="showOffcanvas('top')">Top</button>
             <button class="btn btn-primary" (click)="showOffcanvas('bottom')">Bottom</button>
-            <button class="btn btn-primary" (click)="isSidebarVisible = true">Left</button>
+            <button class="btn btn-primary" (click)="sidebarState = 'open'">Left</button>
             <button class="btn btn-primary" (click)="showOffcanvas('end')">Right</button>
             <br>
-            <button class="btn btn-primary" (click)="isOffcanvasVisible = false">Hide offcanvas</button>
+            <button class="btn btn-primary" (click)="offcanvasState = 'closed'">Hide offcanvas</button>
             <ng-container *ngIf="(position$ | async) as position">
-                <bs-offcanvas [(show)]="isOffcanvasVisible" [position]="position" [hasBackdrop]="true" (backdropClick)="isOffcanvasVisible = false">
+                <bs-offcanvas [(state)]="offcanvasState" [position]="position" [hasBackdrop]="true" (backdropClick)="offcanvasState = 'closed'">
                     <div *bsOffcanvasContent>
                         <bs-offcanvas-header>
                             <h5 class="offcanvas-title" id="offcanvasExampleLabel">Offcanvas</h5>
@@ -36,7 +36,7 @@
                     </div>
                 </bs-offcanvas>
             </ng-container>
-            <bs-offcanvas [(show)]="isSidebarVisible" [position]="'start'" [hasBackdrop]="true" (backdropClick)="isSidebarVisible = false">
+            <bs-offcanvas [(state)]="sidebarState" [position]="'start'" [hasBackdrop]="true" (backdropClick)="sidebarState = 'closed'">
                 <div *bsOffcanvasContent>
                     <bs-offcanvas-body [noPadding]="true">
                         <bs-accordion class="d-block">
