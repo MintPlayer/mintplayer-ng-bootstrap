@@ -1,8 +1,9 @@
 import { Overlay } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { AfterViewInit, Component, ComponentRef, ElementRef, EventEmitter, Injector, Input, OnDestroy, Output, StaticProvider, TemplateRef, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ComponentRef, ElementRef, EventEmitter, Inject, Injector, Input, OnDestroy, Output, StaticProvider, TemplateRef, ViewChild } from '@angular/core';
 import { BehaviorSubject, combineLatest, filter, Subject, takeUntil } from 'rxjs';
 import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
+import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
 import { OffcanvasPosition } from '../../types/position';
 import { BsOffcanvasComponent } from '../offcanvas/offcanvas.component';
 
@@ -13,7 +14,7 @@ import { BsOffcanvasComponent } from '../offcanvas/offcanvas.component';
 })
 export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
 
-  constructor(private overlayService: Overlay, private rootInjector: Injector) {
+  constructor(private overlayService: Overlay, private rootInjector: Injector, @Inject(PORTAL_FACTORY) private portalFactory: (injector: Injector) => ComponentPortal<any>) {
     this.show$
       .pipe(takeUntil(this.destroyed$))
       .subscribe((show) => {
@@ -69,7 +70,8 @@ export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
       ],
       parent: this.rootInjector,
     });
-    const portal = new ComponentPortal(BsOffcanvasComponent, null, injector);
+    // const portal = new ComponentPortal(BsOffcanvasComponent, null, injector);
+    const portal = this.portalFactory(injector);
     const overlayRef = this.overlayService.create({
       scrollStrategy: this.overlayService.scrollStrategies.block(),
       positionStrategy: this.overlayService.position().global()

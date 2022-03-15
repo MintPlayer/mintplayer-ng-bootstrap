@@ -1,11 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, Directive, Inject, TemplateRef } from '@angular/core';
+import { Component, Directive, EventEmitter, Inject, Injector, Output, TemplateRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { OverlayModule } from '@angular/cdk/overlay';
 
 import { BsOffcanvasHostComponent } from './offcanvas-host.component';
 import { BsOffcanvasComponent } from '../offcanvas/offcanvas.component';
 import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
+import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
+import { ComponentPortal } from '@angular/cdk/portal';
 
 describe('BsOffcanvasHostComponent', () => {
   let component: BsOffcanvasTestComponent;
@@ -26,7 +28,13 @@ describe('BsOffcanvasHostComponent', () => {
 
         // Testbench
         BsOffcanvasTestComponent,
-      ]
+      ],
+      providers: [{
+        provide: PORTAL_FACTORY,
+        useValue: (injector: Injector) => {
+          return new ComponentPortal(BsOffcanvasMockComponent, null, injector);
+        }
+      }]
     })
     .compileComponents();
   });
@@ -86,6 +94,7 @@ class BsOffcanvasMockComponent {
   }
 
   contentTemplate: TemplateRef<any>;
+  @Output() backdropClick = new EventEmitter<MouseEvent>();
 }
 
 @Component({
