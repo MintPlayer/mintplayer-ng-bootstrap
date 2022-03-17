@@ -1,4 +1,6 @@
 # @mintplayer/ng-bootstrap
+# Demo
+A complete demo application with all components is showcased [here](https://bootstrap.mintplayer.com)
 ## Important notes
 ### 30/01/2022
 Since the last version of NX, the consuming application receives the following error on build:
