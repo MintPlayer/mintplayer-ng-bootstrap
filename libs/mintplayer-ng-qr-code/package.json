@@ -1,6 +1,11 @@
 {
   "name": "@mintplayer/ng-qr-code",
+  "private": false,
   "version": "13.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MintPlayer/mintplayer-ng-bootstrap"
+  },
   "peerDependencies": {
     "@angular/common": "^13.2.0",
     "@angular/core": "^13.2.0",
