@@ -24,7 +24,8 @@
       ],
       "@mintplayer/ng-focus-on-load": [
         "libs/mintplayer-ng-focus-on-load/src/index.ts"
-      ]
+      ],
+      "@mintplayer/ng-qr-code": ["libs/mintplayer-ng-qr-code/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

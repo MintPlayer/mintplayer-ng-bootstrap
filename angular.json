@@ -5,6 +5,7 @@
     "mintplayer-ng-bootstrap": "libs/mintplayer-ng-bootstrap",
     "mintplayer-ng-click-outside": "libs/mintplayer-ng-click-outside",
     "mintplayer-ng-focus-on-load": "libs/mintplayer-ng-focus-on-load",
+    "mintplayer-ng-qr-code": "libs/mintplayer-ng-qr-code",
     "ng-bootstrap-demo": "apps/ng-bootstrap-demo",
     "ng-bootstrap-demo-e2e": "apps/ng-bootstrap-demo-e2e"
   }

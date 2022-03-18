@@ -1,0 +1,42 @@
+{
+  "projectType": "library",
+  "root": "libs/mintplayer-ng-qr-code",
+  "sourceRoot": "libs/mintplayer-ng-qr-code/src",
+  "prefix": "mintplayer-ng-bootstrap",
+  "targets": {
+    "build": {
+      "executor": "@nrwl/angular:package",
+      "outputs": ["dist/libs/mintplayer-ng-qr-code"],
+      "options": {
+        "project": "libs/mintplayer-ng-qr-code/ng-package.json"
+      },
+      "configurations": {
+        "production": {
+          "tsConfig": "libs/mintplayer-ng-qr-code/tsconfig.lib.prod.json"
+        },
+        "development": {
+          "tsConfig": "libs/mintplayer-ng-qr-code/tsconfig.lib.json"
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "test": {
+      "executor": "@nrwl/jest:jest",
+      "outputs": ["coverage/libs/mintplayer-ng-qr-code"],
+      "options": {
+        "jestConfig": "libs/mintplayer-ng-qr-code/jest.config.js",
+        "passWithNoTests": true
+      }
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "options": {
+        "lintFilePatterns": [
+          "libs/mintplayer-ng-qr-code/src/**/*.ts",
+          "libs/mintplayer-ng-qr-code/src/**/*.html"
+        ]
+      }
+    }
+  },
+  "tags": []
+}
