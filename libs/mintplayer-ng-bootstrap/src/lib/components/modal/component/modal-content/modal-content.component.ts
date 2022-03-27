@@ -1,10 +1,9 @@
 import { AnimationEvent } from '@angular/animations';
-import { Component, ContentChild, EventEmitter, HostListener, Inject, TemplateRef } from '@angular/core';
+import { Component, EventEmitter, HostListener, Inject, TemplateRef } from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { filter, take } from 'rxjs';
 import { ModalAnimationMeta } from '../../interfaces';
 import { MODAL_CONTENT } from '../../providers/modal-content.provider';
-import { BsModalComponent } from '../../component/modal/modal.component';
 
 @Component({
   selector: 'bs-modal-content',
