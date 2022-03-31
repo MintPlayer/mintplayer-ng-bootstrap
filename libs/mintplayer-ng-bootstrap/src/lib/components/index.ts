@@ -4,6 +4,7 @@ export * from './calendar';
 export * from './card';
 export * from './carousel';
 export * from './code-snippet';
+export * from './color-picker';
 export * from './context-menu';
 export * from './copy';
 export * from './datatable';
