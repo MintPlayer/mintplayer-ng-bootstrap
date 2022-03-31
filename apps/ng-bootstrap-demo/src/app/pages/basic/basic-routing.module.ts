@@ -22,7 +22,8 @@ const routes: Routes = [
   { path: 'pagination', loadChildren: () => import('./pagination/pagination.module').then(m => m.PaginationModule) },
   { path: 'table', loadChildren: () => import('./table/table.module').then(m => m.TableModule) },
   { path: 'button-type', loadChildren: () => import('./button-type/button-type.module').then(m => m.ButtonTypeModule) },
-  { path: 'containers', loadChildren: () => import('./containers/containers.module').then(m => m.ContainersModule) },
+  { path: 'containers', loadChildren: () => import('./containers/containers.module').then(m => m.ContainersModule) },,
+  { path: 'color-picker', loadChildren: () => import('./color-picker/color-picker.module').then(m => m.ColorPickerModule) }
 ];
 
 @NgModule({
