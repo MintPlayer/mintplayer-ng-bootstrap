@@ -21,6 +21,7 @@ export class FocusOnLoadDirective implements AfterViewInit {
 
   ngAfterViewInit() {
     setTimeout(() => {
+      console.log('focus');
       this.inputBox.focus();
     }, 10);
   }
