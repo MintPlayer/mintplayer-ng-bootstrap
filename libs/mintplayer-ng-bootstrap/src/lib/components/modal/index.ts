@@ -1,4 +1,3 @@
-export * from './component';
+export * from './components';
 export * from './directives';
 export * from './modal.module';
-export * from './service/modal.service';

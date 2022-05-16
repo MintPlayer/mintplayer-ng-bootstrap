@@ -2,35 +2,35 @@
     <div class="form-group row mb-3">
         <div class="col-md-6 col-form-label" [bsFor]="txtFirstName">First name</div>
         <div class="col-md-6">
-            <input type="text" #txtFirstName class="form-control">    
+            <input type="text" #txtFirstName class="form-control">
         </div>
     </div>
     <div class="form-group row mb-3">
         <div class="col-md-6 col-form-label" [bsFor]="txtLastName">Last name</div>
         <div class="col-md-6">
-            <input type="text" #txtLastName class="form-control">    
+            <input type="text" #txtLastName class="form-control">
         </div>
     </div>
     <div class="form-group row mb-3">
         <div class="col-md-6 col-form-label" [bsFor]="txtBirthday">Birthday</div>
         <div class="col-md-6">
-            <input type="date" #txtBirthday class="form-control">    
+            <input type="date" #txtBirthday class="form-control">
         </div>
     </div>
     <div class="form-group row mb-3">
         <div class="col-md-6 col-form-label">Address</div>
         <div class="col-md-6 text-center">
-            <button (click)="editAddress(modalTemplate)" class="btn btn-primary">Specify address</button>
+            <button (click)="isOpen = true" class="btn btn-primary">Specify address</button>
         </div>
     </div>
 </div>
-<ng-template #modalTemplate let-modal>
-    <bs-modal cdkTrapFocus>
-        <ng-container *bsModalHeader>
+<bs-modal [(isOpen)]="isOpen">
+    <div *bsModal cdkTrapFocus>
+        <div bsModalHeader>
             <h5 class="modal-title">Specify address</h5>
-            <button class="btn-close" (click)="hideModal(modal)"></button>
-        </ng-container>
-        <div *bsModalBody class="text-nowrap p-2 d-flex flex-row align-items-center justify-content-between">
+            <button class="btn-close" (click)="isOpen = false"></button>
+        </div>
+        <div bsModalBody class="text-nowrap p-2 d-flex flex-row align-items-center justify-content-between">
             <div class="container">
                 <div class="form-group row mb-3">
                     <div class="col-md-6 col-form-label" [bsFor]="txtStreet">Street</div>
@@ -58,8 +58,8 @@
                 </div>
             </div>
         </div>
-        <div *bsModalFooter>
-            <button type="button" (click)="hideModal(modal)" class="btn btn-default" aria-label="Close">Close</button>
+        <div bsModalFooter>
+            <button type="button" bsModalClose class="btn btn-default" aria-label="Close">Close</button>
         </div>
-    </bs-modal>
-</ng-template>
+    </div>
+</bs-modal>

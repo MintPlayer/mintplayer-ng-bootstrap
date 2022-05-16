@@ -1,19 +1,23 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { OverlayModule } from '@angular/cdk/overlay';
+import { BsModalComponent } from './components/modal/modal.component';
+import { BsModalHostComponent } from './components/modal-host/modal-host.component';
 import { BsModalHeaderDirective } from './directives/modal-header/modal-header.directive';
 import { BsModalBodyDirective } from './directives/modal-body/modal-body.directive';
 import { BsModalFooterDirective } from './directives/modal-footer/modal-footer.directive';
-import { BsModalContentComponent } from './component/modal-content/modal-content.component';
-import { BsModalComponent } from '../modal/component/modal/modal.component';
+import { BsModalDirective } from './directives/modal/modal.directive';
+import { BsModalCloseDirective } from './directives/modal-close/modal-close.directive';
 
 @NgModule({
   declarations: [
     BsModalHeaderDirective,
     BsModalBodyDirective,
     BsModalFooterDirective,
+    BsModalDirective,
+    BsModalCloseDirective,
     BsModalComponent,
-    BsModalContentComponent
+    BsModalHostComponent
   ],
   imports: [
     CommonModule,
@@ -23,7 +27,10 @@ import { BsModalComponent } from '../modal/component/modal/modal.component';
     BsModalHeaderDirective,
     BsModalBodyDirective,
     BsModalFooterDirective,
-    BsModalComponent
+    BsModalDirective,
+    BsModalCloseDirective,
+    BsModalComponent,
+    BsModalHostComponent
   ]
 })
 export class BsModalModule { }

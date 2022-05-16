@@ -3,23 +3,26 @@
 <div class="container text-center">
     <div class="row">
         <div class="col-md-12 text-center">
-            <button class="btn btn-primary" (click)="showModal(modalTemplate)">Show modal</button>
-            <ng-template #modalTemplate let-modal>
-                <bs-modal>
-                    <div *bsModalHeader>
+            <button class="btn btn-primary" (click)="isOpen = true">Show modal</button>
+            <bs-modal [(isOpen)]="isOpen">
+                <div *bsModal cdkTrapFocus>
+                    <div bsModalHeader>
                         <h5 class="modal-title">Modal title</h5>
                     </div>
-                    <div *bsModalBody class="text-nowrap p-2 d-flex flex-row align-items-center justify-content-between">
+                    <div bsModalBody class="text-nowrap p-2 d-flex flex-row align-items-center justify-content-between">
                         <div class="container">
                             <div class="form-group row">
                                 <div class="col-md-12 col-form-label">Search for tags</div>
                             </div>
                             <div class="form-group row">
                                 <div class="col-md-12">
-                                    <bs-select2 (provideSuggestions)="onProvideTagSuggestions($event)" [suggestions]="tagSuggestions" [selectedItems]="selectedTags" autofocus>
+                                    <bs-select2 (provideSuggestions)="onProvideTagSuggestions($event)"
+                                        [suggestions]="tagSuggestions" [selectedItems]="selectedTags" autofocus>
                                         <ng-template bsItemTemplate let-item="item" let-select2="select2">
-                                            <span class="select2-item" [style.background]="item.category.color" [style.color]="item.category.color | bsFontColor">
-                                                <span [style.color]="item.category.color | bsFontColor" (click)="select2.onRemoveItem(item,$event)">×</span>
+                                            <span class="select2-item" [style.background]="item.category.color"
+                                                [style.color]="item.category.color | bsFontColor">
+                                                <span [style.color]="item.category.color | bsFontColor"
+                                                    (click)="select2.onRemoveItem(item,$event)">×</span>
                                                 {{ item.text }}
                                             </span>
                                         </ng-template>
@@ -28,11 +31,11 @@
                             </div>
                         </div>
                     </div>
-                    <div *bsModalFooter>
-                        <button type="button" (click)="hideModal(modal)" class="btn btn-default" aria-label="Close">Close</button>
+                    <div bsModalFooter>
+                        <button type="button" bsModalClose class="btn btn-default" aria-label="Close">Close</button>
                     </div>
-                </bs-modal>
-            </ng-template>
+                </div>
+            </bs-modal>
         </div>
     </div>
 </div>
