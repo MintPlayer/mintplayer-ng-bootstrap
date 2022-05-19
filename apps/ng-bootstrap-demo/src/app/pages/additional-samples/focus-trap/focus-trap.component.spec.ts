@@ -1,19 +1,32 @@
-import { Directive, Injectable, Input } from '@angular/core';
+import { Component, Directive, EventEmitter, Injectable, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsModalService } from '@mintplayer/ng-bootstrap';
 import { FocusTrapComponent } from './focus-trap.component';
-
-@Injectable({
-  providedIn: 'root',
-})
-class BsModalMockService {
-}
 
 @Directive({
   selector: '[bsFor]'
 })
 class BsForMockDirective {
   @Input() bsFor!: any;
+}
+
+@Component({
+  selector: 'bs-modal',
+  template: 'modal'
+})
+class BsModalHostMockComponent {
+  
+  //#region isOpen
+  private _isOpen = false;
+  get isOpen() {
+    return this._isOpen;
+  }
+  @Input() set isOpen(value: boolean) {
+    this._isOpen = value;
+    this.isOpenChange.emit(value);
+  }
+  @Output() isOpenChange = new EventEmitter<boolean>();
+  //#endregion
+
 }
 
 describe('FocusTrapComponent', () => {
@@ -27,10 +40,8 @@ describe('FocusTrapComponent', () => {
         FocusTrapComponent,
 
         // Mock dependencies
-        BsForMockDirective
-      ],
-      providers: [
-        { provide: BsModalService, useClass: BsModalMockService }
+        BsForMockDirective,
+        BsModalHostMockComponent
       ]
     })
     .compileComponents();

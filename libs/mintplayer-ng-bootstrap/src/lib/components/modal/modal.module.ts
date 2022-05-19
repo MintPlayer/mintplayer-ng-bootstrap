@@ -1,4 +1,4 @@
-import { NgModule } from '@angular/core';
+import { Injector, NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { OverlayModule } from '@angular/cdk/overlay';
 import { BsModalComponent } from './components/modal/modal.component';
@@ -8,6 +8,8 @@ import { BsModalBodyDirective } from './directives/modal-body/modal-body.directi
 import { BsModalFooterDirective } from './directives/modal-footer/modal-footer.directive';
 import { BsModalDirective } from './directives/modal/modal.directive';
 import { BsModalCloseDirective } from './directives/modal-close/modal-close.directive';
+import { PORTAL_FACTORY } from './providers/portal-factory.provider';
+import { ComponentPortal } from '@angular/cdk/portal';
 
 @NgModule({
   declarations: [
@@ -31,6 +33,12 @@ import { BsModalCloseDirective } from './directives/modal-close/modal-close.dire
     BsModalCloseDirective,
     BsModalComponent,
     BsModalHostComponent
-  ]
+  ],
+  providers: [{
+    provide: PORTAL_FACTORY,
+    useValue: (injector: Injector) => {
+      return new ComponentPortal(BsModalComponent, null, injector);
+    }
+  }]
 })
 export class BsModalModule { }

@@ -1,7 +1,8 @@
 import { Overlay } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { AfterViewInit, Component, ComponentFactoryResolver, ComponentRef, EventEmitter, HostListener, Injector, Input, Output, TemplateRef } from '@angular/core';
+import { AfterViewInit, Component, ComponentFactoryResolver, ComponentRef, EventEmitter, HostListener, Inject, Injector, Input, Output, TemplateRef } from '@angular/core';
 import { MODAL_CONTENT } from '../../providers/modal-content.provider';
+import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
 import { BsModalComponent } from '../modal/modal.component';
 
 @Component({
@@ -11,7 +12,7 @@ import { BsModalComponent } from '../modal/modal.component';
 })
 export class BsModalHostComponent implements AfterViewInit {
 
-  constructor(private overlay: Overlay, private parentInjector: Injector, private componentFactoryResolver: ComponentFactoryResolver) { }
+  constructor(private overlay: Overlay, private parentInjector: Injector, @Inject(PORTAL_FACTORY) private portalFactory: (injector: Injector) => ComponentPortal<any>, private componentFactoryResolver: ComponentFactoryResolver) { }
 
   componentInstance?: ComponentRef<BsModalComponent>;
   template!: TemplateRef<any>;
@@ -39,7 +40,8 @@ export class BsModalHostComponent implements AfterViewInit {
       ],
       parent: this.parentInjector
     });
-    const portal = new ComponentPortal(BsModalComponent, null, injector, this.componentFactoryResolver);
+    // const portal = new ComponentPortal(BsModalComponent, null, injector, this.componentFactoryResolver);
+    const portal = this.portalFactory(injector);
     const overlayRef = this.overlay.create({
       scrollStrategy: this.overlay.scrollStrategies.reposition(),
       positionStrategy: this.overlay.position()
