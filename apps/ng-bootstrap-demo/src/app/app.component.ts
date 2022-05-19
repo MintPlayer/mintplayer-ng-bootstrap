@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
+import { NgBootstrapVersion } from '@mintplayer/ng-bootstrap';
 
 @Component({
   selector: 'mintplayer-ng-bootstrap-root',
@@ -8,4 +9,5 @@ import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
   animations: [SlideUpDownAnimation]
 })
 export class AppComponent {
+  versionInfo = NgBootstrapVersion;
 }
