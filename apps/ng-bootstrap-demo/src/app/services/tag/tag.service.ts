@@ -17,7 +17,7 @@ export class TagService {
   }
 
   public suggestTags(search: string, includeRelations: boolean = false) {
-    return this.httpClient.post<Tag[]>(`${this.baseUrl}/api/v1/Tag/suggest`, {
+    return this.httpClient.post<Tag[]>(`${this.baseUrl}/web/v3/Tag/suggest`, {
       searchTerm: search
     }, {
       headers: {

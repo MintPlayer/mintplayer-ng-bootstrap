@@ -1,4 +1,4 @@
-<div class="modal d-block" [@fadeInOut] [@enterLeave]="'top'" *ngIf="isOpen">
+<div class="modal d-block" [@fadeInOut] [@enterFromTop] *ngIf="isOpen">
     <div class="modal-dialog">
         <div class="modal-content">
             <ng-container *ngTemplateOutlet="template"></ng-container>

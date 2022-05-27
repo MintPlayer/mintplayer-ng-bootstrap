@@ -1,12 +1,12 @@
 import { Component, Inject, TemplateRef } from '@angular/core';
-import { EnterLeaveAnimation, FadeInOutAnimation } from '@mintplayer/ng-animations';
+import { EnterFromTopAnimation, FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { MODAL_CONTENT } from '../../providers/modal-content.provider';
 
 @Component({
   selector: 'bs-modal-content',
   templateUrl: './modal.component.html',
   styleUrls: ['./modal.component.scss'],
-  animations: [FadeInOutAnimation, EnterLeaveAnimation]
+  animations: [FadeInOutAnimation, EnterFromTopAnimation]
 })
 export class BsModalComponent {
 

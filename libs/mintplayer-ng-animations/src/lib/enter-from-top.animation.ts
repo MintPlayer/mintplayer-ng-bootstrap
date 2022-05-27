@@ -1,7 +1,7 @@
 import { trigger, style, transition, animate } from '@angular/animations';
 
-export const EnterLeaveAnimation =
-  trigger('enterLeave', [
+export const EnterFromTopAnimation =
+  trigger('enterFromTop', [
     transition(
       ':enter', [
         style({ top: '-50%' }),
