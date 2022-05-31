@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
+declare const require: any;
 
 export * from './lib/components';
 export * from './lib/directives';
