@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
-import { ngBootstrapJson } from '@mintplayer/ng-bootstrap';
+import ngBootstrapJson from '@mintplayer/ng-bootstrap/package.json';
 
 @Component({
   selector: 'demo-bootstrap-root',

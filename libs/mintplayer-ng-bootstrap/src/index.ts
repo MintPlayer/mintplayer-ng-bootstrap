@@ -4,7 +4,3 @@ export * from './lib/enums';
 export * from './lib/interfaces';
 export * from './lib/pipes';
 export * from './lib/types';
-
-
-import packageJson from '../package.json';
-export const ngBootstrapJson = packageJson;
