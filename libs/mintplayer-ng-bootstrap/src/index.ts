@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
-declare const require: any;
-
 export * from './lib/components';
 export * from './lib/directives';
 export * from './lib/enums';
@@ -8,4 +5,6 @@ export * from './lib/interfaces';
 export * from './lib/pipes';
 export * from './lib/types';
 
-export const NgBootstrapVersion: string = require('../package.json').version;
+
+import packageJson from '../package.json';
+export const ngBootstrapJson = packageJson;
