@@ -3,6 +3,8 @@ import { NgModule } from '@angular/core';
 import { CommonModule, JsonPipe } from '@angular/common';
 import { BrowserModule } from '@angular/platform-browser';
 import { BsNavbarModule } from '@mintplayer/ng-bootstrap';
+import ngBootstrapJson from '@mintplayer/ng-bootstrap/package.json';
+
 import { HighlightOptions, HIGHLIGHT_OPTIONS } from 'ngx-highlightjs';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -20,11 +22,21 @@ import { AppRoutingModule } from './app-routing.module';
     AppRoutingModule
   ],
   providers: [
-    { provide: HIGHLIGHT_OPTIONS, useValue: <HighlightOptions>{
-      fullLibraryLoader: () => import('highlight.js'),
-      themePath: 'assets/styles/solarized-dark.css'
-    } },
-    { provide: 'GIT_REPO', useValue: 'https://github.com/MintPlayer/mintplayer-ng-bootstrap/tree/master/apps/ng-bootstrap-demo/src/app/' },
+    {
+      provide: HIGHLIGHT_OPTIONS,
+      useValue: <HighlightOptions>{
+        fullLibraryLoader: () => import('highlight.js'),
+        themePath: 'assets/styles/solarized-dark.css'
+      }
+    },
+    {
+      provide: 'GIT_REPO',
+      useValue: 'https://github.com/MintPlayer/mintplayer-ng-bootstrap/tree/master/apps/ng-bootstrap-demo/src/app/'
+    },
+    {
+      provide: 'BOOTSTRAP_VERSION',
+      useValue: ngBootstrapJson.version
+    },
     JsonPipe
   ],
   bootstrap: [AppComponent],

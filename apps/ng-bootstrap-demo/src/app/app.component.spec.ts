@@ -41,6 +41,7 @@ describe('AppComponent', () => {
       ],
       providers: [
         { provide: JsonPipe, useClass: JsonPipe },
+        { provide: 'BOOTSTRAP_VERSION', useValue: '0.0.0' }
       ],
     }).compileComponents();
   });

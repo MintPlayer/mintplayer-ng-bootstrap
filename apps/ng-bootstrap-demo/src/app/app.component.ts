@@ -1,6 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, Inject } from '@angular/core';
 import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
-import ngBootstrapJson from '@mintplayer/ng-bootstrap/package.json';
 
 @Component({
   selector: 'demo-bootstrap-root',
@@ -9,5 +8,9 @@ import ngBootstrapJson from '@mintplayer/ng-bootstrap/package.json';
   animations: [SlideUpDownAnimation]
 })
 export class AppComponent {
-  versionInfo = ngBootstrapJson.version;
+  constructor(@Inject('BOOTSTRAP_VERSION') bootstrapVersion: string) {
+    this.versionInfo = bootstrapVersion;
+  }
+  
+  versionInfo = '';
 }
