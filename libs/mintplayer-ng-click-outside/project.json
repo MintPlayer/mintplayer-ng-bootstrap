@@ -1,6 +1,6 @@
 {
+  "$schema": "..\\..\\node_modules\\nx\\schemas\\project-schema.json",
   "projectType": "library",
-  "root": "libs/mintplayer-ng-click-outside",
   "sourceRoot": "libs/mintplayer-ng-click-outside/src",
   "prefix": "mintplayer-ng-bootstrap",
   "targets": {
@@ -8,6 +8,7 @@
       "executor": "@nrwl/angular:package",
       "outputs": ["dist/libs/mintplayer-ng-click-outside"],
       "options": {
+        "tsConfig": "libs/mintplayer-ng-click-outside/tsconfig.lib.json",
         "project": "libs/mintplayer-ng-click-outside/ng-package.json"
       },
       "configurations": {
@@ -24,7 +25,8 @@
       "executor": "@nrwl/jest:jest",
       "outputs": ["coverage/libs/mintplayer-ng-click-outside"],
       "options": {
-        "jestConfig": "libs/mintplayer-ng-click-outside/jest.config.js",
+        "tsConfig": "libs/mintplayer-ng-click-outside/tsconfig.spec.json",
+        "jestConfig": "libs/mintplayer-ng-click-outside/jest.config.ts",
         "passWithNoTests": true
       }
     },

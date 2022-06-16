@@ -1,11 +1,11 @@
 {
+  "$schema": "..\\..\\node_modules\\nx\\schemas\\project-schema.json",
   "projectType": "application",
   "generators": {
     "@schematics/angular:component": {
       "style": "scss"
     }
   },
-  "root": "apps/ng-bootstrap-demo",
   "sourceRoot": "apps/ng-bootstrap-demo/src",
   "prefix": "demo",
   "targets": {
@@ -91,7 +91,7 @@
       "executor": "@nrwl/jest:jest",
       "outputs": ["coverage/apps/ng-bootstrap-demo"],
       "options": {
-        "jestConfig": "apps/ng-bootstrap-demo/jest.config.js",
+        "jestConfig": "apps/ng-bootstrap-demo/jest.config.ts",
         "passWithNoTests": true
       }
     }

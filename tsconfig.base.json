@@ -15,11 +15,19 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@mintplayer/ng-animations": ["libs/mintplayer-ng-animations/src/index.ts"],
+      "@mintplayer/ng-animations": [
+        "libs/mintplayer-ng-animations/src/index.ts"
+      ],
       "@mintplayer/ng-bootstrap": ["libs/mintplayer-ng-bootstrap/src/index.ts"],
-      "@mintplayer/ng-bootstrap/package.json": ["libs/mintplayer-ng-bootstrap/package.ts"],
-      "@mintplayer/ng-click-outside": ["libs/mintplayer-ng-click-outside/src/index.ts"],
-      "@mintplayer/ng-focus-on-load": ["libs/mintplayer-ng-focus-on-load/src/index.ts"],
+      "@mintplayer/ng-bootstrap/package.json": [
+        "libs/mintplayer-ng-bootstrap/package.ts"
+      ],
+      "@mintplayer/ng-click-outside": [
+        "libs/mintplayer-ng-click-outside/src/index.ts"
+      ],
+      "@mintplayer/ng-focus-on-load": [
+        "libs/mintplayer-ng-focus-on-load/src/index.ts"
+      ],
       "@mintplayer/ng-qr-code": ["libs/mintplayer-ng-qr-code/src/index.ts"]
     }
   },

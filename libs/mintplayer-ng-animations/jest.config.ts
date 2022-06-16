@@ -1,5 +1,6 @@
-module.exports = {
-  displayName: 'mintplayer-ng-focus-on-load',
+/* eslint-disable */
+export default {
+  displayName: 'mintplayer-ng-animations',
   preset: '../../jest.preset.js',
   setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
   globals: {
@@ -8,7 +9,7 @@ module.exports = {
       stringifyContentPathRegex: '\\.(html|svg)$',
     },
   },
-  coverageDirectory: '../../coverage/libs/mintplayer-ng-focus-on-load',
+  coverageDirectory: '../../coverage/libs/mintplayer-ng-animations',
   transform: {
     '^.+\\.(ts|mjs|js|html)$': 'jest-preset-angular',
   },

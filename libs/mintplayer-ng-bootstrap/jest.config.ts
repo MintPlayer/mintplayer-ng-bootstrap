@@ -1,5 +1,6 @@
-module.exports = {
-  displayName: 'ng-bootstrap-demo',
+/* eslint-disable */
+export default {
+  displayName: 'mintplayer-ng-bootstrap',
   preset: '../../jest.preset.js',
   setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
   globals: {
@@ -8,7 +9,7 @@ module.exports = {
       stringifyContentPathRegex: '\\.(html|svg)$',
     },
   },
-  coverageDirectory: '../../coverage/apps/ng-bootstrap-demo',
+  coverageDirectory: '../../coverage/libs/mintplayer-ng-bootstrap',
   transform: {
     '^.+\\.(ts|mjs|js|html)$': 'jest-preset-angular',
   },

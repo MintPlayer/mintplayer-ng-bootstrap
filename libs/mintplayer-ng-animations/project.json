@@ -1,6 +1,6 @@
 {
+  "$schema": "..\\..\\node_modules\\nx\\schemas\\project-schema.json",
   "projectType": "library",
-  "root": "libs/mintplayer-ng-animations",
   "sourceRoot": "libs/mintplayer-ng-animations/src",
   "prefix": "mintplayer-ng-bootstrap",
   "targets": {
@@ -8,6 +8,7 @@
       "executor": "@nrwl/angular:package",
       "outputs": ["dist/libs/mintplayer-ng-animations"],
       "options": {
+        "tsConfig": "libs/mintplayer-ng-animations/tsconfig.lib.json",
         "project": "libs/mintplayer-ng-animations/ng-package.json"
       },
       "configurations": {
@@ -24,7 +25,8 @@
       "executor": "@nrwl/jest:jest",
       "outputs": ["coverage/libs/mintplayer-ng-animations"],
       "options": {
-        "jestConfig": "libs/mintplayer-ng-animations/jest.config.js",
+        "tsConfig": "libs/mintplayer-ng-animations/tsconfig.spec.json",
+        "jestConfig": "libs/mintplayer-ng-animations/jest.config.ts",
         "passWithNoTests": true
       }
     },

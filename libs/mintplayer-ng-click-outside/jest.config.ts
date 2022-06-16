@@ -1,5 +1,6 @@
-module.exports = {
-  displayName: 'mintplayer-ng-qr-code',
+/* eslint-disable */
+export default {
+  displayName: 'mintplayer-ng-click-outside',
   preset: '../../jest.preset.js',
   setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
   globals: {
@@ -8,7 +9,7 @@ module.exports = {
       stringifyContentPathRegex: '\\.(html|svg)$',
     },
   },
-  coverageDirectory: '../../coverage/libs/mintplayer-ng-qr-code',
+  coverageDirectory: '../../coverage/libs/mintplayer-ng-click-outside',
   transform: {
     '^.+\\.(ts|mjs|js|html)$': 'jest-preset-angular',
   },
