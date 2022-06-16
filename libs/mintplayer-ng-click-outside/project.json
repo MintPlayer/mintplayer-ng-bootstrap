@@ -25,7 +25,6 @@
       "executor": "@nrwl/jest:jest",
       "outputs": ["coverage/libs/mintplayer-ng-click-outside"],
       "options": {
-        "tsConfig": "libs/mintplayer-ng-click-outside/tsconfig.spec.json",
         "jestConfig": "libs/mintplayer-ng-click-outside/jest.config.ts",
         "passWithNoTests": true
       }

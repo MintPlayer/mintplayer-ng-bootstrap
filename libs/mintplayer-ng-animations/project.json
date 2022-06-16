@@ -25,7 +25,6 @@
       "executor": "@nrwl/jest:jest",
       "outputs": ["coverage/libs/mintplayer-ng-animations"],
       "options": {
-        "tsConfig": "libs/mintplayer-ng-animations/tsconfig.spec.json",
         "jestConfig": "libs/mintplayer-ng-animations/jest.config.ts",
         "passWithNoTests": true
       }

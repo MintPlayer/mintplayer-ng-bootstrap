@@ -25,7 +25,6 @@
       "executor": "@nrwl/jest:jest",
       "outputs": ["coverage/libs/mintplayer-ng-focus-on-load"],
       "options": {
-        "tsConfig": "libs/mintplayer-ng-focus-on-load/tsconfig.spec.json",
         "jestConfig": "libs/mintplayer-ng-focus-on-load/jest.config.ts",
         "passWithNoTests": true
       }
