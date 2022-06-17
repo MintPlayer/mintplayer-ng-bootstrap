@@ -9,7 +9,8 @@ const routes: Routes = [
   { path: 'floating-labels', loadChildren: () => import('./floating-labels/floating-labels.module').then(m => m.FloatingLabelsModule) },
   { path: 'focus-trap', loadChildren: () => import('./focus-trap/focus-trap.module').then(m => m.FocusTrapModule) },
   { path: 'drag-drop', loadChildren: () => import('./drag-drop/drag-drop.module').then(m => m.DragDropModule) },
-  { path: 'qr-code', loadChildren: () => import('./qr-code/qr-code.module').then(m => m.QrCodeModule) }
+  { path: 'qr-code', loadChildren: () => import('./qr-code/qr-code.module').then(m => m.QrCodeModule) },
+  { path: 'swiper', loadChildren: () => import('./swiper/swiper.module').then(m => m.SwiperModule) }
 ];
 
 @NgModule({

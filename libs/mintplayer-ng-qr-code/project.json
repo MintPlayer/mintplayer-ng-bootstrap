@@ -8,8 +8,8 @@
       "executor": "@nrwl/angular:package",
       "outputs": ["dist/libs/mintplayer-ng-qr-code"],
       "options": {
-          "tsConfig": "libs/mintplayer-ng-qr-code/tsconfig.lib.json",
-          "project": "libs/mintplayer-ng-qr-code/ng-package.json"
+        "tsConfig": "libs/mintplayer-ng-qr-code/tsconfig.lib.json",
+        "project": "libs/mintplayer-ng-qr-code/ng-package.json"
       },
       "configurations": {
         "production": {
