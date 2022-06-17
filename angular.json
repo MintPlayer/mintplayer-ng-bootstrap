@@ -10,6 +10,7 @@
     "mintplayer-ng-qr-code": "libs/mintplayer-ng-qr-code",
     "mintplayer-pagination": "libs/mintplayer-pagination",
     "mintplayer-qr-code": "libs/mintplayer-qr-code",
+    "mintplayer-ng-swiper": "libs/mintplayer-ng-swiper",
     "ng-bootstrap-demo": "apps/ng-bootstrap-demo",
     "ng-bootstrap-demo-e2e": "apps/ng-bootstrap-demo-e2e"
   }
