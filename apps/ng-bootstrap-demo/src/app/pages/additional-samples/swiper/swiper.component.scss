@@ -1,3 +1,11 @@
 .wrapper {
     overflow: hidden;
 }
+
+.carousel-inner {
+    white-space: nowrap !important;
+}
+
+.carousel-item {
+    float: none !important;
+}
