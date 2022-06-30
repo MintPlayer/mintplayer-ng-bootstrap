@@ -1,13 +1,29 @@
 <h1>Alert</h1>
-<bs-alert [type]="colors.warning">
+<h2>Static alert</h2>
+<bs-alert [type]="colors.warning" [(isVisible)]="alert1Visible">
     Cras justo odio
     <bs-alert-close></bs-alert-close>
 </bs-alert>
-<bs-alert [type]="colors.danger">
+<bs-alert [type]="colors.danger" [(isVisible)]="alert2Visible">
     Cras justo odio
     <bs-alert-close></bs-alert-close>
 </bs-alert>
-<bs-alert>
+<bs-alert [(isVisible)]="alert3Visible">
     Cras justo odio
     <bs-alert-close></bs-alert-close>
 </bs-alert>
+<button type="button" class="btn btn-primary" (click)="alert1Visible = alert2Visible = alert3Visible = true">
+    Show all alerts again
+</button>
+<h2 class="mt-4">Alerts list</h2>
+<bs-alert *ngFor="let alertItem of alertsList" [type]="colors.danger" (afterOpenedOrClosed)="alertVisibleChange(alertItem, $event)">
+    {{ alertItem.text }}
+    <bs-alert-close></bs-alert-close>
+</bs-alert>
+<form class="input-group" (submit)="addAlertItem()">
+    <input type="text" class="form-control" [(ngModel)]="newAlertItem" name="txtNewAlert" #txtNewAlert>
+    <button type="submit" class="btn btn-primary">Add</button>
+</form>
+<ul class="mt-3">
+    <li *ngFor="let alertItem of alertsList">{{ alertItem.text }}</li>
+</ul>

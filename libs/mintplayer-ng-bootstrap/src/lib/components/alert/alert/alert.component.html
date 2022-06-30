@@ -1,4 +1,4 @@
-<div class="mb-3 overflow-hidden" *ngIf="isVisible" [@fadeInOut]>
+<div class="mb-3 overflow-hidden" *ngIf="isVisible" [@fadeInOut] (@fadeInOut.done)="onAfterOpenedOrClosed(isVisible)">
     <div class="alert mb-0" [ngClass]="'alert-' + colors[type]">
         <ng-content></ng-content>
     </div>
