@@ -1,3 +1,24 @@
-<div class="wrapper d-inline-block">
-    <img src="/assets/resized/leopard.png" swipe [easeOut]="false">
+<!-- <div class="wrapper d-inline-block">
+    <img src="/assets/resized/leopard.png" swipe [easeOut]="true" [allowedDirections]="['left', 'right']">
+</div> -->
+
+<div class="carousel slide">
+    <div class="carousel-inner">
+        <div *ngFor="let image of (imageData$ | async)" class="carousel-item d-inline-block" [class.active]="true" swipe [swipeStart]="onSwipeStart" [swipeEnd]="onSwipeEnd" [correctRight]="false" [easeOut]="true" [allowedDirections]="['left', 'right']">
+            <div class="w-100">
+                <img [src]="image.url" class="w-100">
+            </div>
+        </div>
+    </div>
 </div>
+
+<!-- 
+<div class="carousel slide">
+    <div class="carousel-inner" [@carouselSlide]="currentImageCounter$ | async" *ngIf="animation === 'slide'">
+        <ng-container *ngFor="let image of images; let i = index">
+            <div class="carousel-item" [class.active]="true" *ngIf="(currentImageIndex$ | async) === i">
+                <ng-container [ngTemplateOutlet]="image.itemTemplate"></ng-container>    
+            </div>
+        </ng-container>
+    </div>
+</div> -->
