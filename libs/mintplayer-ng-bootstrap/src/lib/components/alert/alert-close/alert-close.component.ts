@@ -13,6 +13,7 @@ export class BsAlertCloseComponent {
 
   closeAlert() {
     this.alert.isVisible = false;
+    return false;
   }
   
 }
