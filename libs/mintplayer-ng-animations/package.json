@@ -1,16 +1,16 @@
 {
   "name": "@mintplayer/ng-animations",
   "private": false,
-  "version": "14.0.0",
+  "version": "14.1.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/MintPlayer/mintplayer-ng-bootstrap",
     "directory": "libs/mintplayer-ng-animations"
   },
   "peerDependencies": {
-    "@angular/common": "^14.0.0",
-    "@angular/core": "^14.0.0",
-    "@angular/animations": "^14.0.0"
+    "@angular/common": "^14.1.0",
+    "@angular/core": "^14.1.0",
+    "@angular/animations": "^14.1.0"
   },
   "dependencies": {
     "tslib": "^2.3.0"
