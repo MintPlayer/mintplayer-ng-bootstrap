@@ -9,7 +9,7 @@ import { FocusOnLoadDirective } from './focus-on-load.directive';
   selector: 'focus-on-load-test-component',
   template: `
     <div #wrapper>
-      <input type="text" autofocus #textbox>
+      <input type="text" [autofocus] #textbox>
     </div>`
 })
 class FocusOnLoadTestComponent {

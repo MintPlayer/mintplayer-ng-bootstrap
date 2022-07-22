@@ -16,7 +16,7 @@
                             </div>
                             <div class="form-group row">
                                 <div class="col-md-12">
-                                    <bs-select2 (provideSuggestions)="onProvideTagSuggestions($event)" [suggestions]="tagSuggestions" [selectedItems]="selectedTags" [autofocus]>
+                                    <bs-select2 (provideSuggestions)="onProvideTagSuggestions($event)" [suggestions]="tagSuggestions" [selectedItems]="selectedTags" [autofocus]="true">
                                         <span *bsItemTemplate="let item=item; let select2=select2" class="select2-item" [style.background]="item.category.color"
                                             [style.color]="item.category.color | bsFontColor">
                                             <span [style.color]="item.category.color | bsFontColor" (click)="select2.onRemoveItem(item,$event)">×</span>

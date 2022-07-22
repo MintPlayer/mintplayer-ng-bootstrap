@@ -9,6 +9,7 @@ export class FocusOnLoadDirective implements AfterViewInit {
   constructor(
     private viewContainer: ViewContainerRef
   ) {
+    console.log('init FocusOnLoadDirective');
     const container = (<any>this.viewContainer)['_lContainer'][0]
     if (container instanceof HTMLElement) {
       this.inputBox = <HTMLInputElement>container;
@@ -21,6 +22,10 @@ export class FocusOnLoadDirective implements AfterViewInit {
 
   private _autofocus = true;
   @Input() public set autofocus(value: any) {
+    if (value === '') {
+      // <bs-select2 ... autofocus></bs-select2>
+      value = true;
+    }
     this._autofocus = value;  
   }
 
