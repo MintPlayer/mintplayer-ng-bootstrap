@@ -1,4 +1,4 @@
-import { ViewContainerRef } from '@angular/core';
+import { Input, ViewContainerRef } from '@angular/core';
 import { Directive, AfterViewInit } from '@angular/core';
 
 @Directive({
@@ -19,9 +19,16 @@ export class FocusOnLoadDirective implements AfterViewInit {
 
   private readonly inputBox!: any;
 
+  private _autofocus = true;
+  @Input() public set autofocus(value: any) {
+    this._autofocus = value;  
+  }
+
   ngAfterViewInit() {
     setTimeout(() => {
-      this.inputBox.focus();
+      if (this._autofocus) {
+        this.inputBox.focus();
+      }
     }, 10);
   }
 }
