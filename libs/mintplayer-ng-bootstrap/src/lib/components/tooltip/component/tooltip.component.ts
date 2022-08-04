@@ -1,4 +1,4 @@
-import { Component, Inject, Input, TemplateRef } from '@angular/core';
+import { Component, HostBinding, Inject, Input, TemplateRef } from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Position } from '../../../enums/position.enum';
 import { TOOLTIP_CONTENT } from '../providers/tooltip-content.provider';
@@ -18,5 +18,6 @@ export class BsTooltipComponent {
   @Input() public position: Position = Position.bottom;
   template: TemplateRef<any>;
 
+  @HostBinding('class.position-relative') positionRelative = true;
 
 }

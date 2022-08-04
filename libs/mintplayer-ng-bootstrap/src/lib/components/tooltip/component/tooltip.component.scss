@@ -1,4 +1,12 @@
 .tooltip {
+    &.bs-tooltip-start { right: 0; }
+    &.bs-tooltip-start, &.bs-tooltip-end { transform: translateY(-50%); }
+    &.bs-tooltip-bottom {
+        transform: translateX(-50%);
+    }
+    &.bs-tooltip-top {
+        transform: translateX(-50%) translateY(-100%);
+    }
     &.bs-tooltip-bottom .tooltip-arrow, &.bs-tooltip-top .tooltip-arrow {
         left: 50%;
         transform: translateX(-50%);
