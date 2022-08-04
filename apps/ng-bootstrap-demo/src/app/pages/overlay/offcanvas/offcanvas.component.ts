@@ -21,6 +21,6 @@ export class OffcanvasComponent {
   offcanvas: BsOffcanvasComponent | null = null;
   showOffcanvas(position: OffcanvasPosition) {
     this.position$.next(position);
-    setTimeout(() => this.offcanvasState = 'open');
+    setTimeout(() => this.offcanvasState = 'open', 50);
   }
 }

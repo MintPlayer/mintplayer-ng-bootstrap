@@ -1,5 +1,6 @@
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { FormsModule } from '@angular/forms';
 import { AlertComponent } from './alert.component';
 
 enum Color {
@@ -25,6 +26,9 @@ enum Color {
 })
 class BsAlertMockComponent {
   @Input() public type: Color = Color.primary;
+
+  @Input() public isVisible = false;
+  @Output() public isVisibleChange = new EventEmitter<boolean>();
 }
 
 @Component({
@@ -50,6 +54,9 @@ describe('AlertComponent', () => {
         // Mock dependencies
         BsAlertMockComponent,
         BsAlertCloseMockComponent
+      ],
+      imports: [
+        FormsModule
       ]
     })
     .compileComponents();
