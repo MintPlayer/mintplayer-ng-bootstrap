@@ -1,0 +1,31 @@
+{
+  "name": "@mintplayer/qr-code",
+  "private": false,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Typescript implementation of node-qrcode",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MintPlayer/mintplayer-ng-bootstrap",
+    "directory": "libs/mintplayer-qr-code"
+  },
+  "main": "./src/index.ts",
+  "dependencies": {},
+  "devDependencies": {},
+  "peerDependencies": {
+    "encode-utf8": "^1.0.3",
+    "@mintplayer/dijkstra": "^1.0.0"
+  },
+  "author": {
+    "name": "Pieterjan De Clippel",
+    "url": "https://github.com/MintPlayer",
+    "email": "info@mintplayer.com"
+  },
+  "keywords": [
+    "qr",
+    "code",
+    "qrcode",
+    "canvas",
+    "typescript"
+  ]
+}

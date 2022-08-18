@@ -10,7 +10,7 @@
   "peerDependencies": {
     "@angular/common": "^14.1.0",
     "@angular/core": "^14.1.0",
-    "qrcode": "1.5.0"
+    "@mintplayer/qr-code": "^1.0.0"
   },
   "dependencies": {
     "tslib": "^2.3.0"

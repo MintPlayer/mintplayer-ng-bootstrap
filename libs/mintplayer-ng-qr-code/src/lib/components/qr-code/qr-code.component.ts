@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core';
-import { QRCodeErrorCorrectionLevel } from 'qrcode';
+import { QRCodeErrorCorrectionLevel } from '@mintplayer/qr-code';
 import { RgbaColor } from '../../types/rgba-color';
 
 @Component({

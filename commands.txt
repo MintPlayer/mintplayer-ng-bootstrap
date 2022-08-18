@@ -16,3 +16,6 @@ nx g @nrwl/angular:lib mintplayer-ng-animations --buildable --publishable --impo
 nx g @nrwl/angular:lib mintplayer-ng-bootstrap --buildable --publishable --import-path @mintplayer/ng-bootstrap
 nx g @nrwl/angular:application ng-bootstrap-demo --routing --style=scss
 code .
+
+nx generate @nrwl/js:library --name=mintplayer-qr-code --buildable --publishable --import-path @mintplayer/qr-code
+nx generate @nrwl/js:library --name=mintplayer-dijkstra --buildable --publishable --import-path @mintplayer/dijkstra

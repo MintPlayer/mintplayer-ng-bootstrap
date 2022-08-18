@@ -1,6 +1,6 @@
 import { Directive, Input, isDevMode, OnChanges, ViewContainerRef } from '@angular/core';
-import { QRCodeErrorCorrectionLevel } from 'qrcode';
-import * as qrCodeService from 'qrcode';
+import { QRCodeErrorCorrectionLevel } from '@mintplayer/qr-code';
+import * as qrCodeService from '@mintplayer/qr-code';
 import { RgbaColor } from '../../types/rgba-color';
 
 @Directive({

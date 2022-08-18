@@ -1,0 +1,25 @@
+{
+  "name": "@mintplayer/encode-utf8",
+  "private": false,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "encode-utf8 TypeScript implementation",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MintPlayer/mintplayer-ng-bootstrap",
+    "directory": "libs/mintplayer-dijkstra"
+  },
+  "main": "./src/index.ts",
+  "dependencies": {},
+  "devDependencies": {},
+  "peerDependencies": {},
+  "author": {
+    "name": "Pieterjan De Clippel",
+    "url": "https://github.com/MintPlayer",
+    "email": "info@mintplayer.com"
+  },
+  "keywords": [
+    "encode-utf8",
+    "typescript"
+  ]
+}

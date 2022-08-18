@@ -1,11 +1,14 @@
 {
   "version": 2,
   "projects": {
+    "mintplayer-dijkstra": "libs/mintplayer-dijkstra",
+    "mintplayer-encode-utf8": "libs/mintplayer-encode-utf8",
     "mintplayer-ng-animations": "libs/mintplayer-ng-animations",
     "mintplayer-ng-bootstrap": "libs/mintplayer-ng-bootstrap",
     "mintplayer-ng-click-outside": "libs/mintplayer-ng-click-outside",
     "mintplayer-ng-focus-on-load": "libs/mintplayer-ng-focus-on-load",
     "mintplayer-ng-qr-code": "libs/mintplayer-ng-qr-code",
+    "mintplayer-qr-code": "libs/mintplayer-qr-code",
     "ng-bootstrap-demo": "apps/ng-bootstrap-demo",
     "ng-bootstrap-demo-e2e": "apps/ng-bootstrap-demo-e2e"
   }
