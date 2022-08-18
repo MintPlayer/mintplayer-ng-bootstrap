@@ -2,7 +2,6 @@
   "name": "@mintplayer/dijkstra",
   "private": false,
   "version": "1.0.0",
-  "type": "module",
   "description": "Dijkstra TypeScript implementation",
   "repository": {
     "type": "git",

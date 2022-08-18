@@ -1,7 +1,8 @@
-import { mintplayerEncodeUtf8 } from './mintplayer-encode-utf8';
+import { encodeUtf8 } from './encode-utf8';
 
 describe('mintplayerEncodeUtf8', () => {
   it('should work', () => {
-    expect(mintplayerEncodeUtf8()).toEqual('mintplayer-encode-utf8');
+    const encoded = encodeUtf8('example');
+    expect(encoded).toBeDefined();
   });
 });

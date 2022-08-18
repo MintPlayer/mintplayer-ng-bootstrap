@@ -28,7 +28,7 @@ export class BitMatrix {
 	}
 
 	public isReserved(row: number, col: number) {
-		return this.reservedBit[row * this.size * col];
+		return this.reservedBit[row * this.size + col];
 	}
 
 }
