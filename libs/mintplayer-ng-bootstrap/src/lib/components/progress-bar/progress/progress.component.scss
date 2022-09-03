@@ -1,3 +1,84 @@
+:host {
+// bs-progress ::ng-deep, bs-progress-bar ::ng-deep {
+    // @import "~bootstrap/scss/mixins/banner";
+    // @include bsBanner("");
+
+
+    // scss-docs-start import-stack
+    // Configuration
+    @import "~bootstrap/scss/functions";
+    @import "~bootstrap/scss/variables";
+    // @import "~bootstrap/scss/maps";
+    @import "~bootstrap/scss/mixins";
+    // @import "~bootstrap/scss/utilities";
+
+    // Layout & components
+    // @import "~bootstrap/scss/root";
+    // @import "~bootstrap/scss/reboot";
+    // @import "~bootstrap/scss/type";
+    // @import "~bootstrap/scss/images";
+    // @import "~bootstrap/scss/containers";
+    // @import "~bootstrap/scss/grid";
+    // @import "~bootstrap/scss/tables";
+    // @import "~bootstrap/scss/forms";
+    // @import "~bootstrap/scss/buttons";
+    // @import "~bootstrap/scss/transitions";
+    // @import "~bootstrap/scss/dropdown";
+    // @import "~bootstrap/scss/button-group";
+    // @import "~bootstrap/scss/nav";
+    // @import "~bootstrap/scss/navbar";
+    // @import "~bootstrap/scss/card";
+    // @import "~bootstrap/scss/accordion";
+    // @import "~bootstrap/scss/breadcrumb";
+    // @import "~bootstrap/scss/pagination";
+    // @import "~bootstrap/scss/badge";
+    // @import "~bootstrap/scss/alert";
+    // @import "~bootstrap/scss/list-group";
+    // @import "~bootstrap/scss/close";
+    // @import "~bootstrap/scss/toasts";
+    // @import "~bootstrap/scss/modal";
+    // @import "~bootstrap/scss/tooltip";
+    // @import "~bootstrap/scss/popover";
+    // @import "~bootstrap/scss/carousel";
+    // @import "~bootstrap/scss/spinners";
+    // @import "~bootstrap/scss/offcanvas";
+    // @import "~bootstrap/scss/placeholders";
+
+    @import "~bootstrap/scss/progress";
+    
+    // &.progress {
+    //     // scss-docs-start progress-css-vars
+    //     --#{$prefix}progress-height: #{$progress-height};
+    //     @include rfs($progress-font-size, --#{$prefix}progress-font-size);
+    //     --#{$prefix}progress-bg: #{$progress-bg};
+    //     --#{$prefix}progress-border-radius: #{$progress-border-radius};
+    //     --#{$prefix}progress-box-shadow: #{$progress-box-shadow};
+    //     --#{$prefix}progress-bar-color: #{$progress-bar-color};
+    //     --#{$prefix}progress-bar-bg: #{$progress-bar-bg};
+    //     --#{$prefix}progress-bar-transition: #{$progress-bar-transition};
+    //     // scss-docs-end progress-css-vars
+
+    //     display: flex;
+    //     height: var(--#{$prefix}progress-height);
+    //     overflow: hidden; // force rounded corners by cropping it
+    //     @include font-size(var(--#{$prefix}progress-font-size));
+    //     background-color: var(--#{$prefix}progress-bg);
+    //     @include border-radius(var(--#{$prefix}progress-border-radius));
+    //     @include box-shadow(var(--#{$prefix}progress-box-shadow));
+    // }
+
+    .progress-bar-infinite {
+        animation: progress-infinite 1.5s infinite;
+    }
+
+    // // Helpers
+    // @import "~bootstrap/scss/helpers";
+
+    // Utilities
+    // @import "~bootstrap/scss/utilities/api";
+    // scss-docs-end import-stack
+}
+
 @keyframes progress-infinite {
     0% {
         width: 10%;
@@ -19,8 +100,4 @@
         width: 10%;
         margin-left: 0%;
     }
-}
-
-.progress-bar-infinite {
-    animation: progress-infinite 1.5s infinite;
 }

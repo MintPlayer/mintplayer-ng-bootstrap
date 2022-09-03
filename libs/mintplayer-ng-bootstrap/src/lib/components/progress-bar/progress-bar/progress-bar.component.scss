@@ -1,0 +1,94 @@
+:host ::ng-deep {
+// bs-progress ::ng-deep, bs-progress-bar ::ng-deep {
+    // @import "~bootstrap/scss/mixins/banner";
+    // @include bsBanner("");
+
+
+    // scss-docs-start import-stack
+    // Configuration
+    @import "~bootstrap/scss/functions";
+    @import "~bootstrap/scss/variables";
+    // @import "~bootstrap/scss/maps";
+    @import "~bootstrap/scss/mixins";
+    // @import "~bootstrap/scss/utilities";
+
+    // Layout & components
+    // @import "~bootstrap/scss/root";
+    // @import "~bootstrap/scss/reboot";
+    // @import "~bootstrap/scss/type";
+    // @import "~bootstrap/scss/images";
+    // @import "~bootstrap/scss/containers";
+    // @import "~bootstrap/scss/grid";
+    // @import "~bootstrap/scss/tables";
+    // @import "~bootstrap/scss/forms";
+    // @import "~bootstrap/scss/buttons";
+    // @import "~bootstrap/scss/transitions";
+    // @import "~bootstrap/scss/dropdown";
+    // @import "~bootstrap/scss/button-group";
+    // @import "~bootstrap/scss/nav";
+    // @import "~bootstrap/scss/navbar";
+    // @import "~bootstrap/scss/card";
+    // @import "~bootstrap/scss/accordion";
+    // @import "~bootstrap/scss/breadcrumb";
+    // @import "~bootstrap/scss/pagination";
+    // @import "~bootstrap/scss/badge";
+    // @import "~bootstrap/scss/alert";
+    // @import "~bootstrap/scss/list-group";
+    // @import "~bootstrap/scss/close";
+    // @import "~bootstrap/scss/toasts";
+    // @import "~bootstrap/scss/modal";
+    // @import "~bootstrap/scss/tooltip";
+    // @import "~bootstrap/scss/popover";
+    // @import "~bootstrap/scss/carousel";
+    // @import "~bootstrap/scss/spinners";
+    // @import "~bootstrap/scss/offcanvas";
+    // @import "~bootstrap/scss/placeholders";
+
+    @import "~bootstrap/scss/progress";// Disable animation if transitions are disabled
+
+    // // scss-docs-start progress-keyframes
+    // @if $enable-transitions {
+    //     @keyframes progress-bar-stripes {
+    //     0% { background-position-x: $progress-height; }
+    //     }
+    // }
+    // // scss-docs-end progress-keyframes
+
+    // .progress-bar {
+    //     display: flex;
+    //     flex-direction: column;
+    //     justify-content: center;
+    //     overflow: hidden;
+    //     color: var(--#{$prefix}progress-bar-color);
+    //     text-align: center;
+    //     white-space: nowrap;
+    //     background-color: var(--#{$prefix}progress-bar-bg);
+    //     @include transition(var(--#{$prefix}progress-bar-transition));
+    // }
+    
+    // .progress-bar-striped {
+    //     @include gradient-striped();
+    //     background-size: var(--#{$prefix}progress-height) var(--#{$prefix}progress-height);
+    // }
+    
+    // @if $enable-transitions {
+    //     .progress-bar-animated {
+    //     animation: $progress-bar-animation-timing progress-bar-stripes;
+    
+    //     @if $enable-reduced-motion {
+    //         @media (prefers-reduced-motion: reduce) {
+    //         animation: none;
+    //         }
+    //     }
+    //     }
+    // }
+  
+
+
+    // // Helpers
+    // @import "~bootstrap/scss/helpers";
+
+    // Utilities
+    // @import "~bootstrap/scss/utilities/api";
+    // scss-docs-end import-stack
+}
