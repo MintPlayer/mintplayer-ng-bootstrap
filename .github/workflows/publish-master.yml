@@ -101,6 +101,40 @@ jobs:
         token: ${{ github.token }}
         access: 'public'
 
+    ## encode-utf8
+    - name: Push to NPM
+      uses: JS-DevTools/npm-publish@v1
+      with:
+        package: 'dist/libs/mintplayer-encode-utf8/package.json'
+        registry: 'https://registry.npmjs.org'
+        token: ${{ secrets.PUBLISH_NODE_TO_NPMJS_COM }}
+        access: 'public'
+
+    - name: Push to Github
+      uses: JS-DevTools/npm-publish@v1
+      with:
+        package: 'dist/libs/mintplayer-encode-utf8/package.json'
+        registry: 'https://npm.pkg.github.com'
+        token: ${{ github.token }}
+        access: 'public'
+
+    ## dijkstra
+    - name: Push to NPM
+      uses: JS-DevTools/npm-publish@v1
+      with:
+        package: 'dist/libs/mintplayer-dijkstra/package.json'
+        registry: 'https://registry.npmjs.org'
+        token: ${{ secrets.PUBLISH_NODE_TO_NPMJS_COM }}
+        access: 'public'
+
+    - name: Push to Github
+      uses: JS-DevTools/npm-publish@v1
+      with:
+        package: 'dist/libs/mintplayer-dijkstra/package.json'
+        registry: 'https://npm.pkg.github.com'
+        token: ${{ github.token }}
+        access: 'public'
+
     ## qr-code
     - name: Push to NPM
       uses: JS-DevTools/npm-publish@v1
