@@ -1,9 +1,8 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { OverlayComponent } from './overlay.component';
 
 const routes: Routes = [
-  { path: '', component: OverlayComponent },
+  { path: '', redirectTo: '', pathMatch: 'full', canActivate: [() => false] },
   { path: 'modals', loadChildren: () => import('./modal/modal.module').then(m => m.ModalModule) },
   { path: 'snackbar', loadChildren: () => import('./snackbar/snackbar.module').then(m => m.SnackbarModule) },
   { path: 'tooltip', loadChildren: () => import('./tooltip/tooltip.module').then(m => m.TooltipModule) },

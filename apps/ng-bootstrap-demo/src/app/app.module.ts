@@ -10,6 +10,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
+import { DirectivesModule } from './directives/directives.module';
 
 @NgModule({
   declarations: [AppComponent],
@@ -19,7 +20,8 @@ import { AppRoutingModule } from './app-routing.module';
     BrowserAnimationsModule,
     BsNavbarModule,
     HttpClientModule,
-    AppRoutingModule
+    AppRoutingModule,
+    DirectivesModule
   ],
   providers: [
     {

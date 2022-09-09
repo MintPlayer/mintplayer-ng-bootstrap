@@ -1,9 +1,8 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { BasicComponent } from './basic.component';
 
 const routes: Routes = [
-  { path: '', component: BasicComponent },
+  { path: '', redirectTo: '', pathMatch: 'full', canActivate: [() => false] },
   { path: 'toggle-button', loadChildren: () => import('./toggle-button/toggle-button.module').then(m => m.ToggleButtonModule) },
   { path: 'calendar', loadChildren: () => import('./calendar/calendar.module').then(m => m.CalendarModule) },
   { path: 'alert', loadChildren: () => import('./alert/alert.module').then(m => m.AlertModule) },

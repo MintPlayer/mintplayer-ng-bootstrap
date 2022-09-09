@@ -9,14 +9,11 @@
   </bs-navbar-brand>
   <bs-navbar-nav [collapse]="true">
     <bs-navbar-item>
-      <a [routerLink]='["/"]'>Home</a>
+      <a [routerLink]='["/"]' [routerLinkActiveOptions]="{exact: true}">Home</a>
     </bs-navbar-item>
     <bs-navbar-item>
-      <a [routerLink]='[]'>Basic</a>
+      <a [routerLink]='["/basic"]'>Basic</a>
       <bs-navbar-dropdown>
-        <bs-navbar-item>
-          <a [routerLink]='["/basic"]'>Overview</a>
-        </bs-navbar-item>
         <bs-navbar-item>
           <a [routerLink]='["/basic", "toggle-button"]'>Toggle button</a>
         </bs-navbar-item>
@@ -59,11 +56,8 @@
       </bs-navbar-dropdown>
     </bs-navbar-item>
     <bs-navbar-item>
-      <a [routerLink]='[]'>Overlays</a>
+      <a [routerLink]='["/overlays"]'>Overlays</a>
       <bs-navbar-dropdown>
-        <bs-navbar-item>
-          <a [routerLink]='["/overlays"]'>Overview</a>
-        </bs-navbar-item>
         <bs-navbar-item>
           <a [routerLink]='["/overlays", "modals"]'>Modals</a>
         </bs-navbar-item>
@@ -91,11 +85,8 @@
       </bs-navbar-dropdown>
     </bs-navbar-item>
     <bs-navbar-item>
-      <a [routerLink]='[]'>Advanced</a>
+      <a [routerLink]='["/advanced"]'>Advanced</a>
       <bs-navbar-dropdown>
-        <bs-navbar-item>
-          <a [routerLink]='["/advanced"]'>Overview</a>
-        </bs-navbar-item>
         <bs-navbar-item>
           <a [routerLink]='["/advanced", "copy"]'>Copy</a>
         </bs-navbar-item>
@@ -123,11 +114,8 @@
       </bs-navbar-dropdown>
     </bs-navbar-item>
     <bs-navbar-item>
-      <a [routerLink]='[]'>Additional samples</a>
+      <a [routerLink]='["/additional-samples"]'>Additional samples</a>
       <bs-navbar-dropdown>
-        <bs-navbar-item>
-          <a [routerLink]='["/additional-samples"]'>Overview</a>
-        </bs-navbar-item>
         <bs-navbar-item>
           <a [routerLink]='["/additional-samples", "collapse"]'>Collapse</a>
         </bs-navbar-item>
