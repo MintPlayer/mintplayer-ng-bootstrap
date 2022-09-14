@@ -53,23 +53,32 @@ describe('AccordionTabHeaderComponent', () => {
   </bs-accordion>`
 })
 class BsAccordionTestComponent {
-
 }
 
 @Component({
   selector: 'bs-accordion',
-  template: 'accordion works'
+  template: '<ng-content></ng-content>',
+  providers: [
+    { provide: BsAccordionComponent, useExisting: BsAccordionMockComponent }
+  ]
 })
 class BsAccordionMockComponent {
-
 }
 
 @Component({
   selector: 'bs-accordion-tab',
-  template: 'accordion-tab works'
+  template: '<ng-content></ng-content>',
+  providers: [
+    { provide: BsAccordionTabComponent, useExisting: BsAccordionTabMockComponent }
+  ]
 })
 class BsAccordionTabMockComponent {
   
+  accordion: BsAccordionMockComponent;
+  constructor(accordion: BsAccordionMockComponent) {
+    this.accordion = accordion;
+  }
+
   @ContentChildren(() => forwardRef(() => BsAccordionComponent)) childAccordions!: QueryList<BsAccordionComponent>;
 
 }

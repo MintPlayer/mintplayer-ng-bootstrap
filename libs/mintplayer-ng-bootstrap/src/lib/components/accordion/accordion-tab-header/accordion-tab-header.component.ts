@@ -1,6 +1,5 @@
 import { Component } from '@angular/core';
 import { BsAccordionTabComponent } from '../accordion-tab/accordion-tab.component';
-import { BsAccordionComponent } from '../accordion/accordion.component';
 
 @Component({
   selector: 'bs-accordion-tab-header',
@@ -9,7 +8,7 @@ import { BsAccordionComponent } from '../accordion/accordion.component';
 })
 export class BsAccordionTabHeaderComponent {
 
-  constructor(accordionTab: BsAccordionTabComponent, private accordion: BsAccordionComponent) {
+  constructor(accordionTab: BsAccordionTabComponent) {
     this.accordionTab = accordionTab;
   }
 
