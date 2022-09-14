@@ -1,24 +1,37 @@
-.multi-level {
-    background-color: red;
+::ng-deep .multi-level bs-accordion-tab {
+    border-width: 0 !important;
+}
 
-    bs-accordion-tab {
-        ::ng-deep .card {
+
+.multi-level {
+    ::ng-deep > .accordion > bs-accordion-tab {
+        > div > bs-accordion-tab-header h2 button {
             background-color: #333;
-            color: #FFF;
+        }
+
+        .accordion-button {
+            color: #FFF !important;
+            box-shadow: none;
+
+            &:after {
+                background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23ffffff'><path fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/></svg>") !important;
+            }
+        }
+
+        background-color: transparent;
+        .accordion-body {
+            background-color: #666;
         }
 
         bs-accordion-tab {
-            ::ng-deep .card {
-                background-color: #666;
-                color: #FFF;
+            background-color: transparent !important;
+            .accordion-body {
+                background-color: #999;
             }
             
             bs-accordion-tab {
-                ::ng-deep .card {
-                    background-color: #999;
-                }
-                
-                ::ng-deep .card-block {
+                background-color: transparent !important;
+                .accordion-body {
                     background-color: #CCC;
                 }
             }

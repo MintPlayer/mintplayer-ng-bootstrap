@@ -1,4 +1,4 @@
-import { Component, ContentChildren, QueryList } from '@angular/core';
+import { Component, ContentChildren, Input, QueryList } from '@angular/core';
 import { BsAccordionTabComponent } from '../accordion-tab/accordion-tab.component';
 
 @Component({
@@ -10,5 +10,6 @@ export class BsAccordionComponent {
 
   @ContentChildren(BsAccordionTabComponent) tabPages!: QueryList<BsAccordionTabComponent>;
   disableAnimations = false;
+  @Input() highlightActiveTab = false;
 
 }

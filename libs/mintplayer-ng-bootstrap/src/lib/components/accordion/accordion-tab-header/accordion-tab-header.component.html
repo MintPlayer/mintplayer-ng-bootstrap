@@ -1,3 +1,5 @@
-<div class="card-header cursor-pointer" (click)="headerClicked($event)">
-    <ng-content></ng-content>
-</div>
+<h2 class="accordion-header cursor-pointer" (click)="headerClicked($event)">
+    <button class="accordion-button" [class.bg-none]="!accordionTab.accordion.highlightActiveTab" [class.collapsed]="!accordionTab.isActive" type="button">
+        <ng-content></ng-content>
+    </button>
+</h2>

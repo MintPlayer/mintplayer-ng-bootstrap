@@ -9,8 +9,11 @@ import { BsAccordionComponent } from '../accordion/accordion.component';
 })
 export class BsAccordionTabHeaderComponent {
 
-  constructor(private accordionTab: BsAccordionTabComponent, private accordion: BsAccordionComponent) {
+  constructor(accordionTab: BsAccordionTabComponent, private accordion: BsAccordionComponent) {
+    this.accordionTab = accordionTab;
   }
+
+  accordionTab: BsAccordionTabComponent;
 
   headerClicked(event: MouseEvent) {
     event.preventDefault();

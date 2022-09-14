@@ -1,4 +1,4 @@
-import { Component, ContentChildren, EventEmitter, forwardRef, Input, Output, QueryList } from '@angular/core';
+import { Component, ContentChildren, EventEmitter, forwardRef, HostBinding, Input, Output, QueryList } from '@angular/core';
 import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
 import { BsAccordionComponent } from '../accordion/accordion.component';
 
@@ -16,7 +16,9 @@ export class BsAccordionTabComponent {
     this.accordion = accordion;
   }
 
-  private tabOverlayIdentifier: string | null = null;
+  @HostBinding('class.accordion-item') accordionItemClass = true;
+  @HostBinding('class.d-block') dBlock = true;
+  @HostBinding('class.border-0') noBorder = false;
   
   //#region IsActive
   @Output() public isActiveChange = new EventEmitter<boolean>();

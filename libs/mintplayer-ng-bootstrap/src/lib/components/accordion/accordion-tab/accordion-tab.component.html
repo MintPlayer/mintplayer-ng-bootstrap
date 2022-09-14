@@ -1,6 +1,8 @@
-<div class="card" [@.disabled]="accordion.disableAnimations">
+<div [class.border-0]="false" [@.disabled]="accordion.disableAnimations">
     <ng-content select="bs-accordion-tab-header"></ng-content>
-    <div class="card-block overflow-hidden" [@slideUpDown] *ngIf="isActive">
-        <ng-content></ng-content>
+    <div class="accordion-collapse collapse show overflow-hidden" [@slideUpDown] *ngIf="isActive">
+        <div class="accordion-body p-0">
+            <ng-content></ng-content>
+        </div>
     </div>
 </div>
