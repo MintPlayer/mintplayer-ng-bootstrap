@@ -1,3 +1,13 @@
+@import '~@angular/cdk/overlay-prebuilt.css';
+
+// scss-docs-start import-stack
+// Configuration
+@import "~bootstrap/scss/functions";
+@import "~bootstrap/scss/variables";
+@import "~bootstrap/scss/mixins";
+
+// @import "~bootstrap/scss/dropdown";
+
 .has-custom-context-menu {
   height: 100px;
   background-color: red;
