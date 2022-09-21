@@ -45,6 +45,15 @@ export class BsOffcanvasComponent implements OnDestroy {
           return null;
         }
       }));
+    
+    this.overflowClass$ = this.position$
+      .pipe(map((position) => {
+        if (['top', 'bottom'].includes(position)) {
+          return 'overflow-y-hidden';
+        } else {
+          return 'overflow-x-hidden';
+        }
+      }))
 
     this.showBackdrop$ = combineLatest([this.hasBackdrop$, this.state$])
       .pipe(map(([hasBackdrop, state]) => hasBackdrop && (state === 'open')));
@@ -59,6 +68,7 @@ export class BsOffcanvasComponent implements OnDestroy {
   visibility$: Observable<string>;
   disableTransition$ = new BehaviorSubject<boolean>(false);
   offcanvasClass$ = new BehaviorSubject<string | null>(null);
+  overflowClass$: Observable<string | null>;
   width$: Observable<number | null>;
   height$: Observable<number | null>;
   hasBackdrop$ = new BehaviorSubject<boolean>(false);

@@ -11,7 +11,8 @@ const routes: Routes = [
   { path: 'typeahead', loadChildren: () => import('./typeahead/typeahead.module').then(m => m.TypeaheadModule) },
   { path: 'multiselect-dropdown', loadChildren: () => import('./multiselect-dropdown/multiselect-dropdown.module').then(m => m.MultiselectDropdownModule) },
   { path: 'offcanvas', loadChildren: () => import('./offcanvas/offcanvas.module').then(m => m.OffcanvasModule) },
-  { path: 'popover', loadChildren: () => import('./popover/popover.module').then(m => m.PopoverModule) }
+  { path: 'popover', loadChildren: () => import('./popover/popover.module').then(m => m.PopoverModule) },
+  { path: 'toast', loadChildren: () => import('./toast/toast.module').then(m => m.ToastModule) }
 ];
 
 @NgModule({

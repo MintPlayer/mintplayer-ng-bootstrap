@@ -31,6 +31,7 @@ export * from './snackbar';
 export * from './spinner';
 export * from './tab-control';
 export * from './timepicker';
+export * from './toast';
 export * from './toggle-button';
 export * from './tooltip';
 export * from './typeahead';
