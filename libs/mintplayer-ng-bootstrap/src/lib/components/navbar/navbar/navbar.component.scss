@@ -63,6 +63,14 @@ nav {
     z-index: 10;
 }
 
+@media (max-width: 767px) {
+    nav.position-fixed {
+        max-height: 100%;
+        overflow-y: scroll;
+        margin-right: -17px;
+    }
+}
+
 @media (min-width: 768px) {
     .mx-md-unset {
         margin-left: 0 !important;    

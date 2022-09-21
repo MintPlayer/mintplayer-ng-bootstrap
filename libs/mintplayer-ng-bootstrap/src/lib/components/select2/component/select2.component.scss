@@ -1,3 +1,7 @@
+// ::ng-deep {
+//   @import '~@angular/cdk/overlay-prebuilt.css';
+// }
+
 .items-box {
   display: block;
   position: relative;
