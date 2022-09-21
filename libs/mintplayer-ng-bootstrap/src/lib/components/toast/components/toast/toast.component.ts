@@ -1,11 +1,9 @@
-import { Component, HostBinding } from '@angular/core';
-import { FadeInOutAnimation } from '@mintplayer/ng-animations';
+import { Component, Input } from '@angular/core';
 
 @Component({
   selector: 'bs-toast',
   templateUrl: './toast.component.html',
-  styleUrls: ['./toast.component.scss'],
-  animations: [FadeInOutAnimation]
+  styleUrls: ['./toast.component.scss']
 })
 export class BsToastComponent {
   constructor() {
@@ -14,4 +12,5 @@ export class BsToastComponent {
 
   static counter = 1;
   id: number | null = null;
+  @Input() public isVisible = false;
 }

@@ -28,16 +28,24 @@ export class BsToastService {
       const component = this.overlayRef.attach<BsToastContainerComponent>(portal);
     }
 
-    // context = context ?? {};
-    // Object.assign(context, { isVisible: false });
-    this.toasts$.value.push({ template: toast, context: context ?? null });
+    context = context ?? {};
+    const ctx = Object.assign(context, { isVisible: false });
+    this.toasts$.value.push({ template: toast, context: ctx });
     this.toasts$.next(this.toasts$.value);
+    setTimeout(() => ctx.isVisible = true, 20);
   }
 
   public close(index: number) {
     const toasts = this.toasts$.value;
-    toasts.splice(index, 1);
-    this.toasts$.next(this.toasts$.value);
+    const toast = toasts[index];
+    if (toast && toast.context) {
+      (<any>toast.context).isVisible = false;
+    }
+
+    setTimeout(() => {
+      toasts.splice(index, 1);
+      this.toasts$.next(this.toasts$.value);
+    }, 400);
   }
 }
 
