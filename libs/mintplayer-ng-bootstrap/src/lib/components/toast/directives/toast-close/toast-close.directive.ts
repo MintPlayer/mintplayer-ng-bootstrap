@@ -8,7 +8,6 @@ import { BsToastComponent } from '../../components/toast/toast.component';
 export class BsToastCloseDirective {
 
   constructor(private toast: BsToastComponent, private toastService: BsToastService) {
-    console.log('constructed');
   }
 
   @HostListener('click') onClick() {

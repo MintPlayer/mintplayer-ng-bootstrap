@@ -1,7 +1,6 @@
 import { Injector, NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BsToastComponent } from './components/toast/toast.component';
-import { BsToastDirective } from './directives/toast/toast.directive';
 import { BsToastBodyComponent } from './components/toast-body/toast-body.component';
 import { BsToastHeaderComponent } from './components/toast-header/toast-header.component';
 import { BsToastContainerComponent } from './components/toast-container/toast-container.component';
@@ -15,7 +14,6 @@ import { BsAddPropertiesModule } from '../../pipes/add-properties/add-properties
 @NgModule({
   declarations: [
     BsToastComponent,
-    BsToastDirective,
     BsToastBodyComponent,
     BsToastHeaderComponent,
     BsToastContainerComponent,
@@ -28,7 +26,6 @@ import { BsAddPropertiesModule } from '../../pipes/add-properties/add-properties
   ],
   exports: [
     BsToastComponent,
-    BsToastDirective,
     BsToastBodyComponent,
     BsToastHeaderComponent,
     BsToastContainerComponent,
