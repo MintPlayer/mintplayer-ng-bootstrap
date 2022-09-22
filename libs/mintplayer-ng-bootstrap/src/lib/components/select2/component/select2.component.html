@@ -1,4 +1,4 @@
-<div bsDropdown [(isOpen)]="isOpen" [hasBackdrop]="false" [closeOnClickOutside]="true" #itemsBox class="items-box text-wrap">
+<div bsDropdown [(isOpen)]="isOpen" [hasBackdrop]="false" [closeOnClickOutside]="false" #itemsBox class="items-box text-wrap">
     <ng-container *ngFor="let item of selectedItems">
         <ng-container *ngTemplateOutlet="itemTemplate ?? defaultItemTemplate; context: { item: item, select2: this }"></ng-container>
     </ng-container>
@@ -10,11 +10,9 @@
         (blur)="isFocused=false"
         [style.width.px]="searchWidth"
         #searchBox />
-    <div *bsDropdownMenu>
-        <ul class="dropdown-menu d-block position-static p-0" [style.width.px]="hostWidth$ | async">
-            <li *ngFor="let suggestion of suggestions" (click)="onSuggestionClicked(suggestion)" [class.selected]="selectedItems | inList:suggestion.id">{{ suggestion.text }}</li>
-        </ul>
-    </div>
+    <ul *bsDropdownMenu class="dropdown-menu d-block position-static p-0" [style.width.px]="hostWidth$ | async">
+        <li *ngFor="let suggestion of suggestions" (click)="onSuggestionClicked(suggestion)" [class.selected]="selectedItems | inList:suggestion.id">{{ suggestion.text }}</li>
+    </ul>
 </div>
 
 <ng-template #defaultItemTemplate let-item="item" let-select2="select2">

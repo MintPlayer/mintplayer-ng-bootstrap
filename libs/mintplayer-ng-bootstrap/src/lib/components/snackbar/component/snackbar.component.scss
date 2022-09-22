@@ -1,3 +1,6 @@
+// ::ng-deep {
+//     @use 'node_modules/@angular/cdk/overlay/index';
+// }
 :host {
     background: #232323;
     color: rgba(var(--bs-light-rgb));

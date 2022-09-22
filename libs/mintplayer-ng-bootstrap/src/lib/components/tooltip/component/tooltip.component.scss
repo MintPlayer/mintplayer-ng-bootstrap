@@ -1,74 +1,34 @@
+
+@import 'node_modules/@angular/cdk/overlay/index';
+
+// ::ng-deep {
+// 	@import 'node_modules/@angular/cdk/overlay/index';
+// }
 :host ::ng-deep {
-// bs-progress ::ng-deep, bs-progress-bar ::ng-deep {
-    // @import "~bootstrap/scss/mixins/banner";
-    // @include bsBanner("");
+	// Configuration
+	@import "~bootstrap/scss/functions";
+	@import "~bootstrap/scss/variables";
+	@import "~bootstrap/scss/mixins";
 
-
-    // scss-docs-start import-stack
-    // Configuration
-    @import "~bootstrap/scss/functions";
-    @import "~bootstrap/scss/variables";
-    // @import "~bootstrap/scss/maps";
-    @import "~bootstrap/scss/mixins";
-    // @import "~bootstrap/scss/utilities";
-
-    // Layout & components
-    // @import "~bootstrap/scss/root";
-    // @import "~bootstrap/scss/reboot";
-    // @import "~bootstrap/scss/type";
-    // @import "~bootstrap/scss/images";
-    // @import "~bootstrap/scss/containers";
-    // @import "~bootstrap/scss/grid";
-    // @import "~bootstrap/scss/tables";
-    // @import "~bootstrap/scss/forms";
-    // @import "~bootstrap/scss/buttons";
-    // @import "~bootstrap/scss/transitions";
-    // @import "~bootstrap/scss/dropdown";
-    // @import "~bootstrap/scss/button-group";
-    // @import "~bootstrap/scss/nav";
-    // @import "~bootstrap/scss/navbar";
-    // @import "~bootstrap/scss/card";
-    // @import "~bootstrap/scss/accordion";
-    // @import "~bootstrap/scss/breadcrumb";
-    // @import "~bootstrap/scss/pagination";
-    // @import "~bootstrap/scss/badge";
-    // @import "~bootstrap/scss/alert";
-    // @import "~bootstrap/scss/list-group";
-    // @import "~bootstrap/scss/close";
-    // @import "~bootstrap/scss/toasts";
-    // @import "~bootstrap/scss/modal";
-    @import "~bootstrap/scss/tooltip";
-    // @import "~bootstrap/scss/popover";
-    // @import "~bootstrap/scss/carousel";
-    // @import "~bootstrap/scss/spinners";
-    // @import "~bootstrap/scss/offcanvas";
-    // @import "~bootstrap/scss/placeholders";
-
-
-    // // Helpers
-    // @import "~bootstrap/scss/helpers";
-
-    // Utilities
-    // @import "~bootstrap/scss/utilities/api";
-    // scss-docs-end import-stack
+	// Layout & components
+	@import "~bootstrap/scss/tooltip";
 }
 
-
 .tooltip {
-    &.bs-tooltip-start { right: 0; }
-    &.bs-tooltip-start, &.bs-tooltip-end { transform: translateY(-50%); }
-    &.bs-tooltip-bottom {
-        transform: translateX(-50%);
-    }
-    &.bs-tooltip-top {
-        transform: translateX(-50%) translateY(-100%);
-    }
-    &.bs-tooltip-bottom .tooltip-arrow, &.bs-tooltip-top .tooltip-arrow {
-        left: 50%;
-        transform: translateX(-50%);
-    }
-    &.bs-tooltip-start .tooltip-arrow, &.bs-tooltip-end .tooltip-arrow {
-        top: 50%;
-        transform: translateY(-50%);
-    }
+	&.bs-tooltip-start { right: 0; }
+	&.bs-tooltip-start, &.bs-tooltip-end { transform: translateY(-50%); }
+	&.bs-tooltip-bottom {
+		transform: translateX(-50%);
+	}
+	&.bs-tooltip-top {
+		transform: translateX(-50%) translateY(-100%);
+	}
+	&.bs-tooltip-bottom .tooltip-arrow, &.bs-tooltip-top .tooltip-arrow {
+		left: 50%;
+		transform: translateX(-50%);
+	}
+	&.bs-tooltip-start .tooltip-arrow, &.bs-tooltip-end .tooltip-arrow {
+		top: 50%;
+		transform: translateY(-50%);
+	}
 }

@@ -1,4 +1,4 @@
-import { AfterContentInit, Component, ContentChildren, HostBinding, Input, OnDestroy, OnInit, QueryList, TemplateRef } from '@angular/core';
+import { AfterContentInit, Component, ContentChildren, HostBinding, HostListener, Input, OnDestroy, OnInit, QueryList, TemplateRef } from '@angular/core';
 import { FadeInOutAnimation, CarouselSlideAnimation } from '@mintplayer/ng-animations';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { map, take, takeUntil } from 'rxjs/operators';
@@ -82,6 +82,20 @@ export class BsCarouselComponent implements OnDestroy, AfterContentInit {
     const counterMod = ((currentValue % l) + l) % l;
     const newValue = currentValue - counterMod + index;
     this.currentImageCounter$.next(newValue);
+  }
+
+  @HostListener('document:keydown.ArrowLeft', ['$event'])
+  @HostListener('document:keydown.ArrowRight', ['$event'])
+  onKeyPress(ev: KeyboardEvent) {
+    switch (ev.key) {
+      case 'ArrowLeft':
+        this.previousImage();
+        break;
+      case 'ArrowRight':
+        this.nextImage();
+        break;
+    }
+    ev.preventDefault();
   }
 
 }
