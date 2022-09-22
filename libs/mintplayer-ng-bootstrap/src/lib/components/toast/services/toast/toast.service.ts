@@ -49,7 +49,7 @@ export class BsToastService {
   }
 }
 
-export interface ToastItem {
+interface ToastItem {
   template: TemplateRef<any>;
   context: Object | null;
 }
