@@ -22,6 +22,7 @@ export * from './multiselect';
 export * from './navbar';
 export * from './offcanvas';
 export * from './pagination';
+export * from './placeholder';
 export * from './popover';
 export * from './progress-bar';
 export * from './rating';

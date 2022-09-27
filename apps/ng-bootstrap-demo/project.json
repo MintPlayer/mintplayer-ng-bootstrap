@@ -27,6 +27,9 @@
         "styles": ["apps/ng-bootstrap-demo/src/styles.scss"],
         "scripts": []
       },
+      "stylePreprocessorOptions": {
+        "includePaths": ["../../node_modules"]
+      },
       "configurations": {
         "production": {
           "budgets": [

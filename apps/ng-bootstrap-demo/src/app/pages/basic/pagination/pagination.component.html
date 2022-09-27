@@ -1,0 +1,27 @@
+<h1>Pagination</h1>
+<h2>Basic</h2>
+<bs-pagination [pageNumbers]="example1PageNumbers" [(selectedPageNumber)]="example1SelectedPageNumber"></bs-pagination>
+<br>
+Selected value: {{ example1SelectedPageNumber }}
+
+<h2>No arrows</h2>
+<bs-pagination [pageNumbers]="example2PageNumbers" [(selectedPageNumber)]="example2SelectedPageNumber" [showArrows]="false"></bs-pagination>
+<br>
+Selected value: {{ example2SelectedPageNumber }}
+
+<h2>Range</h2>
+<bs-pagination [pageNumbers]="example3PageNumbers" [(selectedPageNumber)]="example3SelectedPageNumber"></bs-pagination>
+<br>
+Selected value: {{ example3SelectedPageNumber }}
+
+<h2>Max box count</h2>
+<p>Restrict the number of boxes shown on the paginator.</p>
+<bs-pagination [pageNumbers]="example4PageNumbers" [(selectedPageNumber)]="example4SelectedPageNumber" [numberOfBoxes]="9"></bs-pagination>
+<br>
+Selected value: {{ example4SelectedPageNumber }}
+
+<!-- <h2>Show ellipsis</h2>
+<p>Restrict the number of boxes shown on the paginator. Show the ellipsis (overflow) box.</p>
+<bs-pagination [pageNumbers]="example4PageNumbers" [(selectedPageNumber)]="example4SelectedPageNumber" [numberOfBoxes]="9" []></bs-pagination>
+<br>
+Selected value: {{ example4SelectedPageNumber }} -->

@@ -20,7 +20,9 @@ const routes: Routes = [
   { path: 'breadcrumb', loadChildren: () => import('./breadcrumb/breadcrumb.module').then(m => m.BreadcrumbModule) },
   { path: 'badge', loadChildren: () => import('./badge/badge.module').then(m => m.BadgeModule) },
   { path: 'close', loadChildren: () => import('./close/close.module').then(m => m.CloseModule) },
-  { path: 'spinner', loadChildren: () => import('./spinner/spinner.module').then(m => m.SpinnerModule) }
+  { path: 'spinner', loadChildren: () => import('./spinner/spinner.module').then(m => m.SpinnerModule) },
+  { path: 'placeholder', loadChildren: () => import('./placeholder/placeholder.module').then(m => m.PlaceholderModule) },
+  { path: 'pagination', loadChildren: () => import('./pagination/pagination.module').then(m => m.PaginationModule) }
 ];
 
 @NgModule({

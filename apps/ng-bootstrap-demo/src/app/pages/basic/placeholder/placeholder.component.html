@@ -1,0 +1,28 @@
+<h1>Placeholders</h1>
+<h2 class="my-2">Demo</h2>
+<div class="d-block">
+    <label>
+        <input type="checkbox" [(ngModel)]="isLoading"> Toggle me
+    </label>
+</div>
+<bs-card>
+    <bs-card-header>Card with placeholders</bs-card-header>
+    <h5 class="card-title" [bsPlaceholder]="isLoading">
+        <span bsPlaceholderField class="d-inline-block col-12">Featured</span>
+    </h5>
+    <p class="card-text" [bsPlaceholder]="isLoading">
+        <span bsPlaceholderField class="d-inline-block col-7">{{ isLoading ? '' : lines[0] }}</span>
+        &nbsp;
+        <span bsPlaceholderField class="d-inline-block col-4">{{ isLoading ? '' : lines[1] }}</span>
+        &nbsp;
+        <span bsPlaceholderField class="d-inline-block col-4">{{ isLoading ? '' : lines[2] }}</span>
+        &nbsp;
+        <span bsPlaceholderField class="d-inline-block col-6">{{ isLoading ? '' : lines[3] }}</span>
+        &nbsp;
+        <span bsPlaceholderField class="d-inline-block col-8">{{ isLoading ? '' : lines[4] }}</span>
+    </p>
+</bs-card>
+<h2 class="my-2">Warning</h2>
+<bs-alert [type]="colors.warning">
+    Never apply the <code>[bsPlaceholder]</code> to an angular component.
+</bs-alert>
