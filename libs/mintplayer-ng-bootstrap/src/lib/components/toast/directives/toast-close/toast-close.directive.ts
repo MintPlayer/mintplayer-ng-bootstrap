@@ -1,4 +1,4 @@
-import { Directive, ElementRef, Host, HostListener, Inject, Input, SkipSelf } from '@angular/core';
+import { Directive, HostListener, Input } from '@angular/core';
 import { BsToastService } from '../../services/toast/toast.service';
 import { BsToastComponent } from '../../components/toast/toast.component';
 

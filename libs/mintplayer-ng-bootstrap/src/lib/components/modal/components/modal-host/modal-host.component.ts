@@ -13,7 +13,7 @@ import { BsModalComponent } from '../modal/modal.component';
 })
 export class BsModalHostComponent implements AfterViewInit, OnDestroy {
 
-  constructor(private overlay: Overlay, private parentInjector: Injector, @Inject(PORTAL_FACTORY) private portalFactory: (injector: Injector) => ComponentPortal<any>, private componentFactoryResolver: ComponentFactoryResolver) {
+  constructor(private overlay: Overlay, private parentInjector: Injector, @Inject(PORTAL_FACTORY) private portalFactory: (injector: Injector) => ComponentPortal<BsModalComponent>, private componentFactoryResolver: ComponentFactoryResolver) {
     this.destroyed$.pipe(take(1))
       .subscribe(() => {
         this.isOpen = false;

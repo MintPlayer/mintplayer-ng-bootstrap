@@ -1,8 +1,8 @@
-import { PopoverHeaderDirective } from './popover-header.directive';
+import { BsPopoverHeaderDirective } from './popover-header.directive';
 
-describe('PopoverHeaderDirective', () => {
+describe('BsPopoverHeaderDirective', () => {
   it('should create an instance', () => {
-    const directive = new PopoverHeaderDirective();
+    const directive = new BsPopoverHeaderDirective();
     expect(directive).toBeTruthy();
   });
 });

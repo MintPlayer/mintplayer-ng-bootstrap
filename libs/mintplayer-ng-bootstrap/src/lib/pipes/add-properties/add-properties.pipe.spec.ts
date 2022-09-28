@@ -1,8 +1,8 @@
-import { AddPropertiesPipe } from './add-properties.pipe';
+import { BsAddPropertiesPipe } from './add-properties.pipe';
 
-describe('AddPropertiesPipe', () => {
+describe('BsAddPropertiesPipe', () => {
   it('create an instance', () => {
-    const pipe = new AddPropertiesPipe();
+    const pipe = new BsAddPropertiesPipe();
     expect(pipe).toBeTruthy();
   });
 });

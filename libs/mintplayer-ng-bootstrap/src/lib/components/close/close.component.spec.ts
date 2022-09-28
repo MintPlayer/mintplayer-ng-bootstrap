@@ -1,17 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { CloseComponent } from './close.component';
+import { BsCloseComponent } from './close.component';
 
-describe('CloseComponent', () => {
-  let component: CloseComponent;
-  let fixture: ComponentFixture<CloseComponent>;
+describe('BsCloseComponent', () => {
+  let component: BsCloseComponent;
+  let fixture: ComponentFixture<BsCloseComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [CloseComponent],
+      declarations: [BsCloseComponent],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(CloseComponent);
+    fixture = TestBed.createComponent(BsCloseComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

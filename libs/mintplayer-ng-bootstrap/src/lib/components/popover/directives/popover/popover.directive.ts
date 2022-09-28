@@ -1,10 +1,11 @@
 import { ConnectedPosition, Overlay, OverlayRef, PositionStrategy } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { BehaviorSubject, delay, map, Observable, Subject, take, takeUntil } from 'rxjs';
-import { AfterViewInit, ComponentFactoryResolver, ComponentRef, Directive, ElementRef, Host, HostListener, Injector, Input, OnDestroy, SkipSelf, TemplateRef } from '@angular/core';
+import { AfterViewInit, ComponentFactoryResolver, ComponentRef, Directive, ElementRef, Host, HostListener, Inject, Injector, Input, OnDestroy, SkipSelf, TemplateRef } from '@angular/core';
 import { Position } from '../../../../enums/position.enum';
 import { BsPopoverComponent } from '../../component/popover.component';
 import { POPOVER_CONTENT } from '../../providers/popover-content.provider';
+import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
 
 @Directive({
   selector: '*[bsPopover]'
@@ -14,8 +15,8 @@ export class BsPopoverDirective implements AfterViewInit, OnDestroy {
   constructor(
     private overlay: Overlay,
     private templateRef: TemplateRef<any>,
-    private componentFactoryResolver: ComponentFactoryResolver,
     private parentInjector: Injector,
+    @Inject(PORTAL_FACTORY) private portalFactory: (injector: Injector) => ComponentPortal<any>,
     @Host() @SkipSelf() private parent: ElementRef
   ) {
     this.position$.pipe(takeUntil(this.destroyed$)).subscribe((position) => {
@@ -100,7 +101,7 @@ export class BsPopoverDirective implements AfterViewInit, OnDestroy {
         providers: [{ provide: POPOVER_CONTENT, useValue: this.templateRef }],
         parent: this.parentInjector
       });
-      this.portal = new ComponentPortal(BsPopoverComponent, null, this.injector, this.componentFactoryResolver);
+      this.portal = this.portalFactory(this.injector);
       this.overlayRef = this.overlay.create({
         scrollStrategy: this.overlay.scrollStrategies.reposition(),
         positionStrategy: this.overlay.position()
@@ -110,7 +111,6 @@ export class BsPopoverDirective implements AfterViewInit, OnDestroy {
       this.component = this.overlayRef.attach<BsPopoverComponent>(this.portal);
       this.component.instance.position = this.position$.value;
     });
-    
     
     this.parent.nativeElement.onclick = () => {
       this.isVisible$.pipe(take(1)).subscribe((isVisible) => {

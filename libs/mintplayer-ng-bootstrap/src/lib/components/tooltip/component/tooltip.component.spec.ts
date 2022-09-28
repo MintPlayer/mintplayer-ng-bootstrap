@@ -1,5 +1,8 @@
-import { Component, TemplateRef, ViewChild } from '@angular/core';
+import { Overlay, OverlayModule } from '@angular/cdk/overlay';
+import { ComponentPortal } from '@angular/cdk/portal';
+import { Component, ComponentRef, Injector, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { TOOLTIP_CONTENT } from '../providers/tooltip-content.provider';
 import { BsTooltipComponent } from './tooltip.component';
 
 @Component({
@@ -12,7 +15,20 @@ import { BsTooltipComponent } from './tooltip.component';
   </ng-template>`,
 })
 class BsTooltipTestComponent {
+  constructor(private overlay: Overlay, private injector: Injector) {}
+
   @ViewChild('tooltipTemplate') tooltipTemplate!: TemplateRef<any>;
+  component: ComponentRef<BsTooltipComponent> | null = null;
+
+  renderTooltip() {
+    this.injector = Injector.create({
+      providers: [{ provide: TOOLTIP_CONTENT, useValue: this.tooltipTemplate }],
+      parent: this.injector
+    });
+    const portal = new ComponentPortal(BsTooltipComponent, null, this.injector);
+    const overlayRef = this.overlay.create({});
+    this.component = overlayRef.attach<BsTooltipComponent>(portal);
+  }
 }
 
 describe('BsTooltipComponent', () => {
@@ -21,6 +37,9 @@ describe('BsTooltipComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      imports: [
+        OverlayModule,
+      ],
       declarations: [
         // Unit to test
         BsTooltipComponent,
@@ -39,5 +58,10 @@ describe('BsTooltipComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('should render the tooltip', () => {
+    component.renderTooltip();
+    expect(component.component).toBeTruthy();
   });
 });
