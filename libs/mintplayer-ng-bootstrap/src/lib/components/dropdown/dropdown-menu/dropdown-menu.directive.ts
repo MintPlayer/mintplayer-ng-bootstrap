@@ -1,9 +1,10 @@
-import { Directive, ElementRef, forwardRef, HostBinding, HostListener, Inject, NgZone, PLATFORM_ID, TemplateRef, ViewContainerRef } from '@angular/core';
+import { Directive, ElementRef, forwardRef, HostBinding, HostListener, Inject, NgZone, Optional, PLATFORM_ID, TemplateRef, ViewContainerRef } from '@angular/core';
 import { TemplatePortal } from '@angular/cdk/portal';
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ClickOutsideDirective } from '@mintplayer/ng-click-outside';
 import { Subject, take, takeUntil } from 'rxjs';
 import { BsDropdownDirective } from '../dropdown/dropdown.directive';
+import { BS_DEVELOPMENT } from '../../../providers/development.provider';
 
 @Directive({
   selector: '[bsDropdownMenu]'
@@ -17,7 +18,8 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
 
     elementRef: ElementRef<any>,
     zone: NgZone,
-    @Inject(PLATFORM_ID) platformId: any
+    @Inject(PLATFORM_ID) platformId: any,
+    @Optional() @Inject(BS_DEVELOPMENT) private bsDevelopment?: boolean,
   ) {
     super(elementRef, zone, platformId);
 
@@ -71,15 +73,25 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
 
   @HostBinding('class.show') get show() { return this.dropdown.isOpen; }
   @HostListener('clickOutside', ['$event']) clickedOutside(ev: MouseEvent) {
-    if (!this.wait) {
-      if (!this.overlayRef?.overlayElement.contains(<any>ev.target)) {
-        this.dropdown.isOpen$.pipe(take(1)).subscribe((isOpen) => {
-          if (isOpen && !this.dropdown.hasBackdrop && this.dropdown.closeOnClickOutside) {
-            this.dropdown.isOpen = false;
-          }
-        });
+    if (!this.bsDevelopment) {
+      if (!this.wait) {
+        if (!this.overlayRef?.overlayElement.contains(<any>ev.target)) {
+          this.doClose();
+        }
       }
     }
+  }
+
+  @HostListener('document:keydown.escape', ['$event']) onEscape(ev: KeyboardEvent) {
+    this.doClose();
+  }
+
+  private doClose() {
+    this.dropdown.isOpen$.pipe(take(1)).subscribe((isOpen) => {
+      if (isOpen && !this.dropdown.hasBackdrop && this.dropdown.closeOnClickOutside) {
+        this.dropdown.isOpen = false;
+      }
+    });
   }
 
 }

@@ -1,19 +1,19 @@
 <ul class="pagination">
-    <li class="page-item" *ngIf="showArrows$ | async" [class.disabled]="isFirstPage$ | async">
-        <a class="page-link" href="" (click)="onPrevious()" aria-label="Previous">
+    <li class="page-item" *ngIf="showArrows$ | async">
+        <a class="page-link" href="" (click)="onPrevious()" [class.disabled]="isFirstPage$ | async" aria-label="Previous">
             <span aria-hidden="true">&laquo;</span>
             <span class="visually-hidden">Previous</span>
         </a>
     </li>
-    <li *ngFor="let pageNumber of (shownPageNumbers$ | async)" class="page-item"
-        [ngClass]="{ 'active': pageNumber.selected }">
-        <a class="page-link" href="" (click)="onSelectPage($event, pageNumber.page)" *ngIf="pageNumber.page != '...'">
+    <li *ngFor="let pageNumber of (shownPageNumbers$ | async)" class="page-item">
+        <a class="page-link" href="" (click)="onSelectPage($event, pageNumber.page)"
+          [ngClass]="{ 'active': pageNumber.selected }" *ngIf="pageNumber.page != '...'">
             {{ pageNumber.page }}
             <span class="visually-hidden" *ngIf="pageNumber.selected">(current)</span>
         </a>
     </li>
-    <li class="page-item" *ngIf="showArrows$ | async" [class.disabled]="isLastPage$ | async">
-        <a class="page-link" href="" (click)="onNext()" aria-label="Next">
+    <li class="page-item" *ngIf="showArrows$ | async">
+        <a class="page-link" href="" (click)="onNext()" [class.disabled]="isLastPage$ | async" aria-label="Next">
             <span aria-hidden="true">&raquo;</span>
             <span class="visually-hidden">Next</span>
         </a>

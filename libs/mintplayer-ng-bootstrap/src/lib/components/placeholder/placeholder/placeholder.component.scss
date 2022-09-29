@@ -1,0 +1,13 @@
+:host ::ng-deep {
+    // Configuration
+    @import "~bootstrap/scss/functions";
+    @import "~bootstrap/scss/variables";
+    @import "~bootstrap/scss/mixins";
+
+    // Layout & components
+    @import "~bootstrap/scss/placeholders";
+
+    .placeholder {
+        min-height: calc(1em - 1px) !important;
+    }
+}

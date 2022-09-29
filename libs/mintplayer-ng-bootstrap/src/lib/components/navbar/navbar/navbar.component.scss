@@ -1,12 +1,28 @@
-// :host ::ng-deep + * {
-//     padding-top: 56px;
-// }
+:host ::ng-deep {
+    // Configuration
+    @import "~bootstrap/scss/functions";
+    @import "~bootstrap/scss/variables";
+    @import "~bootstrap/scss/mixins";
+
+    // Layout & components
+    @import "~bootstrap/scss/dropdown";
+    @import "~bootstrap/scss/nav";
+    @import "~bootstrap/scss/navbar";
+}
 
 nav {
     left: 0;
     top: 0;
     right: 0;
     z-index: 10;
+}
+
+@media (max-width: 767px) {
+    nav.position-fixed {
+        max-height: 100%;
+        overflow-y: scroll;
+        margin-right: -17px;
+    }
 }
 
 @media (min-width: 768px) {

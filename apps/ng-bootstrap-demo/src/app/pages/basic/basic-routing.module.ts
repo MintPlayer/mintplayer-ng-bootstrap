@@ -15,7 +15,14 @@ const routes: Routes = [
   { path: 'tab-control', loadChildren: () => import('./tab-control/tab-control.module').then(m => m.TabControlModule) },
   { path: 'list-group', loadChildren: () => import('./list-group/list-group.module').then(m => m.ListGroupModule) },
   { path: 'for-directive', loadChildren: () => import('./for-directive/for-directive.module').then(m => m.ForDirectiveModule) },
-  { path: 'timepicker', loadChildren: () => import('./timepicker/timepicker.module').then(m => m.TimepickerModule) }
+  { path: 'timepicker', loadChildren: () => import('./timepicker/timepicker.module').then(m => m.TimepickerModule) },
+  { path: 'button-group', loadChildren: () => import('./button-group/button-group.module').then(m => m.ButtonGroupModule) },
+  { path: 'breadcrumb', loadChildren: () => import('./breadcrumb/breadcrumb.module').then(m => m.BreadcrumbModule) },
+  { path: 'badge', loadChildren: () => import('./badge/badge.module').then(m => m.BadgeModule) },
+  { path: 'close', loadChildren: () => import('./close/close.module').then(m => m.CloseModule) },
+  { path: 'spinner', loadChildren: () => import('./spinner/spinner.module').then(m => m.SpinnerModule) },
+  { path: 'placeholder', loadChildren: () => import('./placeholder/placeholder.module').then(m => m.PlaceholderModule) },
+  { path: 'pagination', loadChildren: () => import('./pagination/pagination.module').then(m => m.PaginationModule) }
 ];
 
 @NgModule({

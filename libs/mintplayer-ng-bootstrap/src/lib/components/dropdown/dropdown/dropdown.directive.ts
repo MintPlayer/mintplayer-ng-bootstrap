@@ -20,7 +20,7 @@ export class BsDropdownDirective {
   
   @Input() public hasBackdrop = false;
   @Input() public sameWidth = false;
-  @Input() public closeOnClickOutside = false;
+  @Input() public closeOnClickOutside = true;
   @Input() public sameDropdownWidth = false;
 
   //#region IsOpen
@@ -37,7 +37,9 @@ export class BsDropdownDirective {
   //#endregion
 
   @HostListener('window:blur') private onBlur() {
-    this.isOpen = false;
+    if (this.closeOnClickOutside) {
+      this.isOpen = false;
+    }
   }
 
 }

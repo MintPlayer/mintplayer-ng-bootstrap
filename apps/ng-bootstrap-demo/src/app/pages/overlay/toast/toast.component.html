@@ -1,0 +1,23 @@
+<form (submit)="addToast(toastTemplate, itemToAdd)">
+    <div class="input-group">
+        <input type="text" name="txtItem" #txtItem class="form-control" autofocus [(ngModel)]="itemToAdd">
+        <button type="submit" class="btn btn-primary">Add notification</button>
+    </div>
+</form>
+
+<!-- isVisible is received from the ToastService -->
+<!-- toastIndex is received from the ToastContainer -->
+<!-- Other properties come from the context passed to ToastService.pushToast -->
+<ng-template #toastTemplate let-message="message" let-index="toastIndex" let-isVisible="isVisible">
+    <bs-toast [isVisible]="isVisible">
+        <bs-toast-header>
+            <svg class="bd-placeholder-img rounded me-2" width="20" height="20" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" focusable="false">
+                <rect width="100%" height="100%" fill="#007aff"/>
+            </svg>
+            <strong class="me-auto">Bootstrap</strong>
+            <small class="text-muted">11 mins ago</small>
+            <bs-close [index]="index"></bs-close>
+        </bs-toast-header>
+        <bs-toast-body>{{ message }}</bs-toast-body>
+    </bs-toast>
+</ng-template>

@@ -1,3 +1,13 @@
+/* :host */ ::ng-deep {
+    // Configuration
+    @import "~bootstrap/scss/functions";
+    @import "~bootstrap/scss/variables";
+    @import "~bootstrap/scss/mixins";
+
+    // Layout & components
+    @import "~bootstrap/scss/dropdown";
+}
+
 :host {
     display: inline-block;
 }
@@ -5,14 +15,14 @@
 /* Chrome, Safari, Edge, Opera */
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
+	-webkit-appearance: none;
+	margin: 0;
 }
 
 /* Firefox */
 input[type=number] {
-  -moz-appearance: textfield;
-  outline: 0px !important;
+	-moz-appearance: textfield;
+	outline: 0px !important;
 }
 
 .form-control {
@@ -27,11 +37,11 @@ input[type=number] {
     }
 }
 
-.list-group {
-  max-height: 250px;
-  overflow-y: auto;
+.dropdown-menu {
+	max-height: 250px;
+	overflow-y: auto;
 
-  .list-group-item-action {
-    cursor: pointer;
-  }
+	.dropdown-item {
+		cursor: pointer;
+	}
 }

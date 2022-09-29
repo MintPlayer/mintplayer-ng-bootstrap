@@ -1,3 +1,3 @@
-<ul class="dropdown-menu" [class.show]="isVisible" [class.submenu]="!!parentDropdown" (clickOutside)="isVisible = false" [exclude]="elementsToExclude" aria-labelledby="navbarDropdown">
+<ul #dd class="dropdown-menu overflow-auto" [class.show]="isVisible" [class.submenu]="!!parentDropdown" [style.max-height]="maxHeight$ | async" (clickOutside)="isVisible = false" [exclude]="elementsToExclude" aria-labelledby="navbarDropdown">
     <ng-content></ng-content>
 </ul>

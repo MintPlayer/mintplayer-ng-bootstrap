@@ -1,3 +1,14 @@
-.carousel {
-    min-height: 100px;
+:host ::ng-deep {
+    // Configuration
+    @import "~bootstrap/scss/functions";
+    @import "~bootstrap/scss/variables";
+    @import "~bootstrap/scss/mixins";
+
+    // Layout & components
+    @import "~bootstrap/scss/carousel";
+    
+    // Custom SCSS
+    .carousel {
+        min-height: 100px;
+    }
 }

@@ -1,4 +1,4 @@
-name: npm-publish
+name: pull-request
 
 on:
   pull_request:
@@ -7,7 +7,7 @@ on:
 jobs:
   build:
   
-    name: npm-publish
+    name: pull-request
     runs-on: ubuntu-latest
     
     permissions: 

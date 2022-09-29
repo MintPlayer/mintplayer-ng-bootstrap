@@ -303,7 +303,6 @@ export class BsSchedulerComponent implements OnDestroy {
   }
 
   onHoverEvent(ev: SchedulerEvent | null) {
-    console.log('hovered', ev);
     this.hoveredEvent$.next(ev);
   }
 

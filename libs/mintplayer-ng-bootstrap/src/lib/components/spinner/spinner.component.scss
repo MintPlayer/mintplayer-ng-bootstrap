@@ -1,0 +1,8 @@
+:host ::ng-deep {
+    // Configuration
+    @import "~bootstrap/scss/functions";
+    @import "~bootstrap/scss/variables";
+
+    // Layout & components
+    @import "~bootstrap/scss/spinners";
+}

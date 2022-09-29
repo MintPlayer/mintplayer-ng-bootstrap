@@ -2,7 +2,7 @@ import { HttpClientModule } from '@angular/common/http';
 import { NgModule } from '@angular/core';
 import { CommonModule, JsonPipe } from '@angular/common';
 import { BrowserModule } from '@angular/platform-browser';
-import { BsNavbarModule } from '@mintplayer/ng-bootstrap';
+import { BsNavbarModule, BS_DEVELOPMENT } from '@mintplayer/ng-bootstrap';
 import ngBootstrapJson from '@mintplayer/ng-bootstrap/package.json';
 
 import { HighlightOptions, HIGHLIGHT_OPTIONS } from 'ngx-highlightjs';
@@ -30,6 +30,10 @@ import { DirectivesModule } from './directives/directives.module';
         fullLibraryLoader: () => import('highlight.js'),
         themePath: 'assets/styles/solarized-dark.css'
       }
+    },
+    {
+      provide: BS_DEVELOPMENT,
+      useValue: false
     },
     {
       provide: 'GIT_REPO',

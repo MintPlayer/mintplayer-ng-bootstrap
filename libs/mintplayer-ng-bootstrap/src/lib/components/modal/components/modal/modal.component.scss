@@ -1,0 +1,14 @@
+// ::ng-deep {
+//     @use 'node_modules/@angular/cdk/overlay/index';
+// }
+
+:host ::ng-deep {
+    // Configuration
+    @import "~bootstrap/scss/functions";
+    @import "~bootstrap/scss/variables";
+    @import "~bootstrap/scss/mixins";
+
+    // Layout & components
+    @import "~bootstrap/scss/transitions";
+    @import "~bootstrap/scss/modal";
+}

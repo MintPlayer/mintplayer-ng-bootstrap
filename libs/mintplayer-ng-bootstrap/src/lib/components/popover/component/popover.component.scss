@@ -1,0 +1,21 @@
+:host ::ng-deep {
+    // Configuration
+    @import "~bootstrap/scss/functions";
+    @import "~bootstrap/scss/variables";
+    @import "~bootstrap/scss/mixins";
+
+    // Layout & components
+    @import "~bootstrap/scss/transitions";
+    @import "~bootstrap/scss/popover";
+}
+
+.popover {
+    &.bs-popover-top > .popover-arrow, &.bs-popover-bottom > .popover-arrow {
+        left: 50%;
+        transform: translateX(-50%);
+    }
+    &.bs-popover-start > .popover-arrow, &.bs-popover-end > .popover-arrow {
+        top: 50%;
+        transform: translateY(-50%);
+    }
+}

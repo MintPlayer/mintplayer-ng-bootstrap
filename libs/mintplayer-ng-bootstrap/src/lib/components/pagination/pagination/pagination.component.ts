@@ -1,19 +1,7 @@
-import {
-  Component,
-  EventEmitter,
-  Input,
-  OnDestroy,
-  Output,
-} from '@angular/core';
-import {
-  BehaviorSubject,
-  combineLatest,
-  map,
-  Observable,
-  Subject,
-  takeUntil,
-} from 'rxjs';
+import { Component, EventEmitter, Input, OnDestroy, Output } from '@angular/core';
+import { BehaviorSubject, combineLatest, map, Observable, Subject, takeUntil } from 'rxjs';
 import { PageWithSelection } from '../../../interfaces/page-with-selection';
+import { Size } from '../../../types';
 
 @Component({
   selector: 'bs-pagination',
@@ -44,16 +32,42 @@ export class BsPaginationComponent implements OnDestroy {
         })
       );
 
+    this.isLeftOverflow$ = combineLatest([this.pageNumbers$, this.selectedPageNumber$, this.visibleNumberOfNumberBoxes$])
+      .pipe(map(([pageNumbers, selectedPageNumber, visibleNumberOfNumberBoxes]) => {
+        const index = pageNumbers.indexOf(selectedPageNumber);
+        const middle = Math.floor(visibleNumberOfNumberBoxes / 2);
+        return index > middle;
+      }));
+
+    this.isRightOverflow$ = combineLatest([this.pageNumbers$, this.selectedPageNumber$, this.visibleNumberOfNumberBoxes$])
+      .pipe(map(([pageNumbers, selectedPageNumber, visibleNumberOfNumberBoxes]) => {
+        const index = pageNumbers.indexOf(selectedPageNumber);
+        const middle = Math.floor(visibleNumberOfNumberBoxes / 2);
+        return (pageNumbers.length - index) < middle;
+      }));
+
     this.shownPageNumbers$ = combineLatest([
       this.pageNumbers$,
       this.selectedPageNumber$,
       this.visibleNumberOfNumberBoxes$,
+      this.isLeftOverflow$,
+      this.isRightOverflow$
     ])
       .pipe(takeUntil(this.destroyed$))
       .pipe(
-        map(([pageNumbers, selectedPageNumber, visibleNumberOfNumberBoxes]) => {
-          let startIndex = 0;
+        map(([pageNumbers, selectedPageNumber, visibleNumberOfNumberBoxes, isLeftOverflow, isRightOverflow]) => {
+          // const boxesToRemove = pageNumbers.length - visibleNumberOfNumberBoxes
+          //   + (isLeftOverflow ? 1 : 0)
+          //   + (isRightOverflow ? 1 : 0);
 
+          // let result: number[] = [];
+          // result.push(pageNumbers[0]);
+
+          // // ...
+
+          // result.push(pageNumbers[pageNumbers.length - 1]);
+
+          let startIndex = 0;
           const half = Math.round((visibleNumberOfNumberBoxes - 1) / 2);
           if (pageNumbers.indexOf(selectedPageNumber) < half) {
             startIndex = 0;
@@ -114,59 +128,65 @@ export class BsPaginationComponent implements OnDestroy {
   numberOfBoxes$ = new BehaviorSubject<number>(0);
   /** Display previous/next arrows. */
   showArrows$ = new BehaviorSubject<boolean>(true);
+  /** Page number size. */
+  size$ = new BehaviorSubject<Size>('medium');
 
   /** Indicates if first value is selected. */
-  isFirstPage$ = new Observable<boolean>();
+  isFirstPage$: Observable<boolean>;
   /** Indicates if last value is selected. */
-  isLastPage$ = new Observable<boolean>();
+  isLastPage$: Observable<boolean>;
   /** The number of boxes (excluding arrows) that's being shown on the pagination component. */
-  visibleNumberOfNumberBoxes$ = new Observable<number>();
+  visibleNumberOfNumberBoxes$: Observable<number>;
+  /** Indicates whether there are too many numbers to the left-hand side of the current page. */
+  isLeftOverflow$: Observable<boolean>;
+  /** Indicates whether there are too many numbers to the right-hand side of the current page. */
+  isRightOverflow$: Observable<boolean>;
   /** Monitor OnDestroyed hook. */
   private destroyed$: Subject<any>;
-
-  private _selectedPageNumber = 0;
-  private _numberOfBoxes = 0;
-  private _pageNumbers: number[] = [];
-  private _showArrows = true;
 
   //#region SelectedPageNumber
   @Output() public selectedPageNumberChange = new EventEmitter<number>();
   @Input() set selectedPageNumber(value: number) {
-    this._selectedPageNumber = value;
     this.selectedPageNumber$.next(value);
   }
   get selectedPageNumber() {
-    return this._selectedPageNumber;
+    return this.selectedPageNumber$.value;
   }
   //#endregion
 
   //#region NumberOfBoxes
   @Input() set numberOfBoxes(value: number) {
-    this._numberOfBoxes = value;
     this.numberOfBoxes$.next(value);
   }
   get numberOfBoxes() {
-    return this._numberOfBoxes;
+    return this.numberOfBoxes$.value;
   }
   //#endregion
 
   //#region PageNumbers
   @Input() set pageNumbers(value: number[]) {
-    this._pageNumbers = value;
     this.pageNumbers$.next(value);
   }
   get pageNumbers() {
-    return this._pageNumbers;
+    return this.pageNumbers$.value;
   }
   //#endregion
 
   //#region ShowArrows
   @Input() set showArrows(value: boolean) {
-    this._showArrows = value;
     this.showArrows$.next(value);
   }
   get showArrows() {
-    return this._showArrows;
+    return this.showArrows$.value;
+  }
+  //#endregion
+
+  //#region Size
+  @Input() set size(value: Size) {
+    this.size$.next(value);
+  }
+  get size() {
+    return this.size$.value;
   }
   //#endregion
 
@@ -180,12 +200,25 @@ export class BsPaginationComponent implements OnDestroy {
   }
 
   onPrevious() {
-    this.selectedPageNumber$.next(this.selectedPageNumber$.value - 1);
+    const index = this.pageNumbers.indexOf(this.selectedPageNumber);
+    if (index > 0) {
+      const newValue = this.pageNumbers[index - 1];
+      this.selectedPageNumber$.next(newValue);
+    } else {
+      this.selectedPageNumber$.next(this.pageNumbers[0]);
+    }
     return false;
   }
 
   onNext() {
-    this.selectedPageNumber$.next(this.selectedPageNumber$.value + 1);
+    const index = this.pageNumbers.indexOf(this.selectedPageNumber);
+    if (index < 0) {
+      this.selectedPageNumber$.next(this.pageNumbers[this.pageNumbers.length - 1]);
+    } else if (index < this.pageNumbers.length - 1) {
+      this.selectedPageNumber$.next(this.pageNumbers[index + 1]);
+    } else {
+      this.selectedPageNumber$.next(this.pageNumbers[this.pageNumbers.length - 1]);
+    }
     return false;
   }
 }

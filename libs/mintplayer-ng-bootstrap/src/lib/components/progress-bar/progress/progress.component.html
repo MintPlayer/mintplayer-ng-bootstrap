@@ -1,2 +1,4 @@
-<ng-content *ngIf="!isIndeterminate"></ng-content>
-<div *ngIf="isIndeterminate" class="progress-bar progress-bar-infinite" role="progressbar" aria-valuenow="infinite"></div>
+<div class="progress">
+    <ng-content *ngIf="!isIndeterminate"></ng-content>
+    <div *ngIf="isIndeterminate" class="progress-bar progress-bar-infinite bg-primary" role="progressbar" aria-valuenow="infinite"></div>
+</div>

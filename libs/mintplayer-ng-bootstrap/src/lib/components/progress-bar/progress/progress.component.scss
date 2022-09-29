@@ -1,3 +1,18 @@
+:host {
+    // Configuration
+    @import "~bootstrap/scss/functions";
+    @import "~bootstrap/scss/variables";
+    @import "~bootstrap/scss/mixins";
+
+    // Layout & components
+    @import "~bootstrap/scss/progress";
+    
+    // Custom SCSS
+    .progress-bar-infinite {
+        animation: progress-infinite 1.5s infinite;
+    }
+}
+
 @keyframes progress-infinite {
     0% {
         width: 10%;
@@ -19,8 +34,4 @@
         width: 10%;
         margin-left: 0%;
     }
-}
-
-.progress-bar-infinite {
-    animation: progress-infinite 1.5s infinite;
 }
