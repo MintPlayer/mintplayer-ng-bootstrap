@@ -1,0 +1,10 @@
+<div class="d-block" [class.table-responsive]="isResponsive$ | async" [class.nowrap]="isResponsive$ | async">
+    <table class="table" cellspacing="0" role="grid"
+        [class.mb-0]="isResponsive$ | async"
+        [class.table-striped]="striped$ | async"
+        [class.table-hover]="hover$ | async">
+
+        <ng-content></ng-content>
+
+    </table>
+</div>

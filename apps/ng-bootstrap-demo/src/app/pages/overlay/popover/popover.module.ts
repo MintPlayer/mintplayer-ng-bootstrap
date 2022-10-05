@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BsPopoverModule } from '@mintplayer/ng-bootstrap';
+import { BsGridModule, BsPopoverModule } from '@mintplayer/ng-bootstrap';
 
 import { PopoverRoutingModule } from './popover-routing.module';
 import { PopoverComponent } from './popover.component';
@@ -12,6 +12,7 @@ import { PopoverComponent } from './popover.component';
   ],
   imports: [
     CommonModule,
+    BsGridModule,
     BsPopoverModule,
     PopoverRoutingModule
   ]

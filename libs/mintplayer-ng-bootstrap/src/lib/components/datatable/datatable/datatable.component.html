@@ -1,34 +1,38 @@
-<div class="table-responsive overflow-y-hidden mb-3">
-    <table class="table table-striped table-hover w-100 mb-0" cellspacing="0" role="grid">
-        <thead>
-            <tr>
-                <th *ngFor="let column of columns" class="text-nowrap"
-                    [class.sort]="column.bsDatatableColumn.sortable"
-                    [class.sort-asc]="column.bsDatatableColumn.sortable && (settings.sortProperty === column.bsDatatableColumn.name) && (settings.sortDirection === 'ascending')"
-                    [class.sort-desc]="column.bsDatatableColumn.sortable && (settings.sortProperty === column.bsDatatableColumn.name) && (settings.sortDirection === 'descending')"
-                    (click)="columnHeaderClicked(column)">
-                    <ng-container *ngTemplateOutlet="column.templateRef"></ng-container>
-                </th>
-            </tr>
-        </thead>
-        <tbody>
-            <ng-container *ngIf="!!data && !!rowTemplate">
-                <ng-container *ngFor="let item of data.data">
-                    <ng-container *ngTemplateOutlet="rowTemplate; context: { $implicit: item }"></ng-container>
-                </ng-container>
+<bs-table [isResponsive]="true" [striped]="true" [hover]="true" class="mb-3">
+    <thead>
+        <tr>
+            <th *ngFor="let column of (columns$ | async)" class="text-nowrap"
+                [class.sort]="column.bsDatatableColumn.sortable"
+                [class.sort-asc]="column.bsDatatableColumn.sortable && (settings.sortProperty === column.bsDatatableColumn.name) && (settings.sortDirection === 'ascending')"
+                [class.sort-desc]="column.bsDatatableColumn.sortable && (settings.sortProperty === column.bsDatatableColumn.name) && (settings.sortDirection === 'descending')"
+                (click)="columnHeaderClicked(column)">
+                <ng-container *ngTemplateOutlet="column.templateRef"></ng-container>
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        <ng-container *ngIf="!!data && !!rowTemplate">
+            <ng-container *ngFor="let item of data.data">
+                <ng-container *ngTemplateOutlet="rowTemplate; context: { $implicit: item }"></ng-container>
             </ng-container>
-        </tbody>
-    </table>
-</div>
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-md-12">
-            <bs-pagination class="float-start" [pageNumbers]="settings.perPage.values"
-                [(selectedPageNumber)]="settings.perPage.selected" (selectedPageNumberChange)="reloadData.emit(settings)"
-                [showArrows]="false"></bs-pagination>
-            <bs-pagination class="float-end" [pageNumbers]="settings.page.values"
-                [(selectedPageNumber)]="settings.page.selected" (selectedPageNumberChange)="reloadData.emit(settings)"
-                [showArrows]="true"></bs-pagination>
-        </div>
-    </div>
-</div>
+        </ng-container>
+    </tbody>
+    <tfoot>
+        <tr>
+            <td [colSpan]="numberOfColumns$ | async">
+                <bs-grid [stopFullWidthAt]="'never'">
+                    <div bsRow>
+                        <div [bsColumn]="{md: 12}">
+                            <bs-pagination class="float-start" [pageNumbers]="settings.perPage.values"
+                                [(selectedPageNumber)]="settings.perPage.selected" (selectedPageNumberChange)="reloadData.emit(settings)"
+                                [showArrows]="false"></bs-pagination>
+                            <bs-pagination class="float-end" [pageNumbers]="settings.page.values"
+                                [(selectedPageNumber)]="settings.page.selected" (selectedPageNumberChange)="reloadData.emit(settings)"
+                                [showArrows]="true"></bs-pagination>
+                        </div>
+                    </div>
+                </bs-grid>
+            </td>
+        </tr>
+    </tfoot>
+</bs-table>

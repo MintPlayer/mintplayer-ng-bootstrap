@@ -4,11 +4,11 @@
     <span class="h3 d-block">{{ dropFilesCaption }}</span>
     <label class="btn btn-primary position-relative" [bsFor]="fileUpload">{{ browseFilesCaption }}</label>
 </div>
-<ul class="list-group files-list">
-    <li class="list-group-item" *ngFor="let upload of files">
+<bs-list-group class="files-list">
+    <bs-list-group-item *ngFor="let upload of files">
         <ng-container *ngTemplateOutlet="fileTemplate ?? defaultFileTemplate; context: { $implicit: upload }"></ng-container>
-    </li>
-</ul>
+    </bs-list-group-item>
+</bs-list-group>
 
 <ng-template #defaultFileTemplate let-upload>
     <div class="d-flex flex-row mx-auto">

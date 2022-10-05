@@ -12,10 +12,13 @@ export class BsPlaceholderFieldDirective implements OnDestroy {
       .pipe(takeUntil(this.destroyed$))
       .subscribe((isLoading) => {
         this.placeholderClass = isLoading;
-        // this.marginBottom = isLoading ? -1 : 0;
+        this.marginBottom = isLoading ? -1 : 0;
+        this.html = isLoading ? '&nbsp;' : undefined;
       });
   }
 
+  @HostBinding('attr.innerHtml') html?: string = undefined;
+  @HostBinding('style.min-width.px') minWidth = 80;
   @HostBinding('style.margin-bottom.px') marginBottom = 0;
   @HostBinding('class.placeholder') placeholderClass = true;
   destroyed$ = new Subject();

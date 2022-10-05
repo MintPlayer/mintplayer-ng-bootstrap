@@ -1,17 +1,17 @@
-<div class="container">
-    <div class="row">
-        <div class="col-sm-4">
+<bs-grid>
+    <div bsRow>
+        <div [bsColumn]="{ sm: 4 }">
             To do
         </div>
-        <div class="col-sm-4">
+        <div [bsColumn]="{ sm: 4 }">
             In progress
         </div>
-        <div class="col-sm-4">
+        <div [bsColumn]="{ sm: 4 }">
             Done
         </div>
     </div>
-    <div class="row">
-        <div class="col-sm-4">
+    <div bsRow>
+        <div [bsColumn]="{ sm: 4 }">
             <div cdkDropList #toDoList="cdkDropList"
                 [cdkDropListData]="toDoItems"
                 [cdkDropListConnectedTo]="[inProgressList]"
@@ -25,7 +25,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-4">
+        <div [bsColumn]="{ sm: 4 }">
             <div cdkDropList #inProgressList="cdkDropList"
                 [cdkDropListData]="inProgressItems"
                 [cdkDropListConnectedTo]="[toDoList,doneList]"
@@ -40,7 +40,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-4">
+        <div [bsColumn]="{ sm: 4 }">
             <div cdkDropList #doneList="cdkDropList"
                 [cdkDropListData]="doneItems"
                 [cdkDropListConnectedTo]="[inProgressList]"
@@ -56,4 +56,4 @@
             </div>
         </div>
     </div>
-</div>
+</bs-grid>

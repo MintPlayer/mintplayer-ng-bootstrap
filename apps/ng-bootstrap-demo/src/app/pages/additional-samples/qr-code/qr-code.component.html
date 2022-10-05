@@ -1,11 +1,11 @@
 <h2>QR Code viewer</h2>
-<div class="container">
+<bs-grid>
     <div class="row">
-        <div class="col-xl-6">
+        <div [bsColumn]="{xl: 6}">
             <textarea [(ngModel)]="text" class="form-control"></textarea>
         </div>
-        <div class="col-xl-6 text-center">
+        <div [bsColumn]="{xl: 6}" class="text-center">
             <qr-code [value]="text"></qr-code>
         </div>
     </div>
-</div>
+</bs-grid>

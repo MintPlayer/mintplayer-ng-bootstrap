@@ -1,15 +1,21 @@
-import { Component, HostBinding, Input } from '@angular/core';
+import { Component, EventEmitter, HostBinding, Input } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 
 @Component({
-  selector: '[bsPlaceholder]',
+  selector: 'bs-placeholder',
   templateUrl: './placeholder.component.html',
   styleUrls: ['./placeholder.component.scss'],
 })
 export class BsPlaceholderComponent {
+  //#region isLoading
   isLoading$ = new BehaviorSubject<boolean>(false);
-
-  @Input() public set bsPlaceholder(value: boolean) {
-    this.isLoading$.next(value);
+  isLoadingChange = new EventEmitter<boolean>();
+  public get isLoading() {
+    return this.isLoading$.value;
   }
+  @Input() public set isLoading(value: boolean) {
+    this.isLoading$.next(value);
+    this.isLoadingChange.emit(value);
+  }
+  //#endregion
 }

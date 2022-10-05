@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BsForModule } from '@mintplayer/ng-bootstrap';
+import { BsForModule, BsGridModule } from '@mintplayer/ng-bootstrap';
 
 import { ForDirectiveRoutingModule } from './for-directive-routing.module';
 import { ForDirectiveComponent } from './for-directive.component';
@@ -13,6 +13,7 @@ import { ForDirectiveComponent } from './for-directive.component';
   imports: [
     CommonModule,
     BsForModule,
+    BsGridModule,
     ForDirectiveRoutingModule
   ]
 })

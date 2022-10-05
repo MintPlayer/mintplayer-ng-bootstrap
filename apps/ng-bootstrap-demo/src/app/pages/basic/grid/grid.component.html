@@ -1,0 +1,37 @@
+<h1>Grid</h1>
+<h2>Flex columns</h2>
+<bs-grid>
+    <div bsRow>
+        <div bsColumn>Hello</div>
+        <div bsColumn>World</div>
+    </div>
+    <div bsRow>
+        <div bsColumn>This</div>
+        <div bsColumn>Is</div>
+        <div bsColumn>Me</div>
+    </div>
+</bs-grid>
+<h2>Explicit column size</h2>
+<bs-grid>
+    <div bsRow>
+        <div [bsColumn]="{ sm: 8 }">Hello</div>
+        <div [bsColumn]="{ sm: 4 }">World</div>
+    </div>
+    <div bsRow>
+        <div [bsColumn]="{ sm: 6 }">This</div>
+        <div [bsColumn]="{ sm: 3 }">Is</div>
+        <div [bsColumn]="{ sm: 3 }">Me</div>
+    </div>
+</bs-grid>
+<h2>Minimum column size</h2>
+<bs-grid>
+    <div bsRow>
+        <div [bsColumn]="{ _: 8 }">Hello</div>
+        <div [bsColumn]="{ _: 4 }">World</div>
+    </div>
+    <div bsRow>
+        <div [bsColumn]="{ _: 6 }">This</div>
+        <div [bsColumn]="{ _: 3 }">Is</div>
+        <div [bsColumn]="{ _: 3 }">Me</div>
+    </div>
+</bs-grid>

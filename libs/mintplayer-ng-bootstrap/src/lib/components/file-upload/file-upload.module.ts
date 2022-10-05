@@ -5,6 +5,7 @@ import { BsProgressBarModule } from '../progress-bar';
 import { BsFormatBytesModule } from '../../pipes/format-bytes/format-bytes.module';
 import { BsFileUploadComponent } from './component/file-upload.component';
 import { BsFileUploadTemplateDirective } from './directive/file-upload-template.directive';
+import { BsListGroupModule } from '../list-group/list-group.module';
 
 @NgModule({
   declarations: [
@@ -15,7 +16,8 @@ import { BsFileUploadTemplateDirective } from './directive/file-upload-template.
     CommonModule,
     BsForModule,
     BsFormatBytesModule,
-    BsProgressBarModule
+    BsProgressBarModule,
+    BsListGroupModule
   ],
   exports: [
     BsFileUploadComponent,

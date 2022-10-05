@@ -1,9 +1,9 @@
 <h1>Rating</h1>
-<div class="container">
-    <div class="row">
-        <div class="col-md-12">
+<bs-grid>
+    <div bsRow>
+        <div [bsColumn]="{md: 12}">
             <bs-rating [maximum]="10" [(value)]="ratingValue" (starsChange)="previewValue = $event"></bs-rating>
             <span>{{ previewValue }}</span>
         </div>
     </div>
-</div>
+</bs-grid>

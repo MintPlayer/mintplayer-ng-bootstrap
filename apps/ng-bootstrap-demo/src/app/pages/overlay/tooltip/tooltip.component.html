@@ -4,9 +4,9 @@
     Just to demonstrate that nothing is being cut-off,
     we're having position:relative;overflow:hidden on the containers.
 </blockquote>
-<div class="container text-center">
-    <div class="row mb-3">
-        <div class="col-md-3 offset-md-3 position-relative overflow-hidden">
+<bs-grid class="text-center">
+    <div bsRow class="mb-3">
+        <div [bsColumn]="{md: 3}" class="offset-md-3 position-relative overflow-hidden">
             <button class="btn btn-primary">
                 Left
                 <div class="text-nowrap" *bsTooltip="tooltipPosition.left">
@@ -16,7 +16,7 @@
                 </div>
             </button>
         </div>
-        <div class="col-md-3 position-relative overflow-hidden">
+        <div [bsColumn]="{md: 3}" class="position-relative overflow-hidden">
             <button class="btn btn-primary">
                 Top
                 <div class="text-nowrap" *bsTooltip="tooltipPosition.top">
@@ -27,8 +27,8 @@
             </button>
         </div>
     </div>
-    <div class="row">
-        <div class="col-md-3 offset-md-3 position-relative overflow-hidden">
+    <div bsRow>
+        <div [bsColumn]="{md: 3}" class="offset-md-3 position-relative overflow-hidden">
             <button class="btn btn-primary">
                 Bottom
                 <div class="text-nowrap" *bsTooltip="tooltipPosition.bottom">
@@ -38,7 +38,7 @@
                 </div>
             </button>
         </div>
-        <div class="col-md-3 position-relative overflow-hidden">
+        <div [bsColumn]="{md: 3}" class="position-relative overflow-hidden">
             <button class="btn btn-primary">
                 Right
                 <div class="text-nowrap" *bsTooltip="tooltipPosition.right">
@@ -49,7 +49,7 @@
             </button>
         </div>
     </div>
-</div>
+</bs-grid>
 
 <h2>Code</h2>
 <p>

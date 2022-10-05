@@ -1,5 +1,5 @@
 <h2 class="accordion-header cursor-pointer" (click)="headerClicked($event)">
-    <button class="accordion-button" [class.bg-none]="!accordionTab.accordion.highlightActiveTab" [class.collapsed]="!accordionTab.isActive" type="button">
+    <button class="accordion-button" [class.bg-transparent]="!accordionTab.isActive && accordionTab.accordion.highlightActiveTab" [class.collapsed]="!accordionTab.isActive" [class.background-unset]="!accordionTab.accordion.highlightActiveTab" type="button">
         <ng-content></ng-content>
     </button>
 </h2>

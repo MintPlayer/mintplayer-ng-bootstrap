@@ -7,22 +7,30 @@
 </div>
 <bs-card>
     <bs-card-header>Card with placeholders</bs-card-header>
-    <h5 class="card-title" [bsPlaceholder]="isLoading">
-        <span bsPlaceholderField class="d-inline-block col-12">Featured</span>
-    </h5>
-    <p class="card-text" [bsPlaceholder]="isLoading">
-        <span bsPlaceholderField class="d-inline-block col-7">{{ isLoading ? '' : lines[0] }}</span>
-        &nbsp;
-        <span bsPlaceholderField class="d-inline-block col-4">{{ isLoading ? '' : lines[1] }}</span>
-        &nbsp;
-        <span bsPlaceholderField class="d-inline-block col-4">{{ isLoading ? '' : lines[2] }}</span>
-        &nbsp;
-        <span bsPlaceholderField class="d-inline-block col-6">{{ isLoading ? '' : lines[3] }}</span>
-        &nbsp;
-        <span bsPlaceholderField class="d-inline-block col-8">{{ isLoading ? '' : lines[4] }}</span>
-    </p>
+    <div class="p-3">
+        <bs-placeholder [isLoading]="isLoading">
+            <h5 class="card-title">
+                <span bsPlaceholderField class="d-block text-center">Featured</span>
+            </h5>
+            <p class="card-text">
+                <bs-grid>
+                    <div bsRow>
+                        <span bsPlaceholderField [bsColumn]="{_: 7}" class="d-inline-block">{{ isLoading ? '&nbsp;' : lines[0] }}</span>
+                    </div>
+                    <div bsRow>
+                        <span bsPlaceholderField [bsColumn]="{_: 4}" class="d-inline-block">{{ isLoading ? '&nbsp;' : lines[1] }}</span>
+                    </div>
+                    <div bsRow>
+                        <span bsPlaceholderField [bsColumn]="{_: 4}" class="d-inline-block">{{ isLoading ? '&nbsp;' : lines[2] }}</span>
+                    </div>
+                    <div bsRow>
+                        <span bsPlaceholderField [bsColumn]="{_: 6}" class="d-inline-block">{{ isLoading ? '&nbsp;' : lines[3] }}</span>
+                    </div>
+                    <div bsRow>
+                        <span bsPlaceholderField [bsColumn]="{_: 8}" class="d-inline-block">{{ isLoading ? '&nbsp;' : lines[4] }}</span>
+                    </div>
+                </bs-grid>
+            </p>
+        </bs-placeholder>
+    </div>
 </bs-card>
-<h2 class="my-2">Warning</h2>
-<bs-alert [type]="colors.warning">
-    Never apply the <code>[bsPlaceholder]</code> to an angular component.
-</bs-alert>

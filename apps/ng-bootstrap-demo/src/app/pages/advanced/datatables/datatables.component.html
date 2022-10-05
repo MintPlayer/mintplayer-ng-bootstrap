@@ -10,11 +10,9 @@
     3. Year quit
   </div>
 
-  <ng-template bsRowTemplate let-artist>
-    <tr>
-      <td class="text-nowrap">{{ artist.name }}</td>
-      <td class="text-nowrap">{{ artist.yearStarted }}</td>
-      <td class="text-nowrap">{{ artist.yearQuit }}</td>
-    </tr>
-  </ng-template>
+  <tr *bsRowTemplate="let artist">
+    <td class="text-nowrap">{{ artist.name }}</td>
+    <td class="text-nowrap">{{ artist.yearStarted }}</td>
+    <td class="text-nowrap">{{ artist.yearQuit }}</td>
+  </tr>
 </bs-datatable>

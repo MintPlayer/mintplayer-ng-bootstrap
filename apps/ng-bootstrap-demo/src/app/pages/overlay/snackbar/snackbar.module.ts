@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BsSnackbarModule } from '@mintplayer/ng-bootstrap';
+import { BsGridModule, BsSnackbarModule } from '@mintplayer/ng-bootstrap';
 
 import { SnackbarRoutingModule } from './snackbar-routing.module';
 import { SnackbarComponent } from './snackbar.component';
@@ -12,6 +12,7 @@ import { SnackbarComponent } from './snackbar.component';
   ],
   imports: [
     CommonModule,
+    BsGridModule,
     BsSnackbarModule,
     SnackbarRoutingModule
   ]

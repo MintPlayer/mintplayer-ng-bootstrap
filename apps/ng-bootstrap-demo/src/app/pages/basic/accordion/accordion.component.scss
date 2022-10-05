@@ -4,10 +4,12 @@
 
 
 .multi-level {
+    background: #333;
+
     ::ng-deep > .accordion > bs-accordion-tab {
-        > div > bs-accordion-tab-header h2 button {
-            background-color: #333;
-        }
+        // > div > bs-accordion-tab-header h2 button {
+        //     background-color: #333;
+        // }
 
         .accordion-button {
             color: #FFF !important;
@@ -20,19 +22,19 @@
 
         background-color: transparent;
         .accordion-body {
-            background-color: #666;
+            background-color: #666 !important;
         }
 
         bs-accordion-tab {
             background-color: transparent !important;
             .accordion-body {
-                background-color: #999;
+                background-color: #999 !important;
             }
             
             bs-accordion-tab {
                 background-color: transparent !important;
                 .accordion-body {
-                    background-color: #CCC;
+                    background-color: #CCC !important;
                 }
             }
         }

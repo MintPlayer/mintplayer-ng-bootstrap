@@ -1,4 +1,4 @@
-<div class="table d-flex w-100 overflow-y-auto mb-0 week-schedule" [style.max-height.px]="null"
+<div class="d-flex flex-column w-100 overflow-y-auto mb-0 week-schedule" [style.max-height.px]="null"
     *ngIf="(mode$ | async) === modes.week">
     <div class="calendar-head">
         <div class="w-100 d-flex flex-row">
@@ -70,7 +70,7 @@
         </div>
     </div>
 </div>
-<div class="table d-flex w-100 overflow-y-auto mb-0 bg-white timeline" *ngIf="(mode$ | async) === modes.timeline">
+<div class="d-flex flex-column-100 overflow-y-auto mb-0 bg-white timeline" *ngIf="(mode$ | async) === modes.timeline">
     <div class="calendar-head d-flex">
         <button class="btn flex-start" (click)="onPreviousWeekOrMonth()">
             <i class="bi-chevron-left px-0"></i>
@@ -80,6 +80,7 @@
             <i class="bi-chevron-right px-0"></i>
         </button>
     </div>
+    
     <div class="calendar-body table-responsive overflow-x-auto">
         <table class="table mb-0">
             <ng-container *ngIf="(timeSlots$ | async) as timeSlots">

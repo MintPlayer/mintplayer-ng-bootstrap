@@ -1,16 +1,15 @@
 <h2>Toggle button</h2>
-<div class="container">
-    <div class="row">
-        <div class="col-sm-3">Use dark mode</div>
-        <div class="col-sm-3">
+<bs-grid>
+    <div bsRow>
+        <div [bsColumn]="{sm:3}">Use dark mode</div>
+        <div [bsColumn]="{sm:3}">
             <bs-toggle-button [(isToggled)]="darkMode">{{ darkMode ? 'dark' : 'light' }}</bs-toggle-button>
         </div>
-        <div class="col-sm-3">
+        <div [bsColumn]="{sm:3}">
             <bs-toggle-button [(isToggled)]="darkMode">{{ darkMode ? 'dark' : 'light' }}</bs-toggle-button>
         </div>
-        <div class="col-sm-3">
-            <bs-toggle-button [(isToggled)]="darkMode" [disabled]="true">{{ darkMode ? 'dark' : 'light' }}
-            </bs-toggle-button>
+        <div [bsColumn]="{sm:3}">
+            <bs-toggle-button [(isToggled)]="darkMode" [disabled]="true">{{ darkMode ? 'dark' : 'light' }}</bs-toggle-button>
         </div>
     </div>
-</div>
+</bs-grid>

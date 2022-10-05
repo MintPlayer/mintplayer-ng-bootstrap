@@ -1,0 +1,42 @@
+<bs-grid>
+    <div bsRow>
+        <div [bsColumn]>
+            <label>
+                <input type="checkbox" [(ngModel)]="isResponsive">
+                Responsive
+            </label>
+        </div>
+    </div>
+    <div bsRow>
+        <div [bsColumn]>
+            <bs-table [isResponsive]="isResponsive">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>First name</th>
+                        <th>Last name</th>
+                        <th>Nickname</th>
+                        <th>Occupation</th>
+                        <th>Date of birth</th>
+                        <th>Place of birth</th>
+                        <th>Date of death</th>
+                        <th>Place of death</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let person of people">
+                        <th scope="row">{{ person.id }}</th>
+                        <td>{{ person.firstName }}</td>
+                        <td>{{ person.lastName }}</td>
+                        <td>{{ person.nickName }}</td>
+                        <td>{{ person.occupation }}</td>
+                        <td>{{ person.dateOfBirth | date:'yyyy/MM/dd' }}</td>
+                        <td>{{ person.placeOfBirth }}</td>
+                        <td>{{ person.dateOfDeath | date:'yyyy/MM/dd' }}</td>
+                        <td>{{ person.placeOfDeath }}</td>
+                    </tr>
+                </tbody>
+            </bs-table>
+        </div>
+    </div>
+</bs-grid>
