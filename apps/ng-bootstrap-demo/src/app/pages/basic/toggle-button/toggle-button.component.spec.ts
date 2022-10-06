@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, ContentChildren, Directive, EventEmitter, Input, Output, QueryList } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ToggleButtonComponent } from './toggle-button.component';
 
@@ -13,6 +13,17 @@ class BsToggleButtonMockComponent {
   @Input() public disabled = false;
 }
 
+@Directive({
+  selector: '[bsToggleButtonGroup]',
+  exportAs: 'bsToggleButtonGroup'
+})
+class BsToggleButtonGroupMockDirective {
+
+  constructor() { }
+
+  @ContentChildren(BsToggleButtonMockComponent, { descendants: true }) toggleButtons!: QueryList<BsToggleButtonMockComponent>;
+}
+
 describe('ToggleButtonComponent', () => {
   let component: ToggleButtonComponent;
   let fixture: ComponentFixture<ToggleButtonComponent>;
@@ -24,7 +35,8 @@ describe('ToggleButtonComponent', () => {
         ToggleButtonComponent,
 
         // Mock dependencies
-        BsToggleButtonMockComponent
+        BsToggleButtonMockComponent,
+        BsToggleButtonGroupMockDirective
       ]
     })
     .compileComponents();

@@ -1,8 +1,8 @@
-import { ToggleButtonGroupDirective } from './toggle-button-group.directive';
+import { BsToggleButtonGroupDirective } from './toggle-button-group.directive';
 
-describe('ToggleButtonGroupDirective', () => {
+describe('BsToggleButtonGroupDirective', () => {
   it('should create an instance', () => {
-    const directive = new ToggleButtonGroupDirective();
+    const directive = new BsToggleButtonGroupDirective();
     expect(directive).toBeTruthy();
   });
 });

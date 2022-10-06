@@ -1,4 +1,4 @@
-import { Directive, Input } from '@angular/core';
+import { Component, Directive, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ForDirectiveComponent } from './for-directive.component';
 
@@ -9,6 +9,24 @@ class BsForDirective {
 
   @Input() bsFor: any;
 
+}
+
+@Component({
+  selector: 'bs-grid',
+  template: `
+    <div>
+      <ng-content></ng-content>
+    </div>`
+})
+class BsGridMockComponent {
+  @Input() stopFullWidthAt: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl' | 'never' = 'sm';
+}
+
+@Directive({
+  selector: '[bsColumn]'
+})
+class BsColumnMockDirective {
+  @Input() bsColumn?: object | '';
 }
 
 describe('ForDirectiveComponent', () => {
@@ -22,7 +40,9 @@ describe('ForDirectiveComponent', () => {
         ForDirectiveComponent,
         
         // Mock dependencies
-        BsForDirective
+        BsForDirective,
+        BsGridMockComponent,
+        BsColumnMockDirective
       ]
     })
     .compileComponents();

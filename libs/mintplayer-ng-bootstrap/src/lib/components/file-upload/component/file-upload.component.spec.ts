@@ -54,6 +54,24 @@ class BsProgressbarMockComponent {
   @Input() public animated = false;
 }
 
+@Component({
+  selector: 'bs-list-group',
+  template: `
+    <ul class="list-group">
+      <ng-content></ng-content>
+    </ul>`
+})
+class BsListGroupMockComponent {}
+
+@Component({
+  selector: 'bs-list-group-item',
+  template: `
+    <li class="list-group-item">
+      <ng-content></ng-content>
+    </li>`
+})
+class BsListGroupItemMockComponent {}
+
 describe('BsFileUploadComponent', () => {
   let component: BsFileUploadComponent;
   let fixture: ComponentFixture<BsFileUploadComponent>;
@@ -68,7 +86,9 @@ describe('BsFileUploadComponent', () => {
         BsForMockDirective,
         BsFormatBytesMockPipe,
         BsProgressMockComponent,
-        BsProgressbarMockComponent
+        BsProgressbarMockComponent,
+        BsListGroupMockComponent,
+        BsListGroupItemMockComponent
       ]
     })
     .compileComponents();

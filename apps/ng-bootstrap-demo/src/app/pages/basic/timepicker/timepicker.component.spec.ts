@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Directive, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TimepickerComponent } from './timepicker.component';
 
@@ -8,6 +8,24 @@ import { TimepickerComponent } from './timepicker.component';
 })
 class BsTimepickerMockComponent {
   @Input() selectedTime = new Date();
+}
+
+@Component({
+  selector: 'bs-grid',
+  template: `
+    <div>
+      <ng-content></ng-content>
+    </div>`
+})
+class BsGridMockComponent {
+  @Input() stopFullWidthAt: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl' | 'never' = 'sm';
+}
+
+@Directive({
+  selector: '[bsColumn]'
+})
+class BsColumnMockDirective {
+  @Input() bsColumn?: object | '';
 }
 
 describe('TimepickerComponent', () => {
@@ -21,7 +39,9 @@ describe('TimepickerComponent', () => {
         TimepickerComponent,
       
         // Mock dependencies
-        BsTimepickerMockComponent
+        BsTimepickerMockComponent,
+        BsGridMockComponent,
+        BsColumnMockDirective
       ]
     })
     .compileComponents();

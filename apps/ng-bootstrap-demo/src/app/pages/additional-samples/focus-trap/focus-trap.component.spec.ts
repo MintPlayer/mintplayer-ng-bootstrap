@@ -29,6 +29,24 @@ class BsModalHostMockComponent {
 
 }
 
+@Component({
+  selector: 'bs-grid',
+  template: `
+    <div>
+      <ng-content></ng-content>
+    </div>`
+})
+class BsGridMockComponent {
+  @Input() stopFullWidthAt: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl' | 'never' = 'sm';
+}
+
+@Directive({
+  selector: '[bsColumn]'
+})
+class BsColumnMockDirective {
+  @Input() bsColumn?: object | '';
+}
+
 describe('FocusTrapComponent', () => {
   let component: FocusTrapComponent;
   let fixture: ComponentFixture<FocusTrapComponent>;
@@ -41,7 +59,9 @@ describe('FocusTrapComponent', () => {
 
         // Mock dependencies
         BsForMockDirective,
-        BsModalHostMockComponent
+        BsModalHostMockComponent,
+        BsGridMockComponent,
+        BsColumnMockDirective
       ]
     })
     .compileComponents();

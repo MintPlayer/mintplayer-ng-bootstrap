@@ -1,6 +1,15 @@
+import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { ButtonGroupComponent } from './button-group.component';
+
+@Component({
+  selector: 'bs-button-group',
+  template: `
+    <div>
+      <ng-content></ng-content>
+    </div>`
+})
+class BsButtonGroupMockComponent {}
 
 describe('ButtonGroupComponent', () => {
   let component: ButtonGroupComponent;
@@ -8,7 +17,13 @@ describe('ButtonGroupComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ ButtonGroupComponent ]
+      declarations: [
+        // Unit to test
+        ButtonGroupComponent,
+      
+        // Mock dependencies
+        BsButtonGroupMockComponent
+      ]
     })
     .compileComponents();
 

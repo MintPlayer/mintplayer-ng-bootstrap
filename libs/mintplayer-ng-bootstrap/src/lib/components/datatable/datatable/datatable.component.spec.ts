@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Directive, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { BsDatatableComponent } from './datatable.component';
@@ -14,7 +14,10 @@ describe('BsDatatableComponent', () => {
         BsDatatableComponent,
         
         // Mock dependencies
-        BsPaginationComponent
+        BsPaginationMockComponent,
+        BsTableMockComponent,
+        BsGridMockComponent,
+        BsColumnMockDirective
       ]
     })
     .compileComponents();
@@ -40,11 +43,44 @@ describe('BsDatatableComponent', () => {
       </li>
     </ul>`
 })
-export class BsPaginationComponent {
+class BsPaginationMockComponent {
 
   @Input() selectedPageNumber = 0;
   @Input() numberOfBoxes = 0;
   @Input() pageNumbers: number[] = [];
   @Input() showArrows = true;
 
+}
+
+@Component({
+  selector: 'bs-table',
+  template: `
+    <div>
+      <table>
+        <ng-content></ng-content>
+      </table>
+    </div>`
+})
+class BsTableMockComponent {
+  @Input() isResponsive = false;
+  @Input() striped = false;
+  @Input() hover = false;
+}
+
+@Component({
+  selector: 'bs-grid',
+  template: `
+    <div>
+      <ng-content></ng-content>
+    </div>`
+})
+class BsGridMockComponent {
+  @Input() stopFullWidthAt: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl' | 'never' = 'sm';
+}
+
+@Directive({
+  selector: '[bsColumn]'
+})
+class BsColumnMockDirective {
+  @Input() bsColumn?: object | '';
 }
