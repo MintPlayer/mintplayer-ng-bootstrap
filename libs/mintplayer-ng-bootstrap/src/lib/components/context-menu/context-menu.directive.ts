@@ -19,11 +19,6 @@ export class BsContextMenuDirective {
 
       const target = {
         getBoundingClientRect: () => {
-          console.log('getBoundingClientRect', {
-            clientX: ev.clientX,
-            clientY: ev.clientY,
-            scrollY: window.scrollY,
-          });
           return  ({
             width: 0,
             height: 0,

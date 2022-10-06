@@ -1,7 +1,5 @@
 <bs-navbar #nav>
-  <ng-template bsExpandButton let-state>
-    <bs-navbar-toggler [state]="state" [toggleOnClick]="false"></bs-navbar-toggler>
-  </ng-template>
+  <bs-navbar-toggler *bsExpandButton="let state" [state]="state" [toggleOnClick]="false"></bs-navbar-toggler>
   <bs-navbar-brand [routerLink]='["/"]'>
     <span class="brand d-block px-3 pb-3 pt-3">
       ng-bootstrap
@@ -22,6 +20,9 @@
         </bs-navbar-item>
         <bs-navbar-item>
           <a [routerLink]='["/basic", "rating"]'>Rating</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "range"]'>Range</a>
         </bs-navbar-item>
         <bs-navbar-item>
           <a [routerLink]='["/basic", "badge"]'>Badge</a>
@@ -151,9 +152,6 @@
       <bs-navbar-dropdown>
         <bs-navbar-item>
           <a [routerLink]='["/additional-samples", "collapse"]'>Collapse</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/additional-samples", "range"]'>Range</a>
         </bs-navbar-item>
         <bs-navbar-item>
           <a [routerLink]='["/additional-samples", "floating-labels"]'>Floating labels</a>

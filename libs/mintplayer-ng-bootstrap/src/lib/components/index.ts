@@ -26,6 +26,7 @@ export * from './pagination';
 export * from './placeholder';
 export * from './popover';
 export * from './progress-bar';
+export * from './range';
 export * from './rating';
 export * from './scrollspy';
 export * from './select2';

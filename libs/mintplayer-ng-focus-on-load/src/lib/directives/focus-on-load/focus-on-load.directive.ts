@@ -9,7 +9,6 @@ export class FocusOnLoadDirective implements AfterViewInit {
   constructor(
     private viewContainer: ViewContainerRef
   ) {
-    console.log('init FocusOnLoadDirective');
     const container = (<any>this.viewContainer)['_lContainer'][0]
     if (container instanceof HTMLElement) {
       this.inputBox = <HTMLInputElement>container;

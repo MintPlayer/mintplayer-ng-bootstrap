@@ -7,4 +7,15 @@ import { Component } from '@angular/core';
 })
 export class ToggleButtonComponent {
   darkMode: boolean | null = true;
+
+  // Checkbox - Multi mode
+  favoriteColors: string[] = [];
+
+  // Checkbox - Single mode
+  isDarkMode = false;
+  isHstsEnabled = false;
+  isCrossPlatform = false;
+
+  // Radio
+  theme: 'light' | 'dark' | 'contrast' | 'disabled' = 'light';
 }

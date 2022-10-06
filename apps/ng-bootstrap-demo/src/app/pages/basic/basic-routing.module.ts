@@ -24,7 +24,8 @@ const routes: Routes = [
   { path: 'spinner', loadChildren: () => import('./spinner/spinner.module').then(m => m.SpinnerModule) },
   { path: 'placeholder', loadChildren: () => import('./placeholder/placeholder.module').then(m => m.PlaceholderModule) },
   { path: 'pagination', loadChildren: () => import('./pagination/pagination.module').then(m => m.PaginationModule) },
-  { path: 'table', loadChildren: () => import('./table/table.module').then(m => m.TableModule) }
+  { path: 'table', loadChildren: () => import('./table/table.module').then(m => m.TableModule) },
+  { path: 'range', loadChildren: () => import('./range/range.module').then(m => m.RangeModule) }
 ];
 
 @NgModule({

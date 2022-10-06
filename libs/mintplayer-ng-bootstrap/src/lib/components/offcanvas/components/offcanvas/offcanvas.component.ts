@@ -108,7 +108,6 @@ export class BsOffcanvasComponent implements OnDestroy {
 
   @Output() backdropClick = new EventEmitter<MouseEvent>();
   onBackdropClick(ev: MouseEvent) {
-    console.log(1);
     this.backdropClick.emit(ev);
   }
   
