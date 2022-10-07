@@ -1,0 +1,1 @@
+export type BsSelectSize = 'sm' | 'md' | 'lg';

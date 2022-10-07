@@ -25,7 +25,8 @@ const routes: Routes = [
   { path: 'placeholder', loadChildren: () => import('./placeholder/placeholder.module').then(m => m.PlaceholderModule) },
   { path: 'pagination', loadChildren: () => import('./pagination/pagination.module').then(m => m.PaginationModule) },
   { path: 'table', loadChildren: () => import('./table/table.module').then(m => m.TableModule) },
-  { path: 'range', loadChildren: () => import('./range/range.module').then(m => m.RangeModule) }
+  { path: 'range', loadChildren: () => import('./range/range.module').then(m => m.RangeModule) },
+  { path: 'select', loadChildren: () => import('./select/select.module').then(m => m.SelectModule) }
 ];
 
 @NgModule({

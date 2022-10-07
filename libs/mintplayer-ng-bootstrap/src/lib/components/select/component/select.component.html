@@ -1,0 +1,3 @@
+<select class="form-select" #selectBox [class]="sizeClass$ | async" [attr.multiple]="multipleValue$ | async" [attr.size]="numberVisible$ | async" aria-label="Default select example">
+    <ng-content></ng-content>
+</select>

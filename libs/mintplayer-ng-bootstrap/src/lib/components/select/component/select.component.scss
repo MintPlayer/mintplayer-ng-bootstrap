@@ -1,0 +1,7 @@
+:host ::ng-deep {
+    @import "~bootstrap/scss/bootstrap-utilities.scss";
+    @import "~bootstrap/scss/functions";
+    @import "~bootstrap/scss/variables";
+    @import "~bootstrap/scss/utilities";
+    @import "~bootstrap/scss/forms/form-select";
+}
