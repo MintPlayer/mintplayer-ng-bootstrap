@@ -36,12 +36,12 @@ export class BsSelectValueAccessor implements ControlValueAccessor {
     this.setProperty('disabled', isDisabled);
   }
   protected setProperty(key: string, value: any): void {
-    if (this._elementRef) {
-      this._renderer.setProperty(this._elementRef.nativeElement, key, value);
-    }
-    // if (this.selectBox.selectBox) {
-    //   this._renderer.setProperty(this.selectBox.selectBox.nativeElement, key, value);
+    // if (this._elementRef) {
+    //   this._renderer.setProperty(this._elementRef.nativeElement, key, value);
     // }
+    if (this.selectBox.selectBox) {
+      this._renderer.setProperty(this.selectBox.selectBox.nativeElement, key, value);
+    }
   }
 
   @HostListener('change', ['$event']) hostOnChange(ev: InputEvent) {
@@ -140,10 +140,11 @@ export class BsSelectOption implements OnDestroy {
 
   setElementValue(value: string) {
     // console.log('setElementValue', value);
-    const nativeSelect = this.select['selectBox'].selectBox;
-    if (nativeSelect) {
-      this.renderer.setProperty(nativeSelect.nativeElement, 'value', value);
-    }
+    // const nativeSelect = this.select['selectBox'].selectBox;
+    // if (nativeSelect) {
+    //   this.renderer.setProperty(nativeSelect.nativeElement, 'value', value);
+    // }
+    this.renderer.setProperty(this.element.nativeElement, 'value', value);
   }
 
   ngOnDestroy() {

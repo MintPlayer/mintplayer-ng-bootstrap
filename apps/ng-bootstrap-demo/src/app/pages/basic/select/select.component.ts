@@ -11,7 +11,6 @@ export class SelectComponent implements OnInit {
 
   disableSelectBox = false;
   selectedDishBootstrapSelect: Dish | null = null;
-  selectedDishNormalSelect: Dish | null = null;
   dishes: Dish[] = [
     { id: 1, name: 'Salmon', description: 'Salmon with mini-tomatoes', ingredients: ['Salmon', 'tomatoes', 'Pepper sauce'] },
     { id: 2, name: 'Spaghetti', description: 'Spaghetti Bolognaise', ingredients: ['Pasta', 'Minced meat', 'Tomato sauce', 'Mushrooms'] },

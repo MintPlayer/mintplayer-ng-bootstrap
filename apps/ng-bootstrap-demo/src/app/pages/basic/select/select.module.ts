@@ -1,10 +1,10 @@
 import { NgModule } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { BsSelectModule } from '@mintplayer/ng-bootstrap';
+import { BsGridModule, BsSelectModule } from '@mintplayer/ng-bootstrap';
 
 import { SelectRoutingModule } from './select-routing.module';
 import { SelectComponent } from './select.component';
-import { FormsModule } from '@angular/forms';
 
 
 @NgModule({
@@ -14,6 +14,7 @@ import { FormsModule } from '@angular/forms';
   imports: [
     CommonModule,
     FormsModule,
+    BsGridModule,
     BsSelectModule,
     SelectRoutingModule
   ]
