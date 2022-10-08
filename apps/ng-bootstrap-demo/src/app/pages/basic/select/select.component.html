@@ -1,0 +1,30 @@
+<bs-grid>
+    <div bsRow class="mb-3">
+        <div [bsColumn]="{sm: 6}">
+            <bs-select [(ngModel)]="selectedDishBootstrapSelect" [disabled]="disableSelectBox" [identifier]="1">
+                <option [ngValue]="null" selected>Choose a dish</option>
+                <option *ngFor="let dish of dishes" [ngValue]="dish">{{ dish.name }}</option>
+            </bs-select>
+        </div>
+        <div [bsColumn]="{sm: 6}">
+            <bs-select [(ngModel)]="selectedDishBootstrapSelect" [disabled]="disableSelectBox" [identifier]="2">
+                <option [ngValue]="null" selected>Choose a dish</option>
+                <option *ngFor="let dish of dishes" [ngValue]="dish">{{ dish.name }}</option>
+            </bs-select>
+        </div>
+    </div>
+    <div bsRow class="mb-3">
+        <div bsColumn class="text-center">
+            <label>
+                <input type="checkbox" [(ngModel)]="disableSelectBox">
+                Disable
+            </label>
+        </div>
+    </div>
+    <div bsRow class="mb-3">
+        <div bsColumn class="text-center">
+            Selected dish:
+            <pre class="text-start"><code>{{ selectedDishBootstrapSelect | json }}</code></pre>
+        </div>
+    </div>
+</bs-grid>

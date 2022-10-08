@@ -29,6 +29,7 @@ export * from './progress-bar';
 export * from './range';
 export * from './rating';
 export * from './scrollspy';
+export * from './select';
 export * from './select2';
 export * from './snackbar';
 export * from './spinner';
