@@ -1,6 +1,5 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
 import { ClickOutsideModule } from '@mintplayer/ng-click-outside';
 import { BsNavbarComponent } from './navbar/navbar.component';
 import { BsNavbarNavComponent } from './navbar-nav/navbar-nav.component';
@@ -29,7 +28,6 @@ import { BsNavbarTogglerComponent } from './navbar-toggler/navbar-toggler.compon
   ],
   imports: [
     CommonModule,
-    RouterModule,
     ClickOutsideModule
   ],
   exports: [
