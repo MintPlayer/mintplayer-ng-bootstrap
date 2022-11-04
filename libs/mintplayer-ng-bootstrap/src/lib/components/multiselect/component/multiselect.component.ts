@@ -16,8 +16,9 @@ export class BsMultiselectComponent {
   @Input() public selectedItems: any[] = [];
   @ViewChild('defaultButtonTemplate') defaultButtonTemplate!: TemplateRef<any>;
 
-  itemChange(item: any, event: Event) {
-    if ((<any>event.target).checked) {
+  itemChange(item: any, ev: Event) {
+    const value = (<any>ev.target).checked;
+    if (value) {
       this.selectedItems.push(item);
     } else {
       this.selectedItems.splice(this.selectedItems.findIndex((i) => i === item), 1);

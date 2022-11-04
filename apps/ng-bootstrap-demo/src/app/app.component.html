@@ -1,12 +1,12 @@
 <bs-navbar #nav>
   <bs-navbar-toggler *bsExpandButton="let state" [state]="state" [toggleOnClick]="false"></bs-navbar-toggler>
-  <a [routerLink]='["/"]'>
-    <bs-navbar-brand [routerLink]='["/"]'>
+  <bs-navbar-brand>
+    <a [routerLink]='["/"]'>
       <span class="brand d-block px-3 pb-3 pt-3">
         ng-bootstrap
       </span>
-    </bs-navbar-brand>
-  </a>
+    </a>
+  </bs-navbar-brand>
   <bs-navbar-nav [collapse]="true">
     <bs-navbar-item>
       <a [routerLink]='["/"]' [routerLinkActiveOptions]="{exact: true}">Home</a>

@@ -1,6 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { Component, ContentChildren, ElementRef, forwardRef, Host, Inject, Input, OnDestroy, Optional, QueryList, SkipSelf, ViewChild } from '@angular/core';
-import { BehaviorSubject, map, Observable, Subject, takeUntil } from 'rxjs';
+import { BehaviorSubject, combineLatest, map, Observable, Subject, takeUntil } from 'rxjs';
+import { BsNavbarComponent } from '../navbar/navbar.component';
 import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
 
 @Component({
@@ -11,6 +12,7 @@ import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
 export class BsNavbarDropdownComponent implements OnDestroy {
 
   constructor(
+    private navbar: BsNavbarComponent,
     @SkipSelf() @Host() @Optional() parentDropdown: BsNavbarDropdownComponent,
     @Host() @Inject(forwardRef(() => BsNavbarItemComponent)) navbarItem: BsNavbarItemComponent,
     private element: ElementRef<HTMLElement>,
@@ -38,6 +40,14 @@ export class BsNavbarDropdownComponent implements OnDestroy {
         return null;
       }
     }));
+
+    this.maxHeightOrNull$ = combineLatest([this.maxHeight$, this.navbar.isSmallMode$]).pipe(map(([maxHeight, isSmallMode]) => {
+      if (isSmallMode) {
+        return null;
+      } else {
+        return maxHeight;
+      }
+    }));
   }
 
   @Input() public autoclose = true;
@@ -47,6 +57,7 @@ export class BsNavbarDropdownComponent implements OnDestroy {
   @ViewChild('dd') dropdownElement!: ElementRef<HTMLDivElement>;
   topPos$ = new BehaviorSubject<number | null>(null);
   maxHeight$: Observable<string | null>;
+  maxHeightOrNull$: Observable<string | null>;
 
   //#region IsVisible
   isVisible$ = new BehaviorSubject<boolean>(false);

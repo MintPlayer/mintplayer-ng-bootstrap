@@ -14,7 +14,7 @@
       }
     },
     "publish": {
-      "executor": "@nrwl/workspace:run-commands",
+      "executor": "nx:run-commands",
       "options": {
         "command": "node tools/scripts/publish.mjs mintplayer-encode-utf8 {args.ver} {args.tag}"
       },
@@ -34,7 +34,7 @@
     },
     "test": {
       "executor": "@nrwl/jest:jest",
-      "outputs": ["coverage/libs/mintplayer-encode-utf8"],
+      "outputs": ["{workspaceRoot}/coverage/libs/mintplayer-encode-utf8"],
       "options": {
         "jestConfig": "libs/mintplayer-encode-utf8/jest.config.ts",
         "passWithNoTests": true

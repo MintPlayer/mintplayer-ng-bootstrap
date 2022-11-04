@@ -14,7 +14,7 @@
       }
     },
     "publish": {
-      "executor": "@nrwl/workspace:run-commands",
+      "executor": "nx:run-commands",
       "options": {
         "command": "node tools/scripts/publish.mjs mintplayer-dijkstra {args.ver} {args.tag}"
       },
@@ -34,7 +34,7 @@
     },
     "test": {
       "executor": "@nrwl/jest:jest",
-      "outputs": ["coverage/libs/mintplayer-dijkstra"],
+      "outputs": ["{workspaceRoot}/coverage/libs/mintplayer-dijkstra"],
       "options": {
         "jestConfig": "libs/mintplayer-dijkstra/jest.config.ts",
         "passWithNoTests": true

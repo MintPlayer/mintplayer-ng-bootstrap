@@ -107,7 +107,6 @@ export class BsToggleButtonComponent implements AfterViewInit {
 
   //#region isToggled
   _isToggled: boolean | null = false;
-  @Output() public change = new EventEmitter<boolean | null>();
   @Output() public isToggledChange = new EventEmitter<boolean | null>();
   public get isToggled() {
     return this._isToggled;
@@ -152,12 +151,6 @@ export class BsToggleButtonComponent implements AfterViewInit {
   }
   //#endregion
 
-  onChange(event: Event) {
-    const val = (<any>event.target).checked;
-    this.isToggled = val;
-    this.change.emit(val);
-  }
-  
   ngAfterViewInit() {
     this.disableAnimations = false;
   }
