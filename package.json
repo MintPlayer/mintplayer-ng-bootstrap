@@ -11,7 +11,7 @@
     "build:wba": "nx build --stats-json",
     "analyze:wba": "webpack-bundle-analyzer dist/apps/ng-bootstrap-demo/stats.json",
     "build:sme": "nx build --source-map",
-    "analyze:sme": "source-map-explorer dist/apps/ng-bootstrap-demo/main*",
+    "analyze:sme": "source-map-explorer dist/apps/ng-bootstrap-demo/*",
     "test": "nx run-many --target=test --projects=ng-bootstrap-demo"
   },
   "private": true,
