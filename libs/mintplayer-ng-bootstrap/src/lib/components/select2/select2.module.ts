@@ -5,6 +5,7 @@ import { BsDropdownModule } from '../dropdown/dropdown.module';
 import { BsItemTemplateDirective } from './directive/item-template.directive';
 import { BsSelect2Component } from './component/select2.component';
 import { BsInListModule } from '../../pipes/in-list/in-list.module';
+import { BsDropdownMenuModule } from '../dropdown-menu/dropdown-menu.module';
 
 @NgModule({
   declarations: [
@@ -15,6 +16,7 @@ import { BsInListModule } from '../../pipes/in-list/in-list.module';
     CommonModule,
     FormsModule,
     BsDropdownModule,
+    BsDropdownMenuModule,
     BsInListModule
   ],
   exports: [

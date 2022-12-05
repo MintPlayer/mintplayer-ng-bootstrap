@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, EventEmitter, HostBinding, HostListener, Input, Output, TemplateRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostBinding, HostListener, Input, Output, TemplateRef, ViewChild } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 
 @Component({
@@ -6,13 +6,12 @@ import { BehaviorSubject } from 'rxjs';
   templateUrl: './select2.component.html',
   styleUrls: ['./select2.component.scss']
 })
-export class BsSelect2Component implements AfterViewInit {
+export class BsSelect2Component {
 
   isOpen = false;
   
   suggestions$ = new BehaviorSubject<any[]>([]);
   isLoading$ = new BehaviorSubject<boolean>(false);
-  hostWidth$ = new BehaviorSubject<number>(200);
 
   @ViewChild('defaultItemTemplate', { static: true }) defaultItemTemplate!: TemplateRef<any>;
   @ViewChild('searchBox') searchBox!: ElementRef<HTMLInputElement>;
@@ -27,11 +26,6 @@ export class BsSelect2Component implements AfterViewInit {
   searchWidth = 20;
   itemTemplate?: TemplateRef<any>;
 
-
-  ngAfterViewInit() {
-    this.onResize();
-  }
-  
   onProvideSuggestions(value: string) {
     this.searchWidth = this.charWidth * (this.searchterm.length + 2);
     if (value === '') {
@@ -60,13 +54,6 @@ export class BsSelect2Component implements AfterViewInit {
     event.stopPropagation();
     this.selectedItems.splice(this.selectedItems.indexOf(item), 1);
     this.focus();
-  }
-
-  @HostListener('window:resize')
-  onResize() {
-    if (typeof window !== 'undefined') {
-      this.hostWidth$.next(this.itemsBox.nativeElement.offsetWidth);
-    }
   }
 
   @HostListener('click')

@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BsContextMenuModule } from '@mintplayer/ng-bootstrap';
+import { BsContextMenuModule, BsDropdownMenuModule } from '@mintplayer/ng-bootstrap';
 
 import { ContextMenuRoutingModule } from './context-menu-routing.module';
 import { ContextMenuComponent } from './context-menu.component';
@@ -12,6 +12,7 @@ import { ContextMenuComponent } from './context-menu.component';
   ],
   imports: [
     CommonModule,
+    BsDropdownMenuModule,
     BsContextMenuModule,
     ContextMenuRoutingModule
   ]

@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { BsTypeaheadComponent } from './typeahead.component';
 import { BsProgressBarModule } from '../progress-bar/progress-bar.module';
 import { BsDropdownModule } from '../dropdown/dropdown.module';
+import { BsDropdownMenuModule } from '../dropdown-menu/dropdown-menu.module';
 
 
 
@@ -15,6 +16,7 @@ import { BsDropdownModule } from '../dropdown/dropdown.module';
     CommonModule,
     FormsModule,
     BsDropdownModule,
+    BsDropdownMenuModule,
     BsProgressBarModule
   ],
   exports: [

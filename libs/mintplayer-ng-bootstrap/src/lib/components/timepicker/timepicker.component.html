@@ -1,4 +1,4 @@
-<div bsDropdown [(isOpen)]="isOpen" [closeOnClickOutside]="false" [sameDropdownWidth]="true">
+<div bsDropdown [(isOpen)]="isOpen" [sameDropdownWidth]="true">
     <span class="input-group">
         <span class="form-control d-flex" [class.focus]="isFocused">
             <div class="flex-grow-1">
@@ -13,9 +13,9 @@
             <i class="bi bi-clock"></i>
         </button>
     </span>
-    <ul class="dropdown-menu show" *bsDropdownMenu>
-        <li class="dropdown-item" [class.active]="timesEqual(selectedTime, timestamp)" *ngFor="let timestamp of presetTimestamps" (click)="setTime(timestamp)">
+    <bs-dropdown-menu class="overflow-auto" *bsDropdownMenu>
+        <bs-dropdown-item [isSelected]="timesEqual(selectedTime, timestamp)" *ngFor="let timestamp of presetTimestamps" (click)="setTime(timestamp)">
             {{ timestamp | date: 'HH:mm' }}
-        </li>
-    </ul>
+        </bs-dropdown-item>
+    </bs-dropdown-menu>
 </div>

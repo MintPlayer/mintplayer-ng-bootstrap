@@ -10,9 +10,11 @@
         (blur)="isFocused=false"
         [style.width.px]="searchWidth"
         #searchBox />
-    <ul *bsDropdownMenu class="dropdown-menu d-block position-static p-0" [style.width.px]="hostWidth$ | async">
-        <li *ngFor="let suggestion of suggestions" (click)="onSuggestionClicked(suggestion)" [class.selected]="selectedItems | inList:suggestion.id">{{ suggestion.text }}</li>
-    </ul>
+    <bs-dropdown-menu *bsDropdownMenu [maxHeight]="200">
+        <bs-dropdown-item *ngFor="let suggestion of suggestions" (click)="onSuggestionClicked(suggestion)" [isSelected]="selectedItems | inList:suggestion.id">
+            {{ suggestion.text }}
+        </bs-dropdown-item>
+    </bs-dropdown-menu>
 </div>
 
 <ng-template #defaultItemTemplate let-item="item" let-select2="select2">
