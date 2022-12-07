@@ -14,7 +14,7 @@ export class BsDropdownDirective {
 
   isOpen$ = new BehaviorSubject<boolean>(false);
 
-  elementRef: ElementRef<any>;
+  elementRef: ElementRef<HTMLElement>;
   @ContentChild(BsDropdownMenuDirective, {static: false}) menu!: BsDropdownMenuDirective;
   @ContentChild(BsDropdownToggleDirective, {static: false}) toggle: BsDropdownToggleDirective | null = null;
   

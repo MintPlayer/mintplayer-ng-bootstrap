@@ -13,6 +13,7 @@ export * from './copy';
 export * from './datatable';
 export * from './datepicker';
 export * from './dropdown';
+export * from './dropdown-menu';
 export * from './file-upload';
 export * from './for';
 export * from './grid';

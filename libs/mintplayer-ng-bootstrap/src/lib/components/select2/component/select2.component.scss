@@ -1,22 +1,8 @@
-/* :host */ ::ng-deep {
-  // Configuration
-  @import "~bootstrap/scss/functions";
-  @import "~bootstrap/scss/variables";
-  @import "~bootstrap/scss/mixins";
-
-  // Layout & components
-  @import "~bootstrap/scss/dropdown";
-
-}
-
-// ::ng-deep {
-//   @import '@angular/cdk/overlay-prebuilt.css';
-// }
 
 .items-box {
-  display: block;
-  position: relative;
-  width: 100%;
+  // display: block;
+  // position: relative;
+  // width: 100%;
   min-height: 38px;
   padding: 0 5px 3px 5px;
   cursor: text;

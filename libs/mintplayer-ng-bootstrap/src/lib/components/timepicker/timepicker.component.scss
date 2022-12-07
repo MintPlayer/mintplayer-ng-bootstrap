@@ -1,13 +1,3 @@
-/* :host */ ::ng-deep {
-    // Configuration
-    @import "~bootstrap/scss/functions";
-    @import "~bootstrap/scss/variables";
-    @import "~bootstrap/scss/mixins";
-
-    // Layout & components
-    @import "~bootstrap/scss/dropdown";
-}
-
 :host {
     display: inline-block;
 }
@@ -37,11 +27,6 @@ input[type=number] {
     }
 }
 
-.dropdown-menu {
+bs-dropdown-menu {
 	max-height: 250px;
-	overflow-y: auto;
-
-	.dropdown-item {
-		cursor: pointer;
-	}
 }

@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, OnInit, Output, TemplateRef, ViewChild, ViewContainerRef } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostListener, Input, OnInit, Output, TemplateRef, ViewChild, ViewContainerRef } from '@angular/core';
 import { BehaviorSubject, map, Observable, Subject } from 'rxjs';
 
 @Component({
@@ -6,14 +6,13 @@ import { BehaviorSubject, map, Observable, Subject } from 'rxjs';
   templateUrl: './typeahead.component.html',
   styleUrls: ['./typeahead.component.scss']
 })
-export class BsTypeaheadComponent implements AfterViewInit {
+export class BsTypeaheadComponent {
 
   isOpen = false;
   
   suggestions$ = new BehaviorSubject<any[]>([]);
   isLoading$ = new BehaviorSubject<boolean>(false);
   showNoSuggestions$: Observable<boolean>;
-  hostWidth$ = new BehaviorSubject<number>(200);
   destroyed$ = new Subject();
   
   @ViewChild('textbox') textbox!: ElementRef<HTMLInputElement>;
@@ -28,10 +27,6 @@ export class BsTypeaheadComponent implements AfterViewInit {
   constructor() {
     this.showNoSuggestions$ = this.suggestions$
       .pipe(map(suggestions => suggestions.length === 0));
-  }
-
-  ngAfterViewInit() {
-    this.onResize();
   }
 
   onProvideSuggestions(value: string) {
@@ -65,13 +60,6 @@ export class BsTypeaheadComponent implements AfterViewInit {
 
   public focus() {
     this.textbox.nativeElement.focus();
-  }
-
-  @HostListener('window:resize')
-  onResize() {
-    if (typeof window !== 'undefined') {
-      this.hostWidth$.next(this.textbox.nativeElement.offsetWidth);
-    }
   }
 
 }

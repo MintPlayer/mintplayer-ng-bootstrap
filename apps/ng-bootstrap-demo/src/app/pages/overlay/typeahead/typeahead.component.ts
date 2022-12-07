@@ -20,7 +20,9 @@ export class TypeaheadComponent {
     { id: 4, firstName: 'Chris', lastName: 'Martin', text: 'Chris Martin' }
   ];
   provideSuggestions(searchTerm: string) {
-    this.suggestions$.next(this.items.filter(i => (i.firstName + ' ' + i.lastName).indexOf(searchTerm) > -1));
+    setTimeout(() => {
+      this.suggestions$.next(this.items.filter(i => (i.firstName + ' ' + i.lastName).indexOf(searchTerm) > -1));
+    }, 3000);
   }
   gotoArtist(suggestion: any) {
     alert('Selected value:\r\n' + this.jsonPipe.transform(suggestion));
