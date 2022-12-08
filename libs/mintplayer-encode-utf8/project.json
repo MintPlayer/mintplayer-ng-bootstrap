@@ -41,5 +41,6 @@
       }
     }
   },
-  "tags": []
+  "tags": [],
+  "name": "mintplayer-encode-utf8"
 }

@@ -39,5 +39,6 @@
       }
     }
   },
-  "tags": []
+  "tags": [],
+  "name": "mintplayer-ng-focus-on-load"
 }

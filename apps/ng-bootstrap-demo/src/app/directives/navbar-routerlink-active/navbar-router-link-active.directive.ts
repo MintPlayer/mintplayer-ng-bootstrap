@@ -1,5 +1,5 @@
 import { ChangeDetectorRef, Directive, ElementRef, Renderer2 } from '@angular/core';
-import { Router, RouterLinkActive, RouterLinkWithHref } from '@angular/router';
+import { Router, RouterLinkActive, RouterLink } from '@angular/router';
 
 // Here we extend the RouterLinkActiveDirective
 // to have the "active" value for each <a> with a routerLink attribute
@@ -9,7 +9,7 @@ import { Router, RouterLinkActive, RouterLinkWithHref } from '@angular/router';
 })
 export class NavbarRouterLinkActiveDirective extends RouterLinkActive {
 
-  constructor(router: Router, element: ElementRef<any>, renderer: Renderer2, cdr: ChangeDetectorRef, routerLinkWithHref: RouterLinkWithHref) {
+  constructor(router: Router, element: ElementRef<any>, renderer: Renderer2, cdr: ChangeDetectorRef, routerLinkWithHref: RouterLink) {
     super(router, element, renderer, cdr, undefined, routerLinkWithHref);
     this.routerLinkActive = 'active';
   }

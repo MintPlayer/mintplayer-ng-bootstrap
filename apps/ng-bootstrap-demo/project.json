@@ -99,5 +99,6 @@
       }
     }
   },
-  "tags": []
+  "tags": [],
+  "name": "ng-bootstrap-demo"
 }

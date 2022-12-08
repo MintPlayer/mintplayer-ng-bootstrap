@@ -24,5 +24,6 @@
     }
   },
   "tags": [],
-  "implicitDependencies": ["ng-bootstrap-demo"]
+  "implicitDependencies": ["ng-bootstrap-demo"],
+  "name": "ng-bootstrap-demo-e2e"
 }

@@ -42,5 +42,6 @@
       }
     }
   },
-  "tags": []
+  "tags": [],
+  "name": "mintplayer-ng-bootstrap"
 }
