@@ -2,6 +2,7 @@ import { Component, Directive, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
+import { BsNavbarComponent } from '../navbar/navbar.component';
 
 import { BsNavbarDropdownComponent } from './navbar-dropdown.component';
 
@@ -76,11 +77,14 @@ class BsNavbarDropdownTestComponent {
 @Component({
   selector: 'bs-navbar',
   template: `
-  <nav>
-    <div>
-      <ng-content></ng-content>
-    </div>  
-  </nav>`
+    <nav>
+      <div>
+        <ng-content></ng-content>
+      </div>  
+    </nav>`,
+  providers: [
+    { provide: BsNavbarComponent, useExisting: BsNavbarMockComponent }
+  ]
 })
 class BsNavbarMockComponent {
 }
