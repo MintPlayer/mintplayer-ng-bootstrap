@@ -1,5 +1,5 @@
 import { Component, ElementRef, TemplateRef, ViewChild } from '@angular/core';
-import { BsToastService } from '@mintplayer/ng-bootstrap';
+import { BsToastService } from '@mintplayer/ng-bootstrap/toast';
 
 @Component({
   selector: 'demo-toast',

@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BsCloseModule } from '@mintplayer/ng-bootstrap';
+import { BsCloseModule } from '@mintplayer/ng-bootstrap/close';
 
 import { CloseRoutingModule } from './close-routing.module';
 import { CloseComponent } from './close.component';

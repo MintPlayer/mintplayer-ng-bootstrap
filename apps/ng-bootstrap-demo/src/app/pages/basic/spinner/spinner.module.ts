@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BsSpinnerModule } from '@mintplayer/ng-bootstrap';
+import { BsSpinnerModule } from '@mintplayer/ng-bootstrap/spinner';
 
 import { SpinnerRoutingModule } from './spinner-routing.module';
 import { SpinnerComponent } from './spinner.component';

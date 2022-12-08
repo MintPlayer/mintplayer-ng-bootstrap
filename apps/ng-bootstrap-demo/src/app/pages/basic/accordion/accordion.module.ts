@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BsAccordionModule } from '@mintplayer/ng-bootstrap';
+import { BsAccordionModule } from '@mintplayer/ng-bootstrap/accordion';
 
 import { AccordionRoutingModule } from './accordion-routing.module';
 import { AccordionComponent } from './accordion.component';

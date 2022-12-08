@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BsProgressBarModule } from '@mintplayer/ng-bootstrap';
+import { BsProgressBarModule } from '@mintplayer/ng-bootstrap/progress-bar';
 
 import { ProgressBarRoutingModule } from './progress-bar-routing.module';
 import { ProgressBarComponent } from './progress-bar.component';

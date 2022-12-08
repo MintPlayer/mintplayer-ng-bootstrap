@@ -1,5 +1,5 @@
-import { Component, OnInit } from '@angular/core';
-import { ESchedulerMode, Resource, ResourceGroup, TimelineOptions, WeekOptions } from '@mintplayer/ng-bootstrap';
+import { Component } from '@angular/core';
+import { ESchedulerMode, Resource, ResourceGroup, TimelineOptions, WeekOptions } from '@mintplayer/ng-bootstrap/scheduler';
 
 @Component({
   selector: 'demo-scheduler',

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { Position } from '@mintplayer/ng-bootstrap';
 
 @Component({
@@ -6,12 +6,7 @@ import { Position } from '@mintplayer/ng-bootstrap';
   templateUrl: './popover.component.html',
   styleUrls: ['./popover.component.scss']
 })
-export class PopoverComponent implements OnInit {
-
-  constructor() { }
-
-  ngOnInit(): void {
-  }
+export class PopoverComponent {
 
   popoverPosition = Position;
 

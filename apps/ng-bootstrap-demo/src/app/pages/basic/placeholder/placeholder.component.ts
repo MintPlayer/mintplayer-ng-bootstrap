@@ -1,6 +1,5 @@
 import { Component } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
-import { BehaviorSubject } from 'rxjs';
 
 @Component({
   selector: 'demo-placeholder',

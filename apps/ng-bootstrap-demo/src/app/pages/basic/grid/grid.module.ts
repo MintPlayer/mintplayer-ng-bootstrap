@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BsGridModule } from '@mintplayer/ng-bootstrap';
+import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 
 import { GridRoutingModule } from './grid-routing.module';
 import { GridComponent } from './grid.component';

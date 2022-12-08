@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BsCalendarModule } from '@mintplayer/ng-bootstrap';
+import { BsCalendarModule } from '@mintplayer/ng-bootstrap/calendar';
 
 import { CalendarRoutingModule } from './calendar-routing.module';
 import { CalendarComponent } from './calendar.component';

@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BsCalendarModule, BsDropdownModule } from '@mintplayer/ng-bootstrap';
+import { BsCalendarModule } from '@mintplayer/ng-bootstrap/calendar';
+import { BsDropdownModule } from '@mintplayer/ng-bootstrap/dropdown';
 
 import { DropdownRoutingModule } from './dropdown-routing.module';
 import { DropdownComponent } from './dropdown.component';

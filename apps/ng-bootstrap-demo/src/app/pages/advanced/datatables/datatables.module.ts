@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BsDatatableModule } from '@mintplayer/ng-bootstrap';
+import { BsDatatableModule } from '@mintplayer/ng-bootstrap/datatable';
 
 import { DatatablesRoutingModule } from './datatables-routing.module';
 import { DatatablesComponent } from './datatables.component';

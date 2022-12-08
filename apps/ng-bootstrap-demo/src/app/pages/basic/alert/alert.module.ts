@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { BsAlertModule } from '@mintplayer/ng-bootstrap';
+import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
 
 import { AlertRoutingModule } from './alert-routing.module';
 import { AlertComponent } from './alert.component';

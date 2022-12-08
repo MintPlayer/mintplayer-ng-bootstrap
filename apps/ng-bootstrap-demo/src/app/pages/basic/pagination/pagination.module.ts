@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BsPaginationModule } from '@mintplayer/ng-bootstrap';
+import { BsPaginationModule } from '@mintplayer/ng-bootstrap/pagination';
 
 import { PaginationRoutingModule } from './pagination-routing.module';
 import { PaginationComponent } from './pagination.component';

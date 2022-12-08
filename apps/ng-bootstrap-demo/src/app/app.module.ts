@@ -1,12 +1,12 @@
-import { HttpClientModule } from '@angular/common/http';
 import { NgModule } from '@angular/core';
+import { HttpClientModule } from '@angular/common/http';
 import { CommonModule, JsonPipe } from '@angular/common';
 import { BrowserModule } from '@angular/platform-browser';
-import { BsNavbarModule, BS_DEVELOPMENT } from '@mintplayer/ng-bootstrap';
-import ngBootstrapJson from '@mintplayer/ng-bootstrap/package.json';
-
-import { HighlightOptions, HIGHLIGHT_OPTIONS } from 'ngx-highlightjs';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { HighlightOptions, HIGHLIGHT_OPTIONS } from 'ngx-highlightjs';
+import { BS_DEVELOPMENT } from '@mintplayer/ng-bootstrap';
+import { BsNavbarModule } from '@mintplayer/ng-bootstrap/navbar';
+import ngBootstrapJson from '@mintplayer/ng-bootstrap/package.json';
 
 import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';

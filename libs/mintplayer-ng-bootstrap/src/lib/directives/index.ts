@@ -1,1 +1,0 @@
-export * from './enhanced-paste/enhanced-paste.directive';

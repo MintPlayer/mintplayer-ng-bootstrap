@@ -1,5 +1,5 @@
 import { Component, TemplateRef, ViewChild } from '@angular/core';
-import { BsSnackbarService } from '@mintplayer/ng-bootstrap';
+import { BsSnackbarService } from '@mintplayer/ng-bootstrap/snackbar';
 
 @Component({
   selector: 'demo-copy',

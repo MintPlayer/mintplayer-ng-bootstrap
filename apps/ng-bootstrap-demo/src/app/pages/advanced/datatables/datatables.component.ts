@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { DatatableSettings } from '@mintplayer/ng-bootstrap';
+import { DatatableSettings } from '@mintplayer/ng-bootstrap/datatable';
 import { PaginationResponse } from '@mintplayer/ng-pagination';
 import { Artist } from '../../../entities/artist';
 import { ArtistService } from '../../../services/artist/artist.service';

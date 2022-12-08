@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BsCardModule, BsListGroupModule } from '@mintplayer/ng-bootstrap';
+import { BsCardModule } from '@mintplayer/ng-bootstrap/card';
+import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
 
 import { CardRoutingModule } from './card-routing.module';
 import { CardComponent } from './card.component';

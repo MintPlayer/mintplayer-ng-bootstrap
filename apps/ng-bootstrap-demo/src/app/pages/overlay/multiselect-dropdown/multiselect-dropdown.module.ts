@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BsMultiselectModule } from '@mintplayer/ng-bootstrap';
+import { BsMultiselectModule } from '@mintplayer/ng-bootstrap/multiselect';
 import { FocusOnLoadModule } from '@mintplayer/ng-focus-on-load';
 
 import { MultiselectDropdownRoutingModule } from './multiselect-dropdown-routing.module';

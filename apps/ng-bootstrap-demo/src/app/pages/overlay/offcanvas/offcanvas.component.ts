@@ -1,5 +1,6 @@
 import { Component, Inject } from '@angular/core';
-import { BsViewState, OffcanvasPosition } from '@mintplayer/ng-bootstrap';
+import { BsViewState } from '@mintplayer/ng-bootstrap';
+import { OffcanvasPosition } from '@mintplayer/ng-bootstrap/offcanvas';
 import { BehaviorSubject } from 'rxjs';
 
 @Component({

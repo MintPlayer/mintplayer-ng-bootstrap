@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BsDatepickerModule } from '@mintplayer/ng-bootstrap';
+import { BsDatepickerModule } from '@mintplayer/ng-bootstrap/datepicker';
 
 import { DatepickerRoutingModule } from './datepicker-routing.module';
 import { DatepickerComponent } from './datepicker.component';

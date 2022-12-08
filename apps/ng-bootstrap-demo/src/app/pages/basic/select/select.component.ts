@@ -1,13 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 
 @Component({
   selector: 'demo-select',
   templateUrl: './select.component.html',
   styleUrls: ['./select.component.scss']
 })
-export class SelectComponent implements OnInit {
-
-  constructor() {}
+export class SelectComponent {
 
   disableSelectBox = false;
   selectedDishBootstrapSelect: Dish | null = null;
@@ -16,9 +14,6 @@ export class SelectComponent implements OnInit {
     { id: 2, name: 'Spaghetti', description: 'Spaghetti Bolognaise', ingredients: ['Pasta', 'Minced meat', 'Tomato sauce', 'Mushrooms'] },
     { id: 3, name: 'Lasagna', description: 'Lasagna Bolognaise', ingredients: ['Pasta', 'Minced meat', 'Tomato sauce', 'Cheese'] },
   ]
-
-  ngOnInit(): void {
-  }
 
 }
 

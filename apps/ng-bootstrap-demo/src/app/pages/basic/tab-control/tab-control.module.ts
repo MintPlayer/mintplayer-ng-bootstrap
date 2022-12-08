@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BsTabControlModule } from '@mintplayer/ng-bootstrap';
+import { BsTabControlModule } from '@mintplayer/ng-bootstrap/tab-control';
 
 import { TabControlRoutingModule } from './tab-control-routing.module';
 import { TabControlComponent } from './tab-control.component';

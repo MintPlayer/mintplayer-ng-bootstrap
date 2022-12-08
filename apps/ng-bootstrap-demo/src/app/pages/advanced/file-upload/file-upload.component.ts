@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
-import { Color, FileUpload } from '@mintplayer/ng-bootstrap';
+import { Color } from '@mintplayer/ng-bootstrap';
+import { FileUpload } from '@mintplayer/ng-bootstrap/file-upload';
 
 @Component({
   selector: 'demo-file-upload',

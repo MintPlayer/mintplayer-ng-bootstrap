@@ -1,4 +1,4 @@
-import { Component, Inject, TemplateRef } from '@angular/core';
+import { Component, Inject } from '@angular/core';
 import { Tag } from '../../../entities/tag';
 import { TagService } from '../../../services/tag/tag.service';
 

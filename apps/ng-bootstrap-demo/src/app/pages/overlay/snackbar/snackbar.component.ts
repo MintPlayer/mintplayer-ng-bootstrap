@@ -1,5 +1,5 @@
 import { Component, Inject, TemplateRef } from '@angular/core';
-import { BsSnackbarComponent, BsSnackbarService } from '@mintplayer/ng-bootstrap';
+import { BsSnackbarComponent, BsSnackbarService } from '@mintplayer/ng-bootstrap/snackbar';
 
 @Component({
   selector: 'demo-snackbar',

@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BsCodeSnippetModule, BsSnackbarModule } from '@mintplayer/ng-bootstrap';
+import { BsCodeSnippetModule } from '@mintplayer/ng-bootstrap/code-snippet';
+import { BsSnackbarModule } from '@mintplayer/ng-bootstrap/snackbar';
 
 import { CodeSnippetRoutingModule } from './code-snippet-routing.module';
 import { CodeSnippetComponent } from './code-snippet.component';
