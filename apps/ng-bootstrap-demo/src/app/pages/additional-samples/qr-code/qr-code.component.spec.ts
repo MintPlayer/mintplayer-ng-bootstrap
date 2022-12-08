@@ -1,10 +1,23 @@
-import { Component, Input } from '@angular/core';
+import { Component, Directive, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { QrCodeComponent } from './qr-code.component';
 
 type RgbaColor = `#${string}`;
 type QRCodeErrorCorrectionLevel = 'low' | 'medium' | 'quartile' | 'high' | 'L' | 'M' | 'Q' | 'H';
+
+@Component({
+  selector: 'bs-grid',
+  template: 'grid'
+})
+class BsGridMockComponent { }
+
+@Directive({
+  selector: '[bsColumn]'
+})
+class BsGridColumnMockDirective {
+  @Input() public bsColumn: string | null = '';
+}
 
 @Component({
   selector: 'qr-code',
@@ -35,7 +48,9 @@ describe('QrCodeComponent', () => {
         QrCodeComponent,
       
         // Mock dependencies
-        QrCodeMockComponent
+        QrCodeMockComponent,
+        BsGridMockComponent,
+        BsGridColumnMockDirective
       ]
     })
     .compileComponents();

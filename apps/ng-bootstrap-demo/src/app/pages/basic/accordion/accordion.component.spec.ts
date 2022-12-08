@@ -1,4 +1,4 @@
-import { Component, ContentChildren, forwardRef, QueryList } from '@angular/core';
+import { Component, ContentChildren, forwardRef, Input, QueryList } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AccordionComponent } from './accordion.component';
 
@@ -6,7 +6,9 @@ import { AccordionComponent } from './accordion.component';
   selector: 'bs-accordion',
   template: 'accordion works'
 })
-class BsAccordionMockComponent {}
+class BsAccordionMockComponent {
+  @Input() highlightActiveTab = false;
+}
 
 @Component({
   selector: 'bs-accordion-tab',

@@ -1,6 +1,34 @@
+import { Component, Directive, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { PopoverComponent } from './popover.component';
+
+enum Position { top, left, bottom, right }
+
+@Component({
+  selector: 'bs-grid',
+  template: `
+    <div>
+      <ng-content></ng-content>
+    </div>`
+})
+class BsGridMockComponent {
+  @Input() stopFullWidthAt: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl' | 'never' = 'sm';
+}
+
+@Directive({
+  selector: '[bsColumn]'
+})
+class BsColumnMockDirective {
+  @Input() bsColumn?: object | '';
+}
+
+@Directive({
+  selector: '*[bsPopover]'
+})
+class BsPopoverMockDirective {
+  @Input() public bsPopover: Position = Position.top;
+}
 
 describe('PopoverComponent', () => {
   let component: PopoverComponent;
@@ -8,7 +36,15 @@ describe('PopoverComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ PopoverComponent ]
+      declarations: [
+        // Unit to test
+        PopoverComponent,
+
+        // Mock dependencies
+        BsGridMockComponent,
+        BsColumnMockDirective,
+        BsPopoverMockDirective
+      ]
     })
     .compileComponents();
 
