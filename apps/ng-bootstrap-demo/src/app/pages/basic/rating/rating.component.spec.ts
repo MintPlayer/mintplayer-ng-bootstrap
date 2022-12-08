@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Directive, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RatingComponent } from './rating.component';
 
@@ -8,6 +8,19 @@ import { RatingComponent } from './rating.component';
 class BsRatingMockComponent {
   @Input() maximum = 5;
   @Input() value = 0;
+}
+
+@Component({
+  selector: 'bs-grid',
+  template: 'grid'
+})
+class BsGridMockComponent { }
+
+@Directive({
+  selector: '[bsColumn]'
+})
+class BsGridColumnMockDirective {
+  @Input() public bsColumn: string | null = '';
 }
 
 describe('RatingComponent', () => {
@@ -21,7 +34,9 @@ describe('RatingComponent', () => {
         RatingComponent,
       
         // Mock dependencies
-        BsRatingMockComponent
+        BsRatingMockComponent,
+        BsGridMockComponent,
+        BsGridColumnMockDirective
       ]
     })
     .compileComponents();

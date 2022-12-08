@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsSnackbarService } from '@mintplayer/ng-bootstrap';
+import { BsSnackbarService } from '@mintplayer/ng-bootstrap/snackbar';
 import { SnackbarComponent } from './snackbar.component';
 
 @Injectable({

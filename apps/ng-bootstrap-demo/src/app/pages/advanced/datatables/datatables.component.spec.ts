@@ -1,7 +1,7 @@
 import { HttpClientModule } from '@angular/common/http';
 import { Component, Directive, EventEmitter, Injectable, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { DatatableSettings } from '@mintplayer/ng-bootstrap';
+import { DatatableSettings } from '@mintplayer/ng-bootstrap/datatable';
 import { PaginationResponse } from '@mintplayer/pagination';
 import { ArtistService } from '../../../services/artist/artist.service';
 import { DatatablesComponent } from './datatables.component';

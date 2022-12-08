@@ -24,6 +24,7 @@ describe('AppComponent', () => {
         BsNavbarDropdownMockComponent,
         BsNavbarItemMockComponent,
         NavbarContentMockDirective,
+        BsNavbarBrandMockComponent,
 
         // Mock pages
         PageAbcComponent
@@ -99,3 +100,9 @@ class NavbarContentMockDirective {
   
   @Input('navbarContent') navbar!: BsNavbarMockComponent;
 }
+
+@Component({
+  selector: 'bs-navbar-brand',
+  template: 'navbar-brand'
+})
+class BsNavbarBrandMockComponent { }

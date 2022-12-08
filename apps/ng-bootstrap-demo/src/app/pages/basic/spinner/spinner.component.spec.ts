@@ -1,5 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Color } from '@mintplayer/ng-bootstrap';
 import { SpinnerComponent } from './spinner.component';
 
 @Component({
@@ -8,6 +9,7 @@ import { SpinnerComponent } from './spinner.component';
 })
 class BsSpinnerMockComponent {
   @Input() type: 'border' | 'grow' = 'border';
+  @Input() color: Color = Color.primary;
 }
 
 describe('SpinnerComponent', () => {

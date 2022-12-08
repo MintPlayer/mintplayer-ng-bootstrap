@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Directive, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FileUploadComponent } from './file-upload.component';
 
@@ -38,6 +38,19 @@ class BsProgressbarMockComponent {
   @Input() public animated = false;
 }
 
+@Component({
+  selector: 'bs-grid',
+  template: 'grid'
+})
+class BsGridMockComponent { }
+
+@Directive({
+  selector: '[bsColumn]'
+})
+class BsGridColumnMockDirective {
+  @Input() public bsColumn: string | null = '';
+}
+
 interface FileUpload {
   file: File;
   progress: number;
@@ -64,7 +77,9 @@ describe('FileUploadComponent', () => {
         // Mock dependencies
         BsProgressMockComponent,
         BsProgressbarMockComponent,
-        BsFileUploadMockComponent
+        BsFileUploadMockComponent,
+        BsGridMockComponent,
+        BsGridColumnMockDirective
       ]
     })
     .compileComponents();

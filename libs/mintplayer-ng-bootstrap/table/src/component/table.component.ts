@@ -7,8 +7,6 @@ import { BehaviorSubject, map, Observable } from 'rxjs';
   styleUrls: ['./table.component.scss']
 })
 export class BsTableComponent {
-  constructor() {
-  }
 
   //#region isResponsive
   isResponsive$ = new BehaviorSubject<boolean>(false);
