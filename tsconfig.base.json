@@ -32,6 +32,7 @@
         "libs/mintplayer-ng-focus-on-load/src/index.ts"
       ],
       "@mintplayer/ng-qr-code": ["libs/mintplayer-ng-qr-code/src/index.ts"],
+      "@mintplayer/pagination": ["libs/mintplayer-pagination/src/index.ts"],
       "@mintplayer/qr-code": ["libs/mintplayer-qr-code/src/index.ts"]
     }
   },

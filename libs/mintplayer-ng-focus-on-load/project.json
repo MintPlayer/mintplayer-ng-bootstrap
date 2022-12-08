@@ -1,4 +1,5 @@
 {
+  "name": "mintplayer-ng-focus-on-load",
   "$schema": "..\\..\\node_modules\\nx\\schemas\\project-schema.json",
   "projectType": "library",
   "sourceRoot": "libs/mintplayer-ng-focus-on-load/src",
@@ -39,6 +40,5 @@
       }
     }
   },
-  "tags": [],
-  "name": "mintplayer-ng-focus-on-load"
+  "tags": []
 }

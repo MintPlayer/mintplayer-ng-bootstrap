@@ -8,6 +8,7 @@
     "mintplayer-ng-click-outside": "libs/mintplayer-ng-click-outside",
     "mintplayer-ng-focus-on-load": "libs/mintplayer-ng-focus-on-load",
     "mintplayer-ng-qr-code": "libs/mintplayer-ng-qr-code",
+    "mintplayer-pagination": "libs/mintplayer-pagination",
     "mintplayer-qr-code": "libs/mintplayer-qr-code",
     "ng-bootstrap-demo": "apps/ng-bootstrap-demo",
     "ng-bootstrap-demo-e2e": "apps/ng-bootstrap-demo-e2e"

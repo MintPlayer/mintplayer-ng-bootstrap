@@ -1,4 +1,5 @@
 {
+  "name": "mintplayer-dijkstra",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/mintplayer-dijkstra/src",
   "projectType": "library",
@@ -41,6 +42,5 @@
       }
     }
   },
-  "tags": [],
-  "name": "mintplayer-dijkstra"
+  "tags": []
 }

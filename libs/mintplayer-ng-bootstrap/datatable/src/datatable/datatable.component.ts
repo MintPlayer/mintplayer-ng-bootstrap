@@ -32,7 +32,8 @@ export class BsDatatableComponent {
   //#endregion
 
   @Input() settings: DatatableSettings;
-  // @Input() data?: PaginationResponse<any>;
+  @Input() data?: PaginationResponse<any>;
+  // @Input() data?: any;
   // rowTemplate?: TemplateRef<any>;
   // @Output() reloadData = new EventEmitter<DatatableSettings>();
 
