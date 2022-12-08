@@ -1,10 +1,9 @@
-import { Component, Input, ContentChildren } from '@angular/core';
+import { Component, Input, ContentChildren, TemplateRef, EventEmitter, Output } from '@angular/core';
 import { BehaviorSubject, Observable, map } from 'rxjs';
+import { PaginationResponse } from '@mintplayer/pagination';
 import { DatatableSettings } from '../datatable-settings';
 import { BsDatatableColumnDirective } from '../datatable-column';
 
-// import { EventEmitter, Output, TemplateRef } from '@angular/core';
-import { PaginationResponse } from '@mintplayer/pagination';
 
 @Component({
   selector: 'bs-datatable',
@@ -33,22 +32,21 @@ export class BsDatatableComponent {
 
   @Input() settings: DatatableSettings;
   @Input() data?: PaginationResponse<any>;
-  // @Input() data?: any;
-  // rowTemplate?: TemplateRef<any>;
-  // @Output() reloadData = new EventEmitter<DatatableSettings>();
+  rowTemplate?: TemplateRef<any>;
+  @Output() reloadData = new EventEmitter<DatatableSettings>();
 
   columnHeaderClicked(column: BsDatatableColumnDirective) {
-  //   if (column.bsDatatableColumn.sortable) {
-  //     if (this.settings.sortProperty !== column.bsDatatableColumn.name) {
-  //       this.settings.sortProperty = column.bsDatatableColumn.name;
-  //       this.settings.sortDirection = 'ascending';
-  //     } else if (this.settings.sortDirection === 'descending') {
-  //       this.settings.sortDirection = 'ascending';
-  //     } else {
-  //       this.settings.sortDirection = 'descending';
-  //     }
-  //     this.reloadData.emit(this.settings);
-  //   }
+    if (column.bsDatatableColumn.sortable) {
+      if (this.settings.sortProperty !== column.bsDatatableColumn.name) {
+        this.settings.sortProperty = column.bsDatatableColumn.name;
+        this.settings.sortDirection = 'ascending';
+      } else if (this.settings.sortDirection === 'descending') {
+        this.settings.sortDirection = 'ascending';
+      } else {
+        this.settings.sortDirection = 'descending';
+      }
+      this.reloadData.emit(this.settings);
+    }
   }
 
 }

@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { DatatableSettings } from '@mintplayer/ng-bootstrap/datatable';
 import { PaginationResponse } from '@mintplayer/pagination';
 import { Artist } from '../../../entities/artist';
-// import { ArtistService } from '../../../services/artist/artist.service';
+import { ArtistService } from '../../../services/artist/artist.service';
 
 @Component({
   selector: 'demo-datatables',
@@ -11,8 +11,7 @@ import { Artist } from '../../../entities/artist';
 })
 export class DatatablesComponent implements OnInit {
 
-  // constructor(private artistService: ArtistService) {
-  // }
+  constructor(private artistService: ArtistService) {}
 
   artists?: PaginationResponse<Artist>;
   settings: DatatableSettings = new DatatableSettings({
@@ -29,17 +28,18 @@ export class DatatablesComponent implements OnInit {
   });
   
   ngOnInit() {
-  //   this.loadArtists();
+    this.loadArtists();
   }
 
-  // loadArtists() {
-  //   this.artistService.pageArtists(this.settings.toPagination())
-  //     .then((response) => {
-  //       this.artists = response;
-  //       if (response) {
-  //         this.settings.page.values = Array.from(Array(response.totalPages).keys()).map((p) => p + 1);
-  //       }
-  //     });
-  // }
+  loadArtists() {
+    this.artistService.pageArtists(this.settings.toPagination())
+      .then((response) => {
+        this.artists = response;
+        console.log('artists', response);
+        if (response) {
+          this.settings.page.values = Array.from(Array(response.totalPages).keys()).map((p) => p + 1);
+        }
+      });
+  }
 
 }
