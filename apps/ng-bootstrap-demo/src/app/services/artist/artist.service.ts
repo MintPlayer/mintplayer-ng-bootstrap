@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { PaginationRequest, PaginationResponse } from '@mintplayer/ng-pagination';
+import { PaginationRequest, PaginationResponse } from '@mintplayer/pagination';
 import { Artist } from '../../entities/artist';
 
 @Injectable({

@@ -1,5 +1,5 @@
 import { Component, ContentChildren, EventEmitter, Input, Output, TemplateRef } from '@angular/core';
-import { PaginationResponse } from '@mintplayer/ng-pagination';
+import { PaginationResponse } from '@mintplayer/pagination';
 import { BehaviorSubject, map, Observable } from 'rxjs';
 import { BsDatatableColumnDirective } from '../datatable-column/datatable-column.directive';
 import { DatatableSettings } from '../datatable-settings';

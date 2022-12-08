@@ -1,4 +1,4 @@
-import { PaginationRequest } from "@mintplayer/ng-pagination";
+import { PaginationRequest } from "@mintplayer/pagination";
 
 export class DatatableSettings {
     constructor(data?: Partial<DatatableSettings>) {

@@ -8,7 +8,7 @@
     "types": ["node"],
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
-    "target": "ES2022",
+    "target": "es2022",
     "useDefineForClassFields": false
   },
   "exclude": [

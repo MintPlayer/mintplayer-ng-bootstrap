@@ -18,7 +18,7 @@
     "ngx-highlightjs": "^7.0.1",
     "@mintplayer/ng-click-outside": "^15.0.0",
     "@mintplayer/ng-animations": "^15.0.0",
-    "@mintplayer/ng-pagination": "^15.0.0",
+    "@mintplayer/pagination": "^1.0.0",
     "@mintplayer/ng-focus-on-load": "^15.0.0"
   },
   "dependencies": {
