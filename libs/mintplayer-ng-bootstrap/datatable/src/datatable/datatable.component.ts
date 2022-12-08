@@ -1,9 +1,10 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ContentChildren } from '@angular/core';
+import { BehaviorSubject, Observable, map } from 'rxjs';
 import { DatatableSettings } from '../datatable-settings';
+import { BsDatatableColumnDirective } from '../datatable-column';
 
-// import { ContentChildren, EventEmitter, Output, TemplateRef } from '@angular/core';
+// import { EventEmitter, Output, TemplateRef } from '@angular/core';
 import { PaginationResponse } from '@mintplayer/pagination';
-// import { BehaviorSubject, map, Observable } from 'rxjs';
 
 @Component({
   selector: 'bs-datatable',
@@ -18,14 +19,24 @@ export class BsDatatableComponent {
     this.settings.sortDirection = 'ascending';
     this.settings.perPage = { values: [10, 20, 50], selected: 20 };
     this.settings.page = { values: [1], selected: 1 };
+
+    this.numberOfColumns$ = this.columns$.pipe(map(columns => columns.length));
   }
+  
+  //#region Columns
+  columns$ = new BehaviorSubject<BsDatatableColumnDirective[]>([]);
+  numberOfColumns$: Observable<number>;
+  @ContentChildren(BsDatatableColumnDirective) set columns(value: BsDatatableColumnDirective[]) {
+    this.columns$.next(value);
+  }
+  //#endregion
 
   @Input() settings: DatatableSettings;
   // @Input() data?: PaginationResponse<any>;
   // rowTemplate?: TemplateRef<any>;
   // @Output() reloadData = new EventEmitter<DatatableSettings>();
 
-  // columnHeaderClicked(column: any) {
+  columnHeaderClicked(column: BsDatatableColumnDirective) {
   //   if (column.bsDatatableColumn.sortable) {
   //     if (this.settings.sortProperty !== column.bsDatatableColumn.name) {
   //       this.settings.sortProperty = column.bsDatatableColumn.name;
@@ -37,6 +48,6 @@ export class BsDatatableComponent {
   //     }
   //     this.reloadData.emit(this.settings);
   //   }
-  // }
+  }
 
 }

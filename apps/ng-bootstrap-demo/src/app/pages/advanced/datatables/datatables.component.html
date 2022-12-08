@@ -17,4 +17,7 @@
   </tr>
 </bs-datatable> -->
 <bs-datatable #tabel [settings]="settings">
+  <div *bsDatatableColumn="{ sortable: true, name: 'Name' }">
+    1. Artist
+  </div>
 </bs-datatable>

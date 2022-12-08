@@ -1,6 +1,6 @@
 <h2>Datatable</h2>
 <bs-table [isResponsive]="true" [striped]="true" [hover]="true" class="mb-3">
-    <!--<thead>
+    <thead>
         <tr>
             <th *ngFor="let column of (columns$ | async)" class="text-nowrap"
                 [class.sort]="column.bsDatatableColumn.sortable"
@@ -11,7 +11,7 @@
             </th>
         </tr>
     </thead>
-    <tbody>
+    <!--<tbody>
         <ng-container *ngIf="!!data && !!rowTemplate">
             <ng-container *ngFor="let item of data.data">
                 <ng-container *ngTemplateOutlet="rowTemplate; context: { $implicit: item }"></ng-container>

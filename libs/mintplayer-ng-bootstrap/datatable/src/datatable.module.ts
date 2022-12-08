@@ -4,10 +4,12 @@ import { CommonModule } from '@angular/common';
 import { BsTableModule } from '@mintplayer/ng-bootstrap/table';
 // import { BsPaginationModule } from '@mintplayer/ng-bootstrap/pagination';
 import { BsDatatableComponent } from './datatable/datatable.component';
+import { BsDatatableColumnDirective } from './datatable-column';
 
 @NgModule({
   declarations: [
-    BsDatatableComponent
+    BsDatatableComponent,
+    BsDatatableColumnDirective
   ],
   imports: [
     CommonModule,
@@ -16,7 +18,8 @@ import { BsDatatableComponent } from './datatable/datatable.component';
     // BsPaginationModule
   ],
   exports: [
-    BsDatatableComponent
+    BsDatatableComponent,
+    BsDatatableColumnDirective
   ]
 })
 export class BsDatatableModule { }
