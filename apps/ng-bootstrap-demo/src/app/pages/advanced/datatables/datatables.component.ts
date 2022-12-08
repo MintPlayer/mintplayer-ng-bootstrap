@@ -15,18 +15,18 @@ export class DatatablesComponent implements OnInit {
   // }
 
   // artists?: PaginationResponse<Artist>;
-  // settings: DatatableSettings = new DatatableSettings({
-  //   sortProperty: 'YearStarted',
-  //   sortDirection: 'ascending',
-  //   perPage: {
-  //     values: [10, 20, 50],
-  //     selected: 20
-  //   },
-  //   page: {
-  //     values: [1],
-  //     selected: 1
-  //   }
-  // });
+  settings: DatatableSettings = new DatatableSettings({
+    sortProperty: 'YearStarted',
+    sortDirection: 'ascending',
+    perPage: {
+      values: [10, 20, 50],
+      selected: 20
+    },
+    page: {
+      values: [1],
+      selected: 1
+    }
+  });
   
   ngOnInit() {
   //   this.loadArtists();

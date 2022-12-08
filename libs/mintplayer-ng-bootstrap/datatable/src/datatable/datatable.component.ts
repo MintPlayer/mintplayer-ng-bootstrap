@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
-// import { Component, ContentChildren, EventEmitter, Input, Output, TemplateRef } from '@angular/core';
-// import { PaginationResponse } from '@mintplayer/pagination';
+import { Component, Input } from '@angular/core';
+import { DatatableSettings } from '../datatable-settings';
+
+// import { ContentChildren, EventEmitter, Output, TemplateRef } from '@angular/core';
+import { PaginationResponse } from '@mintplayer/pagination';
 // import { BehaviorSubject, map, Observable } from 'rxjs';
-// import { DatatableSettings } from '../datatable-settings';
 
 @Component({
   selector: 'bs-datatable',
@@ -11,16 +12,15 @@ import { Component } from '@angular/core';
 })
 export class BsDatatableComponent {
 
-  // constructor() {
-  //   this.settings = new DatatableSettings();
-  //   this.settings.sortProperty = '';
-  //   this.settings.sortDirection = 'ascending';
-  //   this.settings.perPage = { values: [10, 20, 50], selected: 20 };
-  //   this.settings.page = { values: [1], selected: 1 };
+  constructor() {
+    this.settings = new DatatableSettings();
+    this.settings.sortProperty = '';
+    this.settings.sortDirection = 'ascending';
+    this.settings.perPage = { values: [10, 20, 50], selected: 20 };
+    this.settings.page = { values: [1], selected: 1 };
+  }
 
-  // }
-
-  // @Input() settings: DatatableSettings;
+  @Input() settings: DatatableSettings;
   // @Input() data?: PaginationResponse<any>;
   // rowTemplate?: TemplateRef<any>;
   // @Output() reloadData = new EventEmitter<DatatableSettings>();
