@@ -1,2 +1,5 @@
 <h1>Spinner</h1>
-<bs-spinner [type]="'grow'"></bs-spinner>
+<h2>Border</h2>
+<bs-spinner *ngFor="let color of colors" [type]="'border'" [color]="color.value" class="m-1"></bs-spinner>
+<h2>Grow</h2>
+<bs-spinner *ngFor="let color of colors" [type]="'grow'" [color]="color.value" class="m-1"></bs-spinner>

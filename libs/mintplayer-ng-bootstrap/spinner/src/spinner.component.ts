@@ -35,7 +35,7 @@ export class BsSpinnerComponent implements OnInit {
   public get color() {
     return this.color$.value;
   }
-  public set color(value: Color) {
+  @Input() public set color(value: Color) {
     this.color$.next(value);
   }
   //#endregion

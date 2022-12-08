@@ -10,7 +10,7 @@ import { Router, RouterLinkActive, RouterLink } from '@angular/router';
 export class NavbarRouterLinkActiveDirective extends RouterLinkActive {
 
   constructor(router: Router, element: ElementRef<any>, renderer: Renderer2, cdr: ChangeDetectorRef, routerLinkWithHref: RouterLink) {
-    super(router, element, renderer, cdr, undefined, routerLinkWithHref);
+    super(router, element, renderer, cdr, routerLinkWithHref);
     this.routerLinkActive = 'active';
   }
 

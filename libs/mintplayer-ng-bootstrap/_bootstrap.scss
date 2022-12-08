@@ -1,8 +1,8 @@
-@import "~bootstrap-icons/font/bootstrap-icons.css";
-@import '~@angular/cdk/overlay-prebuilt';
+@import "../../node_modules/bootstrap-icons/font/bootstrap-icons";
+@import '../../node_modules/@angular/cdk/overlay-prebuilt';
 
 // Import our own utilities
-@import "~bootstrap/scss/bootstrap-utilities.scss";
+@import "../../node_modules/bootstrap/scss/bootstrap-utilities.scss";
 @import './src/styles/utilities/cursor.scss';
 @import './src/styles/utilities/white-space.scss';
 @import './src/styles/utilities/overflow.scss';
@@ -10,7 +10,7 @@
 // Finally import the bootstrap
 // @import "~bootstrap/scss/bootstrap.scss";
 
-@import "~bootstrap/scss/mixins/banner";
+@import "../../node_modules/bootstrap/scss/mixins/banner";
 @include bsBanner("");
 
 
@@ -20,28 +20,28 @@
 // @import "~bootstrap/scss/variables";
 // @import "~bootstrap/scss/maps";
 // @import "~bootstrap/scss/mixins";
-@import "~bootstrap/scss/utilities";
+@import "../../node_modules/bootstrap/scss/utilities";
 
 // Layout & components
 
-@import "~bootstrap/scss/root";
-@import "~bootstrap/scss/reboot";
-@import "~bootstrap/scss/type";
-@import "~bootstrap/scss/images";
+@import "../../node_modules/bootstrap/scss/root";
+@import "../../node_modules/bootstrap/scss/reboot";
+@import "../../node_modules/bootstrap/scss/type";
+@import "../../node_modules/bootstrap/scss/images";
 // @import "~bootstrap/scss/containers";
 // @import "~bootstrap/scss/grid";
 // @import "~bootstrap/scss/tables";
 // @import "~bootstrap/scss/forms";
-@import "~bootstrap/scss/forms/labels";
-@import "~bootstrap/scss/forms/form-text";
-@import "~bootstrap/scss/forms/form-control";
+@import "../../node_modules/bootstrap/scss/forms/labels";
+@import "../../node_modules/bootstrap/scss/forms/form-text";
+@import "../../node_modules/bootstrap/scss/forms/form-control";
 // @import "~bootstrap/scss/forms/form-select";
 // @import "~bootstrap/scss/forms/form-check";
 // @import "~bootstrap/scss/forms/form-range";
-@import "~bootstrap/scss/forms/floating-labels";
-@import "~bootstrap/scss/forms/input-group";
-@import "~bootstrap/scss/forms/validation";
-@import "~bootstrap/scss/buttons";
+@import "../../node_modules/bootstrap/scss/forms/floating-labels";
+@import "../../node_modules/bootstrap/scss/forms/input-group";
+@import "../../node_modules/bootstrap/scss/forms/validation";
+@import "../../node_modules/bootstrap/scss/buttons";
 // @import "~bootstrap/scss/transitions";
 // @import "~bootstrap/scss/dropdown";
 // @import "~bootstrap/scss/button-group";
@@ -61,13 +61,13 @@
 // @import "~bootstrap/scss/tooltip";
 // @import "~bootstrap/scss/popover";
 // @import "~bootstrap/scss/carousel";
-// @import "~bootstrap/scss/spinners";
+@import "../../node_modules/bootstrap/scss/spinners";
 // @import "~bootstrap/scss/offcanvas";
 // @import "~bootstrap/scss/placeholders";
 
 // Helpers
-@import "~bootstrap/scss/helpers";
+@import "../../node_modules/bootstrap/scss/helpers";
 
 // Utilities
-@import "~bootstrap/scss/utilities/api";
+@import "../../node_modules/bootstrap/scss/utilities/api";
 // scss-docs-end import-stack

@@ -1,8 +1,4 @@
-:host ::ng-deep {
-    // Configuration
-    @import "~bootstrap/scss/functions";
-    @import "~bootstrap/scss/variables";
-
-    // Layout & components
-    @import "~bootstrap/scss/spinners";
-}
+@import "../../../../node_modules/bootstrap/scss/bootstrap-utilities.scss";
+@import "../../../../node_modules/bootstrap/scss/utilities";
+@import "../../../../node_modules/bootstrap/scss/spinners";
+@import "../../../../node_modules/bootstrap/scss/utilities/api";
