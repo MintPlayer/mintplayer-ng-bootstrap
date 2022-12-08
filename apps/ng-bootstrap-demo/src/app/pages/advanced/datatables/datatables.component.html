@@ -16,3 +16,14 @@
     <td class="text-nowrap">{{ artist.yearQuit }}</td>
   </tr>
 </bs-datatable> -->
+<bs-datatable #tabel [settings]="settings" [data]="artists">
+  <div *bsDatatableColumn="{ sortable: true, name: 'Name' }">
+    1. Artist
+  </div>
+  <div *bsDatatableColumn="{ sortable: true, name: 'YearStarted' }">
+    2. Year started
+  </div>
+  <div *bsDatatableColumn="{ sortable: true, name: 'YearQuit' }">
+    3. Year quit
+  </div>
+</bs-datatable>

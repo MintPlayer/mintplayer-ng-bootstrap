@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Injectable, Input, Output } from '@angular/core';
+import { Component, Directive, EventEmitter, Injectable, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TagService } from '../../../services/tag/tag.service';
 import { ModalComponent } from './modal.component';
@@ -26,8 +26,21 @@ class BsModalHostMockComponent {
   }
   @Output() isOpenChange = new EventEmitter<boolean>();
   //#endregion
-
 }
+
+@Component({
+  selector: 'bs-grid',
+  template: 'grid'
+})
+class BsGridMockComponent { }
+
+@Directive({
+  selector: '[bsColumn]'
+})
+class BsGridColumnMockDirective {
+  @Input() public bsColumn: string | null = '';
+}
+
 
 describe('ModalComponent', () => {
   let component: ModalComponent;
@@ -40,7 +53,9 @@ describe('ModalComponent', () => {
         ModalComponent,
 
         // Mock dependencies
-        BsModalHostMockComponent
+        BsModalHostMockComponent,
+        BsGridMockComponent,
+        BsGridColumnMockDirective
       ],
       providers: [
         { provide: 'GIT_REPO', useValue: 'https://github.com/MintPlayer/mintplayer-ng-bootstrap/apps/ng-bootstrap-demo/src/app/' },

@@ -1,7 +1,7 @@
 import { Component, ElementRef, Input, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { Color } from '../../../enums';
+import { Color } from '@mintplayer/ng-bootstrap';
 import { BsAlertComponent } from '../alert/alert.component';
 
 import { BsAlertCloseComponent } from './alert-close.component';

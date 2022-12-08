@@ -1,7 +1,25 @@
-import { Injectable } from '@angular/core';
+import { Component, Directive, Injectable, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsSnackbarService } from '@mintplayer/ng-bootstrap';
+import { BsSnackbarService } from '@mintplayer/ng-bootstrap/snackbar';
 import { SnackbarComponent } from './snackbar.component';
+
+@Component({
+  selector: 'bs-grid',
+  template: `
+    <div>
+      <ng-content></ng-content>
+    </div>`
+})
+class BsGridMockComponent {
+  @Input() stopFullWidthAt: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl' | 'never' = 'sm';
+}
+
+@Directive({
+  selector: '[bsColumn]'
+})
+class BsColumnMockDirective {
+  @Input() bsColumn?: object | '';
+}
 
 @Injectable({
   providedIn: 'root'
@@ -17,7 +35,11 @@ describe('SnackbarComponent', () => {
     await TestBed.configureTestingModule({
       declarations: [
         // Unit to test
-        SnackbarComponent
+        SnackbarComponent,
+
+        // Mock dependencies
+        BsGridMockComponent,
+        BsColumnMockDirective
       ],
       providers: [
         { provide: BsSnackbarService, useClass: BsSnackbarMockService },

@@ -1,4 +1,5 @@
 {
+  "name": "mintplayer-qr-code",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/mintplayer-qr-code/src",
   "projectType": "library",
@@ -41,6 +42,5 @@
       }
     }
   },
-  "tags": [],
-  "name": "mintplayer-qr-code"
+  "tags": []
 }

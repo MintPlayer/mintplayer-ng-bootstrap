@@ -1,4 +1,5 @@
 {
+  "name": "mintplayer-ng-click-outside",
   "$schema": "..\\..\\node_modules\\nx\\schemas\\project-schema.json",
   "projectType": "library",
   "sourceRoot": "libs/mintplayer-ng-click-outside/src",
@@ -39,6 +40,5 @@
       }
     }
   },
-  "tags": [],
-  "name": "mintplayer-ng-click-outside"
+  "tags": []
 }

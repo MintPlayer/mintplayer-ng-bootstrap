@@ -18,4 +18,8 @@
         top: 50%;
         transform: translateY(-50%);
     }
+
+    &:not(.show) {
+        pointer-events: none;
+    }
 }

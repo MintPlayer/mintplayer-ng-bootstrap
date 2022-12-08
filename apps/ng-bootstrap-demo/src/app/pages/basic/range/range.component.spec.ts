@@ -1,5 +1,6 @@
-import { Component, Directive, Input } from '@angular/core';
+import { Component, Directive, forwardRef, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { RangeComponent } from './range.component';
 
 @Component({
@@ -26,12 +27,42 @@ class BsColumnMockDirective {
 })
 class BsRangeMockComponent { }
 
+@Directive({
+  selector: 'bs-range',
+  providers: [{
+    provide: NG_VALUE_ACCESSOR,
+    useExisting: forwardRef(() => BsRangeMockValueAccessor),
+    multi: true,
+  }],
+})
+class BsRangeMockValueAccessor implements ControlValueAccessor {
+  onValueChange?: (value: number) => void;
+  onTouched?: () => void;
+
+  registerOnChange(fn: (_: any) => void) {
+    this.onValueChange = fn;
+  }
+  
+  registerOnTouched(fn: () => void) {
+    this.onTouched = fn;
+  }
+
+  writeValue(value: number) {
+  }
+
+  setDisabledState(isDisabled: boolean) {
+  }
+}
+
 describe('RangeComponent', () => {
   let component: RangeComponent;
   let fixture: ComponentFixture<RangeComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      imports: [
+        FormsModule
+      ],
       declarations: [
         // Unit to test
         RangeComponent,
@@ -39,7 +70,8 @@ describe('RangeComponent', () => {
         // Mock dependencies
         BsGridMockComponent,
         BsColumnMockDirective,
-        BsRangeMockComponent
+        BsRangeMockComponent,
+        BsRangeMockValueAccessor
       ]
     })
     .compileComponents();

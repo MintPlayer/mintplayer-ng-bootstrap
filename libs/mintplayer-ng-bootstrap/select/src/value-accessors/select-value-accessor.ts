@@ -1,10 +1,5 @@
-// import { AfterViewInit, Directive, forwardRef, HostListener, Input, OnDestroy } from '@angular/core';
-// import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-// import { fromEvent, Subject, takeUntil } from 'rxjs';
-// import { BsSelectComponent } from '../component/select.component';
-
 import { Directive, ElementRef, forwardRef, Host, HostListener, Input, OnDestroy, Optional, Renderer2 } from "@angular/core";
-import { ControlValueAccessor, NG_VALUE_ACCESSOR, SelectControlValueAccessor } from "@angular/forms";
+import { ControlValueAccessor, NG_VALUE_ACCESSOR } from "@angular/forms";
 import { BsSelectComponent } from "../component/select.component";
 
 @Directive({

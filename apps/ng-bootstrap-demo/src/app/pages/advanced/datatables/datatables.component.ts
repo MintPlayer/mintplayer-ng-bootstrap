@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { DatatableSettings } from '@mintplayer/ng-bootstrap/datatable';
 import { PaginationResponse } from '@mintplayer/pagination';
 import { Artist } from '../../../entities/artist';
-import { ArtistService } from '../../../services/artist/artist.service';
+// import { ArtistService } from '../../../services/artist/artist.service';
 
 @Component({
   selector: 'demo-datatables',
@@ -11,22 +11,22 @@ import { ArtistService } from '../../../services/artist/artist.service';
 })
 export class DatatablesComponent implements OnInit {
 
-  constructor(private artistService: ArtistService) {
-  }
+  // constructor(private artistService: ArtistService) {
+  // }
 
-  // artists?: PaginationResponse<Artist>;
-  // settings: DatatableSettings = new DatatableSettings({
-  //   sortProperty: 'YearStarted',
-  //   sortDirection: 'ascending',
-  //   perPage: {
-  //     values: [10, 20, 50],
-  //     selected: 20
-  //   },
-  //   page: {
-  //     values: [1],
-  //     selected: 1
-  //   }
-  // });
+  artists?: PaginationResponse<Artist>;
+  settings: DatatableSettings = new DatatableSettings({
+    sortProperty: 'YearStarted',
+    sortDirection: 'ascending',
+    perPage: {
+      values: [10, 20, 50],
+      selected: 20
+    },
+    page: {
+      values: [1],
+      selected: 1
+    }
+  });
   
   ngOnInit() {
   //   this.loadArtists();
