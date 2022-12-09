@@ -6,7 +6,5 @@ import { Component, HostBinding } from '@angular/core';
   styleUrls: ['./toast-header.component.scss'],
 })
 export class BsToastHeaderComponent {
-  constructor() {}
-
   @HostBinding('class.toast-header') toastClass = true;
 }

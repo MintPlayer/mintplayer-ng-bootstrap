@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, OnDestroy, Output } from '@angular/core';
-import { PageWithSelection, Size } from '@mintplayer/ng-bootstrap';
+import { Size } from '@mintplayer/ng-bootstrap';
 import { BehaviorSubject, combineLatest, map, Observable, Subject, takeUntil } from 'rxjs';
+import { PageWithSelection } from '../../interfaces/page-with-selection';
 
 @Component({
   selector: 'bs-pagination',

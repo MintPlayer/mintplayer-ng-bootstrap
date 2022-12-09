@@ -1,7 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { AfterContentInit, AfterViewInit, Component, ContentChildren, ElementRef, HostListener, Inject, NgZone, OnDestroy, QueryList, ViewChildren } from '@angular/core';
-import { BsScrollOffsetService } from '@mintplayer/ng-bootstrap';
 import { BehaviorSubject, combineLatest, filter, Subject, take, takeUntil } from 'rxjs';
+import { BsScrollOffsetService } from '../services/scroll-offset/scroll-offset.service';
 import { BsScrollspyDirective } from '../directives/scrollspy.directive';
 
 @Component({

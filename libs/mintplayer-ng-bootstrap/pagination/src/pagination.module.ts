@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BsPaginationComponent } from './pagination/pagination.component';
+import { BsPaginationComponent } from './component/pagination/pagination.component';
 
 
 
