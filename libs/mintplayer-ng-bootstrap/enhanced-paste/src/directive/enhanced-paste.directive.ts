@@ -1,6 +1,6 @@
 import { Directive, ElementRef, EventEmitter, HostListener, Output } from '@angular/core';
 import { NgModel } from '@angular/forms';
-import { NumberOverflow } from '@mintplayer/ng-bootstrap';
+import { NumberOverflow } from '../interfaces/number-overflow';
 
 @Directive({
   selector: 'input[type="number"][bsEnhancedPaste]'

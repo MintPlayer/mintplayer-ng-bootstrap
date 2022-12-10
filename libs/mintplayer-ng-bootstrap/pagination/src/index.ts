@@ -1,2 +1,4 @@
 export * from './pagination.module';
-export * from './pagination/pagination.component';
+export * from './component';
+export * from './interfaces';
+export * from './types';

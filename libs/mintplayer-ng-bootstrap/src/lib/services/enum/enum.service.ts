@@ -6,23 +6,23 @@ import { EnumItem } from '../../interfaces/enum-item';
 })
 export class EnumService {
 
-  public getKeys(en: Object) {
+  public getKeys(en: Record<string, unknown>) {
     const items = Object.keys(en);
     const halfLength = items.length / 2;
     return items.slice(halfLength);
   }
   
-  public getValues(en: Object) {
+  public getValues(en: Record<string, unknown>) {
     const items = Object.keys(en);
     const halfLength = items.length / 2;
     return items.slice(0, halfLength);
   }
 
-  public getItems(en: Object) {
+  public getItems(en: Record<string, unknown>) {
     return this.getKeys(en).map((key) => {
       return <EnumItem>{
         key,
-        value: (<any>en)[key],
+        value: en[key],
       }
     });
   }
