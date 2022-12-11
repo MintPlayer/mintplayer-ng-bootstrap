@@ -1,11 +1,13 @@
-<div class="popover position-relative fade show" role="tooltip"
-    [class.bs-popover-bottom]="position === positions.bottom"
-    [class.bs-popover-top]="position === positions.top"
-    [class.bs-popover-start]="position === positions.left"
-    [class.bs-popover-end]="position === positions.right"
-    [class]="marginClass$ | async"
-    [@fadeInOut]
-    *ngIf="isVisible$ | async">
-    <ng-container *ngTemplateOutlet="template"></ng-container>
-    <div class="popover-arrow position-absolute"></div>
-</div>
+<bs-has-overlay>
+    <div class="popover position-relative fade show" role="tooltip"
+        [class.bs-popover-bottom]="position === positions.bottom"
+        [class.bs-popover-top]="position === positions.top"
+        [class.bs-popover-start]="position === positions.left"
+        [class.bs-popover-end]="position === positions.right"
+        [class]="marginClass$ | async"
+        [@fadeInOut]
+        *ngIf="isVisible$ | async">
+        <ng-container *ngTemplateOutlet="template"></ng-container>
+        <div class="popover-arrow position-absolute"></div>
+    </div>
+</bs-has-overlay>

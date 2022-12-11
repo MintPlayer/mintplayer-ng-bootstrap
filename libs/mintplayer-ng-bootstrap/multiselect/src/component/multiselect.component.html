@@ -1,7 +1,9 @@
 <div bsDropdown [hasBackdrop]="true" [closeOnClickOutside]="true">
-    <button bsDropdownToggle class="btn btn-primary">
-        <ng-container *ngTemplateOutlet="buttonTemplate ?? defaultButtonTemplate; context: { $implicit: selectedItems.length }"></ng-container>
-    </button>
+    <bs-has-overlay>
+        <button bsDropdownToggle class="btn btn-primary">
+            <ng-container *ngTemplateOutlet="buttonTemplate ?? defaultButtonTemplate; context: { $implicit: selectedItems.length }"></ng-container>
+        </button>
+    </bs-has-overlay>
     <div *bsDropdownMenu class="bg-white mw-250px p-3 border rounded shadow">
         <ng-container *ngTemplateOutlet="headerTemplate"></ng-container>
         <hr class="my-2" *ngIf="headerTemplate">

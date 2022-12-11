@@ -2,6 +2,7 @@ import { Injector, NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { OverlayModule } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
+import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
 import { BsOffcanvasComponent } from './components/offcanvas/offcanvas.component';
 import { BsOffcanvasContentDirective } from './directives/offcanvas-content/offcanvas-content.directive';
 import { BsOffcanvasHostComponent } from './components/offcanvas-host/offcanvas-host.component';
@@ -23,7 +24,8 @@ import { PORTAL_FACTORY } from './providers/portal-factory.provider';
   ],
   imports: [
     CommonModule,
-    OverlayModule
+    OverlayModule,
+    BsHasOverlayModule
   ],
   exports: [
     BsOffcanvasComponent,

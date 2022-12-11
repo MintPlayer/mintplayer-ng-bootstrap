@@ -10,6 +10,7 @@ import { BsModalDirective } from './directives/modal/modal.directive';
 import { BsModalCloseDirective } from './directives/modal-close/modal-close.directive';
 import { PORTAL_FACTORY } from './providers/portal-factory.provider';
 import { ComponentPortal } from '@angular/cdk/portal';
+import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
 
 @NgModule({
   declarations: [
@@ -23,7 +24,8 @@ import { ComponentPortal } from '@angular/cdk/portal';
   ],
   imports: [
     CommonModule,
-    OverlayModule
+    OverlayModule,
+    BsHasOverlayModule
   ],
   exports: [
     BsModalHeaderDirective,

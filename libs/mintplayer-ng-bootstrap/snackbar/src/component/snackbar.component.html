@@ -1,6 +1,8 @@
-<div [@slideUpDown]="animationState"
-     (@slideUpDown.start)="onAnimationChanged($event)"
-     (@slideUpDown.done)="onAnimationChanged($event)">
-
-    <ng-container *ngTemplateOutlet="content; context: { $implicit: this }" ></ng-container>
-</div>
+<bs-has-overlay>
+    <div [@slideUpDown]="animationState"
+        (@slideUpDown.start)="onAnimationChanged($event)"
+        (@slideUpDown.done)="onAnimationChanged($event)">
+        
+        <ng-container *ngTemplateOutlet="content; context: { $implicit: this }" ></ng-container>
+    </div>
+</bs-has-overlay>
