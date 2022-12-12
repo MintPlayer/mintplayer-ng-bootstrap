@@ -1,15 +1,6 @@
-import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { BsButtonGroupTestingModule } from '@mintplayer/ng-bootstrap/testing';
 import { ButtonGroupComponent } from './button-group.component';
-
-@Component({
-  selector: 'bs-button-group',
-  template: `
-    <div>
-      <ng-content></ng-content>
-    </div>`
-})
-class BsButtonGroupMockComponent {}
 
 describe('ButtonGroupComponent', () => {
   let component: ButtonGroupComponent;
@@ -17,12 +8,12 @@ describe('ButtonGroupComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      imports: [
+        BsButtonGroupTestingModule,
+      ],
       declarations: [
         // Unit to test
         ButtonGroupComponent,
-      
-        // Mock dependencies
-        BsButtonGroupMockComponent
       ]
     })
     .compileComponents();

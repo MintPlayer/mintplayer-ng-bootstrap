@@ -24,6 +24,9 @@
             "prefix": "bs",
             "style": "kebab-case"
           }
+        ],
+        "@nrwl/nx/enforce-module-boundaries": [
+          "nowarn"
         ]
       }
     },

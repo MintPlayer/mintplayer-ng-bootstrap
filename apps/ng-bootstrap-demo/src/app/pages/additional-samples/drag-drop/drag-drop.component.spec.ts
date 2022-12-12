@@ -1,5 +1,6 @@
-import { Component, Directive, Input } from '@angular/core';
+import { Directive, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { BsGridTestingModule } from '@mintplayer/ng-bootstrap/testing';
 import { DragDropComponent } from './drag-drop.component';
 
 @Directive({
@@ -11,33 +12,21 @@ class CdkDropListMockDirective<T = any> {
   @Input() cdkDropListConnectedTo: (CdkDropListMockDirective | string)[] | CdkDropListMockDirective | string = [];
 }
 
-@Component({
-  selector: 'bs-grid',
-  template: 'grid'
-})
-class BsGridMockComponent { }
-
-@Directive({
-  selector: '[bsColumn]'
-})
-class BsGridColumnMockDirective {
-  @Input() public bsColumn: string | null = '';
-}
-
 describe('DragDropComponent', () => {
   let component: DragDropComponent;
   let fixture: ComponentFixture<DragDropComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      imports: [
+        BsGridTestingModule,
+      ],
       declarations: [
         // Unit to test
         DragDropComponent,
       
         // Mock dependencies
-        CdkDropListMockDirective,
-        BsGridMockComponent,
-        BsGridColumnMockDirective
+        CdkDropListMockDirective
       ]
     })
     .compileComponents();

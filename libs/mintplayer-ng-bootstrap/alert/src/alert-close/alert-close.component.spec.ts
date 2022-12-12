@@ -64,21 +64,3 @@ class BsAlertCloseTestComponent {
   @ViewChild('alert') alert!: BsAlertMockComponent;
   @ViewChild('alertClose') alertClose!: BsAlertCloseComponent;
 }
-
-@Component({
-  selector: 'bs-alert',
-  template: `
-  <div *ngIf="isVisible">
-    <div class="alert mb-0">
-      <ng-content></ng-content>
-    </div>
-  </div>`,
-  providers: [
-    { provide: BsAlertComponent, useExisting: BsAlertMockComponent }
-  ]
-})
-class BsAlertMockComponent {
-  isVisible: boolean = true;
-
-  @Input() public type: Color = Color.primary;
-}

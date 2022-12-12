@@ -1,26 +1,9 @@
 import { Component, Directive, forwardRef, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { BsGridTestingModule } from '@mintplayer/ng-bootstrap/testing';
 
 import { SelectComponent } from './select.component';
-
-@Component({
-  selector: 'bs-grid',
-  template: `
-    <div>
-      <ng-content></ng-content>
-    </div>`
-})
-class BsGridMockComponent {
-  @Input() stopFullWidthAt: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl' | 'never' = 'sm';
-}
-
-@Directive({
-  selector: '[bsColumn]'
-})
-class BsColumnMockDirective {
-  @Input() bsColumn?: object | '';
-}
 
 @Component({
   selector: 'bs-select',
@@ -64,15 +47,14 @@ describe('SelectComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        FormsModule
+        FormsModule,
+        BsGridTestingModule,
       ],
       declarations: [
         // Unit to test
         SelectComponent,
 
         // Mock dependencies
-        BsGridMockComponent,
-        BsColumnMockDirective,
         BsSelectMockComponent,
         BsSelectMockValueAccessor,
         BsMockSelectOption

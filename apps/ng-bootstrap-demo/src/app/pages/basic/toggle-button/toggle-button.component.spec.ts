@@ -1,22 +1,10 @@
 import { Component, ContentChildren, Directive, EventEmitter, forwardRef, Input, Output, QueryList } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { BsGridTestingModule } from '@mintplayer/ng-bootstrap/testing';
 import { ToggleButtonComponent } from './toggle-button.component';
 
 type BsCheckStyleMock = 'checkbox' | 'radio' | 'switch' | 'toggle_button' | 'radio_toggle_button';
-
-@Component({
-  selector: 'bs-grid',
-  template: 'grid'
-})
-class BsGridMockComponent { }
-
-@Directive({
-  selector: '[bsColumn]'
-})
-class BsGridColumnMockDirective {
-  @Input() public bsColumn: string | null = '';
-}
 
 @Component({
   selector: 'bs-toggle-button',
@@ -39,9 +27,6 @@ class BsToggleButtonMockComponent {
   exportAs: 'bsToggleButtonGroup'
 })
 class BsToggleButtonGroupMockDirective {
-
-  constructor() { }
-
   @ContentChildren(BsToggleButtonMockComponent, { descendants: true }) toggleButtons!: QueryList<BsToggleButtonMockComponent>;
 }
 
@@ -79,15 +64,14 @@ describe('ToggleButtonComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        FormsModule
+        FormsModule,
+        BsGridTestingModule,
       ],
       declarations: [
         // Unit to test
         ToggleButtonComponent,
 
         // Mock dependencies
-        BsGridMockComponent,
-        BsGridColumnMockDirective,
         BsToggleButtonMockComponent,
         BsToggleButtonGroupMockDirective,
         BsToggleButtonMockValueAccessor

@@ -1,13 +1,6 @@
-import { Component, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { BsCodeSnippetTestingModule } from '@mintplayer/ng-bootstrap/testing';
 import { CodeSnippetComponent } from './code-snippet.component';
-
-@Component({
-  selector: 'bs-code-snippet'
-})
-class BsCodeSnippetMockComponent {
-  @Input() htmlToCopy = '';
-}
 
 describe('CodeSnippetComponent', () => {
   let component: CodeSnippetComponent;
@@ -15,12 +8,12 @@ describe('CodeSnippetComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      imports: [
+        BsCodeSnippetTestingModule,
+      ],
       declarations: [
         // Unit to test
         CodeSnippetComponent,
-      
-        // Mock dependencies
-        BsCodeSnippetMockComponent
       ]
     })
     .compileComponents();

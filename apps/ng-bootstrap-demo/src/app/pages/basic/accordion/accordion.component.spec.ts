@@ -1,28 +1,6 @@
-import { Component, ContentChildren, forwardRef, Input, QueryList } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { BsAccordionTestingModule } from '@mintplayer/ng-bootstrap/testing';
 import { AccordionComponent } from './accordion.component';
-
-@Component({
-  selector: 'bs-accordion',
-  template: 'accordion works'
-})
-class BsAccordionMockComponent {
-  @Input() highlightActiveTab = false;
-}
-
-@Component({
-  selector: 'bs-accordion-tab',
-  template: 'accordion-tab works'
-})
-class BsAccordionTabMockComponent {
-  @ContentChildren(() => forwardRef(() => BsAccordionMockComponent)) childAccordions!: QueryList<BsAccordionMockComponent>;
-}
-
-@Component({
-  selector: 'bs-accordion-tab-header',
-  template: 'accordion-tab-header works'
-})
-class BsAccordionTabHeaderMockComponent {}
 
 describe('AccordionComponent', () => {
   let component: AccordionComponent;
@@ -30,14 +8,12 @@ describe('AccordionComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      imports: [
+        BsAccordionTestingModule,
+      ],
       declarations: [
         // Unit to test
         AccordionComponent,
-      
-        // Mock dependencies
-        BsAccordionMockComponent,
-        BsAccordionTabMockComponent,
-        BsAccordionTabHeaderMockComponent
       ]
     })
     .compileComponents();

@@ -1,20 +1,7 @@
-import { Component, Directive, Input } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { BsFileUploadTestingModule, BsGridTestingModule, Color } from '@mintplayer/ng-bootstrap/testing';
 import { FileUploadComponent } from './file-upload.component';
-
-enum Color {
-  primary,
-  secondary,
-  success,
-  danger,
-  warning,
-  info,
-  light,
-  dark,
-  body,
-  white,
-  transparent
-}
 
 @Component({
   selector: 'bs-progress',
@@ -38,38 +25,16 @@ class BsProgressbarMockComponent {
   @Input() public animated = false;
 }
 
-@Component({
-  selector: 'bs-grid',
-  template: 'grid'
-})
-class BsGridMockComponent { }
-
-@Directive({
-  selector: '[bsColumn]'
-})
-class BsGridColumnMockDirective {
-  @Input() public bsColumn: string | null = '';
-}
-
-interface FileUpload {
-  file: File;
-  progress: number;
-}
-
-@Component({
-  selector: 'bs-file-upload',
-  template: 'File-upload works'
-})
-class BsFileUploadMockComponent {
-  @Input() files: FileUpload[] = [];
-}
-
 describe('FileUploadComponent', () => {
   let component: FileUploadComponent;
   let fixture: ComponentFixture<FileUploadComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      imports: [
+        BsGridTestingModule,
+        BsFileUploadTestingModule,
+      ],
       declarations: [
         // Unit to test
         FileUploadComponent,
@@ -77,9 +42,6 @@ describe('FileUploadComponent', () => {
         // Mock dependencies
         BsProgressMockComponent,
         BsProgressbarMockComponent,
-        BsFileUploadMockComponent,
-        BsGridMockComponent,
-        BsGridColumnMockDirective
       ]
     })
     .compileComponents();

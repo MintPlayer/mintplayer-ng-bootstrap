@@ -1,6 +1,7 @@
 import { Directive, Injectable, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsSnackbarService } from '@mintplayer/ng-bootstrap/snackbar';
+import { BsCopyTestingModule } from '@mintplayer/ng-bootstrap/testing';
 import { CopyComponent } from './copy.component';
 
 @Injectable({
@@ -16,25 +17,20 @@ class HighlightMockDirective {
   @Input() highlight!: string;
 }
 
-@Directive({
-  selector: '[bsCopy]'
-})
-class BsCopyMockDirective {
-  @Input() bsCopy!: string;
-}
-
 describe('CopyComponent', () => {
   let component: CopyComponent;
   let fixture: ComponentFixture<CopyComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      imports: [
+        BsCopyTestingModule
+      ],
       declarations: [
         // Unit to test
         CopyComponent,
 
         // Mock dependencies
-        BsCopyMockDirective,
         HighlightMockDirective
       ],
       providers: [

@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { BsAccordionMockComponent, BsAccordionTabHeaderMockComponent } from '@mintplayer/ng-bootstrap/testing';
 import { BsAccordionTabHeaderComponent } from '../accordion-tab-header/accordion-tab-header.component';
 import { BsAccordionComponent } from '../accordion/accordion.component';
 
@@ -18,13 +19,13 @@ describe('BsAccordionTabComponent', () => {
       declarations: [
         // Unit to test
         BsAccordionTabComponent,
+        
+        // Mock in-module components
+        BsAccordionMockComponent,
+        BsAccordionTabHeaderMockComponent,
 
         // Testbench
         BsAccordionTestComponent,
-        
-        // Mock components
-        BsAccordionMockComponent,
-        BsAccordionTabHeaderMockComponent,
       ],
       providers: [
         { provide: BsAccordionComponent, useClass: BsAccordionMockComponent },
@@ -55,19 +56,4 @@ describe('BsAccordionTabComponent', () => {
     </bs-accordion-tab>
   </bs-accordion>`
 })
-class BsAccordionTestComponent {
-}
-
-@Component({
-  selector: 'bs-accordion',
-  template: 'accordion works'
-})
-class BsAccordionMockComponent {
-}
-
-@Component({
-  selector: 'bs-accordion-tab-header',
-  template: 'accordion-tab-header works'
-})
-class BsAccordionTabHeaderMockComponent {
-}
+class BsAccordionTestComponent {}

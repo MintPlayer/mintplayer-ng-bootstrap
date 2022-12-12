@@ -1,31 +1,6 @@
-import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { BsCardTestingModule, BsListGroupTestingModule } from '@mintplayer/ng-bootstrap/testing';
 import { CardComponent } from './card.component';
-
-@Component({
-  selector: 'bs-card',
-  template: 'card works'
-})
-class BsCardMockComponent {}
-
-@Component({
-  selector: 'bs-card-header',
-  template: 'card-header works'
-})
-class BsCardHeaderMockComponent {}
-
-@Component({
-  selector: 'bs-list-group',
-  template: 'list-group works'
-})
-class BsListGroupMockComponent {}
-
-@Component({
-  selector: 'bs-list-group-item',
-  template: 'list-group-item works'
-})
-class BsListGroupItemMockComponent {}
-
 
 describe('CardComponent', () => {
   let component: CardComponent;
@@ -33,15 +8,13 @@ describe('CardComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      imports: [
+        BsCardTestingModule,
+        BsListGroupTestingModule,
+      ],
       declarations: [
         // Unit to test
         CardComponent,
-        
-        // Mock dependencies
-        BsCardMockComponent,
-        BsCardHeaderMockComponent,
-        BsListGroupMockComponent,
-        BsListGroupItemMockComponent
       ]
     })
     .compileComponents();

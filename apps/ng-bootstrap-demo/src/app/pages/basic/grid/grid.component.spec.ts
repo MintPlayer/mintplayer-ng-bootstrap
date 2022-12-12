@@ -1,24 +1,6 @@
-import { Component, Directive, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { BsGridTestingModule } from '@mintplayer/ng-bootstrap/testing';
 import { GridComponent } from './grid.component';
-
-@Component({
-  selector: 'bs-grid',
-  template: `
-    <div>
-      <ng-content></ng-content>
-    </div>`
-})
-class BsGridMockComponent {
-  @Input() stopFullWidthAt: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl' | 'never' = 'sm';
-}
-
-@Directive({
-  selector: '[bsColumn]'
-})
-class BsColumnMockDirective {
-  @Input() bsColumn?: object | '';
-}
 
 describe('GridComponent', () => {
   let component: GridComponent;
@@ -26,13 +8,12 @@ describe('GridComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      imports: [
+        BsGridTestingModule,
+      ],
       declarations: [
         // Unit to test
         GridComponent,
-      
-        // Mock dependencies
-        BsGridMockComponent,
-        BsColumnMockDirective
       ]
     })
     .compileComponents();
