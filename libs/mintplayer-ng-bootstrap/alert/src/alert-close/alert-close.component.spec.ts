@@ -1,4 +1,4 @@
-import { Component, ElementRef, Input, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, Output, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { Color } from '@mintplayer/ng-bootstrap';
@@ -51,6 +51,25 @@ describe('BsAlertCloseComponent', () => {
     expect(component.alert.isVisible).toBe(false);
   });
 });
+
+@Component({
+  selector: 'bs-alert',
+  template: `
+    <div *ngIf="isVisible">
+        <div class="alert mb-0">
+            <ng-content></ng-content>
+        </div>
+    </div>`,
+  providers: [
+    { provide: BsAlertComponent, useExisting: BsAlertMockComponent }
+  ],
+})
+class BsAlertMockComponent {
+  @Input() public type: Color = Color.primary;
+  @Input() public isVisible: boolean = true;
+  @Output() public isVisibleChange = new EventEmitter<boolean>();
+  @Output() public afterOpenedOrClosed = new EventEmitter();
+}
 
 @Component({
   selector: 'bs-alert-close-test',
