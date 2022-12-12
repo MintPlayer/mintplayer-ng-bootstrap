@@ -4,14 +4,14 @@ import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ClickOutsideDirective } from '@mintplayer/ng-click-outside';
 import { BS_DEVELOPMENT } from '@mintplayer/ng-bootstrap';
 import { Subject, take, takeUntil } from 'rxjs';
-import { BsDropdownDirective } from '../dropdown/dropdown.directive';
+import { BsDropdownComponent } from '../dropdown/dropdown.component';
 
 @Directive({
   selector: '[bsDropdownMenu]'
 })
 export class BsDropdownMenuDirective extends ClickOutsideDirective {
   constructor(
-    @Inject(forwardRef(() => BsDropdownDirective)) private dropdown: BsDropdownDirective,
+    @Inject(forwardRef(() => BsDropdownComponent)) private dropdown: BsDropdownComponent,
     private viewContainerRef: ViewContainerRef,
     private templateRef: TemplateRef<any>,
     private overlay: Overlay,

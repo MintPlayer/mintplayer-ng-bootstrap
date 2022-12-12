@@ -1,6 +1,6 @@
 import { Directive, ElementRef, HostListener } from '@angular/core';
 import { take } from 'rxjs';
-import { BsDropdownDirective } from '../dropdown/dropdown.directive';
+import { BsDropdownComponent } from '../dropdown/dropdown.component';
 
 @Directive({
   selector: '[bsDropdownToggle]'
@@ -8,7 +8,7 @@ import { BsDropdownDirective } from '../dropdown/dropdown.directive';
 export class BsDropdownToggleDirective {
 
   constructor(
-    private dropdown: BsDropdownDirective,
+    private dropdown: BsDropdownComponent,
     toggleButton: ElementRef) {
       this.toggleButton = toggleButton;
     }

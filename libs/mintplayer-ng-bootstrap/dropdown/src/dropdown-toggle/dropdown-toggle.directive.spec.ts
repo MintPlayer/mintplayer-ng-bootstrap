@@ -1,13 +1,13 @@
 import { Component, ContentChild, Directive, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsDropdownDirective } from '../dropdown/dropdown.directive';
 import { BehaviorSubject } from 'rxjs';
+import { BsDropdownComponent } from '../dropdown/dropdown.component';
 import { BsDropdownToggleDirective } from './dropdown-toggle.directive';
 
 @Component({
   selector: 'bs-dropdown-toggle-test',
   template: `
-    <div bsDropdown [closeOnClickOutside]="true">
+    <bs-dropdown [closeOnClickOutside]="true">
       <button bsDropdownToggle class="btn btn-primary">Dropdown</button>
       <div *bsDropdownMenu>
         Dropdown contents
@@ -29,7 +29,7 @@ class BsDropdownMenuMockDirective {
 @Directive({
   selector: '[bsDropdown]',
   providers: [
-    { provide: BsDropdownDirective, useExisting: BsDropdownMockDirective }
+    { provide: BsDropdownComponent, useExisting: BsDropdownMockDirective }
   ]
 })
 class BsDropdownMockDirective {
