@@ -1,5 +1,6 @@
-import { Component, ContentChildren, QueryList } from '@angular/core';
+import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { BsScrollspyMockComponent } from '@mintplayer/ng-bootstrap/testing';
 import { BsScrollspyDirective } from './scrollspy.directive';
 
 @Component({
@@ -28,25 +29,6 @@ import { BsScrollspyDirective } from './scrollspy.directive';
 class BsScrollspyTestComponent {
 }
 
-@Component({
-  selector: 'bs-scrollspy',
-  template: `
-    <ul>
-      <li *ngFor="let dir of directives">
-        {{ dir.element.nativeElement.textContent }}
-      </li>
-    </ul>
-    <div class="content">
-      <ng-content></ng-content>
-    </div>`
-})
-class BsScrollspyMockComponent {
-
-  @ContentChildren(BsScrollspyDirective, { descendants: true })
-  directives!: QueryList<BsScrollspyDirective>;
-
-}
-
 describe('BsScrollspyDirective', () => {
   let component: BsScrollspyTestComponent;
   let fixture: ComponentFixture<BsScrollspyTestComponent>;
@@ -58,7 +40,7 @@ describe('BsScrollspyDirective', () => {
         // Directive to test
         BsScrollspyDirective,
 
-        // Mock components
+        // Mock dependencies
         BsScrollspyMockComponent,
 
         // Testbench

@@ -1,5 +1,6 @@
-import { Component, EventEmitter, Injectable, Input, Output } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { BsSelect2TestingModule } from '@mintplayer/ng-bootstrap/testing';
 import { SubjectService } from '../../../services/subject/subject.service';
 import { TagService } from '../../../services/tag/tag.service';
 import { AutofocusComponent } from './autofocus.component';
@@ -16,30 +17,18 @@ class SubjectMockService {
 class TagMockService {
 }
 
-
-@Component({
-  selector: 'bs-select2',
-  template: 'select2'
-})
-class BsSelect2MockComponent {
-  @Input() public selectedItems: any[] = [];
-  @Input() public suggestions: any[] = [];
-  @Output() public provideSuggestions = new EventEmitter<string>();
-}
-
 describe('AutofocusComponent', () => {
   let component: AutofocusComponent;
   let fixture: ComponentFixture<AutofocusComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [],
+      imports: [
+        BsSelect2TestingModule
+      ],
       declarations: [
         // Unit to test
         AutofocusComponent,
-
-        // Mock dependencies
-        BsSelect2MockComponent
       ],
       providers: [
         { provide: SubjectService, useClass: SubjectMockService },

@@ -1,15 +1,6 @@
-import { Component, Directive, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsGridTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { BsGridTestingModule, BsRatingTestingModule } from '@mintplayer/ng-bootstrap/testing';
 import { RatingComponent } from './rating.component';
-
-@Component({
-  selector: 'bs-rating'
-})
-class BsRatingMockComponent {
-  @Input() maximum = 5;
-  @Input() value = 0;
-}
 
 describe('RatingComponent', () => {
   let component: RatingComponent;
@@ -19,13 +10,11 @@ describe('RatingComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         BsGridTestingModule,
+        BsRatingTestingModule,
       ],
       declarations: [
         // Unit to test
         RatingComponent,
-      
-        // Mock dependencies
-        BsRatingMockComponent,
       ]
     })
     .compileComponents();

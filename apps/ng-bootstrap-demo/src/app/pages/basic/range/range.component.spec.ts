@@ -1,41 +1,9 @@
-import { Component, Directive, forwardRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { BsGridTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { FormsModule } from '@angular/forms';
+import { BsGridTestingModule, BsRangeTestingModule } from '@mintplayer/ng-bootstrap/testing';
 import { RangeComponent } from './range.component';
 
-@Component({
-  selector: 'bs-range',
-  template: `<input type="range">`
-})
-class BsRangeMockComponent { }
 
-@Directive({
-  selector: 'bs-range',
-  providers: [{
-    provide: NG_VALUE_ACCESSOR,
-    useExisting: forwardRef(() => BsRangeMockValueAccessor),
-    multi: true,
-  }],
-})
-class BsRangeMockValueAccessor implements ControlValueAccessor {
-  onValueChange?: (value: number) => void;
-  onTouched?: () => void;
-
-  registerOnChange(fn: (_: any) => void) {
-    this.onValueChange = fn;
-  }
-  
-  registerOnTouched(fn: () => void) {
-    this.onTouched = fn;
-  }
-
-  writeValue(value: number) {
-  }
-
-  setDisabledState(isDisabled: boolean) {
-  }
-}
 
 describe('RangeComponent', () => {
   let component: RangeComponent;
@@ -45,15 +13,12 @@ describe('RangeComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         FormsModule,
-        BsGridTestingModule
+        BsGridTestingModule,
+        BsRangeTestingModule,
       ],
       declarations: [
         // Unit to test
         RangeComponent,
-      
-        // Mock dependencies
-        BsRangeMockComponent,
-        BsRangeMockValueAccessor
       ]
     })
     .compileComponents();

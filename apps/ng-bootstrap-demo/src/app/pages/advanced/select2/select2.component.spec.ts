@@ -1,6 +1,7 @@
 import { HttpClientModule } from '@angular/common/http';
-import { Component, Injectable, Input } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { BsSelect2TestingModule } from '@mintplayer/ng-bootstrap/testing';
 import { SubjectService } from '../../../services/subject/subject.service';
 import { TagService } from '../../../services/tag/tag.service';
 
@@ -18,18 +19,6 @@ class SubjectMockService {
 class TagMockService {
 }
 
-@Component({
-  selector: 'bs-select2',
-  template: `
-    <div>
-      Select2 works
-    </div>`
-})
-class BsSelect2MockComponent {
-  @Input() suggestions: any[] = [];
-  @Input() selectedItems: any[] = [];
-}
-
 describe('Select2Component', () => {
   let component: Select2Component;
   let fixture: ComponentFixture<Select2Component>;
@@ -37,14 +26,12 @@ describe('Select2Component', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        HttpClientModule
+        HttpClientModule,
+        BsSelect2TestingModule,
       ],
       declarations: [
         // Unit to test
         Select2Component,
-
-        // Mock dependencies
-        BsSelect2MockComponent
       ],
       providers: [
         { provide: SubjectService, useClass: SubjectMockService },
