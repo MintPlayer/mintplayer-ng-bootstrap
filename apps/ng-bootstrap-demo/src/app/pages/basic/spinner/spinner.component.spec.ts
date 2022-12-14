@@ -1,16 +1,6 @@
-import { Component, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Color } from '@mintplayer/ng-bootstrap';
+import { BsSpinnerTestingModule } from '@mintplayer/ng-bootstrap/testing';
 import { SpinnerComponent } from './spinner.component';
-
-@Component({
-  selector: 'bs-spinner',
-  template: '<b>Spinner</b>'
-})
-class BsSpinnerMockComponent {
-  @Input() type: 'border' | 'grow' = 'border';
-  @Input() color: Color = Color.primary;
-}
 
 describe('SpinnerComponent', () => {
   let component: SpinnerComponent;
@@ -18,12 +8,12 @@ describe('SpinnerComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      imports: [
+        BsSpinnerTestingModule,
+      ],
       declarations: [
         // Unit to test
         SpinnerComponent,
-        
-        // Mock dependencies
-        BsSpinnerMockComponent
       ]
     })
     .compileComponents();

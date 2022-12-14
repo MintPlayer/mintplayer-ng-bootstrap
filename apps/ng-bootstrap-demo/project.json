@@ -25,7 +25,14 @@
           "apps/ng-bootstrap-demo/src/assets",
           "apps/ng-bootstrap-demo/src/web.config"
         ],
-        "styles": ["apps/ng-bootstrap-demo/src/styles.scss"],
+        "styles": [
+          "apps/ng-bootstrap-demo/src/styles.scss",
+          {
+            "input": "libs/mintplayer-ng-bootstrap/src/styles/ngx-highlight-themes/solarized-dark.scss",
+            "inject": false,
+            "bundleName": "solarized-dark"
+          }
+        ],
         "scripts": []
       },
       "stylePreprocessorOptions": {

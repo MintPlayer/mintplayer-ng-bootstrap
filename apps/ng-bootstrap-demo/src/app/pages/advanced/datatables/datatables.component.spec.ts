@@ -1,7 +1,7 @@
 import { HttpClientModule } from '@angular/common/http';
-import { Component, Directive, EventEmitter, Injectable, Input, Output } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { DatatableSettings } from '@mintplayer/ng-bootstrap/datatable';
+import { BsDatatableTestingModule } from '@mintplayer/ng-bootstrap/testing';
 import { PaginationResponse } from '@mintplayer/pagination';
 import { ArtistService } from '../../../services/artist/artist.service';
 import { DatatablesComponent } from './datatables.component';
@@ -41,38 +41,6 @@ class ArtistMockService {
   }
 }
 
-@Component({
-  selector: 'bs-datatable',
-  template: ``
-})
-class BsDatatableMockComponent {
-
-  constructor() {
-    this.settings = new DatatableSettings();
-    this.settings.sortProperty = '';
-    this.settings.sortDirection = 'ascending';
-    this.settings.perPage = { values: [10, 20, 50], selected: 20 };
-    this.settings.page = { values: [1], selected: 1 };
-  }
-
-  @Input() settings: DatatableSettings;
-  @Input() data?: PaginationResponse<any>;
-  @Output() reloadData: EventEmitter<any> = new EventEmitter();
-
-}
-
-@Directive({
-  selector: '[bsDatatableColumn]'
-})
-class BsDatatableColumnMockDirective {
-  @Input() public bsDatatableColumn: DatatableColumnMetadata = { name: '', sortable: true };
-}
-
-interface DatatableColumnMetadata {
-  name: string;
-  sortable: boolean;
-}
-
 describe('DatatablesComponent', () => {
   let component: DatatablesComponent;
   let fixture: ComponentFixture<DatatablesComponent>;
@@ -80,15 +48,12 @@ describe('DatatablesComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        HttpClientModule
+        HttpClientModule,
+        BsDatatableTestingModule
       ],
       declarations: [
         // Unit to test
         DatatablesComponent,
-
-        // Mock dependencies
-        BsDatatableMockComponent,
-        BsDatatableColumnMockDirective
       ],
       providers: [
         { provide: ArtistService, useClass: ArtistMockService }

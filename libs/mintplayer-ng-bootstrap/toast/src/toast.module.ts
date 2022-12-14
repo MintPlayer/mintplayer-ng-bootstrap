@@ -2,6 +2,7 @@ import { Injector, NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { OverlayModule } from '@angular/cdk/overlay';
+import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
 import { BsToastComponent } from './components/toast/toast.component';
 import { BsToastBodyComponent } from './components/toast-body/toast-body.component';
 import { BsToastHeaderComponent } from './components/toast-header/toast-header.component';
@@ -9,7 +10,7 @@ import { BsToastContainerComponent } from './components/toast-container/toast-co
 import { PORTAL_FACTORY } from './providers/portal-factory.provider';
 import { BsToastService } from './services/toast/toast.service';
 import { BsToastCloseDirective } from './directives/toast-close/toast-close.directive';
-import { BsAddPropertiesModule } from '@mintplayer/ng-bootstrap';
+import { BsAddPropertiesPipe } from './pipes/add-properties.pipe';
 
 @NgModule({
   declarations: [
@@ -18,11 +19,12 @@ import { BsAddPropertiesModule } from '@mintplayer/ng-bootstrap';
     BsToastHeaderComponent,
     BsToastContainerComponent,
     BsToastCloseDirective,
+    BsAddPropertiesPipe,
   ],
   imports: [
     CommonModule,
     OverlayModule,
-    BsAddPropertiesModule
+    BsHasOverlayModule,
   ],
   exports: [
     BsToastComponent,
@@ -30,6 +32,7 @@ import { BsAddPropertiesModule } from '@mintplayer/ng-bootstrap';
     BsToastHeaderComponent,
     BsToastContainerComponent,
     BsToastCloseDirective,
+    BsAddPropertiesPipe,
   ],
   providers: [
     {

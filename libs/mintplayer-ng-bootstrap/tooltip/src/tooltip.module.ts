@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { OverlayModule } from '@angular/cdk/overlay';
+import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
 import { BsTooltipDirective } from './directive/tooltip.directive';
 import { BsTooltipComponent } from './component/tooltip.component';
 
@@ -11,7 +12,8 @@ import { BsTooltipComponent } from './component/tooltip.component';
   ],
   imports: [
     CommonModule,
-    OverlayModule
+    OverlayModule,
+    BsHasOverlayModule,
   ],
   exports: [
     BsTooltipDirective

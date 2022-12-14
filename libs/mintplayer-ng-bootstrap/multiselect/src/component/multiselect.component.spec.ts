@@ -1,5 +1,6 @@
 import { Directive, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { BsHasOverlayTestingModule } from '@mintplayer/ng-bootstrap/testing';
 import { BsMultiselectComponent } from './multiselect.component';
 
 @Directive({
@@ -16,6 +17,9 @@ describe('BsMultiselectComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      imports: [
+        BsHasOverlayTestingModule
+      ],
       declarations: [
         // Unit to test
         BsMultiselectComponent,

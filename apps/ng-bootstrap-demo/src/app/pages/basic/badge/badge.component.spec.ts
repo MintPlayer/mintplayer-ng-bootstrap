@@ -1,15 +1,6 @@
-import { Component, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Color } from '@mintplayer/ng-bootstrap';
+import { BsBadgeTestingModule } from '@mintplayer/ng-bootstrap/testing';
 import { BadgeComponent } from './badge.component';
-
-@Component({
-  selector: 'bs-badge',
-  template: `<ng-content></ng-content>`
-})
-class BsBadgeMockComponent {
-  @Input() type: Color = Color.primary;
-}
 
 describe('BadgeComponent', () => {
   let component: BadgeComponent;
@@ -17,12 +8,12 @@ describe('BadgeComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      imports: [
+        BsBadgeTestingModule,
+      ],
       declarations: [
         // Unit to test
         BadgeComponent,
-      
-        // Mock dependencies
-        BsBadgeMockComponent
       ]
     })
     .compileComponents();

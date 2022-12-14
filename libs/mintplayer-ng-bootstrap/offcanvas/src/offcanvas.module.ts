@@ -9,6 +9,7 @@ import { BsOffcanvasCloseDirective } from './directives/offcanvas-close/offcanva
 import { OffcanvasHeaderComponent } from './components/offcanvas-header/offcanvas-header.component';
 import { OffcanvasBodyComponent } from './components/offcanvas-body/offcanvas-body.component';
 import { PORTAL_FACTORY } from './providers/portal-factory.provider';
+import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
 
 
 
@@ -23,7 +24,8 @@ import { PORTAL_FACTORY } from './providers/portal-factory.provider';
   ],
   imports: [
     CommonModule,
-    OverlayModule
+    OverlayModule,
+    BsHasOverlayModule
   ],
   exports: [
     BsOffcanvasComponent,

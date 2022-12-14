@@ -1,12 +1,6 @@
-import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { BsCloseTestingModule } from '@mintplayer/ng-bootstrap/testing';
 import { CloseComponent } from './close.component';
-
-@Component({
-  selector: 'bs-close',
-  template: `<button>Close</button>`
-})
-class BsCloseMockComponent { }
 
 describe('CloseComponent', () => {
   let component: CloseComponent;
@@ -14,12 +8,12 @@ describe('CloseComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      imports: [
+        BsCloseTestingModule,
+      ],
       declarations: [
         // Unit to test
         CloseComponent,
-      
-        // Mock dependencies
-        BsCloseMockComponent
       ]
     })
     .compileComponents();

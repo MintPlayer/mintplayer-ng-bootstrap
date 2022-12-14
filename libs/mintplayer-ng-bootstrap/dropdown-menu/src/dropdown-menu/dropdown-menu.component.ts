@@ -1,5 +1,6 @@
 import { AfterViewInit, Component, HostBinding, HostListener, Input, Optional } from '@angular/core';
 import { BsDropdownDirective } from '@mintplayer/ng-bootstrap/dropdown';
+// import { BsDropdownComponent } from '@mintplayer/ng-bootstrap/dropdown';
 
 @Component({
   selector: 'bs-dropdown-menu',

@@ -35,7 +35,6 @@ export class DatatablesComponent implements OnInit {
     this.artistService.pageArtists(this.settings.toPagination())
       .then((response) => {
         this.artists = response;
-        console.log('artists', response);
         if (response) {
           this.settings.page.values = Array.from(Array(response.totalPages).keys()).map((p) => p + 1);
         }

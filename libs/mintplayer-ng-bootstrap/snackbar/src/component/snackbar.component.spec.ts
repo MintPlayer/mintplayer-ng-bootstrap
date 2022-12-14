@@ -3,6 +3,7 @@ import { ComponentPortal } from '@angular/cdk/portal';
 import { Component, ComponentFactoryResolver, ElementRef, Injectable, Injector, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { BsHasOverlayTestingModule } from '@mintplayer/ng-bootstrap/testing';
 import { SNACKBAR_CONTENT } from '../providers/snackbar-content.provider';
 
 import { BsSnackbarComponent } from './snackbar.component';
@@ -66,6 +67,7 @@ describe('BsSnackbarComponent', () => {
     //   }],
     imports: [
         OverlayModule,
+        BsHasOverlayTestingModule,
         NoopAnimationsModule
     ],
       declarations: [

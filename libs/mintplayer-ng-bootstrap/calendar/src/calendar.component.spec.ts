@@ -1,5 +1,6 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { UcFirstTestingModule } from '@mintplayer/ng-bootstrap/testing';
 
 import { BsCalendarComponent } from './calendar.component';
 
@@ -9,9 +10,11 @@ describe('CalendarComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      imports: [
+        UcFirstTestingModule
+      ],
       declarations: [
         BsCalendarComponent,
-        UcFirstMockPipe,
         MonthNameMockPipe,
       ]
     })
@@ -28,17 +31,6 @@ describe('CalendarComponent', () => {
     expect(component).toBeTruthy();
   });
 });
-
-@Pipe({
-  name: 'ucFirst'
-})
-class UcFirstMockPipe implements PipeTransform {
-
-  transform(value: string, ...args: any[]) {
-    return value[0].toUpperCase() + value.slice(1);
-  }
-
-}
 
 @Pipe({
   name: 'monthName'

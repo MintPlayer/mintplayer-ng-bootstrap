@@ -9,7 +9,7 @@
         <div [bsColumn]="{md: 3}" class="offset-md-3 position-relative overflow-hidden">
             <button class="btn btn-primary">
                 Left
-                <ng-container *bsPopover="popoverPosition.left">
+                <ng-container *bsPopover="'start'">
                     <h3 bsPopoverHeader>Popover title</h3>
                     <div bsPopoverBody>
                         And here's some amazing content. It's very engaging. Right?
@@ -20,7 +20,7 @@
         <div [bsColumn]="{md: 3}" class="position-relative overflow-hidden">
             <button class="btn btn-primary">
                 Top
-                <ng-container *bsPopover="popoverPosition.top">
+                <ng-container *bsPopover="'top'">
                     <h3 bsPopoverHeader>Popover title</h3>
                     <div bsPopoverBody>
                         And here's some amazing content. It's very engaging. Right?
@@ -33,7 +33,7 @@
         <div [bsColumn]="{md: 3}" class="offset-md-3 position-relative overflow-hidden">
             <button class="btn btn-primary">
                 Bottom
-                <ng-container *bsPopover="popoverPosition.bottom">
+                <ng-container *bsPopover="'bottom'">
                     <h3 bsPopoverHeader>Popover title</h3>
                     <div bsPopoverBody>
                         And here's some amazing content. It's very engaging. Right?
@@ -44,7 +44,7 @@
         <div [bsColumn]="{md: 3}" class="position-relative overflow-hidden">
             <button class="btn btn-primary">
                 Right
-                <ng-container *bsPopover="popoverPosition.right">
+                <ng-container *bsPopover="'end'">
                     <h3 bsPopoverHeader>Popover title</h3>
                     <div bsPopoverBody>
                         And here's some amazing content. It's very engaging. Right?

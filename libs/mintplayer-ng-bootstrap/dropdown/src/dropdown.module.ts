@@ -5,24 +5,22 @@ import { ClickOutsideModule } from '@mintplayer/ng-click-outside';
 import { BsDropdownDirective } from './dropdown/dropdown.directive';
 import { BsDropdownMenuDirective } from './dropdown-menu/dropdown-menu.directive';
 import { BsDropdownToggleDirective } from './dropdown-toggle/dropdown-toggle.directive';
-
+// import { BsDropdownComponent } from './dropdown/dropdown.component';
 
 
 @NgModule({
   declarations: [
     BsDropdownDirective,
     BsDropdownToggleDirective,
-    BsDropdownMenuDirective
+    BsDropdownMenuDirective,
+    // BsDropdownComponent,
   ],
-  imports: [
-    CommonModule,
-    OverlayModule,
-    ClickOutsideModule
-  ],
+  imports: [CommonModule, OverlayModule, ClickOutsideModule],
   exports: [
     BsDropdownDirective,
     BsDropdownToggleDirective,
-    BsDropdownMenuDirective
-  ]
+    BsDropdownMenuDirective,
+    // BsDropdownComponent,
+  ],
 })
-export class BsDropdownModule { }
+export class BsDropdownModule {}

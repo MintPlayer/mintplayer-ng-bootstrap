@@ -1,38 +1,8 @@
-import { Component, Directive, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
+import { BsGridTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { QrCodeTestingModule } from '@mintplayer/ng-qr-code/testing';
 import { QrCodeComponent } from './qr-code.component';
-
-type RgbaColor = `#${string}`;
-type QRCodeErrorCorrectionLevel = 'low' | 'medium' | 'quartile' | 'high' | 'L' | 'M' | 'Q' | 'H';
-
-@Component({
-  selector: 'bs-grid',
-  template: 'grid'
-})
-class BsGridMockComponent { }
-
-@Directive({
-  selector: '[bsColumn]'
-})
-class BsGridColumnMockDirective {
-  @Input() public bsColumn: string | null = '';
-}
-
-@Component({
-  selector: 'qr-code',
-  template: `QR code`
-})
-class QrCodeMockComponent {
-  @Input() value?: string;
-  @Input() size?: number;
-  @Input() darkColor?: RgbaColor;
-  @Input() lightColor?: RgbaColor;
-  @Input() errorCorrectionLevel?: QRCodeErrorCorrectionLevel;
-  @Input() centerImageSrc?: string;
-  @Input() centerImageSize?: string | number;
-  @Input() margin?: number;
-}
 
 describe('QrCodeComponent', () => {
   let component: QrCodeComponent;
@@ -41,16 +11,13 @@ describe('QrCodeComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        FormsModule
+        FormsModule,
+        BsGridTestingModule,
+        QrCodeTestingModule
       ],
       declarations: [
         // Unit to test
         QrCodeComponent,
-      
-        // Mock dependencies
-        QrCodeMockComponent,
-        BsGridMockComponent,
-        BsGridColumnMockDirective
       ]
     })
     .compileComponents();

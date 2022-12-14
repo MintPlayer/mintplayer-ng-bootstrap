@@ -28,7 +28,7 @@ import { DirectivesModule } from './directives/directives.module';
       provide: HIGHLIGHT_OPTIONS,
       useValue: <HighlightOptions>{
         fullLibraryLoader: () => import('highlight.js'),
-        themePath: 'assets/styles/solarized-dark.css'
+        themePath: 'solarized-dark.css'
       }
     },
     {

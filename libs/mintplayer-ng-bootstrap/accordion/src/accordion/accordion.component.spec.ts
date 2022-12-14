@@ -1,5 +1,8 @@
-import { Component, ContentChildren, forwardRef, QueryList } from '@angular/core';
+import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { BsAccordionTabMockComponent, BsAccordionTabHeaderMockComponent } from '@mintplayer/ng-bootstrap/testing';
+import { BsAccordionTabHeaderComponent } from '../accordion-tab-header/accordion-tab-header.component';
+import { BsAccordionTabComponent } from '../accordion-tab/accordion-tab.component';
 
 import { BsAccordionComponent } from './accordion.component';
 
@@ -19,6 +22,10 @@ describe('BsAccordionComponent', () => {
         // Mock components
         BsAccordionTabMockComponent,
         BsAccordionTabHeaderMockComponent,
+      ],
+      providers: [
+        { provide: BsAccordionTabComponent, useClass: BsAccordionTabMockComponent },
+        { provide: BsAccordionTabHeaderComponent, useClass: BsAccordionTabHeaderMockComponent },
       ]
     })
     .compileComponents();
@@ -46,19 +53,4 @@ describe('BsAccordionComponent', () => {
   </bs-accordion>`
 })
 class BsAccordionTestComponent {
-}
-
-@Component({
-  selector: 'bs-accordion-tab',
-  template: 'accordion-tab works'
-})
-class BsAccordionTabMockComponent {
-  @ContentChildren(() => forwardRef(() => BsAccordionComponent)) childAccordions!: QueryList<BsAccordionComponent>;
-}
-
-@Component({
-  selector: 'bs-accordion-tab-header',
-  template: 'accordion-tab-header works'
-})
-class BsAccordionTabHeaderMockComponent {
 }

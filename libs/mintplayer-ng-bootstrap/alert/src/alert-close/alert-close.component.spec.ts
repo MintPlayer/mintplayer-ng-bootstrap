@@ -1,8 +1,7 @@
-import { Component, ElementRef, Input, ViewChild } from '@angular/core';
+import { Component, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { Color } from '@mintplayer/ng-bootstrap';
-import { BsAlertComponent } from '../alert/alert.component';
+import { BsAlertMockComponent } from '@mintplayer/ng-bootstrap/testing';
 
 import { BsAlertCloseComponent } from './alert-close.component';
 
@@ -63,22 +62,4 @@ describe('BsAlertCloseComponent', () => {
 class BsAlertCloseTestComponent {
   @ViewChild('alert') alert!: BsAlertMockComponent;
   @ViewChild('alertClose') alertClose!: BsAlertCloseComponent;
-}
-
-@Component({
-  selector: 'bs-alert',
-  template: `
-  <div *ngIf="isVisible">
-    <div class="alert mb-0">
-      <ng-content></ng-content>
-    </div>
-  </div>`,
-  providers: [
-    { provide: BsAlertComponent, useExisting: BsAlertMockComponent }
-  ]
-})
-class BsAlertMockComponent {
-  isVisible: boolean = true;
-
-  @Input() public type: Color = Color.primary;
 }

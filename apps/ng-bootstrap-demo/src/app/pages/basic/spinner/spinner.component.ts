@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
-import { Color, EnumItem, EnumService } from '@mintplayer/ng-bootstrap';
+import { Color } from '@mintplayer/ng-bootstrap';
+import { EnumItem, EnumService } from '@mintplayer/ng-bootstrap/enum';
 
 @Component({
   selector: 'demo-spinner',

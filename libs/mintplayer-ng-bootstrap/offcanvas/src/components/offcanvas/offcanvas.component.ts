@@ -1,8 +1,7 @@
 import { Component, EventEmitter, Inject, Input, OnDestroy, Output, TemplateRef } from '@angular/core';
 import { BehaviorSubject, combineLatest, delayWhen, interval, map, Observable, of, Subject, takeUntil } from 'rxjs';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
-import { BsViewState } from '@mintplayer/ng-bootstrap';
-import { OffcanvasPosition } from '../../types/position';
+import { BsViewState, Position } from '@mintplayer/ng-bootstrap';
 import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
 
 @Component({
@@ -76,8 +75,8 @@ export class BsOffcanvasComponent implements OnDestroy {
   showBackdrop$: Observable<boolean>;
 
   //#region Position
-  position$ = new BehaviorSubject<OffcanvasPosition>('bottom');
-  @Input() public set position(value: OffcanvasPosition) {
+  position$ = new BehaviorSubject<Position>('bottom');
+  @Input() public set position(value: Position) {
     this.position$.next(value);
   }
   public get position() {
