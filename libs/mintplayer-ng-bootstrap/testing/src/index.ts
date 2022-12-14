@@ -19,6 +19,7 @@ export * from './enhanced-paste';
 export * from './file-upload';
 export * from './for';
 export * from './grid';
+export * from './has-overlay';
 export * from './highlight';
 export * from './list-group';
 export * from './modal';

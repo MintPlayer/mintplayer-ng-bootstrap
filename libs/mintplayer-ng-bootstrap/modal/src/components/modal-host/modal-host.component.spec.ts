@@ -6,6 +6,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { BsModalHostComponent } from './modal-host.component';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
+import { BsHasOverlayTestingModule } from '@mintplayer/ng-bootstrap/testing';
 
 @Component({
   selector: 'bs-modal-test',
@@ -45,6 +46,7 @@ describe('BsModalHostComponent', () => {
       imports: [
         CommonModule,
         OverlayModule,
+        BsHasOverlayTestingModule,
         NoopAnimationsModule
       ],
       declarations: [

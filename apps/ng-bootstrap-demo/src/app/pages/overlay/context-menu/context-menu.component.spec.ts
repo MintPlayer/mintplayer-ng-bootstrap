@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { BsHasOverlayTestingModule } from '@mintplayer/ng-bootstrap/testing';
 
 import { ContextMenuComponent } from './context-menu.component';
 
@@ -8,6 +9,7 @@ describe('ContextMenuComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      imports: [BsHasOverlayTestingModule],
       declarations: [ ContextMenuComponent ]
     })
     .compileComponents();
