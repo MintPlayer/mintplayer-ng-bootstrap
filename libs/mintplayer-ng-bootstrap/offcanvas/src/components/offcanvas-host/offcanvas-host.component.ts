@@ -1,11 +1,10 @@
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { AfterViewInit, Component, ComponentRef, EventEmitter, Inject, Injector, Input, OnDestroy, Output, TemplateRef } from '@angular/core';
-import { BsViewState } from '@mintplayer/ng-bootstrap';
+import { BsViewState, Position } from '@mintplayer/ng-bootstrap';
 import { BehaviorSubject, combineLatest, filter, Subject, take, takeUntil } from 'rxjs';
 import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
-import { OffcanvasPosition } from '../../types/position';
 import { BsOffcanvasComponent } from '../offcanvas/offcanvas.component';
 
 @Component({
@@ -65,7 +64,7 @@ export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
   viewInited$ = new BehaviorSubject<boolean>(false);
   state$ = new BehaviorSubject<BsViewState>('closed');
   size$ = new BehaviorSubject<number | null>(null);
-  position$ = new BehaviorSubject<OffcanvasPosition>('bottom');
+  position$ = new BehaviorSubject<Position>('bottom');
   hasBackdrop$ = new BehaviorSubject<boolean>(false);
   destroyed$ = new Subject();
 
@@ -117,7 +116,7 @@ export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
   //#endregion
 
   //#region Position
-  @Input() public set position(value: OffcanvasPosition) {
+  @Input() public set position(value: Position) {
     this.position$.next(value);
   }
   public get position() {

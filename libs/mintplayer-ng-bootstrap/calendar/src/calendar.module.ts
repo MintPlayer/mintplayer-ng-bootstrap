@@ -1,10 +1,8 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BsCalendarComponent } from './calendar.component';
-import { BsUcFirstPipeModule, BsMonthNamePipeModule, BsWeekdayNameModule } from '@mintplayer/ng-bootstrap';
-// import { BsMonthNamePipeModule } from '../../pipes/month-name/month-name.module';
-// import { BsUcFirstPipeModule } from '../../pipes/uc-first/uc-first.module';
-// import { BsWeekdayNameModule } from '../../pipes/weekday-name/weekday-name.module';
+import { BsUcFirstPipeModule } from '@mintplayer/ng-bootstrap';
+import { BsMonthNamePipeModule, BsWeekdayNameModule } from '@mintplayer/ng-bootstrap/calendar-month';
 
 @NgModule({
   declarations: [

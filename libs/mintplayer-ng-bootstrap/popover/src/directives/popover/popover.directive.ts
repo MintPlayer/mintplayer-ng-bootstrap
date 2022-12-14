@@ -32,21 +32,21 @@ export class BsPopoverDirective implements AfterViewInit, OnDestroy {
     this.connectedPosition$ = this.position$
       .pipe(delay(20), map((position) => {
         switch (position) {
-          case Position.top:
+          case 'top':
             return <ConnectedPosition>{
               originX: "center",
               originY: "top", //<--
               overlayX: "center",
               overlayY: "bottom"
             };
-          case Position.left:
+          case 'start':
             return <ConnectedPosition>{
               originX: "start", //<--
               originY: "center",
               overlayX: "end",
               overlayY: "center",
             };
-          case Position.right:
+          case 'end':
             return <ConnectedPosition>{
               originX: "end", //<--
               originY: "center",
@@ -90,7 +90,7 @@ export class BsPopoverDirective implements AfterViewInit, OnDestroy {
   private portal: ComponentPortal<any> | null = null;
   private overlayRef: OverlayRef | null = null;
   private component: ComponentRef<BsPopoverComponent> | null = null;
-  position$ = new BehaviorSubject<Position>(Position.bottom);
+  position$ = new BehaviorSubject<Position>('bottom');
   connectedPosition$: Observable<ConnectedPosition>;
   isVisible$ = new BehaviorSubject<boolean>(false);
   destroyed$ = new Subject();

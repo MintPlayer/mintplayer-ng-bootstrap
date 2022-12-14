@@ -1,6 +1,6 @@
 import { ConnectedPosition, Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { ComponentFactoryResolver, Directive, ElementRef, Host, HostListener, Injector, Input, SkipSelf, TemplateRef, ViewContainerRef } from '@angular/core';
+import { Directive, ElementRef, Host, HostListener, Injector, Input, SkipSelf, TemplateRef } from '@angular/core';
 import { Position } from '@mintplayer/ng-bootstrap';
 import { BsTooltipComponent } from '../component/tooltip.component';
 import { TOOLTIP_CONTENT } from '../providers/tooltip-content.provider';
@@ -13,7 +13,6 @@ export class BsTooltipDirective {
   constructor(
     private overlay: Overlay,
     private templateRef: TemplateRef<any>,
-    componentFactoryResolver: ComponentFactoryResolver,
     private parentInjector: Injector,
     @Host() @SkipSelf() private parent: ElementRef
   ) {
@@ -21,7 +20,7 @@ export class BsTooltipDirective {
       providers: [{ provide: TOOLTIP_CONTENT, useValue: this.templateRef }],
       parent: this.parentInjector
     });
-    this.portal = new ComponentPortal(BsTooltipComponent, null, this.injector, componentFactoryResolver);
+    this.portal = new ComponentPortal(BsTooltipComponent, null, this.injector);
 
     parent.nativeElement.onmouseenter = () => {
       this.showTooltip();
@@ -31,7 +30,7 @@ export class BsTooltipDirective {
     }
   }
 
-  @Input() public bsTooltip: Position = Position.bottom;
+  @Input() public bsTooltip: Position = 'bottom';
 
   private injector: Injector;
   private portal: ComponentPortal<any>;
@@ -44,7 +43,7 @@ export class BsTooltipDirective {
   showTooltip() {
     const positions: ConnectedPosition[] = [];
     switch (this.bsTooltip) {
-      case Position.bottom: {
+      case 'bottom': {
         positions.push({
           originX: "center",
           originY: "bottom", //<--
@@ -52,7 +51,7 @@ export class BsTooltipDirective {
           overlayY: "top"
         });
       } break;
-      case Position.top: {
+      case 'top': {
         positions.push({
           originX: "center",
           originY: "top", //<--
@@ -60,7 +59,7 @@ export class BsTooltipDirective {
           overlayY: "bottom"
         });
       } break;
-      case Position.left: {
+      case 'start': {
         positions.push({
           originX: "start", //<--
           originY: "center",
@@ -68,7 +67,7 @@ export class BsTooltipDirective {
           overlayY: "center",
         });
       } break;
-      case Position.right: {
+      case 'end': {
         positions.push({
           originX: "end", //<--
           originY: "center",

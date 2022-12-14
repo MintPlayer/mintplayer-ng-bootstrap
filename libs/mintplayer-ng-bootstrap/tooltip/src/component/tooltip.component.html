@@ -1,8 +1,5 @@
 <div [@fadeInOut] class="tooltip position-absolute show"
-    [class.bs-tooltip-bottom]="position === positions.bottom"
-    [class.bs-tooltip-top]="position === positions.top"
-    [class.bs-tooltip-start]="position === positions.left"
-    [class.bs-tooltip-end]="position === positions.right">
+    [class]="[positionClass$ | async]">
     <div class="tooltip-arrow position-absolute"></div>
     <div class="tooltip-inner">
         <ng-container *ngTemplateOutlet="template"></ng-container>

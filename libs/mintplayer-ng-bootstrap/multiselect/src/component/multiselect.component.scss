@@ -1,3 +1,7 @@
+::ng-deep {
+	@import '../../../../../node_modules/@angular/cdk/overlay-prebuilt';
+}
+
 .mw-250px {
     min-width: 250px;
 }

@@ -9,7 +9,7 @@ import { BsToastContainerComponent } from './components/toast-container/toast-co
 import { PORTAL_FACTORY } from './providers/portal-factory.provider';
 import { BsToastService } from './services/toast/toast.service';
 import { BsToastCloseDirective } from './directives/toast-close/toast-close.directive';
-import { BsAddPropertiesModule } from '@mintplayer/ng-bootstrap';
+import { BsAddPropertiesPipe } from './pipes/add-properties.pipe';
 
 @NgModule({
   declarations: [
@@ -18,11 +18,11 @@ import { BsAddPropertiesModule } from '@mintplayer/ng-bootstrap';
     BsToastHeaderComponent,
     BsToastContainerComponent,
     BsToastCloseDirective,
+    BsAddPropertiesPipe,
   ],
   imports: [
     CommonModule,
     OverlayModule,
-    BsAddPropertiesModule
   ],
   exports: [
     BsToastComponent,
@@ -30,6 +30,7 @@ import { BsAddPropertiesModule } from '@mintplayer/ng-bootstrap';
     BsToastHeaderComponent,
     BsToastContainerComponent,
     BsToastCloseDirective,
+    BsAddPropertiesPipe,
   ],
   providers: [
     {

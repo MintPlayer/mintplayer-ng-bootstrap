@@ -15,17 +15,18 @@ export class BsPopoverComponent {
     this.template = content;
     this.marginClass$ = this.position$.pipe(map((position) => {
       switch (position) {
-        case Position.top: return 'mb-2';
-        case Position.left: return 'me-2';
-        case Position.right: return 'ms-2';
+        case 'top': return 'mb-2';
+        case 'start': return 'me-2';
+        case 'end': return 'ms-2';
         default: return 'mt-2';
       }
     }));
+    this.positionClass$ = this.position$
+      .pipe(map(position => `bs-popover-${position}`));
   }
 
   //#region Position
-  positions = Position;
-  position$ = new BehaviorSubject<Position>(Position.bottom);
+  position$ = new BehaviorSubject<Position>('bottom');
   public get position() {
     return this.position$.value;
   }
@@ -44,6 +45,7 @@ export class BsPopoverComponent {
   //#endregion
 
   marginClass$: Observable<string>;
+  positionClass$: Observable<string>;
 
   template: TemplateRef<any>;
 

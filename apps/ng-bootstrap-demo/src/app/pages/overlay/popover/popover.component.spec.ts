@@ -1,17 +1,8 @@
-import { Directive, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsGridTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { BsGridTestingModule, BsPopoverTestingModule } from '@mintplayer/ng-bootstrap/testing';
 
 import { PopoverComponent } from './popover.component';
 
-enum Position { top, left, bottom, right }
-
-@Directive({
-  selector: '*[bsPopover]'
-})
-class BsPopoverMockDirective {
-  @Input() public bsPopover: Position = Position.top;
-}
 
 describe('PopoverComponent', () => {
   let component: PopoverComponent;
@@ -21,13 +12,11 @@ describe('PopoverComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         BsGridTestingModule,
+        BsPopoverTestingModule
       ],
       declarations: [
         // Unit to test
         PopoverComponent,
-
-        // Mock dependencies
-        BsPopoverMockDirective
       ]
     })
     .compileComponents();

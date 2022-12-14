@@ -11,7 +11,7 @@
             <br>
             <button class="btn btn-primary" (click)="offcanvasState = 'closed'">Hide offcanvas</button>
             <ng-container *ngIf="(position$ | async) as position">
-                <bs-offcanvas [(state)]="offcanvasState" [position]="position" [hasBackdrop]="false" (backdropClick)="offcanvasState = 'closed'">
+                <bs-offcanvas [(state)]="offcanvasState" [position]="position" [hasBackdrop]="true" (backdropClick)="offcanvasState = 'closed'">
                     <div *bsOffcanvasContent>
                         <bs-offcanvas-header>
                             <h5 class="offcanvas-title" id="offcanvasExampleLabel">Offcanvas</h5>

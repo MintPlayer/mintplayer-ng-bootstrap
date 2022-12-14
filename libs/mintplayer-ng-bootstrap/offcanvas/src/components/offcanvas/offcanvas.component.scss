@@ -9,6 +9,10 @@
     @import "../../../../../../node_modules/bootstrap/scss/offcanvas";
 }
 
+::ng-deep {
+	@import '../../../../../../node_modules/@angular/cdk/overlay-prebuilt';
+}
+
 .offcanvas {
     &.oc-max-width {
         max-width: calc(100% - 40px);

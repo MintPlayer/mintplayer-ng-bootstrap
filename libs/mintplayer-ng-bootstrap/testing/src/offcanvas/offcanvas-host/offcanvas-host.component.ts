@@ -1,5 +1,7 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { BsOffcanvasHostComponent } from '@mintplayer/ng-bootstrap/offcanvas';
+import { Position } from '../../types/position';
+import { BsViewState } from '../../types/view-state';
 
 @Component({
   selector: 'bs-offcanvas',
@@ -11,5 +13,8 @@ import { BsOffcanvasHostComponent } from '@mintplayer/ng-bootstrap/offcanvas';
 })
 export class BsOffcanvasHostMockComponent {
   @Output() backdropClick = new EventEmitter<MouseEvent>();
+  @Input() public state: BsViewState = 'closed';
   @Output() public stateChange = new EventEmitter<BsViewState>();
+  @Input() public position: Position = 'top';
+  @Input() public hasBackdrop = true;
 }

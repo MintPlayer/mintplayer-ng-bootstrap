@@ -1,3 +1,7 @@
+::ng-deep {
+	@import '../../../../../../node_modules/@angular/cdk/overlay-prebuilt';
+}
+
 :host ::ng-deep {
 	// Configuration
     @import "../../../../../../node_modules/bootstrap/scss/functions";

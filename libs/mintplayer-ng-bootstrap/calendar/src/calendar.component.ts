@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, OnDestroy, Output } from '@angular/core';
 import { BehaviorSubject, filter, map, Observable, Subject, take, takeUntil } from 'rxjs';
-import { DateDayOfMonth, Week, WeekDay, BsCalendarMonthService } from '@mintplayer/ng-bootstrap';
+import { BsCalendarMonthService, DateDayOfMonth, Week, WeekDay } from '@mintplayer/ng-bootstrap/calendar-month';
 
 @Component({
   selector: 'bs-calendar',

@@ -44,4 +44,5 @@ export * from './toast';
 export * from './toggle-button';
 export * from './tooltip';
 export * from './typeahead';
-export * from './uc-first';
+export * from './types';
+export * from './uc-first.pipe';

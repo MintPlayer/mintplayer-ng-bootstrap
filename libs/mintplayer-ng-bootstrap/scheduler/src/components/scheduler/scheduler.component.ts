@@ -1,6 +1,6 @@
 import { Component, ElementRef, EventEmitter, HostListener, Input, OnDestroy, Output, QueryList, ViewChildren } from '@angular/core';
 import { BehaviorSubject, combineLatest, filter, map, Observable, Subject, take, takeUntil } from 'rxjs';
-import { BsCalendarMonthService } from '@mintplayer/ng-bootstrap';
+import { BsCalendarMonthService } from '@mintplayer/ng-bootstrap/calendar-month';
 import { ESchedulerMode } from '../../enums/scheduler-mode';
 import { EDragOperation } from '../../enums/drag-operation';
 import { DragOperation } from '../../interfaces/drag-operation';

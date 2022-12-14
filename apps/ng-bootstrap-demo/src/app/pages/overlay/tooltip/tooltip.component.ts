@@ -1,5 +1,4 @@
 import { Component, Inject } from '@angular/core';
-import { Position } from '@mintplayer/ng-bootstrap';
 
 @Component({
   selector: 'demo-tooltip',
@@ -12,6 +11,4 @@ export class TooltipComponent {
   }
 
   gitRepo: string;
-  tooltipPosition = Position;
-
 }

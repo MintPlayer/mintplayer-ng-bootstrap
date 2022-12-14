@@ -1,3 +1,7 @@
+::ng-deep {
+	@import '../../../../../node_modules/@angular/cdk/overlay-prebuilt';
+}
+
 :host {
     background: #232323;
     color: rgba(var(--bs-light-rgb));

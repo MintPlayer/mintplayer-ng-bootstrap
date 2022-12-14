@@ -1,8 +1,7 @@
 import { Component, ContentChildren, forwardRef, QueryList } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
-import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
-import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
+import { BsNavbarBrandMockComponent, BsNavbarDropdownMockComponent, BsNavbarItemMockComponent, BsNavbarMockComponent, BsNavbarNavMockComponent, NavbarContentMockDirective } from '@mintplayer/ng-bootstrap/testing';
 import { DropdownToggleDirective } from './dropdown-toggle.directive';
 
 describe('DropdownToggleDirective', () => {
@@ -28,6 +27,8 @@ describe('DropdownToggleDirective', () => {
         BsNavbarNavMockComponent,
         BsNavbarDropdownMockComponent,
         BsNavbarItemMockComponent,
+        NavbarContentMockDirective,
+        BsNavbarBrandMockComponent,
 
         // Pages
         PageAComponent,
@@ -35,11 +36,7 @@ describe('DropdownToggleDirective', () => {
 
         // Testbench
         BsDropdownToggleTestComponent,
-      ],
-      // providers: [
-      //   // { provide: BsNavbarItemComponent, useClass: BsNavbarItemMockComponent },
-      //   //{ provide: BsNavbarDropdownComponent, useClass: BsNavbarDropdownMockComponent }
-      // ]
+      ]
     })
     .compileComponents();
   });
@@ -75,57 +72,6 @@ describe('DropdownToggleDirective', () => {
   </bs-navbar>`
 })
 class BsDropdownToggleTestComponent {
-}
-
-@Component({
-  selector: 'bs-navbar',
-  template: `
-  <nav>
-    <div>
-      <ng-content></ng-content>
-    </div>  
-  </nav>`
-})
-class BsNavbarMockComponent {
-}
-
-@Component({
-  selector: 'bs-navbar-nav',
-  template: `
-  <div>
-    <ul>
-      <ng-content></ng-content>
-    </ul>  
-  </div>`
-})
-class BsNavbarNavMockComponent {
-}
-
-@Component({
-  selector: 'bs-navbar-dropdown',
-  template: `
-  <ul>
-    <ng-content></ng-content>
-  </ul>`,
-  providers: [
-    { provide: BsNavbarDropdownComponent, useExisting: BsNavbarDropdownMockComponent }
-  ]
-})
-class BsNavbarDropdownMockComponent {
-}
-
-@Component({
-  selector: 'bs-navbar-item',
-  template: `
-  <li>
-    <ng-content></ng-content>
-  </li>`,
-  providers: [
-    { provide: BsNavbarItemComponent, useExisting: BsNavbarItemMockComponent }
-  ]
-})
-class BsNavbarItemMockComponent {
-  @ContentChildren(forwardRef(() => BsNavbarDropdownMockComponent)) dropdowns!: QueryList<BsNavbarDropdownMockComponent>;
 }
 
 @Component({

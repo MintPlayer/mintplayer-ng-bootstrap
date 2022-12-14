@@ -1,6 +1,6 @@
-// ::ng-deep {
-//     @use 'node_modules/@angular/cdk/overlay/index';
-// }
+::ng-deep {
+	@import '../../../../../../node_modules/@angular/cdk/overlay-prebuilt';
+}
 
 :host ::ng-deep {
     // Configuration
