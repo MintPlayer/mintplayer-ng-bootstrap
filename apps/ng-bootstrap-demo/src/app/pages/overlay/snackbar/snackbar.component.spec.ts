@@ -1,14 +1,6 @@
-import { Injectable } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsSnackbarService } from '@mintplayer/ng-bootstrap/snackbar';
-import { BsGridTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { BsGridTestingModule, BsSnackbarTestingModule } from '@mintplayer/ng-bootstrap/testing';
 import { SnackbarComponent } from './snackbar.component';
-
-@Injectable({
-  providedIn: 'root'
-})
-class BsSnackbarMockService {
-}
 
 describe('SnackbarComponent', () => {
   let component: SnackbarComponent;
@@ -18,13 +10,13 @@ describe('SnackbarComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         BsGridTestingModule,
+        BsSnackbarTestingModule
       ],
       declarations: [
         // Unit to test
         SnackbarComponent,
       ],
       providers: [
-        { provide: BsSnackbarService, useClass: BsSnackbarMockService },
         { provide: 'GIT_REPO', useValue: 'https://github.com/MintPlayer/mintplayer-ng-bootstrap/apps/ng-bootstrap-demo/src/app/' },
       ]
     })

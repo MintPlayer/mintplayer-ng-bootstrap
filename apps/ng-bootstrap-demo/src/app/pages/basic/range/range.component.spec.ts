@@ -3,8 +3,6 @@ import { FormsModule } from '@angular/forms';
 import { BsGridTestingModule, BsRangeTestingModule } from '@mintplayer/ng-bootstrap/testing';
 import { RangeComponent } from './range.component';
 
-
-
 describe('RangeComponent', () => {
   let component: RangeComponent;
   let fixture: ComponentFixture<RangeComponent>;

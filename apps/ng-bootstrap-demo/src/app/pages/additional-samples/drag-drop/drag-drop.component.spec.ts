@@ -31,7 +31,7 @@ describe('DragDropComponent', () => {
     })
     .compileComponents();
   });
-
+  
   beforeEach(() => {
     fixture = TestBed.createComponent(DragDropComponent);
     component = fixture.componentInstance;

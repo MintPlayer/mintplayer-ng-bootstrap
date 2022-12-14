@@ -5,9 +5,9 @@ import { BsRangeMockComponent } from './component/range.component';
 import { BsRangeMockValueAccessor } from './directives/range-value-accessor.directive';
 
 @NgModule({
-  declarations: [BsRangeComponent, BsRangeMockValueAccessor],
+  declarations: [BsRangeMockComponent, BsRangeMockValueAccessor],
   imports: [CommonModule],
-  exports: [BsRangeComponent, BsRangeMockValueAccessor],
+  exports: [BsRangeMockComponent, BsRangeMockValueAccessor],
   providers: [
     { provide: BsRangeComponent, useExisting: BsRangeMockComponent },
   ]
