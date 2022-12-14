@@ -1,4 +1,5 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
 import { BsToggleButtonGroupMockDirective } from '../directives/toggle-button-group.directive';
 import { BsCheckStyleMock } from '../types/check-style';
 
@@ -6,6 +7,9 @@ import { BsCheckStyleMock } from '../types/check-style';
   selector: 'bs-toggle-button',
   templateUrl: './toggle-button.component.html',
   styleUrls: ['./toggle-button.component.scss'],
+  providers: [
+    { provide: BsToggleButtonComponent, useExisting: BsToggleButtonMockComponent }
+  ]
 })
 export class BsToggleButtonMockComponent {
   @Output() public isToggledChange = new EventEmitter<boolean | null>();
