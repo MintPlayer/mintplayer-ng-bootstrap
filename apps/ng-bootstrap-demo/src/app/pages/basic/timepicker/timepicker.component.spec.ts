@@ -1,15 +1,6 @@
-import { Component, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsGridTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { BsGridTestingModule, BsTimepickerTestingModule } from '@mintplayer/ng-bootstrap/testing';
 import { TimepickerComponent } from './timepicker.component';
-
-@Component({
-  selector: 'bs-timepicker',
-  template: `<span>Time picker</span>`
-})
-class BsTimepickerMockComponent {
-  @Input() selectedTime = new Date();
-}
 
 describe('TimepickerComponent', () => {
   let component: TimepickerComponent;
@@ -19,13 +10,11 @@ describe('TimepickerComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         BsGridTestingModule,
+        BsTimepickerTestingModule,
       ],
       declarations: [
         // Unit to test  
         TimepickerComponent,
-      
-        // Mock dependencies
-        BsTimepickerMockComponent,
       ]
     })
     .compileComponents();

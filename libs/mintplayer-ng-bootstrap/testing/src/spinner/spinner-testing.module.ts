@@ -1,10 +1,10 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { BsSpinnerMockComponent } from './component/spinner.component';
 
 @NgModule({
-  declarations: [],
-  imports: [
-    CommonModule
-  ]
+  declarations: [BsSpinnerMockComponent],
+  imports: [CommonModule],
+  exports: [BsSpinnerMockComponent],
 })
-export class BsSpinnerTestingModule { }
+export class BsSpinnerTestingModule {}

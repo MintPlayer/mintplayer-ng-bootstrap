@@ -1,10 +1,10 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { BsTimepickerMockComponent } from './component/timepicker.component';
 
 @NgModule({
-  declarations: [],
-  imports: [
-    CommonModule
-  ]
+  declarations: [BsTimepickerMockComponent],
+  imports: [CommonModule],
+  exports: [BsTimepickerMockComponent],
 })
-export class BsTimepickerTestingModule { }
+export class BsTimepickerTestingModule {}
