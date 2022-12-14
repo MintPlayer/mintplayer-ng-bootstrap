@@ -1,6 +1,8 @@
 import { Injector, NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { OverlayModule } from '@angular/cdk/overlay';
+import { ComponentPortal } from '@angular/cdk/portal';
+import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
 import { BsModalComponent } from './components/modal/modal.component';
 import { BsModalHostComponent } from './components/modal-host/modal-host.component';
 import { BsModalHeaderDirective } from './directives/modal-header/modal-header.directive';
@@ -9,7 +11,6 @@ import { BsModalFooterDirective } from './directives/modal-footer/modal-footer.d
 import { BsModalDirective } from './directives/modal/modal.directive';
 import { BsModalCloseDirective } from './directives/modal-close/modal-close.directive';
 import { PORTAL_FACTORY } from './providers/portal-factory.provider';
-import { ComponentPortal } from '@angular/cdk/portal';
 
 @NgModule({
   declarations: [
@@ -23,7 +24,8 @@ import { ComponentPortal } from '@angular/cdk/portal';
   ],
   imports: [
     CommonModule,
-    OverlayModule
+    OverlayModule,
+    BsHasOverlayModule
   ],
   exports: [
     BsModalHeaderDirective,
