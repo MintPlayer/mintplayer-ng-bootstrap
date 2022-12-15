@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { BsButtonTypeTestingModule, BsInputGroupTestingModule } from '@mintplayer/ng-bootstrap/testing';
 
 import { InputGroupComponent } from './input-group.component';
 
@@ -8,6 +9,10 @@ describe('InputGroupComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      imports: [
+        BsButtonTypeTestingModule,
+        BsInputGroupTestingModule  
+      ],
       declarations: [ InputGroupComponent ]
     })
     .compileComponents();

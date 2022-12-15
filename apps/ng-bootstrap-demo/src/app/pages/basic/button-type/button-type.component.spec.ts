@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { BsButtonTypeTestingModule } from '@mintplayer/ng-bootstrap/testing';
 
 import { ButtonTypeComponent } from './button-type.component';
 
@@ -8,6 +9,7 @@ describe('ButtonTypeComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      imports: [ BsButtonTypeTestingModule ],
       declarations: [ ButtonTypeComponent ]
     })
     .compileComponents();
