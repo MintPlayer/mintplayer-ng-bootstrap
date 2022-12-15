@@ -26,7 +26,9 @@ const routes: Routes = [
   { path: 'pagination', loadChildren: () => import('./pagination/pagination.module').then(m => m.PaginationModule) },
   { path: 'table', loadChildren: () => import('./table/table.module').then(m => m.TableModule) },
   { path: 'range', loadChildren: () => import('./range/range.module').then(m => m.RangeModule) },
-  { path: 'select', loadChildren: () => import('./select/select.module').then(m => m.SelectModule) }
+  { path: 'select', loadChildren: () => import('./select/select.module').then(m => m.SelectModule) },
+  { path: 'input-group', loadChildren: () => import('./input-group/input-group.module').then(m => m.InputGroupModule) },
+  { path: 'button-type', loadChildren: () => import('./button-type/button-type.module').then(m => m.ButtonTypeModule) }
 ];
 
 @NgModule({
