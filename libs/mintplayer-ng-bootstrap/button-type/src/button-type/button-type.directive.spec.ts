@@ -1,8 +1,8 @@
-import { ButtonTypeDirective } from './button-type.directive';
+import { BsButtonTypeDirective } from './button-type.directive';
 
-describe('ButtonTypeDirective', () => {
+describe('BsButtonTypeDirective', () => {
   it('should create an instance', () => {
-    const directive = new ButtonTypeDirective();
+    const directive = new BsButtonTypeDirective();
     expect(directive).toBeTruthy();
   });
 });
