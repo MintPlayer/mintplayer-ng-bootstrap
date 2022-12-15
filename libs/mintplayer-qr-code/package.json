@@ -1,7 +1,7 @@
 {
   "name": "@mintplayer/qr-code",
   "private": false,
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Typescript implementation of node-qrcode",
   "repository": {
     "type": "git",
@@ -13,7 +13,8 @@
   "devDependencies": {},
   "peerDependencies": {
     "encode-utf8": "^1.0.3",
-    "@mintplayer/dijkstra": "^1.0.0"
+    "@mintplayer/dijkstra": "^1.1.0",
+    "@mintplayer/encode-utf8": "^1.1.0"
   },
   "author": {
     "name": "Pieterjan De Clippel",

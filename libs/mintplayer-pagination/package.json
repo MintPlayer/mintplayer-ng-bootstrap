@@ -2,7 +2,7 @@
   "name": "@mintplayer/pagination",
   "private": false,
   "type": "commonjs",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "Pagination typescript library",
   "repository": {
     "type": "git",
