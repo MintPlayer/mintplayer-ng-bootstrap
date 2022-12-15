@@ -1,5 +1,4 @@
-import { Input, ViewContainerRef } from '@angular/core';
-import { Directive, AfterViewInit } from '@angular/core';
+import { Input, ViewContainerRef, Directive, AfterViewInit } from '@angular/core';
 
 @Directive({
   selector: '*[autofocus]'
