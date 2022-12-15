@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { BsRangeComponent } from '@mintplayer/ng-bootstrap/range';
 
 @Component({
@@ -9,4 +9,8 @@ import { BsRangeComponent } from '@mintplayer/ng-bootstrap/range';
     { provide: BsRangeComponent, useExisting: BsRangeMockComponent },
   ]
 })
-export class BsRangeMockComponent {}
+export class BsRangeMockComponent {
+  @Input() min = 0;
+  @Input() max = 10;
+  @Input() step = 1;
+}
