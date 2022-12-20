@@ -1,23 +1,51 @@
-import { Component } from '@angular/core';
+import { Component, ContentChild, Directive, ElementRef, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsDropdownDirective } from '../dropdown/dropdown.directive';
+import { BehaviorSubject } from 'rxjs';
 import { BsDropdownMenuDirective } from './dropdown-menu.directive';
 import { OverlayModule } from '@angular/cdk/overlay';
-import { MockDirective, MockModule, MockProvider } from 'ng-mocks';
-import { BsDropdownToggleDirective } from '../dropdown-toggle/dropdown-toggle.directive';
-import { BehaviorSubject } from 'rxjs';
 
 @Component({
   selector: 'bs-dropdown-menu-test',
   template: `
     <div bsDropdown [closeOnClickOutside]="true">
-      <button bsDropdownToggle>Dropdown</button>
+      <button bsDropdownToggle class="btn btn-primary">Dropdown</button>
       <div *bsDropdownMenu>
         Dropdown contents
       </div>
     </div>`
 })
 class BsDropdownMenuTestComponent {
+}
+
+@Directive({
+  selector: '[bsDropdownToggle]'
+})
+class BsDropdownToggleMockDirective {
+
+  constructor(toggleButton: ElementRef) {
+    this.toggleButton = toggleButton;
+  }
+
+  toggleButton: ElementRef;
+
+}
+
+@Directive({
+  selector: '[bsDropdown]',
+  providers: [
+    { provide: BsDropdownDirective, useExisting: BsDropdownMockDirective }
+  ]
+})
+class BsDropdownMockDirective {
+
+  public isOpen$ = new BehaviorSubject<boolean>(false);
+
+  @ContentChild(BsDropdownMenuDirective, {static: false}) menu!: BsDropdownMenuDirective;
+  @ContentChild(BsDropdownToggleMockDirective, {static: false}) toggle!: BsDropdownToggleMockDirective;
+  
+  @Input() public hasBackdrop = false;
+  @Input() public closeOnClickOutside = false;
 }
 
 describe('BsDropdownMenuDirective', () => {
@@ -27,24 +55,18 @@ describe('BsDropdownMenuDirective', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        MockModule(OverlayModule),
+        OverlayModule
       ],
       declarations: [
         // Directive to test
         BsDropdownMenuDirective,
 
         // Mock directives
-        // MockDirective(BsDropdownDirective, { isOpen$: new BehaviorSubject<boolean>(false) }),
-        MockDirective(BsDropdownDirective),
-        MockDirective(BsDropdownToggleDirective),
+        BsDropdownMockDirective,
+        BsDropdownToggleMockDirective,
 
         // Testbench
         BsDropdownMenuTestComponent
-      ],
-      providers: [
-        MockProvider(BsDropdownDirective, {
-          isOpen$: new BehaviorSubject<boolean>(false)
-        })
       ]
     })
     .compileComponents();
@@ -60,3 +82,39 @@ describe('BsDropdownMenuDirective', () => {
     expect(component).toBeTruthy();
   });
 });
+
+// @Component({
+//   selector: 'bs-dropdown-menu-test',
+//   template: `
+//     <div bsDropdown [closeOnClickOutside]="true">
+//       <button bsDropdownToggle>Dropdown</button>
+//       <div *bsDropdownMenu>
+//         Dropdown contents
+//       </div>
+//     </div>`
+// })
+// class BsDropdownMenuTestComponent {
+// }
+
+// describe('BsDropdownMenuDirective', () => {
+//   let component: BsDropdownMenuTestComponent;
+//   let fixture: ComponentFixture<BsDropdownMenuTestComponent>;
+
+//   beforeEach(async () => {
+//     await TestBed.configureTestingModule(
+//       MockBuilder(BsDropdownMenuDirective, BsDropdownModule)
+//       .build()
+//     )
+//     .compileComponents();
+//   });
+
+//   beforeEach(() => {
+//     fixture = TestBed.createComponent(BsDropdownMenuTestComponent);
+//     component = fixture.componentInstance;
+//     fixture.detectChanges();
+//   });
+
+//   it('should create an instance', () => {
+//     expect(component).toBeTruthy();
+//   });
+// });
