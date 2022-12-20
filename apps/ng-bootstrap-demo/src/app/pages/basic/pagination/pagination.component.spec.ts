@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsPaginationTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { BsPaginationModule } from '@mintplayer/ng-bootstrap/pagination';
+import { MockModule } from 'ng-mocks';
 import { PaginationComponent } from './pagination.component';
 
 describe('PaginationComponent', () => {
@@ -9,7 +10,7 @@ describe('PaginationComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        BsPaginationTestingModule
+        MockModule(BsPaginationModule),
       ],
       declarations: [
         // Unit to test

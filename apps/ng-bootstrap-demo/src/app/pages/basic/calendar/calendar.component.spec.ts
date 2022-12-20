@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsCalendarTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { BsCalendarModule } from '@mintplayer/ng-bootstrap/calendar';
+import { MockModule } from 'ng-mocks';
 import { CalendarComponent } from './calendar.component';
 
 describe('CalendarComponent', () => {
@@ -9,7 +10,7 @@ describe('CalendarComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        BsCalendarTestingModule,
+        MockModule(BsCalendarModule),
       ],
       declarations: [
         // Unit to test

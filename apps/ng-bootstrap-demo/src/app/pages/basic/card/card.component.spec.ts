@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsCardTestingModule, BsListGroupTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { BsCardModule } from '@mintplayer/ng-bootstrap/card';
+import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
+import { MockModule } from 'ng-mocks';
 import { CardComponent } from './card.component';
 
 describe('CardComponent', () => {
@@ -9,8 +11,8 @@ describe('CardComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        BsCardTestingModule,
-        BsListGroupTestingModule,
+        MockModule(BsCardModule),
+        MockModule(BsListGroupModule),
       ],
       declarations: [
         // Unit to test

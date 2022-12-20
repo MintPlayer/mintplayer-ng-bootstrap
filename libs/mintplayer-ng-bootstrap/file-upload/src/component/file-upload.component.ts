@@ -1,4 +1,5 @@
 import { Component, EventEmitter, HostListener, Input, Output, TemplateRef } from '@angular/core';
+import { Color } from '@mintplayer/ng-bootstrap';
 import { FileUpload } from '../file-upload';
 
 @Component({
@@ -12,6 +13,7 @@ export class BsFileUploadComponent {
   @Input() public browseFilesCaption = 'Browse for files';
   @Input() public placeholder = 'Drop files to upload';
 
+  colors = Color;
   isDraggingFile = false;
   fileTemplate?: TemplateRef<FileUpload>;
   @Input() public files: FileUpload[] = [];

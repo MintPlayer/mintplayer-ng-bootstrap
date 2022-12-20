@@ -1,4 +1,5 @@
 import { ChangeDetectorRef, Component, EventEmitter, Input, NgZone, Output, Renderer2 } from '@angular/core';
+import { Color } from '@mintplayer/ng-bootstrap';
 
 @Component({
   selector: 'bs-timepicker',
@@ -20,6 +21,7 @@ export class BsTimepickerComponent {
       });
   }
 
+  colors = Color;
   isOpen = false;
   presetTimestamps: Date[] = [];
   isFocused = false;

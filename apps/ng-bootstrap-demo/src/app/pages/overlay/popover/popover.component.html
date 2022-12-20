@@ -7,7 +7,7 @@
 <bs-grid class="text-center">
     <div bsRow class="mb-3">
         <div [bsColumn]="{md: 3}" class="offset-md-3 position-relative overflow-hidden">
-            <button class="btn btn-primary">
+            <button [color]="colors.primary">
                 Left
                 <ng-container *bsPopover="'start'">
                     <h3 bsPopoverHeader>Popover title</h3>
@@ -18,7 +18,7 @@
             </button>
         </div>
         <div [bsColumn]="{md: 3}" class="position-relative overflow-hidden">
-            <button class="btn btn-primary">
+            <button [color]="colors.primary">
                 Top
                 <ng-container *bsPopover="'top'">
                     <h3 bsPopoverHeader>Popover title</h3>
@@ -31,7 +31,7 @@
     </div>
     <div bsRow>
         <div [bsColumn]="{md: 3}" class="offset-md-3 position-relative overflow-hidden">
-            <button class="btn btn-primary">
+            <button [color]="colors.primary">
                 Bottom
                 <ng-container *bsPopover="'bottom'">
                     <h3 bsPopoverHeader>Popover title</h3>
@@ -42,7 +42,7 @@
             </button>
         </div>
         <div [bsColumn]="{md: 3}" class="position-relative overflow-hidden">
-            <button class="btn btn-primary">
+            <button [color]="colors.primary">
                 Right
                 <ng-container *bsPopover="'end'">
                     <h3 bsPopoverHeader>Popover title</h3>

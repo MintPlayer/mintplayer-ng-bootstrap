@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsHasOverlayTestingModule } from '@mintplayer/ng-bootstrap/testing';
 import { BsToastService } from '../../services/toast/toast.service';
 import { BsToastContainerComponent } from './toast-container.component';
 
@@ -16,7 +15,7 @@ describe('BsToastContainerComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [BsHasOverlayTestingModule],
+      imports: [],
       declarations: [BsToastContainerComponent],
       providers: [{provide: BsToastService, useClass: BsToastMockService}],
     }).compileComponents();

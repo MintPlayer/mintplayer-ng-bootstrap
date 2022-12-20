@@ -1,4 +1,5 @@
 import { Component, Inject } from '@angular/core';
+import { Color } from '@mintplayer/ng-bootstrap';
 
 @Component({
   selector: 'demo-tooltip',
@@ -10,5 +11,6 @@ export class TooltipComponent {
     this.gitRepo = gitRepo;
   }
 
+  colors = Color;
   gitRepo: string;
 }

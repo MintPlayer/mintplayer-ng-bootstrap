@@ -20,7 +20,7 @@ class BsPopoverMockComponent {
 @Component({
   selector: 'bs-Popover-directive-test',
   template: `
-    <button #button class="btn btn-primary">
+    <button #button>
       Bottom
       <ng-container *bsPopover="popoverPosition.bottom">
         <h3 bsPopoverHeader>Popover title</h3>

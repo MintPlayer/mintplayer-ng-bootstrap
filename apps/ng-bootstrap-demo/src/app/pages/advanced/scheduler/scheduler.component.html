@@ -3,6 +3,6 @@
     <option [ngValue]="modes.week">Week</option>
     <option [ngValue]="modes.timeline">Timeline</option>
 </select>
-<button (click)="fillData()" class="btn btn-primary">Fill data</button>
+<button (click)="fillData()" [color]="colors.primary">Fill data</button>
 <hr>
 <bs-scheduler [(weekOptions)]="weekOptions" [(timelineOptions)]="timelineOptions" [(mode)]="mode" [resources]="resources"></bs-scheduler>

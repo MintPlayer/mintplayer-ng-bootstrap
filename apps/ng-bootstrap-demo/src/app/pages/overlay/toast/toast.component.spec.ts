@@ -1,8 +1,8 @@
 import { OverlayModule } from '@angular/cdk/overlay';
 import { Component, ElementRef, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsToastTestingModule } from '@mintplayer/ng-bootstrap/testing';
-import { BsToastService } from '@mintplayer/ng-bootstrap/toast';
+import { BsToastModule, BsToastService } from '@mintplayer/ng-bootstrap/toast';
+import { MockModule } from 'ng-mocks';
 import { ToastComponent } from './toast.component';
 
 @Component({
@@ -42,7 +42,7 @@ describe('ToastComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         OverlayModule,
-        BsToastTestingModule,
+        MockModule(BsToastModule),
       ],
       declarations: [
         // Unit to test

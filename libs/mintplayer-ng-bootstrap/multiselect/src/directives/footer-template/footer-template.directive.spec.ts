@@ -20,7 +20,7 @@ class BsFooterTemplateTestComponent {
 @Component({
   selector: 'bs-multiselect',
   template: `
-    <button class="btn btn-primary">
+    <button>
       <ng-container *ngTemplateOutlet="footerTemplate ?? defaultFooterTemplate; context: { $implicit: 0 }"></ng-container>
     </button>`,
   providers: [

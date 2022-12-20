@@ -6,7 +6,7 @@ import { BsNavbarComponent } from '../navbar/navbar.component';
 @Directive({
   selector: '[navbarContent]'
 })
-export class NavbarContentDirective implements AfterViewInit, OnDestroy {
+export class BsNavbarContentDirective implements AfterViewInit, OnDestroy {
 
   constructor(private element: ElementRef, @Inject(PLATFORM_ID) private platformId: any) {
     combineLatest([this.viewInit$, this.navbar$])

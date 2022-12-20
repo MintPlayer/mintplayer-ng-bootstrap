@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsAccordionMockComponent, BsAccordionTabHeaderMockComponent, BsAccordionTabMockComponent } from '@mintplayer/ng-bootstrap/testing';
+import { MockComponent, MockComponents, MockProvider, MockProviders } from 'ng-mocks';
+import { BsAccordionTabComponent } from '../accordion-tab/accordion-tab.component';
 import { BsAccordionComponent } from '../accordion/accordion.component';
 import { BsAccordionTabHeaderComponent } from './accordion-tab-header.component';
 
@@ -15,15 +16,14 @@ describe('AccordionTabHeaderComponent', () => {
         BsAccordionTabHeaderComponent,
 
         // Mock in-module components
-        BsAccordionMockComponent,
-        BsAccordionTabMockComponent,
+        MockComponent(BsAccordionComponent),
+        MockComponent(BsAccordionTabComponent),
       
         // Testbench
         BsAccordionTestComponent,
       ],
       providers: [
-        { provide: BsAccordionComponent, useClass: BsAccordionMockComponent },
-        { provide: BsAccordionTabHeaderComponent, useClass: BsAccordionTabHeaderMockComponent },
+        MockProvider(BsAccordionComponent),
       ]
     })
     .compileComponents();

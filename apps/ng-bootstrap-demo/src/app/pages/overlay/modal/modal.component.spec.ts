@@ -1,14 +1,9 @@
-import { Injectable } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsGridTestingModule, BsModalTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsModalModule } from '@mintplayer/ng-bootstrap/modal';
+import { MockModule, MockProvider } from 'ng-mocks';
 import { TagService } from '../../../services/tag/tag.service';
 import { ModalComponent } from './modal.component';
-
-@Injectable({
-  providedIn: 'root'
-})
-class TagMockService {
-}
 
 describe('ModalComponent', () => {
   let component: ModalComponent;
@@ -17,8 +12,8 @@ describe('ModalComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        BsGridTestingModule,
-        BsModalTestingModule,
+        MockModule(BsGridModule),
+        MockModule(BsModalModule),
       ],
       declarations: [
         // Unit to test
@@ -26,7 +21,7 @@ describe('ModalComponent', () => {
       ],
       providers: [
         { provide: 'GIT_REPO', useValue: 'https://github.com/MintPlayer/mintplayer-ng-bootstrap/apps/ng-bootstrap-demo/src/app/' },
-        { provide: TagService, useClass: TagMockService }
+        MockProvider(TagService),  
       ]
     })
     .compileComponents();

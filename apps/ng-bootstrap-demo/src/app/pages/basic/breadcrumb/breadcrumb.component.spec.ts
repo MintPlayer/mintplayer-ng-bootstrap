@@ -1,7 +1,8 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
-import { BsBreadcrumbTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { BsBreadcrumbModule } from '@mintplayer/ng-bootstrap/breadcrumb';
+import { MockModule } from 'ng-mocks';
 import { BreadcrumbComponent } from './breadcrumb.component';
 
 @Component({
@@ -23,7 +24,7 @@ describe('BreadcrumbComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        BsBreadcrumbTestingModule,
+        MockModule(BsBreadcrumbModule),
         RouterTestingModule.withRoutes([
           { path: '', component: PageHomeComponent },
           { path: 'basic', component: PageBasicComponent, children: [] }

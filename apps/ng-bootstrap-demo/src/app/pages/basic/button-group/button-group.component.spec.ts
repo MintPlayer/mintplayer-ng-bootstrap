@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsButtonGroupTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { BsButtonGroupModule } from '@mintplayer/ng-bootstrap/button-group';
+import { MockModule } from 'ng-mocks';
 import { ButtonGroupComponent } from './button-group.component';
 
 describe('ButtonGroupComponent', () => {
@@ -9,7 +10,7 @@ describe('ButtonGroupComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        BsButtonGroupTestingModule,
+        MockModule(BsButtonGroupModule),
       ],
       declarations: [
         // Unit to test

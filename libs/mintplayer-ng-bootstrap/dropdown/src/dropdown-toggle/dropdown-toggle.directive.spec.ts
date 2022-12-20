@@ -3,12 +3,14 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsDropdownDirective } from '../dropdown/dropdown.directive';
 import { BehaviorSubject } from 'rxjs';
 import { BsDropdownToggleDirective } from './dropdown-toggle.directive';
+import { MockDirectives } from 'ng-mocks';
+import { BsDropdownMenuDirective } from '../dropdown-menu/dropdown-menu.directive';
 
 @Component({
   selector: 'bs-dropdown-toggle-test',
   template: `
     <div bsDropdown [closeOnClickOutside]="true">
-      <button bsDropdownToggle class="btn btn-primary">Dropdown</button>
+      <button bsDropdownToggle>Dropdown</button>
       <div *bsDropdownMenu>
         Dropdown contents
       </div>
@@ -17,31 +19,31 @@ import { BsDropdownToggleDirective } from './dropdown-toggle.directive';
 class BsDropdownToggleTestComponent {
 }
 
-@Directive({
-  selector: '[bsDropdownMenu]',
-  // host: {
-  //   '[class.show]': 'dropdown.isOpen',
-  // },
-})
-class BsDropdownMenuMockDirective {
-}
+// @Directive({
+//   selector: '[bsDropdownMenu]',
+//   // host: {
+//   //   '[class.show]': 'dropdown.isOpen',
+//   // },
+// })
+// class BsDropdownMenuMockDirective {
+// }
 
-@Directive({
-  selector: '[bsDropdown]',
-  providers: [
-    { provide: BsDropdownDirective, useExisting: BsDropdownMockDirective }
-  ]
-})
-class BsDropdownMockDirective {
+// @Directive({
+//   selector: '[bsDropdown]',
+//   providers: [
+//     { provide: BsDropdownDirective, useExisting: BsDropdownMockDirective }
+//   ]
+// })
+// class BsDropdownMockDirective {
 
-  public isOpen$ = new BehaviorSubject<boolean>(false);
+//   public isOpen$ = new BehaviorSubject<boolean>(false);
 
-  @ContentChild(BsDropdownMenuMockDirective, {static: false}) menu!: BsDropdownMenuMockDirective;
-  @ContentChild(BsDropdownToggleDirective, {static: false}) toggle!: BsDropdownToggleDirective;
+//   @ContentChild(BsDropdownMenuMockDirective, {static: false}) menu!: BsDropdownMenuMockDirective;
+//   @ContentChild(BsDropdownToggleDirective, {static: false}) toggle!: BsDropdownToggleDirective;
   
-  @Input() public hasBackdrop = false;
-  @Input() public closeOnClickOutside = false;
-}
+//   @Input() public hasBackdrop = false;
+//   @Input() public closeOnClickOutside = false;
+// }
 
 describe('BsDropdownToggleDirective', () => {
   let component: BsDropdownToggleTestComponent;
@@ -55,8 +57,7 @@ describe('BsDropdownToggleDirective', () => {
         BsDropdownToggleDirective,
 
         // Mock directives
-        BsDropdownMockDirective,
-        BsDropdownMenuMockDirective,
+        MockDirectives(BsDropdownDirective, BsDropdownMenuDirective),
 
         // Testbench
         BsDropdownToggleTestComponent

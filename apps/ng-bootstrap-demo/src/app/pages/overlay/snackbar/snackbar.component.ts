@@ -1,4 +1,5 @@
 import { Component, Inject, TemplateRef } from '@angular/core';
+import { Color } from '@mintplayer/ng-bootstrap';
 import { BsSnackbarComponent, BsSnackbarService } from '@mintplayer/ng-bootstrap/snackbar';
 
 @Component({
@@ -11,6 +12,7 @@ export class SnackbarComponent {
     this.gitRepo = gitRepo;
   }
 
+  colors = Color;
   gitRepo: string;
   snackbar: BsSnackbarComponent | null = null;
   showSnackbar(template: TemplateRef<any>) {

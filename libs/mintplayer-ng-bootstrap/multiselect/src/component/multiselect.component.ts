@@ -1,4 +1,5 @@
 import { Component, Input, TemplateRef, ViewChild } from '@angular/core';
+import { Color } from '@mintplayer/ng-bootstrap';
 
 @Component({
   selector: 'bs-multiselect',
@@ -10,6 +11,7 @@ export class BsMultiselectComponent {
   headerTemplate!: TemplateRef<any>;
   footerTemplate!: TemplateRef<any>;
   buttonTemplate!: TemplateRef<any>;
+  colors = Color;
 
 
   @Input() public items: any[] = [];

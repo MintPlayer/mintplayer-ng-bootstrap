@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
-import { BsGridTestingModule, BsTableTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsTableModule } from '@mintplayer/ng-bootstrap/table';
+import { MockModule } from 'ng-mocks';
 
 import { TableComponent } from './table.component';
 
@@ -12,8 +14,8 @@ describe('TableComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         FormsModule,
-        BsGridTestingModule,
-        BsTableTestingModule,
+        MockModule(BsGridModule),
+        MockModule(BsTableModule),
       ],
       declarations: [
         // Unit to test

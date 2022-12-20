@@ -1,6 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { BsGridTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
+import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsScrollspyDirective } from '@mintplayer/ng-bootstrap/scrollspy';
+import { MockDirective, MockModule } from 'ng-mocks';
 
 import { CollapseComponent } from './collapse.component';
 
@@ -11,10 +14,19 @@ describe('CollapseComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        BsGridTestingModule,
-        NoopAnimationsModule
+        NoopAnimationsModule,
+
+        // Mock dependencies
+        MockModule(BsGridModule),
+        MockModule(BsAlertModule),
       ],
-      declarations: [ CollapseComponent ]
+      declarations: [
+        // Unit to test
+        CollapseComponent,
+        
+        // Mock dependencies
+        MockDirective(BsScrollspyDirective),
+      ]
     })
     .compileComponents();
   });

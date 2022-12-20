@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
-import { BsAlertTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
+import { MockModule } from 'ng-mocks';
 import { AlertComponent } from './alert.component';
 
 describe('AlertComponent', () => {
@@ -11,7 +12,7 @@ describe('AlertComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         FormsModule,
-        BsAlertTestingModule,
+        MockModule(BsAlertModule),
       ],
       declarations: [
         // Unit to test

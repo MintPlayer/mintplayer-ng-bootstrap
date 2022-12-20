@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsGridTestingModule, BsOffcanvasTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsOffcanvasModule } from '@mintplayer/ng-bootstrap/offcanvas';
+import { MockModule } from 'ng-mocks';
 
 import { OffcanvasComponent } from './offcanvas.component';
 
@@ -10,8 +12,8 @@ describe('OffcanvasComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        BsGridTestingModule,
-        BsOffcanvasTestingModule
+        MockModule(BsGridModule),
+        MockModule(BsOffcanvasModule),
       ],
       declarations: [
         // Unit to test

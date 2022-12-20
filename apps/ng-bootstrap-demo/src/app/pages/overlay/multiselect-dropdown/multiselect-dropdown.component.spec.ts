@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsMultiselectTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { BsMultiselectModule } from '@mintplayer/ng-bootstrap/multiselect';
+import { MockModule } from 'ng-mocks';
 import { MultiselectDropdownComponent } from './multiselect-dropdown.component';
 
 describe('MultiselectDropdownComponent', () => {
@@ -9,7 +10,7 @@ describe('MultiselectDropdownComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        BsMultiselectTestingModule,
+        MockModule(BsMultiselectModule),
       ],
       declarations: [
         // Unit to test

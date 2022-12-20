@@ -11,8 +11,7 @@ import { EnhancedPasteDirective } from './enhanced-paste.directive';
 class EnhancedPasteTestComponent {
   minutes = 0;
   @ViewChild('inputBox') inputBox!: ElementRef<HTMLInputElement>;
-  setNumber(event: Event, max: number, nextInput: HTMLInputElement | null) {
-  }
+  setNumber(event: Event, max: number, nextInput: HTMLInputElement | null) { }
 }
 
 describe('EnhancedPasteDirective', () => {
@@ -27,9 +26,6 @@ describe('EnhancedPasteDirective', () => {
       declarations: [
         // Unit to test
         EnhancedPasteDirective,
-        
-        // Mock dependencies
-        
         
         // Testbench
         EnhancedPasteTestComponent,

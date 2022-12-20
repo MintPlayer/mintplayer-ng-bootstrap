@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsScrollspyTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { BsScrollspyModule } from '@mintplayer/ng-bootstrap/scrollspy';
+import { MockModule } from 'ng-mocks';
 import { ScrollspyComponent } from './scrollspy.component';
 
 describe('ScrollspyComponent', () => {
@@ -9,7 +10,7 @@ describe('ScrollspyComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        BsScrollspyTestingModule,
+        MockModule(BsScrollspyModule),
       ],
       declarations: [
         // Unit to test

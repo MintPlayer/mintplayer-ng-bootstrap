@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { Color } from '@mintplayer/ng-bootstrap';
 import { ESchedulerMode, Resource, ResourceGroup, TimelineOptions, WeekOptions } from '@mintplayer/ng-bootstrap/scheduler';
 
 @Component({
@@ -9,6 +10,7 @@ import { ESchedulerMode, Resource, ResourceGroup, TimelineOptions, WeekOptions }
 export class SchedulerComponent {
   weekOptions: WeekOptions = { unitHeight: 30 };
   timelineOptions: TimelineOptions = { unitWidth: 50 };
+  colors = Color;
   modes = ESchedulerMode;
   mode = ESchedulerMode.week;
   resources: (Resource | ResourceGroup)[] = [];

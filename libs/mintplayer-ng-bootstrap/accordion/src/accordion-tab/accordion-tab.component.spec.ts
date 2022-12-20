@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { BsAccordionMockComponent, BsAccordionTabHeaderMockComponent } from '@mintplayer/ng-bootstrap/testing';
+import { MockComponent, MockProvider } from 'ng-mocks';
 import { BsAccordionTabHeaderComponent } from '../accordion-tab-header/accordion-tab-header.component';
 import { BsAccordionComponent } from '../accordion/accordion.component';
 
@@ -21,15 +21,15 @@ describe('BsAccordionTabComponent', () => {
         BsAccordionTabComponent,
         
         // Mock in-module components
-        BsAccordionMockComponent,
-        BsAccordionTabHeaderMockComponent,
+        MockComponent(BsAccordionComponent),
+        MockComponent(BsAccordionTabHeaderComponent),
 
         // Testbench
         BsAccordionTestComponent,
       ],
       providers: [
-        { provide: BsAccordionComponent, useClass: BsAccordionMockComponent },
-        { provide: BsAccordionTabHeaderComponent, useClass: BsAccordionTabHeaderMockComponent },
+        MockProvider(BsAccordionComponent),
+        MockProvider(BsAccordionTabHeaderComponent),
       ]
     })
     .compileComponents();

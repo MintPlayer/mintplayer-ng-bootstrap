@@ -1,7 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
-import { BsGridTestingModule } from '@mintplayer/ng-bootstrap/testing';
-import { QrCodeTestingModule } from '@mintplayer/ng-qr-code/testing';
+import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { QrCodeModule } from '@mintplayer/ng-qr-code';
+import { MockModule } from 'ng-mocks';
 import { QrCodeComponent } from './qr-code.component';
 
 describe('QrCodeComponent', () => {
@@ -12,8 +13,8 @@ describe('QrCodeComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         FormsModule,
-        BsGridTestingModule,
-        QrCodeTestingModule
+        MockModule(BsGridModule),
+        MockModule(QrCodeModule),
       ],
       declarations: [
         // Unit to test

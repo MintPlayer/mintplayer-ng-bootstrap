@@ -1,5 +1,7 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MockComponent } from 'ng-mocks';
+import { BsCarouselComponent } from '../carousel/carousel.component';
 import { BsCarouselImageDirective } from './carousel-image.directive';
 
 @Component({
@@ -29,22 +31,6 @@ import { BsCarouselImageDirective } from './carousel-image.directive';
 class BsCarouselImageTestComponent {
 }
 
-@Component({
-  selector: 'bs-carousel',
-  template: `
-  <div class="carousel">
-    <div class="carousel-inner">
-      <ng-container *ngFor="let image of images">
-          <div class="carousel-item">
-            <ng-container [ngTemplateOutlet]="image.itemTemplate"></ng-container>    
-          </div>
-      </ng-container>
-    </div>
-  </div>`
-})
-class BsCarouselMockComponent {
-}
-
 describe('CarouselImageDirective', () => {
   let component: BsCarouselImageTestComponent;
   let fixture: ComponentFixture<BsCarouselImageTestComponent>;
@@ -57,7 +43,7 @@ describe('CarouselImageDirective', () => {
         BsCarouselImageDirective,
 
         // Mock components
-        BsCarouselMockComponent,
+        MockComponent(BsCarouselComponent),
 
         // Testbench
         BsCarouselImageTestComponent

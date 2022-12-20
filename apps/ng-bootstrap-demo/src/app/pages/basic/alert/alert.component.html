@@ -12,7 +12,7 @@
     Cras justo odio
     <bs-alert-close></bs-alert-close>
 </bs-alert>
-<button type="button" class="btn btn-primary" (click)="alert1Visible = alert2Visible = alert3Visible = true">
+<button type="button" [color]="colors.primary" (click)="alert1Visible = alert2Visible = alert3Visible = true">
     Show all alerts again
 </button>
 <h2 class="mt-4">Alerts list</h2>
@@ -22,7 +22,7 @@
 </bs-alert>
 <form class="input-group" (submit)="addAlertItem()">
     <input type="text" class="form-control" [(ngModel)]="newAlertItem" name="txtNewAlert" #txtNewAlert>
-    <button type="submit" class="btn btn-primary">Add</button>
+    <button type="submit" [color]="colors.primary">Add</button>
 </form>
 <ul class="mt-3">
     <li *ngFor="let alertItem of alertsList">{{ alertItem.text }}</li>

@@ -5,6 +5,7 @@ import { BsFontColorPipeModule } from '@mintplayer/ng-bootstrap';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsModalModule } from '@mintplayer/ng-bootstrap/modal';
 import { BsSelect2Module } from '@mintplayer/ng-bootstrap/select2';
+import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
 
 import { ModalRoutingModule } from './modal-routing.module';
 import { ModalComponent } from './modal.component';
@@ -20,6 +21,7 @@ import { ModalComponent } from './modal.component';
     BsGridModule,
     BsModalModule,
     BsSelect2Module,
+    BsButtonTypeModule,
     FocusOnLoadModule,
 
     BsFontColorPipeModule,

@@ -1,8 +1,8 @@
 <form (submit)="addToast(toastTemplate, itemToAdd)">
-    <div class="input-group">
+    <bs-input-group>
         <input type="text" name="txtItem" #txtItem class="form-control" autofocus [(ngModel)]="itemToAdd">
-        <button type="submit" class="btn btn-primary">Add notification</button>
-    </div>
+        <button type="submit" [color]="colors.primary">Add notification</button>
+    </bs-input-group>
 </form>
 
 <!-- isVisible is received from the ToastService -->

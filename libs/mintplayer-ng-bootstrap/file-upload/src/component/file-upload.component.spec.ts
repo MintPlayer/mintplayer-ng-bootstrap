@@ -1,16 +1,10 @@
-import { Component, Directive, Input, Pipe, PipeTransform } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsForTestingModule, BsListGroupTestingModule, BsProgressBarTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { MockModule, MockPipe } from 'ng-mocks';
+import { BsFormatBytesPipe } from '../pipes/format-bytes/format-bytes.pipe';
 import { BsFileUploadComponent } from './file-upload.component';
-
-@Pipe({
-  name: 'bsFormatBytes'
-})
-class BsFormatBytesMockPipe implements PipeTransform {
-  transform(value: number, decimals = 2) {
-    return value + " Bytes";
-  }
-}
+import { BsForModule } from '@mintplayer/ng-bootstrap/for';
+import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
+import { BsProgressBarModule } from '@mintplayer/ng-bootstrap/progress-bar';
 
 describe('BsFileUploadComponent', () => {
   let component: BsFileUploadComponent;
@@ -19,16 +13,16 @@ describe('BsFileUploadComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        BsForTestingModule,
-        BsListGroupTestingModule,
-        BsProgressBarTestingModule,
+        MockModule(BsForModule),
+        MockModule(BsListGroupModule),
+        MockModule(BsProgressBarModule),
       ],
       declarations: [
         // Unit to test
         BsFileUploadComponent,
 
         // Mock dependencies
-        BsFormatBytesMockPipe,
+        MockPipe(BsFormatBytesPipe),
       ]
     })
     .compileComponents();

@@ -1,5 +1,6 @@
 import { Component, forwardRef, Input, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MockComponent } from 'ng-mocks';
 import { BsDatatableComponent } from '../datatable/datatable.component';
 import { BsRowTemplateDirective } from './row-template.directive';
 
@@ -8,21 +9,20 @@ describe('BsRowTemplateDirective', () => {
   let fixture: ComponentFixture<BsRowTemplateTestComponent>;
 
   beforeEach(async () => {
-    const testbed = TestBed.configureTestingModule({
+    await TestBed.configureTestingModule({
       imports: [],
       declarations: [
         // Directive to test
         BsRowTemplateDirective,
 
         // Mock components
-        BsDatatableMockComponent,
+        MockComponent(BsDatatableComponent),
 
         // Testbench
         BsRowTemplateTestComponent,
-      ],
-      providers: []
-    });
-    await testbed.compileComponents();
+      ]
+    }).compileComponents();
+
     fixture = TestBed.createComponent(BsRowTemplateTestComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
@@ -60,7 +60,7 @@ interface Artist {
     </bs-datatable>`
 })
 class BsRowTemplateTestComponent {
-  @ViewChild('table') table!: BsDatatableMockComponent;
+  @ViewChild('table') table!: BsDatatableComponent;
 
   artists?: Artist[] = [
     { id: 1, name: 'Dario G', yearStarted: 1993, yearQuit: null, text: 'Dario G' },
@@ -69,25 +69,4 @@ class BsRowTemplateTestComponent {
     { id: 1, name: 'Beyonce', yearStarted: 1993, yearQuit: null, text: 'Beyonce' },
     { id: 1, name: 'Daft Punk', yearStarted: 1993, yearQuit: null, text: 'Daft Punk' },
   ];
-}
-
-@Component({
-  selector: 'bs-datatable',
-  template: `
-    <table>
-      <tbody>
-        <ng-container *ngIf="!!data && !!rowTemplate">
-          <ng-container *ngFor="let item of data.data">
-            <ng-container *ngTemplateOutlet="rowTemplate; context: { $implicit: item }"></ng-container>
-          </ng-container>
-        </ng-container>
-      </tbody>
-    </table>`,
-  providers: [
-    { provide: BsDatatableComponent, useExisting: forwardRef(() => BsDatatableMockComponent) }
-  ]
-})
-class BsDatatableMockComponent {
-  @Input() data: Artist[] = [];
-  rowTemplate?: TemplateRef<any>;
 }

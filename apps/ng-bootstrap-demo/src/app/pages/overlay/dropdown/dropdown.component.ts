@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { Color } from '@mintplayer/ng-bootstrap';
 
 @Component({
   selector: 'demo-dropdown',
@@ -6,4 +7,5 @@ import { Component } from '@angular/core';
   styleUrls: ['./dropdown.component.scss']
 })
 export class DropdownComponent {
+  colors = Color;
 }

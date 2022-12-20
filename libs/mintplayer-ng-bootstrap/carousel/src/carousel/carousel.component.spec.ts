@@ -1,11 +1,12 @@
-import { Component, Directive, ElementRef, ViewChild } from '@angular/core';
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
+import { Component, Directive, ViewChild } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { MockDirective } from 'ng-mocks';
+import { BsCarouselImageDirective } from '../carousel-image/carousel-image.directive';
 
 import { BsCarouselComponent } from './carousel.component';
 
-fdescribe('CarouselComponent', () => {
+describe('CarouselComponent', () => {
   let component: BsCarouselTestComponent;
   let fixture: ComponentFixture<BsCarouselTestComponent>;
 
@@ -19,7 +20,7 @@ fdescribe('CarouselComponent', () => {
         BsCarouselTestComponent,
 
         // Mock dependencies
-        BsCarouselImageMockDirective,
+        MockDirective(BsCarouselImageDirective),
       ],
       imports: [
         NoopAnimationsModule
@@ -61,11 +62,4 @@ fdescribe('CarouselComponent', () => {
 })
 class BsCarouselTestComponent {
   @ViewChild('carousel') carousel!: BsCarouselComponent;
-}
-
-
-@Directive({
-  selector: 'img[bsCarouselImage]'
-})
-class BsCarouselImageMockDirective {
 }

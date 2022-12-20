@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsGridTestingModule, BsTimepickerTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsTimepickerModule } from '@mintplayer/ng-bootstrap/timepicker';
+import { MockModule } from 'ng-mocks';
 import { TimepickerComponent } from './timepicker.component';
 
 describe('TimepickerComponent', () => {
@@ -9,8 +11,8 @@ describe('TimepickerComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        BsGridTestingModule,
-        BsTimepickerTestingModule,
+        MockModule(BsGridModule),
+        MockModule(BsTimepickerModule),
       ],
       declarations: [
         // Unit to test  

@@ -20,7 +20,7 @@
     <div bsRow class="form-group mb-3">
         <div [bsColumn]="{md: 6}" class="col-form-label">Address</div>
         <div [bsColumn]="{md: 6}" class="text-center">
-            <button (click)="isOpen = true" class="btn btn-primary">Specify address</button>
+            <button (click)="isOpen = true" [color]="colors.primary">Specify address</button>
         </div>
     </div>
 </bs-grid>
@@ -59,7 +59,7 @@
             </bs-grid>
         </div>
         <div bsModalFooter>
-            <button type="button" bsModalClose class="btn btn-light bg-transparent" aria-label="Close">Close</button>
+            <button type="button" bsModalClose [color]="colors.light" class="bg-transparent" aria-label="Close">Close</button>
         </div>
     </div>
 </bs-modal>

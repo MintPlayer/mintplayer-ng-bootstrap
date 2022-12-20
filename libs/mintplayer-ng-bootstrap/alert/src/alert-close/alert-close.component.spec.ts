@@ -1,7 +1,8 @@
 import { Component, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { BsAlertMockComponent } from '@mintplayer/ng-bootstrap/testing';
+import { MockComponent } from 'ng-mocks';
+import { BsAlertComponent } from '../alert/alert.component';
 
 import { BsAlertCloseComponent } from './alert-close.component';
 
@@ -16,7 +17,7 @@ describe('BsAlertCloseComponent', () => {
         BsAlertCloseComponent,
       
         // Mock components
-        BsAlertMockComponent,
+        MockComponent(BsAlertComponent),
 
         // Testbench
         BsAlertCloseTestComponent
@@ -60,6 +61,6 @@ describe('BsAlertCloseComponent', () => {
   </bs-alert>`
 })
 class BsAlertCloseTestComponent {
-  @ViewChild('alert') alert!: BsAlertMockComponent;
+  @ViewChild('alert') alert!: BsAlertComponent;
   @ViewChild('alertClose') alertClose!: BsAlertCloseComponent;
 }
