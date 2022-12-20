@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
-import { BsGridTestingModule, BsRangeTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsRangeModule } from '@mintplayer/ng-bootstrap/range';
+import { MockModule } from 'ng-mocks';
 import { RangeComponent } from './range.component';
 
 describe('RangeComponent', () => {
@@ -11,8 +13,8 @@ describe('RangeComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         FormsModule,
-        BsGridTestingModule,
-        BsRangeTestingModule,
+        MockModule(BsGridModule),
+        MockModule(BsRangeModule),
       ],
       declarations: [
         // Unit to test

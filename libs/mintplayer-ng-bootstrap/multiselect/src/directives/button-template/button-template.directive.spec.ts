@@ -20,7 +20,7 @@ class BsButtonTemplateTestComponent {
 @Component({
   selector: 'bs-multiselect',
   template: `
-    <button class="btn btn-primary">
+    <button>
       <ng-container *ngTemplateOutlet="buttonTemplate ?? defaultButtonTemplate; context: { $implicit: 0 }"></ng-container>
     </button>`,
   providers: [

@@ -1,16 +1,8 @@
-import { Directive, Input } from '@angular/core';
+import { DragDropModule } from '@angular/cdk/drag-drop';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsGridTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { MockModule } from 'ng-mocks';
 import { DragDropComponent } from './drag-drop.component';
-
-@Directive({
-  selector: '*[cdkDropList]',
-  exportAs: 'cdkDropList'
-})
-class CdkDropListMockDirective<T = any> {
-  @Input() cdkDropListData!: T;
-  @Input() cdkDropListConnectedTo: (CdkDropListMockDirective | string)[] | CdkDropListMockDirective | string = [];
-}
 
 describe('DragDropComponent', () => {
   let component: DragDropComponent;
@@ -19,14 +11,13 @@ describe('DragDropComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        BsGridTestingModule,
+        // Mock dependencies
+        MockModule(BsGridModule),
+        MockModule(DragDropModule),
       ],
       declarations: [
         // Unit to test
         DragDropComponent,
-      
-        // Mock dependencies
-        CdkDropListMockDirective
       ]
     })
     .compileComponents();

@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
-import { BsSchedulerTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
+import { BsSchedulerModule } from '@mintplayer/ng-bootstrap/scheduler';
+import { MockModule } from 'ng-mocks';
 import { SchedulerComponent } from './scheduler.component';
 
 describe('SchedulerComponent', () => {
@@ -11,7 +13,8 @@ describe('SchedulerComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         FormsModule,
-        BsSchedulerTestingModule
+        MockModule(BsSchedulerModule),
+        MockModule(BsButtonTypeModule),
       ],
       declarations: [
         // Unit to test

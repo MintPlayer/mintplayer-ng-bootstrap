@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
-import { BsCarouselTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { BsCarouselModule } from '@mintplayer/ng-bootstrap/carousel';
+import { MockModule } from 'ng-mocks';
 import { CarouselComponent } from './carousel.component';
 
 describe('CarouselComponent', () => {
@@ -11,7 +12,7 @@ describe('CarouselComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         FormsModule,
-        BsCarouselTestingModule,
+        MockModule(BsCarouselModule),
       ],
       declarations: [
         // Unit to test

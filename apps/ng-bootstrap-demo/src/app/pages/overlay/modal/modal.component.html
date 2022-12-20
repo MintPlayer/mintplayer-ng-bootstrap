@@ -3,7 +3,7 @@
 <bs-grid class="text-center">
     <div bsRow>
         <div bsColumn class="text-center">
-            <button class="btn btn-primary" (click)="isOpen = true">Show modal</button>
+            <button [color]="colors.primary" (click)="isOpen = true">Show modal</button>
             <bs-modal [(isOpen)]="isOpen">
                 <div *bsModal cdkTrapFocus>
                     <div bsModalHeader>

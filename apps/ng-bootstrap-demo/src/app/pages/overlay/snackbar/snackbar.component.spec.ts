@@ -1,5 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsGridTestingModule, BsSnackbarTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
+import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsSnackbarModule } from '@mintplayer/ng-bootstrap/snackbar';
+import { MockModule } from 'ng-mocks';
 import { SnackbarComponent } from './snackbar.component';
 
 describe('SnackbarComponent', () => {
@@ -9,8 +12,9 @@ describe('SnackbarComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        BsGridTestingModule,
-        BsSnackbarTestingModule
+        MockModule(BsGridModule),
+        MockModule(BsSnackbarModule),
+        MockModule(BsButtonTypeModule),
       ],
       declarations: [
         // Unit to test

@@ -1,6 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
-import { BsCardTestingModule, BsGridTestingModule, BsPlaceholderTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { BsCardModule } from '@mintplayer/ng-bootstrap/card';
+import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsPlaceholderModule } from '@mintplayer/ng-bootstrap/placeholder';
+import { MockModule } from 'ng-mocks';
 
 import { PlaceholderComponent } from './placeholder.component';
 
@@ -12,9 +15,9 @@ describe('PlaceholderComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         FormsModule,
-        BsCardTestingModule,
-        BsGridTestingModule,
-        BsPlaceholderTestingModule,
+        MockModule(BsCardModule),
+        MockModule(BsGridModule),
+        MockModule(BsPlaceholderModule),
       ],
       declarations: [
         // Unit to test

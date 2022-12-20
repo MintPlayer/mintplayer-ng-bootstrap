@@ -1,3 +1,0 @@
-<ng-container *ngFor="let toast of (toastService.toasts$ | async); let i = index">
-    <ng-container [ngTemplateOutlet]="toast.template" [ngTemplateOutletContext]="toast.context | bsAddProperties: {toastIndex: i}"></ng-container>
-</ng-container>

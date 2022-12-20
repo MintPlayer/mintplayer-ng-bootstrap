@@ -12,6 +12,8 @@
 @import "node_modules/bootstrap/scss/mixins/banner";
 @include bsBanner("");
 
+@import 'node_modules/@angular/cdk/overlay-prebuilt';
+
 
 // scss-docs-start import-stack
 // Configuration

@@ -3,19 +3,19 @@
 <bs-grid class="text-center">
     <div bsRow>
         <div [bsColumn]="{md: 12}" class="text-center">
-            <button class="btn btn-primary" (click)="showSnackbar(snackbarTemplate)">Show snackbar</button>
-            <button class="btn btn-primary" (click)="hideSnackbar()">Hide snackbar</button>
+            <button [color]="colors.primary" (click)="showSnackbar(snackbarTemplate)">Show snackbar</button>
+            <button [color]="colors.primary" (click)="hideSnackbar()">Hide snackbar</button>
             <ng-template #snackbarTemplate let-snackbar>
                 <div class="text-nowrap p-2 d-flex flex-row align-items-center justify-content-between">
-                    <span class="">You have new notifications</span>
-                    <button class="btn btn-secondary flex-end">
+                    <span>You have new notifications</span>
+                    <button [color]="colors.secondary" class="flex-end">
                         Open
                         <br>
                         dashboard
                         <br>
                         Newline
                     </button>
-                    <button [bsSnackbarClose]="snackbar" class="btn btn-secondary flex-end">Close</button>
+                    <button [bsSnackbarClose]="snackbar" [color]="colors.secondary" class="flex-end">Close</button>
                 </div>
             </ng-template>
         </div>

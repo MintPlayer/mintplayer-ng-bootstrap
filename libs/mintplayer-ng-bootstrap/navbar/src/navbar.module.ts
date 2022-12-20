@@ -7,7 +7,7 @@ import { BsNavbarDropdownComponent } from './navbar-dropdown/navbar-dropdown.com
 import { BsNavbarItemComponent } from './navbar-item/navbar-item.component';
 import { DropdownToggleDirective } from './dropdown-toggle/dropdown-toggle.directive';
 import { NavLinkDirective } from './nav-link/nav-link.directive';
-import { NavbarContentDirective } from './navbar-content/navbar-content.directive';
+import { BsNavbarContentDirective } from './navbar-content/navbar-content.directive';
 import { BsNavbarBrandComponent } from './navbar-brand/navbar-brand.component';
 import { BsExpandButtonDirective } from './expand-button/expand-button.directive';
 import { BsNavbarTogglerComponent } from './navbar-toggler/navbar-toggler.component';
@@ -21,7 +21,7 @@ import { BsNavbarTogglerComponent } from './navbar-toggler/navbar-toggler.compon
 
     DropdownToggleDirective,
     NavLinkDirective,
-    NavbarContentDirective,
+    BsNavbarContentDirective,
     BsNavbarBrandComponent,
     BsExpandButtonDirective,
     BsNavbarTogglerComponent
@@ -38,7 +38,7 @@ import { BsNavbarTogglerComponent } from './navbar-toggler/navbar-toggler.compon
 
     DropdownToggleDirective,
     NavLinkDirective,
-    NavbarContentDirective,
+    BsNavbarContentDirective,
     BsNavbarBrandComponent,
     BsExpandButtonDirective,
     BsNavbarTogglerComponent

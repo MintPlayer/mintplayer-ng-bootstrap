@@ -1,5 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsForTestingModule, BsGridTestingModule, BsModalTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
+import { BsForModule } from '@mintplayer/ng-bootstrap/for';
+import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsModalModule } from '@mintplayer/ng-bootstrap/modal';
+import { MockModule } from 'ng-mocks';
 import { FocusTrapComponent } from './focus-trap.component';
 
 describe('FocusTrapComponent', () => {
@@ -9,9 +13,10 @@ describe('FocusTrapComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        BsForTestingModule,
-        BsGridTestingModule,
-        BsModalTestingModule
+        MockModule(BsForModule),
+        MockModule(BsGridModule),
+        MockModule(BsModalModule),
+        MockModule(BsButtonTypeModule),
       ],
       declarations: [
         // Unit to test

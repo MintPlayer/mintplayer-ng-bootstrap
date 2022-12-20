@@ -1,4 +1,5 @@
 import { Component, Inject } from '@angular/core';
+import { Color } from '@mintplayer/ng-bootstrap';
 import { Tag } from '../../../entities/tag';
 import { TagService } from '../../../services/tag/tag.service';
 
@@ -13,6 +14,7 @@ export class ModalComponent {
   }
 
   isOpen = false;
+  colors = Color;
   gitRepo: string;
   tagSuggestions: Tag[] = [];
   selectedTags: Tag[] = [];

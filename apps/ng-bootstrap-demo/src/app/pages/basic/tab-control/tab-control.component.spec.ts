@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsTabControlTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { BsTabControlModule } from '@mintplayer/ng-bootstrap/tab-control';
+import { MockModule } from 'ng-mocks';
 import { TabControlComponent } from './tab-control.component';
 
 describe('TabControlComponent', () => {
@@ -9,7 +10,7 @@ describe('TabControlComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        BsTabControlTestingModule,
+        MockModule(BsTabControlModule),
       ],
       declarations: [
         // Unit to test

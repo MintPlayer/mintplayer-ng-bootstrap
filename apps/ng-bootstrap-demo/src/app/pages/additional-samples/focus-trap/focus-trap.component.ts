@@ -1,4 +1,5 @@
-import { Component, TemplateRef } from '@angular/core';
+import { Component } from '@angular/core';
+import { Color } from '@mintplayer/ng-bootstrap';
 
 @Component({
   selector: 'demo-focus-trap',
@@ -8,5 +9,6 @@ import { Component, TemplateRef } from '@angular/core';
 export class FocusTrapComponent {
 
   isOpen = false;
+  colors = Color;
 
 }

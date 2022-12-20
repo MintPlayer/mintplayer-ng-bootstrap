@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { BsDatepickerComponent } from './datepicker.component';
 import { BsCalendarModule } from '@mintplayer/ng-bootstrap/calendar';
 import { BsDropdownModule } from '@mintplayer/ng-bootstrap/dropdown';
+import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
 
 
 
@@ -13,7 +14,8 @@ import { BsDropdownModule } from '@mintplayer/ng-bootstrap/dropdown';
   imports: [
     CommonModule,
     BsCalendarModule,
-    BsDropdownModule
+    BsDropdownModule,
+    BsButtonTypeModule,
   ],
   exports: [
     BsDatepickerComponent

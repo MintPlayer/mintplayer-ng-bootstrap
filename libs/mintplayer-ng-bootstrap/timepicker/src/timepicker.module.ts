@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { EnhancedPasteModule } from '@mintplayer/ng-bootstrap/enhanced-paste';
 import { BsDropdownModule } from '@mintplayer/ng-bootstrap/dropdown';
+import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
 import { BsDropdownMenuModule } from '@mintplayer/ng-bootstrap/dropdown-menu';
 import { BsTimepickerComponent } from './timepicker.component';
 
@@ -15,7 +16,8 @@ import { BsTimepickerComponent } from './timepicker.component';
     FormsModule,
     EnhancedPasteModule,
     BsDropdownModule,
-    BsDropdownMenuModule
+    BsDropdownMenuModule,
+    BsButtonTypeModule,
   ],
   exports: [
     BsTimepickerComponent

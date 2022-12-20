@@ -1,5 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsFileUploadTestingModule, BsGridTestingModule, BsProgressBarTestingModule, Color } from '@mintplayer/ng-bootstrap/testing';
+import { BsFileUploadModule } from '@mintplayer/ng-bootstrap/file-upload';
+import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsProgressBarModule } from '@mintplayer/ng-bootstrap/progress-bar';
+import { MockModule } from 'ng-mocks';
 import { FileUploadComponent } from './file-upload.component';
 
 describe('FileUploadComponent', () => {
@@ -9,9 +12,9 @@ describe('FileUploadComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        BsGridTestingModule,
-        BsFileUploadTestingModule,
-        BsProgressBarTestingModule,
+        MockModule(BsGridModule),
+        MockModule(BsFileUploadModule),
+        MockModule(BsProgressBarModule),
       ],
       declarations: [
         // Unit to test

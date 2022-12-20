@@ -1,15 +1,10 @@
-import { Injectable } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsSnackbarService } from '@mintplayer/ng-bootstrap/snackbar';
-import { BsCopyTestingModule, HighlightTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { BsCopyModule } from '@mintplayer/ng-bootstrap/copy';
+import { BsSnackbarModule, BsSnackbarService } from '@mintplayer/ng-bootstrap/snackbar';
+import { MockModule, MockProvider } from 'ng-mocks';
+import { HighlightModule } from 'ngx-highlightjs';
 
 import { BsCodeSnippetComponent } from './code-snippet.component';
-
-@Injectable({
-  providedIn: 'root'
-})
-class BsSnackbarMockService {
-}
 
 describe('BsCodeSnippetComponent', () => {
   let component: BsCodeSnippetComponent;
@@ -18,15 +13,13 @@ describe('BsCodeSnippetComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        BsCopyTestingModule,
-        HighlightTestingModule
+        MockModule(BsCopyModule),
+        MockModule(HighlightModule),
+        MockModule(BsSnackbarModule),
       ],
       declarations: [
         // Unit to test
         BsCodeSnippetComponent,
-      ],
-      providers: [
-        { provide: BsSnackbarService, useClass: BsSnackbarMockService }
       ]
     })
     .compileComponents();

@@ -1,4 +1,5 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Color } from '@mintplayer/ng-bootstrap';
 
 @Component({
   selector: 'bs-datepicker',
@@ -6,6 +7,8 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
   styleUrls: ['./datepicker.component.scss']
 })
 export class BsDatepickerComponent {
+
+  colors = Color;
 
   //#region SelectedDate
   _selectedDate = new Date();

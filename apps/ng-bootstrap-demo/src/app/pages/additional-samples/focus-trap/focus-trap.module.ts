@@ -6,6 +6,7 @@ import { BsCloseModule } from '@mintplayer/ng-bootstrap/close';
 import { BsForModule } from '@mintplayer/ng-bootstrap/for';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsModalModule } from '@mintplayer/ng-bootstrap/modal';
+import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
 
 import { FocusTrapRoutingModule } from './focus-trap-routing.module';
 import { FocusTrapComponent } from './focus-trap.component';
@@ -22,6 +23,7 @@ import { FocusTrapComponent } from './focus-trap.component';
     BsGridModule,
     BsCloseModule,
     BsModalModule,
+    BsButtonTypeModule,
     FocusOnLoadModule,
     FocusTrapRoutingModule
   ]

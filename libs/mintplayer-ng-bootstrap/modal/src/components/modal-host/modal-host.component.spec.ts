@@ -1,12 +1,15 @@
 import { Component, Directive, Injector, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { OverlayModule } from '@angular/cdk/overlay';
+import { Overlay, OverlayModule } from '@angular/cdk/overlay';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { BsModalHostComponent } from './modal-host.component';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
-import { BsHasOverlayTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { MockComponent, MockDirective, MockModule, MockProvider } from 'ng-mocks';
+import { BsModalComponent } from '../modal/modal.component';
+import { BsModalDirective } from '../../directives/modal/modal.directive';
+import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
 
 @Component({
   selector: 'bs-modal-test',
@@ -23,49 +26,39 @@ class BsModalTestComponent {
   isOpen = false;
 }
 
-@Component({
-  selector: 'bs-modal-content',
-  template: `test`
-})
-class BsModalMockComponent {
-}
-
-@Directive({ selector: '[bsModal]' })
-class BsModalMockDirective {
-  constructor(offcanvasHost: BsModalHostComponent, template: TemplateRef<any>) {
-    offcanvasHost.template = template;
-  }
-}
-
 describe('BsModalHostComponent', () => {
   let component: BsModalTestComponent;
   let fixture: ComponentFixture<BsModalTestComponent>;
+
+  const modalMockType = MockComponent(BsModalComponent);
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
         CommonModule,
         OverlayModule,
-        BsHasOverlayTestingModule,
-        NoopAnimationsModule
+        MockModule(BsHasOverlayModule),
+        NoopAnimationsModule,
       ],
       declarations: [
         // Unit to test
         BsModalHostComponent,
 
         // Mock dependencies
-        BsModalMockComponent,
-        BsModalMockDirective,
+        modalMockType,
+        MockDirective(BsModalDirective),
 
         // Testbench
         BsModalTestComponent
       ],
-      providers: [{
-        provide: PORTAL_FACTORY,
-        useValue: (injector: Injector) => {
-          return new ComponentPortal(BsModalMockComponent, null, injector);
+      providers: [
+        {
+          provide: PORTAL_FACTORY,
+          useValue: (injector: Injector) => {
+            return new ComponentPortal(modalMockType, null, injector);
+          }
         }
-      }]
+      ]
     })
     .compileComponents();
   });

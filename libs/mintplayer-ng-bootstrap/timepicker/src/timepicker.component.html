@@ -10,7 +10,7 @@
                 <input type="number" [min]="0" [max]="59" (input)="setNumber($event, 59, null)" bsEnhancedPaste [ngModel]="minutes | number: '2.0'" (ngModelChange)="minutes = $event"  (focus)="selectAll(minuteBox)" (blur)="isFocused = false" #minuteBox class="w-100 border-0 bg-transparent">
             </div>
         </span>
-        <button class="btn btn-secondary" (click)="isOpen = !isOpen">
+        <button [color]="colors.secondary" (click)="isOpen = !isOpen">
             <i class="bi bi-clock"></i>
         </button>
     </span>

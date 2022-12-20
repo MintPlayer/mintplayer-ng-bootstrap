@@ -1,6 +1,7 @@
-import { Pipe, PipeTransform } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { UcFirstTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { BsUcFirstPipeModule } from '@mintplayer/ng-bootstrap';
+import { MonthNamePipe } from '@mintplayer/ng-bootstrap/calendar-month';
+import { MockModule, MockPipe } from 'ng-mocks';
 
 import { BsCalendarComponent } from './calendar.component';
 
@@ -11,11 +12,11 @@ describe('CalendarComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        UcFirstTestingModule
+        MockModule(BsUcFirstPipeModule),
       ],
       declarations: [
         BsCalendarComponent,
-        MonthNameMockPipe,
+        MockPipe(MonthNamePipe),
       ]
     })
     .compileComponents();
@@ -31,14 +32,3 @@ describe('CalendarComponent', () => {
     expect(component).toBeTruthy();
   });
 });
-
-@Pipe({
-  name: 'monthName'
-})
-class MonthNameMockPipe implements PipeTransform {
-
-  transform(date: Date, ...args: any[]) {
-    return date.toLocaleString("default", { month: 'long' });
-  }
-
-}

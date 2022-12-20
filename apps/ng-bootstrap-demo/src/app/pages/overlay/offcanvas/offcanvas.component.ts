@@ -1,5 +1,5 @@
 import { Component, Inject } from '@angular/core';
-import { BsViewState, Position } from '@mintplayer/ng-bootstrap';
+import { BsViewState, Color, Position } from '@mintplayer/ng-bootstrap';
 import { BehaviorSubject } from 'rxjs';
 
 @Component({
@@ -13,6 +13,7 @@ export class OffcanvasComponent {
     this.gitRepo = gitRepo;
   }
   
+  colors = Color;
   position$ = new BehaviorSubject<Position>('start');
   offcanvasState: BsViewState = 'closed';
   sidebarState: BsViewState = 'closed';

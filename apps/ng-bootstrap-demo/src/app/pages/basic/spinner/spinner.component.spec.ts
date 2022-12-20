@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsSpinnerTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { BsSpinnerModule } from '@mintplayer/ng-bootstrap/spinner';
+import { MockModule } from 'ng-mocks';
 import { SpinnerComponent } from './spinner.component';
 
 describe('SpinnerComponent', () => {
@@ -9,7 +10,7 @@ describe('SpinnerComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        BsSpinnerTestingModule,
+        MockModule(BsSpinnerModule),
       ],
       declarations: [
         // Unit to test

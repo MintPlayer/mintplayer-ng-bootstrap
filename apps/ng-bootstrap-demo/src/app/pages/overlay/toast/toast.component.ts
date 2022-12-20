@@ -1,4 +1,5 @@
 import { Component, ElementRef, TemplateRef, ViewChild } from '@angular/core';
+import { Color } from '@mintplayer/ng-bootstrap';
 import { BsToastService } from '@mintplayer/ng-bootstrap/toast';
 
 @Component({
@@ -10,6 +11,7 @@ export class ToastComponent {
 
   constructor(private toastService: BsToastService) { }
 
+  colors = Color;
   myCounter = 0;
   itemToAdd = '';
   @ViewChild('txtItem') txtItem!: ElementRef<HTMLInputElement>;

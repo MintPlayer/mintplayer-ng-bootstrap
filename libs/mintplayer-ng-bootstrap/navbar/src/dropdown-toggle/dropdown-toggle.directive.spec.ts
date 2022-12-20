@@ -1,7 +1,13 @@
-import { Component, ContentChildren, forwardRef, QueryList } from '@angular/core';
+import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
-import { BsNavbarBrandMockComponent, BsNavbarDropdownMockComponent, BsNavbarItemMockComponent, BsNavbarMockComponent, BsNavbarNavMockComponent, NavbarContentMockDirective } from '@mintplayer/ng-bootstrap/testing';
+import { MockComponent, MockDirective } from 'ng-mocks';
+import { BsNavbarBrandComponent } from '../navbar-brand/navbar-brand.component';
+import { BsNavbarContentDirective } from '../navbar-content/navbar-content.directive';
+import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
+import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
+import { BsNavbarNavComponent } from '../navbar-nav/navbar-nav.component';
+import { BsNavbarComponent } from '../navbar/navbar.component';
 import { DropdownToggleDirective } from './dropdown-toggle.directive';
 
 describe('DropdownToggleDirective', () => {
@@ -23,12 +29,12 @@ describe('DropdownToggleDirective', () => {
         DropdownToggleDirective,
 
         // Mock components
-        BsNavbarMockComponent,
-        BsNavbarNavMockComponent,
-        BsNavbarDropdownMockComponent,
-        BsNavbarItemMockComponent,
-        NavbarContentMockDirective,
-        BsNavbarBrandMockComponent,
+        MockComponent(BsNavbarComponent),
+        MockComponent(BsNavbarNavComponent),
+        MockComponent(BsNavbarDropdownComponent),
+        MockComponent(BsNavbarItemComponent),
+        MockDirective(BsNavbarContentDirective),
+        MockComponent(BsNavbarBrandComponent),
 
         // Pages
         PageAComponent,

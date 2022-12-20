@@ -4,12 +4,12 @@
     <div bsRow>
         <div [bsColumn]="{md: 12}" class="text-center">
             <span class="mx-5">Show offcanvas</span>
-            <button class="btn btn-primary" (click)="showOffcanvas('top')">Top</button>
-            <button class="btn btn-primary" (click)="showOffcanvas('bottom')">Bottom</button>
-            <button class="btn btn-primary" (click)="sidebarState = 'open'">Left</button>
-            <button class="btn btn-primary" (click)="showOffcanvas('end')">Right</button>
+            <button [color]="colors.primary" (click)="showOffcanvas('top')">Top</button>
+            <button [color]="colors.primary" (click)="showOffcanvas('bottom')">Bottom</button>
+            <button [color]="colors.primary" (click)="sidebarState = 'open'">Left</button>
+            <button [color]="colors.primary" (click)="showOffcanvas('end')">Right</button>
             <br>
-            <button class="btn btn-primary" (click)="offcanvasState = 'closed'">Hide offcanvas</button>
+            <button [color]="colors.primary" (click)="offcanvasState = 'closed'">Hide offcanvas</button>
             <ng-container *ngIf="(position$ | async) as position">
                 <bs-offcanvas [(state)]="offcanvasState" [position]="position" [hasBackdrop]="true" (backdropClick)="offcanvasState = 'closed'">
                     <div *bsOffcanvasContent>
@@ -23,8 +23,8 @@
                                 Some text as placeholder. In real life you can have the elements you have chosen. Like, text, images, lists, etc.
                             </div>
                             <!-- <bs-dropdown class="dropdown mt-3"></bs-dropdown> -->
-                            <div bsDropdown class="dropdown mt-3">
-                                <button bsDropdownToggle class="btn btn-secondary dropdown-toggle" type="button">
+                            <div bsDropdown class="mt-3">
+                                <button bsDropdownToggle [color]="colors.secondary" type="button">
                                     Dropdown button
                                 </button>
                                 <bs-dropdown-menu *bsDropdownMenu>

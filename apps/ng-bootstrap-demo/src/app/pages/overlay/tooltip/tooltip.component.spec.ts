@@ -1,5 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsGridTestingModule, BsTooltipTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
+import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsTooltipModule } from '@mintplayer/ng-bootstrap/tooltip';
+import { MockModule } from 'ng-mocks';
 import { TooltipComponent } from './tooltip.component';
 
 
@@ -10,8 +13,9 @@ describe('TooltipComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        BsGridTestingModule,
-        BsTooltipTestingModule,
+        MockModule(BsGridModule),
+        MockModule(BsTooltipModule),
+        MockModule(BsButtonTypeModule),
       ],
       declarations: [
         // Unit to test

@@ -1,7 +1,12 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
-import { NavbarContentDirective } from './navbar-content.directive';
+import { MockComponents } from 'ng-mocks';
+import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
+import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
+import { BsNavbarNavComponent } from '../navbar-nav/navbar-nav.component';
+import { BsNavbarComponent } from '../navbar/navbar.component';
+import { BsNavbarContentDirective } from './navbar-content.directive';
 
 describe('DropdownToggleDirective', () => {
   let component: BsNavbarContentTestComponent;
@@ -19,13 +24,10 @@ describe('DropdownToggleDirective', () => {
       ],
       declarations: [
         // Directive to test
-        NavbarContentDirective,
+        BsNavbarContentDirective,
 
-        // Mock components
-        BsNavbarMockComponent,
-        BsNavbarNavMockComponent,
-        BsNavbarDropdownMockComponent,
-        BsNavbarItemMockComponent,
+        // Mock dependencies
+        ...MockComponents(BsNavbarComponent, BsNavbarNavComponent, BsNavbarDropdownComponent, BsNavbarItemComponent),
 
         // Pages
         PageAComponent,
@@ -69,50 +71,6 @@ describe('DropdownToggleDirective', () => {
   </bs-navbar>`
 })
 class BsNavbarContentTestComponent {
-}
-
-@Component({
-  selector: 'bs-navbar',
-  template: `
-  <nav>
-    <div>
-      <ng-content></ng-content>
-    </div>  
-  </nav>`
-})
-class BsNavbarMockComponent {
-}
-
-@Component({
-  selector: 'bs-navbar-nav',
-  template: `
-  <div>
-    <ul>
-      <ng-content></ng-content>
-    </ul>  
-  </div>`
-})
-class BsNavbarNavMockComponent {
-}
-
-@Component({
-  selector: 'bs-navbar-dropdown',
-  template: `
-  <ul>
-    <ng-content></ng-content>
-</ul>`
-})
-class BsNavbarDropdownMockComponent {
-}
-
-@Component({
-  selector: 'bs-navbar-item',
-  template: `
-  <li>
-    <ng-content></ng-content>
-</li>`
-})
-class BsNavbarItemMockComponent {
 }
 
 @Component({

@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
-import { BsGridTestingModule, BsSelectTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsSelectModule } from '@mintplayer/ng-bootstrap/select';
+import { MockModule } from 'ng-mocks';
 
 import { SelectComponent } from './select.component';
 
@@ -12,8 +14,8 @@ describe('SelectComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         FormsModule,
-        BsGridTestingModule,
-        BsSelectTestingModule,
+        MockModule(BsGridModule),
+        MockModule(BsSelectModule),
       ],
       declarations: [
         // Unit to test

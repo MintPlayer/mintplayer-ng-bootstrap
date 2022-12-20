@@ -1,21 +1,9 @@
-import { Injectable } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsSelect2TestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { BsSelect2Module } from '@mintplayer/ng-bootstrap/select2';
+import { MockModule, MockProviders } from 'ng-mocks';
 import { SubjectService } from '../../../services/subject/subject.service';
 import { TagService } from '../../../services/tag/tag.service';
 import { AutofocusComponent } from './autofocus.component';
-
-@Injectable({
-  providedIn: 'root'
-})
-class SubjectMockService {
-}
-
-@Injectable({
-  providedIn: 'root'
-})
-class TagMockService {
-}
 
 describe('AutofocusComponent', () => {
   let component: AutofocusComponent;
@@ -24,15 +12,14 @@ describe('AutofocusComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        BsSelect2TestingModule
+        MockModule(BsSelect2Module),
       ],
       declarations: [
         // Unit to test
         AutofocusComponent,
       ],
       providers: [
-        { provide: SubjectService, useClass: SubjectMockService },
-        { provide: TagService, useClass: TagMockService }
+        ...MockProviders(SubjectService, TagService),
       ]
     })
     .compileComponents();

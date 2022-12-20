@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MockComponent } from 'ng-mocks';
 import { BsFileUploadComponent } from '../component/file-upload.component';
 import { BsFileUploadTemplateDirective } from './file-upload-template.directive';
 
@@ -14,30 +15,13 @@ import { BsFileUploadTemplateDirective } from './file-upload-template.directive'
     </bs-file-upload>`
 })
 class FileUploadTestComponent {
-  @ViewChild('fileUpload') fileUpload!: BsFileUploadMockComponent;
+  @ViewChild('fileUpload') fileUpload!: BsFileUploadComponent;
   files: MockFileUpload[] = [
     { file: { name: 'file 1', size: 2000 }, progress: 20 },
     { file: { name: 'file 2', size: 6000 }, progress: 30 },
     { file: { name: 'file 3', size: 4000 }, progress: 40 },
     { file: { name: 'file 4', size: 8000 }, progress: 50 },
   ];
-}
-
-@Component({
-  selector: 'bs-file-upload',
-  template: `
-    <ul class="list-group files-list">
-      <li class="list-group-item" *ngFor="let upload of files">
-          <ng-container *ngTemplateOutlet="fileTemplate; context: { $implicit: upload }"></ng-container>
-      </li>
-    </ul>`,
-  providers: [
-    { provide: BsFileUploadComponent, useExisting: BsFileUploadMockComponent }
-  ]
-})
-class BsFileUploadMockComponent {
-  fileTemplate?: TemplateRef<MockFileUpload>;
-  @Input() files: MockFileUpload[] = [];
 }
 
 interface MockFileUpload {
@@ -59,7 +43,7 @@ describe('BsContextMenuDirective', () => {
         BsFileUploadTemplateDirective,
 
         // Mock dependencies
-        BsFileUploadMockComponent,
+        MockComponent(BsFileUploadComponent),
 
         // Testbench
         FileUploadTestComponent

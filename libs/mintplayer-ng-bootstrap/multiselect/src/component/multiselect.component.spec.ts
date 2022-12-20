@@ -1,15 +1,8 @@
-import { Directive, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsHasOverlayTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
+import { BsDropdownModule } from '@mintplayer/ng-bootstrap/dropdown';
+import { MockModule } from 'ng-mocks';
 import { BsMultiselectComponent } from './multiselect.component';
-
-@Directive({
-  selector: '[bsDropdown]'
-})
-class BsDropdownMockDirective {
-  @Input() public hasBackdrop = false;
-  @Input() public closeOnClickOutside = false;
-}
 
 describe('BsMultiselectComponent', () => {
   let component: BsMultiselectComponent;
@@ -18,14 +11,12 @@ describe('BsMultiselectComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        BsHasOverlayTestingModule
+        MockModule(BsDropdownModule),
+        MockModule(BsButtonTypeModule),
       ],
       declarations: [
         // Unit to test
         BsMultiselectComponent,
-      
-        // Mock dependencies
-        BsDropdownMockDirective
       ]
     })
     .compileComponents();

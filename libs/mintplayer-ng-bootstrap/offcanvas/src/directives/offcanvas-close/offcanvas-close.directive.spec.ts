@@ -22,7 +22,7 @@ class BsOffcanvasMockComponent {
     <ng-template #offcanvasTemplate let-offcanvas>
       <div>
           <span>Notifications</span>
-          <button [bsOffcanvasClose]="offcanvas" class="btn btn-secondary flex-end">Close</button>
+          <button [bsOffcanvasClose]="offcanvas">Close</button>
       </div>
     </ng-template>`
 })

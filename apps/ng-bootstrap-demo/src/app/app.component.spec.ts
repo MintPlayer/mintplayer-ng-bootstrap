@@ -3,7 +3,8 @@ import { HttpClientModule } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
-import { BsNavbarTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { MockModule } from 'ng-mocks';
+import { BsNavbarModule } from '@mintplayer/ng-bootstrap/navbar';
 import { AppComponent } from './app.component';
 
 describe('AppComponent', () => {
@@ -11,15 +12,17 @@ describe('AppComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         HttpClientModule,
-        BsNavbarTestingModule,
         RouterTestingModule.withRoutes([
           { path: 'a/b/c', component: PageAbcComponent }
         ]),
+
+        // Mock dependencies
+        MockModule(BsNavbarModule),
       ],
       declarations: [
         // Component to test
         AppComponent,
-      
+
         // Mock pages
         PageAbcComponent
       ],

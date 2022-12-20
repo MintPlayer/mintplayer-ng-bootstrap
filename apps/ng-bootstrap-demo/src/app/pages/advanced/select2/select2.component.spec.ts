@@ -1,23 +1,12 @@
 import { HttpClientModule } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsSelect2TestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { BsSelect2Module } from '@mintplayer/ng-bootstrap/select2';
+import { MockModule, MockProvider } from 'ng-mocks';
 import { SubjectService } from '../../../services/subject/subject.service';
 import { TagService } from '../../../services/tag/tag.service';
 
 import { Select2Component } from './select2.component';
-
-@Injectable({
-  providedIn: 'root'
-})
-class SubjectMockService {
-}
-
-@Injectable({
-  providedIn: 'root'
-})
-class TagMockService {
-}
 
 describe('Select2Component', () => {
   let component: Select2Component;
@@ -27,15 +16,15 @@ describe('Select2Component', () => {
     await TestBed.configureTestingModule({
       imports: [
         HttpClientModule,
-        BsSelect2TestingModule,
+        MockModule(BsSelect2Module),
       ],
       declarations: [
         // Unit to test
         Select2Component,
       ],
       providers: [
-        { provide: SubjectService, useClass: SubjectMockService },
-        { provide: TagService, useClass: TagMockService }
+        MockProvider(SubjectService),
+        MockProvider(TagService),
       ]
     })
     .compileComponents();

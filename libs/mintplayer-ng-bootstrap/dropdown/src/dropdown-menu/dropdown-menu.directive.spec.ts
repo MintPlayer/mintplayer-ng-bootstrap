@@ -82,3 +82,39 @@ describe('BsDropdownMenuDirective', () => {
     expect(component).toBeTruthy();
   });
 });
+
+// @Component({
+//   selector: 'bs-dropdown-menu-test',
+//   template: `
+//     <div bsDropdown [closeOnClickOutside]="true">
+//       <button bsDropdownToggle>Dropdown</button>
+//       <div *bsDropdownMenu>
+//         Dropdown contents
+//       </div>
+//     </div>`
+// })
+// class BsDropdownMenuTestComponent {
+// }
+
+// describe('BsDropdownMenuDirective', () => {
+//   let component: BsDropdownMenuTestComponent;
+//   let fixture: ComponentFixture<BsDropdownMenuTestComponent>;
+
+//   beforeEach(async () => {
+//     await TestBed.configureTestingModule(
+//       MockBuilder(BsDropdownMenuDirective, BsDropdownModule)
+//       .build()
+//     )
+//     .compileComponents();
+//   });
+
+//   beforeEach(() => {
+//     fixture = TestBed.createComponent(BsDropdownMenuTestComponent);
+//     component = fixture.componentInstance;
+//     fixture.detectChanges();
+//   });
+
+//   it('should create an instance', () => {
+//     expect(component).toBeTruthy();
+//   });
+// });

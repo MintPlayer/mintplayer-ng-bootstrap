@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsScrollspyMockComponent } from '@mintplayer/ng-bootstrap/testing';
+import { MockComponent } from 'ng-mocks';
+import { BsScrollspyComponent } from '../component/scrollspy.component';
 import { BsScrollspyDirective } from './scrollspy.directive';
 
 @Component({
@@ -41,7 +42,7 @@ describe('BsScrollspyDirective', () => {
         BsScrollspyDirective,
 
         // Mock dependencies
-        BsScrollspyMockComponent,
+        MockComponent(BsScrollspyComponent),
 
         // Testbench
         BsScrollspyTestComponent

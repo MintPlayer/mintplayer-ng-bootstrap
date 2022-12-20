@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsForTestingModule, BsGridTestingModule } from '@mintplayer/ng-bootstrap/testing';
+import { BsForModule } from '@mintplayer/ng-bootstrap/for';
+import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { MockModule } from 'ng-mocks';
 import { ForDirectiveComponent } from './for-directive.component';
 
 describe('ForDirectiveComponent', () => {
@@ -9,8 +11,8 @@ describe('ForDirectiveComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        BsForTestingModule,
-        BsGridTestingModule,
+        MockModule(BsForModule),
+        MockModule(BsGridModule),
       ],
       declarations: [
         // Unit to test

@@ -1,11 +1,9 @@
-import { Overlay } from '@angular/cdk/overlay';
+import { OverlayModule } from '@angular/cdk/overlay';
 import { CommonModule } from '@angular/common';
-import { Component, Injectable } from '@angular/core';
+import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MockModule } from 'ng-mocks';
 import { BsContextMenuDirective } from './context-menu.directive';
-
-@Injectable({ providedIn: 'root' })
-class OverlayMock { }
 
 @Component({
   selector: 'context-menu-test-component',
@@ -29,17 +27,12 @@ describe('BsContextMenuDirective', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        CommonModule
+        CommonModule,
+        MockModule(OverlayModule),
       ],
-      providers: [{
-        provide: Overlay,
-        useClass: OverlayMock
-      }],
       declarations: [
         // Unit to test
         BsContextMenuDirective,
-
-        // Mock dependencies
 
         // Testbench
         ContextMenuTestComponent
