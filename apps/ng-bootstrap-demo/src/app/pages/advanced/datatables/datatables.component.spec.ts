@@ -20,7 +20,7 @@ describe('DatatablesComponent', () => {
         DatatablesComponent,
       ],
       providers: [
-        MockProvider(ArtistService),
+        ArtistService,
       ]
     })
     .compileComponents();

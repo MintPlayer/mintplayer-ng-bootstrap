@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsOffcanvasModule } from '@mintplayer/ng-bootstrap/offcanvas';
 import { MockModule } from 'ng-mocks';
@@ -14,6 +15,7 @@ describe('OffcanvasComponent', () => {
       imports: [
         MockModule(BsGridModule),
         MockModule(BsOffcanvasModule),
+        MockModule(BsButtonTypeModule),
       ],
       declarations: [
         // Unit to test

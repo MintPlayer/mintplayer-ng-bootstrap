@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsSnackbarModule } from '@mintplayer/ng-bootstrap/snackbar';
 import { MockModule } from 'ng-mocks';
@@ -13,6 +14,7 @@ describe('SnackbarComponent', () => {
       imports: [
         MockModule(BsGridModule),
         MockModule(BsSnackbarModule),
+        MockModule(BsButtonTypeModule),
       ],
       declarations: [
         // Unit to test

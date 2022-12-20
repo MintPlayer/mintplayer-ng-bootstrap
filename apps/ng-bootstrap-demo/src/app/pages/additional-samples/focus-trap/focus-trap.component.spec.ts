@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
 import { BsForModule } from '@mintplayer/ng-bootstrap/for';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsModalModule } from '@mintplayer/ng-bootstrap/modal';
@@ -15,6 +16,7 @@ describe('FocusTrapComponent', () => {
         MockModule(BsForModule),
         MockModule(BsGridModule),
         MockModule(BsModalModule),
+        MockModule(BsButtonTypeModule),
       ],
       declarations: [
         // Unit to test
