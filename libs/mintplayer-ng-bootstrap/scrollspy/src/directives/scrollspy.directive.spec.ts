@@ -1,5 +1,7 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MockComponent } from 'ng-mocks';
+import { BsScrollspyComponent } from '../component/scrollspy.component';
 import { BsScrollspyDirective } from './scrollspy.directive';
 
 @Component({
@@ -40,6 +42,7 @@ describe('BsScrollspyDirective', () => {
         BsScrollspyDirective,
 
         // Mock dependencies
+        MockComponent(BsScrollspyComponent),
 
         // Testbench
         BsScrollspyTestComponent

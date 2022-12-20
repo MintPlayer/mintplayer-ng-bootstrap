@@ -36,7 +36,7 @@ describe('BsModalHostComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         CommonModule,
-        MockModule(OverlayModule),
+        OverlayModule,
         MockModule(BsHasOverlayModule),
         NoopAnimationsModule,
       ],
@@ -57,15 +57,6 @@ describe('BsModalHostComponent', () => {
           useValue: (injector: Injector) => {
             return new ComponentPortal(modalMockType, null, injector);
           }
-        },
-        {
-          provide: Overlay,
-          useFactory: () => ({
-            scrollStrategies: {
-              reposition: () => null
-            }
-          }),
-          deps: []
         }
       ]
     })
