@@ -1,8 +1,8 @@
-import { UserAgentDirective } from './user-agent.directive';
+import { BsUserAgentDirective } from './user-agent.directive';
 
-describe('UserAgentDirective', () => {
+describe('BsUserAgentDirective', () => {
   it('should create an instance', () => {
-    const directive = new UserAgentDirective();
+    const directive = new BsUserAgentDirective();
     expect(directive).toBeTruthy();
   });
 });
