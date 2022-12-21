@@ -1,4 +1,5 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, ElementRef, ViewChild, OnDestroy } from '@angular/core';
+import { Point } from '@mintplayer/ng-swiper';
 import { BehaviorSubject, map, Observable, Subject } from 'rxjs';
 
 @Component({
@@ -6,7 +7,7 @@ import { BehaviorSubject, map, Observable, Subject } from 'rxjs';
   templateUrl: './swiper.component.html',
   styleUrls: ['./swiper.component.scss']
 })
-export class SwiperComponent implements OnInit, OnDestroy {
+export class SwiperComponent implements OnDestroy {
 
   constructor() {
     this.imageData$ = this.images$
@@ -14,11 +15,15 @@ export class SwiperComponent implements OnInit, OnDestroy {
         url: image,
         marginLeft: undefined
       })));
+    this.imageIndex$.subscribe((index) => {
+      console.log('image index', index);
+    });
   }
 
   imageIndex$ = new BehaviorSubject<number>(0);
   isSwiping$ = new BehaviorSubject<boolean>(false);
   destroyed$ = new Subject();
+  offsetX: number | null = null;
 
   images$ = new BehaviorSubject<string[]>([
     '/assets/resized/deer.png',
@@ -30,11 +35,9 @@ export class SwiperComponent implements OnInit, OnDestroy {
   ]);
 
   imageData$: Observable<ImageData[]>;
+  @ViewChild('carousel') carousel!: ElementRef<HTMLDivElement>;
 
-  ngOnInit() {
-  }
-
-  ngOnDestroy(): void {
+  ngOnDestroy() {
     this.destroyed$.next(true);
   }
   
@@ -42,10 +45,14 @@ export class SwiperComponent implements OnInit, OnDestroy {
     this.isSwiping$.next(true);
   }
 
-  onSwipeEnd = () =>  {
+  onSwipeEnd = (offset: Point, durationMs: number) =>  {
     this.isSwiping$.next(false);
-    this.imageIndex$.next(this.imageIndex$.value + 1);
-    return false;
+    if (Math.abs(offset.x) >= this.carousel.nativeElement.clientWidth) {
+      this.imageIndex$.next(this.imageIndex$.value + 1);
+      return true;
+    } else {
+      return false;
+    }
   }
 
 }
