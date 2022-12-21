@@ -11,6 +11,7 @@ const routes: Routes = [
   { path: 'scrollspy', loadChildren: () => import('./scrollspy/scrollspy.module').then(m => m.ScrollspyModule) },
   { path: 'code-snippet', loadChildren: () => import('./code-snippet/code-snippet.module').then(m => m.CodeSnippetModule) },
   { path: 'scheduler', loadChildren: () => import('./scheduler/scheduler.module').then(m => m.SchedulerModule) },
+  { path: 'user-agent', loadChildren: () => import('./user-agent/user-agent.module').then(m => m.UserAgentModule) },
 ];
 
 @NgModule({

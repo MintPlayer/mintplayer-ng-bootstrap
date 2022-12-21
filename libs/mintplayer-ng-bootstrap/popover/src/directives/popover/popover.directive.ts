@@ -86,6 +86,8 @@ export class BsPopoverDirective implements AfterViewInit, OnDestroy {
     this.position$.next(value);
   }
 
+  @Input() public updatePosition = false;
+
   private injector: Injector | null = null;
   private portal: ComponentPortal<any> | null = null;
   private overlayRef: OverlayRef | null = null;
@@ -113,9 +115,10 @@ export class BsPopoverDirective implements AfterViewInit, OnDestroy {
     });
     
     this.parent.nativeElement.onclick = () => {
-      this.isVisible$.pipe(take(1)).subscribe((isVisible) => {
-        this.isVisible$.next(!isVisible);
-      });
+      if (this.updatePosition) {
+        this.overlayRef?.updatePosition();
+      }
+      this.isVisible$.next(!this.isVisible$.value);
     };
   }
 

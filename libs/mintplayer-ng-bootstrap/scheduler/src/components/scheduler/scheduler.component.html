@@ -11,7 +11,7 @@
                 </button>
             </div>
             <div class="flex-grow-1 calendar-head-cell" *ngFor="let day of (shownDays$ | async)">
-                <span class="d-block col-form-label text-center">
+                <span class="d-block col-form-label text-center text-nowrap">
                     <span>{{ day | date: 'dd-MM' }}</span><span class="d-none d-lg-inline-block">-{{ day | date: 'yyyy' }}</span>
                 </span>
             </div>
