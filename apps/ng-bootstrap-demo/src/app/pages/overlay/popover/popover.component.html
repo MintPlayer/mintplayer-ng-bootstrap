@@ -9,23 +9,23 @@
         <div [bsColumn]="{md: 3}" class="offset-md-3 position-relative overflow-hidden">
             <button [color]="colors.primary">
                 Left
-                <ng-container *bsPopover="'start'">
+                <ng-template [bsPopover]="'start'" [updatePosition]="true">
                     <h3 bsPopoverHeader>Popover title</h3>
                     <div bsPopoverBody>
                         And here's some amazing content. It's very engaging. Right?
                     </div>
-                </ng-container>
+                </ng-template>
             </button>
         </div>
         <div [bsColumn]="{md: 3}" class="position-relative overflow-hidden">
             <button [color]="colors.primary">
                 Top
-                <ng-container *bsPopover="'top'">
+                <ng-template [bsPopover]="'top'" [updatePosition]="true">
                     <h3 bsPopoverHeader>Popover title</h3>
                     <div bsPopoverBody>
                         And here's some amazing content. It's very engaging. Right?
                     </div>
-                </ng-container>
+                </ng-template>
             </button>
         </div>
     </div>
@@ -33,23 +33,23 @@
         <div [bsColumn]="{md: 3}" class="offset-md-3 position-relative overflow-hidden">
             <button [color]="colors.primary">
                 Bottom
-                <ng-container *bsPopover="'bottom'">
+                <ng-template [bsPopover]="'bottom'" [updatePosition]="true">
                     <h3 bsPopoverHeader>Popover title</h3>
                     <div bsPopoverBody>
                         And here's some amazing content. It's very engaging. Right?
                     </div>
-                </ng-container>
+                </ng-template>
             </button>
         </div>
         <div [bsColumn]="{md: 3}" class="position-relative overflow-hidden">
             <button [color]="colors.primary">
                 Right
-                <ng-container *bsPopover="'end'">
+                <ng-template [bsPopover]="'end'" [updatePosition]="true">
                     <h3 bsPopoverHeader>Popover title</h3>
                     <div bsPopoverBody>
                         And here's some amazing content. It's very engaging. Right?
                     </div>
-                </ng-container>
+                </ng-template>
             </button>
         </div>
     </div>

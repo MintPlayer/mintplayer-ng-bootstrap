@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ClickOutsideModule } from '@mintplayer/ng-click-outside';
+import { BsUserAgentModule } from '@mintplayer/ng-bootstrap/user-agent';
 import { BsNavbarComponent } from './navbar/navbar.component';
 import { BsNavbarNavComponent } from './navbar-nav/navbar-nav.component';
 import { BsNavbarDropdownComponent } from './navbar-dropdown/navbar-dropdown.component';
@@ -24,11 +25,12 @@ import { BsNavbarTogglerComponent } from './navbar-toggler/navbar-toggler.compon
     BsNavbarContentDirective,
     BsNavbarBrandComponent,
     BsExpandButtonDirective,
-    BsNavbarTogglerComponent
+    BsNavbarTogglerComponent,
   ],
   imports: [
     CommonModule,
-    ClickOutsideModule
+    ClickOutsideModule,
+    BsUserAgentModule,
   ],
   exports: [
     BsNavbarComponent,
@@ -41,7 +43,7 @@ import { BsNavbarTogglerComponent } from './navbar-toggler/navbar-toggler.compon
     BsNavbarContentDirective,
     BsNavbarBrandComponent,
     BsExpandButtonDirective,
-    BsNavbarTogglerComponent
+    BsNavbarTogglerComponent,
   ]
 })
 export class BsNavbarModule { }

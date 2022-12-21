@@ -22,6 +22,9 @@ nav {
     nav.position-fixed {
         max-height: 100%;
         overflow-y: scroll;
+    }
+    
+    nav.os-windows {
         margin-right: -17px;
     }
 }

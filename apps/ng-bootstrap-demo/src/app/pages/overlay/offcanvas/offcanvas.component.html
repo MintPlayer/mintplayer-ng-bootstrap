@@ -4,10 +4,12 @@
     <div bsRow>
         <div [bsColumn]="{md: 12}" class="text-center">
             <span class="mx-5">Show offcanvas</span>
-            <button [color]="colors.primary" (click)="showOffcanvas('top')">Top</button>
-            <button [color]="colors.primary" (click)="showOffcanvas('bottom')">Bottom</button>
-            <button [color]="colors.primary" (click)="sidebarState = 'open'">Left</button>
-            <button [color]="colors.primary" (click)="showOffcanvas('end')">Right</button>
+            <bs-button-group>
+                <button [color]="colors.primary" (click)="showOffcanvas('top')">Top</button>
+                <button [color]="colors.primary" (click)="showOffcanvas('bottom')">Bottom</button>
+                <button [color]="colors.primary" (click)="sidebarState = 'open'">Left</button>
+                <button [color]="colors.primary" (click)="showOffcanvas('end')">Right</button>
+            </bs-button-group>
             <br>
             <button [color]="colors.primary" (click)="offcanvasState = 'closed'">Hide offcanvas</button>
             <ng-container *ngIf="(position$ | async) as position">
@@ -101,6 +103,7 @@
                                     <a [routerLink]='[]' class="d-block p-2">Manage dishes</a>
                                 </bs-accordion>
                             </bs-accordion-tab>
+                            <a [routerLink]='[]' bsOffcanvasClose class="d-block p-2 text-center">Close</a>
                         </bs-accordion>
                     </bs-offcanvas-body>
                 </div>
