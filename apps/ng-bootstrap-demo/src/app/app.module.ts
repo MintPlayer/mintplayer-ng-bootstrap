@@ -5,25 +5,27 @@ import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { HighlightOptions, HIGHLIGHT_OPTIONS } from 'ngx-highlightjs';
 import { BS_DEVELOPMENT } from '@mintplayer/ng-bootstrap';
-import { BsNavbarModule } from '@mintplayer/ng-bootstrap/navbar';
+// import { BsNavbarModule } from '@mintplayer/ng-bootstrap/navbar';
 import { BsAsyncHostBindingModule } from '@mintplayer/ng-bootstrap/async-host-binding';
 import ngBootstrapJson from '@mintplayer/ng-bootstrap/package.json';
 
 import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
-import { DirectivesModule } from './directives/directives.module';
+import { BsLazyLoadingModule } from '@mintplayer/ng-bootstrap/lazy-loading';
+// import { NavbarModule } from './components/navbar/navbar.module';
 
 @NgModule({
   declarations: [AppComponent],
   imports: [
     BrowserModule.withServerTransition({ appId: 'serverApp' }),
     CommonModule,
+    BsLazyLoadingModule,
     BrowserAnimationsModule,
-    BsNavbarModule,
+    // BsNavbarModule,
     BsAsyncHostBindingModule,
     HttpClientModule,
     AppRoutingModule,
-    DirectivesModule
+    // NavbarModule
   ],
   providers: [
     {
