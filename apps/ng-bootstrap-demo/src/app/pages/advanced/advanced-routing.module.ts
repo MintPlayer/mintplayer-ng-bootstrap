@@ -12,6 +12,7 @@ const routes: Routes = [
   { path: 'code-snippet', loadChildren: () => import('./code-snippet/code-snippet.module').then(m => m.CodeSnippetModule) },
   { path: 'scheduler', loadChildren: () => import('./scheduler/scheduler.module').then(m => m.SchedulerModule) },
   { path: 'user-agent', loadChildren: () => import('./user-agent/user-agent.module').then(m => m.UserAgentModule) },
+  { path: 'lazy-loading-components', loadChildren: () => import('./lazy-loading/lazy-loading.module').then(m => m.LazyLoadingModule) },
 ];
 
 @NgModule({
