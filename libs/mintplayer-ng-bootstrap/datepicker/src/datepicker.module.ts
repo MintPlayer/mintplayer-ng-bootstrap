@@ -4,6 +4,7 @@ import { BsDatepickerComponent } from './datepicker.component';
 import { BsCalendarModule } from '@mintplayer/ng-bootstrap/calendar';
 import { BsDropdownModule } from '@mintplayer/ng-bootstrap/dropdown';
 import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
+import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
 
 
 
@@ -16,6 +17,7 @@ import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
     BsCalendarModule,
     BsDropdownModule,
     BsButtonTypeModule,
+    BsHasOverlayModule,
   ],
   exports: [
     BsDatepickerComponent
