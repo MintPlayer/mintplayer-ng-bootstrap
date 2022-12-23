@@ -1,4 +1,5 @@
 <!-- <bs-dropdown [(isOpen)]="isOpen" [hasBackdrop]="false"></bs-dropdown> -->
+<bs-has-overlay></bs-has-overlay>
 <div bsDropdown [(isOpen)]="isOpen" [hasBackdrop]="false">
     <input type="text" class="form-control" #textbox [(ngModel)]="searchterm" (ngModelChange)="onProvideSuggestions($event)" (keyup.enter)="onSubmit()" />
     <bs-dropdown-menu *bsDropdownMenu>

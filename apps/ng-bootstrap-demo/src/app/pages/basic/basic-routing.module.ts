@@ -28,7 +28,8 @@ const routes: Routes = [
   { path: 'range', loadChildren: () => import('./range/range.module').then(m => m.RangeModule) },
   { path: 'select', loadChildren: () => import('./select/select.module').then(m => m.SelectModule) },
   { path: 'input-group', loadChildren: () => import('./input-group/input-group.module').then(m => m.InputGroupModule) },
-  { path: 'button-type', loadChildren: () => import('./button-type/button-type.module').then(m => m.ButtonTypeModule) }
+  { path: 'button-type', loadChildren: () => import('./button-type/button-type.module').then(m => m.ButtonTypeModule) },
+  { path: 'floating-labels', loadChildren: () => import('./floating-labels/floating-labels.module').then(m => m.FloatingLabelsModule) },
 ];
 
 @NgModule({

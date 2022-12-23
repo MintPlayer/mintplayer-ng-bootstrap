@@ -2,6 +2,7 @@ import { Directive, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
+import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
 import { BsInputGroupModule } from '@mintplayer/ng-bootstrap/input-group';
 import { MockModule } from 'ng-mocks';
 
@@ -27,6 +28,7 @@ describe('BsTimepickerComponent', () => {
         FormsModule,
         MockModule(BsButtonTypeModule),
         MockModule(BsInputGroupModule),
+        MockModule(BsHasOverlayModule),
       ],
       declarations: [
         // Unit to test

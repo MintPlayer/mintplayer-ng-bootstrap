@@ -1,6 +1,8 @@
 import { Directive, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
+import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
+import { MockModule } from 'ng-mocks';
 
 import { BsTypeaheadComponent } from './typeahead.component';
 
@@ -32,6 +34,10 @@ describe('TypeaheadComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      imports: [
+        FormsModule,
+        MockModule(BsHasOverlayModule),
+      ],
       declarations: [
         // Unit to test
         BsTypeaheadComponent,
@@ -41,7 +47,6 @@ describe('TypeaheadComponent', () => {
         BsDropdownMenuMockDirective,
         BsDropdownMockDirective,
       ],
-      imports: [ FormsModule ]
     })
     .compileComponents();
   });

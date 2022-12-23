@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { BsDropdownModule } from '@mintplayer/ng-bootstrap/dropdown';
 import { BsDropdownMenuModule } from '@mintplayer/ng-bootstrap/dropdown-menu';
 import { BsProgressBarModule } from '@mintplayer/ng-bootstrap/progress-bar';
+import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
 import { BsTypeaheadComponent } from './typeahead.component';
 
 
@@ -17,7 +18,8 @@ import { BsTypeaheadComponent } from './typeahead.component';
     FormsModule,
     BsDropdownModule,
     BsDropdownMenuModule,
-    BsProgressBarModule
+    BsProgressBarModule,
+    BsHasOverlayModule,
   ],
   exports: [
     BsTypeaheadComponent

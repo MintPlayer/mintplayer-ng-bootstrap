@@ -1,4 +1,3 @@
-<bs-has-overlay></bs-has-overlay>
 <div [@fadeInOut]="{value: ':leave', params: {duration: '300ms'} }" *ngIf="showBackdrop$ | async">
     <div class="modal-backdrop show" (click)="onBackdropClick($event)"></div>
 </div>
