@@ -1,6 +1,8 @@
 import { Directive, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
+import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
+import { MockModule } from 'ng-mocks';
 
 import { BsSelect2Component } from './select2.component';
 
@@ -30,6 +32,10 @@ describe('BsSelect2Component', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      imports: [
+        FormsModule,
+        MockModule(BsHasOverlayModule),
+      ],
       declarations: [
         // Unit to test
         BsSelect2Component,
@@ -39,9 +45,6 @@ describe('BsSelect2Component', () => {
         BsDropdownMenuMockDirective,
         BsDropdownMockDirective,
       ],
-      imports: [
-        FormsModule
-      ]
     })
     .compileComponents();
   });
