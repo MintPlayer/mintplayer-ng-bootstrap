@@ -5,6 +5,7 @@ tfoot > tr > td {
 bs-table thead th.sort {
     position: relative;
     cursor: pointer;
+    padding-right: 2rem;
   
     &:before, &:after {
       position: absolute;
