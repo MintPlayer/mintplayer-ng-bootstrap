@@ -6,6 +6,7 @@ import { BsDropdownModule } from '@mintplayer/ng-bootstrap/dropdown';
 import { BsDropdownMenuModule } from '@mintplayer/ng-bootstrap/dropdown-menu';
 import { BsItemTemplateDirective } from './directive/item-template.directive';
 import { BsSelect2Component } from './component/select2.component';
+import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
 
 @NgModule({
   declarations: [
@@ -17,6 +18,7 @@ import { BsSelect2Component } from './component/select2.component';
     FormsModule,
     BsDropdownModule,
     BsDropdownMenuModule,
+    BsHasOverlayModule,
     BsInListModule
   ],
   exports: [

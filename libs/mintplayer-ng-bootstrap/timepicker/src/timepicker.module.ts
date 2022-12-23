@@ -6,6 +6,7 @@ import { BsDropdownModule } from '@mintplayer/ng-bootstrap/dropdown';
 import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
 import { BsInputGroupModule } from '@mintplayer/ng-bootstrap/input-group';
 import { BsDropdownMenuModule } from '@mintplayer/ng-bootstrap/dropdown-menu';
+import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
 import { BsTimepickerComponent } from './timepicker.component';
 
 @NgModule({
@@ -20,6 +21,7 @@ import { BsTimepickerComponent } from './timepicker.component';
     BsDropdownMenuModule,
     BsInputGroupModule,
     BsButtonTypeModule,
+    BsHasOverlayModule,
   ],
   exports: [
     BsTimepickerComponent
