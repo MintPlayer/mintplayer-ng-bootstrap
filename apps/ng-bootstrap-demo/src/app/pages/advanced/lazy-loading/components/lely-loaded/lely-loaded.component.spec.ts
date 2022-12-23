@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { FormsModule } from '@angular/forms';
 
 import { LelyLoadedComponent } from './lely-loaded.component';
 
@@ -8,6 +9,7 @@ describe('LelyLoadedComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      imports: [ FormsModule ],
       declarations: [ LelyLoadedComponent ]
     })
     .compileComponents();

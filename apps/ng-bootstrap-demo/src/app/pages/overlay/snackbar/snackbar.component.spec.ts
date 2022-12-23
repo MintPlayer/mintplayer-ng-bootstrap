@@ -1,4 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { RouterTestingModule } from '@angular/router/testing';
+import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
+import { BsButtonGroupModule } from '@mintplayer/ng-bootstrap/button-group';
 import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsSnackbarModule } from '@mintplayer/ng-bootstrap/snackbar';
@@ -12,7 +15,10 @@ describe('SnackbarComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
+        RouterTestingModule.withRoutes([]),
         MockModule(BsGridModule),
+        MockModule(BsAlertModule),
+        MockModule(BsButtonGroupModule),
         MockModule(BsSnackbarModule),
         MockModule(BsButtonTypeModule),
       ],
