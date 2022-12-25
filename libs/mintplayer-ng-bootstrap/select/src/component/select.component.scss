@@ -1,3 +1,7 @@
+// :host {
+//     display: contents;
+// }
+
 :host ::ng-deep {
     @import "../../../../../node_modules/bootstrap/scss/bootstrap-utilities.scss";
     @import "../../../../../node_modules/bootstrap/scss/functions";

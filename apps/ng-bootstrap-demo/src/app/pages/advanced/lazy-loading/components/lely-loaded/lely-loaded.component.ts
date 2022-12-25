@@ -1,6 +1,7 @@
 import { Component, NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
 
 @Component({
   selector: 'demo-lely-loaded',
@@ -13,6 +14,6 @@ export class LelyLoadedComponent {
 
 @NgModule({
   declarations: [LelyLoadedComponent],
-  imports: [FormsModule, BrowserAnimationsModule]
+  imports: [FormsModule, BsFormModule, BrowserAnimationsModule]
 })
 export class LelyLoadedComponentModule {}

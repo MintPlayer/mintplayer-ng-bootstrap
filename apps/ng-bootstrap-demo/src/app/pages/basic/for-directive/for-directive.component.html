@@ -1,20 +1,22 @@
-<bs-grid>
-    <div bsRow class="mb-3">
-        <div [bsColumn]="{md: 4}" class="col-form-label" [bsFor]="firstName">First name</div>
-        <div [bsColumn]="{md: 8}">
-            <input type="text" #firstName class="form-control">
+<bs-form>
+    <bs-grid>
+        <div bsRow class="mb-3">
+            <div [bsColumn]="{md: 4}" class="col-form-label" [bsFor]="firstName">First name</div>
+            <div [bsColumn]="{md: 8}">
+                <input type="text" #firstName>
+            </div>
         </div>
-    </div>
-    <div bsRow class="mb-3">
-        <div [bsColumn]="{md: 4}" class="col-form-label" [bsFor]="lastName">Last name</div>
-        <div [bsColumn]="{md: 8}">
-            <input type="text" #lastName class="form-control">
+        <div bsRow class="mb-3">
+            <div [bsColumn]="{md: 4}" class="col-form-label" [bsFor]="lastName">Last name</div>
+            <div [bsColumn]="{md: 8}">
+                <input type="text" #lastName>
+            </div>
         </div>
-    </div>
-    <div bsRow class="mb-3">
-        <div [bsColumn]="{md: 4}" class="col-form-label" [bsFor]="birthDate">Birth date</div>
-        <div [bsColumn]="{md: 8}">
-            <input type="date" #birthDate class="form-control">
+        <div bsRow class="mb-3">
+            <div [bsColumn]="{md: 4}" class="col-form-label" [bsFor]="birthDate">Birth date</div>
+            <div [bsColumn]="{md: 8}">
+                <input type="date" #birthDate>
+            </div>
         </div>
-    </div>
-</bs-grid>
+    </bs-grid>
+</bs-form>

@@ -15,10 +15,7 @@
     </div>
     <div bsRow class="mb-3">
         <div bsColumn class="text-center">
-            <label>
-                <input type="checkbox" [(ngModel)]="disableSelectBox">
-                Disable
-            </label>
+            <bs-toggle-button [(ngModel)]="disableSelectBox" [type]="'checkbox'">Disable</bs-toggle-button>
         </div>
     </div>
     <div bsRow class="mb-3">

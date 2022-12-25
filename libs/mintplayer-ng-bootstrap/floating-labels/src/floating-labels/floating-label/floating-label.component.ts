@@ -1,15 +1,21 @@
-import { AfterContentInit, Component, ContentChild, ElementRef } from '@angular/core';
-import { BsFloatingFormControlDirective } from '../floating-form-control/floating-form-control.directive';
+import { Optional, Component, ContentChild, ElementRef } from '@angular/core';
+import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 
 @Component({
   selector: 'bs-floating-label',
   templateUrl: './floating-label.component.html',
   styleUrls: ['./floating-label.component.scss'],
 })
-export class BsFloatingLabelComponent implements AfterContentInit {
-  @ContentChild(BsFloatingFormControlDirective, { read: ElementRef }) input!: ElementRef<HTMLInputElement>;
-
-  ngAfterContentInit() {
-    this.input.nativeElement.classList.add('form-control');
+export class BsFloatingLabelComponent {
+  constructor(@Optional() bsForm: BsFormComponent) {
+    if (!bsForm) {
+      throw '<bs-floating-label> must be inside a <bs-form>';
+    }
   }
+
+  // @ContentChild(BsFloatingFormControlDirective, { read: ElementRef }) input!: ElementRef<HTMLInputElement>;
+
+  // ngAfterContentInit() {
+  //   this.input.nativeElement.classList.add('form-control');
+  // }
 }
