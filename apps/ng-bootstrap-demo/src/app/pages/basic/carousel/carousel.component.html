@@ -1,25 +1,40 @@
 <h1>Carousel</h1>
-<bs-carousel [animation]="mode" [indicators]="true">
-    <div class="w-100" *bsCarouselImage>
-        <img src="/assets/resized/deer.png" class="w-100">
-    </div>
-    <div class="w-100" *bsCarouselImage>
-        <img src="/assets/resized/duck.png" (load)="log()" class="w-100">
-    </div>
-    <div class="w-100" *bsCarouselImage>
-        <img src="/assets/resized/leopard.png" class="w-100">
-    </div>
-    <div class="w-100" *bsCarouselImage>
-        <img src="/assets/resized/lion.png" class="w-100">
-    </div>
-    <div class="w-100" *bsCarouselImage>
-        <img src="/assets/resized/peacock.png" class="w-100">
-    </div>
-    <div class="w-100" *bsCarouselImage>
-        <img src="/assets/resized/tiger.png" class="w-100">
-    </div>
-</bs-carousel>
-<select [ngModel]="mode" (ngModelChange)="onModeChange($event)">
-  <option value="slide">Slide</option>
-  <option value="fade">Fade</option>
-</select>
+<bs-form>
+    <bs-grid>
+        <div bsRow class="mb-3">
+            <div bsColumn>
+                <bs-carousel [animation]="mode" [indicators]="true" class="mx-auto">
+                    <div class="w-100" *bsCarouselImage>
+                        <img src="/assets/resized/deer.png" class="w-100">
+                    </div>
+                    <div class="w-100" *bsCarouselImage>
+                        <img src="/assets/resized/duck.png" class="w-100">
+                    </div>
+                    <div class="w-100" *bsCarouselImage>
+                        <img src="/assets/resized/leopard.png" class="w-100">
+                    </div>
+                    <div class="w-100" *bsCarouselImage>
+                        <img src="/assets/resized/lion.png" class="w-100">
+                    </div>
+                    <div class="w-100" *bsCarouselImage>
+                        <img src="/assets/resized/peacock.png" class="w-100">
+                    </div>
+                    <div class="w-100" *bsCarouselImage>
+                        <img src="/assets/resized/tiger.png" class="w-100">
+                    </div>
+                </bs-carousel>
+            </div>
+        </div>
+        <div bsRow>
+            <span bsColumn class="col-form-label text-end">
+                Carousel mode
+            </span>
+            <div bsColumn>
+                <bs-select [ngModel]="mode" (ngModelChange)="onModeChange($event)" class="d-inline-block">
+                    <option value="slide">Slide</option>
+                    <option value="fade">Fade</option>
+                </bs-select>
+            </div>
+        </div>
+    </bs-grid>
+</bs-form>

@@ -8,6 +8,7 @@ import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsOffcanvasModule } from '@mintplayer/ng-bootstrap/offcanvas';
 import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
 import { BsButtonGroupModule } from '@mintplayer/ng-bootstrap/button-group';
+import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
 
 import { OffcanvasRoutingModule } from './offcanvas-routing.module';
 import { OffcanvasComponent } from './offcanvas.component';
@@ -27,6 +28,7 @@ import { OffcanvasComponent } from './offcanvas.component';
     BsDropdownMenuModule,
     BsOffcanvasModule,
     BsAccordionModule,
+    BsToggleButtonModule,
     OffcanvasRoutingModule
   ]
 })

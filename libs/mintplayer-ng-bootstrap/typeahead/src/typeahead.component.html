@@ -1,7 +1,7 @@
 <!-- <bs-dropdown [(isOpen)]="isOpen" [hasBackdrop]="false"></bs-dropdown> -->
 <bs-has-overlay></bs-has-overlay>
 <bs-form>
-    <div bsDropdown [(isOpen)]="isOpen" [hasBackdrop]="false">
+    <div bsDropdown [(isOpen)]="isOpen" [hasBackdrop]="false" [sameDropdownWidth]="true">
         <input type="text" #textbox [(ngModel)]="searchterm" (ngModelChange)="onProvideSuggestions($event)" (keyup.enter)="onSubmit()" />
         <bs-dropdown-menu *bsDropdownMenu>
             <bs-progress *ngIf="isLoading$ | async" [height]="2" [isIndeterminate]="true"></bs-progress>

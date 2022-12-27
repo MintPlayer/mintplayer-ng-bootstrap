@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsTableModule } from '@mintplayer/ng-bootstrap/table';
+import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
 
 import { TableRoutingModule } from './table-routing.module';
 import { TableComponent } from './table.component';
@@ -17,6 +18,7 @@ import { TableComponent } from './table.component';
     FormsModule,
     BsGridModule,
     BsTableModule,
+    BsToggleButtonModule,
     TableRoutingModule
   ]
 })

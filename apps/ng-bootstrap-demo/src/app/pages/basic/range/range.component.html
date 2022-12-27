@@ -2,7 +2,7 @@
 <bs-grid>
     <div bsRow>
         <div [bsColumn]="{md: 11}">
-            <bs-range [min]="0" [max]="5" [step]="0.5" class="form-range" [(ngModel)]="rangeValue" [disabled]="isDisabled"></bs-range>
+            <bs-range [min]="0" [max]="5" [step]="0.5" [(ngModel)]="rangeValue" [disabled]="isDisabled"></bs-range>
         </div>
         <div [bsColumn]="{md: 1}">
             <span>{{ rangeValue }}</span>
@@ -10,7 +10,7 @@
     </div>
     <div bsRow>
         <div [bsColumn]="{md: 11}">
-            <bs-range [min]="0" [max]="5" [step]="0.5" class="form-range" [(ngModel)]="rangeValue" [disabled]="isDisabled"></bs-range>
+            <bs-range [min]="0" [max]="5" [step]="0.5" [(ngModel)]="rangeValue" [disabled]="isDisabled"></bs-range>
         </div>
         <div [bsColumn]="{md: 1}">
             <span>{{ rangeValue }}</span>
@@ -18,10 +18,7 @@
     </div>
     <div bsRow>
         <div bsColumn class="text-center">
-            <label>
-                <input type="checkbox" [checked]="isDisabled" (change)="setDisabled($event)">
-                Disabled
-            </label>
+            <bs-toggle-button [(ngModel)]="isDisabled" [type]="'checkbox'">Disabled</bs-toggle-button>
         </div>
     </div>
 </bs-grid>
