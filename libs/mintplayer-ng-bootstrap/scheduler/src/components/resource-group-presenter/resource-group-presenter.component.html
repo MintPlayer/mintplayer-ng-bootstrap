@@ -7,8 +7,8 @@
             <ng-container *ngIf="(colSpan$ | async) as colspan">
                 <td class="p-2 cursor-pointer" [colSpan]="colspan + 1" (click)="toggleExpanded()">
                     <span class="p-2 align-middle position-sticky">
-                        <i class="bi bi-chevron-down" [style.padding-left.px]="level * 20" *ngIf="isExpanded$ | async"></i>
-                        <i class="bi bi-chevron-right" [style.padding-left.px]="level * 20" *ngIf="(isExpanded$ | async) === false"></i>
+                        <bs-icon [icon]="'chevron-down'" [style.padding-left.px]="level * 20" *ngIf="isExpanded$ | async"></bs-icon>
+                        <bs-icon [icon]="'chevron-right'" [style.padding-left.px]="level * 20" *ngIf="(isExpanded$ | async) === false"></bs-icon>
                         {{ data.resourceGroup.description }}
                     </span>
                 </td>
