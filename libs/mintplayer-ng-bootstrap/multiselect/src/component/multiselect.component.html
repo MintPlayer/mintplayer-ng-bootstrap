@@ -6,7 +6,7 @@
     <div *bsDropdownMenu class="bg-white mw-250px p-3 border rounded shadow">
         <ng-container *ngTemplateOutlet="headerTemplate"></ng-container>
         <hr class="my-2" *ngIf="headerTemplate">
-        <bs-toggle-button *ngFor="let item of items" [isToggled]="selectedItems.indexOf(item) > -1" (isToggledChange)="itemChange(item, $event)" class="d-block">{{ item }}</bs-toggle-button>
+        <bs-toggle-button *ngFor="let item of items" [ngModel]="selectedItems.indexOf(item) > -1" (ngModelChange)="itemChange(item, $event)" class="d-block">{{ item }}</bs-toggle-button>
         <hr class="my-2" *ngIf="footerTemplate">
         <ng-container *ngTemplateOutlet="footerTemplate"></ng-container>
     </div>
