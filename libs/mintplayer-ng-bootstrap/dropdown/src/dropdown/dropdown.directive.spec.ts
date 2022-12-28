@@ -3,8 +3,9 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { OverlayModule } from '@angular/cdk/overlay';
 import { BsDropdownDirective } from './dropdown.directive';
 import { BsDropdownMenuDirective } from '../dropdown-menu/dropdown-menu.directive';
-import { MockDirective, MockModule } from 'ng-mocks';
+import { MockDirective, MockModule, MockProvider } from 'ng-mocks';
 import { BsDropdownToggleDirective } from '../dropdown-toggle/dropdown-toggle.directive';
+import { BS_DEVELOPMENT } from '@mintplayer/ng-bootstrap';
 
 @Component({
   selector: 'bs-dropdown-test',
@@ -38,6 +39,9 @@ describe('BsDropdownDirective', () => {
 
         // Testbench
         BsDropdownTestComponent
+      ],
+      providers: [
+        MockProvider(BS_DEVELOPMENT)
       ]
     })
     .compileComponents();

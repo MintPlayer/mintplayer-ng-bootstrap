@@ -1,8 +1,8 @@
-import { FormControlDirective } from './form-control.directive';
+import { BsFormControlDirective } from './form-control.directive';
 
-describe('FormControlDirective', () => {
+describe('BsFormControlDirective', () => {
   it('should create an instance', () => {
-    const directive = new FormControlDirective();
+    const directive = new BsFormControlDirective();
     expect(directive).toBeTruthy();
   });
 });

@@ -1,16 +1,18 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MockDirective } from 'ng-mocks';
-import { BsFloatingFormControlDirective } from '../floating-form-control/floating-form-control.directive';
+import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
+import { MockComponent } from 'ng-mocks';
 import { BsFloatingLabelComponent } from './floating-label.component';
 
 @Component({
   selector: 'bs-floating-label-test',
   template: `
-    <bs-floating-label>
-      <input type="email">
-      <label>Email address</label>
-    </bs-floating-label>`
+    <bs-form>
+      <bs-floating-label>
+        <input type="email">
+        <label>Email address</label>
+      </bs-floating-label>
+    </bs-form>`
 })
 class FloatingLabelTestComponent {}
 
@@ -25,7 +27,7 @@ describe('BsFloatingLabelComponent', () => {
         BsFloatingLabelComponent,
 
         // Mock dependencies
-        MockDirective(BsFloatingFormControlDirective),
+        MockComponent(BsFormComponent),
       
         // Testbench
         FloatingLabelTestComponent,
