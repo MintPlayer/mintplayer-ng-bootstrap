@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { BsCarouselModule } from '@mintplayer/ng-bootstrap/carousel';
 import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsSelectModule } from '@mintplayer/ng-bootstrap/select';
 import { MockModule } from 'ng-mocks';
 import { CarouselComponent } from './carousel.component';
 
@@ -16,6 +17,7 @@ describe('CarouselComponent', () => {
         FormsModule,
         MockModule(BsFormModule),
         MockModule(BsGridModule),
+        MockModule(BsSelectModule),
         MockModule(BsCarouselModule),
       ],
       declarations: [
