@@ -12,3 +12,18 @@
         margin-top: -1px;
     }
 }
+
+// Tab-strip-container
+.tsc {
+    max-height: 41px;
+    margin-top: -41px;
+    top: 1px;
+}
+
+.tab-content {
+    margin-top: 48px;
+}
+
+.overflow-y-hidden {
+    overflow-y: hidden;
+}

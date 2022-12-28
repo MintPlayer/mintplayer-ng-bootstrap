@@ -1,12 +1,14 @@
-<ul class="nav nav-tabs">
-  <ng-container *ngFor="let tab of tabPages">
-    <li class="nav-item" (click)="setActiveTab(tab)" *ngIf="!!tab.headerTemplate">
-      <a class="nav-link" [class.active]="activeTab === tab" [class.disabled]="tab.disabled" [attr.aria-current]="activeTab === tab ? 'page' : null" [attr.aria-disabled]="tab.disabled" href="">
-        <ng-container [ngTemplateOutlet]="tab.headerTemplate"></ng-container>
-      </a>
-    </li>
-  </ng-container>
-</ul>
-<div class="tab-content" [class.border]="border && activeTab">
+<div class="overflow-hidden position-absolute mw-100 tsc">
+  <ul class="nav nav-tabs flex-nowrap overflow-x-auto overflow-y-hidden">
+    <ng-container *ngFor="let tab of tabPages">
+      <li class="nav-item" (click)="setActiveTab(tab)" *ngIf="!!tab.headerTemplate">
+        <a class="nav-link text-nowrap" [class.active]="activeTab === tab" [class.disabled]="tab.disabled" [attr.aria-current]="activeTab === tab ? 'page' : null" [attr.aria-disabled]="tab.disabled" href="">
+          <ng-container [ngTemplateOutlet]="tab.headerTemplate"></ng-container>
+        </a>
+      </li>
+    </ng-container>
+  </ul>
+</div>
+<div class="tab-content" [class.border]="border && activeTab" [class.border-top]="border && !activeTab">
   <ng-content></ng-content>
 </div>
