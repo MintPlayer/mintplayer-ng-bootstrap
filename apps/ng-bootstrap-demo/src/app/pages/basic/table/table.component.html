@@ -1,7 +1,7 @@
 <bs-grid>
     <div bsRow>
         <div [bsColumn]>
-            <bs-toggle-button [isToggled]="isResponsive" (isToggledChange)="isResponsive = !!$event">Responsive</bs-toggle-button>
+            <bs-toggle-button [(ngModel)]="isResponsive">Responsive</bs-toggle-button>
         </div>
     </div>
     <div bsRow>
