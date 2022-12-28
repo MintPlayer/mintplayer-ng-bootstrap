@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
+import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
+import { MockModule } from 'ng-mocks';
 
 import { LazyLoadedComponent } from './lazy-loaded.component';
 
@@ -9,7 +11,10 @@ describe('LazyLoadedComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ FormsModule ],
+      imports: [
+        FormsModule,
+        MockModule(BsFormModule),
+      ],
       declarations: [ LazyLoadedComponent ]
     })
     .compileComponents();

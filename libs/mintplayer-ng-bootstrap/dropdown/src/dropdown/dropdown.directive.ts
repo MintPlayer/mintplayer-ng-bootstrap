@@ -1,4 +1,5 @@
-import { ContentChild, Directive, ElementRef, EventEmitter, HostListener, Input, Output } from '@angular/core';
+import { ContentChild, Directive, ElementRef, EventEmitter, HostListener, Inject, Input, Output } from '@angular/core';
+import { BS_DEVELOPMENT } from '@mintplayer/ng-bootstrap';
 import { BehaviorSubject } from 'rxjs';
 import { BsDropdownMenuDirective } from '../dropdown-menu/dropdown-menu.directive';
 import { BsDropdownToggleDirective } from '../dropdown-toggle/dropdown-toggle.directive';
@@ -8,7 +9,7 @@ import { BsDropdownToggleDirective } from '../dropdown-toggle/dropdown-toggle.di
 })
 export class BsDropdownDirective {
 
-  constructor(elementRef: ElementRef<any>) {
+  constructor(elementRef: ElementRef<any>, @Inject(BS_DEVELOPMENT) private bsDevelopment: boolean) {
     this.elementRef = elementRef;
   }
 
@@ -37,7 +38,7 @@ export class BsDropdownDirective {
   //#endregion
 
   @HostListener('window:blur') private onBlur() {
-    if (this.closeOnClickOutside) {
+    if (this.closeOnClickOutside && !this.bsDevelopment) {
       this.isOpen = false;
     }
   }

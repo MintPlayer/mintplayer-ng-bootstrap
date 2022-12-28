@@ -6,4 +6,5 @@ import { Component } from '@angular/core';
   styleUrls: ['./tab-control.component.scss']
 })
 export class TabControlComponent {
+  numbers = Array.from(Array(20).keys()).map(i => i + 4);
 }

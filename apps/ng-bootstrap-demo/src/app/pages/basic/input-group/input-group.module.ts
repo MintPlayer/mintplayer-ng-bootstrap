@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
 import { BsInputGroupModule } from '@mintplayer/ng-bootstrap/input-group';
 import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
 
@@ -13,6 +14,7 @@ import { InputGroupComponent } from './input-group.component';
   ],
   imports: [
     CommonModule,
+    BsFormModule,
     BsInputGroupModule,
     BsButtonTypeModule,
     InputGroupRoutingModule

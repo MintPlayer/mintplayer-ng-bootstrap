@@ -1,19 +1,21 @@
 <!-- <bs-dropdown [(isOpen)]="isOpen" [sameDropdownWidth]="true"></bs-dropdown> -->
 <div bsDropdown [(isOpen)]="isOpen" [sameDropdownWidth]="true">
-    <bs-input-group>
-        <span class="form-control d-flex" [class.focus]="isFocused">
-            <div class="flex-grow-1">
-                <input type="number" [min]="0" [max]="23" (input)="setNumber($event, 23, minuteBox)" bsEnhancedPaste [ngModel]="hours | number: '2.0'" (ngModelChange)="hours = $event" (focus)="selectAll(hourBox)" (blur)="isFocused = false" #hourBox class="w-100 border-0 bg-transparent text-end">
-            </div>
-            <span class="px-1">:</span>
-            <div class="flex-grow-1">
-                <input type="number" [min]="0" [max]="59" (input)="setNumber($event, 59, null)" bsEnhancedPaste [ngModel]="minutes | number: '2.0'" (ngModelChange)="minutes = $event"  (focus)="selectAll(minuteBox)" (blur)="isFocused = false" #minuteBox class="w-100 border-0 bg-transparent">
-            </div>
-        </span>
-        <button [color]="colors.secondary" (click)="isOpen = !isOpen">
-            <i class="bi bi-clock"></i>
-        </button>
-    </bs-input-group>
+    <bs-form>
+        <bs-input-group>
+            <span class="form-control d-flex" [class.focus]="isFocused">
+                <div class="flex-grow-1">
+                    <input type="number" [min]="0" [max]="23" (input)="setNumber($event, 23, minuteBox)" bsEnhancedPaste [ngModel]="hours | number: '2.0'" (ngModelChange)="hours = $event" (focus)="selectAll(hourBox)" (blur)="isFocused = false" #hourBox class="w-100 border-0 bg-transparent text-end no-form-control">
+                </div>
+                <span class="px-1">:</span>
+                <div class="flex-grow-1">
+                    <input type="number" [min]="0" [max]="59" (input)="setNumber($event, 59, null)" bsEnhancedPaste [ngModel]="minutes | number: '2.0'" (ngModelChange)="minutes = $event"  (focus)="selectAll(minuteBox)" (blur)="isFocused = false" #minuteBox class="w-100 border-0 bg-transparent no-form-control">
+                </div>
+            </span>
+            <button [color]="colors.secondary" (click)="isOpen = !isOpen">
+                <i class="bi bi-clock"></i>
+            </button>
+        </bs-input-group>
+    </bs-form>
     <bs-has-overlay></bs-has-overlay>
     <bs-dropdown-menu class="overflow-auto" *bsDropdownMenu>
         <bs-dropdown-item [isSelected]="timesEqual(selectedTime, timestamp)" *ngFor="let timestamp of presetTimestamps" (click)="setTime(timestamp)">

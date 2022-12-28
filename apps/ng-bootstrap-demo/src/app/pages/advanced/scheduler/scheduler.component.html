@@ -1,10 +1,12 @@
-<bs-input-group>
-    <input type="number" placeholder="Slot height" class="form-control" [(ngModel)]="weekOptions.unitHeight">
-    <select [(ngModel)]="mode" class="form-control">
-        <option [ngValue]="modes.week">Week</option>
-        <option [ngValue]="modes.timeline">Timeline</option>
-    </select>
-    <button (click)="fillData()" [color]="colors.primary">Fill data</button>
-</bs-input-group>
+<bs-form>
+    <bs-input-group>
+        <input type="number" placeholder="Slot height" [(ngModel)]="weekOptions.unitHeight">
+        <bs-select [(ngModel)]="mode">
+            <option [ngValue]="modes.week">Week</option>
+            <option [ngValue]="modes.timeline">Timeline</option>
+        </bs-select>
+        <button (click)="fillData()" [color]="colors.primary">Fill data</button>
+    </bs-input-group>
+</bs-form>
 <hr>
 <bs-scheduler [(weekOptions)]="weekOptions" [(timelineOptions)]="timelineOptions" [(mode)]="mode" [resources]="resources"></bs-scheduler>

@@ -2,7 +2,7 @@
 <bs-tab-control [border]="true">
     <bs-tab-page>
         <ng-template>
-            <span class="triangle mr-2"></span>
+            <span class="triangle float-none d-inline-block mr-2"></span>
             Tab 1
         </ng-template>
         <div class="p-3">
@@ -11,23 +11,25 @@
     </bs-tab-page>
     <bs-tab-page>
         <ng-template>
-            <span class="triangle mr-2"></span>
+            <span class="triangle float-none d-inline-block mr-2"></span>
             Tab 2
         </ng-template>
         This is tab 2
     </bs-tab-page>
     <bs-tab-page [disabled]="true">
         <ng-template>
-            <span class="triangle mr-2"></span>
+            <span class="triangle float-none d-inline-block mr-2"></span>
             Tab 3
         </ng-template>
         This is tab 3
     </bs-tab-page>
-    <bs-tab-page>
+    <bs-tab-page *ngFor="let n of numbers">
         <ng-template>
-            <span class="triangle mr-2"></span>
-            Tab 4
+            <span class="triangle float-none d-inline-block mr-2"></span>
+            Tab {{ n }}
         </ng-template>
-        This is tab 4
+        <div class="p-3">
+            This is tab {{ n }}
+        </div>
     </bs-tab-page>
 </bs-tab-control>

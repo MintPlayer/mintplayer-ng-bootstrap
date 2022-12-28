@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
 import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
 import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
 import { BsInputGroupModule } from '@mintplayer/ng-bootstrap/input-group';
@@ -16,6 +17,7 @@ import { AlertComponent } from './alert.component';
   imports: [
     CommonModule,
     FormsModule,
+    BsFormModule,
     BsAlertModule,
     BsInputGroupModule,
     BsButtonTypeModule,

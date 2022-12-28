@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, EventEmitter, Input, Output, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, EventEmitter, HostBinding, Input, Output, ViewChild } from '@angular/core';
 import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
 import { BsToggleButtonGroupDirective } from '../directives/toggle-button-group/toggle-button-group.directive';
 import { BsCheckStyle } from '../types/check-style';
@@ -86,6 +86,7 @@ export class BsToggleButtonComponent implements AfterViewInit {
   }
 
   @ViewChild('checkbox') checkbox!: ElementRef<HTMLInputElement>;
+  @HostBinding('class.d-inline-block') dInlineBlockClass = true;
 
   disableAnimations = true;
   mainCheckStyle$: Observable<string | null>;

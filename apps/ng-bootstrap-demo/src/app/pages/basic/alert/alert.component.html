@@ -20,12 +20,12 @@
     {{ alertItem.text }}
     <bs-alert-close></bs-alert-close>
 </bs-alert>
-<form (submit)="addAlertItem()">
+<bs-form (submit)="addAlertItem()">
     <bs-input-group>
-        <input type="text" class="form-control" [(ngModel)]="newAlertItem" name="txtNewAlert" #txtNewAlert>
+        <input type="text" [(ngModel)]="newAlertItem" name="txtNewAlert" #txtNewAlert>
         <button type="submit" [color]="colors.primary">Add</button>
     </bs-input-group>
-</form>
+</bs-form>
 <ul class="mt-3">
     <li *ngFor="let alertItem of alertsList">{{ alertItem.text }}</li>
 </ul>

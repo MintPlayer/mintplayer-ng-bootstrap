@@ -1,10 +1,7 @@
 <bs-grid>
     <div bsRow>
         <div [bsColumn]>
-            <label>
-                <input type="checkbox" [(ngModel)]="isResponsive">
-                Responsive
-            </label>
+            <bs-toggle-button [isToggled]="isResponsive" (isToggledChange)="isResponsive = !!$event">Responsive</bs-toggle-button>
         </div>
     </div>
     <div bsRow>

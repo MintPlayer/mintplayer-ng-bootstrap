@@ -1,19 +1,21 @@
 <!-- <bs-dropdown [(isOpen)]="isOpen" [hasBackdrop]="false"></bs-dropdown> -->
 <bs-has-overlay></bs-has-overlay>
-<div bsDropdown [(isOpen)]="isOpen" [hasBackdrop]="false">
-    <input type="text" class="form-control" #textbox [(ngModel)]="searchterm" (ngModelChange)="onProvideSuggestions($event)" (keyup.enter)="onSubmit()" />
-    <bs-dropdown-menu *bsDropdownMenu>
-        <bs-progress *ngIf="isLoading$ | async" [height]="2" [isIndeterminate]="true"></bs-progress>
-        <bs-dropdown-item *ngIf="isLoading$ | async" [disabled]="true">
-            {{ isLoadingText }}
-        </bs-dropdown-item>
-        <ng-container *ngIf="(isLoading$ | async) === false">
-            <bs-dropdown-item *ngIf="showNoSuggestions$ | async" [disabled]="true">
-                {{ noSuggestionsText }}
+<bs-form>
+    <div bsDropdown [(isOpen)]="isOpen" [hasBackdrop]="false" [sameDropdownWidth]="true">
+        <input type="text" #textbox [(ngModel)]="searchterm" (ngModelChange)="onProvideSuggestions($event)" (keyup.enter)="onSubmit()" />
+        <bs-dropdown-menu *bsDropdownMenu>
+            <bs-progress *ngIf="isLoading$ | async" [height]="2" [isIndeterminate]="true"></bs-progress>
+            <bs-dropdown-item *ngIf="isLoading$ | async" [disabled]="true">
+                {{ isLoadingText }}
             </bs-dropdown-item>
-            <bs-dropdown-item *ngFor="let suggestion of (suggestions$ | async)" (click)="suggestionClicked(suggestion)">
-                {{ suggestion.text }}
-            </bs-dropdown-item>
-        </ng-container>
-    </bs-dropdown-menu>
-</div>
+            <ng-container *ngIf="(isLoading$ | async) === false">
+                <bs-dropdown-item *ngIf="showNoSuggestions$ | async" [disabled]="true">
+                    {{ noSuggestionsText }}
+                </bs-dropdown-item>
+                <bs-dropdown-item *ngFor="let suggestion of (suggestions$ | async)" (click)="suggestionClicked(suggestion)">
+                    {{ suggestion.text }}
+                </bs-dropdown-item>
+            </ng-container>
+        </bs-dropdown-menu>
+    </div>
+</bs-form>

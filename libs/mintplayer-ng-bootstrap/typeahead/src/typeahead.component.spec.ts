@@ -1,32 +1,13 @@
-import { Directive, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
+import { BsDropdownDirective, BsDropdownMenuDirective } from '@mintplayer/ng-bootstrap/dropdown';
+import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
-import { MockModule } from 'ng-mocks';
+import { ClickOutsideDirective } from '@mintplayer/ng-click-outside';
+import { MockComponent, MockDirective, MockModule } from 'ng-mocks';
 
 import { BsTypeaheadComponent } from './typeahead.component';
 
-
-@Directive({ selector: '[clickOutside]' })
-class ClickOutsideMockDirective {
-}
-
-@Directive({ selector: '[bsDropdownMenu]' })
-class BsDropdownMenuMockDirective extends ClickOutsideMockDirective {
-}
-
-@Directive({ selector: '[bsDropdown]' })
-class BsDropdownMockDirective {
-  
-  //#region IsOpen
-  @Input() public isOpen = false;
-  @Output() public isOpenChange = new EventEmitter<boolean>();
-  //#endregion
-
-  @Input() public hasBackdrop = false;
-  @Input() public closeOnClickOutside = false;
-
-}
 
 describe('TypeaheadComponent', () => {
   let component: BsTypeaheadComponent;
@@ -42,10 +23,11 @@ describe('TypeaheadComponent', () => {
         // Unit to test
         BsTypeaheadComponent,
       
-        // // Mock dependencies
-        ClickOutsideMockDirective,
-        BsDropdownMenuMockDirective,
-        BsDropdownMockDirective,
+        // Mock dependencies
+        MockDirective(ClickOutsideDirective),
+        MockDirective(BsDropdownMenuDirective),
+        MockDirective(BsDropdownDirective),
+        MockComponent(BsFormComponent),
       ],
     })
     .compileComponents();

@@ -1,22 +1,13 @@
-import { Directive, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
+import { BsDropdownDirective } from '@mintplayer/ng-bootstrap/dropdown';
+import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
 import { BsInputGroupModule } from '@mintplayer/ng-bootstrap/input-group';
-import { MockModule } from 'ng-mocks';
+import { MockComponent, MockDirective, MockModule } from 'ng-mocks';
 
 import { BsTimepickerComponent } from './timepicker.component';
-
-@Directive({
-  selector: '[bsDropdown]'
-})
-class BsDropdownMockDirective {
-  @Input() public isOpen = false;
-  @Input() public hasBackdrop = false;
-  @Input() public closeOnClickOutside = false;
-  @Input() public sameDropdownWidth = false;
-}
 
 describe('BsTimepickerComponent', () => {
   let component: BsTimepickerComponent;
@@ -35,7 +26,9 @@ describe('BsTimepickerComponent', () => {
         BsTimepickerComponent,
 
         // Mock dependencies
-        BsDropdownMockDirective,
+        MockComponent(BsFormComponent),
+        MockDirective(BsDropdownDirective),
+        // BsDropdownMockDirective,
       ]
     })
     .compileComponents();

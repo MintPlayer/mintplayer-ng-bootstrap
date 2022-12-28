@@ -1,4 +1,4 @@
-import { Component, ContentChildren, Input } from '@angular/core';
+import { Component, ContentChildren, HostBinding, Input } from '@angular/core';
 import { BsTabPageComponent } from '../tab-page/tab-page.component';
 
 @Component({
@@ -8,6 +8,8 @@ import { BsTabPageComponent } from '../tab-page/tab-page.component';
 })
 export class BsTabControlComponent {
 
+  @HostBinding('class.d-block') dBlock = true;
+  @HostBinding('class.position-relative') positionRelative = true;
   @ContentChildren(BsTabPageComponent) tabPages!: BsTabPageComponent[];
   @Input() public border = true;
   activeTab: BsTabPageComponent | null = null;
