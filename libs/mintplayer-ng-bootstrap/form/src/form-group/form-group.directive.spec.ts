@@ -1,8 +1,8 @@
-import { FormGroupDirective } from './form-group.directive';
+import { BsFormGroupDirective } from './form-group.directive';
 
-describe('FormGroupDirective', () => {
+describe('BsFormGroupDirective', () => {
   it('should create an instance', () => {
-    const directive = new FormGroupDirective();
+    const directive = new BsFormGroupDirective();
     expect(directive).toBeTruthy();
   });
 });
