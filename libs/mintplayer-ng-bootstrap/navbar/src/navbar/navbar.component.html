@@ -1,4 +1,4 @@
-<nav #nav class="navbar position-fixed navbar-dark bg-dark" [class]="expandClass$ | async" bsUserAgent>
+<nav #nav class="navbar position-fixed" [class]="navClassList$ | async" bsUserAgent>
     <div class="container-fluid">
         <div class="d-flex" [class]="wAutoClass$ | async" [class.w-100]="isSmallMode$ | async">
             <ng-content select="bs-navbar-brand"></ng-content>
