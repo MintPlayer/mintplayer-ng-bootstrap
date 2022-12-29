@@ -1,5 +1,5 @@
 import { Component, ElementRef, HostListener, Input, OnDestroy, TemplateRef, ViewChild } from '@angular/core';
-import { Breakpoint } from '@mintplayer/ng-bootstrap';
+import { Breakpoint, Color } from '@mintplayer/ng-bootstrap';
 import { BehaviorSubject, combineLatest, debounceTime, filter, map, Observable, Subject, take, takeUntil } from 'rxjs';
 
 @Component({
@@ -56,6 +56,22 @@ export class BsNavbarComponent implements OnDestroy {
     this.dNoneClass$ = this.breakPoint$.pipe(map((breakpoint) => {
       return `d-${breakpoint}-none`;
     }));
+
+    this.backgroundColorClass$ = this.color$.pipe(map((color) => {
+      switch (color) {
+        case Color.light:
+        case null:
+          return ['navbar-light'];
+        default:
+          return ['navbar-dark', `bg-${Color[color]}`];
+      }
+    }));
+
+    this.navClassList$ = combineLatest([this.expandClass$, this.backgroundColorClass$])
+      .pipe(map(([expandClass, backgroundColorClass]) => {
+        const result: string[] = [];
+        return result.concat(expandClass, ...backgroundColorClass);
+      }));
   }
 
   @HostListener('window:resize')
@@ -80,6 +96,8 @@ export class BsNavbarComponent implements OnDestroy {
   isResizing$ = new BehaviorSubject<boolean>(false);
   expandAt$: Observable<number | null>;
   isSmallMode$: Observable<boolean>;
+  backgroundColorClass$: Observable<string[]>;
+  navClassList$: Observable<string[]>;
   destroyed$ = new Subject();
 
   toggleExpanded() {
@@ -91,6 +109,16 @@ export class BsNavbarComponent implements OnDestroy {
   ngOnDestroy() {
     this.destroyed$.next(true);
   }
+
+  //#region Color
+  color$ = new BehaviorSubject<Color | null>(null);
+  public get color() {
+    return this.color$.value;
+  }
+  @Input() public set color(value: Color | null) {
+    this.color$.next(value);
+  }
+  //#endregion
 
   //#region Breakpoint
   breakPoint$ = new BehaviorSubject<Breakpoint | null>('md');

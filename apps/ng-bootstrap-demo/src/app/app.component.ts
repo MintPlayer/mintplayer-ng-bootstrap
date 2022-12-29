@@ -1,5 +1,6 @@
 import { Component, Inject } from '@angular/core';
 import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
+import { Color } from '@mintplayer/ng-bootstrap';
 
 @Component({
   selector: 'demo-bootstrap-root',
@@ -13,4 +14,5 @@ export class AppComponent {
   }
   
   versionInfo = '';
+  colors = Color;
 }
