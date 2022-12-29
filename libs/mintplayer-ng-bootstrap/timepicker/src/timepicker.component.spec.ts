@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
 import { BsDropdownDirective } from '@mintplayer/ng-bootstrap/dropdown';
 import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
+import { BsIconModule } from '@mintplayer/ng-bootstrap/icon';
 import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
 import { BsInputGroupModule } from '@mintplayer/ng-bootstrap/input-group';
 import { MockComponent, MockDirective, MockModule } from 'ng-mocks';
@@ -17,6 +18,7 @@ describe('BsTimepickerComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         FormsModule,
+        MockModule(BsIconModule),
         MockModule(BsButtonTypeModule),
         MockModule(BsInputGroupModule),
         MockModule(BsHasOverlayModule),
