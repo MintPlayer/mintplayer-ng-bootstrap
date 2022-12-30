@@ -13,6 +13,7 @@ const routes: Routes = [
   { path: 'scheduler', loadChildren: () => import('./scheduler/scheduler.module').then(m => m.SchedulerModule) },
   { path: 'user-agent', loadChildren: () => import('./user-agent/user-agent.module').then(m => m.UserAgentModule) },
   { path: 'lazy-loading-components', loadChildren: () => import('./lazy-loading/lazy-loading.module').then(m => m.LazyLoadingModule) },
+  { path: 'ordinal-number', loadChildren: () => import('./ordinal-number/ordinal-number.module').then(m => m.OrdinalNumberModule) },
 ];
 
 @NgModule({

@@ -1,0 +1,4 @@
+<bs-form>
+    <textarea rows="10" cols="20" [(ngModel)]="text" class="d-block"></textarea>
+    <div [innerHtml]="text | ordinalNumber: 'st':'nd':'rd':'th'"></div>
+</bs-form>
