@@ -10,6 +10,7 @@ import { OffcanvasHeaderComponent } from './components/offcanvas-header/offcanva
 import { OffcanvasBodyComponent } from './components/offcanvas-body/offcanvas-body.component';
 import { PORTAL_FACTORY } from './providers/portal-factory.provider';
 import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
+import { BsOffcanvasPushDirective } from './directives/offcanvas-push/offcanvas-push.directive';
 
 
 
@@ -20,7 +21,8 @@ import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
     BsOffcanvasHostComponent,
     BsOffcanvasCloseDirective,
     OffcanvasHeaderComponent,
-    OffcanvasBodyComponent
+    OffcanvasBodyComponent,
+    BsOffcanvasPushDirective
   ],
   imports: [
     CommonModule,
@@ -33,7 +35,8 @@ import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
     BsOffcanvasHostComponent,
     BsOffcanvasCloseDirective,
     OffcanvasHeaderComponent,
-    OffcanvasBodyComponent
+    OffcanvasBodyComponent,
+    BsOffcanvasPushDirective
   ],
   providers: [{
     provide: PORTAL_FACTORY,

@@ -1,4 +1,4 @@
-<bs-navbar [color]="colors.danger" #nav>
+<bs-navbar [color]="colors.dark" #nav>
   <bs-navbar-toggler *bsExpandButton="let state" [state]="state" [toggleOnClick]="false"></bs-navbar-toggler>
   <bs-navbar-brand>
     <a [routerLink]='["/"]'>
@@ -143,6 +143,9 @@
         </bs-navbar-item>
         <bs-navbar-item>
           <a [routerLink]='["/advanced", "autofocus"]'>Autofocus</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/advanced", "ordinal-number"]'>Ordinal numbers</a>
         </bs-navbar-item>
         <bs-navbar-item>
           <a [routerLink]='["/advanced", "scrollspy"]'>Scrollspy</a>
