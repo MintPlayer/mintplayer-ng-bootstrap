@@ -42,16 +42,18 @@ export class BsOffcanvasPushDirective implements OnDestroy {
             style({ 'margin-left': '400px', 'margin-right': '-400px' }),
             animate('250ms', style({ 'margin-left': '0', 'margin-right': '0' })),
           ];
-          setTimeout(() => {
-            if (this.element.nativeElement.parentElement && this.initialOverflowX) {
-              this.initialOverflowX.element.style.overflowX = this.initialOverflowX.value;
-            }
-          }, 260);
           break;
       }
       const b = builder.build(data);
       const player = b.create(this.element.nativeElement, { });
-
+      
+      if (viewstate === 'closed') {
+        player.onDone(() => {
+          if (this.element.nativeElement.parentElement && this.initialOverflowX) {
+            this.initialOverflowX.element.style.overflowX = this.initialOverflowX.value;
+          }
+        });
+      }
       
       player.play();
     });
