@@ -8,8 +8,8 @@ export class BsBoldPipe implements PipeTransform {
 
   constructor(private domSanitizer: DomSanitizer) {}
 
-  transform(value: string, numberOfStars: number = 2): SafeHtml | null {
-    const txt = `\\b\*{${numberOfStars}}\b(?<boldtext>[^\\*]+)\\b\*{${numberOfStars}}\b`;
+  transform(value: string, numberOfStars: number = 2, classList: string[] = []): SafeHtml | null {
+    const txt = `\\*{${numberOfStars}}\\b(?<boldtext>[^\\*]+)\\b\\*{${numberOfStars}}`;
     const rgx = new RegExp(txt, "gm");
     const safeValue = this.domSanitizer.sanitize(SecurityContext.HTML, value);
 
@@ -17,7 +17,8 @@ export class BsBoldPipe implements PipeTransform {
       return null;
     }
 
-    const result = safeValue.replace(rgx, `<b class="text-danger">$<boldtext></b>`);
+    const classString = classList.length === 0 ? '' : ` class="${classList.join(' ')}"`;
+    const result = safeValue.replace(rgx, `<b${classString}>$<boldtext></b>`);
     const safeResult = this.domSanitizer.bypassSecurityTrustHtml(result);
     return safeResult;
   }

@@ -4,7 +4,6 @@ import { BsBoldPipe } from './bold/bold.pipe';
 import { BsItalicPipe } from './italic/italic.pipe';
 import { BsUnderlinePipe } from './underline/underline.pipe';
 import { BsStrikethroughPipe } from './strikethrough/strikethrough.pipe';
-import { BsMarkdownPipe } from './markdown/markdown.pipe';
 
 @NgModule({
   declarations: [
@@ -12,7 +11,6 @@ import { BsMarkdownPipe } from './markdown/markdown.pipe';
     BsItalicPipe,
     BsUnderlinePipe,
     BsStrikethroughPipe,
-    BsMarkdownPipe
   ],
   imports: [
     CommonModule
@@ -22,7 +20,6 @@ import { BsMarkdownPipe } from './markdown/markdown.pipe';
     BsItalicPipe,
     BsUnderlinePipe,
     BsStrikethroughPipe,
-    BsMarkdownPipe
   ]
 })
 export class BsMarkdownModule { }

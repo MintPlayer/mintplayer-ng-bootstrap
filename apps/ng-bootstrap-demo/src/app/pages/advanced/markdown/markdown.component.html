@@ -1,0 +1,11 @@
+<bs-form>
+    <bs-grid>
+        <div bsRow>
+            <div bsColumn>
+                <textarea [(ngModel)]="markdownText"></textarea>
+            </div>
+            <div bsColumn [innerHTML]="markdownText | bsBold | bsItalic | bsUnderline | bsStrikethrough">
+            </div>
+        </div>
+    </bs-grid>
+</bs-form>

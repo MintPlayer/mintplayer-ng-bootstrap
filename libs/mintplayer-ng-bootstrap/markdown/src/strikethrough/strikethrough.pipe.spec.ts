@@ -1,8 +1,46 @@
-import { StrikethroughPipe } from './strikethrough.pipe';
+import { BsStrikethroughPipe } from './strikethrough.pipe';
+import { Component } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 
-describe('StrikethroughPipe', () => {
-  it('create an instance', () => {
-    const pipe = new StrikethroughPipe();
-    expect(pipe).toBeTruthy();
+@Component({
+  selector: 'bs-strikethrough-test',
+  template: `<span [innerHTML]="'~~Hello world~~' | bsStrikethrough"></span>`
+})
+class BsStrikethroughTestComponent {}
+
+describe('BsStrikethroughPipe', () => {
+  let component: BsStrikethroughTestComponent;
+  let fixture: ComponentFixture<BsStrikethroughTestComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [],
+      declarations: [
+        // Pipe to test
+        BsStrikethroughPipe,
+
+        // Testbench
+        BsStrikethroughTestComponent
+      ],
+      providers: []
+    })
+    .compileComponents();
+  });
+
+  beforeEach(() => {
+    fixture = TestBed.createComponent(BsStrikethroughTestComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should create an instance', () => {
+    expect(component).toBeTruthy();
+  });
+
+  it('should contain the right html', () => {
+    const spanElement = fixture.debugElement.query(By.css('span'));
+    expect(spanElement).toBeTruthy();
+    expect(spanElement.nativeElement.innerHTML).toBe('<strike>Hello world</strike>');
   });
 });
