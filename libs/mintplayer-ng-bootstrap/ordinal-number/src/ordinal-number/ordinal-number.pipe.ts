@@ -8,7 +8,7 @@ export class BsOrdinalNumberPipe implements PipeTransform {
 
   constructor(private domSanitizer: DomSanitizer) {}
 
-  transform(value: string, ...args: string[]): SafeHtml {
+  transform(value: string | SafeHtml | null, ...args: string[]): SafeHtml {
     const sanitizeRgx = new RegExp(`[^A-Za-z]`, 'gm');
     const countWords = args.map(w => w.replace(sanitizeRgx, '')).join('|');
     const rgx = new RegExp(`\\b(?<num>[0-9]+)(?<tel>${countWords})\\b`, 'gm');
