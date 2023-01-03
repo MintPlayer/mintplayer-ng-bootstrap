@@ -13,14 +13,16 @@ export class BsNavbarNavComponent implements OnDestroy {
 
   constructor(bsNavbar: BsNavbarComponent) {
     this.bsNavbar = bsNavbar;
-    this.showNavs$ = combineLatest([this.bsNavbar.isExpanded$, this.windowWidth$])
-      .pipe(filter(([isExpanded, windowWidth]) => {
+    this.showNavs$ = combineLatest([this.bsNavbar.isExpanded$, this.bsNavbar.expandAt$, this.windowWidth$])
+      .pipe(filter(([isExpanded, expandAt, windowWidth]) => {
         return windowWidth !== null;
       }))
-      .pipe(map(([isExpanded, windowWidth]) => {
+      .pipe(map(([isExpanded, expandAt, windowWidth]) => {
         if (windowWidth === null) {
           throw 'windowWidth should not be null here';
-        } else if (windowWidth >= 768) {
+        } else if (expandAt === null) {
+          return false;
+        } else if (windowWidth >= expandAt) {
           return true;
         } else if (isExpanded) {
           return true;
