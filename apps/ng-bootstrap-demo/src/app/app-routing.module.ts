@@ -8,12 +8,12 @@ const routes: Routes = [
 @NgModule({
     imports: [
         RouterModule.forRoot(routes, {
-            preloadingStrategy: PreloadAllModules,
-            initialNavigation: 'enabledBlocking',
-            anchorScrolling: 'enabled',
-            onSameUrlNavigation: 'reload',
-            scrollOffset: [0, 56],
-        })
+    preloadingStrategy: PreloadAllModules,
+    initialNavigation: 'enabledBlocking',
+    anchorScrolling: 'enabled',
+    onSameUrlNavigation: 'reload',
+    scrollOffset: [0, 56],
+})
     ],
     exports: [RouterModule]
 })
