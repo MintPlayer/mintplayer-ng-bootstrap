@@ -169,6 +169,9 @@
           <a [routerLink]='["/advanced", "user-agent"]'>User-agent</a>
         </bs-navbar-item>
         <bs-navbar-item>
+          <a [routerLink]='["/advanced", "navigation-lock"]'>Navigation lock</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
           <a [routerLink]='["/advanced", "scheduler"]'>Scheduler</a>
         </bs-navbar-item>
       </bs-navbar-dropdown>
@@ -201,5 +204,6 @@
   </bs-navbar-nav>
 </bs-navbar>
 <div [navbarContent]="nav" style="padding-top:10px">
+  <button (click)="test()">Test</button>
   <router-outlet></router-outlet>
 </div>
