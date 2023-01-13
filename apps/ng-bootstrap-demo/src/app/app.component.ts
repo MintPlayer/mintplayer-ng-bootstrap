@@ -12,7 +12,7 @@ export class AppComponent {
   constructor(@Inject('BOOTSTRAP_VERSION') bootstrapVersion: string) {
     this.versionInfo = bootstrapVersion;
   }
-  
+
   versionInfo = '';
   colors = Color;
 }
