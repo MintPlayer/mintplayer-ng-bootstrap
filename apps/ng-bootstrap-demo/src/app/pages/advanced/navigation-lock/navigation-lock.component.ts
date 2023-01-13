@@ -1,5 +1,6 @@
 import { Component, ViewChild } from '@angular/core';
 import { BsHasNavigationLock, BsNavigationLockDirective } from '@mintplayer/ng-bootstrap/navigation-lock';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'demo-navigation-lock',
@@ -7,35 +8,28 @@ import { BsHasNavigationLock, BsNavigationLockDirective } from '@mintplayer/ng-b
   styleUrls: ['./navigation-lock.component.scss']
 })
 export class NavigationLockComponent implements BsHasNavigationLock {
-  @ViewChild('navigationLock', { read: BsNavigationLockDirective }) navigationLock!: BsNavigationLockDirective;
-  @ViewChild('bsNavigationLock', { read: BsNavigationLockDirective }) bsNavigationLock!: BsNavigationLockDirective;
+  @ViewChild('navigationLock') navigationLock!: BsNavigationLockDirective;
   allowExit: boolean | null = false;
-  // canExit = new Promise<boolean>((resolve, reject) => {
-  //   debugger;
-  //   setTimeout(() => {
-  //     console.log('this', { this: this, navigationLock: this.navigationLock, bsNavigationLock: this.bsNavigationLock });
-  //     if (this.allowExit === true) {
-  //       resolve(true);
-  //     } else {
-  //       if (confirm(this.navigationLock.exitMessage ?? 'Are you sure you want to leave this page?')) {
-  //         resolve(true);
-  //       } else {
-  //         resolve(false);
-  //       }
-  //     }
-  //   });
-  // });
-  canExit = () => {
-    debugger;
-    console.log('this', { this: this, navigationLock: this.navigationLock, bsNavigationLock: this.bsNavigationLock });
+  canExit = new Observable<boolean>((sub) => {
     if (this.allowExit === true) {
-      return true;
+      sub.next(true);
     } else {
       if (confirm(this.navigationLock.exitMessage ?? 'Are you sure you want to leave this page?')) {
-        return true;
+        sub.next(true);
       } else {
-        return false;
+        sub.next(false);
       }
     }
-  };
+  });
+  // canExit = () => {
+  //   if (this.allowExit === true) {
+  //     return true;
+  //   } else {
+  //     if (confirm(this.navigationLock.exitMessage ?? 'Are you sure you want to leave this page?')) {
+  //       return true;
+  //     } else {
+  //       return false;
+  //     }
+  //   }
+  // };
 }

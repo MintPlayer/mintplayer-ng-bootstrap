@@ -1,8 +1,24 @@
 import { Directive, HostListener, Input, OnDestroy } from '@angular/core';
-import { ActivatedRoute, Router, RouterEvent } from '@angular/router';
-import { combineLatest, takeUntil, Subject, of } from 'rxjs';
-import { isPromise } from 'util/types';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Subject, take, Observable } from 'rxjs';
 
+
+/**
+ * Places a navigation lock on this page.
+ * 
+ * Don't forget to add the following to your route:
+ * 
+ * ```ts
+ * canDeactivate: [BsNavigationLockGuard]
+ * ```
+ * 
+ * and implement the `BsHasNavigationLock` on the page:
+ * 
+ * ```ts
+ * ViewChild('navigationLock') navigationLock!: BsNavigationLockDirective;
+ * ```
+ * 
+ **/
 @Directive({
   selector: '[bsNavigationLock]',
   exportAs: 'bsNavigationLock'
@@ -24,11 +40,10 @@ export class BsNavigationLockDirective implements OnDestroy {
     // });
   }
 
-  @Input() canExit?: boolean | (() => boolean) | Promise<boolean>;
+  @Input() canExit?: boolean | (() => boolean) | Observable<boolean>;
   @Input() exitMessage?: string;
 
   requestCanExit() {
-    console.log('requestCanExit');
     return new Promise<boolean>((resolve, reject) => {
       if (typeof this.canExit === 'undefined') {
         resolve(true);
@@ -38,27 +53,10 @@ export class BsNavigationLockDirective implements OnDestroy {
         const result = this.canExit();
         resolve(result);
       } else {
-        this.canExit.then((result) => resolve(result));
+        this.canExit.pipe(take(1))
+          .subscribe((result) => resolve(result));
       }
     });
-
-    // if (typeof this.canExit === 'undefined') {
-    //   return new Promise<boolean>((resolve) => resolve(true));
-    // } else if (typeof this.canExit === 'boolean') {
-    //   const ce = this.canExit;
-    //   return new Promise<boolean>((resolve) => resolve(ce));
-    // } else if (typeof this.canExit === 'function') {
-    //   const ce = this.canExit;
-    //   return new Promise<boolean>((resolve, reject) => {
-    //     const result = ce();
-    //     resolve(result);
-    //   });
-    // } else {
-    //   const ce = this.canExit
-    //   return new Promise<boolean>((resolve, reject) => {
-    //     ce.then((res) => resolve(res));
-    //   });
-    // }
   }
 
   @HostListener('window:beforeunload', ['$event'])

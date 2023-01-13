@@ -12,7 +12,7 @@
       <a [routerLink]='["/"]' [routerLinkActiveOptions]="{exact: true}">Home</a>
     </bs-navbar-item>
     <bs-navbar-item>
-      <a [routerLink]='["/basic"]'>Basic</a>
+      <a>Basic</a>
       <bs-navbar-dropdown>
         <bs-navbar-item>
           <a [routerLink]='["/basic", "toggle-button"]'>Toggle button</a>
@@ -98,7 +98,7 @@
       </bs-navbar-dropdown>
     </bs-navbar-item>
     <bs-navbar-item>
-      <a [routerLink]='["/overlays"]'>Overlays</a>
+      <a>Overlays</a>
       <bs-navbar-dropdown>
         <bs-navbar-item>
           <a [routerLink]='["/overlays", "modals"]'>Modals</a>
@@ -133,7 +133,7 @@
       </bs-navbar-dropdown>
     </bs-navbar-item>
     <bs-navbar-item>
-      <a [routerLink]='["/advanced"]'>Advanced</a>
+      <a>Advanced</a>
       <bs-navbar-dropdown>
         <bs-navbar-item>
           <a [routerLink]='["/advanced", "copy"]'>Copy</a>
@@ -177,7 +177,7 @@
       </bs-navbar-dropdown>
     </bs-navbar-item>
     <bs-navbar-item>
-      <a [routerLink]='["/additional-samples"]'>Additional samples</a>
+      <a>Additional samples</a>
       <bs-navbar-dropdown>
         <bs-navbar-item>
           <a [routerLink]='["/additional-samples", "collapse"]'>Collapse</a>
@@ -196,7 +196,7 @@
   </bs-navbar-nav>
   <bs-navbar-nav class="me-0">
     <bs-navbar-item>
-      <a class="nav-link text-nowrap" href="https://github.com/MintPlayer/mintplayer-ng-bootstrap" title="@mintplayer/ng-bootstrap on GitHub">
+      <a class="text-nowrap" href="https://github.com/MintPlayer/mintplayer-ng-bootstrap" title="@mintplayer/ng-bootstrap on GitHub">
         <span class="me-2 align-middle">{{ versionInfo }}</span>
         <img src="/assets/github.svg" alt="@mintplayer/ng-bootstrap on GitHub">
       </a>
@@ -204,6 +204,5 @@
   </bs-navbar-nav>
 </bs-navbar>
 <div [navbarContent]="nav" style="padding-top:10px">
-  <button (click)="test()">Test</button>
   <router-outlet></router-outlet>
 </div>

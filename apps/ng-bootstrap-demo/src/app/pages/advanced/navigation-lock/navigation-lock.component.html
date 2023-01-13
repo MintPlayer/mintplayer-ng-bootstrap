@@ -1,11 +1,6 @@
 <h1 class="text-center">Navigation lock</h1>
 <bs-toggle-button [type]="'checkbox'" [(ngModel)]="allowExit">Allow exit</bs-toggle-button>
 <br>
-<ng-container bsNavigationLock [canExit]="canExit" #navigationLock="bsNavigationLock"></ng-container>
 
-<ng-container *ngIf="navigationLock as navlock">
-    one: {{ navlock.exitMessage }}
-</ng-container>
-<ng-container *ngIf="bsNavigationLock as navlock">
-    two: {{ navlock.exitMessage }}
-</ng-container>
+<!-- [canExit]="allowExit ?? true" -->
+<ng-container bsNavigationLock [canExit]="canExit" #navigationLock="bsNavigationLock"></ng-container>

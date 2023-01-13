@@ -1,8 +1,9 @@
-import { Directive, ElementRef, forwardRef, Inject, Optional } from '@angular/core';
+import { Directive, ElementRef, forwardRef, HostBinding, Inject, Optional } from '@angular/core';
 import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
 
 @Directive({
-  selector: 'bs-navbar-item > a[routerLink]'
+  // selector: 'bs-navbar-item > a[routerLink]'
+  selector: 'bs-navbar-item:first-child > a'
 })
 export class NavLinkDirective {
 
@@ -16,5 +17,7 @@ export class NavLinkDirective {
       this.elementRef.nativeElement.classList.add('dropdown-item');
     }
   }
+
+  @HostBinding('class.cursor-pointer') cursorPointer = true;
 
 }

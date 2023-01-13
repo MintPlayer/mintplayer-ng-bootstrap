@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, CanDeactivate, RouterStateSnapshot, UrlTree } from '@angular/router';
-import { Observable } from 'rxjs';
 import { BsHasNavigationLock } from '../interface/has-navigation-lock';
 
 @Injectable({
@@ -12,9 +11,12 @@ export class BsNavigationLockGuard implements CanDeactivate<BsHasNavigationLock>
     currentRoute: ActivatedRouteSnapshot,
     currentState: RouterStateSnapshot,
     nextState?: RouterStateSnapshot): Promise<boolean | UrlTree> {
-      // console.log('run candeactivate');
-      return component.navigationLock.requestCanExit();
-      // return canExit;
+      if (component.navigationLock) {
+        return component.navigationLock.requestCanExit();
+      } else {
+        console.warn('When using <bs-navigation-lock>, you should implement BsHasNavigationLock and add "@ViewChild(\'navigationLock\') navigationLock!: BsNavigationLockDirective;" to your page');
+        return new Promise<boolean>(resolve => resolve(false));
+      }
   }
   
 }
