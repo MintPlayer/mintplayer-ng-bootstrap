@@ -17,7 +17,6 @@ export class BsOffcanvasPushDirective implements OnDestroy {
       skip(1),
       takeUntil(this.destroyed$)
     ).subscribe((viewstate) => {
-      console.log('state', {viewstate, element: this.element.nativeElement});
       let data: AnimationMetadata[];
       switch (viewstate) {
         case 'open':

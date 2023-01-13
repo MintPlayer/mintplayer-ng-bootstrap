@@ -25,7 +25,7 @@ import { Subject, take, Observable } from 'rxjs';
 })
 export class BsNavigationLockDirective implements OnDestroy {
   constructor(private router: Router, private route: ActivatedRoute) {
-    console.log('initial navigation', this.route.snapshot.pathFromRoot.flatMap(ars => ars.url));
+    // console.log('initial navigation', this.route.snapshot.pathFromRoot.flatMap(ars => ars.url));
     // combineLatest([this.route.fragment])
     //   .pipe(takeUntil(this.destroyed$))
     //   .subscribe((fragment) => {
