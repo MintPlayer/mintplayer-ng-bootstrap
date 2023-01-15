@@ -1,5 +1,6 @@
 import { Directive, HostBinding, Input, OnDestroy, Optional } from '@angular/core';
 import { BehaviorSubject, map, Observable, Subject, takeUntil } from 'rxjs';
+import { BsColumnDefinition } from '../../interfaces/column-definition';
 
 @Directive({
   selector: '[bsColumn]'
@@ -32,11 +33,11 @@ export class BsGridColumnDirective implements OnDestroy {
       });
   }
 
-  private customColClasses$ = new BehaviorSubject<object | '' | undefined>(undefined);
+  private customColClasses$ = new BehaviorSubject<BsColumnDefinition | '' | undefined>(undefined);
   private destroyed$ = new Subject();
   @HostBinding('class') classList: string | null = null
 
-  @Input() public set bsColumn(value: object | '' | undefined) {
+  @Input() public set bsColumn(value: BsColumnDefinition | '' | undefined) {
     this.customColClasses$.next(value);
   }
 

@@ -1,2 +1,2 @@
-export * from './rating.component';
+export * from './component/rating.component';
 export * from './rating.module';

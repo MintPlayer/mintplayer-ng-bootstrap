@@ -33,7 +33,7 @@ import { DirectivesModule } from './directives/directives.module';
     },
     {
       provide: BS_DEVELOPMENT,
-      useValue: false
+      useValue: true
     },
     {
       provide: 'GIT_REPO',
