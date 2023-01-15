@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BsRatingComponent } from './rating.component';
+import { BsRatingComponent } from './component/rating.component';
 
 
 
