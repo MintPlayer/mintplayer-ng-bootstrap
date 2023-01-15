@@ -6,6 +6,7 @@ const routes: Routes = [
   { path: 'additional-samples', loadChildren: () => import('./additional-samples/additional-samples.module').then(m => m.AdditionalSamplesModule) },
   { path: 'basic', loadChildren: () => import('./basic/basic.module').then(m => m.BasicModule) },
   { path: 'advanced', loadChildren: () => import('./advanced/advanced.module').then(m => m.AdvancedModule) },
+  { path: 'animations', loadChildren: () => import('./animations/animations.module').then(m => m.AnimationsModule) },
 ];
 
 @NgModule({

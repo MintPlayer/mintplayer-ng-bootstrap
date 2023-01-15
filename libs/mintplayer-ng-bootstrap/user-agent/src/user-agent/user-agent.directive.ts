@@ -1,4 +1,5 @@
-import { AfterViewInit, Directive, EventEmitter, HostBinding, Output } from '@angular/core';
+import { isPlatformServer } from '@angular/common';
+import { AfterViewInit, Directive, EventEmitter, HostBinding, Inject, Output, PLATFORM_ID } from '@angular/core';
 import { BsUserAgent } from '../user-agent.type';
 
 @Directive({
@@ -6,16 +7,18 @@ import { BsUserAgent } from '../user-agent.type';
 })
 export class BsUserAgentDirective implements AfterViewInit {
 
+  constructor(@Inject(PLATFORM_ID) private platformId: Object) { }
+
   @HostBinding('class.os-android') get isAndroid() {
-    return !!navigator.userAgent.match(/Android/i);
+    return !isPlatformServer(this.platformId) && !!navigator.userAgent.match(/Android/i);
   }
 
   @HostBinding('class.os-ios') get isIos() {
-    return !!navigator.userAgent.match(/iPhone|iPad|iPod/i);
+    return !isPlatformServer(this.platformId) && !!navigator.userAgent.match(/iPhone|iPad|iPod/i);
   }
 
   @HostBinding('class.os-windows') get isWindows() {
-    return !!navigator.userAgent.match(/Windows/i);
+    return !isPlatformServer(this.platformId) && !!navigator.userAgent.match(/Windows/i);
   }
 
   ngAfterViewInit() {

@@ -15,7 +15,7 @@ import { DirectivesModule } from './directives/directives.module';
 @NgModule({
   declarations: [AppComponent],
   imports: [
-    BrowserModule,
+    BrowserModule.withServerTransition({ appId: 'serverApp' }),
     CommonModule,
     BrowserAnimationsModule,
     BsNavbarModule,

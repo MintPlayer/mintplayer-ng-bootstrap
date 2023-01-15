@@ -16,7 +16,9 @@ export class BsNavbarContentDirective implements AfterViewInit, OnDestroy {
       .pipe(take(1))
       .pipe(takeUntil(this.destroyed$))
       .subscribe(([viewInit, navbar]) => {
-        if (!isPlatformServer(platformId)) {
+        if (isPlatformServer(platformId)) {
+          this.element.nativeElement.style.paddingTop = (this.initialPadding + 58) + 'px';
+        } else {
           // Initialize the ResizeObserver
           this.resizeObserver = new ResizeObserver((entries) => {
             const height = navbar

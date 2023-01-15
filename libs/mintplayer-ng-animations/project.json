@@ -7,7 +7,9 @@
   "targets": {
     "build": {
       "executor": "@nrwl/angular:package",
-      "outputs": ["{workspaceRoot}/dist/libs/mintplayer-ng-animations"],
+      "outputs": [
+        "{workspaceRoot}/dist/libs/mintplayer-ng-animations"
+      ],
       "options": {
         "tsConfig": "libs/mintplayer-ng-animations/tsconfig.lib.json",
         "project": "libs/mintplayer-ng-animations/ng-package.json"
@@ -24,7 +26,9 @@
     },
     "test": {
       "executor": "@nrwl/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/libs/mintplayer-ng-animations"],
+      "outputs": [
+        "{workspaceRoot}/coverage/libs/mintplayer-ng-animations"
+      ],
       "options": {
         "jestConfig": "libs/mintplayer-ng-animations/jest.config.ts",
         "passWithNoTests": true

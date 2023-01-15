@@ -1,0 +1,16 @@
+<bs-grid>
+    <div bsRow>
+        <div [bsColumn]="{md: 6}">
+            <button (click)="slideUpDownState = !slideUpDownState" [color]="colors.primary" class="d-block w-100 rounded-0">Toggle</button>
+            <div [@slideUpDown]="slideUpDownState" class="overflow-hidden">
+                <button [color]="colors.primary" class="d-block w-100 rounded-0" *ngFor="let num of numbers">Button {{ num }}</button>
+            </div>
+        </div>
+        <div [bsColumn]="{md: 6}">
+            <button (click)="slideUpDownNgifState = !slideUpDownNgifState" [color]="colors.secondary" class="d-block w-100 rounded-0">Toggle using <code class="text-light">*ngIf</code></button>
+            <div [@slideUpDownNgif] *ngIf="slideUpDownNgifState" class="overflow-hidden">
+                <button [color]="colors.secondary" class="d-block w-100 rounded-0" *ngFor="let num of numbers">Button {{ num }}</button>
+            </div>
+        </div>
+    </div>
+</bs-grid>

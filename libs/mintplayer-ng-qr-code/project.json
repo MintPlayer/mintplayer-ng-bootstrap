@@ -7,7 +7,9 @@
   "targets": {
     "build": {
       "executor": "@nrwl/angular:package",
-      "outputs": ["{workspaceRoot}/dist/libs/mintplayer-ng-qr-code"],
+      "outputs": [
+        "{workspaceRoot}/dist/libs/mintplayer-ng-qr-code"
+      ],
       "options": {
         "tsConfig": "libs/mintplayer-ng-qr-code/tsconfig.lib.json",
         "project": "libs/mintplayer-ng-qr-code/ng-package.json"
@@ -24,7 +26,9 @@
     },
     "test": {
       "executor": "@nrwl/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/libs/mintplayer-ng-qr-code"],
+      "outputs": [
+        "{workspaceRoot}/coverage/libs/mintplayer-ng-qr-code"
+      ],
       "options": {
         "jestConfig": "libs/mintplayer-ng-qr-code/jest.config.ts",
         "passWithNoTests": true

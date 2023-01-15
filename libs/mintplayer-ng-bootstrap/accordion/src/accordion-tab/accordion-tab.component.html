@@ -1,6 +1,6 @@
 <div [class.border-0]="false" [@.disabled]="accordion.disableAnimations">
     <ng-content select="bs-accordion-tab-header"></ng-content>
-    <div class="accordion-collapse collapse show overflow-hidden" [@slideUpDown] *ngIf="isActive">
+    <div class="accordion-collapse collapse show overflow-hidden" [@slideUpDownNgif] *ngIf="isActive">
         <div class="accordion-body p-0">
             <ng-content></ng-content>
         </div>

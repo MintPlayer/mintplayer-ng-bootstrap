@@ -1,12 +1,15 @@
-import { trigger, style, transition, animate } from '@angular/animations';
+import { trigger, style, transition, animate, state } from '@angular/animations';
 
 export const SlideUpDownAnimation =
   trigger('slideUpDown', [
-    transition(':enter', [
+    // trigger value binding
+    state('false', style({ height: 0 })),
+    state('true', style({ height: '*' })),
+    transition('false => true', [
       style({ height: 0 }),
       animate('300ms ease-in-out', style({ height: '*' })),
     ]),
-    transition(':leave', [
+    transition('true => false', [
       style({ height: '*' }),
       animate('300ms ease-in-out', style({ height: 0 })),
     ]),
