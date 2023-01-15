@@ -7,13 +7,17 @@
   "targets": {
     "build": {
       "executor": "@nrwl/angular:package",
-      "outputs": ["{workspaceRoot}/dist/libs/mintplayer-ng-bootstrap"],
+      "outputs": [
+        "{workspaceRoot}/dist/libs/mintplayer-ng-bootstrap"
+      ],
       "options": {
         "tsConfig": "libs/mintplayer-ng-bootstrap/tsconfig.lib.json",
         "project": "libs/mintplayer-ng-bootstrap/ng-package.json"
       },
       "stylePreprocessorOptions": {
-        "includePaths": ["../../node_modules"]
+        "includePaths": [
+          "../../node_modules"
+        ]
       },
       "configurations": {
         "production": {
@@ -27,7 +31,9 @@
     },
     "test": {
       "executor": "@nrwl/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/libs/mintplayer-ng-bootstrap"],
+      "outputs": [
+        "{workspaceRoot}/coverage/libs/mintplayer-ng-bootstrap"
+      ],
       "options": {
         "jestConfig": "libs/mintplayer-ng-bootstrap/jest.config.ts",
         "passWithNoTests": true

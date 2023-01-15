@@ -1,6 +1,7 @@
-import { AfterContentChecked, Component, ContentChildren, ElementRef, forwardRef, Optional, QueryList } from '@angular/core';
+import { AfterContentChecked, Component, ContentChildren, ElementRef, forwardRef, Inject, Optional, PLATFORM_ID, QueryList } from '@angular/core';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
+import { isPlatformServer } from '@angular/common';
 
 @Component({
   selector: 'bs-navbar-item',
@@ -9,7 +10,12 @@ import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.co
 })
 export class BsNavbarItemComponent implements AfterContentChecked {
 
-  constructor(private navbar: BsNavbarComponent, @Optional() parentDropdown: BsNavbarDropdownComponent, private element: ElementRef) {
+  constructor(
+    private navbar: BsNavbarComponent,
+    private element: ElementRef,
+    @Inject(PLATFORM_ID) private platformId: Object,
+    @Optional() parentDropdown: BsNavbarDropdownComponent,
+  ) {
     this.parentDropdown = parentDropdown;
   }
 
@@ -22,22 +28,28 @@ export class BsNavbarItemComponent implements AfterContentChecked {
     this.anchorTag = this.element.nativeElement.querySelector('li a');
 
     if (this.hasDropdown) {
-      (this.anchorTag) && this.anchorTag.classList.add('dropdown-toggle');
+      if (this.anchorTag) {
+        this.anchorTag.classList.add('dropdown-toggle');
 
-      if (this.anchorTag && !this.anchorTag.getAttribute('close-init-b')) {
-        this.anchorTag.setAttribute('close-init-b', '1');
-        this.anchorTag.addEventListener('click', (ev: MouseEvent) => {
-          ev.preventDefault();
-          // Normally there should be only one dropdown in this list
-          this.dropdowns.forEach((dropdown) => {
-            if (!(dropdown.isVisible = !dropdown.isVisible)) {
-              dropdown.childDropdowns.forEach((child) => {
-                child.isVisible = false;
-              });
-            }
+        if (isPlatformServer(this.platformId)) {
+          this.anchorTag.href = 'javascript:;';
+        }
+  
+        if (!this.anchorTag.getAttribute('close-init-b')) {
+          this.anchorTag.setAttribute('close-init-b', '1');
+          this.anchorTag.addEventListener('click', (ev: MouseEvent) => {
+            ev.preventDefault();
+            // Normally there should be only one dropdown in this list
+            this.dropdowns.forEach((dropdown) => {
+              if (!(dropdown.isVisible = !dropdown.isVisible)) {
+                dropdown.childDropdowns.forEach((child) => {
+                  child.isVisible = false;
+                });
+              }
+            });
+            return false;
           });
-          return false;
-        });
+        }
       }
     } else {
 

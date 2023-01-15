@@ -11,6 +11,22 @@
     @import "../../../../../node_modules/bootstrap/scss/navbar";
 }
 
+::ng-deep {
+    .navbar.noscript {
+        &:not(:focus-within) > div > bs-navbar-nav > div.navbar-collapse {
+            display: none;
+        }
+
+        li.nav-item:focus-within > bs-navbar-dropdown > ul {
+            display: block;
+
+            li:has(a.dropdown-item):focus-within > bs-navbar-dropdown > ul {
+                display: block;
+            }
+        }
+    }
+}
+
 nav {
     left: 0;
     top: 0;
@@ -43,3 +59,4 @@ nav {
 .tw {
     margin: -.5rem calc(-2rem / 3);
 }
+

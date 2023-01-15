@@ -12,9 +12,11 @@
   "targets": {
     "build": {
       "executor": "@angular-devkit/build-angular:browser",
-      "outputs": ["{options.outputPath}"],
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "options": {
-        "outputPath": "dist/apps/ng-bootstrap-demo",
+        "outputPath": "dist/ng-bootstrap-demo/browser",
         "index": "apps/ng-bootstrap-demo/src/index.html",
         "main": "apps/ng-bootstrap-demo/src/main.ts",
         "polyfills": "apps/ng-bootstrap-demo/src/polyfills.ts",
@@ -36,7 +38,9 @@
         "scripts": []
       },
       "stylePreprocessorOptions": {
-        "includePaths": ["../../node_modules"]
+        "includePaths": [
+          "../../node_modules"
+        ]
       },
       "configurations": {
         "production": {
@@ -100,11 +104,73 @@
     },
     "test": {
       "executor": "@nrwl/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/apps/ng-bootstrap-demo"],
+      "outputs": [
+        "{workspaceRoot}/coverage/apps/ng-bootstrap-demo"
+      ],
       "options": {
         "jestConfig": "apps/ng-bootstrap-demo/jest.config.ts",
         "passWithNoTests": true
       }
+    },
+    "server": {
+      "executor": "@angular-devkit/build-angular:server",
+      "options": {
+        "outputPath": "dist/ng-bootstrap-demo/server",
+        "main": "apps/ng-bootstrap-demo/server.ts",
+        "tsConfig": "apps/ng-bootstrap-demo/tsconfig.server.json",
+        "inlineStyleLanguage": "scss"
+      },
+      "configurations": {
+        "production": {
+          "outputHashing": "media",
+          "fileReplacements": [
+            {
+              "replace": "apps/ng-bootstrap-demo/src/environments/environment.ts",
+              "with": "apps/ng-bootstrap-demo/src/environments/environment.prod.ts"
+            }
+          ]
+        },
+        "development": {
+          "optimization": false,
+          "sourceMap": true,
+          "extractLicenses": false,
+          "vendorChunk": true
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "serve-ssr": {
+      "executor": "@nguniversal/builders:ssr-dev-server",
+      "configurations": {
+        "development": {
+          "browserTarget": "ng-bootstrap-demo:build:development",
+          "serverTarget": "ng-bootstrap-demo:server:development"
+        },
+        "production": {
+          "browserTarget": "ng-bootstrap-demo:build:production",
+          "serverTarget": "ng-bootstrap-demo:server:production"
+        }
+      },
+      "defaultConfiguration": "development"
+    },
+    "prerender": {
+      "executor": "@nguniversal/builders:prerender",
+      "options": {
+        "routes": [
+          "/"
+        ]
+      },
+      "configurations": {
+        "production": {
+          "browserTarget": "ng-bootstrap-demo:build:production",
+          "serverTarget": "ng-bootstrap-demo:server:production"
+        },
+        "development": {
+          "browserTarget": "ng-bootstrap-demo:build:development",
+          "serverTarget": "ng-bootstrap-demo:server:development"
+        }
+      },
+      "defaultConfiguration": "production"
     }
   },
   "tags": []

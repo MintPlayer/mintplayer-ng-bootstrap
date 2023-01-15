@@ -1,5 +1,5 @@
-import { DOCUMENT } from '@angular/common';
-import { Component, ContentChildren, ElementRef, forwardRef, Host, Inject, Input, OnDestroy, Optional, QueryList, SkipSelf, ViewChild } from '@angular/core';
+import { DOCUMENT, isPlatformServer } from '@angular/common';
+import { Component, ContentChildren, ElementRef, forwardRef, Host, Inject, Input, OnDestroy, Optional, PLATFORM_ID, QueryList, SkipSelf, ViewChild } from '@angular/core';
 import { BehaviorSubject, combineLatest, map, Observable, Subject, takeUntil } from 'rxjs';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
@@ -16,10 +16,12 @@ export class BsNavbarDropdownComponent implements OnDestroy {
     @SkipSelf() @Host() @Optional() parentDropdown: BsNavbarDropdownComponent,
     @Host() @Inject(forwardRef(() => BsNavbarItemComponent)) navbarItem: BsNavbarItemComponent,
     private element: ElementRef<HTMLElement>,
-    @Inject(DOCUMENT) private document: Document
+    @Inject(DOCUMENT) private document: Document,
+    @Inject(PLATFORM_ID) platformId: Object,
   ) {
     this.parentDropdown = parentDropdown;
     this.navbarItem = navbarItem;
+    this.isBrowser = !isPlatformServer(platformId);
 
     this.isVisible$.pipe(takeUntil(this.destroyed$)).subscribe((isVisible) => {
       if (isVisible) {
@@ -55,6 +57,7 @@ export class BsNavbarDropdownComponent implements OnDestroy {
   parentDropdown: BsNavbarDropdownComponent;
   private destroyed$ = new Subject();
   @ViewChild('dd') dropdownElement!: ElementRef<HTMLDivElement>;
+  isBrowser = false;
   topPos$ = new BehaviorSubject<number | null>(null);
   maxHeight$: Observable<string | null>;
   maxHeightOrNull$: Observable<string | null>;
