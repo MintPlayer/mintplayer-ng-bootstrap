@@ -15,31 +15,36 @@
       <a>Basic</a>
       <bs-navbar-dropdown>
         <bs-navbar-item>
-          <a [routerLink]='["/basic", "toggle-button"]'>Toggle button</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
           <a [routerLink]='["/basic", "alert"]'>Alert</a>
         </bs-navbar-item>
         <bs-navbar-item>
+          <a>Forms</a>
+          <bs-navbar-dropdown>
+            <bs-navbar-item>
+              <a [routerLink]='["/basic", "floating-labels"]'>Floating labels</a>
+            </bs-navbar-item>
+            <bs-navbar-item>
+              <a [routerLink]='["/basic", "input-group"]'>Input group</a>
+            </bs-navbar-item>
+            <bs-navbar-item>
+              <a [routerLink]='["/basic", "range"]'>Range</a>
+            </bs-navbar-item>
+            <bs-navbar-item>
+              <a [routerLink]='["/basic", "select"]'>Select</a>
+            </bs-navbar-item>
+            <bs-navbar-item>
+              <a [routerLink]='["/basic", "toggle-button"]'>Toggle button</a>
+            </bs-navbar-item>
+          </bs-navbar-dropdown>
+        </bs-navbar-item>
+        <bs-navbar-item>
           <a [routerLink]='["/basic", "rating"]'>Rating</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/basic", "select"]'>Select</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/basic", "range"]'>Range</a>
         </bs-navbar-item>
         <bs-navbar-item>
           <a [routerLink]='["/basic", "badge"]'>Badge</a>
         </bs-navbar-item>
         <bs-navbar-item>
           <a [routerLink]='["/basic", "breadcrumb"]'>Breadcrumb</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/basic", "input-group"]'>Input group</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/basic", "floating-labels"]'>Floating labels</a>
         </bs-navbar-item>
         <bs-navbar-item>
           <a [routerLink]='["/basic", "button-group"]'>Button group</a>
