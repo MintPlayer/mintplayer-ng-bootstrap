@@ -2,7 +2,7 @@
 <div class="d-block mb-3">
     <button (click)="collapseVisible = !collapseVisible" [color]="colors.primary">Expand/collapse</button>
 </div>
-<div class="overflow-hidden" *ngIf="collapseVisible" [@slideUpDown]>
+<div class="overflow-hidden" *ngIf="collapseVisible" [@slideUpDownNgif]>
     <bs-grid>
         <div bsRow>
             <div [bsColumn]="{md: 12}">

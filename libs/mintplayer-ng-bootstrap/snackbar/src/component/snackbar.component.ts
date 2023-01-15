@@ -22,7 +22,7 @@ export class BsSnackbarComponent {
 
   private instance: SnackbarAnimationMeta | null = null;
 
-  //#region Monitor @slideUpDown hooks
+  //#region Monitor @slideUpDownNgif hooks
   animationState = '';
   animationStateChanged = new EventEmitter<AnimationEvent>();
   onAnimationChanged(event: AnimationEvent) {
