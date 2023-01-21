@@ -1,12 +1,12 @@
 import { Component, ContentChildren, EventEmitter, forwardRef, HostBinding, Input, Output, QueryList } from '@angular/core';
-import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
+import { SlideUpDownNgifAnimation } from '@mintplayer/ng-animations';
 import { BsAccordionComponent } from '../accordion/accordion.component';
 
 @Component({
   selector: 'bs-accordion-tab',
   templateUrl: './accordion-tab.component.html',
   styleUrls: ['./accordion-tab.component.scss'],
-  animations: [SlideUpDownAnimation]
+  animations: [SlideUpDownNgifAnimation]
 })
 export class BsAccordionTabComponent {
 
