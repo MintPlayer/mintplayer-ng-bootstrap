@@ -1,3 +1,13 @@
 <ul #dd class="dropdown-menu" [class.overflow-auto]="isBrowser" [class.show]="isVisible$ | async" [class.submenu]="!!parentDropdown" [style.max-height]="maxHeightOrNull$ | async" (clickOutside)="isVisible = false" [exclude]="elementsToExclude" aria-labelledby="navbarDropdown">
     <ng-content></ng-content>
 </ul>
+
+<!-- 
+    - Working demo: https://codepen.io/agop/pen/VwwMGR
+    - Location must be set through javascript
+    - bsNoScript => If noscript, 2nd-level submenus must be shown inside the 1st-level submenu
+ -->
+ <!-- 
+    - Another option: https://stackblitz.com/edit/web-platform-vmsr4l?file=index.html
+    - But this doesn't seem to work here
+  -->

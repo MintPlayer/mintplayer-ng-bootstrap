@@ -21,13 +21,11 @@ export class BsNavbarNavComponent implements OnDestroy {
         if (windowWidth === null) {
           throw 'windowWidth should not be null here';
         } else if (expandAt === null) {
-          return false;
+          return isExpanded;
         } else if (windowWidth >= expandAt) {
           return true;
-        } else if (isExpanded) {
-          return true;
         } else {
-          return false;
+          return isExpanded;
         }
       }));
 

@@ -48,13 +48,25 @@ export class BsNavbarComponent implements OnDestroy {
     this.onWindowResize();
 
     this.expandClass$ = this.breakPoint$.pipe(map((breakpoint) => {
-      return `navbar-expand-${breakpoint}`;
+      if (breakpoint === null) {
+        return null;
+      } else {
+        return `navbar-expand-${breakpoint}`;
+      }
     }));
     this.wAutoClass$ = this.breakPoint$.pipe(map((breakpoint) => {
-      return `w-${breakpoint}-auto`;
+      if (breakpoint === null) {
+        return null;
+      } else {
+        return `w-${breakpoint}-auto`;
+      }
     }));
     this.dNoneClass$ = this.breakPoint$.pipe(map((breakpoint) => {
-      return `d-${breakpoint}-none`;
+      if (breakpoint === null) {
+        return null;
+      } else {
+        return `d-${breakpoint}-none`;
+      }
     }));
 
     this.backgroundColorClass$ = this.color$.pipe(map((color) => {
@@ -70,7 +82,7 @@ export class BsNavbarComponent implements OnDestroy {
     this.navClassList$ = combineLatest([this.expandClass$, this.backgroundColorClass$])
       .pipe(map(([expandClass, backgroundColorClass]) => {
         const result: string[] = [];
-        return result.concat(expandClass, ...backgroundColorClass);
+        return result.concat(expandClass ?? [], ...backgroundColorClass);
       }));
   }
 
@@ -88,9 +100,9 @@ export class BsNavbarComponent implements OnDestroy {
   expandButtonTemplate: TemplateRef<any> | null = null;
   
   
-  expandClass$: Observable<string>;
-  wAutoClass$: Observable<string>;
-  dNoneClass$: Observable<string>;
+  expandClass$: Observable<string | null>;
+  wAutoClass$: Observable<string | null>;
+  dNoneClass$: Observable<string | null>;
   isExpanded$ = new BehaviorSubject<boolean>(false);
   windowWidth$ = new BehaviorSubject<number | null>(null);
   isResizing$ = new BehaviorSubject<boolean>(false);
