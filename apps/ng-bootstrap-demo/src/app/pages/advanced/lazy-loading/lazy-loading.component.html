@@ -1,4 +1,20 @@
 <h1>Lazy-loading components</h1>
 <p>This page demonstrates a way to lazy-load components</p>
-<ng-container [bsLazyLoad]="lazyLoaded"></ng-container>
-<ng-container [bsLazyLoad]="lelyLoaded"></ng-container>
+<ng-container [bsLazyLoad]="lazyLoaded" [contentNodes]="[[lazyLoadNgContent]]">
+    <div #lazyLoadNgContent>
+        <div *ngIf="lazyReady$ | async">
+            <span class="text-success">Some extra content inside the <code>bsLazyLoad</code> container.</span>
+            &nbsp;
+            <span class="text-success">You can also use <code>&lt;router-outlet&gt;</code> here.</span>
+        </div>
+    </div>
+</ng-container>
+<ng-container [bsLazyLoad]="lelyLoaded" [contentNodes]="[[lelyLoadNgContent]]">
+    <div #lelyLoadNgContent>
+        <div *ngIf="lelyReady$ | async">
+            <span class="text-danger">Some extra content inside the <code>bsLazyLoad</code> container.</span>
+            &nbsp;
+            <span class="text-danger">You can also use <code>&lt;router-outlet&gt;</code> here.</span>
+        </div>
+    </div>
+</ng-container>
