@@ -29,6 +29,10 @@
                 }
             }
         }
+
+        > .container-fluid > .d-flex {
+            width: 100% !important;
+        }
     }
 }
 
