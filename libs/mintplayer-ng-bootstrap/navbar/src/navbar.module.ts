@@ -13,6 +13,7 @@ import { BsNavbarContentDirective } from './navbar-content/navbar-content.direct
 import { BsNavbarBrandComponent } from './navbar-brand/navbar-brand.component';
 import { BsExpandButtonDirective } from './expand-button/expand-button.directive';
 import { BsNavbarTogglerComponent } from './navbar-toggler/navbar-toggler.component';
+// import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
 
 @NgModule({
   declarations: [
@@ -33,6 +34,7 @@ import { BsNavbarTogglerComponent } from './navbar-toggler/navbar-toggler.compon
     ClickOutsideModule,
     BsUserAgentModule,
     BsNoNoscriptModule,
+    // BsHasOverlayModule,
   ],
   exports: [
     BsNavbarComponent,

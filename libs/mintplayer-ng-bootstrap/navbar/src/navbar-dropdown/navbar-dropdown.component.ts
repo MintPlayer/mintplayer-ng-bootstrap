@@ -15,7 +15,7 @@ export class BsNavbarDropdownComponent implements OnDestroy {
     private navbar: BsNavbarComponent,
     @SkipSelf() @Host() @Optional() parentDropdown: BsNavbarDropdownComponent,
     @Host() @Inject(forwardRef(() => BsNavbarItemComponent)) navbarItem: BsNavbarItemComponent,
-    private element: ElementRef<HTMLElement>,
+    public element: ElementRef<HTMLElement>,
     @Inject(DOCUMENT) private document: Document,
     @Inject(PLATFORM_ID) platformId: Object,
   ) {

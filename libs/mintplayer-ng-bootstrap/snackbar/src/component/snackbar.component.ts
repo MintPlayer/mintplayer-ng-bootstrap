@@ -1,6 +1,6 @@
 import { AnimationEvent } from '@angular/animations';
 import { Component, EventEmitter, HostBinding, Inject, TemplateRef } from '@angular/core';
-import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
+import { SlideUpDownNgifAnimation } from '@mintplayer/ng-animations';
 import { SnackbarAnimationMeta } from '../interfaces/snackbar-animation-meta';
 import { SNACKBAR_CONTENT } from '../providers/snackbar-content.provider';
 
@@ -8,7 +8,7 @@ import { SNACKBAR_CONTENT } from '../providers/snackbar-content.provider';
   selector: 'bs-snackbar',
   templateUrl: './snackbar.component.html',
   styleUrls: ['./snackbar.component.scss'],
-  animations: [SlideUpDownAnimation]
+  animations: [SlideUpDownNgifAnimation]
 })
 export class BsSnackbarComponent {
 

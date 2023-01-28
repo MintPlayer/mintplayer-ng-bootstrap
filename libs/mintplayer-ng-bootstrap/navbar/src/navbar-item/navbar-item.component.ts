@@ -1,7 +1,8 @@
-import { AfterContentChecked, Component, ContentChildren, ElementRef, forwardRef, Inject, Optional, PLATFORM_ID, QueryList } from '@angular/core';
+import { AfterContentChecked, Component, ContentChildren, ElementRef, forwardRef, Inject, Injector, Optional, PLATFORM_ID, QueryList, ViewContainerRef } from '@angular/core';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
 import { isPlatformServer } from '@angular/common';
+import { DomPortal } from '@angular/cdk/portal';
 
 @Component({
   selector: 'bs-navbar-item',
@@ -13,6 +14,7 @@ export class BsNavbarItemComponent implements AfterContentChecked {
   constructor(
     private navbar: BsNavbarComponent,
     private element: ElementRef,
+    private injector: Injector,
     @Inject(PLATFORM_ID) private platformId: Object,
     @Optional() parentDropdown: BsNavbarDropdownComponent,
   ) {
@@ -45,6 +47,19 @@ export class BsNavbarItemComponent implements AfterContentChecked {
                 dropdown.childDropdowns.forEach((child) => {
                   child.isVisible = false;
                 });
+              // } else {
+                // import('@angular/cdk/overlay').then(({ OverlayModule, Overlay }) => {
+                //   const overlayService = this.injector.get(Overlay);
+                //   return overlayService;
+                // }).then((overlayService) => {
+
+                //   const p = new DomPortal(dropdown.element);
+                //   const overlayRef = overlayService.create({
+                //   });
+                //   overlayRef.attach(p);
+
+                // });
+
               }
             });
             return false;

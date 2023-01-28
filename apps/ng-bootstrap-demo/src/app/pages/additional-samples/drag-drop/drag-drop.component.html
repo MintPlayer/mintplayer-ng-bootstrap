@@ -1,17 +1,9 @@
 <bs-grid>
     <div bsRow>
         <div [bsColumn]="{ sm: 4 }">
-            To do
-        </div>
-        <div [bsColumn]="{ sm: 4 }">
-            In progress
-        </div>
-        <div [bsColumn]="{ sm: 4 }">
-            Done
-        </div>
-    </div>
-    <div bsRow>
-        <div [bsColumn]="{ sm: 4 }">
+            <div class="d-block mb-3">
+                To do
+            </div>
             <div cdkDropList #toDoList="cdkDropList"
                 [cdkDropListData]="toDoItems"
                 [cdkDropListConnectedTo]="[inProgressList]"
@@ -26,6 +18,9 @@
             </div>
         </div>
         <div [bsColumn]="{ sm: 4 }">
+            <div class="d-block mb-3">
+                In progress
+            </div>
             <div cdkDropList #inProgressList="cdkDropList"
                 [cdkDropListData]="inProgressItems"
                 [cdkDropListConnectedTo]="[toDoList,doneList]"
@@ -41,6 +36,9 @@
             </div>
         </div>
         <div [bsColumn]="{ sm: 4 }">
+            <div class="d-block mb-3">
+                Done
+            </div>
             <div cdkDropList #doneList="cdkDropList"
                 [cdkDropListData]="doneItems"
                 [cdkDropListConnectedTo]="[inProgressList]"
