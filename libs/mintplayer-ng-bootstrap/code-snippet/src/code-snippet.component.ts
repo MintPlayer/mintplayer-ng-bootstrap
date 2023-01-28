@@ -11,7 +11,9 @@ export class BsCodeSnippetComponent {
   constructor(private snackbarService: BsSnackbarService) {
   }
   
-  @Input() public htmlToCopy = '';
+  @Input() public codeToCopy = '';
+  @Input() public languages: string[] | null = null;
+  @Input() public lineNumbers = false;
   @ViewChild('copiedTemplate') copiedTemplate!: TemplateRef<any>;
 
   copiedHtml() {

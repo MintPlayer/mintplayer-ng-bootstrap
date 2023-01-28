@@ -2,17 +2,17 @@ import { Component, ElementRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsCopyDirective } from './copy.directive';
 
-const htmlToCopy = 'Hello world';
+const codeToCopy = 'Hello world';
 
 @Component({
   selector: 'bs-copy-test',
   template: `
-    <button #copyBtn [bsCopy]="htmlToCopy" (bsCopied)="copiedHtml()">
+    <button #copyBtn [bsCopy]="codeToCopy" (bsCopied)="copiedHtml()">
       Copy html
     </button>`
 })
 class BsCopyTestComponent {
-  htmlToCopy = htmlToCopy;
+  codeToCopy = codeToCopy;
   @ViewChild('copyBtn') copyBtn!: ElementRef<HTMLButtonElement>;
 }
 

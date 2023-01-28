@@ -1,5 +1,6 @@
 import { Component, TemplateRef, ViewChild } from '@angular/core';
 import { BsSnackbarService } from '@mintplayer/ng-bootstrap/snackbar';
+import dedent from 'dedent';
 
 @Component({
   selector: 'demo-copy',
@@ -12,17 +13,17 @@ export class CopyComponent {
   }
 
   @ViewChild('copiedTemplate') copiedTemplate!: TemplateRef<any>;
-  htmlToCopy = 
-`<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset=utf-8>
-    <title>I'm the title</title>
-  </head>
-  <body>
-    <p>I'm the content</p>
-  </body>
-</html>`;
+  codeToCopy = dedent`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset=utf-8>
+        <title>I'm the title</title>
+      </head>
+      <body>
+        <p>I'm the content</p>
+      </body>
+    </html>`;
 
   copiedHtml() {
     const snackbar = this.snackbarService.show(this.copiedTemplate);
