@@ -13,3 +13,13 @@
         margin-top: calc(-1rem / 2);
     }
 }
+
+.submenu.noscript {
+    position: initial !important;
+    margin: 0 .5rem;
+}
+
+:not(.submenu).noscript {
+    max-height: calc(100vh - 100% - 1rem);
+    overflow-y: auto;
+}
