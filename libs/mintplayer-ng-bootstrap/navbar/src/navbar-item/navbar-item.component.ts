@@ -47,18 +47,23 @@ export class BsNavbarItemComponent implements AfterContentChecked {
                 dropdown.childDropdowns.forEach((child) => {
                   child.isVisible = false;
                 });
-              // } else {
-                // import('@angular/cdk/overlay').then(({ OverlayModule, Overlay }) => {
-                //   const overlayService = this.injector.get(Overlay);
-                //   return overlayService;
-                // }).then((overlayService) => {
+              } else if (this.parentDropdown) {
+                import('@angular/cdk/overlay').then(({ OverlayModule, Overlay }) => {
+                  const overlayService = this.injector.get(Overlay);
+                  return overlayService;
+                }).then((overlayService) => {
 
-                //   const p = new DomPortal(dropdown.element);
-                //   const overlayRef = overlayService.create({
-                //   });
-                //   overlayRef.attach(p);
+                  const p = new DomPortal(dropdown.element);
+                  const overlayRef = overlayService.create({
+                    positionStrategy: overlayService.position()
+                      .flexibleConnectedTo(this.element)
+                      .withPositions([
+                        { originX: 'end', originY: 'top', overlayX: 'start', overlayY: 'top' }
+                      ])
+                  });
+                  overlayRef.attach(p);
 
-                // });
+                });
 
               }
             });

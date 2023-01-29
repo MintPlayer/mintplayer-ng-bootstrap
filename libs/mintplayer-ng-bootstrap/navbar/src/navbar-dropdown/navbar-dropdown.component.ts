@@ -46,7 +46,12 @@ export class BsNavbarDropdownComponent implements OnDestroy {
     this.maxHeightOrNull$ = combineLatest([this.maxHeight$, this.navbar.isSmallMode$]).pipe(map(([maxHeight, isSmallMode]) => {
       if (isSmallMode) {
         return null;
+      } else if (isPlatformServer(platformId)) {
+        // Javascript disabled
+        // Only apply max-height to the top-dropdown
+        return parentDropdown ? null : maxHeight;
       } else {
+        // If javascript enabled
         return maxHeight;
       }
     }));
