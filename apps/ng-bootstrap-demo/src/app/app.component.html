@@ -12,13 +12,13 @@
       <a [routerLink]='["/"]' [routerLinkActiveOptions]="{exact: true}">Home</a>
     </bs-navbar-item>
     <bs-navbar-item>
-      <a>Basic</a>
+      <a [routerLink]="isServerSide ? null : ['/basic']">Basic</a>
       <bs-navbar-dropdown>
         <bs-navbar-item>
           <a [routerLink]='["/basic", "alert"]'>Alert</a>
         </bs-navbar-item>
         <bs-navbar-item>
-          <a>Forms</a>
+          <a [routerLink]="isServerSide ? null : ['/basic', 'forms']">Forms</a>
           <bs-navbar-dropdown>
             <bs-navbar-item>
               <a [routerLink]='["/basic", "floating-labels"]'>Floating labels</a>
@@ -103,7 +103,7 @@
       </bs-navbar-dropdown>
     </bs-navbar-item>
     <bs-navbar-item>
-      <a>Overlays</a>
+      <a [routerLink]="isServerSide ? null : ['/overlays']">Overlays</a>
       <bs-navbar-dropdown>
         <bs-navbar-item>
           <a [routerLink]='["/overlays", "modals"]'>Modals</a>
@@ -138,7 +138,7 @@
       </bs-navbar-dropdown>
     </bs-navbar-item>
     <bs-navbar-item>
-      <a>Advanced</a>
+      <a [routerLink]="isServerSide ? null : ['/advanced']">Advanced</a>
       <bs-navbar-dropdown>
         <bs-navbar-item>
           <a [routerLink]='["/advanced", "copy"]'>Copy</a>
@@ -182,7 +182,7 @@
       </bs-navbar-dropdown>
     </bs-navbar-item>
     <bs-navbar-item>
-      <a>Animations</a>
+      <a [routerLink]="isServerSide ? null : ['/animations']">Animations</a>
       <bs-navbar-dropdown>
         <bs-navbar-item>
           <a [routerLink]='["/animations", "slide-up-down"]'>Slide up/down</a>
@@ -196,7 +196,7 @@
       </bs-navbar-dropdown>
     </bs-navbar-item>
     <bs-navbar-item>
-      <a>Additional samples</a>
+      <a [routerLink]="isServerSide ? null : ['/additional-samples']">Additional samples</a>
       <bs-navbar-dropdown>
         <bs-navbar-item>
           <a [routerLink]='["/additional-samples", "collapse"]'>Collapse</a>
