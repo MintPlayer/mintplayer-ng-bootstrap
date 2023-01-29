@@ -1,29 +1,34 @@
-import { AfterContentChecked, Component, ContentChildren, ElementRef, forwardRef, Inject, Injector, Optional, PLATFORM_ID, QueryList, ViewContainerRef } from '@angular/core';
-import { BsNavbarComponent } from '../navbar/navbar.component';
-import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
+import { AfterContentChecked, OnDestroy, Component, ContentChildren, ElementRef, forwardRef, Inject, Injector, Optional, PLATFORM_ID, QueryList, ViewContainerRef } from '@angular/core';
 import { isPlatformServer } from '@angular/common';
 import { DomPortal } from '@angular/cdk/portal';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import { BsNavbarComponent } from '../navbar/navbar.component';
+import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
 
 @Component({
   selector: 'bs-navbar-item',
   templateUrl: './navbar-item.component.html',
   styleUrls: ['./navbar-item.component.scss']
 })
-export class BsNavbarItemComponent implements AfterContentChecked {
+export class BsNavbarItemComponent implements AfterContentChecked, OnDestroy {
 
   constructor(
     private navbar: BsNavbarComponent,
-    private element: ElementRef,
-    private injector: Injector,
+    element: ElementRef,
+    // private injector: Injector,
     @Inject(PLATFORM_ID) private platformId: Object,
     @Optional() parentDropdown: BsNavbarDropdownComponent,
   ) {
+    this.element = element;
     this.parentDropdown = parentDropdown;
   }
 
+  element: ElementRef;
   parentDropdown: BsNavbarDropdownComponent;
   hasDropdown = false;
   anchorTag: HTMLAnchorElement | null = null;
+  private destroyed$ = new Subject();
   @ContentChildren(forwardRef(() => BsNavbarDropdownComponent)) dropdowns!: QueryList<BsNavbarDropdownComponent>;
 
   ngAfterContentChecked() {
@@ -48,23 +53,29 @@ export class BsNavbarItemComponent implements AfterContentChecked {
                   child.isVisible = false;
                 });
               } else if (this.parentDropdown) {
-                import('@angular/cdk/overlay').then(({ OverlayModule, Overlay }) => {
-                  const overlayService = this.injector.get(Overlay);
-                  return overlayService;
-                }).then((overlayService) => {
+                // import('@angular/cdk/overlay').then(({ OverlayModule, Overlay }) => {
+                //   const overlayService = this.injector.get(Overlay);
+                //   return overlayService;
+                // }).then((overlayService) => {
 
-                  const p = new DomPortal(dropdown.element);
-                  const overlayRef = overlayService.create({
-                    positionStrategy: overlayService.position()
-                      .flexibleConnectedTo(this.element)
-                      .withPositions([
-                        { originX: 'end', originY: 'top', overlayX: 'start', overlayY: 'top' }
-                      ])
+                //   const p = new DomPortal(dropdown.element);
+                //   const overlayRef = overlayService.create({
+                //     positionStrategy: overlayService.position()
+                //       .flexibleConnectedTo(this.element)
+                //       .withPositions([
+                //         { originX: 'end', originY: 'top', overlayX: 'start', overlayY: 'top' }
+                //       ])
+                //   });
+                  // overlayRef.attach(p);
+
+                // });
+                // dropdown.showInOverlay = true;
+
+                this.navbar.isSmallMode$
+                  .pipe(takeUntil(this.destroyed$))
+                  .subscribe((isSmallMode) => {
+                    dropdown.showInOverlay = !isSmallMode;
                   });
-                  overlayRef.attach(p);
-
-                });
-
               }
             });
             return false;
@@ -89,5 +100,9 @@ export class BsNavbarItemComponent implements AfterContentChecked {
       }
 
     }
+  }
+
+  ngOnDestroy() {
+    this.destroyed$.next(true);
   }
 }
