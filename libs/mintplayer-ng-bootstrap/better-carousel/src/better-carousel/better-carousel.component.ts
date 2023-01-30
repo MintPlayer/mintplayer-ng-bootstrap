@@ -1,4 +1,5 @@
-import { Component, ContentChildren, QueryList } from '@angular/core';
+import { isPlatformServer } from '@angular/common';
+import { Component, ContentChildren, Inject, PLATFORM_ID, QueryList } from '@angular/core';
 import { BsCarouselImageDirective } from '../carousel-image/carousel-image.directive';
 
 @Component({
@@ -7,5 +8,12 @@ import { BsCarouselImageDirective } from '../carousel-image/carousel-image.direc
   styleUrls: ['./better-carousel.component.scss'],
 })
 export class BsBetterCarouselComponent {
+  constructor(@Inject(PLATFORM_ID) platformId: any) {
+    this.isServerSide = isPlatformServer(platformId);
+  }
+
   @ContentChildren(BsCarouselImageDirective) images!: QueryList<BsCarouselImageDirective>;
+  
+  isServerSide: boolean;
+  currentIndex = 0;
 }

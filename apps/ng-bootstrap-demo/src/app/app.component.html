@@ -12,13 +12,13 @@
       <a [routerLink]='["/"]' [routerLinkActiveOptions]="{exact: true}">Home</a>
     </bs-navbar-item>
     <bs-navbar-item>
-      <a [routerLink]="isServerSide ? null : ['/basic']">Basic</a>
+      <a [routerLink]="['/basic']">Basic</a>
       <bs-navbar-dropdown>
         <bs-navbar-item>
           <a [routerLink]='["/basic", "alert"]'>Alert</a>
         </bs-navbar-item>
         <bs-navbar-item>
-          <a [routerLink]="isServerSide ? null : ['/basic', 'forms']">Forms</a>
+          <a [routerLink]="['/basic', 'forms']">Forms</a>
           <bs-navbar-dropdown>
             <bs-navbar-item>
               <a [routerLink]='["/basic", "forms", "floating-labels"]'>Floating labels</a>
@@ -68,7 +68,7 @@
           <a [routerLink]='["/basic", "table"]'>Table</a>
         </bs-navbar-item>
         <bs-navbar-item>
-          <a [routerLink]="isServerSide ? null : ['/basic', 'carousel']">Carousel</a>
+          <a [routerLink]="['/basic', 'carousel']">Carousel</a>
           <bs-navbar-dropdown>
             <bs-navbar-item>
               <a [routerLink]='["/basic", "carousel"]'>Current</a>
@@ -111,7 +111,7 @@
       </bs-navbar-dropdown>
     </bs-navbar-item>
     <bs-navbar-item>
-      <a [routerLink]="isServerSide ? null : ['/overlays']">Overlays</a>
+      <a [routerLink]="['/overlays']">Overlays</a>
       <bs-navbar-dropdown>
         <bs-navbar-item>
           <a [routerLink]='["/overlays", "modals"]'>Modals</a>
@@ -146,7 +146,7 @@
       </bs-navbar-dropdown>
     </bs-navbar-item>
     <bs-navbar-item>
-      <a [routerLink]="isServerSide ? null : ['/advanced']">Advanced</a>
+      <a [routerLink]="['/advanced']">Advanced</a>
       <bs-navbar-dropdown>
         <bs-navbar-item>
           <a [routerLink]='["/advanced", "copy"]'>Copy</a>
@@ -190,7 +190,7 @@
       </bs-navbar-dropdown>
     </bs-navbar-item>
     <bs-navbar-item>
-      <a [routerLink]="isServerSide ? null : ['/animations']">Animations</a>
+      <a [routerLink]="['/animations']">Animations</a>
       <bs-navbar-dropdown>
         <bs-navbar-item>
           <a [routerLink]='["/animations", "slide-up-down"]'>Slide up/down</a>
@@ -204,7 +204,7 @@
       </bs-navbar-dropdown>
     </bs-navbar-item>
     <bs-navbar-item>
-      <a [routerLink]="isServerSide ? null : ['/additional-samples']">Additional samples</a>
+      <a [routerLink]="['/additional-samples']">Additional samples</a>
       <bs-navbar-dropdown>
         <bs-navbar-item>
           <a [routerLink]='["/additional-samples", "collapse"]'>Collapse</a>
