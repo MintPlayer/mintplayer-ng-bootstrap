@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { FormsModule } from '@angular/forms';
 import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsMarkdownModule } from '@mintplayer/ng-bootstrap/markdown';
@@ -13,6 +14,7 @@ describe('MarkdownComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
+        FormsModule,
         MockModule(BsFormModule),
         MockModule(BsGridModule),
         MockModule(BsMarkdownModule),

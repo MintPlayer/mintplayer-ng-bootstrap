@@ -1,6 +1,8 @@
 import { Component, Directive, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
+import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
+import { MockModule } from 'ng-mocks';
 import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 
@@ -18,7 +20,8 @@ describe('BsNavbarDropdownComponent', () => {
           { path: 'b', children: [
             { path: 'c', component: PageBCComponent }
           ]}
-        ])
+        ]),
+        MockModule(BsHasOverlayModule)
       ],
       declarations: [
         // Component to test

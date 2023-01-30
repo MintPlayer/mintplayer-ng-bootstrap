@@ -1,30 +1,11 @@
-import { Directive, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
+import { BsDropdownModule } from '@mintplayer/ng-bootstrap/dropdown';
 import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
+import { ClickOutsideModule } from '@mintplayer/ng-click-outside';
 import { MockModule } from 'ng-mocks';
 
 import { BsSelect2Component } from './select2.component';
-
-@Directive({ selector: '[clickOutside]' })
-class ClickOutsideMockDirective {
-}
-
-@Directive({ selector: '[bsDropdownMenu]' })
-class BsDropdownMenuMockDirective extends ClickOutsideMockDirective {
-}
-
-@Directive({ selector: '[bsDropdown]' })
-class BsDropdownMockDirective {
-  
-  //#region IsOpen
-  @Input() public isOpen = false;
-  @Output() public isOpenChange = new EventEmitter<boolean>();
-  //#endregion
-
-  @Input() public hasBackdrop = false;
-  @Input() public closeOnClickOutside = false;
-}
 
 describe('BsSelect2Component', () => {
   let component: BsSelect2Component;
@@ -35,15 +16,12 @@ describe('BsSelect2Component', () => {
       imports: [
         FormsModule,
         MockModule(BsHasOverlayModule),
+        MockModule(ClickOutsideModule),
+        MockModule(BsDropdownModule),
       ],
       declarations: [
         // Unit to test
         BsSelect2Component,
-
-        // Mock dependencies
-        ClickOutsideMockDirective,
-        BsDropdownMenuMockDirective,
-        BsDropdownMockDirective,
       ],
     })
     .compileComponents();
