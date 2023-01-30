@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import * as dedent from "dedent";
+import * as dedent from 'dedent';
 import { SlideUpDownNgifAnimation } from '@mintplayer/ng-animations';
 import { Color } from '@mintplayer/ng-bootstrap';
 

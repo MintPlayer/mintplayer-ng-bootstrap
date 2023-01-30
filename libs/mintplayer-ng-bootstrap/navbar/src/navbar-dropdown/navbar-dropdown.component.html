@@ -1,7 +1,5 @@
-<!-- <bs-has-overlay></bs-has-overlay> -->
-<!-- [class.overflow-auto]="isBrowser" -->
-<!-- [style.max-height]="maxHeightOrNull$ | async" -->
-<ul #dd class="dropdown-menu" [class.show]="isVisible$ | async" [class.submenu]="!!parentDropdown" (clickOutside)="isVisible = false" [exclude]="elementsToExclude" aria-labelledby="navbarDropdown">
+<bs-has-overlay></bs-has-overlay>
+<ul #dd class="dropdown-menu" [class.show]="isVisible$ | async" [class.submenu]="!!parentDropdown" [class.overflow-y-auto]="isBrowser" [style.max-height]="maxHeightOrNull$ | async" bsNoNoscript (clickOutside)="isVisible = false" [exclude]="elementsToExclude" aria-labelledby="navbarDropdown">
     <ng-content></ng-content>
 </ul>
 

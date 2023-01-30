@@ -3,9 +3,9 @@ import { RouterModule, Routes } from '@angular/router';
 
 const routes: Routes = [
   { path: '', redirectTo: '', pathMatch: 'full', canActivate: [() => false] },
-  { path: 'toggle-button', loadChildren: () => import('./toggle-button/toggle-button.module').then(m => m.ToggleButtonModule) },
   { path: 'calendar', loadChildren: () => import('./calendar/calendar.module').then(m => m.CalendarModule) },
   { path: 'alert', loadChildren: () => import('./alert/alert.module').then(m => m.AlertModule) },
+  { path: 'forms', loadChildren: () => import('./forms/forms.module').then(m => m.FormsModule) },
   { path: 'carousel', loadChildren: () => import('./carousel/carousel.module').then(m => m.CarouselModule) },
   { path: 'datepicker', loadChildren: () => import('./datepicker/datepicker.module').then(m => m.DatepickerModule) },
   { path: 'rating', loadChildren: () => import('./rating/rating.module').then(m => m.RatingModule) },
@@ -25,11 +25,7 @@ const routes: Routes = [
   { path: 'placeholder', loadChildren: () => import('./placeholder/placeholder.module').then(m => m.PlaceholderModule) },
   { path: 'pagination', loadChildren: () => import('./pagination/pagination.module').then(m => m.PaginationModule) },
   { path: 'table', loadChildren: () => import('./table/table.module').then(m => m.TableModule) },
-  { path: 'range', loadChildren: () => import('./range/range.module').then(m => m.RangeModule) },
-  { path: 'select', loadChildren: () => import('./select/select.module').then(m => m.SelectModule) },
-  { path: 'input-group', loadChildren: () => import('./input-group/input-group.module').then(m => m.InputGroupModule) },
   { path: 'button-type', loadChildren: () => import('./button-type/button-type.module').then(m => m.ButtonTypeModule) },
-  { path: 'floating-labels', loadChildren: () => import('./floating-labels/floating-labels.module').then(m => m.FloatingLabelsModule) },
 ];
 
 @NgModule({
