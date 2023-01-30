@@ -1,10 +1,12 @@
-import { Directive } from '@angular/core';
+import { Directive, TemplateRef } from '@angular/core';
 
 @Directive({
   selector: '[bsCarouselImage]'
 })
 export class BsCarouselImageDirective {
-
-  constructor() { }
-
+  public itemTemplate: TemplateRef<any>;
+  
+  constructor(private templateRef: TemplateRef<any>) {
+    this.itemTemplate = this.templateRef;
+  }
 }
