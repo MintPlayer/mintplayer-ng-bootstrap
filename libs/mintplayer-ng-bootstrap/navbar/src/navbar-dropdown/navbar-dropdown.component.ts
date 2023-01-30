@@ -28,6 +28,7 @@ export class BsNavbarDropdownComponent implements OnDestroy {
 
     this.isVisible$.pipe(takeUntil(this.destroyed$)).subscribe((isVisible) => {
       if (isVisible) {
+        setTimeout(() => this.overlay && this.overlay.updatePosition(), 20);
         this.topPos$.next(this.element.nativeElement.offsetTop);
       } else {
         this.topPos$.next(null);
@@ -71,25 +72,31 @@ export class BsNavbarDropdownComponent implements OnDestroy {
           positionStrategy: overlayService.position()
             .flexibleConnectedTo(this.navbarItem.element)
             .withPositions([
-              { originX: 'end', originY: 'top', overlayX: 'start', overlayY: 'top' }
+              { originX: 'end', originY: 'top', overlayX: 'start', overlayY: 'top', offsetX: -7, offsetY: -9 }
             ])
         });
 
+        // For some reason we have to trigger this from the BsDropdownItem
         // this.showInOverlay = true;
       });
     }
 
   }
 
+  private isAttached = false;
   private domPortal?: DomPortal;
   private overlay?: OverlayRef;
   public set showInOverlay(value: boolean) {
     if (this.overlay && this.domPortal) {
       console.log('showInOverlay', value);
-      if (value) {
+      // if (value && !this.overlay.hasAttached()) {
+      if (value && !this.isAttached) {
         this.overlay.attach(this.domPortal);
-      } else {
+        this.isAttached = true;
+      }
+      if (!value && this.isAttached) {
         this.overlay.detach();
+        this.isAttached = false;
       }
     }
   }

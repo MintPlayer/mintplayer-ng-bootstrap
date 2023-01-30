@@ -1,25 +1,9 @@
-// @media (max-width: 767px) {
-//     .submenu {
-//         margin-left: 0.5rem;
-//         margin-right: 0.5rem;
-//     }
-// }
-
-// @media (min-width: 768px) {
-//     .submenu {
-//         position: absolute;
-//         left: 100%;
-//         top: -1px;
-//         margin-top: calc(-1rem / 2);
-//     }
-// }
-
 .submenu {
     &:not(.noscript) {
-        margin-top: -.5rem !important;
+        margin: 0 .5rem !important;
     }
 
-    .noscript {
+    &.noscript {
         margin: 0 .5rem;
         position: initial !important;
     }
