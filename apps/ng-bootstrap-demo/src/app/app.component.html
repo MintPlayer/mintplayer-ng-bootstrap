@@ -68,7 +68,15 @@
           <a [routerLink]='["/basic", "table"]'>Table</a>
         </bs-navbar-item>
         <bs-navbar-item>
-          <a [routerLink]='["/basic", "carousel"]'>Carousel</a>
+          <a [routerLink]="isServerSide ? null : ['/basic', 'carousel']">Carousel</a>
+          <bs-navbar-dropdown>
+            <bs-navbar-item>
+              <a [routerLink]='["/basic", "carousel"]'>Current</a>
+            </bs-navbar-item>
+            <bs-navbar-item>
+              <a [routerLink]='["/basic", "better-carousel"]'>Preview</a>
+            </bs-navbar-item>
+          </bs-navbar-dropdown>
         </bs-navbar-item>
         <bs-navbar-item>
           <a [routerLink]='["/basic", "close"]'>Close</a>
