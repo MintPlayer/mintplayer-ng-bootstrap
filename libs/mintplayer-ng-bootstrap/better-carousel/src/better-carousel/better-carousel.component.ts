@@ -1,5 +1,5 @@
 import { isPlatformServer } from '@angular/common';
-import { Component, ContentChildren, Inject, PLATFORM_ID, QueryList } from '@angular/core';
+import { Component, ContentChildren, Inject, Input, PLATFORM_ID, QueryList } from '@angular/core';
 import { BsCarouselImageDirective } from '../carousel-image/carousel-image.directive';
 
 @Component({
@@ -16,4 +16,5 @@ export class BsBetterCarouselComponent {
   
   isServerSide: boolean;
   currentIndex = 0;
+  @Input() indicators = false;
 }

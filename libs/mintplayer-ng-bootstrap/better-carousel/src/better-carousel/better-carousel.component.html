@@ -1,10 +1,15 @@
-<div class="carousel">
+<div class="carousel" bsNoNoscript>
     <div class="carousel-inner d-grid">
         <ng-container *ngFor="let image of images; let i = index">
             <input type="radio" [id]="'car-' + i" [name]="'car'" class="car-radio d-none" bsNoNoscript [checked]="i === currentIndex">
             <!--  position-absolute -->
             <div class="carousel-item fade d-flex flex-row h-100 align-items-center" [class.active]="(i === currentIndex) && !isServerSide">
-                <ng-container [ngTemplateOutlet]="image.itemTemplate"></ng-container>
+                <div class="w-100 position-relative">
+                    <ng-container [ngTemplateOutlet]="image.itemTemplate"></ng-container>
+                    <div *ngIf="indicators" class="carousel-indicators">
+                        <label *ngFor="let image of images; let j = index" [attr.for]="'car-' + (j % images.length)" [class.active]="i === j" data-bs-target></label>
+                    </div>
+                </div>
             </div>
             
             <ng-container *ngIf="isServerSide">
@@ -17,6 +22,9 @@
                     <span class="visually-hidden">Next</span>
                 </label>
             </ng-container>
+            <!-- <div *ngIf="indicators" class="carousel-indicators">
+                <button *ngFor="let image of images; let j = index" [attr.for]="'car-' + ((j + 1) % images.length)" [class.active]="i === j" data-bs-target></button>
+            </div> -->
         </ng-container>
     </div>
 
