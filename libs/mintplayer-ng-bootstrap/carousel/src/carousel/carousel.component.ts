@@ -1,4 +1,5 @@
-import { AfterContentInit, Component, ContentChildren, HostBinding, HostListener, Input, OnDestroy, OnInit, QueryList, TemplateRef } from '@angular/core';
+import { isPlatformServer } from '@angular/common';
+import { AfterContentInit, Component, ContentChildren, HostBinding, HostListener, Inject, Input, OnDestroy, OnInit, PLATFORM_ID, QueryList, TemplateRef } from '@angular/core';
 import { FadeInOutAnimation, CarouselSlideAnimation } from '@mintplayer/ng-animations';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { map, take, takeUntil } from 'rxjs/operators';
@@ -12,7 +13,8 @@ import { BsCarouselImageDirective } from '../carousel-image/carousel-image.direc
 })
 export class BsCarouselComponent implements OnDestroy, AfterContentInit {
 
-  constructor() {
+  constructor(@Inject(PLATFORM_ID) platformId: any) {
+    this.isServerSide = isPlatformServer(platformId);
     this.currentImageIndex$ = this.currentImageCounter$
       .pipe(map((counter) => {
         const l = this.images.length;
@@ -24,17 +26,16 @@ export class BsCarouselComponent implements OnDestroy, AfterContentInit {
       .pipe(takeUntil(this.destroyed$));
   }
 
-  @HostBinding('@.disabled') public animationsDisabled = false;
-  @Input() public indicators = true;
   @ContentChildren(BsCarouselImageDirective) images!: QueryList<BsCarouselImageDirective>;
+  @Input() indicators = false;
   
-  private _animation: 'fade' | 'slide' = 'slide';
+  isServerSide: boolean;
 
   destroyed$ = new Subject();
   currentImageCounter$ = new BehaviorSubject<number>(-1);
   currentImageIndex$: Observable<number>;
   currentImage$: Observable<TemplateRef<any> | null>;
-
+  
   ngOnDestroy() {
     this.destroyed$.next(true);
   }
@@ -46,8 +47,10 @@ export class BsCarouselComponent implements OnDestroy, AfterContentInit {
       this.currentImageCounter$.next(-1);
     }
   }
-  
+
   //#region Animation
+  @HostBinding('@.disabled') public animationsDisabled = false;
+  private _animation: 'fade' | 'slide' = 'slide';
   @Input() public set animation(value: 'fade' | 'slide') {
     this.animationsDisabled = true;
     this._animation = value;
