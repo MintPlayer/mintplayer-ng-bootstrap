@@ -26,7 +26,6 @@ const routes: Routes = [
   { path: 'pagination', loadChildren: () => import('./pagination/pagination.module').then(m => m.PaginationModule) },
   { path: 'table', loadChildren: () => import('./table/table.module').then(m => m.TableModule) },
   { path: 'button-type', loadChildren: () => import('./button-type/button-type.module').then(m => m.ButtonTypeModule) },
-  { path: 'better-carousel', loadChildren: () => import('./better-carousel/better-carousel.module').then(m => m.BetterCarouselModule) },
 ];
 
 @NgModule({
