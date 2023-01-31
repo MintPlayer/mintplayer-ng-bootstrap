@@ -6,5 +6,9 @@ import { Component } from '@angular/core';
   styleUrls: ['./better-carousel.component.scss']
 })
 export class BetterCarouselComponent {
+  mode: 'slide' | 'fade' = 'slide';
 
+  onModeChange(value: any) {
+    this.mode = value;
+  }
 }
