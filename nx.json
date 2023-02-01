@@ -59,5 +59,6 @@
       "!{projectRoot}/jest.config.[jt]s",
       "!{projectRoot}/.eslintrc.json"
     ]
-  }
+  },
+  "plugins": ["@nx-dotnet/core"]
 }

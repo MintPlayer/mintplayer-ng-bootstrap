@@ -2,6 +2,7 @@
 
 # compiled output
 /dist
+/dist-server
 /tmp
 /out-tsc
 
@@ -37,10 +38,3 @@ testem.log
 # System Files
 .DS_Store
 Thumbs.db
-
-.angular
-
-apps/*/bin
-apps/*/obj
-libs/*/bin
-libs/*/obj
