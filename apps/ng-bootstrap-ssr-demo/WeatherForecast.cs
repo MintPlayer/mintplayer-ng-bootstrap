@@ -1,4 +1,4 @@
-namespace MintplayerNgBootstrap.NgBootstrapSsrDemo;
+namespace Mintplayer.NgBootstrap.SsrDemo;
 
 public class WeatherForecast
 {

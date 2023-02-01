@@ -9,9 +9,9 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddSpaStaticFiles(configuration =>
 {
     // In production, the Angular files will be served from this directory
-    configuration.RootPath = "ClientApp/dist";
+    configuration.RootPath = "../../dist/apps/ng-bootstrap-demo/browser";
 });
-builder.Services.AddSpaPrerenderingService<Services.SpaPrerenderingService>();
+builder.Services.AddSpaPrerenderingService<Mintplayer.NgBootstrap.SsrDemo.Services.SpaPrerenderingService>();
 
 var app = builder.Build();
 
@@ -37,12 +37,12 @@ if (!app.Environment.IsDevelopment())
 
 app.UseSpa(spa =>
 {
-    spa.Options.SourcePath = "ClientApp";
+    spa.Options.SourcePath = "../ng-bootstrap-demo";
 
     spa.UseSpaPrerendering(options =>
     {
         options.BootModuleBuilder = app.Environment.IsDevelopment() ? new AngularCliBuilder(npmScript: "build:ssr") : null;
-        options.BootModulePath = $"{spa.Options.SourcePath}/dist/ClientApp/server/main.js";
+        options.BootModulePath = $"{spa.Options.SourcePath}/../dist/apps/ng-bootstrap-demo/ClientApp/server/main.js";
         options.ExcludeUrls = new[] { "/sockjs-node" };
     });
 

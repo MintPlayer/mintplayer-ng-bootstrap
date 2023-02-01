@@ -1,7 +1,7 @@
 using MintPlayer.AspNetCore.SpaServices.Prerendering.Services;
 using MintPlayer.AspNetCore.SpaServices.Routing;
 
-namespace Ssr.Services;
+namespace Mintplayer.NgBootstrap.SsrDemo.Services;
 
 public class SpaPrerenderingService : ISpaPrerenderingService
 {

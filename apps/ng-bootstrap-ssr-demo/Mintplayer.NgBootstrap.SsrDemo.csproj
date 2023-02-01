@@ -4,7 +4,7 @@
     <TargetFramework>net7.0</TargetFramework>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
-    <SpaRoot>ClientApp\</SpaRoot>
+    <SpaRoot>..\ng-bootstrap-demo\</SpaRoot>
     <ImplicitUsings>enable</ImplicitUsings>
 
 		<!-- Set this to true if you enable server-side prerendering -->

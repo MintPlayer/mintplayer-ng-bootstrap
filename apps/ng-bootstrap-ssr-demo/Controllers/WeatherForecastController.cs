@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 
-namespace MintplayerNgBootstrap.NgBootstrapSsrDemo.Controllers;
+namespace Mintplayer.NgBootstrap.SsrDemo.Controllers;
 
 [ApiController]
 [Route("[controller]")]
