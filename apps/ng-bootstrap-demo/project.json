@@ -16,7 +16,7 @@
         "{options.outputPath}"
       ],
       "options": {
-        "outputPath": "dist/ng-bootstrap-demo/browser",
+        "outputPath": "dist/apps/ng-bootstrap-demo/browser",
         "index": "apps/ng-bootstrap-demo/src/index.html",
         "main": "apps/ng-bootstrap-demo/src/main.ts",
         "polyfills": "apps/ng-bootstrap-demo/src/polyfills.ts",

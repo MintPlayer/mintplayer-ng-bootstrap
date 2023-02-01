@@ -1,4 +1,4 @@
-<h1>User-agent</h1>
+<h1 class="text-center">User-agent</h1>
 <div bsUserAgent (detected)="userAgentDetected($event)">
     <bs-alert [type]="colors.success" *ngIf="detectedUserAgent">
         Your operating system is <b>{{ detectedUserAgent }}</b>
