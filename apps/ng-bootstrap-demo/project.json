@@ -12,9 +12,7 @@
   "targets": {
     "build": {
       "executor": "@angular-devkit/build-angular:browser",
-      "outputs": [
-        "{options.outputPath}"
-      ],
+      "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/apps/ng-bootstrap-demo/browser",
         "index": "apps/ng-bootstrap-demo/src/index.html",
@@ -36,6 +34,9 @@
           }
         ],
         "scripts": []
+      },
+      "stylePreprocessorOptions": {
+        "includePaths": ["../../node_modules"]
       },
       "configurations": {
         "production": {
@@ -99,9 +100,7 @@
     },
     "test": {
       "executor": "@nrwl/jest:jest",
-      "outputs": [
-        "{workspaceRoot}/coverage/apps/ng-bootstrap-demo"
-      ],
+      "outputs": ["{workspaceRoot}/coverage/apps/ng-bootstrap-demo"],
       "options": {
         "jestConfig": "apps/ng-bootstrap-demo/jest.config.ts",
         "passWithNoTests": true
@@ -151,9 +150,7 @@
     "prerender": {
       "executor": "@nguniversal/builders:prerender",
       "options": {
-        "routes": [
-          "/"
-        ]
+        "routes": ["/"]
       },
       "configurations": {
         "production": {

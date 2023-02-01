@@ -22,6 +22,9 @@
       ],
       "@mintplayer/ng-bootstrap": ["libs/mintplayer-ng-bootstrap/src/index.ts"],
       "@mintplayer/ng-bootstrap/*": ["libs/mintplayer-ng-bootstrap/*"],
+      "@mintplayer/ng-bootstrap/demo": [
+        "libs/mintplayer-ng-bootstrap-demo/src/index.ts"
+      ],
       "@mintplayer/ng-bootstrap/package.json": [
         "libs/mintplayer-ng-bootstrap/package.ts"
       ],
