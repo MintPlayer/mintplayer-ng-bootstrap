@@ -1,15 +1,16 @@
 import { animate, AnimationBuilder, style } from '@angular/animations';
 import { Directive, ElementRef, EventEmitter, HostBinding, HostListener, Input, Output, OnDestroy } from '@angular/core';
-import { BehaviorSubject, Subject, take, takeUntil } from 'rxjs';
+import { BehaviorSubject, Subject, takeUntil } from 'rxjs';
 import { Point } from '../../interfaces/point';
 import { Direction } from '../../types/direction';
+import { BsSwipeContainerDirective } from '../swipe-container/swipe-container.directive';
 
 @Directive({
   selector: '[swipe]'
 })
 export class SwipeDirective implements OnDestroy {
 
-  constructor(private element: ElementRef, private animationBuilder: AnimationBuilder) {
+  constructor(private element: ElementRef, private animationBuilder: AnimationBuilder, private container: BsSwipeContainerDirective) {
     this.offsetX$.pipe(takeUntil(this.destroyed$)).subscribe((offsetX) => {
       this.offsetXChange.emit(offsetX);
       if (!offsetX) {

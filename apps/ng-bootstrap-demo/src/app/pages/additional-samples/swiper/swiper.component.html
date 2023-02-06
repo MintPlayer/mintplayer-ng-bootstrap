@@ -3,7 +3,7 @@
 </div> -->
 
 <div #carousel class="carousel slide">
-    <div class="carousel-inner overflow-hidden">
+    <div class="carousel-inner overflow-hidden" bsSwipeContainer>
         <div *ngFor="let image of (imageData$ | async)" class="carousel-item d-inline-block w-100" [class.active]="true" swipe [swipeStart]="onSwipeStart" [swipeEnd]="onSwipeEnd" [correctRight]="false" (offsetXChange)="offsetX = $event" [easeOut]="true" [allowedDirections]="['left', 'right']">
             <div class="w-100">
                 <img [src]="image.url" class="w-100">
