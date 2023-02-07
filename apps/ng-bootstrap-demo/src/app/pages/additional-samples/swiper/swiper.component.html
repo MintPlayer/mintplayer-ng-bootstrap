@@ -1,16 +1,9 @@
 <h1 class="text-center">Swiper</h1>
-<!-- <div class="wrapper d-inline-block">
-    <img src="/assets/resized/leopard.png" swipe [easeOut]="true" [allowedDirections]="['left', 'right']">
-</div> -->
-
 <div #carousel class="carousel slide">
-    <div class="carousel-inner overflow-hidden" bsSwipeContainer>
-        <!--  swipe [swipeStart]="onSwipeStart" [swipeEnd]="onSwipeEnd" [correctRight]="false" (offsetXChange)="offsetX = $event" [easeOut]="true" [allowedDirections]="['left', 'right']" -->
-        <div #wrapper [style.margin-left.%]="offsetLeft$ | async" [style.margin-right.%]="offsetRight$ | async">
-            <div *ngFor="let image of (imageData$ | async)" class="carousel-item d-inline-block w-100" [class.active]="true" (touchstart)="onTouchStart($event)" (touchmove)="onTouchMove($event)" (touchend)="onTouchEnd($event)">
-                <div class="w-100">
-                    <img [src]="image.url" class="w-100">
-                </div>
+    <div class="carousel-inner overflow-hidden">
+        <div bsSwipeContainer>
+            <div *ngFor="let image of (images$ | async)" class="carousel-item d-inline-block w-100" [class.active]="true" bsSwipe>
+                <img [src]="image" class="w-100">
             </div>
         </div>
     </div>
