@@ -126,13 +126,9 @@ export class SwiperComponent implements AfterViewInit, OnDestroy {
 
           const animation = this.animationBuilder.build([
             style({ 'margin-left': (-imageIndex * this.wrapper.nativeElement.clientWidth + ml) + 'px', 'margin-right': (imageIndex * this.wrapper.nativeElement.clientWidth - ml) + 'px' }),
-            animate('500ms ease', style({ 'margin-left': (-(imageIndex + 1) * this.wrapper.nativeElement.clientWidth) + 'px', 'margin-right': ((imageIndex + 1) * this.wrapper.nativeElement.clientWidth) + 'px' }))
+            animate('500ms ease', style({ 'margin-left': (-(imageIndex + (direction === 'right' ? 1 : -1)) * this.wrapper.nativeElement.clientWidth) + 'px', 'margin-right': ((imageIndex + (direction === 'right' ? 1 : -1)) * this.wrapper.nativeElement.clientWidth) + 'px' }))
           ]).create(this.wrapper.nativeElement);
           animation.onDone(() => {
-            this.startTouch$.next(null);
-            this.lastTouch$.next(null);
-            animation.destroy();
-
             switch (direction) {
               case 'left':
                 this.imageIndex$.next(imageIndex - 1);
@@ -141,6 +137,10 @@ export class SwiperComponent implements AfterViewInit, OnDestroy {
                 this.imageIndex$.next(imageIndex + 1);
                 break;
             }
+
+            this.startTouch$.next(null);
+            this.lastTouch$.next(null);
+            animation.destroy();
           });
           animation.play();
         }
