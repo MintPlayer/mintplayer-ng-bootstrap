@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { Color } from '@mintplayer/ng-bootstrap';
 
 @Component({
   selector: 'demo-swiper',
@@ -7,6 +8,7 @@ import { Component } from '@angular/core';
 })
 export class SwiperComponent {
 
+  colors = Color;
   images = [
     '/assets/resized/deer.png',
     '/assets/resized/duck.png',

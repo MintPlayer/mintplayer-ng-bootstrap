@@ -72,7 +72,7 @@ export class BsNavbarDropdownComponent implements OnDestroy {
           positionStrategy: overlayService.position()
             .flexibleConnectedTo(this.navbarItem.element)
             .withPositions([
-              { originX: 'end', originY: 'top', overlayX: 'start', overlayY: 'top', offsetX: -7, offsetY: -9 }
+              { originX: 'end', originY: 'top', overlayX: 'start', overlayY: 'top', offsetX: -9, offsetY: -9 }
             ])
         });
 

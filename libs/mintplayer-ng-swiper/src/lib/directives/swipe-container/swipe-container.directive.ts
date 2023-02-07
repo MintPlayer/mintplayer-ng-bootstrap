@@ -1,5 +1,5 @@
 import { AnimationPlayer } from '@angular/animations';
-import { AfterViewInit, Directive, ElementRef, EventEmitter, HostBinding, OnDestroy, Output } from '@angular/core';
+import { AfterViewInit, Directive, ElementRef, EventEmitter, HostBinding, Input, OnDestroy, Output } from '@angular/core';
 import { BehaviorSubject, combineLatest, map, Observable, Subject, takeUntil } from 'rxjs';
 import { LastTouch } from '../../interfaces/last-touch';
 import { StartTouch } from '../../interfaces/start-touch';
@@ -41,6 +41,7 @@ export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
   @HostBinding('style.margin-right.%') offsetRight: number | null = null;
   @HostBinding('style.margin-top.%') offsetTop: number | null = null;
   @HostBinding('style.margin-bottom.%') offsetBottom: number | null = null;
+  @Input() minimumOffset = 50;
   @Output() imageIndexChange = new EventEmitter<number>();
 
   isViewInited$ = new BehaviorSubject<boolean>(false);

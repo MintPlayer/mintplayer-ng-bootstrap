@@ -12,7 +12,7 @@ export class ToggleButtonComponent {
   favoriteColors: string[] = [];
 
   // Checkbox - Single mode
-  isDarkMode = false;
+  isAllDisabled = false;
   isHstsEnabled = false;
   isCrossPlatform = false;
 

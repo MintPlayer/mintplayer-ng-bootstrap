@@ -1,12 +1,23 @@
 <h1 class="text-center">Swiper</h1>
+<bs-badge [type]="colors.info">In development</bs-badge>
+<h2>Demo</h2>
+<p>View this page on a phone, or open DevTools <kbd>F12</kbd> in order to enable the mobile viewer</p>
 <div #carousel class="carousel slide">
     <div class="carousel-inner overflow-hidden">
-        <div bsSwipeContainer>
+        <div bsSwipeContainer [minimumOffset]="50">
             <div *ngFor="let image of images" class="carousel-item d-inline-block w-100" [class.active]="true" bsSwipe>
                 <img [src]="image" class="w-100">
             </div>
         </div>
     </div>
+    <!-- <button class="carousel-control-prev" type="button">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Previous</span>
+    </button>
+    <button class="carousel-control-next" type="button">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Next</span>
+    </button> -->
 </div>
 
 <!-- 

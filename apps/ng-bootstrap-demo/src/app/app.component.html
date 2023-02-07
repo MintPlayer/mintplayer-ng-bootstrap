@@ -211,7 +211,10 @@
           <a [routerLink]='["/additional-samples", "qr-code"]'>QR-code viewer</a>
         </bs-navbar-item>
         <bs-navbar-item>
-          <a [routerLink]='["/additional-samples", "swiper"]'>Swiper</a>
+          <a [routerLink]='["/additional-samples", "swiper"]'>
+            Swiper
+            <bs-badge [type]="colors.info" class="float-end">alpha</bs-badge>
+          </a>
         </bs-navbar-item>
       </bs-navbar-dropdown>
     </bs-navbar-item>

@@ -61,7 +61,14 @@ export class BsSwipeDirective {
 
   animateToIndex(oldIndex: number, dx: number) {
     const direction = dx > 0 ? 'left' : 'right';
-    const newIndex = oldIndex + (direction === 'right' ? 1 : -1);
+    
+    let newIndex: number;
+    if (Math.abs(dx) < this.container.minimumOffset) {
+      newIndex = oldIndex;
+    } else {
+      newIndex = oldIndex + (direction === 'right' ? 1 : -1);
+    }
+
     this.container.pendingAnimation = this.animationBuilder.build([
       style({ 'margin-left': (-oldIndex * this.container.containerElement.nativeElement.clientWidth + dx) + 'px', 'margin-right': (oldIndex * this.container.containerElement.nativeElement.clientWidth - dx) + 'px' }),
       animate('500ms ease', style({ 'margin-left': (-newIndex * this.container.containerElement.nativeElement.clientWidth) + 'px', 'margin-right': (newIndex * this.container.containerElement.nativeElement.clientWidth) + 'px' })),
