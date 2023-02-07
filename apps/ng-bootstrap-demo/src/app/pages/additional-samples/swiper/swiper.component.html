@@ -2,7 +2,7 @@
 <div #carousel class="carousel slide">
     <div class="carousel-inner overflow-hidden">
         <div bsSwipeContainer>
-            <div *ngFor="let image of (images$ | async)" class="carousel-item d-inline-block w-100" [class.active]="true" bsSwipe>
+            <div *ngFor="let image of images" class="carousel-item d-inline-block w-100" [class.active]="true" bsSwipe>
                 <img [src]="image" class="w-100">
             </div>
         </div>
