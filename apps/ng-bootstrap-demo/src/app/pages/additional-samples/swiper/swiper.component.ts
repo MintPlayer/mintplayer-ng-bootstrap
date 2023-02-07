@@ -1,4 +1,4 @@
-import { animate, AnimationBuilder, state, style } from '@angular/animations';
+import { animate, AnimationBuilder, AnimationPlayer, state, style } from '@angular/animations';
 import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
 // import { Point } from '@mintplayer/ng-swiper';
 import { BehaviorSubject, combineLatest, filter, map, Observable, Subject, take, takeUntil, tap, delay } from 'rxjs';
@@ -71,7 +71,7 @@ export class SwiperComponent implements AfterViewInit, OnDestroy {
   @ViewChild('wrapper') wrapper!: ElementRef<HTMLDivElement>;
   startTouch$ = new BehaviorSubject<StartTouch | null>(null);
   lastTouch$ = new BehaviorSubject<LastTouch | null>(null);
-  // offsetLeft = 0;
+  currentAnimation?: AnimationPlayer;
   offset$ = new BehaviorSubject<number>(0);
   offsetLeft$: Observable<number>;
   offsetRight$: Observable<number>;
@@ -87,20 +87,24 @@ export class SwiperComponent implements AfterViewInit, OnDestroy {
   onTouchStart(ev: TouchEvent) {
     if (ev.touches.length === 1) {
       ev.preventDefault();
-      this.startTouch$.next({
-        position: {
-          x: ev.touches[0].clientX,
-          y: ev.touches[0].clientY,
-        },
-        timestamp: Date.now(),
-      });
-      this.lastTouch$.next({
-        position: {
-          x: ev.touches[0].clientX,
-          y: ev.touches[0].clientY,
-        },
-        isTouching: true,
-      });
+      this.currentAnimation?.finish();
+
+      setTimeout(() => {
+        this.startTouch$.next({
+          position: {
+            x: ev.touches[0].clientX,
+            y: ev.touches[0].clientY,
+          },
+          timestamp: Date.now(),
+        });
+        this.lastTouch$.next({
+          position: {
+            x: ev.touches[0].clientX,
+            y: ev.touches[0].clientY,
+          },
+          isTouching: true,
+        });
+      }, 20);
     }
   }
 
@@ -124,34 +128,35 @@ export class SwiperComponent implements AfterViewInit, OnDestroy {
           const direction = ml > 0 ? 'left' : 'right';
 
 
-          const animation = this.animationBuilder.build([
+          this.currentAnimation = this.animationBuilder.build([
             style({ 'margin-left': (-imageIndex * this.wrapper.nativeElement.clientWidth + ml) + 'px', 'margin-right': (imageIndex * this.wrapper.nativeElement.clientWidth - ml) + 'px' }),
             animate('500ms ease', style({ 'margin-left': (-(imageIndex + (direction === 'right' ? 1 : -1)) * this.wrapper.nativeElement.clientWidth) + 'px', 'margin-right': ((imageIndex + (direction === 'right' ? 1 : -1)) * this.wrapper.nativeElement.clientWidth) + 'px' }))
           ]).create(this.wrapper.nativeElement);
-          animation.onDone(() => {
-            // switch (direction) {
-            //   case 'left':
-            //     this.imageIndex$.next(imageIndex - 1);
-            //     break;
-            //   case 'right':
-            //     this.imageIndex$.next(imageIndex + 1);
-            //     break;
-            // }
+          this.currentAnimation.onDone(() => {
+            switch (direction) {
+              case 'left':
+                this.imageIndex$.next(imageIndex - 1);
+                break;
+              case 'right':
+                this.imageIndex$.next(imageIndex + 1);
+                break;
+            }
 
             this.startTouch$.next(null);
             this.lastTouch$.next(null);
-            animation.destroy();
+            this.currentAnimation?.destroy();
+            this.currentAnimation = undefined;
           });
-          animation.play();
+          this.currentAnimation.play();
           
-          switch (direction) {
-            case 'left':
-              this.imageIndex$.next(imageIndex - 1);
-              break;
-            case 'right':
-              this.imageIndex$.next(imageIndex + 1);
-              break;
-          }
+          // switch (direction) {
+          //   case 'left':
+          //     this.imageIndex$.next(imageIndex - 1);
+          //     break;
+          //   case 'right':
+          //     this.imageIndex$.next(imageIndex + 1);
+          //     break;
+          // }
         }
       });
   }
