@@ -1,7 +1,7 @@
 import { animate, AnimationBuilder, state, style } from '@angular/animations';
-import { Component, ElementRef, ViewChild, OnDestroy } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
 // import { Point } from '@mintplayer/ng-swiper';
-import { BehaviorSubject, combineLatest, filter, map, Observable, Subject, take, takeUntil, tap } from 'rxjs';
+import { BehaviorSubject, combineLatest, filter, map, Observable, Subject, take, takeUntil, tap, delay } from 'rxjs';
 
 export interface Point {
   x: number;
@@ -23,7 +23,7 @@ export interface LastTouch {
   templateUrl: './swiper.component.html',
   styleUrls: ['./swiper.component.scss']
 })
-export class SwiperComponent implements OnDestroy {
+export class SwiperComponent implements AfterViewInit, OnDestroy {
 
   constructor(private animationBuilder: AnimationBuilder) {
     this.imageData$ = this.images$
@@ -35,13 +35,15 @@ export class SwiperComponent implements OnDestroy {
     //   console.log('image index', index);
     // });
 
-    combineLatest([this.startTouch$, this.lastTouch$])
+    combineLatest([this.startTouch$, this.lastTouch$, this.imageIndex$, this.isViewInited$])
+      .pipe(filter(([startTouch, lastTouch, imageIndex, isViewInited]) => isViewInited), delay(20))
       .pipe(takeUntil(this.destroyed$))
-      .subscribe(([startTouch, lastTouch]) => {
+      .subscribe(([startTouch, lastTouch, imageIndex]) => {
+        console.log('startTouch, lastTouch', {startTouch, lastTouch});
         if (!!startTouch && !!lastTouch) {
-          this.offset$.next(lastTouch.position.x - startTouch.position.x);
+          this.offset$.next(-imageIndex * this.wrapper.nativeElement.clientWidth + lastTouch.position.x - startTouch.position.x);
         } else {
-          this.offset$.next(0);
+          this.offset$.next(-imageIndex * this.wrapper.nativeElement.clientWidth);
         }
       });
 
@@ -49,7 +51,8 @@ export class SwiperComponent implements OnDestroy {
     this.offsetRight$ = this.offset$.pipe(map((o) => -o));
   }
 
-  imageIndex$ = new BehaviorSubject<number>(0);
+  isViewInited$ = new BehaviorSubject<boolean>(false);
+  imageIndex$ = new BehaviorSubject<number>(2);
   isSwiping$ = new BehaviorSubject<boolean>(false);
   destroyed$ = new Subject();
   offsetX: number | null = null;
@@ -72,6 +75,10 @@ export class SwiperComponent implements OnDestroy {
   offset$ = new BehaviorSubject<number>(0);
   offsetLeft$: Observable<number>;
   offsetRight$: Observable<number>;
+
+  ngAfterViewInit() {
+    this.isViewInited$.next(true);
+  }
 
   ngOnDestroy() {
     this.destroyed$.next(true);
@@ -114,14 +121,26 @@ export class SwiperComponent implements OnDestroy {
       .subscribe(([startTouch, lastTouch, imageIndex]) => {
         if (!!startTouch && !!lastTouch) {
           const ml = lastTouch.position.x - startTouch.position.x;
+          const direction = ml > 0 ? 'left' : 'right';
+
+
           const animation = this.animationBuilder.build([
-            style({ 'margin-left': `calc(-${imageIndex} * 100% + ${ml}px)`, 'margin-right': `calc(${imageIndex} * 100% - ${ml}px)` }),
-            animate('500ms ease', style({ 'margin-left': `calc(-(${imageIndex} + 1) * 100% - 20px)`, 'margin-right': `calc((${imageIndex} + 1) * 100% + 20px` }))
+            style({ 'margin-left': (-imageIndex * this.wrapper.nativeElement.clientWidth + ml) + 'px', 'margin-right': (imageIndex * this.wrapper.nativeElement.clientWidth - ml) + 'px' }),
+            animate('500ms ease', style({ 'margin-left': (-(imageIndex + 1) * this.wrapper.nativeElement.clientWidth) + 'px', 'margin-right': ((imageIndex + 1) * this.wrapper.nativeElement.clientWidth) + 'px' }))
           ]).create(this.wrapper.nativeElement);
           animation.onDone(() => {
             this.startTouch$.next(null);
             this.lastTouch$.next(null);
             animation.destroy();
+
+            switch (direction) {
+              case 'left':
+                this.imageIndex$.next(imageIndex - 1);
+                break;
+              case 'right':
+                this.imageIndex$.next(imageIndex + 1);
+                break;
+            }
           });
           animation.play();
         }
