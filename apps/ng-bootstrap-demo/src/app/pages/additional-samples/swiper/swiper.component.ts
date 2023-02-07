@@ -1,7 +1,6 @@
 import { animate, AnimationBuilder, AnimationPlayer, state, style } from '@angular/animations';
 import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
-// import { Point } from '@mintplayer/ng-swiper';
-import { BehaviorSubject, combineLatest, filter, map, Observable, Subject, take, takeUntil, tap, delay } from 'rxjs';
+import { BehaviorSubject, combineLatest, filter, map, Observable, Subject, take, takeUntil, tap, delay, debounceTime, of } from 'rxjs';
 
 export interface Point {
   x: number;
@@ -29,33 +28,27 @@ export class SwiperComponent implements AfterViewInit, OnDestroy {
     this.imageData$ = this.images$
       .pipe(map((images) => images.map(image => <ImageData>{
         url: image,
-        // marginLeft: undefined
       })));
-    // this.imageIndex$.subscribe((index) => {
-    //   console.log('image index', index);
-    // });
 
-    combineLatest([this.startTouch$, this.lastTouch$, this.imageIndex$, this.isViewInited$])
-      .pipe(filter(([startTouch, lastTouch, imageIndex, isViewInited]) => isViewInited))
-      .pipe(takeUntil(this.destroyed$))
-      .subscribe(([startTouch, lastTouch, imageIndex]) => {
-        console.log('startTouch, lastTouch', {startTouch, lastTouch});
-        if (!!startTouch && !!lastTouch) {
-          this.offset$.next(-imageIndex * this.wrapper.nativeElement.clientWidth + lastTouch.position.x - startTouch.position.x);
+    this.offset$ = combineLatest([this.startTouch$, this.lastTouch$, this.imageIndex$, this.isViewInited$])
+      .pipe(map(([startTouch, lastTouch, imageIndex, isViewInited]) => {
+        if (!isViewInited) {
+          return (-imageIndex * 100);
+        } else if (!!startTouch && !!lastTouch) {
+          return (-imageIndex * 100 + (lastTouch.position.x - startTouch.position.x) / this.wrapper.nativeElement.clientWidth * 100);
         } else {
-          this.offset$.next(-imageIndex * this.wrapper.nativeElement.clientWidth);
+          return (-imageIndex * 100);
         }
-      });
-
+      }));
+      
     this.offsetLeft$ = this.offset$;
-    this.offsetRight$ = this.offset$.pipe(map((o) => -o));
+    this.offsetRight$ = this.offset$.pipe(map(o => -o));
   }
 
   isViewInited$ = new BehaviorSubject<boolean>(false);
-  imageIndex$ = new BehaviorSubject<number>(2);
+  imageIndex$ = new BehaviorSubject<number>(0);
   isSwiping$ = new BehaviorSubject<boolean>(false);
   destroyed$ = new Subject();
-  offsetX: number | null = null;
 
   images$ = new BehaviorSubject<string[]>([
     '/assets/resized/deer.png',
@@ -72,7 +65,7 @@ export class SwiperComponent implements AfterViewInit, OnDestroy {
   startTouch$ = new BehaviorSubject<StartTouch | null>(null);
   lastTouch$ = new BehaviorSubject<LastTouch | null>(null);
   currentAnimation?: AnimationPlayer;
-  offset$ = new BehaviorSubject<number>(0);
+  offset$: Observable<number>;
   offsetLeft$: Observable<number>;
   offsetRight$: Observable<number>;
 
@@ -130,7 +123,8 @@ export class SwiperComponent implements AfterViewInit, OnDestroy {
 
           this.currentAnimation = this.animationBuilder.build([
             style({ 'margin-left': (-imageIndex * this.wrapper.nativeElement.clientWidth + ml) + 'px', 'margin-right': (imageIndex * this.wrapper.nativeElement.clientWidth - ml) + 'px' }),
-            animate('500ms ease', style({ 'margin-left': (-(imageIndex + (direction === 'right' ? 1 : -1)) * this.wrapper.nativeElement.clientWidth) + 'px', 'margin-right': ((imageIndex + (direction === 'right' ? 1 : -1)) * this.wrapper.nativeElement.clientWidth) + 'px' }))
+            animate('500ms ease', style({ 'margin-left': (-(imageIndex + (direction === 'right' ? 1 : -1)) * this.wrapper.nativeElement.clientWidth) + 'px', 'margin-right': ((imageIndex + (direction === 'right' ? 1 : -1)) * this.wrapper.nativeElement.clientWidth) + 'px' })),
+            // style({ 'margin-left': (-(imageIndex + (direction === 'right' ? 1 : -1))) + '00%', 'margin-right': (imageIndex + (direction === 'right' ? 1 : -1)) + '00%' })),
           ]).create(this.wrapper.nativeElement);
           this.currentAnimation.onDone(() => {
             switch (direction) {
@@ -160,26 +154,6 @@ export class SwiperComponent implements AfterViewInit, OnDestroy {
         }
       });
   }
-  
-  // onSwipeStart = () => {
-  //   this.isSwiping$.next(true);
-  // }
-
-  // onSwipeEnd = (offset: Point, durationMs: number) =>  {
-  //   this.isSwiping$.next(false);
-  //   if (Math.abs(offset.x) >= this.carousel.nativeElement.clientWidth / 2) {
-  //     this.imageIndex$.next(this.imageIndex$.value + 1);
-
-  //     this.animationBuilder.build([
-  //       style({ 'margin-left':  })
-  //     ])
-
-  //     return true;
-  //   } else {
-  //     return false;
-  //   }
-  // }
-
 }
 
 export interface ImageData {
