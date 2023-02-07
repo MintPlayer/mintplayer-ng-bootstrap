@@ -36,7 +36,7 @@ export class SwiperComponent implements AfterViewInit, OnDestroy {
     // });
 
     combineLatest([this.startTouch$, this.lastTouch$, this.imageIndex$, this.isViewInited$])
-      .pipe(filter(([startTouch, lastTouch, imageIndex, isViewInited]) => isViewInited), delay(20))
+      .pipe(filter(([startTouch, lastTouch, imageIndex, isViewInited]) => isViewInited))
       .pipe(takeUntil(this.destroyed$))
       .subscribe(([startTouch, lastTouch, imageIndex]) => {
         console.log('startTouch, lastTouch', {startTouch, lastTouch});
@@ -129,20 +129,29 @@ export class SwiperComponent implements AfterViewInit, OnDestroy {
             animate('500ms ease', style({ 'margin-left': (-(imageIndex + (direction === 'right' ? 1 : -1)) * this.wrapper.nativeElement.clientWidth) + 'px', 'margin-right': ((imageIndex + (direction === 'right' ? 1 : -1)) * this.wrapper.nativeElement.clientWidth) + 'px' }))
           ]).create(this.wrapper.nativeElement);
           animation.onDone(() => {
-            switch (direction) {
-              case 'left':
-                this.imageIndex$.next(imageIndex - 1);
-                break;
-              case 'right':
-                this.imageIndex$.next(imageIndex + 1);
-                break;
-            }
+            // switch (direction) {
+            //   case 'left':
+            //     this.imageIndex$.next(imageIndex - 1);
+            //     break;
+            //   case 'right':
+            //     this.imageIndex$.next(imageIndex + 1);
+            //     break;
+            // }
 
             this.startTouch$.next(null);
             this.lastTouch$.next(null);
             animation.destroy();
           });
           animation.play();
+          
+          switch (direction) {
+            case 'left':
+              this.imageIndex$.next(imageIndex - 1);
+              break;
+            case 'right':
+              this.imageIndex$.next(imageIndex + 1);
+              break;
+          }
         }
       });
   }
