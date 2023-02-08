@@ -9,6 +9,7 @@ import { Color } from '@mintplayer/ng-bootstrap';
 export class SwiperComponent {
 
   colors = Color;
+  indicators = true;
   images = [
     '/assets/resized/deer.png',
     '/assets/resized/duck.png',

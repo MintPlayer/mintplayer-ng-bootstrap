@@ -5,11 +5,15 @@
     @import "../../../../../../../node_modules/bootstrap/scss/mixins";
 
     // Layout & components
-    // @import "../../../../../../../node_modules/bootstrap/scss/carousel";
+    @import "../../../../../../../node_modules/bootstrap/scss/carousel";
 }
 
 .wrapper {
     overflow: hidden;
+}
+
+.carousel {
+    max-width: 500px;
 }
 
 .carousel-inner {
