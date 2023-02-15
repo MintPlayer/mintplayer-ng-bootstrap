@@ -1,5 +1,5 @@
 import { AfterViewInit, Directive, ElementRef, HostBinding, HostListener, OnDestroy } from "@angular/core";
-import { BehaviorSubject, combineLatest, filter, Subject, take } from "rxjs";
+import { BehaviorSubject, combineLatest, filter, take } from "rxjs";
 import { BsSwipeContainerDirective } from "../swipe-container/swipe-container.directive";
 
 @Directive({
@@ -67,7 +67,6 @@ export class BsSwipeDirective implements AfterViewInit, OnDestroy {
 
   ngAfterViewInit() {
     this.observer = new ResizeObserver((entries) => {
-      console.log('resized', entries[0].contentRect);
       this.slideHeight$.next(entries[0].contentRect.height);
     });
     this.observer.observe(this.element.nativeElement);

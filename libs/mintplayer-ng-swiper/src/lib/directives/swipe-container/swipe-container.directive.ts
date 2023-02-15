@@ -1,8 +1,7 @@
 import { animate, AnimationBuilder, AnimationPlayer, style } from '@angular/animations';
-import { ContentObserver } from '@angular/cdk/observers';
 import { DOCUMENT } from '@angular/common';
-import { AfterContentInit, AfterViewInit, ContentChildren, Directive, ElementRef, EventEmitter, forwardRef, HostBinding, Inject, Input, OnDestroy, Output, QueryList } from '@angular/core';
-import { BehaviorSubject, combineLatest, delay, filter, flatMap, forkJoin, map, mergeMap, Observable, pairwise, repeat, Subject, switchMap, take, takeUntil } from 'rxjs';
+import { AfterViewInit, ContentChildren, Directive, ElementRef, EventEmitter, forwardRef, HostBinding, Inject, Input, OnDestroy, Output, QueryList } from '@angular/core';
+import { BehaviorSubject, combineLatest, filter, map, mergeMap, Observable, Subject, take, takeUntil } from 'rxjs';
 import { LastTouch } from '../../interfaces/last-touch';
 import { StartTouch } from '../../interfaces/start-touch';
 import { BsSwipeDirective } from '../swipe/swipe.directive';
@@ -11,9 +10,9 @@ import { BsSwipeDirective } from '../swipe/swipe.directive';
   selector: '[bsSwipeContainer]',
   exportAs: 'bsSwipeContainer'
 })
-export class BsSwipeContainerDirective implements AfterViewInit, AfterContentInit, OnDestroy {
+export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
 
-  constructor(element: ElementRef, private animationBuilder: AnimationBuilder, private contentObserver: ContentObserver, @Inject(DOCUMENT) document: any) {
+  constructor(element: ElementRef, private animationBuilder: AnimationBuilder, @Inject(DOCUMENT) document: any) {
     this.containerElement = element;
     this.document = <Document>document;
     this.offset$ = combineLatest([this.startTouch$, this.lastTouch$, this.imageIndex$, this.isViewInited$])
@@ -44,9 +43,8 @@ export class BsSwipeContainerDirective implements AfterViewInit, AfterContentIni
       .pipe(map(swipes => <QueryList<BsSwipeDirective>>swipes))
       .pipe(mergeMap(swipes => combineLatest(swipes.map(swipe => swipe.slideHeight$))));
 
-    this.currentSlideHeight$ = combineLatest([this.isContentInited$, this.slideHeights$, this.imageIndex$])
-      .pipe(filter(([isContentInited, slideHeights, imageIndex]) => isContentInited))
-      .pipe(map(([isContentInited, slideHeights, imageIndex]) => {
+    this.currentSlideHeight$ = combineLatest([this.slideHeights$, this.imageIndex$])
+      .pipe(map(([slideHeights, imageIndex]) => {
         const maxHeight = Math.max(...slideHeights);
         const currHeight: number = slideHeights[imageIndex] ?? maxHeight;
         return maxHeight - (maxHeight - currHeight)/* / 2*/;
@@ -72,7 +70,6 @@ export class BsSwipeContainerDirective implements AfterViewInit, AfterContentIni
   @Output() imageIndexChange = new EventEmitter<number>();
   
   isViewInited$ = new BehaviorSubject<boolean>(false);
-  isContentInited$ = new BehaviorSubject<boolean>(false);
   destroyed$ = new Subject();
   startTouch$ = new BehaviorSubject<StartTouch | null>(null);
   lastTouch$ = new BehaviorSubject<LastTouch | null>(null);
@@ -92,16 +89,6 @@ export class BsSwipeContainerDirective implements AfterViewInit, AfterContentIni
 
   ngAfterViewInit() {
     this.isViewInited$.next(true);
-
-    this.contentObserver.observe(this.containerElement)
-      .pipe(takeUntil(this.destroyed$))
-      .subscribe((ev) => {
-        console.log('content changed', ev);
-      });
-  }
-
-  ngAfterContentInit(): void {
-    setTimeout(() => this.isContentInited$.next(true), 50);
   }
 
   ngOnDestroy() {
