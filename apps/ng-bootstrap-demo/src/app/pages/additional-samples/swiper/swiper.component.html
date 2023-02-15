@@ -7,14 +7,3 @@
         <img *bsCarouselPreviewImage [src]="image" class="w-100">
     </ng-container>
 </bs-carousel-preview>
-
-<!-- 
-<div class="carousel slide">
-    <div class="carousel-inner" [@carouselSlide]="currentImageCounter$ | async" *ngIf="animation === 'slide'">
-        <ng-container *ngFor="let image of images; let i = index">
-            <div class="carousel-item" [class.active]="true" *ngIf="(currentImageIndex$ | async) === i">
-                <ng-container [ngTemplateOutlet]="image.itemTemplate"></ng-container>    
-            </div>
-        </ng-container>
-    </div>
-</div> -->
