@@ -1,8 +1,8 @@
-import { DropdownDividerDirective } from './dropdown-divider.directive';
+import { BsDropdownDividerDirective } from './dropdown-divider.directive';
 
-describe('DropdownDividerDirective', () => {
+describe('BsDropdownDividerDirective', () => {
   it('should create an instance', () => {
-    const directive = new DropdownDividerDirective();
+    const directive = new BsDropdownDividerDirective();
     expect(directive).toBeTruthy();
   });
 });
