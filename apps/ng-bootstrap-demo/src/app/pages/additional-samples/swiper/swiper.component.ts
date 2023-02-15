@@ -8,6 +8,7 @@ import { Color } from '@mintplayer/ng-bootstrap';
 })
 export class SwiperComponent {
 
+  mode: 'slide' | 'fade' = 'slide';
   colors = Color;
   indicators = true;
   images = [

@@ -6,20 +6,47 @@
 
     // Layout & components
     @import "../../../../../node_modules/bootstrap/scss/carousel";
+        
+    .carousel {
+        min-height: 100px;
+        max-width: 500px;
+
+        &.noscript {
+            .carousel-inner {
+                grid-template-rows: 100%;
+                grid-template-columns: 100%;
+            }
+
+            .carousel-control-prev, .carousel-control-next {
+                display: none;
+                z-index: 10;
+            }
+
+            .carousel-item {
+                display: block;
+                opacity: 0;
+                transition: opacity .4s ease-in-out;
+
+                grid-row: 1;
+                grid-column: 1;
+            }
+
+            .car-radio.noscript:checked + .carousel-item {
+                opacity: 1;
+                z-index: 5;
+
+                + label.carousel-control-prev, + label.carousel-control-prev + .carousel-control-next {
+                    display: flex;
+                }
+            }
+
+            .carousel-indicators {
+                z-index: 10;
+            }
+        }
+    }
 }
 
 .wrapper {
     overflow: hidden;
-}
-
-.carousel {
-    max-width: 500px;
-}
-
-.carousel-inner {
-    white-space: nowrap !important;
-}
-
-.carousel-item {
-    float: none !important;
 }

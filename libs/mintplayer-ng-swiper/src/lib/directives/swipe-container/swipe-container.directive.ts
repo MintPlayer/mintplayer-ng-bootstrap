@@ -67,7 +67,16 @@ export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
     setTimeout(() => this.swipes$.next(value));
   }
   @Input() minimumOffset = 50;
+
+  //#region ImageIndex
+  public get imageIndex() {
+    return this.imageIndex$.value;
+  }
+  @Input() public set imageIndex(value: number) {
+    this.imageIndex$.next(value);
+  }
   @Output() imageIndexChange = new EventEmitter<number>();
+  //#endregion
   
   isViewInited$ = new BehaviorSubject<boolean>(false);
   destroyed$ = new Subject();
@@ -158,4 +167,5 @@ export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
       setTimeout(() => this.animateToIndex(imageIndex, index, 0), 10);
     });
   }
+
 }
