@@ -1,9 +1,11 @@
 {
   "name": "@mintplayer/ng-swiper",
-  "version": "0.0.1",
+  "version": "15.0.0",
   "peerDependencies": {
-    "@angular/common": "^14.0.0",
-    "@angular/core": "^14.0.0"
+    "@angular/common": "^15.0.0",
+    "@angular/core": "^15.0.0",
+    "@angular/animations": "^15.0.0",
+    "rxjs": "^7.8.0"
   },
   "dependencies": {
     "tslib": "^2.3.0"

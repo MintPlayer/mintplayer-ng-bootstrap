@@ -1,4 +1,4 @@
-import { Directive, TemplateRef } from '@angular/core';
+import { Directive, TemplateRef, HostBinding } from '@angular/core';
 
 @Directive({
   selector: '*[bsCarouselImage]'
@@ -10,4 +10,6 @@ export class BsCarouselImageDirective {
   constructor(private templateRef: TemplateRef<any>) {
     this.itemTemplate = this.templateRef;
   }
+
+  @HostBinding('class.w-100') width100class = true;
 }

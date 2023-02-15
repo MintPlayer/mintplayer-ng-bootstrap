@@ -1,52 +1,30 @@
 import { isPlatformServer } from '@angular/common';
-import { AfterContentInit, Component, ContentChildren, HostBinding, HostListener, Inject, Input, OnDestroy, OnInit, PLATFORM_ID, QueryList, TemplateRef } from '@angular/core';
-import { FadeInOutAnimation, CarouselSlideAnimation } from '@mintplayer/ng-animations';
-import { BehaviorSubject, Observable, Subject } from 'rxjs';
-import { map, take, takeUntil } from 'rxjs/operators';
+import { ChangeDetectorRef, Component, ContentChildren, forwardRef, HostBinding, HostListener, Inject, Input, PLATFORM_ID, QueryList, ViewChild } from '@angular/core';
+import { FadeInOutAnimation } from '@mintplayer/ng-animations';
+import { Color } from '@mintplayer/ng-bootstrap';
+import { BsSwipeContainerDirective } from '@mintplayer/ng-swiper';
 import { BsCarouselImageDirective } from '../carousel-image/carousel-image.directive';
 
 @Component({
   selector: 'bs-carousel',
   templateUrl: './carousel.component.html',
   styleUrls: ['./carousel.component.scss'],
-  animations: [FadeInOutAnimation, CarouselSlideAnimation]
+  animations: [FadeInOutAnimation]
 })
-export class BsCarouselComponent implements OnDestroy, AfterContentInit {
+export class BsCarouselComponent {
 
-  constructor(@Inject(PLATFORM_ID) platformId: any) {
+  constructor(@Inject(PLATFORM_ID) platformId: any, private cdRef: ChangeDetectorRef) {
     this.isServerSide = isPlatformServer(platformId);
-    this.currentImageIndex$ = this.currentImageCounter$
-      .pipe(map((counter) => {
-        const l = this.images.length;
-        return ((counter % l) + l) % l;
-      }))
-      .pipe(takeUntil(this.destroyed$));
-    this.currentImage$ = this.currentImageIndex$
-      .pipe(map((index) => this.images.get(index)?.itemTemplate ?? null))
-      .pipe(takeUntil(this.destroyed$));
   }
-
-  @ContentChildren(BsCarouselImageDirective) images!: QueryList<BsCarouselImageDirective>;
-  @Input() indicators = false;
   
+  colors = Color;
   isServerSide: boolean;
+  currentImageIndex = 0;
+  @Input() indicators = false;
+  @Input() keyboardEvents = true;
 
-  destroyed$ = new Subject();
-  currentImageCounter$ = new BehaviorSubject<number>(-1);
-  currentImageIndex$: Observable<number>;
-  currentImage$: Observable<TemplateRef<any> | null>;
-  
-  ngOnDestroy() {
-    this.destroyed$.next(true);
-  }
-
-  ngAfterContentInit() {
-    if (this.images.length > 0) {
-      this.currentImageCounter$.next(0);
-    } else {
-      this.currentImageCounter$.next(-1);
-    }
-  }
+  @ViewChild('container') swipeContainer!: BsSwipeContainerDirective;
+  @ContentChildren(forwardRef(() => BsCarouselImageDirective)) images!: QueryList<BsCarouselImageDirective>;
 
   //#region Animation
   @HostBinding('@.disabled') public animationsDisabled = false;
@@ -54,51 +32,59 @@ export class BsCarouselComponent implements OnDestroy, AfterContentInit {
   @Input() public set animation(value: 'fade' | 'slide') {
     this.animationsDisabled = true;
     this._animation = value;
-    setTimeout(() => {
-      this.animationsDisabled = false;
-    }, 20);
+    setTimeout(() => this.animationsDisabled = false, 20);
+    setTimeout(() => this.cdRef.detectChanges(), 50);
   }
   public get animation() {
     return this._animation;
   }
   //#endregion
 
-  previousImage() {
-    this.currentImageCounter$
-      .pipe(take(1))
-      .subscribe((currentImageCounter) => {
-        this.currentImageCounter$.next(currentImageCounter - 1);
-      });
-  }
-
-  nextImage() {
-    this.currentImageCounter$
-      .pipe(take(1))
-      .subscribe((currentImageCounter) => {
-        this.currentImageCounter$.next(currentImageCounter + 1);
-      });
-  }
-
-  setCurrentImage(index: number) {
-    const currentValue = this.currentImageCounter$.value;
-    const l = this.images.length;
-    const counterMod = ((currentValue % l) + l) % l;
-    const newValue = currentValue - counterMod + index;
-    this.currentImageCounter$.next(newValue);
-  }
-
   @HostListener('document:keydown.ArrowLeft', ['$event'])
   @HostListener('document:keydown.ArrowRight', ['$event'])
   onKeyPress(ev: KeyboardEvent) {
-    switch (ev.key) {
-      case 'ArrowLeft':
-        this.previousImage();
+    if (this.keyboardEvents) {
+      switch (ev.key) {
+        case 'ArrowLeft':
+          this.previousImage();
+          break;
+        case 'ArrowRight':
+          this.nextImage();
+          break;
+      }
+      ev.preventDefault();
+    }
+  }
+
+  previousImage() {
+    switch (this.animation) {
+      case 'fade':
+        if (this.currentImageIndex > 0) {
+          this.currentImageIndex--;
+        } else {
+          this.currentImageIndex = this.images.length - 1;
+        }
         break;
-      case 'ArrowRight':
-        this.nextImage();
+      case 'slide':
+        this.swipeContainer.previous();
         break;
     }
-    ev.preventDefault();
   }
+
+  nextImage() {
+    switch (this.animation) {
+      case 'fade':
+        if (this.currentImageIndex < this.images.length - 1) {
+          this.currentImageIndex++;
+        } else {
+          this.currentImageIndex = 0;
+        }
+        break;
+      case 'slide':
+        this.swipeContainer.next();
+        break;
+    }
+  }
+
 
 }

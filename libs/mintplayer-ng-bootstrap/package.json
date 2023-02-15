@@ -1,7 +1,7 @@
 {
   "name": "@mintplayer/ng-bootstrap",
   "private": false,
-  "version": "15.16.2",
+  "version": "15.17.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/MintPlayer/mintplayer-ng-bootstrap",
@@ -19,7 +19,8 @@
     "@mintplayer/ng-click-outside": "^15.2.0",
     "@mintplayer/ng-animations": "^15.2.0",
     "@mintplayer/pagination": "^1.1.0",
-    "@mintplayer/ng-focus-on-load": "^15.2.0"
+    "@mintplayer/ng-focus-on-load": "^15.2.0",
+    "@mintplayer/ng-swiper": "^15.0.0"
   },
   "dependencies": {
     "tslib": "^2.3.0"

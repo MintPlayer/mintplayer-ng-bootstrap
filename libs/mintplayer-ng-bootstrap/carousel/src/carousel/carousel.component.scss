@@ -6,10 +6,10 @@
 
     // Layout & components
     @import "../../../../../node_modules/bootstrap/scss/carousel";
-    
-    // Custom SCSS
+        
     .carousel {
         min-height: 100px;
+        max-width: 500px;
 
         &.noscript {
             .carousel-inner {
@@ -45,4 +45,8 @@
             }
         }
     }
+}
+
+.wrapper {
+    overflow: hidden;
 }

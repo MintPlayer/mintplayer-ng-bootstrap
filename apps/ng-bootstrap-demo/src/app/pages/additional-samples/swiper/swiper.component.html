@@ -1,29 +1,21 @@
 <h1 class="text-center">Swiper</h1>
 <h2>Demo</h2>
-<bs-form>
-    <bs-grid>
-        <div bsRow class="mb-3">
-            <div bsColumn>
-                <bs-badge [type]="colors.info">In development</bs-badge>
-                <p>View this page on a phone, or open DevTools <kbd>F12</kbd> in order to enable the mobile viewer</p>
-            </div>
+<bs-grid>
+    <div bsRow class="mb-3">
+        <div bsColumn>
+            <bs-alert [type]="colors.info">
+                The swiper is used in the carousel component.
+                View this page on a phone, or open DevTools <kbd>F12</kbd> in order to enable the mobile viewer.
+            </bs-alert>
         </div>
-        <div bsRow class="mb-3">
-            <div bsColumn>
-                <bs-carousel-preview [indicators]="true" [animation]="mode">
-                    <ng-container *ngFor="let image of images">
-                        <img *bsCarouselPreviewImage [src]="image" class="w-100">
-                    </ng-container>
-                </bs-carousel-preview>
-            </div>
+    </div>
+    <div bsRow class="mb-3">
+        <div bsColumn>
+            <bs-carousel [indicators]="true" [animation]="'slide'">
+                <ng-container *ngFor="let image of images">
+                    <img *bsCarouselImage [src]="image" class="w-100">
+                </ng-container>
+            </bs-carousel>
         </div>
-        <div bsRow>
-            <div bsColumn>
-                <bs-select [(ngModel)]="mode" class="d-inline-block">
-                    <option value="slide">Slide</option>
-                    <option value="fade">Fade</option>
-                </bs-select>
-            </div>
-        </div>
-    </bs-grid>
-</bs-form>
+    </div>
+</bs-grid>
