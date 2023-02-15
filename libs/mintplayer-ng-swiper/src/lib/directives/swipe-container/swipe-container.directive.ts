@@ -64,7 +64,7 @@ export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
   @HostBinding('style.margin-top.%') offsetTop: number | null = null;
   @HostBinding('style.margin-bottom.%') offsetBottom: number | null = null;
   @ContentChildren(forwardRef(() => BsSwipeDirective)) set swipes(value: QueryList<BsSwipeDirective>) {
-    this.swipes$.next(value);
+    setTimeout(() => this.swipes$.next(value));
   }
   @Input() minimumOffset = 50;
   @Output() imageIndexChange = new EventEmitter<number>();
