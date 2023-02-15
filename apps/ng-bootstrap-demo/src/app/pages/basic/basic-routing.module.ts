@@ -9,12 +9,8 @@ const routes: Routes = [
   { path: 'carousel', loadChildren: () => import('./carousel/carousel.module').then(m => m.CarouselModule) },
   { path: 'datepicker', loadChildren: () => import('./datepicker/datepicker.module').then(m => m.DatepickerModule) },
   { path: 'rating', loadChildren: () => import('./rating/rating.module').then(m => m.RatingModule) },
-  { path: 'accordion', loadChildren: () => import('./accordion/accordion.module').then(m => m.AccordionModule) },
-  { path: 'card', loadChildren: () => import('./card/card.module').then(m => m.CardModule) },
   { path: 'progress-bar', loadChildren: () => import('./progress-bar/progress-bar.module').then(m => m.ProgressBarModule) },
-  { path: 'tab-control', loadChildren: () => import('./tab-control/tab-control.module').then(m => m.TabControlModule) },
   { path: 'list-group', loadChildren: () => import('./list-group/list-group.module').then(m => m.ListGroupModule) },
-  { path: 'grid', loadChildren: () => import('./grid/grid.module').then(m => m.GridModule) },
   { path: 'for-directive', loadChildren: () => import('./for-directive/for-directive.module').then(m => m.ForDirectiveModule) },
   { path: 'timepicker', loadChildren: () => import('./timepicker/timepicker.module').then(m => m.TimepickerModule) },
   { path: 'button-group', loadChildren: () => import('./button-group/button-group.module').then(m => m.ButtonGroupModule) },
@@ -26,6 +22,7 @@ const routes: Routes = [
   { path: 'pagination', loadChildren: () => import('./pagination/pagination.module').then(m => m.PaginationModule) },
   { path: 'table', loadChildren: () => import('./table/table.module').then(m => m.TableModule) },
   { path: 'button-type', loadChildren: () => import('./button-type/button-type.module').then(m => m.ButtonTypeModule) },
+  { path: 'containers', loadChildren: () => import('./containers/containers.module').then(m => m.ContainersModule) },
 ];
 
 @NgModule({

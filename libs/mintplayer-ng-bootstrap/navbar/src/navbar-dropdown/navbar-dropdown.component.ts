@@ -88,7 +88,6 @@ export class BsNavbarDropdownComponent implements OnDestroy {
   private overlay?: OverlayRef;
   public set showInOverlay(value: boolean) {
     if (this.overlay && this.domPortal) {
-      console.log('showInOverlay', value);
       // if (value && !this.overlay.hasAttached()) {
       if (value && !this.isAttached) {
         this.overlay.attach(this.domPortal);

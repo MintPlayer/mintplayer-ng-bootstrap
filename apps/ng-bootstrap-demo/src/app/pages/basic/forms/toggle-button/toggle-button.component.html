@@ -92,18 +92,15 @@
 <h2>Radio toggle button</h2>
 <bs-grid>
     <div bsRow>
-        <div [bsColumn]="{sm:3}">Theme</div>
-        <div [bsColumn]="{sm:2}">
+        <div [bsColumn]="{sm:2}">Theme</div>
+        <div [bsColumn]="{sm:3}">
             <bs-toggle-button [type]="'radio_toggle_button'" [(ngModel)]="theme" [disabled]="isAllDisabled" [name]="'theme2'" [value]="'light'">Light</bs-toggle-button>
         </div>
-        <div [bsColumn]="{sm:2}">
+        <div [bsColumn]="{sm:3}">
             <bs-toggle-button [type]="'radio_toggle_button'" [(ngModel)]="theme" [disabled]="isAllDisabled" [name]="'theme2'" [value]="'dark'">Dark</bs-toggle-button>
         </div>
-        <div [bsColumn]="{sm:2}">
+        <div [bsColumn]="{sm:3}">
             <bs-toggle-button [type]="'radio_toggle_button'" [(ngModel)]="theme" [disabled]="isAllDisabled" [name]="'theme2'" [value]="'contrast'">Contrast</bs-toggle-button>
-        </div>
-        <div [bsColumn]="{sm:2}">
-            <bs-toggle-button [type]="'radio_toggle_button'" [(ngModel)]="theme" [disabled]="isAllDisabled" [name]="'theme2'" [value]="'disabled'" [disabled]="true">Disabled</bs-toggle-button>
         </div>
         <div [bsColumn]="{sm:1}">
             {{ theme | json }}
