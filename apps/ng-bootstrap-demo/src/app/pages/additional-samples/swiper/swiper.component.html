@@ -1,0 +1,21 @@
+<h1 class="text-center">Swiper</h1>
+<h2>Demo</h2>
+<bs-grid>
+    <div bsRow class="mb-3">
+        <div bsColumn>
+            <bs-alert [type]="colors.info">
+                The swiper is used in the carousel component.
+                View this page on a phone, or open DevTools <kbd>F12</kbd> in order to enable the mobile viewer.
+            </bs-alert>
+        </div>
+    </div>
+    <div bsRow class="mb-3">
+        <div bsColumn>
+            <bs-carousel [indicators]="true" [animation]="'slide'">
+                <ng-container *ngFor="let image of images">
+                    <img *bsCarouselImage [src]="image" class="w-100">
+                </ng-container>
+            </bs-carousel>
+        </div>
+    </div>
+</bs-grid>

@@ -72,7 +72,7 @@ export class BsNavbarDropdownComponent implements OnDestroy {
           positionStrategy: overlayService.position()
             .flexibleConnectedTo(this.navbarItem.element)
             .withPositions([
-              { originX: 'end', originY: 'top', overlayX: 'start', overlayY: 'top', offsetX: -7, offsetY: -9 }
+              { originX: 'end', originY: 'top', overlayX: 'start', overlayY: 'top', offsetX: -9, offsetY: -9 }
             ])
         });
 
@@ -88,7 +88,6 @@ export class BsNavbarDropdownComponent implements OnDestroy {
   private overlay?: OverlayRef;
   public set showInOverlay(value: boolean) {
     if (this.overlay && this.domPortal) {
-      console.log('showInOverlay', value);
       // if (value && !this.overlay.hasAttached()) {
       if (value && !this.isAttached) {
         this.overlay.attach(this.domPortal);

@@ -1,0 +1,41 @@
+{
+  "projectType": "library",
+  "sourceRoot": "libs/mintplayer-ng-swiper/src",
+  "prefix": "mintplayer-ng-bootstrap",
+  "targets": {
+    "build": {
+      "executor": "@nrwl/angular:package",
+      "outputs": ["dist/libs/mintplayer-ng-swiper"],
+      "options": {
+        "project": "libs/mintplayer-ng-swiper/ng-package.json"
+      },
+      "configurations": {
+        "production": {
+          "tsConfig": "libs/mintplayer-ng-swiper/tsconfig.lib.prod.json"
+        },
+        "development": {
+          "tsConfig": "libs/mintplayer-ng-swiper/tsconfig.lib.json"
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "test": {
+      "executor": "@nrwl/jest:jest",
+      "outputs": ["coverage/libs/mintplayer-ng-swiper"],
+      "options": {
+        "jestConfig": "libs/mintplayer-ng-swiper/jest.config.ts",
+        "passWithNoTests": true
+      }
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "options": {
+        "lintFilePatterns": [
+          "libs/mintplayer-ng-swiper/**/*.ts",
+          "libs/mintplayer-ng-swiper/**/*.html"
+        ]
+      }
+    }
+  },
+  "tags": []
+}

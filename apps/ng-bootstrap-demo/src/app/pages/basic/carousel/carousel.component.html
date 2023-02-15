@@ -1,9 +1,10 @@
 <h1 class="text-center">Carousel</h1>
 <bs-form>
     <bs-grid>
+        <h2>Demo</h2>
         <div bsRow class="mb-3">
             <div bsColumn>
-                <bs-carousel [animation]="mode" [indicators]="true">
+                <bs-carousel [animation]="mode" [indicators]="true" class="mx-auto">
                     <img *bsCarouselImage src="/assets/resized/deer.png" class="w-100">
                     <img *bsCarouselImage src="/assets/resized/duck.png" loading="lazy" class="w-100">
                     <img *bsCarouselImage src="/assets/resized/leopard.png" loading="lazy" class="w-100">
@@ -22,6 +23,15 @@
                     <option value="slide">Slide</option>
                     <option value="fade">Fade</option>
                 </bs-select>
+            </div>
+        </div>
+        <h2>Features</h2>
+        <div bsRow>
+            <div bsColumn>
+                <ul>
+                    <li>Touch-event support</li>
+                    <li><code>&lt;noscript&gt;</code> support</li>
+                </ul>
             </div>
         </div>
     </bs-grid>

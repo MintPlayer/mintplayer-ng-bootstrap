@@ -14,6 +14,7 @@ import { BsNavbarContentDirective } from './navbar-content/navbar-content.direct
 import { BsNavbarBrandComponent } from './navbar-brand/navbar-brand.component';
 import { BsExpandButtonDirective } from './expand-button/expand-button.directive';
 import { BsNavbarTogglerComponent } from './navbar-toggler/navbar-toggler.component';
+import { BsDropdownDividerDirective, BsDropdownDividerModule } from '@mintplayer/ng-bootstrap/dropdown-divider';
 
 @NgModule({
   declarations: [
@@ -35,6 +36,7 @@ import { BsNavbarTogglerComponent } from './navbar-toggler/navbar-toggler.compon
     BsUserAgentModule,
     BsNoNoscriptModule,
     BsHasOverlayModule,
+    BsDropdownDividerModule,
   ],
   exports: [
     BsNavbarComponent,
@@ -48,6 +50,8 @@ import { BsNavbarTogglerComponent } from './navbar-toggler/navbar-toggler.compon
     BsNavbarBrandComponent,
     BsExpandButtonDirective,
     BsNavbarTogglerComponent,
+
+    BsDropdownDividerDirective,
   ]
 })
 export class BsNavbarModule { }

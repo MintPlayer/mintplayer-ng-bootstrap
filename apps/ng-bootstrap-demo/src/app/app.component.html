@@ -38,6 +38,23 @@
           </bs-navbar-dropdown>
         </bs-navbar-item>
         <bs-navbar-item>
+          <a [routerLink]='["/basic", "containers"]'>Containers</a>
+          <bs-navbar-dropdown>
+            <bs-navbar-item>
+              <a [routerLink]='["/basic", "containers", "grid"]'>Grid</a>
+            </bs-navbar-item>
+            <bs-navbar-item>
+              <a [routerLink]='["/basic", "containers", "card"]'>Card</a>
+            </bs-navbar-item>
+            <bs-navbar-item>
+              <a [routerLink]='["/basic", "containers", "accordion"]'>Accordion</a>
+            </bs-navbar-item>
+            <bs-navbar-item>
+              <a [routerLink]='["/basic", "containers", "tab-control"]'>Tab control</a>
+            </bs-navbar-item>
+          </bs-navbar-dropdown>
+        </bs-navbar-item>
+        <bs-navbar-item>
           <a [routerLink]='["/basic", "rating"]'>Rating</a>
         </bs-navbar-item>
         <bs-navbar-item>
@@ -56,13 +73,7 @@
           <a [routerLink]='["/basic", "calendar"]'>Calendar</a>
         </bs-navbar-item>
         <bs-navbar-item>
-          <a [routerLink]='["/basic", "card"]'>Card</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
           <a [routerLink]='["/basic", "list-group"]'>List group</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/basic", "grid"]'>Grid</a>
         </bs-navbar-item>
         <bs-navbar-item>
           <a [routerLink]='["/basic", "table"]'>Table</a>
@@ -89,14 +100,9 @@
           <a [routerLink]='["/basic", "timepicker"]'>Timepicker</a>
         </bs-navbar-item>
         <bs-navbar-item>
-          <a [routerLink]='["/basic", "accordion"]'>Accordion</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
           <a [routerLink]='["/basic", "progress-bar"]'>Progress bar</a>
         </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/basic", "tab-control"]'>Tab control</a>
-        </bs-navbar-item>
+        <hr bsDropdownDivider>
         <bs-navbar-item>
           <a [routerLink]='["/basic", "for-directive"]'>For directive</a>
         </bs-navbar-item>
@@ -209,6 +215,12 @@
         </bs-navbar-item>
         <bs-navbar-item>
           <a [routerLink]='["/additional-samples", "qr-code"]'>QR-code viewer</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/additional-samples", "swiper"]'>
+            Swiper
+            <bs-badge [type]="colors.info" class="float-end">alpha</bs-badge>
+          </a>
         </bs-navbar-item>
       </bs-navbar-dropdown>
     </bs-navbar-item>
