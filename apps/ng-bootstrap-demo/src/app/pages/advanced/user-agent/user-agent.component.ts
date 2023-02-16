@@ -10,7 +10,7 @@ import { BsUserAgent } from '@mintplayer/ng-bootstrap/user-agent';
 export class UserAgentComponent {
   
   colors = Color;
-  detectedUserAgent?: string;
+  detectedUserAgent?: BsUserAgent;
 
   userAgentDetected(userAgent?: BsUserAgent) {
     this.detectedUserAgent = userAgent;

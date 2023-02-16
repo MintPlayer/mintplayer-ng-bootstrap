@@ -1,3 +1,4 @@
-export * from './user-agent.type';
-export * from './user-agent/user-agent.directive';
-export * from './user-agent/user-agent.module';
+export * from './types';
+export * from './directive';
+export * from './interfaces';
+export * from './user-agent.module';

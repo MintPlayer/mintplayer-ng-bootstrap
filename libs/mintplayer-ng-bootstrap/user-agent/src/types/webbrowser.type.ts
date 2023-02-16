@@ -1,0 +1,1 @@
+export type BsWebbrowser = 'Chrome' | 'Firefox' | 'Safari' | 'Opera' | 'Edge';

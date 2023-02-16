@@ -1,1 +1,0 @@
-export type BsUserAgent = 'Android' | 'iOS' | 'Windows';
