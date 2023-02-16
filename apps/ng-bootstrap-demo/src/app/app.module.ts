@@ -5,7 +5,6 @@ import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { HighlightOptions, HIGHLIGHT_OPTIONS } from 'ngx-highlightjs';
 import { BS_DEVELOPMENT } from '@mintplayer/ng-bootstrap';
-import { BsBadgeModule } from '@mintplayer/ng-bootstrap/badge';
 import { BsNavbarModule } from '@mintplayer/ng-bootstrap/navbar';
 import ngBootstrapJson from '@mintplayer/ng-bootstrap/package.json';
 
@@ -19,7 +18,6 @@ import { DirectivesModule } from './directives/directives.module';
     BrowserModule.withServerTransition({ appId: 'serverApp' }),
     CommonModule,
     BrowserAnimationsModule,
-    BsBadgeModule,
     BsNavbarModule,
     HttpClientModule,
     AppRoutingModule,
