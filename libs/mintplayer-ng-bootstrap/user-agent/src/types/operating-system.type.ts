@@ -1,0 +1,1 @@
+export type BsOperatingSystem = 'Android' | 'iOS' | 'Windows';

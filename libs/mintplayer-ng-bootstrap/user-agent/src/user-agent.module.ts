@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BsUserAgentDirective } from './user-agent.directive';
+import { BsUserAgentDirective } from './directive/user-agent.directive';
 
 
 
