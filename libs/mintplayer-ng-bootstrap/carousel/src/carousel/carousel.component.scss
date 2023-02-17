@@ -11,9 +11,10 @@
         min-height: 100px;
         max-width: 500px;
 
-        .carousel-inner {
-            z-index: -1;
-        }
+        // Touch events aren't working when .carousel-inner is sent to back
+        // .carousel-inner {
+        //     z-index: -1;
+        // }
 
         &.noscript {
             .carousel-inner {
