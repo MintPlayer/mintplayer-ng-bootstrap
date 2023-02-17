@@ -32,9 +32,9 @@
                 [attr.aria-current]="(container.imageIndex$ | async) === i ? true : null"
                 [attr.aria-label]="'Slide ' + i"></button>
         </div>
-        <div class="carousel-inner overflow-hidden text-nowrap">
+        <div class="carousel-inner overflow-hidden text-nowrap pe-none">
             <div bsSwipeContainer #container="bsSwipeContainer" [minimumOffset]="50" [(imageIndex)]="currentImageIndex">
-                <div *ngFor="let image of images" class="carousel-item d-inline-block float-none w-100 me-0" [class.active]="true" bsSwipe>
+                <div *ngFor="let image of images" class="carousel-item d-inline-block float-none w-100 me-0 pe-auto" [class.active]="true" bsSwipe>
                     <ng-container *ngTemplateOutlet="image.itemTemplate"></ng-container>
                 </div>
             </div>
