@@ -12,15 +12,15 @@ export class BsUserAgentDirective implements AfterViewInit {
   constructor(@Inject(PLATFORM_ID) private platformId: Object) { }
 
   @HostBinding('class.os-android') get isAndroid() {
-    return !isPlatformServer(this.platformId) && !!navigator.userAgent.match(/Android/i);
+    return !isPlatformServer(this.platformId) && !!navigator && !!navigator.userAgent.match(/Android/i);
   }
 
   @HostBinding('class.os-ios') get isIos() {
-    return !isPlatformServer(this.platformId) && !!navigator.userAgent.match(/iPhone|iPad|iPod/i);
+    return !isPlatformServer(this.platformId) && !!navigator && !!navigator.userAgent.match(/iPhone|iPad|iPod/i);
   }
 
   @HostBinding('class.os-windows') get isWindows() {
-    return !isPlatformServer(this.platformId) && !!navigator.userAgent.match(/Windows/i);
+    return !isPlatformServer(this.platformId) && !!navigator && !!navigator.userAgent.match(/Windows/i);
   }
 
   @HostBinding('class') get browserClass() {  
@@ -33,17 +33,21 @@ export class BsUserAgentDirective implements AfterViewInit {
   }
 
   private getBrowser(): BsWebbrowser | undefined {
-    const userAgent = navigator.userAgent;
-    if(userAgent.match(/opr\//i)) {
-      return 'Opera';
-    } else if(userAgent.match(/edg/i)) {
-      return 'Edge';
-    } else if (userAgent.match(/chrome|chromium|crios/i)) {
-      return 'Chrome';
-    } else if(userAgent.match(/firefox|fxios/i)) {
-      return 'Firefox';
-    } else if(userAgent.match(/safari/i)) {
-      return 'Safari';
+    if (!isPlatformServer(this.platformId) && !!navigator) {
+      const userAgent = navigator.userAgent;
+      if(userAgent.match(/opr\//i)) {
+        return 'Opera';
+      } else if(userAgent.match(/edg/i)) {
+        return 'Edge';
+      } else if (userAgent.match(/chrome|chromium|crios/i)) {
+        return 'Chrome';
+      } else if(userAgent.match(/firefox|fxios/i)) {
+        return 'Firefox';
+      } else if(userAgent.match(/safari/i)) {
+        return 'Safari';
+      } else {
+        return undefined;
+      }
     } else {
       return undefined;
     }
