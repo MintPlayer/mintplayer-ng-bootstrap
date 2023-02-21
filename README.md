@@ -51,3 +51,9 @@ Then run following commands
     git clone https://github.com/MintPlayer/mintplayer-ng-bootstrap
     npm i
     npm start -- --open
+
+## Features
+- Uses `@angular/cdk/overlay`
+- Uses per-component styles. Only non-generic bootstrap styles are bundled in the main bundle
+- Carousel: supports touch-events
+- Noscript support for **Navbar** and **Carousel**, requires `@angular/universal`
