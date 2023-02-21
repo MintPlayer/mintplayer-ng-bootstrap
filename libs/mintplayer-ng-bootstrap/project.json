@@ -14,11 +14,6 @@
         "tsConfig": "libs/mintplayer-ng-bootstrap/tsconfig.lib.json",
         "project": "libs/mintplayer-ng-bootstrap/ng-package.json"
       },
-      "stylePreprocessorOptions": {
-        "includePaths": [
-          "../../node_modules"
-        ]
-      },
       "configurations": {
         "production": {
           "tsConfig": "libs/mintplayer-ng-bootstrap/tsconfig.lib.prod.json"
