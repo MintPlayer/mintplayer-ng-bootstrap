@@ -37,11 +37,6 @@
         ],
         "scripts": []
       },
-      "stylePreprocessorOptions": {
-        "includePaths": [
-          "../../node_modules"
-        ]
-      },
       "configurations": {
         "production": {
           "budgets": [

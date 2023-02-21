@@ -1,4 +1,4 @@
-import { AfterViewInit, Directive, ElementRef, HostBinding, HostListener, OnDestroy } from "@angular/core";
+import { AfterViewInit, Directive, ElementRef, HostBinding, HostListener, Input, OnDestroy } from "@angular/core";
 import { BehaviorSubject, combineLatest, filter, take } from "rxjs";
 import { BsSwipeContainerDirective } from "../swipe-container/swipe-container.directive";
 
@@ -14,6 +14,10 @@ export class BsSwipeDirective implements AfterViewInit, OnDestroy {
   element: ElementRef<HTMLElement>;
   observer?: ResizeObserver;
   public slideHeight$ = new BehaviorSubject<number>(0);
+
+  //#region Offside
+  @Input() public offside = false;
+  //#endregion
 
   @HostBinding('class.align-top') alignTopClass = true;
   @HostListener('touchstart', ['$event'])
