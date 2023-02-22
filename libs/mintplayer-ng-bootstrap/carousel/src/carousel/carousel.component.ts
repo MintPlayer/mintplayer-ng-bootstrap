@@ -89,7 +89,7 @@ export class BsCarouselComponent {
         if (this.currentImageIndex > 0) {
           this.currentImageIndex--;
         } else {
-          this.currentImageIndex = this.images.length - 1;
+          this.currentImageIndex = this.images$.value!.length - 1;
         }
         break;
       case 'slide':
@@ -101,7 +101,7 @@ export class BsCarouselComponent {
   nextImage() {
     switch (this.animation) {
       case 'fade':
-        if (this.currentImageIndex < this.images.length - 1) {
+        if (this.currentImageIndex < this.images$.value!.length - 1) {
           this.currentImageIndex++;
         } else {
           this.currentImageIndex = 0;
