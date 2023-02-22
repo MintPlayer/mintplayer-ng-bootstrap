@@ -1,4 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
+import { BsCarouselModule } from '@mintplayer/ng-bootstrap/carousel';
+import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { MockModule } from 'ng-mocks';
 
 import { SwiperComponent } from './swiper.component';
 
@@ -8,7 +12,14 @@ describe('SwiperComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ SwiperComponent ]
+      imports: [
+        MockModule(BsGridModule),
+        MockModule(BsAlertModule),
+        MockModule(BsCarouselModule),
+      ],
+      declarations: [
+        SwiperComponent
+      ]
     })
     .compileComponents();
 

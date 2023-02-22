@@ -5,3 +5,20 @@
 .card {
     margin-bottom: -1px;
 }
+
+:host ::ng-deep {
+    .noscript > input[type="radio"]:checked {
+        + bs-accordion-tab-header > h2 > label {
+            background-color: #e7f1ff; // !important;
+            // background-color: var(--bs-accordion-active-bg);
+
+            &::after {
+                transform: var(--bs-accordion-btn-icon-transform);
+            }
+        }
+
+        ~ .accordion-collapse {
+            height: auto !important;
+        }
+    }
+}
