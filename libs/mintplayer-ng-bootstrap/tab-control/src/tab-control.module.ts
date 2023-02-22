@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { BsNoNoscriptModule } from '@mintplayer/ng-bootstrap/no-noscript';
 import { BsTabControlComponent } from './tab-control/tab-control.component';
 import { BsTabPageComponent } from './tab-page/tab-page.component';
 
@@ -9,7 +10,8 @@ import { BsTabPageComponent } from './tab-page/tab-page.component';
     BsTabPageComponent,
   ],
   imports: [
-    CommonModule
+    CommonModule,
+    BsNoNoscriptModule
   ],
   exports: [
     BsTabControlComponent,
