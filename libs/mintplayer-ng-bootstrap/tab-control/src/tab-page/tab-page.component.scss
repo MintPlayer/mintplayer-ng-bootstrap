@@ -1,0 +1,9 @@
+.tab-page-content {
+    display: none;
+}
+
+input[type="radio"].noscript {
+    &:checked + .tab-page-content {
+        display: block;
+    }
+}

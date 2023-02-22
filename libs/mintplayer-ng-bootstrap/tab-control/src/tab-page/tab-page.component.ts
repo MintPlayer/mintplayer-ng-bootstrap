@@ -1,4 +1,5 @@
 import { Component, ContentChild, TemplateRef, Input } from '@angular/core';
+import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
 import { BsTabControlComponent } from '../tab-control/tab-control.component';
 
 @Component({
@@ -8,10 +9,16 @@ import { BsTabControlComponent } from '../tab-control/tab-control.component';
 })
 export class BsTabPageComponent {
 
-  tabControl: BsTabControlComponent;
   constructor(tabControl: BsTabControlComponent) {
     this.tabControl = tabControl;
+    this.tabId$ = new BehaviorSubject<number>(++this.tabControl.tabCounter);
+    this.tabName$ = combineLatest([this.tabControl.tabControlName$, this.tabId$])
+      .pipe(map(([tabControlName, tabId]) =>  `${tabControlName}-${tabId}`));
   }
+
+  tabControl: BsTabControlComponent;
+  tabId$: BehaviorSubject<number>;
+  tabName$: Observable<string>;
 
   @Input() disabled = false;
   @ContentChild(TemplateRef) headerTemplate!: TemplateRef<any>;

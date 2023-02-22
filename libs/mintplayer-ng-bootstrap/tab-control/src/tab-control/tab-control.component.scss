@@ -24,6 +24,11 @@
     margin-top: 48px;
 }
 
+.tab-content.noscript::ng-deep > bs-tab-page > .tab-page-content {
+    border: var(--bs-border-width) var(--bs-border-style) var(--bs-border-color) !important;
+    margin-top: -1px;
+}
+
 .overflow-y-hidden {
     overflow-y: hidden;
 }

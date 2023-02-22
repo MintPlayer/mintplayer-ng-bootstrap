@@ -1,1 +1,4 @@
-<ng-content *ngIf="tabControl.activeTab === this"></ng-content>
+<input type="radio" bsNoNoscript class="d-none" [name]="tabControl.tabControlName$ | async" [id]="tabName$ | async">
+<div class="tab-page-content" [class.d-block]="tabControl.activeTab === this">
+    <ng-content></ng-content>
+</div>
