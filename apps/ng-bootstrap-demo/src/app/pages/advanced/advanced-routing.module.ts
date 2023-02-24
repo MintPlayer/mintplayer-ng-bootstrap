@@ -18,6 +18,7 @@ const routes: Routes = [
   { path: 'navigation-lock', loadChildren: () => import('./navigation-lock/navigation-lock.module').then(m => m.NavigationLockModule) },
   { path: 'splitter', loadChildren: () => import('./splitter/splitter.module').then(m => m.SplitterModule) },
   { path: 'dock', loadChildren: () => import('./dock/dock.module').then(m => m.DockModule) },
+  { path: 'box-resize', loadChildren: () => import('./box-resize/box-resize.module').then(m => m.BoxResizeModule) },
 ];
 
 @NgModule({
