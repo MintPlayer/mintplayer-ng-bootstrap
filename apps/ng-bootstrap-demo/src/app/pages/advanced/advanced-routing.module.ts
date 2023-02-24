@@ -17,6 +17,7 @@ const routes: Routes = [
   { path: 'markdown', loadChildren: () => import('./markdown/markdown.module').then(m => m.MarkdownModule) },
   { path: 'navigation-lock', loadChildren: () => import('./navigation-lock/navigation-lock.module').then(m => m.NavigationLockModule) },
   { path: 'splitter', loadChildren: () => import('./splitter/splitter.module').then(m => m.SplitterModule) },
+  { path: 'dock', loadChildren: () => import('./dock/dock.module').then(m => m.DockModule) },
 ];
 
 @NgModule({

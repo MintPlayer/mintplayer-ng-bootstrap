@@ -1,0 +1,58 @@
+.dock-panel {
+    position: relative;
+    border-radius: .25rem;
+    box-shadow: 0 8px 10px 1px rgba(0, 0, 0, .14), 0 3px 14px 3px rgba(0, 0, 0, .12), 0 4px 15px 0 rgba(0, 0, 0, .2);
+}
+
+$resize-width: 4px;
+.rs {
+    position: absolute;
+    z-index: 1;
+
+    &.rs-top, &.rs-bottom {
+        height: $resize-width;
+        cursor: s-resize;
+        left: $resize-width;
+        right: $resize-width;
+    }
+    &.rs-left, &.rs-right {
+        width: $resize-width;
+        top: $resize-width;
+        bottom: $resize-width;
+        cursor: e-resize;
+    }
+
+    &.rs-top {
+        top: 0;
+    }
+    &.rs-bottom {
+        bottom: 0;
+    }
+    &.rs-left {
+        left: 0;
+    }
+    &.rs-right {
+        right: 0;
+    }
+
+    &.rs-top.rs-left {
+        bottom: auto;
+        right: auto;
+        cursor: se-resize;
+    }
+    &.rs-top.rs-right {
+        bottom: auto;
+        left: auto;
+        cursor: ne-resize;
+    }
+    &.rs-bottom.rs-left {
+        top: auto;
+        right: auto;
+        cursor: ne-resize;
+    }
+    &.rs-bottom.rs-right {
+        top: auto;
+        left: auto;
+        cursor: se-resize;
+    }
+}

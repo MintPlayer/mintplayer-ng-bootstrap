@@ -1,0 +1,17 @@
+<div class="dock-panel" cdkDrag [cdkDragBoundary]="'.dock-container'">
+    <div cdkDragHandle>
+        <ng-content select="bs-dock-panel-header"></ng-content>
+    </div>
+    <div class="dock-panel-content d-block border bg-light">
+        <ng-content></ng-content>
+    </div>
+
+    <div class="rs rs-top"></div>
+    <div class="rs rs-top rs-left"></div>
+    <div class="rs rs-left"></div>
+    <div class="rs rs-bottom rs-left"></div>
+    <div class="rs rs-bottom"></div>
+    <div class="rs rs-bottom rs-right"></div>
+    <div class="rs rs-right"></div>
+    <div class="rs rs-top rs-right"></div>
+</div>
