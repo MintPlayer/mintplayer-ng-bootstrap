@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, ViewChild } from '@angular/core';
+import { BsBoxResizeDirective } from '@mintplayer/ng-bootstrap/box-resize';
 
 @Component({
   selector: 'demo-box-resize',
@@ -6,5 +7,5 @@ import { Component } from '@angular/core';
   styleUrls: ['./box-resize.component.scss']
 })
 export class BoxResizeComponent {
-
+  @ViewChild('bsBoxResize') bsBoxResize!: BsBoxResizeDirective;
 }

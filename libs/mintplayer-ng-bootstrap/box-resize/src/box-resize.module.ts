@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BsBoxResizeDirective } from './box-resize.directive';
+import { BsBoxResizeDirective } from './directive/box-resize.directive';
 
 @NgModule({
   declarations: [
