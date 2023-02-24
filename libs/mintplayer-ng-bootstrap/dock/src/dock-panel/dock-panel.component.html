@@ -1,4 +1,4 @@
-<div class="dock-panel" cdkDrag [cdkDragBoundary]="'.dock-container'">
+<div class="dock-panel" #dockPanel cdkDrag [cdkDragBoundary]="'.dock-container'">
     <div cdkDragHandle>
         <ng-content select="bs-dock-panel-header"></ng-content>
     </div>
@@ -6,12 +6,12 @@
         <ng-content></ng-content>
     </div>
 
-    <div class="rs rs-top"></div>
-    <div class="rs rs-top rs-left"></div>
-    <div class="rs rs-left"></div>
-    <div class="rs rs-bottom rs-left"></div>
-    <div class="rs rs-bottom"></div>
-    <div class="rs rs-bottom rs-right"></div>
-    <div class="rs rs-right"></div>
-    <div class="rs rs-top rs-right"></div>
+    <div #t class="rs rs-top" cdkDrag [cdkDragLockAxis]="'y'" (cdkDragMoved)="onDragMove(t, $event)"></div>
+    <div #tl class="rs rs-top rs-left" cdkDrag (cdkDragMoved)="onDragMove(tl, $event)"></div>
+    <div #l class="rs rs-left"cdkDrag [cdkDragLockAxis]="'x'" (cdkDragMoved)="onDragMove(l, $event)"></div>
+    <div #bl class="rs rs-bottom rs-left" cdkDrag (cdkDragMoved)="onDragMove(bl, $event)"></div>
+    <div #b class="rs rs-bottom" cdkDrag [cdkDragLockAxis]="'y'" (cdkDragMoved)="onDragMove(b, $event)"></div>
+    <div #br class="rs rs-bottom rs-right" cdkDrag (cdkDragMoved)="onDragMove(br, $event)"></div>
+    <div #r class="rs rs-right" cdkDrag [cdkDragLockAxis]="'x'" (cdkDragMoved)="onDragMove(r, $event)"></div>
+    <div #tr class="rs rs-top rs-right" cdkDrag (cdkDragMoved)="onDragMove(tr, $event)"></div>
 </div>
