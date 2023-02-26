@@ -26,5 +26,4 @@ export class DragDropComponent {
         event.currentIndex);
     }
   }
-
 }

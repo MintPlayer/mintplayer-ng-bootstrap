@@ -1,14 +1,20 @@
-import { CdkDragMove } from '@angular/cdk/drag-drop';
-import { Component, ElementRef, HostListener, HostBinding, ViewChild, NgZone } from '@angular/core';
+import { CdkDragEnter, CdkDragStart } from '@angular/cdk/drag-drop';
+import { Overlay, OverlayRef } from '@angular/cdk/overlay';
+import { DomPortal } from '@angular/cdk/portal';
+import { Component, ElementRef, HostListener, HostBinding, ViewChild, NgZone, AfterViewInit } from '@angular/core';
+import { BsDockService } from '../dock-service/dock.service';
 
 @Component({
   selector: 'bs-dock-panel',
   templateUrl: './dock-panel.component.html',
   styleUrls: ['./dock-panel.component.scss'],
 })
-export class BsDockPanelComponent {
-  constructor(private zone: NgZone) {
+export class BsDockPanelComponent implements AfterViewInit {
+  constructor(private zone: NgZone, private overlay: Overlay, private dockService: BsDockService) {
   }
+
+  portal: DomPortal | null = null;
+  overlayRef: OverlayRef | null = null;
 
   @ViewChild('dockPanel') dockPanel!: ElementRef<HTMLDivElement>;
   
@@ -31,6 +37,21 @@ export class BsDockPanelComponent {
   @HostBinding('height.px') height: number | null = null;
   resizeAction: { side: 'top' | 'left' | 'bottom' | 'right', rect: DOMRect } | null = null;
 
+  ngAfterViewInit() {
+    this.portal = new DomPortal(this.dockPanel.nativeElement);
+  }
+
+  public toggleAttached() {
+    console.log('isAttached', this.portal!.isAttached);
+    if (this.overlayRef && this.overlayRef.hasAttached()) {
+      this.overlayRef?.detach();
+      this.overlayRef?.dispose();
+    } else {
+      this.overlayRef = this.overlay.create({});
+      this.overlayRef!.attach(this.portal);
+    }
+  }
+
   onMouseDown(side: 'top' | 'left' | 'bottom' | 'right', ev: MouseEvent) {
     // this.resizeAction = {
     //   side,
@@ -47,4 +68,12 @@ export class BsDockPanelComponent {
   onMouseUp(ev: MouseEvent) {
 
   }
+
+  onDragStart(ev: CdkDragStart<any>) {
+    console.log('ev', ev);
+  }
+
+  // onDockPanelDragEnter(ev: CdkDragEnter<any>) {
+  //   console.log('Entered with a panel', ev);
+  // }
 }

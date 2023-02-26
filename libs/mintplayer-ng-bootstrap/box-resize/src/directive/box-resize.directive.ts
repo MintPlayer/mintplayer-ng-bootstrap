@@ -17,7 +17,6 @@ export class BsBoxResizeDirective implements AfterViewInit, OnDestroy {
     });
       
     this.offsetContentRect$ = this.contentRect$.pipe(map((contentRect) => {
-      console.log('element', this.element.nativeElement);
       const dx = this.element.nativeElement.offsetLeft;
       const dy = this.element.nativeElement.offsetTop;
       return new DOMRect(contentRect?.x + dx, contentRect?.y + dy, contentRect?.width, contentRect?.height);
