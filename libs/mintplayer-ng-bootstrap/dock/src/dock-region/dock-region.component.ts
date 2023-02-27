@@ -30,7 +30,7 @@ export class BsDockRegionComponent {
     // StackBlitz with Drag-drop:
     // https://stackblitz.com/edit/angular-xa6byy
     // StackBlitz with Attachable DomPortal
-    // https://stackblitz.com/edit/angular-zq6i8e
+    // https://stackblitz.com/edit/angular-z1twdj
     // Desired result:
     // https://www.npmjs.com/package/igniteui-dockmanager
   }
