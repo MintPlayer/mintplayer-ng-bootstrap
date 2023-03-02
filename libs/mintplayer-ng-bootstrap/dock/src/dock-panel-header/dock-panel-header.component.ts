@@ -1,3 +1,4 @@
+import { DomPortal } from '@angular/cdk/portal';
 import { Component } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 

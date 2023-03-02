@@ -1,21 +1,43 @@
 <bs-dock-container [style.height.px]="500" class="d-block">
     <bs-grid>
-        <div bsRow>
+        <div bsRow [style.height.px]="250">
             <div [bsColumn]="{md: 6}" class="border">
                 <bs-dock-region class="d-block">
+                    <bs-dock-panel [style.width.px]="200" #dockPanel1>
+                        <bs-dock-panel-header>HELP</bs-dock-panel-header>
+                        <div class="p-3">This is the content</div>
+                    </bs-dock-panel>
                 </bs-dock-region>
             </div>
             <div [bsColumn]="{md: 6}" class="border">
                 <bs-dock-region class="d-block">
+                    <bs-dock-panel [style.width.px]="200" #dockPanel2>
+                        <bs-dock-panel-header>HELP</bs-dock-panel-header>
+                        <div class="p-3">This is the content</div>
+                    </bs-dock-panel>
+                </bs-dock-region>
+            </div>
+        </div>
+        <div bsRow [style.height.px]="250">
+            <div [bsColumn]="{md: 6}" class="border">
+                <bs-dock-region class="d-block">
+                    <bs-dock-panel [style.width.px]="200" #dockPanel3>
+                        <bs-dock-panel-header>HELP</bs-dock-panel-header>
+                        <div class="p-3">This is the content</div>
+                    </bs-dock-panel>
+                </bs-dock-region>
+            </div>
+            <div [bsColumn]="{md: 6}" class="border">
+                <bs-dock-region class="d-block">
+                    <bs-dock-panel [style.width.px]="200" #dockPanel4>
+                        <bs-dock-panel-header>HELP</bs-dock-panel-header>
+                        <div class="p-3">This is the content</div>
+                    </bs-dock-panel>
                 </bs-dock-region>
             </div>
         </div>
     </bs-grid>
     
-    <bs-dock-panel [style.width.px]="200" #dockPanel>
-        <bs-dock-panel-header>HELP</bs-dock-panel-header>
-        <div class="p-3">This is the content</div>
-    </bs-dock-panel>
 </bs-dock-container>
 
 <button (click)="toggleAttached()">Toggle attached</button>

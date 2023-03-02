@@ -7,10 +7,10 @@ import { BsDockPanelComponent } from '@mintplayer/ng-bootstrap/dock';
   styleUrls: ['./dock.component.scss']
 })
 export class DockComponent {
-  @ViewChild('dockPanel') dockPanel!: BsDockPanelComponent;
+  @ViewChild('dockPanel1') dockPanel1!: BsDockPanelComponent;
   toggleAttached() {
-    if (this.dockPanel) {
-      this.dockPanel.toggleAttached();
+    if (this.dockPanel1) {
+      this.dockPanel1.toggleAttached();
     }
   }
 }
