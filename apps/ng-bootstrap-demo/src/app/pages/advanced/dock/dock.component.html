@@ -2,18 +2,20 @@
     <bs-grid>
         <div bsRow>
             <div [bsColumn]="{md: 6}" class="border">
-                <bs-dock-region>
-                    <bs-dock-panel [style.width.px]="200" #dockPanel>
-                        <bs-dock-panel-header>HELP</bs-dock-panel-header>
-                        <div class="p-3">This is the content</div>
-                    </bs-dock-panel>
+                <bs-dock-region class="d-block">
                 </bs-dock-region>
             </div>
             <div [bsColumn]="{md: 6}" class="border">
-                <bs-dock-region></bs-dock-region>
+                <bs-dock-region class="d-block">
+                </bs-dock-region>
             </div>
         </div>
     </bs-grid>
+    
+    <bs-dock-panel [style.width.px]="200" #dockPanel>
+        <bs-dock-panel-header>HELP</bs-dock-panel-header>
+        <div class="p-3">This is the content</div>
+    </bs-dock-panel>
 </bs-dock-container>
 
 <button (click)="toggleAttached()">Toggle attached</button>

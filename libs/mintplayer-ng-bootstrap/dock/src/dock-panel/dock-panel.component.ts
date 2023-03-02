@@ -1,4 +1,4 @@
-import { CdkDragEnter, CdkDragStart } from '@angular/cdk/drag-drop';
+import { CdkDrag, CdkDragEnd, CdkDragEnter, CdkDragStart } from '@angular/cdk/drag-drop';
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { DomPortal } from '@angular/cdk/portal';
 import { Component, ElementRef, HostListener, HostBinding, ViewChild, NgZone, AfterViewInit } from '@angular/core';
@@ -10,13 +10,16 @@ import { BsDockService } from '../dock-service/dock.service';
   styleUrls: ['./dock-panel.component.scss'],
 })
 export class BsDockPanelComponent implements AfterViewInit {
-  constructor(private zone: NgZone, private overlay: Overlay, private dockService: BsDockService) {
+  constructor(private zone: NgZone, private overlay: Overlay, private dockService: BsDockService, element: ElementRef) {
+    this.element = element;
   }
 
   portal: DomPortal | null = null;
+  element: ElementRef;
   overlayRef: OverlayRef | null = null;
 
   @ViewChild('dockPanel') dockPanel!: ElementRef<HTMLDivElement>;
+  @ViewChild('cdkDragRef') cdkDrag!: CdkDrag;
   
   @HostBinding('class.d-block') dBlockClass = true;
   // onDragMove(element: HTMLDivElement, ev: CdkDragMove<any>) {
@@ -71,6 +74,12 @@ export class BsDockPanelComponent implements AfterViewInit {
 
   onDragStart(ev: CdkDragStart<any>) {
     console.log('ev', ev);
+    this.dockService.currentDraggedPanel$.next(this);
+  }
+
+  onDragEnd(ev: CdkDragEnd<any>) {
+    this.dockService.onDragEnd(this);
+    this.cdkDrag.reset();
   }
 
   // onDockPanelDragEnter(ev: CdkDragEnter<any>) {

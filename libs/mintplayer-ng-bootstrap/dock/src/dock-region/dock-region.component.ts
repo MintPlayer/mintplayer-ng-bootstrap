@@ -1,6 +1,8 @@
 import { CdkDragEnter } from '@angular/cdk/drag-drop';
-import { Component } from '@angular/core';
-import { BehaviorSubject, Observable, map } from 'rxjs';
+import { DomPortal } from '@angular/cdk/portal';
+import { Component, HostBinding } from '@angular/core';
+import { BehaviorSubject, Observable, map, combineLatest } from 'rxjs';
+import { BsDockService } from '../dock-service/dock.service';
 
 @Component({
   selector: 'bs-dock-region',
@@ -8,23 +10,23 @@ import { BehaviorSubject, Observable, map } from 'rxjs';
   styleUrls: ['./dock-region.component.scss'],
 })
 export class BsDockRegionComponent {
-  constructor() {
-    this.background$ = this.isDragHover$.pipe(map((isDragHover) => {
-      return isDragHover ? 'bg-danger' : 'bg-dark';
-    }));
+  constructor(dockService: BsDockService) {
+    this.dockService = dockService;
+    this.background$ = combineLatest([this.dockService.currentDraggedPanel$, this.isDragHover$])
+      .pipe(map(([dockPanel, isDragHover]) => {
+        return (!!dockPanel && isDragHover) ? 'bg-danger' : 'bg-dark';
+      }));
   }
 
+  dockService: BsDockService;
   isDragHover$ = new BehaviorSubject<boolean>(false);
   background$: Observable<string>;
+  dockContent!: DomPortal;
+  @HostBinding('class.position-relative') positionRelativeClass = true;
   
-  onEnter() {
+  onEnter(ev: Event) {
     this.isDragHover$.next(true);
-  }
-  onLeave() {
-    this.isDragHover$.next(false);
-  }
-
-  onDockPanelDropEnter(ev: CdkDragEnter<any, any>) {
+    this.dockService.currentHoveredRegion$.next(this);
     console.log('Entered with a panel', ev);
 
     // StackBlitz with Drag-drop:
@@ -34,4 +36,10 @@ export class BsDockRegionComponent {
     // Desired result:
     // https://www.npmjs.com/package/igniteui-dockmanager
   }
+
+  onLeave() {
+    this.isDragHover$.next(false);
+    this.dockService.currentHoveredRegion$.next(null);
+  }
+
 }

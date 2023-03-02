@@ -1,3 +1,5 @@
-<div class="w-100 h-100" [class]="background$ | async" (mouseenter)="onEnter()" (mouseout)="onLeave()">
-    <ng-content></ng-content>
+<div class="position-absolute w-100 h-100" [class]="background$ | async">
+    <!-- <ng-content></ng-content> -->
+    <ng-template [cdkPortalOutlet]="dockContent"></ng-template>
 </div>
+<div (mouseenter)="onEnter($event)" (mouseout)="onLeave()" class="position-absolute w-100 h-100 hoverbox" *ngIf="(dockService.currentDraggedPanel$ | async) as currentDraggedPanel"></div>

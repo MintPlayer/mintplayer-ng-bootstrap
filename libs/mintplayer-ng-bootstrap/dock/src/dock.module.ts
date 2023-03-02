@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PortalModule } from '@angular/cdk/portal';
 import { DragDropModule } from '@angular/cdk/drag-drop';
 import { BsIconModule } from '@mintplayer/ng-bootstrap/icon';
 import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
@@ -15,7 +16,7 @@ import { BsDockRegionComponent } from './dock-region/dock-region.component';
     BsDockPanelHeaderComponent,
     BsDockRegionComponent,
   ],
-  imports: [CommonModule, DragDropModule, BsIconModule, BsButtonTypeModule],
+  imports: [CommonModule, DragDropModule, PortalModule, BsIconModule, BsButtonTypeModule],
   exports: [
     BsDockContainerComponent,
     BsDockPanelComponent,

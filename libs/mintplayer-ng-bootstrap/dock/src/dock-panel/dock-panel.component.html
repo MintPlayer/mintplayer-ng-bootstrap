@@ -1,5 +1,5 @@
 <!-- (cdkDragEntered)="onDockPanelDragEnter($event)" -->
-<div class="dock-panel" #dockPanel cdkDrag [cdkDragBoundary]="'.dock-container, html'" (cdkDragStarted)="onDragStart($event)">
+<div class="dock-panel" #dockPanel cdkDrag #cdkDragRef="cdkDrag" [cdkDragDisabled]="false" [cdkDragBoundary]="'.dock-container, html'" (cdkDragStarted)="onDragStart($event)" (cdkDragEnded)="onDragEnd($event)">
     <div cdkDragHandle>
         <ng-content select="bs-dock-panel-header"></ng-content>
     </div>
