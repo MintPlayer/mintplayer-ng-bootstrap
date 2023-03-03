@@ -1,0 +1,6 @@
+<div #contentElement>
+    <ng-content></ng-content>
+    <div *ngFor="let panel of panels">
+        <ng-template [cdkPortalOutlet]="panel.portal"></ng-template>
+    </div>
+</div>
