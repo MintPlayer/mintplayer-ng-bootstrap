@@ -8,5 +8,4 @@ import { BsSplitPanelComponent } from '../split-panel/split-panel.component';
 })
 export class BsSplitterComponent {
   @ContentChildren(BsSplitPanelComponent) panels!: QueryList<BsSplitPanelComponent>;
-  @ViewChild('contentElement') contentElement!: ElementRef<HTMLDivElement>;
 }

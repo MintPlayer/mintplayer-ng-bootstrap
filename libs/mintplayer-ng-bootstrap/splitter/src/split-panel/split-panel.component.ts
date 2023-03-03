@@ -12,7 +12,6 @@ export class BsSplitPanelComponent implements AfterViewInit {
   portal?: DomPortal;
 
   ngAfterViewInit() {
-    // setTimeout(() => this.portal = new DomPortal(this.contentElement.nativeElement), 10);
     setTimeout(() => this.portal = new DomPortal(this.element.nativeElement), 10);
   }
 }
