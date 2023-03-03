@@ -1,5 +1,5 @@
 import { Component, Input, ContentChildren, QueryList, ElementRef, ViewChild, HostBinding } from '@angular/core';
-import { BehaviorSubject, map, Observable } from 'rxjs';
+import { BehaviorSubject, map, combineLatest, Observable } from 'rxjs';
 import { BsSplitPanelComponent } from '../split-panel/split-panel.component';
 import { Direction } from '../types/direction.type';
 
@@ -23,18 +23,44 @@ export class BsSplitterComponent {
         case 'vertical': return 'split-ver';
       }
     }));
-    this.widthStyle$ = this.orientation$.pipe(map((orientation) => {
-      switch (orientation) {
-        case 'horizontal': return '100%';
-        case 'vertical': return null;
-      }
-    }));
-    this.heightStyle$ = this.orientation$.pipe(map((orientation) => {
-      switch (orientation) {
-        case 'horizontal': return null;
-        case 'vertical': return '100%';
-      }
-    }));
+    this.widthStyles$ = combineLatest([this.orientation$, this.previewSizes$, this.panels$])
+      .pipe(map(([orientation, previewSizes, panels]) => {
+        switch (orientation) {
+          case 'horizontal':
+            if (previewSizes) {
+              return Array(panels.length).map((v, i) => {
+                if (i < previewSizes.length) {
+                  return previewSizes[i] + 'px';
+                } else {
+                  return '100%';
+                }
+              });
+            } else {
+              return Array(panels.length).map((v, i) => '100%');
+            }
+          case 'vertical':
+            return null;
+        }
+      }));
+    this.heightStyles$ =  combineLatest([this.orientation$, this.previewSizes$, this.panels$])
+      .pipe(map(([orientation, previewSizes, panels]) => {
+        switch (orientation) {
+          case 'horizontal':
+            return null;
+          case 'vertical':
+            if (previewSizes) {
+              return Array(panels.length).map((v, i) => {
+                if (i < previewSizes.length) {
+                  return previewSizes[i] + 'px';
+                } else {
+                  return '100%';
+                }
+              });
+            } else {
+              return Array(panels.length).map((v, i) => '100%');
+            }
+        }
+      }));
   }
 
   //#region Orientation
@@ -47,7 +73,7 @@ export class BsSplitterComponent {
   }
   //#endregion
 
-  // previewSizes$
+  previewSizes$ = new BehaviorSubject<number[] | null>(null);
 
   panels$ = new BehaviorSubject<BsSplitPanelComponent[]>([]);
   @ContentChildren(BsSplitPanelComponent) set panels(value: QueryList<BsSplitPanelComponent>) {
@@ -61,6 +87,6 @@ export class BsSplitterComponent {
 
   directionClass$: Observable<string>;
   splitterClass$: Observable<string>;
-  widthStyle$: Observable<string | null>;
-  heightStyle$: Observable<string | null>;
+  widthStyles$: Observable<string[] | null>;
+  heightStyles$: Observable<string[] | null>;
 }

@@ -1,9 +1,14 @@
 <div class="d-flex w-100" [class]="[directionClass$ | async, splitterClass$ | async]">
     <ng-content></ng-content>
-    <ng-container *ngFor="let panel of (panels$ | async); let last = last">
-        <div class="split-panel">
-            <ng-template [cdkPortalOutlet]="panel.portal"></ng-template>
-        </div>
+    <ng-container *ngFor="let panel of (panels$ | async); let index = index; let last = last">
+        <ng-container *bsLet="(widthStyles$ | async) as widthStyles">
+            <ng-container *bsLet="(heightStyles$ | async) as heightStyles">
+                <!--  [style.width]="widthStyles[index]" [style.height]="heightStyles[index]" -->
+                <div class="split-panel" [style.width.%]="100" [style.height.%]="100">
+                    <ng-template [cdkPortalOutlet]="panel.portal"></ng-template>
+                </div>
+            </ng-container>
+        </ng-container>
         <div class="divider" *ngIf="!last"></div>
     </ng-container>
 </div>
