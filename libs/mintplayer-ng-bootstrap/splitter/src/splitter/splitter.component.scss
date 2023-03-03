@@ -1,0 +1,24 @@
+$splitter-size: 8px;
+
+.split-panel {
+    flex-grow: 1;
+}
+
+.divider {
+    background: #EEE;
+    background-position: center center;
+    background-repeat: no-repeat;
+}
+
+.split-hor .divider {
+    width: $splitter-size;
+    height: 100%;
+    cursor: col-resize;
+    background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==);
+}
+.split-ver .divider {
+    width: 100%;
+    height: $splitter-size;
+    cursor: row-resize;
+    background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAFCAMAAABl/6zIAAAABlBMVEUAAADMzMzIT8AyAAAAAXRSTlMAQObYZgAAABRJREFUeAFjYGRkwIMJSeMHlBkOABP7AEGzSuPKAAAAAElFTkSuQmCC);
+}

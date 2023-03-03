@@ -1,5 +1,7 @@
-import { Component, ContentChildren, QueryList, ElementRef, ViewChild } from '@angular/core';
+import { Component, Input, ContentChildren, QueryList, ElementRef, ViewChild, HostBinding } from '@angular/core';
+import { BehaviorSubject, map, Observable } from 'rxjs';
 import { BsSplitPanelComponent } from '../split-panel/split-panel.component';
+import { Direction } from '../types/direction.type';
 
 @Component({
   selector: 'bs-splitter',
@@ -7,5 +9,38 @@ import { BsSplitPanelComponent } from '../split-panel/split-panel.component';
   styleUrls: ['./splitter.component.scss'],
 })
 export class BsSplitterComponent {
+
+  constructor() {
+    this.directionClass$ = this.orientation$.pipe(map((orientation) => {
+      switch (orientation) {
+        case 'horizontal': return 'flex-row';
+        case 'vertical': return 'flex-column';
+      }
+    }));
+    this.splitterClass$ = this.orientation$.pipe(map((orientation) => {
+      switch (orientation) {
+        case 'horizontal': return 'split-hor';
+        case 'vertical': return 'split-ver';
+      }
+    }));
+  }
+
+  //#region Orientation
+  orientation$ = new BehaviorSubject<Direction>('horizontal');
+  public get orientation() {
+    return this.orientation$.value;
+  }
+  @Input() public set orientation(value: Direction) {
+    this.orientation$.next(value);
+  }
+  //#endregion
+
   @ContentChildren(BsSplitPanelComponent) panels!: QueryList<BsSplitPanelComponent>;
+  @HostBinding('class.w-100')
+  @HostBinding('class.h-100')
+  @HostBinding('class.d-flex')
+  classes = true;
+
+  directionClass$: Observable<string>;
+  splitterClass$: Observable<string>;
 }

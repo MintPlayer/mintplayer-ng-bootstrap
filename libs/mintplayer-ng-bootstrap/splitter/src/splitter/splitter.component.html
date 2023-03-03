@@ -1,6 +1,9 @@
-<div>
+<div class="d-flex w-100" [class]="[directionClass$ | async, splitterClass$ | async]">
     <ng-content></ng-content>
-    <div *ngFor="let panel of panels">
-        <ng-template [cdkPortalOutlet]="panel.portal"></ng-template>
-    </div>
+    <ng-container *ngFor="let panel of panels; let last = last">
+        <div class="split-panel">
+            <ng-template [cdkPortalOutlet]="panel.portal"></ng-template>
+        </div>
+        <div class="divider" *ngIf="!last"></div>
+    </ng-container>
 </div>
