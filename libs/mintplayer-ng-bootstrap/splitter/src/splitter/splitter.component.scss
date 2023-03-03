@@ -8,6 +8,7 @@ $splitter-size: 8px;
     background: #EEE;
     background-position: center center;
     background-repeat: no-repeat;
+    flex-shrink: 0;
 }
 
 .split-hor .divider {

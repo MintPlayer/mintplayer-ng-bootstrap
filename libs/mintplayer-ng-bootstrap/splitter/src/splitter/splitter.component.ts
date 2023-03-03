@@ -23,6 +23,18 @@ export class BsSplitterComponent {
         case 'vertical': return 'split-ver';
       }
     }));
+    this.widthStyle$ = this.orientation$.pipe(map((orientation) => {
+      switch (orientation) {
+        case 'horizontal': return '100%';
+        case 'vertical': return null;
+      }
+    }));
+    this.heightStyle$ = this.orientation$.pipe(map((orientation) => {
+      switch (orientation) {
+        case 'horizontal': return null;
+        case 'vertical': return '100%';
+      }
+    }));
   }
 
   //#region Orientation
@@ -35,7 +47,13 @@ export class BsSplitterComponent {
   }
   //#endregion
 
-  @ContentChildren(BsSplitPanelComponent) panels!: QueryList<BsSplitPanelComponent>;
+  // previewSizes$
+
+  panels$ = new BehaviorSubject<BsSplitPanelComponent[]>([]);
+  @ContentChildren(BsSplitPanelComponent) set panels(value: QueryList<BsSplitPanelComponent>) {
+    this.panels$.next(value.toArray());
+  }
+  
   @HostBinding('class.w-100')
   @HostBinding('class.h-100')
   @HostBinding('class.d-flex')
@@ -43,4 +61,6 @@ export class BsSplitterComponent {
 
   directionClass$: Observable<string>;
   splitterClass$: Observable<string>;
+  widthStyle$: Observable<string | null>;
+  heightStyle$: Observable<string | null>;
 }
