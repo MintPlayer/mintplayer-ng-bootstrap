@@ -5,10 +5,16 @@ $splitter-size: 8px;
 }
 
 .divider {
-    background: #EEE;
+    background-color: #EEE;
     background-position: center center;
     background-repeat: no-repeat;
     flex-shrink: 0;
+    transition: background-color .15s ease-in-out;
+
+    &:hover {
+        background-color: #1389FD;
+        border-radius: 4px;
+    }
 }
 
 .split-hor .divider {

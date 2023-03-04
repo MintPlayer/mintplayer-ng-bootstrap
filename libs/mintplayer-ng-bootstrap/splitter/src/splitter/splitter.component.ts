@@ -89,4 +89,8 @@ export class BsSplitterComponent {
   splitterClass$: Observable<string>;
   widthStyles$: Observable<string[] | null>;
   heightStyles$: Observable<string[] | null>;
+
+  startResize(ev: MouseEvent) {
+    ev.preventDefault();
+  }
 }
