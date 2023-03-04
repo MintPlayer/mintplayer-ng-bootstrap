@@ -4,7 +4,9 @@
         <ng-container *bsLet="(widthStyles$ | async) as widthStyles">
             <ng-container *bsLet="(heightStyles$ | async) as heightStyles">
                 <!--  [style.width.%]="100" [style.height.%]="100" -->
-                <div class="split-panel" [style.width]="widthStyles | bsElementAt:index" [style.height]="heightStyles | bsElementAt:index">
+                <div class="split-panel" #splitPanel [style.width]="widthStyles | bsElementAt:index" [style.height]="heightStyles | bsElementAt:index">
+                    {{ widthStyles$ | async }}
+                    {{ heightStyles$ | async }}
                     <ng-template [cdkPortalOutlet]="panel.portal"></ng-template>
                 </div>
             </ng-container>

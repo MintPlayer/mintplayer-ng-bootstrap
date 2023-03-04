@@ -7,6 +7,7 @@ export class BsElementAtPipe implements PipeTransform {
 
   transform(value: any[] | null | undefined, index: number) {
     if (value) {
+      console.log('bsElementAt', {value, index});
       return value[index];
     } else {
       return null;

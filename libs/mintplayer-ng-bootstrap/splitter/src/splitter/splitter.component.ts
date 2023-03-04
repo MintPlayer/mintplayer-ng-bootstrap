@@ -1,5 +1,6 @@
-import { Component, Input, ContentChildren, QueryList, ElementRef, ViewChild, HostBinding } from '@angular/core';
-import { BehaviorSubject, map, combineLatest, Observable } from 'rxjs';
+import { DOCUMENT } from '@angular/common';
+import { Component, Input, ContentChildren, QueryList, ElementRef, ViewChild, HostBinding, ViewChildren, Inject } from '@angular/core';
+import { BehaviorSubject, map, combineLatest, Observable, take, tap } from 'rxjs';
 import { BsSplitPanelComponent } from '../split-panel/split-panel.component';
 import { Direction } from '../types/direction.type';
 
@@ -28,7 +29,7 @@ export class BsSplitterComponent {
         switch (orientation) {
           case 'horizontal':
             if (previewSizes) {
-              return Array(panels.length).map((v, i) => {
+              return [...Array(panels.length).keys()].map((v, i) => {
                 if (i < previewSizes.length) {
                   return previewSizes[i] + 'px';
                 } else {
@@ -41,6 +42,9 @@ export class BsSplitterComponent {
           case 'vertical':
             return null;
         }
+      }))
+      .pipe(tap(widthStyles => {
+        console.log('widthStyles', {orientation: this.orientation$.value, widthStyles});
       }));
     this.heightStyles$ =  combineLatest([this.orientation$, this.previewSizes$, this.panels$])
       .pipe(map(([orientation, previewSizes, panels]) => {
@@ -49,7 +53,8 @@ export class BsSplitterComponent {
             return null;
           case 'vertical':
             if (previewSizes) {
-              return Array(panels.length).map((v, i) => {
+              console.log('test', [...Array(panels.length).keys()]);
+              return [...Array(panels.length).keys()].map((v, i) => {
                 if (i < previewSizes.length) {
                   return previewSizes[i] + 'px';
                 } else {
@@ -60,6 +65,9 @@ export class BsSplitterComponent {
               return Array(panels.length).map((v, i) => '100%');
             }
         }
+      }))
+      .pipe(tap(heightStyles => {
+        console.log('heightStyles', {orientation: this.orientation$.value, heightStyles});
       }));
   }
 
@@ -79,6 +87,7 @@ export class BsSplitterComponent {
   @ContentChildren(BsSplitPanelComponent) set panels(value: QueryList<BsSplitPanelComponent>) {
     this.panels$.next(value.toArray());
   }
+  @ViewChildren('splitPanel') splitPanels!: QueryList<ElementRef<HTMLDivElement>>;
   
   @HostBinding('class.w-100')
   @HostBinding('class.h-100')
@@ -92,5 +101,24 @@ export class BsSplitterComponent {
 
   startResize(ev: MouseEvent) {
     ev.preventDefault();
+    if (typeof window !== 'undefined') {
+      console.log('panels', this.splitPanels);
+      this.orientation$.pipe(take(1)).subscribe((orientation) => {
+        const sizes = this.splitPanels
+          .map((sp) => {
+            const styles = window.getComputedStyle(sp.nativeElement);
+            switch (this.orientation) {
+              case 'horizontal': return styles.width;
+              case 'vertical': return styles.height;
+            }
+          })
+          .map((size) => size.slice(0, -2))
+          .map((size) => parseFloat(size));
+
+        console.log('sizes', sizes);
+        this.previewSizes$.next(sizes);
+      });
+
+    }
   }
 }
