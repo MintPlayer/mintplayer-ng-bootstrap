@@ -95,8 +95,29 @@ export class BsSplitterComponent {
   heightStyles$: Observable<string[] | null>;
   isResizing$ = new BehaviorSubject<boolean>(false);
 
+  computeSizes() {
+    if (typeof window !== 'undefined') {
+      const sizes = this.splitPanels
+        .map((sp) => {
+          const styles = window.getComputedStyle(sp.nativeElement);
+          switch (this.orientation) {
+            case 'horizontal': return styles.width;
+            case 'vertical': return styles.height;
+          }
+        })
+        .map((size) => size.slice(0, -2))
+        .map((size) => parseFloat(size));
+      return sizes;
+    } else {
+      return this.splitPanels.map(p => 50);
+    }
+  }
+  
   startResize(ev: MouseEvent, indexBefore: number, indexAfter: number) {
     ev.preventDefault();
+    const sizes = this.computeSizes();
+    this.previewSizes$.next(sizes);
+
     this.isResizing$.next(true);
   }
 
