@@ -1,8 +1,6 @@
-import { DOCUMENT } from '@angular/common';
-import { Component, Input, ContentChildren, QueryList, ElementRef, HostListener, HostBinding, ViewChildren, Inject } from '@angular/core';
-import { BehaviorSubject, map, combineLatest, Observable, take, tap, debounceTime, delay, Subject, takeUntil } from 'rxjs';
+import { Component, Input, ContentChildren, QueryList, ElementRef, HostListener, HostBinding, ViewChildren } from '@angular/core';
+import { BehaviorSubject, map, combineLatest, Observable, take } from 'rxjs';
 import { DragOperation, EDragOperation } from '../interfaces/drag-operation';
-import { Point } from '../interfaces/point';
 import { BsSplitPanelComponent } from '../split-panel/split-panel.component';
 import { Direction } from '../types/direction.type';
 
@@ -44,9 +42,6 @@ export class BsSplitterComponent {
           case 'vertical':
             return null;
         }
-      }))
-      .pipe(tap(widthStyles => {
-        console.log('widthStyles', {orientation: this.orientation$.value, widthStyles});
       }));
     this.heightStyles$ =  combineLatest([this.orientation$, this.previewSizes$, this.panels$])
       .pipe(map(([orientation, previewSizes, panels]) => {
@@ -55,7 +50,6 @@ export class BsSplitterComponent {
             return null;
           case 'vertical':
             if (previewSizes) {
-              console.log('test', [...Array(panels.length).keys()]);
               return [...Array(panels.length).keys()].map((v, i) => {
                 if (i < previewSizes.length) {
                   return previewSizes[i] + 'px';
@@ -67,9 +61,6 @@ export class BsSplitterComponent {
               return Array(panels.length).map((v, i) => '100%');
             }
         }
-      }))
-      .pipe(tap(heightStyles => {
-        console.log('heightStyles', {orientation: this.orientation$.value, heightStyles});
       }));
   }
 
@@ -100,53 +91,11 @@ export class BsSplitterComponent {
   splitterClass$: Observable<string>;
   widthStyles$: Observable<string[] | null>;
   heightStyles$: Observable<string[] | null>;
-
+  isResizing$ = new BehaviorSubject<boolean>(false);
   operation: DragOperation | null = null;
-  mousePosition$ = new BehaviorSubject<Point | null>(null);
 
-  // test(indexBefore: number, indexAfter: number) {
-  //   if (this.orientation === 'horizontal') {
-  //     const sizes = this.splitPanels
-  //       .map((sp) => {
-  //         const styles = window.getComputedStyle(sp.nativeElement);
-  //         switch (this.orientation) {
-  //           case 'horizontal': return styles.width;
-  //           case 'vertical': return styles.height;
-  //         }
-  //       })
-  //       .map((size) => size.slice(0, -2))
-  //       .map((size) => parseFloat(size));
-
-  //     console.log('sizes', sizes);
-  //     this.previewSizes$.next(sizes);
-  //     const operation = {
-  //       operation: EDragOperation.resizeSplitter,
-  //       startPosition: { x: 600, y: 600 },
-  //       sizes,
-  //       indexBefore,
-  //       indexAfter,
-  //     };
-
-  //     // offsetX
-  //     let current = 600;
-  //     setInterval(() => {
-  //       current += 5;
-  //       const deltaX = current - operation.startPosition.x;
-  //       const sx = Array.from(operation.sizes);
-  //       sx[operation.indexBefore] = operation.sizes[operation.indexBefore] + deltaX;
-  //       sx[operation.indexAfter] = operation.sizes[operation.indexAfter] - deltaX;
-  //       this.previewSizes$.next(sx);
-  //     }, 100)
-  //   }
-  // }
-
-  stopResize$ = new Subject();
-
-  startResize(ev: MouseEvent, indexBefore: number, indexAfter: number) {
-    ev.preventDefault();
-    // this.test(indexBefore, indexAfter);
+  computeSizes() {
     if (typeof window !== 'undefined') {
-      console.log('panels', this.splitPanels);
       const sizes = this.splitPanels
         .map((sp) => {
           const styles = window.getComputedStyle(sp.nativeElement);
@@ -157,87 +106,62 @@ export class BsSplitterComponent {
         })
         .map((size) => size.slice(0, -2))
         .map((size) => parseFloat(size));
-
-      console.log('sizes', sizes);
-      this.previewSizes$.next(sizes);
-      this.operation = {
-        operation: EDragOperation.resizeSplitter,
-        startPosition: { x: ev.offsetX, y: ev.offsetY },
-        sizes,
-        indexBefore,
-        indexAfter,
-      };
-
-      this.stopResize$.next(false);
-      this.mousePosition$.pipe(delay(5), takeUntil(this.stopResize$)).subscribe((mousePosition) => {
-        if (this.operation) {
-          switch (this.operation.operation) {
-            case EDragOperation.resizeSplitter: {
-              switch (this.orientation) {
-                case 'horizontal':
-                  const deltaX = mousePosition!.x - this.operation.startPosition.x;
-                  const sx = Array.from(this.operation.sizes);
-                  sx[this.operation.indexBefore] = this.operation.sizes[this.operation.indexBefore] + deltaX;
-                  sx[this.operation.indexAfter] = this.operation.sizes[this.operation.indexAfter] - deltaX;
-                  this.previewSizes$.next(sx);
-                  break;
-                case 'vertical':
-                  const deltaY = mousePosition!.y - this.operation.startPosition.y;
-                  const sy = Array.from(this.operation.sizes);
-                  sy[this.operation.indexBefore] = this.operation.sizes[this.operation.indexBefore] + deltaY;
-                  sy[this.operation.indexAfter] = this.operation.sizes[this.operation.indexAfter] - deltaY;
-                  this.previewSizes$.next(sy);
-                  break;
-              }
-            } break;
-          }
-        }
-      });
+      return sizes;
+    } else {
+      return this.splitPanels.map(p => 50);
     }
   }
+  
+  startResize(ev: MouseEvent, indexBefore: number, indexAfter: number) {
+    ev.preventDefault();
+    const sizes = this.computeSizes();
+    this.previewSizes$.next(sizes);
+    this.operation = {
+      operation: EDragOperation.resizeSplitter,
+      startPosition: { x: ev.clientX, y: ev.clientY },
+      sizes,
+      indexBefore,
+      indexAfter,
+    };
 
-  isBusy = false;
+    this.isResizing$.next(true);
+  }
 
   @HostListener('document:mousemove', ['$event'])
   onMouseMove(ev: MouseEvent) {
-    this.mousePosition$.next({ x: ev.offsetX, y: ev.offsetY });
-    // if (this.operation && !this.isBusy) {
-    //   this.isBusy = true;
-    //   switch (this.operation.operation) {
-    //     case EDragOperation.resizeSplitter: {
-    //       combineLatest([this.orientation$])
-    //         .pipe(take(1))
-    //         .subscribe(([orientation]) => {
-    //           if (this.operation) {
-    //             switch (orientation) {
-    //               case 'horizontal':
-    //                 const deltaX = ev.offsetX - this.operation.startPosition.x;
-    //                 const sx = Array.from(this.operation.sizes);
-    //                 sx[this.operation.indexBefore] = this.operation.sizes[this.operation.indexBefore] + deltaX;
-    //                 sx[this.operation.indexAfter] = this.operation.sizes[this.operation.indexAfter] - deltaX;
-    //                 this.previewSizes$.next(sx);
-    //                 break;
-    //               case 'vertical':
-    //                 const deltaY = ev.offsetY - this.operation.startPosition.y;
-    //                 const sy = Array.from(this.operation.sizes);
-    //                 sy[this.operation.indexBefore] = this.operation.sizes[this.operation.indexBefore] + deltaY;
-    //                 sy[this.operation.indexAfter] = this.operation.sizes[this.operation.indexAfter] - deltaY;
-    //                 this.previewSizes$.next(sy);
-    //                 break;
-    //             }
-    //           }
-    //       })
-    //     } break;
-    //   }
-    //   this.isBusy = false;
-    // }
+    if (this.operation) {
+      switch (this.operation.operation) {
+        case EDragOperation.resizeSplitter: {
+          combineLatest([this.orientation$])
+            .pipe(take(1))
+            .subscribe(([orientation]) => {
+              if (this.operation) {
+                switch (orientation) {
+                  case 'horizontal':
+                    const deltaX = ev.clientX - this.operation.startPosition.x;
+                    const sx = Array.from(this.operation.sizes);
+                    sx[this.operation.indexBefore] = this.operation.sizes[this.operation.indexBefore] + deltaX;
+                    sx[this.operation.indexAfter] = this.operation.sizes[this.operation.indexAfter] - deltaX;
+                    this.previewSizes$.next(sx);
+                    break;
+                  case 'vertical':
+                    const deltaY = ev.clientY - this.operation.startPosition.y;
+                    const sy = Array.from(this.operation.sizes);
+                    sy[this.operation.indexBefore] = this.operation.sizes[this.operation.indexBefore] + deltaY;
+                    sy[this.operation.indexAfter] = this.operation.sizes[this.operation.indexAfter] - deltaY;
+                    this.previewSizes$.next(sy);
+                    break;
+                }
+              }
+          })
+        } break;
+      }
+    }
   }
-
-  @Input() showLabels = true;
 
   @HostListener('document:mouseup', ['$event'])
   onMouseUp(ev: MouseEvent) {
-    this.stopResize$.next(true);
+    this.isResizing$.next(false);
     this.operation = null;
   }
 }
