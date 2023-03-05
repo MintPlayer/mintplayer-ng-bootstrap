@@ -4,13 +4,13 @@
         <ng-container *bsLet="(widthStyles$ | async) as widthStyles">
             <ng-container *bsLet="(heightStyles$ | async) as heightStyles">
                 <!--  [style.width.%]="100" [style.height.%]="100" -->
-                <div class="split-panel" #splitPanel [style.width]="widthStyles | bsElementAt:index" [style.height]="heightStyles | bsElementAt:index">
+                <div class="split-panel overflow-hidden" #splitPanel [style.width]="widthStyles | bsElementAt:index" [style.height]="heightStyles | bsElementAt:index">
                     {{ widthStyles$ | async }}
                     {{ heightStyles$ | async }}
                     <ng-template [cdkPortalOutlet]="panel.portal"></ng-template>
                 </div>
             </ng-container>
         </ng-container>
-        <div class="divider" (mousedown)="startResize($event)" *ngIf="!last"></div>
+        <div class="divider" (mousedown)="startResize($event, index, index + 1)" *ngIf="!last"></div>
     </ng-container>
 </div>
