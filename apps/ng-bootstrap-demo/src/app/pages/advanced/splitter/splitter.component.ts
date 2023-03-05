@@ -6,5 +6,4 @@ import { Component } from '@angular/core';
   styleUrls: ['./splitter.component.scss']
 })
 export class SplitterComponent {
-  showLabels = false;
 }

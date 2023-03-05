@@ -5,11 +5,6 @@
             <ng-container *bsLet="(heightStyles$ | async) as heightStyles">
                 <!--  [style.width.%]="100" [style.height.%]="100" -->
                 <div class="split-panel overflow-hidden" #splitPanel [style.width]="widthStyles | bsElementAt:index" [style.height]="heightStyles | bsElementAt:index">
-                    <ng-container *ngIf="showLabels">
-                        {{ widthStyles$ | async }}
-                        {{ heightStyles$ | async }}
-                        {{ mousePosition$ | async | json }}
-                    </ng-container>
                     <ng-template [cdkPortalOutlet]="panel.portal"></ng-template>
                 </div>
             </ng-container>
