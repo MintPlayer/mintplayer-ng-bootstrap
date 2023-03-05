@@ -16,6 +16,7 @@ const routes: Routes = [
   { path: 'ordinal-number', loadChildren: () => import('./ordinal-number/ordinal-number.module').then(m => m.OrdinalNumberModule) },
   { path: 'markdown', loadChildren: () => import('./markdown/markdown.module').then(m => m.MarkdownModule) },
   { path: 'navigation-lock', loadChildren: () => import('./navigation-lock/navigation-lock.module').then(m => m.NavigationLockModule) },
+  { path: 'splitter', loadChildren: () => import('./splitter/splitter.module').then(m => m.SplitterModule) },
 ];
 
 @NgModule({

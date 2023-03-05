@@ -1,0 +1,35 @@
+$splitter-size: 8px;
+
+.split-panel {
+    flex-grow: 1;
+}
+
+.divider {
+    background-color: #EEE;
+    background-position: center center;
+    background-repeat: no-repeat;
+    flex-shrink: 0;
+    transition: background-color .15s ease-in-out;
+
+    &:hover {
+        background-color: #1389FD;
+        border-radius: 4px;
+    }
+}
+
+.split-hor .divider {
+    width: $splitter-size;
+    height: 100%;
+    cursor: col-resize;
+    background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==);
+}
+.split-ver .divider {
+    width: 100%;
+    height: $splitter-size;
+    cursor: row-resize;
+    background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAFCAMAAABl/6zIAAAABlBMVEUAAADMzMzIT8AyAAAAAXRSTlMAQObYZgAAABRJREFUeAFjYGRkwIMJSeMHlBkOABP7AEGzSuPKAAAAAElFTkSuQmCC);
+}
+
+.flex-none {
+    flex: none;
+}

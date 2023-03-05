@@ -1,0 +1,14 @@
+<div class="d-flex w-100" [class]="[directionClass$ | async, splitterClass$ | async]">
+    <ng-content></ng-content>
+    <ng-container *ngFor="let panel of (panels$ | async); let index = index; let last = last">
+        <ng-container *bsLet="(widthStyles$ | async) as widthStyles">
+            <ng-container *bsLet="(heightStyles$ | async) as heightStyles">
+                <!--  [style.width.%]="100" [style.height.%]="100" -->
+                <div class="split-panel overflow-hidden" [class.flex-none]="isResizing$ | async" #splitPanel [style.width]="widthStyles | bsElementAt:index" [style.height]="heightStyles | bsElementAt:index">
+                    <ng-template [cdkPortalOutlet]="panel.portal"></ng-template>
+                </div>
+            </ng-container>
+        </ng-container>
+        <div class="divider" (mousedown)="startResize($event, index, index + 1)" *ngIf="!last"></div>
+    </ng-container>
+</div>
