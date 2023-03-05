@@ -1,6 +1,7 @@
 import { Component, Input, ContentChildren, QueryList, ElementRef, HostListener, HostBinding, ViewChildren } from '@angular/core';
 import { BehaviorSubject, map, combineLatest, Observable, take } from 'rxjs';
 import { DragOperation, EDragOperation } from '../interfaces/drag-operation';
+import { Point } from '../interfaces/point';
 import { BsSplitPanelComponent } from '../split-panel/split-panel.component';
 import { Direction } from '../types/direction.type';
 
@@ -112,13 +113,22 @@ export class BsSplitterComponent {
     }
   }
   
-  startResize(ev: MouseEvent, indexBefore: number, indexAfter: number) {
+  startResizeMouse(ev: MouseEvent, indexBefore: number, indexAfter: number) {
     ev.preventDefault();
+    this.startResize(indexBefore, indexAfter, { x: ev.clientX, y: ev.clientY });
+  }
+
+  startResizeTouch(ev: TouchEvent, indexBefore: number, indexAfter: number) {
+    ev.preventDefault();
+    this.startResize(indexBefore, indexAfter, { x: ev.touches[0].clientX, y: ev.touches[0].clientY });
+  }
+
+  private startResize(indexBefore: number, indexAfter: number, pt: Point) {
     const sizes = this.computeSizes();
     this.previewSizes$.next(sizes);
     this.operation = {
       operation: EDragOperation.resizeSplitter,
-      startPosition: { x: ev.clientX, y: ev.clientY },
+      startPosition: pt,
       sizes,
       indexBefore,
       indexAfter,
@@ -129,6 +139,14 @@ export class BsSplitterComponent {
 
   @HostListener('document:mousemove', ['$event'])
   onMouseMove(ev: MouseEvent) {
+    this.onResizeMove({ x: ev.clientX, y: ev.clientY });
+  }
+
+  onTouchMove(ev: TouchEvent) {
+    this.onResizeMove({ x: ev.touches[0].clientX, y: ev.touches[0].clientY });
+  }
+
+  onResizeMove(pt: Point) {
     if (this.operation) {
       switch (this.operation.operation) {
         case EDragOperation.resizeSplitter: {
@@ -138,14 +156,14 @@ export class BsSplitterComponent {
               if (this.operation) {
                 switch (orientation) {
                   case 'horizontal':
-                    const deltaX = ev.clientX - this.operation.startPosition.x;
+                    const deltaX = pt.x - this.operation.startPosition.x;
                     const sx = Array.from(this.operation.sizes);
                     sx[this.operation.indexBefore] = this.operation.sizes[this.operation.indexBefore] + deltaX;
                     sx[this.operation.indexAfter] = this.operation.sizes[this.operation.indexAfter] - deltaX;
                     this.previewSizes$.next(sx);
                     break;
                   case 'vertical':
-                    const deltaY = ev.clientY - this.operation.startPosition.y;
+                    const deltaY = pt.y - this.operation.startPosition.y;
                     const sy = Array.from(this.operation.sizes);
                     sy[this.operation.indexBefore] = this.operation.sizes[this.operation.indexBefore] + deltaY;
                     sy[this.operation.indexAfter] = this.operation.sizes[this.operation.indexAfter] - deltaY;
@@ -161,6 +179,14 @@ export class BsSplitterComponent {
 
   @HostListener('document:mouseup', ['$event'])
   onMouseUp(ev: MouseEvent) {
+    this.onResizeUp();
+  }
+
+  onTouchEnd(ev: TouchEvent) {
+    this.onResizeUp();
+  }
+
+  onResizeUp() {
     this.isResizing$.next(false);
     this.operation = null;
   }
