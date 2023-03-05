@@ -93,8 +93,11 @@ export class BsSplitterComponent {
   splitterClass$: Observable<string>;
   widthStyles$: Observable<string[] | null>;
   heightStyles$: Observable<string[] | null>;
+  isResizing$ = new BehaviorSubject<boolean>(false);
 
   startResize(ev: MouseEvent, indexBefore: number, indexAfter: number) {
+    ev.preventDefault();
+    this.isResizing$.next(true);
   }
 
   @HostListener('document:mousemove', ['$event'])
@@ -103,5 +106,6 @@ export class BsSplitterComponent {
 
   @HostListener('document:mouseup', ['$event'])
   onMouseUp(ev: MouseEvent) {
+    this.isResizing$.next(false);
   }
 }
