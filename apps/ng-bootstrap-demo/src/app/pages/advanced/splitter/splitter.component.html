@@ -1,13 +1,14 @@
 <h1 class="text-center">Splitter</h1>
+<bs-toggle-button [(ngModel)]="showLabels">Show labels</bs-toggle-button>
 <div class="dock">
-    <bs-splitter>
+    <bs-splitter [showLabels]="showLabels">
         <bs-split-panel>
             <div class="d-flex w-100 h-100 align-items-center justify-content-center">
                 <span>Panel 1</span>
             </div>
         </bs-split-panel>
         <bs-split-panel>
-            <bs-splitter [orientation]="'vertical'">
+            <bs-splitter [orientation]="'vertical'" [showLabels]="showLabels">
                 <bs-split-panel>
                     <div class="d-flex w-100 h-100 align-items-center justify-content-center">
                         <span>Panel 2a</span>

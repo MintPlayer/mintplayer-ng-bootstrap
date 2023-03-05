@@ -233,6 +233,8 @@ export class BsSplitterComponent {
     // }
   }
 
+  @Input() showLabels = true;
+
   @HostListener('document:mouseup', ['$event'])
   onMouseUp(ev: MouseEvent) {
     this.stopResize$.next(true);
