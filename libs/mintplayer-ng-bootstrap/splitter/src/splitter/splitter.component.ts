@@ -1,8 +1,6 @@
-import { DOCUMENT } from '@angular/common';
-import { Component, Input, ContentChildren, QueryList, ElementRef, HostListener, HostBinding, ViewChildren, Inject } from '@angular/core';
-import { BehaviorSubject, map, combineLatest, Observable, take, tap, debounceTime, delay, Subject, takeUntil } from 'rxjs';
+import { Component, Input, ContentChildren, QueryList, ElementRef, HostListener, HostBinding, ViewChildren } from '@angular/core';
+import { BehaviorSubject, map, combineLatest, Observable, take } from 'rxjs';
 import { DragOperation, EDragOperation } from '../interfaces/drag-operation';
-import { Point } from '../interfaces/point';
 import { BsSplitPanelComponent } from '../split-panel/split-panel.component';
 import { Direction } from '../types/direction.type';
 
@@ -94,6 +92,7 @@ export class BsSplitterComponent {
   widthStyles$: Observable<string[] | null>;
   heightStyles$: Observable<string[] | null>;
   isResizing$ = new BehaviorSubject<boolean>(false);
+  operation: DragOperation | null = null;
 
   computeSizes() {
     if (typeof window !== 'undefined') {
@@ -117,16 +116,52 @@ export class BsSplitterComponent {
     ev.preventDefault();
     const sizes = this.computeSizes();
     this.previewSizes$.next(sizes);
+    this.operation = {
+      operation: EDragOperation.resizeSplitter,
+      startPosition: { x: ev.clientX, y: ev.clientY },
+      sizes,
+      indexBefore,
+      indexAfter,
+    };
 
     this.isResizing$.next(true);
   }
 
   @HostListener('document:mousemove', ['$event'])
   onMouseMove(ev: MouseEvent) {
+    if (this.operation) {
+      switch (this.operation.operation) {
+        case EDragOperation.resizeSplitter: {
+          combineLatest([this.orientation$])
+            .pipe(take(1))
+            .subscribe(([orientation]) => {
+              if (this.operation) {
+                switch (orientation) {
+                  case 'horizontal':
+                    const deltaX = ev.clientX - this.operation.startPosition.x;
+                    const sx = Array.from(this.operation.sizes);
+                    sx[this.operation.indexBefore] = this.operation.sizes[this.operation.indexBefore] + deltaX;
+                    sx[this.operation.indexAfter] = this.operation.sizes[this.operation.indexAfter] - deltaX;
+                    this.previewSizes$.next(sx);
+                    break;
+                  case 'vertical':
+                    const deltaY = ev.clientY - this.operation.startPosition.y;
+                    const sy = Array.from(this.operation.sizes);
+                    sy[this.operation.indexBefore] = this.operation.sizes[this.operation.indexBefore] + deltaY;
+                    sy[this.operation.indexAfter] = this.operation.sizes[this.operation.indexAfter] - deltaY;
+                    this.previewSizes$.next(sy);
+                    break;
+                }
+              }
+          })
+        } break;
+      }
+    }
   }
 
   @HostListener('document:mouseup', ['$event'])
   onMouseUp(ev: MouseEvent) {
     this.isResizing$.next(false);
+    this.operation = null;
   }
 }
