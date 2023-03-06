@@ -5,30 +5,66 @@ $splitter-size: 8px;
 }
 
 .divider {
-    background-color: #EEE;
-    background-position: center center;
-    background-repeat: no-repeat;
-    border: 3px solid transparent;
     flex-shrink: 0;
     transition: background-color .15s ease-in-out;
+    z-index: 3;
+
+    &::before {
+        background-position: center center;
+        background-repeat: no-repeat;
+    }
 
     &:hover, &.hover {
-        background-color: #1389FD;
-        border-radius: calc($splitter-size / 2);
+        &::before {
+            background-color: #1389FD;
+            border-radius: calc($splitter-size / 2);
+        }
+    }
+
+    &::before {
+        content: "";
+        display: block;
+        background-color: #EEE;
     }
 }
 
-.split-hor .divider {
-    width: $splitter-size;
-    height: 100%;
-    cursor: col-resize;
-    background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==);
+.split-hor {
+    > .divider {
+        width: calc($splitter-size + 6px);
+        height: 100%;
+        cursor: col-resize;
+        border-left: 3px solid transparent;
+        border-right: 3px solid transparent;
+
+        &::before {
+            width: $splitter-size;
+            height: 100%;
+            background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==);
+        }
+    }
+    > .split-panel {
+        margin-left: -3px;
+        margin-right: -3px;
+    }
 }
-.split-ver .divider {
-    width: 100%;
-    height: $splitter-size;
-    cursor: row-resize;
-    background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAFCAMAAABl/6zIAAAABlBMVEUAAADMzMzIT8AyAAAAAXRSTlMAQObYZgAAABRJREFUeAFjYGRkwIMJSeMHlBkOABP7AEGzSuPKAAAAAElFTkSuQmCC);
+
+.split-ver {
+    > .divider {
+        width: 100%;
+        height: calc($splitter-size + 6px);
+        cursor: row-resize;
+        border-top: 3px solid transparent;
+        border-bottom: 3px solid transparent;
+
+        &::before {
+            height: $splitter-size;
+            background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAFCAMAAABl/6zIAAAABlBMVEUAAADMzMzIT8AyAAAAAXRSTlMAQObYZgAAABRJREFUeAFjYGRkwIMJSeMHlBkOABP7AEGzSuPKAAAAAElFTkSuQmCC);
+        }
+    }
+    > .split-panel {
+        margin-top: -3px;
+        margin-bottom: -3px;
+    }
 }
 
 .flex-none {
