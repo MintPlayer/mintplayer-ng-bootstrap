@@ -93,6 +93,7 @@ export class BsSplitterComponent {
   widthStyles$: Observable<string[] | null>;
   heightStyles$: Observable<string[] | null>;
   isResizing$ = new BehaviorSubject<boolean>(false);
+  touchedDivider$ = new BehaviorSubject<HTMLDivElement | null>(null);
   operation: DragOperation | null = null;
 
   computeSizes() {
@@ -118,8 +119,9 @@ export class BsSplitterComponent {
     this.startResize(indexBefore, indexAfter, { x: ev.clientX, y: ev.clientY });
   }
 
-  startResizeTouch(ev: TouchEvent, indexBefore: number, indexAfter: number) {
+  startResizeTouch(ev: TouchEvent, indexBefore: number, indexAfter: number, divider: HTMLDivElement) {
     ev.preventDefault();
+    this.touchedDivider$.next(divider);
     this.startResize(indexBefore, indexAfter, { x: ev.touches[0].clientX, y: ev.touches[0].clientY });
   }
 
@@ -183,6 +185,7 @@ export class BsSplitterComponent {
   }
 
   onTouchEnd(ev: TouchEvent) {
+    this.touchedDivider$.next(null);
     this.onResizeUp();
   }
 

@@ -9,6 +9,6 @@
                 </div>
             </ng-container>
         </ng-container>
-        <div class="divider" (mousedown)="startResizeMouse($event, index, index + 1)" (touchstart)="startResizeTouch($event, index, index + 1)" (touchmove)="onTouchMove($event)" (touchend)="onTouchEnd($event)" *ngIf="!last"></div>
+        <div class="divider" [class.hover]="(touchedDivider$ | async) === divider" #divider (mousedown)="startResizeMouse($event, index, index + 1)" (touchstart)="startResizeTouch($event, index, index + 1, divider)" (touchmove)="onTouchMove($event)" (touchend)="onTouchEnd($event)" *ngIf="!last"></div>
     </ng-container>
 </div>
