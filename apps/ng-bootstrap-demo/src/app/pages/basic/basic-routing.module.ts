@@ -8,6 +8,7 @@ const routes: Routes = [
   { path: 'forms', loadChildren: () => import('./forms/forms.module').then(m => m.FormsModule) },
   { path: 'carousel', loadChildren: () => import('./carousel/carousel.module').then(m => m.CarouselModule) },
   { path: 'datepicker', loadChildren: () => import('./datepicker/datepicker.module').then(m => m.DatepickerModule) },
+  { path: 'color-picker', loadChildren: () => import('./color-picker/color-picker.module').then(m => m.ColorPickerModule) },
   { path: 'rating', loadChildren: () => import('./rating/rating.module').then(m => m.RatingModule) },
   { path: 'progress-bar', loadChildren: () => import('./progress-bar/progress-bar.module').then(m => m.ProgressBarModule) },
   { path: 'list-group', loadChildren: () => import('./list-group/list-group.module').then(m => m.ListGroupModule) },
@@ -22,8 +23,7 @@ const routes: Routes = [
   { path: 'pagination', loadChildren: () => import('./pagination/pagination.module').then(m => m.PaginationModule) },
   { path: 'table', loadChildren: () => import('./table/table.module').then(m => m.TableModule) },
   { path: 'button-type', loadChildren: () => import('./button-type/button-type.module').then(m => m.ButtonTypeModule) },
-  { path: 'containers', loadChildren: () => import('./containers/containers.module').then(m => m.ContainersModule) },,
-  { path: 'color-picker', loadChildren: () => import('./color-picker/color-picker.module').then(m => m.ColorPickerModule) }
+  { path: 'containers', loadChildren: () => import('./containers/containers.module').then(m => m.ContainersModule) },
 ];
 
 @NgModule({
