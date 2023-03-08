@@ -21,35 +21,58 @@ export class BsColorPickerComponent implements AfterViewInit, OnDestroy {
     //   }
     // });
 
-    combineLatest([this.width$, this.height$])
-      .pipe(debounceTime(20), takeUntil(this.destroyed$))
-      .subscribe(([width, height]) => {
+    this.squareSize$ = combineLatest([this.width$, this.height$])
+      .pipe(map(([width, height]) => {
         if ((width === null) || (height === null)) {
-          this.squareSize$.next(null);
-        } else {
-          const squareSize = Math.min(width, height);
-          this.squareSize$.next(squareSize);
-          if (width < height) {
-            this.shiftX$.next(0);
-            this.shiftY$.next((height - width) / 2);
-          } else {
-            this.shiftX$.next((width - height) / 2);
-            this.shiftY$.next(0);
-          }
+          return null;
         }
-      });
-    
-    combineLatest([this.squareSize$, this.diameterRatio$])
-      .pipe(debounceTime(20), takeUntil(this.destroyed$))
-      .subscribe(([squareSize, diameterRatio]) => {
-        if (squareSize) {
-          this.outerRadius$.next(squareSize / 2);
-          this.innerRadius$.next(squareSize / 2 * diameterRatio);
-        }
-      });
 
+        const squareSize = Math.min(width, height);
+        return squareSize;
+      }));
+
+    this.shiftX$ = combineLatest([this.width$, this.height$])
+      .pipe(map(([width, height]) => {
+        if ((width === null) || (height === null)) {
+          return null;
+        } else if (width < height) {
+          return 0;
+        } else {
+          return (width - height) / 2;
+        }
+      }));
+
+    this.shiftY$ = combineLatest([this.width$, this.height$])
+      .pipe(map(([width, height]) => {
+        if ((width === null) || (height === null)) {
+          return null;
+        } else if (width < height) {
+          return (height - width) / 2;
+        } else {
+          return 0;
+        }
+      }));
+
+    this.innerRadius$ = combineLatest([this.squareSize$, this.diameterRatio$])
+      .pipe(map(([squareSize, diameterRatio]) => {
+        if (squareSize) {
+          return squareSize / 2 * diameterRatio;
+        } else {
+          return 0;
+        }
+      }));
+
+    this.outerRadius$ = combineLatest([this.squareSize$, this.diameterRatio$])
+      .pipe(map(([squareSize, diameterRatio]) => {
+        if (squareSize) {
+          return squareSize / 2;
+        } else {
+          return 150;
+        }
+      }));
+  
     combineLatest([this.innerRadius$, this.outerRadius$, this.shiftX$, this.shiftY$])
-      .pipe(takeUntil(this.destroyed$))
+      .pipe(debounceTime(20), takeUntil(this.destroyed$))
       .subscribe(([innerRadius, outerRadius, shiftX, shiftY]) => {
         if (this.canvasContext && (innerRadius !== null) && (outerRadius !== null) && (shiftX !== null) && (shiftY !== null)) {
           this.canvasContext.clearRect(0, 0, this.canvas.nativeElement.width, this.canvas.nativeElement.height);
@@ -123,12 +146,12 @@ export class BsColorPickerComponent implements AfterViewInit, OnDestroy {
   height$ = new BehaviorSubject<number>(150);
   diameterRatio$ = new BehaviorSubject<number>(0);
 
-  squareSize$ = new BehaviorSubject<number | null>(null);
-  shiftX$ = new BehaviorSubject<number | null>(null);
-  shiftY$ = new BehaviorSubject<number | null>(null);
+  squareSize$: Observable<number | null>;
+  shiftX$: Observable<number | null>;
+  shiftY$: Observable<number | null>;
 
-  innerRadius$ = new BehaviorSubject<number | null>(null);
-  outerRadius$ = new BehaviorSubject<number | null>(null);
+  innerRadius$: Observable<number | null>;
+  outerRadius$: Observable<number | null>;
   markerPosition$: Observable<{x: number, y: number}>;
   disabled$ = new BehaviorSubject<boolean>(false);
   

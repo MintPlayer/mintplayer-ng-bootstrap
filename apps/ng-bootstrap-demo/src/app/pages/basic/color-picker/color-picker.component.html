@@ -1,5 +1,5 @@
 <h1 class="text-center">Color picker</h1>
-<bs-color-picker class="d-inline-block" [(ngModel)]="selectedColor"></bs-color-picker>
+<bs-color-picker class="d-inline-block" [(ngModel)]="selectedColor" [width]="400"></bs-color-picker>
 <br>
 <bs-button-group>
     <button (click)="setColor('#FF0000')" [color]="colors.primary">Set red</button>
