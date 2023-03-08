@@ -1,6 +1,6 @@
 import { AfterViewInit, Component, ElementRef, EventEmitter, Host, HostBinding, HostListener, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
-import { BehaviorSubject, combineLatest, debounce, debounceTime, filter, map, Observable, Subject, takeUntil } from 'rxjs';
-import { RgbColor } from '..';
+import { BehaviorSubject, combineLatest, debounce, debounceTime, filter, map, Observable, Subject, switchMap, takeUntil } from 'rxjs';
+import { RgbColor } from '../interfaces/rgb-color';
 
 @Component({
   selector: 'bs-color-picker',
@@ -29,7 +29,6 @@ export class BsColorPickerComponent implements AfterViewInit, OnDestroy {
         } else {
           const squareSize = Math.min(width, height);
           this.squareSize$.next(squareSize);
-          console.log('squareSize', squareSize);
           if (width < height) {
             this.shiftX$.next(0);
             this.shiftY$.next((height - width) / 2);
@@ -71,17 +70,26 @@ export class BsColorPickerComponent implements AfterViewInit, OnDestroy {
       });
 
     this.markerPosition$ = combineLatest([this.selectedColor$, this.shiftX$, this.shiftY$])
-      .pipe(map(([selectedColor, shiftX, shiftY]) => {
-        const pos = this.color2position(selectedColor);
-        if ((shiftX !== null) && (shiftY !== null)) {
+      .pipe(switchMap(([selectedColor, shiftX, shiftY]) => {
+        return this.color2position(selectedColor)
+          .pipe(map((position) => <[{x:number,y:number}, number, number]>[position, shiftX, shiftY]));
+      }))
+      .pipe(map(([position, shiftX, shiftY]) => {
+        if ((shiftX !== null) && (shiftY !== null) && position) {
           return {
-            x: pos.x + shiftX,
-            y: pos.y + shiftY,
+            x: position.x + shiftX,
+            y: position.y + shiftY,
           };
         } else {
-          return pos;
+          return position;
         }
       }));
+
+    this.selectedColor$
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe((selectedColor) => {
+        this.selectedColorChange.emit(selectedColor);
+      });
   }
 
   @HostBinding('class.position-relative') positionRelative = true;
@@ -91,7 +99,6 @@ export class BsColorPickerComponent implements AfterViewInit, OnDestroy {
   @Output() public selectedColorChange = new EventEmitter<RgbColor>();
   @Input() public set selectedColor(value: RgbColor) {
     this.selectedColor$.next(value);
-    this.selectedColorChange.emit(value);
   }
   public get selectedColor() {
     return this.selectedColor$.value;
@@ -112,7 +119,7 @@ export class BsColorPickerComponent implements AfterViewInit, OnDestroy {
   // private resizeObserver: ResizeObserver;
   private canvasContext: CanvasRenderingContext2D | null = null;
   private isPointerDown = false;
-  width$ = new BehaviorSubject<number>(300);
+  width$ = new BehaviorSubject<number>(150);
   height$ = new BehaviorSubject<number>(150);
   diameterRatio$ = new BehaviorSubject<number>(0);
 
@@ -123,6 +130,7 @@ export class BsColorPickerComponent implements AfterViewInit, OnDestroy {
   innerRadius$ = new BehaviorSubject<number | null>(null);
   outerRadius$ = new BehaviorSubject<number | null>(null);
   markerPosition$: Observable<{x: number, y: number}>;
+  disabled$ = new BehaviorSubject<boolean>(false);
   
   viewInited$ = new BehaviorSubject<boolean>(false);
   destroyed$ = new Subject();
@@ -130,10 +138,7 @@ export class BsColorPickerComponent implements AfterViewInit, OnDestroy {
   ngAfterViewInit() {
     // this.resizeObserver.observe(this.element.nativeElement);
     this.viewInited$.next(true);
-    this.canvasContext = this.canvas.nativeElement.getContext('2d');
-
-    // this.canvasContext?.getImageData(0,0,0,0).data
-    
+    this.canvasContext = this.canvas.nativeElement.getContext('2d', { willReadFrequently: true });
   }
 
   ngOnDestroy() {
@@ -142,21 +147,47 @@ export class BsColorPickerComponent implements AfterViewInit, OnDestroy {
   }
 
   onPointerDown(ev: MouseEvent | TouchEvent) {
-    console.log('ev', ev);
-    this.isPointerDown = true;
-  }
-
-  onPointerMove(ev: MouseEvent | TouchEvent) {
-    console.log('ev', ev);
-    if (this.isPointerDown) {
+    if (!this.disabled$.value) {
       ev.preventDefault();
-      ev.stopPropagation();
+      this.isPointerDown = true;
+      this.updateColor(ev);
     }
   }
 
+  onPointerMove(ev: MouseEvent | TouchEvent) {
+    if (this.isPointerDown) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      this.updateColor(ev);
+    }
+  }
+
+  @HostListener('document:mouseup', ['$event'])
   onPointerUp(ev: MouseEvent | TouchEvent) {
-    console.log('ev', ev);
     this.isPointerDown = false;
+  }
+
+  private updateColor(ev: MouseEvent | TouchEvent) {
+    let co: { x: number, y: number };
+    if ('touches' in ev) {
+      const rect = this.canvas.nativeElement.getBoundingClientRect();
+      co = {
+        x: ev.touches[0].clientX - rect.left,
+        y: ev.touches[0].clientY - rect.top,
+      };
+    } else {
+      co = {
+        x: ev.offsetX,
+        y: ev.offsetY,
+      };
+    }
+    
+    const color = this.position2color(co.x, co.y);
+    if (color) {
+      this.selectedColor$.next(color);
+    } else {
+      console.warn('Color is null');
+    }
   }
 
   private position2color(x: number, y: number) {
@@ -169,25 +200,31 @@ export class BsColorPickerComponent implements AfterViewInit, OnDestroy {
   }
 
   private color2position(color: RgbColor) {
-    const { h, s, l } = this.rgb2Hsl(color);
-    const theta = h * Math.PI / 180;
-    const c = {
-      x: (this.outerRadius$.value ?? 0) * Math.cos(theta),
-      y: (this.outerRadius$.value ?? 0) * Math.sin(theta)
-    };
-    const ratio = 1 - Math.max(0, 2 * (l - 0.5));
-    const outerRadius = this.outerRadius$.value ?? 0;
-    const innerRadius = this.innerRadius$.value ?? 0;
+    return combineLatest([this.innerRadius$, this.outerRadius$])
+      .pipe(map(([innerRadius, outerRadius]) => {
+        if (innerRadius === null) {
+          innerRadius = 0;
+        }
+        if (!outerRadius) {
+          outerRadius = 100;
+        }
 
-    const d = ratio * (outerRadius - innerRadius) + innerRadius;
-    const o = { x: outerRadius, y: outerRadius };
-
-    console.log('hsl', {h, s, l});
-
-    return {
-      x: o.x + d * (c.x / outerRadius),
-      y: o.y + d * (c.y / outerRadius),
-    }
+        const { h, s, l } = this.rgb2Hsl(color);
+        const theta = h * Math.PI / 180;
+        const c = {
+          x: outerRadius * Math.cos(theta),
+          y: outerRadius * Math.sin(theta)
+        };
+        const ratio = 1 - Math.max(0, 2 * (l - 0.5));
+    
+        const d = ratio * (outerRadius - innerRadius) + innerRadius;
+        const o = { x: outerRadius, y: outerRadius };
+    
+        return {
+          x: o.x + d * (c.x / outerRadius),
+          y: o.y + d * (c.y / outerRadius),
+        }
+      }));
   }
   
   private rgb2Hsl(color: RgbColor) {

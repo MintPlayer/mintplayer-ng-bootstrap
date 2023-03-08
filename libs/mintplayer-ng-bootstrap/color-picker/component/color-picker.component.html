@@ -1,16 +1,13 @@
-<!-- {{ innerRadius$ | async }} | {{ outerRadius$ | async }} | {{ shiftX$ | async }} | {{ shiftY$ | async }} -->
-
 <canvas
-    [style.width.px]="width$ | async"
-    [style.height.px]="height$ | async"
+    [width]="width$ | async"
+    [height]="height$ | async"
     (mousedown)="onPointerDown($event)"
     (mousemove)="onPointerMove($event)"
-    (mouseup)="onPointerUp($event)"
     (touchstart)="onPointerDown($event)"
     (touchmove)="onPointerMove($event)"
     (touchend)="onPointerUp($event)"
     #canvas></canvas>
 
 <ng-container *ngIf="(markerPosition$ | async) as markerPosition">
-    <div class="thumb position-absolute" [style.left.px]="markerPosition.x" [style.top.px]="markerPosition.y"></div>
+    <div class="thumb position-absolute pe-none" [style.left.px]="markerPosition.x" [style.top.px]="markerPosition.y"></div>
 </ng-container>
