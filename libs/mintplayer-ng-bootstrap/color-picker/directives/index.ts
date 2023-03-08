@@ -1,0 +1,1 @@
+export * from './color-picker-value-accessor/color-picker-value-accessor.directive';
