@@ -214,3 +214,20 @@ jobs:
         registry: 'https://npm.pkg.github.com'
         token: ${{ github.token }}
         access: 'public'
+        
+    ## ng-bootstrap-demo
+    - name: Push to NPM
+      uses: JS-DevTools/npm-publish@v1
+      with:
+        package: 'dist/libs/mintplayer-ng-bootstrap-demo/package.json'
+        registry: 'https://registry.npmjs.org'
+        token: ${{ secrets.PUBLISH_NODE_TO_NPMJS_COM }}
+        access: 'public'
+
+    - name: Push to Github
+      uses: JS-DevTools/npm-publish@v1
+      with:
+        package: 'dist/libs/mintplayer-ng-bootstrap-demo/package.json'
+        registry: 'https://npm.pkg.github.com'
+        token: ${{ github.token }}
+        access: 'public'
