@@ -7,9 +7,7 @@
   "targets": {
     "build": {
       "executor": "@nrwl/angular:package",
-      "outputs": [
-        "{workspaceRoot}/dist/libs/mintplayer-ng-click-outside"
-      ],
+      "outputs": ["{workspaceRoot}/dist/libs/mintplayer-ng-click-outside"],
       "options": {
         "tsConfig": "libs/mintplayer-ng-click-outside/tsconfig.lib.json",
         "project": "libs/mintplayer-ng-click-outside/ng-package.json"
@@ -26,9 +24,7 @@
     },
     "test": {
       "executor": "@nrwl/jest:jest",
-      "outputs": [
-        "{workspaceRoot}/coverage/libs/mintplayer-ng-click-outside"
-      ],
+      "outputs": ["{workspaceRoot}/coverage/libs/mintplayer-ng-click-outside"],
       "options": {
         "jestConfig": "libs/mintplayer-ng-click-outside/jest.config.ts",
         "passWithNoTests": true

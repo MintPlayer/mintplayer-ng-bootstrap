@@ -7,9 +7,7 @@
   "targets": {
     "build": {
       "executor": "@nrwl/angular:package",
-      "outputs": [
-        "{workspaceRoot}/dist/libs/mintplayer-ng-focus-on-load"
-      ],
+      "outputs": ["{workspaceRoot}/dist/libs/mintplayer-ng-focus-on-load"],
       "options": {
         "tsConfig": "libs/mintplayer-ng-focus-on-load/tsconfig.lib.json",
         "project": "libs/mintplayer-ng-focus-on-load/ng-package.json"
@@ -26,9 +24,7 @@
     },
     "test": {
       "executor": "@nrwl/jest:jest",
-      "outputs": [
-        "{workspaceRoot}/coverage/libs/mintplayer-ng-focus-on-load"
-      ],
+      "outputs": ["{workspaceRoot}/coverage/libs/mintplayer-ng-focus-on-load"],
       "options": {
         "jestConfig": "libs/mintplayer-ng-focus-on-load/jest.config.ts",
         "passWithNoTests": true
