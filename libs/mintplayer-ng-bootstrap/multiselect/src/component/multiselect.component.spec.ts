@@ -5,8 +5,8 @@ import { MockModule } from 'ng-mocks';
 import { BsMultiselectComponent } from './multiselect.component';
 
 describe('BsMultiselectComponent', () => {
-  let component: BsMultiselectComponent;
-  let fixture: ComponentFixture<BsMultiselectComponent>;
+  let component: BsMultiselectComponent<any>;
+  let fixture: ComponentFixture<BsMultiselectComponent<any>>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
