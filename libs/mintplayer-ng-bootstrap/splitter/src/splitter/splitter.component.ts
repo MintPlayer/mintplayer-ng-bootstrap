@@ -120,9 +120,12 @@ export class BsSplitterComponent {
   }
 
   startResizeTouch(ev: TouchEvent, indexBefore: number, indexAfter: number, divider: HTMLDivElement) {
-    ev.preventDefault();
-    this.touchedDivider$.next(divider);
-    this.startResize(indexBefore, indexAfter, { x: ev.touches[0].clientX, y: ev.touches[0].clientY });
+    console.log('start touch', divider);
+    if (ev.cancelable) {
+      ev.preventDefault();
+      this.touchedDivider$.next(divider);
+      this.startResize(indexBefore, indexAfter, { x: ev.touches[0].clientX, y: ev.touches[0].clientY });
+    }
   }
 
   private startResize(indexBefore: number, indexAfter: number, pt: Point) {
@@ -187,6 +190,7 @@ export class BsSplitterComponent {
   onTouchEnd(ev: TouchEvent) {
     this.touchedDivider$.next(null);
     this.onResizeUp();
+    console.log('end touch', null);
   }
 
   onResizeUp() {

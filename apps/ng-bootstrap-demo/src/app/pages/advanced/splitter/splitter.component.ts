@@ -6,4 +6,5 @@ import { Component } from '@angular/core';
   styleUrls: ['./splitter.component.scss']
 })
 export class SplitterComponent {
+  bgWarning = false;
 }

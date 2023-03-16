@@ -1,25 +1,26 @@
 <h1 class="text-center">Splitter</h1>
+<bs-toggle-button [(ngModel)]="bgWarning">Yellow background</bs-toggle-button>
 <div class="dock">
     <bs-splitter>
         <bs-split-panel>
-            <div class="d-flex w-100 h-100 align-items-center justify-content-center">
+            <div class="d-flex w-100 h-100 align-items-center justify-content-center" [class.bg-warning]="bgWarning">
                 <span>Panel 1</span>
             </div>
         </bs-split-panel>
         <bs-split-panel>
             <bs-splitter [orientation]="'vertical'">
                 <bs-split-panel>
-                    <div class="d-flex w-100 h-100 align-items-center justify-content-center">
+                    <div class="d-flex w-100 h-100 align-items-center justify-content-center" [class.bg-warning]="bgWarning">
                         <span>Panel 2a</span>
                     </div>
                 </bs-split-panel>
                 <bs-split-panel>
-                    <div class="d-flex w-100 h-100 align-items-center justify-content-center">
+                    <div class="d-flex w-100 h-100 align-items-center justify-content-center" [class.bg-warning]="bgWarning">
                         <span>Panel 2b</span>
                     </div>
                 </bs-split-panel>
                 <bs-split-panel>
-                    <div class="d-flex w-100 h-100 align-items-center justify-content-center">
+                    <div class="d-flex w-100 h-100 align-items-center justify-content-center" [class.bg-warning]="bgWarning">
                         <span>Panel 2c</span>
                     </div>
                 </bs-split-panel>
