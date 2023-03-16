@@ -1,4 +1,4 @@
-import { Component, Input, TemplateRef, ViewChild } from '@angular/core';
+import { Component, Input, TemplateRef, TrackByFunction, ViewChild } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 
 @Component({
@@ -6,7 +6,7 @@ import { Color } from '@mintplayer/ng-bootstrap';
   templateUrl: './multiselect.component.html',
   styleUrls: ['./multiselect.component.scss']
 })
-export class BsMultiselectComponent {
+export class BsMultiselectComponent<T> {
 
   headerTemplate!: TemplateRef<any>;
   footerTemplate!: TemplateRef<any>;
@@ -14,12 +14,13 @@ export class BsMultiselectComponent {
   colors = Color;
 
 
-  @Input() public items: any[] = [];
-  @Input() public selectedItems: any[] = [];
+  @Input() public items: T[] = [];
+  @Input() public selectedItems: T[] = [];
   @ViewChild('defaultButtonTemplate') defaultButtonTemplate!: TemplateRef<any>;
+  @Input() public itemsTrackBy?: TrackByFunction<T>;
 
   // itemChange(item: any, ev: Event) {
-  itemChange(item: any, value: boolean | null) {
+  itemChange(item: T, value: boolean | null) {
     // const value = (<any>ev.target).checked;
     if (value) {
       this.selectedItems.push(item);
@@ -28,4 +29,8 @@ export class BsMultiselectComponent {
     }
   }
   
+  defaultTrackBy(index: number, item: T) {
+    return item;
+  }
+
 }

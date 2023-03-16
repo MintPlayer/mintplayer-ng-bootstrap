@@ -15,6 +15,10 @@ export class SelectComponent {
     { id: 3, name: 'Lasagna', description: 'Lasagna Bolognaise', ingredients: ['Pasta', 'Minced meat', 'Tomato sauce', 'Cheese'] },
   ]
 
+  trackByDish(index: number, item: Dish) {
+    return item.id;
+  }
+
 }
 
 interface Dish {

@@ -40,6 +40,9 @@ export class TableComponent {
   }];
   isResponsive = true;
   
+  trackByPerson(index: number, item: Person) {
+    return item.id;
+  }
 }
 
 interface Person {

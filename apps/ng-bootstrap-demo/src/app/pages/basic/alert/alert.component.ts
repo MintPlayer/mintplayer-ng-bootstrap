@@ -12,6 +12,7 @@ export class AlertComponent {
   alert2Visible = true;
   alert3Visible = true;
 
+  newAlertId = 1;
   newAlertItem = '';
   alertsList: AlertItem[] = [];
   @ViewChild('txtNewAlert') txtNewAlert!: ElementRef<HTMLInputElement>;
@@ -21,12 +22,17 @@ export class AlertComponent {
     }
   }
   addAlertItem() {
-    this.alertsList.push({ text: this.newAlertItem });
+    this.alertsList.push({ id: this.newAlertId++, text: this.newAlertItem });
     this.newAlertItem = '';
     this.txtNewAlert.nativeElement.focus();
+  }
+
+  trackByAlertItem(index: number, item: AlertItem) {
+    return item.id;
   }
 }
 
 interface AlertItem {
+  id: number;
   text: string;
 }

@@ -22,7 +22,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr *ngFor="let person of people">
+                    <tr *ngFor="let person of people; trackBy: trackByPerson">
                         <th scope="row">{{ person.id }}</th>
                         <td>{{ person.firstName }}</td>
                         <td>{{ person.lastName }}</td>

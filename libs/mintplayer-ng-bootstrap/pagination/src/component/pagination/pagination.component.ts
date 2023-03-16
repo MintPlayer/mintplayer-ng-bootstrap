@@ -221,4 +221,8 @@ export class BsPaginationComponent implements OnDestroy {
     }
     return false;
   }
+
+  trackByPageNumber(index: number, page: PageWithSelection) {
+    return page;
+  }
 }

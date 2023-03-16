@@ -200,6 +200,7 @@ export class BsSchedulerComponent implements OnDestroy {
   hoveredTimeSlot$ = new BehaviorSubject<TimeSlot | null>(null);
   hoveredEvent$ = new BehaviorSubject<SchedulerEvent | null>(null);
   destroyed$ = new Subject();
+  resourceGroupPresenterCounter = 1;
 
   @ViewChildren('slot') timeSlotElements!: QueryList<ElementRef<HTMLDivElement>>;
 

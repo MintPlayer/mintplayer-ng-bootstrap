@@ -62,9 +62,13 @@ export class BsFileUploadComponent {
     const newFiles = [...Array(fileList.length).keys()]
       .map(i => fileList.item(i))
       .filter(f => !!f)
-      .map(f => <FileUpload>{ file: f, progress: 0 });
+      .map((file, index) => <FileUpload>{ file, progress: 0, index: this.files.length + index });
     
     this.files.push(...newFiles);
     this.filesDropped.emit(newFiles);
+  }
+
+  trackByFile(index: number, file: FileUpload) {
+    return file.index;
   }
 }

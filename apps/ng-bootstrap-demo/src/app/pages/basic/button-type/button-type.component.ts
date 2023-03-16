@@ -14,4 +14,8 @@ export class ButtonTypeComponent {
   
   colors = Color;
   colorValues: EnumItem[];
+
+  trackByColor(index: number, item: EnumItem) {
+    return item.key;
+  }
 }

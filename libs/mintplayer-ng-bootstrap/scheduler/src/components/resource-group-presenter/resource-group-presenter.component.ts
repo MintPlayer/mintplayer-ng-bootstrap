@@ -3,7 +3,6 @@ import { BehaviorSubject, filter, map, Observable, Subject, take, takeUntil } fr
 import { Resource, ResourceGroup } from '../../interfaces';
 import { ResourceOrGroup } from '../../interfaces/resource-or-group';
 import { SchedulerStampWithSlots } from '../../interfaces/scheduler-stamp-with-slots';
-import { TimeSlot } from '../../interfaces/time-slot';
 
 @Component({
   selector: 'bs-resource-group-presenter',

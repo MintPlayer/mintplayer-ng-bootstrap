@@ -4,9 +4,9 @@ import { BsMultiselectComponent } from '../../component/multiselect.component';
 @Directive({
   selector: '[bsHeaderTemplate]'
 })
-export class BsHeaderTemplateDirective {
+export class BsHeaderTemplateDirective<T> {
 
-  constructor(template: TemplateRef<any>, multiselect: BsMultiselectComponent) {
+  constructor(template: TemplateRef<any>, multiselect: BsMultiselectComponent<T>) {
     multiselect.headerTemplate = template;
   }
 

@@ -113,5 +113,8 @@ export class BsCarouselComponent {
     }
   }
 
-
+  imageCounter = 1;
+  trackByImageId(index: number, item: BsCarouselImageDirective) {
+    return item.id;
+  }
 }

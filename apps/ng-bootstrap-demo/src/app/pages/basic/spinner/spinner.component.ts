@@ -11,5 +11,10 @@ export class SpinnerComponent {
   constructor(enumService: EnumService) {
     this.colors = enumService.getItems(Color);
   }
+
   colors: EnumItem[];
+  
+  trackByColor(index: number, item: EnumItem) {
+    return item.key;
+  }
 }

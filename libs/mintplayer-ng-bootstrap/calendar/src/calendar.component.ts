@@ -108,4 +108,12 @@ export class BsCalendarComponent implements OnDestroy {
       this.selectedDate$.next(day.date);
     }
   }
+  
+  trackByWeekDay(index: number, item: WeekDay) {
+    return item.long;
+  }
+
+  trackByWeek(index: number, item: Week) {
+    return item.number;
+  }
 }
