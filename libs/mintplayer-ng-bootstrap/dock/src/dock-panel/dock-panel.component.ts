@@ -13,4 +13,5 @@ export class BsDockPanelComponent {
   }
 
   portal: DomPortal;
+  @Input() panelId = '';
 }
