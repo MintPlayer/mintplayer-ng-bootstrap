@@ -1,0 +1,40 @@
+<bs-splitter>
+    <ng-content></ng-content>
+    <ng-container *ngFor="let panel of (panels$ | async)">
+        <bs-split-panel>
+            <ng-template [cdkPortalOutlet]="panel.portal"></ng-template>
+        </bs-split-panel>
+    </ng-container>
+    <!-- <bs-split-panel *ngFor="let panel of " -->
+    <!-- <ng-container [cdkPortalOutlet]="" -->
+    <!-- <bs-dock-panel>
+        <bs-dock-panel-header>Panel 2</bs-dock-panel-header>
+        <div class="p-3">Content</div>
+    </bs-dock-panel>
+    <bs-dock-panel>
+        <bs-dock-panel-header>Panel 3</bs-dock-panel-header>
+        <div class="p-3">Content</div>
+    </bs-dock-panel>
+    <bs-dock-panel>
+        <bs-dock-panel-header>Panel 4</bs-dock-panel-header>
+        <div class="p-3">Content</div>
+    </bs-dock-panel> -->
+    <!-- <bs-split-panel>
+        <bs-card [rounded]="false">
+            <bs-card-header>Panel 2</bs-card-header>
+            <div class="p-3">Content</div>
+        </bs-card>
+    </bs-split-panel>
+    <bs-split-panel>
+        <bs-card [rounded]="false">
+            <bs-card-header>Panel 3</bs-card-header>
+            <div class="p-3">Content</div>
+        </bs-card>
+    </bs-split-panel>
+    <bs-split-panel>
+        <bs-card [rounded]="false">
+            <bs-card-header>Panel 4</bs-card-header>
+            <div class="p-3">Content</div>
+        </bs-card>
+    </bs-split-panel> -->
+</bs-splitter>

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
 
 @Component({
   selector: 'bs-card',
@@ -6,4 +6,5 @@ import { Component } from '@angular/core';
   styleUrls: ['./card.component.scss']
 })
 export class BsCardComponent {
+  @Input() rounded = true;
 }
