@@ -1,4 +1,4 @@
 export class BsInstanceOfContext<T = unknown> {
     public $implicit: T = null!;
-    public instanceofCase: T = null!;
+    public bsInstanceofCase: T = null!;
 }

@@ -20,7 +20,7 @@ export class BsInstanceOfDefaultDirective {
 
   throwError(directiveName: string) {
     throw new Error(
-      `An element with the "${directiveName}" attribute (matching the "${directiveName}" directive) must be located inside an element with the "bsInstanceof" attribute (matching "InstanceofSwitchDirective" directive)`
+      `An element with the "${directiveName}" attribute (matching the "${directiveName}" directive) must be located inside an element with the "bsInstanceof" attribute (matching "BsInstanceofDirective" directive)`
     );
   };
 }

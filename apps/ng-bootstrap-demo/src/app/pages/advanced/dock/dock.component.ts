@@ -66,18 +66,18 @@ export class DockComponent implements AfterContentInit, AfterViewInit {
         new BsContentPane({
           dockPanel: this.panel1,
         }),
-        new BsDocumentHost({
-          rootPane: new BsTabGroupPane({
-            panes: [
-              new BsContentPane({
-                dockPanel: this.panel2,
-              }),
-              new BsContentPane({
-                dockPanel: this.panel3,
-              }),
-            ]
-          })
-        }),
+        // new BsDocumentHost({
+        //   rootPane: new BsTabGroupPane({
+        //     panes: [
+        //       new BsContentPane({
+        //         dockPanel: this.panel2,
+        //       }),
+        //       new BsContentPane({
+        //         dockPanel: this.panel3,
+        //       }),
+        //     ]
+        //   })
+        // }),
         new BsContentPane({
           dockPanel: this.panel4,
         })

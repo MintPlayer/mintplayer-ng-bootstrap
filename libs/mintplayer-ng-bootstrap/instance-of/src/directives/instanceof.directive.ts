@@ -11,11 +11,11 @@ export class BsInstanceOfDirective {
   private _caseCount = 0;
   private _lastCaseCheckIndex = 0;
   private _lastCasesMatched = false;
-  private _instanceofSwitch: any;
+  private _instanceof: any;
 
   @Input()
   public set bsInstanceof(newValue: any) {
-    this._instanceofSwitch = newValue;
+    this._instanceof = newValue;
     if (this._caseCount === 0) {
       this._updateDefaultCases(true);
     }
@@ -37,8 +37,8 @@ export class BsInstanceOfDirective {
   /** @internal */
   public _matchCase<T>(type: AbstractType<T>): T | undefined {
     const matched =
-      this._instanceofSwitch instanceof type
-        ? this._instanceofSwitch
+      this._instanceof instanceof type
+        ? this._instanceof
         : undefined;
     this._lastCasesMatched = this._lastCasesMatched || !!matched;
     this._lastCaseCheckIndex++;

@@ -8,6 +8,8 @@ export class SwitchView<T = unknown> {
     public constructor(private _viewContainerRef: ViewContainerRef, private _templateRef: TemplateRef<BsInstanceOfContext<T>>) {}
   
     public enforceState(result?: T) {
+        console.log('t', result);
+        debugger;
         if (result && !this._created) {
             this.create(result);
         } else if (!result && this._created) {
@@ -17,7 +19,7 @@ export class SwitchView<T = unknown> {
   
     private create(result: T) {
         this._created = true;
-        this._context.$implicit = this._context.instanceofCase = result;
+        this._context.$implicit = this._context.bsInstanceofCase = result;
         this._viewContainerRef.createEmbeddedView(this._templateRef, this._context);
     }
   
