@@ -1,5 +1,5 @@
-import { Component, ContentChildren, Input, QueryList } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { Component, ContentChildren, Input, OnDestroy, QueryList } from '@angular/core';
+import { BehaviorSubject, combineLatest, combineLatestAll, Subject, takeUntil } from 'rxjs';
 import { BsDockPanelComponent } from '../dock-panel/dock-panel.component';
 import { EPaneType } from '../enums/pane-type.enum';
 import { BsTabGroupPane } from '../interfaces/tab-group-pane';
@@ -12,7 +12,7 @@ import { BsContentPane } from '../interfaces/content-pane';
   templateUrl: './dock.component.html',
   styleUrls: ['./dock.component.scss']
 })
-export class BsDockComponent {
+export class BsDockComponent implements OnDestroy {
   constructor() {
     this.layout$ = new BehaviorSubject<BsDockLayout>({
       rootPane: <BsDocumentHost>{
@@ -24,6 +24,12 @@ export class BsDockComponent {
       },
       floatingPanes: []
     });
+
+    combineLatest([this.layout$, this.panels$])
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe(([layout, panels]) => {
+        
+      })
   }
 
   //#region Panels
@@ -41,4 +47,9 @@ export class BsDockComponent {
     this.layout$.next(value);
   }
   //#endregion
+
+  destroyed$ = new Subject();
+  ngOnDestroy() {
+    this.destroyed$.next(true);
+  }
 }

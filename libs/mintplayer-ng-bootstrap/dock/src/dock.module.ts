@@ -6,12 +6,14 @@ import { BsSplitterModule } from '@mintplayer/ng-bootstrap/splitter';
 import { BsDockComponent } from './dock/dock.component';
 import { BsDockPanelComponent } from './dock-panel/dock-panel.component';
 import { BsDockPanelHeaderComponent } from './dock-panel-header/dock-panel-header.component';
+import { BsDockPaneRendererComponent } from './dock-pane-renderer/dock-pane-renderer.component';
 
 @NgModule({
   declarations: [
     BsDockComponent,
     BsDockPanelComponent,
-    BsDockPanelHeaderComponent
+    BsDockPanelHeaderComponent,
+    BsDockPaneRendererComponent
   ],
   imports: [
     CommonModule,
@@ -22,7 +24,8 @@ import { BsDockPanelHeaderComponent } from './dock-panel-header/dock-panel-heade
   exports: [
     BsDockComponent,
     BsDockPanelComponent,
-    BsDockPanelHeaderComponent
+    BsDockPanelHeaderComponent,
+    BsDockPaneRendererComponent
   ]
 })
 export class BsDockModule { }
