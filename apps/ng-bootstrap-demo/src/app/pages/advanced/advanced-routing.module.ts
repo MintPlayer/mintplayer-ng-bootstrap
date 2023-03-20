@@ -18,6 +18,7 @@ const routes: Routes = [
   { path: 'navigation-lock', loadChildren: () => import('./navigation-lock/navigation-lock.module').then(m => m.NavigationLockModule) },
   { path: 'splitter', loadChildren: () => import('./splitter/splitter.module').then(m => m.SplitterModule) },
   { path: 'dock', loadChildren: () => import('./dock/dock.module').then(m => m.DockModule) },
+  { path: 'instance-of', loadChildren: () => import('./instance-of/instance-of.module').then(m => m.InstanceOfModule) },
 ];
 
 @NgModule({

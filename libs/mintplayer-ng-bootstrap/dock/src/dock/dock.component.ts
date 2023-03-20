@@ -2,10 +2,9 @@ import { Component, ContentChildren, Input, OnDestroy, QueryList } from '@angula
 import { BehaviorSubject, combineLatest, combineLatestAll, Subject, takeUntil } from 'rxjs';
 import { BsDockPanelComponent } from '../dock-panel/dock-panel.component';
 import { EPaneType } from '../enums/pane-type.enum';
-import { BsTabGroupPane } from '../interfaces/tab-group-pane';
 import { BsDockLayout } from '../interfaces/dock-layout';
-import { BsDocumentHost } from '../interfaces/document-host-pane';
-import { BsContentPane } from '../interfaces/content-pane';
+import { BsTabGroupPane } from '../panes/tab-group-pane';
+import { BsDocumentHost } from '../panes/document-host-pane';
 
 @Component({
   selector: 'bs-dock',
@@ -14,22 +13,20 @@ import { BsContentPane } from '../interfaces/content-pane';
 })
 export class BsDockComponent implements OnDestroy {
   constructor() {
+    const tabs = new BsTabGroupPane();
+    const docHost = new BsDocumentHost();
+    docHost.rootPane = tabs;
+
     this.layout$ = new BehaviorSubject<BsDockLayout>({
-      rootPane: <BsDocumentHost>{
-        type: EPaneType.documentHost,
-        rootPane: <BsTabGroupPane>{
-          type: EPaneType.tabGroupPane,
-          panes: []
-        }
-      },
+      rootPane: docHost,
       floatingPanes: []
     });
 
-    combineLatest([this.layout$, this.panels$])
-      .pipe(takeUntil(this.destroyed$))
-      .subscribe(([layout, panels]) => {
+    // combineLatest([this.layout$, this.panels$])
+    //   .pipe(takeUntil(this.destroyed$))
+    //   .subscribe(([layout, panels]) => {
         
-      })
+    //   })
   }
 
   //#region Panels

@@ -24,7 +24,7 @@ export class BsDockPanelHeaderComponent {
   @HostListener('document:mousemove', ['$event']) onMouseMove(ev: MouseEvent) {
     // console.log('attached', this.overlayRef.hasAttached);
     if (this.isDragging && !this.overlayRef.hasAttached()) {
-      this.dockPanel.portal.attach(this.overlayRef);
+      this.dockPanel.portal?.attach(this.overlayRef);
     }
   }
 

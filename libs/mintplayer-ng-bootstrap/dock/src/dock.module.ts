@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { PortalModule } from '@angular/cdk/portal';
 import { BsCardModule } from '@mintplayer/ng-bootstrap/card';
 import { BsSplitterModule } from '@mintplayer/ng-bootstrap/splitter';
+import { BsTabControlModule } from '@mintplayer/ng-bootstrap/tab-control';
+import { BsInstanceOfModule } from '@mintplayer/ng-bootstrap/instance-of';
 import { BsDockComponent } from './dock/dock.component';
 import { BsDockPanelComponent } from './dock-panel/dock-panel.component';
 import { BsDockPanelHeaderComponent } from './dock-panel-header/dock-panel-header.component';
@@ -19,7 +21,9 @@ import { BsDockPaneRendererComponent } from './dock-pane-renderer/dock-pane-rend
     CommonModule,
     PortalModule,
     BsCardModule,
-    BsSplitterModule
+    BsInstanceOfModule,
+    BsSplitterModule,
+    BsTabControlModule
   ],
   exports: [
     BsDockComponent,

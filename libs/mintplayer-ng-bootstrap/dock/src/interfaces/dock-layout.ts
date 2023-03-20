@@ -1,5 +1,5 @@
-import { BsDockPane } from "./dock-pane";
-import { BsFloatingPane } from "./floating-pane";
+import { BsDockPane } from "../panes/dock-pane";
+import { BsFloatingPane } from "../panes/floating-pane";
 
 export interface BsDockLayout {
     rootPane: BsDockPane;
