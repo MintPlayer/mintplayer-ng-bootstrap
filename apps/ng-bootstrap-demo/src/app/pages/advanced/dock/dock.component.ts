@@ -1,6 +1,6 @@
 import { Component, ViewChild, AfterViewInit } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
-import { BsContentPane, BsDockLayout, BsDockPanelComponent, BsSplitPane, BsTabGroupPane, EPaneType, ESplitPaneOrientation } from '@mintplayer/ng-bootstrap/dock';
+import { BsContentPane, BsDockLayout, BsDockPanelComponent, BsSplitPane, BsTabGroupPane, EPaneType } from '@mintplayer/ng-bootstrap/dock';
 
 @Component({
   selector: 'demo-dock',
@@ -12,7 +12,7 @@ export class DockComponent implements AfterViewInit {
   constructor() {
     this.layout$ = new BehaviorSubject<BsDockLayout>({
       rootPane: new BsSplitPane({
-        orientation: ESplitPaneOrientation.horizontal,
+        orientation: 'horizontal',
         panes: [
           new BsTabGroupPane({
             panes: []
@@ -33,13 +33,13 @@ export class DockComponent implements AfterViewInit {
   ngAfterViewInit() {
     console.log('panel1', this.panel1);
     const root = new BsSplitPane({
-      orientation: ESplitPaneOrientation.vertical,
+      orientation: 'vertical',
       panes: [
         new BsContentPane({
           dockPanel: this.panel5
         }),
         new BsSplitPane({
-          orientation: ESplitPaneOrientation.horizontal,
+          orientation: 'horizontal',
           panes: [
             new BsContentPane({
               dockPanel: this.panel1,

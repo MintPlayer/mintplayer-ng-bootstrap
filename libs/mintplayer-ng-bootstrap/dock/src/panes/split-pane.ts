@@ -1,4 +1,4 @@
-import { ESplitPaneOrientation } from "../enums";
+import { SplitPaneOrientation } from "../types/split-pane-orientation.type";
 import { BsDockPane } from "./dock-pane";
 
 export class BsSplitPane extends BsDockPane {
@@ -7,6 +7,6 @@ export class BsSplitPane extends BsDockPane {
         Object.assign(this, data);
     }
 
-    orientation = ESplitPaneOrientation.horizontal;
+    orientation: SplitPaneOrientation = 'horizontal';
     panes: BsDockPane[] = [];
 }
