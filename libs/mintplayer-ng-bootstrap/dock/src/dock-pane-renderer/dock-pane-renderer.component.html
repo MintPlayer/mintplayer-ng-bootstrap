@@ -1,34 +1,21 @@
-<!-- <ng-container *ngIf="(layoutType$ | async) as layoutType">
-    <bs-tab-control *ngIf="layoutType === paneTypes.documentHost">
-        <bs-tab-page *ngFor="let child of "
-    </bs-tab-control>
-    <bs-tab-control *ngIf="layoutType === paneTypes.tabGroupPane"></bs-tab-control>
-    <bs-splitter *ngIf="layoutType === paneTypes.splitPane"></bs-splitter>
-</ng-container> -->
 <!-- <ng-content></ng-content> -->
-<h1>{{ $any(layout$ | async)['panes'].length }}</h1>
 <ng-container [bsInstanceof]="layout$ | async">
-    <!-- {{ layout$ | async | json }} -->
     <div *bsInstanceofCase="BsDocumentHostType; let documentHost">
         <bs-dock-pane-renderer [layout]="documentHost"></bs-dock-pane-renderer>
     </div>
     <bs-tab-control *bsInstanceofCase="BsTabGroupType; let tabGroup">
         <bs-tab-page *ngFor="let tab of tabGroup.panes">
+            <ng-template>Tab page</ng-template>
             <bs-dock-pane-renderer [layout]="tab"></bs-dock-pane-renderer>
         </bs-tab-page>
     </bs-tab-control>
-    <bs-splitter *bsInstanceofCase="BsSplitterType; let splitter">
-        <h1>{{ splitter.panes.length }}</h1>
-        <!-- <h1 *ngFor="let panel of splitter.panes">Hello world</h1> -->
-        <!-- <bs-split-panel *ngFor="let panel of splitter.panes">
+    <bs-splitter *bsInstanceofCase="BsSplitterType; let splitter" [orientation]="splitter.orientation">
+        <bs-split-panel *ngFor="let panel of splitter.panes">
             <bs-dock-pane-renderer [layout]="panel"></bs-dock-pane-renderer>
-        </bs-split-panel> -->
+        </bs-split-panel>
     </bs-splitter>
     <ng-container *bsInstanceofCase="BsContentPaneType; let content">
-        Content pane
         <ng-template [cdkPortalOutlet]="content.dockPanel.portal"></ng-template>
-
-        {{ content.dockPanel.portal | json }}
     </ng-container>
     <div *bsInstanceofDefault>
         No match

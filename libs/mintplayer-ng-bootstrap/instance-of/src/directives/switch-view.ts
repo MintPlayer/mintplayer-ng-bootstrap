@@ -8,12 +8,12 @@ export class SwitchView<T = unknown> {
     public constructor(private _viewContainerRef: ViewContainerRef, private _templateRef: TemplateRef<BsInstanceOfContext<T>>) {}
   
     public enforceState(result?: T) {
-        console.log('t', result);
-        debugger;
         if (result && !this._created) {
             this.create(result);
         } else if (!result && this._created) {
             this.destroy();
+        } else if (result) {
+            this._context.$implicit = this._context.bsInstanceofCase = result;
         }
     }
   
