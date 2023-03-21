@@ -1,6 +1,7 @@
 import { Component, ViewChild, AfterViewInit } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { BsContentPane, BsDockLayout, BsDockPanelComponent, BsSplitPane, BsTabGroupPane, EPaneType } from '@mintplayer/ng-bootstrap/dock';
+import { Color } from '@mintplayer/ng-bootstrap';
 
 @Component({
   selector: 'demo-dock',
@@ -23,6 +24,7 @@ export class DockComponent implements AfterViewInit {
     });
   }
 
+  colors = Color;
   layout$: BehaviorSubject<BsDockLayout>;
   @ViewChild('panel1') panel1!: BsDockPanelComponent;
   @ViewChild('panel2') panel2!: BsDockPanelComponent;
