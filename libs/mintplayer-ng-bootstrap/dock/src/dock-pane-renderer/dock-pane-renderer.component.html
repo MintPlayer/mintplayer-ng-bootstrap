@@ -1,0 +1,23 @@
+<!-- <ng-content></ng-content> -->
+<ng-container [bsInstanceof]="layout$ | async">
+    <div *bsInstanceofCase="BsDocumentHostType; let documentHost">
+        <bs-dock-pane-renderer [layout]="documentHost"></bs-dock-pane-renderer>
+    </div>
+    <bs-tab-control *bsInstanceofCase="BsTabGroupType; let tabGroup">
+        <bs-tab-page *ngFor="let tab of tabGroup.panes">
+            <ng-template>Tab page</ng-template>
+            <bs-dock-pane-renderer [layout]="tab"></bs-dock-pane-renderer>
+        </bs-tab-page>
+    </bs-tab-control>
+    <bs-splitter *bsInstanceofCase="BsSplitterType; let splitter" [orientation]="splitter.orientation">
+        <bs-split-panel *ngFor="let panel of splitter.panes">
+            <bs-dock-pane-renderer [layout]="panel"></bs-dock-pane-renderer>
+        </bs-split-panel>
+    </bs-splitter>
+    <ng-container *bsInstanceofCase="BsContentPaneType; let content">
+        <ng-template [cdkPortalOutlet]="content.dockPanel.portal"></ng-template>
+    </ng-container>
+    <div *bsInstanceofDefault>
+        No match
+    </div>
+</ng-container>

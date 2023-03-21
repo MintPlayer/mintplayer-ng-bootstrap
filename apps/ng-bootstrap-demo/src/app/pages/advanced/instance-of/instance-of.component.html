@@ -1,0 +1,12 @@
+<h1 class="text-center">Instance of</h1>
+<h2>Demo</h2>
+<ul>
+    <li *ngFor="let item of items">
+        <ng-container [bsInstanceof]="item">
+            <ng-container *bsInstanceofCase="A; let a">{{ a.a }}</ng-container>
+            <ng-container *bsInstanceofCase="B; let b">{{ b.b }}</ng-container>
+            <ng-container *bsInstanceofCase="C; let c">{{ c.c }}</ng-container>
+            <ng-container *bsInstanceofDefault>No match</ng-container>
+        </ng-container>
+    </li>
+</ul>

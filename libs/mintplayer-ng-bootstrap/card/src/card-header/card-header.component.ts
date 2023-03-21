@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
 
 @Component({
   selector: 'bs-card-header',
@@ -6,4 +6,5 @@ import { Component } from '@angular/core';
   styleUrls: ['./card-header.component.scss']
 })
 export class BsCardHeaderComponent {
+  @Input() noPadding = false;
 }
