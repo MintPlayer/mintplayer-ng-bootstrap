@@ -3,8 +3,10 @@ import { DOCUMENT } from '@angular/common';
 import { AfterViewInit, ContentChildren, Directive, ElementRef, EventEmitter, forwardRef, HostBinding, Inject, Input, Output, QueryList } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, combineLatest, delay, filter, map, mergeMap, Observable, take } from 'rxjs';
+import { Point } from '../../interfaces/point';
 import { LastTouch } from '../../interfaces/last-touch';
 import { StartTouch } from '../../interfaces/start-touch';
+import { Direction } from '../../types/direction.type';
 import { BsSwipeDirective } from '../swipe/swipe.directive';
 
 @Directive({
@@ -13,21 +15,28 @@ import { BsSwipeDirective } from '../swipe/swipe.directive';
 })
 export class BsSwipeContainerDirective implements AfterViewInit {
 
-  constructor(element: ElementRef, private animationBuilder: AnimationBuilder, @Inject(DOCUMENT) document: any) {
+  constructor(element: ElementRef, private animationBuilder: AnimationBuilder, @Inject(DOCUMENT) document: any, @SkipSelf() @Host() @Optional() @Inject(BsSwipeContainerDirective) private parentSwipeContainers: BsSwipeContainerDirective[]) {
     this.containerElement = element;
     this.document = <Document>document;
-    this.offset$ = combineLatest([this.startTouch$, this.lastTouch$, this.imageIndex$, this.isViewInited$])
-      .pipe(map(([startTouch, lastTouch, imageIndex, isViewInited]) => {
+    this.offset$ = combineLatest([this.direction$, this.startTouch$, this.lastTouch$, this.imageIndex$, this.isViewInited$])
+      .pipe(map(([direction, startTouch, lastTouch, imageIndex, isViewInited]) => {
         if (!isViewInited) {
           return (-imageIndex * 100);
         } else if (!!startTouch && !!lastTouch) {
-          return (-imageIndex * 100 + (lastTouch.position.x - startTouch.position.x) / this.containerElement.nativeElement.clientWidth * 100);
+          switch (direction) {
+            case 'horizontal':
+              return (-imageIndex * 100 + (lastTouch.position.x - startTouch.position.x) / this.containerElement.nativeElement.clientWidth * 100);
+            case 'vertical':
+              return (-imageIndex * 100 + (lastTouch.position.y - startTouch.position.y) / this.containerElement.nativeElement.clientHeight * 100);
+            default:
+              throw '[carousel] Invalid value for direction';
+          }
         } else {
           return (-imageIndex * 100);
         }
       }));
 
-      this.padLeft$ = this.swipes$.pipe(map(swipes => {
+      this.padStart$ = this.swipes$.pipe(map(swipes => {
         if (!swipes) {
           return 0;
         }
@@ -43,7 +52,7 @@ export class BsSwipeContainerDirective implements AfterViewInit {
         return count;
       }));
 
-      this.padRight$ = this.swipes$.pipe(map(swipes => {
+      this.padEnd$ = this.swipes$.pipe(map(swipes => {
         if (!swipes) {
           return 0;
         }
@@ -59,16 +68,41 @@ export class BsSwipeContainerDirective implements AfterViewInit {
         return count;
       }));
 
-    this.offsetLeft$ = combineLatest([this.offset$, this.padLeft$])
-      .pipe(map(([offset, padLeft]) => offset - padLeft * 100));
-    this.offsetRight$ = combineLatest([this.offset$, this.padLeft$, this.padRight$])
-      .pipe(map(([offset, padLeft, padRight]) => -(offset - padLeft * 100) - (padRight - 1) * 100));
-    this.offsetLeft$.pipe(takeUntilDestroyed())
-      .subscribe(offsetLeft => this.offsetLeft = offsetLeft);
-    this.offsetRight$.pipe(takeUntilDestroyed())
-      .subscribe(offsetRight => this.offsetRight = offsetRight);
-    this.imageIndex$.pipe(takeUntilDestroyed())
-      .subscribe(imageIndex => this.imageIndexChange.emit(imageIndex));
+    this.offsetStart$ = combineLatest([this.offset$, this.padStart$])
+      .pipe(map(([offset, padStart]) => offset - padStart * 100));
+    this.offsetEnd$ = combineLatest([this.offset$, this.padStart$, this.padEnd$])
+      .pipe(map(([offset, padStart, padEnd]) => -(offset - padStart * 100) - (padEnd - 1) * 100));
+    combineLatest([this.direction$, this.offsetStart$])
+      .pipe(takeUntilDestroyed())
+      .subscribe(([direction, offsetStart]) => {
+        switch (direction) {
+          case 'horizontal':
+            this.offsetLeft = offsetStart;
+            break;
+          case 'vertical':
+            this.offsetTop = offsetStart;
+            break;
+          default:
+            throw '[BsCarousel] Invalid value for direction';
+        }
+      });
+    combineLatest([this.direction$, this.offsetEnd$])
+      .pipe(takeUntilDestroyed())
+      .subscribe(([direction, offsetEnd]) => {
+        switch (direction) {
+          case 'horizontal':
+            this.offsetRight = offsetEnd;
+            break;
+          case 'vertical':
+            this.offsetBottom = offsetEnd;
+            break;
+          default:
+            throw '[BsCarousel] Invalid value for direction';
+        }
+      });
+    this.imageIndex$
+      .pipe(takeUntilDestroyed())
+      .subscribe((imageIndex) => this.imageIndexChange.emit(imageIndex));
 
     this.actualSwipes$ = this.swipes$
       .pipe(map(swipes => {
@@ -111,11 +145,16 @@ export class BsSwipeContainerDirective implements AfterViewInit {
   @Output() imageIndexChange = new EventEmitter<number>();
   //#endregion
   
+  @Input() public set direction(value: Direction) {
+    this.direction$.next(value);
+  }
+
   actualSwipes$: Observable<BsSwipeDirective[]>;
   isViewInited$ = new BehaviorSubject<boolean>(false);
   startTouch$ = new BehaviorSubject<StartTouch | null>(null);
   lastTouch$ = new BehaviorSubject<LastTouch | null>(null);
   swipes$ = new BehaviorSubject<QueryList<BsSwipeDirective> | null>(null);
+  direction$ = new BehaviorSubject<Direction>('horizontal');
   imageIndex$ = new BehaviorSubject<number>(0);
   slideHeights$: Observable<number[]>;
   currentSlideHeight$: Observable<number>;
@@ -124,35 +163,70 @@ export class BsSwipeContainerDirective implements AfterViewInit {
   document: Document;
 
   offset$: Observable<number>;
-  offsetLeft$: Observable<number>;
-  offsetRight$: Observable<number>;
-  padLeft$: Observable<number>;
-  padRight$: Observable<number>;
+  offsetStart$: Observable<number>;
+  offsetEnd$: Observable<number>;
+  padStart$: Observable<number>;
+  padEnd$: Observable<number>;
 
   ngAfterViewInit() {
     this.isViewInited$.next(true);
   }
 
-  animateToIndexByDx(dx: number) {
-    combineLatest([this.imageIndex$, this.actualSwipes$]).pipe(take(1))
-      .subscribe(([imageIndex, actualSwipes]) => {
-        const direction = dx > 0 ? 'left' : 'right';
+  animateToIndexByDelta(delta: number) {
+    combineLatest([this.direction$, this.imageIndex$, this.actualSwipes$]).pipe(take(1))
+      .subscribe(([direction, imageIndex, actualSwipes]) => {
+        let way: 'previous' | 'next';
+        switch (direction) {
+          case 'horizontal':
+            way = delta > 0 ? 'previous' : 'next';
+            console.log('log', { direction, way, delta });
+            break;
+          case 'vertical':
+            way = delta > 0 ? 'previous' : 'next';
+            break;
+          default:
+            throw '[BsCarousel] Invalid value for direction';
+        }
       
         let newIndex: number;
-        if (Math.abs(dx) < this.minimumOffset) {
+        if (Math.abs(delta) < this.minimumOffset) {
           newIndex = imageIndex;
         } else {
-          newIndex = imageIndex + (direction === 'right' ? 1 : -1);
+          newIndex = imageIndex + (way === 'next' ? 1 : -1);
         }
   
-        this.animateToIndex(imageIndex, newIndex, dx, actualSwipes?.length ?? 1);
+        this.animateToIndex(imageIndex, newIndex, direction, delta, actualSwipes?.length ?? 1);
       });
   }
 
-  animateToIndex(oldIndex: number, newIndex: number, dx: number, totalSlides: number) {
+  animateToIndex(oldIndex: number, newIndex: number, direction: Direction, delta: number, totalSlides: number) {
+    let dStart: number;
+    let dEnd: number;
+    let startProperty: string;
+    let endProperty: string;
+    switch (direction) {
+      case 'horizontal':
+        // dStart = (oldIndex + 1) * this.containerElement.nativeElement.clientWidth;
+        // dEnd = (newIndex + 1) * this.containerElement.nativeElement.clientWidth;
+        dStart = (oldIndex + 1) * this.containerElement.nativeElement.clientWidth;
+        dEnd = (newIndex + 1) * this.containerElement.nativeElement.clientWidth;
+        startProperty = 'margin-left';
+        endProperty = 'margin-right';
+        break;
+      case 'vertical':
+        dStart = (oldIndex + 1) * this.containerElement.nativeElement.clientHeight;
+        dEnd = (newIndex + 1) * this.containerElement.nativeElement.clientHeight;
+        startProperty = 'margin-top';
+        endProperty = 'margin-bottom';
+        break;
+      default:
+        throw '[BsCarousel] Invalid value for direction';
+    }
+
+    console.log('animation', { [startProperty]: -(-dStart + delta) + 'px', [endProperty]: (dStart - delta) + 'px' });
     this.pendingAnimation = this.animationBuilder.build([
-      style({ 'margin-left': (-(oldIndex + 1) * this.containerElement.nativeElement.clientWidth + dx) + 'px', 'margin-right': ((oldIndex + 1) * this.containerElement.nativeElement.clientWidth - dx) + 'px' }),
-      animate('500ms ease', style({ 'margin-left': (-(newIndex + 1) * this.containerElement.nativeElement.clientWidth) + 'px', 'margin-right': ((newIndex + 1) * this.containerElement.nativeElement.clientWidth) + 'px' })),
+      style({ [startProperty]: (-dStart + delta) + 'px', [endProperty]: (dStart - delta) + 'px' }),
+      animate('500ms ease', style({ [startProperty]: (-dEnd) + 'px', [endProperty]: dEnd + 'px' })),
     ]).create(this.containerElement.nativeElement);
     this.pendingAnimation.onDone(() => {
       // Correct the image index
@@ -171,28 +245,37 @@ export class BsSwipeContainerDirective implements AfterViewInit {
     this.pendingAnimation.play();
   }
 
-  onSwipe(dx: number) {
-    this.animateToIndexByDx(dx);
+  onSwipe(start: Point, end: Point) {
+    let delta: number;
+    switch (this.direction$.value) {
+      case 'horizontal':
+        delta = end.x - start.x;
+        break;
+      case 'vertical':
+        delta = end.y - start.y;
+        break;
+    }
+    this.animateToIndexByDelta(delta);
   }
 
   previous() {
     this.pendingAnimation?.finish();
-    combineLatest([this.actualSwipes$, this.imageIndex$]).pipe(take(1)).subscribe(([actualSwipes, imageIndex]) => {
-      setTimeout(() => this.animateToIndex(imageIndex, imageIndex - 1, 0, actualSwipes?.length ?? 1), 20);
+    combineLatest([this.direction$, this.actualSwipes$, this.imageIndex$]).pipe(take(1)).subscribe(([direction, actualSwipes, imageIndex]) => {
+      setTimeout(() => this.animateToIndex(imageIndex, imageIndex - 1, direction, 0, actualSwipes?.length ?? 1), 20);
     });
   }
 
   next() {
     this.pendingAnimation?.finish();
-    combineLatest([this.actualSwipes$, this.imageIndex$]).pipe(take(1)).subscribe(([actualSwipes, imageIndex]) => {
-      setTimeout(() => this.animateToIndex(imageIndex, imageIndex + 1, 0, actualSwipes?.length ?? 1), 20);
+    combineLatest([this.direction$, this.actualSwipes$, this.imageIndex$]).pipe(take(1)).subscribe(([direction, actualSwipes, imageIndex]) => {
+      setTimeout(() => this.animateToIndex(imageIndex, imageIndex + 1, direction, 0, actualSwipes?.length ?? 1), 20);
     });
   }
 
   goto(index: number) {
-    combineLatest([this.actualSwipes$, this.imageIndex$]).pipe(take(1)).subscribe(([actualSwipes, imageIndex]) => {
+    combineLatest([this.direction$, this.actualSwipes$, this.imageIndex$]).pipe(take(1)).subscribe(([direction, actualSwipes, imageIndex]) => {
       this.pendingAnimation?.finish();
-      setTimeout(() => this.animateToIndex(imageIndex, index, 0, actualSwipes?.length ?? 1), 20);
+      setTimeout(() => this.animateToIndex(imageIndex, index, direction, 0, actualSwipes?.length ?? 1), 20);
     });
   }
 

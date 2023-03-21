@@ -70,8 +70,7 @@ export class BsSwipeDirective implements AfterViewInit, OnDestroy {
       .pipe(take(1))
       .subscribe(([startTouch, lastTouch]) => {
         if (!!startTouch && !!lastTouch) {
-          const dx = lastTouch.position.x - startTouch.position.x;
-          this.container.onSwipe(dx);
+          this.container.onSwipe(startTouch.position, lastTouch.position);
         }
       });
   }
