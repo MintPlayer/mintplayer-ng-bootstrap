@@ -77,9 +77,11 @@ export class BsSwipeContainerDirective implements AfterViewInit {
       .subscribe(([direction, offsetStart]) => {
         switch (direction) {
           case 'horizontal':
+            this.offsetTop = this.offsetBottom = null;
             this.offsetLeft = offsetStart;
             break;
           case 'vertical':
+            this.offsetLeft = this.offsetRight = null;
             this.offsetTop = offsetStart;
             break;
           default:
@@ -91,9 +93,11 @@ export class BsSwipeContainerDirective implements AfterViewInit {
       .subscribe(([direction, offsetEnd]) => {
         switch (direction) {
           case 'horizontal':
+            this.offsetTop = this.offsetBottom = null;
             this.offsetRight = offsetEnd;
             break;
           case 'vertical':
+            this.offsetLeft = this.offsetRight = null;
             this.offsetBottom = offsetEnd;
             break;
           default:
