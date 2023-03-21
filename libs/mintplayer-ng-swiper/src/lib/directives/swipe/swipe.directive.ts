@@ -1,5 +1,5 @@
 import { AfterViewInit, Directive, ElementRef, HostBinding, HostListener, Input, OnDestroy } from "@angular/core";
-import { BehaviorSubject, combineLatest, filter, take } from "rxjs";
+import { BehaviorSubject, combineLatest, filter, Subject, take, takeUntil } from "rxjs";
 import { BsSwipeContainerDirective } from "../swipe-container/swipe-container.directive";
 
 @Directive({
@@ -9,18 +9,34 @@ export class BsSwipeDirective implements AfterViewInit, OnDestroy {
 
   constructor(private container: BsSwipeContainerDirective, element: ElementRef<HTMLElement>) {
     this.element = element;
+    this.container.direction$
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe((direction) => {
+        switch (direction) {
+          case 'horizontal':
+            this.displayClass = 'd-inline-block';
+            break;
+          case 'vertical':
+            this.displayClass = 'd-block';
+            break;
+          default:
+            throw '[BsCarousel] Invalid value for direction';
+        }
+      });
   }
 
   element: ElementRef<HTMLElement>;
   observer?: ResizeObserver;
   public slideHeight$ = new BehaviorSubject<number>(0);
+  destroyed$ = new Subject();
 
   //#region Offside
   @Input() public offside = false;
   //#endregion
 
+  @HostBinding('class') displayClass: string | null = null;
+  
   @HostBinding('class.align-top')
-  @HostBinding('class.d-inline-block')
   @HostBinding('class.float-none')
   @HostBinding('class.w-100')
   @HostBinding('class.pe-auto')
@@ -87,6 +103,7 @@ export class BsSwipeDirective implements AfterViewInit, OnDestroy {
       this.observer.unobserve(this.element.nativeElement);
       this.observer.disconnect();
     }
+    this.destroyed$.next(true);
   }
 
 }

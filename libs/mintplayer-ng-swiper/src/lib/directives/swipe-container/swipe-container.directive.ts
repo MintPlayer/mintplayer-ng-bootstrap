@@ -124,12 +124,16 @@ export class BsSwipeContainerDirective implements AfterViewInit {
         const currHeight: number = slideHeights[imageIndex] ?? maxHeight;
         return maxHeight - (maxHeight - currHeight)/* / 2*/;
       }));
+
+    this.direction$.pipe(takeUntil(this.destroyed$))
+      .subscribe((direction) => this.w100class = (direction === 'vertical'));
   }
 
   @HostBinding('style.margin-left.%') offsetLeft: number | null = null;
   @HostBinding('style.margin-right.%') offsetRight: number | null = null;
   @HostBinding('style.margin-top.%') offsetTop: number | null = null;
   @HostBinding('style.margin-bottom.%') offsetBottom: number | null = null;
+  @HostBinding('class.w-100') w100class = false;
   @ContentChildren(forwardRef(() => BsSwipeDirective)) set swipes(value: QueryList<BsSwipeDirective>) {
     setTimeout(() => this.swipes$.next(value));
   }
@@ -206,8 +210,6 @@ export class BsSwipeContainerDirective implements AfterViewInit {
     let endProperty: string;
     switch (direction) {
       case 'horizontal':
-        // dStart = (oldIndex + 1) * this.containerElement.nativeElement.clientWidth;
-        // dEnd = (newIndex + 1) * this.containerElement.nativeElement.clientWidth;
         dStart = (oldIndex + 1) * this.containerElement.nativeElement.clientWidth;
         dEnd = (newIndex + 1) * this.containerElement.nativeElement.clientWidth;
         startProperty = 'margin-left';
