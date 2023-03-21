@@ -1,19 +1,21 @@
-<div class="overflow-hidden position-absolute mw-100 tsc">
-	<ul cdkDropList #list #tabList="cdkDropList"
-		[cdkDropListData]="tabPages"
-		[cdkDropListConnectedTo]="[]"
-		[cdkDropListOrientation]="'horizontal'"
-		(cdkDropListDropped)="moveTab($event)"
-		class="nav nav-tabs flex-nowrap overflow-x-auto overflow-y-hidden">
-		<ng-container *ngFor="let tab of orderedTabPages">
-			<span class="nav-item" (click)="setActiveTab(tab)" *ngIf="!!tab.headerTemplate" cdkDrag [cdkDragBoundary]="dragBoundarySelector" [cdkDragStartDelay]="1000">
-				<label [for]="tab.tabName$ | async" class="nav-link text-nowrap cursor-pointer" [class.active]="activeTab === tab" [class.disabled]="tab.disabled" [attr.aria-current]="activeTab === tab ? 'page' : null" [attr.aria-disabled]="tab.disabled">
-					<ng-container [ngTemplateOutlet]="tab.headerTemplate"></ng-container>
-				</label>
-			</span>
-		</ng-container>
-	</ul>
-</div>
-<div class="tab-content" bsNoNoscript [class.border]="border && activeTab" [class.border-top]="border && !activeTab">
-	<ng-content></ng-content>
-</div>
+<ng-container *bsLet="(activeTab$ | async) as activeTab">
+	<div class="overflow-hidden position-absolute mw-100 tsc">
+		<ul cdkDropList #list #tabList="cdkDropList"
+			[cdkDropListData]="tabPages$ | async"
+			[cdkDropListConnectedTo]="[]"
+			[cdkDropListOrientation]="'horizontal'"
+			(cdkDropListDropped)="moveTab($event)"
+			class="nav nav-tabs flex-nowrap overflow-x-auto overflow-y-hidden">
+			<ng-container *ngFor="let tab of orderedTabPages">
+				<span class="nav-item" (click)="setActiveTab(tab)" *ngIf="!!tab.headerTemplate" cdkDrag [cdkDragBoundary]="dragBoundarySelector" [cdkDragStartDelay]="1000">
+					<label [for]="tab.tabName$ | async" class="nav-link text-nowrap cursor-pointer" [class.active]="activeTab === tab" [class.disabled]="tab.disabled" [attr.aria-current]="activeTab === tab ? 'page' : null" [attr.aria-disabled]="tab.disabled">
+						<ng-container [ngTemplateOutlet]="tab.headerTemplate"></ng-container>
+					</label>
+				</span>
+			</ng-container>
+		</ul>
+	</div>
+	<div class="tab-content" bsNoNoscript [class.border]="border && activeTab" [class.border-top]="border && !activeTab">
+		<ng-content></ng-content>
+	</div>
+</ng-container>

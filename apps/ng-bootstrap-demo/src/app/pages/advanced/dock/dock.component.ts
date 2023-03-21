@@ -35,14 +35,22 @@ export class DockComponent implements AfterViewInit {
     const root = new BsSplitPane({
       orientation: 'vertical',
       panes: [
-        new BsContentPane({
-          dockPanel: this.panel5
+        new BsTabGroupPane({
+          panes: [
+            new BsContentPane({
+              dockPanel: this.panel5
+            })
+          ]
         }),
         new BsSplitPane({
           orientation: 'horizontal',
           panes: [
-            new BsContentPane({
-              dockPanel: this.panel1,
+            new BsTabGroupPane({
+              panes: [
+                new BsContentPane({
+                  dockPanel: this.panel1,
+                }),
+              ]
             }),
             // new BsDocumentHost({
             //   rootPane: new BsTabGroupPane({
@@ -66,9 +74,13 @@ export class DockComponent implements AfterViewInit {
                 }),
               ]
             }),
-            new BsContentPane({
-              dockPanel: this.panel4,
-            })
+            new BsTabGroupPane({
+              panes: [
+                new BsContentPane({
+                  dockPanel: this.panel4,
+                })
+              ]
+            }),
           ]
         })
       ]
