@@ -27,6 +27,9 @@ export class BsSwipeContainerDirective implements AfterViewInit {
             case 'horizontal':
               return (-imageIndex * 100 + (lastTouch.position.x - startTouch.position.x) / this.containerElement.nativeElement.clientWidth * 100);
             case 'vertical':
+              // TODO
+              // const curHeight = swipes[imageIndex].nativeElement.clientHeight
+              // px => sum
               return (-imageIndex * 100 + (lastTouch.position.y - startTouch.position.y) / this.containerElement.nativeElement.clientHeight * 100);
             default:
               throw '[carousel] Invalid value for direction';
@@ -220,6 +223,9 @@ export class BsSwipeContainerDirective implements AfterViewInit {
         endProperty = 'margin-right';
         break;
       case 'vertical':
+        // TODO
+        // const curHeight = swipes[imageIndex].nativeElement.clientHeight
+        // px => sum
         dStart = (oldIndex + 1) * this.containerElement.nativeElement.clientHeight;
         dEnd = (newIndex + 1) * this.containerElement.nativeElement.clientHeight;
         startProperty = 'margin-top';
@@ -229,7 +235,7 @@ export class BsSwipeContainerDirective implements AfterViewInit {
         throw '[BsCarousel] Invalid value for direction';
     }
 
-    console.log('animation', { [startProperty]: -(-dStart + delta) + 'px', [endProperty]: (dStart - delta) + 'px' });
+    console.log('animation', { [startProperty]: (-dStart + delta) + 'px', [endProperty]: (dStart - delta) + 'px' });
     this.pendingAnimation = this.animationBuilder.build([
       style({ [startProperty]: (-dStart + delta) + 'px', [endProperty]: (dStart - delta) + 'px' }),
       animate('500ms ease', style({ [startProperty]: (-dEnd) + 'px', [endProperty]: dEnd + 'px' })),

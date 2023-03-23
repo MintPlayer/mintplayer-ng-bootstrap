@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { Direction } from '@mintplayer/ng-swiper';
 
 @Component({
   selector: 'demo-carousel',
@@ -7,7 +8,8 @@ import { Component } from '@angular/core';
 })
 export class CarouselComponent {
   mode: 'slide' | 'fade' = 'slide';
-
+  direction: Direction = 'horizontal';
+  
   onModeChange(value: any) {
     this.mode = value;
   }
