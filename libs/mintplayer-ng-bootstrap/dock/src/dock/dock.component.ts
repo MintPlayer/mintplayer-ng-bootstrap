@@ -1,4 +1,4 @@
-import { Component, ContentChildren, ViewChildren, Input, OnDestroy, QueryList } from '@angular/core';
+import { Component, ContentChildren, ViewChildren, Input, OnDestroy, QueryList, HostBinding } from '@angular/core';
 import { BehaviorSubject, combineLatest, combineLatestAll, Subject, takeUntil } from 'rxjs';
 import { BsDockPanelComponent } from '../dock-panel/dock-panel.component';
 import { EPaneType } from '../enums/pane-type.enum';
@@ -60,6 +60,15 @@ export class BsDockComponent implements OnDestroy {
     // value.changes.pipe(takeUntil(this.destroyed$)).subscribe((changes) => console.log('floatingPanes', changes));
     this.floating$.next(value.toArray());
   }
+
+  @HostBinding('class.position-absolute')
+  positionAbsolute = true;
+
+  @HostBinding('style.top')
+  @HostBinding('style.left')
+  @HostBinding('style.bottom')
+  @HostBinding('style.right')
+  positionPx = 0;
 
   destroyed$ = new Subject();
   ngOnDestroy() {

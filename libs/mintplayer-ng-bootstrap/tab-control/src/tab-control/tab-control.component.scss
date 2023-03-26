@@ -17,6 +17,8 @@
 .tsc {
     max-height: 41px;
     top: 2px;
+    z-index: 10;
+    flex-shrink: 0;
 
     // .nav-item {
     //     margin-bottom: 1px;

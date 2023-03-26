@@ -4,7 +4,7 @@ import { BehaviorSubject, combineLatest, filter, Subject, take, takeUntil } from
 import { BsNavbarComponent } from '../navbar/navbar.component';
 
 @Directive({
-  selector: '[navbarContent]'
+  selector: '[bsNavbarContent]'
 })
 export class BsNavbarContentDirective implements AfterViewInit, OnDestroy {
 
@@ -51,7 +51,7 @@ export class BsNavbarContentDirective implements AfterViewInit, OnDestroy {
   resizeObserver: ResizeObserver | null = null;
   initialPadding = 0;
 
-  @Input('navbarContent') set navbar(value: BsNavbarComponent) {
+  @Input('bsNavbarContent') set navbar(value: BsNavbarComponent) {
     this.navbar$.next(value);
   }
   

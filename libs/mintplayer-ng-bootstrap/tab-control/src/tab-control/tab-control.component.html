@@ -15,7 +15,7 @@
 			</ng-container>
 		</ul>
 	</div>
-	<div class="tab-content" bsNoNoscript [class.border]="border && activeTab" [class.border-top]="border && !activeTab">
+	<div class="tab-content flex-grow-1" bsNoNoscript [class.border]="border && activeTab" [class.border-top]="border && !activeTab">
 		<ng-content></ng-content>
 	</div>
 	<div class="overflow-hidden mw-100 tsc bottom-tabs" *ngIf="bottomTabs$ | async">

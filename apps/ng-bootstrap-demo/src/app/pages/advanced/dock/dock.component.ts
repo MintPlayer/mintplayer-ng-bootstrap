@@ -31,7 +31,7 @@ export class DockComponent implements AfterViewInit {
   @ViewChild('panel3') panel3!: BsDockPanelComponent;
   @ViewChild('panel4') panel4!: BsDockPanelComponent;
   @ViewChild('panel5') panel5!: BsDockPanelComponent;
-  @ViewChild('panel6') panel6!: BsDockPanelComponent;
+  // @ViewChild('panel6') panel6!: BsDockPanelComponent;
 
   ngAfterViewInit() {
     const root = new BsSplitPane({
@@ -91,15 +91,15 @@ export class DockComponent implements AfterViewInit {
     this.layout$.next({
       rootPane: root,
       floatingPanes: [
-        new BsFloatingPane({
-          pane: new BsTabGroupPane({
-            panes: [
-              new BsContentPane({
-                dockPanel: this.panel6,
-              })
-            ]
-          })
-        })
+        // new BsFloatingPane({
+        //   pane: new BsTabGroupPane({
+        //     panes: [
+        //       new BsContentPane({
+        //         dockPanel: this.panel6,
+        //       })
+        //     ]
+        //   })
+        // })
       ]
     });
   }

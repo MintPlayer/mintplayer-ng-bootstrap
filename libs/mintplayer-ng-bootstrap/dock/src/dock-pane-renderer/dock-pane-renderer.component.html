@@ -1,9 +1,9 @@
 <!-- <ng-content></ng-content> -->
 <ng-container [bsInstanceof]="layout$ | async">
-    <div *bsInstanceofCase="BsDocumentHostType; let documentHost">
+    <div *bsInstanceofCase="BsDocumentHostType; let documentHost" data-hello>
         <bs-dock-pane-renderer [layout]="documentHost"></bs-dock-pane-renderer>
     </div>
-    <bs-tab-control *bsInstanceofCase="BsTabGroupType; let tabGroup" class="dock-tabs">
+    <bs-tab-control *bsInstanceofCase="BsTabGroupType; let tabGroup" class="d-flex flex-column h-100 dock-tabs">
         <bs-tab-page *ngFor="let tab of tabGroup.panes">
             <ng-container *bsTabPageHeader>
                 <ng-template [cdkPortalOutlet]="tab.dockPanel.headerPortal"></ng-template>
