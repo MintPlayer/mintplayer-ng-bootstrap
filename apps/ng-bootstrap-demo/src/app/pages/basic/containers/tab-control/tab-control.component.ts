@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { BsTabsPosition } from '@mintplayer/ng-bootstrap/tab-control';
 
 @Component({
   selector: 'demo-tab-control',
@@ -6,5 +7,6 @@ import { Component } from '@angular/core';
   styleUrls: ['./tab-control.component.scss']
 })
 export class TabControlComponent {
+  tabsPosition: BsTabsPosition = 'top';
   numbers = Array.from(Array(20).keys()).map(i => i + 4);
 }

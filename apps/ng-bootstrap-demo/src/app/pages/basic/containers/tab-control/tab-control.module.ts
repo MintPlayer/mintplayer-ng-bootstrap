@@ -1,5 +1,9 @@
 import { NgModule } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { BsForModule } from '@mintplayer/ng-bootstrap/for';
+import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsSelectModule } from '@mintplayer/ng-bootstrap/select';
 import { BsTabControlModule } from '@mintplayer/ng-bootstrap/tab-control';
 
 import { TabControlRoutingModule } from './tab-control-routing.module';
@@ -12,6 +16,10 @@ import { TabControlComponent } from './tab-control.component';
   ],
   imports: [
     CommonModule,
+    FormsModule,
+    BsForModule,
+    BsGridModule,
+    BsSelectModule,
     BsTabControlModule,
     TabControlRoutingModule
   ]
