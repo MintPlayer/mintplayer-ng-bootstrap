@@ -1,4 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { BsBadgeModule } from '@mintplayer/ng-bootstrap/badge';
+import { BsDockModule } from '@mintplayer/ng-bootstrap/dock';
+import { MockModule } from 'ng-mocks';
 
 import { DockComponent } from './dock.component';
 
@@ -8,6 +11,10 @@ describe('DockComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      imports: [
+        MockModule(BsDockModule),
+        MockModule(BsBadgeModule),
+      ],
       declarations: [ DockComponent ]
     })
     .compileComponents();
