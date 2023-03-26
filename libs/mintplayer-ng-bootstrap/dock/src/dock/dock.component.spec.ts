@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MockComponent } from 'ng-mocks';
+import { BsDockPaneRendererComponent } from '../dock-pane-renderer/dock-pane-renderer.component';
 
 import { BsDockComponent } from './dock.component';
 
@@ -8,7 +10,13 @@ describe('BsDockComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ BsDockComponent ]
+      declarations: [
+        // Unit to test
+        BsDockComponent,
+      
+        // Mock dependencies
+        MockComponent(BsDockPaneRendererComponent)
+      ]
     })
     .compileComponents();
 

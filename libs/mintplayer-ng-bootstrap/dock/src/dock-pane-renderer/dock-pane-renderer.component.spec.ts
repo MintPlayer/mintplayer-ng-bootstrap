@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { BsInstanceOfModule } from '@mintplayer/ng-bootstrap/instance-of';
+import { MockModule } from 'ng-mocks';
 
 import { BsDockPaneRendererComponent } from './dock-pane-renderer.component';
 
@@ -8,6 +10,9 @@ describe('BsDockPaneRendererComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      imports: [
+        MockModule(BsInstanceOfModule)
+      ],
       declarations: [ BsDockPaneRendererComponent ]
     })
     .compileComponents();

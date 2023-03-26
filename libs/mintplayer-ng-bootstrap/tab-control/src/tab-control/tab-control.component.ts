@@ -33,7 +33,6 @@ export class BsTabControlComponent implements OnDestroy {
   @HostBinding('class.d-block') dBlock = true;
   @HostBinding('class.position-relative') positionRelative = true;
   @ContentChildren(BsTabPageComponent) set setTabPages(value: QueryList<BsTabPageComponent>) {
-    console.log('tabpages', value);
     this.tabPages$.next(value);
     const missing = value.filter(tp => !this.orderedTabPages.includes(tp));
     this.orderedTabPages = this.orderedTabPages.concat(missing);
