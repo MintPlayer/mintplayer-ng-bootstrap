@@ -23,7 +23,7 @@ export class BsTabControlComponent implements OnDestroy {
       .subscribe(([tabPages, activeTab, selectFirstTab]) => {
         const notDisabled = tabPages!.filter((tp) => !tp.disabled);
         if (notDisabled.length > 0) {
-          this.activeTab$.next(notDisabled[0]);
+          setTimeout(() => this.activeTab$.next(notDisabled[0]));
         }
       });
     this.topTabs$ = this.tabsPosition$.pipe(map(position => position === 'top'));
@@ -33,7 +33,6 @@ export class BsTabControlComponent implements OnDestroy {
   @HostBinding('class.d-block') dBlock = true;
   @HostBinding('class.position-relative') positionRelative = true;
   @ContentChildren(BsTabPageComponent) set setTabPages(value: QueryList<BsTabPageComponent>) {
-    console.log('tabpages', value);
     this.tabPages$.next(value);
     const missing = value.filter(tp => !this.orderedTabPages.includes(tp));
     this.orderedTabPages = this.orderedTabPages.concat(missing);

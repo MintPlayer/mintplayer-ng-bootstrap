@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { BsInstanceOfModule } from '@mintplayer/ng-bootstrap/instance-of';
+import { MockModule } from 'ng-mocks';
 
 import { InstanceOfComponent } from './instance-of.component';
 
@@ -8,6 +10,9 @@ describe('InstanceOfComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      imports: [
+        MockModule(BsInstanceOfModule)
+      ],
       declarations: [ InstanceOfComponent ]
     })
     .compileComponents();

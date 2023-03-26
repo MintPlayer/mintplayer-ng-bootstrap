@@ -1,6 +1,7 @@
 import { Component, ContentChild, TemplateRef, Input, ElementRef } from '@angular/core';
 import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
 import { BsTabControlComponent } from '../tab-control/tab-control.component';
+import { BsTabPageHeaderDirective } from '../tab-page-header/tab-page-header.directive';
 
 @Component({
   selector: 'bs-tab-page',
@@ -23,6 +24,6 @@ export class BsTabPageComponent {
   tabName$: Observable<string>;
 
   @Input() disabled = false;
-  @ContentChild(TemplateRef) headerTemplate!: TemplateRef<any>;
+  @ContentChild(BsTabPageHeaderDirective) headerTemplate!: BsTabPageHeaderDirective;
 
 }

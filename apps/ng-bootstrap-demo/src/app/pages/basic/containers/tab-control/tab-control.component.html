@@ -1,34 +1,11 @@
 <h1 class="text-center">Tab control</h1>
 <h2>Demo</h2>
 <bs-tab-control [border]="true" [restrictDragging]="true" [tabsPosition]="tabsPosition">
-    <bs-tab-page>
-        <ng-template>
-            <span class="triangle float-none d-inline-block mr-2"></span>
-            Tab 1
-        </ng-template>
-        <div class="p-3">
-            This is tab 1
-        </div>
-    </bs-tab-page>
-    <bs-tab-page>
-        <ng-template>
-            <span class="triangle float-none d-inline-block mr-2"></span>
-            Tab 2
-        </ng-template>
-        This is tab 2
-    </bs-tab-page>
-    <bs-tab-page [disabled]="true">
-        <ng-template>
-            <span class="triangle float-none d-inline-block mr-2"></span>
-            Tab 3
-        </ng-template>
-        This is tab 3
-    </bs-tab-page>
-    <bs-tab-page *ngFor="let n of numbers">
-        <ng-template>
+    <bs-tab-page *ngFor="let n of numbers" [disabled]="n === 3">
+        <ng-container *bsTabPageHeader>
             <span class="triangle float-none d-inline-block mr-2"></span>
             Tab {{ n }}
-        </ng-template>
+        </ng-container>
         <div class="p-3">
             This is tab {{ n }}
         </div>

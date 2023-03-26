@@ -1,0 +1,4 @@
+:host ::ng-deep .tab-content {
+    max-height: calc(100% - 41px);
+    overflow: auto;
+}

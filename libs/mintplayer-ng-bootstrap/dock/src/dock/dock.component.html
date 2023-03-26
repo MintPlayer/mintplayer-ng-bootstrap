@@ -1,6 +1,10 @@
 <ng-content></ng-content>
 <ng-container *ngIf="(layout$ | async) as layout">
     <bs-dock-pane-renderer [layout]="layout.rootPane"></bs-dock-pane-renderer>
+
+    <ng-container *ngFor="let pane of layout.floatingPanes">
+        <bs-dock-pane-renderer #floating *ngIf="pane.pane" [layout]="pane.pane"></bs-dock-pane-renderer>
+    </ng-container>
 </ng-container>
 <!-- <bs-splitter>
     <ng-content></ng-content>

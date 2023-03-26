@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, ElementRef, Input } from '@angular/core';
 import { BehaviorSubject, Observable, map } from 'rxjs';
 import { BsDockPane } from '../panes/dock-pane';
 import { EPaneType } from '../enums/pane-type.enum';
@@ -6,6 +6,7 @@ import { BsSplitPane } from '../panes/split-pane';
 import { BsContentPane } from '../panes/content-pane';
 import { BsDocumentHost } from '../panes/document-host-pane';
 import { BsTabGroupPane } from '../panes/tab-group-pane';
+import { DomPortal } from '@angular/cdk/portal';
 
 @Component({
   selector: 'bs-dock-pane-renderer',
@@ -14,7 +15,7 @@ import { BsTabGroupPane } from '../panes/tab-group-pane';
 })
 export class BsDockPaneRendererComponent {
 
-  constructor() {
+  constructor(element: ElementRef) {
     // this.layoutType$ = this.layout$.pipe<EPaneType | null>(map((layout) => {
     //   if (layout === null) {
     //     return null;
@@ -31,7 +32,10 @@ export class BsDockPaneRendererComponent {
     //     // throw 'unknown pane type';
     //   }
     // }));
+    this.portal = new DomPortal(element);
   }
+
+  portal: DomPortal;
 
   paneTypes = EPaneType;
   readonly BsDocumentHostType = BsDocumentHost;
