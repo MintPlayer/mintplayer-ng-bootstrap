@@ -1,10 +1,12 @@
-import { Component, ContentChildren, Input, OnDestroy, QueryList } from '@angular/core';
+import { Component, ContentChildren, ViewChildren, Input, OnDestroy, QueryList } from '@angular/core';
 import { BehaviorSubject, combineLatest, combineLatestAll, Subject, takeUntil } from 'rxjs';
 import { BsDockPanelComponent } from '../dock-panel/dock-panel.component';
 import { EPaneType } from '../enums/pane-type.enum';
 import { BsDockLayout } from '../interfaces/dock-layout';
 import { BsTabGroupPane } from '../panes/tab-group-pane';
 import { BsDocumentHost } from '../panes/document-host-pane';
+import { BsDockPaneRendererComponent } from '../dock-pane-renderer/dock-pane-renderer.component';
+import { Overlay } from '@angular/cdk/overlay';
 
 @Component({
   selector: 'bs-dock',
@@ -12,7 +14,7 @@ import { BsDocumentHost } from '../panes/document-host-pane';
   styleUrls: ['./dock.component.scss']
 })
 export class BsDockComponent implements OnDestroy {
-  constructor() {
+  constructor(private overlay: Overlay) {
     const tabs = new BsTabGroupPane();
     const docHost = new BsDocumentHost();
     docHost.rootPane = tabs;
@@ -27,6 +29,14 @@ export class BsDockComponent implements OnDestroy {
     //   .subscribe(([layout, panels]) => {
         
     //   })
+
+    this.floating$.pipe(takeUntil(this.destroyed$))
+      .subscribe((floating) => {
+        floating.forEach((panel) => {
+          const overlayRef = this.overlay.create({});
+          overlayRef.attach(panel.portal);
+        });
+      });
   }
 
   //#region Panels
@@ -44,6 +54,12 @@ export class BsDockComponent implements OnDestroy {
     this.layout$.next(value);
   }
   //#endregion
+
+  floating$ = new BehaviorSubject<BsDockPaneRendererComponent[]>([]);
+  @ViewChildren('floating') set floatingPanes(value: QueryList<BsDockPaneRendererComponent>) {
+    // value.changes.pipe(takeUntil(this.destroyed$)).subscribe((changes) => console.log('floatingPanes', changes));
+    this.floating$.next(value.toArray());
+  }
 
   destroyed$ = new Subject();
   ngOnDestroy() {

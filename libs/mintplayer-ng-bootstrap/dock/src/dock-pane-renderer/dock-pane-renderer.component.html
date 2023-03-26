@@ -3,7 +3,7 @@
     <div *bsInstanceofCase="BsDocumentHostType; let documentHost">
         <bs-dock-pane-renderer [layout]="documentHost"></bs-dock-pane-renderer>
     </div>
-    <bs-tab-control *bsInstanceofCase="BsTabGroupType; let tabGroup">
+    <bs-tab-control *bsInstanceofCase="BsTabGroupType; let tabGroup" class="dock-tabs">
         <bs-tab-page *ngFor="let tab of tabGroup.panes">
             <ng-container *bsTabPageHeader>
                 <ng-template [cdkPortalOutlet]="tab.dockPanel.headerPortal"></ng-template>

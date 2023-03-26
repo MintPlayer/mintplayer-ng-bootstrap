@@ -23,7 +23,7 @@ export class BsTabControlComponent implements OnDestroy {
       .subscribe(([tabPages, activeTab, selectFirstTab]) => {
         const notDisabled = tabPages!.filter((tp) => !tp.disabled);
         if (notDisabled.length > 0) {
-          this.activeTab$.next(notDisabled[0]);
+          setTimeout(() => this.activeTab$.next(notDisabled[0]));
         }
       });
     this.topTabs$ = this.tabsPosition$.pipe(map(position => position === 'top'));
