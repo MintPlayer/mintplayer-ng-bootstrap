@@ -1,8 +1,8 @@
 <!-- <bs-split-panel> -->
-    <bs-card [rounded]="false">
-        <bs-card-header [noPadding]="true">
-            <ng-content select="bs-dock-panel-header"></ng-content>
-        </bs-card-header>
-        <ng-content></ng-content>
-    </bs-card>
+<div #headerElement class="dock-header">
+    <ng-content select="bs-dock-panel-header"></ng-content>
+</div>
+<div #contentElement>
+    <ng-content></ng-content>
+</div>
 <!-- </bs-split-panel> -->

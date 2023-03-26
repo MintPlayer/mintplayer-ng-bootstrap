@@ -5,7 +5,9 @@
     </div>
     <bs-tab-control *bsInstanceofCase="BsTabGroupType; let tabGroup">
         <bs-tab-page *ngFor="let tab of tabGroup.panes">
-            <ng-template>Tab page</ng-template>
+            <ng-container *bsTabPageHeader>
+                <ng-template [cdkPortalOutlet]="tab.dockPanel.headerPortal"></ng-template>
+            </ng-container>
             <bs-dock-pane-renderer [layout]="tab"></bs-dock-pane-renderer>
         </bs-tab-page>
     </bs-tab-control>
@@ -15,7 +17,7 @@
         </bs-split-panel>
     </bs-splitter>
     <ng-container *bsInstanceofCase="BsContentPaneType; let content">
-        <ng-template [cdkPortalOutlet]="content.dockPanel.portal"></ng-template>
+        <ng-template [cdkPortalOutlet]="content.dockPanel.contentPortal"></ng-template>
     </ng-container>
     <div *bsInstanceofDefault>
         No match
