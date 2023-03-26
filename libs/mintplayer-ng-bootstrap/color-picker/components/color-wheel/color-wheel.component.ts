@@ -1,13 +1,13 @@
-import { AfterViewInit, Component, ElementRef, EventEmitter, Host, HostBinding, HostListener, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
-import { BehaviorSubject, combineLatest, debounce, debounceTime, filter, map, Observable, Subject, switchMap, takeUntil } from 'rxjs';
-import { RgbColor } from '../interfaces/rgb-color';
+import { Component, ElementRef, EventEmitter, Input, Output, HostBinding, HostListener, ViewChild } from '@angular/core';
+import { BehaviorSubject, combineLatest, debounceTime, map, Observable, Subject, switchMap, takeUntil } from 'rxjs';
+import { RgbColor } from '../../interfaces/rgb-color';
 
 @Component({
-  selector: 'bs-color-picker',
-  templateUrl: './color-picker.component.html',
-  styleUrls: ['./color-picker.component.scss']
+  selector: 'bs-color-wheel',
+  templateUrl: './color-wheel.component.html',
+  styleUrls: ['./color-wheel.component.scss']
 })
-export class BsColorPickerComponent implements AfterViewInit, OnDestroy {
+export class BsColorWheelComponent {
 
   constructor(private element: ElementRef<HTMLElement>) {
     // this.resizeObserver = new ResizeObserver((entries) => {
@@ -115,6 +115,7 @@ export class BsColorPickerComponent implements AfterViewInit, OnDestroy {
       });
   }
 
+  @HostBinding('class.d-block')
   @HostBinding('class.position-relative') positionRelative = true;
   
   //#region selectedColor
@@ -300,5 +301,4 @@ export class BsColorPickerComponent implements AfterViewInit, OnDestroy {
           return (n % max) / max;
       }
   }
-
 }

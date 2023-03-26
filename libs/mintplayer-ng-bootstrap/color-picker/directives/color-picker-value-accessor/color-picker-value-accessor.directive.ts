@@ -1,14 +1,13 @@
 import { Directive, Inject, forwardRef, OnDestroy } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
-import { BsColorPickerComponent } from '../../component/color-picker.component';
-import { RgbColor } from '../../interfaces';
+import { BsColorPickerComponent } from '../../components/color-picker/color-picker.component';
+import { RgbColor } from '../../interfaces/rgb-color';
 
 @Directive({
   selector: 'bs-color-picker',
   providers: [{
     provide: NG_VALUE_ACCESSOR,
-    // useExisting: BsColorPickerValueAccessor,
     useExisting: forwardRef(() => BsColorPickerValueAccessor),
     multi: true
   }],
@@ -17,7 +16,6 @@ import { RgbColor } from '../../interfaces';
 export class BsColorPickerValueAccessor implements OnDestroy, ControlValueAccessor {
 
   constructor(@Inject(forwardRef(() => BsColorPickerComponent)) private host: BsColorPickerComponent) {
-
     this.host.selectedColorChange
       .pipe(takeUntil(this.destroyed$))
       .subscribe((selectedColor) => {

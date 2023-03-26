@@ -1,5 +1,9 @@
 $thumb-size: 30px;
 
+canvas {
+    border-radius: 50%;
+}
+
 .thumb {
     width: $thumb-size;
     height: $thumb-size;
