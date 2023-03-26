@@ -1,5 +1,6 @@
 <h1 class="text-center">Tab control</h1>
-<bs-tab-control [border]="true" [restrictDragging]="true">
+<h2>Demo</h2>
+<bs-tab-control [border]="true" [restrictDragging]="true" [tabsPosition]="tabsPosition">
     <bs-tab-page>
         <ng-template>
             <span class="triangle float-none d-inline-block mr-2"></span>
@@ -33,3 +34,18 @@
         </div>
     </bs-tab-page>
 </bs-tab-control>
+<h2>Configuration</h2>
+<bs-grid>
+    <div bsRow>
+        <div bsColumn>
+            <label class="py-2" [bsFor]="selectBox">Tabs position</label>
+        </div>
+        <div bsColumn>
+            <bs-select [(ngModel)]="tabsPosition" #selectBox>
+                <option [ngValue]="'top'">Top</option>
+                <option [ngValue]="'bottom'">Bottom</option>
+            </bs-select>
+        </div>
+    </div>
+</bs-grid>
+

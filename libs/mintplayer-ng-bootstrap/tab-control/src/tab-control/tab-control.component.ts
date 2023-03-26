@@ -2,6 +2,7 @@ import { CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/dr
 import { Component, ContentChildren, ElementRef, HostBinding, Input, OnDestroy, QueryList, Renderer2 } from '@angular/core';
 import { BehaviorSubject, combineLatest, filter, map, Observable, Subject, takeUntil } from 'rxjs';
 import { BsTabPageComponent } from '../tab-page/tab-page.component';
+import { BsTabsPosition } from '../tabs-position';
 
 @Component({
   selector: 'bs-tab-control',
@@ -25,6 +26,8 @@ export class BsTabControlComponent implements OnDestroy {
           this.activeTab$.next(notDisabled[0]);
         }
       });
+    this.topTabs$ = this.tabsPosition$.pipe(map(position => position === 'top'));
+    this.bottomTabs$ = this.tabsPosition$.pipe(map(position => position === 'bottom'));
   }
 
   @HostBinding('class.d-block') dBlock = true;
@@ -46,6 +49,8 @@ export class BsTabControlComponent implements OnDestroy {
   orderedTabPages: BsTabPageComponent[] = [];
   tabControlId$: BehaviorSubject<number>;
   tabControlName$: Observable<string>;
+  topTabs$: Observable<boolean>;
+  bottomTabs$: Observable<boolean>;
   static tabControlCounter = 0;
   tabCounter = 0;
   destroyed$ = new Subject()
@@ -57,6 +62,15 @@ export class BsTabControlComponent implements OnDestroy {
   }
   @Input() public set selectFirstTab(value: boolean) {
     this.selectFirstTab$.next(value);
+  }
+  //#endregion
+  //#region TabsPosition
+  tabsPosition$ = new BehaviorSubject<BsTabsPosition>('top');
+  public get tabsPosition() {
+    return this.tabsPosition$.value;
+  }
+  @Input() public set tabsPosition(value: BsTabsPosition) {
+    this.tabsPosition$.next(value);
   }
   //#endregion
 
