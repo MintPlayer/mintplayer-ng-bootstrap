@@ -1,4 +1,5 @@
 <ng-container *bsLet="selectedColor$ | async; let letSelectedColor">
 <ng-container *bsLet="disabled$ | async; let letDisabled">
     <bs-color-wheel [width]="150" [height]="150" [ngModel]="letSelectedColor" (ngModelChange)="onSelectedColorChange($event)" [disabled]="letDisabled!"></bs-color-wheel>
+    <bs-luminosity-strip class="lumstrip my-2"></bs-luminosity-strip>
 </ng-container>
