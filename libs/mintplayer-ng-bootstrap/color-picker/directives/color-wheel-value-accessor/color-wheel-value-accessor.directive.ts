@@ -2,6 +2,7 @@ import { Directive, Inject, forwardRef, OnDestroy } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
 import { BsColorWheelComponent } from '../../components/color-wheel/color-wheel.component';
+import { HL } from '../../interfaces/hl';
 import { RgbColor } from '../../interfaces/rgb-color';
 
 @Directive({
@@ -17,15 +18,15 @@ export class BsColorWheelValueAccessor implements OnDestroy, ControlValueAccesso
 
   constructor(@Inject(forwardRef(() => BsColorWheelComponent)) private host: BsColorWheelComponent) {
 
-    this.host.selectedColorChange
+    this.host.hlChange
       .pipe(takeUntil(this.destroyed$))
-      .subscribe((selectedColor) => {
-        this.onValueChange && this.onValueChange(selectedColor);
+      .subscribe((hl) => {
+        this.onValueChange && this.onValueChange(hl);
       });
   }
 
   destroyed$ = new Subject();
-  onValueChange?: (value: RgbColor) => void;
+  onValueChange?: (value: HL) => void;
   onTouched?: () => void;
 
   ngOnDestroy() {
@@ -41,11 +42,11 @@ export class BsColorWheelValueAccessor implements OnDestroy, ControlValueAccesso
     this.onTouched = fn;
   }
 
-  writeValue(value: RgbColor | null) {
+  writeValue(value: HL | null) {
     if (this.host) {
       if (value) {
         // this.host.selectedColor = this.hex2rgb(value);
-        this.host.selectedColor = value;
+        this.host.hl = value;
       }
     }
   }

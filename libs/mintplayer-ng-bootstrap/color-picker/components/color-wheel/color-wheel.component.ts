@@ -1,5 +1,6 @@
 import { Component, ElementRef, EventEmitter, Input, Output, HostBinding, HostListener, ViewChild } from '@angular/core';
 import { BehaviorSubject, combineLatest, debounceTime, map, Observable, Subject, switchMap, takeUntil } from 'rxjs';
+import { HL } from '../../interfaces/hl';
 import { RgbColor } from '../../interfaces/rgb-color';
 
 @Component({
@@ -71,6 +72,9 @@ export class BsColorWheelComponent {
         }
       }));
   
+    this.hl$.pipe(takeUntil(this.destroyed$))
+      .subscribe(hl => this.hlChange.emit(hl));
+
     combineLatest([this.innerRadius$, this.outerRadius$, this.shiftX$, this.shiftY$])
       .pipe(debounceTime(20), takeUntil(this.destroyed$))
       .subscribe(([innerRadius, outerRadius, shiftX, shiftY]) => {
@@ -92,9 +96,9 @@ export class BsColorWheelComponent {
         }
       });
 
-    this.markerPosition$ = combineLatest([this.selectedColor$, this.shiftX$, this.shiftY$])
-      .pipe(switchMap(([selectedColor, shiftX, shiftY]) => {
-        return this.color2position(selectedColor)
+    this.markerPosition$ = combineLatest([this.hl$, this.shiftX$, this.shiftY$])
+      .pipe(switchMap(([hl, shiftX, shiftY]) => {
+        return this.color2position(hl)
           .pipe(map((position) => <[{x:number,y:number}, number, number]>[position, shiftX, shiftY]));
       }))
       .pipe(map(([position, shiftX, shiftY]) => {
@@ -108,24 +112,45 @@ export class BsColorWheelComponent {
         }
       }));
 
-    this.selectedColor$
-      .pipe(takeUntil(this.destroyed$))
-      .subscribe((selectedColor) => {
-        this.selectedColorChange.emit(selectedColor);
-      });
+    // this.selectedColor$
+    //   .pipe(takeUntil(this.destroyed$))
+    //   .subscribe((selectedColor) => {
+    //     this.selectedColorChange.emit(selectedColor);
+    //   });
   }
 
   @HostBinding('class.d-block')
   @HostBinding('class.position-relative') positionRelative = true;
   
-  //#region selectedColor
-  private selectedColor$ = new BehaviorSubject<RgbColor>({ r: 255, g: 255, b: 255 });
-  @Output() public selectedColorChange = new EventEmitter<RgbColor>();
-  @Input() public set selectedColor(value: RgbColor) {
-    this.selectedColor$.next(value);
+  // //#region selectedColor
+  // private selectedColor$ = new BehaviorSubject<RgbColor>({ r: 255, g: 255, b: 255 });
+  // @Output() public selectedColorChange = new EventEmitter<RgbColor>();
+  // @Input() public set selectedColor(value: RgbColor) {
+  //   this.selectedColor$.next(value);
+  // }
+  // public get selectedColor() {
+  //   return this.selectedColor$.value;
+  // }
+  // //#endregion
+
+  //#region Hue/Luminosity
+  hl$ = new BehaviorSubject<HL>({ hue: 0, luminosity: 0 });
+  @Output() hlChange = new EventEmitter<HL>();
+  public get hl() {
+    return this.hl$.value;
   }
-  public get selectedColor() {
-    return this.selectedColor$.value;
+  @Input() public set hl(value: HL) {
+    this.hl$.next(value);
+  }
+  //#endregion
+  //#region Saturation
+  saturation$ = new BehaviorSubject<number>(0);
+  // @Output() saturationChange = new EventEmitter<number>();
+  public get saturation() {
+    return this.saturation$.value;
+  }
+  @Input() public set saturation(value: number) {
+    this.saturation$.next(value);
   }
   //#endregion
 
@@ -208,7 +233,9 @@ export class BsColorWheelComponent {
     
     const color = this.position2color(co.x, co.y);
     if (color) {
-      this.selectedColor$.next(color);
+      const hsl = this.rgb2Hsl(color);
+      // this.selectedColor$.next(color);
+      this.hl$.next({ hue: hsl.h, luminosity: hsl.l });
     } else {
       console.warn('Color is null');
     }
@@ -223,7 +250,7 @@ export class BsColorWheelComponent {
     }
   }
 
-  private color2position(color: RgbColor) {
+  private color2position(hl: HL) {
     return combineLatest([this.innerRadius$, this.outerRadius$])
       .pipe(map(([innerRadius, outerRadius]) => {
         if (innerRadius === null) {
@@ -233,13 +260,12 @@ export class BsColorWheelComponent {
           outerRadius = 100;
         }
 
-        const { h, s, l } = this.rgb2Hsl(color);
-        const theta = h * Math.PI / 180;
+        const theta = hl.hue * Math.PI / 180;
         const c = {
           x: outerRadius * Math.cos(theta),
           y: outerRadius * Math.sin(theta)
         };
-        const ratio = 1 - Math.max(0, 2 * (l - 0.5));
+        const ratio = 1 - Math.max(0, 2 * (hl.luminosity - 0.5));
     
         const d = ratio * (outerRadius - innerRadius) + innerRadius;
         const o = { x: outerRadius, y: outerRadius };

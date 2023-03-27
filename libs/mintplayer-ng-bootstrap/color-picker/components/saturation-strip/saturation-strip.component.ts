@@ -1,15 +1,16 @@
 import { AfterViewInit, Component, ElementRef, EventEmitter, HostBinding, Input, OnDestroy, Output, ViewChild } from '@angular/core';
 import { BehaviorSubject, Subject, takeUntil } from 'rxjs';
+import { HL } from '../../interfaces/hl';
 
 @Component({
-  selector: 'bs-luminosity-strip',
-  templateUrl: './luminosity-strip.component.html',
-  styleUrls: ['./luminosity-strip.component.scss']
+  selector: 'bs-saturation-strip',
+  templateUrl: './saturation-strip.component.html',
+  styleUrls: ['./saturation-strip.component.scss']
 })
-export class BsLuminosityStripComponent implements AfterViewInit, OnDestroy {
+export class BsSaturationStripComponent implements AfterViewInit, OnDestroy {
   constructor() {
-    this.luminosityChange.pipe(takeUntil(this.destroyed$))
-      .subscribe((luminosity) => this.luminosityChange.emit(luminosity));
+    this.saturation$.pipe(takeUntil(this.destroyed$))
+      .subscribe((saturation) => this.saturationChange.emit(saturation));
   }
 
   @HostBinding('class.d-block') dBlockClass = true;
@@ -17,32 +18,23 @@ export class BsLuminosityStripComponent implements AfterViewInit, OnDestroy {
   private canvasContext: CanvasRenderingContext2D | null = null;
   destroyed$ = new Subject();
 
-  //#region Hue
-  hue$ = new BehaviorSubject<number>(0);
-  public get hue() {
-    return this.hue$.value;
+  //#region HL
+  hl$ = new BehaviorSubject<HL>(0);
+  public get hl() {
+    return this.hl$.value;
   }
-  @Input() public set hue(value: number) {
-    this.hue$.next(value);
+  @Input() public set hl(value: HL) {
+    this.hl$.next(value);
   }
   //#endregion
   //#region Saturation
   saturation$ = new BehaviorSubject<number>(0);
+  @Output() saturationChange = new EventEmitter<number>();
   public get saturation() {
     return this.saturation$.value;
   }
   @Input() public set saturation(value: number) {
     this.saturation$.next(value);
-  }
-  //#endregion
-  //#region Luminosity
-  luminosity$ = new BehaviorSubject<number>(0);
-  @Output() luminosityChange = new EventEmitter<number>();
-  public get luminosity() {
-    return this.luminosity$.value;
-  }
-  @Input() public set luminosity(value: number) {
-    this.luminosity$.next(value);
   }
   //#endregion
 
