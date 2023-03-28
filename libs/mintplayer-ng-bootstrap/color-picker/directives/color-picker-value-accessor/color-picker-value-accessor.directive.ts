@@ -58,7 +58,7 @@ export class BsColorPickerValueAccessor implements OnDestroy, ControlValueAccess
 
   //#region Color Conversion
   private rgb2hex(rgb: RgbColor) {
-    return '#' + ((rgb.r << 16) + (rgb.g << 8) + rgb.b).toString(16).padStart(6, '0');
+    return '#' + ((Math.round(rgb.r) << 16) + (Math.round(rgb.g) << 8) + Math.round(rgb.b)).toString(16).padStart(6, '0');
   }
 
   private hex2rgb(hex: string): RgbColor {

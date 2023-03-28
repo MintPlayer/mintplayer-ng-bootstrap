@@ -1,5 +1,9 @@
-<ng-container *bsLet="selectedColor$ | async; let letSelectedColor">
 <ng-container *bsLet="disabled$ | async; let letDisabled">
-    <bs-color-wheel [width]="150" [height]="150" [ngModel]="letSelectedColor" (ngModelChange)="onSelectedColorChange($event)" [disabled]="letDisabled!"></bs-color-wheel>
-    <bs-saturation-strip class="lumstrip my-2"></bs-saturation-strip>
+    <ng-container *bsLet="hl$ | async; let letHL">
+        <ng-container *bsLet="saturation$ | async; let letSaturation">
+            <bs-color-wheel [width]="150" [height]="150" [hl]="letHL!" (hlChange)="hl = $event" [saturation]="saturation"></bs-color-wheel>
+            <bs-saturation-strip [hl]="letHL!" [saturation]="letSaturation!" (saturationChange)="saturation = $event" class="lumstrip my-2"></bs-saturation-strip>
+            {{ letHL | json }}    
+        </ng-container>
+    </ng-container>
 </ng-container>
