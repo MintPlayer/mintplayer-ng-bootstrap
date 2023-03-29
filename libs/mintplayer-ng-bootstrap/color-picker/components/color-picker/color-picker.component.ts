@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, OnDestroy, Output } from "@angular/core";
 import { BehaviorSubject, combineLatest, map, Observable, Subject, debounceTime, takeUntil } from 'rxjs';
-import { HL } from "../../interfaces/hl";
+import { HS } from "../../interfaces/hs";
 import { RgbColor } from "../../interfaces/rgb-color";
 import { HslService } from "../../services/hsl/hsl.service";
 
@@ -12,8 +12,8 @@ import { HslService } from "../../services/hsl/hsl.service";
 export class BsColorPickerComponent implements OnDestroy {
   
   constructor(private hslService: HslService) {
-    this.selectedColor$ = combineLatest([this.hl$, this.saturation$])
-      .pipe(debounceTime(10), map(([hl, saturation]) => hslService.hsl2rgb(hl.hue, saturation, hl.luminosity)));
+    this.selectedColor$ = combineLatest([this.hs$, this.luminosity$])
+      .pipe(debounceTime(10), map(([hs, luminosity]) => hslService.hsl2rgb(hs.hue, hs.saturation, luminosity)));
 
     this.selectedColor$.pipe(takeUntil(this.destroyed$))
       .subscribe(selectedColor => this.selectedColorChange.emit(selectedColor));
@@ -22,22 +22,22 @@ export class BsColorPickerComponent implements OnDestroy {
   disabled$ = new BehaviorSubject<boolean>(false);
   destroyed$ = new Subject();
 
-  //#region HL
-  hl$ = new BehaviorSubject<HL>({ hue: 0, luminosity: 0 });
-  get hl() {
-    return this.hl$.value;
+  //#region HS
+  hs$ = new BehaviorSubject<HS>({ hue: 0, saturation: 0 });
+  get hs() {
+    return this.hs$.value;
   }
-  @Input() set hl(value: HL) {
-    this.hl$.next(value);
+  @Input() set hs(value: HS) {
+    this.hs$.next(value);
   }
   //#endregion
-  //#region Saturation
-  saturation$ = new BehaviorSubject<number>(0);
-  get saturation() {
-    return this.saturation$.value;
+  //#region Luminosity
+  luminosity$ = new BehaviorSubject<number>(0);
+  get luminosity() {
+    return this.luminosity$.value;
   }
-  @Input() set saturation(value: number) {
-    this.saturation$.next(value);
+  @Input() set luminosity(value: number) {
+    this.luminosity$.next(value);
   }
   //#endregion
 
@@ -46,8 +46,8 @@ export class BsColorPickerComponent implements OnDestroy {
   @Output() selectedColorChange = new EventEmitter<RgbColor>();
   @Input() public set selectedColor(value: RgbColor) {
     const hsl = this.hslService.rgb2Hsl(value);
-    this.hl$.next({ hue: hsl.h, luminosity: hsl.l });
-    this.saturation$.next(hsl.s);
+    this.hs$.next({ hue: hsl.h, saturation: hsl.s });
+    this.luminosity$.next(hsl.l);
   }
   //#endregion
 

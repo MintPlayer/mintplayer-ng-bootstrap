@@ -1,2 +1,2 @@
 export * from './rgb-color';
-export * from './hl';
+export * from './hs';

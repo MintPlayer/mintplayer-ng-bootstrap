@@ -1,6 +1,6 @@
 import { Component, ElementRef, EventEmitter, Input, Output, HostBinding, HostListener, ViewChild } from '@angular/core';
 import { BehaviorSubject, combineLatest, debounceTime, map, Observable, Subject, switchMap, takeUntil } from 'rxjs';
-import { HL } from '../../interfaces/hl';
+import { HS } from '../../interfaces/hs';
 import { RgbColor } from '../../interfaces/rgb-color';
 import { HslService } from '../../services/hsl/hsl.service';
 
@@ -73,8 +73,8 @@ export class BsColorWheelComponent {
         }
       }));
   
-    this.hl$.pipe(takeUntil(this.destroyed$))
-      .subscribe(hl => this.hlChange.emit(hl));
+    this.hs$.pipe(takeUntil(this.destroyed$))
+      .subscribe(hs => this.hsChange.emit(hs));
 
     combineLatest([this.innerRadius$, this.outerRadius$, this.shiftX$, this.shiftY$])
       .pipe(debounceTime(20), takeUntil(this.destroyed$))
@@ -82,24 +82,37 @@ export class BsColorWheelComponent {
         if (this.canvasContext && (innerRadius !== null) && (outerRadius !== null) && (shiftX !== null) && (shiftY !== null)) {
           this.canvasContext.clearRect(0, 0, this.canvas.nativeElement.width, this.canvas.nativeElement.height);
           this.canvasContext.save();
-          this.canvasContext.translate(shiftX + outerRadius, shiftY + outerRadius);
+          // this.canvasContext.translate(shiftX + outerRadius, shiftY + outerRadius);
 
+          // for (let x = 0; x < 360; x++) {
+          //   this.canvasContext.rotate(1 * Math.PI / 180);
+          //   const gradient = this.canvasContext.createLinearGradient(innerRadius, 0, outerRadius, 0);
+          //   gradient.addColorStop(0, '#FFFFFF');
+          //   gradient.addColorStop(1, `hsl(${x}, 100%, 50%)`);
+          //   this.canvasContext.fillStyle = gradient;
+          //   this.canvasContext.fillRect(innerRadius, 0, outerRadius - innerRadius, outerRadius / 50);
+          // }
+
+          const size = { width: this.canvas.nativeElement.width, height: this.canvas.nativeElement.height };
+          const luminosity = '50%';
           for (let x = 0; x < 360; x++) {
-            this.canvasContext.rotate(1 * Math.PI / 180);
-            const gradient = this.canvasContext.createLinearGradient(innerRadius, 0, outerRadius, 0);
-            gradient.addColorStop(0, '#FFFFFF');
-            gradient.addColorStop(1, `hsl(${x}, 100%, 50%)`);
+          //   this.canvasContext.rotate(1 * Math.PI / 180);
+            const gradient = this.canvasContext.createLinearGradient(x, 0, x, size.height);
+            gradient.addColorStop(0, `hsl(${x * 360 / size.width}, 0%, ${luminosity})`);
+            gradient.addColorStop(1, `hsl(${x * 360 / size.width}, 100%, ${luminosity})`);
+          //   gradient.addColorStop(0, '#FFFFFF');
+          //   gradient.addColorStop(1, `hsl(${x}, 100%, 50%)`);
             this.canvasContext.fillStyle = gradient;
-            this.canvasContext.fillRect(innerRadius, 0, outerRadius - innerRadius, outerRadius / 50);
+            this.canvasContext.fillRect(x, 0, 1, this.canvas.nativeElement.height);
           }
 
           this.canvasContext.restore();
         }
       });
 
-    this.markerPosition$ = combineLatest([this.hl$, this.shiftX$, this.shiftY$])
-      .pipe(switchMap(([hl, shiftX, shiftY]) => {
-        return this.color2position(hl)
+    this.markerPosition$ = combineLatest([this.hs$, this.shiftX$, this.shiftY$])
+      .pipe(switchMap(([hs, shiftX, shiftY]) => {
+        return this.color2position(hs)
           .pipe(map((position) => <[{x:number,y:number}, number, number]>[position, shiftX, shiftY]));
       }))
       .pipe(map(([position, shiftX, shiftY]) => {
@@ -134,24 +147,24 @@ export class BsColorWheelComponent {
   // }
   // //#endregion
 
-  //#region Hue/Luminosity
-  hl$ = new BehaviorSubject<HL>({ hue: 0, luminosity: 0 });
-  @Output() hlChange = new EventEmitter<HL>();
-  public get hl() {
-    return this.hl$.value;
+  //#region Hue/Saturation
+  hs$ = new BehaviorSubject<HS>({ hue: 0, saturation: 0 });
+  @Output() hsChange = new EventEmitter<HS>();
+  public get hs() {
+    return this.hs$.value;
   }
-  @Input() public set hl(value: HL) {
-    this.hl$.next(value);
+  @Input() public set hs(value: HS) {
+    this.hs$.next(value);
   }
   //#endregion
-  //#region Saturation
-  saturation$ = new BehaviorSubject<number>(0);
+  //#region Luminosity
+  luminosity$ = new BehaviorSubject<number>(0);
   // @Output() saturationChange = new EventEmitter<number>();
-  public get saturation() {
-    return this.saturation$.value;
+  public get luminosity() {
+    return this.luminosity$.value;
   }
-  @Input() public set saturation(value: number) {
-    this.saturation$.next(value);
+  @Input() public set luminosity(value: number) {
+    this.luminosity$.next(value);
   }
   //#endregion
 
@@ -236,7 +249,7 @@ export class BsColorWheelComponent {
     if (color) {
       const hsl = this.hslService.rgb2Hsl(color);
       // this.selectedColor$.next(color);
-      this.hl$.next({ hue: hsl.h, luminosity: hsl.l });
+      this.hs$.next({ hue: hsl.h, saturation: hsl.s });
     } else {
       console.warn('Color is null');
     }
@@ -251,7 +264,7 @@ export class BsColorWheelComponent {
     }
   }
 
-  private color2position(hl: HL) {
+  private color2position(hs: HS) {
     return combineLatest([this.innerRadius$, this.outerRadius$])
       .pipe(map(([innerRadius, outerRadius]) => {
         if (innerRadius === null) {
@@ -261,12 +274,15 @@ export class BsColorWheelComponent {
           outerRadius = 100;
         }
 
-        const theta = hl.hue * Math.PI / 180;
+        const theta = hs.hue * Math.PI / 180;
         const c = {
           x: outerRadius * Math.cos(theta),
           y: outerRadius * Math.sin(theta)
         };
-        const ratio = 1 - Math.max(0, 2 * (hl.luminosity - 0.5));
+        // TODO
+        // const ratio = 1 - Math.max(0, 2 * (hs.luminosity - 0.5));
+        const ratio = 1 - Math.max(0, 2 * (hs.saturation - 0.5));
+        
     
         const d = ratio * (outerRadius - innerRadius) + innerRadius;
         const o = { x: outerRadius, y: outerRadius };
