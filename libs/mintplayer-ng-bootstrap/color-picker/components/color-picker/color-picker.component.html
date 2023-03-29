@@ -1,9 +1,9 @@
 <ng-container *bsLet="disabled$ | async; let letDisabled">
-    <ng-container *bsLet="hs$ | async; let letHS">
-        <ng-container *bsLet="luminosity$ | async; let letLuminosity">
-            <bs-color-wheel [width]="150" [height]="150" [hs]="letHS!" (hsChange)="hs = $event" [luminosity]="letLuminosity!"></bs-color-wheel>
-            <bs-saturation-strip [hs]="letHS!" [luminosity]="letLuminosity!" (luminosityChange)="luminosity$.next($event!)" class="lumstrip my-2"></bs-saturation-strip>
-            {{ letHS | json }}    
+    <ng-container *bsLet="hl$ | async; let letHL">
+        <ng-container *bsLet="saturation$ | async; let letSaturation">
+            <bs-color-wheel [width]="150" [height]="150" [hl]="letHL!" (hlChange)="hl = $event" [saturation]="letSaturation!"></bs-color-wheel>
+            <bs-saturation-strip [hl]="letHL!" [saturation]="letSaturation!" (saturationChange)="saturation$.next($event!)" class="lumstrip my-2"></bs-saturation-strip>
+            {{ letHL | json }}    
         </ng-container>
     </ng-container>
 </ng-container>
