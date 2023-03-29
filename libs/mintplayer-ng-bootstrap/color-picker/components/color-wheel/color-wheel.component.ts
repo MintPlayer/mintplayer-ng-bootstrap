@@ -1,13 +1,13 @@
-import { AfterViewInit, Component, ElementRef, EventEmitter, Host, HostBinding, HostListener, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
-import { BehaviorSubject, combineLatest, debounce, debounceTime, filter, map, Observable, Subject, switchMap, takeUntil } from 'rxjs';
-import { RgbColor } from '../interfaces/rgb-color';
+import { AfterViewInit, Component, ElementRef, EventEmitter, HostBinding, HostListener, Input, OnDestroy, Output, ViewChild } from '@angular/core';
+import { BehaviorSubject, combineLatest, debounceTime, map, Observable, Subject, switchMap, takeUntil } from 'rxjs';
+import { RgbColor } from '../../interfaces/rgb-color';
 
 @Component({
-  selector: 'bs-color-picker',
-  templateUrl: './color-picker.component.html',
-  styleUrls: ['./color-picker.component.scss']
+  selector: 'bs-color-wheel',
+  templateUrl: './color-wheel.component.html',
+  styleUrls: ['./color-wheel.component.scss']
 })
-export class BsColorPickerComponent implements AfterViewInit, OnDestroy {
+export class BsColorWheelComponent implements AfterViewInit, OnDestroy {
 
   constructor(private element: ElementRef<HTMLElement>) {
     // this.resizeObserver = new ResizeObserver((entries) => {
@@ -82,8 +82,17 @@ export class BsColorPickerComponent implements AfterViewInit, OnDestroy {
           for (let x = 0; x < 360; x++) {
             this.canvasContext.rotate(1 * Math.PI / 180);
             const gradient = this.canvasContext.createLinearGradient(innerRadius, 0, outerRadius, 0);
-            gradient.addColorStop(0, '#FFFFFF');
+
+            // gradient.addColorStop(0, `hsl(${x}, 100%, 100%)`);
+            // gradient.addColorStop(1, `hsl(${x}, 100%, 50%)`);
+
+            // gradient.addColorStop(0, `hsl(${x}, 100%, 100%)`);
+            // gradient.addColorStop(0.5, `hsl(${x}, 100%, 50%`);
+            // gradient.addColorStop(1, `hsl(${x}, 100%, 0%`);
+
+            gradient.addColorStop(0, `hsl(${x}, 0%, 50%)`);
             gradient.addColorStop(1, `hsl(${x}, 100%, 50%)`);
+
             this.canvasContext.fillStyle = gradient;
             this.canvasContext.fillRect(innerRadius, 0, outerRadius - innerRadius, outerRadius / 50);
           }

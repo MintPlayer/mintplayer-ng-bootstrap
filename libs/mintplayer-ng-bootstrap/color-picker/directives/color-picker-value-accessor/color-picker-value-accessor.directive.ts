@@ -1,8 +1,8 @@
-import { Directive, Inject, forwardRef, OnDestroy } from '@angular/core';
+import { Directive, Inject, forwardRef, OnDestroy, AfterViewInit } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
-import { BsColorPickerComponent } from '../../component/color-picker.component';
-import { RgbColor } from '../../interfaces';
+import { BsColorPickerComponent } from '../../components/color-picker/color-picker.component';
+import { RgbColor } from '../../interfaces/rgb-color';
 
 @Directive({
   selector: 'bs-color-picker',
@@ -14,11 +14,13 @@ import { RgbColor } from '../../interfaces';
   }],
   exportAs: 'bsColorPicker'
 })
-export class BsColorPickerValueAccessor implements OnDestroy, ControlValueAccessor {
+export class BsColorPickerValueAccessor implements AfterViewInit, OnDestroy, ControlValueAccessor {
 
   constructor(@Inject(forwardRef(() => BsColorPickerComponent)) private host: BsColorPickerComponent) {
+  }
 
-    this.host.selectedColorChange
+  ngAfterViewInit(): void {
+    this.host.colorWheel.selectedColorChange
       .pipe(takeUntil(this.destroyed$))
       .subscribe((selectedColor) => {
         const hex = this.rgb2hex(selectedColor);
@@ -44,16 +46,16 @@ export class BsColorPickerValueAccessor implements OnDestroy, ControlValueAccess
   }
 
   writeValue(value: string | null) {
-    if (this.host) {
+    if (this.host && this.host.colorWheel) {
       if (value) {
-        this.host.selectedColor = this.hex2rgb(value);
+        this.host.colorWheel.selectedColor = this.hex2rgb(value);
       }
     }
   }
 
   setDisabledState(isDisabled: boolean) {
-    if (this.host) {
-      this.host.disabled$.next(isDisabled);
+    if (this.host && this.host.colorWheel) {
+      this.host.colorWheel.disabled$.next(isDisabled);
     }
   }
   //#endregion
