@@ -1,6 +1,6 @@
 import { Directive, Inject, forwardRef, OnDestroy, AfterViewInit } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { Subject, takeUntil } from 'rxjs';
+import { combineLatest, Subject, takeUntil } from 'rxjs';
 import { BsColorPickerComponent } from '../../components/color-picker/color-picker.component';
 import { RgbColor } from '../../interfaces/rgb-color';
 
@@ -20,12 +20,29 @@ export class BsColorPickerValueAccessor implements AfterViewInit, OnDestroy, Con
   }
 
   ngAfterViewInit(): void {
-    this.host.colorWheel.selectedColorChange
+    // this.host.colorWheel.hsChange
+    //   .pipe(takeUntil(this.destroyed$))
+    //   .subscribe((selectedColor) => {
+    //     const hex = this.rgb2hex(selectedColor);
+    //     this.onValueChange && this.onValueChange(hex);
+    //   });
+    combineLatest([this.host.hs$, this.host.luminosity$])
       .pipe(takeUntil(this.destroyed$))
-      .subscribe((selectedColor) => {
-        const hex = this.rgb2hex(selectedColor);
+      .subscribe(([hs, luminosity]) => {
+        const rgb = this.hsl2rgb(hs.hue, hs.saturation, luminosity);
+        const hex = this.rgb2hex(rgb);
         this.onValueChange && this.onValueChange(hex);
-      });
+      })
+  }
+
+  public hsl2rgb(h: number, s: number, l: number) {
+    // s /= 100;
+    // l /= 100;
+    const k = (n: number) => (n + h / 30) % 12;
+    const a = s * Math.min(l, 1 - l);
+    const f = (n: number) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+    const retValue = <RgbColor>{ r: 255 * f(0), g: 255 * f(8), b: 255 * f(4) };
+    return retValue;
   }
 
   destroyed$ = new Subject();
@@ -48,7 +65,10 @@ export class BsColorPickerValueAccessor implements AfterViewInit, OnDestroy, Con
   writeValue(value: string | null) {
     if (this.host && this.host.colorWheel) {
       if (value) {
-        this.host.colorWheel.selectedColor = this.hex2rgb(value);
+        const rgb = this.hex2rgb(value);
+        const hsl = this.rgb2Hsl(rgb);
+        this.host.hs = { hue: hsl.h, saturation: hsl.s };
+        this.host.luminosity = hsl.l;
       }
     }
   }
@@ -71,6 +91,56 @@ export class BsColorPickerValueAccessor implements AfterViewInit, OnDestroy, Con
           b = parseInt(hex.slice(5, 7), 16);
 
     return { r, g, b };
+  }
+  /**
+   * Divide 1 to n, handling floating point errors.
+   * Ensures that the value is in between 0 and 1.
+   **/
+  private bound01(n: number, max: number) {
+    n = Math.min(max, Math.max(0, n));
+    if (Math.abs(n - max) < 0.000001) {
+      return 1;
+    } else {
+      return (n % max) / max;
+    }
+  }
+  private rgb2Hsl(color: RgbColor) {
+    const r01 = this.bound01(color.r, 255);
+    const g01 = this.bound01(color.g, 255);
+    const b01 = this.bound01(color.b, 255);
+
+    const max = Math.max(r01, g01, b01);
+    const min = Math.min(r01, g01, b01);
+
+    let h: number, s: number;
+    const l = (max + min) / 2;
+    if (max === min) {
+      h = s = 0;
+    } else {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+
+      switch (max) {
+        case r01:
+          h = (g01 - b01) / d + (g01 < b01 ? 6 : 0);
+          break;
+        case g01:
+          h = (b01 - r01) / d + 2;
+          break;
+        case b01:
+          h = (r01 - g01) / d + 4;
+          break;
+        default: {
+          throw 'Invalid operation';
+        }
+      }
+
+      h /= 6;
+    }
+
+    h *= 360;
+
+    return { h, s, l };
   }
   //#endregion
 }

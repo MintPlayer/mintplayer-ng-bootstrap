@@ -1,1 +1,8 @@
-<bs-color-wheel #wheel></bs-color-wheel>
+<ng-container *bsLet="disabled$ | async; let letDisabled">
+    <ng-container *bsLet="hs$ | async; let letHS">
+        <ng-container *bsLet="luminosity$ | async; let letLuminosity">
+            <bs-color-wheel [hs]="letHS!" (hsChange)="hs$.next($event)" [luminosity]="letLuminosity!" #wheel></bs-color-wheel>
+            <bs-luminosity-strip [hs]="letHS!" [luminosity]="letLuminosity!" (luminosityChange)="luminosity$.next($event)" #strip></bs-luminosity-strip>
+        </ng-container>
+    </ng-container>
+</ng-container>
