@@ -31,7 +31,11 @@ export class BsColorPickerValueAccessor implements AfterViewInit, OnDestroy, Con
       .subscribe(([hs, luminosity]) => {
         const rgb = this.hsl2rgb(hs.hue, hs.saturation, luminosity);
         const hex = this.rgb2hex(rgb);
-        this.onValueChange && this.onValueChange(hex);
+        console.log('value changed', hex);
+        if (hex.includes('.')) {
+          debugger;
+        }
+        setTimeout(() => this.onValueChange && this.onValueChange(hex), 10);
       })
   }
 
@@ -82,7 +86,7 @@ export class BsColorPickerValueAccessor implements AfterViewInit, OnDestroy, Con
 
   //#region Color Conversion
   private rgb2hex(rgb: RgbColor) {
-    return '#' + ((rgb.r << 16) + (rgb.g << 8) + rgb.b).toString(16).padStart(6, '0');
+    return '#' + (Math.round((rgb.r << 16) + (rgb.g << 8) + rgb.b)).toString(16).padStart(6, '0');
   }
 
   private hex2rgb(hex: string): RgbColor {

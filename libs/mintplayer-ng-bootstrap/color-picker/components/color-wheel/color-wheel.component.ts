@@ -92,7 +92,7 @@ export class BsColorWheelComponent implements AfterViewInit, OnDestroy {
             // gradient.addColorStop(0.5, `hsl(${x}, 100%, 50%`);
             // gradient.addColorStop(1, `hsl(${x}, 100%, 0%`);
 
-            gradient.addColorStop(0, `hsl(${x}, 0%, 100%)`);
+            gradient.addColorStop(0, `hsl(${x}, 0%, 50%)`);
             gradient.addColorStop(1, `hsl(${x}, 100%, 50%)`);
 
             this.canvasContext.fillStyle = gradient;
@@ -107,18 +107,17 @@ export class BsColorWheelComponent implements AfterViewInit, OnDestroy {
       .pipe(switchMap(([hs, shiftX, shiftY]) => {
         // const hs = this.hsl()
         return this.color2position(hs)
-          .pipe(map((position) => <[{x:number,y:number}, number, number]>[position, shiftX, shiftY]));
+          .pipe(map((position) => ({position, shiftX: (shiftX ?? 0), shiftY: (shiftY ?? 0)})));
       }))
-      .pipe(map(([position, shiftX, shiftY]) => {
-        if ((shiftX !== null) && (shiftY !== null) && position) {
-          return {
-            x: position.x + shiftX,
-            y: position.y + shiftY,
-          };
-        } else {
-          return position;
-        }
+      .pipe(map(({position, shiftX, shiftY}) => {
+        return {
+          x: position.x + shiftX,
+          y: position.y + shiftY,
+        };
       }));
+
+    this.hs$.pipe(takeUntil(this.destroyed$))
+      .subscribe((hs) => this.hsChange.emit(hs));
 
     // this.selectedColor$
     //   .pipe(takeUntil(this.destroyed$))
@@ -249,6 +248,7 @@ export class BsColorWheelComponent implements AfterViewInit, OnDestroy {
     if (this.canvasContext) {
       const imageData = this.canvasContext.getImageData(x, y, 1, 1).data;
       const hsl = this.rgb2Hsl({ r: imageData[0], g: imageData[1], b: imageData[2] });
+      console.log('hsl', hsl);
       return hsl;
     } else {
       return null;
@@ -267,18 +267,16 @@ export class BsColorWheelComponent implements AfterViewInit, OnDestroy {
 
         const theta = hs.hue * Math.PI / 180;
         const c = {
-          x: outerRadius * Math.cos(theta),
-          y: outerRadius * Math.sin(theta)
+          x: -outerRadius * Math.cos(theta),
+          y: -outerRadius * Math.sin(theta)
         };
-        // const ratio = 1 - Math.max(0, 2 * (hsl.luminosity - 0.5));
-        const ratio = 1 - Math.max(0, 2 * hs.saturation);
     
-        const d = ratio * (outerRadius - innerRadius) + innerRadius;
+        const d = hs.saturation * (outerRadius - innerRadius) + innerRadius;
         const o = { x: outerRadius, y: outerRadius };
     
         return {
-          x: o.x + d * (c.x / outerRadius),
-          y: o.y + d * (c.y / outerRadius),
+          x: o.x - d * (c.x / outerRadius),
+          y: o.y - d * (c.y / outerRadius),
         }
       }));
   }
@@ -297,7 +295,7 @@ export class BsColorWheelComponent implements AfterViewInit, OnDestroy {
     } else {
         const d = max - min;
         s = (l > 0.5) ? (d / (2 - max - min)) : (d / (max + min));
-
+        console.log('s', s);
         switch (max) {
             case r01: {
                 h = (g01 - b01) / d + ((g01 < b01) ? 6 : 0);
