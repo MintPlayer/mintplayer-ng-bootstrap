@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, EventEmitter, HostBinding, HostListener, Input, OnDestroy, Output, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, Directive, ElementRef, EventEmitter, HostBinding, HostListener, Input, OnDestroy, Output, ViewChild } from '@angular/core';
 import { BehaviorSubject, combineLatest, map, Observable, Subject, takeUntil } from 'rxjs';
 import { HS } from '../../interfaces/hs';
 
@@ -9,8 +9,8 @@ import { HS } from '../../interfaces/hs';
 })
 export class BsSliderComponent implements AfterViewInit, OnDestroy {
   constructor(private element: ElementRef<HTMLElement>) {
-    this.luminosity$.pipe(takeUntil(this.destroyed$))
-      .subscribe((luminosity) => this.luminosityChange.emit(luminosity));
+    this.value$.pipe(takeUntil(this.destroyed$))
+      .subscribe((value) => this.valueChange.emit(value));
     this.hs$.pipe(takeUntil(this.destroyed$)).subscribe((hs) => {
       if (this.canvasContext) {
         const width = this.canvas.nativeElement.width, height = this.canvas.nativeElement.height;
@@ -33,13 +33,13 @@ export class BsSliderComponent implements AfterViewInit, OnDestroy {
       }
     });
 
-    this.resultBackground$ = combineLatest([this.hs$, this.luminosity$])
-      .pipe(map(([hs, l]) => {
-        return `hsl(${hs.hue}, ${hs.saturation * 100}%, ${l * 100}%)`;
+    this.resultBackground$ = combineLatest([this.hs$, this.value$])
+      .pipe(map(([hs, v]) => {
+        return `hsl(${hs.hue}, ${hs.saturation * 100}%, ${v * 100}%)`;
       }));
 
-    this.thumbMarginLeft$ = this.luminosity$.pipe(map((luminosity) => {
-      const res = luminosity * element.nativeElement.clientWidth - 12;
+    this.thumbMarginLeft$ = this.value$.pipe(map((value) => {
+      const res = value * element.nativeElement.clientWidth - 12;
       return res;
     }));
   }
@@ -60,14 +60,14 @@ export class BsSliderComponent implements AfterViewInit, OnDestroy {
     this.hs$.next(value);
   }
   //#endregion
-  //#region Luminosity
-  luminosity$ = new BehaviorSubject<number>(0.5);
-  @Output() luminosityChange = new EventEmitter<number>();
-  public get luminosity() {
-    return this.luminosity$.value;
+  //#region Value
+  value$ = new BehaviorSubject<number>(0.5);
+  @Output() valueChange = new EventEmitter<number>();
+  public get value() {
+    return this.value$.value;
   }
-  @Input() public set luminosity(value: number) {
-    this.luminosity$.next(value);
+  @Input() public set value(value: number) {
+    this.value$.next(value);
   }
   //#endregion
 
@@ -106,7 +106,6 @@ export class BsSliderComponent implements AfterViewInit, OnDestroy {
         x: ev.touches[0].clientX - rect.left,
       };
     } else {
-      console.log('info', { rect: rect.left, ev: ev.clientX, w: this.canvas.nativeElement.width, el: this.element.nativeElement });
       co = {
         x: ev.clientX - rect.left,
       };
@@ -114,8 +113,7 @@ export class BsSliderComponent implements AfterViewInit, OnDestroy {
     
     const percent = co.x / this.canvas.nativeElement.clientWidth;
     const limited = Math.max(0, Math.min(1, percent));
-    console.log('percent', limited);
-    this.luminosity$.next(limited);
+    this.value$.next(limited);
   }
 
   destroyed$ = new Subject();
@@ -124,3 +122,9 @@ export class BsSliderComponent implements AfterViewInit, OnDestroy {
     this.destroyed$.complete();
   }
 }
+
+@Directive({ selector: 'bsThumb' })
+export class BsThumbDirective {}
+
+@Directive({ selector: 'bsTrack' })
+export class BsTrackDirective {}

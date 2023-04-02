@@ -5,7 +5,9 @@
         (touchmove)="onPointerMove($event)"
         (touchend)="onPointerUp($event)"
         #canvas></canvas>
-    <div class="thumb position-absolute" [style.background]="resultBackground$ | async" [style.margin-left.px]="thumbMarginLeft$ | async"
+    <div class="thumb position-absolute"
+        [style.background]="resultBackground$ | async"
+        [style.margin-left.px]="thumbMarginLeft$ | async"
         (mousedown)="onPointerDown($event)"
         (touchstart)="onPointerDown($event)"
         (touchmove)="onPointerMove($event)"

@@ -1,1 +1,4 @@
-<bs-slider [hs]="(hs$ | async)!" [luminosity]="(luminosity$ | async)!" (luminosityChange)="luminosityChange.emit($event)"></bs-slider>
+<bs-slider [hs]="(hs$ | async)!" [value]="(luminosity$ | async)!" (valueChange)="luminosityChange.emit($event)">
+    <div bsThumb></div>
+    <div bsTrack></div>
+</bs-slider>
