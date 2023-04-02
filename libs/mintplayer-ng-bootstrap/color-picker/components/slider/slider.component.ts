@@ -12,11 +12,6 @@ export class BsSliderComponent implements OnDestroy {
     this.value$.pipe(takeUntil(this.destroyed$))
       .subscribe((value) => this.valueChange.emit(value));
 
-    this.resultBackground$ = combineLatest([this.hs$, this.value$])
-      .pipe(map(([hs, v]) => {
-        return `hsl(${hs.hue}, ${hs.saturation * 100}%, ${v * 100}%)`;
-      }));
-
     this.thumbMarginLeft$ = this.value$.pipe(map((value) => {
       const res = value * element.nativeElement.clientWidth - 12;
       return res;
@@ -24,7 +19,6 @@ export class BsSliderComponent implements OnDestroy {
   }
 
   @HostBinding('class.d-block') dBlock = true;
-  @HostBinding('style.height.px') height = 20;
   @HostBinding('class.position-relative') positionRelative = true;
   thumbMarginLeft$: Observable<number>;
   @ViewChild('track') track!: ElementRef<HTMLDivElement>;
@@ -51,7 +45,6 @@ export class BsSliderComponent implements OnDestroy {
   //#endregion
 
   private isPointerDown = false;
-  resultBackground$: Observable<string>;
 
   onPointerDown(ev: MouseEvent | TouchEvent) {
     ev.preventDefault();
@@ -98,8 +91,14 @@ export class BsSliderComponent implements OnDestroy {
   }
 }
 
-@Directive({ selector: 'bsThumb' })
-export class BsThumbDirective {}
+@Directive({ selector: '[bsThumb]' })
+export class BsThumbDirective {
+  @HostBinding('class.thumb')
+  @HostBinding('class.position-absolute')
+  thumbClass = true;
+}
 
-@Directive({ selector: 'bsTrack' })
-export class BsTrackDirective {}
+@Directive({ selector: '[bsTrack]' })
+export class BsTrackDirective {
+  @HostBinding('class.track') trackClass = true;
+}

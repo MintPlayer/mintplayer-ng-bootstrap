@@ -2,7 +2,7 @@
     <!-- <ng-container *bsLet="hs$ | async; let letHS">
         <ng-container *bsLet="luminosity$ | async; let letLuminosity"> -->
             <bs-color-wheel [hs]="(hs$ | async)!" (hsChange)="hs$.next($event)" [luminosity]="(luminosity$ | async)!" #wheel></bs-color-wheel>
-            <bs-luminosity-strip [hs]="(hs$ | async)!" [luminosity]="(luminosity$ | async)!" (luminosityChange)="luminosity$.next($event)" class="mt-3" #strip></bs-luminosity-strip>
+            <bs-luminosity-strip [hs]="(hs$ | async)!" [luminosity]="(luminosity$ | async)!" (luminosityChange)="luminosity$.next($event)" class="d-block mt-2" #strip></bs-luminosity-strip>
         <!-- </ng-container>
     </ng-container> -->
 </ng-container>

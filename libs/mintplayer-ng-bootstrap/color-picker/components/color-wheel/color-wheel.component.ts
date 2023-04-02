@@ -1,5 +1,5 @@
 import { AfterViewInit, Component, ElementRef, EventEmitter, HostBinding, HostListener, Input, OnDestroy, Output, ViewChild } from '@angular/core';
-import { BehaviorSubject, combineLatest, debounceTime, map, Observable, Subject, switchMap, takeUntil } from 'rxjs';
+import { BehaviorSubject, combineLatest, debounceTime, map, take, Observable, Subject, switchMap, takeUntil } from 'rxjs';
 import { HS } from '../../interfaces/hs';
 import { HslColor } from '../../interfaces/hsl-color';
 import { RgbColor } from '../../interfaces/rgb-color';
@@ -85,13 +85,6 @@ export class BsColorWheelComponent implements AfterViewInit, OnDestroy {
             this.canvasContext.rotate(1 * Math.PI / 180);
             const gradient = this.canvasContext.createLinearGradient(innerRadius, 0, outerRadius, 0);
 
-            // gradient.addColorStop(0, `hsl(${x}, 100%, 100%)`);
-            // gradient.addColorStop(1, `hsl(${x}, 100%, 50%)`);
-
-            // gradient.addColorStop(0, `hsl(${x}, 100%, 100%)`);
-            // gradient.addColorStop(0.5, `hsl(${x}, 100%, 50%`);
-            // gradient.addColorStop(1, `hsl(${x}, 100%, 0%`);
-
             gradient.addColorStop(0, `hsl(${x}, 0%, 50%)`);
             gradient.addColorStop(1, `hsl(${x}, 100%, 50%)`);
 
@@ -105,7 +98,6 @@ export class BsColorWheelComponent implements AfterViewInit, OnDestroy {
 
     this.markerPosition$ = combineLatest([this.hs$, this.shiftX$, this.shiftY$])
       .pipe(switchMap(([hs, shiftX, shiftY]) => {
-        // const hs = this.hsl()
         return this.color2position(hs)
           .pipe(map((position) => ({position, shiftX: (shiftX ?? 0), shiftY: (shiftY ?? 0)})));
       }))
@@ -118,27 +110,10 @@ export class BsColorWheelComponent implements AfterViewInit, OnDestroy {
 
     this.hs$.pipe(takeUntil(this.destroyed$))
       .subscribe((hs) => this.hsChange.emit(hs));
-
-    // this.selectedColor$
-    //   .pipe(takeUntil(this.destroyed$))
-    //   .subscribe((selectedColor) => {
-    //     this.selectedColorChange.emit(selectedColor);
-    //   });
   }
 
   @HostBinding('class.position-relative') positionRelative = true;
   
-  // //#region selectedColor
-  // private selectedColor$ = new BehaviorSubject<RgbColor>({ r: 255, g: 255, b: 255 });
-  // @Output() public selectedColorChange = new EventEmitter<RgbColor>();
-  // @Input() public set selectedColor(value: RgbColor) {
-  //   this.selectedColor$.next(value);
-  // }
-  // public get selectedColor() {
-  //   return this.selectedColor$.value;
-  // }
-  // //#endregion
-
   @Input() set diameterRatio(value: number) {
     this.diameterRatio$.next(value);
   }
@@ -204,7 +179,7 @@ export class BsColorWheelComponent implements AfterViewInit, OnDestroy {
     if (!this.disabled$.value) {
       ev.preventDefault();
       this.isPointerDown = true;
-      this.updateColor(ev);
+      this.updateColor(ev, !('touches' in ev));
     }
   }
 
@@ -212,8 +187,13 @@ export class BsColorWheelComponent implements AfterViewInit, OnDestroy {
     if (this.isPointerDown) {
       ev.preventDefault();
       ev.stopPropagation();
-      this.updateColor(ev);
+      this.updateColor(ev, !('touches' in ev));
     }
+  }
+
+  @HostListener('document:mousemove', ['$event'])
+  onMouseMove(ev: MouseEvent) {
+    this.onPointerMove(ev);
   }
 
   @HostListener('document:mouseup', ['$event'])
@@ -221,38 +201,62 @@ export class BsColorWheelComponent implements AfterViewInit, OnDestroy {
     this.isPointerDown = false;
   }
 
-  private updateColor(ev: MouseEvent | TouchEvent) {
+  private updateColor(ev: MouseEvent | TouchEvent, subtract: boolean) {
     let co: { x: number, y: number };
+    const rect = this.canvas.nativeElement.getBoundingClientRect();
     if ('touches' in ev) {
-      const rect = this.canvas.nativeElement.getBoundingClientRect();
       co = {
         x: ev.touches[0].clientX - rect.left,
         y: ev.touches[0].clientY - rect.top,
       };
     } else {
       co = {
-        x: ev.offsetX,
-        y: ev.offsetY,
+        x: ev.clientX - (subtract ? rect.left : 0),
+        y: ev.clientY - (subtract ? rect.top : 0),
       };
     }
     
-    const color = this.position2color(co.x, co.y);
-    if (color) {
-      this.hs$.next({ hue: color.hue, saturation: color.saturation });
-    } else {
-      console.warn('Color is null');
-    }
+    this.position2color(co.x, co.y).pipe(take(1)).subscribe((color) => {
+      if (color) {
+        this.hs$.next({ hue: color.hue, saturation: color.saturation });
+      } else {
+        console.warn('Color is null');
+      }
+    });
+  }
+
+  private isInsideCircle(x: number, y: number) {
+    return combineLatest([this.squareSize$, this.shiftX$, this.shiftY$])
+      .pipe(map(([squareSize, shiftX, shiftY]) => {
+        // Position to the square
+        const sx: number = x - (shiftX ?? 0);
+        const sy = y - (shiftY ?? 0);
+        // Square radius
+        const sr = (squareSize ?? 0) / 2;
+
+        const radius = Math.sqrt(Math.pow(sx - sr, 2) + Math.pow(sy - sr, 2));
+        const angle = (Math.atan2(sr - sy, sr - sx) + Math.PI) % 360;
+        return {
+          inside: radius <= sr,
+          angle
+        };
+      }));
   }
 
   private position2color(x: number, y: number) {
-    if (this.canvasContext) {
-      const imageData = this.canvasContext.getImageData(x, y, 1, 1).data;
-      const hsl = this.rgb2Hsl({ r: imageData[0], g: imageData[1], b: imageData[2] });
-      console.log('hsl', hsl);
-      return hsl;
-    } else {
-      return null;
-    }
+    return this.isInsideCircle(x, y).pipe(map((result) => {
+      if (!this.canvasContext) {
+        return null;
+      }
+
+      if (result.inside) {
+        const imageData = this.canvasContext.getImageData(x, y, 1, 1).data;
+        const hsl = this.rgb2Hsl({ r: imageData[0], g: imageData[1], b: imageData[2] });
+        return hsl;
+      }
+
+      return <HslColor>{ hue: result.angle * 180 / Math.PI, saturation: 1, luminosity: 0.5 };
+    }));
   }
 
   private color2position(hs: HS) {
@@ -295,7 +299,6 @@ export class BsColorWheelComponent implements AfterViewInit, OnDestroy {
     } else {
         const d = max - min;
         s = (l > 0.5) ? (d / (2 - max - min)) : (d / (max + min));
-        console.log('s', s);
         switch (max) {
             case r01: {
                 h = (g01 - b01) / d + ((g01 < b01) ? 6 : 0);

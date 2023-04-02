@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output, AfterViewInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
-import { BehaviorSubject, Subject, takeUntil } from 'rxjs';
+import { BehaviorSubject, combineLatest, map, Observable, Subject, takeUntil } from 'rxjs';
 import { HS } from '../../interfaces/hs';
 
 @Component({
@@ -30,6 +30,11 @@ export class BsLuminosityStripComponent implements AfterViewInit, OnDestroy {
         this.canvasContext.fillRect(0, 0, width, height);
       }
     });
+    
+  this.resultBackground$ = combineLatest([this.hs$, this.luminosity$])
+    .pipe(map(([hs, luminosity]) => {
+      return `hsl(${hs.hue}, ${hs.saturation * 100}%, ${luminosity * 100}%)`;
+    }));
   }
 
   //#region HS
@@ -57,6 +62,8 @@ export class BsLuminosityStripComponent implements AfterViewInit, OnDestroy {
   ngAfterViewInit() {
     this.canvasContext = this.canvas.nativeElement.getContext('2d', { willReadFrequently: true });
   }
+
+  resultBackground$: Observable<string>;
 
   destroyed$ = new Subject();
   ngOnDestroy() {

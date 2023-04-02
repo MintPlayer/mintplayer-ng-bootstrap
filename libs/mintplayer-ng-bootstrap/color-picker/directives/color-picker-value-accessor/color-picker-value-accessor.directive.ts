@@ -31,10 +31,6 @@ export class BsColorPickerValueAccessor implements AfterViewInit, OnDestroy, Con
       .subscribe(([hs, luminosity]) => {
         const rgb = this.hsl2rgb(hs.hue, hs.saturation, luminosity);
         const hex = this.rgb2hex(rgb);
-        console.log('value changed', hex);
-        if (hex.includes('.')) {
-          debugger;
-        }
         setTimeout(() => this.onValueChange && this.onValueChange(hex), 10);
       })
   }
