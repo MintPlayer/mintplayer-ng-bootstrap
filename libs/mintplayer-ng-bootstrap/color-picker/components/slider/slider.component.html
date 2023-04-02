@@ -1,0 +1,13 @@
+<div class="wrapper d-block position-relative">
+    <canvas class="strip position-absolute w-100"
+        (mousedown)="onPointerDown($event)"
+        (touchstart)="onPointerDown($event)"
+        (touchmove)="onPointerMove($event)"
+        (touchend)="onPointerUp($event)"
+        #canvas></canvas>
+    <div class="thumb position-absolute" [style.background]="resultBackground$ | async" [style.margin-left.px]="thumbMarginLeft$ | async"
+        (mousedown)="onPointerDown($event)"
+        (touchstart)="onPointerDown($event)"
+        (touchmove)="onPointerMove($event)"
+        (touchend)="onPointerUp($event)"></div>
+</div>

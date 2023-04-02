@@ -6,13 +6,15 @@ import { BsColorPickerValueAccessor } from './directives/color-picker-value-acce
 import { BsColorPickerComponent } from './components/color-picker/color-picker.component';
 import { BsColorWheelComponent } from './components/color-wheel/color-wheel.component';
 import { BsLuminosityStripComponent } from './components/luminosity-strip/luminosity-strip.component';
+import { BsSliderComponent } from './components/slider/slider.component';
 
 @NgModule({
   declarations: [
     BsColorPickerComponent,
     BsColorPickerValueAccessor,
     BsColorWheelComponent,
-    BsLuminosityStripComponent
+    BsLuminosityStripComponent,
+    BsSliderComponent
   ],
   imports: [
     CommonModule,
@@ -23,7 +25,8 @@ import { BsLuminosityStripComponent } from './components/luminosity-strip/lumino
     BsColorPickerComponent,
     BsColorPickerValueAccessor,
     BsColorWheelComponent,
-    BsLuminosityStripComponent
+    BsLuminosityStripComponent,
+    BsSliderComponent
   ]
 })
 export class BsColorPickerModule { }
