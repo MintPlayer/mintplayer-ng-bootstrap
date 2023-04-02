@@ -11,17 +11,19 @@ export class BsAlphaStripComponent implements AfterViewInit, OnDestroy {
 
   constructor() {
     combineLatest([this.hs$, this.luminosity$]).pipe(takeUntil(this.destroyed$)).subscribe(([hs, luminosity]) => {
-      if (this.canvasContext) {
-        const width = this.canvas.nativeElement.width, height = this.canvas.nativeElement.height;
-        this.canvasContext.clearRect(0, 0, width, height);
-        this.canvasContext.save();
-        
-        const gradient = this.canvasContext.createLinearGradient(0, 0, width, 0);
-        gradient.addColorStop(0, `hsla(${hs.hue}, ${hs.saturation * 100}%, ${luminosity * 100}%, 0)`);
-        gradient.addColorStop(1, `hsla(${hs.hue}, ${hs.saturation * 100}%, ${luminosity * 100}%, 1)`);
-        this.canvasContext.fillStyle = gradient;
-        this.canvasContext.fillRect(0, 0, width, height);
-      }
+      setTimeout(() => {
+        if (this.canvasContext) {
+          const width = this.canvas.nativeElement.width, height = this.canvas.nativeElement.height;
+          this.canvasContext.clearRect(0, 0, width, height);
+          this.canvasContext.save();
+          
+          const gradient = this.canvasContext.createLinearGradient(0, 0, width, 0);
+          gradient.addColorStop(0, `hsla(${hs.hue}, ${hs.saturation * 100}%, ${luminosity * 100}%, 0)`);
+          gradient.addColorStop(1, `hsla(${hs.hue}, ${hs.saturation * 100}%, ${luminosity * 100}%, 1)`);
+          this.canvasContext.fillStyle = gradient;
+          this.canvasContext.fillRect(0, 0, width, height);
+        }
+      });
     });
 
     this.resultBackground$ = combineLatest([this.hs$, this.luminosity$, this.alpha$])
