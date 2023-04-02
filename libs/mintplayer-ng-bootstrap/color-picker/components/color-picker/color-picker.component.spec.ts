@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { BsLetModule } from '@mintplayer/ng-bootstrap/let';
+import { MockModule } from 'ng-mocks';
 
 import { BsColorPickerComponent } from './color-picker.component';
 
@@ -8,7 +10,13 @@ describe('ColorPickerComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ BsColorPickerComponent ]
+      declarations: [
+        // Unit to test
+        BsColorPickerComponent,
+        
+        // Mock dependencies
+        MockModule(BsLetModule),
+      ]
     })
     .compileComponents();
   });
