@@ -10,6 +10,7 @@ export class ColorPickerComponent {
 
   colors = Color;
   selectedColor = '#0000FF';
+  allowAlpha = false;
 
   setColor(color: string) {
     this.selectedColor = color;

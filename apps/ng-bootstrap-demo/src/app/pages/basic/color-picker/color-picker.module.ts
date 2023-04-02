@@ -7,6 +7,7 @@ import { BsColorPickerModule } from '@mintplayer/ng-bootstrap/color-picker';
 
 import { ColorPickerRoutingModule } from './color-picker-routing.module';
 import { ColorPickerComponent } from './color-picker.component';
+import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
 
 
 @NgModule({
@@ -19,6 +20,7 @@ import { ColorPickerComponent } from './color-picker.component';
     BsButtonTypeModule,
     BsButtonGroupModule,
     BsColorPickerModule,
+    BsToggleButtonModule,
     ColorPickerRoutingModule
   ]
 })

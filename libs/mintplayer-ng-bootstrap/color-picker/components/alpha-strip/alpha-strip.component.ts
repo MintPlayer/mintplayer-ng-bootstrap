@@ -3,39 +3,34 @@ import { BehaviorSubject, combineLatest, map, Observable, Subject, takeUntil } f
 import { HS } from '../../interfaces/hs';
 
 @Component({
-  selector: 'bs-luminosity-strip',
-  templateUrl: './luminosity-strip.component.html',
-  styleUrls: ['./luminosity-strip.component.scss']
+  selector: 'bs-alpha-strip',
+  templateUrl: './alpha-strip.component.html',
+  styleUrls: ['./alpha-strip.component.scss']
 })
-export class BsLuminosityStripComponent implements AfterViewInit, OnDestroy {
+export class BsAlphaStripComponent implements AfterViewInit, OnDestroy {
+
   constructor() {
-    this.hs$.pipe(takeUntil(this.destroyed$)).subscribe((hs) => {
+    combineLatest([this.hs$, this.luminosity$]).pipe(takeUntil(this.destroyed$)).subscribe(([hs, luminosity]) => {
       if (this.canvasContext) {
         const width = this.canvas.nativeElement.width, height = this.canvas.nativeElement.height;
         this.canvasContext.clearRect(0, 0, width, height);
         this.canvasContext.save();
-
-        // HSL
-        // - H: 0 - 359
-        // - S: "0%" - "100%"
-        // - L: "0%" - "50%" - "100%"
-
+        
         const gradient = this.canvasContext.createLinearGradient(0, 0, width, 0);
-        gradient.addColorStop(0, `hsl(${hs.hue}, ${hs.saturation * 100}%, 0%)`);
-        gradient.addColorStop(0.5, `hsl(${hs.hue}, ${hs.saturation * 100}%, 50%)`);
-        gradient.addColorStop(1, `hsl(${hs.hue}, ${hs.saturation * 100}%, 100%)`);
+        gradient.addColorStop(0, `hsla(${hs.hue}, ${hs.saturation * 100}%, ${luminosity * 100}%, 0)`);
+        gradient.addColorStop(1, `hsla(${hs.hue}, ${hs.saturation * 100}%, ${luminosity * 100}%, 1)`);
         this.canvasContext.fillStyle = gradient;
         this.canvasContext.fillRect(0, 0, width, height);
       }
     });
-    
-    this.resultBackground$ = combineLatest([this.hs$, this.luminosity$])
-      .pipe(map(([hs, luminosity]) => {
-        return `hsl(${hs.hue}, ${hs.saturation * 100}%, ${luminosity * 100}%)`;
+
+    this.resultBackground$ = combineLatest([this.hs$, this.luminosity$, this.alpha$])
+      .pipe(map(([hs, luminosity, alpha]) => {
+        return `hsla(${hs.hue}, ${hs.saturation * 100}%, ${luminosity * 100}%, ${alpha})`;
       }));
-      
-    this.luminosity$.pipe(takeUntil(this.destroyed$))
-      .subscribe((luminosity) => this.luminosityChange.emit(luminosity));
+
+    this.alpha$.pipe(takeUntil(this.destroyed$))
+      .subscribe((alpha) => this.alphaChange.emit(alpha));
   }
 
   //#region HS
@@ -49,7 +44,6 @@ export class BsLuminosityStripComponent implements AfterViewInit, OnDestroy {
   //#endregion
   //#region Luminosity
   luminosity$ = new BehaviorSubject<number>(0.5);
-  @Output() luminosityChange = new EventEmitter<number>();
   public get luminosity() {
     return this.luminosity$.value;
   }
@@ -57,9 +51,19 @@ export class BsLuminosityStripComponent implements AfterViewInit, OnDestroy {
     this.luminosity$.next(value);
   }
   //#endregion
-
+  //#region Alpha
+  alpha$ = new BehaviorSubject<number>(1);
+  @Output() alphaChange = new EventEmitter<number>();
+  public get alpha() {
+    return this.alpha$.value;
+  }
+  @Input() public set alpha(value: number) {
+    this.alpha$.next(value);
+  }
+  //#endregion
+  
   private canvasContext: CanvasRenderingContext2D | null = null;
-  @ViewChild('canvas') canvas!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('track') canvas!: ElementRef<HTMLCanvasElement>;
   ngAfterViewInit() {
     this.canvasContext = this.canvas.nativeElement.getContext('2d', { willReadFrequently: true });
   }
