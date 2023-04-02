@@ -7,31 +7,10 @@ import { HS } from '../../interfaces/hs';
   templateUrl: './slider.component.html',
   styleUrls: ['./slider.component.scss']
 })
-export class BsSliderComponent implements AfterViewInit, OnDestroy {
+export class BsSliderComponent implements OnDestroy {
   constructor(private element: ElementRef<HTMLElement>) {
     this.value$.pipe(takeUntil(this.destroyed$))
       .subscribe((value) => this.valueChange.emit(value));
-    this.hs$.pipe(takeUntil(this.destroyed$)).subscribe((hs) => {
-      if (this.canvasContext) {
-        const width = this.canvas.nativeElement.width, height = this.canvas.nativeElement.height;
-        this.canvasContext.clearRect(0, 0, width, height);
-        this.canvasContext.save();
-
-        // HSL
-        // - H: 0 - 359
-        // - S: "0%" - "100%"
-        // - L: "0%" - "50%" - "100%"
-
-        const gradient = this.canvasContext.createLinearGradient(0, 0, width, 0);
-        gradient.addColorStop(0, `hsl(${hs.hue}, ${hs.saturation * 100}%, 0%)`);
-        // gradient.addColorStop(0, `hsl(${hs.hue}, ${hs.saturation * 100}%, 10%)`);
-        gradient.addColorStop(0.5, `hsl(${hs.hue}, ${hs.saturation * 100}%, 50%)`);
-        // gradient.addColorStop(1, `hsl(${hs.hue}, ${hs.saturation * 100}%, 90%)`);
-        gradient.addColorStop(1, `hsl(${hs.hue}, ${hs.saturation * 100}%, 100%)`);
-        this.canvasContext.fillStyle = gradient;
-        this.canvasContext.fillRect(0, 0, width, height);
-      }
-    });
 
     this.resultBackground$ = combineLatest([this.hs$, this.value$])
       .pipe(map(([hs, v]) => {
@@ -44,12 +23,12 @@ export class BsSliderComponent implements AfterViewInit, OnDestroy {
     }));
   }
 
-  @ViewChild('canvas') canvas!: ElementRef<HTMLCanvasElement>;
-  private canvasContext: CanvasRenderingContext2D | null = null;
   @HostBinding('class.d-block') dBlock = true;
   @HostBinding('style.height.px') height = 20;
   @HostBinding('class.position-relative') positionRelative = true;
   thumbMarginLeft$: Observable<number>;
+  @ViewChild('track') track!: ElementRef<HTMLDivElement>;
+  @ViewChild('thumb') thumb!: ElementRef<HTMLDivElement>;
 
   //#region HS
   hs$ = new BehaviorSubject<HS>({ hue: 0, saturation: 0 });
@@ -74,10 +53,6 @@ export class BsSliderComponent implements AfterViewInit, OnDestroy {
   private isPointerDown = false;
   resultBackground$: Observable<string>;
 
-  ngAfterViewInit() {
-    this.canvasContext = this.canvas.nativeElement.getContext('2d', { willReadFrequently: true });
-  }
-
   onPointerDown(ev: MouseEvent | TouchEvent) {
     ev.preventDefault();
     this.isPointerDown = true;
@@ -100,7 +75,7 @@ export class BsSliderComponent implements AfterViewInit, OnDestroy {
 
   private updateColor(ev: MouseEvent | TouchEvent) {
     let co: { x: number };
-    const rect = this.canvas.nativeElement.getBoundingClientRect();
+    const rect = this.track.nativeElement.getBoundingClientRect();
     if ('touches' in ev) {
       co = {
         x: ev.touches[0].clientX - rect.left,
@@ -111,7 +86,7 @@ export class BsSliderComponent implements AfterViewInit, OnDestroy {
       };
     }
     
-    const percent = co.x / this.canvas.nativeElement.clientWidth;
+    const percent = co.x / this.track.nativeElement.clientWidth;
     const limited = Math.max(0, Math.min(1, percent));
     this.value$.next(limited);
   }

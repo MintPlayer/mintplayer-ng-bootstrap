@@ -1,17 +1,17 @@
 <div class="wrapper d-block position-relative">
-    <div
+    <div #track
         (mousedown)="onPointerDown($event)"
         (touchstart)="onPointerDown($event)"
         (touchmove)="onPointerMove($event)"
         (touchend)="onPointerUp($event)">
-        <canvas class="strip position-absolute w-100" #canvas></canvas>
+        <ng-content select="[bsTrack]"></ng-content>
     </div>
-    <div
+    <div #thumb
         (mousedown)="onPointerDown($event)"
         (touchstart)="onPointerDown($event)"
         (touchmove)="onPointerMove($event)"
         (touchend)="onPointerUp($event)"
         [style.margin-left.px]="thumbMarginLeft$ | async">
-        <div class="thumb position-absolute" [style.background]="resultBackground$ | async"></div>
+        <ng-content select="[bsThumb]"></ng-content>
     </div>
 </div>

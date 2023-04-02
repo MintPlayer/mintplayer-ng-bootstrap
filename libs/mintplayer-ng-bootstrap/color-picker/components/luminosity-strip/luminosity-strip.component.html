@@ -1,4 +1,6 @@
 <bs-slider [hs]="(hs$ | async)!" [value]="(luminosity$ | async)!" (valueChange)="luminosityChange.emit($event)">
-    <div bsTrack></div>
-    <div bsThumb></div>
+    <canvas bsTrack class="strip position-absolute w-100" #canvas></canvas>
+
+    <!--  [style.background]="resultBackground$ | async" -->
+    <div bsThumb class="thumb position-absolute"></div>
 </bs-slider>
