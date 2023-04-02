@@ -1,13 +1,15 @@
-import { AfterViewInit, Component, ElementRef, EventEmitter, Host, HostBinding, HostListener, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
-import { BehaviorSubject, combineLatest, debounce, debounceTime, filter, map, Observable, Subject, switchMap, takeUntil } from 'rxjs';
-import { RgbColor } from '../interfaces/rgb-color';
+import { AfterViewInit, Component, ElementRef, EventEmitter, HostBinding, HostListener, Input, OnDestroy, Output, ViewChild } from '@angular/core';
+import { BehaviorSubject, combineLatest, debounceTime, map, take, Observable, Subject, switchMap, takeUntil } from 'rxjs';
+import { HS } from '../../interfaces/hs';
+import { HslColor } from '../../interfaces/hsl-color';
+import { RgbColor } from '../../interfaces/rgb-color';
 
 @Component({
-  selector: 'bs-color-picker',
-  templateUrl: './color-picker.component.html',
-  styleUrls: ['./color-picker.component.scss']
+  selector: 'bs-color-wheel',
+  templateUrl: './color-wheel.component.html',
+  styleUrls: ['./color-wheel.component.scss']
 })
-export class BsColorPickerComponent implements AfterViewInit, OnDestroy {
+export class BsColorWheelComponent implements AfterViewInit, OnDestroy {
 
   constructor(private element: ElementRef<HTMLElement>) {
     // this.resizeObserver = new ResizeObserver((entries) => {
@@ -82,8 +84,10 @@ export class BsColorPickerComponent implements AfterViewInit, OnDestroy {
           for (let x = 0; x < 360; x++) {
             this.canvasContext.rotate(1 * Math.PI / 180);
             const gradient = this.canvasContext.createLinearGradient(innerRadius, 0, outerRadius, 0);
-            gradient.addColorStop(0, '#FFFFFF');
+
+            gradient.addColorStop(0, `hsl(${x}, 0%, 50%)`);
             gradient.addColorStop(1, `hsl(${x}, 100%, 50%)`);
+
             this.canvasContext.fillStyle = gradient;
             this.canvasContext.fillRect(innerRadius, 0, outerRadius - innerRadius, outerRadius / 50);
           }
@@ -92,42 +96,24 @@ export class BsColorPickerComponent implements AfterViewInit, OnDestroy {
         }
       });
 
-    this.markerPosition$ = combineLatest([this.selectedColor$, this.shiftX$, this.shiftY$])
-      .pipe(switchMap(([selectedColor, shiftX, shiftY]) => {
-        return this.color2position(selectedColor)
-          .pipe(map((position) => <[{x:number,y:number}, number, number]>[position, shiftX, shiftY]));
+    this.markerPosition$ = combineLatest([this.hs$, this.shiftX$, this.shiftY$])
+      .pipe(switchMap(([hs, shiftX, shiftY]) => {
+        return this.color2position(hs)
+          .pipe(map((position) => ({position, shiftX: (shiftX ?? 0), shiftY: (shiftY ?? 0)})));
       }))
-      .pipe(map(([position, shiftX, shiftY]) => {
-        if ((shiftX !== null) && (shiftY !== null) && position) {
-          return {
-            x: position.x + shiftX,
-            y: position.y + shiftY,
-          };
-        } else {
-          return position;
-        }
+      .pipe(map(({position, shiftX, shiftY}) => {
+        return {
+          x: position.x + shiftX,
+          y: position.y + shiftY,
+        };
       }));
 
-    this.selectedColor$
-      .pipe(takeUntil(this.destroyed$))
-      .subscribe((selectedColor) => {
-        this.selectedColorChange.emit(selectedColor);
-      });
+    this.hs$.pipe(takeUntil(this.destroyed$))
+      .subscribe((hs) => this.hsChange.emit(hs));
   }
 
   @HostBinding('class.position-relative') positionRelative = true;
   
-  //#region selectedColor
-  private selectedColor$ = new BehaviorSubject<RgbColor>({ r: 255, g: 255, b: 255 });
-  @Output() public selectedColorChange = new EventEmitter<RgbColor>();
-  @Input() public set selectedColor(value: RgbColor) {
-    this.selectedColor$.next(value);
-  }
-  public get selectedColor() {
-    return this.selectedColor$.value;
-  }
-  //#endregion
-
   @Input() set diameterRatio(value: number) {
     this.diameterRatio$.next(value);
   }
@@ -139,6 +125,26 @@ export class BsColorPickerComponent implements AfterViewInit, OnDestroy {
   }
   @ViewChild('canvas') canvas!: ElementRef<HTMLCanvasElement>;
   
+  //#region Hue/Luminosity
+  hs$ = new BehaviorSubject<HS>({ hue: 0, saturation: 0 });
+  @Output() hsChange = new EventEmitter<HS>();
+  public get hs() {
+    return this.hs$.value;
+  }
+  @Input() public set hs(value: HS) {
+    this.hs$.next(value);
+  }
+  //#endregion
+  //#region Luminosity
+  luminosity$ = new BehaviorSubject<number>(0);
+  public get luminosity() {
+    return this.luminosity$.value;
+  }
+  @Input() public set luminosity(value: number) {
+    this.luminosity$.next(value);
+  }
+  //#endregion
+
   // private resizeObserver: ResizeObserver;
   private canvasContext: CanvasRenderingContext2D | null = null;
   private isPointerDown = false;
@@ -173,7 +179,7 @@ export class BsColorPickerComponent implements AfterViewInit, OnDestroy {
     if (!this.disabled$.value) {
       ev.preventDefault();
       this.isPointerDown = true;
-      this.updateColor(ev);
+      this.updateColor(ev, !('touches' in ev));
     }
   }
 
@@ -181,8 +187,13 @@ export class BsColorPickerComponent implements AfterViewInit, OnDestroy {
     if (this.isPointerDown) {
       ev.preventDefault();
       ev.stopPropagation();
-      this.updateColor(ev);
+      this.updateColor(ev, !('touches' in ev));
     }
+  }
+
+  @HostListener('document:mousemove', ['$event'])
+  onMouseMove(ev: MouseEvent) {
+    this.onPointerMove(ev);
   }
 
   @HostListener('document:mouseup', ['$event'])
@@ -190,39 +201,65 @@ export class BsColorPickerComponent implements AfterViewInit, OnDestroy {
     this.isPointerDown = false;
   }
 
-  private updateColor(ev: MouseEvent | TouchEvent) {
+  private updateColor(ev: MouseEvent | TouchEvent, subtract: boolean) {
     let co: { x: number, y: number };
+    const rect = this.canvas.nativeElement.getBoundingClientRect();
     if ('touches' in ev) {
-      const rect = this.canvas.nativeElement.getBoundingClientRect();
       co = {
         x: ev.touches[0].clientX - rect.left,
         y: ev.touches[0].clientY - rect.top,
       };
     } else {
       co = {
-        x: ev.offsetX,
-        y: ev.offsetY,
+        x: ev.clientX - (subtract ? rect.left : 0),
+        y: ev.clientY - (subtract ? rect.top : 0),
       };
     }
     
-    const color = this.position2color(co.x, co.y);
-    if (color) {
-      this.selectedColor$.next(color);
-    } else {
-      console.warn('Color is null');
-    }
+    this.position2color(co.x, co.y).pipe(take(1)).subscribe((color) => {
+      if (color) {
+        this.hs$.next({ hue: color.hue, saturation: color.saturation });
+      } else {
+        console.warn('Color is null');
+      }
+    });
+  }
+
+  private isInsideCircle(x: number, y: number) {
+    return combineLatest([this.squareSize$, this.shiftX$, this.shiftY$])
+      .pipe(map(([squareSize, shiftX, shiftY]) => {
+        // Position to the square
+        const sx: number = x - (shiftX ?? 0);
+        const sy = y - (shiftY ?? 0);
+        // Square radius
+        const sr = (squareSize ?? 0) / 2;
+
+        const radius = Math.sqrt(Math.pow(sx - sr, 2) + Math.pow(sy - sr, 2));
+        const angle = (Math.atan2(sr - sy, sr - sx) + Math.PI) % 360;
+        return {
+          inside: radius <= sr,
+          angle
+        };
+      }));
   }
 
   private position2color(x: number, y: number) {
-    if (this.canvasContext) {
-      const imageData = this.canvasContext.getImageData(x, y, 1, 1).data;
-      return <RgbColor>{ r: imageData[0], g: imageData[1], b: imageData[2] };
-    } else {
-      return null;
-    }
+    return this.isInsideCircle(x, y).pipe(map((result) => {
+      if (!this.canvasContext) {
+        return null;
+      }
+
+      if (result.inside) {
+        const imageData = this.canvasContext.getImageData(x, y, 1, 1).data;
+        const hsl = this.rgb2Hsl({ r: imageData[0], g: imageData[1], b: imageData[2] });
+        return hsl;
+      }
+
+      return <HslColor>{ hue: result.angle * 180 / Math.PI, saturation: 1, luminosity: 0.5 };
+    }));
   }
 
-  private color2position(color: RgbColor) {
+  private color2position(hs: HS) {
     return combineLatest([this.innerRadius$, this.outerRadius$])
       .pipe(map(([innerRadius, outerRadius]) => {
         if (innerRadius === null) {
@@ -232,20 +269,18 @@ export class BsColorPickerComponent implements AfterViewInit, OnDestroy {
           outerRadius = 100;
         }
 
-        const { h, s, l } = this.rgb2Hsl(color);
-        const theta = h * Math.PI / 180;
+        const theta = hs.hue * Math.PI / 180;
         const c = {
-          x: outerRadius * Math.cos(theta),
-          y: outerRadius * Math.sin(theta)
+          x: -outerRadius * Math.cos(theta),
+          y: -outerRadius * Math.sin(theta)
         };
-        const ratio = 1 - Math.max(0, 2 * (l - 0.5));
     
-        const d = ratio * (outerRadius - innerRadius) + innerRadius;
+        const d = hs.saturation * (outerRadius - innerRadius) + innerRadius;
         const o = { x: outerRadius, y: outerRadius };
     
         return {
-          x: o.x + d * (c.x / outerRadius),
-          y: o.y + d * (c.y / outerRadius),
+          x: o.x - d * (c.x / outerRadius),
+          y: o.y - d * (c.y / outerRadius),
         }
       }));
   }
@@ -264,7 +299,6 @@ export class BsColorPickerComponent implements AfterViewInit, OnDestroy {
     } else {
         const d = max - min;
         s = (l > 0.5) ? (d / (2 - max - min)) : (d / (max + min));
-
         switch (max) {
             case r01: {
                 h = (g01 - b01) / d + ((g01 < b01) ? 6 : 0);
@@ -285,7 +319,7 @@ export class BsColorPickerComponent implements AfterViewInit, OnDestroy {
     
     h *= 360;
 
-    return { h, s, l };
+    return <HslColor>{ hue: h, saturation: s, luminosity: l };
   }
 
   /**

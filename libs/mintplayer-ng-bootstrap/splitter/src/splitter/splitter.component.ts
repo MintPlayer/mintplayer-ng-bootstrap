@@ -120,7 +120,6 @@ export class BsSplitterComponent {
   }
 
   startResizeTouch(ev: TouchEvent, indexBefore: number, indexAfter: number, divider: HTMLDivElement) {
-    console.log('start touch', divider);
     if (ev.cancelable) {
       ev.preventDefault();
       this.touchedDivider$.next(divider);
@@ -190,7 +189,6 @@ export class BsSplitterComponent {
   onTouchEnd(ev: TouchEvent) {
     this.touchedDivider$.next(null);
     this.onResizeUp();
-    console.log('end touch', null);
   }
 
   onResizeUp() {

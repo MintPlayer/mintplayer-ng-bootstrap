@@ -1,8 +1,8 @@
 <canvas
+    class="d-block"
     [width]="width$ | async"
     [height]="height$ | async"
     (mousedown)="onPointerDown($event)"
-    (mousemove)="onPointerMove($event)"
     (touchstart)="onPointerDown($event)"
     (touchmove)="onPointerMove($event)"
     (touchend)="onPointerUp($event)"

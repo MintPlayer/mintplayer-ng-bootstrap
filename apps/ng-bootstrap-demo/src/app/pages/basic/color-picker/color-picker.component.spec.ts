@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { BsButtonGroupModule } from '@mintplayer/ng-bootstrap/button-group';
 import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
 import { BsColorPickerModule } from '@mintplayer/ng-bootstrap/color-picker';
+import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
 import { MockModule } from 'ng-mocks';
 
 import { ColorPickerComponent } from './color-picker.component';
@@ -16,10 +17,14 @@ describe('ColorPickerComponent', () => {
       imports: [
         FormsModule,
         MockModule(BsColorPickerModule),
+        MockModule(BsToggleButtonModule),
         MockModule(BsButtonGroupModule),
         MockModule(BsButtonTypeModule)
       ],
-      declarations: [ ColorPickerComponent ]
+      declarations: [
+        // Unit to test
+        ColorPickerComponent,
+      ]
     })
     .compileComponents();
   });

@@ -1,0 +1,17 @@
+<div class="wrapper d-block position-relative">
+    <div #track class="track2"
+        (mousedown)="onPointerDown($event)"
+        (touchstart)="onPointerDown($event)"
+        (touchmove)="onPointerMove($event)"
+        (touchend)="onPointerUp($event)">
+        <ng-content select="[bsTrack]"></ng-content>
+    </div>
+    <div #thumb
+        (mousedown)="onPointerDown($event)"
+        (touchstart)="onPointerDown($event)"
+        (touchmove)="onPointerMove($event)"
+        (touchend)="onPointerUp($event)"
+        [style.margin-left.px]="thumbMarginLeft$ | async">
+        <ng-content select="[bsThumb]"></ng-content>
+    </div>
+</div>

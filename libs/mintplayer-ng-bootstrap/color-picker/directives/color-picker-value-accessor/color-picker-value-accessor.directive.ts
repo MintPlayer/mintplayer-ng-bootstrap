@@ -1,8 +1,8 @@
-import { Directive, Inject, forwardRef, OnDestroy } from '@angular/core';
+import { Directive, Inject, forwardRef, OnDestroy, AfterViewInit } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { Subject, takeUntil } from 'rxjs';
-import { BsColorPickerComponent } from '../../component/color-picker.component';
-import { RgbColor } from '../../interfaces';
+import { combineLatest, Subject, takeUntil } from 'rxjs';
+import { BsColorPickerComponent } from '../../components/color-picker/color-picker.component';
+import { RgbColor } from '../../interfaces/rgb-color';
 
 @Directive({
   selector: 'bs-color-picker',
@@ -14,16 +14,35 @@ import { RgbColor } from '../../interfaces';
   }],
   exportAs: 'bsColorPicker'
 })
-export class BsColorPickerValueAccessor implements OnDestroy, ControlValueAccessor {
+export class BsColorPickerValueAccessor implements AfterViewInit, OnDestroy, ControlValueAccessor {
 
   constructor(@Inject(forwardRef(() => BsColorPickerComponent)) private host: BsColorPickerComponent) {
+  }
 
-    this.host.selectedColorChange
+  ngAfterViewInit(): void {
+    // this.host.colorWheel.hsChange
+    //   .pipe(takeUntil(this.destroyed$))
+    //   .subscribe((selectedColor) => {
+    //     const hex = this.rgb2hex(selectedColor);
+    //     this.onValueChange && this.onValueChange(hex);
+    //   });
+    combineLatest([this.host.hs$, this.host.luminosity$])
       .pipe(takeUntil(this.destroyed$))
-      .subscribe((selectedColor) => {
-        const hex = this.rgb2hex(selectedColor);
-        this.onValueChange && this.onValueChange(hex);
-      });
+      .subscribe(([hs, luminosity]) => {
+        const rgb = this.hsl2rgb(hs.hue, hs.saturation, luminosity);
+        const hex = this.rgb2hex(rgb);
+        setTimeout(() => this.onValueChange && this.onValueChange(hex), 10);
+      })
+  }
+
+  public hsl2rgb(h: number, s: number, l: number) {
+    // s /= 100;
+    // l /= 100;
+    const k = (n: number) => (n + h / 30) % 12;
+    const a = s * Math.min(l, 1 - l);
+    const f = (n: number) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+    const retValue = <RgbColor>{ r: 255 * f(0), g: 255 * f(8), b: 255 * f(4) };
+    return retValue;
   }
 
   destroyed$ = new Subject();
@@ -44,23 +63,26 @@ export class BsColorPickerValueAccessor implements OnDestroy, ControlValueAccess
   }
 
   writeValue(value: string | null) {
-    if (this.host) {
+    if (this.host && this.host.colorWheel) {
       if (value) {
-        this.host.selectedColor = this.hex2rgb(value);
+        const rgb = this.hex2rgb(value);
+        const hsl = this.rgb2Hsl(rgb);
+        this.host.hs = { hue: hsl.h, saturation: hsl.s };
+        this.host.luminosity = hsl.l;
       }
     }
   }
 
   setDisabledState(isDisabled: boolean) {
-    if (this.host) {
-      this.host.disabled$.next(isDisabled);
+    if (this.host && this.host.colorWheel) {
+      this.host.colorWheel.disabled$.next(isDisabled);
     }
   }
   //#endregion
 
   //#region Color Conversion
   private rgb2hex(rgb: RgbColor) {
-    return '#' + ((rgb.r << 16) + (rgb.g << 8) + rgb.b).toString(16).padStart(6, '0');
+    return '#' + (Math.round((rgb.r << 16) + (rgb.g << 8) + rgb.b)).toString(16).padStart(6, '0');
   }
 
   private hex2rgb(hex: string): RgbColor {
@@ -69,6 +91,56 @@ export class BsColorPickerValueAccessor implements OnDestroy, ControlValueAccess
           b = parseInt(hex.slice(5, 7), 16);
 
     return { r, g, b };
+  }
+  /**
+   * Divide 1 to n, handling floating point errors.
+   * Ensures that the value is in between 0 and 1.
+   **/
+  private bound01(n: number, max: number) {
+    n = Math.min(max, Math.max(0, n));
+    if (Math.abs(n - max) < 0.000001) {
+      return 1;
+    } else {
+      return (n % max) / max;
+    }
+  }
+  private rgb2Hsl(color: RgbColor) {
+    const r01 = this.bound01(color.r, 255);
+    const g01 = this.bound01(color.g, 255);
+    const b01 = this.bound01(color.b, 255);
+
+    const max = Math.max(r01, g01, b01);
+    const min = Math.min(r01, g01, b01);
+
+    let h: number, s: number;
+    const l = (max + min) / 2;
+    if (max === min) {
+      h = s = 0;
+    } else {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+
+      switch (max) {
+        case r01:
+          h = (g01 - b01) / d + (g01 < b01 ? 6 : 0);
+          break;
+        case g01:
+          h = (b01 - r01) / d + 2;
+          break;
+        case b01:
+          h = (r01 - g01) / d + 4;
+          break;
+        default: {
+          throw 'Invalid operation';
+        }
+      }
+
+      h /= 6;
+    }
+
+    h *= 360;
+
+    return { h, s, l };
   }
   //#endregion
 }
