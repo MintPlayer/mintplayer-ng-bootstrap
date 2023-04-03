@@ -30,4 +30,4 @@ jobs:
 
     - name: Test
       # run: npm run test -- --watch=false --browsers=ChromeHeadless
-      run: npm run nx affected -- --target=test --base=master --watch=false
+      run: npm run nx affected -- --target=test --base=master --head=HEAD --watch=false
