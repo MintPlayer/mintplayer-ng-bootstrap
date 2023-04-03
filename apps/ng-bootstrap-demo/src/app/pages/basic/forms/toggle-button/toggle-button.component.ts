@@ -13,7 +13,7 @@ export class ToggleButtonComponent {
 
   // Checkbox - Single mode
   isAllDisabled = false;
-  isHstsEnabled = false;
+  isHstsEnabled = true;
   isCrossPlatform = false;
 
   // Radio

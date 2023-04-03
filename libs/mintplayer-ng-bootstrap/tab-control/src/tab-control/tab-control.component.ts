@@ -28,6 +28,7 @@ export class BsTabControlComponent implements OnDestroy {
       });
     this.topTabs$ = this.tabsPosition$.pipe(map(position => position === 'top'));
     this.bottomTabs$ = this.tabsPosition$.pipe(map(position => position === 'bottom'));
+    this.disableDragDrop$ = this.allowDragDrop$.pipe(map(allow => !allow));
   }
 
   @HostBinding('class.d-block') dBlock = true;
@@ -50,6 +51,7 @@ export class BsTabControlComponent implements OnDestroy {
   tabControlName$: Observable<string>;
   topTabs$: Observable<boolean>;
   bottomTabs$: Observable<boolean>;
+  disableDragDrop$: Observable<boolean>;
   static tabControlCounter = 0;
   tabCounter = 0;
   destroyed$ = new Subject()
@@ -70,6 +72,15 @@ export class BsTabControlComponent implements OnDestroy {
   }
   @Input() public set tabsPosition(value: BsTabsPosition) {
     this.tabsPosition$.next(value);
+  }
+  //#endregion
+  //#region AllowDragDrop
+  allowDragDrop$ = new BehaviorSubject<boolean>(false);
+  public get allowDragDrop() {
+    return this.allowDragDrop$.value;
+  }
+  @Input() public set allowDragDrop(value: boolean) {
+    this.allowDragDrop$.next(value);
   }
   //#endregion
 

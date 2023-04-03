@@ -5,6 +5,7 @@
 			[cdkDropListConnectedTo]="[]"
 			[cdkDropListOrientation]="'horizontal'"
 			(cdkDropListDropped)="moveTab($event)"
+			[cdkDropListDisabled]="disableDragDrop$ | async"
 			class="nav nav-tabs flex-nowrap overflow-x-auto overflow-y-hidden">
 			<ng-container *ngFor="let tab of orderedTabPages">
 				<span class="nav-item" (click)="setActiveTab(tab)" *ngIf="!!tab.headerTemplate" cdkDrag [cdkDragBoundary]="dragBoundarySelector" [cdkDragStartDelay]="1000">
@@ -24,6 +25,7 @@
 			[cdkDropListConnectedTo]="[]"
 			[cdkDropListOrientation]="'horizontal'"
 			(cdkDropListDropped)="moveTab($event)"
+			[cdkDropListDisabled]="disableDragDrop$ | async"
 			class="nav nav-tabs flex-nowrap overflow-x-auto overflow-y-hidden">
 			<ng-container *ngFor="let tab of orderedTabPages">
 				<span class="nav-item" (click)="setActiveTab(tab)" *ngIf="!!tab.headerTemplate" cdkDrag [cdkDragBoundary]="dragBoundarySelector" [cdkDragStartDelay]="1000">
