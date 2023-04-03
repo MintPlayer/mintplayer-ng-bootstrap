@@ -11,6 +11,7 @@
         (touchstart)="onPointerDown($event)"
         (touchmove)="onPointerMove($event)"
         (touchend)="onPointerUp($event)"
+        [class]="cursorClass$ | async"
         [style.margin-left.px]="thumbMarginLeft$ | async">
         <ng-content select="[bsThumb]"></ng-content>
     </div>

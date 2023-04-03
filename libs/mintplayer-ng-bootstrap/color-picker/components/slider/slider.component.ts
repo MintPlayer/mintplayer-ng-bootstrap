@@ -16,6 +16,10 @@ export class BsSliderComponent implements OnDestroy {
       const res = value * element.nativeElement.clientWidth - 12;
       return res;
     }));
+
+    this.cursorClass$ = this.isPointerDown$.pipe(map((isPointerDown) => {
+      return isPointerDown ? 'cursor-grabbing' : 'cursor-grab';
+    }));
   }
 
   @HostBinding('class.d-block') dBlock = true;
@@ -35,17 +39,18 @@ export class BsSliderComponent implements OnDestroy {
   }
   //#endregion
 
-  private isPointerDown = false;
+  private isPointerDown$ = new BehaviorSubject<boolean>(false);
+  cursorClass$: Observable<string>;
 
   onPointerDown(ev: MouseEvent | TouchEvent) {
     ev.preventDefault();
-    this.isPointerDown = true;
+    this.isPointerDown$.next(true);
     this.updateColor(ev);
   }
 
   @HostListener('document:mousemove', ['$event'])
   onPointerMove(ev: MouseEvent | TouchEvent) {
-    if (this.isPointerDown) {
+    if (this.isPointerDown$.value) {
       ev.preventDefault();
       ev.stopPropagation();
       this.updateColor(ev);
@@ -54,7 +59,7 @@ export class BsSliderComponent implements OnDestroy {
 
   @HostListener('document:mouseup', ['$event'])
   onPointerUp(ev: MouseEvent | TouchEvent) {
-    this.isPointerDown = false;
+    this.isPointerDown$.next(false);
   }
 
   private updateColor(ev: MouseEvent | TouchEvent) {
