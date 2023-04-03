@@ -1,13 +1,44 @@
 <h1 class="text-center">Color picker</h1>
-<bs-color-picker class="d-inline-block" [(ngModel)]="selectedColor" [width]="400" [allowAlpha]="allowAlpha"></bs-color-picker>
-<br>
-<bs-button-group>
-    <button (click)="setColor('#FF0000')" [color]="colors.primary">Set red</button>
-    <button (click)="setColor('#00FF00')" [color]="colors.primary">Set green</button>
-    <button (click)="setColor('#0000FF')" [color]="colors.primary">Set blue</button>
-</bs-button-group>
-<br>
-<bs-toggle-button [(ngModel)]="allowAlpha">Allow alpha</bs-toggle-button>
-<br>
-<div class="d-block mt-3">Native color picker:</div>
-<input type="color" [(ngModel)]="selectedColor">
+<h2>Demo</h2>
+<bs-grid>
+    <div bsRow>
+        <div [bsColumn]="{md: 6}">
+            <bs-color-picker class="d-inline-block mb-5" [(ngModel)]="selectedColor" [(alpha)]="selectedAlpha" [width]="400" [allowAlpha]="allowAlpha"></bs-color-picker>
+        </div>
+        <div [bsColumn]="{md: 6}">
+            <div bsRow class="mb-3">
+                <div bsColumn>
+                    <bs-button-group>
+                        <button (click)="setColor('#FF0000')" [color]="colors.primary">Set red</button>
+                        <button (click)="setColor('#00FF00')" [color]="colors.primary">Set green</button>
+                        <button (click)="setColor('#0000FF')" [color]="colors.primary">Set blue</button>
+                    </bs-button-group>
+                </div>
+            </div>
+            <div bsRow class="mb-3">
+                <div bsColumn>
+                    <bs-toggle-button [(ngModel)]="allowAlpha">Allow alpha</bs-toggle-button>
+                </div>
+            </div>
+            <div bsRow>
+                <div bsColumn>
+                    <span class="me-2 align-middle">Native color picker:</span>
+                    <input type="color" [(ngModel)]="selectedColor" class="align-middle">
+                </div>
+                <div bsColumn *ngIf="allowAlpha">
+                    <span class="me-2 align-middle">
+                        <span>Alpha:</span>
+                        &nbsp;
+                        <span>{{ selectedAlpha | number: '1.2' }}</span>
+                    </span>
+                    <bs-range [(ngModel)]="selectedAlpha" [min]="0" [max]="1" [step]="0.01"></bs-range>
+                </div>
+            </div>
+        </div>
+    </div>
+</bs-grid>
+<h2>Features</h2>
+<bs-list-group>
+    <bs-list-group-item>Support for alpha-channel</bs-list-group-item>
+    <bs-list-group-item><code>[(ngModel)]</code> - Supports the <code>FormsModule</code></bs-list-group-item>
+</bs-list-group>

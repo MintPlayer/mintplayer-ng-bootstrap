@@ -30,7 +30,7 @@ jobs:
       run: npm run build -- --configuration=production
 
     - name: Test
-      run: npm run test -- --watch=false --browsers=ChromeHeadless --coverage --coverageReporters=lcovonly
+      run: npm run test -- --watch=false --browsers=ChromeHeadless --coverage --coverageReporters=lcovonly --parallel=15
 
     ## ng-animations
     - name: Upload code coverage report
