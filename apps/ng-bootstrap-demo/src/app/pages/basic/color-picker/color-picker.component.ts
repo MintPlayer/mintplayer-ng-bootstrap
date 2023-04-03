@@ -9,11 +9,13 @@ import { Color } from '@mintplayer/ng-bootstrap';
 export class ColorPickerComponent {
 
   colors = Color;
-  selectedColor = '#0000FF';
   allowAlpha = false;
+  selectedColor = '#0000FF';
+  selectedAlpha = 1;
 
   setColor(color: string) {
     this.selectedColor = color;
+    this.selectedAlpha = 1;
   }
 
 }
