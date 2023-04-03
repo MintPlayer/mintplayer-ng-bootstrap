@@ -3,6 +3,8 @@ import { FormsModule } from '@angular/forms';
 import { BsButtonGroupModule } from '@mintplayer/ng-bootstrap/button-group';
 import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
 import { BsColorPickerModule } from '@mintplayer/ng-bootstrap/color-picker';
+import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
 import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
 import { MockModule } from 'ng-mocks';
 
@@ -16,6 +18,8 @@ describe('ColorPickerComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         FormsModule,
+        MockModule(BsGridModule),
+        MockModule(BsListGroupModule),
         MockModule(BsColorPickerModule),
         MockModule(BsToggleButtonModule),
         MockModule(BsButtonGroupModule),
