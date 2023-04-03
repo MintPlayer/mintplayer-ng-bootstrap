@@ -9,4 +9,5 @@ import { BsTabsPosition } from '@mintplayer/ng-bootstrap/tab-control';
 export class TabControlComponent {
   tabsPosition: BsTabsPosition = 'top';
   numbers = Array.from(Array(20).keys()).map(i => i + 1);
+  allowDragDrop = true;
 }
