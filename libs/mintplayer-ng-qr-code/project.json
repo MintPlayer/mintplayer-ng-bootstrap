@@ -30,6 +30,9 @@
         "{workspaceRoot}/coverage/libs/mintplayer-ng-qr-code"
       ],
       "options": {
+        "codeCoverage": true,
+        "coverageReporters": ["lcovonly"],
+        "coverageDirectory": "coverage/libs/mintplayer-ng-qr-code",
         "jestConfig": "libs/mintplayer-ng-qr-code/jest.config.ts",
         "passWithNoTests": true
       }

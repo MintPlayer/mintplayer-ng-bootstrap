@@ -25,6 +25,9 @@
       "executor": "@nrwl/jest:jest",
       "outputs": ["coverage/libs/mintplayer-ng-swiper"],
       "options": {
+        "codeCoverage": true,
+        "coverageReporters": ["lcovonly"],
+        "coverageDirectory": "coverage/libs/mintplayer-ng-swiper",
         "jestConfig": "libs/mintplayer-ng-swiper/jest.config.ts",
         "passWithNoTests": true
       }

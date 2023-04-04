@@ -44,6 +44,9 @@
         "{workspaceRoot}/coverage/{projectRoot}"
       ],
       "options": {
+        "codeCoverage": true,
+        "coverageReporters": ["lcovonly"],
+        "coverageDirectory": "coverage/libs/mintplayer-pagination",
         "jestConfig": "libs/mintplayer-pagination/jest.config.ts",
         "passWithNoTests": true
       }
