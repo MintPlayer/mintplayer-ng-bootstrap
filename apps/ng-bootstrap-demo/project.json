@@ -103,6 +103,9 @@
         "{workspaceRoot}/coverage/apps/ng-bootstrap-demo"
       ],
       "options": {
+        "codeCoverage": true,
+        "coverageReporters": ["lcovonly"],
+        "coverageDirectory": "coverage/apps/ng-bootstrap-demo",
         "jestConfig": "apps/ng-bootstrap-demo/jest.config.ts",
         "passWithNoTests": true
       }

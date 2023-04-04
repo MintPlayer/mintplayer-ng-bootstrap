@@ -30,6 +30,9 @@
         "{workspaceRoot}/coverage/libs/mintplayer-ng-animations"
       ],
       "options": {
+        "codeCoverage": true,
+        "coverageReporters": ["lcovonly"],
+        "coverageDirectory": "coverage/libs/mintplayer-ng-animations",
         "jestConfig": "libs/mintplayer-ng-animations/jest.config.ts",
         "passWithNoTests": true
       }

@@ -47,6 +47,9 @@
         "{workspaceRoot}/coverage/libs/mintplayer-dijkstra"
       ],
       "options": {
+        "codeCoverage": true,
+        "coverageReporters": ["lcovonly"],
+        "coverageDirectory": "coverage/libs/mintplayer-dijkstra",
         "jestConfig": "libs/mintplayer-dijkstra/jest.config.ts",
         "passWithNoTests": true
       }

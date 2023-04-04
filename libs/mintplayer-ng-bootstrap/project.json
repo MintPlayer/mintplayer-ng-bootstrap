@@ -30,6 +30,9 @@
         "{workspaceRoot}/coverage/libs/mintplayer-ng-bootstrap"
       ],
       "options": {
+        "codeCoverage": true,
+        "coverageReporters": ["lcovonly"],
+        "coverageDirectory": "coverage/libs/mintplayer-ng-bootstrap",
         "jestConfig": "libs/mintplayer-ng-bootstrap/jest.config.ts",
         "passWithNoTests": true
       }
