@@ -35,6 +35,8 @@ export class BsDockPanelHeaderComponent {
       if (!this.isLayoutDetached) {
         this.isLayoutDetached = true;
         this.dock.layout$.pipe(take(1)).subscribe((layout) => {
+          this.removeFromPane(layout.rootPane, this.dockPanel);
+
           layout.floatingPanes.push(new BsFloatingPane({
             pane: new BsTabGroupPane({
               panes: [
@@ -44,8 +46,10 @@ export class BsDockPanelHeaderComponent {
               ]
             }) 
           }));
+          this.dock.layout$.next(layout);
 
-          this.removeFromPane(layout.rootPane, this.dockPanel);
+          // this.removeFromPane(layout.rootPane, this.dockPanel);
+          // this.dock.layout$.next(layout);
         });
       }
     }
@@ -56,28 +60,52 @@ export class BsDockPanelHeaderComponent {
     } else if (host instanceof BsDocumentHost) {
       host.rootPane && this.removeFromPane(host.rootPane, panel);
     } else if (host instanceof BsTabGroupPane) {
+      // console.log('Expected 3');
       const matching = host.panes.filter(p => p.dockPanel === panel);
       if (matching.length > 0) {
-        host.panes = host.panes.filter(p => p.dockPanel !== panel);
+        // console.log('Expected 3: if');
+        // host.panes = host.panes.filter(p => p.dockPanel !== panel);
+        console.warn('panes before', host.panes);
+        host.panes.splice(host.panes.findIndex(p => p.dockPanel === panel), 1);
+        console.warn('panes after', host.panes);
       } else {
+        // console.log('Expected 3: else');
         host.panes.forEach((parentPane) => {
           this.removeFromPane(parentPane, panel);
         });
       }
     } else if (host instanceof BsSplitPane) {
+      // console.log('Expected 1 or 2');
       const matching = host.panes
         .filter(p => p instanceof BsContentPane)
         .map(p => <BsContentPane>p)
         .filter(p => p.dockPanel === panel);
       
       if (matching.length > 0) {
-        host.panes = host.panes.filter(p => (p instanceof BsContentPane) && !matching.includes(p));
+        // host.panes = host.panes.filter(p => (p instanceof BsContentPane) && !matching.includes(p));
+        host.panes.splice(host.panes.findIndex(p => (p instanceof BsContentPane) && matching.includes(p)), 1);
       } else {
         host.panes.forEach((splitPane) => {
           this.removeFromPane(splitPane, panel);
         });
       }
     }
+
+    // if (host instanceof BsTabGroupPane) {
+    //   // console.log('Expected 3');
+    //   const matching = host.panes.filter(p => p.dockPanel === panel);
+    //   if (matching.length > 0) {
+    //     // console.log('Expected 3: if');
+    //     console.log('panes before', host.panes);
+    //     host.panes = host.panes.filter(p => p.dockPanel !== panel);
+    //     console.log('panes after', host.panes);
+    //   } else {
+    //     // console.log('Expected 3: else');
+    //     host.panes.forEach((parentPane) => {
+    //       this.removeFromPane(parentPane, panel);
+    //     });
+    //   }
+    // }
   }
 
   @HostListener('document:mouseup', ['$event']) onMouseUp(ev: Event) {

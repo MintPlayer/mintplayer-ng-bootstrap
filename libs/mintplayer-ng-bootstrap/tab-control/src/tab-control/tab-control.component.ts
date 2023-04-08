@@ -35,8 +35,9 @@ export class BsTabControlComponent implements OnDestroy {
   @HostBinding('class.position-relative') positionRelative = true;
   @ContentChildren(BsTabPageComponent) set setTabPages(value: QueryList<BsTabPageComponent>) {
     this.tabPages$.next(value);
-    const missing = value.filter(tp => !this.orderedTabPages.includes(tp));
-    this.orderedTabPages = this.orderedTabPages.concat(missing);
+    const list = value.toArray();
+    const toAdd = value.filter(tp => !this.orderedTabPages.includes(tp));
+    this.orderedTabPages = this.orderedTabPages.concat(toAdd).filter((tp) => list.includes(tp));
   }
   @Input() public border = true;
   @Input() public set restrictDragging(value: boolean) {
