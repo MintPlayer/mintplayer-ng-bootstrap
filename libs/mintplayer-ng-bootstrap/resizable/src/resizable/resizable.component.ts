@@ -1,4 +1,4 @@
-import { Component, ElementRef } from '@angular/core';
+import { Component, Directive, ElementRef, HostBinding } from '@angular/core';
 import { ResizeAction } from '../interfaces/resize-action';
 
 @Component({
@@ -13,4 +13,15 @@ export class BsResizableComponent {
 
   resizeAction?: ResizeAction;
   element: ElementRef<HTMLElement>;
+  
+  @HostBinding('style.margin-left.px') marginLeft?: number;
+  @HostBinding('style.margin-right.px') marginRight?: number;
+  @HostBinding('style.margin-top.px') marginTop?: number;
+  @HostBinding('style.margin-bottom.px') marginBottom?: number;
+  @HostBinding('style.height.px') height?: number;
+
+  @HostBinding('class.d-block')
+  @HostBinding('class.border')
+  @HostBinding('class.position-relative')
+  classes = true;
 }

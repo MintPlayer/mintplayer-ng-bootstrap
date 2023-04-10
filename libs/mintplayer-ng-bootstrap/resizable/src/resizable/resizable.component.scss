@@ -4,6 +4,8 @@ $glyph-size: 8px;
     position: absolute;
     width: $glyph-size;
     height: $glyph-size;
+    transition: background-color .2s ease-in-out;
+    border-radius: calc($glyph-size / 2);
 
     &.top {
         top: calc($glyph-size / -2);
@@ -20,15 +22,19 @@ $glyph-size: 8px;
 
     &.start, &.end {
         &:not(.top):not(.bottom) {
-            top: $glyph-size;
-            height: calc(100% - 2 * $glyph-size);
+            top: calc($glyph-size / 2);
+            height: calc(100% - $glyph-size);
         }
     }
     &.top, &.bottom {
         &:not(.start):not(.end) {
-            left: $glyph-size;
-            width: calc(100% - 2 * $glyph-size);
+            left: calc($glyph-size / 2);
+            width: calc(100% - $glyph-size);
         }
+    }
+
+    &:hover {
+        background-color: #1389FD;
     }
 
 }
