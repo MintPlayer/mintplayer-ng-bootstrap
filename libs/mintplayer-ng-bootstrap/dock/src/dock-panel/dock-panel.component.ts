@@ -7,9 +7,6 @@ import { Component, ElementRef, Input, AfterViewInit, ViewChild } from '@angular
   styleUrls: ['./dock-panel.component.scss']
 })
 export class BsDockPanelComponent implements AfterViewInit {
-  constructor() {
-    // this.contentPortal = new DomPortal(this.element.nativeElement);
-  }
 
   @ViewChild('headerElement') headerElement!: ElementRef<HTMLDivElement>;
   @ViewChild('contentElement') contentElement!: ElementRef<HTMLDivElement>;

@@ -35,6 +35,9 @@ export class BsDockPanelHeaderComponent {
       if (!this.isLayoutDetached) {
         this.isLayoutDetached = true;
         this.dock.layout$.pipe(take(1)).subscribe((layout) => {
+          this.dockPanel.headerPortal?.isAttached && this.dockPanel.headerPortal?.detach();
+          this.dockPanel.contentPortal?.isAttached && this.dockPanel.contentPortal?.detach();
+
           this.removeFromPane(layout.rootPane, this.dockPanel);
 
           layout.floatingPanes.push(new BsFloatingPane({
