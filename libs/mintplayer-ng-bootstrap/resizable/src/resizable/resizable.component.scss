@@ -33,7 +33,7 @@ $glyph-size: 8px;
         }
     }
 
-    &:hover {
+    &:hover, &.active {
         background-color: #1389FD;
     }
 

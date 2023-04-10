@@ -12,6 +12,7 @@ export class BsResizeGlyphDirective {
 
   @HostBinding('class') positions = '';
   @HostBinding('class.glyph') glyphClass = true;
+  @HostBinding('class.active') activeClass = false;
 
   @Input() set bsResizeGlyph(value: Position[]) {
     this.positions = value.join(' ');
@@ -28,7 +29,6 @@ export class BsResizeGlyphDirective {
     const marginTop = parseFloat(styles.marginTop.slice(0, -2));
     const marginBottom = parseFloat(styles.marginBottom.slice(0, -2));
 
-    // debugger;
     if (this.positions?.includes('start')) {
       action = {
         ...action,
@@ -75,6 +75,7 @@ export class BsResizeGlyphDirective {
     }
 
     this.resizable.resizeAction = action;
+    this.activeClass = true;
     console.log('resize', action);
   }
 
@@ -85,22 +86,29 @@ export class BsResizeGlyphDirective {
       const rct = this.resizable.element.nativeElement.getBoundingClientRect();
       // console.log('position', ev);
       if (this.resizable.resizeAction.start && this.positions?.includes('end')) {
-        const x = ev.clientX;// - rct.left;
+        // Right glyph
         const initalMargin = this.resizable.marginRight ?? 0;
+        const x = (ev.clientX < rct.left + 10) ? rct.left + 10 : ev.clientX;
         this.resizable.marginRight = initalMargin - (x - rct.right);
       } else if (this.resizable.resizeAction.end && this.positions?.includes('start')) {
+        // Left glyph
         const initalMargin = this.resizable.marginLeft ?? 0;
-        this.resizable.marginLeft = initalMargin + ev.clientX - rct.left;
+        const x = (ev.clientX > rct.right - 10) ? rct.right - 10 : ev.clientX;
+        this.resizable.marginLeft = initalMargin + x - rct.left;
       }
 
       if (this.resizable.resizeAction.top && this.positions?.includes('bottom')) {
+        // Bottom glyph
         const initalMargin = this.resizable.marginBottom ?? 0;
-        this.resizable.height = ev.clientY - rct.top;
-        this.resizable.marginBottom = initalMargin - (ev.clientY - rct.bottom);
+        const y = (ev.clientY < rct.top + 10) ? rct.top + 10 : ev.clientY;
+        this.resizable.height = y - rct.top;
+        this.resizable.marginBottom = initalMargin - (y - rct.bottom);
       } else if (this.resizable.resizeAction.bottom && this.positions?.includes('top')) {
+        // Top glyph
         const initalMargin = this.resizable.marginTop ?? 0;
-        this.resizable.height = rct.bottom - ev.clientY;
-        this.resizable.marginTop = initalMargin + ev.clientY - rct.top;
+        const y = (ev.clientY > rct.bottom - 10) ? rct.bottom - 10 : ev.clientY;
+        this.resizable.height = rct.bottom - y;
+        this.resizable.marginTop = initalMargin + y - rct.top;
       }
       this.isBusy = false;
     }
@@ -108,5 +116,6 @@ export class BsResizeGlyphDirective {
   
   @HostListener('document:mouseup', ['$event']) onMouseUp(ev: Event) {
     this.resizable.resizeAction = undefined;
+    this.activeClass = false;
   }
 }
