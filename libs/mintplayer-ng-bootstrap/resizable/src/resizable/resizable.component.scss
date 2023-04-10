@@ -1,0 +1,34 @@
+$glyph-size: 8px;
+
+.glyph {
+    position: absolute;
+    width: $glyph-size;
+    height: $glyph-size;
+
+    &.top {
+        top: calc($glyph-size / -2);
+    }
+    &.left {
+        left: calc($glyph-size / -2);
+    }
+    &.bottom {
+        bottom: calc($glyph-size / -2);
+    }
+    &.right {
+        right: calc($glyph-size / -2);
+    }
+
+    &.left, &.right {
+        &:not(.top):not(.bottom) {
+            top: $glyph-size;
+            height: calc(100% - 2 * $glyph-size);
+        }
+    }
+    &.top, &.bottom {
+        &:not(.left):not(.right) {
+            left: $glyph-size;
+            width: calc(100% - 2 * $glyph-size);
+        }
+    }
+
+}
