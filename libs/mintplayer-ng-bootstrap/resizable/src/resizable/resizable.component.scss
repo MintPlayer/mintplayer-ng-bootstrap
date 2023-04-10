@@ -8,24 +8,24 @@ $glyph-size: 8px;
     &.top {
         top: calc($glyph-size / -2);
     }
-    &.left {
+    &.start {
         left: calc($glyph-size / -2);
     }
     &.bottom {
         bottom: calc($glyph-size / -2);
     }
-    &.right {
+    &.end {
         right: calc($glyph-size / -2);
     }
 
-    &.left, &.right {
+    &.start, &.end {
         &:not(.top):not(.bottom) {
             top: $glyph-size;
             height: calc(100% - 2 * $glyph-size);
         }
     }
     &.top, &.bottom {
-        &:not(.left):not(.right) {
+        &:not(.start):not(.end) {
             left: $glyph-size;
             width: calc(100% - 2 * $glyph-size);
         }

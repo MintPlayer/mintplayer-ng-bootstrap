@@ -1,16 +1,19 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BsResizableComponent } from './resizable/resizable.component';
+import { BsResizeGlyphDirective } from './resize-glyph/resize-glyph.directive';
 
 @NgModule({
   declarations: [
-    BsResizableComponent
+    BsResizableComponent,
+    BsResizeGlyphDirective
   ],
   imports: [
     CommonModule
   ],
   exports: [
-    BsResizableComponent
+    BsResizableComponent,
+    BsResizeGlyphDirective
   ]
 })
 export class BsResizableModule { }

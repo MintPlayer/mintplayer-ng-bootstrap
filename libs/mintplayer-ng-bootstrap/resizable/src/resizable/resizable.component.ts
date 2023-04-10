@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, ElementRef } from '@angular/core';
+import { ResizeAction } from '../interfaces/resize-action';
 
 @Component({
   selector: 'bs-resizable',
@@ -6,5 +7,10 @@ import { Component } from '@angular/core';
   styleUrls: ['./resizable.component.scss']
 })
 export class BsResizableComponent {
+  constructor(element: ElementRef<HTMLElement>) {
+    this.element = element;
+  }
 
+  resizeAction?: ResizeAction;
+  element: ElementRef<HTMLElement>;
 }

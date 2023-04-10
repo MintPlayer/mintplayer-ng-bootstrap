@@ -1,11 +1,11 @@
 <div class="border position-relative">
-    <div class="glyph top left cursor-nw-resize"></div>
-    <div class="glyph top cursor-n-resize"></div>
-    <div class="glyph top right cursor-ne-resize"></div>
-    <div class="glyph right cursor-e-resize"></div>
-    <div class="glyph bottom right cursor-se-resize"></div>
-    <div class="glyph bottom cursor-s-resize"></div>
-    <div class="glyph bottom left cursor-sw-resize"></div>
-    <div class="glyph left cursor-w-resize"></div>
+    <div class="cursor-nw-resize" [bsResizeGlyph]="['top', 'start']"></div>
+    <div class="cursor-n-resize" [bsResizeGlyph]="['top']"></div>
+    <div class="cursor-ne-resize" [bsResizeGlyph]="['top', 'end']"></div>
+    <div class="cursor-e-resize" [bsResizeGlyph]="['end']"></div>
+    <div class="cursor-se-resize" [bsResizeGlyph]="['bottom', 'end']"></div>
+    <div class="cursor-s-resize" [bsResizeGlyph]="['bottom']"></div>
+    <div class="cursor-sw-resize" [bsResizeGlyph]="['bottom', 'start']"></div>
+    <div class="cursor-w-resize" [bsResizeGlyph]="['start']"></div>
     <ng-content></ng-content>
 </div>
