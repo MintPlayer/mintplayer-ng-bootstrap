@@ -36,5 +36,10 @@ $glyph-size: 8px;
     &:hover, &.active {
         background-color: #1389FD;
     }
+}
 
+// Prevents the box from becoming invisible when a parent is resized
+:host {
+    min-width: 2rem;
+    min-height: 2rem;
 }

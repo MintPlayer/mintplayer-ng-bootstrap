@@ -2,6 +2,7 @@ import { Directive, HostBinding, HostListener, Inject, Input, forwardRef, Option
 import { Position } from '@mintplayer/ng-bootstrap';
 import { BsResizableComponent } from '../resizable/resizable.component';
 import { ResizeAction } from '../interfaces/resize-action';
+import { PointerData } from '../interfaces/pointer-data';
 
 @Directive({
   selector: '[bsResizeGlyph]'
@@ -20,6 +21,33 @@ export class BsResizeGlyphDirective {
 
   @HostListener('mousedown', ['$event']) onMouseDown(ev: MouseEvent) {
     ev.preventDefault();
+    this.onPointerDown()
+  }
+
+  @HostListener('touchstart', ['$event']) onTouchStart(ev: TouchEvent) {
+    ev.preventDefault();
+    this.onPointerDown();
+  }
+
+  @HostListener('document:mousemove', ['$event']) onMouseMove(ev: MouseEvent) {
+    this.onPointerMove({ clientX: ev.clientX, clientY: ev.clientY, preventDefault: () => ev.preventDefault() });
+  }
+
+  @HostListener('touchmove', ['$event']) onTouchMove(ev: TouchEvent) {
+    if (ev.touches.length === 1) {
+      this.onPointerMove({ clientX: ev.touches[0].clientX, clientY: ev.touches[0].clientY, preventDefault: () => ev.preventDefault() });
+    }
+  }
+
+  @HostListener('document:mouseup', ['$event']) onMouseUp(ev: Event) {
+    this.onPointerUp();
+  }
+
+  @HostListener('touchend', ['$event']) onTouchEnd(ev: Event) {
+    this.onPointerUp();
+  }
+
+  onPointerDown() {
     let action: ResizeAction = {};
     const rect = this.resizable.element.nativeElement.getBoundingClientRect();
     const styles = window.getComputedStyle(this.resizable.element.nativeElement);
@@ -80,8 +108,9 @@ export class BsResizeGlyphDirective {
   }
 
   private isBusy = false;
-  @HostListener('document:mousemove', ['$event']) onMouseMove(ev: MouseEvent) {
+  onPointerMove(ev: PointerData) {
     if (this.resizable.resizeAction && !this.isBusy) {
+      ev.preventDefault();
       this.isBusy = true;
       const rct = this.resizable.element.nativeElement.getBoundingClientRect();
       // console.log('position', ev);
@@ -114,7 +143,7 @@ export class BsResizeGlyphDirective {
     }
   }
   
-  @HostListener('document:mouseup', ['$event']) onMouseUp(ev: Event) {
+  onPointerUp() {
     this.resizable.resizeAction = undefined;
     this.activeClass = false;
   }
