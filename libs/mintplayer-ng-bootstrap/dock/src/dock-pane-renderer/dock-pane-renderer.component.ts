@@ -1,4 +1,5 @@
 import { Component, ElementRef, Input } from '@angular/core';
+import { DomPortal } from '@angular/cdk/portal';
 import { BehaviorSubject, Observable, map } from 'rxjs';
 import { BsDockPane } from '../panes/dock-pane';
 import { EPaneType } from '../enums/pane-type.enum';
@@ -6,7 +7,7 @@ import { BsSplitPane } from '../panes/split-pane';
 import { BsContentPane } from '../panes/content-pane';
 import { BsDocumentHost } from '../panes/document-host-pane';
 import { BsTabGroupPane } from '../panes/tab-group-pane';
-import { DomPortal } from '@angular/cdk/portal';
+import { BsFloatingPane } from '../panes/floating-pane';
 
 @Component({
   selector: 'bs-dock-pane-renderer',
@@ -42,6 +43,7 @@ export class BsDockPaneRendererComponent {
   readonly BsTabGroupType = BsTabGroupPane;
   readonly BsSplitterType = BsSplitPane;
   readonly BsContentPaneType = BsContentPane;
+  readonly BsFloatingPaneType = BsFloatingPane;
 
   //#region Layout
   layout$ = new BehaviorSubject<BsDockPane | null>(null);
