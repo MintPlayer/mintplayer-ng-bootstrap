@@ -16,10 +16,7 @@ export class BsDockPanelComponent implements AfterViewInit {
   @Input() panelId = '';
 
   ngAfterViewInit() {
-    // console.log('attach dockpanel', this.element.nativeElement);
     this.headerPortal = new DomPortal(this.headerElement.nativeElement);
-    // setTimeout(() => {
-      this.contentPortal = new DomPortal(this.contentElement.nativeElement);
-    // }, 2000);
+    this.contentPortal = new DomPortal(this.contentElement.nativeElement);
   }
 }

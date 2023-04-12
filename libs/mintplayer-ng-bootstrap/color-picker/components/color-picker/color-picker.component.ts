@@ -23,7 +23,6 @@ export class BsColorPickerComponent implements OnDestroy {
     this.height$.next(value);
   }
   @Input() set allowAlpha(value: boolean) {
-    console.log('allowAlpha', value);
     this.allowAlpha$.next(value);
   }
   

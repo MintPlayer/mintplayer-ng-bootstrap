@@ -17,22 +17,6 @@ import { BsFloatingPane } from '../panes/floating-pane';
 export class BsDockPaneRendererComponent {
 
   constructor(element: ElementRef) {
-    // this.layoutType$ = this.layout$.pipe<EPaneType | null>(map((layout) => {
-    //   if (layout === null) {
-    //     return null;
-    //   } else if (layout instanceof BsDocumentHost) {
-    //     return EPaneType.documentHost;
-    //   } else if (layout instanceof BsSplitPane) {
-    //     return EPaneType.splitPane;
-    //   } else if (layout instanceof BsContentPane) {
-    //     return EPaneType.contentPane;
-    //   } else if (layout instanceof BsTabGroupPane) {
-    //     return EPaneType.tabGroupPane;
-    //   } else {
-    //     return null;
-    //     // throw 'unknown pane type';
-    //   }
-    // }));
     this.portal = new DomPortal(element);
   }
 
@@ -45,19 +29,13 @@ export class BsDockPaneRendererComponent {
   readonly BsContentPaneType = BsContentPane;
   readonly BsFloatingPaneType = BsFloatingPane;
 
-  // @HostBinding('class.position-absolute')
-  // classes = true;
-
   //#region Layout
   layout$ = new BehaviorSubject<BsDockPane | null>(null);
   public get layout() {
     return this.layout$.value;
   }
   @Input() public set layout(value: BsDockPane | null) {
-    console.log('set layout', value);
     this.layout$.next(value);
   }
   //#endregion
-
-  // layoutType$: Observable<EPaneType | null>;
 }
