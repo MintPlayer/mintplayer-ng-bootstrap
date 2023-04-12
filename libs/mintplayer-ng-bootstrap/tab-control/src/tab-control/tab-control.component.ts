@@ -7,7 +7,10 @@ import { BsTabsPosition } from '../tabs-position';
 @Component({
   selector: 'bs-tab-control',
   templateUrl: './tab-control.component.html',
-  styleUrls: ['./tab-control.component.scss']
+  styleUrls: ['./tab-control.component.scss'],
+  providers: [
+    { provide: 'TAB_CONTROL', useExisting: BsTabControlComponent }
+  ]
 })
 export class BsTabControlComponent implements OnDestroy {
 

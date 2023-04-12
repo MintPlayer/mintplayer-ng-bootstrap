@@ -19,9 +19,9 @@
     <ng-container *bsInstanceofCase="BsContentPaneType; let content">
         <ng-template [cdkPortalOutlet]="content.dockPanel.contentPortal"></ng-template>
     </ng-container>
-    <ng-container *bsInstanceofCase="BsFloatingPaneType; let content">
-        <bs-resizable *ngIf="content.pane" [positioning]="'absolute'">
-            <bs-dock-pane-renderer [layout]="content.pane"></bs-dock-pane-renderer>
+    <ng-container *bsInstanceofCase="BsFloatingPaneType; let floating">
+        <bs-resizable *ngIf="floating.pane" [positioning]="'absolute'" [presetPosition]="{ left: floating.location?.x ?? 0, top: floating.location?.y ?? 0, width: floating.size?.width ?? 200, height: floating.size?.height ?? 100 }">
+            <bs-dock-pane-renderer [layout]="floating.pane"></bs-dock-pane-renderer>
         </bs-resizable>
     </ng-container>
     <div *bsInstanceofDefault>

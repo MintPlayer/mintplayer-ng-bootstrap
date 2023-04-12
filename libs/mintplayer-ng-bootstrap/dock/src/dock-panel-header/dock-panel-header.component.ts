@@ -1,6 +1,7 @@
 import { GlobalPositionStrategy, Overlay, OverlayRef } from '@angular/cdk/overlay';
-import { Component, HostBinding, HostListener } from '@angular/core';
+import { Component, ElementRef, HostBinding, HostListener, Inject, Optional, forwardRef } from '@angular/core';
 import { take } from 'rxjs';
+import { BsTabControlComponent } from '@mintplayer/ng-bootstrap/tab-control';
 import { BsDockPanelComponent } from '../dock-panel/dock-panel.component';
 import { BsDockComponent } from '../dock/dock.component';
 import { BsDockPane } from '../panes/dock-pane';
@@ -10,6 +11,7 @@ import { BsFloatingPane } from '../panes/floating-pane';
 import { BsTabGroupPane } from '../panes/tab-group-pane';
 import { BsDocumentHost } from '../panes/document-host-pane';
 import { RemoveFromPaneResult } from '../interfaces/remove-from-pane-result';
+import { DragOperation } from '../interfaces/drag-operation';
 
 @Component({
   selector: 'bs-dock-panel-header',
@@ -17,44 +19,80 @@ import { RemoveFromPaneResult } from '../interfaces/remove-from-pane-result';
   styleUrls: ['./dock-panel-header.component.scss']
 })
 export class BsDockPanelHeaderComponent {
-  constructor(private overlay: Overlay, private dockPanel: BsDockPanelComponent, private dock: BsDockComponent) {
+  constructor(private overlay: Overlay, private dockPanel: BsDockPanelComponent, private dock: BsDockComponent, private element: ElementRef<HTMLElement>) {
     this.overlayRef = this.overlay.create({
       positionStrategy: this.overlay.position().global()
     });
   }
 
-  isDragging = false;
+  isMouseDown = false;
+  dragOperation?: DragOperation;
   overlayRef: OverlayRef;
   isLayoutDetached = false;
   @HostListener('mousedown', ['$event']) onMouseDown(ev: MouseEvent) {
     ev.preventDefault();
-    this.isDragging = true;
+    this.isMouseDown = true;
   }
 
   @HostListener('document:mousemove', ['$event']) onMouseMove(ev: MouseEvent) {
-    if (this.isDragging) {
+    if (this.isMouseDown) {
       if (!this.isLayoutDetached) {
         this.isLayoutDetached = true;
         this.dock.layout$.pipe(take(1)).subscribe((layout) => {
-          this.dockPanel.headerPortal?.isAttached && this.dockPanel.headerPortal?.detach();
-          this.dockPanel.contentPortal?.isAttached && this.dockPanel.contentPortal?.detach();
 
-          this.removeFromPane(layout.rootPane, this.dockPanel);
+          let element: HTMLElement | null = this.element.nativeElement;
+          let tree: HTMLElement[] = [];
+          do {
+            tree.push(element!);
+            element = element!.parentElement;
+          } while (element);
 
-          layout.floatingPanes.push(new BsFloatingPane({
-            pane: new BsTabGroupPane({
-              panes: [
-                new BsContentPane({
-                  dockPanel: this.dockPanel
-                })
-              ]
-            }) 
-          }));
-          this.dock.layout$.next(layout);
+          const tabControls = tree.filter(el => el.tagName.toUpperCase() === 'BS-TAB-CONTROL');
+          if (tabControls.length > 0) {
+            const coords = {
+              width: tabControls[0].clientWidth,
+              height: tabControls[0].clientHeight,
+              left: ev.clientX - ev.offsetX,
+              top: ev.clientY - ev.offsetY,
+            };
 
-          // this.removeFromPane(layout.rootPane, this.dockPanel);
-          // this.dock.layout$.next(layout);
+            this.dockPanel.headerPortal?.isAttached && this.dockPanel.headerPortal?.detach();
+            this.dockPanel.contentPortal?.isAttached && this.dockPanel.contentPortal?.detach();
+            this.removeFromPane(layout.rootPane, this.dockPanel);
+
+            const floatingPane = new BsFloatingPane({
+              pane: new BsTabGroupPane({
+                panes: [
+                  new BsContentPane({
+                    dockPanel: this.dockPanel
+                  })
+                ]
+              }),
+              size: {
+                width: coords.width,
+                height: coords.height,
+              },
+              location: {
+                x: coords.left,
+                y: coords.top,
+              }
+            });
+            
+            this.dragOperation = {
+              offsetX: ev.offsetX,
+              offsetY: ev.offsetY,
+              floatingPane
+            };
+
+            layout.floatingPanes.push(floatingPane);
+            this.dock.layout$.next(layout);
+          }
         });
+      } else if (this.dragOperation) {
+        if (this.dragOperation.floatingPane.location) {
+          this.dragOperation.floatingPane.location.x = ev.clientX - this.dragOperation.offsetX;
+          this.dragOperation.floatingPane.location.y = ev.clientY - this.dragOperation.offsetY;
+        }
       }
     }
   }
@@ -129,7 +167,8 @@ export class BsDockPanelHeaderComponent {
   }
 
   @HostListener('document:mouseup', ['$event']) onMouseUp(ev: Event) {
-    this.isDragging = false;
+    this.isMouseDown = false;
+    this.dragOperation = undefined;
   }
 
   @HostBinding('class.d-block') dBlock = true;

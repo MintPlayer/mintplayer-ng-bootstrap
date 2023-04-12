@@ -1,4 +1,4 @@
-import { Component, ElementRef, Input } from '@angular/core';
+import { Component, ElementRef, HostBinding, Input } from '@angular/core';
 import { DomPortal } from '@angular/cdk/portal';
 import { BehaviorSubject, Observable, map } from 'rxjs';
 import { BsDockPane } from '../panes/dock-pane';
@@ -44,6 +44,9 @@ export class BsDockPaneRendererComponent {
   readonly BsSplitterType = BsSplitPane;
   readonly BsContentPaneType = BsContentPane;
   readonly BsFloatingPaneType = BsFloatingPane;
+
+  // @HostBinding('class.position-absolute')
+  // classes = true;
 
   //#region Layout
   layout$ = new BehaviorSubject<BsDockPane | null>(null);

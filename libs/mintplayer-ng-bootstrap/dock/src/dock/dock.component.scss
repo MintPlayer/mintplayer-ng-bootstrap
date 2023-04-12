@@ -1,4 +1,15 @@
-:host ::ng-deep .tab-content {
-    max-height: calc(100% - 41px);
-    overflow: auto;
+:host ::ng-deep {
+    .tab-content {
+        max-height: calc(100% - 41px);
+        overflow: auto;
+    }
+
+    bs-dock-pane-renderer {
+        min-width: 100%;
+        min-height: 100%;
+    }
+
+    // bs-tab-control > div.tab-content > bs-tab-page > div.tab-page-content > bs-dock-pane-renderer {
+    //     position: absolute;
+    // }
 }

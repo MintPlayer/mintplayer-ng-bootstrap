@@ -1,5 +1,6 @@
 import { DomPortal } from '@angular/cdk/portal';
-import { Component, ElementRef, Input, AfterViewInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, Input, AfterViewInit, ViewChild, Inject, Optional, forwardRef } from '@angular/core';
+import { BsTabControlComponent } from '@mintplayer/ng-bootstrap/tab-control';
 
 @Component({
   selector: 'bs-dock-panel',
