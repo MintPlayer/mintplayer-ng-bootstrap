@@ -1,4 +1,4 @@
-import { Component, Directive, ElementRef, HostBinding } from '@angular/core';
+import { Component, Directive, ElementRef, HostBinding, forwardRef } from '@angular/core';
 import { ResizeAction } from '../interfaces/resize-action';
 import { RESIZABLE } from '../providers/resizable.provider';
 
@@ -7,7 +7,7 @@ import { RESIZABLE } from '../providers/resizable.provider';
   templateUrl: './resizable.component.html',
   styleUrls: ['./resizable.component.scss'],
   providers: [
-    { provide: RESIZABLE, useExisting: BsResizableComponent }
+    { provide: RESIZABLE, useExisting: forwardRef(() => BsResizableComponent) }
   ]
 })
 export class BsResizableComponent {
