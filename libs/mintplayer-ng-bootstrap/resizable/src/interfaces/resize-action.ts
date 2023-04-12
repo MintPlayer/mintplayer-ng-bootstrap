@@ -1,4 +1,7 @@
+import { ResizablePositioning } from "../types/positioning";
+
 export interface ResizeAction {
+    positioning: ResizablePositioning;
     top?: ResizeActionSide;
     start?: ResizeActionSide;
     bottom?: ResizeActionSide;
@@ -10,10 +13,10 @@ export interface ResizeActionSide {
     edge: number;
 
     /** Initial margin at the fixed edge */
-    margin: number;
+    margin?: number;
 
     /** Initial margin at the edge that's being dragged */
-    dragMargin: number;
+    dragMargin?: number;
 
     /** Initial size */
     size: number;
