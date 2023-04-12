@@ -1,6 +1,5 @@
-import { AfterViewInit, Component, Directive, ElementRef, EventEmitter, HostBinding, HostListener, Input, OnDestroy, Output, ViewChild } from '@angular/core';
-import { BehaviorSubject, combineLatest, map, Observable, Subject, takeUntil } from 'rxjs';
-import { HS } from '../../interfaces/hs';
+import { Component, Directive, ElementRef, EventEmitter, HostBinding, HostListener, Input, OnDestroy, Output, ViewChild, NgZone } from '@angular/core';
+import { BehaviorSubject, map, Observable, Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'bs-slider',
@@ -8,13 +7,17 @@ import { HS } from '../../interfaces/hs';
   styleUrls: ['./slider.component.scss']
 })
 export class BsSliderComponent implements OnDestroy {
-  constructor(private element: ElementRef<HTMLElement>) {
+  constructor(private element: ElementRef<HTMLElement>, private zone: NgZone) {
     this.value$.pipe(takeUntil(this.destroyed$))
       .subscribe((value) => this.valueChange.emit(value));
 
     this.thumbMarginLeft$ = this.value$.pipe(map((value) => {
       const res = value * element.nativeElement.clientWidth - 12;
       return res;
+    }));
+
+    this.cursorClass$ = this.isPointerDown$.pipe(map((isPointerDown) => {
+      return isPointerDown ? 'cursor-grabbing' : 'cursor-grab';
     }));
   }
 
@@ -35,17 +38,18 @@ export class BsSliderComponent implements OnDestroy {
   }
   //#endregion
 
-  private isPointerDown = false;
+  private isPointerDown$ = new BehaviorSubject<boolean>(false);
+  cursorClass$: Observable<string>;
 
   onPointerDown(ev: MouseEvent | TouchEvent) {
     ev.preventDefault();
-    this.isPointerDown = true;
+    this.zone.run(() => this.isPointerDown$.next(true));
     this.updateColor(ev);
   }
 
   @HostListener('document:mousemove', ['$event'])
   onPointerMove(ev: MouseEvent | TouchEvent) {
-    if (this.isPointerDown) {
+    if (this.isPointerDown$.value) {
       ev.preventDefault();
       ev.stopPropagation();
       this.updateColor(ev);
@@ -54,7 +58,7 @@ export class BsSliderComponent implements OnDestroy {
 
   @HostListener('document:mouseup', ['$event'])
   onPointerUp(ev: MouseEvent | TouchEvent) {
-    this.isPointerDown = false;
+    this.isPointerDown$.next(false);
   }
 
   private updateColor(ev: MouseEvent | TouchEvent) {

@@ -4,7 +4,7 @@ $utilities: map-merge(
   (
     "cursor": (
       property: cursor,
-      values: auto default pointer wait text move help not-allowed n-resize e-resize s-resize w-resize ne-resize se-resize nw-resize sw-resize
+      values: auto default pointer wait text move help not-allowed n-resize e-resize s-resize w-resize ne-resize se-resize nw-resize sw-resize grab grabbing
     ),
   )
 );
