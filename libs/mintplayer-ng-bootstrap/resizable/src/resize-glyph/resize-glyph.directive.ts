@@ -1,15 +1,16 @@
 import { Directive, HostBinding, HostListener, Inject, Input, forwardRef, Optional } from '@angular/core';
 import { Position } from '@mintplayer/ng-bootstrap';
-import { BsResizableComponent } from '../resizable/resizable.component';
+import type { BsResizableComponent } from '../resizable/resizable.component';
 import { ResizeAction } from '../interfaces/resize-action';
 import { PointerData } from '../interfaces/pointer-data';
+import { RESIZABLE } from '../providers/resizable.provider';
 
 @Directive({
   selector: '[bsResizeGlyph]'
 })
 export class BsResizeGlyphDirective {
 
-  constructor(@Optional() @Inject(forwardRef(() => BsResizableComponent)) private resizable: BsResizableComponent) {}
+  constructor(@Inject(RESIZABLE) private resizable: BsResizableComponent) {}
 
   @HostBinding('class') positions = '';
   @HostBinding('class.glyph') glyphClass = true;

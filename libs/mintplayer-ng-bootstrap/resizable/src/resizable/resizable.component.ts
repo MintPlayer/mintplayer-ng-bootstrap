@@ -1,10 +1,14 @@
 import { Component, Directive, ElementRef, HostBinding } from '@angular/core';
 import { ResizeAction } from '../interfaces/resize-action';
+import { RESIZABLE } from '../providers/resizable.provider';
 
 @Component({
   selector: 'bs-resizable',
   templateUrl: './resizable.component.html',
-  styleUrls: ['./resizable.component.scss']
+  styleUrls: ['./resizable.component.scss'],
+  providers: [
+    { provide: RESIZABLE, useExisting: BsResizableComponent }
+  ]
 })
 export class BsResizableComponent {
   constructor(element: ElementRef<HTMLElement>) {
