@@ -20,7 +20,7 @@
         <ng-template [cdkPortalOutlet]="content.dockPanel.contentPortal"></ng-template>
     </ng-container>
     <ng-container *bsInstanceofCase="BsFloatingPaneType; let content">
-        <bs-resizable *ngIf="content.pane">
+        <bs-resizable *ngIf="content.pane" [positioning]="'absolute'">
             <bs-dock-pane-renderer [layout]="content.pane"></bs-dock-pane-renderer>
         </bs-resizable>
     </ng-container>
