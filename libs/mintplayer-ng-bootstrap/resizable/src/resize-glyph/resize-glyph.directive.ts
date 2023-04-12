@@ -10,10 +10,7 @@ import { RESIZABLE } from '../providers/resizable.provider';
 })
 export class BsResizeGlyphDirective {
 
-  resizable: BsResizableComponent
-  constructor(@Inject(RESIZABLE) resizable: any) {
-    this.resizable = resizable;
-  }
+  constructor(@Inject(RESIZABLE) private resizable: BsResizableComponent) {}
 
   @HostBinding('class') positions = '';
   @HostBinding('class.glyph') glyphClass = true;

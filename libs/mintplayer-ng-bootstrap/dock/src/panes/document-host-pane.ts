@@ -1,4 +1,5 @@
 import { BsDockPane } from "./dock-pane";
+import { BsTabGroupPane } from "./tab-group-pane";
 
 export class BsDocumentHost extends BsDockPane {
     constructor(data?: Partial<BsDocumentHost>) {
@@ -6,5 +7,5 @@ export class BsDocumentHost extends BsDockPane {
         Object.assign(this, data);
     }
 
-    rootPane?: BsDockPane
+    rootPane?: BsTabGroupPane
 }

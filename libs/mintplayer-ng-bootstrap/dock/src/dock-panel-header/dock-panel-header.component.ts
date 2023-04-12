@@ -1,5 +1,6 @@
 import { GlobalPositionStrategy, Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { Component, HostBinding, HostListener } from '@angular/core';
+import { take } from 'rxjs';
 import { BsDockPanelComponent } from '../dock-panel/dock-panel.component';
 import { BsDockComponent } from '../dock/dock.component';
 import { BsDockPane } from '../panes/dock-pane';
@@ -8,7 +9,7 @@ import { BsContentPane } from '../panes/content-pane';
 import { BsFloatingPane } from '../panes/floating-pane';
 import { BsTabGroupPane } from '../panes/tab-group-pane';
 import { BsDocumentHost } from '../panes/document-host-pane';
-import { take } from 'rxjs';
+import { RemoveFromPaneResult } from '../interfaces/remove-from-pane-result';
 
 @Component({
   selector: 'bs-dock-panel-header',
@@ -58,57 +59,73 @@ export class BsDockPanelHeaderComponent {
     }
   }
 
-  removeFromPane(host: BsDockPane, panel: BsDockPanelComponent) {
+  removeFromPane(host: BsDockPane, panel: BsDockPanelComponent /*, parents: BsDockPane[] */): RemoveFromPaneResult {
     if (host instanceof BsContentPane) {
+      return { paneRemoved: false, hostIsEmpty: false };
     } else if (host instanceof BsDocumentHost) {
-      host.rootPane && this.removeFromPane(host.rootPane, panel);
+      // Actually documentHost should never be removed
+
+      if (!host.rootPane) {
+        return { paneRemoved: false, hostIsEmpty: true };
+      }
+
+      const result = this.removeFromPane(host.rootPane, panel);
+      return { paneRemoved: result.paneRemoved, hostIsEmpty: result.hostIsEmpty };
+
     } else if (host instanceof BsTabGroupPane) {
-      // console.log('Expected 3');
+
+
+
       const matching = host.panes.filter(p => p.dockPanel === panel);
       if (matching.length > 0) {
-        // console.log('Expected 3: if');
-        // host.panes = host.panes.filter(p => p.dockPanel !== panel);
-        console.warn('panes before', host.panes);
         host.panes.splice(host.panes.findIndex(p => p.dockPanel === panel), 1);
-        console.warn('panes after', host.panes);
+        return { paneRemoved: true, hostIsEmpty: host.panes.length === 0 };
       } else {
-        // console.log('Expected 3: else');
-        host.panes.forEach((parentPane) => {
-          this.removeFromPane(parentPane, panel);
-        });
+        // ATM. all panes are ContentPanes anyway.
+        // So unless you'd want to have splitters inside the tabs,
+        // This code will not be hit.
+
+        // const result = host.panes
+        //   .map(parentPane => this.removeFromPane(parentPane, panel))
+        //   .filter(r => r.paneRemoved);
+        //
+        // if (result.length > 0) {
+        //   return { paneRemoved: true, hostIsEmpty: }
+        // }
+        return { paneRemoved: false, hostIsEmpty: host.panes.length === 0 };
       }
+
+
+
+
     } else if (host instanceof BsSplitPane) {
-      // console.log('Expected 1 or 2');
       const matching = host.panes
         .filter(p => p instanceof BsContentPane)
         .map(p => <BsContentPane>p)
         .filter(p => p.dockPanel === panel);
       
       if (matching.length > 0) {
-        // host.panes = host.panes.filter(p => (p instanceof BsContentPane) && !matching.includes(p));
         host.panes.splice(host.panes.findIndex(p => (p instanceof BsContentPane) && matching.includes(p)), 1);
-      } else {
-        host.panes.forEach((splitPane) => {
-          this.removeFromPane(splitPane, panel);
-        });
-      }
-    }
 
-    // if (host instanceof BsTabGroupPane) {
-    //   // console.log('Expected 3');
-    //   const matching = host.panes.filter(p => p.dockPanel === panel);
-    //   if (matching.length > 0) {
-    //     // console.log('Expected 3: if');
-    //     console.log('panes before', host.panes);
-    //     host.panes = host.panes.filter(p => p.dockPanel !== panel);
-    //     console.log('panes after', host.panes);
-    //   } else {
-    //     // console.log('Expected 3: else');
-    //     host.panes.forEach((parentPane) => {
-    //       this.removeFromPane(parentPane, panel);
-    //     });
-    //   }
-    // }
+        // TODO: Remove splitter if only 1 pane left?
+        return { paneRemoved: true, hostIsEmpty: host.panes.length === 0 };
+      } else {
+
+
+        for (let splitPane of host.panes) {
+          const result = this.removeFromPane(splitPane, panel);
+          if (result.paneRemoved && result.hostIsEmpty) {
+            // splitPane is empty now, so we can remove it from this splitter
+            host.panes.splice(host.panes.indexOf(splitPane), 1);
+            return { paneRemoved: true, hostIsEmpty: host.panes.length === 0 };
+          }
+        }
+      }
+
+      return { paneRemoved: false, hostIsEmpty: host.panes.length === 0 };
+    } else {
+      throw 'unknown host type';
+    }
   }
 
   @HostListener('document:mouseup', ['$event']) onMouseUp(ev: Event) {
