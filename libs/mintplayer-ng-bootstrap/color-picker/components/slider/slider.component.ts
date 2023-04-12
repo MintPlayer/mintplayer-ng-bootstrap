@@ -1,6 +1,5 @@
-import { AfterViewInit, Component, Directive, ElementRef, EventEmitter, HostBinding, HostListener, Input, OnDestroy, Output, ViewChild } from '@angular/core';
-import { BehaviorSubject, combineLatest, map, Observable, Subject, takeUntil } from 'rxjs';
-import { HS } from '../../interfaces/hs';
+import { Component, Directive, ElementRef, EventEmitter, HostBinding, HostListener, Input, OnDestroy, Output, ViewChild, NgZone } from '@angular/core';
+import { BehaviorSubject, map, Observable, Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'bs-slider',
@@ -8,7 +7,7 @@ import { HS } from '../../interfaces/hs';
   styleUrls: ['./slider.component.scss']
 })
 export class BsSliderComponent implements OnDestroy {
-  constructor(private element: ElementRef<HTMLElement>) {
+  constructor(private element: ElementRef<HTMLElement>, private zone: NgZone) {
     this.value$.pipe(takeUntil(this.destroyed$))
       .subscribe((value) => this.valueChange.emit(value));
 
@@ -44,7 +43,7 @@ export class BsSliderComponent implements OnDestroy {
 
   onPointerDown(ev: MouseEvent | TouchEvent) {
     ev.preventDefault();
-    this.isPointerDown$.next(true);
+    this.zone.run(() => this.isPointerDown$.next(true));
     this.updateColor(ev);
   }
 
