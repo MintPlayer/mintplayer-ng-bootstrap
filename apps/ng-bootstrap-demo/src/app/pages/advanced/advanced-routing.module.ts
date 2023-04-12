@@ -19,6 +19,7 @@ const routes: Routes = [
   { path: 'splitter', loadChildren: () => import('./splitter/splitter.module').then(m => m.SplitterModule) },
   { path: 'dock', loadChildren: () => import('./dock/dock.module').then(m => m.DockModule) },
   { path: 'instance-of', loadChildren: () => import('./instance-of/instance-of.module').then(m => m.InstanceOfModule) },
+  { path: 'resizable', loadChildren: () => import('./resizable/resizable.module').then(m => m.ResizableModule) },
 ];
 
 @NgModule({

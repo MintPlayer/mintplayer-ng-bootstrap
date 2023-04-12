@@ -1,0 +1,45 @@
+$glyph-size: 8px;
+
+.glyph {
+    position: absolute;
+    width: $glyph-size;
+    height: $glyph-size;
+    transition: background-color .2s ease-in-out;
+    border-radius: calc($glyph-size / 2);
+
+    &.top {
+        top: calc($glyph-size / -2);
+    }
+    &.start {
+        left: calc($glyph-size / -2);
+    }
+    &.bottom {
+        bottom: calc($glyph-size / -2);
+    }
+    &.end {
+        right: calc($glyph-size / -2);
+    }
+
+    &.start, &.end {
+        &:not(.top):not(.bottom) {
+            top: calc($glyph-size / 2);
+            height: calc(100% - $glyph-size);
+        }
+    }
+    &.top, &.bottom {
+        &:not(.start):not(.end) {
+            left: calc($glyph-size / 2);
+            width: calc(100% - $glyph-size);
+        }
+    }
+
+    &:hover, &.active {
+        background-color: #1389FD;
+    }
+}
+
+// Prevents the box from becoming invisible when a parent is resized
+:host {
+    min-width: 2rem;
+    min-height: 2rem;
+}

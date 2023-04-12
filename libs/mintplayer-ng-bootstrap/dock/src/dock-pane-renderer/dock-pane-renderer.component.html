@@ -19,6 +19,11 @@
     <ng-container *bsInstanceofCase="BsContentPaneType; let content">
         <ng-template [cdkPortalOutlet]="content.dockPanel.contentPortal"></ng-template>
     </ng-container>
+    <ng-container *bsInstanceofCase="BsFloatingPaneType; let content">
+        <bs-resizable *ngIf="content.pane">
+            <bs-dock-pane-renderer [layout]="content.pane"></bs-dock-pane-renderer>
+        </bs-resizable>
+    </ng-container>
     <div *bsInstanceofDefault>
         No match
     </div>
