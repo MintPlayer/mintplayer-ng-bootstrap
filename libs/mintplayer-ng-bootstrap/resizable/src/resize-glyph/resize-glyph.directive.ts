@@ -52,14 +52,16 @@ export class BsResizeGlyphDirective {
   }
 
   onPointerDown() {
-    let action: ResizeAction = {};
+    let action: ResizeAction = {
+      positioning: this.resizable.positioning
+    };
     const rect = this.resizable.element.nativeElement.getBoundingClientRect();
     const styles = window.getComputedStyle(this.resizable.element.nativeElement);
 
-    const marginLeft = parseFloat(styles.marginLeft.slice(0, -2));
-    const marginRight = parseFloat(styles.marginRight.slice(0, -2));
-    const marginTop = parseFloat(styles.marginTop.slice(0, -2));
-    const marginBottom = parseFloat(styles.marginBottom.slice(0, -2));
+    const marginLeft = (this.resizable.positioning === 'absolute') ? undefined : parseFloat(styles.marginLeft.slice(0, -2));
+    const marginRight = (this.resizable.positioning === 'absolute') ? undefined : parseFloat(styles.marginRight.slice(0, -2));
+    const marginTop = (this.resizable.positioning === 'absolute') ? undefined : parseFloat(styles.marginTop.slice(0, -2));
+    const marginBottom = (this.resizable.positioning === 'absolute') ? undefined : parseFloat(styles.marginBottom.slice(0, -2));
 
     if (this.positions?.includes('start')) {
       action = {
@@ -108,7 +110,6 @@ export class BsResizeGlyphDirective {
 
     this.resizable.resizeAction = action;
     this.activeClass = true;
-    console.log('resize', action);
   }
 
   private isBusy = false;
@@ -117,31 +118,60 @@ export class BsResizeGlyphDirective {
       ev.preventDefault();
       this.isBusy = true;
       const rct = this.resizable.element.nativeElement.getBoundingClientRect();
-      // console.log('position', ev);
       if (this.resizable.resizeAction.start && this.positions?.includes('end')) {
         // Right glyph
-        const initalMargin = this.resizable.marginRight ?? 0;
         const x = (ev.clientX < rct.left + 10) ? rct.left + 10 : ev.clientX;
-        this.resizable.marginRight = initalMargin - (x - rct.right);
+        switch (this.resizable.positioning) {
+          case 'inline': {
+            const initalMargin = this.resizable.marginRight ?? 0;
+            this.resizable.marginRight = initalMargin - (x - rct.right);
+          } break;
+          case 'absolute': {
+            this.resizable.width = x - rct.left;
+          } break;
+        }
       } else if (this.resizable.resizeAction.end && this.positions?.includes('start')) {
         // Left glyph
-        const initalMargin = this.resizable.marginLeft ?? 0;
         const x = (ev.clientX > rct.right - 10) ? rct.right - 10 : ev.clientX;
-        this.resizable.marginLeft = initalMargin + x - rct.left;
+        switch (this.resizable.positioning) {
+          case 'inline': {
+            const initalMargin = this.resizable.marginLeft ?? 0;
+            this.resizable.marginLeft = initalMargin + x - rct.left;
+          } break;
+          case 'absolute': {
+            this.resizable.left = x;
+            this.resizable.width = this.resizable.resizeAction.end.edge - x;
+          } break;
+        }
       }
 
       if (this.resizable.resizeAction.top && this.positions?.includes('bottom')) {
         // Bottom glyph
-        const initalMargin = this.resizable.marginBottom ?? 0;
         const y = (ev.clientY < rct.top + 10) ? rct.top + 10 : ev.clientY;
-        this.resizable.height = y - rct.top;
-        this.resizable.marginBottom = initalMargin - (y - rct.bottom);
+        switch (this.resizable.positioning) {
+          case 'inline': {
+            const initalMargin = this.resizable.marginBottom ?? 0;
+            this.resizable.height = y - rct.top;
+            this.resizable.marginBottom = initalMargin - (y - rct.bottom);
+          } break;
+          case 'absolute': {
+            this.resizable.height = y - rct.top;
+          } break;
+        }
       } else if (this.resizable.resizeAction.bottom && this.positions?.includes('top')) {
         // Top glyph
-        const initalMargin = this.resizable.marginTop ?? 0;
         const y = (ev.clientY > rct.bottom - 10) ? rct.bottom - 10 : ev.clientY;
-        this.resizable.height = rct.bottom - y;
-        this.resizable.marginTop = initalMargin + y - rct.top;
+        switch (this.resizable.positioning) {
+          case 'inline': {
+            const initalMargin = this.resizable.marginTop ?? 0;
+            this.resizable.height = rct.bottom - y;
+            this.resizable.marginTop = initalMargin + y - rct.top;
+          } break;
+          case 'absolute': {
+            this.resizable.top = y;
+            this.resizable.height = this.resizable.resizeAction.bottom.edge - y;
+          } break;
+        }
       }
       this.isBusy = false;
     }
