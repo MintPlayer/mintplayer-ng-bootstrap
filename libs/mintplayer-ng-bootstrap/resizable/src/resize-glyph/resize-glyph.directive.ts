@@ -10,7 +10,8 @@ import { RESIZABLE } from '../providers/resizable.provider';
 })
 export class BsResizeGlyphDirective {
 
-  resizable: BsResizableComponent
+  // Can't use typed DI because of the `import type`
+  private resizable: BsResizableComponent;
   constructor(@Inject(RESIZABLE) resizable: any) {
     this.resizable = resizable;
   }

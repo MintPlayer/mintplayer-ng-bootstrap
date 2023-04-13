@@ -7,7 +7,10 @@ import { BsTabsPosition } from '../tabs-position';
 @Component({
   selector: 'bs-tab-control',
   templateUrl: './tab-control.component.html',
-  styleUrls: ['./tab-control.component.scss']
+  styleUrls: ['./tab-control.component.scss'],
+  providers: [
+    { provide: 'TAB_CONTROL', useExisting: BsTabControlComponent }
+  ]
 })
 export class BsTabControlComponent implements OnDestroy {
 
@@ -35,8 +38,9 @@ export class BsTabControlComponent implements OnDestroy {
   @HostBinding('class.position-relative') positionRelative = true;
   @ContentChildren(BsTabPageComponent) set setTabPages(value: QueryList<BsTabPageComponent>) {
     this.tabPages$.next(value);
-    const missing = value.filter(tp => !this.orderedTabPages.includes(tp));
-    this.orderedTabPages = this.orderedTabPages.concat(missing);
+    const list = value.toArray();
+    const toAdd = value.filter(tp => !this.orderedTabPages.includes(tp));
+    this.orderedTabPages = this.orderedTabPages.concat(toAdd).filter((tp) => list.includes(tp));
   }
   @Input() public border = true;
   @Input() public set restrictDragging(value: boolean) {

@@ -1,4 +1,4 @@
-import { Component, ElementRef, Input } from '@angular/core';
+import { Component, ElementRef, HostBinding, Input } from '@angular/core';
 import { DomPortal } from '@angular/cdk/portal';
 import { BehaviorSubject, Observable, map } from 'rxjs';
 import { BsDockPane } from '../panes/dock-pane';
@@ -17,22 +17,6 @@ import { BsFloatingPane } from '../panes/floating-pane';
 export class BsDockPaneRendererComponent {
 
   constructor(element: ElementRef) {
-    // this.layoutType$ = this.layout$.pipe<EPaneType | null>(map((layout) => {
-    //   if (layout === null) {
-    //     return null;
-    //   } else if (layout instanceof BsDocumentHost) {
-    //     return EPaneType.documentHost;
-    //   } else if (layout instanceof BsSplitPane) {
-    //     return EPaneType.splitPane;
-    //   } else if (layout instanceof BsContentPane) {
-    //     return EPaneType.contentPane;
-    //   } else if (layout instanceof BsTabGroupPane) {
-    //     return EPaneType.tabGroupPane;
-    //   } else {
-    //     return null;
-    //     // throw 'unknown pane type';
-    //   }
-    // }));
     this.portal = new DomPortal(element);
   }
 
@@ -51,10 +35,7 @@ export class BsDockPaneRendererComponent {
     return this.layout$.value;
   }
   @Input() public set layout(value: BsDockPane | null) {
-    console.log('set layout', value);
     this.layout$.next(value);
   }
   //#endregion
-
-  // layoutType$: Observable<EPaneType | null>;
 }

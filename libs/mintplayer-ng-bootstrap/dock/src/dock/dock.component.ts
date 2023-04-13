@@ -57,7 +57,6 @@ export class BsDockComponent implements OnDestroy {
 
   floating$ = new BehaviorSubject<BsDockPaneRendererComponent[]>([]);
   @ViewChildren('floating') set floatingPanes(value: QueryList<BsDockPaneRendererComponent>) {
-    // value.changes.pipe(takeUntil(this.destroyed$)).subscribe((changes) => console.log('floatingPanes', changes));
     this.floating$.next(value.toArray());
   }
 

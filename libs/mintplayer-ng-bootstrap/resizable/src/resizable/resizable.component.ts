@@ -3,6 +3,7 @@ import { BehaviorSubject, Observable, map, Subject, takeUntil } from 'rxjs';
 import { ResizeAction } from '../interfaces/resize-action';
 import { RESIZABLE } from '../providers/resizable.provider';
 import { ResizablePositioning } from '../types/positioning';
+import { PresetPosition } from '../interfaces/preset-position';
 
 @Component({
   selector: 'bs-resizable',
@@ -47,6 +48,17 @@ export class BsResizableComponent implements OnDestroy {
     this.positioning$.next(value);
   }
   //#endregion
+
+  @Input() public set presetPosition(value: PresetPosition) {
+    if (this.positioning === 'inline') {
+      throw 'presetPosition currently only supported in absolute positioning';
+    }
+    this.width = value.width;
+    this.height = value.height;
+    this.left = value.left;
+    this.top = value.top;
+    this.marginTop = this.marginBottom = this.marginLeft = this.marginRight = undefined;
+  }
 
   @HostBinding('style.margin-left.px') marginLeft?: number;
   @HostBinding('style.margin-right.px') marginRight?: number;
