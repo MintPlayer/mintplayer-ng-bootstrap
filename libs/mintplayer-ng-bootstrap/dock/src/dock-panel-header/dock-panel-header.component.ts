@@ -1,4 +1,3 @@
-import { GlobalPositionStrategy, Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { Component, ElementRef, HostBinding, HostListener, Inject, Optional, forwardRef } from '@angular/core';
 import { take } from 'rxjs';
 import { BsTabControlComponent } from '@mintplayer/ng-bootstrap/tab-control';
@@ -19,15 +18,10 @@ import { DragOperation } from '../interfaces/drag-operation';
   styleUrls: ['./dock-panel-header.component.scss']
 })
 export class BsDockPanelHeaderComponent {
-  constructor(private overlay: Overlay, private dockPanel: BsDockPanelComponent, private dock: BsDockComponent, private element: ElementRef<HTMLElement>) {
-    this.overlayRef = this.overlay.create({
-      positionStrategy: this.overlay.position().global()
-    });
-  }
+  constructor(private dockPanel: BsDockPanelComponent, private dock: BsDockComponent, private element: ElementRef<HTMLElement>) {}
 
   isMouseDown = false;
   dragOperation?: DragOperation;
-  overlayRef: OverlayRef;
   isLayoutDetached = false;
   @HostListener('mousedown', ['$event']) onMouseDown(ev: MouseEvent) {
     ev.preventDefault();

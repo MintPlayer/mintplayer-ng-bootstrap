@@ -8,6 +8,7 @@ import { BsContentPane } from '../panes/content-pane';
 import { BsDocumentHost } from '../panes/document-host-pane';
 import { BsTabGroupPane } from '../panes/tab-group-pane';
 import { BsFloatingPane } from '../panes/floating-pane';
+import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 
 @Component({
   selector: 'bs-dock-pane-renderer',
@@ -16,7 +17,7 @@ import { BsFloatingPane } from '../panes/floating-pane';
 })
 export class BsDockPaneRendererComponent {
 
-  constructor(element: ElementRef) {
+  constructor(private overlay: Overlay, element: ElementRef) {
     this.portal = new DomPortal(element);
   }
 
@@ -38,4 +39,20 @@ export class BsDockPaneRendererComponent {
     this.layout$.next(value);
   }
   //#endregion
+
+  private overlayRef?: OverlayRef;
+  public moveToOverlay() {
+    if (!this.overlayRef && !this.portal.isAttached) {
+      this.overlayRef = this.overlay.create({});
+      this.portal.attach(this.overlayRef);
+    }
+  }
+
+  public disposeOverlay() {
+    if (this.overlayRef) {
+      this.portal.detach();
+      this.overlayRef.dispose();
+      this.overlayRef = undefined;
+    }
+  }
 }
