@@ -14,7 +14,7 @@ import { Overlay } from '@angular/cdk/overlay';
   styleUrls: ['./dock.component.scss']
 })
 export class BsDockComponent implements OnDestroy {
-  constructor(private overlay: Overlay) {
+  constructor() {
     const tabs = new BsTabGroupPane();
     const docHost = new BsDocumentHost();
     docHost.rootPane = tabs;
@@ -32,10 +32,7 @@ export class BsDockComponent implements OnDestroy {
 
     this.floating$.pipe(takeUntil(this.destroyed$))
       .subscribe((floating) => {
-        floating.forEach((panel) => {
-          const overlayRef = this.overlay.create({});
-          overlayRef.attach(panel.portal);
-        });
+        floating.forEach((panel) => panel.moveToOverlay());
       });
   }
 
@@ -72,5 +69,6 @@ export class BsDockComponent implements OnDestroy {
   destroyed$ = new Subject();
   ngOnDestroy() {
     this.destroyed$.next(true);
+    this.floating$.value.forEach(panel => panel.disposeOverlay());
   }
 }
