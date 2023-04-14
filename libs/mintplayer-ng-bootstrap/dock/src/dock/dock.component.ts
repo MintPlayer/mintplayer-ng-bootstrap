@@ -1,5 +1,5 @@
 import { Component, ContentChildren, ViewChildren, Input, OnDestroy, QueryList, HostBinding } from '@angular/core';
-import { BehaviorSubject, combineLatest, combineLatestAll, Subject, takeUntil } from 'rxjs';
+import { BehaviorSubject, combineLatest, combineLatestAll, map, Subject, takeUntil } from 'rxjs';
 import { BsDockPanelComponent } from '../dock-panel/dock-panel.component';
 import { EPaneType } from '../enums/pane-type.enum';
 import { BsDockLayout } from '../interfaces/dock-layout';
@@ -34,6 +34,10 @@ export class BsDockComponent implements OnDestroy {
       .subscribe((floating) => {
         floating.forEach((panel) => panel.moveToOverlay());
       });
+
+    // this.layout$.pipe(map((layout) => {
+    //   layout.rootPane
+    // }))
   }
 
   //#region Panels
