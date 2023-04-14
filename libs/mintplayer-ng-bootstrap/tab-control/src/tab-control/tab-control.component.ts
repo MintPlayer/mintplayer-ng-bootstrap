@@ -1,4 +1,4 @@
-import { CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
+import { CdkDragDrop, CdkDragStart, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { Component, ContentChildren, ElementRef, HostBinding, Input, OnDestroy, QueryList, Renderer2 } from '@angular/core';
 import { BehaviorSubject, combineLatest, filter, map, Observable, Subject, takeUntil } from 'rxjs';
 import { BsTabPageComponent } from '../tab-page/tab-page.component';
@@ -93,6 +93,12 @@ export class BsTabControlComponent implements OnDestroy {
       this.activeTab$.next(tab);
     }
     return false;
+  }
+
+  startDragTab(ev: CdkDragStart<BsTabPageComponent>) {
+    if ('vibrate' in navigator) {
+      navigator.vibrate([30]);
+    }
   }
 
   moveTab(ev: CdkDragDrop<QueryList<BsTabPageComponent> | null>) {
