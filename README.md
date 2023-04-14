@@ -29,7 +29,7 @@ Now you should import the `bootstrap` stylesheet in the application. To do so, y
 Update your `angular.json`:
 
     "styles": [
-      "node_modules/@mintplayer/ng-bootstrap/_bootstrap.scss",
+      "@mintplayer/ng-bootstrap/bootstrap.scss",
       "src/styles.scss"
     ],
 
