@@ -1,11 +1,14 @@
 {
   "name": "@mintplayer/ng-bootstrap",
   "private": false,
-  "version": "15.23.5",
+  "version": "15.24.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/MintPlayer/mintplayer-ng-bootstrap",
     "directory": "libs/mintplayer-ng-bootstrap"
+  },
+  "exports": {
+    "bootstrap.scss": "./_bootstrap.scss"
   },
   "peerDependencies": {
     "@angular/common": "^15.1.0",
