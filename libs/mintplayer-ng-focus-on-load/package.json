@@ -1,16 +1,16 @@
 {
   "name": "@mintplayer/ng-focus-on-load",
   "private": false,
-  "version": "15.2.0",
+  "version": "15.2.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/MintPlayer/mintplayer-ng-bootstrap",
     "directory": "libs/mintplayer-ng-focus-on-load"
   },
   "peerDependencies": {
-    "@angular/common": "^15.1.0",
-    "@angular/core": "^15.1.0",
-    "@angular/platform-browser": "^15.1.0"
+    "@angular/common": "^15.2.0",
+    "@angular/core": "^15.2.0",
+    "@angular/platform-browser": "^15.2.0"
   },
   "dependencies": {
     "tslib": "^2.3.0"
