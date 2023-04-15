@@ -1,14 +1,15 @@
 {
   "name": "@mintplayer/pagination",
   "private": false,
-  "type": "commonjs",
-  "version": "1.1.0",
+  "type": "module",
+  "version": "1.2.0",
   "description": "Pagination typescript library",
   "repository": {
     "type": "git",
     "url": "https://github.com/MintPlayer/mintplayer-ng-bootstrap",
     "directory": "libs/mintplayer-pagination"
   },
+  "main": "./src/index.js",
   "dependencies": {},
   "devDependencies": {},
   "peerDependencies": {},
