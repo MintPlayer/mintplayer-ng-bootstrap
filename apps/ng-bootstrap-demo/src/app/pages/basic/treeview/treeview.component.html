@@ -1,0 +1,49 @@
+<h1 class="text-center">Treeview</h1>
+<bs-treeview>
+    <bs-treeview-item>
+        <span>
+            <bs-icon [icon]="'inbox-fill'"></bs-icon>
+            Inbox
+        </span>
+        <bs-treeview>
+            <bs-treeview-item>
+                <span>
+                    <bs-icon [icon]="'building'"></bs-icon>
+                    Office
+                </span>
+                <bs-treeview>
+                    <bs-treeview-item>
+                        <bs-icon [icon]="'people-fill'"></bs-icon>
+                        Customers
+                    </bs-treeview-item>
+                    <bs-treeview-item>
+                        <bs-icon [icon]="'person-bounding-box'"></bs-icon>
+                        Co-Workers
+                    </bs-treeview-item>
+                </bs-treeview>
+            </bs-treeview-item>
+            <bs-treeview-item>
+                <span>
+                    <bs-icon [icon]="'inbox'"></bs-icon>
+                    Others
+                </span>
+            </bs-treeview-item>
+        </bs-treeview>
+    </bs-treeview-item>
+    <bs-treeview-item>
+        <bs-icon [icon]="'archive-fill'"></bs-icon>
+        Drafts
+    </bs-treeview-item>
+    <bs-treeview-item>
+        <bs-icon [icon]="'calendar3'"></bs-icon>
+        Calendar
+    </bs-treeview-item>
+    <bs-treeview-item>
+        <bs-icon [icon]="'person-lines-fill'"></bs-icon>
+        Contacts
+    </bs-treeview-item>
+    <bs-treeview-item>
+        <bs-icon [icon]="'trash-fill'"></bs-icon>
+        Deleted Items
+    </bs-treeview-item>
+</bs-treeview>

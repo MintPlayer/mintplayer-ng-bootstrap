@@ -1,0 +1,7 @@
+<bs-list-group-item (click)="onClick($event)" class="d-block cursor-pointer list-group-item-action">
+    <span [style.padding-left.px]="parent.indentation$ | async">
+        <bs-icon [icon]="'chevron-right'" [class.open]="childTree?.isExpanded$ | async" [class.invisible]="!childTree" class="d-inline-block me-2"></bs-icon>
+        <ng-content></ng-content>
+    </span>
+</bs-list-group-item>
+<ng-content select="bs-treeview"></ng-content>

@@ -1,16 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, HostBinding } from '@angular/core';
 
 @Component({
   selector: 'bs-list-group-item',
   templateUrl: './list-group-item.component.html',
   styleUrls: ['./list-group-item.component.scss']
 })
-export class BsListGroupItemComponent implements OnInit {
-
-  constructor() {
-  }
-
-  ngOnInit() {
-  }
-
+export class BsListGroupItemComponent {
+  @HostBinding('class.list-group-item') classes = true;
 }

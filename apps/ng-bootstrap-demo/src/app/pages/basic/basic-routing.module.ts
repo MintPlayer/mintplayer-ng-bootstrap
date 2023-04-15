@@ -24,6 +24,7 @@ const routes: Routes = [
   { path: 'table', loadChildren: () => import('./table/table.module').then(m => m.TableModule) },
   { path: 'button-type', loadChildren: () => import('./button-type/button-type.module').then(m => m.ButtonTypeModule) },
   { path: 'containers', loadChildren: () => import('./containers/containers.module').then(m => m.ContainersModule) },
+  { path: 'treeview', loadChildren: () => import('./treeview/treeview.module').then(m => m.TreeviewModule) },
 ];
 
 @NgModule({
