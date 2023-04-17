@@ -1,0 +1,25 @@
+{
+  "name": "@mintplayer/parentify",
+  "private": false,
+  "type": "module",
+  "version": "1.0.0",
+  "description": "Adds the parent to objects",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MintPlayer/mintplayer-ng-bootstrap",
+    "directory": "libs/mintplayer-parentify"
+  },
+  "main": "./src/index.js",
+  "dependencies": {},
+  "devDependencies": {},
+  "peerDependencies": {},
+  "author": {
+    "name": "Pieterjan De Clippel",
+    "url": "https://github.com/MintPlayer",
+    "email": "info@mintplayer.com"
+  },
+  "keywords": [
+    "parentify",
+    "typescript"
+  ]
+}

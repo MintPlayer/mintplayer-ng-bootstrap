@@ -52,6 +52,12 @@
         "coverageDirectory": "coverage/libs/mintplayer-qr-code",
         "jestConfig": "libs/mintplayer-qr-code/jest.config.ts",
         "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "ci": true,
+          "codeCoverage": true
+        }
       }
     }
   },

@@ -52,6 +52,12 @@
         "coverageDirectory": "coverage/libs/mintplayer-dijkstra",
         "jestConfig": "libs/mintplayer-dijkstra/jest.config.ts",
         "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "ci": true,
+          "codeCoverage": true
+        }
       }
     }
   },

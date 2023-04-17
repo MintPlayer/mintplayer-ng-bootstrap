@@ -52,6 +52,12 @@
         "coverageDirectory": "coverage/libs/mintplayer-encode-utf8",
         "jestConfig": "libs/mintplayer-encode-utf8/jest.config.ts",
         "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "ci": true,
+          "codeCoverage": true
+        }
       }
     }
   },
