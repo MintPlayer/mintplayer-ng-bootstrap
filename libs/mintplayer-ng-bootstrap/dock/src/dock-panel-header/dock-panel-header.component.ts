@@ -11,6 +11,7 @@ import { BsTabGroupPane } from '../panes/tab-group-pane';
 import { BsDocumentHost } from '../panes/document-host-pane';
 import { RemoveFromPaneResult } from '../interfaces/remove-from-pane-result';
 import { DragOperation } from '../interfaces/drag-operation';
+import { BsDockService } from '../services/dock/dock.service';
 
 @Component({
   selector: 'bs-dock-panel-header',
@@ -18,7 +19,7 @@ import { DragOperation } from '../interfaces/drag-operation';
   styleUrls: ['./dock-panel-header.component.scss']
 })
 export class BsDockPanelHeaderComponent {
-  constructor(private dockPanel: BsDockPanelComponent, private dock: BsDockComponent, private element: ElementRef<HTMLElement>) {}
+  constructor(private dockPanel: BsDockPanelComponent, private dock: BsDockComponent, private dockService: BsDockService, private element: ElementRef<HTMLElement>) {}
 
   isMouseDown = false;
   dragOperation?: DragOperation;
@@ -82,10 +83,23 @@ export class BsDockPanelHeaderComponent {
             this.dock.layout$.next(layout);
           }
         });
-      } else if (this.dragOperation) {
-        if (this.dragOperation.floatingPane.location) {
-          this.dragOperation.floatingPane.location.x = ev.clientX - this.dragOperation.offsetX;
-          this.dragOperation.floatingPane.location.y = ev.clientY - this.dragOperation.offsetY;
+      } else {
+        if (this.dragOperation) {
+          if (this.dragOperation.floatingPane.location) {
+            this.dragOperation.floatingPane.location.x = ev.clientX - this.dragOperation.offsetX;
+            this.dragOperation.floatingPane.location.y = ev.clientY - this.dragOperation.offsetY;
+          }
+        } else {
+          const traces = this.dockService.buildTraces(this.dock.layout);
+          const matchingTrace = traces.filter(trace => {
+            const pane = trace.trace[trace.trace.length - 1];
+            return (pane instanceof BsContentPane) && (pane.dockPanel === this.dockPanel);
+          });
+
+          console.log('matching', { traces, matchingTrace });
+          // this.dragOperation = {
+            
+          // }
         }
       }
     }

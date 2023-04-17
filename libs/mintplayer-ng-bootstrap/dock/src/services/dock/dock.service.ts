@@ -5,40 +5,32 @@ import { BsContentPane } from '../../panes/content-pane';
 import { BsTabGroupPane } from '../../panes/tab-group-pane';
 import { BsFloatingPane } from '../../panes/floating-pane';
 import { BsDocumentHost } from '../../panes/document-host-pane';
+import { BsDockLayout } from '../../interfaces/dock-layout';
 
 @Injectable({
   providedIn: 'root'
 })
 export class BsDockService {
-
-  constructor() {
-
+  public buildTraces(layout: BsDockLayout) {
+    const result = this.buildTracesPrivate([layout.rootPane, ...layout.floatingPanes]);
+    // const result = this.buildTracesPrivate([layout.rootPane]);
+    return result;
   }
 
-  public getAllPanes(rootPane: BsDockPane) {
-    // [rootPane].reduce((prev, curr))
-    const result = this.getChildPanes(rootPane)
-      .flatMap(parent => [
-        parent,
-        ...this.getChildPanes(parent).map(child => [parent, child])
-      ]);
-    
+  private buildTracesPrivate(currentSequence: BsDockPane[]): PaneTraceResult[] {
+    const children = this.getChildPanes(currentSequence[currentSequence.length - 1]);
+    if (children.length === 0) {
+      return [{
+        finished: true,
+        trace: [currentSequence]
+      }];
+    } else {
+      const result = children.map(child => this.buildTracesPrivate([...currentSequence, child]));
+      return result.flatMap(r => r);
+    }
   }
 
   private getChildPanes(pane: BsDockPane): BsDockPane[] {
-    // if (pane instanceof BsContentPane) {
-    //   return [pane];
-    // } else if (pane instanceof BsTabGroupPane) {
-    //   return (<BsDockPane[]>pane.panes).concat(pane)
-    // } else if (pane instanceof BsSplitPane) {
-    //   return (<BsDockPane[]>pane.panes).concat([pane])
-    // } else if (pane instanceof BsFloatingPane) {
-    //   return [pane, pane.pane].filter(p => !!p).map(p => p!);
-    // } else if (pane instanceof BsDocumentHost) {
-    //   return [pane, pane.rootPane].filter(p => !!p).map(p => p!);
-    // } else {
-    //   return [];
-    // }
     if (pane instanceof BsContentPane) {
       return [];
     } else if (pane instanceof BsTabGroupPane) {
@@ -55,7 +47,7 @@ export class BsDockService {
   }
 }
 
-export interface PaneTrace {
-  pane: BsDockPane;
+export interface PaneTraceResult {
   trace: BsDockPane[];
+  finished: boolean;
 }
