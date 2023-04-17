@@ -1,7 +1,6 @@
 {
   "name": "@mintplayer/parentify",
   "private": false,
-  "type": "module",
   "version": "1.0.0",
   "description": "Adds the parent to objects",
   "repository": {

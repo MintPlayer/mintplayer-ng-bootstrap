@@ -1,7 +1,6 @@
 {
   "name": "@mintplayer/encode-utf8",
   "private": false,
-  "type": "module",
   "version": "1.2.0",
   "description": "encode-utf8 TypeScript implementation",
   "repository": {

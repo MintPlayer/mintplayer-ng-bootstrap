@@ -1,6 +1,6 @@
 import { AfterViewInit, Component, OnDestroy } from '@angular/core';
 import { deepClone } from '@mintplayer/parentify';
-import { BehaviorSubject, Observable, Subject, map, takeUntil } from 'rxjs';
+import { BehaviorSubject, Subject, map, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'demo-parentify',
@@ -10,7 +10,7 @@ import { BehaviorSubject, Observable, Subject, map, takeUntil } from 'rxjs';
 export class ParentifyComponent implements AfterViewInit, OnDestroy {
   constructor() {
     this.example$
-      .pipe(map(deepClone))
+      .pipe(map(example => deepClone(example, true)))
       // .pipe(map((clone) => JSON.stringify(clone)))
       .pipe(takeUntil(this.destroyed$))
       .subscribe(console.log);
