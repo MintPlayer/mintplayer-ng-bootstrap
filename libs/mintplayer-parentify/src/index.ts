@@ -1,1 +1,1 @@
-export * from './lib/mintplayer-parentify';
+export * from './lib/parentify.service';
