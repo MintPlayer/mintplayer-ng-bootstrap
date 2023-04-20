@@ -12,9 +12,9 @@ import { BsDockLayout } from '../../interfaces/dock-layout';
 })
 export class BsDockService {
   public buildTraces(layout: BsDockLayout) {
-    const result = this.buildTracesPrivate([layout.rootPane, ...layout.floatingPanes]);
+    const result = [layout.rootPane, ...layout.floatingPanes].map(pane => this.buildTracesPrivate([pane]));
     // const result = this.buildTracesPrivate([layout.rootPane]);
-    return result;
+    return result.flatMap(traceGroup => traceGroup);
   }
 
   private buildTracesPrivate(currentSequence: BsDockPane[]): PaneTraceResult[] {
@@ -22,7 +22,7 @@ export class BsDockService {
     if (children.length === 0) {
       return [{
         finished: true,
-        trace: [currentSequence]
+        trace: currentSequence
       }];
     } else {
       const result = children.map(child => this.buildTracesPrivate([...currentSequence, child]));

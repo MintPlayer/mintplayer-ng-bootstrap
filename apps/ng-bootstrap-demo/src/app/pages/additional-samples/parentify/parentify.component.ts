@@ -10,7 +10,7 @@ import { BehaviorSubject, Subject, map, takeUntil } from 'rxjs';
 export class ParentifyComponent implements AfterViewInit, OnDestroy {
   constructor() {
     this.example$
-      .pipe(map(example => deepClone(example, true)))
+      .pipe(map(example => deepClone(example, true, [Object])))
       // .pipe(map((clone) => JSON.stringify(clone)))
       .pipe(takeUntil(this.destroyed$))
       .subscribe(console.log);

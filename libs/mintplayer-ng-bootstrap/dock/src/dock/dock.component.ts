@@ -1,12 +1,16 @@
 import { Component, ContentChildren, ViewChildren, Input, OnDestroy, QueryList, HostBinding } from '@angular/core';
-import { BehaviorSubject, combineLatest, combineLatestAll, map, Subject, takeUntil } from 'rxjs';
+import { BehaviorSubject, combineLatest, combineLatestAll, map, Observable, Subject, takeUntil } from 'rxjs';
 import { BsDockPanelComponent } from '../dock-panel/dock-panel.component';
 import { EPaneType } from '../enums/pane-type.enum';
 import { BsDockLayout } from '../interfaces/dock-layout';
 import { BsTabGroupPane } from '../panes/tab-group-pane';
 import { BsDocumentHost } from '../panes/document-host-pane';
+import { BsContentPane } from '../panes/content-pane';
+import { BsFloatingPane } from '../panes/floating-pane';
+import { BsSplitPane } from '../panes/split-pane';
 import { BsDockPaneRendererComponent } from '../dock-pane-renderer/dock-pane-renderer.component';
 import { Overlay } from '@angular/cdk/overlay';
+import { Parentified, deepClone } from '@mintplayer/parentify';
 
 @Component({
   selector: 'bs-dock',
@@ -34,10 +38,15 @@ export class BsDockComponent implements OnDestroy {
       .subscribe((floating) => {
         floating.forEach((panel) => panel.moveToOverlay());
       });
+      
+    this.parentifiedLayout$ = this.layout$.pipe(map(layout => deepClone(
+      layout, true,
+      // []
+      [BsContentPane, BsDocumentHost, BsFloatingPane, BsSplitPane, BsTabGroupPane],
+      true
+    )));
 
-    // this.layout$.pipe(map((layout) => {
-    //   layout.rootPane
-    // }))
+    this.parentifiedLayout$.pipe(takeUntil(this.destroyed$)).subscribe(console.log);
   }
 
   //#region Panels
@@ -69,6 +78,8 @@ export class BsDockComponent implements OnDestroy {
   @HostBinding('style.bottom')
   @HostBinding('style.right')
   positionPx = 0;
+
+  parentifiedLayout$: Observable<Parentified<BsDockLayout>>;
 
   destroyed$ = new Subject();
   ngOnDestroy() {
