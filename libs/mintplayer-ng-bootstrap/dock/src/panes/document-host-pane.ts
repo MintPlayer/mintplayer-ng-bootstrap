@@ -8,4 +8,8 @@ export class BsDocumentHost extends BsDockPane {
     }
 
     rootPane?: BsTabGroupPane
+
+    override get isEmpty() {
+        return this.rootPane?.isEmpty ?? true;
+    }
 }

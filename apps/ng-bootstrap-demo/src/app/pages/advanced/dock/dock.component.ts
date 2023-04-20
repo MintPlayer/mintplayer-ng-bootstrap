@@ -1,6 +1,6 @@
 import { Component, ViewChild, AfterViewInit } from '@angular/core';
 import { BehaviorSubject, Observable, map, delay } from 'rxjs';
-import { BsContentPane, BsDockLayout, BsDockPane, BsDockPanelComponent, BsFloatingPane, BsSplitPane, BsTabGroupPane, EPaneType } from '@mintplayer/ng-bootstrap/dock';
+import { BsContentPane, BsDockLayout, BsDockPane, BsDockPanelComponent, BsDockService, BsFloatingPane, BsSplitPane, BsTabGroupPane, EPaneType } from '@mintplayer/ng-bootstrap/dock';
 import { Color } from '@mintplayer/ng-bootstrap';
 
 @Component({
@@ -10,7 +10,7 @@ import { Color } from '@mintplayer/ng-bootstrap';
 })
 export class DockComponent implements AfterViewInit {
 
-  constructor() {
+  constructor(private dockService: BsDockService) {
     this.layout$ = new BehaviorSubject<BsDockLayout>({
       rootPane: new BsSplitPane({
         orientation: 'horizontal',
@@ -38,33 +38,38 @@ export class DockComponent implements AfterViewInit {
   @ViewChild('panel5') panel5!: BsDockPanelComponent;
   // @ViewChild('panel6') panel6!: BsDockPanelComponent;
 
-  getData(pane: BsDockLayout | BsDockPane): any {
-    if (('rootPane' in pane) && ('floatingPanes' in pane)) {
-      return {
-        rootPane: this.getData(pane.rootPane),
-        floatingPanes: pane.floatingPanes.map((fp) => this.getData(fp))
-      }
-    } else if (pane instanceof BsSplitPane) {
-      return {
-        orientation: pane.orientation,
-        panes: pane.panes.map((p) => this.getData(p))
-      }
-    } else if (pane instanceof BsTabGroupPane) {
-      return {
-        panes: pane.panes.map((p) => this.getData(p))
-      }
-    } else if (pane instanceof BsFloatingPane) {
-      return {
-        location: pane.location,
-        size: pane.size,
-        pane: pane.pane ? this.getData(pane.pane) : null
-      }
-    } else if (pane instanceof BsContentPane) {
-      return {
-        panelId: pane.dockPanel.panelId
-      }
-    }
+  getAllPanes() {
+    const result = this.dockService.buildTraces(this.layout$.value);
+    console.log('all panes', result);
   }
+
+  // getData(pane: BsDockLayout | BsDockPane): any {
+  //   if (('rootPane' in pane) && ('floatingPanes' in pane)) {
+  //     return {
+  //       rootPane: this.getData(pane.rootPane),
+  //       floatingPanes: pane.floatingPanes.map((fp) => this.getData(fp))
+  //     }
+  //   } else if (pane instanceof BsSplitPane) {
+  //     return {
+  //       orientation: pane.orientation,
+  //       panes: pane.panes.map((p) => this.getData(p))
+  //     }
+  //   } else if (pane instanceof BsTabGroupPane) {
+  //     return {
+  //       panes: pane.panes.map((p) => this.getData(p))
+  //     }
+  //   } else if (pane instanceof BsFloatingPane) {
+  //     return {
+  //       location: pane.location,
+  //       size: pane.size,
+  //       pane: pane.pane ? this.getData(pane.pane) : null
+  //     }
+  //   } else if (pane instanceof BsContentPane) {
+  //     return {
+  //       panelId: pane.dockPanel.panelId
+  //     }
+  //   }
+  // }
 
   ngAfterViewInit() {
     // const root = new BsTabGroupPane({

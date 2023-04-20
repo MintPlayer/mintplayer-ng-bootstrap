@@ -9,4 +9,8 @@ export class BsSplitPane extends BsDockPane {
 
     orientation: SplitPaneOrientation = 'horizontal';
     panes: BsDockPane[] = [];
+
+    override get isEmpty() {
+        return this.panes.length === 0;
+    }
 }

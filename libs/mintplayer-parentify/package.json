@@ -1,12 +1,12 @@
 {
-  "name": "@mintplayer/encode-utf8",
+  "name": "@mintplayer/parentify",
   "private": false,
-  "version": "1.2.0",
-  "description": "encode-utf8 TypeScript implementation",
+  "version": "1.0.0",
+  "description": "Adds the parent to objects",
   "repository": {
     "type": "git",
     "url": "https://github.com/MintPlayer/mintplayer-ng-bootstrap",
-    "directory": "libs/mintplayer-dijkstra"
+    "directory": "libs/mintplayer-parentify"
   },
   "main": "./src/index.js",
   "dependencies": {},
@@ -18,7 +18,7 @@
     "email": "info@mintplayer.com"
   },
   "keywords": [
-    "encode-utf8",
+    "parentify",
     "typescript"
   ]
 }
