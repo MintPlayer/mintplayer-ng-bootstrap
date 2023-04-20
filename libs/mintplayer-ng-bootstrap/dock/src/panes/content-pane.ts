@@ -9,4 +9,8 @@ export class BsContentPane extends BsDockPane {
 
     dockPanel!: BsDockPanelComponent;
     isPinned?: boolean;
+
+    override get isEmpty() {
+        return false;
+    }
 }

@@ -11,8 +11,10 @@ function deepCloneRecursive(obj: any, existingClones: Map<any, any>, parentify: 
     existingClones.set(obj, objClone);
   }
 
+  Object.assign(objClone, { '$original': obj });
+
   for (const prop in obj) {
-    if (prop === '$parents') {
+    if (['$parents', '$original'].includes(prop)) {
       continue;
     }
 

@@ -69,9 +69,31 @@ export class BsDockPanelHeaderComponent {
             top: ev.clientY - ev.offsetY,
           };
 
+          // this.dockPanel.headerPortal?.isAttached && this.dockPanel.headerPortal?.detach();
+          // this.dockPanel.contentPortal?.isAttached && this.dockPanel.contentPortal?.detach();
+          // this.removeFromPane(layout.rootPane, this.dockPanel);
+
+          const trace = [...matching[0].trace];
+
           this.dockPanel.headerPortal?.isAttached && this.dockPanel.headerPortal?.detach();
           this.dockPanel.contentPortal?.isAttached && this.dockPanel.contentPortal?.detach();
-          this.removeFromPane(layout.rootPane, this.dockPanel);
+          
+          
+          for (let index = trace.length - 1; index >= 0; index--) {
+            if (index > 0) {
+              this.removeFromPaneBis(trace[index - 1], trace[index]);
+              if (!trace[index - 1].isEmpty) break;
+            } else {
+              const floatingIndex = layout.floatingPanes.indexOf(trace[0]);
+              if (trace[0].isEmpty && (floatingIndex > -1)) {
+                layout.floatingPanes.splice(floatingIndex, 1);
+              }
+            }
+          }
+
+
+
+          // this.removeFromPane((<any>matching[0].trace[0])['$original'], this.dockPanel);
 
           const floatingPane = new BsFloatingPane({
             pane: new BsTabGroupPane({
@@ -169,74 +191,92 @@ export class BsDockPanelHeaderComponent {
     }
   }
 
-  removeFromPane(host: BsDockPane, panel: BsDockPanelComponent /*, parents: BsDockPane[] */): RemoveFromPaneResult {
+  removeFromPaneBis(host: BsDockPane, pane: BsDockPane) {
     if (host instanceof BsContentPane) {
-      return { paneRemoved: false, hostIsEmpty: false };
     } else if (host instanceof BsDocumentHost) {
       // Actually documentHost should never be removed
-
-      if (!host.rootPane) {
-        return { paneRemoved: false, hostIsEmpty: true };
-      }
-
-      const result = this.removeFromPane(host.rootPane, panel);
-      return { paneRemoved: result.paneRemoved, hostIsEmpty: result.hostIsEmpty };
-
     } else if (host instanceof BsTabGroupPane) {
-
-
-
-      const matching = host.panes.filter(p => p.dockPanel === panel);
-      if (matching.length > 0) {
-        host.panes.splice(host.panes.findIndex(p => p.dockPanel === panel), 1);
-        return { paneRemoved: true, hostIsEmpty: host.panes.length === 0 };
-      } else {
-        // ATM. all panes are ContentPanes anyway.
-        // So unless you'd want to have splitters inside the tabs,
-        // This code will not be hit.
-
-        // const result = host.panes
-        //   .map(parentPane => this.removeFromPane(parentPane, panel))
-        //   .filter(r => r.paneRemoved);
-        //
-        // if (result.length > 0) {
-        //   return { paneRemoved: true, hostIsEmpty: }
-        // }
-        return { paneRemoved: false, hostIsEmpty: host.panes.length === 0 };
+      if (pane instanceof BsContentPane) {
+        const index = host.panes.indexOf(pane);
+        host.panes.splice(index, 1);
       }
-
-
-
-
     } else if (host instanceof BsSplitPane) {
-      const matching = host.panes
-        .filter(p => p instanceof BsContentPane)
-        .map(p => <BsContentPane>p)
-        .filter(p => p.dockPanel === panel);
-      
-      if (matching.length > 0) {
-        host.panes.splice(host.panes.findIndex(p => (p instanceof BsContentPane) && matching.includes(p)), 1);
-
-        // TODO: Remove splitter if only 1 pane left?
-        return { paneRemoved: true, hostIsEmpty: host.panes.length === 0 };
-      } else {
-
-
-        for (let splitPane of host.panes) {
-          const result = this.removeFromPane(splitPane, panel);
-          if (result.paneRemoved && result.hostIsEmpty) {
-            // splitPane is empty now, so we can remove it from this splitter
-            host.panes.splice(host.panes.indexOf(splitPane), 1);
-            return { paneRemoved: true, hostIsEmpty: host.panes.length === 0 };
-          }
-        }
-      }
-
-      return { paneRemoved: false, hostIsEmpty: host.panes.length === 0 };
+      const index = host.panes.indexOf(pane);
+      host.panes.splice(index, 1);
+    } else if (host instanceof BsFloatingPane) {
     } else {
-      throw 'unknown host type';
+      throw 'Unknown pane type';
     }
   }
+
+  // removeFromPane(host: BsDockPane, panel: BsDockPanelComponent /*, parents: BsDockPane[] */): RemoveFromPaneResult {
+  //   if (host instanceof BsContentPane) {
+  //     return { paneRemoved: false, hostIsEmpty: false };
+  //   } else if (host instanceof BsDocumentHost) {
+  //     // Actually documentHost should never be removed
+
+  //     if (!host.rootPane) {
+  //       return { paneRemoved: false, hostIsEmpty: true };
+  //     }
+
+  //     const result = this.removeFromPane(host.rootPane, panel);
+  //     return { paneRemoved: result.paneRemoved, hostIsEmpty: result.hostIsEmpty };
+
+  //   } else if (host instanceof BsTabGroupPane) {
+
+
+
+  //     const matching = host.panes.filter(p => p.dockPanel === panel);
+  //     if (matching.length > 0) {
+  //       host.panes.splice(host.panes.findIndex(p => p.dockPanel === panel), 1);
+  //       return { paneRemoved: true, hostIsEmpty: host.panes.length === 0 };
+  //     } else {
+  //       // ATM. all panes are ContentPanes anyway.
+  //       // So unless you'd want to have splitters inside the tabs,
+  //       // This code will not be hit.
+
+  //       // const result = host.panes
+  //       //   .map(parentPane => this.removeFromPane(parentPane, panel))
+  //       //   .filter(r => r.paneRemoved);
+  //       //
+  //       // if (result.length > 0) {
+  //       //   return { paneRemoved: true, hostIsEmpty: }
+  //       // }
+  //       return { paneRemoved: false, hostIsEmpty: host.panes.length === 0 };
+  //     }
+
+
+
+
+  //   } else if (host instanceof BsSplitPane) {
+  //     const matching = host.panes
+  //       .filter(p => p instanceof BsContentPane)
+  //       .map(p => <BsContentPane>p)
+  //       .filter(p => p.dockPanel === panel);
+      
+  //     if (matching.length > 0) {
+  //       host.panes.splice(host.panes.findIndex(p => (p instanceof BsContentPane) && matching.includes(p)), 1);
+
+  //       // TODO: Remove splitter if only 1 pane left?
+  //       return { paneRemoved: true, hostIsEmpty: host.panes.length === 0 };
+  //     } else {
+
+
+  //       for (let splitPane of host.panes) {
+  //         const result = this.removeFromPane(splitPane, panel);
+  //         if (result.paneRemoved && result.hostIsEmpty) {
+  //           // splitPane is empty now, so we can remove it from this splitter
+  //           host.panes.splice(host.panes.indexOf(splitPane), 1);
+  //           return { paneRemoved: true, hostIsEmpty: host.panes.length === 0 };
+  //         }
+  //       }
+  //     }
+
+  //     return { paneRemoved: false, hostIsEmpty: host.panes.length === 0 };
+  //   } else {
+  //     throw 'unknown host type';
+  //   }
+  // }
 
   @HostListener('document:mouseup', ['$event']) onMouseUp(ev: Event) {
     this.isMouseDown = false;

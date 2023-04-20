@@ -8,4 +8,8 @@ export class BsTabGroupPane extends BsDockPane {
     }
 
     panes: BsContentPane[] = [];
+    
+    override get isEmpty() {
+        return this.panes.length === 0;
+    }
 }
