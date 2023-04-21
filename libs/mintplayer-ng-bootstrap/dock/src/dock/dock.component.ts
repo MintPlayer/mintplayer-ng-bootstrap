@@ -1,5 +1,7 @@
 import { Component, ContentChildren, ViewChildren, Input, OnDestroy, QueryList, HostBinding } from '@angular/core';
 import { BehaviorSubject, combineLatest, combineLatestAll, map, Observable, Subject, takeUntil } from 'rxjs';
+import { Overlay } from '@angular/cdk/overlay';
+import { Parentified, deepClone } from '@mintplayer/parentify';
 import { BsDockPanelComponent } from '../dock-panel/dock-panel.component';
 import { EPaneType } from '../enums/pane-type.enum';
 import { BsDockLayout } from '../interfaces/dock-layout';
@@ -9,8 +11,6 @@ import { BsContentPane } from '../panes/content-pane';
 import { BsFloatingPane } from '../panes/floating-pane';
 import { BsSplitPane } from '../panes/split-pane';
 import { BsDockPaneRendererComponent } from '../dock-pane-renderer/dock-pane-renderer.component';
-import { Overlay } from '@angular/cdk/overlay';
-import { Parentified, deepClone } from '@mintplayer/parentify';
 
 @Component({
   selector: 'bs-dock',
@@ -39,15 +39,23 @@ export class BsDockComponent implements OnDestroy {
         floating.forEach((panel) => panel.moveToOverlay());
       });
       
-    this.parentifiedLayout$ = this.layout$.pipe(map(layout => deepClone(
-      layout, true,
-      // []
-      [BsContentPane, BsDocumentHost, BsFloatingPane, BsSplitPane, BsTabGroupPane],
-      true
-    )));
+    this.parentifiedLayout$ = this.layout$.pipe(map(layout => {
+      const clone = deepClone(
+        layout, true,
+        // []
+        [BsContentPane, BsDocumentHost, BsFloatingPane, BsSplitPane, BsTabGroupPane],
+        true,
+        this.paneCache);
+
+      this.paneCache = clone.cache;
+
+      return clone.result;
+    }));
 
     this.parentifiedLayout$.pipe(takeUntil(this.destroyed$)).subscribe(console.log);
   }
+
+  private paneCache?: Map<any, any>;
 
   //#region Panels
   panels$ = new BehaviorSubject<BsDockPanelComponent[]>([]);

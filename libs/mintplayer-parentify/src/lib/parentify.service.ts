@@ -1,8 +1,11 @@
-export function deepClone(obj: any, parentify: boolean, allowedTypes: any[], preserveTypes?: boolean): any {
+export function deepClone(obj: any, parentify: boolean, allowedTypes: any[], preserveTypes?: boolean, precache?: Map<any, any>) {
   console.log('deepclone', obj);
-  const existing = new Map<any, any>();
+  const existing = precache ?? new Map<any, any>();
   const result = deepCloneRecursive(obj, existing, parentify, allowedTypes, preserveTypes);
-  return result;
+  return {
+    result,
+    cache: existing,
+  };
 }
 
 function deepCloneRecursive(obj: any, existingClones: Map<any, any>, parentify: boolean, allowedTypes?: any[], preserveTypes?: boolean) {
