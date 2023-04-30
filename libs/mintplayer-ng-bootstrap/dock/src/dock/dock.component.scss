@@ -12,4 +12,8 @@
     // bs-tab-control > div.tab-content > bs-tab-page > div.tab-page-content > bs-dock-pane-renderer {
     //     position: absolute;
     // }
+    
+    > bs-dock-panel > * {
+        display: none;
+    }
 }
