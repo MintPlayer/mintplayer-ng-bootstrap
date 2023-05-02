@@ -47,7 +47,9 @@ export class BsDockComponent implements OnDestroy {
         true,
         this.paneCache);
 
-      this.paneCache = clone.cache;
+      // this.paneCache = clone.cache;
+
+      console.log('parentify', { layout, result: clone.result });
 
       return clone.result;
     }));
