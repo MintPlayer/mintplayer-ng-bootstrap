@@ -36,6 +36,13 @@ export class DockComponent implements AfterViewInit {
   @ViewChild('panel3') panel3!: BsDockPanelComponent;
   @ViewChild('panel4') panel4!: BsDockPanelComponent;
   @ViewChild('panel5') panel5!: BsDockPanelComponent;
+  @ViewChild('panel6') panel6!: BsDockPanelComponent;
+  @ViewChild('panel7') panel7!: BsDockPanelComponent;
+  @ViewChild('panel8') panel8!: BsDockPanelComponent;
+  @ViewChild('panel9') panel9!: BsDockPanelComponent;
+  @ViewChild('panel10') panel10!: BsDockPanelComponent;
+  @ViewChild('panel11') panel11!: BsDockPanelComponent;
+  @ViewChild('panel12') panel12!: BsDockPanelComponent;
   // @ViewChild('panel6') panel6!: BsDockPanelComponent;
 
   getAllPanes() {
@@ -127,7 +134,28 @@ export class DockComponent implements AfterViewInit {
               panes: [
                 new BsContentPane({
                   dockPanel: this.panel4,
-                })
+                }),
+                // new BsContentPane({
+                //   dockPanel: this.panel6,
+                // }),
+                new BsContentPane({
+                  dockPanel: this.panel7,
+                }),
+                new BsContentPane({
+                  dockPanel: this.panel8,
+                }),
+                new BsContentPane({
+                  dockPanel: this.panel9,
+                }),
+                new BsContentPane({
+                  dockPanel: this.panel10,
+                }),
+                new BsContentPane({
+                  dockPanel: this.panel11,
+                }),
+                new BsContentPane({
+                  dockPanel: this.panel12,
+                }),
               ]
             }),
           ]

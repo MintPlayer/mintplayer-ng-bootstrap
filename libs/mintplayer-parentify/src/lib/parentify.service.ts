@@ -10,9 +10,17 @@ export function deepClone(obj: any, parentify: boolean, allowedTypes: any[], pre
 
 function deepCloneRecursive(obj: any, existingClones: Map<any, any>, parentify: boolean, allowedTypes?: any[], preserveTypes?: boolean) {
   const objClone = preserveTypes ? Object.create(Object.getPrototypeOf(obj)) : {};
-  if (!existingClones.has(obj)) {
-    existingClones.set(obj, objClone);
+  if (existingClones.has(obj)) {
+    const result = existingClones.get(obj);
+    console.log('Cached clone found', { obj, result });
+    return result;
+  } else {
+    console.log('Nothing found', { obj, existingClones });
   }
+  
+  // if (!existingClones.has(obj)) {
+  existingClones.set(obj, objClone);
+  // }
 
   Object.assign(objClone, { '$original': obj });
 
