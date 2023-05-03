@@ -30,6 +30,8 @@ export class BsDockPaneRendererComponent {
   readonly BsContentPaneType = BsContentPane;
   readonly BsFloatingPaneType = BsFloatingPane;
 
+  @HostBinding('class.position-relative') positionRelative = true;
+
   //#region Layout
   layout$ = new BehaviorSubject<BsDockPane | null>(null);
   public get layout() {

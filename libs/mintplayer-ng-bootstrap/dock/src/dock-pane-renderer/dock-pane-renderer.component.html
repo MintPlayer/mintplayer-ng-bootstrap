@@ -3,14 +3,17 @@
     <div *bsInstanceofCase="BsDocumentHostType; let documentHost" data-hello>
         <bs-dock-pane-renderer [layout]="documentHost"></bs-dock-pane-renderer>
     </div>
-    <bs-tab-control *bsInstanceofCase="BsTabGroupType; let tabGroup" [allowDragDrop]="false" class="d-flex flex-column h-100 dock-tabs">
-        <bs-tab-page *ngFor="let tab of tabGroup.panes">
-            <ng-container *bsTabPageHeader>
-                <ng-template [cdkPortalOutlet]="tab.dockPanel.headerPortal"></ng-template>
-            </ng-container>
-            <bs-dock-pane-renderer [layout]="tab"></bs-dock-pane-renderer>
-        </bs-tab-page>
-    </bs-tab-control>
+    <ng-container *bsInstanceofCase="BsTabGroupType; let tabGroup">
+        <bs-tab-control [allowDragDrop]="false" class="d-flex flex-column h-100 dock-tabs">
+            <bs-tab-page *ngFor="let tab of tabGroup.panes">
+                <ng-container *bsTabPageHeader>
+                    <ng-template [cdkPortalOutlet]="tab.dockPanel.headerPortal"></ng-template>
+                </ng-container>
+                <bs-dock-pane-renderer [layout]="tab"></bs-dock-pane-renderer>
+            </bs-tab-page>
+        </bs-tab-control>
+        <div class="dock-region position-absolute w-100 h-100"></div>
+    </ng-container>
     <bs-splitter *bsInstanceofCase="BsSplitterType; let splitter" [orientation]="splitter.orientation">
         <bs-split-panel *ngFor="let panel of splitter.panes">
             <bs-dock-pane-renderer [layout]="panel"></bs-dock-pane-renderer>

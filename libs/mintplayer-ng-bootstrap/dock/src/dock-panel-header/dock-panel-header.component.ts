@@ -71,7 +71,11 @@ export class BsDockPanelHeaderComponent {
 
           // this.dockPanel.headerPortal?.isAttached && this.dockPanel.headerPortal?.detach();
           // this.dockPanel.contentPortal?.isAttached && this.dockPanel.contentPortal?.detach();
-          this.removeFromPane(parentifiedLayout.$original.rootPane, this.dockPanel);
+          
+          // this.removeFromPane(parentifiedLayout.$original.rootPane, this.dockPanel);
+          [parentifiedLayout.$original.rootPane, ...parentifiedLayout.$original.floatingPanes].forEach((pane) => {
+            this.removeFromPane(pane, this.dockPanel);
+          });
 
           const trace = [...matching[0].trace];
 
@@ -274,6 +278,14 @@ export class BsDockPanelHeaderComponent {
       }
 
       return { paneRemoved: false, hostIsEmpty: host.panes.length === 0 };
+    } else if (host instanceof BsFloatingPane) {
+      if (!host.pane) {
+        return { paneRemoved: false, hostIsEmpty: true };
+      }
+
+      const result = this.removeFromPane(host.pane, panel);
+      return { paneRemoved: result.paneRemoved, hostIsEmpty: result.hostIsEmpty };
+      
     } else {
       throw 'unknown host type';
     }

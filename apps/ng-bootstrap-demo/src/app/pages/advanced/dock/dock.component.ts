@@ -130,34 +130,6 @@ export class DockComponent implements AfterViewInit {
                 }),
               ]
             }),
-            new BsTabGroupPane({
-              panes: [
-                new BsContentPane({
-                  dockPanel: this.panel4,
-                }),
-                // new BsContentPane({
-                //   dockPanel: this.panel6,
-                // }),
-                new BsContentPane({
-                  dockPanel: this.panel7,
-                }),
-                new BsContentPane({
-                  dockPanel: this.panel8,
-                }),
-                new BsContentPane({
-                  dockPanel: this.panel9,
-                }),
-                new BsContentPane({
-                  dockPanel: this.panel10,
-                }),
-                new BsContentPane({
-                  dockPanel: this.panel11,
-                }),
-                new BsContentPane({
-                  dockPanel: this.panel12,
-                }),
-              ]
-            }),
           ]
         })
       ]
@@ -169,15 +141,36 @@ export class DockComponent implements AfterViewInit {
         // new BsFloatingPane({
         //   pane: new BsContentPane({ dockPanel: this.panel2 }),
         // })
-        // new BsFloatingPane({
-        //   pane: new BsTabGroupPane({
-        //     panes: [
-        //       new BsContentPane({
-        //         dockPanel: this.panel2,
-        //       })
-        //     ]
-        //   })
-        // })
+        new BsFloatingPane({
+          pane: new BsTabGroupPane({
+            panes: [
+              new BsContentPane({
+                dockPanel: this.panel4,
+              }),
+              // new BsContentPane({
+              //   dockPanel: this.panel6,
+              // }),
+              new BsContentPane({
+                dockPanel: this.panel7,
+              }),
+              new BsContentPane({
+                dockPanel: this.panel8,
+              }),
+              new BsContentPane({
+                dockPanel: this.panel9,
+              }),
+              new BsContentPane({
+                dockPanel: this.panel10,
+              }),
+              new BsContentPane({
+                dockPanel: this.panel11,
+              }),
+              new BsContentPane({
+                dockPanel: this.panel12,
+              }),
+            ]
+          })
+        })
       ]
     });
   }
