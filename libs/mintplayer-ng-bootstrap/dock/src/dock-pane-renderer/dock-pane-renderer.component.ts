@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostBinding, Input } from '@angular/core';
+import { Component, ElementRef, HostBinding, Inject, Input } from '@angular/core';
 import { DomPortal } from '@angular/cdk/portal';
 import { BehaviorSubject, Observable, map } from 'rxjs';
 import { BsDockPane } from '../panes/dock-pane';
@@ -9,6 +9,7 @@ import { BsDocumentHost } from '../panes/document-host-pane';
 import { BsTabGroupPane } from '../panes/tab-group-pane';
 import { BsFloatingPane } from '../panes/floating-pane';
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
+import type { BsDockComponent } from '../dock/dock.component';
 
 @Component({
   selector: 'bs-dock-pane-renderer',
@@ -17,11 +18,13 @@ import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 })
 export class BsDockPaneRendererComponent {
 
-  constructor(private overlay: Overlay, element: ElementRef) {
+  constructor(private overlay: Overlay, @Inject('DOCK') dock: any, element: ElementRef) {
     this.portal = new DomPortal(element);
+    this.dock = dock;
   }
 
   portal: DomPortal;
+  readonly dock: BsDockComponent;
 
   paneTypes = EPaneType;
   readonly BsDocumentHostType = BsDocumentHost;

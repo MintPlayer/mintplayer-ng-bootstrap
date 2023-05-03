@@ -1,6 +1,6 @@
 <!-- <ng-content></ng-content> -->
 <ng-container [bsInstanceof]="layout$ | async">
-    <div *bsInstanceofCase="BsDocumentHostType; let documentHost" data-hello>
+    <div *bsInstanceofCase="BsDocumentHostType; let documentHost">
         <bs-dock-pane-renderer [layout]="documentHost"></bs-dock-pane-renderer>
     </div>
     <ng-container *bsInstanceofCase="BsTabGroupType; let tabGroup">
@@ -12,7 +12,10 @@
                 <bs-dock-pane-renderer [layout]="tab"></bs-dock-pane-renderer>
             </bs-tab-page>
         </bs-tab-control>
-        <div class="dock-region position-absolute w-100 h-100"></div>
+        <!-- z-index: 5000 -->
+        <ng-container *ngIf="(dock.draggingPanel$ | async) as draggingPanel">
+            <div class="dock-region position-absolute w-100 h-100" *ngIf="(tabGroup.panes.length > 0) && (draggingPanel.pane.$original.dockPanel !== tabGroup.panes[0].dockPanel)"></div>
+        </ng-container>
     </ng-container>
     <bs-splitter *bsInstanceofCase="BsSplitterType; let splitter" [orientation]="splitter.orientation">
         <bs-split-panel *ngFor="let panel of splitter.panes">

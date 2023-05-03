@@ -95,7 +95,8 @@ export class BsDockPanelHeaderComponent {
             }
           }
 
-
+          console.log('draggingPanel$.pane', trace[trace.length - 1]);
+          this.dock.draggingPanel$.next({ component: this.dockPanel, pane: <Parentified<BsContentPane>>trace[trace.length - 1] });
 
           // this.removeFromPane((<any>matching[0].trace[0])['$original'], this.dockPanel);
 
@@ -295,6 +296,7 @@ export class BsDockPanelHeaderComponent {
     this.isMouseDown = false;
     this.isDragging = false;
     this.dragOperation = undefined;
+    this.dock.draggingPanel$.next(null);
   }
 
   @HostBinding('class.d-block') dBlock = true;

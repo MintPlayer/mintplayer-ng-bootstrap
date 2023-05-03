@@ -1,4 +1,4 @@
-import { Component, ContentChildren, ViewChildren, Input, OnDestroy, QueryList, HostBinding } from '@angular/core';
+import { Component, ContentChildren, forwardRef, ViewChildren, Input, OnDestroy, QueryList, HostBinding } from '@angular/core';
 import { BehaviorSubject, map, Observable } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Parentified, deepClone } from '@mintplayer/parentify';
@@ -10,11 +10,15 @@ import { BsContentPane } from '../panes/content-pane';
 import { BsFloatingPane } from '../panes/floating-pane';
 import { BsSplitPane } from '../panes/split-pane';
 import { BsDockPaneRendererComponent } from '../dock-pane-renderer/dock-pane-renderer.component';
+import { DraggingPanel } from '../interfaces/dragging-panel';
 
 @Component({
   selector: 'bs-dock',
   templateUrl: './dock.component.html',
-  styleUrls: ['./dock.component.scss']
+  styleUrls: ['./dock.component.scss'],
+  providers: [
+    { provide: 'DOCK', useExisting: forwardRef(() => BsDockComponent) }
+  ]
 })
 export class BsDockComponent implements OnDestroy {
   constructor() {
@@ -47,7 +51,9 @@ export class BsDockComponent implements OnDestroy {
       return clone.result;
     }));
 
-    this.parentifiedLayout$.pipe(takeUntilDestroyed()).subscribe(console.log);
+    // this.parentifiedLayout$.pipe(takeUntil(this.destroyed$)).subscribe(console.log);
+
+    this.draggingPanel$.pipe(takeUntil(this.destroyed$)).subscribe(console.log);
   }
 
   private paneCache?: Map<any, any>;
@@ -72,6 +78,8 @@ export class BsDockComponent implements OnDestroy {
   @ViewChildren('floating') set floatingPanes(value: QueryList<BsDockPaneRendererComponent>) {
     this.floating$.next(value.toArray());
   }
+
+  draggingPanel$ = new BehaviorSubject<DraggingPanel | null>(null);
 
   @HostBinding('class.position-absolute')
   positionAbsolute = true;
