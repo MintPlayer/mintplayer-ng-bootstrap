@@ -13,9 +13,31 @@
             </bs-tab-page>
         </bs-tab-control>
         <!-- z-index: 5000 -->
-        <ng-container *ngIf="(dock.draggingPanel$ | async) as draggingPanel">
+        <!-- <ng-container *ngIf="(dock.draggingPanel$ | async) as draggingPanel">
             <div class="dock-region position-absolute w-100 h-100" *ngIf="(tabGroup.panes.length > 0) && (draggingPanel.pane.$original.dockPanel !== tabGroup.panes[0].dockPanel)"></div>
+        </ng-container> -->
+
+        <ng-container *ngIf="(dock.draggingPanel$ | async) as draggingPanel">
+            <div *ngIf="(tabGroup.panes.length > 0) && (draggingPanel.pane.$original.dockPanel !== tabGroup.panes[0].dockPanel)" class="dock-region position-absolute d-flex align-items-center justify-content-around w-100 h-100">
+                <div class="dock-region-zones">
+                    <div class="dock-region-zone top"></div>
+                    <div class="dock-region-zone left"></div>
+                    <div class="dock-region-zone bottom"></div>
+                    <div class="dock-region-zone right"></div>
+                    <div class="dock-region-zone center"></div>
+                </div>
+            </div>
         </ng-container>
+
+        <!-- <div class="dock-region position-absolute d-flex align-items-center justify-content-around w-100 h-100">
+            <div class="dock-region-zones">
+                <div class="dock-region-zone top"></div>
+                <div class="dock-region-zone left"></div>
+                <div class="dock-region-zone bottom"></div>
+                <div class="dock-region-zone right"></div>
+                <div class="dock-region-zone center"></div>
+            </div>
+        </div> -->
     </ng-container>
     <bs-splitter *bsInstanceofCase="BsSplitterType; let splitter" [orientation]="splitter.orientation">
         <bs-split-panel *ngFor="let panel of splitter.panes">

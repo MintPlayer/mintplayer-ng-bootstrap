@@ -1,3 +1,5 @@
+$marker-size: 30px;
+
 .dock-tabs {
     background: #F3F3F3;
     // border: 4px solid #5858F8;
@@ -14,4 +16,45 @@
     top: 0;
     left: 0;
     opacity: .3;
+}
+
+.dock-region {
+    > .dock-region-zones {
+        display: none;
+    }
+
+    &:hover > .dock-region-zones {
+        display: grid;
+    }
+}
+
+.dock-region-zone {
+    background: red;
+    width: $marker-size;
+    height: $marker-size;
+
+    &.top {
+        grid-row: 1;
+        grid-column: 2;
+    }
+    &.right {
+        grid-row: 2;
+        grid-column: 3;
+    }
+    &.bottom {
+        grid-row: 3;
+        grid-column: 2;
+    }
+    &.left {
+        grid-row: 2;
+        grid-column: 1;
+    }
+    &.center {
+        grid-row: 2;
+        grid-column: 2;
+    }
+
+    &:hover {
+        background: yellow;
+    }
 }
