@@ -62,3 +62,13 @@
 // Utilities
 @import "node_modules/bootstrap/scss/utilities/api";
 // scss-docs-end import-stack
+
+
+// // .dock-region {
+// .cdk-overlay-container:not(:has(.dock-region)) .cdk-overlay-pane {
+//     z-index: 4000;
+// }
+
+// .cdk-overlay-container:has(.dock-region) .cdk-overlay-pane {
+//     z-index: 5000;
+// }

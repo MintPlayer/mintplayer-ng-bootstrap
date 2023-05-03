@@ -12,10 +12,14 @@ $marker-size: 30px;
 
 .dock-region {
     background: #99F;
-    z-index: 5000;
+    z-index: 4000;
     top: 0;
     left: 0;
     opacity: .3;
+}
+
+::ng-deep .cdk-overlay-container:has(.dock-region) {
+    // z-index: 5000;
 }
 
 .dock-region {
