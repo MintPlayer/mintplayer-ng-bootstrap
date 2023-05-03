@@ -72,3 +72,11 @@
 // .cdk-overlay-container:has(.dock-region) .cdk-overlay-pane {
 //     z-index: 5000;
 // }
+
+// .cdk-overlay-container .cdk-overlay-pane:not(:has(.dock-region)) {
+//     z-index: 4000;
+// }
+
+.cdk-overlay-container .cdk-overlay-pane:has(.dock-region) {
+    z-index: 5000;
+}

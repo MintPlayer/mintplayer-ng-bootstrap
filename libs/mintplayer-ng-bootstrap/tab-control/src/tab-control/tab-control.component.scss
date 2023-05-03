@@ -18,7 +18,9 @@
 .tsc {
     max-height: 41px;
     top: 2px;
-    z-index: 10;
+    // THIS BREAKS THE DOCK COMPONENT
+    // z-index: 10;
+    
     flex-shrink: 0;
 
     // .nav-item {
