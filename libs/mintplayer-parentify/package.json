@@ -1,7 +1,7 @@
 {
   "name": "@mintplayer/parentify",
   "private": false,
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Adds the parent to objects",
   "repository": {
     "type": "git",
