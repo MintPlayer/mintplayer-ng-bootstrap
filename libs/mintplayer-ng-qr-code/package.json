@@ -1,15 +1,15 @@
 {
   "name": "@mintplayer/ng-qr-code",
   "private": false,
-  "version": "15.3.0",
+  "version": "16.0.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/MintPlayer/mintplayer-ng-bootstrap",
     "directory": "libs/mintplayer-ng-qr-code"
   },
   "peerDependencies": {
-    "@angular/common": "^15.2.0",
-    "@angular/core": "^15.2.0",
+    "@angular/common": "^16.0.0",
+    "@angular/core": "^16.0.0",
     "@mintplayer/qr-code": "^1.2.0"
   },
   "dependencies": {
