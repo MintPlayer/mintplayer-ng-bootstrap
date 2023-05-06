@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostBinding, Inject, Input } from '@angular/core';
+import { Component, ElementRef, HostBinding, Inject, Input, forwardRef } from '@angular/core';
 import { DomPortal } from '@angular/cdk/portal';
 import { BehaviorSubject, Observable, map } from 'rxjs';
 import { BsDockPane } from '../panes/dock-pane';
@@ -10,11 +10,15 @@ import { BsTabGroupPane } from '../panes/tab-group-pane';
 import { BsFloatingPane } from '../panes/floating-pane';
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import type { BsDockComponent } from '../dock/dock.component';
+import { DockRegionZone } from '../types/dock-region-zone';
 
 @Component({
   selector: 'bs-dock-pane-renderer',
   templateUrl: './dock-pane-renderer.component.html',
-  styleUrls: ['./dock-pane-renderer.component.scss']
+  styleUrls: ['./dock-pane-renderer.component.scss'],
+  providers: [
+    { provide: 'DOCK_PANE_RENDERER', useExisting: forwardRef(() => BsDockPaneRendererComponent) }
+  ]
 })
 export class BsDockPaneRendererComponent {
 

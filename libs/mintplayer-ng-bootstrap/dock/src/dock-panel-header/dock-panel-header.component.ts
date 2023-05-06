@@ -294,9 +294,18 @@ export class BsDockPanelHeaderComponent {
 
   @HostListener('document:mouseup', ['$event']) onMouseUp(ev: Event) {
     this.isMouseDown = false;
-    this.isDragging = false;
-    this.dragOperation = undefined;
-    this.dock.draggingPanel$.next(null);
+    if (this.isDragging) {
+      this.isDragging = false;
+      this.dragOperation = undefined;
+      
+      const layout = this.dock.hoveredZone$.value?.panel.layout;
+      debugger;
+      if ((layout instanceof BsTabGroupPane) && this.dock.draggingPanel$.value?.pane) {
+        this.removeFromPane(this.dock.layout.rootPane, this.dock.draggingPanel$.value.component);
+        layout.panes.push(this.dock.draggingPanel$.value.pane);
+      }
+      this.dock.draggingPanel$.next(null);
+    }
   }
 
   @HostBinding('class.d-block') dBlock = true;

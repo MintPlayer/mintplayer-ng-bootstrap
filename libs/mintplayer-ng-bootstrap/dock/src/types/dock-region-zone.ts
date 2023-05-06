@@ -1,0 +1,1 @@
+export type DockRegionZone = 'top' | 'right' | 'bottom' | 'left' | 'center';

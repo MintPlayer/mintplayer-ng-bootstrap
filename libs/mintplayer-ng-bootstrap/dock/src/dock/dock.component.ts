@@ -11,6 +11,7 @@ import { BsFloatingPane } from '../panes/floating-pane';
 import { BsSplitPane } from '../panes/split-pane';
 import { BsDockPaneRendererComponent } from '../dock-pane-renderer/dock-pane-renderer.component';
 import { DraggingPanel } from '../interfaces/dragging-panel';
+import { BsHoveredZone } from '../interfaces/hovered-zone';
 
 @Component({
   selector: 'bs-dock',
@@ -91,6 +92,8 @@ export class BsDockComponent implements OnDestroy {
   positionPx = 0;
 
   parentifiedLayout$: Observable<Parentified<BsDockLayout>>;
+  hoveredZone$ = new BehaviorSubject<BsHoveredZone | null>(null);
+
 
   ngOnDestroy() {
     this.floating$.value.forEach(panel => panel.disposeOverlay());

@@ -10,13 +10,15 @@ import { BsDockComponent } from './dock/dock.component';
 import { BsDockPanelComponent } from './dock-panel/dock-panel.component';
 import { BsDockPanelHeaderComponent } from './dock-panel-header/dock-panel-header.component';
 import { BsDockPaneRendererComponent } from './dock-pane-renderer/dock-pane-renderer.component';
+import { BsDockRegionZoneDirective } from './dock-region-zone/dock-region-zone.directive';
 
 @NgModule({
   declarations: [
     BsDockComponent,
     BsDockPanelComponent,
     BsDockPanelHeaderComponent,
-    BsDockPaneRendererComponent
+    BsDockPaneRendererComponent,
+    BsDockRegionZoneDirective,
   ],
   imports: [
     CommonModule,
@@ -25,13 +27,14 @@ import { BsDockPaneRendererComponent } from './dock-pane-renderer/dock-pane-rend
     BsInstanceOfModule,
     BsSplitterModule,
     BsTabControlModule,
-    BsResizableModule
+    BsResizableModule,
   ],
   exports: [
     BsDockComponent,
     BsDockPanelComponent,
     BsDockPanelHeaderComponent,
-    BsDockPaneRendererComponent
-  ]
+    BsDockPaneRendererComponent,
+    BsDockRegionZoneDirective,
+  ],
 })
-export class BsDockModule { }
+export class BsDockModule {}

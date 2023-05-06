@@ -20,11 +20,11 @@
         <!-- <ng-container>
             <div class="dock-region position-absolute d-flex align-items-center justify-content-around w-100 h-100"> -->
                 <div class="dock-region-zones">
-                    <div class="dock-region-zone top"></div>
-                    <div class="dock-region-zone left"></div>
-                    <div class="dock-region-zone bottom"></div>
-                    <div class="dock-region-zone right"></div>
-                    <div class="dock-region-zone center"></div>
+                    <div [bsDockRegionZone]="'top'"></div>
+                    <div [bsDockRegionZone]="'left'"></div>
+                    <div [bsDockRegionZone]="'bottom'"></div>
+                    <div [bsDockRegionZone]="'right'"></div>
+                    <div [bsDockRegionZone]="'center'"></div>
                 </div>
             </div>
         </ng-container>

@@ -4,3 +4,4 @@ export * from './size';
 export * from './remove-from-pane-result';
 export * from './drag-operation';
 export * from './dragging-panel';
+export * from './hovered-zone';
