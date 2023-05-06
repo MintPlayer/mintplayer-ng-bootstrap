@@ -5,17 +5,13 @@
   "projectType": "library",
   "targets": {
     "build": {
-      "executor": "@nrwl/js:tsc",
-      "outputs": [
-        "{options.outputPath}"
-      ],
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/libs/mintplayer-qr-code",
         "main": "libs/mintplayer-qr-code/src/index.ts",
         "tsConfig": "libs/mintplayer-qr-code/tsconfig.lib.json",
-        "assets": [
-          "libs/mintplayer-qr-code/*.md"
-        ]
+        "assets": ["libs/mintplayer-qr-code/*.md"]
       }
     },
     "publish": {
@@ -25,27 +21,20 @@
       },
       "dependsOn": [
         {
-          "projects": "self",
           "target": "build"
         }
       ]
     },
     "lint": {
-      "executor": "@nrwl/linter:eslint",
-      "outputs": [
-        "{options.outputFile}"
-      ],
+      "executor": "@nx/linter:eslint",
+      "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": [
-          "libs/mintplayer-qr-code/**/*.ts"
-        ]
+        "lintFilePatterns": ["libs/mintplayer-qr-code/**/*.ts"]
       }
     },
     "test": {
-      "executor": "@nrwl/jest:jest",
-      "outputs": [
-        "{workspaceRoot}/coverage/libs/mintplayer-qr-code"
-      ],
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/mintplayer-qr-code"],
       "options": {
         "codeCoverage": true,
         "coverageReporters": ["lcovonly"],

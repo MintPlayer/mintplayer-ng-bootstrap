@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core';
-import { ActivatedRouteSnapshot, CanDeactivate, RouterStateSnapshot, UrlTree } from '@angular/router';
+import { ActivatedRouteSnapshot, RouterStateSnapshot, UrlTree } from '@angular/router';
 import { BsHasNavigationLock } from '../interface/has-navigation-lock';
 
 @Injectable({
   providedIn: 'root'
 })
-export class BsNavigationLockGuard implements CanDeactivate<BsHasNavigationLock> {
+export class BsNavigationLockGuard  {
   canDeactivate(
     component: BsHasNavigationLock,
     currentRoute: ActivatedRouteSnapshot,

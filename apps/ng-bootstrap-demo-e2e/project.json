@@ -5,7 +5,7 @@
   "projectType": "application",
   "targets": {
     "e2e": {
-      "executor": "@nrwl/cypress:cypress",
+      "executor": "@nx/cypress:cypress",
       "options": {
         "cypressConfig": "apps/ng-bootstrap-demo-e2e/cypress.json",
         "devServerTarget": "ng-bootstrap-demo:serve:development"
@@ -17,19 +17,13 @@
       }
     },
     "lint": {
-      "executor": "@nrwl/linter:eslint",
-      "outputs": [
-        "{options.outputFile}"
-      ],
+      "executor": "@nx/linter:eslint",
+      "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": [
-          "apps/ng-bootstrap-demo-e2e/**/*.{js,ts}"
-        ]
+        "lintFilePatterns": ["apps/ng-bootstrap-demo-e2e/**/*.{js,ts}"]
       }
     }
   },
   "tags": [],
-  "implicitDependencies": [
-    "ng-bootstrap-demo"
-  ]
+  "implicitDependencies": ["ng-bootstrap-demo"]
 }
