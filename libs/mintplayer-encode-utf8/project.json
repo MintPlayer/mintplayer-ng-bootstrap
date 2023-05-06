@@ -5,17 +5,13 @@
   "projectType": "library",
   "targets": {
     "build": {
-      "executor": "@nrwl/js:tsc",
-      "outputs": [
-        "{options.outputPath}"
-      ],
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/libs/mintplayer-encode-utf8",
         "main": "libs/mintplayer-encode-utf8/src/index.ts",
         "tsConfig": "libs/mintplayer-encode-utf8/tsconfig.lib.json",
-        "assets": [
-          "libs/mintplayer-encode-utf8/*.md"
-        ]
+        "assets": ["libs/mintplayer-encode-utf8/*.md"]
       }
     },
     "publish": {
@@ -25,27 +21,20 @@
       },
       "dependsOn": [
         {
-          "projects": "self",
           "target": "build"
         }
       ]
     },
     "lint": {
-      "executor": "@nrwl/linter:eslint",
-      "outputs": [
-        "{options.outputFile}"
-      ],
+      "executor": "@nx/linter:eslint",
+      "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": [
-          "libs/mintplayer-encode-utf8/**/*.ts"
-        ]
+        "lintFilePatterns": ["libs/mintplayer-encode-utf8/**/*.ts"]
       }
     },
     "test": {
-      "executor": "@nrwl/jest:jest",
-      "outputs": [
-        "{workspaceRoot}/coverage/libs/mintplayer-encode-utf8"
-      ],
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/mintplayer-encode-utf8"],
       "options": {
         "codeCoverage": true,
         "coverageReporters": ["lcovonly"],

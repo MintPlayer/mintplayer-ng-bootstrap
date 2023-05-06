@@ -6,10 +6,8 @@
   "prefix": "mintplayer-ng-bootstrap",
   "targets": {
     "build": {
-      "executor": "@nrwl/angular:package",
-      "outputs": [
-        "{workspaceRoot}/dist/libs/mintplayer-ng-qr-code"
-      ],
+      "executor": "@nx/angular:package",
+      "outputs": ["{workspaceRoot}/dist/libs/mintplayer-ng-qr-code"],
       "options": {
         "tsConfig": "libs/mintplayer-ng-qr-code/tsconfig.lib.json",
         "project": "libs/mintplayer-ng-qr-code/ng-package.json"
@@ -25,10 +23,8 @@
       "defaultConfiguration": "production"
     },
     "test": {
-      "executor": "@nrwl/jest:jest",
-      "outputs": [
-        "{workspaceRoot}/coverage/libs/mintplayer-ng-qr-code"
-      ],
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/mintplayer-ng-qr-code"],
       "options": {
         "codeCoverage": true,
         "coverageReporters": ["lcovonly"],
@@ -38,7 +34,7 @@
       }
     },
     "lint": {
-      "executor": "@nrwl/linter:eslint",
+      "executor": "@nx/linter:eslint",
       "options": {
         "lintFilePatterns": [
           "libs/mintplayer-ng-qr-code/src/**/*.ts",

@@ -5,17 +5,13 @@
   "projectType": "library",
   "targets": {
     "build": {
-      "executor": "@nrwl/js:tsc",
-      "outputs": [
-        "{options.outputPath}"
-      ],
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/libs/mintplayer-dijkstra",
         "main": "libs/mintplayer-dijkstra/src/index.ts",
         "tsConfig": "libs/mintplayer-dijkstra/tsconfig.lib.json",
-        "assets": [
-          "libs/mintplayer-dijkstra/*.md"
-        ]
+        "assets": ["libs/mintplayer-dijkstra/*.md"]
       }
     },
     "publish": {
@@ -25,27 +21,20 @@
       },
       "dependsOn": [
         {
-          "projects": "self",
           "target": "build"
         }
       ]
     },
     "lint": {
-      "executor": "@nrwl/linter:eslint",
-      "outputs": [
-        "{options.outputFile}"
-      ],
+      "executor": "@nx/linter:eslint",
+      "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": [
-          "libs/mintplayer-dijkstra/**/*.ts"
-        ]
+        "lintFilePatterns": ["libs/mintplayer-dijkstra/**/*.ts"]
       }
     },
     "test": {
-      "executor": "@nrwl/jest:jest",
-      "outputs": [
-        "{workspaceRoot}/coverage/libs/mintplayer-dijkstra"
-      ],
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/mintplayer-dijkstra"],
       "options": {
         "codeCoverage": true,
         "coverageReporters": ["lcovonly"],

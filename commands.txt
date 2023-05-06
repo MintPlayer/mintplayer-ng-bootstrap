@@ -12,10 +12,10 @@ cd mintplayer-ng-bootstrap
 # Remove the library folders
 # Remove the application folders
 # Open the angular.json, remove all projects, set "version":2
-nx g @nrwl/angular:lib mintplayer-ng-animations --buildable --publishable --import-path @mintplayer/ng-animations
-nx g @nrwl/angular:lib mintplayer-ng-bootstrap --buildable --publishable --import-path @mintplayer/ng-bootstrap
-nx g @nrwl/angular:application ng-bootstrap-demo --routing --style=scss
+nx g @nx/angular:lib mintplayer-ng-animations --buildable --publishable --import-path @mintplayer/ng-animations
+nx g @nx/angular:lib mintplayer-ng-bootstrap --buildable --publishable --import-path @mintplayer/ng-bootstrap
+nx g @nx/angular:application ng-bootstrap-demo --routing --style=scss
 code .
 
-nx generate @nrwl/js:library --name=mintplayer-qr-code --buildable --publishable --import-path @mintplayer/qr-code
-nx generate @nrwl/js:library --name=mintplayer-dijkstra --buildable --publishable --import-path @mintplayer/dijkstra
+nx generate @nx/js:library --name=mintplayer-qr-code --buildable --publishable --import-path @mintplayer/qr-code
+nx generate @nx/js:library --name=mintplayer-dijkstra --buildable --publishable --import-path @mintplayer/dijkstra
