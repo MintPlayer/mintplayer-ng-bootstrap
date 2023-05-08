@@ -55,6 +55,7 @@ export class BsDockComponent implements OnDestroy {
     // this.parentifiedLayout$.pipe(takeUntil(this.destroyed$)).subscribe(console.log);
 
     this.draggingPanel$.pipe(takeUntil(this.destroyed$)).subscribe(console.log);
+    this.hoveredZone$.pipe(takeUntil(this.destroyed$)).subscribe(zone => console.log('hovered zone', zone));
   }
 
   private paneCache?: Map<any, any>;

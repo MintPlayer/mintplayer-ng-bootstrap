@@ -300,8 +300,11 @@ export class BsDockPanelHeaderComponent {
       
       const layout = this.dock.hoveredZone$.value?.panel.layout;
       debugger;
-      if ((layout instanceof BsTabGroupPane) && this.dock.draggingPanel$.value?.pane) {
+      if (!layout) {
+
+      } else if ((layout instanceof BsTabGroupPane) && this.dock.draggingPanel$.value?.pane) {
         this.removeFromPane(this.dock.layout.rootPane, this.dock.draggingPanel$.value.component);
+        console.log('to split', layout);
         layout.panes.push(this.dock.draggingPanel$.value.pane);
       }
       this.dock.draggingPanel$.next(null);

@@ -26,12 +26,12 @@ export class BsDockRegionZoneDirective implements OnDestroy {
   @HostBinding('class') zone: DockRegionZone = 'center';
 
   @HostListener('mouseenter', ['$event']) onMouseEnter(ev: MouseEvent) {
-    setTimeout(() => {
+    // setTimeout(() => {
       this.dockPaneRenderer.dock.hoveredZone$.next({
         zone: this.zone,
         panel: this.dockPaneRenderer,
       });
-    }, 5);
+    // }, 5);
   }
   
   @HostListener('mouseout', ['$event']) onMouseLeave(ev: MouseEvent) {
