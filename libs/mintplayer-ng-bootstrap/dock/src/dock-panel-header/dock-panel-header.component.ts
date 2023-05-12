@@ -13,6 +13,8 @@ import { BsDocumentHost } from '../panes/document-host-pane';
 import { RemoveFromPaneResult } from '../interfaces/remove-from-pane-result';
 import { DragOperation } from '../interfaces/drag-operation';
 import { BsDockService } from '../services/dock/dock.service';
+import { DockRegionZone } from '../types/dock-region-zone';
+import { BsDockLayout } from '../interfaces/dock-layout';
 
 @Component({
   selector: 'bs-dock-panel-header',
@@ -319,7 +321,10 @@ export class BsDockPanelHeaderComponent {
             });
 
             console.log('to split', hoveredZone.panel.layout);
-            hoveredZone.panel.layout.panes.push(draggingPanel.pane);
+            // hoveredZone.panel.layout.panes.push(draggingPanel.pane);
+
+            this.replaceAndSplit(layout, hoveredZone.panel.layout, draggingPanel.pane.$original, hoveredZone.zone);
+
             hoveredZone.panel.hoverLeft$.next(false);
             hoveredZone.panel.hoverRight$.next(false);
             hoveredZone.panel.hoverTop$.next(false);
@@ -330,6 +335,46 @@ export class BsDockPanelHeaderComponent {
           this.dock.draggingPanel$.next(null);
           // this.dock.layout$.next(this.dock.layout);
         });
+    }
+  }
+
+  replaceAndSplit(parent: BsDockLayout | BsDockPane, hoveredTabGroup: BsTabGroupPane, droppedPane: BsContentPane, zone: DockRegionZone) {
+    if ('floatingPanes' in parent) {
+      if (parent.rootPane instanceof BsTabGroupPane) {
+        if (parent.rootPane === hoveredTabGroup) {
+          parent.rootPane = new BsSplitPane({
+            orientation: ['left', 'right'].includes(zone) ? 'horizontal' : 'vertical',
+            panes: ['left', 'top'].includes(zone)
+              ? [new BsTabGroupPane({ panes: [droppedPane] }), parent.rootPane]
+              : [parent.rootPane, new BsTabGroupPane({ panes: [droppedPane] })]
+          });
+        } else {
+          this.replaceAndSplit(parent.rootPane, hoveredTabGroup, droppedPane, zone);
+        }
+      } else if (parent.rootPane instanceof BsSplitPane) {
+
+        if (parent.rootPane.panes.includes(hoveredTabGroup)) {
+          if (((parent.rootPane.orientation === 'horizontal') && ['left', 'right'].includes(zone))
+              || ((parent.rootPane.orientation === 'vertical') && ['top', 'bottom'].includes(zone)))
+          {
+            parent.rootPane.panes.splice(parent.rootPane.panes.indexOf(hoveredTabGroup) + (['right', 'bottom'].includes(zone) ? 1 : 0), 0, new BsTabGroupPane({ panes: [droppedPane] }));
+          } else {
+            parent.rootPane = new BsSplitPane({
+              orientation: ['left', 'right'].includes(zone) ? 'horizontal' : 'vertical',
+              panes: ['left', 'top'].includes(zone)
+                ? [new BsTabGroupPane({ panes: [droppedPane] }), parent.rootPane]
+                : [parent.rootPane, new BsTabGroupPane({ panes: [droppedPane] })]
+            });
+          }
+        } else {
+          this.replaceAndSplit(parent.rootPane, hoveredTabGroup, droppedPane, zone);
+        }
+
+      } else if (parent.rootPane instanceof BsDocumentHost) {
+
+      }
+    } else {
+      // parent
     }
   }
 
