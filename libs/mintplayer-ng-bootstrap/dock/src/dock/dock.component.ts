@@ -12,6 +12,7 @@ import { BsSplitPane } from '../panes/split-pane';
 import { BsDockPaneRendererComponent } from '../dock-pane-renderer/dock-pane-renderer.component';
 import { DraggingPanel } from '../interfaces/dragging-panel';
 import { BsHoveredZone } from '../interfaces/hovered-zone';
+import { BsDockService, PaneTraceResult } from '../services/dock/dock.service';
 
 @Component({
   selector: 'bs-dock',
@@ -22,7 +23,7 @@ import { BsHoveredZone } from '../interfaces/hovered-zone';
   ]
 })
 export class BsDockComponent implements OnDestroy {
-  constructor() {
+  constructor(private dockService: BsDockService) {
     const tabs = new BsTabGroupPane();
     const docHost = new BsDocumentHost();
     docHost.rootPane = tabs;
@@ -51,6 +52,12 @@ export class BsDockComponent implements OnDestroy {
 
       return clone.result;
     }));
+
+    this.traces$ = this.parentifiedLayout$
+      .pipe(map(layout => this.dockService.buildTraces(layout)));
+
+    this.traces$.pipe(takeUntilDestroyed())
+      .subscribe(traces => this.cachedTraces$.next(traces));
 
     this.draggingPanel$.pipe(takeUntilDestroyed()).subscribe(console.log);
 
@@ -96,6 +103,8 @@ export class BsDockComponent implements OnDestroy {
   positionPx = 0;
 
   parentifiedLayout$: Observable<Parentified<BsDockLayout>>;
+  traces$: Observable<PaneTraceResult[]>;
+  cachedTraces$ = new BehaviorSubject<PaneTraceResult[]>([]);
   hoveredZone$: Observable<BsHoveredZone | null>;
   dockPaneRenderers$ = new BehaviorSubject<BsDockPaneRendererComponent[]>([]);
 

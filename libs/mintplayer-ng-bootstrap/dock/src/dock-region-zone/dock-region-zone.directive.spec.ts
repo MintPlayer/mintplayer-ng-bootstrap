@@ -1,8 +1,8 @@
-import { DockRegionZoneDockRegionZoneDirective } from './dock-region-zone/dock-region-zone.directive';
+import { BsDockRegionZoneDirective } from './dock-region-zone.directive';
 
 describe('DockRegionZoneDockRegionZoneDirective', () => {
   it('should create an instance', () => {
-    const directive = new DockRegionZoneDockRegionZoneDirective();
+    const directive = new BsDockRegionZoneDirective(null!);
     expect(directive).toBeTruthy();
   });
 });
