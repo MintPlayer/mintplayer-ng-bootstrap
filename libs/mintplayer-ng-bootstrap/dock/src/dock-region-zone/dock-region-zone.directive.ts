@@ -26,16 +26,26 @@ export class BsDockRegionZoneDirective implements OnDestroy {
   @HostBinding('class') zone: DockRegionZone = 'center';
 
   @HostListener('mouseenter', ['$event']) onMouseEnter(ev: MouseEvent) {
-    // setTimeout(() => {
-      this.dockPaneRenderer.dock.hoveredZone$.next({
-        zone: this.zone,
-        panel: this.dockPaneRenderer,
-      });
-    // }, 5);
+    this.setHover(true);
   }
   
   @HostListener('mouseout', ['$event']) onMouseLeave(ev: MouseEvent) {
-    this.dockPaneRenderer.dock.hoveredZone$.next(null);
+    this.setHover(false);
+  }
+
+  private setHover(isHover: boolean) {
+    switch (this.zone) {
+      case 'left':
+        return this.dockPaneRenderer.hoverLeft$.next(isHover);
+      case 'right':
+        return this.dockPaneRenderer.hoverRight$.next(isHover);
+      case 'top':
+        return this.dockPaneRenderer.hoverTop$.next(isHover);
+      case 'bottom':
+        return this.dockPaneRenderer.hoverBottom$.next(isHover);
+      case 'center':
+        return this.dockPaneRenderer.hoverCenter$.next(isHover);
+    }
   }
 
   destroyed$ = new Subject();

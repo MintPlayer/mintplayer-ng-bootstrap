@@ -1,5 +1,5 @@
 import { Component, ContentChildren, forwardRef, ViewChildren, Input, OnDestroy, QueryList, HostBinding } from '@angular/core';
-import { BehaviorSubject, map, Observable } from 'rxjs';
+import { BehaviorSubject, map, Observable, switchMap, zip } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Parentified, deepClone } from '@mintplayer/parentify';
 import { BsDockPanelComponent } from '../dock-panel/dock-panel.component';
@@ -52,10 +52,13 @@ export class BsDockComponent implements OnDestroy {
       return clone.result;
     }));
 
-    // this.parentifiedLayout$.pipe(takeUntil(this.destroyed$)).subscribe(console.log);
+    this.draggingPanel$.pipe(takeUntilDestroyed()).subscribe(console.log);
 
-    this.draggingPanel$.pipe(takeUntil(this.destroyed$)).subscribe(console.log);
-    this.hoveredZone$.pipe(takeUntil(this.destroyed$)).subscribe(zone => console.log('hovered zone', zone));
+    this.hoveredZone$ = this.dockPaneRenderers$
+      .pipe(map(dprs => dprs.map(dpr => dpr.hoveredZone$)))
+      .pipe(switchMap(dprs => zip(dprs)))
+      .pipe(map((zones) => zones.filter(zone => !!zone)))
+      .pipe(map(zones => zones.length === 0 ? null : zones[0]));
   }
 
   private paneCache?: Map<any, any>;
@@ -93,7 +96,8 @@ export class BsDockComponent implements OnDestroy {
   positionPx = 0;
 
   parentifiedLayout$: Observable<Parentified<BsDockLayout>>;
-  hoveredZone$ = new BehaviorSubject<BsHoveredZone | null>(null);
+  hoveredZone$: Observable<BsHoveredZone | null>;
+  dockPaneRenderers$ = new BehaviorSubject<BsDockPaneRendererComponent[]>([]);
 
 
   ngOnDestroy() {

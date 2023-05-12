@@ -1,5 +1,5 @@
 import { Component, ElementRef, HostBinding, HostListener, Inject, Optional, forwardRef } from '@angular/core';
-import { take } from 'rxjs';
+import { combineLatest, take } from 'rxjs';
 import { BsTabControlComponent } from '@mintplayer/ng-bootstrap/tab-control';
 import { Parentified } from '@mintplayer/parentify';
 import { BsDockPanelComponent } from '../dock-panel/dock-panel.component';
@@ -284,6 +284,7 @@ export class BsDockPanelHeaderComponent {
         return { paneRemoved: false, hostIsEmpty: true };
       }
 
+      debugger;
       const result = this.removeFromPane(host.pane, panel);
       return { paneRemoved: result.paneRemoved, hostIsEmpty: result.hostIsEmpty };
       
@@ -293,21 +294,42 @@ export class BsDockPanelHeaderComponent {
   }
 
   @HostListener('document:mouseup', ['$event']) onMouseUp(ev: Event) {
+    debugger;
     this.isMouseDown = false;
     if (this.isDragging) {
       this.isDragging = false;
       this.dragOperation = undefined;
       
-      const layout = this.dock.hoveredZone$.value?.panel.layout;
-      debugger;
-      if (!layout) {
+      combineLatest([this.dock.layout$, this.dock.hoveredZone$, this.dock.draggingPanel$])
+        .pipe(take(1))
+        .subscribe(([layout, hoveredZone, draggingPanel]) => {
+          debugger;
+          if (!hoveredZone?.panel.layout) {
+            // Not hovering a dropzone
+          } else if ((hoveredZone.panel.layout instanceof BsTabGroupPane) && draggingPanel?.pane) {
+            draggingPanel.component.contentPortal!.detach();
+            draggingPanel.component.headerPortal!.detach();
 
-      } else if ((layout instanceof BsTabGroupPane) && this.dock.draggingPanel$.value?.pane) {
-        this.removeFromPane(this.dock.layout.rootPane, this.dock.draggingPanel$.value.component);
-        console.log('to split', layout);
-        layout.panes.push(this.dock.draggingPanel$.value.pane);
-      }
-      this.dock.draggingPanel$.next(null);
+            this.removeFromPane(layout.rootPane, draggingPanel.component);
+            layout.floatingPanes.forEach((floating) => {
+              const result = this.removeFromPane(floating, draggingPanel.component);
+              if (result.hostIsEmpty) {
+                layout.floatingPanes.splice(layout.floatingPanes.indexOf(floating), 1);
+              }
+            });
+
+            console.log('to split', hoveredZone.panel.layout);
+            hoveredZone.panel.layout.panes.push(draggingPanel.pane);
+            hoveredZone.panel.hoverLeft$.next(false);
+            hoveredZone.panel.hoverRight$.next(false);
+            hoveredZone.panel.hoverTop$.next(false);
+            hoveredZone.panel.hoverBottom$.next(false);
+            hoveredZone.panel.hoverCenter$.next(false);
+          }
+
+          this.dock.draggingPanel$.next(null);
+          // this.dock.layout$.next(this.dock.layout);
+        });
     }
   }
 
