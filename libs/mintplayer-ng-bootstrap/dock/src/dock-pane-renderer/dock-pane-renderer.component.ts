@@ -26,7 +26,7 @@ export class BsDockPaneRendererComponent implements OnDestroy {
   constructor(private overlay: Overlay, @Inject('DOCK') dock: any, element: ElementRef) {
     this.portal = new DomPortal(element);
     this.dock = dock;
-    this.dock.dockPaneRenderers$.next([...this.dock.dockPaneRenderers$.value, this]);
+    this.dock.dockPaneRenderers$ && this.dock.dockPaneRenderers$.next([...this.dock.dockPaneRenderers$.value, this]);
 
     this.hoveredZone$ = combineLatest([this.hoverLeft$, this.hoverRight$, this.hoverTop$, this.hoverBottom$, this.hoverCenter$])
       .pipe(map(([hoverLeft, hoverRight, hoverTop, hoverBottom, hoverCenter]) => {
@@ -85,7 +85,7 @@ export class BsDockPaneRendererComponent implements OnDestroy {
   }
 
   ngOnDestroy() {
-    this.dock.dockPaneRenderers$.next(this.dock.dockPaneRenderers$.value.filter(dpr => dpr !== this));
+    this.dock.dockPaneRenderers$ && this.dock.dockPaneRenderers$.next(this.dock.dockPaneRenderers$.value.filter(dpr => dpr !== this));
   }
 
   hoverLeft$ = new BehaviorSubject<boolean>(false);

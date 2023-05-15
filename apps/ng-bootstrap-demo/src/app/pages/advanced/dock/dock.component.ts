@@ -1,6 +1,6 @@
 import { Component, ViewChild, AfterViewInit } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
-import { BsContentPane, BsDockLayout, BsDockPanelComponent, BsDockService, BsSplitPane, BsTabGroupPane } from '@mintplayer/ng-bootstrap/dock';
+import { BsContentPane, BsDockLayout, BsDockPanelComponent, BsDockService, BsFloatingPane, BsSplitPane, BsTabGroupPane } from '@mintplayer/ng-bootstrap/dock';
 import { Color } from '@mintplayer/ng-bootstrap';
 
 @Component({
