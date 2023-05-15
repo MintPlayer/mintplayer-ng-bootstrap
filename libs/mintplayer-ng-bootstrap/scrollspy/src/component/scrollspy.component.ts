@@ -1,15 +1,16 @@
 import { DOCUMENT } from '@angular/common';
-import { AfterContentInit, AfterViewInit, Component, ContentChildren, ElementRef, HostListener, Inject, NgZone, OnDestroy, QueryList, ViewChildren } from '@angular/core';
-import { BehaviorSubject, combineLatest, filter, Subject, take, takeUntil } from 'rxjs';
+import { AfterContentInit, AfterViewInit, Component, ContentChildren, ElementRef, HostListener, Inject, NgZone, QueryList, ViewChildren } from '@angular/core';
+import { BehaviorSubject, combineLatest, filter, take } from 'rxjs';
 import { BsScrollOffsetService } from '../services/scroll-offset/scroll-offset.service';
 import { BsScrollspyDirective } from '../directives/scrollspy.directive';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'bs-scrollspy',
   templateUrl: './scrollspy.component.html',
   styleUrls: ['./scrollspy.component.scss']
 })
-export class BsScrollspyComponent implements AfterViewInit, AfterContentInit, OnDestroy {
+export class BsScrollspyComponent implements AfterViewInit, AfterContentInit {
 
   constructor(
     private scrollOffsetService: BsScrollOffsetService,
@@ -18,14 +19,13 @@ export class BsScrollspyComponent implements AfterViewInit, AfterContentInit, On
     this.doc = <Document>document;
     combineLatest([this.viewInit$, this.contentInit$])
       .pipe(filter(([viewInit, contentInit]) => viewInit && contentInit), take(1))
-      .pipe(takeUntil(this.destroyed$))
+      .pipe(takeUntilDestroyed())
       .subscribe(() => {
         // this.setActiveDirective();
         this.scrollToCurrentInSpy();
       });
   }
 
-  private destroyed$ = new Subject();
   private viewInit$ = new BehaviorSubject<boolean>(false);
   private contentInit$ = new BehaviorSubject<boolean>(false);
 
@@ -41,10 +41,6 @@ export class BsScrollspyComponent implements AfterViewInit, AfterContentInit, On
 
   ngAfterContentInit() {
     this.contentInit$.next(true);
-  }
-  
-  ngOnDestroy() {
-    this.destroyed$.next(true);
   }
   
   @HostListener('window:scroll', ['$event'])

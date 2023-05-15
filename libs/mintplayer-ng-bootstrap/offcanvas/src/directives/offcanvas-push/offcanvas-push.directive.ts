@@ -1,13 +1,14 @@
-import { animate, AnimationBuilder, AnimationMetadata, state, style } from '@angular/animations';
-import { Directive, ElementRef, Input, OnDestroy } from '@angular/core';
-import { BehaviorSubject, Subject } from 'rxjs';
-import { takeUntil, filter, switchMap, skip, distinctUntilChanged } from 'rxjs/operators';
+import { animate, AnimationBuilder, AnimationMetadata, style } from '@angular/animations';
+import { Directive, ElementRef, Input } from '@angular/core';
+import { BehaviorSubject } from 'rxjs';
+import { filter, switchMap, skip, distinctUntilChanged } from 'rxjs/operators';
 import { BsOffcanvasHostComponent } from '../../components';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Directive({
   selector: '[bsOffcanvasPush]',
 })
-export class BsOffcanvasPushDirective implements OnDestroy {
+export class BsOffcanvasPushDirective {
   constructor(private element: ElementRef<HTMLElement>, private builder: AnimationBuilder) {
     this.offcanvas$.pipe(
       filter(offcanvas => offcanvas !== null),
@@ -15,7 +16,7 @@ export class BsOffcanvasPushDirective implements OnDestroy {
       distinctUntilChanged(),
       filter(state => !!state),
       skip(1),
-      takeUntil(this.destroyed$)
+      takeUntilDestroyed()
     ).subscribe((viewstate) => {
       let data: AnimationMetadata[];
       switch (viewstate) {
@@ -59,14 +60,9 @@ export class BsOffcanvasPushDirective implements OnDestroy {
   }
 
   private offcanvas$ = new BehaviorSubject<BsOffcanvasHostComponent | null>(null);
-  private destroyed$ = new Subject();
   private initialOverflowX?: {element: HTMLElement, value: string};
 
   @Input('bsOffcanvasPush') set offcanvas(value: BsOffcanvasHostComponent) {
     this.offcanvas$.next(value);
-  }
-
-  ngOnDestroy() {
-    this.destroyed$.next(true);
   }
 }

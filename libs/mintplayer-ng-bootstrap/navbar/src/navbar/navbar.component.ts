@@ -1,13 +1,14 @@
-import { Component, ElementRef, HostListener, Input, OnDestroy, TemplateRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, Input, TemplateRef, ViewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Breakpoint, Color } from '@mintplayer/ng-bootstrap';
-import { BehaviorSubject, combineLatest, debounceTime, filter, map, Observable, Subject, take, takeUntil } from 'rxjs';
+import { BehaviorSubject, combineLatest, debounceTime, filter, map, Observable, take } from 'rxjs';
 
 @Component({
   selector: 'bs-navbar',
   templateUrl: './navbar.component.html',
   styleUrls: ['./navbar.component.scss'],
 })
-export class BsNavbarComponent implements OnDestroy {
+export class BsNavbarComponent {
 
   constructor() {
     this.expandAt$ = this.breakPoint$
@@ -40,10 +41,8 @@ export class BsNavbarComponent implements OnDestroy {
       }));
 
     this.windowWidth$
-      .pipe(debounceTime(300), takeUntil(this.destroyed$))
-      .subscribe(() => {
-        this.isResizing$.next(false);
-      });
+      .pipe(debounceTime(300), takeUntilDestroyed())
+      .subscribe(() => this.isResizing$.next(false));
 
     this.onWindowResize();
 
@@ -110,16 +109,11 @@ export class BsNavbarComponent implements OnDestroy {
   isSmallMode$: Observable<boolean>;
   backgroundColorClass$: Observable<string[]>;
   navClassList$: Observable<string[]>;
-  destroyed$ = new Subject();
 
   toggleExpanded() {
     this.isExpanded$.pipe(take(1)).subscribe((isExpanded) => {
       this.isExpanded$.next(!isExpanded);
     });
-  }
-
-  ngOnDestroy() {
-    this.destroyed$.next(true);
   }
 
   //#region Color

@@ -1,6 +1,7 @@
-import { AfterViewInit, Directive, forwardRef, HostListener, OnDestroy, Optional } from '@angular/core';
+import { AfterViewInit, Directive, forwardRef } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { fromEvent, Subject, takeUntil } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { fromEvent } from 'rxjs';
 import { BsToggleButtonComponent } from '../component/toggle-button.component';
 
 @Directive({
@@ -11,18 +12,15 @@ import { BsToggleButtonComponent } from '../component/toggle-button.component';
     multi: true,
   }],
 })
-export class BsToggleButtonValueAccessor implements ControlValueAccessor, AfterViewInit, OnDestroy {
+export class BsToggleButtonValueAccessor implements ControlValueAccessor, AfterViewInit {
   constructor(private host: BsToggleButtonComponent) {}
-
-  destroyed$ = new Subject();
 
   onValueChange?: (value: boolean | string | string[]) => void;
   onTouched?: () => void;
 
-  //#region Lifecycle hooks
   ngAfterViewInit() {
     fromEvent(this.host.checkbox.nativeElement, 'change')
-      .pipe(takeUntil(this.destroyed$))
+      .pipe(takeUntilDestroyed())
       .subscribe((ev) => {
         if (this.onValueChange && this.host.checkbox) {
           const isChecked = (<HTMLInputElement>ev.target).checked;
@@ -62,11 +60,6 @@ export class BsToggleButtonValueAccessor implements ControlValueAccessor, AfterV
         }
       });
   }
-
-  ngOnDestroy() {
-    this.destroyed$.next(true);
-  }
-  //#endregion
 
   //#region ControlValueAccessor implementation
   registerOnChange(fn: (_: any) => void) {

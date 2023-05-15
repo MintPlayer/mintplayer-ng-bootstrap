@@ -1,5 +1,6 @@
-import { Component, SkipSelf, Input, Output, EventEmitter, OnDestroy, Optional } from '@angular/core';
-import { BehaviorSubject, Observable, Subject, map, takeUntil } from 'rxjs';
+import { Component, SkipSelf, Input, Output, EventEmitter, Optional } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { BehaviorSubject, Observable, map } from 'rxjs';
 import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
 
 @Component({
@@ -8,7 +9,7 @@ import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
   styleUrls: ['./treeview.component.scss'],
   animations: [SlideUpDownAnimation]
 })
-export class BsTreeviewComponent implements OnDestroy {
+export class BsTreeviewComponent {
   constructor(
     @SkipSelf() @Optional() parent: BsTreeviewComponent
   ) {
@@ -18,8 +19,8 @@ export class BsTreeviewComponent implements OnDestroy {
 
     this.isExpanded$.next(!parent);
     this.isExpanded$
-      .pipe(takeUntil(this.destroyed$))
-      .subscribe((isExpanded) => this.isExpandedChange.emit(isExpanded));
+      .pipe(takeUntilDestroyed())
+      .subscribe(isExpanded => this.isExpandedChange.emit(isExpanded));
   }
   
   level$: BehaviorSubject<number>;
@@ -35,9 +36,4 @@ export class BsTreeviewComponent implements OnDestroy {
     this.isExpanded$.next(value);
   }
   //#endregion
-
-  destroyed$ = new Subject();
-  ngOnDestroy() {
-    this.destroyed$.next(true);
-  }
 }

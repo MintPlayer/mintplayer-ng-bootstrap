@@ -1,6 +1,6 @@
 import { Directive, HostListener, Input, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subject, take, Observable } from 'rxjs';
+import { take, Observable } from 'rxjs';
 
 
 /**
@@ -23,7 +23,7 @@ import { Subject, take, Observable } from 'rxjs';
   selector: '[bsNavigationLock]',
   exportAs: 'bsNavigationLock'
 })
-export class BsNavigationLockDirective implements OnDestroy {
+export class BsNavigationLockDirective {
   constructor(private router: Router, private route: ActivatedRoute) {
     // console.log('initial navigation', this.route.snapshot.pathFromRoot.flatMap(ars => ars.url));
     // combineLatest([this.route.fragment])
@@ -75,10 +75,4 @@ export class BsNavigationLockDirective implements OnDestroy {
   onUnload(ev: Event) {
 
   }
-
-  ngOnDestroy() {
-    this.destroyed$.next(true);
-  }
-
-  destroyed$ = new Subject();
 }

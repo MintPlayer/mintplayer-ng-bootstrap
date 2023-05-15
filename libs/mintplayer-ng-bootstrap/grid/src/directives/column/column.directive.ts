@@ -1,12 +1,13 @@
-import { Directive, HostBinding, Input, OnDestroy, Optional } from '@angular/core';
-import { BehaviorSubject, map, Observable, Subject, takeUntil } from 'rxjs';
+import { Directive, HostBinding, Input, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { BehaviorSubject, map } from 'rxjs';
 import { BsColumnDefinition } from '../../interfaces/column-definition';
 
 @Directive({
   selector: '[bsColumn]'
 })
-export class BsGridColumnDirective implements OnDestroy {
-  constructor() {
+export class BsGridColumnDirective {
+  constructor(destroy: DestroyRef) {
     this.customColClasses$
       .pipe(map((data) => {
         if (!data) {
@@ -27,23 +28,16 @@ export class BsGridColumnDirective implements OnDestroy {
             .join(' ');
         }
       }))
-      .pipe(takeUntil(this.destroyed$))
+      .pipe(takeUntilDestroyed(destroy))
       .subscribe((classList) => {
         this.classList = classList;
       });
   }
 
   private customColClasses$ = new BehaviorSubject<BsColumnDefinition | '' | undefined>(undefined);
-  private destroyed$ = new Subject();
   @HostBinding('class') classList: string | null = null
 
   @Input() public set bsColumn(value: BsColumnDefinition | '' | undefined) {
     this.customColClasses$.next(value);
   }
-
-  ngOnDestroy() {
-    this.destroyed$.next(true);
-  }
-
-
 }

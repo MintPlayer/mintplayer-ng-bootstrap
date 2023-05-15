@@ -1,8 +1,9 @@
-import { Directive, Inject, forwardRef, OnDestroy, AfterViewInit } from '@angular/core';
+import { Directive, Inject, forwardRef, AfterViewInit } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { combineLatest, Subject, takeUntil } from 'rxjs';
+import { combineLatest } from 'rxjs';
 import { BsColorPickerComponent } from '../../components/color-picker/color-picker.component';
 import { RgbColor } from '../../interfaces/rgb-color';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Directive({
   selector: 'bs-color-picker',
@@ -14,14 +15,14 @@ import { RgbColor } from '../../interfaces/rgb-color';
   }],
   exportAs: 'bsColorPicker'
 })
-export class BsColorPickerValueAccessor implements AfterViewInit, OnDestroy, ControlValueAccessor {
+export class BsColorPickerValueAccessor implements AfterViewInit, ControlValueAccessor {
 
   constructor(@Inject(forwardRef(() => BsColorPickerComponent)) private host: BsColorPickerComponent) {
   }
 
   ngAfterViewInit() {
     combineLatest([this.host.hs$, this.host.luminosity$])
-      .pipe(takeUntil(this.destroyed$))
+      .pipe(takeUntilDestroyed())
       .subscribe(([hs, luminosity]) => {
         const rgb = this.hsl2rgb(hs.hue, hs.saturation, luminosity);
         const hex = this.rgb2hex(rgb);
@@ -37,13 +38,8 @@ export class BsColorPickerValueAccessor implements AfterViewInit, OnDestroy, Con
     return retValue;
   }
 
-  destroyed$ = new Subject();
   onValueChange?: (value: string) => void;
   onTouched?: () => void;
-
-  ngOnDestroy() {
-    this.destroyed$.next(true);
-  }
 
   //#region ControlValueAccessor implementation
   registerOnChange(fn: (_: any) => void) {

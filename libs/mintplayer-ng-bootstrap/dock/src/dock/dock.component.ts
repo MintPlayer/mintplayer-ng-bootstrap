@@ -1,9 +1,8 @@
 import { Component, ContentChildren, ViewChildren, Input, OnDestroy, QueryList, HostBinding } from '@angular/core';
-import { BehaviorSubject, combineLatest, combineLatestAll, map, Observable, Subject, takeUntil } from 'rxjs';
-import { Overlay } from '@angular/cdk/overlay';
+import { BehaviorSubject, map, Observable } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Parentified, deepClone } from '@mintplayer/parentify';
 import { BsDockPanelComponent } from '../dock-panel/dock-panel.component';
-import { EPaneType } from '../enums/pane-type.enum';
 import { BsDockLayout } from '../interfaces/dock-layout';
 import { BsTabGroupPane } from '../panes/tab-group-pane';
 import { BsDocumentHost } from '../panes/document-host-pane';
@@ -28,13 +27,7 @@ export class BsDockComponent implements OnDestroy {
       floatingPanes: []
     });
 
-    // combineLatest([this.layout$, this.panels$])
-    //   .pipe(takeUntil(this.destroyed$))
-    //   .subscribe(([layout, panels]) => {
-        
-    //   })
-
-    this.floating$.pipe(takeUntil(this.destroyed$))
+    this.floating$.pipe(takeUntilDestroyed())
       .subscribe((floating) => {
         floating.forEach((panel) => panel.moveToOverlay());
       });
@@ -54,7 +47,7 @@ export class BsDockComponent implements OnDestroy {
       return clone.result;
     }));
 
-    this.parentifiedLayout$.pipe(takeUntil(this.destroyed$)).subscribe(console.log);
+    this.parentifiedLayout$.pipe(takeUntilDestroyed()).subscribe(console.log);
   }
 
   private paneCache?: Map<any, any>;
@@ -91,9 +84,7 @@ export class BsDockComponent implements OnDestroy {
 
   parentifiedLayout$: Observable<Parentified<BsDockLayout>>;
 
-  destroyed$ = new Subject();
   ngOnDestroy() {
-    this.destroyed$.next(true);
     this.floating$.value.forEach(panel => panel.disposeOverlay());
   }
 }

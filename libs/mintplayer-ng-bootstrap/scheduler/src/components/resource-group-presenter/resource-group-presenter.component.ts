@@ -1,5 +1,5 @@
-import { Component, Input, OnDestroy } from '@angular/core';
-import { BehaviorSubject, filter, map, Observable, Subject, take, takeUntil } from 'rxjs';
+import { Component, Input } from '@angular/core';
+import { BehaviorSubject, filter, map, Observable } from 'rxjs';
 import { Resource, ResourceGroup } from '../../interfaces';
 import { ResourceOrGroup } from '../../interfaces/resource-or-group';
 import { SchedulerStampWithSlots } from '../../interfaces/scheduler-stamp-with-slots';
@@ -10,7 +10,7 @@ import { SchedulerStampWithSlots } from '../../interfaces/scheduler-stamp-with-s
   styleUrls: ['./resource-group-presenter.component.scss'],
   
 })
-export class ResourceGroupPresenterComponent implements OnDestroy {
+export class ResourceGroupPresenterComponent {
   
   constructor() {
     this.data$ = this.resourceOrGroup$
@@ -45,7 +45,6 @@ export class ResourceGroupPresenterComponent implements OnDestroy {
   isExpanded$ = new BehaviorSubject<boolean>(false);
   data$: Observable<ResourceOrGroup>;
   colSpan$: Observable<number>;
-  destroyed$ = new Subject();
 
   //#region resourceOrGroup
   public get resourceOrGroup() {
@@ -75,13 +74,7 @@ export class ResourceGroupPresenterComponent implements OnDestroy {
   //#endregion
 
   toggleExpanded() {
-    this.isExpanded$.pipe(take(1)).subscribe((isExpanded) => {
-      this.isExpanded$.next(!isExpanded);
-    });
-  }
-
-  ngOnDestroy() {
-    this.destroyed$.next(true);
+    this.isExpanded$.next(!this.isExpanded$.value);
   }
 
 }

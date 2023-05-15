@@ -1,17 +1,18 @@
 import { DOCUMENT, isPlatformServer } from '@angular/common';
-import { Component, ContentChildren, ElementRef, forwardRef, Host, Inject, Injector, Input, OnDestroy, Optional, PLATFORM_ID, QueryList, SkipSelf, ViewChild } from '@angular/core';
-import { BehaviorSubject, combineLatest, map, Observable, Subject, takeUntil } from 'rxjs';
+import { Component, ContentChildren, ElementRef, forwardRef, Host, Inject, Injector, Input, Optional, PLATFORM_ID, QueryList, SkipSelf, ViewChild } from '@angular/core';
+import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
 import { DomPortal } from '@angular/cdk/portal';
 import { OverlayRef } from '@angular/cdk/overlay';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'bs-navbar-dropdown',
   templateUrl: './navbar-dropdown.component.html',
   styleUrls: ['./navbar-dropdown.component.scss']
 })
-export class BsNavbarDropdownComponent implements OnDestroy {
+export class BsNavbarDropdownComponent {
 
   constructor(
     private navbar: BsNavbarComponent,
@@ -26,7 +27,7 @@ export class BsNavbarDropdownComponent implements OnDestroy {
     this.navbarItem = navbarItem;
     this.isBrowser = !isPlatformServer(platformId);
 
-    this.isVisible$.pipe(takeUntil(this.destroyed$)).subscribe((isVisible) => {
+    this.isVisible$.pipe(takeUntilDestroyed()).subscribe((isVisible) => {
       if (isVisible) {
         setTimeout(() => this.overlay && this.overlay.updatePosition(), 20);
         this.topPos$.next(this.element.nativeElement.offsetTop);
@@ -103,7 +104,6 @@ export class BsNavbarDropdownComponent implements OnDestroy {
   @Input() public autoclose = true;
   navbarItem: BsNavbarItemComponent;
   parentDropdown: BsNavbarDropdownComponent;
-  private destroyed$ = new Subject();
   @ViewChild('dd') dropdownElement!: ElementRef<HTMLDivElement>;
   isBrowser = false;
   topPos$ = new BehaviorSubject<number | null>(null);
@@ -125,8 +125,4 @@ export class BsNavbarDropdownComponent implements OnDestroy {
   }
 
   @ContentChildren(forwardRef(() => BsNavbarDropdownComponent), { descendants: true }) childDropdowns!: QueryList<BsNavbarDropdownComponent>;
-
-  ngOnDestroy() {
-    this.destroyed$.next(true);
-  }
 }

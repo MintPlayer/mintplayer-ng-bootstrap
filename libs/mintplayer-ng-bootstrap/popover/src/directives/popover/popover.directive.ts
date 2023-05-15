@@ -1,11 +1,12 @@
 import { ConnectedPosition, Overlay, OverlayRef, PositionStrategy } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { BehaviorSubject, delay, map, Observable, Subject, take, takeUntil } from 'rxjs';
+import { Position } from '@mintplayer/ng-bootstrap';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { BehaviorSubject, delay, map, Observable, take } from 'rxjs';
 import { AfterViewInit, ComponentRef, Directive, ElementRef, Host, Inject, Injector, Input, OnDestroy, SkipSelf, TemplateRef } from '@angular/core';
 import { BsPopoverComponent } from '../../component/popover.component';
 import { POPOVER_CONTENT } from '../../providers/popover-content.provider';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
-import { Position } from '@mintplayer/ng-bootstrap';
 
 @Directive({
   selector: '*[bsPopover]'
@@ -19,12 +20,12 @@ export class BsPopoverDirective implements AfterViewInit, OnDestroy {
     @Inject(PORTAL_FACTORY) private portalFactory: (injector: Injector) => ComponentPortal<any>,
     @Host() @SkipSelf() private parent: ElementRef
   ) {
-    this.position$.pipe(takeUntil(this.destroyed$)).subscribe((position) => {
+    this.position$.pipe(takeUntilDestroyed()).subscribe((position) => {
       if (this.component) {
         this.component.instance.position = position;
       }
     });
-    this.isVisible$.pipe(takeUntil(this.destroyed$)).subscribe((isVisible) => {
+    this.isVisible$.pipe(takeUntilDestroyed()).subscribe((isVisible) => {
       if (this.component) {
         this.component.instance.isVisible = isVisible;
       }
@@ -64,7 +65,7 @@ export class BsPopoverDirective implements AfterViewInit, OnDestroy {
       }));
 
     this.connectedPosition$
-      .pipe(takeUntil(this.destroyed$))
+      .pipe(takeUntilDestroyed())
       .subscribe((connectedPosition) => {
         if (this.overlayRef) {
           this.overlayRef.updatePositionStrategy(this.overlay.position()
@@ -72,14 +73,6 @@ export class BsPopoverDirective implements AfterViewInit, OnDestroy {
             .withPositions([connectedPosition]));
         }
       });
-
-    this.destroyed$.pipe(take(1)).subscribe(() => {
-      if (this.overlayRef) {
-        this.overlayRef.detach();
-        this.overlayRef.dispose();
-        this.overlayRef = null;
-      }
-    });
   }
 
   @Input() public set bsPopover(value: Position) {
@@ -95,7 +88,6 @@ export class BsPopoverDirective implements AfterViewInit, OnDestroy {
   position$ = new BehaviorSubject<Position>('bottom');
   connectedPosition$: Observable<ConnectedPosition>;
   isVisible$ = new BehaviorSubject<boolean>(false);
-  destroyed$ = new Subject();
 
   ngAfterViewInit() {
     this.connectedPosition$.pipe(take(1)).subscribe((connectedPosition) => {
@@ -123,7 +115,10 @@ export class BsPopoverDirective implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    this.destroyed$.next(true);
+    if (this.overlayRef) {
+      this.overlayRef.detach();
+      this.overlayRef.dispose();
+      this.overlayRef = null;
+    }
   }
-
 }

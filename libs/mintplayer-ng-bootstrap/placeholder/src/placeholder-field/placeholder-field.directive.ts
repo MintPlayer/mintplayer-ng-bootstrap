@@ -1,15 +1,15 @@
-import { Directive, HostBinding, OnDestroy } from '@angular/core';
-import { Subject, takeUntil } from 'rxjs';
+import { Directive, HostBinding } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BsPlaceholderComponent } from '../placeholder/placeholder.component';
 
 @Directive({
   selector: '[bsPlaceholderField]'
 })
-export class BsPlaceholderFieldDirective implements OnDestroy {
+export class BsPlaceholderFieldDirective {
 
   constructor(private placeholder: BsPlaceholderComponent) {
     this.placeholder.isLoading$
-      .pipe(takeUntil(this.destroyed$))
+      .pipe(takeUntilDestroyed())
       .subscribe((isLoading) => {
         this.placeholderClass = isLoading;
         this.marginBottom = isLoading ? -1 : 0;
@@ -20,11 +20,5 @@ export class BsPlaceholderFieldDirective implements OnDestroy {
   @HostBinding('attr.innerHtml') html?: string = undefined;
   @HostBinding('style.min-width.px') minWidth = 80;
   @HostBinding('style.margin-bottom.px') marginBottom = 0;
-  @HostBinding('class.placeholder') placeholderClass = true;
-  destroyed$ = new Subject();
-
-  ngOnDestroy() {
-    this.destroyed$.next(true);
-  }
-  
+  @HostBinding('class.placeholder') placeholderClass = true;  
 }

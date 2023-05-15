@@ -1,5 +1,6 @@
-import { Component, Directive, ElementRef, HostBinding, Input, OnDestroy, forwardRef } from '@angular/core';
-import { BehaviorSubject, Observable, map, Subject, takeUntil } from 'rxjs';
+import { Component, ElementRef, HostBinding, Input, forwardRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { BehaviorSubject, Observable, map } from 'rxjs';
 import { ResizeAction } from '../interfaces/resize-action';
 import { RESIZABLE } from '../providers/resizable.provider';
 import { ResizablePositioning } from '../types/positioning';
@@ -13,7 +14,7 @@ import { PresetPosition } from '../interfaces/preset-position';
     { provide: RESIZABLE, useExisting: forwardRef(() => BsResizableComponent) }
   ]
 })
-export class BsResizableComponent implements OnDestroy {
+export class BsResizableComponent {
   constructor(element: ElementRef<HTMLElement>) {
     this.element = element;
     this.hostPosition$ = this.positioning$.pipe(map((positioning) => {
@@ -30,7 +31,7 @@ export class BsResizableComponent implements OnDestroy {
       }
     }));
 
-    this.hostPosition$.pipe(takeUntil(this.destroyed$))
+    this.hostPosition$.pipe(takeUntilDestroyed())
       .subscribe(hostPosition => this.hostClass = hostPosition);
   }
 
@@ -76,9 +77,4 @@ export class BsResizableComponent implements OnDestroy {
 
   @HostBinding('class')
   hostClass: string | null = null;
-
-  destroyed$ = new Subject();
-  ngOnDestroy() {
-    this.destroyed$.next(true);
-  }
 }

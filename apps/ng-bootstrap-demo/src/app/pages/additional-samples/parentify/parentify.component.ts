@@ -1,23 +1,23 @@
-import { AfterViewInit, Component, OnDestroy } from '@angular/core';
+import { AfterViewInit, Component } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { deepClone } from '@mintplayer/parentify';
-import { BehaviorSubject, Subject, map, takeUntil } from 'rxjs';
+import { BehaviorSubject, map } from 'rxjs';
 
 @Component({
   selector: 'demo-parentify',
   templateUrl: './parentify.component.html',
   styleUrls: ['./parentify.component.scss']
 })
-export class ParentifyComponent implements AfterViewInit, OnDestroy {
+export class ParentifyComponent implements AfterViewInit {
   constructor() {
     this.example$
       .pipe(map(example => deepClone(example, true, [Object])))
       // .pipe(map((clone) => JSON.stringify(clone)))
-      .pipe(takeUntil(this.destroyed$))
+      .pipe(takeUntilDestroyed())
       .subscribe(console.log);
   }
 
   example$ = new BehaviorSubject<any>(null);
-  destroyed$ = new Subject();
 
   ngAfterViewInit() {
     const address = {
@@ -37,9 +37,5 @@ export class ParentifyComponent implements AfterViewInit, OnDestroy {
     (<any>address)['person'] = person;
 
     this.example$.next(person);
-  }
-
-  ngOnDestroy() {
-    this.destroyed$.next(true);
   }
 }

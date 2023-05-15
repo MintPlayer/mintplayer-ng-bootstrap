@@ -1,8 +1,9 @@
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { AfterViewInit, Component, ComponentRef, EventEmitter, Inject, Injector, Input, OnDestroy, Output, TemplateRef } from '@angular/core';
+import { AfterViewInit, Component, DestroyRef, ComponentRef, EventEmitter, Inject, Injector, Input, OnDestroy, Output, TemplateRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BsViewState, Position } from '@mintplayer/ng-bootstrap';
-import { BehaviorSubject, combineLatest, filter, Subject, take, takeUntil } from 'rxjs';
+import { BehaviorSubject, combineLatest, filter } from 'rxjs';
 import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
 import { BsOffcanvasComponent } from '../offcanvas/offcanvas.component';
@@ -14,9 +15,9 @@ import { BsOffcanvasComponent } from '../offcanvas/offcanvas.component';
 })
 export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
 
-  constructor(private overlayService: Overlay, private rootInjector: Injector, @Inject(PORTAL_FACTORY) private portalFactory: (injector: Injector) => ComponentPortal<any>) {
+  constructor(private overlayService: Overlay, private rootInjector: Injector, private destroy: DestroyRef, @Inject(PORTAL_FACTORY) private portalFactory: (injector: Injector) => ComponentPortal<any>) {
     this.state$
-      .pipe(takeUntil(this.destroyed$))
+      .pipe(takeUntilDestroyed())
       .subscribe((state) => {
         if (this.component) {
           this.stateChange.emit(state);
@@ -26,36 +27,18 @@ export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
 
     combineLatest([this.position$, this.viewInited$])
       .pipe(filter(([position, viewInited]) => viewInited))
-      .pipe(takeUntil(this.destroyed$))
-      .subscribe(([position, viewInited]) => {
-        if (this.component) {
-          this.component.instance.position$.next(position);
-        }
-      });
+      .pipe(takeUntilDestroyed())
+      .subscribe(([position, viewInited]) => this.component && this.component.instance.position$.next(position));
 
     combineLatest([this.size$, this.viewInited$])
       .pipe(filter(([size, viewInited]) => viewInited))
-      .pipe(takeUntil(this.destroyed$))
-      .subscribe(([size, viewInited]) => {
-        if (this.component) {
-          this.component.instance.size$.next(size);
-        }
-      });
+      .pipe(takeUntilDestroyed())
+      .subscribe(([size, viewInited]) => this.component && this.component.instance.size$.next(size));
       
     combineLatest([this.hasBackdrop$, this.viewInited$])
       .pipe(filter(([hasBackdrop, viewInited]) => viewInited))
-      .pipe(takeUntil(this.destroyed$))
-      .subscribe(([hasBackdrop, viewInited]) => {
-        if (this.component) {
-          this.component.instance.hasBackdrop$.next(hasBackdrop);
-        }
-      });
-
-    this.destroyed$.pipe(take(1))
-      .subscribe(() => {
-        this.state = 'closed';
-        setTimeout(() => this.overlayRef && this.overlayRef.dispose(), 3000);
-      });
+      .pipe(takeUntilDestroyed())
+      .subscribe(([hasBackdrop, viewInited]) => this.component && this.component.instance.hasBackdrop$.next(hasBackdrop));
   }
 
   content!: TemplateRef<any>;
@@ -66,7 +49,6 @@ export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
   size$ = new BehaviorSubject<number | null>(null);
   position$ = new BehaviorSubject<Position>('bottom');
   hasBackdrop$ = new BehaviorSubject<boolean>(false);
-  destroyed$ = new Subject();
 
   @Output() backdropClick = new EventEmitter<MouseEvent>();
 
@@ -89,16 +71,15 @@ export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
     this.component = this.overlayRef.attach<BsOffcanvasComponent>(portal);
 
     this.component.instance.backdropClick
-      .pipe(takeUntil(this.destroyed$))
-      .subscribe((ev) => {
-        this.backdropClick.emit(ev);
-      });
+      .pipe(takeUntilDestroyed(this.destroy))
+      .subscribe((ev) => this.backdropClick.emit(ev));
 
     this.viewInited$.next(true);
   }
 
-  ngOnDestroy(): void {
-    this.destroyed$.next(true);
+  ngOnDestroy() {
+    this.state = 'closed';
+    setTimeout(() => this.overlayRef && this.overlayRef.dispose(), 3000);
   }
 
   //#region State

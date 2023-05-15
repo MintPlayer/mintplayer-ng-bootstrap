@@ -1,7 +1,8 @@
 import { animate, AnimationBuilder, AnimationPlayer, style } from '@angular/animations';
 import { DOCUMENT } from '@angular/common';
-import { AfterViewInit, ContentChildren, Directive, ElementRef, EventEmitter, forwardRef, HostBinding, Inject, Input, OnDestroy, Output, QueryList } from '@angular/core';
-import { BehaviorSubject, combineLatest, filter, map, mergeMap, Observable, Subject, take, takeUntil, takeWhile } from 'rxjs';
+import { AfterViewInit, ContentChildren, Directive, ElementRef, EventEmitter, forwardRef, HostBinding, Inject, Input, Output, QueryList } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { BehaviorSubject, combineLatest, filter, map, mergeMap, Observable, take } from 'rxjs';
 import { LastTouch } from '../../interfaces/last-touch';
 import { StartTouch } from '../../interfaces/start-touch';
 import { BsSwipeDirective } from '../swipe/swipe.directive';
@@ -10,7 +11,7 @@ import { BsSwipeDirective } from '../swipe/swipe.directive';
   selector: '[bsSwipeContainer]',
   exportAs: 'bsSwipeContainer'
 })
-export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
+export class BsSwipeContainerDirective implements AfterViewInit {
 
   constructor(element: ElementRef, private animationBuilder: AnimationBuilder, @Inject(DOCUMENT) document: any) {
     this.containerElement = element;
@@ -59,22 +60,15 @@ export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
       }));
 
     this.offsetLeft$ = combineLatest([this.offset$, this.padLeft$])
-      .pipe(map(([offset, padLeft]) => {
-        return offset - padLeft * 100;
-      }));
+      .pipe(map(([offset, padLeft]) => offset - padLeft * 100));
     this.offsetRight$ = combineLatest([this.offset$, this.padLeft$, this.padRight$])
-      .pipe(map(([offset, padLeft, padRight]) => {
-        return -(offset - padLeft * 100) - (padRight - 1) * 100;
-      }));
-    this.offsetLeft$
-      .pipe(takeUntil(this.destroyed$))
-      .subscribe((offsetLeft) => this.offsetLeft = offsetLeft);
-    this.offsetRight$
-      .pipe(takeUntil(this.destroyed$))
-      .subscribe((offsetRight) => this.offsetRight = offsetRight);
-    this.imageIndex$
-      .pipe(takeUntil(this.destroyed$))
-      .subscribe((imageIndex) => this.imageIndexChange.emit(imageIndex));
+      .pipe(map(([offset, padLeft, padRight]) => -(offset - padLeft * 100) - (padRight - 1) * 100));
+    this.offsetLeft$.pipe(takeUntilDestroyed())
+      .subscribe(offsetLeft => this.offsetLeft = offsetLeft);
+    this.offsetRight$.pipe(takeUntilDestroyed())
+      .subscribe(offsetRight => this.offsetRight = offsetRight);
+    this.imageIndex$.pipe(takeUntilDestroyed())
+      .subscribe(imageIndex => this.imageIndexChange.emit(imageIndex));
 
     this.actualSwipes$ = this.swipes$
       .pipe(map(swipes => {
@@ -119,7 +113,6 @@ export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
   
   actualSwipes$: Observable<BsSwipeDirective[]>;
   isViewInited$ = new BehaviorSubject<boolean>(false);
-  destroyed$ = new Subject();
   startTouch$ = new BehaviorSubject<StartTouch | null>(null);
   lastTouch$ = new BehaviorSubject<LastTouch | null>(null);
   swipes$ = new BehaviorSubject<QueryList<BsSwipeDirective> | null>(null);
@@ -138,10 +131,6 @@ export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
 
   ngAfterViewInit() {
     this.isViewInited$.next(true);
-  }
-
-  ngOnDestroy() {
-    this.destroyed$.next(true);
   }
 
   animateToIndexByDx(dx: number) {

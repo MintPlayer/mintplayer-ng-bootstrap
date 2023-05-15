@@ -1,13 +1,14 @@
-import { Component, HostBinding, Input, OnDestroy } from '@angular/core';
+import { Component, HostBinding, Input } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Color } from '@mintplayer/ng-bootstrap';
-import { BehaviorSubject, combineLatest, map, Observable, Subject, takeUntil } from 'rxjs';
+import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
 
 @Component({
   selector: 'bs-progress-bar',
   templateUrl: './progress-bar.component.html',
   styleUrls: ['./progress-bar.component.scss']
 })
-export class BsProgressBarComponent implements OnDestroy {
+export class BsProgressBarComponent {
 
   constructor() {
     this.percentage$ = combineLatest([this.minimum$, this.maximum$, this.value$])
@@ -24,34 +25,18 @@ export class BsProgressBarComponent implements OnDestroy {
         return `bg-${name}`;
       }));
 
-    this.colorClass$
-      .pipe(takeUntil(this.destroyed$))
-      .subscribe((color) => {
-        this.colorClass = color;
-      });
-    this.width$
-      .pipe(takeUntil(this.destroyed$))
-      .subscribe((width) => {
-        this.widthStyle = width;
-      });
-    this.value$
-      .pipe(takeUntil(this.destroyed$))
-      .subscribe((value) => {
-        this.valueNow = value;
-      });
-    this.minimum$
-      .pipe(takeUntil(this.destroyed$))
-      .subscribe((value) => {
-        this.valueMin = value;
-      });
-    this.maximum$
-      .pipe(takeUntil(this.destroyed$))
-      .subscribe((value) => {
-        this.valueMax = value;
-      });
+    this.colorClass$.pipe(takeUntilDestroyed())
+      .subscribe(color => this.colorClass = color);
+    this.width$.pipe(takeUntilDestroyed())
+      .subscribe(width => this.widthStyle = width);
+    this.value$.pipe(takeUntilDestroyed())
+      .subscribe(value => this.valueNow = value);
+    this.minimum$.pipe(takeUntilDestroyed())
+      .subscribe(value => this.valueMin = value);
+    this.maximum$.pipe(takeUntilDestroyed())
+      .subscribe(value => this.valueMax = value);
   }
 
-  destroyed$ = new Subject()
   minimum$ = new BehaviorSubject<number>(0);
   maximum$ = new BehaviorSubject<number>(100);
   value$ = new BehaviorSubject<number>(50);
@@ -82,9 +67,4 @@ export class BsProgressBarComponent implements OnDestroy {
   @HostBinding('attr.aria-valuenow') valueNow = 50;
   @HostBinding('attr.aria-valuemin') valueMin = 0;
   @HostBinding('attr.aria-valuemax') valueMax = 100;
-
-  ngOnDestroy() {
-    this.destroyed$.next(true);
-  }
-
 }

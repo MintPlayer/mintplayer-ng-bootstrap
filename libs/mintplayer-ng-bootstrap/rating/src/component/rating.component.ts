@@ -1,12 +1,13 @@
-import { Component, EventEmitter, HostListener, Input, OnDestroy, OnInit, Output } from '@angular/core';
-import { BehaviorSubject, combineLatest, map, Observable, Subject, takeUntil } from 'rxjs';
+import { Component, EventEmitter, HostListener, Input, Output } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
 
 @Component({
   selector: 'bs-rating',
   templateUrl: './rating.component.html',
   styleUrls: ['./rating.component.scss']
 })
-export class BsRatingComponent implements OnDestroy {
+export class BsRatingComponent {
 
   constructor() {
     this.stars$ = combineLatest([this.maximum$, this.previewValue$, this.value$])
@@ -19,14 +20,13 @@ export class BsRatingComponent implements OnDestroy {
       }));
 
     combineLatest([this.previewValue$, this.value$])
-      .pipe(takeUntil(this.destroyed$))
+      .pipe(takeUntilDestroyed())
       .subscribe(([previewValue, value]) => {
         const v = previewValue ?? value;
         this.starsChange.emit(v);
       });
   }
 
-  destroyed$ = new Subject();
   maximum$ = new BehaviorSubject<number>(5);
   value$ = new BehaviorSubject<number>(3);
   previewValue$ = new BehaviorSubject<number | null>(null);
@@ -49,10 +49,6 @@ export class BsRatingComponent implements OnDestroy {
     this.valueChange.emit(value);
   }
   //#endregion
-
-  ngOnDestroy() {
-    this.destroyed$.next(true);
-  }
 
   hoverValue(index: number) {
     this.previewValue$.next(index + 1);

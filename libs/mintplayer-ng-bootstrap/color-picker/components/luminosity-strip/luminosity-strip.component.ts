@@ -1,5 +1,6 @@
-import { Component, EventEmitter, Input, Output, AfterViewInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
-import { BehaviorSubject, combineLatest, map, Observable, Subject, takeUntil } from 'rxjs';
+import { Component, EventEmitter, Input, Output, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
+import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HS } from '../../interfaces/hs';
 
 @Component({
@@ -7,9 +8,9 @@ import { HS } from '../../interfaces/hs';
   templateUrl: './luminosity-strip.component.html',
   styleUrls: ['./luminosity-strip.component.scss']
 })
-export class BsLuminosityStripComponent implements AfterViewInit, OnDestroy {
+export class BsLuminosityStripComponent implements AfterViewInit {
   constructor() {
-    this.hs$.pipe(takeUntil(this.destroyed$)).subscribe((hs) => {
+    this.hs$.pipe(takeUntilDestroyed()).subscribe((hs) => {
       if (this.canvasContext) {
         const width = this.canvas.nativeElement.width, height = this.canvas.nativeElement.height;
         this.canvasContext.clearRect(0, 0, width, height);
@@ -34,8 +35,8 @@ export class BsLuminosityStripComponent implements AfterViewInit, OnDestroy {
         return `hsl(${hs.hue}, ${hs.saturation * 100}%, ${luminosity * 100}%)`;
       }));
       
-    this.luminosity$.pipe(takeUntil(this.destroyed$))
-      .subscribe((luminosity) => this.luminosityChange.emit(luminosity));
+    this.luminosity$.pipe(takeUntilDestroyed())
+      .subscribe(luminosity => this.luminosityChange.emit(luminosity));
   }
 
   //#region HS
@@ -65,9 +66,4 @@ export class BsLuminosityStripComponent implements AfterViewInit, OnDestroy {
   }
 
   resultBackground$: Observable<string>;
-
-  destroyed$ = new Subject();
-  ngOnDestroy() {
-    this.destroyed$.next(true);
-  }
 }
