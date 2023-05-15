@@ -1,4 +1,4 @@
-import { Directive, HostBinding, Input } from '@angular/core';
+import { Directive, HostBinding, Input, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, map } from 'rxjs';
 import { BsColumnDefinition } from '../../interfaces/column-definition';
@@ -7,7 +7,7 @@ import { BsColumnDefinition } from '../../interfaces/column-definition';
   selector: '[bsColumn]'
 })
 export class BsGridColumnDirective {
-  constructor() {
+  constructor(destroy: DestroyRef) {
     this.customColClasses$
       .pipe(map((data) => {
         if (!data) {
@@ -28,7 +28,7 @@ export class BsGridColumnDirective {
             .join(' ');
         }
       }))
-      .pipe(takeUntilDestroyed())
+      .pipe(takeUntilDestroyed(destroy))
       .subscribe((classList) => {
         this.classList = classList;
       });

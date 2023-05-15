@@ -1,6 +1,6 @@
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { AfterViewInit, Component, ComponentRef, EventEmitter, Inject, Injector, Input, OnDestroy, Output, TemplateRef } from '@angular/core';
+import { AfterViewInit, Component, DestroyRef, ComponentRef, EventEmitter, Inject, Injector, Input, OnDestroy, Output, TemplateRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BsViewState, Position } from '@mintplayer/ng-bootstrap';
 import { BehaviorSubject, combineLatest, filter } from 'rxjs';
@@ -15,7 +15,7 @@ import { BsOffcanvasComponent } from '../offcanvas/offcanvas.component';
 })
 export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
 
-  constructor(private overlayService: Overlay, private rootInjector: Injector, @Inject(PORTAL_FACTORY) private portalFactory: (injector: Injector) => ComponentPortal<any>) {
+  constructor(private overlayService: Overlay, private rootInjector: Injector, private destroy: DestroyRef, @Inject(PORTAL_FACTORY) private portalFactory: (injector: Injector) => ComponentPortal<any>) {
     this.state$
       .pipe(takeUntilDestroyed())
       .subscribe((state) => {
@@ -71,7 +71,7 @@ export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
     this.component = this.overlayRef.attach<BsOffcanvasComponent>(portal);
 
     this.component.instance.backdropClick
-      .pipe(takeUntilDestroyed())
+      .pipe(takeUntilDestroyed(this.destroy))
       .subscribe((ev) => this.backdropClick.emit(ev));
 
     this.viewInited$.next(true);

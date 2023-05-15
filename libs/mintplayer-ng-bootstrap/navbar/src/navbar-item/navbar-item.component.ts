@@ -1,4 +1,4 @@
-import { AfterContentChecked, Component, ContentChildren, ElementRef, forwardRef, Inject, Injector, Optional, PLATFORM_ID, QueryList, ViewContainerRef } from '@angular/core';
+import { AfterContentChecked, Component, ContentChildren, DestroyRef, ElementRef, forwardRef, Inject, Optional, PLATFORM_ID, QueryList, ViewContainerRef } from '@angular/core';
 import { isPlatformServer } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BsNavbarComponent } from '../navbar/navbar.component';
@@ -14,7 +14,7 @@ export class BsNavbarItemComponent implements AfterContentChecked {
   constructor(
     private navbar: BsNavbarComponent,
     element: ElementRef,
-    // private injector: Injector,
+    private destroy: DestroyRef,
     @Inject(PLATFORM_ID) private platformId: Object,
     @Optional() parentDropdown: BsNavbarDropdownComponent,
   ) {
@@ -46,9 +46,7 @@ export class BsNavbarItemComponent implements AfterContentChecked {
             // Normally there should be only one dropdown in this list
             this.dropdowns.forEach((dropdown) => {
               if (!(dropdown.isVisible = !dropdown.isVisible)) {
-                dropdown.childDropdowns.forEach((child) => {
-                  child.isVisible = false;
-                });
+                dropdown.childDropdowns.forEach((child) => child.isVisible = false);
               } else if (this.parentDropdown) {
                 // import('@angular/cdk/overlay').then(({ OverlayModule, Overlay }) => {
                 //   const overlayService = this.injector.get(Overlay);
@@ -69,7 +67,7 @@ export class BsNavbarItemComponent implements AfterContentChecked {
                 // dropdown.showInOverlay = true;
 
                 this.navbar.isSmallMode$
-                  .pipe(takeUntilDestroyed())
+                  .pipe(takeUntilDestroyed(this.destroy))
                   .subscribe((isSmallMode) => dropdown.showInOverlay = !isSmallMode);
               }
             });
