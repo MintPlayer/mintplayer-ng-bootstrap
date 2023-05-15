@@ -1,14 +1,15 @@
-import { Component, Directive, ElementRef, EventEmitter, HostBinding, HostListener, Input, OnDestroy, Output, ViewChild, NgZone } from '@angular/core';
-import { BehaviorSubject, map, Observable, Subject, takeUntil } from 'rxjs';
+import { Component, Directive, ElementRef, EventEmitter, HostBinding, HostListener, Input, Output, ViewChild, NgZone } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { BehaviorSubject, map, Observable } from 'rxjs';
 
 @Component({
   selector: 'bs-slider',
   templateUrl: './slider.component.html',
   styleUrls: ['./slider.component.scss']
 })
-export class BsSliderComponent implements OnDestroy {
+export class BsSliderComponent {
   constructor(private element: ElementRef<HTMLElement>, private zone: NgZone) {
-    this.value$.pipe(takeUntil(this.destroyed$))
+    this.value$.pipe(takeUntilDestroyed())
       .subscribe((value) => this.valueChange.emit(value));
 
     this.thumbMarginLeft$ = this.value$.pipe(map((value) => {
@@ -77,12 +78,6 @@ export class BsSliderComponent implements OnDestroy {
     const percent = co.x / this.track.nativeElement.clientWidth;
     const limited = Math.max(0, Math.min(1, percent));
     this.value$.next(limited);
-  }
-
-  destroyed$ = new Subject();
-  ngOnDestroy() {
-    this.destroyed$.next(true);
-    this.destroyed$.complete();
   }
 }
 

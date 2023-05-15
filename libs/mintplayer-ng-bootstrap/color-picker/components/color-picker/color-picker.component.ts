@@ -1,17 +1,18 @@
-import { Component, Input, ViewChild, OnDestroy, EventEmitter, Output } from "@angular/core";
-import { BehaviorSubject, Subject, takeUntil } from "rxjs";
+import { Component, Input, ViewChild, EventEmitter, Output } from "@angular/core";
+import { BehaviorSubject } from "rxjs";
 import { HS } from "../../interfaces/hs";
 import { BsColorWheelComponent } from "../color-wheel/color-wheel.component";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 
 @Component({
   selector: 'bs-color-picker',
   templateUrl: './color-picker.component.html',
   styleUrls: ['./color-picker.component.scss']
 })
-export class BsColorPickerComponent implements OnDestroy {
+export class BsColorPickerComponent {
 
   constructor() {
-    this.alpha$.pipe(takeUntil(this.destroyed$))
+    this.alpha$.pipe(takeUntilDestroyed())
       .subscribe((alpha) => this.alphaChange.emit(alpha));
   }
 
@@ -44,10 +45,4 @@ export class BsColorPickerComponent implements OnDestroy {
     this.alpha$.next(value);
   }
   //#endregion
-
-  destroyed$ = new Subject();
-  ngOnDestroy() {
-    this.destroyed$.next(true);
-  }
-
 }

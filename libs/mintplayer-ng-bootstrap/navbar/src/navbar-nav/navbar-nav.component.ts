@@ -1,6 +1,7 @@
-import { Component, HostListener, Input, OnDestroy } from '@angular/core';
+import { Component, HostListener, Input } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
-import { BehaviorSubject, combineLatest, debounceTime, filter, map, Observable, Subject, takeUntil } from 'rxjs';
+import { BehaviorSubject, combineLatest, debounceTime, filter, map, Observable } from 'rxjs';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 
 @Component({
@@ -9,7 +10,7 @@ import { BsNavbarComponent } from '../navbar/navbar.component';
   styleUrls: ['./navbar-nav.component.scss'],
   animations: [SlideUpDownAnimation]
 })
-export class BsNavbarNavComponent implements OnDestroy {
+export class BsNavbarNavComponent {
 
   constructor(bsNavbar: BsNavbarComponent) {
     this.bsNavbar = bsNavbar;
@@ -30,10 +31,8 @@ export class BsNavbarNavComponent implements OnDestroy {
       }));
 
     this.windowWidth$
-      .pipe(debounceTime(300), takeUntil(this.destroyed$))
-      .subscribe(() => {
-        this.isResizing$.next(false);
-      });
+      .pipe(debounceTime(300), takeUntilDestroyed())
+      .subscribe(() => this.isResizing$.next(false));
     this.onWindowResize();
   }
   
@@ -42,11 +41,6 @@ export class BsNavbarNavComponent implements OnDestroy {
   windowWidth$ = new BehaviorSubject<number | null>(null);
   showNavs$: Observable<boolean>;
   isResizing$ = new BehaviorSubject<boolean>(false);
-  destroyed$ = new Subject();
-  
-  ngOnDestroy() {
-    this.destroyed$.next(true);
-  }
   
   //#region collapse
   @Input() public set collapse(value: boolean) {

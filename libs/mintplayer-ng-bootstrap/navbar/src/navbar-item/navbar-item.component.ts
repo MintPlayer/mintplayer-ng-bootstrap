@@ -1,8 +1,6 @@
-import { AfterContentChecked, OnDestroy, Component, ContentChildren, ElementRef, forwardRef, Inject, Injector, Optional, PLATFORM_ID, QueryList, ViewContainerRef } from '@angular/core';
+import { AfterContentChecked, Component, ContentChildren, ElementRef, forwardRef, Inject, Injector, Optional, PLATFORM_ID, QueryList, ViewContainerRef } from '@angular/core';
 import { isPlatformServer } from '@angular/common';
-import { DomPortal } from '@angular/cdk/portal';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
 
@@ -11,7 +9,7 @@ import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.co
   templateUrl: './navbar-item.component.html',
   styleUrls: ['./navbar-item.component.scss']
 })
-export class BsNavbarItemComponent implements AfterContentChecked, OnDestroy {
+export class BsNavbarItemComponent implements AfterContentChecked {
 
   constructor(
     private navbar: BsNavbarComponent,
@@ -28,7 +26,6 @@ export class BsNavbarItemComponent implements AfterContentChecked, OnDestroy {
   parentDropdown: BsNavbarDropdownComponent;
   hasDropdown = false;
   anchorTag: HTMLAnchorElement | null = null;
-  private destroyed$ = new Subject();
   @ContentChildren(forwardRef(() => BsNavbarDropdownComponent)) dropdowns!: QueryList<BsNavbarDropdownComponent>;
 
   ngAfterContentChecked() {
@@ -72,10 +69,8 @@ export class BsNavbarItemComponent implements AfterContentChecked, OnDestroy {
                 // dropdown.showInOverlay = true;
 
                 this.navbar.isSmallMode$
-                  .pipe(takeUntil(this.destroyed$))
-                  .subscribe((isSmallMode) => {
-                    dropdown.showInOverlay = !isSmallMode;
-                  });
+                  .pipe(takeUntilDestroyed())
+                  .subscribe((isSmallMode) => dropdown.showInOverlay = !isSmallMode);
               }
             });
             return false;
@@ -100,9 +95,5 @@ export class BsNavbarItemComponent implements AfterContentChecked, OnDestroy {
       }
 
     }
-  }
-
-  ngOnDestroy() {
-    this.destroyed$.next(true);
   }
 }

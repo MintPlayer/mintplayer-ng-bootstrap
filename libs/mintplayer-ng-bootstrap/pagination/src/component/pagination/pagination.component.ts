@@ -1,6 +1,7 @@
-import { Component, EventEmitter, Input, OnDestroy, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Size } from '@mintplayer/ng-bootstrap';
-import { BehaviorSubject, combineLatest, map, Observable, Subject, takeUntil } from 'rxjs';
+import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
 import { PageWithSelection } from '../../interfaces/page-with-selection';
 
 @Component({
@@ -8,16 +9,14 @@ import { PageWithSelection } from '../../interfaces/page-with-selection';
   templateUrl: './pagination.component.html',
   styleUrls: ['./pagination.component.scss'],
 })
-export class BsPaginationComponent implements OnDestroy {
+export class BsPaginationComponent {
   constructor() {
-    this.destroyed$ = new Subject();
-
     this.visibleNumberOfNumberBoxes$ = combineLatest([
       this.numberOfBoxes$,
       this.pageNumbers$,
       this.showArrows$,
     ])
-      .pipe(takeUntil(this.destroyed$))
+      .pipe(takeUntilDestroyed())
       .pipe(
         map(([numberOfBoxes, pageNumbers, showArrows]) => {
           if (numberOfBoxes <= 0) {
@@ -53,7 +52,7 @@ export class BsPaginationComponent implements OnDestroy {
       this.isLeftOverflow$,
       this.isRightOverflow$
     ])
-      .pipe(takeUntil(this.destroyed$))
+      .pipe(takeUntilDestroyed())
       .pipe(
         map(([pageNumbers, selectedPageNumber, visibleNumberOfNumberBoxes, isLeftOverflow, isRightOverflow]) => {
           // const boxesToRemove = pageNumbers.length - visibleNumberOfNumberBoxes
@@ -93,29 +92,18 @@ export class BsPaginationComponent implements OnDestroy {
       this.pageNumbers$,
       this.selectedPageNumber$,
     ])
-      .pipe(takeUntil(this.destroyed$))
-      .pipe(
-        map(([pageNumbers, selectedPageNumber]) => {
-          return pageNumbers.indexOf(selectedPageNumber) === 0;
-        })
-      );
+    .pipe(takeUntilDestroyed())
+    .pipe(map(([pageNumbers, selectedPageNumber]) => pageNumbers.indexOf(selectedPageNumber) === 0));
 
     this.isLastPage$ = combineLatest([
       this.pageNumbers$,
       this.selectedPageNumber$,
     ])
-      .pipe(takeUntil(this.destroyed$))
-      .pipe(
-        map(([pageNumbers, selectedPageNumber]) => {
-          return (pageNumbers.indexOf(selectedPageNumber) === pageNumbers.length - 1);
-        })
-      );
+      .pipe(takeUntilDestroyed())
+      .pipe(map(([pageNumbers, selectedPageNumber]) => pageNumbers.indexOf(selectedPageNumber) === pageNumbers.length - 1));
 
-    this.selectedPageNumber$
-      .pipe(takeUntil(this.destroyed$))
-      .subscribe((selectedPageNumber) => {
-        this.selectedPageNumberChange.emit(selectedPageNumber);
-      });
+    this.selectedPageNumber$.pipe(takeUntilDestroyed())
+      .subscribe(selectedPageNumber => this.selectedPageNumberChange.emit(selectedPageNumber));
   }
 
   /** All page numbers. */
@@ -141,8 +129,6 @@ export class BsPaginationComponent implements OnDestroy {
   isLeftOverflow$: Observable<boolean>;
   /** Indicates whether there are too many numbers to the right-hand side of the current page. */
   isRightOverflow$: Observable<boolean>;
-  /** Monitor OnDestroyed hook. */
-  private destroyed$: Subject<any>;
 
   //#region SelectedPageNumber
   @Output() public selectedPageNumberChange = new EventEmitter<number>();
@@ -189,10 +175,6 @@ export class BsPaginationComponent implements OnDestroy {
     return this.size$.value;
   }
   //#endregion
-
-  ngOnDestroy() {
-    this.destroyed$.next(true);
-  }
 
   onSelectPage(event: MouseEvent, page: number) {
     this.selectedPageNumber$.next(page);

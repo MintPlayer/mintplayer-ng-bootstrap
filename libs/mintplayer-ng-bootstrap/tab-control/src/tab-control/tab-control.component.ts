@@ -1,8 +1,9 @@
-import { CdkDragDrop, CdkDragStart, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
-import { Component, ContentChildren, ElementRef, HostBinding, Input, OnDestroy, QueryList, Renderer2 } from '@angular/core';
-import { BehaviorSubject, combineLatest, filter, map, Observable, Subject, takeUntil } from 'rxjs';
+import { CdkDragDrop, CdkDragStart, moveItemInArray } from '@angular/cdk/drag-drop';
+import { Component, ContentChildren, ElementRef, HostBinding, Input, QueryList } from '@angular/core';
+import { BehaviorSubject, combineLatest, filter, map, Observable } from 'rxjs';
 import { BsTabPageComponent } from '../tab-page/tab-page.component';
 import { BsTabsPosition } from '../tabs-position';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'bs-tab-control',
@@ -12,7 +13,7 @@ import { BsTabsPosition } from '../tabs-position';
     { provide: 'TAB_CONTROL', useExisting: BsTabControlComponent }
   ]
 })
-export class BsTabControlComponent implements OnDestroy {
+export class BsTabControlComponent {
 
   constructor(element: ElementRef<any>) {
     this.tabControlId$ = new BehaviorSubject<number>(++BsTabControlComponent.tabControlCounter);
@@ -22,7 +23,7 @@ export class BsTabControlComponent implements OnDestroy {
       .pipe(filter(([tabPages, activeTab, selectFirstTab]) => {
         return !!tabPages && (!activeTab || !tabPages.some(tp => tp === activeTab)) && selectFirstTab;
       }))
-      .pipe(takeUntil(this.destroyed$))
+      .pipe(takeUntilDestroyed())
       .subscribe(([tabPages, activeTab, selectFirstTab]) => {
         const notDisabled = tabPages!.filter((tp) => !tp.disabled);
         if (notDisabled.length > 0) {
@@ -58,7 +59,6 @@ export class BsTabControlComponent implements OnDestroy {
   disableDragDrop$: Observable<boolean>;
   static tabControlCounter = 0;
   tabCounter = 0;
-  destroyed$ = new Subject()
 
   //#region SelectFirstTab
   selectFirstTab$ = new BehaviorSubject<boolean>(true);
@@ -115,9 +115,4 @@ export class BsTabControlComponent implements OnDestroy {
       //   ev.currentIndex);
     }
   }
-
-  ngOnDestroy() {
-    this.destroyed$.next(true);
-  }
-
 }

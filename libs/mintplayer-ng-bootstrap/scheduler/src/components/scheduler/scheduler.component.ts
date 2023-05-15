@@ -1,5 +1,6 @@
-import { Component, ElementRef, EventEmitter, HostListener, Input, OnDestroy, Output, QueryList, ViewChildren } from '@angular/core';
-import { BehaviorSubject, combineLatest, filter, map, Observable, Subject, take, takeUntil } from 'rxjs';
+import { Component, ElementRef, EventEmitter, HostListener, Input, Output, QueryList, ViewChildren } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { BehaviorSubject, combineLatest, filter, map, Observable, take } from 'rxjs';
 import { BsCalendarMonthService } from '@mintplayer/ng-bootstrap/calendar-month';
 import { ESchedulerMode } from '../../enums/scheduler-mode';
 import { EDragOperation } from '../../enums/drag-operation';
@@ -21,7 +22,7 @@ import { TimelineOptions } from '../../interfaces/timeline-options';
   templateUrl: './scheduler.component.html',
   styleUrls: ['./scheduler.component.scss'],
 })
-export class BsSchedulerComponent implements OnDestroy {
+export class BsSchedulerComponent {
   constructor(private calendarMonthService: BsCalendarMonthService, private timelineService: BsTimelineService) {
     const monday = this.calendarMonthService.getMondayBefore(new Date());
     this.currentWeekOrMonth$ = new BehaviorSubject<Date>(monday);
@@ -163,16 +164,10 @@ export class BsSchedulerComponent implements OnDestroy {
         this.timeSlots$.next(timeslots);
       });
     
-      this.weekOptions$
-      .pipe(takeUntil(this.destroyed$))
-      .subscribe((weekOptions) => {
-        this.weekOptionsChange.emit(weekOptions);
-      });
-    this.timelineOptions$
-      .pipe(takeUntil(this.destroyed$))
-      .subscribe((timelineOptions) => {
-        this.timelineOptionsChange.emit(timelineOptions);
-      });
+    this.weekOptions$.pipe(takeUntilDestroyed())
+      .subscribe(weekOptions => this.weekOptionsChange.emit(weekOptions));
+    this.timelineOptions$.pipe(takeUntilDestroyed())
+      .subscribe(timelineOptions => this.timelineOptionsChange.emit(timelineOptions));
 
     // combineLatest([this.mode$, this.scale$])
     //   .pipe(filter(([mode, scale]) => mode === ESchedulerMode.timeline))
@@ -199,7 +194,6 @@ export class BsSchedulerComponent implements OnDestroy {
   mouseState$ = new BehaviorSubject<boolean>(false);
   hoveredTimeSlot$ = new BehaviorSubject<TimeSlot | null>(null);
   hoveredEvent$ = new BehaviorSubject<SchedulerEvent | null>(null);
-  destroyed$ = new Subject();
   resourceGroupPresenterCounter = 1;
 
   @ViewChildren('slot') timeSlotElements!: QueryList<ElementRef<HTMLDivElement>>;
@@ -547,9 +541,5 @@ export class BsSchedulerComponent implements OnDestroy {
         } break;
       }
     }
-  }
-
-  ngOnDestroy() {
-    this.destroyed$.next(true);
   }
 }

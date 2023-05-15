@@ -1,11 +1,11 @@
 import { Directive, ElementRef, forwardRef, HostBinding, HostListener, Inject, NgZone, Optional, PLATFORM_ID, TemplateRef, ViewContainerRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TemplatePortal } from '@angular/cdk/portal';
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ClickOutsideDirective } from '@mintplayer/ng-click-outside';
 import { BS_DEVELOPMENT } from '@mintplayer/ng-bootstrap';
-import { Subject, take, takeUntil } from 'rxjs';
+import { take } from 'rxjs';
 import { BsDropdownDirective } from '../dropdown/dropdown.directive';
-// import { BsDropdownComponent } from '../dropdown/dropdown.component';
 
 @Directive({
   selector: '[bsDropdownMenu]'
@@ -13,7 +13,6 @@ import { BsDropdownDirective } from '../dropdown/dropdown.directive';
 export class BsDropdownMenuDirective extends ClickOutsideDirective {
   constructor(
     @Inject(forwardRef(() => BsDropdownDirective)) private dropdown: BsDropdownDirective,
-    // @Inject(forwardRef(() => BsDropdownComponent)) private dropdown: BsDropdownComponent,
     private viewContainerRef: ViewContainerRef,
     private templateRef: TemplateRef<any>,
     private overlay: Overlay,
@@ -26,7 +25,7 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
     super(elementRef, zone, platformId);
 
     this.dropdown.isOpen$
-      .pipe(takeUntil(this.destroyed$))
+      .pipe(takeUntilDestroyed())
       .subscribe((isOpen) => {
         if (isOpen) {
           this.wait = true;
@@ -69,7 +68,6 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
   }
 
   private wait = false;
-  private destroyed$ = new Subject();
   private overlayRef: OverlayRef | null = null;
   private templatePortal: TemplatePortal<any> | null = null;
 

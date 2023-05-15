@@ -1,8 +1,9 @@
-import { Component, EventEmitter, Inject, Input, OnDestroy, Output, TemplateRef } from '@angular/core';
-import { BehaviorSubject, combineLatest, delayWhen, interval, map, Observable, of, Subject, takeUntil } from 'rxjs';
+import { Component, EventEmitter, Inject, Input, Output, TemplateRef } from '@angular/core';
+import { BehaviorSubject, combineLatest, delayWhen, interval, map, Observable, of } from 'rxjs';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { BsViewState, Position } from '@mintplayer/ng-bootstrap';
 import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'bs-offcanvas-holder',
@@ -10,7 +11,7 @@ import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
   styleUrls: ['./offcanvas.component.scss'],
   animations: [FadeInOutAnimation]
 })
-export class BsOffcanvasComponent implements OnDestroy {
+export class BsOffcanvasComponent {
 
   constructor(@Inject(OFFCANVAS_CONTENT) contentTemplate: TemplateRef<any>) {
     this.contentTemplate = contentTemplate;
@@ -20,7 +21,7 @@ export class BsOffcanvasComponent implements OnDestroy {
       .pipe(map((val) => val ? 'visible' : 'hidden'));
 
     this.position$
-      .pipe(takeUntil(this.destroyed$))
+      .pipe(takeUntilDestroyed())
       .subscribe((position) => {
         this.disableTransition$.next(true);
         this.offcanvasClass$.next(`offcanvas-${position}`);
@@ -63,7 +64,6 @@ export class BsOffcanvasComponent implements OnDestroy {
 
   contentTemplate: TemplateRef<any>;
   
-  destroyed$ = new Subject();
   visibility$: Observable<string>;
   disableTransition$ = new BehaviorSubject<boolean>(false);
   offcanvasClass$ = new BehaviorSubject<string | null>(null);
@@ -108,10 +108,6 @@ export class BsOffcanvasComponent implements OnDestroy {
   @Output() backdropClick = new EventEmitter<MouseEvent>();
   onBackdropClick(ev: MouseEvent) {
     this.backdropClick.emit(ev);
-  }
-  
-  ngOnDestroy() {
-    this.destroyed$.next(true);
   }
 
 }

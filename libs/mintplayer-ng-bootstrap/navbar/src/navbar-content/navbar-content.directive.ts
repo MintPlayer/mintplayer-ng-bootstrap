@@ -1,6 +1,7 @@
 import { isPlatformServer } from '@angular/common';
 import { AfterViewInit, Directive, ElementRef, Inject, Input, OnDestroy, PLATFORM_ID } from '@angular/core';
-import { BehaviorSubject, combineLatest, filter, Subject, take, takeUntil } from 'rxjs';
+import { BehaviorSubject, combineLatest, filter, take } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 
 @Directive({
@@ -10,11 +11,8 @@ export class BsNavbarContentDirective implements AfterViewInit, OnDestroy {
 
   constructor(private element: ElementRef, @Inject(PLATFORM_ID) private platformId: any) {
     combineLatest([this.viewInit$, this.navbar$])
-      .pipe(filter(([viewInit, navbar]) => {
-        return viewInit && !!navbar;
-      }))
-      .pipe(take(1))
-      .pipe(takeUntil(this.destroyed$))
+      .pipe(filter(([viewInit, navbar]) => viewInit && !!navbar))
+      .pipe(take(1), takeUntilDestroyed())
       .subscribe(([viewInit, navbar]) => {
         if (isPlatformServer(platformId)) {
           this.element.nativeElement.style.paddingTop = (this.initialPadding + 58) + 'px';
@@ -37,15 +35,8 @@ export class BsNavbarContentDirective implements AfterViewInit, OnDestroy {
           }
         }
       });
-
-    this.destroyed$
-      .pipe(filter(d => !!d))
-      .subscribe(() => {
-        this.resizeObserver?.unobserve(this.navbar$.value?.nav.nativeElement);
-      });
   }
 
-  private destroyed$ = new Subject();
   private viewInit$ = new BehaviorSubject<boolean>(false);
   private navbar$ = new BehaviorSubject<BsNavbarComponent | null>(null);
   resizeObserver: ResizeObserver | null = null;
@@ -60,6 +51,6 @@ export class BsNavbarContentDirective implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    this.destroyed$.next(true);
+    this.resizeObserver?.unobserve(this.navbar$.value?.nav.nativeElement);
   }
 }

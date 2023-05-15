@@ -1,5 +1,6 @@
-import { Component, EventEmitter, Input, OnDestroy, Output } from '@angular/core';
-import { BehaviorSubject, filter, map, Observable, Subject, take, takeUntil } from 'rxjs';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { BehaviorSubject, filter, map, Observable, take } from 'rxjs';
 import { BsCalendarMonthService, DateDayOfMonth, Week, WeekDay } from '@mintplayer/ng-bootstrap/calendar-month';
 
 @Component({
@@ -7,11 +8,10 @@ import { BsCalendarMonthService, DateDayOfMonth, Week, WeekDay } from '@mintplay
   templateUrl: './calendar.component.html',
   styleUrls: ['./calendar.component.scss'],
 })
-export class BsCalendarComponent implements OnDestroy {
+export class BsCalendarComponent {
   constructor(private calendarMonthService: BsCalendarMonthService) {
     this.weeks$ = this.currentMonth$
-      .pipe(map((month) => this.calendarMonthService.getWeeks(month)))
-      .pipe(takeUntil(this.destroyed$));
+      .pipe(map((month) => this.calendarMonthService.getWeeks(month)));
     this.shownDays$ = this.weeks$
       .pipe(filter((weeks) => weeks.length > 1))
       .pipe(map((weeks) => weeks[1].days))
@@ -35,15 +35,12 @@ export class BsCalendarComponent implements OnDestroy {
           }
         })
       );
-    this.selectedDate$.pipe(takeUntil(this.destroyed$)).subscribe((date) => {
-      this.selectedDateChange.emit(date);
-    });
-    this.currentMonth$.pipe(takeUntil(this.destroyed$)).subscribe((month) => {
-      this.currentMonthChange.emit(month);
-    });
+    this.selectedDate$.pipe(takeUntilDestroyed())
+      .subscribe(date => this.selectedDateChange.emit(date));
+    this.currentMonth$.pipe(takeUntilDestroyed())
+      .subscribe(month => this.currentMonthChange.emit(month));
   }
 
-  private destroyed$ = new Subject();
   weeks$: Observable<Week[]>;
   shownDays$: Observable<WeekDay[]>;
 
@@ -67,10 +64,6 @@ export class BsCalendarComponent implements OnDestroy {
     this.selectedDate$.next(value);
   }
   //#endregion
-
-  ngOnDestroy() {
-    this.destroyed$.next(true);
-  }
 
   previousMonth() {
     this.currentMonth$.pipe(take(1)).subscribe((month) => {

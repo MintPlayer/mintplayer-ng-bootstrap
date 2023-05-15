@@ -1,5 +1,5 @@
-import { Component, ElementRef, EventEmitter, HostListener, Input, OnInit, Output, TemplateRef, ViewChild, ViewContainerRef } from '@angular/core';
-import { BehaviorSubject, map, Observable, Subject } from 'rxjs';
+import { Component, ElementRef, EventEmitter, Input, Output, ViewChild } from '@angular/core';
+import { BehaviorSubject, map, Observable } from 'rxjs';
 
 @Component({
   selector: 'bs-typeahead',
@@ -13,7 +13,6 @@ export class BsTypeaheadComponent {
   suggestions$ = new BehaviorSubject<any[]>([]);
   isLoading$ = new BehaviorSubject<boolean>(false);
   showNoSuggestions$: Observable<boolean>;
-  destroyed$ = new Subject();
   
   @ViewChild('textbox') textbox!: ElementRef<HTMLInputElement>;
   @Input() searchterm = '';

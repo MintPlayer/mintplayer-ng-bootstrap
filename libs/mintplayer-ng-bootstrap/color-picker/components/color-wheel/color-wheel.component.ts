@@ -1,5 +1,6 @@
-import { AfterViewInit, Component, ElementRef, EventEmitter, HostBinding, HostListener, Input, OnDestroy, Output, ViewChild } from '@angular/core';
-import { BehaviorSubject, combineLatest, debounceTime, map, take, Observable, Subject, switchMap, takeUntil } from 'rxjs';
+import { AfterViewInit, Component, ElementRef, EventEmitter, HostBinding, HostListener, Input, Output, ViewChild } from '@angular/core';
+import { BehaviorSubject, combineLatest, debounceTime, map, take, Observable, switchMap } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HS } from '../../interfaces/hs';
 import { HslColor } from '../../interfaces/hsl-color';
 import { RgbColor } from '../../interfaces/rgb-color';
@@ -9,7 +10,7 @@ import { RgbColor } from '../../interfaces/rgb-color';
   templateUrl: './color-wheel.component.html',
   styleUrls: ['./color-wheel.component.scss']
 })
-export class BsColorWheelComponent implements AfterViewInit, OnDestroy {
+export class BsColorWheelComponent implements AfterViewInit {
 
   constructor(private element: ElementRef<HTMLElement>) {
     // this.resizeObserver = new ResizeObserver((entries) => {
@@ -74,7 +75,7 @@ export class BsColorWheelComponent implements AfterViewInit, OnDestroy {
       }));
   
     combineLatest([this.innerRadius$, this.outerRadius$, this.shiftX$, this.shiftY$])
-      .pipe(debounceTime(20), takeUntil(this.destroyed$))
+      .pipe(debounceTime(20), takeUntilDestroyed())
       .subscribe(([innerRadius, outerRadius, shiftX, shiftY]) => {
         if (this.canvasContext && (innerRadius !== null) && (outerRadius !== null) && (shiftX !== null) && (shiftY !== null)) {
           this.canvasContext.clearRect(0, 0, this.canvas.nativeElement.width, this.canvas.nativeElement.height);
@@ -108,7 +109,7 @@ export class BsColorWheelComponent implements AfterViewInit, OnDestroy {
         };
       }));
 
-    this.hs$.pipe(takeUntil(this.destroyed$))
+    this.hs$.pipe(takeUntilDestroyed())
       .subscribe((hs) => this.hsChange.emit(hs));
   }
 
@@ -162,17 +163,11 @@ export class BsColorWheelComponent implements AfterViewInit, OnDestroy {
   disabled$ = new BehaviorSubject<boolean>(false);
   
   viewInited$ = new BehaviorSubject<boolean>(false);
-  destroyed$ = new Subject();
 
   ngAfterViewInit() {
     // this.resizeObserver.observe(this.element.nativeElement);
     this.viewInited$.next(true);
     this.canvasContext = this.canvas.nativeElement.getContext('2d', { willReadFrequently: true });
-  }
-
-  ngOnDestroy() {
-    // this.resizeObserver.unobserve(this.element.nativeElement);
-    this.destroyed$.next(true);
   }
 
   onPointerDown(ev: MouseEvent | TouchEvent) {

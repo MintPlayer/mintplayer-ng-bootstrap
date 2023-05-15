@@ -1,16 +1,17 @@
-import { Component, EventEmitter, Input, Output, AfterViewInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
-import { BehaviorSubject, combineLatest, map, Observable, Subject, takeUntil } from 'rxjs';
+import { Component, EventEmitter, Input, Output, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
+import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
 import { HS } from '../../interfaces/hs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'bs-alpha-strip',
   templateUrl: './alpha-strip.component.html',
   styleUrls: ['./alpha-strip.component.scss']
 })
-export class BsAlphaStripComponent implements AfterViewInit, OnDestroy {
+export class BsAlphaStripComponent implements AfterViewInit {
 
   constructor() {
-    combineLatest([this.hs$, this.luminosity$]).pipe(takeUntil(this.destroyed$)).subscribe(([hs, luminosity]) => {
+    combineLatest([this.hs$, this.luminosity$]).pipe(takeUntilDestroyed()).subscribe(([hs, luminosity]) => {
       setTimeout(() => {
         if (this.canvasContext) {
           const width = this.canvas.nativeElement.width, height = this.canvas.nativeElement.height;
@@ -31,7 +32,7 @@ export class BsAlphaStripComponent implements AfterViewInit, OnDestroy {
         return `hsla(${hs.hue}, ${hs.saturation * 100}%, ${luminosity * 100}%, ${alpha})`;
       }));
 
-    this.alpha$.pipe(takeUntil(this.destroyed$))
+    this.alpha$.pipe(takeUntilDestroyed())
       .subscribe((alpha) => this.alphaChange.emit(alpha));
   }
 
@@ -71,9 +72,4 @@ export class BsAlphaStripComponent implements AfterViewInit, OnDestroy {
   }
 
   resultBackground$: Observable<string>;
-
-  destroyed$ = new Subject();
-  ngOnDestroy() {
-    this.destroyed$.next(true);
-  }
 }

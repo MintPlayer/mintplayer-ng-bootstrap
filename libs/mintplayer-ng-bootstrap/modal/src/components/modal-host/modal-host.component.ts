@@ -1,7 +1,6 @@
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { AfterViewInit, Component, ComponentFactoryResolver, ComponentRef, EventEmitter, HostListener, Inject, Injector, Input, OnDestroy, Output, TemplateRef } from '@angular/core';
-import { Subject, take } from 'rxjs';
 import { MODAL_CONTENT } from '../../providers/modal-content.provider';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
 import { BsModalComponent } from '../modal/modal.component';
@@ -13,18 +12,11 @@ import { BsModalComponent } from '../modal/modal.component';
 })
 export class BsModalHostComponent implements AfterViewInit, OnDestroy {
 
-  constructor(private overlay: Overlay, private parentInjector: Injector, @Inject(PORTAL_FACTORY) private portalFactory: (injector: Injector) => ComponentPortal<BsModalComponent>, private componentFactoryResolver: ComponentFactoryResolver) {
-    this.destroyed$.pipe(take(1))
-      .subscribe(() => {
-        this.isOpen = false;
-        setTimeout(() => this.overlayRef && this.overlayRef.dispose(), 500);
-      });
-  }
+  constructor(private overlay: Overlay, private parentInjector: Injector, @Inject(PORTAL_FACTORY) private portalFactory: (injector: Injector) => ComponentPortal<BsModalComponent>, private componentFactoryResolver: ComponentFactoryResolver) {}
 
   overlayRef!: OverlayRef;
   componentInstance?: ComponentRef<BsModalComponent>;
   template!: TemplateRef<any>;
-  destroyed$ = new Subject();
 
   //#region isOpen
   private _isOpen = false;
@@ -63,7 +55,8 @@ export class BsModalHostComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    this.destroyed$.next(true);
+    this.isOpen = false;
+    setTimeout(() => this.overlayRef && this.overlayRef.dispose(), 500);
   }
   
   @HostListener('document:keydown', ['$event'])
