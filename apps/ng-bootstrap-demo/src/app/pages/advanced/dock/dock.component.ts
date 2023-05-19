@@ -95,7 +95,10 @@ export class DockComponent implements AfterViewInit {
           panes: [
             new BsContentPane({
               dockPanel: this.panel5
-            })
+            }),
+            new BsContentPane({
+              dockPanel: this.panel6
+            }),
           ]
         }),
         new BsSplitPane({

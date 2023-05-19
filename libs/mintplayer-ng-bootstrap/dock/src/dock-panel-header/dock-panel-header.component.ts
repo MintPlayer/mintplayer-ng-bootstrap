@@ -15,6 +15,7 @@ import { DragOperation } from '../interfaces/drag-operation';
 import { BsDockService } from '../services/dock/dock.service';
 import { DockRegionZone } from '../types/dock-region-zone';
 import { BsDockLayout } from '../interfaces/dock-layout';
+import { DraggingPanel } from '../interfaces';
 
 @Component({
   selector: 'bs-dock-panel-header',
@@ -287,7 +288,7 @@ export class BsDockPanelHeaderComponent {
         return { paneRemoved: false, hostIsEmpty: true };
       }
 
-      debugger;
+      // debugger;
       const result = this.removeFromPane(host.pane, panel);
       return { paneRemoved: result.paneRemoved, hostIsEmpty: result.hostIsEmpty };
       
@@ -297,7 +298,7 @@ export class BsDockPanelHeaderComponent {
   }
 
   @HostListener('document:mouseup', ['$event']) onMouseUp(ev: Event) {
-    debugger;
+    // debugger;
     this.isMouseDown = false;
     if (this.isDragging) {
       this.isDragging = false;
@@ -306,7 +307,7 @@ export class BsDockPanelHeaderComponent {
       combineLatest([this.dock.layout$, this.dock.hoveredZone$, this.dock.draggingPanel$])
         .pipe(take(1))
         .subscribe(([layout, hoveredZone, draggingPanel]) => {
-          debugger;
+          // debugger;
           if (!hoveredZone?.panel.layout) {
             // Not hovering a dropzone
           } else if ((hoveredZone.panel.layout instanceof BsTabGroupPane) && draggingPanel?.pane) {
@@ -321,10 +322,10 @@ export class BsDockPanelHeaderComponent {
               }
             });
 
-            console.log('to split', hoveredZone.panel.layout);
+            console.log('to split', { layout, hoveredZone, draggingPanel });
             // hoveredZone.panel.layout.panes.push(draggingPanel.pane);
 
-            this.replaceAndSplit(layout, hoveredZone.panel.layout, draggingPanel.pane.$original, hoveredZone.zone);
+            this.replaceAndSplit(layout, hoveredZone.panel.layout, draggingPanel.pane.$original, hoveredZone.zone, draggingPanel);
 
             hoveredZone.panel.hoverLeft$.next(false);
             hoveredZone.panel.hoverRight$.next(false);
@@ -339,7 +340,9 @@ export class BsDockPanelHeaderComponent {
     }
   }
 
-  replaceAndSplit(parent: BsDockLayout | BsDockPane, hoveredTabGroup: BsTabGroupPane, droppedPane: BsContentPane, zone: DockRegionZone) {
+  replaceAndSplit(parent: BsDockLayout | BsDockPane, hoveredTabGroup: BsTabGroupPane, droppedPane: BsContentPane, zone: DockRegionZone, dragging: DraggingPanel) {
+    // Dragging parameter can be removed
+    debugger;
     if ('floatingPanes' in parent) {
       if (parent.rootPane instanceof BsTabGroupPane) {
         if (parent.rootPane === hoveredTabGroup) {
@@ -350,25 +353,44 @@ export class BsDockPanelHeaderComponent {
               : [parent.rootPane, new BsTabGroupPane({ panes: [droppedPane] })]
           });
         } else {
-          this.replaceAndSplit(parent.rootPane, hoveredTabGroup, droppedPane, zone);
+          this.replaceAndSplit(parent.rootPane, hoveredTabGroup, droppedPane, zone, dragging);
         }
       } else if (parent.rootPane instanceof BsSplitPane) {
-
-        if (parent.rootPane.panes.includes(hoveredTabGroup)) {
-          if (((parent.rootPane.orientation === 'horizontal') && ['left', 'right'].includes(zone))
-              || ((parent.rootPane.orientation === 'vertical') && ['top', 'bottom'].includes(zone)))
+        const theSplitPane = parent.rootPane;
+        if (theSplitPane.panes.includes(hoveredTabGroup)) {
+          if (((theSplitPane.orientation === 'horizontal') && ['left', 'right'].includes(zone))
+              || ((theSplitPane.orientation === 'vertical') && ['top', 'bottom'].includes(zone)))
           {
-            parent.rootPane.panes.splice(parent.rootPane.panes.indexOf(hoveredTabGroup) + (['right', 'bottom'].includes(zone) ? 1 : 0), 0, new BsTabGroupPane({ panes: [droppedPane] }));
+            theSplitPane.panes.splice(theSplitPane.panes.indexOf(hoveredTabGroup) + (['right', 'bottom'].includes(zone) ? 1 : 0), 0, new BsTabGroupPane({ panes: [droppedPane] }));
           } else {
-            parent.rootPane = new BsSplitPane({
-              orientation: ['left', 'right'].includes(zone) ? 'horizontal' : 'vertical',
-              panes: ['left', 'top'].includes(zone)
-                ? [new BsTabGroupPane({ panes: [droppedPane] }), parent.rootPane]
-                : [parent.rootPane, new BsTabGroupPane({ panes: [droppedPane] })]
-            });
+            // Clone the @angular/components repository in a directory without spaces
+            // https://github.com/angular/components
+            // In this repo, run yarn
+            // npm run build -- --output_user_root C:\Users\Pieterjan\_bazel_Pieterjan
+            // npm link
+
+            // parent.rootPane = new BsSplitPane({
+            //   orientation: ['left', 'right'].includes(zone) ? 'horizontal' : 'vertical',
+            //   panes: ['left', 'top'].includes(zone)
+            //     ? [new BsTabGroupPane({ panes: [droppedPane] }), parent.rootPane]
+            //     : [parent.rootPane, new BsTabGroupPane({ panes: [droppedPane] })]
+            // });
+
+            const index = theSplitPane.panes.indexOf(hoveredTabGroup);
+            // console.log('test before', { content: dragging.component.contentPortal?.element, contentParent: dragging.component.contentPortal?.element.parentNode, header: dragging.component.headerPortal?.element, headerParent: dragging.component.headerPortal?.element.parentNode });
+            setTimeout(() => {
+              theSplitPane.panes[index] = new BsSplitPane({
+                orientation: ['left', 'right'].includes(zone) ? 'horizontal' : 'vertical',
+                panes: ['left', 'top'].includes(zone)
+                ? [new BsTabGroupPane({ panes: [droppedPane] }), hoveredTabGroup]
+                : [hoveredTabGroup, new BsTabGroupPane({ panes: [droppedPane] })]
+              });
+            }, 5000);
+            // console.log('test after', { content: dragging.component.contentPortal?.element, contentParent: dragging.component.contentPortal?.element.parentNode, header: dragging.component.headerPortal?.element, headerParent: dragging.component.headerPortal?.element.parentNode });
           }
         } else {
-          this.replaceAndSplit(parent.rootPane, hoveredTabGroup, droppedPane, zone);
+          debugger;
+          this.replaceAndSplit(theSplitPane, hoveredTabGroup, droppedPane, zone, dragging);
         }
 
       } else if (parent.rootPane instanceof BsDocumentHost) {
