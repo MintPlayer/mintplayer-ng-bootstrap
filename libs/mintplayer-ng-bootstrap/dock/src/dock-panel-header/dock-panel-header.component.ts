@@ -39,9 +39,10 @@ export class BsDockPanelHeaderComponent {
           
         this.dock.parentifiedLayout$.pipe(take(1)).subscribe((parentifiedLayout) => {
         // // this.dock.layout$.pipe(take(1)).subscribe((layout) => {
-        //   const traces = this.dockService.buildTraces(parentifiedLayout);
+          const traces = this.dockService.buildTraces(parentifiedLayout);
+          // const traces = this.dock.cachedTraces$.value;
         //   console.log('traces', {parentifiedLayout, traces});
-          const matching = this.dock.cachedTraces$.value.filter(t => {
+          const matching = traces.filter(t => {
             const lastPane = t.trace[t.trace.length - 1];
             // return (lastPane instanceof BsContentPane) && (lastPane.dockPanel === this.dockPanel);
             return (lastPane instanceof BsContentPane) && (lastPane.dockPanel === this.dockPanel);
