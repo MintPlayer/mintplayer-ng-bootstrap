@@ -1,5 +1,5 @@
 {
-  "name": "@mintplayer/ng-bootstrap/snippets",
+  "name": "mintplayer-ng-bootstrap-snippets",
   "displayName": "ng-bootstrap snippets for VS Code",
   "description": "This package contains @mintplayer/ng-bootstrap snippets for VS Code",
   "private": false,
