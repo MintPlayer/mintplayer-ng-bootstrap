@@ -4,23 +4,43 @@
     <div bsRow>
         <div bsColumn class="text-center">
             <button [color]="colors.primary" (click)="isOpen = true">Show modal</button>
-<bs-modal [(isOpen)]="isOpen">
-    <div *bsModal>
-        <div bsModalHeader>
-            <h5 class="modal-title">Modal title</h5>
-        </div>
-        <div bsModalBody>
-            Modal body
-        </div>
-        <div bsModalFooter>
-            <button type="button" bsModalClose class="btn btn-light bg-transparent">Close</button>
-        </div>
-    </div>
-</bs-modal>
+            <bs-modal [(isOpen)]="isOpen">
+                <div *bsModal cdkTrapFocus>
+                    <div bsModalHeader>
+                        <h5 class="modal-title">Modal title</h5>
+                    </div>
+                    <div bsModalBody class="text-nowrap p-2 d-flex flex-row align-items-center justify-content-between">
+                        <bs-grid>
+                            <div bsRow class="form-group">
+                                <div bsColumn bsColFormLabel>Search for tags</div>
+                            </div>
+                            <div bsRow class="form-group">
+                                <div [bsColumn]="{md: 3, lg: 6}">
+                                    <bs-select2 (provideSuggestions)="onProvideTagSuggestions($event)" [suggestions]="tagSuggestions" [selectedItems]="selectedTags" [autofocus]="true">
+                                        <span *bsItemTemplate="let item=item; let select2=select2" class="select2-item" [style.background]="item.category.color"
+                                            [style.color]="item.category.color | bsFontColor">
+                                            <span [style.color]="item.category.color | bsFontColor" (click)="select2.onRemoveItem(item,$event)">×</span>
+                                            {{ item.text }}
+                                        </span>
+                                    </bs-select2>
+                                </div>
+                                <div [bsColumn]="{md: 9, lg: 6}">
+                                    <bs-select2 (provideSuggestions)="onProvideTagSuggestions($event)" [suggestions]="tagSuggestions" [selectedItems]="selectedTags" [autofocus]="true">
+                                        <span *bsItemTemplate="let item=item; let select2=select2" class="select2-item" [style.background]="item.category.color"
+                                            [style.color]="item.category.color | bsFontColor">
+                                            <span [style.color]="item.category.color | bsFontColor" (click)="select2.onRemoveItem(item,$event)">×</span>
+                                            {{ item.text }}
+                                        </span>
+                                    </bs-select2>
+                                </div>
+                            </div>
+                        </bs-grid>
+                    </div>
+                    <div bsModalFooter>
+                        <button type="button" bsModalClose class="btn btn-light bg-transparent" aria-label="Close">Close</button>
+                    </div>
+                </div>
+            </bs-modal>
         </div>
     </div>
 </bs-grid>
-<h2>Code</h2>
-<p>
-    The code is available <a [href]="gitRepo + 'pages/overlay/modal'" target="_blank">here</a>.
-</p>
