@@ -254,3 +254,26 @@ jobs:
         registry: 'https://npm.pkg.github.com'
         token: ${{ github.token }}
         access: 'public'
+        
+    - name: Push to NPM
+      uses: JS-DevTools/npm-publish@v1
+      with:
+        package: 'libs/mintplayer-ng-bootstrap-snippets/package.json'
+        registry: 'https://registry.npmjs.org'
+        token: ${{ secrets.PUBLISH_NODE_TO_NPMJS_COM }}
+        access: 'public'
+
+    - name: Push to Github
+      uses: JS-DevTools/npm-publish@v1
+      with:
+        package: 'libs/mintplayer-ng-bootstrap-snippets/package.json'
+        registry: 'https://npm.pkg.github.com'
+        token: ${{ github.token }}
+        access: 'public'
+
+    - name: Publish to Visual Studio Marketplace
+      uses: HaaLeo/publish-vscode-extension@v1
+      with:
+        packagePath: 'libs/mintplayer-ng-bootstrap-snippets/package.json'
+        pat: ${{ secrets.VS_MARKETPLACE_TOKEN }}
+        registryUrl: https://marketplace.visualstudio.com

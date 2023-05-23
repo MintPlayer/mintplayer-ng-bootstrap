@@ -1,0 +1,57 @@
+{
+  "name": "@mintplayer/ng-bootstrap/snippets",
+  "displayName": "ng-bootstrap snippets for VS Code",
+  "description": "This package contains @mintplayer/ng-bootstrap snippets for VS Code",
+  "private": false,
+  "version": "16.0.0",
+  "icon": "images/ng-bootstrap.png",
+  "publisher": "MintPlayer",
+  "galleryBanner": {
+    "color": "#0273D4",
+    "theme": "dark"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MintPlayer/mintplayer-ng-bootstrap",
+    "directory": "libs/mintplayer-ng-bootstrap-snippets"
+  },
+  "keywords": [
+    "Angular",
+    "Bootstrap",
+    "ng-bootstrap"
+  ],
+  "engines": {
+    "vscode": "^1.28.0"
+  },
+  "scripts": {
+    "package": "npx vsce package",
+    "publish": "npx vsce publish",
+    "postinstall": "node ./node_modules/vscode/bin/install",
+    "open-in-browser": "vscode-test-web --extensionDevelopmentPath=. ."
+  },
+  "extensionKind": [
+    "ui",
+    "workspace"
+  ],
+  "categories": [
+    "Snippets",
+    "Other"
+  ],
+  "contributes": {
+    "snippets": [
+      {
+        "language": "html",
+        "path": "./snippets/html.json"
+      }
+    ]
+  },
+  "peerDependencies": {},
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^14.14.11",
+    "@vscode/test-web": "^0.0.22",
+    "typescript": "^4.1.2",
+    "vscode": "*"
+  }
+}

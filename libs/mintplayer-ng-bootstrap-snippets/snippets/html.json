@@ -1,0 +1,21 @@
+{
+    "Modal": {
+        "prefix": "bs-modal",
+        "description": "Bootstrap Modal",
+        "body": [
+            "<bs-modal [(isOpen)]=\"isOpen\">",
+            "\t<div *bsModal>",
+            "\t\t<div bsModalHeader>",
+            "\t\t\t<h5 class=\"modal-title\">Modal title</h5>",
+            "\t\t</div>",
+            "\t\t<div bsModalBody>",
+            "\t\t\tModal body",
+            "\t\t</div>",
+            "\t\t<div bsModalFooter>",
+            "\t\t\t<button type=\"button\" bsModalClose class=\"btn btn-light bg-transparent\">Close</button>",
+            "\t\t</div>",
+            "\t</div>",
+            "</bs-modal>"
+        ]
+    }
+}
