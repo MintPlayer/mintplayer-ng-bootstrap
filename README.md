@@ -44,6 +44,12 @@ All components are showcased in the angular app included in the project. You can
 
 to discover them.
 
+## VS Code snippets
+This workspace contains several code snippets for [VS Code](https://code.visualstudio.com).
+They are distributed on the [MarketPlace](https://marketplace.visualstudio.com/items?itemName=MintPlayer.mintplayer-ng-bootstrap-snippets) and can be installed by searching for **ng-bootstrap snippets for VS Code**
+
+[![@mintplayer/ng-bootstrap on the MarketPlace](libs/mintplayer-ng-bootstrap-snippets/images/marketplace.png)](libs/mintplayer-ng-bootstrap-snippets/images/marketplace.png)
+
 ## Discover yourself
 Make sure you have [NodeJS](https://nodejs.org/en/download/) installed.
 Then run following commands

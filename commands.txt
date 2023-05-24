@@ -19,3 +19,9 @@ code .
 
 nx generate @nx/js:library --name=mintplayer-qr-code --buildable --publishable --import-path @mintplayer/qr-code
 nx generate @nx/js:library --name=mintplayer-dijkstra --buildable --publishable --import-path @mintplayer/dijkstra
+
+
+# Code snippets
+- Go to https://dev.azure.com
+- User settings -> Personal access tokens
+- Generate a token

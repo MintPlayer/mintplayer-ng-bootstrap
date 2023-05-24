@@ -1,0 +1,23 @@
+{
+  "name": "mintplayer-ng-bootstrap-snippets",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "root": "libs/mintplayer-ng-bootstrap-snippets",
+  "sourceRoot": "libs/mintplayer-ng-bootstrap-snippets/snippets",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "libs/mintplayer-ng-bootstrap-snippets",
+        "parallel": false,
+        "commands": [
+          { "command": "echo {args.outputPath}" },
+          { "command": "npx mkdirp {args.outputPath}" },
+          { "command": "npx -y @vscode/vsce package --no-yarn --out {args.outputPath}/" }
+        ],
+        "args": "--outputPath=../../dist/libs/mintplayer-ng-bootstrap-snippets"
+      }
+    }
+  },
+  "tags": []
+}
