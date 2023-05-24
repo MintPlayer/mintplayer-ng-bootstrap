@@ -33,7 +33,7 @@ export class BsDatatableComponent {
   @Input() settings: DatatableSettings;
   @Input() data?: PaginationResponse<any>;
   rowTemplate?: TemplateRef<any>;
-  @Output() reloadData = new EventEmitter<DatatableSettings>();
+  @Output() settingsChange = new EventEmitter<DatatableSettings>();
 
   columnHeaderClicked(column: BsDatatableColumnDirective) {
     if (column.bsDatatableColumn.sortable) {
@@ -45,7 +45,7 @@ export class BsDatatableComponent {
       } else {
         this.settings.sortDirection = 'descending';
       }
-      this.reloadData.emit(this.settings);
+      this.settingsChange.emit(this.settings);
     }
   }
 

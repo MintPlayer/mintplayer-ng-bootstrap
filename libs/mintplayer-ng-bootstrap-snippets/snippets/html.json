@@ -1,4 +1,35 @@
 {
+    "Swipe": {
+        "prefix": "bs-swipe-container",
+        "description": "Swiper",
+        "body": [
+            "<div bsSwipeContainer #${1:container}=\"bsSwipeContainer\">",
+            "\t<div *ngFor=\"let image of ${2:images}\" bsSwipe>",
+            "\t\t<ng-container *ngTemplateOutlet=\"image.itemTemplate\"></ng-container>",
+            "\t</div>",
+            "</div>"
+        ]
+    },
+    "CodeSnippet": {
+        "prefix": "bs-code-snippet",
+        "description": "Code Snippet using highlight.js",
+        "body": [
+            "<bs-code-snippet [codeToCopy]=\"${1:code}\"></bs-code-snippet>"
+        ]
+    },
+    "Datatable": {
+        "prefix": "bs-datatable",
+        "description": "Bootstrap Datatable",
+        "body": [
+            "<bs-datatable [(settings)]=\"${1:settings}\" [data]=\"${2:data}\" (settingsChange)=\"load${2:/capitalize}()\">",
+            "\t<div *bsDatatableColumn=\"{ sortable: true, name: '${3:/capitalize}' }\">${4:heading}</div>",
+            "",
+            "\t<tr *bsRowTemplate=\"let item\">",
+            "\t\t<td>{{ item.${3:propertyName} }}</td>",
+            "\t</tr>",
+            "</bs-datatable>"
+        ]
+    },
     "Modal": {
         "prefix": "bs-modal",
         "description": "Bootstrap Modal",
