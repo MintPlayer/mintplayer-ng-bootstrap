@@ -19,7 +19,14 @@ export class BsSwipeDirective implements AfterViewInit, OnDestroy {
   @Input() public offside = false;
   //#endregion
 
-  @HostBinding('class.align-top') alignTopClass = true;
+  @HostBinding('class.align-top')
+  @HostBinding('class.d-inline-block')
+  @HostBinding('class.float-none')
+  @HostBinding('class.w-100')
+  @HostBinding('class.pe-auto')
+  @HostBinding('class.me-0')
+  classes = true;
+
   @HostListener('touchstart', ['$event'])
   onTouchStart(ev: TouchEvent) {
     if (ev.touches.length === 1) {
