@@ -272,7 +272,7 @@ jobs:
     #    access: 'public'
 
     - name: Publish to Visual Studio Marketplace
-      uses: MintPlayer/publish-vscode-extension@v2
+      uses: MintPlayer/publish-vscode-extension@v3
       with:
         packagePath: 'libs/mintplayer-ng-bootstrap-snippets'
         pat: ${{ secrets.PUBLISH_SNIPPETS }}
