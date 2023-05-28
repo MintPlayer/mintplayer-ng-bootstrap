@@ -276,4 +276,5 @@ jobs:
       with:
         packagePath: 'libs/mintplayer-ng-bootstrap-snippets'
         pat: ${{ secrets.PUBLISH_SNIPPETS }}
+        skipDuplicate: true
         registryUrl: https://marketplace.visualstudio.com
