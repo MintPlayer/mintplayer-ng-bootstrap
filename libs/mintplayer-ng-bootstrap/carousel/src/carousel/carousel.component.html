@@ -34,13 +34,13 @@
         </div>
         <div class="carousel-inner overflow-hidden text-nowrap pe-none">
             <div bsSwipeContainer #container="bsSwipeContainer" [minimumOffset]="50" [(imageIndex)]="currentImageIndex">
-                <div class="carousel-item d-inline-block float-none w-100 me-0 pe-auto" bsSwipe [offside]="true">
+                <div class="carousel-item" bsSwipe [offside]="true">
                     <ng-container *ngTemplateOutlet="lastImageTemplate$ | async"></ng-container>
                 </div>
-                <div *ngFor="let image of (images$ | async); trackBy: trackByImageId" class="carousel-item d-inline-block float-none w-100 me-0 pe-auto" [class.active]="true" bsSwipe>
+                <div *ngFor="let image of (images$ | async); trackBy: trackByImageId" class="carousel-item" [class.active]="true" bsSwipe>
                     <ng-container *ngTemplateOutlet="image.itemTemplate"></ng-container>
                 </div>
-                <div class="carousel-item d-inline-block float-none w-100 me-0 pe-auto" bsSwipe [offside]="true">
+                <div class="carousel-item" bsSwipe [offside]="true">
                     <ng-container *ngTemplateOutlet="firstImageTemplate$ | async"></ng-container>
                 </div>
             </div>
