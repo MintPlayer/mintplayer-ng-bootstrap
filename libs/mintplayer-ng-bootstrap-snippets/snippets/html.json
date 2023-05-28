@@ -48,5 +48,17 @@
             "\t</div>",
             "</bs-modal>"
         ]
+    },
+    "Select2": {
+        "prefix": "bs-select2",
+        "description": "Select2 component (multiselect)",
+        "body": [
+            "<bs-select2 (provideSuggestions)=\"onProvideTagSuggestions($event)\" [suggestions]=\"tagSuggestions\" [selectedItems]=\"selectedTags\">",
+            "\t<span *bsItemTemplate=\"let item=item; let select2=select2\" class=\"select2-item\" [style.background]=\"item.category.color\" [style.color]=\"item.category.color | bsFontColor\">",
+            "\t\t<span [style.color]=\"item.category.color | bsFontColor\" (click)=\"select2.onRemoveItem(item,$event)\">×</span>",
+            "\t\t{{ item.text }}",
+            "\t</span>",
+            "</bs-select2>"
+        ]
     }
 }
