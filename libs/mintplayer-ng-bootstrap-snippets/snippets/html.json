@@ -60,5 +60,302 @@
             "\t</span>",
             "</bs-select2>"
         ]
+    },
+    "Alert": {
+        "prefix": "bs-alert",
+        "description": "Bootstrap Alert",
+        "body": [
+            "<bs-alert [type]=\"${1:colors.danger}\" [(isVisible)]=\"${2:alertVisible}\">",
+            "\t${3:Content}",
+            "\t<bs-alert-close></bs-alert-close>",
+            "</bs-alert>"
+        ]
+    },
+    "Badge": {
+        "prefix": "bs-badge",
+        "description": "Bootstrap Badge",
+        "body": [
+            "<bs-badge [type]=\"${1:colors.warning}\">${2:Content}</bs-badge>"
+        ]
+    },
+    "Breadcrumb": {
+        "prefix": "bs-breadcrumb",
+        "description": "Bootstrap Breadcrumb",
+        "body": [
+            "<bs-breadcrumb>",
+            "\t<bs-breadcrumb-item>",
+            "\t\t<a [routerLink]='[\"${1:\/}\"]'>${2:Home}</a>",
+            "\t</bs-breadcrumb-item>",
+            "\t<bs-breadcrumb-item>",
+            "\t\t<a [routerLink]='[\"${1}\", \"${3:account}\"]'>${4:Account}</a>",
+            "\t</bs-breadcrumb-item>",
+            "\t<bs-breadcrumb-item>",
+            "\t\t<a [routerLink]='[\"${1}\", \"${3}\", \"${5:login}\"]'>${6:Login}</a>",
+            "\t</bs-breadcrumb-item>",
+            "</bs-breadcrumb>"
+        ]
+    },
+    "ButtonGroup": {
+        "prefix": "bs-button-group",
+        "description": "Bootstrap Button group",
+        "body": [
+            "<bs-button-group>",
+            "\t<button type=\"button\" [color]=\"${1:colors.secondary}\">${2:Left}</button>",
+            "\t<button type=\"button\" [color]=\"${1}\">${3:Middle}</button>",
+            "\t<button type=\"button\" [color]=\"${1}\">${4:Right}</button>",
+            "</bs-button-group>"
+        ]
+    },
+    "Calendar": {
+        "prefix": "bs-calendar",
+        "description": "Bootstrap Calendar",
+        "body": [
+            "<bs-calendar></bs-calendar>"
+        ]
+    },
+    "Carousel": {
+        "prefix": "bs-carousel",
+        "description": "Bootstrap Carousel",
+        "body": [
+            "<bs-carousel [animation]=\"${1:'slide'}\" [indicators]=\"true\">",
+            "\t<img *bsCarouselImage src=\"${2:\/assets\/deer.png}\">",
+            "\t<img *bsCarouselImage src=\"${3:\/assets\/duck.png}\" loading=\"lazy\">",
+            "</bs-carousel>"
+        ]
+    },
+    "Close": {
+        "prefix": "bs-close",
+        "description": "Bootstrap Close button",
+        "body": [
+            "<bs-close (click)=\"${1:onClose}()\"></bs-close>"
+        ]
+    },
+    "ColorPicker": {
+        "prefix": "bs-color-picker",
+        "description": "Bootstrap Color picker",
+        "body": [
+            "<bs-color-picker [(ngModel)]=\"${1:selectedColor}\" [allowAlpha]=\"${3:allowAlpha}\" [(alpha)]=\"${2:selectedAlpha}\" [width]=\"400\"></bs-color-picker>"
+        ]
+    },
+    "Accordion": {
+        "prefix": "bs-accordion",
+        "description": "Bootstrap Accordion",
+        "body": [
+            "<bs-accordion [highlightActiveTab]=\"${1:true}\">",
+            "\t<bs-accordion-tab>",
+            "\t\t<bs-accordion-tab-header>${2:Profile}</bs-accordion-tab-header>",
+            "\t\t<span>${3:Profile content}</span>",
+            "\t</bs-accordion-tab>",
+            "\t<bs-accordion-tab>",
+            "\t\t<bs-accordion-tab-header>${4:Sign in}</bs-accordion-tab-header>",
+            "\t\t<span>${5:Enter your email and password}</span>",
+            "\t</bs-accordion-tab>",
+            "</bs-accordion>"
+        ]
+    },
+    "Card": {
+        "prefix": "bs-card",
+        "description": "Bootstrap Card",
+        "body": [
+            "<bs-card>",
+            "\t<bs-card-header>${1:Card title}</bs-card-header>",
+            "\t<div class=\"p-3\">${2:Card content}</div>",
+            "</bs-card>"
+        ]
+    },
+    "Grid": {
+        "prefix": "bs-grid",
+        "description": "Bootstrap Grid/Container",
+        "body": [
+            "<bs-grid>",
+            "\t<div bsRow>",
+            "\t\t<div [bsColumn]=\"{ _: 8, sm: 6 }\">${1:Hello}</div>",
+            "\t\t<div [bsColumn]=\"{ _: 4, sm: 6 }\">${2:World}</div>",
+            "\t</div>",
+            "\t<div bsRow>",
+            "\t\t<div [bsColumn]=\"{ _: 6, sm: 4 }\">${3:This}</div>",
+            "\t\t<div [bsColumn]=\"{ _: 3, sm: 4 }\">${4:Is}</div>",
+            "\t\t<div [bsColumn]=\"{ _: 3, sm: 4 }\">${5:Me}</div>",
+            "\t</div>",
+            "</bs-grid>"
+        ]
+    },
+    "TabControl": {
+        "prefix": "bs-tab-control",
+        "description": "Bootstrap Tab Control",
+        "body": [
+            "<bs-tab-control [border]=\"true\" [tabsPosition]=\"${1:'top'}\">",
+            "\t<bs-tab-page>",
+            "\t\t<ng-container *bsTabPageHeader>${2:First tab}</ng-container>",
+            "\t\t\t${3:This is tab 1}",
+            "\t\t</div>",
+            "\t</bs-tab-page>",
+            "\t<bs-tab-page [disabled]=\"true\">",
+            "\t\t<ng-container *bsTabPageHeader>${4:Disabled tab}</ng-container>",
+            "\t\t\t${5:This is tab 2}",
+            "\t\t</div>",
+            "\t</bs-tab-page>",
+            "</bs-tab-control>"
+        ]
+    },
+    "DatePicker": {
+        "prefix": "bs-datepicker",
+        "description": "Bootstrap Date Picker",
+        "body": [
+            "<bs-datepicker [(selectedDate)]=\"${1:selectedDate}\"></bs-datepicker>"
+        ]
+    },
+    "FloatingLabel": {
+        "prefix": "bs-floating-label",
+        "description": "Bootstrap Floating Lael",
+        "body": [
+            "<bs-floating-label>",
+            "\t<input type=\"${1:email}\" placeholder=\"${2:name@example.com}\">",
+            "\t<label>${3:Email address}</label>",
+            "</bs-floating-label>"
+        ]
+    },
+    "InputGroup": {
+        "prefix": "bs-input-group",
+        "description": "Bootstrap Input Group",
+        "body": [
+            "<bs-input-group>",
+            "\t<input type=\"text\">",
+            "\t<button type=\"submit\">Submit</button>",
+            "</bs-input-group>"
+        ]
+    },
+    "Range": {
+        "prefix": "bs-range",
+        "description": "Bootstrap Range",
+        "body": [
+            "<bs-range [min]=\"${1:0}\" [max]=\"${2:10}\" [step]=\"${3:0.5}\" [(ngModel)]=\"${4:rangeValue}\" [disabled]=\"${5:isDisabled}\"></bs-range>"
+        ]
+    },
+    "Select": {
+        "prefix": "bs-select",
+        "description": "Bootstrap Select",
+        "body": [
+            "<bs-select [(ngModel)]=\"${1:selectedItem}\" [disabled]=\"${2:disabled}\">",
+            "\t<option [ngValue]=\"null\" selected>${3:Choose an item}</option>",
+            "\t<option *ngFor=\"let item of ${4:items}\" [ngValue]=\"item\">{{ item.${5:name} }}</option>",
+            "</bs-select>"
+        ]
+    },
+    "ToggleButton": {
+        "prefix": "bs-toggle-button",
+        "description": "Bootstrap Toggle Button",
+        "body": [
+            "<bs-toggle-button [type]=\"'${1:checkbox}'\" [(ngModel)]=\"${2:favoriteColors}\" [value]=\"'${3:blue}'\" [group]=\"${4:colors}\">${5:Blue}</bs-toggle-button>"
+        ]
+    },
+    "ListGroup": {
+        "prefix": "bs-list-group",
+        "description": "Bootstrap List Group",
+        "body": [
+            "<bs-list-group>",
+            "\t<bs-list-group-item>${1:Cras justo odio}</bs-list-group-item>",
+            "\t<bs-list-group-item>${2:Dapibus ac facilisis in}</bs-list-group-item>",
+            "\t<bs-list-group-item>${3:Morbi leo risus}</bs-list-group-item>",
+            "\t<bs-list-group-item>${4:Porta ac consectetur ac}</bs-list-group-item>",
+            "\t<bs-list-group-item>${5:Vestibulum at eros}</bs-list-group-item>",
+            "</bs-list-group>"
+        ]
+    },
+    "Pagination": {
+        "prefix": "bs-pagination",
+        "description": "Bootstrap Pagination",
+        "body": [
+            "<bs-pagination [pageNumbers]=\"${1:pageNumbers}\" [(selectedPageNumber)]=\"${2:selectedPageNumber}\" [showArrows]=\"${3:true}\" [numberOfBoxes]=\"${4:9}\"></bs-pagination>"
+        ]
+    },
+    "Progress": {
+        "prefix": "bs-progress",
+        "description": "Bootstrap Progress",
+        "body": [
+            "<bs-progress>",
+            "\t<bs-progress-bar [minimum]=\"${1:0}\" [maximum]=\"${2:100}\" [value]=\"${3:15}\"></bs-progress-bar>",
+            "\t<bs-progress-bar [minimum]=\"${4:0}\" [maximum]=\"${5:100}\" [value]=\"${6:30}\" [color]=\"${7:colors.warning}\" [striped]=\"${8:true}\"></bs-progress-bar>",
+            "</bs-progress>"
+        ]
+    },
+    "Rating": {
+        "prefix": "bs-rating",
+        "description": "Rating",
+        "body": [
+            "<bs-rating [maximum]=\"${1:10}\" [(value)]=\"${2:ratingValue}\" (starsChange)=\"${3:previewValue} = $event\"></bs-rating>"
+        ]
+    },
+    "Spinner": {
+        "prefix": "bs-spinner",
+        "description": "Bootstrap Spinner",
+        "body": [
+            "<bs-spinner [type]=\"'${1:grow}'\" [color]=\"${2:colors.warning}\"></bs-spinner>"
+        ]
+    },
+    "Table": {
+        "prefix": "bs-table",
+        "description": "Bootstrap Table",
+        "body": [
+            "<bs-table [isResponsive]=\"${1:true}\">",
+            "\t<thead>",
+            "\t\t<tr>",
+            "\t\t\t${2}",
+            "\t\t</tr>",
+            "\t</thead>",
+            "\t<tbody>",
+            "\t\t<tr *ngFor=\"let ${3:item} of ${4:items}\">",
+            "\t\t\t${5}",
+            "\t\t</tr>",
+            "\t</tbody>",
+            "</bs-table>"
+        ]
+    },
+    "TimePicker": {
+        "prefix": "bs-timepicker",
+        "description": "Bootstrap Time Picker",
+        "body": [
+            "<bs-timepicker [(selectedTime)]=\"selectedTime\"></bs-timepicker>"
+        ]
+    },
+    "Treeview": {
+        "prefix": "bs-treeview",
+        "description": "Bootstrap Treeview",
+        "body": [
+            "<bs-treeview>",
+            "\t<bs-treeview-item>${1:Customers}</bs-treeview-item>",
+            "\t<bs-treeview-item>${2:Co-Workers}</bs-treeview-item>",
+            "</bs-treeview>"
+        ]
+    },
+    "MultiSelect": {
+        "prefix": "bs-multiselect",
+        "description": "Bootstrap Multiselect",
+        "body": [
+            "<bs-multiselect [items]=\"${1:items}\" [selectedItems]=\"${2:selectedItems}\">",
+            "\t<div *bsHeaderTemplate>${3:Header}</div>",
+            "\t<div *bsFooterTemplate>${4:Footer}</div>",
+            "\t<ng-container *bsButtonTemplate=\"let count\">",
+            "\t\t{{ count }} geselecteerd",
+            "\t</ng-container>",
+            "</bs-multiselect>"
+        ]
+    },
+    "Offcanvas": {
+        "prefix": "bs-offcanvas",
+        "description": "Bootstrap Offcanvas",
+        "body": [
+            "<bs-offcanvas [(state)]=\"${1:offcanvasState}\" [position]=\"${2:'left'}\" [hasBackdrop]=\"${3:true}\" (backdropClick)=\"${1} = 'closed'\">",
+            "\t<div *bsOffcanvasContent>",
+            "\t\t<bs-offcanvas-header>",
+            "\t\t\t<span class=\"offcanvas-title h5\">${4:Offcanvas}</span>",
+            "\t\t\t<bs-close bsOffcanvasClose></bs-close>",
+            "\t\t</bs-offcanvas-header>",
+            "\t\t<bs-offcanvas-body>",
+            "\t\t\t${5:Body}",
+            "\t\t</bs-offcanvas-body>",
+            "\t</div>",
+            "</bs-offcanvas>"
+        ]
     }
 }
