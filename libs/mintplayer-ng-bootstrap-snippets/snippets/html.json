@@ -226,13 +226,11 @@
             "<bs-tab-control [border]=\"true\" [tabsPosition]=\"'${1|top,bottom|}'\">",
             "\t<bs-tab-page>",
             "\t\t<ng-container *bsTabPageHeader>${2:First tab}</ng-container>",
-            "\t\t\t${3:This is tab 1}",
-            "\t\t</div>",
+            "\t\t${3:This is tab 1}",
             "\t</bs-tab-page>",
             "\t<bs-tab-page [disabled]=\"true\">",
             "\t\t<ng-container *bsTabPageHeader>${4:Disabled tab}</ng-container>",
-            "\t\t\t${5:This is tab 2}",
-            "\t\t</div>",
+            "\t\t${5:This is tab 2}",
             "\t</bs-tab-page>",
             "</bs-tab-control>"
         ]
@@ -285,7 +283,7 @@
         "prefix": "bs-toggle-button",
         "description": "Bootstrap Toggle Button",
         "body": [
-            "<bs-toggle-button [type]=\"'${1:checkbox}'\" [(ngModel)]=\"${2:favoriteColors}\" [value]=\"'${3:blue}'\" [group]=\"${4:colors}\">${5:Blue}</bs-toggle-button>"
+            "<bs-toggle-button [type]=\"'${1|checkbox,radio,switch,toggle_button,radio_toggle_button|}'\" [(ngModel)]=\"${2:favoriteColors}\" [value]=\"'${3:blue}'\" [group]=\"${4:colors}\">${5:Blue}</bs-toggle-button>"
         ]
     },
     "ListGroup": {
@@ -354,7 +352,7 @@
         "prefix": "bs-timepicker",
         "description": "Bootstrap Time Picker",
         "body": [
-            "<bs-timepicker [(selectedTime)]=\"selectedTime\"></bs-timepicker>"
+            "<bs-timepicker [(selectedTime)]=\"${1:selectedTime}\"></bs-timepicker>"
         ]
     },
     "Treeview": {
