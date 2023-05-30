@@ -4,7 +4,6 @@ import { RouterModule, Routes } from '@angular/router';
 const routes: Routes = [
   { path: '', redirectTo: '', pathMatch: 'full', canActivate: [() => false] },
   { path: 'modals', loadChildren: () => import('./modal/modal.module').then(m => m.ModalModule) },
-  { path: 'snackbar', loadChildren: () => import('./snackbar/snackbar.module').then(m => m.SnackbarModule) },
   { path: 'tooltip', loadChildren: () => import('./tooltip/tooltip.module').then(m => m.TooltipModule) },
   { path: 'dropdown', loadChildren: () => import('./dropdown/dropdown.module').then(m => m.DropdownModule) },
   { path: 'context-menu', loadChildren: () => import('./context-menu/context-menu.module').then(m => m.ContextMenuModule) },

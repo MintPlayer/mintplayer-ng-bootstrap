@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { BsOffcanvasModule } from '@mintplayer/ng-bootstrap/offcanvas';
 import { BsCodeSnippetModule } from '@mintplayer/ng-bootstrap/code-snippet';
-import { BsSnackbarModule } from '@mintplayer/ng-bootstrap/snackbar';
 
 import { CodeSnippetRoutingModule } from './code-snippet-routing.module';
 import { CodeSnippetComponent } from './code-snippet.component';
@@ -13,7 +13,7 @@ import { CodeSnippetComponent } from './code-snippet.component';
   ],
   imports: [
     CommonModule,
-    BsSnackbarModule,
+    BsOffcanvasModule,
     BsCodeSnippetModule,
     CodeSnippetRoutingModule
   ]

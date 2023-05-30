@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsCopyModule } from '@mintplayer/ng-bootstrap/copy';
-import { BsSnackbarModule, BsSnackbarService } from '@mintplayer/ng-bootstrap/snackbar';
+import { BsOffcanvasModule } from '@mintplayer/ng-bootstrap/offcanvas';
 import { MockModule, MockProvider } from 'ng-mocks';
 import { HighlightModule } from 'ngx-highlightjs';
 
@@ -15,7 +15,7 @@ describe('BsCodeSnippetComponent', () => {
       imports: [
         MockModule(BsCopyModule),
         MockModule(HighlightModule),
-        MockModule(BsSnackbarModule),
+        MockModule(BsOffcanvasModule),
       ],
       declarations: [
         // Unit to test

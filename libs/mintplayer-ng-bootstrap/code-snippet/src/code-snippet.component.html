@@ -5,7 +5,7 @@
     <pre class="white-space-normal">
         <code class="d-block white-space-pre" [highlight]="codeToCopy" [lineNumbers]="lineNumbers" [languages]="languages ?? undefined!"></code>
     </pre>
-    <ng-template #copiedTemplate>
-        <div class="p-3">Copied!</div>
-    </ng-template>
+    <bs-offcanvas [(state)]="offcanvasState" [position]="'bottom'">
+        <div *bsOffcanvasContent class="p-3">Copied!</div>
+    </bs-offcanvas>
 </div>
