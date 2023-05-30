@@ -62,9 +62,9 @@
         "description": "Template-driven `instanceof` switch-case",
         "body": [
             "<ng-container [bsInstanceof]=\"${1:item}\">",
-            "\t<ng-container *bsInstanceofCase=\"${2:A}; let ${2/(.*)/${1:/uncapitalize}/}\">{{ ${2/(.*)/${1:/uncapitalize}/}.${3:a} }}</ng-container>",
-            "\t<ng-container *bsInstanceofCase=\"${4:B}; let ${4/(.*)/${1:/uncapitalize}/}\">{{ ${4/(.*)/${1:/uncapitalize}/}.${5:b} }}</ng-container>",
-            "\t<ng-container *bsInstanceofCase=\"${6:C}; let ${6/(.*)/${1:/uncapitalize}/}\">{{ ${6/(.*)/${1:/uncapitalize}/}.${7:c} }}</ng-container>",
+            "\t<ng-container *bsInstanceofCase=\"${2:A}; let ${2/(.)(.*)/${1:/downcase}$2/}\">{{ ${2/(.)(.*)/${1:/downcase}$2/}.${3:a} }}</ng-container>",
+            "\t<ng-container *bsInstanceofCase=\"${4:B}; let ${4/(.)(.*)/${1:/downcase}$2/}\">{{ ${4/(.)(.*)/${1:/downcase}$2/}.${5:b} }}</ng-container>",
+            "\t<ng-container *bsInstanceofCase=\"${6:C}; let ${6/(.)(.*)/${1:/downcase}$2/}\">{{ ${6/(.)(.*)/${1:/downcase}$2/}.${7:c} }}</ng-container>",
             "\t<ng-container *bsInstanceofDefault>${8:No match}</ng-container>",
             "</ng-container>"
         ]
@@ -156,7 +156,7 @@
         "prefix": "bs-carousel",
         "description": "Bootstrap Carousel",
         "body": [
-            "<bs-carousel [animation]=\"${1:'slide'}\" [indicators]=\"true\">",
+            "<bs-carousel [animation]=\"${1:|'fade','slide'|}\" [indicators]=\"true\">",
             "\t<img *bsCarouselImage src=\"${2:\/assets\/deer.png}\">",
             "\t<img *bsCarouselImage src=\"${3:\/assets\/duck.png}\" loading=\"lazy\">",
             "</bs-carousel>"
