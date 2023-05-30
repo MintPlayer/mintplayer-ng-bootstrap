@@ -1,4 +1,20 @@
 {
+    "Collapse": {
+        "prefix": "bs-collapse",
+        "description": "Animated collapsible box",
+        "body": [
+            "<div class=\"overflow-hidden\" *ngIf=\"${1:collapseVisible}\" [@slideUpDownNgif]>",
+            "\t${2}",
+            "</div>"
+        ]
+    },
+    "QrCode": {
+        "prefix": "qr-code",
+        "description": "QR-code",
+        "body": [
+            "<qr-code [value]=\"${1:text}\"></qr-code>"
+        ]
+    },
     "Swipe": {
         "prefix": "bs-swipe-container",
         "description": "Swiper",
@@ -30,6 +46,29 @@
             "</bs-datatable>"
         ]
     },
+    "FileUpload": {
+        "prefix": "bs-file-upload",
+        "description": "File uploader",
+        "body": [
+            "<bs-file-upload [files]=\"${1:files}\" (filesDropped)=\"${2:onFilesDropped}(\\$event)\">",
+            "\t<div *bsFileUploadTemplate=\"let upload\">",
+            "\t\t${3}",
+            "\t</div>",
+            "</bs-file-upload>"
+        ]
+    },
+    "InstanceOf": {
+        "prefix": "bs-instance-of",
+        "description": "Template-driven `instanceof` switch-case",
+        "body": [
+            "<ng-container [bsInstanceof]=\"${1:item}\">",
+            "\t<ng-container *bsInstanceofCase=\"${2:A}; let ${2/(.*)/${1:/uncapitalize}/}\">{{ ${2/(.*)/${1:/uncapitalize}/}.${3:a} }}</ng-container>",
+            "\t<ng-container *bsInstanceofCase=\"${4:B}; let ${4/(.*)/${1:/uncapitalize}/}\">{{ ${4/(.*)/${1:/uncapitalize}/}.${5:b} }}</ng-container>",
+            "\t<ng-container *bsInstanceofCase=\"${6:C}; let ${6/(.*)/${1:/uncapitalize}/}\">{{ ${6/(.*)/${1:/uncapitalize}/}.${7:c} }}</ng-container>",
+            "\t<ng-container *bsInstanceofDefault>${8:No match}</ng-container>",
+            "</ng-container>"
+        ]
+    },
     "Modal": {
         "prefix": "bs-modal",
         "description": "Bootstrap Modal",
@@ -55,7 +94,7 @@
         "body": [
             "<bs-select2 (provideSuggestions)=\"onProvide${1:Tag}Suggestions(\\$event)\" [suggestions]=\"${1/(.*)/${1:/uncapitalize}/}Suggestions\" [selectedItems]=\"selected${1}s\">",
             "\t<span *bsItemTemplate=\"let item=item; let select2=select2\" class=\"select2-item\" [style.background]=\"${3:item.category.color}\" [style.color]=\"${3} | bsFontColor\">",
-            "\t\t<span [style.color]=\"${3} | bsFontColor\" (click)=\"select2.onRemove${1}(item,$$event)\">×</span>",
+            "\t\t<span [style.color]=\"${3} | bsFontColor\" (click)=\"select2.onRemove${1}(item,\\$event)\">×</span>",
             "\t\t{{ ${4:item.text} }}",
             "\t</span>",
             "</bs-select2>"
