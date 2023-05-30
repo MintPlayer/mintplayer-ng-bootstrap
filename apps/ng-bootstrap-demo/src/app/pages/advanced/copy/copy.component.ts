@@ -1,5 +1,5 @@
-import { Component, TemplateRef, ViewChild } from '@angular/core';
-import { BsSnackbarService } from '@mintplayer/ng-bootstrap/snackbar';
+import { Component } from '@angular/core';
+import { BsViewState } from '@mintplayer/ng-bootstrap';
 import * as dedent from 'dedent';
 
 @Component({
@@ -9,10 +9,7 @@ import * as dedent from 'dedent';
 })
 export class CopyComponent {
 
-  constructor(private snackbarService: BsSnackbarService) {
-  }
-
-  @ViewChild('copiedTemplate') copiedTemplate!: TemplateRef<any>;
+  offcanvasState: BsViewState = 'closed';
   codeToCopy = dedent`
     <!DOCTYPE html>
     <html>
@@ -25,8 +22,9 @@ export class CopyComponent {
       </body>
     </html>`;
 
+  
   copiedHtml() {
-    const snackbar = this.snackbarService.show(this.copiedTemplate);
-    setTimeout(() => this.snackbarService.hide(snackbar), 3000);
+    this.offcanvasState = 'open';
+    setTimeout(() => this.offcanvasState = 'closed', 3000);
   }
 }

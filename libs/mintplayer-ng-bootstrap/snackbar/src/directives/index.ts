@@ -1,1 +1,0 @@
-export * from './snackbar-close/snackbar-close.directive';

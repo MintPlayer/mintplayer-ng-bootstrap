@@ -1,5 +1,5 @@
 import { Component, Input, TemplateRef, ViewChild } from '@angular/core';
-import { BsSnackbarService } from '@mintplayer/ng-bootstrap/snackbar';
+import { BsViewState } from '@mintplayer/ng-bootstrap';
 
 @Component({
   selector: 'bs-code-snippet',
@@ -8,17 +8,15 @@ import { BsSnackbarService } from '@mintplayer/ng-bootstrap/snackbar';
 })
 export class BsCodeSnippetComponent {
 
-  constructor(private snackbarService: BsSnackbarService) {
-  }
-  
+  offcanvasState: BsViewState = 'closed';
   @Input() public codeToCopy = '';
   @Input() public languages: string[] | null = null;
   @Input() public lineNumbers = false;
   @ViewChild('copiedTemplate') copiedTemplate!: TemplateRef<any>;
 
   copiedHtml() {
-    const snackbar = this.snackbarService.show(this.copiedTemplate);
-    setTimeout(() => this.snackbarService.hide(snackbar), 3000);
+    this.offcanvasState = 'open';
+    setTimeout(() => this.offcanvasState = 'closed', 3000);
   }
 
 }

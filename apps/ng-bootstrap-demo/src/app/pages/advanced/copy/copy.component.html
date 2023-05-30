@@ -5,7 +5,7 @@
         <code class="d-block white-space-pre" [highlight]="codeToCopy"></code>
     </pre>
     <p>You might also use the <a href="https://material.angular.io/cdk/clipboard/overview" target="_blank">@angular/cdk</a> for this.</p>
-    <ng-template #copiedTemplate>
-        <div class="p-3">Copied!</div>
-    </ng-template>
+    <bs-offcanvas [(state)]="offcanvasState" [position]="'bottom'">
+        <div *bsOffcanvasContent class="p-3">Copied!</div>
+    </bs-offcanvas>
 </div>

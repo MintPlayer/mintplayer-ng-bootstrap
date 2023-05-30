@@ -37,11 +37,11 @@
         "prefix": "bs-datatable",
         "description": "Bootstrap Datatable",
         "body": [
-            "<bs-datatable [(settings)]=\"${1:settings}\" [data]=\"${2:data}\" (settingsChange)=\"load${2:/capitalize}()\">",
-            "\t<div *bsDatatableColumn=\"{ sortable: true, name: '${3:/capitalize}' }\">${4:heading}</div>",
+            "<bs-datatable [(settings)]=\"${1:settings}\" [data]=\"${2:data}\" (settingsChange)=\"load${2/(.)(.*)/${1:/upcase}$2/}()\">",
+            "\t<div *bsDatatableColumn=\"{ sortable: true, name: '${3:PropertyName}' }\">${4:Heading}</div>",
             "",
             "\t<tr *bsRowTemplate=\"let item\">",
-            "\t\t<td>{{ item.${3:propertyName} }}</td>",
+            "\t\t<td>{{ item.${3/(.)(.*)/${1:/downcase}$2/} }}</td>",
             "\t</tr>",
             "</bs-datatable>"
         ]
@@ -50,9 +50,9 @@
         "prefix": "bs-file-upload",
         "description": "File uploader",
         "body": [
-            "<bs-file-upload [files]=\"${1:files}\" (filesDropped)=\"${2:onFilesDropped}(\\$event)\">",
+            "<bs-file-upload [files]=\"${1:files}\" (filesDropped)=\"on${1/(.)(.*)/${1:/upcase}$2/}Dropped(\\$event)\">",
             "\t<div *bsFileUploadTemplate=\"let upload\">",
-            "\t\t${3}",
+            "\t\t${2}",
             "\t</div>",
             "</bs-file-upload>"
         ]
@@ -92,7 +92,7 @@
         "prefix": "bs-select2",
         "description": "Select2 component (multiselect)",
         "body": [
-            "<bs-select2 (provideSuggestions)=\"onProvide${1:Tag}Suggestions(\\$event)\" [suggestions]=\"${1/(.*)/${1:/uncapitalize}/}Suggestions\" [selectedItems]=\"selected${1}s\">",
+            "<bs-select2 (provideSuggestions)=\"onProvide${1:Tag}Suggestions(\\$event)\" [suggestions]=\"${1/(.)(.*)/${1:/downcase}$2/}Suggestions\" [selectedItems]=\"selected${1}s\">",
             "\t<span *bsItemTemplate=\"let item=item; let select2=select2\" class=\"select2-item\" [style.background]=\"${3:item.category.color}\" [style.color]=\"${3} | bsFontColor\">",
             "\t\t<span [style.color]=\"${3} | bsFontColor\" (click)=\"select2.onRemove${1}(item,\\$event)\">×</span>",
             "\t\t{{ ${4:item.text} }}",
@@ -156,7 +156,7 @@
         "prefix": "bs-carousel",
         "description": "Bootstrap Carousel",
         "body": [
-            "<bs-carousel [animation]=\"${1:|'fade','slide'|}\" [indicators]=\"true\">",
+            "<bs-carousel [animation]=\"'${1|fade,slide|}'\" [indicators]=\"true\">",
             "\t<img *bsCarouselImage src=\"${2:\/assets\/deer.png}\">",
             "\t<img *bsCarouselImage src=\"${3:\/assets\/duck.png}\" loading=\"lazy\">",
             "</bs-carousel>"
@@ -173,7 +173,7 @@
         "prefix": "bs-color-picker",
         "description": "Bootstrap Color picker",
         "body": [
-            "<bs-color-picker [(ngModel)]=\"${1:selectedColor}\" [allowAlpha]=\"${3:allowAlpha}\" [(alpha)]=\"${2:selectedAlpha}\" [width]=\"400\"></bs-color-picker>"
+            "<bs-color-picker [(ngModel)]=\"${1:selectedColor}\" [allowAlpha]=\"${2:allowAlpha}\" [(alpha)]=\"${3:selectedAlpha}\" [width]=\"400\"></bs-color-picker>"
         ]
     },
     "Accordion": {
@@ -223,7 +223,7 @@
         "prefix": "bs-tab-control",
         "description": "Bootstrap Tab Control",
         "body": [
-            "<bs-tab-control [border]=\"true\" [tabsPosition]=\"${1:'top'}\">",
+            "<bs-tab-control [border]=\"true\" [tabsPosition]=\"'${1|top,bottom|}'\">",
             "\t<bs-tab-page>",
             "\t\t<ng-container *bsTabPageHeader>${2:First tab}</ng-container>",
             "\t\t\t${3:This is tab 1}",
@@ -322,14 +322,14 @@
         "prefix": "bs-rating",
         "description": "Rating",
         "body": [
-            "<bs-rating [maximum]=\"${1:10}\" [(value)]=\"${2:ratingValue}\" (starsChange)=\"${3:previewValue} = $event\"></bs-rating>"
+            "<bs-rating [maximum]=\"${1:10}\" [(value)]=\"${2:ratingValue}\" (starsChange)=\"${3:previewValue} = \\$event\"></bs-rating>"
         ]
     },
     "Spinner": {
         "prefix": "bs-spinner",
         "description": "Bootstrap Spinner",
         "body": [
-            "<bs-spinner [type]=\"'${1:grow}'\" [color]=\"${2:colors.warning}\"></bs-spinner>"
+            "<bs-spinner [type]=\"'${1|border,grow|}'\" [color]=\"${2:colors.warning}\"></bs-spinner>"
         ]
     },
     "Table": {
@@ -384,7 +384,7 @@
         "prefix": "bs-offcanvas",
         "description": "Bootstrap Offcanvas",
         "body": [
-            "<bs-offcanvas [(state)]=\"${1:offcanvasState}\" [position]=\"${2:'left'}\" [hasBackdrop]=\"${3:true}\" (backdropClick)=\"${1} = 'closed'\">",
+            "<bs-offcanvas [(state)]=\"${1:offcanvasState}\" [position]=\"'${2|top,end,bottom,start|}'\" [hasBackdrop]=\"${3:true}\" (backdropClick)=\"${1} = 'closed'\">",
             "\t<div *bsOffcanvasContent>",
             "\t\t<bs-offcanvas-header>",
             "\t\t\t<span class=\"offcanvas-title h5\">${4:Offcanvas}</span>",

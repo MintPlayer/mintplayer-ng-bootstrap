@@ -1,6 +1,0 @@
-<bs-has-overlay></bs-has-overlay>
-<div [@slideUpDownNgif]="animationState"
-     (@slideUpDownNgif.start)="onAnimationChanged($event)"
-     (@slideUpDownNgif.done)="onAnimationChanged($event)">
-    <ng-container *ngTemplateOutlet="content; context: { $implicit: this }" ></ng-container>
-</div>

@@ -2,7 +2,7 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HighlightModule } from 'ngx-highlightjs';
 import { BsCopyModule } from '@mintplayer/ng-bootstrap/copy';
-import { BsSnackbarModule } from '@mintplayer/ng-bootstrap/snackbar';
+import { BsOffcanvasModule } from '@mintplayer/ng-bootstrap/offcanvas';
 import { BsCodeSnippetComponent } from './code-snippet.component';
 
 @NgModule({
@@ -12,7 +12,7 @@ import { BsCodeSnippetComponent } from './code-snippet.component';
   imports: [
     CommonModule,
     BsCopyModule,
-    BsSnackbarModule,
+    BsOffcanvasModule,
     HighlightModule
   ],
   exports: [

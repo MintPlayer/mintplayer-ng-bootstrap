@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsCopyModule } from '@mintplayer/ng-bootstrap/copy';
-import { BsSnackbarModule } from '@mintplayer/ng-bootstrap/snackbar';
+import { BsOffcanvasModule } from '@mintplayer/ng-bootstrap/offcanvas';
 import { MockModule } from 'ng-mocks';
 import { HighlightModule } from 'ngx-highlightjs';
 import { CopyComponent } from './copy.component';
@@ -13,7 +13,7 @@ describe('CopyComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         MockModule(BsCopyModule),
-        MockModule(BsSnackbarModule),
+        MockModule(BsOffcanvasModule),
         MockModule(HighlightModule),
       ],
       declarations: [
