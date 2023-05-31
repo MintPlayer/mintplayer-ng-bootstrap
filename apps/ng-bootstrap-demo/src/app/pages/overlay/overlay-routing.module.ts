@@ -2,7 +2,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
 const routes: Routes = [
-  { path: '', redirectTo: '', pathMatch: 'full', canActivate: [() => false] },
+  { path: '', loadChildren: () => [], pathMatch: 'full', canActivate: [() => false] },
   { path: 'modals', loadChildren: () => import('./modal/modal.module').then(m => m.ModalModule) },
   { path: 'tooltip', loadChildren: () => import('./tooltip/tooltip.module').then(m => m.TooltipModule) },
   { path: 'dropdown', loadChildren: () => import('./dropdown/dropdown.module').then(m => m.DropdownModule) },

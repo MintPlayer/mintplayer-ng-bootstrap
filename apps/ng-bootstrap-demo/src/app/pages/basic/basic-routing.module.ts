@@ -2,7 +2,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
 const routes: Routes = [
-  { path: '', redirectTo: '', pathMatch: 'full', canActivate: [() => false] },
+  { path: '', loadChildren: () => [], pathMatch: 'full', canActivate: [() => false] },
   { path: 'calendar', loadChildren: () => import('./calendar/calendar.module').then(m => m.CalendarModule) },
   { path: 'alert', loadChildren: () => import('./alert/alert.module').then(m => m.AlertModule) },
   { path: 'forms', loadChildren: () => import('./forms/forms.module').then(m => m.FormsModule) },
