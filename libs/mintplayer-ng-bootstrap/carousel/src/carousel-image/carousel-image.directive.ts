@@ -1,4 +1,4 @@
-import { Directive, TemplateRef, HostBinding } from '@angular/core';
+import { Directive, TemplateRef, ElementRef } from '@angular/core';
 import { BsCarouselComponent } from '../carousel/carousel.component';
 
 @Directive({
@@ -8,11 +8,10 @@ export class BsCarouselImageDirective {
 
   public itemTemplate: TemplateRef<any>;
   
-  constructor(private templateRef: TemplateRef<any>, carousel: BsCarouselComponent) {
+  constructor(private templateRef: TemplateRef<any>, carousel: BsCarouselComponent, private element: ElementRef<HTMLElement>) {
     this.itemTemplate = this.templateRef;
     this.id = carousel.imageCounter++;
   }
-
+  
   id: number;
-  @HostBinding('class.w-100') width100class = true;
 }
