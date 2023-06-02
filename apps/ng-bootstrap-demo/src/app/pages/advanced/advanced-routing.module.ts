@@ -2,7 +2,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
 const routes: Routes = [
-  { path: '', redirectTo: '', pathMatch: 'full', canActivate: [() => false] },
+  { path: '', loadChildren: () => [], pathMatch: 'full', canActivate: [() => false] },
   { path: 'copy', loadChildren: () => import('../advanced/copy/copy.module').then(m => m.CopyModule) },
   { path: 'file-upload', loadChildren: () => import('../advanced/file-upload/file-upload.module').then(m => m.FileUploadModule) },
   { path: 'datatables', loadChildren: () => import('./datatables/datatables.module').then(m => m.DatatablesModule) },

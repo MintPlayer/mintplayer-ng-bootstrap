@@ -2,7 +2,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
 const routes: Routes = [
-  { path: '', redirectTo: '', pathMatch: 'full', canActivate: [() => false] },
+  { path: '', loadChildren: () => [], pathMatch: 'full', canActivate: [() => false] },
   { path: 'floating-labels', loadChildren: () => import('./floating-labels/floating-labels.module').then(m => m.FloatingLabelsModule) },
   { path: 'input-group', loadChildren: () => import('./input-group/input-group.module').then(m => m.InputGroupModule) },
   { path: 'range', loadChildren: () => import('./range/range.module').then(m => m.RangeModule) },
