@@ -50,6 +50,10 @@
                 z-index: 10;
             }
         }
+
+        .carousel-item > * {
+            width: 100% !important;
+        }
     }
 }
 
