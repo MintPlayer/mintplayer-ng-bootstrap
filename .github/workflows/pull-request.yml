@@ -24,6 +24,11 @@ jobs:
       with:
         node-version: 16
 
+    - name: Print GitHub
+      run: echo $JSON
+      env:
+        JSON: ${{ toJson(github) }}
+
     - name: Install dependencies
       run: npm install
     
