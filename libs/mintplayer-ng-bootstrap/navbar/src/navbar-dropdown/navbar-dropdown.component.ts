@@ -29,7 +29,10 @@ export class BsNavbarDropdownComponent {
 
     this.isVisible$.pipe(takeUntilDestroyed()).subscribe((isVisible) => {
       if (isVisible) {
-        setTimeout(() => this.overlay && this.overlay.updatePosition(), 20);
+        setTimeout(() => {
+          try { this.overlay && this.overlay.updatePosition(); }
+          catch (ex) { }
+        }, 20);
         this.topPos$.next(this.element.nativeElement.offsetTop);
       } else {
         this.topPos$.next(null);
