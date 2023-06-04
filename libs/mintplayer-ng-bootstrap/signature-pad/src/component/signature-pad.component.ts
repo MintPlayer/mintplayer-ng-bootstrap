@@ -1,8 +1,9 @@
-import { AfterViewInit, Component, ElementRef, HostBinding, HostListener, ViewChild } from '@angular/core';
-import { SignatureData } from '../interfaces/signature-data';
+import { AfterViewInit, Component, ElementRef, EventEmitter, HostBinding, HostListener, Input, Output, ViewChild } from '@angular/core';
+import { Signature } from '../interfaces/signature';
 import { BehaviorSubject } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Point } from '../interfaces/point';
+import { Stroke } from '../interfaces/stroke';
 
 @Component({
   selector: 'bs-signature-pad',
@@ -10,26 +11,38 @@ import { Point } from '../interfaces/point';
   styleUrls: ['./signature-pad.component.scss'],
 })
 export class BsSignaturePadComponent implements AfterViewInit {
-  // constructor() {
-  //   this.data$.pipe(takeUntilDestroyed()).subscribe((data) => {
+  constructor() {
+    this.signature$.pipe(takeUntilDestroyed()).subscribe((signature) => {
+      this.signatureChange.emit(signature);
+    });
+  }
 
-  //   });
-  // }
+  //#region Signature
+  signature$ = new BehaviorSubject<Signature>({ strokes: [] });
+  @Output() signatureChange = new EventEmitter<Signature>();
+  public get signature() {
+    return this.signature$.value;
+  }
+  @Input() public set signature(value: Signature) {
+    this.signature$.next(value);
+  }
+  //#endregion
+
+  @Input() width = 500;
+  @Input() height = 300;
 
   @HostBinding('class.border')
-  @HostBinding('class.d-block')
+  @HostBinding('class.d-inline-block')
   classes = true;
 
   isDrawing = false;
   @ViewChild('canvas') canvas!: ElementRef<HTMLCanvasElement>;
   context: CanvasRenderingContext2D | null = null;
-  // data$ = new BehaviorSubject<SignatureData>({ strokes: [] });
 
   ngAfterViewInit() {
     this.context = this.canvas.nativeElement.getContext('2d', { willReadFrequently: true });
   }
 
-  points: Point[] = [];
   @HostBinding('style.min-height.rem') minHeight = 5;
   @HostListener('touchmove', ['$event']) onTouchMove(ev: TouchEvent) {
     if (this.isDrawing) {
@@ -40,8 +53,10 @@ export class BsSignaturePadComponent implements AfterViewInit {
     ev.preventDefault();
     this.isDrawing = true;
     if (this.context) {
-      console.log('pointer down', ev);
-      this.points.push({ x: ev.offsetX, y: ev.offsetY });
+      this.signature.strokes.push({
+        points: [{ x: ev.offsetX, y: ev.offsetY }]
+      });
+      this.signatureChange.emit(this.signature);
 
       this.context.fillStyle = 'black';
       this.context.beginPath();
@@ -51,7 +66,6 @@ export class BsSignaturePadComponent implements AfterViewInit {
   @HostListener('pointermove', ['$event']) onPointerMove(ev: PointerEvent) {
     if (this.isDrawing && this.context) {
       ev.preventDefault();
-      console.log('pointer move', ev);
       
       // this.context.moveTo(this.points.at(-1)!.x, this.points.at(-1)!.y);
       // // ctx.arc(x, y, width, 0, 2 * Math.PI, false);
@@ -60,17 +74,18 @@ export class BsSignaturePadComponent implements AfterViewInit {
       // this.context.closePath();
       // this.context.fill();
 
+      this.signature.strokes.at(-1)?.points.push({ x: ev.offsetX, y: ev.offsetY });
+      this.signatureChange.emit(this.signature);
+
       this.context.lineTo(ev.offsetX, ev.offsetY);
       this.context.stroke();
-
-      this.points.push({ x: ev.offsetX, y: ev.offsetY });
     }
   }
   @HostListener('window:pointerup', ['$event']) onPointerEnd(ev: PointerEvent) {
     if (this.isDrawing && this.context) {
       ev.preventDefault();
       this.isDrawing = false;
-      console.log('pointer up', ev);
+      this.signatureChange.emit(this.signature);
     }
   }
 }

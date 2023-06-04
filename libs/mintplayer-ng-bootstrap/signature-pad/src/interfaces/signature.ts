@@ -1,5 +1,5 @@
 import { Stroke } from "./stroke";
 
-export interface SignatureData {
+export interface Signature {
     strokes: Stroke[];
 }

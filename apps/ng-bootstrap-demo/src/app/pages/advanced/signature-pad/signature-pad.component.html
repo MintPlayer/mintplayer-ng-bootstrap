@@ -1,2 +1,4 @@
 <h1 class="text-center">Signature pad</h1>
-<bs-signature-pad></bs-signature-pad>
+<div class="d-block text-center">
+    <bs-signature-pad [width]="500" [height]="300" [(signature)]="signature" (signatureChange)="onSignatureChange($event)"></bs-signature-pad>
+</div>
