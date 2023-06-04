@@ -42,9 +42,10 @@ export class BsSignaturePadComponent implements AfterViewInit {
     if (this.context) {
       console.log('pointer down', ev);
       this.points.push({ x: ev.offsetX, y: ev.offsetY });
-      this.context.moveTo(ev.offsetX, ev.offsetY);
+
       this.context.fillStyle = 'black';
       this.context.beginPath();
+      this.context.moveTo(ev.offsetX, ev.offsetY);
     }
   }
   @HostListener('pointermove', ['$event']) onPointerMove(ev: PointerEvent) {
@@ -52,17 +53,20 @@ export class BsSignaturePadComponent implements AfterViewInit {
       ev.preventDefault();
       console.log('pointer move', ev);
       
-      this.context.moveTo(this.points.at(-1)!.x, this.points.at(-1)!.y);
-      // ctx.arc(x, y, width, 0, 2 * Math.PI, false);
-      // this.context.arc(ev.offsetX, ev.offsetY, 2, 0, 2 * Math.PI, false);
-      // this.context.arcTo(ev.offsetX, ev.offsetY,)
-      this.context.closePath();
-      this.context.fill();
+      // this.context.moveTo(this.points.at(-1)!.x, this.points.at(-1)!.y);
+      // // ctx.arc(x, y, width, 0, 2 * Math.PI, false);
+      // // this.context.arc(ev.offsetX, ev.offsetY, 2, 0, 2 * Math.PI, false);
+      // // this.context.arcTo(ev.offsetX, ev.offsetY,)
+      // this.context.closePath();
+      // this.context.fill();
+
+      this.context.lineTo(ev.offsetX, ev.offsetY);
+      this.context.stroke();
 
       this.points.push({ x: ev.offsetX, y: ev.offsetY });
     }
   }
-  @HostListener('pointerup', ['$event']) onPointerEnd(ev: PointerEvent) {
+  @HostListener('window:pointerup', ['$event']) onPointerEnd(ev: PointerEvent) {
     if (this.isDrawing && this.context) {
       ev.preventDefault();
       this.isDrawing = false;
