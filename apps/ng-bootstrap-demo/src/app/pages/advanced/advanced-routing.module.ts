@@ -20,6 +20,7 @@ const routes: Routes = [
   { path: 'dock', loadChildren: () => import('./dock/dock.module').then(m => m.DockModule) },
   { path: 'instance-of', loadChildren: () => import('./instance-of/instance-of.module').then(m => m.InstanceOfModule) },
   { path: 'resizable', loadChildren: () => import('./resizable/resizable.module').then(m => m.ResizableModule) },
+  { path: 'signature-pad', loadChildren: () => import('./signature-pad/signature-pad.module').then(m => m.SignaturePadModule) },
 ];
 
 @NgModule({
