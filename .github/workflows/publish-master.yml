@@ -287,3 +287,12 @@ jobs:
         pat: ${{ secrets.PUBLISH_SNIPPETS }}
         skipDuplicate: true
         registryUrl: https://marketplace.visualstudio.com
+
+    - name: Publish through FTP
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+      with:
+        server: mintplayer.com
+        username: ${{ secrets.PUBLISH_FTP_USER }}
+        password: ${{ secrets.PUBLISH_FTP_PWD }}
+        local-dir: ./dist/apps/ng-bootstrap-demo/browser
+        server-dir: ./
