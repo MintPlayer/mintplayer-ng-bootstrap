@@ -294,5 +294,5 @@ jobs:
         server: mintplayer.com
         username: ${{ secrets.PUBLISH_FTP_USER }}
         password: ${{ secrets.PUBLISH_FTP_PWD }}
-        local-dir: ./dist/apps/ng-bootstrap-demo/browser
+        local-dir: ./dist/apps/ng-bootstrap-demo/browser/
         server-dir: ./
