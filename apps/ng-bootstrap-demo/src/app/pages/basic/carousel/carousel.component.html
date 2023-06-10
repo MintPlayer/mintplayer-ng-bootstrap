@@ -15,7 +15,7 @@
             </div>
         </div>
         <div bsRow>
-            <span bsColumn class="col-form-label text-end">
+            <span bsColumn bsColFormLabel class="text-end">
                 Carousel mode
             </span>
             <div bsColumn>
@@ -32,6 +32,19 @@
                     <li>Touch-event support</li>
                     <li><code>&lt;noscript&gt;</code> support</li>
                 </ul>
+            </div>
+        </div>
+        <h2>Vertical carousel</h2>
+        <div bsRow>
+            <div bsColumn>
+                <bs-carousel [animation]="mode" [indicators]="true" class="mx-auto">
+                    <img *bsCarouselImage src="/assets/resized/deer.png">
+                    <img *bsCarouselImage src="/assets/resized/duck.png" loading="lazy">
+                    <img *bsCarouselImage src="/assets/resized/leopard.png" loading="lazy">
+                    <img *bsCarouselImage src="/assets/resized/lion.png" loading="lazy">
+                    <img *bsCarouselImage src="/assets/resized/peacock.png" loading="lazy">
+                    <img *bsCarouselImage src="/assets/resized/tiger.png" loading="lazy">
+                </bs-carousel>
             </div>
         </div>
     </bs-grid>

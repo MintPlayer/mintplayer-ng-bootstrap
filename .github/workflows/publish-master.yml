@@ -249,6 +249,7 @@ jobs:
         directory: ./coverage/libs/mintplayer-ng-bootstrap
       
     - name: Push to NPM
+      id: publish_ng_bootstrap
       uses: JS-DevTools/npm-publish@v2
       with:
         package: 'dist/libs/mintplayer-ng-bootstrap/package.json'
@@ -290,6 +291,7 @@ jobs:
 
     - name: Publish through FTP
       uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+      if: ${{ steps.publish_ng_bootstrap.outputs.type }}
       with:
         server: mintplayer.com
         username: ${{ secrets.PUBLISH_FTP_USER }}
