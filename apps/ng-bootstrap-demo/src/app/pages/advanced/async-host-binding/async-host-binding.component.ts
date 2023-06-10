@@ -21,6 +21,7 @@ export class HelloComponent {
 
   @HostBinding('class.d-inline-block')
   @HostBinding('class.border')
+  @HostBinding('class.mw-100')
   classes = true;
 
   @HostBinding("$.style.padding.px")

@@ -3,10 +3,6 @@ import { EMPTY } from 'rxjs';
 import { switchMap, take } from 'rxjs/operators';
 
 export class BsBindEventPlugin {
-  constructor() {
-    console.log('Hi there');
-  }
-
   manager!: EventManager;
 
   supports(event: string) {
