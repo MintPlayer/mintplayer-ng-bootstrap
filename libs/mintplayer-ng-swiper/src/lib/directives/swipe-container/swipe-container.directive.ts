@@ -1,6 +1,6 @@
 import { animate, AnimationBuilder, AnimationPlayer, style } from '@angular/animations';
 import { DOCUMENT } from '@angular/common';
-import { AfterViewInit, ContentChildren, Directive, ElementRef, EventEmitter, forwardRef, HostBinding, Inject, Input, Output, QueryList } from '@angular/core';
+import { AfterViewInit, ContentChildren, Directive, ElementRef, EventEmitter, forwardRef, Host, HostBinding, Inject, Input, Optional, Output, QueryList, SkipSelf } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, combineLatest, delay, filter, map, mergeMap, Observable, take } from 'rxjs';
 import { Point } from '../../interfaces/point';
@@ -132,7 +132,7 @@ export class BsSwipeContainerDirective implements AfterViewInit {
         return maxHeight - (maxHeight - currHeight)/* / 2*/;
       }));
 
-    this.direction$.pipe(takeUntil(this.destroyed$))
+    this.direction$.pipe(takeUntilDestroyed())
       .subscribe((direction) => this.w100class = (direction === 'vertical'));
   }
 

@@ -1,6 +1,7 @@
 import { AfterViewInit, Directive, ElementRef, HostBinding, HostListener, Input, OnDestroy } from "@angular/core";
-import { BehaviorSubject, combineLatest, filter, Subject, take, takeUntil } from "rxjs";
+import { BehaviorSubject, combineLatest, filter, Subject, take } from "rxjs";
 import { BsSwipeContainerDirective } from "../swipe-container/swipe-container.directive";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 
 @Directive({
   selector: '[bsSwipe]'
@@ -10,7 +11,7 @@ export class BsSwipeDirective implements AfterViewInit, OnDestroy {
   constructor(private container: BsSwipeContainerDirective, element: ElementRef<HTMLElement>) {
     this.element = element;
     this.container.direction$
-      .pipe(takeUntil(this.destroyed$))
+      .pipe(takeUntilDestroyed())
       .subscribe((direction) => {
         switch (direction) {
           case 'horizontal':
@@ -35,7 +36,7 @@ export class BsSwipeDirective implements AfterViewInit, OnDestroy {
   //#endregion
 
   @HostBinding('class') displayClass: string | null = null;
-  
+
   @HostBinding('class.align-top')
   @HostBinding('class.float-none')
   @HostBinding('class.w-100')
