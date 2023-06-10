@@ -6,6 +6,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { HighlightOptions, HIGHLIGHT_OPTIONS } from 'ngx-highlightjs';
 import { BS_DEVELOPMENT } from '@mintplayer/ng-bootstrap';
 import { BsNavbarModule } from '@mintplayer/ng-bootstrap/navbar';
+import { BsAsyncHostBindingModule } from '@mintplayer/ng-bootstrap/async-host-binding';
 import ngBootstrapJson from '@mintplayer/ng-bootstrap/package.json';
 
 import { AppComponent } from './app.component';
@@ -19,6 +20,7 @@ import { DirectivesModule } from './directives/directives.module';
     CommonModule,
     BrowserAnimationsModule,
     BsNavbarModule,
+    BsAsyncHostBindingModule,
     HttpClientModule,
     AppRoutingModule,
     DirectivesModule

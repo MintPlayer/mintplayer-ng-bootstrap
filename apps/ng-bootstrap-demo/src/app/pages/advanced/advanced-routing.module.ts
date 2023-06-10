@@ -21,6 +21,7 @@ const routes: Routes = [
   { path: 'instance-of', loadChildren: () => import('./instance-of/instance-of.module').then(m => m.InstanceOfModule) },
   { path: 'resizable', loadChildren: () => import('./resizable/resizable.module').then(m => m.ResizableModule) },
   { path: 'signature-pad', loadChildren: () => import('./signature-pad/signature-pad.module').then(m => m.SignaturePadModule) },
+  { path: 'async-host-binding', loadChildren: () => import('./async-host-binding/async-host-binding.module').then(m => m.AsyncHostBindingModule) },
 ];
 
 @NgModule({
