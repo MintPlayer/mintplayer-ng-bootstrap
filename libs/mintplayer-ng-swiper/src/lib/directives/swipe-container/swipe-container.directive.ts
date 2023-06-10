@@ -2,7 +2,7 @@ import { animate, AnimationBuilder, AnimationPlayer, style } from '@angular/anim
 import { DOCUMENT } from '@angular/common';
 import { AfterViewInit, ContentChildren, Directive, ElementRef, EventEmitter, forwardRef, HostBinding, Inject, Input, Output, QueryList } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, combineLatest, filter, map, mergeMap, Observable, take } from 'rxjs';
+import { BehaviorSubject, combineLatest, delay, filter, map, mergeMap, Observable, take } from 'rxjs';
 import { LastTouch } from '../../interfaces/last-touch';
 import { StartTouch } from '../../interfaces/start-touch';
 import { BsSwipeDirective } from '../swipe/swipe.directive';
@@ -80,7 +80,7 @@ export class BsSwipeContainerDirective implements AfterViewInit {
       }));
 
     this.slideHeights$ = this.actualSwipes$
-      .pipe(filter(swipes => !!swipes))
+      .pipe(delay(400), filter(swipes => !!swipes))
       // .pipe(map(swipes => <QueryList<BsSwipeDirective>>swipes))
       .pipe(mergeMap(swipes => combineLatest(swipes.map(swipe => swipe.slideHeight$))));
 
