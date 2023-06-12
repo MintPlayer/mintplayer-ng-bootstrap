@@ -2,7 +2,7 @@ import { animate, AnimationBuilder, AnimationPlayer, style } from '@angular/anim
 import { DOCUMENT } from '@angular/common';
 import { AfterViewInit, ContentChildren, Directive, ElementRef, EventEmitter, forwardRef, Host, HostBinding, Inject, Input, Optional, Output, QueryList, SkipSelf } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, combineLatest, delay, filter, map, mergeMap, Observable, take } from 'rxjs';
+import { BehaviorSubject, combineLatest, delay, filter, map, mergeMap, Observable, of, reduce, switchMap, take } from 'rxjs';
 import { Point } from '../../interfaces/point';
 import { LastTouch } from '../../interfaces/last-touch';
 import { StartTouch } from '../../interfaces/start-touch';
@@ -30,12 +30,22 @@ export class BsSwipeContainerDirective implements AfterViewInit {
               // TODO
               // const curHeight = swipes[imageIndex].nativeElement.clientHeight
               // px => sum
-              return (-imageIndex * 100 + (lastTouch.position.y - startTouch.position.y) / this.containerElement.nativeElement.clientHeight * 100);
+              // return (-imageIndex * 100 + (lastTouch.position.y - startTouch.position.y) / this.containerElement.nativeElement.clientHeight * 100);
+              const ds = this.swipes$.value!.filter((swipe, index) => index < imageIndex).map((swipe) => swipe.slideHeight$.value).reduce((a, b) => a + b, 0);
+              console.log('ds', ds);
+              return ds;
             default:
               throw '[carousel] Invalid value for direction';
           }
         } else {
-          return (-imageIndex * 100);
+          switch (direction) {
+            case 'horizontal':
+              return (-imageIndex * 100);
+            case 'vertical':
+              const ds = this.swipes$.value!.filter((swipe, index) => index < imageIndex).map((swipe) => swipe.slideHeight$.value).reduce((a, b) => a + b, 0);
+              console.log('ds', ds);
+              return ds;
+          }
         }
       }));
 
@@ -138,10 +148,11 @@ export class BsSwipeContainerDirective implements AfterViewInit {
 
   @HostBinding('style.margin-left.%') offsetLeft: number | null = null;
   @HostBinding('style.margin-right.%') offsetRight: number | null = null;
-  @HostBinding('style.margin-top.%') offsetTop: number | null = null;
-  @HostBinding('style.margin-bottom.%') offsetBottom: number | null = null;
+  @HostBinding('style.margin-top.px') offsetTop: number | null = null;
+  @HostBinding('style.margin-bottom.px') offsetBottom: number | null = null;
   @HostBinding('class.w-100') w100class = false;
   @ContentChildren(forwardRef(() => BsSwipeDirective)) set swipes(value: QueryList<BsSwipeDirective>) {
+    console.log('set swipes', value);
     setTimeout(() => this.swipes$.next(value));
   }
   @Input() minimumOffset = 50;
@@ -226,8 +237,59 @@ export class BsSwipeContainerDirective implements AfterViewInit {
         // TODO
         // const curHeight = swipes[imageIndex].nativeElement.clientHeight
         // px => sum
-        dStart = (oldIndex + 1) * this.containerElement.nativeElement.clientHeight;
-        dEnd = (newIndex + 1) * this.containerElement.nativeElement.clientHeight;
+
+        dStart = this.swipes$.value!.filter((swipe, index) => index < oldIndex).map((swipe) => swipe.slideHeight$.value).reduce((a, b) => a + b, 0);
+        dEnd = this.swipes$.value!.filter((swipe, index) => index < newIndex).map((swipe) => swipe.slideHeight$.value).reduce((a, b) => a + b, 0);
+        console.log('test', {dStart, dEnd});
+
+        // combineLatest([this.swipes$, this.imageIndex$])
+        //   .pipe(switchMap(([swipes, imageIndex]) => {
+        //     if (swipes) {
+        //       return combineLatest(swipes.map((swipe, index) => {
+        //         if (index < imageIndex) {
+        //           return swipe.slideHeight$;
+        //         } else {
+        //           return of(0);
+        //         }
+        //       }));
+        //     } else {
+        //       return of([0]);
+        //     }
+        //   }), reduce((needle, haystack) => haystack.reduce((a,b) => a + b, 0) + needle, 0))
+        //   .pipe(take(1)).subscribe((result) => {
+
+        //   });
+        
+        // combineLatest([this.swipes$, this.imageIndex$])
+        //   .pipe(switchMap(([swipes, imageIndex]) => {
+        //     if (swipes) {
+        //        swipes.map((swipe, index) => {
+        //         if (index < this.imageIndex) {
+        //           return swipe.slideHeight$.value;
+        //         } else {
+        //           return 0;
+        //         }
+        //       });
+        //     } else {
+        //       return 0;
+        //     }
+        //   }))
+
+        // combineLatest([this.swipes$, this.imageIndex$]).pipe(take(1)).subscribe(([swipes, imageIndex]) => {
+        //   if (swipes) {
+        //      swipes.map((swipe, index) => {
+        //       if (index < this.imageIndex) {
+        //         return swipe.slideHeight$.value;
+        //       } else {
+        //         return 0;
+        //       }
+        //     });
+        //   }
+        // });
+
+
+        // dStart = (oldIndex + 1) * this.containerElement.nativeElement.clientHeight;
+        // dEnd = (newIndex + 1) * this.containerElement.nativeElement.clientHeight;
         startProperty = 'margin-top';
         endProperty = 'margin-bottom';
         break;
