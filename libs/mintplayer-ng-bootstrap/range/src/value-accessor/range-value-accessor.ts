@@ -1,4 +1,4 @@
-import { AfterViewInit, Directive, forwardRef } from '@angular/core';
+import { AfterViewInit, DestroyRef, Directive, forwardRef } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { fromEvent } from 'rxjs';
@@ -13,14 +13,14 @@ import { BsRangeComponent } from '../component/range.component';
   }],
 })
 export class BsRangeValueAccessor implements ControlValueAccessor, AfterViewInit {
-  constructor(private host: BsRangeComponent) {}
+  constructor(private host: BsRangeComponent, private destroy: DestroyRef) {}
 
   onValueChange?: (value: number) => void;
   onTouched?: () => void;
 
   ngAfterViewInit() {
     fromEvent(this.host.slider.nativeElement, 'input')
-      .pipe(takeUntilDestroyed())
+      .pipe(takeUntilDestroyed(this.destroy))
       .subscribe((ev) => {
         if (this.onValueChange) {
           const val = parseFloat((<HTMLInputElement>ev.target).value);
