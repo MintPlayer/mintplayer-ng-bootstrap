@@ -12,6 +12,7 @@ export class BsModalComponent {
 
   constructor(@Inject(MODAL_CONTENT) template: TemplateRef<any>) {
     this.template = template;
+    console.log('test');
   }
 
   isOpen = false;
