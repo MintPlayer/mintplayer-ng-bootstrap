@@ -11,7 +11,7 @@ import { MODAL_CONTENT } from '../../providers/modal-content.provider';
 export class BsModalComponent {
 
   constructor(@Inject(MODAL_CONTENT) template: TemplateRef<any>) {
-    this.template = template;
+    // this.template = template;
   }
 
   isOpen = false;
