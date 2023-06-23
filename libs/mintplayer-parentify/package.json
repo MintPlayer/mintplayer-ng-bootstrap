@@ -1,7 +1,7 @@
 {
   "name": "@mintplayer/parentify",
   "private": false,
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "Adds the parent to objects",
   "repository": {
     "type": "git",
@@ -9,7 +9,9 @@
     "directory": "libs/mintplayer-parentify"
   },
   "main": "./src/index.js",
-  "dependencies": {},
+  "dependencies": {
+    "tslib": "^2.3.0"
+  },
   "devDependencies": {},
   "peerDependencies": {},
   "author": {
