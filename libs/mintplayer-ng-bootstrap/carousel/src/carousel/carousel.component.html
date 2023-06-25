@@ -33,7 +33,7 @@
                 [attr.aria-label]="'Slide ' + i"></button>
         </div>
         <div class="carousel-inner overflow-hidden text-nowrap pe-none">
-            <div bsSwipeContainer #container="bsSwipeContainer" [minimumOffset]="50" [(imageIndex)]="currentImageIndex">
+            <div bsSwipeContainer #container="bsSwipeContainer" [minimumOffset]="50" [(imageIndex)]="currentImageIndex" [orientation]="orientation">
                 <div class="carousel-item" bsSwipe [offside]="true">
                     <ng-container *ngTemplateOutlet="lastImageTemplate$ | async"></ng-container>
                 </div>

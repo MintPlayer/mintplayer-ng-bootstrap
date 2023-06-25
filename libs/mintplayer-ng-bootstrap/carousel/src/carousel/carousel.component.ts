@@ -2,7 +2,7 @@ import { isPlatformServer } from '@angular/common';
 import { ChangeDetectorRef, Component, ContentChildren, forwardRef, HostBinding, HostListener, Inject, Input, PLATFORM_ID, QueryList, TemplateRef, ViewChild } from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Color } from '@mintplayer/ng-bootstrap';
-import { BsSwipeContainerDirective } from '@mintplayer/ng-swiper';
+import { BsSwipeContainerDirective, Orientation } from '@mintplayer/ng-swiper';
 import { BehaviorSubject, map, Observable } from 'rxjs';
 import { BsCarouselImageDirective } from '../carousel-image/carousel-image.directive';
 
@@ -46,6 +46,7 @@ export class BsCarouselComponent {
   lastImageTemplate$: Observable<TemplateRef<any> | null>;
 
   @Input() indicators = false;
+  @Input() orientation: Orientation = 'horizontal';
   @Input() keyboardEvents = true;
 
   @ViewChild('container') swipeContainer!: BsSwipeContainerDirective;
