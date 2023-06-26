@@ -73,39 +73,39 @@ export class BsSwipeContainerDirective implements AfterViewInit {
         }
       }), map(o => o));
 
-      // Width of the swipes that are offside
-      this.padLeft$ = this.swipes$.pipe(map(swipes => {
-        if (!swipes) {
-          return 0;
-        }
+    // Width of the swipes that are offside
+    this.padLeft$ = this.swipes$.pipe(map(swipes => {
+      if (!swipes) {
+        return 0;
+      }
 
-        let count = 0;
-        for (const s of swipes) {
-          if (!s.offside) {
-            break;
-          } else {
-            count++;
-          }
+      let count = 0;
+      for (const s of swipes) {
+        if (!s.offside) {
+          break;
+        } else {
+          count++;
         }
-        return count * 100;
-      }));
+      }
+      return count * 100;
+    }));
 
-      // Width of the swipes that are offside
-      this.padRight$ = this.swipes$.pipe(map(swipes => {
-        if (!swipes) {
-          return 0;
-        }
+    // Width of the swipes that are offside
+    this.padRight$ = this.swipes$.pipe(map(swipes => {
+      if (!swipes) {
+        return 0;
+      }
 
-        let count = 0;
-        for (const s of swipes.toArray().reverse()) {
-          if (!s.offside) {
-            break;
-          } else {
-            count++;
-          }
+      let count = 0;
+      for (const s of swipes.toArray().reverse()) {
+        if (!s.offside) {
+          break;
+        } else {
+          count++;
         }
-        return count * 100;
-      }));
+      }
+      return count * 100;
+    }));
 
     this.padTop$ = this.swipes$.pipe(map(swipes => {
       if (!swipes) {
@@ -212,12 +212,14 @@ export class BsSwipeContainerDirective implements AfterViewInit {
   }
   //#endregion
   
+  /** Holds all the swipes, including the offside. */
+  swipes$ = new BehaviorSubject<QueryList<BsSwipeDirective> | null>(null);
+
   /** Swipes that are not offside. */
   actualSwipes$: Observable<BsSwipeDirective[]>;
   isViewInited$ = new BehaviorSubject<boolean>(false);
   startTouch$ = new BehaviorSubject<StartTouch | null>(null);
   lastTouch$ = new BehaviorSubject<LastTouch | null>(null);
-  swipes$ = new BehaviorSubject<QueryList<BsSwipeDirective> | null>(null);
   imageIndex$ = new BehaviorSubject<number>(0);
   orientation$ = new BehaviorSubject<Orientation>('horizontal');
   slideHeights$: Observable<number[]>;
