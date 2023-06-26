@@ -48,32 +48,43 @@ export class BsSwipeContainerDirective implements AfterViewInit {
       }));
 
     this.offset$ = combineLatest([this.startTouch$, this.lastTouch$, this.orientation$, this.imageIndex$, this.isViewInited$])
-      .pipe(map(([startTouch, lastTouch, orientation, imageIndex, isViewInited]) => {
+      .pipe(switchMap(([startTouch, lastTouch, orientation, imageIndex, isViewInited]) => {
         if (orientation === 'horizontal') {
           if (!isViewInited) {
-            return (-imageIndex * 100);
+            return of(-imageIndex * 100);
           } else if (!!startTouch && !!lastTouch) {
-            return (-imageIndex * 100 + (lastTouch.position.x - startTouch.position.x) / this.containerElement.nativeElement.clientWidth * 100);
+            return of(-imageIndex * 100 + (lastTouch.position.x - startTouch.position.x) / this.containerElement.nativeElement.clientWidth * 100);
           } else {
-            return (-imageIndex * 100);
+            return of(-imageIndex * 100);
           }
         } else {
           if (!isViewInited) {
-            return 0;
+            return of(0);
           } else if (!this.swipes$.value) {
-            return 0;
+            return of(0);
           } else if (!!startTouch && !!lastTouch) {
-            // Bug = Here we should use the actualSwipes
-            return -this.swipes$.value.map((s, i) => (i < imageIndex /*+ 1*/) ? s.slideHeight$.value : 0)
-              .reduce((haystack, needle) => haystack + needle, 0)
-              + (lastTouch.position.y - startTouch.position.y);
+            return this.actualSwipes$.pipe(map((actualSwipes, i) => {
+              return -actualSwipes.map((s, i) => (i < imageIndex /*+ 1*/) ? s.slideHeight$.value : 0)
+                .reduce((haystack, needle) => haystack + needle, 0)
+                + (lastTouch.position.y - startTouch.position.y);
+            }));
+
+            // // Bug = Here we should use the actualSwipes
+            // return of(-this.swipes$.value.map((s, i) => (i < imageIndex /*+ 1*/) ? s.slideHeight$.value : 0)
+            //   .reduce((haystack, needle) => haystack + needle, 0)
+            //   + (lastTouch.position.y - startTouch.position.y));
           } else {
-            // Bug = Here we should use the actualSwipes
-            return -this.swipes$.value.map((s, i) => (i < imageIndex /*+ 1*/) ? s.slideHeight$.value : 0)
-              .reduce((haystack, needle) => haystack + needle, 0);
+            // // Bug = Here we should use the actualSwipes
+            // return of(-this.swipes$.value.map((s, i) => (i < imageIndex /*+ 1*/) ? s.slideHeight$.value : 0)
+            //   .reduce((haystack, needle) => haystack + needle, 0));
+
+            return this.actualSwipes$.pipe(map((actualSwipes, i) => {
+              return -actualSwipes.map((s, i) => (i < imageIndex /*+ 1*/) ? s.slideHeight$.value : 0)
+                .reduce((haystack, needle) => haystack + needle, 0);
+            }));
           }
         }
-      }), map(o => o));
+      }));
 
     // Width of the swipes that are offside
     this.padLeft$ = this.swipes$.pipe(map(swipes => {
