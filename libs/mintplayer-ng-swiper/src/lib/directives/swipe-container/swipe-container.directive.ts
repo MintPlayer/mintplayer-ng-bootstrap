@@ -2,7 +2,7 @@ import { animate, AnimationBuilder, AnimationPlayer, style } from '@angular/anim
 import { DOCUMENT } from '@angular/common';
 import { AfterViewInit, ContentChildren, Directive, ElementRef, EventEmitter, forwardRef, HostBinding, Inject, Input, Output, QueryList } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, combineLatest, delay, filter, map, mergeMap, Observable, of, switchMap, take } from 'rxjs';
+import { BehaviorSubject, combineLatest, delay, filter, from, map, mergeMap, Observable, of, reduce, switchMap, take } from 'rxjs';
 import { LastTouch } from '../../interfaces/last-touch';
 import { StartTouch } from '../../interfaces/start-touch';
 import { BsSwipeDirective } from '../swipe/swipe.directive';
@@ -63,24 +63,17 @@ export class BsSwipeContainerDirective implements AfterViewInit {
           } else if (!this.swipes$.value) {
             return of(0);
           } else if (!!startTouch && !!lastTouch) {
-            return this.actualSwipes$.pipe(map((actualSwipes, i) => {
-              return -actualSwipes.map((s, i) => (i < imageIndex /*+ 1*/) ? s.slideHeight$.value : 0)
-                .reduce((haystack, needle) => haystack + needle, 0)
-                + (lastTouch.position.y - startTouch.position.y);
+            return this.actualSwipes$.pipe(switchMap((actualSwipes, i) => {
+              return combineLatest(actualSwipes.map((s, i) => (i < imageIndex) ? s.slideHeight$ : of(0)))
+                .pipe(map(heights => heights.reduce((haystack, needle) => haystack + needle, 0)))
+                .pipe(map(total => total + (lastTouch.position.y - startTouch.position.y)));
+                // .pipe(map(total => -total));
             }));
-
-            // // Bug = Here we should use the actualSwipes
-            // return of(-this.swipes$.value.map((s, i) => (i < imageIndex /*+ 1*/) ? s.slideHeight$.value : 0)
-            //   .reduce((haystack, needle) => haystack + needle, 0)
-            //   + (lastTouch.position.y - startTouch.position.y));
           } else {
-            // // Bug = Here we should use the actualSwipes
-            // return of(-this.swipes$.value.map((s, i) => (i < imageIndex /*+ 1*/) ? s.slideHeight$.value : 0)
-            //   .reduce((haystack, needle) => haystack + needle, 0));
-
-            return this.actualSwipes$.pipe(map((actualSwipes, i) => {
-              return -actualSwipes.map((s, i) => (i < imageIndex /*+ 1*/) ? s.slideHeight$.value : 0)
-                .reduce((haystack, needle) => haystack + needle, 0);
+            return this.actualSwipes$.pipe(switchMap((actualSwipes, i) => {
+              return combineLatest(actualSwipes.map((s, i) => (i < imageIndex) ? s.slideHeight$ : of(0)))
+                .pipe(map(heights => heights.reduce((haystack, needle) => haystack + needle, 0)))
+                .pipe(map(total => -total));
             }));
           }
         }
@@ -120,21 +113,21 @@ export class BsSwipeContainerDirective implements AfterViewInit {
       return count * 100;
     }));
 
-    this.padTop$ = this.swipes$.pipe(map(swipes => {
-      if (!swipes) {
-        return 0;
-      }
+    // this.padTop$ = this.swipes$.pipe(map(swipes => {
+    //   if (!swipes) {
+    //     return 0;
+    //   }
 
-      let countHeight = 0;
-      for (const s of swipes) {
-        if (!s.offside) {
-          break;
-        } else {
-          countHeight += s.slideHeight$.value;
-        }
-      }
-      return -countHeight;
-    }));
+    //   let countHeight = 0;
+    //   for (const s of swipes) {
+    //     if (!s.offside) {
+    //       break;
+    //     } else {
+    //       countHeight += s.slideHeight$.value;
+    //     }
+    //   }
+    //   return -countHeight;
+    // }));
 
     this.padTop$ = this.swipes$.pipe(map(swipes => {
       if (!swipes) {
@@ -151,23 +144,36 @@ export class BsSwipeContainerDirective implements AfterViewInit {
       }
       return list;
     })).pipe(switchMap((obs) => {
-      return combineLatest(obs).pipe(map((nums) => nums.reduce((haystack, needle) => haystack + needle)));
+      return combineLatest(obs).pipe(map((nums) => nums.reduce((haystack, needle) => haystack + needle)), map(sum => -sum));
     }));
 
     this.padBottom$ = this.swipes$.pipe(delay(50), map(swipes => {
       if (!swipes) {
-        return 0;
+        return [];
       }
 
-      let countHeight = 0;
+      const list: BehaviorSubject<number>[] = [];
       for (const s of swipes.toArray().reverse()) {
         if (!s.offside) {
           break;
         } else {
-          countHeight += s.slideHeight$.value;
+          list.push(s.slideHeight$);
         }
       }
-      return -countHeight;
+      return list;
+
+
+      // let countHeight = 0;
+      // for (const s of swipes.toArray().reverse()) {
+      //   if (!s.offside) {
+      //     break;
+      //   } else {
+      //     countHeight += s.slideHeight$.value;
+      //   }
+      // }
+      // return -countHeight;
+    })).pipe(switchMap((obs) => {
+      return combineLatest(obs).pipe(map((nums) => nums.reduce((haystack, needle) => haystack + needle)), map(sum => -sum));
     }));
 
     this.offsetLeft$ = combineLatest([this.orientation$, this.offset$, this.padLeft$])
