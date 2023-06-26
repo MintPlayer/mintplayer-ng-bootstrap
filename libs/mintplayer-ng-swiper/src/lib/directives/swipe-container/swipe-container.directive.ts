@@ -63,10 +63,12 @@ export class BsSwipeContainerDirective implements AfterViewInit {
           } else if (!this.swipes$.value) {
             return 0;
           } else if (!!startTouch && !!lastTouch) {
+            // Bug = Here we should use the actualSwipes
             return -this.swipes$.value.map((s, i) => (i < imageIndex /*+ 1*/) ? s.slideHeight$.value : 0)
               .reduce((haystack, needle) => haystack + needle, 0)
               + (lastTouch.position.y - startTouch.position.y);
           } else {
+            // Bug = Here we should use the actualSwipes
             return -this.swipes$.value.map((s, i) => (i < imageIndex /*+ 1*/) ? s.slideHeight$.value : 0)
               .reduce((haystack, needle) => haystack + needle, 0);
           }
@@ -123,6 +125,24 @@ export class BsSwipeContainerDirective implements AfterViewInit {
       return -countHeight;
     }));
 
+    this.padTop$ = this.swipes$.pipe(map(swipes => {
+      if (!swipes) {
+        return [];
+      }
+
+      const list: BehaviorSubject<number>[] = [];
+      for (const s of swipes) {
+        if (!s.offside) {
+          break;
+        } else {
+          list.push(s.slideHeight$);
+        }
+      }
+      return list;
+    })).pipe(switchMap((obs) => {
+      return combineLatest(obs).pipe(map((nums) => nums.reduce((haystack, needle) => haystack + needle)));
+    }));
+
     this.padBottom$ = this.swipes$.pipe(delay(50), map(swipes => {
       if (!swipes) {
         return 0;
@@ -156,7 +176,7 @@ export class BsSwipeContainerDirective implements AfterViewInit {
         }
       }));
     this.offsetTop$ = combineLatest([this.orientation$, this.offset$, this.padTop$])
-      .pipe(map(([orientation, offset, padTop]) => {
+      .pipe(delay(5), map(([orientation, offset, padTop]) => {
         if (orientation === 'horizontal') {
           return 0;
         } else {

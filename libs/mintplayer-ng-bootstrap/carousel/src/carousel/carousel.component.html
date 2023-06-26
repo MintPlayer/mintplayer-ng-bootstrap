@@ -32,6 +32,17 @@
                 [attr.aria-current]="(container.imageIndex$ | async) === i ? true : null"
                 [attr.aria-label]="'Slide ' + i"></button>
         </div>
+        <span>
+            {{ container.offsetTop$ | async }}
+            |
+            {{ container.offset$ | async }}
+            |
+            {{ container.padTop$ | async }}
+            <br>
+            <ng-container *ngFor="let swipe of (container.swipes$ | async)">
+                {{ swipe.slideHeight$ | async }} |
+            </ng-container>
+        </span>
         <div class="carousel-inner overflow-hidden text-nowrap pe-none">
             <div bsSwipeContainer #container="bsSwipeContainer" [minimumOffset]="50" [(imageIndex)]="currentImageIndex" [orientation]="orientation">
                 <div class="carousel-item" bsSwipe [offside]="true">
