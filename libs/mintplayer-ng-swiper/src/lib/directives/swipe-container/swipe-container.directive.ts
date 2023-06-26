@@ -2,7 +2,7 @@ import { animate, AnimationBuilder, AnimationPlayer, style } from '@angular/anim
 import { DOCUMENT } from '@angular/common';
 import { AfterViewInit, ContentChildren, Directive, ElementRef, EventEmitter, forwardRef, HostBinding, Inject, Input, Output, QueryList } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, combineLatest, delay, filter, map, mergeMap, Observable, take } from 'rxjs';
+import { BehaviorSubject, combineLatest, delay, filter, map, mergeMap, Observable, of, switchMap, take } from 'rxjs';
 import { LastTouch } from '../../interfaces/last-touch';
 import { StartTouch } from '../../interfaces/start-touch';
 import { BsSwipeDirective } from '../swipe/swipe.directive';
@@ -26,6 +26,14 @@ export class BsSwipeContainerDirective implements AfterViewInit {
           return [];
         }
       }));
+
+    // const t = this.swipes$.pipe(switchMap((swipes) => {
+    //   if (!swipes) {
+    //     return of([]);
+    //   }
+
+    //   return combineLatest(swipes.map(s => s.slideHeight$.asObservable()));
+    // }));
 
     this.slideHeights$ = this.actualSwipes$
       .pipe(delay(400), filter(swipes => !!swipes))
@@ -55,15 +63,15 @@ export class BsSwipeContainerDirective implements AfterViewInit {
           } else if (!this.swipes$.value) {
             return 0;
           } else if (!!startTouch && !!lastTouch) {
-            return this.swipes$.value.map((s, i) => (i < imageIndex) ? s.slideHeight$.value : 0)
+            return -this.swipes$.value.map((s, i) => (i < imageIndex /*+ 1*/) ? s.slideHeight$.value : 0)
               .reduce((haystack, needle) => haystack + needle, 0)
               + (lastTouch.position.y - startTouch.position.y);
           } else {
-            return this.swipes$.value.map((s, i) => (i < imageIndex) ? s.slideHeight$.value : 0)
+            return -this.swipes$.value.map((s, i) => (i < imageIndex /*+ 1*/) ? s.slideHeight$.value : 0)
               .reduce((haystack, needle) => haystack + needle, 0);
           }
         }
-      }));
+      }), map(o => o));
 
       // Width of the swipes that are offside
       this.padLeft$ = this.swipes$.pipe(map(swipes => {
@@ -99,7 +107,7 @@ export class BsSwipeContainerDirective implements AfterViewInit {
         return count * 100;
       }));
 
-    this.padTop$ = this.swipes$.pipe(delay(50), map(swipes => {
+    this.padTop$ = this.swipes$.pipe(map(swipes => {
       if (!swipes) {
         return 0;
       }
@@ -112,7 +120,7 @@ export class BsSwipeContainerDirective implements AfterViewInit {
           countHeight += s.slideHeight$.value;
         }
       }
-      return countHeight;
+      return -countHeight;
     }));
 
     this.padBottom$ = this.swipes$.pipe(delay(50), map(swipes => {
@@ -128,7 +136,7 @@ export class BsSwipeContainerDirective implements AfterViewInit {
           countHeight += s.slideHeight$.value;
         }
       }
-      return countHeight;
+      return -countHeight;
     }));
 
     this.offsetLeft$ = combineLatest([this.orientation$, this.offset$, this.padLeft$])
@@ -152,7 +160,8 @@ export class BsSwipeContainerDirective implements AfterViewInit {
         if (orientation === 'horizontal') {
           return 0;
         } else {
-          return (offset + padTop);
+          // return (offset + padTop);
+          return (offset - padTop);
         }
       }));
     this.offsetBottom$ = combineLatest([this.orientation$, this.offset$, this.padTop$, this.padBottom$, this.currentSlideHeight$])
@@ -268,31 +277,31 @@ export class BsSwipeContainerDirective implements AfterViewInit {
   }
 
   animateToIndex(oldIndex: number, newIndex: number, dxy: number, orientation: Orientation, actualSwipes: BsSwipeDirective[]) {
-    if (orientation === 'horizontal') {
-      const start = (oldIndex + 1) * this.containerElement.nativeElement.clientWidth - dxy;
-      const end = (newIndex + 1) * this.containerElement.nativeElement.clientWidth;
-      this.pendingAnimation = this.animationBuilder.build([
-        style({ 'margin-left': -start + 'px', 'margin-right': start + 'px' }),
-        animate('500ms ease', style({ 'margin-left': -end + 'px', 'margin-right': end + 'px' })),
-      ]).create(this.containerElement.nativeElement);
-    } else {
-      // Don't forget the last slide's height
-      const start = actualSwipes.map((s, i) => (i < oldIndex) ? s.slideHeight$.value : 0)
-        .reduce((haystack, needle) => haystack + needle, 0)
-        + actualSwipes[actualSwipes.length - 1].slideHeight$.value + dxy;
+    // if (orientation === 'horizontal') {
+    //   const start = (oldIndex + 1) * this.containerElement.nativeElement.clientWidth - dxy;
+    //   const end = (newIndex + 1) * this.containerElement.nativeElement.clientWidth;
+    //   this.pendingAnimation = this.animationBuilder.build([
+    //     style({ 'margin-left': -start + 'px', 'margin-right': start + 'px' }),
+    //     animate('500ms ease', style({ 'margin-left': -end + 'px', 'margin-right': end + 'px' })),
+    //   ]).create(this.containerElement.nativeElement);
+    // } else {
+    //   // Don't forget the last slide's height
+    //   const start = actualSwipes.map((s, i) => (i < oldIndex) ? s.slideHeight$.value : 0)
+    //     .reduce((haystack, needle) => haystack + needle, 0)
+    //     + actualSwipes[actualSwipes.length - 1].slideHeight$.value + dxy;
 
-      const end = actualSwipes.map((s, i) => (i < newIndex) ? s.slideHeight$.value : 0)
-        .reduce((haystack, needle) => haystack + needle, 0)
-        + actualSwipes[actualSwipes.length - 1].slideHeight$.value;
+    //   const end = actualSwipes.map((s, i) => (i < newIndex) ? s.slideHeight$.value : 0)
+    //     .reduce((haystack, needle) => haystack + needle, 0)
+    //     + actualSwipes[actualSwipes.length - 1].slideHeight$.value;
 
-      this.pendingAnimation = this.animationBuilder.build([
-        style({ 'margin-top': -start + 'px', 'margin-bottom': start + 'px' }),
-        animate('500ms ease', style({ 'margin-top': -end + 'px', 'margin-bottom': end + 'px' })),
-      ]).create(this.containerElement.nativeElement);
-    }
+    //   this.pendingAnimation = this.animationBuilder.build([
+    //     style({ 'margin-top': -start + 'px', 'margin-bottom': start + 'px' }),
+    //     animate('500ms ease', style({ 'margin-top': -end + 'px', 'margin-bottom': end + 'px' })),
+    //   ]).create(this.containerElement.nativeElement);
+    // }
 
-    this.pendingAnimation.onDone(() => {
-      // Correct the image index
+    // this.pendingAnimation.onDone(() => {
+    //   // Correct the image index
       if (newIndex === -1) {
         this.imageIndex$.next(actualSwipes.length - 1);
       } else if (newIndex === actualSwipes.length) {
@@ -302,10 +311,10 @@ export class BsSwipeContainerDirective implements AfterViewInit {
       }
       this.startTouch$.next(null);
       this.lastTouch$.next(null);
-      this.pendingAnimation?.destroy();
-      this.pendingAnimation = undefined;
-    });
-    this.pendingAnimation.play();
+    //   this.pendingAnimation?.destroy();
+    //   this.pendingAnimation = undefined;
+    // });
+    // this.pendingAnimation.play();
   }
 
   onSwipe(dxy: number, orientation: Orientation) {
