@@ -30,7 +30,8 @@ export class BsTooltipDirective {
     }
   }
 
-  @Input() public bsTooltip: Position = 'bottom';
+  // @Input() public bsTooltip: Position = 'bottom';
+  @Input() public bsTooltipPosition: Position = 'bottom';
 
   private injector: Injector;
   private portal: ComponentPortal<any>;

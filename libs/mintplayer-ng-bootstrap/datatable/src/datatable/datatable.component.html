@@ -2,9 +2,9 @@
     <thead>
         <tr>
             <th *ngFor="let column of (columns$ | async)" class="text-nowrap"
-                [class.sort]="column.bsDatatableColumn.sortable"
-                [class.sort-asc]="column.bsDatatableColumn.sortable && (settings.sortProperty === column.bsDatatableColumn.name) && (settings.sortDirection === 'ascending')"
-                [class.sort-desc]="column.bsDatatableColumn.sortable && (settings.sortProperty === column.bsDatatableColumn.name) && (settings.sortDirection === 'descending')"
+                [class.sort]="column.bsDatatableColumnSortable"
+                [class.sort-asc]="column.bsDatatableColumnSortable && (settings.sortProperty === column.bsDatatableColumnName) && (settings.sortDirection === 'ascending')"
+                [class.sort-desc]="column.bsDatatableColumnSortable && (settings.sortProperty === column.bsDatatableColumnName) && (settings.sortDirection === 'descending')"
                 (click)="columnHeaderClicked(column)">
                 <ng-container *ngTemplateOutlet="column.templateRef"></ng-container>
             </th>

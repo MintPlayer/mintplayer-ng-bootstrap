@@ -1,5 +1,4 @@
 import { Directive, Input, TemplateRef } from '@angular/core';
-import { DatatableColumnMetadata } from './datatable-column-metadata';
 
 @Directive({
   selector: '[bsDatatableColumn]'
@@ -11,6 +10,9 @@ export class BsDatatableColumnDirective {
   }
 
   templateRef: TemplateRef<any>;
-  @Input() public bsDatatableColumn: DatatableColumnMetadata = { name: '', sortable: true };
+  // @Input('bsDatatableColumn')
+  public bsDatatableColumnName = '';
+  // @Input()
+  public bsDatatableColumnSortable = true;
 
 }
