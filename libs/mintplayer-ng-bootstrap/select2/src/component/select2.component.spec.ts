@@ -8,8 +8,8 @@ import { MockModule } from 'ng-mocks';
 import { BsSelect2Component } from './select2.component';
 
 describe('BsSelect2Component', () => {
-  let component: BsSelect2Component;
-  let fixture: ComponentFixture<BsSelect2Component>;
+  let component: BsSelect2Component<any>;
+  let fixture: ComponentFixture<BsSelect2Component<any>>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
