@@ -2,7 +2,7 @@ import { Component, Input, ContentChildren, TemplateRef, EventEmitter, Output } 
 import { BehaviorSubject, Observable, map } from 'rxjs';
 import { PaginationResponse } from '@mintplayer/pagination';
 import { DatatableSettings } from '../datatable-settings';
-import { BsDatatableColumnDirective } from '../datatable-column';
+import { BsDatatableColumnDirective } from '../datatable-column/datatable-column.directive';
 
 
 @Component({
@@ -36,9 +36,9 @@ export class BsDatatableComponent {
   @Output() settingsChange = new EventEmitter<DatatableSettings>();
 
   columnHeaderClicked(column: BsDatatableColumnDirective) {
-    if (column.bsDatatableColumn.sortable) {
-      if (this.settings.sortProperty !== column.bsDatatableColumn.name) {
-        this.settings.sortProperty = column.bsDatatableColumn.name;
+    if (column.sortable) {
+      if (this.settings.sortProperty !== column.name) {
+        this.settings.sortProperty = column.name;
         this.settings.sortDirection = 'ascending';
       } else if (this.settings.sortDirection === 'descending') {
         this.settings.sortDirection = 'ascending';

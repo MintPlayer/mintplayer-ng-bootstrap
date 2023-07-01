@@ -4,14 +4,16 @@ import { CommonModule } from '@angular/common';
 import { BsInListModule } from '@mintplayer/ng-bootstrap';
 import { BsDropdownModule } from '@mintplayer/ng-bootstrap/dropdown';
 import { BsDropdownMenuModule } from '@mintplayer/ng-bootstrap/dropdown-menu';
-import { BsItemTemplateDirective } from './directive/item-template.directive';
-import { BsSelect2Component } from './component/select2.component';
 import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
+import { BsSelect2Component } from './component/select2.component';
+import { BsItemTemplateDirective } from './directive/item-template/item-template.directive';
+import { BsSuggestionTemplateDirective } from './directive/suggestion-template/suggestion-template.directive';
 
 @NgModule({
   declarations: [
     BsSelect2Component,
-    BsItemTemplateDirective
+    BsItemTemplateDirective,
+    BsSuggestionTemplateDirective,
   ],
   imports: [
     CommonModule,
@@ -19,11 +21,12 @@ import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
     BsDropdownModule,
     BsDropdownMenuModule,
     BsHasOverlayModule,
-    BsInListModule
+    BsInListModule,
   ],
   exports: [
     BsSelect2Component,
-    BsItemTemplateDirective
-  ]
+    BsItemTemplateDirective,
+    BsSuggestionTemplateDirective,
+  ],
 })
-export class BsSelect2Module { }
+export class BsSelect2Module {}

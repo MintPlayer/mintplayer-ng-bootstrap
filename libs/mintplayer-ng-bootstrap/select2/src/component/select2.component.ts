@@ -1,30 +1,32 @@
 import { Component, ElementRef, EventEmitter, HostBinding, HostListener, Input, Output, TemplateRef, ViewChild } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
+import { HasId } from '../interfaces/has-id';
 
 @Component({
   selector: 'bs-select2',
   templateUrl: './select2.component.html',
   styleUrls: ['./select2.component.scss']
 })
-export class BsSelect2Component {
+export class BsSelect2Component<T extends HasId> {
 
   isOpen = false;
   
-  suggestions$ = new BehaviorSubject<any[]>([]);
+  suggestions$ = new BehaviorSubject<T[]>([]);
   isLoading$ = new BehaviorSubject<boolean>(false);
 
   @ViewChild('defaultItemTemplate', { static: true }) defaultItemTemplate!: TemplateRef<any>;
   @ViewChild('searchBox') searchBox!: ElementRef<HTMLInputElement>;
   @ViewChild('itemsBox') itemsBox!: ElementRef<HTMLDivElement>;
   @Input() searchterm = '';
-  @Input() public suggestions: any[] = [];
+  @Input() public suggestions: T[] = [];
   @Output() public provideSuggestions = new EventEmitter<string>();
-  @Input() selectedItems: any[] = [];
+  @Input() selectedItems: T[] = [];
   @HostBinding('class.focus') isFocused = false;
 
   private charWidth = 10;
   searchWidth = 20;
-  itemTemplate?: TemplateRef<any>;
+  itemTemplate?: TemplateRef<T>;
+  suggestionTemplate?: TemplateRef<T>;
 
   onProvideSuggestions(value: string) {
     this.searchWidth = this.charWidth * (this.searchterm.length + 2);
