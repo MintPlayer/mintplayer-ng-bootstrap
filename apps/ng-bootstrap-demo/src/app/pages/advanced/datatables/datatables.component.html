@@ -1,6 +1,6 @@
 <h1 class="text-center">Datatable</h1>
 <bs-datatable #tabel [(settings)]="settings" [data]="artists" (settingsChange)="loadArtists()">
-  <div *bsDatatableColumn="name: 'Name'; sortable: true">
+  <div *bsDatatableColumn="'Name'; sortable: true">
     1. Artist
   </div>
   <div *bsDatatableColumn="'YearStarted'; sortable: true">

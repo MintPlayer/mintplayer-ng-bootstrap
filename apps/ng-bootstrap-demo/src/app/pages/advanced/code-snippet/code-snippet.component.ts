@@ -10,7 +10,7 @@ export class CodeSnippetComponent {
 
   html = dedent`
     <bs-datatable #tabel [settings]="settings" [data]="artists" (reloadData)="loadArtists()">
-    <div *bsDatatableColumn="'Name'; sortable: true">
+      <div *bsDatatableColumn="'Name'; sortable: true">
         1. Artist
       </div>
       <div *bsDatatableColumn="'YearStarted'; sortable: true">

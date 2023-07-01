@@ -1,7 +1,8 @@
+import { HasId } from '@mintplayer/ng-bootstrap/select2';
 import { Subject } from './subject';
 import { TagCategory } from './tag-category';
 
-export interface Tag {
+export interface Tag extends HasId {
     id: number;
     description: string;
     category: TagCategory;

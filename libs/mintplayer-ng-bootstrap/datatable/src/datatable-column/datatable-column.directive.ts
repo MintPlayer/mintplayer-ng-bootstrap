@@ -10,9 +10,7 @@ export class BsDatatableColumnDirective {
   }
 
   templateRef: TemplateRef<any>;
-  // @Input('bsDatatableColumn')
-  public bsDatatableColumnName = '';
-  // @Input()
-  public bsDatatableColumnSortable = true;
+  @Input('bsDatatableColumn') public name = '';
+  @Input('bsDatatableColumnSortable') public sortable = true;
 
 }

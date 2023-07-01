@@ -14,7 +14,7 @@
         #searchBox />
     <bs-dropdown-menu *bsDropdownMenu [maxHeight]="200">
         <bs-dropdown-item *ngFor="let suggestion of suggestions" (click)="onSuggestionClicked(suggestion)" [isSelected]="selectedItems | inList:suggestion.id">
-            {{ suggestion.text }}
+            <ng-container *ngTemplateOutlet="suggestionTemplate ?? defaultSuggestionTemplate; context: { suggestion: suggestion, select2: this }"></ng-container>
         </bs-dropdown-item>
     </bs-dropdown-menu>
 </div>
@@ -24,4 +24,8 @@
         <span (click)="select2.onRemoveItem(item,$event)">×</span>
         {{ item.text }}
     </span>
+</ng-template>
+
+<ng-template #defaultSuggestionTemplate let-suggestion="suggestion" let-select2="select2">
+    {{ suggestion.text }}
 </ng-template>

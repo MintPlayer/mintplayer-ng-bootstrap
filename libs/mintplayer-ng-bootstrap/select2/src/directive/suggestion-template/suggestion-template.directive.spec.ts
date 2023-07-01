@@ -2,19 +2,17 @@ import { CommonModule } from '@angular/common';
 import { Component, DebugElement, TemplateRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { BsSelect2Component } from '../component/select2.component';
-import { BsItemTemplateDirective } from './item-template.directive';
+import { BsSuggestionTemplateDirective } from './suggestion-template.directive';
+import { BsSelect2Component } from '../../component/select2.component';
 
 @Component({
   selector: 'item-template-test-component',
   template: `
     <select2>
-      <ng-template itemTemplate>
-        <span>item template</span>
-      </ng-template>
+      <span *bsSuggestionTemplate>Suggestion template</span>
     </select2>`
 })
-class BsItemTemplateTestComponent { }
+class BsSuggestionTemplateTestComponent { }
 
 @Component({
   selector: 'select2'
@@ -23,8 +21,8 @@ class MockBsSelect2Component {
   itemTemplate?: TemplateRef<any>;
 }
 
-describe('BsItemTemplateDirective', () => {
-  let fixture: ComponentFixture<BsItemTemplateTestComponent>;
+describe('BsSuggestionTemplateDirective', () => {
+  let fixture: ComponentFixture<BsSuggestionTemplateTestComponent>;
   let debugElements: DebugElement[];
 
   beforeEach(() => {
@@ -34,13 +32,13 @@ describe('BsItemTemplateDirective', () => {
       ],
       declarations: [
         // Unit to test
-        BsItemTemplateDirective,
+        BsSuggestionTemplateDirective,
         
         // Mock dependencies
         MockBsSelect2Component,
         
         // Testbench
-        BsItemTemplateTestComponent,
+        BsSuggestionTemplateTestComponent,
       ],
       providers: [{
         provide: BsSelect2Component,
@@ -49,13 +47,13 @@ describe('BsItemTemplateDirective', () => {
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(BsItemTemplateTestComponent);
+    fixture = TestBed.createComponent(BsSuggestionTemplateTestComponent);
 
     // Trigger initial binding
     fixture.detectChanges();
     
     // Get all elements with an attached ItemTemplateDirective
-    debugElements = fixture.debugElement.queryAll(By.directive(BsItemTemplateDirective));
+    debugElements = fixture.debugElement.queryAll(By.directive(BsSuggestionTemplateDirective));
   });
 
   it('should be created', () => {
