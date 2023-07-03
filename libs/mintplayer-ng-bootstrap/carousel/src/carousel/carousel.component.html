@@ -35,6 +35,7 @@
             </div>
             <div class="carousel-inner overflow-hidden text-nowrap pe-none">
                 <div bsSwipeContainer #container="bsSwipeContainer" [minimumOffset]="50" [(imageIndex)]="currentImageIndex" [direction]="direction!">
+                    <div>{{ container.imageIndex$ | async }}</div>
                     <div class="carousel-item w-100 me-0 pe-auto" bsSwipe [offside]="true" [class.float-none]="direction === 'horizontal'">
                         <ng-container *ngTemplateOutlet="lastImageTemplate$ | async"></ng-container>
                     </div>
