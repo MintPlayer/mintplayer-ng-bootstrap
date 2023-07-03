@@ -63,37 +63,53 @@ export class BsSwipeContainerDirective implements AfterViewInit {
         }
       }));
 
-      this.padStart$ = this.swipes$.pipe(switchMap(swipes => {
-        if (!swipes) {
-          return of(0);
-        }
-
-        let count = 0;
-        for (const s of swipes) {
-          if (!s.offside) {
-            break;
-          } else {
-            count++;
+      this.padStart$ = combineLatest([this.swipes$, this.direction$])
+        .pipe(switchMap(([swipes, direction]) => {
+          if (!swipes) {
+            return of(0);
           }
-        }
-        return of(count * 100);
-      }));
 
-      this.padEnd$ = this.swipes$.pipe(switchMap(swipes => {
-        if (!swipes) {
-          return of(0);
-        }
-
-        let count = 0;
-        for (const s of swipes.toArray().reverse()) {
-          if (!s.offside) {
-            break;
-          } else {
-            count++;
+          const list: BsSwipeDirective[] = [];
+          for (const s of swipes) {
+            if (!s.offside) {
+              break;
+            } else {
+              list.push(s);
+            }
           }
-        }
-        return of((count - 1) * 100);
-      }));
+
+          switch (direction) {
+            case 'horizontal':
+              return of(list.length * 100);
+            case 'vertical':
+              return combineLatest(list.map(s => s.slideHeight$))
+                .pipe(map(heights => heights.reduce((a, b) => a + b, 0)));
+          }
+        }));
+
+      this.padEnd$ = combineLatest([this.swipes$, this.direction$])
+        .pipe(switchMap(([swipes, direction]) => {
+          if (!swipes) {
+            return of(0);
+          }
+
+          const list: BsSwipeDirective[] = [];
+          for (const s of swipes.toArray().reverse()) {
+            if (!s.offside) {
+              break;
+            } else {
+              list.push(s);
+            }
+          }
+
+          switch (direction) {
+            case 'horizontal':
+              return of((list.length - 1) * 100);
+            case 'vertical':
+              return combineLatest(list.splice(-1).map(s => s.slideHeight$))
+                .pipe(map(heights => heights.reduce((a, b) => a + b, 0)));
+          }
+        }));
 
     this.offsetStart$ = combineLatest([this.offset$, this.padStart$])
       .pipe(map(([offset, padStart]) => offset - padStart));
