@@ -1,8 +1,9 @@
 import { animate, AnimationBuilder, AnimationPlayer, style } from '@angular/animations';
 import { DOCUMENT } from '@angular/common';
-import { AfterViewInit, ContentChildren, Directive, ElementRef, EventEmitter, forwardRef, Host, HostBinding, Inject, Input, Optional, Output, QueryList, SkipSelf } from '@angular/core';
+import { AfterViewInit, ContentChildren, DestroyRef, Directive, ElementRef, EventEmitter, forwardRef, Host, HostBinding, Inject, Input, Optional, Output, QueryList, SkipSelf } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, combineLatest, concatMap, debounceTime, delay, filter, map, mergeMap, Observable, of, reduce, switchMap, take } from 'rxjs';
+import { BehaviorSubject, combineLatest, concatMap, debounceTime, delay, filter, map, mergeMap, Observable, of, switchMap, take } from 'rxjs';
+import { startWith } from 'rxjs/operators';
 import { Point } from '../../interfaces/point';
 import { LastTouch } from '../../interfaces/last-touch';
 import { StartTouch } from '../../interfaces/start-touch';
@@ -15,30 +16,24 @@ import { BsSwipeDirective } from '../swipe/swipe.directive';
 })
 export class BsSwipeContainerDirective implements AfterViewInit {
 
-  constructor(element: ElementRef, private animationBuilder: AnimationBuilder, @Inject(DOCUMENT) document: any, @SkipSelf() @Host() @Optional() @Inject(BsSwipeContainerDirective) private parentSwipeContainers: BsSwipeContainerDirective[]) {
+  constructor(element: ElementRef, private animationBuilder: AnimationBuilder, @Inject(DOCUMENT) document: any, private destroy: DestroyRef, @SkipSelf() @Host() @Optional() @Inject(BsSwipeContainerDirective) private parentSwipeContainers: BsSwipeContainerDirective[]) {
     this.containerElement = element;
     this.document = <Document>document;
     this.offset$ = combineLatest([this.direction$, this.startTouch$, this.lastTouch$, this.imageIndex$, this.swipes$, this.isViewInited$])
       .pipe(switchMap(([direction, startTouch, lastTouch, imageIndex, swipes, isViewInited]) => {
         if (!isViewInited) {
-          console.log('vivi');
           return of(-imageIndex * 100);
         } else if (!!startTouch && !!lastTouch) {
           switch (direction) {
             case 'horizontal':
-              return of(-imageIndex * 100 + (lastTouch.position.x - startTouch.position.x) / this.containerElement.nativeElement.clientWidth * 100);
+              return of(-imageIndex * 100
+                + (lastTouch.position.x - startTouch.position.x) / this.containerElement.nativeElement.clientWidth * 100);
             case 'vertical':
-              // TODO
-              // const curHeight = swipes[imageIndex].nativeElement.clientHeight
-              // px => sum
-              // return (-imageIndex * 100 + (lastTouch.position.y - startTouch.position.y) / this.containerElement.nativeElement.clientHeight * 100);
               if (swipes) {
-                // const ds = swipes.filter((swipe, index) => index < imageIndex).map((swipe) => swipe.slideHeight$.value).reduce((a, b) => a + b, 0);
-                // console.log('ds', ds);
-                // return of(ds);
-
+                console.log('vivi');
                 return combineLatest(swipes.filter((swipe, index) => index < imageIndex).map((swipe) => swipe.slideHeight$))
-                  .pipe(map(heights => heights.reduce((a, b) => a + b, 0)));
+                  .pipe(map(heights => heights.reduce((a, b) => a + b, 0)))
+                  .pipe(map((o) => -o + (lastTouch.position.y - startTouch.position.y)));
               } else {
                 return of(0);
               }
@@ -118,6 +113,7 @@ export class BsSwipeContainerDirective implements AfterViewInit {
     combineLatest([this.direction$, this.offsetStart$])
       .pipe(takeUntilDestroyed())
       .subscribe(([direction, offsetStart]) => {
+        console.log('hello');
         switch (direction) {
           case 'horizontal':
             this.offsetTop = this.offsetBottom = null;
@@ -253,25 +249,74 @@ export class BsSwipeContainerDirective implements AfterViewInit {
   }
 
   animateToIndex(oldIndex: number, newIndex: number, direction: Direction, delta: number, swipes: BsSwipeDirective[], actualSwipes: BsSwipeDirective[]) {
-    let dStart: number;
-    let dEnd: number;
-    let startProperty: string;
-    let endProperty: string;
+    const doAnimation = (dStart: number, dEnd: number, startProperty: string, endProperty: string) => {
+      console.log('animation', { [startProperty]: (-dStart + delta) + 'px', [endProperty]: (dStart - delta) + 'px' });
+      this.pendingAnimation = this.animationBuilder.build([
+        style({ [startProperty]: (-dStart + delta) + 'px', [endProperty]: (dStart - delta) + 'px' }),
+        animate('500ms ease', style({ [startProperty]: (-dEnd) + 'px', [endProperty]: dEnd + 'px' })),
+      ]).create(this.containerElement.nativeElement);
+      this.pendingAnimation.onDone(() => {
+        // Correct the image index
+        if (newIndex === -1) {
+          this.imageIndex$.next((actualSwipes?.length ?? 1) - 1);
+        } else if (newIndex === (actualSwipes?.length ?? 1)) {
+          this.imageIndex$.next(0);
+        } else {
+          this.imageIndex$.next(newIndex);
+        }
+        this.startTouch$.next(null);
+        this.lastTouch$.next(null);
+        this.pendingAnimation?.destroy();
+        this.pendingAnimation = undefined;
+      });
+      this.pendingAnimation.play();
+    }
+
+    // let dStart: number;
+    // let dEnd: number;
+    // let startProperty: string;
+    // let endProperty: string;
     switch (direction) {
       case 'horizontal':
-        dStart = (oldIndex + 1) * this.containerElement.nativeElement.clientWidth;
-        dEnd = (newIndex + 1) * this.containerElement.nativeElement.clientWidth;
-        startProperty = 'margin-left';
-        endProperty = 'margin-right';
+        doAnimation(
+          (oldIndex + 1) * this.containerElement.nativeElement.clientWidth,
+          (newIndex + 1) * this.containerElement.nativeElement.clientWidth,
+          'margin-left',
+          'margin-right');
         break;
       case 'vertical':
         // TODO
         // const curHeight = swipes[imageIndex].nativeElement.clientHeight
         // px => sum
+        
+        // combineLatest([
+        //   combineLatest(swipes.filter((swipe, index) => index < oldIndex).map((swipe) => swipe.slideHeight$))
+        //     .pipe(map(heights => heights.reduce((a, b) => a + b, 0)), take(1)),
+        //   combineLatest(swipes.filter((swipe, index) => index < newIndex).map((swipe) => swipe.slideHeight$))
+        //     .pipe(map(heights => heights.reduce((a, b) => a + b, 0)), take(1))
+        // ]).pipe(take(1), takeUntilDestroyed(this.destroy))
+        // .subscribe(([dStart, dEnd]) => {
+        //   console.log('do animation');
+        //   doAnimation(dStart, dEnd, 'margin-top', 'margin-bottom');
+        // });
 
-        dStart = swipes.filter((swipe, index) => index < oldIndex).map((swipe) => swipe.slideHeight$.value).reduce((a, b) => a + b, 0);
-        dEnd = swipes.filter((swipe, index) => index < newIndex).map((swipe) => swipe.slideHeight$.value).reduce((a, b) => a + b, 0);
-        console.log('test', {dStart, dEnd});
+
+          // combineLatest(swipes.filter((swipe, index) => index < oldIndex).map((swipe) => swipe.slideHeight$.pipe(startWith(0))))
+          //   .pipe(map(heights => heights.reduce((a, b) => a + b, 0)))
+          //   .subscribe((dStart) => {
+          //     console.log('do animation 1');
+          //     combineLatest(swipes.filter((swipe, index) => index < newIndex).map((swipe) => swipe.slideHeight$.pipe(startWith(0))))
+          //       .pipe(map(heights => heights.reduce((a, b) => a + b, 0)), take(1), takeUntilDestroyed(this.destroy))
+          //       .subscribe((dEnd) => {
+          //         console.log('do animation 2');
+          //         doAnimation(dStart, dEnd, 'margin-top', 'margin-bottom');
+          //       });
+          //   });
+
+        const dStart = swipes.filter((swipe, index) => index < oldIndex).map((swipe) => swipe.slideHeight$.value).reduce((a, b) => a + b, 0);
+        const dEnd = swipes.filter((swipe, index) => index < newIndex).map((swipe) => swipe.slideHeight$.value).reduce((a, b) => a + b, 0);
+        doAnimation(dStart, dEnd, 'margin-top', 'margin-bottom');
+        // console.log('test', {dStart, dEnd});
 
         // combineLatest([this.swipes$, this.imageIndex$])
         //   .pipe(switchMap(([swipes, imageIndex]) => {
@@ -321,33 +366,12 @@ export class BsSwipeContainerDirective implements AfterViewInit {
 
         // dStart = (oldIndex + 1) * this.containerElement.nativeElement.clientHeight;
         // dEnd = (newIndex + 1) * this.containerElement.nativeElement.clientHeight;
-        startProperty = 'margin-top';
-        endProperty = 'margin-bottom';
+        // startProperty = 'margin-top';
+        // endProperty = 'margin-bottom';
         break;
       default:
         throw '[BsCarousel] Invalid value for direction';
     }
-
-    console.log('animation', { [startProperty]: (-dStart + delta) + 'px', [endProperty]: (dStart - delta) + 'px' });
-    this.pendingAnimation = this.animationBuilder.build([
-      style({ [startProperty]: (-dStart + delta) + 'px', [endProperty]: (dStart - delta) + 'px' }),
-      animate('500ms ease', style({ [startProperty]: (-dEnd) + 'px', [endProperty]: dEnd + 'px' })),
-    ]).create(this.containerElement.nativeElement);
-    this.pendingAnimation.onDone(() => {
-      // Correct the image index
-      if (newIndex === -1) {
-        this.imageIndex$.next((actualSwipes?.length ?? 1) - 1);
-      } else if (newIndex === (actualSwipes?.length ?? 1)) {
-        this.imageIndex$.next(0);
-      } else {
-        this.imageIndex$.next(newIndex);
-      }
-      this.startTouch$.next(null);
-      this.lastTouch$.next(null);
-      this.pendingAnimation?.destroy();
-      this.pendingAnimation = undefined;
-    });
-    this.pendingAnimation.play();
   }
 
   onSwipe(start: Point, end: Point) {
