@@ -1,4 +1,5 @@
-<input type="radio" bsNoNoscript class="d-none" [name]="tabControl.tabControlName$ | async" [id]="tabName$ | async">
-<div class="tab-page-content" [class.d-block]="(tabControl.activeTab$ | async) === this">
+<input type="radio" *ngIf="isServerSide" [checked]="(tabControl.activeTab$ | async) === this" bsNoNoscript [name]="tabControl.tabControlName$ | async" [id]="tabName$ | async" [value]="tabName$ | async">
+<!-- class="d-none" -->
+<div class="tab-page-content" [class.d-block]="dBlockClass$ | async">
     <ng-content></ng-content>
 </div>
