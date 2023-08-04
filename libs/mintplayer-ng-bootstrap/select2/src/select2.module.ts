@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { DragDropModule } from '@angular/cdk/drag-drop';
 import { BsInListModule } from '@mintplayer/ng-bootstrap';
 import { BsDropdownModule } from '@mintplayer/ng-bootstrap/dropdown';
 import { BsDropdownMenuModule } from '@mintplayer/ng-bootstrap/dropdown-menu';
@@ -22,6 +23,7 @@ import { BsSuggestionTemplateDirective } from './directive/suggestion-template/s
     BsDropdownMenuModule,
     BsHasOverlayModule,
     BsInListModule,
+    DragDropModule
   ],
   exports: [
     BsSelect2Component,

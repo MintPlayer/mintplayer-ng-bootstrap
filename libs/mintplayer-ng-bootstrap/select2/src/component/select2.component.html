@@ -1,8 +1,11 @@
 <!-- <bs-dropdown [(isOpen)]="isOpen" [hasBackdrop]="false" #itemsBox class="items-box text-wrap"></bs-dropdown> -->
 <bs-has-overlay></bs-has-overlay>
-<div bsDropdown [(isOpen)]="isOpen" [hasBackdrop]="false" [sameDropdownWidth]="true" #itemsBox class="items-box text-wrap">
+<div bsDropdown [(isOpen)]="isOpen" [hasBackdrop]="false" [sameDropdownWidth]="true" #itemsBox class="items-box text-wrap"
+    cdkDropList [cdkDropListOrientation]="'horizontal'" [cdkDropListData]="selectedItems" (cdkDropListDropped)="itemDropped($event)">
     <ng-container *ngFor="let item of selectedItems">
-        <ng-container *ngTemplateOutlet="itemTemplate ?? defaultItemTemplate; context: { item: item, select2: this }"></ng-container>
+        <span cdkDrag class="d-inline-block">
+            <ng-container *ngTemplateOutlet="itemTemplate ?? defaultItemTemplate; context: { item: item, select2: this }"></ng-container>
+        </span>
     </ng-container>
 
     <input type="text" autocomplete="off"

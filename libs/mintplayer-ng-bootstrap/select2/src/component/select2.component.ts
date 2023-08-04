@@ -1,6 +1,7 @@
 import { Component, ElementRef, EventEmitter, HostBinding, HostListener, Input, Output, TemplateRef, ViewChild } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { HasId } from '../interfaces/has-id';
+import { CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 
 @Component({
   selector: 'bs-select2',
@@ -63,4 +64,21 @@ export class BsSelect2Component<T extends HasId> {
     this.searchBox.nativeElement.focus();
   }
   
+  itemDropped(event: CdkDragDrop<T[]>) {
+    if (event.previousContainer === event.container) {
+      console.log('move');
+      moveItemInArray(
+        // event.container.data,
+        this.selectedItems,
+        event.previousIndex, 
+        event.currentIndex);
+    } else {
+      transferArrayItem(
+        event.previousContainer.data,
+        event.container.data,
+        event.previousIndex,
+        event.currentIndex);
+    }
+  }
+
 }
