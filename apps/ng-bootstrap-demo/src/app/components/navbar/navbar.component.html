@@ -1,0 +1,199 @@
+<bs-navbar #nav>
+  <bs-navbar-toggler *bsExpandButton="let state" [state]="state" [toggleOnClick]="false"></bs-navbar-toggler>
+  <bs-navbar-brand>
+    <a [routerLink]='["/"]'>
+      <span class="brand d-block px-3 pb-3 pt-3">
+        ng-bootstrap
+      </span>
+    </a>
+  </bs-navbar-brand>
+  <bs-navbar-nav [collapse]="true">
+    <bs-navbar-item>
+      <a [routerLink]='["/"]' [routerLinkActiveOptions]="{exact: true}">Home</a>
+    </bs-navbar-item>
+    <bs-navbar-item>
+      <a [routerLink]='["/basic"]'>Basic</a>
+      <bs-navbar-dropdown>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "toggle-button"]'>Toggle button</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "alert"]'>Alert</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "rating"]'>Rating</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "select"]'>Select</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "range"]'>Range</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "badge"]'>Badge</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "breadcrumb"]'>Breadcrumb</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "input-group"]'>Input group</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "button-group"]'>Button group</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "button-type"]'>Button type</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "calendar"]'>Calendar</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "card"]'>Card</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "list-group"]'>List group</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "grid"]'>Grid</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "table"]'>Table</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "carousel"]'>Carousel</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "close"]'>Close</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "pagination"]'>Pagination</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "placeholder"]'>Placeholder</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "spinner"]'>Spinner</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "datepicker"]'>Datepicker</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "timepicker"]'>Timepicker</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "accordion"]'>Accordion</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "progress-bar"]'>Progress bar</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "tab-control"]'>Tab control</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/basic", "for-directive"]'>For directive</a>
+        </bs-navbar-item>
+      </bs-navbar-dropdown>
+    </bs-navbar-item>
+    <bs-navbar-item>
+      <a [routerLink]='["/overlays"]'>Overlays</a>
+      <bs-navbar-dropdown>
+        <bs-navbar-item>
+          <a [routerLink]='["/overlays", "modals"]'>Modals</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/overlays", "snackbar"]'>Snackbar</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/overlays", "offcanvas"]'>Offcanvas</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/overlays", "tooltip"]'>Tooltip</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/overlays", "toast"]'>Toast</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/overlays", "popover"]'>Popover</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/overlays", "dropdown"]'>Dropdown</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/overlays", "multiselect-dropdown"]'>Multiselect dropdown</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/overlays", "typeahead"]'>Typeahead</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/overlays", "context-menu"]'>Context menu</a>
+        </bs-navbar-item>
+      </bs-navbar-dropdown>
+    </bs-navbar-item>
+    <bs-navbar-item>
+      <a [routerLink]='["/advanced"]'>Advanced</a>
+      <bs-navbar-dropdown>
+        <bs-navbar-item>
+          <a [routerLink]='["/advanced", "copy"]'>Copy</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/advanced", "code-snippet"]'>Code snippet</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/advanced", "autofocus"]'>Autofocus</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/advanced", "scrollspy"]'>Scrollspy</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/advanced", "select2"]'>Select2</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/advanced", "datatables"]'>Datatables</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/advanced", "file-upload"]'>File upload</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/advanced", "lazy-loading-components"]'>Lazy-loading components</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/advanced", "user-agent"]'>User-agent</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/advanced", "scheduler"]'>Scheduler</a>
+        </bs-navbar-item>
+      </bs-navbar-dropdown>
+    </bs-navbar-item>
+    <bs-navbar-item>
+      <a [routerLink]='["/additional-samples"]'>Additional samples</a>
+      <bs-navbar-dropdown>
+        <bs-navbar-item>
+          <a [routerLink]='["/additional-samples", "collapse"]'>Collapse</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/additional-samples", "floating-labels"]'>Floating labels</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/additional-samples", "focus-trap"]'>FocusTrap</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/additional-samples", "drag-drop"]'>Drag-drop</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/additional-samples", "qr-code"]'>QR-code viewer</a>
+        </bs-navbar-item>
+      </bs-navbar-dropdown>
+    </bs-navbar-item>
+  </bs-navbar-nav>
+  <bs-navbar-nav class="me-0">
+    <bs-navbar-item>
+      <a class="nav-link text-nowrap" href="https://github.com/MintPlayer/mintplayer-ng-bootstrap" title="@mintplayer/ng-bootstrap on GitHub">
+        <span class="me-2 align-middle">{{ versionInfo }}</span>
+        <img src="/assets/github.svg" alt="@mintplayer/ng-bootstrap on GitHub">
+      </a>
+    </bs-navbar-item>
+  </bs-navbar-nav>
+</bs-navbar>
+<div [navbarContent]="nav" style="padding-top:10px">
+  <ng-content></ng-content>
+</div>
