@@ -1,0 +1,17 @@
+:host ::ng-deep {
+    // @import "../../../../../node_modules/bootstrap/scss/bootstrap-utilities.scss";
+    
+    @import "../../../../../node_modules/bootstrap/scss/functions";
+    @import "../../../../../node_modules/bootstrap/scss/variables";
+    @import "../../../../../node_modules/bootstrap/scss/variables-dark";
+    // @import "../../../../../node_modules/bootstrap/scss/maps";
+    @import "../../../../../node_modules/bootstrap/scss/mixins";
+    
+    // @import "../../../../../node_modules/bootstrap/scss/mixins/breakpoints";
+    @import "../../../../../node_modules/bootstrap/scss/mixins/container";
+    @import "../../../../../node_modules/bootstrap/scss/containers";
+}
+
+:host {
+    display: contents;
+}
