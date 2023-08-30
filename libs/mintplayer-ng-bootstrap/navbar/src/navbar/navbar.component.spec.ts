@@ -4,6 +4,8 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { BsNavbarComponent } from './navbar.component';
+import { MockModule } from 'ng-mocks';
+import { BsContainerModule } from '@mintplayer/ng-bootstrap/container';
 
 describe('BsNavbarComponent', () => {
   let component: BsNavbarComponent;
@@ -18,7 +20,8 @@ describe('BsNavbarComponent', () => {
           { path: 'b', children: [
             { path: 'c', component: PageBCComponent }
           ]}
-        ])
+        ]),
+        MockModule(BsContainerModule),
       ],
       declarations: [
         // Component to test
