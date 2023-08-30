@@ -22,6 +22,7 @@ const routes: Routes = [
   { path: 'resizable', loadChildren: () => import('./resizable/resizable.module').then(m => m.ResizableModule) },
   { path: 'signature-pad', loadChildren: () => import('./signature-pad/signature-pad.module').then(m => m.SignaturePadModule) },
   { path: 'async-host-binding', loadChildren: () => import('./async-host-binding/async-host-binding.module').then(m => m.AsyncHostBindingModule) },
+  { path: 'svg', loadChildren: () => import('./svg/svg.module').then(m => m.SvgModule) },
 ];
 
 @NgModule({
