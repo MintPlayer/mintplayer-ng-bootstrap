@@ -1,13 +1,14 @@
-import { AfterViewInit, Directive, ElementRef, HostBinding, HostListener, Input, OnDestroy } from "@angular/core";
+import { AfterViewInit, Directive, ElementRef, HostBinding, HostListener, Inject, Input, OnDestroy, PLATFORM_ID } from "@angular/core";
 import { BehaviorSubject, combineLatest, filter, take } from "rxjs";
 import { BsSwipeContainerDirective } from "../swipe-container/swipe-container.directive";
+import { isPlatformServer } from "@angular/common";
 
 @Directive({
   selector: '[bsSwipe]'
 })
 export class BsSwipeDirective implements AfterViewInit, OnDestroy {
 
-  constructor(private container: BsSwipeContainerDirective, element: ElementRef<HTMLElement>) {
+  constructor(private container: BsSwipeContainerDirective, element: ElementRef<HTMLElement>, @Inject(PLATFORM_ID) private platformId: any) {
     this.element = element;
   }
 
@@ -77,10 +78,12 @@ export class BsSwipeDirective implements AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit() {
-    this.observer = new ResizeObserver((entries) => {
-      this.slideHeight$.next(entries[0].contentRect.height);
-    });
-    this.observer.observe(this.element.nativeElement);
+    if (!isPlatformServer(this.platformId)) {
+      this.observer = new ResizeObserver((entries) => {
+        this.slideHeight$.next(entries[0].contentRect.height);
+      });
+      this.observer.observe(this.element.nativeElement);
+    }
   }
 
   ngOnDestroy() {
