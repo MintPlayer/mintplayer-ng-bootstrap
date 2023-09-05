@@ -49,18 +49,16 @@ interface Artist {
 @Component({
   selector: 'bs-row-template-test',
   template: `
-    <bs-datatable #table [data]="artists">
-      <ng-template bsRowTemplate let-artist>
-        <tr>
-          <td class="text-nowrap">{{ artist.name }}</td>
-          <td class="text-nowrap">{{ artist.yearStarted }}</td>
-          <td class="text-nowrap">{{ artist.yearQuit }}</td>
-        </tr>
-      </ng-template>
+    <bs-datatable #table>
+      <tr *bsRowTemplate="let artist of artists">
+        <td class="text-nowrap">{{ artist.name }}</td>
+        <td class="text-nowrap">{{ artist.yearStarted }}</td>
+        <td class="text-nowrap">{{ artist.yearQuit }}</td>
+      </tr>
     </bs-datatable>`
 })
 class BsRowTemplateTestComponent {
-  @ViewChild('table') table!: BsDatatableComponent;
+  @ViewChild('table') table!: BsDatatableComponent<Artist>;
 
   artists?: Artist[] = [
     { id: 1, name: 'Dario G', yearStarted: 1993, yearQuit: null, text: 'Dario G' },

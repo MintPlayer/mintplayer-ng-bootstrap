@@ -7,8 +7,8 @@ import { MockModule } from 'ng-mocks';
 import { BsDatatableComponent } from './datatable.component';
 
 describe('BsDatatableComponent', () => {
-  let component: BsDatatableComponent;
-  let fixture: ComponentFixture<BsDatatableComponent>;
+  let component: BsDatatableComponent<any>;
+  let fixture: ComponentFixture<BsDatatableComponent<any>>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
