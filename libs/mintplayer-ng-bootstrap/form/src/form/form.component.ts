@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 
 @Component({
   selector: 'bs-form',
@@ -6,6 +6,9 @@ import { Component, EventEmitter, Output } from '@angular/core';
   styleUrls: ['./form.component.scss'],
 })
 export class BsFormComponent {
+  @Input() action?: string;
+  @Input() method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+
   @Output() submitted = new EventEmitter<Event>();
   onSubmit(ev: Event) {
     this.submitted.emit(ev);
