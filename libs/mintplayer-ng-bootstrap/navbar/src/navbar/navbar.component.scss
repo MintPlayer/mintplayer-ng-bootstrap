@@ -76,7 +76,7 @@ nav {
 
 @each $breakpoint, $container-max-width in $container-max-widths {
     @include media-breakpoint-down($breakpoint, $grid-breakpoints) {
-        nav.navbar-expand-#{$breakpoint} div.navbar-collapse {
+        nav.navbar-expand-#{$breakpoint} ::ng-deep div.navbar-collapse {
             overflow-y: hidden;
         }
     }
