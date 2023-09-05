@@ -3,6 +3,7 @@ import { BehaviorSubject, Observable, map } from 'rxjs';
 import { PaginationResponse } from '@mintplayer/pagination';
 import { DatatableSettings } from '../datatable-settings';
 import { BsDatatableColumnDirective } from '../datatable-column/datatable-column.directive';
+import { BsRowTemplateContext } from '../row-template/row-template.directive';
 
 
 @Component({
@@ -10,7 +11,7 @@ import { BsDatatableColumnDirective } from '../datatable-column/datatable-column
   templateUrl: './datatable.component.html',
   styleUrls: ['./datatable.component.scss']
 })
-export class BsDatatableComponent {
+export class BsDatatableComponent<TData> {
 
   constructor() {
     this.settings = new DatatableSettings();
@@ -31,8 +32,8 @@ export class BsDatatableComponent {
   //#endregion
 
   @Input() settings: DatatableSettings;
-  @Input() data?: PaginationResponse<any>;
-  rowTemplate?: TemplateRef<any>;
+  @Input() data?: PaginationResponse<TData>;
+  rowTemplate?: TemplateRef<BsRowTemplateContext<TData>>;
   @Output() settingsChange = new EventEmitter<DatatableSettings>();
 
   columnHeaderClicked(column: BsDatatableColumnDirective) {
