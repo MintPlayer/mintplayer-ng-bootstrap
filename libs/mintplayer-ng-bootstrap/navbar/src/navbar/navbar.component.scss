@@ -66,3 +66,6 @@ nav {
     margin: -.5rem 0;
 }
 
+::ng-deep bs-navbar-nav {
+    display: contents;
+}
