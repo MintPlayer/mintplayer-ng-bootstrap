@@ -12,7 +12,6 @@ export class BsRowTemplateDirective<TData> {
   }
 
   @Input() set bsRowTemplateOf(value: PaginationResponse<TData> | undefined) {
-    // console.log('Hello world', value);
     this.datatableComponent.data = value;
   }
   
@@ -25,7 +24,5 @@ export class BsRowTemplateDirective<TData> {
 }
 
 export class BsRowTemplateContext<TData = unknown> {
-  // constructor(public $implicit: TData, public templateRef: TemplateRef<BsRowTemplateContext<TData>>) {}
   public $implicit: TData = null!;
-  // public bsRowTemplate: TemplateRef<BsRowTemplateContext<TData>> = null!;
 }

@@ -32,7 +32,7 @@ export class BsDatatableComponent<TData> {
   //#endregion
 
   @Input() settings: DatatableSettings;
-  /* @Input() */ data?: PaginationResponse<TData>;
+  data?: PaginationResponse<TData>;
   rowTemplate?: TemplateRef<BsRowTemplateContext<TData>>;
   @Output() settingsChange = new EventEmitter<DatatableSettings>();
 
