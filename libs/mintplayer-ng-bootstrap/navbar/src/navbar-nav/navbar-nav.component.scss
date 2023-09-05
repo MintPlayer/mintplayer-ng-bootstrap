@@ -1,13 +1,3 @@
 :host {
     margin-right: auto;
 }
-
-@media screen and (max-width: 767px) {
-    :host {
-        width: 100% !important;
-    }
-
-    .navbar-collapse.collapse {
-        overflow: hidden;
-    }
-} 

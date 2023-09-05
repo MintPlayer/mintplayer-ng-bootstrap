@@ -1,10 +1,10 @@
-/* :host */ ::ng-deep {
-    // Configuration
-    @import "../../../../../node_modules/bootstrap/scss/functions";
-    @import "../../../../../node_modules/bootstrap/scss/variables";
-    @import "../../../../../node_modules/bootstrap/scss/variables-dark";
-    @import "../../../../../node_modules/bootstrap/scss/mixins";
+// Configuration
+@import "../../../../../node_modules/bootstrap/scss/functions";
+@import "../../../../../node_modules/bootstrap/scss/variables";
+@import "../../../../../node_modules/bootstrap/scss/variables-dark";
+@import "../../../../../node_modules/bootstrap/scss/mixins";
 
+/* :host */ ::ng-deep {
     // Layout & components
     // @import "../../../../../node_modules/bootstrap/scss/containers";
     @import "../../../../../node_modules/bootstrap/scss/dropdown";
@@ -68,4 +68,16 @@ nav {
 
 ::ng-deep bs-navbar-nav {
     display: contents;
+}
+
+// nav div.navbar-collapse {
+//     overflow-y: hidden;
+// }
+
+@each $breakpoint, $container-max-width in $container-max-widths {
+    @include media-breakpoint-down($breakpoint, $grid-breakpoints) {
+        nav.navbar-expand-#{$breakpoint} div.navbar-collapse {
+            overflow-y: hidden;
+        }
+    }
 }
