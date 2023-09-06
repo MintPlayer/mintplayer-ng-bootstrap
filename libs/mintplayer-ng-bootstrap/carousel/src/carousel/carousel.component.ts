@@ -1,5 +1,5 @@
 import { isPlatformServer } from '@angular/common';
-import { ChangeDetectorRef, Component, ContentChildren, forwardRef, HostBinding, HostListener, Inject, Input, PLATFORM_ID, QueryList, TemplateRef, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ContentChildren, ElementRef, forwardRef, HostBinding, HostListener, Inject, Input, OnDestroy, PLATFORM_ID, QueryList, TemplateRef, ViewChild } from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsSwipeContainerDirective } from '@mintplayer/ng-swiper';
@@ -12,7 +12,7 @@ import { BsCarouselImageDirective } from '../carousel-image/carousel-image.direc
   styleUrls: ['./carousel.component.scss'],
   animations: [FadeInOutAnimation]
 })
-export class BsCarouselComponent {
+export class BsCarouselComponent implements AfterViewInit, OnDestroy {
 
   constructor(@Inject(PLATFORM_ID) platformId: any, private cdRef: ChangeDetectorRef) {
     this.isServerSide = isPlatformServer(platformId);
@@ -35,6 +35,12 @@ export class BsCarouselComponent {
 
       return img.itemTemplate;
     }));
+
+    if (!isPlatformServer(platformId)) {
+      this.resizeObserver = new ResizeObserver((entries) => {
+        this.cdRef.detectChanges();
+      });
+    }
   }
   
   colors = Color;
@@ -44,10 +50,12 @@ export class BsCarouselComponent {
   imageCount$: Observable<number>;
   firstImageTemplate$: Observable<TemplateRef<any> | null>;
   lastImageTemplate$: Observable<TemplateRef<any> | null>;
+  resizeObserver?: ResizeObserver;
 
   @Input() indicators = false;
   @Input() keyboardEvents = true;
 
+  @ViewChild('innerElement') innerElement!: ElementRef<HTMLDivElement>;
   @ViewChild('container') swipeContainer!: BsSwipeContainerDirective;
   @ContentChildren(forwardRef(() => BsCarouselImageDirective)) set images(value: QueryList<BsCarouselImageDirective>) {
     this.images$.next(value);
@@ -116,5 +124,14 @@ export class BsCarouselComponent {
   imageCounter = 1;
   trackByImageId(index: number, item: BsCarouselImageDirective) {
     return item.id;
+  }
+
+  ngAfterViewInit() {
+    this.resizeObserver?.observe(this.innerElement.nativeElement);
+  }
+
+  ngOnDestroy() {
+    this.resizeObserver?.unobserve(this.innerElement.nativeElement);
+    this.resizeObserver?.disconnect();
   }
 }
