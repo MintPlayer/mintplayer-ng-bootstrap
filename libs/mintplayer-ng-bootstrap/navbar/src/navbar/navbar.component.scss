@@ -40,17 +40,6 @@ nav {
     // overflow-y: auto !important;
 }
 
-@media (max-width: 767px) {
-    nav.position-fixed {
-        max-height: 100%;
-        overflow-y: scroll;
-    }
-    
-    nav.os-windows {
-        margin-right: -17px;
-    }
-}
-
 @media (min-width: 768px) {
     .mx-md-unset {
         margin-left: 0 !important;    
@@ -73,8 +62,19 @@ nav {
 // Prevent navbar from going outside its bounds in small mode
 @each $breakpoint, $container-max-width in $container-max-widths {
     @include media-breakpoint-down($breakpoint, $grid-breakpoints) {
-        nav.navbar-expand-#{$breakpoint} ::ng-deep div.navbar-collapse {
-            overflow-y: hidden;
+        nav.navbar-expand-#{$breakpoint} {
+            ::ng-deep div.navbar-collapse {
+                overflow-y: hidden;
+            }
+
+            &.position-fixed {
+                max-height: 100%;
+                overflow-y: scroll;
+            }
+            
+            &.os-windows {
+                margin-right: -17px;
+            }
         }
     }
 }
