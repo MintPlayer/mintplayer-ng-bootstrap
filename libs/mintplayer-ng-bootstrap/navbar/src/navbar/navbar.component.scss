@@ -70,14 +70,22 @@ nav {
     display: contents;
 }
 
-// nav div.navbar-collapse {
-//     overflow-y: hidden;
-// }
-
+// Prevent navbar from going outside its bounds in small mode
 @each $breakpoint, $container-max-width in $container-max-widths {
     @include media-breakpoint-down($breakpoint, $grid-breakpoints) {
         nav.navbar-expand-#{$breakpoint} ::ng-deep div.navbar-collapse {
             overflow-y: hidden;
         }
     }
+}
+
+// Properly align the navbar-navs
+.nav-wrapper ::ng-deep bs-navbar-nav > .navbar-collapse {
+    justify-content: center;
+}
+.nav-wrapper ::ng-deep bs-navbar-nav:first-of-type > .navbar-collapse {
+    justify-content: flex-start;
+}
+.nav-wrapper ::ng-deep bs-navbar-nav:last-of-type > .navbar-collapse {
+    justify-content: flex-end;
 }

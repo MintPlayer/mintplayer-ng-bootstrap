@@ -1,6 +1,6 @@
 <bs-container>
     <nav #nav class="navbar position-fixed" [class]="navClassList$ | async" bsUserAgent bsNoNoscript>
-        <div class="container-fluid">
+        <div class="container-fluid nav-wrapper">
             <div class="d-flex" [class]="wAutoClass$ | async" [class.w-100]="isSmallMode$ | async">
                 <ng-content select="bs-navbar-brand"></ng-content>
                 <div class="flex-end d-flex tw" [class]="dNoneClass$ | async">

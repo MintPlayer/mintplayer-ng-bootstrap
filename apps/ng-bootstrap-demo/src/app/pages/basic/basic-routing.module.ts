@@ -25,6 +25,7 @@ const routes: Routes = [
   { path: 'button-type', loadChildren: () => import('./button-type/button-type.module').then(m => m.ButtonTypeModule) },
   { path: 'containers', loadChildren: () => import('./containers/containers.module').then(m => m.ContainersModule) },
   { path: 'treeview', loadChildren: () => import('./treeview/treeview.module').then(m => m.TreeviewModule) },
+  { path: 'marquee', loadChildren: () => import('./marquee/marquee.module').then(m => m.MarqueeModule) },
 ];
 
 @NgModule({
