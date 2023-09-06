@@ -2,8 +2,11 @@ import { Directive, ElementRef, forwardRef, HostBinding, Inject, Optional, PLATF
 import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
 
 @Directive({
+  selector: 'bs-navbar-item > li > a'
+  // Below selector doesn't work well either (does not select the github link)
   // selector: 'bs-navbar-item > a[routerLink]'
-  selector: 'bs-navbar-item:first-child > a'
+  // Below selector seems to target other a's that aren't even remotely inside a bs-navbar-item
+  // selector: 'bs-navbar-item:first-child > a'
 })
 export class NavLinkDirective {
 
@@ -16,6 +19,7 @@ export class NavLinkDirective {
     } else {
       this.elementRef.nativeElement.classList.add('dropdown-item');
     }
+    // console.log('elementref', elementRef);
   }
 
   @HostBinding('class.cursor-pointer') cursorPointer = true;
