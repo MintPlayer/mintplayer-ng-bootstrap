@@ -1,5 +1,6 @@
 import { Directive, ElementRef, forwardRef, HostBinding, Inject, Optional, PLATFORM_ID } from '@angular/core';
 import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
+import { BsNavbarComponent } from '../navbar/navbar.component';
 
 @Directive({
   selector: 'bs-navbar-item > li > a'
@@ -12,16 +13,19 @@ export class NavLinkDirective {
 
   constructor(
     private elementRef: ElementRef<HTMLAnchorElement>,
+    @Optional() parentNavbar: BsNavbarComponent,
     @Optional() @Inject(forwardRef(() => BsNavbarDropdownComponent)) parentDropdown: BsNavbarDropdownComponent
   ) {
-    if (parentDropdown == null) {
-      this.elementRef.nativeElement.classList.add('nav-link');
-    } else {
-      this.elementRef.nativeElement.classList.add('dropdown-item');
+    if (parentNavbar) {
+      if (parentDropdown == null) {
+        this.elementRef.nativeElement.classList.add('nav-link');
+      } else {
+        this.elementRef.nativeElement.classList.add('dropdown-item');
+      }
     }
-    // console.log('elementref', elementRef);
+    this.cursorPointer = !!parentNavbar;
   }
 
-  @HostBinding('class.cursor-pointer') cursorPointer = true;
+  @HostBinding('class.cursor-pointer') cursorPointer: boolean;
 
 }
