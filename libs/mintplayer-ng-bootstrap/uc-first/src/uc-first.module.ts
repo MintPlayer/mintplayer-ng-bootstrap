@@ -1,18 +1,16 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BsFontColorPipe } from './font-color.pipe';
-
-
+import { BsUcFirstPipe } from './uc-first.pipe';
 
 @NgModule({
   declarations: [
-    BsFontColorPipe
+    BsUcFirstPipe
   ],
   imports: [
     CommonModule
   ],
   exports: [
-    BsFontColorPipe
+    BsUcFirstPipe
   ]
 })
-export class BsFontColorPipeModule { }
+export class BsUcFirstModule { }

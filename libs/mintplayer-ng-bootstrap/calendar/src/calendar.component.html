@@ -6,7 +6,7 @@
             </button>
         </td>
         <td colspan="6" class="fw-bolder">
-            {{ currentMonth$ | async | monthName | ucFirst }}
+            {{ currentMonth$ | async | monthName | bsUcFirst }}
             {{ (currentMonth$ | async)?.getFullYear() }}
         </td>
         <td>
