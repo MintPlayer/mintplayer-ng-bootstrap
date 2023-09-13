@@ -1,0 +1,13 @@
+<h1 class="text-center">Trust-html</h1>
+<bs-form>
+    <bs-grid>
+        <div bsRow>
+            <div [bsColumn]="{md: 6}">
+                <textarea [(ngModel)]="html" rows="8"></textarea>
+            </div>
+            <div [bsColumn]="{md: 6}">
+                <span [innerHTML]="html | bsTrustHtml"></span>
+            </div>
+        </div>
+    </bs-grid>
+</bs-form>

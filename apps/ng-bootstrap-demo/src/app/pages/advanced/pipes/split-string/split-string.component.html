@@ -1,0 +1,20 @@
+<h1 class="text-center">Split string</h1>
+<bs-form>
+    <bs-grid>
+        <div bsRow>
+            <div [bsColumn]="{md: 4}">
+                <textarea [(ngModel)]="text" rows="8"></textarea>
+            </div>
+            <div [bsColumn]="{md: 4}">
+                <bs-list-group>
+                    <bs-list-group-item *ngFor="let line of text | bsSplitString">{{ line }}</bs-list-group-item>
+                </bs-list-group>
+            </div>
+            <div [bsColumn]="{md: 4}">
+                <bs-list-group>
+                    <bs-list-group-item *ngFor="let line of text | bsSplitString: undefined:false">{{ line }}</bs-list-group-item>
+                </bs-list-group>
+            </div>
+        </div>
+    </bs-grid>
+</bs-form>

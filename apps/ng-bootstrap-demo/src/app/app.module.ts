@@ -1,4 +1,4 @@
-import { NgModule } from '@angular/core';
+import { NgModule, APP_ID } from '@angular/core';
 import { HttpClientModule } from '@angular/common/http';
 import { CommonModule, JsonPipe } from '@angular/common';
 import { BrowserModule } from '@angular/platform-browser';
@@ -16,7 +16,7 @@ import { DirectivesModule } from './directives/directives.module';
 @NgModule({
   declarations: [AppComponent],
   imports: [
-    BrowserModule.withServerTransition({ appId: 'serverApp' }),
+    BrowserModule,
     CommonModule,
     BrowserAnimationsModule,
     BsNavbarModule,
@@ -26,6 +26,10 @@ import { DirectivesModule } from './directives/directives.module';
     DirectivesModule
   ],
   providers: [
+    {
+      provide: APP_ID,
+      useValue: 'serverApp'
+    },
     {
       provide: HIGHLIGHT_OPTIONS,
       useValue: <HighlightOptions>{

@@ -23,6 +23,8 @@ const routes: Routes = [
   { path: 'signature-pad', loadChildren: () => import('./signature-pad/signature-pad.module').then(m => m.SignaturePadModule) },
   { path: 'async-host-binding', loadChildren: () => import('./async-host-binding/async-host-binding.module').then(m => m.AsyncHostBindingModule) },
   { path: 'sticky-footer', loadChildren: () => import('./sticky-footer/sticky-footer.module').then(m => m.StickyFooterModule) },
+  { path: 'pipes', loadChildren: () => import('./pipes/pipes.module').then(m => m.PipesModule) },
+  { path: 'searchbox', loadChildren: () => import('./searchbox/searchbox.module').then(m => m.SearchboxModule) },
 ];
 
 @NgModule({

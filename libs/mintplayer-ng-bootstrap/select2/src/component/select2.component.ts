@@ -1,13 +1,13 @@
 import { Component, ElementRef, EventEmitter, HostBinding, HostListener, Input, Output, TemplateRef, ViewChild } from '@angular/core';
+import { HasId } from '@mintplayer/ng-bootstrap/has-id';
 import { BehaviorSubject } from 'rxjs';
-import { HasId } from '../interfaces/has-id';
 
 @Component({
   selector: 'bs-select2',
   templateUrl: './select2.component.html',
   styleUrls: ['./select2.component.scss']
 })
-export class BsSelect2Component<T extends HasId> {
+export class BsSelect2Component<T extends HasId<U>, U> {
 
   isOpen = false;
   
@@ -39,7 +39,7 @@ export class BsSelect2Component<T extends HasId> {
       this.provideSuggestions.emit(value);
     }
   }
-  onSuggestionClicked(suggestion: any) {
+  onSuggestionClicked(suggestion: T) {
     this.searchterm = '';
     this.isOpen = false;
 
@@ -52,7 +52,7 @@ export class BsSelect2Component<T extends HasId> {
 
     this.searchBox.nativeElement.focus();
   }
-  onRemoveItem(item: any, event: MouseEvent) {
+  onRemoveItem(item: T, event: MouseEvent) {
     event.stopPropagation();
     this.selectedItems.splice(this.selectedItems.indexOf(item), 1);
     this.focus();

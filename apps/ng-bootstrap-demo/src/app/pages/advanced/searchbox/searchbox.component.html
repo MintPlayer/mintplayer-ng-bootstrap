@@ -1,0 +1,17 @@
+<h1 class="text-center">Searchbox</h1>
+<bs-form>
+    <bs-grid>
+        <div bsRow>
+            <div [bsColumn]="{md: 6}">
+                <bs-searchbox [suggestions]="suggestions" (provideSuggestions)="onProvideSuggestions($event)" [(selectedItem)]="selectedArtist">
+                    Search for artists
+                    <div *bsEnterSearchTermTemplate>Start typing...</div>
+                    <div *bsSuggestionTemplate="let suggestion=suggestion; let searchbox=searchbox">{{ suggestion.name }}</div>
+                </bs-searchbox>
+            </div>
+            <div [bsColumn]="{md: 6}">
+                <pre><code>{{ selectedArtist | json }}</code></pre>
+            </div>
+        </div>
+    </bs-grid>
+</bs-form>

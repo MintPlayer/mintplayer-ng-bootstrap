@@ -1,0 +1,5 @@
+<h1 class="text-center">Word-count</h1>
+<bs-form>
+    <textarea rows="8" [(ngModel)]="text"></textarea>
+</bs-form>
+<span>{{ text | bsWordCount }}</span>

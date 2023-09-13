@@ -12,7 +12,7 @@ export class SubjectService {
 
   private baseUrl = 'https://mintplayer.com';
 
-  public suggest(search: string, subjects: ESubjectType[], includeRelations: boolean = false) {
+  public suggest(search: string, subjects: ESubjectType[], includeRelations = false) {
     return this.httpClient.post<Subject[]>(`${this.baseUrl}/api/v1/subject/search/suggest`, {
       searchTerm: search,
       subjectTypes: subjects
@@ -20,6 +20,6 @@ export class SubjectService {
       headers: {
         include_relations: String(includeRelations)
       }
-    }).toPromise();
+    });
   }
 }
