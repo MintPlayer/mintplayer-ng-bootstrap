@@ -3,10 +3,10 @@
     <bs-grid>
         <div bsRow>
             <div [bsColumn]="{md: 6}">
-                <bs-searchbox [suggestions]="suggestions" (provideSuggestions)="onProvideSuggestions($event)" [(selectedItem)]="selectedArtist">
+                <bs-searchbox (provideSuggestions)="onProvideSuggestions($event)" [(selectedItem)]="selectedArtist">
                     Search for artists
                     <div *bsEnterSearchTermTemplate>Start typing...</div>
-                    <div *bsSuggestionTemplate="let suggestion=suggestion; let searchbox=searchbox">{{ suggestion.name }}</div>
+                    <div *bsSuggestionTemplate="let suggestion of suggestions">{{ suggestion.name }}</div>
                 </bs-searchbox>
             </div>
             <div [bsColumn]="{md: 6}">

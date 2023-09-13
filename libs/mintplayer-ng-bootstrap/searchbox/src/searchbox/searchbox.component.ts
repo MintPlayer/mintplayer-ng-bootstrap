@@ -4,6 +4,7 @@ import { Color } from '@mintplayer/ng-bootstrap';
 import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 import { HasId } from '@mintplayer/ng-bootstrap/has-id';
 import { BehaviorSubject, debounceTime } from 'rxjs';
+import { BsSuggestionTemplateContext } from '../directives';
 
 @Component({
   selector: 'bs-searchbox',
@@ -77,7 +78,7 @@ export class BsSearchboxComponent<T extends HasId<U>, U> {
   }
   //#endregion
 
-  suggestionTemplate?: TemplateRef<T>;
+  suggestionTemplate?: TemplateRef<BsSuggestionTemplateContext<T, U>>;
   enterSearchtermTemplate?: TemplateRef<T>;
   noResultsTemplate?: TemplateRef<T>;
   @Output() provideSuggestions = new EventEmitter<string>();

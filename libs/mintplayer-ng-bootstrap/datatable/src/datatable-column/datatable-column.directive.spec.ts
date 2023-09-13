@@ -41,13 +41,13 @@ describe('BsDatatableColumnDirective', () => {
   selector: 'bs-datatable-column-test',
   template: `
     <bs-datatable>
-      <div *bsDatatableColumn="{ sortable: true, name: 'Name' }">
+      <div *bsDatatableColumn="'Name'; sortable: true">
         1. Artist
       </div>
-      <div *bsDatatableColumn="{ sortable: true, name: 'YearStarted' }">
+      <div *bsDatatableColumn="'YearStarted'; sortable: true">
         2. Year started
       </div>
-      <div *bsDatatableColumn="{ sortable: true, name: 'YearQuit' }">
+      <div *bsDatatableColumn="'YearQuit'; sortable: true">
         3. Year quit
       </div>
     </bs-datatable>`
