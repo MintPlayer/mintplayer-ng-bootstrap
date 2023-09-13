@@ -3,8 +3,8 @@
     <button [color]="colors.primary" class="d-flex w-100" bsDropdownToggle>
         <div class="flex-grow-1">
             <ng-content *ngIf="!selectedItem"></ng-content>
-            <ng-container *ngIf="selectedItem">
-                <ng-container *ngTemplateOutlet="suggestionTemplate ?? defaultSuggestionTemplate; context: { suggestion: selectedItem, searchbox: this }"></ng-container>
+            <ng-container *ngIf="selectedItem && suggestionTemplate">
+                <ng-container *ngTemplateOutlet="suggestionTemplate; context: { $implicit: selectedItem, searchbox: this }"></ng-container>
             </ng-container>
         </div>
         <bs-icon [icon]="isOpen ? 'caret-up-fill' : 'caret-down-fill'" class="float-end"></bs-icon>
@@ -23,7 +23,9 @@
             </bs-dropdown-item>
             <div *ngIf="searchterm !== ''" class="overflow-y-auto" [style.max-height.px]="200">
                 <bs-dropdown-item *ngFor="let suggestion of suggestions" (click)="onSuggestionClicked(suggestion)" [isSelected]="selectedItem?.id === suggestion.id" [disabled]="isBusy ?? true">
-                    <ng-container *ngTemplateOutlet="suggestionTemplate ?? defaultSuggestionTemplate; context: { suggestion: suggestion, searchbox: this }"></ng-container>
+                    <ng-container *ngIf="suggestionTemplate">
+                        <ng-container *ngTemplateOutlet="suggestionTemplate; context: { $implicit: suggestion, searchbox: this }"></ng-container>
+                    </ng-container>
                 </bs-dropdown-item>
                 <bs-dropdown-item *ngIf="suggestions.length === 0" [disabled]="true">
                     <ng-container *ngTemplateOutlet="noResultsTemplate ?? defaultNoResultsTemplate; context: { }"></ng-container>
@@ -35,9 +37,6 @@
 
 <ng-template #defaultEnterSearchtermTemplate>
     Enter a search term
-</ng-template>
-<ng-template #defaultSuggestionTemplate let-suggestion="suggestion" let-searchbox="searchbox">
-    {{ suggestion.text }}
 </ng-template>
 <ng-template #defaultNoResultsTemplate>
     No results
