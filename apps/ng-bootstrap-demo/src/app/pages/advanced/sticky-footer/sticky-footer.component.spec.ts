@@ -1,4 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MockModule } from 'ng-mocks';
+import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsStickyFooterModule } from '@mintplayer/ng-bootstrap/sticky-footer';
 
 import { StickyFooterComponent } from './sticky-footer.component';
 
@@ -8,7 +11,12 @@ describe('StickyFooterComponent', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      declarations: [StickyFooterComponent]
+      declarations: [StickyFooterComponent],
+      imports: [
+        // Mock dependencies
+        MockModule(BsGridModule),
+        MockModule(BsStickyFooterModule),
+      ]
     });
     fixture = TestBed.createComponent(StickyFooterComponent);
     component = fixture.componentInstance;
