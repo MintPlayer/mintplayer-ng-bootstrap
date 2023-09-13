@@ -1,0 +1,44 @@
+<bs-has-overlay></bs-has-overlay>
+<div bsDropdown [(isOpen)]="isOpen" [hasBackdrop]="false" [sameDropdownWidth]="true">
+    <button [color]="colors.primary" class="d-flex w-100" bsDropdownToggle>
+        <div class="flex-grow-1">
+            <ng-content *ngIf="!selectedItem"></ng-content>
+            <ng-container *ngIf="selectedItem">
+                <ng-container *ngTemplateOutlet="suggestionTemplate ?? defaultSuggestionTemplate; context: { suggestion: selectedItem, searchbox: this }"></ng-container>
+            </ng-container>
+        </div>
+        <bs-icon [icon]="isOpen ? 'caret-up-fill' : 'caret-down-fill'" class="float-end"></bs-icon>
+    </button>
+    <bs-dropdown-menu *bsDropdownMenu>
+        <ng-container *bsLet="(isBusy$ | async) as isBusy">
+            <bs-progress [isIndeterminate]="true" class="prog" *ngIf="isBusy">
+                <bs-progress-bar></bs-progress-bar>
+            </bs-progress>
+            <div class="w-100 px-2 mb-2">
+                <input type="text" #textbox autofocus class="form-control d-block" [ngModel]="searchterm$ | async" (ngModelChange)="onSearchtermChange($event)">
+            </div>
+            
+            <bs-dropdown-item [disabled]="true" *ngIf="searchterm === ''">
+                <ng-container *ngTemplateOutlet="enterSearchtermTemplate ?? defaultEnterSearchtermTemplate; context: { }"></ng-container>
+            </bs-dropdown-item>
+            <div *ngIf="searchterm !== ''" class="overflow-y-auto" [style.max-height.px]="200">
+                <bs-dropdown-item *ngFor="let suggestion of suggestions" (click)="onSuggestionClicked(suggestion)" [isSelected]="selectedItem?.id === suggestion.id" [disabled]="isBusy ?? true">
+                    <ng-container *ngTemplateOutlet="suggestionTemplate ?? defaultSuggestionTemplate; context: { suggestion: suggestion, searchbox: this }"></ng-container>
+                </bs-dropdown-item>
+                <bs-dropdown-item *ngIf="suggestions.length === 0" [disabled]="true">
+                    <ng-container *ngTemplateOutlet="noResultsTemplate ?? defaultNoResultsTemplate; context: { }"></ng-container>
+                </bs-dropdown-item>
+            </div>
+        </ng-container>
+    </bs-dropdown-menu>
+</div>
+
+<ng-template #defaultEnterSearchtermTemplate>
+    Enter a search term
+</ng-template>
+<ng-template #defaultSuggestionTemplate let-suggestion="suggestion" let-searchbox="searchbox">
+    {{ suggestion.text }}
+</ng-template>
+<ng-template #defaultNoResultsTemplate>
+    No results
+</ng-template>

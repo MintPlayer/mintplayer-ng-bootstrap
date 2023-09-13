@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FocusOnLoadModule } from '@mintplayer/ng-focus-on-load';
-import { BsFontColorPipeModule } from '@mintplayer/ng-bootstrap';
+import { BsFontColorModule } from '@mintplayer/ng-bootstrap/font-color';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsModalModule } from '@mintplayer/ng-bootstrap/modal';
 import { BsSelect2Module } from '@mintplayer/ng-bootstrap/select2';
@@ -24,7 +24,7 @@ import { ModalComponent } from './modal.component';
     BsButtonTypeModule,
     FocusOnLoadModule,
 
-    BsFontColorPipeModule,
+    BsFontColorModule,
 
     ModalRoutingModule
   ]

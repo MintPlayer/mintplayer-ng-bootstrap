@@ -159,6 +159,23 @@
           <a [routerLink]='["/advanced", "code-snippet"]'>Code snippet</a>
         </bs-navbar-item>
         <bs-navbar-item>
+          <a [routerLink]='["/advanced", "pipes"]'>Pipes</a>
+          <bs-navbar-dropdown>
+            <bs-navbar-item>
+              <a [routerLink]='["/advanced", "pipes", "trust-html"]'>Trust-html</a>
+            </bs-navbar-item>
+            <bs-navbar-item>
+              <a [routerLink]='["/advanced", "pipes", "split-string"]'>Split-string</a>
+            </bs-navbar-item>
+            <bs-navbar-item>
+              <a [routerLink]='["/advanced", "pipes", "slugify"]'>Slugify</a>
+            </bs-navbar-item>
+            <bs-navbar-item>
+              <a [routerLink]='["/advanced", "pipes", "word-count"]'>Word-count</a>
+            </bs-navbar-item>
+          </bs-navbar-dropdown>
+        </bs-navbar-item>
+        <bs-navbar-item>
           <a [routerLink]='["/advanced", "sticky-footer"]'>Sticky footer</a>
         </bs-navbar-item>
         <bs-navbar-item>
@@ -187,6 +204,9 @@
         </bs-navbar-item>
         <bs-navbar-item>
           <a [routerLink]='["/advanced", "scrollspy"]'>Scrollspy</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/advanced", "searchbox"]'>Searchbox</a>
         </bs-navbar-item>
         <bs-navbar-item>
           <a [routerLink]='["/advanced", "select2"]'>Select2</a>

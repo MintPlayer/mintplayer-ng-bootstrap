@@ -19,8 +19,8 @@ export class Select2Component {
   selectedTags: Tag[] = [];
 
   onProvideArtistSuggestions(search: string) {
-    this.subjectService.suggest(search, [ESubjectType.artist]).then((artists) => {
-      this.artistSuggestions = <Artist[]>artists;
+    this.subjectService.suggest(search, [ESubjectType.artist]).subscribe({
+      next: artists => this.artistSuggestions = artists.map(s => <Artist>s),
     })
   }
   onProvideTagSuggestions(search: string) {
