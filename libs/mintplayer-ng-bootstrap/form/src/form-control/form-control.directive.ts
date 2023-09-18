@@ -5,7 +5,7 @@ import { BsFormComponent } from '../form/form.component';
   selector: 'bs-form input:not(.no-form-control), bs-form textarea:not(.no-form-control)'
 })
 export class BsFormControlDirective {
-  constructor(@Optional() form: BsFormComponent) {
+  constructor(@Optional() form?: BsFormComponent) {
     this.formControlClass = !!form;
   }
   @HostBinding('class.form-control') formControlClass: boolean;
