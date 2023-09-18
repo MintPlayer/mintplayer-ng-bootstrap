@@ -118,10 +118,6 @@ export class BsToggleButtonComponent implements AfterViewInit {
   }
   //#endregion
 
-  //#region disabled
-  @Input() public disabled = false;
-  //#endregion
-
   //#region name
   name$ = new BehaviorSubject<string | null>(null);
   public get name() {
