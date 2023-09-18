@@ -38,8 +38,8 @@ export class BsRangeValueAccessor implements ControlValueAccessor, AfterViewInit
     this.onTouched = fn;
   }
 
-  writeValue(value: number) {
-    if (this.host.slider) {
+  writeValue(value?: number) {
+    if (this.host.slider && (typeof value === 'number')) {
       this.host.slider.nativeElement.value = value.toString();
     }
   }
