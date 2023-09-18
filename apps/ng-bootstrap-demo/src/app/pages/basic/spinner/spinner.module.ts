@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BsSpinnerModule } from '@mintplayer/ng-bootstrap/spinner';
+import { BsTrackByModule } from '@mintplayer/ng-bootstrap/track-by';
 
 import { SpinnerRoutingModule } from './spinner-routing.module';
 import { SpinnerComponent } from './spinner.component';
@@ -13,6 +14,7 @@ import { SpinnerComponent } from './spinner.component';
   imports: [
     CommonModule,
     BsSpinnerModule,
+    BsTrackByModule,
     SpinnerRoutingModule
   ]
 })

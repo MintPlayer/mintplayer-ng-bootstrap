@@ -67,8 +67,4 @@ export class BsFileUploadComponent {
     this.files.push(...newFiles);
     this.filesDropped.emit(newFiles);
   }
-
-  trackByFile(index: number, file: FileUpload) {
-    return file.index;
-  }
 }

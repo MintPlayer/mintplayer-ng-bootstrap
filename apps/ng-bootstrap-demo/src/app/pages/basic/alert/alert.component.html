@@ -16,7 +16,7 @@
     Show all alerts again
 </button>
 <h2 class="mt-4">Alerts list</h2>
-<bs-alert *ngFor="let alertItem of alertsList; trackBy: trackByAlertItem" [type]="colors.danger" (afterOpenedOrClosed)="alertVisibleChange(alertItem, $event)">
+<bs-alert *ngFor="let alertItem of alertsList; bsTrackBy: 'id'" [type]="colors.danger" (afterOpenedOrClosed)="alertVisibleChange(alertItem, $event)">
     {{ alertItem.text }}
     <bs-alert-close></bs-alert-close>
 </bs-alert>
@@ -27,5 +27,5 @@
     </bs-input-group>
 </bs-form>
 <ul class="mt-3">
-    <li *ngFor="let alertItem of alertsList; trackBy: trackByAlertItem">{{ alertItem.text }}</li>
+    <li *ngFor="let alertItem of alertsList; bsTrackBy: 'id'">{{ alertItem.text }}</li>
 </ul>

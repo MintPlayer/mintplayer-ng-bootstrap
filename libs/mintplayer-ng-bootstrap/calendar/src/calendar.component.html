@@ -17,11 +17,11 @@
     </tr>
     <tr>
         <th></th>
-        <th *ngFor="let dayOfWeek of shownDays$ | async; trackBy: trackByWeekDay" [title]="dayOfWeek.long">
+        <th *ngFor="let dayOfWeek of shownDays$ | async; bsTrackBy: 'long'" [title]="dayOfWeek.long">
             {{ dayOfWeek.short }}
         </th>
     </tr>
-    <tr *ngFor="let week of (weeks$ | async); trackBy: trackByWeek">
+    <tr *ngFor="let week of (weeks$ | async); bsTrackBy: 'number'">
         <th>
             {{ week.number }}
         </th>

@@ -26,10 +26,6 @@ export class AlertComponent {
     this.newAlertItem = '';
     this.txtNewAlert.nativeElement.focus();
   }
-
-  trackByAlertItem(index: number, item: AlertItem) {
-    return item.id;
-  }
 }
 
 interface AlertItem {

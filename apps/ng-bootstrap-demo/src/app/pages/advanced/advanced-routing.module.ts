@@ -25,6 +25,7 @@ const routes: Routes = [
   { path: 'sticky-footer', loadChildren: () => import('./sticky-footer/sticky-footer.module').then(m => m.StickyFooterModule) },
   { path: 'pipes', loadChildren: () => import('./pipes/pipes.module').then(m => m.PipesModule) },
   { path: 'searchbox', loadChildren: () => import('./searchbox/searchbox.module').then(m => m.SearchboxModule) },
+  { path: 'track-by', loadChildren: () => import('./track-by/track-by.module').then(m => m.TrackByModule) },
 ];
 
 @NgModule({
