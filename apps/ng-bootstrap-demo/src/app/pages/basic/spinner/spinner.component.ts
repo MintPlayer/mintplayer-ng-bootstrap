@@ -13,8 +13,4 @@ export class SpinnerComponent {
   }
 
   colors: EnumItem[];
-  
-  trackByColor(index: number, item: EnumItem) {
-    return item.key;
-  }
 }

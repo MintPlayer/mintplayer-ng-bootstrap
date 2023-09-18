@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BsForModule } from '@mintplayer/ng-bootstrap/for';
+import { BsTrackByModule } from '@mintplayer/ng-bootstrap/track-by';
 import { BsProgressBarModule } from '@mintplayer/ng-bootstrap/progress-bar';
 import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
 import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
@@ -17,6 +18,7 @@ import { BsFormatBytesPipe } from './pipes/format-bytes/format-bytes.pipe';
   imports: [
     CommonModule,
     BsForModule,
+    BsTrackByModule,
     BsProgressBarModule,
     BsListGroupModule,
     BsButtonTypeModule,

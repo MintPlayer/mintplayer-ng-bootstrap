@@ -122,9 +122,6 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
   }
 
   imageCounter = 1;
-  trackByImageId(index: number, item: BsCarouselImageDirective) {
-    return item.id;
-  }
 
   ngAfterViewInit() {
     this.resizeObserver?.observe(this.innerElement.nativeElement);

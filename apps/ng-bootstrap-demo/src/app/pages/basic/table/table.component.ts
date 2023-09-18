@@ -39,10 +39,6 @@ export class TableComponent {
     placeOfDeath: 'Los Angeles',
   }];
   isResponsive = true;
-  
-  trackByPerson(index: number, item: Person) {
-    return item.id;
-  }
 }
 
 interface Person {

@@ -203,8 +203,4 @@ export class BsPaginationComponent {
     }
     return false;
   }
-
-  trackByPageNumber(index: number, page: PageWithSelection) {
-    return page;
-  }
 }

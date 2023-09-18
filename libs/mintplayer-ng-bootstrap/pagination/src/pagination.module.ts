@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { BsTrackByModule } from '@mintplayer/ng-bootstrap/track-by';
 import { BsPaginationComponent } from './component/pagination/pagination.component';
 
 
@@ -9,7 +10,8 @@ import { BsPaginationComponent } from './component/pagination/pagination.compone
     BsPaginationComponent
   ],
   imports: [
-    CommonModule
+    CommonModule,
+    BsTrackByModule
   ],
   exports: [
     BsPaginationComponent

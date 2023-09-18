@@ -1,2 +1,2 @@
 <h1 class="text-center">Button type</h1>
-<button *ngFor="let color of colorValues; trackBy: trackByColor" [color]="color.value" class="mx-2">{{ color.key }}</button>
+<button *ngFor="let color of colorValues; bsTrackBy: 'key'" [color]="color.value" class="mx-2">{{ color.key }}</button>
