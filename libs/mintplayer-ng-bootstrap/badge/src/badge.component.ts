@@ -1,4 +1,4 @@
-import { Component, HostBinding, Input, OnInit } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { BehaviorSubject, map, Observable } from 'rxjs';
 import { Color } from '@mintplayer/ng-bootstrap';
 
@@ -7,7 +7,7 @@ import { Color } from '@mintplayer/ng-bootstrap';
   templateUrl: './badge.component.html',
   styleUrls: ['./badge.component.scss'],
 })
-export class BsBadgeComponent implements OnInit {
+export class BsBadgeComponent {
   constructor() {
     this.colorClass$ = this.type$
       .pipe(map((type) => `bg-${this.colors[type]}`));
@@ -26,11 +26,4 @@ export class BsBadgeComponent implements OnInit {
   //#endregion
 
   colorClass$: Observable<string>;
-
-  ngOnInit(): void {}
-
-  // @HostBinding('class.badge') badgeCls = true;
-  // @HostBinding('class') get typeClass() {
-  //   return `bg-${this.colors[this.type]}`;
-  // }
 }
