@@ -8,5 +8,7 @@ import { Component } from '@angular/core';
 export class DatepickerComponent {
 
   selectedDate = new Date();
-  
+  disableDate = (date: Date) => {
+    return date.getDate() % 2 === 0;
+  }
 }

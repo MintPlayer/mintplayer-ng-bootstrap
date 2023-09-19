@@ -65,6 +65,8 @@ export class BsCalendarComponent {
   }
   //#endregion
 
+  @Input() disableDateFn?: (date: Date) => boolean;
+
   previousMonth() {
     this.currentMonth$.pipe(take(1)).subscribe((month) => {
       this.currentMonth$.next(
@@ -97,7 +99,7 @@ export class BsCalendarComponent {
   }
 
   goto(day: DateDayOfMonth | null) {
-    if (day) {
+    if (day && day.isInMonth && (!this.disableDateFn || !this.disableDateFn(day.date))) {
       this.selectedDate$.next(day.date);
     }
   }

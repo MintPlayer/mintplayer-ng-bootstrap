@@ -34,4 +34,6 @@ export class BsDatepickerComponent {
   }
   //#endregion
 
+  @Input() disableDateFn?: (date: Date) => boolean;
+
 }
