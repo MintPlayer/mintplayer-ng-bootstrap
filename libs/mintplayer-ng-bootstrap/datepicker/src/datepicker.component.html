@@ -3,6 +3,6 @@
     <button bsDropdownToggle [color]="colors.primary">{{ selectedDate | date }}</button>
     <bs-has-overlay></bs-has-overlay>
     <div *bsDropdownMenu>
-        <bs-calendar [(selectedDate)]="selectedDate" [(currentMonth)]="currentMonth"></bs-calendar>
+        <bs-calendar [(selectedDate)]="selectedDate" [(currentMonth)]="currentMonth" [disableDateFn]="disableDateFn"></bs-calendar>
     </div>
 </div>
