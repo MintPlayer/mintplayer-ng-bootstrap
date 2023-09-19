@@ -6,5 +6,5 @@ import { Component } from '@angular/core';
   styleUrls: ['./sticky-footer.component.scss']
 })
 export class StickyFooterComponent {
-
+  numbers = [...Array(5).keys()];
 }

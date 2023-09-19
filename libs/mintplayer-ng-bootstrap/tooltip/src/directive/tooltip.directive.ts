@@ -1,6 +1,6 @@
 import { ConnectedPosition, Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { Directive, ElementRef, Host, HostListener, Injector, Input, SkipSelf, TemplateRef } from '@angular/core';
+import { Directive, ElementRef, Host, HostListener, Injector, Input, OnDestroy, SkipSelf, TemplateRef } from '@angular/core';
 import { Position } from '@mintplayer/ng-bootstrap';
 import { BsTooltipComponent } from '../component/tooltip.component';
 import { TOOLTIP_CONTENT } from '../providers/tooltip-content.provider';
@@ -8,7 +8,7 @@ import { TOOLTIP_CONTENT } from '../providers/tooltip-content.provider';
 @Directive({
   selector: '*[bsTooltip]'
 })
-export class BsTooltipDirective {
+export class BsTooltipDirective implements OnDestroy {
 
   constructor(
     private overlay: Overlay,
@@ -93,6 +93,10 @@ export class BsTooltipDirective {
       this.overlayRef.dispose();
       this.overlayRef = null;
     }
+  }
+
+  ngOnDestroy() {
+    this.hideTooltip();
   }
 
 }

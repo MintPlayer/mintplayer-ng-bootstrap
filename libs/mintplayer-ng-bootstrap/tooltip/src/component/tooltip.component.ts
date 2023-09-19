@@ -15,6 +15,15 @@ export class BsTooltipComponent {
     this.template = content;  
     this.positionClass$ = this.position$
       .pipe(map(position => `bs-tooltip-${position}`));
+    this.marginClass$ = this.position$
+      .pipe(map(position => {
+        switch (position) {
+          case 'start': return 'me-1';
+          case 'end': return 'ms-1';
+          case 'top': return 'mb-1';
+          case 'bottom': return 'mt-1';
+        }
+      }));
   }
 
   //#region Position
@@ -29,6 +38,7 @@ export class BsTooltipComponent {
 
   template: TemplateRef<any>;
   positionClass$: Observable<string>;
+  marginClass$: Observable<string>;
 
   @HostBinding('class.position-relative') positionRelative = true;
 
