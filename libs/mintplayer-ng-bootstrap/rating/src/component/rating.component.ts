@@ -57,10 +57,6 @@ export class BsRatingComponent {
     this.value = index + 1;
   }
 
-  trackByStar(index: number, star: boolean) {
-    return index;
-  }
-
   @HostListener('mouseleave') onMouseLeave() {
     this.previewValue$.next(null);
   }

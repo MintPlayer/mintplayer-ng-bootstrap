@@ -3,8 +3,12 @@
     <li>Open devtools <kbd>F12</kbd> and find and select the <code>ul</code> inside the <code>bs-list-group</code></li>
     <li>Click the button. Note that only the newly added <code>bs-list-group-item</code> is recreated</li>
 </ul>
-<button (click)="addSomeone()" [color]="colors.primary" class="w-100">Add someone</button>
 <bs-grid>
+    <div bsRow>
+        <div [bsColumn]="{md: 12}">
+            <button (click)="addSomeone()" [color]="colors.primary" class="w-100">Add someone</button>
+        </div>
+    </div>
     <div bsRow>
         <div [bsColumn]="{md:6}">
             <bs-list-group>

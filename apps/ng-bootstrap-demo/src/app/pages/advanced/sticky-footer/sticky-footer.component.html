@@ -1,15 +1,11 @@
 <div bsStickyFooterParent>
     <h1 class="text-center">Sticky-footer</h1>
-    <h2>Title 1</h2>
-    <p>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Quaerat minus doloremque distinctio pariatur consequuntur velit a rem, consequatur inventore explicabo, iste, nemo sit adipisci. Magnam ab totam aspernatur eos iusto.</p>
-    <h2>Title2</h2>
-    <p>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Quaerat minus doloremque distinctio pariatur consequuntur velit a rem, consequatur inventore explicabo, iste, nemo sit adipisci. Magnam ab totam aspernatur eos iusto.</p>
-    <h2>Title 3</h2>
-    <p>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Quaerat minus doloremque distinctio pariatur consequuntur velit a rem, consequatur inventore explicabo, iste, nemo sit adipisci. Magnam ab totam aspernatur eos iusto.</p>
-    <h2>Title 4</h2>
-    <p>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Quaerat minus doloremque distinctio pariatur consequuntur velit a rem, consequatur inventore explicabo, iste, nemo sit adipisci. Magnam ab totam aspernatur eos iusto.</p>
-    <h2>Title 5</h2>
-    <p>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Quaerat minus doloremque distinctio pariatur consequuntur velit a rem, consequatur inventore explicabo, iste, nemo sit adipisci. Magnam ab totam aspernatur eos iusto.</p>
+    <bs-accordion [highlightActiveTab]="true">
+        <bs-accordion-tab *ngFor="let num of numbers; bsTrackByIndex">
+            <bs-accordion-tab-header>Title {{ num }}</bs-accordion-tab-header>
+            <p class="p-3 m-0">Lorem ipsum dolor sit, amet consectetur adipisicing elit. Quaerat minus doloremque distinctio pariatur consequuntur velit a rem, consequatur inventore explicabo, iste, nemo sit adipisci. Magnam ab totam aspernatur eos iusto.</p>
+        </bs-accordion-tab>
+    </bs-accordion>
     <bs-sticky-footer>
         <bs-grid class="d-block py-3 bg-dark text-light">
             <div bsRow>
