@@ -16,20 +16,20 @@
                             </div>
                             <div bsRow class="form-group">
                                 <div [bsColumn]="{md: 3, lg: 6}">
-                                    <bs-select2 (provideSuggestions)="onProvideTagSuggestions($event)" [suggestions]="tagSuggestions" [selectedItems]="selectedTags" [autofocus]="true">
-                                        <span *bsItemTemplate="let item=item; let select2=select2" class="select2-item" [style.background]="item.category.color"
-                                            [style.color]="item.category.color | bsFontColor">
-                                            <span [style.color]="item.category.color | bsFontColor" (click)="select2.onRemoveItem(item,$event)">×</span>
-                                            {{ item.text }}
+                                    <bs-select2 (provideSuggestions)="onProvideTagSuggestions($event)" [suggestions]="tagSuggestions" [autofocus]="true">
+                                        <span *bsItemTemplate="let item of selectedTags; let select2=select2" class="select2-item" [style.background]="item.category?.color"
+                                            [style.color]="item.category?.color | bsFontColor">
+                                            <span [style.color]="item.category?.color | bsFontColor" (click)="select2.onRemoveItem(item,$event)">×</span>
+                                            {{ item?.description }}
                                         </span>
                                     </bs-select2>
                                 </div>
                                 <div [bsColumn]="{md: 9, lg: 6}">
-                                    <bs-select2 (provideSuggestions)="onProvideTagSuggestions($event)" [suggestions]="tagSuggestions" [selectedItems]="selectedTags" [autofocus]="true">
-                                        <span *bsItemTemplate="let item=item; let select2=select2" class="select2-item" [style.background]="item.category.color"
-                                            [style.color]="item.category.color | bsFontColor">
-                                            <span [style.color]="item.category.color | bsFontColor" (click)="select2.onRemoveItem(item,$event)">×</span>
-                                            {{ item.text }}
+                                    <bs-select2 (provideSuggestions)="onProvideTagSuggestions($event)" [suggestions]="tagSuggestions" [autofocus]="true">
+                                        <span *bsItemTemplate="let item of selectedTags; let select2=select2" class="select2-item" [style.background]="item.category?.color"
+                                            [style.color]="item.category?.color | bsFontColor">
+                                            <span [style.color]="item.category?.color | bsFontColor" (click)="select2.onRemoveItem(item,$event)">×</span>
+                                            {{ item.description }}
                                         </span>
                                     </bs-select2>
                                 </div>
