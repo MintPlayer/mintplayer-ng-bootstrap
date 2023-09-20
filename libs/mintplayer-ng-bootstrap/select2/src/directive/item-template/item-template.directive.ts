@@ -1,4 +1,4 @@
-import { Directive, TemplateRef } from '@angular/core';
+import { Directive, Input, TemplateRef } from '@angular/core';
 import { BsSelect2Component } from '../../component/select2.component';
 import { HasId } from '@mintplayer/ng-bootstrap/has-id';
 
@@ -15,9 +15,13 @@ export class BsItemTemplateDirective<T extends HasId<U>, U> {
     return true;
   }
 
+  @Input() set bsItemTemplateOf(value: T[]) {
+    this.select2component.selectedItems = value;
+  }
+
 }
 
 export class BsItemTemplateContext<T extends HasId<U>, U> {
-  item: T = null!;
+  $implicit: T = null!;
   select2: BsSelect2Component<T, U> = null!;
 }

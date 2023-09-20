@@ -5,7 +5,7 @@ import { TagCategory } from './tag-category';
 export interface Tag extends HasId<number> {
     id: number;
     description: string;
-    category: TagCategory;
+    category: TagCategory | null;
     subjects: Subject[];
 
     parent: Tag;

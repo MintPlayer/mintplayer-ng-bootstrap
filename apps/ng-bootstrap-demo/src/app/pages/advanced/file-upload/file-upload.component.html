@@ -2,8 +2,8 @@
 <bs-grid>
     <div bsRow>
         <div [bsColumn]="{md: 12}" class="text-center">
-            <bs-file-upload [files]="files" (filesDropped)="logFilesForUpload($event)">
-                <div *bsFileUploadTemplate="let upload" class="d-flex flex-row mx-auto">
+            <bs-file-upload (filesDropped)="logFilesForUpload($event)">
+                <div *bsFileUploadTemplate="let upload of files" class="d-flex flex-row mx-auto">
                     <div class="file-img"></div>
                     <div class="flex-grow-1 text-start px-2">
                         <span class="d-block text-truncate text-secondary">{{ upload.file.name }}</span>

@@ -5,9 +5,9 @@ import { Pipe, PipeTransform } from '@angular/core';
 })
 export class BsFontColorPipe implements PipeTransform {
 
-  transform(color_hex: any): any {
+  transform(color_hex: any, defaultColor = '#FFFFFF'): any {
     if (color_hex === undefined || color_hex === null || color_hex.length < 7 || typeof (color_hex) !== 'string') {
-      return '#FFFFFF';
+      return defaultColor;
     }
     const R_HEX: string = color_hex.substr(1, 2);
     const G_HEX: string = color_hex.substr(3, 2);
