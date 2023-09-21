@@ -10,7 +10,8 @@
       "outputs": ["{workspaceRoot}/dist/libs/mintplayer-ng-click-outside"],
       "options": {
         "tsConfig": "libs/mintplayer-ng-click-outside/tsconfig.lib.json",
-        "project": "libs/mintplayer-ng-click-outside/ng-package.json"
+        "project": "libs/mintplayer-ng-click-outside/ng-package.json",
+        "updateBuildableProjectDepsInPackageJson": true
       },
       "configurations": {
         "production": {

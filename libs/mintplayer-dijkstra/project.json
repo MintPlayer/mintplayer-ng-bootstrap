@@ -11,7 +11,8 @@
         "outputPath": "dist/libs/mintplayer-dijkstra",
         "main": "libs/mintplayer-dijkstra/src/index.ts",
         "tsConfig": "libs/mintplayer-dijkstra/tsconfig.lib.json",
-        "assets": ["libs/mintplayer-dijkstra/*.md"]
+        "assets": ["libs/mintplayer-dijkstra/*.md"],
+        "updateBuildableProjectDepsInPackageJson": true
       }
     },
     "publish": {

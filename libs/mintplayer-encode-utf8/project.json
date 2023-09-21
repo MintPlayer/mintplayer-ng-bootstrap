@@ -11,7 +11,8 @@
         "outputPath": "dist/libs/mintplayer-encode-utf8",
         "main": "libs/mintplayer-encode-utf8/src/index.ts",
         "tsConfig": "libs/mintplayer-encode-utf8/tsconfig.lib.json",
-        "assets": ["libs/mintplayer-encode-utf8/*.md"]
+        "assets": ["libs/mintplayer-encode-utf8/*.md"],
+        "updateBuildableProjectDepsInPackageJson": true
       }
     },
     "publish": {

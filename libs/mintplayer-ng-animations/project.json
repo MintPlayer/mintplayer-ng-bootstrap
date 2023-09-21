@@ -10,7 +10,8 @@
       "outputs": ["{workspaceRoot}/dist/libs/mintplayer-ng-animations"],
       "options": {
         "tsConfig": "libs/mintplayer-ng-animations/tsconfig.lib.json",
-        "project": "libs/mintplayer-ng-animations/ng-package.json"
+        "project": "libs/mintplayer-ng-animations/ng-package.json",
+        "updateBuildableProjectDepsInPackageJson": true
       },
       "configurations": {
         "production": {

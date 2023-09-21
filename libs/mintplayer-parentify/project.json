@@ -11,7 +11,8 @@
         "outputPath": "dist/libs/mintplayer-parentify",
         "main": "libs/mintplayer-parentify/src/index.ts",
         "tsConfig": "libs/mintplayer-parentify/tsconfig.lib.json",
-        "assets": ["libs/mintplayer-parentify/*.md"]
+        "assets": ["libs/mintplayer-parentify/*.md"],
+        "updateBuildableProjectDepsInPackageJson": true
       }
     },
     "publish": {
