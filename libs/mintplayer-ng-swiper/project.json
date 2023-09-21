@@ -7,9 +7,10 @@
   "targets": {
     "build": {
       "executor": "@nx/angular:package",
-      "outputs": ["dist/libs/mintplayer-ng-swiper"],
+      "outputs": ["{workspaceRoot}/dist/libs/mintplayer-ng-swiper"],
       "options": {
-        "project": "libs/mintplayer-ng-swiper/ng-package.json"
+        "project": "libs/mintplayer-ng-swiper/ng-package.json",
+        "updateBuildableProjectDepsInPackageJson": true
       },
       "configurations": {
         "production": {
@@ -23,7 +24,7 @@
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["coverage/libs/mintplayer-ng-swiper"],
+      "outputs": ["{workspaceRoot}/coverage/libs/mintplayer-ng-swiper"],
       "options": {
         "codeCoverage": true,
         "coverageReporters": ["lcovonly"],

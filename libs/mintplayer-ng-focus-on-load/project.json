@@ -10,7 +10,8 @@
       "outputs": ["{workspaceRoot}/dist/libs/mintplayer-ng-focus-on-load"],
       "options": {
         "tsConfig": "libs/mintplayer-ng-focus-on-load/tsconfig.lib.json",
-        "project": "libs/mintplayer-ng-focus-on-load/ng-package.json"
+        "project": "libs/mintplayer-ng-focus-on-load/ng-package.json",
+        "updateBuildableProjectDepsInPackageJson": true
       },
       "configurations": {
         "production": {
