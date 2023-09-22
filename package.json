@@ -34,7 +34,7 @@
     "bootstrap": "^5.1.3",
     "bootstrap-icons": "~1.7.2",
     "express": "^4.15.2",
-    "ngx-highlightjs": "~7.0.1",
+    "ngx-highlightjs": "~10.0.0",
     "rxjs": "~7.5.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.13.0",
