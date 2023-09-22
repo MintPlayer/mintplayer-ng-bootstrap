@@ -1,0 +1,12 @@
+//Generate utilites for width
+$utilities: map-merge(
+    $utilities,
+    (
+        "width": (
+            property: width,
+            class: w,
+            values: auto,
+            responsive: true
+        ),
+    )
+);

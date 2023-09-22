@@ -1,7 +1,7 @@
 <bs-container>
     <nav #nav class="navbar position-fixed" [class]="navClassList$ | async" bsUserAgent bsNoNoscript>
         <div class="container-fluid nav-wrapper">
-            <div class="d-flex" [class]="wAutoClass$ | async" [class.w-100]="isSmallMode$ | async">
+            <div class="d-flex w-100" [class]="wAutoClass$ | async">
                 <ng-content select="bs-navbar-brand"></ng-content>
                 <div class="flex-end d-flex tw" [class]="dNoneClass$ | async">
                     <button (click)="toggleExpanded()" title="Expand/collapse menu" class="align-self-center" [class.navbar-toggler]="!expandButtonTemplate" [class.bg-transparent]="expandButtonTemplate" [class.shadow-none]="expandButtonTemplate" [class.border-0]="expandButtonTemplate" type="button">
