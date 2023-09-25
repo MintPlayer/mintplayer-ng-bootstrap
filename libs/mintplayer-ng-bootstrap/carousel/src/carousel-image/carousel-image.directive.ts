@@ -1,4 +1,4 @@
-import { Directive, TemplateRef, ElementRef } from '@angular/core';
+import { Directive, TemplateRef, ElementRef, HostBinding } from '@angular/core';
 import { BsCarouselComponent } from '../carousel/carousel.component';
 
 @Directive({
@@ -14,4 +14,5 @@ export class BsCarouselImageDirective {
   }
   
   id: number;
+  isFirst = false;
 }

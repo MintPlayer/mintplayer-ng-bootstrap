@@ -59,6 +59,7 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
   @ViewChild('container') swipeContainer!: BsSwipeContainerDirective;
   @ContentChildren(forwardRef(() => BsCarouselImageDirective)) set images(value: QueryList<BsCarouselImageDirective>) {
     this.images$.next(value);
+    value.forEach((item, index) => item.isFirst = (index === 0));
   }
 
   //#region Animation

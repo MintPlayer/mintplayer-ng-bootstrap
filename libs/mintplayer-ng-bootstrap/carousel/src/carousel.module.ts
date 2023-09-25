@@ -6,11 +6,13 @@ import { BsTrackByModule } from '@mintplayer/ng-bootstrap/track-by';
 import { BsNoNoscriptModule } from '@mintplayer/ng-bootstrap/no-noscript';
 import { BsCarouselComponent } from './carousel/carousel.component';
 import { BsCarouselImageDirective } from './carousel-image/carousel-image.directive';
+import { BsCarouselImgDirective } from './carousel-img/carousel-img.directive';
 
 @NgModule({
   declarations: [
     BsCarouselComponent,
-    BsCarouselImageDirective
+    BsCarouselImageDirective,
+    BsCarouselImgDirective,
   ],
   imports: [
     CommonModule,
@@ -21,7 +23,8 @@ import { BsCarouselImageDirective } from './carousel-image/carousel-image.direct
   ],
   exports: [
     BsCarouselComponent,
-    BsCarouselImageDirective
+    BsCarouselImageDirective,
+    BsCarouselImgDirective,
   ]
 })
 export class BsCarouselModule { }
