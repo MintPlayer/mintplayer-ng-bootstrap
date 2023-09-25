@@ -17,18 +17,14 @@ export class BsColorPickerComponent {
   }
 
   @ViewChild('wheel') colorWheel!: BsColorWheelComponent;
-  @Input() set width(value: number) {
-    this.width$.next(value);
-  }
-  @Input() set height(value: number) {
-    this.height$.next(value);
+  @Input() set size(value: number) {
+    this.size$.next(value);
   }
   @Input() set allowAlpha(value: boolean) {
     this.allowAlpha$.next(value);
   }
   
-  width$ = new BehaviorSubject<number>(150);
-  height$ = new BehaviorSubject<number>(150);
+  size$ = new BehaviorSubject<number>(150);
   disabled$ = new BehaviorSubject<boolean>(false);
   allowAlpha$ = new BehaviorSubject<boolean>(true);
 

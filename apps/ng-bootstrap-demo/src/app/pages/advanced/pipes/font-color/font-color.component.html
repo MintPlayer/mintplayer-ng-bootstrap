@@ -1,0 +1,5 @@
+<h1 class="text-center">Font-color</h1>
+<div [style.background]="background" class="p-5 mb-3">
+    <b [style.color]="background | bsFontColor">Hello world</b>
+</div>
+<bs-color-picker class="d-inline-block mb-5" [(ngModel)]="background" [alpha]="1" [allowAlpha]="false" [size]="200"></bs-color-picker>

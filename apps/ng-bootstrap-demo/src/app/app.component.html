@@ -1,4 +1,4 @@
-<bs-navbar [color]="colors.dark" [breakpoint]="'sm'" #nav>
+<bs-navbar [color]="colors.dark" [breakpoint]="'lg'" #nav>
   <bs-navbar-toggler *bsExpandButton="let state" [state]="state" [toggleOnClick]="false"></bs-navbar-toggler>
   <bs-navbar-brand>
     <a [routerLink]='["/"]'>
@@ -175,6 +175,9 @@
             </bs-navbar-item>
             <bs-navbar-item>
               <a [routerLink]='["/advanced", "pipes", "word-count"]'>Word-count</a>
+            </bs-navbar-item>
+            <bs-navbar-item>
+              <a [routerLink]='["/advanced", "pipes", "font-color"]'>Font-color</a>
             </bs-navbar-item>
           </bs-navbar-dropdown>
         </bs-navbar-item>

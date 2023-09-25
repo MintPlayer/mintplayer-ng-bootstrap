@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MockModule } from 'ng-mocks';
+import { BsMarqueeModule } from '@mintplayer/ng-bootstrap/marquee';
 
 import { MarqueeComponent } from './marquee.component';
 
@@ -8,6 +10,9 @@ describe('MarqueeComponent', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
+      imports: [
+        MockModule(BsMarqueeModule),
+      ],
       declarations: [MarqueeComponent]
     });
     fixture = TestBed.createComponent(MarqueeComponent);
