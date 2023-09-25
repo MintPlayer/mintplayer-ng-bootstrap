@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { FormsModule } from '@angular/forms';
 import { MockModule } from 'ng-mocks';
 import { BsFontColorModule } from '@mintplayer/ng-bootstrap/font-color';
 import { BsColorPickerModule } from '@mintplayer/ng-bootstrap/color-picker';
@@ -12,6 +13,7 @@ describe('FontColorComponent', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [
+        FormsModule,
         MockModule(BsFontColorModule),
         MockModule(BsColorPickerModule),
       ],

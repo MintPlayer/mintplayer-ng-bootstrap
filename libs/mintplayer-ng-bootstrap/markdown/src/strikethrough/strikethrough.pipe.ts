@@ -2,7 +2,8 @@ import { Pipe, PipeTransform, SecurityContext } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Pipe({
-  name: 'bsStrikethrough'
+  name: 'bsStrikethrough',
+  pure: true
 })
 export class BsStrikethroughPipe implements PipeTransform {
 

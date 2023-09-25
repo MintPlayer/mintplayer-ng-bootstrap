@@ -2,7 +2,8 @@ import { Pipe, PipeTransform, SecurityContext } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Pipe({
-  name: 'bsBold'
+  name: 'bsBold',
+  pure: true
 })
 export class BsBoldPipe implements PipeTransform {
 

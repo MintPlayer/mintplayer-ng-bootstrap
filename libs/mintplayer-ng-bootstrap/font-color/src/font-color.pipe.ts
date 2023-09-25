@@ -1,7 +1,8 @@
 import { Pipe, PipeTransform } from '@angular/core';
 
 @Pipe({
-  name: 'bsFontColor'
+  name: 'bsFontColor',
+  pure: true
 })
 export class BsFontColorPipe implements PipeTransform {
 

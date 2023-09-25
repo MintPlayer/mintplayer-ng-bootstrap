@@ -7,7 +7,8 @@ const routes: Routes = [
   { path: 'split-string', loadChildren: () => import('./split-string/split-string.module').then(m => m.SplitStringModule) },
   { path: 'slugify', loadChildren: () => import('./slugify/slugify.module').then(m => m.SlugifyModule) },
   { path: 'word-count', loadChildren: () => import('./word-count/word-count.module').then(m => m.WordCountModule) },
-  { path: 'font-color', loadChildren: () => import('./font-color/font-color.module').then(m => m.FontColorModule) }
+  { path: 'font-color', loadChildren: () => import('./font-color/font-color.module').then(m => m.FontColorModule) },
+  { path: 'linify', loadChildren: () => import('./linify/linify.module').then(m => m.LinifyModule) }
 ];
 
 @NgModule({

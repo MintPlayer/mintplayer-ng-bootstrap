@@ -2,7 +2,8 @@ import { Pipe, PipeTransform, SecurityContext } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Pipe({
-  name: 'bsUnderline'
+  name: 'bsUnderline',
+  pure: true
 })
 export class BsUnderlinePipe implements PipeTransform {
 
