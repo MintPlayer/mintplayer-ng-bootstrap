@@ -176,24 +176,26 @@ export class BsSwipeContainerDirective implements AfterViewInit {
   }
 
   previous() {
-    this.pendingAnimation?.finish();
-    combineLatest([this.actualSwipes$, this.imageIndex$]).pipe(take(1)).subscribe(([actualSwipes, imageIndex]) => {
-      setTimeout(() => this.animateToIndex(imageIndex, imageIndex - 1, 0, actualSwipes?.length ?? 1), 20);
-    });
+    this.gotoAnimate(-1, 'relative');
   }
 
   next() {
-    this.pendingAnimation?.finish();
-    combineLatest([this.actualSwipes$, this.imageIndex$]).pipe(take(1)).subscribe(([actualSwipes, imageIndex]) => {
-      setTimeout(() => this.animateToIndex(imageIndex, imageIndex + 1, 0, actualSwipes?.length ?? 1), 20);
-    });
+    this.gotoAnimate(1, 'relative');
   }
 
   goto(index: number) {
-    combineLatest([this.actualSwipes$, this.imageIndex$]).pipe(take(1)).subscribe(([actualSwipes, imageIndex]) => {
-      this.pendingAnimation?.finish();
-      setTimeout(() => this.animateToIndex(imageIndex, index, 0, actualSwipes?.length ?? 1), 20);
-    });
+    this.gotoAnimate(index, 'absolute');
+  }
+
+  private gotoAnimate(index: number, type: 'absolute' | 'relative') {
+    this.pendingAnimation?.finish();
+    setTimeout(() => {
+      combineLatest([this.actualSwipes$, this.imageIndex$]).pipe(take(1)).subscribe(([actualSwipes, imageIndex]) => {
+        this.pendingAnimation?.finish();
+        const idx = (type === 'relative') ? imageIndex + index : index;
+        this.animateToIndex(imageIndex, idx, 0, actualSwipes?.length ?? 1);
+      });
+    }, 20);
   }
 
 }
