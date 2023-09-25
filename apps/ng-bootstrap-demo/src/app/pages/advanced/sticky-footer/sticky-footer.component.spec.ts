@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MockModule } from 'ng-mocks';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsTrackByModule } from '@mintplayer/ng-bootstrap/track-by';
+import { BsAccordionModule } from '@mintplayer/ng-bootstrap/accordion';
 import { BsStickyFooterModule } from '@mintplayer/ng-bootstrap/sticky-footer';
 
 import { StickyFooterComponent } from './sticky-footer.component';
@@ -15,6 +17,8 @@ describe('StickyFooterComponent', () => {
       imports: [
         // Mock dependencies
         MockModule(BsGridModule),
+        MockModule(BsTrackByModule),
+        MockModule(BsAccordionModule),
         MockModule(BsStickyFooterModule),
       ]
     });
