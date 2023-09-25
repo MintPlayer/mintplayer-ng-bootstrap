@@ -1,7 +1,8 @@
 import { Pipe, PipeTransform } from '@angular/core';
 
 @Pipe({
-  name: 'bsUcFirst'
+  name: 'bsUcFirst',
+  pure: true
 })
 export class BsUcFirstPipe implements PipeTransform {
 

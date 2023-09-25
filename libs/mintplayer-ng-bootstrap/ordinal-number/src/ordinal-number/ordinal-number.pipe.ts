@@ -2,7 +2,8 @@ import { Pipe, PipeTransform, SecurityContext } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Pipe({
-  name: 'ordinalNumber'
+  name: 'ordinalNumber',
+  pure: true
 })
 export class BsOrdinalNumberPipe implements PipeTransform {
 
