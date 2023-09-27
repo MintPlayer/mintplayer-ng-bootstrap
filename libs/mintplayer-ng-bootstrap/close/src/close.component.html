@@ -1,1 +1,2 @@
-<button type="button" (click)="onClose($event)" class="btn-close" aria-label="Close"></button>
+<!-- <button type="button" (click)="onClose($event)" class="btn-close" [class.cursor-pointer]="serverClasses" [class.pe-all]="serverClasses" aria-label="Close"></button> -->
+<label (click)="onClose($event)" class="btn-close" [class.cursor-pointer]="serverClasses" [class.pe-all]="serverClasses" aria-label="Close"></label>

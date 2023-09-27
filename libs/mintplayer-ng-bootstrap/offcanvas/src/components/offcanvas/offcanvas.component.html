@@ -1,3 +1,4 @@
+<input type="checkbox" *ngIf="serverSide" [id]="offcanvasName$ | async">
 <div [@fadeInOut]="{value: ':leave', params: {duration: '300ms'} }" *ngIf="showBackdrop$ | async">
     <div class="modal-backdrop show" (click)="onBackdropClick($event)"></div>
 </div>

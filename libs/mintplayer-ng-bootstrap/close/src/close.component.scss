@@ -8,3 +8,7 @@
     // Layout & components
     @import "../../../../node_modules/bootstrap/scss/close";
 }
+
+.pe-all {
+    pointer-events: all !important;
+}

@@ -3,7 +3,7 @@ import { ComponentPortal } from '@angular/cdk/portal';
 import { AfterViewInit, Component, DestroyRef, ComponentRef, EventEmitter, Inject, Injector, Input, OnDestroy, Output, TemplateRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Position } from '@mintplayer/ng-bootstrap';
-import { BehaviorSubject, combineLatest, filter } from 'rxjs';
+import { BehaviorSubject, Observable, combineLatest, filter, map } from 'rxjs';
 import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
 import { BsOffcanvasComponent } from '../offcanvas/offcanvas.component';
@@ -16,6 +16,8 @@ import { BsOffcanvasComponent } from '../offcanvas/offcanvas.component';
 export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
 
   constructor(private overlayService: Overlay, private rootInjector: Injector, private destroy: DestroyRef, @Inject(PORTAL_FACTORY) private portalFactory: (injector: Injector) => ComponentPortal<any>) {
+    this.offcanvasId$ = new BehaviorSubject<number>(++BsOffcanvasHostComponent.offcanvasCounter);
+    this.offcanvasName$ = this.offcanvasId$.pipe(map((id) => `bs-offcanvas-${id}`));
     this.isVisible$
       .pipe(takeUntilDestroyed())
       .subscribe((isVisible) => {
@@ -39,6 +41,13 @@ export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
       .pipe(filter(([hasBackdrop, viewInited]) => viewInited))
       .pipe(takeUntilDestroyed())
       .subscribe(([hasBackdrop, viewInited]) => this.component && this.component.instance.hasBackdrop$.next(hasBackdrop));
+
+    combineLatest([this.offcanvasName$, this.viewInited$])
+      .pipe(filter(([offcanvasName, viewInited]) => viewInited))
+      .pipe(takeUntilDestroyed())
+      .subscribe(([offcanvasName, viewInited]) => {
+        this.component && (this.component.instance.offcanvasName$.next(offcanvasName));
+      });
   }
 
   content!: TemplateRef<any>;
@@ -49,6 +58,10 @@ export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
   size$ = new BehaviorSubject<number | null>(null);
   position$ = new BehaviorSubject<Position>('bottom');
   hasBackdrop$ = new BehaviorSubject<boolean>(false);
+
+  static offcanvasCounter = 0;
+  offcanvasId$: BehaviorSubject<number>;
+  offcanvasName$: Observable<string>;
 
   @Output() backdropClick = new EventEmitter<MouseEvent>();
 

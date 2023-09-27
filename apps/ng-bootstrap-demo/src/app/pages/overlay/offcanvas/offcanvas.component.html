@@ -18,7 +18,9 @@
                         <div *bsOffcanvasContent>
                             <bs-offcanvas-header>
                                 <h5 class="offcanvas-title">Offcanvas</h5>
-                                <bs-close bsOffcanvasClose></bs-close>
+                                <label bsOffcanvasClose>
+                                    <bs-close></bs-close>
+                                </label>
                             </bs-offcanvas-header>
                             <bs-offcanvas-body>
                                 <bs-toggle-button>
@@ -103,7 +105,7 @@
                                         <a [routerLink]='[]' class="d-block p-2">Manage dishes</a>
                                     </bs-accordion>
                                 </bs-accordion-tab>
-                                <a [routerLink]='[]' bsOffcanvasClose class="d-block p-2 text-center">Close</a>
+                                <label bsOffcanvasClose class="d-block p-2 text-center link-primary cursor-pointer">Close</label>
                             </bs-accordion>
                         </bs-offcanvas-body>
                     </div>

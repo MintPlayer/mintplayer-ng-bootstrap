@@ -1,18 +1,22 @@
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { isPlatformServer } from '@angular/common';
+import { Component, EventEmitter, HostBinding, Inject, Output, PLATFORM_ID } from '@angular/core';
 
 @Component({
   selector: 'bs-close',
   templateUrl: './close.component.html',
   styleUrls: ['./close.component.scss'],
 })
-export class BsCloseComponent implements OnInit {
-  constructor() {}
-
-  ngOnInit(): void {}
+export class BsCloseComponent {
+  constructor(@Inject(PLATFORM_ID) platformId: any) {
+    this.serverClasses = isPlatformServer(platformId);
+  }
 
   @Output() click = new EventEmitter<any>();
   onClose(ev: MouseEvent) {
     this.click.emit();
     ev.stopImmediatePropagation();
   }
+
+  @HostBinding('class.pe-none')
+  serverClasses: boolean;
 }

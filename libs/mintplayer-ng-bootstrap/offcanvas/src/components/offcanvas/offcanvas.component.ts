@@ -1,4 +1,5 @@
-import { Component, EventEmitter, Inject, Input, Output, TemplateRef } from '@angular/core';
+import { isPlatformServer } from '@angular/common';
+import { Component, EventEmitter, Inject, Input, Output, PLATFORM_ID, TemplateRef } from '@angular/core';
 import { BehaviorSubject, combineLatest, delayWhen, interval, map, Observable, of } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
@@ -13,8 +14,9 @@ import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
 })
 export class BsOffcanvasComponent {
 
-  constructor(@Inject(OFFCANVAS_CONTENT) contentTemplate: TemplateRef<any>) {
+  constructor(@Inject(OFFCANVAS_CONTENT) contentTemplate: TemplateRef<any>, @Inject(PLATFORM_ID) platformId: any) {
     this.contentTemplate = contentTemplate;
+    this.serverSide = isPlatformServer(platformId);
 
     this.visibility$ = this.isVisible$
       .pipe(delayWhen((val, i) => val ? of(0) : interval(300)))
@@ -64,6 +66,7 @@ export class BsOffcanvasComponent {
 
   contentTemplate: TemplateRef<any>;
   
+  serverSide: boolean;
   visibility$: Observable<string>;
   disableTransition$ = new BehaviorSubject<boolean>(false);
   offcanvasClass$ = new BehaviorSubject<string | null>(null);
@@ -71,6 +74,7 @@ export class BsOffcanvasComponent {
   width$: Observable<number | null>;
   height$: Observable<number | null>;
   hasBackdrop$ = new BehaviorSubject<boolean>(false);
+  offcanvasName$ = new BehaviorSubject<string>('original');
   show$: Observable<boolean>;
   showBackdrop$: Observable<boolean>;
 

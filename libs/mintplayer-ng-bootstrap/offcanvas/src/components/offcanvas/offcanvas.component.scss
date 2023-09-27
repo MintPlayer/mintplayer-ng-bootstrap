@@ -40,3 +40,8 @@
         top: unset;
     }
 }
+
+// NoScript support
+input[type="checkbox"]:checked ~ .offcanvas {
+    transform: none !important;
+}
