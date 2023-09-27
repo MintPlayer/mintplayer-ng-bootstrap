@@ -39,7 +39,7 @@ jobs:
       run: npm run build -- --configuration=production
 
     - name: Test
-      run: npm run test -- --watch=false --parallel=15
+      run: npm run test -- --watch=false --parallel=true
 
     ## ng-animations
     - name: Upload code coverage report
