@@ -25,7 +25,7 @@ jobs:
     - name: Setup node
       uses: actions/setup-node@v2
       with:
-        node-version: 16
+        node-version: 18
 
     # - name: Print GitHub
     #   run: echo $JSON
@@ -39,7 +39,7 @@ jobs:
       run: npm run build -- --configuration=production
 
     - name: Test
-      run: npm run test -- --watch=false --parallel=15
+      run: npm run test -- --watch=false --parallel=true
 
     ## ng-animations
     - name: Upload code coverage report
