@@ -1,2 +1,2 @@
-export * from './close.component';
+export * from './button/close.component';
 export * from './close.module';

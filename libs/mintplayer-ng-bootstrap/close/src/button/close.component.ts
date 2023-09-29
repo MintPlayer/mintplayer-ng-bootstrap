@@ -1,5 +1,5 @@
 import { isPlatformServer } from '@angular/common';
-import { Component, EventEmitter, HostBinding, Inject, Output, PLATFORM_ID } from '@angular/core';
+import { Component, EventEmitter, HostBinding, Inject, Output, PLATFORM_ID, TemplateRef } from '@angular/core';
 
 @Component({
   selector: 'bs-close',
@@ -19,4 +19,6 @@ export class BsCloseComponent {
 
   @HostBinding('class.pe-none')
   serverClasses: boolean;
+
+  customTemplate?: TemplateRef<any>;
 }
