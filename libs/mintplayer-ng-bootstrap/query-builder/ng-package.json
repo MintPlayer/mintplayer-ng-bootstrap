@@ -1,0 +1,7 @@
+{
+    "$schema": "../../../node_modules/ng-packagr/ng-package.schema.json",
+    "dest": "../../../dist/libs/mintplayer-ng-bootstrap/query-builder",
+    "lib": {
+        "entryFile": "index.ts"
+    }
+}

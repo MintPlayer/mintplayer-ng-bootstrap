@@ -1,0 +1,12 @@
+<h1 class="text-center">Has property</h1>
+<bs-button-group>
+    <button (click)="data = {a: 'Test'}" [color]="colors.primary">A</button>
+    <button (click)="data = {b: 5}" [color]="colors.primary">B</button>
+    <button (click)="data = {c: false}" [color]="colors.primary">C</button>
+</bs-button-group>
+
+<ng-container [bsHasProperty]="data">
+    <ng-container *bsHasPropertyName="'a'; let a">{{ a.a }}</ng-container>
+    <ng-container *bsHasPropertyName="'b'; let b">{{ b.b }}</ng-container>
+    <ng-container *bsHasPropertyName="'c'; let c">{{ c.c }}</ng-container>
+</ng-container>

@@ -1,0 +1,9 @@
+<div class="border" *ngIf="(ruleOrGroup$ | async) as ruleOrGroup">
+    <ng-container *ngIf="'items' in ruleOrGroup">
+        <bs-button-group>
+            <button [color]="colors.primary">AND</button>
+            <button [color]="colors.primary">OR</button>
+        </bs-button-group>
+        <bs-query-item-renderer *ngFor="let item of ruleOrGroup.items"></bs-query-item-renderer>
+    </ng-container>
+</div>
