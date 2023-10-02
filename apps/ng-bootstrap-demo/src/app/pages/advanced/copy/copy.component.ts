@@ -1,5 +1,4 @@
 import { Component } from '@angular/core';
-import { BsViewState } from '@mintplayer/ng-bootstrap';
 import * as dedent from 'dedent';
 
 @Component({
@@ -9,7 +8,7 @@ import * as dedent from 'dedent';
 })
 export class CopyComponent {
 
-  offcanvasState: BsViewState = 'closed';
+  offcanvasVisible = false;
   codeToCopy = dedent`
     <!DOCTYPE html>
     <html>
@@ -24,7 +23,7 @@ export class CopyComponent {
 
   
   copiedHtml() {
-    this.offcanvasState = 'open';
-    setTimeout(() => this.offcanvasState = 'closed', 3000);
+    this.offcanvasVisible = true;
+    setTimeout(() => this.offcanvasVisible = false, 3000);
   }
 }

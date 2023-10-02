@@ -12,42 +12,38 @@ export class BsOffcanvasPushDirective {
   constructor(private element: ElementRef<HTMLElement>, private builder: AnimationBuilder) {
     this.offcanvas$.pipe(
       filter(offcanvas => offcanvas !== null),
-      switchMap(offcanvas => offcanvas!.state$),
+      switchMap(offcanvas => offcanvas!.isVisible$),
       distinctUntilChanged(),
-      filter(state => !!state),
       skip(1),
       takeUntilDestroyed()
-    ).subscribe((viewstate) => {
+    ).subscribe((isVisible) => {
       let data: AnimationMetadata[];
-      switch (viewstate) {
-        case 'open':
-          data = [
-            style({ 'margin-left': '0', 'margin-right': '0' }),
-            animate('250ms', style({ 'margin-left': '400px', 'margin-right': '-400px' })),
-          ];
-          let el = this.element.nativeElement;
-          while (el.parentElement && !['scroll', 'visible'].includes(el.parentElement.style.overflowX)) {
-            el = el.parentElement;
-          }
-          if (this.element.nativeElement.parentElement) {
-            this.initialOverflowX = {
-              value: this.element.nativeElement.parentElement.style.overflowX,
-              element: el,
-            };
-            el.style.overflowX = 'hidden';
-          }
-          break;
-        case 'closed':
-          data = [
-            style({ 'margin-left': '400px', 'margin-right': '-400px' }),
-            animate('250ms', style({ 'margin-left': '0', 'margin-right': '0' })),
-          ];
-          break;
+      if (isVisible) {
+        data = [
+          style({ 'margin-left': '0', 'margin-right': '0' }),
+          animate('250ms', style({ 'margin-left': '400px', 'margin-right': '-400px' })),
+        ];
+        let el = this.element.nativeElement;
+        while (el.parentElement && !['scroll', 'visible'].includes(el.parentElement.style.overflowX)) {
+          el = el.parentElement;
+        }
+        if (this.element.nativeElement.parentElement) {
+          this.initialOverflowX = {
+            value: this.element.nativeElement.parentElement.style.overflowX,
+            element: el,
+          };
+          el.style.overflowX = 'hidden';
+        }
+      } else {
+        data = [
+          style({ 'margin-left': '400px', 'margin-right': '-400px' }),
+          animate('250ms', style({ 'margin-left': '0', 'margin-right': '0' })),
+        ];
       }
       const b = builder.build(data);
       const player = b.create(this.element.nativeElement, { });
       
-      if (viewstate === 'closed') {
+      if (!isVisible) {
         player.onDone(() => {
           if (this.element.nativeElement.parentElement && this.initialOverflowX) {
             this.initialOverflowX.element.style.overflowX = this.initialOverflowX.value;
