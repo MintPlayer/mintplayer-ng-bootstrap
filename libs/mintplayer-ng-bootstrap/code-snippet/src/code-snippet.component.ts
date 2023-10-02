@@ -1,5 +1,4 @@
 import { Component, Input, TemplateRef, ViewChild } from '@angular/core';
-import { BsViewState } from '@mintplayer/ng-bootstrap';
 
 @Component({
   selector: 'bs-code-snippet',
@@ -8,15 +7,15 @@ import { BsViewState } from '@mintplayer/ng-bootstrap';
 })
 export class BsCodeSnippetComponent {
 
-  offcanvasState: BsViewState = 'closed';
+  offcanvasVisible = false;
   @Input() public codeToCopy = '';
   @Input() public languages: string[] | null = null;
   @Input() public lineNumbers = false;
   @ViewChild('copiedTemplate') copiedTemplate!: TemplateRef<any>;
 
   copiedHtml() {
-    this.offcanvasState = 'open';
-    setTimeout(() => this.offcanvasState = 'closed', 3000);
+    this.offcanvasVisible = true;
+    setTimeout(() => this.offcanvasVisible = false, 3000);
   }
 
 }

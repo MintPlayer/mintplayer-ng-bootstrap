@@ -6,7 +6,6 @@ export * from './navbar-dropdown/navbar-dropdown.component';
 export * from './navbar-item/navbar-item.component';
 export * from './navbar-content/navbar-content.directive';
 export * from './expand-button/expand-button.directive';
-export * from './navbar-toggler/navbar-toggler.component';
 
 // Not for end-use
 export * from './dropdown-toggle/dropdown-toggle.directive';

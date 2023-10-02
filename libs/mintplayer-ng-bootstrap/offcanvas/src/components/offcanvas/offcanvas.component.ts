@@ -1,9 +1,9 @@
 import { Component, EventEmitter, Inject, Input, Output, TemplateRef } from '@angular/core';
 import { BehaviorSubject, combineLatest, delayWhen, interval, map, Observable, of } from 'rxjs';
-import { FadeInOutAnimation } from '@mintplayer/ng-animations';
-import { BsViewState, Position } from '@mintplayer/ng-bootstrap';
-import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FadeInOutAnimation } from '@mintplayer/ng-animations';
+import { Position } from '@mintplayer/ng-bootstrap';
+import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
 
 @Component({
   selector: 'bs-offcanvas-holder',
@@ -16,7 +16,7 @@ export class BsOffcanvasComponent {
   constructor(@Inject(OFFCANVAS_CONTENT) contentTemplate: TemplateRef<any>) {
     this.contentTemplate = contentTemplate;
 
-    this.visibility$ = this.state$
+    this.visibility$ = this.isVisible$
       .pipe(delayWhen((val, i) => val ? of(0) : interval(300)))
       .pipe(map((val) => val ? 'visible' : 'hidden'));
 
@@ -55,11 +55,11 @@ export class BsOffcanvasComponent {
         }
       }))
 
-    this.showBackdrop$ = combineLatest([this.hasBackdrop$, this.state$])
-      .pipe(map(([hasBackdrop, state]) => hasBackdrop && (state === 'open')));
+    this.showBackdrop$ = combineLatest([this.hasBackdrop$, this.isVisible$])
+      .pipe(map(([hasBackdrop, isVisible]) => hasBackdrop && isVisible));
 
-    this.show$ = this.state$
-      .pipe(map((state) => state === 'open'));
+    this.show$ = this.isVisible$
+      .pipe(map((isVisible) => isVisible === true));
   }
 
   contentTemplate: TemplateRef<any>;
@@ -94,14 +94,14 @@ export class BsOffcanvasComponent {
   }
   //#endregion
 
-  //#region State
-  state$ = new BehaviorSubject<BsViewState>('closed');
-  @Output() public stateChange = new EventEmitter<boolean>();
-  @Input() public set state(value: BsViewState) {
-    this.state$.next(value);
+  //#region IsVisible
+  isVisible$ = new BehaviorSubject<boolean>(false);
+  @Output() public isVisibleChange = new EventEmitter<boolean>();
+  @Input() public set isVisible(value: boolean) {
+    this.isVisible$.next(value);
   }
-  public get state() {
-    return this.state$.value;
+  public get isVisible() {
+    return this.isVisible$.value;
   }
   //#endregion
 

@@ -57,12 +57,11 @@ describe('BsOffcanvasHostComponent', () => {
 });
 
 type OffcanvasPosition = 'top' | 'bottom' | 'start' | 'end';
-type BsViewState = 'open' | 'closed';
 
 @Component({
   selector: 'bs-offcanvas-test',
   template: `
-    <bs-offcanvas [(state)]="offcanvasState" [position]="position" [hasBackdrop]="true" (backdropClick)="isOffcanvasVisible = false">
+    <bs-offcanvas [(isVisible)]="offcanvasVisible" [position]="position" [hasBackdrop]="true" (backdropClick)="isOffcanvasVisible = false">
         <div *bsOffcanvasContent>
             <bs-offcanvas-header>
                 <h5>Offcanvas</h5>
@@ -74,7 +73,7 @@ type BsViewState = 'open' | 'closed';
     </bs-offcanvas>`
 })
 class BsOffcanvasTestComponent {
-  offcanvasState: BsViewState = 'closed';
+  offcanvasVisible = false;
   position: OffcanvasPosition = 'start';
 }
 

@@ -8,13 +8,13 @@
                 <bs-button-group>
                     <button [color]="colors.primary" (click)="showOffcanvas('top')">Top</button>
                     <button [color]="colors.primary" (click)="showOffcanvas('bottom')">Bottom</button>
-                    <button [color]="colors.primary" (click)="sidebarState = 'open'">Left</button>
+                    <button [color]="colors.primary" (click)="sidebarVisible = true">Left</button>
                     <button [color]="colors.primary" (click)="showOffcanvas('end')">Right</button>
                 </bs-button-group>
                 <br>
-                <button [color]="colors.primary" (click)="offcanvasState = 'closed'">Hide offcanvas</button>
+                <button [color]="colors.primary" (click)="offcanvasVisible = false">Hide offcanvas</button>
                 <ng-container *ngIf="(position$ | async) as position">
-                    <bs-offcanvas [(state)]="offcanvasState" [position]="position" [hasBackdrop]="true" (backdropClick)="offcanvasState = 'closed'">
+                    <bs-offcanvas [(isVisible)]="offcanvasVisible" [position]="position" [hasBackdrop]="true" (backdropClick)="offcanvasVisible = false">
                         <div *bsOffcanvasContent>
                             <bs-offcanvas-header>
                                 <h5 class="offcanvas-title">Offcanvas</h5>
@@ -39,7 +39,7 @@
                         </div>
                     </bs-offcanvas>
                 </ng-container>
-                <bs-offcanvas #accordion [(state)]="sidebarState" [position]="'start'" [hasBackdrop]="true" (backdropClick)="sidebarState = 'closed'">
+                <bs-offcanvas #accordion [(isVisible)]="sidebarVisible" [position]="'start'" [hasBackdrop]="true" (backdropClick)="sidebarVisible = false">
                     <div *bsOffcanvasContent>
                         <bs-offcanvas-body [noPadding]="true">
                             <bs-accordion class="d-block">

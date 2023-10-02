@@ -2,7 +2,7 @@ import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { AfterViewInit, Component, DestroyRef, ComponentRef, EventEmitter, Inject, Injector, Input, OnDestroy, Output, TemplateRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BsViewState, Position } from '@mintplayer/ng-bootstrap';
+import { Position } from '@mintplayer/ng-bootstrap';
 import { BehaviorSubject, combineLatest, filter } from 'rxjs';
 import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
@@ -16,12 +16,12 @@ import { BsOffcanvasComponent } from '../offcanvas/offcanvas.component';
 export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
 
   constructor(private overlayService: Overlay, private rootInjector: Injector, private destroy: DestroyRef, @Inject(PORTAL_FACTORY) private portalFactory: (injector: Injector) => ComponentPortal<any>) {
-    this.state$
+    this.isVisible$
       .pipe(takeUntilDestroyed())
-      .subscribe((state) => {
+      .subscribe((isVisible) => {
         if (this.component) {
-          this.stateChange.emit(state);
-          this.component.instance.state$.next(state);
+          this.isVisibleChange.emit(isVisible);
+          this.component.instance.isVisible$.next(isVisible);
         }
       });
 
@@ -45,7 +45,7 @@ export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
   overlayRef!: OverlayRef;
   component!: ComponentRef<BsOffcanvasComponent>;
   viewInited$ = new BehaviorSubject<boolean>(false);
-  state$ = new BehaviorSubject<BsViewState>('closed');
+  isVisible$ = new BehaviorSubject<boolean>(false);
   size$ = new BehaviorSubject<number | null>(null);
   position$ = new BehaviorSubject<Position>('bottom');
   hasBackdrop$ = new BehaviorSubject<boolean>(false);
@@ -78,21 +78,21 @@ export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    this.state = 'closed';
+    this.isVisible = false;
     setTimeout(() => this.overlayRef && this.overlayRef.dispose(), 3000);
   }
 
-  //#region State
-  @Output() public stateChange = new EventEmitter<BsViewState>();
-  @Input() public set state(value: BsViewState) {
-    this.state$.next(value);
+  //#region IsVisible
+  @Output() public isVisibleChange = new EventEmitter<boolean>();
+  @Input() public set isVisible(value: boolean) {
+    this.isVisible$.next(value);
     if (this.component) {
-      this.component.instance.state = value;
+      this.component.instance.isVisible = value;
     }
-    this.stateChange.emit(value);
+    this.isVisibleChange.emit(value);
   }
-  public get state() {
-    return this.state$.value;
+  public get isVisible() {
+    return this.isVisible$.value;
   }
   //#endregion
 

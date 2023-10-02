@@ -1,5 +1,4 @@
 import { Directive, TemplateRef } from '@angular/core';
-import { BsViewState } from '@mintplayer/ng-bootstrap';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 
 @Directive({
@@ -21,5 +20,5 @@ export class BsExpandButtonDirective {
 }
 
 export class BsExpandButtonContext {
-  public $implicit: BsViewState = null!;
+  public $implicit: boolean = null!;
 }
