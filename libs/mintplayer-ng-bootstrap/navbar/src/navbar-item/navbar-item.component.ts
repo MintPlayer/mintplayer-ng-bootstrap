@@ -87,7 +87,11 @@ export class BsNavbarItemComponent implements AfterContentChecked {
             d = d.parentDropdown;
           }
           if (this.navbar.autoclose) {
-            this.navbar.isExpanded$.next(false);
+            if (this.navbar.autocloseTimeout > 0) {
+              setTimeout(() => this.navbar.isExpanded$.next(false), this.navbar.autocloseTimeout);
+            } else {
+              this.navbar.isExpanded$.next(false);
+            }
           }
         });
       }

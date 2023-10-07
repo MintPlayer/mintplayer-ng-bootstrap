@@ -1,4 +1,4 @@
-import { Component, HostListener, Input } from '@angular/core';
+import { Component, EventEmitter, HostListener, Input } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
 import { BehaviorSubject, combineLatest, debounceTime, filter, map, Observable } from 'rxjs';
@@ -41,6 +41,7 @@ export class BsNavbarNavComponent {
   windowWidth$ = new BehaviorSubject<number | null>(null);
   showNavs$: Observable<boolean>;
   isResizing$ = new BehaviorSubject<boolean>(false);
+  fullyCollapsed = new EventEmitter<any>();
   
   //#region collapse
   @Input() public set collapse(value: boolean) {
@@ -56,6 +57,12 @@ export class BsNavbarNavComponent {
     this.isResizing$.next(true);
     if (typeof window !== 'undefined') {
       this.windowWidth$.next(window.innerWidth);
+    }
+  }
+
+  onFullyCollapsed(showNavs: boolean) {
+    if (!showNavs) {
+      this.fullyCollapsed.emit();
     }
   }
 }

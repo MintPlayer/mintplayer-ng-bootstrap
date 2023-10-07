@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ClickOutsideModule } from '@mintplayer/ng-click-outside';
+// import { BsLetModule } from '@mintplayer/ng-bootstrap/let';
 import { BsUserAgentModule } from '@mintplayer/ng-bootstrap/user-agent';
 import { BsNoNoscriptModule } from '@mintplayer/ng-bootstrap/no-noscript';
 import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
@@ -33,6 +34,7 @@ import { BsExpandButtonDirective } from './expand-button/expand-button.directive
   imports: [
     CommonModule,
     ClickOutsideModule,
+    // BsLetModule,
     BsContainerModule,
     BsUserAgentModule,
     BsNoNoscriptModule,

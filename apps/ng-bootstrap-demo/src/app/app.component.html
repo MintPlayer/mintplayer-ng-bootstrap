@@ -1,4 +1,4 @@
-<bs-navbar [color]="colors.dark" [breakpoint]="'lg'" #nav>
+<bs-navbar [color]="colors.dark" [breakpoint]="'lg'" [autocloseTimeout]="1000" #nav>
   <bs-navbar-toggler *bsExpandButton="let state" [state]="state" [toggleOnClick]="false"></bs-navbar-toggler>
   <bs-navbar-brand>
     <a [routerLink]='["/"]'>

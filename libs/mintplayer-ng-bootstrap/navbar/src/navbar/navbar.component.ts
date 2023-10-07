@@ -95,6 +95,7 @@ export class BsNavbarComponent {
 
   @ViewChild('nav') nav!: ElementRef;
   @Input() autoclose = true;
+  @Input() autocloseTimeout = 0;
 
   expandButtonTemplate: TemplateRef<any> | null = null;
   
