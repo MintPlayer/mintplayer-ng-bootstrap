@@ -8,7 +8,8 @@ const routes: Routes = [
   { path: 'slugify', loadChildren: () => import('./slugify/slugify.module').then(m => m.SlugifyModule) },
   { path: 'word-count', loadChildren: () => import('./word-count/word-count.module').then(m => m.WordCountModule) },
   { path: 'font-color', loadChildren: () => import('./font-color/font-color.module').then(m => m.FontColorModule) },
-  { path: 'linify', loadChildren: () => import('./linify/linify.module').then(m => m.LinifyModule) }
+  { path: 'linify', loadChildren: () => import('./linify/linify.module').then(m => m.LinifyModule) },
+  { path: 'has-property', loadChildren: () => import('./has-property/has-property.module').then(m => m.HasPropertyModule) }
 ];
 
 @NgModule({
