@@ -6,8 +6,25 @@ import { Component } from '@angular/core';
   styleUrls: ['./has-property.component.scss']
 })
 export class HasPropertyComponent {
-  person = {
-    firstName: 'John',
-    lastName: 'Doe'
-  };
+  animal?: Fish | Bird;
+
+  // fish = Fish
+  // get isBird() {
+  //   return this.animal && ('bar' in this.animal);
+  // }
+}
+
+
+export interface Animal {
+  // type: 'fish' | 'bird';
+}
+
+export interface Fish extends Animal {
+  // type: 'fish';
+  foo: string;
+}
+
+export interface Bird extends Animal {
+  // type: 'bird';
+  bar: string;
 }

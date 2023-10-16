@@ -1,9 +1,21 @@
 <h1 class="text-center">Has-property</h1>
-<bs-code-snippet [codeToCopy]="person | json"></bs-code-snippet>
+<!-- <bs-code-snippet [codeToCopy]="person | json"></bs-code-snippet>
 <bs-toggle-button [type]="'checkbox'" [ngModel]="person | bsHasProperty:'firstName'" [disabled]="true">
     <code>firstName</code>
 </bs-toggle-button>
 <br>
 <bs-toggle-button [type]="'checkbox'" [ngModel]="person | bsHasProperty:'birthDate'" [disabled]="true">
     <code>birthDate</code>
-</bs-toggle-button>
+</bs-toggle-button> -->
+
+<!-- <div [hasProperty]="animal"> -->
+    <!-- <p *hasPropertyName="animal; property: 'bar'; let typed">
+        {{ animal.foo }}
+    </p> -->
+    <p *isBird="animal; let typed">
+        {{ typed.bar }}
+    </p>
+    <p *isFish="animal; let typed">
+        {{ typed.foo }}
+    </p>
+<!-- </div> -->
