@@ -1,4 +1,4 @@
-import { Directive, Input, NgModule } from '@angular/core';
+import { Directive, Input, NgModule, ViewContainerRef, TemplateRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { BsHasPropertyModule } from '@mintplayer/ng-bootstrap/has-property';
@@ -6,21 +6,46 @@ import { BsCodeSnippetModule } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
 
 import { HasPropertyRoutingModule } from './has-property-routing.module';
-import { Bird, Fish, HasPropertyComponent } from './has-property.component';
+import { Animal, Bird, Fish, HasPropertyComponent } from './has-property.component';
+import { BehaviorSubject, combineLatest } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-@Directive({
-  selector: '[hasProperty]',
-})
-export class HasPropertyDirective<T> {
-  @Input() hasProperty: T | undefined;
-}
+// @Directive({
+//   selector: '[hasProperty]',
+// })
+// export class HasPropertyDirective<T> {
+//   @Input() hasProperty: T | undefined;
+// }
 
 @Directive({
   selector: '[isBird]'
 })
 export class IsBirdDirective<T> {
-  @Input() hasPropertyName!: T;
-  @Input() hasPropertyNameProperty!: string;
+  constructor(private viewContainer: ViewContainerRef, private template: TemplateRef<IsBirdContext>) {
+    combineLatest([this.value$, this.property$])
+      .pipe(takeUntilDestroyed())
+      .subscribe(([value, property]) => {
+        if (!property || !value) {
+          this.viewContainer.clear();
+        } else if (property in value) {
+          this.viewContainer.createEmbeddedView(this.template, {
+            $implicit: <Bird>value
+          });
+        } else {
+          this.viewContainer.clear();
+        }
+      })
+  }
+
+  value$ = new BehaviorSubject<Animal | null | undefined>(undefined);
+  property$ = new BehaviorSubject<string | undefined>(undefined);
+
+  @Input() set isBird(value: Animal | undefined) {
+    this.value$.next(value);
+  }
+  @Input() set isBirdProperty(value: string) {
+    this.property$.next(value);
+  }
   
   public static ngTemplateContextGuard<T>(
     dir: IsBirdDirective<T>,
@@ -28,14 +53,39 @@ export class IsBirdDirective<T> {
   ): ctx is IsBirdContext<Exclude<T, false | 0 | '' | null | undefined>> {
     return true;
   }
+
+
 }
 @Directive({
   selector: '[isFish]'
 })
 export class IsFishDirective<T> {
-  @Input() hasPropertyName!: T;
-  // @Input() hasPropertyNameProperty!: string;
-  
+  constructor(private viewContainer: ViewContainerRef, private template: TemplateRef<IsFishContext>) {
+    combineLatest([this.value$, this.property$])
+      .pipe(takeUntilDestroyed())
+      .subscribe(([value, property]) => {
+        if (!property || !value) {
+          this.viewContainer.clear();
+        } else if (property in value) {
+          this.viewContainer.createEmbeddedView(this.template, {
+            $implicit: <Fish>value
+          });
+        } else {
+          this.viewContainer.clear();
+        }
+      })
+  }
+
+  value$ = new BehaviorSubject<Animal | null | undefined>(undefined);
+  property$ = new BehaviorSubject<string | undefined>(undefined);
+
+  @Input() set isBird(value: Animal | undefined) {
+    this.value$.next(value);
+  }
+  @Input() set isBirdProperty(value: string) {
+    this.property$.next(value);
+  }
+
   public static ngTemplateContextGuard<T>(
     dir: IsFishDirective<T>,
     ctx: any
@@ -43,6 +93,10 @@ export class IsFishDirective<T> {
     return true;
   }
 }
+
+// export class AnimalContext<T = unknown> {
+//   public $implicit: Bird | Fish = null!;
+// }
 
 export class IsBirdContext<T = unknown> {
   public $implicit: Bird = null!;
@@ -55,7 +109,7 @@ export class IsFishContext<T = unknown> {
 @NgModule({
   declarations: [
     HasPropertyComponent,
-    HasPropertyDirective,
+    // HasPropertyDirective,
     IsBirdDirective,
     IsFishDirective
   ],

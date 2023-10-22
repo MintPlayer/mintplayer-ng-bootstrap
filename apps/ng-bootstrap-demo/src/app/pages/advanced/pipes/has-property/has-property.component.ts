@@ -21,10 +21,10 @@ export interface Animal {
 
 export interface Fish extends Animal {
   // type: 'fish';
-  foo: string;
+  blub: string;
 }
 
 export interface Bird extends Animal {
   // type: 'bird';
-  bar: string;
+  chirp: string;
 }
