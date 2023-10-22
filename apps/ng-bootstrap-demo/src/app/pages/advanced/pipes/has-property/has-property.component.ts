@@ -15,16 +15,14 @@ export class HasPropertyComponent {
 }
 
 
-export interface Animal {
-  // type: 'fish' | 'bird';
-}
+export type Animal = Fish | Bird
 
-export interface Fish extends Animal {
+export interface Fish {
   // type: 'fish';
   blub: string;
 }
 
-export interface Bird extends Animal {
+export interface Bird {
   // type: 'bird';
   chirp: string;
 }

@@ -38,12 +38,12 @@ export class IsBirdDirective<T> {
   }
 
   value$ = new BehaviorSubject<Animal | null | undefined>(undefined);
-  property$ = new BehaviorSubject<string | undefined>(undefined);
+  property$ = new BehaviorSubject<KeysOfUnion<Animal> | undefined>(undefined);
 
   @Input() set isBird(value: Animal | undefined) {
     this.value$.next(value);
   }
-  @Input() set isBirdProperty(value: string) {
+  @Input() set isBirdProperty(value: KeysOfUnion<Animal>) {
     this.property$.next(value);
   }
   
@@ -53,9 +53,10 @@ export class IsBirdDirective<T> {
   ): ctx is IsBirdContext<Exclude<T, false | 0 | '' | null | undefined>> {
     return true;
   }
-
-
 }
+
+type KeysOfUnion<T> = (T extends T ? keyof T: never);// | undefined;
+
 @Directive({
   selector: '[isFish]'
 })
@@ -79,10 +80,10 @@ export class IsFishDirective<T> {
   value$ = new BehaviorSubject<Animal | null | undefined>(undefined);
   property$ = new BehaviorSubject<string | undefined>(undefined);
 
-  @Input() set isBird(value: Animal | undefined) {
+  @Input() set isFish(value: Animal | undefined) {
     this.value$.next(value);
   }
-  @Input() set isBirdProperty(value: string) {
+  @Input() set isFishProperty(value: KeysOfUnion<Animal>) {
     this.property$.next(value);
   }
 
