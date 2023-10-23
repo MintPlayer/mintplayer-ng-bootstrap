@@ -44,6 +44,35 @@ All components are showcased in the angular app included in the project. You can
 
 to discover them.
 
+## Fonts
+The `<bs-icon>` uses fonts from bootstrap-icons which need to be included in the application. Since there's no `"assets"` field in an angular library its project configuration, we seem to have no other option than to explicitly tell the application to include them.
+
+`angular.json` / `project.json`
+
+    {
+      "projects": {
+        ...,
+        "xxx": {
+          ...,
+          "architect": {
+            "build": {
+              "options": {
+                ...,
+                "assets": [
+                  ...,
+                  {
+                    "glob": "*.woff|*.woff2",
+                    "input": "node_modules/bootstrap-icons/font/fonts",
+                    "output": "/fonts"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+
 ## VS Code snippets
 This workspace contains several code snippets for [VS Code](https://code.visualstudio.com).
 They are distributed on the [MarketPlace](https://marketplace.visualstudio.com/items?itemName=MintPlayer.mintplayer-ng-bootstrap-snippets) and can be installed by searching for **ng-bootstrap snippets for VS Code**
