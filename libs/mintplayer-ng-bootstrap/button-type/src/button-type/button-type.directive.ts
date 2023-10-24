@@ -2,7 +2,7 @@ import { Directive, Input, HostBinding } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 
 @Directive({
-  selector: 'button[color],input[type="button"][color],input[type="submit"][color]'
+  selector: 'button[color],input[type="button"][color],input[type="submit"][color],a[color]'
 })
 export class BsButtonTypeDirective {
   @HostBinding('class.btn') btnClass = true;
