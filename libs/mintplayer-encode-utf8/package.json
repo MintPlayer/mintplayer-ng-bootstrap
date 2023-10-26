@@ -1,7 +1,7 @@
 {
   "name": "@mintplayer/encode-utf8",
   "private": false,
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "encode-utf8 TypeScript implementation",
   "repository": {
     "type": "git",
@@ -14,6 +14,7 @@
   },
   "devDependencies": {},
   "peerDependencies": {},
+  "sideEffects": false,
   "author": {
     "name": "Pieterjan De Clippel",
     "url": "https://github.com/MintPlayer",
