@@ -9,8 +9,7 @@
       "executor": "@nx/angular:package",
       "outputs": ["{workspaceRoot}/dist/libs/mintplayer-ng-swiper"],
       "options": {
-        "project": "libs/mintplayer-ng-swiper/ng-package.json",
-        "updateBuildableProjectDepsInPackageJson": true
+        "project": "libs/mintplayer-ng-swiper/ng-package.json"
       },
       "configurations": {
         "production": {

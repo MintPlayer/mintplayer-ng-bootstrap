@@ -11,8 +11,7 @@
         "outputPath": "dist/libs/mintplayer-qr-code",
         "main": "libs/mintplayer-qr-code/src/index.ts",
         "tsConfig": "libs/mintplayer-qr-code/tsconfig.lib.json",
-        "assets": ["libs/mintplayer-qr-code/*.md"],
-        "updateBuildableProjectDepsInPackageJson": true
+        "assets": ["libs/mintplayer-qr-code/*.md"]
       }
     },
     "publish": {
