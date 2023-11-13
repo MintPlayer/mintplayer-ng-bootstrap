@@ -9,7 +9,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions: 
-  id-token: write
+  contents: read
     
 jobs:
   build:
@@ -19,6 +19,7 @@ jobs:
     
     permissions: 
       contents: read
+      id-token: write
       packages: write 
     
     steps:
