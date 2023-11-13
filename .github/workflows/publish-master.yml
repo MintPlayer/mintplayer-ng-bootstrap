@@ -49,20 +49,22 @@ jobs:
         directory: ./coverage/libs/mintplayer-ng-animations
       
     - name: Push to NPM
-      uses: JS-DevTools/npm-publish@v2
+      uses: JS-DevTools/npm-publish@v3
       with:
         package: 'dist/libs/mintplayer-ng-animations/package.json'
         registry: 'https://registry.npmjs.org'
         token: ${{ secrets.PUBLISH_NODE_TO_NPMJS_COM }}
         access: 'public'
+        provenance: true
 
     - name: Push to Github
-      uses: JS-DevTools/npm-publish@v2
+      uses: JS-DevTools/npm-publish@v3
       with:
         package: 'dist/libs/mintplayer-ng-animations/package.json'
         registry: 'https://npm.pkg.github.com'
         token: ${{ github.token }}
         access: 'public'
+        provenance: true
 
     ## ng-click-outside
     - name: Upload code coverage report
@@ -72,20 +74,22 @@ jobs:
         directory: ./coverage/libs/mintplayer-ng-click-outside
       
     - name: Push to NPM
-      uses: JS-DevTools/npm-publish@v2
+      uses: JS-DevTools/npm-publish@v3
       with:
         package: 'dist/libs/mintplayer-ng-click-outside/package.json'
         registry: 'https://registry.npmjs.org'
         token: ${{ secrets.PUBLISH_NODE_TO_NPMJS_COM }}
         access: 'public'
+        provenance: true
 
     - name: Push to Github
-      uses: JS-DevTools/npm-publish@v2
+      uses: JS-DevTools/npm-publish@v3
       with:
         package: 'dist/libs/mintplayer-ng-click-outside/package.json'
         registry: 'https://npm.pkg.github.com'
         token: ${{ github.token }}
         access: 'public'
+        provenance: true
 
     ## ng-focus-on-load
     - name: Upload code coverage report
@@ -95,105 +99,117 @@ jobs:
         directory: ./coverage/libs/mintplayer-ng-focus-on-load
       
     - name: Push to NPM
-      uses: JS-DevTools/npm-publish@v2
+      uses: JS-DevTools/npm-publish@v3
       with:
         package: 'dist/libs/mintplayer-ng-focus-on-load/package.json'
         registry: 'https://registry.npmjs.org'
         token: ${{ secrets.PUBLISH_NODE_TO_NPMJS_COM }}
         access: 'public'
+        provenance: true
 
     - name: Push to Github
-      uses: JS-DevTools/npm-publish@v2
+      uses: JS-DevTools/npm-publish@v3
       with:
         package: 'dist/libs/mintplayer-ng-focus-on-load/package.json'
         registry: 'https://npm.pkg.github.com'
         token: ${{ github.token }}
         access: 'public'
+        provenance: true
 
     ## encode-utf8
     - name: Push to NPM
-      uses: JS-DevTools/npm-publish@v2
+      uses: JS-DevTools/npm-publish@v3
       with:
         package: 'dist/libs/mintplayer-encode-utf8/package.json'
         registry: 'https://registry.npmjs.org'
         token: ${{ secrets.PUBLISH_NODE_TO_NPMJS_COM }}
         access: 'public'
+        provenance: true
 
     - name: Push to Github
-      uses: JS-DevTools/npm-publish@v2
+      uses: JS-DevTools/npm-publish@v3
       with:
         package: 'dist/libs/mintplayer-encode-utf8/package.json'
         registry: 'https://npm.pkg.github.com'
         token: ${{ github.token }}
         access: 'public'
+        provenance: true
 
     ## dijkstra
     - name: Push to NPM
-      uses: JS-DevTools/npm-publish@v2
+      uses: JS-DevTools/npm-publish@v3
       with:
         package: 'dist/libs/mintplayer-dijkstra/package.json'
         registry: 'https://registry.npmjs.org'
         token: ${{ secrets.PUBLISH_NODE_TO_NPMJS_COM }}
         access: 'public'
+        provenance: true
 
     - name: Push to Github
-      uses: JS-DevTools/npm-publish@v2
+      uses: JS-DevTools/npm-publish@v3
       with:
         package: 'dist/libs/mintplayer-dijkstra/package.json'
         registry: 'https://npm.pkg.github.com'
         token: ${{ github.token }}
         access: 'public'
+        provenance: true
 
     ## parentify
     - name: Push to NPM
-      uses: JS-DevTools/npm-publish@v2
+      uses: JS-DevTools/npm-publish@v3
       with:
         package: 'dist/libs/mintplayer-parentify/package.json'
         registry: 'https://registry.npmjs.org'
         token: ${{ secrets.PUBLISH_NODE_TO_NPMJS_COM }}
         access: 'public'
+        provenance: true
 
     - name: Push to Github
-      uses: JS-DevTools/npm-publish@v2
+      uses: JS-DevTools/npm-publish@v3
       with:
         package: 'dist/libs/mintplayer-parentify/package.json'
         registry: 'https://npm.pkg.github.com'
         token: ${{ github.token }}
         access: 'public'
+        provenance: true
 
     ## qr-code
     - name: Push to NPM
-      uses: JS-DevTools/npm-publish@v2
+      uses: JS-DevTools/npm-publish@v3
       with:
         package: 'dist/libs/mintplayer-qr-code/package.json'
         registry: 'https://registry.npmjs.org'
         token: ${{ secrets.PUBLISH_NODE_TO_NPMJS_COM }}
         access: 'public'
+        provenance: true
 
     - name: Push to Github
-      uses: JS-DevTools/npm-publish@v2
+      uses: JS-DevTools/npm-publish@v3
       with:
         package: 'dist/libs/mintplayer-qr-code/package.json'
         registry: 'https://npm.pkg.github.com'
         token: ${{ github.token }}
         access: 'public'
+        provenance: true
 
     ## pagination
     - name: Push to NPM
-      uses: JS-DevTools/npm-publish@v2
+      uses: JS-DevTools/npm-publish@v3
       with:
         package: 'dist/libs/mintplayer-pagination/package.json'
         registry: 'https://registry.npmjs.org'
         token: ${{ secrets.PUBLISH_NODE_TO_NPMJS_COM }}
         access: 'public'
+        provenance: true
 
     - name: Push to Github
-      uses: JS-DevTools/npm-publish@v2
+      uses: JS-DevTools/npm-publish@v3
       with:
         package: 'dist/libs/mintplayer-pagination/package.json'
         registry: 'https://npm.pkg.github.com'
         token: ${{ github.token }}
         access: 'public'
+        provenance: true
 
     ## ng-qr-code
     - name: Upload code coverage report
@@ -203,20 +219,22 @@ jobs:
         directory: ./coverage/libs/mintplayer-ng-qr-code
       
     - name: Push to NPM
-      uses: JS-DevTools/npm-publish@v2
+      uses: JS-DevTools/npm-publish@v3
       with:
         package: 'dist/libs/mintplayer-ng-qr-code/package.json'
         registry: 'https://registry.npmjs.org'
         token: ${{ secrets.PUBLISH_NODE_TO_NPMJS_COM }}
         access: 'public'
+        provenance: true
 
     - name: Push to Github
-      uses: JS-DevTools/npm-publish@v2
+      uses: JS-DevTools/npm-publish@v3
       with:
         package: 'dist/libs/mintplayer-ng-qr-code/package.json'
         registry: 'https://npm.pkg.github.com'
         token: ${{ github.token }}
         access: 'public'
+        provenance: true
 
     ## ng-swiper
     - name: Upload code coverage report
@@ -226,20 +244,22 @@ jobs:
         directory: ./coverage/libs/mintplayer-ng-swiper
       
     - name: Push to NPM
-      uses: JS-DevTools/npm-publish@v2
+      uses: JS-DevTools/npm-publish@v3
       with:
         package: 'dist/libs/mintplayer-ng-swiper/package.json'
         registry: 'https://registry.npmjs.org'
         token: ${{ secrets.PUBLISH_NODE_TO_NPMJS_COM }}
         access: 'public'
+        provenance: true
 
     - name: Push to Github
-      uses: JS-DevTools/npm-publish@v2
+      uses: JS-DevTools/npm-publish@v3
       with:
         package: 'dist/libs/mintplayer-ng-swiper/package.json'
         registry: 'https://npm.pkg.github.com'
         token: ${{ github.token }}
         access: 'public'
+        provenance: true
 
     ## ng-bootstrap
     - name: Upload code coverage report
@@ -250,36 +270,40 @@ jobs:
       
     - name: Push to NPM
       id: publish_ng_bootstrap
-      uses: JS-DevTools/npm-publish@v2
+      uses: JS-DevTools/npm-publish@v3
       with:
         package: 'dist/libs/mintplayer-ng-bootstrap/package.json'
         registry: 'https://registry.npmjs.org'
         token: ${{ secrets.PUBLISH_NODE_TO_NPMJS_COM }}
         access: 'public'
+        provenance: true
 
     - name: Push to Github
-      uses: JS-DevTools/npm-publish@v2
+      uses: JS-DevTools/npm-publish@v3
       with:
         package: 'dist/libs/mintplayer-ng-bootstrap/package.json'
         registry: 'https://npm.pkg.github.com'
         token: ${{ github.token }}
         access: 'public'
+        provenance: true
         
     - name: Push to NPM
-      uses: JS-DevTools/npm-publish@v2
+      uses: JS-DevTools/npm-publish@v3
       with:
         package: 'libs/mintplayer-ng-bootstrap-snippets/package.json'
         registry: 'https://registry.npmjs.org'
         token: ${{ secrets.PUBLISH_NODE_TO_NPMJS_COM }}
         access: 'public'
+        provenance: true
 
     #- name: Push to Github
-    #  uses: JS-DevTools/npm-publish@v2
+    #  uses: JS-DevTools/npm-publish@v3
     #  with:
     #    package: 'libs/mintplayer-ng-bootstrap-snippets/package.json'
     #    registry: 'https://npm.pkg.github.com'
     #    token: ${{ github.token }}
     #    access: 'public'
+    #    provenance: true
 
     - name: Publish to Visual Studio Marketplace
       uses: MintPlayer/publish-vscode-extension@v4.0.3
