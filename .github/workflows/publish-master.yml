@@ -300,17 +300,9 @@ jobs:
         access: 'public'
         provenance: true
 
-    #- name: Push to Github
-    #  uses: JS-DevTools/npm-publish@v3
-    #  with:
-    #    package: 'libs/mintplayer-ng-bootstrap-snippets/package.json'
-    #    registry: 'https://npm.pkg.github.com'
-    #    token: ${{ github.token }}
-    #    access: 'public'
-    #    provenance: true
-
     - name: Publish to Visual Studio Marketplace
-      uses: MintPlayer/publish-vscode-extension@v4.0.3
+      # uses: MintPlayer/publish-vscode-extension@v4.0.3
+      uses: HaaLeo/publish-vscode-extension@v1.5.0
       with:
         packagePath: 'libs/mintplayer-ng-bootstrap-snippets'
         pat: ${{ secrets.PUBLISH_SNIPPETS }}
