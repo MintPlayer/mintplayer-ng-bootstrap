@@ -1,17 +1,17 @@
 {
   "name": "@mintplayer/ng-swiper",
   "private": false,
-  "version": "16.0.4",
+  "version": "17.0.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/MintPlayer/mintplayer-ng-bootstrap",
     "directory": "libs/mintplayer-ng-swiper"
   },
   "peerDependencies": {
-    "@angular/common": "^16.0.0",
-    "@angular/core": "^16.0.0",
-    "@angular/animations": "^16.0.0",
-    "@angular/platform-browser": "^16.0.0",
+    "@angular/common": "^17.0.0",
+    "@angular/core": "^17.0.0",
+    "@angular/animations": "^17.0.0",
+    "@angular/platform-browser": "^17.0.0",
     "rxjs": "^7.5.0"
   },
   "dependencies": {

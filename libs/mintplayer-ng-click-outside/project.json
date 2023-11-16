@@ -10,8 +10,7 @@
       "outputs": ["{workspaceRoot}/dist/libs/mintplayer-ng-click-outside"],
       "options": {
         "tsConfig": "libs/mintplayer-ng-click-outside/tsconfig.lib.json",
-        "project": "libs/mintplayer-ng-click-outside/ng-package.json",
-        "updateBuildableProjectDepsInPackageJson": true
+        "project": "libs/mintplayer-ng-click-outside/ng-package.json"
       },
       "configurations": {
         "production": {
@@ -30,12 +29,11 @@
         "codeCoverage": true,
         "coverageReporters": ["lcovonly"],
         "coverageDirectory": "coverage/libs/mintplayer-ng-click-outside",
-        "jestConfig": "libs/mintplayer-ng-click-outside/jest.config.ts",
-        "passWithNoTests": true
+        "jestConfig": "libs/mintplayer-ng-click-outside/jest.config.ts"
       }
     },
     "lint": {
-      "executor": "@nx/linter:eslint",
+      "executor": "@nx/eslint:lint",
       "options": {
         "lintFilePatterns": [
           "libs/mintplayer-ng-click-outside/src/**/*.ts",
