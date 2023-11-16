@@ -9,8 +9,7 @@
       "executor": "@nx/angular:package",
       "outputs": ["{workspaceRoot}/dist/libs/mintplayer-ng-swiper"],
       "options": {
-        "project": "libs/mintplayer-ng-swiper/ng-package.json",
-        "updateBuildableProjectDepsInPackageJson": true
+        "project": "libs/mintplayer-ng-swiper/ng-package.json"
       },
       "configurations": {
         "production": {
@@ -29,12 +28,11 @@
         "codeCoverage": true,
         "coverageReporters": ["lcovonly"],
         "coverageDirectory": "coverage/libs/mintplayer-ng-swiper",
-        "jestConfig": "libs/mintplayer-ng-swiper/jest.config.ts",
-        "passWithNoTests": true
+        "jestConfig": "libs/mintplayer-ng-swiper/jest.config.ts"
       }
     },
     "lint": {
-      "executor": "@nx/linter:eslint",
+      "executor": "@nx/eslint:lint",
       "options": {
         "lintFilePatterns": [
           "libs/mintplayer-ng-swiper/**/*.ts",

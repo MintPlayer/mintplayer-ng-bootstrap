@@ -11,8 +11,7 @@
         "outputPath": "dist/libs/mintplayer-parentify",
         "main": "libs/mintplayer-parentify/src/index.ts",
         "tsConfig": "libs/mintplayer-parentify/tsconfig.lib.json",
-        "assets": ["libs/mintplayer-parentify/*.md"],
-        "updateBuildableProjectDepsInPackageJson": true
+        "assets": ["libs/mintplayer-parentify/*.md"]
       }
     },
     "publish": {
@@ -23,7 +22,7 @@
       "dependsOn": ["build"]
     },
     "lint": {
-      "executor": "@nx/linter:eslint",
+      "executor": "@nx/eslint:lint",
       "outputs": ["{options.outputFile}"],
       "options": {
         "lintFilePatterns": ["libs/mintplayer-parentify/**/*.ts"]
@@ -36,14 +35,7 @@
         "codeCoverage": true,
         "coverageReporters": ["lcovonly"],
         "coverageDirectory": "coverage/libs/mintplayer-parentify",
-        "jestConfig": "libs/mintplayer-parentify/jest.config.ts",
-        "passWithNoTests": true
-      },
-      "configurations": {
-        "ci": {
-          "ci": true,
-          "codeCoverage": true
-        }
+        "jestConfig": "libs/mintplayer-parentify/jest.config.ts"
       }
     }
   },
