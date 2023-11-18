@@ -38,11 +38,11 @@ export class BsNavbarContentDirective implements AfterViewInit, OnDestroy {
   }
 
   private viewInit$ = new BehaviorSubject<boolean>(false);
-  private navbar$ = new BehaviorSubject<BsNavbarComponent | null>(null);
+  private navbar$ = new BehaviorSubject<BsNavbarComponent | undefined>(undefined);
   resizeObserver: ResizeObserver | null = null;
   initialPadding = 0;
 
-  @Input('bsNavbarContent') set navbar(value: BsNavbarComponent) {
+  @Input('bsNavbarContent') set navbar(value: BsNavbarComponent | undefined) {
     this.navbar$.next(value);
   }
   
