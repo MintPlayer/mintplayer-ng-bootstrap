@@ -72,7 +72,7 @@
     "jest-canvas-mock": "^2.4.0",
     "jest-environment-jsdom": "29.5.0",
     "jest-preset-angular": "13.1.4",
-    "ng-mocks": "^14.11.0",
+    "ng-mocks": "^14.12.0",
     "ng-packagr": "~17.0.0",
     "nx": "17.1.2",
     "postcss": "^8.4.5",
@@ -87,13 +87,5 @@
     "typescript": "~5.2.2",
     "webpack-bundle-analyzer": "~4.9.0",
     "@nx/eslint": "17.1.2"
-  },
-  "overrides": {
-    "ng-mocks": {
-      "@angular/common": "^17.0.2",
-      "@angular/core": "^17.0.2",
-      "@angular/forms": "^17.0.2",
-      "@angular/platform-browser": "^17.0.2"
-    }
   }
 }
