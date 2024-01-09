@@ -32,13 +32,7 @@
       }
     },
     "lint": {
-      "executor": "@nx/eslint:lint",
-      "options": {
-        "lintFilePatterns": [
-          "libs/mintplayer-ng-swiper/**/*.ts",
-          "libs/mintplayer-ng-swiper/**/*.html"
-        ]
-      }
+      "executor": "@nx/eslint:lint"
     }
   },
   "tags": []
