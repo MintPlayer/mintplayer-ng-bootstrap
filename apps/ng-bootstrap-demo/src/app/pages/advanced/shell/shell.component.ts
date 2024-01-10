@@ -8,4 +8,5 @@ import { BsShellState } from '@mintplayer/ng-bootstrap/shell';
 })
 export class ShellComponent {
   sidebarState: BsShellState = 'auto';
+  numbers = Array.from(Array(5).keys());
 }
