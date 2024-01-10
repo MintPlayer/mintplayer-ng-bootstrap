@@ -1,0 +1,11 @@
+<h1 class="text-center">Shell</h1>
+<bs-form>
+  <bs-select [(ngModel)]="sidebarState">
+    <option [ngValue]="'auto'">Auto</option>
+    <option [ngValue]="'show'">Show</option>
+    <option [ngValue]="'hide'">Hide</option>
+  </bs-select>
+</bs-form>
+<div *bsShell="sidebarState" class="sidebar h-100 bg-dark">
+  This is the sidebar
+</div>

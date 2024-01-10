@@ -27,6 +27,7 @@ const routes: Routes = [
   { path: 'searchbox', loadChildren: () => import('./searchbox/searchbox.module').then(m => m.SearchboxModule) },
   { path: 'track-by', loadChildren: () => import('./track-by/track-by.module').then(m => m.TrackByModule) },
   { path: 'toggle-buttons', loadChildren: () => import('./toggle-buttons/toggle-buttons.module').then(m => m.ToggleButtonsModule) },
+  { path: 'shell', loadChildren: () => import('./shell/shell.module').then(m => m.ShellModule) },
 ];
 
 @NgModule({
