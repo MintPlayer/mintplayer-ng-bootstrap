@@ -27,9 +27,8 @@
     },
     "lint": {
       "executor": "@nx/eslint:lint",
-      "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": ["libs/mintplayer-encode-utf8/**/*.ts"]
+        "lintFilePatterns": ["{projectRoot}/**/*.ts"]
       }
     },
     "test": {
