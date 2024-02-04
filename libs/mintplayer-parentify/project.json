@@ -1,17 +1,17 @@
 {
   "name": "mintplayer-parentify",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/mintplayer-parentify/src",
+  "sourceRoot": "{projectRoot}/src",
   "projectType": "library",
   "targets": {
     "build": {
       "executor": "@nx/js:tsc",
       "outputs": ["{options.outputPath}"],
       "options": {
-        "outputPath": "dist/libs/mintplayer-parentify",
-        "main": "libs/mintplayer-parentify/src/index.ts",
-        "tsConfig": "libs/mintplayer-parentify/tsconfig.lib.json",
-        "assets": ["libs/mintplayer-parentify/*.md"]
+        "outputPath": "dist/{projectRoot}",
+        "main": "{projectRoot}/src/index.ts",
+        "tsConfig": "{projectRoot}/tsconfig.lib.json",
+        "assets": ["{projectRoot}/*.md"]
       }
     },
     "publish": {
@@ -33,8 +33,8 @@
       "options": {
         "codeCoverage": true,
         "coverageReporters": ["lcovonly"],
-        "coverageDirectory": "coverage/libs/mintplayer-parentify",
-        "jestConfig": "libs/mintplayer-parentify/jest.config.ts"
+        "coverageDirectory": "coverage/{projectRoot}",
+        "jestConfig": "{projectRoot}/jest.config.ts"
       }
     }
   },

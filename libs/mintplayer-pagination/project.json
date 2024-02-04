@@ -1,17 +1,17 @@
 {
   "name": "mintplayer-pagination",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/mintplayer-pagination/src",
+  "sourceRoot": "{projectRoot}/src",
   "projectType": "library",
   "targets": {
     "build": {
       "executor": "@nx/js:tsc",
       "outputs": ["{options.outputPath}"],
       "options": {
-        "outputPath": "dist/libs/mintplayer-pagination",
-        "main": "libs/mintplayer-pagination/src/index.ts",
-        "tsConfig": "libs/mintplayer-pagination/tsconfig.lib.json",
-        "assets": ["libs/mintplayer-pagination/*.md"]
+        "outputPath": "dist/{projectRoot}",
+        "main": "{projectRoot}/src/index.ts",
+        "tsConfig": "{projectRoot}/tsconfig.lib.json",
+        "assets": ["{projectRoot}/*.md"]
       }
     },
     "publish": {
@@ -33,8 +33,8 @@
       "options": {
         "codeCoverage": true,
         "coverageReporters": ["lcovonly"],
-        "coverageDirectory": "coverage/libs/mintplayer-pagination",
-        "jestConfig": "libs/mintplayer-pagination/jest.config.ts"
+        "coverageDirectory": "coverage/{projectRoot}",
+        "jestConfig": "{projectRoot}/jest.config.ts"
       }
     }
   },
