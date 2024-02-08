@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import * as dedent from 'dedent';
+import dedent from 'ts-dedent';
 
 @Component({
   selector: 'demo-copy',
@@ -21,7 +21,7 @@ export class CopyComponent {
       </body>
     </html>`;
 
-  
+
   copiedHtml() {
     this.offcanvasVisible = true;
     setTimeout(() => this.offcanvasVisible = false, 3000);

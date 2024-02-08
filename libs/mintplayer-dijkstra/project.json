@@ -7,6 +7,7 @@
     "build": {
       "executor": "@nx/js:tsc",
       "outputs": ["{options.outputPath}"],
+      "dependsOn": ["^build"],
       "options": {
         "outputPath": "dist/libs/mintplayer-dijkstra",
         "main": "libs/mintplayer-dijkstra/src/index.ts",

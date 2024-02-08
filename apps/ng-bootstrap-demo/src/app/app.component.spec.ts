@@ -1,49 +1,27 @@
-import { JsonPipe } from '@angular/common';
-import { HttpClientModule } from '@angular/common/http';
-import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { RouterTestingModule } from '@angular/router/testing';
-import { MockModule } from 'ng-mocks';
-import { BsNavbarModule } from '@mintplayer/ng-bootstrap/navbar';
 import { AppComponent } from './app.component';
+import { NxWelcomeComponent } from './nx-welcome.component';
+import { RouterTestingModule } from '@angular/router/testing';
 
 describe('AppComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [
-        HttpClientModule,
-        RouterTestingModule.withRoutes([
-          { path: 'a/b/c', component: PageAbcComponent }
-        ]),
-
-        // Mock dependencies
-        MockModule(BsNavbarModule),
-      ],
-      declarations: [
-        // Component to test
-        AppComponent,
-
-        // Mock pages
-        PageAbcComponent
-      ],
-      providers: [
-        JsonPipe,
-        { provide: 'BOOTSTRAP_VERSION', useValue: '0.0.0' }
-      ],
+      imports: [AppComponent, NxWelcomeComponent, RouterTestingModule],
     }).compileComponents();
   });
 
-  it('should create the app', () => {
+  it('should render title', () => {
     const fixture = TestBed.createComponent(AppComponent);
-    const app = fixture.componentInstance;
-    expect(app).toBeTruthy();
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('h1')?.textContent).toContain(
+      'Welcome ng-bootstrap-demo'
+    );
   });
 
+  it(`should have as title 'ng-bootstrap-demo'`, () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    expect(app.title).toEqual('ng-bootstrap-demo');
+  });
 });
-
-@Component({
-  selector: 'a-b-c',
-  template: 'Page ABC'
-})
-class PageAbcComponent {
-}

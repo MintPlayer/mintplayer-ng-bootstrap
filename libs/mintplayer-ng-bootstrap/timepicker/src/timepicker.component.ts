@@ -26,6 +26,8 @@ export class BsTimepickerComponent {
   presetTimestamps: Date[] = [];
   isFocused = false;
 
+  clockLoader = () => import('bootstrap-icons/icons/clock.svg');
+
   selectAll(box: HTMLInputElement) {
     box.select();
     // box.setSelectionRange(0, box.value.length);

@@ -8,6 +8,7 @@
     "build": {
       "executor": "@nx/angular:package",
       "outputs": ["{workspaceRoot}/dist/libs/mintplayer-ng-qr-code"],
+      "dependsOn": ["^build"],
       "options": {
         "tsConfig": "libs/mintplayer-ng-qr-code/tsconfig.lib.json",
         "project": "libs/mintplayer-ng-qr-code/ng-package.json"

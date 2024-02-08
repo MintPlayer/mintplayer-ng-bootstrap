@@ -8,10 +8,10 @@ import { SchedulerStampWithSlots } from '../../interfaces/scheduler-stamp-with-s
   selector: 'bs-resource-group-presenter',
   templateUrl: './resource-group-presenter.component.html',
   styleUrls: ['./resource-group-presenter.component.scss'],
-  
+
 })
 export class ResourceGroupPresenterComponent {
-  
+
   constructor() {
     this.data$ = this.resourceOrGroup$
       .pipe(map((resourceOrGroup) => {
@@ -45,6 +45,9 @@ export class ResourceGroupPresenterComponent {
   isExpanded$ = new BehaviorSubject<boolean>(false);
   data$: Observable<ResourceOrGroup>;
   colSpan$: Observable<number>;
+
+  chevronDownLoader = () => import('bootstrap-icons/icons/chevron-down.svg');
+  chevronRightLoader = () => import('bootstrap-icons/icons/chevron-right.svg');
 
   //#region resourceOrGroup
   public get resourceOrGroup() {

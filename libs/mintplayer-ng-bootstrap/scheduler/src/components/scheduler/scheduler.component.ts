@@ -48,7 +48,7 @@ export class BsSchedulerComponent {
 
     this.daysOfWeekWithTimestamps$ = this.shownDays$
       .pipe(map((shownDays) => ({ start: shownDays[0].getTime(), end: shownDays[shownDays.length - 1].getTime() + 24 * 60 * 60 * 1000 })));
-    
+
     this.events$ = this.resources$
       .pipe(map((resourcesOrGroups) => resourcesOrGroups.map(resOrGroup => this.getResourcesForGroup(resOrGroup))))
       .pipe(map(jaggedResources => jaggedResources.reduce((flat, toFlatten) => flat.concat(toFlatten), [])))
@@ -128,14 +128,14 @@ export class BsSchedulerComponent {
                   start.setMinutes(timeslotForMonday.start.getMinutes());
                   start.setSeconds(timeslotForMonday.start.getSeconds());
                   start.setMilliseconds(timeslotForMonday.start.getMilliseconds());
-      
+
                   const end = new Date(day);
                   end.setHours(timeslotForMonday.end.getHours());
                   end.setMinutes(timeslotForMonday.end.getMinutes());
                   end.setSeconds(timeslotForMonday.end.getSeconds());
                   end.setMilliseconds(timeslotForMonday.end.getMilliseconds());
                   end.setDate(end.getDate() + timeslotForMonday.end.getDate() - timeslotForMonday.start.getDate());
-      
+
                   return <TimeSlot>{ start, end };
                 }),
                 stamp: timeslotForMonday.start
@@ -151,7 +151,7 @@ export class BsSchedulerComponent {
                     return this.createTimeslot(day, index, duration);
                   }),
                 stamp: day
-              } 
+              }
             });
           }
           default: {
@@ -163,7 +163,7 @@ export class BsSchedulerComponent {
         // For performance reasons, we're not using an observable here, but persist the timeslots in a BehaviorSubject.
         this.timeSlots$.next(timeslots);
       });
-    
+
     this.weekOptions$.pipe(takeUntilDestroyed())
       .subscribe(weekOptions => this.weekOptionsChange.emit(weekOptions));
     this.timelineOptions$.pipe(takeUntilDestroyed())
@@ -174,6 +174,9 @@ export class BsSchedulerComponent {
 
   }
 
+  chevronLeftLoader = () => import('bootstrap-icons/icons/chevron-left.svg');
+  chevronRightLoader = () => import('bootstrap-icons/icons/chevron-right.svg');
+
   resources$ = new BehaviorSubject<(Resource | ResourceGroup)[]>([]);
   events$: Observable<SchedulerEvent[]>;
   eventParts$: Observable<SchedulerEventWithParts[]>;
@@ -181,11 +184,11 @@ export class BsSchedulerComponent {
   timelinedEventPartsForThisWeek$: Observable<{ total: number, parts: { part: SchedulerEventPart, index: number}[] }>;
   weekOptions$ = new BehaviorSubject<WeekOptions>({ unitHeight: 30 });
   timelineOptions$ = new BehaviorSubject<TimelineOptions>({ unitWidth: 50 });
-  
+
   previewEvent$ = new BehaviorSubject<PreviewEvent | null>(null);
   previewEventParts$: Observable<SchedulerEventWithParts | null>;
   previewEventPartsForThisWeek$: Observable<SchedulerEventPart[]>;
-  
+
   currentWeekOrMonth$: BehaviorSubject<Date>;
   shownDays$: Observable<Date[]>;
   daysOfWeekWithTimestamps$: Observable<{start: number, end: number}>;
@@ -457,7 +460,7 @@ export class BsSchedulerComponent {
                       start: new Date(ev.start.getTime() + hovered.start.getTime() - this.dragStartTimeslot.start.getTime()),
                       end: new Date(ev.end.getTime() + hovered.start.getTime() - this.dragStartTimeslot.start.getTime())
                     };
-                    
+
                     this.dragStartTimeslot = hovered;
 
                     return result;

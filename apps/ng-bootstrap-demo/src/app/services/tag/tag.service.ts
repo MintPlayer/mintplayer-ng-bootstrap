@@ -16,7 +16,7 @@ export class TagService {
     return this.httpClient.post<PaginationResponse<Tag>>(`${this.baseUrl}/api/v1/Tag/page`, request).toPromise();
   }
 
-  public suggestTags(search: string, includeRelations: boolean = false) {
+  public suggestTags(search: string, includeRelations = false) {
     return this.httpClient.post<Tag[]>(`${this.baseUrl}/web/v3/Tag/suggest`, {
       searchTerm: search
     }, {

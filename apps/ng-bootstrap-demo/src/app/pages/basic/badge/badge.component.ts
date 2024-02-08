@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 
 @Component({
@@ -6,14 +6,8 @@ import { Color } from '@mintplayer/ng-bootstrap';
   templateUrl: './badge.component.html',
   styleUrls: ['./badge.component.scss']
 })
-export class BadgeComponent implements OnInit {
+export class BadgeComponent {
 
-  constructor() { }
-  
   colors = Color;
-
-  ngOnInit(): void {
-  }
-
 
 }

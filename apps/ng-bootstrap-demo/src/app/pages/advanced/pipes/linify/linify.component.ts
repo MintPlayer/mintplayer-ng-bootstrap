@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import * as dedent from 'dedent';
+import dedent from 'ts-dedent';
 
 @Component({
   selector: 'demo-linify',

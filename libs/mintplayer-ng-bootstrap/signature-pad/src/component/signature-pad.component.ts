@@ -66,7 +66,7 @@ export class BsSignaturePadComponent implements AfterViewInit {
   @HostListener('pointermove', ['$event']) onPointerMove(ev: PointerEvent) {
     if (this.isDrawing && this.context) {
       ev.preventDefault();
-      
+
       // this.context.moveTo(this.points.at(-1)!.x, this.points.at(-1)!.y);
       // // ctx.arc(x, y, width, 0, 2 * Math.PI, false);
       // // this.context.arc(ev.offsetX, ev.offsetY, 2, 0, 2 * Math.PI, false);
@@ -74,7 +74,7 @@ export class BsSignaturePadComponent implements AfterViewInit {
       // this.context.closePath();
       // this.context.fill();
 
-      this.signature.strokes.at(-1)?.points.push({ x: ev.offsetX, y: ev.offsetY });
+      this.signature.strokes[this.signature.strokes.length - 1]?.points.push({ x: ev.offsetX, y: ev.offsetY });
       this.signatureChange.emit(this.signature);
 
       this.context.lineTo(ev.offsetX, ev.offsetY);

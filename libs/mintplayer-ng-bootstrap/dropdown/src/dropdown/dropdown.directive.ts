@@ -1,4 +1,4 @@
-import { ContentChild, Directive, ElementRef, EventEmitter, HostListener, Inject, Input, Output } from '@angular/core';
+import { ContentChild, Directive, ElementRef, EventEmitter, HostListener, Inject, Input, Optional, Output } from '@angular/core';
 import { BS_DEVELOPMENT } from '@mintplayer/ng-bootstrap';
 import { BehaviorSubject } from 'rxjs';
 import { BsDropdownMenuDirective } from '../dropdown-menu/dropdown-menu.directive';
@@ -9,7 +9,7 @@ import { BsDropdownToggleDirective } from '../dropdown-toggle/dropdown-toggle.di
 })
 export class BsDropdownDirective {
 
-  constructor(elementRef: ElementRef<any>, @Inject(BS_DEVELOPMENT) private bsDevelopment: boolean) {
+  constructor(elementRef: ElementRef<any>, @Optional() @Inject(BS_DEVELOPMENT) private bsDevelopment?: boolean) {
     this.elementRef = elementRef;
   }
 
@@ -18,7 +18,7 @@ export class BsDropdownDirective {
   elementRef: ElementRef<HTMLElement>;
   @ContentChild(BsDropdownMenuDirective, {static: false}) menu!: BsDropdownMenuDirective;
   @ContentChild(BsDropdownToggleDirective, {static: false}) toggle: BsDropdownToggleDirective | null = null;
-  
+
   @Input() public hasBackdrop = false;
   @Input() public sameWidth = false;
   @Input() public closeOnClickOutside = true;

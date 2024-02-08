@@ -8,6 +8,7 @@
     "build": {
       "executor": "@nx/angular:package",
       "outputs": ["{workspaceRoot}/dist/libs/mintplayer-ng-bootstrap"],
+      "dependsOn": ["^build"],
       "options": {
         "tsConfig": "libs/mintplayer-ng-bootstrap/tsconfig.lib.json",
         "project": "libs/mintplayer-ng-bootstrap/ng-package.json"

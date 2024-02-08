@@ -14,7 +14,7 @@ export class BsRowTemplateDirective<TData> {
   @Input() set bsRowTemplateOf(value: PaginationResponse<TData> | undefined) {
     this.datatableComponent.data = value;
   }
-  
+
   public static ngTemplateContextGuard<TData>(
     dir: BsRowTemplateDirective<TData>,
     ctx: any

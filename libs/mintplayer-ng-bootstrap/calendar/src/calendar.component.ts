@@ -44,6 +44,10 @@ export class BsCalendarComponent {
   weeks$: Observable<Week[]>;
   shownDays$: Observable<WeekDay[]>;
 
+  chevronLeftLoader = () => import('bootstrap-icons/icons/chevron-left.svg');
+  chevronRightLoader = () => import('bootstrap-icons/icons/chevron-right.svg');
+
+
   //#region CurrentMonth
   currentMonth$ = new BehaviorSubject<Date>(new Date());
   @Output() public currentMonthChange = new EventEmitter<Date>();

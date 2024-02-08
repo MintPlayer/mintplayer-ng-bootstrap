@@ -27,10 +27,13 @@ export class BsSearchboxComponent<T extends HasId<U>, U> {
     });
   }
 
+  caretUpFillLoader = () => import('bootstrap-icons/icons/caret-up-fill.svg');
+  caretDownFillLoader = () => import('bootstrap-icons/icons/caret-down-fill.svg');
+
   colors = Color;
   isBusy$ = new BehaviorSubject<boolean>(false);
   @ViewChild('textbox') textbox!: ElementRef<HTMLInputElement>;
-  
+
   //#region isOpen
   private _isOpen = false;
   public get isOpen() {

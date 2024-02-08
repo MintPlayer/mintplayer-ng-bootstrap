@@ -21,6 +21,9 @@ export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
       .subscribe((isVisible) => {
         if (this.component) {
           this.isVisibleChange.emit(isVisible);
+          this.overlayRef.updateScrollStrategy(isVisible
+            ? this.overlayService.scrollStrategies.block()
+            : this.overlayService.scrollStrategies.noop());
           this.component.instance.isVisible$.next(isVisible);
         }
       });
@@ -34,7 +37,7 @@ export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
       .pipe(filter(([size, viewInited]) => viewInited))
       .pipe(takeUntilDestroyed())
       .subscribe(([size, viewInited]) => this.component && this.component.instance.size$.next(size));
-      
+
     combineLatest([this.hasBackdrop$, this.viewInited$])
       .pipe(filter(([hasBackdrop, viewInited]) => viewInited))
       .pipe(takeUntilDestroyed())
@@ -62,7 +65,7 @@ export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
     // const portal = new ComponentPortal(BsOffcanvasComponent, null, injector);
     const portal = this.portalFactory(injector);
     this.overlayRef = this.overlayService.create({
-      scrollStrategy: this.overlayService.scrollStrategies.block(),
+      // scrollStrategy: this.overlayService.scrollStrategies.block(),
       positionStrategy: this.overlayService.position().global()
         .top('0').left('0').bottom('0').right('0'),
       hasBackdrop: false
@@ -89,7 +92,6 @@ export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
     if (this.component) {
       this.component.instance.isVisible = value;
     }
-    this.isVisibleChange.emit(value);
   }
   public get isVisible() {
     return this.isVisible$.value;

@@ -1,38 +1,39 @@
 <table class="table w-auto mb-0">
-    <tr>
-        <td>
-            <button class="btn btn-default" (click)="previousMonth()">
-                <bs-icon [icon]="'chevron-left'" class="fw-bolder"></bs-icon>
-            </button>
-        </td>
-        <td colspan="6" class="fw-bolder">
-            {{ currentMonth$ | async | monthName | bsUcFirst }}
-            {{ (currentMonth$ | async)?.getFullYear() }}
-        </td>
-        <td>
-            <button class="btn btn-default border-bottom-0" (click)="nextMonth()">
-                <bs-icon [icon]="'chevron-right'" class="fw-bolder"></bs-icon>
-            </button>
-        </td>
-    </tr>
-    <tr>
-        <th></th>
-        <th *ngFor="let dayOfWeek of shownDays$ | async; bsTrackBy: 'long'" [title]="dayOfWeek.long">
-            {{ dayOfWeek.short }}
-        </th>
-    </tr>
-    <tr *ngFor="let week of (weeks$ | async); bsTrackBy: 'number'">
-        <th>
-            {{ week.number }}
-        </th>
-        <ng-container *ngFor="let day of week.days">
-            <ng-container *bsLet="((day !== null) && day.isInMonth) as showSpan">
-                <ng-container *bsLet="(disableDateFn && disableDateFn(day.date)) as disabled">
-                    <td [class.selected]="day === null ? false : !day.isInMonth ? false : isSameDate(selectedDate$ | async, day.date)" [class.cursor-pointer]="showSpan && !disabled" (click)="goto(day)">
-                        <span *ngIf="showSpan" [class.text-muted]="disabled">{{ day.dayOfMonth }}</span>
-                    </td>
-                </ng-container>
-            </ng-container>
-        </ng-container>
-    </tr>
+	<tr>
+		<td>
+			<button class="btn btn-default" (click)="previousMonth()">
+				<span [innerHTML]="chevronLeftLoader | bsIcon | async"></span>
+			</button>
+		</td>
+		<td colspan="6" class="fw-bolder">
+			{{ currentMonth$ | async | monthName | bsUcFirst }}
+			{{ (currentMonth$ | async)?.getFullYear() }}
+		</td>
+		<td>
+			<button class="btn btn-default border-bottom-0" (click)="nextMonth()">
+				<span [innerHTML]="chevronRightLoader | bsIcon | async"></span>
+			</button>
+		</td>
+	</tr>
+	<tr>
+		<th></th>
+		<th *ngFor="let dayOfWeek of shownDays$ | async; bsTrackBy: 'long'" [title]="dayOfWeek.long">
+			{{ dayOfWeek.short }}
+		</th>
+	</tr>
+	<tr *ngFor="let week of (weeks$ | async); bsTrackBy: 'number'">
+		<th>
+			{{ week.number }}
+		</th>
+		<ng-container *ngFor="let day of week.days">
+			<ng-container *bsLet="((day !== null) && day.isInMonth) as showSpan">
+				<ng-container *bsLet="(disableDateFn && disableDateFn(day.date)) as disabled">
+					<td [class.selected]="day === null ? false : !day.isInMonth ? false : isSameDate(selectedDate$ | async, day.date)"
+						[class.cursor-pointer]="showSpan && !disabled" (click)="goto(day)">
+						<span *ngIf="showSpan" [class.text-muted]="disabled">{{ day.dayOfMonth }}</span>
+					</td>
+				</ng-container>
+			</ng-container>
+		</ng-container>
+	</tr>
 </table>

@@ -1,11 +1,10 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BsIconModule } from '@mintplayer/ng-bootstrap/icon';
+import { BsIconPipe } from '@mintplayer/ng-bootstrap/icon';
 import { BsCodeSnippetModule } from '@mintplayer/ng-bootstrap/code-snippet';
 
 import { IconRoutingModule } from './icon-routing.module';
 import { IconComponent } from './icon.component';
-
 
 @NgModule({
   declarations: [
@@ -13,7 +12,7 @@ import { IconComponent } from './icon.component';
   ],
   imports: [
     CommonModule,
-    BsIconModule,
+    BsIconPipe,
     BsCodeSnippetModule,
     IconRoutingModule
   ]

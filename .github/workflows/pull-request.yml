@@ -4,29 +4,34 @@ on:
   pull_request:
     branches: [ master ]
 
+permissions:
+  actions: read
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
 jobs:
   build:
-  
+
     name: pull-request
     runs-on: ubuntu-latest
-    
-    permissions: 
+
+    permissions:
       contents: read
-    
+
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    
+
     - name: Setup node
-      uses: actions/setup-node@v2
+      uses: actions/setup-node@v4
       with:
         node-version: 18
+        cache: 'npm'
 
     # - name: Print GitHub
     #   run: echo $JSON
@@ -34,10 +39,22 @@ jobs:
     #     JSON: ${{ toJson(github) }}
 
     - name: Install dependencies
-      run: npm install
-    
-    - name: Build
-      run: npm run build -- --configuration=production
+      run: npm ci
+
+    - name: Affected configuration
+      uses: nrwl/nx-set-shas@v4
+
+    # - name: Build
+    #   run: npm run build -- --configuration=production
+
+    # - name: Test
+    #   run: npm run nx affected -- --target=test --watch=false --parallel=true --base=${{ github.event.pull_request.base.sha }} --head=${{ github.event.pull_request.head.sha }}
+
+    # - name: Lint
+    #   run: npx nx affected -t lint
 
     - name: Test
-      run: npm run nx affected -- --target=test --watch=false --parallel=true --base=${{ github.event.pull_request.base.sha }} --head=${{ github.event.pull_request.head.sha }}
+      run: npx nx affected -t test
+
+    - name: Build
+      run: npx nx affected -t build

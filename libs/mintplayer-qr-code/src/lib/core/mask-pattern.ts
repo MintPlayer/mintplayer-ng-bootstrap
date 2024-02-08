@@ -20,11 +20,11 @@ const PenaltyScores = {
 
 export function isValid(mask: number) {
 	return (mask != null) && !isNaN(mask) && (mask >= 0) && (mask <= 7);
-};
+}
 
 export function from(value: any) {
 	return isValid(value) ? parseInt(value, 10) : undefined;
-};
+}
 
 /**
  * Find adjacent modules in row/column with the same color
@@ -70,7 +70,7 @@ export function getPenaltyN1(data: BitMatrix.BitMatrix) {
 	}
 
 	return points;
-};
+}
 
 export function getPenaltyN2(data: BitMatrix.BitMatrix) {
 	const size = data.size;
@@ -89,7 +89,7 @@ export function getPenaltyN2(data: BitMatrix.BitMatrix) {
 	}
 
 	return points * PenaltyScores.N2;
-};
+}
 
 /**
  * Find 1:1:3:1:1 ratio (dark:light:dark:light:dark) pattern in row/column,
@@ -117,7 +117,7 @@ export function getPenaltyN3(data: BitMatrix.BitMatrix) {
 	}
 
 	return points * PenaltyScores.N3;
-};
+}
 
 export function getPenaltyN4(data: BitMatrix.BitMatrix) {
 	let darkCount = 0;
@@ -130,7 +130,7 @@ export function getPenaltyN4(data: BitMatrix.BitMatrix) {
 	const k = Math.abs(Math.ceil((darkCount * 100) / modulesCount / 5) - 10);
 
 	return k * PenaltyScores.N4;
-};
+}
 
 function getMaskAt(maskPattern: number, i: number, j: number) {
 	switch (maskPattern) {
@@ -167,7 +167,7 @@ export function applyMask(pattern: number, data: BitMatrix.BitMatrix) {
 			data.xor(row, col, getMaskAt(pattern, row, col));
 		}
 	}
-};
+}
 
 /**
  * Returns the best mask pattern for data
@@ -201,4 +201,4 @@ export function getBestMask(data: BitMatrix.BitMatrix, setupFormatFunc: (n: numb
 	}
 
 	return bestPattern;
-};
+}

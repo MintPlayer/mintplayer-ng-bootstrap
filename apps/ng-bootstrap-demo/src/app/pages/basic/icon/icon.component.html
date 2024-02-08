@@ -1,10 +1,20 @@
 <h1 class="text-center">Icon</h1>
+<h2>Note</h2>
+Angular 17 <a href="https://netbasal.com/simplifying-file-imports-in-angular-with-new-loader-options-4e94a0eb18af" target="_blank">now supports loaders</a>.
 <h2>Demo</h2>
-<bs-icon [icon]="'bootstrap'"></bs-icon>
+<span [innerHTML]="iconLoader | bsIcon | async"></span>
 <h2>Code</h2>
-Module:
-<bs-code-snippet [codeToCopy]="moduleCode" [languages]="['ts']"></bs-code-snippet>
+Component:
+<bs-code-snippet [codeToCopy]="componentCode" [languages]="['ts']"></bs-code-snippet>
 HTML:
 <bs-code-snippet [codeToCopy]="htmlCode" [languages]="['html']"></bs-code-snippet>
+angular.json (for angular workspaces):
+<bs-code-snippet [codeToCopy]="angularJson" [languages]="['json']"></bs-code-snippet>
+project.json (for NX workspaces):
+<bs-code-snippet [codeToCopy]="projectJson" [languages]="['json']"></bs-code-snippet>
+src/types.d.ts:
+<bs-code-snippet [codeToCopy]="typesDTs" [languages]="['ts']"></bs-code-snippet>
+
 <h2>All icons</h2>
 A list of all icons is available <a href="https://icons.getbootstrap.com" target="_blank">here</a>.
+

@@ -12,7 +12,7 @@
                 </div>
             </span>
             <button [color]="colors.secondary" (click)="isOpen = !isOpen">
-                <bs-icon [icon]="'clock'"></bs-icon>
+				        <span [innerHTML]="clockLoader | bsIcon | async"></span>
             </button>
         </bs-input-group>
     </bs-form>

@@ -14,6 +14,8 @@ export class BsTreeviewItemComponent {
 
   @ContentChild(BsTreeviewComponent, { descendants: false }) childTree?: BsTreeviewComponent;
 
+  chevronRightLoader = () => import('bootstrap-icons/icons/chevron-right.svg');
+
   onClick(ev: MouseEvent) {
     if (this.childTree) {
       this.childTree.isExpanded = !this.childTree.isExpanded;

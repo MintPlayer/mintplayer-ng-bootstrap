@@ -1,10 +1,10 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { BsIconPipe } from '@mintplayer/ng-bootstrap/icon';
 import { BsTreeviewModule } from '@mintplayer/ng-bootstrap/treeview';
 
 import { TreeviewRoutingModule } from './treeview-routing.module';
 import { TreeviewComponent } from './treeview.component';
-import { BsIconModule } from '@mintplayer/ng-bootstrap/icon';
 
 
 @NgModule({
@@ -13,8 +13,8 @@ import { BsIconModule } from '@mintplayer/ng-bootstrap/icon';
   ],
   imports: [
     CommonModule,
+    BsIconPipe,
     BsTreeviewModule,
-    BsIconModule,
     TreeviewRoutingModule
   ]
 })

@@ -1,29 +1,24 @@
 {
   "name": "ng-bootstrap-demo",
-  "$schema": "..\\..\\node_modules\\nx\\schemas\\project-schema.json",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
-  "generators": {
-    "@schematics/angular:component": {
-      "style": "scss"
-    }
-  },
+  "prefix": "mintplayer-ng-bootstrap",
   "sourceRoot": "apps/ng-bootstrap-demo/src",
-  "prefix": "demo",
+  "tags": [],
   "targets": {
     "build": {
-      "executor": "@angular-devkit/build-angular:browser",
+      "executor": "@angular-devkit/build-angular:application",
       "outputs": ["{options.outputPath}"],
       "options": {
-        "outputPath": "dist/apps/ng-bootstrap-demo/browser",
+        "outputPath": "dist/apps/ng-bootstrap-demo",
         "index": "apps/ng-bootstrap-demo/src/index.html",
-        "main": "apps/ng-bootstrap-demo/src/main.ts",
-        "polyfills": "apps/ng-bootstrap-demo/src/polyfills.ts",
+        "browser": "apps/ng-bootstrap-demo/src/main.ts",
+        "polyfills": ["zone.js"],
         "tsConfig": "apps/ng-bootstrap-demo/tsconfig.app.json",
         "inlineStyleLanguage": "scss",
         "assets": [
           "apps/ng-bootstrap-demo/src/favicon.ico",
-          "apps/ng-bootstrap-demo/src/assets",
-          "apps/ng-bootstrap-demo/src/web.config"
+          "apps/ng-bootstrap-demo/src/assets"
         ],
         "styles": [
           "apps/ng-bootstrap-demo/src/styles.scss",
@@ -33,7 +28,10 @@
             "bundleName": "solarized-dark"
           }
         ],
-        "scripts": []
+        "scripts": [],
+        "loader": {
+          ".svg": "text"
+        }
       },
       "configurations": {
         "production": {
@@ -45,25 +43,16 @@
             },
             {
               "type": "anyComponentStyle",
-              "maximumWarning": "5kb",
-              "maximumError": "100kb"
-            }
-          ],
-          "fileReplacements": [
-            {
-              "replace": "apps/ng-bootstrap-demo/src/environments/environment.ts",
-              "with": "apps/ng-bootstrap-demo/src/environments/environment.prod.ts"
+              "maximumWarning": "2kb",
+              "maximumError": "4kb"
             }
           ],
           "outputHashing": "all"
         },
         "development": {
-          "buildOptimizer": false,
           "optimization": false,
-          "vendorChunk": true,
           "extractLicenses": false,
-          "sourceMap": true,
-          "namedChunks": true
+          "sourceMap": true
         }
       },
       "defaultConfiguration": "production"
@@ -85,85 +74,6 @@
       "options": {
         "buildTarget": "ng-bootstrap-demo:build"
       }
-    },
-    "lint": {
-      "executor": "@nx/eslint:lint",
-      "options": {
-        "lintFilePatterns": [
-          "apps/ng-bootstrap-demo/src/**/*.ts",
-          "apps/ng-bootstrap-demo/src/**/*.html"
-        ]
-      }
-    },
-    "test": {
-      "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/apps/ng-bootstrap-demo"],
-      "options": {
-        "codeCoverage": true,
-        "coverageReporters": ["lcovonly"],
-        "coverageDirectory": "coverage/apps/ng-bootstrap-demo",
-        "jestConfig": "apps/ng-bootstrap-demo/jest.config.ts"
-      }
-    },
-    "server": {
-      "executor": "@angular-devkit/build-angular:server",
-      "options": {
-        "outputPath": "dist/ng-bootstrap-demo/server",
-        "main": "apps/ng-bootstrap-demo/server.ts",
-        "tsConfig": "apps/ng-bootstrap-demo/tsconfig.server.json",
-        "inlineStyleLanguage": "scss"
-      },
-      "configurations": {
-        "production": {
-          "outputHashing": "media",
-          "fileReplacements": [
-            {
-              "replace": "apps/ng-bootstrap-demo/src/environments/environment.ts",
-              "with": "apps/ng-bootstrap-demo/src/environments/environment.prod.ts"
-            }
-          ]
-        },
-        "development": {
-          "optimization": false,
-          "sourceMap": true,
-          "extractLicenses": false,
-          "vendorChunk": true,
-          "buildOptimizer": false
-        }
-      },
-      "defaultConfiguration": "production"
-    },
-    "serve-ssr": {
-      "executor": "@angular-devkit/build-angular:ssr-dev-server",
-      "configurations": {
-        "development": {
-          "browserTarget": "ng-bootstrap-demo:build:development",
-          "serverTarget": "ng-bootstrap-demo:server:development"
-        },
-        "production": {
-          "browserTarget": "ng-bootstrap-demo:build:production",
-          "serverTarget": "ng-bootstrap-demo:server:production"
-        }
-      },
-      "defaultConfiguration": "development"
-    },
-    "prerender": {
-      "executor": "@angular-devkit/build-angular:prerender",
-      "options": {
-        "routes": ["/"]
-      },
-      "configurations": {
-        "production": {
-          "browserTarget": "ng-bootstrap-demo:build:production",
-          "serverTarget": "ng-bootstrap-demo:server:production"
-        },
-        "development": {
-          "browserTarget": "ng-bootstrap-demo:build:development",
-          "serverTarget": "ng-bootstrap-demo:server:development"
-        }
-      },
-      "defaultConfiguration": "production"
     }
-  },
-  "tags": []
+  }
 }

@@ -4,10 +4,10 @@
         <div class="w-100 d-flex flex-row">
             <div class="d-flex calendar-left justify-content-between">
                 <button class="btn btn-default flex-start" (click)="onPreviousWeekOrMonth()">
-                    <bs-icon [icon]="'chevron-left'" class="px-0"></bs-icon>
+                    <span [innerHTML]="chevronLeftLoader | bsIcon | async"></span>
                 </button>
                 <button class="btn btn-default flex-end" (click)="onNextWeekOrMonth()">
-                    <bs-icon [icon]="'chevron-right'" class="px-0"></bs-icon>
+                    <span [innerHTML]="chevronRightLoader | bsIcon | async"></span>
                 </button>
             </div>
             <div class="flex-grow-1 calendar-head-cell" *ngFor="let day of (shownDays$ | async)">
@@ -73,14 +73,14 @@
 <div class="d-flex flex-column-100 overflow-y-auto mb-0 bg-white timeline" *ngIf="(mode$ | async) === modes.timeline">
     <div class="calendar-head d-flex">
         <button class="btn flex-start" (click)="onPreviousWeekOrMonth()">
-            <bs-icon [icon]="'chevron-left'" class="px-0"></bs-icon>
+				    <span [innerHTML]="chevronLeftLoader | bsIcon | async"></span>
         </button>
         <div class="flex-grow-1 h3 py-2 mb-0 text-center">{{ currentWeekOrMonth$ | async | date: 'MMMM yyyy' }}</div>
         <button class="btn flex-start" (click)="onNextWeekOrMonth()">
-            <bs-icon [icon]="'chevron-right'" class="px-0"></bs-icon>
+				    <span [innerHTML]="chevronRightLoader | bsIcon | async"></span>
         </button>
     </div>
-    
+
     <div class="calendar-body table-responsive overflow-x-auto">
         <table class="table mb-0">
             <ng-container *ngIf="(timeSlots$ | async) as timeSlots">

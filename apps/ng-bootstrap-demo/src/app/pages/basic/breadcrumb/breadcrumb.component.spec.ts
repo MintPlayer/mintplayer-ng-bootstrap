@@ -6,13 +6,13 @@ import { MockModule } from 'ng-mocks';
 import { BreadcrumbComponent } from './breadcrumb.component';
 
 @Component({
-  selector: 'page-home',
+  selector: 'demo-page-home',
   template: 'Home'
 })
 class PageHomeComponent { }
 
 @Component({
-  selector: 'page-basic',
+  selector: 'demo-page-basic',
   template: 'Basic'
 })
 class PageBasicComponent { }
