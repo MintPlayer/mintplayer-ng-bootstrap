@@ -1,9 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { IconComponent } from './icon.component';
-import { MockModule } from 'ng-mocks';
-import { BsIconModule } from '@mintplayer/ng-bootstrap/icon';
+import { MockModule, MockPipe } from 'ng-mocks';
 import { BsCodeSnippetModule } from '@mintplayer/ng-bootstrap/code-snippet';
+import { BsIconPipe } from '@mintplayer/ng-bootstrap/icon';
 
 describe('IconComponent', () => {
   let component: IconComponent;
@@ -11,14 +11,16 @@ describe('IconComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [IconComponent],
+      declarations: [
+        IconComponent,
+        MockPipe(BsIconPipe),
+      ],
       imports: [
-        MockModule(BsIconModule),
         MockModule(BsCodeSnippetModule),
       ]
     })
     .compileComponents();
-    
+
     fixture = TestBed.createComponent(IconComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();

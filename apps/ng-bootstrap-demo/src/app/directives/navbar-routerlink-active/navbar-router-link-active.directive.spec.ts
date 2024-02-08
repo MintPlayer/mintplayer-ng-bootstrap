@@ -12,11 +12,11 @@ describe('NavbarRouterLinkActiveDirective', () => {
       imports: [
         RouterTestingModule.withRoutes([
           { path: '', component: PageHomeComponent },
-        ])
-      ],
-      declarations: [
+        ]),
         // Directive to test
         NavbarRouterLinkActiveDirective,
+      ],
+      declarations: [
 
         // Mock dependencies
 

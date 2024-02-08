@@ -1,8 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MockModule } from 'ng-mocks';
+import { MockModule, MockPipe } from 'ng-mocks';
 import { Component } from '@angular/core';
 import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
-import { BsIconModule } from '@mintplayer/ng-bootstrap/icon';
+import { BsIconPipe } from '@mintplayer/ng-bootstrap/icon';
 import { BsDropdownModule } from '@mintplayer/ng-bootstrap/dropdown';
 import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
 import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
@@ -34,12 +34,14 @@ describe('BsSearchboxComponent', () => {
         // Unit to test
         BsSearchboxComponent,
 
+        // Mock dependencies
+        MockPipe(BsIconPipe),
+
         // Testbench
         BsSearchboxTestComponent,
       ],
       imports: [
         MockModule(BsFormModule),
-        MockModule(BsIconModule),
         MockModule(BsDropdownModule),
         MockModule(BsButtonTypeModule),
         MockModule(BsDropdownMenuModule),

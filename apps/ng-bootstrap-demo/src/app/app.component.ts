@@ -21,6 +21,7 @@ import { NavbarRouterLinkActiveDirective } from './directives/navbar-routerlink-
 export class AppComponent {
   versionInfo = '';
   colors = Color;
+  title = 'ng-bootstrap-demo';
 
   constructor(@Inject('BOOTSTRAP_VERSION') bootstrapVersion: string) {
     this.versionInfo = bootstrapVersion;

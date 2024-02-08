@@ -53,7 +53,8 @@ jobs:
     #   run: npx nx affected -t test
 
     - name: Build
-      run: npx nx affected -t build
+      #run: npx nx affected -t build
+      run: npx nx build
 
     # run: npm run build -- --configuration=production
 

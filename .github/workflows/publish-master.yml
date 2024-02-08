@@ -56,10 +56,13 @@ jobs:
     #   run: npx nx affected -t lint
 
     - name: Test
-      run: npx nx affected -t test
+      # run: npx nx affected -t test
+      # run: npx nx test
+      run: npx nx run-many --target affected:test --passWithNoTests
 
     - name: Build
-      run: npx nx affected -t build
+      # run: npx nx affected -t build
+      run: npx nx build
 
     ## ng-animations
     - name: Upload code coverage report

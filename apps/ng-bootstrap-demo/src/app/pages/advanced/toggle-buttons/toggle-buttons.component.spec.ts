@@ -1,6 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ToggleButtonsComponent } from './toggle-buttons.component';
+import { MockComponent } from 'ng-mocks';
+import { BsNavbarTogglerComponent } from '@mintplayer/ng-bootstrap/navbar-toggler';
+import { BsPlaylistTogglerComponent } from '@mintplayer/ng-bootstrap/playlist-toggler';
 
 describe('ToggleButtonsComponent', () => {
   let component: ToggleButtonsComponent;
@@ -8,7 +11,11 @@ describe('ToggleButtonsComponent', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      declarations: [ToggleButtonsComponent]
+      declarations: [
+        MockComponent(BsNavbarTogglerComponent),
+        MockComponent(BsPlaylistTogglerComponent),
+        ToggleButtonsComponent
+      ]
     });
     fixture = TestBed.createComponent(ToggleButtonsComponent);
     component = fixture.componentInstance;

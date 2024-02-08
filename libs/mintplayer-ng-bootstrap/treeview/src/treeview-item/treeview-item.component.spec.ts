@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsIconModule } from '@mintplayer/ng-bootstrap/icon';
-import { MockComponent, MockModule, MockProvider } from 'ng-mocks';
+import { BsIconPipe } from '@mintplayer/ng-bootstrap/icon';
+import { MockComponent, MockModule, MockPipe, MockProvider } from 'ng-mocks';
 import { BsTreeviewItemComponent } from './treeview-item.component';
 import { BsTreeviewComponent } from '../treeview/treeview.component';
 import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
@@ -12,10 +12,10 @@ describe('BsTreeviewItemComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        MockModule(BsIconModule),
         MockModule(BsListGroupModule)
       ],
       declarations: [
+        MockPipe(BsIconPipe),
         MockComponent(BsTreeviewComponent),
         BsTreeviewItemComponent
       ],
