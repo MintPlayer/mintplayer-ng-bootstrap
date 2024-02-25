@@ -1,7 +1,9 @@
-import { Component, ElementRef, HostListener, Input, TemplateRef, ViewChild } from '@angular/core';
+import { Component, DestroyRef, ElementRef, HostListener, Inject, Input, TemplateRef, ViewChild } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Breakpoint, Color } from '@mintplayer/ng-bootstrap';
-import { BehaviorSubject, combineLatest, debounceTime, filter, map, Observable, take } from 'rxjs';
+import { BehaviorSubject, combineLatest, debounceTime, filter, fromEvent, map, Observable, take } from 'rxjs';
+import { CollapseBehavior } from '../types/collapse-behavior';
 
 @Component({
   selector: 'bs-navbar',
@@ -10,7 +12,9 @@ import { BehaviorSubject, combineLatest, debounceTime, filter, map, Observable, 
 })
 export class BsNavbarComponent {
 
-  constructor() {
+  constructor(private destroy: DestroyRef, @Inject(DOCUMENT) doc: any) {
+    this.doc = doc;
+
     this.expandAt$ = this.breakPoint$
       .pipe(map((breakpoint) => {
         switch (breakpoint) {
@@ -94,11 +98,11 @@ export class BsNavbarComponent {
   }
 
   @ViewChild('nav') nav!: ElementRef;
-  @Input() autoclose = true;
 
+  doc: Document;
   expandButtonTemplate: TemplateRef<any> | null = null;
-  
-  
+
+
   expandClass$: Observable<string | null>;
   wAutoClass$: Observable<string | null>;
   dNoneClass$: Observable<string | null>;
@@ -114,6 +118,19 @@ export class BsNavbarComponent {
     this.isExpanded$.pipe(take(1)).subscribe((isExpanded) => {
       this.isExpanded$.next(!isExpanded);
     });
+  }
+
+  onItemClicked() {
+    switch (this.collapseBehavior$.value) {
+      case 'afterNavigate':
+        this.isExpanded$.next(false);
+        break;
+      case 'afterScrollEnd':
+        fromEvent(this.doc, 'scrollend')
+          .pipe(take(1), takeUntilDestroyed(this.destroy))
+          .subscribe(() => this.isExpanded$.next(false));
+        break;
+    }
   }
 
   //#region Color
@@ -136,5 +153,13 @@ export class BsNavbarComponent {
   }
   //#endregion
 
-  
+  //#region CollapseBehavior
+  collapseBehavior$ = new BehaviorSubject<CollapseBehavior>('afterNavigate');
+  public get collapseBehavior() {
+    return this.collapseBehavior$.value;
+  }
+  @Input() public set collapseBehavior(value: CollapseBehavior) {
+    this.collapseBehavior$.next(value);
+  }
+  //#endregion
 }

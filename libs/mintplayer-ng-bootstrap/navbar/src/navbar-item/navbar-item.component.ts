@@ -38,7 +38,7 @@ export class BsNavbarItemComponent implements AfterContentChecked {
         if (isPlatformServer(this.platformId)) {
           this.anchorTag.href = 'javascript:;';
         }
-  
+
         if (!this.anchorTag.getAttribute('close-init-b')) {
           this.anchorTag.setAttribute('close-init-b', '1');
           this.anchorTag.addEventListener('click', (ev: MouseEvent) => {
@@ -86,9 +86,7 @@ export class BsNavbarItemComponent implements AfterContentChecked {
             d.isVisible = false;
             d = d.parentDropdown;
           }
-          if (this.navbar.autoclose) {
-            this.navbar.isExpanded$.next(false);
-          }
+          this.navbar.onItemClicked();
         });
       }
 
