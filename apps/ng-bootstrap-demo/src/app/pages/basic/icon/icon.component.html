@@ -1,10 +1,13 @@
 <h1 class="text-center">Icon</h1>
+<h2>Note</h2>
+<bs-alert [type]="colors.info">
+  The <code>bs-icon</code> component was removed from this library from version 17.1.
+  In recent versions of angular you can configure loaders, which allows you to use <code>import</code> syntax on custom file types.
+  <a href="https://netbasal.com/simplifying-file-imports-in-angular-with-new-loader-options-4e94a0eb18af" target="_blank">More info</a>
+</bs-alert>
+
 <h2>Demo</h2>
-<bs-icon [icon]="'bootstrap'"></bs-icon>
-<h2>Code</h2>
-Module:
-<bs-code-snippet [codeToCopy]="moduleCode" [languages]="['ts']"></bs-code-snippet>
-HTML:
-<bs-code-snippet [codeToCopy]="htmlCode" [languages]="['html']"></bs-code-snippet>
+<span [innerHTML]="icon"></span>
+
 <h2>All icons</h2>
 A list of all icons is available <a href="https://icons.getbootstrap.com" target="_blank">here</a>.

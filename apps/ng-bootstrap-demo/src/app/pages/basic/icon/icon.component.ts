@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
-import * as dedent from 'dedent';
+import { Component, ElementRef, ViewChild } from '@angular/core';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { Color } from '@mintplayer/ng-bootstrap';
 
 @Component({
   selector: 'demo-icon',
@@ -7,18 +8,12 @@ import * as dedent from 'dedent';
   styleUrls: ['./icon.component.scss']
 })
 export class IconComponent {
-  moduleCode = dedent`
-  ...
-  import { BsIconModule } from '@mintplayer/ng-bootstrap/icon';
-  
-  @NgModule({
-    declarations: [ ... ],
-    imports: [
-      ...,
-      BsIconModule
-    ]
-  })
-  export class IconModule { }`;
+  constructor(domSanitizer: DomSanitizer) {
+    import('bootstrap-icons/icons/bootstrap.svg').then((icon) => {
+      this.icon = domSanitizer.bypassSecurityTrustHtml(icon.default);
+    });
+  }
 
-  htmlCode = `<bs-icon [icon]="'bootstrap'"></bs-icon>`;
+  colors = Color;
+  icon?: SafeHtml;
 }
