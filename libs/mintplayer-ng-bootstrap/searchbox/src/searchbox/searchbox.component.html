@@ -7,7 +7,7 @@
                 <ng-container *ngTemplateOutlet="suggestionTemplate; context: { $implicit: selectedItem, searchbox: this }"></ng-container>
             </ng-container>
         </div>
-        <bs-icon [icon]="isOpen ? 'caret-up-fill' : 'caret-down-fill'" class="float-end"></bs-icon>
+        <span [innerHTML]="isOpen ? caretUpFill : caretDownFill" class="float-end"></span>
     </button>
     <bs-dropdown-menu *bsDropdownMenu>
         <ng-container *bsLet="(isBusy$ | async) as isBusy">

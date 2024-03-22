@@ -3,6 +3,7 @@ import { BehaviorSubject, filter, map, Observable } from 'rxjs';
 import { Resource, ResourceGroup } from '../../interfaces';
 import { ResourceOrGroup } from '../../interfaces/resource-or-group';
 import { SchedulerStampWithSlots } from '../../interfaces/scheduler-stamp-with-slots';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Component({
   selector: 'bs-resource-group-presenter',
@@ -12,7 +13,7 @@ import { SchedulerStampWithSlots } from '../../interfaces/scheduler-stamp-with-s
 })
 export class ResourceGroupPresenterComponent {
   
-  constructor() {
+  constructor(private sanitizer: DomSanitizer) {
     this.data$ = this.resourceOrGroup$
       .pipe(map((resourceOrGroup) => {
         if (!resourceOrGroup) {
@@ -37,8 +38,17 @@ export class ResourceGroupPresenterComponent {
         .map(timeslot => timeslot.slots.length)
         .reduce((sum, current) => sum + current, 0)
       ));
+
+    import('bootstrap-icons/icons/chevron-down.svg').then((icon) => {
+      this.chevronDown = sanitizer.bypassSecurityTrustHtml(icon.default);
+    });
+    import('bootstrap-icons/icons/chevron-right.svg').then((icon) => {
+      this.chevronRight = sanitizer.bypassSecurityTrustHtml(icon.default);
+    });
   }
 
+  chevronDown?: SafeHtml;
+  chevronRight?: SafeHtml;
   @Input() level = 0;
   resourceOrGroup$ = new BehaviorSubject<Resource | ResourceGroup | null>(null);
   timeSlots$ = new BehaviorSubject<SchedulerStampWithSlots[]>([]);

@@ -1,7 +1,10 @@
+/// <reference types="./types" />
+
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, filter, map, Observable, take } from 'rxjs';
 import { BsCalendarMonthService, DateDayOfMonth, Week, WeekDay } from '@mintplayer/ng-bootstrap/calendar-month';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Component({
   selector: 'bs-calendar',
@@ -9,7 +12,7 @@ import { BsCalendarMonthService, DateDayOfMonth, Week, WeekDay } from '@mintplay
   styleUrls: ['./calendar.component.scss'],
 })
 export class BsCalendarComponent {
-  constructor(private calendarMonthService: BsCalendarMonthService) {
+  constructor(private sanitizer: DomSanitizer, private calendarMonthService: BsCalendarMonthService) {
     this.weeks$ = this.currentMonth$
       .pipe(map((month) => this.calendarMonthService.getWeeks(month)));
     this.shownDays$ = this.weeks$
@@ -39,8 +42,16 @@ export class BsCalendarComponent {
       .subscribe(date => this.selectedDateChange.emit(date));
     this.currentMonth$.pipe(takeUntilDestroyed())
       .subscribe(month => this.currentMonthChange.emit(month));
+    import('bootstrap-icons/icons/chevron-left.svg').then((icon) => {
+      this.chevronLeft = sanitizer.bypassSecurityTrustHtml(icon.default);
+    });
+    import('bootstrap-icons/icons/chevron-right.svg').then((icon) => {
+      this.chevronRight = sanitizer.bypassSecurityTrustHtml(icon.default);
+    });
   }
 
+  chevronLeft?: SafeHtml;
+  chevronRight?: SafeHtml;
   weeks$: Observable<Week[]>;
   shownDays$: Observable<WeekDay[]>;
 

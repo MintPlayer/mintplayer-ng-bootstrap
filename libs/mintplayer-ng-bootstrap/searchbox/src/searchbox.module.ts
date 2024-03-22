@@ -2,7 +2,6 @@ import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { BsLetModule } from '@mintplayer/ng-bootstrap/let';
-import { BsIconModule } from '@mintplayer/ng-bootstrap/icon';
 import { FocusOnLoadModule } from '@mintplayer/ng-focus-on-load';
 import { BsDropdownModule } from '@mintplayer/ng-bootstrap/dropdown';
 import { BsProgressBarModule } from '@mintplayer/ng-bootstrap/progress-bar';
@@ -26,7 +25,6 @@ import { BsNoResultsTemplateDirective } from './directives/no-results.directive'
     FormsModule,
     FocusOnLoadModule,
     BsLetModule,
-    BsIconModule,
     BsDropdownModule,
     BsDropdownMenuModule,
     BsButtonTypeModule,

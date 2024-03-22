@@ -1,6 +1,5 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BsIconModule } from '@mintplayer/ng-bootstrap/icon';
 import { BsSecondsTimespanPipe } from './pipes/bs-seconds-timespan.pipe/bs-seconds-timespan.pipe';
 import { BsSecondsTodayOffsetPipe } from './pipes/bs-seconds-today-offset/bs-seconds-today-offset.pipe';
 import { DateOffsetPipe } from './pipes/date-offset/date-offset.pipe';
@@ -19,7 +18,6 @@ import { ResourceGroupPresenterComponent } from './components/resource-group-pre
   ],
   imports: [
     CommonModule,
-    BsIconModule,
   ],
   exports: [
     BsSchedulerComponent,

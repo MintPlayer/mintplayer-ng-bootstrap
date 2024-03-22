@@ -1,5 +1,8 @@
+/// <reference types="../../../../types" />
+
 import { Component } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { Color } from '@mintplayer/ng-bootstrap';
 import * as dedent from 'dedent';
 
 @Component({
@@ -9,25 +12,46 @@ import * as dedent from 'dedent';
 })
 export class IconComponent {
   constructor(private sanitizer: DomSanitizer) {
-    import('bootstrap-icons/icons/bootstrap.svg').then((res) => res.default).then((icon) => {
-      this.icon = sanitizer.bypassSecurityTrustHtml(icon);
+    import('bootstrap-icons/icons/bootstrap.svg').then((icon) => {
+      this.icon = sanitizer.bypassSecurityTrustHtml(icon.default);
     });
   }
 
+  colors = Color;
   icon?: SafeHtml;
 
-  moduleCode = dedent`
-  ...
-  import { BsIconModule } from '@mintplayer/ng-bootstrap/icon';
-  
-  @NgModule({
-    declarations: [ ... ],
-    imports: [
-      ...,
-      BsIconModule
-    ]
-  })
-  export class IconModule { }`;
+  componentCode = dedent`
+    constructor(private sanitizer: DomSanitizer) {
+      import('bootstrap-icons/icons/bootstrap.svg').then((icon) => {
+        this.icon = sanitizer.bypassSecurityTrustHtml(icon.default);
+      });
+    }
 
-  htmlCode = `<bs-icon [icon]="'bootstrap'"></bs-icon>`;
+    icon?: SafeHtml;`;
+
+  htmlCode = `<span [innerHTML]="icon"></span>`;
+
+  typesCode = dedent`
+    declare module "*.svg" {
+      const content: string;
+      export default content;
+    }`;
+
+  angularJsonCode = dedent`
+    {
+      ...,
+      "architect": {
+        ...,
+        "build": {
+          ...,
+          "builderOrExecutor": "@angular-devkit/build-angular:application",
+          "options": {
+            ...,
+            "loader": {
+              ".svg": "text"
+            }
+          }
+        }
+      }
+    }`;
 }

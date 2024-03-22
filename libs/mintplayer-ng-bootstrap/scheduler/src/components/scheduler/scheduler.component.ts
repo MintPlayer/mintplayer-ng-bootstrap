@@ -1,3 +1,5 @@
+/// <reference types="../../types" />
+
 import { Component, ElementRef, EventEmitter, HostListener, Input, Output, QueryList, ViewChildren } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, combineLatest, filter, map, Observable, take } from 'rxjs';
@@ -16,6 +18,7 @@ import { Resource } from '../../interfaces/resource';
 import { SchedulerStampWithSlots } from '../../interfaces/scheduler-stamp-with-slots';
 import { WeekOptions } from '../../interfaces/week-options';
 import { TimelineOptions } from '../../interfaces/timeline-options';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Component({
   selector: 'bs-scheduler',
@@ -23,7 +26,7 @@ import { TimelineOptions } from '../../interfaces/timeline-options';
   styleUrls: ['./scheduler.component.scss'],
 })
 export class BsSchedulerComponent {
-  constructor(private calendarMonthService: BsCalendarMonthService, private timelineService: BsTimelineService) {
+  constructor(private sanitizer: DomSanitizer, private calendarMonthService: BsCalendarMonthService, private timelineService: BsTimelineService) {
     const monday = this.calendarMonthService.getMondayBefore(new Date());
     this.currentWeekOrMonth$ = new BehaviorSubject<Date>(monday);
 
@@ -172,8 +175,16 @@ export class BsSchedulerComponent {
     // combineLatest([this.mode$, this.scale$])
     //   .pipe(filter(([mode, scale]) => mode === ESchedulerMode.timeline))
 
+    import('bootstrap-icons/icons/chevron-left.svg').then((icon) => {
+      this.chevronLeft = sanitizer.bypassSecurityTrustHtml(icon.default);
+    });
+    import('bootstrap-icons/icons/chevron-right.svg').then((icon) => {
+      this.chevronRight = sanitizer.bypassSecurityTrustHtml(icon.default);
+    });
   }
 
+  chevronLeft?: SafeHtml;
+  chevronRight?: SafeHtml;
   resources$ = new BehaviorSubject<(Resource | ResourceGroup)[]>([]);
   events$: Observable<SchedulerEvent[]>;
   eventParts$: Observable<SchedulerEventWithParts[]>;
