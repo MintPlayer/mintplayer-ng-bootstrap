@@ -1,6 +1,5 @@
 {
     "$schema": "../../../node_modules/ng-packagr/ng-package.schema.json",
-    "dest": "../../../dist/libs/mintplayer-ng-bootstrap/split-string",
     "lib": {
         "entryFile": "index.ts"
     }
