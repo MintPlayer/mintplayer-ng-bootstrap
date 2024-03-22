@@ -1,3 +1,5 @@
+/// <reference types="../types" />
+
 import { Component, ElementRef, EventEmitter, Input, Optional, Output, TemplateRef, ViewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Color } from '@mintplayer/ng-bootstrap';
@@ -5,6 +7,7 @@ import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 import { HasId } from '@mintplayer/ng-bootstrap/has-id';
 import { BehaviorSubject, debounceTime } from 'rxjs';
 import { BsSuggestionTemplateContext } from '../directives';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Component({
   selector: 'bs-searchbox',
@@ -12,7 +15,7 @@ import { BsSuggestionTemplateContext } from '../directives';
   styleUrls: ['./searchbox.component.scss'],
 })
 export class BsSearchboxComponent<T extends HasId<U>, U> {
-  constructor(@Optional() bsForm: BsFormComponent) {
+  constructor(@Optional() bsForm: BsFormComponent, sanitizer: DomSanitizer) {
     if (!bsForm) {
       throw '<bs-searchbox> must be inside a <bs-form>';
     }
@@ -25,8 +28,17 @@ export class BsSearchboxComponent<T extends HasId<U>, U> {
         this.provideSuggestions.emit(searchterm);
       }
     });
+    
+    import('bootstrap-icons/icons/caret-up-fill.svg').then((icon) => {
+      this.caretUpFill = sanitizer.bypassSecurityTrustHtml(icon.default);
+    });
+    import('bootstrap-icons/icons/caret-down-fill.svg').then((icon) => {
+      this.caretDownFill = sanitizer.bypassSecurityTrustHtml(icon.default);
+    });
   }
 
+  caretUpFill?: SafeHtml;
+  caretDownFill?: SafeHtml;
   colors = Color;
   isBusy$ = new BehaviorSubject<boolean>(false);
   @ViewChild('textbox') textbox!: ElementRef<HTMLInputElement>;

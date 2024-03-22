@@ -1,4 +1,7 @@
+/// <reference types="./types" />
+
 import { ChangeDetectorRef, Component, EventEmitter, Input, NgZone, Output, Renderer2 } from '@angular/core';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Color } from '@mintplayer/ng-bootstrap';
 
 @Component({
@@ -8,7 +11,7 @@ import { Color } from '@mintplayer/ng-bootstrap';
 })
 export class BsTimepickerComponent {
 
-  constructor(private ref: ChangeDetectorRef, private zone: NgZone, private renderer: Renderer2) {
+  constructor(private ref: ChangeDetectorRef, private zone: NgZone, private renderer: Renderer2, private sanitizer: DomSanitizer) {
     const today = new Date();
     today.setHours(0); today.setMinutes(0); today.setSeconds(0);
 
@@ -19,8 +22,14 @@ export class BsTimepickerComponent {
         clone.setTime(clone.getTime() + i * interval * 1000);
         return clone;
       });
+
+      
+    import('bootstrap-icons/icons/clock.svg').then((icon) => {
+      this.clock = sanitizer.bypassSecurityTrustHtml(icon.default);
+    });
   }
 
+  clock?: SafeHtml;
   colors = Color;
   isOpen = false;
   presetTimestamps: Date[] = [];

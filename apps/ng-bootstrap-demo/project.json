@@ -11,13 +11,13 @@
   "prefix": "demo",
   "targets": {
     "build": {
-      "executor": "@angular-devkit/build-angular:browser",
+      "executor": "@angular-devkit/build-angular:application",
       "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/apps/ng-bootstrap-demo/browser",
         "index": "apps/ng-bootstrap-demo/src/index.html",
-        "main": "apps/ng-bootstrap-demo/src/main.ts",
-        "polyfills": "apps/ng-bootstrap-demo/src/polyfills.ts",
+        "browser": "apps/ng-bootstrap-demo/src/main.ts",
+        "polyfills": ["apps/ng-bootstrap-demo/src/polyfills.ts"],
         "tsConfig": "apps/ng-bootstrap-demo/tsconfig.app.json",
         "inlineStyleLanguage": "scss",
         "assets": [
@@ -33,7 +33,10 @@
             "bundleName": "solarized-dark"
           }
         ],
-        "scripts": []
+        "scripts": [],
+        "loader": {
+          ".svg": "text"
+        }
       },
       "configurations": {
         "production": {
@@ -87,13 +90,7 @@
       }
     },
     "lint": {
-      "executor": "@nx/eslint:lint",
-      "options": {
-        "lintFilePatterns": [
-          "apps/ng-bootstrap-demo/src/**/*.ts",
-          "apps/ng-bootstrap-demo/src/**/*.html"
-        ]
-      }
+      "executor": "@nx/eslint:lint"
     },
     "test": {
       "executor": "@nx/jest:jest",
