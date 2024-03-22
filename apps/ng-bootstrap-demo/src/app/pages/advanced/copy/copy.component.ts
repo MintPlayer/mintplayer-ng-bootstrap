@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import dedent from 'dedent';
+import * as dedent from 'dedent';
 
 @Component({
   selector: 'demo-copy',

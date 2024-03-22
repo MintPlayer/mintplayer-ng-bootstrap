@@ -3,7 +3,7 @@
 import { Component } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Color } from '@mintplayer/ng-bootstrap';
-import dedent from 'dedent';
+import * as dedent from 'dedent';
 
 @Component({
   selector: 'demo-icon',
