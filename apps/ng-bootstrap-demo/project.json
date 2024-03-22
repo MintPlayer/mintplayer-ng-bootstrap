@@ -61,9 +61,7 @@
           "outputHashing": "all"
         },
         "development": {
-          "buildOptimizer": false,
           "optimization": false,
-          "vendorChunk": true,
           "extractLicenses": false,
           "sourceMap": true,
           "namedChunks": true
@@ -123,9 +121,7 @@
         "development": {
           "optimization": false,
           "sourceMap": true,
-          "extractLicenses": false,
-          "vendorChunk": true,
-          "buildOptimizer": false
+          "extractLicenses": false
         }
       },
       "defaultConfiguration": "production"

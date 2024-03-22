@@ -3,7 +3,7 @@
 import { Component } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Color } from '@mintplayer/ng-bootstrap';
-import * as dedent from 'dedent';
+import dedent from 'dedent';
 
 @Component({
   selector: 'demo-icon',
@@ -39,14 +39,10 @@ export class IconComponent {
 
   angularJsonCode = dedent`
     {
-      ...,
       "architect": {
-        ...,
         "build": {
-          ...,
           "builderOrExecutor": "@angular-devkit/build-angular:application",
           "options": {
-            ...,
             "loader": {
               ".svg": "text"
             }
