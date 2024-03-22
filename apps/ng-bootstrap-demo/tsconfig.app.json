@@ -2,7 +2,7 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "../../dist/out-tsc",
-    "types": ["dedent"],
+    "types": [],
     "target": "es2022",
     "useDefineForClassFields": false
   },
