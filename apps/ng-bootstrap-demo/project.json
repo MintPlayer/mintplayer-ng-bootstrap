@@ -33,7 +33,10 @@
             "bundleName": "solarized-dark"
           }
         ],
-        "scripts": []
+        "scripts": [],
+        "loader": {
+          ".svg": "text"
+        }
       },
       "configurations": {
         "production": {

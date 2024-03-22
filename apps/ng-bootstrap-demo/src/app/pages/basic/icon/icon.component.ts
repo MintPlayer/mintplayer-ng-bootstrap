@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import * as dedent from 'dedent';
 
 @Component({
@@ -7,6 +8,14 @@ import * as dedent from 'dedent';
   styleUrls: ['./icon.component.scss']
 })
 export class IconComponent {
+  constructor(private sanitizer: DomSanitizer) {
+    import('bootstrap-icons/icons/bootstrap.svg').then((res) => res.default).then((icon) => {
+      this.icon = sanitizer.bypassSecurityTrustHtml(icon);
+    });
+  }
+
+  icon?: SafeHtml;
+
   moduleCode = dedent`
   ...
   import { BsIconModule } from '@mintplayer/ng-bootstrap/icon';
