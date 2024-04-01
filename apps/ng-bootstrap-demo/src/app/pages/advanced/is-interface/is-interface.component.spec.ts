@@ -8,7 +8,7 @@ describe('IsInterfaceComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [IsInterfaceComponent]
+      imports: [IsInterfaceComponent]
     })
     .compileComponents();
     
