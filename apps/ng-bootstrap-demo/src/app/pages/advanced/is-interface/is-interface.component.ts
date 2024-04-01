@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { Color } from '@mintplayer/ng-bootstrap';
 
 interface Employee {
   id: number;
@@ -27,12 +28,16 @@ export class IsInterfaceComponent {
     { id: 4, firstName: 'G', lastName: 'H', officeNumber: 3 },
     { id: 5, firstName: 'I', lastName: 'J', reason: 'visum' },
   ];
+  counter = 1;
+  colors = Color;
 
   isEployee(person: Employee | Visitor) {
+    console.log('Ran isEployee');
     return ('officeNumber' in person) ? person : null;
   }
 
   isVisitor(person: Employee | Visitor) {
+    console.log('Ran isVisitor');
     return ('reason' in person) ? person : null;
   }
 }
