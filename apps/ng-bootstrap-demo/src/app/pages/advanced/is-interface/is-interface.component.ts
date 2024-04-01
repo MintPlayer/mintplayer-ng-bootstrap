@@ -27,4 +27,12 @@ export class IsInterfaceComponent {
     { id: 4, firstName: 'G', lastName: 'H', officeNumber: 3 },
     { id: 5, firstName: 'I', lastName: 'J', reason: 'visum' },
   ];
+
+  isEployee(person: Employee | Visitor) {
+    return ('officeNumber' in person) ? person : null;
+  }
+
+  isVisitor(person: Employee | Visitor) {
+    return ('reason' in person) ? person : null;
+  }
 }
