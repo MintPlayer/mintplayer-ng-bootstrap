@@ -1,12 +1,12 @@
 <h1 class="text-center">Is interface</h1>
-<table>
+<bs-table [isResponsive]="true">
     <thead>
         <tr>
-            <th>ID</th>
-            <th>First name</th>
-            <th>Last name</th>
-            <th>Office number</th>
-            <th>Reason</th>
+            <th class="text-nowrap">ID</th>
+            <th class="text-nowrap">First name</th>
+            <th class="text-nowrap">Last name</th>
+            <th class="text-nowrap">Office number</th>
+            <th class="text-nowrap">Reason</th>
         </tr>
     </thead>
     <tbody>
@@ -15,18 +15,19 @@
             <td>{{ item.firstName }}</td>
             <td>{{ item.lastName }}</td>
 
-            <ng-container *ngIf="isEployee(item) as employee">
+            <ng-container *ngIf="(item | asEmployee) as employee">
                 <td>{{ employee.officeNumber }}</td>
                 <td></td>
             </ng-container>
-            <ng-container *ngIf="isVisitor(item) as visitor">
+            <ng-container *ngIf="(item | asVisitor) as visitor">
                 <td></td>
                 <td>{{ visitor.reason }}</td>
             </ng-container>
         </tr>
     </tbody>
-</table>
+</bs-table>
 
-<h2>Counter</h2>
-{{ counter }}
+<h2 class="py-3">Counter</h2>
 <button (click)="counter = counter + 1" [color]="colors.primary">Increment</button>
+{{ counter }}
+<p class="py-3">Changing the counter binding does not trigger the pipe functions</p>
