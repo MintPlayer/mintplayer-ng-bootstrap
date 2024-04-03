@@ -1,10 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
-import { MockModule } from 'ng-mocks';
+import { MockModule, MockPipe } from 'ng-mocks';
 import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
-import { BsSplitStringModule } from '@mintplayer/ng-bootstrap/split-string';
+import { BsSplitStringPipe } from '@mintplayer/ng-bootstrap/split-string';
 
 import { SplitStringComponent } from './split-string.component';
 
@@ -23,7 +23,7 @@ describe('SplitStringComponent', () => {
         MockModule(BsFormModule),
         MockModule(BsGridModule),
         MockModule(BsListGroupModule),
-        MockModule(BsSplitStringModule),
+        MockPipe(BsSplitStringPipe),
       ]
     });
     fixture = TestBed.createComponent(SplitStringComponent);

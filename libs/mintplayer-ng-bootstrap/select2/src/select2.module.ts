@@ -1,10 +1,10 @@
 import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
-import { BsInListModule } from '@mintplayer/ng-bootstrap/in-list';
+import { NgTemplateOutlet } from '@angular/common';
+import { BsInListPipe } from '@mintplayer/ng-bootstrap/in-list';
 import { BsDropdownModule } from '@mintplayer/ng-bootstrap/dropdown';
 import { BsDropdownMenuModule } from '@mintplayer/ng-bootstrap/dropdown-menu';
-import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
+import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { BsSelect2Component } from './component/select2.component';
 import { BsItemTemplateDirective } from './directive/item-template/item-template.directive';
 import { BsSuggestionTemplateDirective } from './directive/suggestion-template/suggestion-template.directive';
@@ -16,12 +16,12 @@ import { BsSuggestionTemplateDirective } from './directive/suggestion-template/s
     BsSuggestionTemplateDirective,
   ],
   imports: [
-    CommonModule,
+    NgTemplateOutlet,
     FormsModule,
     BsDropdownModule,
     BsDropdownMenuModule,
-    BsHasOverlayModule,
-    BsInListModule,
+    BsHasOverlayComponent,
+    BsInListPipe,
   ],
   exports: [
     BsSelect2Component,

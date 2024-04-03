@@ -1,3 +1,4 @@
+import { AsyncPipe } from '@angular/common';
 import { Component, EventEmitter, HostListener, Input, Output } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, distinctUntilChanged } from 'rxjs';
@@ -6,6 +7,8 @@ import { BehaviorSubject, distinctUntilChanged } from 'rxjs';
   selector: 'bs-navbar-toggler',
   templateUrl: './navbar-toggler.component.html',
   styleUrls: ['./navbar-toggler.component.scss'],
+  standalone: true,
+  imports: [AsyncPipe]
 })
 export class BsNavbarTogglerComponent {
   constructor() {

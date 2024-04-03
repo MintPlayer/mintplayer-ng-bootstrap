@@ -4,7 +4,9 @@
             <ng-container *bsLet="(alpha$ | async)!; let letAlpha">
                 <bs-color-wheel [hs]="letHS" (hsChange)="hs$.next($event)" [luminosity]="letLuminosity" [width]="(size$ | async) ?? 150" [height]="(size$ | async) ?? 150" #wheel></bs-color-wheel>
                 <bs-luminosity-strip [hs]="letHS" [luminosity]="letLuminosity" (luminosityChange)="luminosity$.next($event)" class="d-block mt-2" [style.width.px]="size$ | async" #strip></bs-luminosity-strip>
-                <bs-alpha-strip *ngIf="allowAlpha$ | async" [hs]="letHS" [luminosity]="letLuminosity" [alpha]="letAlpha" (alphaChange)="alpha$.next($event)" class="d-block mt-2" [style.width.px]="size$ | async" #alpha></bs-alpha-strip>
+                @if (allowAlpha$ | async) {
+                    <bs-alpha-strip [hs]="letHS" [luminosity]="letLuminosity" [alpha]="letAlpha" (alphaChange)="alpha$.next($event)" class="d-block mt-2" [style.width.px]="size$ | async" #alpha></bs-alpha-strip>
+                }
             </ng-container>
         </ng-container>
     </ng-container>

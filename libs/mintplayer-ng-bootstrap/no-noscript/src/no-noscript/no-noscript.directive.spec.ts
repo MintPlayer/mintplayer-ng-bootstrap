@@ -8,8 +8,7 @@ import { BsNoNoscriptDirective } from './no-noscript.directive';
     <div bsNoNoscript></div>
   `
 })
-class NoNoscriptTestComponent {
-}
+class NoNoscriptTestComponent {}
 
 describe('BsNoNoscriptDirective', () => {
   let component: NoNoscriptTestComponent;
@@ -17,11 +16,11 @@ describe('BsNoNoscriptDirective', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [],
-      declarations: [
+      imports: [
         // Directive to test
         BsNoNoscriptDirective,
-
+      ],
+      declarations: [
         // Mock dependencies
 
         // Testbench

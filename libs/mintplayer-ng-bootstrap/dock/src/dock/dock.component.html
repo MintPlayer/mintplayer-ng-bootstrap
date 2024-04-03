@@ -1,16 +1,9 @@
 <ng-content></ng-content>
-<ng-container *ngIf="(layout$ | async) as layout">
+@if (layout$ | async; as layout) {
     <bs-dock-pane-renderer [layout]="layout.rootPane"></bs-dock-pane-renderer>
-
-    <ng-container *ngFor="let pane of layout.floatingPanes">
-        <bs-dock-pane-renderer #floating *ngIf="pane.pane" [layout]="pane"></bs-dock-pane-renderer>
-    </ng-container>
-</ng-container>
-<!-- <bs-splitter>
-    <ng-content></ng-content>
-    <ng-container *ngFor="let panel of (panels$ | async)">
-        <bs-split-panel>
-            <ng-template [cdkPortalOutlet]="panel.portal"></ng-template>
-        </bs-split-panel>
-    </ng-container>
-</bs-splitter> -->
+    @for (pane of layout.floatingPanes; track pane) {
+        @if (pane.pane) {
+            <bs-dock-pane-renderer #floating [layout]="pane"></bs-dock-pane-renderer>
+        }
+    }
+}

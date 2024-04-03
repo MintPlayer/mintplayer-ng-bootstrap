@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsTrackByModule } from '@mintplayer/ng-bootstrap/track-by';
 import { MockModule } from 'ng-mocks';
 
 import { BsPaginationComponent } from './pagination.component';
@@ -11,9 +10,10 @@ describe('BsPaginationComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        MockModule(BsTrackByModule),
+        // Unit to test
+        BsPaginationComponent,
       ],
-      declarations: [ BsPaginationComponent ]
+      declarations: []
     })
     .compileComponents();
   });

@@ -1,3 +1,4 @@
+import { AsyncPipe } from '@angular/common';
 import { Component, Input, OnInit } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BehaviorSubject, map, Observable } from 'rxjs';
@@ -6,6 +7,8 @@ import { BehaviorSubject, map, Observable } from 'rxjs';
   selector: 'bs-spinner',
   templateUrl: './spinner.component.html',
   styleUrls: ['./spinner.component.scss'],
+  standalone: true,
+  imports: [AsyncPipe]
 })
 export class BsSpinnerComponent implements OnInit {
   constructor() {

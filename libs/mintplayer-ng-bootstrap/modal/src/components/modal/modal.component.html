@@ -1,11 +1,13 @@
-<div class="modal d-block" [@fadeInOut] [@enterFromTop] *ngIf="isOpen">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <ng-container *ngTemplateOutlet="template"></ng-container>
+@if (isOpen) {
+    <div class="modal d-block" [@fadeInOut] [@enterFromTop]>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <ng-container *ngTemplateOutlet="template"></ng-container>
+            </div>
         </div>
     </div>
-</div>
 
-<div [@fadeInOut] *ngIf="isOpen">
-    <div class="modal-backdrop fade" [class.show]="isOpen"></div>
-</div>
+    <div [@fadeInOut]>
+        <div class="modal-backdrop fade" [class.show]="isOpen"></div>
+    </div>
+}

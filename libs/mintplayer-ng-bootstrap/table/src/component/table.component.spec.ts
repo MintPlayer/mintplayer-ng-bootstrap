@@ -8,7 +8,7 @@ describe('BsTableComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [BsTableComponent],
+      imports: [BsTableComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BsTableComponent);

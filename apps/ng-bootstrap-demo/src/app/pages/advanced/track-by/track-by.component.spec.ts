@@ -1,11 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MockModule } from 'ng-mocks';
+import { MockDirective, MockModule } from 'ng-mocks';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
-import { BsTrackByModule } from '@mintplayer/ng-bootstrap/track-by';
 import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
-import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
+import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 
 import { TrackByComponent } from './track-by.component';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 describe('TrackByComponent', () => {
   let component: TrackByComponent;
@@ -14,10 +14,10 @@ describe('TrackByComponent', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [
+        NoopAnimationsModule,
         MockModule(BsGridModule),
-        MockModule(BsTrackByModule),
         MockModule(BsListGroupModule),
-        MockModule(BsButtonTypeModule),
+        MockDirective(BsButtonTypeDirective),
       ],
       declarations: [TrackByComponent]
     });

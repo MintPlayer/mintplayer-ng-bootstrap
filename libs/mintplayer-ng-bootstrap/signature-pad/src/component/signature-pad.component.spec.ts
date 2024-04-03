@@ -7,7 +7,7 @@ describe('BsSignaturePadComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [BsSignaturePadComponent],
+      imports: [BsSignaturePadComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BsSignaturePadComponent);

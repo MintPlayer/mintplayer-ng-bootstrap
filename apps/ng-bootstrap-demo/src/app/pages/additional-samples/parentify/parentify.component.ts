@@ -1,12 +1,15 @@
 import { AfterViewInit, Component } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { deepClone } from '@mintplayer/parentify';
 import { BehaviorSubject, map } from 'rxjs';
 
 @Component({
   selector: 'demo-parentify',
   templateUrl: './parentify.component.html',
-  styleUrls: ['./parentify.component.scss']
+  styleUrls: ['./parentify.component.scss'],
+  standalone: true,
+  imports: [BsGridModule]
 })
 export class ParentifyComponent implements AfterViewInit {
   constructor() {

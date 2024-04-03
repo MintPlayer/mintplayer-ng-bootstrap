@@ -1,13 +1,24 @@
 /// <reference types="./types" />
 
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectorRef, Component, EventEmitter, Input, NgZone, Output, Renderer2 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Color } from '@mintplayer/ng-bootstrap';
+import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
+import { BsDropdownModule } from '@mintplayer/ng-bootstrap/dropdown';
+import { BsDropdownMenuModule } from '@mintplayer/ng-bootstrap/dropdown-menu';
+import { EnhancedPasteDirective } from '@mintplayer/ng-bootstrap/enhanced-paste';
+import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
+import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
+import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
 
 @Component({
   selector: 'bs-timepicker',
   templateUrl: './timepicker.component.html',
-  styleUrls: ['./timepicker.component.scss']
+  styleUrls: ['./timepicker.component.scss'],
+  standalone: true,
+  imports: [DatePipe, DecimalPipe, FormsModule, EnhancedPasteDirective, BsFormModule, BsDropdownModule, BsDropdownMenuModule, BsInputGroupComponent, BsButtonTypeDirective, BsHasOverlayComponent]
 })
 export class BsTimepickerComponent {
 

@@ -1,11 +1,15 @@
-import { JsonPipe } from '@angular/common';
+import { AsyncPipe, JsonPipe } from '@angular/common';
 import { Component } from '@angular/core';
+import { BsTypeaheadComponent } from '@mintplayer/ng-bootstrap/typeahead';
 import { BehaviorSubject } from 'rxjs';
 
 @Component({
   selector: 'demo-typeahead',
   templateUrl: './typeahead.component.html',
-  styleUrls: ['./typeahead.component.scss']
+  styleUrls: ['./typeahead.component.scss'],
+  standalone: true,
+  imports: [BsTypeaheadComponent, AsyncPipe, JsonPipe],
+  providers: [JsonPipe]
 })
 export class TypeaheadComponent {
 

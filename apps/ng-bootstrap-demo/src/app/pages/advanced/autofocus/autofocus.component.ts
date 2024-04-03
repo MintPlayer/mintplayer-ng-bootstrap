@@ -1,4 +1,7 @@
 import { Component } from '@angular/core';
+import { BsSelect2Module } from '@mintplayer/ng-bootstrap/select2';
+import { BsFontColorPipe } from '@mintplayer/ng-bootstrap/font-color';
+import { FocusOnLoadDirective } from '@mintplayer/ng-focus-on-load';
 import { Artist } from '../../../entities/artist';
 import { Tag } from '../../../entities/tag';
 import { ESubjectType } from '../../../enums/subject-type';
@@ -8,7 +11,9 @@ import { TagService } from '../../../services/tag/tag.service';
 @Component({
   selector: 'demo-autofocus',
   templateUrl: './autofocus.component.html',
-  styleUrls: ['./autofocus.component.scss']
+  styleUrls: ['./autofocus.component.scss'],
+  standalone: true,
+  imports: [BsSelect2Module, BsFontColorPipe, FocusOnLoadDirective]
 })
 export class AutofocusComponent {
 

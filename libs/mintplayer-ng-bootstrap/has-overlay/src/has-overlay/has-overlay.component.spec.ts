@@ -8,7 +8,7 @@ describe('BsHasOverlayComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [BsHasOverlayComponent],
+      imports: [BsHasOverlayComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BsHasOverlayComponent);

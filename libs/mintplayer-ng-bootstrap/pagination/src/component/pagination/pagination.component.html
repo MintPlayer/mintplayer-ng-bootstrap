@@ -1,21 +1,30 @@
 <ul class="pagination">
-    <li class="page-item" *ngIf="showArrows$ | async">
-        <a class="page-link" href="" (click)="onPrevious()" [class.disabled]="isFirstPage$ | async" aria-label="Previous">
-            <span aria-hidden="true">&laquo;</span>
-            <span class="visually-hidden">Previous</span>
-        </a>
-    </li>
-    <li *ngFor="let pageNumber of (shownPageNumbers$ | async); bsTrackBy: 'page'" class="page-item">
-        <a class="page-link" href="" (click)="onSelectPage($event, pageNumber.page)"
-          [ngClass]="{ 'active': pageNumber.selected }" *ngIf="pageNumber.page != '...'">
-            {{ pageNumber.page }}
-            <span class="visually-hidden" *ngIf="pageNumber.selected">(current)</span>
-        </a>
-    </li>
-    <li class="page-item" *ngIf="showArrows$ | async">
-        <a class="page-link" href="" (click)="onNext()" [class.disabled]="isLastPage$ | async" aria-label="Next">
-            <span aria-hidden="true">&raquo;</span>
-            <span class="visually-hidden">Next</span>
-        </a>
-    </li>
+    @if (showArrows$ | async) {
+        <li class="page-item">
+            <a class="page-link" href="" (click)="onPrevious()" [class.disabled]="isFirstPage$ | async" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+                <span class="visually-hidden">Previous</span>
+            </a>
+        </li>
+    }
+    @for (pageNumber of (shownPageNumbers$ | async); track pageNumber.page) {
+        <li class="page-item">
+            @if (pageNumber.page != '...') {
+                <a class="page-link" href="" (click)="onSelectPage($event, pageNumber.page)" [class.active]="pageNumber.selected">
+                    {{ pageNumber.page }}
+                    @if (pageNumber.selected) {
+                        <span class="visually-hidden">(current)</span>
+                    }
+                </a>
+            }
+        </li>
+    }
+    @if (showArrows$ | async) {
+        <li class="page-item">
+            <a class="page-link" href="" (click)="onNext()" [class.disabled]="isLastPage$ | async" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+                <span class="visually-hidden">Next</span>
+            </a>
+        </li>
+    }
 </ul>

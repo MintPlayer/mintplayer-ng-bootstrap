@@ -3,12 +3,12 @@ import { NgModel } from '@angular/forms';
 import { NumberOverflow } from '../interfaces/number-overflow';
 
 @Directive({
-  selector: 'input[type="number"][bsEnhancedPaste]'
+  selector: 'input[type="number"][bsEnhancedPaste]',
+  standalone: true,
 })
 export class EnhancedPasteDirective {
 
-  constructor(private element: ElementRef<HTMLInputElement>, private model: NgModel) {
-  }
+  constructor(private element: ElementRef<HTMLInputElement>, private model: NgModel) {}
 
   @Output() public numberOverflow = new EventEmitter<NumberOverflow>();
 

@@ -8,7 +8,7 @@ describe('BsSpinnerComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [BsSpinnerComponent],
+      imports: [BsSpinnerComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BsSpinnerComponent);

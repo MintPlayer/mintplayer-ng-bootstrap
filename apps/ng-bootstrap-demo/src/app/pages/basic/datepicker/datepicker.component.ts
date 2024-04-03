@@ -1,9 +1,13 @@
+import { DatePipe } from '@angular/common';
 import { Component } from '@angular/core';
+import { BsDatepickerComponent } from '@mintplayer/ng-bootstrap/datepicker';
 
 @Component({
   selector: 'demo-datepicker',
   templateUrl: './datepicker.component.html',
-  styleUrls: ['./datepicker.component.scss']
+  styleUrls: ['./datepicker.component.scss'],
+  standalone: true,
+  imports: [DatePipe, BsDatepickerComponent]
 })
 export class DatepickerComponent {
 

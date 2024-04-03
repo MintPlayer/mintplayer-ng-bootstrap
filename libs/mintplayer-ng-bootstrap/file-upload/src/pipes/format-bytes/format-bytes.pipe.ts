@@ -2,7 +2,7 @@ import { Pipe, PipeTransform } from '@angular/core';
 
 @Pipe({
   name: 'bsFormatBytes',
-  pure: true
+  pure: true,
 })
 export class BsFormatBytesPipe implements PipeTransform {
 

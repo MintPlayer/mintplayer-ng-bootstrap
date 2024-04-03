@@ -7,7 +7,7 @@ describe('BsMarqueeComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [BsMarqueeComponent],
+      imports: [BsMarqueeComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BsMarqueeComponent);

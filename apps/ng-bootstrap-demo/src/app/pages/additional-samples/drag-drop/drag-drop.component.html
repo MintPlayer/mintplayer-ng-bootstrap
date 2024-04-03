@@ -11,10 +11,12 @@
                 (cdkDropListDropped)="taskDropped($event)"
                 class="task-list">
                 <div>
-                    <div class="task-item d-flex flex-row" *ngFor="let task of toDoItems" cdkDrag>
-                        <label class="flex-grow-1">{{ task }}</label>
-                        <div cdkDragHandle></div>
-                    </div>
+                    @for (task of toDoItems; track $index) {
+                        <div class="task-item d-flex flex-row" cdkDrag>
+                            <label class="flex-grow-1">{{ task }}</label>
+                            <div cdkDragHandle></div>
+                        </div>
+                    }
                 </div>
             </div>
         </div>
@@ -29,10 +31,12 @@
                 class="task-list">
                 
                 <div>
-                    <div class="task-item d-flex flex-row" *ngFor="let task of inProgressItems" cdkDrag>
-                        <label class="flex-grow-1">{{ task }}</label>
-                        <div cdkDragHandle></div>
-                    </div>
+                    @for (task of inProgressItems; track $index) {
+                        <div class="task-item d-flex flex-row" cdkDrag>
+                            <label class="flex-grow-1">{{ task }}</label>
+                            <div cdkDragHandle></div>
+                        </div>
+                    }
                 </div>
             </div>
         </div>
@@ -47,10 +51,12 @@
                 class="task-list">
                 
                 <div>
-                    <div class="task-item d-flex flex-row" *ngFor="let task of doneItems" cdkDrag>
-                        <label class="flex-grow-1">{{ task }}</label>
-                        <div cdkDragHandle></div>
-                    </div>
+                    @for (task of doneItems; track $index) {
+                        <div class="task-item d-flex flex-row" cdkDrag>
+                            <label class="flex-grow-1">{{ task }}</label>
+                            <div cdkDragHandle></div>
+                        </div>
+                    }
                 </div>
             </div>
         </div>

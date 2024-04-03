@@ -1,6 +1,8 @@
-<div [@fadeInOut]="{value: ':leave', params: {duration: '300ms'} }" *ngIf="showBackdrop$ | async">
-    <div class="modal-backdrop show" (click)="onBackdropClick($event)"></div>
-</div>
+@if (showBackdrop$ | async) {
+    <div [@fadeInOut]="{value: ':leave', params: {duration: '300ms'} }">
+        <div class="modal-backdrop show" (click)="onBackdropClick($event)"></div>
+    </div>
+}
 <div class="offcanvas"
     [class.show]="show$ | async"
     [class.disable-transition]="disableTransition$ | async"

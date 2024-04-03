@@ -3,11 +3,14 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Size } from '@mintplayer/ng-bootstrap';
 import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
 import { PageWithSelection } from '../../interfaces/page-with-selection';
+import { AsyncPipe } from '@angular/common';
 
 @Component({
   selector: 'bs-pagination',
   templateUrl: './pagination.component.html',
   styleUrls: ['./pagination.component.scss'],
+  standalone: true,
+  imports: [AsyncPipe]
 })
 export class BsPaginationComponent {
   constructor() {

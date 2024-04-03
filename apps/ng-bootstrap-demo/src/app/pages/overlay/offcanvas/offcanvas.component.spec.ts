@@ -1,9 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsButtonGroupModule } from '@mintplayer/ng-bootstrap/button-group';
-import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
+import { BsButtonGroupComponent } from '@mintplayer/ng-bootstrap/button-group';
+import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsOffcanvasModule } from '@mintplayer/ng-bootstrap/offcanvas';
-import { MockModule } from 'ng-mocks';
+import { MockComponent, MockDirective, MockModule } from 'ng-mocks';
 
 import { OffcanvasComponent } from './offcanvas.component';
 
@@ -16,8 +16,8 @@ describe('OffcanvasComponent', () => {
       imports: [
         MockModule(BsGridModule),
         MockModule(BsOffcanvasModule),
-        MockModule(BsButtonTypeModule),
-        MockModule(BsButtonGroupModule),
+        MockDirective(BsButtonTypeDirective),
+        MockComponent(BsButtonGroupComponent),
       ],
       declarations: [
         // Unit to test

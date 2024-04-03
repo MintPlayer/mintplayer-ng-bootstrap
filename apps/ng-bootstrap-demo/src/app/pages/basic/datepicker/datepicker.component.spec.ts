@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsDatepickerModule } from '@mintplayer/ng-bootstrap/datepicker';
-import { MockModule } from 'ng-mocks';
+import { BsDatepickerComponent } from '@mintplayer/ng-bootstrap/datepicker';
+import { MockComponent } from 'ng-mocks';
 import { DatepickerComponent } from './datepicker.component';
 
 describe('DatepickerComponent', () => {
@@ -10,7 +10,7 @@ describe('DatepickerComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        MockModule(BsDatepickerModule),
+        MockComponent(BsDatepickerComponent),
       ],
       declarations: [
         // Unit to test

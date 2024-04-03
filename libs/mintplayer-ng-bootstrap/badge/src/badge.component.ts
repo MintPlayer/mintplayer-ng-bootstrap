@@ -1,11 +1,14 @@
 import { Component, Input } from '@angular/core';
 import { BehaviorSubject, map, Observable } from 'rxjs';
 import { Color } from '@mintplayer/ng-bootstrap';
+import { AsyncPipe } from '@angular/common';
 
 @Component({
   selector: 'bs-badge',
   templateUrl: './badge.component.html',
   styleUrls: ['./badge.component.scss'],
+  standalone: true,
+  imports: [AsyncPipe]
 })
 export class BsBadgeComponent {
   constructor() {

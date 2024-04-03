@@ -1,10 +1,17 @@
+import { DatePipe } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
+import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
+import { BsCalendarComponent } from '@mintplayer/ng-bootstrap/calendar';
+import { BsDropdownModule } from '@mintplayer/ng-bootstrap/dropdown';
+import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 
 @Component({
   selector: 'bs-datepicker',
   templateUrl: './datepicker.component.html',
-  styleUrls: ['./datepicker.component.scss']
+  styleUrls: ['./datepicker.component.scss'],
+  standalone: true,
+  imports: [DatePipe, BsCalendarComponent, BsDropdownModule, BsButtonTypeDirective, BsHasOverlayComponent]
 })
 export class BsDatepickerComponent {
 

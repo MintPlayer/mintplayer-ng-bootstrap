@@ -2,9 +2,10 @@ import { Pipe, PipeTransform } from '@angular/core';
 
 @Pipe({
   name: 'weekdayName',
-  pure: true
+  pure: true,
+  standalone: true
 })
-export class WeekdayNamePipe implements PipeTransform {
+export class BsWeekdayNamePipe implements PipeTransform {
 
   transform(date: Date): unknown {
     return date.toLocaleString("default", { weekday: 'short' });

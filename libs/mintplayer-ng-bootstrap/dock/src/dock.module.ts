@@ -1,5 +1,5 @@
 import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { PortalModule } from '@angular/cdk/portal';
 import { BsCardModule } from '@mintplayer/ng-bootstrap/card';
 import { BsSplitterModule } from '@mintplayer/ng-bootstrap/splitter';
@@ -19,7 +19,7 @@ import { BsDockPaneRendererComponent } from './dock-pane-renderer/dock-pane-rend
     BsDockPaneRendererComponent
   ],
   imports: [
-    CommonModule,
+    AsyncPipe,
     PortalModule,
     BsCardModule,
     BsInstanceOfModule,

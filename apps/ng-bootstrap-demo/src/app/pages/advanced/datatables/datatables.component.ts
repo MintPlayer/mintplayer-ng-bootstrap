@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { DatatableSettings } from '@mintplayer/ng-bootstrap/datatable';
+import { BsDatatableModule, DatatableSettings } from '@mintplayer/ng-bootstrap/datatable';
 import { PaginationResponse } from '@mintplayer/pagination';
 import { Artist } from '../../../entities/artist';
 import { ArtistService } from '../../../services/artist/artist.service';
@@ -7,7 +7,9 @@ import { ArtistService } from '../../../services/artist/artist.service';
 @Component({
   selector: 'demo-datatables',
   templateUrl: './datatables.component.html',
-  styleUrls: ['./datatables.component.scss']
+  styleUrls: ['./datatables.component.scss'],
+  standalone: true,
+  imports: [BsDatatableModule]
 })
 export class DatatablesComponent implements OnInit {
 

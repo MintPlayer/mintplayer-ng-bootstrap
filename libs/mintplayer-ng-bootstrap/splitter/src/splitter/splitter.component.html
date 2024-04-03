@@ -1,6 +1,6 @@
 <div class="d-flex w-100 root" [class]="[directionClass$ | async, splitterClass$ | async]" bsUserAgent>
     <ng-content></ng-content>
-    <ng-container *ngFor="let panel of (panels$ | async); let index = index; let last = last">
+    @for (panel of (panels$ | async); let index = $index; let last = $last; track panel) {
         <ng-container *bsLet="(widthStyles$ | async) as widthStyles">
             <ng-container *bsLet="(heightStyles$ | async) as heightStyles">
                 <!--  [style.width.%]="100" [style.height.%]="100" -->
@@ -9,6 +9,8 @@
                 </div>
             </ng-container>
         </ng-container>
-        <div class="divider" bsUserAgent [class.hover]="(touchedDivider$ | async) === divider" #divider (mousedown)="startResizeMouse($event, index, index + 1)" (touchstart)="startResizeTouch($event, index, index + 1, divider)" (touchmove)="onTouchMove($event)" (touchend)="onTouchEnd($event)" *ngIf="!last"></div>
-    </ng-container>
+        @if (!last) {
+            <div class="divider" bsUserAgent [class.hover]="(touchedDivider$ | async) === divider" #divider (mousedown)="startResizeMouse($event, index, index + 1)" (touchstart)="startResizeTouch($event, index, index + 1, divider)" (touchmove)="onTouchMove($event)" (touchend)="onTouchEnd($event)"></div>
+        }
+    }
 </div>

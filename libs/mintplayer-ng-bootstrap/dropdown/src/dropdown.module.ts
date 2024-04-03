@@ -1,8 +1,8 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { OverlayModule } from '@angular/cdk/overlay';
-import { ClickOutsideModule } from '@mintplayer/ng-click-outside';
-import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
+import { ClickOutsideDirective } from '@mintplayer/ng-click-outside';
+import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { BsDropdownDirective } from './dropdown/dropdown.directive';
 import { BsDropdownMenuDirective } from './dropdown-menu/dropdown-menu.directive';
 import { BsDropdownToggleDirective } from './dropdown-toggle/dropdown-toggle.directive';
@@ -16,13 +16,13 @@ import { BsDropdownToggleDirective } from './dropdown-toggle/dropdown-toggle.dir
     BsDropdownMenuDirective,
     // BsDropdownComponent,
   ],
-  imports: [CommonModule, OverlayModule, BsHasOverlayModule, ClickOutsideModule],
+  imports: [CommonModule, OverlayModule, BsHasOverlayComponent, ClickOutsideDirective],
   exports: [
     BsDropdownDirective,
     BsDropdownToggleDirective,
     BsDropdownMenuDirective,
     // BsDropdownComponent,
-    BsHasOverlayModule,
+    BsHasOverlayComponent,
   ],
 })
 export class BsDropdownModule {}

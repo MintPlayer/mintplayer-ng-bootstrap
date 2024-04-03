@@ -30,12 +30,12 @@ describe('ClickOutsideDirective', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        CommonModule
-      ],
-      declarations: [
+        CommonModule,
+
         // Unit to test
         ClickOutsideDirective,
-
+      ],
+      declarations: [
         // Mock dependencies
 
         // Testbench

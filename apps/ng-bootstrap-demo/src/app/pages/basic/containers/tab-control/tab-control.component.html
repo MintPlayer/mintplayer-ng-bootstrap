@@ -1,15 +1,17 @@
 <h1 class="text-center">Tab control</h1>
 <h2>Demo</h2>
 <bs-tab-control [border]="true"  [restrictDragging]="true" [tabsPosition]="tabsPosition" [allowDragDrop]="allowDragDrop">
-    <bs-tab-page *ngFor="let n of numbers" [disabled]="n === 3">
-        <ng-container *bsTabPageHeader>
-            <span class="triangle float-none d-inline-block mr-2"></span>
-            Tab {{ n }}
-        </ng-container>
-        <div class="p-3">
-            This is tab {{ n }}
-        </div>
-    </bs-tab-page>
+    @for (n of numbers; track $index) {
+        <bs-tab-page [disabled]="n === 3">
+            <ng-container *bsTabPageHeader>
+                <span class="triangle float-none d-inline-block mr-2"></span>
+                Tab {{ n }}
+            </ng-container>
+            <div class="p-3">
+                This is tab {{ n }}
+            </div>
+        </bs-tab-page>
+    }
 </bs-tab-control>
 <h2>Configuration</h2>
 <bs-grid>

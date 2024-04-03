@@ -1,7 +1,7 @@
 import { JsonPipe } from '@angular/common';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsTypeaheadModule } from '@mintplayer/ng-bootstrap/typeahead';
-import { MockModule } from 'ng-mocks';
+import { BsTypeaheadComponent } from '@mintplayer/ng-bootstrap/typeahead';
+import { MockComponent } from 'ng-mocks';
 import { TypeaheadComponent } from './typeahead.component';
 
 
@@ -12,7 +12,7 @@ describe('TypeaheadComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        MockModule(BsTypeaheadModule),
+        MockComponent(BsTypeaheadComponent),
       ],
       declarations: [
         // Unit to test

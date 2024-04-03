@@ -1,10 +1,13 @@
+import { AsyncPipe } from '@angular/common';
 import { Component, Input } from '@angular/core';
-import { BehaviorSubject, map, Observable } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 
 @Component({
   selector: 'bs-table',
   templateUrl: './table.component.html',
-  styleUrls: ['./table.component.scss']
+  styleUrls: ['./table.component.scss'],
+  standalone: true,
+  imports: [AsyncPipe]
 })
 export class BsTableComponent {
 

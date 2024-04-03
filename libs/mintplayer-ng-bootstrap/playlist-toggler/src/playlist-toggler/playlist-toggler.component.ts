@@ -1,3 +1,4 @@
+import { AsyncPipe } from '@angular/common';
 import { Component, EventEmitter, HostListener, Input, Output } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, distinctUntilChanged } from 'rxjs';
@@ -6,6 +7,8 @@ import { BehaviorSubject, distinctUntilChanged } from 'rxjs';
   selector: 'bs-playlist-toggler',
   templateUrl: './playlist-toggler.component.html',
   styleUrls: ['./playlist-toggler.component.scss'],
+  standalone: true,
+  imports: [AsyncPipe]
 })
 export class BsPlaylistTogglerComponent {
   constructor() {

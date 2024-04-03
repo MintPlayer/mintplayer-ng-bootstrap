@@ -1,8 +1,8 @@
 import { Injector, NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { AsyncPipe, NgTemplateOutlet } from '@angular/common';
 import { OverlayModule } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
+import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { BsPopoverComponent } from './component/popover.component';
 import { BsPopoverDirective } from './directives/popover/popover.directive';
 import { BsPopoverHeaderDirective } from './directives/popover-header/popover-header.directive';
@@ -11,7 +11,7 @@ import { PORTAL_FACTORY } from './providers/portal-factory.provider';
 
 @NgModule({
   declarations: [BsPopoverComponent, BsPopoverDirective, BsPopoverHeaderDirective, BsPopoverBodyDirective],
-  imports: [CommonModule, OverlayModule, BsHasOverlayModule],
+  imports: [AsyncPipe, NgTemplateOutlet, OverlayModule, BsHasOverlayComponent],
   exports: [BsPopoverDirective, BsPopoverHeaderDirective, BsPopoverBodyDirective],
   providers: [{
     provide: PORTAL_FACTORY,

@@ -2,11 +2,11 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
-import { BsLinifyModule } from '@mintplayer/ng-bootstrap/linify';
+import { BsLinifyPipe } from '@mintplayer/ng-bootstrap/linify';
 import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
-import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
+import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
-import { MockModule } from 'ng-mocks';
+import { MockDirective, MockModule, MockPipe } from 'ng-mocks';
 
 import { LinifyComponent } from './linify.component';
 
@@ -20,9 +20,9 @@ describe('LinifyComponent', () => {
         FormsModule,
         MockModule(BsFormModule),
         MockModule(BsGridModule),
-        MockModule(BsLinifyModule),
+        MockPipe(BsLinifyPipe),
         MockModule(BsListGroupModule),
-        MockModule(BsButtonTypeModule),
+        MockDirective(BsButtonTypeDirective),
         MockModule(BsToggleButtonModule),
       ],
       declarations: [LinifyComponent]

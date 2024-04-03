@@ -17,11 +17,11 @@ describe('BsOrdinalNumberPipe', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [],
-      declarations: [
-        // Directive to test
+      imports: [
+        // Pipe to test
         BsOrdinalNumberPipe,
-
+      ],
+      declarations: [
         // Testbench
         OrdinalNumberTestComponent
       ]

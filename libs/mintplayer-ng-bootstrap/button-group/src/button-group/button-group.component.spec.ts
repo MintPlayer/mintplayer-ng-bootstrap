@@ -8,7 +8,7 @@ describe('BsButtonGroupComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [BsButtonGroupComponent],
+      imports: [BsButtonGroupComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BsButtonGroupComponent);

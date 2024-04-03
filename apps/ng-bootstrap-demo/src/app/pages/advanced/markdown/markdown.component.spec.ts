@@ -2,8 +2,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
-import { BsMarkdownModule } from '@mintplayer/ng-bootstrap/markdown';
-import { MockModule } from 'ng-mocks';
+import { BsBoldPipe, BsItalicPipe, BsStrikethroughPipe, BsUnderlinePipe } from '@mintplayer/ng-bootstrap/markdown';
+import { MockModule, MockPipes } from 'ng-mocks';
 
 import { MarkdownComponent } from './markdown.component';
 
@@ -17,7 +17,7 @@ describe('MarkdownComponent', () => {
         FormsModule,
         MockModule(BsFormModule),
         MockModule(BsGridModule),
-        MockModule(BsMarkdownModule),
+        MockPipes(BsBoldPipe, BsItalicPipe, BsStrikethroughPipe, BsUnderlinePipe),
       ],
       declarations: [
         // Unit to test

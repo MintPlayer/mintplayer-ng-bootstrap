@@ -1,12 +1,11 @@
 import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { BsSwiperModule } from '@mintplayer/ng-swiper';
-import { BsLetModule } from '@mintplayer/ng-bootstrap/let';
-import { BsTrackByModule } from '@mintplayer/ng-bootstrap/track-by';
-import { BsNoNoscriptModule } from '@mintplayer/ng-bootstrap/no-noscript';
+import { BsLetDirective } from '@mintplayer/ng-bootstrap/let';
+import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
 import { BsCarouselComponent } from './carousel/carousel.component';
 import { BsCarouselImageDirective } from './carousel-image/carousel-image.directive';
 import { BsCarouselImgDirective } from './carousel-img/carousel-img.directive';
+import { AsyncPipe, NgTemplateOutlet } from '@angular/common';
 
 @NgModule({
   declarations: [
@@ -15,11 +14,11 @@ import { BsCarouselImgDirective } from './carousel-img/carousel-img.directive';
     BsCarouselImgDirective,
   ],
   imports: [
-    CommonModule,
-    BsLetModule,
+    AsyncPipe,
+    NgTemplateOutlet,
+    BsLetDirective,
     BsSwiperModule,
-    BsTrackByModule,
-    BsNoNoscriptModule
+    BsNoNoscriptDirective
   ],
   exports: [
     BsCarouselComponent,

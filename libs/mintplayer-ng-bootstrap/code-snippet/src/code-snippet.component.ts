@@ -1,9 +1,14 @@
 import { Component, Input, TemplateRef, ViewChild } from '@angular/core';
+import { BsCopyDirective } from '@mintplayer/ng-bootstrap/copy';
+import { BsOffcanvasModule } from '@mintplayer/ng-bootstrap/offcanvas';
+import { HighlightModule } from 'ngx-highlightjs';
 
 @Component({
   selector: 'bs-code-snippet',
   templateUrl: './code-snippet.component.html',
-  styleUrls: ['./code-snippet.component.scss']
+  styleUrls: ['./code-snippet.component.scss'],
+  standalone: true,
+  imports: [BsCopyDirective, BsOffcanvasModule, HighlightModule]
 })
 export class BsCodeSnippetComponent {
 

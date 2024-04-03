@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
-import { MockModule } from 'ng-mocks';
+import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
+import { MockComponent } from 'ng-mocks';
 
 import { ContextMenuComponent } from './context-menu.component';
 
@@ -11,7 +11,7 @@ describe('ContextMenuComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        MockModule(BsHasOverlayModule),
+        MockComponent(BsHasOverlayComponent),
       ],
       declarations: [ ContextMenuComponent ]
     })

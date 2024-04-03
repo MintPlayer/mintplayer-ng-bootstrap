@@ -1,4 +1,8 @@
 <h1 class="text-center">Track By</h1>
+<bs-alert [type]="colors.info">
+    Since angular 17, you can use the control-flow syntax.
+    This makes using <code>bsTrackBy: 'id'</code> obsolete.
+</bs-alert>
 <ul>
     <li>Open devtools <kbd>F12</kbd> and find and select the <code>ul</code> inside the <code>bs-list-group</code></li>
     <li>Click the button. Note that only the newly added <code>bs-list-group-item</code> is recreated</li>
@@ -12,25 +16,9 @@
     <div bsRow>
         <div [bsColumn]="{md:6}">
             <bs-list-group>
-                <bs-list-group-item *ngFor="let person of people">
-                    {{ person.firstName }} {{ person.lastName }}
-                </bs-list-group-item>
-            </bs-list-group>
-        </div>
-        <div [bsColumn]="{md:6}">
-            <bs-list-group>
-                <bs-list-group-item *ngFor="let person of people; trackBy: trackById">
-                    {{ person.firstName }} {{ person.lastName }}
-                </bs-list-group-item>
-            </bs-list-group>
-        </div>
-    </div>
-    <div bsRow>
-        <div [bsColumn]="{md:12}">
-            <bs-list-group>
-                <bs-list-group-item *ngFor="let person of people; bsTrackBy: 'id'">
-                    {{ person.firstName }} {{ person.lastName }}
-                </bs-list-group-item>
+                @for (person of people; track person.id) {
+                    <bs-list-group-item>{{ person.firstName }} {{ person.lastName }}</bs-list-group-item>
+                }
             </bs-list-group>
         </div>
     </div>

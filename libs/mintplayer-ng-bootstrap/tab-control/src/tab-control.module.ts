@@ -1,8 +1,8 @@
 import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { AsyncPipe, NgTemplateOutlet } from '@angular/common';
 import { DragDropModule } from '@angular/cdk/drag-drop';
-import { BsLetModule } from '@mintplayer/ng-bootstrap/let';
-import { BsNoNoscriptModule } from '@mintplayer/ng-bootstrap/no-noscript';
+import { BsLetDirective } from '@mintplayer/ng-bootstrap/let';
+import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
 import { BsTabControlComponent } from './tab-control/tab-control.component';
 import { BsTabPageComponent } from './tab-page/tab-page.component';
 import { BsTabPageHeaderDirective } from './tab-page-header/tab-page-header.directive';
@@ -14,10 +14,11 @@ import { BsTabPageHeaderDirective } from './tab-page-header/tab-page-header.dire
     BsTabPageHeaderDirective,
   ],
   imports: [
-    CommonModule,
+    AsyncPipe,
+    NgTemplateOutlet,
     DragDropModule,
-    BsLetModule,
-    BsNoNoscriptModule
+    BsLetDirective,
+    BsNoNoscriptDirective
   ],
   exports: [
     BsTabControlComponent,

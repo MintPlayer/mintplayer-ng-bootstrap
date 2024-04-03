@@ -1,5 +1,5 @@
 import { Injector, NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { AsyncPipe, NgTemplateOutlet } from '@angular/common';
 import { OverlayModule } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { BsOffcanvasComponent } from './components/offcanvas/offcanvas.component';
@@ -9,7 +9,7 @@ import { BsOffcanvasCloseDirective } from './directives/offcanvas-close/offcanva
 import { OffcanvasHeaderComponent } from './components/offcanvas-header/offcanvas-header.component';
 import { OffcanvasBodyComponent } from './components/offcanvas-body/offcanvas-body.component';
 import { PORTAL_FACTORY } from './providers/portal-factory.provider';
-import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
+import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { BsOffcanvasPushDirective } from './directives/offcanvas-push/offcanvas-push.directive';
 
 
@@ -25,9 +25,10 @@ import { BsOffcanvasPushDirective } from './directives/offcanvas-push/offcanvas-
     BsOffcanvasPushDirective
   ],
   imports: [
-    CommonModule,
+    AsyncPipe,
+    NgTemplateOutlet,
     OverlayModule,
-    BsHasOverlayModule
+    BsHasOverlayComponent
   ],
   exports: [
     BsOffcanvasComponent,

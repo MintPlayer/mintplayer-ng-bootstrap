@@ -1,0 +1,31 @@
+import { Routes } from '@angular/router';
+import { BsNavigationLockGuard } from '@mintplayer/ng-bootstrap/navigation-lock';
+
+export const ROUTES: Routes = [
+  { path: '', loadChildren: () => [], pathMatch: 'full', canActivate: [() => false] },
+  { path: 'copy', loadComponent: () => import('../advanced/copy/copy.component').then(m => m.CopyComponent) },
+  { path: 'file-upload', loadComponent: () => import('../advanced/file-upload/file-upload.component').then(m => m.FileUploadComponent) },
+  { path: 'datatables', loadComponent: () => import('./datatables/datatables.component').then(m => m.DatatablesComponent) },
+  { path: 'select2', loadComponent: () => import('./select2/select2.component').then(m => m.Select2Component) },
+  { path: 'autofocus', loadComponent: () => import('./autofocus/autofocus.component').then(m => m.AutofocusComponent) },
+  { path: 'scrollspy', loadComponent: () => import('./scrollspy/scrollspy.component').then(m => m.ScrollspyComponent) },
+  { path: 'code-snippet', loadComponent: () => import('./code-snippet/code-snippet.component').then(m => m.CodeSnippetComponent) },
+  { path: 'scheduler', loadComponent: () => import('./scheduler/scheduler.component').then(m => m.SchedulerComponent) },
+  { path: 'user-agent', loadComponent: () => import('./user-agent/user-agent.component').then(m => m.UserAgentComponent) },
+  { path: 'lazy-loading-components', loadComponent: () => import('./lazy-loading/lazy-loading.component').then(m => m.LazyLoadingComponent) },
+  { path: 'ordinal-number', loadComponent: () => import('./ordinal-number/ordinal-number.component').then(m => m.OrdinalNumberComponent) },
+  { path: 'markdown', loadComponent: () => import('./markdown/markdown.component').then(m => m.MarkdownComponent) },
+  { path: 'navigation-lock', loadComponent: () => import('./navigation-lock/navigation-lock.component').then(m => m.NavigationLockComponent), canDeactivate: [BsNavigationLockGuard] },
+  { path: 'splitter', loadComponent: () => import('./splitter/splitter.component').then(m => m.SplitterComponent) },
+  { path: 'dock', loadComponent: () => import('./dock/dock.component').then(m => m.DockComponent) },
+  { path: 'instance-of', loadComponent: () => import('./instance-of/instance-of.component').then(m => m.InstanceOfComponent) },
+  { path: 'resizable', loadComponent: () => import('./resizable/resizable.component').then(m => m.ResizableComponent) },
+  { path: 'signature-pad', loadComponent: () => import('./signature-pad/signature-pad.component').then(m => m.SignaturePadComponent) },
+  { path: 'async-host-binding', loadComponent: () => import('./async-host-binding/async-host-binding.component').then(m => m.AsyncHostBindingComponent) },
+  { path: 'sticky-footer', loadComponent: () => import('./sticky-footer/sticky-footer.component').then(m => m.StickyFooterComponent) },
+  { path: 'pipes', loadChildren: () => import('./pipes/pipes.routes').then(m => m.ROUTES) },
+  { path: 'searchbox', loadComponent: () => import('./searchbox/searchbox.component').then(m => m.SearchboxComponent) },
+  { path: 'track-by', loadComponent: () => import('./track-by/track-by.component').then(m => m.TrackByComponent) },
+  { path: 'toggle-buttons', loadComponent: () => import('./toggle-buttons/toggle-buttons.component').then(m => m.ToggleButtonsComponent) },
+  { path: 'is-interface', loadComponent: () => import('./is-interface/is-interface.component').then(m => m.IsInterfaceComponent) },
+];

@@ -12,9 +12,9 @@
     <div bsRow class="mb-3">
         <div bsColumn>
             <bs-carousel [indicators]="true" [animation]="'slide'">
-                <ng-container *ngFor="let image of images">
+                @for (image of images; track $index) {
                     <img *bsCarouselImage [src]="image">
-                </ng-container>
+                }
             </bs-carousel>
         </div>
     </div>

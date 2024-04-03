@@ -9,7 +9,9 @@
             </div>
             <div [bsColumn]="{ md: 6 }">
                 <bs-list-group>
-                    <bs-list-group-item *ngFor="let line of (text | bsLinify: removeEmptyEntries)">{{ line }}</bs-list-group-item>
+                    @for (line of (text | bsLinify: removeEmptyEntries); track $index) {
+                        <bs-list-group-item>{{ line }}</bs-list-group-item>
+                    }
                 </bs-list-group>
             </div>
         </div>

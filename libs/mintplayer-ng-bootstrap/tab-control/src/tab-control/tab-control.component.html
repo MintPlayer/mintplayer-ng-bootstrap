@@ -1,39 +1,47 @@
 <ng-container *bsLet="(activeTab$ | async) as activeTab">
-	<div class="overflow-hidden mw-100 tsc" *ngIf="topTabs$ | async">
-		<ul cdkDropList #list #tabList="cdkDropList"
-			[cdkDropListData]="tabPages$ | async"
-			[cdkDropListConnectedTo]="[]"
-			[cdkDropListOrientation]="'horizontal'"
-			(cdkDropListDropped)="moveTab($event)"
-			[cdkDropListDisabled]="disableDragDrop$ | async"
-			class="nav nav-tabs flex-nowrap overflow-x-auto overflow-y-hidden">
-			<ng-container *ngFor="let tab of orderedTabPages">
-				<span class="nav-item" (click)="setActiveTab(tab)" *ngIf="!!tab.headerTemplate" cdkDrag [cdkDragBoundary]="dragBoundarySelector" [cdkDragStartDelay]="500" (cdkDragStarted)="startDragTab($event)">
-					<label [for]="tab.tabName$ | async" class="nav-link text-nowrap cursor-pointer" [class.active]="activeTab === tab" [class.disabled]="tab.disabled" [attr.aria-current]="activeTab === tab ? 'page' : null" [attr.aria-disabled]="tab.disabled">
-						<ng-container [ngTemplateOutlet]="tab.headerTemplate.template"></ng-container>
-					</label>
-				</span>
-			</ng-container>
-		</ul>
-	</div>
+	@if (topTabs$ | async) {
+		<div class="overflow-hidden mw-100 tsc">
+			<ul cdkDropList #list #tabList="cdkDropList"
+				[cdkDropListData]="tabPages$ | async"
+				[cdkDropListConnectedTo]="[]"
+				[cdkDropListOrientation]="'horizontal'"
+				(cdkDropListDropped)="moveTab($event)"
+				[cdkDropListDisabled]="disableDragDrop$ | async"
+				class="nav nav-tabs flex-nowrap overflow-x-auto overflow-y-hidden">
+				@for (tab of orderedTabPages; track tab) {
+					@if (tab.headerTemplate) {
+						<span class="nav-item" (click)="setActiveTab(tab)" cdkDrag [cdkDragBoundary]="dragBoundarySelector" [cdkDragStartDelay]="500" (cdkDragStarted)="startDragTab($event)">
+							<label [for]="tab.tabName$ | async" class="nav-link text-nowrap cursor-pointer" [class.active]="activeTab === tab" [class.disabled]="tab.disabled" [attr.aria-current]="activeTab === tab ? 'page' : null" [attr.aria-disabled]="tab.disabled">
+								<ng-container [ngTemplateOutlet]="tab.headerTemplate.template"></ng-container>
+							</label>
+						</span>
+					}
+				}
+			</ul>
+		</div>
+	}
 	<div class="tab-content flex-grow-1 overflow-auto" bsNoNoscript [class.border]="border && activeTab" [class.border-top]="border && !activeTab">
 		<ng-content></ng-content>
 	</div>
-	<div class="overflow-hidden mw-100 tsc bottom-tabs" *ngIf="bottomTabs$ | async">
-		<ul cdkDropList #list #tabList="cdkDropList"
-			[cdkDropListData]="tabPages$ | async"
-			[cdkDropListConnectedTo]="[]"
-			[cdkDropListOrientation]="'horizontal'"
-			(cdkDropListDropped)="moveTab($event)"
-			[cdkDropListDisabled]="disableDragDrop$ | async"
-			class="nav nav-tabs flex-nowrap overflow-x-auto overflow-y-hidden">
-			<ng-container *ngFor="let tab of orderedTabPages">
-				<span class="nav-item" (click)="setActiveTab(tab)" *ngIf="!!tab.headerTemplate" cdkDrag [cdkDragBoundary]="dragBoundarySelector" [cdkDragStartDelay]="500" (cdkDragStarted)="startDragTab($event)">
-					<label [for]="tab.tabName$ | async" class="nav-link text-nowrap cursor-pointer" [class.active]="activeTab === tab" [class.disabled]="tab.disabled" [attr.aria-current]="activeTab === tab ? 'page' : null" [attr.aria-disabled]="tab.disabled">
-						<ng-container [ngTemplateOutlet]="tab.headerTemplate.template"></ng-container>
-					</label>
-				</span>
-			</ng-container>
-		</ul>
-	</div>
+	@if (bottomTabs$ | async) {
+		<div class="overflow-hidden mw-100 tsc bottom-tabs">
+			<ul cdkDropList #list #tabList="cdkDropList"
+				[cdkDropListData]="tabPages$ | async"
+				[cdkDropListConnectedTo]="[]"
+				[cdkDropListOrientation]="'horizontal'"
+				(cdkDropListDropped)="moveTab($event)"
+				[cdkDropListDisabled]="disableDragDrop$ | async"
+				class="nav nav-tabs flex-nowrap overflow-x-auto overflow-y-hidden">
+				@for (tab of orderedTabPages; track tab) {
+					@if (tab.headerTemplate) {
+						<span class="nav-item" (click)="setActiveTab(tab)" cdkDrag [cdkDragBoundary]="dragBoundarySelector" [cdkDragStartDelay]="500" (cdkDragStarted)="startDragTab($event)">
+							<label [for]="tab.tabName$ | async" class="nav-link text-nowrap cursor-pointer" [class.active]="activeTab === tab" [class.disabled]="tab.disabled" [attr.aria-current]="activeTab === tab ? 'page' : null" [attr.aria-disabled]="tab.disabled">
+								<ng-container [ngTemplateOutlet]="tab.headerTemplate.template"></ng-container>
+							</label>
+						</span>
+					}
+				}
+			</ul>
+		</div>
+	}
 </ng-container>

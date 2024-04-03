@@ -7,7 +7,7 @@ describe('BsContainerComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [BsContainerComponent],
+      imports: [BsContainerComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BsContainerComponent);

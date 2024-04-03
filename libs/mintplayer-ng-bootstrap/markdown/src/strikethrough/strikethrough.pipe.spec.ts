@@ -15,11 +15,11 @@ describe('BsStrikethroughPipe', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [],
-      declarations: [
+      imports: [
         // Pipe to test
         BsStrikethroughPipe,
-
+      ],
+      declarations: [
         // Testbench
         BsStrikethroughTestComponent
       ],

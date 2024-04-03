@@ -1,10 +1,14 @@
 import { CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { Component } from '@angular/core';
+import { DragDropModule as CdkDragDropModule } from '@angular/cdk/drag-drop';
+import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 
 @Component({
   selector: 'demo-drag-drop',
   templateUrl: './drag-drop.component.html',
-  styleUrls: ['./drag-drop.component.scss']
+  styleUrls: ['./drag-drop.component.scss'],
+  standalone: true,
+  imports: [CdkDragDropModule, BsGridModule]
 })
 export class DragDropComponent {
 

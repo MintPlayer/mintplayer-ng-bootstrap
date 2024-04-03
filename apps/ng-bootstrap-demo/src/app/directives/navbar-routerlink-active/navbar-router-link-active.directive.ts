@@ -5,7 +5,8 @@ import { Router, RouterLinkActive, RouterLink } from '@angular/router';
 // to have the "active" value for each <a> with a routerLink attribute
 
 @Directive({
-  selector: 'a[routerLink]'
+  selector: 'a[routerLink]',
+  standalone: true
 })
 export class NavbarRouterLinkActiveDirective extends RouterLinkActive {
 

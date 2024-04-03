@@ -1,8 +1,8 @@
-import { MonthNamePipe } from './month-name.pipe';
+import { BsMonthNamePipe } from './month-name.pipe';
 
 describe('MonthNamePipe', () => {
   it('create an instance', () => {
-    const pipe = new MonthNamePipe();
+    const pipe = new BsMonthNamePipe();
     expect(pipe).toBeTruthy();
   });
 });

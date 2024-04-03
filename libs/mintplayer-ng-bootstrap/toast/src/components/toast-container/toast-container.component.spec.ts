@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MockModule, MockProvider } from 'ng-mocks';
+import { MockComponent, MockProvider } from 'ng-mocks';
 import { BsToastContainerComponent } from './toast-container.component';
-import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
+import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { BsToastService } from '../../services/toast/toast.service';
 
 describe('BsToastContainerComponent', () => {
@@ -11,7 +11,7 @@ describe('BsToastContainerComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        MockModule(BsHasOverlayModule),
+        MockComponent(BsHasOverlayComponent),
       ],
       declarations: [BsToastContainerComponent],
       providers: [

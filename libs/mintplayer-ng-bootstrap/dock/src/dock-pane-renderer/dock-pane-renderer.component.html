@@ -4,25 +4,31 @@
         <bs-dock-pane-renderer [layout]="documentHost"></bs-dock-pane-renderer>
     </div>
     <bs-tab-control *bsInstanceofCase="BsTabGroupType; let tabGroup" [allowDragDrop]="false" class="d-flex flex-column h-100 dock-tabs">
-        <bs-tab-page *ngFor="let tab of tabGroup.panes">
-            <ng-container *bsTabPageHeader>
-                <ng-template [cdkPortalOutlet]="tab.dockPanel.headerPortal"></ng-template>
-            </ng-container>
-            <bs-dock-pane-renderer [layout]="tab"></bs-dock-pane-renderer>
-        </bs-tab-page>
+        @for (tab of tabGroup.panes; track tab) {
+            <bs-tab-page>
+                <ng-container *bsTabPageHeader>
+                    <ng-template [cdkPortalOutlet]="tab.dockPanel.headerPortal"></ng-template>
+                </ng-container>
+                <bs-dock-pane-renderer [layout]="tab"></bs-dock-pane-renderer>
+            </bs-tab-page>
+        }
     </bs-tab-control>
     <bs-splitter *bsInstanceofCase="BsSplitterType; let splitter" [orientation]="splitter.orientation">
-        <bs-split-panel *ngFor="let panel of splitter.panes">
-            <bs-dock-pane-renderer [layout]="panel"></bs-dock-pane-renderer>
-        </bs-split-panel>
+        @for (panel of splitter.panes; track panel) {
+            <bs-split-panel>
+                <bs-dock-pane-renderer [layout]="panel"></bs-dock-pane-renderer>
+            </bs-split-panel>
+        }
     </bs-splitter>
     <ng-container *bsInstanceofCase="BsContentPaneType; let content">
         <ng-template [cdkPortalOutlet]="content.dockPanel.contentPortal"></ng-template>
     </ng-container>
     <ng-container *bsInstanceofCase="BsFloatingPaneType; let floating">
-        <bs-resizable *ngIf="floating.pane" [positioning]="'absolute'" [presetPosition]="{ left: floating.location?.x ?? 0, top: floating.location?.y ?? 0, width: floating.size?.width ?? 200, height: floating.size?.height ?? 100 }">
-            <bs-dock-pane-renderer [layout]="floating.pane"></bs-dock-pane-renderer>
-        </bs-resizable>
+        @if (floating.pane) {
+            <bs-resizable [positioning]="'absolute'" [presetPosition]="{ left: floating.location?.x ?? 0, top: floating.location?.y ?? 0, width: floating.size?.width ?? 200, height: floating.size?.height ?? 100 }">
+                <bs-dock-pane-renderer [layout]="floating.pane"></bs-dock-pane-renderer>
+            </bs-resizable>
+        }
     </ng-container>
     <div *bsInstanceofDefault>
         No match

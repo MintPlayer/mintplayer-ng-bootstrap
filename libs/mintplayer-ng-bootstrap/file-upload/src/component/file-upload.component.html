@@ -5,9 +5,11 @@
     <label class="btn btn-primary position-relative" [bsFor]="fileUpload">{{ browseFilesCaption }}</label>
 </div>
 <bs-list-group class="files-list">
-    <bs-list-group-item *ngFor="let upload of files; bsTrackBy: 'index'">
-        <ng-container *ngTemplateOutlet="fileTemplate ?? defaultFileTemplate; context: { $implicit: upload }"></ng-container>
-    </bs-list-group-item>
+    @for (upload of files; track upload.index) {
+        <bs-list-group-item>
+            <ng-container *ngTemplateOutlet="fileTemplate ?? defaultFileTemplate; context: { $implicit: upload }"></ng-container>
+        </bs-list-group-item>
+    }
 </bs-list-group>
 
 <ng-template #defaultFileTemplate let-upload>
