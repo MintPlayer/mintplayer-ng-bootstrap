@@ -1,21 +1,24 @@
 <h1 class="text-center">User-agent</h1>
 <div bsUserAgent (detected)="userAgentDetected($event)">
-    <ng-container *ngIf="detectedUserAgent">
+    @if (detectedUserAgent) {
+        @if (detectedUserAgent.os) {
+            <bs-alert [type]="colors.success">
+                Your operating system is <b>{{ detectedUserAgent.os }}</b>
+            </bs-alert>
+        } @else {
+            <bs-alert [type]="colors.danger">
+                Your operating system is unknown
+            </bs-alert>
+        }
 
-        <bs-alert [type]="colors.success" *ngIf="detectedUserAgent.os">
-            Your operating system is <b>{{ detectedUserAgent.os }}</b>
-        </bs-alert>
-        <bs-alert [type]="colors.danger" *ngIf="!detectedUserAgent.os">
-            Your operating system is unknown
-        </bs-alert>
-
-        
-        <bs-alert [type]="colors.success" *ngIf="detectedUserAgent.webbrowser">
-            Your webbrowser is <b>{{ detectedUserAgent.webbrowser }}</b>
-        </bs-alert>
-        <bs-alert [type]="colors.danger" *ngIf="!detectedUserAgent.webbrowser">
-            Your webbrowser is unknown
-        </bs-alert>
-
-    </ng-container>
+        @if (detectedUserAgent.webbrowser) {
+            <bs-alert [type]="colors.success">
+                Your webbrowser is <b>{{ detectedUserAgent.webbrowser }}</b>
+            </bs-alert>
+        } @else {
+            <bs-alert [type]="colors.danger">
+                Your webbrowser is unknown
+            </bs-alert>
+        }
+    }
 </div>

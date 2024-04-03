@@ -1,20 +1,16 @@
 <h1 class="text-center">Lazy-loading components</h1>
+<bs-alert [type]="colors.info">
+    Angular 17 introduced the control-flow syntax.
+    You can now defer loading of parts of your components (<a href="https://angular.io/guide/defer" target="_blank">Documentation</a>).
+</bs-alert>
+
 <p>This page demonstrates a way to lazy-load components</p>
-<ng-container [bsLazyLoad]="lazyLoaded" [contentNodes]="[[lazyLoadNgContent]]">
-    <div #lazyLoadNgContent>
-        <div *ngIf="lazyReady$ | async">
+@defer (on timer(5s)) {
+    <demo-lazy-loaded>
+        <div>
             <span class="text-success">Some extra content inside the <code>bsLazyLoad</code> container.</span>
             &nbsp;
             <span class="text-success">You can also use <code>&lt;router-outlet&gt;</code> here.</span>
         </div>
-    </div>
-</ng-container>
-<ng-container [bsLazyLoad]="lelyLoaded" [contentNodes]="[[lelyLoadNgContent]]">
-    <div #lelyLoadNgContent>
-        <div *ngIf="lelyReady$ | async">
-            <span class="text-danger">Some extra content inside the <code>bsLazyLoad</code> container.</span>
-            &nbsp;
-            <span class="text-danger">You can also use <code>&lt;router-outlet&gt;</code> here.</span>
-        </div>
-    </div>
-</ng-container>
+    </demo-lazy-loaded>
+}

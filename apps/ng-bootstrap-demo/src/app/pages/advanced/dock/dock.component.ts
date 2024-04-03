@@ -1,12 +1,17 @@
 import { Component, ViewChild, AfterViewInit } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
-import { BsContentPane, BsDockLayout, BsDockPanelComponent, BsDockService, BsSplitPane, BsTabGroupPane } from '@mintplayer/ng-bootstrap/dock';
+import { BsContentPane, BsDockLayout, BsDockModule, BsDockPanelComponent, BsDockService, BsSplitPane, BsTabGroupPane } from '@mintplayer/ng-bootstrap/dock';
 import { Color } from '@mintplayer/ng-bootstrap';
+import { BsBadgeComponent } from '@mintplayer/ng-bootstrap/badge';
+import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
+import { AsyncPipe } from '@angular/common';
 
 @Component({
   selector: 'demo-dock',
   templateUrl: './dock.component.html',
-  styleUrls: ['./dock.component.scss']
+  styleUrls: ['./dock.component.scss'],
+  standalone: true,
+  imports: [AsyncPipe, BsDockModule, BsBadgeComponent, BsButtonTypeDirective]
 })
 export class DockComponent implements AfterViewInit {
 

@@ -1,9 +1,12 @@
 import { Component } from '@angular/core';
+import { BsInstanceOfModule } from '@mintplayer/ng-bootstrap/instance-of';
 
 @Component({
   selector: 'demo-instance-of',
   templateUrl: './instance-of.component.html',
-  styleUrls: ['./instance-of.component.scss']
+  styleUrls: ['./instance-of.component.scss'],
+  standalone: true,
+  imports: [BsInstanceOfModule]
 })
 export class InstanceOfComponent {
   items: (Base | null)[] = [

@@ -1,9 +1,9 @@
 import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { BsNoNoscriptModule } from '@mintplayer/ng-bootstrap/no-noscript';
+import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
 import { BsAccordionComponent } from './accordion/accordion.component';
 import { BsAccordionTabComponent } from './accordion-tab/accordion-tab.component';
 import { BsAccordionTabHeaderComponent } from './accordion-tab-header/accordion-tab-header.component';
+import { AsyncPipe } from '@angular/common';
 
 @NgModule({
   declarations: [
@@ -12,8 +12,8 @@ import { BsAccordionTabHeaderComponent } from './accordion-tab-header/accordion-
     BsAccordionTabHeaderComponent
   ],
   imports: [
-    CommonModule,
-    BsNoNoscriptModule
+    AsyncPipe,
+    BsNoNoscriptDirective
   ],
   exports: [
     BsAccordionComponent,

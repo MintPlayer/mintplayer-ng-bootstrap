@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsCodeSnippetModule } from '@mintplayer/ng-bootstrap/code-snippet';
+import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { MockModule } from 'ng-mocks';
 import { CodeSnippetComponent } from './code-snippet.component';
 
@@ -10,7 +10,7 @@ describe('CodeSnippetComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        MockModule(BsCodeSnippetModule),
+        MockModule(BsCodeSnippetComponent),
       ],
       declarations: [
         // Unit to test

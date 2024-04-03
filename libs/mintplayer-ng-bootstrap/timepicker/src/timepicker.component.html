@@ -18,8 +18,10 @@
     </bs-form>
     <bs-has-overlay></bs-has-overlay>
     <bs-dropdown-menu class="overflow-auto" *bsDropdownMenu>
-        <bs-dropdown-item [isSelected]="timesEqual(selectedTime, timestamp)" *ngFor="let timestamp of presetTimestamps" (click)="setTime(timestamp)">
-            {{ timestamp | date: 'HH:mm' }}
-        </bs-dropdown-item>
+        @for (timestamp of presetTimestamps; track timestamp) {
+            <bs-dropdown-item [isSelected]="timesEqual(selectedTime, timestamp)" (click)="setTime(timestamp)">
+                {{ timestamp | date: 'HH:mm' }}
+            </bs-dropdown-item>
+        }
     </bs-dropdown-menu>
 </div>

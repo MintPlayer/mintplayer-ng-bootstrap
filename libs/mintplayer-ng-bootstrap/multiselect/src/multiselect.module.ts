@@ -1,11 +1,11 @@
 import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
-import { FocusOnLoadModule } from '@mintplayer/ng-focus-on-load';
+import { NgTemplateOutlet } from '@angular/common';
+import { FocusOnLoadDirective } from '@mintplayer/ng-focus-on-load';
 import { BsDropdownModule } from '@mintplayer/ng-bootstrap/dropdown';
 import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
-import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
-import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
+import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
+import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsMultiselectComponent } from './component/multiselect.component';
 import { BsHeaderTemplateDirective } from './directives/header-template/header-template.directive';
 import { BsFooterTemplateDirective } from './directives/footer-template/footer-template.directive';
@@ -19,13 +19,13 @@ import { BsButtonTemplateDirective } from './directives/button-template/button-t
     BsButtonTemplateDirective
   ],
   imports: [
-    CommonModule,
+    NgTemplateOutlet,
     FormsModule,
     BsDropdownModule,
     BsToggleButtonModule,
-    BsButtonTypeModule,
-    BsHasOverlayModule,
-    FocusOnLoadModule,
+    BsButtonTypeDirective,
+    BsHasOverlayComponent,
+    FocusOnLoadDirective,
   ],
   exports: [
     BsMultiselectComponent,

@@ -10,20 +10,22 @@
         </tr>
     </thead>
     <tbody>
-        <tr *ngFor="let item of employeesOrVisitors">
-            <td>{{ item.id }}</td>
-            <td>{{ item.firstName }}</td>
-            <td>{{ item.lastName }}</td>
+        @for (item of employeesOrVisitors; track item) {
+            <tr>
+                <td>{{ item.id }}</td>
+                <td>{{ item.firstName }}</td>
+                <td>{{ item.lastName }}</td>
 
-            <ng-container *ngIf="(item | asEmployee) as employee">
-                <td>{{ employee.officeNumber }}</td>
-                <td></td>
-            </ng-container>
-            <ng-container *ngIf="(item | asVisitor) as visitor">
-                <td></td>
-                <td>{{ visitor.reason }}</td>
-            </ng-container>
-        </tr>
+                @if (item | asEmployee; as employee) {
+                    <td>{{ employee.officeNumber }}</td>
+                    <td></td>
+                }
+                @if (item | asVisitor; as visitor) {
+                    <td></td>
+                    <td>{{ visitor.reason }}</td>
+                }
+            </tr>
+        }
     </tbody>
 </bs-table>
 

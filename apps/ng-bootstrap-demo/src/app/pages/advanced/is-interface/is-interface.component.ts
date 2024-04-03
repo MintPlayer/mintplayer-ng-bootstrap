@@ -1,9 +1,7 @@
 import { Component, Pipe, PipeTransform } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
-import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
-import { IsInterfaceRoutingModule } from './is-interface-routing.module';
-import { CommonModule } from '@angular/common';
-import { BsTableModule } from '@mintplayer/ng-bootstrap/table';
+import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
+import { BsTableComponent } from '@mintplayer/ng-bootstrap/table';
 
 interface Employee {
   id: number;
@@ -46,12 +44,10 @@ export class AsEmployeePipe implements PipeTransform {
 @Component({
   standalone: true,
   imports: [
-    CommonModule,
-    BsTableModule,
-    BsButtonTypeModule,
+    BsTableComponent,
+    BsButtonTypeDirective,
     AsVisitorPipe,
-    AsEmployeePipe,
-    IsInterfaceRoutingModule
+    AsEmployeePipe
   ],
   selector: 'demo-is-interface',
   templateUrl: './is-interface.component.html',

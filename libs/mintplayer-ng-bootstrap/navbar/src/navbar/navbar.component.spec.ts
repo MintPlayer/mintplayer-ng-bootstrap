@@ -5,7 +5,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { BsNavbarComponent } from './navbar.component';
 import { MockModule } from 'ng-mocks';
-import { BsContainerModule } from '@mintplayer/ng-bootstrap/container';
+import { BsContainerComponent } from '@mintplayer/ng-bootstrap/container';
 
 describe('BsNavbarComponent', () => {
   let component: BsNavbarComponent;
@@ -21,7 +21,7 @@ describe('BsNavbarComponent', () => {
             { path: 'c', component: PageBCComponent }
           ]}
         ]),
-        MockModule(BsContainerModule),
+        MockModule(BsContainerComponent),
       ],
       declarations: [
         // Component to test

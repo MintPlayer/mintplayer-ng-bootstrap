@@ -4,7 +4,8 @@ import * as qrCodeService from '@mintplayer/qr-code';
 import { RgbaColor } from '../../types/rgba-color';
 
 @Directive({
-  selector: 'canvas[qrCode]'
+  selector: 'canvas[qrCode]',
+  standalone: true
 })
 export class QrCodeDirective implements OnChanges {
 

@@ -1,10 +1,12 @@
 <div bsStickyFooterParent>
     <h1 class="text-center">Sticky-footer</h1>
     <bs-accordion [highlightActiveTab]="true">
-        <bs-accordion-tab *ngFor="let num of numbers; bsTrackByIndex">
-            <bs-accordion-tab-header>Title {{ num }}</bs-accordion-tab-header>
-            <p class="p-3 m-0">Lorem ipsum dolor sit, amet consectetur adipisicing elit. Quaerat minus doloremque distinctio pariatur consequuntur velit a rem, consequatur inventore explicabo, iste, nemo sit adipisci. Magnam ab totam aspernatur eos iusto.</p>
-        </bs-accordion-tab>
+        @for (num of numbers; track $index) {
+            <bs-accordion-tab>
+                <bs-accordion-tab-header>Title {{ num }}</bs-accordion-tab-header>
+                <p class="p-3 m-0">Lorem ipsum dolor sit, amet consectetur adipisicing elit. Quaerat minus doloremque distinctio pariatur consequuntur velit a rem, consequatur inventore explicabo, iste, nemo sit adipisci. Magnam ab totam aspernatur eos iusto.</p>
+            </bs-accordion-tab>
+        }
     </bs-accordion>
     <bs-sticky-footer>
         <bs-grid class="d-block py-3 bg-dark text-light">

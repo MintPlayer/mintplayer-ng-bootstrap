@@ -3,7 +3,7 @@ import { MockModule } from 'ng-mocks';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsTrackByModule } from '@mintplayer/ng-bootstrap/track-by';
 import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
-import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
+import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 
 import { TrackByComponent } from './track-by.component';
 
@@ -17,7 +17,7 @@ describe('TrackByComponent', () => {
         MockModule(BsGridModule),
         MockModule(BsTrackByModule),
         MockModule(BsListGroupModule),
-        MockModule(BsButtonTypeModule),
+        MockModule(BsButtonTypeDirective),
       ],
       declarations: [TrackByComponent]
     });

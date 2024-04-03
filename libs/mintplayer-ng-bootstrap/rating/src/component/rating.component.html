@@ -1,3 +1,5 @@
-<span class="cursor-pointer" *ngFor="let star of (stars$ | async), let i = index; bsTrackByIndex" (mouseenter)="hoverValue(i)" (click)="selectValue(i)">
-    {{ star ? '&#9733;' : '&#9734;' }}
-</span>
+@for (star of (stars$ | async); let i = $index; track i) {
+    <span class="cursor-pointer" (mouseenter)="hoverValue(i)" (click)="selectValue(i)">
+        {{ star ? '&#9733;' : '&#9734;' }}
+    </span>
+}

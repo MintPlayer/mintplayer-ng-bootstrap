@@ -4,11 +4,15 @@ import { Tag } from '../../../entities/tag';
 import { ESubjectType } from '../../../enums/subject-type';
 import { SubjectService } from '../../../services/subject/subject.service';
 import { TagService } from '../../../services/tag/tag.service';
+import { BsSelect2Module } from '@mintplayer/ng-bootstrap/select2';
+import { BsFontColorPipe } from '@mintplayer/ng-bootstrap/font-color';
 
 @Component({
   selector: 'demo-select2',
   templateUrl: './select2.component.html',
-  styleUrls: ['./select2.component.scss']
+  styleUrls: ['./select2.component.scss'],
+  standalone: true,
+  imports: [BsSelect2Module, BsFontColorPipe]
 })
 export class Select2Component {
 
@@ -28,7 +32,7 @@ export class Select2Component {
       if (tags) {
         this.tagSuggestions = tags;
       }
-    })
+    });
   }
 
 }

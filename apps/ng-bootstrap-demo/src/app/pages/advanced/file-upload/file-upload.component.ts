@@ -1,11 +1,15 @@
 import { Component } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
-import { FileUpload } from '@mintplayer/ng-bootstrap/file-upload';
+import { BsFileUploadModule, FileUpload } from '@mintplayer/ng-bootstrap/file-upload';
+import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsProgressBarModule } from '@mintplayer/ng-bootstrap/progress-bar';
 
 @Component({
   selector: 'demo-file-upload',
   templateUrl: './file-upload.component.html',
-  styleUrls: ['./file-upload.component.scss']
+  styleUrls: ['./file-upload.component.scss'],
+  standalone: true,
+  imports: [BsGridModule, BsFileUploadModule, BsProgressBarModule]
 })
 export class FileUploadComponent {
   

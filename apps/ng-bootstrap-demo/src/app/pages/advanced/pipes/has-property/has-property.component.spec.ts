@@ -5,7 +5,7 @@ import { BsHasPropertyModule } from '@mintplayer/ng-bootstrap/has-property';
 import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
 
 import { HasPropertyComponent } from './has-property.component';
-import { BsCodeSnippetModule } from '@mintplayer/ng-bootstrap/code-snippet';
+import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 
 describe('HasPropertyComponent', () => {
   let component: HasPropertyComponent;
@@ -17,7 +17,7 @@ describe('HasPropertyComponent', () => {
         FormsModule,
         MockModule(BsHasPropertyModule),
         MockModule(BsToggleButtonModule),
-        MockModule(BsCodeSnippetModule),
+        MockModule(BsCodeSnippetComponent),
       ],
       declarations: [HasPropertyComponent]
     });

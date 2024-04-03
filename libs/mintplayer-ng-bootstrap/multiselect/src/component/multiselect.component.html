@@ -5,9 +5,15 @@
     </button>
     <div *bsDropdownMenu class="bg-white mw-250px p-3 border rounded shadow">
         <ng-container *ngTemplateOutlet="headerTemplate"></ng-container>
-        <hr class="my-2" *ngIf="headerTemplate">
-        <bs-toggle-button *ngFor="let item of items; trackBy: itemsTrackBy ?? defaultTrackBy" [ngModel]="selectedItems.indexOf(item) > -1" (ngModelChange)="itemChange(item, $event)" class="d-block">{{ item }}</bs-toggle-button>
-        <hr class="my-2" *ngIf="footerTemplate">
+        @if (headerTemplate) {
+            <hr class="my-2">
+        }
+        @for (item of items; track item) {
+            <bs-toggle-button [ngModel]="selectedItems.indexOf(item) > -1" (ngModelChange)="itemChange(item, $event)" class="d-block">{{ item }}</bs-toggle-button>
+        }
+        @if (footerTemplate) {
+            <hr class="my-2">
+        }
         <ng-container *ngTemplateOutlet="footerTemplate"></ng-container>
     </div>
 </div>

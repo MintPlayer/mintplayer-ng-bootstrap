@@ -1,5 +1,9 @@
 <h1 class="text-center">Spinner</h1>
 <h2>Border</h2>
-<bs-spinner *ngFor="let color of colors; bsTrackBy: 'key'" [type]="'border'" [color]="color.value" class="m-1"></bs-spinner>
+@for (color of colors; track color.key) {
+    <bs-spinner [type]="'border'" [color]="color.value" class="m-1"></bs-spinner>
+}
 <h2>Grow</h2>
-<bs-spinner *ngFor="let color of colors; bsTrackBy: 'key'" [type]="'grow'" [color]="color.value" class="m-1"></bs-spinner>
+@for (color of colors; track color.key) {
+    <bs-spinner [type]="'grow'" [color]="color.value" class="m-1"></bs-spinner>
+}

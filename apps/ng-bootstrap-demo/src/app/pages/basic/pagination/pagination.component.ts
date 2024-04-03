@@ -1,9 +1,12 @@
 import { Component } from '@angular/core';
+import { BsPaginationComponent } from '@mintplayer/ng-bootstrap/pagination';
 
 @Component({
   selector: 'demo-pagination',
   templateUrl: './pagination.component.html',
-  styleUrls: ['./pagination.component.scss']
+  styleUrls: ['./pagination.component.scss'],
+  standalone: true,
+  imports: [BsPaginationComponent]
 })
 export class PaginationComponent {
 

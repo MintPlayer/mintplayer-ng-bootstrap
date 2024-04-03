@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
-import { BsForModule } from '@mintplayer/ng-bootstrap/for';
+import { BsForDirective } from '@mintplayer/ng-bootstrap/for';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsSelectModule } from '@mintplayer/ng-bootstrap/select';
 import { BsTabControlModule } from '@mintplayer/ng-bootstrap/tab-control';
@@ -17,7 +17,7 @@ describe('TabControlComponent', () => {
       imports: [
         FormsModule,
         MockModule(BsTabControlModule),
-        MockModule(BsForModule),
+        MockModule(BsForDirective),
         MockModule(BsGridModule),
         MockModule(BsSelectModule),
         MockModule(BsToggleButtonModule),

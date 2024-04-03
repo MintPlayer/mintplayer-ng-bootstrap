@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MockModule, MockPipe } from 'ng-mocks';
-import { BsForModule } from '@mintplayer/ng-bootstrap/for';
+import { BsForDirective } from '@mintplayer/ng-bootstrap/for';
 import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
 import { BsProgressBarModule } from '@mintplayer/ng-bootstrap/progress-bar';
 import { BsTrackByModule } from '@mintplayer/ng-bootstrap/track-by';
@@ -14,7 +14,7 @@ describe('BsFileUploadComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        MockModule(BsForModule),
+        MockModule(BsForDirective),
         MockModule(BsListGroupModule),
         MockModule(BsProgressBarModule),
         MockModule(BsTrackByModule),

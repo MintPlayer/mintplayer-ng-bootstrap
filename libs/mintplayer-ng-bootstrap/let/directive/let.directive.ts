@@ -2,7 +2,8 @@ import { Directive, Input, TemplateRef, ViewContainerRef } from '@angular/core';
 import { BsLetContext } from '../interfaces/let-context';
 
 @Directive({
-  selector: '[bsLet]'
+  selector: '[bsLet]',
+  standalone: true
 })
 export class BsLetDirective<T> {
 

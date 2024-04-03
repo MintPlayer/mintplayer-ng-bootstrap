@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsLetModule } from '@mintplayer/ng-bootstrap/let';
+import { BsLetDirective } from '@mintplayer/ng-bootstrap/let';
 import { MockModule } from 'ng-mocks';
 
 import { BsColorPickerComponent } from './color-picker.component';
@@ -15,7 +15,7 @@ describe('ColorPickerComponent', () => {
         BsColorPickerComponent,
         
         // Mock dependencies
-        MockModule(BsLetModule),
+        MockModule(BsLetDirective),
       ]
     })
     .compileComponents();

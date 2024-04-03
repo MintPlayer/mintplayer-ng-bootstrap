@@ -25,14 +25,16 @@
                     <span class="me-2 align-middle">Native color picker:</span>
                     <input type="color" [(ngModel)]="selectedColor" class="align-middle">
                 </div>
-                <div bsColumn *ngIf="allowAlpha">
-                    <span class="me-2 align-middle">
-                        <span>Alpha:</span>
-                        &nbsp;
-                        <span>{{ selectedAlpha | number: '1.2' }}</span>
-                    </span>
-                    <bs-range [(ngModel)]="selectedAlpha" [min]="0" [max]="1" [step]="0.01"></bs-range>
-                </div>
+                @if (allowAlpha) {
+                    <div bsColumn>
+                        <span class="me-2 align-middle">
+                            <span>Alpha:</span>
+                            &nbsp;
+                            <span>{{ selectedAlpha | number: '1.2' }}</span>
+                        </span>
+                        <bs-range [(ngModel)]="selectedAlpha" [min]="0" [max]="1" [step]="0.01"></bs-range>
+                    </div>
+                }
             </div>
         </div>
     </div>

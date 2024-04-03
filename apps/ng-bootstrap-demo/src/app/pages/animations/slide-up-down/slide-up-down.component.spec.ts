@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
+import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { MockModule } from 'ng-mocks';
 
@@ -15,7 +15,7 @@ describe('SlideUpDownComponent', () => {
       imports: [
         NoopAnimationsModule,
         MockModule(BsGridModule),
-        MockModule(BsButtonTypeModule),
+        MockModule(BsButtonTypeDirective),
       ],
       declarations: [ SlideUpDownComponent ]
     })

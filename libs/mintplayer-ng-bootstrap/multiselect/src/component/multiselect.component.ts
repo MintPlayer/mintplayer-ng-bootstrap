@@ -17,7 +17,6 @@ export class BsMultiselectComponent<T> {
   @Input() public items: T[] = [];
   @Input() public selectedItems: T[] = [];
   @ViewChild('defaultButtonTemplate') defaultButtonTemplate!: TemplateRef<any>;
-  @Input() public itemsTrackBy?: TrackByFunction<T>;
 
   // itemChange(item: any, ev: Event) {
   itemChange(item: T, value: boolean | null) {
@@ -27,10 +26,6 @@ export class BsMultiselectComponent<T> {
     } else {
       this.selectedItems.splice(this.selectedItems.findIndex((i) => i === item), 1);
     }
-  }
-  
-  defaultTrackBy(index: number, item: T) {
-    return item;
   }
 
 }

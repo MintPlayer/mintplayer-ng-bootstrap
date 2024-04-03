@@ -2,9 +2,10 @@ import { Pipe, PipeTransform } from '@angular/core';
 
 @Pipe({
   name: 'monthName',
-  pure: true
+  pure: true,
+  standalone: true
 })
-export class MonthNamePipe implements PipeTransform {
+export class BsMonthNamePipe implements PipeTransform {
 
   transform(date: Date | null) {
     if (date) {

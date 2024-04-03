@@ -1,16 +1,20 @@
-<ng-container *ngIf="isServerSide">
+@if (isServerSide) {
     <div class="carousel mx-auto noscript">
         <div class="carousel-inner d-grid">
             <ng-container *bsLet="(images$ | async) as images">
-                <ng-container *ngIf="(imageCount$ | async) as imageCount">
-                    <ng-container *ngFor="let image of images; bsTrackBy: 'id'; let i = index">
+                @if (imageCount$ | async; as imageCount) {
+                    @for (image of images; track image.id; let i = $index) {
                         <input type="radio" [id]="'car-' + i" [name]="'car'" class="car-radio d-none" bsNoNoscript [checked]="i === 0">
                         <div class="carousel-item fade d-flex flex-row h-100 align-items-center">
                             <div class="w-100 position-relative">
                                 <ng-container [ngTemplateOutlet]="image.itemTemplate"></ng-container>
-                                <div *ngIf="indicators" class="carousel-indicators">
-                                    <label *ngFor="let image of images; bsTrackBy: 'id'; let j = index" [attr.for]="'car-' + (j % imageCount)" [class.active]="i === j" data-bs-target></label>
-                                </div>
+                                @if (indicators) {
+                                    <div class="carousel-indicators">
+                                        @for (image of images; track image.id; let j = $index) {
+                                            <label [attr.for]="'car-' + (j % imageCount)" [class.active]="i === j" data-bs-target></label>
+                                        }
+                                    </div>
+                                }
                             </div>
                         </div>
                         
@@ -22,63 +26,80 @@
                             <span class="carousel-control-next-icon" aria-hidden="true"></span>
                             <span class="visually-hidden">Next</span>
                         </label>
-                    </ng-container>
-                </ng-container>
+                    }
+                }
             </ng-container>
         </div>
     </div>
-</ng-container>
-<ng-container *ngIf="!isServerSide">
-    <div *ngIf="animation === 'slide'" class="carousel slide mx-auto" [style.height.px]="container.currentSlideHeight$ | async">
-        <div *ngIf="indicators" class="carousel-indicators">
-            <button *ngFor="let image of (images$ | async); bsTrackBy: 'id'; let i = index" type="button" (click)="container.goto(i)"
-                [class.active]="(container.imageIndex$ | async) === i" data-bs-target
-                [attr.aria-current]="(container.imageIndex$ | async) === i ? true : null"
-                [attr.aria-label]="'Slide ' + i"></button>
-        </div>
-        <div class="carousel-inner overflow-hidden text-nowrap pe-none" #innerElement>
-            <div bsSwipeContainer #container="bsSwipeContainer" [minimumOffset]="50" [(imageIndex)]="currentImageIndex">
-                <div class="carousel-item" bsSwipe [offside]="true">
-                    <ng-container *ngTemplateOutlet="lastImageTemplate$ | async"></ng-container>
+} @else {
+    @switch (animation) {
+        @case ('slide') {
+            <div class="carousel slide mx-auto" [style.height.px]="container.currentSlideHeight$ | async">
+                @if (indicators) {
+                    <div class="carousel-indicators">
+                        @for (image of (images$ | async); track image.id; let i = $index) {
+                            <button type="button" (click)="container.goto(i)"
+                                [class.active]="(container.imageIndex$ | async) === i" data-bs-target
+                                [attr.aria-current]="(container.imageIndex$ | async) === i ? true : null"
+                                [attr.aria-label]="'Slide ' + i"></button>
+                        }
+                    </div>
+                }
+                <div class="carousel-inner overflow-hidden text-nowrap pe-none" #innerElement>
+                    <div bsSwipeContainer #container="bsSwipeContainer" [minimumOffset]="50" [(imageIndex)]="currentImageIndex">
+                        <div class="carousel-item" bsSwipe [offside]="true">
+                            <ng-container *ngTemplateOutlet="lastImageTemplate$ | async"></ng-container>
+                        </div>
+                        @for (image of (images$ | async); track image.id) {
+                            <div class="carousel-item" [class.active]="true" bsSwipe>
+                                <ng-container *ngTemplateOutlet="image.itemTemplate"></ng-container>
+                            </div>
+                        }
+                        <div class="carousel-item" bsSwipe [offside]="true">
+                            <ng-container *ngTemplateOutlet="firstImageTemplate$ | async"></ng-container>
+                        </div>
+                    </div>
                 </div>
-                <div *ngFor="let image of (images$ | async); bsTrackBy: 'id'" class="carousel-item" [class.active]="true" bsSwipe>
-                    <ng-container *ngTemplateOutlet="image.itemTemplate"></ng-container>
-                </div>
-                <div class="carousel-item" bsSwipe [offside]="true">
-                    <ng-container *ngTemplateOutlet="firstImageTemplate$ | async"></ng-container>
-                </div>
+                <button class="carousel-control-prev" type="button" (click)="previousImage()">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" (click)="nextImage()">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
             </div>
-        </div>
-        <button class="carousel-control-prev" type="button" (click)="previousImage()">
-            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-            <span class="visually-hidden">Previous</span>
-        </button>
-        <button class="carousel-control-next" type="button" (click)="nextImage()">
-            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-            <span class="visually-hidden">Next</span>
-        </button>
-    </div>
-    <div *ngIf="animation === 'fade'" class="carousel fade mx-auto">
-        <div *ngIf="indicators" class="carousel-indicators">
-            <button *ngFor="let image of (images$ | async); bsTrackBy: 'id'; let i = index" type="button" (click)="currentImageIndex = i"
-                [class.active]="currentImageIndex === i" data-bs-target
-                [attr.aria-current]="currentImageIndex === i ? true : null"
-                [attr.aria-label]="'Slide ' + i"></button>
-        </div>
-        <div class="carousel-inner">
-            <ng-container *ngFor="let image of (images$ | async); bsTrackBy: 'id'; let i = index">
-                <div class="carousel-item" [class.active]="true" @fadeInOut *ngIf="currentImageIndex === i">
-                    <ng-container [ngTemplateOutlet]="image.itemTemplate"></ng-container>    
+        }
+        @case ('fade') {
+            <div class="carousel fade mx-auto">
+                @if (indicators) {
+                    <div class="carousel-indicators">
+                        @for (image of (images$ | async); track image.id; let i = $index) {
+                            <button type="button" (click)="currentImageIndex = i"
+                                [class.active]="currentImageIndex === i" data-bs-target
+                                [attr.aria-current]="currentImageIndex === i ? true : null"
+                                [attr.aria-label]="'Slide ' + i"></button>
+                        }
+                    </div>
+                }
+                <div class="carousel-inner">
+                    @for (image of (images$ | async); track image.id; let i = $index) {
+                        @if (currentImageIndex === i) {
+                            <div class="carousel-item" [class.active]="true" @fadeInOut>
+                                <ng-container [ngTemplateOutlet]="image.itemTemplate"></ng-container>    
+                            </div>
+                        }
+                    }
                 </div>
-            </ng-container>
-        </div>
-        <button class="carousel-control-prev" type="button" (click)="previousImage()">
-            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-            <span class="visually-hidden">Previous</span>
-        </button>
-        <button class="carousel-control-next" type="button" (click)="nextImage()">
-            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-            <span class="visually-hidden">Next</span>
-        </button>
-    </div>
-</ng-container>
+                <button class="carousel-control-prev" type="button" (click)="previousImage()">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" (click)="nextImage()">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
+            </div>
+        }
+    }
+}

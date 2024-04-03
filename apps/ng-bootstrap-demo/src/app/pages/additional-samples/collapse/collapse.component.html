@@ -4,17 +4,19 @@
 <div class="d-block mb-3">
     <button (click)="collapseVisible = !collapseVisible" [color]="colors.primary">Expand/collapse</button>
 </div>
-<div class="overflow-hidden" *ngIf="collapseVisible" [@slideUpDownNgif]>
-    <bs-grid>
-        <div bsRow>
-            <div [bsColumn]="{md: 12}">
-                <bs-alert [type]="colors.warning">Cras justo odio</bs-alert>
-                <bs-alert [type]="colors.danger">Cras justo odio</bs-alert>
-                <bs-alert>Cras justo odio</bs-alert>
+@if (collapseVisible) {
+    <div class="overflow-hidden" [@slideUpDownNgif]>
+        <bs-grid>
+            <div bsRow>
+                <div [bsColumn]="{md: 12}">
+                    <bs-alert [type]="colors.warning">Cras justo odio</bs-alert>
+                    <bs-alert [type]="colors.danger">Cras justo odio</bs-alert>
+                    <bs-alert>Cras justo odio</bs-alert>
+                </div>
             </div>
-        </div>
-    </bs-grid>
-</div>
+        </bs-grid>
+    </div>
+}
 
 <h2>Example</h2>
 Module

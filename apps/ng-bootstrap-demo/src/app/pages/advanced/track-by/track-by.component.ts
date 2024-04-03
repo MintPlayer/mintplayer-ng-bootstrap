@@ -1,10 +1,16 @@
 import { Component } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
+import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
+import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
+import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
 
 @Component({
   selector: 'demo-track-by',
   templateUrl: './track-by.component.html',
-  styleUrls: ['./track-by.component.scss']
+  styleUrls: ['./track-by.component.scss'],
+  standalone: true,
+  imports: [BsGridModule, BsButtonTypeDirective, BsListGroupModule, BsAlertModule]
 })
 export class TrackByComponent {
   people: Person[] = [];
@@ -26,10 +32,6 @@ export class TrackByComponent {
   addSomeone() {
     // We need new copies of the items to notice the effect of the trackBy function
     this.people = this.peopleFromServer.slice(0, this.counter++).map((p) => ({ ...p }));
-  }
-
-  trackById = (index: number, person: Person) => {
-    return person.id;
   }
 }
 

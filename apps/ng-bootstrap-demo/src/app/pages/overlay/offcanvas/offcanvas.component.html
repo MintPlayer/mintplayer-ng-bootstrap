@@ -13,11 +13,11 @@
                 </bs-button-group>
                 <br>
                 <button [color]="colors.primary" (click)="offcanvasVisible = false">Hide offcanvas</button>
-                <ng-container *ngIf="(position$ | async) as position">
+                @if (position$ | async; as position) {
                     <bs-offcanvas [(isVisible)]="offcanvasVisible" [position]="position" [hasBackdrop]="true" (backdropClick)="offcanvasVisible = false">
                         <div *bsOffcanvasContent>
                             <bs-offcanvas-header>
-                                <h5 class="offcanvas-title">Offcanvas</h5>
+                                <h5 class="offcanvas-title flex-grow-1">Offcanvas</h5>
                                 <bs-close bsOffcanvasClose></bs-close>
                             </bs-offcanvas-header>
                             <bs-offcanvas-body>
@@ -38,7 +38,7 @@
                             </bs-offcanvas-body>
                         </div>
                     </bs-offcanvas>
-                </ng-container>
+                }
                 <bs-offcanvas #accordion [(isVisible)]="sidebarVisible" [position]="'start'" [hasBackdrop]="true" (backdropClick)="sidebarVisible = false">
                     <div *bsOffcanvasContent>
                         <bs-offcanvas-body [noPadding]="true">

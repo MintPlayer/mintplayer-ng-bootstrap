@@ -1,10 +1,14 @@
 import { Component } from '@angular/core';
+import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
+import { BsOffcanvasModule } from '@mintplayer/ng-bootstrap/offcanvas';
 import { dedent } from 'ts-dedent';
 
 @Component({
   selector: 'demo-code-snippet',
   templateUrl: './code-snippet.component.html',
-  styleUrls: ['./code-snippet.component.scss']
+  styleUrls: ['./code-snippet.component.scss'],
+  standalone: true,
+  imports: [BsOffcanvasModule, BsCodeSnippetComponent]
 })
 export class CodeSnippetComponent {
 

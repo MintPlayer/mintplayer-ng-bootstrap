@@ -1,12 +1,12 @@
 import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ClickOutsideModule } from '@mintplayer/ng-click-outside';
-import { BsUserAgentModule } from '@mintplayer/ng-bootstrap/user-agent';
-import { BsNoNoscriptModule } from '@mintplayer/ng-bootstrap/no-noscript';
-import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
-import { BsDropdownDividerDirective, BsDropdownDividerModule } from '@mintplayer/ng-bootstrap/dropdown-divider';
-import { BsContainerModule } from '@mintplayer/ng-bootstrap/container';
-import { BsNavbarTogglerComponent, BsNavbarTogglerModule } from '@mintplayer/ng-bootstrap/navbar-toggler';
+import { AsyncPipe, NgTemplateOutlet } from '@angular/common';
+import { ClickOutsideDirective } from '@mintplayer/ng-click-outside';
+import { BsUserAgentDirective } from '@mintplayer/ng-bootstrap/user-agent';
+import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
+import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
+import { BsDropdownDividerDirective } from '@mintplayer/ng-bootstrap/dropdown-divider';
+import { BsContainerComponent } from '@mintplayer/ng-bootstrap/container';
+import { BsNavbarTogglerComponent } from '@mintplayer/ng-bootstrap/navbar-toggler';
 import { BsNavbarComponent } from './navbar/navbar.component';
 import { BsNavbarNavComponent } from './navbar-nav/navbar-nav.component';
 import { BsNavbarDropdownComponent } from './navbar-dropdown/navbar-dropdown.component';
@@ -31,14 +31,15 @@ import { BsExpandButtonDirective } from './expand-button/expand-button.directive
     BsExpandButtonDirective,
   ],
   imports: [
-    CommonModule,
-    ClickOutsideModule,
-    BsContainerModule,
-    BsUserAgentModule,
-    BsNoNoscriptModule,
-    BsHasOverlayModule,
-    BsDropdownDividerModule,
-    BsNavbarTogglerModule,
+    AsyncPipe,
+    NgTemplateOutlet,
+    ClickOutsideDirective,
+    BsContainerComponent,
+    BsUserAgentDirective,
+    BsNoNoscriptDirective,
+    BsHasOverlayComponent,
+    BsDropdownDividerDirective,
+    BsNavbarTogglerComponent,
   ],
   exports: [
     BsNavbarComponent,

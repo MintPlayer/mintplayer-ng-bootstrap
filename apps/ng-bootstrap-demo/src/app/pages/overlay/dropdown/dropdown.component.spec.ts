@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
+import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsDropdownModule } from '@mintplayer/ng-bootstrap/dropdown';
 import { MockModule } from 'ng-mocks';
 
@@ -13,7 +13,7 @@ describe('DropdownComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         MockModule(BsDropdownModule),
-        MockModule(BsButtonTypeModule),
+        MockModule(BsButtonTypeDirective),
       ],
       declarations: [
         // Unit to test

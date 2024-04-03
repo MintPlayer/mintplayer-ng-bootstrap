@@ -3,13 +3,17 @@
 import { Component } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Color } from '@mintplayer/ng-bootstrap';
+import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
+import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
 
 
 @Component({
   selector: 'demo-icon',
   templateUrl: './icon.component.html',
-  styleUrls: ['./icon.component.scss']
+  styleUrls: ['./icon.component.scss'],
+  standalone: true,
+  imports: [BsAlertModule, BsCodeSnippetComponent]
 })
 export class IconComponent {
   constructor(private sanitizer: DomSanitizer) {

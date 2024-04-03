@@ -2,11 +2,14 @@
 
 import { Component } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { BsTreeviewModule } from '@mintplayer/ng-bootstrap/treeview';
 
 @Component({
   selector: 'demo-treeview',
   templateUrl: './treeview.component.html',
-  styleUrls: ['./treeview.component.scss']
+  styleUrls: ['./treeview.component.scss'],
+  standalone: true,
+  imports: [BsTreeviewModule]
 })
 export class TreeviewComponent {
   constructor(private sanitizer: DomSanitizer) {

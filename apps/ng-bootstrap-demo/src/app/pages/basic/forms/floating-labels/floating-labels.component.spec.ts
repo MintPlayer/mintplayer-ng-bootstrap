@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsFloatingLabelsModule } from '@mintplayer/ng-bootstrap/floating-labels';
+import { BsFloatingLabelComponent } from '@mintplayer/ng-bootstrap/floating-labels';
 import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
 import { MockModule } from 'ng-mocks';
 
@@ -13,7 +13,7 @@ describe('FloatingLabelsComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         MockModule(BsFormModule),
-        MockModule(BsFloatingLabelsModule),
+        MockModule(BsFloatingLabelComponent),
       ],
       declarations: [
         FloatingLabelsComponent

@@ -2,7 +2,8 @@ import { isPlatformServer } from '@angular/common';
 import { Directive, HostBinding, Inject, PLATFORM_ID } from '@angular/core';
 
 @Directive({
-  selector: '[bsNoNoscript]'
+  selector: '[bsNoNoscript]',
+  standalone: true
 })
 export class BsNoNoscriptDirective {
 

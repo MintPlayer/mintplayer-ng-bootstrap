@@ -1,8 +1,8 @@
 import { Injector, NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import { OverlayModule } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
+import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { BsModalComponent } from './components/modal/modal.component';
 import { BsModalHostComponent } from './components/modal-host/modal-host.component';
 import { BsModalHeaderDirective } from './directives/modal-header/modal-header.directive';
@@ -23,9 +23,9 @@ import { PORTAL_FACTORY } from './providers/portal-factory.provider';
     BsModalHostComponent
   ],
   imports: [
-    CommonModule,
+    NgTemplateOutlet,
     OverlayModule,
-    BsHasOverlayModule
+    BsHasOverlayComponent
   ],
   exports: [
     BsModalHeaderDirective,

@@ -9,7 +9,7 @@ import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
 import { MockComponent, MockDirective, MockModule, MockProvider } from 'ng-mocks';
 import { BsModalComponent } from '../modal/modal.component';
 import { BsModalDirective } from '../../directives/modal/modal.directive';
-import { BsHasOverlayModule } from '@mintplayer/ng-bootstrap/has-overlay';
+import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 
 @Component({
   selector: 'bs-modal-test',
@@ -37,7 +37,7 @@ describe('BsModalHostComponent', () => {
       imports: [
         CommonModule,
         OverlayModule,
-        MockModule(BsHasOverlayModule),
+        MockModule(BsHasOverlayComponent),
         NoopAnimationsModule,
       ],
       declarations: [

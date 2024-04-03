@@ -7,12 +7,16 @@
             </div>
             <div [bsColumn]="{md: 4}">
                 <bs-list-group>
-                    <bs-list-group-item *ngFor="let line of text | bsSplitString">{{ line }}</bs-list-group-item>
+                    @for (line of text | bsSplitString; track $index) {
+                        <bs-list-group-item>{{ line }}</bs-list-group-item>
+                    }
                 </bs-list-group>
             </div>
             <div [bsColumn]="{md: 4}">
                 <bs-list-group>
-                    <bs-list-group-item *ngFor="let line of text | bsSplitString: undefined:false">{{ line }}</bs-list-group-item>
+                    @for (line of text | bsSplitString: undefined:false; track $index) {
+                        <bs-list-group-item>{{ line }}</bs-list-group-item>
+                    }
                 </bs-list-group>
             </div>
         </div>

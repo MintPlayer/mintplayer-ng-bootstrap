@@ -1,5 +1,4 @@
 import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { BsScrollspyComponent } from './component/scrollspy.component';
 import { BsScrollspyDirective } from './directives/scrollspy.directive';
 
@@ -10,9 +9,7 @@ import { BsScrollspyDirective } from './directives/scrollspy.directive';
     BsScrollspyComponent,
     BsScrollspyDirective
   ],
-  imports: [
-    CommonModule
-  ],
+  imports: [],
   exports: [
     BsScrollspyComponent,
     BsScrollspyDirective

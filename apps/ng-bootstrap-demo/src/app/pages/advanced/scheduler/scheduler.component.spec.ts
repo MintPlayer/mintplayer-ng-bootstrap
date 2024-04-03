@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
-import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
+import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
 import { BsInputGroupModule } from '@mintplayer/ng-bootstrap/input-group';
 import { BsSchedulerModule } from '@mintplayer/ng-bootstrap/scheduler';
@@ -18,7 +18,7 @@ describe('SchedulerComponent', () => {
         FormsModule,
         MockModule(BsFormModule),
         MockModule(BsSchedulerModule),
-        MockModule(BsButtonTypeModule),
+        MockModule(BsButtonTypeDirective),
         MockModule(BsInputGroupModule),
         MockModule(BsSelectModule),
       ],

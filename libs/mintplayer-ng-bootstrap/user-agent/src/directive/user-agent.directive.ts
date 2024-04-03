@@ -5,7 +5,8 @@ import { BsOperatingSystem } from '../types/operating-system.type';
 import { BsWebbrowser } from '../types/webbrowser.type';
 
 @Directive({
-  selector: '[bsUserAgent]'
+  selector: '[bsUserAgent]',
+  standalone: true
 })
 export class BsUserAgentDirective implements AfterViewInit {
 

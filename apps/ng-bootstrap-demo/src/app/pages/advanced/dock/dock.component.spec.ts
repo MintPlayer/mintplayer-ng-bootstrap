@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsBadgeModule } from '@mintplayer/ng-bootstrap/badge';
 import { BsDockModule } from '@mintplayer/ng-bootstrap/dock';
-import { BsButtonTypeModule } from '@mintplayer/ng-bootstrap/button-type';
+import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { MockModule } from 'ng-mocks';
 
 import { DockComponent } from './dock.component';
@@ -15,7 +15,7 @@ describe('DockComponent', () => {
       imports: [
         MockModule(BsDockModule),
         MockModule(BsBadgeModule),
-        MockModule(BsButtonTypeModule)
+        MockModule(BsButtonTypeDirective)
       ],
       declarations: [ DockComponent ]
     })

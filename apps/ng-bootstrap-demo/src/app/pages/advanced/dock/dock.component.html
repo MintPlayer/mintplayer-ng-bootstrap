@@ -1,4 +1,4 @@
-<ng-container *ngIf="(layout$ | async) as layout">
+@if (layout$ | async; as layout) {
     <bs-dock [layout]="layout" [style.top.px]="56">
         <bs-dock-panel #panel1>
             <bs-dock-panel-header>Panel 1</bs-dock-panel-header>
@@ -62,4 +62,4 @@
             <div class="p-3">Floating panel</div>
         </bs-dock-panel> -->
     </bs-dock>
-</ng-container>
+}
