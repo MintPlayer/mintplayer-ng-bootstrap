@@ -22,10 +22,11 @@ describe('BsFloatingLabelComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [
+      imports: [
         // Unit to test
         BsFloatingLabelComponent,
-
+      ],
+      declarations: [
         // Mock dependencies
         MockComponent(BsFormComponent),
       

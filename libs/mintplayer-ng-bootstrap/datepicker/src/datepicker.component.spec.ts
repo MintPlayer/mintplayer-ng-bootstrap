@@ -13,11 +13,11 @@ describe('BsDatepickerComponent', () => {
       imports: [
         MockModule(BsDropdownModule),
         MockModule(BsButtonTypeDirective),
-      ],
-      declarations: [
+
         // Unit to test
         BsDatepickerComponent,
-      ]
+      ],
+      declarations: []
     })
     .compileComponents();
   });

@@ -15,11 +15,11 @@ describe('BsItalicPipe', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [],
-      declarations: [
+      imports: [
         // Pipe to test
         BsItalicPipe,
-
+      ],
+      declarations: [
         // Testbench
         BsItalicTestComponent
       ],

@@ -22,12 +22,12 @@ describe('FocusOnLoadDirective', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        CommonModule
-      ],
-      declarations: [
+        CommonModule,
+        
         // Unit to test
         FocusOnLoadDirective,
-
+      ],
+      declarations: [
         // Mock dependencies
 
         // Testbench

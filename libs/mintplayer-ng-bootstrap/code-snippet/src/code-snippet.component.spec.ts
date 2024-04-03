@@ -16,11 +16,11 @@ describe('BsCodeSnippetComponent', () => {
         MockModule(BsCopyModule),
         MockModule(HighlightModule),
         MockModule(BsOffcanvasModule),
-      ],
-      declarations: [
+        
         // Unit to test
         BsCodeSnippetComponent,
-      ]
+      ],
+      declarations: []
     })
     .compileComponents();
   });

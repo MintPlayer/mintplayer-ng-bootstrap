@@ -22,11 +22,11 @@ describe('BsCopyDirective', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [],
-      declarations: [
+      imports: [
         // Directive to test
         BsCopyDirective,
-
+      ],
+      declarations: [
         // Testbench
         BsCopyTestComponent,
       ]

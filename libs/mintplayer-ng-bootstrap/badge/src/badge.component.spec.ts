@@ -8,7 +8,7 @@ describe('BsBadgeComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [BsBadgeComponent],
+      imports: [BsBadgeComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BsBadgeComponent);

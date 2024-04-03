@@ -15,11 +15,11 @@ describe('BsUnderlinePipe', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [],
-      declarations: [
+      imports: [
         // Pipe to test
         BsUnderlinePipe,
-
+      ],
+      declarations: [
         // Testbench
         BsUnderlineTestComponent
       ],

@@ -8,7 +8,7 @@ describe('BsNavbarTogglerComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ BsNavbarTogglerComponent ]
+      imports: [ BsNavbarTogglerComponent ]
     })
     .compileComponents();
   });

@@ -8,7 +8,7 @@ import { Color } from '@mintplayer/ng-bootstrap';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsDropdownModule } from '@mintplayer/ng-bootstrap/dropdown';
 import { BsDropdownMenuModule } from '@mintplayer/ng-bootstrap/dropdown-menu';
-import { EnhancedPasteModule } from '@mintplayer/ng-bootstrap/enhanced-paste';
+import { EnhancedPasteDirective } from '@mintplayer/ng-bootstrap/enhanced-paste';
 import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
@@ -18,7 +18,7 @@ import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
   templateUrl: './timepicker.component.html',
   styleUrls: ['./timepicker.component.scss'],
   standalone: true,
-  imports: [DatePipe, DecimalPipe, FormsModule, EnhancedPasteModule, BsFormModule, BsDropdownModule, BsDropdownMenuModule, BsInputGroupComponent, BsButtonTypeDirective, BsHasOverlayComponent]
+  imports: [DatePipe, DecimalPipe, FormsModule, EnhancedPasteDirective, BsFormModule, BsDropdownModule, BsDropdownMenuModule, BsInputGroupComponent, BsButtonTypeDirective, BsHasOverlayComponent]
 })
 export class BsTimepickerComponent {
 

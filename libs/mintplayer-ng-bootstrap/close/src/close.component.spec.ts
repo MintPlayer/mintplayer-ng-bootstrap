@@ -8,7 +8,7 @@ describe('BsCloseComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [BsCloseComponent],
+      imports: [BsCloseComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BsCloseComponent);

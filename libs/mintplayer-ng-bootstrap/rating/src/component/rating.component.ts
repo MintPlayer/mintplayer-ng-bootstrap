@@ -1,3 +1,4 @@
+import { AsyncPipe } from '@angular/common';
 import { Component, EventEmitter, HostListener, Input, Output } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
@@ -5,7 +6,9 @@ import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
 @Component({
   selector: 'bs-rating',
   templateUrl: './rating.component.html',
-  styleUrls: ['./rating.component.scss']
+  styleUrls: ['./rating.component.scss'],
+  standalone: true,
+  imports: [AsyncPipe]
 })
 export class BsRatingComponent {
 
