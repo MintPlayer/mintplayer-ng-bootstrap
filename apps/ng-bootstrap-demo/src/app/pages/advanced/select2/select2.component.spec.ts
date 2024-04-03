@@ -1,5 +1,4 @@
 import { HttpClientModule } from '@angular/common/http';
-import { Injectable } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsSelect2Module } from '@mintplayer/ng-bootstrap/select2';
 import { MockModule, MockProvider } from 'ng-mocks';

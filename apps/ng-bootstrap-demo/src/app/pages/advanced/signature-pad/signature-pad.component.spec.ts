@@ -1,8 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { SignaturePadComponent } from './signature-pad.component';
-import { MockModule } from 'ng-mocks';
-import { BsSignaturePadModule } from '@mintplayer/ng-bootstrap/signature-pad';
+import { MockComponent, MockModule } from 'ng-mocks';
+import { BsSignaturePadComponent } from '@mintplayer/ng-bootstrap/signature-pad';
 
 describe('SignaturePadComponent', () => {
   let component: SignaturePadComponent;
@@ -11,7 +11,7 @@ describe('SignaturePadComponent', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [
-        MockModule(BsSignaturePadModule)
+        MockComponent(BsSignaturePadComponent)
       ],
       declarations: [
         SignaturePadComponent

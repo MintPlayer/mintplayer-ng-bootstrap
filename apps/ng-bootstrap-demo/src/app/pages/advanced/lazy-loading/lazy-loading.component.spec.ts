@@ -1,8 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsLazyLoadingModule } from '@mintplayer/ng-bootstrap/lazy-loading';
-import { MockModule } from 'ng-mocks';
 
 import { LazyLoadingComponent } from './lazy-loading.component';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 describe('LazyLoadingComponent', () => {
   let component: LazyLoadingComponent;
@@ -11,11 +10,12 @@ describe('LazyLoadingComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        MockModule(BsLazyLoadingModule),
-      ],
-      declarations: [
+        // Unit to test
         LazyLoadingComponent,
-      ]
+
+        NoopAnimationsModule
+      ],
+      declarations: []
     })
     .compileComponents();
 

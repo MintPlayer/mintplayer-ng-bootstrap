@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsBadgeModule } from '@mintplayer/ng-bootstrap/badge';
-import { MockModule } from 'ng-mocks';
+import { BsBadgeComponent } from '@mintplayer/ng-bootstrap/badge';
+import { MockComponent } from 'ng-mocks';
 import { BadgeComponent } from './badge.component';
 
 describe('BadgeComponent', () => {
@@ -10,7 +10,7 @@ describe('BadgeComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        MockModule(BsBadgeModule),
+        MockComponent(BsBadgeComponent),
       ],
       declarations: [
         // Unit to test
