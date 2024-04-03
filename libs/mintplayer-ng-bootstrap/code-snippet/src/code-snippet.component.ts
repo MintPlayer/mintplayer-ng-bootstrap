@@ -1,5 +1,5 @@
 import { Component, Input, TemplateRef, ViewChild } from '@angular/core';
-import { BsCopyModule } from '@mintplayer/ng-bootstrap/copy';
+import { BsCopyDirective } from '@mintplayer/ng-bootstrap/copy';
 import { BsOffcanvasModule } from '@mintplayer/ng-bootstrap/offcanvas';
 import { HighlightModule } from 'ngx-highlightjs';
 
@@ -8,7 +8,7 @@ import { HighlightModule } from 'ngx-highlightjs';
   templateUrl: './code-snippet.component.html',
   styleUrls: ['./code-snippet.component.scss'],
   standalone: true,
-  imports: [BsCopyModule, BsOffcanvasModule, HighlightModule]
+  imports: [BsCopyDirective, BsOffcanvasModule, HighlightModule]
 })
 export class BsCodeSnippetComponent {
 

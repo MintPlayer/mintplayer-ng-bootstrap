@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsCopyModule } from '@mintplayer/ng-bootstrap/copy';
+import { BsCopyDirective } from '@mintplayer/ng-bootstrap/copy';
 import { BsOffcanvasModule } from '@mintplayer/ng-bootstrap/offcanvas';
-import { MockModule, MockProvider } from 'ng-mocks';
+import { MockDirective, MockModule, MockProvider } from 'ng-mocks';
 import { HighlightModule } from 'ngx-highlightjs';
 
 import { BsCodeSnippetComponent } from './code-snippet.component';
@@ -13,7 +13,7 @@ describe('BsCodeSnippetComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        MockModule(BsCopyModule),
+        MockDirective(BsCopyDirective),
         MockModule(HighlightModule),
         MockModule(BsOffcanvasModule),
         

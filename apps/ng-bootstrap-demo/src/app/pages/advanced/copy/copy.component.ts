@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { BsCopyModule } from '@mintplayer/ng-bootstrap/copy';
+import { BsCopyDirective } from '@mintplayer/ng-bootstrap/copy';
 import { BsOffcanvasModule } from '@mintplayer/ng-bootstrap/offcanvas';
 import { HighlightModule } from 'ngx-highlightjs';
 import { dedent } from 'ts-dedent';
@@ -9,7 +9,7 @@ import { dedent } from 'ts-dedent';
   templateUrl: './copy.component.html',
   styleUrls: ['./copy.component.scss'],
   standalone: true,
-  imports: [BsCopyModule, BsOffcanvasModule, HighlightModule]
+  imports: [BsCopyDirective, BsOffcanvasModule, HighlightModule]
 })
 export class CopyComponent {
 
