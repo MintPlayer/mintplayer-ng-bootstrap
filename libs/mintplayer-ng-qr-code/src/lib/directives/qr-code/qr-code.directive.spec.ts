@@ -18,8 +18,7 @@ import { QrCodeDirective } from './qr-code.directive';
       [lightColor]="lightColor">
     </canvas>`
 })
-class QrcodeTestComponent {
-}
+class QrcodeTestComponent {}
 
 describe('QrCodeDirective', () => {
   let component: QrcodeTestComponent;
@@ -27,11 +26,11 @@ describe('QrCodeDirective', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [],
-      declarations: [
+      imports: [
         // Directive to test
         QrCodeDirective,
-
+      ],
+      declarations: [
         // Testbench
         QrcodeTestComponent
       ]

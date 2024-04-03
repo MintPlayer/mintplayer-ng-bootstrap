@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MockModule } from 'ng-mocks';
+import { MockComponent, MockDirective, MockModule } from 'ng-mocks';
 import { Component } from '@angular/core';
 import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
 import { BsDropdownModule } from '@mintplayer/ng-bootstrap/dropdown';
@@ -39,9 +39,9 @@ describe('BsSearchboxComponent', () => {
       imports: [
         MockModule(BsFormModule),
         MockModule(BsDropdownModule),
-        MockModule(BsButtonTypeDirective),
+        MockDirective(BsButtonTypeDirective),
         MockModule(BsDropdownMenuModule),
-        MockModule(BsHasOverlayComponent),
+        MockComponent(BsHasOverlayComponent),
       ]
     }).compileComponents();
 

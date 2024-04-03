@@ -3,7 +3,7 @@ import { ComponentPortal } from '@angular/cdk/portal';
 import { Component, Injector, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
-import { MockModule } from 'ng-mocks';
+import { MockComponent, MockModule } from 'ng-mocks';
 import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
 import { BsOffcanvasComponent } from './offcanvas.component';
 
@@ -40,7 +40,7 @@ describe('BsOffcanvasComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         OverlayModule,
-        MockModule(BsHasOverlayComponent),
+        MockComponent(BsHasOverlayComponent),
       ],
       declarations: [
         // Unit to test

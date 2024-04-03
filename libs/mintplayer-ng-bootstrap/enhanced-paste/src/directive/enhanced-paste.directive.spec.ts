@@ -22,11 +22,11 @@ describe('EnhancedPasteDirective', () => {
       imports: [
         CommonModule,
         FormsModule,
-      ],
-      declarations: [
+        
         // Unit to test
         EnhancedPasteDirective,
-        
+      ],
+      declarations: [
         // Testbench
         EnhancedPasteTestComponent,
       ],

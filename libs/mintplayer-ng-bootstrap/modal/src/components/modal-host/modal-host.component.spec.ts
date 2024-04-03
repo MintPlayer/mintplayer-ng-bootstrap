@@ -37,7 +37,7 @@ describe('BsModalHostComponent', () => {
       imports: [
         CommonModule,
         OverlayModule,
-        MockModule(BsHasOverlayComponent),
+        MockComponent(BsHasOverlayComponent),
         NoopAnimationsModule,
       ],
       declarations: [

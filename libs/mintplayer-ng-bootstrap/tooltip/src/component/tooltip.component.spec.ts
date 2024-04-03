@@ -3,7 +3,7 @@ import { ComponentPortal } from '@angular/cdk/portal';
 import { Component, ComponentRef, Injector, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
-import { MockModule } from 'ng-mocks';
+import { MockComponent, MockModule } from 'ng-mocks';
 import { TOOLTIP_CONTENT } from '../providers/tooltip-content.provider';
 import { BsTooltipComponent } from './tooltip.component';
 
@@ -41,7 +41,7 @@ describe('BsTooltipComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         OverlayModule,
-        MockModule(BsHasOverlayComponent),
+        MockComponent(BsHasOverlayComponent),
       ],
       declarations: [
         // Unit to test
