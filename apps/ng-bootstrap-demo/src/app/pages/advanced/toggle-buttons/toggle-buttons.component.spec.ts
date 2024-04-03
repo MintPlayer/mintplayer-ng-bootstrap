@@ -1,9 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ToggleButtonsComponent } from './toggle-buttons.component';
-import { MockModule } from 'ng-mocks';
-import { BsPlaylistTogglerModule } from '@mintplayer/ng-bootstrap/playlist-toggler';
-import { BsNavbarTogglerModule } from '@mintplayer/ng-bootstrap/navbar-toggler';
+import { MockComponent } from 'ng-mocks';
+import { BsPlaylistTogglerComponent } from '@mintplayer/ng-bootstrap/playlist-toggler';
+import { BsNavbarTogglerComponent } from '@mintplayer/ng-bootstrap/navbar-toggler';
 
 describe('ToggleButtonsComponent', () => {
   let component: ToggleButtonsComponent;
@@ -12,8 +12,8 @@ describe('ToggleButtonsComponent', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [
-        MockModule(BsNavbarTogglerModule),
-        MockModule(BsPlaylistTogglerModule)
+        MockComponent(BsPlaylistTogglerComponent),
+        MockComponent(BsNavbarTogglerComponent)
       ],
       declarations: [ToggleButtonsComponent]
     });

@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AsyncHostBindingComponent, HelloComponent } from './async-host-binding.component';
 import { MockComponent, MockModule } from 'ng-mocks';
 import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
-import { BsAsyncHostBindingModule } from '@mintplayer/ng-bootstrap/async-host-binding';
+import { provideAsyncHostBindings } from '@mintplayer/ng-bootstrap/async-host-binding';
 
 describe('AsyncHostBindingComponent', () => {
   let component: AsyncHostBindingComponent;
@@ -13,11 +13,13 @@ describe('AsyncHostBindingComponent', () => {
     TestBed.configureTestingModule({
       imports: [
         MockModule(BsAlertModule),
-        MockModule(BsAsyncHostBindingModule)
       ],
       declarations: [
         AsyncHostBindingComponent,
         MockComponent(HelloComponent)
+      ],
+      providers: [
+        provideAsyncHostBindings()
       ]
     });
     fixture = TestBed.createComponent(AsyncHostBindingComponent);

@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
-import { BsRatingModule } from '@mintplayer/ng-bootstrap/rating';
-import { MockModule } from 'ng-mocks';
+import { BsRatingComponent } from '@mintplayer/ng-bootstrap/rating';
+import { MockComponent, MockModule } from 'ng-mocks';
 import { RatingComponent } from './rating.component';
 
 describe('RatingComponent', () => {
@@ -12,7 +12,7 @@ describe('RatingComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         MockModule(BsGridModule),
-        MockModule(BsRatingModule),
+        MockComponent(BsRatingComponent),
       ],
       declarations: [
         // Unit to test

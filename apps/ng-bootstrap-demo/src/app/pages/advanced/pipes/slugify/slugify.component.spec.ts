@@ -1,10 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MockModule } from 'ng-mocks';
+import { MockModule, MockPipe } from 'ng-mocks';
 import { FormsModule } from '@angular/forms';
 import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
 
 import { SlugifyComponent } from './slugify.component';
-import { BsSlugifyModule } from '@mintplayer/ng-bootstrap/slugify';
+import { BsSlugifyPipe } from '@mintplayer/ng-bootstrap/slugify';
 
 describe('SlugifyComponent', () => {
   let component: SlugifyComponent;
@@ -16,7 +16,7 @@ describe('SlugifyComponent', () => {
       imports: [
         FormsModule,
         MockModule(BsFormModule),
-        MockModule(BsSlugifyModule),
+        MockPipe(BsSlugifyPipe),
       ]
     });
     fixture = TestBed.createComponent(SlugifyComponent);

@@ -5,6 +5,7 @@ import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 
 import { TrackByComponent } from './track-by.component';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 describe('TrackByComponent', () => {
   let component: TrackByComponent;
@@ -13,6 +14,7 @@ describe('TrackByComponent', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [
+        NoopAnimationsModule,
         MockModule(BsGridModule),
         MockModule(BsListGroupModule),
         MockDirective(BsButtonTypeDirective),
