@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsTooltipModule } from '@mintplayer/ng-bootstrap/tooltip';
-import { MockModule } from 'ng-mocks';
+import { MockDirective, MockModule } from 'ng-mocks';
 import { TooltipComponent } from './tooltip.component';
 
 
@@ -15,7 +15,7 @@ describe('TooltipComponent', () => {
       imports: [
         MockModule(BsGridModule),
         MockModule(BsTooltipModule),
-        MockModule(BsButtonTypeDirective),
+        MockDirective(BsButtonTypeDirective),
       ],
       declarations: [
         // Unit to test

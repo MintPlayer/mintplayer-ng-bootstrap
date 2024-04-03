@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
-import { MockModule } from 'ng-mocks';
-import { BsHasPropertyModule } from '@mintplayer/ng-bootstrap/has-property';
+import { MockComponent, MockModule, MockPipe } from 'ng-mocks';
+import { BsHasPropertyPipe } from '@mintplayer/ng-bootstrap/has-property';
 import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
 
 import { HasPropertyComponent } from './has-property.component';
@@ -15,9 +15,9 @@ describe('HasPropertyComponent', () => {
     TestBed.configureTestingModule({
       imports: [
         FormsModule,
-        MockModule(BsHasPropertyModule),
+        MockPipe(BsHasPropertyPipe),
         MockModule(BsToggleButtonModule),
-        MockModule(BsCodeSnippetComponent),
+        MockComponent(BsCodeSnippetComponent),
       ],
       declarations: [HasPropertyComponent]
     });

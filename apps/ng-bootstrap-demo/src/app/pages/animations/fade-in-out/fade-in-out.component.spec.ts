@@ -1,4 +1,4 @@
-import { MockModule } from 'ng-mocks';
+import { MockDirective } from 'ng-mocks';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 
@@ -11,7 +11,7 @@ describe('FadeInOutComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        MockModule(BsButtonTypeDirective),
+        MockDirective(BsButtonTypeDirective),
       ],
       declarations: [
         FadeInOutComponent

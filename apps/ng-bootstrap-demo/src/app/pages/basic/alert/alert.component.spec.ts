@@ -3,10 +3,9 @@ import { FormsModule } from '@angular/forms';
 import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
-import { BsInputGroupModule } from '@mintplayer/ng-bootstrap/input-group';
-import { MockModule } from 'ng-mocks';
+import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
+import { MockComponent, MockDirective, MockModule } from 'ng-mocks';
 import { AlertComponent } from './alert.component';
-import { BsTrackByModule } from '@mintplayer/ng-bootstrap/track-by';
 
 describe('AlertComponent', () => {
   let component: AlertComponent;
@@ -18,9 +17,8 @@ describe('AlertComponent', () => {
         FormsModule,
         MockModule(BsFormModule),
         MockModule(BsAlertModule),
-        MockModule(BsInputGroupModule),
-        MockModule(BsButtonTypeDirective),
-        MockModule(BsTrackByModule),
+        MockComponent(BsInputGroupComponent),
+        MockDirective(BsButtonTypeDirective),
       ],
       declarations: [
         // Unit to test

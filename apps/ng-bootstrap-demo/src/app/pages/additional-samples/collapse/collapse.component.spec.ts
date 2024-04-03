@@ -5,7 +5,7 @@ import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsScrollspyDirective } from '@mintplayer/ng-bootstrap/scrollspy';
-import { MockDirective, MockModule } from 'ng-mocks';
+import { MockComponent, MockDirective, MockModule } from 'ng-mocks';
 
 import { CollapseComponent } from './collapse.component';
 
@@ -21,8 +21,8 @@ describe('CollapseComponent', () => {
         // Mock dependencies
         MockModule(BsGridModule),
         MockModule(BsAlertModule),
-        MockModule(BsButtonTypeDirective),
-        MockModule(BsCodeSnippetComponent),
+        MockDirective(BsButtonTypeDirective),
+        MockComponent(BsCodeSnippetComponent),
       ],
       declarations: [
         // Unit to test

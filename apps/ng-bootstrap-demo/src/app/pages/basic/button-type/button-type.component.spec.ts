@@ -1,7 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsTrackByModule } from '@mintplayer/ng-bootstrap/track-by';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
-import { MockModule } from 'ng-mocks';
+import { MockDirective } from 'ng-mocks';
 
 import { ButtonTypeComponent } from './button-type.component';
 
@@ -12,8 +11,7 @@ describe('ButtonTypeComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        MockModule(BsButtonTypeDirective),
-        MockModule(BsTrackByModule),
+        MockDirective(BsButtonTypeDirective),
       ],
       declarations: [ ButtonTypeComponent ]
     })

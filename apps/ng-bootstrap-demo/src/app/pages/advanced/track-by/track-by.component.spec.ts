@@ -1,7 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MockModule } from 'ng-mocks';
+import { MockDirective, MockModule } from 'ng-mocks';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
-import { BsTrackByModule } from '@mintplayer/ng-bootstrap/track-by';
 import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 
@@ -15,9 +14,8 @@ describe('TrackByComponent', () => {
     TestBed.configureTestingModule({
       imports: [
         MockModule(BsGridModule),
-        MockModule(BsTrackByModule),
         MockModule(BsListGroupModule),
-        MockModule(BsButtonTypeDirective),
+        MockDirective(BsButtonTypeDirective),
       ],
       declarations: [TrackByComponent]
     });

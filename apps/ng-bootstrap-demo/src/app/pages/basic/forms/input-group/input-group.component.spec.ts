@@ -1,8 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
-import { BsInputGroupModule } from '@mintplayer/ng-bootstrap/input-group';
-import { MockModule } from 'ng-mocks';
+import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
+import { MockComponent, MockDirective, MockModule } from 'ng-mocks';
 
 import { InputGroupComponent } from './input-group.component';
 
@@ -14,8 +14,8 @@ describe('InputGroupComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         MockModule(BsFormModule),
-        MockModule(BsButtonTypeDirective),
-        MockModule(BsInputGroupModule),  
+        MockDirective(BsButtonTypeDirective),
+        MockComponent(BsInputGroupComponent),  
       ],
       declarations: [ InputGroupComponent ]
     })

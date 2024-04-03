@@ -6,7 +6,7 @@ import { BsLinifyModule } from '@mintplayer/ng-bootstrap/linify';
 import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
-import { MockModule } from 'ng-mocks';
+import { MockDirective, MockModule } from 'ng-mocks';
 
 import { LinifyComponent } from './linify.component';
 
@@ -22,7 +22,7 @@ describe('LinifyComponent', () => {
         MockModule(BsGridModule),
         MockModule(BsLinifyModule),
         MockModule(BsListGroupModule),
-        MockModule(BsButtonTypeDirective),
+        MockDirective(BsButtonTypeDirective),
         MockModule(BsToggleButtonModule),
       ],
       declarations: [LinifyComponent]

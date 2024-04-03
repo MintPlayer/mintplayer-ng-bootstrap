@@ -5,7 +5,7 @@ import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsSelectModule } from '@mintplayer/ng-bootstrap/select';
 import { BsTabControlModule } from '@mintplayer/ng-bootstrap/tab-control';
 import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
-import { MockModule } from 'ng-mocks';
+import { MockDirective, MockModule } from 'ng-mocks';
 import { TabControlComponent } from './tab-control.component';
 
 describe('TabControlComponent', () => {
@@ -17,7 +17,7 @@ describe('TabControlComponent', () => {
       imports: [
         FormsModule,
         MockModule(BsTabControlModule),
-        MockModule(BsForDirective),
+        MockDirective(BsForDirective),
         MockModule(BsGridModule),
         MockModule(BsSelectModule),
         MockModule(BsToggleButtonModule),

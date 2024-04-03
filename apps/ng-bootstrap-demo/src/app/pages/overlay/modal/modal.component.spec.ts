@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsModalModule } from '@mintplayer/ng-bootstrap/modal';
-import { MockModule, MockProvider } from 'ng-mocks';
+import { MockDirective, MockModule, MockProvider } from 'ng-mocks';
 import { TagService } from '../../../services/tag/tag.service';
 import { ModalComponent } from './modal.component';
 
@@ -15,7 +15,7 @@ describe('ModalComponent', () => {
       imports: [
         MockModule(BsGridModule),
         MockModule(BsModalModule),
-        MockModule(BsButtonTypeDirective),
+        MockDirective(BsButtonTypeDirective),
       ],
       declarations: [
         // Unit to test
