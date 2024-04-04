@@ -1,9 +1,9 @@
 <div class="position-relative">
     <button #copyBtn [bsCopy]="codeToCopy" (bsCopied)="copiedHtml()" class="btn btn-link rounded-0 text-light position-absolute copy-btn">
-        Copy html
+        Copy {{ language$ | async }}
     </button>
     <pre class="white-space-normal">
-        <code class="d-block white-space-pre" [highlight]="codeToCopy" [lineNumbers]="lineNumbers" [languages]="languages ?? undefined!"></code>
+        <code class="d-block white-space-pre" [highlight]="codeToCopy" [lineNumbers]="lineNumbers" [languages]="languages ?? undefined!" (highlighted)="onHighlighted($event)"></code>
     </pre>
     <bs-offcanvas [(isVisible)]="offcanvasVisible" [position]="'bottom'">
         <div *bsOffcanvasContent class="p-3 bg-dark text-light">Copied!</div>
