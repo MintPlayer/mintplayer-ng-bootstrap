@@ -1,4 +1,3 @@
-import { Overlay } from '@angular/cdk/overlay';
 import { Component, TemplateRef } from '@angular/core';
 
 @Component({
@@ -7,5 +6,5 @@ import { Component, TemplateRef } from '@angular/core';
   styleUrl: './shell.component.scss'
 })
 export class BsShellComponent {
-  sidebarTemplate?: TemplateRef<any>;
+  sidebarTemplate: TemplateRef<any> | null = null;
 }

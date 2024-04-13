@@ -1,5 +1,9 @@
 <div>
-    <bs-has-overlay></bs-has-overlay>
+    <div class="sidebar position-fixed">
+        <div class="sidebar-body d-flex flex-column">
+            <ng-container *ngTemplateOutlet="sidebarTemplate"></ng-container>
+        </div>
+    </div>
     <div>
         <ng-content></ng-content>
     </div>

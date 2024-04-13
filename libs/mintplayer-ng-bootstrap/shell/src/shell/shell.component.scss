@@ -1,0 +1,13 @@
+.sidebar {
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 10rem;
+    z-index: 500;
+
+    .sidebar-body {
+        margin-top: 56px;
+        background: #333;
+        height: calc(100% - 56px);
+    }
+}
