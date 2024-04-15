@@ -1,4 +1,4 @@
-import { Component, TemplateRef } from '@angular/core';
+import { Component, ElementRef, TemplateRef, ViewChild } from '@angular/core';
 
 @Component({
   selector: 'bs-shell',
@@ -7,4 +7,9 @@ import { Component, TemplateRef } from '@angular/core';
 })
 export class BsShellComponent {
   sidebarTemplate: TemplateRef<any> | null = null;
+  @ViewChild('root') rootElement!: ElementRef<HTMLDivElement>;
+
+  public setSize(size: string) {
+    this.rootElement.nativeElement.style.setProperty('--size', size);
+  }
 }

@@ -1,10 +1,10 @@
-<div>
+<div class="sidebar-root" #root>
     <div class="sidebar position-fixed">
         <div class="sidebar-body d-flex flex-column">
             <ng-container *ngTemplateOutlet="sidebarTemplate"></ng-container>
         </div>
     </div>
-    <div>
+    <div class="content">
         <ng-content></ng-content>
     </div>
 </div>

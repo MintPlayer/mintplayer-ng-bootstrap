@@ -1,6 +1,8 @@
-<bs-shell>
+<bs-shell #shell>
     <div *bsShellSidebar class="text-light">
         Sidebar
     </div>
     Content
+    <br>
+    <button [color]="colors.primary" (click)="setSize(20)">Change sidebar width</button>
 </bs-shell>
