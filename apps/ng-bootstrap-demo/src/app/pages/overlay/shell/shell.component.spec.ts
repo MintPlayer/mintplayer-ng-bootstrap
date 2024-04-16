@@ -1,6 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ShellComponent } from './shell.component';
+import { MockComponent, MockDirective, MockModule } from 'ng-mocks';
+import { BsAccordionModule } from '@mintplayer/ng-bootstrap/accordion';
+import { BsButtonGroupComponent } from '@mintplayer/ng-bootstrap/button-group';
+import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
+import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
 
 describe('ShellComponent', () => {
   let component: ShellComponent;
@@ -8,7 +13,16 @@ describe('ShellComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ShellComponent]
+      imports: [
+        // Unit to test
+        ShellComponent,
+      
+        // Mock dependencies
+        MockModule(BsAccordionModule),
+        MockComponent(BsButtonGroupComponent),
+        MockDirective(BsButtonTypeDirective),
+        MockModule(BsToggleButtonModule),
+      ]
     })
     .compileComponents();
     
