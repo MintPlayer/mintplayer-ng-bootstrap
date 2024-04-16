@@ -30,8 +30,8 @@
         <button (click)="shellState = 'auto'" [color]="colors.transparent" class="w-100 text-light">Auto sidebar</button>
     </div>
 
-    <div>
-        <bs-button-group bsToggleButtonGroup #group="bsToggleButtonGroup">
+    <div class="text-center">
+        <bs-button-group bsToggleButtonGroup #group="bsToggleButtonGroup" class="mx-auto">
             <bs-toggle-button [type]="'radio_toggle_button'" [(ngModel)]="shellState" [value]="'auto'" [group]="group">Auto</bs-toggle-button>
             <bs-toggle-button [type]="'radio_toggle_button'" [(ngModel)]="shellState" [value]="'show'" [group]="group">Show</bs-toggle-button>
             <bs-toggle-button [type]="'radio_toggle_button'" [(ngModel)]="shellState" [value]="'hide'" [group]="group">Hide</bs-toggle-button>

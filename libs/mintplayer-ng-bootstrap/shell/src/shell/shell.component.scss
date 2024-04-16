@@ -56,9 +56,9 @@
         }
     }
 
-    .content {
-        padding-left: var(--size);
-    }
+    // .content {
+    //     padding-left: var(--size);
+    // }
 
     @each $name, $value in $grid-breakpoints {
         &.shell-#{$name} {
