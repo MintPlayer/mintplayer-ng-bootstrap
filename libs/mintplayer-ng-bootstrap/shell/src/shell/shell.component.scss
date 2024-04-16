@@ -41,6 +41,8 @@
         left: 0;
         width: var(--size);
         z-index: 500;
+        transition: margin-left 0.3s, width 0.3s;
+        // transition: width 0.3s ease-in-out;
 
         .sidebar-body {
             margin-top: 56px;
