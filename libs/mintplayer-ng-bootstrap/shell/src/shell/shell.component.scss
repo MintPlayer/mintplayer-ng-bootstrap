@@ -55,8 +55,8 @@
         padding-left: var(--size);
     }
 
-    &.show {
-        @each $name, $value in $grid-breakpoints {
+    @each $name, $value in $grid-breakpoints {
+        &.show {
             @include media-breakpoint-down($name, $grid-breakpoints) {
                 @include sidebar-show-narrow();
             }
@@ -64,9 +64,7 @@
                 @include sidebar-show-wide();
             }
         }
-    }
-    &.hide {
-        @each $name, $value in $grid-breakpoints {
+        &.hide {
             @include media-breakpoint-down($name, $grid-breakpoints) {
                 @include sidebar-hide-narrow();
             }
@@ -74,9 +72,7 @@
                 @include sidebar-hide-wide();
             }
         }
-    }
-    &:not(.show):not(.hide) {
-        @each $name, $value in $grid-breakpoints {
+        &:not(.show):not(.hide) {
             @include media-breakpoint-down($name, $grid-breakpoints) {
                 @include sidebar-hide-narrow();
             }

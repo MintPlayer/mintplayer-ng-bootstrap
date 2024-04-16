@@ -1,4 +1,4 @@
-<div class="sidebar-root" [class]="stateClass$ | async" #root>
+<div class="sidebar-root" [class]="[stateClass$ | async, breakpointClass$ | async]" #root>
     <div class="sidebar position-fixed">
         <div class="sidebar-body d-flex flex-column">
             <ng-container *ngTemplateOutlet="sidebarTemplate"></ng-container>

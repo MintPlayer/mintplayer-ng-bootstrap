@@ -1,6 +1,7 @@
 import { Component, ElementRef, Input, TemplateRef, ViewChild } from '@angular/core';
 import { BehaviorSubject, Observable, map } from 'rxjs';
 import { BsShellState } from '../shell-state';
+import { Breakpoint } from '@mintplayer/ng-bootstrap';
 
 @Component({
   selector: 'bs-shell',
@@ -13,6 +14,7 @@ export class BsShellComponent {
       if (state === 'auto') return null;
       else return state;
     }));
+    this.breakpointClass$ = this.breakpoint$.pipe(map(breakpoint => `shell-${breakpoint}`));
   }
 
   sidebarTemplate: TemplateRef<any> | null = null;
@@ -22,8 +24,14 @@ export class BsShellComponent {
     this.state$.next(value);
   }
 
+  @Input() set breakpoint(value: Breakpoint) {
+    this.breakpoint$.next(value);
+  }
+
   state$ = new BehaviorSubject<BsShellState>('auto');
+  breakpoint$ = new BehaviorSubject<Breakpoint>('md');
   stateClass$: Observable<string | null>;
+  breakpointClass$: Observable<string>;
 
   public setSize(size: string) {
     this.rootElement.nativeElement.style.setProperty('--size', size);
