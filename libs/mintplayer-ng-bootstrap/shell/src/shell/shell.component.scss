@@ -5,6 +5,7 @@
 
 // Force hide sidebar in wide mode
 @mixin sidebar-hide-wide {
+    margin-left: 0;
     .sidebar {
         width: var(--size);
         margin-left: calc(-1 * var(--size));
@@ -12,6 +13,7 @@
 }
 
 @mixin sidebar-hide-narrow {
+    margin-left: 0;
     .sidebar {
         width: 100%;
         margin-left: -100%;
@@ -19,6 +21,7 @@
 }
 
 @mixin sidebar-show-wide {
+    margin-left: var(--size);
     .sidebar {
         width: var(--size);
         margin-left: 0;
@@ -26,6 +29,7 @@
 }
 
 @mixin sidebar-show-narrow {
+    margin-left: 0;
     .sidebar {
         width: 100%;
         margin-left: 0;
@@ -34,6 +38,7 @@
 
 .sidebar-root {
     --size: 15rem;
+    transition: margin-left .3s ease-in-out;
 
     .sidebar {
         top: 0;
