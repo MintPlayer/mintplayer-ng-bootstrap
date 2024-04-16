@@ -1,10 +1,44 @@
+@import "../../../../../node_modules/bootstrap/scss/functions";
+@import "../../../../../node_modules/bootstrap/scss/variables";
+@import "../../../../../node_modules/bootstrap/scss/mixins/breakpoints";
+
+
+// Force hide sidebar in wide mode
+@mixin sidebar-hide-wide {
+    .sidebar {
+        width: var(--size);
+        margin-left: calc(-1 * var(--size));
+    }
+}
+
+@mixin sidebar-hide-narrow {
+    .sidebar {
+        width: 100%;
+        margin-left: -100%;
+    }
+}
+
+@mixin sidebar-show-wide {
+    .sidebar {
+        width: var(--size);
+        margin-left: 0;
+    }
+}
+
+@mixin sidebar-show-narrow {
+    .sidebar {
+        width: 100%;
+        margin-left: 0;
+    }
+}
+
 .sidebar-root {
     --size: 15rem;
 
     .sidebar {
-        left: 0;
         top: 0;
         bottom: 0;
+        left: 0;
         width: var(--size);
         z-index: 500;
 
@@ -18,4 +52,43 @@
     .content {
         padding-left: var(--size);
     }
+
+    &.show {
+        @each $name, $value in $grid-breakpoints {
+            @include media-breakpoint-down($name, $grid-breakpoints) {
+                @include sidebar-show-narrow();
+            }
+            @include media-breakpoint-up($name, $grid-breakpoints) {
+                @include sidebar-show-wide();
+            }
+        }
+    }
+    &.hide {
+        @each $name, $value in $grid-breakpoints {
+            @include media-breakpoint-down($name, $grid-breakpoints) {
+                @include sidebar-hide-narrow();
+            }
+            @include media-breakpoint-up($name, $grid-breakpoints) {
+                @include sidebar-hide-wide();
+            }
+        }
+    }
+    &:not(.show):not(.hide) {
+        @each $name, $value in $grid-breakpoints {
+            @include media-breakpoint-down($name, $grid-breakpoints) {
+                @include sidebar-hide-narrow();
+            }
+            @include media-breakpoint-up($name, $grid-breakpoints) {
+                @include sidebar-show-wide();
+            }
+        }
+    }
+
+    // @each $name, $value in $grid-breakpoints {
+    //     @include media-breakpoint-up($name, $grid-breakpoints) {
+    //         &.sidebar-#{$name} {
+
+    //         }
+    //     }
+    // }
 }
