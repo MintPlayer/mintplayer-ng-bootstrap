@@ -1,8 +1,15 @@
-<bs-shell #shell>
+<bs-shell [state]="shellState" #shell>
     <div *bsShellSidebar class="text-light">
         Sidebar
     </div>
-    Content
-    <br>
-    <button [color]="colors.primary" (click)="setSize(20)">Change sidebar width</button>
+
+    <div>
+        <bs-button-group bsToggleButtonGroup #group="bsToggleButtonGroup">
+            <bs-toggle-button [type]="'radio_toggle_button'" [(ngModel)]="shellState" [value]="'auto'" [group]="group">Auto</bs-toggle-button>
+            <bs-toggle-button [type]="'radio_toggle_button'" [(ngModel)]="shellState" [value]="'show'" [group]="group">Show</bs-toggle-button>
+            <bs-toggle-button [type]="'radio_toggle_button'" [(ngModel)]="shellState" [value]="'hide'" [group]="group">Hide</bs-toggle-button>
+        </bs-button-group>
+        <br>
+        <button [color]="colors.primary" (click)="setSize(20)">Change sidebar width</button>
+    </div>
 </bs-shell>
