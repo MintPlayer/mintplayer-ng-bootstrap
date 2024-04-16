@@ -56,28 +56,30 @@
     }
 
     @each $name, $value in $grid-breakpoints {
-        &.show {
-            @include media-breakpoint-down($name, $grid-breakpoints) {
-                @include sidebar-show-narrow();
+        &.shell-#{$name} {
+            &.show {
+                @include media-breakpoint-down($name, $grid-breakpoints) {
+                    @include sidebar-show-narrow();
+                }
+                @include media-breakpoint-up($name, $grid-breakpoints) {
+                    @include sidebar-show-wide();
+                }
             }
-            @include media-breakpoint-up($name, $grid-breakpoints) {
-                @include sidebar-show-wide();
+            &.hide {
+                @include media-breakpoint-down($name, $grid-breakpoints) {
+                    @include sidebar-hide-narrow();
+                }
+                @include media-breakpoint-up($name, $grid-breakpoints) {
+                    @include sidebar-hide-wide();
+                }
             }
-        }
-        &.hide {
-            @include media-breakpoint-down($name, $grid-breakpoints) {
-                @include sidebar-hide-narrow();
-            }
-            @include media-breakpoint-up($name, $grid-breakpoints) {
-                @include sidebar-hide-wide();
-            }
-        }
-        &:not(.show):not(.hide) {
-            @include media-breakpoint-down($name, $grid-breakpoints) {
-                @include sidebar-hide-narrow();
-            }
-            @include media-breakpoint-up($name, $grid-breakpoints) {
-                @include sidebar-show-wide();
+            &:not(.show):not(.hide) {
+                @include media-breakpoint-down($name, $grid-breakpoints) {
+                    @include sidebar-hide-narrow();
+                }
+                @include media-breakpoint-up($name, $grid-breakpoints) {
+                    @include sidebar-show-wide();
+                }
             }
         }
     }
