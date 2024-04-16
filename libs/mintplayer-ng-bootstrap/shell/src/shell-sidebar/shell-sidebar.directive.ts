@@ -12,10 +12,4 @@ export class BsShellSidebarDirective {
     shell.sidebarTemplate = template;
   }
 
-  // ngAfterViewInit() {
-  //   const portal = new TemplatePortal(this.template, this.vcRef);
-  //   const overlay = this.overlayService.create({});
-  //   const viewRef = overlay.attach(portal);
-  // }
-
 }
