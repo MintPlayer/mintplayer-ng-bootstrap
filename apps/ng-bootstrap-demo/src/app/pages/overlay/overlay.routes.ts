@@ -10,5 +10,6 @@ export const ROUTES: Routes = [
   { path: 'multiselect-dropdown', loadComponent: () => import('./multiselect-dropdown/multiselect-dropdown.component').then(m => m.MultiselectDropdownComponent) },
   { path: 'offcanvas', loadComponent: () => import('./offcanvas/offcanvas.component').then(m => m.OffcanvasComponent) },
   { path: 'popover', loadComponent: () => import('./popover/popover.component').then(m => m.PopoverComponent) },
-  { path: 'toast', loadComponent: () => import('./toast/toast.component').then(m => m.ToastComponent) }
+  { path: 'toast', loadComponent: () => import('./toast/toast.component').then(m => m.ToastComponent) },
+  { path: 'shell', loadComponent: () => import('./shell/shell.component').then(m => m.ShellComponent) },
 ];

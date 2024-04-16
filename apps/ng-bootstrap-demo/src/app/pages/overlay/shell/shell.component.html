@@ -1,0 +1,42 @@
+<bs-shell [state]="shellState" [breakpoint]="'md'" #shell>
+    <div *bsShellSidebar class="text-light">
+        <bs-accordion>
+            <bs-accordion-tab>
+                <bs-accordion-tab-header>Receipes</bs-accordion-tab-header>
+                <span class="d-block p-3">Apple pie</span>
+                <span class="d-block p-3">Raspberry pie</span>
+            </bs-accordion-tab>
+            <bs-accordion-tab>
+                <bs-accordion-tab-header>Menus</bs-accordion-tab-header>
+                <span class="d-block p-3">Christmas</span>
+                <span class="d-block p-3">Easter</span>
+            </bs-accordion-tab>
+            <bs-accordion-tab>
+                <bs-accordion-tab-header>Social</bs-accordion-tab-header>
+                <bs-accordion class="d-block">
+                    <bs-accordion-tab>
+                        <bs-accordion-tab-header>Forum</bs-accordion-tab-header>
+                        <span class="d-block p-3">All posts</span>
+                        <span class="d-block p-3">Create post</span>
+                    </bs-accordion-tab>
+                    <bs-accordion-tab>
+                        <bs-accordion-tab-header>Blog</bs-accordion-tab-header>
+                        <span class="d-block p-3">All posts</span>
+                        <span class="d-block p-3">Create post</span>
+                    </bs-accordion-tab>
+                </bs-accordion>
+            </bs-accordion-tab>
+        </bs-accordion>
+        <button (click)="shellState = 'auto'" [color]="colors.transparent" class="w-100 text-light">Auto sidebar</button>
+    </div>
+
+    <div>
+        <bs-button-group bsToggleButtonGroup #group="bsToggleButtonGroup">
+            <bs-toggle-button [type]="'radio_toggle_button'" [(ngModel)]="shellState" [value]="'auto'" [group]="group">Auto</bs-toggle-button>
+            <bs-toggle-button [type]="'radio_toggle_button'" [(ngModel)]="shellState" [value]="'show'" [group]="group">Show</bs-toggle-button>
+            <bs-toggle-button [type]="'radio_toggle_button'" [(ngModel)]="shellState" [value]="'hide'" [group]="group">Hide</bs-toggle-button>
+        </bs-button-group>
+        <br>
+        <button [color]="colors.primary" (click)="setSize(20)">Change sidebar width</button>
+    </div>
+</bs-shell>
