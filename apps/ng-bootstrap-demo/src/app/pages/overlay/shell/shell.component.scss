@@ -1,0 +1,8 @@
+$margin: 59px;
+
+::ng-deep {
+    .sidebar-body {
+        margin-top: $margin;
+        height: calc(100% - $margin);
+    }
+}

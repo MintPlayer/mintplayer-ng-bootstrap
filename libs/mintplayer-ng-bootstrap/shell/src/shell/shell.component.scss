@@ -36,6 +36,10 @@
     }
 }
 
+.pe-all {
+    pointer-events: all !important;
+}
+
 .sidebar-root {
     --size: 15rem;
     transition: margin-left .3s ease-in-out;
@@ -50,9 +54,7 @@
         // transition: width 0.3s ease-in-out;
 
         .sidebar-body {
-            margin-top: 59px;
             background: #333;
-            height: calc(100% - 59px);
         }
     }
 
