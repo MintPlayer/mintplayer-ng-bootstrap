@@ -1,40 +1,66 @@
 $glyph-size: 8px;
+$thumb-size: 14px;
 
 .glyph {
+    &::before {
+        content: '';
+        width: $glyph-size;
+        height: $glyph-size;
+        display: block;
+        border-radius: calc($glyph-size / 2);
+        transition: background-color .2s ease-in-out;
+    }
+    
     position: absolute;
-    width: $glyph-size;
-    height: $glyph-size;
-    transition: background-color .2s ease-in-out;
-    border-radius: calc($glyph-size / 2);
+    width: $thumb-size;
+    height: $thumb-size;
     z-index: 20;
 
     &.top {
-        top: calc($glyph-size / -2);
+        top: calc($thumb-size / -2);
     }
     &.start {
-        left: calc($glyph-size / -2);
+        left: calc($thumb-size / -2);
     }
     &.bottom {
-        bottom: calc($glyph-size / -2);
+        bottom: calc($thumb-size / -2);
     }
     &.end {
-        right: calc($glyph-size / -2);
+        right: calc($thumb-size / -2);
     }
 
     &.start, &.end {
         &:not(.top):not(.bottom) {
             top: calc($glyph-size / 2);
             height: calc(100% - $glyph-size);
+
+            &::before {
+                display: block;
+                height: 100%;
+            }
+        }
+        &::before {
+            margin-left: ($thumb-size - $glyph-size) / 2;
+            margin-right: ($thumb-size - $glyph-size) / 2;
         }
     }
     &.top, &.bottom {
         &:not(.start):not(.end) {
             left: calc($glyph-size / 2);
             width: calc(100% - $glyph-size);
+
+            &::before {
+                display: block;
+                width: 100%;
+            }
+        }
+        &::before {
+            margin-top: ($thumb-size - $glyph-size) / 2;
+            margin-bottom: ($thumb-size - $glyph-size) / 2;
         }
     }
 
-    &:hover, &.active {
+    &:hover::before, &.active::before {
         background-color: #1389FD;
     }
 }
