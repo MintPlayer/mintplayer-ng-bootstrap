@@ -1,0 +1,8 @@
+<bs-form-check>
+    <label>
+        <input #checkbox class="btn-check" type="radio" [name]="nameResult$ | async">
+        <span class="btn btn-secondary">
+            <ng-content></ng-content>
+        </span>
+    </label>
+</bs-form-check>
