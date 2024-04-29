@@ -31,7 +31,7 @@ export class BsGridColumnDirective {
       });
   }
 
-  // private customColClasses$ = new BehaviorSubject<[col]Definition | '' | undefined>(undefined);
+  // private customColClasses$ = new BehaviorSubject<BsColumnDefinition | '' | undefined>(undefined);
   @HostBinding('class') classList: string | null = null
 
   xxs$ = new BehaviorSubject<number | undefined>(undefined);
