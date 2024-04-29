@@ -4,13 +4,13 @@
     <div bsRow>
         <div [sm]="1">Settings</div>
         <div [sm]="3">
-            <bs-toggle-button [type]="'checkbox'" [(ngModel)]="isAllDisabled" [name]="'disableAll'">Disable all</bs-toggle-button>
+            <bs-checkbox [(ngModel)]="isAllDisabled" [name]="'disableAll'">Disable all</bs-checkbox>
         </div>
         <div [sm]="3">
-            <bs-toggle-button [type]="'checkbox'" [(ngModel)]="isHstsEnabled" [disabled]="isAllDisabled" [name]="'isHstsEnabled'">Enable HSTS</bs-toggle-button>
+            <bs-checkbox [(ngModel)]="isHstsEnabled" [disabled]="isAllDisabled" [name]="'isHstsEnabled'">Enable HSTS</bs-checkbox>
         </div>
         <div [sm]="3">
-            <bs-toggle-button [type]="'checkbox'" [(ngModel)]="isCrossPlatform" [disabled]="isAllDisabled" [name]="'isCrossPlatform'">Cross-platform</bs-toggle-button>
+            <bs-checkbox [(ngModel)]="isCrossPlatform" [disabled]="isAllDisabled" [name]="'isCrossPlatform'">Cross-platform</bs-checkbox>
         </div>
         <div [sm]="2">
             HSTS: {{ isHstsEnabled | json }}
@@ -21,16 +21,16 @@
 </bs-grid>
 <h2>Checkbox (multi)</h2>
 <bs-grid>
-    <div bsRow bsToggleButtonGroup #group="bsToggleButtonGroup">
+    <div bsRow bsCheckGroup [name]="'favoriteColors'">
         <div [sm]="2">Favorite colors</div>
         <div [sm]="3">
-            <bs-toggle-button [type]="'checkbox'" [(ngModel)]="favoriteColors" [disabled]="isAllDisabled" [name]="'favoriteColors1'" [value]="'pink'" [group]="group">Pink</bs-toggle-button>
+            <bs-checkbox [(ngModel)]="favoriteColors" [disabled]="isAllDisabled" [value]="'pink'">Pink</bs-checkbox>
         </div>
         <div [sm]="3">
-            <bs-toggle-button [type]="'checkbox'" [(ngModel)]="favoriteColors" [disabled]="isAllDisabled" [name]="'favoriteColors1'" [value]="'blue'" [group]="group">Blue</bs-toggle-button>
+            <bs-checkbox [(ngModel)]="favoriteColors" [disabled]="isAllDisabled" [value]="'blue'">Blue</bs-checkbox>
         </div>
         <div [sm]="3">
-            <bs-toggle-button [type]="'checkbox'" [(ngModel)]="favoriteColors" [disabled]="isAllDisabled" [name]="'favoriteColors1'" [value]="'orange'" [group]="group">Orange</bs-toggle-button>
+            <bs-checkbox [(ngModel)]="favoriteColors" [disabled]="isAllDisabled" [value]="'orange'">Orange</bs-checkbox>
         </div>
         <div [sm]="1">
             {{ favoriteColors | json }}
@@ -39,16 +39,16 @@
 </bs-grid>
 <h2>Toggle button</h2>
 <bs-grid>
-    <div bsRow bsToggleButtonGroup #group="bsToggleButtonGroup">
+    <div bsRow bsCheckGroup [name]="'favoriteColors2'">
         <div [sm]="2">Favorite colors</div>
         <div [sm]="3">
-            <bs-toggle-button [type]="'toggle_button'" [(ngModel)]="favoriteColors" [disabled]="isAllDisabled" [name]="'favoriteColors2'" [value]="'pink'" [group]="group">Pink</bs-toggle-button>
+            <bs-toggle-button [(ngModel)]="favoriteColors" [disabled]="isAllDisabled" [value]="'pink'">Pink</bs-toggle-button>
         </div>
         <div [sm]="3">
-            <bs-toggle-button [type]="'toggle_button'" [(ngModel)]="favoriteColors" [disabled]="isAllDisabled" [name]="'favoriteColors2'" [value]="'blue'" [group]="group">Blue</bs-toggle-button>
+            <bs-toggle-button [(ngModel)]="favoriteColors" [disabled]="isAllDisabled" [value]="'blue'">Blue</bs-toggle-button>
         </div>
         <div [sm]="3">
-            <bs-toggle-button [type]="'toggle_button'" [(ngModel)]="favoriteColors" [disabled]="isAllDisabled" [name]="'favoriteColors2'" [value]="'orange'" [group]="group">Orange</bs-toggle-button>
+            <bs-toggle-button [(ngModel)]="favoriteColors" [disabled]="isAllDisabled" [value]="'orange'">Orange</bs-toggle-button>
         </div>
         <div [sm]="1">
             {{ favoriteColors | json }}
@@ -57,32 +57,32 @@
 </bs-grid>
 <h2>Switch</h2>
 <bs-grid>
-    <div bsRow bsToggleButtonGroup #group="bsToggleButtonGroup">
+    <div bsRow bsCheckGroup [name]="'favoriteColors3'">
         <div [sm]="2">Favorite colors</div>
         <div [sm]="3">
-            <bs-toggle-button [type]="'switch'" [(ngModel)]="favoriteColors" [disabled]="isAllDisabled" [name]="'favoriteColors3'" [value]="'pink'" [group]="group">Pink</bs-toggle-button>
+            <bs-switch [(ngModel)]="favoriteColors" [disabled]="isAllDisabled" [value]="'pink'">Pink</bs-switch>
         </div>
         <div [sm]="3">
-            <bs-toggle-button [type]="'switch'" [(ngModel)]="favoriteColors" [disabled]="isAllDisabled" [name]="'favoriteColors3'" [value]="'blue'" [group]="group">Blue</bs-toggle-button>
+            <bs-switch [(ngModel)]="favoriteColors" [disabled]="isAllDisabled" [value]="'blue'">Blue</bs-switch>
         </div>
         <div [sm]="3">
-            <bs-toggle-button [type]="'switch'" [(ngModel)]="favoriteColors" [disabled]="isAllDisabled" [name]="'favoriteColors3'" [value]="'orange'" [group]="group">Orange</bs-toggle-button>
+            <bs-switch [(ngModel)]="favoriteColors" [disabled]="isAllDisabled" [value]="'orange'">Orange</bs-switch>
         </div>
         <div [sm]="1"></div>
     </div>
 </bs-grid>
 <h2>Radio</h2>
 <bs-grid>
-    <div bsRow>
+    <div bsRow bsCheckGroup [name]="'theme1'">
         <div [sm]="2">Theme</div>
         <div [sm]="3">
-            <bs-toggle-button [type]="'radio'" [name]="'theme1'" [value]="'light'" [(ngModel)]="theme" [disabled]="isAllDisabled">Light</bs-toggle-button>
+            <bs-radio-button [value]="'light'" [(ngModel)]="theme" [disabled]="isAllDisabled">Light</bs-radio-button>
         </div>
         <div [sm]="3">
-            <bs-toggle-button [type]="'radio'" [name]="'theme1'" [value]="'dark'" [(ngModel)]="theme" [disabled]="isAllDisabled">Dark</bs-toggle-button>
+            <bs-radio-button [value]="'dark'" [(ngModel)]="theme" [disabled]="isAllDisabled">Dark</bs-radio-button>
         </div>
         <div [sm]="3">
-            <bs-toggle-button [type]="'radio'" [name]="'theme1'" [value]="'contrast'" [(ngModel)]="theme" [disabled]="isAllDisabled">Contrast</bs-toggle-button>
+            <bs-radio-button [value]="'contrast'" [(ngModel)]="theme" [disabled]="isAllDisabled">Contrast</bs-radio-button>
         </div>
         <div [sm]="1">
             {{ theme | json }}
@@ -91,16 +91,16 @@
 </bs-grid>
 <h2>Radio toggle button</h2>
 <bs-grid>
-    <div bsRow>
+    <div bsRow bsCheckGroup [name]="'theme2'">
         <div [sm]="2">Theme</div>
         <div [sm]="3">
-            <bs-toggle-button [type]="'radio_toggle_button'" [(ngModel)]="theme" [disabled]="isAllDisabled" [name]="'theme2'" [value]="'light'">Light</bs-toggle-button>
+            <bs-radio-toggle-button [(ngModel)]="theme" [disabled]="isAllDisabled" [value]="'light'">Light</bs-radio-toggle-button>
         </div>
         <div [sm]="3">
-            <bs-toggle-button [type]="'radio_toggle_button'" [(ngModel)]="theme" [disabled]="isAllDisabled" [name]="'theme2'" [value]="'dark'">Dark</bs-toggle-button>
+            <bs-radio-toggle-button [(ngModel)]="theme" [disabled]="isAllDisabled" [value]="'dark'">Dark</bs-radio-toggle-button>
         </div>
         <div [sm]="3">
-            <bs-toggle-button [type]="'radio_toggle_button'" [(ngModel)]="theme" [disabled]="isAllDisabled" [name]="'theme2'" [value]="'contrast'">Contrast</bs-toggle-button>
+            <bs-radio-toggle-button [(ngModel)]="theme" [disabled]="isAllDisabled" [value]="'contrast'">Contrast</bs-radio-toggle-button>
         </div>
         <div [sm]="1">
             {{ theme | json }}

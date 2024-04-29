@@ -1,1 +1,1 @@
-export * from './src/form-check.component';
+export * from './src/radio-button.component';

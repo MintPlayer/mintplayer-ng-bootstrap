@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, HostBinding, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BsFormCheckComponent } from '@mintplayer/ng-bootstrap/form-check';
 import { BsCheckGroupDirective } from '@mintplayer/ng-bootstrap/check-group/src/check-group.directive';
@@ -20,6 +20,7 @@ export class BsRadioToggleButtonComponent {
   
   group$ = new BehaviorSubject<BsCheckGroupDirective | undefined>(undefined);
   nameResult$: Observable<string | undefined>;
+  @HostBinding('class.d-inline-block') dInlineBlockClass = true;
 
   //#region value
   value$ = new BehaviorSubject<string | null>(null);

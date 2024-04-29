@@ -1,1 +1,1 @@
-export * from './src/form-check.component';
+export * from './src/switch.component';

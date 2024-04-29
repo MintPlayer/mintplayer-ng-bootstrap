@@ -1,8 +1,8 @@
-<bs-form-check></bs-form-check>
-
-<label [class]="mainCheckStyle$ | async" [class.form-switch]="isSwitch$ | async">
-    <input #checkbox [class]="inputClass$ | async" [type]="checkOrRadio$ | async" [name]="nameResult$ | async" [value]="value$ | async">
-    <span [class]="labelClass$ | async">
-        <ng-content></ng-content>
-    </span>
-</label>
+<bs-form-check>
+    <label>
+        <input #checkbox class="btn-check" type="checkbox" [name]="nameResult$ | async">
+        <span class="btn btn-primary">
+            <ng-content></ng-content>
+        </span>
+    </label>
+</bs-form-check>

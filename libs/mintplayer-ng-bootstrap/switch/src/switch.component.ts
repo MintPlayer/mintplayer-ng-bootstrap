@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, HostBinding, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BsFormCheckComponent } from '@mintplayer/ng-bootstrap/form-check';
 import { BehaviorSubject, Observable, combineLatest, map } from 'rxjs';
@@ -22,6 +22,7 @@ export class BsSwitchComponent {
   group$ = new BehaviorSubject<BsCheckGroupDirective | undefined>(undefined);
   name$ = new BehaviorSubject<string | undefined>(undefined);
   nameResult$: Observable<string | undefined>;
+  @HostBinding('class.d-inline-block') dInlineBlockClass = true;
 
   @Input() public set name(value: string | undefined) {
     this.name$.next(value);
