@@ -1,12 +1,12 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ObserveSizeDirective } from '@mintplayer/ng-bootstrap/observe-size';
-import { BsPrioNavDirective } from './prio-nav.directive';
+import { BsObserveSizeDirective } from '@mintplayer/ng-bootstrap/observe-size';
+import { BsPrioNavComponent } from './component/prio-nav.component';
 import { BsPrioNavElementDirective } from './prio-nav-element.directive';
 
 @NgModule({
-  declarations: [BsPrioNavDirective, BsPrioNavElementDirective],
-  imports: [CommonModule, ObserveSizeDirective],
-  exports: [BsPrioNavDirective, BsPrioNavElementDirective],
+  declarations: [BsPrioNavComponent, BsPrioNavElementDirective],
+  imports: [CommonModule, BsObserveSizeDirective],
+  exports: [BsPrioNavComponent, BsPrioNavElementDirective],
 })
 export class BsPrioNavModule { }

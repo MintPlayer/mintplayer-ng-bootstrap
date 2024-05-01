@@ -6,7 +6,7 @@ import { BehaviorSubject } from 'rxjs';
   standalone: true,
   exportAs: 'bsObserveSize'
 })
-export class ObserveSizeDirective implements AfterViewInit, OnDestroy {
+export class BsObserveSizeDirective implements AfterViewInit, OnDestroy {
   constructor(private element: ElementRef) {
     this.observer = new ResizeObserver((entries) => {
       const size = entries[0].contentRect;
@@ -20,6 +20,7 @@ export class ObserveSizeDirective implements AfterViewInit, OnDestroy {
   height$ = new BehaviorSubject<number | undefined>(undefined);
 
   ngAfterViewInit() {
+    console.log('element', this.element);
     this.observer.observe(this.element.nativeElement);
   }
 

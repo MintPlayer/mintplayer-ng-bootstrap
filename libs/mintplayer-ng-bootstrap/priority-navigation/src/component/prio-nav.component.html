@@ -1,0 +1,5 @@
+@for (el of (elements$ | async); track el) {
+    <div class="d-inline-block" bsObserveSize>
+        <ng-container *ngTemplateOutlet="el.template"></ng-container>
+    </div>
+}

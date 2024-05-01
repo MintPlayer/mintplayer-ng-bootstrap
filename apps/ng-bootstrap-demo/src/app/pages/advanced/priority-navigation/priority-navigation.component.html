@@ -1,6 +1,6 @@
 <h1 class="text-center">Priority navigation</h1>
-<div bsPrioNav class="d-block">
+<bs-prio-nav>
     @for (element of elements; track $index) {
-        <div bsPrioNavElement class="p-2">{{ element }}</div>
+        <div *bsPrioNavElement class="p-2">{{ element }}</div>
     }
-</div>
+</bs-prio-nav>
