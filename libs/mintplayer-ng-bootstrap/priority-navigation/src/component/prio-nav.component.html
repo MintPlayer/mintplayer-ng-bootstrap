@@ -4,6 +4,15 @@
     </div>
 }
 
-<div class="d-inline-block float-end">
-    <ng-container *ngTemplateOutlet="overflowButtonTemplate"></ng-container>
-</div>
+<ng-container bsDropdown>
+    <div class="d-inline-block float-end" bsDropdownToggle>
+        <ng-container *ngTemplateOutlet="overflowButtonTemplate; context: { isOverflown: false }"></ng-container>
+    </div>
+    <bs-dropdown-menu *bsDropdownMenu>
+        @for (el of (elements$ | async); track el) {
+            <bs-dropdown-item>
+                <ng-container *ngTemplateOutlet="el.template; context: { isOverflown: true }"></ng-container>
+            </bs-dropdown-item>
+        }
+    </bs-dropdown-menu>
+</ng-container>

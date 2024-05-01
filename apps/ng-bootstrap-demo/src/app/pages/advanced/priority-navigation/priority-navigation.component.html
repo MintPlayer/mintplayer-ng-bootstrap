@@ -2,7 +2,13 @@
 <div class="bg-dark text-light">
     <bs-prio-nav>
         @for (element of elements; track $index) {
-            <button *bsPrioNavElement [color]="colors.transparent" class="text-light p-2">{{ element }}</button>
+            <ng-container *bsPrioNavElement="let isOverflown=isOverflown">
+                @if (isOverflown) {
+                    <span>{{ element }}</span>
+                } @else {
+                    <button [color]="colors.transparent" class="text-light p-2">{{ element }}</button>
+                }
+            </ng-container>
         }
 
         <button *bsPrioNavButton [color]="colors.transparent" class="text-light">...</button>

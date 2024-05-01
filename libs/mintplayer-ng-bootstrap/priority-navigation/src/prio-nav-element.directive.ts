@@ -10,4 +10,13 @@ export class BsPrioNavElementDirective {
   }
 
   template: TemplateRef<any>;
+  
+  public static ngTemplateContextGuard(dir: BsPrioNavElementDirective, ctx: any)
+    : ctx is BsPrioNavElementContext {
+      return true;
+    }
+}
+
+export class BsPrioNavElementContext {
+  isOverflown: boolean = null!;
 }
