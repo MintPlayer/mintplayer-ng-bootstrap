@@ -18,15 +18,11 @@ export class BsPrioNavComponent {
       .pipe(map(o => o.map(dir => dir.width$)))
       .pipe(switchMap(o => combineLatest(o)))
       .pipe(map(w => w.map(x => x || 0)))
-      .pipe(map(w => w.reduce((acc, curr) => acc + curr, 0)));
+      .pipe(map(w => w.reduce((acc: number[], curr: number) => [...acc, acc.reduce((s, c) => s + c, 0) + curr], [])));
 
     obs$.pipe(takeUntilDestroyed()).subscribe((x) => {
       console.log(x);
     });
-
-
-    // this.observers$
-    //   .pipe(map((all, index) => all.slice(0, index)));
   }
 
   @HostBinding('class.d-block')
@@ -45,36 +41,7 @@ export class BsPrioNavComponent {
   @ViewChildren('observers') set observers(value: QueryList<BsObserveSizeDirective>) {
     console.warn('set', value);
     this.observers$.next(value.toArray());
-
-    // of(value.map(o => o.width$))
-    //   .pipe(switchMap(o => o))
-    //   .pipe(switchMap(o => o))
-    //   .pipe(reduce((sum, current) => sum + (current ?? 0), 0))
   }
 
   observers$ = new BehaviorSubject<BsObserveSizeDirective[]>([]);
-  // rightBounds$: Observable<number[]>;
 }
-
-// interface Product {
-//   name: string;
-//   price: number;
-// }
-
-    // const w1$ = new BehaviorSubject(1);
-    // const w2$ = new BehaviorSubject(2);
-    // const w3$ = new BehaviorSubject(3);
-    // const w4$ = new BehaviorSubject(4);
-    // combineLatest([w1$, w2$, w3$, w4$])
-    //   .pipe(map(([w1, w2, w3, w4]) => [w1, w2, w3, w4]))
-    //   .pipe(reduce((sum, current) => 1, 0));
-
-    // const products: Product[] = [
-    //   { name: 'a', price: 1 },
-    //   { name: 'b', price: 2 },
-    //   { name: 'c', price: 3 },
-    //   { name: 'd', price: 4 },
-    // ];
-
-    // const checkout = from(products)
-    //   .pipe(reduce((acc, currentProduct) => acc + currentProduct.price, 0));
