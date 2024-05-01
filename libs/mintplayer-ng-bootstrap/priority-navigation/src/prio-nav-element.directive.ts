@@ -18,5 +18,6 @@ export class BsPrioNavElementDirective {
 }
 
 export class BsPrioNavElementContext {
+  /** Indicates if the item is in the dropdown. */
   isOverflown: boolean = null!;
 }

@@ -20,7 +20,6 @@ export class BsObserveSizeDirective implements AfterViewInit, OnDestroy {
   height$ = new BehaviorSubject<number | undefined>(undefined);
 
   ngAfterViewInit() {
-    console.log('element', this.element);
     this.observer.observe(this.element.nativeElement);
   }
 

@@ -32,6 +32,6 @@ export const config: ApplicationConfig = {
         },
         { provide: 'GIT_REPO', useValue: 'https://github.com/MintPlayer/mintplayer-ng-bootstrap/tree/master/apps/ng-bootstrap-demo/src/app/' },
         { provide: 'BOOTSTRAP_VERSION', useValue: ngBootstrapJson.version },
-        { provide: BS_DEVELOPMENT, useValue: true },
+        { provide: BS_DEVELOPMENT, useValue: false },
     ]
 };

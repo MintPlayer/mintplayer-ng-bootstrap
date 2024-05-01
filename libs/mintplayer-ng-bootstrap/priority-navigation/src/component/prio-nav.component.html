@@ -1,5 +1,5 @@
 @for (el of (elements$ | async); track el) {
-    <div class="d-inline-block float-start" bsObserveSize>
+    <div class="d-inline-block float-start" bsObserveSize #observers="bsObserveSize">
         <ng-container *ngTemplateOutlet="el.template"></ng-container>
     </div>
 }
@@ -16,3 +16,4 @@
         }
     </bs-dropdown-menu>
 </ng-container>
+<!-- <span>{{ rightBounds$ | async | json }}</span> -->
