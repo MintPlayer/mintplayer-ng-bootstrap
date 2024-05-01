@@ -13,6 +13,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 export class BsPrioNavComponent {
   constructor(private observer: BsObserveSizeDirective) {
     const obs$ = this.observers$
+      .pipe(map(observers => observers.map((_, index) => observers.slice(0, index + 1))))
+      .pipe(switchMap(o => o))
       .pipe(map(o => o.map(dir => dir.width$)))
       .pipe(switchMap(o => combineLatest(o)))
       .pipe(map(w => w.map(x => x || 0)))
@@ -21,6 +23,10 @@ export class BsPrioNavComponent {
     obs$.pipe(takeUntilDestroyed()).subscribe((x) => {
       console.log(x);
     });
+
+
+    // this.observers$
+    //   .pipe(map((all, index) => all.slice(0, index)));
   }
 
   @HostBinding('class.d-block')
