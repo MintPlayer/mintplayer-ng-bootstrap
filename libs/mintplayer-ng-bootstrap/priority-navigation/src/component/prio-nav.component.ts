@@ -12,10 +12,14 @@ import { BehaviorSubject } from 'rxjs';
 export class BsPrioNavComponent {
   constructor(private observer: BsObserveSizeDirective) {}
 
-  @HostBinding('class.d-block') classList = true;
+  @HostBinding('class.d-block')
+  @HostBinding('class.clearfix')
+  @HostBinding('class.text-nowrap')
+  classList = true;
+  
   elements$ = new BehaviorSubject<BsPrioNavElementDirective[]>([]);
 
-  buttonTemplate: TemplateRef<any> | null = null;
+  overflowButtonTemplate: TemplateRef<any> | null = null;
 
   @ContentChildren(BsPrioNavElementDirective) set elements(value: QueryList<BsPrioNavElementDirective>) {
     this.elements$.next(value.toArray());

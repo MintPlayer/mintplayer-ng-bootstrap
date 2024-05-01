@@ -1,9 +1,9 @@
 @for (el of (elements$ | async); track el) {
-    <div class="d-inline-block" bsObserveSize>
+    <div class="d-inline-block float-start" bsObserveSize>
         <ng-container *ngTemplateOutlet="el.template"></ng-container>
     </div>
 }
 
 <div class="d-inline-block float-end">
-    <ng-container *ngTemplateOutlet="buttonTemplate"></ng-container>
+    <ng-container *ngTemplateOutlet="overflowButtonTemplate"></ng-container>
 </div>

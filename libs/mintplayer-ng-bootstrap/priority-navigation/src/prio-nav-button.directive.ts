@@ -6,6 +6,6 @@ import { BsPrioNavComponent } from './component/prio-nav.component';
 })
 export class BsPrioNavButtonDirective {
   constructor(component: BsPrioNavComponent, template: TemplateRef<any>) {
-    component.buttonTemplate = template;
+    component.overflowButtonTemplate = template;
   }
 }
