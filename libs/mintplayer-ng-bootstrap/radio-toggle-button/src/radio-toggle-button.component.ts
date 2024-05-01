@@ -1,7 +1,7 @@
-import { Component, HostBinding, Input } from '@angular/core';
+import { Component, EventEmitter, HostBinding, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BsFormCheckComponent } from '@mintplayer/ng-bootstrap/form-check';
-import { BsCheckGroupDirective } from '@mintplayer/ng-bootstrap/check-group/src/check-group.directive';
+import { BsCheckGroupDirective } from '@mintplayer/ng-bootstrap/check-group';
 import { BehaviorSubject, Observable, map } from 'rxjs';
 
 @Component({
@@ -29,6 +29,28 @@ export class BsRadioToggleButtonComponent {
   }
   @Input() public set value(value: string | null) {
     this.value$.next(value);
+  }
+  //#endregion
+  
+  
+  //#region isChecked
+  isChecked$ = new BehaviorSubject<boolean | null>(false);
+  @Output() public isCheckedChange = new EventEmitter<boolean | null>();
+  public get isChecked() {
+    return this.isChecked$.value;
+  }
+  @Input() public set isChecked(value: boolean | null) {
+    this.isChecked$.next(value);
+    this.isCheckedChange.emit(value);
+  }
+  //#endregion
+  //#region isEnabled
+  isEnabled$ = new BehaviorSubject<boolean>(true);
+  public get isEnabled() {
+    return this.isEnabled$.value;
+  }
+  @Input() public set isEnabled(value: boolean) {
+    this.isEnabled$.next(value);
   }
   //#endregion
 }

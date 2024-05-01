@@ -1,18 +1,14 @@
-import { Component, HostBinding, Input } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { BsFormCheckComponent } from '@mintplayer/ng-bootstrap/form-check';
-import { BsCheckGroupDirective } from '@mintplayer/ng-bootstrap/check-group/src/check-group.directive';
+import { Component, ElementRef, EventEmitter, HostBinding, Input, Optional, Output, ViewChild } from '@angular/core';
+import { BsCheckGroupDirective } from '@mintplayer/ng-bootstrap/check-group';
 import { BehaviorSubject, Observable, combineLatest, map } from 'rxjs';
 
 @Component({
   selector: 'bs-checkbox',
-  standalone: true,
-  imports: [CommonModule, BsFormCheckComponent],
   templateUrl: './checkbox.component.html',
   styleUrl: './checkbox.component.scss',
 })
 export class BsCheckboxComponent {
-  constructor(group?: BsCheckGroupDirective) {
+  constructor(@Optional() group?: BsCheckGroupDirective) {
     this.group$.next(group);
 
     this.nameResult$ = combineLatest([this.group$, this.name$])
@@ -23,6 +19,7 @@ export class BsCheckboxComponent {
   name$ = new BehaviorSubject<string | undefined>(undefined);
   nameResult$: Observable<string | undefined>;
   @HostBinding('class.d-inline-block') dInlineBlockClass = true;
+  @ViewChild('checkbox') checkbox!: ElementRef<HTMLInputElement>;
 
   @Input() public set name(value: string | undefined) {
     this.name$.next(value);
@@ -35,6 +32,28 @@ export class BsCheckboxComponent {
   }
   @Input() public set value(value: string | null) {
     this.value$.next(value);
+  }
+  //#endregion
+
+  //#region isChecked
+  isChecked$ = new BehaviorSubject<boolean | null>(false);
+  @Output() public isCheckedChange = new EventEmitter<boolean | null>();
+  public get isChecked() {
+    return this.isChecked$.value;
+  }
+  @Input() public set isChecked(value: boolean | null) {
+    this.isChecked$.next(value);
+    this.isCheckedChange.emit(value);
+  }
+  //#endregion
+  
+  //#region isEnabled
+  isEnabled$ = new BehaviorSubject<boolean>(true);
+  public get isEnabled() {
+    return this.isEnabled$.value;
+  }
+  @Input() public set isEnabled(value: boolean) {
+    this.isEnabled$.next(value);
   }
   //#endregion
 }

@@ -3,8 +3,8 @@ import { map } from 'rxjs/operators';
 import { Component } from '@angular/core';
 import { ColorTransitionAnimation } from '@mintplayer/ng-animations';
 import { FormsModule } from '@angular/forms';
-import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
 import { AsyncPipe } from '@angular/common';
+import { BsCheckboxModule } from '@mintplayer/ng-bootstrap/checkbox';
 
 @Component({
   selector: 'demo-color-transition',
@@ -12,7 +12,7 @@ import { AsyncPipe } from '@angular/common';
   styleUrls: ['./color-transition.component.scss'],
   animations: [ColorTransitionAnimation],
   standalone: true,
-  imports: [AsyncPipe, FormsModule, BsToggleButtonModule]
+  imports: [AsyncPipe, FormsModule, BsCheckboxModule]
 })
 export class ColorTransitionComponent {
 

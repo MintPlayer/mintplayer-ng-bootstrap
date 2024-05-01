@@ -1,6 +1,6 @@
-import { AfterViewInit, Component, ElementRef, EventEmitter, HostBinding, Input, Output, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, EventEmitter, HostBinding, Input, Optional, Output, ViewChild } from '@angular/core';
 import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
-import { BsCheckGroupDirective } from '@mintplayer/ng-bootstrap/check-group/src/check-group.directive';
+import { BsCheckGroupDirective } from '@mintplayer/ng-bootstrap/check-group';
 
 @Component({
   selector: 'bs-toggle-button',
@@ -8,7 +8,7 @@ import { BsCheckGroupDirective } from '@mintplayer/ng-bootstrap/check-group/src/
   styleUrls: ['./toggle-button.component.scss']
 })
 export class BsToggleButtonComponent implements AfterViewInit {
-  constructor(group?: BsCheckGroupDirective) {
+  constructor(@Optional() group?: BsCheckGroupDirective) {
     this.group$.next(group);
 
     this.nameResult$ = combineLatest([this.group$, this.name$])
@@ -23,14 +23,24 @@ export class BsToggleButtonComponent implements AfterViewInit {
   disableAnimations = true;
 
   //#region isToggled
-  _isToggled: boolean | null = false;
+  isToggled$ = new BehaviorSubject<boolean | null>(false);
   @Output() public isToggledChange = new EventEmitter<boolean | null>();
   public get isToggled() {
-    return this._isToggled;
+    return this.isToggled$.value;
   }
   @Input() public set isToggled(value: boolean | null) {
-    this._isToggled = value;
-    this.isToggledChange.emit(this._isToggled);
+    this.isToggled$.next(value);
+    this.isToggledChange.emit(value);
+  }
+  //#endregion
+
+  //#region isEnabled
+  isEnabled$ = new BehaviorSubject<boolean>(true);
+  public get isEnabled() {
+    return this.isEnabled$.value;
+  }
+  @Input() public set isEnabled(value: boolean) {
+    this.isEnabled$.next(value);
   }
   //#endregion
 
