@@ -1,1 +1,6 @@
-<p>priority-navigation works!</p>
+<h1 class="text-center">Priority navigation</h1>
+<div bsPrioNav class="d-block">
+    @for (element of elements; track $index) {
+        <div bsPrioNavElement class="p-2">{{ element }}</div>
+    }
+</div>
