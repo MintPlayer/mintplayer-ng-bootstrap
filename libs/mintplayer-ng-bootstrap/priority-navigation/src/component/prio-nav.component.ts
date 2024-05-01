@@ -1,4 +1,4 @@
-import { Component, ContentChildren, HostBinding, QueryList } from '@angular/core';
+import { Component, ContentChildren, HostBinding, QueryList, TemplateRef } from '@angular/core';
 import { BsObserveSizeDirective } from '@mintplayer/ng-bootstrap/observe-size';
 import { BsPrioNavElementDirective } from '../prio-nav-element.directive';
 import { BehaviorSubject } from 'rxjs';
@@ -14,6 +14,8 @@ export class BsPrioNavComponent {
 
   @HostBinding('class.d-block') classList = true;
   elements$ = new BehaviorSubject<BsPrioNavElementDirective[]>([]);
+
+  buttonTemplate: TemplateRef<any> | null = null;
 
   @ContentChildren(BsPrioNavElementDirective) set elements(value: QueryList<BsPrioNavElementDirective>) {
     this.elements$.next(value.toArray());

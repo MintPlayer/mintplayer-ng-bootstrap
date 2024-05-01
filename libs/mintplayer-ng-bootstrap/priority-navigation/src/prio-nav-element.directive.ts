@@ -1,5 +1,4 @@
 import { Directive, HostBinding, TemplateRef } from "@angular/core";
-// import { BsObserveSizeDirective } from "@mintplayer/ng-bootstrap/observe-size";
 
 @Directive({
   selector: '[bsPrioNavElement]',
@@ -10,6 +9,5 @@ export class BsPrioNavElementDirective {
     this.template = template;
   }
 
-  @HostBinding('class.d-inline-block') classList = true;
   template: TemplateRef<any>;
 }

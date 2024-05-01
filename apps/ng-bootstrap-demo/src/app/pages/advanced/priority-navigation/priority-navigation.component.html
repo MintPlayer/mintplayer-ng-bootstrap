@@ -1,6 +1,10 @@
 <h1 class="text-center">Priority navigation</h1>
-<bs-prio-nav>
-    @for (element of elements; track $index) {
-        <div *bsPrioNavElement class="p-2">{{ element }}</div>
-    }
-</bs-prio-nav>
+<div class="bg-dark text-light">
+    <bs-prio-nav>
+        @for (element of elements; track $index) {
+            <button *bsPrioNavElement [color]="colors.transparent" class="text-light p-2">{{ element }}</button>
+        }
+
+        <button *bsPrioNavButton [color]="colors.transparent" class="text-light">...</button>
+    </bs-prio-nav>
+</div>
