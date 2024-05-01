@@ -4,7 +4,7 @@
     </div>
 }
 
-<ng-container bsDropdown>
+<ng-container bsDropdown [align]="'end'">
     <div class="d-inline-block float-end" bsDropdownToggle>
         <ng-container *ngTemplateOutlet="overflowButtonTemplate; context: { isOverflown: false }"></ng-container>
     </div>

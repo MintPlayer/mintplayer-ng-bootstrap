@@ -31,19 +31,29 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
           this.wait = true;
           setTimeout(() => this.wait = false, 100);
 
-          this.overlayRef = this.overlay.create({
-            hasBackdrop: this.dropdown.hasBackdrop,
-            scrollStrategy: this.overlay.scrollStrategies.reposition(),
-            positionStrategy: this.overlay.position()
+          const positionStrategy = this.dropdown.align === 'end'
+            ? this.overlay.position()
+              .flexibleConnectedTo(!this.dropdown.toggle ? dropdown.elementRef : this.dropdown.toggle.toggleButton)
+              .withPositions([
+                // element: BottomRight - dropdown: TopRight
+                { originX: "end", originY: "bottom", overlayX: "end", overlayY: "top", offsetY: 0 },
+                // element: TopRight - dropdown: BottomRight
+                { originX: "end", originY: "top", overlayX: "end", overlayY: "bottom", offsetY: 0 },
+              ])
+            : this.overlay.position()
               .flexibleConnectedTo(!this.dropdown.toggle ? dropdown.elementRef : this.dropdown.toggle.toggleButton)
               .withPositions([
                 // element: BottomLeft - dropdown: TopLeft
                 { originX: "start", originY: "bottom", overlayX: "start", overlayY: "top", offsetY: 0 },
                 // element: TopLeft - dropdown: BottomLeft
                 { originX: "start", originY: "top", overlayX: "start", overlayY: "bottom", offsetY: 0 },
-              ]),
-          });
+              ]);
 
+          this.overlayRef = this.overlay.create({
+            hasBackdrop: this.dropdown.hasBackdrop,
+            scrollStrategy: this.overlay.scrollStrategies.reposition(),
+            positionStrategy: positionStrategy,
+          });
           if (this.dropdown.hasBackdrop && this.dropdown.closeOnClickOutside) {
             this.overlayRef.backdropClick().subscribe(() => {
               this.dropdown.isOpen = false;

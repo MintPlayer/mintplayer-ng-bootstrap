@@ -21,6 +21,7 @@ export class BsDropdownDirective {
   
   @Input() public hasBackdrop = false;
   @Input() public sameWidth = false;
+  @Input() public align: 'start' | 'end' = 'start';
   @Input() public closeOnClickOutside = true;
   @Input() public sameDropdownWidth = false;
 
