@@ -208,13 +208,13 @@
         "body": [
             "<bs-grid>",
             "\t<div bsRow>",
-            "\t\t<div [bsColumn]=\"{ _: 8, sm: 6 }\">${1:Hello}</div>",
-            "\t\t<div [bsColumn]=\"{ _: 4, sm: 6 }\">${2:World}</div>",
+            "\t\t<div [col]=\"8\" [sm]=\"6\">${1:Hello}</div>",
+            "\t\t<div [col]=\"4\" [sm]=\"6\">${2:World}</div>",
             "\t</div>",
             "\t<div bsRow>",
-            "\t\t<div [bsColumn]=\"{ _: 6, sm: 4 }\">${3:This}</div>",
-            "\t\t<div [bsColumn]=\"{ _: 3, sm: 4 }\">${4:Is}</div>",
-            "\t\t<div [bsColumn]=\"{ _: 3, sm: 4 }\">${5:Me}</div>",
+            "\t\t<div [col]=\"6\" [sm]=\"4\">${3:This}</div>",
+            "\t\t<div [col]=\"3\" [sm]=\"4\">${4:Is}</div>",
+            "\t\t<div [col]=\"3\" [sm]=\"4\">${5:Me}</div>",
             "\t</div>",
             "</bs-grid>"
         ]

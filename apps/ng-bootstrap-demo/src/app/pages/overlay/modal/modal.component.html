@@ -2,7 +2,7 @@
 <h2>Demo</h2>
 <bs-grid class="text-center">
     <div bsRow>
-        <div bsColumn class="text-center">
+        <div [col] class="text-center">
             <button [color]="colors.primary" (click)="isOpen = true">Show modal</button>
             <bs-modal [(isOpen)]="isOpen">
                 <div *bsModal cdkTrapFocus>
@@ -12,7 +12,7 @@
                     <div bsModalBody class="text-nowrap p-2 d-flex flex-row align-items-center justify-content-between">
                         <bs-grid>
                             <div bsRow class="form-group">
-                                <div bsColumn bsColFormLabel>Search for tags</div>
+                                <div [col] bsColFormLabel>Search for tags</div>
                             </div>
                             <div bsRow class="form-group">
                                 <div [md]="3" [lg]="6">

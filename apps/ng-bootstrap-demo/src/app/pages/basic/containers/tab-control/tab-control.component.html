@@ -16,10 +16,10 @@
 <h2>Configuration</h2>
 <bs-grid>
     <div bsRow>
-        <div bsColumn>
+        <div [col]>
             <label class="py-2" [bsFor]="tabsPositionSelect">Tabs position</label>
         </div>
-        <div bsColumn>
+        <div [col]>
             <bs-select [(ngModel)]="tabsPosition" #tabsPositionSelect>
                 <option [ngValue]="'top'">Top</option>
                 <option [ngValue]="'bottom'">Bottom</option>
@@ -27,7 +27,7 @@
         </div>
     </div>
     <div bsRow>
-        <div bsColumn>
+        <div [col]>
             <bs-toggle-button class="py-2" [type]="'checkbox'" [(ngModel)]="allowDragDrop">Allow drag/drop</bs-toggle-button>
         </div>
     </div>
