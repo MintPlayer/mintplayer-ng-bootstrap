@@ -1,7 +1,7 @@
 <h1 class="text-center">Rating</h1>
 <bs-grid>
     <div bsRow>
-        <div [bsColumn]="{md: 12}">
+        <div [md]="12">
             <bs-rating [maximum]="10" [(value)]="ratingValue" (starsChange)="previewValue = $event"></bs-rating>
             <span>{{ previewValue }}</span>
         </div>

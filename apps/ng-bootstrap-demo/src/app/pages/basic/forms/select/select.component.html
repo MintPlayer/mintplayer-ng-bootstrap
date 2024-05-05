@@ -1,6 +1,6 @@
 <bs-grid>
     <div bsRow class="mb-3">
-        <div [bsColumn]="{sm: 6}">
+        <div [sm]="6">
             <bs-select [(ngModel)]="selectedDishBootstrapSelect" [disabled]="disableSelectBox" [identifier]="1">
                 <option [ngValue]="null" selected>Choose a dish</option>
                 @for (dish of dishes; track dish.id) {
@@ -8,7 +8,7 @@
                 }
             </bs-select>
         </div>
-        <div [bsColumn]="{sm: 6}">
+        <div [sm]="6">
             <bs-select [(ngModel)]="selectedDishBootstrapSelect" [disabled]="disableSelectBox" [identifier]="2">
                 <option [ngValue]="null" selected>Choose a dish</option>
                 @for (dish of dishes; track dish.id) {

@@ -2,10 +2,10 @@
 <bs-form>
     <bs-grid>
         <div bsRow>
-            <div [bsColumn]="{ md: 6 }">
+            <div [md]="6">
                 <textarea [(ngModel)]="markdownText" rows="4"></textarea>
             </div>
-            <div [bsColumn]="{ md: 6 }" [innerHTML]="markdownText | bsBold | bsItalic | bsUnderline | bsStrikethrough">
+            <div [md]="6" [innerHTML]="markdownText | bsBold | bsItalic | bsUnderline | bsStrikethrough">
             </div>
         </div>
     </bs-grid>

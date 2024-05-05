@@ -1,7 +1,7 @@
 <h1 class="text-center">Slide up/down animation</h1>
 <bs-grid>
     <div bsRow>
-        <div [bsColumn]="{md: 6}">
+        <div [md]="6">
             <button (click)="slideUpDownState = !slideUpDownState" [color]="colors.primary" class="d-block w-100 rounded-0">Toggle</button>
             <div [@slideUpDown]="slideUpDownState" class="overflow-hidden">
                 @for (num of numbers; track num) {
@@ -9,7 +9,7 @@
                 }
             </div>
         </div>
-        <div [bsColumn]="{md: 6}">
+        <div [md]="6">
             <button (click)="slideUpDownNgifState = !slideUpDownNgifState" [color]="colors.secondary" class="d-block w-100 rounded-0">Toggle using <code class="text-light">*ngIf</code></button>
             @if (slideUpDownNgifState) {
                 <div [@slideUpDownNgif] class="overflow-hidden">
