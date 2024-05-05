@@ -24,7 +24,7 @@
             <td [colSpan]="numberOfColumns$ | async">
                 <bs-grid [stopFullWidthAt]="'never'">
                     <div bsRow>
-                        <div [bsColumn]="{md: 12}">
+                        <div [md]="12">
                             <bs-pagination class="float-start" [pageNumbers]="settings.perPage.values"
                                 [(selectedPageNumber)]="settings.perPage.selected" (selectedPageNumberChange)="settingsChange.emit(settings)"
                                 [showArrows]="false"></bs-pagination>

@@ -2,10 +2,10 @@
 <bs-form>
     <bs-grid>
         <div bsRow>
-            <div [bsColumn]="{xl: 6}">
+            <div [xl]="6">
                 <textarea [(ngModel)]="text" class="mb-3"></textarea>
             </div>
-            <div [bsColumn]="{xl: 6}" class="text-center">
+            <div [xl]="6" class="text-center">
                 <qr-code [value]="text"></qr-code>
             </div>
         </div>

@@ -2,10 +2,10 @@
 <h2>Demo</h2>
 <bs-grid>
     <div bsRow>
-        <div [bsColumn]="{md: 6}">
+        <div [md]="6">
             <bs-color-picker class="d-inline-block mb-5" [(ngModel)]="selectedColor" [(alpha)]="selectedAlpha" [size]="200" [allowAlpha]="allowAlpha"></bs-color-picker>
         </div>
-        <div [bsColumn]="{md: 6}">
+        <div [md]="6">
             <div bsRow class="mb-3">
                 <div bsColumn>
                     <bs-button-group>

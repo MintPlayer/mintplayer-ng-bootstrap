@@ -9,12 +9,12 @@
 </ul>
 <bs-grid>
     <div bsRow>
-        <div [bsColumn]="{md: 12}">
+        <div [md]="12">
             <button (click)="addSomeone()" [color]="colors.primary" class="w-100">Add someone</button>
         </div>
     </div>
     <div bsRow>
-        <div [bsColumn]="{md:6}">
+        <div [md]="6">
             <bs-list-group>
                 @for (person of people; track person.id) {
                     <bs-list-group-item>{{ person.firstName }} {{ person.lastName }}</bs-list-group-item>

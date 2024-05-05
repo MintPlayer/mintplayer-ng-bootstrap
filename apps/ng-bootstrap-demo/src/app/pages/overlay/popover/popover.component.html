@@ -6,7 +6,7 @@
 </blockquote>
 <bs-grid class="text-center">
     <div bsRow class="mb-3">
-        <div [bsColumn]="{md: 3}" class="offset-md-3 position-relative overflow-hidden">
+        <div [md]="3" class="offset-md-3 position-relative overflow-hidden">
             <button [color]="colors.primary">
                 Left
                 <ng-template [bsPopover]="'start'" [updatePosition]="true">
@@ -17,7 +17,7 @@
                 </ng-template>
             </button>
         </div>
-        <div [bsColumn]="{md: 3}" class="position-relative overflow-hidden">
+        <div [md]="3" class="position-relative overflow-hidden">
             <button [color]="colors.primary">
                 Top
                 <ng-template [bsPopover]="'top'" [updatePosition]="true">
@@ -30,7 +30,7 @@
         </div>
     </div>
     <div bsRow>
-        <div [bsColumn]="{md: 3}" class="offset-md-3 position-relative overflow-hidden">
+        <div [md]="3" class="offset-md-3 position-relative overflow-hidden">
             <button [color]="colors.primary">
                 Bottom
                 <ng-template [bsPopover]="'bottom'" [updatePosition]="true">
@@ -41,7 +41,7 @@
                 </ng-template>
             </button>
         </div>
-        <div [bsColumn]="{md: 3}" class="position-relative overflow-hidden">
+        <div [md]="3" class="position-relative overflow-hidden">
             <button [color]="colors.primary">
                 Right
                 <ng-template [bsPopover]="'end'" [updatePosition]="true">

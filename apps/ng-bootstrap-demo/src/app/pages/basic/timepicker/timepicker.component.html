@@ -1,18 +1,18 @@
 <h1 class="text-center">Timepicker</h1>
 <bs-grid>
     <div bsRow class="mb-3">
-        <div [bsColumn]="{md: 6}">
+        <div [md]="6">
             <bs-timepicker [(selectedTime)]="selectedTime"></bs-timepicker>
         </div>
-        <div [bsColumn]="{md: 6}">
+        <div [md]="6">
             <bs-timepicker [(selectedTime)]="selectedTime"></bs-timepicker>
         </div>
     </div>
     <div bsRow class="mb-3">
-        <div [bsColumn]="{md: 6}">
+        <div [md]="6">
             Selected time    
         </div>
-        <div [bsColumn]="{md: 6}">
+        <div [md]="6">
             <span class="px-3">{{ selectedTime | date: 'HH:mm' }}</span>
         </div>
     </div>

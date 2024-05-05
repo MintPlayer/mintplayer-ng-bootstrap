@@ -6,7 +6,7 @@
 </blockquote>
 <bs-grid class="text-center">
     <div bsRow class="mb-3">
-        <div [bsColumn]="{md: 3}" class="offset-md-3 position-relative overflow-hidden">
+        <div [md]="3" class="offset-md-3 position-relative overflow-hidden">
             <button [color]="colors.primary">
                 Left
                 <div class="text-nowrap" *bsTooltip="'start'">
@@ -16,7 +16,7 @@
                 </div>
             </button>
         </div>
-        <div [bsColumn]="{md: 3}" class="position-relative overflow-hidden">
+        <div [md]="3" class="position-relative overflow-hidden">
             <button [color]="colors.primary">
                 Top
                 <div class="text-nowrap" *bsTooltip="'top'">
@@ -28,7 +28,7 @@
         </div>
     </div>
     <div bsRow>
-        <div [bsColumn]="{md: 3}" class="offset-md-3 position-relative overflow-hidden">
+        <div [md]="3" class="offset-md-3 position-relative overflow-hidden">
             <button [color]="colors.primary">
                 Bottom
                 <div class="text-nowrap" *bsTooltip="'bottom'">
@@ -38,7 +38,7 @@
                 </div>
             </button>
         </div>
-        <div [bsColumn]="{md: 3}" class="position-relative overflow-hidden">
+        <div [md]="3" class="position-relative overflow-hidden">
             <button [color]="colors.primary">
                 Right
                 <div class="text-nowrap" *bsTooltip="'end'">

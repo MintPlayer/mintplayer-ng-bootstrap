@@ -1,7 +1,7 @@
 <h1 class="text-center">File upload</h1>
 <bs-grid>
     <div bsRow>
-        <div [bsColumn]="{md: 12}" class="text-center">
+        <div [md]="12" class="text-center">
             <bs-file-upload (filesDropped)="logFilesForUpload($event)">
                 <div *bsFileUploadTemplate="let upload of files" class="d-flex flex-row mx-auto">
                     <div class="file-img"></div>
