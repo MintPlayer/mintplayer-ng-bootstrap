@@ -15,7 +15,7 @@ export class BsGridColumnDirective {
             key,
             value: (<any>sizes)[key],
           }))
-          .filter(v => v.value && (v.key !== 'xxs'))
+          .filter(v => v.value)
           .map(v => {
             switch (v.key) {
               case '': return 'col';
@@ -31,7 +31,7 @@ export class BsGridColumnDirective {
       });
   }
 
-  // private customColClasses$ = new BehaviorSubject<BsColumnDefinition | '' | undefined>(undefined);
+  // private customColClasses$ = new BehaviorSubject<[col]Definition | '' | undefined>(undefined);
   @HostBinding('class') classList: string | null = null
 
   xxs$ = new BehaviorSubject<number | undefined>(undefined);

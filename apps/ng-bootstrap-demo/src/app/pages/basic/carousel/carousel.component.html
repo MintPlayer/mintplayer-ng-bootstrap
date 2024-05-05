@@ -3,7 +3,7 @@
     <bs-grid>
         <h2>Demo</h2>
         <div bsRow class="mb-3">
-            <div bsColumn>
+            <div [col]>
                 <bs-carousel [animation]="mode" [indicators]="true" class="mx-auto">
                     <img *bsCarouselImage src="/assets/resized/deer.png">
                     <img *bsCarouselImage src="/assets/resized/duck.png">
@@ -15,10 +15,10 @@
             </div>
         </div>
         <div bsRow>
-            <span bsColumn bsColFormLabel class="text-end">
+            <span [col] bsColFormLabel class="text-end">
                 Carousel mode
             </span>
-            <div bsColumn>
+            <div [col]>
                 <bs-select [ngModel]="mode" (ngModelChange)="onModeChange($event)" class="d-inline-block">
                     <option value="slide">Slide</option>
                     <option value="fade">Fade</option>
@@ -27,7 +27,7 @@
         </div>
         <h2>Features</h2>
         <div bsRow>
-            <div bsColumn>
+            <div [col]>
                 <ul>
                     <li>Touch-event support</li>
                     <li><code>&lt;noscript&gt;</code> support</li>
@@ -36,7 +36,7 @@
         </div>
         <h2>Vertical carousel</h2>
         <div bsRow>
-            <div bsColumn>
+            <div [col]>
                 <bs-carousel [animation]="mode" [indicators]="true" class="mx-auto">
                     <img *bsCarouselImage src="/assets/resized/deer.png">
                     <img *bsCarouselImage src="/assets/resized/duck.png" loading="lazy">

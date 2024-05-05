@@ -2,7 +2,7 @@
 <h2>Demo</h2>
 <bs-grid>
     <div bsRow class="mb-3">
-        <div bsColumn>
+        <div [col]>
             <bs-alert [type]="colors.info">
                 The swiper is used in the carousel component.
                 View this page on a phone, or open DevTools <kbd>F12</kbd> in order to enable the mobile viewer.
@@ -10,7 +10,7 @@
         </div>
     </div>
     <div bsRow class="mb-3">
-        <div bsColumn>
+        <div [col]>
             <bs-carousel [indicators]="true" [animation]="'slide'">
                 @for (image of images; track $index) {
                     <img *bsCarouselImage [src]="image">
