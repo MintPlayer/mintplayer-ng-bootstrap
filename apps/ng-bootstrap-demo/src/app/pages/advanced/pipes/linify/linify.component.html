@@ -2,12 +2,12 @@
 <bs-form>
     <bs-grid>
         <div bsRow>
-            <div [bsColumn]="{ md: 6 }">
+            <div [md]="6">
                 <textarea [(ngModel)]="text" rows="10"></textarea>
                 <br>
                 <bs-toggle-button [type]="'checkbox'" [(ngModel)]="removeEmptyEntries">Remove empty entries</bs-toggle-button>
             </div>
-            <div [bsColumn]="{ md: 6 }">
+            <div [md]="6">
                 <bs-list-group>
                     @for (line of (text | bsLinify: removeEmptyEntries); track $index) {
                         <bs-list-group-item>{{ line }}</bs-list-group-item>
