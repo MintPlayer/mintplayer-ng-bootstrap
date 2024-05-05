@@ -2,11 +2,11 @@ import { JsonPipe } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BsSwitchComponent } from '@mintplayer/ng-bootstrap/switch';
-import { BsCheckboxModule } from '@mintplayer/ng-bootstrap/checkbox';
+import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsRadioButtonComponent } from '@mintplayer/ng-bootstrap/radio-button';
 import { BsRadioToggleButtonComponent } from '@mintplayer/ng-bootstrap/radio-toggle-button';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
-import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
 import { BsCheckGroupModule } from '@mintplayer/ng-bootstrap/check-group';
 
 @Component({
@@ -14,7 +14,7 @@ import { BsCheckGroupModule } from '@mintplayer/ng-bootstrap/check-group';
   templateUrl: './toggle-button.component.html',
   styleUrls: ['./toggle-button.component.scss'],
   standalone: true,
-  imports: [JsonPipe, FormsModule, BsGridModule, BsToggleButtonModule, BsCheckboxModule, BsRadioButtonComponent, BsRadioToggleButtonComponent, BsSwitchComponent, BsCheckGroupModule]
+  imports: [JsonPipe, FormsModule, BsGridModule, BsToggleButtonComponent, BsCheckboxComponent, BsRadioButtonComponent, BsRadioToggleButtonComponent, BsSwitchComponent, BsCheckGroupModule]
 })
 export class ToggleButtonComponent {
   darkMode: boolean | null = true;

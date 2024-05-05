@@ -4,7 +4,7 @@ import { Component } from '@angular/core';
 import { ColorTransitionAnimation } from '@mintplayer/ng-animations';
 import { FormsModule } from '@angular/forms';
 import { AsyncPipe } from '@angular/common';
-import { BsCheckboxModule } from '@mintplayer/ng-bootstrap/checkbox';
+import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 
 @Component({
   selector: 'demo-color-transition',
@@ -12,7 +12,7 @@ import { BsCheckboxModule } from '@mintplayer/ng-bootstrap/checkbox';
   styleUrls: ['./color-transition.component.scss'],
   animations: [ColorTransitionAnimation],
   standalone: true,
-  imports: [AsyncPipe, FormsModule, BsCheckboxModule]
+  imports: [AsyncPipe, FormsModule, BsCheckboxComponent]
 })
 export class ColorTransitionComponent {
 

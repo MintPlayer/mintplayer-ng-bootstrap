@@ -1,24 +1,27 @@
-// import { AfterViewInit, DestroyRef, Directive, forwardRef } from '@angular/core';
-// import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { AfterViewInit, DestroyRef, Directive, forwardRef } from '@angular/core';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 // import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 // import { fromEvent } from 'rxjs';
-// import { BsToggleButtonComponent } from '../component/toggle-button.component';
+import { BsToggleButtonComponent } from '../component/toggle-button.component';
 
-// @Directive({
-//   selector: 'bs-toggle-button',
-//   providers: [{
-//     provide: NG_VALUE_ACCESSOR,
-//     useExisting: forwardRef(() => BsToggleButtonValueAccessor),
-//     multi: true,
-//   }],
-// })
-// export class BsToggleButtonValueAccessor implements ControlValueAccessor, AfterViewInit {
-//   constructor(private host: BsToggleButtonComponent, private destroy: DestroyRef) {}
+@Directive({
+  selector: 'bs-toggle-button',
+  standalone: true,
+  providers: [{
+    provide: NG_VALUE_ACCESSOR,
+    useExisting: forwardRef(() => BsToggleButtonValueAccessor),
+    multi: true,
+  }],
+})
+export class BsToggleButtonValueAccessor implements ControlValueAccessor, AfterViewInit {
+  constructor(private host: BsToggleButtonComponent, private destroy: DestroyRef) {
+    console.log('constructor');
+  }
 
-//   onValueChange?: (value: boolean | string | string[]) => void;
-//   onTouched?: () => void;
+  onValueChange?: (value: boolean | string | string[]) => void;
+  onTouched?: () => void;
 
-//   ngAfterViewInit() {
+  ngAfterViewInit() {
 //     fromEvent(this.host.checkbox.nativeElement, 'change')
 //       .pipe(takeUntilDestroyed(this.destroy))
 //       .subscribe((ev) => {
@@ -59,18 +62,18 @@
 //           }
 //         }
 //       });
-//   }
+  }
 
 //   //#region ControlValueAccessor implementation
-//   registerOnChange(fn: (_: any) => void) {
-//     this.onValueChange = fn;
-//   }
+  registerOnChange(fn: (_: any) => void) {
+    this.onValueChange = fn;
+  }
   
-//   registerOnTouched(fn: () => void) {
-//     this.onTouched = fn;
-//   }
+  registerOnTouched(fn: () => void) {
+    this.onTouched = fn;
+  }
 
-//   writeValue(value: boolean | string | string[]) {
+  writeValue(value: boolean | string | string[]) {
 //     if (this.host.checkbox) {
 //       switch (this.host.type) {
 //         case 'radio':
@@ -88,13 +91,13 @@
 //           break;
 //       }
 //     }
-//   }
+  }
 
-//   setDisabledState(isDisabled: boolean) {
+  setDisabledState(isDisabled: boolean) {
 //     if (this.host.checkbox) {
 //       this.host.checkbox.nativeElement.disabled = isDisabled;
 //     }
-//   }
-//   //#endregion
+  }
+  //#endregion
 
-// }
+}

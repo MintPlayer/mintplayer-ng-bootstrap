@@ -10,7 +10,7 @@
             <bs-checkbox [(ngModel)]="isHstsEnabled" [disabled]="isAllDisabled" [name]="'isHstsEnabled'">Enable HSTS</bs-checkbox>
         </div>
         <div [sm]="3">
-            <bs-checkbox [(ngModel)]="isHstsEnabled" [disabled]="isAllDisabled" [name]="'isCrossPlatform'">Cross-platform</bs-checkbox>
+            <bs-checkbox [(ngModel)]="isCrossPlatform" [disabled]="isAllDisabled" [name]="'isCrossPlatform'">Cross-platform</bs-checkbox>
         </div>
         <div [sm]="2">
             HSTS: {{ isHstsEnabled | json }}

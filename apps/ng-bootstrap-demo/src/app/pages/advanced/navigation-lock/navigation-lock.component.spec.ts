@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MockModule } from 'ng-mocks';
-import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
 import { BsNavigationLockModule } from '@mintplayer/ng-bootstrap/navigation-lock';
 
 import { NavigationLockComponent } from './navigation-lock.component';
@@ -14,7 +14,7 @@ describe('NavigationLockComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         FormsModule,
-        MockModule(BsToggleButtonModule),
+        MockModule(BsToggleButtonComponent),
         MockModule(BsNavigationLockModule),
       ],
       declarations: [

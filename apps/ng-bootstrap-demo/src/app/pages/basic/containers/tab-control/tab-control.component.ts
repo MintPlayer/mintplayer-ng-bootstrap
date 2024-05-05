@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { BsCheckboxModule } from '@mintplayer/ng-bootstrap/checkbox';
+import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsForDirective } from '@mintplayer/ng-bootstrap/for';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsSelectModule } from '@mintplayer/ng-bootstrap/select';
@@ -11,7 +11,7 @@ import { BsTabControlModule, BsTabsPosition } from '@mintplayer/ng-bootstrap/tab
   templateUrl: './tab-control.component.html',
   styleUrls: ['./tab-control.component.scss'],
   standalone: true,
-  imports: [FormsModule, BsForDirective, BsGridModule, BsSelectModule, BsTabControlModule, BsCheckboxModule]
+  imports: [FormsModule, BsForDirective, BsGridModule, BsSelectModule, BsTabControlModule, BsCheckboxComponent]
 })
 export class TabControlComponent {
   tabsPosition: BsTabsPosition = 'top';

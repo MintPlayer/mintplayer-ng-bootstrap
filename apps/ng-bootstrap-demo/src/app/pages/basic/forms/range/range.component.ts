@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { BsCheckboxModule } from '@mintplayer/ng-bootstrap/checkbox';
+import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsRangeModule } from '@mintplayer/ng-bootstrap/range';
 
@@ -9,7 +9,7 @@ import { BsRangeModule } from '@mintplayer/ng-bootstrap/range';
   templateUrl: './range.component.html',
   styleUrls: ['./range.component.scss'],
   standalone: true,
-  imports: [FormsModule, BsGridModule, BsRangeModule, BsCheckboxModule]
+  imports: [FormsModule, BsGridModule, BsRangeModule, BsCheckboxComponent]
 })
 export class RangeComponent {
 
