@@ -29,6 +29,7 @@
                 {{ week.number }}
             </th>
             @for (day of week.days; track day?.date) {
+                <!-- @let showSpan = (day !== null) && day.isInMonth; -->
                 <ng-container *bsLet="((day !== null) && day.isInMonth) as showSpan">
                     <ng-container *bsLet="(disableDateFn && disableDateFn(day.date)) as disabled">
                         <td [class.selected]="day === null ? false : !day.isInMonth ? false : isSameDate(selectedDate$ | async, day.date)" [class.cursor-pointer]="showSpan && !disabled" (click)="goto(day)">
