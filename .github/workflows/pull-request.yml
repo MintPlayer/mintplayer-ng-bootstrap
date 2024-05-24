@@ -34,7 +34,7 @@ jobs:
     #     JSON: ${{ toJson(github) }}
 
     - name: Install dependencies
-      run: npm install
+      run: npm ci
     
     - name: Build
       run: npm run build -- --configuration=production
