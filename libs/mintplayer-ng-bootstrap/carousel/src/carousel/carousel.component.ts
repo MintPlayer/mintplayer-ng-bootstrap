@@ -1,9 +1,9 @@
 import { isPlatformServer } from '@angular/common';
-import { AfterViewInit, ChangeDetectorRef, Component, ContentChildren, ElementRef, forwardRef, HostBinding, HostListener, Inject, Input, OnDestroy, PLATFORM_ID, QueryList, TemplateRef, ViewChild, ViewChildren } from '@angular/core';
+import { ChangeDetectorRef, Component, ContentChildren, ElementRef, forwardRef, HostBinding, HostListener, Inject, Input, PLATFORM_ID, QueryList, TemplateRef, ViewChild, ViewChildren } from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsSwipeContainerDirective } from '@mintplayer/ng-swiper';
-import { BehaviorSubject, combineLatest, concatAll, filter, map, Observable, of, switchMap, tap } from 'rxjs';
+import { BehaviorSubject, forkJoin, map, mergeMap, Observable } from 'rxjs';
 import { BsCarouselImageDirective } from '../carousel-image/carousel-image.directive';
 import { BsObserveSizeDirective, Size } from '@mintplayer/ng-bootstrap/observe-size';
 
@@ -13,7 +13,7 @@ import { BsObserveSizeDirective, Size } from '@mintplayer/ng-bootstrap/observe-s
   styleUrls: ['./carousel.component.scss'],
   animations: [FadeInOutAnimation]
 })
-export class BsCarouselComponent implements AfterViewInit, OnDestroy {
+export class BsCarouselComponent {
 
   constructor(@Inject(PLATFORM_ID) platformId: any, private cdRef: ChangeDetectorRef) {
     this.isServerSide = isPlatformServer(platformId);
@@ -37,22 +37,18 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
       return img.itemTemplate;
     }));
 
-    if (!isPlatformServer(platformId)) {
-      this.resizeObserver = new ResizeObserver((entries) => {
-        this.cdRef.detectChanges();
-      });
-    }
+    this.slideSizes$ = this.slideSizeObservers$
+      .pipe(mergeMap(dir => forkJoin(dir.map(i => i.size$))));
 
-    this.maxSize$ = this.slideSizeObservers$
-      .pipe(map(dir => dir.map(i => i.size$)))
-      .pipe(switchMap((t) => {
-        if (t.length === 0) {
-          return of({ width: 0, height: 0 });
+    this.maxSize$ = this.slideSizes$
+      .pipe(map((vals) => {
+        if (vals.length === 0) {
+          return ({ width: 0, height: 0 });
         } else {
-          return combineLatest(t).pipe(map(vals => ({
+          return ({
             width: Math.max(0, ...vals.map(v => v.width ?? 0)),
             height: Math.max(0, ...vals.map(v => v.height ?? 0)),
-          })));
+          });
         }
       }));
   }
@@ -64,12 +60,11 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
   imageCount$: Observable<number>;
   firstImageTemplate$: Observable<TemplateRef<any> | null>;
   lastImageTemplate$: Observable<TemplateRef<any> | null>;
-  resizeObserver?: ResizeObserver;
   slideSizeObservers$ = new BehaviorSubject<BsObserveSizeDirective[]>([]);
   @ViewChildren(forwardRef(() => BsObserveSizeDirective)) set slideSizeObservers(val: QueryList<BsObserveSizeDirective>) {
     this.slideSizeObservers$.next(val.toArray());
   }
-  // slideSizes$: Observable<Size[]>;
+  slideSizes$: Observable<Size[]>;
   maxSize$: Observable<Size>;
 
   @Input() indicators = false;
@@ -143,13 +138,4 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
   }
 
   imageCounter = 1;
-
-  ngAfterViewInit() {
-    this.resizeObserver?.observe(this.innerElement.nativeElement);
-  }
-
-  ngOnDestroy() {
-    this.resizeObserver?.unobserve(this.innerElement.nativeElement);
-    this.resizeObserver?.disconnect();
-  }
 }
