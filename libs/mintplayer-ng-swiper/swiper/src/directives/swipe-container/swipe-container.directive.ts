@@ -2,7 +2,7 @@ import { animate, AnimationBuilder, AnimationPlayer, style } from '@angular/anim
 import { DOCUMENT } from '@angular/common';
 import { AfterViewInit, ContentChildren, Directive, ElementRef, EventEmitter, forwardRef, HostBinding, Inject, Input, Output, QueryList } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, combineLatest, delay, filter, map, mergeMap, Observable, take } from 'rxjs';
+import { BehaviorSubject, combineLatest, delay, filter, forkJoin, map, mergeMap, Observable, take } from 'rxjs';
 import { LastTouch } from '../../interfaces/last-touch';
 import { StartTouch } from '../../interfaces/start-touch';
 import { BsSwipeDirective } from '../swipe/swipe.directive';
@@ -82,11 +82,11 @@ export class BsSwipeContainerDirective implements AfterViewInit {
     this.slideHeights$ = this.actualSwipes$
       .pipe(delay(400), filter(swipes => !!swipes))
       // .pipe(map(swipes => <QueryList<BsSwipeDirective>>swipes))
-      .pipe(mergeMap(swipes => combineLatest(swipes.map(swipe => swipe.slideHeight$))));
+      .pipe(mergeMap(swipes => forkJoin(swipes.map(swipe => swipe.observeSize.height$))));
 
     this.currentSlideHeight$ = combineLatest([this.slideHeights$, this.imageIndex$])
       .pipe(map(([slideHeights, imageIndex]) => {
-        const maxHeight = Math.max(...slideHeights);
+        const maxHeight = Math.max(...slideHeights.map(h => h ?? 0));
         const currHeight: number = slideHeights[imageIndex] ?? maxHeight;
         return maxHeight - (maxHeight - currHeight)/* / 2*/;
       }));
@@ -117,7 +117,7 @@ export class BsSwipeContainerDirective implements AfterViewInit {
   lastTouch$ = new BehaviorSubject<LastTouch | null>(null);
   swipes$ = new BehaviorSubject<QueryList<BsSwipeDirective> | null>(null);
   imageIndex$ = new BehaviorSubject<number>(0);
-  slideHeights$: Observable<number[]>;
+  slideHeights$: Observable<(number | undefined)[]>;
   currentSlideHeight$: Observable<number>;
   pendingAnimation?: AnimationPlayer;
   containerElement: ElementRef<HTMLDivElement>;

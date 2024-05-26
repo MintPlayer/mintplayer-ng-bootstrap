@@ -54,7 +54,7 @@
                                 <ng-container *ngTemplateOutlet="lastImageTemplate$ | async"></ng-container>
                             </div>
                             @for (image of (images$ | async); track image.id) {
-                                <div bsObserveSize #slideSizeObservers="bsObserveSize" class="carousel-item" [class.active]="true" bsSwipe>
+                                <div class="carousel-item" [class.active]="true" bsSwipe>
                                     <ng-container *ngTemplateOutlet="image.itemTemplate"></ng-container>
                                 </div>
                             }

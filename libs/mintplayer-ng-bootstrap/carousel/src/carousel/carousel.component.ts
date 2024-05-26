@@ -2,10 +2,10 @@ import { isPlatformServer } from '@angular/common';
 import { ChangeDetectorRef, Component, ContentChildren, ElementRef, forwardRef, HostBinding, HostListener, Inject, Input, PLATFORM_ID, QueryList, TemplateRef, ViewChild, ViewChildren } from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Color } from '@mintplayer/ng-bootstrap';
-import { BsSwipeContainerDirective } from '@mintplayer/ng-swiper';
+import { BsSwipeContainerDirective } from '@mintplayer/ng-swiper/swiper';
+import { BsObserveSizeDirective, Size } from '@mintplayer/ng-swiper/observe-size';
 import { BehaviorSubject, forkJoin, map, mergeMap, Observable } from 'rxjs';
 import { BsCarouselImageDirective } from '../carousel-image/carousel-image.directive';
-import { BsObserveSizeDirective, Size } from '@mintplayer/ng-bootstrap/observe-size';
 
 @Component({
   selector: 'bs-carousel',
@@ -40,6 +40,8 @@ export class BsCarouselComponent {
     this.slideSizes$ = this.slideSizeObservers$
       .pipe(mergeMap(dir => forkJoin(dir.map(i => i.size$))));
 
+    this.currentSlideSize$ = this.slideSizes$.pipe(map((sizes) => sizes[this.currentImageIndex]));
+
     this.maxSize$ = this.slideSizes$
       .pipe(map((vals) => {
         if (vals.length === 0) {
@@ -66,6 +68,7 @@ export class BsCarouselComponent {
   }
   slideSizes$: Observable<Size[]>;
   maxSize$: Observable<Size>;
+  currentSlideSize$: Observable<Size>;
 
   @Input() indicators = false;
   @Input() keyboardEvents = true;
