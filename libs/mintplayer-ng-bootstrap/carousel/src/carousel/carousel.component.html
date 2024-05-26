@@ -35,9 +35,9 @@
     <!-- <span>{{ maxSize$ | async | json }}</span> -->
     @switch (animation) {
         @case ('slide') {
-            <ng-container *bsLet="(maxSize$ | async) as maxSize">
-                <!-- [style.height.px]="container.currentSlideHeight$ | async" -->
-                <div class="carousel slide mx-auto" [style.height.px]="maxSize">
+            <!-- <ng-container *bsLet="(maxSize$ | async) as maxSize"> -->
+                <!-- [style.height.px]="maxSize" -->
+                <div class="carousel slide mx-auto">
                     @if (indicators) {
                         <div class="carousel-indicators">
                             @for (image of (images$ | async); track image.id; let i = $index) {
@@ -48,7 +48,7 @@
                             }
                         </div>
                     }
-                    <div class="carousel-inner overflow-hidden text-nowrap pe-none" #innerElement>
+                    <div class="carousel-inner overflow-hidden text-nowrap pe-none" [style.height.px]="container.currentSlideHeight$ | async" #innerElement>
                         <div bsSwipeContainer #container="bsSwipeContainer" [minimumOffset]="50" [(imageIndex)]="currentImageIndex">
                             <div class="carousel-item" bsSwipe [offside]="true">
                                 <ng-container *ngTemplateOutlet="lastImageTemplate$ | async"></ng-container>
@@ -72,7 +72,7 @@
                         <span class="visually-hidden">Next</span>
                     </button>
                 </div>
-            </ng-container>
+            <!-- </ng-container> -->
         }
         @case ('fade') {
             <div class="carousel fade mx-auto">

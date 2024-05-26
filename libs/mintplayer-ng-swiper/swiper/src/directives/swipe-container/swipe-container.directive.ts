@@ -81,8 +81,7 @@ export class BsSwipeContainerDirective implements AfterViewInit {
 
     this.slideHeights$ = this.actualSwipes$
       .pipe(delay(400), filter(swipes => !!swipes))
-      // .pipe(map(swipes => <QueryList<BsSwipeDirective>>swipes))
-      .pipe(mergeMap(swipes => forkJoin(swipes.map(swipe => swipe.observeSize.height$))));
+      .pipe(mergeMap(swipes => combineLatest(swipes.map(swipe => swipe.observeSize.height$))));
 
     this.currentSlideHeight$ = combineLatest([this.slideHeights$, this.imageIndex$])
       .pipe(map(([slideHeights, imageIndex]) => {
