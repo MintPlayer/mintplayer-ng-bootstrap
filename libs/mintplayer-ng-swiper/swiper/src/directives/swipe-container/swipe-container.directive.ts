@@ -2,10 +2,11 @@ import { animate, AnimationBuilder, AnimationPlayer, style } from '@angular/anim
 import { DOCUMENT } from '@angular/common';
 import { AfterViewInit, ContentChildren, Directive, ElementRef, EventEmitter, forwardRef, HostBinding, Inject, Input, Output, QueryList } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, combineLatest, delay, filter, forkJoin, map, mergeMap, Observable, take } from 'rxjs';
+import { BehaviorSubject, combineLatest, debounce, debounceTime, delay, filter, forkJoin, map, mergeMap, Observable, take } from 'rxjs';
 import { LastTouch } from '../../interfaces/last-touch';
 import { StartTouch } from '../../interfaces/start-touch';
 import { BsSwipeDirective } from '../swipe/swipe.directive';
+import { Orientation } from '../../types/orientation';
 
 @Directive({
   selector: '[bsSwipeContainer]',
@@ -83,12 +84,17 @@ export class BsSwipeContainerDirective implements AfterViewInit {
       .pipe(delay(400), filter(swipes => !!swipes))
       .pipe(mergeMap(swipes => combineLatest(swipes.map(swipe => swipe.observeSize.height$))));
 
-    this.currentSlideHeight$ = combineLatest([this.slideHeights$, this.imageIndex$])
-      .pipe(map(([slideHeights, imageIndex]) => {
+    this.currentSlideHeight$ = combineLatest([this.slideHeights$, this.imageIndex$, this.orientation$])
+      .pipe(map(([slideHeights, imageIndex, orientation]) => {
         const maxHeight = Math.max(...slideHeights.map(h => h ?? 0));
         const currHeight: number = slideHeights[imageIndex] ?? maxHeight;
-        return maxHeight - (maxHeight - currHeight)/* / 2*/;
-      }));
+        // return maxHeight - (maxHeight - currHeight)/* / 2*/;
+        switch (orientation) {
+          case 'horizontal': return currHeight;
+          case 'vertical': return maxHeight;
+        }
+      }))
+      .pipe(debounceTime(10));
   }
 
   @HostBinding('style.margin-left.%') offsetLeft: number | null = null;
@@ -101,6 +107,7 @@ export class BsSwipeContainerDirective implements AfterViewInit {
   @Input() minimumOffset = 50;
 
   //#region ImageIndex
+  imageIndex$ = new BehaviorSubject<number>(0);
   public get imageIndex() {
     return this.imageIndex$.value;
   }
@@ -110,12 +117,21 @@ export class BsSwipeContainerDirective implements AfterViewInit {
   @Output() imageIndexChange = new EventEmitter<number>();
   //#endregion
   
+  //#region Orientation
+  orientation$ = new BehaviorSubject<Orientation>('horizontal');
+  public get orientation() {
+    return this.orientation$.value;
+  }
+  @Input() public set orientation(value: Orientation | null) {
+    this.orientation$.next(value || 'horizontal');
+  }
+  //#endregion
+
   actualSwipes$: Observable<BsSwipeDirective[]>;
   isViewInited$ = new BehaviorSubject<boolean>(false);
   startTouch$ = new BehaviorSubject<StartTouch | null>(null);
   lastTouch$ = new BehaviorSubject<LastTouch | null>(null);
   swipes$ = new BehaviorSubject<QueryList<BsSwipeDirective> | null>(null);
-  imageIndex$ = new BehaviorSubject<number>(0);
   slideHeights$: Observable<(number | undefined)[]>;
   currentSlideHeight$: Observable<number>;
   pendingAnimation?: AnimationPlayer;

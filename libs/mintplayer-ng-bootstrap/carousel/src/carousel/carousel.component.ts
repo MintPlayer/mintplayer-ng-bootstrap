@@ -2,7 +2,7 @@ import { isPlatformServer } from '@angular/common';
 import { ChangeDetectorRef, Component, ContentChildren, ElementRef, forwardRef, HostBinding, HostListener, Inject, Input, PLATFORM_ID, QueryList, TemplateRef, ViewChild, ViewChildren } from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Color } from '@mintplayer/ng-bootstrap';
-import { BsSwipeContainerDirective } from '@mintplayer/ng-swiper/swiper';
+import { BsSwipeContainerDirective, Orientation } from '@mintplayer/ng-swiper/swiper';
 import { BsObserveSizeDirective, Size } from '@mintplayer/ng-swiper/observe-size';
 import { BehaviorSubject, forkJoin, map, mergeMap, Observable } from 'rxjs';
 import { BsCarouselImageDirective } from '../carousel-image/carousel-image.directive';
@@ -91,6 +91,15 @@ export class BsCarouselComponent {
   }
   public get animation() {
     return this._animation;
+  }
+  //#endregion
+  //#region Orientation
+  orientation$ = new BehaviorSubject<Orientation>('horizontal');
+  public get orientation() {
+    return this.swipeContainer.orientation;
+  }
+  @Input() public set orientation(value: Orientation | null) {
+    this.orientation$.next(value || 'horizontal');
   }
   //#endregion
 
