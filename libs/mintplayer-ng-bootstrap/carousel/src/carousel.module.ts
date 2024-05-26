@@ -5,7 +5,8 @@ import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
 import { BsCarouselComponent } from './carousel/carousel.component';
 import { BsCarouselImageDirective } from './carousel-image/carousel-image.directive';
 import { BsCarouselImgDirective } from './carousel-img/carousel-img.directive';
-import { AsyncPipe, NgTemplateOutlet } from '@angular/common';
+import { AsyncPipe, JsonPipe, NgTemplateOutlet } from '@angular/common';
+import { BsObserveSizeDirective } from '@mintplayer/ng-bootstrap/observe-size';
 
 @NgModule({
   declarations: [
@@ -15,10 +16,12 @@ import { AsyncPipe, NgTemplateOutlet } from '@angular/common';
   ],
   imports: [
     AsyncPipe,
+    JsonPipe,
     NgTemplateOutlet,
     BsLetDirective,
     BsSwiperModule,
-    BsNoNoscriptDirective
+    BsNoNoscriptDirective,
+    BsObserveSizeDirective
   ],
   exports: [
     BsCarouselComponent,

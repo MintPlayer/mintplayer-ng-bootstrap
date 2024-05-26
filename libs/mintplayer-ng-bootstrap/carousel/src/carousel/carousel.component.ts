@@ -1,10 +1,11 @@
 import { isPlatformServer } from '@angular/common';
-import { AfterViewInit, ChangeDetectorRef, Component, ContentChildren, ElementRef, forwardRef, HostBinding, HostListener, Inject, Input, OnDestroy, PLATFORM_ID, QueryList, TemplateRef, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ContentChildren, ElementRef, forwardRef, HostBinding, HostListener, Inject, Input, OnDestroy, PLATFORM_ID, QueryList, TemplateRef, ViewChild, ViewChildren } from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsSwipeContainerDirective } from '@mintplayer/ng-swiper';
-import { BehaviorSubject, map, Observable } from 'rxjs';
+import { BehaviorSubject, combineLatest, concatAll, filter, map, Observable, of, switchMap, tap } from 'rxjs';
 import { BsCarouselImageDirective } from '../carousel-image/carousel-image.directive';
+import { BsObserveSizeDirective, Size } from '@mintplayer/ng-bootstrap/observe-size';
 
 @Component({
   selector: 'bs-carousel',
@@ -41,6 +42,19 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
         this.cdRef.detectChanges();
       });
     }
+
+    this.maxSize$ = this.slideSizeObservers$
+      .pipe(map(dir => dir.map(i => i.size$)))
+      .pipe(switchMap((t) => {
+        if (t.length === 0) {
+          return of({ width: 0, height: 0 });
+        } else {
+          return combineLatest(t).pipe(map(vals => ({
+            width: Math.max(0, ...vals.map(v => v.width ?? 0)),
+            height: Math.max(0, ...vals.map(v => v.height ?? 0)),
+          })));
+        }
+      }));
   }
   
   colors = Color;
@@ -51,6 +65,12 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
   firstImageTemplate$: Observable<TemplateRef<any> | null>;
   lastImageTemplate$: Observable<TemplateRef<any> | null>;
   resizeObserver?: ResizeObserver;
+  slideSizeObservers$ = new BehaviorSubject<BsObserveSizeDirective[]>([]);
+  @ViewChildren(forwardRef(() => BsObserveSizeDirective)) set slideSizeObservers(val: QueryList<BsObserveSizeDirective>) {
+    this.slideSizeObservers$.next(val.toArray());
+  }
+  // slideSizes$: Observable<Size[]>;
+  maxSize$: Observable<Size>;
 
   @Input() indicators = false;
   @Input() keyboardEvents = true;
