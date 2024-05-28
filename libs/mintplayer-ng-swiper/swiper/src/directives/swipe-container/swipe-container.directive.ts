@@ -7,6 +7,7 @@ import { LastTouch } from '../../interfaces/last-touch';
 import { StartTouch } from '../../interfaces/start-touch';
 import { BsSwipeDirective } from '../swipe/swipe.directive';
 import { Orientation } from '../../types/orientation';
+import { Size } from '@mintplayer/ng-swiper/observe-size';
 
 @Directive({
   selector: '[bsSwipeContainer]',
@@ -79,14 +80,14 @@ export class BsSwipeContainerDirective implements AfterViewInit {
         }
       }));
 
-    this.slideHeights$ = this.actualSwipes$
+    this.slideSizes$ = this.actualSwipes$
       .pipe(delay(400), filter(swipes => !!swipes))
-      .pipe(mergeMap(swipes => combineLatest(swipes.map(swipe => swipe.observeSize.height$))));
+      .pipe(mergeMap(swipes => combineLatest(swipes.map(swipe => swipe.observeSize.size$))));
 
-    this.currentSlideHeight$ = combineLatest([this.slideHeights$, this.imageIndex$, this.orientation$])
-      .pipe(map(([slideHeights, imageIndex, orientation]) => {
-        const maxHeight = Math.max(...slideHeights.map(h => h ?? 0));
-        const currHeight: number = slideHeights[imageIndex] ?? maxHeight;
+    this.currentSlideHeight$ = combineLatest([this.slideSizes$, this.imageIndex$, this.orientation$])
+      .pipe(map(([slideSizes, imageIndex, orientation]) => {
+        const maxHeight = Math.max(...slideSizes.map(s => s.height ?? 0));
+        const currHeight: number = slideSizes[imageIndex].height ?? maxHeight;
         // return maxHeight - (maxHeight - currHeight)/* / 2*/;
         switch (orientation) {
           case 'horizontal': return currHeight;
@@ -154,7 +155,7 @@ export class BsSwipeContainerDirective implements AfterViewInit {
   lastTouch$ = new BehaviorSubject<LastTouch | null>(null);
   swipes$ = new BehaviorSubject<QueryList<BsSwipeDirective> | null>(null);
   // TODO: slide sizes instead
-  slideHeights$: Observable<(number | undefined)[]>;
+  slideSizes$: Observable<Size[]>;
   currentSlideHeight$: Observable<number>;
   pendingAnimation?: AnimationPlayer;
   containerElement: ElementRef<HTMLDivElement>;
