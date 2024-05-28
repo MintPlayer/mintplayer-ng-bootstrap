@@ -7,27 +7,51 @@ import { LastTouch } from '../../interfaces/last-touch';
 import { StartTouch } from '../../interfaces/start-touch';
 import { BsSwipeDirective } from '../swipe/swipe.directive';
 import { Orientation } from '../../types/orientation';
-import { Size } from '@mintplayer/ng-swiper/observe-size';
+import { BsObserveSizeDirective, Size } from '@mintplayer/ng-swiper/observe-size';
+import { SwipeOffset } from '../../interfaces/swipe-offset';
 
 @Directive({
   selector: '[bsSwipeContainer]',
-  exportAs: 'bsSwipeContainer'
+  exportAs: 'bsSwipeContainer',
+  hostDirectives: [BsObserveSizeDirective]
 })
 export class BsSwipeContainerDirective implements AfterViewInit {
 
-  constructor(element: ElementRef, private animationBuilder: AnimationBuilder, @Inject(DOCUMENT) document: any) {
+  constructor(element: ElementRef, private animationBuilder: AnimationBuilder, @Inject(DOCUMENT) document: any, private observeSize: BsObserveSizeDirective) {
     this.containerElement = element;
     this.document = <Document>document;
-    this.offset$ = combineLatest([this.orientation$, this.startTouch$, this.lastTouch$, this.imageIndex$, this.isViewInited$])
-      .pipe(map(([orientation, startTouch, lastTouch, imageIndex, isViewInited]) => {
-        if (!isViewInited) {
-          return (-imageIndex * 100);
-        } else if (!!startTouch && !!lastTouch) {
-          return (orientation === 'horizontal')
-            ? (-imageIndex * 100 + (lastTouch.position.x - startTouch.position.x) / this.containerElement.nativeElement.clientWidth * 100)
-            : (-imageIndex * 100 + (lastTouch.position.y - startTouch.position.y) / this.containerElement.nativeElement.clientHeight * 100);
+    this.offset$ = combineLatest([this.orientation$, this.observeSize.size$, this.startTouch$, this.lastTouch$, this.imageIndex$, this.isViewInited$])
+      .pipe(map(([orientation, size, startTouch, lastTouch, imageIndex, isViewInited]) => {
+        if (!isViewInited || !startTouch || !lastTouch) {
+          if (orientation === 'horizontal') {
+            return <SwipeOffset>{
+              x: { pixels: -imageIndex * size.width, percents: -100 * imageIndex },
+              y: { pixels: 0, percents: 0 }
+            };
+          } else {
+            return <SwipeOffset>{
+              x: { pixels: 0, percents: 0 },
+              y: { pixels: -imageIndex * size.height, percents: -100 * imageIndex }
+            };
+          }
         } else {
-          return (-imageIndex * 100);
+          if (orientation === 'horizontal') {
+            return <SwipeOffset>{
+              x: {
+                pixels: -imageIndex * size.width + lastTouch.position.x - startTouch.position.x,
+                percents: -imageIndex * 100 + (lastTouch.position.x - startTouch.position.x) / size.width * 100
+              },
+              y: { pixels: 0, percents: 0 }
+            };
+          } else {
+            return <SwipeOffset>{
+              x: { pixels: 0, percents: 0 },
+              y: {
+                pixels: -imageIndex * size.height + (lastTouch.position.y - startTouch.position.y),
+                percents: (-imageIndex * 100 + (lastTouch.position.y - startTouch.position.y) / size.height * 100)
+              }
+            };
+          }
         }
       }));
 
@@ -162,7 +186,7 @@ export class BsSwipeContainerDirective implements AfterViewInit {
   document: Document;
 
   // TODO: Don't just keep px, but both px and % using currentslidesize$
-  offset$: Observable<number>;
+  offset$: Observable<SwipeOffset>;
   offsetBefore$: Observable<number>;
   offsetAfter$: Observable<number>;
   padBefore$: Observable<number>;

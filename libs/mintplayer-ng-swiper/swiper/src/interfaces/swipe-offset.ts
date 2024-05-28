@@ -4,6 +4,6 @@ export interface SwipeOffset {
 }
 
 export interface SwipeOffsetValues {
-    pixels: number;
+    pixels?: number;
     percents: number;
 }

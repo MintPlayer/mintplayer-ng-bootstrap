@@ -1,6 +1,6 @@
 import { isPlatformServer } from '@angular/common';
 import { AfterViewInit, Directive, ElementRef, Inject, NgZone, OnDestroy, PLATFORM_ID } from '@angular/core';
-import { BehaviorSubject, Observable, map } from 'rxjs';
+import { Observable, Subject, map } from 'rxjs';
 import { Size } from './size';
 
 @Directive({
@@ -21,13 +21,14 @@ export class BsObserveSizeDirective implements AfterViewInit, OnDestroy {
   }
 
   private observer?: ResizeObserver;
-  size$ = new BehaviorSubject<Size>({});
+  size$ = new Subject<Size>();
   width$: Observable<number | undefined>;
   height$: Observable<number | undefined>;
 
   ngAfterViewInit() {
-    // console.log('el', this.element.nativeElement);
-    this.observer?.observe(this.element.nativeElement);
+    const el: HTMLElement = this.element.nativeElement;
+    this.observer?.observe(el);
+    this.size$.next({ width: el.clientWidth, height: el.clientHeight });
   }
 
   ngOnDestroy() {
