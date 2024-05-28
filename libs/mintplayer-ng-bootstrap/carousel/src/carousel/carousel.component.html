@@ -37,9 +37,9 @@
         @case ('slide') {
             <!-- <ng-container *bsLet="(maxSize$ | async) as maxSize"> -->
                 <!-- [style.height.px]="maxSize" -->
-                <div class="carousel slide mx-auto">
+                <div class="carousel slide mx-auto" [class.vertical]="isVertical$ | async">
                     @if (indicators) {
-                        <div class="carousel-indicators">
+                        <div class="carousel-indicators" [class.flex-column]="isVertical$ | async">
                             @for (image of (images$ | async); track image.id; let i = $index) {
                                 <button type="button" (click)="container.goto(i)"
                                     [class.active]="(container.imageIndex$ | async) === i" data-bs-target
@@ -50,15 +50,17 @@
                     }
                     <div class="carousel-inner overflow-hidden text-nowrap pe-none" [style.height.px]="container.currentSlideHeight$ | async" #innerElement>
                         <div bsSwipeContainer #container="bsSwipeContainer" [minimumOffset]="50" [(imageIndex)]="currentImageIndex" [orientation]="orientation$ | async">
-                            <div class="carousel-item" bsSwipe [offside]="true">
+                            <div class="carousel-item" bsSwipe [offside]="true" [style.height.px]="carouselItemHeight$ | async">
                                 <ng-container *ngTemplateOutlet="lastImageTemplate$ | async"></ng-container>
                             </div>
                             @for (image of (images$ | async); track image.id) {
-                                <div class="carousel-item" [class.active]="true" bsSwipe>
-                                    <ng-container *ngTemplateOutlet="image.itemTemplate"></ng-container>
+                                <div class="carousel-item" [class.active]="true" bsSwipe [style.height.px]="carouselItemHeight$ | async">
+                                    <div *bsLet="(isVertical$ | async) as isVertical" [class.d-flex]="isVertical" [class.flex-column]="isVertical" [class.h-100]="isVertical" [class.justify-content-around]="isVertical">
+                                        <ng-container *ngTemplateOutlet="image.itemTemplate"></ng-container>
+                                    </div>
                                 </div>
                             }
-                            <div class="carousel-item" bsSwipe [offside]="true">
+                            <div class="carousel-item" bsSwipe [offside]="true" [style.height.px]="carouselItemHeight$ | async">
                                 <ng-container *ngTemplateOutlet="firstImageTemplate$ | async"></ng-container>
                             </div>
                         </div>

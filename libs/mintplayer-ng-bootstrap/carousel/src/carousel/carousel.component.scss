@@ -54,6 +54,53 @@
         .carousel-item > * {
             width: 100% !important;
         }
+
+        .carousel-item img {
+            width: 100% !important;
+        }
+
+        &.vertical {
+            // background: #AAA;
+
+            button.carousel-control-next, button.carousel-control-prev {
+                width: auto;
+                height: 15%;
+
+                > span {
+                    transform: rotate(90deg);
+                    background-color: #333;
+                    border-radius: 50%;
+                    padding: 1rem;
+                    background-size: 70%;
+                }
+            }
+
+            button.carousel-control-next {
+                left: 0;
+                bottom: 0;
+                top: auto;
+            }
+            button.carousel-control-prev {
+                right: 0;
+                bottom: auto;
+                top: 0;
+            }
+            .carousel-indicators {
+                right: auto;
+                top: 0;
+                margin-top: 15%;
+                margin-bottom: 15%;
+                margin-left: 1rem;
+                margin-right: auto;
+
+                > button[data-bs-target] {
+                    width: 3px;
+                    height: 30px;
+                    margin-left: 3px;
+                    margin-right: 3px;
+                }
+            }
+        }
     }
 }
 

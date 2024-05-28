@@ -4,7 +4,7 @@ import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsSwipeContainerDirective, Orientation } from '@mintplayer/ng-swiper/swiper';
 import { BsObserveSizeDirective, Size } from '@mintplayer/ng-swiper/observe-size';
-import { BehaviorSubject, forkJoin, map, mergeMap, Observable } from 'rxjs';
+import { BehaviorSubject, combineLatest, forkJoin, map, mergeMap, Observable } from 'rxjs';
 import { BsCarouselImageDirective } from '../carousel-image/carousel-image.directive';
 
 @Component({
@@ -38,7 +38,7 @@ export class BsCarouselComponent {
     }));
 
     this.slideSizes$ = this.slideSizeObservers$
-      .pipe(mergeMap(dir => forkJoin(dir.map(i => i.size$))));
+      .pipe(mergeMap(dir => combineLatest(dir.map(i => i.size$))));
 
     this.currentSlideSize$ = this.slideSizes$.pipe(map((sizes) => sizes[this.currentImageIndex]));
 
@@ -53,6 +53,11 @@ export class BsCarouselComponent {
           });
         }
       }));
+
+    this.carouselItemHeight$ = combineLatest([this.maxSize$, this.orientation$])
+      .pipe(map(([maxSize, orientation]) => (orientation === 'vertical') ? maxSize.height : undefined));
+
+    this.isVertical$ = this.orientation$.pipe(map(orientation => orientation === 'vertical'));
   }
   
   colors = Color;
@@ -68,6 +73,7 @@ export class BsCarouselComponent {
   }
   slideSizes$: Observable<Size[]>;
   maxSize$: Observable<Size>;
+  carouselItemHeight$: Observable<number | undefined>;
   currentSlideSize$: Observable<Size>;
 
   @Input() indicators = false;
@@ -95,6 +101,7 @@ export class BsCarouselComponent {
   //#endregion
   //#region Orientation
   orientation$ = new BehaviorSubject<Orientation>('horizontal');
+  isVertical$: Observable<boolean>;
   public get orientation() {
     return this.swipeContainer.orientation;
   }
