@@ -40,7 +40,7 @@ export class BsCarouselComponent {
     this.slideSizes$ = this.slideSizeObservers$
       .pipe(mergeMap(dir => combineLatest(dir.map(i => i.size$))));
 
-    this.currentSlideSize$ = this.slideSizes$.pipe(map((sizes) => sizes[this.currentImageIndex]));
+    this.currentSlideSize$ = this.slideSizes$.pipe(map((sizes) => sizes[this.currentImageIndex] || { width: 1, height: 1 }));
 
     this.maxSize$ = this.slideSizes$
       .pipe(map((vals) => {
@@ -48,8 +48,8 @@ export class BsCarouselComponent {
           return ({ width: 0, height: 0 });
         } else {
           return ({
-            width: Math.max(0, ...vals.map(v => v.width ?? 0)),
-            height: Math.max(0, ...vals.map(v => v.height ?? 0)),
+            width: Math.max(0, ...vals.map(v => v?.width ?? 1)),
+            height: Math.max(0, ...vals.map(v => v?.height ?? 1)),
           });
         }
       }));
@@ -71,7 +71,7 @@ export class BsCarouselComponent {
   @ViewChildren(forwardRef(() => BsObserveSizeDirective)) set slideSizeObservers(val: QueryList<BsObserveSizeDirective>) {
     this.slideSizeObservers$.next(val.toArray());
   }
-  slideSizes$: Observable<Size[]>;
+  slideSizes$: Observable<(Size | undefined)[]>;
   maxSize$: Observable<Size>;
   carouselItemHeight$: Observable<number | undefined>;
   currentSlideSize$: Observable<Size>;

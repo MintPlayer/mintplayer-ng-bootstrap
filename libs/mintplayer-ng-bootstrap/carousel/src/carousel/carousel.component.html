@@ -37,6 +37,7 @@
         @case ('slide') {
             <!-- <ng-container *bsLet="(maxSize$ | async) as maxSize"> -->
                 <!-- [style.height.px]="maxSize" -->
+                <span>{{ container.currentSlideHeight$ | async | json }}</span>
                 <div class="carousel slide mx-auto" [class.vertical]="isVertical$ | async">
                     @if (indicators) {
                         <div class="carousel-indicators" [class.flex-column]="isVertical$ | async">
