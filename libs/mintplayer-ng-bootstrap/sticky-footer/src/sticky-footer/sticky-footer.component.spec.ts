@@ -1,5 +1,3 @@
-global.ResizeObserver = require('resize-observer-polyfill');
-
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MockDirective } from 'ng-mocks';
 import { Component } from '@angular/core';

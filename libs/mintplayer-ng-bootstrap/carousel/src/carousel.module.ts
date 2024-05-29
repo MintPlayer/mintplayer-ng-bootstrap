@@ -1,5 +1,5 @@
 import { NgModule } from '@angular/core';
-import { BsSwiperModule } from '@mintplayer/ng-swiper';
+import { BsSwiperModule } from '@mintplayer/ng-swiper/swiper';
 import { BsLetDirective } from '@mintplayer/ng-bootstrap/let';
 import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
 import { BsCarouselComponent } from './carousel/carousel.component';
