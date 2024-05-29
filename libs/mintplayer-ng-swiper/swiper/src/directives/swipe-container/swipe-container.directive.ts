@@ -1,19 +1,21 @@
-import { animate, AnimationBuilder, AnimationPlayer, style } from '@angular/animations';
 import { DOCUMENT } from '@angular/common';
-import { AfterViewInit, ContentChildren, Directive, ElementRef, EventEmitter, forwardRef, HostBinding, Inject, Input, Output, QueryList } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, combineLatest, delay, filter, map, mergeMap, Observable, take } from 'rxjs';
+import { animate, AnimationBuilder, AnimationPlayer, style } from '@angular/animations';
+import { AfterViewInit, ContentChildren, Directive, ElementRef, EventEmitter, forwardRef, HostBinding, Inject, Input, Output, QueryList } from '@angular/core';
+import { BehaviorSubject, combineLatest, debounceTime, delay, filter, map, mergeMap, Observable, take } from 'rxjs';
+import { BsObserveSizeDirective, Size } from '@mintplayer/ng-swiper/observe-size';
 import { LastTouch } from '../../interfaces/last-touch';
 import { StartTouch } from '../../interfaces/start-touch';
 import { BsSwipeDirective } from '../swipe/swipe.directive';
 
 @Directive({
   selector: '[bsSwipeContainer]',
-  exportAs: 'bsSwipeContainer'
+  exportAs: 'bsSwipeContainer',
+  hostDirectives: [BsObserveSizeDirective]
 })
 export class BsSwipeContainerDirective implements AfterViewInit {
 
-  constructor(element: ElementRef, private animationBuilder: AnimationBuilder, @Inject(DOCUMENT) document: any) {
+  constructor(element: ElementRef, private animationBuilder: AnimationBuilder, @Inject(DOCUMENT) document: any, private observeSize: BsObserveSizeDirective) {
     this.containerElement = element;
     this.document = <Document>document;
     this.offset$ = combineLatest([this.startTouch$, this.lastTouch$, this.imageIndex$, this.isViewInited$])
@@ -79,17 +81,23 @@ export class BsSwipeContainerDirective implements AfterViewInit {
         }
       }));
 
-    this.slideHeights$ = this.actualSwipes$
+    this.slideSizes$ = this.actualSwipes$
       .pipe(delay(400), filter(swipes => !!swipes))
-      // .pipe(map(swipes => <QueryList<BsSwipeDirective>>swipes))
-      .pipe(mergeMap(swipes => combineLatest(swipes.map(swipe => swipe.slideHeight$))));
+      .pipe(mergeMap(swipes => combineLatest(swipes.map(swipe => swipe.observeSize.size$))));
 
-    this.currentSlideHeight$ = combineLatest([this.slideHeights$, this.imageIndex$])
-      .pipe(map(([slideHeights, imageIndex]) => {
-        const maxHeight = Math.max(...slideHeights);
-        const currHeight: number = slideHeights[imageIndex] ?? maxHeight;
-        return maxHeight - (maxHeight - currHeight)/* / 2*/;
-      }));
+    this.currentSlideHeight$ = combineLatest([this.slideSizes$, this.imageIndex$])
+      .pipe(map(([slideSizes, imageIndex]) => {
+        const maxHeight = Math.max(...slideSizes.map(s => s?.height ?? 1));
+        console.log('maxHeight', {maxHeight, slideSizes});
+        const currHeight: number = slideSizes[imageIndex]?.height ?? maxHeight;
+        // switch (orientation) {
+        //   case 'horizontal':
+            return currHeight;
+        //   case 'vertical':
+        //     return maxHeight;
+        // }
+      }))
+      .pipe(debounceTime(10));
   }
 
   @HostBinding('style.margin-left.%') offsetLeft: number | null = null;
@@ -116,13 +124,15 @@ export class BsSwipeContainerDirective implements AfterViewInit {
   startTouch$ = new BehaviorSubject<StartTouch | null>(null);
   lastTouch$ = new BehaviorSubject<LastTouch | null>(null);
   swipes$ = new BehaviorSubject<QueryList<BsSwipeDirective> | null>(null);
+  // TODO: slide sizes instead
+  slideSizes$: Observable<(Size | undefined)[]>;
   imageIndex$ = new BehaviorSubject<number>(0);
-  slideHeights$: Observable<number[]>;
   currentSlideHeight$: Observable<number>;
   pendingAnimation?: AnimationPlayer;
   containerElement: ElementRef<HTMLDivElement>;
   document: Document;
 
+  // TODO: Don't just keep px, but both px and % using currentslidesize$
   offset$: Observable<number>;
   offsetLeft$: Observable<number>;
   offsetRight$: Observable<number>;

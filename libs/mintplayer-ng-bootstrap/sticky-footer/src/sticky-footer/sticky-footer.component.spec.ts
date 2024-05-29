@@ -1,10 +1,9 @@
-global.ResizeObserver = require('resize-observer-polyfill');
-
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MockDirective } from 'ng-mocks';
 import { Component } from '@angular/core';
 import { BsStickyFooterComponent } from './sticky-footer.component';
 import { BsStickyFooterParentDirective } from '../sticky-footer-parent/sticky-footer-parent.directive';
+import { BsObserveSizeDirective } from '@mintplayer/ng-swiper/observe-size';
 
 @Component({
   selector: 'sticky-footer-test',
@@ -24,6 +23,9 @@ describe('BsStickyFooterComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      imports: [
+        MockDirective(BsObserveSizeDirective),
+      ],
       declarations: [
         // Unit test
         BsStickyFooterComponent,

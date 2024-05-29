@@ -1,20 +1,21 @@
-import { AfterViewInit, Directive, ElementRef, HostBinding, HostListener, Inject, Input, OnDestroy, PLATFORM_ID } from "@angular/core";
-import { BehaviorSubject, combineLatest, filter, take } from "rxjs";
+import { Directive, HostBinding, HostListener, Input } from "@angular/core";
+import { BsObserveSizeDirective } from "@mintplayer/ng-swiper/observe-size";
+import { combineLatest, filter, take } from "rxjs";
 import { BsSwipeContainerDirective } from "../swipe-container/swipe-container.directive";
-import { isPlatformServer } from "@angular/common";
 
 @Directive({
-  selector: '[bsSwipe]'
+  selector: '[bsSwipe]',
+  hostDirectives: [BsObserveSizeDirective]
 })
-export class BsSwipeDirective implements AfterViewInit, OnDestroy {
+export class BsSwipeDirective {
 
-  constructor(private container: BsSwipeContainerDirective, element: ElementRef<HTMLElement>, @Inject(PLATFORM_ID) private platformId: any) {
-    this.element = element;
+  constructor(private container: BsSwipeContainerDirective, observeSize: BsObserveSizeDirective) {
+    this.observeSize = observeSize;
+    // container.orientation$.pipe(takeUntilDestroyed())
+    //   .subscribe(orientation => this.hostClass = (orientation === 'vertical') ? 'd-block' : 'd-inline-block');
   }
 
-  element: ElementRef<HTMLElement>;
-  observer?: ResizeObserver;
-  public slideHeight$ = new BehaviorSubject<number>(0);
+  observeSize: BsObserveSizeDirective;
 
   //#region Offside
   @Input() public offside = false;
@@ -27,6 +28,8 @@ export class BsSwipeDirective implements AfterViewInit, OnDestroy {
   @HostBinding('class.pe-auto')
   @HostBinding('class.me-0')
   classes = true;
+
+  @HostBinding('class') hostClass?: string;
 
   @HostListener('touchstart', ['$event'])
   onTouchStart(ev: TouchEvent) {
@@ -75,22 +78,6 @@ export class BsSwipeDirective implements AfterViewInit, OnDestroy {
           this.container.onSwipe(dx);
         }
       });
-  }
-
-  ngAfterViewInit() {
-    if (!isPlatformServer(this.platformId)) {
-      this.observer = new ResizeObserver((entries) => {
-        this.slideHeight$.next(entries[0].contentRect.height);
-      });
-      this.observer.observe(this.element.nativeElement);
-    }
-  }
-
-  ngOnDestroy() {
-    if (this.observer) {
-      this.observer.unobserve(this.element.nativeElement);
-      this.observer.disconnect();
-    }
   }
 
 }
