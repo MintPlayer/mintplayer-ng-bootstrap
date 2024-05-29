@@ -12,9 +12,11 @@ export class BsStickyFooterComponent implements AfterViewInit {
   constructor(private parent: BsStickyFooterParentDirective, private destroy: DestroyRef) {}
 
   ngAfterViewInit() {
-    this.sizeObserver.height$
-      .pipe(takeUntilDestroyed(this.destroy))
-      .subscribe(height => this.parent.marginBottom = height);
+    if (this.sizeObserver.height$) {
+      this.sizeObserver.height$
+        .pipe(takeUntilDestroyed(this.destroy))
+        .subscribe(height => this.parent.marginBottom = height);
+    }
   }
 
   @ViewChild('sizeObserver') sizeObserver!: BsObserveSizeDirective;
