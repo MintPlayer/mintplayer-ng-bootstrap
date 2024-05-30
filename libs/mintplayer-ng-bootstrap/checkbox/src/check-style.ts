@@ -1,0 +1,1 @@
+export type BsCheckStyle = 'checkbox' | 'switch' | 'toggle_button';

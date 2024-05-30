@@ -1,6 +1,6 @@
 <h1 class="text-center">Color-transition animation</h1>
 <div class="d-block text-center">
-    <bs-toggle-button [type]="'checkbox'" [(ngModel)]="state">State</bs-toggle-button>
+    <bs-checkbox [(ngModel)]="state">State</bs-checkbox>
     <br>
     <div [@colorTransition]="{ value: currentColor$ | async, params: { color1: '#F00', color2: '#00F' }}" class="tdiv d-inline-block"></div>
 </div>

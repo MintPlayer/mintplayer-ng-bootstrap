@@ -1,0 +1,1 @@
+export type BsRadioStyle = 'radio' | 'radio_toggle_button';

@@ -9,7 +9,7 @@
             <hr class="my-2">
         }
         @for (item of items; track item) {
-            <bs-toggle-button [ngModel]="selectedItems.indexOf(item) > -1" (ngModelChange)="itemChange(item, $event)" class="d-block">{{ item }}</bs-toggle-button>
+            <bs-checkbox [ngModel]="selectedItems.indexOf(item) > -1" (ngModelChange)="itemChange(item, $event)" class="d-block">{{ item }}</bs-checkbox>
         }
         @if (footerTemplate) {
             <hr class="my-2">

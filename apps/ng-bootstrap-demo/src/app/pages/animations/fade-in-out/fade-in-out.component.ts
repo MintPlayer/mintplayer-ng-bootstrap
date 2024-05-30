@@ -3,7 +3,6 @@ import { FormsModule } from '@angular/forms';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
-import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
 
 @Component({
   selector: 'demo-fade-in-out',
@@ -11,7 +10,7 @@ import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
   styleUrls: ['./fade-in-out.component.scss'],
   animations: [FadeInOutAnimation],
   standalone: true,
-  imports: [FormsModule, BsButtonTypeDirective, BsToggleButtonModule]
+  imports: [FormsModule, BsButtonTypeDirective]
 })
 export class FadeInOutComponent {
   colors = Color;
