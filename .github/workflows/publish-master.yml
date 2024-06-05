@@ -309,12 +309,12 @@ jobs:
         skipDuplicate: true
         registryUrl: https://marketplace.visualstudio.com
 
-    - name: Publish through FTP
-      uses: SamKirkland/FTP-Deploy-Action@v4.3.4
-      if: ${{ steps.publish_ng_bootstrap.outputs.type }}
-      with:
-        server: mintplayer.com
-        username: ${{ secrets.PUBLISH_FTP_USER }}
-        password: ${{ secrets.PUBLISH_FTP_PWD }}
-        local-dir: ./dist/apps/ng-bootstrap-demo/browser/
-        server-dir: ./
+    # - name: Publish through FTP
+    #   uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+    #   if: ${{ steps.publish_ng_bootstrap.outputs.type }}
+    #   with:
+    #     server: mintplayer.com
+    #     username: ${{ secrets.PUBLISH_FTP_USER }}
+    #     password: ${{ secrets.PUBLISH_FTP_PWD }}
+    #     local-dir: ./dist/apps/ng-bootstrap-demo/browser/
+    #     server-dir: ./
