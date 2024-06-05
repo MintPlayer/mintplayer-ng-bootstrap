@@ -23,7 +23,8 @@
         "assets": [
           "apps/ng-bootstrap-demo/src/favicon.ico",
           "apps/ng-bootstrap-demo/src/assets",
-          "apps/ng-bootstrap-demo/src/web.config"
+          "apps/ng-bootstrap-demo/src/web.config",
+          "apps/video-player-demo/src/nginx.conf"
         ],
         "styles": [
           "apps/ng-bootstrap-demo/src/styles.scss",
