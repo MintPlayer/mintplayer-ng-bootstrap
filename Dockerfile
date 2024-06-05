@@ -22,7 +22,11 @@ RUN npm run build -- --configuration=production
 FROM nginx:latest
 
 # Copy the build output to replace the default nginx contents.
-COPY --from=node_image dist/apps/ng-bootstrap-demo/browser/browser /usr/share/nginx/html
+COPY --from=node_image /usr/local/app/dist/apps/ng-bootstrap-demo/browser/browser /usr/share/nginx/html
 
 # Expose port 80
 EXPOSE 80
+
+# docker build --tag 'ng-bootstrap-demo' .
+# docker run -p 4201:80 ng-bootstrap-demo
+# Visit http://localhost:4201
