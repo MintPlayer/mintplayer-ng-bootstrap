@@ -16,6 +16,8 @@ export const ROUTES: Routes = [
   { path: 'ordinal-number', loadComponent: () => import('./ordinal-number/ordinal-number.component').then(m => m.OrdinalNumberComponent) },
   { path: 'markdown', loadComponent: () => import('./markdown/markdown.component').then(m => m.MarkdownComponent) },
   { path: 'navigation-lock', loadComponent: () => import('./navigation-lock/navigation-lock.component').then(m => m.NavigationLockComponent), canDeactivate: [BsNavigationLockGuard] },
+  { path: 'observe-size', loadComponent: () => import('./observe-size/observe-size.component').then(m => m.ObserveSizeComponent) },
+  { path: 'entered-view', loadComponent: () => import('./entered-view/entered-view.component').then(m => m.EnteredViewComponent) },
   { path: 'splitter', loadComponent: () => import('./splitter/splitter.component').then(m => m.SplitterComponent) },
   { path: 'dock', loadComponent: () => import('./dock/dock.component').then(m => m.DockComponent) },
   { path: 'instance-of', loadComponent: () => import('./instance-of/instance-of.component').then(m => m.InstanceOfComponent) },

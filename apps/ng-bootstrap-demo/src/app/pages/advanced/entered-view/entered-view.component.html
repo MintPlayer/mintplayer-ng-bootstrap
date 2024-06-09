@@ -1,0 +1,9 @@
+<h1 class="text-center">EnteredView</h1>
+@for (color of colors; track $index) {
+    <div bsEnteredView #enteredView="bsEnteredView" class="d-block my-5">
+        @if (enteredView.viewPosition$ | async; as viewPosition) {
+            <div [class]="['bg-' + color, 'position-' + viewPosition]" class="animating-div border">
+            </div>
+        }
+    </div>
+}

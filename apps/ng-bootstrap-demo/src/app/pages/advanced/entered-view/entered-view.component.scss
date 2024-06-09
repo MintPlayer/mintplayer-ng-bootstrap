@@ -1,0 +1,13 @@
+.animating-div {
+    height: 5rem;
+    transform: translateY(0);
+    transition: transform .7s ease-in-out;
+
+    &.position-above {
+        transform: translateY(-150%);
+    }
+
+    &.position-below {
+        transform: translateY(150%);
+    }
+}

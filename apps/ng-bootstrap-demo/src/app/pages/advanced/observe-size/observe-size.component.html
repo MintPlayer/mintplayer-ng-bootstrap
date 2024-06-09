@@ -1,0 +1,14 @@
+<h1 class="text-center">ObserveSize</h1>
+<bs-grid>
+    <div bsRow>
+        <div [col] class="text-center bg-warning p-3" bsObserveSize (resized)="lastSize = $event">
+            Some content here
+            <ng-container *ngIf="lastSize">
+                <br>
+                Width: {{ lastSize.width }}
+                <br>
+                Height: {{ lastSize.height }}
+            </ng-container>
+        </div>
+    </div>
+</bs-grid>
