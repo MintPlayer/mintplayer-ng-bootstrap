@@ -9,6 +9,7 @@ export const ROUTES: Routes = [
   { path: 'select2', loadComponent: () => import('./select2/select2.component').then(m => m.Select2Component) },
   { path: 'autofocus', loadComponent: () => import('./autofocus/autofocus.component').then(m => m.AutofocusComponent) },
   { path: 'scrollspy', loadComponent: () => import('./scrollspy/scrollspy.component').then(m => m.ScrollspyComponent) },
+  { path: 'parallax', loadComponent: () => import('./parallax/parallax.component').then(m => m.ParallaxComponent) },
   { path: 'code-snippet', loadComponent: () => import('./code-snippet/code-snippet.component').then(m => m.CodeSnippetComponent) },
   { path: 'scheduler', loadComponent: () => import('./scheduler/scheduler.component').then(m => m.SchedulerComponent) },
   { path: 'user-agent', loadComponent: () => import('./user-agent/user-agent.component').then(m => m.UserAgentComponent) },

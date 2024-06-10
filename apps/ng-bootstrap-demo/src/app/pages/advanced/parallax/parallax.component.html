@@ -1,0 +1,13 @@
+<h1 class="text-center">Parallax</h1>
+<div class="fullpage">
+    @for (image of images; track $index; let last = $last) {
+        <bs-parallax [image]="image" [height]="300"></bs-parallax>
+        @if (!last) {
+            <div class="d-block p-2 p-md-5">
+                @for (num of numbers; track $index) {
+                    Lorem, ipsum dolor sit amet consectetur adipisicing elit. Perspiciatis non rerum, totam nemo ab id illo sunt esse. Maxime odio veritatis excepturi libero magni neque expedita ipsum, ducimus iusto corrupti.
+                }
+            </div>
+        }
+    }
+</div>
