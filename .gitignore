@@ -12,6 +12,7 @@
 # IDEs and editors
 /.vs
 /.idea
+/.vs
 .project
 .classpath
 .c9/

@@ -1,7 +1,7 @@
 import { Component, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsHasNavigationLock, BsNavigationLockDirective, BsNavigationLockModule } from '@mintplayer/ng-bootstrap/navigation-lock';
-import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
 import { Observable } from 'rxjs';
 
 @Component({
@@ -9,7 +9,7 @@ import { Observable } from 'rxjs';
   templateUrl: './navigation-lock.component.html',
   styleUrls: ['./navigation-lock.component.scss'],
   standalone: true,
-  imports: [FormsModule, BsToggleButtonModule, BsNavigationLockModule]
+  imports: [FormsModule, BsCheckboxComponent, BsNavigationLockModule]
 })
 export class NavigationLockComponent implements BsHasNavigationLock {
   @ViewChild('navigationLock') navigationLock!: BsNavigationLockDirective;

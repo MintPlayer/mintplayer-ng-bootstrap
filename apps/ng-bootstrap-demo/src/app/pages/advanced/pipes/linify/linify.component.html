@@ -5,7 +5,7 @@
             <div [md]="6">
                 <textarea [(ngModel)]="text" rows="10"></textarea>
                 <br>
-                <bs-toggle-button [type]="'checkbox'" [(ngModel)]="removeEmptyEntries">Remove empty entries</bs-toggle-button>
+                <bs-checkbox [(ngModel)]="removeEmptyEntries">Remove empty entries</bs-checkbox>
             </div>
             <div [md]="6">
                 <bs-list-group>

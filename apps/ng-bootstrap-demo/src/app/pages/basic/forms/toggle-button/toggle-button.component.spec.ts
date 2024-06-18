@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
-import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
 import { MockModule } from 'ng-mocks';
 import { ToggleButtonComponent } from './toggle-button.component';
 
@@ -14,7 +14,7 @@ describe('ToggleButtonComponent', () => {
       imports: [
         FormsModule,
         MockModule(BsGridModule),
-        MockModule(BsToggleButtonModule),
+        MockModule(BsToggleButtonComponent),
       ],
       declarations: [
         // Unit to test

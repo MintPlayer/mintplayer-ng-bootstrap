@@ -1,130 +1,58 @@
-import { AfterViewInit, Component, ElementRef, EventEmitter, HostBinding, Input, Output, ViewChild } from '@angular/core';
-import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
-import { BsToggleButtonGroupDirective } from '../directives/toggle-button-group/toggle-button-group.directive';
-import { BsCheckStyle } from '../types/check-style';
+import { AfterViewInit, Component, DestroyRef, ElementRef, EventEmitter, HostBinding, Input, Optional, Output, ViewChild, forwardRef } from '@angular/core';
+import { BehaviorSubject, combineLatest, fromEvent, map, Observable } from 'rxjs';
+import { BsFormCheckComponent } from '@mintplayer/ng-bootstrap/form-check';
+import { BsCheckGroupDirective } from '@mintplayer/ng-bootstrap/check-group';
+import { AsyncPipe } from '@angular/common';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'bs-toggle-button',
   templateUrl: './toggle-button.component.html',
-  styleUrls: ['./toggle-button.component.scss']
+  styleUrls: ['./toggle-button.component.scss'],
+  standalone: true,
+  imports: [AsyncPipe, BsFormCheckComponent],
+  providers: [{
+      provide: NG_VALUE_ACCESSOR,
+      useExisting: forwardRef(() => BsToggleButtonComponent),
+      multi: true,
+  }],
 })
-export class BsToggleButtonComponent implements AfterViewInit {
+export class BsToggleButtonComponent implements AfterViewInit, ControlValueAccessor {
+  constructor(private destroy: DestroyRef, @Optional() group?: BsCheckGroupDirective) {
+    this.group$.next(group);
 
-  constructor() {
-    this.mainCheckStyle$ = this.type$.pipe(map((type) => {
-      switch (type) {
-        case 'checkbox':
-        case 'radio':
-        case 'switch':
-          return 'form-check';
-        default:
-          return null;
-      }
-    }));
-
-    this.isSwitch$ = this.type$.pipe(map((type) => {
-      switch (type) {
-        case 'switch':
-          return true;
-        default:
-          return false;
-      }
-    }));
-
-    this.inputClass$ = this.type$.pipe(map((type) => {
-      switch (type) {
-        case 'checkbox':
-        case 'radio':
-        case 'switch':
-          return 'form-check-input';
-        default:
-          return 'btn-check';
-      }
-    }));
-    
-    this.labelClass$ = this.type$.pipe(map((type) => {
-      switch (type) {
-        case 'checkbox':
-        case 'radio':
-        case 'switch':
-          return 'form-check-label';
-        case 'toggle_button':
-          return 'btn btn-primary'
-        case 'radio_toggle_button':
-          return 'btn btn-secondary';
-      }
-    }));
-
-    this.checkOrRadio$ = this.type$.pipe(map((type) => {
-      switch (type) {
-        case 'radio':
-        case 'radio_toggle_button':
-          return 'radio';
-        default:
-          return 'checkbox';
-      }
-    }));
-
-    this.nameResult$ = combineLatest([this.name$, this.type$, this.group$])
-      .pipe(map(([name, type, group]) => {
-        switch (type) {
-          case 'radio':
-          case 'radio_toggle_button':
-              return name;
-          case 'checkbox':
-          case 'toggle_button':
-          case 'switch':
-            if (group) {
-              return `${name}[]`;
-            } else {
-              return name;
-            }
-          default:
-            throw 'Invalid value';
-        }
-      }));
+    this.nameResult$ = combineLatest([this.group$, this.name$])
+      .pipe(map(([group, name]) => group ? `${group.name}[]` : name));
   }
-
-  @ViewChild('checkbox') checkbox!: ElementRef<HTMLInputElement>;
+  
+  group$ = new BehaviorSubject<BsCheckGroupDirective | undefined>(undefined);
+  name$ = new BehaviorSubject<string | undefined>(undefined);
+  nameResult$: Observable<string | undefined>;
   @HostBinding('class.d-inline-block') dInlineBlockClass = true;
+  @ViewChild('checkbox') checkboxElement!: ElementRef<HTMLInputElement>;
 
   disableAnimations = true;
-  mainCheckStyle$: Observable<string | null>;
-  isSwitch$: Observable<boolean>;
-  inputClass$: Observable<string>;
-  labelClass$: Observable<string>;
-  checkOrRadio$: Observable<'checkbox' | 'radio'>;
-  nameResult$: Observable<string | null>;
-
-  //#region Type
-  type$ = new BehaviorSubject<BsCheckStyle>('checkbox');
-  public get type() {
-    return this.type$.value;
-  }
-  @Input() public set type(value: BsCheckStyle) {
-    this.type$.next(value);
-  }
-  //#endregion
 
   //#region isToggled
-  _isToggled: boolean | null = false;
+  isToggled$ = new BehaviorSubject<boolean | null>(false);
   @Output() public isToggledChange = new EventEmitter<boolean | null>();
   public get isToggled() {
-    return this._isToggled;
+    return this.isToggled$.value;
   }
   @Input() public set isToggled(value: boolean | null) {
-    this._isToggled = value;
-    this.isToggledChange.emit(this._isToggled);
+    this.isToggled$.next(value);
+    this.isToggledChange.emit(value);
   }
   //#endregion
 
-  //#region name
-  name$ = new BehaviorSubject<string | null>(null);
-  public get name() {
-    return this.name$.value;
+  //#region isEnabled
+  isEnabled$ = new BehaviorSubject<boolean>(true);
+  public get isEnabled() {
+    return this.isEnabled$.value;
   }
-  @Input() public set name(value: string | null) {
-    this.name$.next(value);
+  @Input() public set isEnabled(value: boolean) {
+    this.isEnabled$.next(value);
   }
   //#endregion
 
@@ -138,18 +66,37 @@ export class BsToggleButtonComponent implements AfterViewInit {
   }
   //#endregion
 
-  //#region Group
-  group$ = new BehaviorSubject<BsToggleButtonGroupDirective | null>(null);
-  public get group() {
-    return this.group$.value;
+  //#region ValueAccessor implementation
+  onValueChange?: (value: boolean | string | string[]) => void;
+  onTouched?: () => void;
+
+  registerOnChange(fn: (_: any) => void) {
+    this.onValueChange = fn;
   }
-  @Input() public set group(value: BsToggleButtonGroupDirective | null) {
-    this.group$.next(value);
+  
+  registerOnTouched(fn: () => void) {
+    this.onTouched = fn;
+  }
+
+  writeValue(value: boolean | null) {
+    this.isToggled$.next(value);
+  }
+
+  setDisabledState(isDisabled: boolean) {
+    this.isEnabled$.next(!isDisabled);
   }
   //#endregion
 
   ngAfterViewInit() {
     this.disableAnimations = false;
+    fromEvent(this.checkboxElement.nativeElement, 'change')
+      .pipe(takeUntilDestroyed(this.destroy))
+      .subscribe((ev) => {
+        if (this.onValueChange) {
+          const isChecked = (<HTMLInputElement>ev.target).checked;
+          this.onValueChange(isChecked);
+        }
+      });
   }
 
 }
