@@ -2,19 +2,22 @@
 
 <h2>Simple card</h2>
 <bs-card class="d-block mb-3">
-    <bs-card-header>
+    <div *bsCardHeader>
         Card title
-    </bs-card-header>
+    </div>
     <div class="p-3">
         Simple content
-    </div>    
+    </div>
+    <div *bsCardFooter>
+        Card footer
+    </div>
 </bs-card>
 
 <h2>Card with list group</h2>
 <bs-card>
-    <bs-card-header>
+    <div *bsCardHeader>
         List of elements
-    </bs-card-header>
+    </div>
     <bs-list-group>
         <bs-list-group-item>Cras justo odio</bs-list-group-item>
         <bs-list-group-item>Dapibus ac facilisis in</bs-list-group-item>
@@ -22,4 +25,15 @@
         <bs-list-group-item>Porta ac consectetur ac</bs-list-group-item>
         <bs-list-group-item>Vestibulum at eros</bs-list-group-item>
     </bs-list-group>
+</bs-card>
+
+<h2>Card with image</h2>
+<bs-card class="d-block mx-auto" [style.max-width.px]="200">
+    <img *bsCardImage="'top'" src="/assets/resized/duck.png">
+    <div class="m-3">Simple content</div>
+</bs-card>
+
+<bs-card class="d-block mx-auto" [style.max-width.px]="200">
+    <div class="m-3">Simple content</div>
+    <img *bsCardImage="'bottom'" src="/assets/resized/duck.png">
 </bs-card>

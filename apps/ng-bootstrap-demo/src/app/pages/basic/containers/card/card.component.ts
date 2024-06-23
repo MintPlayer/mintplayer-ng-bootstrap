@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { BsCardModule } from '@mintplayer/ng-bootstrap/card';
+import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
 
 @Component({
@@ -7,6 +8,6 @@ import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
   templateUrl: './card.component.html',
   styleUrls: ['./card.component.scss'],
   standalone: true,
-  imports: [BsCardModule, BsListGroupModule]
+  imports: [BsCardModule, BsGridModule, BsListGroupModule]
 })
 export class CardComponent {}

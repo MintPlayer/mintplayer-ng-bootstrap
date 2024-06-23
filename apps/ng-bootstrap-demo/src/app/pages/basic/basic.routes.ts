@@ -14,6 +14,7 @@ export const ROUTES: Routes = [
   { path: 'for-directive', loadComponent: () => import('./for-directive/for-directive.component').then(m => m.ForDirectiveComponent) },
   { path: 'timepicker', loadComponent: () => import('./timepicker/timepicker.component').then(m => m.TimepickerComponent) },
   { path: 'button-group', loadComponent: () => import('./button-group/button-group.component').then(m => m.ButtonGroupComponent) },
+  { path: 'blockquote', loadComponent: () => import('./blockquote/blockquote.component').then(m => m.BlockquoteComponent) },
   { path: 'breadcrumb', loadComponent: () => import('./breadcrumb/breadcrumb.component').then(m => m.BreadcrumbComponent) },
   { path: 'badge', loadComponent: () => import('./badge/badge.component').then(m => m.BadgeComponent) },
   { path: 'close', loadComponent: () => import('./close/close.component').then(m => m.CloseComponent) },

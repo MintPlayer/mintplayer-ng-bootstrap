@@ -1,6 +1,21 @@
 <div class="card" [class.rounded-0]="!rounded">
-    <ng-content select="bs-card-header"></ng-content>
+    @if (headerTemplate) {
+        <div class="card-header">
+            <ng-container *ngTemplateOutlet="headerTemplate"></ng-container>
+        </div>
+    }
+    @if (topImage$ | async; as topImage) {
+        <ng-container *ngTemplateOutlet="topImage.template"></ng-container>
+    }
     <div class="card-body p-0">
         <ng-content></ng-content>
     </div>
+    @if (bottomImage$ | async; as bottomImage) {
+        <ng-container *ngTemplateOutlet="bottomImage.template"></ng-container>
+    }
+    @if (footerTemplate) {
+        <div class="card-footer">
+            <ng-container *ngTemplateOutlet="footerTemplate"></ng-container>
+        </div>
+    }
 </div>
