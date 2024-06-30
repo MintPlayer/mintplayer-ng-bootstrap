@@ -1,11 +1,13 @@
 import { Component, ElementRef, Input, OnInit, Renderer2, ViewChild } from '@angular/core';
 import { BehaviorSubject, map, Observable } from 'rxjs';
 import { BsSelectSize } from '../types/select-size';
+import { BsDisableSelectDirective } from '../directives/disable-select/disable-select.directive';
 
 @Component({
   selector: 'bs-select',
   templateUrl: './select.component.html',
   styleUrls: ['./select.component.scss'],
+  hostDirectives: [BsDisableSelectDirective]
 })
 export class BsSelectComponent implements OnInit {
   constructor(private renderer: Renderer2) {
