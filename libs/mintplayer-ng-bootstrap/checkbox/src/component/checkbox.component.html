@@ -1,5 +1,5 @@
 <bs-toggle-button>
-    <label class="form-check">
+    <label class="form-check" [class.form-switch]="isSwitch()">
         <input type="checkbox" [class]="inputClass()" [name]="groupName()">
         <span [class]="labelClass()">
             <ng-content></ng-content>

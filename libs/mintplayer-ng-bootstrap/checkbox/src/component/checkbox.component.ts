@@ -15,6 +15,7 @@ export class BsCheckboxComponent {
   groupName = computed(() => this.group ? this.group.name() + '[]' : '');
 
   isButton = computed(() => this.displayStyle() === 'toggle_button');
+  isSwitch = computed(() => this.displayStyle() === 'switch');
   inputClass = computed(() => this.isButton() ? 'btn-check' : 'form-check-input');
   labelClass = computed(() => this.isButton() ? 'btn btn-primary' : 'form-check-label');
 }

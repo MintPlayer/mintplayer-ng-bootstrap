@@ -3,7 +3,6 @@ import { ControlValueAccessor } from '@angular/forms';
 
 @Directive({
   selector: '[bsRadioGroupValueAccessor]',
-  standalone: true,
 })
 export class BsRadioGroupValueAccessorDirective implements ControlValueAccessor {
   constructor() {}
