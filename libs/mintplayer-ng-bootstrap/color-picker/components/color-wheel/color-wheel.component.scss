@@ -1,11 +1,13 @@
+@use 'sass:math';
+
 $thumb-size: 30px;
 
 .thumb {
     width: $thumb-size;
     height: $thumb-size;
-    border-radius: calc($thumb-size / 2);
-    margin-top: calc($thumb-size / -2);
-    margin-left: calc($thumb-size / -2);
+    border-radius: math.div($thumb-size, 2);
+    margin-top: math.div($thumb-size, -2);
+    margin-left: math.div($thumb-size, -2);
     box-sizing: border-box;
     border: 2px solid white;
     box-shadow: rgb(0 0 0 / 10%) 0px 0px 10px 5px;
