@@ -4,7 +4,7 @@ import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsRangeModule } from '@mintplayer/ng-bootstrap/range';
 import { MockComponent, MockModule } from 'ng-mocks';
 import { RangeComponent } from './range.component';
-import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
+import { BsCheckboxModule } from '@mintplayer/ng-bootstrap/checkbox';
 
 describe('RangeComponent', () => {
   let component: RangeComponent;
@@ -16,7 +16,7 @@ describe('RangeComponent', () => {
         FormsModule,
         MockModule(BsGridModule),
         MockModule(BsRangeModule),
-        MockComponent(BsCheckboxComponent),
+        MockModule(BsCheckboxModule),
       ],
       declarations: [
         // Unit to test

@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
-import { MockComponent, MockPipe } from 'ng-mocks';
-import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
+import { MockComponent, MockModule, MockPipe } from 'ng-mocks';
+import { BsCheckboxModule } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsHasPropertyPipe } from '@mintplayer/ng-bootstrap/has-property';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 
@@ -16,7 +16,7 @@ describe('HasPropertyComponent', () => {
       imports: [
         FormsModule,
         MockPipe(BsHasPropertyPipe),
-        MockComponent(BsCheckboxComponent),
+        MockModule(BsCheckboxModule),
         MockComponent(BsCodeSnippetComponent),
       ],
       declarations: [HasPropertyComponent]

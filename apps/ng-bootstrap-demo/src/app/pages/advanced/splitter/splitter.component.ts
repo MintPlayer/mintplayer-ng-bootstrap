@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
+import { BsCheckboxModule } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsSplitterModule } from '@mintplayer/ng-bootstrap/splitter';
 
 @Component({
@@ -8,7 +8,7 @@ import { BsSplitterModule } from '@mintplayer/ng-bootstrap/splitter';
   templateUrl: './splitter.component.html',
   styleUrls: ['./splitter.component.scss'],
   standalone: true,
-  imports: [FormsModule, BsSplitterModule, BsCheckboxComponent]
+  imports: [FormsModule, BsSplitterModule, BsCheckboxModule]
 })
 export class SplitterComponent {
   bgWarning = false;

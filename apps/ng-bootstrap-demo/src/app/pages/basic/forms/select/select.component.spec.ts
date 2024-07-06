@@ -5,7 +5,7 @@ import { BsSelectModule } from '@mintplayer/ng-bootstrap/select';
 import { MockComponent, MockModule } from 'ng-mocks';
 
 import { SelectComponent } from './select.component';
-import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
+import { BsCheckboxModule } from '@mintplayer/ng-bootstrap/checkbox';
 
 describe('SelectComponent', () => {
   let component: SelectComponent;
@@ -17,7 +17,7 @@ describe('SelectComponent', () => {
         FormsModule,
         MockModule(BsGridModule),
         MockModule(BsSelectModule),
-        MockComponent(BsCheckboxComponent),
+        MockModule(BsCheckboxModule),
       ],
       declarations: [
         // Unit to test

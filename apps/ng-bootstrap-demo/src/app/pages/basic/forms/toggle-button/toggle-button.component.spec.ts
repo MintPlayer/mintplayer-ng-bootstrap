@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { MockComponent, MockModule } from 'ng-mocks';
 import { ToggleButtonComponent } from './toggle-button.component';
-import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
+import { BsCheckboxModule } from '@mintplayer/ng-bootstrap/checkbox';
 
 describe('ToggleButtonComponent', () => {
   let component: ToggleButtonComponent;
@@ -14,7 +14,7 @@ describe('ToggleButtonComponent', () => {
       imports: [
         FormsModule,
         MockModule(BsGridModule),
-        MockComponent(BsCheckboxComponent),
+        MockModule(BsCheckboxModule),
       ],
       declarations: [
         // Unit to test

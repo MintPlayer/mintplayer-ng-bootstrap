@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { NgTemplateOutlet } from '@angular/common';
 import { FocusOnLoadDirective } from '@mintplayer/ng-focus-on-load';
 import { BsDropdownModule } from '@mintplayer/ng-bootstrap/dropdown';
-import { BsCheckboxComponent, BsCheckboxGroupDirective } from '@mintplayer/ng-bootstrap/checkbox';
+import { BsCheckboxModule } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsMultiselectComponent } from './component/multiselect.component';
@@ -22,8 +22,7 @@ import { BsButtonTemplateDirective } from './directives/button-template/button-t
     NgTemplateOutlet,
     FormsModule,
     BsDropdownModule,
-    BsCheckboxComponent,
-    BsCheckboxGroupDirective,
+    BsCheckboxModule,
     BsButtonTypeDirective,
     BsHasOverlayComponent,
     FocusOnLoadDirective,

@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { MockComponent, MockModule } from 'ng-mocks';
-import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
+import { BsCheckboxModule } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsNavigationLockModule } from '@mintplayer/ng-bootstrap/navigation-lock';
 import { NavigationLockComponent } from './navigation-lock.component';
 
@@ -13,7 +13,7 @@ describe('NavigationLockComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         FormsModule,
-        MockComponent(BsCheckboxComponent),
+        MockModule(BsCheckboxModule),
         MockModule(BsNavigationLockModule),
       ],
       declarations: [

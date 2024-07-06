@@ -2,7 +2,7 @@ import { MockComponent, MockModule } from 'ng-mocks';
 import { FormsModule } from '@angular/forms';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
+import { BsCheckboxModule } from '@mintplayer/ng-bootstrap/checkbox';
 
 import { ColorTransitionComponent } from './color-transition.component';
 
@@ -15,7 +15,7 @@ describe('ColorTransitionComponent', () => {
       imports: [
         FormsModule,
         NoopAnimationsModule,
-        MockComponent(BsCheckboxComponent),
+        MockModule(BsCheckboxModule),
       ],
       declarations: [ ColorTransitionComponent ]
     })

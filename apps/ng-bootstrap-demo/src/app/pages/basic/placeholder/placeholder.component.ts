@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
 import { BsCardModule } from '@mintplayer/ng-bootstrap/card';
-import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
+import { BsCheckboxModule } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsPlaceholderModule } from '@mintplayer/ng-bootstrap/placeholder';
 
@@ -12,7 +12,7 @@ import { BsPlaceholderModule } from '@mintplayer/ng-bootstrap/placeholder';
   templateUrl: './placeholder.component.html',
   styleUrls: ['./placeholder.component.scss'],
   standalone: true,
-  imports: [FormsModule, BsGridModule, BsCardModule, BsAlertModule, BsPlaceholderModule, BsCheckboxComponent]
+  imports: [FormsModule, BsGridModule, BsCardModule, BsAlertModule, BsPlaceholderModule, BsCheckboxModule]
 })
 export class PlaceholderComponent {
 

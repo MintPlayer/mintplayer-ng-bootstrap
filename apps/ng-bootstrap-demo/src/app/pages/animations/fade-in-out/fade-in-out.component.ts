@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
-import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
+import { BsCheckboxModule } from '@mintplayer/ng-bootstrap/checkbox';
 
 @Component({
   selector: 'demo-fade-in-out',
@@ -11,7 +11,7 @@ import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
   styleUrls: ['./fade-in-out.component.scss'],
   animations: [FadeInOutAnimation],
   standalone: true,
-  imports: [FormsModule, BsButtonTypeDirective, BsCheckboxComponent]
+  imports: [FormsModule, BsButtonTypeDirective, BsCheckboxModule]
 })
 export class FadeInOutComponent {
   colors = Color;

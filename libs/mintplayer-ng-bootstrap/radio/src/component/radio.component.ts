@@ -1,7 +1,7 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
-import { BsRadioGroupDirective } from '../directive/radio-group/radio-group.directive';
+import { BsRadioGroupDirective } from '../directives/radio-group/radio-group.directive';
 
 @Component({
   selector: 'bs-radio',

@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { BsCardModule } from '@mintplayer/ng-bootstrap/card';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
-import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
+import { BsCheckboxModule } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsPlaceholderModule } from '@mintplayer/ng-bootstrap/placeholder';
 import { MockComponent, MockModule } from 'ng-mocks';
 
@@ -18,7 +18,7 @@ describe('PlaceholderComponent', () => {
         FormsModule,
         MockModule(BsCardModule),
         MockModule(BsGridModule),
-        MockComponent(BsCheckboxComponent),
+        MockModule(BsCheckboxModule),
         MockModule(BsPlaceholderModule),
       ],
       declarations: [

@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsTableComponent } from '@mintplayer/ng-bootstrap/table';
-import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
+import { BsCheckboxModule } from '@mintplayer/ng-bootstrap/checkbox';
 import { MockComponent, MockModule } from 'ng-mocks';
 
 import { TableComponent } from './table.component';
@@ -17,7 +17,7 @@ describe('TableComponent', () => {
         FormsModule,
         MockModule(BsGridModule),
         MockComponent(BsTableComponent),
-        MockComponent(BsCheckboxComponent),
+        MockModule(BsCheckboxModule),
       ],
       declarations: [
         // Unit to test

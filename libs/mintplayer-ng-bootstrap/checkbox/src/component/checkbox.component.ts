@@ -1,12 +1,10 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
-import { BsCheckboxGroupDirective } from '../directive/checkbox-group/checkbox-group.directive';
+import { BsCheckboxGroupDirective } from '../directives/checkbox-group/checkbox-group.directive';
 
 @Component({
   selector: 'bs-checkbox',
-  standalone: true,
-  imports: [CommonModule, BsToggleButtonComponent],
   templateUrl: './checkbox.component.html',
   styleUrl: './checkbox.component.scss'
 })

@@ -6,7 +6,7 @@ import { BsSelectModule } from '@mintplayer/ng-bootstrap/select';
 import { BsTabControlModule } from '@mintplayer/ng-bootstrap/tab-control';
 import { MockComponent, MockDirective, MockModule } from 'ng-mocks';
 import { TabControlComponent } from './tab-control.component';
-import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
+import { BsCheckboxModule } from '@mintplayer/ng-bootstrap/checkbox';
 
 describe('TabControlComponent', () => {
   let component: TabControlComponent;
@@ -20,7 +20,7 @@ describe('TabControlComponent', () => {
         MockDirective(BsForDirective),
         MockModule(BsGridModule),
         MockModule(BsSelectModule),
-        MockComponent(BsCheckboxComponent),
+        MockModule(BsCheckboxModule),
       ],
       declarations: [
         // Unit to test

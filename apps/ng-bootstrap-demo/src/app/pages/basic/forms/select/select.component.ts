@@ -1,7 +1,7 @@
 import { JsonPipe } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
+import { BsCheckboxModule } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsSelectModule } from '@mintplayer/ng-bootstrap/select';
 
@@ -10,7 +10,7 @@ import { BsSelectModule } from '@mintplayer/ng-bootstrap/select';
   templateUrl: './select.component.html',
   styleUrls: ['./select.component.scss'],
   standalone: true,
-  imports: [JsonPipe, FormsModule, BsGridModule, BsSelectModule, BsCheckboxComponent]
+  imports: [JsonPipe, FormsModule, BsGridModule, BsSelectModule, BsCheckboxModule]
 })
 export class SelectComponent {
 
