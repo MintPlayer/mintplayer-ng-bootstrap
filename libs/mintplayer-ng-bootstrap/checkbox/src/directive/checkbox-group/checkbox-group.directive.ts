@@ -1,9 +1,9 @@
-import { Directive } from '@angular/core';
+import { Directive, input } from '@angular/core';
 
 @Directive({
   selector: '[bsCheckboxGroup]',
   standalone: true,
 })
 export class BsCheckboxGroupDirective {
-  constructor() {}
+  name = input.required<string>();
 }

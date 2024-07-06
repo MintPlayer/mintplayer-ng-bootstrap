@@ -1,3 +1,8 @@
 <bs-toggle-button>
-    
+    <label class="form-check">
+        <input type="radio" [name]="groupName()" [class]="inputClass()">
+        <span [class]="labelClass()">
+            <ng-content></ng-content>
+        </span>
+    </label>
 </bs-toggle-button>

@@ -1,9 +1,9 @@
-import { Directive } from '@angular/core';
+import { Directive, input } from '@angular/core';
 
 @Directive({
   selector: '[bsRadioGroup]',
   standalone: true,
 })
 export class BsRadioGroupDirective {
-  constructor() {}
+  name = input.required<string>();
 }

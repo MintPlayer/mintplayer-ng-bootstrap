@@ -1,4 +1,4 @@
-import { Component, inject, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
 import { BsRadioGroupDirective } from '../directive/radio-group/radio-group.directive';
@@ -14,4 +14,9 @@ export class BsRadioComponent {
   displayStyle = input<'radio' | 'toggle_button'>('radio');
   value = input.required<string>();
   group = inject(BsRadioGroupDirective);
+  groupName = computed(() => this.group.name() + '[]');
+
+  isButton = computed(() => this.displayStyle() === 'toggle_button');
+  inputClass = computed(() => this.isButton() ? 'btn-check' : 'form-check-input');
+  labelClass = computed(() => this.isButton() ? 'btn btn-primary' : 'form-check-label');
 }
