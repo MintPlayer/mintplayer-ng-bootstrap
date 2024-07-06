@@ -2,10 +2,10 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsSelectModule } from '@mintplayer/ng-bootstrap/select';
-import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
-import { MockModule } from 'ng-mocks';
+import { MockComponent, MockModule } from 'ng-mocks';
 
 import { SelectComponent } from './select.component';
+import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 
 describe('SelectComponent', () => {
   let component: SelectComponent;
@@ -17,7 +17,7 @@ describe('SelectComponent', () => {
         FormsModule,
         MockModule(BsGridModule),
         MockModule(BsSelectModule),
-        MockModule(BsToggleButtonModule),
+        MockComponent(BsCheckboxComponent),
       ],
       declarations: [
         // Unit to test

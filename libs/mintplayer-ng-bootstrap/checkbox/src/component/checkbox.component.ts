@@ -8,7 +8,7 @@ import { BsCheckboxGroupDirective } from '../directive/checkbox-group/checkbox-g
   standalone: true,
   imports: [CommonModule, BsToggleButtonComponent],
   templateUrl: './checkbox.component.html',
-  styleUrl: './checkbox.component.scss',
+  styleUrl: './checkbox.component.scss'
 })
 export class BsCheckboxComponent {
   displayStyle = input<'checkbox' | 'switch' | 'toggle_button'>('checkbox');
