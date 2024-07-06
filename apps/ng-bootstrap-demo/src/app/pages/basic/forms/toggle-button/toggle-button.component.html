@@ -19,90 +19,70 @@
         </div>
     </div>
 </bs-grid>
-<h2>Checkbox (multi)</h2>
+<h2 class="mt-4">Checkbox (multi)</h2>
 <bs-grid>
     <div bsRow bsCheckboxGroup [(ngModel)]="favoriteColors" [name]="'favoriteColors1'" [disabled]="isAllDisabled">
         <div [sm]="2">Favorite colors</div>
-        <div [sm]="3">
-            <bs-checkbox [value]="'pink'">Pink</bs-checkbox>
-        </div>
-        <div [sm]="3">
-            <bs-checkbox [value]="'blue'">Blue</bs-checkbox>
-        </div>
-        <div [sm]="3">
-            <bs-checkbox [value]="'orange'">Orange</bs-checkbox>
-        </div>
-        <div [sm]="1">
+        @for (color of availableColors; track color.key) {
+            <div [col]>
+                <bs-checkbox [value]="color.key">{{ color.text }}</bs-checkbox>
+            </div>
+        }
+        <div [sm]="2">
             {{ favoriteColors | json }}
         </div>
     </div>
 </bs-grid>
-<h2>Toggle button</h2>
+<h2 class="mt-4">Toggle button</h2>
 <bs-grid>
     <div bsRow bsCheckboxGroup [(ngModel)]="favoriteColors" [disabled]="isAllDisabled" [name]="'favoriteColors2'">
         <div [sm]="2">Favorite colors</div>
-        <div [sm]="3">
-            <bs-checkbox [displayStyle]="'toggle_button'" [value]="'pink'">Pink</bs-checkbox>
-        </div>
-        <div [sm]="3">
-            <bs-checkbox [displayStyle]="'toggle_button'" [value]="'blue'">Blue</bs-checkbox>
-        </div>
-        <div [sm]="3">
-            <bs-checkbox [displayStyle]="'toggle_button'" [value]="'orange'">Orange</bs-checkbox>
-        </div>
-        <div [sm]="1">
+        @for (color of availableColors; track color.key) {
+            <div [col]>
+                <bs-checkbox [displayStyle]="'toggle_button'" [value]="color.key">{{ color.text }}</bs-checkbox>
+            </div>
+        }
+        <div [sm]="2">
             {{ favoriteColors | json }}
         </div>
     </div>
 </bs-grid>
-<h2>Switch</h2>
+<h2 class="mt-4">Switch</h2>
 <bs-grid>
     <div bsRow bsCheckboxGroup [(ngModel)]="favoriteColors" [disabled]="isAllDisabled" [name]="'favoriteColors3'">
         <div [sm]="2">Favorite colors</div>
-        <div [sm]="3">
-            <bs-checkbox [displayStyle]="'switch'" [value]="'pink'">Pink</bs-checkbox>
-        </div>
-        <div [sm]="3">
-            <bs-checkbox [displayStyle]="'switch'" [value]="'blue'">Blue</bs-checkbox>
-        </div>
-        <div [sm]="3">
-            <bs-checkbox [displayStyle]="'switch'" [value]="'orange'">Orange</bs-checkbox>
-        </div>
-        <div [sm]="1"></div>
+        @for (color of availableColors; track color.key) {
+            <div [col]>
+                <bs-checkbox [displayStyle]="'switch'" [value]="color.key">{{ color.text }}</bs-checkbox>
+            </div>
+        }
+        <div [sm]="2"></div>
     </div>
 </bs-grid>
-<h2>Radio</h2>
+<h2 class="mt-4">Radio</h2>
 <bs-grid>
     <div bsRow bsRadioGroup [(ngModel)]="theme" [disabled]="isAllDisabled" [name]="'theme1'">
         <div [sm]="2">Theme</div>
-        <div [sm]="3">
-            <bs-radio [value]="'light'">Light</bs-radio>
-        </div>
-        <div [sm]="3">
-            <bs-radio [value]="'dark'">Dark</bs-radio>
-        </div>
-        <div [sm]="3">
-            <bs-radio [value]="'contrast'">Contrast</bs-radio>
-        </div>
-        <div [sm]="1">
+        @for (theme of availableThemes; track theme.key) {
+            <div [col]>
+                <bs-radio [value]="theme.key">{{ theme.text }}</bs-radio>
+            </div>
+        }
+        <div [sm]="2">
             {{ theme | json }}
         </div>
     </div>
 </bs-grid>
-<h2>Radio toggle button</h2>
+<h2 class="mt-4">Radio toggle button</h2>
 <bs-grid>
     <div bsRow bsRadioGroup [(ngModel)]="theme" [disabled]="isAllDisabled" [name]="'theme2'">
         <div [sm]="2">Theme</div>
-        <div [sm]="3">
-            <bs-radio [displayStyle]="'toggle_button'" [value]="'light'">Light</bs-radio>
-        </div>
-        <div [sm]="3">
-            <bs-radio [displayStyle]="'toggle_button'" [value]="'dark'">Dark</bs-radio>
-        </div>
-        <div [sm]="3">
-            <bs-radio [displayStyle]="'toggle_button'" [value]="'contrast'">Contrast</bs-radio>
-        </div>
-        <div [sm]="1">
+        @for (theme of availableThemes; track theme.key) {
+            <div [col]>
+                <bs-radio [displayStyle]="'toggle_button'" [value]="theme.key">{{ theme.text }}</bs-radio>
+            </div>
+        }
+        <div [sm]="2">
             {{ theme | json }}
         </div>
     </div>

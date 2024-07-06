@@ -13,6 +13,9 @@ import { BsCheckboxGroupDirective } from '../checkbox-group/checkbox-group.direc
 export class BsCheckboxGroupValueAccessorDirective implements ControlValueAccessor {
   constructor(private group: BsCheckboxGroupDirective,) {}
 
+  onValueChange?: (value: number) => void;
+  onTouched?: () => void;
+
   registerOnChange(fn: any) {
   }
 

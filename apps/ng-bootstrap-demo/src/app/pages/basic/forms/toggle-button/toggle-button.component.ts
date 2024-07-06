@@ -5,6 +5,11 @@ import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsCheckboxModule } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsRadioModule } from '@mintplayer/ng-bootstrap/radio';
 
+interface KeyText {
+  key: string;
+  text: string;
+}
+
 @Component({
   selector: 'demo-toggle-button',
   templateUrl: './toggle-button.component.html',
@@ -13,6 +18,17 @@ import { BsRadioModule } from '@mintplayer/ng-bootstrap/radio';
   imports: [JsonPipe, FormsModule, BsGridModule, BsCheckboxModule, BsRadioModule]
 })
 export class ToggleButtonComponent {
+  availableColors: KeyText[] = [
+    { key: 'pink', text: 'Pink' },
+    { key: 'blue', text: 'Blue' },
+    { key: 'orange', text: 'Orange' },
+  ];
+  availableThemes: KeyText[] = [
+    { key: 'light', text: 'Light' },
+    { key: 'dark', text: 'Dark' },
+    { key: 'contrast', text: 'Contrast' },
+  ];
+
   darkMode: boolean | null = true;
 
   // Checkbox - Multi mode
