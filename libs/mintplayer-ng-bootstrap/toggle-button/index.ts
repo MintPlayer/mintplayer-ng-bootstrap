@@ -1,1 +1,1 @@
-export * from './src';
+export * from './src/component/toggle-button.component';

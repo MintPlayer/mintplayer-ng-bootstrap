@@ -1,16 +1,16 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsToggleButtonComponent } from './toggle-button.component';
+import { BsCheckboxComponent } from './checkbox.component';
 
-describe('BsToggleButtonComponent', () => {
-  let component: BsToggleButtonComponent;
-  let fixture: ComponentFixture<BsToggleButtonComponent>;
+describe('BsCheckboxComponent', () => {
+  let component: BsCheckboxComponent;
+  let fixture: ComponentFixture<BsCheckboxComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [BsToggleButtonComponent],
+      imports: [BsCheckboxComponent],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(BsToggleButtonComponent);
+    fixture = TestBed.createComponent(BsCheckboxComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

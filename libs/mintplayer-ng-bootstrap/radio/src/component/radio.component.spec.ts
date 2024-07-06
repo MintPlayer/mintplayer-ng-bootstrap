@@ -1,16 +1,16 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsToggleButtonComponent } from './toggle-button.component';
+import { BsRadioComponent } from './radio.component';
 
-describe('BsToggleButtonComponent', () => {
-  let component: BsToggleButtonComponent;
-  let fixture: ComponentFixture<BsToggleButtonComponent>;
+describe('BsRadioComponent', () => {
+  let component: BsRadioComponent;
+  let fixture: ComponentFixture<BsRadioComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [BsToggleButtonComponent],
+      imports: [BsRadioComponent],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(BsToggleButtonComponent);
+    fixture = TestBed.createComponent(BsRadioComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
