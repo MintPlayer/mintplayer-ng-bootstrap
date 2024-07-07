@@ -12,7 +12,7 @@ export class BsCheckboxComponent {
   displayStyle = input<'checkbox' | 'switch' | 'toggle_button'>('checkbox');
   value = input<string>();
   group = inject(BsCheckboxGroupDirective, { optional: true });
-  groupName = computed(() => this.group ? this.group.name() + '[]' : '');
+  groupName = computed(() => this.group ? this.group.name + '[]' : '');
 
   isButton = computed(() => this.displayStyle() === 'toggle_button');
   isSwitch = computed(() => this.displayStyle() === 'switch');
