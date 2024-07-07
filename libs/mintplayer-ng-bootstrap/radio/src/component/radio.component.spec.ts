@@ -43,9 +43,9 @@ describe('BsRadioComponent', () => {
 
     fixture = TestBed.createComponent(BsRadioTestComponent);
     component = fixture.componentInstance;
-    await fixture.whenStable();
-    
     fixture.detectChanges();
+    
+    await fixture.whenStable();
   });
 
   it('should create', () => {
