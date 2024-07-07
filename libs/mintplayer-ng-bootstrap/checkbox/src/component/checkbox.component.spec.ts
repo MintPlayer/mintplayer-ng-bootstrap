@@ -39,6 +39,7 @@ describe('BsCheckboxComponent', () => {
     }).compileComponents();
 
     fixture = TestBed.createComponent(BsCheckboxTestComponent);
+    await fixture.whenStable();
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
