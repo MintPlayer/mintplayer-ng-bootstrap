@@ -1,4 +1,4 @@
-import { Directive, contentChildren, input } from '@angular/core';
+import { Directive, contentChildren, forwardRef, input } from '@angular/core';
 import { BsCheckboxComponent } from '../../component/checkbox.component';
 
 @Directive({
@@ -6,5 +6,5 @@ import { BsCheckboxComponent } from '../../component/checkbox.component';
 })
 export class BsCheckboxGroupDirective {
   name = input.required<string>();
-  children = contentChildren(BsCheckboxComponent);
+  children = contentChildren(forwardRef(() => BsCheckboxComponent));
 }
