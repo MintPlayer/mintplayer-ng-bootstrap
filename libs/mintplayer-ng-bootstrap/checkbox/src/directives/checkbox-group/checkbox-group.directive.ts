@@ -10,5 +10,5 @@ export class BsCheckboxGroupDirective {
 
   // TODO: Use contentChildren function
   // @ContentChildren(forwardRef(() => BsCheckboxComponent)) children!: QueryList<BsCheckboxComponent>;
-  children = contentChildren(forwardRef(() => BsCheckboxComponent));
+  checks = contentChildren<BsCheckboxComponent>(forwardRef(() => BsCheckboxComponent));
 }

@@ -1,4 +1,4 @@
-import { Directive, forwardRef } from '@angular/core';
+import { AfterViewInit, Directive, forwardRef } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { BsCheckboxGroupDirective } from '../checkbox-group/checkbox-group.directive';
 
@@ -10,19 +10,26 @@ import { BsCheckboxGroupDirective } from '../checkbox-group/checkbox-group.direc
     multi: true,
   }],
 })
-export class BsCheckboxGroupValueAccessorDirective implements ControlValueAccessor {
-  constructor(private group: BsCheckboxGroupDirective,) {}
+export class BsCheckboxGroupValueAccessorDirective implements ControlValueAccessor, AfterViewInit {
+  constructor(private group: BsCheckboxGroupDirective) {}
 
   onValueChange?: (value: number) => void;
   onTouched?: () => void;
 
+  ngAfterViewInit() {
+    
+  }
+
   registerOnChange(fn: any) {
+    this.onValueChange = fn;
   }
 
   registerOnTouched(fn: any) {
+    this.onTouched = fn;
   }
 
   setDisabledState(isDisabled: boolean) {
+    this.group.checks().forEach(check => check.isEnabled.set(!isDisabled))
   }
 
   writeValue(obj: any) {
