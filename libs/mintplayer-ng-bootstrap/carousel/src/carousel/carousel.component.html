@@ -1,34 +1,33 @@
 @if (isServerSide) {
     <div class="carousel mx-auto noscript">
         <div class="carousel-inner d-grid">
-            <ng-container *bsLet="(images$ | async) as images">
-                @if (imageCount$ | async; as imageCount) {
-                    @for (image of images; track image.id; let i = $index) {
-                        <input type="radio" [id]="'car-' + i" [name]="'car'" class="car-radio d-none" bsNoNoscript [checked]="i === 0">
-                        <div class="carousel-item fade d-flex flex-row h-100 align-items-center">
-                            <div class="w-100 position-relative">
-                                <ng-container [ngTemplateOutlet]="image.itemTemplate"></ng-container>
-                                @if (indicators) {
-                                    <div class="carousel-indicators">
-                                        @for (image of images; track image.id; let j = $index) {
-                                            <label [attr.for]="'car-' + (j % imageCount)" [class.active]="i === j" data-bs-target></label>
-                                        }
-                                    </div>
-                                }
-                            </div>
+            @let images = images$ | async;
+            @if (imageCount$ | async; as imageCount) {
+                @for (image of images; track image.id; let i = $index) {
+                    <input type="radio" [id]="'car-' + i" [name]="'car'" class="car-radio d-none" bsNoNoscript [checked]="i === 0">
+                    <div class="carousel-item fade d-flex flex-row h-100 align-items-center">
+                        <div class="w-100 position-relative">
+                            <ng-container [ngTemplateOutlet]="image.itemTemplate"></ng-container>
+                            @if (indicators) {
+                                <div class="carousel-indicators">
+                                    @for (image of images; track image.id; let j = $index) {
+                                        <label [attr.for]="'car-' + (j % imageCount)" [class.active]="i === j" data-bs-target></label>
+                                    }
+                                </div>
+                            }
                         </div>
-                        
-                        <label class="carousel-control-prev cursor-pointer" [for]="'car-' + ((i - 1 + imageCount) % imageCount)">
-                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                            <span class="visually-hidden">Previous</span>
-                        </label>
-                        <label class="carousel-control-next cursor-pointer" [for]="'car-' + ((i + 1) % imageCount)">
-                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                            <span class="visually-hidden">Next</span>
-                        </label>
-                    }
+                    </div>
+                    
+                    <label class="carousel-control-prev cursor-pointer" [for]="'car-' + ((i - 1 + imageCount) % imageCount)">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </label>
+                    <label class="carousel-control-next cursor-pointer" [for]="'car-' + ((i + 1) % imageCount)">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </label>
                 }
-            </ng-container>
+            }
         </div>
     </div>
 } @else {

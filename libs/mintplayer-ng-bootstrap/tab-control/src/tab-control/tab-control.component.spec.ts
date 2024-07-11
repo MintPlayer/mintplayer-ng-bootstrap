@@ -1,8 +1,7 @@
 import { DragDropModule } from '@angular/cdk/drag-drop';
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsLetDirective } from '@mintplayer/ng-bootstrap/let';
-import { MockDirective, MockModule } from 'ng-mocks';
+import { MockModule } from 'ng-mocks';
 
 import { BsTabControlComponent } from './tab-control.component';
 
@@ -14,7 +13,6 @@ describe('BsTabControlComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         MockModule(DragDropModule),
-        MockDirective(BsLetDirective),
       ],
       declarations: [
         // Component to test
