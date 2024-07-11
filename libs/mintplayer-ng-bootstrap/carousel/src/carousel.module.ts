@@ -1,6 +1,5 @@
 import { NgModule } from '@angular/core';
 import { BsSwiperModule } from '@mintplayer/ng-swiper/swiper';
-import { BsLetDirective } from '@mintplayer/ng-bootstrap/let';
 import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
 import { BsCarouselComponent } from './carousel/carousel.component';
 import { BsCarouselImageDirective } from './carousel-image/carousel-image.directive';
@@ -16,7 +15,6 @@ import { AsyncPipe, NgTemplateOutlet } from '@angular/common';
   imports: [
     AsyncPipe,
     NgTemplateOutlet,
-    BsLetDirective,
     BsSwiperModule,
     BsNoNoscriptDirective
   ],

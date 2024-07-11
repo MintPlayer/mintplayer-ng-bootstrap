@@ -1,3 +1,5 @@
+@use 'sass:math';
+
 $glyph-size: 8px;
 $thumb-size: 14px;
 
@@ -7,7 +9,7 @@ $thumb-size: 14px;
         width: $glyph-size;
         height: $glyph-size;
         display: block;
-        border-radius: calc($glyph-size / 2);
+        border-radius: math.div($glyph-size, 2);
         transition: background-color .2s ease-in-out;
     }
     
@@ -17,21 +19,21 @@ $thumb-size: 14px;
     z-index: 20;
 
     &.top {
-        top: calc($thumb-size / -2);
+        top: math.div($thumb-size, -2);
     }
     &.start {
-        left: calc($thumb-size / -2);
+        left: math.div($thumb-size, -2);
     }
     &.bottom {
-        bottom: calc($thumb-size / -2);
+        bottom: math.div($thumb-size, -2);
     }
     &.end {
-        right: calc($thumb-size / -2);
+        right: math.div($thumb-size, -2);
     }
 
     &.start, &.end {
         &:not(.top):not(.bottom) {
-            top: calc($glyph-size / 2);
+            top: math.div($glyph-size, 2);
             height: calc(100% - $glyph-size);
 
             &::before {
@@ -40,13 +42,13 @@ $thumb-size: 14px;
             }
         }
         &::before {
-            margin-left: ($thumb-size - $glyph-size) / 2;
-            margin-right: ($thumb-size - $glyph-size) / 2;
+            margin-left: math.div($thumb-size - $glyph-size, 2);
+            margin-right: math.div($thumb-size - $glyph-size, 2);
         }
     }
     &.top, &.bottom {
         &:not(.start):not(.end) {
-            left: calc($glyph-size / 2);
+            left: math.div($glyph-size, 2);
             width: calc(100% - $glyph-size);
 
             &::before {
@@ -55,8 +57,8 @@ $thumb-size: 14px;
             }
         }
         &::before {
-            margin-top: ($thumb-size - $glyph-size) / 2;
-            margin-bottom: ($thumb-size - $glyph-size) / 2;
+            margin-top: math.div($thumb-size - $glyph-size, 2);
+            margin-bottom: math.div($thumb-size - $glyph-size, 2);
         }
     }
 

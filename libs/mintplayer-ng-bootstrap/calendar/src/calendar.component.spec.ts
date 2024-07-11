@@ -1,8 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsUcFirstPipe } from '@mintplayer/ng-bootstrap/uc-first';
 import { BsMonthNamePipe } from '@mintplayer/ng-bootstrap/calendar-month';
-import { BsLetDirective } from '@mintplayer/ng-bootstrap/let';
-import { MockDirective, MockModule, MockPipe } from 'ng-mocks';
+import { MockPipe } from 'ng-mocks';
 
 import { BsCalendarComponent } from './calendar.component';
 
@@ -13,7 +12,6 @@ describe('CalendarComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        MockDirective(BsLetDirective),
         MockPipe(BsUcFirstPipe),
         MockPipe(BsMonthNamePipe),
 

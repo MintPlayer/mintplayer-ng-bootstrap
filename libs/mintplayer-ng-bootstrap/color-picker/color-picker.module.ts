@@ -1,7 +1,6 @@
 import { NgModule } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { BsLetDirective } from '@mintplayer/ng-bootstrap/let';
 import { BsColorPickerValueAccessor } from './directives/color-picker-value-accessor/color-picker-value-accessor.directive';
 import { BsColorPickerComponent } from './components/color-picker/color-picker.component';
 import { BsColorWheelComponent } from './components/color-wheel/color-wheel.component';
@@ -23,7 +22,6 @@ import { BsAlphaStripComponent } from './components/alpha-strip/alpha-strip.comp
   imports: [
     AsyncPipe,
     FormsModule,
-    BsLetDirective
   ],
   exports: [
     BsColorPickerComponent,

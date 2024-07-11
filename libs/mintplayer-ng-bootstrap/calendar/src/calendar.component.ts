@@ -6,7 +6,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, filter, map, Observable, take } from 'rxjs';
 import { BsCalendarMonthService, BsMonthNamePipe, BsWeekdayNamePipe, DateDayOfMonth, Week, WeekDay } from '@mintplayer/ng-bootstrap/calendar-month';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { BsLetDirective } from '@mintplayer/ng-bootstrap/let';
 import { BsUcFirstPipe } from '@mintplayer/ng-bootstrap/uc-first';
 
 @Component({
@@ -14,7 +13,7 @@ import { BsUcFirstPipe } from '@mintplayer/ng-bootstrap/uc-first';
   templateUrl: './calendar.component.html',
   styleUrls: ['./calendar.component.scss'],
   standalone: true,
-  imports: [AsyncPipe, BsLetDirective, BsUcFirstPipe, BsMonthNamePipe, BsWeekdayNamePipe]
+  imports: [AsyncPipe, BsUcFirstPipe, BsMonthNamePipe, BsWeekdayNamePipe]
 })
 export class BsCalendarComponent {
   constructor(private sanitizer: DomSanitizer, private calendarMonthService: BsCalendarMonthService) {
