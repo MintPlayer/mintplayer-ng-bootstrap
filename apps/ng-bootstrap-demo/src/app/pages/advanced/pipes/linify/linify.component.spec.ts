@@ -4,9 +4,9 @@ import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsLinifyPipe } from '@mintplayer/ng-bootstrap/linify';
 import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
+import { BsCheckboxModule } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
-import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
-import { MockDirective, MockModule, MockPipe } from 'ng-mocks';
+import { MockComponent, MockDirective, MockModule, MockPipe } from 'ng-mocks';
 
 import { LinifyComponent } from './linify.component';
 
@@ -23,7 +23,7 @@ describe('LinifyComponent', () => {
         MockPipe(BsLinifyPipe),
         MockModule(BsListGroupModule),
         MockDirective(BsButtonTypeDirective),
-        MockModule(BsToggleButtonModule),
+        MockModule(BsCheckboxModule),
       ],
       declarations: [LinifyComponent]
     });

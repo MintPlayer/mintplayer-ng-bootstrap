@@ -31,10 +31,10 @@
     </div>
 
     <div class="text-center">
-        <bs-button-group bsToggleButtonGroup #group="bsToggleButtonGroup" class="mx-auto">
-            <bs-toggle-button [type]="'radio_toggle_button'" [(ngModel)]="shellState" [value]="'auto'" [group]="group">Auto</bs-toggle-button>
-            <bs-toggle-button [type]="'radio_toggle_button'" [(ngModel)]="shellState" [value]="'show'" [group]="group">Show</bs-toggle-button>
-            <bs-toggle-button [type]="'radio_toggle_button'" [(ngModel)]="shellState" [value]="'hide'" [group]="group">Hide</bs-toggle-button>
+        <bs-button-group bsRadioGroup [name]="'shellState'" [(ngModel)]="shellState" class="mx-auto">
+            <bs-radio [displayStyle]="'toggle_button'" [value]="'auto'">Auto</bs-radio>
+            <bs-radio [displayStyle]="'toggle_button'" [value]="'show'">Show</bs-radio>
+            <bs-radio [displayStyle]="'toggle_button'" [value]="'hide'">Hide</bs-radio>
         </bs-button-group>
         <br>
         <button [color]="colors.primary" (click)="setSize(20)">Change sidebar width</button>

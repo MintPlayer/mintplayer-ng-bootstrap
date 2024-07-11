@@ -1,3 +1,5 @@
+@use 'sass:math';
+
 $splitter-size: 8px;
 
 .root {
@@ -26,7 +28,7 @@ $splitter-size: 8px;
         &:hover {
             &::before {
                 background-color: #1389FD;
-                border-radius: calc($splitter-size / 2);
+                border-radius: math.div($splitter-size, 2);
             }
         }
     }
@@ -34,7 +36,7 @@ $splitter-size: 8px;
         &.hover {
             &::before {
                 background-color: #1389FD;
-                border-radius: calc($splitter-size / 2);
+                border-radius: math.div($splitter-size, 2);
             }
         }
     }

@@ -4,13 +4,13 @@ import { Color } from '@mintplayer/ng-bootstrap';
 import { BsAccordionModule } from '@mintplayer/ng-bootstrap/accordion';
 import { BsButtonGroupComponent } from '@mintplayer/ng-bootstrap/button-group';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
+import { BsRadioModule } from '@mintplayer/ng-bootstrap/radio';
 import { BsShellComponent, BsShellModule } from '@mintplayer/ng-bootstrap/shell';
-import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
 
 @Component({
   selector: 'demo-shell',
   standalone: true,
-  imports: [FormsModule, BsShellModule, BsAccordionModule, BsButtonGroupComponent, BsButtonTypeDirective, BsToggleButtonModule],
+  imports: [FormsModule, BsShellModule, BsAccordionModule, BsButtonGroupComponent, BsButtonTypeDirective, BsRadioModule],
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.scss'
 })

@@ -4,9 +4,9 @@ import { BsForDirective } from '@mintplayer/ng-bootstrap/for';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsSelectModule } from '@mintplayer/ng-bootstrap/select';
 import { BsTabControlModule } from '@mintplayer/ng-bootstrap/tab-control';
-import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
-import { MockDirective, MockModule } from 'ng-mocks';
+import { MockComponent, MockDirective, MockModule } from 'ng-mocks';
 import { TabControlComponent } from './tab-control.component';
+import { BsCheckboxModule } from '@mintplayer/ng-bootstrap/checkbox';
 
 describe('TabControlComponent', () => {
   let component: TabControlComponent;
@@ -20,7 +20,7 @@ describe('TabControlComponent', () => {
         MockDirective(BsForDirective),
         MockModule(BsGridModule),
         MockModule(BsSelectModule),
-        MockModule(BsToggleButtonModule),
+        MockModule(BsCheckboxModule),
       ],
       declarations: [
         // Unit to test
