@@ -332,6 +332,7 @@ jobs:
         push: true
         tags: ${{ steps.meta-dockerhub.outputs.tags }}
         labels: ${{ steps.meta-dockerhub.outputs.labels }}
+        sbom: true
         provenance: true
         github-token: ${{ github.token }}
 
@@ -358,6 +359,7 @@ jobs:
         push: true
         tags: ${{ steps.meta-ghcr.outputs.tags }}
         labels: ${{ steps.meta-ghcr.outputs.labels }}
+        sbom: true
         provenance: true
         github-token: ${{ github.token }}
   
