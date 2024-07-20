@@ -44,6 +44,13 @@ All components are showcased in the angular app included in the project. You can
 
 to discover them.
 
+## Docker image
+Alternatively you can run the docker image which is published on GitHub Container Registry
+
+    docker run -p 4200:80 ghcr.io/mintplayer/mintplayer-ng-bootstrap:master
+
+and visit [http://localhost:4200](http://localhost:4200).
+
 ## Fonts
 The `<bs-icon>` uses fonts from bootstrap-icons which need to be included in the application. Since there's no `"assets"` field in an angular library its project configuration, we seem to have no other option than to explicitly tell the application to include them.
 
