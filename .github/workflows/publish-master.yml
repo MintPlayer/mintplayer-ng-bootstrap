@@ -361,7 +361,7 @@ jobs:
         tags: ${{ steps.meta-ghcr.outputs.tags }}
         labels: ${{ steps.meta-ghcr.outputs.labels }}
         sbom: true
-        provenance: true
+        provenance: mode=max
         github-token: ${{ github.token }}
 
   
