@@ -343,3 +343,10 @@ jobs:
     #     password: ${{ secrets.PUBLISH_FTP_PWD }}
     #     local-dir: ./dist/apps/ng-bootstrap-demo/browser/
     #     server-dir: ./
+
+    - name: Trigger deploy hook
+      uses: fjogeleit/http-request-action@v1
+      with:
+        url: ${{ secrets.SLIPLANE_DEPLOY_HOOK }}
+        method: GET
+        
