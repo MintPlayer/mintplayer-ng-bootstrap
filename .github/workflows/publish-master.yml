@@ -47,12 +47,6 @@ jobs:
       run: npm run test -- --watch=false --parallel=true
 
     ## ng-animations
-    - name: Upload code coverage report
-      uses: codecov/codecov-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        directory: ./coverage/libs/mintplayer-ng-animations
-      
     - name: Push to NPM
       uses: JS-DevTools/npm-publish@v3
       with:
@@ -72,12 +66,6 @@ jobs:
         provenance: true
 
     ## ng-click-outside
-    - name: Upload code coverage report
-      uses: codecov/codecov-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        directory: ./coverage/libs/mintplayer-ng-click-outside
-      
     - name: Push to NPM
       uses: JS-DevTools/npm-publish@v3
       with:
@@ -97,12 +85,6 @@ jobs:
         provenance: true
 
     ## ng-focus-on-load
-    - name: Upload code coverage report
-      uses: codecov/codecov-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        directory: ./coverage/libs/mintplayer-ng-focus-on-load
-      
     - name: Push to NPM
       uses: JS-DevTools/npm-publish@v3
       with:
@@ -217,12 +199,6 @@ jobs:
         provenance: true
 
     ## ng-qr-code
-    - name: Upload code coverage report
-      uses: codecov/codecov-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        directory: ./coverage/libs/mintplayer-ng-qr-code
-      
     - name: Push to NPM
       uses: JS-DevTools/npm-publish@v3
       with:
@@ -242,12 +218,6 @@ jobs:
         provenance: true
 
     ## ng-swiper
-    - name: Upload code coverage report
-      uses: codecov/codecov-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        directory: ./coverage/libs/mintplayer-ng-swiper
-      
     - name: Push to NPM
       uses: JS-DevTools/npm-publish@v3
       with:
@@ -267,12 +237,6 @@ jobs:
         provenance: true
 
     ## ng-bootstrap
-    - name: Upload code coverage report
-      uses: codecov/codecov-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        directory: ./coverage/libs/mintplayer-ng-bootstrap
-      
     - name: Push to NPM
       id: publish_ng_bootstrap
       uses: JS-DevTools/npm-publish@v3
