@@ -20,6 +20,7 @@ RUN npm run build -- --configuration=production
 
 # Use official nginx image as the base image
 FROM nginx:latest
+LABEL org.opencontainers.image.source="https://github.com/MintPlayer/mintplayer-ng-bootstrap"
 
 # Copy the build output to replace the default nginx contents.
 COPY --from=node_image /usr/local/app/dist/apps/ng-bootstrap-demo/browser/browser /usr/share/nginx/html

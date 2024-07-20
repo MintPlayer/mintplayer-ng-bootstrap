@@ -10,7 +10,8 @@ concurrency:
 
 permissions: 
   contents: read
-    
+  packages: write 
+  
 jobs:
   build:
   
@@ -362,6 +363,7 @@ jobs:
         sbom: true
         provenance: true
         github-token: ${{ github.token }}
+
   
     # - name: Publish through FTP
     #   uses: SamKirkland/FTP-Deploy-Action@v4.3.4
