@@ -317,6 +317,7 @@ jobs:
         images: ghcr.io/${{ github.repository }}
     
     - name: Publish to Github Container Registry
+      id: push-ghcr
       uses: docker/build-push-action@v6
       with:
         context: .
@@ -324,10 +325,13 @@ jobs:
         push: true
         tags: ${{ steps.meta-ghcr.outputs.tags }}
         labels: ${{ steps.meta-ghcr.outputs.labels }}
-        sbom: true
-        provenance: mode=max
-        github-token: ${{ github.token }}
 
+    - name: Generate artifact attestation
+      uses: actions/attest-build-provenance@v1
+      with:
+        subject-name: ghcr.io/${{ github.repository }}
+        subject-digest: ${{ steps.push-ghcr.outputs.digest }}
+        push-to-registry: true
   
     # - name: Publish through FTP
     #   uses: SamKirkland/FTP-Deploy-Action@v4.3.4
