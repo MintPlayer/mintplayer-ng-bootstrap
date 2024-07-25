@@ -16,7 +16,7 @@ export class BsNavbarDropdownComponent {
 
   constructor(
     private navbar: BsNavbarComponent,
-    @SkipSelf() @Host() @Optional() parentDropdown: BsNavbarDropdownComponent,
+    @Inject(forwardRef(() => BsNavbarDropdownComponent)) @SkipSelf() @Host() @Optional() parentDropdown: BsNavbarDropdownComponent,
     @Host() @Inject(forwardRef(() => BsNavbarItemComponent)) navbarItem: BsNavbarItemComponent,
     public element: ElementRef<HTMLElement>,
     private injector: Injector,
