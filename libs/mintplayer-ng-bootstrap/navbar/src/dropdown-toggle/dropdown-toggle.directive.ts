@@ -6,7 +6,7 @@ import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.co
   // selector: 'bs-navbar-item > a[routerLink]',
   selector: 'bs-navbar-item',
   queries: {
-    childDropdowns: new ContentChildren(BsNavbarDropdownComponent)
+    childDropdowns: new ContentChildren(forwardRef(() => BsNavbarDropdownComponent))
   }
 })
 export class DropdownToggleDirective implements AfterContentInit {
