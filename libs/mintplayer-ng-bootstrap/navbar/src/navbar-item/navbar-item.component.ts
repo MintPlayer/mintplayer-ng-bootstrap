@@ -16,7 +16,7 @@ export class BsNavbarItemComponent implements AfterContentChecked {
     element: ElementRef,
     private destroy: DestroyRef,
     @Inject(PLATFORM_ID) private platformId: Object,
-    @Optional() parentDropdown: BsNavbarDropdownComponent,
+    @Optional() @Inject(forwardRef(() => BsNavbarDropdownComponent)) parentDropdown: BsNavbarDropdownComponent,
   ) {
     this.element = element;
     this.parentDropdown = parentDropdown;
