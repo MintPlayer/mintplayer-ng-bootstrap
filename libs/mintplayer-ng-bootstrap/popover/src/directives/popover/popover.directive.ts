@@ -9,7 +9,8 @@ import { POPOVER_CONTENT } from '../../providers/popover-content.provider';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
 
 @Directive({
-  selector: '*[bsPopover]'
+  selector: '*[bsPopover]',
+  standalone: false,
 })
 export class BsPopoverDirective implements AfterViewInit, OnDestroy {
 

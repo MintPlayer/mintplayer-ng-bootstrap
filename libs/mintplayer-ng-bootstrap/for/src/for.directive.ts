@@ -2,7 +2,6 @@ import { Directive, HostBinding, HostListener, Input } from '@angular/core';
 
 @Directive({
   selector: 'label[bsFor]',
-  standalone: true,
 })
 export class BsForDirective {
 

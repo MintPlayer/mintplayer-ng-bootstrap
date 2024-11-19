@@ -3,7 +3,8 @@ import { Component, HostBinding, Input } from '@angular/core';
 @Component({
   selector: 'bs-navbar-brand',
   templateUrl: './navbar-brand.component.html',
-  styleUrls: ['./navbar-brand.component.scss']
+  styleUrls: ['./navbar-brand.component.scss'],
+  standalone: false,
 })
 export class BsNavbarBrandComponent {
   @Input() public routerLink: any[] = [];

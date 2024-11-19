@@ -2,7 +2,8 @@ import { Directive, TemplateRef } from '@angular/core';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 
 @Directive({
-  selector: '[bsExpandButton]'
+  selector: '[bsExpandButton]',
+  standalone: false,
 })
 export class BsExpandButtonDirective {
 

@@ -3,7 +3,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BsPlaceholderComponent } from '../placeholder/placeholder.component';
 
 @Directive({
-  selector: '[bsPlaceholderField]'
+  selector: '[bsPlaceholderField]',
+  standalone: false,
 })
 export class BsPlaceholderFieldDirective {
 

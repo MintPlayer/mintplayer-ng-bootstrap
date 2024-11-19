@@ -8,7 +8,8 @@ import { BsNavbarComponent } from '../navbar/navbar.component';
   selector: 'bs-navbar-nav',
   templateUrl: './navbar-nav.component.html',
   styleUrls: ['./navbar-nav.component.scss'],
-  animations: [SlideUpDownAnimation]
+  standalone: false,
+  animations: [SlideUpDownAnimation],
 })
 export class BsNavbarNavComponent {
 

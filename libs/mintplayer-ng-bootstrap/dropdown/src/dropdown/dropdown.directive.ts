@@ -5,7 +5,8 @@ import { BsDropdownMenuDirective } from '../dropdown-menu/dropdown-menu.directiv
 import { BsDropdownToggleDirective } from '../dropdown-toggle/dropdown-toggle.directive';
 
 @Directive({
-  selector: '[bsDropdown]'
+  selector: '[bsDropdown]',
+  standalone: false,
 })
 export class BsDropdownDirective {
 

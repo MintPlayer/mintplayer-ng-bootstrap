@@ -2,7 +2,8 @@ import { Directive, TemplateRef, ElementRef, HostBinding } from '@angular/core';
 import { BsCarouselComponent } from '../carousel/carousel.component';
 
 @Directive({
-  selector: '*[bsCarouselImage]'
+  selector: '*[bsCarouselImage]',
+  standalone: false,
 })
 export class BsCarouselImageDirective {
 

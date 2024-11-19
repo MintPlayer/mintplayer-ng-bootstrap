@@ -3,7 +3,8 @@ import { TemplatePortal } from '@angular/cdk/portal';
 import { Directive, ElementRef, Host, HostListener, SkipSelf, TemplateRef, ViewContainerRef } from '@angular/core';
 
 @Directive({
-  selector: '[bsContextMenu]'
+  selector: '[bsContextMenu]',
+  standalone: false,
 })
 export class BsContextMenuDirective {
 

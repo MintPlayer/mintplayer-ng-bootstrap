@@ -3,7 +3,8 @@ import { BsToastService } from '../../services/toast/toast.service';
 import { BsToastComponent } from '../../components/toast/toast.component';
 
 @Directive({
-  selector: 'bs-close'
+  selector: 'bs-close',
+  standalone: false,
 })
 export class BsToastCloseDirective {
 

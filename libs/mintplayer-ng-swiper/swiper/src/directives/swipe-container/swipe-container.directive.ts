@@ -10,6 +10,7 @@ import { BsSwipeDirective } from '../swipe/swipe.directive';
 
 @Directive({
   selector: '[bsSwipeContainer]',
+  standalone: false,
   exportAs: 'bsSwipeContainer',
   hostDirectives: [BsObserveSizeDirective]
 })

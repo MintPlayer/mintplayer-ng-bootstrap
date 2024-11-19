@@ -3,7 +3,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, combineLatest, map } from 'rxjs';
 
 @Directive({
-  selector: '[xxs],[xs],[sm],[md],[lg],[xl],[xxl]'
+  selector: '[xxs],[xs],[sm],[md],[lg],[xl],[xxl]',
+  standalone: false,
 })
 export class BsGridColumnDirective {
   constructor(destroy: DestroyRef) {
@@ -66,7 +67,8 @@ export class BsGridColumnDirective {
 }
 
 @Directive({
-  selector: '[col]'
+  selector: '[col]',
+  standalone: false,
 })
 export class BsGridColDirective {
   @HostBinding('class.col') colClass = true;

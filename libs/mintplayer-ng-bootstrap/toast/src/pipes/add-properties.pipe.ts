@@ -1,7 +1,8 @@
 import { Pipe, PipeTransform } from '@angular/core';
 
 @Pipe({
-  name: 'bsAddProperties'
+  name: 'bsAddProperties',
+  standalone: false,
 })
 export class BsAddPropertiesPipe implements PipeTransform {
 

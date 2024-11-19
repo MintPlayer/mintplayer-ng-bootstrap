@@ -1,7 +1,8 @@
 import { Pipe, PipeTransform } from '@angular/core';
 
 @Pipe({
-  name: 'bsElementAt'
+  name: 'bsElementAt',
+  standalone: false,
 })
 export class BsElementAtPipe implements PipeTransform {
 

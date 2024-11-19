@@ -7,7 +7,6 @@ import { QrCodeDirective } from '../../directives/qr-code/qr-code.directive';
   selector: 'qr-code',
   templateUrl: './qr-code.component.html',
   styleUrls: ['./qr-code.component.scss'],
-  standalone: true,
   imports: [QrCodeDirective]
 })
 export class QrCodeComponent {

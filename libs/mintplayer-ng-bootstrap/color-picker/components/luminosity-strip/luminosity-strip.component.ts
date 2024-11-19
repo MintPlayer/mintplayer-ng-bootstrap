@@ -6,7 +6,8 @@ import { HS } from '../../interfaces/hs';
 @Component({
   selector: 'bs-luminosity-strip',
   templateUrl: './luminosity-strip.component.html',
-  styleUrls: ['./luminosity-strip.component.scss']
+  styleUrls: ['./luminosity-strip.component.scss'],
+  standalone: false,
 })
 export class BsLuminosityStripComponent implements AfterViewInit {
   constructor() {

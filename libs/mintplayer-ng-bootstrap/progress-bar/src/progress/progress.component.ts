@@ -3,7 +3,8 @@ import { Component, HostBinding, Input } from '@angular/core';
 @Component({
   selector: 'bs-progress',
   templateUrl: './progress.component.html',
-  styleUrls: ['./progress.component.scss']
+  styleUrls: ['./progress.component.scss'],
+  standalone: false,
 })
 export class BsProgressComponent {
   // @HostBinding('class.progress') private progressClass = true;

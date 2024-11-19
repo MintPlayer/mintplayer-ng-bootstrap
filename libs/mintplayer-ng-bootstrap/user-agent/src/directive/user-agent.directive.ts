@@ -6,7 +6,6 @@ import { BsWebbrowser } from '../types/webbrowser.type';
 
 @Directive({
   selector: '[bsUserAgent]',
-  standalone: true
 })
 export class BsUserAgentDirective implements AfterViewInit {
 

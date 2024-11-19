@@ -5,7 +5,8 @@ import { BehaviorSubject, map, Observable } from 'rxjs';
 @Component({
   selector: 'bs-slider',
   templateUrl: './slider.component.html',
-  styleUrls: ['./slider.component.scss']
+  styleUrls: ['./slider.component.scss'],
+  standalone: false,
 })
 export class BsSliderComponent {
   constructor(private element: ElementRef<HTMLElement>, private zone: NgZone) {

@@ -5,6 +5,7 @@ import { BehaviorSubject } from 'rxjs';
   selector: 'bs-placeholder',
   templateUrl: './placeholder.component.html',
   styleUrls: ['./placeholder.component.scss'],
+  standalone: false,
 })
 export class BsPlaceholderComponent {
   //#region isLoading

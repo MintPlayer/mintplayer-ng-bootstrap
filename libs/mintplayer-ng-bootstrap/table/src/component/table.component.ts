@@ -6,7 +6,6 @@ import { BehaviorSubject } from 'rxjs';
   selector: 'bs-table',
   templateUrl: './table.component.html',
   styleUrls: ['./table.component.scss'],
-  standalone: true,
   imports: [AsyncPipe]
 })
 export class BsTableComponent {

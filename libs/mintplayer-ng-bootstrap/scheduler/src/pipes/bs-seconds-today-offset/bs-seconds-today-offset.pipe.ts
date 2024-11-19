@@ -3,7 +3,8 @@ import { SchedulerEvent } from '../../interfaces/scheduler-event';
 import { SchedulerEventPart } from '../../interfaces/scheduler-event-part';
 
 @Pipe({
-  name: 'bsSecondsTodayOffset'
+  name: 'bsSecondsTodayOffset',
+  standalone: false,
 })
 export class BsSecondsTodayOffsetPipe implements PipeTransform {
 

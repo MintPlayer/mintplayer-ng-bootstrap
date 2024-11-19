@@ -9,7 +9,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
   selector: 'bs-resource-group-presenter',
   templateUrl: './resource-group-presenter.component.html',
   styleUrls: ['./resource-group-presenter.component.scss'],
-  
+  standalone: false,
 })
 export class ResourceGroupPresenterComponent {
   

@@ -4,6 +4,7 @@ import { BsSearchboxComponent } from '../searchbox/searchbox.component';
 
 @Directive({
   selector: '[bsEnterSearchTermTemplate]',
+  standalone: false,
 })
 export class BsEnterSearchTermTemplateDirective<T extends HasId<U>, U> {
   constructor(searchbox: BsSearchboxComponent<T, U>, template: TemplateRef<T>) {

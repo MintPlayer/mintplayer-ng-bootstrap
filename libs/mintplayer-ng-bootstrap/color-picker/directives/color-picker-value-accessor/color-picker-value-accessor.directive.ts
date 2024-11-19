@@ -13,7 +13,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
     useExisting: forwardRef(() => BsColorPickerValueAccessor),
     multi: true
   }],
-  exportAs: 'bsColorPicker'
+  exportAs: 'bsColorPicker',
+  standalone: false,
 })
 export class BsColorPickerValueAccessor implements AfterViewInit, ControlValueAccessor {
 

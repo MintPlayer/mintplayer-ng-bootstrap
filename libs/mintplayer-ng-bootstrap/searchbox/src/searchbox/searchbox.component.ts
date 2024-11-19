@@ -13,6 +13,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
   selector: 'bs-searchbox',
   templateUrl: './searchbox.component.html',
   styleUrls: ['./searchbox.component.scss'],
+  standalone: false,
 })
 export class BsSearchboxComponent<T extends HasId<U>, U> {
   constructor(@Optional() bsForm: BsFormComponent, sanitizer: DomSanitizer) {

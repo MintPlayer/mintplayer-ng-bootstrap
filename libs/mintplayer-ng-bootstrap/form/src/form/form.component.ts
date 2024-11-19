@@ -4,6 +4,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
   selector: 'bs-form',
   templateUrl: './form.component.html',
   styleUrls: ['./form.component.scss'],
+  standalone: false,
 })
 export class BsFormComponent {
   @Input() action?: string;

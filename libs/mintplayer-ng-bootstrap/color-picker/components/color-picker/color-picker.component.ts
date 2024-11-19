@@ -7,7 +7,8 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 @Component({
   selector: 'bs-color-picker',
   templateUrl: './color-picker.component.html',
-  styleUrls: ['./color-picker.component.scss']
+  styleUrls: ['./color-picker.component.scss'],
+  standalone: false,
 })
 export class BsColorPickerComponent {
 

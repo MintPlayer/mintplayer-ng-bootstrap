@@ -5,7 +5,8 @@ import { BehaviorSubject } from 'rxjs';
 @Component({
   selector: 'bs-select2',
   templateUrl: './select2.component.html',
-  styleUrls: ['./select2.component.scss']
+  styleUrls: ['./select2.component.scss'],
+  standalone: false,
 })
 export class BsSelect2Component<T extends HasId<U>, U> {
 

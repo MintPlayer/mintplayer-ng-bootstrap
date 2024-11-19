@@ -6,6 +6,7 @@ import { BehaviorSubject, map, Observable } from 'rxjs';
   selector: 'bs-grid',
   templateUrl: './grid.component.html',
   styleUrls: ['./grid.component.scss'],
+  standalone: false,
 })
 export class BsGridComponent {
   

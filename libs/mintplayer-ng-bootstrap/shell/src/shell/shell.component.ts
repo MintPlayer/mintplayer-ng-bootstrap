@@ -6,7 +6,8 @@ import { Breakpoint } from '@mintplayer/ng-bootstrap';
 @Component({
   selector: 'bs-shell',
   templateUrl: './shell.component.html',
-  styleUrl: './shell.component.scss'
+  styleUrl: './shell.component.scss',
+  standalone: false,
 })
 export class BsShellComponent {
   constructor() {

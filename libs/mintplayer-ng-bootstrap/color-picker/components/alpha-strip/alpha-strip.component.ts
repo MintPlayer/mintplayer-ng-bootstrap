@@ -6,7 +6,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 @Component({
   selector: 'bs-alpha-strip',
   templateUrl: './alpha-strip.component.html',
-  styleUrls: ['./alpha-strip.component.scss']
+  styleUrls: ['./alpha-strip.component.scss'],
+  standalone: false,
 })
 export class BsAlphaStripComponent implements AfterViewInit {
 

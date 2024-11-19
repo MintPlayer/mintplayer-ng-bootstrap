@@ -2,8 +2,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { Directive, ElementRef, EventEmitter, Inject, Input, NgZone, OnChanges, OnDestroy, OnInit, Output, PLATFORM_ID, SimpleChanges } from '@angular/core';
 
 @Directive({
-  selector: '[clickOutside]',
-  standalone: true
+  selector: '[clickOutside]'
 })
 export class ClickOutsideDirective implements OnInit, OnChanges, OnDestroy {
 

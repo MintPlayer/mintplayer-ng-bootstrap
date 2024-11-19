@@ -8,7 +8,8 @@ import { take } from 'rxjs';
 import { BsDropdownDirective } from '../dropdown/dropdown.directive';
 
 @Directive({
-  selector: '[bsDropdownMenu]'
+  selector: '[bsDropdownMenu]',
+  standalone: false,
 })
 export class BsDropdownMenuDirective extends ClickOutsideDirective {
   constructor(

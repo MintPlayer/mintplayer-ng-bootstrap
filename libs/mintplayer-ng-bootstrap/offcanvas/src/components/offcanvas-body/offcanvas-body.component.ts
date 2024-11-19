@@ -1,17 +1,11 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input } from '@angular/core';
 
 @Component({
   selector: 'bs-offcanvas-body',
   templateUrl: './offcanvas-body.component.html',
-  styleUrls: ['./offcanvas-body.component.scss']
+  styleUrls: ['./offcanvas-body.component.scss'],
+  standalone: false,
 })
-export class OffcanvasBodyComponent implements OnInit {
-
-  constructor() { }
-
+export class OffcanvasBodyComponent {
   @Input() noPadding = false;
-
-  ngOnInit(): void {
-  }
-
 }

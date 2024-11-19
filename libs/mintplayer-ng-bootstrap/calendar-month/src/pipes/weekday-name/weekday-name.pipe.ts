@@ -3,7 +3,6 @@ import { Pipe, PipeTransform } from '@angular/core';
 @Pipe({
   name: 'weekdayName',
   pure: true,
-  standalone: true
 })
 export class BsWeekdayNamePipe implements PipeTransform {
 

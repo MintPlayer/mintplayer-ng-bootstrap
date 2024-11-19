@@ -7,6 +7,7 @@ import { BehaviorSubject, combineLatest, debounceTime, filter, map, Observable, 
   selector: 'bs-navbar',
   templateUrl: './navbar.component.html',
   styleUrls: ['./navbar.component.scss'],
+  standalone: false,
 })
 export class BsNavbarComponent {
 

@@ -6,6 +6,7 @@ import { BsInstanceOfDirective } from "./instanceof.directive";
 
 @Directive({
   selector: '[bsInstanceofCase]',
+  standalone: false,
 })
 export class BsInstanceofCaseDirective<T> implements DoCheck {
   @Input() public bsInstanceofCase!: AbstractType<T>;

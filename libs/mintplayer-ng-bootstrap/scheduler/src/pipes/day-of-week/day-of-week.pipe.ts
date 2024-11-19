@@ -3,7 +3,8 @@ import { SchedulerEvent } from '../../interfaces/scheduler-event';
 import { SchedulerEventPart } from '../../interfaces/scheduler-event-part';
 
 @Pipe({
-  name: 'dayOfWeek'
+  name: 'dayOfWeek',
+  standalone: false,
 })
 export class DayOfWeekPipe implements PipeTransform {
 

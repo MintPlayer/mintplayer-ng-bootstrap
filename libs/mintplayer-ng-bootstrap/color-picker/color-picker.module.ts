@@ -15,13 +15,13 @@ import { BsAlphaStripComponent } from './components/alpha-strip/alpha-strip.comp
     BsColorWheelComponent,
     BsLuminosityStripComponent,
     BsSliderComponent,
-    BsThumbDirective,
-    BsTrackDirective,
     BsAlphaStripComponent
   ],
   imports: [
     AsyncPipe,
     FormsModule,
+    BsThumbDirective,
+    BsTrackDirective,
   ],
   exports: [
     BsColorPickerComponent,

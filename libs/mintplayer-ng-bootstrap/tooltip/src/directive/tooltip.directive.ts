@@ -6,7 +6,8 @@ import { BsTooltipComponent } from '../component/tooltip.component';
 import { TOOLTIP_CONTENT } from '../providers/tooltip-content.provider';
 
 @Directive({
-  selector: '*[bsTooltip]'
+  selector: '*[bsTooltip]',
+  standalone: false,
 })
 export class BsTooltipDirective implements OnDestroy {
 
