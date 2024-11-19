@@ -108,9 +108,6 @@
       "@angular/core": "~19.0.0",
       "@angular/forms": "~19.0.0",
       "@angular/platform-browser": "~19.0.0"
-    },
-    "ng-packagr": {
-      "@angular/compiler-cli": "~19.0.0"
     }
   }
 }
