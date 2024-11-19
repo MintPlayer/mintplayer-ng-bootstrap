@@ -3,7 +3,8 @@ import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.co
 import { BsNavbarComponent } from '../navbar/navbar.component';
 
 @Directive({
-  selector: 'bs-navbar-item > li > a'
+  selector: 'bs-navbar-item > li > a',
+  standalone: false,
   // Below selector doesn't work well either (does not select the github link)
   // selector: 'bs-navbar-item > a[routerLink]'
   // Below selector seems to target other a's that aren't even remotely inside a bs-navbar-item

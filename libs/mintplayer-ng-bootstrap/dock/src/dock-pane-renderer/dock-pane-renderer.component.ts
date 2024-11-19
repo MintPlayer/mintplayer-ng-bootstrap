@@ -13,7 +13,8 @@ import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 @Component({
   selector: 'bs-dock-pane-renderer',
   templateUrl: './dock-pane-renderer.component.html',
-  styleUrls: ['./dock-pane-renderer.component.scss']
+  styleUrls: ['./dock-pane-renderer.component.scss'],
+  standalone: false,
 })
 export class BsDockPaneRendererComponent {
 

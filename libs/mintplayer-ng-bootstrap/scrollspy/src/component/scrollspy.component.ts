@@ -8,7 +8,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 @Component({
   selector: 'bs-scrollspy',
   templateUrl: './scrollspy.component.html',
-  styleUrls: ['./scrollspy.component.scss']
+  styleUrls: ['./scrollspy.component.scss'],
+  standalone: false,
 })
 export class BsScrollspyComponent implements AfterViewInit, AfterContentInit {
 

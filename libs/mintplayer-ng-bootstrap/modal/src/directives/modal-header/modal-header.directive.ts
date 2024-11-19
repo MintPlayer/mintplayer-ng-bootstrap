@@ -1,7 +1,8 @@
 import { Directive, HostBinding } from '@angular/core';
 
 @Directive({
-  selector: '[bsModalHeader]'
+  selector: '[bsModalHeader]',
+  standalone: false,
 })
 export class BsModalHeaderDirective {
 

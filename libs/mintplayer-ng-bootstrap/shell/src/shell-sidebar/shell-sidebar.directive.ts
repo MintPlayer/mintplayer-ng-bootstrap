@@ -5,6 +5,7 @@ import { TemplatePortal } from '@angular/cdk/portal';
 
 @Directive({
   selector: '[bsShellSidebar]',
+  standalone: false,
 })
 export class BsShellSidebarDirective {
 

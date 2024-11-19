@@ -2,7 +2,8 @@ import { Pipe, PipeTransform } from '@angular/core';
 import { SchedulerEventPart } from '../../interfaces/scheduler-event-part';
 
 @Pipe({
-  name: 'dateOffset'
+  name: 'dateOffset',
+  standalone: false,
 })
 export class DateOffsetPipe implements PipeTransform {
 

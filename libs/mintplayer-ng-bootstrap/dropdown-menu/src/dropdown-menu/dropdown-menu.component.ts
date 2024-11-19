@@ -6,6 +6,7 @@ import { BsDropdownDirective } from '@mintplayer/ng-bootstrap/dropdown';
   selector: 'bs-dropdown-menu',
   templateUrl: './dropdown-menu.component.html',
   styleUrls: ['./dropdown-menu.component.scss'],
+  standalone: false,
 })
 export class BsDropdownMenuComponent implements AfterViewInit {
   constructor(@Optional() private bsDropdown?: BsDropdownDirective) {

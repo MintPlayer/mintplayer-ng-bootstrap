@@ -4,6 +4,7 @@ import { BsSelectComponent } from "../component/select.component";
 
 @Directive({
   selector: 'bs-select',
+  standalone: false,
   providers: [{
     provide: NG_VALUE_ACCESSOR,
     useExisting: forwardRef(() => BsSelectValueAccessor),
@@ -107,7 +108,10 @@ export class BsSelectValueAccessor implements ControlValueAccessor {
   }
 }
 
-@Directive({ selector: 'option' })
+@Directive({
+  selector: 'option',
+  standalone: false,
+})
 export class BsSelectOption implements OnDestroy {
   constructor(private element: ElementRef, private renderer: Renderer2, @Optional() @Host() private select: BsSelectValueAccessor) {
     if (this.select) {

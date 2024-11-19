@@ -2,7 +2,8 @@ import { Directive, HostBinding } from '@angular/core';
 import { BsCarouselImageDirective } from '../carousel-image/carousel-image.directive';
 
 @Directive({
-  selector: 'img'
+  selector: 'img',
+  standalone: false,
 })
 export class BsCarouselImgDirective {
   constructor(image: BsCarouselImageDirective) {

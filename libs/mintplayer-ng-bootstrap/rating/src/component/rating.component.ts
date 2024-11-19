@@ -7,7 +7,6 @@ import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
   selector: 'bs-rating',
   templateUrl: './rating.component.html',
   styleUrls: ['./rating.component.scss'],
-  standalone: true,
   imports: [AsyncPipe]
 })
 export class BsRatingComponent {

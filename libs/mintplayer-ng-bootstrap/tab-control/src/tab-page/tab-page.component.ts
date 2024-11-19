@@ -6,7 +6,8 @@ import { BsTabPageHeaderDirective } from '../tab-page-header/tab-page-header.dir
 @Component({
   selector: 'bs-tab-page',
   templateUrl: './tab-page.component.html',
-  styleUrls: ['./tab-page.component.scss']
+  styleUrls: ['./tab-page.component.scss'],
+  standalone: false,
 })
 export class BsTabPageComponent {
 

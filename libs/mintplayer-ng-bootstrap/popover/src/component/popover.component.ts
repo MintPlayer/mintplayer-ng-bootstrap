@@ -8,6 +8,7 @@ import { POPOVER_CONTENT } from '../providers/popover-content.provider';
   selector: 'bs-popover',
   templateUrl: './popover.component.html',
   styleUrls: ['./popover.component.scss'],
+  standalone: false,
   animations: [FadeInOutAnimation]
 })
 export class BsPopoverComponent {

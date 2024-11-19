@@ -17,7 +17,8 @@ import { BsDockService } from '../services/dock/dock.service';
 @Component({
   selector: 'bs-dock-panel-header',
   templateUrl: './dock-panel-header.component.html',
-  styleUrls: ['./dock-panel-header.component.scss']
+  styleUrls: ['./dock-panel-header.component.scss'],
+  standalone: false,
 })
 export class BsDockPanelHeaderComponent {
   constructor(private dockPanel: BsDockPanelComponent, private dock: BsDockComponent, private dockService: BsDockService, private element: ElementRef<HTMLElement>) {}

@@ -3,7 +3,8 @@ import { BsSelect2Component } from '../../component/select2.component';
 import { HasId } from '@mintplayer/ng-bootstrap/has-id';
 
 @Directive({
-  selector: '[bsItemTemplate]'
+  selector: '[bsItemTemplate]',
+  standalone: false,
 })
 export class BsItemTemplateDirective<T extends HasId<U>, U> {
 

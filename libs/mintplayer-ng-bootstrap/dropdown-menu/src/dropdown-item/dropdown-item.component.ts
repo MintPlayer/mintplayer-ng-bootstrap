@@ -4,6 +4,7 @@ import { Component, Input } from '@angular/core';
   selector: 'bs-dropdown-item',
   templateUrl: './dropdown-item.component.html',
   styleUrls: ['./dropdown-item.component.scss'],
+  standalone: false,
 })
 export class BsDropdownItemComponent {
   @Input() public isSelected = false;

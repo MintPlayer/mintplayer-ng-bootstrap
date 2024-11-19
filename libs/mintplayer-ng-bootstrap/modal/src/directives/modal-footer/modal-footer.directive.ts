@@ -1,7 +1,8 @@
 import { Directive, HostBinding } from '@angular/core';
 
 @Directive({
-  selector: '[bsModalFooter]'
+  selector: '[bsModalFooter]',
+  standalone: false,
 })
 export class BsModalFooterDirective {
 

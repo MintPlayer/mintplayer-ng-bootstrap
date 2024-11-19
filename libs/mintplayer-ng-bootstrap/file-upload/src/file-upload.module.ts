@@ -12,7 +12,6 @@ import { BsFormatBytesPipe } from './pipes/format-bytes/format-bytes.pipe';
   declarations: [
     BsFileUploadComponent,
     BsFileUploadTemplateDirective,
-    BsFormatBytesPipe
   ],
   imports: [
     NgTemplateOutlet,
@@ -20,6 +19,7 @@ import { BsFormatBytesPipe } from './pipes/format-bytes/format-bytes.pipe';
     BsProgressBarModule,
     BsListGroupModule,
     BsButtonTypeDirective,
+    BsFormatBytesPipe,
   ],
   exports: [
     BsFileUploadComponent,

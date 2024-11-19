@@ -9,6 +9,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   selector: 'bs-tab-control',
   templateUrl: './tab-control.component.html',
   styleUrls: ['./tab-control.component.scss'],
+  standalone: false,
   providers: [
     { provide: 'TAB_CONTROL', useExisting: BsTabControlComponent }
   ]

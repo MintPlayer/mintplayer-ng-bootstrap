@@ -7,8 +7,7 @@ import { BehaviorSubject, map, Observable } from 'rxjs';
   selector: 'bs-spinner',
   templateUrl: './spinner.component.html',
   styleUrls: ['./spinner.component.scss'],
-  standalone: true,
-  imports: [AsyncPipe]
+  imports: [AsyncPipe],
 })
 export class BsSpinnerComponent implements OnInit {
   constructor() {
