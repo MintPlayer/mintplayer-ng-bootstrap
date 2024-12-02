@@ -62,7 +62,7 @@ export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
     // const portal = new ComponentPortal(BsOffcanvasComponent, null, injector);
     const portal = this.portalFactory(injector);
     this.overlayRef = this.overlayService.create({
-      scrollStrategy: this.overlayService.scrollStrategies.block(),
+      scrollStrategy: this.overlayService.scrollStrategies.reposition(),
       positionStrategy: this.overlayService.position().global()
         .top('0').left('0').bottom('0').right('0'),
       hasBackdrop: false
