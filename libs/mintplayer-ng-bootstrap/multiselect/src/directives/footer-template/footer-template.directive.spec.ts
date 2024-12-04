@@ -2,35 +2,19 @@ import { Component, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsMultiselectComponent } from '../../component/multiselect.component';
 import { BsFooterTemplateDirective } from './footer-template.directive';
+import { MockComponent } from 'ng-mocks';
 
 @Component({
   selector: 'bs-footer-template-test',
-  standalone: true,
+  standalone: false,
   template: `
     <bs-multiselect #multiselect>
-      <ng-template bsFooterTemplate let-count>
-          {{ count }} geselecteerd
-      </ng-template>
+      <ng-container *bsFooterTemplate="let count">{{ count }} geselecteerd</ng-container>
     </bs-multiselect>`
 })
 class BsFooterTemplateTestComponent {
   @ViewChild('modalTemplate') modalTemplate!: TemplateRef<any>;
-  @ViewChild('multiselect') multiselect!: BsMultiselectMockComponent;
-}
-
-@Component({
-  selector: 'bs-multiselect',
-  standalone: false,
-  template: `
-    <button>
-      <ng-container *ngTemplateOutlet="footerTemplate ?? defaultFooterTemplate; context: { $implicit: 0 }"></ng-container>
-    </button>`,
-  providers: [
-    { provide: BsMultiselectComponent, useExisting: BsMultiselectMockComponent }
-  ]
-})
-class BsMultiselectMockComponent {
-  footerTemplate!: TemplateRef<any>;
+  @ViewChild('multiselect') multiselect!: BsMultiselectComponent<any>;
 }
 
 describe('BsFooterTemplateDirective', () => {
@@ -39,16 +23,17 @@ describe('BsFooterTemplateDirective', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [],
+      imports: [
+      ],
       declarations: [
         // Directive to test
         BsFooterTemplateDirective,
 
         // Mock dependencies
-        BsMultiselectMockComponent,
-
+        MockComponent(BsMultiselectComponent),
+        
         // Testbench
-        BsFooterTemplateTestComponent
+        BsFooterTemplateTestComponent,
       ]
     }).compileComponents();
   });
