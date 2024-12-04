@@ -32,14 +32,14 @@ describe('BsItemTemplateDirective', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [
-        CommonModule
+        CommonModule,
+        
+        // Mock dependencies
+        MockBsSelect2Component,
       ],
       declarations: [
         // Unit to test
         BsItemTemplateDirective,
-        
-        // Mock dependencies
-        MockBsSelect2Component,
         
         // Testbench
         BsItemTemplateTestComponent,

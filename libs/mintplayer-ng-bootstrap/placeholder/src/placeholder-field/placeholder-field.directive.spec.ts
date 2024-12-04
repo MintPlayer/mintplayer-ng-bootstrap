@@ -43,13 +43,14 @@ describe('BsPlaceholderFieldDirective', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      imports: [
+        // Mock dependencies
+        BsPlaceholderMockComponent,
+      ],
       declarations: [
         // Unit to test
         BsPlaceholderFieldDirective,
       
-        // Mock dependencies
-        BsPlaceholderMockComponent,
-
         // Testbench
         BsPlaceholderTestComponent,
       ],

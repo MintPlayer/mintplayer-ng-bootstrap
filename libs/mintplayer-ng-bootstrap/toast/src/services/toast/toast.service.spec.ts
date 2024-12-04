@@ -4,6 +4,7 @@ import { Component, ElementRef, Injectable, Injector, TemplateRef, ViewChild } f
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
 import { BsToastService } from './toast.service';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'bs-toast-test',
@@ -31,6 +32,7 @@ class BsToastTestComponent {
 @Component({
   selector: 'bs-toast-container',
   standalone: true,
+  imports: [CommonModule],
   template: `
     <ng-container *ngFor="let toast of (toastService.toasts$ | async); let i = index">
       <ng-container [ngTemplateOutlet]="toast.template" [ngTemplateOutletContext]="toast.context"></ng-container>
@@ -51,16 +53,15 @@ describe('BsToastService', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       declarations: [
-        // Unit to test
-
-        // Mock dependencies
-        BsToastContainerComponent,
 
         // Testbench
         BsToastTestComponent
       ],
       imports: [
-        OverlayModule
+        OverlayModule,
+        
+        // Unit to test
+        BsToastContainerComponent,
       ],
       providers: [
         {

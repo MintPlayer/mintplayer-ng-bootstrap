@@ -30,15 +30,15 @@ describe('BsSuggestionTemplateDirective', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [
-        CommonModule
+        CommonModule,
+        
+        // Mock dependencies
+        MockBsSelect2Component,
       ],
       declarations: [
         // Unit to test
         BsSuggestionTemplateDirective,
-        
-        // Mock dependencies
-        MockBsSelect2Component,
-        
+                
         // Testbench
         BsSuggestionTemplateTestComponent,
       ],

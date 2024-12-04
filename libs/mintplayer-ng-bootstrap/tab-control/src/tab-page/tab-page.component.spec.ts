@@ -77,7 +77,7 @@ class BsTabControlTestComponent {}
 
 @Component({
   selector: 'bs-tab-control',
-  standalone: true,
+  standalone: false,
   template: 'tab-control works'
 })
 class BsTabControlMockComponent {}
