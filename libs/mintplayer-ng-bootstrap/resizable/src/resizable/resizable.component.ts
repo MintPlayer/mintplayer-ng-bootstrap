@@ -10,9 +10,10 @@ import { PresetPosition } from '../interfaces/preset-position';
   selector: 'bs-resizable',
   templateUrl: './resizable.component.html',
   styleUrls: ['./resizable.component.scss'],
+  standalone: false,
   providers: [
     { provide: RESIZABLE, useExisting: forwardRef(() => BsResizableComponent) }
-  ]
+  ],
 })
 export class BsResizableComponent {
   constructor(element: ElementRef<HTMLElement>) {

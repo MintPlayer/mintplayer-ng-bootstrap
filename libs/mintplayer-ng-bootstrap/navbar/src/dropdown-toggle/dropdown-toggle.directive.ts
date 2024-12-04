@@ -5,9 +5,10 @@ import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.co
 @Directive({
   // selector: 'bs-navbar-item > a[routerLink]',
   selector: 'bs-navbar-item',
+  standalone: false,
   queries: {
     childDropdowns: new ContentChildren(forwardRef(() => BsNavbarDropdownComponent))
-  }
+  },
 })
 export class DropdownToggleDirective implements AfterContentInit {
 

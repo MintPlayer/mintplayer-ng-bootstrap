@@ -5,6 +5,7 @@ import { Component, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
   selector: 'bs-split-panel',
   templateUrl: './split-panel.component.html',
   styleUrls: ['./split-panel.component.scss'],
+  standalone: false,
 })
 export class BsSplitPanelComponent implements AfterViewInit {
   constructor(private element: ElementRef) {}

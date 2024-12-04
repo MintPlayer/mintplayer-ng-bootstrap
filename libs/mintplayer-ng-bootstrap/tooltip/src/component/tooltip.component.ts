@@ -8,7 +8,8 @@ import { TOOLTIP_CONTENT } from '../providers/tooltip-content.provider';
   selector: 'bs-tooltip',
   templateUrl: './tooltip.component.html',
   styleUrls: ['./tooltip.component.scss'],
-  animations: [FadeInOutAnimation]
+  standalone: false,
+  animations: [FadeInOutAnimation],
 })
 export class BsTooltipComponent {
   constructor(@Inject(TOOLTIP_CONTENT) content: TemplateRef<any>) {

@@ -11,7 +11,8 @@ import { BsSwipeDirective } from '../swipe/swipe.directive';
 @Directive({
   selector: '[bsSwipeContainer]',
   exportAs: 'bsSwipeContainer',
-  hostDirectives: [BsObserveSizeDirective]
+  standalone: false,
+  hostDirectives: [BsObserveSizeDirective],
 })
 export class BsSwipeContainerDirective implements AfterViewInit {
 

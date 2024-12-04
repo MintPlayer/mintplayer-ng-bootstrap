@@ -3,11 +3,9 @@ import { BsToggleButtonComponent } from '../../component/toggle-button.component
 
 @Directive({
   selector: '[bsToggleButtonGroup]',
-  exportAs: 'bsToggleButtonGroup'
+  standalone: false,
+  exportAs: 'bsToggleButtonGroup',
 })
 export class BsToggleButtonGroupDirective {
-
-  constructor() { }
-
   @ContentChildren(BsToggleButtonComponent, { descendants: true }) toggleButtons!: QueryList<BsToggleButtonComponent>;
 }

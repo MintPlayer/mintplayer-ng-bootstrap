@@ -5,7 +5,8 @@ import { BsSwipeContainerDirective } from "../swipe-container/swipe-container.di
 
 @Directive({
   selector: '[bsSwipe]',
-  hostDirectives: [BsObserveSizeDirective]
+  hostDirectives: [BsObserveSizeDirective],
+  standalone: false,
 })
 export class BsSwipeDirective {
 

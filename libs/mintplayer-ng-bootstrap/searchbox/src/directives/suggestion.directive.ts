@@ -4,6 +4,7 @@ import { BsSearchboxComponent } from '../searchbox/searchbox.component';
 
 @Directive({
   selector: '[bsSuggestionTemplate]',
+  standalone: false,
 })
 export class BsSuggestionTemplateDirective<TData extends HasId<U>, U> {
   constructor(private searchbox: BsSearchboxComponent<TData, U>, template: TemplateRef<BsSuggestionTemplateContext<TData, U>>) {

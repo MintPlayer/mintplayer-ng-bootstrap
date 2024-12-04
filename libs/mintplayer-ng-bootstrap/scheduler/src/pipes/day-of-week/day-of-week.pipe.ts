@@ -3,10 +3,10 @@ import { SchedulerEvent } from '../../interfaces/scheduler-event';
 import { SchedulerEventPart } from '../../interfaces/scheduler-event-part';
 
 @Pipe({
-  name: 'dayOfWeek'
+  name: 'dayOfWeek',
+  standalone: false,
 })
 export class DayOfWeekPipe implements PipeTransform {
-
   transform(value: SchedulerEventPart | SchedulerEvent) {
     const dayOfWeek = value.start.getDay();
     if (dayOfWeek === 0) {
@@ -15,5 +15,4 @@ export class DayOfWeekPipe implements PipeTransform {
       return dayOfWeek;
     }
   }
-
 }

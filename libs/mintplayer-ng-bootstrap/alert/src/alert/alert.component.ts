@@ -6,7 +6,8 @@ import { Color } from '@mintplayer/ng-bootstrap';
   selector: 'bs-alert',
   templateUrl: './alert.component.html',
   styleUrls: ['./alert.component.scss'],
-  animations: [ FadeInOutAnimation ]
+  standalone: false,
+  animations: [ FadeInOutAnimation ],
 })
 export class BsAlertComponent {
 

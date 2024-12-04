@@ -2,7 +2,8 @@ import { Directive, TemplateRef } from '@angular/core';
 import { BsMultiselectComponent } from '../../component/multiselect.component';
 
 @Directive({
-  selector: '[bsButtonTemplate]'
+  selector: '[bsButtonTemplate]',
+  standalone: false,
 })
 export class BsButtonTemplateDirective<T> {
 

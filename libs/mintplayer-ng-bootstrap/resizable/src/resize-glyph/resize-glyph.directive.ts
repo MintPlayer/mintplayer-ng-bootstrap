@@ -6,7 +6,8 @@ import { PointerData } from '../interfaces/pointer-data';
 import { RESIZABLE } from '../providers/resizable.provider';
 
 @Directive({
-  selector: '[bsResizeGlyph]'
+  selector: '[bsResizeGlyph]',
+  standalone: false,
 })
 export class BsResizeGlyphDirective {
 

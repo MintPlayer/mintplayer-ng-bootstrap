@@ -7,8 +7,7 @@ import { BehaviorSubject, distinctUntilChanged } from 'rxjs';
   selector: 'bs-playlist-toggler',
   templateUrl: './playlist-toggler.component.html',
   styleUrls: ['./playlist-toggler.component.scss'],
-  standalone: true,
-  imports: [AsyncPipe]
+  imports: [AsyncPipe],
 })
 export class BsPlaylistTogglerComponent {
   constructor() {

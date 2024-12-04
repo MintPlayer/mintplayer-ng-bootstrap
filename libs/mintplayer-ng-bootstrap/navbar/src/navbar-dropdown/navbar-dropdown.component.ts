@@ -10,7 +10,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 @Component({
   selector: 'bs-navbar-dropdown',
   templateUrl: './navbar-dropdown.component.html',
-  styleUrls: ['./navbar-dropdown.component.scss']
+  styleUrls: ['./navbar-dropdown.component.scss'],
+  standalone: false,
 })
 export class BsNavbarDropdownComponent {
 

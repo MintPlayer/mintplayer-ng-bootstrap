@@ -21,7 +21,8 @@ import { take, Observable } from 'rxjs';
  **/
 @Directive({
   selector: '[bsNavigationLock]',
-  exportAs: 'bsNavigationLock'
+  standalone: false,
+  exportAs: 'bsNavigationLock',
 })
 export class BsNavigationLockDirective {
   constructor(private router: Router, private route: ActivatedRoute) {

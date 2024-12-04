@@ -8,6 +8,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
   selector: 'bs-treeview-item',
   templateUrl: './treeview-item.component.html',
   styleUrls: ['./treeview-item.component.scss'],
+  standalone: false,
 })
 export class BsTreeviewItemComponent {
   readonly parent: BsTreeviewComponent;

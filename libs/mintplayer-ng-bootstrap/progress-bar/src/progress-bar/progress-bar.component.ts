@@ -6,7 +6,8 @@ import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
 @Component({
   selector: 'bs-progress-bar',
   templateUrl: './progress-bar.component.html',
-  styleUrls: ['./progress-bar.component.scss']
+  styleUrls: ['./progress-bar.component.scss'],
+  standalone: false,
 })
 export class BsProgressBarComponent {
 

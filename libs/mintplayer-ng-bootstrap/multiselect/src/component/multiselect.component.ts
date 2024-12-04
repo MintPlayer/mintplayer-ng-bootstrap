@@ -4,7 +4,8 @@ import { Color } from '@mintplayer/ng-bootstrap';
 @Component({
   selector: 'bs-multiselect',
   templateUrl: './multiselect.component.html',
-  styleUrls: ['./multiselect.component.scss']
+  styleUrls: ['./multiselect.component.scss'],
+  standalone: false,
 })
 export class BsMultiselectComponent<T> {
 

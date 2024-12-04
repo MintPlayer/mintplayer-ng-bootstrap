@@ -3,7 +3,8 @@ import { PaginationResponse } from '@mintplayer/pagination';
 import { BsDatatableComponent } from '../datatable/datatable.component';
 
 @Directive({
-  selector: '[bsRowTemplate]'
+  selector: '[bsRowTemplate]',
+  standalone: false,
 })
 export class BsRowTemplateDirective<TData> {
 
