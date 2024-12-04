@@ -19,6 +19,7 @@ class BsPopoverMockComponent {
 
 @Component({
   selector: 'bs-Popover-directive-test',
+  standalone: false,
   template: `
     <button #button>
       Bottom

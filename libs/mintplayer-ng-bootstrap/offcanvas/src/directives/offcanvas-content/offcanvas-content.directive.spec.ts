@@ -45,6 +45,7 @@ type OffcanvasPosition = 'top' | 'bottom' | 'start' | 'end';
 
 @Component({
   selector: 'bs-offcanvas-test',
+  standalone: false,
   template: `
     <bs-offcanvas [(show)]="isOffcanvasVisible" [position]="position" [hasBackdrop]="true" (backdropClick)="isOffcanvasVisible = false">
         <div *bsOffcanvasContent>

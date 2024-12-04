@@ -8,6 +8,7 @@ import { BsSwipeContainerDirective } from './swipe-container.directive';
 
 @Component({
   selector: 'swipe-test-component',
+  standalone: false,
   template: `
     <div bsSwipeContainer>
       <div *ngFor="let n of images" bsSwipe>Slide {{ n }}</div>

@@ -10,7 +10,7 @@ import { BsFooterTemplateDirective } from './footer-template.directive';
       <ng-template bsFooterTemplate let-count>
           {{ count }} geselecteerd
       </ng-template>
-  </bs-multiselect>`
+    </bs-multiselect>`
 })
 class BsFooterTemplateTestComponent {
   @ViewChild('modalTemplate') modalTemplate!: TemplateRef<any>;
@@ -19,6 +19,7 @@ class BsFooterTemplateTestComponent {
 
 @Component({
   selector: 'bs-multiselect',
+  standalone: false,
   template: `
     <button>
       <ng-container *ngTemplateOutlet="footerTemplate ?? defaultFooterTemplate; context: { $implicit: 0 }"></ng-container>

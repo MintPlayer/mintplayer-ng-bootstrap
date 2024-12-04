@@ -7,6 +7,7 @@ import { BsSelect2Component } from '../../component/select2.component';
 
 @Component({
   selector: 'item-template-test-component',
+  standalone: false,
   template: `
     <select2>
       <ng-template itemTemplate>

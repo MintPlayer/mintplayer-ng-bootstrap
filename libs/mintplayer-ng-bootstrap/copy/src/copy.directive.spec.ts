@@ -6,6 +6,7 @@ const codeToCopy = 'Hello world';
 
 @Component({
   selector: 'bs-copy-test',
+  standalone: false,
   template: `
     <button #copyBtn [bsCopy]="codeToCopy" (bsCopied)="copiedHtml()">
       Copy html

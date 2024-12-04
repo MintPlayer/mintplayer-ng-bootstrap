@@ -5,12 +5,13 @@ import { BsHeaderTemplateDirective } from './header-template.directive';
 
 @Component({
   selector: 'bs-header-template-test',
+  standalone: false,
   template: `
     <bs-multiselect #multiselect>
       <ng-template bsHeaderTemplate let-count>
           {{ count }} geselecteerd
       </ng-template>
-  </bs-multiselect>`
+    </bs-multiselect>`
 })
 class BsHeaderTemplateTestComponent {
   @ViewChild('modalTemplate') modalTemplate!: TemplateRef<any>;
@@ -19,6 +20,7 @@ class BsHeaderTemplateTestComponent {
 
 @Component({
   selector: 'bs-multiselect',
+  standalone: false,
   template: `
     <button>
       <ng-container *ngTemplateOutlet="headerTemplate ?? defaultHeaderTemplate; context: { $implicit: 0 }"></ng-container>

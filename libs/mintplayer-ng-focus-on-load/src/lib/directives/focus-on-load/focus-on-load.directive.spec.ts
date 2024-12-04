@@ -7,6 +7,7 @@ import { FocusOnLoadDirective } from './focus-on-load.directive';
 
 @Component({
   selector: 'focus-on-load-test-component',
+  standalone: false,
   template: `
     <div #wrapper>
       <input type="text" [autofocus] #textbox>

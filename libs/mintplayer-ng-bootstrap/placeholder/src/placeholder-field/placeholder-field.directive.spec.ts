@@ -25,6 +25,7 @@ class BsPlaceholderMockComponent {
 
 @Component({
   selector: 'bs-placeholder-test',
+  standalone: false,
   template: `
     <p class="card-text" [bsPlaceholder]="isLoading">
       <span bsPlaceholderField>{{ isLoading ? '' : lines[0] }}</span>

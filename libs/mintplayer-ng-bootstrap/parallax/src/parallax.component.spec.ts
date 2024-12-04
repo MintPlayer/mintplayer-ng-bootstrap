@@ -4,13 +4,10 @@ import { Component } from '@angular/core';
 
 @Component({
   selector: 'bs-parallax-test',
-  standalone: true,
   imports: [BsParallaxComponent],
   template: `<bs-parallax [image]="'/assets/test.png'"></bs-parallax>`
 })
-class BsParallaxTestComponent {
-
-}
+class BsParallaxTestComponent {}
 
 describe('BsParallaxComponent', () => {
   let component: BsParallaxTestComponent;

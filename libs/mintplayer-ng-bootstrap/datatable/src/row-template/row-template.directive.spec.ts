@@ -48,6 +48,7 @@ interface Artist {
 
 @Component({
   selector: 'bs-row-template-test',
+  standalone: false,
   template: `
     <bs-datatable #table>
       <tr *bsRowTemplate="let artist of artists">

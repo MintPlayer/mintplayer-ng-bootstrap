@@ -5,6 +5,7 @@ import { ClickOutsideDirective } from './click-outside.directive';
 
 @Component({
   selector: 'click-outside-test-component',
+  standalone: false,
   template: `
     <div #wrapper>
       <div #div (clickOutside)="increment()">

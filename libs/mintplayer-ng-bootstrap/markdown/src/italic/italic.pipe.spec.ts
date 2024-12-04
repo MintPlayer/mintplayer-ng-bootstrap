@@ -5,6 +5,7 @@ import { BsItalicPipe } from './italic.pipe';
 
 @Component({
   selector: 'bs-italic-test',
+  standalone: false,
   template: `<span [innerHTML]="'*Hello world*' | bsItalic"></span>`
 })
 class BsItalicTestComponent {}

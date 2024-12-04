@@ -7,6 +7,7 @@ import { BsFileUploadTemplateDirective } from './file-upload-template.directive'
 
 @Component({
   selector: 'file-upload-template-test-component',
+  standalone: false,
   template: `
     <bs-file-upload [files]="files" #fileUpload>
       <ng-template bsFileUploadTemplate let-upload>

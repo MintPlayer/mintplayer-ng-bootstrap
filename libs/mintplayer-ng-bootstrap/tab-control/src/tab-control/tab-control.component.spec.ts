@@ -41,6 +41,7 @@ describe('BsTabControlComponent', () => {
 
 @Component({
   selector: 'bs-tab-control-test',
+  standalone: false,
   template: `
     <bs-tab-control>
       <bs-tab-page>
@@ -73,21 +74,12 @@ describe('BsTabControlComponent', () => {
       </bs-tab-page>
     </bs-tab-control>`
 })
-class BsTabControlTestComponent {
-
-  ngOnInit() {
-  }
-
-}
+class BsTabControlTestComponent {}
 
 @Component({
   selector: 'bs-tab-page',
-  template: 'tab-page works'
+  standalone: false,
+  template: 'tab-page works',
 })
-class BsTabPageMockComponent {
-
-  ngOnInit() {
-  }
-
-}
+class BsTabPageMockComponent {}
 

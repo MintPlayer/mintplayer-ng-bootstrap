@@ -40,12 +40,13 @@ describe('BsExpandButtonDirective', () => {
 
 @Component({
   selector: 'bs-navbar',
+  standalone: false,
   template: `
-  <nav>
-    <div>
-      <ng-content></ng-content>
-    </div>  
-  </nav>`,
+    <nav>
+      <div>
+        <ng-content></ng-content>
+      </div>  
+    </nav>`,
   providers: [
     { provide: BsNavbarComponent, useExisting: BsNavbarMockComponent }
   ]
@@ -55,12 +56,13 @@ class BsNavbarMockComponent {
 
 @Component({
   selector: 'bs-nav-link-test',
+  standalone: false,
   template: `
-  <bs-navbar #navbar>
-    <ng-template bsExpandButton let-state>
-      <input type="checkbox" [checked]="state === 'open'">
-    </ng-template>
-  </bs-navbar>`
+    <bs-navbar #navbar>
+      <ng-template bsExpandButton let-state>
+        <input type="checkbox" [checked]="state === 'open'">
+      </ng-template>
+    </bs-navbar>`
 })
 class BsExpandButtonTestComponent {
   @ViewChild('navbar') navbar!: BsNavbarComponent;

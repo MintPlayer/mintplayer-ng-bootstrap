@@ -5,6 +5,7 @@ import { BsNavigationLockDirective } from './navigation-lock.directive';
 
 @Component({
   selector: 'navigation-lock-test',
+  standalone: false,
   template: `
     <ng-container bsNavigationLock [canExit]="canExit" #navigationLock="bsNavigationLock">
     </ng-container>`

@@ -57,6 +57,7 @@ describe('BsNavbarNavComponent', () => {
 
 @Component({
   selector: 'bs-navbar-test',
+  standalone: false,
   template: `
   <bs-navbar>
     <bs-navbar-nav>

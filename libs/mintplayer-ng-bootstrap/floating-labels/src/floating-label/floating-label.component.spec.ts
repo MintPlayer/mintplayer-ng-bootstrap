@@ -6,6 +6,7 @@ import { BsFloatingLabelComponent } from './floating-label.component';
 
 @Component({
   selector: 'bs-floating-label-test',
+  standalone: false,
   template: `
     <bs-form>
       <bs-floating-label>

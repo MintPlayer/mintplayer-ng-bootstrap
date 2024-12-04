@@ -7,6 +7,7 @@ enum Position { top, left, bottom, right }
 
 @Component({
   selector: 'bs-tooltip-directive-test',
+  standalone: false,
   template: `
     <button>
         Bottom
