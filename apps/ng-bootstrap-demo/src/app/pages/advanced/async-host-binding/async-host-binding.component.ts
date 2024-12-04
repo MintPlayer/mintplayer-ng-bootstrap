@@ -6,7 +6,7 @@ import { interval, map, tap } from 'rxjs';
 @Component({
   selector: "demo-hello",
   template: `Hello {{ name }}!`,
-  standalone: true
+  standalone: true,
 })
 export class HelloComponent {
   @Input() name!: string;

@@ -9,7 +9,7 @@ import { dedent } from 'ts-dedent';
   templateUrl: './copy.component.html',
   styleUrls: ['./copy.component.scss'],
   standalone: true,
-  imports: [BsCopyDirective, BsOffcanvasModule, HighlightModule]
+  imports: [BsCopyDirective, BsOffcanvasModule, HighlightModule],
 })
 export class CopyComponent {
 

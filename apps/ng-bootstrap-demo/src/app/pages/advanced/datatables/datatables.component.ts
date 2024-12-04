@@ -9,7 +9,7 @@ import { ArtistService } from '../../../services/artist/artist.service';
   templateUrl: './datatables.component.html',
   styleUrls: ['./datatables.component.scss'],
   standalone: true,
-  imports: [BsDatatableModule]
+  imports: [BsDatatableModule],
 })
 export class DatatablesComponent implements OnInit {
 

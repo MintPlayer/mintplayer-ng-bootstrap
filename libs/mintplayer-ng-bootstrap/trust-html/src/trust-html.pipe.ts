@@ -3,6 +3,7 @@ import { DomSanitizer } from '@angular/platform-browser';
 
 @Pipe({
   name: 'bsTrustHtml',
+  standalone: true,
   pure: true,
 })
 export class BsTrustHtmlPipe implements PipeTransform {

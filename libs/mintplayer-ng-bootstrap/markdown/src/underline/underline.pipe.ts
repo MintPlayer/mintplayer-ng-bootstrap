@@ -3,6 +3,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Pipe({
   name: 'bsUnderline',
+  standalone: true,
   pure: true,
 })
 export class BsUnderlinePipe implements PipeTransform {

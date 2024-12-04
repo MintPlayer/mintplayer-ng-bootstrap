@@ -65,6 +65,7 @@ class BsOffcanvasTestComponent {
 
 @Component({
   selector: 'bs-offcanvas',
+  standalone: true,
   template: ``,
   providers: [{ provide: BsOffcanvasHostComponent, useExisting: BsOffcanvasHostMockComponent }]
 })
@@ -77,6 +78,7 @@ class BsOffcanvasHostMockComponent {
 
 @Component({
   selector: 'bs-offcanvas-holder',
+  standalone: true,
   template: `
     <div>
       <ng-container *ngTemplateOutlet="contentTemplate"></ng-container>
@@ -92,6 +94,7 @@ class BsOffcanvasMockComponent {
 
 @Component({
   selector: 'bs-offcanvas-header',
+  standalone: true,
   template: `
     <div class="offcanvas-header">
       <ng-content></ng-content>
@@ -101,6 +104,7 @@ class BsOffcanvasHeaderMockComponent {}
 
 @Component({
   selector: 'bs-offcanvas-body',
+  standalone: true,
   template: `
     <div class="offcanvas-body">
       <ng-content></ng-content>

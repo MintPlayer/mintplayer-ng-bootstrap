@@ -7,6 +7,7 @@ import { AsyncPipe } from '@angular/common';
 
 @Component({
   selector: 'bs-pagination',
+  standalone: true,
   templateUrl: './pagination.component.html',
   styleUrls: ['./pagination.component.scss'],
   imports: [AsyncPipe],

@@ -3,6 +3,7 @@ import { Color } from '@mintplayer/ng-bootstrap';
 
 @Directive({
   selector: 'button[color],input[type="button"][color],input[type="submit"][color],a[color]',
+  standalone: true,
 })
 export class BsButtonTypeDirective {
   @HostBinding('class.btn') btnClass = true;

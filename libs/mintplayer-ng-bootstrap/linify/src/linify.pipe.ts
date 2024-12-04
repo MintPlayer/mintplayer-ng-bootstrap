@@ -2,6 +2,7 @@ import { Pipe, PipeTransform } from '@angular/core';
 
 @Pipe({
   name: 'bsLinify',
+  standalone: true,
 })
 export class BsLinifyPipe implements PipeTransform {
   transform(value: string, removeEmptyEntries = true) {

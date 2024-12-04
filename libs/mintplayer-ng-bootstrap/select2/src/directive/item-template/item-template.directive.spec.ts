@@ -18,7 +18,8 @@ import { BsSelect2Component } from '../../component/select2.component';
 class BsItemTemplateTestComponent { }
 
 @Component({
-  selector: 'select2'
+  selector: 'select2',
+  standalone: true,
 })
 class MockBsSelect2Component {
   itemTemplate?: TemplateRef<any>;

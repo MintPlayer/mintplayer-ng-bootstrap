@@ -30,6 +30,7 @@ class BsToastTestComponent {
 
 @Component({
   selector: 'bs-toast-container',
+  standalone: true,
   template: `
     <ng-container *ngFor="let toast of (toastService.toasts$ | async); let i = index">
       <ng-container [ngTemplateOutlet]="toast.template" [ngTemplateOutletContext]="toast.context"></ng-container>

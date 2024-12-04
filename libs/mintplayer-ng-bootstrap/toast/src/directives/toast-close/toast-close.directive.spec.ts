@@ -47,6 +47,7 @@ class BsToastTestComponent {
 
 @Component({
   selector: 'bs-close',
+  standalone: true,
   template: `<button type="button" (click)="onClose($event)"></button>`,
 })
 class BsCloseMockComponent {
@@ -59,6 +60,7 @@ class BsCloseMockComponent {
 
 @Component({
   selector: 'bs-toast-container',
+  standalone: true,
   template: `
     <ng-container *ngFor="let toast of (toastService.toasts$ | async); let i = index">
       <ng-container [ngTemplateOutlet]="toast.template" [ngTemplateOutletContext]="toast.context | bsAddProperties: {toastIndex: i}"></ng-container>
@@ -74,6 +76,7 @@ class BsToastContainerMockComponent {
 
 @Component({
   selector: 'bs-toast',
+  standalone: true,
   template: `
     <div [class.show]="isVisible">
       <ng-content></ng-content>
@@ -85,12 +88,14 @@ class BsToastMockComponent {
 
 @Component({
   selector: 'bs-toast-header',
+  standalone: true,
   template: `<ng-content></ng-content>`
 })
 class BsToastHeaderMockComponent { }
 
 @Component({
   selector: 'bs-toast-body',
+  standalone: true,
   template: `<ng-content></ng-content>`
 })
 class BsToastBodyMockComponent {

@@ -2,6 +2,7 @@ import { Pipe, PipeTransform } from '@angular/core';
 
 @Pipe({
   name: 'bsFontColor',
+  standalone: true,
   pure: true,
 })
 export class BsFontColorPipe implements PipeTransform {

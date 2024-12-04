@@ -8,6 +8,7 @@ import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 
 @Component({
   selector: 'bs-datepicker',
+  standalone: true,
   templateUrl: './datepicker.component.html',
   styleUrls: ['./datepicker.component.scss'],
   imports: [DatePipe, BsCalendarComponent, BsDropdownModule, BsButtonTypeDirective, BsHasOverlayComponent],

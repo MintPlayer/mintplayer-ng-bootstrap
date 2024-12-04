@@ -2,6 +2,7 @@ import { Pipe, PipeTransform } from '@angular/core';
 
 @Pipe({
   name: 'bsWordCount',
+  standalone: true,
   pure: true,
 })
 export class BsWordCountPipe implements PipeTransform {

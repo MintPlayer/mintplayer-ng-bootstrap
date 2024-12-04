@@ -3,6 +3,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Pipe({
   name: 'ordinalNumber',
+  standalone: true,
   pure: true,
 })
 export class BsOrdinalNumberPipe implements PipeTransform {

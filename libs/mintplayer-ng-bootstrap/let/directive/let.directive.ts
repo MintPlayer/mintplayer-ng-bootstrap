@@ -3,6 +3,7 @@ import { BsLetContext } from '../interfaces/let-context';
 
 @Directive({
   selector: '[bsLet]',
+  standalone: true,
 })
 export class BsLetDirective<T> {
 

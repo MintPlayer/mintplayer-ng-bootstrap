@@ -5,6 +5,7 @@ import { BsFooterTemplateDirective } from './footer-template.directive';
 
 @Component({
   selector: 'bs-footer-template-test',
+  standalone: true,
   template: `
     <bs-multiselect #multiselect>
       <ng-template bsFooterTemplate let-count>

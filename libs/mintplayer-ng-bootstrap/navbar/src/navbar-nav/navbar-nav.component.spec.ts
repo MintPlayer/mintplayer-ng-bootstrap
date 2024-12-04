@@ -80,48 +80,51 @@ class BsNavbarNavTestComponent {
 
 @Component({
   selector: 'bs-navbar',
+  standalone: true,
   template: `
-  <nav>
-    <div>
-      <ng-content></ng-content>
-    </div>  
-  </nav>`
+    <nav>
+      <div>
+        <ng-content></ng-content>
+      </div>  
+    </nav>`
 })
 class BsNavbarMockComponent {
 }
 
 @Component({
   selector: 'bs-navbar-dropdown',
+  standalone: true,
   template: `
-  <ul>
-    <ng-content></ng-content>
-</ul>`
+    <ul>
+      <ng-content></ng-content>
+    </ul>`
 })
 class BsNavbarDropdownMockComponent {
 }
 
 @Component({
   selector: 'bs-navbar-item',
+  standalone: true,
   template: `
-  <li>
-    <ng-content></ng-content>
-  </li>`
+    <li>
+      <ng-content></ng-content>
+    </li>`
 })
 class BsNavbarItemMockComponent {
 }
 
 @Component({
   selector: 'page-a',
-  template: `
-  <div>Page A</div>`
+  standalone: true,
+  template: `<div>Page A</div>`
 })
 class PageAComponent {
 }
 
 @Component({
   selector: 'page-bc',
-  template: `
-  <div>Page B - C</div>`
+  standalone: true,
+  template: `<div>Page B - C</div>`
 })
 class PageBCComponent {
 }

@@ -5,6 +5,7 @@ import { BehaviorSubject, distinctUntilChanged } from 'rxjs';
 
 @Component({
   selector: 'bs-playlist-toggler',
+  standalone: true,
   templateUrl: './playlist-toggler.component.html',
   styleUrls: ['./playlist-toggler.component.scss'],
   imports: [AsyncPipe],

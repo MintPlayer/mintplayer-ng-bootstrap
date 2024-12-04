@@ -9,6 +9,7 @@ enum Position { top, left, bottom, right }
 
 @Component({
   selector: 'bs-popover',
+  standalone: true,
   template: `
     <div>
       <ng-container *ngTemplateOutlet="template"></ng-container>

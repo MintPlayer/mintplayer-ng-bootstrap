@@ -19,8 +19,8 @@ interface Visitor {
 
 @Pipe({
   name: 'asVisitor',
-  pure: true, // Not necessary
   standalone: true,
+  pure: true, // Not necessary
 })
 export class AsVisitorPipe implements PipeTransform {
   transform(person: Employee | Visitor) {
@@ -31,8 +31,8 @@ export class AsVisitorPipe implements PipeTransform {
 
 @Pipe({
   name: 'asEmployee',
-  pure: true, // Not necessary
   standalone: true,
+  pure: true, // Not necessary
 })
 export class AsEmployeePipe implements PipeTransform {
   transform(person: Employee | Visitor) {
@@ -42,6 +42,7 @@ export class AsEmployeePipe implements PipeTransform {
 }
 
 @Component({
+  selector: 'demo-is-interface',
   standalone: true,
   imports: [
     BsTableComponent,
@@ -49,9 +50,8 @@ export class AsEmployeePipe implements PipeTransform {
     AsVisitorPipe,
     AsEmployeePipe
   ],
-  selector: 'demo-is-interface',
   templateUrl: './is-interface.component.html',
-  styleUrl: './is-interface.component.scss'
+  styleUrl: './is-interface.component.scss',
 })
 export class IsInterfaceComponent {
   employeesOrVisitors: (Employee | Visitor)[] = [

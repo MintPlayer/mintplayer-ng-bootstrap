@@ -7,8 +7,6 @@ import { Component, ElementRef, Input, ViewChild } from '@angular/core';
   standalone: false,
 })
 export class BsRangeComponent {
-  constructor() {}
-
   @ViewChild('slider') slider!: ElementRef<HTMLInputElement>;
   
   @Input() min = 0;
