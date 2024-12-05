@@ -7,13 +7,15 @@ import { BreadcrumbComponent } from './breadcrumb.component';
 
 @Component({
   selector: 'page-home',
-  template: 'Home'
+  template: 'Home',
+  standalone: true,
 })
 class PageHomeComponent { }
 
 @Component({
   selector: 'page-basic',
-  template: 'Basic'
+  template: 'Basic',
+  standalone: true,
 })
 class PageBasicComponent { }
 

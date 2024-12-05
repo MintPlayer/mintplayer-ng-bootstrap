@@ -19,7 +19,12 @@ describe('BsNavbarNavComponent', () => {
           { path: 'b', children: [
             { path: 'c', component: PageBCComponent }
           ]}
-        ])
+        ]),
+        
+        // Pages
+        PageAComponent,
+        PageBCComponent,
+        
       ],
       declarations: [
         // Component to test
@@ -30,10 +35,6 @@ describe('BsNavbarNavComponent', () => {
         BsNavbarDropdownMockComponent,
         BsNavbarItemMockComponent,
 
-        // Pages
-        PageAComponent,
-        PageBCComponent,
-        
         // Testbench
         BsNavbarNavTestComponent
       ],
@@ -57,6 +58,7 @@ describe('BsNavbarNavComponent', () => {
 
 @Component({
   selector: 'bs-navbar-test',
+  standalone: false,
   template: `
   <bs-navbar>
     <bs-navbar-nav>
@@ -79,48 +81,48 @@ class BsNavbarNavTestComponent {
 
 @Component({
   selector: 'bs-navbar',
+  standalone: false,
   template: `
-  <nav>
-    <div>
-      <ng-content></ng-content>
-    </div>  
-  </nav>`
+    <nav>
+      <div>
+        <ng-content></ng-content>
+      </div>  
+    </nav>`
 })
 class BsNavbarMockComponent {
 }
 
 @Component({
   selector: 'bs-navbar-dropdown',
+  standalone: false,
   template: `
-  <ul>
-    <ng-content></ng-content>
-</ul>`
+    <ul>
+      <ng-content></ng-content>
+    </ul>`
 })
 class BsNavbarDropdownMockComponent {
 }
 
 @Component({
   selector: 'bs-navbar-item',
+  standalone: false,
   template: `
-  <li>
-    <ng-content></ng-content>
-  </li>`
+    <li>
+      <ng-content></ng-content>
+    </li>`
 })
-class BsNavbarItemMockComponent {
-}
+class BsNavbarItemMockComponent {}
 
 @Component({
   selector: 'page-a',
-  template: `
-  <div>Page A</div>`
+  standalone: true,
+  template: `<div>Page A</div>`
 })
-class PageAComponent {
-}
+class PageAComponent {}
 
 @Component({
   selector: 'page-bc',
-  template: `
-  <div>Page B - C</div>`
+  standalone: true,
+  template: `<div>Page B - C</div>`
 })
-class PageBCComponent {
-}
+class PageBCComponent {}

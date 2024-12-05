@@ -2,8 +2,8 @@ import { Pipe, PipeTransform } from '@angular/core';
 
 @Pipe({
   name: 'weekdayName',
+  standalone: true,
   pure: true,
-  standalone: true
 })
 export class BsWeekdayNamePipe implements PipeTransform {
 

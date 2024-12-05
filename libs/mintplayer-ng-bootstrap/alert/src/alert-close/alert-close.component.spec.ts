@@ -54,6 +54,7 @@ describe('BsAlertCloseComponent', () => {
 
 @Component({
   selector: 'bs-alert-close-test',
+  standalone: false,
   template: `
   <bs-alert [type]="4" #alert>
     Cras justo odio

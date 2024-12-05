@@ -7,7 +7,8 @@ import { BsAccordionComponent } from '../accordion/accordion.component';
   selector: 'bs-accordion-tab',
   templateUrl: './accordion-tab.component.html',
   styleUrls: ['./accordion-tab.component.scss'],
-  animations: [SlideUpDownAnimation]
+  standalone: false,
+  animations: [SlideUpDownAnimation],
 })
 export class BsAccordionTabComponent {
 

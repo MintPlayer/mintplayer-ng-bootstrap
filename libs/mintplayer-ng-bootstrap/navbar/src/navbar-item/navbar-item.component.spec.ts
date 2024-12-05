@@ -56,6 +56,7 @@ describe('BsNavbarItemComponent', () => {
 
 @Component({
   selector: 'bs-navbar-test',
+  standalone: false,
   template: `
   <bs-navbar>
     <bs-navbar-nav>
@@ -78,6 +79,7 @@ class BsNavbarItemTestComponent {
 
 @Component({
   selector: 'bs-navbar',
+  standalone: false,
   template: `
   <nav>
     <div>
@@ -93,6 +95,7 @@ class BsNavbarMockComponent {
 
 @Component({
   selector: 'bs-navbar-nav',
+  standalone: false,
   template: `
   <div>
     <ul>
@@ -105,6 +108,7 @@ class BsNavbarNavMockComponent {
 
 @Component({
   selector: 'bs-navbar-dropdown',
+  standalone: false,
   template: `
   <ul>
     <ng-content></ng-content>
@@ -115,16 +119,16 @@ class BsNavbarDropdownMockComponent {
 
 @Component({
   selector: 'page-a',
-  template: `
-  <div>Page A</div>`
+  standalone: false,
+  template: `<div>Page A</div>`
 })
 class PageAComponent {
 }
 
 @Component({
   selector: 'page-bc',
-  template: `
-  <div>Page B - C</div>`
+  standalone: false,
+  template: `<div>Page B - C</div>`
 })
 class PageBCComponent {
 }

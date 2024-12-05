@@ -4,6 +4,7 @@ import { Component, HostBinding } from '@angular/core';
   selector: 'bs-toast-body',
   templateUrl: './toast-body.component.html',
   styleUrls: ['./toast-body.component.scss'],
+  standalone: false,
 })
 export class BsToastBodyComponent {
   @HostBinding('class.d-flex')

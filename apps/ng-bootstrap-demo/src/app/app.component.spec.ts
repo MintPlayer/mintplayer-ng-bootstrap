@@ -43,7 +43,8 @@ describe('AppComponent', () => {
 
 @Component({
   selector: 'a-b-c',
-  template: 'Page ABC'
+  standalone: true,
+  template: 'Page ABC',
 })
 class PageAbcComponent {
 }

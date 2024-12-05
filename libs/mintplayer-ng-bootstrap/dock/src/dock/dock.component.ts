@@ -14,7 +14,8 @@ import { BsDockPaneRendererComponent } from '../dock-pane-renderer/dock-pane-ren
 @Component({
   selector: 'bs-dock',
   templateUrl: './dock.component.html',
-  styleUrls: ['./dock.component.scss']
+  styleUrls: ['./dock.component.scss'],
+  standalone: false,
 })
 export class BsDockComponent implements OnDestroy {
   constructor() {

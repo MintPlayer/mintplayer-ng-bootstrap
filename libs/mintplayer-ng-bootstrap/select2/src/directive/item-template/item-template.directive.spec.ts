@@ -7,6 +7,7 @@ import { BsSelect2Component } from '../../component/select2.component';
 
 @Component({
   selector: 'item-template-test-component',
+  standalone: false,
   template: `
     <select2>
       <ng-template itemTemplate>
@@ -17,7 +18,8 @@ import { BsSelect2Component } from '../../component/select2.component';
 class BsItemTemplateTestComponent { }
 
 @Component({
-  selector: 'select2'
+  selector: 'select2',
+  standalone: true,
 })
 class MockBsSelect2Component {
   itemTemplate?: TemplateRef<any>;
@@ -30,14 +32,14 @@ describe('BsItemTemplateDirective', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [
-        CommonModule
+        CommonModule,
+        
+        // Mock dependencies
+        MockBsSelect2Component,
       ],
       declarations: [
         // Unit to test
         BsItemTemplateDirective,
-        
-        // Mock dependencies
-        MockBsSelect2Component,
         
         // Testbench
         BsItemTemplateTestComponent,

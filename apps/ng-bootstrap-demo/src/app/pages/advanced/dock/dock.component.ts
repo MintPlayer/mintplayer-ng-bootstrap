@@ -11,7 +11,7 @@ import { AsyncPipe } from '@angular/common';
   templateUrl: './dock.component.html',
   styleUrls: ['./dock.component.scss'],
   standalone: true,
-  imports: [AsyncPipe, BsDockModule, BsBadgeComponent, BsButtonTypeDirective]
+  imports: [AsyncPipe, BsDockModule, BsBadgeComponent, BsButtonTypeDirective],
 })
 export class DockComponent implements AfterViewInit {
 

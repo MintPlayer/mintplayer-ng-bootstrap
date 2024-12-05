@@ -7,7 +7,8 @@ import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.co
 @Component({
   selector: 'bs-navbar-item',
   templateUrl: './navbar-item.component.html',
-  styleUrls: ['./navbar-item.component.scss']
+  styleUrls: ['./navbar-item.component.scss'],
+  standalone: false,
 })
 export class BsNavbarItemComponent implements AfterContentChecked {
 

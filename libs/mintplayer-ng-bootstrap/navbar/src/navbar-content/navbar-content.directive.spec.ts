@@ -53,6 +53,7 @@ describe('DropdownToggleDirective', () => {
 
 @Component({
   selector: 'bs-navbar-test',
+  standalone: false,
   template: `
   <bs-navbar>
     <bs-navbar-nav>
@@ -75,16 +76,16 @@ class BsNavbarContentTestComponent {
 
 @Component({
   selector: 'page-a',
-  template: `
-  <div>Page A</div>`
+  standalone: false,
+  template: `<div>Page A</div>`
 })
 class PageAComponent {
 }
 
 @Component({
   selector: 'page-bc',
-  template: `
-  <div>Page B - C</div>`
+  standalone: false,
+  template: `<div>Page B - C</div>`
 })
 class PageBCComponent {
 }

@@ -9,7 +9,8 @@ import { BsRowTemplateContext } from '../row-template/row-template.directive';
 @Component({
   selector: 'bs-datatable',
   templateUrl: './datatable.component.html',
-  styleUrls: ['./datatable.component.scss']
+  styleUrls: ['./datatable.component.scss'],
+  standalone: false,
 })
 export class BsDatatableComponent<TData> {
 

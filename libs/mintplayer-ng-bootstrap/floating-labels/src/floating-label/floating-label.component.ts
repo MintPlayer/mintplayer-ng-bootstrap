@@ -3,9 +3,9 @@ import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 
 @Component({
   selector: 'bs-floating-label',
+  standalone: true,
   templateUrl: './floating-label.component.html',
   styleUrls: ['./floating-label.component.scss'],
-  standalone: true
 })
 export class BsFloatingLabelComponent {
   constructor(@Optional() bsForm: BsFormComponent) {

@@ -4,6 +4,6 @@ import { Component } from '@angular/core';
   selector: 'bs-button-group',
   templateUrl: './button-group.component.html',
   styleUrls: ['./button-group.component.scss'],
-  standalone: true
+  standalone: true,
 })
 export class BsButtonGroupComponent {}

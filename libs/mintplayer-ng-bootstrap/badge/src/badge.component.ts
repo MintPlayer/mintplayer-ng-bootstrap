@@ -5,9 +5,9 @@ import { AsyncPipe } from '@angular/common';
 
 @Component({
   selector: 'bs-badge',
+  standalone: true,
   templateUrl: './badge.component.html',
   styleUrls: ['./badge.component.scss'],
-  standalone: true,
   imports: [AsyncPipe]
 })
 export class BsBadgeComponent {

@@ -60,6 +60,7 @@ type OffcanvasPosition = 'top' | 'bottom' | 'start' | 'end';
 
 @Component({
   selector: 'bs-offcanvas-test',
+  standalone: false,
   template: `
     <bs-offcanvas [(isVisible)]="offcanvasVisible" [position]="position" [hasBackdrop]="true" (backdropClick)="isOffcanvasVisible = false">
         <div *bsOffcanvasContent>
@@ -77,7 +78,10 @@ class BsOffcanvasTestComponent {
   position: OffcanvasPosition = 'start';
 }
 
-@Directive({ selector: '[bsOffcanvasContent]' })
+@Directive({
+  selector: '[bsOffcanvasContent]',
+  standalone: false,
+})
 class BsOffcanvasContentMockDirective {
   constructor(offcanvasHost: BsOffcanvasHostComponent, template: TemplateRef<any>) {
     offcanvasHost.content = template;
@@ -86,6 +90,7 @@ class BsOffcanvasContentMockDirective {
 
 @Component({
   selector: 'bs-offcanvas-holder',
+  standalone: false,
   template: `
     <div>
       <ng-container *ngTemplateOutlet="contentTemplate"></ng-container>
@@ -105,6 +110,7 @@ class BsOffcanvasMockComponent {
 
 @Component({
   selector: 'bs-offcanvas-header',
+  standalone: false,
   template: `
     <div class="offcanvas-header">
       <ng-content></ng-content>
@@ -114,6 +120,7 @@ class BsOffcanvasHeaderMockComponent {}
 
 @Component({
   selector: 'bs-offcanvas-body',
+  standalone: false,
   template: `
     <div class="offcanvas-body">
       <ng-content></ng-content>

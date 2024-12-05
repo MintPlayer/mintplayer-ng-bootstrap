@@ -5,12 +5,13 @@ import { BsButtonTemplateDirective } from './button-template.directive';
 
 @Component({
   selector: 'bs-button-template-test',
+  standalone: false,
   template: `
     <bs-multiselect #multiselect>
       <ng-template bsButtonTemplate let-count>
           {{ count }} geselecteerd
       </ng-template>
-  </bs-multiselect>`
+    </bs-multiselect>`
 })
 class BsButtonTemplateTestComponent {
   @ViewChild('modalTemplate') modalTemplate!: TemplateRef<any>;
@@ -19,6 +20,7 @@ class BsButtonTemplateTestComponent {
 
 @Component({
   selector: 'bs-multiselect',
+  standalone: false,
   template: `
     <button>
       <ng-container *ngTemplateOutlet="buttonTemplate ?? defaultButtonTemplate; context: { $implicit: 0 }"></ng-container>

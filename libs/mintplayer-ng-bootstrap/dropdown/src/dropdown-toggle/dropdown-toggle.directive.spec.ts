@@ -7,6 +7,7 @@ import { BsDropdownMenuDirective } from '../dropdown-menu/dropdown-menu.directiv
 
 @Component({
   selector: 'bs-dropdown-toggle-test',
+  standalone: false,
   template: `
     <div bsDropdown [closeOnClickOutside]="true">
       <button bsDropdownToggle>Dropdown</button>

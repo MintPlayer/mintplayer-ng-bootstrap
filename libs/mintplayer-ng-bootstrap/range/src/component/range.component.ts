@@ -4,10 +4,9 @@ import { Component, ElementRef, Input, ViewChild } from '@angular/core';
   selector: 'bs-range',
   templateUrl: './range.component.html',
   styleUrls: ['./range.component.scss'],
+  standalone: false,
 })
 export class BsRangeComponent {
-  constructor() {}
-
   @ViewChild('slider') slider!: ElementRef<HTMLInputElement>;
   
   @Input() min = 0;

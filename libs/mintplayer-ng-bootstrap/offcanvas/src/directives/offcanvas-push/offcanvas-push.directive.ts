@@ -7,6 +7,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Directive({
   selector: '[bsOffcanvasPush]',
+  standalone: false,
 })
 export class BsOffcanvasPushDirective {
   constructor(private element: ElementRef<HTMLElement>, private builder: AnimationBuilder) {

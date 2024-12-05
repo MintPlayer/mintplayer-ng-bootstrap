@@ -8,7 +8,8 @@ import { RgbColor } from '../../interfaces/rgb-color';
 @Component({
   selector: 'bs-color-wheel',
   templateUrl: './color-wheel.component.html',
-  styleUrls: ['./color-wheel.component.scss']
+  styleUrls: ['./color-wheel.component.scss'],
+  standalone: false,
 })
 export class BsColorWheelComponent implements AfterViewInit {
 

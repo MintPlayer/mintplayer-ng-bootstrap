@@ -4,6 +4,6 @@ import { Component } from '@angular/core';
   selector: 'bs-container',
   templateUrl: './container.component.html',
   styleUrls: ['./container.component.scss'],
-  standalone: true
+  standalone: true,
 })
 export class BsContainerComponent {}

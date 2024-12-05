@@ -5,7 +5,8 @@ import { BehaviorSubject, map, Observable } from 'rxjs';
 @Component({
   selector: 'bs-slider',
   templateUrl: './slider.component.html',
-  styleUrls: ['./slider.component.scss']
+  styleUrls: ['./slider.component.scss'],
+  standalone: false,
 })
 export class BsSliderComponent {
   constructor(private element: ElementRef<HTMLElement>, private zone: NgZone) {
@@ -81,14 +82,20 @@ export class BsSliderComponent {
   }
 }
 
-@Directive({ selector: '[bsThumb]' })
+@Directive({
+  selector: '[bsThumb]',
+  standalone: false,
+})
 export class BsThumbDirective {
   @HostBinding('class.thumb')
   @HostBinding('class.position-absolute')
   thumbClass = true;
 }
 
-@Directive({ selector: '[bsTrack]' })
+@Directive({
+  selector: '[bsTrack]',
+  standalone: false,
+})
 export class BsTrackDirective {
   @HostBinding('class.track') trackClass = true;
 }

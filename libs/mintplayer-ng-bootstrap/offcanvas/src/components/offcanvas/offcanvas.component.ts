@@ -9,7 +9,8 @@ import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
   selector: 'bs-offcanvas-holder',
   templateUrl: './offcanvas.component.html',
   styleUrls: ['./offcanvas.component.scss'],
-  animations: [FadeInOutAnimation]
+  standalone: false,
+  animations: [FadeInOutAnimation],
 })
 export class BsOffcanvasComponent {
 

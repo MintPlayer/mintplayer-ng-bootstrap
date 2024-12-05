@@ -24,6 +24,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
   selector: 'bs-scheduler',
   templateUrl: './scheduler.component.html',
   styleUrls: ['./scheduler.component.scss'],
+  standalone: false,
 })
 export class BsSchedulerComponent {
   constructor(private sanitizer: DomSanitizer, private calendarMonthService: BsCalendarMonthService, private timelineService: BsTimelineService) {

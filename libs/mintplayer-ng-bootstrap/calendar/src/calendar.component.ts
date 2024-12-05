@@ -10,9 +10,9 @@ import { BsUcFirstPipe } from '@mintplayer/ng-bootstrap/uc-first';
 
 @Component({
   selector: 'bs-calendar',
+  standalone: true,
   templateUrl: './calendar.component.html',
   styleUrls: ['./calendar.component.scss'],
-  standalone: true,
   imports: [AsyncPipe, BsUcFirstPipe, BsMonthNamePipe, BsWeekdayNamePipe]
 })
 export class BsCalendarComponent {

@@ -54,70 +54,74 @@ describe('BsNavbarComponent', () => {
 
 @Component({
   selector: 'bs-navbar-test',
+  standalone: false,
   template: `
-  <bs-navbar>
-    <bs-navbar-nav>
-      <bs-navbar-item>
-        <a [routerLink]='["/a"]'>a</a>
-      </bs-navbar-item>
-      <bs-navbar-item>
-        <a [routerLink]='[]'>dropdown</a>
-        <bs-navbar-dropdown>
-          <bs-navbar-item>
-            <a [routerLink]='["/b", "c"]'>bc</a>
-          </bs-navbar-item>
-        </bs-navbar-dropdown>
-      </bs-navbar-item>
-    </bs-navbar-nav>
-  </bs-navbar>`
+    <bs-navbar>
+      <bs-navbar-nav>
+        <bs-navbar-item>
+          <a [routerLink]='["/a"]'>a</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='[]'>dropdown</a>
+          <bs-navbar-dropdown>
+            <bs-navbar-item>
+              <a [routerLink]='["/b", "c"]'>bc</a>
+            </bs-navbar-item>
+          </bs-navbar-dropdown>
+        </bs-navbar-item>
+      </bs-navbar-nav>
+    </bs-navbar>`
 })
 class BsNavbarTestComponent {
 }
 
 @Component({
   selector: 'bs-navbar-nav',
+  standalone: false,
   template: `
-  <div>
-    <ul>
-      <ng-content></ng-content>
-    </ul>  
-  </div>`
+    <div>
+      <ul>
+        <ng-content></ng-content>
+      </ul>  
+    </div>`
 })
 class BsNavbarNavMockComponent {
 }
 
 @Component({
   selector: 'bs-navbar-dropdown',
+  standalone: false,
   template: `
-  <ul>
-    <ng-content></ng-content>
-</ul>`
+    <ul>
+      <ng-content></ng-content>
+    </ul>`
 })
 class BsNavbarDropdownMockComponent {
 }
 
 @Component({
   selector: 'bs-navbar-item',
+  standalone: false,
   template: `
-  <li>
-    <ng-content></ng-content>
-</li>`
+    <li>
+      <ng-content></ng-content>
+    </li>`
 })
 class BsNavbarItemMockComponent {
 }
 
 @Component({
   selector: 'page-a',
-  template: `
-  <div>Page A</div>`
+  standalone: false,
+  template: `<div>Page A</div>`
 })
 class PageAComponent {
 }
 
 @Component({
   selector: 'page-bc',
-  template: `
-  <div>Page B - C</div>`
+  standalone: false,
+  template: `<div>Page B - C</div>`
 })
 class PageBCComponent {
 }

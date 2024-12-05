@@ -11,7 +11,8 @@ import { BsOffcanvasComponent } from '../offcanvas/offcanvas.component';
 @Component({
   selector: 'bs-offcanvas',
   templateUrl: './offcanvas-host.component.html',
-  styleUrls: ['./offcanvas-host.component.scss']
+  styleUrls: ['./offcanvas-host.component.scss'],
+  standalone: false,
 })
 export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
 

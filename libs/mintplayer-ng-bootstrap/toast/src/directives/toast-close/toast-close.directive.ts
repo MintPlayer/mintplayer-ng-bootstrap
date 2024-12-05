@@ -3,12 +3,11 @@ import { BsToastService } from '../../services/toast/toast.service';
 import { BsToastComponent } from '../../components/toast/toast.component';
 
 @Directive({
-  selector: 'bs-close'
+  selector: 'bs-close',
+  standalone: false,
 })
 export class BsToastCloseDirective {
-
-  constructor(private toast: BsToastComponent, private toastService: BsToastService) {
-  }
+  constructor(private toast: BsToastComponent, private toastService: BsToastService) {}
 
   @HostListener('click') onClick() {
     if (this.index !== null) {

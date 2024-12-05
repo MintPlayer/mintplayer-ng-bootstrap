@@ -1,7 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MockDirective } from 'ng-mocks';
+import { MockComponent, MockDirective } from 'ng-mocks';
 
 import { BsColorPickerComponent } from './color-picker.component';
+import { BsAlphaStripComponent } from '../alpha-strip/alpha-strip.component';
+import { BsLuminosityStripComponent } from '../luminosity-strip/luminosity-strip.component';
+import { BsColorWheelComponent } from '../color-wheel/color-wheel.component';
 
 describe('ColorPickerComponent', () => {
   let component: BsColorPickerComponent;
@@ -12,6 +15,11 @@ describe('ColorPickerComponent', () => {
       declarations: [
         // Unit to test
         BsColorPickerComponent,
+
+        // Mock dependencies
+        MockComponent(BsAlphaStripComponent),
+        MockComponent(BsLuminosityStripComponent),
+        MockComponent(BsColorWheelComponent),
       ],
       imports: [
         // Mock dependencies

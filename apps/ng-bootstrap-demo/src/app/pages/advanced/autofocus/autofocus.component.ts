@@ -13,7 +13,7 @@ import { TagService } from '../../../services/tag/tag.service';
   templateUrl: './autofocus.component.html',
   styleUrls: ['./autofocus.component.scss'],
   standalone: true,
-  imports: [BsSelect2Module, BsFontColorPipe, FocusOnLoadDirective]
+  imports: [BsSelect2Module, BsFontColorPipe, FocusOnLoadDirective],
 })
 export class AutofocusComponent {
 

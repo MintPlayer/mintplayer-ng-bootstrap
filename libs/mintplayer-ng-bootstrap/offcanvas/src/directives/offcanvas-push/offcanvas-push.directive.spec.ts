@@ -4,8 +4,8 @@ import { BsOffcanvasPushDirective } from './offcanvas-push.directive';
 
 @Component({
   selector: 'bs-offcanvas-test',
-  template: `
-    <div [bsOffcanvasPush]="pushElement"></div>`
+  standalone: false,
+  template: `<div [bsOffcanvasPush]="pushElement"></div>`
 })
 class BsOffcanvasPushTestComponent {}
 

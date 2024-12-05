@@ -5,6 +5,7 @@ import { BsUnderlinePipe } from './underline.pipe';
 
 @Component({
   selector: 'bs-underline-test',
+  standalone: false,
   template: `<span [innerHTML]="'<ins>Hello world</ins>' | bsUnderline"></span>`
 })
 class BsUnderlineTestComponent {}

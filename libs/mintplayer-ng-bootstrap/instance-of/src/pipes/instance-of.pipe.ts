@@ -5,6 +5,7 @@ import { AbstractType } from '../types/abstract.type';
 @Pipe({
   name: 'bsInstanceof',
   pure: true,
+  standalone: false,
 })
 export class BsInstanceofPipe implements PipeTransform {
   public transform<V, R>(value: V, type: AbstractType<R>): R | undefined {

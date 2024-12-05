@@ -3,8 +3,8 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Pipe({
   name: 'bsItalic',
+  standalone: true,
   pure: true,
-  standalone: true
 })
 export class BsItalicPipe implements PipeTransform {
 

@@ -8,7 +8,8 @@ import { BsModalComponent } from '../modal/modal.component';
 @Component({
   selector: 'bs-modal',
   templateUrl: './modal-host.component.html',
-  styleUrls: ['./modal-host.component.scss']
+  styleUrls: ['./modal-host.component.scss'],
+  standalone: false,
 })
 export class BsModalHostComponent implements AfterViewInit, OnDestroy {
 

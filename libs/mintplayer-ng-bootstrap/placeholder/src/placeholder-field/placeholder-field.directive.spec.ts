@@ -6,6 +6,7 @@ import { BsPlaceholderFieldDirective } from './placeholder-field.directive';
 
 @Component({
   selector: '[bsPlaceholder]',
+  standalone: true,
   template: `
     <div class="placeholder-glow">
       <ng-content></ng-content>
@@ -25,6 +26,7 @@ class BsPlaceholderMockComponent {
 
 @Component({
   selector: 'bs-placeholder-test',
+  standalone: false,
   template: `
     <p class="card-text" [bsPlaceholder]="isLoading">
       <span bsPlaceholderField>{{ isLoading ? '' : lines[0] }}</span>
@@ -41,13 +43,14 @@ describe('BsPlaceholderFieldDirective', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      imports: [
+        // Mock dependencies
+        BsPlaceholderMockComponent,
+      ],
       declarations: [
         // Unit to test
         BsPlaceholderFieldDirective,
       
-        // Mock dependencies
-        BsPlaceholderMockComponent,
-
         // Testbench
         BsPlaceholderTestComponent,
       ],

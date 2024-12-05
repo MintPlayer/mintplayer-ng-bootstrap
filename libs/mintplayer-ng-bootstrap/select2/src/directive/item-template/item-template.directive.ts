@@ -3,10 +3,10 @@ import { BsSelect2Component } from '../../component/select2.component';
 import { HasId } from '@mintplayer/ng-bootstrap/has-id';
 
 @Directive({
-  selector: '[bsItemTemplate]'
+  selector: '[bsItemTemplate]',
+  standalone: false,
 })
 export class BsItemTemplateDirective<T extends HasId<U>, U> {
-
   constructor(private select2component: BsSelect2Component<T, U>, templateRef: TemplateRef<T>) {
     this.select2component.itemTemplate = templateRef;
   }
@@ -18,7 +18,6 @@ export class BsItemTemplateDirective<T extends HasId<U>, U> {
   @Input() set bsItemTemplateOf(value: T[]) {
     this.select2component.selectedItems = value;
   }
-
 }
 
 export class BsItemTemplateContext<T extends HasId<U>, U> {

@@ -5,7 +5,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 
 @Directive({
-  selector: '[bsNavbarContent]'
+  selector: '[bsNavbarContent]',
+  standalone: false,
 })
 export class BsNavbarContentDirective implements AfterViewInit, OnDestroy {
 

@@ -5,7 +5,8 @@ import { BsTabControlComponent } from '@mintplayer/ng-bootstrap/tab-control';
 @Component({
   selector: 'bs-dock-panel',
   templateUrl: './dock-panel.component.html',
-  styleUrls: ['./dock-panel.component.scss']
+  styleUrls: ['./dock-panel.component.scss'],
+  standalone: false,
 })
 export class BsDockPanelComponent implements AfterViewInit {
 

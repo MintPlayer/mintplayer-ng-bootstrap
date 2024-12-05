@@ -4,13 +4,9 @@ import { Component, EventEmitter, OnInit, Output } from '@angular/core';
   selector: 'bs-close',
   templateUrl: './close.component.html',
   styleUrls: ['./close.component.scss'],
-  standalone: true
+  standalone: true,
 })
-export class BsCloseComponent implements OnInit {
-  constructor() {}
-
-  ngOnInit(): void {}
-
+export class BsCloseComponent {
   @Output() click = new EventEmitter<any>();
   onClose(ev: MouseEvent) {
     this.click.emit();

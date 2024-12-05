@@ -9,7 +9,7 @@ import { Stroke } from '../interfaces/stroke';
   selector: 'bs-signature-pad',
   templateUrl: './signature-pad.component.html',
   styleUrls: ['./signature-pad.component.scss'],
-  standalone: true
+  standalone: true,
 })
 export class BsSignaturePadComponent implements AfterViewInit {
   constructor() {

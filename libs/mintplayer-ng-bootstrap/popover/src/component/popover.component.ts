@@ -8,7 +8,8 @@ import { POPOVER_CONTENT } from '../providers/popover-content.provider';
   selector: 'bs-popover',
   templateUrl: './popover.component.html',
   styleUrls: ['./popover.component.scss'],
-  animations: [FadeInOutAnimation]
+  standalone: false,
+  animations: [FadeInOutAnimation],
 })
 export class BsPopoverComponent {
   constructor(@Inject(POPOVER_CONTENT) content: TemplateRef<any>) {

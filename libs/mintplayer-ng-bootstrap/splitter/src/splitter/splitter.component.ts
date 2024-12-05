@@ -9,6 +9,7 @@ import { Direction } from '../types/direction.type';
   selector: 'bs-splitter',
   templateUrl: './splitter.component.html',
   styleUrls: ['./splitter.component.scss'],
+  standalone: false,
 })
 export class BsSplitterComponent {
 
