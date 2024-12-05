@@ -4,19 +4,10 @@ import { Component, ElementRef, Injector, TemplateRef, ViewChild } from '@angula
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
 import { BsPopoverDirective } from './popover.directive';
+import { MockComponent } from 'ng-mocks';
+import { BsPopoverComponent } from '../../component/popover.component';
 
 enum Position { top, left, bottom, right }
-
-@Component({
-  selector: 'bs-popover',
-  standalone: true,
-  template: `
-    <div>
-      <ng-container *ngTemplateOutlet="template"></ng-container>
-    </div>`
-})
-class BsPopoverMockComponent {
-}
 
 @Component({
   selector: 'bs-Popover-directive-test',
@@ -53,7 +44,7 @@ describe('BsPopoverDirective', () => {
         BsPopoverDirective,
 
         // Mock dependencies
-        BsPopoverMockComponent,
+        MockComponent(BsPopoverComponent),
 
         // Testbench
         BsPopoverDirectiveTestComponent,
@@ -61,7 +52,7 @@ describe('BsPopoverDirective', () => {
       providers: [{
         provide: PORTAL_FACTORY,
         useValue: (injector: Injector) => {
-          return new ComponentPortal(BsPopoverMockComponent, null, injector);
+          return new ComponentPortal(MockComponent(BsPopoverComponent), null, injector);
         }
       }]
     }).compileComponents();
