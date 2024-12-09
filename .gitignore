@@ -17,8 +17,6 @@
 *.launch
 .settings/
 *.sublime-workspace
-.nx/cache
-.nx/workspace-data
 
 # IDE - VSCode
 .vscode/*
@@ -42,3 +40,6 @@ testem.log
 Thumbs.db
 
 .angular
+
+.nx/cache
+.nx/workspace-data
