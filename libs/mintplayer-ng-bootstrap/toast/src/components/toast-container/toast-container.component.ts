@@ -1,4 +1,4 @@
-import { Component, HostBinding } from '@angular/core';
+import { Component, HostBinding, ViewEncapsulation } from '@angular/core';
 import { BsToastService } from '../../services/toast/toast.service';
 
 @Component({
@@ -6,6 +6,7 @@ import { BsToastService } from '../../services/toast/toast.service';
   templateUrl: './toast-container.component.html',
   styleUrls: ['./toast-container.component.scss'],
   standalone: false,
+  encapsulation: ViewEncapsulation.None,
 })
 export class BsToastContainerComponent {
   constructor(toastService: BsToastService) {

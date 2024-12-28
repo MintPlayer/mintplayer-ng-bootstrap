@@ -1,4 +1,4 @@
-import { Component, ElementRef, Input, OnInit, Renderer2, ViewChild } from '@angular/core';
+import { Component, ElementRef, Input, OnInit, Renderer2, ViewChild, ViewEncapsulation } from '@angular/core';
 import { BehaviorSubject, map, Observable } from 'rxjs';
 import { BsSelectSize } from '../types/select-size';
 
@@ -7,6 +7,7 @@ import { BsSelectSize } from '../types/select-size';
   templateUrl: './select.component.html',
   styleUrls: ['./select.component.scss'],
   standalone: false,
+  encapsulation: ViewEncapsulation.None,
 })
 export class BsSelectComponent implements OnInit {
   constructor(private renderer: Renderer2) {

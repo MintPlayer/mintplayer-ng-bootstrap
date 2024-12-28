@@ -1,10 +1,10 @@
-.footer {
+:host .footer.sfooter {
     bottom: 0;
     left: 0;
     right: 0;
 }
 
-::ng-deep html {
+html {
     position: relative;
     min-height: 100%;
 }

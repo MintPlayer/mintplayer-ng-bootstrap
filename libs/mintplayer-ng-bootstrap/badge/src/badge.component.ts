@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ViewEncapsulation } from '@angular/core';
 import { BehaviorSubject, map, Observable } from 'rxjs';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { AsyncPipe } from '@angular/common';
@@ -8,6 +8,7 @@ import { AsyncPipe } from '@angular/common';
   standalone: true,
   templateUrl: './badge.component.html',
   styleUrls: ['./badge.component.scss'],
+  encapsulation: ViewEncapsulation.None,
   imports: [AsyncPipe]
 })
 export class BsBadgeComponent {

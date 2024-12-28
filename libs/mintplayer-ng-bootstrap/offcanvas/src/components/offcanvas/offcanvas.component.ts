@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Inject, Input, Output, TemplateRef } from '@angular/core';
+import { Component, EventEmitter, Inject, Input, Output, TemplateRef, ViewEncapsulation } from '@angular/core';
 import { BehaviorSubject, combineLatest, delayWhen, interval, map, Observable, of } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
@@ -10,6 +10,7 @@ import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
   templateUrl: './offcanvas.component.html',
   styleUrls: ['./offcanvas.component.scss'],
   standalone: false,
+  encapsulation: ViewEncapsulation.None,
   animations: [FadeInOutAnimation],
 })
 export class BsOffcanvasComponent {

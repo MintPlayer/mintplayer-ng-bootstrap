@@ -1,5 +1,5 @@
 import { CdkDragDrop, CdkDragStart, moveItemInArray } from '@angular/cdk/drag-drop';
-import { Component, ContentChildren, ElementRef, HostBinding, Input, QueryList } from '@angular/core';
+import { Component, ContentChildren, ElementRef, HostBinding, Input, QueryList, ViewEncapsulation } from '@angular/core';
 import { BehaviorSubject, combineLatest, filter, map, Observable } from 'rxjs';
 import { BsTabPageComponent } from '../tab-page/tab-page.component';
 import { BsTabsPosition } from '../tabs-position';
@@ -10,6 +10,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   templateUrl: './tab-control.component.html',
   styleUrls: ['./tab-control.component.scss'],
   standalone: false,
+  encapsulation: ViewEncapsulation.None,
   providers: [
     { provide: 'TAB_CONTROL', useExisting: BsTabControlComponent }
   ],

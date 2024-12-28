@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, DestroyRef, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, DestroyRef, ViewChild, ViewEncapsulation } from '@angular/core';
 import { BsStickyFooterParentDirective } from '../sticky-footer-parent/sticky-footer-parent.directive';
 import { BsObserveSizeDirective } from '@mintplayer/ng-swiper/observe-size';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -8,6 +8,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   templateUrl: './sticky-footer.component.html',
   styleUrls: ['./sticky-footer.component.scss'],
   standalone: false,
+  encapsulation: ViewEncapsulation.None,
 })
 export class BsStickyFooterComponent implements AfterViewInit {
   constructor(private parent: BsStickyFooterParentDirective, private destroy: DestroyRef) {}

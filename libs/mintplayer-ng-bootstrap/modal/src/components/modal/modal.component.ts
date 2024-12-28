@@ -1,4 +1,4 @@
-import { Component, Inject, TemplateRef } from '@angular/core';
+import { Component, Inject, TemplateRef, ViewEncapsulation } from '@angular/core';
 import { EnterFromTopAnimation, FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { MODAL_CONTENT } from '../../providers/modal-content.provider';
 
@@ -7,6 +7,7 @@ import { MODAL_CONTENT } from '../../providers/modal-content.provider';
   templateUrl: './modal.component.html',
   styleUrls: ['./modal.component.scss'],
   standalone: false,
+  encapsulation: ViewEncapsulation.None,
   animations: [FadeInOutAnimation, EnterFromTopAnimation],
 })
 export class BsModalComponent {

@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ViewEncapsulation } from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Color } from '@mintplayer/ng-bootstrap';
 
@@ -7,6 +7,7 @@ import { Color } from '@mintplayer/ng-bootstrap';
   templateUrl: './alert.component.html',
   styleUrls: ['./alert.component.scss'],
   standalone: false,
+  encapsulation: ViewEncapsulation.None,
   animations: [ FadeInOutAnimation ],
 })
 export class BsAlertComponent {

@@ -1,4 +1,4 @@
-import { Component, ContentChildren, QueryList } from '@angular/core';
+import { Component, ContentChildren, QueryList, ViewEncapsulation } from '@angular/core';
 import { BsListGroupItemComponent } from '../list-group-item/list-group-item.component';
 
 @Component({
@@ -6,6 +6,7 @@ import { BsListGroupItemComponent } from '../list-group-item/list-group-item.com
   templateUrl: './list-group.component.html',
   styleUrls: ['./list-group.component.scss'],
   standalone: false,
+  encapsulation: ViewEncapsulation.None,
 })
 export class BsListGroupComponent {
   @ContentChildren(BsListGroupItemComponent) items!: QueryList<BsListGroupItemComponent>;

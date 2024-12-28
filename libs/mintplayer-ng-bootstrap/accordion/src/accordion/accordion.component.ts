@@ -1,4 +1,4 @@
-import { Component, ContentChildren, forwardRef, Input, QueryList } from '@angular/core';
+import { Component, ContentChildren, forwardRef, Input, QueryList, ViewEncapsulation } from '@angular/core';
 import { BehaviorSubject, map, Observable } from 'rxjs';
 import { BsAccordionTabComponent } from '../accordion-tab/accordion-tab.component';
 
@@ -7,6 +7,7 @@ import { BsAccordionTabComponent } from '../accordion-tab/accordion-tab.componen
   templateUrl: './accordion.component.html',
   styleUrls: ['./accordion.component.scss'],
   standalone: false,
+  encapsulation: ViewEncapsulation.None,
 })
 export class BsAccordionComponent {
 

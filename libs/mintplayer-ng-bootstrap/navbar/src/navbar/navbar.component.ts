@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, Input, TemplateRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, Input, TemplateRef, ViewChild, ViewEncapsulation } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Breakpoint, Color } from '@mintplayer/ng-bootstrap';
 import { BehaviorSubject, combineLatest, debounceTime, filter, map, Observable, take } from 'rxjs';
@@ -8,6 +8,7 @@ import { BehaviorSubject, combineLatest, debounceTime, filter, map, Observable, 
   templateUrl: './navbar.component.html',
   styleUrls: ['./navbar.component.scss'],
   standalone: false,
+  encapsulation: ViewEncapsulation.None,
 })
 export class BsNavbarComponent {
 

@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ViewEncapsulation } from '@angular/core';
 import { Breakpoint } from '@mintplayer/ng-bootstrap';
 import { BehaviorSubject, map, Observable } from 'rxjs';
 
@@ -7,6 +7,7 @@ import { BehaviorSubject, map, Observable } from 'rxjs';
   templateUrl: './grid.component.html',
   styleUrls: ['./grid.component.scss'],
   standalone: false,
+  encapsulation: ViewEncapsulation.None,
 })
 export class BsGridComponent {
   
