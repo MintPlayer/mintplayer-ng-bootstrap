@@ -1,28 +1,26 @@
 $size: 8px;
 $thumb: 3 * $size;
 
-.track2 {
+.bs-slider-track {
     height: $size;
 }
 
-.wrapper {
+.bs-slider-wrapper {
     padding-top: $size;
     padding-bottom: $size;
 }
 
-::ng-deep {
-    .thumb {
-        width: $thumb;
-        height: $thumb;
-        top: 0;
-        // margin-top: -$size;
-        // margin-bottom: -$size;
-        border-radius: 50%;
-        box-shadow: 0 0 0 0.1rem rgba(100, 107, 114, 0.25);
-    }
+.thumb {
+    width: $thumb;
+    height: $thumb;
+    top: 0;
+    // margin-top: -$size;
+    // margin-bottom: -$size;
+    border-radius: 50%;
+    box-shadow: 0 0 0 0.1rem rgba(100, 107, 114, 0.25);
+}
 
-    .track {
-        height: $size;
-        border-radius: $size;
-    }
+.track {
+    height: $size;
+    border-radius: $size;
 }
