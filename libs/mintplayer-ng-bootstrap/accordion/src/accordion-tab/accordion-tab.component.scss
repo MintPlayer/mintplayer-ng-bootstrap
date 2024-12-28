@@ -1,12 +1,4 @@
-// Custom SCSS
-.card, .card-header, .card-block {
-    border-radius: 0;
-}
-.card {
-    margin-bottom: -1px;
-}
-
-:host ::ng-deep {
+accordion-tab {
     .noscript > input[type="radio"]:checked {
         + bs-accordion-tab-header > h2 > label {
             background-color: #e7f1ff; // !important;

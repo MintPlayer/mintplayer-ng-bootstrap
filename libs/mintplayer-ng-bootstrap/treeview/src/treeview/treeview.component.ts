@@ -1,4 +1,4 @@
-import { Component, SkipSelf, Input, Output, EventEmitter, Optional } from '@angular/core';
+import { Component, SkipSelf, Input, Output, EventEmitter, Optional, ViewEncapsulation, HostBinding } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, Observable, map } from 'rxjs';
 import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
@@ -8,6 +8,7 @@ import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
   templateUrl: './treeview.component.html',
   styleUrls: ['./treeview.component.scss'],
   standalone: false,
+  encapsulation: ViewEncapsulation.None,
   animations: [SlideUpDownAnimation],
 })
 export class BsTreeviewComponent {
@@ -37,4 +38,6 @@ export class BsTreeviewComponent {
     this.isExpanded$.next(value);
   }
   //#endregion
+
+  @HostBinding('class.d-block') dBlock = true;
 }

@@ -1,4 +1,4 @@
-import { Component, ViewChild } from '@angular/core';
+import { Component, ViewChild, ViewEncapsulation } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsAccordionModule } from '@mintplayer/ng-bootstrap/accordion';
@@ -10,6 +10,7 @@ import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
 @Component({
   selector: 'demo-shell',
   standalone: true,
+  encapsulation: ViewEncapsulation.None,
   imports: [FormsModule, BsShellModule, BsAccordionModule, BsButtonGroupComponent, BsButtonTypeDirective, BsToggleButtonModule],
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.scss'

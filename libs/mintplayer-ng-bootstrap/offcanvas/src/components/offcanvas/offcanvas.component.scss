@@ -1,4 +1,4 @@
-:host {
+bs-offcanvas-holder {
     // Configuration
     @import "../../../../../../node_modules/bootstrap/scss/functions";
     @import "../../../../../../node_modules/bootstrap/scss/variables";
@@ -8,35 +8,35 @@
     // Layout & components
     @import "../../../../../../node_modules/bootstrap/scss/modal";
     @import "../../../../../../node_modules/bootstrap/scss/offcanvas";
-}
 
-.offcanvas {
-    &.oc-max-width {
-        max-width: calc(100% - 40px);
-    }
-    &.oc-max-height {
-        max-height: calc(100% - 40px);
-    }
-}
-
-.modal-backdrop {
-    z-index: 1040;
-}
-
-.offcanvas {
-    visibility: unset;
-
-    &.disable-transition {
-        transition: none;
+    .offcanvas {
+        &.oc-max-width {
+            max-width: calc(100% - 40px);
+        }
+        &.oc-max-height {
+            max-height: calc(100% - 40px);
+        }
     }
 
-    &.offcanvas-top {
-        height: auto;
-        bottom: unset;
+    .modal-backdrop {
+        z-index: 1040;
     }
 
-    &.offcanvas-bottom {
-        height: auto;
-        top: unset;
+    .offcanvas {
+        visibility: unset;
+
+        &.disable-transition {
+            transition: none;
+        }
+
+        &.offcanvas-top {
+            height: auto;
+            bottom: unset;
+        }
+
+        &.offcanvas-bottom {
+            height: auto;
+            top: unset;
+        }
     }
 }

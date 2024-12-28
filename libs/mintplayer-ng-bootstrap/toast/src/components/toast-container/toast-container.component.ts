@@ -6,7 +6,6 @@ import { BsToastService } from '../../services/toast/toast.service';
   templateUrl: './toast-container.component.html',
   styleUrls: ['./toast-container.component.scss'],
   standalone: false,
-  encapsulation: ViewEncapsulation.None,
 })
 export class BsToastContainerComponent {
   constructor(toastService: BsToastService) {

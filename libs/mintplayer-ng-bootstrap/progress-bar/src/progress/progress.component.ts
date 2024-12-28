@@ -1,10 +1,11 @@
-import { Component, HostBinding, Input } from '@angular/core';
+import { Component, HostBinding, Input, ViewEncapsulation } from '@angular/core';
 
 @Component({
   selector: 'bs-progress',
   templateUrl: './progress.component.html',
   styleUrls: ['./progress.component.scss'],
   standalone: false,
+  encapsulation: ViewEncapsulation.None,
 })
 export class BsProgressComponent {
   // @HostBinding('class.progress') private progressClass = true;
