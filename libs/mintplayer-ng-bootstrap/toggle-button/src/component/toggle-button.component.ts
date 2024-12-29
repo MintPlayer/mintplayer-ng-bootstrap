@@ -8,7 +8,6 @@ import { BsCheckStyle } from '../types/check-style';
   templateUrl: './toggle-button.component.html',
   styleUrls: ['./toggle-button.component.scss'],
   standalone: false,
-  encapsulation: ViewEncapsulation.None,
 })
 export class BsToggleButtonComponent implements AfterViewInit {
 

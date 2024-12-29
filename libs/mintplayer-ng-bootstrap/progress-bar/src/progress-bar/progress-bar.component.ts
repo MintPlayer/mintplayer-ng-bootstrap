@@ -8,7 +8,6 @@ import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
   templateUrl: './progress-bar.component.html',
   styleUrls: ['./progress-bar.component.scss'],
   standalone: false,
-  encapsulation: ViewEncapsulation.None,
 })
 export class BsProgressBarComponent {
 

@@ -8,6 +8,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   templateUrl: './sticky-footer.component.html',
   styleUrls: ['./sticky-footer.component.scss'],
   standalone: false,
+  encapsulation: ViewEncapsulation.None,
 })
 export class BsStickyFooterComponent implements AfterViewInit {
   constructor(private parent: BsStickyFooterParentDirective, private destroy: DestroyRef) {}

@@ -28,27 +28,29 @@
     }
 }
 
-nav {
-    left: 0;
-    top: 0;
-    right: 0;
-    z-index: 10;
-    // overflow-y: auto !important;
-}
-
-@media (min-width: 768px) {
-    .mx-md-unset {
-        margin-left: 0 !important;    
-        margin-right: 0 !important;    
+bs-navbar {
+    nav {
+        left: 0;
+        top: 0;
+        right: 0;
+        z-index: 10;
+        // overflow-y: auto !important;
     }
 
-    .w-md-auto {
-        width: auto !important;
-    }
-}
+    @media (min-width: 768px) {
+        .mx-md-unset {
+            margin-left: 0 !important;    
+            margin-right: 0 !important;    
+        }
 
-.tw {
-    margin: -.5rem 0;
+        .w-md-auto {
+            width: auto !important;
+        }
+    }
+
+    .tw {
+        margin: -.5rem 0;
+    }
 }
 
 bs-navbar-nav {

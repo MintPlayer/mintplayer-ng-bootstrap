@@ -1,5 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import { Component, Input, OnInit, ViewEncapsulation } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BehaviorSubject, map, Observable } from 'rxjs';
 
@@ -8,7 +8,6 @@ import { BehaviorSubject, map, Observable } from 'rxjs';
   templateUrl: './spinner.component.html',
   styleUrls: ['./spinner.component.scss'],
   standalone: true,
-  encapsulation: ViewEncapsulation.None,
   imports: [AsyncPipe],
 })
 export class BsSpinnerComponent implements OnInit {

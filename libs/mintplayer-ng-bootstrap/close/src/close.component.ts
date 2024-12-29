@@ -5,7 +5,6 @@ import { Component, EventEmitter, OnInit, Output, ViewEncapsulation } from '@ang
   templateUrl: './close.component.html',
   styleUrls: ['./close.component.scss'],
   standalone: true,
-  encapsulation: ViewEncapsulation.None,
 })
 export class BsCloseComponent {
   @Output() click = new EventEmitter<any>();

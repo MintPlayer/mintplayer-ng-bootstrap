@@ -1,9 +1,11 @@
-.dock-tabs {
-    background: #F3F3F3;
-    // border: 4px solid #5858F8;
-}
+bs-dock-pane-renderer {
+    .dock-tabs {
+        background: #F3F3F3;
+        // border: 4px solid #5858F8;
+    }
 
-:host .tab-page-content {
-    background: #FFF;
-    min-height: 100%;
+    .tab-page-content {
+        background: #FFF;
+        min-height: 100%;
+    }
 }

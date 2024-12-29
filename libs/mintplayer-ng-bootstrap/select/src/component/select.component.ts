@@ -7,7 +7,6 @@ import { BsSelectSize } from '../types/select-size';
   templateUrl: './select.component.html',
   styleUrls: ['./select.component.scss'],
   standalone: false,
-  encapsulation: ViewEncapsulation.None,
 })
 export class BsSelectComponent implements OnInit {
   constructor(private renderer: Renderer2) {

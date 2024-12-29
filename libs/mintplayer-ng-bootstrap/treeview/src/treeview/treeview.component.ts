@@ -8,7 +8,6 @@ import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
   templateUrl: './treeview.component.html',
   styleUrls: ['./treeview.component.scss'],
   standalone: false,
-  encapsulation: ViewEncapsulation.None,
   animations: [SlideUpDownAnimation],
 })
 export class BsTreeviewComponent {
