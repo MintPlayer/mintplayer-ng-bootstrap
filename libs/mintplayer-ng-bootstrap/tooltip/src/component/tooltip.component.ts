@@ -1,4 +1,4 @@
-import { Component, HostBinding, Inject, Input, TemplateRef } from '@angular/core';
+import { Component, HostBinding, Inject, Input, TemplateRef, ViewEncapsulation } from '@angular/core';
 import { BehaviorSubject, map, Observable } from 'rxjs';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Position } from '@mintplayer/ng-bootstrap';
@@ -9,6 +9,7 @@ import { TOOLTIP_CONTENT } from '../providers/tooltip-content.provider';
   templateUrl: './tooltip.component.html',
   styleUrls: ['./tooltip.component.scss'],
   standalone: false,
+  encapsulation: ViewEncapsulation.None,
   animations: [FadeInOutAnimation],
 })
 export class BsTooltipComponent {

@@ -1,4 +1,4 @@
-import { Component, HostBinding, Inject, Input, TemplateRef } from '@angular/core';
+import { Component, HostBinding, Inject, Input, TemplateRef, ViewEncapsulation } from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Position } from '@mintplayer/ng-bootstrap';
 import { BehaviorSubject, map, Observable } from 'rxjs';
@@ -9,6 +9,7 @@ import { POPOVER_CONTENT } from '../providers/popover-content.provider';
   templateUrl: './popover.component.html',
   styleUrls: ['./popover.component.scss'],
   standalone: false,
+  encapsulation: ViewEncapsulation.None,
   animations: [FadeInOutAnimation],
 })
 export class BsPopoverComponent {

@@ -1,4 +1,4 @@
-import { Component, HostBinding } from '@angular/core';
+import { Component, HostBinding, ViewEncapsulation } from '@angular/core';
 import { BsToastService } from '../../services/toast/toast.service';
 
 @Component({

@@ -1,4 +1,4 @@
-:host ::ng-deep {
+bs-popover {
     // Configuration
     @import "../../../../../node_modules/bootstrap/scss/functions";
     @import "../../../../../node_modules/bootstrap/scss/variables";
@@ -8,19 +8,19 @@
     // Layout & components
     @import "../../../../../node_modules/bootstrap/scss/transitions";
     @import "../../../../../node_modules/bootstrap/scss/popover";
-}
-
-.popover {
-    &.bs-popover-top > .popover-arrow, &.bs-popover-bottom > .popover-arrow {
-        left: 50%;
-        transform: translateX(-50%);
-    }
-    &.bs-popover-start > .popover-arrow, &.bs-popover-end > .popover-arrow {
-        top: 50%;
-        transform: translateY(-50%);
-    }
-
-    &:not(.show) {
-        pointer-events: none;
+    
+    .popover {
+        &.bs-popover-top > .popover-arrow, &.bs-popover-bottom > .popover-arrow {
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        &.bs-popover-start > .popover-arrow, &.bs-popover-end > .popover-arrow {
+            top: 50%;
+            transform: translateY(-50%);
+        }
+    
+        &:not(.show) {
+            pointer-events: none;
+        }
     }
 }

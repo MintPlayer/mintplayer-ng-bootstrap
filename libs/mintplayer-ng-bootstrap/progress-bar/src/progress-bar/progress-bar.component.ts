@@ -1,4 +1,4 @@
-import { Component, HostBinding, Input } from '@angular/core';
+import { Component, HostBinding, Input, ViewEncapsulation } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';

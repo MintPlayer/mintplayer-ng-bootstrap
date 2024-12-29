@@ -1,4 +1,4 @@
-import { Component, Directive, ElementRef, EventEmitter, HostBinding, HostListener, Input, Output, ViewChild, NgZone } from '@angular/core';
+import { Component, Directive, ElementRef, EventEmitter, HostBinding, HostListener, Input, Output, ViewChild, NgZone, ViewEncapsulation } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, map, Observable } from 'rxjs';
 
@@ -7,6 +7,7 @@ import { BehaviorSubject, map, Observable } from 'rxjs';
   templateUrl: './slider.component.html',
   styleUrls: ['./slider.component.scss'],
   standalone: false,
+  encapsulation: ViewEncapsulation.None,
 })
 export class BsSliderComponent {
   constructor(private element: ElementRef<HTMLElement>, private zone: NgZone) {

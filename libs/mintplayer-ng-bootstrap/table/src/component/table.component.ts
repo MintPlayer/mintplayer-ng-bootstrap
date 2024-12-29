@@ -1,5 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { Component, Input, ViewEncapsulation } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 
 @Component({
@@ -7,6 +7,7 @@ import { BehaviorSubject } from 'rxjs';
   templateUrl: './table.component.html',
   styleUrls: ['./table.component.scss'],
   standalone: true,
+  encapsulation: ViewEncapsulation.None,
   imports: [AsyncPipe]
 })
 export class BsTableComponent {

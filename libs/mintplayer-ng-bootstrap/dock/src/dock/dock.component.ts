@@ -1,4 +1,4 @@
-import { Component, ContentChildren, ViewChildren, Input, OnDestroy, QueryList, HostBinding } from '@angular/core';
+import { Component, ContentChildren, ViewChildren, Input, OnDestroy, QueryList, HostBinding, ViewEncapsulation } from '@angular/core';
 import { BehaviorSubject, map, Observable } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Parentified, deepClone } from '@mintplayer/parentify';
@@ -16,6 +16,7 @@ import { BsDockPaneRendererComponent } from '../dock-pane-renderer/dock-pane-ren
   templateUrl: './dock.component.html',
   styleUrls: ['./dock.component.scss'],
   standalone: false,
+  encapsulation: ViewEncapsulation.None,
 })
 export class BsDockComponent implements OnDestroy {
   constructor() {

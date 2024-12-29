@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ViewEncapsulation } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Size } from '@mintplayer/ng-bootstrap';
 import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';

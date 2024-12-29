@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, HostBinding, HostListener, Input, Optional } from '@angular/core';
+import { AfterViewInit, Component, HostBinding, HostListener, Input, Optional, ViewEncapsulation } from '@angular/core';
 import { BsDropdownDirective } from '@mintplayer/ng-bootstrap/dropdown';
 // import { BsDropdownComponent } from '@mintplayer/ng-bootstrap/dropdown';
 
@@ -7,6 +7,7 @@ import { BsDropdownDirective } from '@mintplayer/ng-bootstrap/dropdown';
   templateUrl: './dropdown-menu.component.html',
   styleUrls: ['./dropdown-menu.component.scss'],
   standalone: false,
+  encapsulation: ViewEncapsulation.None,
 })
 export class BsDropdownMenuComponent implements AfterViewInit {
   constructor(@Optional() private bsDropdown?: BsDropdownDirective) {

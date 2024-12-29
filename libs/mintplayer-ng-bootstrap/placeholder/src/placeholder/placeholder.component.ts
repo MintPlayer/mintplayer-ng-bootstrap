@@ -1,4 +1,4 @@
-import { Component, EventEmitter, HostBinding, Input } from '@angular/core';
+import { Component, EventEmitter, HostBinding, Input, ViewEncapsulation } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 
 @Component({
@@ -6,6 +6,7 @@ import { BehaviorSubject } from 'rxjs';
   templateUrl: './placeholder.component.html',
   styleUrls: ['./placeholder.component.scss'],
   standalone: false,
+  encapsulation: ViewEncapsulation.None,
 })
 export class BsPlaceholderComponent {
   //#region isLoading

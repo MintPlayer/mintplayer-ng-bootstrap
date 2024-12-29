@@ -1,5 +1,5 @@
 import { isPlatformServer } from '@angular/common';
-import { AfterViewInit, ChangeDetectorRef, Component, ContentChildren, ElementRef, forwardRef, HostBinding, HostListener, Inject, Input, OnDestroy, PLATFORM_ID, QueryList, TemplateRef, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ContentChildren, ElementRef, forwardRef, HostBinding, HostListener, Inject, Input, OnDestroy, PLATFORM_ID, QueryList, TemplateRef, ViewChild, ViewEncapsulation } from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsSwipeContainerDirective } from '@mintplayer/ng-swiper/swiper';
@@ -11,6 +11,7 @@ import { BsCarouselImageDirective } from '../carousel-image/carousel-image.direc
   templateUrl: './carousel.component.html',
   styleUrls: ['./carousel.component.scss'],
   standalone: false,
+  encapsulation: ViewEncapsulation.None,
   animations: [FadeInOutAnimation],
 })
 export class BsCarouselComponent implements AfterViewInit, OnDestroy {

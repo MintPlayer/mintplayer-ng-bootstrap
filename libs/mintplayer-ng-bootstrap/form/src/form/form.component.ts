@@ -1,10 +1,11 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ViewEncapsulation } from '@angular/core';
 
 @Component({
   selector: 'bs-form',
   templateUrl: './form.component.html',
   styleUrls: ['./form.component.scss'],
   standalone: false,
+  encapsulation: ViewEncapsulation.None,
 })
 export class BsFormComponent {
   @Input() action?: string;

@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostBinding, Input } from '@angular/core';
+import { Component, ElementRef, HostBinding, Input, ViewEncapsulation } from '@angular/core';
 import { DomPortal } from '@angular/cdk/portal';
 import { BehaviorSubject, Observable, map } from 'rxjs';
 import { BsDockPane } from '../panes/dock-pane';
@@ -15,6 +15,7 @@ import { Overlay, OverlayRef } from '@angular/cdk/overlay';
   templateUrl: './dock-pane-renderer.component.html',
   styleUrls: ['./dock-pane-renderer.component.scss'],
   standalone: false,
+  encapsulation: ViewEncapsulation.None,
 })
 export class BsDockPaneRendererComponent {
 

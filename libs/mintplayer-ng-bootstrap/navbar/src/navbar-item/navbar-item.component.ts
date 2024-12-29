@@ -1,4 +1,4 @@
-import { AfterContentChecked, Component, ContentChildren, DestroyRef, ElementRef, forwardRef, Inject, Optional, PLATFORM_ID, QueryList, ViewContainerRef } from '@angular/core';
+import { AfterContentChecked, Component, ContentChildren, DestroyRef, ElementRef, forwardRef, Inject, Optional, PLATFORM_ID, QueryList, ViewContainerRef, ViewEncapsulation } from '@angular/core';
 import { isPlatformServer } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BsNavbarComponent } from '../navbar/navbar.component';
@@ -9,6 +9,7 @@ import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.co
   templateUrl: './navbar-item.component.html',
   styleUrls: ['./navbar-item.component.scss'],
   standalone: false,
+  encapsulation: ViewEncapsulation.None,
 })
 export class BsNavbarItemComponent implements AfterContentChecked {
 

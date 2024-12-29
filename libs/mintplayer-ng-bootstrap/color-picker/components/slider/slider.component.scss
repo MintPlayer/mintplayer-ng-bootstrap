@@ -1,16 +1,16 @@
 $size: 8px;
 $thumb: 3 * $size;
 
-.track2 {
-    height: $size;
-}
+bs-slider {
+    .bs-slider-track {
+        height: $size;
+    }
 
-.wrapper {
-    padding-top: $size;
-    padding-bottom: $size;
-}
-
-::ng-deep {
+    .bs-slider-wrapper {
+        padding-top: $size;
+        padding-bottom: $size;
+    }
+        
     .thumb {
         width: $thumb;
         height: $thumb;

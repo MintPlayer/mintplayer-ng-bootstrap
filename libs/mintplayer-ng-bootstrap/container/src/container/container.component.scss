@@ -1,4 +1,4 @@
-:host ::ng-deep {
+bs-container {
     // @import "../../../../../node_modules/bootstrap/scss/bootstrap-utilities.scss";
     
     @import "../../../../../node_modules/bootstrap/scss/functions";
@@ -10,8 +10,6 @@
     // @import "../../../../../node_modules/bootstrap/scss/mixins/breakpoints";
     @import "../../../../../node_modules/bootstrap/scss/mixins/container";
     @import "../../../../../node_modules/bootstrap/scss/containers";
-}
-
-:host {
+    
     display: contents;
 }

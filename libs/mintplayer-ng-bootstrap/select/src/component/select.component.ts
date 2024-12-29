@@ -1,4 +1,4 @@
-import { Component, ElementRef, Input, OnInit, Renderer2, ViewChild } from '@angular/core';
+import { Component, ElementRef, Input, OnInit, Renderer2, ViewChild, ViewEncapsulation } from '@angular/core';
 import { BehaviorSubject, map, Observable } from 'rxjs';
 import { BsSelectSize } from '../types/select-size';
 
