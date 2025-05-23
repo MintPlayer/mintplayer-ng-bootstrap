@@ -1,7 +1,7 @@
 {
   "name": "@mintplayer/ng-bootstrap",
   "private": false,
-  "version": "19.0.0",
+  "version": "20.0.0-preview.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/MintPlayer/mintplayer-ng-bootstrap",
@@ -11,21 +11,21 @@
     "./bootstrap.scss": "./_bootstrap.scss"
   },
   "peerDependencies": {
-    "@angular/common": "^19.0.0",
-    "@angular/core": "^19.0.0",
-    "@angular/cdk": "^19.0.0",
-    "@angular/forms": "^19.0.0",
-    "@angular/router": "^19.0.0",
-    "@angular/platform-browser": "^19.0.0",
+    "@angular/common": "^20.0.0-rc.2",
+    "@angular/core": "^20.0.0-rc.2",
+    "@angular/cdk": "^20.0.0-rc.2",
+    "@angular/forms": "^20.0.0-rc.2",
+    "@angular/router": "^20.0.0-rc.2",
+    "@angular/platform-browser": "^20.0.0-rc.2",
     "rxjs": "^7.5.0",
     "bootstrap": "^5.3.0",
     "bootstrap-icons": "^1.7.2",
     "ngx-highlightjs": "^10.0.0",
-    "@mintplayer/ng-click-outside": "^19.0.0",
-    "@mintplayer/ng-animations": "^19.0.0",
+    "@mintplayer/ng-click-outside": "^20.0.0-preview.1",
+    "@mintplayer/ng-animations": "^20.0.0-preview.1",
     "@mintplayer/pagination": "^2.2.0",
-    "@mintplayer/ng-focus-on-load": "^19.0.0",
-    "@mintplayer/ng-swiper": "^19.0.0",
+    "@mintplayer/ng-focus-on-load": "^20.0.0-preview.1",
+    "@mintplayer/ng-swiper": "^20.0.0-preview.1",
     "@mintplayer/parentify": "^1.1.0"
   },
   "dependencies": {
