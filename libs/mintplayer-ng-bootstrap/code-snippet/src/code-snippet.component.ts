@@ -1,9 +1,10 @@
 import { AsyncPipe } from '@angular/common';
-import { Component, EventEmitter, Input, Output, TemplateRef, ViewChild } from '@angular/core';
+import { Component, EventEmitter, input, Input, Output, TemplateRef, ViewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BsCopyDirective } from '@mintplayer/ng-bootstrap/copy';
 import { BsOffcanvasModule } from '@mintplayer/ng-bootstrap/offcanvas';
-import { HighlightAutoResult, HighlightModule } from 'ngx-highlightjs';
+import { HighlightModule } from 'ngx-highlightjs';
+import { HighlightResult } from 'highlight.js';
 import { BehaviorSubject } from 'rxjs';
 
 @Component({
@@ -22,8 +23,7 @@ export class BsCodeSnippetComponent {
 
   offcanvasVisible = false;
   @Input() public codeToCopy = '';
-  @Input() public languages: string[] | null = null;
-  @Input() public lineNumbers = false;
+  language = input<string>('');
   @ViewChild('copiedTemplate') copiedTemplate!: TemplateRef<any>;
   @Output() public detectedLanguage = new EventEmitter<string>();
 
@@ -34,7 +34,7 @@ export class BsCodeSnippetComponent {
     setTimeout(() => this.offcanvasVisible = false, 3000);
   }
 
-  onHighlighted(result: HighlightAutoResult) {
+  onHighlighted(result: HighlightResult) {
     this.language$.next(result.language ?? 'code');
   }
 

@@ -3,7 +3,7 @@
         Copy {{ language$ | async }}
     </button>
     <pre class="white-space-normal">
-        <code class="d-block white-space-pre" [highlight]="codeToCopy" [lineNumbers]="lineNumbers" [languages]="languages ?? undefined!" (highlighted)="onHighlighted($event)"></code>
+        <code class="d-block white-space-pre" [highlight]="codeToCopy" [language]="language()" (highlighted)="onHighlighted($event)"></code>
     </pre>
     <bs-offcanvas [(isVisible)]="offcanvasVisible" [position]="'bottom'">
         <div *bsOffcanvasContent class="p-3 bg-dark text-light">Copied!</div>
