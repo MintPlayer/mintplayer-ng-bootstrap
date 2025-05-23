@@ -63,6 +63,5 @@
   "useDaemonProcess": false,
   "nxCloudAccessToken": "OTQ3ODE1NTgtOTNjZi00ZTQwLTgxOGUtYWQ0MWQ0NGJkNDU2fHJlYWQtd3JpdGU=",
   "useInferencePlugins": false,
-  "defaultBase": "master",
-  "useLegacyCache": true
+  "defaultBase": "master"
 }

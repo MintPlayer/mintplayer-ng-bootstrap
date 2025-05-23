@@ -2,13 +2,14 @@
   "name": "ng-bootstrap-demo",
   "$schema": "..\\..\\node_modules\\nx\\schemas\\project-schema.json",
   "projectType": "application",
+  "sourceRoot": "apps/ng-bootstrap-demo/src",
+  "prefix": "demo",
+  "tags": [],
   "generators": {
     "@schematics/angular:component": {
       "style": "scss"
     }
   },
-  "sourceRoot": "apps/ng-bootstrap-demo/src",
-  "prefix": "demo",
   "targets": {
     "build": {
       "executor": "@angular-devkit/build-angular:application",
@@ -80,7 +81,8 @@
           "buildTarget": "ng-bootstrap-demo:build:development"
         }
       },
-      "defaultConfiguration": "development"
+      "defaultConfiguration": "development",
+      "continuous": true
     },
     "extract-i18n": {
       "executor": "@angular-devkit/build-angular:extract-i18n",
@@ -139,7 +141,8 @@
           "serverTarget": "ng-bootstrap-demo:server:production"
         }
       },
-      "defaultConfiguration": "development"
+      "defaultConfiguration": "development",
+      "continuous": true
     },
     "prerender": {
       "executor": "@angular-devkit/build-angular:prerender",
@@ -158,6 +161,5 @@
       },
       "defaultConfiguration": "production"
     }
-  },
-  "tags": []
+  }
 }
