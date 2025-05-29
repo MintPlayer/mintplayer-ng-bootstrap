@@ -20,17 +20,17 @@
   },
   "private": true,
   "dependencies": {
-    "@angular/animations": "~20.0.0-rc.2",
-    "@angular/cdk": "~20.0.0-rc.2",
-    "@angular/common": "~20.0.0-rc.2",
-    "@angular/compiler": "~20.0.0-rc.2",
-    "@angular/core": "~20.0.0-rc.2",
-    "@angular/forms": "~20.0.0-rc.2",
-    "@angular/platform-browser": "~20.0.0-rc.2",
-    "@angular/platform-browser-dynamic": "~20.0.0-rc.2",
-    "@angular/platform-server": "~20.0.0-rc.2",
-    "@angular/router": "~20.0.0-rc.2",
-    "@nx/angular": "21.2.0-canary.20250523-560a53e",
+    "@angular/animations": "~20.0.0",
+    "@angular/cdk": "~20.0.0",
+    "@angular/common": "~20.0.0",
+    "@angular/compiler": "~20.0.0",
+    "@angular/core": "~20.0.0",
+    "@angular/forms": "~20.0.0",
+    "@angular/platform-browser": "~20.0.0",
+    "@angular/platform-browser-dynamic": "~20.0.0",
+    "@angular/platform-server": "~20.0.0",
+    "@angular/router": "~20.0.0",
+    "@nx/angular": "21.2.0-canary.20250529-c8a6ffb",
     "bootstrap": "^5.3.3",
     "bootstrap-icons": "~1.11.3",
     "express": "^4.15.2",
@@ -48,14 +48,14 @@
     "@angular-eslint/eslint-plugin-template": "~19.4.1-alpha.5",
     "@angular-eslint/template-parser": "~19.4.1-alpha.5",
     "@angular/cli": "~20.0.0-rc.3",
-    "@angular/compiler-cli": "~20.0.0-rc.2",
-    "@angular/language-service": "~20.0.0-rc.2",
-    "@nx/cypress": "21.2.0-canary.20250523-560a53e",
-    "@nx/eslint": "21.2.0-canary.20250523-560a53e",
-    "@nx/eslint-plugin": "21.2.0-canary.20250523-560a53e",
-    "@nx/jest": "21.2.0-canary.20250523-560a53e",
-    "@nx/js": "21.2.0-canary.20250523-560a53e",
-    "@nx/workspace": "21.2.0-canary.20250523-560a53e",
+    "@angular/compiler-cli": "~20.0.0",
+    "@angular/language-service": "~20.0.0",
+    "@nx/cypress": "21.2.0-canary.20250529-c8a6ffb",
+    "@nx/eslint": "21.2.0-canary.20250529-c8a6ffb",
+    "@nx/eslint-plugin": "21.2.0-canary.20250529-c8a6ffb",
+    "@nx/jest": "21.2.0-canary.20250529-c8a6ffb",
+    "@nx/js": "21.2.0-canary.20250529-c8a6ffb",
+    "@nx/workspace": "21.2.0-canary.20250529-c8a6ffb",
     "@schematics/angular": "20.0.0-rc.3",
     "@swc-node/register": "1.9.2",
     "@swc/core": "1.5.7",
@@ -76,8 +76,8 @@
     "jest-environment-jsdom": "29.7.0",
     "jest-preset-angular": "15.0.0-next.0",
     "ng-mocks": "^14.13.5",
-    "ng-packagr": "~20.0.0-rc.1",
-    "nx": "21.2.0-canary.20250523-560a53e",
+    "ng-packagr": "~20.0.0",
+    "nx": "21.2.0-canary.20250529-c8a6ffb",
     "postcss": "^8.4.5",
     "postcss-import": "^14.1.0",
     "postcss-preset-env": "^7.5.0",
@@ -91,10 +91,6 @@
     "webpack-bundle-analyzer": "~4.9.0"
   },
   "overrides": {
-    "@angular/cdk": {
-      "@angular/common": "~20.0.0-rc.2",
-      "@angular/core": "~20.0.0-rc.2"
-    },
     "@nx/angular": {
       "@angular-devkit/build-angular": "~20.0.0-rc.3",
       "@angular-devkit/core": "~20.0.0-rc.3",
@@ -102,18 +98,18 @@
       "@schematics/angular": "20.0.0-rc.3"
     },
     "ngx-highlightjs": {
-      "@angular/cdk": "~20.0.0-rc.2",
-      "@angular/core": "~20.0.0-rc.2",
-      "@angular/common": "~20.0.0-rc.2"
+      "@angular/cdk": "~20.0.0",
+      "@angular/core": "~20.0.0",
+      "@angular/common": "~20.0.0"
     },
     "jest-preset-angular": {
-      "@angular/cli": "~20.0.0-rc.2",
-      "@angular/core": "~20.0.0-rc.2",
-      "@angular/compiler-cli": "~20.0.0-rc.2",
-      "@angular/platform-browser-dynamic": "~20.0.0-rc.2"
+      "@angular/cli": "~20.0.0",
+      "@angular/core": "~20.0.0",
+      "@angular/compiler-cli": "~20.0.0",
+      "@angular/platform-browser-dynamic": "~20.0.0"
     },
     "ng-mocks": {
-      "@angular/forms": "~20.0.0-rc.2"
+      "@angular/forms": "~20.0.0"
     }
   }
 }
