@@ -1,7 +1,7 @@
 {
   "name": "@mintplayer/ng-bootstrap",
   "private": false,
-  "version": "20.0.0-preview.2",
+  "version": "20.0.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/MintPlayer/mintplayer-ng-bootstrap",
@@ -11,12 +11,12 @@
     "./bootstrap.scss": "./_bootstrap.scss"
   },
   "peerDependencies": {
-    "@angular/common": "^20.0.0-rc.2",
-    "@angular/core": "^20.0.0-rc.2",
-    "@angular/cdk": "^20.0.0-rc.2",
-    "@angular/forms": "^20.0.0-rc.2",
-    "@angular/router": "^20.0.0-rc.2",
-    "@angular/platform-browser": "^20.0.0-rc.2",
+    "@angular/common": "^20.0.0",
+    "@angular/core": "^20.0.0",
+    "@angular/cdk": "^20.0.0",
+    "@angular/forms": "^20.0.0",
+    "@angular/router": "^20.0.0",
+    "@angular/platform-browser": "^20.0.0",
     "rxjs": "^7.5.0",
     "bootstrap": "^5.3.0",
     "bootstrap-icons": "^1.7.2",
