@@ -18,6 +18,11 @@
         "outputPath": "dist/apps/ng-bootstrap-demo/browser",
         "index": "apps/ng-bootstrap-demo/src/index.html",
         "browser": "apps/ng-bootstrap-demo/src/main.ts",
+        "server": "apps/ng-bootstrap-demo/src/main.server.ts",
+        "outputMode": "server",
+        "ssr": {
+          "entry": "apps/ng-bootstrap-demo/server.ts"
+        },
         "polyfills": ["apps/ng-bootstrap-demo/src/polyfills.ts"],
         "tsConfig": "apps/ng-bootstrap-demo/tsconfig.app.json",
         "inlineStyleLanguage": "scss",
@@ -50,7 +55,7 @@
             },
             {
               "type": "anyComponentStyle",
-              "maximumWarning": "5kb",
+              "maximumWarning": "25kb",
               "maximumError": "100kb"
             }
           ],
