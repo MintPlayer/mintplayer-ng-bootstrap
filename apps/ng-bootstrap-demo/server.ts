@@ -7,7 +7,8 @@ import {
 import express from 'express';
 import { join } from 'node:path';
 
-const browserDistFolder = join(__dirname, '../browser');
+// const browserDistFolder = join(__dirname, '../browser');
+const browserDistFolder = join(process.cwd(), 'dist/apps/ng-bootstrap-demo/browser');
 
 const app = express();
 const angularApp = new AngularNodeAppEngine();
