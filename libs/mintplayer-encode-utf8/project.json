@@ -3,6 +3,7 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/mintplayer-encode-utf8/src",
   "projectType": "library",
+  "tags": [],
   "targets": {
     "build": {
       "executor": "@nx/js:tsc",
@@ -39,6 +40,5 @@
         "jestConfig": "libs/mintplayer-encode-utf8/jest.config.ts"
       }
     }
-  },
-  "tags": []
+  }
 }
