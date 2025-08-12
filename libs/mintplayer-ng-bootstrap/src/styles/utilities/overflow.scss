@@ -1,5 +1,7 @@
+@use "sass:map";
+
 //Generate utilites for white-space
-$utilities: map-merge(
+$utilities: map.merge(
   $utilities,
   (
     "overflow-x": (

@@ -30,15 +30,14 @@
     "@angular/platform-browser-dynamic": "~20.1.6",
     "@angular/platform-server": "~20.1.6",
     "@angular/router": "~20.1.6",
+    "@angular/ssr": "~20.1.5",
     "@nx/angular": "~21.3.11",
     "bootstrap": "^5.3.3",
     "bootstrap-icons": "~1.11.3",
-    "express": "^4.15.2",
+    "express": "^5.1.0",
     "ngx-highlightjs": "~14.0.0",
-    "rxjs": "~7.5.0",
     "ts-dedent": "^2.2.0",
-    "tslib": "^2.3.0",
-    "zone.js": "~0.15.0"
+    "tslib": "^2.3.0"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "~20.1.5",
@@ -59,7 +58,7 @@
     "@schematics/angular": "~20.1.5",
     "@swc-node/register": "1.9.2",
     "@swc/core": "1.5.7",
-    "@types/express": "^4.17.0",
+    "@types/express": "^5.0.1",
     "@types/jest": "30.0.0",
     "@types/node": "^18.16.9",
     "@typescript-eslint/eslint-plugin": "7.16.0",

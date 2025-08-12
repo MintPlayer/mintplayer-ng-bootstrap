@@ -1,5 +1,5 @@
 import { provideHttpClient } from "@angular/common/http";
-import { ApplicationConfig } from "@angular/core";
+import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZonelessChangeDetection } from "@angular/core";
 import { provideAnimations } from "@angular/platform-browser/animations";
 import { PreloadAllModules, provideRouter, withEnabledBlockingInitialNavigation, withPreloading, withInMemoryScrolling } from "@angular/router";
 import { HIGHLIGHT_OPTIONS, provideHighlightOptions } from 'ngx-highlightjs';
@@ -11,6 +11,8 @@ export const config: ApplicationConfig = {
     providers: [
         provideAnimations(),
         provideHttpClient(),
+        provideZonelessChangeDetection(),
+        provideBrowserGlobalErrorListeners(),
         provideRouter(
             [
                 { path: '', loadChildren: () => import('./pages/pages.routes').then(m => m.ROUTES) },
