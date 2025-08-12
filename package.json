@@ -11,7 +11,7 @@
     "build:wba": "nx build --stats-json",
     "analyze:wba": "webpack-bundle-analyzer dist/apps/ng-bootstrap-demo/stats.json",
     "build:sme": "nx build --source-map",
-    "analyze:sme": "source-map-explorer dist/apps/ng-bootstrap-demo/browser/*",
+    "analyze:sme": "source-map-explorer dist/apps/ng-bootstrap-demo/browser/browser/*",
     "test": "nx run-many --target=test --projects=ng-bootstrap-demo",
     "dev:ssr": "nx run ng-bootstrap-demo:serve-ssr",
     "serve:ssr": "node dist/ng-bootstrap-demo/server/main.js",
