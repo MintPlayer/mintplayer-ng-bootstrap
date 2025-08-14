@@ -1,4 +1,4 @@
-import { DestroyRef, Directive, HostBinding, HostListener, Input } from "@angular/core";
+import { computed, Directive, effect, HostBinding, HostListener, input, Input, signal } from "@angular/core";
 import { BsObserveSizeDirective } from "@mintplayer/ng-swiper/observe-size";
 import { combineLatest, filter, take } from "rxjs";
 import { BsSwipeContainerDirective } from "../swipe-container/swipe-container.directive";
@@ -6,6 +6,15 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 
 @Directive({
   selector: '[bsSwipe]',
+  host: {
+    'class.align-top': 'true',
+    'class.d-inline-block': 'true',
+    'class.float-none': 'true',
+    'class.w-100': 'true',
+    'class.pe-auto': 'true',
+    'class.me-0': 'true',
+    'class': 'hostClass()',
+  },
   hostDirectives: [BsObserveSizeDirective],
   standalone: false,
 })
@@ -19,20 +28,10 @@ export class BsSwipeDirective {
 
   observeSize: BsObserveSizeDirective;
 
-  //#region Offside
-  @Input() public offside = false;
-  //#endregion
-
-  @HostBinding('class.align-top')
-  @HostBinding('class.d-inline-block')
-  @HostBinding('class.float-none')
-  @HostBinding('class.w-100')
-  @HostBinding('class.pe-auto')
-  @HostBinding('class.me-0')
-  classes = true;
+  public offside = input(false);
 
   @HostBinding('class') hostClass?: string;
-
+  
   @HostListener('touchstart', ['$event'])
   onTouchStart(ev: TouchEvent) {
     if (ev.touches.length === 1) {
