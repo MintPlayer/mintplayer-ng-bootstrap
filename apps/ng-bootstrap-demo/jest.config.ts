@@ -15,6 +15,10 @@ export default {
     ],
   },
   transformIgnorePatterns: ['node_modules/(?!.*\\.mjs$)'],
+  moduleNameMapper: {
+    // Map ANY .svg import (incl. from node_modules) to a stub
+    '\\.svg$': '<rootDir>/../../tools/testing/svg.mock.ts',
+  },
   snapshotSerializers: [
     'jest-preset-angular/build/serializers/no-ng-attributes',
     'jest-preset-angular/build/serializers/ng-snapshot',
