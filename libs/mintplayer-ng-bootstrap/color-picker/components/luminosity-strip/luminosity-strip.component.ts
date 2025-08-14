@@ -1,7 +1,8 @@
-import { Component, EventEmitter, Input, Output, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, EventEmitter, Input, Output, AfterViewInit, ViewChild, ElementRef, inject, PLATFORM_ID } from '@angular/core';
 import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HS } from '../../interfaces/hs';
+import { isPlatformServer } from '@angular/common';
 
 @Component({
   selector: 'bs-luminosity-strip',
@@ -40,6 +41,8 @@ export class BsLuminosityStripComponent implements AfterViewInit {
       .subscribe(luminosity => this.luminosityChange.emit(luminosity));
   }
 
+  platformId = inject(PLATFORM_ID);
+
   //#region HS
   hs$ = new BehaviorSubject<HS>({ hue: 0, saturation: 0 });
   public get hs() {
@@ -63,7 +66,9 @@ export class BsLuminosityStripComponent implements AfterViewInit {
   private canvasContext: CanvasRenderingContext2D | null = null;
   @ViewChild('canvas') canvas!: ElementRef<HTMLCanvasElement>;
   ngAfterViewInit() {
-    this.canvasContext = this.canvas.nativeElement.getContext('2d', { willReadFrequently: true });
+    if (!isPlatformServer(this.platformId)) {
+      this.canvasContext = this.canvas.nativeElement.getContext('2d', { willReadFrequently: true });
+    }
   }
 
   resultBackground$: Observable<string>;
