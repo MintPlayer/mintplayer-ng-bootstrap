@@ -22,7 +22,7 @@ export class BsCodeSnippetComponent {
   }
 
   offcanvasVisible = false;
-  @Input() public codeToCopy = '';
+  codeToCopy = input<string>('');
   language = input<string>('');
   @ViewChild('copiedTemplate') copiedTemplate!: TemplateRef<any>;
   @Output() public detectedLanguage = new EventEmitter<string>();
@@ -35,7 +35,7 @@ export class BsCodeSnippetComponent {
   }
 
   onHighlighted(result: HighlightResult) {
-    this.language$.next(result.language ?? 'code');
+    this.language$.next(result?.language || 'code');
   }
 
 }
