@@ -2,7 +2,6 @@ import { Component, EventEmitter, Input, Output, AfterViewInit, ViewChild, Eleme
 import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HS } from '../../interfaces/hs';
-import { isPlatformServer } from '@angular/common';
 
 @Component({
   selector: 'bs-luminosity-strip',
