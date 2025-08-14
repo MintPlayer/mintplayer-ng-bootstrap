@@ -1,5 +1,4 @@
 import { Directive, inject, Input, isDevMode, OnChanges, PLATFORM_ID, ViewContainerRef } from '@angular/core';
-import { isPlatformServer } from '@angular/common';
 import { QRCodeErrorCorrectionLevel } from '@mintplayer/qr-code';
 import * as qrCodeService from '@mintplayer/qr-code';
 import { RgbaColor } from '../../types/rgba-color';
@@ -59,7 +58,7 @@ export class QrCodeDirective implements OnChanges {
       return;
     }
 
-    if (!isPlatformServer(this.platformId)) {
+    if (typeof window !== 'undefined') {
       const context = canvas.getContext('2d');
       if (context) {
         context.clearRect(0, 0, context.canvas.width, context.canvas.height);

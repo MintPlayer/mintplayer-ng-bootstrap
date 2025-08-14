@@ -2,7 +2,6 @@ import { Component, EventEmitter, Input, Output, AfterViewInit, ViewChild, Eleme
 import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
 import { HS } from '../../interfaces/hs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { isPlatformServer } from '@angular/common';
 
 @Component({
   selector: 'bs-alpha-strip',
@@ -72,7 +71,7 @@ export class BsAlphaStripComponent implements AfterViewInit {
   private canvasContext: CanvasRenderingContext2D | null = null;
   @ViewChild('track') canvas!: ElementRef<HTMLCanvasElement>;
   ngAfterViewInit() {
-    if (!isPlatformServer(this.platformId)) {
+    if (typeof window !== 'undefined') {
       this.canvasContext = this.canvas.nativeElement.getContext('2d', { willReadFrequently: true });
     }
   }

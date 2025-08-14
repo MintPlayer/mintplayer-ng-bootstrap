@@ -4,7 +4,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HS } from '../../interfaces/hs';
 import { HslColor } from '../../interfaces/hsl-color';
 import { RgbColor } from '../../interfaces/rgb-color';
-import { isPlatformServer } from '@angular/common';
 
 @Component({
   selector: 'bs-color-wheel',
@@ -171,7 +170,7 @@ export class BsColorWheelComponent implements AfterViewInit {
   ngAfterViewInit() {
     // this.resizeObserver.observe(this.element.nativeElement);
     this.viewInited$.next(true);
-    if (!isPlatformServer(this.platformId)) {
+    if (typeof window !== 'undefined') {
       this.canvasContext = this.canvas.nativeElement.getContext('2d', { willReadFrequently: true });
     }
   }
