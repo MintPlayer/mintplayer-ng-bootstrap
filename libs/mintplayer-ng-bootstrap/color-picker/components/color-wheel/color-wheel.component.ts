@@ -1,9 +1,10 @@
-import { AfterViewInit, Component, DestroyRef, ElementRef, EventEmitter, HostBinding, HostListener, Input, Output, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, EventEmitter, HostBinding, HostListener, inject, Input, Output, PLATFORM_ID, ViewChild } from '@angular/core';
 import { BehaviorSubject, combineLatest, debounceTime, map, take, Observable, switchMap } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HS } from '../../interfaces/hs';
 import { HslColor } from '../../interfaces/hsl-color';
 import { RgbColor } from '../../interfaces/rgb-color';
+import { isPlatformServer } from '@angular/common';
 
 @Component({
   selector: 'bs-color-wheel',
@@ -127,6 +128,8 @@ export class BsColorWheelComponent implements AfterViewInit {
   }
   @ViewChild('canvas') canvas!: ElementRef<HTMLCanvasElement>;
   
+  platformId = inject(PLATFORM_ID);
+
   //#region Hue/Luminosity
   hs$ = new BehaviorSubject<HS>({ hue: 0, saturation: 0 });
   @Output() hsChange = new EventEmitter<HS>();

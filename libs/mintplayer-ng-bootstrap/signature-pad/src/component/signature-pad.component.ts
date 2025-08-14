@@ -1,9 +1,10 @@
-import { AfterViewInit, Component, ElementRef, EventEmitter, HostBinding, HostListener, Input, Output, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, EventEmitter, HostBinding, HostListener, inject, Input, Output, PLATFORM_ID, ViewChild } from '@angular/core';
 import { Signature } from '../interfaces/signature';
 import { BehaviorSubject } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Point } from '../interfaces/point';
 import { Stroke } from '../interfaces/stroke';
+import { isPlatformServer } from '@angular/common';
 
 @Component({
   selector: 'bs-signature-pad',
@@ -17,6 +18,8 @@ export class BsSignaturePadComponent implements AfterViewInit {
       this.signatureChange.emit(signature);
     });
   }
+
+  platformId = inject(PLATFORM_ID);
 
   //#region Signature
   signature$ = new BehaviorSubject<Signature>({ strokes: [] });
