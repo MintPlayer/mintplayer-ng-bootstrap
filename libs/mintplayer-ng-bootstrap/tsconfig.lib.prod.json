@@ -5,6 +5,13 @@
     "target": "es2022",
     "useDefineForClassFields": false
   },
+  "exclude": [
+    "src/test-setup.ts",
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    "jest.config.ts",
+    "**/test-helpers/*.ts"
+  ],
   "angularCompilerOptions": {
     "compilationMode": "partial"
   }
