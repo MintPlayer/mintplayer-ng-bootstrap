@@ -1,4 +1,4 @@
-import { Directive, inject, Input, isDevMode, OnChanges, PLATFORM_ID, ViewContainerRef } from '@angular/core';
+import { Directive, Input, OnChanges,  ViewContainerRef } from '@angular/core';
 import { QRCodeErrorCorrectionLevel } from '@mintplayer/qr-code';
 import * as qrCodeService from '@mintplayer/qr-code';
 import { RgbaColor } from '../../types/rgba-color';
@@ -43,9 +43,6 @@ export class QrCodeDirective implements OnChanges {
   @Input('qrCodeMargin') margin? = 16;
 
   private centerImage?: HTMLImageElement;
-
-  platformId = inject(PLATFORM_ID);
-
 
   async ngOnChanges() {
     if (!this.value) {

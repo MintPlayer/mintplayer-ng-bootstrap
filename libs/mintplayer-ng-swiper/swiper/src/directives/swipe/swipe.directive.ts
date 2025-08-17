@@ -28,8 +28,9 @@ export class BsSwipeDirective {
   @HostBinding('class.pe-auto')
   @HostBinding('class.me-0')
   classes = true;
+
   @HostBinding('class') hostClass?: string;
-  
+
   @HostListener('touchstart', ['$event'])
   onTouchStart(ev: TouchEvent) {
     if (ev.touches.length === 1) {

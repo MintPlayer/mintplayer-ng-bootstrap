@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, AfterViewInit, ViewChild, ElementRef, inject, PLATFORM_ID } from '@angular/core';
+import { Component, EventEmitter, Input, Output, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
 import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
 import { HS } from '../../interfaces/hs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -36,8 +36,6 @@ export class BsAlphaStripComponent implements AfterViewInit {
     this.alpha$.pipe(takeUntilDestroyed())
       .subscribe((alpha) => this.alphaChange.emit(alpha));
   }
-
-  platformId = inject(PLATFORM_ID);
 
   //#region HS
   hs$ = new BehaviorSubject<HS>({ hue: 0, saturation: 0 });
