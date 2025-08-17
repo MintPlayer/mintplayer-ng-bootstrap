@@ -1,6 +1,6 @@
 import { Overlay, OverlayModule } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { Component, ComponentRef, Injector, TemplateRef, ViewChild } from '@angular/core';
+import { Component, ComponentRef, inject, Injector, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { MockComponent, MockModule } from 'ng-mocks';
@@ -18,7 +18,8 @@ import { BsTooltipComponent } from './tooltip.component';
   </ng-template>`,
 })
 class BsTooltipTestComponent {
-  constructor(private overlay: Overlay, private injector: Injector) {}
+  overlay = inject(Overlay);
+  injector = inject(Injector);
 
   @ViewChild('tooltipTemplate') tooltipTemplate!: TemplateRef<any>;
   component: ComponentRef<BsTooltipComponent> | null = null;

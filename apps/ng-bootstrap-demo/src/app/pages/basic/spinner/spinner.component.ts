@@ -1,6 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
-import { EnumItem, EnumService } from '@mintplayer/ng-bootstrap/enum';
+import { EnumService } from '@mintplayer/ng-bootstrap/enum';
 import { BsSpinnerComponent } from '@mintplayer/ng-bootstrap/spinner';
 
 @Component({
@@ -11,9 +11,6 @@ import { BsSpinnerComponent } from '@mintplayer/ng-bootstrap/spinner';
   imports: [BsSpinnerComponent]
 })
 export class SpinnerComponent {
-  constructor(enumService: EnumService) {
-    this.colors = enumService.getItems(Color);
-  }
-
-  colors: EnumItem[];
+  enumService = inject(EnumService);
+  colors = this.enumService.getItems(Color);
 }

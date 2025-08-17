@@ -1,6 +1,5 @@
-import { Directive, HostBinding, HostListener, Inject, Input, forwardRef, Optional } from '@angular/core';
+import { Directive, HostBinding, HostListener, Inject, Input, forwardRef, Optional, inject } from '@angular/core';
 import { Position } from '@mintplayer/ng-bootstrap';
-import type { BsResizableComponent } from '../resizable/resizable.component';
 import { ResizeAction } from '../interfaces/resize-action';
 import { PointerData } from '../interfaces/pointer-data';
 import { RESIZABLE } from '../providers/resizable.provider';
@@ -11,11 +10,7 @@ import { RESIZABLE } from '../providers/resizable.provider';
 })
 export class BsResizeGlyphDirective {
 
-  // Can't use typed DI because of the `import type`
-  private readonly resizable: BsResizableComponent;
-  constructor(@Inject(RESIZABLE) resizable: any) {
-    this.resizable = resizable;
-  }
+  readonly resizable = inject(RESIZABLE);
 
   @HostBinding('class') positions = '';
   @HostBinding('class.glyph') glyphClass = true;

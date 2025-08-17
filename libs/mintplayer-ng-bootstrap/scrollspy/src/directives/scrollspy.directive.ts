@@ -1,13 +1,9 @@
-import { Directive, ElementRef } from '@angular/core';
+import { Directive, ElementRef, inject } from '@angular/core';
 
 @Directive({
   selector: '[bsScrollspy]',
   standalone: false,
 })
 export class BsScrollspyDirective {
-  constructor(element: ElementRef) {
-    this.element = element;
-  }
-
-  element: ElementRef;
+  element = inject(ElementRef);
 }

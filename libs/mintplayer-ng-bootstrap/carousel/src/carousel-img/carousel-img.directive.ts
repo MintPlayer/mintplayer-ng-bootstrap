@@ -1,4 +1,4 @@
-import { Directive, HostBinding } from '@angular/core';
+import { Directive, HostBinding, inject } from '@angular/core';
 import { BsCarouselImageDirective } from '../carousel-image/carousel-image.directive';
 
 @Directive({
@@ -6,9 +6,6 @@ import { BsCarouselImageDirective } from '../carousel-image/carousel-image.direc
   standalone: false,
 })
 export class BsCarouselImgDirective {
-  constructor(image: BsCarouselImageDirective) {
-    this.fetchPriority = (image && image.isFirst) ? 'high' : 'low';
-  }
-  
-  @HostBinding('attr.fetch-priority') fetchPriority: 'high' | 'low' | 'auto';
+  image = inject(BsCarouselImageDirective);
+  @HostBinding('attr.fetch-priority') fetchPriority: 'high' | 'low' | 'auto' = (this.image && this.image.isFirst) ? 'high' : 'low';
 }

@@ -1,4 +1,4 @@
-import { Directive, TemplateRef, ElementRef, HostBinding } from '@angular/core';
+import { Directive, TemplateRef, ElementRef, HostBinding, inject } from '@angular/core';
 import { BsCarouselComponent } from '../carousel/carousel.component';
 
 @Directive({
@@ -6,14 +6,9 @@ import { BsCarouselComponent } from '../carousel/carousel.component';
   standalone: false,
 })
 export class BsCarouselImageDirective {
-
-  public itemTemplate: TemplateRef<any>;
-  
-  constructor(private templateRef: TemplateRef<any>, carousel: BsCarouselComponent, private element: ElementRef<HTMLElement>) {
-    this.itemTemplate = this.templateRef;
-    this.id = carousel.imageCounter++;
-  }
-  
-  id: number;
+  element = inject(ElementRef<HTMLElement>);
+  carousel = inject(BsCarouselComponent);
+  itemTemplate = inject(TemplateRef<any>);
+  id = this.carousel.imageCounter++;
   isFirst = false;
 }

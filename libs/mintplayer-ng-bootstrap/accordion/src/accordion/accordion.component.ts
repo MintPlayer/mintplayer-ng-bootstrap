@@ -10,17 +10,12 @@ import { BsAccordionTabComponent } from '../accordion-tab/accordion-tab.componen
 })
 export class BsAccordionComponent {
 
-  constructor() {
-    this.accordionId$ = new BehaviorSubject<number>(++BsAccordionComponent.accordionCounter);
-    this.accordionName$ = this.accordionId$.pipe(map((id) => `bs-accordion-${id}`));
-  }
-  
   @ContentChildren(forwardRef(() => BsAccordionTabComponent)) tabPages!: QueryList<BsAccordionTabComponent>;
   disableAnimations = false;
   @Input() highlightActiveTab = false;
 
-  accordionId$: BehaviorSubject<number>;
-  accordionName$: Observable<string>;
+  accordionId$ = new BehaviorSubject<number>(++BsAccordionComponent.accordionCounter);
+  accordionName$ = this.accordionId$.pipe(map((id) => `bs-accordion-${id}`));
   accordionTabCounter = 0;
   static accordionCounter = 0;
 

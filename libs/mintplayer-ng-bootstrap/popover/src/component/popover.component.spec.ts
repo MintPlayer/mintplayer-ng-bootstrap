@@ -1,6 +1,6 @@
 import { Overlay, OverlayModule } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { Component, ComponentRef, Injector, TemplateRef, ViewChild } from '@angular/core';
+import { Component, ComponentRef, inject, Injector, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { POPOVER_CONTENT } from '../providers/popover-content.provider';
 import { BsPopoverComponent } from './popover.component';
@@ -16,17 +16,18 @@ import { BsPopoverComponent } from './popover.component';
     </ng-template>`,
 })
 class BsPopoverTestComponent {
-  constructor(private overlay: Overlay, private injector: Injector) {}
+  overlay = inject(Overlay);
+  parentInjector = inject(Injector);
 
   @ViewChild('popoverTemplate') popoverTemplate!: TemplateRef<any>;
   component: ComponentRef<BsPopoverComponent> | null = null;
   
   renderPopover() {
-    this.injector = Injector.create({
+    this.parentInjector = Injector.create({
       providers: [{ provide: POPOVER_CONTENT, useValue: this.popoverTemplate }],
-      parent: this.injector
+      parent: this.parentInjector
     });
-    const portal = new ComponentPortal(BsPopoverComponent, null, this.injector);
+    const portal = new ComponentPortal(BsPopoverComponent, null, this.parentInjector);
     const overlayRef = this.overlay.create({});
     this.component = overlayRef.attach<BsPopoverComponent>(portal);
   }

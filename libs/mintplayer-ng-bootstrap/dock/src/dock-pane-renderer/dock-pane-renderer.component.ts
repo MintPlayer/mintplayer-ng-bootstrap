@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostBinding, Input } from '@angular/core';
+import { Component, ElementRef, HostBinding, inject, Input } from '@angular/core';
 import { DomPortal } from '@angular/cdk/portal';
 import { BehaviorSubject, Observable, map } from 'rxjs';
 import { BsDockPane } from '../panes/dock-pane';
@@ -18,11 +18,9 @@ import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 })
 export class BsDockPaneRendererComponent {
 
-  constructor(private overlay: Overlay, element: ElementRef) {
-    this.portal = new DomPortal(element);
-  }
-
-  portal: DomPortal;
+  overlay = inject(Overlay);
+  element = inject(ElementRef);
+  portal = new DomPortal(this.element);
 
   paneTypes = EPaneType;
   readonly BsDocumentHostType = BsDocumentHost;

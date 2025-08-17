@@ -1,4 +1,4 @@
-import { Component, DestroyRef, ElementRef, HostBinding, HostListener, Inject, Optional, forwardRef } from '@angular/core';
+import { Component, DestroyRef, ElementRef, HostBinding, HostListener, Inject, Optional, forwardRef, inject } from '@angular/core';
 import { take } from 'rxjs';
 import { BsTabControlComponent } from '@mintplayer/ng-bootstrap/tab-control';
 import { Parentified } from '@mintplayer/parentify';
@@ -22,7 +22,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   standalone: false,
 })
 export class BsDockPanelHeaderComponent {
-  constructor(private dockPanel: BsDockPanelComponent, private dock: BsDockComponent, private dockService: BsDockService, private element: ElementRef<HTMLElement>, private destroy: DestroyRef) {}
+  dockPanel = inject(BsDockPanelComponent);
+  dock = inject(BsDockComponent);
+  dockService = inject(BsDockService);
+  element = inject(ElementRef<HTMLElement>);
+  destroy = inject(DestroyRef);
 
   isMouseDown = false;
   dragOperation?: DragOperation;

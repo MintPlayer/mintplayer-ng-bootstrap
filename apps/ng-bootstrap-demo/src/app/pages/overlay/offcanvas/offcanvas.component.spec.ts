@@ -6,6 +6,7 @@ import { BsOffcanvasModule } from '@mintplayer/ng-bootstrap/offcanvas';
 import { MockComponent, MockDirective, MockModule } from 'ng-mocks';
 
 import { OffcanvasComponent } from './offcanvas.component';
+import { GIT_REPO } from '../../../providers/git-repo.provider';
 
 describe('OffcanvasComponent', () => {
   let component: OffcanvasComponent;
@@ -24,7 +25,7 @@ describe('OffcanvasComponent', () => {
         OffcanvasComponent,
       ],
       providers: [
-        { provide: 'GIT_REPO', useValue: 'https://github.com' },
+        { provide: GIT_REPO, useValue: 'https://github.com' },
       ]
     })
     .compileComponents();

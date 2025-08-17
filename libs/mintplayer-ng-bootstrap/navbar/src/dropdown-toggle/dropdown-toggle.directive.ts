@@ -1,4 +1,4 @@
-import { AfterContentInit, Component, ContentChildren, Directive, ElementRef, forwardRef, Inject, Optional, QueryList } from '@angular/core';
+import { AfterContentInit, Component, ContentChildren, Directive, ElementRef, forwardRef, inject, Inject, Optional, QueryList } from '@angular/core';
 import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
 import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
 
@@ -12,12 +12,9 @@ import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.co
 })
 export class DropdownToggleDirective implements AfterContentInit {
 
-  constructor(
-    private elementRef: ElementRef<HTMLAnchorElement>,
-    @Inject(forwardRef(() => BsNavbarItemComponent)) private bsNavbarItem: BsNavbarItemComponent,
-    @Optional() @Inject(forwardRef(() => BsNavbarDropdownComponent)) parentDropdown: BsNavbarDropdownComponent
-  ) {
-  }
+  elementRef = inject(ElementRef<HTMLAnchorElement>);
+  bsNavbarItem = inject(BsNavbarItemComponent);
+  parentDropdown = inject(BsNavbarDropdownComponent, { optional: true });
 
   childDropdowns!: QueryList<BsNavbarDropdownComponent>;
 

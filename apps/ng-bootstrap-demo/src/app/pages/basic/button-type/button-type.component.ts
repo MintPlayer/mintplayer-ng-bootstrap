@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
-import { EnumItem, EnumService } from '@mintplayer/ng-bootstrap/enum';
+import { EnumService } from '@mintplayer/ng-bootstrap/enum';
 
 @Component({
   selector: 'demo-button-type',
@@ -11,10 +11,7 @@ import { EnumItem, EnumService } from '@mintplayer/ng-bootstrap/enum';
   imports: [BsButtonTypeDirective]
 })
 export class ButtonTypeComponent {
-  constructor(private enumService: EnumService) {
-    this.colorValues = this.enumService.getItems(Color);
-  }
-  
   colors = Color;
-  colorValues: EnumItem[];
+  enumService = inject(EnumService);
+  colorValues = this.enumService.getItems(Color)
 }

@@ -1,6 +1,6 @@
 import { Overlay, OverlayModule } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { Component, Injector, TemplateRef, ViewChild } from '@angular/core';
+import { Component, inject, Injector, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { MockComponent, MockModule } from 'ng-mocks';
@@ -16,8 +16,9 @@ import { BsOffcanvasComponent } from './offcanvas.component';
     </ng-template>`
 })
 class OffcanvasTestComponent {
-  constructor(private overlay: Overlay, private parentInjector: Injector) {}
-  
+  overlay = inject(Overlay);
+  parentInjector = inject(Injector);
+
   @ViewChild('offcanvasTemplate') offcanvasTemplate!: TemplateRef<any>;
 
   generateOffcanvas(template: TemplateRef<any>) {

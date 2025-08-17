@@ -1,5 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import { Component, Inject } from '@angular/core';
+import { Component, inject, Inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Color, Position } from '@mintplayer/ng-bootstrap';
 import { BsAccordionModule } from '@mintplayer/ng-bootstrap/accordion';
@@ -12,6 +12,7 @@ import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsOffcanvasModule } from '@mintplayer/ng-bootstrap/offcanvas';
 import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
 import { BehaviorSubject } from 'rxjs';
+import { GIT_REPO } from '../../../providers/git-repo.provider';
 
 @Component({
   selector: 'demo-offcanvas',
@@ -22,16 +23,12 @@ import { BehaviorSubject } from 'rxjs';
 })
 export class OffcanvasComponent {
 
-  constructor(@Inject('GIT_REPO') gitRepo: string) {
-    this.gitRepo = gitRepo;
-  }
-  
   colors = Color;
   position$ = new BehaviorSubject<Position>('start');
   offcanvasVisible = false;
   sidebarVisible = false;
   
-  gitRepo: string;
+  gitRepo = inject(GIT_REPO);
   showOffcanvas(position: Position) {
     this.position$.next(position);
     setTimeout(() => this.offcanvasVisible = true, 50);

@@ -1,4 +1,4 @@
-import { Component, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, ViewChild, AfterViewInit, inject } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { BsContentPane, BsDockLayout, BsDockModule, BsDockPanelComponent, BsDockService, BsSplitPane, BsTabGroupPane } from '@mintplayer/ng-bootstrap/dock';
 import { Color } from '@mintplayer/ng-bootstrap';
@@ -15,8 +15,10 @@ import { AsyncPipe } from '@angular/common';
 })
 export class DockComponent implements AfterViewInit {
 
-  constructor(private dockService: BsDockService) {
-    this.layout$ = new BehaviorSubject<BsDockLayout>({
+  dockService = inject(BsDockService);
+
+  colors = Color;
+  layout$ = new BehaviorSubject<BsDockLayout>({
       rootPane: new BsSplitPane({
         orientation: 'horizontal',
         panes: [
@@ -27,15 +29,7 @@ export class DockComponent implements AfterViewInit {
       }),
       floatingPanes: []
     });
-
-    // this.layoutFiltered$ = this.layout$.pipe(map((layout) => {
-    //   return this.getData(layout);
-    // }));
-  }
-
-  colors = Color;
-  layout$: BehaviorSubject<BsDockLayout>;
-  // layoutFiltered$: Observable<any>;
+    
   @ViewChild('panel1') panel1!: BsDockPanelComponent;
   @ViewChild('panel2') panel2!: BsDockPanelComponent;
   @ViewChild('panel3') panel3!: BsDockPanelComponent;
@@ -48,7 +42,6 @@ export class DockComponent implements AfterViewInit {
   @ViewChild('panel10') panel10!: BsDockPanelComponent;
   @ViewChild('panel11') panel11!: BsDockPanelComponent;
   @ViewChild('panel12') panel12!: BsDockPanelComponent;
-  // @ViewChild('panel6') panel6!: BsDockPanelComponent;
 
   getAllPanes() {
     const result = this.dockService.buildTraces(this.layout$.value);
