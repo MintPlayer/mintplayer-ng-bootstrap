@@ -13,7 +13,7 @@ import { dedent } from 'ts-dedent';
 export class CodeSnippetComponent {
 
   html = dedent`
-    <bs-datatable #tabel [settings]="settings" [data]="artists" (reloadData)="loadArtists()">
+    <bs-datatable #tabel [settings]="settings" (settingsChange)="loadArtists()">
       <div *bsDatatableColumn="'Name'; sortable: true">
         1. Artist
       </div>
@@ -24,7 +24,7 @@ export class CodeSnippetComponent {
         3. Year quit
       </div>
 
-      <tr *bsRowTemplate="let artist">
+      <tr *bsRowTemplate="let artist of artists">
         <td class="text-nowrap">{{ artist.name }}</td>
         <td class="text-nowrap">{{ artist.yearStarted }}</td>
         <td class="text-nowrap">{{ artist.yearQuit }}</td>

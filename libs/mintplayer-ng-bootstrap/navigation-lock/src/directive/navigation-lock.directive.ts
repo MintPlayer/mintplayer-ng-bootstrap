@@ -1,4 +1,5 @@
-import { Directive, HostListener, Input, OnDestroy } from '@angular/core';
+import { DestroyRef, Directive, HostListener, Input, OnDestroy } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { take, Observable } from 'rxjs';
 
@@ -25,7 +26,7 @@ import { take, Observable } from 'rxjs';
   exportAs: 'bsNavigationLock',
 })
 export class BsNavigationLockDirective {
-  constructor(private router: Router, private route: ActivatedRoute) {
+  constructor(private router: Router, private route: ActivatedRoute, private destroy: DestroyRef) {
     // console.log('initial navigation', this.route.snapshot.pathFromRoot.flatMap(ars => ars.url));
     // combineLatest([this.route.fragment])
     //   .pipe(takeUntil(this.destroyed$))
@@ -54,7 +55,7 @@ export class BsNavigationLockDirective {
         const result = this.canExit();
         resolve(result);
       } else {
-        this.canExit.pipe(take(1))
+        this.canExit.pipe(take(1), takeUntilDestroyed(this.destroy))
           .subscribe((result) => resolve(result));
       }
     });

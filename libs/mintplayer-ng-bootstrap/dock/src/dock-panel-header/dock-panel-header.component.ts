@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostBinding, HostListener, Inject, Optional, forwardRef } from '@angular/core';
+import { Component, DestroyRef, ElementRef, HostBinding, HostListener, Inject, Optional, forwardRef } from '@angular/core';
 import { take } from 'rxjs';
 import { BsTabControlComponent } from '@mintplayer/ng-bootstrap/tab-control';
 import { Parentified } from '@mintplayer/parentify';
@@ -13,6 +13,7 @@ import { BsDocumentHost } from '../panes/document-host-pane';
 import { RemoveFromPaneResult } from '../interfaces/remove-from-pane-result';
 import { DragOperation } from '../interfaces/drag-operation';
 import { BsDockService } from '../services/dock/dock.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'bs-dock-panel-header',
@@ -21,7 +22,7 @@ import { BsDockService } from '../services/dock/dock.service';
   standalone: false,
 })
 export class BsDockPanelHeaderComponent {
-  constructor(private dockPanel: BsDockPanelComponent, private dock: BsDockComponent, private dockService: BsDockService, private element: ElementRef<HTMLElement>) {}
+  constructor(private dockPanel: BsDockPanelComponent, private dock: BsDockComponent, private dockService: BsDockService, private element: ElementRef<HTMLElement>, private destroy: DestroyRef) {}
 
   isMouseDown = false;
   dragOperation?: DragOperation;
@@ -36,7 +37,7 @@ export class BsDockPanelHeaderComponent {
       if (!this.isDragging) {
         this.isDragging = true;
           
-        this.dock.parentifiedLayout$.pipe(take(1)).subscribe((parentifiedLayout) => {
+        this.dock.parentifiedLayout$.pipe(take(1), takeUntilDestroyed(this.destroy)).subscribe((parentifiedLayout) => {
         // this.dock.layout$.pipe(take(1)).subscribe((layout) => {
           const traces = this.dockService.buildTraces(parentifiedLayout);
           console.log('traces', {parentifiedLayout, traces});

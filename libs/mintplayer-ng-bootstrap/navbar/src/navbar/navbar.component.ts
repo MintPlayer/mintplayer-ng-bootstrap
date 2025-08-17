@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, Input, TemplateRef, ViewChild } from '@angular/core';
+import { Component, DestroyRef, ElementRef, HostListener, Input, TemplateRef, ViewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Breakpoint, Color } from '@mintplayer/ng-bootstrap';
 import { BehaviorSubject, combineLatest, debounceTime, filter, map, Observable, take } from 'rxjs';
@@ -11,7 +11,7 @@ import { BehaviorSubject, combineLatest, debounceTime, filter, map, Observable, 
 })
 export class BsNavbarComponent {
 
-  constructor() {
+  constructor(private destroy: DestroyRef) {
     this.expandAt$ = this.breakPoint$
       .pipe(map((breakpoint) => {
         switch (breakpoint) {
@@ -112,9 +112,9 @@ export class BsNavbarComponent {
   navClassList$: Observable<string[]>;
 
   toggleExpanded() {
-    this.isExpanded$.pipe(take(1)).subscribe((isExpanded) => {
-      this.isExpanded$.next(!isExpanded);
-    });
+    this.isExpanded$
+      .pipe(take(1), takeUntilDestroyed(this.destroy))
+      .subscribe((isExpanded) => this.isExpanded$.next(!isExpanded));
   }
 
   //#region Color

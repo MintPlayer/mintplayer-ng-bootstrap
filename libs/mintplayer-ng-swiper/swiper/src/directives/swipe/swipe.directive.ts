@@ -1,7 +1,8 @@
-import { Directive, HostBinding, HostListener, Input } from "@angular/core";
+import { DestroyRef, Directive, HostBinding, HostListener, Input } from "@angular/core";
 import { BsObserveSizeDirective } from "@mintplayer/ng-swiper/observe-size";
 import { combineLatest, filter, take } from "rxjs";
 import { BsSwipeContainerDirective } from "../swipe-container/swipe-container.directive";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 
 @Directive({
   selector: '[bsSwipe]',
@@ -10,7 +11,7 @@ import { BsSwipeContainerDirective } from "../swipe-container/swipe-container.di
 })
 export class BsSwipeDirective {
 
-  constructor(private container: BsSwipeContainerDirective, observeSize: BsObserveSizeDirective) {
+  constructor(private container: BsSwipeContainerDirective, observeSize: BsObserveSizeDirective, private destroy: DestroyRef) {
     this.observeSize = observeSize;
     // container.orientation$.pipe(takeUntilDestroyed())
     //   .subscribe(orientation => this.hostClass = (orientation === 'vertical') ? 'd-block' : 'd-inline-block');
@@ -72,7 +73,7 @@ export class BsSwipeDirective {
   onTouchEnd(ev: TouchEvent) {
     combineLatest([this.container.startTouch$, this.container.lastTouch$])
       .pipe(filter(([startTouch, lastTouch]) => !!startTouch && !!lastTouch))
-      .pipe(take(1))
+      .pipe(take(1), takeUntilDestroyed(this.destroy))
       .subscribe(([startTouch, lastTouch]) => {
         if (!!startTouch && !!lastTouch) {
           const dx = lastTouch.position.x - startTouch.position.x;

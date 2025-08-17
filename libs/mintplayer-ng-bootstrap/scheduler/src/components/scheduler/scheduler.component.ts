@@ -1,6 +1,6 @@
 /// <reference types="../../types" />
 
-import { Component, ElementRef, EventEmitter, HostListener, Input, Output, QueryList, ViewChildren } from '@angular/core';
+import { Component, DestroyRef, ElementRef, EventEmitter, HostListener, Input, Output, QueryList, ViewChildren } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, combineLatest, filter, map, Observable, take } from 'rxjs';
 import { BsCalendarMonthService } from '@mintplayer/ng-bootstrap/calendar-month';
@@ -27,7 +27,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
   standalone: false,
 })
 export class BsSchedulerComponent {
-  constructor(private sanitizer: DomSanitizer, private calendarMonthService: BsCalendarMonthService, private timelineService: BsTimelineService) {
+  constructor(private sanitizer: DomSanitizer, private calendarMonthService: BsCalendarMonthService, private timelineService: BsTimelineService, private destroy: DestroyRef) {
     const monday = this.calendarMonthService.getMondayBefore(new Date());
     this.currentWeekOrMonth$ = new BehaviorSubject<Date>(monday);
 
@@ -163,6 +163,7 @@ export class BsSchedulerComponent {
           }
         }
       }))
+      .pipe(takeUntilDestroyed(this.destroy))
       .subscribe((timeslots) => {
         // For performance reasons, we're not using an observable here, but persist the timeslots in a BehaviorSubject.
         this.timeSlots$.next(timeslots);
@@ -305,7 +306,7 @@ export class BsSchedulerComponent {
             return new Date(currentWeekOrMonth.getFullYear(), currentWeekOrMonth.getMonth() + (next ? 1 : -1), 1);
           }
         }
-      }), take(1))
+      }), take(1), takeUntilDestroyed(this.destroy))
       .subscribe((w) => this.currentWeekOrMonth$.next(w));
   }
 
@@ -349,7 +350,7 @@ export class BsSchedulerComponent {
 
   onStartDragEvent(eventPart: SchedulerEventPart, ev: MouseEvent) {
     ev.preventDefault();
-    this.hoveredTimeSlot$.pipe(take(1)).subscribe((hoveredTimeSlot) => {
+    this.hoveredTimeSlot$.pipe(take(1), takeUntilDestroyed(this.destroy)).subscribe((hoveredTimeSlot) => {
       if (eventPart.event) {
         this.dragStartTimeslot = hoveredTimeSlot;
         this.operation = {
@@ -420,7 +421,7 @@ export class BsSchedulerComponent {
 
   @HostListener('document:mousemove', ['$event'])
   onMousemove(ev: MouseEvent) {
-    this.timeSlots$.pipe(take(1)).subscribe((timeSlots) => {
+    this.timeSlots$.pipe(take(1), takeUntilDestroyed(this.destroy)).subscribe((timeSlots) => {
       const hovered = this.getHoveredTimeslot(ev, timeSlots);
       this.hoveredTimeSlot$.next(hovered);
 
@@ -441,7 +442,7 @@ export class BsSchedulerComponent {
                     }
                     return ev;
                   }))
-                  .pipe(take(1))
+                  .pipe(take(1), takeUntilDestroyed(this.destroy))
                   .subscribe((ev) => this.previewEvent$.next(ev));
               } else if (this.dragStartTimeslot.start.getTime() > hovered.start.getTime()) {
                 // Drag up
@@ -454,7 +455,7 @@ export class BsSchedulerComponent {
                     }
                     return ev;
                   }))
-                  .pipe(take(1))
+                  .pipe(take(1), takeUntilDestroyed(this.destroy))
                   .subscribe((ev) => this.previewEvent$.next(ev));
               }
             }
@@ -477,7 +478,7 @@ export class BsSchedulerComponent {
                     return ev;
                   }
                 }))
-                .pipe(take(1))
+                .pipe(take(1), takeUntilDestroyed(this.destroy))
                 .subscribe(ev => this.previewEvent$.next(ev));
             }
           } break;
@@ -497,7 +498,7 @@ export class BsSchedulerComponent {
                   }
                   return ev;
                 }))
-                .pipe(take(1))
+                .pipe(take(1), takeUntilDestroyed(this.destroy))
                 .subscribe((ev) => this.previewEvent$.next(ev));
             }
           } break;
@@ -514,7 +515,7 @@ export class BsSchedulerComponent {
       switch (this.operation.operation) {
         case EDragOperation.createEvent: {
           combineLatest([this.previewEvent$])
-            .pipe(take(1))
+            .pipe(take(1), takeUntilDestroyed(this.destroy))
             .subscribe(([previewEvent]) => {
               if (previewEvent) {
                 this.operation = null;
@@ -539,7 +540,7 @@ export class BsSchedulerComponent {
         case EDragOperation.resizeEvent: {
           this.previewEvent$
             .pipe(filter((ev) => !!ev))
-            .pipe(take(1))
+            .pipe(take(1), takeUntilDestroyed(this.destroy))
             .subscribe((previewEvent) => {
               if (this.operation && this.operation.event && previewEvent) {
                 this.operation.event.start = previewEvent.start;

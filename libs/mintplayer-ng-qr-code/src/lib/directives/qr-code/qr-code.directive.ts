@@ -51,7 +51,7 @@ export class QrCodeDirective implements OnChanges {
     }
 
     const canvas = this.viewContainerRef.element.nativeElement as HTMLCanvasElement | null;
-    if (!canvas) {
+    if (!canvas || (typeof window === 'undefined')) {
       // native element not available on server side rendering
       return;
     }

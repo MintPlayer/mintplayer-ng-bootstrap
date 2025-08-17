@@ -1,7 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { animate, AnimationBuilder, AnimationPlayer, style } from '@angular/animations';
-import { AfterViewInit, ContentChildren, Directive, ElementRef, EventEmitter, forwardRef, HostBinding, Inject, Input, Output, QueryList } from '@angular/core';
+import { AfterViewInit, ContentChildren, DestroyRef, Directive, ElementRef, EventEmitter, forwardRef, HostBinding, Inject, Input, Output, QueryList } from '@angular/core';
 import { BehaviorSubject, combineLatest, debounceTime, delay, filter, map, mergeMap, Observable, take } from 'rxjs';
 import { BsObserveSizeDirective, Size } from '@mintplayer/ng-swiper/observe-size';
 import { LastTouch } from '../../interfaces/last-touch';
@@ -16,7 +16,7 @@ import { BsSwipeDirective } from '../swipe/swipe.directive';
 })
 export class BsSwipeContainerDirective implements AfterViewInit {
 
-  constructor(element: ElementRef, private animationBuilder: AnimationBuilder, @Inject(DOCUMENT) document: any, private observeSize: BsObserveSizeDirective) {
+  constructor(element: ElementRef, private animationBuilder: AnimationBuilder, private destroy: DestroyRef, @Inject(DOCUMENT) document: any, private observeSize: BsObserveSizeDirective) {
     this.containerElement = element;
     this.document = <Document>document;
     this.offset$ = combineLatest([this.startTouch$, this.lastTouch$, this.imageIndex$, this.isViewInited$])
@@ -145,7 +145,8 @@ export class BsSwipeContainerDirective implements AfterViewInit {
   }
 
   animateToIndexByDx(dx: number) {
-    combineLatest([this.imageIndex$, this.actualSwipes$]).pipe(take(1))
+    combineLatest([this.imageIndex$, this.actualSwipes$])
+      .pipe(take(1), takeUntilDestroyed(this.destroy))
       .subscribe(([imageIndex, actualSwipes]) => {
         const direction = dx > 0 ? 'left' : 'right';
       
@@ -201,11 +202,13 @@ export class BsSwipeContainerDirective implements AfterViewInit {
   private gotoAnimate(index: number, type: 'absolute' | 'relative') {
     this.pendingAnimation?.finish();
     setTimeout(() => {
-      combineLatest([this.actualSwipes$, this.imageIndex$]).pipe(take(1)).subscribe(([actualSwipes, imageIndex]) => {
-        this.pendingAnimation?.finish();
-        const idx = (type === 'relative') ? imageIndex + index : index;
-        this.animateToIndex(imageIndex, idx, 0, actualSwipes?.length ?? 1);
-      });
+      combineLatest([this.actualSwipes$, this.imageIndex$])
+        .pipe(take(1), takeUntilDestroyed(this.destroy))
+        .subscribe(([actualSwipes, imageIndex]) => {
+          this.pendingAnimation?.finish();
+          const idx = (type === 'relative') ? imageIndex + index : index;
+          this.animateToIndex(imageIndex, idx, 0, actualSwipes?.length ?? 1);
+        });
     }, 20);
   }
 
