@@ -19,6 +19,7 @@ export class BsPopoverDirective implements AfterViewInit, OnDestroy {
     private destroy: DestroyRef,
     private templateRef: TemplateRef<any>,
     private parentInjector: Injector,
+    private destroy: DestroyRef,
     @Inject(PORTAL_FACTORY) private portalFactory: (injector: Injector) => ComponentPortal<any>,
     @Host() @SkipSelf() private parent: ElementRef
   ) {
