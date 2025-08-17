@@ -1,4 +1,4 @@
-import { Component, ContentChild, Directive, ElementRef, Input } from '@angular/core';
+import { Component, ContentChild, Directive, ElementRef, inject, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsDropdownDirective } from '../dropdown/dropdown.directive';
 import { BehaviorSubject } from 'rxjs';
@@ -24,13 +24,7 @@ class BsDropdownMenuTestComponent {
   standalone: false,
 })
 class BsDropdownToggleMockDirective {
-
-  constructor(toggleButton: ElementRef) {
-    this.toggleButton = toggleButton;
-  }
-
-  toggleButton: ElementRef;
-
+  toggleButton = inject(ElementRef);
 }
 
 @Directive({

@@ -1,4 +1,4 @@
-import { Directive, ElementRef, forwardRef, Host, HostListener, Input, OnDestroy, Optional, Renderer2 } from "@angular/core";
+import { Directive, ElementRef, forwardRef, Host, HostListener, inject, Input, OnDestroy, Optional, Renderer2 } from "@angular/core";
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from "@angular/forms";
 import { BsSelectComponent } from "../component/select.component";
 
@@ -12,7 +12,9 @@ import { BsSelectComponent } from "../component/select.component";
   }],
 })
 export class BsSelectValueAccessor implements ControlValueAccessor {
-  constructor(private _renderer: Renderer2, private _elementRef: ElementRef, private selectBox: BsSelectComponent) {}
+  _renderer = inject(Renderer2);
+  _elementRef = inject(ElementRef);
+  selectBox = inject(BsSelectComponent);
 
   onChange = (_: any) => {};
   onTouched = () => {};
@@ -113,16 +115,14 @@ export class BsSelectValueAccessor implements ControlValueAccessor {
   standalone: false,
 })
 export class BsSelectOption implements OnDestroy {
-  constructor(private element: ElementRef, private renderer: Renderer2, @Optional() @Host() private select: BsSelectValueAccessor) {
-    if (this.select) {
-      this.id = this.select.registerOption();
-    }
-  }
   
-  id!: string;
+  element = inject(ElementRef);
+  renderer = inject(Renderer2);
+  select = inject(BsSelectValueAccessor, { optional: true, host: true });
+  id = this.select ? this.select.registerOption() : null;
 
   @Input('ngValue') set ngValue(value: any) {
-    if (this.select) {
+    if (this.select && this.id) {
       this.select.optionMap.set(this.id, value);
       this.setElementValue(this.select.buildValueString(this.id, value));
       // console.log('ngValue', this.select.value);
@@ -148,7 +148,7 @@ export class BsSelectOption implements OnDestroy {
 
   ngOnDestroy() {
     if (this.select) {
-      this.select.optionMap.delete(this.id);
+      this.select.optionMap.delete(this.id || '');
       this.select.writeValue(this.select.value);
     }
   }

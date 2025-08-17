@@ -1,4 +1,4 @@
-import { Directive, HostListener, Input } from '@angular/core';
+import { Directive, HostListener, inject, Input } from '@angular/core';
 import { BsToastService } from '../../services/toast/toast.service';
 import { BsToastComponent } from '../../components/toast/toast.component';
 
@@ -7,7 +7,8 @@ import { BsToastComponent } from '../../components/toast/toast.component';
   standalone: false,
 })
 export class BsToastCloseDirective {
-  constructor(private toast: BsToastComponent, private toastService: BsToastService) {}
+  toast = inject(BsToastComponent);
+  toastService = inject(BsToastService);
 
   @HostListener('click') onClick() {
     if (this.index !== null) {

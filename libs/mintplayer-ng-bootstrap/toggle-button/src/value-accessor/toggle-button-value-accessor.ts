@@ -1,4 +1,4 @@
-import { AfterViewInit, DestroyRef, Directive, forwardRef } from '@angular/core';
+import { AfterViewInit, DestroyRef, Directive, forwardRef, inject } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { fromEvent } from 'rxjs';
@@ -14,7 +14,8 @@ import { BsToggleButtonComponent } from '../component/toggle-button.component';
   }],
 })
 export class BsToggleButtonValueAccessor implements ControlValueAccessor, AfterViewInit {
-  constructor(private host: BsToggleButtonComponent, private destroy: DestroyRef) {}
+  host = inject(BsToggleButtonComponent);
+  destroy = inject(DestroyRef);
 
   onValueChange?: (value: boolean | string | string[]) => void;
   onTouched?: () => void;

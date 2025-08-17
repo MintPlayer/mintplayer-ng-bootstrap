@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { BsAccordionTabComponent } from '../accordion-tab/accordion-tab.component';
 
 @Component({
@@ -9,11 +9,7 @@ import { BsAccordionTabComponent } from '../accordion-tab/accordion-tab.componen
 })
 export class BsAccordionTabHeaderComponent {
 
-  constructor(accordionTab: BsAccordionTabComponent) {
-    this.accordionTab = accordionTab;
-  }
-
-  accordionTab: BsAccordionTabComponent;
+  accordionTab = inject(BsAccordionTabComponent);
 
   headerClicked(event: MouseEvent) {
     event.preventDefault();

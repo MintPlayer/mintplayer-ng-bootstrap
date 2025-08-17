@@ -1,4 +1,4 @@
-import { Component, ContentChildren, EventEmitter, forwardRef, HostBinding, Input, Output, QueryList } from '@angular/core';
+import { Component, ContentChildren, EventEmitter, forwardRef, HostBinding, inject, Input, Output, QueryList } from '@angular/core';
 import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
 import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
 import { BsAccordionComponent } from '../accordion/accordion.component';
@@ -12,16 +12,11 @@ import { BsAccordionComponent } from '../accordion/accordion.component';
 })
 export class BsAccordionTabComponent {
 
-  accordion: BsAccordionComponent;
-  accordionTabId$: BehaviorSubject<number>;
-  accordionTabName$: Observable<string>;
+  accordion = inject(BsAccordionComponent);
+  accordionTabId$ = new BehaviorSubject<number>(++this.accordion.accordionTabCounter);
+  accordionTabName$ = combineLatest([this.accordion.accordionName$, this.accordionTabId$])
+    .pipe(map(([accordionName, accordionTabId]) => `${accordionName}-${accordionTabId}`));
   @ContentChildren(forwardRef(() => BsAccordionComponent)) childAccordions!: QueryList<BsAccordionComponent>;
-  constructor(accordion: BsAccordionComponent) {
-    this.accordion = accordion;
-    this.accordionTabId$ = new BehaviorSubject<number>(++this.accordion.accordionTabCounter);
-    this.accordionTabName$ = combineLatest([this.accordion.accordionName$, this.accordionTabId$])
-      .pipe(map(([accordionName, accordionTabId]) => `${accordionName}-${accordionTabId}`));
-  }
 
   @HostBinding('class.accordion-item') accordionItemClass = true;
   @HostBinding('class.d-block') dBlock = true;

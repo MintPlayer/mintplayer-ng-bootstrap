@@ -1,4 +1,4 @@
-import { Directive, Inject, forwardRef, AfterViewInit, DestroyRef } from '@angular/core';
+import { Directive, Inject, forwardRef, AfterViewInit, DestroyRef, inject } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { combineLatest } from 'rxjs';
 import { BsColorPickerComponent } from '../../components/color-picker/color-picker.component';
@@ -18,8 +18,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 })
 export class BsColorPickerValueAccessor implements AfterViewInit, ControlValueAccessor {
 
-  constructor(@Inject(forwardRef(() => BsColorPickerComponent)) private host: BsColorPickerComponent, private destroy: DestroyRef) {
-  }
+  host = inject(BsColorPickerComponent);
+  destroy = inject(DestroyRef);
 
   ngAfterViewInit() {
     combineLatest([this.host.hs$, this.host.luminosity$])

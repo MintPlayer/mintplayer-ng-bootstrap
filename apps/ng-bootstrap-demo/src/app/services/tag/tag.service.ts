@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { PaginationRequest, PaginationResponse } from '@mintplayer/pagination';
 import { Tag } from '../../entities/tag';
@@ -7,16 +7,14 @@ import { Tag } from '../../entities/tag';
   providedIn: 'root'
 })
 export class TagService {
-  constructor(private httpClient: HttpClient) {
-  }
-
-  private baseUrl = 'https://mintplayer.com';
+  httpClient = inject(HttpClient);
+  baseUrl = 'https://mintplayer.com';
 
   public pageTags(request: PaginationRequest) {
     return this.httpClient.post<PaginationResponse<Tag>>(`${this.baseUrl}/api/v1/Tag/page`, request).toPromise();
   }
 
-  public suggestTags(search: string, includeRelations: boolean = false) {
+  public suggestTags(search: string, includeRelations = false) {
     return this.httpClient.post<Tag[]>(`${this.baseUrl}/web/v3/Tag/suggest`, {
       searchTerm: search
     }, {

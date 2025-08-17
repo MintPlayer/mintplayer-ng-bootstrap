@@ -1,4 +1,4 @@
-import { Directive, HostListener } from '@angular/core';
+import { Directive, HostListener, inject } from '@angular/core';
 import { BsModalHostComponent } from '../../components/modal-host/modal-host.component';
 
 @Directive({
@@ -7,7 +7,7 @@ import { BsModalHostComponent } from '../../components/modal-host/modal-host.com
 })
 export class BsModalCloseDirective {
 
-  constructor(private host: BsModalHostComponent) { }
+  host = inject(BsModalHostComponent);
 
   @HostListener('click') onClick() {
     this.host.isOpen = false;

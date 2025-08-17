@@ -1,5 +1,5 @@
 import { DomPortal } from '@angular/cdk/portal';
-import { Component, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewInit, inject } from '@angular/core';
 
 @Component({
   selector: 'bs-split-panel',
@@ -8,8 +8,7 @@ import { Component, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
   standalone: false,
 })
 export class BsSplitPanelComponent implements AfterViewInit {
-  constructor(private element: ElementRef) {}
-
+  element = inject(ElementRef);
   portal?: DomPortal;
 
   ngAfterViewInit() {

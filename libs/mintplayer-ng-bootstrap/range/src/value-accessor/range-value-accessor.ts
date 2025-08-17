@@ -1,4 +1,4 @@
-import { AfterViewInit, DestroyRef, Directive, forwardRef } from '@angular/core';
+import { AfterViewInit, DestroyRef, Directive, forwardRef, inject } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { fromEvent } from 'rxjs';
@@ -14,7 +14,8 @@ import { BsRangeComponent } from '../component/range.component';
   }],
 })
 export class BsRangeValueAccessor implements ControlValueAccessor, AfterViewInit {
-  constructor(private host: BsRangeComponent, private destroy: DestroyRef) {}
+  host = inject(BsRangeComponent);
+  destroy = inject(DestroyRef);
 
   onValueChange?: (value: number) => void;
   onTouched?: () => void;

@@ -1,4 +1,4 @@
-import { Component, HostBinding, Inject, Input, TemplateRef } from '@angular/core';
+import { Component, HostBinding, inject, Inject, Input, TemplateRef } from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Position } from '@mintplayer/ng-bootstrap';
 import { BehaviorSubject, map, Observable } from 'rxjs';
@@ -12,20 +12,6 @@ import { POPOVER_CONTENT } from '../providers/popover-content.provider';
   animations: [FadeInOutAnimation],
 })
 export class BsPopoverComponent {
-  constructor(@Inject(POPOVER_CONTENT) content: TemplateRef<any>) {
-    this.template = content;
-    this.marginClass$ = this.position$.pipe(map((position) => {
-      switch (position) {
-        case 'top': return 'mb-2';
-        case 'start': return 'me-2';
-        case 'end': return 'ms-2';
-        default: return 'mt-2';
-      }
-    }));
-    this.positionClass$ = this.position$
-      .pipe(map(position => `bs-popover-${position}`));
-  }
-
   //#region Position
   position$ = new BehaviorSubject<Position>('bottom');
   public get position() {
@@ -45,10 +31,18 @@ export class BsPopoverComponent {
   }
   //#endregion
 
-  marginClass$: Observable<string>;
-  positionClass$: Observable<string>;
+  marginClass$ = this.position$.pipe(map((position) => {
+    switch (position) {
+      case 'top': return 'mb-2';
+      case 'start': return 'me-2';
+      case 'end': return 'ms-2';
+      default: return 'mt-2';
+    }
+  }));
+  positionClass$ = this.position$
+    .pipe(map(position => `bs-popover-${position}`));
 
-  template: TemplateRef<any>;
+  template = inject(POPOVER_CONTENT);
 
   @HostBinding('class.position-relative') positionRelative = true;
 }

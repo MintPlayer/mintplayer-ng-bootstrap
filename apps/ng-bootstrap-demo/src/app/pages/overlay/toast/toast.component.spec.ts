@@ -1,5 +1,5 @@
 import { OverlayModule } from '@angular/cdk/overlay';
-import { Component, ElementRef, TemplateRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, inject, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsToastModule, BsToastService } from '@mintplayer/ng-bootstrap/toast';
 import { MockModule } from 'ng-mocks';
@@ -22,11 +22,7 @@ import { ToastComponent } from './toast.component';
     <bs-toast-container #toaster></bs-toast-container>`
 })
 class BsToastTestComponent {
-  constructor(toastService: BsToastService) {
-    this.toastService = toastService;
-  }
-
-  toastService: BsToastService;
+  toastService = inject(BsToastService);
 
   @ViewChild('toaster', { read: ElementRef }) toaster!: ElementRef<HTMLElement>;
   @ViewChild('toastTemplate') toastTemplate!: TemplateRef<any>;

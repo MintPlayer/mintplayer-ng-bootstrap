@@ -4,6 +4,7 @@ import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsTooltipModule } from '@mintplayer/ng-bootstrap/tooltip';
 import { MockDirective, MockModule } from 'ng-mocks';
 import { TooltipComponent } from './tooltip.component';
+import { GIT_REPO } from '../../../providers/git-repo.provider';
 
 
 describe('TooltipComponent', () => {
@@ -22,7 +23,7 @@ describe('TooltipComponent', () => {
         TooltipComponent,
       ],
       providers: [
-        { provide: 'GIT_REPO', useValue: 'https://github.com' }
+        { provide: GIT_REPO, useValue: 'https://github.com' }
       ]
     })
     .compileComponents();

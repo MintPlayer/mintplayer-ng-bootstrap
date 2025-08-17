@@ -11,15 +11,7 @@ import { BehaviorSubject, map, Observable } from 'rxjs';
   imports: [AsyncPipe],
 })
 export class BsSpinnerComponent implements OnInit {
-  constructor() {
-    this.spinnerClass$ = this.type$
-      .pipe(map((type) => `spinner-${type}`));
-    this.colorClass$ = this.color$
-      .pipe(map((type) => `text-${this.colors[type]}`));
-  }
 
-  spinnerClass$: Observable<string>;
-  colorClass$: Observable<string>;
   colors = Color;
 
   ngOnInit(): void {}
@@ -42,4 +34,7 @@ export class BsSpinnerComponent implements OnInit {
     this.color$.next(value);
   }
   //#endregion
+  
+  spinnerClass$ = this.type$.pipe(map((type) => `spinner-${type}`));
+  colorClass$ = this.color$.pipe(map((type) => `text-${this.colors[type]}`));
 }

@@ -1,4 +1,4 @@
-import { AfterContentChecked, Component, ContentChildren, DestroyRef, ElementRef, forwardRef, Inject, Optional, PLATFORM_ID, QueryList, ViewContainerRef } from '@angular/core';
+import { AfterContentChecked, Component, ContentChildren, DestroyRef, ElementRef, forwardRef, inject, Inject, Optional, PLATFORM_ID, QueryList, ViewContainerRef } from '@angular/core';
 import { isPlatformServer } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BsNavbarComponent } from '../navbar/navbar.component';
@@ -12,19 +12,11 @@ import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.co
 })
 export class BsNavbarItemComponent implements AfterContentChecked {
 
-  constructor(
-    private navbar: BsNavbarComponent,
-    element: ElementRef,
-    private destroy: DestroyRef,
-    @Inject(PLATFORM_ID) private platformId: Object,
-    @Optional() @Inject(forwardRef(() => BsNavbarDropdownComponent)) parentDropdown: BsNavbarDropdownComponent,
-  ) {
-    this.element = element;
-    this.parentDropdown = parentDropdown;
-  }
-
-  element: ElementRef;
-  parentDropdown: BsNavbarDropdownComponent;
+  navbar = inject(BsNavbarComponent);
+  element = inject(ElementRef);
+  destroy = inject(DestroyRef);
+  platformId = inject(PLATFORM_ID);
+  parentDropdown = inject(forwardRef(() => BsNavbarDropdownComponent), { optional: true });
   hasDropdown = false;
   anchorTag: HTMLAnchorElement | null = null;
   @ContentChildren(forwardRef(() => BsNavbarDropdownComponent)) dropdowns!: QueryList<BsNavbarDropdownComponent>;

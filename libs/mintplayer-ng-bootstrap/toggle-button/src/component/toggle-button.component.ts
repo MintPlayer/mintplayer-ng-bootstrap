@@ -11,91 +11,10 @@ import { BsCheckStyle } from '../types/check-style';
 })
 export class BsToggleButtonComponent implements AfterViewInit {
 
-  constructor() {
-    this.mainCheckStyle$ = this.type$.pipe(map((type) => {
-      switch (type) {
-        case 'checkbox':
-        case 'radio':
-        case 'switch':
-          return 'form-check';
-        default:
-          return null;
-      }
-    }));
-
-    this.isSwitch$ = this.type$.pipe(map((type) => {
-      switch (type) {
-        case 'switch':
-          return true;
-        default:
-          return false;
-      }
-    }));
-
-    this.inputClass$ = this.type$.pipe(map((type) => {
-      switch (type) {
-        case 'checkbox':
-        case 'radio':
-        case 'switch':
-          return 'form-check-input';
-        default:
-          return 'btn-check';
-      }
-    }));
-    
-    this.labelClass$ = this.type$.pipe(map((type) => {
-      switch (type) {
-        case 'checkbox':
-        case 'radio':
-        case 'switch':
-          return 'form-check-label';
-        case 'toggle_button':
-          return 'btn btn-primary'
-        case 'radio_toggle_button':
-          return 'btn btn-secondary';
-      }
-    }));
-
-    this.checkOrRadio$ = this.type$.pipe(map((type) => {
-      switch (type) {
-        case 'radio':
-        case 'radio_toggle_button':
-          return 'radio';
-        default:
-          return 'checkbox';
-      }
-    }));
-
-    this.nameResult$ = combineLatest([this.name$, this.type$, this.group$])
-      .pipe(map(([name, type, group]) => {
-        switch (type) {
-          case 'radio':
-          case 'radio_toggle_button':
-              return name;
-          case 'checkbox':
-          case 'toggle_button':
-          case 'switch':
-            if (group) {
-              return `${name}[]`;
-            } else {
-              return name;
-            }
-          default:
-            throw 'Invalid value';
-        }
-      }));
-  }
-
   @ViewChild('checkbox') checkbox!: ElementRef<HTMLInputElement>;
   @HostBinding('class.d-inline-block') dInlineBlockClass = true;
 
   disableAnimations = true;
-  mainCheckStyle$: Observable<string | null>;
-  isSwitch$: Observable<boolean>;
-  inputClass$: Observable<string>;
-  labelClass$: Observable<string>;
-  checkOrRadio$: Observable<'checkbox' | 'radio'>;
-  nameResult$: Observable<string | null>;
 
   //#region Type
   type$ = new BehaviorSubject<BsCheckStyle>('checkbox');
@@ -148,6 +67,74 @@ export class BsToggleButtonComponent implements AfterViewInit {
     this.group$.next(value);
   }
   //#endregion
+
+  mainCheckStyle$ = this.type$.pipe(map((type) => {
+    switch (type) {
+      case 'checkbox':
+      case 'radio':
+      case 'switch':
+        return 'form-check';
+      default:
+        return null;
+    }
+  }));
+  isSwitch$ = this.type$.pipe(map((type) => {
+    switch (type) {
+      case 'switch':
+        return true;
+      default:
+        return false;
+    }
+  }));
+  inputClass$ = this.type$.pipe(map((type) => {
+    switch (type) {
+      case 'checkbox':
+      case 'radio':
+      case 'switch':
+        return 'form-check-input';
+      default:
+        return 'btn-check';
+    }
+  }));
+  labelClass$ = this.type$.pipe(map((type) => {
+    switch (type) {
+      case 'checkbox':
+      case 'radio':
+      case 'switch':
+        return 'form-check-label';
+      case 'toggle_button':
+        return 'btn btn-primary'
+      case 'radio_toggle_button':
+        return 'btn btn-secondary';
+    }
+  }));
+  checkOrRadio$ = this.type$.pipe(map((type) => {
+    switch (type) {
+      case 'radio':
+      case 'radio_toggle_button':
+        return 'radio';
+      default:
+        return 'checkbox';
+    }
+  }));
+  nameResult$ = combineLatest([this.name$, this.type$, this.group$])
+    .pipe(map(([name, type, group]) => {
+      switch (type) {
+        case 'radio':
+        case 'radio_toggle_button':
+            return name;
+        case 'checkbox':
+        case 'toggle_button':
+        case 'switch':
+          if (group) {
+            return `${name}[]`;
+          } else {
+            return name;
+          }
+        default:
+          throw 'Invalid value';
+      }
+    }));
 
   ngAfterViewInit() {
     this.disableAnimations = false;

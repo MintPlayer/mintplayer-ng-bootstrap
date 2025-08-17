@@ -21,7 +21,8 @@ export class BsTypeaheadComponent {
   
   suggestions$ = new BehaviorSubject<any[]>([]);
   isLoading$ = new BehaviorSubject<boolean>(false);
-  showNoSuggestions$: Observable<boolean>;
+  showNoSuggestions$ = this.suggestions$
+    .pipe(map(suggestions => suggestions.length === 0));
   
   @ViewChild('textbox') textbox!: ElementRef<HTMLInputElement>;
   @Input() searchterm = '';
@@ -32,11 +33,6 @@ export class BsTypeaheadComponent {
   @Output() searchtermChange = new EventEmitter<string>();
   @Output() submitted = new EventEmitter<string>();
   
-  constructor() {
-    this.showNoSuggestions$ = this.suggestions$
-      .pipe(map(suggestions => suggestions.length === 0));
-  }
-
   onProvideSuggestions(value: string) {
     this.searchtermChange.emit(value);
     if (value === '') {

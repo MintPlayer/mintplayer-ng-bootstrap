@@ -1,6 +1,6 @@
 import { OverlayModule } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { Component, ElementRef, Injectable, Injector, TemplateRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, inject, Injectable, Injector, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
 import { BsToastService } from './toast.service';
@@ -16,11 +16,7 @@ import { CommonModule } from '@angular/common';
     <bs-toast-container #toaster></bs-toast-container>`
 })
 class BsToastTestComponent {
-  constructor(toastService: BsToastService) {
-    this.toastService = toastService;
-  }
-
-  toastService: BsToastService;
+  toastService = inject(BsToastService);
 
   @ViewChild('toaster', { read: ElementRef }) toaster!: ElementRef<HTMLElement>;
   @ViewChild('toastTemplate') toastTemplate!: TemplateRef<any>;
@@ -39,11 +35,7 @@ class BsToastTestComponent {
     </ng-container>`
 })
 class BsToastContainerComponent {
-  constructor(toastService: BsToastService) {
-    this.toastService = toastService;
-  }
-
-  toastService: BsToastService;
+  toastService = inject(BsToastService);
 }
 
 describe('BsToastService', () => {

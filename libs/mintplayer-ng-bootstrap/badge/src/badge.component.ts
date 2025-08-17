@@ -11,10 +11,6 @@ import { AsyncPipe } from '@angular/common';
   imports: [AsyncPipe]
 })
 export class BsBadgeComponent {
-  constructor() {
-    this.colorClass$ = this.type$
-      .pipe(map((type) => `bg-${this.colors[type]}`));
-  }
 
   colors = Color;
 
@@ -28,5 +24,6 @@ export class BsBadgeComponent {
   }
   //#endregion
 
-  colorClass$: Observable<string>;
+  colorClass$ = this.type$
+    .pipe(map((type) => `bg-${this.colors[type]}`));
 }

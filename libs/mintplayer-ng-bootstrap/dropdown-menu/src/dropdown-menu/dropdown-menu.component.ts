@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, HostBinding, HostListener, Input, Optional } from '@angular/core';
+import { AfterViewInit, Component, HostBinding, HostListener, inject, Input, Optional } from '@angular/core';
 import { BsDropdownDirective } from '@mintplayer/ng-bootstrap/dropdown';
 // import { BsDropdownComponent } from '@mintplayer/ng-bootstrap/dropdown';
 
@@ -9,8 +9,7 @@ import { BsDropdownDirective } from '@mintplayer/ng-bootstrap/dropdown';
   standalone: false,
 })
 export class BsDropdownMenuComponent implements AfterViewInit {
-  constructor(@Optional() private bsDropdown?: BsDropdownDirective) {
-  }
+  bsDropdown = inject(BsDropdownDirective, { optional: true });
 
   @HostBinding('class.position-relative') positionRelative = false;
   @Input() maxHeight: number | null = null;

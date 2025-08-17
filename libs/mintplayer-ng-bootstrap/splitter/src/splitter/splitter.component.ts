@@ -1,4 +1,4 @@
-import { Component, Input, ContentChildren, QueryList, ElementRef, HostListener, HostBinding, ViewChildren, DestroyRef } from '@angular/core';
+import { Component, Input, ContentChildren, QueryList, ElementRef, HostListener, HostBinding, ViewChildren, DestroyRef, inject } from '@angular/core';
 import { BehaviorSubject, map, combineLatest, Observable, take } from 'rxjs';
 import { DragOperation, EDragOperation } from '../interfaces/drag-operation';
 import { Point } from '../interfaces/point';
@@ -14,58 +14,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 })
 export class BsSplitterComponent {
 
-  constructor(private destroy: DestroyRef) {
-    this.directionClass$ = this.orientation$.pipe(map((orientation) => {
-      switch (orientation) {
-        case 'horizontal': return 'flex-row';
-        case 'vertical': return 'flex-column';
-      }
-    }));
-    this.splitterClass$ = this.orientation$.pipe(map((orientation) => {
-      switch (orientation) {
-        case 'horizontal': return 'split-hor';
-        case 'vertical': return 'split-ver';
-      }
-    }));
-    this.widthStyles$ = combineLatest([this.orientation$, this.previewSizes$, this.panels$])
-      .pipe(map(([orientation, previewSizes, panels]) => {
-        switch (orientation) {
-          case 'horizontal':
-            if (previewSizes) {
-              return [...Array(panels.length).keys()].map((v, i) => {
-                if (i < previewSizes.length) {
-                  return previewSizes[i] + 'px';
-                } else {
-                  return '100%';
-                }
-              });
-            } else {
-              return Array(panels.length).map((v, i) => '100%');
-            }
-          case 'vertical':
-            return null;
-        }
-      }));
-    this.heightStyles$ =  combineLatest([this.orientation$, this.previewSizes$, this.panels$])
-      .pipe(map(([orientation, previewSizes, panels]) => {
-        switch (orientation) {
-          case 'horizontal':
-            return null;
-          case 'vertical':
-            if (previewSizes) {
-              return [...Array(panels.length).keys()].map((v, i) => {
-                if (i < previewSizes.length) {
-                  return previewSizes[i] + 'px';
-                } else {
-                  return '100%';
-                }
-              });
-            } else {
-              return Array(panels.length).map((v, i) => '100%');
-            }
-        }
-      }));
-  }
+  destroy = inject(DestroyRef);
 
   //#region Orientation
   orientation$ = new BehaviorSubject<Direction>('horizontal');
@@ -90,10 +39,56 @@ export class BsSplitterComponent {
   @HostBinding('class.d-flex')
   classes = true;
 
-  directionClass$: Observable<string>;
-  splitterClass$: Observable<string>;
-  widthStyles$: Observable<string[] | null>;
-  heightStyles$: Observable<string[] | null>;
+  directionClass$ =this.orientation$.pipe(map((orientation) => {
+    switch (orientation) {
+      case 'horizontal': return 'flex-row';
+      case 'vertical': return 'flex-column';
+    }
+  }));
+  splitterClass$ = this.orientation$.pipe(map((orientation) => {
+    switch (orientation) {
+      case 'horizontal': return 'split-hor';
+      case 'vertical': return 'split-ver';
+    }
+  }));
+  widthStyles$ = combineLatest([this.orientation$, this.previewSizes$, this.panels$])
+    .pipe(map(([orientation, previewSizes, panels]) => {
+      switch (orientation) {
+        case 'horizontal':
+          if (previewSizes) {
+            return [...Array(panels.length).keys()].map((v, i) => {
+              if (i < previewSizes.length) {
+                return previewSizes[i] + 'px';
+              } else {
+                return '100%';
+              }
+            });
+          } else {
+            return Array(panels.length).map((v, i) => '100%');
+          }
+        case 'vertical':
+          return null;
+      }
+    }));
+  heightStyles$ = combineLatest([this.orientation$, this.previewSizes$, this.panels$])
+    .pipe(map(([orientation, previewSizes, panels]) => {
+      switch (orientation) {
+        case 'horizontal':
+          return null;
+        case 'vertical':
+          if (previewSizes) {
+            return [...Array(panels.length).keys()].map((v, i) => {
+              if (i < previewSizes.length) {
+                return previewSizes[i] + 'px';
+              } else {
+                return '100%';
+              }
+            });
+          } else {
+            return Array(panels.length).map((v, i) => '100%');
+          }
+      }
+    }));
   isResizing$ = new BehaviorSubject<boolean>(false);
   touchedDivider$ = new BehaviorSubject<HTMLDivElement | null>(null);
   operation: DragOperation | null = null;

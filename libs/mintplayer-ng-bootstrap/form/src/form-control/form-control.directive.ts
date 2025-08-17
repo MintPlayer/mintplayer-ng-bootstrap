@@ -1,4 +1,4 @@
-import { Directive, HostBinding, Optional } from '@angular/core';
+import { Directive, HostBinding, inject, Optional } from '@angular/core';
 import { BsFormComponent } from '../form/form.component';
 
 @Directive({
@@ -6,8 +6,6 @@ import { BsFormComponent } from '../form/form.component';
   standalone: false,
 })
 export class BsFormControlDirective {
-  constructor(@Optional() form?: BsFormComponent) {
-    this.formControlClass = !!form;
-  }
-  @HostBinding('class.form-control') formControlClass: boolean;
+  form = inject(BsFormComponent, { optional: true });
+  @HostBinding('class.form-control') formControlClass = !!this.form;
 }

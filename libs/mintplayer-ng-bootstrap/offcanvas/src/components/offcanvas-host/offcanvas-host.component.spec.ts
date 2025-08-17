@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Directive, EventEmitter, Inject, Injector, Output, TemplateRef } from '@angular/core';
+import { Component, Directive, EventEmitter, inject, Inject, Injector, Output, TemplateRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { OverlayModule } from '@angular/cdk/overlay';
 
@@ -100,11 +100,7 @@ class BsOffcanvasContentMockDirective {
   ]
 })
 class BsOffcanvasMockComponent {
-  constructor(@Inject(OFFCANVAS_CONTENT) contentTemplate: TemplateRef<any>) {
-    this.contentTemplate = contentTemplate;
-  }
-
-  contentTemplate: TemplateRef<any>;
+  contentTemplate = inject(OFFCANVAS_CONTENT);
   @Output() backdropClick = new EventEmitter<MouseEvent>();
 }
 

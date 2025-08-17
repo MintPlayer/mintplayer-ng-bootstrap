@@ -16,15 +16,12 @@ export class BsObserveSizeDirective implements AfterViewInit, OnDestroy {
         this.zone.run(() => this.size$.next(entries[0].contentRect));
       });
     }
-
-    this.width$ = this.size$.pipe(map(size => size?.width));
-    this.height$ = this.size$.pipe(map(size => size?.height));
   }
 
   private observer?: ResizeObserver;
   size$ = new BehaviorSubject<Size | undefined>(undefined);
-  width$: Observable<number | undefined>;
-  height$: Observable<number | undefined>;
+  width$ = this.size$.pipe(map(size => size?.width));
+  height$ = this.size$.pipe(map(size => size?.height));
 
   ngAfterViewInit() {
     const el: HTMLElement = this.element.nativeElement;

@@ -1,4 +1,4 @@
-import { Component, ElementRef, Input, OnInit, Renderer2, ViewChild } from '@angular/core';
+import { Component, ElementRef, inject, Input, OnInit, Renderer2, ViewChild } from '@angular/core';
 import { BehaviorSubject, map, Observable } from 'rxjs';
 import { BsSelectSize } from '../types/select-size';
 
@@ -9,25 +9,7 @@ import { BsSelectSize } from '../types/select-size';
   standalone: false,
 })
 export class BsSelectComponent implements OnInit {
-  constructor(private renderer: Renderer2) {
-    this.sizeClass$ = this.size$.pipe(map((size) => {
-      switch (size) {
-        case 'sm':
-        case 'lg':
-          return `form-select-${size}`;
-        default:
-          return null;
-      }
-    }));
-
-    this.multipleValue$ = this.multiple$.pipe(map((multiple) => {
-      if (multiple) {
-        return true;
-      } else {
-        return null;
-      }
-    }));
-  }
+  renderer = inject(Renderer2);
 
   // For debugging purposes
   @Input() public identifier = 0;
@@ -77,6 +59,20 @@ export class BsSelectComponent implements OnInit {
   }
   //#endregion
 
-  sizeClass$: Observable<string | null>;
-  multipleValue$: Observable<boolean | null>;
+  sizeClass$ = this.size$.pipe(map((size) => {
+    switch (size) {
+      case 'sm':
+      case 'lg':
+        return `form-select-${size}`;
+      default:
+        return null;
+    }
+  }));
+  multipleValue$ = this.multiple$.pipe(map((multiple) => {
+    if (multiple) {
+      return true;
+    } else {
+      return null;
+    }
+  }));
 }
