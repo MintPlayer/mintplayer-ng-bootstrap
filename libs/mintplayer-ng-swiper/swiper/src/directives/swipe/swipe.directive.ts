@@ -1,4 +1,4 @@
-import { computed, DestroyRef, Directive, effect, HostBinding, HostListener, input, Input, signal } from "@angular/core";
+import { DestroyRef, Directive, HostBinding, HostListener, input } from "@angular/core";
 import { BsObserveSizeDirective } from "@mintplayer/ng-swiper/observe-size";
 import { combineLatest, filter, take } from "rxjs";
 import { BsSwipeContainerDirective } from "../swipe-container/swipe-container.directive";
