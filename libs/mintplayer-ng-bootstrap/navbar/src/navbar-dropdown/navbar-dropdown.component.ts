@@ -67,22 +67,22 @@ export class BsNavbarDropdownComponent {
 
     if (!!parentDropdown && this.isBrowser) {
       // Setup overlay
+      const injector = this.injector;
       import('@angular/cdk/overlay').then(({ OverlayModule, Overlay }) => {
-        const overlayService = this.injector.get(Overlay);
-        return overlayService;
-      }).then((overlayService) => {
+        queueMicrotask(() => {
+          const overlayService = injector.get(Overlay); // <-- Line 73
+          this.domPortal = new DomPortal(this.element);
+          this.overlay = overlayService.create({
+            positionStrategy: overlayService.position()
+              .flexibleConnectedTo(this.navbarItem.element)
+              .withPositions([
+                { originX: 'end', originY: 'top', overlayX: 'start', overlayY: 'top', offsetX: -9, offsetY: -9 }
+              ])
+          });
 
-        this.domPortal = new DomPortal(this.element);
-        this.overlay = overlayService.create({
-          positionStrategy: overlayService.position()
-            .flexibleConnectedTo(this.navbarItem.element)
-            .withPositions([
-              { originX: 'end', originY: 'top', overlayX: 'start', overlayY: 'top', offsetX: -9, offsetY: -9 }
-            ])
+          // For some reason we have to trigger this from the BsDropdownItem
+          // this.showInOverlay = true;
         });
-
-        // For some reason we have to trigger this from the BsDropdownItem
-        // this.showInOverlay = true;
       });
     }
 
