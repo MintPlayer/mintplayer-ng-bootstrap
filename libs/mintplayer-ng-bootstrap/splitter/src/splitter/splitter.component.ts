@@ -1,9 +1,10 @@
-import { Component, Input, ContentChildren, QueryList, ElementRef, HostListener, HostBinding, ViewChildren } from '@angular/core';
+import { Component, Input, ContentChildren, QueryList, ElementRef, HostListener, HostBinding, ViewChildren, DestroyRef } from '@angular/core';
 import { BehaviorSubject, map, combineLatest, Observable, take } from 'rxjs';
 import { DragOperation, EDragOperation } from '../interfaces/drag-operation';
 import { Point } from '../interfaces/point';
 import { BsSplitPanelComponent } from '../split-panel/split-panel.component';
 import { Direction } from '../types/direction.type';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'bs-splitter',
@@ -13,7 +14,7 @@ import { Direction } from '../types/direction.type';
 })
 export class BsSplitterComponent {
 
-  constructor() {
+  constructor(private destroy: DestroyRef) {
     this.directionClass$ = this.orientation$.pipe(map((orientation) => {
       switch (orientation) {
         case 'horizontal': return 'flex-row';
@@ -156,7 +157,7 @@ export class BsSplitterComponent {
       switch (this.operation.operation) {
         case EDragOperation.resizeSplitter: {
           combineLatest([this.orientation$])
-            .pipe(take(1))
+            .pipe(take(1), takeUntilDestroyed(this.destroy))
             .subscribe(([orientation]) => {
               if (this.operation) {
                 switch (orientation) {

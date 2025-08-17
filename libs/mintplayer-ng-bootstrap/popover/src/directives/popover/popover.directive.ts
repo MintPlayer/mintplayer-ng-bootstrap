@@ -3,7 +3,7 @@ import { ComponentPortal } from '@angular/cdk/portal';
 import { Position } from '@mintplayer/ng-bootstrap';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, delay, map, Observable, take } from 'rxjs';
-import { AfterViewInit, ComponentRef, Directive, ElementRef, Host, Inject, Injector, Input, OnDestroy, SkipSelf, TemplateRef } from '@angular/core';
+import { AfterViewInit, ComponentRef, DestroyRef, Directive, ElementRef, Host, Inject, Injector, Input, OnDestroy, SkipSelf, TemplateRef } from '@angular/core';
 import { BsPopoverComponent } from '../../component/popover.component';
 import { POPOVER_CONTENT } from '../../providers/popover-content.provider';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
@@ -16,6 +16,7 @@ export class BsPopoverDirective implements AfterViewInit, OnDestroy {
 
   constructor(
     private overlay: Overlay,
+    private destroy: DestroyRef,
     private templateRef: TemplateRef<any>,
     private parentInjector: Injector,
     @Inject(PORTAL_FACTORY) private portalFactory: (injector: Injector) => ComponentPortal<any>,
@@ -91,7 +92,7 @@ export class BsPopoverDirective implements AfterViewInit, OnDestroy {
   isVisible$ = new BehaviorSubject<boolean>(false);
 
   ngAfterViewInit() {
-    this.connectedPosition$.pipe(take(1)).subscribe((connectedPosition) => {
+    this.connectedPosition$.pipe(take(1), takeUntilDestroyed(this.destroy)).subscribe((connectedPosition) => {
       this.injector = Injector.create({
         providers: [{ provide: POPOVER_CONTENT, useValue: this.templateRef }],
         parent: this.parentInjector

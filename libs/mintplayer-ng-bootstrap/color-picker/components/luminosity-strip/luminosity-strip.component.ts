@@ -63,7 +63,9 @@ export class BsLuminosityStripComponent implements AfterViewInit {
   private canvasContext: CanvasRenderingContext2D | null = null;
   @ViewChild('canvas') canvas!: ElementRef<HTMLCanvasElement>;
   ngAfterViewInit() {
-    this.canvasContext = this.canvas.nativeElement.getContext('2d', { willReadFrequently: true });
+    if (typeof window !== 'undefined') {
+      this.canvasContext = this.canvas.nativeElement.getContext('2d', { willReadFrequently: true });
+    }
   }
 
   resultBackground$: Observable<string>;

@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, EventEmitter, HostBinding, HostListener, Input, Output, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, DestroyRef, ElementRef, EventEmitter, HostBinding, HostListener, Input, Output, ViewChild } from '@angular/core';
 import { BehaviorSubject, combineLatest, debounceTime, map, take, Observable, switchMap } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HS } from '../../interfaces/hs';
@@ -13,7 +13,7 @@ import { RgbColor } from '../../interfaces/rgb-color';
 })
 export class BsColorWheelComponent implements AfterViewInit {
 
-  constructor(private element: ElementRef<HTMLElement>) {
+  constructor(private element: ElementRef<HTMLElement>, private destroy: DestroyRef) {
     // this.resizeObserver = new ResizeObserver((entries) => {
     //   for (const entry of entries) {
     //     if (entry.target === this.element.nativeElement) {
@@ -168,7 +168,9 @@ export class BsColorWheelComponent implements AfterViewInit {
   ngAfterViewInit() {
     // this.resizeObserver.observe(this.element.nativeElement);
     this.viewInited$.next(true);
-    this.canvasContext = this.canvas.nativeElement.getContext('2d', { willReadFrequently: true });
+    if (typeof window !== 'undefined') {
+      this.canvasContext = this.canvas.nativeElement.getContext('2d', { willReadFrequently: true });
+    }
   }
 
   onPointerDown(ev: MouseEvent | TouchEvent) {
@@ -212,7 +214,7 @@ export class BsColorWheelComponent implements AfterViewInit {
       };
     }
     
-    this.position2color(co.x, co.y).pipe(take(1)).subscribe((color) => {
+    this.position2color(co.x, co.y).pipe(take(1)).pipe(takeUntilDestroyed(this.destroy)).subscribe((color) => {
       if (color) {
         this.hs$.next({ hue: color.hue, saturation: color.saturation });
       } else {

@@ -1,7 +1,7 @@
 /// <reference types="./types" />
 
 import { AsyncPipe } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, DestroyRef, EventEmitter, Input, Output } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, filter, map, Observable, take } from 'rxjs';
 import { BsCalendarMonthService, BsMonthNamePipe, BsWeekdayNamePipe, DateDayOfMonth, Week, WeekDay } from '@mintplayer/ng-bootstrap/calendar-month';
@@ -16,7 +16,7 @@ import { BsUcFirstPipe } from '@mintplayer/ng-bootstrap/uc-first';
   imports: [AsyncPipe, BsUcFirstPipe, BsMonthNamePipe, BsWeekdayNamePipe]
 })
 export class BsCalendarComponent {
-  constructor(private sanitizer: DomSanitizer, private calendarMonthService: BsCalendarMonthService) {
+  constructor(private sanitizer: DomSanitizer, private calendarMonthService: BsCalendarMonthService, private destroy: DestroyRef) {
     this.weeks$ = this.currentMonth$
       .pipe(map((month) => this.calendarMonthService.getWeeks(month)));
     this.shownDays$ = this.weeks$
@@ -83,7 +83,7 @@ export class BsCalendarComponent {
   @Input() disableDateFn?: (date: Date) => boolean;
 
   previousMonth() {
-    this.currentMonth$.pipe(take(1)).subscribe((month) => {
+    this.currentMonth$.pipe(take(1), takeUntilDestroyed(this.destroy)).subscribe((month) => {
       this.currentMonth$.next(
         new Date(month.getFullYear(), month.getMonth() - 1, 1)
       );
@@ -93,7 +93,7 @@ export class BsCalendarComponent {
   }
 
   nextMonth() {
-    this.currentMonth$.pipe(take(1)).subscribe((month) => {
+    this.currentMonth$.pipe(take(1), takeUntilDestroyed(this.destroy)).subscribe((month) => {
       this.currentMonth$.next(
         new Date(month.getFullYear(), month.getMonth() + 1, 1)
       );

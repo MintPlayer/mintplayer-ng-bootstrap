@@ -41,7 +41,9 @@ export class BsSignaturePadComponent implements AfterViewInit {
   context: CanvasRenderingContext2D | null = null;
 
   ngAfterViewInit() {
-    this.context = this.canvas.nativeElement.getContext('2d', { willReadFrequently: true });
+    if (typeof window !== 'undefined') {
+      this.context = this.canvas.nativeElement.getContext('2d', { willReadFrequently: true });
+    }
   }
 
   @HostBinding('style.min-height.rem') minHeight = 5;

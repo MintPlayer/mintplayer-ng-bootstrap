@@ -34,8 +34,8 @@ export class BsCodeSnippetComponent {
     setTimeout(() => this.offcanvasVisible = false, 3000);
   }
 
-  onHighlighted(result: HighlightResult) {
-    this.language$.next(result.language ?? 'code');
+  onHighlighted(result: HighlightResult | null) {
+    this.language$.next(result?.language ?? 'code');
   }
 
 }

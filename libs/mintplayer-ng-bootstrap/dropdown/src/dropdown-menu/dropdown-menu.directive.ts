@@ -1,4 +1,4 @@
-import { Directive, ElementRef, forwardRef, HostBinding, HostListener, Inject, NgZone, Optional, PLATFORM_ID, TemplateRef, ViewContainerRef } from '@angular/core';
+import { DestroyRef, Directive, ElementRef, forwardRef, HostBinding, HostListener, Inject, NgZone, Optional, PLATFORM_ID, TemplateRef, ViewContainerRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TemplatePortal } from '@angular/cdk/portal';
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
@@ -17,6 +17,7 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
     private viewContainerRef: ViewContainerRef,
     private templateRef: TemplateRef<any>,
     private overlay: Overlay,
+    private destroy: DestroyRef,
 
     elementRef: ElementRef<any>,
     zone: NgZone,
@@ -46,7 +47,7 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
           });
 
           if (this.dropdown.hasBackdrop && this.dropdown.closeOnClickOutside) {
-            this.overlayRef.backdropClick().subscribe(() => {
+            this.overlayRef.backdropClick().pipe(takeUntilDestroyed(this.destroy)).subscribe(() => {
               this.dropdown.isOpen = false;
             });
           }
@@ -88,7 +89,7 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
   }
 
   private doClose() {
-    this.dropdown.isOpen$.pipe(take(1)).subscribe((isOpen) => {
+    this.dropdown.isOpen$.pipe(take(1), takeUntilDestroyed()).subscribe((isOpen) => {
       if (isOpen && !this.dropdown.hasBackdrop && this.dropdown.closeOnClickOutside) {
         this.dropdown.isOpen = false;
       }

@@ -65,7 +65,7 @@ export class BsNavbarDropdownComponent {
       }
     }));
 
-    if (!!parentDropdown) {
+    if (!!parentDropdown && this.isBrowser) {
       // Setup overlay
       import('@angular/cdk/overlay').then(({ OverlayModule, Overlay }) => {
         const overlayService = this.injector.get(Overlay);
