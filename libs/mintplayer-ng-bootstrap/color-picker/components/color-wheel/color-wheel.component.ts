@@ -213,8 +213,8 @@ export class BsColorWheelComponent implements AfterViewInit {
         y: ev.clientY - (subtract ? rect.top : 0),
       };
     }
-    
-    this.position2color(co.x, co.y).pipe(take(1)).pipe(takeUntilDestroyed(this.destroy)).subscribe((color) => {
+
+    this.position2color(co.x, co.y).pipe(take(1), takeUntilDestroyed(this.destroy)).subscribe((color) => {
       if (color) {
         this.hs$.next({ hue: color.hue, saturation: color.saturation });
       } else {

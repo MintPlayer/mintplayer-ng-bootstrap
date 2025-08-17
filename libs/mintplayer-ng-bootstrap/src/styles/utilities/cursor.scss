@@ -1,5 +1,7 @@
+@use "sass:map";
+
 //Generate utilites for cursor
-$utilities: map-merge(
+$utilities: map.merge(
   $utilities,
   (
     "cursor": (

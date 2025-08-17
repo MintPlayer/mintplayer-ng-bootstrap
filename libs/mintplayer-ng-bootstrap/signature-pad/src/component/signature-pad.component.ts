@@ -2,8 +2,6 @@ import { AfterViewInit, Component, ElementRef, EventEmitter, HostBinding, HostLi
 import { Signature } from '../interfaces/signature';
 import { BehaviorSubject } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Point } from '../interfaces/point';
-import { Stroke } from '../interfaces/stroke';
 
 @Component({
   selector: 'bs-signature-pad',

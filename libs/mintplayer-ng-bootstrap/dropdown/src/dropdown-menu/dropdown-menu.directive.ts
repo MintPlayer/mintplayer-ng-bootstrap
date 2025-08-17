@@ -89,7 +89,7 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
   }
 
   private doClose() {
-    this.dropdown.isOpen$.pipe(take(1), takeUntilDestroyed()).subscribe((isOpen) => {
+    this.dropdown.isOpen$.pipe(take(1), takeUntilDestroyed(this.destroy)).subscribe((isOpen) => {
       if (isOpen && !this.dropdown.hasBackdrop && this.dropdown.closeOnClickOutside) {
         this.dropdown.isOpen = false;
       }

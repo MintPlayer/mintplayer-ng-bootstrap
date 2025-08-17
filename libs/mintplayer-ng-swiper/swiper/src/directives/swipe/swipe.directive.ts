@@ -1,4 +1,4 @@
-import { DestroyRef, Directive, HostBinding, HostListener, Input } from "@angular/core";
+import { DestroyRef, Directive, HostBinding, HostListener, input } from "@angular/core";
 import { BsObserveSizeDirective } from "@mintplayer/ng-swiper/observe-size";
 import { combineLatest, filter, take } from "rxjs";
 import { BsSwipeContainerDirective } from "../swipe-container/swipe-container.directive";
@@ -19,9 +19,7 @@ export class BsSwipeDirective {
 
   observeSize: BsObserveSizeDirective;
 
-  //#region Offside
-  @Input() public offside = false;
-  //#endregion
+  public offside = input(false);
 
   @HostBinding('class.align-top')
   @HostBinding('class.d-inline-block')

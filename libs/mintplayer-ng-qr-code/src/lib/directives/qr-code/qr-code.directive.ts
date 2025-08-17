@@ -1,4 +1,4 @@
-import { Directive, Input, isDevMode, OnChanges, ViewContainerRef } from '@angular/core';
+import { Directive, Input, OnChanges, ViewContainerRef } from '@angular/core';
 import { QRCodeErrorCorrectionLevel } from '@mintplayer/qr-code';
 import * as qrCodeService from '@mintplayer/qr-code';
 import { RgbaColor } from '../../types/rgba-color';
@@ -44,7 +44,6 @@ export class QrCodeDirective implements OnChanges {
 
   private centerImage?: HTMLImageElement;
 
-
   async ngOnChanges() {
     if (!this.value) {
       return;
@@ -56,70 +55,70 @@ export class QrCodeDirective implements OnChanges {
       return;
     }
 
-    const context = canvas.getContext('2d');
+    if (typeof window !== 'undefined') {
+      const context = canvas.getContext('2d');
+      if (context) {
+        context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 
-    if (context) {
-      context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+        const errorCorrectionLevel = this.errorCorrectionLevel ?? QrCodeDirective.DEFAULT_ERROR_CORRECTION_LEVEL
+
+        const dark = !this.darkColor 
+          ? undefined
+          : QrCodeDirective.VALID_COLOR_REGEX.test(this.darkColor)
+          ? this.darkColor
+          : undefined;
+        const light = !this.lightColor
+          ? undefined
+          : QrCodeDirective.VALID_COLOR_REGEX.test(this.lightColor)
+          ? this.lightColor
+          : undefined;
+
+        await qrCodeService
+          .toCanvas(canvas, this.value, {
+            version: this.version ?? undefined,
+            errorCorrectionLevel,
+            width: this.width,
+            margin: this.margin,
+            color: {
+              dark,
+              light,
+            },
+          });
+
+        const centerImageSrc = this.centerImageSrc;
+        const centerImageWidth = this.getIntOrDefault(this.centerImageWidth, QrCodeDirective.DEFAULT_CENTER_IMAGE_SIZE);
+        const centerImageHeight = this.getIntOrDefault(this.centerImageHeight, QrCodeDirective.DEFAULT_CENTER_IMAGE_SIZE);
+
+        if (centerImageSrc && context) {
+
+          if (!this.centerImage) {
+            this.centerImage = new Image(centerImageWidth, centerImageHeight);
+          }
+
+          if (centerImageSrc !== this.centerImage?.src) {
+            this.centerImage.src = centerImageSrc;
+          }
+
+          if (centerImageWidth !== this.centerImage.width) {
+            this.centerImage.width = centerImageWidth;
+          }
+
+          if (centerImageHeight !== this.centerImage.height) {
+            this.centerImage.height = centerImageHeight;
+          }
+
+          const centerImage = this.centerImage;
+
+          centerImage.onload = () => {
+            context.drawImage(
+              centerImage,
+              canvas.width / 2 - centerImageWidth / 2,
+              canvas.height / 2 - centerImageHeight / 2, centerImageWidth, centerImageHeight,
+            );
+          }
+        }
+      }
     }
-
-    const errorCorrectionLevel = this.errorCorrectionLevel ?? QrCodeDirective.DEFAULT_ERROR_CORRECTION_LEVEL
-
-    const dark = !this.darkColor 
-      ? undefined
-      : QrCodeDirective.VALID_COLOR_REGEX.test(this.darkColor)
-      ? this.darkColor
-      : undefined;
-    const light = !this.lightColor
-      ? undefined
-      : QrCodeDirective.VALID_COLOR_REGEX.test(this.lightColor)
-      ? this.lightColor
-      : undefined;
-
-    await qrCodeService
-      .toCanvas(canvas, this.value, {
-        version: this.version ?? undefined,
-        errorCorrectionLevel,
-        width: this.width,
-        margin: this.margin,
-        color: {
-          dark,
-          light,
-        },
-      });
-
-    const centerImageSrc = this.centerImageSrc;
-    const centerImageWidth = this.getIntOrDefault(this.centerImageWidth, QrCodeDirective.DEFAULT_CENTER_IMAGE_SIZE);
-    const centerImageHeight = this.getIntOrDefault(this.centerImageHeight, QrCodeDirective.DEFAULT_CENTER_IMAGE_SIZE);
-
-    if (centerImageSrc && context) {
-
-      if (!this.centerImage) {
-        this.centerImage = new Image(centerImageWidth, centerImageHeight);
-      }
-
-      if (centerImageSrc !== this.centerImage?.src) {
-        this.centerImage.src = centerImageSrc;
-      }
-
-      if (centerImageWidth !== this.centerImage.width) {
-        this.centerImage.width = centerImageWidth;
-      }
-
-      if (centerImageHeight !== this.centerImage.height) {
-        this.centerImage.height = centerImageHeight;
-      }
-
-      const centerImage = this.centerImage;
-
-      centerImage.onload = () => {
-        context.drawImage(
-          centerImage,
-          canvas.width / 2 - centerImageWidth / 2,
-          canvas.height / 2 - centerImageHeight / 2, centerImageWidth, centerImageHeight,
-        );
-      }
-    }
-
   }
 
   private getIntOrDefault(value: string | number | undefined, defaultValue: number): number {

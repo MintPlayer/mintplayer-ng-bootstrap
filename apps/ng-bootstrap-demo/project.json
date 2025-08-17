@@ -18,7 +18,11 @@
         "outputPath": "dist/apps/ng-bootstrap-demo/browser",
         "index": "apps/ng-bootstrap-demo/src/index.html",
         "browser": "apps/ng-bootstrap-demo/src/main.ts",
-        "polyfills": ["apps/ng-bootstrap-demo/src/polyfills.ts"],
+        "server": "apps/ng-bootstrap-demo/src/main.server.ts",
+        "outputMode": "server",
+        "ssr": {
+          "entry": "apps/ng-bootstrap-demo/server.ts"
+        },
         "tsConfig": "apps/ng-bootstrap-demo/tsconfig.app.json",
         "inlineStyleLanguage": "scss",
         "assets": [
@@ -50,7 +54,7 @@
             },
             {
               "type": "anyComponentStyle",
-              "maximumWarning": "5kb",
+              "maximumWarning": "25kb",
               "maximumError": "100kb"
             }
           ],
@@ -102,64 +106,6 @@
         "coverageDirectory": "coverage/apps/ng-bootstrap-demo",
         "jestConfig": "apps/ng-bootstrap-demo/jest.config.ts"
       }
-    },
-    "server": {
-      "executor": "@angular-devkit/build-angular:server",
-      "options": {
-        "outputPath": "dist/ng-bootstrap-demo/server",
-        "main": "apps/ng-bootstrap-demo/server.ts",
-        "tsConfig": "apps/ng-bootstrap-demo/tsconfig.server.json",
-        "inlineStyleLanguage": "scss"
-      },
-      "configurations": {
-        "production": {
-          "outputHashing": "media",
-          "fileReplacements": [
-            {
-              "replace": "apps/ng-bootstrap-demo/src/environments/environment.ts",
-              "with": "apps/ng-bootstrap-demo/src/environments/environment.prod.ts"
-            }
-          ]
-        },
-        "development": {
-          "optimization": false,
-          "sourceMap": true,
-          "extractLicenses": false
-        }
-      },
-      "defaultConfiguration": "production"
-    },
-    "serve-ssr": {
-      "executor": "@angular-devkit/build-angular:ssr-dev-server",
-      "configurations": {
-        "development": {
-          "browserTarget": "ng-bootstrap-demo:build:development",
-          "serverTarget": "ng-bootstrap-demo:server:development"
-        },
-        "production": {
-          "browserTarget": "ng-bootstrap-demo:build:production",
-          "serverTarget": "ng-bootstrap-demo:server:production"
-        }
-      },
-      "defaultConfiguration": "development",
-      "continuous": true
-    },
-    "prerender": {
-      "executor": "@angular-devkit/build-angular:prerender",
-      "options": {
-        "routes": ["/"]
-      },
-      "configurations": {
-        "production": {
-          "browserTarget": "ng-bootstrap-demo:build:production",
-          "serverTarget": "ng-bootstrap-demo:server:production"
-        },
-        "development": {
-          "browserTarget": "ng-bootstrap-demo:build:development",
-          "serverTarget": "ng-bootstrap-demo:server:development"
-        }
-      },
-      "defaultConfiguration": "production"
     }
   }
 }

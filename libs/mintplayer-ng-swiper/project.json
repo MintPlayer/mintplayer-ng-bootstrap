@@ -4,6 +4,7 @@
   "projectType": "library",
   "sourceRoot": "libs/mintplayer-ng-swiper/src",
   "prefix": "mintplayer-ng-bootstrap",
+  "tags": [],
   "targets": {
     "build": {
       "executor": "@nx/angular:package",
@@ -34,6 +35,5 @@
     "lint": {
       "executor": "@nx/eslint:lint"
     }
-  },
-  "tags": []
+  }
 }

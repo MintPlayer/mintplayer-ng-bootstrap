@@ -69,9 +69,6 @@ export class BsNavbarDropdownComponent {
       // Setup overlay
       import('@angular/cdk/overlay').then(({ OverlayModule, Overlay }) => {
         const overlayService = this.injector.get(Overlay);
-        return overlayService;
-      }).then((overlayService) => {
-
         this.domPortal = new DomPortal(this.element);
         this.overlay = overlayService.create({
           positionStrategy: overlayService.position()

@@ -37,7 +37,7 @@ export class BsSwipeContainerDirective implements AfterViewInit {
 
         let count = 0;
         for (const s of swipes) {
-          if (!s.offside) {
+          if (!s.offside()) {
             break;
           } else {
             count++;
@@ -53,7 +53,7 @@ export class BsSwipeContainerDirective implements AfterViewInit {
 
         let count = 0;
         for (const s of swipes.toArray().reverse()) {
-          if (!s.offside) {
+          if (!s.offside()) {
             break;
           } else {
             count++;
@@ -76,7 +76,7 @@ export class BsSwipeContainerDirective implements AfterViewInit {
     this.actualSwipes$ = this.swipes$
       .pipe(map(swipes => {
         if (swipes) {
-          return swipes.filter(swipe => !swipe.offside);
+          return swipes.filter(swipe => !swipe.offside());
         } else {
           return [];
         }
