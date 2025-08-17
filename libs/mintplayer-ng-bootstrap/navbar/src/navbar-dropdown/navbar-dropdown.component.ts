@@ -68,7 +68,7 @@ export class BsNavbarDropdownComponent {
     if (!!parentDropdown && this.isBrowser) {
       // Setup overlay
       import('@angular/cdk/overlay').then(({ OverlayModule, Overlay }) => {
-        const overlayService = this.injector.get(Overlay); // <-- Line 73
+        const overlayService = this.injector.get(Overlay);
         this.domPortal = new DomPortal(this.element);
         this.overlay = overlayService.create({
           positionStrategy: overlayService.position()
