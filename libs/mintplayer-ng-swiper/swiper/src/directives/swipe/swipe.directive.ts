@@ -6,15 +6,6 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 
 @Directive({
   selector: '[bsSwipe]',
-  host: {
-    'class.align-top': 'true',
-    'class.d-inline-block': 'true',
-    'class.float-none': 'true',
-    'class.w-100': 'true',
-    'class.pe-auto': 'true',
-    'class.me-0': 'true',
-    'class': 'hostClass()',
-  },
   hostDirectives: [BsObserveSizeDirective],
   standalone: false,
 })
@@ -30,6 +21,13 @@ export class BsSwipeDirective {
 
   public offside = input(false);
 
+  @HostBinding('class.align-top')
+  @HostBinding('class.d-inline-block')
+  @HostBinding('class.float-none')
+  @HostBinding('class.w-100')
+  @HostBinding('class.pe-auto')
+  @HostBinding('class.me-0')
+  classes = true;
   @HostBinding('class') hostClass?: string;
   
   @HostListener('touchstart', ['$event'])
