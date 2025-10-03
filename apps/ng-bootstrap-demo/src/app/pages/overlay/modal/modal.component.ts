@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, signal } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { Tag } from '../../../entities/tag';
 import { TagService } from '../../../services/tag/tag.service';
@@ -21,7 +21,7 @@ export class ModalComponent {
     this.gitRepo = gitRepo;
   }
 
-  isOpen = false;
+  isOpen = signal(false);
   colors = Color;
   gitRepo: string;
   tagSuggestions: Tag[] = [];

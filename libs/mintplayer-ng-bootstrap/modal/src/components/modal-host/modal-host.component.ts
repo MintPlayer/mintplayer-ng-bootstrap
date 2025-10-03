@@ -25,11 +25,8 @@ export class BsModalHostComponent implements AfterViewInit, OnDestroy {
     return this._isOpen;
   }
   @Input() set isOpen(value: boolean) {
-    this._isOpen = value;
-    if (this.componentInstance) {
-      this.componentInstance.instance.isOpen = value;
-    }
-    this.isOpenChange.emit(value);
+    this.isOpenChange.emit(this._isOpen = value);
+    setTimeout(() => this.componentInstance && (this.componentInstance.instance.isOpen = value), 10);
   }
   @Output() isOpenChange = new EventEmitter<boolean>();
   //#endregion
@@ -52,7 +49,7 @@ export class BsModalHostComponent implements AfterViewInit, OnDestroy {
       hasBackdrop: false
     });
     this.componentInstance = this.overlayRef.attach<BsModalComponent>(portal);
-    this.componentInstance.instance.isOpen = this._isOpen;
+    this.isOpen = this._isOpen;
   }
 
   ngOnDestroy() {
