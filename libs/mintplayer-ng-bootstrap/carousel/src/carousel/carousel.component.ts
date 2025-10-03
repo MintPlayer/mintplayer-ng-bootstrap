@@ -1,5 +1,5 @@
 import { isPlatformServer } from '@angular/common';
-import { AfterViewInit, ChangeDetectorRef, Component, ContentChildren, ElementRef, forwardRef, HostBinding, HostListener, Inject, Input, OnDestroy, PLATFORM_ID, QueryList, TemplateRef, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ContentChildren, ElementRef, forwardRef, HostBinding, HostListener, inject, Inject, Input, OnDestroy, PLATFORM_ID, QueryList, TemplateRef, ViewChild } from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsSwipeContainerDirective } from '@mintplayer/ng-swiper/swiper';
@@ -15,8 +15,8 @@ import { BsCarouselImageDirective } from '../carousel-image/carousel-image.direc
 })
 export class BsCarouselComponent implements AfterViewInit, OnDestroy {
 
-  constructor(@Inject(PLATFORM_ID) platformId: any, private cdRef: ChangeDetectorRef) {
-    this.isServerSide = isPlatformServer(platformId);
+  constructor() {
+    this.isServerSide = isPlatformServer(this.platformId);
     this.imageCount$ = this.images$.pipe(map((images) => images?.length ?? 0));
     this.firstImageTemplate$ = this.images$.pipe(map((images) => {
       if (!images) return null;
@@ -37,13 +37,15 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
       return img.itemTemplate;
     }));
 
-    if (!isPlatformServer(platformId)) {
+    if (!isPlatformServer(this.platformId)) {
       this.resizeObserver = new ResizeObserver((entries) => {
         this.cdRef.detectChanges();
       });
     }
   }
   
+  cdRef = inject(ChangeDetectorRef);
+  platformId = inject(PLATFORM_ID);
   colors = Color;
   isServerSide: boolean;
   currentImageIndex = 0;

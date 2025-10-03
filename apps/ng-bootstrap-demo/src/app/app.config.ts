@@ -1,4 +1,4 @@
-import { provideHttpClient } from "@angular/common/http";
+import { provideHttpClient, withFetch } from "@angular/common/http";
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZonelessChangeDetection } from "@angular/core";
 import { provideAnimations } from "@angular/platform-browser/animations";
 import { PreloadAllModules, provideRouter, withEnabledBlockingInitialNavigation, withPreloading, withInMemoryScrolling } from "@angular/router";
@@ -12,7 +12,7 @@ import { GIT_REPO } from "./providers/git-repo.provider";
 export const config: ApplicationConfig = {
     providers: [
         provideAnimations(),
-        provideHttpClient(),
+        provideHttpClient(withFetch()),
         provideZonelessChangeDetection(),
         provideBrowserGlobalErrorListeners(),
         provideRouter(

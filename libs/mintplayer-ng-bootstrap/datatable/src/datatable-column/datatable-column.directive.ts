@@ -1,4 +1,4 @@
-import { Directive, Input, TemplateRef } from '@angular/core';
+import { Directive, inject, input, Input, TemplateRef } from '@angular/core';
 
 @Directive({
   selector: '[bsDatatableColumn]',
@@ -6,12 +6,8 @@ import { Directive, Input, TemplateRef } from '@angular/core';
 })
 export class BsDatatableColumnDirective {
 
-  constructor(templateRef: TemplateRef<any>) {
-    this.templateRef = templateRef;
-  }
-
-  templateRef: TemplateRef<any>;
-  @Input('bsDatatableColumn') public name = '';
-  @Input('bsDatatableColumnSortable') public sortable = true;
+  templateRef = inject(TemplateRef<any>);
+  public name = input<string>('', { alias: 'bsDatatableColumn' });
+  public sortable = input<boolean>(true, { alias: 'bsDatatableColumnSortable' });
 
 }

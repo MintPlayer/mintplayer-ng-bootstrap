@@ -2,10 +2,12 @@
     <thead>
         <tr>
             @for (column of (columns$ | async); track column) {
+                @let columnName = column.name();
+                @let columnSortable = column.sortable();
                 <th class="text-nowrap"
-                    [class.sort]="column.sortable"
-                    [class.sort-asc]="column.sortable && (settings.sortProperty === column.name) && (settings.sortDirection === 'ascending')"
-                    [class.sort-desc]="column.sortable && (settings.sortProperty === column.name) && (settings.sortDirection === 'descending')"
+                    [class.sort]="columnSortable"
+                    [class.sort-asc]="columnSortable && (settings.sortProperty === columnName) && (settings.sortDirection === 'ascending')"
+                    [class.sort-desc]="columnSortable && (settings.sortProperty === columnName) && (settings.sortDirection === 'descending')"
                     (click)="columnHeaderClicked(column)">
                     <ng-container *ngTemplateOutlet="column.templateRef"></ng-container>
                 </th>

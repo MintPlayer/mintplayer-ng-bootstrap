@@ -1,8 +1,9 @@
-import { Component, Inject } from '@angular/core';
+import { Component, inject, Inject } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsTooltipModule } from '@mintplayer/ng-bootstrap/tooltip';
+import { GIT_REPO } from '../../../providers/git-repo.provider';
 
 @Component({
   selector: 'demo-tooltip',
@@ -12,10 +13,6 @@ import { BsTooltipModule } from '@mintplayer/ng-bootstrap/tooltip';
   imports: [BsGridModule, BsTooltipModule, BsButtonTypeDirective]
 })
 export class TooltipComponent {
-  constructor(@Inject('GIT_REPO') gitRepo: string) {
-    this.gitRepo = gitRepo;
-  }
-
   colors = Color;
-  gitRepo: string;
+  gitRepo = inject(GIT_REPO);
 }

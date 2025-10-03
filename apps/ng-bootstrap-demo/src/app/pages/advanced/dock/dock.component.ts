@@ -1,4 +1,4 @@
-import { Component, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, ViewChild, AfterViewInit, inject } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { BsContentPane, BsDockLayout, BsDockModule, BsDockPanelComponent, BsDockService, BsSplitPane, BsTabGroupPane } from '@mintplayer/ng-bootstrap/dock';
 import { Color } from '@mintplayer/ng-bootstrap';
@@ -15,7 +15,7 @@ import { AsyncPipe } from '@angular/common';
 })
 export class DockComponent implements AfterViewInit {
 
-  constructor(private dockService: BsDockService) {
+  constructor() {
     this.layout$ = new BehaviorSubject<BsDockLayout>({
       rootPane: new BsSplitPane({
         orientation: 'horizontal',
@@ -33,6 +33,7 @@ export class DockComponent implements AfterViewInit {
     // }));
   }
 
+  dockService = inject(BsDockService);
   colors = Color;
   layout$: BehaviorSubject<BsDockLayout>;
   // layoutFiltered$: Observable<any>;

@@ -1,6 +1,6 @@
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
-import { Directive, ElementRef, Host, HostListener, SkipSelf, TemplateRef, ViewContainerRef } from '@angular/core';
+import { Directive, ElementRef, Host, HostListener, inject, SkipSelf, TemplateRef, ViewContainerRef } from '@angular/core';
 
 @Directive({
   selector: '[bsContextMenu]',
@@ -8,12 +8,12 @@ import { Directive, ElementRef, Host, HostListener, SkipSelf, TemplateRef, ViewC
 })
 export class BsContextMenuDirective {
 
-  constructor(
-    private overlay: Overlay,
-    private templateRef: TemplateRef<any>,
-    private viewContainerRef: ViewContainerRef,
-    @Host() @SkipSelf() private element: ElementRef
-  ) {
+  overlay = inject(Overlay);
+  viewContainerRef = inject(ViewContainerRef);
+  element = inject(ElementRef, { host: true, skipSelf: true });
+  templateRef = inject(TemplateRef);
+
+  constructor() {
     this.element.nativeElement.oncontextmenu = (ev: MouseEvent) => {
       ev.preventDefault();
       this.checkAndCloseExisting(ev);

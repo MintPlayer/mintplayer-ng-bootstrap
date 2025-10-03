@@ -1,4 +1,4 @@
-import { Component, Input, ViewChild, EventEmitter, Output } from "@angular/core";
+import { Component, Input, ViewChild, EventEmitter, Output, viewChild } from "@angular/core";
 import { BehaviorSubject } from "rxjs";
 import { HS } from "../../interfaces/hs";
 import { BsColorWheelComponent } from "../color-wheel/color-wheel.component";
@@ -17,7 +17,7 @@ export class BsColorPickerComponent {
       .subscribe((alpha) => this.alphaChange.emit(alpha));
   }
 
-  @ViewChild('wheel') colorWheel!: BsColorWheelComponent;
+  colorWheel = viewChild<BsColorWheelComponent>('wheel');
   @Input() set size(value: number) {
     this.size$.next(value);
   }

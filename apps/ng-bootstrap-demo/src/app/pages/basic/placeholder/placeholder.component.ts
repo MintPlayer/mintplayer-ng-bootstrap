@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
@@ -17,10 +17,10 @@ import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
 export class PlaceholderComponent {
 
   constructor() {
-    setTimeout(() => this.isLoading = false, 3000);
+    setTimeout(() => this.isLoading.set(false), 3000);
   }
 
-  isLoading = true;
+  isLoading = signal(true);
   colors = Color;
   lines = [
     'Hello world',

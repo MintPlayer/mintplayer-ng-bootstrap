@@ -1,4 +1,4 @@
-import { Directive, Input, TemplateRef } from '@angular/core';
+import { Directive, Input, inject, TemplateRef } from '@angular/core';
 import { PaginationResponse } from '@mintplayer/pagination';
 import { BsDatatableComponent } from '../datatable/datatable.component';
 
@@ -8,9 +8,12 @@ import { BsDatatableComponent } from '../datatable/datatable.component';
 })
 export class BsRowTemplateDirective<TData> {
 
-  constructor(private datatableComponent: BsDatatableComponent<TData>, templateRef: TemplateRef<BsRowTemplateContext<TData>>) {
-    this.datatableComponent.rowTemplate = templateRef;
+  constructor() {
+    this.datatableComponent.rowTemplate = this.templateRef;
   }
+
+  datatableComponent = inject(BsDatatableComponent<TData>);
+  templateRef = inject(TemplateRef<BsRowTemplateContext<TData>>);
 
   @Input() set bsRowTemplateOf(value: PaginationResponse<TData> | undefined) {
     this.datatableComponent.data = value;

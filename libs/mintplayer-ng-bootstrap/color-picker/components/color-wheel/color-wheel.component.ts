@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, DestroyRef, ElementRef, EventEmitter, HostBinding, HostListener, Input, Output, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, DestroyRef, ElementRef, EventEmitter, HostBinding, HostListener, inject, Input, Output, ViewChild } from '@angular/core';
 import { BehaviorSubject, combineLatest, debounceTime, map, take, Observable, switchMap } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HS } from '../../interfaces/hs';
@@ -13,7 +13,10 @@ import { RgbColor } from '../../interfaces/rgb-color';
 })
 export class BsColorWheelComponent implements AfterViewInit {
 
-  constructor(private element: ElementRef<HTMLElement>, private destroy: DestroyRef) {
+  element = inject(ElementRef<HTMLElement>);
+  destroy = inject(DestroyRef);
+  
+  constructor() {
     // this.resizeObserver = new ResizeObserver((entries) => {
     //   for (const entry of entries) {
     //     if (entry.target === this.element.nativeElement) {

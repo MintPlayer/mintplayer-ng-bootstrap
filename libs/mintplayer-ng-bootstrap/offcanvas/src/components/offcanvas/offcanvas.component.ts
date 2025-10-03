@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Inject, Input, Output, TemplateRef } from '@angular/core';
+import { Component, EventEmitter, inject, Inject, Input, Output, TemplateRef } from '@angular/core';
 import { BehaviorSubject, combineLatest, delayWhen, interval, map, Observable, of } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
@@ -14,9 +14,7 @@ import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
 })
 export class BsOffcanvasComponent {
 
-  constructor(@Inject(OFFCANVAS_CONTENT) contentTemplate: TemplateRef<any>) {
-    this.contentTemplate = contentTemplate;
-
+  constructor() {
     this.visibility$ = this.isVisible$
       .pipe(delayWhen((val, i) => val ? of(0) : interval(300)))
       .pipe(map((val) => val ? 'visible' : 'hidden'));
@@ -63,7 +61,7 @@ export class BsOffcanvasComponent {
       .pipe(map((isVisible) => isVisible === true));
   }
 
-  contentTemplate: TemplateRef<any>;
+  contentTemplate = inject(OFFCANVAS_CONTENT);
   
   visibility$: Observable<string>;
   disableTransition$ = new BehaviorSubject<boolean>(false);

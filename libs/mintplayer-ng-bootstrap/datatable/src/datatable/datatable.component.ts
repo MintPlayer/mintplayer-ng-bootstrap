@@ -38,9 +38,9 @@ export class BsDatatableComponent<TData> {
   @Output() settingsChange = new EventEmitter<DatatableSettings>();
 
   columnHeaderClicked(column: BsDatatableColumnDirective) {
-    if (column.sortable) {
-      if (this.settings.sortProperty !== column.name) {
-        this.settings.sortProperty = column.name;
+    if (column.sortable()) {
+      if (this.settings.sortProperty !== column.name()) {
+        this.settings.sortProperty = column.name();
         this.settings.sortDirection = 'ascending';
       } else if (this.settings.sortDirection === 'descending') {
         this.settings.sortDirection = 'ascending';

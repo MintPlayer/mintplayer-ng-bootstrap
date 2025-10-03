@@ -1,6 +1,6 @@
 /// <reference types="../../../../types" />
 
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { BsTreeviewModule } from '@mintplayer/ng-bootstrap/treeview';
 
@@ -12,36 +12,37 @@ import { BsTreeviewModule } from '@mintplayer/ng-bootstrap/treeview';
   imports: [BsTreeviewModule]
 })
 export class TreeviewComponent {
-  constructor(private sanitizer: DomSanitizer) {
+  constructor() {
     import('bootstrap-icons/icons/inbox-fill.svg').then((icon) => {
-      this.inboxFill = sanitizer.bypassSecurityTrustHtml(icon.default);
+      this.inboxFill = this.sanitizer.bypassSecurityTrustHtml(icon.default);
     });
     import('bootstrap-icons/icons/building.svg').then((icon) => {
-      this.building = sanitizer.bypassSecurityTrustHtml(icon.default);
+      this.building = this.sanitizer.bypassSecurityTrustHtml(icon.default);
     });
     import('bootstrap-icons/icons/people-fill.svg').then((icon) => {
-      this.peopleFill = sanitizer.bypassSecurityTrustHtml(icon.default);
+      this.peopleFill = this.sanitizer.bypassSecurityTrustHtml(icon.default);
     });
     import('bootstrap-icons/icons/person-bounding-box.svg').then((icon) => {
-      this.personBoundingBox = sanitizer.bypassSecurityTrustHtml(icon.default);
+      this.personBoundingBox = this.sanitizer.bypassSecurityTrustHtml(icon.default);
     });
     import('bootstrap-icons/icons/inbox.svg').then((icon) => {
-      this.inbox = sanitizer.bypassSecurityTrustHtml(icon.default);
+      this.inbox = this.sanitizer.bypassSecurityTrustHtml(icon.default);
     });
     import('bootstrap-icons/icons/archive-fill.svg').then((icon) => {
-      this.archiveFill = sanitizer.bypassSecurityTrustHtml(icon.default);
+      this.archiveFill = this.sanitizer.bypassSecurityTrustHtml(icon.default);
     });
     import('bootstrap-icons/icons/calendar3.svg').then((icon) => {
-      this.calendar3 = sanitizer.bypassSecurityTrustHtml(icon.default);
+      this.calendar3 = this.sanitizer.bypassSecurityTrustHtml(icon.default);
     });
     import('bootstrap-icons/icons/person-lines-fill.svg').then((icon) => {
-      this.personLinesFill = sanitizer.bypassSecurityTrustHtml(icon.default);
+      this.personLinesFill = this.sanitizer.bypassSecurityTrustHtml(icon.default);
     });
     import('bootstrap-icons/icons/trash-fill.svg').then((icon) => {
-      this.trashFill = sanitizer.bypassSecurityTrustHtml(icon.default);
+      this.trashFill = this.sanitizer.bypassSecurityTrustHtml(icon.default);
     });
   }
 
+  sanitizer = inject(DomSanitizer);
   inboxFill?: SafeHtml;
   building?: SafeHtml;
   peopleFill?: SafeHtml;

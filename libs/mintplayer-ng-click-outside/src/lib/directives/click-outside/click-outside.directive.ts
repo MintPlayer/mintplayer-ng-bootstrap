@@ -1,5 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
-import { Directive, ElementRef, EventEmitter, Inject, Input, NgZone, OnChanges, OnDestroy, OnInit, Output, PLATFORM_ID, SimpleChanges } from '@angular/core';
+import { Directive, ElementRef, EventEmitter, inject, Inject, Input, NgZone, OnChanges, OnDestroy, OnInit, Output, PLATFORM_ID, SimpleChanges } from '@angular/core';
 
 @Directive({
   selector: '[clickOutside]',
@@ -23,11 +23,11 @@ export class ClickOutsideDirective implements OnInit, OnChanges, OnDestroy {
   private _nodesExcluded: Array<HTMLElement> = [];
   private _events: Array<string> = ['click'];
 
-  constructor(
-      private element: ElementRef,
-      private zone: NgZone,
-      @Inject(PLATFORM_ID) private platformId: Object
-  ) {
+  element = inject(ElementRef);
+  zone = inject(NgZone);
+  @Inject(PLATFORM_ID) platformId = inject(PLATFORM_ID);
+
+  constructor() {
     this._initOnClickBody = this._initOnClickBody.bind(this);
     this._onClickBody = this._onClickBody.bind(this);
     this._onWindowBlur = this._onWindowBlur.bind(this);

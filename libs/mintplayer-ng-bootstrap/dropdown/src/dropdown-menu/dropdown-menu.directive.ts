@@ -1,4 +1,4 @@
-import { DestroyRef, Directive, ElementRef, forwardRef, HostBinding, HostListener, Inject, NgZone, Optional, PLATFORM_ID, TemplateRef, ViewContainerRef } from '@angular/core';
+import { DestroyRef, Directive, ElementRef, forwardRef, HostBinding, HostListener, inject, Inject, NgZone, Optional, PLATFORM_ID, TemplateRef, ViewContainerRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TemplatePortal } from '@angular/cdk/portal';
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
@@ -12,20 +12,18 @@ import { BsDropdownDirective } from '../dropdown/dropdown.directive';
   standalone: false,
 })
 export class BsDropdownMenuDirective extends ClickOutsideDirective {
-  constructor(
-    @Inject(forwardRef(() => BsDropdownDirective)) private dropdown: BsDropdownDirective,
-    private viewContainerRef: ViewContainerRef,
-    private templateRef: TemplateRef<any>,
-    private overlay: Overlay,
-    private destroy: DestroyRef,
+  private dropdown = inject<BsDropdownDirective>(forwardRef(() => BsDropdownDirective));
+  private viewContainerRef = inject(ViewContainerRef);
+  private templateRef = inject(TemplateRef<any>);
+  private overlay = inject(Overlay);
+  private destroy = inject(DestroyRef);
+  @Optional() @Inject(BS_DEVELOPMENT) private bsDevelopment = inject(BS_DEVELOPMENT, { optional: true });
 
-    elementRef: ElementRef<any>,
-    zone: NgZone,
-    @Inject(PLATFORM_ID) platformId: any,
-    @Optional() @Inject(BS_DEVELOPMENT) private bsDevelopment?: boolean,
-  ) {
-    super(elementRef, zone, platformId);
 
+  constructor() {
+    super();
+
+    this.dropdown.elementRef.nativeElement.style.position = 'relative';
     this.dropdown.isOpen$
       .pipe(takeUntilDestroyed())
       .subscribe((isOpen) => {
@@ -37,7 +35,7 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
             hasBackdrop: this.dropdown.hasBackdrop,
             scrollStrategy: this.overlay.scrollStrategies.reposition(),
             positionStrategy: this.overlay.position()
-              .flexibleConnectedTo(!this.dropdown.toggle ? dropdown.elementRef : this.dropdown.toggle.toggleButton)
+              .flexibleConnectedTo(!this.dropdown.toggle ? this.dropdown.elementRef : this.dropdown.toggle.toggleButton)
               .withPositions([
                 // element: BottomLeft - dropdown: TopLeft
                 { originX: "start", originY: "bottom", overlayX: "start", overlayY: "top", offsetY: 0 },

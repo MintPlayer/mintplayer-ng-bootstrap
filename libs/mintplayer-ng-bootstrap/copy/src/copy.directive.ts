@@ -1,15 +1,12 @@
 import { DOCUMENT } from '@angular/common';
-import { Directive, EventEmitter, HostListener, Inject, Input, Output } from '@angular/core';
+import { Directive, EventEmitter, HostListener, inject, Inject, Input, Output } from '@angular/core';
 
 @Directive({
   selector: '[bsCopy]',
   standalone: true,
 })
 export class BsCopyDirective {
-  private doc: Document;
-  constructor(@Inject(DOCUMENT) doc: any) {
-    this.doc = doc;
-  }
+  doc = inject(Document);
 
   @Input() public bsCopy: string | null = null;
   @Output() public bsCopied = new EventEmitter<string>();

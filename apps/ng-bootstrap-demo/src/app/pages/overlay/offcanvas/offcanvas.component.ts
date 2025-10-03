@@ -1,5 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import { Component, Inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Color, Position } from '@mintplayer/ng-bootstrap';
 import { BsAccordionModule } from '@mintplayer/ng-bootstrap/accordion';
@@ -11,29 +11,26 @@ import { BsDropdownMenuModule } from '@mintplayer/ng-bootstrap/dropdown-menu';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsOffcanvasModule } from '@mintplayer/ng-bootstrap/offcanvas';
 import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
-import { BehaviorSubject } from 'rxjs';
+import { GIT_REPO } from '../../../providers/git-repo.provider';
 
 @Component({
   selector: 'demo-offcanvas',
   templateUrl: './offcanvas.component.html',
   styleUrls: ['./offcanvas.component.scss'],
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AsyncPipe, RouterLink, BsGridModule, BsCloseComponent, BsDropdownModule, BsButtonTypeDirective, BsButtonGroupComponent, BsDropdownMenuModule, BsOffcanvasModule, BsAccordionModule, BsToggleButtonModule]
 })
 export class OffcanvasComponent {
 
-  constructor(@Inject('GIT_REPO') gitRepo: string) {
-    this.gitRepo = gitRepo;
-  }
-  
   colors = Color;
-  position$ = new BehaviorSubject<Position>('start');
-  offcanvasVisible = false;
-  sidebarVisible = false;
-  
-  gitRepo: string;
+  position = signal<Position>('start');
+  offcanvasVisible = signal<boolean>(false);
+  sidebarVisible = signal<boolean>(false);
+
+  gitRepo = inject(GIT_REPO);
   showOffcanvas(position: Position) {
-    this.position$.next(position);
-    setTimeout(() => this.offcanvasVisible = true, 50);
+    this.position.set(position);
+    setTimeout(() => this.offcanvasVisible.set(true), 50);
   }
 }

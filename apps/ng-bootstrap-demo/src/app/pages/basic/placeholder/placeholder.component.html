@@ -6,26 +6,27 @@
 <bs-card>
     <bs-card-header>Card with placeholders</bs-card-header>
     <div class="p-3">
-        <bs-placeholder [isLoading]="isLoading">
+        @let isLoadingValue = isLoading();
+        <bs-placeholder [isLoading]="isLoadingValue">
             <h5 class="card-title">
                 <span bsPlaceholderField class="d-block text-center">Featured</span>
             </h5>
             <p class="card-text">
                 <bs-grid>
                     <div bsRow>
-                        <span bsPlaceholderField [xxs]="7" class="d-inline-block">{{ isLoading ? '&nbsp;' : lines[0] }}</span>
+                        <span bsPlaceholderField [xxs]="7" class="d-inline-block">{{ isLoadingValue ? '&nbsp;' : lines[0] }}</span>
                     </div>
                     <div bsRow>
-                        <span bsPlaceholderField [xxs]="4" class="d-inline-block">{{ isLoading ? '&nbsp;' : lines[1] }}</span>
+                        <span bsPlaceholderField [xxs]="4" class="d-inline-block">{{ isLoadingValue ? '&nbsp;' : lines[1] }}</span>
                     </div>
                     <div bsRow>
-                        <span bsPlaceholderField [xxs]="4" class="d-inline-block">{{ isLoading ? '&nbsp;' : lines[2] }}</span>
+                        <span bsPlaceholderField [xxs]="4" class="d-inline-block">{{ isLoadingValue ? '&nbsp;' : lines[2] }}</span>
                     </div>
                     <div bsRow>
-                        <span bsPlaceholderField [xxs]="6" class="d-inline-block">{{ isLoading ? '&nbsp;' : lines[3] }}</span>
+                        <span bsPlaceholderField [xxs]="6" class="d-inline-block">{{ isLoadingValue ? '&nbsp;' : lines[3] }}</span>
                     </div>
                     <div bsRow>
-                        <span bsPlaceholderField [xxs]="8" class="d-inline-block">{{ isLoading ? '&nbsp;' : lines[4] }}</span>
+                        <span bsPlaceholderField [xxs]="8" class="d-inline-block">{{ isLoadingValue ? '&nbsp;' : lines[4] }}</span>
                     </div>
                 </bs-grid>
             </p>

@@ -1,4 +1,4 @@
-import { Component, ElementRef, TemplateRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, inject, TemplateRef, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
@@ -17,11 +17,10 @@ import { FocusOnLoadDirective } from '@mintplayer/ng-focus-on-load';
 })
 export class ToastComponent {
 
-  constructor(private toastService: BsToastService) { }
-
   colors = Color;
   myCounter = 0;
   itemToAdd = '';
+  toastService = inject(BsToastService);
   @ViewChild('txtItem') txtItem!: ElementRef<HTMLInputElement>;
 
   addToast(template: TemplateRef<any>, message: string) {
