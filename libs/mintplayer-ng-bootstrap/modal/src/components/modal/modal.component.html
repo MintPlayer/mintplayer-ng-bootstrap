@@ -1,4 +1,5 @@
-@if (isOpen) {
+@let isOpenValue = isOpen();
+@if (isOpenValue) {
     <div class="modal d-block" [@fadeInOut] [@enterFromTop]>
         <div class="modal-dialog">
             <div class="modal-content">
@@ -8,6 +9,6 @@
     </div>
 
     <div [@fadeInOut]>
-        <div class="modal-backdrop fade" [class.show]="isOpen"></div>
+        <div class="modal-backdrop fade" [class.show]="isOpenValue"></div>
     </div>
 }

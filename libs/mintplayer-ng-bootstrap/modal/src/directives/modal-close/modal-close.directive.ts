@@ -10,6 +10,6 @@ export class BsModalCloseDirective {
   constructor(private host: BsModalHostComponent) { }
 
   @HostListener('click') onClick() {
-    this.host.isOpen = false;
+    this.host.isOpen.set(false);
   }
 }
