@@ -1,6 +1,6 @@
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { Inject, Injectable, Injector, TemplateRef } from '@angular/core';
+import { inject, Inject, Injectable, Injector, TemplateRef } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { BsToastContainerComponent } from '../../components/toast-container/toast-container.component';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
@@ -8,7 +8,9 @@ import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
 @Injectable()
 export class BsToastService {
 
-  constructor(private overlayService: Overlay, private rootInjector: Injector, @Inject(PORTAL_FACTORY) private portalFactory: (injector: Injector) => ComponentPortal<any>) { }
+  overlayService = inject(Overlay);
+  rootInjector = inject(Injector);
+  portalFactory = inject(PORTAL_FACTORY);
 
   overlayRef: OverlayRef | null = null;
   toasts$ = new BehaviorSubject<ToastItem[]>([]);

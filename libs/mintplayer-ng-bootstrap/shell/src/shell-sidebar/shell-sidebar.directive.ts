@@ -6,7 +6,7 @@ import { BsShellComponent } from '../shell/shell.component';
   standalone: false,
 })
 export class BsShellSidebarDirective {
-  constructor(private shell: BsShellComponent, private template: TemplateRef<any>) {
+  constructor(shell: BsShellComponent, template: TemplateRef<any>) {
     shell.sidebarTemplate = template;
   }
 }

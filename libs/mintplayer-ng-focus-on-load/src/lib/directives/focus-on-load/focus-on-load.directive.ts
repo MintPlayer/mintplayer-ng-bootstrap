@@ -1,4 +1,4 @@
-import { Input, ViewContainerRef, Directive, AfterViewInit } from '@angular/core';
+import { Input, ViewContainerRef, Directive, AfterViewInit, inject } from '@angular/core';
 
 @Directive({
   selector: '*[autofocus]',
@@ -6,9 +6,7 @@ import { Input, ViewContainerRef, Directive, AfterViewInit } from '@angular/core
 })
 export class FocusOnLoadDirective implements AfterViewInit {
 
-  constructor(
-    private viewContainer: ViewContainerRef
-  ) {
+  constructor() {
     const container = (<any>this.viewContainer)['_lContainer'][0]
     if (container instanceof HTMLElement) {
       this.inputBox = <HTMLInputElement>container;
@@ -18,6 +16,7 @@ export class FocusOnLoadDirective implements AfterViewInit {
   }
 
   private readonly inputBox!: any;
+  viewContainer = inject(ViewContainerRef);
 
   private _autofocus = true;
   @Input() public set autofocus(value: any) {

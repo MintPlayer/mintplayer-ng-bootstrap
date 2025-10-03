@@ -1,9 +1,9 @@
-import { Directive, TemplateRef } from '@angular/core';
+import { Directive, inject, TemplateRef } from '@angular/core';
 
 @Directive({
   selector: '[bsTabPageHeader]',
   standalone: false,
 })
 export class BsTabPageHeaderDirective {
-  constructor(public template: TemplateRef<any>) {}
+  template = inject(TemplateRef<any>);
 }

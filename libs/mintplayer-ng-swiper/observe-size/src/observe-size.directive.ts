@@ -1,5 +1,5 @@
 import { isPlatformServer } from '@angular/common';
-import { AfterViewInit, Directive, ElementRef, Inject, NgZone, OnDestroy, PLATFORM_ID } from '@angular/core';
+import { AfterViewInit, Directive, ElementRef, inject, Inject, NgZone, OnDestroy, PLATFORM_ID } from '@angular/core';
 import { BehaviorSubject, Observable, Subject, map } from 'rxjs';
 import { Size } from './size';
 
@@ -9,7 +9,10 @@ import { Size } from './size';
   exportAs: 'bsObserveSize'
 })
 export class BsObserveSizeDirective implements AfterViewInit, OnDestroy {
-  constructor(private element: ElementRef, @Inject(PLATFORM_ID) private platformId: any, private zone: NgZone) {
+  element = inject(ElementRef);
+  platformId = inject(PLATFORM_ID)
+  zone = inject(NgZone);
+  constructor() {
     if (!isPlatformServer(this.platformId)) {
       this.observer = new ResizeObserver((entries) => {
         // console.log('resized', entries[0].contentRect);

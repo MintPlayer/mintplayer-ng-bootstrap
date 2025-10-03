@@ -1,7 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { animate, AnimationBuilder, AnimationPlayer, style } from '@angular/animations';
-import { AfterViewInit, ContentChildren, DestroyRef, Directive, ElementRef, EventEmitter, forwardRef, HostBinding, Inject, Input, Output, QueryList } from '@angular/core';
+import { AfterViewInit, ContentChildren, DestroyRef, Directive, ElementRef, EventEmitter, forwardRef, HostBinding, inject, Inject, Input, Output, QueryList } from '@angular/core';
 import { BehaviorSubject, combineLatest, debounceTime, delay, filter, map, mergeMap, Observable, take } from 'rxjs';
 import { BsObserveSizeDirective, Size } from '@mintplayer/ng-swiper/observe-size';
 import { LastTouch } from '../../interfaces/last-touch';
@@ -16,9 +16,13 @@ import { BsSwipeDirective } from '../swipe/swipe.directive';
 })
 export class BsSwipeContainerDirective implements AfterViewInit {
 
-  constructor(element: ElementRef, private animationBuilder: AnimationBuilder, private destroy: DestroyRef, @Inject(DOCUMENT) document: any, private observeSize: BsObserveSizeDirective) {
-    this.containerElement = element;
-    this.document = <Document>document;
+  containerElement = inject(ElementRef);
+  animationBuilder = inject(AnimationBuilder);
+  destroy = inject(DestroyRef);
+  document = inject(DOCUMENT);
+  observeSize = inject(BsObserveSizeDirective);
+
+  constructor() {
     this.offset$ = combineLatest([this.startTouch$, this.lastTouch$, this.imageIndex$, this.isViewInited$])
       .pipe(map(([startTouch, lastTouch, imageIndex, isViewInited]) => {
         if (!isViewInited) {
@@ -130,8 +134,6 @@ export class BsSwipeContainerDirective implements AfterViewInit {
   imageIndex$ = new BehaviorSubject<number>(0);
   currentSlideHeight$: Observable<number>;
   pendingAnimation?: AnimationPlayer;
-  containerElement: ElementRef<HTMLDivElement>;
-  document: Document;
 
   // TODO: Don't just keep px, but both px and % using currentslidesize$
   offset$: Observable<number>;

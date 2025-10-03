@@ -1,4 +1,4 @@
-import { Component, Input, ContentChildren, QueryList, ElementRef, HostListener, HostBinding, ViewChildren, DestroyRef } from '@angular/core';
+import { Component, Input, ContentChildren, QueryList, ElementRef, HostListener, HostBinding, ViewChildren, DestroyRef, inject } from '@angular/core';
 import { BehaviorSubject, map, combineLatest, Observable, take } from 'rxjs';
 import { DragOperation, EDragOperation } from '../interfaces/drag-operation';
 import { Point } from '../interfaces/point';
@@ -14,7 +14,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 })
 export class BsSplitterComponent {
 
-  constructor(private destroy: DestroyRef) {
+  destroy = inject(DestroyRef);
+  constructor() {
     this.directionClass$ = this.orientation$.pipe(map((orientation) => {
       switch (orientation) {
         case 'horizontal': return 'flex-row';

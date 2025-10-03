@@ -1,4 +1,4 @@
-import { Component, HostBinding } from '@angular/core';
+import { Component, HostBinding, inject } from '@angular/core';
 import { BsToastService } from '../../services/toast/toast.service';
 
 @Component({
@@ -8,11 +8,7 @@ import { BsToastService } from '../../services/toast/toast.service';
   standalone: false,
 })
 export class BsToastContainerComponent {
-  constructor(toastService: BsToastService) {
-    this.toastService = toastService;
-  }
-
-  toastService: BsToastService;
+  toastService = inject(BsToastService);
 
   @HostBinding('style.overflow-y') overflowY = 'auto';
 }

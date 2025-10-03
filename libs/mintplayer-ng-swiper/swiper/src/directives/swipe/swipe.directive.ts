@@ -1,4 +1,4 @@
-import { DestroyRef, Directive, HostBinding, HostListener, input } from "@angular/core";
+import { DestroyRef, Directive, HostBinding, HostListener, inject, input } from "@angular/core";
 import { BsObserveSizeDirective } from "@mintplayer/ng-swiper/observe-size";
 import { combineLatest, filter, take } from "rxjs";
 import { BsSwipeContainerDirective } from "../swipe-container/swipe-container.directive";
@@ -11,13 +11,15 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 })
 export class BsSwipeDirective {
 
-  constructor(private container: BsSwipeContainerDirective, observeSize: BsObserveSizeDirective, private destroy: DestroyRef) {
-    this.observeSize = observeSize;
-    // container.orientation$.pipe(takeUntilDestroyed())
-    //   .subscribe(orientation => this.hostClass = (orientation === 'vertical') ? 'd-block' : 'd-inline-block');
-  }
+  // constructor() {
+  //   // container.orientation$.pipe(takeUntilDestroyed())
+  //   //   .subscribe(orientation => this.hostClass = (orientation === 'vertical') ? 'd-block' : 'd-inline-block');
+  // }
 
-  observeSize: BsObserveSizeDirective;
+  destroy = inject(DestroyRef);
+  observeSize = inject(BsObserveSizeDirective);
+  container = inject(BsSwipeContainerDirective);
+
 
   public offside = input(false);
 

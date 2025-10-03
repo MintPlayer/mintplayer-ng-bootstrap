@@ -25,7 +25,7 @@ export class ClickOutsideDirective implements OnInit, OnChanges, OnDestroy {
 
   element = inject(ElementRef);
   zone = inject(NgZone);
-  @Inject(PLATFORM_ID) platformId = inject(PLATFORM_ID);
+  platformId = inject(PLATFORM_ID);
 
   constructor() {
     this._initOnClickBody = this._initOnClickBody.bind(this);

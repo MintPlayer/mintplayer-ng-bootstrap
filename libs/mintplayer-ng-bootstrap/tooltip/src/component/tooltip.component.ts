@@ -1,4 +1,4 @@
-import { Component, HostBinding, Inject, Input, TemplateRef } from '@angular/core';
+import { Component, HostBinding, inject, Input } from '@angular/core';
 import { BehaviorSubject, map, Observable } from 'rxjs';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Position } from '@mintplayer/ng-bootstrap';
@@ -12,8 +12,8 @@ import { TOOLTIP_CONTENT } from '../providers/tooltip-content.provider';
   animations: [FadeInOutAnimation],
 })
 export class BsTooltipComponent {
-  constructor(@Inject(TOOLTIP_CONTENT) content: TemplateRef<any>) {
-    this.template = content;  
+  template = inject(TOOLTIP_CONTENT);
+  constructor() {
     this.positionClass$ = this.position$
       .pipe(map(position => `bs-tooltip-${position}`));
     this.marginClass$ = this.position$
@@ -37,7 +37,6 @@ export class BsTooltipComponent {
   }
   //#endregion
 
-  template: TemplateRef<any>;
   positionClass$: Observable<string>;
   marginClass$: Observable<string>;
 

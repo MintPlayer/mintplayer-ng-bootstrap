@@ -1,6 +1,6 @@
 import { ConnectedPosition, Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { Directive, ElementRef, Host, HostListener, Injector, Input, OnDestroy, SkipSelf, TemplateRef } from '@angular/core';
+import { Directive, ElementRef, Host, HostListener, inject, Injector, Input, OnDestroy, SkipSelf, TemplateRef } from '@angular/core';
 import { Position } from '@mintplayer/ng-bootstrap';
 import { BsTooltipComponent } from '../component/tooltip.component';
 import { TOOLTIP_CONTENT } from '../providers/tooltip-content.provider';
@@ -11,30 +11,27 @@ import { TOOLTIP_CONTENT } from '../providers/tooltip-content.provider';
 })
 export class BsTooltipDirective implements OnDestroy {
 
-  constructor(
-    private overlay: Overlay,
-    private templateRef: TemplateRef<any>,
-    private parentInjector: Injector,
-    @Host() @SkipSelf() private parent: ElementRef
-  ) {
-    this.injector = Injector.create({
-      providers: [{ provide: TOOLTIP_CONTENT, useValue: this.templateRef }],
-      parent: this.parentInjector
-    });
-    this.portal = new ComponentPortal(BsTooltipComponent, null, this.injector);
+  overlay = inject(Overlay);
+  templateRef = inject(TemplateRef<any>);
+  parentInjector = inject(Injector);
+  parent = inject(ElementRef, { host: true, skipSelf: true });
+  injector = Injector.create({
+    providers: [{ provide: TOOLTIP_CONTENT, useValue: this.templateRef }],
+    parent: this.parentInjector
+  });
+  portal = new ComponentPortal(BsTooltipComponent, null, this.injector);
 
-    parent.nativeElement.onmouseenter = () => {
+  constructor() {
+    this.parent.nativeElement.onmouseenter = () => {
       this.showTooltip();
     };
-    parent.nativeElement.onmouseleave = () => {
+    this.parent.nativeElement.onmouseleave = () => {
       this.hideTooltip();
-    }
+    };
   }
 
   @Input() public bsTooltip: Position = 'bottom';
 
-  private injector: Injector;
-  private portal: ComponentPortal<any>;
   private overlayRef: OverlayRef | null = null;
 
   @HostListener('window:blur') private onBlur() {

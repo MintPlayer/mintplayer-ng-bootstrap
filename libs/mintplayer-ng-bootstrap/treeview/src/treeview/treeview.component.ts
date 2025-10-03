@@ -1,4 +1,4 @@
-import { Component, SkipSelf, Input, Output, EventEmitter, Optional } from '@angular/core';
+import { Component, SkipSelf, Input, Output, EventEmitter, Optional, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, Observable, map } from 'rxjs';
 import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
@@ -11,10 +11,9 @@ import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
   animations: [SlideUpDownAnimation],
 })
 export class BsTreeviewComponent {
-  constructor(
-    @SkipSelf() @Optional() parent: BsTreeviewComponent
-  ) {
-    const level = !parent ? 0 : parent.level$.value + 1
+  parent = inject(BsTreeviewComponent, { optional: true, skipSelf: true });
+  constructor() {
+    const level = !this.parent ? 0 : this.parent.level$.value + 1
     this.level$ = new BehaviorSubject<number>(level);
     this.indentation$ = this.level$.pipe(map(level => level * 30));
 

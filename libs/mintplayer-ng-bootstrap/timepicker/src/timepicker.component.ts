@@ -1,7 +1,7 @@
 /// <reference types="./types" />
 
 import { DatePipe, DecimalPipe } from '@angular/common';
-import { ChangeDetectorRef, Component, EventEmitter, Input, NgZone, Output, Renderer2 } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, inject, Input, NgZone, Output, Renderer2 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Color } from '@mintplayer/ng-bootstrap';
@@ -22,7 +22,7 @@ import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
 })
 export class BsTimepickerComponent {
 
-  constructor(private ref: ChangeDetectorRef, private zone: NgZone, private renderer: Renderer2, private sanitizer: DomSanitizer) {
+  constructor() {
     const today = new Date();
     today.setHours(0); today.setMinutes(0); today.setSeconds(0);
 
@@ -36,10 +36,14 @@ export class BsTimepickerComponent {
 
       
     import('bootstrap-icons/icons/clock.svg').then((icon) => {
-      this.clock = sanitizer.bypassSecurityTrustHtml(icon.default);
+      this.clock = this.sanitizer.bypassSecurityTrustHtml(icon.default);
     });
   }
 
+  ref = inject(ChangeDetectorRef);
+  zone = inject(NgZone);
+  renderer = inject(Renderer2);
+  sanitizer = inject(DomSanitizer);
   clock?: SafeHtml;
   colors = Color;
   isOpen = false;

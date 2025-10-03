@@ -1,6 +1,6 @@
 /// <reference types="../types" />
 
-import { Component, ContentChild, HostListener } from '@angular/core';
+import { Component, ContentChild, HostListener, inject } from '@angular/core';
 import { BsTreeviewComponent } from '../treeview/treeview.component';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
@@ -11,11 +11,11 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
   standalone: false,
 })
 export class BsTreeviewItemComponent {
-  readonly parent: BsTreeviewComponent;
-  constructor(parent: BsTreeviewComponent, private sanitizer: DomSanitizer) {
-    this.parent = parent;
+  readonly parent = inject(BsTreeviewComponent);
+  readonly sanitizer = inject(DomSanitizer);
+  constructor() {
     import('bootstrap-icons/icons/chevron-right.svg').then((icon) => {
-      this.chevronRight = sanitizer.bypassSecurityTrustHtml(icon.default);
+      this.chevronRight = this.sanitizer.bypassSecurityTrustHtml(icon.default);
     });
   }
 

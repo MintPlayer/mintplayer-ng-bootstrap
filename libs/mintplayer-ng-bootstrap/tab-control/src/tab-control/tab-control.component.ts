@@ -1,5 +1,5 @@
 import { CdkDragDrop, CdkDragStart, moveItemInArray } from '@angular/cdk/drag-drop';
-import { Component, ContentChildren, ElementRef, HostBinding, Input, QueryList } from '@angular/core';
+import { Component, ContentChildren, ElementRef, HostBinding, inject, Input, QueryList } from '@angular/core';
 import { BehaviorSubject, combineLatest, filter, map, Observable } from 'rxjs';
 import { BsTabPageComponent } from '../tab-page/tab-page.component';
 import { BsTabsPosition } from '../tabs-position';
@@ -16,24 +16,23 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 })
 export class BsTabControlComponent {
 
-  constructor(element: ElementRef<any>) {
-    this.tabControlId$ = new BehaviorSubject<number>(++BsTabControlComponent.tabControlCounter);
-    this.tabControlName$ = this.tabControlId$.pipe(map((id) => `bs-tab-control-${id}`));
-    this.element = element;
+  element = inject(ElementRef<any>);
+  constructor() {
     combineLatest([this.tabPages$, this.activeTab$, this.selectFirstTab$])
       .pipe(filter(([tabPages, activeTab, selectFirstTab]) => {
         return !!tabPages && (!activeTab || !tabPages.some(tp => tp === activeTab)) && selectFirstTab;
       }))
       .pipe(takeUntilDestroyed())
-      .subscribe(([tabPages, activeTab, selectFirstTab]) => {
+      .pipe(map(([tabPages, activeTab, selectFirstTab]) => {
         const notDisabled = tabPages!.filter((tp) => !tp.disabled);
-        if (notDisabled.length > 0) {
-          setTimeout(() => this.activeTab$.next(notDisabled[0]));
+        return notDisabled.length > 0 ? notDisabled[0] : null;
+      }))
+      .pipe(filter(tab => !!tab))
+      .subscribe((tabPage) => {
+        if (tabPage) {
+          setTimeout(() => this.activeTab$.next(tabPage));
         }
       });
-    this.topTabs$ = this.tabsPosition$.pipe(map(position => position === 'top'));
-    this.bottomTabs$ = this.tabsPosition$.pipe(map(position => position === 'bottom'));
-    this.disableDragDrop$ = this.allowDragDrop$.pipe(map(allow => !allow));
   }
 
   @HostBinding('class.d-block') dBlock = true;
@@ -49,15 +48,11 @@ export class BsTabControlComponent {
     this.dragBoundarySelector = value ? 'ul' : '';
   }
   dragBoundarySelector = '';
-  element: ElementRef<any>;
   tabPages$ = new BehaviorSubject<QueryList<BsTabPageComponent> | null>(null);
   activeTab$ = new BehaviorSubject<BsTabPageComponent | null>(null);
   orderedTabPages: BsTabPageComponent[] = [];
-  tabControlId$: BehaviorSubject<number>;
-  tabControlName$: Observable<string>;
-  topTabs$: Observable<boolean>;
-  bottomTabs$: Observable<boolean>;
-  disableDragDrop$: Observable<boolean>;
+  tabControlId$ = new BehaviorSubject<number>(++BsTabControlComponent.tabControlCounter);
+  tabControlName$ = this.tabControlId$.pipe(map((id) => `bs-tab-control-${id}`));
   static tabControlCounter = 0;
   tabCounter = 0;
 
@@ -88,6 +83,10 @@ export class BsTabControlComponent {
     this.allowDragDrop$.next(value);
   }
   //#endregion
+
+  topTabs$ = this.tabsPosition$.pipe(map(position => position === 'top'));
+  bottomTabs$ = this.tabsPosition$.pipe(map(position => position === 'bottom'));
+  disableDragDrop$ = this.allowDragDrop$.pipe(map(allow => !allow));
 
   setActiveTab(tab: BsTabPageComponent) {
     if (!tab.disabled) {
