@@ -1,6 +1,6 @@
-import { Component, ElementRef, HostBinding, Input } from '@angular/core';
+import { Component, ElementRef, Input, OnDestroy } from '@angular/core';
 import { DomPortal } from '@angular/cdk/portal';
-import { BehaviorSubject, Observable, map } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 import { BsDockPane } from '../panes/dock-pane';
 import { EPaneType } from '../enums/pane-type.enum';
 import { BsSplitPane } from '../panes/split-pane';
@@ -9,6 +9,7 @@ import { BsDocumentHost } from '../panes/document-host-pane';
 import { BsTabGroupPane } from '../panes/tab-group-pane';
 import { BsFloatingPane } from '../panes/floating-pane';
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
+import { BsDockComponent } from '../dock/dock.component';
 
 @Component({
   selector: 'bs-dock-pane-renderer',
@@ -16,13 +17,16 @@ import { Overlay, OverlayRef } from '@angular/cdk/overlay';
   styleUrls: ['./dock-pane-renderer.component.scss'],
   standalone: false,
 })
-export class BsDockPaneRendererComponent {
+export class BsDockPaneRendererComponent implements OnDestroy {
 
-  constructor(private overlay: Overlay, element: ElementRef) {
+  constructor(private overlay: Overlay, private element: ElementRef<HTMLElement>, private dock: BsDockComponent) {
     this.portal = new DomPortal(element);
+    this.hostElement = element.nativeElement;
   }
 
   portal: DomPortal;
+  private hostElement: HTMLElement;
+  private registeredPane?: BsDockPane | null;
 
   paneTypes = EPaneType;
   readonly BsDocumentHostType = BsDocumentHost;
@@ -37,7 +41,17 @@ export class BsDockPaneRendererComponent {
     return this.layout$.value;
   }
   @Input() public set layout(value: BsDockPane | null) {
+    if (this.registeredPane && this.registeredPane !== value) {
+      this.dock.unregisterRenderer(this.registeredPane, this);
+      this.registeredPane = undefined;
+    }
+
     this.layout$.next(value);
+
+    if (value && this.registeredPane !== value) {
+      this.registeredPane = value;
+      this.dock.registerRenderer(value, this, this.hostElement);
+    }
   }
   //#endregion
 
@@ -55,5 +69,13 @@ export class BsDockPaneRendererComponent {
       this.overlayRef.dispose();
       this.overlayRef = undefined;
     }
+  }
+
+  ngOnDestroy() {
+    if (this.registeredPane) {
+      this.dock.unregisterRenderer(this.registeredPane, this);
+      this.registeredPane = undefined;
+    }
+    this.disposeOverlay();
   }
 }

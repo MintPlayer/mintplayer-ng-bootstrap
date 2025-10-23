@@ -1,3 +1,15 @@
+:host {
+    .dock-drop-indicator {
+        position: absolute;
+        border: 2px dashed rgba(13, 110, 253, 0.7);
+        background-color: rgba(13, 110, 253, 0.15);
+        pointer-events: none;
+        z-index: 2000;
+        border-radius: .25rem;
+        box-sizing: border-box;
+    }
+}
+
 :host ::ng-deep {
     .tab-content {
         max-height: calc(100% - 41px);
