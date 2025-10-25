@@ -2,6 +2,7 @@ import { AfterContentInit, Component, Input, TemplateRef, ViewChild } from '@ang
 
 @Component({
   selector: 'bs-dock-pane',
+  standalone: false,
   template: `<ng-template><ng-content></ng-content></ng-template>`,
 })
 export class BsDockPaneComponent implements AfterContentInit {
