@@ -56,8 +56,9 @@ export class BsDockManagerComponent implements AfterViewInit {
     return element?.snapshot ?? { root: null };
   }
 
-  onLayoutChanged(event: CustomEvent<DockLayoutSnapshot>): void {
-    const snapshot = event.detail ?? { root: null };
+  onLayoutChanged(event: Event): void {
+    const snapshot =
+      (event as CustomEvent<DockLayoutSnapshot>).detail ?? { root: null };
     this._layout = snapshot.root;
     this.layoutString = this._layout ? JSON.stringify(this._layout) : null;
     this.layoutChange.emit(this._layout);
