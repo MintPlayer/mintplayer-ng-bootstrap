@@ -1,6 +1,5 @@
-import { Component, ContentChildren, ViewChildren, Input, OnDestroy, QueryList, HostBinding, ElementRef } from '@angular/core';
+import { Component, ContentChildren, Input, OnDestroy, HostBinding, ElementRef, QueryList } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BsDockPanelComponent } from '../dock-panel/dock-panel.component';
 import { BsDockLayout } from '../interfaces/dock-layout';
 import { BsTabGroupPane } from '../panes/tab-group-pane';
@@ -23,11 +22,6 @@ export class BsDockComponent implements OnDestroy {
       rootPane: new BsTabGroupPane({ panes: [] }),
       floatingPanes: []
     });
-
-    this.floating$.pipe(takeUntilDestroyed())
-      .subscribe((floating) => {
-        floating.forEach((panel) => panel.moveToOverlay());
-      });
   }
 
   //#region Panels
@@ -46,11 +40,6 @@ export class BsDockComponent implements OnDestroy {
   }
   //#endregion
 
-  floating$ = new BehaviorSubject<BsDockPaneRendererComponent[]>([]);
-  @ViewChildren('floating') set floatingPanes(value: QueryList<BsDockPaneRendererComponent>) {
-    this.floating$.next(value.toArray());
-  }
-
   @HostBinding('class.position-absolute')
   positionAbsolute = true;
 
@@ -66,7 +55,6 @@ export class BsDockComponent implements OnDestroy {
   private activeDrag?: DockDragState;
 
   ngOnDestroy() {
-    this.floating$.value.forEach(panel => panel.disposeOverlay());
   }
 
   public registerRenderer(pane: BsDockPane, renderer: BsDockPaneRendererComponent, element: HTMLElement) {
