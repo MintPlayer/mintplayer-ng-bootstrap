@@ -614,7 +614,7 @@ export class MintDockManagerElement extends HTMLElement {
       return;
     }
 
-    this.removePaneFromStack(sourceNode, pane);
+    const stackEmptied = this.removePaneFromStack(sourceNode, pane, true);
 
     if (!this._layout) {
       this._layout = {
@@ -622,6 +622,9 @@ export class MintDockManagerElement extends HTMLElement {
         panes: [pane],
         activePane: pane,
       };
+      if (stackEmptied) {
+        this.cleanupEmptyStack(sourceNode);
+      }
       this.render();
       this.dispatchLayoutChanged();
       return;
@@ -632,6 +635,9 @@ export class MintDockManagerElement extends HTMLElement {
         targetNode.panes.push(pane);
       }
       targetNode.activePane = pane;
+      if (stackEmptied) {
+        this.cleanupEmptyStack(sourceNode);
+      }
       this.render();
       this.dispatchLayoutChanged();
       return;
@@ -662,6 +668,10 @@ export class MintDockManagerElement extends HTMLElement {
       this.replaceNode(targetNode, split);
     }
 
+    if (stackEmptied) {
+      this.cleanupEmptyStack(sourceNode);
+    }
+
     this.render();
     this.dispatchLayoutChanged();
   }
@@ -683,7 +693,7 @@ export class MintDockManagerElement extends HTMLElement {
     return result;
   }
 
-  private removePaneFromStack(stack: DockStackNode, pane: string): void {
+  private removePaneFromStack(stack: DockStackNode, pane: string, skipCleanup = false): boolean {
     stack.panes = stack.panes.filter((p) => p !== pane);
     if (!stack.panes.includes(stack.activePane ?? '')) {
       if (stack.panes.length > 0) {
@@ -694,18 +704,42 @@ export class MintDockManagerElement extends HTMLElement {
     }
 
     if (stack.panes.length > 0) {
+      return false;
+    }
+
+    if (skipCleanup) {
+      return true;
+    }
+
+    this.cleanupEmptyStack(stack);
+    return true;
+  }
+
+  private cleanupEmptyStack(stack: DockStackNode): void {
+    if (stack.panes.length > 0) {
+      return;
+    }
+
+    if (!this.containsNode(this._layout, stack)) {
       return;
     }
 
     const parentInfo = this.findParentSplit(this._layout, stack);
     if (!parentInfo) {
-      this._layout = null;
+      if (this._layout === stack) {
+        this._layout = null;
+      }
       return;
     }
 
-    parentInfo.parent.children.splice(parentInfo.index, 1);
+    const index = parentInfo.parent.children.indexOf(stack);
+    if (index === -1) {
+      return;
+    }
+
+    parentInfo.parent.children.splice(index, 1);
     if (Array.isArray(parentInfo.parent.sizes)) {
-      parentInfo.parent.sizes.splice(parentInfo.index, 1);
+      parentInfo.parent.sizes.splice(index, 1);
     }
 
     this.normalizeSplitNode(parentInfo.parent);
@@ -717,6 +751,28 @@ export class MintDockManagerElement extends HTMLElement {
     if (parentInfo.parent.children.length === 0) {
       this.removeEmptySplit(parentInfo.parent);
     }
+  }
+
+  private containsNode(node: DockLayoutNode | null, target: DockLayoutNode): boolean {
+    if (!node) {
+      return false;
+    }
+
+    if (node === target) {
+      return true;
+    }
+
+    if (node.kind !== 'split') {
+      return false;
+    }
+
+    for (const child of node.children) {
+      if (this.containsNode(child, target)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   private promoteSingleChild(split: DockSplitNode): void {
