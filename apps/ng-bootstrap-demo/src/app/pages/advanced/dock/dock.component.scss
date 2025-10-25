@@ -1,0 +1,26 @@
+.dock-demo {
+  display: grid;
+  gap: 1rem;
+}
+
+.dock-demo__surface {
+  min-height: 24rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.dock-demo__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+pre {
+  margin: 0;
+  padding: 0.75rem;
+  background: rgba(15, 23, 42, 0.05);
+  border-radius: 0.5rem;
+  max-height: 16rem;
+  overflow: auto;
+}

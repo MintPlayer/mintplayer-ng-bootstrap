@@ -1,65 +1,39 @@
-@if (layout$ | async; as layout) {
-    <bs-dock [layout]="layout" [style.top.px]="56">
-        <bs-dock-panel #panel1>
-            <bs-dock-panel-header>Panel 1</bs-dock-panel-header>
-            <div class="p-3">Content</div>
-            <!-- <div class="p-3">
-                <pre>{{ layoutFiltered$ | async | json }}</pre>
-            </div> -->
-        </bs-dock-panel>
-        <bs-dock-panel #panel2>
-            <bs-dock-panel-header>Panel 2</bs-dock-panel-header>
-            <div class="p-3">Content</div>
-        </bs-dock-panel>
-        <bs-dock-panel #panel3>
-            <bs-dock-panel-header>Panel 3</bs-dock-panel-header>
-            <div class="p-3">Content</div>
-        </bs-dock-panel>
-        <bs-dock-panel #panel4>
-            <bs-dock-panel-header>Panel 4</bs-dock-panel-header>
-            <div class="p-3">Content</div>
-        </bs-dock-panel>
-        <bs-dock-panel #panel5>
-            <bs-dock-panel-header>Panel 5</bs-dock-panel-header>
-            <div class="p-3">
-                <h1 class="text-center">Dock</h1>
-                <bs-badge [type]="colors.info">In development</bs-badge>
-                <h2>Demo</h2>
-                <button [color]="colors.primary" (click)="getAllPanes()">Get all panes</button>
-            </div>
-            <div class="p-3">Content</div>
-        </bs-dock-panel>
-        <bs-dock-panel #panel6>
-            <bs-dock-panel-header>Panel 6</bs-dock-panel-header>
-            <div class="p-3">Content</div>
-        </bs-dock-panel>
-        <bs-dock-panel #panel7>
-            <bs-dock-panel-header>Panel 7</bs-dock-panel-header>
-            <div class="p-3">Content</div>
-        </bs-dock-panel>
-        <bs-dock-panel #panel8>
-            <bs-dock-panel-header>Panel 8</bs-dock-panel-header>
-            <div class="p-3">Content</div>
-        </bs-dock-panel>
-        <bs-dock-panel #panel9>
-            <bs-dock-panel-header>Panel 9</bs-dock-panel-header>
-            <div class="p-3">Content</div>
-        </bs-dock-panel>
-        <bs-dock-panel #panel10>
-            <bs-dock-panel-header>Panel 10</bs-dock-panel-header>
-            <div class="p-3">Content</div>
-        </bs-dock-panel>
-        <bs-dock-panel #panel11>
-            <bs-dock-panel-header>Panel 11</bs-dock-panel-header>
-            <div class="p-3">Content</div>
-        </bs-dock-panel>
-        <bs-dock-panel #panel12>
-            <bs-dock-panel-header>Panel 12</bs-dock-panel-header>
-            <div class="p-3">Content</div>
-        </bs-dock-panel>
-        <!-- <bs-dock-panel #panel6>
-            <bs-dock-panel-header>Panel 6</bs-dock-panel-header>
-            <div class="p-3">Floating panel</div>
-        </bs-dock-panel> -->
-    </bs-dock>
-}
+<div class="dock-demo">
+  <bs-dock-manager [layout]="layout" class="dock-demo__surface">
+    <bs-dock-pane name="panel-1">
+      <div class="p-3">
+        <h3 class="mb-2">Panel 1</h3>
+        <p class="mb-0">This panel demonstrates static content projected through a named slot.</p>
+      </div>
+    </bs-dock-pane>
+    <bs-dock-pane name="panel-2">
+      <div class="p-3">
+        <h3 class="mb-2">Panel 2</h3>
+        <p class="mb-0">Switch tabs to see how the dock manager preserves the layout.</p>
+      </div>
+    </bs-dock-pane>
+    <bs-dock-pane name="panel-3">
+      <div class="p-3">
+        <h3 class="mb-2">Panel 3</h3>
+        <bs-badge [type]="Color.info">Web component powered</bs-badge>
+      </div>
+    </bs-dock-pane>
+    <bs-dock-pane name="panel-4">
+      <div class="p-3">
+        <h3 class="mb-2">Panel 4</h3>
+        <p class="mb-0">Layouts can be saved as JSON using the capture button.</p>
+      </div>
+    </bs-dock-pane>
+    <bs-dock-pane name="panel-5">
+      <div class="p-3">
+        <h3 class="mb-2">Panel 5</h3>
+        <p class="mb-0">Use this panel to imagine additional tools or editors.</p>
+      </div>
+    </bs-dock-pane>
+  </bs-dock-manager>
+
+  <div class="dock-demo__actions">
+    <button bsButtonType (click)="saveLayout()">Capture layout JSON</button>
+    <pre *ngIf="savedLayout as snapshot">{{ snapshot | json }}</pre>
+  </div>
+</div>

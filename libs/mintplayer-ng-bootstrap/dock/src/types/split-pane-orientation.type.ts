@@ -1,1 +1,0 @@
-export type SplitPaneOrientation = 'horizontal' | 'vertical';
