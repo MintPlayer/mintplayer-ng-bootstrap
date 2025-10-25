@@ -16,6 +16,7 @@ import { MintDockManagerElement } from '../web-components/mint-dock-manager.elem
   selector: 'bs-dock-manager',
   templateUrl: './dock-manager.component.html',
   styleUrls: ['./dock-manager.component.scss'],
+  standalone: false,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsDockManagerComponent implements AfterViewInit {
