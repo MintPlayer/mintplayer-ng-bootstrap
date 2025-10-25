@@ -1,10 +1,13 @@
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   ContentChildren,
   ElementRef,
+  EventEmitter,
   Input,
+  Output,
   QueryList,
   ViewChild,
 } from '@angular/core';
@@ -30,6 +33,9 @@ export class BsDockManagerComponent implements AfterViewInit {
     return this._layout;
   }
 
+  @Output() layoutChange = new EventEmitter<DockLayoutNode | null>();
+  @Output() layoutSnapshotChange = new EventEmitter<DockLayoutSnapshot>();
+
   layoutString: string | null = null;
 
   @ContentChildren(BsDockPaneComponent) panes: QueryList<BsDockPaneComponent> = new QueryList();
@@ -39,6 +45,8 @@ export class BsDockManagerComponent implements AfterViewInit {
 
   private _layout: DockLayoutNode | null = null;
 
+  constructor(private readonly changeDetector: ChangeDetectorRef) {}
+
   ngAfterViewInit(): void {
     this.applyLayout();
   }
@@ -46,6 +54,15 @@ export class BsDockManagerComponent implements AfterViewInit {
   captureLayout(): DockLayoutSnapshot {
     const element = this.managerRef?.nativeElement;
     return element?.snapshot ?? { root: null };
+  }
+
+  onLayoutChanged(event: CustomEvent<DockLayoutSnapshot>): void {
+    const snapshot = event.detail ?? { root: null };
+    this._layout = snapshot.root;
+    this.layoutString = this._layout ? JSON.stringify(this._layout) : null;
+    this.layoutChange.emit(this._layout);
+    this.layoutSnapshotChange.emit(snapshot);
+    this.changeDetector.markForCheck();
   }
 
   private applyLayout(): void {

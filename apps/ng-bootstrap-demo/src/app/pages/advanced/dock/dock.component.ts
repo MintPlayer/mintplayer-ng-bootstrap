@@ -62,6 +62,7 @@ export class DockComponent {
     ],
   };
 
+  liveLayout?: DockLayoutSnapshot;
   savedLayout?: DockLayoutSnapshot;
 
   saveLayout(): void {
@@ -70,5 +71,9 @@ export class DockComponent {
     }
 
     this.savedLayout = this.dockManager.captureLayout();
+  }
+
+  onLayoutSnapshot(snapshot: DockLayoutSnapshot): void {
+    this.liveLayout = snapshot;
   }
 }

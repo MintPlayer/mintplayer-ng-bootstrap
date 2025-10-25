@@ -1,5 +1,9 @@
 <div class="dock-demo">
-  <bs-dock-manager [layout]="layout" class="dock-demo__surface">
+  <bs-dock-manager
+    [(layout)]="layout"
+    class="dock-demo__surface"
+    (layoutSnapshotChange)="onLayoutSnapshot($event)"
+  >
     <bs-dock-pane name="panel-1">
       <div class="p-3">
         <h3 class="mb-2">Panel 1</h3>
@@ -34,6 +38,15 @@
 
   <div class="dock-demo__actions">
     <button bsButtonType (click)="saveLayout()">Capture layout JSON</button>
-    <pre *ngIf="savedLayout as snapshot">{{ snapshot | json }}</pre>
+    <div class="dock-demo__snapshots">
+      <div class="dock-demo__snapshot">
+        <h4 class="dock-demo__snapshot-title">Live layout</h4>
+        <pre class="dock-demo__snapshot-json">{{ liveLayout | json }}</pre>
+      </div>
+      <div class="dock-demo__snapshot" *ngIf="savedLayout as snapshot">
+        <h4 class="dock-demo__snapshot-title">Captured snapshot</h4>
+        <pre class="dock-demo__snapshot-json">{{ snapshot | json }}</pre>
+      </div>
+    </div>
   </div>
 </div>

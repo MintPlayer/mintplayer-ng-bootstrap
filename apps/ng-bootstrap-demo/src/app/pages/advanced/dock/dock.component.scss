@@ -16,7 +16,30 @@
   gap: 0.75rem;
 }
 
-pre {
+.dock-demo__snapshots {
+  display: grid;
+  gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .dock-demo__snapshots {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.dock-demo__snapshot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dock-demo__snapshot-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.dock-demo__snapshot-json {
   margin: 0;
   padding: 0.75rem;
   background: rgba(15, 23, 42, 0.05);
