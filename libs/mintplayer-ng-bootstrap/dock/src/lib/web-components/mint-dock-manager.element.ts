@@ -198,8 +198,11 @@ export class MintDockManagerElement extends HTMLElement {
     return ['layout'];
   }
 
+  private static instanceCounter = 0;
+
   private readonly rootEl: HTMLElement;
   private readonly dropIndicator: HTMLElement;
+  private readonly instanceId: string;
   private _layout: DockLayoutNode | null = null;
   private resizeState:
     | {
@@ -236,6 +239,7 @@ export class MintDockManagerElement extends HTMLElement {
 
     this.rootEl = root;
     this.dropIndicator = indicator;
+    this.instanceId = `mint-dock-${++MintDockManagerElement.instanceCounter}`;
     this.onPointerMove = this.onPointerMove.bind(this);
     this.onPointerUp = this.onPointerUp.bind(this);
     this.onDragOver = this.onDragOver.bind(this);
@@ -361,6 +365,7 @@ export class MintDockManagerElement extends HTMLElement {
 
     const header = document.createElement('div');
     header.classList.add('dock-stack__header');
+    header.setAttribute('role', 'tablist');
     const content = document.createElement('div');
     content.classList.add('dock-stack__content');
 
@@ -378,15 +383,25 @@ export class MintDockManagerElement extends HTMLElement {
       ? node.activePane!
       : panes[0];
 
+    const pathSlug = path.length ? path.join('-') : 'root';
     panes.forEach((paneName) => {
+      const paneSlugRaw = paneName.replace(/[^a-zA-Z0-9_-]/g, '-');
+      const paneSlug = paneSlugRaw.length > 0 ? paneSlugRaw : 'pane';
+      const tabId = `${this.instanceId}-tab-${pathSlug}-${paneSlug}`;
+      const panelId = `${this.instanceId}-panel-${pathSlug}-${paneSlug}`;
+
       const button = document.createElement('button');
       button.type = 'button';
       button.classList.add('dock-tab');
       button.dataset['pane'] = paneName;
+      button.id = tabId;
       button.textContent = node.titles?.[paneName] ?? paneName;
+      button.setAttribute('role', 'tab');
+      button.setAttribute('aria-controls', panelId);
       if (paneName === activePane) {
         button.classList.add('dock-tab--active');
       }
+      button.setAttribute('aria-selected', String(paneName === activePane));
       button.draggable = true;
       button.addEventListener('dragstart', (event) =>
         this.beginPaneDrag(event, path, paneName),
@@ -407,6 +422,9 @@ export class MintDockManagerElement extends HTMLElement {
       const paneHost = document.createElement('div');
       paneHost.classList.add('dock-stack__pane');
       paneHost.dataset['pane'] = paneName;
+      paneHost.id = panelId;
+      paneHost.setAttribute('role', 'tabpanel');
+      paneHost.setAttribute('aria-labelledby', tabId);
       if (paneName !== activePane) {
         paneHost.setAttribute('hidden', '');
       }
@@ -928,7 +946,9 @@ export class MintDockManagerElement extends HTMLElement {
 
     const headerButtons = stack.querySelectorAll<HTMLButtonElement>('.dock-tab');
     headerButtons.forEach((button) => {
-      button.classList.toggle('dock-tab--active', button.dataset['pane'] === paneName);
+      const isSelected = button.dataset['pane'] === paneName;
+      button.classList.toggle('dock-tab--active', isSelected);
+      button.setAttribute('aria-selected', String(isSelected));
     });
 
     const panes = stack.querySelectorAll<HTMLElement>('.dock-stack__pane');
