@@ -82,6 +82,32 @@ template.innerHTML = `
       overflow: hidden;
     }
 
+    .dock-floating__chrome {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.75rem;
+      cursor: move;
+      background: linear-gradient(
+        to bottom,
+        rgba(148, 163, 184, 0.6),
+        rgba(148, 163, 184, 0.25)
+      );
+      border-bottom: 1px solid rgba(148, 163, 184, 0.5);
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .dock-floating__title {
+      flex: 1 1 auto;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: rgba(30, 41, 59, 0.95);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     .dock-floating > .dock-stack {
       flex: 1 1 auto;
       min-width: 12rem;
@@ -280,6 +306,19 @@ export class MintDockManagerElement extends HTMLElement {
     pane: string;
     sourcePath: DockPath;
   } | null = null;
+  private floatingDragState:
+    | {
+        index: number;
+        pointerId: number;
+        startX: number;
+        startY: number;
+        startLeft: number;
+        startTop: number;
+        wrapper: HTMLElement;
+        handle: HTMLElement;
+      }
+    | null = null;
+  private pointerTrackingActive = false;
 
   constructor() {
     super();
@@ -335,6 +374,7 @@ export class MintDockManagerElement extends HTMLElement {
     this.rootEl.removeEventListener('dragleave', this.onDragLeave);
     window.removeEventListener('pointermove', this.onPointerMove);
     window.removeEventListener('pointerup', this.onPointerUp);
+    this.pointerTrackingActive = false;
   }
 
   attributeChangedCallback(name: string, _oldValue: string | null, newValue: string | null): void {
@@ -437,6 +477,17 @@ export class MintDockManagerElement extends HTMLElement {
       const zIndex = this.getFloatingPaneZIndex(index);
       wrapper.style.zIndex = String(zIndex);
 
+      const chrome = document.createElement('div');
+      chrome.classList.add('dock-floating__chrome');
+      chrome.addEventListener('pointerdown', (event) =>
+        this.beginFloatingDrag(event, index, wrapper, chrome),
+      );
+
+      const title = document.createElement('div');
+      title.classList.add('dock-floating__title');
+      title.textContent = this.getFloatingWindowTitle(floating);
+      chrome.appendChild(title);
+
       const stackNode: DockStackNode = {
         kind: 'stack',
         panes: [...floating.panes],
@@ -446,9 +497,85 @@ export class MintDockManagerElement extends HTMLElement {
 
       const stack = this.renderStack(stackNode, [], { type: 'floating', index });
       stack.classList.add('dock-floating__stack');
+      wrapper.appendChild(chrome);
       wrapper.appendChild(stack);
       this.floatingLayerEl.appendChild(wrapper);
     });
+  }
+
+  private beginFloatingDrag(
+    event: PointerEvent,
+    index: number,
+    wrapper: HTMLElement,
+    handle: HTMLElement,
+  ): void {
+    const floating = this.floatingLayouts[index];
+    if (!floating) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const { left, top } = floating.bounds;
+
+    try {
+      handle.setPointerCapture(event.pointerId);
+    } catch (err) {
+      /* no-op: pointer capture may not be supported in all environments */
+    }
+
+    this.promoteFloatingPane(index, wrapper);
+
+    this.floatingDragState = {
+      index,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startLeft: left,
+      startTop: top,
+      wrapper,
+      handle,
+    };
+
+    this.startPointerTracking();
+  }
+
+  private handleFloatingDragMove(event: PointerEvent): void {
+    const state = this.floatingDragState;
+    if (!state || event.pointerId !== state.pointerId) {
+      return;
+    }
+
+    const deltaX = event.clientX - state.startX;
+    const deltaY = event.clientY - state.startY;
+    const newLeft = state.startLeft + deltaX;
+    const newTop = state.startTop + deltaY;
+
+    state.wrapper.style.left = `${newLeft}px`;
+    state.wrapper.style.top = `${newTop}px`;
+
+    const floating = this.floatingLayouts[state.index];
+    if (floating) {
+      floating.bounds.left = newLeft;
+      floating.bounds.top = newTop;
+    }
+  }
+
+  private endFloatingDrag(pointerId: number): void {
+    const state = this.floatingDragState;
+    if (!state || pointerId !== state.pointerId) {
+      return;
+    }
+
+    try {
+      state.handle.releasePointerCapture(state.pointerId);
+    } catch (err) {
+      /* no-op */
+    }
+
+    this.floatingDragState = null;
+    this.dispatchLayoutChanged();
   }
 
   private getFloatingPaneZIndex(index: number): number {
@@ -461,6 +588,79 @@ export class MintDockManagerElement extends HTMLElement {
         ? floating.zIndex
         : 10 + index;
     return base;
+  }
+
+  private promoteFloatingPane(index: number, wrapper: HTMLElement): void {
+    const floating = this.floatingLayouts[index];
+    if (!floating) {
+      return;
+    }
+
+    const maxExisting = this.floatingLayouts.reduce((max, layout, idx) => {
+      if (!layout) {
+        return max;
+      }
+      const z = idx === index ? Number.NEGATIVE_INFINITY : this.getFloatingPaneZIndex(idx);
+      return Math.max(max, z);
+    }, 0);
+
+    const nextZ = Math.max(maxExisting + 2, 12);
+    floating.zIndex = nextZ;
+    wrapper.style.zIndex = String(nextZ);
+  }
+
+  private startPointerTracking(): void {
+    if (this.pointerTrackingActive) {
+      return;
+    }
+    window.addEventListener('pointermove', this.onPointerMove);
+    window.addEventListener('pointerup', this.onPointerUp);
+    this.pointerTrackingActive = true;
+  }
+
+  private stopPointerTrackingIfIdle(): void {
+    if (this.pointerTrackingActive && !this.resizeState && !this.floatingDragState) {
+      window.removeEventListener('pointermove', this.onPointerMove);
+      window.removeEventListener('pointerup', this.onPointerUp);
+      this.pointerTrackingActive = false;
+    }
+  }
+
+  private getFloatingWindowTitle(floating: DockFloatingStackLayout): string {
+    const fallback = 'Floating Pane';
+    if (!floating || floating.panes.length === 0) {
+      return fallback;
+    }
+
+    const active =
+      floating.activePane && floating.panes.includes(floating.activePane)
+        ? floating.activePane
+        : floating.panes[0];
+
+    return floating.titles?.[active] ?? active ?? fallback;
+  }
+
+  private updateFloatingWindowTitle(index: number): void {
+    const floating = this.floatingLayouts[index];
+    if (!floating) {
+      return;
+    }
+
+    const selector = `.dock-floating[data-path="${this.formatPath({
+      type: 'floating',
+      index,
+    })}"]`;
+    const wrapper = this.floatingLayerEl.querySelector<HTMLElement>(selector);
+    if (!wrapper) {
+      return;
+    }
+
+    const titleEl = wrapper.querySelector<HTMLElement>('.dock-floating__title');
+    if (!titleEl) {
+      return;
+    }
+
+    titleEl.textContent = this.getFloatingWindowTitle(floating);
   }
 
   private renderSplit(node: DockSplitNode, path: number[]): HTMLElement {
@@ -627,69 +827,72 @@ export class MintDockManagerElement extends HTMLElement {
       afterSize,
     };
 
-    window.addEventListener('pointermove', this.onPointerMove);
-    window.addEventListener('pointerup', this.onPointerUp);
+    this.startPointerTracking();
   }
 
   private onPointerMove(event: PointerEvent): void {
-    if (!this.resizeState || event.pointerId !== this.resizeState.pointerId) {
-      return;
-    }
-
-    const state = this.resizeState;
-    const splitNode = this.getDockedNode(state.path);
-    if (!splitNode || splitNode.kind !== 'split') {
-      return;
-    }
-
-    const currentPos = state.orientation === 'horizontal' ? event.clientX : event.clientY;
-    const delta = currentPos - state.startPos;
-    const minSize = 48;
-    const pairTotal = state.beforeSize + state.afterSize;
-
-    let newBefore = Math.min(
-      Math.max(state.beforeSize + delta, minSize),
-      pairTotal - minSize,
-    );
-    let newAfter = pairTotal - newBefore;
-
-    if (!Number.isFinite(newBefore) || !Number.isFinite(newAfter)) {
-      return;
-    }
-
-    if (newAfter < minSize) {
-      newAfter = minSize;
-      newBefore = pairTotal - minSize;
-    }
-
-    const newSizesPixels = [...state.initialSizes];
-    newSizesPixels[state.index] = newBefore;
-    newSizesPixels[state.index + 1] = newAfter;
-
-    const total = newSizesPixels.reduce((acc, size) => acc + size, 0);
-    const normalized = total > 0 ? newSizesPixels.map((size) => size / total) : [];
-
-    splitNode.sizes = normalized;
-    const children = Array.from(state.container.querySelectorAll<HTMLElement>(':scope > .dock-split__child'));
-    normalized.forEach((size, idx) => {
-      if (children[idx]) {
-        children[idx].style.flex = `${Math.max(size, 0)} 1 0`;
+    if (this.resizeState && event.pointerId === this.resizeState.pointerId) {
+      const state = this.resizeState;
+      const splitNode = this.getDockedNode(state.path);
+      if (!splitNode || splitNode.kind !== 'split') {
+        return;
       }
-    });
-    this.dispatchLayoutChanged();
+
+      const currentPos = state.orientation === 'horizontal' ? event.clientX : event.clientY;
+      const delta = currentPos - state.startPos;
+      const minSize = 48;
+      const pairTotal = state.beforeSize + state.afterSize;
+
+      let newBefore = Math.min(
+        Math.max(state.beforeSize + delta, minSize),
+        pairTotal - minSize,
+      );
+      let newAfter = pairTotal - newBefore;
+
+      if (!Number.isFinite(newBefore) || !Number.isFinite(newAfter)) {
+        return;
+      }
+
+      if (newAfter < minSize) {
+        newAfter = minSize;
+        newBefore = pairTotal - minSize;
+      }
+
+      const newSizesPixels = [...state.initialSizes];
+      newSizesPixels[state.index] = newBefore;
+      newSizesPixels[state.index + 1] = newAfter;
+
+      const total = newSizesPixels.reduce((acc, size) => acc + size, 0);
+      const normalized = total > 0 ? newSizesPixels.map((size) => size / total) : [];
+
+      splitNode.sizes = normalized;
+      const children = Array.from(state.container.querySelectorAll<HTMLElement>(':scope > .dock-split__child'));
+      normalized.forEach((size, idx) => {
+        if (children[idx]) {
+          children[idx].style.flex = `${Math.max(size, 0)} 1 0`;
+        }
+      });
+      this.dispatchLayoutChanged();
+    }
+
+    if (this.floatingDragState && event.pointerId === this.floatingDragState.pointerId) {
+      this.handleFloatingDragMove(event);
+    }
   }
 
   private onPointerUp(event: PointerEvent): void {
-    if (!this.resizeState || event.pointerId !== this.resizeState.pointerId) {
-      return;
+    if (this.resizeState && event.pointerId === this.resizeState.pointerId) {
+      const divider = this.resizeState.divider;
+      divider.dataset['resizing'] = 'false';
+      divider.releasePointerCapture(this.resizeState.pointerId);
+      this.resizeState = null;
     }
 
-    const divider = this.resizeState.divider;
-    divider.dataset['resizing'] = 'false';
-    divider.releasePointerCapture(this.resizeState.pointerId);
-    this.resizeState = null;
-    window.removeEventListener('pointermove', this.onPointerMove);
-    window.removeEventListener('pointerup', this.onPointerUp);
+    if (this.floatingDragState && event.pointerId === this.floatingDragState.pointerId) {
+      this.endFloatingDrag(event.pointerId);
+    }
+
+    this.stopPointerTrackingIfIdle();
   }
 
   private beginPaneDrag(event: DragEvent, path: DockPath, pane: string): void {
@@ -1130,6 +1333,9 @@ export class MintDockManagerElement extends HTMLElement {
     }
 
     location.node.activePane = paneName;
+    if (path.type === 'floating') {
+      this.updateFloatingWindowTitle(path.index);
+    }
     this.dispatchLayoutChanged();
   }
 
