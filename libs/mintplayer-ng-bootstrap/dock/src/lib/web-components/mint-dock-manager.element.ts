@@ -2246,6 +2246,40 @@ export class MintDockManagerElement extends HTMLElement {
       return zoneHint;
     }
 
+    const pointWithinJoystick = (() => {
+      if (
+        !point ||
+        !Number.isFinite(point.clientX) ||
+        !Number.isFinite(point.clientY)
+      ) {
+        return false;
+      }
+
+      if (
+        !this.dropJoystick ||
+        this.dropJoystick.dataset['visible'] !== 'true' ||
+        this.dropJoystickTarget !== stack
+      ) {
+        return false;
+      }
+
+      const rect = this.dropJoystick.getBoundingClientRect();
+      return (
+        point.clientX >= rect.left &&
+        point.clientX <= rect.right &&
+        point.clientY >= rect.top &&
+        point.clientY <= rect.bottom
+      );
+    })();
+
+    if (pointWithinJoystick) {
+      const activeZone = this.dropJoystick.dataset['zone'];
+      if (this.isDropZone(activeZone)) {
+        this.updateDropJoystickActiveZone(activeZone);
+        return activeZone;
+      }
+    }
+
     let fallbackZone: DropZone | null = null;
 
     if (
