@@ -1726,6 +1726,7 @@ export class MintDockManagerElement extends HTMLElement {
     const state = this.dragState;
     this.dragState = null;
     this.hideDropIndicator();
+    this.dropJoystick.hidden = true;
     this.stopDragPointerTracking();
     this.lastDragPointerPosition = null;
     if (state && state.floatingIndex !== null && !state.dropHandled) {
@@ -1792,7 +1793,9 @@ export class MintDockManagerElement extends HTMLElement {
   }
 
   private onGlobalDragEnd(): void {
+    this.hideDropIndicator();
     if (!this.dragState) {
+      this.clearPendingTabDragMetrics();
       return;
     }
     this.endPaneDrag();
@@ -1955,24 +1958,21 @@ export class MintDockManagerElement extends HTMLElement {
       return;
     }
 
+    const completeDrag = () => {
+      this.pendingDragEndTimeout = null;
+      this.hideDropIndicator();
+      if (!this.dragState) {
+        this.clearPendingTabDragMetrics();
+        return;
+      }
+      this.endPaneDrag();
+      this.clearPendingTabDragMetrics();
+    };
+
     const win = this.windowRef;
     this.pendingDragEndTimeout = win
-      ? win.setTimeout(() => {
-          this.pendingDragEndTimeout = null;
-          if (!this.dragState) {
-            return;
-          }
-          this.endPaneDrag();
-          this.clearPendingTabDragMetrics();
-        }, 0)
-      : setTimeout(() => {
-          this.pendingDragEndTimeout = null;
-          if (!this.dragState) {
-            return;
-          }
-          this.endPaneDrag();
-          this.clearPendingTabDragMetrics();
-        }, 0);
+      ? win.setTimeout(completeDrag, 0)
+      : setTimeout(completeDrag, 0);
   }
 
   private onDrop(event: DragEvent): void {
@@ -2362,6 +2362,8 @@ export class MintDockManagerElement extends HTMLElement {
     const hostRect = this.getBoundingClientRect();
     const indicator = this.dropIndicator;
     const joystick = this.dropJoystick;
+
+    joystick.hidden = false;
 
     const path = this.parsePath(stack.dataset['path']);
     let overlayZ = 100;
