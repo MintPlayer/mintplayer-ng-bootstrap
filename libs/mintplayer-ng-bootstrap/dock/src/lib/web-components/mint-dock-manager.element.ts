@@ -485,6 +485,16 @@ export class MintDockManagerElement extends HTMLElement {
   private dropJoystickTarget: HTMLElement | null = null;
   private rootLayout: DockLayoutNode | null = null;
   private floatingLayouts: DockFloatingStackLayout[] = [];
+  private pendingTabDragMetrics:
+    | {
+        pointerOffsetX: number;
+        pointerOffsetY: number;
+        left: number;
+        top: number;
+        width: number;
+        height: number;
+      }
+    | null = null;
   private resizeState:
     | {
         path: DockPath;
@@ -1223,11 +1233,21 @@ export class MintDockManagerElement extends HTMLElement {
       }
       button.setAttribute('aria-selected', String(paneName === activePane));
       button.draggable = true;
+      button.addEventListener('pointerdown', (event) => {
+        const stackEl = button.closest<HTMLElement>('.dock-stack');
+        this.captureTabDragMetrics(event, stackEl ?? null);
+        event.stopPropagation();
+      });
+      button.addEventListener('pointerup', () => this.clearPendingTabDragMetrics());
+      button.addEventListener('pointercancel', () => this.clearPendingTabDragMetrics());
       button.addEventListener('dragstart', (event) => {
         const stackEl = button.closest<HTMLElement>('.dock-stack');
         this.beginPaneDrag(event, this.clonePath(location), paneName, stackEl ?? null);
       });
-      button.addEventListener('dragend', () => this.endPaneDrag());
+      button.addEventListener('dragend', () => {
+        this.endPaneDrag();
+        this.clearPendingTabDragMetrics();
+      });
       button.addEventListener('click', () => {
         this.activatePane(stack, paneName, this.clonePath(location));
         this.dispatchEvent(
@@ -1375,6 +1395,41 @@ export class MintDockManagerElement extends HTMLElement {
     this.stopPointerTrackingIfIdle();
   }
 
+  private captureTabDragMetrics(event: PointerEvent, stackEl: HTMLElement | null): void {
+    if (!stackEl) {
+      this.pendingTabDragMetrics = null;
+      return;
+    }
+
+    if (!Number.isFinite(event.clientX) || !Number.isFinite(event.clientY)) {
+      this.pendingTabDragMetrics = null;
+      return;
+    }
+
+    const hostRect = this.getBoundingClientRect();
+    const stackRect = stackEl.getBoundingClientRect();
+
+    const pointerOffsetX = event.clientX - stackRect.left;
+    const pointerOffsetY = event.clientY - stackRect.top;
+    const left = stackRect.left - hostRect.left;
+    const top = stackRect.top - hostRect.top;
+    const width = Number.isFinite(stackRect.width) ? stackRect.width : 0;
+    const height = Number.isFinite(stackRect.height) ? stackRect.height : 0;
+
+    this.pendingTabDragMetrics = {
+      pointerOffsetX,
+      pointerOffsetY,
+      left,
+      top,
+      width,
+      height,
+    };
+  }
+
+  private clearPendingTabDragMetrics(): void {
+    this.pendingTabDragMetrics = null;
+  }
+
   private beginPaneDrag(
     event: DragEvent,
     path: DockPath,
@@ -1413,6 +1468,7 @@ export class MintDockManagerElement extends HTMLElement {
   ): { path: DockPath; floatingIndex: number | null; pointerOffsetX: number; pointerOffsetY: number } {
     const location = this.resolveStackLocation(path);
     if (!location || !location.node.panes.includes(pane)) {
+      this.clearPendingTabDragMetrics();
       return {
         path,
         floatingIndex: null,
@@ -1420,6 +1476,9 @@ export class MintDockManagerElement extends HTMLElement {
         pointerOffsetY: 0,
       };
     }
+
+    const metrics = this.pendingTabDragMetrics;
+    this.pendingTabDragMetrics = null;
 
     const hasSiblingPane =
       location.context === 'floating' && location.node.panes.some((existing) => existing !== pane);
@@ -1435,11 +1494,21 @@ export class MintDockManagerElement extends HTMLElement {
         }
         const hostRect = this.getBoundingClientRect();
         const pointerOffsetX =
-          Number.isFinite(event.clientX) && Number.isFinite(floating.bounds.left)
+          metrics &&
+          Number.isFinite(metrics.pointerOffsetX) &&
+          Number.isFinite(metrics.left) &&
+          Number.isFinite(floating.bounds.left)
+            ? metrics.pointerOffsetX + (metrics.left - floating.bounds.left)
+            : Number.isFinite(event.clientX) && Number.isFinite(floating.bounds.left)
             ? event.clientX - hostRect.left - floating.bounds.left
             : floating.bounds.width / 2;
         const pointerOffsetY =
-          Number.isFinite(event.clientY) && Number.isFinite(floating.bounds.top)
+          metrics &&
+          Number.isFinite(metrics.pointerOffsetY) &&
+          Number.isFinite(metrics.top) &&
+          Number.isFinite(floating.bounds.top)
+            ? metrics.pointerOffsetY + (metrics.top - floating.bounds.top)
+            : Number.isFinite(event.clientY) && Number.isFinite(floating.bounds.top)
             ? event.clientY - hostRect.top - floating.bounds.top
             : floating.bounds.height / 2;
         return {
@@ -1461,24 +1530,44 @@ export class MintDockManagerElement extends HTMLElement {
     const stackRect = stackEl?.getBoundingClientRect() ?? null;
     const fallbackWidth = 320;
     const fallbackHeight = 240;
-    const width = stackRect && Number.isFinite(stackRect.width) ? stackRect.width : fallbackWidth;
-    const height = stackRect && Number.isFinite(stackRect.height) ? stackRect.height : fallbackHeight;
+    const width =
+      metrics && Number.isFinite(metrics.width) && metrics.width > 0
+        ? metrics.width
+        : stackRect && Number.isFinite(stackRect.width)
+        ? stackRect.width
+        : fallbackWidth;
+    const height =
+      metrics && Number.isFinite(metrics.height) && metrics.height > 0
+        ? metrics.height
+        : stackRect && Number.isFinite(stackRect.height)
+        ? stackRect.height
+        : fallbackHeight;
 
     const pointerOffsetX =
-      stackRect && Number.isFinite(event.clientX)
+      metrics && Number.isFinite(metrics.pointerOffsetX)
+        ? metrics.pointerOffsetX
+        : stackRect && Number.isFinite(event.clientX)
         ? event.clientX - stackRect.left
         : width / 2;
     const pointerOffsetY =
-      stackRect && Number.isFinite(event.clientY)
+      metrics && Number.isFinite(metrics.pointerOffsetY)
+        ? metrics.pointerOffsetY
+        : stackRect && Number.isFinite(event.clientY)
         ? event.clientY - stackRect.top
         : height / 2;
 
-    const pointerLeft = Number.isFinite(event.clientX)
-      ? event.clientX - hostRect.left - pointerOffsetX
-      : null;
-    const pointerTop = Number.isFinite(event.clientY)
-      ? event.clientY - hostRect.top - pointerOffsetY
-      : null;
+    const pointerLeft =
+      metrics && Number.isFinite(metrics.left)
+        ? metrics.left
+        : Number.isFinite(event.clientX)
+        ? event.clientX - hostRect.left - pointerOffsetX
+        : null;
+    const pointerTop =
+      metrics && Number.isFinite(metrics.top)
+        ? metrics.top
+        : Number.isFinite(event.clientY)
+        ? event.clientY - hostRect.top - pointerOffsetY
+        : null;
 
     const left =
       pointerLeft !== null
