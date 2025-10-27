@@ -1480,8 +1480,14 @@ export class MintDockManagerElement extends HTMLElement {
     const metrics = this.pendingTabDragMetrics;
     this.pendingTabDragMetrics = null;
 
+    const domHasSibling =
+      !!stackEl &&
+      Array.from(stackEl.querySelectorAll<HTMLElement>('.dock-tab')).some(
+        (button) => button.dataset['pane'] && button.dataset['pane'] !== pane,
+      );
     const hasSiblingPane =
-      location.context === 'floating' && location.node.panes.some((existing) => existing !== pane);
+      location.context === 'floating' &&
+      (location.node.panes.some((existing) => existing !== pane) || domHasSibling);
 
     if (location.context === 'floating' && !hasSiblingPane) {
       const floating = this.floatingLayouts[location.index];
