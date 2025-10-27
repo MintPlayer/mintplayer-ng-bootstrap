@@ -546,6 +546,9 @@ export class MintDockManagerElement extends HTMLElement {
       }
     | null = null;
   private pointerTrackingActive = false;
+  private dragPointerTrackingActive = false;
+  private lastDragPointerPosition: { x: number; y: number } | null = null;
+  private pendingDragEndTimeout: number | null = null;
 
   constructor() {
     super();
@@ -596,8 +599,14 @@ export class MintDockManagerElement extends HTMLElement {
     this.onPointerUp = this.onPointerUp.bind(this);
     this.onDragOver = this.onDragOver.bind(this);
     this.onGlobalDragOver = this.onGlobalDragOver.bind(this);
+    this.onGlobalDragEnd = this.onGlobalDragEnd.bind(this);
     this.onDrop = this.onDrop.bind(this);
     this.onDragLeave = this.onDragLeave.bind(this);
+    this.onDrag = this.onDrag.bind(this);
+    this.onDragMouseMove = this.onDragMouseMove.bind(this);
+    this.onDragTouchMove = this.onDragTouchMove.bind(this);
+    this.onDragMouseUp = this.onDragMouseUp.bind(this);
+    this.onDragTouchEnd = this.onDragTouchEnd.bind(this);
   }
 
   connectedCallback(): void {
@@ -609,6 +618,8 @@ export class MintDockManagerElement extends HTMLElement {
     this.rootEl.addEventListener('drop', this.onDrop);
     this.rootEl.addEventListener('dragleave', this.onDragLeave);
     window.addEventListener('dragover', this.onGlobalDragOver);
+    window.addEventListener('drag', this.onDrag);
+    window.addEventListener('dragend', this.onGlobalDragEnd, true);
   }
 
   disconnectedCallback(): void {
@@ -616,6 +627,9 @@ export class MintDockManagerElement extends HTMLElement {
     this.rootEl.removeEventListener('drop', this.onDrop);
     this.rootEl.removeEventListener('dragleave', this.onDragLeave);
     window.removeEventListener('dragover', this.onGlobalDragOver);
+    window.removeEventListener('drag', this.onDrag);
+    window.removeEventListener('dragend', this.onGlobalDragEnd, true);
+    this.stopDragPointerTracking();
     window.removeEventListener('pointermove', this.onPointerMove);
     window.removeEventListener('pointerup', this.onPointerUp);
     this.pointerTrackingActive = false;
@@ -1456,6 +1470,7 @@ export class MintDockManagerElement extends HTMLElement {
       dropHandled: false,
     };
     this.updateDraggedFloatingPosition(event);
+    this.startDragPointerTracking();
     event.dataTransfer.effectAllowed = 'move';
     event.dataTransfer.setData('text/plain', pane);
   }
@@ -1643,9 +1658,12 @@ export class MintDockManagerElement extends HTMLElement {
   }
 
   private endPaneDrag(): void {
+    this.clearPendingDragEndTimeout();
     const state = this.dragState;
     this.dragState = null;
     this.hideDropIndicator();
+    this.stopDragPointerTracking();
+    this.lastDragPointerPosition = null;
     if (state && state.floatingIndex !== null && !state.dropHandled) {
       this.dispatchLayoutChanged();
     }
@@ -1677,12 +1695,60 @@ export class MintDockManagerElement extends HTMLElement {
       return;
     }
 
+    const { clientX, clientY, screenX, screenY } = event;
+    const hasValidCoordinates =
+      Number.isFinite(clientX) &&
+      Number.isFinite(clientY) &&
+      !(clientX === 0 && clientY === 0 && screenX === 0 && screenY === 0);
+
+    if (hasValidCoordinates) {
+      this.lastDragPointerPosition = { x: clientX, y: clientY };
+      this.updateDraggedFloatingPositionFromPoint(clientX, clientY);
+      return;
+    }
+
+    if (this.lastDragPointerPosition) {
+      const { x, y } = this.lastDragPointerPosition;
+      this.updateDraggedFloatingPositionFromPoint(x, y);
+    }
+  }
+
+  private onGlobalDragOver(event: DragEvent): void {
+    if (!this.dragState) {
+      return;
+    }
+    this.updateDraggedFloatingPosition(event);
+  }
+
+  private onDrag(event: DragEvent): void {
+    if (!this.dragState) {
+      return;
+    }
+    this.updateDraggedFloatingPosition(event);
+  }
+
+  private onGlobalDragEnd(): void {
+    if (!this.dragState) {
+      return;
+    }
+    this.endPaneDrag();
+    this.clearPendingTabDragMetrics();
+  }
+
+  private updateDraggedFloatingPositionFromPoint(
+    clientX: number,
+    clientY: number,
+  ): void {
+    if (!this.dragState) {
+      return;
+    }
+
     const { floatingIndex, pointerOffsetX, pointerOffsetY } = this.dragState;
     if (floatingIndex === null || floatingIndex < 0) {
       return;
     }
 
-    if (!Number.isFinite(event.clientX) || !Number.isFinite(event.clientY)) {
+    if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) {
       return;
     }
 
@@ -1692,8 +1758,8 @@ export class MintDockManagerElement extends HTMLElement {
     }
 
     const hostRect = this.getBoundingClientRect();
-    const newLeft = event.clientX - hostRect.left - pointerOffsetX;
-    const newTop = event.clientY - hostRect.top - pointerOffsetY;
+    const newLeft = clientX - hostRect.left - pointerOffsetX;
+    const newTop = clientY - hostRect.top - pointerOffsetY;
 
     floating.bounds.left = newLeft;
     floating.bounds.top = newTop;
@@ -1705,11 +1771,103 @@ export class MintDockManagerElement extends HTMLElement {
     }
   }
 
-  private onGlobalDragOver(event: DragEvent): void {
-    if (!this.dragState) {
+  private startDragPointerTracking(): void {
+    if (this.dragPointerTrackingActive) {
       return;
     }
-    this.updateDraggedFloatingPosition(event);
+    this.lastDragPointerPosition = null;
+    window.addEventListener('mousemove', this.onDragMouseMove, true);
+    window.addEventListener('touchmove', this.onDragTouchMove, { passive: false });
+    window.addEventListener('mouseup', this.onDragMouseUp, true);
+    window.addEventListener('touchend', this.onDragTouchEnd, true);
+    window.addEventListener('touchcancel', this.onDragTouchEnd, true);
+    this.dragPointerTrackingActive = true;
+  }
+
+  private stopDragPointerTracking(): void {
+    if (!this.dragPointerTrackingActive) {
+      return;
+    }
+    window.removeEventListener('mousemove', this.onDragMouseMove, true);
+    window.removeEventListener('touchmove', this.onDragTouchMove);
+    window.removeEventListener('mouseup', this.onDragMouseUp, true);
+    window.removeEventListener('touchend', this.onDragTouchEnd, true);
+    window.removeEventListener('touchcancel', this.onDragTouchEnd, true);
+    this.dragPointerTrackingActive = false;
+    this.lastDragPointerPosition = null;
+    this.clearPendingDragEndTimeout();
+  }
+
+  private onDragMouseMove(event: MouseEvent): void {
+    if (!this.dragState) {
+      this.stopDragPointerTracking();
+      return;
+    }
+
+    if (event.buttons === 0) {
+      this.scheduleDeferredDragEnd();
+      return;
+    }
+
+    this.lastDragPointerPosition = { x: event.clientX, y: event.clientY };
+    this.updateDraggedFloatingPositionFromPoint(event.clientX, event.clientY);
+  }
+
+  private onDragTouchMove(event: TouchEvent): void {
+    if (!this.dragState) {
+      this.stopDragPointerTracking();
+      return;
+    }
+
+    const touch = event.touches[0];
+    if (!touch) {
+      this.scheduleDeferredDragEnd();
+      return;
+    }
+
+    event.preventDefault();
+    this.lastDragPointerPosition = { x: touch.clientX, y: touch.clientY };
+    this.updateDraggedFloatingPositionFromPoint(touch.clientX, touch.clientY);
+  }
+
+  private onDragMouseUp(): void {
+    if (!this.dragState) {
+      this.stopDragPointerTracking();
+      return;
+    }
+
+    this.scheduleDeferredDragEnd();
+  }
+
+  private onDragTouchEnd(): void {
+    if (!this.dragState) {
+      this.stopDragPointerTracking();
+      return;
+    }
+
+    this.scheduleDeferredDragEnd();
+  }
+
+  private clearPendingDragEndTimeout(): void {
+    if (this.pendingDragEndTimeout !== null) {
+      window.clearTimeout(this.pendingDragEndTimeout);
+      this.pendingDragEndTimeout = null;
+    }
+  }
+
+  private scheduleDeferredDragEnd(): void {
+    if (this.pendingDragEndTimeout !== null) {
+      return;
+    }
+
+    this.pendingDragEndTimeout = window.setTimeout(() => {
+      this.pendingDragEndTimeout = null;
+      if (!this.dragState) {
+        return;
+      }
+      this.endPaneDrag();
+      this.clearPendingTabDragMetrics();
+    }, 0);
   }
 
   private onDrop(event: DragEvent): void {
