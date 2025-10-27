@@ -643,6 +643,9 @@ export class MintDockManagerElement extends HTMLElement {
     this.rootEl.addEventListener('dragover', this.onDragOver);
     this.rootEl.addEventListener('drop', this.onDrop);
     this.rootEl.addEventListener('dragleave', this.onDragLeave);
+    this.dropJoystick.addEventListener('dragover', this.onDragOver);
+    this.dropJoystick.addEventListener('drop', this.onDrop);
+    this.dropJoystick.addEventListener('dragleave', this.onDragLeave);
     const win = this.windowRef;
     win?.addEventListener('dragover', this.onGlobalDragOver);
     win?.addEventListener('drag', this.onDrag);
@@ -653,6 +656,9 @@ export class MintDockManagerElement extends HTMLElement {
     this.rootEl.removeEventListener('dragover', this.onDragOver);
     this.rootEl.removeEventListener('drop', this.onDrop);
     this.rootEl.removeEventListener('dragleave', this.onDragLeave);
+    this.dropJoystick.removeEventListener('dragover', this.onDragOver);
+    this.dropJoystick.removeEventListener('drop', this.onDrop);
+    this.dropJoystick.removeEventListener('dragleave', this.onDragLeave);
     const win = this.windowRef;
     win?.removeEventListener('dragover', this.onGlobalDragOver);
     win?.removeEventListener('drag', this.onDrag);
@@ -2014,7 +2020,14 @@ export class MintDockManagerElement extends HTMLElement {
 
   private onDragLeave(event: DragEvent): void {
     const related = event.relatedTarget as Node | null;
-    if (!related || !this.rootEl.contains(related)) {
+    if (!related) {
+      this.hideDropIndicator();
+      return;
+    }
+
+    const rootContains = this.rootEl.contains(related);
+    const joystickContains = this.dropJoystick.contains(related);
+    if (!rootContains && !joystickContains) {
       this.hideDropIndicator();
     }
   }
