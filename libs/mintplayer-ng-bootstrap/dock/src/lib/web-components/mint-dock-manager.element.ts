@@ -570,7 +570,7 @@ export class MintDockManagerElement extends HTMLElement {
   private pointerTrackingActive = false;
   private dragPointerTrackingActive = false;
   private lastDragPointerPosition: { x: number; y: number } | null = null;
-  private pendingDragEndTimeout: ReturnType<typeof globalThis.setTimeout> | null = null;
+  private pendingDragEndTimeout: number | NodeJS.Timeout | null = null;
 
   constructor() {
     super();
