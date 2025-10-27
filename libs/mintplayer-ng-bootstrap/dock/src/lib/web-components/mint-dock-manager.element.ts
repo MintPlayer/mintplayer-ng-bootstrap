@@ -547,6 +547,7 @@ export class MintDockManagerElement extends HTMLElement {
     | null = null;
   private pointerTrackingActive = false;
   private dragPointerTrackingActive = false;
+  private lastDragPointerPosition: { x: number; y: number } | null = null;
 
   constructor() {
     super();
@@ -1655,6 +1656,7 @@ export class MintDockManagerElement extends HTMLElement {
     this.dragState = null;
     this.hideDropIndicator();
     this.stopDragPointerTracking();
+    this.lastDragPointerPosition = null;
     if (state && state.floatingIndex !== null && !state.dropHandled) {
       this.dispatchLayoutChanged();
     }
@@ -1682,7 +1684,26 @@ export class MintDockManagerElement extends HTMLElement {
   }
 
   private updateDraggedFloatingPosition(event: DragEvent): void {
-    this.updateDraggedFloatingPositionFromPoint(event.clientX, event.clientY);
+    if (!this.dragState) {
+      return;
+    }
+
+    const { clientX, clientY, screenX, screenY } = event;
+    const hasValidCoordinates =
+      Number.isFinite(clientX) &&
+      Number.isFinite(clientY) &&
+      !(clientX === 0 && clientY === 0 && screenX === 0 && screenY === 0);
+
+    if (hasValidCoordinates) {
+      this.lastDragPointerPosition = { x: clientX, y: clientY };
+      this.updateDraggedFloatingPositionFromPoint(clientX, clientY);
+      return;
+    }
+
+    if (this.lastDragPointerPosition) {
+      const { x, y } = this.lastDragPointerPosition;
+      this.updateDraggedFloatingPositionFromPoint(x, y);
+    }
   }
 
   private onGlobalDragOver(event: DragEvent): void {
@@ -1739,6 +1760,7 @@ export class MintDockManagerElement extends HTMLElement {
     if (this.dragPointerTrackingActive) {
       return;
     }
+    this.lastDragPointerPosition = null;
     window.addEventListener('mousemove', this.onDragMouseMove, true);
     window.addEventListener('touchmove', this.onDragTouchMove, { passive: false });
     this.dragPointerTrackingActive = true;
@@ -1751,6 +1773,7 @@ export class MintDockManagerElement extends HTMLElement {
     window.removeEventListener('mousemove', this.onDragMouseMove, true);
     window.removeEventListener('touchmove', this.onDragTouchMove);
     this.dragPointerTrackingActive = false;
+    this.lastDragPointerPosition = null;
   }
 
   private onDragMouseMove(event: MouseEvent): void {
@@ -1758,6 +1781,7 @@ export class MintDockManagerElement extends HTMLElement {
       this.stopDragPointerTracking();
       return;
     }
+    this.lastDragPointerPosition = { x: event.clientX, y: event.clientY };
     this.updateDraggedFloatingPositionFromPoint(event.clientX, event.clientY);
   }
 
@@ -1773,6 +1797,7 @@ export class MintDockManagerElement extends HTMLElement {
     }
 
     event.preventDefault();
+    this.lastDragPointerPosition = { x: touch.clientX, y: touch.clientY };
     this.updateDraggedFloatingPositionFromPoint(touch.clientX, touch.clientY);
   }
 
