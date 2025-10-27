@@ -1207,9 +1207,10 @@ export class MintDockManagerElement extends HTMLElement {
       }
       button.setAttribute('aria-selected', String(paneName === activePane));
       button.draggable = true;
-      button.addEventListener('dragstart', (event) =>
-        this.beginPaneDrag(event, this.clonePath(location), paneName),
-      );
+      button.addEventListener('dragstart', (event) => {
+        const stackEl = button.closest<HTMLElement>('.dock-stack');
+        this.beginPaneDrag(event, this.clonePath(location), paneName, stackEl ?? null);
+      });
       button.addEventListener('dragend', () => this.endPaneDrag());
       button.addEventListener('click', () => {
         this.activatePane(stack, paneName, this.clonePath(location));
@@ -1358,17 +1359,118 @@ export class MintDockManagerElement extends HTMLElement {
     this.stopPointerTrackingIfIdle();
   }
 
-  private beginPaneDrag(event: DragEvent, path: DockPath, pane: string): void {
+  private beginPaneDrag(
+    event: DragEvent,
+    path: DockPath,
+    pane: string,
+    stackEl: HTMLElement | null,
+  ): void {
     if (!event.dataTransfer) {
       return;
     }
 
+    const sourcePath = this.preparePaneDragSource(path, pane, stackEl, event);
+
     this.dragState = {
       pane,
-      sourcePath: this.clonePath(path),
+      sourcePath: this.clonePath(sourcePath),
     };
     event.dataTransfer.effectAllowed = 'move';
     event.dataTransfer.setData('text/plain', pane);
+  }
+
+  private preparePaneDragSource(
+    path: DockPath,
+    pane: string,
+    stackEl: HTMLElement | null,
+    event: DragEvent,
+  ): DockPath {
+    const location = this.resolveStackLocation(path);
+    if (!location || !location.node.panes.includes(pane)) {
+      return path;
+    }
+
+    if (location.context === 'floating' && location.node.panes.length === 1) {
+      const floating = this.floatingLayouts[location.index];
+      if (floating) {
+        floating.activePane = pane;
+        this.updateFloatingWindowTitle(location.index);
+      }
+      return path;
+    }
+
+    const hostRect = this.getBoundingClientRect();
+    const stackRect = stackEl?.getBoundingClientRect() ?? null;
+    const fallbackWidth = 320;
+    const fallbackHeight = 240;
+    const width = stackRect && Number.isFinite(stackRect.width) ? stackRect.width : fallbackWidth;
+    const height = stackRect && Number.isFinite(stackRect.height) ? stackRect.height : fallbackHeight;
+
+    const pointerLeft = Number.isFinite(event.clientX)
+      ? event.clientX - hostRect.left - width / 2
+      : null;
+    const pointerTop = Number.isFinite(event.clientY)
+      ? event.clientY - hostRect.top - height / 2
+      : null;
+
+    const left =
+      pointerLeft !== null
+        ? pointerLeft
+        : stackRect
+        ? stackRect.left - hostRect.left
+        : (hostRect.width - width) / 2;
+    const top =
+      pointerTop !== null
+        ? pointerTop
+        : stackRect
+        ? stackRect.top - hostRect.top
+        : (hostRect.height - height) / 2;
+
+    const paneTitle = location.node.titles?.[pane];
+
+    this.removePaneFromLocation(location, pane);
+
+    const floatingStack: DockStackNode = {
+      kind: 'stack',
+      panes: [pane],
+      activePane: pane,
+    };
+    if (paneTitle) {
+      floatingStack.titles = { [pane]: paneTitle };
+    }
+
+    const floatingLayout: DockFloatingStackLayout = {
+      bounds: {
+        left,
+        top,
+        width,
+        height,
+      },
+      root: floatingStack,
+      activePane: pane,
+    };
+    if (paneTitle) {
+      floatingLayout.titles = { [pane]: paneTitle };
+    }
+
+    this.floatingLayouts.push(floatingLayout);
+    const floatingIndex = this.floatingLayouts.length - 1;
+
+    this.render();
+
+    const wrapperSelector = `.dock-floating[data-path="${this.formatPath({
+      type: 'floating',
+      index: floatingIndex,
+      segments: [],
+    })}"]`;
+    const wrapper = this.floatingLayerEl.querySelector<HTMLElement>(wrapperSelector);
+    if (wrapper) {
+      this.promoteFloatingPane(floatingIndex, wrapper);
+    }
+
+    this.dispatchLayoutChanged();
+
+    return { type: 'floating', index: floatingIndex, segments: [] };
   }
 
   private endPaneDrag(): void {
@@ -1645,6 +1747,11 @@ export class MintDockManagerElement extends HTMLElement {
     }
 
     if (this.dropJoystickTarget === stack) {
+      const activeZone = this.dropJoystick.dataset['zone'];
+      if (this.isDropZone(activeZone)) {
+        this.updateDropJoystickActiveZone(activeZone);
+        return activeZone;
+      }
       this.updateDropJoystickActiveZone(null);
     }
 
