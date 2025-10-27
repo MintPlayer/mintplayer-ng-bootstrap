@@ -6,11 +6,13 @@ import {
   ContentChildren,
   ElementRef,
   EventEmitter,
+  Inject,
   Input,
   Output,
   QueryList,
   ViewChild,
 } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
 import {
   DockLayout,
   DockLayoutNode,
@@ -53,7 +55,14 @@ export class BsDockManagerComponent implements AfterViewInit {
 
   private _layout: DockLayoutSnapshot = { root: null, floating: [] };
 
-  constructor(private readonly changeDetector: ChangeDetectorRef) {}
+  constructor(
+    private readonly changeDetector: ChangeDetectorRef,
+    @Inject(DOCUMENT) documentRef: Document,
+  ) {
+    if (documentRef) {
+      MintDockManagerElement.configureDocument(documentRef);
+    }
+  }
 
   ngAfterViewInit(): void {
     this.applyLayout();
