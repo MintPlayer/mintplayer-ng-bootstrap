@@ -1801,12 +1801,14 @@ export class MintDockManagerElement extends HTMLElement {
       return;
     }
 
-    const { floatingIndex, pointerOffsetX, pointerOffsetY } = this.dragState;
-    if (floatingIndex === null || floatingIndex < 0) {
+    if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) {
       return;
     }
 
-    if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) {
+    this.updatePaneDragDropTargetFromPoint(clientX, clientY);
+
+    const { floatingIndex, pointerOffsetX, pointerOffsetY } = this.dragState;
+    if (floatingIndex === null || floatingIndex < 0) {
       return;
     }
 
@@ -1827,6 +1829,28 @@ export class MintDockManagerElement extends HTMLElement {
       wrapper.style.left = `${newLeft}px`;
       wrapper.style.top = `${newTop}px`;
     }
+  }
+
+  private updatePaneDragDropTargetFromPoint(clientX: number, clientY: number): void {
+    if (!this.dragState) {
+      return;
+    }
+
+    const stack = this.findStackAtPoint(clientX, clientY);
+    if (!stack) {
+      this.hideDropIndicator();
+      return;
+    }
+
+    const path = this.parsePath(stack.dataset['path']);
+    if (!path) {
+      this.hideDropIndicator();
+      return;
+    }
+
+    const zoneHint = this.findDropZoneByPoint(clientX, clientY);
+    const zone = this.computeDropZone(stack, { clientX, clientY }, zoneHint);
+    this.showDropIndicator(stack, zone);
   }
 
   private startDragPointerTracking(): void {
