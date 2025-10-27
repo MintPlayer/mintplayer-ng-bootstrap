@@ -345,14 +345,14 @@ export class MintDockManagerElement extends HTMLElement {
 
   get layout(): DockLayoutSnapshot {
     return {
-      root: this.cloneNode(this.rootLayout),
+      root: this.cloneLayoutNode(this.rootLayout),
       floating: this.cloneFloatingArray(this.floatingLayouts),
     };
   }
 
   set layout(value: DockLayoutSnapshot | DockLayout | DockLayoutNode | null) {
     const snapshot = this.ensureSnapshot(value);
-    this.rootLayout = this.cloneNode(snapshot.root);
+    this.rootLayout = this.cloneLayoutNode(snapshot.root);
     this.floatingLayouts = this.cloneFloatingArray(snapshot.floating);
     this.render();
   }
@@ -507,10 +507,10 @@ export class MintDockManagerElement extends HTMLElement {
   ): HTMLElement {
     const stack = document.createElement('div');
     stack.classList.add('dock-stack');
-    const location =
+    const location: DockPath =
       dockPath && dockPath.type === 'floating'
         ? { type: 'floating', index: dockPath.index }
-        : ({ type: 'docked', segments: [...path] } as DockPath);
+        : { type: 'docked', segments: [...path] };
     stack.dataset['path'] = this.formatPath(location);
 
     const header = document.createElement('div');
@@ -1340,9 +1340,9 @@ export class MintDockManagerElement extends HTMLElement {
     );
   }
 
-  private cloneNode(layout: DockLayoutNode): DockLayoutNode;
-  private cloneNode(layout: DockLayoutNode | null): DockLayoutNode | null;
-  private cloneNode(layout: DockLayoutNode | null): DockLayoutNode | null {
+  private cloneLayoutNode(layout: DockLayoutNode): DockLayoutNode;
+  private cloneLayoutNode(layout: DockLayoutNode | null): DockLayoutNode | null;
+  private cloneLayoutNode(layout: DockLayoutNode | null): DockLayoutNode | null {
     if (!layout) {
       return null;
     }
