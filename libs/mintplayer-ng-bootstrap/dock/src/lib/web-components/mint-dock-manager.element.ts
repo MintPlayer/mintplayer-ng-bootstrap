@@ -1726,6 +1726,7 @@ export class MintDockManagerElement extends HTMLElement {
     const state = this.dragState;
     this.dragState = null;
     this.hideDropIndicator();
+    this.dropJoystick.hidden = true;
     this.stopDragPointerTracking();
     this.lastDragPointerPosition = null;
     if (state && state.floatingIndex !== null && !state.dropHandled) {
@@ -2361,6 +2362,8 @@ export class MintDockManagerElement extends HTMLElement {
     const hostRect = this.getBoundingClientRect();
     const indicator = this.dropIndicator;
     const joystick = this.dropJoystick;
+
+    joystick.hidden = false;
 
     const path = this.parsePath(stack.dataset['path']);
     let overlayZ = 100;
