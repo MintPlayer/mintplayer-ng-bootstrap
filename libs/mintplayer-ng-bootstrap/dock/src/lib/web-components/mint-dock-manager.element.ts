@@ -2254,97 +2254,25 @@ export class MintDockManagerElement extends HTMLElement {
     point: { clientX: number; clientY: number } | null,
     zoneHint?: DropZone | null,
   ): DropZone | null {
-    if (zoneHint && this.isDropZone(zoneHint)) {
-      this.updateDropJoystickActiveZone(zoneHint);
-      return zoneHint;
+    const hintedZone = this.isDropZone(zoneHint) ? zoneHint : null;
+    if (hintedZone) {
+      this.updateDropJoystickActiveZone(hintedZone);
+      return hintedZone;
     }
 
-    const pointWithinJoystick = (() => {
-      if (
-        !point ||
-        !Number.isFinite(point.clientX) ||
-        !Number.isFinite(point.clientY)
-      ) {
-        return false;
-      }
-
-      if (
-        !this.dropJoystick ||
-        this.dropJoystick.dataset['visible'] !== 'true' ||
-        this.dropJoystickTarget !== stack
-      ) {
-        return false;
-      }
-
-      const rect = this.dropJoystick.getBoundingClientRect();
-      return (
-        point.clientX >= rect.left &&
-        point.clientX <= rect.right &&
-        point.clientY >= rect.top &&
-        point.clientY <= rect.bottom
-      );
-    })();
-
-    if (pointWithinJoystick) {
-      const activeZone = this.dropJoystick.dataset['zone'];
-      if (this.isDropZone(activeZone)) {
-        this.updateDropJoystickActiveZone(activeZone);
-        return activeZone;
-      }
-    }
-
-    let fallbackZone: DropZone | null = null;
-
-    if (
+    const pointZone =
       point &&
       Number.isFinite(point.clientX) &&
       Number.isFinite(point.clientY)
-    ) {
-      const rect = stack.getBoundingClientRect();
-      if (rect.width > 0 && rect.height > 0) {
-        const offsetX = point.clientX - rect.left;
-        const offsetY = point.clientY - rect.top;
-        if (offsetX >= 0 && offsetX <= rect.width && offsetY >= 0 && offsetY <= rect.height) {
-          const relativeX = offsetX / rect.width;
-          const relativeY = offsetY / rect.height;
-          const centerThreshold = 0.3;
-          const insideCenterX = relativeX >= centerThreshold && relativeX <= 1 - centerThreshold;
-          const insideCenterY = relativeY >= centerThreshold && relativeY <= 1 - centerThreshold;
+        ? this.findDropZoneByPoint(point.clientX, point.clientY)
+        : null;
 
-          if (insideCenterX && insideCenterY) {
-            fallbackZone = 'center';
-          } else {
-            const distanceLeft = relativeX;
-            const distanceRight = 1 - relativeX;
-            const distanceTop = relativeY;
-            const distanceBottom = 1 - relativeY;
-            const minDistance = Math.min(distanceLeft, distanceRight, distanceTop, distanceBottom);
-
-            if (minDistance === distanceLeft) {
-              fallbackZone = 'left';
-            } else if (minDistance === distanceRight) {
-              fallbackZone = 'right';
-            } else if (minDistance === distanceTop) {
-              fallbackZone = 'top';
-            } else {
-              fallbackZone = 'bottom';
-            }
-          }
-        }
-      }
-    }
-
-    if (fallbackZone) {
-      this.updateDropJoystickActiveZone(fallbackZone);
-      return fallbackZone;
+    if (pointZone) {
+      this.updateDropJoystickActiveZone(pointZone);
+      return pointZone;
     }
 
     if (this.dropJoystickTarget === stack) {
-      const activeZone = this.dropJoystick.dataset['zone'];
-      if (this.isDropZone(activeZone)) {
-        this.updateDropJoystickActiveZone(activeZone);
-        return activeZone;
-      }
       this.updateDropJoystickActiveZone(null);
     }
 
@@ -2359,7 +2287,10 @@ export class MintDockManagerElement extends HTMLElement {
     if (typeof (event as DragEvent).composedPath === 'function') {
       const path = (event as DragEvent).composedPath();
       for (const target of path) {
-        if (target instanceof HTMLElement) {
+        if (
+          target instanceof HTMLElement &&
+          target.classList.contains('dock-drop-joystick__button')
+        ) {
           const zone = target.dataset?.['zone'];
           if (this.isDropZone(zone)) {
             return zone;
