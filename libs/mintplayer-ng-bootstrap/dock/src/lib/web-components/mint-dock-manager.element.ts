@@ -1924,6 +1924,8 @@ export class MintDockManagerElement extends HTMLElement {
   }
 
   private onDragMouseUp(): void {
+    this.hideAllDropJoysticks();
+
     if (!this.dragState) {
       this.stopDragPointerTracking();
       return;
@@ -1933,6 +1935,8 @@ export class MintDockManagerElement extends HTMLElement {
   }
 
   private onDragTouchEnd(): void {
+    this.hideAllDropJoysticks();
+
     if (!this.dragState) {
       this.stopDragPointerTracking();
       return;
@@ -2423,6 +2427,19 @@ export class MintDockManagerElement extends HTMLElement {
     delete this.dropJoystick.dataset['path'];
     this.dropJoystickTarget = null;
     this.updateDropJoystickActiveZone(null);
+    this.hideAllDropJoysticks();
+  }
+
+  private hideAllDropJoysticks(): void {
+    const shadowRoot = this.shadowRoot;
+    if (!shadowRoot) {
+      return;
+    }
+
+    const joysticks = shadowRoot.querySelectorAll<HTMLElement>('.dock-drop-joystick');
+    joysticks.forEach((joystick) => {
+      joystick.dataset['visible'] = 'false';
+    });
   }
 
   private findStackAtPoint(clientX: number, clientY: number): HTMLElement | null {
