@@ -598,6 +598,7 @@ export class MintDockManagerElement extends HTMLElement {
     this.onGlobalDragOver = this.onGlobalDragOver.bind(this);
     this.onDrop = this.onDrop.bind(this);
     this.onDragLeave = this.onDragLeave.bind(this);
+    this.onDrag = this.onDrag.bind(this);
   }
 
   connectedCallback(): void {
@@ -609,6 +610,7 @@ export class MintDockManagerElement extends HTMLElement {
     this.rootEl.addEventListener('drop', this.onDrop);
     this.rootEl.addEventListener('dragleave', this.onDragLeave);
     window.addEventListener('dragover', this.onGlobalDragOver);
+    window.addEventListener('drag', this.onDrag);
   }
 
   disconnectedCallback(): void {
@@ -616,6 +618,7 @@ export class MintDockManagerElement extends HTMLElement {
     this.rootEl.removeEventListener('drop', this.onDrop);
     this.rootEl.removeEventListener('dragleave', this.onDragLeave);
     window.removeEventListener('dragover', this.onGlobalDragOver);
+    window.removeEventListener('drag', this.onDrag);
     window.removeEventListener('pointermove', this.onPointerMove);
     window.removeEventListener('pointerup', this.onPointerUp);
     this.pointerTrackingActive = false;
@@ -1706,6 +1709,13 @@ export class MintDockManagerElement extends HTMLElement {
   }
 
   private onGlobalDragOver(event: DragEvent): void {
+    if (!this.dragState) {
+      return;
+    }
+    this.updateDraggedFloatingPosition(event);
+  }
+
+  private onDrag(event: DragEvent): void {
     if (!this.dragState) {
       return;
     }
