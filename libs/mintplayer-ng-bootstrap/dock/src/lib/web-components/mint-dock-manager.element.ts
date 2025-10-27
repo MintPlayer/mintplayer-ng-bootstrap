@@ -570,7 +570,7 @@ export class MintDockManagerElement extends HTMLElement {
   private pointerTrackingActive = false;
   private dragPointerTrackingActive = false;
   private lastDragPointerPosition: { x: number; y: number } | null = null;
-  private pendingDragEndTimeout: number | null = null;
+  private pendingDragEndTimeout: ReturnType<typeof globalThis.setTimeout> | null = null;
 
   constructor() {
     super();
@@ -1911,10 +1911,10 @@ export class MintDockManagerElement extends HTMLElement {
   private clearPendingDragEndTimeout(): void {
     if (this.pendingDragEndTimeout !== null) {
       const win = this.windowRef;
-      if (win) {
-        win.clearTimeout(this.pendingDragEndTimeout as number);
+      if (win && typeof this.pendingDragEndTimeout === 'number') {
+        win.clearTimeout(this.pendingDragEndTimeout);
       } else {
-        clearTimeout(this.pendingDragEndTimeout);
+        globalThis.clearTimeout(this.pendingDragEndTimeout);
       }
       this.pendingDragEndTimeout = null;
     }
