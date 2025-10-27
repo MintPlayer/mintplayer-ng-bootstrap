@@ -346,6 +346,68 @@ template.innerHTML = `
       opacity: 1;
     }
 
+    .dock-drop-joystick {
+      position: absolute;
+      display: grid;
+      grid-template-columns: repeat(3, min-content);
+      grid-template-rows: repeat(3, min-content);
+      gap: 0.125rem;
+      padding: 0.125rem;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.15);
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 120ms ease;
+      transform: translate(-50%, -50%);
+      z-index: 110;
+    }
+
+    .dock-drop-joystick[data-visible='true'] {
+      opacity: 1;
+    }
+
+    .dock-drop-joystick__spacer {
+      width: 1.75rem;
+      height: 1.75rem;
+      pointer-events: none;
+    }
+
+    .dock-drop-joystick__button {
+      width: 1.75rem;
+      height: 1.75rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 0.375rem;
+      border: 1px solid rgba(59, 130, 246, 0.4);
+      background: rgba(255, 255, 255, 0.9);
+      color: rgba(30, 64, 175, 0.9);
+      font-size: 0.75rem;
+      line-height: 1;
+      font-weight: 600;
+      pointer-events: auto;
+      cursor: pointer;
+      transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+    }
+
+    .dock-drop-joystick__button[data-active='true'],
+    .dock-drop-joystick__button:hover,
+    .dock-drop-joystick__button:focus-visible {
+      background: rgba(59, 130, 246, 0.25);
+      border-color: rgba(59, 130, 246, 0.8);
+      color: rgba(30, 64, 175, 1);
+    }
+
+    .dock-drop-joystick__button:focus-visible {
+      outline: 2px solid rgba(59, 130, 246, 0.9);
+      outline-offset: 1px;
+    }
+
+    .dock-drop-joystick__button[data-zone='center'] {
+      border-radius: 0.5rem;
+    }
+
     ::slotted(*) {
       flex: 1 1 auto;
       display: block;
@@ -358,6 +420,52 @@ template.innerHTML = `
     <div class="dock-floating-layer"></div>
   </div>
   <div class="dock-drop-indicator"></div>
+  <div class="dock-drop-joystick" data-visible="false">
+    <div class="dock-drop-joystick__spacer"></div>
+    <button
+      class="dock-drop-joystick__button"
+      type="button"
+      data-zone="top"
+      aria-label="Dock to top"
+    >
+      ↑
+    </button>
+    <div class="dock-drop-joystick__spacer"></div>
+    <button
+      class="dock-drop-joystick__button"
+      type="button"
+      data-zone="left"
+      aria-label="Dock to left"
+    >
+      ←
+    </button>
+    <button
+      class="dock-drop-joystick__button"
+      type="button"
+      data-zone="center"
+      aria-label="Dock to center"
+    >
+      •
+    </button>
+    <button
+      class="dock-drop-joystick__button"
+      type="button"
+      data-zone="right"
+      aria-label="Dock to right"
+    >
+      →
+    </button>
+    <div class="dock-drop-joystick__spacer"></div>
+    <button
+      class="dock-drop-joystick__button"
+      type="button"
+      data-zone="bottom"
+      aria-label="Dock to bottom"
+    >
+      ↓
+    </button>
+    <div class="dock-drop-joystick__spacer"></div>
+  </div>
 `;
 
 export class MintDockManagerElement extends HTMLElement {
@@ -371,7 +479,10 @@ export class MintDockManagerElement extends HTMLElement {
   private readonly dockedEl: HTMLElement;
   private readonly floatingLayerEl: HTMLElement;
   private readonly dropIndicator: HTMLElement;
+  private readonly dropJoystick: HTMLElement;
+  private readonly dropJoystickButtons: HTMLButtonElement[];
   private readonly instanceId: string;
+  private dropJoystickTarget: HTMLElement | null = null;
   private rootLayout: DockLayoutNode | null = null;
   private floatingLayouts: DockFloatingStackLayout[] = [];
   private resizeState:
@@ -448,10 +559,24 @@ export class MintDockManagerElement extends HTMLElement {
       throw new Error('mint-dock-manager template is missing the drop indicator element.');
     }
 
+    const joystick = shadowRoot.querySelector<HTMLElement>('.dock-drop-joystick');
+    if (!joystick) {
+      throw new Error('mint-dock-manager template is missing the drop joystick element.');
+    }
+
+    const joystickButtons = Array.from(
+      joystick.querySelectorAll<HTMLButtonElement>('.dock-drop-joystick__button[data-zone]'),
+    );
+    if (joystickButtons.length === 0) {
+      throw new Error('mint-dock-manager template is missing drop joystick buttons.');
+    }
+
     this.rootEl = root;
     this.dockedEl = docked;
     this.floatingLayerEl = floatingLayer;
     this.dropIndicator = indicator;
+    this.dropJoystick = joystick;
+    this.dropJoystickButtons = joystickButtons;
     this.instanceId = `mint-dock-${++MintDockManagerElement.instanceCounter}`;
     this.onPointerMove = this.onPointerMove.bind(this);
     this.onPointerUp = this.onPointerUp.bind(this);
@@ -813,7 +938,7 @@ export class MintDockManagerElement extends HTMLElement {
       return;
     }
 
-    const zone = this.computeDropZone(stack, event);
+    const zone = this.computeDropZone(stack, event, this.extractDropZoneFromEvent(event));
 
     state.dropTarget = { path, zone };
     this.showDropIndicator(stack, zone);
@@ -1262,7 +1387,7 @@ export class MintDockManagerElement extends HTMLElement {
     }
 
     const path = this.parsePath(stack.dataset['path']);
-    const zone = this.computeDropZone(stack, event);
+    const zone = this.computeDropZone(stack, event, this.extractDropZoneFromEvent(event));
     this.showDropIndicator(stack, zone);
   }
 
@@ -1279,7 +1404,7 @@ export class MintDockManagerElement extends HTMLElement {
     }
 
     const path = this.parsePath(stack.dataset['path']);
-    const zone = this.computeDropZone(stack, event);
+    const zone = this.computeDropZone(stack, event, this.extractDropZoneFromEvent(event));
     this.handleDrop(path, zone);
     this.endPaneDrag();
   }
@@ -1502,7 +1627,13 @@ export class MintDockManagerElement extends HTMLElement {
   private computeDropZone(
     stack: HTMLElement,
     point: { clientX: number; clientY: number },
+    zoneHint?: DropZone | null,
   ): DropZone {
+    if (zoneHint && this.dropJoystickTarget === stack) {
+      this.updateDropJoystickActiveZone(zoneHint);
+      return zoneHint;
+    }
+
     const rect = stack.getBoundingClientRect();
     const x = point.clientX - rect.left;
     const y = point.clientY - rect.top;
@@ -1511,24 +1642,115 @@ export class MintDockManagerElement extends HTMLElement {
     const threshold = 0.25;
 
     if (horizontalRatio < threshold) {
+      if (this.dropJoystickTarget === stack) {
+        this.updateDropJoystickActiveZone('left');
+      }
       return 'left';
     }
     if (horizontalRatio > 1 - threshold) {
+      if (this.dropJoystickTarget === stack) {
+        this.updateDropJoystickActiveZone('right');
+      }
       return 'right';
     }
     if (verticalRatio < threshold) {
+      if (this.dropJoystickTarget === stack) {
+        this.updateDropJoystickActiveZone('top');
+      }
       return 'top';
     }
     if (verticalRatio > 1 - threshold) {
+      if (this.dropJoystickTarget === stack) {
+        this.updateDropJoystickActiveZone('bottom');
+      }
       return 'bottom';
     }
+    if (this.dropJoystickTarget === stack) {
+      this.updateDropJoystickActiveZone('center');
+    }
     return 'center';
+  }
+
+  private extractDropZoneFromEvent(event: Event): DropZone | null {
+    if (!event) {
+      return null;
+    }
+
+    if (typeof (event as DragEvent).composedPath === 'function') {
+      const path = (event as DragEvent).composedPath();
+      for (const target of path) {
+        if (target instanceof HTMLElement) {
+          const zone = target.dataset?.['zone'];
+          if (this.isDropZone(zone)) {
+            return zone;
+          }
+        }
+      }
+    }
+
+    if ('clientX' in event && 'clientY' in event) {
+      const pointEvent = event as MouseEvent;
+      const zoneFromPoint = this.findDropZoneByPoint(pointEvent.clientX, pointEvent.clientY);
+      if (zoneFromPoint) {
+        return zoneFromPoint;
+      }
+    }
+
+    return null;
+  }
+
+  private findDropZoneByPoint(clientX: number, clientY: number): DropZone | null {
+    if (
+      !this.dropJoystickButtons ||
+      this.dropJoystick.dataset['visible'] !== 'true' ||
+      !this.dropJoystickTarget
+    ) {
+      return null;
+    }
+
+    for (const button of this.dropJoystickButtons) {
+      const rect = button.getBoundingClientRect();
+      if (
+        clientX >= rect.left &&
+        clientX <= rect.right &&
+        clientY >= rect.top &&
+        clientY <= rect.bottom
+      ) {
+        const zone = button.dataset['zone'];
+        if (this.isDropZone(zone)) {
+          return zone;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  private updateDropJoystickActiveZone(zone: DropZone | null): void {
+    this.dropJoystickButtons.forEach((button) => {
+      const isActive = zone !== null && button.dataset['zone'] === zone;
+      if (isActive) {
+        button.dataset['active'] = 'true';
+      } else {
+        delete button.dataset['active'];
+      }
+    });
+    if (zone) {
+      this.dropJoystick.dataset['zone'] = zone;
+    } else {
+      delete this.dropJoystick.dataset['zone'];
+    }
+  }
+
+  private isDropZone(value: string | null | undefined): value is DropZone {
+    return value === 'left' || value === 'right' || value === 'top' || value === 'bottom' || value === 'center';
   }
 
   private showDropIndicator(stack: HTMLElement, zone: DropZone): void {
     const rect = stack.getBoundingClientRect();
     const hostRect = this.getBoundingClientRect();
     const indicator = this.dropIndicator;
+    const joystick = this.dropJoystick;
 
     const path = this.parsePath(stack.dataset['path']);
     let overlayZ = 100;
@@ -1536,6 +1758,7 @@ export class MintDockManagerElement extends HTMLElement {
       overlayZ = this.getFloatingPaneZIndex(path.index) + 100;
     }
     indicator.style.zIndex = String(overlayZ);
+    joystick.style.zIndex = String(overlayZ + 1);
 
     let left = rect.left - hostRect.left;
     let top = rect.top - hostRect.top;
@@ -1568,10 +1791,21 @@ export class MintDockManagerElement extends HTMLElement {
     indicator.style.width = `${width}px`;
     indicator.style.height = `${height}px`;
     indicator.dataset['visible'] = 'true';
+
+    joystick.style.left = `${rect.left - hostRect.left + rect.width / 2}px`;
+    joystick.style.top = `${rect.top - hostRect.top + rect.height / 2}px`;
+    joystick.dataset['visible'] = 'true';
+    joystick.dataset['path'] = stack.dataset['path'] ?? '';
+    this.dropJoystickTarget = stack;
+    this.updateDropJoystickActiveZone(zone);
   }
 
   private hideDropIndicator(): void {
     this.dropIndicator.dataset['visible'] = 'false';
+    this.dropJoystick.dataset['visible'] = 'false';
+    delete this.dropJoystick.dataset['path'];
+    this.dropJoystickTarget = null;
+    this.updateDropJoystickActiveZone(null);
   }
 
   private findStackAtPoint(clientX: number, clientY: number): HTMLElement | null {
@@ -1582,8 +1816,19 @@ export class MintDockManagerElement extends HTMLElement {
 
     const elements = shadow.elementsFromPoint(clientX, clientY);
     for (const element of elements) {
-      if (element instanceof HTMLElement && element.classList.contains('dock-stack')) {
+      if (!(element instanceof HTMLElement)) {
+        continue;
+      }
+      if (element.classList.contains('dock-stack')) {
         return element;
+      }
+      if (
+        this.dropJoystickTarget &&
+        (element.classList.contains('dock-drop-joystick') ||
+          element.classList.contains('dock-drop-joystick__button') ||
+          element.classList.contains('dock-drop-joystick__spacer'))
+      ) {
+        return this.dropJoystickTarget;
       }
     }
 
@@ -1593,8 +1838,19 @@ export class MintDockManagerElement extends HTMLElement {
   private findStackElement(event: DragEvent): HTMLElement | null {
     const path = event.composedPath();
     for (const target of path) {
-      if (target instanceof HTMLElement && target.classList.contains('dock-stack')) {
+      if (!(target instanceof HTMLElement)) {
+        continue;
+      }
+      if (target.classList.contains('dock-stack')) {
         return target;
+      }
+      if (
+        this.dropJoystickTarget &&
+        (target.classList.contains('dock-drop-joystick') ||
+          target.classList.contains('dock-drop-joystick__button') ||
+          target.classList.contains('dock-drop-joystick__spacer'))
+      ) {
+        return this.dropJoystickTarget;
       }
     }
     return null;
