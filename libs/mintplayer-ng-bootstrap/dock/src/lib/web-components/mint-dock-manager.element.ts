@@ -1485,12 +1485,19 @@ export class MintDockManagerElement extends HTMLElement {
       Array.from(stackEl.querySelectorAll<HTMLElement>('.dock-tab')).some(
         (button) => button.dataset['pane'] && button.dataset['pane'] !== pane,
       );
-    const hasSiblingPane =
-      location.context === 'floating' &&
-      (location.node.panes.some((existing) => existing !== pane) || domHasSibling);
 
-    if (location.context === 'floating' && !hasSiblingPane) {
-      const floating = this.floatingLayouts[location.index];
+    const hasSiblingInStack = location.node.panes.some((existing) => existing !== pane);
+    const floating = location.context === 'floating' ? this.floatingLayouts[location.index] : null;
+    const floatingPaneCount =
+      floating && floating.root ? this.countPanesInTree(floating.root) : hasSiblingInStack ? 2 : 1;
+    const shouldReuseExistingWindow =
+      location.context === 'floating' &&
+      !!floating &&
+      !hasSiblingInStack &&
+      !domHasSibling &&
+      floatingPaneCount <= 1;
+
+    if (shouldReuseExistingWindow) {
       if (floating) {
         floating.activePane = pane;
         this.updateFloatingWindowTitle(location.index);
@@ -2520,6 +2527,16 @@ export class MintDockManagerElement extends HTMLElement {
     }
 
     return a.segments.every((value, index) => value === other.segments[index]);
+  }
+
+  private countPanesInTree(node: DockLayoutNode | null): number {
+    if (!node) {
+      return 0;
+    }
+    if (node.kind === 'stack') {
+      return node.panes.length;
+    }
+    return node.children.reduce((total, child) => total + this.countPanesInTree(child), 0);
   }
 
   private resolveStackLocation(path: DockPath): ResolvedLocation | null {
