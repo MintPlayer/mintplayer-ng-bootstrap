@@ -80,6 +80,8 @@ template.innerHTML = `
       background: rgba(255, 255, 255, 0.92);
       box-shadow: 0 16px 32px rgba(15, 23, 42, 0.25);
       overflow: hidden;
+      min-width: 12rem;
+      min-height: 8rem;
     }
 
     .dock-floating__chrome {
@@ -112,6 +114,17 @@ template.innerHTML = `
       flex: 1 1 auto;
       min-width: 12rem;
       min-height: 8rem;
+    }
+
+    .dock-floating__resizer {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      width: 1rem;
+      height: 1rem;
+      cursor: se-resize;
+      background: linear-gradient(135deg, transparent 40%, rgba(148, 163, 184, 0.6));
+      pointer-events: auto;
     }
 
     .dock-split {
@@ -316,6 +329,19 @@ export class MintDockManagerElement extends HTMLElement {
         startTop: number;
         wrapper: HTMLElement;
         handle: HTMLElement;
+        dropTarget?: { path: DockPath; zone: DropZone };
+      }
+    | null = null;
+  private floatingResizeState:
+    | {
+        index: number;
+        pointerId: number;
+        startX: number;
+        startY: number;
+        startWidth: number;
+        startHeight: number;
+        wrapper: HTMLElement;
+        handle: HTMLElement;
       }
     | null = null;
   private pointerTrackingActive = false;
@@ -499,6 +525,13 @@ export class MintDockManagerElement extends HTMLElement {
       stack.classList.add('dock-floating__stack');
       wrapper.appendChild(chrome);
       wrapper.appendChild(stack);
+
+      const resizer = document.createElement('div');
+      resizer.classList.add('dock-floating__resizer');
+      resizer.addEventListener('pointerdown', (event) =>
+        this.beginFloatingResize(event, index, wrapper, resizer),
+      );
+      wrapper.appendChild(resizer);
       this.floatingLayerEl.appendChild(wrapper);
     });
   }
@@ -541,6 +574,42 @@ export class MintDockManagerElement extends HTMLElement {
     this.startPointerTracking();
   }
 
+  private beginFloatingResize(
+    event: PointerEvent,
+    index: number,
+    wrapper: HTMLElement,
+    handle: HTMLElement,
+  ): void {
+    const floating = this.floatingLayouts[index];
+    if (!floating) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    try {
+      handle.setPointerCapture(event.pointerId);
+    } catch (err) {
+      /* pointer capture may not be supported */
+    }
+
+    this.promoteFloatingPane(index, wrapper);
+
+    this.floatingResizeState = {
+      index,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startWidth: floating.bounds.width,
+      startHeight: floating.bounds.height,
+      wrapper,
+      handle,
+    };
+
+    this.startPointerTracking();
+  }
+
   private handleFloatingDragMove(event: PointerEvent): void {
     const state = this.floatingDragState;
     if (!state || event.pointerId !== state.pointerId) {
@@ -560,6 +629,8 @@ export class MintDockManagerElement extends HTMLElement {
       floating.bounds.left = newLeft;
       floating.bounds.top = newTop;
     }
+
+    this.updateFloatingDragDropTarget(event);
   }
 
   private endFloatingDrag(pointerId: number): void {
@@ -574,7 +645,86 @@ export class MintDockManagerElement extends HTMLElement {
       /* no-op */
     }
 
+    const dropHandled = state.dropTarget
+      ? this.handleFloatingStackDrop(state.index, state.dropTarget.path, state.dropTarget.zone)
+      : false;
+
     this.floatingDragState = null;
+    this.hideDropIndicator();
+    if (!dropHandled) {
+      this.dispatchLayoutChanged();
+    }
+  }
+
+  private updateFloatingDragDropTarget(event: PointerEvent): void {
+    const state = this.floatingDragState;
+    if (!state) {
+      return;
+    }
+
+    const stack = this.findStackAtPoint(event.clientX, event.clientY);
+    if (!stack) {
+      if (state.dropTarget) {
+        delete state.dropTarget;
+        this.hideDropIndicator();
+      }
+      return;
+    }
+
+    const path = this.parsePath(stack.dataset['path']);
+    if (!path || (path.type === 'floating' && path.index === state.index)) {
+      if (state.dropTarget) {
+        delete state.dropTarget;
+        this.hideDropIndicator();
+      }
+      return;
+    }
+
+    let zone = this.computeDropZone(stack, event);
+    if (path.type === 'floating') {
+      zone = 'center';
+    }
+
+    state.dropTarget = { path, zone };
+    this.showDropIndicator(stack, zone);
+  }
+
+  private handleFloatingResizeMove(event: PointerEvent): void {
+    const state = this.floatingResizeState;
+    if (!state || event.pointerId !== state.pointerId) {
+      return;
+    }
+
+    const deltaX = event.clientX - state.startX;
+    const deltaY = event.clientY - state.startY;
+    const minWidth = 192;
+    const minHeight = 128;
+    const newWidth = Math.max(minWidth, state.startWidth + deltaX);
+    const newHeight = Math.max(minHeight, state.startHeight + deltaY);
+
+    state.wrapper.style.width = `${newWidth}px`;
+    state.wrapper.style.height = `${newHeight}px`;
+
+    const floating = this.floatingLayouts[state.index];
+    if (floating) {
+      floating.bounds.width = newWidth;
+      floating.bounds.height = newHeight;
+    }
+  }
+
+  private endFloatingResize(pointerId: number): void {
+    const state = this.floatingResizeState;
+    if (!state || pointerId !== state.pointerId) {
+      return;
+    }
+
+    try {
+      state.handle.releasePointerCapture(state.pointerId);
+    } catch (err) {
+      /* no-op */
+    }
+
+    this.floatingResizeState = null;
     this.dispatchLayoutChanged();
   }
 
@@ -619,7 +769,12 @@ export class MintDockManagerElement extends HTMLElement {
   }
 
   private stopPointerTrackingIfIdle(): void {
-    if (this.pointerTrackingActive && !this.resizeState && !this.floatingDragState) {
+    if (
+      this.pointerTrackingActive &&
+      !this.resizeState &&
+      !this.floatingDragState &&
+      !this.floatingResizeState
+    ) {
       window.removeEventListener('pointermove', this.onPointerMove);
       window.removeEventListener('pointerup', this.onPointerUp);
       this.pointerTrackingActive = false;
@@ -875,6 +1030,10 @@ export class MintDockManagerElement extends HTMLElement {
       this.dispatchLayoutChanged();
     }
 
+    if (this.floatingResizeState && event.pointerId === this.floatingResizeState.pointerId) {
+      this.handleFloatingResizeMove(event);
+    }
+
     if (this.floatingDragState && event.pointerId === this.floatingDragState.pointerId) {
       this.handleFloatingDragMove(event);
     }
@@ -890,6 +1049,10 @@ export class MintDockManagerElement extends HTMLElement {
 
     if (this.floatingDragState && event.pointerId === this.floatingDragState.pointerId) {
       this.endFloatingDrag(event.pointerId);
+    }
+
+    if (this.floatingResizeState && event.pointerId === this.floatingResizeState.pointerId) {
+      this.endFloatingResize(event.pointerId);
     }
 
     this.stopPointerTrackingIfIdle();
@@ -928,7 +1091,11 @@ export class MintDockManagerElement extends HTMLElement {
       return;
     }
 
-    const zone = this.computeDropZone(stack, event);
+    const path = this.parsePath(stack.dataset['path']);
+    let zone = this.computeDropZone(stack, event);
+    if (path?.type === 'floating') {
+      zone = 'center';
+    }
     this.showDropIndicator(stack, zone);
   }
 
@@ -945,7 +1112,10 @@ export class MintDockManagerElement extends HTMLElement {
     }
 
     const path = this.parsePath(stack.dataset['path']);
-    const zone = this.computeDropZone(stack, event);
+    let zone = this.computeDropZone(stack, event);
+    if (path?.type === 'floating') {
+      zone = 'center';
+    }
     this.handleDrop(path, zone);
     this.endPaneDrag();
   }
@@ -1052,6 +1222,102 @@ export class MintDockManagerElement extends HTMLElement {
 
     this.render();
     this.dispatchLayoutChanged();
+  }
+
+  private handleFloatingStackDrop(sourceIndex: number, targetPath: DockPath, zone: DropZone): boolean {
+    const source = this.floatingLayouts[sourceIndex];
+    if (!source || source.panes.length === 0) {
+      return false;
+    }
+
+    const target = this.resolveStackLocation(targetPath);
+    if (!target) {
+      return false;
+    }
+
+    if (target.context === 'floating' && target.index === sourceIndex) {
+      return false;
+    }
+
+    if (target.context === 'floating') {
+      zone = 'center';
+    }
+
+    const panesToMove = [...source.panes];
+    const titlesToMove = source.titles ? { ...source.titles } : undefined;
+    const activePane = source.activePane && panesToMove.includes(source.activePane)
+      ? source.activePane
+      : panesToMove[0];
+
+    const applyTitles = (location: ResolvedLocation, pane: string): void => {
+      if (!titlesToMove) {
+        return;
+      }
+      const title = titlesToMove[pane];
+      if (!title) {
+        return;
+      }
+      location.node.titles = location.node.titles ? { ...location.node.titles } : {};
+      location.node.titles[pane] = title;
+    };
+
+    if (zone === 'center') {
+      panesToMove.forEach((pane) => {
+        this.addPaneToLocation(target, pane);
+        applyTitles(target, pane);
+      });
+
+      if (activePane) {
+        this.setActivePaneForLocation(target, activePane);
+      }
+
+      this.removeFloatingAt(sourceIndex);
+      this.render();
+      this.dispatchLayoutChanged();
+      return true;
+    }
+
+    if (target.context !== 'docked') {
+      return false;
+    }
+
+    const newStack: DockStackNode = {
+      kind: 'stack',
+      panes: panesToMove,
+      activePane,
+    };
+
+    if (titlesToMove) {
+      newStack.titles = { ...titlesToMove };
+    }
+
+    const targetNode = target.node;
+    const orientation = zone === 'left' || zone === 'right' ? 'horizontal' : 'vertical';
+    const placeBefore = zone === 'left' || zone === 'top';
+    const parentInfo = this.findParentSplit(this.rootLayout, targetNode);
+
+    if (parentInfo && parentInfo.parent.direction === orientation) {
+      const insertIndex = placeBefore ? parentInfo.index : parentInfo.index + 1;
+      parentInfo.parent.children.splice(insertIndex, 0, newStack);
+      parentInfo.parent.sizes = this.insertWeight(
+        parentInfo.parent.sizes,
+        insertIndex,
+        parentInfo.parent.children.length,
+      );
+    } else {
+      const split: DockSplitNode = {
+        kind: 'split',
+        direction: orientation,
+        children: placeBefore ? [newStack, targetNode] : [targetNode, newStack],
+        sizes: [0.5, 0.5],
+      };
+      this.replaceNode(targetNode, split);
+    }
+
+    this.removeFloatingAt(sourceIndex);
+    this.render();
+    this.dispatchLayoutChanged();
+    return true;
   }
 
   private insertWeight(sizes: number[] | undefined, index: number, totalChildren: number): number[] {
@@ -1226,12 +1492,15 @@ export class MintDockManagerElement extends HTMLElement {
     return null;
   }
 
-  private computeDropZone(stack: HTMLElement, event: DragEvent): DropZone {
+  private computeDropZone(
+    stack: HTMLElement,
+    point: { clientX: number; clientY: number },
+  ): DropZone {
     const rect = stack.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    const horizontalRatio = x / rect.width;
-    const verticalRatio = y / rect.height;
+    const x = point.clientX - rect.left;
+    const y = point.clientY - rect.top;
+    const horizontalRatio = rect.width > 0 ? x / rect.width : 0;
+    const verticalRatio = rect.height > 0 ? y / rect.height : 0;
     const threshold = 0.25;
 
     if (horizontalRatio < threshold) {
@@ -1296,6 +1565,22 @@ export class MintDockManagerElement extends HTMLElement {
 
   private hideDropIndicator(): void {
     this.dropIndicator.dataset['visible'] = 'false';
+  }
+
+  private findStackAtPoint(clientX: number, clientY: number): HTMLElement | null {
+    const shadow = this.shadowRoot;
+    if (!shadow) {
+      return null;
+    }
+
+    const elements = shadow.elementsFromPoint(clientX, clientY);
+    for (const element of elements) {
+      if (element instanceof HTMLElement && element.classList.contains('dock-stack')) {
+        return element;
+      }
+    }
+
+    return null;
   }
 
   private findStackElement(event: DragEvent): HTMLElement | null {
