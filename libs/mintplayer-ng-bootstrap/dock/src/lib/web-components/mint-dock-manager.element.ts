@@ -940,7 +940,12 @@ export class MintDockManagerElement extends HTMLElement {
 
     const zone = this.computeDropZone(stack, event, this.extractDropZoneFromEvent(event));
 
-    state.dropTarget = { path, zone };
+    if (zone) {
+      state.dropTarget = { path, zone };
+    } else if (state.dropTarget) {
+      delete state.dropTarget;
+    }
+
     this.showDropIndicator(stack, zone);
   }
 
@@ -1405,6 +1410,11 @@ export class MintDockManagerElement extends HTMLElement {
 
     const path = this.parsePath(stack.dataset['path']);
     const zone = this.computeDropZone(stack, event, this.extractDropZoneFromEvent(event));
+    if (!zone) {
+      this.hideDropIndicator();
+      this.endPaneDrag();
+      return;
+    }
     this.handleDrop(path, zone);
     this.endPaneDrag();
   }
@@ -1626,49 +1636,19 @@ export class MintDockManagerElement extends HTMLElement {
 
   private computeDropZone(
     stack: HTMLElement,
-    point: { clientX: number; clientY: number },
+    _point: { clientX: number; clientY: number },
     zoneHint?: DropZone | null,
-  ): DropZone {
-    if (zoneHint && this.dropJoystickTarget === stack) {
+  ): DropZone | null {
+    if (zoneHint && this.isDropZone(zoneHint)) {
       this.updateDropJoystickActiveZone(zoneHint);
       return zoneHint;
     }
 
-    const rect = stack.getBoundingClientRect();
-    const x = point.clientX - rect.left;
-    const y = point.clientY - rect.top;
-    const horizontalRatio = rect.width > 0 ? x / rect.width : 0;
-    const verticalRatio = rect.height > 0 ? y / rect.height : 0;
-    const threshold = 0.25;
-
-    if (horizontalRatio < threshold) {
-      if (this.dropJoystickTarget === stack) {
-        this.updateDropJoystickActiveZone('left');
-      }
-      return 'left';
-    }
-    if (horizontalRatio > 1 - threshold) {
-      if (this.dropJoystickTarget === stack) {
-        this.updateDropJoystickActiveZone('right');
-      }
-      return 'right';
-    }
-    if (verticalRatio < threshold) {
-      if (this.dropJoystickTarget === stack) {
-        this.updateDropJoystickActiveZone('top');
-      }
-      return 'top';
-    }
-    if (verticalRatio > 1 - threshold) {
-      if (this.dropJoystickTarget === stack) {
-        this.updateDropJoystickActiveZone('bottom');
-      }
-      return 'bottom';
-    }
     if (this.dropJoystickTarget === stack) {
-      this.updateDropJoystickActiveZone('center');
+      this.updateDropJoystickActiveZone(null);
     }
-    return 'center';
+
+    return null;
   }
 
   private extractDropZoneFromEvent(event: Event): DropZone | null {
@@ -1746,7 +1726,7 @@ export class MintDockManagerElement extends HTMLElement {
     return value === 'left' || value === 'right' || value === 'top' || value === 'bottom' || value === 'center';
   }
 
-  private showDropIndicator(stack: HTMLElement, zone: DropZone): void {
+  private showDropIndicator(stack: HTMLElement, zone: DropZone | null): void {
     const rect = stack.getBoundingClientRect();
     const hostRect = this.getBoundingClientRect();
     const indicator = this.dropIndicator;
@@ -1767,30 +1747,34 @@ export class MintDockManagerElement extends HTMLElement {
 
     const portion = 0.5;
 
-    switch (zone) {
-      case 'left':
-        width = rect.width * portion;
-        break;
-      case 'right':
-        width = rect.width * portion;
-        left += rect.width * (1 - portion);
-        break;
-      case 'top':
-        height = rect.height * portion;
-        break;
-      case 'bottom':
-        height = rect.height * portion;
-        top += rect.height * (1 - portion);
-        break;
-      default:
-        break;
-    }
+    if (zone) {
+      switch (zone) {
+        case 'left':
+          width = rect.width * portion;
+          break;
+        case 'right':
+          width = rect.width * portion;
+          left += rect.width * (1 - portion);
+          break;
+        case 'top':
+          height = rect.height * portion;
+          break;
+        case 'bottom':
+          height = rect.height * portion;
+          top += rect.height * (1 - portion);
+          break;
+        default:
+          break;
+      }
 
-    indicator.style.left = `${left}px`;
-    indicator.style.top = `${top}px`;
-    indicator.style.width = `${width}px`;
-    indicator.style.height = `${height}px`;
-    indicator.dataset['visible'] = 'true';
+      indicator.style.left = `${left}px`;
+      indicator.style.top = `${top}px`;
+      indicator.style.width = `${width}px`;
+      indicator.style.height = `${height}px`;
+      indicator.dataset['visible'] = 'true';
+    } else {
+      indicator.dataset['visible'] = 'false';
+    }
 
     joystick.style.left = `${rect.left - hostRect.left + rect.width / 2}px`;
     joystick.style.top = `${rect.top - hostRect.top + rect.height / 2}px`;
