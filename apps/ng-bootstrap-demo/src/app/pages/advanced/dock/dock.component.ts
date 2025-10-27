@@ -5,7 +5,6 @@ import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import {
   BsDockManagerComponent,
   BsDockModule,
-  DockLayoutNode,
   DockLayoutSnapshot,
 } from '@mintplayer/ng-bootstrap/dock';
 import { Color } from '@mintplayer/ng-bootstrap';
@@ -22,42 +21,63 @@ export class DockComponent {
 
   readonly Color = Color;
 
-  layout: DockLayoutNode = {
-    kind: 'split',
-    direction: 'horizontal',
-    sizes: [1, 2],
-    children: [
-      {
-        kind: 'stack',
-        panes: ['panel-1', 'panel-2'],
-        titles: {
-          'panel-1': 'Panel 1',
-          'panel-2': 'Panel 2',
+  layout: DockLayoutSnapshot = {
+    root: {
+      kind: 'split',
+      direction: 'horizontal',
+      sizes: [1, 2],
+      children: [
+        {
+          kind: 'stack',
+          panes: ['panel-1', 'panel-2'],
+          titles: {
+            'panel-1': 'Panel 1',
+            'panel-2': 'Panel 2',
+          },
+          activePane: 'panel-1',
         },
-        activePane: 'panel-1',
+        {
+          kind: 'split',
+          direction: 'vertical',
+          sizes: [2, 1],
+          children: [
+            {
+              kind: 'stack',
+              panes: ['panel-3'],
+              titles: {
+                'panel-3': 'Panel 3',
+              },
+            },
+            {
+              kind: 'stack',
+              panes: ['panel-4'],
+              titles: {
+                'panel-4': 'Panel 4',
+              },
+              activePane: 'panel-4',
+            },
+          ],
+        },
+      ],
+    },
+    floating: [
+      {
+        id: 'floating-panel-5',
+        panes: ['panel-5'],
+        titles: {
+          'panel-5': 'Panel 5',
+        },
+        activePane: 'panel-5',
+        bounds: { left: 680, top: 96, width: 320, height: 220 },
       },
       {
-        kind: 'split',
-        direction: 'vertical',
-        sizes: [2, 1],
-        children: [
-          {
-            kind: 'stack',
-            panes: ['panel-3'],
-            titles: {
-              'panel-3': 'Panel 3',
-            },
-          },
-          {
-            kind: 'stack',
-            panes: ['panel-4', 'panel-5'],
-            titles: {
-              'panel-4': 'Panel 4',
-              'panel-5': 'Panel 5',
-            },
-            activePane: 'panel-4',
-          },
-        ],
+        id: 'floating-secondary',
+        panes: ['panel-floating'],
+        titles: {
+          'panel-floating': 'Floating Utilities',
+        },
+        activePane: 'panel-floating',
+        bounds: { left: 520, top: 320, width: 300, height: 210 },
       },
     ],
   };

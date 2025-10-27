@@ -22,10 +22,38 @@ export interface DockStackNode {
   titles?: Record<string, string>;
   /**
    * Optional pane name that should be active when the layout is rendered.
-   */
+  */
   activePane?: string;
+}
+
+export interface DockFloatingPaneBounds {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+export interface DockFloatingStackLayout extends Omit<DockStackNode, 'kind'> {
+  /**
+   * Optional developer supplied identifier that can be used to recognize a floating pane instance.
+   */
+  id?: string;
+  /**
+   * Absolute coordinates (in CSS pixels) describing where the floating pane should appear.
+   */
+  bounds: DockFloatingPaneBounds;
+  /**
+   * Optional z-index override for the floating pane body. Higher values appear above lower ones.
+   */
+  zIndex?: number;
+}
+
+export interface DockLayout {
+  root: DockLayoutNode | null;
+  floating?: DockFloatingStackLayout[];
 }
 
 export interface DockLayoutSnapshot {
   root: DockLayoutNode | null;
+  floating: DockFloatingStackLayout[];
 }

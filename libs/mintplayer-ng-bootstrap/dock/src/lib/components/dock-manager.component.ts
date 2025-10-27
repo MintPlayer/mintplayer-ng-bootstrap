@@ -11,7 +11,11 @@ import {
   QueryList,
   ViewChild,
 } from '@angular/core';
-import { DockLayoutNode, DockLayoutSnapshot } from '../types/dock-layout';
+import {
+  DockLayout,
+  DockLayoutNode,
+  DockLayoutSnapshot,
+} from '../types/dock-layout';
 import { BsDockPaneComponent } from './dock-pane.component';
 import { MintDockManagerElement } from '../web-components/mint-dock-manager.element';
 
@@ -24,16 +28,20 @@ import { MintDockManagerElement } from '../web-components/mint-dock-manager.elem
 })
 export class BsDockManagerComponent implements AfterViewInit {
   @Input()
-  set layout(value: DockLayoutNode | null) {
-    this._layout = value;
-    this.layoutString = value ? JSON.stringify(value) : null;
+  set layout(value: DockLayoutNode | DockLayout | null) {
+    const snapshot = this.cloneLayout(this.ensureSnapshot(value));
+    this._layout = snapshot;
+    this.layoutString = this.stringifyLayout(snapshot);
     this.applyLayout();
   }
-  get layout(): DockLayoutNode | null {
-    return this._layout;
+  get layout(): DockLayoutSnapshot | null {
+    if (!this._layout.root && this._layout.floating.length === 0) {
+      return null;
+    }
+    return this.cloneLayout(this._layout);
   }
 
-  @Output() layoutChange = new EventEmitter<DockLayoutNode | null>();
+  @Output() layoutChange = new EventEmitter<DockLayoutSnapshot | null>();
   @Output() layoutSnapshotChange = new EventEmitter<DockLayoutSnapshot>();
 
   layoutString: string | null = null;
@@ -43,7 +51,7 @@ export class BsDockManagerComponent implements AfterViewInit {
 
   protected readonly trackByPane = (_: number, pane: BsDockPaneComponent) => pane.name;
 
-  private _layout: DockLayoutNode | null = null;
+  private _layout: DockLayoutSnapshot = { root: null, floating: [] };
 
   constructor(private readonly changeDetector: ChangeDetectorRef) {}
 
@@ -53,16 +61,19 @@ export class BsDockManagerComponent implements AfterViewInit {
 
   captureLayout(): DockLayoutSnapshot {
     const element = this.managerRef?.nativeElement;
-    return element?.snapshot ?? { root: null };
+    return element?.snapshot ?? { root: null, floating: [] };
   }
 
   onLayoutChanged(event: Event): void {
     const snapshot =
-      (event as CustomEvent<DockLayoutSnapshot>).detail ?? { root: null };
-    this._layout = snapshot.root;
-    this.layoutString = this._layout ? JSON.stringify(this._layout) : null;
-    this.layoutChange.emit(this._layout);
-    this.layoutSnapshotChange.emit(snapshot);
+      (event as CustomEvent<DockLayoutSnapshot>).detail ?? {
+        root: null,
+        floating: [],
+      };
+    this._layout = this.cloneLayout(snapshot);
+    this.layoutString = this.stringifyLayout(this._layout);
+    this.layoutChange.emit(this.layout);
+    this.layoutSnapshotChange.emit(this.cloneLayout(snapshot));
     this.changeDetector.markForCheck();
   }
 
@@ -72,10 +83,35 @@ export class BsDockManagerComponent implements AfterViewInit {
     }
 
     const element = this.managerRef.nativeElement;
-    if (this._layout) {
-      element.layout = this._layout;
-    } else {
-      element.layout = null;
+    const layout = this.layout;
+    element.layout = layout ?? null;
+  }
+
+  private ensureSnapshot(
+    value: DockLayoutNode | DockLayout | null,
+  ): DockLayoutSnapshot {
+    if (!value) {
+      return { root: null, floating: [] };
     }
+
+    if ('kind' in value) {
+      return { root: value, floating: [] };
+    }
+
+    return {
+      root: value.root ?? null,
+      floating: Array.isArray(value.floating) ? [...value.floating] : [],
+    };
+  }
+
+  private stringifyLayout(layout: DockLayoutSnapshot): string | null {
+    if (!layout.root && layout.floating.length === 0) {
+      return null;
+    }
+    return JSON.stringify(layout);
+  }
+
+  private cloneLayout(layout: DockLayoutSnapshot): DockLayoutSnapshot {
+    return JSON.parse(JSON.stringify(layout)) as DockLayoutSnapshot;
   }
 }
