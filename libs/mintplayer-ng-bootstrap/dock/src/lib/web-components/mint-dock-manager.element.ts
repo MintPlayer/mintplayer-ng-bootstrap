@@ -546,6 +546,7 @@ export class MintDockManagerElement extends HTMLElement {
       }
     | null = null;
   private pointerTrackingActive = false;
+  private dragPointerTrackingActive = false;
 
   constructor() {
     super();
@@ -599,6 +600,8 @@ export class MintDockManagerElement extends HTMLElement {
     this.onDrop = this.onDrop.bind(this);
     this.onDragLeave = this.onDragLeave.bind(this);
     this.onDrag = this.onDrag.bind(this);
+    this.onDragMouseMove = this.onDragMouseMove.bind(this);
+    this.onDragTouchMove = this.onDragTouchMove.bind(this);
   }
 
   connectedCallback(): void {
@@ -619,6 +622,7 @@ export class MintDockManagerElement extends HTMLElement {
     this.rootEl.removeEventListener('dragleave', this.onDragLeave);
     window.removeEventListener('dragover', this.onGlobalDragOver);
     window.removeEventListener('drag', this.onDrag);
+    this.stopDragPointerTracking();
     window.removeEventListener('pointermove', this.onPointerMove);
     window.removeEventListener('pointerup', this.onPointerUp);
     this.pointerTrackingActive = false;
@@ -1459,6 +1463,7 @@ export class MintDockManagerElement extends HTMLElement {
       dropHandled: false,
     };
     this.updateDraggedFloatingPosition(event);
+    this.startDragPointerTracking();
     event.dataTransfer.effectAllowed = 'move';
     event.dataTransfer.setData('text/plain', pane);
   }
@@ -1649,6 +1654,7 @@ export class MintDockManagerElement extends HTMLElement {
     const state = this.dragState;
     this.dragState = null;
     this.hideDropIndicator();
+    this.stopDragPointerTracking();
     if (state && state.floatingIndex !== null && !state.dropHandled) {
       this.dispatchLayoutChanged();
     }
@@ -1676,36 +1682,7 @@ export class MintDockManagerElement extends HTMLElement {
   }
 
   private updateDraggedFloatingPosition(event: DragEvent): void {
-    if (!this.dragState) {
-      return;
-    }
-
-    const { floatingIndex, pointerOffsetX, pointerOffsetY } = this.dragState;
-    if (floatingIndex === null || floatingIndex < 0) {
-      return;
-    }
-
-    if (!Number.isFinite(event.clientX) || !Number.isFinite(event.clientY)) {
-      return;
-    }
-
-    const floating = this.floatingLayouts[floatingIndex];
-    if (!floating) {
-      return;
-    }
-
-    const hostRect = this.getBoundingClientRect();
-    const newLeft = event.clientX - hostRect.left - pointerOffsetX;
-    const newTop = event.clientY - hostRect.top - pointerOffsetY;
-
-    floating.bounds.left = newLeft;
-    floating.bounds.top = newTop;
-
-    const wrapper = this.getFloatingWrapper(floatingIndex);
-    if (wrapper) {
-      wrapper.style.left = `${newLeft}px`;
-      wrapper.style.top = `${newTop}px`;
-    }
+    this.updateDraggedFloatingPositionFromPoint(event.clientX, event.clientY);
   }
 
   private onGlobalDragOver(event: DragEvent): void {
@@ -1720,6 +1697,83 @@ export class MintDockManagerElement extends HTMLElement {
       return;
     }
     this.updateDraggedFloatingPosition(event);
+  }
+
+  private updateDraggedFloatingPositionFromPoint(
+    clientX: number,
+    clientY: number,
+  ): void {
+    if (!this.dragState) {
+      return;
+    }
+
+    const { floatingIndex, pointerOffsetX, pointerOffsetY } = this.dragState;
+    if (floatingIndex === null || floatingIndex < 0) {
+      return;
+    }
+
+    if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) {
+      return;
+    }
+
+    const floating = this.floatingLayouts[floatingIndex];
+    if (!floating) {
+      return;
+    }
+
+    const hostRect = this.getBoundingClientRect();
+    const newLeft = clientX - hostRect.left - pointerOffsetX;
+    const newTop = clientY - hostRect.top - pointerOffsetY;
+
+    floating.bounds.left = newLeft;
+    floating.bounds.top = newTop;
+
+    const wrapper = this.getFloatingWrapper(floatingIndex);
+    if (wrapper) {
+      wrapper.style.left = `${newLeft}px`;
+      wrapper.style.top = `${newTop}px`;
+    }
+  }
+
+  private startDragPointerTracking(): void {
+    if (this.dragPointerTrackingActive) {
+      return;
+    }
+    window.addEventListener('mousemove', this.onDragMouseMove, true);
+    window.addEventListener('touchmove', this.onDragTouchMove, { passive: false });
+    this.dragPointerTrackingActive = true;
+  }
+
+  private stopDragPointerTracking(): void {
+    if (!this.dragPointerTrackingActive) {
+      return;
+    }
+    window.removeEventListener('mousemove', this.onDragMouseMove, true);
+    window.removeEventListener('touchmove', this.onDragTouchMove);
+    this.dragPointerTrackingActive = false;
+  }
+
+  private onDragMouseMove(event: MouseEvent): void {
+    if (!this.dragState) {
+      this.stopDragPointerTracking();
+      return;
+    }
+    this.updateDraggedFloatingPositionFromPoint(event.clientX, event.clientY);
+  }
+
+  private onDragTouchMove(event: TouchEvent): void {
+    if (!this.dragState) {
+      this.stopDragPointerTracking();
+      return;
+    }
+
+    const touch = event.touches[0];
+    if (!touch) {
+      return;
+    }
+
+    event.preventDefault();
+    this.updateDraggedFloatingPositionFromPoint(touch.clientX, touch.clientY);
   }
 
   private onDrop(event: DragEvent): void {
