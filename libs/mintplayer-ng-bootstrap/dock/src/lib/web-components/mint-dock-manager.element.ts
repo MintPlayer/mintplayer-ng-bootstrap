@@ -548,6 +548,7 @@ export class MintDockManagerElement extends HTMLElement {
   private pointerTrackingActive = false;
   private dragPointerTrackingActive = false;
   private lastDragPointerPosition: { x: number; y: number } | null = null;
+  private pendingDragEndTimeout: number | null = null;
 
   constructor() {
     super();
@@ -604,6 +605,8 @@ export class MintDockManagerElement extends HTMLElement {
     this.onDrag = this.onDrag.bind(this);
     this.onDragMouseMove = this.onDragMouseMove.bind(this);
     this.onDragTouchMove = this.onDragTouchMove.bind(this);
+    this.onDragMouseUp = this.onDragMouseUp.bind(this);
+    this.onDragTouchEnd = this.onDragTouchEnd.bind(this);
   }
 
   connectedCallback(): void {
@@ -1655,6 +1658,7 @@ export class MintDockManagerElement extends HTMLElement {
   }
 
   private endPaneDrag(): void {
+    this.clearPendingDragEndTimeout();
     const state = this.dragState;
     this.dragState = null;
     this.hideDropIndicator();
@@ -1774,6 +1778,9 @@ export class MintDockManagerElement extends HTMLElement {
     this.lastDragPointerPosition = null;
     window.addEventListener('mousemove', this.onDragMouseMove, true);
     window.addEventListener('touchmove', this.onDragTouchMove, { passive: false });
+    window.addEventListener('mouseup', this.onDragMouseUp, true);
+    window.addEventListener('touchend', this.onDragTouchEnd, true);
+    window.addEventListener('touchcancel', this.onDragTouchEnd, true);
     this.dragPointerTrackingActive = true;
   }
 
@@ -1783,8 +1790,12 @@ export class MintDockManagerElement extends HTMLElement {
     }
     window.removeEventListener('mousemove', this.onDragMouseMove, true);
     window.removeEventListener('touchmove', this.onDragTouchMove);
+    window.removeEventListener('mouseup', this.onDragMouseUp, true);
+    window.removeEventListener('touchend', this.onDragTouchEnd, true);
+    window.removeEventListener('touchcancel', this.onDragTouchEnd, true);
     this.dragPointerTrackingActive = false;
     this.lastDragPointerPosition = null;
+    this.clearPendingDragEndTimeout();
   }
 
   private onDragMouseMove(event: MouseEvent): void {
@@ -1792,6 +1803,12 @@ export class MintDockManagerElement extends HTMLElement {
       this.stopDragPointerTracking();
       return;
     }
+
+    if (event.buttons === 0) {
+      this.scheduleDeferredDragEnd();
+      return;
+    }
+
     this.lastDragPointerPosition = { x: event.clientX, y: event.clientY };
     this.updateDraggedFloatingPositionFromPoint(event.clientX, event.clientY);
   }
@@ -1804,12 +1821,53 @@ export class MintDockManagerElement extends HTMLElement {
 
     const touch = event.touches[0];
     if (!touch) {
+      this.scheduleDeferredDragEnd();
       return;
     }
 
     event.preventDefault();
     this.lastDragPointerPosition = { x: touch.clientX, y: touch.clientY };
     this.updateDraggedFloatingPositionFromPoint(touch.clientX, touch.clientY);
+  }
+
+  private onDragMouseUp(): void {
+    if (!this.dragState) {
+      this.stopDragPointerTracking();
+      return;
+    }
+
+    this.scheduleDeferredDragEnd();
+  }
+
+  private onDragTouchEnd(): void {
+    if (!this.dragState) {
+      this.stopDragPointerTracking();
+      return;
+    }
+
+    this.scheduleDeferredDragEnd();
+  }
+
+  private clearPendingDragEndTimeout(): void {
+    if (this.pendingDragEndTimeout !== null) {
+      window.clearTimeout(this.pendingDragEndTimeout);
+      this.pendingDragEndTimeout = null;
+    }
+  }
+
+  private scheduleDeferredDragEnd(): void {
+    if (this.pendingDragEndTimeout !== null) {
+      return;
+    }
+
+    this.pendingDragEndTimeout = window.setTimeout(() => {
+      this.pendingDragEndTimeout = null;
+      if (!this.dragState) {
+        return;
+      }
+      this.endPaneDrag();
+      this.clearPendingTabDragMetrics();
+    }, 0);
   }
 
   private onDrop(event: DragEvent): void {
