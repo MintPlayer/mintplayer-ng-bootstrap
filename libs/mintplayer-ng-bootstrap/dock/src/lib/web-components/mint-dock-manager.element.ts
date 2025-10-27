@@ -29,9 +29,7 @@ type FloatingResizeEdges = {
   vertical: 'top' | 'bottom' | 'none';
 };
 
-const template = document.createElement('template');
-
-template.innerHTML = `
+const templateHtml = `
   <style>
     :host {
       display: block;
@@ -468,13 +466,37 @@ template.innerHTML = `
   </div>
 `;
 
+let cachedTemplate: HTMLTemplateElement | null = null;
+let cachedTemplateDocument: Document | null = null;
+
+function ensureTemplate(documentRef: Document): HTMLTemplateElement {
+  if (!cachedTemplate || cachedTemplateDocument !== documentRef) {
+    cachedTemplate = documentRef.createElement('template');
+    cachedTemplate.innerHTML = templateHtml;
+    cachedTemplateDocument = documentRef;
+  }
+
+  return cachedTemplate;
+}
+
 export class MintDockManagerElement extends HTMLElement {
+  private static documentRef: Document | null =
+    typeof document !== 'undefined' ? document : null;
+
+  static configureDocument(documentRef: Document | null | undefined): void {
+    if (documentRef) {
+      MintDockManagerElement.documentRef = documentRef;
+    }
+  }
+
   static get observedAttributes(): string[] {
     return ['layout'];
   }
 
   private static instanceCounter = 0;
 
+  private readonly documentRef: Document;
+  private readonly windowRef: (Window & typeof globalThis) | null;
   private readonly rootEl: HTMLElement;
   private readonly dockedEl: HTMLElement;
   private readonly floatingLayerEl: HTMLElement;
@@ -548,11 +570,15 @@ export class MintDockManagerElement extends HTMLElement {
   private pointerTrackingActive = false;
   private dragPointerTrackingActive = false;
   private lastDragPointerPosition: { x: number; y: number } | null = null;
-  private pendingDragEndTimeout: number | null = null;
+  private pendingDragEndTimeout: number | NodeJS.Timeout | null = null;
 
   constructor() {
     super();
+    const documentRef = this.resolveDocument();
+    this.documentRef = documentRef;
+    this.windowRef = this.resolveWindow(documentRef);
     const shadowRoot = this.attachShadow({ mode: 'open' });
+    const template = ensureTemplate(documentRef);
     shadowRoot.appendChild(template.content.cloneNode(true));
     const root = shadowRoot.querySelector<HTMLElement>('.dock-root');
     if (!root) {
@@ -617,21 +643,29 @@ export class MintDockManagerElement extends HTMLElement {
     this.rootEl.addEventListener('dragover', this.onDragOver);
     this.rootEl.addEventListener('drop', this.onDrop);
     this.rootEl.addEventListener('dragleave', this.onDragLeave);
-    window.addEventListener('dragover', this.onGlobalDragOver);
-    window.addEventListener('drag', this.onDrag);
-    window.addEventListener('dragend', this.onGlobalDragEnd, true);
+    this.dropJoystick.addEventListener('dragover', this.onDragOver);
+    this.dropJoystick.addEventListener('drop', this.onDrop);
+    this.dropJoystick.addEventListener('dragleave', this.onDragLeave);
+    const win = this.windowRef;
+    win?.addEventListener('dragover', this.onGlobalDragOver);
+    win?.addEventListener('drag', this.onDrag);
+    win?.addEventListener('dragend', this.onGlobalDragEnd, true);
   }
 
   disconnectedCallback(): void {
     this.rootEl.removeEventListener('dragover', this.onDragOver);
     this.rootEl.removeEventListener('drop', this.onDrop);
     this.rootEl.removeEventListener('dragleave', this.onDragLeave);
-    window.removeEventListener('dragover', this.onGlobalDragOver);
-    window.removeEventListener('drag', this.onDrag);
-    window.removeEventListener('dragend', this.onGlobalDragEnd, true);
+    this.dropJoystick.removeEventListener('dragover', this.onDragOver);
+    this.dropJoystick.removeEventListener('drop', this.onDrop);
+    this.dropJoystick.removeEventListener('dragleave', this.onDragLeave);
+    const win = this.windowRef;
+    win?.removeEventListener('dragover', this.onGlobalDragOver);
+    win?.removeEventListener('drag', this.onDrag);
+    win?.removeEventListener('dragend', this.onGlobalDragEnd, true);
     this.stopDragPointerTracking();
-    window.removeEventListener('pointermove', this.onPointerMove);
-    window.removeEventListener('pointerup', this.onPointerUp);
+    win?.removeEventListener('pointermove', this.onPointerMove);
+    win?.removeEventListener('pointerup', this.onPointerUp);
     this.pointerTrackingActive = false;
   }
 
@@ -661,6 +695,34 @@ export class MintDockManagerElement extends HTMLElement {
 
   toJSON(): DockLayoutSnapshot {
     return this.snapshot;
+  }
+
+  private resolveDocument(): Document {
+    const staticDocument = MintDockManagerElement.documentRef;
+    const ownerDocument = this.ownerDocument ?? null;
+    const globalDocument =
+      typeof document !== 'undefined' ? document : null;
+    const resolvedDocument = staticDocument ?? ownerDocument ?? globalDocument;
+
+    if (!resolvedDocument) {
+      throw new Error('mint-dock-manager requires a Document to initialize.');
+    }
+
+    if (!MintDockManagerElement.documentRef) {
+      MintDockManagerElement.documentRef = resolvedDocument;
+    }
+
+    return resolvedDocument;
+  }
+
+  private resolveWindow(
+    documentRef: Document,
+  ): (Window & typeof globalThis) | null {
+    if (typeof window !== 'undefined') {
+      return window;
+    }
+
+    return (documentRef.defaultView as (Window & typeof globalThis) | null) ?? null;
   }
 
   private parseLayout(value: string): DockLayoutSnapshot | null {
@@ -725,7 +787,7 @@ export class MintDockManagerElement extends HTMLElement {
   private renderFloatingPanes(): void {
     this.floatingLayerEl.innerHTML = '';
     this.floatingLayouts.forEach((floating, index) => {
-      const wrapper = document.createElement('div');
+      const wrapper = this.documentRef.createElement('div');
       wrapper.classList.add('dock-floating');
       wrapper.dataset['path'] = this.formatPath({
         type: 'floating',
@@ -742,13 +804,13 @@ export class MintDockManagerElement extends HTMLElement {
       const zIndex = this.getFloatingPaneZIndex(index);
       wrapper.style.zIndex = String(zIndex);
 
-      const chrome = document.createElement('div');
+      const chrome = this.documentRef.createElement('div');
       chrome.classList.add('dock-floating__chrome');
       chrome.addEventListener('pointerdown', (event) =>
         this.beginFloatingDrag(event, index, wrapper, chrome),
       );
 
-      const title = document.createElement('div');
+      const title = this.documentRef.createElement('div');
       title.classList.add('dock-floating__title');
       title.textContent = this.getFloatingWindowTitle(floating);
       chrome.appendChild(title);
@@ -760,14 +822,14 @@ export class MintDockManagerElement extends HTMLElement {
         content.classList.add('dock-floating__stack');
         wrapper.appendChild(content);
       } else {
-        const placeholder = document.createElement('div');
+        const placeholder = this.documentRef.createElement('div');
         placeholder.classList.add('dock-stack');
         placeholder.dataset['path'] = this.formatPath({
           type: 'floating',
           index,
           segments: [],
         });
-        const empty = document.createElement('div');
+        const empty = this.documentRef.createElement('div');
         empty.classList.add('dock-stack__pane');
         empty.textContent = 'No panes configured';
         placeholder.appendChild(empty);
@@ -810,7 +872,7 @@ export class MintDockManagerElement extends HTMLElement {
       ];
 
       resizerConfigs.forEach(({ classes, edges }) => {
-        const resizer = document.createElement('div');
+        const resizer = this.documentRef.createElement('div');
         resizer.classList.add(...classes);
         resizer.addEventListener('pointerdown', (event) =>
           this.beginFloatingResize(event, index, wrapper, resizer, edges),
@@ -1083,8 +1145,9 @@ export class MintDockManagerElement extends HTMLElement {
     if (this.pointerTrackingActive) {
       return;
     }
-    window.addEventListener('pointermove', this.onPointerMove);
-    window.addEventListener('pointerup', this.onPointerUp);
+    const win = this.windowRef;
+    win?.addEventListener('pointermove', this.onPointerMove);
+    win?.addEventListener('pointerup', this.onPointerUp);
     this.pointerTrackingActive = true;
   }
 
@@ -1095,8 +1158,9 @@ export class MintDockManagerElement extends HTMLElement {
       !this.floatingDragState &&
       !this.floatingResizeState
     ) {
-      window.removeEventListener('pointermove', this.onPointerMove);
-      window.removeEventListener('pointerup', this.onPointerUp);
+      const win = this.windowRef;
+      win?.removeEventListener('pointermove', this.onPointerMove);
+      win?.removeEventListener('pointerup', this.onPointerUp);
       this.pointerTrackingActive = false;
     }
   }
@@ -1149,14 +1213,14 @@ export class MintDockManagerElement extends HTMLElement {
     path: number[],
     floatingIndex?: number,
   ): HTMLElement {
-    const container = document.createElement('div');
+    const container = this.documentRef.createElement('div');
     container.classList.add('dock-split');
     container.dataset['direction'] = node.direction;
     container.dataset['path'] = path.join('/');
 
     const sizes = Array.isArray(node.sizes) ? node.sizes : [];
     node.children.forEach((child, index) => {
-      const childWrapper = document.createElement('div');
+      const childWrapper = this.documentRef.createElement('div');
       childWrapper.classList.add('dock-split__child');
       childWrapper.dataset['index'] = String(index);
 
@@ -1171,7 +1235,7 @@ export class MintDockManagerElement extends HTMLElement {
       container.appendChild(childWrapper);
 
       if (index < node.children.length - 1) {
-        const divider = document.createElement('div');
+        const divider = this.documentRef.createElement('div');
         divider.classList.add('dock-split__divider');
         divider.setAttribute('role', 'separator');
         divider.tabIndex = 0;
@@ -1197,7 +1261,7 @@ export class MintDockManagerElement extends HTMLElement {
     path: number[],
     floatingIndex?: number,
   ): HTMLElement {
-    const stack = document.createElement('div');
+    const stack = this.documentRef.createElement('div');
     stack.classList.add('dock-stack');
     const location: DockPath =
       typeof floatingIndex === 'number'
@@ -1205,15 +1269,15 @@ export class MintDockManagerElement extends HTMLElement {
         : { type: 'docked', segments: [...path] };
     stack.dataset['path'] = this.formatPath(location);
 
-    const header = document.createElement('div');
+    const header = this.documentRef.createElement('div');
     header.classList.add('dock-stack__header');
     header.setAttribute('role', 'tablist');
-    const content = document.createElement('div');
+    const content = this.documentRef.createElement('div');
     content.classList.add('dock-stack__content');
 
     const panes = Array.from(new Set(node.panes));
     if (panes.length === 0) {
-      const empty = document.createElement('div');
+      const empty = this.documentRef.createElement('div');
       empty.classList.add('dock-stack__pane');
       empty.textContent = 'No panes configured';
       content.appendChild(empty);
@@ -1234,7 +1298,7 @@ export class MintDockManagerElement extends HTMLElement {
       const tabId = `${this.instanceId}-tab-${pathSlug}-${paneSlug}`;
       const panelId = `${this.instanceId}-panel-${pathSlug}-${paneSlug}`;
 
-      const button = document.createElement('button');
+      const button = this.documentRef.createElement('button');
       button.type = 'button';
       button.classList.add('dock-tab');
       button.dataset['pane'] = paneName;
@@ -1274,7 +1338,7 @@ export class MintDockManagerElement extends HTMLElement {
       });
       header.appendChild(button);
 
-      const paneHost = document.createElement('div');
+      const paneHost = this.documentRef.createElement('div');
       paneHost.classList.add('dock-stack__pane');
       paneHost.dataset['pane'] = paneName;
       paneHost.id = panelId;
@@ -1284,7 +1348,7 @@ export class MintDockManagerElement extends HTMLElement {
         paneHost.setAttribute('hidden', '');
       }
 
-      const slotEl = document.createElement('slot');
+      const slotEl = this.documentRef.createElement('slot');
       slotEl.name = paneName;
       paneHost.appendChild(slotEl);
       content.appendChild(paneHost);
@@ -1743,12 +1807,14 @@ export class MintDockManagerElement extends HTMLElement {
       return;
     }
 
-    const { floatingIndex, pointerOffsetX, pointerOffsetY } = this.dragState;
-    if (floatingIndex === null || floatingIndex < 0) {
+    if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) {
       return;
     }
 
-    if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) {
+    this.updatePaneDragDropTargetFromPoint(clientX, clientY);
+
+    const { floatingIndex, pointerOffsetX, pointerOffsetY } = this.dragState;
+    if (floatingIndex === null || floatingIndex < 0) {
       return;
     }
 
@@ -1771,16 +1837,39 @@ export class MintDockManagerElement extends HTMLElement {
     }
   }
 
+  private updatePaneDragDropTargetFromPoint(clientX: number, clientY: number): void {
+    if (!this.dragState) {
+      return;
+    }
+
+    const stack = this.findStackAtPoint(clientX, clientY);
+    if (!stack) {
+      this.hideDropIndicator();
+      return;
+    }
+
+    const path = this.parsePath(stack.dataset['path']);
+    if (!path) {
+      this.hideDropIndicator();
+      return;
+    }
+
+    const zoneHint = this.findDropZoneByPoint(clientX, clientY);
+    const zone = this.computeDropZone(stack, { clientX, clientY }, zoneHint);
+    this.showDropIndicator(stack, zone);
+  }
+
   private startDragPointerTracking(): void {
     if (this.dragPointerTrackingActive) {
       return;
     }
     this.lastDragPointerPosition = null;
-    window.addEventListener('mousemove', this.onDragMouseMove, true);
-    window.addEventListener('touchmove', this.onDragTouchMove, { passive: false });
-    window.addEventListener('mouseup', this.onDragMouseUp, true);
-    window.addEventListener('touchend', this.onDragTouchEnd, true);
-    window.addEventListener('touchcancel', this.onDragTouchEnd, true);
+    const win = this.windowRef;
+    win?.addEventListener('mousemove', this.onDragMouseMove, true);
+    win?.addEventListener('touchmove', this.onDragTouchMove, { passive: false });
+    win?.addEventListener('mouseup', this.onDragMouseUp, true);
+    win?.addEventListener('touchend', this.onDragTouchEnd, true);
+    win?.addEventListener('touchcancel', this.onDragTouchEnd, true);
     this.dragPointerTrackingActive = true;
   }
 
@@ -1788,11 +1877,12 @@ export class MintDockManagerElement extends HTMLElement {
     if (!this.dragPointerTrackingActive) {
       return;
     }
-    window.removeEventListener('mousemove', this.onDragMouseMove, true);
-    window.removeEventListener('touchmove', this.onDragTouchMove);
-    window.removeEventListener('mouseup', this.onDragMouseUp, true);
-    window.removeEventListener('touchend', this.onDragTouchEnd, true);
-    window.removeEventListener('touchcancel', this.onDragTouchEnd, true);
+    const win = this.windowRef;
+    win?.removeEventListener('mousemove', this.onDragMouseMove, true);
+    win?.removeEventListener('touchmove', this.onDragTouchMove);
+    win?.removeEventListener('mouseup', this.onDragMouseUp, true);
+    win?.removeEventListener('touchend', this.onDragTouchEnd, true);
+    win?.removeEventListener('touchcancel', this.onDragTouchEnd, true);
     this.dragPointerTrackingActive = false;
     this.lastDragPointerPosition = null;
     this.clearPendingDragEndTimeout();
@@ -1850,7 +1940,12 @@ export class MintDockManagerElement extends HTMLElement {
 
   private clearPendingDragEndTimeout(): void {
     if (this.pendingDragEndTimeout !== null) {
-      window.clearTimeout(this.pendingDragEndTimeout);
+      const win = this.windowRef;
+      if (win && typeof this.pendingDragEndTimeout === 'number') {
+        win.clearTimeout(this.pendingDragEndTimeout);
+      } else {
+        globalThis.clearTimeout(this.pendingDragEndTimeout);
+      }
       this.pendingDragEndTimeout = null;
     }
   }
@@ -1860,14 +1955,24 @@ export class MintDockManagerElement extends HTMLElement {
       return;
     }
 
-    this.pendingDragEndTimeout = window.setTimeout(() => {
-      this.pendingDragEndTimeout = null;
-      if (!this.dragState) {
-        return;
-      }
-      this.endPaneDrag();
-      this.clearPendingTabDragMetrics();
-    }, 0);
+    const win = this.windowRef;
+    this.pendingDragEndTimeout = win
+      ? win.setTimeout(() => {
+          this.pendingDragEndTimeout = null;
+          if (!this.dragState) {
+            return;
+          }
+          this.endPaneDrag();
+          this.clearPendingTabDragMetrics();
+        }, 0)
+      : setTimeout(() => {
+          this.pendingDragEndTimeout = null;
+          if (!this.dragState) {
+            return;
+          }
+          this.endPaneDrag();
+          this.clearPendingTabDragMetrics();
+        }, 0);
   }
 
   private onDrop(event: DragEvent): void {
@@ -1876,14 +1981,34 @@ export class MintDockManagerElement extends HTMLElement {
     }
     event.preventDefault();
 
-    const stack = this.findStackElement(event);
+    const pointFromEvent =
+      Number.isFinite(event.clientX) && Number.isFinite(event.clientY)
+        ? { clientX: event.clientX, clientY: event.clientY }
+        : null;
+
+    const point =
+      pointFromEvent ??
+      (this.lastDragPointerPosition
+        ? {
+            clientX: this.lastDragPointerPosition.x,
+            clientY: this.lastDragPointerPosition.y,
+          }
+        : null);
+
+    const stack =
+      this.findStackElement(event) ??
+      (point ? this.findStackAtPoint(point.clientX, point.clientY) : null);
+
     if (!stack) {
       this.hideDropIndicator();
+      this.endPaneDrag();
       return;
     }
 
     const path = this.parsePath(stack.dataset['path']);
-    const zone = this.computeDropZone(stack, event, this.extractDropZoneFromEvent(event));
+    const eventZoneHint = this.extractDropZoneFromEvent(event);
+    const pointZoneHint = point ? this.findDropZoneByPoint(point.clientX, point.clientY) : null;
+    const zone = this.computeDropZone(stack, point ?? event, pointZoneHint ?? eventZoneHint);
     if (!zone) {
       this.hideDropIndicator();
       this.endPaneDrag();
@@ -1895,7 +2020,14 @@ export class MintDockManagerElement extends HTMLElement {
 
   private onDragLeave(event: DragEvent): void {
     const related = event.relatedTarget as Node | null;
-    if (!related || !this.rootEl.contains(related)) {
+    if (!related) {
+      this.hideDropIndicator();
+      return;
+    }
+
+    const rootContains = this.rootEl.contains(related);
+    const joystickContains = this.dropJoystick.contains(related);
+    if (!rootContains && !joystickContains) {
       this.hideDropIndicator();
     }
   }
@@ -2119,20 +2251,28 @@ export class MintDockManagerElement extends HTMLElement {
 
   private computeDropZone(
     stack: HTMLElement,
-    _point: { clientX: number; clientY: number },
+    point: { clientX: number; clientY: number } | null,
     zoneHint?: DropZone | null,
   ): DropZone | null {
-    if (zoneHint && this.isDropZone(zoneHint)) {
-      this.updateDropJoystickActiveZone(zoneHint);
-      return zoneHint;
+    const hintedZone = this.isDropZone(zoneHint) ? zoneHint : null;
+    if (hintedZone) {
+      this.updateDropJoystickActiveZone(hintedZone);
+      return hintedZone;
+    }
+
+    const pointZone =
+      point &&
+      Number.isFinite(point.clientX) &&
+      Number.isFinite(point.clientY)
+        ? this.findDropZoneByPoint(point.clientX, point.clientY)
+        : null;
+
+    if (pointZone) {
+      this.updateDropJoystickActiveZone(pointZone);
+      return pointZone;
     }
 
     if (this.dropJoystickTarget === stack) {
-      const activeZone = this.dropJoystick.dataset['zone'];
-      if (this.isDropZone(activeZone)) {
-        this.updateDropJoystickActiveZone(activeZone);
-        return activeZone;
-      }
       this.updateDropJoystickActiveZone(null);
     }
 
@@ -2147,7 +2287,10 @@ export class MintDockManagerElement extends HTMLElement {
     if (typeof (event as DragEvent).composedPath === 'function') {
       const path = (event as DragEvent).composedPath();
       for (const target of path) {
-        if (target instanceof HTMLElement) {
+        if (
+          target instanceof HTMLElement &&
+          target.classList.contains('dock-drop-joystick__button')
+        ) {
           const zone = target.dataset?.['zone'];
           if (this.isDropZone(zone)) {
             return zone;
@@ -2890,7 +3033,7 @@ export class MintDockManagerElement extends HTMLElement {
 
 const tagName = 'mint-dock-manager';
 
-if (!customElements.get(tagName)) {
+if (typeof customElements !== 'undefined' && !customElements.get(tagName)) {
   customElements.define(tagName, MintDockManagerElement);
 }
 
