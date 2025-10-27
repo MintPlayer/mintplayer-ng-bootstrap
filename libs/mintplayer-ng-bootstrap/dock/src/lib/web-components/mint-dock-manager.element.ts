@@ -24,6 +24,11 @@ type ResolvedLocation = DockedLocation | FloatingLocation;
 
 type DropZone = 'center' | 'left' | 'right' | 'top' | 'bottom';
 
+type FloatingResizeEdges = {
+  horizontal: 'left' | 'right' | 'none';
+  vertical: 'top' | 'bottom' | 'none';
+};
+
 const template = document.createElement('template');
 
 template.innerHTML = `
@@ -119,13 +124,80 @@ template.innerHTML = `
 
     .dock-floating__resizer {
       position: absolute;
+      pointer-events: auto;
+      z-index: 2;
+      background: rgba(148, 163, 184, 0.25);
+      transition: background 120ms ease;
+    }
+
+    .dock-floating__resizer:hover {
+      background: rgba(148, 163, 184, 0.4);
+    }
+
+    .dock-floating__resizer--top,
+    .dock-floating__resizer--bottom {
+      left: 0.75rem;
+      right: 0.75rem;
+      height: 0.5rem;
+    }
+
+    .dock-floating__resizer--top {
+      top: 0;
+      cursor: n-resize;
+    }
+
+    .dock-floating__resizer--bottom {
+      bottom: 0;
+      cursor: s-resize;
+    }
+
+    .dock-floating__resizer--left,
+    .dock-floating__resizer--right {
+      top: 1.75rem;
+      bottom: 0.75rem;
+      width: 0.5rem;
+    }
+
+    .dock-floating__resizer--left {
+      left: 0;
+      cursor: w-resize;
+    }
+
+    .dock-floating__resizer--right {
+      right: 0;
+      cursor: e-resize;
+    }
+
+    .dock-floating__resizer--top-left,
+    .dock-floating__resizer--top-right,
+    .dock-floating__resizer--bottom-left,
+    .dock-floating__resizer--bottom-right {
+      width: 0.75rem;
+      height: 0.75rem;
+    }
+
+    .dock-floating__resizer--top-left {
+      top: 0;
+      left: 0;
+      cursor: nw-resize;
+    }
+
+    .dock-floating__resizer--top-right {
+      top: 0;
+      right: 0;
+      cursor: ne-resize;
+    }
+
+    .dock-floating__resizer--bottom-left {
+      bottom: 0;
+      left: 0;
+      cursor: sw-resize;
+    }
+
+    .dock-floating__resizer--bottom-right {
       right: 0;
       bottom: 0;
-      width: 1rem;
-      height: 1rem;
       cursor: se-resize;
-      background: linear-gradient(135deg, transparent 40%, rgba(148, 163, 184, 0.6));
-      pointer-events: auto;
     }
 
     .dock-split {
@@ -341,8 +413,11 @@ export class MintDockManagerElement extends HTMLElement {
         startY: number;
         startWidth: number;
         startHeight: number;
+        startLeft: number;
+        startTop: number;
         wrapper: HTMLElement;
         handle: HTMLElement;
+        edges: FloatingResizeEdges;
       }
     | null = null;
   private pointerTrackingActive = false;
@@ -543,12 +618,49 @@ export class MintDockManagerElement extends HTMLElement {
         wrapper.appendChild(placeholder);
       }
 
-      const resizer = document.createElement('div');
-      resizer.classList.add('dock-floating__resizer');
-      resizer.addEventListener('pointerdown', (event) =>
-        this.beginFloatingResize(event, index, wrapper, resizer),
-      );
-      wrapper.appendChild(resizer);
+      const resizerConfigs: { classes: string[]; edges: FloatingResizeEdges }[] = [
+        {
+          classes: ['dock-floating__resizer', 'dock-floating__resizer--top-left'],
+          edges: { horizontal: 'left', vertical: 'top' },
+        },
+        {
+          classes: ['dock-floating__resizer', 'dock-floating__resizer--top'],
+          edges: { horizontal: 'none', vertical: 'top' },
+        },
+        {
+          classes: ['dock-floating__resizer', 'dock-floating__resizer--top-right'],
+          edges: { horizontal: 'right', vertical: 'top' },
+        },
+        {
+          classes: ['dock-floating__resizer', 'dock-floating__resizer--right'],
+          edges: { horizontal: 'right', vertical: 'none' },
+        },
+        {
+          classes: ['dock-floating__resizer', 'dock-floating__resizer--bottom-right'],
+          edges: { horizontal: 'right', vertical: 'bottom' },
+        },
+        {
+          classes: ['dock-floating__resizer', 'dock-floating__resizer--bottom'],
+          edges: { horizontal: 'none', vertical: 'bottom' },
+        },
+        {
+          classes: ['dock-floating__resizer', 'dock-floating__resizer--bottom-left'],
+          edges: { horizontal: 'left', vertical: 'bottom' },
+        },
+        {
+          classes: ['dock-floating__resizer', 'dock-floating__resizer--left'],
+          edges: { horizontal: 'left', vertical: 'none' },
+        },
+      ];
+
+      resizerConfigs.forEach(({ classes, edges }) => {
+        const resizer = document.createElement('div');
+        resizer.classList.add(...classes);
+        resizer.addEventListener('pointerdown', (event) =>
+          this.beginFloatingResize(event, index, wrapper, resizer, edges),
+        );
+        wrapper.appendChild(resizer);
+      });
       this.floatingLayerEl.appendChild(wrapper);
     });
   }
@@ -596,6 +708,7 @@ export class MintDockManagerElement extends HTMLElement {
     index: number,
     wrapper: HTMLElement,
     handle: HTMLElement,
+    edges: FloatingResizeEdges,
   ): void {
     const floating = this.floatingLayouts[index];
     if (!floating) {
@@ -620,8 +733,11 @@ export class MintDockManagerElement extends HTMLElement {
       startY: event.clientY,
       startWidth: floating.bounds.width,
       startHeight: floating.bounds.height,
+      startLeft: floating.bounds.left,
+      startTop: floating.bounds.top,
       wrapper,
       handle,
+      edges,
     };
 
     this.startPointerTracking();
@@ -713,16 +829,36 @@ export class MintDockManagerElement extends HTMLElement {
     const deltaY = event.clientY - state.startY;
     const minWidth = 192;
     const minHeight = 128;
-    const newWidth = Math.max(minWidth, state.startWidth + deltaX);
-    const newHeight = Math.max(minHeight, state.startHeight + deltaY);
+    let newWidth = state.startWidth;
+    let newHeight = state.startHeight;
+    let newLeft = state.startLeft;
+    let newTop = state.startTop;
+
+    if (state.edges.horizontal === 'right') {
+      newWidth = Math.max(minWidth, state.startWidth + deltaX);
+    } else if (state.edges.horizontal === 'left') {
+      newWidth = Math.max(minWidth, state.startWidth - deltaX);
+      newLeft = state.startLeft + (state.startWidth - newWidth);
+    }
+
+    if (state.edges.vertical === 'bottom') {
+      newHeight = Math.max(minHeight, state.startHeight + deltaY);
+    } else if (state.edges.vertical === 'top') {
+      newHeight = Math.max(minHeight, state.startHeight - deltaY);
+      newTop = state.startTop + (state.startHeight - newHeight);
+    }
 
     state.wrapper.style.width = `${newWidth}px`;
     state.wrapper.style.height = `${newHeight}px`;
+    state.wrapper.style.left = `${newLeft}px`;
+    state.wrapper.style.top = `${newTop}px`;
 
     const floating = this.floatingLayouts[state.index];
     if (floating) {
       floating.bounds.width = newWidth;
       floating.bounds.height = newHeight;
+      floating.bounds.left = newLeft;
+      floating.bounds.top = newTop;
     }
   }
 
