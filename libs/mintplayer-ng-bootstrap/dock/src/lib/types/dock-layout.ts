@@ -33,7 +33,7 @@ export interface DockFloatingPaneBounds {
   height: number;
 }
 
-export interface DockFloatingStackLayout extends Omit<DockStackNode, 'kind'> {
+export interface DockFloatingStackLayout {
   /**
    * Optional developer supplied identifier that can be used to recognize a floating pane instance.
    */
@@ -46,6 +46,22 @@ export interface DockFloatingStackLayout extends Omit<DockStackNode, 'kind'> {
    * Optional z-index override for the floating pane body. Higher values appear above lower ones.
    */
   zIndex?: number;
+  /**
+   * Root layout rendered inside the floating window.
+   */
+  root: DockLayoutNode | null;
+  /**
+   * Pane that should surface in the floating window header.
+   */
+  activePane?: string;
+  /**
+   * @deprecated Legacy support for snapshots created before floating windows supported nested layouts.
+   */
+  panes?: string[];
+  /**
+   * @deprecated Legacy support for snapshots created before floating windows supported nested layouts.
+   */
+  titles?: Record<string, string>;
 }
 
 export interface DockLayout {

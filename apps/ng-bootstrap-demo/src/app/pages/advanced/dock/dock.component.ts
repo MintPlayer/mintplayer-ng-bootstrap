@@ -63,18 +63,26 @@ export class DockComponent {
     floating: [
       {
         id: 'floating-panel-5',
-        panes: ['panel-5'],
-        titles: {
-          'panel-5': 'Panel 5',
+        root: {
+          kind: 'stack',
+          panes: ['panel-5'],
+          titles: {
+            'panel-5': 'Panel 5',
+          },
+          activePane: 'panel-5',
         },
         activePane: 'panel-5',
         bounds: { left: 680, top: 96, width: 320, height: 220 },
       },
       {
         id: 'floating-secondary',
-        panes: ['panel-floating'],
-        titles: {
-          'panel-floating': 'Floating Utilities',
+        root: {
+          kind: 'stack',
+          panes: ['panel-floating'],
+          titles: {
+            'panel-floating': 'Floating Utilities',
+          },
+          activePane: 'panel-floating',
         },
         activePane: 'panel-floating',
         bounds: { left: 520, top: 320, width: 300, height: 210 },

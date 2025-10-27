@@ -10,13 +10,14 @@ import {
 
 type DockPath =
   | { type: 'docked'; segments: number[] }
-  | { type: 'floating'; index: number };
+  | { type: 'floating'; index: number; segments: number[] };
 
 type DockedLocation = { context: 'docked'; path: number[]; node: DockStackNode };
 type FloatingLocation = {
   context: 'floating';
   index: number;
-  node: DockFloatingStackLayout;
+  path: number[];
+  node: DockStackNode;
 };
 
 type ResolvedLocation = DockedLocation | FloatingLocation;
@@ -303,7 +304,7 @@ export class MintDockManagerElement extends HTMLElement {
   private floatingLayouts: DockFloatingStackLayout[] = [];
   private resizeState:
     | {
-        path: number[];
+        path: DockPath;
         index: number;
         pointerId: number;
         orientation: 'horizontal' | 'vertical';
@@ -459,7 +460,9 @@ export class MintDockManagerElement extends HTMLElement {
     const layout = value as DockLayout | DockLayoutSnapshot;
     return {
       root: layout.root ?? null,
-      floating: Array.isArray(layout.floating) ? [...layout.floating] : [],
+      floating: Array.isArray(layout.floating)
+        ? layout.floating.map((floating) => this.normalizeFloatingLayout(floating))
+        : [],
     };
   }
 
@@ -476,12 +479,16 @@ export class MintDockManagerElement extends HTMLElement {
     this.renderFloatingPanes();
   }
 
-  private renderNode(node: DockLayoutNode, path: number[]): HTMLElement {
+  private renderNode(
+    node: DockLayoutNode,
+    path: number[],
+    floatingIndex?: number,
+  ): HTMLElement {
     if (node.kind === 'split') {
-      return this.renderSplit(node, path);
+      return this.renderSplit(node, path, floatingIndex);
     }
 
-    return this.renderStack(node, path);
+    return this.renderStack(node, path, floatingIndex);
   }
 
   private renderFloatingPanes(): void {
@@ -492,6 +499,7 @@ export class MintDockManagerElement extends HTMLElement {
       wrapper.dataset['path'] = this.formatPath({
         type: 'floating',
         index,
+        segments: [],
       });
 
       const { left, top, width, height } = floating.bounds;
@@ -514,17 +522,26 @@ export class MintDockManagerElement extends HTMLElement {
       title.textContent = this.getFloatingWindowTitle(floating);
       chrome.appendChild(title);
 
-      const stackNode: DockStackNode = {
-        kind: 'stack',
-        panes: [...floating.panes],
-        titles: floating.titles ? { ...floating.titles } : undefined,
-        activePane: floating.activePane,
-      };
-
-      const stack = this.renderStack(stackNode, [], { type: 'floating', index });
-      stack.classList.add('dock-floating__stack');
       wrapper.appendChild(chrome);
-      wrapper.appendChild(stack);
+
+      if (floating.root) {
+        const content = this.renderNode(floating.root, [], index);
+        content.classList.add('dock-floating__stack');
+        wrapper.appendChild(content);
+      } else {
+        const placeholder = document.createElement('div');
+        placeholder.classList.add('dock-stack');
+        placeholder.dataset['path'] = this.formatPath({
+          type: 'floating',
+          index,
+          segments: [],
+        });
+        const empty = document.createElement('div');
+        empty.classList.add('dock-stack__pane');
+        empty.textContent = 'No panes configured';
+        placeholder.appendChild(empty);
+        wrapper.appendChild(placeholder);
+      }
 
       const resizer = document.createElement('div');
       resizer.classList.add('dock-floating__resizer');
@@ -680,10 +697,7 @@ export class MintDockManagerElement extends HTMLElement {
       return;
     }
 
-    let zone = this.computeDropZone(stack, event);
-    if (path.type === 'floating') {
-      zone = 'center';
-    }
+    const zone = this.computeDropZone(stack, event);
 
     state.dropTarget = { path, zone };
     this.showDropIndicator(stack, zone);
@@ -783,16 +797,21 @@ export class MintDockManagerElement extends HTMLElement {
 
   private getFloatingWindowTitle(floating: DockFloatingStackLayout): string {
     const fallback = 'Floating Pane';
-    if (!floating || floating.panes.length === 0) {
+    if (!floating || !floating.root) {
       return fallback;
     }
 
-    const active =
-      floating.activePane && floating.panes.includes(floating.activePane)
-        ? floating.activePane
-        : floating.panes[0];
+    const preferred = floating.activePane ?? this.findFirstPaneName(floating.root);
+    if (!preferred) {
+      return fallback;
+    }
 
-    return floating.titles?.[active] ?? active ?? fallback;
+    const owningStack = this.findStackContainingPane(floating.root, preferred);
+    if (!owningStack) {
+      return preferred ?? fallback;
+    }
+
+    return owningStack.titles?.[preferred] ?? preferred ?? fallback;
   }
 
   private updateFloatingWindowTitle(index: number): void {
@@ -804,6 +823,7 @@ export class MintDockManagerElement extends HTMLElement {
     const selector = `.dock-floating[data-path="${this.formatPath({
       type: 'floating',
       index,
+      segments: [],
     })}"]`;
     const wrapper = this.floatingLayerEl.querySelector<HTMLElement>(selector);
     if (!wrapper) {
@@ -818,7 +838,11 @@ export class MintDockManagerElement extends HTMLElement {
     titleEl.textContent = this.getFloatingWindowTitle(floating);
   }
 
-  private renderSplit(node: DockSplitNode, path: number[]): HTMLElement {
+  private renderSplit(
+    node: DockSplitNode,
+    path: number[],
+    floatingIndex?: number,
+  ): HTMLElement {
     const container = document.createElement('div');
     container.classList.add('dock-split');
     container.dataset['direction'] = node.direction;
@@ -837,7 +861,7 @@ export class MintDockManagerElement extends HTMLElement {
         childWrapper.style.flex = '1 1 0';
       }
 
-      childWrapper.appendChild(this.renderNode(child, [...path, index]));
+      childWrapper.appendChild(this.renderNode(child, [...path, index], floatingIndex));
       container.appendChild(childWrapper);
 
       if (index < node.children.length - 1) {
@@ -846,7 +870,14 @@ export class MintDockManagerElement extends HTMLElement {
         divider.setAttribute('role', 'separator');
         divider.tabIndex = 0;
         divider.addEventListener('pointerdown', (event) =>
-          this.beginResize(event, container, path, index),
+          this.beginResize(
+            event,
+            container,
+            floatingIndex !== undefined
+              ? { type: 'floating', index: floatingIndex, segments: [...path] }
+              : { type: 'docked', segments: [...path] },
+            index,
+          ),
         );
         container.appendChild(divider);
       }
@@ -858,13 +889,13 @@ export class MintDockManagerElement extends HTMLElement {
   private renderStack(
     node: DockStackNode,
     path: number[],
-    dockPath?: DockPath,
+    floatingIndex?: number,
   ): HTMLElement {
     const stack = document.createElement('div');
     stack.classList.add('dock-stack');
     const location: DockPath =
-      dockPath && dockPath.type === 'floating'
-        ? { type: 'floating', index: dockPath.index }
+      typeof floatingIndex === 'number'
+        ? { type: 'floating', index: floatingIndex, segments: [...path] }
         : { type: 'docked', segments: [...path] };
     stack.dataset['path'] = this.formatPath(location);
 
@@ -888,7 +919,9 @@ export class MintDockManagerElement extends HTMLElement {
       ? node.activePane!
       : panes[0];
 
-    const pathSlug = path.length ? path.join('-') : 'root';
+    const baseSlug = path.length ? path.join('-') : 'root';
+    const pathSlug =
+      typeof floatingIndex === 'number' ? `f${floatingIndex}-${baseSlug}` : baseSlug;
     panes.forEach((paneName) => {
       const paneSlugRaw = paneName.replace(/[^a-zA-Z0-9_-]/g, '-');
       const paneSlug = paneSlugRaw.length > 0 ? paneSlugRaw : 'pane';
@@ -945,11 +978,12 @@ export class MintDockManagerElement extends HTMLElement {
     return stack;
   }
 
-  private beginResize(event: PointerEvent, container: HTMLElement, path: number[], index: number): void {
-    if (!this.rootLayout) {
-      return;
-    }
-
+  private beginResize(
+    event: PointerEvent,
+    container: HTMLElement,
+    path: DockPath,
+    index: number,
+  ): void {
     event.preventDefault();
     const divider = event.currentTarget as HTMLElement | null;
     if (!divider) {
@@ -970,7 +1004,7 @@ export class MintDockManagerElement extends HTMLElement {
     divider.setPointerCapture(event.pointerId);
     divider.dataset['resizing'] = 'true';
     this.resizeState = {
-      path: [...path],
+      path: this.clonePath(path),
       index,
       pointerId: event.pointerId,
       orientation,
@@ -988,8 +1022,8 @@ export class MintDockManagerElement extends HTMLElement {
   private onPointerMove(event: PointerEvent): void {
     if (this.resizeState && event.pointerId === this.resizeState.pointerId) {
       const state = this.resizeState;
-      const splitNode = this.getDockedNode(state.path);
-      if (!splitNode || splitNode.kind !== 'split') {
+      const splitNode = this.resolveSplitNode(state.path);
+      if (!splitNode) {
         return;
       }
 
@@ -1092,10 +1126,7 @@ export class MintDockManagerElement extends HTMLElement {
     }
 
     const path = this.parsePath(stack.dataset['path']);
-    let zone = this.computeDropZone(stack, event);
-    if (path?.type === 'floating') {
-      zone = 'center';
-    }
+    const zone = this.computeDropZone(stack, event);
     this.showDropIndicator(stack, zone);
   }
 
@@ -1112,10 +1143,7 @@ export class MintDockManagerElement extends HTMLElement {
     }
 
     const path = this.parsePath(stack.dataset['path']);
-    let zone = this.computeDropZone(stack, event);
-    if (path?.type === 'floating') {
-      zone = 'center';
-    }
+    const zone = this.computeDropZone(stack, event);
     this.handleDrop(path, zone);
     this.endPaneDrag();
   }
@@ -1140,10 +1168,6 @@ export class MintDockManagerElement extends HTMLElement {
       return;
     }
 
-    if (zone !== 'center' && target.context === 'floating') {
-      return;
-    }
-
     if (zone === 'center' && this.pathsEqual(sourcePath, targetPath)) {
       if (!source.node.panes.includes(pane)) {
         return;
@@ -1154,11 +1178,16 @@ export class MintDockManagerElement extends HTMLElement {
       return;
     }
 
+    const paneTitle = source.node.titles?.[pane];
     const stackEmptied = this.removePaneFromLocation(source, pane, true);
 
     if (zone === 'center') {
       this.addPaneToLocation(target, pane);
       this.setActivePaneForLocation(target, pane);
+      if (paneTitle) {
+        target.node.titles = target.node.titles ? { ...target.node.titles } : {};
+        target.node.titles[pane] = paneTitle;
+      }
       if (stackEmptied) {
         this.cleanupLocation(source);
       }
@@ -1166,26 +1195,6 @@ export class MintDockManagerElement extends HTMLElement {
       this.dispatchLayoutChanged();
       return;
     }
-
-    if (!this.rootLayout) {
-      this.rootLayout = {
-        kind: 'stack',
-        panes: [pane],
-        activePane: pane,
-      };
-      if (stackEmptied) {
-        this.cleanupLocation(source);
-      }
-      this.render();
-      this.dispatchLayoutChanged();
-      return;
-    }
-
-    if (target.context !== 'docked') {
-      return;
-    }
-
-    const targetNode = target.node;
 
     const newStack: DockStackNode = {
       kind: 'stack',
@@ -1193,27 +1202,25 @@ export class MintDockManagerElement extends HTMLElement {
       activePane: pane,
     };
 
-    const orientation = zone === 'left' || zone === 'right' ? 'horizontal' : 'vertical';
-    const placeBefore = zone === 'left' || zone === 'top';
+    if (paneTitle) {
+      newStack.titles = { [pane]: paneTitle };
+    }
 
-    const parentInfo = this.findParentSplit(this.rootLayout, targetNode);
-
-    if (parentInfo && parentInfo.parent.direction === orientation) {
-      const insertIndex = placeBefore ? parentInfo.index : parentInfo.index + 1;
-      parentInfo.parent.children.splice(insertIndex, 0, newStack);
-      parentInfo.parent.sizes = this.insertWeight(
-        parentInfo.parent.sizes,
-        insertIndex,
-        parentInfo.parent.children.length,
-      );
+    if (target.context === 'docked') {
+      this.rootLayout = this.dockNodeBeside(this.rootLayout, target.node, newStack, zone);
     } else {
-      const split: DockSplitNode = {
-        kind: 'split',
-        direction: orientation,
-        children: placeBefore ? [newStack, targetNode] : [targetNode, newStack],
-        sizes: [0.5, 0.5],
-      };
-      this.replaceNode(targetNode, split);
+      const floating = this.floatingLayouts[target.index];
+      if (!floating) {
+        if (stackEmptied) {
+          this.cleanupLocation(source);
+        }
+        this.render();
+        this.dispatchLayoutChanged();
+        return;
+      }
+
+      floating.root = this.dockNodeBeside(floating.root, target.node, newStack, zone);
+      floating.activePane = pane;
     }
 
     if (stackEmptied) {
@@ -1226,7 +1233,7 @@ export class MintDockManagerElement extends HTMLElement {
 
   private handleFloatingStackDrop(sourceIndex: number, targetPath: DockPath, zone: DropZone): boolean {
     const source = this.floatingLayouts[sourceIndex];
-    if (!source || source.panes.length === 0) {
+    if (!source || !source.root) {
       return false;
     }
 
@@ -1239,33 +1246,25 @@ export class MintDockManagerElement extends HTMLElement {
       return false;
     }
 
-    if (target.context === 'floating') {
-      zone = 'center';
-    }
-
-    const panesToMove = [...source.panes];
-    const titlesToMove = source.titles ? { ...source.titles } : undefined;
-    const activePane = source.activePane && panesToMove.includes(source.activePane)
-      ? source.activePane
-      : panesToMove[0];
-
-    const applyTitles = (location: ResolvedLocation, pane: string): void => {
-      if (!titlesToMove) {
-        return;
-      }
-      const title = titlesToMove[pane];
-      if (!title) {
-        return;
-      }
-      location.node.titles = location.node.titles ? { ...location.node.titles } : {};
-      location.node.titles[pane] = title;
-    };
-
     if (zone === 'center') {
-      panesToMove.forEach((pane) => {
+      const { panes, titles } = this.collectFloatingPaneMetadata(source.root);
+      if (panes.length === 0) {
+        return false;
+      }
+
+      panes.forEach((pane) => {
         this.addPaneToLocation(target, pane);
-        applyTitles(target, pane);
+        const title = titles[pane];
+        if (title) {
+          target.node.titles = target.node.titles ? { ...target.node.titles } : {};
+          target.node.titles[pane] = title;
+        }
       });
+
+      const activePane =
+        source.activePane && panes.includes(source.activePane)
+          ? source.activePane
+          : this.findFirstPaneName(source.root) ?? panes[0];
 
       if (activePane) {
         this.setActivePaneForLocation(target, activePane);
@@ -1277,43 +1276,21 @@ export class MintDockManagerElement extends HTMLElement {
       return true;
     }
 
-    if (target.context !== 'docked') {
-      return false;
+    if (target.context === 'floating') {
+      const floating = this.floatingLayouts[target.index];
+      if (!floating) {
+        return false;
+      }
+
+      floating.root = this.dockNodeBeside(floating.root, target.node, source.root, zone);
+      floating.activePane = source.activePane ?? this.findFirstPaneName(source.root) ?? undefined;
+      this.removeFloatingAt(sourceIndex);
+      this.render();
+      this.dispatchLayoutChanged();
+      return true;
     }
 
-    const newStack: DockStackNode = {
-      kind: 'stack',
-      panes: panesToMove,
-      activePane,
-    };
-
-    if (titlesToMove) {
-      newStack.titles = { ...titlesToMove };
-    }
-
-    const targetNode = target.node;
-    const orientation = zone === 'left' || zone === 'right' ? 'horizontal' : 'vertical';
-    const placeBefore = zone === 'left' || zone === 'top';
-    const parentInfo = this.findParentSplit(this.rootLayout, targetNode);
-
-    if (parentInfo && parentInfo.parent.direction === orientation) {
-      const insertIndex = placeBefore ? parentInfo.index : parentInfo.index + 1;
-      parentInfo.parent.children.splice(insertIndex, 0, newStack);
-      parentInfo.parent.sizes = this.insertWeight(
-        parentInfo.parent.sizes,
-        insertIndex,
-        parentInfo.parent.children.length,
-      );
-    } else {
-      const split: DockSplitNode = {
-        kind: 'split',
-        direction: orientation,
-        children: placeBefore ? [newStack, targetNode] : [targetNode, newStack],
-        sizes: [0.5, 0.5],
-      };
-      this.replaceNode(targetNode, split);
-    }
-
+    this.rootLayout = this.dockNodeBeside(this.rootLayout, target.node, source.root, zone);
     this.removeFloatingAt(sourceIndex);
     this.render();
     this.dispatchLayoutChanged();
@@ -1355,114 +1332,8 @@ export class MintDockManagerElement extends HTMLElement {
       return true;
     }
 
-    this.cleanupEmptyStack(stack);
+    this.rootLayout = this.cleanupEmptyStackInTree(this.rootLayout, stack);
     return true;
-  }
-
-  private cleanupEmptyStack(stack: DockStackNode): void {
-    if (stack.panes.length > 0) {
-      return;
-    }
-
-    if (!this.containsNode(this.rootLayout, stack)) {
-      return;
-    }
-
-    const parentInfo = this.findParentSplit(this.rootLayout, stack);
-    if (!parentInfo) {
-      if (this.rootLayout === stack) {
-        this.rootLayout = null;
-      }
-      return;
-    }
-
-    const index = parentInfo.parent.children.indexOf(stack);
-    if (index === -1) {
-      return;
-    }
-
-    parentInfo.parent.children.splice(index, 1);
-    if (Array.isArray(parentInfo.parent.sizes)) {
-      parentInfo.parent.sizes.splice(index, 1);
-    }
-
-    this.normalizeSplitNode(parentInfo.parent);
-
-    if (parentInfo.parent.children.length === 1) {
-      this.promoteSingleChild(parentInfo.parent);
-    }
-
-    if (parentInfo.parent.children.length === 0) {
-      this.removeEmptySplit(parentInfo.parent);
-    }
-  }
-
-  private containsNode(node: DockLayoutNode | null, target: DockLayoutNode): boolean {
-    if (!node) {
-      return false;
-    }
-
-    if (node === target) {
-      return true;
-    }
-
-    if (node.kind !== 'split') {
-      return false;
-    }
-
-    for (const child of node.children) {
-      if (this.containsNode(child, target)) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  private promoteSingleChild(split: DockSplitNode): void {
-    const child = split.children[0];
-    const parentInfo = this.findParentSplit(this.rootLayout, split);
-    if (!parentInfo) {
-      this.rootLayout = child;
-      return;
-    }
-
-    parentInfo.parent.children[parentInfo.index] = child;
-    this.normalizeSplitNode(parentInfo.parent);
-  }
-
-  private removeEmptySplit(split: DockSplitNode): void {
-    const parentInfo = this.findParentSplit(this.rootLayout, split);
-    if (!parentInfo) {
-      this.rootLayout = null;
-      return;
-    }
-
-    parentInfo.parent.children.splice(parentInfo.index, 1);
-    if (Array.isArray(parentInfo.parent.sizes)) {
-      parentInfo.parent.sizes.splice(parentInfo.index, 1);
-    }
-    this.normalizeSplitNode(parentInfo.parent);
-  }
-
-  private replaceNode(target: DockLayoutNode, replacement: DockLayoutNode): void {
-    if (!this.rootLayout) {
-      this.rootLayout = replacement;
-      return;
-    }
-
-    if (this.rootLayout === target) {
-      this.rootLayout = replacement;
-      return;
-    }
-
-    const parentInfo = this.findParentSplit(this.rootLayout, target);
-    if (!parentInfo) {
-      return;
-    }
-
-    parentInfo.parent.children[parentInfo.index] = replacement;
-    this.normalizeSplitNode(parentInfo.parent);
   }
 
   private findParentSplit(
@@ -1619,33 +1490,270 @@ export class MintDockManagerElement extends HTMLElement {
 
     location.node.activePane = paneName;
     if (path.type === 'floating') {
+      const floating = this.floatingLayouts[path.index];
+      if (floating) {
+        floating.activePane = paneName;
+      }
       this.updateFloatingWindowTitle(path.index);
     }
     this.dispatchLayoutChanged();
   }
 
-  private getDockedNode(path: number[]): DockLayoutNode | null {
-    if (!this.rootLayout) {
+  private getNodeAtPath(root: DockLayoutNode | null, path: number[]): DockLayoutNode | null {
+    if (!root) {
       return null;
     }
-    let current: DockLayoutNode | null = this.rootLayout;
+
+    let current: DockLayoutNode | null = root;
     if (path.length === 0) {
       return current;
     }
 
-    for (const index of path) {
+    for (const segment of path) {
       if (!current || current.kind !== 'split') {
         return null;
       }
-      current = current.children[index] ?? null;
+      current = current.children[segment] ?? null;
     }
 
     return current;
   }
 
+  private resolveSplitNode(path: DockPath): DockSplitNode | null {
+    if (path.type === 'docked') {
+      const node = this.getNodeAtPath(this.rootLayout, path.segments);
+      return node && node.kind === 'split' ? node : null;
+    }
+
+    const floating = this.floatingLayouts[path.index];
+    if (!floating || !floating.root) {
+      return null;
+    }
+
+    const node = this.getNodeAtPath(floating.root, path.segments);
+    return node && node.kind === 'split' ? node : null;
+  }
+
+  private replaceNodeInTree(
+    root: DockLayoutNode | null,
+    target: DockLayoutNode,
+    replacement: DockLayoutNode,
+  ): DockLayoutNode | null {
+    if (!root) {
+      return replacement;
+    }
+
+    if (root === target) {
+      return replacement;
+    }
+
+    const parentInfo = this.findParentSplit(root, target);
+    if (!parentInfo) {
+      return root;
+    }
+
+    parentInfo.parent.children[parentInfo.index] = replacement;
+    this.normalizeSplitNode(parentInfo.parent);
+    return root;
+  }
+
+  private cleanupEmptyStackInTree(
+    root: DockLayoutNode | null,
+    stack: DockStackNode,
+  ): DockLayoutNode | null {
+    if (!root || stack.panes.length > 0) {
+      return root;
+    }
+
+    const parentInfo = this.findParentSplit(root, stack);
+    if (!parentInfo) {
+      return root === stack ? null : root;
+    }
+
+    const parent = parentInfo.parent;
+    const index = parent.children.indexOf(stack);
+    if (index === -1) {
+      return root;
+    }
+
+    parent.children.splice(index, 1);
+    if (Array.isArray(parent.sizes)) {
+      parent.sizes.splice(index, 1);
+    }
+    this.normalizeSplitNode(parent);
+
+    return this.cleanupSplitIfNecessary(root, parent);
+  }
+
+  private cleanupSplitIfNecessary(
+    root: DockLayoutNode | null,
+    split: DockSplitNode,
+  ): DockLayoutNode | null {
+    if (split.children.length === 1) {
+      return this.replaceNodeInTree(root, split, split.children[0]);
+    }
+
+    if (split.children.length === 0) {
+      const parentInfo = this.findParentSplit(root, split);
+      if (!parentInfo) {
+        return null;
+      }
+
+      const parent = parentInfo.parent;
+      const index = parent.children.indexOf(split);
+      if (index !== -1) {
+        parent.children.splice(index, 1);
+        if (Array.isArray(parent.sizes)) {
+          parent.sizes.splice(index, 1);
+        }
+        this.normalizeSplitNode(parent);
+        return this.cleanupSplitIfNecessary(root, parent);
+      }
+    }
+
+    return root;
+  }
+
+  private dockNodeBeside(
+    root: DockLayoutNode | null,
+    targetNode: DockStackNode,
+    newNode: DockLayoutNode,
+    zone: DropZone,
+  ): DockLayoutNode | null {
+    const orientation = zone === 'left' || zone === 'right' ? 'horizontal' : 'vertical';
+    const placeBefore = zone === 'left' || zone === 'top';
+    const parentInfo = this.findParentSplit(root, targetNode);
+
+    if (parentInfo && parentInfo.parent.direction === orientation) {
+      const insertIndex = placeBefore ? parentInfo.index : parentInfo.index + 1;
+      parentInfo.parent.children.splice(insertIndex, 0, newNode);
+      parentInfo.parent.sizes = this.insertWeight(
+        parentInfo.parent.sizes,
+        insertIndex,
+        parentInfo.parent.children.length,
+      );
+      return root ?? newNode;
+    }
+
+    const split: DockSplitNode = {
+      kind: 'split',
+      direction: orientation,
+      children: placeBefore ? [newNode, targetNode] : [targetNode, newNode],
+      sizes: [0.5, 0.5],
+    };
+
+    return this.replaceNodeInTree(root, targetNode, split);
+  }
+
+  private forEachStack(
+    node: DockLayoutNode | null,
+    visitor: (stack: DockStackNode, path: number[]) => void,
+    path: number[] = [],
+  ): void {
+    if (!node) {
+      return;
+    }
+
+    if (node.kind === 'stack') {
+      visitor(node, path);
+      return;
+    }
+
+    node.children.forEach((child, index) =>
+      this.forEachStack(child, visitor, [...path, index]),
+    );
+  }
+
+  private findStackContainingPane(
+    node: DockLayoutNode | null,
+    pane: string,
+  ): DockStackNode | null {
+    let result: DockStackNode | null = null;
+    this.forEachStack(node, (stack) => {
+      if (!result && stack.panes.includes(pane)) {
+        result = stack;
+      }
+    });
+    return result;
+  }
+
+  private findFirstPaneName(node: DockLayoutNode | null): string | null {
+    let found: string | null = null;
+    this.forEachStack(node, (stack) => {
+      if (found || stack.panes.length === 0) {
+        return;
+      }
+      if (stack.activePane && stack.panes.includes(stack.activePane)) {
+        found = stack.activePane;
+      } else {
+        found = stack.panes[0];
+      }
+    });
+    return found;
+  }
+
+  private collectFloatingPaneMetadata(
+    node: DockLayoutNode | null,
+  ): { panes: string[]; titles: Record<string, string> } {
+    const panes: string[] = [];
+    const titles: Record<string, string> = {};
+    this.forEachStack(node, (stack) => {
+      stack.panes.forEach((pane) => {
+        panes.push(pane);
+        const title = stack.titles?.[pane];
+        if (title) {
+          titles[pane] = title;
+        }
+      });
+    });
+    return { panes, titles };
+  }
+
+  private normalizeFloatingLayout(
+    layout: DockFloatingStackLayout,
+  ): DockFloatingStackLayout {
+    const bounds = layout.bounds ?? { left: 0, top: 0, width: 320, height: 200 };
+    const normalizedBounds = {
+      left: Number.isFinite(bounds.left) ? bounds.left : 0,
+      top: Number.isFinite(bounds.top) ? bounds.top : 0,
+      width: Number.isFinite(bounds.width) ? Math.max(bounds.width, 160) : 320,
+      height: Number.isFinite(bounds.height) ? Math.max(bounds.height, 120) : 200,
+    };
+
+    let root = layout.root ? this.cloneLayoutNode(layout.root) : null;
+
+    if (!root) {
+      const panes = Array.isArray(layout.panes) ? [...layout.panes] : [];
+      if (panes.length > 0) {
+        const active =
+          layout.activePane && panes.includes(layout.activePane)
+            ? layout.activePane
+            : panes[0];
+        root = {
+          kind: 'stack',
+          panes,
+          titles: layout.titles ? { ...layout.titles } : undefined,
+          activePane: active,
+        };
+      }
+    }
+
+    return {
+      id: layout.id,
+      bounds: normalizedBounds,
+      zIndex: layout.zIndex,
+      root,
+      activePane: layout.activePane,
+    };
+  }
+
   private formatPath(path: DockPath): string {
     if (path.type === 'floating') {
-      return `f:${path.index}`;
+      const suffix =
+        path.segments.length > 0
+          ? `/${path.segments.map((segment) => segment.toString()).join('/')}`
+          : '';
+      return `f:${path.index}${suffix}`;
     }
     const suffix = path.segments.join('/');
     return suffix.length > 0 ? `d:${suffix}` : 'd:';
@@ -1653,7 +1761,7 @@ export class MintDockManagerElement extends HTMLElement {
 
   private clonePath(path: DockPath): DockPath {
     if (path.type === 'floating') {
-      return { type: 'floating', index: path.index };
+      return { type: 'floating', index: path.index, segments: [...path.segments] };
     }
     return { type: 'docked', segments: [...path.segments] };
   }
@@ -1664,8 +1772,17 @@ export class MintDockManagerElement extends HTMLElement {
     }
 
     if (path.startsWith('f:')) {
-      const index = Number.parseInt(path.slice(2), 10);
-      return Number.isFinite(index) ? { type: 'floating', index } : null;
+      const remainder = path.slice(2);
+      const [indexPart, ...segmentParts] = remainder.split('/');
+      const index = Number.parseInt(indexPart, 10);
+      if (!Number.isFinite(index)) {
+        return null;
+      }
+      const segments = segmentParts
+        .filter((segment) => segment.length > 0)
+        .map((segment) => Number.parseInt(segment, 10))
+        .filter((value) => Number.isFinite(value));
+      return { type: 'floating', index, segments };
     }
 
     const normalized = path.startsWith('d:') ? path.slice(2) : path;
@@ -1689,7 +1806,13 @@ export class MintDockManagerElement extends HTMLElement {
 
     if (a.type === 'floating') {
       const other = b as Extract<DockPath, { type: 'floating' }>;
-      return a.index === other.index;
+      if (a.index !== other.index) {
+        return false;
+      }
+      if (a.segments.length !== other.segments.length) {
+        return false;
+      }
+      return a.segments.every((value, index) => value === other.segments[index]);
     }
 
     const other = b as Extract<DockPath, { type: 'docked' }>;
@@ -1702,14 +1825,18 @@ export class MintDockManagerElement extends HTMLElement {
 
   private resolveStackLocation(path: DockPath): ResolvedLocation | null {
     if (path.type === 'floating') {
-      const node = this.floatingLayouts[path.index];
-      if (!node) {
+      const layout = this.floatingLayouts[path.index];
+      if (!layout || !layout.root) {
         return null;
       }
-      return { context: 'floating', index: path.index, node };
+      const node = this.getNodeAtPath(layout.root, path.segments);
+      if (!node || node.kind !== 'stack') {
+        return null;
+      }
+      return { context: 'floating', index: path.index, path: [...path.segments], node };
     }
 
-    const node = this.getDockedNode(path.segments);
+    const node = this.getNodeAtPath(this.rootLayout, path.segments);
     if (!node || node.kind !== 'stack') {
       return null;
     }
@@ -1726,7 +1853,7 @@ export class MintDockManagerElement extends HTMLElement {
       return this.removePaneFromStack(location.node, pane, skipCleanup);
     }
 
-    return this.removePaneFromFloating(location.index, pane, skipCleanup);
+    return this.removePaneFromFloating(location.index, location.path, pane, skipCleanup);
   }
 
   private addPaneToLocation(location: ResolvedLocation, pane: string): void {
@@ -1740,13 +1867,27 @@ export class MintDockManagerElement extends HTMLElement {
 
   private setActivePaneForLocation(location: ResolvedLocation, pane: string): void {
     location.node.activePane = pane;
+    if (location.context === 'floating') {
+      const floating = this.floatingLayouts[location.index];
+      if (floating) {
+        floating.activePane = pane;
+      }
+    }
   }
 
   private cleanupLocation(location: ResolvedLocation): void {
     if (location.context === 'docked') {
-      this.cleanupEmptyStack(location.node);
+      this.rootLayout = this.cleanupEmptyStackInTree(this.rootLayout, location.node);
     } else {
-      this.removeFloatingAt(location.index);
+      const floating = this.floatingLayouts[location.index];
+      if (!floating) {
+        return;
+      }
+
+      floating.root = this.cleanupEmptyStackInTree(floating.root, location.node);
+      if (!floating.root) {
+        this.removeFloatingAt(location.index);
+      }
     }
   }
 
@@ -1759,6 +1900,12 @@ export class MintDockManagerElement extends HTMLElement {
     panes.splice(index, 1);
     panes.push(pane);
     location.node.activePane = pane;
+    if (location.context === 'floating') {
+      const floating = this.floatingLayouts[location.index];
+      if (floating) {
+        floating.activePane = pane;
+      }
+    }
   }
 
   private removeFloatingAt(index: number): void {
@@ -1770,24 +1917,39 @@ export class MintDockManagerElement extends HTMLElement {
 
   private removePaneFromFloating(
     index: number,
+    path: number[],
     pane: string,
     skipCleanup = false,
   ): boolean {
     const floating = this.floatingLayouts[index];
-    if (!floating) {
+    if (!floating || !floating.root) {
       return false;
     }
 
-    floating.panes = floating.panes.filter((p) => p !== pane);
-    if (!floating.panes.includes(floating.activePane ?? '')) {
-      if (floating.panes.length > 0) {
-        floating.activePane = floating.panes[0];
+    const node = this.getNodeAtPath(floating.root, path);
+    if (!node || node.kind !== 'stack') {
+      return false;
+    }
+
+    node.panes = node.panes.filter((p) => p !== pane);
+    if (!node.panes.includes(node.activePane ?? '')) {
+      if (node.panes.length > 0) {
+        node.activePane = node.panes[0];
+      } else {
+        delete node.activePane;
+      }
+    }
+
+    if (floating.activePane === pane) {
+      const fallback = this.findFirstPaneName(floating.root);
+      if (fallback) {
+        floating.activePane = fallback;
       } else {
         delete floating.activePane;
       }
     }
 
-    if (floating.panes.length > 0) {
+    if (node.panes.length > 0) {
       return false;
     }
 
@@ -1795,7 +1957,11 @@ export class MintDockManagerElement extends HTMLElement {
       return true;
     }
 
-    this.removeFloatingAt(index);
+    floating.root = this.cleanupEmptyStackInTree(floating.root, node);
+    if (!floating.root) {
+      this.removeFloatingAt(index);
+    }
+
     return true;
   }
 
