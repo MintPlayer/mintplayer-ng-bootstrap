@@ -2238,12 +2238,58 @@ export class MintDockManagerElement extends HTMLElement {
 
   private computeDropZone(
     stack: HTMLElement,
-    _point: { clientX: number; clientY: number },
+    point: { clientX: number; clientY: number } | null,
     zoneHint?: DropZone | null,
   ): DropZone | null {
     if (zoneHint && this.isDropZone(zoneHint)) {
       this.updateDropJoystickActiveZone(zoneHint);
       return zoneHint;
+    }
+
+    let fallbackZone: DropZone | null = null;
+
+    if (
+      point &&
+      Number.isFinite(point.clientX) &&
+      Number.isFinite(point.clientY)
+    ) {
+      const rect = stack.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        const offsetX = point.clientX - rect.left;
+        const offsetY = point.clientY - rect.top;
+        if (offsetX >= 0 && offsetX <= rect.width && offsetY >= 0 && offsetY <= rect.height) {
+          const relativeX = offsetX / rect.width;
+          const relativeY = offsetY / rect.height;
+          const centerThreshold = 0.3;
+          const insideCenterX = relativeX >= centerThreshold && relativeX <= 1 - centerThreshold;
+          const insideCenterY = relativeY >= centerThreshold && relativeY <= 1 - centerThreshold;
+
+          if (insideCenterX && insideCenterY) {
+            fallbackZone = 'center';
+          } else {
+            const distanceLeft = relativeX;
+            const distanceRight = 1 - relativeX;
+            const distanceTop = relativeY;
+            const distanceBottom = 1 - relativeY;
+            const minDistance = Math.min(distanceLeft, distanceRight, distanceTop, distanceBottom);
+
+            if (minDistance === distanceLeft) {
+              fallbackZone = 'left';
+            } else if (minDistance === distanceRight) {
+              fallbackZone = 'right';
+            } else if (minDistance === distanceTop) {
+              fallbackZone = 'top';
+            } else {
+              fallbackZone = 'bottom';
+            }
+          }
+        }
+      }
+    }
+
+    if (fallbackZone) {
+      this.updateDropJoystickActiveZone(fallbackZone);
+      return fallbackZone;
     }
 
     if (this.dropJoystickTarget === stack) {
