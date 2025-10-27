@@ -1793,6 +1793,7 @@ export class MintDockManagerElement extends HTMLElement {
 
   private onGlobalDragEnd(): void {
     if (!this.dragState) {
+      this.hideDropIndicator();
       return;
     }
     this.endPaneDrag();
@@ -1960,6 +1961,7 @@ export class MintDockManagerElement extends HTMLElement {
       ? win.setTimeout(() => {
           this.pendingDragEndTimeout = null;
           if (!this.dragState) {
+            this.hideDropIndicator();
             return;
           }
           this.endPaneDrag();
@@ -1968,6 +1970,7 @@ export class MintDockManagerElement extends HTMLElement {
       : setTimeout(() => {
           this.pendingDragEndTimeout = null;
           if (!this.dragState) {
+            this.hideDropIndicator();
             return;
           }
           this.endPaneDrag();
