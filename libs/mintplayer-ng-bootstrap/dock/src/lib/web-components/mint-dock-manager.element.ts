@@ -355,14 +355,8 @@ const templateHtml = `
       background: rgba(15, 23, 42, 0.15);
       box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
       pointer-events: none;
-      opacity: 0;
-      transition: opacity 120ms ease;
       transform: translate(-50%, -50%);
       z-index: 110;
-    }
-
-    .dock-drop-joystick[data-visible='true'] {
-      opacity: 1;
     }
 
     .dock-drop-joystick__spacer {
@@ -1726,7 +1720,6 @@ export class MintDockManagerElement extends HTMLElement {
     const state = this.dragState;
     this.dragState = null;
     this.hideDropIndicator();
-    this.dropJoystick.hidden = true;
     this.stopDragPointerTracking();
     this.lastDragPointerPosition = null;
     if (state && state.floatingIndex !== null && !state.dropHandled) {
@@ -2412,6 +2405,7 @@ export class MintDockManagerElement extends HTMLElement {
     joystick.style.left = `${rect.left - hostRect.left + rect.width / 2}px`;
     joystick.style.top = `${rect.top - hostRect.top + rect.height / 2}px`;
     joystick.dataset['visible'] = 'true';
+    this.dropJoystick.style.display = 'grid';
     joystick.dataset['path'] = stack.dataset['path'] ?? '';
     this.dropJoystickTarget = stack;
     this.updateDropJoystickActiveZone(zone);
@@ -2420,6 +2414,7 @@ export class MintDockManagerElement extends HTMLElement {
   private hideDropIndicator(): void {
     this.dropIndicator.dataset['visible'] = 'false';
     this.dropJoystick.dataset['visible'] = 'false';
+    this.dropJoystick.style.display = 'none';
     delete this.dropJoystick.dataset['path'];
     this.dropJoystickTarget = null;
     this.updateDropJoystickActiveZone(null);
