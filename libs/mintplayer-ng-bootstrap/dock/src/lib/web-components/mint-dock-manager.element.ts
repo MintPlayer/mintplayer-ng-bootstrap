@@ -1975,14 +1975,34 @@ export class MintDockManagerElement extends HTMLElement {
     }
     event.preventDefault();
 
-    const stack = this.findStackElement(event);
+    const pointFromEvent =
+      Number.isFinite(event.clientX) && Number.isFinite(event.clientY)
+        ? { clientX: event.clientX, clientY: event.clientY }
+        : null;
+
+    const point =
+      pointFromEvent ??
+      (this.lastDragPointerPosition
+        ? {
+            clientX: this.lastDragPointerPosition.x,
+            clientY: this.lastDragPointerPosition.y,
+          }
+        : null);
+
+    const stack =
+      this.findStackElement(event) ??
+      (point ? this.findStackAtPoint(point.clientX, point.clientY) : null);
+
     if (!stack) {
       this.hideDropIndicator();
+      this.endPaneDrag();
       return;
     }
 
     const path = this.parsePath(stack.dataset['path']);
-    const zone = this.computeDropZone(stack, event, this.extractDropZoneFromEvent(event));
+    const eventZoneHint = this.extractDropZoneFromEvent(event);
+    const pointZoneHint = point ? this.findDropZoneByPoint(point.clientX, point.clientY) : null;
+    const zone = this.computeDropZone(stack, point ?? event, pointZoneHint ?? eventZoneHint);
     if (!zone) {
       this.hideDropIndicator();
       this.endPaneDrag();
