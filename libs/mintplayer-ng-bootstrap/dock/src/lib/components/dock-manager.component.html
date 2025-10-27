@@ -1,0 +1,12 @@
+<mint-dock-manager
+  #manager
+  class="bs-dock-manager"
+  [attr.layout]="layoutString"
+  (dock-layout-changed)="onLayoutChanged($event)"
+>
+  <ng-container *ngFor="let pane of panes; trackBy: trackByPane">
+    <div class="bs-dock-pane" [attr.slot]="pane.name">
+      <ng-container *ngTemplateOutlet="pane.template"></ng-container>
+    </div>
+  </ng-container>
+</mint-dock-manager>

@@ -1,9 +1,0 @@
-<ng-content></ng-content>
-@if (layout$ | async; as layout) {
-    <bs-dock-pane-renderer [layout]="layout.rootPane"></bs-dock-pane-renderer>
-    @for (pane of layout.floatingPanes; track pane) {
-        @if (pane.pane) {
-            <bs-dock-pane-renderer #floating [layout]="pane"></bs-dock-pane-renderer>
-        }
-    }
-}
