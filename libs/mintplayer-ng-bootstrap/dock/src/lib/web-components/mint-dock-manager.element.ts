@@ -1400,6 +1400,7 @@ export class MintDockManagerElement extends HTMLElement {
       pointerOffsetY,
       dropHandled: false,
     };
+    this.updateDraggedFloatingPosition(event);
     event.dataTransfer.effectAllowed = 'move';
     event.dataTransfer.setData('text/plain', pane);
   }
@@ -1420,7 +1421,10 @@ export class MintDockManagerElement extends HTMLElement {
       };
     }
 
-    if (location.context === 'floating' && location.node.panes.length === 1) {
+    const hasSiblingPane =
+      location.context === 'floating' && location.node.panes.some((existing) => existing !== pane);
+
+    if (location.context === 'floating' && !hasSiblingPane) {
       const floating = this.floatingLayouts[location.index];
       if (floating) {
         floating.activePane = pane;
