@@ -2,7 +2,7 @@ import { DOCUMENT } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { animate, AnimationBuilder, AnimationPlayer, style } from '@angular/animations';
 import { AfterViewInit, ContentChildren, DestroyRef, Directive, ElementRef, EventEmitter, forwardRef, HostBinding, Inject, Input, Output, QueryList } from '@angular/core';
-import { BehaviorSubject, combineLatest, debounceTime, delay, filter, map, mergeMap, Observable, take } from 'rxjs';
+import { BehaviorSubject, combineLatest, debounceTime, delay, distinctUntilChanged, filter, map, mergeMap, Observable, take } from 'rxjs';
 import { BsObserveSizeDirective, Size } from '@mintplayer/ng-swiper/observe-size';
 import { LastTouch } from '../../interfaces/last-touch';
 import { StartTouch } from '../../interfaces/start-touch';
@@ -19,57 +19,91 @@ export class BsSwipeContainerDirective implements AfterViewInit {
   constructor(element: ElementRef, private animationBuilder: AnimationBuilder, private destroy: DestroyRef, @Inject(DOCUMENT) document: any, private observeSize: BsObserveSizeDirective) {
     this.containerElement = element;
     this.document = <Document>document;
-    this.offset$ = combineLatest([this.startTouch$, this.lastTouch$, this.imageIndex$, this.isViewInited$])
-      .pipe(map(([startTouch, lastTouch, imageIndex, isViewInited]) => {
+    this.offset$ = combineLatest([
+      this.startTouch$,
+      this.lastTouch$,
+      this.imageIndex$,
+      this.isViewInited$,
+      this.orientation$,
+      this.observeSize.size$,
+    ])
+      .pipe(map(([startTouch, lastTouch, imageIndex, isViewInited, orientation, containerSize]) => {
         if (!isViewInited) {
           return (-imageIndex * 100);
         } else if (!!startTouch && !!lastTouch) {
-          return (-imageIndex * 100 + (lastTouch.position.x - startTouch.position.x) / this.containerElement.nativeElement.clientWidth * 100);
+          const containerLength = orientation === 'horizontal'
+            ? (containerSize?.width ?? this.containerElement.nativeElement.clientWidth)
+            : (containerSize?.height ?? this.containerElement.nativeElement.clientHeight);
+          if (containerLength === 0) {
+            return (-imageIndex * 100);
+          }
+          const delta = orientation === 'horizontal'
+            ? (lastTouch.position.x - startTouch.position.x)
+            : (lastTouch.position.y - startTouch.position.y);
+          return (-imageIndex * 100 + (delta / containerLength) * 100);
         } else {
           return (-imageIndex * 100);
         }
       }));
 
-      this.padLeft$ = this.swipes$.pipe(map(swipes => {
-        if (!swipes) {
-          return 0;
-        }
+    this.padLeft$ = this.swipes$.pipe(map(swipes => {
+      if (!swipes) {
+        return 0;
+      }
 
-        let count = 0;
-        for (const s of swipes) {
-          if (!s.offside()) {
-            break;
-          } else {
-            count++;
-          }
+      let count = 0;
+      for (const s of swipes) {
+        if (!s.offside()) {
+          break;
+        } else {
+          count++;
         }
-        return count;
-      }));
+      }
+      return count;
+    }));
 
-      this.padRight$ = this.swipes$.pipe(map(swipes => {
-        if (!swipes) {
-          return 0;
+    this.padRight$ = this.swipes$.pipe(map(swipes => {
+      if (!swipes) {
+        return 0;
+      }
+
+      let count = 0;
+      for (const s of swipes.toArray().reverse()) {
+        if (!s.offside()) {
+          break;
+        } else {
+          count++;
         }
+      }
+      return count;
+    }));
 
-        let count = 0;
-        for (const s of swipes.toArray().reverse()) {
-          if (!s.offside()) {
-            break;
-          } else {
-            count++;
-          }
-        }
-        return count;
-      }));
-
-    this.offsetLeft$ = combineLatest([this.offset$, this.padLeft$])
+    this.offsetPrimary$ = combineLatest([this.offset$, this.padLeft$])
       .pipe(map(([offset, padLeft]) => offset - padLeft * 100));
-    this.offsetRight$ = combineLatest([this.offset$, this.padLeft$, this.padRight$])
+    this.offsetSecondary$ = combineLatest([this.offset$, this.padLeft$, this.padRight$])
       .pipe(map(([offset, padLeft, padRight]) => -(offset - padLeft * 100) - (padRight - 1) * 100));
-    this.offsetLeft$.pipe(takeUntilDestroyed())
-      .subscribe(offsetLeft => this.offsetLeft = offsetLeft);
-    this.offsetRight$.pipe(takeUntilDestroyed())
-      .subscribe(offsetRight => this.offsetRight = offsetRight);
+    combineLatest([this.offsetPrimary$, this.orientation$])
+      .pipe(takeUntilDestroyed())
+      .subscribe(([offsetPrimary, orientation]) => {
+        if (orientation === 'horizontal') {
+          this.offsetLeft = offsetPrimary;
+          this.offsetTop = null;
+        } else {
+          this.offsetTop = offsetPrimary;
+          this.offsetLeft = null;
+        }
+      });
+    combineLatest([this.offsetSecondary$, this.orientation$])
+      .pipe(takeUntilDestroyed())
+      .subscribe(([offsetSecondary, orientation]) => {
+        if (orientation === 'horizontal') {
+          this.offsetRight = offsetSecondary;
+          this.offsetBottom = null;
+        } else {
+          this.offsetBottom = offsetSecondary;
+          this.offsetRight = null;
+        }
+      });
     this.imageIndex$.pipe(takeUntilDestroyed())
       .subscribe(imageIndex => this.imageIndexChange.emit(imageIndex));
 
@@ -86,19 +120,29 @@ export class BsSwipeContainerDirective implements AfterViewInit {
       .pipe(delay(400), filter(swipes => !!swipes))
       .pipe(mergeMap(swipes => combineLatest(swipes.map(swipe => swipe.observeSize.size$))));
 
-    this.currentSlideHeight$ = combineLatest([this.slideSizes$, this.imageIndex$])
-      .pipe(map(([slideSizes, imageIndex]) => {
-        const maxHeight = Math.max(...slideSizes.map(s => s?.height ?? 1));
-        console.log('maxHeight', {maxHeight, slideSizes});
+    this.maxSlideHeight$ = this.slideSizes$
+      .pipe(map(slideSizes => {
+        const heights = slideSizes.map(s => s?.height ?? 1);
+        return heights.length ? Math.max(...heights) : 1;
+      }));
+
+    this.currentSlideHeight$ = combineLatest([this.slideSizes$, this.imageIndex$, this.orientation$])
+      .pipe(map(([slideSizes, imageIndex, orientation]) => {
+        const heights = slideSizes.map(s => s?.height ?? 1);
+        const maxHeight = heights.length ? Math.max(...heights) : 1;
         const currHeight: number = slideSizes[imageIndex]?.height ?? maxHeight;
-        // switch (orientation) {
-        //   case 'horizontal':
-            return currHeight;
-        //   case 'vertical':
-        //     return maxHeight;
-        // }
+        return (orientation === 'vertical') ? maxHeight : currHeight;
       }))
       .pipe(debounceTime(10));
+
+    this.orientation$
+      .pipe(distinctUntilChanged(), takeUntilDestroyed())
+      .subscribe(() => {
+        this.offsetLeft = null;
+        this.offsetRight = null;
+        this.offsetTop = null;
+        this.offsetBottom = null;
+      });
   }
 
   @HostBinding('style.margin-left.%') offsetLeft: number | null = null;
@@ -109,6 +153,13 @@ export class BsSwipeContainerDirective implements AfterViewInit {
     setTimeout(() => this.swipes$.next(value));
   }
   @Input() minimumOffset = 50;
+
+  public get orientation() {
+    return this.orientation$.value;
+  }
+  @Input() public set orientation(value: 'horizontal' | 'vertical') {
+    this.orientation$.next(value ?? 'horizontal');
+  }
 
   //#region ImageIndex
   public get imageIndex() {
@@ -127,6 +178,7 @@ export class BsSwipeContainerDirective implements AfterViewInit {
   swipes$ = new BehaviorSubject<QueryList<BsSwipeDirective> | null>(null);
   // TODO: slide sizes instead
   slideSizes$: Observable<(Size | undefined)[]>;
+  maxSlideHeight$: Observable<number>;
   imageIndex$ = new BehaviorSubject<number>(0);
   currentSlideHeight$: Observable<number>;
   pendingAnimation?: AnimationPlayer;
@@ -135,37 +187,60 @@ export class BsSwipeContainerDirective implements AfterViewInit {
 
   // TODO: Don't just keep px, but both px and % using currentslidesize$
   offset$: Observable<number>;
-  offsetLeft$: Observable<number>;
-  offsetRight$: Observable<number>;
+  offsetPrimary$: Observable<number>;
+  offsetSecondary$: Observable<number>;
   padLeft$: Observable<number>;
   padRight$: Observable<number>;
+
+  orientation$ = new BehaviorSubject<'horizontal' | 'vertical'>('horizontal');
 
   ngAfterViewInit() {
     this.isViewInited$.next(true);
   }
 
-  animateToIndexByDx(dx: number) {
+  animateToIndexByDx(distance: number) {
     combineLatest([this.imageIndex$, this.actualSwipes$])
       .pipe(take(1), takeUntilDestroyed(this.destroy))
       .subscribe(([imageIndex, actualSwipes]) => {
-        const direction = dx > 0 ? 'left' : 'right';
-      
         let newIndex: number;
-        if (Math.abs(dx) < this.minimumOffset) {
+        if (Math.abs(distance) < this.minimumOffset) {
           newIndex = imageIndex;
         } else {
-          newIndex = imageIndex + (direction === 'right' ? 1 : -1);
+          newIndex = imageIndex + (distance < 0 ? 1 : -1);
         }
-  
-        this.animateToIndex(imageIndex, newIndex, dx, actualSwipes?.length ?? 1);
+
+        this.animateToIndex(imageIndex, newIndex, distance, actualSwipes?.length ?? 1);
       });
   }
 
-  animateToIndex(oldIndex: number, newIndex: number, dx: number, totalSlides: number) {
-    this.pendingAnimation = this.animationBuilder.build([
-      style({ 'margin-left': (-(oldIndex + 1) * this.containerElement.nativeElement.clientWidth + dx) + 'px', 'margin-right': ((oldIndex + 1) * this.containerElement.nativeElement.clientWidth - dx) + 'px' }),
-      animate('500ms ease', style({ 'margin-left': (-(newIndex + 1) * this.containerElement.nativeElement.clientWidth) + 'px', 'margin-right': ((newIndex + 1) * this.containerElement.nativeElement.clientWidth) + 'px' })),
-    ]).create(this.containerElement.nativeElement);
+  animateToIndex(oldIndex: number, newIndex: number, distance: number, totalSlides: number) {
+    const orientation = this.orientation$.value;
+    const containerElement = this.containerElement.nativeElement;
+    const containerLength = orientation === 'horizontal' ? containerElement.clientWidth : containerElement.clientHeight;
+
+    if (orientation === 'horizontal') {
+      this.pendingAnimation = this.animationBuilder.build([
+        style({
+          'margin-left': (-(oldIndex + 1) * containerLength + distance) + 'px',
+          'margin-right': ((oldIndex + 1) * containerLength - distance) + 'px',
+        }),
+        animate('500ms ease', style({
+          'margin-left': (-(newIndex + 1) * containerLength) + 'px',
+          'margin-right': ((newIndex + 1) * containerLength) + 'px',
+        })),
+      ]).create(containerElement);
+    } else {
+      this.pendingAnimation = this.animationBuilder.build([
+        style({
+          'margin-top': (-(oldIndex + 1) * containerLength + distance) + 'px',
+          'margin-bottom': ((oldIndex + 1) * containerLength - distance) + 'px',
+        }),
+        animate('500ms ease', style({
+          'margin-top': (-(newIndex + 1) * containerLength) + 'px',
+          'margin-bottom': ((newIndex + 1) * containerLength) + 'px',
+        })),
+      ]).create(containerElement);
+    }
     this.pendingAnimation.onDone(() => {
       // Correct the image index
       if (newIndex === -1) {
@@ -183,8 +258,8 @@ export class BsSwipeContainerDirective implements AfterViewInit {
     this.pendingAnimation.play();
   }
 
-  onSwipe(dx: number) {
-    this.animateToIndexByDx(dx);
+  onSwipe(distance: number) {
+    this.animateToIndexByDx(distance);
   }
 
   previous() {
