@@ -10,7 +10,7 @@ import { Size } from './size';
 })
 export class BsObserveSizeDirective implements AfterViewInit, OnDestroy {
   constructor(private element: ElementRef, @Inject(PLATFORM_ID) private platformId: any, private zone: NgZone) {
-    if (!isPlatformServer(this.platformId)) {
+    if (!isPlatformServer(this.platformId) && typeof ResizeObserver !== 'undefined') {
       this.observer = new ResizeObserver((entries) => {
         // console.log('resized', entries[0].contentRect);
         this.zone.run(() => this.size$.next(entries[0].contentRect));

@@ -1,8 +1,25 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MockDirective } from 'ng-mocks';
+import { Directive, forwardRef } from '@angular/core';
+import { BehaviorSubject } from 'rxjs';
 import { BsSwipeContainerDirective } from '../swipe-container/swipe-container.directive';
 import { BsSwipeDirective } from './swipe.directive';
+
+@Directive({
+  selector: '[bsSwipeContainer]',
+  standalone: false,
+  providers: [
+    { provide: BsSwipeContainerDirective, useExisting: forwardRef(() => BsSwipeContainerDirectiveStub) }
+  ]
+})
+class BsSwipeContainerDirectiveStub {
+  orientation$ = new BehaviorSubject<'horizontal' | 'vertical'>('horizontal');
+  startTouch$ = new BehaviorSubject<any>(null);
+  lastTouch$ = new BehaviorSubject<any>(null);
+  pendingAnimation: { finish(): void } | null = null;
+
+  onSwipe(_distance: number) {}
+}
 
 @Component({
   selector: 'swipe-test-component',
@@ -27,7 +44,7 @@ describe('BsSwipeDirective', () => {
         BsSwipeDirective,
 
         // Mock dependencies
-        MockDirective(BsSwipeContainerDirective),
+        BsSwipeContainerDirectiveStub,
 
         // Testbench
         SwipeTestComponent
