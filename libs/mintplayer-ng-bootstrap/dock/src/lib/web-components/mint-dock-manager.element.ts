@@ -2351,6 +2351,13 @@ export class MintDockManagerElement extends HTMLElement {
   }
 
   private showDropIndicator(stack: HTMLElement, zone: DropZone | null): void {
+    const targetPath = this.parsePath(stack.dataset['path']);
+    const sourcePath = this.dragState?.sourcePath ?? null;
+    if (targetPath && sourcePath && this.pathsEqual(sourcePath, targetPath)) {
+      this.hideDropIndicator();
+      return;
+    }
+
     const rect = stack.getBoundingClientRect();
     const hostRect = this.getBoundingClientRect();
     const indicator = this.dropIndicator;
