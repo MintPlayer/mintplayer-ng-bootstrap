@@ -37,7 +37,13 @@ jobs:
       run: npm ci
     
     - name: Build
-      run: npm run build -- --configuration=production
+      id: BuildWithCloud
+      run: npx nx build --configuration=production
+
+    - name: BuildWithoutCloud
+      id: BuildWithoutCloud
+      if: ${{ steps.BuildWithCloud.outcome == 'failure' }}
+      run: npx nx build --configuration=production --no-cloud
 
     #- name: Test
     #  run: npm run test -- --watch=false

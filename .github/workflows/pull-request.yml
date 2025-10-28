@@ -37,7 +37,19 @@ jobs:
       run: npm ci
     
     - name: Build
-      run: npm run build -- --configuration=production
+      id: BuildWithCloud
+      run: npx nx build --configuration=production
+
+    - name: BuildWithoutCloud
+      id: BuildWithoutCloud
+      if: ${{ steps.BuildWithCloud.outcome == 'failure' }}
+      run: npx nx build --configuration=production --no-cloud
 
     - name: Test
+      id: TestWithCloud
       run: npx nx affected --target=test --watch=false --parallel=true --base=${{ github.event.pull_request.base.sha }} --head=${{ github.event.pull_request.head.sha }}
+
+    - name: TestWithoutCloud
+      id: TestWithoutCloud
+      if: ${{ steps.TestWithCloud.outcome == 'failure' }}
+      run: npx nx affected --target=test --watch=false --parallel=true --base=${{ github.event.pull_request.base.sha }} --head=${{ github.event.pull_request.head.sha }} --no-cloud
