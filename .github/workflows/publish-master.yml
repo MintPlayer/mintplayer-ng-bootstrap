@@ -43,6 +43,7 @@ jobs:
     
     - name: Build
       id: BuildWithCloud
+      continue-on-error: true
       run: npx nx build --configuration=production
 
     - name: BuildWithoutCloud
@@ -52,6 +53,7 @@ jobs:
 
     - name: Test
       id: TestWithCloud
+      continue-on-error: true
       run: npx nx affected --target=test --watch=false --parallel=true
 
     - name: TestWithoutCloud
