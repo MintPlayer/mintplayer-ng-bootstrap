@@ -1444,6 +1444,7 @@ export class MintDockManagerElement extends HTMLElement {
     }
 
     if (this.floatingDragState && event.pointerId === this.floatingDragState.pointerId) {
+      console.warn('state', this.floatingDragState);
       this.handleFloatingDragMove(event);
     }
   }
@@ -2353,8 +2354,8 @@ export class MintDockManagerElement extends HTMLElement {
   private showDropIndicator(stack: HTMLElement, zone: DropZone | null): void {
     const targetPath = this.parsePath(stack.dataset['path']);
     const sourcePath = this.dragState?.sourcePath ?? null;
-    if (targetPath && sourcePath && this.pathsEqual(sourcePath, targetPath)) {
-      this.hideDropIndicator();
+    if (targetPath && sourcePath && this.isOrIsAncestorOf(targetPath, sourcePath)) {
+      // Don't show any drop indicators on the pane being dragged.
       return;
     }
 
@@ -2832,6 +2833,24 @@ export class MintDockManagerElement extends HTMLElement {
     }
 
     return a.segments.every((value, index) => value === other.segments[index]);
+  }
+
+  private isOrIsAncestorOf(ancestor: DockPath, descendant: DockPath): boolean {
+    if (ancestor.type !== descendant.type) {
+      return false;
+    }
+
+    if (ancestor.type === 'floating') {
+      if ((descendant as any).index !== ancestor.index) {
+        return false;
+      }
+    }
+
+    if (ancestor.segments.length > descendant.segments.length) {
+      return false;
+    }
+
+    return ancestor.segments.every((segment, i) => segment === descendant.segments[i]);
   }
 
   private countPanesInTree(node: DockLayoutNode | null): number {
