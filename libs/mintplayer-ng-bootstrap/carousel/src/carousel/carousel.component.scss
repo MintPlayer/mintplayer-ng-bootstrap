@@ -65,9 +65,15 @@
         flex-direction: row;
         align-items: stretch;
         gap: 1rem;
+        flex-wrap: nowrap;
 
         .carousel-inner {
+            order: 1;
             flex: 1 1 auto;
+        }
+
+        .carousel-indicators {
+            order: 0;
         }
 
         .carousel-control-prev,
@@ -120,9 +126,8 @@
             bottom: 0;
         }
 
-        .carousel-control-prev-icon,
-        .carousel-control-next-icon {
-            transform: rotate(-90deg);
+        &.carousel-control-prev .carousel-control-prev-icon {
+            transform: rotate(90deg);
         }
 
         &.carousel-control-next .carousel-control-next-icon {
