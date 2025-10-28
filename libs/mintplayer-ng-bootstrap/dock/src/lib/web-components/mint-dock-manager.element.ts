@@ -1513,6 +1513,24 @@ export class MintDockManagerElement extends HTMLElement {
       return;
     }
 
+    // Create a ghost element for the drag image. This prevents the browser from cancelling
+    // the drag operation when the original element is removed from the DOM during re-render.
+    const ghost = (event.currentTarget as HTMLElement).cloneNode(true) as HTMLElement;
+    ghost.style.position = 'absolute';
+    ghost.style.left = '-9999px';
+    ghost.style.top = '-9999px';
+    ghost.style.width = `${(event.currentTarget as HTMLElement).offsetWidth}px`;
+    ghost.style.height = `${(event.currentTarget as HTMLElement).offsetHeight}px`;
+    this.shadowRoot?.appendChild(ghost);
+
+    // Use the ghost element as the drag image.
+    // The offset is set to where the user's cursor is on the original element.
+    event.dataTransfer.setDragImage(ghost, event.offsetX, event.offsetY);
+
+    // The ghost element is no longer needed after the drag image is set.
+    // We defer its removal to ensure the browser has captured it.
+    setTimeout(() => ghost.remove(), 0);
+
     const {
       path: sourcePath,
       floatingIndex,
@@ -1669,48 +1687,57 @@ export class MintDockManagerElement extends HTMLElement {
         ? stackRect.top - hostRect.top
         : (hostRect.height - height) / 2;
 
-    const paneTitle = location.node.titles?.[pane];
+        
+    // Defer the DOM modification to prevent the browser from cancelling the drag operation.
+    setTimeout(() => {
+      const paneTitle = location.node.titles?.[pane];
 
-    this.removePaneFromLocation(location, pane);
+      this.removePaneFromLocation(location, pane);
 
-    const floatingStack: DockStackNode = {
-      kind: 'stack',
-      panes: [pane],
-      activePane: pane,
-    };
-    if (paneTitle) {
-      floatingStack.titles = { [pane]: paneTitle };
-    }
+      const floatingStack: DockStackNode = {
+        kind: 'stack',
+        panes: [pane],
+        activePane: pane,
+      };
+      if (paneTitle) {
+        floatingStack.titles = { [pane]: paneTitle };
+      }
 
-    const floatingLayout: DockFloatingStackLayout = {
-      bounds: {
-        left,
-        top,
-        width,
-        height,
-      },
-      root: floatingStack,
-      activePane: pane,
-    };
-    if (paneTitle) {
-      floatingLayout.titles = { [pane]: paneTitle };
-    }
+      const floatingLayout: DockFloatingStackLayout = {
+        bounds: {
+          left,
+          top,
+          width,
+          height,
+        },
+        root: floatingStack,
+        activePane: pane,
+      };
+      if (paneTitle) {
+        floatingLayout.titles = { [pane]: paneTitle };
+      }
 
-    this.floatingLayouts.push(floatingLayout);
-    const floatingIndex = this.floatingLayouts.length - 1;
+      this.floatingLayouts.push(floatingLayout);
+      const floatingIndex = this.floatingLayouts.length - 1;
 
-    this.render();
+      // Defer rendering to avoid interrupting the drag-and-drop initialization in the browser.
+      // Synchronously re-rendering can cause the browser to lose track of the drag operation.
+      this.render();
+      const wrapper = this.getFloatingWrapper(floatingIndex);
+      if (wrapper) {
+        this.promoteFloatingPane(floatingIndex, wrapper);
+      }
+      this.dispatchLayoutChanged();
 
-    const wrapper = this.getFloatingWrapper(floatingIndex);
-    if (wrapper) {
-      this.promoteFloatingPane(floatingIndex, wrapper);
-    }
-
-    this.dispatchLayoutChanged();
+      if (this.dragState) {
+        this.dragState.sourcePath = { type: 'floating', index: floatingIndex, segments: [] };
+        this.dragState.floatingIndex = floatingIndex;
+      }
+    }, 0);
 
     return {
-      path: { type: 'floating', index: floatingIndex, segments: [] },
-      floatingIndex,
+      path: { type: 'floating', index: -1, segments: [] }, // Placeholder path
+      floatingIndex: -1,
       pointerOffsetX,
       pointerOffsetY,
     };
