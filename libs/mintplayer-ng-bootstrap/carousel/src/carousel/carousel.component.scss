@@ -7,7 +7,7 @@
 
     // Layout & components
     @import "../../../../../node_modules/bootstrap/scss/carousel";
-        
+
     .carousel {
         min-height: 100px;
         max-width: 500px;
@@ -54,6 +54,10 @@
         .carousel-item > * {
             width: 100% !important;
         }
+    }
+
+    .carousel-indicators [data-bs-target] {
+        background-color: var(--bs-carousel-indicator-active-bg, #fff);
     }
 }
 
