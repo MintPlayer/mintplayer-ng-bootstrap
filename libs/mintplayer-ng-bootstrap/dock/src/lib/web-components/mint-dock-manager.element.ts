@@ -1513,6 +1513,24 @@ export class MintDockManagerElement extends HTMLElement {
       return;
     }
 
+    // Create a ghost element for the drag image. This prevents the browser from cancelling
+    // the drag operation when the original element is removed from the DOM during re-render.
+    const ghost = (event.currentTarget as HTMLElement).cloneNode(true) as HTMLElement;
+    ghost.style.position = 'absolute';
+    ghost.style.left = '-9999px';
+    ghost.style.top = '-9999px';
+    ghost.style.width = `${(event.currentTarget as HTMLElement).offsetWidth}px`;
+    ghost.style.height = `${(event.currentTarget as HTMLElement).offsetHeight}px`;
+    this.shadowRoot?.appendChild(ghost);
+
+    // Use the ghost element as the drag image.
+    // The offset is set to where the user's cursor is on the original element.
+    event.dataTransfer.setDragImage(ghost, event.offsetX, event.offsetY);
+
+    // The ghost element is no longer needed after the drag image is set.
+    // We defer its removal to ensure the browser has captured it.
+    setTimeout(() => ghost.remove(), 0);
+
     const {
       path: sourcePath,
       floatingIndex,
@@ -1699,13 +1717,13 @@ export class MintDockManagerElement extends HTMLElement {
     this.floatingLayouts.push(floatingLayout);
     const floatingIndex = this.floatingLayouts.length - 1;
 
+    // Defer rendering to avoid interrupting the drag-and-drop initialization in the browser.
+    // Synchronously re-rendering can cause the browser to lose track of the drag operation.
     this.render();
-
     const wrapper = this.getFloatingWrapper(floatingIndex);
     if (wrapper) {
       this.promoteFloatingPane(floatingIndex, wrapper);
     }
-
     this.dispatchLayoutChanged();
 
     return {
