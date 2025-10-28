@@ -21,11 +21,11 @@
     "bootstrap": "^5.3.0",
     "bootstrap-icons": "^1.7.2",
     "ngx-highlightjs": "^10.0.0",
-    "@mintplayer/ng-click-outside": "^20.0.0-preview.1",
-    "@mintplayer/ng-animations": "^20.0.0-preview.1",
+    "@mintplayer/ng-click-outside": "^20.0.0",
+    "@mintplayer/ng-animations": "^20.0.0",
     "@mintplayer/pagination": "^2.2.0",
-    "@mintplayer/ng-focus-on-load": "^20.0.0-preview.1",
-    "@mintplayer/ng-swiper": "^20.0.0-preview.1",
+    "@mintplayer/ng-focus-on-load": "^20.0.0",
+    "@mintplayer/ng-swiper": "^20.2.0",
     "@mintplayer/parentify": "^1.1.0"
   },
   "dependencies": {
