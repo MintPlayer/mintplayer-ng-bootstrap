@@ -1687,48 +1687,57 @@ export class MintDockManagerElement extends HTMLElement {
         ? stackRect.top - hostRect.top
         : (hostRect.height - height) / 2;
 
-    const paneTitle = location.node.titles?.[pane];
+        
+    // Defer the DOM modification to prevent the browser from cancelling the drag operation.
+    setTimeout(() => {
+      const paneTitle = location.node.titles?.[pane];
 
-    this.removePaneFromLocation(location, pane);
+      this.removePaneFromLocation(location, pane);
 
-    const floatingStack: DockStackNode = {
-      kind: 'stack',
-      panes: [pane],
-      activePane: pane,
-    };
-    if (paneTitle) {
-      floatingStack.titles = { [pane]: paneTitle };
-    }
+      const floatingStack: DockStackNode = {
+        kind: 'stack',
+        panes: [pane],
+        activePane: pane,
+      };
+      if (paneTitle) {
+        floatingStack.titles = { [pane]: paneTitle };
+      }
 
-    const floatingLayout: DockFloatingStackLayout = {
-      bounds: {
-        left,
-        top,
-        width,
-        height,
-      },
-      root: floatingStack,
-      activePane: pane,
-    };
-    if (paneTitle) {
-      floatingLayout.titles = { [pane]: paneTitle };
-    }
+      const floatingLayout: DockFloatingStackLayout = {
+        bounds: {
+          left,
+          top,
+          width,
+          height,
+        },
+        root: floatingStack,
+        activePane: pane,
+      };
+      if (paneTitle) {
+        floatingLayout.titles = { [pane]: paneTitle };
+      }
 
-    this.floatingLayouts.push(floatingLayout);
-    const floatingIndex = this.floatingLayouts.length - 1;
+      this.floatingLayouts.push(floatingLayout);
+      const floatingIndex = this.floatingLayouts.length - 1;
 
-    // Defer rendering to avoid interrupting the drag-and-drop initialization in the browser.
-    // Synchronously re-rendering can cause the browser to lose track of the drag operation.
-    this.render();
-    const wrapper = this.getFloatingWrapper(floatingIndex);
-    if (wrapper) {
-      this.promoteFloatingPane(floatingIndex, wrapper);
-    }
-    this.dispatchLayoutChanged();
+      // Defer rendering to avoid interrupting the drag-and-drop initialization in the browser.
+      // Synchronously re-rendering can cause the browser to lose track of the drag operation.
+      this.render();
+      const wrapper = this.getFloatingWrapper(floatingIndex);
+      if (wrapper) {
+        this.promoteFloatingPane(floatingIndex, wrapper);
+      }
+      this.dispatchLayoutChanged();
+
+      if (this.dragState) {
+        this.dragState.sourcePath = { type: 'floating', index: floatingIndex, segments: [] };
+        this.dragState.floatingIndex = floatingIndex;
+      }
+    }, 0);
 
     return {
-      path: { type: 'floating', index: floatingIndex, segments: [] },
-      floatingIndex,
+      path: { type: 'floating', index: -1, segments: [] }, // Placeholder path
+      floatingIndex: -1,
       pointerOffsetX,
       pointerOffsetY,
     };
