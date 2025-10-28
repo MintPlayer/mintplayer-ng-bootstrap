@@ -13,8 +13,12 @@ export class BsSwipeDirective {
 
   constructor(private container: BsSwipeContainerDirective, observeSize: BsObserveSizeDirective, private destroy: DestroyRef) {
     this.observeSize = observeSize;
-    // container.orientation$.pipe(takeUntilDestroyed())
-    //   .subscribe(orientation => this.hostClass = (orientation === 'vertical') ? 'd-block' : 'd-inline-block');
+    this.container.orientation$
+      .pipe(takeUntilDestroyed())
+      .subscribe(orientation => {
+        this.inlineBlock = (orientation === 'horizontal');
+        this.block = (orientation === 'vertical');
+      });
   }
 
   observeSize: BsObserveSizeDirective;
@@ -22,14 +26,14 @@ export class BsSwipeDirective {
   public offside = input(false);
 
   @HostBinding('class.align-top')
-  @HostBinding('class.d-inline-block')
   @HostBinding('class.float-none')
   @HostBinding('class.w-100')
   @HostBinding('class.pe-auto')
   @HostBinding('class.me-0')
   classes = true;
 
-  @HostBinding('class') hostClass?: string;
+  @HostBinding('class.d-inline-block') inlineBlock = true;
+  @HostBinding('class.d-block') block = false;
 
   @HostListener('touchstart', ['$event'])
   onTouchStart(ev: TouchEvent) {
@@ -69,13 +73,15 @@ export class BsSwipeDirective {
 
   @HostListener('touchend', ['$event'])
   onTouchEnd(ev: TouchEvent) {
-    combineLatest([this.container.startTouch$, this.container.lastTouch$])
+    combineLatest([this.container.startTouch$, this.container.lastTouch$, this.container.orientation$])
       .pipe(filter(([startTouch, lastTouch]) => !!startTouch && !!lastTouch))
       .pipe(take(1), takeUntilDestroyed(this.destroy))
-      .subscribe(([startTouch, lastTouch]) => {
+      .subscribe(([startTouch, lastTouch, orientation]) => {
         if (!!startTouch && !!lastTouch) {
-          const dx = lastTouch.position.x - startTouch.position.x;
-          this.container.onSwipe(dx);
+          const distance = (orientation === 'horizontal')
+            ? lastTouch.position.x - startTouch.position.x
+            : lastTouch.position.y - startTouch.position.y;
+          this.container.onSwipe(distance);
         }
       });
   }

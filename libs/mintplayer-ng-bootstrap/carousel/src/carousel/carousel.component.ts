@@ -56,6 +56,15 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
   @Input() indicators = false;
   @Input() keyboardEvents = true;
 
+  private _orientation: 'horizontal' | 'vertical' = 'horizontal';
+  @Input() public set orientation(value: 'horizontal' | 'vertical') {
+    this._orientation = value ?? 'horizontal';
+    this.cdRef.detectChanges();
+  }
+  public get orientation() {
+    return this._orientation;
+  }
+
   @ViewChild('innerElement') innerElement!: ElementRef<HTMLDivElement>;
   @ViewChild('container') swipeContainer!: BsSwipeContainerDirective;
   @ContentChildren(forwardRef(() => BsCarouselImageDirective)) set images(value: QueryList<BsCarouselImageDirective>) {
@@ -79,17 +88,40 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
 
   @HostListener('document:keydown.ArrowLeft', ['$event'])
   @HostListener('document:keydown.ArrowRight', ['$event'])
+  @HostListener('document:keydown.ArrowUp', ['$event'])
+  @HostListener('document:keydown.ArrowDown', ['$event'])
   onKeyPress(ev: KeyboardEvent) {
     if (this.keyboardEvents) {
+      let handled = false;
       switch (ev.key) {
         case 'ArrowLeft':
-          this.previousImage();
+          if (this.orientation === 'horizontal') {
+            this.previousImage();
+            handled = true;
+          }
           break;
         case 'ArrowRight':
-          this.nextImage();
+          if (this.orientation === 'horizontal') {
+            this.nextImage();
+            handled = true;
+          }
+          break;
+        case 'ArrowUp':
+          if (this.orientation === 'vertical') {
+            this.previousImage();
+            handled = true;
+          }
+          break;
+        case 'ArrowDown':
+          if (this.orientation === 'vertical') {
+            this.nextImage();
+            handled = true;
+          }
           break;
       }
-      ev.preventDefault();
+      if (handled) {
+        ev.preventDefault();
+      }
     }
   }
 
