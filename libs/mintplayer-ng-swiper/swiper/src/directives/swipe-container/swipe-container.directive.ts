@@ -19,6 +19,30 @@ export class BsSwipeContainerDirective implements AfterViewInit {
   constructor(element: ElementRef, private animationBuilder: AnimationBuilder, private destroy: DestroyRef, @Inject(DOCUMENT) document: any, private observeSize: BsObserveSizeDirective) {
     this.containerElement = element;
     this.document = <Document>document;
+
+    
+    this.actualSwipes$ = this.swipes$
+      .pipe(map(swipes => {
+        if (swipes) {
+          return swipes.filter(swipe => !swipe.offside());
+        } else {
+          return [];
+        }
+      }));
+
+    this.slideSizes$ = this.actualSwipes$
+      .pipe(delay(400), filter(swipes => !!swipes))
+      .pipe(mergeMap(swipes => combineLatest(swipes.map(swipe => swipe.observeSize.size$))))
+      .pipe(shareReplay({ bufferSize: 1, refCount: true }));
+
+    this.maxSlideHeight$ = this.slideSizes$
+      .pipe(map(slideSizes => {
+        const heights = slideSizes.map(s => s?.height ?? 1);
+        return heights.length ? Math.max(...heights) : 1;
+      }))
+      .pipe(shareReplay({ bufferSize: 1, refCount: true }));
+
+      
     this.offset$ = combineLatest([
       this.startTouch$,
       this.lastTouch$,
@@ -26,23 +50,26 @@ export class BsSwipeContainerDirective implements AfterViewInit {
       this.isViewInited$,
       this.orientation$,
       this.observeSize.size$,
+      this.maxSlideHeight$,
     ])
-      .pipe(map(([startTouch, lastTouch, imageIndex, isViewInited, orientation, containerSize]) => {
+      .pipe(map(([startTouch, lastTouch, imageIndex, isViewInited, orientation, containerSize, maxHeight]) => {
         if (!isViewInited) {
-          return (-imageIndex * 100);
+          return orientation === 'horizontal' ? (-imageIndex * 100) : (-imageIndex * maxHeight);
         } else if (!!startTouch && !!lastTouch) {
           const containerLength = orientation === 'horizontal'
             ? (containerSize?.width ?? this.containerElement.nativeElement.clientWidth)
             : (containerSize?.height ?? this.containerElement.nativeElement.clientHeight);
-          if (containerLength === 0) {
-            return (-imageIndex * 100);
-          }
           const delta = orientation === 'horizontal'
             ? (lastTouch.position.x - startTouch.position.x)
             : (lastTouch.position.y - startTouch.position.y);
-          return (-imageIndex * 100 + (delta / containerLength) * 100);
+          
+          if (orientation === 'horizontal') {
+            return (containerLength === 0) ? (-imageIndex * 100) : (-imageIndex * 100 + (delta / containerLength) * 100);
+          } else {
+            return (-imageIndex * maxHeight + delta);
+          }
         } else {
-          return (-imageIndex * 100);
+          return orientation === 'horizontal' ? (-imageIndex * 100) : (-imageIndex * maxHeight);
         }
       }));
 
@@ -83,27 +110,6 @@ export class BsSwipeContainerDirective implements AfterViewInit {
     this.offsetSecondary$ = combineLatest([this.offset$, this.padLeft$, this.padRight$])
       .pipe(map(([offset, padLeft, padRight]) => -(offset - padLeft * 100) - (padRight - 1) * 100));
 
-    this.actualSwipes$ = this.swipes$
-      .pipe(map(swipes => {
-        if (swipes) {
-          return swipes.filter(swipe => !swipe.offside());
-        } else {
-          return [];
-        }
-      }));
-
-    this.slideSizes$ = this.actualSwipes$
-      .pipe(delay(400), filter(swipes => !!swipes))
-      .pipe(mergeMap(swipes => combineLatest(swipes.map(swipe => swipe.observeSize.size$))))
-      .pipe(shareReplay({ bufferSize: 1, refCount: true }));
-
-    this.maxSlideHeight$ = this.slideSizes$
-      .pipe(map(slideSizes => {
-        const heights = slideSizes.map(s => s?.height ?? 1);
-        return heights.length ? Math.max(...heights) : 1;
-      }))
-      .pipe(shareReplay({ bufferSize: 1, refCount: true }));
-
     // Apply offsets with correct units. Horizontal uses %, vertical uses px based on maxSlideHeight$.
     combineLatest([this.offsetPrimary$, this.orientation$, this.maxSlideHeight$])
       .pipe(takeUntilDestroyed())
@@ -114,9 +120,7 @@ export class BsSwipeContainerDirective implements AfterViewInit {
           this.offsetTop = null;
           this.offsetTopUnit = null;
         } else {
-          // Convert percent-based offset to pixels using max slide height
-          const px = (offsetPrimary / 100) * (maxHeight || 0);
-          this.offsetTop = px;
+          this.offsetTop = offsetPrimary;
           this.offsetTopUnit = 'px';
           this.offsetLeft = null;
           this.offsetLeftUnit = null;
@@ -132,9 +136,8 @@ export class BsSwipeContainerDirective implements AfterViewInit {
           this.offsetBottom = null;
           this.offsetBottomUnit = null;
         } else {
-          // Convert percent-based offset to pixels using max slide height
-          const px = (offsetSecondary / 100) * (maxHeight || 0);
-          this.offsetBottom = px;
+          // For vertical, we don't need margin-bottom for positioning
+          this.offsetBottom = null;
           this.offsetBottomUnit = 'px';
           this.offsetRight = null;
           this.offsetRightUnit = null;
