@@ -82,30 +82,6 @@ export class BsSwipeContainerDirective implements AfterViewInit {
       .pipe(map(([offset, padLeft]) => offset - padLeft * 100));
     this.offsetSecondary$ = combineLatest([this.offset$, this.padLeft$, this.padRight$])
       .pipe(map(([offset, padLeft, padRight]) => -(offset - padLeft * 100) - (padRight - 1) * 100));
-    combineLatest([this.offsetPrimary$, this.orientation$])
-      .pipe(takeUntilDestroyed())
-      .subscribe(([offsetPrimary, orientation]) => {
-        if (orientation === 'horizontal') {
-          this.offsetLeft = offsetPrimary;
-          this.offsetTop = null;
-        } else {
-          this.offsetTop = offsetPrimary;
-          this.offsetLeft = null;
-        }
-      });
-    combineLatest([this.offsetSecondary$, this.orientation$])
-      .pipe(takeUntilDestroyed())
-      .subscribe(([offsetSecondary, orientation]) => {
-        if (orientation === 'horizontal') {
-          this.offsetRight = offsetSecondary;
-          this.offsetBottom = null;
-        } else {
-          this.offsetBottom = offsetSecondary;
-          this.offsetRight = null;
-        }
-      });
-    this.imageIndex$.pipe(takeUntilDestroyed())
-      .subscribe(imageIndex => this.imageIndexChange.emit(imageIndex));
 
     this.actualSwipes$ = this.swipes$
       .pipe(map(swipes => {
@@ -128,6 +104,45 @@ export class BsSwipeContainerDirective implements AfterViewInit {
       }))
       .pipe(shareReplay({ bufferSize: 1, refCount: true }));
 
+    // Apply offsets with correct units. Horizontal uses %, vertical uses px based on maxSlideHeight$.
+    combineLatest([this.offsetPrimary$, this.orientation$, this.maxSlideHeight$])
+      .pipe(takeUntilDestroyed())
+      .subscribe(([offsetPrimary, orientation, maxHeight]) => {
+        if (orientation === 'horizontal') {
+          this.offsetLeft = offsetPrimary;
+          this.offsetLeftUnit = '%';
+          this.offsetTop = null;
+          this.offsetTopUnit = null;
+        } else {
+          // Convert percent-based offset to pixels using max slide height
+          const px = (offsetPrimary / 100) * (maxHeight || 0);
+          this.offsetTop = px;
+          this.offsetTopUnit = 'px';
+          this.offsetLeft = null;
+          this.offsetLeftUnit = null;
+        }
+      });
+
+    combineLatest([this.offsetSecondary$, this.orientation$, this.maxSlideHeight$])
+      .pipe(takeUntilDestroyed())
+      .subscribe(([offsetSecondary, orientation, maxHeight]) => {
+        if (orientation === 'horizontal') {
+          this.offsetRight = offsetSecondary;
+          this.offsetRightUnit = '%';
+          this.offsetBottom = null;
+          this.offsetBottomUnit = null;
+        } else {
+          // Convert percent-based offset to pixels using max slide height
+          const px = (offsetSecondary / 100) * (maxHeight || 0);
+          this.offsetBottom = px;
+          this.offsetBottomUnit = 'px';
+          this.offsetRight = null;
+          this.offsetRightUnit = null;
+        }
+      });
+    this.imageIndex$.pipe(takeUntilDestroyed())
+      .subscribe(imageIndex => this.imageIndexChange.emit(imageIndex));
+
     this.currentSlideHeight$ = combineLatest([this.slideSizes$, this.imageIndex$, this.orientation$])
       .pipe(map(([slideSizes, imageIndex, orientation]) => {
         const heights = slideSizes.map(s => s?.height ?? 1);
@@ -140,18 +155,36 @@ export class BsSwipeContainerDirective implements AfterViewInit {
 
     this.orientation$
       .pipe(distinctUntilChanged(), takeUntilDestroyed())
-      .subscribe(() => {
-        this.offsetLeft = null;
-        this.offsetRight = null;
-        this.offsetTop = null;
-        this.offsetBottom = null;
+      .subscribe((orientation) => {
+        // Reset values and allow re-computation with correct units
+        // this.offsetLeft = null;
+        // this.offsetRight = null;
+        // this.offsetTop = null;
+        // this.offsetBottom = null;
+        this.offsetLeftUnit = (orientation === 'horizontal') ? '%' : null;
+        this.offsetRightUnit = (orientation === 'horizontal') ? '%' : null;
+        this.offsetTopUnit = (orientation === 'vertical') ? 'px' : null;
+        this.offsetBottomUnit = (orientation === 'vertical') ? 'px' : null;
       });
   }
 
-  @HostBinding('style.margin-left.%') offsetLeft: number | null = null;
-  @HostBinding('style.margin-right.%') offsetRight: number | null = null;
-  @HostBinding('style.margin-top.%') offsetTop: number | null = null;
-  @HostBinding('style.margin-bottom.%') offsetBottom: number | null = null;
+  @HostBinding('style.margin-left.%') get offsetLeftPerc() { return this.offsetLeftUnit === '%' ? this.offsetLeft : null; }
+  @HostBinding('style.margin-right.%') get offsetRightPerc() { return this.offsetRightUnit === '%' ? this.offsetRight : null; }
+  @HostBinding('style.margin-top.%') get offsetTopPerc() { return this.offsetTopUnit === '%' ? this.offsetTop : null; }
+  @HostBinding('style.margin-bottom.%') get offsetBottomPerc() { return this.offsetBottomUnit === '%' ? this.offsetBottom : null; }
+  @HostBinding('style.margin-left.px') get offsetLeftPx() { return this.offsetLeftUnit === 'px' ? this.offsetLeft : null; }
+  @HostBinding('style.margin-right.px') get offsetRightPx() { return this.offsetRightUnit === 'px' ? this.offsetRight : null; }
+  @HostBinding('style.margin-top.px') get offsetTopPx() { return this.offsetTopUnit === 'px' ? this.offsetTop : null; }
+  @HostBinding('style.margin-bottom.px') get offsetBottomPx() { return this.offsetBottomUnit === 'px' ? this.offsetBottom : null; }
+  offsetLeftUnit: '%' | 'px' | null = '%';
+  offsetRightUnit: '%' | 'px' | null = '%';
+  offsetTopUnit: '%' | 'px' | null = null;
+  offsetBottomUnit: '%' | 'px' | null = null;
+  offsetLeft: number | null = null;
+  offsetRight: number | null = null;
+  offsetTop: number | null = null;
+  offsetBottom: number | null = null;
+
   @ContentChildren(forwardRef(() => BsSwipeDirective)) set swipes(value: QueryList<BsSwipeDirective>) {
     setTimeout(() => this.swipes$.next(value));
   }
@@ -217,46 +250,49 @@ export class BsSwipeContainerDirective implements AfterViewInit {
   }
 
   animateToIndex(oldIndex: number, newIndex: number, distance: number, totalSlides: number) {
-    const containerElement = this.containerElement.nativeElement;
+    combineLatest([this.maxSlideHeight$, this.padLeft$])
+      .pipe(take(1), takeUntilDestroyed(this.destroy))
+      .subscribe(([maxHeight, padLeft]) => {
+      const containerElement = this.containerElement.nativeElement;
 
-    if (this.orientation === 'horizontal') {
-      this.pendingAnimation = this.animationBuilder.build([
-        style({
-          'margin-left': `${-(oldIndex + 1) * 100 + (distance / containerElement.clientWidth) * 100}%`,
-          'margin-right': `${(oldIndex + 1) * 100 - (distance / containerElement.clientWidth) * 100}%`,
-        }),
-        animate('500ms ease', style({
-          'margin-left': `${-(newIndex + 1) * 100}%`,
-          'margin-right': `${(newIndex + 1) * 100}%`,
-        })),
-      ]).create(containerElement);
-    } else {
-      this.pendingAnimation = this.animationBuilder.build([
-        style({
-          'margin-top': `${-(oldIndex + 1) * 100 + (distance / containerElement.clientHeight) * 100}%`,
-          'margin-bottom': `${(oldIndex + 1) * 100 - (distance / containerElement.clientHeight) * 100}%`,
-        }),
-        animate('500ms ease', style({
-          'margin-top': `${-(newIndex + 1) * 100}%`,
-          'margin-bottom': `${(newIndex + 1) * 100}%`,
-        })),
-      ]).create(containerElement);
-    }
-    this.pendingAnimation.onDone(() => {
-      // Correct the image index
-      if (newIndex === -1) {
-        this.imageIndex$.next(totalSlides - 1);
-      } else if (newIndex === totalSlides) {
-        this.imageIndex$.next(0);
+      if (this.orientation === 'horizontal') {
+        this.pendingAnimation = this.animationBuilder.build([
+          style({
+            'margin-left': `${-(oldIndex + 1) * 100 + (distance / containerElement.clientWidth) * 100}%`,
+            'margin-right': `${(oldIndex + 1) * 100 - (distance / containerElement.clientWidth) * 100}%`,
+          }),
+          animate('500ms ease', style({
+            'margin-left': `${-(newIndex + 1) * 100}%`,
+            'margin-right': `${(newIndex + 1) * 100}%`,
+          })),
+        ]).create(containerElement);
       } else {
-        this.imageIndex$.next(newIndex);
+        this.pendingAnimation = this.animationBuilder.build([
+          style({
+            'margin-top': `${-(oldIndex + (padLeft ?? 0)) * maxHeight + distance}px`,
+          }),
+          animate('500ms ease', style({
+            'margin-top': `${-(newIndex + (padLeft ?? 0)) * maxHeight}px`,
+          })),
+        ]).create(containerElement);
       }
-      this.startTouch$.next(null);
-      this.lastTouch$.next(null);
-      this.pendingAnimation?.destroy();
-      this.pendingAnimation = undefined;
+
+      this.pendingAnimation.onDone(() => {
+        // Correct the image index
+        if (newIndex === -1) {
+          this.imageIndex$.next(totalSlides - 1);
+        } else if (newIndex === totalSlides) {
+          this.imageIndex$.next(0);
+        } else {
+          this.imageIndex$.next(newIndex);
+        }
+        this.startTouch$.next(null);
+        this.lastTouch$.next(null);
+        this.pendingAnimation?.destroy();
+        this.pendingAnimation = undefined;
+      });
+      this.pendingAnimation.play();
     });
-    this.pendingAnimation.play();
   }
 
   onSwipe(distance: number) {

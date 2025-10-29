@@ -71,6 +71,7 @@
                 flex: 1 1 auto;
                 white-space: normal;
                 display: flex;
+                position: relative;
                 flex-direction: column;
                 height: 100%;
                 width: 100%;
@@ -78,6 +79,7 @@
                 .carousel-item {
                     float: none;
                     height: 100%;
+                    min-height: 1px;
                     width: 100%;
                     margin-right: 0;
                     margin-bottom: 0;
