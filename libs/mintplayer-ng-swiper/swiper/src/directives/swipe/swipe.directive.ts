@@ -19,6 +19,13 @@ export class BsSwipeDirective {
         this.inlineBlock = (orientation === 'horizontal');
         this.block = (orientation === 'vertical');
       });
+
+    combineLatest([this.container.maxSlideHeight$, this.container.orientation$])
+      .pipe(takeUntilDestroyed())
+      .subscribe(([maxHeight, orientation]) => {
+        const targetHeight = (orientation === 'vertical') ? maxHeight : null;
+        this.slideHeight = (targetHeight && targetHeight > 0) ? targetHeight : null;
+      });
   }
 
   observeSize: BsObserveSizeDirective;
@@ -34,6 +41,7 @@ export class BsSwipeDirective {
 
   @HostBinding('class.d-inline-block') inlineBlock = true;
   @HostBinding('class.d-block') block = false;
+  @HostBinding('style.height.px') slideHeight: number | null = null;
 
   @HostListener('touchstart', ['$event'])
   onTouchStart(ev: TouchEvent) {

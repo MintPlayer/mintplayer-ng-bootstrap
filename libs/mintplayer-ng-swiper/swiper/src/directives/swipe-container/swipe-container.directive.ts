@@ -2,7 +2,7 @@ import { DOCUMENT } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { animate, AnimationBuilder, AnimationPlayer, style } from '@angular/animations';
 import { AfterViewInit, ContentChildren, DestroyRef, Directive, ElementRef, EventEmitter, forwardRef, HostBinding, Inject, Input, Output, QueryList } from '@angular/core';
-import { BehaviorSubject, combineLatest, debounceTime, delay, distinctUntilChanged, filter, map, mergeMap, Observable, take } from 'rxjs';
+import { BehaviorSubject, combineLatest, debounceTime, delay, distinctUntilChanged, filter, map, mergeMap, Observable, shareReplay, take } from 'rxjs';
 import { BsObserveSizeDirective, Size } from '@mintplayer/ng-swiper/observe-size';
 import { LastTouch } from '../../interfaces/last-touch';
 import { StartTouch } from '../../interfaces/start-touch';
@@ -118,13 +118,15 @@ export class BsSwipeContainerDirective implements AfterViewInit {
 
     this.slideSizes$ = this.actualSwipes$
       .pipe(delay(400), filter(swipes => !!swipes))
-      .pipe(mergeMap(swipes => combineLatest(swipes.map(swipe => swipe.observeSize.size$))));
+      .pipe(mergeMap(swipes => combineLatest(swipes.map(swipe => swipe.observeSize.size$))))
+      .pipe(shareReplay({ bufferSize: 1, refCount: true }));
 
     this.maxSlideHeight$ = this.slideSizes$
       .pipe(map(slideSizes => {
         const heights = slideSizes.map(s => s?.height ?? 1);
         return heights.length ? Math.max(...heights) : 1;
-      }));
+      }))
+      .pipe(shareReplay({ bufferSize: 1, refCount: true }));
 
     this.currentSlideHeight$ = combineLatest([this.slideSizes$, this.imageIndex$, this.orientation$])
       .pipe(map(([slideSizes, imageIndex, orientation]) => {
@@ -133,6 +135,7 @@ export class BsSwipeContainerDirective implements AfterViewInit {
         const currHeight: number = slideSizes[imageIndex]?.height ?? maxHeight;
         return (orientation === 'vertical') ? maxHeight : currHeight;
       }))
+      .pipe(shareReplay({ bufferSize: 1, refCount: true }))
       .pipe(debounceTime(10));
 
     this.orientation$
