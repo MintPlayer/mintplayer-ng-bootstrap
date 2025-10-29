@@ -17,10 +17,6 @@ export interface DockStackNode {
    */
   panes: string[];
   /**
-   * Optional caption overrides for each pane.
-   */
-  titles?: Record<string, string>;
-  /**
    * Optional pane name that should be active when the layout is rendered.
   */
   activePane?: string;
@@ -54,22 +50,22 @@ export interface DockFloatingStackLayout {
    * Pane that should surface in the floating window header.
    */
   activePane?: string;
-  /**
-   * @deprecated Legacy support for snapshots created before floating windows supported nested layouts.
-   */
-  panes?: string[];
-  /**
-   * @deprecated Legacy support for snapshots created before floating windows supported nested layouts.
-   */
-  titles?: Record<string, string>;
 }
 
 export interface DockLayout {
   root: DockLayoutNode | null;
   floating?: DockFloatingStackLayout[];
+  /**
+   * Optional caption overrides per pane name, scoped to the entire manager.
+   */
+  titles?: Record<string, string>;
 }
 
 export interface DockLayoutSnapshot {
   root: DockLayoutNode | null;
   floating: DockFloatingStackLayout[];
+  /**
+   * Optional caption overrides per pane name, scoped to the entire manager.
+   */
+  titles?: Record<string, string>;
 }

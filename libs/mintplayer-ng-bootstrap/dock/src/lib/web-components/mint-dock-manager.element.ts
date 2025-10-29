@@ -501,6 +501,7 @@ export class MintDockManagerElement extends HTMLElement {
   private dropJoystickTarget: HTMLElement | null = null;
   private rootLayout: DockLayoutNode | null = null;
   private floatingLayouts: DockFloatingStackLayout[] = [];
+  private titles: Record<string, string> = {};
   private pendingTabDragMetrics:
     | {
         pointerOffsetX: number;
@@ -696,6 +697,7 @@ export class MintDockManagerElement extends HTMLElement {
     return {
       root: this.cloneLayoutNode(this.rootLayout),
       floating: this.cloneFloatingArray(this.floatingLayouts),
+      titles: { ...this.titles },
     };
   }
 
@@ -703,6 +705,7 @@ export class MintDockManagerElement extends HTMLElement {
     const snapshot = this.ensureSnapshot(value);
     this.rootLayout = this.cloneLayoutNode(snapshot.root);
     this.floatingLayouts = this.cloneFloatingArray(snapshot.floating);
+    this.titles = snapshot.titles ? { ...snapshot.titles } : {};
     this.render();
   }
 
@@ -760,11 +763,11 @@ export class MintDockManagerElement extends HTMLElement {
     value: DockLayoutSnapshot | DockLayout | DockLayoutNode | null,
   ): DockLayoutSnapshot {
     if (!value) {
-      return { root: null, floating: [] };
+      return { root: null, floating: [], titles: {} };
     }
 
     if ((value as DockLayoutNode).kind) {
-      return { root: value as DockLayoutNode, floating: [] };
+      return { root: value as DockLayoutNode, floating: [], titles: {} };
     }
 
     const layout = value as DockLayout | DockLayoutSnapshot;
@@ -773,6 +776,7 @@ export class MintDockManagerElement extends HTMLElement {
       floating: Array.isArray(layout.floating)
         ? layout.floating.map((floating) => this.normalizeFloatingLayout(floating))
         : [],
+      titles: layout.titles ? { ...layout.titles } : {},
     };
   }
 
@@ -1200,12 +1204,7 @@ export class MintDockManagerElement extends HTMLElement {
       return fallback;
     }
 
-    const owningStack = this.findStackContainingPane(floating.root, preferred);
-    if (!owningStack) {
-      return preferred ?? fallback;
-    }
-
-    return owningStack.titles?.[preferred] ?? preferred ?? fallback;
+    return this.titles[preferred] ?? preferred ?? fallback;
   }
 
   private updateFloatingWindowTitle(index: number): void {
@@ -1327,7 +1326,7 @@ export class MintDockManagerElement extends HTMLElement {
       button.classList.add('dock-tab');
       button.dataset['pane'] = paneName;
       button.id = tabId;
-      button.textContent = node.titles?.[paneName] ?? paneName;
+      button.textContent = this.titles[paneName] ?? paneName;
       button.setAttribute('role', 'tab');
       button.setAttribute('aria-controls', panelId);
       if (paneName === activePane) {
@@ -1720,8 +1719,6 @@ export class MintDockManagerElement extends HTMLElement {
         
     // Defer the DOM modification to prevent the browser from cancelling the drag operation.
     setTimeout(() => {
-      const paneTitle = location.node.titles?.[pane];
-
       this.removePaneFromLocation(location, pane);
 
       const floatingStack: DockStackNode = {
@@ -1729,9 +1726,6 @@ export class MintDockManagerElement extends HTMLElement {
         panes: [pane],
         activePane: pane,
       };
-      if (paneTitle) {
-        floatingStack.titles = { [pane]: paneTitle };
-      }
 
       const floatingLayout: DockFloatingStackLayout = {
         bounds: {
@@ -1743,9 +1737,6 @@ export class MintDockManagerElement extends HTMLElement {
         root: floatingStack,
         activePane: pane,
       };
-      if (paneTitle) {
-        floatingLayout.titles = { [pane]: paneTitle };
-      }
 
       this.floatingLayouts.push(floatingLayout);
       const floatingIndex = this.floatingLayouts.length - 1;
@@ -2156,16 +2147,12 @@ export class MintDockManagerElement extends HTMLElement {
       if (!source) {
         return;
       }
-      const paneTitle = source.node.titles?.[pane];
       const stackEmptied = this.removePaneFromLocation(source, pane, true);
       const newRoot: DockStackNode = {
         kind: 'stack',
         panes: [pane],
         activePane: pane,
       };
-      if (paneTitle) {
-        newRoot.titles = { [pane]: paneTitle };
-      }
       this.rootLayout = newRoot;
       if (stackEmptied) {
         this.cleanupLocation(source);
@@ -2195,16 +2182,11 @@ export class MintDockManagerElement extends HTMLElement {
       return;
     }
 
-    const paneTitle = source.node.titles?.[pane];
     const stackEmptied = this.removePaneFromLocation(source, pane, true);
 
     if (zone === 'center') {
       this.addPaneToLocation(target, pane);
       this.setActivePaneForLocation(target, pane);
-      if (paneTitle) {
-        target.node.titles = target.node.titles ? { ...target.node.titles } : {};
-        target.node.titles[pane] = paneTitle;
-      }
       if (stackEmptied) {
         this.cleanupLocation(source);
       }
@@ -2221,10 +2203,6 @@ export class MintDockManagerElement extends HTMLElement {
       panes: [pane],
       activePane: pane,
     };
-
-    if (paneTitle) {
-      newStack.titles = { [pane]: paneTitle };
-    }
 
     if (target.context === 'docked') {
       this.rootLayout = this.dockNodeBeside(this.rootLayout, target.node, newStack, zone);
@@ -2279,18 +2257,13 @@ export class MintDockManagerElement extends HTMLElement {
     }
 
     if (zone === 'center') {
-      const { panes, titles } = this.collectFloatingPaneMetadata(source.root);
+      const panes = this.collectPaneNames(source.root);
       if (panes.length === 0) {
         return false;
       }
 
       panes.forEach((pane) => {
         this.addPaneToLocation(target, pane);
-        const title = titles[pane];
-        if (title) {
-          target.node.titles = target.node.titles ? { ...target.node.titles } : {};
-          target.node.titles[pane] = title;
-        }
       });
 
       const activePane =
@@ -2960,18 +2933,25 @@ export class MintDockManagerElement extends HTMLElement {
   private collectFloatingPaneMetadata(
     node: DockLayoutNode | null,
   ): { panes: string[]; titles: Record<string, string> } {
-    const panes: string[] = [];
+    // Deprecated method retained temporarily for signature compatibility.
+    // Use collectPaneNames instead.
+    const panes = this.collectPaneNames(node);
     const titles: Record<string, string> = {};
-    this.forEachStack(node, (stack) => {
-      stack.panes.forEach((pane) => {
-        panes.push(pane);
-        const title = stack.titles?.[pane];
-        if (title) {
-          titles[pane] = title;
-        }
-      });
+    panes.forEach((p) => {
+      const t = this.titles[p];
+      if (t) {
+        titles[p] = t;
+      }
     });
     return { panes, titles };
+  }
+
+  private collectPaneNames(node: DockLayoutNode | null): string[] {
+    const panes: string[] = [];
+    this.forEachStack(node, (stack) => {
+      stack.panes.forEach((pane) => panes.push(pane));
+    });
+    return panes;
   }
 
   private normalizeFloatingLayout(
@@ -2985,23 +2965,7 @@ export class MintDockManagerElement extends HTMLElement {
       height: Number.isFinite(bounds.height) ? Math.max(bounds.height, 120) : 200,
     };
 
-    let root = layout.root ? this.cloneLayoutNode(layout.root) : null;
-
-    if (!root) {
-      const panes = Array.isArray(layout.panes) ? [...layout.panes] : [];
-      if (panes.length > 0) {
-        const active =
-          layout.activePane && panes.includes(layout.activePane)
-            ? layout.activePane
-            : panes[0];
-        root = {
-          kind: 'stack',
-          panes,
-          titles: layout.titles ? { ...layout.titles } : undefined,
-          activePane: active,
-        };
-      }
-    }
+    const root = layout.root ? this.cloneLayoutNode(layout.root) : null;
 
     return {
       id: layout.id,
