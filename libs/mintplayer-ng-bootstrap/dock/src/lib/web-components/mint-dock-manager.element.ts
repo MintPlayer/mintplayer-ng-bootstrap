@@ -633,6 +633,9 @@ export class MintDockManagerElement extends HTMLElement {
     if (!this.hasAttribute('role')) {
       this.setAttribute('role', 'application');
     }
+    // Tag the docked surface with a root path so it can act as
+    // a drop target when the main layout is empty.
+    this.dockedEl.dataset['path'] = this.formatPath({ type: 'docked', segments: [] });
     this.render();
     this.rootEl.addEventListener('dragover', this.onDragOver);
     this.rootEl.addEventListener('drop', this.onDrop);
@@ -2148,6 +2151,33 @@ export class MintDockManagerElement extends HTMLElement {
     const source = this.resolveStackLocation(sourcePath);
     const target = this.resolveStackLocation(targetPath);
 
+    // Special case: allow dropping onto an empty main dock area (no root).
+    if (!target && targetPath.type === 'docked' && !this.rootLayout) {
+      if (!source) {
+        return;
+      }
+      const paneTitle = source.node.titles?.[pane];
+      const stackEmptied = this.removePaneFromLocation(source, pane, true);
+      const newRoot: DockStackNode = {
+        kind: 'stack',
+        panes: [pane],
+        activePane: pane,
+      };
+      if (paneTitle) {
+        newRoot.titles = { [pane]: paneTitle };
+      }
+      this.rootLayout = newRoot;
+      if (stackEmptied) {
+        this.cleanupLocation(source);
+      }
+      this.render();
+      this.dispatchLayoutChanged();
+      if (this.dragState) {
+        this.dragState.dropHandled = true;
+      }
+      return;
+    }
+
     if (!source || !target) {
       return;
     }
@@ -2231,6 +2261,15 @@ export class MintDockManagerElement extends HTMLElement {
     }
 
     const target = this.resolveStackLocation(targetPath);
+    // Allow dropping an entire floating stack onto an empty main dock area
+    // (no existing root).
+    if (!target && targetPath.type === 'docked' && !this.rootLayout) {
+      this.rootLayout = this.cloneLayoutNode(source.root);
+      this.removeFloatingAt(sourceIndex);
+      this.render();
+      this.dispatchLayoutChanged();
+      return true;
+    }
     if (!target) {
       return false;
     }
@@ -2584,6 +2623,19 @@ export class MintDockManagerElement extends HTMLElement {
         return this.dropJoystickTarget;
       }
     }
+    // If there are no docked stacks (all panes are floating), allow the
+    // docked surface itself to serve as a drop target for the main zone.
+    if (!this.rootLayout) {
+      const dockRect = this.dockedEl.getBoundingClientRect();
+      if (
+        clientX >= dockRect.left &&
+        clientX <= dockRect.right &&
+        clientY >= dockRect.top &&
+        clientY <= dockRect.bottom
+      ) {
+        return this.dockedEl;
+      }
+    }
 
     return null;
   }
@@ -2604,6 +2656,19 @@ export class MintDockManagerElement extends HTMLElement {
           target.classList.contains('dock-drop-joystick__spacer'))
       ) {
         return this.dropJoystickTarget;
+      }
+    }
+
+    // If the root dock area is empty, treat the docked surface as a valid
+    // target when it appears in the composed path.
+    if (!this.rootLayout) {
+      for (const target of path) {
+        if (
+          target instanceof HTMLElement &&
+          (target === this.dockedEl || target.classList.contains('dock-docked'))
+        ) {
+          return this.dockedEl;
+        }
       }
     }
     return null;
