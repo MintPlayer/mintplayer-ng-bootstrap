@@ -1994,21 +1994,11 @@ export class MintDockManagerElement extends HTMLElement {
   }
 
   private onDragMouseUp(): void {
-    if (!this.dragState) {
-      this.stopDragPointerTracking();
-      return;
-    }
-
-    this.scheduleDeferredDragEnd();
+    this.handleDragPointerUpCommon();
   }
 
   private onDragTouchEnd(): void {
-    if (!this.dragState) {
-      this.stopDragPointerTracking();
-      return;
-    }
-
-    this.scheduleDeferredDragEnd();
+    this.handleDragPointerUpCommon();
   }
 
   private clearPendingDragEndTimeout(): void {
@@ -2402,16 +2392,9 @@ export class MintDockManagerElement extends HTMLElement {
 
     if (typeof (event as DragEvent).composedPath === 'function') {
       const path = (event as DragEvent).composedPath();
-      for (const target of path) {
-        if (
-          target instanceof HTMLElement &&
-          target.classList.contains('dock-drop-joystick__button')
-        ) {
-          const zone = target.dataset?.['zone'];
-          if (this.isDropZone(zone)) {
-            return zone;
-          }
-        }
+      const zone = this.findDropZoneInTargets(path);
+      if (zone) {
+        return zone;
       }
     }
 
@@ -2423,6 +2406,29 @@ export class MintDockManagerElement extends HTMLElement {
       }
     }
 
+    return null;
+  }
+
+  private handleDragPointerUpCommon(): void {
+    if (!this.dragState) {
+      this.stopDragPointerTracking();
+      return;
+    }
+    this.scheduleDeferredDragEnd();
+  }
+
+  private findDropZoneInTargets(targets: Iterable<EventTarget>): DropZone | null {
+    for (const target of targets) {
+      if (
+        target instanceof HTMLElement &&
+        target.classList.contains('dock-drop-joystick__button')
+      ) {
+        const zone = target.dataset?.['zone'];
+        if (this.isDropZone(zone)) {
+          return zone;
+        }
+      }
+    }
     return null;
   }
 
@@ -2622,21 +2628,9 @@ export class MintDockManagerElement extends HTMLElement {
     }
 
     const elements = shadow.elementsFromPoint(clientX, clientY);
-    for (const element of elements) {
-      if (!(element instanceof HTMLElement)) {
-        continue;
-      }
-      if (element.classList.contains('dock-stack')) {
-        return element;
-      }
-      if (
-        this.dropJoystickTarget &&
-        (element.classList.contains('dock-drop-joystick') ||
-          element.classList.contains('dock-drop-joystick__button') ||
-          element.classList.contains('dock-drop-joystick__spacer'))
-      ) {
-        return this.dropJoystickTarget;
-      }
+    const stack = this.findStackInTargets(elements);
+    if (stack) {
+      return stack;
     }
     // If there are no docked stacks (all panes are floating), allow the
     // docked surface itself to serve as a drop target for the main zone.
@@ -2657,21 +2651,9 @@ export class MintDockManagerElement extends HTMLElement {
 
   private findStackElement(event: DragEvent): HTMLElement | null {
     const path = event.composedPath();
-    for (const target of path) {
-      if (!(target instanceof HTMLElement)) {
-        continue;
-      }
-      if (target.classList.contains('dock-stack')) {
-        return target;
-      }
-      if (
-        this.dropJoystickTarget &&
-        (target.classList.contains('dock-drop-joystick') ||
-          target.classList.contains('dock-drop-joystick__button') ||
-          target.classList.contains('dock-drop-joystick__spacer'))
-      ) {
-        return this.dropJoystickTarget;
-      }
+    const stack = this.findStackInTargets(path);
+    if (stack) {
+      return stack;
     }
 
     // If the root dock area is empty, treat the docked surface as a valid
@@ -2684,6 +2666,26 @@ export class MintDockManagerElement extends HTMLElement {
         ) {
           return this.dockedEl;
         }
+      }
+    }
+    return null;
+  }
+
+  private findStackInTargets(targets: Iterable<EventTarget>): HTMLElement | null {
+    for (const element of targets) {
+      if (!(element instanceof HTMLElement)) {
+        continue;
+      }
+      if (element.classList.contains('dock-stack')) {
+        return element;
+      }
+      if (
+        this.dropJoystickTarget &&
+        (element.classList.contains('dock-drop-joystick') ||
+          element.classList.contains('dock-drop-joystick__button') ||
+          element.classList.contains('dock-drop-joystick__spacer'))
+      ) {
+        return this.dropJoystickTarget;
       }
     }
     return null;
