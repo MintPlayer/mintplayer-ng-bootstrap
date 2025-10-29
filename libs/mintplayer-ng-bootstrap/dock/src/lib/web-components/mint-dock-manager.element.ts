@@ -640,6 +640,26 @@ export class MintDockManagerElement extends HTMLElement {
     this.dropJoystick.addEventListener('dragover', this.onDragOver);
     this.dropJoystick.addEventListener('drop', this.onDrop);
     this.dropJoystick.addEventListener('dragleave', this.onDragLeave);
+    // Strengthen zone tracking by reacting to dragenter/dragover directly on the buttons.
+    // This avoids relying solely on hit-testing each frame which can be jittery during HTML5 drag.
+    this.dropJoystickButtons.forEach((btn) => {
+      btn.addEventListener('dragenter', (e) => {
+        if (!this.dragState) return;
+        const z = btn.dataset['zone'];
+        if (this.isDropZone(z)) {
+          this.updateDropJoystickActiveZone(z);
+          e.preventDefault();
+        }
+      });
+      btn.addEventListener('dragover', (e) => {
+        if (!this.dragState) return;
+        const z = btn.dataset['zone'];
+        if (this.isDropZone(z)) {
+          this.updateDropJoystickActiveZone(z);
+          e.preventDefault();
+        }
+      });
+    });
     const win = this.windowRef;
     win?.addEventListener('dragover', this.onGlobalDragOver);
     win?.addEventListener('drag', this.onDrag);
@@ -1760,19 +1780,40 @@ export class MintDockManagerElement extends HTMLElement {
       return;
     }
     event.preventDefault();
+    // Keep internal pointer tracking up-to-date.
     this.updateDraggedFloatingPosition(event);
     if (event.dataTransfer) {
       event.dataTransfer.dropEffect = 'move';
     }
 
-    const stack = this.findStackElement(event);
+    // Some browsers intermittently report (0,0) for dragover coordinates.
+    // Mirror the robust logic used in onDrop: prefer actual event coordinates
+    // when valid, otherwise fall back to the last tracked pointer position.
+    const pointFromEvent =
+      Number.isFinite(event.clientX) && Number.isFinite(event.clientY)
+        ? { clientX: event.clientX, clientY: event.clientY }
+        : null;
+
+    const point =
+      pointFromEvent ??
+      (this.lastDragPointerPosition
+        ? { clientX: this.lastDragPointerPosition.x, clientY: this.lastDragPointerPosition.y }
+        : null);
+
+    const stack =
+      this.findStackElement(event) ??
+      (point ? this.findStackAtPoint(point.clientX, point.clientY) : null);
     if (!stack) {
-      this.hideDropIndicator();
+      if (this.dropJoystick.dataset['visible'] !== 'true') {
+        this.hideDropIndicator();
+      }
       return;
     }
 
     const path = this.parsePath(stack.dataset['path']);
-    const zone = this.computeDropZone(stack, event, this.extractDropZoneFromEvent(event));
+    const eventZoneHint = this.extractDropZoneFromEvent(event);
+    const pointZoneHint = point ? this.findDropZoneByPoint(point.clientX, point.clientY) : null;
+    const zone = this.computeDropZone(stack, point ?? event, pointZoneHint ?? eventZoneHint);
     this.showDropIndicator(stack, zone);
   }
 
@@ -1868,13 +1909,19 @@ export class MintDockManagerElement extends HTMLElement {
 
     const stack = this.findStackAtPoint(clientX, clientY);
     if (!stack) {
-      this.hideDropIndicator();
+      // While actively dragging, avoid hiding the indicator if it is visible.
+      // Transient misses from hit-testing are common near the joystick.
+      if (this.dropJoystick.dataset['visible'] !== 'true') {
+        this.hideDropIndicator();
+      }
       return;
     }
 
     const path = this.parsePath(stack.dataset['path']);
     if (!path) {
-      this.hideDropIndicator();
+      if (this.dropJoystick.dataset['visible'] !== 'true') {
+        this.hideDropIndicator();
+      }
       return;
     }
 
@@ -2041,6 +2088,24 @@ export class MintDockManagerElement extends HTMLElement {
 
   private onDragLeave(event: DragEvent): void {
     const related = event.relatedTarget as Node | null;
+
+    // During active drags, browsers can emit spurious dragleave with null
+    // relatedTarget while the pointer is still over the joystick/buttons.
+    // Be conservative: if we can resolve a stack/joystick at the last known
+    // pointer position, don’t hide (prevents flicker of active state).
+    if (this.dragState) {
+      const pos =
+        (Number.isFinite((event as DragEvent).clientX) && Number.isFinite((event as DragEvent).clientY))
+          ? { x: (event as DragEvent).clientX, y: (event as DragEvent).clientY }
+          : this.lastDragPointerPosition;
+      if (pos) {
+        const stackAtPoint = this.findStackAtPoint(pos.x, pos.y);
+        if (stackAtPoint) {
+          return; // still inside our drop area; ignore this dragleave
+        }
+      }
+    }
+
     if (!related) {
       this.hideDropIndicator();
       return;
@@ -2294,6 +2359,14 @@ export class MintDockManagerElement extends HTMLElement {
     }
 
     if (this.dropJoystickTarget === stack) {
+      // Be sticky while hovering the joystick: if we recently had a zone
+      // selected, prefer keeping it instead of briefly clearing to null
+      // when the browser reports transient coordinates/targets during drag.
+      const sticky = this.dropJoystick.dataset['zone'];
+      if (this.isDropZone(sticky)) {
+        this.updateDropJoystickActiveZone(sticky);
+        return sticky;
+      }
       this.updateDropJoystickActiveZone(null);
     }
 
@@ -2359,16 +2432,23 @@ export class MintDockManagerElement extends HTMLElement {
   }
 
   private updateDropJoystickActiveZone(zone: DropZone | null): void {
+    // If no zone is computed but the joystick is visible, keep the last
+    // known active zone to avoid visual jitter while dragging across
+    // small gaps where hit‑testing momentarily fails.
+    const visible = this.dropJoystick.dataset['visible'] === 'true';
+    const sticky = visible ? (this.dropJoystick.dataset['zone'] as DropZone | undefined) : undefined;
+    const effectiveZone: DropZone | null = zone ?? (sticky && this.isDropZone(sticky) ? sticky : null);
+
     this.dropJoystickButtons.forEach((button) => {
-      const isActive = zone !== null && button.dataset['zone'] === zone;
+      const isActive = effectiveZone !== null && button.dataset['zone'] === effectiveZone;
       if (isActive) {
         button.dataset['active'] = 'true';
       } else {
         delete button.dataset['active'];
       }
     });
-    if (zone) {
-      this.dropJoystick.dataset['zone'] = zone;
+    if (effectiveZone) {
+      this.dropJoystick.dataset['zone'] = effectiveZone;
     } else {
       delete this.dropJoystick.dataset['zone'];
     }
