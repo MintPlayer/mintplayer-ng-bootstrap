@@ -1045,6 +1045,13 @@ export class MintDockManagerElement extends HTMLElement {
       return;
     }
 
+    // Reset sticky zone when moving to another stack while dragging the
+    // floating window so the side doesn't carry over.
+    if (this.dropJoystickTarget && this.dropJoystickTarget !== stack) {
+      delete this.dropJoystick.dataset['zone'];
+      this.updateDropJoystickActiveZone(null);
+    }
+
     const zone = this.computeDropZone(stack, event, this.extractDropZoneFromEvent(event));
 
     if (zone) {
@@ -1811,6 +1818,13 @@ export class MintDockManagerElement extends HTMLElement {
     }
 
     const path = this.parsePath(stack.dataset['path']);
+    // If the hovered stack changed, clear any sticky zone from the previous
+    // target before computing the new zone.
+    if (this.dropJoystickTarget && this.dropJoystickTarget !== stack) {
+      delete this.dropJoystick.dataset['zone'];
+      this.updateDropJoystickActiveZone(null);
+    }
+
     const eventZoneHint = this.extractDropZoneFromEvent(event);
     const pointZoneHint = point ? this.findDropZoneByPoint(point.clientX, point.clientY) : null;
     const zone = this.computeDropZone(stack, point ?? event, pointZoneHint ?? eventZoneHint);
@@ -1923,6 +1937,13 @@ export class MintDockManagerElement extends HTMLElement {
         this.hideDropIndicator();
       }
       return;
+    }
+
+    // If we moved to a different target stack, reset any sticky zone so
+    // the new drop area doesn't inherit the previous side selection.
+    if (this.dropJoystickTarget && this.dropJoystickTarget !== stack) {
+      delete this.dropJoystick.dataset['zone'];
+      this.updateDropJoystickActiveZone(null);
     }
 
     const zoneHint = this.findDropZoneByPoint(clientX, clientY);
@@ -2522,7 +2543,12 @@ export class MintDockManagerElement extends HTMLElement {
     joystick.dataset['visible'] = 'true';
     this.dropJoystick.style.display = 'grid';
     joystick.dataset['path'] = stack.dataset['path'] ?? '';
+    const changedTarget = this.dropJoystickTarget && this.dropJoystickTarget !== stack;
     this.dropJoystickTarget = stack;
+    if (changedTarget) {
+      // New target stack: forget any previously sticky zone.
+      delete this.dropJoystick.dataset['zone'];
+    }
     this.updateDropJoystickActiveZone(zone);
   }
 
