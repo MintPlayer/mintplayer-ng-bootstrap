@@ -2476,6 +2476,10 @@ export class MintDockManagerElement extends HTMLElement {
     }
 
     for (const button of this.dropJoystickButtons) {
+      // Skip hidden/inactive buttons (used in center-only mode)
+      if ((button.dataset['hidden'] === 'true') || button.style.visibility === 'hidden' || button.style.display === 'none') {
+        continue;
+      }
       const rect = button.getBoundingClientRect();
       if (
         clientX >= rect.left &&
@@ -2595,16 +2599,36 @@ export class MintDockManagerElement extends HTMLElement {
     const isEmptyMainArea = !this.rootLayout && (stack === this.dockedEl || (targetPath && targetPath.type === 'docked' && targetPath.segments.length === 0));
     const spacers = Array.from(this.dropJoystick.querySelectorAll<HTMLElement>('.dock-drop-joystick__spacer'));
     if (isEmptyMainArea) {
+      // Keep spacers visible so the joystick keeps its circular footprint.
+      spacers.forEach((s) => {
+        s.style.display = '';
+      });
       this.dropJoystickButtons.forEach((btn) => {
         const isCenter = btn.dataset['zone'] === 'center';
-        btn.style.display = isCenter ? 'inline-flex' : 'none';
+        if (isCenter) {
+          btn.style.visibility = '';
+          btn.style.pointerEvents = '';
+          delete btn.dataset['hidden'];
+          btn.style.display = '';
+        } else {
+          // Hide visually but keep layout space; also prevent interaction.
+          btn.style.visibility = 'hidden';
+          btn.style.pointerEvents = 'none';
+          btn.dataset['hidden'] = 'true';
+          btn.style.display = '';
+        }
       });
-      spacers.forEach((s) => (s.style.display = 'none'));
-      this.dropJoystick.style.gridTemplateColumns = 'min-content';
-      this.dropJoystick.style.gridTemplateRows = 'min-content';
+      // Keep default 3x3 grid so the circular background size stays the same.
+      this.dropJoystick.style.gridTemplateColumns = '';
+      this.dropJoystick.style.gridTemplateRows = '';
       // Do not set an active zone automatically; users must hover the button.
     } else {
-      this.dropJoystickButtons.forEach((btn) => (btn.style.display = ''));
+      this.dropJoystickButtons.forEach((btn) => {
+        btn.style.visibility = '';
+        btn.style.pointerEvents = '';
+        delete btn.dataset['hidden'];
+        btn.style.display = '';
+      });
       spacers.forEach((s) => (s.style.display = ''));
       this.dropJoystick.style.gridTemplateColumns = '';
       this.dropJoystick.style.gridTemplateRows = '';
@@ -2620,7 +2644,12 @@ export class MintDockManagerElement extends HTMLElement {
     this.dropJoystickTarget = null;
     this.updateDropJoystickActiveZone(null);
     // Restore joystick structure to default.
-    this.dropJoystickButtons.forEach((btn) => (btn.style.display = ''));
+    this.dropJoystickButtons.forEach((btn) => {
+      btn.style.display = '';
+      btn.style.visibility = '';
+      btn.style.pointerEvents = '';
+      delete btn.dataset['hidden'];
+    });
     Array.from(this.dropJoystick.querySelectorAll<HTMLElement>('.dock-drop-joystick__spacer')).forEach((s) => (s.style.display = ''));
     this.dropJoystick.style.gridTemplateColumns = '';
     this.dropJoystick.style.gridTemplateRows = '';
