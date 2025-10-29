@@ -105,10 +105,17 @@ export class BsSwipeContainerDirective implements AfterViewInit {
       return count;
     }));
 
-    this.offsetPrimary$ = combineLatest([this.offset$, this.padLeft$])
-      .pipe(map(([offset, padLeft]) => offset - padLeft * 100));
-    this.offsetSecondary$ = combineLatest([this.offset$, this.padLeft$, this.padRight$])
-      .pipe(map(([offset, padLeft, padRight]) => -(offset - padLeft * 100) - (padRight - 1) * 100));
+    this.offsetPrimary$ = combineLatest([this.offset$, this.padLeft$, this.orientation$, this.maxSlideHeight$])
+      .pipe(map(([offset, padLeft, orientation, maxHeight]) => {
+        return orientation === 'horizontal'
+          ? (offset - padLeft * 100)
+          : (offset - padLeft * maxHeight);
+      }));
+    this.offsetSecondary$ = combineLatest([this.offset$, this.padLeft$, this.padRight$, this.orientation$, this.maxSlideHeight$])
+      .pipe(map(([offset, padLeft, padRight, orientation, maxHeight]) => {
+        const unit = (orientation === 'horizontal') ? 100 : maxHeight;
+        return -(offset - padLeft * unit) - (padRight - 1) * unit;
+      }));
 
     // Apply offsets with correct units. Horizontal uses %, vertical uses px based on maxSlideHeight$.
     combineLatest([this.offsetPrimary$, this.orientation$, this.maxSlideHeight$])
