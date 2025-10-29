@@ -533,6 +533,11 @@ export class MintDockManagerElement extends HTMLElement {
     pointerOffsetX: number;
     pointerOffsetY: number;
     dropHandled: boolean;
+    // For tab reordering before converting to floating
+    sourceStackEl?: HTMLElement | null;
+    sourceHeaderBounds?: { left: number; top: number; right: number; bottom: number } | null;
+    startClientX?: number;
+    startClientY?: number;
   } | null = null;
   private floatingDragState:
     | {
@@ -1561,6 +1566,13 @@ export class MintDockManagerElement extends HTMLElement {
       pointerOffsetY,
     } = this.preparePaneDragSource(path, pane, stackEl, event);
 
+    // Capture header bounds for detecting when to convert to floating
+    const headerEl = stackEl?.querySelector<HTMLElement>('.dock-stack__header') ?? null;
+    const headerRect = headerEl ? headerEl.getBoundingClientRect() : null;
+    const headerBounds = headerRect
+      ? { left: headerRect.left, top: headerRect.top, right: headerRect.right, bottom: headerRect.bottom }
+      : null;
+
     this.dragState = {
       pane,
       sourcePath: this.clonePath(sourcePath),
@@ -1568,7 +1580,18 @@ export class MintDockManagerElement extends HTMLElement {
       pointerOffsetX,
       pointerOffsetY,
       dropHandled: false,
+      sourceStackEl: stackEl,
+      sourceHeaderBounds: headerBounds,
+      startClientX: Number.isFinite(event.clientX) ? event.clientX : undefined,
+      startClientY: Number.isFinite(event.clientY) ? event.clientY : undefined,
     };
+    // Prefer the pointer offset relative to the dragged tab to avoid jumps on conversion
+    if (Number.isFinite((event as any).offsetX)) {
+      this.dragState.pointerOffsetX = (event as any).offsetX as number;
+    }
+    if (Number.isFinite((event as any).offsetY)) {
+      this.dragState.pointerOffsetY = (event as any).offsetY as number;
+    }
     this.updateDraggedFloatingPosition(event);
     this.startDragPointerTracking();
     event.dataTransfer.effectAllowed = 'move';
@@ -1583,7 +1606,6 @@ export class MintDockManagerElement extends HTMLElement {
   ): { path: DockPath; floatingIndex: number | null; pointerOffsetX: number; pointerOffsetY: number } {
     const location = this.resolveStackLocation(path);
     if (!location || !location.node.panes.includes(pane)) {
-      this.clearPendingTabDragMetrics();
       return {
         path,
         floatingIndex: null,
@@ -1591,9 +1613,7 @@ export class MintDockManagerElement extends HTMLElement {
         pointerOffsetY: 0,
       };
     }
-
     const metrics = this.pendingTabDragMetrics;
-    this.pendingTabDragMetrics = null;
 
     const domHasSibling =
       !!stackEl &&
@@ -1653,108 +1673,22 @@ export class MintDockManagerElement extends HTMLElement {
         pointerOffsetY: 0,
       };
     }
-
-    const hostRect = this.getBoundingClientRect();
-    const stackRect = stackEl?.getBoundingClientRect() ?? null;
-    const fallbackWidth = 320;
-    const fallbackHeight = 240;
-    const width =
-      metrics && Number.isFinite(metrics.width) && metrics.width > 0
-        ? metrics.width
-        : stackRect && Number.isFinite(stackRect.width)
-        ? stackRect.width
-        : fallbackWidth;
-    const height =
-      metrics && Number.isFinite(metrics.height) && metrics.height > 0
-        ? metrics.height
-        : stackRect && Number.isFinite(stackRect.height)
-        ? stackRect.height
-        : fallbackHeight;
-
-    const pointerOffsetX =
+    // Do not convert to floating yet; allow in-header reordering first.
+    // We return placeholder values and will convert once the pointer leaves the tab header.
+    const pointerOffsetXVal =
       metrics && Number.isFinite(metrics.pointerOffsetX)
         ? metrics.pointerOffsetX
-        : stackRect && Number.isFinite(event.clientX)
-        ? event.clientX - stackRect.left
-        : width / 2;
-    const pointerOffsetY =
+        : 0;
+    const pointerOffsetYVal =
       metrics && Number.isFinite(metrics.pointerOffsetY)
         ? metrics.pointerOffsetY
-        : stackRect && Number.isFinite(event.clientY)
-        ? event.clientY - stackRect.top
-        : height / 2;
-
-    const pointerLeft =
-      metrics && Number.isFinite(metrics.left)
-        ? metrics.left
-        : Number.isFinite(event.clientX)
-        ? event.clientX - hostRect.left - pointerOffsetX
-        : null;
-    const pointerTop =
-      metrics && Number.isFinite(metrics.top)
-        ? metrics.top
-        : Number.isFinite(event.clientY)
-        ? event.clientY - hostRect.top - pointerOffsetY
-        : null;
-
-    const left =
-      pointerLeft !== null
-        ? pointerLeft
-        : stackRect
-        ? stackRect.left - hostRect.left
-        : (hostRect.width - width) / 2;
-    const top =
-      pointerTop !== null
-        ? pointerTop
-        : stackRect
-        ? stackRect.top - hostRect.top
-        : (hostRect.height - height) / 2;
-
-        
-    // Defer the DOM modification to prevent the browser from cancelling the drag operation.
-    setTimeout(() => {
-      this.removePaneFromLocation(location, pane);
-
-      const floatingStack: DockStackNode = {
-        kind: 'stack',
-        panes: [pane],
-        activePane: pane,
-      };
-
-      const floatingLayout: DockFloatingStackLayout = {
-        bounds: {
-          left,
-          top,
-          width,
-          height,
-        },
-        root: floatingStack,
-        activePane: pane,
-      };
-
-      this.floatingLayouts.push(floatingLayout);
-      const floatingIndex = this.floatingLayouts.length - 1;
-
-      // Defer rendering to avoid interrupting the drag-and-drop initialization in the browser.
-      // Synchronously re-rendering can cause the browser to lose track of the drag operation.
-      this.render();
-      const wrapper = this.getFloatingWrapper(floatingIndex);
-      if (wrapper) {
-        this.promoteFloatingPane(floatingIndex, wrapper);
-      }
-      this.dispatchLayoutChanged();
-
-      if (this.dragState) {
-        this.dragState.sourcePath = { type: 'floating', index: floatingIndex, segments: [] };
-        this.dragState.floatingIndex = floatingIndex;
-      }
-    }, 0);
+        : 0;
 
     return {
-      path: { type: 'floating', index: -1, segments: [] }, // Placeholder path
+      path,
       floatingIndex: -1,
-      pointerOffsetX,
-      pointerOffsetY,
+      pointerOffsetX: pointerOffsetXVal,
+      pointerOffsetY: pointerOffsetYVal,
     };
   }
 
@@ -1878,6 +1812,23 @@ export class MintDockManagerElement extends HTMLElement {
       return;
     }
 
+    // If we are still dragging a tab inside its header, only convert to floating once we leave the header bounds.
+    if (this.dragState.floatingIndex !== null && this.dragState.floatingIndex < 0) {
+      const b = this.dragState.sourceHeaderBounds;
+      const sx = this.dragState.startClientX ?? clientX;
+      const sy = this.dragState.startClientY ?? clientY;
+      const dist = Math.hypot(clientX - sx, clientY - sy);
+      const threshold = 4; // pixels to move before converting
+      let insideHeader = false;
+      if (b) {
+        insideHeader = clientX >= b.left && clientX <= b.right && clientY >= b.top && clientY <= b.bottom;
+      }
+      if (!insideHeader && dist > threshold) {
+        // Convert to floating now using current pointer position
+        this.convertPendingTabDragToFloating(clientX, clientY);
+      }
+    }
+
     this.updatePaneDragDropTargetFromPoint(clientX, clientY);
 
     const { floatingIndex, pointerOffsetX, pointerOffsetY } = this.dragState;
@@ -1997,6 +1948,130 @@ export class MintDockManagerElement extends HTMLElement {
     this.handleDragPointerUpCommon();
   }
 
+  // Convert a currently in-header tab drag into a floating window
+  private convertPendingTabDragToFloating(clientX: number, clientY: number): void {
+    if (!this.dragState) {
+      return;
+    }
+    const state = this.dragState;
+    if (state.floatingIndex !== null && state.floatingIndex >= 0) {
+      return; // already floating
+    }
+    const location = this.resolveStackLocation(state.sourcePath);
+    if (!location) {
+      return;
+    }
+
+    const pane = state.pane;
+    const stackEl = state.sourceStackEl ?? null;
+    const hostRect = this.getBoundingClientRect();
+    const stackRect = stackEl?.getBoundingClientRect() ?? null;
+    const metrics = this.pendingTabDragMetrics;
+
+    const fallbackWidth = 320;
+    const fallbackHeight = 240;
+    const width =
+      metrics && Number.isFinite(metrics.width) && metrics.width > 0
+        ? metrics.width
+        : stackRect && Number.isFinite(stackRect.width)
+        ? stackRect.width
+        : fallbackWidth;
+    const height =
+      metrics && Number.isFinite(metrics.height) && metrics.height > 0
+        ? metrics.height
+        : stackRect && Number.isFinite(stackRect.height)
+        ? stackRect.height
+        : fallbackHeight;
+
+    const pointerOffsetX = Number.isFinite(this.dragState?.pointerOffsetX as number)
+      ? (this.dragState!.pointerOffsetX as number)
+      : metrics && Number.isFinite(metrics.pointerOffsetX)
+      ? (metrics.pointerOffsetX as number)
+      : width / 2;
+    const pointerOffsetY = Number.isFinite(this.dragState?.pointerOffsetY as number)
+      ? (this.dragState!.pointerOffsetY as number)
+      : metrics && Number.isFinite(metrics.pointerOffsetY)
+      ? (metrics.pointerOffsetY as number)
+      : height / 2;
+
+    const pointerLeft = Number.isFinite(clientX)
+      ? clientX - hostRect.left - pointerOffsetX
+      : 0;
+    const pointerTop = Number.isFinite(clientY)
+      ? clientY - hostRect.top - pointerOffsetY
+      : 0;
+
+    // Remove pane from its current stack and create a new floating entry
+    this.removePaneFromLocation(location, pane);
+    const floatingStack: DockStackNode = {
+      kind: 'stack',
+      panes: [pane],
+      activePane: pane,
+    };
+
+    const floatingLayout: DockFloatingStackLayout = {
+      bounds: {
+        left: pointerLeft,
+        top: pointerTop,
+        width,
+        height,
+      },
+      root: floatingStack,
+      activePane: pane,
+    };
+
+    this.floatingLayouts.push(floatingLayout);
+    const newIndex = this.floatingLayouts.length - 1;
+    this.render();
+    const wrapper = this.getFloatingWrapper(newIndex);
+    if (wrapper) {
+      this.promoteFloatingPane(newIndex, wrapper);
+    }
+    // Update drag state so subsequent moves reposition the floating window
+    state.sourcePath = { type: 'floating', index: newIndex, segments: [] };
+    state.floatingIndex = newIndex;
+    state.pointerOffsetX = pointerOffsetX;
+    state.pointerOffsetY = pointerOffsetY;
+    this.dispatchLayoutChanged();
+  }
+
+  // Compute the intended tab insert index within a header based on pointer X
+  private computeHeaderInsertIndex(header: HTMLElement, clientX: number): number {
+    const tabs = Array.from(header.querySelectorAll<HTMLElement>('.dock-tab'));
+    if (tabs.length === 0) {
+      return 0;
+    }
+    for (let i = 0; i < tabs.length; i += 1) {
+      const rect = tabs[i].getBoundingClientRect();
+      const mid = rect.left + rect.width / 2;
+      if (clientX < mid) {
+        return i;
+      }
+    }
+    return tabs.length; // insert at end
+  }
+
+  private reorderPaneInLocationAtIndex(location: ResolvedLocation, pane: string, targetIndex: number): void {
+    const panes = location.node.panes;
+    const currentIndex = panes.indexOf(pane);
+    if (currentIndex === -1) {
+      return;
+    }
+    const clampedTarget = Math.max(0, Math.min(targetIndex, panes.length - 1));
+    if (clampedTarget === currentIndex) {
+      return;
+    }
+    panes.splice(currentIndex, 1);
+    panes.splice(clampedTarget, 0, pane);
+    location.node.activePane = pane;
+    if (location.context === 'floating') {
+      const floating = this.floatingLayouts[location.index];
+      if (floating) {
+        floating.activePane = pane;
+      }
+    }
+  }
+
   private onDragTouchEnd(): void {
     this.handleDragPointerUpCommon();
   }
@@ -2066,6 +2141,33 @@ export class MintDockManagerElement extends HTMLElement {
     }
 
     const path = this.parsePath(stack.dataset['path']);
+
+    // Allow reordering within the same stack header without selecting a zone
+    if (
+      this.dragState &&
+      this.dragState.floatingIndex !== null &&
+      this.dragState.floatingIndex < 0 &&
+      path &&
+      this.pathsEqual(path, this.dragState.sourcePath)
+    ) {
+      const header = stack.querySelector<HTMLElement>('.dock-stack__header');
+      if (header) {
+        const x = (point ? point.clientX : event.clientX) as number;
+        if (Number.isFinite(x)) {
+          const location = this.resolveStackLocation(path);
+          if (location) {
+            const idx = this.computeHeaderInsertIndex(header, x);
+            this.reorderPaneInLocationAtIndex(location, this.dragState.pane, idx);
+            this.render();
+            this.dispatchLayoutChanged();
+            this.dragState.dropHandled = true;
+            this.endPaneDrag();
+            return;
+          }
+        }
+      }
+    }
+
     const eventZoneHint = this.extractDropZoneFromEvent(event);
     const pointZoneHint = point ? this.findDropZoneByPoint(point.clientX, point.clientY) : null;
     const zone = this.computeDropZone(stack, point ?? event, pointZoneHint ?? eventZoneHint);
