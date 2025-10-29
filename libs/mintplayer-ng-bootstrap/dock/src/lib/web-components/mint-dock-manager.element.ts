@@ -2400,6 +2400,8 @@ export class MintDockManagerElement extends HTMLElement {
     point: { clientX: number; clientY: number } | null,
     zoneHint?: DropZone | null,
   ): DropZone | null {
+    // Do not force a zone: even when the main area is empty we only
+    // activate a zone when the pointer is actually over a joystick button.
     const hintedZone = this.isDropZone(zoneHint) ? zoneHint : null;
     if (hintedZone) {
       this.updateDropJoystickActiveZone(hintedZone);
@@ -2588,6 +2590,25 @@ export class MintDockManagerElement extends HTMLElement {
       // New target stack: forget any previously sticky zone.
       delete this.dropJoystick.dataset['zone'];
     }
+
+    // If main dock area is empty, show only the center button and collapse the grid
+    const isEmptyMainArea = !this.rootLayout && (stack === this.dockedEl || (targetPath && targetPath.type === 'docked' && targetPath.segments.length === 0));
+    const spacers = Array.from(this.dropJoystick.querySelectorAll<HTMLElement>('.dock-drop-joystick__spacer'));
+    if (isEmptyMainArea) {
+      this.dropJoystickButtons.forEach((btn) => {
+        const isCenter = btn.dataset['zone'] === 'center';
+        btn.style.display = isCenter ? 'inline-flex' : 'none';
+      });
+      spacers.forEach((s) => (s.style.display = 'none'));
+      this.dropJoystick.style.gridTemplateColumns = 'min-content';
+      this.dropJoystick.style.gridTemplateRows = 'min-content';
+      // Do not set an active zone automatically; users must hover the button.
+    } else {
+      this.dropJoystickButtons.forEach((btn) => (btn.style.display = ''));
+      spacers.forEach((s) => (s.style.display = ''));
+      this.dropJoystick.style.gridTemplateColumns = '';
+      this.dropJoystick.style.gridTemplateRows = '';
+    }
     this.updateDropJoystickActiveZone(zone);
   }
 
@@ -2598,6 +2619,11 @@ export class MintDockManagerElement extends HTMLElement {
     delete this.dropJoystick.dataset['path'];
     this.dropJoystickTarget = null;
     this.updateDropJoystickActiveZone(null);
+    // Restore joystick structure to default.
+    this.dropJoystickButtons.forEach((btn) => (btn.style.display = ''));
+    Array.from(this.dropJoystick.querySelectorAll<HTMLElement>('.dock-drop-joystick__spacer')).forEach((s) => (s.style.display = ''));
+    this.dropJoystick.style.gridTemplateColumns = '';
+    this.dropJoystick.style.gridTemplateRows = '';
   }
 
   private findStackAtPoint(clientX: number, clientY: number): HTMLElement | null {
