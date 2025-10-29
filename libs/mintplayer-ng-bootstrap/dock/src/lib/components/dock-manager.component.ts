@@ -100,16 +100,17 @@ export class BsDockManagerComponent implements AfterViewInit {
     value: DockLayoutNode | DockLayout | null,
   ): DockLayoutSnapshot {
     if (!value) {
-      return { root: null, floating: [] };
+      return { root: null, floating: [], titles: {} };
     }
 
     if ('kind' in value) {
-      return { root: value, floating: [] };
+      return { root: value, floating: [], titles: {} };
     }
 
     return {
       root: value.root ?? null,
       floating: Array.isArray(value.floating) ? [...value.floating] : [],
+      titles: value.titles ? { ...value.titles } : {},
     };
   }
 

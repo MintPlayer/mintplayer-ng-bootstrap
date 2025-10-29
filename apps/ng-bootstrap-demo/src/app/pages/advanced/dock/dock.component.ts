@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, ViewChild } from '@angular/core';
 import { BsBadgeComponent } from '@mintplayer/ng-bootstrap/badge';
-import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import {
   BsDockManagerComponent,
   BsDockModule,
@@ -14,7 +13,7 @@ import { Color } from '@mintplayer/ng-bootstrap';
   templateUrl: './dock.component.html',
   styleUrls: ['./dock.component.scss'],
   standalone: true,
-  imports: [CommonModule, BsDockModule, BsBadgeComponent, BsButtonTypeDirective],
+  imports: [CommonModule, BsDockModule, BsBadgeComponent],
 })
 export class DockComponent {
   @ViewChild(BsDockManagerComponent) dockManager?: BsDockManagerComponent;
@@ -30,10 +29,6 @@ export class DockComponent {
         {
           kind: 'stack',
           panes: ['panel-1', 'panel-2'],
-          titles: {
-            'panel-1': 'Panel 1',
-            'panel-2': 'Panel 2',
-          },
           activePane: 'panel-1',
         },
         {
@@ -44,16 +39,10 @@ export class DockComponent {
             {
               kind: 'stack',
               panes: ['panel-3'],
-              titles: {
-                'panel-3': 'Panel 3',
-              },
             },
             {
               kind: 'stack',
               panes: ['panel-4'],
-              titles: {
-                'panel-4': 'Panel 4',
-              },
               activePane: 'panel-4',
             },
           ],
@@ -66,9 +55,6 @@ export class DockComponent {
         root: {
           kind: 'stack',
           panes: ['panel-5'],
-          titles: {
-            'panel-5': 'Panel 5',
-          },
           activePane: 'panel-5',
         },
         activePane: 'panel-5',
@@ -79,15 +65,20 @@ export class DockComponent {
         root: {
           kind: 'stack',
           panes: ['panel-floating'],
-          titles: {
-            'panel-floating': 'Floating Utilities',
-          },
           activePane: 'panel-floating',
         },
         activePane: 'panel-floating',
         bounds: { left: 520, top: 320, width: 300, height: 210 },
       },
     ],
+    titles: {
+      'panel-1': 'Panel 1',
+      'panel-2': 'Panel 2',
+      'panel-3': 'Panel 3',
+      'panel-4': 'Panel 4',
+      'panel-5': 'Panel 5',
+      'panel-floating': 'Floating Utilities',
+    },
   };
 
   liveLayout?: DockLayoutSnapshot;

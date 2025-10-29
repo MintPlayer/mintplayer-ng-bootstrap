@@ -501,6 +501,7 @@ export class MintDockManagerElement extends HTMLElement {
   private dropJoystickTarget: HTMLElement | null = null;
   private rootLayout: DockLayoutNode | null = null;
   private floatingLayouts: DockFloatingStackLayout[] = [];
+  private titles: Record<string, string> = {};
   private pendingTabDragMetrics:
     | {
         pointerOffsetX: number;
@@ -532,6 +533,11 @@ export class MintDockManagerElement extends HTMLElement {
     pointerOffsetX: number;
     pointerOffsetY: number;
     dropHandled: boolean;
+    // For tab reordering before converting to floating
+    sourceStackEl?: HTMLElement | null;
+    sourceHeaderBounds?: { left: number; top: number; right: number; bottom: number } | null;
+    startClientX?: number;
+    startClientY?: number;
   } | null = null;
   private floatingDragState:
     | {
@@ -633,6 +639,9 @@ export class MintDockManagerElement extends HTMLElement {
     if (!this.hasAttribute('role')) {
       this.setAttribute('role', 'application');
     }
+    // Tag the docked surface with a root path so it can act as
+    // a drop target when the main layout is empty.
+    this.dockedEl.dataset['path'] = this.formatPath({ type: 'docked', segments: [] });
     this.render();
     this.rootEl.addEventListener('dragover', this.onDragOver);
     this.rootEl.addEventListener('drop', this.onDrop);
@@ -640,6 +649,20 @@ export class MintDockManagerElement extends HTMLElement {
     this.dropJoystick.addEventListener('dragover', this.onDragOver);
     this.dropJoystick.addEventListener('drop', this.onDrop);
     this.dropJoystick.addEventListener('dragleave', this.onDragLeave);
+    // Strengthen zone tracking by reacting to dragenter/dragover directly on the buttons.
+    // This avoids relying solely on hit-testing each frame which can be jittery during HTML5 drag.
+    this.dropJoystickButtons.forEach((btn) => {
+      const handler = (e: DragEvent) => {
+        if (!this.dragState) return;
+        const z = btn.dataset['zone'];
+        if (this.isDropZone(z)) {
+          this.updateDropJoystickActiveZone(z);
+          e.preventDefault();
+        }
+      };
+      btn.addEventListener('dragenter', handler);
+      btn.addEventListener('dragover', handler);
+    });
     const win = this.windowRef;
     win?.addEventListener('dragover', this.onGlobalDragOver);
     win?.addEventListener('drag', this.onDrag);
@@ -673,6 +696,7 @@ export class MintDockManagerElement extends HTMLElement {
     return {
       root: this.cloneLayoutNode(this.rootLayout),
       floating: this.cloneFloatingArray(this.floatingLayouts),
+      titles: { ...this.titles },
     };
   }
 
@@ -680,6 +704,7 @@ export class MintDockManagerElement extends HTMLElement {
     const snapshot = this.ensureSnapshot(value);
     this.rootLayout = this.cloneLayoutNode(snapshot.root);
     this.floatingLayouts = this.cloneFloatingArray(snapshot.floating);
+    this.titles = snapshot.titles ? { ...snapshot.titles } : {};
     this.render();
   }
 
@@ -737,11 +762,11 @@ export class MintDockManagerElement extends HTMLElement {
     value: DockLayoutSnapshot | DockLayout | DockLayoutNode | null,
   ): DockLayoutSnapshot {
     if (!value) {
-      return { root: null, floating: [] };
+      return { root: null, floating: [], titles: {} };
     }
 
     if ((value as DockLayoutNode).kind) {
-      return { root: value as DockLayoutNode, floating: [] };
+      return { root: value as DockLayoutNode, floating: [], titles: {} };
     }
 
     const layout = value as DockLayout | DockLayoutSnapshot;
@@ -750,6 +775,7 @@ export class MintDockManagerElement extends HTMLElement {
       floating: Array.isArray(layout.floating)
         ? layout.floating.map((floating) => this.normalizeFloatingLayout(floating))
         : [],
+      titles: layout.titles ? { ...layout.titles } : {},
     };
   }
 
@@ -1025,6 +1051,13 @@ export class MintDockManagerElement extends HTMLElement {
       return;
     }
 
+    // Reset sticky zone when moving to another stack while dragging the
+    // floating window so the side doesn't carry over.
+    if (this.dropJoystickTarget && this.dropJoystickTarget !== stack) {
+      delete this.dropJoystick.dataset['zone'];
+      this.updateDropJoystickActiveZone(null);
+    }
+
     const zone = this.computeDropZone(stack, event, this.extractDropZoneFromEvent(event));
 
     if (zone) {
@@ -1170,12 +1203,7 @@ export class MintDockManagerElement extends HTMLElement {
       return fallback;
     }
 
-    const owningStack = this.findStackContainingPane(floating.root, preferred);
-    if (!owningStack) {
-      return preferred ?? fallback;
-    }
-
-    return owningStack.titles?.[preferred] ?? preferred ?? fallback;
+    return this.titles[preferred] ?? preferred ?? fallback;
   }
 
   private updateFloatingWindowTitle(index: number): void {
@@ -1297,7 +1325,7 @@ export class MintDockManagerElement extends HTMLElement {
       button.classList.add('dock-tab');
       button.dataset['pane'] = paneName;
       button.id = tabId;
-      button.textContent = node.titles?.[paneName] ?? paneName;
+      button.textContent = this.titles[paneName] ?? paneName;
       button.setAttribute('role', 'tab');
       button.setAttribute('aria-controls', panelId);
       if (paneName === activePane) {
@@ -1538,6 +1566,13 @@ export class MintDockManagerElement extends HTMLElement {
       pointerOffsetY,
     } = this.preparePaneDragSource(path, pane, stackEl, event);
 
+    // Capture header bounds for detecting when to convert to floating
+    const headerEl = stackEl?.querySelector<HTMLElement>('.dock-stack__header') ?? null;
+    const headerRect = headerEl ? headerEl.getBoundingClientRect() : null;
+    const headerBounds = headerRect
+      ? { left: headerRect.left, top: headerRect.top, right: headerRect.right, bottom: headerRect.bottom }
+      : null;
+
     this.dragState = {
       pane,
       sourcePath: this.clonePath(sourcePath),
@@ -1545,7 +1580,18 @@ export class MintDockManagerElement extends HTMLElement {
       pointerOffsetX,
       pointerOffsetY,
       dropHandled: false,
+      sourceStackEl: stackEl,
+      sourceHeaderBounds: headerBounds,
+      startClientX: Number.isFinite(event.clientX) ? event.clientX : undefined,
+      startClientY: Number.isFinite(event.clientY) ? event.clientY : undefined,
     };
+    // Prefer the pointer offset relative to the dragged tab to avoid jumps on conversion
+    if (Number.isFinite((event as any).offsetX)) {
+      this.dragState.pointerOffsetX = (event as any).offsetX as number;
+    }
+    if (Number.isFinite((event as any).offsetY)) {
+      this.dragState.pointerOffsetY = (event as any).offsetY as number;
+    }
     this.updateDraggedFloatingPosition(event);
     this.startDragPointerTracking();
     event.dataTransfer.effectAllowed = 'move';
@@ -1560,7 +1606,6 @@ export class MintDockManagerElement extends HTMLElement {
   ): { path: DockPath; floatingIndex: number | null; pointerOffsetX: number; pointerOffsetY: number } {
     const location = this.resolveStackLocation(path);
     if (!location || !location.node.panes.includes(pane)) {
-      this.clearPendingTabDragMetrics();
       return {
         path,
         floatingIndex: null,
@@ -1568,9 +1613,7 @@ export class MintDockManagerElement extends HTMLElement {
         pointerOffsetY: 0,
       };
     }
-
     const metrics = this.pendingTabDragMetrics;
-    this.pendingTabDragMetrics = null;
 
     const domHasSibling =
       !!stackEl &&
@@ -1630,116 +1673,22 @@ export class MintDockManagerElement extends HTMLElement {
         pointerOffsetY: 0,
       };
     }
-
-    const hostRect = this.getBoundingClientRect();
-    const stackRect = stackEl?.getBoundingClientRect() ?? null;
-    const fallbackWidth = 320;
-    const fallbackHeight = 240;
-    const width =
-      metrics && Number.isFinite(metrics.width) && metrics.width > 0
-        ? metrics.width
-        : stackRect && Number.isFinite(stackRect.width)
-        ? stackRect.width
-        : fallbackWidth;
-    const height =
-      metrics && Number.isFinite(metrics.height) && metrics.height > 0
-        ? metrics.height
-        : stackRect && Number.isFinite(stackRect.height)
-        ? stackRect.height
-        : fallbackHeight;
-
-    const pointerOffsetX =
+    // Do not convert to floating yet; allow in-header reordering first.
+    // We return placeholder values and will convert once the pointer leaves the tab header.
+    const pointerOffsetXVal =
       metrics && Number.isFinite(metrics.pointerOffsetX)
         ? metrics.pointerOffsetX
-        : stackRect && Number.isFinite(event.clientX)
-        ? event.clientX - stackRect.left
-        : width / 2;
-    const pointerOffsetY =
+        : 0;
+    const pointerOffsetYVal =
       metrics && Number.isFinite(metrics.pointerOffsetY)
         ? metrics.pointerOffsetY
-        : stackRect && Number.isFinite(event.clientY)
-        ? event.clientY - stackRect.top
-        : height / 2;
-
-    const pointerLeft =
-      metrics && Number.isFinite(metrics.left)
-        ? metrics.left
-        : Number.isFinite(event.clientX)
-        ? event.clientX - hostRect.left - pointerOffsetX
-        : null;
-    const pointerTop =
-      metrics && Number.isFinite(metrics.top)
-        ? metrics.top
-        : Number.isFinite(event.clientY)
-        ? event.clientY - hostRect.top - pointerOffsetY
-        : null;
-
-    const left =
-      pointerLeft !== null
-        ? pointerLeft
-        : stackRect
-        ? stackRect.left - hostRect.left
-        : (hostRect.width - width) / 2;
-    const top =
-      pointerTop !== null
-        ? pointerTop
-        : stackRect
-        ? stackRect.top - hostRect.top
-        : (hostRect.height - height) / 2;
-
-        
-    // Defer the DOM modification to prevent the browser from cancelling the drag operation.
-    setTimeout(() => {
-      const paneTitle = location.node.titles?.[pane];
-
-      this.removePaneFromLocation(location, pane);
-
-      const floatingStack: DockStackNode = {
-        kind: 'stack',
-        panes: [pane],
-        activePane: pane,
-      };
-      if (paneTitle) {
-        floatingStack.titles = { [pane]: paneTitle };
-      }
-
-      const floatingLayout: DockFloatingStackLayout = {
-        bounds: {
-          left,
-          top,
-          width,
-          height,
-        },
-        root: floatingStack,
-        activePane: pane,
-      };
-      if (paneTitle) {
-        floatingLayout.titles = { [pane]: paneTitle };
-      }
-
-      this.floatingLayouts.push(floatingLayout);
-      const floatingIndex = this.floatingLayouts.length - 1;
-
-      // Defer rendering to avoid interrupting the drag-and-drop initialization in the browser.
-      // Synchronously re-rendering can cause the browser to lose track of the drag operation.
-      this.render();
-      const wrapper = this.getFloatingWrapper(floatingIndex);
-      if (wrapper) {
-        this.promoteFloatingPane(floatingIndex, wrapper);
-      }
-      this.dispatchLayoutChanged();
-
-      if (this.dragState) {
-        this.dragState.sourcePath = { type: 'floating', index: floatingIndex, segments: [] };
-        this.dragState.floatingIndex = floatingIndex;
-      }
-    }, 0);
+        : 0;
 
     return {
-      path: { type: 'floating', index: -1, segments: [] }, // Placeholder path
+      path,
       floatingIndex: -1,
-      pointerOffsetX,
-      pointerOffsetY,
+      pointerOffsetX: pointerOffsetXVal,
+      pointerOffsetY: pointerOffsetYVal,
     };
   }
 
@@ -1760,19 +1709,47 @@ export class MintDockManagerElement extends HTMLElement {
       return;
     }
     event.preventDefault();
+    // Keep internal pointer tracking up-to-date.
     this.updateDraggedFloatingPosition(event);
     if (event.dataTransfer) {
       event.dataTransfer.dropEffect = 'move';
     }
 
-    const stack = this.findStackElement(event);
+    // Some browsers intermittently report (0,0) for dragover coordinates.
+    // Mirror the robust logic used in onDrop: prefer actual event coordinates
+    // when valid, otherwise fall back to the last tracked pointer position.
+    const pointFromEvent =
+      Number.isFinite(event.clientX) && Number.isFinite(event.clientY)
+        ? { clientX: event.clientX, clientY: event.clientY }
+        : null;
+
+    const point =
+      pointFromEvent ??
+      (this.lastDragPointerPosition
+        ? { clientX: this.lastDragPointerPosition.x, clientY: this.lastDragPointerPosition.y }
+        : null);
+
+    const stack =
+      this.findStackElement(event) ??
+      (point ? this.findStackAtPoint(point.clientX, point.clientY) : null);
     if (!stack) {
-      this.hideDropIndicator();
+      if (this.dropJoystick.dataset['visible'] !== 'true') {
+        this.hideDropIndicator();
+      }
       return;
     }
 
     const path = this.parsePath(stack.dataset['path']);
-    const zone = this.computeDropZone(stack, event, this.extractDropZoneFromEvent(event));
+    // If the hovered stack changed, clear any sticky zone from the previous
+    // target before computing the new zone.
+    if (this.dropJoystickTarget && this.dropJoystickTarget !== stack) {
+      delete this.dropJoystick.dataset['zone'];
+      this.updateDropJoystickActiveZone(null);
+    }
+
+    const eventZoneHint = this.extractDropZoneFromEvent(event);
+    const pointZoneHint = point ? this.findDropZoneByPoint(point.clientX, point.clientY) : null;
+    const zone = this.computeDropZone(stack, point ?? event, pointZoneHint ?? eventZoneHint);
     this.showDropIndicator(stack, zone);
   }
 
@@ -1835,6 +1812,23 @@ export class MintDockManagerElement extends HTMLElement {
       return;
     }
 
+    // If we are still dragging a tab inside its header, only convert to floating once we leave the header bounds.
+    if (this.dragState.floatingIndex !== null && this.dragState.floatingIndex < 0) {
+      const b = this.dragState.sourceHeaderBounds;
+      const sx = this.dragState.startClientX ?? clientX;
+      const sy = this.dragState.startClientY ?? clientY;
+      const dist = Math.hypot(clientX - sx, clientY - sy);
+      const threshold = 4; // pixels to move before converting
+      let insideHeader = false;
+      if (b) {
+        insideHeader = clientX >= b.left && clientX <= b.right && clientY >= b.top && clientY <= b.bottom;
+      }
+      if (!insideHeader && dist > threshold) {
+        // Convert to floating now using current pointer position
+        this.convertPendingTabDragToFloating(clientX, clientY);
+      }
+    }
+
     this.updatePaneDragDropTargetFromPoint(clientX, clientY);
 
     const { floatingIndex, pointerOffsetX, pointerOffsetY } = this.dragState;
@@ -1867,15 +1861,21 @@ export class MintDockManagerElement extends HTMLElement {
     }
 
     const stack = this.findStackAtPoint(clientX, clientY);
-    if (!stack) {
-      this.hideDropIndicator();
+    const path = stack ? this.parsePath(stack.dataset['path']) : null;
+    if (!stack || !path) {
+      // While actively dragging, avoid hiding the indicator if it is visible.
+      // Transient misses from hit-testing are common near the joystick.
+      if (this.dropJoystick.dataset['visible'] !== 'true') {
+        this.hideDropIndicator();
+      }
       return;
     }
 
-    const path = this.parsePath(stack.dataset['path']);
-    if (!path) {
-      this.hideDropIndicator();
-      return;
+    // If we moved to a different target stack, reset any sticky zone so
+    // the new drop area doesn't inherit the previous side selection.
+    if (this.dropJoystickTarget && this.dropJoystickTarget !== stack) {
+      delete this.dropJoystick.dataset['zone'];
+      this.updateDropJoystickActiveZone(null);
     }
 
     const zoneHint = this.findDropZoneByPoint(clientX, clientY);
@@ -1945,21 +1945,135 @@ export class MintDockManagerElement extends HTMLElement {
   }
 
   private onDragMouseUp(): void {
+    this.handleDragPointerUpCommon();
+  }
+
+  // Convert a currently in-header tab drag into a floating window
+  private convertPendingTabDragToFloating(clientX: number, clientY: number): void {
     if (!this.dragState) {
-      this.stopDragPointerTracking();
+      return;
+    }
+    const state = this.dragState;
+    if (state.floatingIndex !== null && state.floatingIndex >= 0) {
+      return; // already floating
+    }
+    const location = this.resolveStackLocation(state.sourcePath);
+    if (!location) {
       return;
     }
 
-    this.scheduleDeferredDragEnd();
+    const pane = state.pane;
+    const stackEl = state.sourceStackEl ?? null;
+    const hostRect = this.getBoundingClientRect();
+    const stackRect = stackEl?.getBoundingClientRect() ?? null;
+    const metrics = this.pendingTabDragMetrics;
+
+    const fallbackWidth = 320;
+    const fallbackHeight = 240;
+    const width =
+      metrics && Number.isFinite(metrics.width) && metrics.width > 0
+        ? metrics.width
+        : stackRect && Number.isFinite(stackRect.width)
+        ? stackRect.width
+        : fallbackWidth;
+    const height =
+      metrics && Number.isFinite(metrics.height) && metrics.height > 0
+        ? metrics.height
+        : stackRect && Number.isFinite(stackRect.height)
+        ? stackRect.height
+        : fallbackHeight;
+
+    const pointerOffsetX = Number.isFinite(this.dragState?.pointerOffsetX as number)
+      ? (this.dragState!.pointerOffsetX as number)
+      : metrics && Number.isFinite(metrics.pointerOffsetX)
+      ? (metrics.pointerOffsetX as number)
+      : width / 2;
+    const pointerOffsetY = Number.isFinite(this.dragState?.pointerOffsetY as number)
+      ? (this.dragState!.pointerOffsetY as number)
+      : metrics && Number.isFinite(metrics.pointerOffsetY)
+      ? (metrics.pointerOffsetY as number)
+      : height / 2;
+
+    const pointerLeft = Number.isFinite(clientX)
+      ? clientX - hostRect.left - pointerOffsetX
+      : 0;
+    const pointerTop = Number.isFinite(clientY)
+      ? clientY - hostRect.top - pointerOffsetY
+      : 0;
+
+    // Remove pane from its current stack and create a new floating entry
+    this.removePaneFromLocation(location, pane);
+    const floatingStack: DockStackNode = {
+      kind: 'stack',
+      panes: [pane],
+      activePane: pane,
+    };
+
+    const floatingLayout: DockFloatingStackLayout = {
+      bounds: {
+        left: pointerLeft,
+        top: pointerTop,
+        width,
+        height,
+      },
+      root: floatingStack,
+      activePane: pane,
+    };
+
+    this.floatingLayouts.push(floatingLayout);
+    const newIndex = this.floatingLayouts.length - 1;
+    this.render();
+    const wrapper = this.getFloatingWrapper(newIndex);
+    if (wrapper) {
+      this.promoteFloatingPane(newIndex, wrapper);
+    }
+    // Update drag state so subsequent moves reposition the floating window
+    state.sourcePath = { type: 'floating', index: newIndex, segments: [] };
+    state.floatingIndex = newIndex;
+    state.pointerOffsetX = pointerOffsetX;
+    state.pointerOffsetY = pointerOffsetY;
+    this.dispatchLayoutChanged();
+  }
+
+  // Compute the intended tab insert index within a header based on pointer X
+  private computeHeaderInsertIndex(header: HTMLElement, clientX: number): number {
+    const tabs = Array.from(header.querySelectorAll<HTMLElement>('.dock-tab'));
+    if (tabs.length === 0) {
+      return 0;
+    }
+    for (let i = 0; i < tabs.length; i += 1) {
+      const rect = tabs[i].getBoundingClientRect();
+      const mid = rect.left + rect.width / 2;
+      if (clientX < mid) {
+        return i;
+      }
+    }
+    return tabs.length; // insert at end
+  }
+
+  private reorderPaneInLocationAtIndex(location: ResolvedLocation, pane: string, targetIndex: number): void {
+    const panes = location.node.panes;
+    const currentIndex = panes.indexOf(pane);
+    if (currentIndex === -1) {
+      return;
+    }
+    const clampedTarget = Math.max(0, Math.min(targetIndex, panes.length - 1));
+    if (clampedTarget === currentIndex) {
+      return;
+    }
+    panes.splice(currentIndex, 1);
+    panes.splice(clampedTarget, 0, pane);
+    location.node.activePane = pane;
+    if (location.context === 'floating') {
+      const floating = this.floatingLayouts[location.index];
+      if (floating) {
+        floating.activePane = pane;
+      }
+    }
   }
 
   private onDragTouchEnd(): void {
-    if (!this.dragState) {
-      this.stopDragPointerTracking();
-      return;
-    }
-
-    this.scheduleDeferredDragEnd();
+    this.handleDragPointerUpCommon();
   }
 
   private clearPendingDragEndTimeout(): void {
@@ -2027,6 +2141,33 @@ export class MintDockManagerElement extends HTMLElement {
     }
 
     const path = this.parsePath(stack.dataset['path']);
+
+    // Allow reordering within the same stack header without selecting a zone
+    if (
+      this.dragState &&
+      this.dragState.floatingIndex !== null &&
+      this.dragState.floatingIndex < 0 &&
+      path &&
+      this.pathsEqual(path, this.dragState.sourcePath)
+    ) {
+      const header = stack.querySelector<HTMLElement>('.dock-stack__header');
+      if (header) {
+        const x = (point ? point.clientX : event.clientX) as number;
+        if (Number.isFinite(x)) {
+          const location = this.resolveStackLocation(path);
+          if (location) {
+            const idx = this.computeHeaderInsertIndex(header, x);
+            this.reorderPaneInLocationAtIndex(location, this.dragState.pane, idx);
+            this.render();
+            this.dispatchLayoutChanged();
+            this.dragState.dropHandled = true;
+            this.endPaneDrag();
+            return;
+          }
+        }
+      }
+    }
+
     const eventZoneHint = this.extractDropZoneFromEvent(event);
     const pointZoneHint = point ? this.findDropZoneByPoint(point.clientX, point.clientY) : null;
     const zone = this.computeDropZone(stack, point ?? event, pointZoneHint ?? eventZoneHint);
@@ -2041,6 +2182,24 @@ export class MintDockManagerElement extends HTMLElement {
 
   private onDragLeave(event: DragEvent): void {
     const related = event.relatedTarget as Node | null;
+
+    // During active drags, browsers can emit spurious dragleave with null
+    // relatedTarget while the pointer is still over the joystick/buttons.
+    // Be conservative: if we can resolve a stack/joystick at the last known
+    // pointer position, don’t hide (prevents flicker of active state).
+    if (this.dragState) {
+      const pos =
+        (Number.isFinite((event as DragEvent).clientX) && Number.isFinite((event as DragEvent).clientY))
+          ? { x: (event as DragEvent).clientX, y: (event as DragEvent).clientY }
+          : this.lastDragPointerPosition;
+      if (pos) {
+        const stackAtPoint = this.findStackAtPoint(pos.x, pos.y);
+        if (stackAtPoint) {
+          return; // still inside our drop area; ignore this dragleave
+        }
+      }
+    }
+
     if (!related) {
       this.hideDropIndicator();
       return;
@@ -2062,6 +2221,29 @@ export class MintDockManagerElement extends HTMLElement {
     const source = this.resolveStackLocation(sourcePath);
     const target = this.resolveStackLocation(targetPath);
 
+    // Special case: allow dropping onto an empty main dock area (no root).
+    if (!target && targetPath.type === 'docked' && !this.rootLayout) {
+      if (!source) {
+        return;
+      }
+      const stackEmptied = this.removePaneFromLocation(source, pane, true);
+      const newRoot: DockStackNode = {
+        kind: 'stack',
+        panes: [pane],
+        activePane: pane,
+      };
+      this.rootLayout = newRoot;
+      if (stackEmptied) {
+        this.cleanupLocation(source);
+      }
+      this.render();
+      this.dispatchLayoutChanged();
+      if (this.dragState) {
+        this.dragState.dropHandled = true;
+      }
+      return;
+    }
+
     if (!source || !target) {
       return;
     }
@@ -2079,16 +2261,11 @@ export class MintDockManagerElement extends HTMLElement {
       return;
     }
 
-    const paneTitle = source.node.titles?.[pane];
     const stackEmptied = this.removePaneFromLocation(source, pane, true);
 
     if (zone === 'center') {
       this.addPaneToLocation(target, pane);
       this.setActivePaneForLocation(target, pane);
-      if (paneTitle) {
-        target.node.titles = target.node.titles ? { ...target.node.titles } : {};
-        target.node.titles[pane] = paneTitle;
-      }
       if (stackEmptied) {
         this.cleanupLocation(source);
       }
@@ -2105,10 +2282,6 @@ export class MintDockManagerElement extends HTMLElement {
       panes: [pane],
       activePane: pane,
     };
-
-    if (paneTitle) {
-      newStack.titles = { [pane]: paneTitle };
-    }
 
     if (target.context === 'docked') {
       this.rootLayout = this.dockNodeBeside(this.rootLayout, target.node, newStack, zone);
@@ -2145,6 +2318,15 @@ export class MintDockManagerElement extends HTMLElement {
     }
 
     const target = this.resolveStackLocation(targetPath);
+    // Allow dropping an entire floating stack onto an empty main dock area
+    // (no existing root).
+    if (!target && targetPath.type === 'docked' && !this.rootLayout) {
+      this.rootLayout = this.cloneLayoutNode(source.root);
+      this.removeFloatingAt(sourceIndex);
+      this.render();
+      this.dispatchLayoutChanged();
+      return true;
+    }
     if (!target) {
       return false;
     }
@@ -2154,18 +2336,13 @@ export class MintDockManagerElement extends HTMLElement {
     }
 
     if (zone === 'center') {
-      const { panes, titles } = this.collectFloatingPaneMetadata(source.root);
+      const panes = this.collectPaneNames(source.root);
       if (panes.length === 0) {
         return false;
       }
 
       panes.forEach((pane) => {
         this.addPaneToLocation(target, pane);
-        const title = titles[pane];
-        if (title) {
-          target.node.titles = target.node.titles ? { ...target.node.titles } : {};
-          target.node.titles[pane] = title;
-        }
       });
 
       const activePane =
@@ -2275,6 +2452,8 @@ export class MintDockManagerElement extends HTMLElement {
     point: { clientX: number; clientY: number } | null,
     zoneHint?: DropZone | null,
   ): DropZone | null {
+    // Do not force a zone: even when the main area is empty we only
+    // activate a zone when the pointer is actually over a joystick button.
     const hintedZone = this.isDropZone(zoneHint) ? zoneHint : null;
     if (hintedZone) {
       this.updateDropJoystickActiveZone(hintedZone);
@@ -2294,6 +2473,14 @@ export class MintDockManagerElement extends HTMLElement {
     }
 
     if (this.dropJoystickTarget === stack) {
+      // Be sticky while hovering the joystick: if we recently had a zone
+      // selected, prefer keeping it instead of briefly clearing to null
+      // when the browser reports transient coordinates/targets during drag.
+      const sticky = this.dropJoystick.dataset['zone'];
+      if (this.isDropZone(sticky)) {
+        this.updateDropJoystickActiveZone(sticky);
+        return sticky;
+      }
       this.updateDropJoystickActiveZone(null);
     }
 
@@ -2307,16 +2494,9 @@ export class MintDockManagerElement extends HTMLElement {
 
     if (typeof (event as DragEvent).composedPath === 'function') {
       const path = (event as DragEvent).composedPath();
-      for (const target of path) {
-        if (
-          target instanceof HTMLElement &&
-          target.classList.contains('dock-drop-joystick__button')
-        ) {
-          const zone = target.dataset?.['zone'];
-          if (this.isDropZone(zone)) {
-            return zone;
-          }
-        }
+      const zone = this.findDropZoneInTargets(path);
+      if (zone) {
+        return zone;
       }
     }
 
@@ -2331,6 +2511,29 @@ export class MintDockManagerElement extends HTMLElement {
     return null;
   }
 
+  private handleDragPointerUpCommon(): void {
+    if (!this.dragState) {
+      this.stopDragPointerTracking();
+      return;
+    }
+    this.scheduleDeferredDragEnd();
+  }
+
+  private findDropZoneInTargets(targets: Iterable<EventTarget>): DropZone | null {
+    for (const target of targets) {
+      if (
+        target instanceof HTMLElement &&
+        target.classList.contains('dock-drop-joystick__button')
+      ) {
+        const zone = target.dataset?.['zone'];
+        if (this.isDropZone(zone)) {
+          return zone;
+        }
+      }
+    }
+    return null;
+  }
+
   private findDropZoneByPoint(clientX: number, clientY: number): DropZone | null {
     if (
       !this.dropJoystickButtons ||
@@ -2341,6 +2544,10 @@ export class MintDockManagerElement extends HTMLElement {
     }
 
     for (const button of this.dropJoystickButtons) {
+      // Skip hidden/inactive buttons (used in center-only mode)
+      if ((button.dataset['hidden'] === 'true') || button.style.visibility === 'hidden' || button.style.display === 'none') {
+        continue;
+      }
       const rect = button.getBoundingClientRect();
       if (
         clientX >= rect.left &&
@@ -2359,16 +2566,23 @@ export class MintDockManagerElement extends HTMLElement {
   }
 
   private updateDropJoystickActiveZone(zone: DropZone | null): void {
+    // If no zone is computed but the joystick is visible, keep the last
+    // known active zone to avoid visual jitter while dragging across
+    // small gaps where hit‑testing momentarily fails.
+    const visible = this.dropJoystick.dataset['visible'] === 'true';
+    const sticky = visible ? this.dropJoystick.dataset['zone'] : undefined;
+    const effectiveZone: DropZone | null = zone ?? (this.isDropZone(sticky) ? sticky : null);
+
     this.dropJoystickButtons.forEach((button) => {
-      const isActive = zone !== null && button.dataset['zone'] === zone;
+      const isActive = effectiveZone !== null && button.dataset['zone'] === effectiveZone;
       if (isActive) {
         button.dataset['active'] = 'true';
       } else {
         delete button.dataset['active'];
       }
     });
-    if (zone) {
-      this.dropJoystick.dataset['zone'] = zone;
+    if (effectiveZone) {
+      this.dropJoystick.dataset['zone'] = effectiveZone;
     } else {
       delete this.dropJoystick.dataset['zone'];
     }
@@ -2442,7 +2656,51 @@ export class MintDockManagerElement extends HTMLElement {
     joystick.dataset['visible'] = 'true';
     this.dropJoystick.style.display = 'grid';
     joystick.dataset['path'] = stack.dataset['path'] ?? '';
+    const changedTarget = this.dropJoystickTarget && this.dropJoystickTarget !== stack;
     this.dropJoystickTarget = stack;
+    if (changedTarget) {
+      // New target stack: forget any previously sticky zone.
+      delete this.dropJoystick.dataset['zone'];
+    }
+
+    // If main dock area is empty, show only the center button and collapse the grid
+    const isEmptyMainArea = !this.rootLayout && (stack === this.dockedEl || (targetPath && targetPath.type === 'docked' && targetPath.segments.length === 0));
+    const spacers = Array.from(this.dropJoystick.querySelectorAll<HTMLElement>('.dock-drop-joystick__spacer'));
+    if (isEmptyMainArea) {
+      // Keep spacers visible so the joystick keeps its circular footprint.
+      spacers.forEach((s) => {
+        s.style.display = '';
+      });
+      this.dropJoystickButtons.forEach((btn) => {
+        const isCenter = btn.dataset['zone'] === 'center';
+        if (isCenter) {
+          btn.style.visibility = '';
+          btn.style.pointerEvents = '';
+          delete btn.dataset['hidden'];
+          btn.style.display = '';
+        } else {
+          // Hide visually but keep layout space; also prevent interaction.
+          btn.style.visibility = 'hidden';
+          btn.style.pointerEvents = 'none';
+          btn.dataset['hidden'] = 'true';
+          btn.style.display = '';
+        }
+      });
+      // Keep default 3x3 grid so the circular background size stays the same.
+      this.dropJoystick.style.gridTemplateColumns = '';
+      this.dropJoystick.style.gridTemplateRows = '';
+      // Do not set an active zone automatically; users must hover the button.
+    } else {
+      this.dropJoystickButtons.forEach((btn) => {
+        btn.style.visibility = '';
+        btn.style.pointerEvents = '';
+        delete btn.dataset['hidden'];
+        btn.style.display = '';
+      });
+      spacers.forEach((s) => (s.style.display = ''));
+      this.dropJoystick.style.gridTemplateColumns = '';
+      this.dropJoystick.style.gridTemplateRows = '';
+    }
     this.updateDropJoystickActiveZone(zone);
   }
 
@@ -2453,6 +2711,16 @@ export class MintDockManagerElement extends HTMLElement {
     delete this.dropJoystick.dataset['path'];
     this.dropJoystickTarget = null;
     this.updateDropJoystickActiveZone(null);
+    // Restore joystick structure to default.
+    this.dropJoystickButtons.forEach((btn) => {
+      btn.style.display = '';
+      btn.style.visibility = '';
+      btn.style.pointerEvents = '';
+      delete btn.dataset['hidden'];
+    });
+    Array.from(this.dropJoystick.querySelectorAll<HTMLElement>('.dock-drop-joystick__spacer')).forEach((s) => (s.style.display = ''));
+    this.dropJoystick.style.gridTemplateColumns = '';
+    this.dropJoystick.style.gridTemplateRows = '';
   }
 
   private findStackAtPoint(clientX: number, clientY: number): HTMLElement | null {
@@ -2462,7 +2730,51 @@ export class MintDockManagerElement extends HTMLElement {
     }
 
     const elements = shadow.elementsFromPoint(clientX, clientY);
-    for (const element of elements) {
+    const stack = this.findStackInTargets(elements);
+    if (stack) {
+      return stack;
+    }
+    // If there are no docked stacks (all panes are floating), allow the
+    // docked surface itself to serve as a drop target for the main zone.
+    if (!this.rootLayout) {
+      const dockRect = this.dockedEl.getBoundingClientRect();
+      if (
+        clientX >= dockRect.left &&
+        clientX <= dockRect.right &&
+        clientY >= dockRect.top &&
+        clientY <= dockRect.bottom
+      ) {
+        return this.dockedEl;
+      }
+    }
+
+    return null;
+  }
+
+  private findStackElement(event: DragEvent): HTMLElement | null {
+    const path = event.composedPath();
+    const stack = this.findStackInTargets(path);
+    if (stack) {
+      return stack;
+    }
+
+    // If the root dock area is empty, treat the docked surface as a valid
+    // target when it appears in the composed path.
+    if (!this.rootLayout) {
+      for (const target of path) {
+        if (
+          target instanceof HTMLElement &&
+          (target === this.dockedEl || target.classList.contains('dock-docked'))
+        ) {
+          return this.dockedEl;
+        }
+      }
+    }
+    return null;
+  }
+
+  private findStackInTargets(targets: Iterable<EventTarget>): HTMLElement | null {
+    for (const element of targets) {
       if (!(element instanceof HTMLElement)) {
         continue;
       }
@@ -2474,28 +2786,6 @@ export class MintDockManagerElement extends HTMLElement {
         (element.classList.contains('dock-drop-joystick') ||
           element.classList.contains('dock-drop-joystick__button') ||
           element.classList.contains('dock-drop-joystick__spacer'))
-      ) {
-        return this.dropJoystickTarget;
-      }
-    }
-
-    return null;
-  }
-
-  private findStackElement(event: DragEvent): HTMLElement | null {
-    const path = event.composedPath();
-    for (const target of path) {
-      if (!(target instanceof HTMLElement)) {
-        continue;
-      }
-      if (target.classList.contains('dock-stack')) {
-        return target;
-      }
-      if (
-        this.dropJoystickTarget &&
-        (target.classList.contains('dock-drop-joystick') ||
-          target.classList.contains('dock-drop-joystick__button') ||
-          target.classList.contains('dock-drop-joystick__spacer'))
       ) {
         return this.dropJoystickTarget;
       }
@@ -2734,18 +3024,25 @@ export class MintDockManagerElement extends HTMLElement {
   private collectFloatingPaneMetadata(
     node: DockLayoutNode | null,
   ): { panes: string[]; titles: Record<string, string> } {
-    const panes: string[] = [];
+    // Deprecated method retained temporarily for signature compatibility.
+    // Use collectPaneNames instead.
+    const panes = this.collectPaneNames(node);
     const titles: Record<string, string> = {};
-    this.forEachStack(node, (stack) => {
-      stack.panes.forEach((pane) => {
-        panes.push(pane);
-        const title = stack.titles?.[pane];
-        if (title) {
-          titles[pane] = title;
-        }
-      });
+    panes.forEach((p) => {
+      const t = this.titles[p];
+      if (t) {
+        titles[p] = t;
+      }
     });
     return { panes, titles };
+  }
+
+  private collectPaneNames(node: DockLayoutNode | null): string[] {
+    const panes: string[] = [];
+    this.forEachStack(node, (stack) => {
+      stack.panes.forEach((pane) => panes.push(pane));
+    });
+    return panes;
   }
 
   private normalizeFloatingLayout(
@@ -2759,23 +3056,7 @@ export class MintDockManagerElement extends HTMLElement {
       height: Number.isFinite(bounds.height) ? Math.max(bounds.height, 120) : 200,
     };
 
-    let root = layout.root ? this.cloneLayoutNode(layout.root) : null;
-
-    if (!root) {
-      const panes = Array.isArray(layout.panes) ? [...layout.panes] : [];
-      if (panes.length > 0) {
-        const active =
-          layout.activePane && panes.includes(layout.activePane)
-            ? layout.activePane
-            : panes[0];
-        root = {
-          kind: 'stack',
-          panes,
-          titles: layout.titles ? { ...layout.titles } : undefined,
-          activePane: active,
-        };
-      }
-    }
+    const root = layout.root ? this.cloneLayoutNode(layout.root) : null;
 
     return {
       id: layout.id,
