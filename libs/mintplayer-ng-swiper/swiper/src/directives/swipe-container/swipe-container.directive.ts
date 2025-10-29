@@ -2,7 +2,7 @@ import { DOCUMENT } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { animate, AnimationBuilder, AnimationPlayer, style } from '@angular/animations';
 import { AfterViewInit, ContentChildren, DestroyRef, Directive, ElementRef, EventEmitter, forwardRef, HostBinding, Inject, Input, Output, QueryList } from '@angular/core';
-import { BehaviorSubject, combineLatest, debounceTime, delay, distinctUntilChanged, filter, map, mergeMap, Observable, shareReplay, take } from 'rxjs';
+import { BehaviorSubject, combineLatest, debounceTime, delay, distinctUntilChanged, filter, map, mergeMap, Observable, shareReplay, take, startWith } from 'rxjs';
 import { BsObserveSizeDirective, Size } from '@mintplayer/ng-swiper/observe-size';
 import { LastTouch } from '../../interfaces/last-touch';
 import { StartTouch } from '../../interfaces/start-touch';
@@ -105,22 +105,33 @@ export class BsSwipeContainerDirective implements AfterViewInit {
       return count;
     }));
 
-    this.offsetPrimary$ = combineLatest([this.offset$, this.padLeft$, this.orientation$, this.maxSlideHeight$])
+    this.offsetPrimary$ = combineLatest([
+      this.offset$,
+      this.padLeft$,
+      this.orientation$,
+      this.maxSlideHeight$.pipe(startWith(1)),
+    ])
       .pipe(map(([offset, padLeft, orientation, maxHeight]) => {
         return orientation === 'horizontal'
           ? (offset - padLeft * 100)
           : (offset - padLeft * maxHeight);
       }));
-    this.offsetSecondary$ = combineLatest([this.offset$, this.padLeft$, this.padRight$, this.orientation$, this.maxSlideHeight$])
+    this.offsetSecondary$ = combineLatest([
+      this.offset$,
+      this.padLeft$,
+      this.padRight$,
+      this.orientation$,
+      this.maxSlideHeight$.pipe(startWith(1)),
+    ])
       .pipe(map(([offset, padLeft, padRight, orientation, maxHeight]) => {
         const unit = (orientation === 'horizontal') ? 100 : maxHeight;
         return -(offset - padLeft * unit) - (padRight - 1) * unit;
       }));
 
     // Apply offsets with correct units. Horizontal uses %, vertical uses px based on maxSlideHeight$.
-    combineLatest([this.offsetPrimary$, this.orientation$, this.maxSlideHeight$])
+    combineLatest([this.offsetPrimary$, this.orientation$])
       .pipe(takeUntilDestroyed())
-      .subscribe(([offsetPrimary, orientation, maxHeight]) => {
+      .subscribe(([offsetPrimary, orientation]) => {
         if (orientation === 'horizontal') {
           this.offsetLeft = offsetPrimary;
           this.offsetLeftUnit = '%';
@@ -134,9 +145,9 @@ export class BsSwipeContainerDirective implements AfterViewInit {
         }
       });
 
-    combineLatest([this.offsetSecondary$, this.orientation$, this.maxSlideHeight$])
+    combineLatest([this.offsetSecondary$, this.orientation$])
       .pipe(takeUntilDestroyed())
-      .subscribe(([offsetSecondary, orientation, maxHeight]) => {
+      .subscribe(([offsetSecondary, orientation]) => {
         if (orientation === 'horizontal') {
           this.offsetRight = offsetSecondary;
           this.offsetRightUnit = '%';
@@ -288,7 +299,15 @@ export class BsSwipeContainerDirective implements AfterViewInit {
       }
 
       this.pendingAnimation.onDone(() => {
-        // Correct the image index
+        // First, clean up animation styles so HostBinding can take over
+        this.pendingAnimation?.destroy();
+        this.pendingAnimation = undefined;
+
+        // Clear touch state so offset$ uses the static index-based offset
+        this.startTouch$.next(null);
+        this.lastTouch$.next(null);
+
+        // Correct the image index (triggers HostBinding margin updates)
         if (newIndex === -1) {
           this.imageIndex$.next(totalSlides - 1);
         } else if (newIndex === totalSlides) {
@@ -296,10 +315,6 @@ export class BsSwipeContainerDirective implements AfterViewInit {
         } else {
           this.imageIndex$.next(newIndex);
         }
-        this.startTouch$.next(null);
-        this.lastTouch$.next(null);
-        this.pendingAnimation?.destroy();
-        this.pendingAnimation = undefined;
       });
       this.pendingAnimation.play();
     });
