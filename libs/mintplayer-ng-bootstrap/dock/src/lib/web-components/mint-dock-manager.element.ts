@@ -647,22 +647,16 @@ export class MintDockManagerElement extends HTMLElement {
     // Strengthen zone tracking by reacting to dragenter/dragover directly on the buttons.
     // This avoids relying solely on hit-testing each frame which can be jittery during HTML5 drag.
     this.dropJoystickButtons.forEach((btn) => {
-      btn.addEventListener('dragenter', (e) => {
+      const handler = (e: DragEvent) => {
         if (!this.dragState) return;
         const z = btn.dataset['zone'];
         if (this.isDropZone(z)) {
           this.updateDropJoystickActiveZone(z);
           e.preventDefault();
         }
-      });
-      btn.addEventListener('dragover', (e) => {
-        if (!this.dragState) return;
-        const z = btn.dataset['zone'];
-        if (this.isDropZone(z)) {
-          this.updateDropJoystickActiveZone(z);
-          e.preventDefault();
-        }
-      });
+      };
+      btn.addEventListener('dragenter', handler);
+      btn.addEventListener('dragover', handler);
     });
     const win = this.windowRef;
     win?.addEventListener('dragover', this.onGlobalDragOver);
@@ -1916,17 +1910,10 @@ export class MintDockManagerElement extends HTMLElement {
     }
 
     const stack = this.findStackAtPoint(clientX, clientY);
-    if (!stack) {
+    const path = stack ? this.parsePath(stack.dataset['path']) : null;
+    if (!stack || !path) {
       // While actively dragging, avoid hiding the indicator if it is visible.
       // Transient misses from hit-testing are common near the joystick.
-      if (this.dropJoystick.dataset['visible'] !== 'true') {
-        this.hideDropIndicator();
-      }
-      return;
-    }
-
-    const path = this.parsePath(stack.dataset['path']);
-    if (!path) {
       if (this.dropJoystick.dataset['visible'] !== 'true') {
         this.hideDropIndicator();
       }
@@ -2475,8 +2462,8 @@ export class MintDockManagerElement extends HTMLElement {
     // known active zone to avoid visual jitter while dragging across
     // small gaps where hit‑testing momentarily fails.
     const visible = this.dropJoystick.dataset['visible'] === 'true';
-    const sticky = visible ? (this.dropJoystick.dataset['zone'] as DropZone | undefined) : undefined;
-    const effectiveZone: DropZone | null = zone ?? (sticky && this.isDropZone(sticky) ? sticky : null);
+    const sticky = visible ? this.dropJoystick.dataset['zone'] : undefined;
+    const effectiveZone: DropZone | null = zone ?? (this.isDropZone(sticky) ? sticky : null);
 
     this.dropJoystickButtons.forEach((button) => {
       const isActive = effectiveZone !== null && button.dataset['zone'] === effectiveZone;
