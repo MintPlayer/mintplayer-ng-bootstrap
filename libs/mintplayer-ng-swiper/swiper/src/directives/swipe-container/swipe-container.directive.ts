@@ -161,7 +161,7 @@ export class BsSwipeContainerDirective implements AfterViewInit {
     return this.orientation$.value;
   }
   @Input() public set orientation(value: 'horizontal' | 'vertical') {
-    this.orientation$.next(value ?? 'horizontal');
+    setTimeout(() => this.orientation$.next(value ?? 'horizontal'), 0);
   }
 
   //#region ImageIndex
@@ -217,30 +217,28 @@ export class BsSwipeContainerDirective implements AfterViewInit {
   }
 
   animateToIndex(oldIndex: number, newIndex: number, distance: number, totalSlides: number) {
-    const orientation = this.orientation$.value;
     const containerElement = this.containerElement.nativeElement;
-    const containerLength = orientation === 'horizontal' ? containerElement.clientWidth : containerElement.clientHeight;
 
-    if (orientation === 'horizontal') {
+    if (this.orientation === 'horizontal') {
       this.pendingAnimation = this.animationBuilder.build([
         style({
-          'margin-left': (-(oldIndex + 1) * containerLength + distance) + 'px',
-          'margin-right': ((oldIndex + 1) * containerLength - distance) + 'px',
+          'margin-left': `${-(oldIndex + 1) * 100 + (distance / containerElement.clientWidth) * 100}%`,
+          'margin-right': `${(oldIndex + 1) * 100 - (distance / containerElement.clientWidth) * 100}%`,
         }),
         animate('500ms ease', style({
-          'margin-left': (-(newIndex + 1) * containerLength) + 'px',
-          'margin-right': ((newIndex + 1) * containerLength) + 'px',
+          'margin-left': `${-(newIndex + 1) * 100}%`,
+          'margin-right': `${(newIndex + 1) * 100}%`,
         })),
       ]).create(containerElement);
     } else {
       this.pendingAnimation = this.animationBuilder.build([
         style({
-          'margin-top': (-(oldIndex + 1) * containerLength + distance) + 'px',
-          'margin-bottom': ((oldIndex + 1) * containerLength - distance) + 'px',
+          'margin-top': `${-(oldIndex + 1) * 100 + (distance / containerElement.clientHeight) * 100}%`,
+          'margin-bottom': `${(oldIndex + 1) * 100 - (distance / containerElement.clientHeight) * 100}%`,
         }),
         animate('500ms ease', style({
-          'margin-top': (-(newIndex + 1) * containerLength) + 'px',
-          'margin-bottom': ((newIndex + 1) * containerLength) + 'px',
+          'margin-top': `${-(newIndex + 1) * 100}%`,
+          'margin-bottom': `${(newIndex + 1) * 100}%`,
         })),
       ]).create(containerElement);
     }

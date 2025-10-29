@@ -12,11 +12,6 @@
         min-height: 100px;
         max-width: 500px;
 
-        // Touch events aren't working when .carousel-inner is sent to back
-        // .carousel-inner {
-        //     z-index: -1;
-        // }
-
         &.noscript {
             .carousel-inner {
                 grid-template-rows: 100%;
@@ -60,58 +55,62 @@
         background-color: var(--bs-carousel-indicator-active-bg, #fff);
     }
 
-    .carousel.carousel-vertical {
-        display: flex;
-        flex-direction: row;
-        align-items: stretch;
-        gap: 1rem;
-        flex-wrap: nowrap;
-
-        .carousel-inner {
-            order: 1;
-            flex: 1 1 auto;
-        }
-
-        .carousel-indicators {
-            order: 0;
-        }
-
-        .carousel-control-prev,
-        .carousel-control-next {
-            width: 100%;
-            left: 0;
-            right: 0;
-        }
-
-        .carousel-control-prev.carousel-control-vertical,
-        .carousel-control-next.carousel-control-vertical {
-            justify-content: center;
-        }
-    }
-
-    .carousel-inner-vertical {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-
-        .carousel-item {
-            flex: 1 1 auto;
-            display: block;
-        }
-    }
-
-    .carousel-indicators-vertical {
-        position: static;
-        flex-direction: column;
-        justify-content: center;
-        align-items: stretch;
-        margin: 0;
-        gap: .5rem;
-        height: 100%;
-
-        [data-bs-target] {
+    .carousel {
+        &.carousel-vertical {
+            height: 100%;
+            max-height: 500px;
             width: auto;
-            height: .75rem;
+            display: flex;
+            flex-direction: row;
+            align-items: stretch;
+            gap: 1rem;
+            flex-wrap: nowrap;
+
+            .carousel-inner {
+                order: 1;
+                flex: 1 1 auto;
+                white-space: normal;
+                display: flex;
+                flex-direction: column;
+                height: 100%;
+                width: 100%;
+
+                .carousel-item {
+                    float: none;
+                    height: 100%;
+                    width: 100%;
+                    margin-right: 0;
+                    margin-bottom: 0;
+                }
+            }
+
+            .carousel-indicators {
+                order: 0;
+                position: static;
+                flex-direction: column;
+                justify-content: center;
+                align-items: stretch;
+                margin: 0;
+                gap: .5rem;
+                height: 100%;
+
+                [data-bs-target] {
+                    width: auto;
+                    height: .75rem;
+                }
+            }
+
+            .carousel-control-prev,
+            .carousel-control-next {
+                &.carousel-control-vertical {
+                    width: 100%;
+                    left: 0;
+                    right: 0;
+                    height: 2.5rem;
+                    align-items: center;
+                    justify-content: center;
+                }
+            }
         }
     }
 

@@ -1,15 +1,16 @@
 import { isPlatformServer } from '@angular/common';
-import { AfterViewInit, ChangeDetectorRef, Component, ContentChildren, ElementRef, forwardRef, HostBinding, HostListener, Inject, Input, OnDestroy, PLATFORM_ID, QueryList, TemplateRef, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ContentChildren, ElementRef, forwardRef, HostBinding, HostListener, Inject, Input, OnDestroy, PLATFORM_ID, QueryList, TemplateRef, ViewChild, OnChanges, SimpleChanges } from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Color } from '@mintplayer/ng-bootstrap';
-import { BsSwipeContainerDirective } from '@mintplayer/ng-swiper/swiper';
-import { BehaviorSubject, map, Observable } from 'rxjs';
+import { BsSwipeContainerDirective, BsSwipeDirective } from '@mintplayer/ng-swiper/swiper';
+import { BehaviorSubject, map, Observable, combineLatest, take, Subject, auditTime, filter, switchMap, startWith } from 'rxjs';
 import { BsCarouselImageDirective } from '../carousel-image/carousel-image.directive';
 
 @Component({
   selector: 'bs-carousel',
   templateUrl: './carousel.component.html',
   styleUrls: ['./carousel.component.scss'],
+  // The component is not standalone, so this is not needed.
   standalone: false,
   animations: [FadeInOutAnimation],
 })
@@ -59,7 +60,6 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
   private _orientation: 'horizontal' | 'vertical' = 'horizontal';
   @Input() public set orientation(value: 'horizontal' | 'vertical') {
     this._orientation = value ?? 'horizontal';
-    this.cdRef.detectChanges();
   }
   public get orientation() {
     return this._orientation;
@@ -89,7 +89,7 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
   @HostListener('document:keydown.ArrowLeft', ['$event'])
   @HostListener('document:keydown.ArrowRight', ['$event'])
   @HostListener('document:keydown.ArrowUp', ['$event'])
-  @HostListener('document:keydown.ArrowDown', ['$event'])
+  @HostListener('document:keydown.ArrowDown', ['$event']) // Add listener for ArrowDown
   onKeyPress(ev: KeyboardEvent) {
     if (this.keyboardEvents) {
       let handled = false;
@@ -108,13 +108,13 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
           break;
         case 'ArrowUp':
           if (this.orientation === 'vertical') {
-            this.previousImage();
+            this.previousImage(); // Use previousImage for ArrowUp in vertical mode
             handled = true;
           }
           break;
         case 'ArrowDown':
           if (this.orientation === 'vertical') {
-            this.nextImage();
+            this.nextImage(); // Use nextImage for ArrowDown in vertical mode
             handled = true;
           }
           break;
