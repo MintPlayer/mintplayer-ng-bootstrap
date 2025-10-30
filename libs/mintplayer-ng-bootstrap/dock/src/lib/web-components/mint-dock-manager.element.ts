@@ -540,6 +540,9 @@ export class MintDockManagerElement extends HTMLElement {
     sourceHeaderBounds?: { left: number; top: number; right: number; bottom: number } | null;
     startClientX?: number;
     startClientY?: number;
+    liveReorderIndex?: number;
+    placeholderHeader?: HTMLElement | null;
+    placeholderEl?: HTMLElement | null;
   } | null = null;
   private floatingDragState:
     | {
@@ -660,6 +663,12 @@ export class MintDockManagerElement extends HTMLElement {
         if (this.isDropZone(z)) {
           this.updateDropJoystickActiveZone(z);
           e.preventDefault();
+          try {
+            console.debug('[mint-dock] joystick dragover', {
+              zone: z,
+              path: this.dropJoystick.dataset?.['path'] ?? null,
+            });
+          } catch {}
         }
       };
       btn.addEventListener('dragenter', handler);
@@ -1344,6 +1353,12 @@ export class MintDockManagerElement extends HTMLElement {
       button.addEventListener('pointercancel', () => this.clearPendingTabDragMetrics());
       button.addEventListener('dragstart', (event) => {
         const stackEl = button.closest<HTMLElement>('.dock-stack');
+        try {
+          console.debug('[mint-dock] dragstart(tab)', {
+            pane: paneName,
+            sourcePath: this.formatPath(this.clonePath(location) as any),
+          });
+        } catch {}
         this.beginPaneDrag(event, this.clonePath(location), paneName, stackEl ?? null);
       });
       button.addEventListener('dragend', () => {
@@ -1725,6 +1740,7 @@ export class MintDockManagerElement extends HTMLElement {
     const state = this.dragState;
     this.dragState = null;
     this.hideDropIndicator();
+    this.clearHeaderDragPlaceholder();
     this.stopDragPointerTracking();
     this.lastDragPointerPosition = null;
     if (state && state.floatingIndex !== null && !state.dropHandled) {
@@ -1736,6 +1752,15 @@ export class MintDockManagerElement extends HTMLElement {
     if (!this.dragState) {
       return;
     }
+    try {
+      console.debug('[mint-dock] onDragOver', {
+        clientX: event.clientX,
+        clientY: event.clientY,
+        visible: this.dropJoystick.dataset['visible'] === 'true',
+        joystickPath: this.dropJoystick.dataset?.['path'] ?? null,
+        joystickZone: this.dropJoystick.dataset?.['zone'] ?? null,
+      });
+    } catch {}
     event.preventDefault();
     // Keep internal pointer tracking up-to-date.
     this.updateDraggedFloatingPosition(event);
@@ -1779,6 +1804,8 @@ export class MintDockManagerElement extends HTMLElement {
       const px = (point ? point.clientX : event.clientX) as number;
       const py = (point ? point.clientY : event.clientY) as number;
       if (Number.isFinite(px) && Number.isFinite(py) && this.isPointerOverSourceHeader(px, py)) {
+        // Drive live reorder using the unified path so we update instantly.
+        this.updatePaneDragDropTargetFromPoint(px, py);
         this.hideDropIndicator();
         return;
       }
@@ -1834,7 +1861,46 @@ export class MintDockManagerElement extends HTMLElement {
   }
 
   private onGlobalDragEnd(): void {
-    this.hideDropIndicator();
+    // Attempt to finalize a drop even if the drop event doesn't reach us (Firefox/edge cases)
+    const state = this.dragState;
+    const pos = this.lastDragPointerPosition;
+    if (state && pos) {
+      const stack = this.findStackAtPoint(pos.x, pos.y);
+      const joystickVisible = this.dropJoystick.dataset['visible'] === 'true';
+      const joystickPath = this.parsePath(this.dropJoystick.dataset['path']);
+      const joystickTarget = this.dropJoystickTarget;
+      const joystickTargetPath = joystickTarget ? this.parsePath(joystickTarget.dataset['path']) : null;
+      const path = stack ? this.parsePath(stack.dataset['path']) : (joystickPath ?? joystickTargetPath);
+      const joystickZone = this.dropJoystick.dataset['zone'] as DropZone | undefined;
+      const zone = this.isDropZone(joystickZone)
+        ? joystickZone
+        : (stack ? this.computeDropZone(stack, { clientX: pos.x, clientY: pos.y }, null) : null);
+      try {
+        // eslint-disable-next-line no-debugger
+        debugger;
+        console.debug('[mint-dock] onGlobalDragEnd', {
+          lastPos: pos,
+          stackPath: stack?.dataset?.['path'] ?? null,
+          joystickVisible,
+          joystickStoredPath: this.dropJoystick.dataset?.['path'] ?? null,
+          joystickTargetPath: this.dropJoystickTarget?.dataset?.['path'] ?? null,
+          resolvedPath: path ? (typeof path === 'object' ? this.formatPath(path as any) : String(path)) : null,
+          joystickZone,
+          resolvedZone: zone ?? null,
+          sourcePath: this.dragState?.sourcePath ? this.formatPath(this.dragState.sourcePath as any) : null,
+        });
+      } catch {}
+      if (path && this.isDropZone(zone)) {
+        this.handleDrop(path, zone!);
+        this.hideDropIndicator();
+        if (this.dragState) {
+          this.dragState.dropHandled = true;
+        }
+      }
+    } else {
+      this.hideDropIndicator();
+    }
+
     if (!this.dragState) {
       this.clearPendingTabDragMetrics();
       return;
@@ -1868,13 +1934,9 @@ export class MintDockManagerElement extends HTMLElement {
       const threshold = 8; // pixels to move before converting (tuned up)
       // Default to inside while bounds are unknown to avoid premature floating
       let insideHeader = true;
-      if (b) {
-        insideHeader = clientX >= b.left && clientX <= b.right && clientY >= b.top && clientY <= b.bottom;
-      }
-      // Also use hit-testing to guard conversion (helps in Firefox)
-      if (insideHeader) {
-        insideHeader = this.isPointerOverSourceHeader(clientX, clientY);
-      }
+      const insideByBounds = b ? this.isPointWithinBounds(b, clientX, clientY) : true;
+      const insideByHitTest = this.isPointerOverSourceHeader(clientX, clientY);
+      insideHeader = insideByBounds || insideByHitTest;
       if (!insideHeader && dist > threshold) {
         // Convert to floating now using current pointer position
         this.convertPendingTabDragToFloating(clientX, clientY);
@@ -1930,7 +1992,10 @@ export class MintDockManagerElement extends HTMLElement {
       this.updateDropJoystickActiveZone(null);
     }
 
-    // While reordering within the same header, suppress the joystick/indicator entirely
+    // Previous behavior hid the indicator and returned early here; instead,
+    // allow the live-reorder branch below to handle in-header drags.
+
+    // While reordering within the same header, update order live and suppress joystick/indicator
     if (
       this.dragState &&
       this.dragState.floatingIndex !== null &&
@@ -1938,30 +2003,27 @@ export class MintDockManagerElement extends HTMLElement {
       path &&
       this.pathsEqual(path, this.dragState.sourcePath)
     ) {
-      const b = this.dragState.sourceHeaderBounds;
-      if (
-        b &&
-        clientX >= b.left &&
-        clientX <= b.right &&
-        clientY >= b.top &&
-        clientY <= b.bottom
-      ) {
+      const inHeaderByBounds = !!this.dragState.sourceHeaderBounds && this.isPointWithinBounds(this.dragState.sourceHeaderBounds, clientX, clientY);
+      const inHeaderByHitTest = this.isPointerOverSourceHeader(clientX, clientY);
+      if (inHeaderByBounds || inHeaderByHitTest) {
+        const header = stack.querySelector<HTMLElement>('.dock-stack__header');
+        if (header) {
+          const idx = this.computeHeaderInsertIndex(header, clientX);
+          if (this.dragState.liveReorderIndex !== idx) {
+            this.ensureHeaderDragPlaceholder(header, this.dragState.pane);
+            this.updateHeaderDragPlaceholderPosition(header, idx);
+            const location = this.resolveStackLocation(path);
+            if (location) {
+              this.reorderPaneInLocationAtIndex(location, this.dragState.pane, idx);
+              this.render();
+              this.dispatchLayoutChanged();
+            }
+            this.dragState.liveReorderIndex = idx;
+          }
+        }
         this.hideDropIndicator();
         return;
       }
-    }
-
-    // While reordering within the same header, suppress the joystick/indicator entirely
-    if (
-      this.dragState &&
-      this.dragState.floatingIndex !== null &&
-      this.dragState.floatingIndex < 0 &&
-      path &&
-      this.pathsEqual(path, this.dragState.sourcePath) &&
-      this.isPointerOverSourceHeader(clientX, clientY)
-    ) {
-      this.hideDropIndicator();
-      return;
     }
 
     const zoneHint = this.findDropZoneByPoint(clientX, clientY);
@@ -1989,6 +2051,73 @@ export class MintDockManagerElement extends HTMLElement {
       }
     }
     return false;
+  }
+
+  private isPointWithinBounds(
+    bounds: { left: number; right: number; top: number; bottom: number },
+    x: number,
+    y: number,
+  ): boolean {
+    return x >= bounds.left && x <= bounds.right && y >= bounds.top && y <= bounds.bottom;
+  }
+
+  // Ensure a placeholder tab exists during in-header drag and hide the real dragged tab visually
+  private ensureHeaderDragPlaceholder(header: HTMLElement, pane: string): void {
+    if (this.dragState?.placeholderHeader === header && this.dragState.placeholderEl) {
+      return;
+    }
+    const dragged = Array.from(header.querySelectorAll<HTMLElement>('.dock-tab')).find((t) => t.dataset['pane'] === pane) ?? null;
+    if (!dragged) {
+      return;
+    }
+    // Create placeholder
+    const placeholder = this.documentRef.createElement('button');
+    placeholder.type = 'button';
+    placeholder.classList.add('dock-tab');
+    placeholder.dataset['placeholder'] = 'true';
+    placeholder.textContent = dragged.textContent ?? '';
+    // Hide the original dragged tab so it doesn't duplicate visually
+    dragged.style.visibility = 'hidden';
+    // Insert placeholder next to dragged initially
+    header.insertBefore(placeholder, dragged.nextSibling);
+    if (this.dragState) {
+      this.dragState.placeholderHeader = header;
+      this.dragState.placeholderEl = placeholder;
+    }
+  }
+
+  // Move the placeholder to the computed target index within the header
+  private updateHeaderDragPlaceholderPosition(header: HTMLElement, targetIndex: number): void {
+    const placeholder = this.dragState?.placeholderEl ?? null;
+    if (!placeholder) {
+      return;
+    }
+    const tabs = Array.from(header.querySelectorAll<HTMLElement>('.dock-tab'))
+      .filter((t) => t !== placeholder);
+    const clampedTarget = Math.max(0, Math.min(targetIndex, tabs.length));
+    const ref = tabs[clampedTarget] ?? null;
+    header.insertBefore(placeholder, ref);
+  }
+
+  // Remove placeholder and restore original tab visibility
+  private clearHeaderDragPlaceholder(): void {
+    const ph = this.dragState?.placeholderEl ?? null;
+    const header = this.dragState?.placeholderHeader ?? null;
+    if (header) {
+      const dragged = this.dragState?.pane
+        ? (Array.from(header.querySelectorAll<HTMLElement>('.dock-tab')).find((t) => t.dataset['pane'] === this.dragState?.pane) ?? null)
+        : null;
+      if (dragged) {
+        dragged.style.visibility = '';
+      }
+    }
+    if (ph && ph.parentElement) {
+      ph.parentElement.removeChild(ph);
+    }
+    if (this.dragState) {
+      this.dragState.placeholderEl = null;
+      this.dragState.placeholderHeader = null;
+    }
   }
 
   private startDragPointerTracking(): void {
@@ -2053,6 +2182,13 @@ export class MintDockManagerElement extends HTMLElement {
   }
 
   private onDragMouseUp(): void {
+    // Prefer committing a drop from pointer-up since some browsers suppress drop events
+    if (this.dragState) {
+      const pos = this.lastDragPointerPosition;
+      if (pos) {
+        this.finalizeDropFromPoint(pos.x, pos.y);
+      }
+    }
     this.handleDragPointerUpCommon();
   }
 
@@ -2065,6 +2201,8 @@ export class MintDockManagerElement extends HTMLElement {
     if (state.floatingIndex !== null && state.floatingIndex >= 0) {
       return; // already floating
     }
+    // Clean up any placeholder before converting
+    this.clearHeaderDragPlaceholder();
     const location = this.resolveStackLocation(state.sourcePath);
     if (!location) {
       return;
@@ -2145,7 +2283,8 @@ export class MintDockManagerElement extends HTMLElement {
 
   // Compute the intended tab insert index within a header based on pointer X
   private computeHeaderInsertIndex(header: HTMLElement, clientX: number): number {
-    const tabs = Array.from(header.querySelectorAll<HTMLElement>('.dock-tab'));
+    const tabs = Array.from(header.querySelectorAll<HTMLElement>('.dock-tab'))
+      .filter((t) => t.dataset['placeholder'] !== 'true');
     if (tabs.length === 0) {
       return 0;
     }
@@ -2182,6 +2321,55 @@ export class MintDockManagerElement extends HTMLElement {
 
   private onDragTouchEnd(): void {
     this.handleDragPointerUpCommon();
+  }
+
+  // Commit a drop using current pointer coordinates and joystick state
+  private finalizeDropFromPoint(clientX: number, clientY: number): void {
+    if (!this.dragState) {
+      return;
+    }
+    const stack = this.findStackAtPoint(clientX, clientY);
+    const stackPath = stack ? this.parsePath(stack.dataset['path']) : null;
+    const joystickVisible = this.dropJoystick.dataset['visible'] === 'true';
+    const joystickStoredPath = this.parsePath(this.dropJoystick.dataset['path']);
+    const joystickTarget = this.dropJoystickTarget;
+    const joystickTargetPath = joystickTarget ? this.parsePath(joystickTarget.dataset['path']) : null;
+    const path = (joystickVisible ? (joystickStoredPath ?? joystickTargetPath) : null) ?? stackPath;
+
+    const joystickZone = this.dropJoystick.dataset['zone'] as DropZone | undefined;
+    const zone: DropZone | null = this.isDropZone(joystickZone)
+      ? joystickZone
+      : (stack ? this.computeDropZone(stack, { clientX, clientY }, null) : null);
+
+    // Same-header reorder case when no side zone is chosen
+    if (
+      this.dragState &&
+      this.dragState.floatingIndex !== null &&
+      this.dragState.floatingIndex < 0 &&
+      stack &&
+      path &&
+      stackPath &&
+      this.pathsEqual(stackPath, this.dragState.sourcePath) &&
+      (!zone || zone === 'center')
+    ) {
+      const header = stack.querySelector<HTMLElement>('.dock-stack__header');
+      if (header) {
+        const location = this.resolveStackLocation(path);
+        if (location) {
+          const idx = this.computeHeaderInsertIndex(header, clientX);
+          this.reorderPaneInLocationAtIndex(location, this.dragState.pane, idx);
+          this.render();
+          this.dispatchLayoutChanged();
+          this.dragState.dropHandled = true;
+          return;
+        }
+      }
+    }
+
+    if (path && this.isDropZone(zone)) {
+      this.handleDrop(path, zone!);
+      this.dragState.dropHandled = true;
+    }
   }
 
   private clearPendingDragEndTimeout(): void {
@@ -2242,21 +2430,59 @@ export class MintDockManagerElement extends HTMLElement {
       this.findStackElement(event) ??
       (point ? this.findStackAtPoint(point.clientX, point.clientY) : null);
 
-    if (!stack) {
-      this.hideDropIndicator();
-      this.endPaneDrag();
-      return;
+    // Prefer joystick's stored target path when the joystick is visible (drop over buttons)
+    const joystickVisible = this.dropJoystick.dataset['visible'] === 'true';
+    const joystickPath = this.parsePath(this.dropJoystick.dataset['path']);
+    const joystickTarget = this.dropJoystickTarget;
+    const joystickTargetPath = joystickTarget ? this.parsePath(joystickTarget.dataset['path']) : null;
+    let path = stack
+      ? this.parsePath(stack.dataset['path'])
+      : (joystickPath ?? joystickTargetPath);
+    if (!path && joystickVisible) {
+      // As a last resort, target the main dock surface only when empty
+      const dockPath = this.parsePath(this.dockedEl.dataset['path']);
+      path = (!this.rootLayout ? dockPath : null);
     }
 
-    const path = this.parsePath(stack.dataset['path']);
+    // Defer same-header reorder decision until after zone resolution below
 
-    // Allow reordering within the same stack header without selecting a zone
+    // Prefer joystick's active zone if available, else infer from event/point
+    const joystickZone = this.dropJoystick.dataset['zone'] as DropZone | undefined;
+    const eventZoneHint = this.extractDropZoneFromEvent(event);
+    const pointZoneHint = point ? this.findDropZoneByPoint(point.clientX, point.clientY) : null;
+    const zone = this.isDropZone(joystickZone)
+      ? joystickZone
+      : stack
+      ? this.computeDropZone(stack, point ?? event, pointZoneHint ?? eventZoneHint)
+      : (this.isDropZone(pointZoneHint ?? eventZoneHint) ? (pointZoneHint ?? eventZoneHint) : null);
+
+    // Debug instrumentation: log resolved drop context and pause in debugger
+    try {
+      // eslint-disable-next-line no-debugger
+      debugger;
+      console.debug('[mint-dock] onDrop', {
+        point,
+        stackPath: stack?.dataset?.['path'] ?? null,
+        joystickVisible,
+        joystickStoredPath: this.dropJoystick.dataset?.['path'] ?? null,
+        joystickTargetPath: this.dropJoystickTarget?.dataset?.['path'] ?? null,
+        resolvedPath: path ? (typeof path === 'object' ? this.formatPath(path as any) : String(path)) : null,
+        joystickZone,
+        eventZoneHint,
+        pointZoneHint,
+        resolvedZone: zone ?? null,
+        sourcePath: this.dragState?.sourcePath ? this.formatPath(this.dragState.sourcePath as any) : null,
+      });
+    } catch {}
+    // If still in same header and no side zone chosen, treat as in-header reorder
     if (
       this.dragState &&
       this.dragState.floatingIndex !== null &&
       this.dragState.floatingIndex < 0 &&
+      stack &&
       path &&
-      this.pathsEqual(path, this.dragState.sourcePath)
+      this.pathsEqual(path, this.dragState.sourcePath) &&
+      (!zone || zone === 'center')
     ) {
       const header = stack.querySelector<HTMLElement>('.dock-stack__header');
       if (header) {
@@ -2275,10 +2501,12 @@ export class MintDockManagerElement extends HTMLElement {
         }
       }
     }
-
-    const eventZoneHint = this.extractDropZoneFromEvent(event);
-    const pointZoneHint = point ? this.findDropZoneByPoint(point.clientX, point.clientY) : null;
-    const zone = this.computeDropZone(stack, point ?? event, pointZoneHint ?? eventZoneHint);
+    // If joystick is visible and both path and zone are resolved, force using joystick as authoritative
+    if (joystickVisible && path && this.isDropZone(joystickZone)) {
+      this.handleDrop(path, joystickZone);
+      this.endPaneDrag();
+      return;
+    }
     if (!zone) {
       this.hideDropIndicator();
       this.endPaneDrag();
@@ -2326,6 +2554,16 @@ export class MintDockManagerElement extends HTMLElement {
     }
 
     const { pane, sourcePath } = this.dragState;
+    try {
+      // eslint-disable-next-line no-debugger
+      debugger;
+      console.debug('[mint-dock] handleDrop(before)', {
+        pane,
+        sourcePath: this.formatPath(sourcePath as any),
+        targetPath: this.formatPath(targetPath as any),
+        zone,
+      });
+    } catch {}
     const source = this.resolveStackLocation(sourcePath);
     const target = this.resolveStackLocation(targetPath);
 
@@ -2417,6 +2655,12 @@ export class MintDockManagerElement extends HTMLElement {
     if (this.dragState) {
       this.dragState.dropHandled = true;
     }
+    try {
+      console.debug('[mint-dock] handleDrop(after)', {
+        rootLayout: this.rootLayout,
+        floatingCount: this.floatingLayouts.length,
+      });
+    } catch {}
   }
 
   private handleFloatingStackDrop(sourceIndex: number, targetPath: DockPath, zone: DropZone): boolean {
