@@ -1960,7 +1960,8 @@ export class MintDockManagerElement extends HTMLElement {
     // Previous behavior hid the indicator and returned early here; instead,
     // allow the live-reorder branch below to handle in-header drags.
 
-    // While reordering within the same header, update order live and suppress joystick/indicator
+    // While dragging within the same header, show a placeholder and live-reorder the tabs.
+    // The original dragged tab is hidden; the placeholder moves to the computed target index.
     if (
       this.dragState &&
       this.dragState.floatingIndex !== null &&
@@ -1973,16 +1974,13 @@ export class MintDockManagerElement extends HTMLElement {
       if (inHeaderByBounds || inHeaderByHitTest) {
         const header = stack.querySelector<HTMLElement>('.dock-stack__header');
         if (header) {
+          // Ensure placeholder exists and move it as the pointer moves
+          this.ensureHeaderDragPlaceholder(header, this.dragState.pane);
           const idx = this.computeHeaderInsertIndex(header, clientX);
           if (this.dragState.liveReorderIndex !== idx) {
-            this.ensureHeaderDragPlaceholder(header, this.dragState.pane);
             this.updateHeaderDragPlaceholderPosition(header, idx);
-            const location = this.resolveStackLocation(path);
-            if (location) {
-              this.reorderPaneInLocationAtIndex(location, this.dragState.pane, idx);
-              this.render();
-              this.dispatchLayoutChanged();
-            }
+            // Do not re-render during drag to keep placeholder visible and smooth.
+            // Model reordering is finalized on drop.
             this.dragState.liveReorderIndex = idx;
           }
         }
@@ -1990,6 +1988,9 @@ export class MintDockManagerElement extends HTMLElement {
         return;
       }
     }
+
+    // Leaving the header: ensure any placeholder is removed immediately
+    this.clearHeaderDragPlaceholder();
 
     const zoneHint = this.findDropZoneByPoint(clientX, clientY);
     const zone = this.computeDropZone(stack, { clientX, clientY }, zoneHint);
