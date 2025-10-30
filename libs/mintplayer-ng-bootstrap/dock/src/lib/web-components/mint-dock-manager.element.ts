@@ -1627,6 +1627,28 @@ export class MintDockManagerElement extends HTMLElement {
     this.startDragPointerTracking();
     event.dataTransfer.effectAllowed = 'move';
     event.dataTransfer.setData('text/plain', pane);
+
+    // Preferred UX: if the dragged tab is the only one in its stack,
+    // immediately convert to a floating window unless it is already the
+    // only pane in a floating window (this case is handled by reuse logic).
+    if (this.dragState && this.dragState.floatingIndex !== null && this.dragState.floatingIndex < 0) {
+      const loc = this.resolveStackLocation(this.dragState.sourcePath);
+      if (loc && Array.isArray(loc.node.panes) && loc.node.panes.length === 1) {
+        let shouldConvert = false;
+        if (loc.context === "docked") {
+          shouldConvert = true;
+        } else if (loc.context === "floating") {
+          const floating = this.floatingLayouts[loc.index];
+          const totalPanes = floating && floating.root ? this.countPanesInTree(floating.root) : 0;
+          shouldConvert = totalPanes > 1; // not the only pane in this floating window
+        }
+        if (shouldConvert) {
+          const startX = Number.isFinite(event.clientX) ? event.clientX : (this.dragState.startClientX ?? 0);
+          const startY = Number.isFinite(event.clientY) ? event.clientY : (this.dragState.startClientY ?? 0);
+          this.convertPendingTabDragToFloating(startX, startY);
+        }
+      }
+    }
   }
 
   private preparePaneDragSource(
@@ -1947,6 +1969,8 @@ export class MintDockManagerElement extends HTMLElement {
       if (this.dropJoystick.dataset['visible'] !== 'true') {
         this.hideDropIndicator();
       }
+      // Also ensure any in-header placeholder is cleared when not over a stack
+      this.clearHeaderDragPlaceholder();
       return;
     }
 
@@ -1960,7 +1984,7 @@ export class MintDockManagerElement extends HTMLElement {
     // Previous behavior hid the indicator and returned early here; instead,
     // allow the live-reorder branch below to handle in-header drags.
 
-    // While reordering within the same header, update order live and suppress joystick/indicator
+    // While dragging within the same header, show a placeholder and suppress joystick/indicator
     if (
       this.dragState &&
       this.dragState.floatingIndex !== null &&
@@ -1973,16 +1997,12 @@ export class MintDockManagerElement extends HTMLElement {
       if (inHeaderByBounds || inHeaderByHitTest) {
         const header = stack.querySelector<HTMLElement>('.dock-stack__header');
         if (header) {
+          // Ensure placeholder exists and move it as the pointer moves
+          this.ensureHeaderDragPlaceholder(header, this.dragState.pane);
           const idx = this.computeHeaderInsertIndex(header, clientX);
           if (this.dragState.liveReorderIndex !== idx) {
-            this.ensureHeaderDragPlaceholder(header, this.dragState.pane);
             this.updateHeaderDragPlaceholderPosition(header, idx);
-            const location = this.resolveStackLocation(path);
-            if (location) {
-              this.reorderPaneInLocationAtIndex(location, this.dragState.pane, idx);
-              this.render();
-              this.dispatchLayoutChanged();
-            }
+            // Keep model reordering until drop; only move the placeholder now
             this.dragState.liveReorderIndex = idx;
           }
         }
@@ -1990,6 +2010,9 @@ export class MintDockManagerElement extends HTMLElement {
         return;
       }
     }
+
+    // Leaving the header: ensure any placeholder is removed immediately
+    this.clearHeaderDragPlaceholder();
 
     const zoneHint = this.findDropZoneByPoint(clientX, clientY);
     const zone = this.computeDropZone(stack, { clientX, clientY }, zoneHint);
@@ -2040,11 +2063,14 @@ export class MintDockManagerElement extends HTMLElement {
     placeholder.type = 'button';
     placeholder.classList.add('dock-tab');
     placeholder.dataset['placeholder'] = 'true';
-    placeholder.textContent = dragged.textContent ?? '';
-    // Hide the original dragged tab so it doesn't duplicate visually
-    dragged.style.visibility = 'hidden';
-    // Insert placeholder next to dragged initially
-    header.insertBefore(placeholder, dragged.nextSibling);
+    // Keep the placeholder visually empty but reserving the same width
+    placeholder.textContent = '';
+    placeholder.setAttribute('aria-hidden', 'true');
+    placeholder.style.width = `${dragged.offsetWidth}px`;
+    // Hide the original dragged tab so it doesn't duplicate visually and free up its slot
+    dragged.style.display = 'none';
+    // Insert placeholder in the original position of the dragged tab
+    header.insertBefore(placeholder, dragged);
     if (this.dragState) {
       this.dragState.placeholderHeader = header;
       this.dragState.placeholderEl = placeholder;
@@ -2057,8 +2083,9 @@ export class MintDockManagerElement extends HTMLElement {
     if (!placeholder) {
       return;
     }
+    const draggedPane = this.dragState?.pane ?? null;
     const tabs = Array.from(header.querySelectorAll<HTMLElement>('.dock-tab'))
-      .filter((t) => t !== placeholder);
+      .filter((t) => t !== placeholder && (!draggedPane || t.dataset['pane'] !== draggedPane));
     const clampedTarget = Math.max(0, Math.min(targetIndex, tabs.length));
     const ref = tabs[clampedTarget] ?? null;
     header.insertBefore(placeholder, ref);
@@ -2073,7 +2100,7 @@ export class MintDockManagerElement extends HTMLElement {
         ? (Array.from(header.querySelectorAll<HTMLElement>('.dock-tab')).find((t) => t.dataset['pane'] === this.dragState?.pane) ?? null)
         : null;
       if (dragged) {
-        dragged.style.visibility = '';
+        dragged.style.display = '';
       }
     }
     if (ph && ph.parentElement) {
@@ -2247,20 +2274,46 @@ export class MintDockManagerElement extends HTMLElement {
   }
 
   // Compute the intended tab insert index within a header based on pointer X
+  // Adds a slight rightward bias and uses the placeholder rect (if present)
+  // to ensure offsets are correct even when the dragged tab is display:none.
   private computeHeaderInsertIndex(header: HTMLElement, clientX: number): number {
-    const tabs = Array.from(header.querySelectorAll<HTMLElement>('.dock-tab'))
-      .filter((t) => t.dataset['placeholder'] !== 'true');
-    if (tabs.length === 0) {
+    const allTabs = Array.from(header.querySelectorAll<HTMLElement>('.dock-tab'));
+    if (allTabs.length === 0) {
       return 0;
     }
-    for (let i = 0; i < tabs.length; i += 1) {
-      const rect = tabs[i].getBoundingClientRect();
-      const mid = rect.left + rect.width / 2;
+
+    const draggedPane = this.dragState?.pane ?? null;
+    const draggedEl = draggedPane
+      ? (allTabs.find((t) => t.dataset['pane'] === draggedPane) ?? null)
+      : null;
+    const placeholderEl = header.querySelector<HTMLElement>('.dock-tab[data-placeholder="true"]');
+
+    const targets = allTabs.filter((t) => t !== draggedEl && t !== placeholderEl);
+    if (targets.length === 0) {
+      return 0;
+    }
+
+    const rightBias = 12;
+    const leftBias = 0;
+
+    const baseRect = placeholderEl
+      ? placeholderEl.getBoundingClientRect()
+      : draggedEl
+      ? draggedEl.getBoundingClientRect()
+      : null;
+    const rectValid = !!baseRect && Number.isFinite(baseRect.width) && (baseRect as DOMRect).width > 0;
+    const draggedCenter = rectValid && baseRect ? baseRect.left + baseRect.width / 2 : null;
+
+    for (let i = 0; i < targets.length; i += 1) {
+      const rect = targets[i].getBoundingClientRect();
+      const baseMid = rect.left + rect.width / 2;
+      const isRightOfDragged = draggedCenter !== null ? baseMid >= draggedCenter : false;
+      const mid = isRightOfDragged ? baseMid + rightBias : baseMid - leftBias;
       if (clientX < mid) {
         return i;
       }
     }
-    return tabs.length; // insert at end
+    return targets.length;
   }
 
   private reorderPaneInLocationAtIndex(location: ResolvedLocation, pane: string, targetIndex: number): void {
