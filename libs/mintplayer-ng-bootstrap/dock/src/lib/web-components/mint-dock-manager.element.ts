@@ -1947,6 +1947,8 @@ export class MintDockManagerElement extends HTMLElement {
       if (this.dropJoystick.dataset['visible'] !== 'true') {
         this.hideDropIndicator();
       }
+      // If we are no longer over any stack, ensure header placeholder is removed.
+      this.clearHeaderDragPlaceholder();
       return;
     }
 
@@ -2249,6 +2251,9 @@ export class MintDockManagerElement extends HTMLElement {
     state.pointerOffsetX = pointerOffsetX;
     state.pointerOffsetY = pointerOffsetY;
     this.dispatchLayoutChanged();
+
+    // Safety: ensure no header placeholder lingers after conversion
+    this.clearHeaderDragPlaceholder();
   }
 
   // Compute the intended tab insert index within a header based on pointer X
