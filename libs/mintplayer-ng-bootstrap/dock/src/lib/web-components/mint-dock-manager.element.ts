@@ -1627,6 +1627,29 @@ export class MintDockManagerElement extends HTMLElement {
     this.startDragPointerTracking();
     event.dataTransfer.effectAllowed = 'move';
     event.dataTransfer.setData('text/plain', pane);
+
+    // Preferred UX: if the dragged tab is the only one in its stack,
+    // immediately convert to a floating window unless it is already the
+    // only pane in a floating window (handled by existing reuse logic).
+    if (this.dragState && this.dragState.floatingIndex !== null && this.dragState.floatingIndex < 0) {
+      const loc = this.resolveStackLocation(this.dragState.sourcePath);
+      if (loc && Array.isArray(loc.node.panes) && loc.node.panes.length === 1) {
+        let shouldConvert = false;
+        if (loc.context === 'docked') {
+          shouldConvert = true;
+        } else if (loc.context === 'floating') {
+          const floating = this.floatingLayouts[loc.index];
+          const totalPanes = floating && floating.root ? this.countPanesInTree(floating.root) : 0;
+          // Only convert if there are other panes in this floating window (not the only pane)
+          shouldConvert = totalPanes > 1;
+        }
+        if (shouldConvert) {
+          const startX = Number.isFinite(event.clientX) ? event.clientX : (this.dragState.startClientX ?? 0);
+          const startY = Number.isFinite(event.clientY) ? event.clientY : (this.dragState.startClientY ?? 0);
+          this.convertPendingTabDragToFloating(startX, startY);
+        }
+      }
+    }
   }
 
   private preparePaneDragSource(
