@@ -663,12 +663,6 @@ export class MintDockManagerElement extends HTMLElement {
         if (this.isDropZone(z)) {
           this.updateDropJoystickActiveZone(z);
           e.preventDefault();
-          try {
-            console.debug('[mint-dock] joystick dragover', {
-              zone: z,
-              path: this.dropJoystick.dataset?.['path'] ?? null,
-            });
-          } catch {}
         }
       };
       btn.addEventListener('dragenter', handler);
@@ -1353,12 +1347,6 @@ export class MintDockManagerElement extends HTMLElement {
       button.addEventListener('pointercancel', () => this.clearPendingTabDragMetrics());
       button.addEventListener('dragstart', (event) => {
         const stackEl = button.closest<HTMLElement>('.dock-stack');
-        try {
-          console.debug('[mint-dock] dragstart(tab)', {
-            pane: paneName,
-            sourcePath: this.formatPath(this.clonePath(location) as any),
-          });
-        } catch {}
         this.beginPaneDrag(event, this.clonePath(location), paneName, stackEl ?? null);
       });
       button.addEventListener('dragend', () => {
@@ -1752,15 +1740,6 @@ export class MintDockManagerElement extends HTMLElement {
     if (!this.dragState) {
       return;
     }
-    try {
-      console.debug('[mint-dock] onDragOver', {
-        clientX: event.clientX,
-        clientY: event.clientY,
-        visible: this.dropJoystick.dataset['visible'] === 'true',
-        joystickPath: this.dropJoystick.dataset?.['path'] ?? null,
-        joystickZone: this.dropJoystick.dataset?.['zone'] ?? null,
-      });
-    } catch {}
     event.preventDefault();
     // Keep internal pointer tracking up-to-date.
     this.updateDraggedFloatingPosition(event);
@@ -1875,21 +1854,7 @@ export class MintDockManagerElement extends HTMLElement {
       const zone = this.isDropZone(joystickZone)
         ? joystickZone
         : (stack ? this.computeDropZone(stack, { clientX: pos.x, clientY: pos.y }, null) : null);
-      try {
-        // eslint-disable-next-line no-debugger
-        debugger;
-        console.debug('[mint-dock] onGlobalDragEnd', {
-          lastPos: pos,
-          stackPath: stack?.dataset?.['path'] ?? null,
-          joystickVisible,
-          joystickStoredPath: this.dropJoystick.dataset?.['path'] ?? null,
-          joystickTargetPath: this.dropJoystickTarget?.dataset?.['path'] ?? null,
-          resolvedPath: path ? (typeof path === 'object' ? this.formatPath(path as any) : String(path)) : null,
-          joystickZone,
-          resolvedZone: zone ?? null,
-          sourcePath: this.dragState?.sourcePath ? this.formatPath(this.dragState.sourcePath as any) : null,
-        });
-      } catch {}
+      
       if (path && this.isDropZone(zone)) {
         this.handleDrop(path, zone!);
         this.hideDropIndicator();
@@ -2456,24 +2421,7 @@ export class MintDockManagerElement extends HTMLElement {
       ? this.computeDropZone(stack, point ?? event, pointZoneHint ?? eventZoneHint)
       : (this.isDropZone(pointZoneHint ?? eventZoneHint) ? (pointZoneHint ?? eventZoneHint) : null);
 
-    // Debug instrumentation: log resolved drop context and pause in debugger
-    try {
-      // eslint-disable-next-line no-debugger
-      debugger;
-      console.debug('[mint-dock] onDrop', {
-        point,
-        stackPath: stack?.dataset?.['path'] ?? null,
-        joystickVisible,
-        joystickStoredPath: this.dropJoystick.dataset?.['path'] ?? null,
-        joystickTargetPath: this.dropJoystickTarget?.dataset?.['path'] ?? null,
-        resolvedPath: path ? (typeof path === 'object' ? this.formatPath(path as any) : String(path)) : null,
-        joystickZone,
-        eventZoneHint,
-        pointZoneHint,
-        resolvedZone: zone ?? null,
-        sourcePath: this.dragState?.sourcePath ? this.formatPath(this.dragState.sourcePath as any) : null,
-      });
-    } catch {}
+    
     // If still in same header and no side zone chosen, treat as in-header reorder
     if (
       this.dragState &&
@@ -2554,16 +2502,7 @@ export class MintDockManagerElement extends HTMLElement {
     }
 
     const { pane, sourcePath } = this.dragState;
-    try {
-      // eslint-disable-next-line no-debugger
-      debugger;
-      console.debug('[mint-dock] handleDrop(before)', {
-        pane,
-        sourcePath: this.formatPath(sourcePath as any),
-        targetPath: this.formatPath(targetPath as any),
-        zone,
-      });
-    } catch {}
+    
     const source = this.resolveStackLocation(sourcePath);
     const target = this.resolveStackLocation(targetPath);
 
@@ -2655,12 +2594,7 @@ export class MintDockManagerElement extends HTMLElement {
     if (this.dragState) {
       this.dragState.dropHandled = true;
     }
-    try {
-      console.debug('[mint-dock] handleDrop(after)', {
-        rootLayout: this.rootLayout,
-        floatingCount: this.floatingLayouts.length,
-      });
-    } catch {}
+    
   }
 
   private handleFloatingStackDrop(sourceIndex: number, targetPath: DockPath, zone: DropZone): boolean {
