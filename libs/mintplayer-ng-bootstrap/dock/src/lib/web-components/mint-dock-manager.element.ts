@@ -510,6 +510,8 @@ export class MintDockManagerElement extends HTMLElement {
         top: number;
         width: number;
         height: number;
+        startClientX: number;
+        startClientY: number;
       }
     | null = null;
   private resizeState:
@@ -1472,7 +1474,6 @@ export class MintDockManagerElement extends HTMLElement {
     }
 
     if (this.floatingDragState && event.pointerId === this.floatingDragState.pointerId) {
-      console.warn('state', this.floatingDragState);
       this.handleFloatingDragMove(event);
     }
   }
@@ -1524,6 +1525,8 @@ export class MintDockManagerElement extends HTMLElement {
       top,
       width,
       height,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
     };
   }
 
@@ -1553,7 +1556,9 @@ export class MintDockManagerElement extends HTMLElement {
 
     // Use the ghost element as the drag image.
     // The offset is set to where the user's cursor is on the original element.
-    event.dataTransfer.setDragImage(ghost, event.offsetX, event.offsetY);
+    const dragImgOffsetX = Number.isFinite((event as any).offsetX) ? (event as any).offsetX : 0;
+    const dragImgOffsetY = Number.isFinite((event as any).offsetY) ? (event as any).offsetY : 0;
+    event.dataTransfer.setDragImage(ghost, dragImgOffsetX, dragImgOffsetY);
 
     // The ghost element is no longer needed after the drag image is set.
     // We defer its removal to ensure the browser has captured it.
@@ -1572,6 +1577,7 @@ export class MintDockManagerElement extends HTMLElement {
     const headerBounds = headerRect
       ? { left: headerRect.left, top: headerRect.top, right: headerRect.right, bottom: headerRect.bottom }
       : null;
+    const metrics = this.pendingTabDragMetrics;
 
     this.dragState = {
       pane,
@@ -1582,9 +1588,31 @@ export class MintDockManagerElement extends HTMLElement {
       dropHandled: false,
       sourceStackEl: stackEl,
       sourceHeaderBounds: headerBounds,
-      startClientX: Number.isFinite(event.clientX) ? event.clientX : undefined,
-      startClientY: Number.isFinite(event.clientY) ? event.clientY : undefined,
+      startClientX:
+        metrics && Number.isFinite(metrics.startClientX)
+          ? metrics.startClientX
+          : Number.isFinite(event.clientX)
+          ? event.clientX
+          : undefined,
+      startClientY:
+        metrics && Number.isFinite(metrics.startClientY)
+          ? metrics.startClientY
+          : Number.isFinite(event.clientY)
+          ? event.clientY
+          : undefined,
     };
+    // Seed last known pointer position from pointerdown metrics to avoid (0,0) glitches in Firefox
+    if (
+      this.dragState.startClientX !== undefined &&
+      this.dragState.startClientY !== undefined &&
+      Number.isFinite(this.dragState.startClientX) &&
+      Number.isFinite(this.dragState.startClientY)
+    ) {
+      this.lastDragPointerPosition = {
+        x: this.dragState.startClientX as number,
+        y: this.dragState.startClientY as number,
+      };
+    }
     // Prefer the pointer offset relative to the dragged tab to avoid jumps on conversion
     if (Number.isFinite((event as any).offsetX)) {
       this.dragState.pointerOffsetX = (event as any).offsetX as number;
@@ -1740,6 +1768,21 @@ export class MintDockManagerElement extends HTMLElement {
     }
 
     const path = this.parsePath(stack.dataset['path']);
+    // While reordering within the same header, suppress the joystick/indicator entirely
+    if (
+      this.dragState &&
+      this.dragState.floatingIndex !== null &&
+      this.dragState.floatingIndex < 0 &&
+      path &&
+      this.pathsEqual(path, this.dragState.sourcePath)
+    ) {
+      const px = (point ? point.clientX : event.clientX) as number;
+      const py = (point ? point.clientY : event.clientY) as number;
+      if (Number.isFinite(px) && Number.isFinite(py) && this.isPointerOverSourceHeader(px, py)) {
+        this.hideDropIndicator();
+        return;
+      }
+    }
     // If the hovered stack changed, clear any sticky zone from the previous
     // target before computing the new zone.
     if (this.dropJoystickTarget && this.dropJoystickTarget !== stack) {
@@ -1758,11 +1801,11 @@ export class MintDockManagerElement extends HTMLElement {
       return;
     }
 
-    const { clientX, clientY, screenX, screenY } = event;
+    const { clientX, clientY } = event;
     const hasValidCoordinates =
       Number.isFinite(clientX) &&
       Number.isFinite(clientY) &&
-      !(clientX === 0 && clientY === 0 && screenX === 0 && screenY === 0);
+      !(clientX === 0 && clientY === 0);
 
     if (hasValidCoordinates) {
       this.lastDragPointerPosition = { x: clientX, y: clientY };
@@ -1811,17 +1854,26 @@ export class MintDockManagerElement extends HTMLElement {
     if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) {
       return;
     }
+    // Ignore obviously bogus coordinates sometimes seen during HTML5 drag
+    if (clientX === 0 && clientY === 0) {
+      return;
+    }
 
-    // If we are still dragging a tab inside its header, only convert to floating once we leave the header bounds.
+    // If still dragging a tab inside its header, only convert to floating once we leave the header.
     if (this.dragState.floatingIndex !== null && this.dragState.floatingIndex < 0) {
       const b = this.dragState.sourceHeaderBounds;
       const sx = this.dragState.startClientX ?? clientX;
       const sy = this.dragState.startClientY ?? clientY;
       const dist = Math.hypot(clientX - sx, clientY - sy);
-      const threshold = 4; // pixels to move before converting
-      let insideHeader = false;
+      const threshold = 8; // pixels to move before converting (tuned up)
+      // Default to inside while bounds are unknown to avoid premature floating
+      let insideHeader = true;
       if (b) {
         insideHeader = clientX >= b.left && clientX <= b.right && clientY >= b.top && clientY <= b.bottom;
+      }
+      // Also use hit-testing to guard conversion (helps in Firefox)
+      if (insideHeader) {
+        insideHeader = this.isPointerOverSourceHeader(clientX, clientY);
       }
       if (!insideHeader && dist > threshold) {
         // Convert to floating now using current pointer position
@@ -1872,15 +1924,71 @@ export class MintDockManagerElement extends HTMLElement {
     }
 
     // If we moved to a different target stack, reset any sticky zone so
-    // the new drop area doesn't inherit the previous side selection.
+      // the new drop area doesn't inherit the previous side selection.
     if (this.dropJoystickTarget && this.dropJoystickTarget !== stack) {
       delete this.dropJoystick.dataset['zone'];
       this.updateDropJoystickActiveZone(null);
     }
 
+    // While reordering within the same header, suppress the joystick/indicator entirely
+    if (
+      this.dragState &&
+      this.dragState.floatingIndex !== null &&
+      this.dragState.floatingIndex < 0 &&
+      path &&
+      this.pathsEqual(path, this.dragState.sourcePath)
+    ) {
+      const b = this.dragState.sourceHeaderBounds;
+      if (
+        b &&
+        clientX >= b.left &&
+        clientX <= b.right &&
+        clientY >= b.top &&
+        clientY <= b.bottom
+      ) {
+        this.hideDropIndicator();
+        return;
+      }
+    }
+
+    // While reordering within the same header, suppress the joystick/indicator entirely
+    if (
+      this.dragState &&
+      this.dragState.floatingIndex !== null &&
+      this.dragState.floatingIndex < 0 &&
+      path &&
+      this.pathsEqual(path, this.dragState.sourcePath) &&
+      this.isPointerOverSourceHeader(clientX, clientY)
+    ) {
+      this.hideDropIndicator();
+      return;
+    }
+
     const zoneHint = this.findDropZoneByPoint(clientX, clientY);
     const zone = this.computeDropZone(stack, { clientX, clientY }, zoneHint);
     this.showDropIndicator(stack, zone);
+  }
+
+  // Returns true when the pointer is currently over the source stack's header (tab strip)
+  private isPointerOverSourceHeader(clientX: number, clientY: number): boolean {
+    const state = this.dragState;
+    if (!state) {
+      return false;
+    }
+    const stackEl = state.sourceStackEl ?? null;
+    const header = stackEl?.querySelector('.dock-stack__header') as HTMLElement | null;
+    if (!header) {
+      // Be conservative: if we cannot resolve the header, treat as inside
+      return true;
+    }
+    const sr = this.shadowRoot;
+    const elements = sr ? sr.elementsFromPoint(clientX, clientY) : [];
+    for (const el of elements) {
+      if (el instanceof HTMLElement && header.contains(el)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private startDragPointerTracking(): void {
