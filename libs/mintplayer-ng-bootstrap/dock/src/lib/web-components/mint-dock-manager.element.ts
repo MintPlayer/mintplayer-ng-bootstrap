@@ -2040,11 +2040,14 @@ export class MintDockManagerElement extends HTMLElement {
     placeholder.type = 'button';
     placeholder.classList.add('dock-tab');
     placeholder.dataset['placeholder'] = 'true';
-    placeholder.textContent = dragged.textContent ?? '';
-    // Hide the original dragged tab so it doesn't duplicate visually
-    dragged.style.visibility = 'hidden';
-    // Insert placeholder next to dragged initially
-    header.insertBefore(placeholder, dragged.nextSibling);
+    // Keep the placeholder visually empty but reserving the same width
+    placeholder.textContent = '';
+    placeholder.setAttribute('aria-hidden', 'true');
+    placeholder.style.width = `${dragged.offsetWidth}px`;
+    // Hide the original dragged tab so it doesn't duplicate visually and free up its slot
+    dragged.style.display = 'none';
+    // Insert placeholder in the original position of the dragged tab
+    header.insertBefore(placeholder, dragged);
     if (this.dragState) {
       this.dragState.placeholderHeader = header;
       this.dragState.placeholderEl = placeholder;
@@ -2073,7 +2076,7 @@ export class MintDockManagerElement extends HTMLElement {
         ? (Array.from(header.querySelectorAll<HTMLElement>('.dock-tab')).find((t) => t.dataset['pane'] === this.dragState?.pane) ?? null)
         : null;
       if (dragged) {
-        dragged.style.visibility = '';
+        dragged.style.display = '';
       }
     }
     if (ph && ph.parentElement) {
@@ -2247,20 +2250,48 @@ export class MintDockManagerElement extends HTMLElement {
   }
 
   // Compute the intended tab insert index within a header based on pointer X
+  // Adds a slight rightward bias so a small move to the right does not immediately
+  // swap with the next tab. Dragging left remains close to midpoint behavior.
   private computeHeaderInsertIndex(header: HTMLElement, clientX: number): number {
-    const tabs = Array.from(header.querySelectorAll<HTMLElement>('.dock-tab'))
+    const allTabs = Array.from(header.querySelectorAll<HTMLElement>('.dock-tab'))
       .filter((t) => t.dataset['placeholder'] !== 'true');
-    if (tabs.length === 0) {
+    if (allTabs.length === 0) {
       return 0;
     }
-    for (let i = 0; i < tabs.length; i += 1) {
-      const rect = tabs[i].getBoundingClientRect();
-      const mid = rect.left + rect.width / 2;
+
+    // Try to resolve the dragged tab element (if any)
+    const draggedPane = this.dragState?.pane ?? null;
+    const draggedEl = draggedPane
+      ? (allTabs.find((t) => t.dataset['pane'] === draggedPane) ?? null)
+      : null;
+
+    // Exclude the dragged element from target positions so we compute insert gaps
+    const targets = draggedEl ? allTabs.filter((t) => t !== draggedEl) : allTabs;
+    if (targets.length === 0) {
+      // Only the dragged tab exists; it stays at index 0
+      return 0;
+    }
+
+    // Bias values in pixels
+    const rightBias = 12; // require a bit more rightward travel to insert after next tab
+    const leftBias = 0; // keep left swaps near midpoint (user reported left feels fine)
+
+    // Helpful reference for deciding "right of dragged"
+    const draggedRect = draggedEl ? draggedEl.getBoundingClientRect() : null;
+    const draggedCenter = draggedRect ? draggedRect.left + draggedRect.width / 2 : null;
+
+    for (let i = 0; i < targets.length; i += 1) {
+      const rect = targets[i].getBoundingClientRect();
+      const baseMid = rect.left + rect.width / 2;
+
+      // Determine if this target sits to the right of the dragged tab's center
+      const isRightOfDragged = draggedCenter !== null ? baseMid >= draggedCenter : false;
+      const mid = isRightOfDragged ? baseMid + rightBias : baseMid - leftBias;
       if (clientX < mid) {
         return i;
       }
     }
-    return tabs.length; // insert at end
+    return targets.length; // insert at end
   }
 
   private reorderPaneInLocationAtIndex(location: ResolvedLocation, pane: string, targetIndex: number): void {
