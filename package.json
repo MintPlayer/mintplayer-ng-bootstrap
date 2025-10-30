@@ -54,7 +54,7 @@
     "@nx/eslint-plugin": "21.3.11",
     "@nx/jest": "21.3.11",
     "@nx/js": "21.3.11",
-    "@nx/workspace": "21.3.11",
+    "@nx/workspace": "^21.3.11",
     "@schematics/angular": "~20.1.5",
     "@swc-node/register": "1.9.2",
     "@swc/core": "1.5.7",
@@ -74,6 +74,7 @@
     "jest-canvas-mock": "^2.4.0",
     "jest-environment-jsdom": "30.0.5",
     "jest-preset-angular": "15.0.0",
+    "jest-util": "30.0.5",
     "ng-mocks": "^14.13.5",
     "ng-packagr": "~20.1.0",
     "nx": "21.3.11",
@@ -87,8 +88,7 @@
     "ts-jest": "29.4.1",
     "ts-node": "10.9.1",
     "typescript": "5.8.3",
-    "webpack-bundle-analyzer": "~4.9.0",
-    "jest-util": "30.0.5"
+    "webpack-bundle-analyzer": "~4.9.0"
   },
   "overrides": {
     "@angular-devkit/build-angular": {

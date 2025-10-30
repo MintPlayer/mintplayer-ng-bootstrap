@@ -7,8 +7,8 @@ import {
   DockSplitNode,
   DockStackNode,
 } from '../types/dock-layout';
-import { dockManagerCss } from './mint-dock-manager.element.css';
-import { dockManagerHtml } from './mint-dock-manager.element.html';
+import { dockManagerCss } from './mint-dock-manager.element-css';
+import { dockManagerHtml } from './mint-dock-manager.element-html';
 
 type DockPath =
   | { type: 'docked'; segments: number[] }

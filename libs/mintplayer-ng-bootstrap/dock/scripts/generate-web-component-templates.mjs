@@ -7,8 +7,8 @@ import { dirname, resolve } from 'node:path';
 const root = resolve(process.cwd(), 'libs/mintplayer-ng-bootstrap/dock/src/lib/web-components');
 const htmlPath = resolve(root, 'mint-dock-manager.element.html');
 const scssPath = resolve(root, 'mint-dock-manager.element.scss');
-const outHtmlTs = resolve(root, 'mint-dock-manager.element.html.ts');
-const outCssTs = resolve(root, 'mint-dock-manager.element.css.ts');
+const outHtmlTs = resolve(root, 'mint-dock-manager.element-html.ts');
+const outCssTs = resolve(root, 'mint-dock-manager.element-css.ts');
 
 function ensureDir(filePath) {
   mkdirSync(dirname(filePath), { recursive: true });
