@@ -31,9 +31,7 @@ async function tryCompileScss(inputPath, scss) {
 
 function toTsStringLiteral(content) {
   // Use backtick template literal safely
-  return '`
-' + content.replace(/`/g, '\\`') + '
-`';
+  return '`\r\n' + content.replace(/`/g, '\`') + '\r\n`';
 }
 
 async function main() {
