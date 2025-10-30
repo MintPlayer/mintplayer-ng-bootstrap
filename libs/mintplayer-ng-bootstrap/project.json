@@ -6,6 +6,12 @@
   "prefix": "bs",
   "tags": [],
   "targets": {
+    "prepare-wc": {
+      "executor": "@nx/workspace:run-commands",
+      "options": {
+        "command": "node libs/mintplayer-ng-bootstrap/dock/scripts/generate-web-component-templates.mjs"
+      }
+    },
     "build": {
       "executor": "@nx/angular:package",
       "outputs": ["{workspaceRoot}/dist/libs/mintplayer-ng-bootstrap"],
@@ -13,6 +19,11 @@
         "tsConfig": "libs/mintplayer-ng-bootstrap/tsconfig.lib.json",
         "project": "libs/mintplayer-ng-bootstrap/ng-package.json"
       },
+      "dependsOn": [
+        {
+          "target": "prepare-wc"
+        }
+      ],
       "configurations": {
         "production": {
           "tsConfig": "libs/mintplayer-ng-bootstrap/tsconfig.lib.prod.json"
