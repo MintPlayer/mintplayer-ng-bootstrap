@@ -2061,8 +2061,9 @@ export class MintDockManagerElement extends HTMLElement {
     if (!placeholder) {
       return;
     }
+    const draggedPane = this.dragState?.pane ?? null;
     const tabs = Array.from(header.querySelectorAll<HTMLElement>('.dock-tab'))
-      .filter((t) => t !== placeholder);
+      .filter((t) => t !== placeholder && (!draggedPane || t.dataset['pane'] !== draggedPane));
     const clampedTarget = Math.max(0, Math.min(targetIndex, tabs.length));
     const ref = tabs[clampedTarget] ?? null;
     header.insertBefore(placeholder, ref);
@@ -2254,45 +2255,47 @@ export class MintDockManagerElement extends HTMLElement {
   // Adds a slight rightward bias so a small move to the right does not immediately
   // swap with the next tab. Dragging left remains close to midpoint behavior.
   private computeHeaderInsertIndex(header: HTMLElement, clientX: number): number {
-    const allTabs = Array.from(header.querySelectorAll<HTMLElement>('.dock-tab'))
-      .filter((t) => t.dataset['placeholder'] !== 'true');
+    const allTabs = Array.from(header.querySelectorAll<HTMLElement>('.dock-tab'));
     if (allTabs.length === 0) {
       return 0;
     }
 
-    // Try to resolve the dragged tab element (if any)
+    // Resolve the dragged and placeholder elements
     const draggedPane = this.dragState?.pane ?? null;
     const draggedEl = draggedPane
       ? (allTabs.find((t) => t.dataset['pane'] === draggedPane) ?? null)
       : null;
+    const placeholderEl = header.querySelector<HTMLElement>('.dock-tab[data-placeholder="true"]');
 
-    // Exclude the dragged element from target positions so we compute insert gaps
-    const targets = draggedEl ? allTabs.filter((t) => t !== draggedEl) : allTabs;
+    // Exclude dragged and placeholder from candidate targets
+    const targets = allTabs.filter((t) => t !== draggedEl && t !== placeholderEl);
     if (targets.length === 0) {
-      // Only the dragged tab exists; it stays at index 0
       return 0;
     }
 
     // Bias values in pixels
-    const rightBias = 12; // require a bit more rightward travel to insert after next tab
-    const leftBias = 0; // keep left swaps near midpoint (user reported left feels fine)
+    const rightBias = 12;
+    const leftBias = 0;
 
-    // Helpful reference for deciding "right of dragged"
-    const draggedRect = draggedEl ? draggedEl.getBoundingClientRect() : null;
-    const draggedCenter = draggedRect ? draggedRect.left + draggedRect.width / 2 : null;
+    // Prefer the placeholder rect because draggedEl may be display:none
+    const baseRect = placeholderEl
+      ? placeholderEl.getBoundingClientRect()
+      : draggedEl
+      ? draggedEl.getBoundingClientRect()
+      : null;
+    const rectValid = !!baseRect && Number.isFinite(baseRect.width) && (baseRect as DOMRect).width > 0;
+    const draggedCenter = rectValid && baseRect ? (baseRect.left + baseRect.width / 2) : null;
 
     for (let i = 0; i < targets.length; i += 1) {
       const rect = targets[i].getBoundingClientRect();
       const baseMid = rect.left + rect.width / 2;
-
-      // Determine if this target sits to the right of the dragged tab's center
       const isRightOfDragged = draggedCenter !== null ? baseMid >= draggedCenter : false;
       const mid = isRightOfDragged ? baseMid + rightBias : baseMid - leftBias;
       if (clientX < mid) {
         return i;
       }
     }
-    return targets.length; // insert at end
+    return targets.length;
   }
 
   private reorderPaneInLocationAtIndex(location: ResolvedLocation, pane: string, targetIndex: number): void {
