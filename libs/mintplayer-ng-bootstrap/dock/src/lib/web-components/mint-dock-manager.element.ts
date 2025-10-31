@@ -517,15 +517,15 @@ export class MintDockManagerElement extends HTMLElement {
   private resizeState:
     | {
         path: DockPath;
-        index: number;
         pointerId: number;
         orientation: 'horizontal' | 'vertical';
         container: HTMLElement;
         divider: HTMLElement;
-        startPos: number;
+        startX: number;
+        startY: number;
         initialSizes: number[];
-        beforeSize: number;
-        afterSize: number;
+        beforeIndex: number;
+        afterIndex: number;
       }
     | null = null;
   private dragState: {
@@ -1266,6 +1266,7 @@ export class MintDockManagerElement extends HTMLElement {
         divider.classList.add('dock-split__divider');
         divider.setAttribute('role', 'separator');
         divider.tabIndex = 0;
+        divider.style.touchAction = 'none';
         divider.addEventListener('pointerdown', (event) =>
           this.beginResize(
             event,
@@ -1392,7 +1393,9 @@ export class MintDockManagerElement extends HTMLElement {
     path: DockPath,
     index: number,
   ): void {
-    event.preventDefault();
+    if (event.cancelable) {
+      event.preventDefault();
+    }
     const divider = event.currentTarget as HTMLElement | null;
     if (!divider) {
       return;
@@ -1400,28 +1403,28 @@ export class MintDockManagerElement extends HTMLElement {
 
     const orientation = (container.dataset['direction'] as 'horizontal' | 'vertical') ?? 'horizontal';
     const children = Array.from(container.querySelectorAll<HTMLElement>(':scope > .dock-split__child'));
+    if (index < 0 || index >= children.length - 1) {
+      return;
+    }
+
     const initialSizes = children.map((child) => {
       const rect = child.getBoundingClientRect();
       return orientation === 'horizontal' ? rect.width : rect.height;
     });
 
-    const beforeSize = initialSizes[index];
-    const afterSize = initialSizes[index + 1];
-    const startPos = orientation === 'horizontal' ? event.clientX : event.clientY;
-
     divider.setPointerCapture(event.pointerId);
     divider.dataset['resizing'] = 'true';
     this.resizeState = {
       path: this.clonePath(path),
-      index,
       pointerId: event.pointerId,
       orientation,
       container,
       divider,
-      startPos,
       initialSizes,
-      beforeSize,
-      afterSize,
+      startX: event.clientX,
+      startY: event.clientY,
+      beforeIndex: index,
+      afterIndex: index + 1,
     };
 
     this.startPointerTracking();
@@ -1435,29 +1438,55 @@ export class MintDockManagerElement extends HTMLElement {
         return;
       }
 
-      const currentPos = state.orientation === 'horizontal' ? event.clientX : event.clientY;
-      const delta = currentPos - state.startPos;
-      const minSize = 48;
-      const pairTotal = state.beforeSize + state.afterSize;
+      const beforeSize = state.initialSizes[state.beforeIndex];
+      const afterSize = state.initialSizes[state.afterIndex];
+      if (!Number.isFinite(beforeSize) || !Number.isFinite(afterSize)) {
+        return;
+      }
 
-      let newBefore = Math.min(
-        Math.max(state.beforeSize + delta, minSize),
-        pairTotal - minSize,
-      );
-      let newAfter = pairTotal - newBefore;
+      const delta =
+        state.orientation === 'horizontal'
+          ? event.clientX - state.startX
+          : event.clientY - state.startY;
+
+      const minSize = 48;
+      const pairTotal = beforeSize + afterSize;
+      if (!Number.isFinite(pairTotal) || pairTotal <= 0) {
+        return;
+      }
+
+      const effectiveMin = Math.min(minSize, pairTotal / 2);
+      let newBefore = beforeSize + delta;
+      let newAfter = afterSize - delta;
 
       if (!Number.isFinite(newBefore) || !Number.isFinite(newAfter)) {
         return;
       }
 
-      if (newAfter < minSize) {
-        newAfter = minSize;
-        newBefore = pairTotal - minSize;
+      if (effectiveMin > 0) {
+        if (newBefore < effectiveMin) {
+          newBefore = effectiveMin;
+          newAfter = pairTotal - effectiveMin;
+        }
+        if (newAfter < effectiveMin) {
+          newAfter = effectiveMin;
+          newBefore = pairTotal - effectiveMin;
+        }
+      }
+
+      if (newBefore < 0) {
+        newBefore = 0;
+        newAfter = pairTotal;
+      }
+
+      if (newAfter < 0) {
+        newAfter = 0;
+        newBefore = pairTotal;
       }
 
       const newSizesPixels = [...state.initialSizes];
-      newSizesPixels[state.index] = newBefore;
-      newSizesPixels[state.index + 1] = newAfter;
+      newSizesPixels[state.beforeIndex] = newBefore;
+      newSizesPixels[state.afterIndex] = newAfter;
 
       const total = newSizesPixels.reduce((acc, size) => acc + size, 0);
       const normalized = total > 0 ? newSizesPixels.map((size) => size / total) : [];
