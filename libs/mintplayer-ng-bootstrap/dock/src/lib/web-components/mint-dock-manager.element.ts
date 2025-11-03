@@ -40,6 +40,7 @@ const templateHtml = `
       box-sizing: border-box;
       font-family: inherit;
       color: inherit;
+      --dock-split-gap: 0.25rem;
     }
 
     .dock-root,
@@ -208,7 +209,7 @@ const templateHtml = `
     .dock-split {
       display: flex;
       flex: 1 1 0;
-      gap: 0.25rem;
+      gap: var(--dock-split-gap);
       position: relative;
     }
 
@@ -236,11 +237,17 @@ const templateHtml = `
     .dock-split[data-direction="horizontal"] > .dock-split__divider {
       width: 0.5rem;
       cursor: col-resize;
+      /* Extend through perpendicular gaps for visual continuity */
+      margin-top: calc(var(--dock-split-gap) * -1);
+      margin-bottom: calc(var(--dock-split-gap) * -1);
     }
 
     .dock-split[data-direction="vertical"] > .dock-split__divider {
       height: 0.5rem;
       cursor: row-resize;
+      /* Extend through perpendicular gaps for visual continuity */
+      margin-left: calc(var(--dock-split-gap) * -1);
+      margin-right: calc(var(--dock-split-gap) * -1);
     }
 
     .dock-split__divider::after {
