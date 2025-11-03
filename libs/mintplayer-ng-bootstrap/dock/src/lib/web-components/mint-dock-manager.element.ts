@@ -1941,10 +1941,24 @@ export class MintDockManagerElement extends HTMLElement {
       const minSize = 48;
       const pairTotal = state.beforeSize + state.afterSize;
 
-      let newBefore = Math.min(
-        Math.max(state.beforeSize + delta, minSize),
-        pairTotal - minSize,
-      );
+      let newBefore = state.beforeSize + delta;
+      // Optional snap with Shift
+      if (event.shiftKey && pairTotal > 0) {
+        const ratios = [1 / 3, 1 / 2, 2 / 3];
+        const target = newBefore / pairTotal;
+        let best = ratios[0];
+        let bestDist = Math.abs(target - best);
+        for (let i = 1; i < ratios.length; i++) {
+          const d = Math.abs(target - ratios[i]);
+          if (d < bestDist) {
+            best = ratios[i];
+            bestDist = d;
+          }
+        }
+        newBefore = best * pairTotal;
+      }
+
+      newBefore = Math.min(Math.max(newBefore, minSize), pairTotal - minSize);
       let newAfter = pairTotal - newBefore;
 
       if (!Number.isFinite(newBefore) || !Number.isFinite(newAfter)) {
