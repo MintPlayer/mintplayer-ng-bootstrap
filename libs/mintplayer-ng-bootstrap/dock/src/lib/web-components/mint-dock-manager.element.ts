@@ -540,6 +540,7 @@ export class MintDockManagerElement extends HTMLElement {
 
   static get observedAttributes(): string[] {
     return ['layout'];
+    // return ['layout', 'debug-snap-markers'];
   }
 
   private static instanceCounter = 0;
@@ -664,7 +665,10 @@ export class MintDockManagerElement extends HTMLElement {
   // Localized snapping while dragging an intersection handle
   private cornerSnapXTargets: number[] = [];
   private cornerSnapYTargets: number[] = [];
+  // Debug: render snap markers while dragging
+  private showSnapMarkers = false;
   private renderSnapMarkersForDivider(): void {
+    if (!this.showSnapMarkers) return;
     const layer = this.shadowRoot?.querySelector<HTMLElement>('.dock-intersections-layer, .dock-intersection-layer');
     if (!layer) return;
     // Clear previous
@@ -694,6 +698,7 @@ export class MintDockManagerElement extends HTMLElement {
   }
 
   private renderSnapMarkersForCorner(): void {
+    if (!this.showSnapMarkers) return;
     const layer = this.shadowRoot?.querySelector<HTMLElement>('.dock-intersections-layer, .dock-intersection-layer');
     if (!layer) return;
     Array.from(layer.querySelectorAll('.dock-snap-marker')).forEach((el) => el.remove());
@@ -732,6 +737,7 @@ export class MintDockManagerElement extends HTMLElement {
   }
 
   private clearSnapMarkers(): void {
+    if (!this.showSnapMarkers) return;
     const layer = this.shadowRoot?.querySelector<HTMLElement>('.dock-intersections-layer, .dock-intersection-layer');
     if (!layer) return;
     Array.from(layer.querySelectorAll('.dock-snap-marker')).forEach((el) => el.remove());
@@ -860,6 +866,11 @@ export class MintDockManagerElement extends HTMLElement {
   attributeChangedCallback(name: string, _oldValue: string | null, newValue: string | null): void {
     if (name === 'layout') {
       this.layout = newValue ? this.parseLayout(newValue) : null;
+    } else if (name === 'debug-snap-markers') {
+      this.showSnapMarkers = !(newValue === null || newValue === 'false' || newValue === '0');
+      if (!this.showSnapMarkers) {
+        this.clearSnapMarkers();
+      }
     }
   }
 
