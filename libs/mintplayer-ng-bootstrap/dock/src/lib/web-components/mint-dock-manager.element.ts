@@ -989,20 +989,8 @@ export class MintDockManagerElement extends HTMLElement {
   }
 
   private scheduleRenderIntersectionHandles(): void {
-    const win = this.windowRef;
-    if (this.intersectionRaf !== null && win) {
-      win.cancelAnimationFrame(this.intersectionRaf);
-      this.intersectionRaf = null;
-    }
-    const cb = () => {
-      this.intersectionRaf = null;
-      this.renderIntersectionHandles();
-    };
-    if (win && typeof win.requestAnimationFrame === 'function') {
-      this.intersectionRaf = win.requestAnimationFrame(cb);
-    } else {
-      setTimeout(cb, 0);
-    }
+    this.intersectionRaf = null;
+    this.renderIntersectionHandles();
   }
 
   private renderIntersectionHandles(): void {
