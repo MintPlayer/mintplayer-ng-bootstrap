@@ -1166,14 +1166,54 @@ export class MintDockManagerElement extends HTMLElement {
     handle: HTMLElement,
   ): void {
     event.preventDefault();
-    if (!h.path || !v.path) return;
+
+    // Prefer fresh lookup based on the handle's key to avoid stale references
+    const fallbackKey = `${this.formatPath(h.path!)}:${h.index}|${this.formatPath(v.path!)}:${v.index}`;
+    const key = handle.dataset['key'] ?? fallbackKey;
+    let hPath: DockPath | null = h.path;
+    let vPath: DockPath | null = v.path;
+    let hIndex = h.index;
+    let vIndex = v.index;
+    let hContainer: HTMLElement | null = h.container;
+    let vContainer: HTMLElement | null = v.container;
+
+    if (key) {
+      const parts = key.split('|');
+      if (parts.length === 2) {
+        const [hPart, vPart] = parts;
+        const hSep = hPart.lastIndexOf(':');
+        const vSep = vPart.lastIndexOf(':');
+        const hPathStr = hPart.slice(0, hSep);
+        const vPathStr = vPart.slice(0, vSep);
+        const hIdxStr = hPart.slice(hSep + 1);
+        const vIdxStr = vPart.slice(vSep + 1);
+        const hp = this.parsePath(hPathStr);
+        const vp = this.parsePath(vPathStr);
+        const hi = Number.parseInt(hIdxStr, 10);
+        const vi = Number.parseInt(vIdxStr, 10);
+        if (hp && vp && Number.isFinite(hi) && Number.isFinite(vi)) {
+          hPath = hp;
+          vPath = vp;
+          hIndex = hi;
+          vIndex = vi;
+          const hDiv = this.shadowRoot?.querySelector<HTMLElement>(`.dock-split__divider[data-path="${hPathStr}"][data-index="${hi}"]`) ?? null;
+          const vDiv = this.shadowRoot?.querySelector<HTMLElement>(`.dock-split__divider[data-path="${vPathStr}"][data-index="${vi}"]`) ?? null;
+          hContainer = hDiv?.closest('.dock-split') as HTMLElement | null;
+          vContainer = vDiv?.closest('.dock-split') as HTMLElement | null;
+        }
+      }
+    }
+
+    if (!hPath || !vPath || !hContainer || !vContainer) {
+      return;
+    }
 
     // Compute initial sizes for both splits
     const hChildren = Array.from(
-      h.container.querySelectorAll<HTMLElement>(':scope > .dock-split__child'),
+      hContainer.querySelectorAll<HTMLElement>(':scope > .dock-split__child'),
     );
     const vChildren = Array.from(
-      v.container.querySelectorAll<HTMLElement>(':scope > .dock-split__child'),
+      vContainer.querySelectorAll<HTMLElement>(':scope > .dock-split__child'),
     );
 
     // h is a horizontal divider bar (split direction = vertical), so sizes are heights
@@ -1181,32 +1221,33 @@ export class MintDockManagerElement extends HTMLElement {
     // v is a vertical divider bar (split direction = horizontal), so sizes are widths
     const vInitial = vChildren.map((c) => c.getBoundingClientRect().width);
 
-    const hBefore = hInitial[h.index];
-    const hAfter = hInitial[h.index + 1];
-    const vBefore = vInitial[v.index];
-    const vAfter = vInitial[v.index + 1];
+    const hBefore = hInitial[hIndex];
+    const hAfter = hInitial[hIndex + 1];
+    const vBefore = vInitial[vIndex];
+    const vAfter = vInitial[vIndex + 1];
 
     try {
       handle.setPointerCapture(event.pointerId);
       handle.dataset['resizing'] = 'true';
+      handle.classList.add('hovering');
     } catch {}
 
     this.cornerResizeState = {
       pointerId: event.pointerId,
       handle,
       h: {
-        path: this.clonePath(h.path),
-        index: h.index,
-        container: h.container,
+        path: this.clonePath(hPath),
+        index: hIndex,
+        container: hContainer,
         beforeSize: hBefore,
         afterSize: hAfter,
         initialSizes: hInitial,
         startY: event.clientY,
       },
       v: {
-        path: this.clonePath(v.path),
-        index: v.index,
-        container: v.container,
+        path: this.clonePath(vPath),
+        index: vIndex,
+        container: vContainer,
         beforeSize: vBefore,
         afterSize: vAfter,
         initialSizes: vInitial,
@@ -1216,7 +1257,6 @@ export class MintDockManagerElement extends HTMLElement {
 
     this.startPointerTracking();
     // Seed a stable key for the active handle so it can be reused across re-renders
-    const key = `${this.formatPath(h.path)}:${h.index}|${this.formatPath(v.path)}:${v.index}`;
     handle.dataset['key'] = key;
     this.intersectionHandles.set(key, handle);
   }
