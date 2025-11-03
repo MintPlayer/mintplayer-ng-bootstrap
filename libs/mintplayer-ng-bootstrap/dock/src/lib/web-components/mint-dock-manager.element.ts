@@ -616,7 +616,7 @@ export class MintDockManagerElement extends HTMLElement {
           beforeSize: number;
           afterSize: number;
           initialSizes: number[];
-          startX: number;
+          startY: number;
         };
         // Vertical divider
         v: {
@@ -626,7 +626,7 @@ export class MintDockManagerElement extends HTMLElement {
           beforeSize: number;
           afterSize: number;
           initialSizes: number[];
-          startY: number;
+          startX: number;
         };
       }
     | null = null;
@@ -1081,8 +1081,10 @@ export class MintDockManagerElement extends HTMLElement {
       v.container.querySelectorAll<HTMLElement>(':scope > .dock-split__child'),
     );
 
-    const hInitial = hChildren.map((c) => c.getBoundingClientRect().width);
-    const vInitial = vChildren.map((c) => c.getBoundingClientRect().height);
+    // h is a horizontal divider bar (split direction = vertical), so sizes are heights
+    const hInitial = hChildren.map((c) => c.getBoundingClientRect().height);
+    // v is a vertical divider bar (split direction = horizontal), so sizes are widths
+    const vInitial = vChildren.map((c) => c.getBoundingClientRect().width);
 
     const hBefore = hInitial[h.index];
     const hAfter = hInitial[h.index + 1];
@@ -1104,7 +1106,7 @@ export class MintDockManagerElement extends HTMLElement {
         beforeSize: hBefore,
         afterSize: hAfter,
         initialSizes: hInitial,
-        startX: event.clientX,
+        startY: event.clientY,
       },
       v: {
         path: this.clonePath(v.path),
@@ -1113,7 +1115,7 @@ export class MintDockManagerElement extends HTMLElement {
         beforeSize: vBefore,
         afterSize: vAfter,
         initialSizes: vInitial,
-        startY: event.clientY,
+        startX: event.clientX,
       },
     };
 
@@ -1124,13 +1126,13 @@ export class MintDockManagerElement extends HTMLElement {
     const state = this.cornerResizeState;
     if (!state || state.pointerId !== event.pointerId) return;
 
-    // Horizontal split reacts to X delta
+    // Horizontal divider bar (vertical split) reacts to Y delta
     const hNode = this.resolveSplitNode(state.h.path);
     if (hNode) {
-      const deltaX = event.clientX - state.h.startX;
+      const deltaY = event.clientY - state.h.startY;
       const minSize = 48;
       const pairTotal = state.h.beforeSize + state.h.afterSize;
-      let newBefore = Math.min(Math.max(state.h.beforeSize + deltaX, minSize), pairTotal - minSize);
+      let newBefore = Math.min(Math.max(state.h.beforeSize + deltaY, minSize), pairTotal - minSize);
       let newAfter = pairTotal - newBefore;
 
       const newSizesPx = [...state.h.initialSizes];
@@ -1147,13 +1149,13 @@ export class MintDockManagerElement extends HTMLElement {
       });
     }
 
-    // Vertical split reacts to Y delta
+    // Vertical divider bar (horizontal split) reacts to X delta
     const vNode = this.resolveSplitNode(state.v.path);
     if (vNode) {
-      const deltaY = event.clientY - state.v.startY;
+      const deltaX = event.clientX - state.v.startX;
       const minSize = 48;
       const pairTotal = state.v.beforeSize + state.v.afterSize;
-      let newBefore = Math.min(Math.max(state.v.beforeSize + deltaY, minSize), pairTotal - minSize);
+      let newBefore = Math.min(Math.max(state.v.beforeSize + deltaX, minSize), pairTotal - minSize);
       let newAfter = pairTotal - newBefore;
 
       const newSizesPx = [...state.v.initialSizes];
