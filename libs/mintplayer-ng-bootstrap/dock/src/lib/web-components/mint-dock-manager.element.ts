@@ -281,14 +281,17 @@ const templateHtml = `
       box-shadow: 0 2px 6px rgba(15, 23, 42, 0.2);
       cursor: all-scroll;
       pointer-events: auto;
-      transition: background 120ms ease, border-color 120ms ease;
+      opacity: 0;
+      transition: background 120ms ease, border-color 120ms ease, opacity 120ms ease;
     }
 
     .dock-intersection-handle:hover,
     .dock-intersection-handle:focus-visible,
+    .dock-intersection-handle[data-visible='true'],
     .dock-intersection-handle[data-resizing='true'] {
       background: rgba(59, 130, 246, 0.35);
       border-color: rgba(59, 130, 246, 0.9);
+      opacity: 1;
       outline: none;
     }
 
