@@ -303,6 +303,19 @@ const templateHtml = `
       outline: none;
     }
 
+    .dock-snap-marker {
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      margin-left: -3px;
+      margin-top: -3px;
+      border-radius: 50%;
+      background: rgba(59, 130, 246, 0.7);
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+      pointer-events: none;
+      z-index: 130;
+    }
+
     .dock-stack {
       display: flex;
       flex-direction: column;
@@ -651,6 +664,78 @@ export class MintDockManagerElement extends HTMLElement {
   // Localized snapping while dragging an intersection handle
   private cornerSnapXTargets: number[] = [];
   private cornerSnapYTargets: number[] = [];
+  private renderSnapMarkersForDivider(): void {
+    const layer = this.shadowRoot?.querySelector<HTMLElement>('.dock-intersections-layer, .dock-intersection-layer');
+    if (!layer) return;
+    // Clear previous
+    Array.from(layer.querySelectorAll('.dock-snap-marker')).forEach((el) => el.remove());
+    if (!this.resizeState || !this.activeSnapAxis || this.activeSnapTargets.length === 0) return;
+    const rootRect = this.rootEl.getBoundingClientRect();
+    const dRect = this.resizeState.divider.getBoundingClientRect();
+    if (this.activeSnapAxis === 'x') {
+      const y = dRect.top + dRect.height / 2 - rootRect.top;
+      this.activeSnapTargets.forEach((sx) => {
+        const dot = this.documentRef.createElement('div');
+        dot.className = 'dock-snap-marker';
+        dot.style.left = `${rootRect.left + sx - rootRect.left}px`;
+        dot.style.top = `${y}px`;
+        layer.appendChild(dot);
+      });
+    } else if (this.activeSnapAxis === 'y') {
+      const x = dRect.left + dRect.width / 2 - rootRect.left;
+      this.activeSnapTargets.forEach((sy) => {
+        const dot = this.documentRef.createElement('div');
+        dot.className = 'dock-snap-marker';
+        dot.style.left = `${x}px`;
+        dot.style.top = `${rootRect.top + sy - rootRect.top}px`;
+        layer.appendChild(dot);
+      });
+    }
+  }
+
+  private renderSnapMarkersForCorner(): void {
+    const layer = this.shadowRoot?.querySelector<HTMLElement>('.dock-intersections-layer, .dock-intersection-layer');
+    if (!layer) return;
+    Array.from(layer.querySelectorAll('.dock-snap-marker')).forEach((el) => el.remove());
+    if (!this.cornerResizeState) return;
+    const rootRect = this.rootEl.getBoundingClientRect();
+    // Compute representative center lines from first entries
+    let centerX: number | null = null;
+    let centerY: number | null = null;
+    const st = this.cornerResizeState;
+    if (st.vs.length > 0) {
+      const vRect = st.vs[0].container.querySelector<HTMLElement>(':scope > .dock-split__divider')?.getBoundingClientRect();
+      if (vRect) centerX = vRect.left + vRect.width / 2 - rootRect.left;
+    }
+    if (st.hs.length > 0) {
+      const hRect = st.hs[0].container.querySelector<HTMLElement>(':scope > .dock-split__divider')?.getBoundingClientRect();
+      if (hRect) centerY = hRect.top + hRect.height / 2 - rootRect.top;
+    }
+    if (centerY != null) {
+      this.cornerSnapXTargets.forEach((sx) => {
+        const dot = this.documentRef.createElement('div');
+        dot.className = 'dock-snap-marker';
+        dot.style.left = `${sx}px`;
+        dot.style.top = `${centerY}px`;
+        layer.appendChild(dot);
+      });
+    }
+    if (centerX != null) {
+      this.cornerSnapYTargets.forEach((sy) => {
+        const dot = this.documentRef.createElement('div');
+        dot.className = 'dock-snap-marker';
+        dot.style.left = `${centerX}px`;
+        dot.style.top = `${sy}px`;
+        layer.appendChild(dot);
+      });
+    }
+  }
+
+  private clearSnapMarkers(): void {
+    const layer = this.shadowRoot?.querySelector<HTMLElement>('.dock-intersections-layer, .dock-intersection-layer');
+    if (!layer) return;
+    Array.from(layer.querySelectorAll('.dock-snap-marker')).forEach((el) => el.remove());
+  }
   private pendingDragEndTimeout: number | NodeJS.Timeout | null = null;
   private previousSplitSizes: Map<string, number[]> = new Map();
 
@@ -1231,6 +1316,7 @@ export class MintDockManagerElement extends HTMLElement {
     if (!handle.dataset['key']) {
       handle.dataset['key'] = handle.dataset['group'] ?? '';
     }
+    this.renderSnapMarkersForCorner();
 
     // Compute localized snap targets for this intersection
     try {
@@ -2007,39 +2093,36 @@ export class MintDockManagerElement extends HTMLElement {
       );
       const targets: number[] = [];
       if (orientation === 'horizontal') {
-        // Current bar is vertical → snap on X positions of vertical bars crossing the same Y
-        const centerY = dividerRect.top + dividerRect.height / 2;
+        // Current bar is vertical → snap X to centers of other vertical bars (no crossing check needed)
         allDividers.forEach((el) => {
           if (el === divider) return;
           const o = (el.dataset['orientation'] as 'horizontal' | 'vertical' | undefined) ?? undefined;
           if (o !== 'horizontal') return; // vertical divider bars (split direction horizontal)
-        const r = el.getBoundingClientRect();
-          if (centerY >= r.top && centerY <= r.bottom) {
-            const xCenter = r.left + r.width / 2 - rootRect.left;
-            targets.push(xCenter);
-          }
+          const r = el.getBoundingClientRect();
+          const xCenter = r.left + r.width / 2 - rootRect.left;
+          targets.push(xCenter);
         });
         this.activeSnapAxis = 'x';
         this.activeSnapTargets = targets;
+        this.renderSnapMarkersForDivider();
       } else {
-        // Current bar is horizontal → snap on Y positions of horizontal bars crossing the same X
-        const centerX = dividerRect.left + dividerRect.width / 2;
+        // Current bar is horizontal → snap Y to centers of other horizontal bars (no crossing check needed)
         allDividers.forEach((el) => {
           if (el === divider) return;
           const o = (el.dataset['orientation'] as 'horizontal' | 'vertical' | undefined) ?? undefined;
           if (o !== 'vertical') return; // horizontal divider bars (split direction vertical)
           const r = el.getBoundingClientRect();
-          if (centerX >= r.left && centerX <= r.right) {
-            const yCenter = r.top + r.height / 2 - rootRect.top;
-            targets.push(yCenter);
-          }
+          const yCenter = r.top + r.height / 2 - rootRect.top;
+          targets.push(yCenter);
         });
         this.activeSnapAxis = 'y';
         this.activeSnapTargets = targets;
+        this.renderSnapMarkersForDivider();
       }
     } catch {
       this.activeSnapAxis = null;
       this.activeSnapTargets = [];
+      this.clearSnapMarkers();
     }
   }
 
@@ -2070,6 +2153,7 @@ export class MintDockManagerElement extends HTMLElement {
             if (d < closest) { closest = d; best = px; }
           });
           if (closest <= tol) currentPos = best;
+          this.renderSnapMarkersForDivider();
         } else if (state.orientation === 'vertical' && this.activeSnapAxis === 'y') {
           // Horizontal divider snapping along Y
           let closest = Number.POSITIVE_INFINITY;
@@ -2081,6 +2165,7 @@ export class MintDockManagerElement extends HTMLElement {
             if (d < closest) { closest = d; best = py; }
           });
           if (closest <= tol) currentPos = best;
+          this.renderSnapMarkersForDivider();
         }
       }
       const delta = currentPos - state.startPos;
