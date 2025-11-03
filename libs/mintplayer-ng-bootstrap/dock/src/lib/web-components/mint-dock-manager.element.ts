@@ -620,8 +620,8 @@ export class MintDockManagerElement extends HTMLElement {
     | {
         pointerId: number;
         handle: HTMLElement;
-        // Horizontal divider
-        h: {
+        // All horizontal divider bars (belong to vertical splits)
+        hs: Array<{
           path: DockPath;
           index: number;
           container: HTMLElement;
@@ -629,9 +629,9 @@ export class MintDockManagerElement extends HTMLElement {
           afterSize: number;
           initialSizes: number[];
           startY: number;
-        };
-        // Vertical divider
-        v: {
+        }>;
+        // All vertical divider bars (belong to horizontal splits)
+        vs: Array<{
           path: DockPath;
           index: number;
           container: HTMLElement;
@@ -639,13 +639,14 @@ export class MintDockManagerElement extends HTMLElement {
           afterSize: number;
           initialSizes: number[];
           startX: number;
-        };
+        }>;
       }
     | null = null;
   private pointerTrackingActive = false;
   private dragPointerTrackingActive = false;
   private lastDragPointerPosition: { x: number; y: number } | null = null;
   private pendingDragEndTimeout: number | NodeJS.Timeout | null = null;
+  private previousSplitSizes: Map<string, number[]> = new Map();
 
   constructor() {
     super();
@@ -1027,15 +1028,17 @@ export class MintDockManagerElement extends HTMLElement {
     // If a corner resize is active, only update that handle's position and avoid creating new ones
     if (this.cornerResizeState) {
       const st = this.cornerResizeState;
-      const hPathStr = this.formatPath(st.h.path);
-      const vPathStr = this.formatPath(st.v.path);
-      const key = `${hPathStr}:${st.h.index}|${vPathStr}:${st.v.index}`;
+      const h0 = st.hs[0];
+      const v0 = st.vs[0];
+      const hPathStr = this.formatPath(h0.path);
+      const vPathStr = this.formatPath(v0.path);
+      const key = `${hPathStr}:${h0.index}|${vPathStr}:${v0.index}`;
       // Find divider elements corresponding to active paths
       const hDiv = this.shadowRoot?.querySelector<HTMLElement>(
-        `.dock-split__divider[data-path="${hPathStr}"][data-index="${st.h.index}"]`,
+        `.dock-split__divider[data-path="${hPathStr}"][data-index="${h0.index}"]`,
       );
       const vDiv = this.shadowRoot?.querySelector<HTMLElement>(
-        `.dock-split__divider[data-path="${vPathStr}"][data-index="${st.v.index}"]`,
+        `.dock-split__divider[data-path="${vPathStr}"][data-index="${v0.index}"]`,
       );
       if (hDiv && vDiv) {
         const hr = hDiv.getBoundingClientRect();
@@ -1102,6 +1105,8 @@ export class MintDockManagerElement extends HTMLElement {
     const desiredKeys = new Set<string>();
 
     const tol = 24; // px tolerance to account for gaps and subpixel layout
+    const groupMap = new Map<string, HTMLElement>();
+    const groupPairs = new Map<string, Array<{ h: { pathStr: string; index: number }; v: { pathStr: string; index: number } }>>();
     hDividers.forEach((h) => {
       const hCenterY = h.rect.top + h.rect.height / 2;
       vDividers.forEach((v) => {
@@ -1113,38 +1118,53 @@ export class MintDockManagerElement extends HTMLElement {
         const x = vCenterX - rootRect.left;
         const y = hCenterY - rootRect.top;
         const key = `${h.pathStr}:${h.index}|${v.pathStr}:${v.index}`;
-        desiredKeys.add(key);
-
-        let handle = this.intersectionHandles.get(key);
+        const gk = `${Math.round(x)}:${Math.round(y)}`;
+        let handle = groupMap.get(gk);
         if (!handle) {
-          handle = this.documentRef.createElement('div');
-          handle.classList.add('dock-intersection-handle');
-          handle.classList.add('glyph');
-          handle.setAttribute('role', 'separator');
-          handle.setAttribute('aria-label', 'Resize split intersection');
-          handle.dataset['key'] = key;
-          handle.dataset['listener'] = '1';
-          handle.addEventListener('pointerdown', (ev) => this.beginCornerResize(ev, h, v, handle!));
-          layer.appendChild(handle);
-          this.intersectionHandles.set(key, handle);
-        } else if (!handle.dataset['listener']) {
-          // Existing DOM node but listener not wired yet for safety
-          handle.dataset['listener'] = '1';
-          handle.addEventListener('pointerdown', (ev) => this.beginCornerResize(ev, h, v, handle!));
+          // Try reuse via existing pair mapping
+          handle = this.intersectionHandles.get(key) ?? null as any;
+          if (!handle) {
+            handle = this.documentRef.createElement('div');
+            handle.classList.add('dock-intersection-handle', 'glyph');
+            handle.setAttribute('role', 'separator');
+            handle.setAttribute('aria-label', 'Resize split intersection');
+            handle.dataset['key'] = key;
+            handle.dataset['listener'] = '1';
+            handle.addEventListener('pointerdown', (ev) => this.beginCornerResize(ev, h, v, handle!));
+            handle.addEventListener('dblclick', (ev) => this.onIntersectionDoubleClick(ev, handle!));
+            layer.appendChild(handle);
+          }
+          groupMap.set(gk, handle);
         }
-        // Update position for existing handle
+        // Track pairs for this group and map all pair keys to the same handle
+        const arr = groupPairs.get(gk) ?? [];
+        arr.push({ h: { pathStr: h.pathStr ?? '', index: h.index }, v: { pathStr: v.pathStr ?? '', index: v.index } });
+        groupPairs.set(gk, arr);
+        this.intersectionHandles.set(key, handle);
+        // Update position for the grouped handle
         handle.style.left = `${x}px`;
         handle.style.top = `${y}px`;
       });
     });
 
-    // Remove stale handles
-    Array.from(this.intersectionHandles.entries()).forEach(([key, el]) => {
-      if (!desiredKeys.has(key)) {
+    // Attach grouped pairs data to each handle and prune stale ones
+    const keep = new Set<HTMLElement>(groupMap.values());
+    groupMap.forEach((handle, gk) => {
+      const pairs = groupPairs.get(gk) ?? [];
+      handle.dataset['pairs'] = JSON.stringify(pairs);
+    });
+    Array.from(layer.querySelectorAll<HTMLElement>('.dock-intersection-handle')).forEach((el) => {
+      if (!keep.has(el)) {
         el.remove();
-        this.intersectionHandles.delete(key);
       }
     });
+    // Reset intersectionHandles to only currently mapped keys
+    const newMap = new Map<string, HTMLElement>();
+    groupPairs.forEach((pairs, gk) => {
+      const handle = groupMap.get(gk)!;
+      pairs.forEach((p) => newMap.set(`${p.h.pathStr}:${p.h.index}|${p.v.pathStr}:${p.v.index}`, handle));
+    });
+    this.intersectionHandles = newMap;
   }
 
   private beginCornerResize(
@@ -1155,64 +1175,37 @@ export class MintDockManagerElement extends HTMLElement {
   ): void {
     event.preventDefault();
 
-    // Prefer fresh lookup based on the handle's key to avoid stale references
-    const fallbackKey = `${this.formatPath(h.path!)}:${h.index}|${this.formatPath(v.path!)}:${v.index}`;
-    const key = handle.dataset['key'] ?? fallbackKey;
-    let hPath: DockPath | null = h.path;
-    let vPath: DockPath | null = v.path;
-    let hIndex = h.index;
-    let vIndex = v.index;
-    let hContainer: HTMLElement | null = h.container;
-    let vContainer: HTMLElement | null = v.container;
+    // Build pairs from dataset if available (grouped intersections), otherwise from the provided pair
+    const pairsRaw = handle.dataset['pairs'];
+    const parsed: Array<{ h: { pathStr: string; index: number }; v: { pathStr: string; index: number } }> =
+      pairsRaw ? JSON.parse(pairsRaw) : [];
+    const hs: Array<{ path: DockPath; index: number; container: HTMLElement; initialSizes: number[]; before: number; after: number }>=[];
+    const vs: Array<{ path: DockPath; index: number; container: HTMLElement; initialSizes: number[]; before: number; after: number }>=[];
 
-    if (key) {
-      const parts = key.split('|');
-      if (parts.length === 2) {
-        const [hPart, vPart] = parts;
-        const hSep = hPart.lastIndexOf(':');
-        const vSep = vPart.lastIndexOf(':');
-        const hPathStr = hPart.slice(0, hSep);
-        const vPathStr = vPart.slice(0, vSep);
-        const hIdxStr = hPart.slice(hSep + 1);
-        const vIdxStr = vPart.slice(vSep + 1);
-        const hp = this.parsePath(hPathStr);
-        const vp = this.parsePath(vPathStr);
-        const hi = Number.parseInt(hIdxStr, 10);
-        const vi = Number.parseInt(vIdxStr, 10);
-        if (hp && vp && Number.isFinite(hi) && Number.isFinite(vi)) {
-          hPath = hp;
-          vPath = vp;
-          hIndex = hi;
-          vIndex = vi;
-          const hDiv = this.shadowRoot?.querySelector<HTMLElement>(`.dock-split__divider[data-path="${hPathStr}"][data-index="${hi}"]`) ?? null;
-          const vDiv = this.shadowRoot?.querySelector<HTMLElement>(`.dock-split__divider[data-path="${vPathStr}"][data-index="${vi}"]`) ?? null;
-          hContainer = hDiv?.closest('.dock-split') as HTMLElement | null;
-          vContainer = vDiv?.closest('.dock-split') as HTMLElement | null;
-        }
+    const ensureHV = (pathStr: string, index: number, axis: 'h'|'v') => {
+      const path = this.parsePath(pathStr);
+      if (!path) return;
+      const div = this.shadowRoot?.querySelector<HTMLElement>(`.dock-split__divider[data-path="${pathStr}"][data-index="${index}"]`) ?? null;
+      const container = div?.closest('.dock-split') as HTMLElement | null;
+      if (!container) return;
+      if (axis === 'h') {
+        const children = Array.from(container.querySelectorAll<HTMLElement>(':scope > .dock-split__child'));
+        const initial = children.map((c) => c.getBoundingClientRect().height);
+        hs.push({ path, index, container, initialSizes: initial, before: initial[index], after: initial[index+1] });
+      } else {
+        const children = Array.from(container.querySelectorAll<HTMLElement>(':scope > .dock-split__child'));
+        const initial = children.map((c) => c.getBoundingClientRect().width);
+        vs.push({ path, index, container, initialSizes: initial, before: initial[index], after: initial[index+1] });
       }
+    };
+
+    if (parsed.length > 0) {
+      parsed.forEach((p) => { ensureHV(p.h.pathStr, p.h.index, 'h'); ensureHV(p.v.pathStr, p.v.index, 'v'); });
+    } else if (h.path && v.path) {
+      ensureHV(this.formatPath(h.path), h.index, 'h');
+      ensureHV(this.formatPath(v.path), v.index, 'v');
     }
-
-    if (!hPath || !vPath || !hContainer || !vContainer) {
-      return;
-    }
-
-    // Compute initial sizes for both splits
-    const hChildren = Array.from(
-      hContainer.querySelectorAll<HTMLElement>(':scope > .dock-split__child'),
-    );
-    const vChildren = Array.from(
-      vContainer.querySelectorAll<HTMLElement>(':scope > .dock-split__child'),
-    );
-
-    // h is a horizontal divider bar (split direction = vertical), so sizes are heights
-    const hInitial = hChildren.map((c) => c.getBoundingClientRect().height);
-    // v is a vertical divider bar (split direction = horizontal), so sizes are widths
-    const vInitial = vChildren.map((c) => c.getBoundingClientRect().width);
-
-    const hBefore = hInitial[hIndex];
-    const hAfter = hInitial[hIndex + 1];
-    const vBefore = vInitial[vIndex];
-    const vAfter = vInitial[vIndex + 1];
+    if (hs.length === 0 && vs.length === 0) return;
 
     try {
       handle.setPointerCapture(event.pointerId);
@@ -1223,81 +1216,70 @@ export class MintDockManagerElement extends HTMLElement {
     this.cornerResizeState = {
       pointerId: event.pointerId,
       handle,
-      h: {
-        path: this.clonePath(hPath),
-        index: hIndex,
-        container: hContainer,
-        beforeSize: hBefore,
-        afterSize: hAfter,
-        initialSizes: hInitial,
-        startY: event.clientY,
-      },
-      v: {
-        path: this.clonePath(vPath),
-        index: vIndex,
-        container: vContainer,
-        beforeSize: vBefore,
-        afterSize: vAfter,
-        initialSizes: vInitial,
-        startX: event.clientX,
-      },
+      hs: hs.map((e) => ({ path: this.clonePath(e.path), index: e.index, container: e.container, beforeSize: e.before, afterSize: e.after, initialSizes: e.initialSizes, startY: event.clientY })),
+      vs: vs.map((e) => ({ path: this.clonePath(e.path), index: e.index, container: e.container, beforeSize: e.before, afterSize: e.after, initialSizes: e.initialSizes, startX: event.clientX })),
     };
 
     this.startPointerTracking();
-    // Seed a stable key for the active handle so it can be reused across re-renders
-    handle.dataset['key'] = key;
-    this.intersectionHandles.set(key, handle);
+    // Ensure handle has a stable key (use group if present)
+    if (!handle.dataset['key']) {
+      handle.dataset['key'] = handle.dataset['group'] ?? '';
+    }
   }
 
   private handleCornerResizeMove(event: PointerEvent): void {
     const state = this.cornerResizeState;
     if (!state || state.pointerId !== event.pointerId) return;
 
-    // Horizontal divider bar (vertical split) reacts to Y delta
-    const hNode = this.resolveSplitNode(state.h.path);
-    if (hNode) {
-      const deltaY = event.clientY - state.h.startY;
+    const snapValue = (val: number, total: number, active: boolean) => {
+      if (!active || total <= 0) return val;
+      const ratios = [1/3, 1/2, 2/3];
+      const r = val / total;
+      let best = ratios[0];
+      let d = Math.abs(r - best);
+      for (let i=1;i<ratios.length;i++){ const dd = Math.abs(r - ratios[i]); if (dd < d) { d = dd; best = ratios[i]; } }
+      return best * total;
+    };
+
+    // Update all horizontal bars (vertical splits) with Y delta
+    state.hs.forEach((h) => {
+      const node = this.resolveSplitNode(h.path);
+      if (!node) return;
+      const deltaY = event.clientY - h.startY;
       const minSize = 48;
-      const pairTotal = state.h.beforeSize + state.h.afterSize;
-      let newBefore = Math.min(Math.max(state.h.beforeSize + deltaY, minSize), pairTotal - minSize);
-      let newAfter = pairTotal - newBefore;
+      const pairTotal = h.beforeSize + h.afterSize;
+      let newBefore = Math.min(Math.max(h.beforeSize + deltaY, minSize), pairTotal - minSize);
+      newBefore = snapValue(newBefore, pairTotal, event.shiftKey);
+      const newAfter = pairTotal - newBefore;
+      const sizesPx = [...h.initialSizes];
+      sizesPx[h.index] = newBefore;
+      sizesPx[h.index+1] = newAfter;
+      const total = sizesPx.reduce((a,s)=>a+s,0);
+      const normalized = total>0 ? sizesPx.map((s)=>s/total) : [];
+      node.sizes = normalized;
+      const children = Array.from(h.container.querySelectorAll<HTMLElement>(':scope > .dock-split__child'));
+      normalized.forEach((size, idx) => { if (children[idx]) children[idx].style.flex = `${Math.max(size,0)} 1 0`; });
+    });
 
-      const newSizesPx = [...state.h.initialSizes];
-      newSizesPx[state.h.index] = newBefore;
-      newSizesPx[state.h.index + 1] = newAfter;
-      const total = newSizesPx.reduce((a, s) => a + s, 0);
-      const normalized = total > 0 ? newSizesPx.map((s) => s / total) : [];
-      hNode.sizes = normalized;
-      const children = Array.from(
-        state.h.container.querySelectorAll<HTMLElement>(':scope > .dock-split__child'),
-      );
-      normalized.forEach((size, idx) => {
-        if (children[idx]) children[idx].style.flex = `${Math.max(size, 0)} 1 0`;
-      });
-    }
-
-    // Vertical divider bar (horizontal split) reacts to X delta
-    const vNode = this.resolveSplitNode(state.v.path);
-    if (vNode) {
-      const deltaX = event.clientX - state.v.startX;
+    // Update all vertical bars (horizontal splits) with X delta
+    state.vs.forEach((v) => {
+      const node = this.resolveSplitNode(v.path);
+      if (!node) return;
+      const deltaX = event.clientX - v.startX;
       const minSize = 48;
-      const pairTotal = state.v.beforeSize + state.v.afterSize;
-      let newBefore = Math.min(Math.max(state.v.beforeSize + deltaX, minSize), pairTotal - minSize);
-      let newAfter = pairTotal - newBefore;
-
-      const newSizesPx = [...state.v.initialSizes];
-      newSizesPx[state.v.index] = newBefore;
-      newSizesPx[state.v.index + 1] = newAfter;
-      const total = newSizesPx.reduce((a, s) => a + s, 0);
-      const normalized = total > 0 ? newSizesPx.map((s) => s / total) : [];
-      vNode.sizes = normalized;
-      const children = Array.from(
-        state.v.container.querySelectorAll<HTMLElement>(':scope > .dock-split__child'),
-      );
-      normalized.forEach((size, idx) => {
-        if (children[idx]) children[idx].style.flex = `${Math.max(size, 0)} 1 0`;
-      });
-    }
+      const pairTotal = v.beforeSize + v.afterSize;
+      let newBefore = Math.min(Math.max(v.beforeSize + deltaX, minSize), pairTotal - minSize);
+      newBefore = snapValue(newBefore, pairTotal, event.shiftKey);
+      const newAfter = pairTotal - newBefore;
+      const sizesPx = [...v.initialSizes];
+      sizesPx[v.index] = newBefore;
+      sizesPx[v.index+1] = newAfter;
+      const total = sizesPx.reduce((a,s)=>a+s,0);
+      const normalized = total>0 ? sizesPx.map((s)=>s/total) : [];
+      node.sizes = normalized;
+      const children = Array.from(v.container.querySelectorAll<HTMLElement>(':scope > .dock-split__child'));
+      normalized.forEach((size, idx) => { if (children[idx]) children[idx].style.flex = `${Math.max(size,0)} 1 0`; });
+    });
 
     this.dispatchLayoutChanged();
   }
@@ -1311,6 +1293,105 @@ export class MintDockManagerElement extends HTMLElement {
     state.handle.dataset['resizing'] = 'false';
     this.cornerResizeState = null;
     // Re-render handles to account for new positions
+    this.scheduleRenderIntersectionHandles();
+  }
+
+  private onIntersectionDoubleClick(event: MouseEvent, handle: HTMLElement): void {
+    event.preventDefault();
+    const pairsRaw = handle.dataset['pairs'];
+    const parsed: Array<{ h: { pathStr: string; index: number }; v: { pathStr: string; index: number } }>
+      = pairsRaw ? JSON.parse(pairsRaw) : [];
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      const k = handle.dataset['key'] ?? '';
+      const parts = k.split('|');
+      if (parts.length === 2) {
+        const [hPart, vPart] = parts;
+        const hi = hPart.lastIndexOf(':');
+        const vi = vPart.lastIndexOf(':');
+        if (hi > 0 && vi > 0) {
+          const hPathStr = hPart.slice(0, hi);
+          const vPathStr = vPart.slice(0, vi);
+          const hIdx = Number.parseInt(hPart.slice(hi + 1), 10);
+          const vIdx = Number.parseInt(vPart.slice(vi + 1), 10);
+          parsed.push({ h: { pathStr: hPathStr, index: hIdx }, v: { pathStr: vPathStr, index: vIdx } });
+        }
+      }
+    }
+    if (parsed.length === 0) return;
+
+    const splitKeys = new Set<string>();
+    parsed.forEach((p) => { splitKeys.add(p.h.pathStr); splitKeys.add(p.v.pathStr); });
+    let hasStored = false;
+    splitKeys.forEach((k) => { if (this.previousSplitSizes.has(k)) hasStored = true; });
+
+    const applySizes = (pathStr: string, mutate: (sizes: number[], index: number) => number[]) => {
+      const path = this.parsePath(pathStr);
+      if (!path) return;
+      const node = this.resolveSplitNode(path);
+      if (!node) return;
+      const sizes = this.normalizeSizesArray(node.sizes ?? [], node.children.length);
+      // Find divider index from any divider belonging to this path
+      const divEl = this.shadowRoot?.querySelector<HTMLElement>(`.dock-split__divider[data-path="${pathStr}"]`);
+      const index = divEl ? Number.parseInt(divEl.dataset['index'] ?? '0', 10) : 0;
+      const newSizes = mutate([...sizes], index);
+      node.sizes = newSizes;
+      const segments = path.segments.join('/');
+      const container = this.shadowRoot?.querySelector<HTMLElement>(`.dock-split[data-path="${segments}"]`);
+      if (container) {
+        const children = Array.from(container.querySelectorAll<HTMLElement>(':scope > .dock-split__child'));
+        newSizes.forEach((s, i) => { if (children[i]) children[i].style.flex = `${Math.max(s, 0)} 1 0`; });
+      }
+    };
+
+    if (hasStored) {
+      // Restore stored sizes
+      this.previousSplitSizes.forEach((sizes, pathStr) => {
+        const path = this.parsePath(pathStr);
+        const node = path ? this.resolveSplitNode(path) : null;
+        if (!node) return;
+        const norm = this.normalizeSizesArray(sizes, node.children.length);
+        node.sizes = norm;
+        const segments = path!.segments.join('/');
+        const container = this.shadowRoot?.querySelector<HTMLElement>(`.dock-split[data-path="${segments}"]`);
+        if (container) {
+          const children = Array.from(container.querySelectorAll<HTMLElement>(':scope > .dock-split__child'));
+          norm.forEach((s, i) => { if (children[i]) children[i].style.flex = `${Math.max(s, 0)} 1 0`; });
+        }
+      });
+      this.previousSplitSizes.clear();
+    } else {
+      // Equalize the two panes adjacent to each divider and store previous sizes
+      const touched = new Set<string>();
+      parsed.forEach((p) => {
+        [p.h.pathStr, p.v.pathStr].forEach((key) => {
+          if (touched.has(key)) return;
+          const path = this.parsePath(key);
+          const node = path ? this.resolveSplitNode(path) : null;
+          if (node && Array.isArray(node.sizes)) {
+            this.previousSplitSizes.set(key, [...node.sizes]);
+          }
+          touched.add(key);
+        });
+        applySizes(p.h.pathStr, (sizes, idx) => {
+          const total = (sizes[idx] ?? 0) + (sizes[idx + 1] ?? 0);
+          if (total <= 0) return sizes;
+          sizes[idx] = total / 2;
+          sizes[idx + 1] = total / 2;
+          const sum = sizes.reduce((a, s) => a + s, 0);
+          return sum > 0 ? sizes.map((s) => s / sum) : sizes;
+        });
+        applySizes(p.v.pathStr, (sizes, idx) => {
+          const total = (sizes[idx] ?? 0) + (sizes[idx + 1] ?? 0);
+          if (total <= 0) return sizes;
+          sizes[idx] = total / 2;
+          sizes[idx + 1] = total / 2;
+          const sum = sizes.reduce((a, s) => a + s, 0);
+          return sum > 0 ? sizes.map((s) => s / sum) : sizes;
+        });
+      });
+    }
+
+    this.dispatchLayoutChanged();
     this.scheduleRenderIntersectionHandles();
   }
 
