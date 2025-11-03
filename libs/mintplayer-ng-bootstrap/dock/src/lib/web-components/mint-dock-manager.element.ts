@@ -136,7 +136,8 @@ const templateHtml = `
       transition: background 120ms ease;
     }
 
-    .dock-floating__resizer:hover {
+    .dock-floating__resizer:hover,
+    .dock-floating__resizer[data-resizing='true'] {
       background: rgba(148, 163, 184, 0.4);
     }
 
@@ -614,6 +615,7 @@ export class MintDockManagerElement extends HTMLElement {
       }
     | null = null;
   private intersectionRaf: number | null = null;
+  private intersectionHandles: Map<string, HTMLElement> = new Map();
   private cornerResizeState:
     | {
         pointerId: number;
@@ -1006,9 +1008,70 @@ export class MintDockManagerElement extends HTMLElement {
   private renderIntersectionHandles(): void {
     const layer = this.shadowRoot?.querySelector<HTMLElement>('.dock-intersections-layer, .dock-intersection-layer');
     if (!layer) return;
-    layer.innerHTML = '';
+    // Keep existing handles; we will diff and update positions
+    // 1) Clean up legacy handles (created before keying) that lack a data-key
+    Array.from(layer.querySelectorAll('.dock-intersection-handle'))
+      .filter((el) => !(el as HTMLElement).dataset['key'])
+      .forEach((el) => el.remove());
+
+    // 2) Rebuild the internal map from DOM to avoid drifting state and dedupe duplicates
+    const domByKey = new Map<string, HTMLElement>();
+    Array.from(layer.querySelectorAll<HTMLElement>('.dock-intersection-handle[data-key]')).forEach((el) => {
+      const key = el.dataset['key'] ?? '';
+      if (!key) return;
+      if (domByKey.has(key)) {
+        // Remove duplicates with the same key, keep the first one
+        el.remove();
+        return;
+      }
+      domByKey.set(key, el);
+      // Ensure listener is attached only once
+      if (!el.dataset['listener']) {
+        el.dataset['listener'] = '1';
+        // Listener will be (re)assigned later when we know the current h/v pair
+      }
+    });
+    // Sync internal map with DOM
+    this.intersectionHandles = domByKey;
 
     const rootRect = this.rootEl.getBoundingClientRect();
+
+    // If a corner resize is active, only update that handle's position and avoid creating new ones
+    if (this.cornerResizeState) {
+      const st = this.cornerResizeState;
+      const hPathStr = this.formatPath(st.h.path);
+      const vPathStr = this.formatPath(st.v.path);
+      const key = `${hPathStr}:${st.h.index}|${vPathStr}:${st.v.index}`;
+      // Find divider elements corresponding to active paths
+      const hDiv = this.shadowRoot?.querySelector<HTMLElement>(
+        `.dock-split__divider[data-path="${hPathStr}"][data-index="${st.h.index}"]`,
+      );
+      const vDiv = this.shadowRoot?.querySelector<HTMLElement>(
+        `.dock-split__divider[data-path="${vPathStr}"][data-index="${st.v.index}"]`,
+      );
+      if (hDiv && vDiv) {
+        const hr = hDiv.getBoundingClientRect();
+        const vr = vDiv.getBoundingClientRect();
+        const x = vr.left + vr.width / 2 - rootRect.left;
+        const y = hr.top + hr.height / 2 - rootRect.top;
+        const handle = st.handle;
+        if (!handle.dataset['key']) {
+          handle.dataset['key'] = key;
+        }
+        this.intersectionHandles.set(key, handle);
+        handle.style.left = `${x}px`;
+        handle.style.top = `${y}px`;
+        // Remove any other handles that don't match the active key
+        Array.from(layer.querySelectorAll<HTMLElement>('.dock-intersection-handle')).forEach((el) => {
+          if ((el.dataset['key'] ?? '') !== key) {
+            el.remove();
+          }
+        });
+        // Normalize internal map as well
+        this.intersectionHandles = new Map([[key, handle]]);
+      }
+      return;
+    }
     const allDividers = Array.from(
       this.shadowRoot?.querySelectorAll<HTMLElement>('.dock-split__divider') ?? [],
     );
@@ -1017,6 +1080,7 @@ export class MintDockManagerElement extends HTMLElement {
       el: HTMLElement;
       rect: DOMRect;
       path: DockPath | null;
+      pathStr?: string;
       index: number;
       container: HTMLElement;
     }[] = [];
@@ -1024,6 +1088,7 @@ export class MintDockManagerElement extends HTMLElement {
       el: HTMLElement;
       rect: DOMRect;
       path: DockPath | null;
+      pathStr?: string;
       index: number;
       container: HTMLElement;
     }[] = [];
@@ -1033,9 +1098,10 @@ export class MintDockManagerElement extends HTMLElement {
       const rect = el.getBoundingClientRect();
       const container = el.closest('.dock-split') as HTMLElement | null;
       const path = this.parsePath(el.dataset['path']);
+      const pathStr = el.dataset['path'] ?? '';
       const index = Number.parseInt(el.dataset['index'] ?? '', 10);
       if (!container || !Number.isFinite(index)) return;
-      const info = { el, rect, path, index, container };
+      const info = { el, rect, path, pathStr, index, container };
       // Note: node.direction === 'horizontal' means the split lays out children left-to-right,
       // which yields a VERTICAL divider bar. So mapping is inverted here.
       if (orientation === 'horizontal') {
@@ -1045,7 +1111,7 @@ export class MintDockManagerElement extends HTMLElement {
       }
     });
 
-    const placed = new Set<string>();
+    const desiredKeys = new Set<string>();
 
     const tol = 24; // px tolerance to account for gaps and subpixel layout
     hDividers.forEach((h) => {
@@ -1058,19 +1124,38 @@ export class MintDockManagerElement extends HTMLElement {
 
         const x = vCenterX - rootRect.left;
         const y = hCenterY - rootRect.top;
-        const key = `${Math.round(x)}:${Math.round(y)}`;
-        if (placed.has(key)) return;
-        placed.add(key);
+        const key = `${h.pathStr}:${h.index}|${v.pathStr}:${v.index}`;
+        desiredKeys.add(key);
 
-        const handle = this.documentRef.createElement('div');
-        handle.classList.add('dock-intersection-handle');
+        let handle = this.intersectionHandles.get(key);
+        if (!handle) {
+          handle = this.documentRef.createElement('div');
+          handle.classList.add('dock-intersection-handle');
+          handle.classList.add('glyph');
+          handle.setAttribute('role', 'separator');
+          handle.setAttribute('aria-label', 'Resize split intersection');
+          handle.dataset['key'] = key;
+          handle.dataset['listener'] = '1';
+          handle.addEventListener('pointerdown', (ev) => this.beginCornerResize(ev, h, v, handle!));
+          layer.appendChild(handle);
+          this.intersectionHandles.set(key, handle);
+        } else if (!handle.dataset['listener']) {
+          // Existing DOM node but listener not wired yet for safety
+          handle.dataset['listener'] = '1';
+          handle.addEventListener('pointerdown', (ev) => this.beginCornerResize(ev, h, v, handle!));
+        }
+        // Update position for existing handle
         handle.style.left = `${x}px`;
         handle.style.top = `${y}px`;
-        handle.setAttribute('role', 'separator');
-        handle.setAttribute('aria-label', 'Resize split intersection');
-        handle.addEventListener('pointerdown', (ev) => this.beginCornerResize(ev, h, v, handle));
-        layer.appendChild(handle);
       });
+    });
+
+    // Remove stale handles
+    Array.from(this.intersectionHandles.entries()).forEach(([key, el]) => {
+      if (!desiredKeys.has(key)) {
+        el.remove();
+        this.intersectionHandles.delete(key);
+      }
     });
   }
 
@@ -1130,6 +1215,10 @@ export class MintDockManagerElement extends HTMLElement {
     };
 
     this.startPointerTracking();
+    // Seed a stable key for the active handle so it can be reused across re-renders
+    const key = `${this.formatPath(h.path)}:${h.index}|${this.formatPath(v.path)}:${v.index}`;
+    handle.dataset['key'] = key;
+    this.intersectionHandles.set(key, handle);
   }
 
   private handleCornerResizeMove(event: PointerEvent): void {
@@ -1252,6 +1341,7 @@ export class MintDockManagerElement extends HTMLElement {
 
     try {
       handle.setPointerCapture(event.pointerId);
+      handle.dataset['resizing'] = 'true';
     } catch (err) {
       /* pointer capture may not be supported */
     }
@@ -1306,6 +1396,7 @@ export class MintDockManagerElement extends HTMLElement {
 
     try {
       state.handle.releasePointerCapture(state.pointerId);
+      delete state.handle.dataset['resizing'];
     } catch (err) {
       /* no-op */
     }
