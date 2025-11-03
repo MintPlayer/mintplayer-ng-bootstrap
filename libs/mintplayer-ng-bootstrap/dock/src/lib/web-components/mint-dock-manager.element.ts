@@ -645,6 +645,9 @@ export class MintDockManagerElement extends HTMLElement {
   private pointerTrackingActive = false;
   private dragPointerTrackingActive = false;
   private lastDragPointerPosition: { x: number; y: number } | null = null;
+  // Localized snapping while dragging a divider
+  private activeSnapAxis: 'x' | 'y' | null = null;
+  private activeSnapTargets: number[] = [];
   private pendingDragEndTimeout: number | NodeJS.Timeout | null = null;
   private previousSplitSizes: Map<string, number[]> = new Map();
 
@@ -1923,6 +1926,49 @@ export class MintDockManagerElement extends HTMLElement {
     };
 
     this.startPointerTracking();
+    // Compute localized snap targets: intersections with perpendicular dividers near this divider
+    try {
+      const rootRect = this.rootEl.getBoundingClientRect();
+      const dividerRect = divider.getBoundingClientRect();
+      const allDividers = Array.from(
+        this.shadowRoot?.querySelectorAll<HTMLElement>('.dock-split__divider') ?? [],
+      );
+      const targets: number[] = [];
+      if (orientation === 'horizontal') {
+        // Current bar is vertical → snap on X positions of horizontal bars that cross this vertical line
+        const centerX = dividerRect.left + dividerRect.width / 2;
+        allDividers.forEach((el) => {
+          if (el === divider) return;
+          const o = (el.dataset['orientation'] as 'horizontal' | 'vertical' | undefined) ?? undefined;
+          if (o !== 'vertical') return; // need horizontal divider bar (split direction vertical)
+          const r = el.getBoundingClientRect();
+          if (centerX >= r.left && centerX <= r.right) {
+            const yCenter = r.top + r.height / 2 - rootRect.top;
+            targets.push(yCenter);
+          }
+        });
+        this.activeSnapAxis = 'y';
+        this.activeSnapTargets = targets;
+      } else {
+        // Current bar is horizontal → snap on Y positions of vertical bars that cross this horizontal line
+        const centerY = dividerRect.top + dividerRect.height / 2;
+        allDividers.forEach((el) => {
+          if (el === divider) return;
+          const o = (el.dataset['orientation'] as 'horizontal' | 'vertical' | undefined) ?? undefined;
+          if (o !== 'horizontal') return; // need vertical divider bar (split direction horizontal)
+          const r = el.getBoundingClientRect();
+          if (centerY >= r.top && centerY <= r.bottom) {
+            const xCenter = r.left + r.width / 2 - rootRect.left;
+            targets.push(xCenter);
+          }
+        });
+        this.activeSnapAxis = 'x';
+        this.activeSnapTargets = targets;
+      }
+    } catch {
+      this.activeSnapAxis = null;
+      this.activeSnapTargets = [];
+    }
   }
 
   private onPointerMove(event: PointerEvent): void {
@@ -1936,7 +1982,33 @@ export class MintDockManagerElement extends HTMLElement {
         return;
       }
 
-      const currentPos = state.orientation === 'horizontal' ? event.clientX : event.clientY;
+      let currentPos = state.orientation === 'horizontal' ? event.clientX : event.clientY;
+      // Localized axis snap near neighboring intersections
+      const tol = 10;
+      const rootRect = this.rootEl.getBoundingClientRect();
+      if (this.activeSnapAxis === 'x' && state.orientation === 'vertical' && this.activeSnapTargets.length) {
+        // Snap X
+        let closest = Number.POSITIVE_INFINITY;
+        let best = currentPos;
+        const pointerX = event.clientX;
+        this.activeSnapTargets.forEach((sx) => {
+          const px = rootRect.left + sx;
+          const d = Math.abs(pointerX - px);
+          if (d < closest) { closest = d; best = px; }
+        });
+        if (closest <= tol) currentPos = best; // apply snap
+      } else if (this.activeSnapAxis === 'y' && state.orientation === 'horizontal' && this.activeSnapTargets.length) {
+        // Snap Y
+        let closest = Number.POSITIVE_INFINITY;
+        let best = currentPos;
+        const pointerY = event.clientY;
+        this.activeSnapTargets.forEach((sy) => {
+          const py = rootRect.top + sy;
+          const d = Math.abs(pointerY - py);
+          if (d < closest) { closest = d; best = py; }
+        });
+        if (closest <= tol) currentPos = best;
+      }
       const delta = currentPos - state.startPos;
       const minSize = 48;
       const pairTotal = state.beforeSize + state.afterSize;
@@ -2006,6 +2078,8 @@ export class MintDockManagerElement extends HTMLElement {
       divider.releasePointerCapture(this.resizeState.pointerId);
       this.resizeState = null;
       this.scheduleRenderIntersectionHandles();
+      this.activeSnapAxis = null;
+      this.activeSnapTargets = [];
     }
 
     if (this.floatingDragState && event.pointerId === this.floatingDragState.pointerId) {
