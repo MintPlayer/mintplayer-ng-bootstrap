@@ -17,6 +17,8 @@ import {
   DockLayout,
   DockLayoutNode,
   DockLayoutSnapshot,
+  DockSide,
+  DockSideSnapshot,
 } from '../types/dock-layout';
 import { BsDockPaneComponent } from './dock-pane.component';
 import { MintDockManagerElement } from '../web-components/mint-dock-manager.element';
@@ -37,7 +39,8 @@ export class BsDockManagerComponent implements AfterViewInit {
     this.applyLayout();
   }
   get layout(): DockLayoutSnapshot | null {
-    if (!this._layout.root && this._layout.floating.length === 0) {
+    const hasSideContent = this.hasSideContent(this._layout);
+    if (!this._layout.root && this._layout.floating.length === 0 && !hasSideContent) {
       return null;
     }
     return this.cloneLayout(this._layout);
@@ -100,22 +103,24 @@ export class BsDockManagerComponent implements AfterViewInit {
     value: DockLayoutNode | DockLayout | null,
   ): DockLayoutSnapshot {
     if (!value) {
-      return { root: null, floating: [], titles: {} };
+      return { root: null, floating: [], titles: {}, sides: undefined };
     }
 
     if ('kind' in value) {
-      return { root: value, floating: [], titles: {} };
+      return { root: value, floating: [], titles: {}, sides: undefined };
     }
 
     return {
       root: value.root ?? null,
       floating: Array.isArray(value.floating) ? [...value.floating] : [],
       titles: value.titles ? { ...value.titles } : {},
+      sides: value.sides ? JSON.parse(JSON.stringify(value.sides)) : undefined,
     };
   }
 
   private stringifyLayout(layout: DockLayoutSnapshot): string | null {
-    if (!layout.root && layout.floating.length === 0) {
+    const hasSideContent = this.hasSideContent(layout);
+    if (!layout.root && layout.floating.length === 0 && !hasSideContent) {
       return null;
     }
     return JSON.stringify(layout);
@@ -123,5 +128,20 @@ export class BsDockManagerComponent implements AfterViewInit {
 
   private cloneLayout(layout: DockLayoutSnapshot): DockLayoutSnapshot {
     return JSON.parse(JSON.stringify(layout)) as DockLayoutSnapshot;
+  }
+
+  private hasSideContent(layout: DockLayoutSnapshot): boolean {
+    if (!layout.sides) {
+      return false;
+    }
+    return (Object.keys(layout.sides) as DockSide[]).some((key) => {
+      const side: DockSideSnapshot | undefined = layout.sides?.[key];
+      if (!side) {
+        return false;
+      }
+      const hasPinned = !!side.pinned;
+      const hasAutoHide = Array.isArray(side.autoHide) && side.autoHide.length > 0;
+      return hasPinned || hasAutoHide;
+    });
   }
 }

@@ -1,5 +1,7 @@
 export type DockLayoutNode = DockSplitNode | DockStackNode;
 
+export type DockSide = 'left' | 'right' | 'top' | 'bottom';
+
 export interface DockSplitNode {
   kind: 'split';
   direction: 'horizontal' | 'vertical';
@@ -52,6 +54,19 @@ export interface DockFloatingStackLayout {
   activePane?: string;
 }
 
+export interface DockAutoHideEntry {
+  id: string;
+  root: DockLayoutNode | null;
+  activePane?: string;
+  size?: number;
+}
+
+export interface DockSideSnapshot {
+  pinned: DockLayoutNode | null;
+  pinnedSize?: number;
+  autoHide: DockAutoHideEntry[];
+}
+
 export interface DockLayout {
   root: DockLayoutNode | null;
   floating?: DockFloatingStackLayout[];
@@ -59,6 +74,7 @@ export interface DockLayout {
    * Optional caption overrides per pane name, scoped to the entire manager.
    */
   titles?: Record<string, string>;
+  sides?: Partial<Record<DockSide, DockSideSnapshot>>;
 }
 
 export interface DockLayoutSnapshot {
@@ -68,4 +84,5 @@ export interface DockLayoutSnapshot {
    * Optional caption overrides per pane name, scoped to the entire manager.
    */
   titles?: Record<string, string>;
+  sides?: Partial<Record<DockSide, DockSideSnapshot>>;
 }

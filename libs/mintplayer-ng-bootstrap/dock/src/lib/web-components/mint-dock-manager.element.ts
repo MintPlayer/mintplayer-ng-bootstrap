@@ -1,16 +1,20 @@
 
 import {
+  DockAutoHideEntry,
   DockFloatingStackLayout,
   DockLayout,
   DockLayoutNode,
   DockLayoutSnapshot,
+  DockSide,
+  DockSideSnapshot,
   DockSplitNode,
   DockStackNode,
 } from '../types/dock-layout';
 
 type DockPath =
   | { type: 'docked'; segments: number[] }
-  | { type: 'floating'; index: number; segments: number[] };
+  | { type: 'floating'; index: number; segments: number[] }
+  | { type: 'side'; side: DockSide; segments: number[] };
 
 type DockedLocation = { context: 'docked'; path: number[]; node: DockStackNode };
 type FloatingLocation = {
@@ -20,7 +24,14 @@ type FloatingLocation = {
   node: DockStackNode;
 };
 
-type ResolvedLocation = DockedLocation | FloatingLocation;
+type SideLocation = {
+  context: 'side';
+  side: DockSide;
+  path: number[];
+  node: DockStackNode;
+};
+
+type ResolvedLocation = DockedLocation | FloatingLocation | SideLocation;
 
 type DropZone = 'center' | 'left' | 'right' | 'top' | 'bottom';
 
@@ -28,6 +39,10 @@ type FloatingResizeEdges = {
   horizontal: 'left' | 'right' | 'none';
   vertical: 'top' | 'bottom' | 'none';
 };
+
+const dockSides: DockSide[] = ['left', 'right', 'top', 'bottom'];
+
+type SideLayoutsMap = Record<DockSide, DockSideSnapshot>;
 
 const templateHtml = `
   <style>
@@ -41,6 +56,11 @@ const templateHtml = `
       font-family: inherit;
       color: inherit;
       --dock-split-gap: 0.25rem;
+      --dock-side-strip-size: 1.75rem;
+      --dock-side-left-size: 0px;
+      --dock-side-right-size: 0px;
+      --dock-side-top-size: 0px;
+      --dock-side-bottom-size: 0px;
     }
 
     .dock-root,
@@ -66,6 +86,229 @@ const templateHtml = `
       inset: 0;
       display: flex;
       z-index: 0;
+      left: var(--dock-side-left-size, 0px);
+      right: var(--dock-side-right-size, 0px);
+      top: var(--dock-side-top-size, 0px);
+      bottom: var(--dock-side-bottom-size, 0px);
+    }
+
+    .dock-side {
+      position: absolute;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .dock-side__strip,
+    .dock-side__pinned {
+      position: absolute;
+      box-sizing: border-box;
+      pointer-events: auto;
+      display: flex;
+    }
+
+    .dock-side__strip {
+      background: rgba(15, 23, 42, 0.08);
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      gap: 0.25rem;
+    }
+
+    .dock-side__strip[data-empty='true']::after {
+      content: '';
+      flex: 1 1 auto;
+    }
+
+    .dock-side__pinned {
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(15, 23, 42, 0.2);
+      box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.05);
+      overflow: hidden;
+    }
+
+    .dock-side__pinned[data-visible='false'] {
+      pointer-events: none;
+      display: none;
+    }
+
+    .dock-side--left,
+    .dock-side--right {
+      top: 0;
+      bottom: 0;
+    }
+
+    .dock-side--left {
+      left: 0;
+    }
+
+    .dock-side--right {
+      right: 0;
+    }
+
+    .dock-side--left .dock-side__strip,
+    .dock-side--right .dock-side__strip {
+      width: var(--dock-side-strip-size);
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+    }
+
+    .dock-side--left .dock-side__strip {
+      left: 0;
+      top: 0;
+      bottom: 0;
+      border-right: none;
+    }
+
+    .dock-side--right .dock-side__strip {
+      right: 0;
+      top: 0;
+      bottom: 0;
+      border-left: none;
+    }
+
+    .dock-side--left .dock-side__pinned,
+    .dock-side--right .dock-side__pinned {
+      top: 0;
+      bottom: 0;
+    }
+
+    .dock-side--left .dock-side__pinned {
+      left: var(--dock-side-strip-size);
+      width: var(--dock-side-left-size, 0px);
+      border-left: none;
+    }
+
+    .dock-side--right .dock-side__pinned {
+      right: var(--dock-side-strip-size);
+      width: var(--dock-side-right-size, 0px);
+      border-right: none;
+    }
+
+    .dock-side--top,
+    .dock-side--bottom {
+      left: 0;
+      right: 0;
+    }
+
+    .dock-side--top {
+      top: 0;
+    }
+
+    .dock-side--bottom {
+      bottom: 0;
+    }
+
+    .dock-side--top .dock-side__strip,
+    .dock-side--bottom .dock-side__strip {
+      height: var(--dock-side-strip-size);
+      flex-direction: row;
+      align-items: center;
+    }
+
+    .dock-side--top .dock-side__strip {
+      top: 0;
+      left: 0;
+      right: 0;
+      border-bottom: none;
+    }
+
+    .dock-side--bottom .dock-side__strip {
+      bottom: 0;
+      left: 0;
+      right: 0;
+      border-top: none;
+    }
+
+    .dock-side--top .dock-side__pinned,
+    .dock-side--bottom .dock-side__pinned {
+      left: 0;
+      right: 0;
+    }
+
+    .dock-side--top .dock-side__pinned {
+      top: var(--dock-side-strip-size);
+      height: var(--dock-side-top-size, 0px);
+      border-top: none;
+    }
+
+    .dock-side--bottom .dock-side__pinned {
+      bottom: var(--dock-side-strip-size);
+      height: var(--dock-side-bottom-size, 0px);
+      border-bottom: none;
+    }
+
+    .dock-auto-hide-tab {
+      appearance: none;
+      border: none;
+      background: rgba(15, 23, 42, 0.12);
+      color: inherit;
+      font: inherit;
+      padding: 0.35rem 0.5rem;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      transition: background 120ms ease;
+      min-width: 1.5rem;
+      min-height: 1.5rem;
+    }
+
+    .dock-auto-hide-tab:hover,
+    .dock-auto-hide-tab:focus-visible {
+      background: rgba(15, 23, 42, 0.22);
+    }
+
+    .dock-auto-hide-tab[data-side='left'],
+    .dock-auto-hide-tab[data-side='right'] {
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+    }
+
+    .dock-auto-hide-tab[data-side='right'] {
+      transform: rotate(180deg);
+    }
+
+    .dock-auto-hide-popover {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.98);
+      border: 1px solid rgba(15, 23, 42, 0.2);
+      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.35);
+      z-index: 150;
+      display: flex;
+      flex-direction: column;
+      pointer-events: auto;
+    }
+
+    .dock-auto-hide-popover__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.25rem 0.5rem;
+      background: rgba(15, 23, 42, 0.05);
+      border-bottom: 1px solid rgba(15, 23, 42, 0.12);
+      gap: 0.25rem;
+    }
+
+    .dock-auto-hide-popover__body {
+      flex: 1 1 auto;
+      display: flex;
+      min-height: 0;
+    }
+
+    .dock-auto-hide-popover__title {
+      font-size: 0.8125rem;
+      font-weight: 500;
+      flex: 1 1 auto;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    .dock-auto-hide-popover button {
+      appearance: none;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font: inherit;
+      padding: 0.125rem 0.35rem;
+      border-radius: 0.25rem;
     }
 
     .dock-floating-layer {
@@ -335,6 +578,16 @@ const templateHtml = `
       border-bottom: 1px solid rgba(0, 0, 0, 0.15);
     }
 
+    .dock-stack--bottom-tabs > .dock-stack__header {
+      order: 2;
+      border-bottom: none;
+      border-top: 1px solid rgba(0, 0, 0, 0.15);
+    }
+
+    .dock-stack--bottom-tabs > .dock-stack__content {
+      order: 1;
+    }
+
     .dock-tab {
       appearance: none;
       border: none;
@@ -362,6 +615,15 @@ const templateHtml = `
 
     .dock-tab--active {
       background: rgba(59, 130, 246, 0.15);
+    }
+
+    .dock-stack__action-button {
+      margin-left: auto;
+      appearance: none;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      padding: 0.25rem;
     }
 
     .dock-stack__content {
@@ -462,6 +724,22 @@ const templateHtml = `
     }
   </style>
   <div class="dock-root">
+    <div class="dock-side dock-side--left" data-side="left">
+      <div class="dock-side__strip" data-side="left" data-path="s:left" data-empty="true"></div>
+      <div class="dock-side__pinned" data-side="left" data-visible="false" data-path="s:left"></div>
+    </div>
+    <div class="dock-side dock-side--right" data-side="right">
+      <div class="dock-side__strip" data-side="right" data-path="s:right" data-empty="true"></div>
+      <div class="dock-side__pinned" data-side="right" data-visible="false" data-path="s:right"></div>
+    </div>
+    <div class="dock-side dock-side--top" data-side="top">
+      <div class="dock-side__strip" data-side="top" data-path="s:top" data-empty="true"></div>
+      <div class="dock-side__pinned" data-side="top" data-visible="false" data-path="s:top"></div>
+    </div>
+    <div class="dock-side dock-side--bottom" data-side="bottom">
+      <div class="dock-side__strip" data-side="bottom" data-path="s:bottom" data-empty="true"></div>
+      <div class="dock-side__pinned" data-side="bottom" data-visible="false" data-path="s:bottom"></div>
+    </div>
     <div class="dock-docked"></div>
     <div class="dock-floating-layer"></div>
     <div class="dock-intersections-layer dock-intersection-layer"></div>
@@ -553,11 +831,24 @@ export class MintDockManagerElement extends HTMLElement {
   private readonly dropIndicator: HTMLElement;
   private readonly dropJoystick: HTMLElement;
   private readonly dropJoystickButtons: HTMLButtonElement[];
+  private readonly sideContainers: Record<
+    DockSide,
+    { host: HTMLElement; strip: HTMLElement; pinned: HTMLElement }
+  >;
   private readonly instanceId: string;
   private dropJoystickTarget: HTMLElement | null = null;
   private rootLayout: DockLayoutNode | null = null;
   private floatingLayouts: DockFloatingStackLayout[] = [];
   private titles: Record<string, string> = {};
+  private sideLayouts: SideLayoutsMap = this.createEmptySideLayouts();
+  private autoHidePreview:
+    | {
+        side: DockSide;
+        entryId: string;
+        wrapper: HTMLElement;
+        hideTimer?: number | null;
+      }
+    | null = null;
   private pendingTabDragMetrics:
     | {
         pointerOffsetX: number;
@@ -787,12 +1078,31 @@ export class MintDockManagerElement extends HTMLElement {
       throw new Error('mint-dock-manager template is missing drop joystick buttons.');
     }
 
+    const sideContainers: Partial<
+      Record<DockSide, { host: HTMLElement; strip: HTMLElement; pinned: HTMLElement }>
+    > = {};
+    dockSides.forEach((side) => {
+      const host = shadowRoot.querySelector<HTMLElement>(`.dock-side[data-side="${side}"]`);
+      const strip = shadowRoot.querySelector<HTMLElement>(`.dock-side__strip[data-side="${side}"]`);
+      const pinned = shadowRoot.querySelector<HTMLElement>(
+        `.dock-side__pinned[data-side="${side}"]`,
+      );
+      if (!host || !strip || !pinned) {
+        throw new Error(`mint-dock-manager template is missing the ${side} side containers.`);
+      }
+      sideContainers[side] = { host, strip, pinned };
+    });
+
     this.rootEl = root;
     this.dockedEl = docked;
     this.floatingLayerEl = floatingLayer;
     this.dropIndicator = indicator;
     this.dropJoystick = joystick;
     this.dropJoystickButtons = joystickButtons;
+    this.sideContainers = sideContainers as Record<
+      DockSide,
+      { host: HTMLElement; strip: HTMLElement; pinned: HTMLElement }
+    >;
     this.instanceId = `mint-dock-${++MintDockManagerElement.instanceCounter}`;
     this.onPointerMove = this.onPointerMove.bind(this);
     this.onPointerUp = this.onPointerUp.bind(this);
@@ -879,6 +1189,7 @@ export class MintDockManagerElement extends HTMLElement {
       root: this.cloneLayoutNode(this.rootLayout),
       floating: this.cloneFloatingArray(this.floatingLayouts),
       titles: { ...this.titles },
+      sides: this.cloneSideLayouts(this.sideLayouts),
     };
   }
 
@@ -887,6 +1198,7 @@ export class MintDockManagerElement extends HTMLElement {
     this.rootLayout = this.cloneLayoutNode(snapshot.root);
     this.floatingLayouts = this.cloneFloatingArray(snapshot.floating);
     this.titles = snapshot.titles ? { ...snapshot.titles } : {};
+    this.sideLayouts = this.cloneSideLayouts(snapshot.sides);
     this.render();
   }
 
@@ -944,11 +1256,16 @@ export class MintDockManagerElement extends HTMLElement {
     value: DockLayoutSnapshot | DockLayout | DockLayoutNode | null,
   ): DockLayoutSnapshot {
     if (!value) {
-      return { root: null, floating: [], titles: {} };
+      return { root: null, floating: [], titles: {}, sides: this.createEmptySideLayouts() };
     }
 
-    if ((value as DockLayoutNode).kind) {
-      return { root: value as DockLayoutNode, floating: [], titles: {} };
+    if ((value as DockLayoutNode)?.kind) {
+      return {
+        root: value as DockLayoutNode,
+        floating: [],
+        titles: {},
+        sides: this.createEmptySideLayouts(),
+      };
     }
 
     const layout = value as DockLayout | DockLayoutSnapshot;
@@ -958,6 +1275,7 @@ export class MintDockManagerElement extends HTMLElement {
         ? layout.floating.map((floating) => this.normalizeFloatingLayout(floating))
         : [],
       titles: layout.titles ? { ...layout.titles } : {},
+      sides: this.normalizeSideLayouts(layout.sides),
     };
   }
 
@@ -965,6 +1283,9 @@ export class MintDockManagerElement extends HTMLElement {
     this.dockedEl.innerHTML = '';
     this.floatingLayerEl.innerHTML = '';
     this.hideDropIndicator();
+    this.hideAutoHidePreview(true);
+
+    this.renderSides();
 
     if (this.rootLayout) {
       const fragment = this.renderNode(this.rootLayout, []);
@@ -975,16 +1296,265 @@ export class MintDockManagerElement extends HTMLElement {
     this.scheduleRenderIntersectionHandles();
   }
 
+  private renderSides(): void {
+    dockSides.forEach((side) => this.renderSideRegion(side));
+    this.updateSideOffsets();
+  }
+
+  private renderSideRegion(side: DockSide): void {
+    const containers = this.sideContainers[side];
+    const state = this.sideLayouts[side];
+    if (!containers || !state) {
+      return;
+    }
+
+    containers.pinned.innerHTML = '';
+    containers.pinned.dataset['visible'] = state.pinned ? 'true' : 'false';
+    if (state.pinned) {
+      const fragment = this.renderNode(state.pinned, [], undefined, side);
+      containers.pinned.appendChild(fragment);
+    }
+
+    this.renderAutoHideStrip(side, containers.strip, state.autoHide);
+  }
+
+  private renderAutoHideStrip(side: DockSide, strip: HTMLElement, entries: DockAutoHideEntry[]): void {
+    strip.innerHTML = '';
+    strip.dataset['side'] = side;
+    strip.dataset['empty'] = entries.length === 0 ? 'true' : 'false';
+    entries.forEach((entry) => {
+      const button = this.documentRef.createElement('button');
+      button.type = 'button';
+      button.classList.add('dock-auto-hide-tab');
+      button.dataset['side'] = side;
+      button.dataset['entryId'] = entry.id;
+      button.textContent = this.getAutoHideEntryTitle(entry);
+      const show = () => this.showAutoHidePreview(side, entry.id);
+      button.addEventListener('pointerenter', show);
+      button.addEventListener('focus', show);
+      button.addEventListener('pointerleave', () => this.scheduleHideAutoHidePreview());
+      button.addEventListener('blur', () => this.scheduleHideAutoHidePreview());
+      button.addEventListener('click', () => this.toggleAutoHidePreview(side, entry.id));
+      strip.appendChild(button);
+    });
+  }
+
+  private getAutoHideEntryTitle(entry: DockAutoHideEntry): string {
+    const fallback = 'Pane';
+    const pane =
+      entry.activePane ??
+      (entry.root ? this.findFirstPaneName(entry.root) : null) ??
+      null;
+    if (!pane) {
+      return fallback;
+    }
+    return this.titles[pane] ?? pane ?? fallback;
+  }
+
+  private updateSideOffsets(): void {
+    dockSides.forEach((side) => {
+      const size = this.getPinnedSizeForSide(side);
+      this.rootEl.style.setProperty(`--dock-side-${side}-size`, `${size}px`);
+      const containers = this.sideContainers[side];
+      if (!containers) {
+        return;
+      }
+      if (side === 'left' || side === 'right') {
+        containers.pinned.style.width = `${size}px`;
+        containers.pinned.style.height = '';
+      } else {
+        containers.pinned.style.height = `${size}px`;
+        containers.pinned.style.width = '';
+      }
+    });
+  }
+
+  private getPinnedSizeForSide(side: DockSide): number {
+    const snapshot = this.sideLayouts[side];
+    if (!snapshot || !snapshot.pinned) {
+      return 0;
+    }
+    const provided = snapshot.pinnedSize;
+    if (typeof provided === 'number' && Number.isFinite(provided) && provided > 0) {
+      return provided;
+    }
+    return side === 'left' || side === 'right' ? 280 : 220;
+  }
+
+  private toggleAutoHidePreview(side: DockSide, entryId: string): void {
+    if (this.autoHidePreview && this.autoHidePreview.entryId === entryId && this.autoHidePreview.side === side) {
+      this.hideAutoHidePreview(true);
+      return;
+    }
+    this.showAutoHidePreview(side, entryId);
+  }
+
+  private showAutoHidePreview(side: DockSide, entryId: string): void {
+    const state = this.sideLayouts[side];
+    const entry = state.autoHide.find((item) => item.id === entryId);
+    if (!entry) {
+      return;
+    }
+    this.hideAutoHidePreview(true);
+
+    const wrapper = this.documentRef.createElement('div');
+    wrapper.classList.add('dock-auto-hide-popover', `dock-auto-hide-popover--${side}`);
+    const stripSize = parseFloat(
+      getComputedStyle(this).getPropertyValue('--dock-side-strip-size') || '28',
+    );
+    const defaultSize = entry.size && Number.isFinite(entry.size) ? entry.size : side === 'left' || side === 'right' ? 320 : 240;
+    const rootRect = this.rootEl.getBoundingClientRect();
+    wrapper.style.height =
+      side === 'left' || side === 'right'
+        ? `${this.rootEl.clientHeight}px`
+        : `${defaultSize}px`;
+    wrapper.style.width =
+      side === 'left' || side === 'right' ? `${defaultSize}px` : `${this.rootEl.clientWidth}px`;
+
+    if (side === 'left') {
+      wrapper.style.left = `${stripSize}px`;
+      wrapper.style.top = `0`;
+      wrapper.style.bottom = `0`;
+    } else if (side === 'right') {
+      wrapper.style.right = `${stripSize}px`;
+      wrapper.style.top = `0`;
+      wrapper.style.bottom = `0`;
+    } else if (side === 'top') {
+      wrapper.style.left = `0`;
+      wrapper.style.right = `0`;
+      wrapper.style.top = `${stripSize}px`;
+    } else {
+      wrapper.style.left = `0`;
+      wrapper.style.right = `0`;
+      wrapper.style.bottom = `${stripSize}px`;
+    }
+
+    const header = this.documentRef.createElement('div');
+    header.classList.add('dock-auto-hide-popover__header');
+    const title = this.documentRef.createElement('div');
+    title.classList.add('dock-auto-hide-popover__title');
+    title.textContent = this.getAutoHideEntryTitle(entry);
+    const pinBtn = this.documentRef.createElement('button');
+    pinBtn.type = 'button';
+    pinBtn.textContent = 'Pin';
+    pinBtn.addEventListener('click', () => {
+      this.pinAutoHideEntry(side, entryId);
+    });
+    const closeBtn = this.documentRef.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.textContent = '×';
+    closeBtn.addEventListener('click', () => this.hideAutoHidePreview(true));
+    header.append(title, pinBtn, closeBtn);
+    wrapper.appendChild(header);
+
+    const content = this.documentRef.createElement('div');
+    content.classList.add('dock-auto-hide-popover__body');
+    if (entry.root) {
+      content.appendChild(this.renderNode(entry.root, [], undefined, side));
+    } else {
+      const empty = this.documentRef.createElement('div');
+      empty.textContent = 'No panes configured';
+      empty.classList.add('dock-stack__pane');
+      content.appendChild(empty);
+    }
+    wrapper.appendChild(content);
+    wrapper.addEventListener('pointerleave', () => this.scheduleHideAutoHidePreview());
+    wrapper.addEventListener('pointerenter', () => this.clearAutoHidePreviewTimer());
+    this.rootEl.appendChild(wrapper);
+    this.autoHidePreview = { side, entryId, wrapper };
+  }
+
+  private scheduleHideAutoHidePreview(): void {
+    if (!this.autoHidePreview) {
+      return;
+    }
+    this.clearAutoHidePreviewTimer();
+    this.autoHidePreview.hideTimer = window.setTimeout(() => {
+      this.hideAutoHidePreview();
+    }, 200);
+  }
+
+  private clearAutoHidePreviewTimer(): void {
+    if (this.autoHidePreview?.hideTimer) {
+      window.clearTimeout(this.autoHidePreview.hideTimer);
+      this.autoHidePreview.hideTimer = null;
+    }
+  }
+
+  private hideAutoHidePreview(immediate = false): void {
+    if (!this.autoHidePreview) {
+      return;
+    }
+    if (!immediate && this.autoHidePreview.hideTimer) {
+      return;
+    }
+    this.autoHidePreview.wrapper.remove();
+    this.autoHidePreview = null;
+  }
+
+  private pinAutoHideEntry(side: DockSide, entryId: string): void {
+    const state = this.sideLayouts[side];
+    const index = state.autoHide.findIndex((entry) => entry.id === entryId);
+    if (index === -1) {
+      return;
+    }
+    const [entry] = state.autoHide.splice(index, 1);
+    if (!entry.root) {
+      this.render();
+      this.dispatchLayoutChanged();
+      return;
+    }
+    const node = this.cloneLayoutNode(entry.root);
+    state.pinned = this.mergeIntoSideRoot(side, state.pinned, node);
+    this.hideAutoHidePreview(true);
+    this.render();
+    this.dispatchLayoutChanged();
+  }
+
+  private mergeIntoSideRoot(
+    side: DockSide,
+    root: DockLayoutNode | null,
+    newNode: DockLayoutNode,
+    zone?: DropZone | null,
+  ): DockLayoutNode {
+    const orientation = side === 'left' || side === 'right' ? 'horizontal' : 'vertical';
+    const placeBefore =
+      zone === 'left' || zone === 'top'
+        ? true
+        : zone === 'right' || zone === 'bottom'
+        ? false
+        : side === 'left' || side === 'top';
+
+    if (!root) {
+      return newNode;
+    }
+
+    if (root.kind === 'split' && root.direction === orientation) {
+      const insertIndex = placeBefore ? 0 : root.children.length;
+      root.children.splice(insertIndex, 0, newNode);
+      root.sizes = this.insertWeight(root.sizes, insertIndex, root.children.length);
+      return root;
+    }
+
+    return {
+      kind: 'split',
+      direction: orientation,
+      children: placeBefore ? [newNode, root] : [root, newNode],
+      sizes: [0.5, 0.5],
+    };
+  }
+
   private renderNode(
     node: DockLayoutNode,
     path: number[],
     floatingIndex?: number,
+    side?: DockSide | null,
   ): HTMLElement {
     if (node.kind === 'split') {
-      return this.renderSplit(node, path, floatingIndex);
+      return this.renderSplit(node, path, floatingIndex, side ?? null);
     }
 
-    return this.renderStack(node, path, floatingIndex);
+    return this.renderStack(node, path, floatingIndex, side ?? null);
   }
 
   private renderFloatingPanes(): void {
@@ -1901,6 +2471,7 @@ export class MintDockManagerElement extends HTMLElement {
     node: DockSplitNode,
     path: number[],
     floatingIndex?: number,
+    side: DockSide | null = null,
   ): HTMLElement {
     const container = this.documentRef.createElement('div');
     container.classList.add('dock-split');
@@ -1920,7 +2491,7 @@ export class MintDockManagerElement extends HTMLElement {
         childWrapper.style.flex = '1 1 0';
       }
 
-      childWrapper.appendChild(this.renderNode(child, [...path, index], floatingIndex));
+      childWrapper.appendChild(this.renderNode(child, [...path, index], floatingIndex, side));
       container.appendChild(childWrapper);
 
       if (index < node.children.length - 1) {
@@ -1932,6 +2503,8 @@ export class MintDockManagerElement extends HTMLElement {
         const dividerPath: DockPath =
           typeof floatingIndex === 'number'
             ? { type: 'floating', index: floatingIndex, segments: [...path] }
+            : side
+            ? { type: 'side', side, segments: [...path] }
             : { type: 'docked', segments: [...path] };
         divider.dataset['path'] = this.formatPath(dividerPath);
         divider.dataset['index'] = String(index);
@@ -1942,6 +2515,8 @@ export class MintDockManagerElement extends HTMLElement {
             container,
             floatingIndex !== undefined
               ? { type: 'floating', index: floatingIndex, segments: [...path] }
+              : side
+              ? { type: 'side', side, segments: [...path] }
               : { type: 'docked', segments: [...path] },
             index,
           ),
@@ -1957,12 +2532,21 @@ export class MintDockManagerElement extends HTMLElement {
     node: DockStackNode,
     path: number[],
     floatingIndex?: number,
+    side: DockSide | null = null,
   ): HTMLElement {
     const stack = this.documentRef.createElement('div');
     stack.classList.add('dock-stack');
+    if (side) {
+      stack.classList.add('dock-stack--bottom-tabs');
+      stack.dataset['side'] = side;
+    } else {
+      delete stack.dataset['side'];
+    }
     const location: DockPath =
       typeof floatingIndex === 'number'
         ? { type: 'floating', index: floatingIndex, segments: [...path] }
+        : side
+        ? { type: 'side', side, segments: [...path] }
         : { type: 'docked', segments: [...path] };
     stack.dataset['path'] = this.formatPath(location);
 
@@ -2052,6 +2636,19 @@ export class MintDockManagerElement extends HTMLElement {
     });
 
     stack.dataset['activePane'] = activePane;
+    if (side) {
+      const actionButton = this.documentRef.createElement('button');
+      actionButton.type = 'button';
+      actionButton.classList.add('dock-stack__action-button');
+      actionButton.textContent = 'Auto-hide';
+      actionButton.title = 'Auto-hide';
+      const pathClone = this.clonePath(location);
+      actionButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        this.unpinSideStack(pathClone);
+      });
+      header.appendChild(actionButton);
+    }
     stack.append(header, content);
     return stack;
   }
@@ -2640,8 +3237,13 @@ export class MintDockManagerElement extends HTMLElement {
         ? joystickZone
         : (stack ? this.computeDropZone(stack, { clientX: pos.x, clientY: pos.y }, null) : null);
       
-      if (path && this.isDropZone(zone)) {
-        this.handleDrop(path, zone!);
+      const zoneToUse = this.isDropZone(zone)
+        ? zone
+        : path && path.type === 'side'
+        ? 'center'
+        : null;
+      if (path && zoneToUse) {
+        this.handleDrop(path, zoneToUse);
         this.hideDropIndicator();
         if (this.dragState) {
           this.dragState.dropHandled = true;
@@ -3147,8 +3749,13 @@ export class MintDockManagerElement extends HTMLElement {
       }
     }
 
-    if (path && this.isDropZone(zone)) {
-      this.handleDrop(path, zone!);
+    const zoneToUse = this.isDropZone(zone)
+      ? zone
+      : path && path.type === 'side'
+      ? 'center'
+      : null;
+    if (path && zoneToUse) {
+      this.handleDrop(path, zoneToUse);
       this.dragState.dropHandled = true;
     }
   }
@@ -3271,12 +3878,13 @@ export class MintDockManagerElement extends HTMLElement {
       this.endPaneDrag();
       return;
     }
-    if (!zone) {
+    const zoneToUse = zone ?? (path && path.type === 'side' ? 'center' : null);
+    if (!path || !zoneToUse) {
       this.hideDropIndicator();
       this.endPaneDrag();
       return;
     }
-    this.handleDrop(path, zone);
+    this.handleDrop(path, zoneToUse);
     this.endPaneDrag();
   }
 
@@ -3345,6 +3953,33 @@ export class MintDockManagerElement extends HTMLElement {
       return;
     }
 
+    if (!target && targetPath.type === 'side') {
+      if (!source) {
+        return;
+      }
+      const state = this.sideLayouts[targetPath.side];
+      const stackEmptied = this.removePaneFromLocation(source, pane, true);
+      const newStack: DockStackNode = {
+        kind: 'stack',
+        panes: [pane],
+        activePane: pane,
+      };
+      if (!state.pinned) {
+        state.pinned = newStack;
+      } else {
+        state.pinned = this.mergeIntoSideRoot(targetPath.side, state.pinned, newStack, zone);
+      }
+      if (stackEmptied) {
+        this.cleanupLocation(source);
+      }
+      this.render();
+      this.dispatchLayoutChanged();
+      if (this.dragState) {
+        this.dragState.dropHandled = true;
+      }
+      return;
+    }
+
     if (!source || !target) {
       return;
     }
@@ -3386,6 +4021,9 @@ export class MintDockManagerElement extends HTMLElement {
 
     if (target.context === 'docked') {
       this.rootLayout = this.dockNodeBeside(this.rootLayout, target.node, newStack, zone);
+    } else if (target.context === 'side') {
+      const state = this.sideLayouts[target.side];
+      state.pinned = this.dockNodeBeside(state.pinned, target.node, newStack, zone);
     } else {
       const floating = this.floatingLayouts[target.index];
       if (!floating) {
@@ -3424,6 +4062,16 @@ export class MintDockManagerElement extends HTMLElement {
     // (no existing root).
     if (!target && targetPath.type === 'docked' && !this.rootLayout) {
       this.rootLayout = this.cloneLayoutNode(source.root);
+      this.removeFloatingAt(sourceIndex);
+      this.render();
+      this.dispatchLayoutChanged();
+      return true;
+    }
+    if (!target && targetPath.type === 'side') {
+      const state = this.sideLayouts[targetPath.side];
+      state.pinned = state.pinned
+        ? this.mergeIntoSideRoot(targetPath.side, state.pinned, this.cloneLayoutNode(source.root), zone)
+        : this.cloneLayoutNode(source.root);
       this.removeFloatingAt(sourceIndex);
       this.render();
       this.dispatchLayoutChanged();
@@ -3475,6 +4123,14 @@ export class MintDockManagerElement extends HTMLElement {
       this.dispatchLayoutChanged();
       return true;
     }
+    if (target.context === 'side') {
+      const state = this.sideLayouts[target.side];
+      state.pinned = this.dockNodeBeside(state.pinned, target.node, source.root, zone);
+      this.removeFloatingAt(sourceIndex);
+      this.render();
+      this.dispatchLayoutChanged();
+      return true;
+    }
 
     this.rootLayout = this.dockNodeBeside(this.rootLayout, target.node, source.root, zone);
     this.removeFloatingAt(sourceIndex);
@@ -3520,6 +4176,54 @@ export class MintDockManagerElement extends HTMLElement {
 
     this.rootLayout = this.cleanupEmptyStackInTree(this.rootLayout, stack);
     return true;
+  }
+
+  private removePaneFromSideStack(
+    side: DockSide,
+    stack: DockStackNode,
+    pane: string,
+    skipCleanup = false,
+  ): boolean {
+    stack.panes = stack.panes.filter((p) => p !== pane);
+    if (!stack.panes.includes(stack.activePane ?? '')) {
+      if (stack.panes.length > 0) {
+        stack.activePane = stack.panes[0];
+      } else {
+        delete stack.activePane;
+      }
+    }
+
+    if (stack.panes.length > 0) {
+      return false;
+    }
+
+    if (skipCleanup) {
+      return true;
+    }
+
+    const state = this.sideLayouts[side];
+    state.pinned = this.cleanupEmptyStackInTree(state.pinned, stack);
+    return true;
+  }
+
+  private unpinSideStack(path: DockPath): void {
+    if (path.type !== 'side') {
+      return;
+    }
+    const location = this.resolveStackLocation(path);
+    if (!location || location.context !== 'side') {
+      return;
+    }
+    const state = this.sideLayouts[path.side];
+    const clone = this.cloneLayoutNode(location.node);
+    state.autoHide.push({
+      id: this.generateAutoHideId(),
+      root: clone,
+      activePane: location.node.activePane,
+    });
+    state.pinned = this.removeStackNodeFromTree(state.pinned, location.node);
+    this.render();
+    this.dispatchLayoutChanged();
   }
 
   private findParentSplit(
@@ -3713,6 +4417,8 @@ export class MintDockManagerElement extends HTMLElement {
     let overlayZ = 100;
     if (path && path.type === 'floating') {
       overlayZ = this.getFloatingPaneZIndex(path.index) + 100;
+    } else if (path && path.type === 'side') {
+      overlayZ = 80;
     }
     indicator.style.zIndex = String(overlayZ);
     joystick.style.zIndex = String(overlayZ + 1);
@@ -3876,6 +4582,7 @@ export class MintDockManagerElement extends HTMLElement {
   }
 
   private findStackInTargets(targets: Iterable<EventTarget>): HTMLElement | null {
+    let fallback: HTMLElement | null = null;
     for (const element of targets) {
       if (!(element instanceof HTMLElement)) {
         continue;
@@ -3891,8 +4598,11 @@ export class MintDockManagerElement extends HTMLElement {
       ) {
         return this.dropJoystickTarget;
       }
+      if (!fallback && element.dataset && element.dataset['path']) {
+        fallback = element;
+      }
     }
-    return null;
+    return fallback;
   }
 
   private activatePane(stack: HTMLElement, paneName: string, path: DockPath): void {
@@ -3956,6 +4666,15 @@ export class MintDockManagerElement extends HTMLElement {
       return node && node.kind === 'split' ? node : null;
     }
 
+    if (path.type === 'side') {
+      const state = this.sideLayouts[path.side];
+      if (!state || !state.pinned) {
+        return null;
+      }
+      const node = this.getNodeAtPath(state.pinned, path.segments);
+      return node && node.kind === 'split' ? node : null;
+    }
+
     const floating = this.floatingLayouts[path.index];
     if (!floating || !floating.root) {
       return null;
@@ -4014,6 +4733,32 @@ export class MintDockManagerElement extends HTMLElement {
     this.normalizeSplitNode(parent);
 
     return this.cleanupSplitIfNecessary(root, parent);
+  }
+
+  private removeStackNodeFromTree(
+    root: DockLayoutNode | null,
+    stack: DockStackNode,
+  ): DockLayoutNode | null {
+    if (!root) {
+      return null;
+    }
+    if (root === stack) {
+      return null;
+    }
+    const parentInfo = this.findParentSplit(root, stack);
+    if (!parentInfo) {
+      return root;
+    }
+    const index = parentInfo.parent.children.indexOf(stack);
+    if (index === -1) {
+      return root;
+    }
+    parentInfo.parent.children.splice(index, 1);
+    if (Array.isArray(parentInfo.parent.sizes)) {
+      parentInfo.parent.sizes.splice(index, 1);
+    }
+    this.normalizeSplitNode(parentInfo.parent);
+    return this.cleanupSplitIfNecessary(root, parentInfo.parent);
   }
 
   private cleanupSplitIfNecessary(
@@ -4285,6 +5030,17 @@ export class MintDockManagerElement extends HTMLElement {
       }
       return { context: 'floating', index: path.index, path: [...path.segments], node };
     }
+    if (path.type === 'side') {
+      const state = this.sideLayouts[path.side];
+      if (!state || !state.pinned) {
+        return null;
+      }
+      const node = this.getNodeAtPath(state.pinned, path.segments);
+      if (!node || node.kind !== 'stack') {
+        return null;
+      }
+      return { context: 'side', side: path.side, path: [...path.segments], node };
+    }
 
     const node = this.getNodeAtPath(this.rootLayout, path.segments);
     if (!node || node.kind !== 'stack') {
@@ -4301,6 +5057,9 @@ export class MintDockManagerElement extends HTMLElement {
   ): boolean {
     if (location.context === 'docked') {
       return this.removePaneFromStack(location.node, pane, skipCleanup);
+    }
+    if (location.context === 'side') {
+      return this.removePaneFromSideStack(location.side, location.node, pane, skipCleanup);
     }
 
     return this.removePaneFromFloating(location.index, location.path, pane, skipCleanup);
@@ -4328,16 +5087,21 @@ export class MintDockManagerElement extends HTMLElement {
   private cleanupLocation(location: ResolvedLocation): void {
     if (location.context === 'docked') {
       this.rootLayout = this.cleanupEmptyStackInTree(this.rootLayout, location.node);
-    } else {
-      const floating = this.floatingLayouts[location.index];
-      if (!floating) {
-        return;
-      }
+      return;
+    }
+    if (location.context === 'side') {
+      const state = this.sideLayouts[location.side];
+      state.pinned = this.cleanupEmptyStackInTree(state.pinned, location.node);
+      return;
+    }
+    const floating = this.floatingLayouts[location.index];
+    if (!floating) {
+      return;
+    }
 
-      floating.root = this.cleanupEmptyStackInTree(floating.root, location.node);
-      if (!floating.root) {
-        this.removeFloatingAt(location.index);
-      }
+    floating.root = this.cleanupEmptyStackInTree(floating.root, location.node);
+    if (!floating.root) {
+      this.removeFloatingAt(location.index);
     }
   }
 
@@ -4435,6 +5199,89 @@ export class MintDockManagerElement extends HTMLElement {
 
   private normalizeSplitNode(split: DockSplitNode): void {
     split.sizes = this.normalizeSizesArray(split.sizes, split.children.length);
+  }
+
+  private createEmptySideLayouts(): SideLayoutsMap {
+    return {
+      left: { pinned: null, autoHide: [] },
+      right: { pinned: null, autoHide: [] },
+      top: { pinned: null, autoHide: [] },
+      bottom: { pinned: null, autoHide: [] },
+    };
+  }
+
+  private normalizeSideLayouts(
+    sides?: Partial<Record<DockSide, DockSideSnapshot>> | null,
+  ): SideLayoutsMap {
+    const base = this.createEmptySideLayouts();
+    dockSides.forEach((side) => {
+      const snapshot = sides?.[side];
+      if (!snapshot) {
+        return;
+      }
+      base[side] = {
+        pinned: snapshot.pinned ? this.cloneLayoutNode(snapshot.pinned) : null,
+        pinnedSize:
+          typeof snapshot.pinnedSize === 'number' && Number.isFinite(snapshot.pinnedSize)
+            ? Math.max(snapshot.pinnedSize, 0)
+            : undefined,
+        autoHide: Array.isArray(snapshot.autoHide)
+          ? snapshot.autoHide.map((entry) => this.normalizeAutoHideEntry(entry))
+          : [],
+      };
+    });
+    return base;
+  }
+
+  private cloneSideLayouts(
+    sides?: Partial<Record<DockSide, DockSideSnapshot>> | SideLayoutsMap | null,
+  ): SideLayoutsMap {
+    const normalized =
+      sides && (sides as SideLayoutsMap).left !== undefined
+        ? (sides as SideLayoutsMap)
+        : this.normalizeSideLayouts(sides as Partial<Record<DockSide, DockSideSnapshot>> | null);
+    const clone = this.createEmptySideLayouts();
+    dockSides.forEach((side) => {
+      const snapshot = normalized[side];
+      clone[side] = {
+        pinned: snapshot.pinned ? this.cloneLayoutNode(snapshot.pinned) : null,
+        pinnedSize: snapshot.pinnedSize,
+        autoHide: snapshot.autoHide.map((entry) => ({
+          id: entry.id,
+          root: entry.root ? this.cloneLayoutNode(entry.root) : null,
+          activePane: entry.activePane,
+          size: entry.size,
+        })),
+      };
+    });
+    return clone;
+  }
+
+  private normalizeAutoHideEntry(entry: DockAutoHideEntry): DockAutoHideEntry {
+    const id =
+      entry && typeof entry.id === 'string' && entry.id.length > 0
+        ? entry.id
+        : this.generateAutoHideId();
+    return {
+      id,
+      root: entry.root ? this.cloneLayoutNode(entry.root) : null,
+      activePane: entry.activePane,
+      size:
+        entry && typeof entry.size === 'number' && Number.isFinite(entry.size) && entry.size > 0
+          ? entry.size
+          : undefined,
+    };
+  }
+
+  private generateAutoHideId(): string {
+    try {
+      if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+      }
+    } catch {
+      /* no-op */
+    }
+    return `${this.instanceId}-auto-${Math.random().toString(36).slice(2, 9)}`;
   }
 
   private dispatchLayoutChanged(): void {
