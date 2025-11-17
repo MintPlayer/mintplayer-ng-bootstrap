@@ -681,7 +681,8 @@ const templateHtml = `
       pointer-events: none;
     }
 
-    .dock-drop-joystick__button {
+    .dock-drop-joystick__button,
+    .dock-edge-targets__button {
       width: 1.75rem;
       height: 1.75rem;
       display: inline-flex;
@@ -701,19 +702,65 @@ const templateHtml = `
 
     .dock-drop-joystick__button[data-active='true'],
     .dock-drop-joystick__button:hover,
-    .dock-drop-joystick__button:focus-visible {
+    .dock-drop-joystick__button:focus-visible,
+    .dock-edge-targets__button[data-active='true'],
+    .dock-edge-targets__button:hover,
+    .dock-edge-targets__button:focus-visible {
       background: rgba(59, 130, 246, 0.25);
       border-color: rgba(59, 130, 246, 0.8);
       color: rgba(30, 64, 175, 1);
     }
 
-    .dock-drop-joystick__button:focus-visible {
+    .dock-drop-joystick__button:focus-visible,
+    .dock-edge-targets__button:focus-visible {
       outline: 2px solid rgba(59, 130, 246, 0.9);
       outline-offset: 1px;
     }
 
-    .dock-drop-joystick__button[data-zone='center'] {
+    .dock-drop-joystick__button[data-zone='center'],
+    .dock-edge-targets__button[data-zone='center'] {
       border-radius: 0.5rem;
+    }
+
+    .dock-edge-targets {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 80;
+      display: none;
+    }
+
+    .dock-edge-targets[data-visible='true'] {
+      display: block;
+    }
+
+    .dock-edge-targets__button {
+      position: absolute;
+      pointer-events: auto;
+    }
+
+    .dock-edge-targets__button[data-side='left'] {
+      top: 50%;
+      left: 0.5rem;
+      transform: translateY(-50%);
+    }
+
+    .dock-edge-targets__button[data-side='right'] {
+      top: 50%;
+      right: 0.5rem;
+      transform: translateY(-50%);
+    }
+
+    .dock-edge-targets__button[data-side='top'] {
+      top: 0.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .dock-edge-targets__button[data-side='bottom'] {
+      bottom: 0.5rem;
+      left: 50%;
+      transform: translateX(-50%);
     }
 
     ::slotted(*) {
@@ -791,6 +838,12 @@ const templateHtml = `
     </button>
     <div class="dock-drop-joystick__spacer"></div>
   </div>
+  <div class="dock-edge-targets" data-visible="false">
+    <button class="dock-edge-targets__button" type="button" data-side="left" data-zone="left" data-path="s:left" aria-label="Dock to outer left">←</button>
+    <button class="dock-edge-targets__button" type="button" data-side="right" data-zone="right" data-path="s:right" aria-label="Dock to outer right">→</button>
+    <button class="dock-edge-targets__button" type="button" data-side="top" data-zone="top" data-path="s:top" aria-label="Dock to outer top">↑</button>
+    <button class="dock-edge-targets__button" type="button" data-side="bottom" data-zone="bottom" data-path="s:bottom" aria-label="Dock to outer bottom">↓</button>
+  </div>
 `;
 
 let cachedTemplate: HTMLTemplateElement | null = null;
@@ -831,12 +884,15 @@ export class MintDockManagerElement extends HTMLElement {
   private readonly dropIndicator: HTMLElement;
   private readonly dropJoystick: HTMLElement;
   private readonly dropJoystickButtons: HTMLButtonElement[];
+  private readonly edgeTargets: HTMLElement;
+  private readonly edgeTargetButtons: HTMLButtonElement[];
   private readonly sideContainers: Record<
     DockSide,
     { host: HTMLElement; strip: HTMLElement; pinned: HTMLElement }
   >;
   private readonly instanceId: string;
   private dropJoystickTarget: HTMLElement | null = null;
+  private activeEdgeSide: DockSide | null = null;
   private rootLayout: DockLayoutNode | null = null;
   private floatingLayouts: DockFloatingStackLayout[] = [];
   private titles: Record<string, string> = {};
@@ -1078,6 +1134,17 @@ export class MintDockManagerElement extends HTMLElement {
       throw new Error('mint-dock-manager template is missing drop joystick buttons.');
     }
 
+    const edgeTargets = shadowRoot.querySelector<HTMLElement>('.dock-edge-targets');
+    if (!edgeTargets) {
+      throw new Error('mint-dock-manager template is missing the edge drop targets.');
+    }
+    const edgeTargetButtons = Array.from(
+      edgeTargets.querySelectorAll<HTMLButtonElement>('.dock-edge-targets__button[data-side][data-path]'),
+    );
+    if (edgeTargetButtons.length === 0) {
+      throw new Error('mint-dock-manager template is missing edge drop buttons.');
+    }
+
     const sideContainers: Partial<
       Record<DockSide, { host: HTMLElement; strip: HTMLElement; pinned: HTMLElement }>
     > = {};
@@ -1099,6 +1166,8 @@ export class MintDockManagerElement extends HTMLElement {
     this.dropIndicator = indicator;
     this.dropJoystick = joystick;
     this.dropJoystickButtons = joystickButtons;
+    this.edgeTargets = edgeTargets;
+    this.edgeTargetButtons = edgeTargetButtons;
     this.sideContainers = sideContainers as Record<
       DockSide,
       { host: HTMLElement; strip: HTMLElement; pinned: HTMLElement }
@@ -1146,6 +1215,23 @@ export class MintDockManagerElement extends HTMLElement {
       };
       btn.addEventListener('dragenter', handler);
       btn.addEventListener('dragover', handler);
+    });
+    this.edgeTargetButtons.forEach((btn) => {
+      const handler = (event: DragEvent) => {
+        if (!this.dragState) return;
+        const zone = btn.dataset['zone'];
+        if (this.isDropZone(zone)) {
+          const sideAttr = btn.dataset['side'];
+          if (sideAttr && dockSides.includes(sideAttr as DockSide)) {
+            this.updateEdgeTargetActive(sideAttr as DockSide);
+          }
+          this.updateDropJoystickActiveZone(zone);
+          event.preventDefault();
+        }
+      };
+      btn.addEventListener('dragenter', handler);
+      btn.addEventListener('dragover', handler);
+      btn.addEventListener('dragleave', () => this.updateEdgeTargetActive(null));
     });
     const win = this.windowRef;
     win?.addEventListener('dragover', this.onGlobalDragOver);
@@ -1379,6 +1465,26 @@ export class MintDockManagerElement extends HTMLElement {
       return provided;
     }
     return side === 'left' || side === 'right' ? 280 : 220;
+  }
+
+  private showEdgeTargets(): void {
+    this.edgeTargets.dataset['visible'] = 'true';
+  }
+
+  private hideEdgeTargets(): void {
+    this.edgeTargets.dataset['visible'] = 'false';
+    this.updateEdgeTargetActive(null);
+  }
+
+  private updateEdgeTargetActive(side: DockSide | null): void {
+    this.activeEdgeSide = side;
+    this.edgeTargetButtons.forEach((btn) => {
+      if (side && btn.dataset['side'] === side) {
+        btn.dataset['active'] = 'true';
+      } else {
+        delete btn.dataset['active'];
+      }
+    });
   }
 
   private toggleAutoHidePreview(side: DockSide, entryId: string): void {
@@ -4329,7 +4435,8 @@ export class MintDockManagerElement extends HTMLElement {
     for (const target of targets) {
       if (
         target instanceof HTMLElement &&
-        target.classList.contains('dock-drop-joystick__button')
+        (target.classList.contains('dock-drop-joystick__button') ||
+          target.classList.contains('dock-edge-targets__button'))
       ) {
         const zone = target.dataset?.['zone'];
         if (this.isDropZone(zone)) {
@@ -4341,6 +4448,27 @@ export class MintDockManagerElement extends HTMLElement {
   }
 
   private findDropZoneByPoint(clientX: number, clientY: number): DropZone | null {
+    if (this.edgeTargets.dataset['visible'] === 'true') {
+      for (const button of this.edgeTargetButtons) {
+        const rect = button.getBoundingClientRect();
+        if (
+          clientX >= rect.left &&
+          clientX <= rect.right &&
+          clientY >= rect.top &&
+          clientY <= rect.bottom
+        ) {
+          const zone = button.dataset['zone'];
+          if (this.isDropZone(zone)) {
+            const sideAttr = button.dataset['side'];
+            if (sideAttr && dockSides.includes(sideAttr as DockSide)) {
+              this.updateEdgeTargetActive(sideAttr as DockSide);
+            }
+            return zone;
+          }
+        }
+      }
+    }
+
     if (
       !this.dropJoystickButtons ||
       this.dropJoystick.dataset['visible'] !== 'true' ||
@@ -4351,7 +4479,11 @@ export class MintDockManagerElement extends HTMLElement {
 
     for (const button of this.dropJoystickButtons) {
       // Skip hidden/inactive buttons (used in center-only mode)
-      if ((button.dataset['hidden'] === 'true') || button.style.visibility === 'hidden' || button.style.display === 'none') {
+      if (
+        button.dataset['hidden'] === 'true' ||
+        button.style.visibility === 'hidden' ||
+        button.style.display === 'none'
+      ) {
         continue;
       }
       const rect = button.getBoundingClientRect();
@@ -4412,6 +4544,7 @@ export class MintDockManagerElement extends HTMLElement {
     const joystick = this.dropJoystick;
 
     joystick.hidden = false;
+    this.showEdgeTargets();
 
     const path = this.parsePath(stack.dataset['path']);
     let overlayZ = 100;
@@ -4470,6 +4603,9 @@ export class MintDockManagerElement extends HTMLElement {
       // New target stack: forget any previously sticky zone.
       delete this.dropJoystick.dataset['zone'];
     }
+    if (!path || path.type !== 'side') {
+      this.updateEdgeTargetActive(null);
+    }
 
     // If main dock area is empty, show only the center button and collapse the grid
     const isEmptyMainArea = !this.rootLayout && (stack === this.dockedEl || (targetPath && targetPath.type === 'docked' && targetPath.segments.length === 0));
@@ -4519,6 +4655,7 @@ export class MintDockManagerElement extends HTMLElement {
     delete this.dropJoystick.dataset['path'];
     this.dropJoystickTarget = null;
     this.updateDropJoystickActiveZone(null);
+    this.hideEdgeTargets();
     // Restore joystick structure to default.
     this.dropJoystickButtons.forEach((btn) => {
       btn.style.display = '';
