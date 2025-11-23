@@ -1,4 +1,4 @@
-import { Directive, HostBinding, HostListener, effect, input } from "@angular/core";
+import { Directive, HostBinding, HostListener, effect, inject, input } from "@angular/core";
 import { BsObserveSizeDirective } from "@mintplayer/ng-swiper/observe-size";
 import { BsSwipeContainerDirective } from "../swipe-container/swipe-container.directive";
 
@@ -8,8 +8,7 @@ import { BsSwipeContainerDirective } from "../swipe-container/swipe-container.di
 })
 export class BsSwipeDirective {
 
-  constructor(private container: BsSwipeContainerDirective, observeSize: BsObserveSizeDirective) {
-    this.observeSize = observeSize;
+  constructor() {
     effect(() => {
       const orientation = this.container.orientation();
       this.inlineBlock = (orientation === 'horizontal');
@@ -24,7 +23,8 @@ export class BsSwipeDirective {
     });
   }
 
-  observeSize: BsObserveSizeDirective;
+  observeSize = inject(BsObserveSizeDirective);
+  container = inject(BsSwipeContainerDirective);
 
   public offside = input(false);
 
