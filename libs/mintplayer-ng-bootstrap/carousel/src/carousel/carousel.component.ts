@@ -86,10 +86,7 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
   }
   //#endregion
 
-  @HostListener('document:keydown.ArrowLeft', ['$event'])
-  @HostListener('document:keydown.ArrowRight', ['$event'])
-  @HostListener('document:keydown.ArrowUp', ['$event'])
-  @HostListener('document:keydown.ArrowDown', ['$event'])
+  @HostListener('document:keydown', ['$event'])
   onKeyPress(ev: KeyboardEvent) {
     if (this.keyboardEvents) {
       let handled = false;

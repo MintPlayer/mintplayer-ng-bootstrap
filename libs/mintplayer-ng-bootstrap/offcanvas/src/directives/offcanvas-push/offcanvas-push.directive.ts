@@ -5,7 +5,7 @@ import { filter, switchMap, skip, distinctUntilChanged } from 'rxjs/operators';
 import { BsOffcanvasHostComponent } from '../../components';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-@Directive({
+Q@Directive({
   selector: '[bsOffcanvasPush]',
   standalone: false,
 })
