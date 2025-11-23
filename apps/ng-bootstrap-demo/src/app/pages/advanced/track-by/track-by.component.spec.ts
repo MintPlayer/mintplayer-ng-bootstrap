@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MockDirective, MockModule } from 'ng-mocks';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsGridComponent, BsGridRowDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 
@@ -15,7 +15,7 @@ describe('TrackByComponent', () => {
     TestBed.configureTestingModule({
       imports: [
         NoopAnimationsModule,
-        MockModule(BsGridModule),
+        MockModule(BsGridComponent, BsGridRowDirective),
         MockModule(BsListGroupModule),
         MockDirective(BsButtonTypeDirective),
       ],

@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsForDirective } from '@mintplayer/ng-bootstrap/for';
 import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsGridComponent, BsGridRowDirective } from '@mintplayer/ng-bootstrap/grid';
 import { MockDirective, MockModule } from 'ng-mocks';
 import { ForDirectiveComponent } from './for-directive.component';
 
@@ -14,7 +14,7 @@ describe('ForDirectiveComponent', () => {
       imports: [
         MockDirective(BsForDirective),
         MockModule(BsFormModule),
-        MockModule(BsGridModule),
+        MockModule(BsGridComponent, BsGridRowDirective),
       ],
       declarations: [
         // Unit to test

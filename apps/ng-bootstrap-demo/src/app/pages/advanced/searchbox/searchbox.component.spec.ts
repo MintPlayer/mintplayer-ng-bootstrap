@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { MockModule } from 'ng-mocks';
 import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsGridComponent, BsGridRowDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsSearchboxModule } from '@mintplayer/ng-bootstrap/searchbox';
 
 import { SearchboxComponent } from './searchbox.component';
@@ -17,7 +17,7 @@ describe('SearchboxComponent', () => {
       imports: [
         HttpClientTestingModule,
         MockModule(BsFormModule),
-        MockModule(BsGridModule),
+        MockModule(BsGridComponent, BsGridRowDirective),
         MockModule(BsSearchboxModule),
       ]
     });

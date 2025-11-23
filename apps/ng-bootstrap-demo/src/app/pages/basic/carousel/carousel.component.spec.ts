@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { BsCarouselModule } from '@mintplayer/ng-bootstrap/carousel';
 import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsGridComponent, BsGridRowDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsSelectModule } from '@mintplayer/ng-bootstrap/select';
 import { MockModule } from 'ng-mocks';
 import { CarouselComponent } from './carousel.component';
@@ -16,7 +16,7 @@ describe('CarouselComponent', () => {
       imports: [
         FormsModule,
         MockModule(BsFormModule),
-        MockModule(BsGridModule),
+        MockModule(BsGridComponent, BsGridRowDirective),
         MockModule(BsSelectModule),
         MockModule(BsCarouselModule),
       ],

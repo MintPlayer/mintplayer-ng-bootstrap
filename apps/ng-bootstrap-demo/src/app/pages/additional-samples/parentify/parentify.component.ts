@@ -1,5 +1,5 @@
 import { AfterViewInit, Component, effect, signal } from '@angular/core';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsGridColDirective, BsGridComponent, BsGridRowDirective } from '@mintplayer/ng-bootstrap/grid';
 import { deepClone } from '@mintplayer/parentify';
 
 @Component({
@@ -7,7 +7,7 @@ import { deepClone } from '@mintplayer/parentify';
   templateUrl: './parentify.component.html',
   styleUrls: ['./parentify.component.scss'],
   standalone: true,
-  imports: [BsGridModule]
+  imports: [BsGridComponent, BsGridRowDirective, BsGridColDirective]
 })
 export class ParentifyComponent implements AfterViewInit {
   constructor() {

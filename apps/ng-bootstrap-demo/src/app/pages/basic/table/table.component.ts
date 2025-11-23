@@ -1,7 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsGridColDirective, BsGridComponent, BsGridRowDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsTableComponent } from '@mintplayer/ng-bootstrap/table';
 import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
 
@@ -10,7 +10,7 @@ import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button'
   templateUrl: './table.component.html',
   styleUrls: ['./table.component.scss'],
   standalone: true,
-  imports: [DatePipe, FormsModule, BsGridModule, BsTableComponent, BsToggleButtonComponent]
+  imports: [DatePipe, FormsModule, BsGridComponent, BsGridRowDirective, BsGridColDirective, BsTableComponent, BsToggleButtonComponent]
 })
 export class TableComponent {
 

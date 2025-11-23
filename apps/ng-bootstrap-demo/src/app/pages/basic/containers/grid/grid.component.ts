@@ -1,11 +1,11 @@
 import { Component } from '@angular/core';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsGridColDirective, BsGridColumnDirective, BsGridComponent, BsGridRowDirective } from '@mintplayer/ng-bootstrap/grid';
 
 @Component({
   selector: 'demo-grid',
   templateUrl: './grid.component.html',
   styleUrls: ['./grid.component.scss'],
   standalone: true,
-  imports: [BsGridModule]
+  imports: [BsGridComponent, BsGridRowDirective, BsGridColDirective, BsGridColumnDirective]
 })
 export class GridComponent {}

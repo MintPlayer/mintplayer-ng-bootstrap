@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsGridColumnDirective, BsGridComponent, BsGridRowDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsAlertComponent, BsAlertCloseComponent } from '@mintplayer/ng-bootstrap/alert';
@@ -10,7 +10,7 @@ import { BsAlertComponent, BsAlertCloseComponent } from '@mintplayer/ng-bootstra
   templateUrl: './track-by.component.html',
   styleUrls: ['./track-by.component.scss'],
   standalone: true,
-  imports: [BsGridModule, BsButtonTypeDirective, BsListGroupModule, BsAlertComponent, BsAlertCloseComponent]
+  imports: [BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsButtonTypeDirective, BsListGroupModule, BsAlertComponent, BsAlertCloseComponent]
 })
 export class TrackByComponent {
   people: Person[] = [];

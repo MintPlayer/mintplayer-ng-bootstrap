@@ -1,7 +1,7 @@
 import { JsonPipe } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsGridColumnDirective, BsGridComponent, BsGridRowDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsToggleButtonComponent, BsToggleButtonGroupDirective } from '@mintplayer/ng-bootstrap/toggle-button';
 
 @Component({
@@ -9,7 +9,7 @@ import { BsToggleButtonComponent, BsToggleButtonGroupDirective } from '@mintplay
   templateUrl: './toggle-button.component.html',
   styleUrls: ['./toggle-button.component.scss'],
   standalone: true,
-  imports: [JsonPipe, FormsModule, BsGridModule, BsToggleButtonComponent, BsToggleButtonGroupDirective]
+  imports: [JsonPipe, FormsModule, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsToggleButtonComponent, BsToggleButtonGroupDirective]
 })
 export class ToggleButtonComponent {
   darkMode: boolean | null = true;

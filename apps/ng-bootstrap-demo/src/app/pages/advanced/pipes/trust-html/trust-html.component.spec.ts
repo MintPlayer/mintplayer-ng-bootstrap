@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { MockModule, MockPipe } from 'ng-mocks';
 import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsGridComponent, BsGridRowDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsTrustHtmlPipe } from '@mintplayer/ng-bootstrap/trust-html';
 
 import { TrustHtmlComponent } from './trust-html.component';
@@ -17,7 +17,7 @@ describe('TrustHtmlComponent', () => {
       imports: [
         FormsModule,
         MockModule(BsFormModule),
-        MockModule(BsGridModule),
+        MockModule(BsGridComponent, BsGridRowDirective),
         MockPipe(BsTrustHtmlPipe),
       ]
     });
