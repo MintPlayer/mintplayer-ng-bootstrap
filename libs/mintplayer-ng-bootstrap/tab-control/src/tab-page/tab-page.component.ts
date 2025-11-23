@@ -1,4 +1,5 @@
-import { Component, ContentChild, TemplateRef, Input, ElementRef } from '@angular/core';
+import { AsyncPipe } from '@angular/common';
+import { Component, ContentChild, Input, ElementRef } from '@angular/core';
 import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
 import { BsTabControlComponent } from '../tab-control/tab-control.component';
 import { BsTabPageHeaderDirective } from '../tab-page-header/tab-page-header.directive';
@@ -7,7 +8,7 @@ import { BsTabPageHeaderDirective } from '../tab-page-header/tab-page-header.dir
   selector: 'bs-tab-page',
   templateUrl: './tab-page.component.html',
   styleUrls: ['./tab-page.component.scss'],
-  standalone: false,
+  imports: [AsyncPipe],
 })
 export class BsTabPageComponent {
 
