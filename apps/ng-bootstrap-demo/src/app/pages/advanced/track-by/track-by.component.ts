@@ -3,14 +3,14 @@ import { Color } from '@mintplayer/ng-bootstrap';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
-import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
+import { BsAlertComponent, BsAlertCloseComponent } from '@mintplayer/ng-bootstrap/alert';
 
 @Component({
   selector: 'demo-track-by',
   templateUrl: './track-by.component.html',
   styleUrls: ['./track-by.component.scss'],
   standalone: true,
-  imports: [BsGridModule, BsButtonTypeDirective, BsListGroupModule, BsAlertModule]
+  imports: [BsGridModule, BsButtonTypeDirective, BsListGroupModule, BsAlertComponent, BsAlertCloseComponent]
 })
 export class TrackByComponent {
   people: Person[] = [];

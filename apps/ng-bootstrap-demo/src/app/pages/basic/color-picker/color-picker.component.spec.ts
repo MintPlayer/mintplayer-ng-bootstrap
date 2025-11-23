@@ -2,10 +2,10 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { BsButtonGroupComponent } from '@mintplayer/ng-bootstrap/button-group';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
-import { BsColorPickerModule } from '@mintplayer/ng-bootstrap/color-picker';
+import { BsColorPickerComponent } from '@mintplayer/ng-bootstrap/color-picker';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
-import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
 import { MockComponent, MockDirective, MockModule } from 'ng-mocks';
 
 import { ColorPickerComponent } from './color-picker.component';
@@ -20,8 +20,8 @@ describe('ColorPickerComponent', () => {
         FormsModule,
         MockModule(BsGridModule),
         MockModule(BsListGroupModule),
-        MockModule(BsColorPickerModule),
-        MockModule(BsToggleButtonModule),
+        MockModule(BsColorPickerComponent),
+        MockModule(BsToggleButtonComponent),
         MockComponent(BsButtonGroupComponent),
         MockDirective(BsButtonTypeDirective)
       ],

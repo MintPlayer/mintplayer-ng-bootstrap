@@ -1,18 +1,18 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Color } from '@mintplayer/ng-bootstrap';
-import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
-import { BsCardModule } from '@mintplayer/ng-bootstrap/card';
+import { BsAlertComponent, BsAlertCloseComponent } from '@mintplayer/ng-bootstrap/alert';
+import { BsCardComponent, BsCardHeaderComponent } from '@mintplayer/ng-bootstrap/card';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsPlaceholderModule } from '@mintplayer/ng-bootstrap/placeholder';
-import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
 
 @Component({
   selector: 'demo-placeholder',
   templateUrl: './placeholder.component.html',
   styleUrls: ['./placeholder.component.scss'],
   standalone: true,
-  imports: [FormsModule, BsGridModule, BsCardModule, BsAlertModule, BsPlaceholderModule, BsToggleButtonModule]
+  imports: [FormsModule, BsGridModule, BsCardComponent, BsCardHeaderComponent, BsAlertComponent, BsAlertCloseComponent, BsPlaceholderModule, BsToggleButtonComponent]
 })
 export class PlaceholderComponent {
 

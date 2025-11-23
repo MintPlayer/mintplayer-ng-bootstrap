@@ -1,6 +1,6 @@
 import { Component, CUSTOM_ELEMENTS_SCHEMA, HostBinding, HostListener, Input } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
-import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
+import { BsAlertComponent, BsAlertCloseComponent } from '@mintplayer/ng-bootstrap/alert';
 import { interval, map, tap } from 'rxjs';
 
 // @Component({
@@ -32,7 +32,7 @@ import { interval, map, tap } from 'rxjs';
   templateUrl: './async-host-binding.component.html',
   styleUrls: ['./async-host-binding.component.scss'],
   imports: [
-    BsAlertModule,
+    BsAlertComponent, BsAlertCloseComponent,
     // HelloComponent
   ]
 })

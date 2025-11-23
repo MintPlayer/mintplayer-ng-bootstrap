@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
-import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
+import { BsAlertComponent, BsAlertCloseComponent } from '@mintplayer/ng-bootstrap/alert';
 import { BsCarouselModule } from '@mintplayer/ng-bootstrap/carousel';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 
@@ -9,7 +9,7 @@ import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
   templateUrl: './swiper.component.html',
   styleUrls: ['./swiper.component.scss'],
   standalone: true,
-  imports: [BsGridModule, BsAlertModule, BsCarouselModule]
+  imports: [BsGridModule, BsAlertComponent, BsAlertCloseComponent, BsCarouselModule]
 })
 export class SwiperComponent {
 

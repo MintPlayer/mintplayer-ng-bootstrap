@@ -3,7 +3,7 @@
 import { Component } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Color } from '@mintplayer/ng-bootstrap';
-import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
+import { BsAlertComponent, BsAlertCloseComponent } from '@mintplayer/ng-bootstrap/alert';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
 
@@ -13,7 +13,7 @@ import { dedent } from 'ts-dedent';
   templateUrl: './icon.component.html',
   styleUrls: ['./icon.component.scss'],
   standalone: true,
-  imports: [BsAlertModule, BsCodeSnippetComponent]
+  imports: [BsAlertComponent, BsAlertCloseComponent, BsCodeSnippetComponent]
 })
 export class IconComponent {
   constructor(private sanitizer: DomSanitizer) {

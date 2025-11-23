@@ -4,7 +4,7 @@ import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsLinifyPipe } from '@mintplayer/ng-bootstrap/linify';
 import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
-import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
 import { dedent } from 'ts-dedent';
 
 @Component({
@@ -12,7 +12,7 @@ import { dedent } from 'ts-dedent';
   templateUrl: './linify.component.html',
   styleUrls: ['./linify.component.scss'],
   standalone: true,
-  imports: [FormsModule, BsFormModule, BsGridModule, BsLinifyPipe, BsListGroupModule, BsToggleButtonModule]
+  imports: [FormsModule, BsFormModule, BsGridModule, BsLinifyPipe, BsListGroupModule, BsToggleButtonComponent]
 })
 export class LinifyComponent {
   text = dedent`

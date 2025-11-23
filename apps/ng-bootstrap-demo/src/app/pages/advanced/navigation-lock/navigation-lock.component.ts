@@ -1,14 +1,14 @@
 import { Component, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BsHasNavigationLock, BsNavigationLockDirective, BsNavigationLockModule } from '@mintplayer/ng-bootstrap/navigation-lock';
-import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
 
 @Component({
   selector: 'demo-navigation-lock',
   templateUrl: './navigation-lock.component.html',
   styleUrls: ['./navigation-lock.component.scss'],
   standalone: true,
-  imports: [FormsModule, BsToggleButtonModule, BsNavigationLockModule]
+  imports: [FormsModule, BsToggleButtonComponent, BsNavigationLockModule]
 })
 export class NavigationLockComponent implements BsHasNavigationLock {
   @ViewChild('navigationLock') navigationLock!: BsNavigationLockDirective;

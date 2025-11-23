@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
+import { BsAlertComponent, BsAlertCloseComponent } from '@mintplayer/ng-bootstrap/alert';
 import { BsCarouselModule } from '@mintplayer/ng-bootstrap/carousel';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { MockModule } from 'ng-mocks';
@@ -14,7 +14,7 @@ describe('SwiperComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         MockModule(BsGridModule),
-        MockModule(BsAlertModule),
+        MockModule(BsAlertComponent, BsAlertCloseComponent),
         MockModule(BsCarouselModule),
       ],
       declarations: [

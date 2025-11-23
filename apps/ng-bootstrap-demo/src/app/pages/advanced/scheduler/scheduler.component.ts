@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
-import { BsCardModule } from '@mintplayer/ng-bootstrap/card';
+import { BsCardComponent, BsCardHeaderComponent } from '@mintplayer/ng-bootstrap/card';
 import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
 import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
 import { BsSchedulerModule, ESchedulerMode, Resource, ResourceGroup, TimelineOptions, WeekOptions } from '@mintplayer/ng-bootstrap/scheduler';
@@ -13,7 +13,7 @@ import { BsSelectModule } from '@mintplayer/ng-bootstrap/select';
   templateUrl: './scheduler.component.html',
   styleUrls: ['./scheduler.component.scss'],
   standalone: true,
-  imports: [FormsModule, BsCardModule, BsFormModule, BsInputGroupComponent, BsButtonTypeDirective, BsSelectModule, BsSchedulerModule]
+  imports: [FormsModule, BsCardComponent, BsCardHeaderComponent, BsFormModule, BsInputGroupComponent, BsButtonTypeDirective, BsSelectModule, BsSchedulerModule]
 })
 export class SchedulerComponent {
   weekOptions: WeekOptions = { unitHeight: 30 };

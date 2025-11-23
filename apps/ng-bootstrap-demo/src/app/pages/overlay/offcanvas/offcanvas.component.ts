@@ -9,7 +9,7 @@ import { BsDropdownModule } from '@mintplayer/ng-bootstrap/dropdown';
 import { BsDropdownMenuModule } from '@mintplayer/ng-bootstrap/dropdown-menu';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsOffcanvasModule } from '@mintplayer/ng-bootstrap/offcanvas';
-import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
 import { GIT_REPO } from '../../../providers/git-repo.provider';
 
 @Component({
@@ -17,7 +17,7 @@ import { GIT_REPO } from '../../../providers/git-repo.provider';
   templateUrl: './offcanvas.component.html',
   styleUrls: ['./offcanvas.component.scss'],
   standalone: true,
-  imports: [RouterLink, BsGridModule, BsCloseComponent, BsDropdownModule, BsButtonTypeDirective, BsButtonGroupComponent, BsDropdownMenuModule, BsOffcanvasModule, BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderComponent, BsToggleButtonModule]
+  imports: [RouterLink, BsGridModule, BsCloseComponent, BsDropdownModule, BsButtonTypeDirective, BsButtonGroupComponent, BsDropdownMenuModule, BsOffcanvasModule, BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderComponent, BsToggleButtonComponent]
 })
 export class OffcanvasComponent {
 
