@@ -85,18 +85,19 @@ export class BsSliderComponent {
 
 @Directive({
   selector: '[bsThumb]',
-  standalone: false,
 })
 export class BsThumbDirective {
   @HostBinding('class.thumb')
   @HostBinding('class.position-absolute')
   thumbClass = true;
+
+  @Input() set bsThumb(value: undefined) {}
 }
 
 @Directive({
   selector: '[bsTrack]',
-  standalone: false,
 })
 export class BsTrackDirective {
   @HostBinding('class.track') trackClass = true;
+  @Input() set bsTrack(value: undefined) {}
 }

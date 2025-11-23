@@ -3,13 +3,13 @@ import { Component, EventEmitter, Input, Output, AfterViewInit, ViewChild, Eleme
 import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
 import { HS } from '../../interfaces/hs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BsSliderComponent } from '../slider/slider.component';
+import { BsSliderComponent, BsThumbDirective, BsTrackDirective } from '../slider/slider.component';
 
 @Component({
   selector: 'bs-alpha-strip',
   templateUrl: './alpha-strip.component.html',
   styleUrls: ['./alpha-strip.component.scss'],
-  imports: [AsyncPipe, BsSliderComponent],
+  imports: [AsyncPipe, BsSliderComponent, BsThumbDirective, BsTrackDirective],
 })
 export class BsAlphaStripComponent implements AfterViewInit {
 

@@ -3,13 +3,13 @@ import { Component, EventEmitter, Input, Output, AfterViewInit, ViewChild, Eleme
 import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HS } from '../../interfaces/hs';
-import { BsSliderComponent } from '../slider/slider.component';
+import { BsSliderComponent, BsThumbDirective, BsTrackDirective } from '../slider/slider.component';
 
 @Component({
   selector: 'bs-luminosity-strip',
   templateUrl: './luminosity-strip.component.html',
   styleUrls: ['./luminosity-strip.component.scss'],
-  imports: [AsyncPipe, BsSliderComponent],
+  imports: [AsyncPipe, BsSliderComponent, BsThumbDirective, BsTrackDirective],
 })
 export class BsLuminosityStripComponent implements AfterViewInit {
   constructor() {

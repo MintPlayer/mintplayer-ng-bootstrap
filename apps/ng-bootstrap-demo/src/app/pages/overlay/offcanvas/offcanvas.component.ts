@@ -1,4 +1,4 @@
-import { Component, inject, Inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Color, Position } from '@mintplayer/ng-bootstrap';
 import { BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderComponent } from '@mintplayer/ng-bootstrap/accordion';

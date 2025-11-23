@@ -1,4 +1,4 @@
-import { Component, inject, Inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { Tag } from '../../../entities/tag';
 import { TagService } from '../../../services/tag/tag.service';
