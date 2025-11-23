@@ -2,14 +2,14 @@ import { JsonPipe } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BsGridColDirective, BsGridColumnDirective, BsGridComponent, BsGridRowDirective } from '@mintplayer/ng-bootstrap/grid';
-import { BsSelectModule } from '@mintplayer/ng-bootstrap/select';
+import { BsSelectComponent, BsSelectOption } from '@mintplayer/ng-bootstrap/select';
 import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
 
 @Component({
   selector: 'demo-select',
   templateUrl: './select.component.html',
   styleUrls: ['./select.component.scss'],
-  imports: [JsonPipe, FormsModule, BsGridComponent, BsGridRowDirective, BsGridColDirective, BsGridColumnDirective, BsSelectModule, BsToggleButtonComponent]
+  imports: [JsonPipe, FormsModule, BsGridComponent, BsGridRowDirective, BsGridColDirective, BsGridColumnDirective, BsSelectComponent, BsSelectOption, BsToggleButtonComponent]
 })
 export class SelectComponent {
 

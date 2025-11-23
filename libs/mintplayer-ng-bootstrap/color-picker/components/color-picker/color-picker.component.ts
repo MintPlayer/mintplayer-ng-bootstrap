@@ -13,7 +13,7 @@ import { BsColorPickerValueAccessor } from "../../directives/color-picker-value-
   templateUrl: './color-picker.component.html',
   styleUrls: ['./color-picker.component.scss'],
   imports: [AsyncPipe, BsColorWheelComponent, BsLuminosityStripComponent, BsAlphaStripComponent],
-  providers: [BsColorPickerValueAccessor]
+  hostDirectives: [BsColorPickerValueAccessor],
 })
 export class BsColorPickerComponent {
 

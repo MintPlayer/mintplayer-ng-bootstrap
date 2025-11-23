@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { BsForDirective } from '@mintplayer/ng-bootstrap/for';
 import { BsGridComponent, BsGridRowDirective } from '@mintplayer/ng-bootstrap/grid';
-import { BsSelectModule } from '@mintplayer/ng-bootstrap/select';
+import { BsSelectComponent, BsSelectOption } from '@mintplayer/ng-bootstrap/select';
 import { BsTabControlModule } from '@mintplayer/ng-bootstrap/tab-control';
 import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
 import { MockDirective, MockModule } from 'ng-mocks';
@@ -19,7 +19,7 @@ describe('TabControlComponent', () => {
         MockModule(BsTabControlModule),
         MockDirective(BsForDirective),
         MockModule(BsGridComponent, BsGridRowDirective),
-        MockModule(BsSelectModule),
+        MockModule(BsSelectComponent, BsSelectOption),
         MockModule(BsToggleButtonComponent),
       ],
       declarations: [

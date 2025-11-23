@@ -1,12 +1,15 @@
+import { AsyncPipe } from '@angular/common';
 import { Component, ElementRef, Input, OnInit, Renderer2, ViewChild } from '@angular/core';
 import { BehaviorSubject, map, Observable } from 'rxjs';
 import { BsSelectSize } from '../types/select-size';
+import { BsSelectValueAccessor } from '../value-accessors/select-value-accessor';
 
 @Component({
   selector: 'bs-select',
   templateUrl: './select.component.html',
   styleUrls: ['./select.component.scss'],
-  standalone: false,
+  imports: [AsyncPipe],
+  hostDirectives: [BsSelectValueAccessor],
 })
 export class BsSelectComponent implements OnInit {
   constructor(private renderer: Renderer2) {
