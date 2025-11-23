@@ -3,12 +3,16 @@ import { BehaviorSubject } from "rxjs";
 import { HS } from "../../interfaces/hs";
 import { BsColorWheelComponent } from "../color-wheel/color-wheel.component";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { BsLuminosityStripComponent } from "../luminosity-strip/luminosity-strip.component";
+import { BsAlphaStripComponent } from "../alpha-strip/alpha-strip.component";
+import { AsyncPipe } from "@angular/common";
+import { BsColorPickerValueAccessor } from "../../directives/color-picker-value-accessor/color-picker-value-accessor.directive";
 
 @Component({
   selector: 'bs-color-picker',
   templateUrl: './color-picker.component.html',
   styleUrls: ['./color-picker.component.scss'],
-  standalone: false,
+  imports: [AsyncPipe, BsColorWheelComponent, BsLuminosityStripComponent, BsAlphaStripComponent, BsColorPickerValueAccessor],
 })
 export class BsColorPickerComponent {
 

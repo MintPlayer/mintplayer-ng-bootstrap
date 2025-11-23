@@ -1,3 +1,4 @@
+import { AsyncPipe } from '@angular/common';
 import { AfterViewInit, Component, DestroyRef, ElementRef, EventEmitter, HostBinding, HostListener, Input, Output, ViewChild } from '@angular/core';
 import { BehaviorSubject, combineLatest, debounceTime, map, take, Observable, switchMap } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -9,7 +10,7 @@ import { RgbColor } from '../../interfaces/rgb-color';
   selector: 'bs-color-wheel',
   templateUrl: './color-wheel.component.html',
   styleUrls: ['./color-wheel.component.scss'],
-  standalone: false,
+  imports: [AsyncPipe],
 })
 export class BsColorWheelComponent implements AfterViewInit {
 
