@@ -4,7 +4,7 @@ import { BsButtonGroupComponent } from '@mintplayer/ng-bootstrap/button-group';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsColorPickerComponent } from '@mintplayer/ng-bootstrap/color-picker';
 import { BsGridComponent, BsGridRowDirective } from '@mintplayer/ng-bootstrap/grid';
-import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
+import { BsListGroupComponent, BsListGroupItemComponent } from '@mintplayer/ng-bootstrap/list-group';
 import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
 import { MockComponent, MockDirective, MockModule } from 'ng-mocks';
 
@@ -19,7 +19,7 @@ describe('ColorPickerComponent', () => {
       imports: [
         FormsModule,
         MockModule(BsGridComponent, BsGridRowDirective),
-        MockModule(BsListGroupModule),
+        MockModule(BsListGroupComponent, BsListGroupItemComponent),
         MockModule(BsColorPickerComponent),
         MockModule(BsToggleButtonComponent),
         MockComponent(BsButtonGroupComponent),

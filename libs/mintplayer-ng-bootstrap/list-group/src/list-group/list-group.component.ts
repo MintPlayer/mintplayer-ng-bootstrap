@@ -5,7 +5,6 @@ import { BsListGroupItemComponent } from '../list-group-item/list-group-item.com
   selector: 'bs-list-group',
   templateUrl: './list-group.component.html',
   styleUrls: ['./list-group.component.scss'],
-  standalone: false,
 })
 export class BsListGroupComponent {
   @ContentChildren(BsListGroupItemComponent) items!: QueryList<BsListGroupItemComponent>;

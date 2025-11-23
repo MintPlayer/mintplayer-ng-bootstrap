@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { MockModule, MockPipe } from 'ng-mocks';
 import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
 import { BsGridComponent, BsGridRowDirective } from '@mintplayer/ng-bootstrap/grid';
-import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
+import { BsListGroupComponent, BsListGroupItemComponent } from '@mintplayer/ng-bootstrap/list-group';
 import { BsSplitStringPipe } from '@mintplayer/ng-bootstrap/split-string';
 
 import { SplitStringComponent } from './split-string.component';
@@ -22,7 +22,7 @@ describe('SplitStringComponent', () => {
         FormsModule,
         MockModule(BsFormModule),
         MockModule(BsGridComponent, BsGridRowDirective),
-        MockModule(BsListGroupModule),
+        MockModule(BsListGroupComponent, BsListGroupItemComponent),
         MockPipe(BsSplitStringPipe),
       ]
     });

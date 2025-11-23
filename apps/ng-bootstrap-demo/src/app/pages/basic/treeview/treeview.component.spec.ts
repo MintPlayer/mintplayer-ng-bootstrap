@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { TreeviewComponent } from './treeview.component';
 import { MockModule } from 'ng-mocks';
-import { BsTreeviewModule } from '@mintplayer/ng-bootstrap/treeview';
+import { BsTreeviewComponent, BsTreeviewItemComponent } from '@mintplayer/ng-bootstrap/treeview';
 
 describe('TreeviewComponent', () => {
   let component: TreeviewComponent;
@@ -11,7 +11,7 @@ describe('TreeviewComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        MockModule(BsTreeviewModule),
+        MockModule(BsTreeviewComponent, BsTreeviewItemComponent),
       ],
       declarations: [ TreeviewComponent ]
     })

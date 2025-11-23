@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsGridColDirective, BsGridColumnDirective, BsGridComponent, BsGridRowDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsRangeModule } from '@mintplayer/ng-bootstrap/range';
-import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
+import { BsListGroupComponent, BsListGroupItemComponent } from '@mintplayer/ng-bootstrap/list-group';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsButtonGroupComponent } from '@mintplayer/ng-bootstrap/button-group';
 import { BsColorPickerComponent } from '@mintplayer/ng-bootstrap/color-picker';
@@ -14,7 +14,7 @@ import { DecimalPipe } from '@angular/common';
   selector: 'demo-color-picker',
   templateUrl: './color-picker.component.html',
   styleUrls: ['./color-picker.component.scss'],
-  imports: [DecimalPipe, FormsModule, BsGridComponent, BsGridRowDirective, BsGridColDirective, BsGridColumnDirective, BsButtonTypeDirective, BsButtonGroupComponent, BsColorPickerComponent, BsToggleButtonComponent, BsRangeModule, BsListGroupModule]
+  imports: [DecimalPipe, FormsModule, BsGridComponent, BsGridRowDirective, BsGridColDirective, BsGridColumnDirective, BsButtonTypeDirective, BsButtonGroupComponent, BsColorPickerComponent, BsToggleButtonComponent, BsRangeModule, BsListGroupComponent, BsListGroupItemComponent]
 })
 export class ColorPickerComponent {
 

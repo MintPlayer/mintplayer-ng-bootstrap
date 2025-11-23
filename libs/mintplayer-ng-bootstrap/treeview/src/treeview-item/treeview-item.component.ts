@@ -1,21 +1,23 @@
 /// <reference types="../types" />
 
-import { Component, ContentChild, HostListener } from '@angular/core';
-import { BsTreeviewComponent } from '../treeview/treeview.component';
+import { AsyncPipe } from '@angular/common';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { Component, ContentChild, HostListener, inject } from '@angular/core';
+import { BsListGroupItemComponent } from '@mintplayer/ng-bootstrap/list-group';
+import { BsTreeviewComponent } from '../treeview/treeview.component';
 
 @Component({
   selector: 'bs-treeview-item',
   templateUrl: './treeview-item.component.html',
   styleUrls: ['./treeview-item.component.scss'],
-  standalone: false,
+  imports: [AsyncPipe, BsListGroupItemComponent],
 })
 export class BsTreeviewItemComponent {
-  readonly parent: BsTreeviewComponent;
-  constructor(parent: BsTreeviewComponent, private sanitizer: DomSanitizer) {
-    this.parent = parent;
+  readonly parent = inject(BsTreeviewComponent);
+  readonly sanitizer = inject(DomSanitizer);
+  constructor() {
     import('bootstrap-icons/icons/chevron-right.svg').then((icon) => {
-      this.chevronRight = sanitizer.bypassSecurityTrustHtml(icon.default);
+      this.chevronRight = this.sanitizer.bypassSecurityTrustHtml(icon.default);
     });
   }
 

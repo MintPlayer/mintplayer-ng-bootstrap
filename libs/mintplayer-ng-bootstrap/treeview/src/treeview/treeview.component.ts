@@ -1,13 +1,15 @@
+import { AsyncPipe } from '@angular/common';
 import { Component, SkipSelf, Input, Output, EventEmitter, Optional } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, Observable, map } from 'rxjs';
 import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
+import { BsListGroupComponent } from '@mintplayer/ng-bootstrap/list-group';
 
 @Component({
   selector: 'bs-treeview',
   templateUrl: './treeview.component.html',
   styleUrls: ['./treeview.component.scss'],
-  standalone: false,
+  imports: [AsyncPipe, BsListGroupComponent],
   animations: [SlideUpDownAnimation],
 })
 export class BsTreeviewComponent {

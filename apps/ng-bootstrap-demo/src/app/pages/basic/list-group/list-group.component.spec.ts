@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
+import { BsListGroupComponent, BsListGroupItemComponent } from '@mintplayer/ng-bootstrap/list-group';
 import { MockModule } from 'ng-mocks';
 import { ListGroupComponent } from './list-group.component';
 
@@ -10,7 +10,7 @@ describe('ListGroupComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        MockModule(BsListGroupModule),
+        MockModule(BsListGroupComponent, BsListGroupItemComponent),
       ],
       declarations: [
         // Unit to test
