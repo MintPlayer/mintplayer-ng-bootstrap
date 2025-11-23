@@ -6,7 +6,6 @@ import { deepClone } from '@mintplayer/parentify';
   selector: 'demo-parentify',
   templateUrl: './parentify.component.html',
   styleUrls: ['./parentify.component.scss'],
-  standalone: true,
   imports: [BsGridComponent, BsGridRowDirective, BsGridColDirective]
 })
 export class ParentifyComponent implements AfterViewInit {

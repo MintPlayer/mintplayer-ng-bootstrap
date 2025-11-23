@@ -9,7 +9,6 @@ import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button'
   selector: 'demo-table',
   templateUrl: './table.component.html',
   styleUrls: ['./table.component.scss'],
-  standalone: true,
   imports: [DatePipe, FormsModule, BsGridComponent, BsGridRowDirective, BsGridColDirective, BsTableComponent, BsToggleButtonComponent]
 })
 export class TableComponent {

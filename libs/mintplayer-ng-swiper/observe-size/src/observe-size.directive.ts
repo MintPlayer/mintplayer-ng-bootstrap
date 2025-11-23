@@ -4,7 +4,7 @@ import { Size } from './size';
 
 @Directive({
   selector: '[bsObserveSize]',
-  standalone: true,
+  
   exportAs: 'bsObserveSize'
 })
 export class BsObserveSizeDirective implements AfterViewInit, OnDestroy {

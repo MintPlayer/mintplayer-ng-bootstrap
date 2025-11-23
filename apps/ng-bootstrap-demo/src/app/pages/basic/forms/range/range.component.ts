@@ -8,7 +8,6 @@ import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button'
   selector: 'demo-range',
   templateUrl: './range.component.html',
   styleUrls: ['./range.component.scss'],
-  standalone: true,
   imports: [FormsModule, BsGridComponent, BsGridRowDirective, BsGridColDirective, BsGridColumnDirective, BsRangeModule, BsToggleButtonComponent]
 })
 export class RangeComponent {

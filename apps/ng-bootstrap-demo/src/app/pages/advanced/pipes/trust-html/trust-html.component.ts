@@ -8,7 +8,6 @@ import { BsTrustHtmlPipe } from '@mintplayer/ng-bootstrap/trust-html';
   selector: 'demo-trust-html',
   templateUrl: './trust-html.component.html',
   styleUrls: ['./trust-html.component.scss'],
-  standalone: true,
   imports: [FormsModule, BsFormModule, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsTrustHtmlPipe]
 })
 export class TrustHtmlComponent {

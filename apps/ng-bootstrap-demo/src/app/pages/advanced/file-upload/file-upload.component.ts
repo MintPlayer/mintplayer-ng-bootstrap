@@ -8,7 +8,6 @@ import { BsProgressBarModule } from '@mintplayer/ng-bootstrap/progress-bar';
   selector: 'demo-file-upload',
   templateUrl: './file-upload.component.html',
   styleUrls: ['./file-upload.component.scss'],
-  standalone: true,
   imports: [BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsFileUploadModule, BsProgressBarModule],
 })
 export class FileUploadComponent {

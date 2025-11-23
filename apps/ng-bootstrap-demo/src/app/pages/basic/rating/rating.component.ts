@@ -6,7 +6,6 @@ import { BsRatingComponent } from '@mintplayer/ng-bootstrap/rating';
   selector: 'demo-rating',
   templateUrl: './rating.component.html',
   styleUrls: ['./rating.component.scss'],
-  standalone: true,
   imports: [BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsRatingComponent]
 })
 export class RatingComponent {

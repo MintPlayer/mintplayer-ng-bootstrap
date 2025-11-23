@@ -7,7 +7,6 @@ import { BsGridColumnDirective, BsGridComponent, BsGridRowDirective } from '@min
   selector: 'demo-for-directive',
   templateUrl: './for-directive.component.html',
   styleUrls: ['./for-directive.component.scss'],
-  standalone: true,
   imports: [BsForDirective, BsFormModule, BsGridComponent, BsGridRowDirective, BsGridColumnDirective]
 })
 export class ForDirectiveComponent {}

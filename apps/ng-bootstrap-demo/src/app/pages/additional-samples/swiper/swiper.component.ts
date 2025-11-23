@@ -8,7 +8,6 @@ import { BsGridColDirective, BsGridComponent, BsGridRowDirective } from '@mintpl
   selector: 'demo-swiper',
   templateUrl: './swiper.component.html',
   styleUrls: ['./swiper.component.scss'],
-  standalone: true,
   imports: [BsGridComponent, BsGridRowDirective, BsGridColDirective, BsAlertComponent, BsAlertCloseComponent, BsCarouselModule]
 })
 export class SwiperComponent {

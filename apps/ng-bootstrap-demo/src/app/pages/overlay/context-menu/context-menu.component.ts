@@ -6,7 +6,6 @@ import { BsDropdownMenuModule } from '@mintplayer/ng-bootstrap/dropdown-menu';
   selector: 'demo-context-menu',
   templateUrl: './context-menu.component.html',
   styleUrls: ['./context-menu.component.scss'],
-  standalone: true,
   imports: [BsDropdownMenuModule, BsContextMenuModule]
 })
 export class ContextMenuComponent {}

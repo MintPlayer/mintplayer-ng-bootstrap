@@ -8,7 +8,6 @@ import { BsTreeviewModule } from '@mintplayer/ng-bootstrap/treeview';
   selector: 'demo-treeview',
   templateUrl: './treeview.component.html',
   styleUrls: ['./treeview.component.scss'],
-  standalone: true,
   imports: [BsTreeviewModule]
 })
 export class TreeviewComponent {

@@ -8,7 +8,6 @@ import { Color } from '@mintplayer/ng-bootstrap';
   selector: 'demo-lazy-loading',
   templateUrl: './lazy-loading.component.html',
   styleUrls: ['./lazy-loading.component.scss'],
-  standalone: true,
   imports: [AsyncPipe, BsAlertComponent, BsAlertCloseComponent, LazyLoadedComponent]
 })
 export class LazyLoadingComponent {

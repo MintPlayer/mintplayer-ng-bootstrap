@@ -7,7 +7,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   selector: 'bs-signature-pad',
   templateUrl: './signature-pad.component.html',
   styleUrls: ['./signature-pad.component.scss'],
-  standalone: true,
+  
 })
 export class BsSignaturePadComponent implements AfterViewInit {
   constructor() {

@@ -31,7 +31,7 @@ class BsToastTestComponent {
 
 @Component({
   selector: 'bs-toast-container',
-  standalone: true,
+  
   imports: [CommonModule],
   template: `
     <ng-container *ngFor="let toast of (toastService.toasts$ | async); let i = index">

@@ -6,7 +6,6 @@ import { Router, RouterLinkActive } from '@angular/router';
 
 @Directive({
   selector: 'a[routerLink]',
-  standalone: true
 })
 export class NavbarRouterLinkActiveDirective extends RouterLinkActive {
   constructor() {

@@ -6,7 +6,6 @@ import { BsProgressBarModule } from '@mintplayer/ng-bootstrap/progress-bar';
   selector: 'demo-progress-bar',
   templateUrl: './progress-bar.component.html',
   styleUrls: ['./progress-bar.component.scss'],
-  standalone: true,
   imports: [BsProgressBarModule]
 })
 export class ProgressBarComponent {

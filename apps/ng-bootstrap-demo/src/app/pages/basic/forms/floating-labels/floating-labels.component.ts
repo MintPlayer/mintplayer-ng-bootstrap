@@ -6,7 +6,6 @@ import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
   selector: 'demo-floating-labels',
   templateUrl: './floating-labels.component.html',
   styleUrls: ['./floating-labels.component.scss'],
-  standalone: true,
   imports: [BsFormModule, BsFloatingLabelComponent]
 })
 export class FloatingLabelsComponent {}

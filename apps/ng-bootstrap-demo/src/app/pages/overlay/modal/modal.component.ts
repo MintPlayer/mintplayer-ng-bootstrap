@@ -14,7 +14,6 @@ import { GIT_REPO } from '../../../providers/git-repo.provider';
   selector: 'demo-modal',
   templateUrl: './modal.component.html',
   styleUrls: ['./modal.component.scss'],
-  standalone: true,
   imports: [BsGridComponent, BsGridRowDirective, BsGridColDirective, BsGridColumnDirective, BsModalModule, BsSelect2Module, BsButtonTypeDirective, FocusOnLoadDirective, BsFontColorPipe]
 })
 export class ModalComponent {

@@ -11,7 +11,6 @@ import { dedent } from 'ts-dedent';
   selector: 'demo-linify',
   templateUrl: './linify.component.html',
   styleUrls: ['./linify.component.scss'],
-  standalone: true,
   imports: [FormsModule, BsFormModule, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsLinifyPipe, BsListGroupModule, BsToggleButtonComponent]
 })
 export class LinifyComponent {

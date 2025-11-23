@@ -7,7 +7,6 @@ import { signal } from '@angular/core';
   selector: 'demo-typeahead',
   templateUrl: './typeahead.component.html',
   styleUrls: ['./typeahead.component.scss'],
-  standalone: true,
   imports: [BsTypeaheadComponent, JsonPipe],
   providers: [JsonPipe]
 })

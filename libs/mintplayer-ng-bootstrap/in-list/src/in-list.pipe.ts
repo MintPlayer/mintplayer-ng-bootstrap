@@ -3,7 +3,7 @@ import { HasId } from '@mintplayer/ng-bootstrap/has-id';
 
 @Pipe({
   name: 'bsInList',
-  standalone: true,
+  
 })
 export class BsInListPipe<T> implements PipeTransform {
   transform(items: HasId<T>[], parameter: T) {

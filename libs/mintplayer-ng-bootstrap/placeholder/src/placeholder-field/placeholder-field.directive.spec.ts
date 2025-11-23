@@ -6,7 +6,7 @@ import { BsPlaceholderFieldDirective } from './placeholder-field.directive';
 
 @Component({
   selector: '[bsPlaceholder]',
-  standalone: true,
+  
   template: `
     <div class="placeholder-glow">
       <ng-content></ng-content>

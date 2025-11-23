@@ -10,7 +10,6 @@ import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button'
   templateUrl: './fade-in-out.component.html',
   styleUrls: ['./fade-in-out.component.scss'],
   animations: [FadeInOutAnimation],
-  standalone: true,
   imports: [FormsModule, BsButtonTypeDirective, BsToggleButtonComponent]
 })
 export class FadeInOutComponent {

@@ -6,7 +6,7 @@ import { interval, map, tap } from 'rxjs';
 // @Component({
 //   selector: "demo-hello",
 //   template: `Hello {{ name }}!`,
-//   standalone: true,
+//   
 //   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 //   imports: [],
 // })

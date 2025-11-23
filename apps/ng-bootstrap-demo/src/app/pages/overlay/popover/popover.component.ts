@@ -8,7 +8,6 @@ import { BsPopoverModule } from '@mintplayer/ng-bootstrap/popover';
   selector: 'demo-popover',
   templateUrl: './popover.component.html',
   styleUrls: ['./popover.component.scss'],
-  standalone: true,
   imports: [BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsPopoverModule, BsButtonTypeDirective]
 })
 export class PopoverComponent {

@@ -12,7 +12,6 @@ import { dedent } from 'ts-dedent';
   selector: 'demo-icon',
   templateUrl: './icon.component.html',
   styleUrls: ['./icon.component.scss'],
-  standalone: true,
   imports: [BsAlertComponent, BsAlertCloseComponent, BsCodeSnippetComponent]
 })
 export class IconComponent {

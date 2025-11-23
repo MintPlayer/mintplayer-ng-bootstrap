@@ -13,7 +13,6 @@ import { FocusOnLoadDirective } from '@mintplayer/ng-focus-on-load';
   selector: 'demo-focus-trap',
   templateUrl: './focus-trap.component.html',
   styleUrls: ['./focus-trap.component.scss'],
-  standalone: true,
   imports: [A11yModule, BsForDirective, BsFormModule, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsCloseComponent, BsModalModule, BsButtonTypeDirective, FocusOnLoadDirective]
 })
 export class FocusTrapComponent {

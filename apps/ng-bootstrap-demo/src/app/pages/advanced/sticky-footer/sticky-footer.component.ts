@@ -7,7 +7,6 @@ import { BsStickyFooterModule } from '@mintplayer/ng-bootstrap/sticky-footer';
   selector: 'demo-sticky-footer',
   templateUrl: './sticky-footer.component.html',
   styleUrls: ['./sticky-footer.component.scss'],
-  standalone: true,
   imports: [BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderComponent, BsStickyFooterModule]
 })
 export class StickyFooterComponent {

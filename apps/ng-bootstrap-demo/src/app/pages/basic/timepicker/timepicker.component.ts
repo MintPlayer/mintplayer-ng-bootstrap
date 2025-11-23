@@ -8,7 +8,6 @@ import { BsTimepickerComponent } from '@mintplayer/ng-bootstrap/timepicker';
   selector: 'demo-timepicker',
   templateUrl: './timepicker.component.html',
   styleUrls: ['./timepicker.component.scss'],
-  standalone: true,
   imports: [DatePipe, BsFormModule, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsTimepickerComponent]
 })
 export class TimepickerComponent {

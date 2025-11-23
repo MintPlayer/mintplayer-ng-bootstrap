@@ -10,7 +10,6 @@ import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button'
   selector: 'demo-tab-control',
   templateUrl: './tab-control.component.html',
   styleUrls: ['./tab-control.component.scss'],
-  standalone: true,
   imports: [FormsModule, BsForDirective, BsGridComponent, BsGridRowDirective, BsGridColDirective, BsSelectModule, BsTabControlModule, BsToggleButtonComponent]
 })
 export class TabControlComponent {

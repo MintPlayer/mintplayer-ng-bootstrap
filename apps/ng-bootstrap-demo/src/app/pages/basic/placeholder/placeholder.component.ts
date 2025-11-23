@@ -11,7 +11,6 @@ import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button'
   selector: 'demo-placeholder',
   templateUrl: './placeholder.component.html',
   styleUrls: ['./placeholder.component.scss'],
-  standalone: true,
   imports: [FormsModule, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsCardComponent, BsCardHeaderComponent, BsAlertComponent, BsAlertCloseComponent, BsPlaceholderModule, BsToggleButtonComponent]
 })
 export class PlaceholderComponent {

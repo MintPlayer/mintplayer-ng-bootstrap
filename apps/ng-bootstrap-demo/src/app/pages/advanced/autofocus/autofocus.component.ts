@@ -13,7 +13,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   selector: 'demo-autofocus',
   templateUrl: './autofocus.component.html',
   styleUrls: ['./autofocus.component.scss'],
-  standalone: true,
   imports: [BsSelect2Module, BsFontColorPipe, FocusOnLoadDirective],
 })
 export class AutofocusComponent {

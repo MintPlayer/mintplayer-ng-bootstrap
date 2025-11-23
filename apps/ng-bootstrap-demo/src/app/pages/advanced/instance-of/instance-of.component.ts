@@ -5,7 +5,6 @@ import { BsInstanceOfModule } from '@mintplayer/ng-bootstrap/instance-of';
   selector: 'demo-instance-of',
   templateUrl: './instance-of.component.html',
   styleUrls: ['./instance-of.component.scss'],
-  standalone: true,
   imports: [BsInstanceOfModule],
 })
 export class InstanceOfComponent {

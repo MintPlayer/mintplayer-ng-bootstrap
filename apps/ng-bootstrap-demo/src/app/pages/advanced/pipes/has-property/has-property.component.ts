@@ -9,7 +9,6 @@ import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button'
   selector: 'demo-has-property',
   templateUrl: './has-property.component.html',
   styleUrls: ['./has-property.component.scss'],
-  standalone: true,
   imports: [JsonPipe, FormsModule, BsHasPropertyPipe, BsCodeSnippetComponent, BsToggleButtonComponent]
 })
 export class HasPropertyComponent {

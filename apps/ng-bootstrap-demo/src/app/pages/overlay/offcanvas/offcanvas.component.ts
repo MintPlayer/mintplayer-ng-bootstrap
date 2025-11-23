@@ -16,7 +16,6 @@ import { GIT_REPO } from '../../../providers/git-repo.provider';
   selector: 'demo-offcanvas',
   templateUrl: './offcanvas.component.html',
   styleUrls: ['./offcanvas.component.scss'],
-  standalone: true,
   imports: [RouterLink, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsCloseComponent, BsDropdownModule, BsButtonTypeDirective, BsButtonGroupComponent, BsDropdownMenuModule, BsOffcanvasModule, BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderComponent, BsToggleButtonComponent]
 })
 export class OffcanvasComponent {

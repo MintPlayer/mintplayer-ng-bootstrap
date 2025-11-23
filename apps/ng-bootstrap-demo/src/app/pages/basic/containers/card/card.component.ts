@@ -6,7 +6,6 @@ import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
   selector: 'demo-card',
   templateUrl: './card.component.html',
   styleUrls: ['./card.component.scss'],
-  standalone: true,
   imports: [BsCardComponent, BsCardHeaderComponent, BsListGroupModule]
 })
 export class CardComponent {}

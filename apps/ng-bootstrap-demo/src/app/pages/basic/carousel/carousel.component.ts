@@ -9,7 +9,6 @@ import { BsCarouselModule } from '@mintplayer/ng-bootstrap/carousel';
   selector: 'demo-carousel',
   templateUrl: './carousel.component.html',
   styleUrls: ['./carousel.component.scss'],
-  standalone: true,
   imports: [FormsModule, BsFormModule, BsGridComponent, BsGridRowDirective, BsGridColDirective, BsSelectModule, BsCarouselModule]
 })
 export class CarouselComponent {

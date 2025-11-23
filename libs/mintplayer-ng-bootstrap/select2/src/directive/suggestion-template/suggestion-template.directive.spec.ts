@@ -17,7 +17,7 @@ class BsSuggestionTemplateTestComponent { }
 
 @Component({
   selector: 'select2',
-  standalone: true,
+  
 })
 class MockBsSelect2Component {
   itemTemplate?: TemplateRef<any>;

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'bs-parallax',
-  standalone: true,
+  
   templateUrl: './parallax.component.html',
   styleUrl: './parallax.component.scss',
   imports: [CommonModule],

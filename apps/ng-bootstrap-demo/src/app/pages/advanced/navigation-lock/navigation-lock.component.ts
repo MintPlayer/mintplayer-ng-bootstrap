@@ -7,7 +7,6 @@ import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button'
   selector: 'demo-navigation-lock',
   templateUrl: './navigation-lock.component.html',
   styleUrls: ['./navigation-lock.component.scss'],
-  standalone: true,
   imports: [FormsModule, BsToggleButtonComponent, BsNavigationLockModule]
 })
 export class NavigationLockComponent implements BsHasNavigationLock {

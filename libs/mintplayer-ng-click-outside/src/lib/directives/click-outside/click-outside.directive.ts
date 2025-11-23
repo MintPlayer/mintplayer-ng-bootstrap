@@ -3,7 +3,7 @@ import { Directive, ElementRef, EventEmitter, Inject, Input, NgZone, OnChanges, 
 
 @Directive({
   selector: '[clickOutside]',
-  standalone: true
+  
 })
 export class ClickOutsideDirective implements OnInit, OnChanges, OnDestroy {
 

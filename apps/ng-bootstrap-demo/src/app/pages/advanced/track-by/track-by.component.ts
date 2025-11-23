@@ -9,7 +9,6 @@ import { BsAlertComponent, BsAlertCloseComponent } from '@mintplayer/ng-bootstra
   selector: 'demo-track-by',
   templateUrl: './track-by.component.html',
   styleUrls: ['./track-by.component.scss'],
-  standalone: true,
   imports: [BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsButtonTypeDirective, BsListGroupModule, BsAlertComponent, BsAlertCloseComponent]
 })
 export class TrackByComponent {

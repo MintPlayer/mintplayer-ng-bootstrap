@@ -9,7 +9,6 @@ import { BsToggleButtonComponent, BsToggleButtonGroupDirective } from '@mintplay
 
 @Component({
   selector: 'demo-shell',
-  standalone: true,
   imports: [FormsModule, BsShellModule, BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderComponent, BsButtonGroupComponent, BsButtonTypeDirective, BsToggleButtonComponent, BsToggleButtonGroupDirective],
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.scss'

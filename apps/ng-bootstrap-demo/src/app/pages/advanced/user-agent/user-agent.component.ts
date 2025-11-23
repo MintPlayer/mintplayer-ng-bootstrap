@@ -7,7 +7,6 @@ import { BsAlertComponent, BsAlertCloseComponent } from '@mintplayer/ng-bootstra
   selector: 'demo-user-agent',
   templateUrl: './user-agent.component.html',
   styleUrls: ['./user-agent.component.scss'],
-  standalone: true,
   imports: [BsAlertComponent, BsAlertCloseComponent, BsUserAgentDirective]
 })
 export class UserAgentComponent {

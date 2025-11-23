@@ -9,7 +9,6 @@ import { GIT_REPO } from '../../../providers/git-repo.provider';
   selector: 'demo-tooltip',
   templateUrl: './tooltip.component.html',
   styleUrls: ['./tooltip.component.scss'],
-  standalone: true,
   imports: [BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsTooltipModule, BsButtonTypeDirective]
 })
 export class TooltipComponent {

@@ -10,7 +10,6 @@ import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
   selector: 'demo-alert',
   templateUrl: './alert.component.html',
   styleUrls: ['./alert.component.scss'],
-  standalone: true,
   imports: [FormsModule, BsFormModule, BsAlertComponent, BsAlertCloseComponent, BsInputGroupComponent, BsButtonTypeDirective]
 })
 export class AlertComponent {

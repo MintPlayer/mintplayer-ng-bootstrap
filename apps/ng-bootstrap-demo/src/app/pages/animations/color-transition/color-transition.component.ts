@@ -8,7 +8,6 @@ import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button'
   templateUrl: './color-transition.component.html',
   styleUrls: ['./color-transition.component.scss'],
   animations: [ColorTransitionAnimation],
-  standalone: true,
   imports: [FormsModule, BsToggleButtonComponent]
 })
 export class ColorTransitionComponent {

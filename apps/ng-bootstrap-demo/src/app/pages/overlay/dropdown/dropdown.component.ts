@@ -8,7 +8,6 @@ import { BsDropdownModule } from '@mintplayer/ng-bootstrap/dropdown';
   selector: 'demo-dropdown',
   templateUrl: './dropdown.component.html',
   styleUrls: ['./dropdown.component.scss'],
-  standalone: true,
   imports: [BsCalendarComponent, BsDropdownModule, BsButtonTypeDirective]
 })
 export class DropdownComponent {

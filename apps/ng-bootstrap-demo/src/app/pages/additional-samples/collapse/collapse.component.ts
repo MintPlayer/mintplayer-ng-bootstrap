@@ -11,7 +11,6 @@ import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
   selector: 'demo-collapse',
   templateUrl: './collapse.component.html',
   styleUrls: ['./collapse.component.scss'],
-  standalone: true,
   imports: [BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsAlertComponent, BsAlertCloseComponent, BsCodeSnippetComponent, BsButtonTypeDirective],
   animations: [SlideUpDownNgifAnimation]
 })

@@ -12,7 +12,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   selector: 'demo-select2',
   templateUrl: './select2.component.html',
   styleUrls: ['./select2.component.scss'],
-  standalone: true,
   imports: [BsSelect2Module, BsFontColorPipe]
 })
 export class Select2Component {

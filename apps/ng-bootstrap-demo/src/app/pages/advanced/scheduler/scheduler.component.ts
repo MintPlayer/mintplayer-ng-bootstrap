@@ -12,7 +12,6 @@ import { BsSelectModule } from '@mintplayer/ng-bootstrap/select';
   selector: 'demo-scheduler',
   templateUrl: './scheduler.component.html',
   styleUrls: ['./scheduler.component.scss'],
-  standalone: true,
   imports: [FormsModule, BsCardComponent, BsCardHeaderComponent, BsFormModule, BsInputGroupComponent, BsButtonTypeDirective, BsSelectModule, BsSchedulerModule]
 })
 export class SchedulerComponent {

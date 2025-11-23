@@ -9,7 +9,7 @@ import { BehaviorSubject } from 'rxjs';
 
 @Component({
   selector: 'bs-code-snippet',
-  standalone: true,
+  
   templateUrl: './code-snippet.component.html',
   styleUrls: ['./code-snippet.component.scss'],
   imports: [AsyncPipe, BsCopyDirective, BsOffcanvasModule, HighlightModule],

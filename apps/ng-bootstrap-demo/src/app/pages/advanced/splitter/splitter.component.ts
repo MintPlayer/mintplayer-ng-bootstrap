@@ -7,7 +7,6 @@ import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button'
   selector: 'demo-splitter',
   templateUrl: './splitter.component.html',
   styleUrls: ['./splitter.component.scss'],
-  standalone: true,
   imports: [FormsModule, BsSplitterModule, BsToggleButtonComponent]
 })
 export class SplitterComponent {

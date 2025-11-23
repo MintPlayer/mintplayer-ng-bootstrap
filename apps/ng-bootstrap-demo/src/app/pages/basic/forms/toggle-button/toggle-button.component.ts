@@ -8,7 +8,6 @@ import { BsToggleButtonComponent, BsToggleButtonGroupDirective } from '@mintplay
   selector: 'demo-toggle-button',
   templateUrl: './toggle-button.component.html',
   styleUrls: ['./toggle-button.component.scss'],
-  standalone: true,
   imports: [JsonPipe, FormsModule, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsToggleButtonComponent, BsToggleButtonGroupDirective]
 })
 export class ToggleButtonComponent {
