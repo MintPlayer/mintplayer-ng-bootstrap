@@ -30,7 +30,8 @@
         "codeCoverage": true,
         "coverageReporters": ["lcovonly"],
         "coverageDirectory": "coverage/libs/mintplayer-ng-qr-code",
-        "jestConfig": "libs/mintplayer-ng-qr-code/jest.config.ts"
+        "jestConfig": "libs/mintplayer-ng-qr-code/jest.config.ts",
+        "tsConfig": "libs/mintplayer-ng-qr-code/tsconfig.spec.json"
       }
     },
     "lint": {

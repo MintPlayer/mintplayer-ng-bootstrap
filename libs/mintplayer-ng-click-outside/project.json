@@ -30,7 +30,8 @@
         "codeCoverage": true,
         "coverageReporters": ["lcovonly"],
         "coverageDirectory": "coverage/libs/mintplayer-ng-click-outside",
-        "jestConfig": "libs/mintplayer-ng-click-outside/jest.config.ts"
+        "jestConfig": "libs/mintplayer-ng-click-outside/jest.config.ts",
+        "tsConfig": "libs/mintplayer-ng-click-outside/tsconfig.spec.json"
       }
     },
     "lint": {

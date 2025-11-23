@@ -30,7 +30,8 @@
         "codeCoverage": true,
         "coverageReporters": ["lcovonly"],
         "coverageDirectory": "coverage/libs/mintplayer-ng-animations",
-        "jestConfig": "libs/mintplayer-ng-animations/jest.config.ts"
+        "jestConfig": "libs/mintplayer-ng-animations/jest.config.ts",
+        "tsConfig": "libs/mintplayer-ng-animations/tsconfig.spec.json"
       }
     },
     "lint": {
