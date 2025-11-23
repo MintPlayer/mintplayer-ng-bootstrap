@@ -104,7 +104,8 @@
         "codeCoverage": true,
         "coverageReporters": ["lcovonly"],
         "coverageDirectory": "coverage/apps/ng-bootstrap-demo",
-        "jestConfig": "apps/ng-bootstrap-demo/jest.config.ts"
+        "jestConfig": "apps/ng-bootstrap-demo/jest.config.ts",
+        "tsConfig": "apps/ng-bootstrap-demo/tsconfig.spec.json"
       }
     }
   }
