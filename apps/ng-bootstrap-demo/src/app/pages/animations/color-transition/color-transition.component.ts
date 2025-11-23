@@ -1,10 +1,7 @@
-import { BehaviorSubject, Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
-import { Component } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { ColorTransitionAnimation } from '@mintplayer/ng-animations';
 import { FormsModule } from '@angular/forms';
 import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
-import { AsyncPipe } from '@angular/common';
 
 @Component({
   selector: 'demo-color-transition',
@@ -12,25 +9,21 @@ import { AsyncPipe } from '@angular/common';
   styleUrls: ['./color-transition.component.scss'],
   animations: [ColorTransitionAnimation],
   standalone: true,
-  imports: [AsyncPipe, FormsModule, BsToggleButtonModule]
+  imports: [FormsModule, BsToggleButtonModule]
 })
 export class ColorTransitionComponent {
 
-  constructor() {
-    this.currentColor$ = this.state$.pipe(map((state) => {
-      return state ? 'color1' : 'color2';
-    }));
-  }
+  constructor() {}
 
   //#region state
-  state$ = new BehaviorSubject<boolean>(false);
+  private readonly stateSignal = signal<boolean>(false);
   get state() {
-    return this.state$.value;
+    return this.stateSignal();
   }
   set state(value: boolean) {
-    this.state$.next(value);
+    this.stateSignal.set(value);
   }
   //#endregion
 
-  currentColor$: Observable<'color1' | 'color2'>;
+  currentColor = computed<'color1' | 'color2'>(() => this.stateSignal() ? 'color1' : 'color2');
 }

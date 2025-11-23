@@ -1,5 +1,4 @@
-import { AsyncPipe } from '@angular/common';
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Color, Position } from '@mintplayer/ng-bootstrap';
 import { BsAccordionModule } from '@mintplayer/ng-bootstrap/accordion';
@@ -11,14 +10,13 @@ import { BsDropdownMenuModule } from '@mintplayer/ng-bootstrap/dropdown-menu';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsOffcanvasModule } from '@mintplayer/ng-bootstrap/offcanvas';
 import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
-import { BehaviorSubject } from 'rxjs';
 
 @Component({
   selector: 'demo-offcanvas',
   templateUrl: './offcanvas.component.html',
   styleUrls: ['./offcanvas.component.scss'],
   standalone: true,
-  imports: [AsyncPipe, RouterLink, BsGridModule, BsCloseComponent, BsDropdownModule, BsButtonTypeDirective, BsButtonGroupComponent, BsDropdownMenuModule, BsOffcanvasModule, BsAccordionModule, BsToggleButtonModule]
+  imports: [RouterLink, BsGridModule, BsCloseComponent, BsDropdownModule, BsButtonTypeDirective, BsButtonGroupComponent, BsDropdownMenuModule, BsOffcanvasModule, BsAccordionModule, BsToggleButtonModule]
 })
 export class OffcanvasComponent {
 
@@ -27,13 +25,13 @@ export class OffcanvasComponent {
   }
   
   colors = Color;
-  position$ = new BehaviorSubject<Position>('start');
+  position = signal<Position>('start');
   offcanvasVisible = false;
   sidebarVisible = false;
   
   gitRepo: string;
   showOffcanvas(position: Position) {
-    this.position$.next(position);
+    this.position.set(position);
     setTimeout(() => this.offcanvasVisible = true, 50);
   }
 }

@@ -13,7 +13,7 @@
                 </bs-button-group>
                 <br>
                 <button [color]="colors.primary" (click)="offcanvasVisible = false">Hide offcanvas</button>
-                @if (position$ | async; as position) {
+                @if (position(); as position) {
                     <bs-offcanvas [(isVisible)]="offcanvasVisible" [position]="position" [hasBackdrop]="true" (backdropClick)="offcanvasVisible = false">
                         <div *bsOffcanvasContent>
                             <bs-offcanvas-header>
