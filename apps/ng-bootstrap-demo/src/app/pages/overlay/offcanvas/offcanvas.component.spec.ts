@@ -3,9 +3,10 @@ import { BsButtonGroupComponent } from '@mintplayer/ng-bootstrap/button-group';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsOffcanvasModule } from '@mintplayer/ng-bootstrap/offcanvas';
-import { MockComponent, MockDirective, MockModule } from 'ng-mocks';
+import { MockComponent, MockDirective, MockModule, MockProvider } from 'ng-mocks';
 
 import { OffcanvasComponent } from './offcanvas.component';
+import { GIT_REPO } from '../../../providers/git-repo.provider';
 
 describe('OffcanvasComponent', () => {
   let component: OffcanvasComponent;
@@ -24,7 +25,7 @@ describe('OffcanvasComponent', () => {
         OffcanvasComponent,
       ],
       providers: [
-        { provide: 'GIT_REPO', useValue: 'https://github.com' },
+        MockProvider(GIT_REPO, 'https://github.com'),
       ]
     })
     .compileComponents();

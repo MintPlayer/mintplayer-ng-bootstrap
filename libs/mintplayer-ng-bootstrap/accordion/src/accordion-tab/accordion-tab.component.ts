@@ -2,12 +2,13 @@ import { Component, ContentChildren, EventEmitter, forwardRef, HostBinding, Inpu
 import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
 import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
 import { BsAccordionComponent } from '../accordion/accordion.component';
+import { AsyncPipe } from '@angular/common';
 
 @Component({
   selector: 'bs-accordion-tab',
   templateUrl: './accordion-tab.component.html',
   styleUrls: ['./accordion-tab.component.scss'],
-  standalone: false,
+  imports: [AsyncPipe],
   animations: [SlideUpDownAnimation],
 })
 export class BsAccordionTabComponent {
