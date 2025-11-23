@@ -1,9 +1,9 @@
 import { Directive, ElementRef, forwardRef, Host, HostListener, Input, OnDestroy, Optional, Renderer2 } from "@angular/core";
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from "@angular/forms";
-import { BsSelectComponent } from "../component/select.component";
 
 @Directive({
   selector: 'bs-select',
+  standalone: true,
   providers: [{
     provide: NG_VALUE_ACCESSOR,
     useExisting: forwardRef(() => BsSelectValueAccessor),
@@ -11,7 +11,7 @@ import { BsSelectComponent } from "../component/select.component";
   }],
 })
 export class BsSelectValueAccessor implements ControlValueAccessor {
-  constructor(private _renderer: Renderer2, private _elementRef: ElementRef, private selectBox: BsSelectComponent) {}
+  constructor(private _renderer: Renderer2, private _elementRef: ElementRef<HTMLElement>) {}
 
   onChange = (_: any) => {};
   onTouched = () => {};
@@ -31,11 +31,9 @@ export class BsSelectValueAccessor implements ControlValueAccessor {
     this.setProperty('disabled', isDisabled);
   }
   protected setProperty(key: string, value: any): void {
-    // if (this._elementRef) {
-    //   this._renderer.setProperty(this._elementRef.nativeElement, key, value);
-    // }
-    if (this.selectBox.selectBox) {
-      this._renderer.setProperty(this.selectBox.selectBox.nativeElement, key, value);
+    const selectElement = this.getSelectElement();
+    if (selectElement) {
+      this._renderer.setProperty(selectElement, key, value);
     }
   }
 
@@ -77,7 +75,6 @@ export class BsSelectValueAccessor implements ControlValueAccessor {
 
   writeValue(value: any) {
     this.value = value;
-    // console.log(`WriteValue ${this.selectBox.identifier}`, value);
 
     const id = this.getOptionId(value);
     const valueString = this.buildValueString(id, value);
@@ -105,10 +102,19 @@ export class BsSelectValueAccessor implements ControlValueAccessor {
     const id = this.extractId(valueString);
     return this.optionMap.has(id) ? this.optionMap.get(id) : valueString;
   }
+
+  private getSelectElement(): HTMLSelectElement | null {
+    const host = this._elementRef?.nativeElement;
+    if (!host) {
+      return null;
+    }
+    return host.querySelector('select');
+  }
 }
 
 @Directive({
   selector: 'option',
+  standalone: true,
 })
 export class BsSelectOption implements OnDestroy {
   constructor(private element: ElementRef, private renderer: Renderer2, @Optional() @Host() private select: BsSelectValueAccessor) {

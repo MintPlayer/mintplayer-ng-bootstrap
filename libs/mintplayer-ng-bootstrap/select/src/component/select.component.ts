@@ -6,6 +6,7 @@ import { BsSelectValueAccessor } from '../value-accessors/select-value-accessor'
 
 @Component({
   selector: 'bs-select',
+  standalone: true,
   templateUrl: './select.component.html',
   styleUrls: ['./select.component.scss'],
   imports: [AsyncPipe],
