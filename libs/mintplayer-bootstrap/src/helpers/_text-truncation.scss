@@ -1,0 +1,10 @@
+@use "../core" as *;
+@use "../mixins" as *;
+
+//
+// Text truncation
+//
+
+.text-truncate {
+  @include text-truncate();
+}

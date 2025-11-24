@@ -1,0 +1,11 @@
+@use "../core" as *;
+@use "../mixins" as *;
+
+//
+// Visually hidden
+//
+
+.visually-hidden,
+.visually-hidden-focusable:not(:focus):not(:focus-within) {
+  @include visually-hidden();
+}

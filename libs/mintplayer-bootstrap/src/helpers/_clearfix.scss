@@ -1,0 +1,6 @@
+@use "../core" as *;
+@use "../mixins" as *;
+
+.clearfix {
+  @include clearfix();
+}
