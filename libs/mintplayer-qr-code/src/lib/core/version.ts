@@ -4,10 +4,10 @@ import { KanjiData } from "./data-types/kanji-data";
 import { NumericData } from "./data-types/numeric-data";
 import { ErrorCorrectionLevel } from "./error-correction-level";
 import * as Utils from "./utils";
-import * as Version from "./version";
 import * as ECCode from "./error-correction-code";
 import * as ECLevel from "./error-correction-level";
 import * as Mode from "./mode";
+import * as VersionCheck from './version-check';
 
 // Generator polynomial used to encode version information
 const G18 = (1 << 12) | (1 << 11) | (1 << 10) | (1 << 9) | (1 << 8) | (1 << 5) | (1 << 2) | (1 << 0);
@@ -51,19 +51,19 @@ export function getBestVersionForMixedData(segments: (NumericData | ByteData | A
 }
 
 export function from(value?: number, defaultValue?: number) {
-	if (isValid(value)) {
-		return value;
+	if (VersionCheck.isValid(value)) {
+		return parseInt(value as any, 10);
 	}
   
 	return defaultValue;
 }
 
 export function isValid(version: number | undefined) {
-	return version && !isNaN(version) && (1 <= version) && (version <= 40);
+	return VersionCheck.isValid(version);
 }
 
 export function getCapacity(version: number, errorCorrectionLevel: ErrorCorrectionLevel, mode: Mode.Mode) {
-	if (!isValid(version)) {
+	if (!VersionCheck.isValid(version)) {
 		throw new Error('Invalid QR Code version');
 	}
   
@@ -124,8 +124,8 @@ export function getBestVersionForData(data: (NumericData | ByteData | Alphanumer
 }
 
 export function getEncodedBits(version: number) {
-	if (!Version.isValid(version) || (version < 7)) {
-	  throw new Error('Invalid QR Code version')
+	if (!VersionCheck.isValid(version) || (version < 7)) {
+		throw new Error('Invalid QR Code version');
 	}
   
 	let d = version << 12;
