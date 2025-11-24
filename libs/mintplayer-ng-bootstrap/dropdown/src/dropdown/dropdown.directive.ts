@@ -38,7 +38,7 @@ export class BsDropdownDirective {
   }
   //#endregion
 
-  @HostListener('window:blur') private onBlur() {
+  @HostListener('window:blur') onBlur() {
     if (this.closeOnClickOutside && !this.bsDevelopment) {
       this.isOpen = false;
     }

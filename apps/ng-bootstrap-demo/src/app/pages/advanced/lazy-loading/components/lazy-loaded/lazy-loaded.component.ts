@@ -6,7 +6,6 @@ import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
   selector: 'demo-lazy-loaded',
   templateUrl: './lazy-loaded.component.html',
   styleUrls: ['./lazy-loaded.component.scss'],
-  standalone: true,
   imports: [FormsModule, BsFormModule]
 })
 export class LazyLoadedComponent {

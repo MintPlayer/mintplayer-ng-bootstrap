@@ -1,26 +1,26 @@
-import { AfterViewInit, Component } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { AfterViewInit, Component, effect, signal } from '@angular/core';
+import { BsGridColDirective, BsGridComponent, BsGridRowDirective } from '@mintplayer/ng-bootstrap/grid';
 import { deepClone } from '@mintplayer/parentify';
-import { BehaviorSubject, map } from 'rxjs';
 
 @Component({
   selector: 'demo-parentify',
   templateUrl: './parentify.component.html',
   styleUrls: ['./parentify.component.scss'],
-  standalone: true,
-  imports: [BsGridModule]
+  imports: [BsGridComponent, BsGridRowDirective, BsGridColDirective]
 })
 export class ParentifyComponent implements AfterViewInit {
   constructor() {
-    this.example$
-      .pipe(map(example => deepClone(example, true, [Object])))
-      // .pipe(map((clone) => JSON.stringify(clone)))
-      .pipe(takeUntilDestroyed())
-      .subscribe(console.log);
+    effect(() => {
+      const example = this.example();
+      if (example === null) {
+        return;
+      }
+      const clone = deepClone(example, true, [Object]);
+      console.log(clone);
+    });
   }
 
-  example$ = new BehaviorSubject<any>(null);
+  example = signal<any>(null);
 
   ngAfterViewInit() {
     const address = {
@@ -37,8 +37,8 @@ export class ParentifyComponent implements AfterViewInit {
       address
     };
 
-    (<any>address)['person'] = person;
+    (address as any)['person'] = person;
 
-    this.example$.next(person);
+    this.example.set(person);
   }
 }

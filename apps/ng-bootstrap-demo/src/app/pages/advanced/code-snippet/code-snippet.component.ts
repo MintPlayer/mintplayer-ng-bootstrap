@@ -7,7 +7,6 @@ import { dedent } from 'ts-dedent';
   selector: 'demo-code-snippet',
   templateUrl: './code-snippet.component.html',
   styleUrls: ['./code-snippet.component.scss'],
-  standalone: true,
   imports: [BsOffcanvasModule, BsCodeSnippetComponent],
 })
 export class CodeSnippetComponent {

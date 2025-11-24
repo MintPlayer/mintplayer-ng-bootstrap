@@ -1,11 +1,12 @@
 import { Component } from '@angular/core';
 import { BsAccordionTabComponent } from '../accordion-tab/accordion-tab.component';
+import { AsyncPipe } from '@angular/common';
 
 @Component({
   selector: 'bs-accordion-tab-header',
   templateUrl: './accordion-tab-header.component.html',
   styleUrls: ['./accordion-tab-header.component.scss'],
-  standalone: false,
+  imports: [AsyncPipe],
 })
 export class BsAccordionTabHeaderComponent {
 

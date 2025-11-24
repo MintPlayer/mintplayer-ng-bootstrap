@@ -55,7 +55,6 @@ class RouterLinkTestComponent {
 
 @Component({
   selector: 'page-home',
-  standalone: true,
   template: `<div>Home</div>`,
 })
 class PageHomeComponent {}

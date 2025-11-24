@@ -7,7 +7,6 @@ import { BsOrdinalNumberPipe } from '@mintplayer/ng-bootstrap/ordinal-number';
   selector: 'demo-ordinal-number',
   templateUrl: './ordinal-number.component.html',
   styleUrls: ['./ordinal-number.component.scss'],
-  standalone: true,
   imports: [FormsModule, BsFormModule, BsOrdinalNumberPipe]
 })
 export class OrdinalNumberComponent {

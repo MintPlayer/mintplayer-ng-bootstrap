@@ -1,7 +1,6 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Directive, forwardRef } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { Directive, forwardRef, signal } from '@angular/core';
 import { BsSwipeContainerDirective } from '../swipe-container/swipe-container.directive';
 import { BsSwipeDirective } from './swipe.directive';
 
@@ -13,9 +12,9 @@ import { BsSwipeDirective } from './swipe.directive';
   ]
 })
 class BsSwipeContainerDirectiveStub {
-  orientation$ = new BehaviorSubject<'horizontal' | 'vertical'>('horizontal');
-  startTouch$ = new BehaviorSubject<any>(null);
-  lastTouch$ = new BehaviorSubject<any>(null);
+  orientation = signal<'horizontal' | 'vertical'>('horizontal');
+  startTouch = signal<any>(null);
+  lastTouch = signal<any>(null);
   pendingAnimation: { finish(): void } | null = null;
 
   onSwipe(_distance: number) {}

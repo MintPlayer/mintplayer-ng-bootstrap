@@ -74,7 +74,7 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
   private templatePortal: TemplatePortal<any> | null = null;
 
   @HostBinding('class.show') get show() { return this.dropdown.isOpen; }
-  @HostListener('clickOutside', ['$event']) clickedOutside(ev: MouseEvent) {
+  @HostListener('clickOutside', ['$event']) clickedOutside(ev: Event) {
     if (!this.bsDevelopment) {
       if (!this.wait) {
         if (!this.overlayRef?.overlayElement.contains(<any>ev.target)) {
@@ -84,7 +84,7 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
     }
   }
 
-  @HostListener('document:keydown.escape', ['$event']) onEscape(ev: KeyboardEvent) {
+  @HostListener('document:keydown.escape') onEscape() {
     this.doClose();
   }
 

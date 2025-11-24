@@ -7,7 +7,6 @@ import { BsWordCountPipe } from '@mintplayer/ng-bootstrap/word-count';
   selector: 'demo-word-count',
   templateUrl: './word-count.component.html',
   styleUrls: ['./word-count.component.scss'],
-  standalone: true,
   imports: [FormsModule, BsFormModule, BsWordCountPipe]
 })
 export class WordCountComponent {

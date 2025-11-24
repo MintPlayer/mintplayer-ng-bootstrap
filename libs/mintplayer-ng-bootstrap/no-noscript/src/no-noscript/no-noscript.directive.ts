@@ -3,7 +3,6 @@ import { Directive, HostBinding, Inject, PLATFORM_ID } from '@angular/core';
 
 @Directive({
   selector: '[bsNoNoscript]',
-  standalone: true,
 })
 export class BsNoNoscriptDirective {
   constructor(@Inject(PLATFORM_ID) private platformId: Object) {

@@ -2,8 +2,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { MockModule, MockPipe } from 'ng-mocks';
 import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
-import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
+import { BsGridComponent, BsGridRowDirective } from '@mintplayer/ng-bootstrap/grid';
+import { BsListGroupComponent, BsListGroupItemComponent } from '@mintplayer/ng-bootstrap/list-group';
 import { BsSplitStringPipe } from '@mintplayer/ng-bootstrap/split-string';
 
 import { SplitStringComponent } from './split-string.component';
@@ -21,8 +21,8 @@ describe('SplitStringComponent', () => {
         // Mock dependencies
         FormsModule,
         MockModule(BsFormModule),
-        MockModule(BsGridModule),
-        MockModule(BsListGroupModule),
+        MockModule(BsGridComponent, BsGridRowDirective),
+        MockModule(BsListGroupComponent, BsListGroupItemComponent),
         MockPipe(BsSplitStringPipe),
       ]
     });

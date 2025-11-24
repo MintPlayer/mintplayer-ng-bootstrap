@@ -1,24 +1,32 @@
-import { AfterViewInit, Component, DestroyRef, ViewChild } from '@angular/core';
+import { Component, ViewChild, effect, inject, signal } from '@angular/core';
 import { BsStickyFooterParentDirective } from '../sticky-footer-parent/sticky-footer-parent.directive';
 import { BsObserveSizeDirective } from '@mintplayer/ng-swiper/observe-size';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'bs-sticky-footer',
   templateUrl: './sticky-footer.component.html',
   styleUrls: ['./sticky-footer.component.scss'],
-  standalone: false,
+  imports: [BsObserveSizeDirective]
 })
-export class BsStickyFooterComponent implements AfterViewInit {
-  constructor(private parent: BsStickyFooterParentDirective, private destroy: DestroyRef) {}
-
-  ngAfterViewInit() {
-    if (this.sizeObserver.height$) {
-      this.sizeObserver.height$
-        .pipe(takeUntilDestroyed(this.destroy))
-        .subscribe(height => this.parent.marginBottom = height);
-    }
+export class BsStickyFooterComponent {
+  constructor() {
+    effect(() => {
+      const height = this.sizeObserverRef()?.height();
+      console.log('footer height changed to', height);
+      debugger;
+      if (height !== undefined) {
+        setTimeout(() => {
+          this.parent.marginBottom = height;
+        }, 5);
+      }
+    });
   }
 
-  @ViewChild('sizeObserver') sizeObserver!: BsObserveSizeDirective;
+  private sizeObserverRef = signal<BsObserveSizeDirective | undefined>(undefined);
+
+  @ViewChild('sizeObserver') set sizeObserver(dir: BsObserveSizeDirective | undefined) {
+    this.sizeObserverRef.set(dir);
+  }
+
+  parent = inject(BsStickyFooterParentDirective);
 }

@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { IconComponent } from './icon.component';
 import { MockComponent, MockModule } from 'ng-mocks';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
-import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
+import { BsAlertComponent, BsAlertCloseComponent } from '@mintplayer/ng-bootstrap/alert';
 
 describe('IconComponent', () => {
   let component: IconComponent;
@@ -13,7 +13,7 @@ describe('IconComponent', () => {
     await TestBed.configureTestingModule({
       declarations: [IconComponent],
       imports: [
-        MockModule(BsAlertModule),
+        MockModule(BsAlertComponent, BsAlertCloseComponent),
         MockComponent(BsCodeSnippetComponent),
       ]
     })

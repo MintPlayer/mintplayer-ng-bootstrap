@@ -7,7 +7,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Directive({
   selector: 'bs-color-picker',
-  standalone: false,
   providers: [{
     provide: NG_VALUE_ACCESSOR,
     // useExisting: BsColorPickerValueAccessor,

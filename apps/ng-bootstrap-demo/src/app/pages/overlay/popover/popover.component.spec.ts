@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsGridComponent, BsGridRowDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsPopoverModule } from '@mintplayer/ng-bootstrap/popover';
 import { MockDirective, MockModule } from 'ng-mocks';
 
@@ -14,7 +14,7 @@ describe('PopoverComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        MockModule(BsGridModule),
+        MockModule(BsGridComponent, BsGridRowDirective),
         MockModule(BsPopoverModule),
         MockDirective(BsButtonTypeDirective),
       ],

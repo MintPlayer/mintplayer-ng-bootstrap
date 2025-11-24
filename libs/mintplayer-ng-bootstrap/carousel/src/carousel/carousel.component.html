@@ -38,21 +38,21 @@
     @switch (animation) {
         @case ('slide') {
             <div class="carousel slide mx-auto" [class.carousel-vertical]="orientation === 'vertical'"
-                [style.height.px]="swipeContainer?.currentSlideHeight$ | async">
+                [style.height.px]="swipeContainer?.currentSlideHeight()">
                 @if (indicators) {
                     <div class="carousel-indicators" [class.carousel-indicators-vertical]="orientation === 'vertical'"
-                        [style.height.px]="orientation === 'vertical' ? (swipeContainer?.maxSlideHeight$ | async) : null">
+                        [style.height.px]="orientation === 'vertical' ? swipeContainer?.maxSlideHeight() : null">
                         @for (image of (images$ | async); track image.id; let i = $index) {
                             <button type="button" (click)="swipeContainer?.goto(i)"
-                                [class.active]="(swipeContainer?.imageIndex$ | async) === i" data-bs-target
-                                [attr.aria-current]="(swipeContainer?.imageIndex$ | async) === i ? true : null"
+                                [class.active]="swipeContainer?.imageIndexSignal() === i" data-bs-target
+                                [attr.aria-current]="swipeContainer?.imageIndexSignal() === i ? true : null"
                                 [attr.aria-label]="'Slide ' + i"></button>
                         }
                     </div>
                 }
                 <div class="carousel-inner overflow-hidden pe-none" [class.text-nowrap]="orientation === 'horizontal'"
                     [class.carousel-inner-vertical]="orientation === 'vertical'" #innerElement
-                    [style.height.px]="swipeContainer?.currentSlideHeight$ | async">
+                    [style.height.px]="swipeContainer?.currentSlideHeight()">
                     <div bsSwipeContainer #container="bsSwipeContainer" [minimumOffset]="50" [(imageIndex)]="currentImageIndex"
                         [orientation]="orientation">
                         <div class="carousel-item" bsSwipe [offside]="true">
@@ -84,7 +84,7 @@
             <div class="carousel fade mx-auto" [class.carousel-vertical]="orientation === 'vertical'">
                 @if (indicators) {
                     <div class="carousel-indicators" [class.carousel-indicators-vertical]="orientation === 'vertical'"
-                        [style.height.px]="orientation === 'vertical' ? (swipeContainer?.currentSlideHeight$ | async) : null">
+                        [style.height.px]="orientation === 'vertical' ? swipeContainer?.currentSlideHeight() : null">
                         @for (image of (images$ | async); track image.id; let i = $index) {
                             <button type="button" (click)="currentImageIndex = i"
                                 [class.active]="currentImageIndex === i" data-bs-target

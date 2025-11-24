@@ -2,8 +2,8 @@ import { Component } from '@angular/core';
 import { dedent } from 'ts-dedent';
 import { SlideUpDownNgifAnimation } from '@mintplayer/ng-animations';
 import { Color } from '@mintplayer/ng-bootstrap';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
-import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
+import { BsGridColumnDirective, BsGridComponent, BsGridRowDirective } from '@mintplayer/ng-bootstrap/grid';
+import { BsAlertComponent, BsAlertCloseComponent } from '@mintplayer/ng-bootstrap/alert';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 
@@ -11,8 +11,7 @@ import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
   selector: 'demo-collapse',
   templateUrl: './collapse.component.html',
   styleUrls: ['./collapse.component.scss'],
-  standalone: true,
-  imports: [BsGridModule, BsAlertModule, BsCodeSnippetComponent, BsButtonTypeDirective],
+  imports: [BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsAlertComponent, BsAlertCloseComponent, BsCodeSnippetComponent, BsButtonTypeDirective],
   animations: [SlideUpDownNgifAnimation]
 })
 export class CollapseComponent {

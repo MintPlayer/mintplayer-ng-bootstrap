@@ -12,7 +12,6 @@ import { FocusOnLoadDirective } from '@mintplayer/ng-focus-on-load';
   selector: 'demo-toast',
   templateUrl: './toast.component.html',
   styleUrls: ['./toast.component.scss'],
-  standalone: true,
   imports: [FormsModule, FocusOnLoadDirective, BsFormModule, BsToastModule, BsCloseComponent, BsInputGroupComponent, BsButtonTypeDirective]
 })
 export class ToastComponent {

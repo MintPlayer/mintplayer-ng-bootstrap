@@ -1,8 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MockModule } from 'ng-mocks';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
-import { BsAccordionModule } from '@mintplayer/ng-bootstrap/accordion';
-import { BsStickyFooterModule } from '@mintplayer/ng-bootstrap/sticky-footer';
+import { BsGridComponent, BsGridRowDirective } from '@mintplayer/ng-bootstrap/grid';
+import { BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderComponent } from '@mintplayer/ng-bootstrap/accordion';
+import { BsStickyFooterComponent, BsStickyFooterParentDirective } from '@mintplayer/ng-bootstrap/sticky-footer';
 
 import { StickyFooterComponent } from './sticky-footer.component';
 
@@ -15,9 +15,9 @@ describe('StickyFooterComponent', () => {
       declarations: [StickyFooterComponent],
       imports: [
         // Mock dependencies
-        MockModule(BsGridModule),
-        MockModule(BsAccordionModule),
-        MockModule(BsStickyFooterModule),
+        MockModule(BsGridComponent, BsGridRowDirective),
+        MockModule(BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderComponent),
+        MockModule(BsStickyFooterComponent, BsStickyFooterParentDirective),
       ]
     });
     fixture = TestBed.createComponent(StickyFooterComponent);

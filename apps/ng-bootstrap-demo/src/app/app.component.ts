@@ -10,7 +10,6 @@ import { NavbarRouterLinkActiveDirective } from './directives/navbar-routerlink-
   selector: 'demo-bootstrap-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
-  standalone: true,
   imports: [RouterOutlet, RouterLink, BsNavbarModule, NavbarRouterLinkActiveDirective],
   animations: [SlideUpDownAnimation]
 })

@@ -1,12 +1,14 @@
+import { AsyncPipe } from '@angular/common';
 import { Component, Input } from '@angular/core';
 import { Breakpoint } from '@mintplayer/ng-bootstrap';
+import { BsContainerComponent } from '@mintplayer/ng-bootstrap/container';
 import { BehaviorSubject, map, Observable } from 'rxjs';
 
 @Component({
   selector: 'bs-grid',
   templateUrl: './grid.component.html',
   styleUrls: ['./grid.component.scss'],
-  standalone: false,
+  imports: [AsyncPipe, BsContainerComponent],
 })
 export class BsGridComponent {
   

@@ -9,9 +9,9 @@ import { Color } from '@mintplayer/ng-bootstrap';
 })
 export class BsMultiselectComponent<T> {
 
-  headerTemplate!: TemplateRef<any>;
-  footerTemplate!: TemplateRef<any>;
-  buttonTemplate!: TemplateRef<any>;
+  headerTemplate?: TemplateRef<any>;
+  footerTemplate?: TemplateRef<any>;
+  buttonTemplate?: TemplateRef<any>;
   colors = Color;
 
 

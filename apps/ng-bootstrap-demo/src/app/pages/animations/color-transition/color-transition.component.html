@@ -2,5 +2,5 @@
 <div class="d-block text-center">
     <bs-toggle-button [type]="'checkbox'" [(ngModel)]="state">State</bs-toggle-button>
     <br>
-    <div [@colorTransition]="{ value: currentColor$ | async, params: { color1: '#F00', color2: '#00F' }}" class="tdiv d-inline-block"></div>
+    <div [@colorTransition]="{ value: currentColor(), params: { color1: '#F00', color2: '#00F' }}" class="tdiv d-inline-block"></div>
 </div>

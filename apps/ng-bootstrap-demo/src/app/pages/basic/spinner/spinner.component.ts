@@ -7,7 +7,6 @@ import { BsSpinnerComponent } from '@mintplayer/ng-bootstrap/spinner';
   selector: 'demo-spinner',
   templateUrl: './spinner.component.html',
   styleUrls: ['./spinner.component.scss'],
-  standalone: true,
   imports: [BsSpinnerComponent]
 })
 export class SpinnerComponent {

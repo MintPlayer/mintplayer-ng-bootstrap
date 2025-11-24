@@ -44,7 +44,7 @@ export class BsScrollspyComponent implements AfterViewInit, AfterContentInit {
     this.contentInit$.next(true);
   }
   
-  @HostListener('window:scroll', ['$event'])
+  @HostListener('window:scroll')
   onWindowScroll() {
     this.setActiveDirective();
     this.scrollToCurrentInSpy();

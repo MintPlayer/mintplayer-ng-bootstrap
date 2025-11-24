@@ -2,7 +2,6 @@ import { Pipe, PipeTransform } from '@angular/core';
 
 @Pipe({
   name: 'monthName',
-  standalone: true,
   pure: true,
 })
 export class BsMonthNamePipe implements PipeTransform {

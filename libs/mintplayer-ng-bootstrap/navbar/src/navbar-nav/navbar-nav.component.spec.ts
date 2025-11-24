@@ -115,14 +115,14 @@ class BsNavbarItemMockComponent {}
 
 @Component({
   selector: 'page-a',
-  standalone: true,
+  
   template: `<div>Page A</div>`
 })
 class PageAComponent {}
 
 @Component({
   selector: 'page-bc',
-  standalone: true,
+  
   template: `<div>Page B - C</div>`
 })
 class PageBCComponent {}

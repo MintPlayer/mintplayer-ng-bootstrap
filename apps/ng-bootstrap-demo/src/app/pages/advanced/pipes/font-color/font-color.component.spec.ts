@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { MockModule, MockPipe } from 'ng-mocks';
 import { BsFontColorPipe } from '@mintplayer/ng-bootstrap/font-color';
-import { BsColorPickerModule } from '@mintplayer/ng-bootstrap/color-picker';
+import { BsColorPickerComponent } from '@mintplayer/ng-bootstrap/color-picker';
 
 import { FontColorComponent } from './font-color.component';
 
@@ -15,7 +15,7 @@ describe('FontColorComponent', () => {
       imports: [
         FormsModule,
         MockPipe(BsFontColorPipe),
-        MockModule(BsColorPickerModule),
+        MockModule(BsColorPickerComponent),
       ],
       declarations: [FontColorComponent]
     });

@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsGridComponent, BsGridRowDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsTableComponent } from '@mintplayer/ng-bootstrap/table';
 import { BsPaginationComponent } from '@mintplayer/ng-bootstrap/pagination';
 import { MockComponent, MockModule } from 'ng-mocks';
@@ -13,7 +13,7 @@ describe('BsDatatableComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        MockModule(BsGridModule),
+        MockModule(BsGridComponent, BsGridRowDirective),
         MockComponent(BsTableComponent),
         MockComponent(BsPaginationComponent),
       ],

@@ -2,12 +2,15 @@ import { AfterViewInit, Component, ElementRef, EventEmitter, HostBinding, Input,
 import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
 import { BsToggleButtonGroupDirective } from '../directives/toggle-button-group/toggle-button-group.directive';
 import { BsCheckStyle } from '../types/check-style';
+import { BsToggleButtonValueAccessor } from '../value-accessor/toggle-button-value-accessor';
+import { AsyncPipe } from '@angular/common';
 
 @Component({
   selector: 'bs-toggle-button',
   templateUrl: './toggle-button.component.html',
   styleUrls: ['./toggle-button.component.scss'],
-  standalone: false,
+  imports: [AsyncPipe],
+  hostDirectives: [BsToggleButtonValueAccessor],
 })
 export class BsToggleButtonComponent implements AfterViewInit {
 

@@ -2,7 +2,7 @@ import { animate, AnimationBuilder, AnimationMetadata, style } from '@angular/an
 import { Directive, ElementRef, Input } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { filter, switchMap, skip, distinctUntilChanged } from 'rxjs/operators';
-import { BsOffcanvasHostComponent } from '../../components';
+import { BsOffcanvasHostComponent } from '../../components/offcanvas-host/offcanvas-host.component';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Directive({

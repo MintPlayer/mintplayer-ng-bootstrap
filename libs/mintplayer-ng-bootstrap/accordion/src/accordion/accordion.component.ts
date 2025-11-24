@@ -6,7 +6,6 @@ import { BsAccordionTabComponent } from '../accordion-tab/accordion-tab.componen
   selector: 'bs-accordion',
   templateUrl: './accordion.component.html',
   styleUrls: ['./accordion.component.scss'],
-  standalone: false,
 })
 export class BsAccordionComponent {
 
@@ -18,6 +17,7 @@ export class BsAccordionComponent {
   @ContentChildren(forwardRef(() => BsAccordionTabComponent)) tabPages!: QueryList<BsAccordionTabComponent>;
   disableAnimations = false;
   @Input() highlightActiveTab = false;
+  @Input() multiple = false;
 
   accordionId$: BehaviorSubject<number>;
   accordionName$: Observable<string>;

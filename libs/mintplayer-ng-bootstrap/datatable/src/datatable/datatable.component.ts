@@ -1,6 +1,10 @@
+import { AsyncPipe, NgTemplateOutlet } from '@angular/common';
 import { Component, Input, ContentChildren, TemplateRef, EventEmitter, Output } from '@angular/core';
 import { BehaviorSubject, Observable, map } from 'rxjs';
 import { PaginationResponse } from '@mintplayer/pagination';
+import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
+import { BsPaginationComponent } from '@mintplayer/ng-bootstrap/pagination';
+import { BsTableComponent } from '@mintplayer/ng-bootstrap/table';
 import { DatatableSettings } from '../datatable-settings';
 import { BsDatatableColumnDirective } from '../datatable-column/datatable-column.directive';
 import { BsRowTemplateContext } from '../row-template/row-template.directive';
@@ -10,7 +14,7 @@ import { BsRowTemplateContext } from '../row-template/row-template.directive';
   selector: 'bs-datatable',
   templateUrl: './datatable.component.html',
   styleUrls: ['./datatable.component.scss'],
-  standalone: false,
+  imports: [AsyncPipe, NgTemplateOutlet, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsPaginationComponent, BsTableComponent],
 })
 export class BsDatatableComponent<TData> {
 

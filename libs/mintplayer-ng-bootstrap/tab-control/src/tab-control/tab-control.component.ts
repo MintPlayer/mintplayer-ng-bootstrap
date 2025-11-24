@@ -1,15 +1,18 @@
+import { AsyncPipe, NgTemplateOutlet } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CdkDragDrop, CdkDragStart, moveItemInArray } from '@angular/cdk/drag-drop';
 import { Component, ContentChildren, ElementRef, HostBinding, Input, QueryList } from '@angular/core';
+import { DragDropModule as CdkDragDropModule } from '@angular/cdk/drag-drop';
+import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
 import { BehaviorSubject, combineLatest, filter, map, Observable } from 'rxjs';
 import { BsTabPageComponent } from '../tab-page/tab-page.component';
 import { BsTabsPosition } from '../tabs-position';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'bs-tab-control',
   templateUrl: './tab-control.component.html',
   styleUrls: ['./tab-control.component.scss'],
-  standalone: false,
+  imports: [AsyncPipe, CdkDragDropModule, NgTemplateOutlet, BsNoNoscriptDirective],
   providers: [
     { provide: 'TAB_CONTROL', useExisting: BsTabControlComponent }
   ],

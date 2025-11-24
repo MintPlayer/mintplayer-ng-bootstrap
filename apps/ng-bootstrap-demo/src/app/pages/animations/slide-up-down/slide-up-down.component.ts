@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { SlideUpDownAnimation, SlideUpDownNgifAnimation } from '@mintplayer/ng-animations';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsGridColumnDirective, BsGridComponent, BsGridRowDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 
 @Component({
@@ -9,8 +9,7 @@ import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
   templateUrl: './slide-up-down.component.html',
   styleUrls: ['./slide-up-down.component.scss'],
   animations: [SlideUpDownAnimation, SlideUpDownNgifAnimation],
-  standalone: true,
-  imports: [BsGridModule, BsButtonTypeDirective]
+  imports: [BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsButtonTypeDirective]
 })
 export class SlideUpDownComponent {
   colors = Color;

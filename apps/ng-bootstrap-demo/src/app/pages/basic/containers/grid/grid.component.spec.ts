@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsGridComponent, BsGridRowDirective } from '@mintplayer/ng-bootstrap/grid';
 import { MockModule } from 'ng-mocks';
 import { GridComponent } from './grid.component';
 
@@ -10,7 +10,7 @@ describe('GridComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        MockModule(BsGridModule),
+        MockModule(BsGridComponent, BsGridRowDirective),
       ],
       declarations: [
         // Unit to test

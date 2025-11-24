@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
-import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
+import { BsAlertComponent, BsAlertCloseComponent } from '@mintplayer/ng-bootstrap/alert';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
 import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
@@ -16,7 +16,7 @@ describe('AlertComponent', () => {
       imports: [
         FormsModule,
         MockModule(BsFormModule),
-        MockModule(BsAlertModule),
+        MockModule(BsAlertComponent, BsAlertCloseComponent),
         MockComponent(BsInputGroupComponent),
         MockDirective(BsButtonTypeDirective),
       ],

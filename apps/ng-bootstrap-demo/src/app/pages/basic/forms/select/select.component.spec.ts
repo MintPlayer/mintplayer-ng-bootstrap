@@ -1,8 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
-import { BsSelectModule } from '@mintplayer/ng-bootstrap/select';
-import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsGridComponent, BsGridRowDirective } from '@mintplayer/ng-bootstrap/grid';
+import { BsSelectComponent, BsSelectOption } from '@mintplayer/ng-bootstrap/select';
+import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
 import { MockModule } from 'ng-mocks';
 
 import { SelectComponent } from './select.component';
@@ -15,9 +15,9 @@ describe('SelectComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         FormsModule,
-        MockModule(BsGridModule),
-        MockModule(BsSelectModule),
-        MockModule(BsToggleButtonModule),
+        MockModule(BsGridComponent, BsGridRowDirective),
+        MockModule(BsSelectComponent, BsSelectOption),
+        MockModule(BsToggleButtonComponent),
       ],
       declarations: [
         // Unit to test

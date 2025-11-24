@@ -2,7 +2,7 @@ import { MockModule } from 'ng-mocks';
 import { FormsModule } from '@angular/forms';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
 
 import { ColorTransitionComponent } from './color-transition.component';
 
@@ -15,7 +15,7 @@ describe('ColorTransitionComponent', () => {
       imports: [
         FormsModule,
         NoopAnimationsModule,
-        MockModule(BsToggleButtonModule),
+        MockModule(BsToggleButtonComponent),
       ],
       declarations: [ ColorTransitionComponent ]
     })
