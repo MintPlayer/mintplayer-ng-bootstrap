@@ -5,14 +5,13 @@ import * as SvgRenderer from './renderer/svg-tag';
 
 export * from './core';
 
+type BrowserCallback<T = unknown> = (err: unknown, value?: T) => void;
+
 function renderCanvas(
 	renderFunc: (d: QRCode.RawQrCodeData, canvas?: HTMLCanvasElement, opts?: any) => any,
-	canvas: HTMLCanvasElement | string | any,
-	text: string | any,
-	opts: any,
-	cb?: (err: unknown, value?: any) => void,
+	...args: any[]
 ) {
-	const args = Array.prototype.slice.call(arguments, 1);
+	let [canvas, text, opts, cb] = args;
 	const argsNum = args.length;
 	const isLastArgCb = typeof args[argsNum - 1] === 'function';
 
