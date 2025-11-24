@@ -17,6 +17,7 @@ export class BsAccordionComponent {
   @ContentChildren(forwardRef(() => BsAccordionTabComponent)) tabPages!: QueryList<BsAccordionTabComponent>;
   disableAnimations = false;
   @Input() highlightActiveTab = false;
+  @Input() multiple = false;
 
   accordionId$: BehaviorSubject<number>;
   accordionName$: Observable<string>;

@@ -19,7 +19,6 @@ class BsItemTemplateTestComponent { }
 
 @Component({
   selector: 'select2',
-  
 })
 class MockBsSelect2Component {
   itemTemplate?: TemplateRef<any>;

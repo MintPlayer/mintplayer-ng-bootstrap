@@ -3,7 +3,6 @@ import { Directive, EventEmitter, HostListener, Inject, Input, Output } from '@a
 
 @Directive({
   selector: '[bsCopy]',
-  
 })
 export class BsCopyDirective {
   private doc: Document;

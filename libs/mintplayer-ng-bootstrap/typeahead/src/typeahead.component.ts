@@ -12,7 +12,6 @@ import { BehaviorSubject, map, Observable } from 'rxjs';
   selector: 'bs-typeahead',
   templateUrl: './typeahead.component.html',
   styleUrls: ['./typeahead.component.scss'],
-  
   imports: [AsyncPipe, FormsModule, BsFormModule, BsDropdownModule, BsDropdownMenuModule, BsProgressBarModule, BsHasOverlayComponent]
 })
 export class BsTypeaheadComponent {

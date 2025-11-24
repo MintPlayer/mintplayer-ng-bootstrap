@@ -37,18 +37,20 @@ export class BsAccordionTabComponent {
   @Input() public set isActive(value: boolean) {
     if (this._isActive !== value) {
       this._isActive = value;
-      if (this._isActive) {
-        this.accordion.tabPages.filter((tab) => {
-          return tab !== this;
-        }).forEach((tab) => {
-          tab.isActive = false;
-        });
-      } else {
-        this.childAccordions.forEach((accordion) => {
-          accordion.tabPages.forEach((tab) => {
+      if (!this.accordion.multiple) {
+        if (this._isActive) {
+          this.accordion.tabPages.filter((tab) => {
+            return tab !== this;
+          }).forEach((tab) => {
             tab.isActive = false;
           });
-        });
+        } else {
+          this.childAccordions.forEach((accordion) => {
+            accordion.tabPages.forEach((tab) => {
+              tab.isActive = false;
+            });
+          });
+        }
       }
       this.isActiveChange.emit(value);
     }

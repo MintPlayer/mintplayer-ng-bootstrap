@@ -1,6 +1,6 @@
 <div bsStickyFooterParent>
     <h1 class="text-center">Sticky-footer</h1>
-    <bs-accordion [highlightActiveTab]="true">
+    <bs-accordion [highlightActiveTab]="true" [multiple]="true">
         @for (num of numbers; track $index) {
             <bs-accordion-tab>
                 <bs-accordion-tab-header>Title {{ num }}</bs-accordion-tab-header>

@@ -5,7 +5,6 @@ import { RgbaColor } from '../../types/rgba-color';
 
 @Directive({
   selector: 'canvas[qrCode]',
-  
 })
 export class QrCodeDirective implements OnChanges {
 

@@ -4,7 +4,6 @@ import { NumberOverflow } from '../interfaces/number-overflow';
 
 @Directive({
   selector: 'input[type="number"][bsEnhancedPaste]',
-  
 })
 export class EnhancedPasteDirective {
 

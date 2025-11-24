@@ -2,7 +2,6 @@ import { Input, ViewContainerRef, Directive, AfterViewInit } from '@angular/core
 
 @Directive({
   selector: '*[autofocus]',
-  
 })
 export class FocusOnLoadDirective implements AfterViewInit {
 
