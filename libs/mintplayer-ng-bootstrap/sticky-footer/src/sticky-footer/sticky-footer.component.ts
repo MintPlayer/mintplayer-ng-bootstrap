@@ -1,4 +1,4 @@
-import { Component, ViewChild, effect, inject } from '@angular/core';
+import { Component, ViewChild, effect, inject, signal } from '@angular/core';
 import { BsStickyFooterParentDirective } from '../sticky-footer-parent/sticky-footer-parent.directive';
 import { BsObserveSizeDirective } from '@mintplayer/ng-swiper/observe-size';
 
@@ -11,7 +11,7 @@ import { BsObserveSizeDirective } from '@mintplayer/ng-swiper/observe-size';
 export class BsStickyFooterComponent {
   constructor() {
     effect(() => {
-      const height = this.sizeObserver?.height();
+      const height = this.sizeObserverRef()?.height();
       console.log('footer height changed to', height);
       debugger;
       if (height !== undefined) {
@@ -22,6 +22,11 @@ export class BsStickyFooterComponent {
     });
   }
 
-  @ViewChild('sizeObserver') sizeObserver?: BsObserveSizeDirective;
+  private sizeObserverRef = signal<BsObserveSizeDirective | undefined>(undefined);
+
+  @ViewChild('sizeObserver') set sizeObserver(dir: BsObserveSizeDirective | undefined) {
+    this.sizeObserverRef.set(dir);
+  }
+
   parent = inject(BsStickyFooterParentDirective);
 }
