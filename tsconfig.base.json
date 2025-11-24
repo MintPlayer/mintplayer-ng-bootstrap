@@ -37,7 +37,8 @@
       "@mintplayer/pagination": ["libs/mintplayer-pagination/src/index.ts"],
       "@mintplayer/parentify": ["libs/mintplayer-parentify/src/index.ts"],
       "@mintplayer/qr-code": ["libs/mintplayer-qr-code/src/index.ts"],
-      "@mintplayer/qr-code/server": ["libs/mintplayer-qr-code/src/server.ts"]
+      "@mintplayer/qr-code/server": ["libs/mintplayer-qr-code/src/server.ts"],
+      "mintplayer-bootstrap": ["libs/mintplayer-bootstrap/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

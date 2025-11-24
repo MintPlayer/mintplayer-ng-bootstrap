@@ -25,3 +25,5 @@ nx generate @nx/js:library --name=mintplayer-dijkstra --buildable --publishable 
 - Go to https://dev.azure.com
 - User settings -> Personal access tokens
 - Generate a token
+
+npx nx g @nx/js:library mintplayer-bootstrap --directory=libs/mintplayer-bootstrap --bundler=none --unitTestRunner=none --linter=none
