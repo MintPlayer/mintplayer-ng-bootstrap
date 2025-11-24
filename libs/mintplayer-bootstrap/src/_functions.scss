@@ -1,10 +1,18 @@
+// Base fallbacks so functions can run before consumer variables are configured.
+$black: #000 !default;
+$white: #fff !default;
+$prefix: bs- !default;
+$min-contrast-ratio: 4.5 !default;
+$color-contrast-dark: $black !default;
+$color-contrast-light: $white !default;
+
 // Bootstrap functions
 //
 // Utility mixins and functions for evaluating source code across our variables, maps, and mixins.
 
 // Ascending
 // Used to evaluate Sass maps like our grid breakpoints.
-@mixin _assert-ascending($map, $map-name) {
+@mixin assert-ascending($map, $map-name) {
   $prev-key: null;
   $prev-num: null;
   @each $key, $num in $map {
@@ -20,9 +28,14 @@
   }
 }
 
+// Backwards-compatible alias for the old private name used before modules.
+@mixin _assert-ascending($map, $map-name) {
+  @include assert-ascending($map, $map-name);
+}
+
 // Starts at zero
 // Used to ensure the min-width of the lowest breakpoint starts at 0.
-@mixin _assert-starts-at-zero($map, $map-name: "$grid-breakpoints") {
+@mixin assert-starts-at-zero($map, $map-name: "$grid-breakpoints") {
   @if length($map) > 0 {
     $values: map-values($map);
     $first-value: nth($values, 1);
@@ -30,6 +43,11 @@
       @warn "First breakpoint in #{$map-name} must start at 0, but starts at #{$first-value}.";
     }
   }
+}
+
+// Backwards-compatible alias for the old private name used before modules.
+@mixin _assert-starts-at-zero($map, $map-name: "$grid-breakpoints") {
+  @include assert-starts-at-zero($map, $map-name);
 }
 
 // Colors
@@ -300,3 +318,10 @@ $_luminance-list: .0008 .001 .0011 .0013 .0015 .0017 .002 .0022 .0025 .0027 .003
   }
   @return $result;
 }
+$escaped-characters: (
+  ("<", "%3c"),
+  (">", "%3e"),
+  ("#", "%23"),
+  ("(", "%28"),
+  (")", "%29"),
+) !default;

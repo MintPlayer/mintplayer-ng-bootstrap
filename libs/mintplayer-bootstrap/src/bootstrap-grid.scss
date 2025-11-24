@@ -1,14 +1,12 @@
 @use "mixins/banner" as *;
-@include bsBanner("Grid");
-
-$include-column-box-sizing: true !default;
-
 @use "core" as *;
 @use "mixins";
 @use "utilities" as *;
-
 @use "containers";
 @use "grid";
+@use "utilities/api";
+
+$include-column-box-sizing: true !default;
 
 // Only use the utilities we need
 // stylelint-disable-next-line scss/dollar-variable-default
@@ -50,4 +48,4 @@ $utilities: map-get-multiple(
   )
 );
 
-@use "utilities/api";
+@include bsBanner("Grid");

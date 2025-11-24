@@ -1,16 +1,9 @@
 @use "mixins/banner" as *;
-@include bsBanner("Utilities");
-
-// Configuration
 @use "core";
 @use "mixins";
 @use "utilities";
-
-// Layout & components
 @use "root";
-
-// Helpers
 @use "helpers";
-
-// Utilities
 @use "utilities/api";
+
+@include bsBanner("Utilities");

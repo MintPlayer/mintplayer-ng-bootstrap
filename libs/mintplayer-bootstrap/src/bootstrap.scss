@@ -1,12 +1,10 @@
 @use "mixins/banner" as *;
-@include bsBanner("");
-
-
-// scss-docs-start import-stack
-// Configuration
 @use "core";
 @use "mixins";
 @use "utilities";
+
+// scss-docs-start import-stack
+// Configuration
 
 // Layout & components
 @use "root";
@@ -47,3 +45,5 @@
 // Utilities
 @use "utilities/api";
 // scss-docs-end import-stack
+
+@include bsBanner("");
