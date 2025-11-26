@@ -1,7 +1,10 @@
 // stylelint-disable selector-attribute-quotes
 
-@use "../../core" as *;
-@use "../../mixins" as *;
+@import "../../functions";
+@import "../../variables";
+@import "../../variables-dark";
+@import "../../maps";
+@import "../../mixins";
 
 @include describe("global $color-mode-type: data") {
   @include it("generates data attribute selectors for dark mode") {

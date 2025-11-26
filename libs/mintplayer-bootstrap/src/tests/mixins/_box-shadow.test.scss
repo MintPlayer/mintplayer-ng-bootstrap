@@ -1,5 +1,6 @@
-@use "../../core" as *;
-@use "../../mixins" as *;
+@import "../../functions";
+@import "../../variables";
+@import "../../mixins";
 
 // Store original value
 $original-enable-shadows: $enable-shadows;

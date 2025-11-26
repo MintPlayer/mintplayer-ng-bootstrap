@@ -1,49 +1,52 @@
-@use "mixins/banner" as *;
-@use "core";
-@use "mixins";
-@use "utilities";
+@import "mixins/banner";
+@include bsBanner("");
+
 
 // scss-docs-start import-stack
 // Configuration
+@import "functions";
+@import "variables";
+@import "variables-dark";
+@import "maps";
+@import "mixins";
+@import "utilities";
 
 // Layout & components
-@use "root";
-@use "reboot";
-@use "type";
-@use "images";
-@use "containers";
-@use "grid";
-@use "tables";
-@use "forms";
-@use "buttons";
-@use "transitions";
-@use "dropdown";
-@use "button-group";
-@use "nav";
-@use "navbar";
-@use "card";
-@use "accordion";
-@use "breadcrumb";
-@use "pagination";
-@use "badge";
-@use "alert";
-@use "progress";
-@use "list-group";
-@use "close";
-@use "toasts";
-@use "modal";
-@use "tooltip";
-@use "popover";
-@use "carousel";
-@use "spinners";
-@use "offcanvas";
-@use "placeholders";
+@import "root";
+@import "reboot";
+@import "type";
+@import "images";
+@import "containers";
+@import "grid";
+@import "tables";
+@import "forms";
+@import "buttons";
+@import "transitions";
+@import "dropdown";
+@import "button-group";
+@import "nav";
+@import "navbar";
+@import "card";
+@import "accordion";
+@import "breadcrumb";
+@import "pagination";
+@import "badge";
+@import "alert";
+@import "progress";
+@import "list-group";
+@import "close";
+@import "toasts";
+@import "modal";
+@import "tooltip";
+@import "popover";
+@import "carousel";
+@import "spinners";
+@import "offcanvas";
+@import "placeholders";
 
 // Helpers
-@use "helpers";
+@import "helpers";
 
 // Utilities
-@use "utilities/api";
+@import "utilities/api";
 // scss-docs-end import-stack
-
-@include bsBanner("");

@@ -1,9 +1,19 @@
-@use "mixins/banner" as *;
-@use "core";
-@use "mixins";
-@use "utilities";
-@use "root";
-@use "helpers";
-@use "utilities/api";
+@import "mixins/banner";
+@include bsBanner(Utilities);
 
-@include bsBanner("Utilities");
+// Configuration
+@import "functions";
+@import "variables";
+@import "variables-dark";
+@import "maps";
+@import "mixins";
+@import "utilities";
+
+// Layout & components
+@import "root";
+
+// Helpers
+@import "helpers";
+
+// Utilities
+@import "utilities/api";

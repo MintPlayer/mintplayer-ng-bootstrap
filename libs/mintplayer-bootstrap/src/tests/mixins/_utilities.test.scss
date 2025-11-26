@@ -2,8 +2,7 @@ $prefix: bs-;
 $enable-important-utilities: false;
 
 // Important: Do not import rfs to check that the mixin just calls the appropriate functions from it
-@use "../../core" as *;
-@use "../../mixins" as *;
+@import "../../mixins/utilities";
 
 @mixin test-generate-utility($params...) {
   @include assert() {

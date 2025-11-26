@@ -1,6 +1,3 @@
-@use "core" as *;
-@use "mixins" as *;
-
 :root,
 [data-bs-theme="light"] {
   // Note: Custom variable values only support SassScript inside `#{}`.

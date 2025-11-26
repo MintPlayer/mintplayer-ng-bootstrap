@@ -1,4 +1,8 @@
-@use "sass:meta";
+@import "../../functions";
+@import "../../variables";
+@import "../../variables-dark";
+@import "../../maps";
+@import "../../mixins";
 
 $utilities: ();
 
@@ -29,9 +33,7 @@ $utilities: ();
 
     @include assert() {
       @include output() {
-        @include meta.load-css("../../core", $with: ($grid-breakpoints: $grid-breakpoints));
-        @include meta.load-css("../../utilities", $with: ($utilities: $utilities));
-        @include meta.load-css("../../utilities/api");
+        @import "../../utilities/api";
       }
 
       @include expect() {
