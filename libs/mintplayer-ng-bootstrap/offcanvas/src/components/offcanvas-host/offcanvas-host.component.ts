@@ -1,9 +1,7 @@
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { AfterViewInit, Component, DestroyRef, ComponentRef, EventEmitter, Inject, Injector, Input, OnDestroy, Output, TemplateRef } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { AfterViewInit, Component, ComponentRef, effect, Inject, Injector, model, OnDestroy, output, signal, TemplateRef } from '@angular/core';
 import { Position } from '@mintplayer/ng-bootstrap';
-import { BehaviorSubject, combineLatest, filter } from 'rxjs';
 import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
 import { BsOffcanvasComponent } from '../offcanvas/offcanvas.component';
@@ -16,42 +14,52 @@ import { BsOffcanvasComponent } from '../offcanvas/offcanvas.component';
 })
 export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
 
-  constructor(private overlayService: Overlay, private rootInjector: Injector, private destroy: DestroyRef, @Inject(PORTAL_FACTORY) private portalFactory: (injector: Injector) => ComponentPortal<any>) {
-    this.isVisible$
-      .pipe(takeUntilDestroyed())
-      .subscribe((isVisible) => {
-        if (this.component) {
-          this.isVisibleChange.emit(isVisible);
-          this.component.instance.isVisible$.next(isVisible);
-        }
-      });
+  constructor(private overlayService: Overlay, private rootInjector: Injector, @Inject(PORTAL_FACTORY) private portalFactory: (injector: Injector) => ComponentPortal<any>) {
+    // Effect to sync isVisible with the inner component
+    effect(() => {
+      const isVisible = this.isVisible();
+      if (this.component) {
+        this.component.instance.isVisible.set(isVisible);
+      }
+    });
 
-    combineLatest([this.position$, this.viewInited$])
-      .pipe(filter(([position, viewInited]) => viewInited))
-      .pipe(takeUntilDestroyed())
-      .subscribe(([position, viewInited]) => this.component && this.component.instance.position$.next(position));
+    // Effect to sync position with the inner component
+    effect(() => {
+      const position = this.position();
+      if (this.component && this.viewInited()) {
+        this.component.instance.position.set(position);
+      }
+    });
 
-    combineLatest([this.size$, this.viewInited$])
-      .pipe(filter(([size, viewInited]) => viewInited))
-      .pipe(takeUntilDestroyed())
-      .subscribe(([size, viewInited]) => this.component && this.component.instance.size$.next(size));
-      
-    combineLatest([this.hasBackdrop$, this.viewInited$])
-      .pipe(filter(([hasBackdrop, viewInited]) => viewInited))
-      .pipe(takeUntilDestroyed())
-      .subscribe(([hasBackdrop, viewInited]) => this.component && this.component.instance.hasBackdrop$.next(hasBackdrop));
+    // Effect to sync size with the inner component
+    effect(() => {
+      const size = this.size();
+      if (this.component && this.viewInited()) {
+        this.component.instance.size.set(size);
+      }
+    });
+
+    // Effect to sync hasBackdrop with the inner component
+    effect(() => {
+      const hasBackdrop = this.hasBackdrop();
+      if (this.component && this.viewInited()) {
+        this.component.instance.hasBackdrop.set(hasBackdrop);
+      }
+    });
   }
 
   content!: TemplateRef<any>;
   overlayRef!: OverlayRef;
   component!: ComponentRef<BsOffcanvasComponent>;
-  viewInited$ = new BehaviorSubject<boolean>(false);
-  isVisible$ = new BehaviorSubject<boolean>(false);
-  size$ = new BehaviorSubject<number | null>(null);
-  position$ = new BehaviorSubject<Position>('bottom');
-  hasBackdrop$ = new BehaviorSubject<boolean>(false);
 
-  @Output() backdropClick = new EventEmitter<MouseEvent>();
+  // Signals
+  viewInited = signal<boolean>(false);
+  isVisible = model<boolean>(false);
+  size = model<number | null>(null);
+  position = model<Position>('bottom');
+  hasBackdrop = model<boolean>(false);
+
+  backdropClick = output<MouseEvent>();
 
   ngAfterViewInit() {
     const injector = Injector.create({
@@ -71,57 +79,20 @@ export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
 
     this.component = this.overlayRef.attach<BsOffcanvasComponent>(portal);
 
-    this.component.instance.backdropClick
-      .pipe(takeUntilDestroyed(this.destroy))
-      .subscribe((ev) => this.backdropClick.emit(ev));
+    this.component.instance.backdropClick.subscribe((ev) => this.backdropClick.emit(ev));
 
-    this.viewInited$.next(true);
+    // Initialize the inner component with current values
+    this.component.instance.isVisible.set(this.isVisible());
+    this.component.instance.position.set(this.position());
+    this.component.instance.size.set(this.size());
+    this.component.instance.hasBackdrop.set(this.hasBackdrop());
+
+    this.viewInited.set(true);
   }
 
   ngOnDestroy() {
-    this.isVisible = false;
+    this.isVisible.set(false);
     setTimeout(() => this.overlayRef && this.overlayRef.dispose(), 3000);
   }
-
-  //#region IsVisible
-  @Output() public isVisibleChange = new EventEmitter<boolean>();
-  @Input() public set isVisible(value: boolean) {
-    this.isVisible$.next(value);
-    if (this.component) {
-      this.component.instance.isVisible = value;
-    }
-    this.isVisibleChange.emit(value);
-  }
-  public get isVisible() {
-    return this.isVisible$.value;
-  }
-  //#endregion
-
-  //#region Position
-  @Input() public set position(value: Position) {
-    this.position$.next(value);
-  }
-  public get position() {
-    return this.position$.value;
-  }
-  //#endregion
-
-  //#region Size
-  @Input() public set size(value: number | null) {
-    this.size$.next(value);
-  }
-  public get size() {
-    return this.size$.value;
-  }
-  //#endregion
-
-  //#region HasBackdrop
-  @Input() public set hasBackdrop(value: boolean) {
-    this.hasBackdrop$.next(value);
-  }
-  public get hasBackdrop() {
-    return this.hasBackdrop$.value;
-  }
-  //#endregion
 
 }

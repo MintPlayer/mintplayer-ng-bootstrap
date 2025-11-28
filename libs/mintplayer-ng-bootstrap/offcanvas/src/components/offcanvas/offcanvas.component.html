@@ -1,13 +1,13 @@
-@if (showBackdrop$ | async) {
+@if (showBackdrop()) {
     <div [@fadeInOut]="{value: ':leave', params: {duration: '300ms'} }">
         <div class="modal-backdrop show" (click)="onBackdropClick($event)"></div>
     </div>
 }
 <div class="offcanvas"
-    [class.show]="show$ | async"
-    [class.disable-transition]="disableTransition$ | async"
-    [class]="[offcanvasClass$ | async, overflowClass$ | async]"
-    [style.height.px]="height$ | async"
-    [style.width.px]="width$ | async">
+    [class.show]="show()"
+    [class.disable-transition]="disableTransition()"
+    [class]="[offcanvasClass(), overflowClass()]"
+    [style.height.px]="height()"
+    [style.width.px]="width()">
     <ng-container *ngTemplateOutlet="contentTemplate"></ng-container>
 </div>
