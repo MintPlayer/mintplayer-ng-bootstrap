@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Directive, EventEmitter, Inject, Injector, Output, TemplateRef } from '@angular/core';
+import { Component, Directive, EventEmitter, Inject, Injector, Output, signal, TemplateRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { OverlayModule } from '@angular/cdk/overlay';
 
@@ -10,6 +10,7 @@ import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { MockComponent, MockModule } from 'ng-mocks';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
+import { Position } from '@mintplayer/ng-bootstrap';
 
 describe('BsOffcanvasHostComponent', () => {
   let component: BsOffcanvasTestComponent;
@@ -106,6 +107,12 @@ class BsOffcanvasMockComponent {
 
   contentTemplate: TemplateRef<any>;
   @Output() backdropClick = new EventEmitter<MouseEvent>();
+
+  // Required signals that BsOffcanvasHostComponent expects
+  isVisible = signal<boolean>(false);
+  position = signal<Position>('bottom');
+  size = signal<number | null>(null);
+  hasBackdrop = signal<boolean>(false);
 }
 
 @Component({
