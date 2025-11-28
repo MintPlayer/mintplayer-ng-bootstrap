@@ -1,4 +1,4 @@
-import { Component, computed, effect, Inject, output, signal, TemplateRef } from '@angular/core';
+import { Component, computed, effect, Inject, output, signal, TemplateRef, untracked } from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Position } from '@mintplayer/ng-bootstrap';
 import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
@@ -18,24 +18,40 @@ export class BsOffcanvasComponent {
     // Effect to handle position changes - disable transition temporarily
     effect(() => {
       const position = this.position();
-      this.disableTransition.set(true);
-      this.offcanvasClass.set(`offcanvas-${position}`);
-      setTimeout(() => this.disableTransition.set(false));
+      // Use untracked to avoid creating dependency on disableTransition
+      untracked(() => {
+        this.disableTransition.set(true);
+        this.offcanvasClass.set(`offcanvas-${position}`);
+        // Re-enable transitions after browser has processed position change
+        requestAnimationFrame(() => {
+          this.disableTransition.set(false);
+        });
+      });
     });
 
-    // Effect to handle visibility changes with delayed hiding
+    // Effect to handle visibility changes
     effect(() => {
       const isVisible = this.isVisible();
-      if (isVisible) {
-        this.visibility.set('visible');
-      } else {
-        // Delay hiding by 300ms for animation
-        setTimeout(() => {
-          if (!this.isVisible()) {
-            this.visibility.set('hidden');
-          }
-        }, 300);
-      }
+      untracked(() => {
+        if (isVisible) {
+          // When showing: set visibility immediately, then add .show class after position is applied
+          this.visibility.set('visible');
+          // Delay adding .show class to allow position to be applied first
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              this.show.set(true);
+            });
+          });
+        } else {
+          // When hiding: remove .show class immediately, delay visibility for animation
+          this.show.set(false);
+          setTimeout(() => {
+            if (!this.isVisible()) {
+              this.visibility.set('hidden');
+            }
+          }, 300);
+        }
+      });
     });
   }
 
@@ -51,6 +67,7 @@ export class BsOffcanvasComponent {
   disableTransition = signal<boolean>(false);
   offcanvasClass = signal<string | null>(null);
   visibility = signal<string>('hidden');
+  show = signal<boolean>(false);
 
   // Computed signals
   width = computed(() => {
@@ -73,8 +90,6 @@ export class BsOffcanvasComponent {
   showBackdrop = computed(() => {
     return this.hasBackdrop() && this.isVisible();
   });
-
-  show = computed(() => this.isVisible());
 
   // Outputs
   isVisibleChange = output<boolean>();
