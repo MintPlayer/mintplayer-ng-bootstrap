@@ -9,6 +9,6 @@ export class BsOffcanvasCloseDirective {
   constructor(private offcanvas: BsOffcanvasHostComponent) { }
 
   @HostListener('click') onClick() {
-    this.offcanvas.isVisible = false;
+    this.offcanvas.isVisible.set(false);
   }
 }

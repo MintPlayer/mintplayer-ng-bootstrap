@@ -1,9 +1,6 @@
 import { animate, AnimationBuilder, AnimationMetadata, style } from '@angular/animations';
-import { Directive, ElementRef, Input } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
-import { filter, switchMap, skip, distinctUntilChanged } from 'rxjs/operators';
+import { Directive, effect, ElementRef, input } from '@angular/core';
 import { BsOffcanvasHostComponent } from '../../components';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Directive({
   selector: '[bsOffcanvasPush]',
@@ -11,13 +8,25 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 })
 export class BsOffcanvasPushDirective {
   constructor(private element: ElementRef<HTMLElement>, private builder: AnimationBuilder) {
-    this.offcanvas$.pipe(
-      filter(offcanvas => offcanvas !== null),
-      switchMap(offcanvas => offcanvas!.isVisible$),
-      distinctUntilChanged(),
-      skip(1),
-      takeUntilDestroyed()
-    ).subscribe((isVisible) => {
+    let previousIsVisible: boolean | null = null;
+
+    effect(() => {
+      const offcanvas = this.offcanvas();
+      if (!offcanvas) return;
+
+      const isVisible = offcanvas.isVisible();
+
+      // Skip the first run (initial state)
+      if (previousIsVisible === null) {
+        previousIsVisible = isVisible;
+        return;
+      }
+
+      // Skip if no change
+      if (previousIsVisible === isVisible) return;
+
+      previousIsVisible = isVisible;
+
       let data: AnimationMetadata[];
       if (isVisible) {
         data = [
@@ -43,7 +52,7 @@ export class BsOffcanvasPushDirective {
       }
       const b = builder.build(data);
       const player = b.create(this.element.nativeElement, { });
-      
+
       if (!isVisible) {
         player.onDone(() => {
           if (this.element.nativeElement.parentElement && this.initialOverflowX) {
@@ -51,15 +60,12 @@ export class BsOffcanvasPushDirective {
           }
         });
       }
-      
+
       player.play();
     });
   }
 
-  private offcanvas$ = new BehaviorSubject<BsOffcanvasHostComponent | null>(null);
   private initialOverflowX?: {element: HTMLElement, value: string};
 
-  @Input('bsOffcanvasPush') set offcanvas(value: BsOffcanvasHostComponent) {
-    this.offcanvas$.next(value);
-  }
+  offcanvas = input<BsOffcanvasHostComponent | null>(null, { alias: 'bsOffcanvasPush' });
 }
