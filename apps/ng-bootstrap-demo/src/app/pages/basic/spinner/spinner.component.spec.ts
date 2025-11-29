@@ -12,9 +12,6 @@ describe('SpinnerComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         MockComponent(BsSpinnerComponent),
-      ],
-      declarations: [
-        // Unit to test
         SpinnerComponent,
       ]
     })

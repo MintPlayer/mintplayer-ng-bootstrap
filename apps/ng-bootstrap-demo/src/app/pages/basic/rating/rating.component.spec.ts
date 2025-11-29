@@ -13,9 +13,6 @@ describe('RatingComponent', () => {
       imports: [
         MockModule(BsGridModule),
         MockComponent(BsRatingComponent),
-      ],
-      declarations: [
-        // Unit to test
         RatingComponent,
       ]
     })

@@ -18,9 +18,6 @@ describe('MarkdownComponent', () => {
         MockModule(BsFormModule),
         MockModule(BsGridModule),
         MockPipes(BsBoldPipe, BsItalicPipe, BsStrikethroughPipe, BsUnderlinePipe),
-      ],
-      declarations: [
-        // Unit to test
         MarkdownComponent,
       ]
     })

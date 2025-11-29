@@ -13,9 +13,9 @@ describe('ToggleButtonsComponent', () => {
     TestBed.configureTestingModule({
       imports: [
         MockComponent(BsPlaylistTogglerComponent),
-        MockComponent(BsNavbarTogglerComponent)
-      ],
-      declarations: [ToggleButtonsComponent]
+        MockComponent(BsNavbarTogglerComponent),
+        ToggleButtonsComponent,
+      ]
     });
     fixture = TestBed.createComponent(ToggleButtonsComponent);
     component = fixture.componentInstance;

@@ -27,13 +27,10 @@
       "outputs": ["{options.outputFile}"]
     },
     "test": {
-      "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "executor": "@analogjs/vitest-angular:test",
+      "outputs": ["{workspaceRoot}/coverage/libs/mintplayer-pagination"],
       "options": {
-        "codeCoverage": true,
-        "coverageReporters": ["lcovonly"],
-        "coverageDirectory": "coverage/libs/mintplayer-pagination",
-        "jestConfig": "libs/mintplayer-pagination/jest.config.ts"
+        "configFile": "vitest.config.ts"
       }
     }
   }

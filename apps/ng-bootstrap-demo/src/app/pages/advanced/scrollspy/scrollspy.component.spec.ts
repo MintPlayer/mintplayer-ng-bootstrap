@@ -11,9 +11,6 @@ describe('ScrollspyComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         MockModule(BsScrollspyModule),
-      ],
-      declarations: [
-        // Unit to test
         ScrollspyComponent,
       ]
     })

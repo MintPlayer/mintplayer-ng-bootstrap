@@ -17,9 +17,8 @@ describe('CopyComponent', () => {
         // MockModule(HighlightModule),
         MockDirective(Highlight),
         // Highlight,
-      ],
-      declarations: [
-        // Unit to test
+
+        // Unit to test (standalone)
         CopyComponent,
       ],
       providers: [

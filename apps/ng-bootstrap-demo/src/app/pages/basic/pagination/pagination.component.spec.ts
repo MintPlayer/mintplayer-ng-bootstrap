@@ -11,9 +11,6 @@ describe('PaginationComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         MockComponent(BsPaginationComponent),
-      ],
-      declarations: [
-        // Unit to test
         PaginationComponent,
       ]
     })

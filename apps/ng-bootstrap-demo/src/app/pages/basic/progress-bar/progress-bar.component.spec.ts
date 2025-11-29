@@ -11,9 +11,6 @@ describe('ProgressBarComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         MockModule(BsProgressBarModule),
-      ],
-      declarations: [
-        // Unit to test
         ProgressBarComponent,
       ]
     })

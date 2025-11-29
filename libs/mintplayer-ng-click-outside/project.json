@@ -24,14 +24,10 @@
       "defaultConfiguration": "production"
     },
     "test": {
-      "executor": "@nx/jest:jest",
+      "executor": "@analogjs/vitest-angular:test",
       "outputs": ["{workspaceRoot}/coverage/libs/mintplayer-ng-click-outside"],
       "options": {
-        "codeCoverage": true,
-        "coverageReporters": ["lcovonly"],
-        "coverageDirectory": "coverage/libs/mintplayer-ng-click-outside",
-        "jestConfig": "libs/mintplayer-ng-click-outside/jest.config.ts",
-        "tsConfig": "libs/mintplayer-ng-click-outside/tsconfig.spec.json"
+        "configFile": "vitest.config.ts"
       }
     },
     "lint": {

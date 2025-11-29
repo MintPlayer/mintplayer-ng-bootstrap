@@ -16,9 +16,6 @@ describe('TooltipComponent', () => {
         MockModule(BsGridModule),
         MockModule(BsTooltipModule),
         MockDirective(BsButtonTypeDirective),
-      ],
-      declarations: [
-        // Unit to test
         TooltipComponent,
       ],
       providers: [

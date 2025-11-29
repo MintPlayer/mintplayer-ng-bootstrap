@@ -14,8 +14,8 @@ describe('LazyLoadedComponent', () => {
       imports: [
         FormsModule,
         MockModule(BsFormModule),
-      ],
-      declarations: [ LazyLoadedComponent ]
+        LazyLoadedComponent,
+      ]
     })
     .compileComponents();
 

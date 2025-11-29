@@ -17,9 +17,6 @@ describe('RangeComponent', () => {
         MockModule(BsGridModule),
         MockModule(BsRangeModule),
         MockModule(BsToggleButtonModule),
-      ],
-      declarations: [
-        // Unit to test
         RangeComponent,
       ]
     })

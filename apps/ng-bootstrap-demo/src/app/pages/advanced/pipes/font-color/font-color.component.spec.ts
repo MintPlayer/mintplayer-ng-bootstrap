@@ -16,8 +16,8 @@ describe('FontColorComponent', () => {
         FormsModule,
         MockPipe(BsFontColorPipe),
         MockModule(BsColorPickerModule),
-      ],
-      declarations: [FontColorComponent]
+        FontColorComponent,
+      ]
     });
     fixture = TestBed.createComponent(FontColorComponent);
     component = fixture.componentInstance;

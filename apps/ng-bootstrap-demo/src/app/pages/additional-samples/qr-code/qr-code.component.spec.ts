@@ -17,9 +17,6 @@ describe('QrCodeComponent', () => {
         MockModule(BsFormModule),
         MockModule(BsGridModule),
         MockComponent(LibQrCodeComponent),
-      ],
-      declarations: [
-        // Unit to test
         QrCodeComponent,
       ]
     })

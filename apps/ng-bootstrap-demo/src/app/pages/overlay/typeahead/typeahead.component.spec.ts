@@ -13,9 +13,6 @@ describe('TypeaheadComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         MockComponent(BsTypeaheadComponent),
-      ],
-      declarations: [
-        // Unit to test
         TypeaheadComponent,
       ],
       providers: [JsonPipe]

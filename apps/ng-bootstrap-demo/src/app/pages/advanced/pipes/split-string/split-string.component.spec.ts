@@ -14,9 +14,6 @@ describe('SplitStringComponent', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      declarations: [
-        SplitStringComponent
-      ],
       imports: [
         // Mock dependencies
         FormsModule,
@@ -24,6 +21,9 @@ describe('SplitStringComponent', () => {
         MockModule(BsGridModule),
         MockModule(BsListGroupModule),
         MockPipe(BsSplitStringPipe),
+
+        // Unit to test (standalone)
+        SplitStringComponent,
       ]
     });
     fixture = TestBed.createComponent(SplitStringComponent);

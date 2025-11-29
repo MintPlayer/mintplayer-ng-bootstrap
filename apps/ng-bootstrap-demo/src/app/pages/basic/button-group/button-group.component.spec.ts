@@ -13,9 +13,6 @@ describe('ButtonGroupComponent', () => {
       imports: [
         MockComponent(BsButtonGroupComponent),
         MockDirective(BsButtonTypeDirective),
-      ],
-      declarations: [
-        // Unit to test
         ButtonGroupComponent,
       ]
     })

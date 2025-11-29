@@ -15,13 +15,8 @@ describe('OrdinalNumberComponent', () => {
       imports: [
         MockModule(FormsModule),
         MockModule(BsFormModule),
-      ],
-      declarations: [
-        // Unit to test
-        OrdinalNumberComponent,
-
-        // Mock dependencies
         MockPipe(BsOrdinalNumberPipe),
+        OrdinalNumberComponent,
       ]
     })
     .compileComponents();

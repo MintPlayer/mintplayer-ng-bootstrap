@@ -21,9 +21,8 @@ describe('TabControlComponent', () => {
         MockModule(BsGridModule),
         MockModule(BsSelectModule),
         MockModule(BsToggleButtonModule),
-      ],
-      declarations: [
-        // Unit to test
+
+        // Unit to test (standalone)
         TabControlComponent,
       ]
     })

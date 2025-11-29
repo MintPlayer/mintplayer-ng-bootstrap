@@ -14,9 +14,6 @@ describe('DragDropComponent', () => {
         // Mock dependencies
         MockModule(BsGridModule),
         MockModule(DragDropModule),
-      ],
-      declarations: [
-        // Unit to test
         DragDropComponent,
       ]
     })

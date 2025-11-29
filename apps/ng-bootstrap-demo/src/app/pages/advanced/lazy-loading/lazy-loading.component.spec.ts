@@ -10,12 +10,9 @@ describe('LazyLoadingComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        // Unit to test
+        NoopAnimationsModule,
         LazyLoadingComponent,
-
-        NoopAnimationsModule
-      ],
-      declarations: []
+      ]
     })
     .compileComponents();
 

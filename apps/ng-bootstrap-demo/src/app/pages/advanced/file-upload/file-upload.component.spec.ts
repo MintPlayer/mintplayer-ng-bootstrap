@@ -15,9 +15,6 @@ describe('FileUploadComponent', () => {
         MockModule(BsGridModule),
         MockModule(BsFileUploadModule),
         MockModule(BsProgressBarModule),
-      ],
-      declarations: [
-        // Unit to test
         FileUploadComponent,
       ]
     })

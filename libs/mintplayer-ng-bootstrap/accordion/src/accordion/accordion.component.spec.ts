@@ -40,7 +40,7 @@ describe('BsAccordionComponent', () => {
 
 @Component({
   selector: 'bs-accordion-test',
-  standalone: true,
+  standalone: false,
   template: `
   <bs-accordion>
     <bs-accordion-tab>

@@ -11,9 +11,9 @@ describe('ParentifyComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        MockModule(BsGridModule)
-      ],
-      declarations: [ ParentifyComponent ]
+        MockModule(BsGridModule),
+        ParentifyComponent,
+      ]
     })
     .compileComponents();
 

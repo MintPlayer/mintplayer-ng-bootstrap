@@ -11,9 +11,6 @@ describe('BadgeComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         MockComponent(BsBadgeComponent),
-      ],
-      declarations: [
-        // Unit to test
         BadgeComponent,
       ]
     })

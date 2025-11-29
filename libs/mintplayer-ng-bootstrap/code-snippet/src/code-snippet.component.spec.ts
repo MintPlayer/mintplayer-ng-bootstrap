@@ -1,10 +1,20 @@
+import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsCopyDirective } from '@mintplayer/ng-bootstrap/copy';
 import { BsOffcanvasModule } from '@mintplayer/ng-bootstrap/offcanvas';
-import { MockDirective, MockModule, MockProvider } from 'ng-mocks';
-import { HighlightModule } from 'ngx-highlightjs';
+import { MockDirective, MockModule } from 'ng-mocks';
+import { HighlightModule, HighlightLoader, HIGHLIGHT_OPTIONS } from 'ngx-highlightjs';
 
 import { BsCodeSnippetComponent } from './code-snippet.component';
+
+// Mock the highlight loader to prevent the "Highlight.js library was not imported!" error
+class MockHighlightLoader {
+  ready = Promise.resolve({
+    highlight: () => ({ value: '', language: 'plaintext' }),
+    highlightAuto: () => ({ value: '', language: 'plaintext' }),
+    listLanguages: () => [],
+  });
+}
 
 describe('BsCodeSnippetComponent', () => {
   let component: BsCodeSnippetComponent;
@@ -14,13 +24,21 @@ describe('BsCodeSnippetComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         MockDirective(BsCopyDirective),
-        MockModule(HighlightModule),
         MockModule(BsOffcanvasModule),
-        
+        MockModule(HighlightModule),
+
         // Unit to test
         BsCodeSnippetComponent,
       ],
-      declarations: []
+      providers: [
+        { provide: HighlightLoader, useClass: MockHighlightLoader },
+        {
+          provide: HIGHLIGHT_OPTIONS,
+          useValue: {
+            fullLibraryLoader: () => Promise.resolve({ default: {} }),
+          },
+        },
+      ],
     })
     .compileComponents();
   });

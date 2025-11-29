@@ -13,12 +13,12 @@ describe('SearchboxComponent', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      declarations: [SearchboxComponent],
       imports: [
         HttpClientTestingModule,
         MockModule(BsFormModule),
         MockModule(BsGridModule),
         MockModule(BsSearchboxModule),
+        SearchboxComponent,
       ]
     });
     fixture = TestBed.createComponent(SearchboxComponent);

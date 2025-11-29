@@ -11,9 +11,6 @@ describe('CloseComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         MockComponent(BsCloseComponent),
-      ],
-      declarations: [
-        // Unit to test
         CloseComponent,
       ]
     })

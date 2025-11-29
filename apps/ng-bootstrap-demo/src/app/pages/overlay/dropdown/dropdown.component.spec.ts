@@ -14,9 +14,6 @@ describe('DropdownComponent', () => {
       imports: [
         MockModule(BsDropdownModule),
         MockDirective(BsButtonTypeDirective),
-      ],
-      declarations: [
-        // Unit to test
         DropdownComponent,
       ]
     })

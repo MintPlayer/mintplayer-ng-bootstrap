@@ -12,8 +12,8 @@ describe('MarqueeComponent', () => {
     TestBed.configureTestingModule({
       imports: [
         MockComponent(BsMarqueeComponent),
-      ],
-      declarations: [MarqueeComponent]
+        MarqueeComponent,
+      ]
     });
     fixture = TestBed.createComponent(MarqueeComponent);
     component = fixture.componentInstance;

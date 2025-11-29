@@ -12,11 +12,11 @@ describe('WordCountComponent', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      declarations: [WordCountComponent],
       imports: [
         FormsModule,
         MockModule(BsFormModule),
         MockPipe(BsWordCountPipe),
+        WordCountComponent,
       ]
     });
     fixture = TestBed.createComponent(WordCountComponent);

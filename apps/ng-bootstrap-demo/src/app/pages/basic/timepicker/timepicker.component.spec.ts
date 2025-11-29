@@ -15,9 +15,6 @@ describe('TimepickerComponent', () => {
         MockModule(BsFormModule),
         MockModule(BsGridModule),
         MockComponent(BsTimepickerComponent),
-      ],
-      declarations: [
-        // Unit to test  
         TimepickerComponent,
       ]
     })

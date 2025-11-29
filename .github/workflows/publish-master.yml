@@ -43,23 +43,24 @@ jobs:
     
     - name: Build
       id: BuildWithCloud
-      continue-on-error: true
-      run: npx nx build --configuration=production
-
-    - name: BuildWithoutCloud
-      id: BuildWithoutCloud
-      if: ${{ steps.BuildWithCloud.outcome == 'failure' }}
+      # continue-on-error: true
       run: npx nx build --configuration=production --no-cloud
+      timeout-minutes: 15
+
+    # - name: BuildWithoutCloud
+    #   id: BuildWithoutCloud
+    #   if: ${{ steps.BuildWithCloud.outcome == 'failure' }}
+    #   run: npx nx build --configuration=production --no-cloud
 
     - name: Test
       id: TestWithCloud
-      continue-on-error: true
+      # continue-on-error: true
       run: npx nx affected --target=test --watch=false --parallel=true
 
-    - name: TestWithoutCloud
-      id: TestWithoutCloud
-      if: ${{ steps.TestWithCloud.outcome == 'failure' }}
-      run: npx nx affected --target=test --watch=false --parallel=true --no-cloud
+    # - name: TestWithoutCloud
+    #   id: TestWithoutCloud
+    #   if: ${{ steps.TestWithCloud.outcome == 'failure' }}
+    #   run: npx nx affected --target=test --watch=false --parallel=true --no-cloud
 
     ## ng-animations
     - name: Push to NPM

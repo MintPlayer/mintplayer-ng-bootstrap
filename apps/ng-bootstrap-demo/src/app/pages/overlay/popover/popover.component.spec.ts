@@ -17,9 +17,6 @@ describe('PopoverComponent', () => {
         MockModule(BsGridModule),
         MockModule(BsPopoverModule),
         MockDirective(BsButtonTypeDirective),
-      ],
-      declarations: [
-        // Unit to test
         PopoverComponent,
       ]
     })

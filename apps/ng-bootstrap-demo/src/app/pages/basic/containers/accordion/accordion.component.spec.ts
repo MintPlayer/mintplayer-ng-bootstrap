@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { BsAccordionModule } from '@mintplayer/ng-bootstrap/accordion';
 import { MockModule } from 'ng-mocks';
 import { AccordionComponent } from './accordion.component';
@@ -10,10 +11,8 @@ describe('AccordionComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
+        NoopAnimationsModule,
         MockModule(BsAccordionModule),
-      ],
-      declarations: [
-        // Unit to test
         AccordionComponent,
       ]
     })

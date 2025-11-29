@@ -12,11 +12,11 @@ describe('SlugifyComponent', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      declarations: [SlugifyComponent],
       imports: [
         FormsModule,
         MockModule(BsFormModule),
         MockPipe(BsSlugifyPipe),
+        SlugifyComponent,
       ]
     });
     fixture = TestBed.createComponent(SlugifyComponent);

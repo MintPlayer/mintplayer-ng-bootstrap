@@ -12,8 +12,8 @@ describe('UserAgentComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         MockModule(BsAlertModule),
-      ],
-      declarations: [ UserAgentComponent ]
+        UserAgentComponent,
+      ]
     })
     .compileComponents();
 

@@ -18,9 +18,6 @@ describe('TableComponent', () => {
         MockModule(BsGridModule),
         MockComponent(BsTableComponent),
         MockModule(BsToggleButtonModule),
-      ],
-      declarations: [
-        // Unit to test
         TableComponent,
       ]
     })

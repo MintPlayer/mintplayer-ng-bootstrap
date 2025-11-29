@@ -27,13 +27,10 @@
       "outputs": ["{options.outputFile}"]
     },
     "test": {
-      "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "executor": "@analogjs/vitest-angular:test",
+      "outputs": ["{workspaceRoot}/coverage/libs/mintplayer-parentify"],
       "options": {
-        "codeCoverage": true,
-        "coverageReporters": ["lcovonly"],
-        "coverageDirectory": "coverage/libs/mintplayer-parentify",
-        "jestConfig": "libs/mintplayer-parentify/jest.config.ts"
+        "configFile": "vitest.config.ts"
       }
     }
   }

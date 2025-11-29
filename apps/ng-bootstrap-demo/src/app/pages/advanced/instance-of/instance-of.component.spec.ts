@@ -11,9 +11,9 @@ describe('InstanceOfComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        MockModule(BsInstanceOfModule)
-      ],
-      declarations: [ InstanceOfComponent ]
+        MockModule(BsInstanceOfModule),
+        InstanceOfComponent,
+      ]
     })
     .compileComponents();
 

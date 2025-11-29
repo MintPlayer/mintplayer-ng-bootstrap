@@ -13,9 +13,6 @@ describe('CardComponent', () => {
       imports: [
         MockModule(BsCardModule),
         MockModule(BsListGroupModule),
-      ],
-      declarations: [
-        // Unit to test
         CardComponent,
       ]
     })

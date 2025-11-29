@@ -13,9 +13,6 @@ describe('AutofocusComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         MockModule(BsSelect2Module),
-      ],
-      declarations: [
-        // Unit to test
         AutofocusComponent,
       ],
       providers: [

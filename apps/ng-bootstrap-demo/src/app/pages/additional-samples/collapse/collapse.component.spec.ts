@@ -23,12 +23,11 @@ describe('CollapseComponent', () => {
         MockModule(BsAlertModule),
         MockDirective(BsButtonTypeDirective),
         MockComponent(BsCodeSnippetComponent),
+
+        // Unit to test (standalone)
+        CollapseComponent,
       ],
       declarations: [
-        // Unit to test
-        CollapseComponent,
-        
-        // Mock dependencies
         MockDirective(BsScrollspyDirective),
       ]
     })

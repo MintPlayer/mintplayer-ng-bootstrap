@@ -18,8 +18,8 @@ describe('TrackByComponent', () => {
         MockModule(BsGridModule),
         MockModule(BsListGroupModule),
         MockDirective(BsButtonTypeDirective),
-      ],
-      declarations: [TrackByComponent]
+        TrackByComponent,
+      ]
     });
     fixture = TestBed.createComponent(TrackByComponent);
     component = fixture.componentInstance;

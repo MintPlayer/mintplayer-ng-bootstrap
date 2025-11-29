@@ -11,9 +11,6 @@ describe('CalendarComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         MockComponent(BsCalendarComponent),
-      ],
-      declarations: [
-        // Unit to test
         CalendarComponent,
       ]
     })
