@@ -39,7 +39,8 @@ jobs:
     - name: Build
       id: BuildWithCloud
       # continue-on-error: true
-      run: npx nx build --configuration=production
+      run: npx nx build --configuration=production --no-cloud
+      timeout-minutes: 15
 
     # - name: BuildWithoutCloud
     #   id: BuildWithoutCloud
