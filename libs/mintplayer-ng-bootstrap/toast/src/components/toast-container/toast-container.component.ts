@@ -8,11 +8,7 @@ import { BsToastService } from '../../services/toast/toast.service';
   standalone: false,
 })
 export class BsToastContainerComponent {
-  constructor(toastService: BsToastService) {
-    this.toastService = toastService;
-  }
-
-  toastService: BsToastService;
+  constructor(public toastService: BsToastService) {}
 
   @HostBinding('style.overflow-y') overflowY = 'auto';
 }

@@ -1,7 +1,6 @@
-import { ConnectedPosition, Overlay, OverlayRef } from '@angular/cdk/overlay';
-import { ComponentPortal } from '@angular/cdk/portal';
-import { Directive, ElementRef, Host, HostListener, Injector, Input, OnDestroy, SkipSelf, TemplateRef } from '@angular/core';
+import { Directive, ElementRef, Host, HostListener, inject, Input, OnDestroy, SkipSelf, TemplateRef } from '@angular/core';
 import { Position } from '@mintplayer/ng-bootstrap';
+import { BsOverlayService, getConnectedPositions, OverlayHandle } from '@mintplayer/ng-bootstrap/overlay';
 import { BsTooltipComponent } from '../component/tooltip.component';
 import { TOOLTIP_CONTENT } from '../providers/tooltip-content.provider';
 
@@ -10,94 +9,50 @@ import { TOOLTIP_CONTENT } from '../providers/tooltip-content.provider';
   standalone: false,
 })
 export class BsTooltipDirective implements OnDestroy {
-
-  constructor(
-    private overlay: Overlay,
-    private templateRef: TemplateRef<any>,
-    private parentInjector: Injector,
-    @Host() @SkipSelf() private parent: ElementRef
-  ) {
-    this.injector = Injector.create({
-      providers: [{ provide: TOOLTIP_CONTENT, useValue: this.templateRef }],
-      parent: this.parentInjector
-    });
-    this.portal = new ComponentPortal(BsTooltipComponent, null, this.injector);
-
-    parent.nativeElement.onmouseenter = () => {
-      this.showTooltip();
-    };
-    parent.nativeElement.onmouseleave = () => {
-      this.hideTooltip();
-    }
-  }
+  private overlayService = inject(BsOverlayService);
+  private templateRef = inject(TemplateRef);
+  private parent = inject(ElementRef, { host: true, skipSelf: true });
 
   @Input() public bsTooltip: Position = 'bottom';
 
-  private injector: Injector;
-  private portal: ComponentPortal<any>;
-  private overlayRef: OverlayRef | null = null;
+  private handle: OverlayHandle<BsTooltipComponent> | null = null;
+
+  constructor() {
+    this.parent.nativeElement.onmouseenter = () => {
+      this.showTooltip();
+    };
+    this.parent.nativeElement.onmouseleave = () => {
+      this.hideTooltip();
+    };
+  }
 
   @HostListener('window:blur') private onBlur() {
     this.hideTooltip();
   }
 
   showTooltip() {
-    const positions: ConnectedPosition[] = [];
-    switch (this.bsTooltip) {
-      case 'bottom': {
-        positions.push({
-          originX: "center",
-          originY: "bottom", //<--
-          overlayX: "center",
-          overlayY: "top"
-        });
-      } break;
-      case 'top': {
-        positions.push({
-          originX: "center",
-          originY: "top", //<--
-          overlayX: "center",
-          overlayY: "bottom"
-        });
-      } break;
-      case 'start': {
-        positions.push({
-          originX: "start", //<--
-          originY: "center",
-          overlayX: "end",
-          overlayY: "center",
-        });
-      } break;
-      case 'end': {
-        positions.push({
-          originX: "end", //<--
-          originY: "center",
-          overlayX: "start",
-          overlayY: "center"
-        });
-      } break;
-    }
+    const positions = getConnectedPositions(this.bsTooltip);
 
-    this.overlayRef = this.overlay.create({
-      scrollStrategy: this.overlay.scrollStrategies.reposition(),
-      positionStrategy: this.overlay.position()
-        .flexibleConnectedTo(this.parent)
-        .withPositions(positions),
+    this.handle = this.overlayService.createConnected<BsTooltipComponent>({
+      connectedTo: this.parent,
+      positions,
+      contentComponent: BsTooltipComponent,
+      contentToken: TOOLTIP_CONTENT,
+      template: this.templateRef,
+      scrollStrategy: 'reposition',
     });
-    const component = this.overlayRef.attach<BsTooltipComponent>(this.portal);
-    component.instance.position = this.bsTooltip;
+
+    if (this.handle.componentRef) {
+      this.handle.componentRef.instance.position = this.bsTooltip;
+    }
   }
 
   hideTooltip() {
-    if (this.overlayRef) {
-      this.overlayRef.detach();
-      this.overlayRef.dispose();
-      this.overlayRef = null;
-    }
+    this.handle?.dispose();
+    this.handle = null;
   }
 
   ngOnDestroy() {
     this.hideTooltip();
   }
-
 }

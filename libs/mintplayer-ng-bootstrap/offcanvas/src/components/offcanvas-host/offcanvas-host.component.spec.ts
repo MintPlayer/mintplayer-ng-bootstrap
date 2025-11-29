@@ -1,15 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, Directive, EventEmitter, inject, Inject, Injector, Output, signal, TemplateRef } from '@angular/core';
+import { Component, Directive, EventEmitter, Output, signal, TemplateRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { OverlayModule } from '@angular/cdk/overlay';
 
 import { BsOffcanvasHostComponent } from './offcanvas-host.component';
 import { BsOffcanvasComponent } from '../offcanvas/offcanvas.component';
-import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
-import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
-import { ComponentPortal } from '@angular/cdk/portal';
-import { MockComponent, MockModule } from 'ng-mocks';
-import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
+import { MockComponent, MockProvider } from 'ng-mocks';
+import { BsOverlayComponent, BsOverlayService } from '@mintplayer/ng-bootstrap/overlay';
 import { Position } from '@mintplayer/ng-bootstrap';
 
 describe('BsOffcanvasHostComponent', () => {
@@ -21,14 +18,14 @@ describe('BsOffcanvasHostComponent', () => {
       imports: [
         CommonModule,
         OverlayModule,
-        MockComponent(BsHasOverlayComponent),
+        MockComponent(BsOverlayComponent),
       ],
       declarations: [
         // Unit to test
         BsOffcanvasHostComponent,
-      
+
         // Mock dependencies
-        BsOffcanvasMockComponent,
+        MockComponent(BsOffcanvasComponent),
         BsOffcanvasHeaderMockComponent,
         BsOffcanvasBodyMockComponent,
         BsOffcanvasContentMockDirective,
@@ -36,12 +33,16 @@ describe('BsOffcanvasHostComponent', () => {
         // Testbench
         BsOffcanvasTestComponent,
       ],
-      providers: [{
-        provide: PORTAL_FACTORY,
-        useValue: (injector: Injector) => {
-          return new ComponentPortal(BsOffcanvasMockComponent, null, injector);
-        }
-      }]
+      providers: [
+        MockProvider(BsOverlayService, {
+          createGlobal: () => ({
+            overlayRef: {} as any,
+            componentRef: undefined,
+            dispose: () => {},
+            updatePosition: () => {}
+          })
+        })
+      ]
     })
     .compileComponents();
   });
@@ -87,28 +88,6 @@ class BsOffcanvasContentMockDirective {
   constructor(offcanvasHost: BsOffcanvasHostComponent, template: TemplateRef<any>) {
     offcanvasHost.content = template;
   }
-}
-
-@Component({
-  selector: 'bs-offcanvas-holder',
-  standalone: false,
-  template: `
-    <div>
-      <ng-container *ngTemplateOutlet="contentTemplate"></ng-container>
-    </div>`,
-  providers: [
-    { provide: BsOffcanvasComponent, useExisting: BsOffcanvasMockComponent }
-  ]
-})
-class BsOffcanvasMockComponent {
-  contentTemplate = inject(OFFCANVAS_CONTENT);
-  @Output() backdropClick = new EventEmitter<MouseEvent>();
-
-  // Required signals that BsOffcanvasHostComponent expects
-  isVisible = signal<boolean>(false);
-  position = signal<Position>('bottom');
-  size = signal<number | null>(null);
-  hasBackdrop = signal<boolean>(false);
 }
 
 @Component({

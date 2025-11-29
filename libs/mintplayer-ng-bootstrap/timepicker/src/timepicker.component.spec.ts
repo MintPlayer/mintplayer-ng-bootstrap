@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsDropdownDirective, BsDropdownModule } from '@mintplayer/ng-bootstrap/dropdown';
 import { BsFormComponent, BsFormModule } from '@mintplayer/ng-bootstrap/form';
-import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
+import { BsOverlayComponent } from '@mintplayer/ng-bootstrap/overlay';
 import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
 import { MockComponent, MockDirective, MockModule } from 'ng-mocks';
 
@@ -23,7 +23,7 @@ describe('BsTimepickerComponent', () => {
         FormsModule,
         MockDirective(BsButtonTypeDirective),
         MockComponent(BsInputGroupComponent),
-        MockComponent(BsHasOverlayComponent),
+        MockComponent(BsOverlayComponent),
         MockModule(BsFormModule),
         MockModule(BsDropdownModule),
       ],

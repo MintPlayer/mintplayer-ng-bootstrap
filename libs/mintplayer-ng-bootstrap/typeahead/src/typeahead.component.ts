@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { BsDropdownModule } from '@mintplayer/ng-bootstrap/dropdown';
 import { BsDropdownMenuModule } from '@mintplayer/ng-bootstrap/dropdown-menu';
 import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
-import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
+import { BsOverlayComponent } from '@mintplayer/ng-bootstrap/overlay';
 import { BsProgressBarModule } from '@mintplayer/ng-bootstrap/progress-bar';
 import { BehaviorSubject, map, Observable } from 'rxjs';
 
@@ -13,7 +13,7 @@ import { BehaviorSubject, map, Observable } from 'rxjs';
   templateUrl: './typeahead.component.html',
   styleUrls: ['./typeahead.component.scss'],
   standalone: true,
-  imports: [AsyncPipe, FormsModule, BsFormModule, BsDropdownModule, BsDropdownMenuModule, BsProgressBarModule, BsHasOverlayComponent]
+  imports: [AsyncPipe, FormsModule, BsFormModule, BsDropdownModule, BsDropdownMenuModule, BsProgressBarModule, BsOverlayComponent]
 })
 export class BsTypeaheadComponent {
 

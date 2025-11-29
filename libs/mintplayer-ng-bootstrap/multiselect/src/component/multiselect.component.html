@@ -1,4 +1,4 @@
-<bs-has-overlay></bs-has-overlay>
+<bs-overlay></bs-overlay>
 <div bsDropdown [hasBackdrop]="true" [closeOnClickOutside]="true">
     <button bsDropdownToggle [color]="colors.primary">
         <ng-container *ngTemplateOutlet="buttonTemplate ?? defaultButtonTemplate; context: { $implicit: selectedItems.length }"></ng-container>

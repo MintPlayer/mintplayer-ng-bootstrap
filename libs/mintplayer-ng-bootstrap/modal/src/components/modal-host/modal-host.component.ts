@@ -1,8 +1,6 @@
-import { Overlay, OverlayRef } from '@angular/cdk/overlay';
-import { ComponentPortal } from '@angular/cdk/portal';
-import { AfterViewInit, Component, ComponentFactoryResolver, ComponentRef, EventEmitter, HostListener, Inject, Injector, Input, OnDestroy, Output, TemplateRef } from '@angular/core';
+import { AfterViewInit, Component, ComponentRef, EventEmitter, HostListener, inject, Input, OnDestroy, Output, TemplateRef } from '@angular/core';
+import { BsOverlayService, OverlayHandle } from '@mintplayer/ng-bootstrap/overlay';
 import { MODAL_CONTENT } from '../../providers/modal-content.provider';
-import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
 import { BsModalComponent } from '../modal/modal.component';
 
 @Component({
@@ -12,11 +10,9 @@ import { BsModalComponent } from '../modal/modal.component';
   standalone: false,
 })
 export class BsModalHostComponent implements AfterViewInit, OnDestroy {
+  private overlayService = inject(BsOverlayService);
 
-  constructor(private overlay: Overlay, private parentInjector: Injector, @Inject(PORTAL_FACTORY) private portalFactory: (injector: Injector) => ComponentPortal<BsModalComponent>, private componentFactoryResolver: ComponentFactoryResolver) {}
-
-  overlayRef!: OverlayRef;
-  componentInstance?: ComponentRef<BsModalComponent>;
+  private handle: OverlayHandle<BsModalComponent> | null = null;
   template!: TemplateRef<any>;
 
   //#region isOpen
@@ -26,9 +22,9 @@ export class BsModalHostComponent implements AfterViewInit, OnDestroy {
   }
   @Input() set isOpen(value: boolean) {
     this._isOpen = value;
-    if (this.componentInstance) {
-      this.componentInstance.instance.isOpen = value;
-      this.componentInstance.changeDetectorRef.detectChanges();
+    if (this.handle?.componentRef) {
+      this.handle.componentRef.instance.isOpen = value;
+      this.handle.componentRef.changeDetectorRef.detectChanges();
     }
     this.isOpenChange.emit(value);
   }
@@ -37,31 +33,34 @@ export class BsModalHostComponent implements AfterViewInit, OnDestroy {
   @Input() closeOnEscape = true;
 
   ngAfterViewInit() {
-    const injector = Injector.create({
-      providers: [
-        { provide: MODAL_CONTENT, useValue: this.template }
-      ],
-      parent: this.parentInjector
-    });
-    // const portal = new ComponentPortal(BsModalComponent, null, injector, this.componentFactoryResolver);
-    const portal = this.portalFactory(injector);
-    this.overlayRef = this.overlay.create({
-      scrollStrategy: this.overlay.scrollStrategies.reposition(),
-      positionStrategy: this.overlay.position()
-        .global().centerHorizontally().bottom('0').top('0').left('0').right('0'),
+    this.handle = this.overlayService.createGlobal<BsModalComponent>({
+      contentComponent: BsModalComponent,
+      contentToken: MODAL_CONTENT,
+      template: this.template,
+      globalPosition: {
+        centerHorizontally: true,
+        top: '0',
+        bottom: '0',
+        left: '0',
+        right: '0'
+      },
+      scrollStrategy: 'reposition',
+      hasBackdrop: false,
       width: '100%',
-      hasBackdrop: false
+      cleanupDelay: 500,
     });
-    this.componentInstance = this.overlayRef.attach<BsModalComponent>(portal);
-    this.componentInstance.instance.isOpen = this._isOpen;
-    this.componentInstance.changeDetectorRef.detectChanges();
+
+    if (this.handle.componentRef) {
+      this.handle.componentRef.instance.isOpen = this._isOpen;
+      this.handle.componentRef.changeDetectorRef.detectChanges();
+    }
   }
 
   ngOnDestroy() {
     this.isOpen = false;
-    setTimeout(() => this.overlayRef && this.overlayRef.dispose(), 500);
+    this.handle?.dispose();
   }
-  
+
   @HostListener('document:keydown', ['$event'])
   private onKeyDown(ev: KeyboardEvent) {
     if (this.isOpen && this.closeOnEscape && ev.code === 'Escape') {

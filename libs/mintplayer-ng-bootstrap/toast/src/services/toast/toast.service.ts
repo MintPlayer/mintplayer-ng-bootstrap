@@ -1,31 +1,26 @@
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { Inject, Injectable, Injector, TemplateRef } from '@angular/core';
+import { inject, Injectable, TemplateRef } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { BsToastContainerComponent } from '../../components/toast-container/toast-container.component';
-import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
 
 @Injectable()
 export class BsToastService {
-
-  constructor(private overlayService: Overlay, private rootInjector: Injector, @Inject(PORTAL_FACTORY) private portalFactory: (injector: Injector) => ComponentPortal<any>) { }
+  private overlay = inject(Overlay);
 
   overlayRef: OverlayRef | null = null;
   toasts$ = new BehaviorSubject<ToastItem[]>([]);
+
   public pushToast(toast: TemplateRef<any>, context?: Object) {
     if (!this.overlayRef) {
-      const injector = Injector.create({
-        providers: [],
-        parent: this.rootInjector,
-      });
-      const portal = this.portalFactory(injector);
-      this.overlayRef = this.overlayService.create({
-        scrollStrategy: this.overlayService.scrollStrategies.block(),
-        positionStrategy: this.overlayService.position().global()
+      const portal = new ComponentPortal(BsToastContainerComponent);
+      this.overlayRef = this.overlay.create({
+        scrollStrategy: this.overlay.scrollStrategies.block(),
+        positionStrategy: this.overlay.position().global()
           .top('0').left('0').bottom('0').right('0'),
         hasBackdrop: false
       });
-      const component = this.overlayRef.attach<BsToastContainerComponent>(portal);
+      this.overlayRef.attach(portal);
     }
 
     context = context ?? {};

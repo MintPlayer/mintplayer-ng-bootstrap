@@ -1,9 +1,7 @@
-import { Overlay, OverlayRef } from '@angular/cdk/overlay';
-import { ComponentPortal } from '@angular/cdk/portal';
-import { AfterViewInit, Component, ComponentRef, effect, Inject, Injector, model, OnDestroy, output, signal, TemplateRef } from '@angular/core';
+import { AfterViewInit, Component, effect, inject, model, OnDestroy, output, signal, TemplateRef } from '@angular/core';
 import { Position } from '@mintplayer/ng-bootstrap';
+import { BsOverlayService, OverlayHandle } from '@mintplayer/ng-bootstrap/overlay';
 import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
-import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
 import { BsOffcanvasComponent } from '../offcanvas/offcanvas.component';
 
 @Component({
@@ -13,44 +11,10 @@ import { BsOffcanvasComponent } from '../offcanvas/offcanvas.component';
   standalone: false,
 })
 export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
-
-  constructor(private overlayService: Overlay, private rootInjector: Injector, @Inject(PORTAL_FACTORY) private portalFactory: (injector: Injector) => ComponentPortal<any>) {
-    // Effect to sync isVisible with the inner component
-    effect(() => {
-      const isVisible = this.isVisible();
-      if (this.component) {
-        this.component.instance.isVisible.set(isVisible);
-      }
-    });
-
-    // Effect to sync position with the inner component
-    effect(() => {
-      const position = this.position();
-      if (this.component && this.viewInited()) {
-        this.component.instance.position.set(position);
-      }
-    });
-
-    // Effect to sync size with the inner component
-    effect(() => {
-      const size = this.size();
-      if (this.component && this.viewInited()) {
-        this.component.instance.size.set(size);
-      }
-    });
-
-    // Effect to sync hasBackdrop with the inner component
-    effect(() => {
-      const hasBackdrop = this.hasBackdrop();
-      if (this.component && this.viewInited()) {
-        this.component.instance.hasBackdrop.set(hasBackdrop);
-      }
-    });
-  }
+  private overlayService = inject(BsOverlayService);
 
   content!: TemplateRef<any>;
-  overlayRef!: OverlayRef;
-  component!: ComponentRef<BsOffcanvasComponent>;
+  private handle: OverlayHandle<BsOffcanvasComponent> | null = null;
 
   // Signals
   viewInited = signal<boolean>(false);
@@ -61,38 +25,71 @@ export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
 
   backdropClick = output<MouseEvent>();
 
+  constructor() {
+    // Effect to sync isVisible with the inner component
+    effect(() => {
+      const isVisible = this.isVisible();
+      if (this.handle?.componentRef) {
+        this.handle.componentRef.instance.isVisible.set(isVisible);
+      }
+    });
+
+    // Effect to sync position with the inner component
+    effect(() => {
+      const position = this.position();
+      if (this.handle?.componentRef && this.viewInited()) {
+        this.handle.componentRef.instance.position.set(position);
+      }
+    });
+
+    // Effect to sync size with the inner component
+    effect(() => {
+      const size = this.size();
+      if (this.handle?.componentRef && this.viewInited()) {
+        this.handle.componentRef.instance.size.set(size);
+      }
+    });
+
+    // Effect to sync hasBackdrop with the inner component
+    effect(() => {
+      const hasBackdrop = this.hasBackdrop();
+      if (this.handle?.componentRef && this.viewInited()) {
+        this.handle.componentRef.instance.hasBackdrop.set(hasBackdrop);
+      }
+    });
+  }
+
   ngAfterViewInit() {
-    const injector = Injector.create({
-      providers: [
-        { provide: OFFCANVAS_CONTENT, useValue: this.content },
-      ],
-      parent: this.rootInjector,
+    this.handle = this.overlayService.createGlobal<BsOffcanvasComponent>({
+      contentComponent: BsOffcanvasComponent,
+      contentToken: OFFCANVAS_CONTENT,
+      template: this.content,
+      globalPosition: {
+        top: '0',
+        left: '0',
+        bottom: '0',
+        right: '0'
+      },
+      scrollStrategy: 'reposition',
+      hasBackdrop: false,
+      cleanupDelay: 3000,
     });
-    // const portal = new ComponentPortal(BsOffcanvasComponent, null, injector);
-    const portal = this.portalFactory(injector);
-    this.overlayRef = this.overlayService.create({
-      scrollStrategy: this.overlayService.scrollStrategies.reposition(),
-      positionStrategy: this.overlayService.position().global()
-        .top('0').left('0').bottom('0').right('0'),
-      hasBackdrop: false
-    });
 
-    this.component = this.overlayRef.attach<BsOffcanvasComponent>(portal);
+    if (this.handle.componentRef) {
+      this.handle.componentRef.instance.backdropClick.subscribe((ev) => this.backdropClick.emit(ev));
 
-    this.component.instance.backdropClick.subscribe((ev) => this.backdropClick.emit(ev));
-
-    // Initialize the inner component with current values
-    this.component.instance.isVisible.set(this.isVisible());
-    this.component.instance.position.set(this.position());
-    this.component.instance.size.set(this.size());
-    this.component.instance.hasBackdrop.set(this.hasBackdrop());
+      // Initialize the inner component with current values
+      this.handle.componentRef.instance.isVisible.set(this.isVisible());
+      this.handle.componentRef.instance.position.set(this.position());
+      this.handle.componentRef.instance.size.set(this.size());
+      this.handle.componentRef.instance.hasBackdrop.set(this.hasBackdrop());
+    }
 
     this.viewInited.set(true);
   }
 
   ngOnDestroy() {
     this.isVisible.set(false);
-    setTimeout(() => this.overlayRef && this.overlayRef.dispose(), 3000);
+    this.handle?.dispose();
   }
-
 }

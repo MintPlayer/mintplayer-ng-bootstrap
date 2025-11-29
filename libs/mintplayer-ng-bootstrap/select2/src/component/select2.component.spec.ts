@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { BsDropdownModule } from '@mintplayer/ng-bootstrap/dropdown';
-import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
+import { BsOverlayComponent } from '@mintplayer/ng-bootstrap/overlay';
 import { ClickOutsideDirective } from '@mintplayer/ng-click-outside';
 import { MockComponent, MockDirective, MockModule } from 'ng-mocks';
 
@@ -15,7 +15,7 @@ describe('BsSelect2Component', () => {
     await TestBed.configureTestingModule({
       imports: [
         FormsModule,
-        MockComponent(BsHasOverlayComponent),
+        MockComponent(BsOverlayComponent),
         MockDirective(ClickOutsideDirective),
         MockModule(BsDropdownModule),
       ],

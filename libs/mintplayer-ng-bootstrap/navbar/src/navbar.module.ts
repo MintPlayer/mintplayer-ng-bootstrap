@@ -3,7 +3,7 @@ import { AsyncPipe, NgTemplateOutlet } from '@angular/common';
 import { ClickOutsideDirective } from '@mintplayer/ng-click-outside';
 import { BsUserAgentDirective } from '@mintplayer/ng-bootstrap/user-agent';
 import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
-import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
+import { BsOverlayComponent } from '@mintplayer/ng-bootstrap/overlay';
 import { BsDropdownDividerDirective } from '@mintplayer/ng-bootstrap/dropdown-divider';
 import { BsContainerComponent } from '@mintplayer/ng-bootstrap/container';
 import { BsNavbarTogglerComponent } from '@mintplayer/ng-bootstrap/navbar-toggler';
@@ -37,7 +37,7 @@ import { BsExpandButtonDirective } from './expand-button/expand-button.directive
     BsContainerComponent,
     BsUserAgentDirective,
     BsNoNoscriptDirective,
-    BsHasOverlayComponent,
+    BsOverlayComponent,
     BsDropdownDividerDirective,
     BsNavbarTogglerComponent,
   ],

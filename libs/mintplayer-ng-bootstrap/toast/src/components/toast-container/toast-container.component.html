@@ -1,4 +1,4 @@
-<bs-has-overlay></bs-has-overlay>
+<bs-overlay></bs-overlay>
 @for (toast of (toastService.toasts$ | async); let i = $index; track i) {
     <ng-container [ngTemplateOutlet]="toast.template" [ngTemplateOutletContext]="toast.context | bsAddProperties: {toastIndex: i}"></ng-container>
 }

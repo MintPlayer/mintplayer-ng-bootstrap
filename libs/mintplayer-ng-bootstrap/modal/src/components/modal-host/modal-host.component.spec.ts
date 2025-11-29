@@ -1,15 +1,13 @@
-import { Component, Directive, Injector, TemplateRef } from '@angular/core';
+import { Component, Directive, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Overlay, OverlayModule } from '@angular/cdk/overlay';
+import { OverlayModule } from '@angular/cdk/overlay';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { ComponentPortal } from '@angular/cdk/portal';
 import { BsModalHostComponent } from './modal-host.component';
-import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
-import { MockComponent, MockDirective, MockModule, MockProvider } from 'ng-mocks';
+import { MockComponent, MockDirective, MockProvider } from 'ng-mocks';
 import { BsModalComponent } from '../modal/modal.component';
 import { BsModalDirective } from '../../directives/modal/modal.directive';
-import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
+import { BsOverlayComponent, BsOverlayService } from '@mintplayer/ng-bootstrap/overlay';
 
 @Component({
   selector: 'bs-modal-test',
@@ -31,14 +29,12 @@ describe('BsModalHostComponent', () => {
   let component: BsModalTestComponent;
   let fixture: ComponentFixture<BsModalTestComponent>;
 
-  const modalMockType = MockComponent(BsModalComponent);
-
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
         CommonModule,
         OverlayModule,
-        MockComponent(BsHasOverlayComponent),
+        MockComponent(BsOverlayComponent),
         NoopAnimationsModule,
       ],
       declarations: [
@@ -46,19 +42,21 @@ describe('BsModalHostComponent', () => {
         BsModalHostComponent,
 
         // Mock dependencies
-        modalMockType,
+        MockComponent(BsModalComponent),
         MockDirective(BsModalDirective),
 
         // Testbench
         BsModalTestComponent
       ],
       providers: [
-        {
-          provide: PORTAL_FACTORY,
-          useValue: (injector: Injector) => {
-            return new ComponentPortal(modalMockType, null, injector);
-          }
-        }
+        MockProvider(BsOverlayService, {
+          createGlobal: () => ({
+            overlayRef: {} as any,
+            componentRef: undefined,
+            dispose: () => {},
+            updatePosition: () => {}
+          })
+        })
       ]
     })
     .compileComponents();

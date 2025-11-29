@@ -1,8 +1,7 @@
-import { Injector, NgModule } from '@angular/core';
+import { NgModule } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { OverlayModule } from '@angular/cdk/overlay';
-import { ComponentPortal } from '@angular/cdk/portal';
-import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
+import { BsOverlayComponent, BsOverlayContentDirective } from '@mintplayer/ng-bootstrap/overlay';
 import { BsModalComponent } from './components/modal/modal.component';
 import { BsModalHostComponent } from './components/modal-host/modal-host.component';
 import { BsModalHeaderDirective } from './directives/modal-header/modal-header.directive';
@@ -10,7 +9,6 @@ import { BsModalBodyDirective } from './directives/modal-body/modal-body.directi
 import { BsModalFooterDirective } from './directives/modal-footer/modal-footer.directive';
 import { BsModalDirective } from './directives/modal/modal.directive';
 import { BsModalCloseDirective } from './directives/modal-close/modal-close.directive';
-import { PORTAL_FACTORY } from './providers/portal-factory.provider';
 
 @NgModule({
   declarations: [
@@ -25,7 +23,8 @@ import { PORTAL_FACTORY } from './providers/portal-factory.provider';
   imports: [
     NgTemplateOutlet,
     OverlayModule,
-    BsHasOverlayComponent
+    BsOverlayComponent,
+    BsOverlayContentDirective
   ],
   exports: [
     BsModalHeaderDirective,
@@ -34,13 +33,8 @@ import { PORTAL_FACTORY } from './providers/portal-factory.provider';
     BsModalDirective,
     BsModalCloseDirective,
     BsModalComponent,
-    BsModalHostComponent
-  ],
-  providers: [{
-    provide: PORTAL_FACTORY,
-    useValue: (injector: Injector) => {
-      return new ComponentPortal(BsModalComponent, null, injector);
-    }
-  }]
+    BsModalHostComponent,
+    BsOverlayContentDirective
+  ]
 })
 export class BsModalModule { }
