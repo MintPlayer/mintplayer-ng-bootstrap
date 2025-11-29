@@ -38,13 +38,13 @@ jobs:
     
     - name: Build
       id: BuildWithCloud
-      continue-on-error: true
+      # continue-on-error: true
       run: npx nx build --configuration=production
 
-    - name: BuildWithoutCloud
-      id: BuildWithoutCloud
-      if: ${{ steps.BuildWithCloud.outcome == 'failure' }}
-      run: npx nx build --configuration=production --no-cloud
+    # - name: BuildWithoutCloud
+    #   id: BuildWithoutCloud
+    #   if: ${{ steps.BuildWithCloud.outcome == 'failure' }}
+    #   run: npx nx build --configuration=production --no-cloud
 
     - name: Test
       id: TestWithCloud
