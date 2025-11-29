@@ -30,13 +30,12 @@ describe('BreadcrumbComponent', () => {
         RouterTestingModule.withRoutes([
           { path: '', component: PageHomeComponent },
           { path: 'basic', component: PageBasicComponent, children: [] }
-        ])
-      ],
-      declarations: [
-        // Unit to test
+        ]),
+
+        // Unit to test (standalone)
         BreadcrumbComponent,
 
-        // Pages
+        // Pages (standalone)
         PageHomeComponent,
         PageBasicComponent,
       ]

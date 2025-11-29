@@ -11,9 +11,6 @@ describe('CodeSnippetComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         MockComponent(BsCodeSnippetComponent),
-      ],
-      declarations: [
-        // Unit to test
         CodeSnippetComponent,
       ]
     })

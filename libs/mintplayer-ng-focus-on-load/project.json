@@ -24,14 +24,10 @@
       "defaultConfiguration": "production"
     },
     "test": {
-      "executor": "@nx/jest:jest",
+      "executor": "@analogjs/vitest-angular:test",
       "outputs": ["{workspaceRoot}/coverage/libs/mintplayer-ng-focus-on-load"],
       "options": {
-        "codeCoverage": true,
-        "coverageReporters": ["lcovonly"],
-        "coverageDirectory": "coverage/libs/mintplayer-ng-focus-on-load",
-        "jestConfig": "libs/mintplayer-ng-focus-on-load/jest.config.ts",
-        "tsConfig": "libs/mintplayer-ng-focus-on-load/tsconfig.spec.json"
+        "configFile": "vitest.config.ts"
       }
     },
     "lint": {

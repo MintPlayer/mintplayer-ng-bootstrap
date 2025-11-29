@@ -16,8 +16,8 @@ describe('SlideUpDownComponent', () => {
         NoopAnimationsModule,
         MockModule(BsGridModule),
         MockDirective(BsButtonTypeDirective),
-      ],
-      declarations: [ SlideUpDownComponent ]
+        SlideUpDownComponent,
+      ]
     })
     .compileComponents();
 

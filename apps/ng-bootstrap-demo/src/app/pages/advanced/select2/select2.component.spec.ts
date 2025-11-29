@@ -16,9 +16,6 @@ describe('Select2Component', () => {
       imports: [
         HttpClientModule,
         MockModule(BsSelect2Module),
-      ],
-      declarations: [
-        // Unit to test
         Select2Component,
       ],
       providers: [

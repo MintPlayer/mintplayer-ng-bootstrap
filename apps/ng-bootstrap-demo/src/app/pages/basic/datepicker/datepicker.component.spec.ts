@@ -11,9 +11,6 @@ describe('DatepickerComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         MockComponent(BsDatepickerComponent),
-      ],
-      declarations: [
-        // Unit to test
         DatepickerComponent,
       ]
     })

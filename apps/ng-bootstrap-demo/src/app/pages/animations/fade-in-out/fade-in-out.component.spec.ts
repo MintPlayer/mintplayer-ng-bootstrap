@@ -12,9 +12,7 @@ describe('FadeInOutComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         MockDirective(BsButtonTypeDirective),
-      ],
-      declarations: [
-        FadeInOutComponent
+        FadeInOutComponent,
       ]
     })
     .compileComponents();

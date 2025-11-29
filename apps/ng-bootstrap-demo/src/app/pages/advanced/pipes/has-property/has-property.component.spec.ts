@@ -18,8 +18,8 @@ describe('HasPropertyComponent', () => {
         MockPipe(BsHasPropertyPipe),
         MockModule(BsToggleButtonModule),
         MockComponent(BsCodeSnippetComponent),
-      ],
-      declarations: [HasPropertyComponent]
+        HasPropertyComponent,
+      ]
     });
     fixture = TestBed.createComponent(HasPropertyComponent);
     component = fixture.componentInstance;

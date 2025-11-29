@@ -14,9 +14,6 @@ describe('DatatablesComponent', () => {
       imports: [
         HttpClientModule,
         MockModule(BsDatatableModule),
-      ],
-      declarations: [
-        // Unit to test
         DatatablesComponent,
       ],
       providers: [

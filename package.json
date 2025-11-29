@@ -12,7 +12,8 @@
     "analyze:wba": "webpack-bundle-analyzer dist/apps/ng-bootstrap-demo/stats.json",
     "build:sme": "nx build --source-map",
     "analyze:sme": "source-map-explorer dist/apps/ng-bootstrap-demo/browser/browser/*",
-    "test": "nx run-many --target=test --projects=ng-bootstrap-demo",
+    "test": "nx run-many --target=test --all --parallel",
+    "test:watch": "vitest --workspace=vitest.workspace.ts",
     "dev:ssr": "nx run ng-bootstrap-demo:serve-ssr",
     "serve:ssr": "node dist/ng-bootstrap-demo/server/main.js",
     "build:ssr": "nx build && nx run ng-bootstrap-demo:server",
@@ -40,6 +41,7 @@
     "tslib": "^2.3.0"
   },
   "devDependencies": {
+    "@analogjs/vitest-angular": "^2.1.1",
     "@angular-devkit/build-angular": "~20.3.9",
     "@angular-devkit/core": "~20.3.9",
     "@angular-devkit/schematics": "~20.3.9",
@@ -52,29 +54,25 @@
     "@nx/cypress": "22.1.1",
     "@nx/eslint": "22.1.1",
     "@nx/eslint-plugin": "22.1.1",
-    "@nx/jest": "22.1.1",
     "@nx/js": "22.1.1",
+    "@nx/vite": "^22.1.1",
     "@nx/workspace": "22.1.1",
     "@schematics/angular": "20.3.9",
     "@swc-node/register": "1.9.2",
     "@swc/core": "1.5.7",
     "@types/express": "^5.0.1",
-    "@types/jest": "30.0.0",
     "@types/node": "^18.16.9",
     "@typescript-eslint/eslint-plugin": "7.16.0",
     "@typescript-eslint/parser": "7.16.0",
     "@typescript-eslint/utils": "^7.16.0",
+    "@vitest/coverage-v8": "^3.2.4",
     "autoprefixer": "^10.4.0",
     "browser-sync": "^3.0.0",
     "cypress": "^13.0.0",
     "eslint": "8.57.0",
     "eslint-config-prettier": "10.0.0",
     "eslint-plugin-cypress": "^2.13.4",
-    "jest": "30.0.5",
-    "jest-canvas-mock": "^2.4.0",
-    "jest-environment-jsdom": "30.0.5",
-    "jest-preset-angular": "15.0.0",
-    "jest-util": "30.0.5",
+    "jsdom": "^27.2.0",
     "ng-mocks": "^14.13.5",
     "ng-packagr": "~20.3.2",
     "nx": "22.1.1",
@@ -85,15 +83,11 @@
     "prettier": "^2.6.2",
     "resize-observer-polyfill": "^1.5.1",
     "source-map-explorer": "^2.5.3",
-    "ts-jest": "29.4.1",
     "ts-node": "10.9.1",
     "typescript": "5.9.3",
-    "webpack-bundle-analyzer": "~4.9.0"
-  },
-  "overrides": {
-    "@angular-devkit/build-angular": {
-      "jest": "30.0.5",
-      "jest-environment-jsdom": "30.0.5"
-    }
+    "vite": "^6.4.1",
+    "vitest": "^3.2.4",
+    "webpack-bundle-analyzer": "~4.9.0",
+    "zone.js": "^0.15.1"
   }
 }

@@ -15,9 +15,6 @@ describe('ToggleButtonComponent', () => {
         FormsModule,
         MockModule(BsGridModule),
         MockModule(BsToggleButtonModule),
-      ],
-      declarations: [
-        // Unit to test
         ToggleButtonComponent,
       ]
     })

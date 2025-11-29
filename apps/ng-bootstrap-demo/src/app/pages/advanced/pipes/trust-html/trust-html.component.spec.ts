@@ -13,12 +13,12 @@ describe('TrustHtmlComponent', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      declarations: [TrustHtmlComponent],
       imports: [
         FormsModule,
         MockModule(BsFormModule),
         MockModule(BsGridModule),
         MockPipe(BsTrustHtmlPipe),
+        TrustHtmlComponent,
       ]
     });
     fixture = TestBed.createComponent(TrustHtmlComponent);

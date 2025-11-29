@@ -11,9 +11,6 @@ describe('GridComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         MockModule(BsGridModule),
-      ],
-      declarations: [
-        // Unit to test
         GridComponent,
       ]
     })

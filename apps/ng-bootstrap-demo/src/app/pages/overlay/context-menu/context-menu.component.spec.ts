@@ -12,8 +12,8 @@ describe('ContextMenuComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         MockComponent(BsHasOverlayComponent),
-      ],
-      declarations: [ ContextMenuComponent ]
+        ContextMenuComponent,
+      ]
     })
     .compileComponents();
   });

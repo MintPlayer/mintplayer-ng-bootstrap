@@ -15,9 +15,9 @@ describe('InputGroupComponent', () => {
       imports: [
         MockModule(BsFormModule),
         MockDirective(BsButtonTypeDirective),
-        MockComponent(BsInputGroupComponent),  
-      ],
-      declarations: [ InputGroupComponent ]
+        MockComponent(BsInputGroupComponent),
+        InputGroupComponent,
+      ]
     })
     .compileComponents();
 

@@ -24,8 +24,10 @@ describe('LinifyComponent', () => {
         MockModule(BsListGroupModule),
         MockDirective(BsButtonTypeDirective),
         MockModule(BsToggleButtonModule),
-      ],
-      declarations: [LinifyComponent]
+
+        // Unit to test (standalone)
+        LinifyComponent,
+      ]
     });
     fixture = TestBed.createComponent(LinifyComponent);
     component = fixture.componentInstance;

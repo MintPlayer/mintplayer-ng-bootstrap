@@ -13,9 +13,6 @@ describe('MultiselectDropdownComponent', () => {
       imports: [
         MockModule(BsFormModule),
         MockModule(BsMultiselectModule),
-      ],
-      declarations: [
-        // Unit to test
         MultiselectDropdownComponent,
       ]
     })

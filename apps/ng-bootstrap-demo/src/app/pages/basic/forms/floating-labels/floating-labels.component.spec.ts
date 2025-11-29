@@ -14,9 +14,7 @@ describe('FloatingLabelsComponent', () => {
       imports: [
         MockModule(BsFormModule),
         MockComponent(BsFloatingLabelComponent),
-      ],
-      declarations: [
-        FloatingLabelsComponent
+        FloatingLabelsComponent,
       ]
     })
     .compileComponents();

@@ -16,8 +16,8 @@ describe('ColorTransitionComponent', () => {
         FormsModule,
         NoopAnimationsModule,
         MockModule(BsToggleButtonModule),
-      ],
-      declarations: [ ColorTransitionComponent ]
+        ColorTransitionComponent,
+      ]
     })
     .compileComponents();
 

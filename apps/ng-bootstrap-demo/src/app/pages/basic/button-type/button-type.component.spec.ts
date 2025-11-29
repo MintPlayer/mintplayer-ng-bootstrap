@@ -12,8 +12,8 @@ describe('ButtonTypeComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         MockDirective(BsButtonTypeDirective),
-      ],
-      declarations: [ ButtonTypeComponent ]
+        ButtonTypeComponent,
+      ]
     })
     .compileComponents();
 

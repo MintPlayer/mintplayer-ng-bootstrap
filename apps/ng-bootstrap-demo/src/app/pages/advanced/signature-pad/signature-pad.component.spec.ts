@@ -11,10 +11,8 @@ describe('SignaturePadComponent', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [
-        MockComponent(BsSignaturePadComponent)
-      ],
-      declarations: [
-        SignaturePadComponent
+        MockComponent(BsSignaturePadComponent),
+        SignaturePadComponent,
       ]
     });
     fixture = TestBed.createComponent(SignaturePadComponent);

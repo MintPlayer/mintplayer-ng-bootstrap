@@ -98,14 +98,10 @@
       "executor": "@nx/eslint:lint"
     },
     "test": {
-      "executor": "@nx/jest:jest",
+      "executor": "@analogjs/vitest-angular:test",
       "outputs": ["{workspaceRoot}/coverage/apps/ng-bootstrap-demo"],
       "options": {
-        "codeCoverage": true,
-        "coverageReporters": ["lcovonly"],
-        "coverageDirectory": "coverage/apps/ng-bootstrap-demo",
-        "jestConfig": "apps/ng-bootstrap-demo/jest.config.ts",
-        "tsConfig": "apps/ng-bootstrap-demo/tsconfig.spec.json"
+        "configFile": "vitest.config.ts"
       }
     }
   }

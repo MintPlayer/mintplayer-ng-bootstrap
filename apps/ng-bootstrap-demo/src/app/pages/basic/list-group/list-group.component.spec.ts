@@ -11,9 +11,6 @@ describe('ListGroupComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         MockModule(BsListGroupModule),
-      ],
-      declarations: [
-        // Unit to test
         ListGroupComponent,
       ]
     })

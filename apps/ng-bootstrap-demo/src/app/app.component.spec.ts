@@ -18,12 +18,11 @@ describe('AppComponent', () => {
 
         // Mock dependencies
         MockModule(BsNavbarModule),
-      ],
-      declarations: [
-        // Component to test
+
+        // Component to test (standalone)
         AppComponent,
 
-        // Mock pages
+        // Mock pages (standalone)
         PageAbcComponent
       ],
       providers: [

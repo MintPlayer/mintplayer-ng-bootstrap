@@ -18,9 +18,6 @@ describe('SelectComponent', () => {
         MockModule(BsGridModule),
         MockModule(BsSelectModule),
         MockModule(BsToggleButtonModule),
-      ],
-      declarations: [
-        // Unit to test
         SelectComponent,
       ]
     })

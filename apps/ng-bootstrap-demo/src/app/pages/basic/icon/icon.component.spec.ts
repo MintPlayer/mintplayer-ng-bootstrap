@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { IconComponent } from './icon.component';
 import { MockComponent, MockModule } from 'ng-mocks';
@@ -11,10 +12,11 @@ describe('IconComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [IconComponent],
       imports: [
+        NoopAnimationsModule,
         MockModule(BsAlertModule),
         MockComponent(BsCodeSnippetComponent),
+        IconComponent,
       ]
     })
     .compileComponents();

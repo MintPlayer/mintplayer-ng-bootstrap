@@ -11,9 +11,9 @@ describe('ResizableComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        MockModule(BsResizableModule)
-      ],
-      declarations: [ ResizableComponent ]
+        MockModule(BsResizableModule),
+        ResizableComponent,
+      ]
     })
     .compileComponents();
 

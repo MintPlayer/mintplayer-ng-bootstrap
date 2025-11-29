@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ShellComponent } from './shell.component';
 import { MockComponent, MockDirective, MockModule } from 'ng-mocks';
@@ -14,9 +15,11 @@ describe('ShellComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
+        NoopAnimationsModule,
+
         // Unit to test
         ShellComponent,
-      
+
         // Mock dependencies
         MockModule(BsAccordionModule),
         MockComponent(BsButtonGroupComponent),

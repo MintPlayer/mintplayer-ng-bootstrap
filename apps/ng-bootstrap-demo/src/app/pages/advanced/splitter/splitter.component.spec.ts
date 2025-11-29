@@ -15,9 +15,9 @@ describe('SplitterComponent', () => {
       imports: [
         FormsModule,
         MockModule(BsSplitterModule),
-        MockModule(BsToggleButtonModule)
-      ],
-      declarations: [ SplitterComponent ]
+        MockModule(BsToggleButtonModule),
+        SplitterComponent,
+      ]
     })
     .compileComponents();
 

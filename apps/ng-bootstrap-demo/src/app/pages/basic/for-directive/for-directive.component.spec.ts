@@ -15,9 +15,6 @@ describe('ForDirectiveComponent', () => {
         MockDirective(BsForDirective),
         MockModule(BsFormModule),
         MockModule(BsGridModule),
-      ],
-      declarations: [
-        // Unit to test
         ForDirectiveComponent,
       ]
     })

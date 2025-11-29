@@ -20,9 +20,8 @@ describe('PlaceholderComponent', () => {
         MockModule(BsGridModule),
         MockModule(BsToggleButtonModule),
         MockModule(BsPlaceholderModule),
-      ],
-      declarations: [
-        // Unit to test
+
+        // Unit to test (standalone)
         PlaceholderComponent,
       ]
     })

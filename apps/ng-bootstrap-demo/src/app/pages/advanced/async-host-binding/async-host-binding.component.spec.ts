@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { AsyncHostBindingComponent, HelloComponent } from './async-host-binding.component';
 import { MockComponent, MockModule } from 'ng-mocks';
@@ -12,11 +13,10 @@ describe('AsyncHostBindingComponent', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [
+        NoopAnimationsModule,
         MockModule(BsAlertModule),
-      ],
-      declarations: [
+        MockComponent(HelloComponent),
         AsyncHostBindingComponent,
-        MockComponent(HelloComponent)
       ],
       providers: [
         provideAsyncHostBindings()

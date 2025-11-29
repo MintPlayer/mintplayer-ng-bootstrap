@@ -23,10 +23,9 @@ describe('ColorPickerComponent', () => {
         MockModule(BsColorPickerModule),
         MockModule(BsToggleButtonModule),
         MockComponent(BsButtonGroupComponent),
-        MockDirective(BsButtonTypeDirective)
-      ],
-      declarations: [
-        // Unit to test
+        MockDirective(BsButtonTypeDirective),
+
+        // Unit to test (standalone)
         ColorPickerComponent,
       ]
     })

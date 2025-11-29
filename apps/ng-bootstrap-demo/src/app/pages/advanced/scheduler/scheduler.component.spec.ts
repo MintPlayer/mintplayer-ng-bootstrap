@@ -21,9 +21,8 @@ describe('SchedulerComponent', () => {
         MockDirective(BsButtonTypeDirective),
         MockComponent(BsInputGroupComponent),
         MockModule(BsSelectModule),
-      ],
-      declarations: [
-        // Unit to test
+
+        // Unit to test (standalone)
         SchedulerComponent,
       ]
     })

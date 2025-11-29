@@ -19,9 +19,8 @@ describe('FocusTrapComponent', () => {
         MockModule(BsGridModule),
         MockModule(BsModalModule),
         MockDirective(BsButtonTypeDirective),
-      ],
-      declarations: [
-        // Unit to test
+
+        // Unit to test (standalone)
         FocusTrapComponent,
       ]
     })

@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
@@ -14,14 +15,14 @@ describe('AlertComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
+        NoopAnimationsModule,
         FormsModule,
         MockModule(BsFormModule),
         MockModule(BsAlertModule),
         MockComponent(BsInputGroupComponent),
         MockDirective(BsButtonTypeDirective),
-      ],
-      declarations: [
-        // Unit to test
+
+        // Unit to test (standalone)
         AlertComponent,
       ],
     })
