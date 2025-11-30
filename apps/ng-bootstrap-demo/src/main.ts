@@ -5,3 +5,10 @@ import { config } from './app/app.config';
 
 bootstrapApplication(AppComponent, config)
   .catch((err) => console.error(err));
+
+  // Angular 21
+  // Remove Zone.js
+  // Signals / remove rxjs
+  // Standalone components
+  // Vite
+  
