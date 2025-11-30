@@ -1,7 +1,8 @@
-import { AfterViewInit, Component, ComponentRef, EventEmitter, InjectionToken, Input, OnDestroy, Output, TemplateRef, Type, inject } from '@angular/core';
+import { AfterContentInit, Component, ComponentRef, ContentChild, EventEmitter, InjectionToken, Input, OnDestroy, Output, TemplateRef, Type, inject } from '@angular/core';
 import { BsOverlayService } from '../../services/overlay/overlay.service';
 import { GlobalPositionConfig, ScrollStrategyType } from '../../interfaces';
 import { OverlayHandle } from '../../interfaces/overlay-handle.interface';
+import { BsOverlayContentDirective } from '../../directives/overlay-content/overlay-content.directive';
 
 @Component({
   selector: 'bs-overlay',
@@ -9,8 +10,10 @@ import { OverlayHandle } from '../../interfaces/overlay-handle.interface';
   templateUrl: './overlay.component.html',
   styleUrls: ['./overlay.component.scss'],
 })
-export class BsOverlayComponent<T = any> implements AfterViewInit, OnDestroy {
+export class BsOverlayComponent<T = any> implements AfterContentInit, OnDestroy {
   private overlayService = inject(BsOverlayService);
+
+  @ContentChild(BsOverlayContentDirective) contentDirective!: BsOverlayContentDirective;
 
   // Configuration inputs
   @Input() contentComponent!: Type<T>;
@@ -26,28 +29,25 @@ export class BsOverlayComponent<T = any> implements AfterViewInit, OnDestroy {
   @Output() backdropClick = new EventEmitter<MouseEvent>();
 
   // Internal state
-  private contentTemplate: TemplateRef<any> | null = null;
   private handle: OverlayHandle<T> | null = null;
 
-  registerContent(template: TemplateRef<any>) {
-    this.contentTemplate = template;
-  }
-
-  ngAfterViewInit() {
-    // Delay to ensure content is registered
+  ngAfterContentInit() {
+    // Use setTimeout to ensure the content directive is fully initialized
     setTimeout(() => this.createOverlay(), 0);
   }
 
   private createOverlay() {
-    if (!this.contentTemplate || !this.contentComponent || !this.contentToken) {
-      console.warn('BsOverlayComponent: Missing required configuration');
+    const template = this.contentDirective?.getTemplate();
+
+    if (!template || !this.contentComponent || !this.contentToken) {
+      console.warn('BsOverlayComponent: Missing required configuration (template, contentComponent, or contentToken)');
       return;
     }
 
     this.handle = this.overlayService.createGlobal<T>({
       contentComponent: this.contentComponent,
       contentToken: this.contentToken,
-      template: this.contentTemplate,
+      template: template,
       globalPosition: this.globalPosition,
       scrollStrategy: this.scrollStrategy,
       hasBackdrop: this.hasBackdrop,

@@ -1,1 +1,12 @@
-<bs-overlay></bs-overlay>
+<bs-overlay
+  [contentComponent]="contentComponent"
+  [contentToken]="contentToken"
+  [globalPosition]="globalPosition"
+  [scrollStrategy]="'reposition'"
+  [hasBackdrop]="false"
+  [cleanupDelay]="3000"
+  (attached)="onAttached($event)">
+  <ng-container *bsOverlayContent>
+    <ng-container *ngTemplateOutlet="content"></ng-container>
+  </ng-container>
+</bs-overlay>
