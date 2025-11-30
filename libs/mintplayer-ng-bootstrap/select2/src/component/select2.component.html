@@ -1,5 +1,4 @@
 <!-- <bs-dropdown [(isOpen)]="isOpen" [hasBackdrop]="false" #itemsBox class="items-box text-wrap"></bs-dropdown> -->
-<bs-has-overlay></bs-has-overlay>
 <div bsDropdown [(isOpen)]="isOpen" [hasBackdrop]="false" [sameDropdownWidth]="true" #itemsBox class="items-box text-wrap">
     @for (item of selectedItems; track item) {
         <ng-container *ngTemplateOutlet="itemTemplate ?? defaultItemTemplate; context: { $implicit: item, select2: this }"></ng-container>

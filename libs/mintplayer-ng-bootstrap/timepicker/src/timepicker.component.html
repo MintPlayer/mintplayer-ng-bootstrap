@@ -16,7 +16,6 @@
             </button>
         </bs-input-group>
     </bs-form>
-    <bs-has-overlay></bs-has-overlay>
     <bs-dropdown-menu class="overflow-auto" *bsDropdownMenu>
         @for (timestamp of presetTimestamps; track timestamp) {
             <bs-dropdown-item [isSelected]="timesEqual(selectedTime, timestamp)" (click)="setTime(timestamp)">

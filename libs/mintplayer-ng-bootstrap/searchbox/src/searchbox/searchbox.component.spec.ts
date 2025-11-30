@@ -4,7 +4,6 @@ import { Component } from '@angular/core';
 import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
 import { BsDropdownModule } from '@mintplayer/ng-bootstrap/dropdown';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
-import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { BsDropdownMenuModule } from '@mintplayer/ng-bootstrap/dropdown-menu';
 import { BsSearchboxComponent } from './searchbox.component';
 
@@ -42,7 +41,6 @@ describe('BsSearchboxComponent', () => {
         MockModule(BsDropdownModule),
         MockDirective(BsButtonTypeDirective),
         MockModule(BsDropdownMenuModule),
-        MockComponent(BsHasOverlayComponent),
       ]
     }).compileComponents();
 

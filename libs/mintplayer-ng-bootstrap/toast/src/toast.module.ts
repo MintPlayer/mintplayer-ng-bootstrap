@@ -2,7 +2,6 @@ import { Injector, NgModule } from '@angular/core';
 import { AsyncPipe, NgTemplateOutlet } from '@angular/common';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { OverlayModule } from '@angular/cdk/overlay';
-import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { BsToastComponent } from './components/toast/toast.component';
 import { BsToastBodyComponent } from './components/toast-body/toast-body.component';
 import { BsToastHeaderComponent } from './components/toast-header/toast-header.component';
@@ -25,7 +24,6 @@ import { BsAddPropertiesPipe } from './pipes/add-properties.pipe';
     AsyncPipe,
     OverlayModule,
     NgTemplateOutlet,
-    BsHasOverlayComponent,
   ],
   exports: [
     BsToastComponent,

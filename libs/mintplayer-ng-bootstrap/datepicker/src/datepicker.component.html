@@ -1,7 +1,6 @@
 <!-- <bs-dropdown [hasBackdrop]="true" [closeOnClickOutside]="true"></bs-dropdown> -->
 <div bsDropdown [hasBackdrop]="true" [closeOnClickOutside]="true">
     <button bsDropdownToggle [color]="colors.primary">{{ selectedDate | date }}</button>
-    <bs-has-overlay></bs-has-overlay>
     <div *bsDropdownMenu>
         <bs-calendar [(selectedDate)]="selectedDate" [(currentMonth)]="currentMonth" [disableDateFn]="disableDateFn"></bs-calendar>
     </div>

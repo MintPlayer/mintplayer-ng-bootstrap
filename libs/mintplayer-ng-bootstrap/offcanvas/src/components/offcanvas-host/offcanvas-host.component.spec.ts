@@ -9,7 +9,6 @@ import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { MockComponent, MockModule } from 'ng-mocks';
-import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { Position } from '@mintplayer/ng-bootstrap';
 
 describe('BsOffcanvasHostComponent', () => {
@@ -21,7 +20,6 @@ describe('BsOffcanvasHostComponent', () => {
       imports: [
         CommonModule,
         OverlayModule,
-        MockComponent(BsHasOverlayComponent),
       ],
       declarations: [
         // Unit to test
