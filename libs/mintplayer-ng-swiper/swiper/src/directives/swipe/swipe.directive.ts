@@ -1,8 +1,8 @@
 import { DestroyRef, Directive, HostBinding, HostListener, input } from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { BsObserveSizeDirective } from "@mintplayer/ng-swiper/observe-size";
 import { combineLatest, filter, take } from "rxjs";
 import { BsSwipeContainerDirective } from "../swipe-container/swipe-container.directive";
-import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 
 @Directive({
   selector: '[bsSwipe]',
