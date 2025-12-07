@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { BsSelect2Module } from '@mintplayer/ng-bootstrap/select2';
 import { BsFontColorPipe } from '@mintplayer/ng-bootstrap/font-color';
 import { FocusOnLoadDirective } from '@mintplayer/ng-focus-on-load';
@@ -7,7 +7,6 @@ import { Tag } from '../../../entities/tag';
 import { ESubjectType } from '../../../enums/subject-type';
 import { SubjectService } from '../../../services/subject/subject.service';
 import { TagService } from '../../../services/tag/tag.service';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'demo-autofocus',
@@ -20,20 +19,19 @@ export class AutofocusComponent {
 
   subjectService = inject(SubjectService);
   tagService = inject(TagService);
-  destroy = inject(DestroyRef);
 
-  artistSuggestions: Artist[] = [];
-  tagSuggestions: Tag[] = [];
-  selectedTags: Tag[] = [];
+  artistSuggestions = signal<Artist[]>([]);
+  tagSuggestions = signal<Tag[]>([]);
+  selectedTags = signal<Tag[]>([]);
 
   onProvideArtistSuggestions(search: string) {
     this.subjectService.suggestAsync(search, [ESubjectType.artist])
-      .then((artists) => this.artistSuggestions = <Artist[]>artists.map((s) => <Artist>s));
+      .then((artists) => this.artistSuggestions.set(<Artist[]>artists.map((s) => <Artist>s)));
   }
   onProvideTagSuggestions(search: string) {
     this.tagService.suggestTags(search, true).then((tags) => {
       if (tags) {
-        this.tagSuggestions = tags;
+        this.tagSuggestions.set(tags);
       }
     });
   }
