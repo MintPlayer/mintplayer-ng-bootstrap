@@ -16,8 +16,8 @@
                             </div>
                             <div bsRow class="form-group">
                                 <div [md]="3" [lg]="6">
-                                    <bs-select2 (provideSuggestions)="onProvideTagSuggestions($event)" [suggestions]="tagSuggestions" [autofocus]="true">
-                                        <span *bsItemTemplate="let item of selectedTags; let select2=select2" class="select2-item" [style.background]="item.category?.color"
+                                    <bs-select2 (provideSuggestions)="onProvideTagSuggestions($event)" [suggestions]="tagSuggestions()" [autofocus]="true">
+                                        <span *bsItemTemplate="let item of selectedTags(); let select2=select2" class="select2-item" [style.background]="item.category?.color"
                                             [style.color]="item.category?.color | bsFontColor">
                                             <span [style.color]="item.category?.color | bsFontColor" (click)="select2.onRemoveItem(item,$event)">×</span>
                                             {{ item?.description }}
@@ -25,8 +25,8 @@
                                     </bs-select2>
                                 </div>
                                 <div [md]="9" [lg]="6">
-                                    <bs-select2 (provideSuggestions)="onProvideTagSuggestions($event)" [suggestions]="tagSuggestions" [autofocus]="true">
-                                        <span *bsItemTemplate="let item of selectedTags; let select2=select2" class="select2-item" [style.background]="item.category?.color"
+                                    <bs-select2 (provideSuggestions)="onProvideTagSuggestions($event)" [suggestions]="tagSuggestions()" [autofocus]="true">
+                                        <span *bsItemTemplate="let item of selectedTags(); let select2=select2" class="select2-item" [style.background]="item.category?.color"
                                             [style.color]="item.category?.color | bsFontColor">
                                             <span [style.color]="item.category?.color | bsFontColor" (click)="select2.onRemoveItem(item,$event)">×</span>
                                             {{ item.description }}
