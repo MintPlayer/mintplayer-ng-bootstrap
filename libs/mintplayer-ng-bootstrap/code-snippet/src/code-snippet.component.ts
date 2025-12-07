@@ -1,24 +1,22 @@
-import { AsyncPipe } from '@angular/common';
-import { Component, EventEmitter, input, Input, Output, TemplateRef, ViewChild } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, EventEmitter, input, Output, signal, effect, TemplateRef, ViewChild } from '@angular/core';
 import { BsCopyDirective } from '@mintplayer/ng-bootstrap/copy';
 import { BsOffcanvasModule } from '@mintplayer/ng-bootstrap/offcanvas';
 import { HighlightModule } from 'ngx-highlightjs';
 import { HighlightResult } from 'highlight.js';
-import { BehaviorSubject } from 'rxjs';
 
 @Component({
   selector: 'bs-code-snippet',
   standalone: true,
   templateUrl: './code-snippet.component.html',
   styleUrls: ['./code-snippet.component.scss'],
-  imports: [AsyncPipe, BsCopyDirective, BsOffcanvasModule, HighlightModule],
+  imports: [BsCopyDirective, BsOffcanvasModule, HighlightModule],
 })
 export class BsCodeSnippetComponent {
 
   constructor() {
-    this.language$.pipe(takeUntilDestroyed())
-      .subscribe((language) => this.detectedLanguage.emit(language));
+    effect(() => {
+      this.detectedLanguage.emit(this.language$());
+    });
   }
 
   offcanvasVisible = false;
@@ -27,7 +25,7 @@ export class BsCodeSnippetComponent {
   @ViewChild('copiedTemplate') copiedTemplate!: TemplateRef<any>;
   @Output() public detectedLanguage = new EventEmitter<string>();
 
-  language$ = new BehaviorSubject<string>('code');
+  language$ = signal<string>('code');
 
   copiedHtml() {
     this.offcanvasVisible = true;
@@ -35,7 +33,7 @@ export class BsCodeSnippetComponent {
   }
 
   onHighlighted(result: HighlightResult | null) {
-    this.language$.next(result?.language ?? 'code');
+    this.language$.set(result?.language ?? 'code');
   }
 
 }

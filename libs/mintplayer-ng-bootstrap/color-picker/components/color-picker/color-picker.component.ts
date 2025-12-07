@@ -1,8 +1,6 @@
-import { Component, Input, ViewChild, EventEmitter, Output } from "@angular/core";
-import { BehaviorSubject } from "rxjs";
+import { Component, Input, ViewChild, EventEmitter, Output, signal, effect } from "@angular/core";
 import { HS } from "../../interfaces/hs";
 import { BsColorWheelComponent } from "../color-wheel/color-wheel.component";
-import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 
 @Component({
   selector: 'bs-color-picker',
@@ -13,33 +11,36 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 export class BsColorPickerComponent {
 
   constructor() {
-    this.alpha$.pipe(takeUntilDestroyed())
-      .subscribe((alpha) => this.alphaChange.emit(alpha));
+    effect(() => {
+      this.alphaChange.emit(this.alpha());
+    });
   }
 
   @ViewChild('wheel') colorWheel!: BsColorWheelComponent;
-  @Input() set size(value: number) {
-    this.size$.next(value);
-  }
-  @Input() set allowAlpha(value: boolean) {
-    this.allowAlpha$.next(value);
-  }
-  
-  size$ = new BehaviorSubject<number>(150);
-  disabled$ = new BehaviorSubject<boolean>(false);
-  allowAlpha$ = new BehaviorSubject<boolean>(true);
 
-  hs$ = new BehaviorSubject<HS>({ hue: 0, saturation: 0 });
-  luminosity$ = new BehaviorSubject<number>(0);
+  size = signal<number>(150);
+  @Input('size') set sizeInput(val: number) {
+    this.size.set(val);
+  }
+
+  disabled = signal<boolean>(false);
+  @Input('disabled') set disabledInput(val: boolean) {
+    this.disabled.set(val);
+  }
+
+  allowAlpha = signal<boolean>(true);
+  @Input('allowAlpha') set allowAlphaInput(val: boolean) {
+    this.allowAlpha.set(val);
+  }
+
+  hs = signal<HS>({ hue: 0, saturation: 0 });
+  luminosity = signal<number>(0);
 
   //#region Alpha
-  alpha$ = new BehaviorSubject<number>(1);
+  alpha = signal<number>(1);
+  @Input('alpha') set alphaInput(val: number) {
+    this.alpha.set(val);
+  }
   @Output() alphaChange = new EventEmitter<number>();
-  get alpha() {
-    return this.alpha$.value;
-  }
-  @Input() set alpha(value: number) {
-    this.alpha$.next(value);
-  }
   //#endregion
 }

@@ -4,7 +4,10 @@
       "Bash(npx nx:*)",
       "Bash(npm show:*)",
       "Bash(npm install:*)",
-      "Bash(npx ng:*)"
+      "Bash(npx ng:*)",
+      "Bash(npm run build:*)",
+      "Bash(git stash:*)",
+      "Bash(cat:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

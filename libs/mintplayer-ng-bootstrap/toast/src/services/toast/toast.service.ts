@@ -1,7 +1,6 @@
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { Inject, Injectable, Injector, TemplateRef } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { Inject, Injectable, Injector, TemplateRef, signal } from '@angular/core';
 import { BsToastContainerComponent } from '../../components/toast-container/toast-container.component';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
 
@@ -11,7 +10,7 @@ export class BsToastService {
   constructor(private overlayService: Overlay, private rootInjector: Injector, @Inject(PORTAL_FACTORY) private portalFactory: (injector: Injector) => ComponentPortal<any>) { }
 
   overlayRef: OverlayRef | null = null;
-  toasts$ = new BehaviorSubject<ToastItem[]>([]);
+  toasts = signal<ToastItem[]>([]);
   public pushToast(toast: TemplateRef<any>, context?: Object) {
     if (!this.overlayRef) {
       const injector = Injector.create({
@@ -30,21 +29,23 @@ export class BsToastService {
 
     context = context ?? {};
     const ctx = Object.assign(context, { isVisible: false });
-    this.toasts$.value.push({ template: toast, context: ctx });
-    this.toasts$.next(this.toasts$.value);
+    const currentToasts = this.toasts();
+    currentToasts.push({ template: toast, context: ctx });
+    this.toasts.set([...currentToasts]);
     setTimeout(() => ctx.isVisible = true, 20);
   }
 
   public close(index: number) {
-    const toasts = this.toasts$.value;
+    const toasts = this.toasts();
     const toast = toasts[index];
     if (toast && toast.context) {
       (<any>toast.context).isVisible = false;
     }
 
     setTimeout(() => {
-      toasts.splice(index, 1);
-      this.toasts$.next(this.toasts$.value);
+      const currentToasts = this.toasts();
+      currentToasts.splice(index, 1);
+      this.toasts.set([...currentToasts]);
     }, 400);
   }
 }

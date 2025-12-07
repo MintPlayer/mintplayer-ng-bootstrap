@@ -63,7 +63,7 @@ export class BsModalHostComponent implements AfterViewInit, OnDestroy {
   }
   
   @HostListener('document:keydown', ['$event'])
-  private onKeyDown(ev: KeyboardEvent) {
+  onKeyDown(ev: KeyboardEvent) {
     if (this.isOpen && this.closeOnEscape && ev.code === 'Escape') {
       this.isOpen = false;
     }

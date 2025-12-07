@@ -1,14 +1,13 @@
-import { Component, HostBinding, HostListener, Input } from '@angular/core';
+import { Component, HostBinding, HostListener, Input, signal, effect, OnDestroy } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
-import { interval, map, tap } from 'rxjs';
 
 @Component({
   selector: "demo-hello",
   template: `Hello {{ name }}!`,
   standalone: true,
 })
-export class HelloComponent {
+export class HelloComponent implements OnDestroy {
   @Input() name!: string;
 
   @HostBinding('class.d-inline-block')
@@ -16,13 +15,32 @@ export class HelloComponent {
   @HostBinding('class.mw-100')
   classes = true;
 
+  testSignal = signal<number>(0);
+  activeSignal = signal<number>(0);
+  private intervalId: any;
+
+  constructor() {
+    this.intervalId = setInterval(() => {
+      const value = this.testSignal() + 1;
+      console.log(value);
+      this.testSignal.set(value);
+      this.activeSignal.set(value % 2);
+    }, 1000);
+  }
+
+  ngOnDestroy() {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+    }
+  }
+
   @HostBinding("$.style.padding.px")
   @HostListener("$.style.padding.px")
-  readonly test = interval(1000).pipe(tap(console.log));
+  get test() { return this.testSignal; }
 
   @HostBinding("$.class.fw-bold")
   @HostListener("$.class.fw-bold")
-  readonly active = this.test.pipe(map(v => v % 2));
+  get active() { return this.activeSignal; }
 }
 
 @Component({

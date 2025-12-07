@@ -1,7 +1,5 @@
-import { Component, EventEmitter, Input, Output, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
-import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
+import { Component, EventEmitter, Input, Output, AfterViewInit, ViewChild, ElementRef, signal, computed, effect } from '@angular/core';
 import { HS } from '../../interfaces/hs';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'bs-alpha-strip',
@@ -12,13 +10,15 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 export class BsAlphaStripComponent implements AfterViewInit {
 
   constructor() {
-    combineLatest([this.hs$, this.luminosity$]).pipe(takeUntilDestroyed()).subscribe(([hs, luminosity]) => {
+    effect(() => {
+      const hs = this.hsSignal();
+      const luminosity = this.luminositySignal();
       setTimeout(() => {
         if (this.canvasContext) {
           const width = this.canvas.nativeElement.width, height = this.canvas.nativeElement.height;
           this.canvasContext.clearRect(0, 0, width, height);
           this.canvasContext.save();
-          
+
           const gradient = this.canvasContext.createLinearGradient(0, 0, width, 0);
           gradient.addColorStop(0, `hsla(${hs.hue}, ${hs.saturation * 100}%, ${luminosity * 100}%, 0)`);
           gradient.addColorStop(1, `hsla(${hs.hue}, ${hs.saturation * 100}%, ${luminosity * 100}%, 1)`);
@@ -28,44 +28,38 @@ export class BsAlphaStripComponent implements AfterViewInit {
       });
     });
 
-    this.resultBackground$ = combineLatest([this.hs$, this.luminosity$, this.alpha$])
-      .pipe(map(([hs, luminosity, alpha]) => {
-        return `hsla(${hs.hue}, ${hs.saturation * 100}%, ${luminosity * 100}%, ${alpha})`;
-      }));
+    this.resultBackground = computed(() => {
+      const hs = this.hsSignal();
+      const luminosity = this.luminositySignal();
+      const alpha = this.alphaSignal();
+      return `hsla(${hs.hue}, ${hs.saturation * 100}%, ${luminosity * 100}%, ${alpha})`;
+    });
 
-    this.alpha$.pipe(takeUntilDestroyed())
-      .subscribe((alpha) => this.alphaChange.emit(alpha));
+    effect(() => {
+      this.alphaChange.emit(this.alphaSignal());
+    });
   }
 
   //#region HS
-  hs$ = new BehaviorSubject<HS>({ hue: 0, saturation: 0 });
-  public get hs() {
-    return this.hs$.value;
-  }
-  @Input() public set hs(value: HS) {
-    this.hs$.next(value);
+  hsSignal = signal<HS>({ hue: 0, saturation: 0 });
+  @Input() set hs(val: HS) {
+    this.hsSignal.set(val);
   }
   //#endregion
   //#region Luminosity
-  luminosity$ = new BehaviorSubject<number>(0.5);
-  public get luminosity() {
-    return this.luminosity$.value;
-  }
-  @Input() public set luminosity(value: number) {
-    this.luminosity$.next(value);
+  luminositySignal = signal<number>(0.5);
+  @Input() set luminosity(val: number) {
+    this.luminositySignal.set(val);
   }
   //#endregion
   //#region Alpha
-  alpha$ = new BehaviorSubject<number>(1);
+  alphaSignal = signal<number>(1);
+  @Input() set alpha(val: number) {
+    this.alphaSignal.set(val);
+  }
   @Output() alphaChange = new EventEmitter<number>();
-  public get alpha() {
-    return this.alpha$.value;
-  }
-  @Input() public set alpha(value: number) {
-    this.alpha$.next(value);
-  }
   //#endregion
-  
+
   private canvasContext: CanvasRenderingContext2D | null = null;
   @ViewChild('track') canvas!: ElementRef<HTMLCanvasElement>;
   ngAfterViewInit() {
@@ -74,5 +68,5 @@ export class BsAlphaStripComponent implements AfterViewInit {
     }
   }
 
-  resultBackground$: Observable<string>;
+  resultBackground;
 }

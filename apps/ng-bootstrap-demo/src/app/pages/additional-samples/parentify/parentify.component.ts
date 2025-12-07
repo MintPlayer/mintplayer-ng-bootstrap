@@ -1,8 +1,6 @@
-import { AfterViewInit, Component } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { AfterViewInit, Component, signal, effect } from '@angular/core';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { deepClone } from '@mintplayer/parentify';
-import { BehaviorSubject, map } from 'rxjs';
 
 @Component({
   selector: 'demo-parentify',
@@ -13,14 +11,16 @@ import { BehaviorSubject, map } from 'rxjs';
 })
 export class ParentifyComponent implements AfterViewInit {
   constructor() {
-    this.example$
-      .pipe(map(example => deepClone(example, true, [Object])))
-      // .pipe(map((clone) => JSON.stringify(clone)))
-      .pipe(takeUntilDestroyed())
-      .subscribe(console.log);
+    effect(() => {
+      const example = this.exampleSignal();
+      if (example) {
+        const clone = deepClone(example, true, [Object]);
+        console.log(clone);
+      }
+    });
   }
 
-  example$ = new BehaviorSubject<any>(null);
+  exampleSignal = signal<any>(null);
 
   ngAfterViewInit() {
     const address = {
@@ -39,6 +39,6 @@ export class ParentifyComponent implements AfterViewInit {
 
     (<any>address)['person'] = person;
 
-    this.example$.next(person);
+    this.exampleSignal.set(person);
   }
 }

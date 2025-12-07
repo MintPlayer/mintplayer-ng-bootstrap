@@ -1,6 +1,4 @@
-import { Component, SkipSelf, Input, Output, EventEmitter, Optional } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, Observable, map } from 'rxjs';
+import { Component, SkipSelf, Input, Output, EventEmitter, Optional, signal, computed, effect } from '@angular/core';
 import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
 
 @Component({
@@ -14,27 +12,21 @@ export class BsTreeviewComponent {
   constructor(
     @SkipSelf() @Optional() parent: BsTreeviewComponent
   ) {
-    const level = !parent ? 0 : parent.level$.value + 1
-    this.level$ = new BehaviorSubject<number>(level);
-    this.indentation$ = this.level$.pipe(map(level => level * 30));
+    const level = !parent ? 0 : parent.level() + 1;
+    this.level = signal<number>(level);
+    this.indentation = computed(() => this.level() * 30);
 
-    this.isExpanded$.next(!parent);
-    this.isExpanded$
-      .pipe(takeUntilDestroyed())
-      .subscribe(isExpanded => this.isExpandedChange.emit(isExpanded));
+    this.isExpanded.set(!parent);
+    effect(() => {
+      this.isExpandedChange.emit(this.isExpanded());
+    });
   }
-  
-  level$: BehaviorSubject<number>;
-  indentation$: Observable<number>;
+
+  level: ReturnType<typeof signal<number>>;
+  indentation;
 
   //#region isExpanded
-  isExpanded$ = new BehaviorSubject<boolean>(false);
+  isExpanded = signal<boolean>(false);
   @Output() isExpandedChange = new EventEmitter<boolean>();
-  public get isExpanded() {
-    return this.isExpanded$.value;
-  }
-  @Input() public set isExpanded(value: boolean) {
-    this.isExpanded$.next(value);
-  }
   //#endregion
 }

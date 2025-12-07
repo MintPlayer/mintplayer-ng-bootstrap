@@ -1,5 +1,4 @@
-import { Component, Input, ContentChildren, TemplateRef, EventEmitter, Output } from '@angular/core';
-import { BehaviorSubject, Observable, map } from 'rxjs';
+import { Component, Input, ContentChildren, TemplateRef, EventEmitter, Output, signal, computed } from '@angular/core';
 import { PaginationResponse } from '@mintplayer/pagination';
 import { DatatableSettings } from '../datatable-settings';
 import { BsDatatableColumnDirective } from '../datatable-column/datatable-column.directive';
@@ -21,14 +20,14 @@ export class BsDatatableComponent<TData> {
     this.settings.perPage = { values: [10, 20, 50], selected: 20 };
     this.settings.page = { values: [1], selected: 1 };
 
-    this.numberOfColumns$ = this.columns$.pipe(map(columns => columns.length));
+    this.numberOfColumns = computed(() => this.columns().length);
   }
-  
+
   //#region Columns
-  columns$ = new BehaviorSubject<BsDatatableColumnDirective[]>([]);
-  numberOfColumns$: Observable<number>;
-  @ContentChildren(BsDatatableColumnDirective) set columns(value: BsDatatableColumnDirective[]) {
-    this.columns$.next(value);
+  columns = signal<BsDatatableColumnDirective[]>([]);
+  numberOfColumns;
+  @ContentChildren(BsDatatableColumnDirective) set columnsQuery(value: BsDatatableColumnDirective[]) {
+    this.columns.set(value);
   }
   //#endregion
 

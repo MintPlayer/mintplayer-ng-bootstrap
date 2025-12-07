@@ -1,6 +1,4 @@
-import { Component, EventEmitter, Input, Output, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
-import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, EventEmitter, Input, Output, AfterViewInit, ViewChild, ElementRef, signal, computed, effect } from '@angular/core';
 import { HS } from '../../interfaces/hs';
 
 @Component({
@@ -11,16 +9,12 @@ import { HS } from '../../interfaces/hs';
 })
 export class BsLuminosityStripComponent implements AfterViewInit {
   constructor() {
-    this.hs$.pipe(takeUntilDestroyed()).subscribe((hs) => {
+    effect(() => {
+      const hs = this.hsSignal();
       if (this.canvasContext) {
         const width = this.canvas.nativeElement.width, height = this.canvas.nativeElement.height;
         this.canvasContext.clearRect(0, 0, width, height);
         this.canvasContext.save();
-
-        // HSL
-        // - H: 0 - 359
-        // - S: "0%" - "100%"
-        // - L: "0%" - "50%" - "100%"
 
         const gradient = this.canvasContext.createLinearGradient(0, 0, width, 0);
         gradient.addColorStop(0, `hsl(${hs.hue}, ${hs.saturation * 100}%, 0%)`);
@@ -30,34 +24,30 @@ export class BsLuminosityStripComponent implements AfterViewInit {
         this.canvasContext.fillRect(0, 0, width, height);
       }
     });
-    
-    this.resultBackground$ = combineLatest([this.hs$, this.luminosity$])
-      .pipe(map(([hs, luminosity]) => {
-        return `hsl(${hs.hue}, ${hs.saturation * 100}%, ${luminosity * 100}%)`;
-      }));
-      
-    this.luminosity$.pipe(takeUntilDestroyed())
-      .subscribe(luminosity => this.luminosityChange.emit(luminosity));
+
+    this.resultBackground = computed(() => {
+      const hs = this.hsSignal();
+      const luminosity = this.luminositySignal();
+      return `hsl(${hs.hue}, ${hs.saturation * 100}%, ${luminosity * 100}%)`;
+    });
+
+    effect(() => {
+      this.luminosityChange.emit(this.luminositySignal());
+    });
   }
 
   //#region HS
-  hs$ = new BehaviorSubject<HS>({ hue: 0, saturation: 0 });
-  public get hs() {
-    return this.hs$.value;
-  }
-  @Input() public set hs(value: HS) {
-    this.hs$.next(value);
+  hsSignal = signal<HS>({ hue: 0, saturation: 0 });
+  @Input() set hs(val: HS) {
+    this.hsSignal.set(val);
   }
   //#endregion
   //#region Luminosity
-  luminosity$ = new BehaviorSubject<number>(0.5);
+  luminositySignal = signal<number>(0.5);
+  @Input() set luminosity(val: number) {
+    this.luminositySignal.set(val);
+  }
   @Output() luminosityChange = new EventEmitter<number>();
-  public get luminosity() {
-    return this.luminosity$.value;
-  }
-  @Input() public set luminosity(value: number) {
-    this.luminosity$.next(value);
-  }
   //#endregion
 
   private canvasContext: CanvasRenderingContext2D | null = null;
@@ -68,5 +58,5 @@ export class BsLuminosityStripComponent implements AfterViewInit {
     }
   }
 
-  resultBackground$: Observable<string>;
+  resultBackground;
 }

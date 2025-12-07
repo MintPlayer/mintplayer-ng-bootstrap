@@ -1,6 +1,5 @@
-import { AfterContentChecked, Component, ContentChildren, DestroyRef, ElementRef, forwardRef, Inject, Optional, PLATFORM_ID, QueryList, ViewContainerRef } from '@angular/core';
+import { AfterContentChecked, Component, ContentChildren, ElementRef, forwardRef, Inject, Optional, PLATFORM_ID, QueryList, ViewContainerRef } from '@angular/core';
 import { isPlatformServer } from '@angular/common';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
 
@@ -15,7 +14,6 @@ export class BsNavbarItemComponent implements AfterContentChecked {
   constructor(
     private navbar: BsNavbarComponent,
     element: ElementRef,
-    private destroy: DestroyRef,
     @Inject(PLATFORM_ID) private platformId: Object,
     @Optional() @Inject(forwardRef(() => BsNavbarDropdownComponent)) parentDropdown: BsNavbarDropdownComponent,
   ) {
@@ -67,9 +65,7 @@ export class BsNavbarItemComponent implements AfterContentChecked {
                 // });
                 // dropdown.showInOverlay = true;
 
-                this.navbar.isSmallMode$
-                  .pipe(takeUntilDestroyed(this.destroy))
-                  .subscribe((isSmallMode) => dropdown.showInOverlay = !isSmallMode);
+                dropdown.showInOverlay = !this.navbar.isSmallMode();
               }
             });
             return false;
@@ -88,7 +84,7 @@ export class BsNavbarItemComponent implements AfterContentChecked {
             d = d.parentDropdown;
           }
           if (this.navbar.autoclose) {
-            this.navbar.isExpanded$.next(false);
+            this.navbar.isExpandedSignal.set(false);
           }
         });
       }

@@ -1,41 +1,30 @@
-import { AsyncPipe } from '@angular/common';
-import { Component, Input } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { Component, Input, signal } from '@angular/core';
 
 @Component({
   selector: 'bs-table',
   templateUrl: './table.component.html',
   styleUrls: ['./table.component.scss'],
   standalone: true,
-  imports: [AsyncPipe]
+  imports: []
 })
 export class BsTableComponent {
 
   //#region isResponsive
-  isResponsive$ = new BehaviorSubject<boolean>(false);
-  public get isResponsive() {
-    return this.isResponsive$.value;
-  }
-  @Input() public set isResponsive(value: boolean) {
-    this.isResponsive$.next(value);
+  isResponsiveSignal = signal<boolean>(false);
+  @Input() set isResponsive(val: boolean) {
+    this.isResponsiveSignal.set(val);
   }
   //#endregion
   //#region striped
-  striped$ = new BehaviorSubject<boolean>(false);
-  public get striped() {
-    return this.striped$.value;
-  }
-  @Input() public set striped(value: boolean) {
-    this.striped$.next(value);
+  stripedSignal = signal<boolean>(false);
+  @Input() set striped(val: boolean) {
+    this.stripedSignal.set(val);
   }
   //#endregion
   //#region hover
-  hover$ = new BehaviorSubject<boolean>(false);
-  public get hover() {
-    return this.hover$.value;
-  }
-  @Input() public set hover(value: boolean) {
-    this.hover$.next(value);
+  hoverSignal = signal<boolean>(false);
+  @Input() set hover(val: boolean) {
+    this.hoverSignal.set(val);
   }
   //#endregion
 }

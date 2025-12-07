@@ -1,6 +1,4 @@
-import { AfterViewInit, Component, DestroyRef, ElementRef, EventEmitter, HostBinding, HostListener, Input, Output, ViewChild } from '@angular/core';
-import { BehaviorSubject, combineLatest, debounceTime, map, take, Observable, switchMap } from 'rxjs';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { AfterViewInit, Component, ElementRef, EventEmitter, HostBinding, HostListener, Input, Output, ViewChild, signal, computed, effect, untracked } from '@angular/core';
 import { HS } from '../../interfaces/hs';
 import { HslColor } from '../../interfaces/hsl-color';
 import { RgbColor } from '../../interfaces/rgb-color';
@@ -13,168 +11,161 @@ import { RgbColor } from '../../interfaces/rgb-color';
 })
 export class BsColorWheelComponent implements AfterViewInit {
 
-  constructor(private element: ElementRef<HTMLElement>, private destroy: DestroyRef) {
-    // this.resizeObserver = new ResizeObserver((entries) => {
-    //   for (const entry of entries) {
-    //     if (entry.target === this.element.nativeElement) {
-    //       console.log(entry.contentRect);
-    //       this.width$.next(entry.contentRect.width);
-    //       this.height$.next(entry.contentRect.height);
-    //       break;
-    //     }
-    //   }
-    // });
+  constructor(private element: ElementRef<HTMLElement>) {
+    this.squareSize = computed(() => {
+      const width = this.widthSignal();
+      const height = this.heightSignal();
+      if ((width === null) || (height === null)) {
+        return null;
+      }
+      return Math.min(width, height);
+    });
 
-    this.squareSize$ = combineLatest([this.width$, this.height$])
-      .pipe(map(([width, height]) => {
-        if ((width === null) || (height === null)) {
-          return null;
-        }
+    this.shiftX = computed(() => {
+      const width = this.widthSignal();
+      const height = this.heightSignal();
+      if ((width === null) || (height === null)) {
+        return null;
+      } else if (width < height) {
+        return 0;
+      } else {
+        return (width - height) / 2;
+      }
+    });
 
-        const squareSize = Math.min(width, height);
-        return squareSize;
-      }));
+    this.shiftY = computed(() => {
+      const width = this.widthSignal();
+      const height = this.heightSignal();
+      if ((width === null) || (height === null)) {
+        return null;
+      } else if (width < height) {
+        return (height - width) / 2;
+      } else {
+        return 0;
+      }
+    });
 
-    this.shiftX$ = combineLatest([this.width$, this.height$])
-      .pipe(map(([width, height]) => {
-        if ((width === null) || (height === null)) {
-          return null;
-        } else if (width < height) {
-          return 0;
-        } else {
-          return (width - height) / 2;
-        }
-      }));
+    this.innerRadius = computed(() => {
+      const squareSize = this.squareSize();
+      const diameterRatio = this.diameterRatio();
+      if (squareSize) {
+        return squareSize / 2 * diameterRatio;
+      } else {
+        return 0;
+      }
+    });
 
-    this.shiftY$ = combineLatest([this.width$, this.height$])
-      .pipe(map(([width, height]) => {
-        if ((width === null) || (height === null)) {
-          return null;
-        } else if (width < height) {
-          return (height - width) / 2;
-        } else {
-          return 0;
-        }
-      }));
+    this.outerRadius = computed(() => {
+      const squareSize = this.squareSize();
+      if (squareSize) {
+        return squareSize / 2;
+      } else {
+        return 150;
+      }
+    });
 
-    this.innerRadius$ = combineLatest([this.squareSize$, this.diameterRatio$])
-      .pipe(map(([squareSize, diameterRatio]) => {
-        if (squareSize) {
-          return squareSize / 2 * diameterRatio;
-        } else {
-          return 0;
-        }
-      }));
+    this.markerPosition = computed(() => {
+      const hs = this.hsSignal();
+      const shiftX = this.shiftX() ?? 0;
+      const shiftY = this.shiftY() ?? 0;
+      const position = this.color2position(hs);
+      return {
+        x: position.x + shiftX,
+        y: position.y + shiftY,
+      };
+    });
 
-    this.outerRadius$ = combineLatest([this.squareSize$, this.diameterRatio$])
-      .pipe(map(([squareSize, diameterRatio]) => {
-        if (squareSize) {
-          return squareSize / 2;
-        } else {
-          return 150;
-        }
-      }));
-  
-    combineLatest([this.innerRadius$, this.outerRadius$, this.shiftX$, this.shiftY$])
-      .pipe(debounceTime(20), takeUntilDestroyed())
-      .subscribe(([innerRadius, outerRadius, shiftX, shiftY]) => {
-        if (this.canvasContext && (innerRadius !== null) && (outerRadius !== null) && (shiftX !== null) && (shiftY !== null)) {
-          this.canvasContext.clearRect(0, 0, this.canvas.nativeElement.width, this.canvas.nativeElement.height);
-          this.canvasContext.save();
-          this.canvasContext.translate(shiftX + outerRadius, shiftY + outerRadius);
+    // Effect to draw the color wheel
+    let debounceTimer: any = null;
+    effect(() => {
+      const innerRadius = this.innerRadius();
+      const outerRadius = this.outerRadius();
+      const shiftX = this.shiftX();
+      const shiftY = this.shiftY();
 
-          for (let x = 0; x < 360; x++) {
-            this.canvasContext.rotate(1 * Math.PI / 180);
-            const gradient = this.canvasContext.createLinearGradient(innerRadius, 0, outerRadius, 0);
+      // Debounce the drawing
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        untracked(() => {
+          if (this.canvasContext && (innerRadius !== null) && (outerRadius !== null) && (shiftX !== null) && (shiftY !== null)) {
+            this.canvasContext.clearRect(0, 0, this.canvas.nativeElement.width, this.canvas.nativeElement.height);
+            this.canvasContext.save();
+            this.canvasContext.translate(shiftX + outerRadius, shiftY + outerRadius);
 
-            gradient.addColorStop(0, `hsl(${x}, 0%, 50%)`);
-            gradient.addColorStop(1, `hsl(${x}, 100%, 50%)`);
+            for (let x = 0; x < 360; x++) {
+              this.canvasContext.rotate(1 * Math.PI / 180);
+              const gradient = this.canvasContext.createLinearGradient(innerRadius, 0, outerRadius, 0);
 
-            this.canvasContext.fillStyle = gradient;
-            this.canvasContext.fillRect(innerRadius, 0, outerRadius - innerRadius, outerRadius / 50);
+              gradient.addColorStop(0, `hsl(${x}, 0%, 50%)`);
+              gradient.addColorStop(1, `hsl(${x}, 100%, 50%)`);
+
+              this.canvasContext.fillStyle = gradient;
+              this.canvasContext.fillRect(innerRadius, 0, outerRadius - innerRadius, outerRadius / 50);
+            }
+
+            this.canvasContext.restore();
           }
+        });
+      }, 20);
+    });
 
-          this.canvasContext.restore();
-        }
-      });
-
-    this.markerPosition$ = combineLatest([this.hs$, this.shiftX$, this.shiftY$])
-      .pipe(switchMap(([hs, shiftX, shiftY]) => {
-        return this.color2position(hs)
-          .pipe(map((position) => ({position, shiftX: (shiftX ?? 0), shiftY: (shiftY ?? 0)})));
-      }))
-      .pipe(map(({position, shiftX, shiftY}) => {
-        return {
-          x: position.x + shiftX,
-          y: position.y + shiftY,
-        };
-      }));
-
-    this.hs$.pipe(takeUntilDestroyed())
-      .subscribe((hs) => this.hsChange.emit(hs));
+    // Effect to emit hs changes
+    effect(() => {
+      const hs = this.hsSignal();
+      untracked(() => this.hsChange.emit(hs));
+    });
   }
 
   @HostBinding('class.position-relative') positionRelative = true;
-  
-  @Input() set diameterRatio(value: number) {
-    this.diameterRatio$.next(value);
-  }
-  @Input() set width(value: number) {
-    this.width$.next(value);
-  }
-  @Input() set height(value: number) {
-    this.height$.next(value);
-  }
+
   @ViewChild('canvas') canvas!: ElementRef<HTMLCanvasElement>;
-  
-  //#region Hue/Luminosity
-  hs$ = new BehaviorSubject<HS>({ hue: 0, saturation: 0 });
+
+  //#region Hue/Saturation
+  hsSignal = signal<HS>({ hue: 0, saturation: 0 });
+  @Input() set hs(val: HS) {
+    this.hsSignal.set(val);
+  }
   @Output() hsChange = new EventEmitter<HS>();
-  public get hs() {
-    return this.hs$.value;
-  }
-  @Input() public set hs(value: HS) {
-    this.hs$.next(value);
-  }
   //#endregion
   //#region Luminosity
-  luminosity$ = new BehaviorSubject<number>(0);
-  public get luminosity() {
-    return this.luminosity$.value;
-  }
-  @Input() public set luminosity(value: number) {
-    this.luminosity$.next(value);
+  luminositySignal = signal<number>(0);
+  @Input() set luminosity(val: number) {
+    this.luminositySignal.set(val);
   }
   //#endregion
 
-  // private resizeObserver: ResizeObserver;
   private canvasContext: CanvasRenderingContext2D | null = null;
   private isPointerDown = false;
-  width$ = new BehaviorSubject<number>(150);
-  height$ = new BehaviorSubject<number>(150);
-  diameterRatio$ = new BehaviorSubject<number>(0);
+  widthSignal = signal<number>(150);
+  @Input() set width(val: number) {
+    this.widthSignal.set(val);
+  }
+  heightSignal = signal<number>(150);
+  @Input() set height(val: number) {
+    this.heightSignal.set(val);
+  }
+  diameterRatio = signal<number>(0);
 
-  squareSize$: Observable<number | null>;
-  shiftX$: Observable<number | null>;
-  shiftY$: Observable<number | null>;
+  squareSize;
+  shiftX;
+  shiftY;
 
-  innerRadius$: Observable<number | null>;
-  outerRadius$: Observable<number | null>;
-  markerPosition$: Observable<{x: number, y: number}>;
-  disabled$ = new BehaviorSubject<boolean>(false);
-  
-  viewInited$ = new BehaviorSubject<boolean>(false);
+  innerRadius;
+  outerRadius;
+  markerPosition;
+  disabled = signal<boolean>(false);
+
+  viewInited = signal<boolean>(false);
 
   ngAfterViewInit() {
-    // this.resizeObserver.observe(this.element.nativeElement);
-    this.viewInited$.next(true);
+    this.viewInited.set(true);
     if (typeof window !== 'undefined') {
       this.canvasContext = this.canvas.nativeElement.getContext('2d', { willReadFrequently: true });
     }
   }
 
   onPointerDown(ev: MouseEvent | TouchEvent) {
-    if (!this.disabled$.value) {
+    if (!this.disabled()) {
       ev.preventDefault();
       this.isPointerDown = true;
       this.updateColor(ev, !('touches' in ev));
@@ -214,75 +205,74 @@ export class BsColorWheelComponent implements AfterViewInit {
       };
     }
 
-    this.position2color(co.x, co.y).pipe(take(1), takeUntilDestroyed(this.destroy)).subscribe((color) => {
-      if (color) {
-        this.hs$.next({ hue: color.hue, saturation: color.saturation });
-      } else {
-        console.warn('Color is null');
-      }
-    });
+    const color = this.position2color(co.x, co.y);
+    if (color) {
+      this.hsSignal.set({ hue: color.hue, saturation: color.saturation });
+    } else {
+      console.warn('Color is null');
+    }
   }
 
   private isInsideCircle(x: number, y: number) {
-    return combineLatest([this.squareSize$, this.shiftX$, this.shiftY$])
-      .pipe(map(([squareSize, shiftX, shiftY]) => {
-        // Position to the square
-        const sx: number = x - (shiftX ?? 0);
-        const sy = y - (shiftY ?? 0);
-        // Square radius
-        const sr = (squareSize ?? 0) / 2;
+    const squareSize = this.squareSize();
+    const shiftX = this.shiftX();
+    const shiftY = this.shiftY();
 
-        const radius = Math.sqrt(Math.pow(sx - sr, 2) + Math.pow(sy - sr, 2));
-        const angle = (Math.atan2(sr - sy, sr - sx) + Math.PI) % 360;
-        return {
-          inside: radius <= sr,
-          angle
-        };
-      }));
+    // Position to the square
+    const sx: number = x - (shiftX ?? 0);
+    const sy = y - (shiftY ?? 0);
+    // Square radius
+    const sr = (squareSize ?? 0) / 2;
+
+    const radius = Math.sqrt(Math.pow(sx - sr, 2) + Math.pow(sy - sr, 2));
+    const angle = (Math.atan2(sr - sy, sr - sx) + Math.PI) % 360;
+    return {
+      inside: radius <= sr,
+      angle
+    };
   }
 
   private position2color(x: number, y: number) {
-    return this.isInsideCircle(x, y).pipe(map((result) => {
-      if (!this.canvasContext) {
-        return null;
-      }
+    const result = this.isInsideCircle(x, y);
+    if (!this.canvasContext) {
+      return null;
+    }
 
-      if (result.inside) {
-        const imageData = this.canvasContext.getImageData(x, y, 1, 1).data;
-        const hsl = this.rgb2Hsl({ r: imageData[0], g: imageData[1], b: imageData[2] });
-        return hsl;
-      }
+    if (result.inside) {
+      const imageData = this.canvasContext.getImageData(x, y, 1, 1).data;
+      const hsl = this.rgb2Hsl({ r: imageData[0], g: imageData[1], b: imageData[2] });
+      return hsl;
+    }
 
-      return <HslColor>{ hue: result.angle * 180 / Math.PI, saturation: 1, luminosity: 0.5 };
-    }));
+    return <HslColor>{ hue: result.angle * 180 / Math.PI, saturation: 1, luminosity: 0.5 };
   }
 
   private color2position(hs: HS) {
-    return combineLatest([this.innerRadius$, this.outerRadius$])
-      .pipe(map(([innerRadius, outerRadius]) => {
-        if (innerRadius === null) {
-          innerRadius = 0;
-        }
-        if (!outerRadius) {
-          outerRadius = 100;
-        }
+    let innerRadius = this.innerRadius();
+    let outerRadius = this.outerRadius();
 
-        const theta = hs.hue * Math.PI / 180;
-        const c = {
-          x: -outerRadius * Math.cos(theta),
-          y: -outerRadius * Math.sin(theta)
-        };
-    
-        const d = hs.saturation * (outerRadius - innerRadius) + innerRadius;
-        const o = { x: outerRadius, y: outerRadius };
-    
-        return {
-          x: o.x - d * (c.x / outerRadius),
-          y: o.y - d * (c.y / outerRadius),
-        }
-      }));
+    if (innerRadius === null) {
+      innerRadius = 0;
+    }
+    if (!outerRadius) {
+      outerRadius = 100;
+    }
+
+    const theta = hs.hue * Math.PI / 180;
+    const c = {
+      x: -outerRadius * Math.cos(theta),
+      y: -outerRadius * Math.sin(theta)
+    };
+
+    const d = hs.saturation * (outerRadius - innerRadius) + innerRadius;
+    const o = { x: outerRadius, y: outerRadius };
+
+    return {
+      x: o.x - d * (c.x / outerRadius),
+      y: o.y - d * (c.y / outerRadius),
+    };
   }
-  
+
   private rgb2Hsl(color: RgbColor) {
     const r01 = this.bound01(color.r, 255);
     const g01 = this.bound01(color.g, 255);
@@ -311,10 +301,10 @@ export class BsColorWheelComponent implements AfterViewInit {
                 throw 'Invalid operation';
             }
         }
-        
+
         h /= 6;
     }
-    
+
     h *= 360;
 
     return <HslColor>{ hue: h, saturation: s, luminosity: l };

@@ -4,19 +4,19 @@
     <div bsDropdown [(isOpen)]="isOpen" [hasBackdrop]="false" [sameDropdownWidth]="true">
         <input type="text" #textbox [(ngModel)]="searchterm" (ngModelChange)="onProvideSuggestions($event)" (keyup.enter)="onSubmit()" />
         <bs-dropdown-menu *bsDropdownMenu>
-            @if (isLoading$ | async) {
+            @if (isLoading()) {
                 <bs-progress [height]="2" [isIndeterminate]="true"></bs-progress>
                 <bs-dropdown-item [disabled]="true">
                     {{ isLoadingText }}
                 </bs-dropdown-item>
             }
-            @if ((isLoading$ | async) === false) {
-                @if (showNoSuggestions$ | async) {
+            @if (!isLoading()) {
+                @if (showNoSuggestions()) {
                     <bs-dropdown-item [disabled]="true">
                         {{ noSuggestionsText }}
                     </bs-dropdown-item>
                 }
-                @for (suggestion of (suggestions$ | async); track suggestion) {
+                @for (suggestion of suggestions(); track suggestion) {
                     <bs-dropdown-item (click)="suggestionClicked(suggestion)">
                         {{ suggestion.text }}
                     </bs-dropdown-item>

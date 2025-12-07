@@ -1,6 +1,5 @@
 import { EventManager } from '@angular/platform-browser';
-import { EMPTY } from 'rxjs';
-import { switchMap, take } from 'rxjs/operators';
+import { Signal, effect, isSignal } from '@angular/core';
 
 export class BsBindEventPlugin {
   manager!: EventManager;
@@ -11,14 +10,33 @@ export class BsBindEventPlugin {
 
   addEventListener(element: HTMLElement, event: string) {
     const el = <any>element;
-    el[event] = EMPTY;
+    el[event] = null;
 
     const method = this.getMethod(element, event);
-    const sub = this.manager.getZone()
-      .onStable.pipe(take(1), switchMap(() => el[event]))
-      .subscribe((value) => method(value));
 
-    return () => sub.unsubscribe();
+    // Use zone's onStable to wait for initialization, then set up effect
+    let cleanup: (() => void) | null = null;
+    const stableSub = this.manager.getZone().onStable.subscribe(() => {
+      stableSub.unsubscribe();
+
+      const value = el[event];
+      if (isSignal(value)) {
+        // If it's a signal, create an effect to track changes
+        const effectRef = effect(() => {
+          const v = (value as Signal<unknown>)();
+          method(v);
+        });
+        cleanup = () => effectRef.destroy();
+      } else if (value !== null && value !== undefined) {
+        // If it's a plain value, just apply it once
+        method(value);
+      }
+    });
+
+    return () => {
+      stableSub.unsubscribe();
+      cleanup?.();
+    };
   }
 
   private getMethod(element: HTMLElement, event: string) {

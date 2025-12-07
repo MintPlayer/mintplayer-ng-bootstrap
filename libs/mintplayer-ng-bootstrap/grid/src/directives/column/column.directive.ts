@@ -1,68 +1,79 @@
-import { Directive, HostBinding, Input, DestroyRef } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, combineLatest, map } from 'rxjs';
+import { Directive, HostBinding, Input, signal, computed, effect } from '@angular/core';
 
 @Directive({
   selector: '[xxs],[xs],[sm],[md],[lg],[xl],[xxl]',
   standalone: false,
 })
 export class BsGridColumnDirective {
-  constructor(destroy: DestroyRef) {
-    combineLatest([this.xxs$, this.xs$, this.sm$, this.md$, this.lg$, this.xl$, this.xxl$])
-      .pipe(map(([xxs, xs, sm, md, lg, xl, xxl]) => ({ xxs, xs, sm, md, lg, xl, xxl })))
-      .pipe(map((sizes) => {
-        return Object.keys(sizes)
-          .map(key => ({
-            key,
-            value: (<any>sizes)[key],
-          }))
-          .filter(v => v.value)
-          .map(v => {
-            switch (v.key) {
-              case '': return 'col';
-              case 'xxs': return `col-${v.value}`;
-              default: return `col-${v.key}-${v.value}`;
-            }
-          })
-          .join(' ');
-      }))
-      .pipe(takeUntilDestroyed(destroy))
-      .subscribe((classList) => {
-        this.classList = classList;
-      });
+  constructor() {
+    this.classListComputed = computed(() => {
+      const sizes = {
+        xxs: this.xxsSignal(),
+        xs: this.xsSignal(),
+        sm: this.smSignal(),
+        md: this.mdSignal(),
+        lg: this.lgSignal(),
+        xl: this.xlSignal(),
+        xxl: this.xxlSignal()
+      };
+      return Object.keys(sizes)
+        .map(key => ({
+          key,
+          value: (<any>sizes)[key],
+        }))
+        .filter(v => v.value)
+        .map(v => {
+          switch (v.key) {
+            case '': return 'col';
+            case 'xxs': return `col-${v.value}`;
+            default: return `col-${v.key}-${v.value}`;
+          }
+        })
+        .join(' ');
+    });
+
+    effect(() => {
+      this.classList = this.classListComputed();
+    });
   }
 
-  // private customColClasses$ = new BehaviorSubject<[col]Definition | '' | undefined>(undefined);
-  @HostBinding('class') classList: string | null = null
+  @HostBinding('class') classList: string | null = null;
 
-  xxs$ = new BehaviorSubject<number | undefined>(undefined);
-  xs$ = new BehaviorSubject<number | undefined>(undefined);
-  sm$ = new BehaviorSubject<number | undefined>(undefined);
-  md$ = new BehaviorSubject<number | undefined>(undefined);
-  lg$ = new BehaviorSubject<number | undefined>(undefined);
-  xl$ = new BehaviorSubject<number | undefined>(undefined);
-  xxl$ = new BehaviorSubject<number | undefined>(undefined);
+  classListComputed;
 
-  @Input() public set xxs(value: number | undefined) {
-    this.xxs$.next(value);
+  xxsSignal = signal<number | undefined>(undefined);
+  @Input() set xxs(val: number | undefined) {
+    this.xxsSignal.set(val);
   }
-  @Input() public set xs(value: number | undefined) {
-    this.xs$.next(value);
+
+  xsSignal = signal<number | undefined>(undefined);
+  @Input() set xs(val: number | undefined) {
+    this.xsSignal.set(val);
   }
-  @Input() public set sm(value: number | undefined) {
-    this.sm$.next(value);
+
+  smSignal = signal<number | undefined>(undefined);
+  @Input() set sm(val: number | undefined) {
+    this.smSignal.set(val);
   }
-  @Input() public set md(value: number | undefined) {
-    this.md$.next(value);
+
+  mdSignal = signal<number | undefined>(undefined);
+  @Input() set md(val: number | undefined) {
+    this.mdSignal.set(val);
   }
-  @Input() public set lg(value: number | undefined) {
-    this.lg$.next(value);
+
+  lgSignal = signal<number | undefined>(undefined);
+  @Input() set lg(val: number | undefined) {
+    this.lgSignal.set(val);
   }
-  @Input() public set xl(value: number | undefined) {
-    this.xl$.next(value);
+
+  xlSignal = signal<number | undefined>(undefined);
+  @Input() set xl(val: number | undefined) {
+    this.xlSignal.set(val);
   }
-  @Input() public set xxl(value: number | undefined) {
-    this.xxl$.next(value);
+
+  xxlSignal = signal<number | undefined>(undefined);
+  @Input() set xxl(val: number | undefined) {
+    this.xxlSignal.set(val);
   }
 }
 

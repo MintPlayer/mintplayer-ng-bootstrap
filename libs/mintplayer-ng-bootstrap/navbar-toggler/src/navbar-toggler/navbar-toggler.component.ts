@@ -1,30 +1,30 @@
-import { AsyncPipe } from '@angular/common';
-import { Component, EventEmitter, HostListener, Input, Output } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, distinctUntilChanged } from 'rxjs';
+import { Component, EventEmitter, HostListener, Input, Output, signal, effect } from '@angular/core';
 
 @Component({
   selector: 'bs-navbar-toggler',
   templateUrl: './navbar-toggler.component.html',
   styleUrls: ['./navbar-toggler.component.scss'],
   standalone: true,
-  imports: [AsyncPipe]
+  imports: []
 })
 export class BsNavbarTogglerComponent {
   constructor() {
-    this.state$.pipe(distinctUntilChanged(), takeUntilDestroyed())
-      .subscribe(state => this.stateChange.emit(state));
+    let previousState: boolean | null = null;
+    effect(() => {
+      const state = this.stateSignal();
+      if (previousState !== state) {
+        this.stateChange.emit(state);
+        previousState = state;
+      }
+    });
   }
 
   //#region State
-  state$ = new BehaviorSubject<boolean>(false);
+  stateSignal = signal<boolean>(false);
+  @Input() set state(val: boolean) {
+    this.stateSignal.set(val);
+  }
   @Output() public stateChange = new EventEmitter<boolean>();
-  public get state() {
-    return this.state$.value;
-  }
-  @Input() public set state(value: boolean) {
-    this.state$.next(value);
-  }
   //#endregion
 
   @Input() public toggleOnClick = true;
@@ -32,7 +32,7 @@ export class BsNavbarTogglerComponent {
   @HostListener('click', ['$event'])
   toggleState(ev: MouseEvent) {
     if (this.toggleOnClick) {
-      this.state$.next(!this.state);
+      this.stateSignal.set(!this.stateSignal());
     }
   }
 }

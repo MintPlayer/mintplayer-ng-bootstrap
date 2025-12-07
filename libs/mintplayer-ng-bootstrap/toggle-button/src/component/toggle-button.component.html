@@ -1,6 +1,6 @@
-<label [class]="mainCheckStyle$ | async" [class.form-switch]="isSwitch$ | async">
-    <input #checkbox [class]="inputClass$ | async" [type]="checkOrRadio$ | async" [name]="nameResult$ | async" [value]="value$ | async">
-    <span [class]="labelClass$ | async">
+<label [class]="mainCheckStyle()" [class.form-switch]="isSwitch()">
+    <input #checkbox [class]="inputClass()" [type]="checkOrRadio()" [name]="nameResult()" [value]="valueSignal()">
+    <span [class]="labelClass()">
         <ng-content></ng-content>
     </span>
 </label>

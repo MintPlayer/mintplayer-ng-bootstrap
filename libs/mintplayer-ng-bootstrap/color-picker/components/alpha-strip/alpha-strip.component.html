@@ -1,6 +1,6 @@
-<bs-slider [value]="(alpha$ | async)!" (valueChange)="alphaChange.emit($event)">
+<bs-slider [value]="alphaSignal()" (valueChange)="alphaChange.emit($event)">
     <canvas bsTrack class=" track position-absolute w-100" #track></canvas>
 
-    <!-- [style.background]="resultBackground$ | async" -->
-    <div bsThumb [style.background]="resultBackground$ | async"></div>
+    <!-- [style.background]="resultBackground()" -->
+    <div bsThumb [style.background]="resultBackground()"></div>
 </bs-slider>

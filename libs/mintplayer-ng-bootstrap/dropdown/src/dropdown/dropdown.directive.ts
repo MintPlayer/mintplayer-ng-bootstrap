@@ -1,6 +1,5 @@
-import { ContentChild, Directive, ElementRef, EventEmitter, HostListener, Inject, Input, Optional, Output } from '@angular/core';
+import { ContentChild, Directive, ElementRef, EventEmitter, HostListener, Inject, Input, Optional, Output, signal } from '@angular/core';
 import { BS_DEVELOPMENT } from '@mintplayer/ng-bootstrap';
-import { BehaviorSubject } from 'rxjs';
 import { BsDropdownMenuDirective } from '../dropdown-menu/dropdown-menu.directive';
 import { BsDropdownToggleDirective } from '../dropdown-toggle/dropdown-toggle.directive';
 
@@ -14,33 +13,36 @@ export class BsDropdownDirective {
     this.elementRef = elementRef;
   }
 
-  isOpen$ = new BehaviorSubject<boolean>(false);
+  isOpenSignal = signal<boolean>(false);
+  @Input() set isOpen(val: boolean) {
+    this.isOpenSignal.set(val);
+  }
+  get isOpen(): boolean {
+    return this.isOpenSignal();
+  }
 
   elementRef: ElementRef<HTMLElement>;
   @ContentChild(BsDropdownMenuDirective, {static: false}) menu!: BsDropdownMenuDirective;
   @ContentChild(BsDropdownToggleDirective, {static: false}) toggle: BsDropdownToggleDirective | null = null;
-  
+
   @Input() public hasBackdrop = false;
   @Input() public sameWidth = false;
   @Input() public closeOnClickOutside = true;
   @Input() public sameDropdownWidth = false;
 
   //#region IsOpen
-  public get isOpen() {
-    return this.isOpen$.value;
-  }
   @Output() public isOpenChange = new EventEmitter<boolean>();
-  @Input() public set isOpen(value: boolean) {
-    if (this.isOpen$.value !== value) {
-      this.isOpen$.next(value);
+  public setIsOpen(value: boolean) {
+    if (this.isOpenSignal() !== value) {
+      this.isOpenSignal.set(value);
       this.isOpenChange.emit(value);
     }
   }
   //#endregion
 
-  @HostListener('window:blur') private onBlur() {
+  @HostListener('window:blur') onBlur() {
     if (this.closeOnClickOutside && !this.bsDevelopment) {
-      this.isOpen = false;
+      this.setIsOpen(false);
     }
   }
 

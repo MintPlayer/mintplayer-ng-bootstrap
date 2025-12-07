@@ -1,5 +1,4 @@
-import { Component, ElementRef, Input, TemplateRef, ViewChild } from '@angular/core';
-import { BehaviorSubject, Observable, map } from 'rxjs';
+import { Component, ElementRef, Input, TemplateRef, ViewChild, signal, computed } from '@angular/core';
 import { BsShellState } from '../shell-state';
 import { Breakpoint } from '@mintplayer/ng-bootstrap';
 
@@ -11,28 +10,28 @@ import { Breakpoint } from '@mintplayer/ng-bootstrap';
 })
 export class BsShellComponent {
   constructor() {
-    this.stateClass$ = this.state$.pipe(map((state) => {
+    this.stateClass = computed(() => {
+      const state = this.stateSignal();
       if (state === 'auto') return null;
       else return state;
-    }));
-    this.breakpointClass$ = this.breakpoint$.pipe(map(breakpoint => `shell-${breakpoint}`));
+    });
+    this.breakpointClass = computed(() => `shell-${this.breakpointSignal()}`);
   }
 
   sidebarTemplate: TemplateRef<any> | null = null;
   @ViewChild('root') rootElement!: ElementRef<HTMLDivElement>;
 
-  @Input() set state(value: BsShellState) {
-    this.state$.next(value);
+  stateSignal = signal<BsShellState>('auto');
+  @Input() set state(val: BsShellState) {
+    this.stateSignal.set(val);
   }
 
-  @Input() set breakpoint(value: Breakpoint) {
-    this.breakpoint$.next(value);
+  breakpointSignal = signal<Breakpoint>('md');
+  @Input() set breakpoint(val: Breakpoint) {
+    this.breakpointSignal.set(val);
   }
-
-  state$ = new BehaviorSubject<BsShellState>('auto');
-  breakpoint$ = new BehaviorSubject<Breakpoint>('md');
-  stateClass$: Observable<string | null>;
-  breakpointClass$: Observable<string>;
+  stateClass;
+  breakpointClass;
 
   public setSize(size: string) {
     this.rootElement.nativeElement.style.setProperty('--size', size);

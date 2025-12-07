@@ -24,7 +24,7 @@ export class BsTreeviewItemComponent {
 
   onClick(ev: MouseEvent) {
     if (this.childTree) {
-      this.childTree.isExpanded = !this.childTree.isExpanded;
+      this.childTree.isExpanded.set(!this.childTree.isExpanded());
     }
   }
 }

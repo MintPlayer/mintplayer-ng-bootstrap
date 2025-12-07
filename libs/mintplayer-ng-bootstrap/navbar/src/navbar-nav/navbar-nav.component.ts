@@ -1,7 +1,5 @@
-import { Component, HostListener, Input } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, HostListener, Input, signal, computed, effect } from '@angular/core';
 import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
-import { BehaviorSubject, combineLatest, debounceTime, filter, map, Observable } from 'rxjs';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 
 @Component({
@@ -15,48 +13,53 @@ export class BsNavbarNavComponent {
 
   constructor(bsNavbar: BsNavbarComponent) {
     this.bsNavbar = bsNavbar;
-    this.showNavs$ = combineLatest([this.bsNavbar.isExpanded$, this.bsNavbar.expandAt$, this.windowWidth$])
-      .pipe(filter(([isExpanded, expandAt, windowWidth]) => {
-        return windowWidth !== null;
-      }))
-      .pipe(map(([isExpanded, expandAt, windowWidth]) => {
-        if (windowWidth === null) {
-          throw 'windowWidth should not be null here';
-        } else if (expandAt === null) {
-          return isExpanded;
-        } else if (windowWidth >= expandAt) {
-          return true;
-        } else {
-          return isExpanded;
-        }
-      }));
+    this.showNavs = computed(() => {
+      const isExpanded = this.bsNavbar.isExpandedSignal();
+      const expandAt = this.bsNavbar.expandAt();
+      const windowWidth = this.windowWidthSignal();
+      if (windowWidth === null) {
+        return isExpanded; // Default to isExpanded when window width unknown
+      } else if (expandAt === null) {
+        return isExpanded;
+      } else if (windowWidth >= expandAt) {
+        return true;
+      } else {
+        return isExpanded;
+      }
+    });
 
-    this.windowWidth$
-      .pipe(debounceTime(300), takeUntilDestroyed())
-      .subscribe(() => this.isResizing$.next(false));
+    // Debounced effect for resizing
+    let debounceTimer: any = null;
+    effect(() => {
+      const windowWidth = this.windowWidthSignal();
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        this.isResizingSignal.set(false);
+      }, 300);
+    });
     this.onWindowResize();
   }
-  
+
   bsNavbar: BsNavbarComponent;
-  collapse$ = new BehaviorSubject<boolean>(true);
-  windowWidth$ = new BehaviorSubject<number | null>(null);
-  showNavs$: Observable<boolean>;
-  isResizing$ = new BehaviorSubject<boolean>(false);
-  
+  collapseSignal = signal<boolean>(true);
+  windowWidthSignal = signal<number | null>(null);
+  showNavs;
+  isResizingSignal = signal<boolean>(false);
+
   //#region collapse
   @Input() public set collapse(value: boolean) {
-    this.collapse$.next(value);
+    this.collapseSignal.set(value);
   }
   public get collapse() {
-    return this.collapse$.value;
+    return this.collapseSignal();
   }
   //#endregion
 
   @HostListener('window:resize')
   onWindowResize() {
-    this.isResizing$.next(true);
+    this.isResizingSignal.set(true);
     if (typeof window !== 'undefined') {
-      this.windowWidth$.next(window.innerWidth);
+      this.windowWidthSignal.set(window.innerWidth);
     }
   }
 }

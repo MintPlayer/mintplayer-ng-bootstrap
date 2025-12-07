@@ -1,6 +1,4 @@
-import { Component, ElementRef, HostBinding, Input, forwardRef } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, Observable, map } from 'rxjs';
+import { Component, ElementRef, HostBinding, Input, forwardRef, signal, computed, effect } from '@angular/core';
 import { ResizeAction } from '../interfaces/resize-action';
 import { RESIZABLE } from '../providers/resizable.provider';
 import { ResizablePositioning } from '../types/positioning';
@@ -18,41 +16,44 @@ import { PresetPosition } from '../interfaces/preset-position';
 export class BsResizableComponent {
   constructor(element: ElementRef<HTMLElement>) {
     this.element = element;
-    this.hostPosition$ = this.positioning$.pipe(map((positioning) => {
+    this.hostPosition = computed(() => {
+      const positioning = this.positioningSignal();
       switch (positioning) {
         case 'absolute': return 'position-absolute';
         case 'inline': return 'position-relative';
       }
-    }));
+    });
 
-    this.wrapperPosition$ = this.positioning$.pipe(map((positioning) => {
+    this.wrapperPosition = computed(() => {
+      const positioning = this.positioningSignal();
       switch (positioning) {
         case 'absolute': return ['position-relative', 'h-100']
         case 'inline': return [];
       }
-    }));
+    });
 
-    this.hostPosition$.pipe(takeUntilDestroyed())
-      .subscribe(hostPosition => this.hostClass = hostPosition);
+    effect(() => {
+      this.hostClass = this.hostPosition();
+    });
   }
 
   resizeAction?: ResizeAction;
   element: ElementRef<HTMLElement>;
-  hostPosition$: Observable<string>;
-  wrapperPosition$: Observable<string[]>;
+  hostPosition;
+  wrapperPosition;
 
   //#region Positioning
-  positioning$ = new BehaviorSubject<ResizablePositioning>('inline');
-  public get positioning() {
-    return this.positioning$.value;
+  positioningSignal = signal<ResizablePositioning>('inline');
+  @Input() set positioning(val: ResizablePositioning) {
+    this.positioningSignal.set(val);
   }
-  @Input() public set positioning(value: ResizablePositioning) {
-    this.positioning$.next(value);
+  get positioning(): ResizablePositioning {
+    return this.positioningSignal();
   }
   //#endregion
 
   @Input() public set presetPosition(value: PresetPosition) {
-    if (this.positioning === 'inline') {
+    if (this.positioningSignal() === 'inline') {
       throw 'presetPosition currently only supported in absolute positioning';
     }
     this.width = value.width;
@@ -70,7 +71,7 @@ export class BsResizableComponent {
   @HostBinding('style.height.px') height?: number;
   @HostBinding('style.left.px') left?: number;
   @HostBinding('style.top.px') top?: number;
-  
+
 
   @HostBinding('class.d-block')
   @HostBinding('class.border')

@@ -11,24 +11,24 @@
         <span [innerHTML]="isOpen ? caretUpFill : caretDownFill" class="float-end"></span>
     </button>
     <bs-dropdown-menu *bsDropdownMenu>
-        @let isBusy = isBusy$ | async;
-        @if (isBusy) {
+        @let isBusyVal = isBusy();
+        @if (isBusyVal) {
             <bs-progress [isIndeterminate]="true" class="prog">
                 <bs-progress-bar></bs-progress-bar>
             </bs-progress>
         }
         <div class="w-100 px-2 mb-2">
-            <input type="text" #textbox autofocus class="form-control d-block" [ngModel]="searchterm$ | async" (ngModelChange)="onSearchtermChange($event)">
+            <input type="text" #textbox autofocus class="form-control d-block" [ngModel]="searchterm()" (ngModelChange)="onSearchtermChange($event)">
         </div>
-        
-        @if (searchterm === '') {
+
+        @if (searchterm() === '') {
             <bs-dropdown-item [disabled]="true">
                 <ng-container *ngTemplateOutlet="enterSearchtermTemplate ?? defaultEnterSearchtermTemplate; context: { }"></ng-container>
             </bs-dropdown-item>
         } @else {
             <div class="overflow-y-auto" [style.max-height.px]="200">
                 @for (suggestion of suggestions; track suggestion) {
-                    <bs-dropdown-item (click)="onSuggestionClicked(suggestion)" [isSelected]="selectedItem?.id === suggestion.id" [disabled]="isBusy ?? true">
+                    <bs-dropdown-item (click)="onSuggestionClicked(suggestion)" [isSelected]="selectedItem?.id === suggestion.id" [disabled]="isBusyVal">
                         @if (suggestionTemplate) {
                             <ng-container *ngTemplateOutlet="suggestionTemplate; context: { $implicit: suggestion, searchbox: this }"></ng-container>
                         }

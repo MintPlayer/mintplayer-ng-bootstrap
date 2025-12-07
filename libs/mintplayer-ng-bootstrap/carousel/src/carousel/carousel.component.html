@@ -1,9 +1,9 @@
 @if (isServerSide) {
     <div class="carousel mx-auto noscript" [class.carousel-vertical]="orientation === 'vertical'">
         <div class="carousel-inner d-grid">
-            @let images = images$ | async;
-            @if (imageCount$ | async; as imageCount) {
-                @for (image of images; track image.id; let i = $index) {
+            @let imagesVal = images();
+            @if (imageCount(); as imageCount) {
+                @for (image of imagesVal; track image.id; let i = $index) {
                     <input type="radio" [id]="'car-' + i" [name]="'car'" class="car-radio d-none" bsNoNoscript [checked]="i === 0">
                     <div class="carousel-item fade d-flex flex-row h-100 align-items-center"
                         [class.flex-column]="orientation === 'vertical'">
@@ -12,14 +12,14 @@
                             @if (indicators) {
                                 <div class="carousel-indicators"
                                     [class.carousel-indicators-vertical]="orientation === 'vertical'">
-                                    @for (image of images; track image.id; let j = $index) {
+                                    @for (image of imagesVal; track image.id; let j = $index) {
                                         <label [attr.for]="'car-' + (j % imageCount)" [class.active]="i === j" data-bs-target></label>
                                     }
                                 </div>
                             }
                         </div>
                     </div>
-                    
+
                     <label class="carousel-control-prev cursor-pointer" [for]="'car-' + ((i - 1 + imageCount) % imageCount)"
                         [class.carousel-control-vertical]="orientation === 'vertical'">
                         <span class="carousel-control-prev-icon" aria-hidden="true"></span>
@@ -38,33 +38,33 @@
     @switch (animation) {
         @case ('slide') {
             <div class="carousel slide mx-auto" [class.carousel-vertical]="orientation === 'vertical'"
-                [style.height.px]="swipeContainer?.currentSlideHeight$ | async">
+                [style.height.px]="swipeContainer?.currentSlideHeight()">
                 @if (indicators) {
                     <div class="carousel-indicators" [class.carousel-indicators-vertical]="orientation === 'vertical'"
-                        [style.height.px]="orientation === 'vertical' ? (swipeContainer?.maxSlideHeight$ | async) : null">
-                        @for (image of (images$ | async); track image.id; let i = $index) {
+                        [style.height.px]="orientation === 'vertical' ? swipeContainer?.maxSlideHeight() : null">
+                        @for (image of images(); track image.id; let i = $index) {
                             <button type="button" (click)="swipeContainer?.goto(i)"
-                                [class.active]="(swipeContainer?.imageIndex$ | async) === i" data-bs-target
-                                [attr.aria-current]="(swipeContainer?.imageIndex$ | async) === i ? true : null"
+                                [class.active]="swipeContainer?.imageIndex() === i" data-bs-target
+                                [attr.aria-current]="swipeContainer?.imageIndex() === i ? true : null"
                                 [attr.aria-label]="'Slide ' + i"></button>
                         }
                     </div>
                 }
                 <div class="carousel-inner overflow-hidden pe-none" [class.text-nowrap]="orientation === 'horizontal'"
                     [class.carousel-inner-vertical]="orientation === 'vertical'" #innerElement
-                    [style.height.px]="swipeContainer?.currentSlideHeight$ | async">
+                    [style.height.px]="swipeContainer?.currentSlideHeight()">
                     <div bsSwipeContainer #container="bsSwipeContainer" [minimumOffset]="50" [(imageIndex)]="currentImageIndex"
                         [orientation]="orientation">
                         <div class="carousel-item" bsSwipe [offside]="true">
-                            <ng-container *ngTemplateOutlet="lastImageTemplate$ | async"></ng-container>
+                            <ng-container *ngTemplateOutlet="lastImageTemplate()"></ng-container>
                         </div>
-                        @for (image of (images$ | async); track image.id) {
+                        @for (image of images(); track image.id) {
                             <div class="carousel-item" [class.active]="true" bsSwipe>
                                 <ng-container *ngTemplateOutlet="image.itemTemplate"></ng-container>
                             </div>
                         }
                         <div class="carousel-item" bsSwipe [offside]="true">
-                            <ng-container *ngTemplateOutlet="firstImageTemplate$ | async"></ng-container>
+                            <ng-container *ngTemplateOutlet="firstImageTemplate()"></ng-container>
                         </div>
                     </div>
                 </div>
@@ -84,8 +84,8 @@
             <div class="carousel fade mx-auto" [class.carousel-vertical]="orientation === 'vertical'">
                 @if (indicators) {
                     <div class="carousel-indicators" [class.carousel-indicators-vertical]="orientation === 'vertical'"
-                        [style.height.px]="orientation === 'vertical' ? (swipeContainer?.currentSlideHeight$ | async) : null">
-                        @for (image of (images$ | async); track image.id; let i = $index) {
+                        [style.height.px]="orientation === 'vertical' ? swipeContainer?.currentSlideHeight() : null">
+                        @for (image of images(); track image.id; let i = $index) {
                             <button type="button" (click)="currentImageIndex = i"
                                 [class.active]="currentImageIndex === i" data-bs-target
                                 [attr.aria-current]="currentImageIndex === i ? true : null"
@@ -94,7 +94,7 @@
                     </div>
                 }
                 <div class="carousel-inner" [class.carousel-inner-vertical]="orientation === 'vertical'">
-                    @for (image of (images$ | async); track image.id; let i = $index) {
+                    @for (image of images(); track image.id; let i = $index) {
                         @if (currentImageIndex === i) {
                             <div class="carousel-item" [class.active]="true" @fadeInOut>
                                 <ng-container [ngTemplateOutlet]="image.itemTemplate"></ng-container>

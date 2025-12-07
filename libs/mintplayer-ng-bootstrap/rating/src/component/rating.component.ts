@@ -1,66 +1,67 @@
-import { AsyncPipe } from '@angular/common';
-import { Component, EventEmitter, HostListener, Input, Output } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
+import { Component, EventEmitter, HostListener, Input, Output, signal, computed, effect } from '@angular/core';
 
 @Component({
   selector: 'bs-rating',
   standalone: true,
   templateUrl: './rating.component.html',
   styleUrls: ['./rating.component.scss'],
-  imports: [AsyncPipe],
+  imports: [],
 })
 export class BsRatingComponent {
 
   constructor() {
-    this.stars$ = combineLatest([this.maximum$, this.previewValue$, this.value$])
-      .pipe(map(([maximum, previewValue, value]) => {
-        const v = previewValue ?? value;
-        return [
-          ...[...Array(v).keys()].map(i => true),
-          ...[...Array(maximum - v).keys()].map(i => false)
-        ];
-      }));
+    this.stars = computed(() => {
+      const maximum = this.maximumSignal();
+      const previewValue = this.previewValue();
+      const value = this.valueSignal();
+      const v = previewValue ?? value;
+      return [
+        ...[...Array(v).keys()].map(i => true),
+        ...[...Array(maximum - v).keys()].map(i => false)
+      ];
+    });
 
-    combineLatest([this.previewValue$, this.value$])
-      .pipe(takeUntilDestroyed())
-      .subscribe(([previewValue, value]) => {
-        const v = previewValue ?? value;
-        this.starsChange.emit(v);
-      });
+    effect(() => {
+      const previewValue = this.previewValue();
+      const value = this.valueSignal();
+      const v = previewValue ?? value;
+      this.starsChange.emit(v);
+    });
   }
 
-  maximum$ = new BehaviorSubject<number>(5);
-  value$ = new BehaviorSubject<number>(3);
-  previewValue$ = new BehaviorSubject<number | null>(null);
-  stars$: Observable<boolean[]>;
-
-  //#region Maximum
-  @Input() public set maximum(value: number) {
-    this.maximum$.next(value);
+  maximumSignal = signal<number>(5);
+  @Input() set maximum(val: number) {
+    this.maximumSignal.set(val);
   }
-  //#endregion
+  get maximum() {
+    return this.maximumSignal();
+  }
+
+  valueSignal = signal<number>(3);
+  @Input() set value(val: number) {
+    this.valueSignal.set(val);
+  }
+  get value() {
+    return this.valueSignal();
+  }
+
+  previewValue = signal<number | null>(null);
+  stars;
 
   //#region Value
   @Output() public valueChange = new EventEmitter<number>();
   @Output() public starsChange = new EventEmitter<number>();
-  public get value() {
-    return this.value$.value;
-  }
-  @Input() public set value(value: number) {
-    this.value$.next(value);
-    this.valueChange.emit(value);
-  }
   //#endregion
 
   hoverValue(index: number) {
-    this.previewValue$.next(index + 1);
+    this.previewValue.set(index + 1);
   }
   selectValue(index: number) {
-    this.value = index + 1;
+    this.valueSignal.set(index + 1);
+    this.valueChange.emit(index + 1);
   }
 
   @HostListener('mouseleave') onMouseLeave() {
-    this.previewValue$.next(null);
+    this.previewValue.set(null);
   }
 }

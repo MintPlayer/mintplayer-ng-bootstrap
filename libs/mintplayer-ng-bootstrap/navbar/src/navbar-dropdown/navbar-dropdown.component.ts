@@ -1,11 +1,9 @@
 import { DOCUMENT, isPlatformServer } from '@angular/common';
-import { Component, ContentChildren, ElementRef, forwardRef, Host, Inject, Injector, Input, Optional, PLATFORM_ID, QueryList, SkipSelf, ViewChild } from '@angular/core';
-import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
+import { Component, ContentChildren, ElementRef, forwardRef, Host, Inject, Injector, Input, Optional, PLATFORM_ID, QueryList, SkipSelf, ViewChild, signal, computed, effect } from '@angular/core';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
 import { DomPortal } from '@angular/cdk/portal';
 import { OverlayRef } from '@angular/cdk/overlay';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'bs-navbar-dropdown',
@@ -28,19 +26,21 @@ export class BsNavbarDropdownComponent {
     this.navbarItem = navbarItem;
     this.isBrowser = !isPlatformServer(platformId);
 
-    this.isVisible$.pipe(takeUntilDestroyed()).subscribe((isVisible) => {
+    effect(() => {
+      const isVisible = this.isVisibleSignal();
       if (isVisible) {
         setTimeout(() => {
           try { this.overlay && this.overlay.updatePosition(); }
           catch (ex) { }
         }, 20);
-        this.topPos$.next(this.element.nativeElement.offsetTop);
+        this.topPosSignal.set(this.element.nativeElement.offsetTop);
       } else {
-        this.topPos$.next(null);
+        this.topPosSignal.set(null);
       }
     });
 
-    this.maxHeight$ = this.topPos$.pipe(map((topPos) => {
+    this.maxHeight = computed(() => {
+      const topPos = this.topPosSignal();
       const w: Window | null = this.document.defaultView;
       if (!topPos) {
         return null;
@@ -50,9 +50,11 @@ export class BsNavbarDropdownComponent {
       } else {
         return null;
       }
-    }));
+    });
 
-    this.maxHeightOrNull$ = combineLatest([this.maxHeight$, this.navbar.isSmallMode$]).pipe(map(([maxHeight, isSmallMode]) => {
+    this.maxHeightOrNull = computed(() => {
+      const maxHeight = this.maxHeight();
+      const isSmallMode = this.navbar.isSmallMode();
       if (isSmallMode) {
         return null;
       } else if (isPlatformServer(platformId)) {
@@ -63,7 +65,7 @@ export class BsNavbarDropdownComponent {
         // If javascript enabled
         return maxHeight;
       }
-    }));
+    });
 
     if (!!parentDropdown && this.isBrowser) {
       // Setup overlay
@@ -107,17 +109,17 @@ export class BsNavbarDropdownComponent {
   parentDropdown: BsNavbarDropdownComponent;
   @ViewChild('dd') dropdownElement!: ElementRef<HTMLDivElement>;
   isBrowser = false;
-  topPos$ = new BehaviorSubject<number | null>(null);
-  maxHeight$: Observable<string | null>;
-  maxHeightOrNull$: Observable<string | null>;
+  topPosSignal = signal<number | null>(null);
+  maxHeight;
+  maxHeightOrNull;
 
   //#region IsVisible
-  isVisible$ = new BehaviorSubject<boolean>(false);
+  isVisibleSignal = signal<boolean>(false);
   public get isVisible() {
-    return this.isVisible$.value;
+    return this.isVisibleSignal();
   }
   public set isVisible(value: boolean) {
-    this.isVisible$.next(value);
+    this.isVisibleSignal.set(value);
   }
   //#endregion
 

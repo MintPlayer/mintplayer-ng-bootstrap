@@ -1,10 +1,8 @@
-import { DestroyRef, Directive, ElementRef, forwardRef, HostBinding, HostListener, Inject, NgZone, Optional, PLATFORM_ID, TemplateRef, ViewContainerRef } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Directive, ElementRef, forwardRef, HostBinding, HostListener, Inject, NgZone, Optional, PLATFORM_ID, TemplateRef, ViewContainerRef, effect, untracked } from '@angular/core';
 import { TemplatePortal } from '@angular/cdk/portal';
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ClickOutsideDirective } from '@mintplayer/ng-click-outside';
 import { BS_DEVELOPMENT } from '@mintplayer/ng-bootstrap';
-import { take } from 'rxjs';
 import { BsDropdownDirective } from '../dropdown/dropdown.directive';
 
 @Directive({
@@ -17,7 +15,6 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
     private viewContainerRef: ViewContainerRef,
     private templateRef: TemplateRef<any>,
     private overlay: Overlay,
-    private destroy: DestroyRef,
 
     elementRef: ElementRef<any>,
     zone: NgZone,
@@ -26,9 +23,9 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
   ) {
     super(elementRef, zone, platformId);
 
-    this.dropdown.isOpen$
-      .pipe(takeUntilDestroyed())
-      .subscribe((isOpen) => {
+    effect(() => {
+      const isOpen = this.dropdown.isOpenSignal();
+      untracked(() => {
         if (isOpen) {
           this.wait = true;
           setTimeout(() => this.wait = false, 100);
@@ -47,14 +44,14 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
           });
 
           if (this.dropdown.hasBackdrop && this.dropdown.closeOnClickOutside) {
-            this.overlayRef.backdropClick().pipe(takeUntilDestroyed(this.destroy)).subscribe(() => {
-              this.dropdown.isOpen = false;
+            this.overlayRef.backdropClick().subscribe(() => {
+              this.dropdown.setIsOpen(false);
             });
           }
-      
+
           this.templatePortal = new TemplatePortal(this.templateRef, this.viewContainerRef);
           const view = this.overlayRef.attach(this.templatePortal);
-          
+
           if (this.dropdown.sameDropdownWidth) {
             const width = this.dropdown.elementRef.nativeElement.offsetWidth;
             view.rootNodes[0].style.width = width + 'px';
@@ -67,14 +64,15 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
           }
         }
       });
+    });
   }
 
   private wait = false;
   private overlayRef: OverlayRef | null = null;
   private templatePortal: TemplatePortal<any> | null = null;
 
-  @HostBinding('class.show') get show() { return this.dropdown.isOpen; }
-  @HostListener('clickOutside', ['$event']) clickedOutside(ev: MouseEvent) {
+  @HostBinding('class.show') get show() { return this.dropdown.isOpenSignal(); }
+  @HostListener('clickOutside', ['$event']) clickedOutside(ev: Event) {
     if (!this.bsDevelopment) {
       if (!this.wait) {
         if (!this.overlayRef?.overlayElement.contains(<any>ev.target)) {
@@ -84,16 +82,15 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
     }
   }
 
-  @HostListener('document:keydown.escape', ['$event']) onEscape(ev: KeyboardEvent) {
+  @HostListener('document:keydown.escape', ['$event']) onEscape(ev: Event) {
     this.doClose();
   }
 
   private doClose() {
-    this.dropdown.isOpen$.pipe(take(1), takeUntilDestroyed(this.destroy)).subscribe((isOpen) => {
-      if (isOpen && !this.dropdown.hasBackdrop && this.dropdown.closeOnClickOutside) {
-        this.dropdown.isOpen = false;
-      }
-    });
+    const isOpen = this.dropdown.isOpenSignal();
+    if (isOpen && !this.dropdown.hasBackdrop && this.dropdown.closeOnClickOutside) {
+      this.dropdown.setIsOpen(false);
+    }
   }
 
 }

@@ -27,9 +27,8 @@ export class AutofocusComponent {
   selectedTags: Tag[] = [];
 
   onProvideArtistSuggestions(search: string) {
-    this.subjectService.suggest(search, [ESubjectType.artist])
-      .pipe(takeUntilDestroyed(this.destroy))
-      .subscribe(artists => this.artistSuggestions = <Artist[]>artists.map(s => <Artist>s));
+    this.subjectService.suggestAsync(search, [ESubjectType.artist])
+      .then((artists) => this.artistSuggestions = <Artist[]>artists.map((s) => <Artist>s));
   }
   onProvideTagSuggestions(search: string) {
     this.tagService.suggestTags(search, true).then((tags) => {

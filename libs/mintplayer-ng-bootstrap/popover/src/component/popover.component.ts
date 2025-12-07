@@ -1,7 +1,6 @@
-import { Component, HostBinding, Inject, Input, TemplateRef } from '@angular/core';
+import { Component, HostBinding, Inject, Input, TemplateRef, signal, computed } from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Position } from '@mintplayer/ng-bootstrap';
-import { BehaviorSubject, map, Observable } from 'rxjs';
 import { POPOVER_CONTENT } from '../providers/popover-content.provider';
 
 @Component({
@@ -14,39 +13,39 @@ import { POPOVER_CONTENT } from '../providers/popover-content.provider';
 export class BsPopoverComponent {
   constructor(@Inject(POPOVER_CONTENT) content: TemplateRef<any>) {
     this.template = content;
-    this.marginClass$ = this.position$.pipe(map((position) => {
+    this.marginClass = computed(() => {
+      const position = this.positionSignal();
       switch (position) {
         case 'top': return 'mb-2';
         case 'start': return 'me-2';
         case 'end': return 'ms-2';
         default: return 'mt-2';
       }
-    }));
-    this.positionClass$ = this.position$
-      .pipe(map(position => `bs-popover-${position}`));
+    });
+    this.positionClass = computed(() => `bs-popover-${this.positionSignal()}`);
   }
 
   //#region Position
-  position$ = new BehaviorSubject<Position>('bottom');
+  positionSignal = signal<Position>('bottom');
   public get position() {
-    return this.position$.value;
+    return this.positionSignal();
   }
   @Input() public set position(value: Position) {
-    this.position$.next(value);
+    this.positionSignal.set(value);
   }
   //#endregion
   //#region IsVisible
-  isVisible$ = new BehaviorSubject<boolean>(false);
+  isVisibleSignal = signal<boolean>(false);
   public get isVisible() {
-    return this.isVisible$.value;
+    return this.isVisibleSignal();
   }
   @Input() public set isVisible(value: boolean) {
-    this.isVisible$.next(value);
+    this.isVisibleSignal.set(value);
   }
   //#endregion
 
-  marginClass$: Observable<string>;
-  positionClass$: Observable<string>;
+  marginClass;
+  positionClass;
 
   template: TemplateRef<any>;
 

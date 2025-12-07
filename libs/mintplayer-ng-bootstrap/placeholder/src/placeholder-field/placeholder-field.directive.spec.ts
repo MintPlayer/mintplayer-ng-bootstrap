@@ -1,6 +1,5 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BehaviorSubject } from 'rxjs';
 import { BsPlaceholderComponent } from '../placeholder/placeholder.component';
 import { BsPlaceholderFieldDirective } from './placeholder-field.directive';
 
@@ -16,10 +15,10 @@ import { BsPlaceholderFieldDirective } from './placeholder-field.directive';
   ]
 })
 class BsPlaceholderMockComponent {
-  isLoading$ = new BehaviorSubject<boolean>(false);
+  isLoadingSignal = signal<boolean>(false);
 
   @Input() public set bsPlaceholder(value: boolean) {
-    this.isLoading$.next(value);
+    this.isLoadingSignal.set(value);
   }
 }
 

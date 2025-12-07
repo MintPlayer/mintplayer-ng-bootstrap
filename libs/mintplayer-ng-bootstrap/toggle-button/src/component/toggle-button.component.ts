@@ -1,5 +1,4 @@
-import { AfterViewInit, Component, ElementRef, EventEmitter, HostBinding, Input, Output, ViewChild } from '@angular/core';
-import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
+import { AfterViewInit, Component, ElementRef, EventEmitter, HostBinding, Input, Output, ViewChild, signal, computed } from '@angular/core';
 import { BsToggleButtonGroupDirective } from '../directives/toggle-button-group/toggle-button-group.directive';
 import { BsCheckStyle } from '../types/check-style';
 
@@ -12,7 +11,8 @@ import { BsCheckStyle } from '../types/check-style';
 export class BsToggleButtonComponent implements AfterViewInit {
 
   constructor() {
-    this.mainCheckStyle$ = this.type$.pipe(map((type) => {
+    this.mainCheckStyle = computed(() => {
+      const type = this.typeSignal();
       switch (type) {
         case 'checkbox':
         case 'radio':
@@ -21,18 +21,20 @@ export class BsToggleButtonComponent implements AfterViewInit {
         default:
           return null;
       }
-    }));
+    });
 
-    this.isSwitch$ = this.type$.pipe(map((type) => {
+    this.isSwitch = computed(() => {
+      const type = this.typeSignal();
       switch (type) {
         case 'switch':
           return true;
         default:
           return false;
       }
-    }));
+    });
 
-    this.inputClass$ = this.type$.pipe(map((type) => {
+    this.inputClass = computed(() => {
+      const type = this.typeSignal();
       switch (type) {
         case 'checkbox':
         case 'radio':
@@ -41,9 +43,10 @@ export class BsToggleButtonComponent implements AfterViewInit {
         default:
           return 'btn-check';
       }
-    }));
-    
-    this.labelClass$ = this.type$.pipe(map((type) => {
+    });
+
+    this.labelClass = computed(() => {
+      const type = this.typeSignal();
       switch (type) {
         case 'checkbox':
         case 'radio':
@@ -54,9 +57,10 @@ export class BsToggleButtonComponent implements AfterViewInit {
         case 'radio_toggle_button':
           return 'btn btn-secondary';
       }
-    }));
+    });
 
-    this.checkOrRadio$ = this.type$.pipe(map((type) => {
+    this.checkOrRadio = computed(() => {
+      const type = this.typeSignal();
       switch (type) {
         case 'radio':
         case 'radio_toggle_button':
@@ -64,46 +68,45 @@ export class BsToggleButtonComponent implements AfterViewInit {
         default:
           return 'checkbox';
       }
-    }));
+    });
 
-    this.nameResult$ = combineLatest([this.name$, this.type$, this.group$])
-      .pipe(map(([name, type, group]) => {
-        switch (type) {
-          case 'radio':
-          case 'radio_toggle_button':
-              return name;
-          case 'checkbox':
-          case 'toggle_button':
-          case 'switch':
-            if (group) {
-              return `${name}[]`;
-            } else {
-              return name;
-            }
-          default:
-            throw 'Invalid value';
-        }
-      }));
+    this.nameResult = computed(() => {
+      const name = this.nameSignal();
+      const type = this.typeSignal();
+      const group = this.groupSignal();
+      switch (type) {
+        case 'radio':
+        case 'radio_toggle_button':
+            return name;
+        case 'checkbox':
+        case 'toggle_button':
+        case 'switch':
+          if (group) {
+            return `${name}[]`;
+          } else {
+            return name;
+          }
+        default:
+          throw 'Invalid value';
+      }
+    });
   }
 
   @ViewChild('checkbox') checkbox!: ElementRef<HTMLInputElement>;
   @HostBinding('class.d-inline-block') dInlineBlockClass = true;
 
   disableAnimations = true;
-  mainCheckStyle$: Observable<string | null>;
-  isSwitch$: Observable<boolean>;
-  inputClass$: Observable<string>;
-  labelClass$: Observable<string>;
-  checkOrRadio$: Observable<'checkbox' | 'radio'>;
-  nameResult$: Observable<string | null>;
+  mainCheckStyle;
+  isSwitch;
+  inputClass;
+  labelClass;
+  checkOrRadio;
+  nameResult;
 
   //#region Type
-  type$ = new BehaviorSubject<BsCheckStyle>('checkbox');
-  public get type() {
-    return this.type$.value;
-  }
-  @Input() public set type(value: BsCheckStyle) {
-    this.type$.next(value);
+  typeSignal = signal<BsCheckStyle>('checkbox');
+  @Input() set type(val: BsCheckStyle) {
+    this.typeSignal.set(val);
   }
   //#endregion
 
@@ -120,32 +123,23 @@ export class BsToggleButtonComponent implements AfterViewInit {
   //#endregion
 
   //#region name
-  name$ = new BehaviorSubject<string | null>(null);
-  public get name() {
-    return this.name$.value;
-  }
-  @Input() public set name(value: string | null) {
-    this.name$.next(value);
+  nameSignal = signal<string | null>(null);
+  @Input() set name(val: string | null) {
+    this.nameSignal.set(val);
   }
   //#endregion
 
   //#region value
-  value$ = new BehaviorSubject<string | null>(null);
-  public get value() {
-    return this.value$.value;
-  }
-  @Input() public set value(value: string | null) {
-    this.value$.next(value);
+  valueSignal = signal<string | null>(null);
+  @Input() set value(val: string | null) {
+    this.valueSignal.set(val);
   }
   //#endregion
 
   //#region Group
-  group$ = new BehaviorSubject<BsToggleButtonGroupDirective | null>(null);
-  public get group() {
-    return this.group$.value;
-  }
-  @Input() public set group(value: BsToggleButtonGroupDirective | null) {
-    this.group$.next(value);
+  groupSignal = signal<BsToggleButtonGroupDirective | null>(null);
+  @Input() set group(val: BsToggleButtonGroupDirective | null) {
+    this.groupSignal.set(val);
   }
   //#endregion
 

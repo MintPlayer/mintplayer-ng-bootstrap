@@ -37,7 +37,7 @@ export class BsTooltipDirective implements OnDestroy {
   private portal: ComponentPortal<any>;
   private overlayRef: OverlayRef | null = null;
 
-  @HostListener('window:blur') private onBlur() {
+  @HostListener('window:blur') onBlur() {
     this.hideTooltip();
   }
 
@@ -85,7 +85,7 @@ export class BsTooltipDirective implements OnDestroy {
         .withPositions(positions),
     });
     const component = this.overlayRef.attach<BsTooltipComponent>(this.portal);
-    component.instance.position = this.bsTooltip;
+    component.instance.position.set(this.bsTooltip);
   }
 
   hideTooltip() {

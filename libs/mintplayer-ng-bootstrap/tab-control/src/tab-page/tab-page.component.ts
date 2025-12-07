@@ -1,5 +1,4 @@
-import { Component, ContentChild, TemplateRef, Input, ElementRef } from '@angular/core';
-import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
+import { Component, ContentChild, Input, ElementRef, signal, computed } from '@angular/core';
 import { BsTabControlComponent } from '../tab-control/tab-control.component';
 import { BsTabPageHeaderDirective } from '../tab-page-header/tab-page-header.directive';
 
@@ -14,15 +13,14 @@ export class BsTabPageComponent {
   constructor(tabControl: BsTabControlComponent, element: ElementRef<any>) {
     this.element = element;
     this.tabControl = tabControl;
-    this.tabId$ = new BehaviorSubject<number>(++this.tabControl.tabCounter);
-    this.tabName$ = combineLatest([this.tabControl.tabControlName$, this.tabId$])
-      .pipe(map(([tabControlName, tabId]) =>  `${tabControlName}-${tabId}`));
+    this.tabId = signal<number>(++this.tabControl.tabCounter);
+    this.tabName = computed(() => `${this.tabControl.tabControlName()}-${this.tabId()}`);
   }
 
   element: ElementRef<any>;
   tabControl: BsTabControlComponent;
-  tabId$: BehaviorSubject<number>;
-  tabName$: Observable<string>;
+  tabId;
+  tabName;
 
   @Input() disabled = false;
   @ContentChild(BsTabPageHeaderDirective) headerTemplate!: BsTabPageHeaderDirective;

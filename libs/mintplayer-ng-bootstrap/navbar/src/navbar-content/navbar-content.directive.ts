@@ -1,7 +1,5 @@
 import { isPlatformServer } from '@angular/common';
-import { AfterViewInit, Directive, ElementRef, Inject, Input, OnDestroy, PLATFORM_ID } from '@angular/core';
-import { BehaviorSubject, combineLatest, filter, take } from 'rxjs';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { AfterViewInit, Directive, ElementRef, Inject, Input, OnDestroy, PLATFORM_ID, signal, effect } from '@angular/core';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 
 @Directive({
@@ -11,10 +9,10 @@ import { BsNavbarComponent } from '../navbar/navbar.component';
 export class BsNavbarContentDirective implements AfterViewInit, OnDestroy {
 
   constructor(private element: ElementRef, @Inject(PLATFORM_ID) private platformId: any) {
-    combineLatest([this.viewInit$, this.navbar$])
-      .pipe(filter(([viewInit, navbar]) => viewInit && !!navbar))
-      .pipe(take(1), takeUntilDestroyed())
-      .subscribe(([viewInit, navbar]) => {
+    effect(() => {
+      const viewInit = this.viewInitSignal();
+      const navbar = this.navbarSignal();
+      if (viewInit && navbar) {
         if (isPlatformServer(platformId)) {
           this.element.nativeElement.style.paddingTop = (this.initialPadding + 58) + 'px';
         } else {
@@ -35,23 +33,24 @@ export class BsNavbarContentDirective implements AfterViewInit, OnDestroy {
             this.resizeObserver.observe(navbar.nav.nativeElement);
           }
         }
-      });
+      }
+    }, { allowSignalWrites: true });
   }
 
-  private viewInit$ = new BehaviorSubject<boolean>(false);
-  private navbar$ = new BehaviorSubject<BsNavbarComponent | undefined>(undefined);
+  private viewInitSignal = signal<boolean>(false);
+  private navbarSignal = signal<BsNavbarComponent | undefined>(undefined);
   resizeObserver: ResizeObserver | null = null;
   initialPadding = 0;
 
   @Input('bsNavbarContent') set navbar(value: BsNavbarComponent | undefined) {
-    this.navbar$.next(value);
+    this.navbarSignal.set(value);
   }
-  
+
   ngAfterViewInit() {
-    this.viewInit$.next(true);
+    this.viewInitSignal.set(true);
   }
 
   ngOnDestroy() {
-    this.resizeObserver?.unobserve(this.navbar$.value?.nav.nativeElement);
+    this.resizeObserver?.unobserve(this.navbarSignal()?.nav.nativeElement);
   }
 }

@@ -1,13 +1,13 @@
 <ul class="pagination">
-    @if (showArrows$ | async) {
+    @if (showArrowsSignal()) {
         <li class="page-item">
-            <a class="page-link" href="" (click)="onPrevious()" [class.disabled]="isFirstPage$ | async" aria-label="Previous">
+            <a class="page-link" href="" (click)="onPrevious()" [class.disabled]="isFirstPage()" aria-label="Previous">
                 <span aria-hidden="true">&laquo;</span>
                 <span class="visually-hidden">Previous</span>
             </a>
         </li>
     }
-    @for (pageNumber of (shownPageNumbers$ | async); track pageNumber.page) {
+    @for (pageNumber of shownPageNumbers(); track pageNumber.page) {
         <li class="page-item">
             @if (pageNumber.page != '...') {
                 <a class="page-link" href="" (click)="onSelectPage($event, pageNumber.page)" [class.active]="pageNumber.selected">
@@ -19,9 +19,9 @@
             }
         </li>
     }
-    @if (showArrows$ | async) {
+    @if (showArrowsSignal()) {
         <li class="page-item">
-            <a class="page-link" href="" (click)="onNext()" [class.disabled]="isLastPage$ | async" aria-label="Next">
+            <a class="page-link" href="" (click)="onNext()" [class.disabled]="isLastPage()" aria-label="Next">
                 <span aria-hidden="true">&raquo;</span>
                 <span class="visually-hidden">Next</span>
             </a>

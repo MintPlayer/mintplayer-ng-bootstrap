@@ -11,7 +11,6 @@ export const ROUTES: Routes = [
   { path: 'scrollspy', loadComponent: () => import('./scrollspy/scrollspy.component').then(m => m.ScrollspyComponent) },
   { path: 'parallax', loadComponent: () => import('./parallax/parallax.component').then(m => m.ParallaxComponent) },
   { path: 'code-snippet', loadComponent: () => import('./code-snippet/code-snippet.component').then(m => m.CodeSnippetComponent) },
-  { path: 'scheduler', loadComponent: () => import('./scheduler/scheduler.component').then(m => m.SchedulerComponent) },
   { path: 'user-agent', loadComponent: () => import('./user-agent/user-agent.component').then(m => m.UserAgentComponent) },
   { path: 'lazy-loading-components', loadComponent: () => import('./lazy-loading/lazy-loading.component').then(m => m.LazyLoadingComponent) },
   { path: 'ordinal-number', loadComponent: () => import('./ordinal-number/ordinal-number.component').then(m => m.OrdinalNumberComponent) },

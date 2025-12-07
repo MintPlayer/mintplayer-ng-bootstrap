@@ -1,7 +1,5 @@
-import { Component, HostBinding, Input } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, HostBinding, Input, signal, computed, effect } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
-import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
 
 @Component({
   selector: 'bs-progress-bar',
@@ -12,51 +10,57 @@ import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
 export class BsProgressBarComponent {
 
   constructor() {
-    this.percentage$ = combineLatest([this.minimum$, this.maximum$, this.value$])
-      .pipe(map(([minimum, maximum, value]) => {
-        return (value - minimum) / (maximum - minimum) * 100;
-      }));
-    this.width$ = this.percentage$
-      .pipe(map((width) => {
-        return String(width) + '%';
-      }));
-    this.colorClass$ = this.color$
-      .pipe(map((color) => {
-        const name = Color[color];
-        return `bg-${name}`;
-      }));
+    this.percentage = computed(() => {
+      const minimum = this.minimumSignal();
+      const maximum = this.maximumSignal();
+      const value = this.valueSignal();
+      return (value - minimum) / (maximum - minimum) * 100;
+    });
+    this.width = computed(() => {
+      return String(this.percentage()) + '%';
+    });
+    this.colorClassComputed = computed(() => {
+      const color = this.colorSignal();
+      const name = Color[color];
+      return `bg-${name}`;
+    });
 
-    this.colorClass$.pipe(takeUntilDestroyed())
-      .subscribe(color => this.colorClass = color);
-    this.width$.pipe(takeUntilDestroyed())
-      .subscribe(width => this.widthStyle = width);
-    this.value$.pipe(takeUntilDestroyed())
-      .subscribe(value => this.valueNow = value);
-    this.minimum$.pipe(takeUntilDestroyed())
-      .subscribe(value => this.valueMin = value);
-    this.maximum$.pipe(takeUntilDestroyed())
-      .subscribe(value => this.valueMax = value);
+    effect(() => {
+      this.colorClass = this.colorClassComputed();
+    });
+    effect(() => {
+      this.widthStyle = this.width();
+    });
+    effect(() => {
+      this.valueNow = this.valueSignal();
+    });
+    effect(() => {
+      this.valueMin = this.minimumSignal();
+    });
+    effect(() => {
+      this.valueMax = this.maximumSignal();
+    });
   }
 
-  minimum$ = new BehaviorSubject<number>(0);
-  maximum$ = new BehaviorSubject<number>(100);
-  value$ = new BehaviorSubject<number>(50);
-  percentage$: Observable<number>;
-  width$: Observable<string>;
-  color$ = new BehaviorSubject<Color>(Color.primary);
-  colorClass$: Observable<string>;
+  minimumSignal = signal<number>(0);
+  maximumSignal = signal<number>(100);
+  valueSignal = signal<number>(50);
+  percentage;
+  width;
+  colorSignal = signal<Color>(Color.primary);
+  colorClassComputed;
 
   @Input() public set minimum(value: number) {
-    this.minimum$.next(value);
+    this.minimumSignal.set(value);
   }
   @Input() public set maximum(value: number) {
-    this.maximum$.next(value);
+    this.maximumSignal.set(value);
   }
   @Input() public set value(value: number) {
-    this.value$.next(value);
+    this.valueSignal.set(value);
   }
   @Input() public set color(value: Color) {
-    this.color$.next(value);
+    this.colorSignal.set(value);
   }
   @Input() @HostBinding('class.progress-bar-striped') public striped = false;
   @Input() @HostBinding('class.progress-bar-animated') public animated = false;

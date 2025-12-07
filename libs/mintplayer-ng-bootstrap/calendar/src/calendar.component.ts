@@ -1,9 +1,6 @@
 /// <reference types="./types" />
 
-import { AsyncPipe } from '@angular/common';
-import { Component, DestroyRef, EventEmitter, Input, Output } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, filter, map, Observable, take } from 'rxjs';
+import { Component, EventEmitter, Input, Output, signal, computed, effect } from '@angular/core';
 import { BsCalendarMonthService, BsMonthNamePipe, BsWeekdayNamePipe, DateDayOfMonth, Week, WeekDay } from '@mintplayer/ng-bootstrap/calendar-month';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { BsUcFirstPipe } from '@mintplayer/ng-bootstrap/uc-first';
@@ -13,39 +10,40 @@ import { BsUcFirstPipe } from '@mintplayer/ng-bootstrap/uc-first';
   standalone: true,
   templateUrl: './calendar.component.html',
   styleUrls: ['./calendar.component.scss'],
-  imports: [AsyncPipe, BsUcFirstPipe, BsMonthNamePipe, BsWeekdayNamePipe]
+  imports: [BsUcFirstPipe, BsMonthNamePipe, BsWeekdayNamePipe]
 })
 export class BsCalendarComponent {
-  constructor(private sanitizer: DomSanitizer, private calendarMonthService: BsCalendarMonthService, private destroy: DestroyRef) {
-    this.weeks$ = this.currentMonth$
-      .pipe(map((month) => this.calendarMonthService.getWeeks(month)));
-    this.shownDays$ = this.weeks$
-      .pipe(filter((weeks) => weeks.length > 1))
-      .pipe(map((weeks) => weeks[1].days))
-      .pipe(
-        map((days) => {
-          const firstDay = days[0];
-          if (firstDay) {
-            return days.map((d) => {
-              const date = new Date(
-                firstDay.date.getFullYear(),
-                firstDay.date.getMonth(),
-                d?.dayOfMonth
-              );
-              return <WeekDay>{
-                short: date.toLocaleString('default', { weekday: 'short' }),
-                long: date.toLocaleString('default', { weekday: 'long' })
-              };
-            });
-          } else {
-            return [];
-          }
-        })
-      );
-    this.selectedDate$.pipe(takeUntilDestroyed())
-      .subscribe(date => this.selectedDateChange.emit(date));
-    this.currentMonth$.pipe(takeUntilDestroyed())
-      .subscribe(month => this.currentMonthChange.emit(month));
+  constructor(private sanitizer: DomSanitizer, private calendarMonthService: BsCalendarMonthService) {
+    this.weeks = computed(() => this.calendarMonthService.getWeeks(this.currentMonthSignal()));
+    this.shownDays = computed(() => {
+      const weeks = this.weeks();
+      if (weeks.length <= 1) return [];
+      const days = weeks[1].days;
+      const firstDay = days[0];
+      if (firstDay) {
+        return days.map((d) => {
+          const date = new Date(
+            firstDay.date.getFullYear(),
+            firstDay.date.getMonth(),
+            d?.dayOfMonth
+          );
+          return <WeekDay>{
+            short: date.toLocaleString('default', { weekday: 'short' }),
+            long: date.toLocaleString('default', { weekday: 'long' })
+          };
+        });
+      } else {
+        return [];
+      }
+    });
+
+    effect(() => {
+      this.selectedDateChange.emit(this.selectedDateSignal());
+    });
+    effect(() => {
+      this.currentMonthChange.emit(this.currentMonthSignal());
+    });
+
     import('bootstrap-icons/icons/chevron-left.svg').then((icon) => {
       this.chevronLeft = sanitizer.bypassSecurityTrustHtml(icon.default);
     });
@@ -56,49 +54,41 @@ export class BsCalendarComponent {
 
   chevronLeft?: SafeHtml;
   chevronRight?: SafeHtml;
-  weeks$: Observable<Week[]>;
-  shownDays$: Observable<WeekDay[]>;
+  weeks;
+  shownDays;
 
   //#region CurrentMonth
-  currentMonth$ = new BehaviorSubject<Date>(new Date());
-  @Output() public currentMonthChange = new EventEmitter<Date>();
+  currentMonthSignal = signal<Date>(new Date());
+  @Input() set currentMonth(val: Date) {
+    this.currentMonthSignal.set(val);
+  }
   get currentMonth() {
-    return this.currentMonth$.value;
+    return this.currentMonthSignal();
   }
-  @Input() set currentMonth(value: Date) {
-    this.currentMonth$.next(value);
-  }
+  @Output() public currentMonthChange = new EventEmitter<Date>();
   //#endregion
   //#region SelectedDate
-  selectedDate$ = new BehaviorSubject<Date>(new Date());
-  @Output() public selectedDateChange = new EventEmitter<Date>();
+  selectedDateSignal = signal<Date>(new Date());
+  @Input() set selectedDate(val: Date) {
+    this.selectedDateSignal.set(val);
+  }
   get selectedDate() {
-    return this.selectedDate$.value;
+    return this.selectedDateSignal();
   }
-  @Input() set selectedDate(value: Date) {
-    this.selectedDate$.next(value);
-  }
+  @Output() public selectedDateChange = new EventEmitter<Date>();
   //#endregion
 
   @Input() disableDateFn?: (date: Date) => boolean;
 
   previousMonth() {
-    this.currentMonth$.pipe(take(1), takeUntilDestroyed(this.destroy)).subscribe((month) => {
-      this.currentMonth$.next(
-        new Date(month.getFullYear(), month.getMonth() - 1, 1)
-      );
-    });
-
+    const month = this.currentMonthSignal();
+    this.currentMonthSignal.set(new Date(month.getFullYear(), month.getMonth() - 1, 1));
     return false;
   }
 
   nextMonth() {
-    this.currentMonth$.pipe(take(1), takeUntilDestroyed(this.destroy)).subscribe((month) => {
-      this.currentMonth$.next(
-        new Date(month.getFullYear(), month.getMonth() + 1, 1)
-      );
-    });
-
+    const month = this.currentMonthSignal();
+    this.currentMonthSignal.set(new Date(month.getFullYear(), month.getMonth() + 1, 1));
     return false;
   }
 
@@ -115,7 +105,7 @@ export class BsCalendarComponent {
 
   goto(day: DateDayOfMonth | null) {
     if (day && day.isInMonth && (!this.disableDateFn || !this.disableDateFn(day.date))) {
-      this.selectedDate$.next(day.date);
+      this.selectedDateSignal.set(day.date);
     }
   }
 }

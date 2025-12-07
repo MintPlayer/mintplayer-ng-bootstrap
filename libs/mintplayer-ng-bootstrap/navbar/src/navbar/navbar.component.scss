@@ -79,13 +79,18 @@ nav {
     }
 }
 
-// Properly align the navbar-navs
-.nav-wrapper ::ng-deep bs-navbar-nav > .navbar-collapse {
-    justify-content: center;
-}
-.nav-wrapper ::ng-deep bs-navbar-nav:first-of-type > .navbar-collapse {
-    justify-content: flex-start;
-}
-.nav-wrapper ::ng-deep bs-navbar-nav:last-of-type > .navbar-collapse {
-    justify-content: flex-end;
+.nav-wrapper {
+    width: calc(100% - 1rem);
+    margin: 0;
+
+    // Properly align the navbar-navs
+    ::ng-deep bs-navbar-nav > .navbar-collapse {
+        justify-content: center;
+    }
+    ::ng-deep bs-navbar-nav:first-of-type > .navbar-collapse {
+        justify-content: flex-start;
+    }
+    ::ng-deep bs-navbar-nav:last-of-type > .navbar-collapse {
+        justify-content: flex-end;
+    }
 }

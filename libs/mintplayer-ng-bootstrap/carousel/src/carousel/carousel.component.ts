@@ -1,9 +1,8 @@
 import { isPlatformServer } from '@angular/common';
-import { AfterViewInit, ChangeDetectorRef, Component, ContentChildren, ElementRef, forwardRef, HostBinding, HostListener, Inject, Input, OnDestroy, PLATFORM_ID, QueryList, TemplateRef, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ContentChildren, ElementRef, forwardRef, HostBinding, HostListener, Inject, Input, OnDestroy, PLATFORM_ID, QueryList, TemplateRef, ViewChild, signal, computed } from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsSwipeContainerDirective } from '@mintplayer/ng-swiper/swiper';
-import { BehaviorSubject, map, Observable } from 'rxjs';
 import { BsCarouselImageDirective } from '../carousel-image/carousel-image.directive';
 
 @Component({
@@ -17,8 +16,9 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
 
   constructor(@Inject(PLATFORM_ID) platformId: any, private cdRef: ChangeDetectorRef) {
     this.isServerSide = isPlatformServer(platformId);
-    this.imageCount$ = this.images$.pipe(map((images) => images?.length ?? 0));
-    this.firstImageTemplate$ = this.images$.pipe(map((images) => {
+    this.imageCount = computed(() => this.images()?.length ?? 0);
+    this.firstImageTemplate = computed(() => {
+      const images = this.images();
       if (!images) return null;
       if (images.length === 0) return null;
 
@@ -26,16 +26,17 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
       if (!img) return null;
 
       return img.itemTemplate;
-    }));
-    this.lastImageTemplate$ = this.images$.pipe(map((images) => {
+    });
+    this.lastImageTemplate = computed(() => {
+      const images = this.images();
       if (!images) return null;
       if (images.length === 0) return null;
-      
+
       const img = images.get(images.length - 1);
       if (!img) return null;
 
       return img.itemTemplate;
-    }));
+    });
 
     if (!isPlatformServer(platformId)) {
       this.resizeObserver = new ResizeObserver((entries) => {
@@ -43,14 +44,14 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
       });
     }
   }
-  
+
   colors = Color;
   isServerSide: boolean;
   currentImageIndex = 0;
-  images$ = new BehaviorSubject<QueryList<BsCarouselImageDirective> | null>(null);
-  imageCount$: Observable<number>;
-  firstImageTemplate$: Observable<TemplateRef<any> | null>;
-  lastImageTemplate$: Observable<TemplateRef<any> | null>;
+  images = signal<QueryList<BsCarouselImageDirective> | null>(null);
+  imageCount;
+  firstImageTemplate;
+  lastImageTemplate;
   resizeObserver?: ResizeObserver;
 
   @Input() indicators = false;
@@ -67,8 +68,8 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
 
   @ViewChild('innerElement') innerElement!: ElementRef<HTMLDivElement>;
   @ViewChild('container') swipeContainer!: BsSwipeContainerDirective;
-  @ContentChildren(forwardRef(() => BsCarouselImageDirective)) set images(value: QueryList<BsCarouselImageDirective>) {
-    this.images$.next(value);
+  @ContentChildren(forwardRef(() => BsCarouselImageDirective)) set imagesQuery(value: QueryList<BsCarouselImageDirective>) {
+    this.images.set(value);
     value.forEach((item, index) => item.isFirst = (index === 0));
   }
 
@@ -90,10 +91,11 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
   @HostListener('document:keydown.ArrowRight', ['$event'])
   @HostListener('document:keydown.ArrowUp', ['$event'])
   @HostListener('document:keydown.ArrowDown', ['$event'])
-  onKeyPress(ev: KeyboardEvent) {
+  onKeyPress(ev: Event) {
+    const keyboardEvent = ev as KeyboardEvent;
     if (this.keyboardEvents) {
       let handled = false;
-      switch (ev.key) {
+      switch (keyboardEvent.key) {
         case 'ArrowLeft':
           if (this.orientation === 'horizontal') {
             this.previousImage();
@@ -120,7 +122,7 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
           break;
       }
       if (handled) {
-        ev.preventDefault();
+        keyboardEvent.preventDefault();
       }
     }
   }
@@ -128,10 +130,11 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
   previousImage() {
     switch (this.animation) {
       case 'fade':
+        const imagesVal = this.images();
         if (this.currentImageIndex > 0) {
           this.currentImageIndex--;
         } else {
-          this.currentImageIndex = this.images$.value!.length - 1;
+          this.currentImageIndex = imagesVal!.length - 1;
         }
         break;
       case 'slide':
@@ -143,7 +146,8 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
   nextImage() {
     switch (this.animation) {
       case 'fade':
-        if (this.currentImageIndex < this.images$.value!.length - 1) {
+        const imagesVal = this.images();
+        if (this.currentImageIndex < imagesVal!.length - 1) {
           this.currentImageIndex++;
         } else {
           this.currentImageIndex = 0;

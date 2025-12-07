@@ -1,11 +1,9 @@
 /// <reference types="../types" />
 
-import { Component, ElementRef, EventEmitter, Input, Optional, Output, TemplateRef, ViewChild } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, ElementRef, EventEmitter, Input, Optional, Output, TemplateRef, ViewChild, signal, effect, untracked } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 import { HasId } from '@mintplayer/ng-bootstrap/has-id';
-import { BehaviorSubject, debounceTime } from 'rxjs';
 import { BsSuggestionTemplateContext } from '../directives';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
@@ -21,15 +19,23 @@ export class BsSearchboxComponent<T extends HasId<U>, U> {
       throw '<bs-searchbox> must be inside a <bs-form>';
     }
 
-    this.searchterm$.pipe(debounceTime(200), takeUntilDestroyed()).subscribe((searchterm) => {
-      if (searchterm === '') {
-        this.suggestions = [];
-      } else {
-        this.isBusy$.next(true);
-        this.provideSuggestions.emit(searchterm);
-      }
+    // Debounced effect for searchterm
+    let debounceTimer: any = null;
+    effect(() => {
+      const searchterm = this.searchterm();
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        untracked(() => {
+          if (searchterm === '') {
+            this.suggestionsInternal = [];
+          } else {
+            this.isBusy.set(true);
+            this.provideSuggestions.emit(searchterm);
+          }
+        });
+      }, 200);
     });
-    
+
     import('bootstrap-icons/icons/caret-up-fill.svg').then((icon) => {
       this.caretUpFill = sanitizer.bypassSecurityTrustHtml(icon.default);
     });
@@ -41,9 +47,9 @@ export class BsSearchboxComponent<T extends HasId<U>, U> {
   caretUpFill?: SafeHtml;
   caretDownFill?: SafeHtml;
   colors = Color;
-  isBusy$ = new BehaviorSubject<boolean>(false);
+  isBusy = signal<boolean>(false);
   @ViewChild('textbox') textbox!: ElementRef<HTMLInputElement>;
-  
+
   //#region isOpen
   private _isOpen = false;
   public get isOpen() {
@@ -59,13 +65,13 @@ export class BsSearchboxComponent<T extends HasId<U>, U> {
   //#endregion
 
   //#region suggestions
-  private _suggestions: T[] = [];
+  private suggestionsInternal: T[] = [];
   public get suggestions() {
-    return this._suggestions;
+    return this.suggestionsInternal;
   }
   @Input() public set suggestions(value: T[]) {
-    this._suggestions = value;
-    this.isBusy$.next(false);
+    this.suggestionsInternal = value;
+    this.isBusy.set(false);
   }
   //#endregion
 
@@ -82,13 +88,7 @@ export class BsSearchboxComponent<T extends HasId<U>, U> {
   //#endregion
 
   //#region searchterm
-  searchterm$ = new BehaviorSubject<string>('');
-  public get searchterm() {
-    return this.searchterm$.value;
-  }
-  @Input() public set searchterm(value: string) {
-    this.searchterm$.next(value);
-  }
+  searchterm = signal<string>('');
   //#endregion
 
   suggestionTemplate?: TemplateRef<BsSuggestionTemplateContext<T, U>>;
@@ -97,12 +97,12 @@ export class BsSearchboxComponent<T extends HasId<U>, U> {
   @Output() provideSuggestions = new EventEmitter<string>();
 
   onSearchtermChange(searchterm: string) {
-    this.searchterm$.next(searchterm);
+    this.searchterm.set(searchterm);
   }
 
   onSuggestionClicked(suggestion: T) {
     this.selectedItem = suggestion;
     this.isOpen = false;
-    this.searchterm = '';
+    this.searchterm.set('');
   }
 }

@@ -1,15 +1,15 @@
-<div class="d-flex w-100 root" [class]="[directionClass$ | async, splitterClass$ | async]" bsUserAgent>
+<div class="d-flex w-100 root" [class]="[directionClass(), splitterClass()]" bsUserAgent>
     <ng-content></ng-content>
-    @for (panel of (panels$ | async); let index = $index; let last = $last; track panel) {
-        @let widthStyles = widthStyles$ | async;
-        @let heightStyles = heightStyles$ | async;
-        
+    @for (panel of panels(); let index = $index; let last = $last; track panel) {
+        @let widthStylesVal = widthStyles();
+        @let heightStylesVal = heightStyles();
+
         <!--  [style.width.%]="100" [style.height.%]="100" -->
-        <div class="split-panel overflow-hidden" [class.flex-none]="isResizing$ | async" #splitPanel [style.width]="widthStyles | bsElementAt:index" [style.height]="heightStyles | bsElementAt:index">
+        <div class="split-panel overflow-hidden" [class.flex-none]="isResizing()" #splitPanel [style.width]="widthStylesVal | bsElementAt:index" [style.height]="heightStylesVal | bsElementAt:index">
             <ng-template [cdkPortalOutlet]="panel.portal"></ng-template>
         </div>
         @if (!last) {
-            <div class="divider" bsUserAgent [class.hover]="(touchedDivider$ | async) === divider" #divider (mousedown)="startResizeMouse($event, index, index + 1)" (touchstart)="startResizeTouch($event, index, index + 1, divider)" (touchmove)="onTouchMove($event)" (touchend)="onTouchEnd($event)"></div>
+            <div class="divider" bsUserAgent [class.hover]="touchedDivider() === divider" #divider (mousedown)="startResizeMouse($event, index, index + 1)" (touchstart)="startResizeTouch($event, index, index + 1, divider)" (touchmove)="onTouchMove($event)" (touchend)="onTouchEnd($event)"></div>
         }
     }
 </div>

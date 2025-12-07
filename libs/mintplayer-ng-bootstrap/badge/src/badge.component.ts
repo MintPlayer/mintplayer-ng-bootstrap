@@ -1,32 +1,26 @@
-import { Component, Input } from '@angular/core';
-import { BehaviorSubject, map, Observable } from 'rxjs';
+import { Component, Input, signal, computed } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
-import { AsyncPipe } from '@angular/common';
 
 @Component({
   selector: 'bs-badge',
   standalone: true,
   templateUrl: './badge.component.html',
   styleUrls: ['./badge.component.scss'],
-  imports: [AsyncPipe]
+  imports: []
 })
 export class BsBadgeComponent {
   constructor() {
-    this.colorClass$ = this.type$
-      .pipe(map((type) => `bg-${this.colors[type]}`));
+    this.colorClass = computed(() => `bg-${this.colors[this.typeSignal()]}`);
   }
 
   colors = Color;
 
   //#region Type
-  type$ = new BehaviorSubject<Color>(Color.primary);
-  public get type() {
-    return this.type$.value;
-  }
-  @Input() public set type(value: Color) {
-    this.type$.next(value);
+  typeSignal = signal<Color>(Color.primary);
+  @Input() set type(val: Color) {
+    this.typeSignal.set(val);
   }
   //#endregion
 
-  colorClass$: Observable<string>;
+  colorClass;
 }

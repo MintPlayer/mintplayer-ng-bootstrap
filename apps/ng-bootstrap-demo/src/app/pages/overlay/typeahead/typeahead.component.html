@@ -2,7 +2,7 @@
 <bs-typeahead
     [(searchterm)]="searchterm"
     (provideSuggestions)="provideSuggestions($event)"
-    [suggestions]="(suggestions$ | async) || []"
+    [suggestionsInput]="suggestionsSignal()"
     (submitted)="doSearch($event)"
     (suggestionSelected)="gotoArtist($event)"
 ></bs-typeahead>

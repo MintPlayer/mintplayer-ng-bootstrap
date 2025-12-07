@@ -1,7 +1,5 @@
-import { AfterViewInit, DestroyRef, Directive, forwardRef } from '@angular/core';
+import { AfterViewInit, Directive, forwardRef } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { fromEvent } from 'rxjs';
 import { BsToggleButtonComponent } from '../component/toggle-button.component';
 
 @Directive({
@@ -14,75 +12,73 @@ import { BsToggleButtonComponent } from '../component/toggle-button.component';
   }],
 })
 export class BsToggleButtonValueAccessor implements ControlValueAccessor, AfterViewInit {
-  constructor(private host: BsToggleButtonComponent, private destroy: DestroyRef) {}
+  constructor(private host: BsToggleButtonComponent) {}
 
   onValueChange?: (value: boolean | string | string[]) => void;
   onTouched?: () => void;
 
   ngAfterViewInit() {
-    fromEvent(this.host.checkbox.nativeElement, 'change')
-      .pipe(takeUntilDestroyed(this.destroy))
-      .subscribe((ev) => {
-        if (this.onValueChange && this.host.checkbox) {
-          const isChecked = (<HTMLInputElement>ev.target).checked;
-          switch (this.host.type) {
-            case 'radio':
-            case 'radio_toggle_button':
-              if (isChecked) {
-                this.onValueChange(this.host.checkbox.nativeElement.value);
-              }
-              break;
-            default:
-              if (this.host['group']) {
-                const group = this.host['group'];
-                const itemValue = this.host.checkbox.nativeElement.value;
-                
-                const result = group.toggleButtons
-                  .map(tb => ({ value: tb.value, checked: tb.checkbox.nativeElement.checked }))
-                  .filter(tb => !!tb.value && tb.checked)
-                  .map(tb => <string>tb.value);
+    this.host.checkbox.nativeElement.addEventListener('change', (ev: Event) => {
+      if (this.onValueChange && this.host.checkbox) {
+        const isChecked = (<HTMLInputElement>ev.target).checked;
+        switch (this.host.typeSignal()) {
+          case 'radio':
+          case 'radio_toggle_button':
+            if (isChecked) {
+              this.onValueChange(this.host.checkbox.nativeElement.value);
+            }
+            break;
+          default:
+            if (this.host.groupSignal()) {
+              const group = this.host.groupSignal();
+              const itemValue = this.host.checkbox.nativeElement.value;
 
-                if (this.host.checkbox.nativeElement.checked) {
-                  if (!result.includes(itemValue)) {
-                    result.push(itemValue);
-                  }
-                } else {
-                  if (result.includes(itemValue)) {
-                    result.splice(result.indexOf(itemValue), 1);
-                  }
+              const result = group!.toggleButtons
+                .map(tb => ({ value: tb.valueSignal(), checked: tb.checkbox.nativeElement.checked }))
+                .filter(tb => !!tb.value && tb.checked)
+                .map(tb => <string>tb.value);
+
+              if (this.host.checkbox.nativeElement.checked) {
+                if (!result.includes(itemValue)) {
+                  result.push(itemValue);
                 }
-
-                this.onValueChange(result);
               } else {
-                this.onValueChange(isChecked);
+                if (result.includes(itemValue)) {
+                  result.splice(result.indexOf(itemValue), 1);
+                }
               }
-              break;
-          }
+
+              this.onValueChange(result);
+            } else {
+              this.onValueChange(isChecked);
+            }
+            break;
         }
-      });
+      }
+    });
   }
 
   //#region ControlValueAccessor implementation
   registerOnChange(fn: (_: any) => void) {
     this.onValueChange = fn;
   }
-  
+
   registerOnTouched(fn: () => void) {
     this.onTouched = fn;
   }
 
   writeValue(value: boolean | string | string[]) {
     if (this.host.checkbox) {
-      switch (this.host.type) {
+      switch (this.host.typeSignal()) {
         case 'radio':
         case 'radio_toggle_button':
-          if (<string>value === this.host.value) {
+          if (<string>value === this.host.valueSignal()) {
             this.host.checkbox.nativeElement.checked = true;
           }
           break;
         default:
-          if (this.host.group) {
-            this.host.checkbox.nativeElement.checked = (<string[]>value).includes(this.host.value!);
+          if (this.host.groupSignal()) {
+            this.host.checkbox.nativeElement.checked = (<string[]>value).includes(this.host.valueSignal()!);
           } else {
             this.host.checkbox.nativeElement.checked = <boolean>value;
           }

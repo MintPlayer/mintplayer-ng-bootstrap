@@ -1,7 +1,6 @@
-import { Component, ContentChild, Directive, ElementRef, Input } from '@angular/core';
+import { Component, ContentChild, Directive, ElementRef, Input, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsDropdownDirective } from '../dropdown/dropdown.directive';
-import { BehaviorSubject } from 'rxjs';
 import { BsDropdownMenuDirective } from './dropdown-menu.directive';
 import { OverlayModule } from '@angular/cdk/overlay';
 
@@ -42,11 +41,11 @@ class BsDropdownToggleMockDirective {
 })
 class BsDropdownMockDirective {
 
-  public isOpen$ = new BehaviorSubject<boolean>(false);
+  public isOpenSignal = signal<boolean>(false);
 
   @ContentChild(BsDropdownMenuDirective, {static: false}) menu!: BsDropdownMenuDirective;
   @ContentChild(BsDropdownToggleMockDirective, {static: false}) toggle!: BsDropdownToggleMockDirective;
-  
+
   @Input() public hasBackdrop = false;
   @Input() public closeOnClickOutside = false;
 }

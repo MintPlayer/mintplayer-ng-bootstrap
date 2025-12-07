@@ -1,7 +1,7 @@
-<!-- <input type="radio" class="d-none" [name]="accordionTab.accordion.accordionName$ | async" [id]="accordionTab.accordionTabName$ | async"> -->
+<!-- <input type="radio" class="d-none" [name]="accordionTab.accordion.accordionName()" [id]="accordionTab.accordionTabName()"> -->
 <h2 class="accordion-header cursor-pointer" (click)="headerClicked($event)">
     <!-- [class.bg-transparent]="!accordionTab.isActive && accordionTab.accordion.highlightActiveTab" -->
-    <label class="btn accordion-button" [class.collapsed]="!accordionTab.isActive" [class.bg-unset]="!accordionTab.accordion.highlightActiveTab" [for]="accordionTab.accordionTabName$ | async" type="button">
+    <label class="btn accordion-button" [class.collapsed]="!accordionTab.isActive" [class.bg-unset]="!accordionTab.accordion.highlightActiveTab" [for]="accordionTab.accordionTabName()" type="button">
         <ng-content></ng-content>
     </label>
 </h2>

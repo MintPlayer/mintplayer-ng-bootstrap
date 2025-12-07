@@ -1,7 +1,5 @@
-import { AfterViewInit, Component, ElementRef, EventEmitter, HostBinding, HostListener, Input, Output, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, EventEmitter, HostBinding, HostListener, Input, Output, ViewChild, signal, effect } from '@angular/core';
 import { Signature } from '../interfaces/signature';
-import { BehaviorSubject } from 'rxjs';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'bs-signature-pad',
@@ -11,20 +9,17 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 })
 export class BsSignaturePadComponent implements AfterViewInit {
   constructor() {
-    this.signature$.pipe(takeUntilDestroyed()).subscribe((signature) => {
-      this.signatureChange.emit(signature);
+    effect(() => {
+      this.signatureChange.emit(this.signatureSignal());
     });
   }
 
   //#region Signature
-  signature$ = new BehaviorSubject<Signature>({ strokes: [] });
+  signatureSignal = signal<Signature>({ strokes: [] });
+  @Input() set signature(val: Signature) {
+    this.signatureSignal.set(val);
+  }
   @Output() signatureChange = new EventEmitter<Signature>();
-  public get signature() {
-    return this.signature$.value;
-  }
-  @Input() public set signature(value: Signature) {
-    this.signature$.next(value);
-  }
   //#endregion
 
   @Input() width = 500;
@@ -54,10 +49,11 @@ export class BsSignaturePadComponent implements AfterViewInit {
     ev.preventDefault();
     this.isDrawing = true;
     if (this.context) {
-      this.signature.strokes.push({
+      const sig = this.signatureSignal();
+      sig.strokes.push({
         points: [{ x: ev.offsetX, y: ev.offsetY }]
       });
-      this.signatureChange.emit(this.signature);
+      this.signatureSignal.set({ ...sig });
 
       this.context.fillStyle = 'black';
       this.context.beginPath();
@@ -67,16 +63,10 @@ export class BsSignaturePadComponent implements AfterViewInit {
   @HostListener('pointermove', ['$event']) onPointerMove(ev: PointerEvent) {
     if (this.isDrawing && this.context) {
       ev.preventDefault();
-      
-      // this.context.moveTo(this.points.at(-1)!.x, this.points.at(-1)!.y);
-      // // ctx.arc(x, y, width, 0, 2 * Math.PI, false);
-      // // this.context.arc(ev.offsetX, ev.offsetY, 2, 0, 2 * Math.PI, false);
-      // // this.context.arcTo(ev.offsetX, ev.offsetY,)
-      // this.context.closePath();
-      // this.context.fill();
 
-      this.signature.strokes.at(-1)?.points.push({ x: ev.offsetX, y: ev.offsetY });
-      this.signatureChange.emit(this.signature);
+      const sig = this.signatureSignal();
+      sig.strokes.at(-1)?.points.push({ x: ev.offsetX, y: ev.offsetY });
+      this.signatureSignal.set({ ...sig });
 
       this.context.lineTo(ev.offsetX, ev.offsetY);
       this.context.stroke();
@@ -86,7 +76,6 @@ export class BsSignaturePadComponent implements AfterViewInit {
     if (this.isDrawing && this.context) {
       ev.preventDefault();
       this.isDrawing = false;
-      this.signatureChange.emit(this.signature);
     }
   }
 }
