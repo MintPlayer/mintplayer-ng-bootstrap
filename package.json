@@ -87,8 +87,7 @@
     "typescript": "5.9.3",
     "vite": "^6.4.1",
     "vitest": "^3.2.4",
-    "webpack-bundle-analyzer": "~4.9.0",
-    "zone.js": "^0.15.1"
+    "webpack-bundle-analyzer": "~4.9.0"
   },
   "overrides": {
     "@nx/angular": {
