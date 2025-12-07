@@ -35,7 +35,7 @@
         </div>
     </div>
 } @else {
-    @switch (animation) {
+    @switch (animation()) {
         @case ('slide') {
             <div class="carousel slide mx-auto" [class.carousel-vertical]="orientation === 'vertical'"
                 [style.height.px]="swipeContainer?.currentSlideHeight()">

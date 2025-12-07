@@ -92,17 +92,19 @@ export class BsSwipeContainerDirective implements AfterViewInit {
 
     this.maxSlideHeight = computed(() => {
       const slideSizes = this.slideSizes();
-      const heights = slideSizes.map(s => s?.height ?? 1);
-      return heights.length ? Math.max(...heights) : 1;
+      if (slideSizes.length === 0) return null;
+      const heights = slideSizes.map(s => s?.height ?? 0).filter(h => h > 0);
+      return heights.length ? Math.max(...heights) : null;
     });
 
     this.currentSlideHeight = computed(() => {
       const slideSizes = this.slideSizes();
+      if (slideSizes.length === 0) return null;
       const imageIndex = this.imageIndex();
       const orientation = this.orientation();
-      const heights = slideSizes.map(s => s?.height ?? 1);
-      const maxHeight = heights.length ? Math.max(...heights) : 1;
-      const currHeight: number = slideSizes[imageIndex]?.height ?? maxHeight;
+      const heights = slideSizes.map(s => s?.height ?? 0).filter(h => h > 0);
+      const maxHeight = heights.length ? Math.max(...heights) : null;
+      const currHeight: number | null = slideSizes[imageIndex]?.height ?? maxHeight;
       return (orientation === 'vertical') ? maxHeight : currHeight;
     });
 
