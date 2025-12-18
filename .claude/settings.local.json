@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx nx migrate latest)",
+      "Bash(npm install)",
+      "Bash(npx nx migrate --run-migrations)",
+      "Bash(npx ng update:*)",
+      "Bash(npx nx build:*)",
+      "Bash(npm run test:*)",
+      "Bash(npm view:*)",
+      "Bash(npm ls:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "github"
+  ]
+}

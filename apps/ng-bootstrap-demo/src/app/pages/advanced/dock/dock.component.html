@@ -3,7 +3,7 @@
     [(layout)]="layout"
     class="dock-demo__surface"
     (layoutSnapshotChange)="onLayoutSnapshot($event)"
-  >
+    >
     <bs-dock-pane name="panel-1">
       <div class="p-3">
         <h3 class="mb-2">Panel 1</h3>
@@ -49,10 +49,12 @@
         <h4 class="dock-demo__snapshot-title">Live layout</h4>
         <pre class="dock-demo__snapshot-json">{{ liveLayout | json }}</pre>
       </div>
-      <div class="dock-demo__snapshot" *ngIf="savedLayout as snapshot">
-        <h4 class="dock-demo__snapshot-title">Captured snapshot</h4>
-        <pre class="dock-demo__snapshot-json">{{ snapshot | json }}</pre>
-      </div>
+      @if (savedLayout; as snapshot) {
+        <div class="dock-demo__snapshot">
+          <h4 class="dock-demo__snapshot-title">Captured snapshot</h4>
+          <pre class="dock-demo__snapshot-json">{{ snapshot | json }}</pre>
+        </div>
+      }
     </div>
   </div>
 </div>

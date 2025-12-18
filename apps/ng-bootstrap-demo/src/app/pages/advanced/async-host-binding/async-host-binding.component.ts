@@ -1,14 +1,14 @@
-import { Component, HostBinding, HostListener, Input } from '@angular/core';
+import { Component, HostBinding, Input, OnInit, OnDestroy } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
-import { interval, map, tap } from 'rxjs';
+import { interval, Subscription } from 'rxjs';
 
 @Component({
   selector: "demo-hello",
   template: `Hello {{ name }}!`,
   standalone: true,
 })
-export class HelloComponent {
+export class HelloComponent implements OnInit, OnDestroy {
   @Input() name!: string;
 
   @HostBinding('class.d-inline-block')
@@ -16,13 +16,25 @@ export class HelloComponent {
   @HostBinding('class.mw-100')
   classes = true;
 
-  @HostBinding("$.style.padding.px")
-  @HostListener("$.style.padding.px")
-  readonly test = interval(1000).pipe(tap(console.log));
+  @HostBinding('style.padding.px')
+  padding = 0;
 
-  @HostBinding("$.class.fw-bold")
-  @HostListener("$.class.fw-bold")
-  readonly active = this.test.pipe(map(v => v % 2));
+  @HostBinding('class.fw-bold')
+  isBold = false;
+
+  private subscription?: Subscription;
+
+  ngOnInit() {
+    this.subscription = interval(1000).subscribe(value => {
+      console.log(value);
+      this.padding = value;
+      this.isBold = value % 2 === 1;
+    });
+  }
+
+  ngOnDestroy() {
+    this.subscription?.unsubscribe();
+  }
 }
 
 @Component({

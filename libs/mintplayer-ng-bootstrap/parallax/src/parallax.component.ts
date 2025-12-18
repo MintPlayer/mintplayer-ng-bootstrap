@@ -1,12 +1,12 @@
 import { Component, Input, computed, input } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 
 @Component({
   selector: 'bs-parallax',
   standalone: true,
   templateUrl: './parallax.component.html',
   styleUrl: './parallax.component.scss',
-  imports: [CommonModule],
+  imports: [],
 })
 export class BsParallaxComponent {
   height = input<number>(150);
