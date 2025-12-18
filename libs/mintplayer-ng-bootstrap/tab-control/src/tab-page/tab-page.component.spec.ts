@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { BehaviorSubject, map, Observable } from 'rxjs';
 import { BsTabControlComponent } from '../tab-control/tab-control.component';
 
 import { BsTabPageComponent } from './tab-page.component';
@@ -80,5 +81,9 @@ class BsTabControlTestComponent {}
   standalone: false,
   template: 'tab-control works'
 })
-class BsTabControlMockComponent {}
+class BsTabControlMockComponent {
+  tabCounter = 0;
+  tabControlId$ = new BehaviorSubject<number>(1);
+  tabControlName$: Observable<string> = this.tabControlId$.pipe(map((id) => `bs-tab-control-${id}`));
+}
 

@@ -58,7 +58,7 @@ export class BsContextMenuDirective {
   }
   
   
-  @HostListener('window:blur') private onBlur() {
+  @HostListener('window:blur') onBlur() {
     this.close();
   }
 

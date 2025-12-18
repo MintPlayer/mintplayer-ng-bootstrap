@@ -13,6 +13,6 @@ export class BsProgressComponent {
 
   @HostBinding('class.d-block')
   @HostBinding('class.overflow-hidden')
-  private progressClass = true;
+  progressClass = true;
 
 }

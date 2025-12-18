@@ -90,7 +90,8 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
   @HostListener('document:keydown.ArrowRight', ['$event'])
   @HostListener('document:keydown.ArrowUp', ['$event'])
   @HostListener('document:keydown.ArrowDown', ['$event'])
-  onKeyPress(ev: KeyboardEvent) {
+  onKeyPress(event: Event) {
+    const ev = event as KeyboardEvent;
     if (this.keyboardEvents) {
       let handled = false;
       switch (ev.key) {

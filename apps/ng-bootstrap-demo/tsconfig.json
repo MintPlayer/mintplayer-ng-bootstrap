@@ -22,8 +22,9 @@
     "noFallthroughCasesInSwitch": true,
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
-    "moduleResolution": "node",
-    "target": "es2020"
+    "moduleResolution": "bundler",
+    "target": "es2020",
+    "module": "preserve"
   },
   "angularCompilerOptions": {
     "strictInjectionParameters": true,

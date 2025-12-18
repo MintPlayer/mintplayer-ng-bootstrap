@@ -40,8 +40,8 @@ export class BsSelectValueAccessor implements ControlValueAccessor {
     }
   }
 
-  @HostListener('change', ['$event']) hostOnChange(ev: InputEvent) {
-    this.onChange((<any>ev.target).value);
+  @HostListener('change', ['$event']) hostOnChange(event: Event) {
+    this.onChange((<any>event.target).value);
   }
 
   @HostListener('blur', ['$event']) hostBlur(ev: Event) {
