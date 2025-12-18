@@ -1,11 +1,19 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { MockComponent, MockProvider } from 'ng-mocks';
+import { MockComponent } from 'ng-mocks';
+import { BehaviorSubject, map, Observable } from 'rxjs';
 import { BsAccordionTabHeaderComponent } from '../accordion-tab-header/accordion-tab-header.component';
 import { BsAccordionComponent } from '../accordion/accordion.component';
 
 import { BsAccordionTabComponent } from './accordion-tab.component';
+
+class BsAccordionMockProvider {
+  accordionTabCounter = 0;
+  accordionId$ = new BehaviorSubject<number>(1);
+  accordionName$: Observable<string> = this.accordionId$.pipe(map((id) => `bs-accordion-${id}`));
+  tabPages: BsAccordionTabComponent[] = [];
+}
 
 describe('BsAccordionTabComponent', () => {
   let component: BsAccordionTabComponent;
@@ -19,7 +27,7 @@ describe('BsAccordionTabComponent', () => {
       declarations: [
         // Unit to test
         BsAccordionTabComponent,
-        
+
         // Mock in-module components
         MockComponent(BsAccordionComponent),
         MockComponent(BsAccordionTabHeaderComponent),
@@ -28,8 +36,7 @@ describe('BsAccordionTabComponent', () => {
         BsAccordionTestComponent,
       ],
       providers: [
-        MockProvider(BsAccordionComponent),
-        MockProvider(BsAccordionTabHeaderComponent),
+        { provide: BsAccordionComponent, useClass: BsAccordionMockProvider },
       ]
     })
     .compileComponents();

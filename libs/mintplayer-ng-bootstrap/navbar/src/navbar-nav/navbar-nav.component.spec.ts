@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { BehaviorSubject, map, Observable } from 'rxjs';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 
 import { BsNavbarNavComponent } from './navbar-nav.component';
@@ -86,10 +87,23 @@ class BsNavbarNavTestComponent {
     <nav>
       <div>
         <ng-content></ng-content>
-      </div>  
+      </div>
     </nav>`
 })
 class BsNavbarMockComponent {
+  isExpanded$ = new BehaviorSubject<boolean>(false);
+  breakPoint$ = new BehaviorSubject<string | null>('md');
+  expandAt$: Observable<number | null> = this.breakPoint$.pipe(map((breakpoint) => {
+    switch (breakpoint) {
+      case 'xxl': return 1400;
+      case 'xl': return 1200;
+      case 'lg': return 992;
+      case 'md': return 768;
+      case 'sm': return 576;
+      case 'xs': return 0;
+      default: return null;
+    }
+  }));
 }
 
 @Component({

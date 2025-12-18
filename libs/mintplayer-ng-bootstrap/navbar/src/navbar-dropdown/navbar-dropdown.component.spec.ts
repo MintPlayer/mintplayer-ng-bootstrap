@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { MockComponent, MockModule } from 'ng-mocks';
+import { BehaviorSubject, map, Observable } from 'rxjs';
 import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 
@@ -85,13 +86,28 @@ class BsNavbarDropdownTestComponent {
     <nav>
       <div>
         <ng-content></ng-content>
-      </div>  
+      </div>
     </nav>`,
   providers: [
     { provide: BsNavbarComponent, useExisting: BsNavbarMockComponent }
   ]
 })
 class BsNavbarMockComponent {
+  isExpanded$ = new BehaviorSubject<boolean>(false);
+  windowWidth$ = new BehaviorSubject<number | null>(1024);
+  breakPoint$ = new BehaviorSubject<string | null>('md');
+  expandAt$: Observable<number | null> = this.breakPoint$.pipe(map((breakpoint) => {
+    switch (breakpoint) {
+      case 'xxl': return 1400;
+      case 'xl': return 1200;
+      case 'lg': return 992;
+      case 'md': return 768;
+      case 'sm': return 576;
+      case 'xs': return 0;
+      default: return null;
+    }
+  }));
+  isSmallMode$ = new BehaviorSubject<boolean>(false);
 }
 
 @Component({

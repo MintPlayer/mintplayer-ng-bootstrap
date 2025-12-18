@@ -14,6 +14,7 @@ import { BsSwipeDirective } from './swipe.directive';
 })
 class BsSwipeContainerDirectiveStub {
   orientation$ = new BehaviorSubject<'horizontal' | 'vertical'>('horizontal');
+  maxSlideHeight$ = new BehaviorSubject<number>(100);
   startTouch$ = new BehaviorSubject<any>(null);
   lastTouch$ = new BehaviorSubject<any>(null);
   pendingAnimation: { finish(): void } | null = null;
