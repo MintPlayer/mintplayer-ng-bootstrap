@@ -1,6 +1,5 @@
-import { Component, Input } from '@angular/core';
+import { Component, input, model } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BehaviorSubject } from 'rxjs';
 import { BsPlaceholderComponent } from '../placeholder/placeholder.component';
 import { BsPlaceholderFieldDirective } from './placeholder-field.directive';
 
@@ -16,11 +15,7 @@ import { BsPlaceholderFieldDirective } from './placeholder-field.directive';
   ]
 })
 class BsPlaceholderMockComponent {
-  isLoading$ = new BehaviorSubject<boolean>(false);
-
-  @Input() public set bsPlaceholder(value: boolean) {
-    this.isLoading$.next(value);
-  }
+  isLoading = model<boolean>(false);
 }
 
 
@@ -28,12 +23,12 @@ class BsPlaceholderMockComponent {
   selector: 'bs-placeholder-test',
   standalone: false,
   template: `
-    <p class="card-text" [bsPlaceholder]="isLoading">
-      <span bsPlaceholderField>{{ isLoading ? '' : lines[0] }}</span>
+    <p class="card-text" [bsPlaceholder]="isLoadingValue">
+      <span bsPlaceholderField>{{ isLoadingValue ? '' : lines[0] }}</span>
     </p>`,
 })
 class BsPlaceholderTestComponent {
-  isLoading = true;
+  isLoadingValue = true;
   lines = ['Hello world'];
 }
 
@@ -50,7 +45,7 @@ describe('BsPlaceholderFieldDirective', () => {
       declarations: [
         // Unit to test
         BsPlaceholderFieldDirective,
-      
+
         // Testbench
         BsPlaceholderTestComponent,
       ],

@@ -1,11 +1,11 @@
 <bs-container>
-    <nav #nav class="navbar position-fixed" [class]="navClassList$ | async" bsUserAgent bsNoNoscript>
+    <nav #nav class="navbar position-fixed" [class]="navClassList()" bsUserAgent bsNoNoscript>
         <div class="container-fluid nav-wrapper">
-            <div class="d-flex w-100" [class]="wAutoClass$ | async">
+            <div class="d-flex w-100" [class]="wAutoClass()">
                 <ng-content select="bs-navbar-brand"></ng-content>
-                <div class="flex-end d-flex tw" [class]="dNoneClass$ | async">
+                <div class="flex-end d-flex tw" [class]="dNoneClass()">
                     <button (click)="toggleExpanded()" title="Expand/collapse menu" class="align-self-center" [class.navbar-toggler]="!expandButtonTemplate" [class.bg-transparent]="expandButtonTemplate" [class.shadow-none]="expandButtonTemplate" [class.border-0]="expandButtonTemplate" type="button">
-                        <ng-container *ngTemplateOutlet="expandButtonTemplate ?? defaultExpandButton; context: { $implicit: isExpanded$ | async }"></ng-container>
+                        <ng-container *ngTemplateOutlet="expandButtonTemplate ?? defaultExpandButton; context: { $implicit: isExpanded() }"></ng-container>
                     </button>
                 </div>
             </div>

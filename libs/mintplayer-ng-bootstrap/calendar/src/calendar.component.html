@@ -6,8 +6,8 @@
             </button>
         </td>
         <td colspan="6" class="fw-bolder">
-            {{ currentMonth$ | async | monthName | bsUcFirst }}
-            {{ (currentMonth$ | async)?.getFullYear() }}
+            {{ currentMonth() | monthName | bsUcFirst }}
+            {{ currentMonth()?.getFullYear() }}
         </td>
         <td>
             <button class="btn btn-default border-bottom-0" (click)="nextMonth()">
@@ -17,21 +17,22 @@
     </tr>
     <tr>
         <th></th>
-        @for (dayOfWeek of shownDays$ | async; track dayOfWeek.long) {
+        @for (dayOfWeek of shownDays(); track dayOfWeek.long) {
             <th [title]="dayOfWeek.long">
                 {{ dayOfWeek.short }}
             </th>
         }
     </tr>
-    @for (week of (weeks$ | async); track week.number) {
+    @for (week of weeks(); track week.number) {
         <tr>
             <th>
                 {{ week.number }}
             </th>
             @for (day of week.days; track day?.date) {
                 @let showSpan = (day !== null) && day.isInMonth;
-                @let disabled = disableDateFn && day && disableDateFn(day.date);
-                <td [class.selected]="day === null ? false : !day.isInMonth ? false : isSameDate(selectedDate$ | async, day.date)" [class.cursor-pointer]="showSpan && !disabled" (click)="goto(day)">
+                @let disableFn = disableDateFn();
+                @let disabled = disableFn && day && disableFn(day.date);
+                <td [class.selected]="day === null ? false : !day.isInMonth ? false : isSameDate(selectedDate(), day.date)" [class.cursor-pointer]="showSpan && !disabled" (click)="goto(day)">
                     @if (showSpan) {
                         <span [class.text-muted]="disabled">{{ day.dayOfMonth }}</span>
                     }

@@ -1,9 +1,7 @@
 import { CdkDragDrop, CdkDragStart, moveItemInArray } from '@angular/cdk/drag-drop';
-import { Component, ContentChildren, ElementRef, HostBinding, Input, QueryList } from '@angular/core';
-import { BehaviorSubject, combineLatest, filter, map, Observable } from 'rxjs';
+import { ChangeDetectionStrategy, Component, computed, ContentChildren, effect, ElementRef, HostBinding, input, QueryList, signal } from '@angular/core';
 import { BsTabPageComponent } from '../tab-page/tab-page.component';
 import { BsTabsPosition } from '../tabs-position';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'bs-tab-control',
@@ -13,85 +11,58 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   providers: [
     { provide: 'TAB_CONTROL', useExisting: BsTabControlComponent }
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsTabControlComponent {
 
   constructor(element: ElementRef<any>) {
-    this.tabControlId$ = new BehaviorSubject<number>(++BsTabControlComponent.tabControlCounter);
-    this.tabControlName$ = this.tabControlId$.pipe(map((id) => `bs-tab-control-${id}`));
+    this.tabControlId = signal(++BsTabControlComponent.tabControlCounter);
     this.element = element;
-    combineLatest([this.tabPages$, this.activeTab$, this.selectFirstTab$])
-      .pipe(filter(([tabPages, activeTab, selectFirstTab]) => {
-        return !!tabPages && (!activeTab || !tabPages.some(tp => tp === activeTab)) && selectFirstTab;
-      }))
-      .pipe(takeUntilDestroyed())
-      .subscribe(([tabPages, activeTab, selectFirstTab]) => {
-        const notDisabled = tabPages!.filter((tp) => !tp.disabled);
+
+    effect(() => {
+      const tabPages = this.tabPages();
+      const activeTab = this.activeTab();
+      const selectFirstTab = this.selectFirstTab();
+      if (tabPages && (!activeTab || !tabPages.some(tp => tp === activeTab)) && selectFirstTab) {
+        const notDisabled = tabPages.filter((tp) => !tp.disabled());
         if (notDisabled.length > 0) {
-          setTimeout(() => this.activeTab$.next(notDisabled[0]));
+          setTimeout(() => this.activeTab.set(notDisabled[0]));
         }
-      });
-    this.topTabs$ = this.tabsPosition$.pipe(map(position => position === 'top'));
-    this.bottomTabs$ = this.tabsPosition$.pipe(map(position => position === 'bottom'));
-    this.disableDragDrop$ = this.allowDragDrop$.pipe(map(allow => !allow));
+      }
+    });
   }
 
   @HostBinding('class.d-block') dBlock = true;
   @HostBinding('class.position-relative') positionRelative = true;
   @ContentChildren(BsTabPageComponent) set setTabPages(value: QueryList<BsTabPageComponent>) {
-    this.tabPages$.next(value);
+    this.tabPages.set(value);
     const list = value.toArray();
     const toAdd = value.filter(tp => !this.orderedTabPages.includes(tp));
     this.orderedTabPages = this.orderedTabPages.concat(toAdd).filter((tp) => list.includes(tp));
   }
-  @Input() public border = true;
-  @Input() public set restrictDragging(value: boolean) {
-    this.dragBoundarySelector = value ? 'ul' : '';
-  }
-  dragBoundarySelector = '';
+
+  border = input(true);
+  restrictDragging = input(false);
+  selectFirstTab = input(true);
+  tabsPosition = input<BsTabsPosition>('top');
+  allowDragDrop = input(false);
+
+  dragBoundarySelector = computed(() => this.restrictDragging() ? 'ul' : '');
   element: ElementRef<any>;
-  tabPages$ = new BehaviorSubject<QueryList<BsTabPageComponent> | null>(null);
-  activeTab$ = new BehaviorSubject<BsTabPageComponent | null>(null);
+  tabPages = signal<QueryList<BsTabPageComponent> | null>(null);
+  activeTab = signal<BsTabPageComponent | null>(null);
   orderedTabPages: BsTabPageComponent[] = [];
-  tabControlId$: BehaviorSubject<number>;
-  tabControlName$: Observable<string>;
-  topTabs$: Observable<boolean>;
-  bottomTabs$: Observable<boolean>;
-  disableDragDrop$: Observable<boolean>;
+  tabControlId = signal<number>(0);
+  tabControlName = computed(() => `bs-tab-control-${this.tabControlId()}`);
+  topTabs = computed(() => this.tabsPosition() === 'top');
+  bottomTabs = computed(() => this.tabsPosition() === 'bottom');
+  disableDragDrop = computed(() => !this.allowDragDrop());
   static tabControlCounter = 0;
   tabCounter = 0;
 
-  //#region SelectFirstTab
-  selectFirstTab$ = new BehaviorSubject<boolean>(true);
-  public get selectFirstTab() {
-    return this.selectFirstTab$.value;
-  }
-  @Input() public set selectFirstTab(value: boolean) {
-    this.selectFirstTab$.next(value);
-  }
-  //#endregion
-  //#region TabsPosition
-  tabsPosition$ = new BehaviorSubject<BsTabsPosition>('top');
-  public get tabsPosition() {
-    return this.tabsPosition$.value;
-  }
-  @Input() public set tabsPosition(value: BsTabsPosition) {
-    this.tabsPosition$.next(value);
-  }
-  //#endregion
-  //#region AllowDragDrop
-  allowDragDrop$ = new BehaviorSubject<boolean>(false);
-  public get allowDragDrop() {
-    return this.allowDragDrop$.value;
-  }
-  @Input() public set allowDragDrop(value: boolean) {
-    this.allowDragDrop$.next(value);
-  }
-  //#endregion
-
   setActiveTab(tab: BsTabPageComponent) {
-    if (!tab.disabled) {
-      this.activeTab$.next(tab);
+    if (!tab.disabled()) {
+      this.activeTab.set(tab);
     }
     return false;
   }
@@ -106,14 +77,8 @@ export class BsTabControlComponent {
     if (ev.previousContainer === ev.container) {
       moveItemInArray(
         this.orderedTabPages,
-        ev.previousIndex, 
+        ev.previousIndex,
         ev.currentIndex);
-    } else {
-      // transferArrayItem(
-      //   ev.previousContainer.data,
-      //   ev.container.data,
-      //   ev.previousIndex,
-      //   ev.currentIndex);
     }
   }
 }

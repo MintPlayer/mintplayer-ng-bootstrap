@@ -25,7 +25,7 @@ export class BsToggleButtonValueAccessor implements ControlValueAccessor, AfterV
       .subscribe((ev) => {
         if (this.onValueChange && this.host.checkbox) {
           const isChecked = (<HTMLInputElement>ev.target).checked;
-          switch (this.host.type) {
+          switch (this.host.type()) {
             case 'radio':
             case 'radio_toggle_button':
               if (isChecked) {
@@ -33,12 +33,12 @@ export class BsToggleButtonValueAccessor implements ControlValueAccessor, AfterV
               }
               break;
             default:
-              if (this.host['group']) {
-                const group = this.host['group'];
+              const group = this.host.group();
+              if (group) {
                 const itemValue = this.host.checkbox.nativeElement.value;
-                
+
                 const result = group.toggleButtons
-                  .map(tb => ({ value: tb.value, checked: tb.checkbox.nativeElement.checked }))
+                  .map(tb => ({ value: tb.value(), checked: tb.checkbox.nativeElement.checked }))
                   .filter(tb => !!tb.value && tb.checked)
                   .map(tb => <string>tb.value);
 
@@ -66,23 +66,23 @@ export class BsToggleButtonValueAccessor implements ControlValueAccessor, AfterV
   registerOnChange(fn: (_: any) => void) {
     this.onValueChange = fn;
   }
-  
+
   registerOnTouched(fn: () => void) {
     this.onTouched = fn;
   }
 
   writeValue(value: boolean | string | string[]) {
     if (this.host.checkbox) {
-      switch (this.host.type) {
+      switch (this.host.type()) {
         case 'radio':
         case 'radio_toggle_button':
-          if (<string>value === this.host.value) {
+          if (<string>value === this.host.value()) {
             this.host.checkbox.nativeElement.checked = true;
           }
           break;
         default:
-          if (this.host.group) {
-            this.host.checkbox.nativeElement.checked = (<string[]>value).includes(this.host.value!);
+          if (this.host.group()) {
+            this.host.checkbox.nativeElement.checked = (<string[]>value).includes(this.host.value()!);
           } else {
             this.host.checkbox.nativeElement.checked = <boolean>value;
           }

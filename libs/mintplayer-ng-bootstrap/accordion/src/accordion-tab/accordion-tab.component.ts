@@ -1,6 +1,5 @@
-import { Component, ContentChildren, EventEmitter, forwardRef, HostBinding, Input, Output, QueryList } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ContentChildren, forwardRef, HostBinding, model, QueryList, computed, signal } from '@angular/core';
 import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
-import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
 import { BsAccordionComponent } from '../accordion/accordion.component';
 
 @Component({
@@ -9,48 +8,42 @@ import { BsAccordionComponent } from '../accordion/accordion.component';
   styleUrls: ['./accordion-tab.component.scss'],
   standalone: false,
   animations: [SlideUpDownAnimation],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsAccordionTabComponent {
 
   accordion: BsAccordionComponent;
-  accordionTabId$: BehaviorSubject<number>;
-  accordionTabName$: Observable<string>;
+  accordionTabId = signal<number>(0);
+  accordionTabName = computed(() => `${this.accordion.accordionName()}-${this.accordionTabId()}`);
   @ContentChildren(forwardRef(() => BsAccordionComponent)) childAccordions!: QueryList<BsAccordionComponent>;
+
   constructor(accordion: BsAccordionComponent) {
     this.accordion = accordion;
-    this.accordionTabId$ = new BehaviorSubject<number>(++this.accordion.accordionTabCounter);
-    this.accordionTabName$ = combineLatest([this.accordion.accordionName$, this.accordionTabId$])
-      .pipe(map(([accordionName, accordionTabId]) => `${accordionName}-${accordionTabId}`));
+    this.accordionTabId.set(++this.accordion.accordionTabCounter);
   }
 
   @HostBinding('class.accordion-item') accordionItemClass = true;
   @HostBinding('class.d-block') dBlock = true;
   @HostBinding('class.border-0') noBorder = false;
-  
-  //#region IsActive
-  @Output() public isActiveChange = new EventEmitter<boolean>();
-  private _isActive = false;
-  public get isActive() {
-    return this._isActive;
-  }
-  @Input() public set isActive(value: boolean) {
-    if (this._isActive !== value) {
-      this._isActive = value;
-      if (this._isActive) {
+
+  isActive = model<boolean>(false);
+
+  setActive(value: boolean) {
+    if (this.isActive() !== value) {
+      this.isActive.set(value);
+      if (value) {
         this.accordion.tabPages.filter((tab) => {
           return tab !== this;
         }).forEach((tab) => {
-          tab.isActive = false;
+          tab.isActive.set(false);
         });
       } else {
         this.childAccordions.forEach((accordion) => {
           accordion.tabPages.forEach((tab) => {
-            tab.isActive = false;
+            tab.isActive.set(false);
           });
         });
       }
-      this.isActiveChange.emit(value);
     }
   }
-  //#endregion
 }

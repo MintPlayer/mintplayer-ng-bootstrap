@@ -1,5 +1,4 @@
-import { Component, ContentChildren, forwardRef, Input, QueryList } from '@angular/core';
-import { BehaviorSubject, map, Observable } from 'rxjs';
+import { ChangeDetectionStrategy, Component, ContentChildren, forwardRef, input, QueryList, signal, computed } from '@angular/core';
 import { BsAccordionTabComponent } from '../accordion-tab/accordion-tab.component';
 
 @Component({
@@ -7,21 +6,20 @@ import { BsAccordionTabComponent } from '../accordion-tab/accordion-tab.componen
   templateUrl: './accordion.component.html',
   styleUrls: ['./accordion.component.scss'],
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsAccordionComponent {
 
   constructor() {
-    this.accordionId$ = new BehaviorSubject<number>(++BsAccordionComponent.accordionCounter);
-    this.accordionName$ = this.accordionId$.pipe(map((id) => `bs-accordion-${id}`));
+    this.accordionId = signal(++BsAccordionComponent.accordionCounter);
   }
-  
+
   @ContentChildren(forwardRef(() => BsAccordionTabComponent)) tabPages!: QueryList<BsAccordionTabComponent>;
   disableAnimations = false;
-  @Input() highlightActiveTab = false;
+  highlightActiveTab = input(false);
 
-  accordionId$: BehaviorSubject<number>;
-  accordionName$: Observable<string>;
+  accordionId = signal<number>(0);
+  accordionName = computed(() => `bs-accordion-${this.accordionId()}`);
   accordionTabCounter = 0;
   static accordionCounter = 0;
-
 }

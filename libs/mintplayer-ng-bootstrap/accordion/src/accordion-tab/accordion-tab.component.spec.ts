@@ -1,8 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MockComponent } from 'ng-mocks';
-import { BehaviorSubject, map, Observable } from 'rxjs';
 import { BsAccordionTabHeaderComponent } from '../accordion-tab-header/accordion-tab-header.component';
 import { BsAccordionComponent } from '../accordion/accordion.component';
 
@@ -10,9 +9,10 @@ import { BsAccordionTabComponent } from './accordion-tab.component';
 
 class BsAccordionMockProvider {
   accordionTabCounter = 0;
-  accordionId$ = new BehaviorSubject<number>(1);
-  accordionName$: Observable<string> = this.accordionId$.pipe(map((id) => `bs-accordion-${id}`));
+  accordionId = signal<number>(1);
+  accordionName = computed(() => `bs-accordion-${this.accordionId()}`);
   tabPages: BsAccordionTabComponent[] = [];
+  disableAnimations = false;
 }
 
 describe('BsAccordionTabComponent', () => {
