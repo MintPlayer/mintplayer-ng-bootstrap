@@ -63,13 +63,16 @@ export class BsSwipeContainerDirective implements AfterViewInit {
     const isViewInited = this.isViewInited$();
     const orientation = this.orientation$();
     const containerSize = this.observeSize.size$();
+    const maxSlideHeight = this.maxSlideHeight$();
 
     if (!isViewInited) {
       return (-imageIndex * 100);
     } else if (!!startTouch && !!lastTouch) {
+      // For horizontal: use container width
+      // For vertical: use maxSlideHeight (single slide height, not total container height)
       const containerLength = orientation === 'horizontal'
         ? (containerSize?.width ?? this.containerElement.nativeElement.clientWidth)
-        : (containerSize?.height ?? this.containerElement.nativeElement.clientHeight);
+        : maxSlideHeight;
       if (containerLength === 0) {
         return (-imageIndex * 100);
       }
