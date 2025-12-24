@@ -22,8 +22,10 @@ export class BsSwipeDirective {
   private heightEffect = effect(() => {
     const maxHeight = this.container.maxSlideHeight$();
     const orientation = this.container.orientation$();
-    const targetHeight = (orientation === 'vertical') ? maxHeight : null;
-    this.slideHeight = (targetHeight && targetHeight > 0) ? targetHeight : null;
+    // Only set height when we have valid measurements (> 10px threshold)
+    // to avoid circular dependency during initial load
+    const targetHeight = (orientation === 'vertical' && maxHeight > 10) ? maxHeight : null;
+    this.slideHeight = targetHeight;
   });
 
   @HostBinding('class.align-top')

@@ -97,7 +97,7 @@
                         }
                     </div>
                 }
-                <div class="carousel-inner" [class.carousel-inner-vertical]="orientation() === 'vertical'" #innerElement>
+                <div class="carousel-inner" #innerElement>
                     @for (image of images(); track image.id; let i = $index) {
                         @if (currentImageIndex() === i) {
                             <div class="carousel-item" [class.active]="true" @fadeInOut>
@@ -132,7 +132,7 @@
                         }
                     </div>
                 }
-                <div class="carousel-inner" [class.carousel-inner-vertical]="orientation() === 'vertical'" #innerElement>
+                <div class="carousel-inner" #innerElement>
                     @for (image of images(); track image.id; let i = $index) {
                         @if (currentImageIndex() === i) {
                             <div class="carousel-item" [class.active]="true">

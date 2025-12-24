@@ -92,10 +92,9 @@
     .carousel-inner-vertical {
         display: flex;
         flex-direction: column;
-        height: 100%;
 
         .carousel-item {
-            flex: 1 1 auto;
+            flex: 0 0 auto;
             display: block;
         }
     }

@@ -20,8 +20,8 @@ export class BsSwipeContainerDirective implements AfterViewInit {
 
   @HostBinding('style.margin-left.%') offsetLeft: number | null = null;
   @HostBinding('style.margin-right.%') offsetRight: number | null = null;
-  @HostBinding('style.margin-top.%') offsetTop: number | null = null;
-  @HostBinding('style.margin-bottom.%') offsetBottom: number | null = null;
+  @HostBinding('style.margin-top.px') offsetTopPx: number | null = null;
+  @HostBinding('style.margin-bottom.px') offsetBottomPx: number | null = null;
 
   @ContentChildren(forwardRef(() => BsSwipeDirective)) set swipes(value: QueryList<BsSwipeDirective>) {
     setTimeout(() => this.swipes$.set(value));
@@ -139,41 +139,49 @@ export class BsSwipeContainerDirective implements AfterViewInit {
     return heights.length ? Math.max(...heights) : 1;
   });
 
-  currentSlideHeight$ = computed(() => {
+  currentSlideHeight$ = computed<number | null>(() => {
     const slideSizes = this.slideSizes$();
     const imageIndex = this.imageIndex$();
     const orientation = this.orientation$();
-    const heights = slideSizes.map(s => s?.height ?? 1);
-    const maxHeight = heights.length ? Math.max(...heights) : 1;
+    const heights = slideSizes.map(s => s?.height ?? 0);
+    const maxHeight = heights.length ? Math.max(...heights) : 0;
     const currHeight: number = slideSizes[imageIndex]?.height ?? maxHeight;
-    return (orientation === 'vertical') ? maxHeight : currHeight;
+    const result = (orientation === 'vertical') ? maxHeight : currHeight;
+    // Return null if measurements aren't valid yet to avoid collapsing the carousel
+    return result > 10 ? result : null;
   });
 
   private previousOrientation: 'horizontal' | 'vertical' | undefined;
 
   constructor() {
-    // Effect to update offsetLeft/offsetTop based on offsetPrimary and orientation
+    // Effect to update offsetLeft/offsetTopPx based on offsetPrimary and orientation
     effect(() => {
       const offsetPrimary = this.offsetPrimary$();
       const orientation = this.orientation$();
+      const maxSlideHeight = this.maxSlideHeight$();
       if (orientation === 'horizontal') {
         this.offsetLeft = offsetPrimary;
-        this.offsetTop = null;
+        this.offsetTopPx = null;
       } else {
-        this.offsetTop = offsetPrimary;
+        // For vertical mode, convert percentage to pixels using slide height
+        // offsetPrimary is in percentage units (e.g., -100 means -100%)
+        // We need to convert to pixels based on actual slide height
+        this.offsetTopPx = (offsetPrimary / 100) * maxSlideHeight;
         this.offsetLeft = null;
       }
     });
 
-    // Effect to update offsetRight/offsetBottom based on offsetSecondary and orientation
+    // Effect to update offsetRight/offsetBottomPx based on offsetSecondary and orientation
     effect(() => {
       const offsetSecondary = this.offsetSecondary$();
       const orientation = this.orientation$();
+      const maxSlideHeight = this.maxSlideHeight$();
       if (orientation === 'horizontal') {
         this.offsetRight = offsetSecondary;
-        this.offsetBottom = null;
+        this.offsetBottomPx = null;
       } else {
-        this.offsetBottom = offsetSecondary;
+        // For vertical mode, convert percentage to pixels using slide height
+        this.offsetBottomPx = (offsetSecondary / 100) * maxSlideHeight;
         this.offsetRight = null;
       }
     });
@@ -190,8 +198,8 @@ export class BsSwipeContainerDirective implements AfterViewInit {
       if (this.previousOrientation !== undefined && this.previousOrientation !== orientation) {
         this.offsetLeft = null;
         this.offsetRight = null;
-        this.offsetTop = null;
-        this.offsetBottom = null;
+        this.offsetTopPx = null;
+        this.offsetBottomPx = null;
       }
       this.previousOrientation = orientation;
     });
