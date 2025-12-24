@@ -14,8 +14,13 @@ import { BsCarouselModule } from '@mintplayer/ng-bootstrap/carousel';
 })
 export class CarouselComponent {
   mode: 'slide' | 'fade' = 'slide';
+  orientation: 'horizontal' | 'vertical' = 'horizontal';
 
   onModeChange(value: any) {
     this.mode = value;
+  }
+
+  onOrientationChange(value: any) {
+    this.orientation = value;
   }
 }
