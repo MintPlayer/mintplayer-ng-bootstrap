@@ -1,4 +1,4 @@
-import { Directive, Input, TemplateRef } from '@angular/core';
+import { Directive, inject, Input, TemplateRef } from '@angular/core';
 import { BsFileUploadComponent } from '../component/file-upload.component';
 import { FileUpload } from '../file-upload';
 
@@ -7,9 +7,11 @@ import { FileUpload } from '../file-upload';
   standalone: false,
 })
 export class BsFileUploadTemplateDirective {
+  private fileUploadComponent = inject(BsFileUploadComponent);
 
-  constructor(private fileUploadComponent: BsFileUploadComponent, templateRef: TemplateRef<any>) {
-    fileUploadComponent.fileTemplate = templateRef;
+  constructor() {
+    const templateRef = inject<TemplateRef<any>>(TemplateRef);
+    this.fileUploadComponent.fileTemplate = templateRef;
   }
 
   @Input() set bsFileUploadTemplateOf(value: FileUpload[]) {

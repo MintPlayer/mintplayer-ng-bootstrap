@@ -1,4 +1,4 @@
-import { Directive, TemplateRef } from '@angular/core';
+import { Directive, inject, TemplateRef } from '@angular/core';
 import { BsMultiselectComponent } from '../../component/multiselect.component';
 
 @Directive({
@@ -7,7 +7,9 @@ import { BsMultiselectComponent } from '../../component/multiselect.component';
 })
 export class BsHeaderTemplateDirective<T> {
 
-  constructor(template: TemplateRef<any>, multiselect: BsMultiselectComponent<T>) {
+  constructor() {
+    const template = inject<TemplateRef<any>>(TemplateRef);
+    const multiselect = inject<BsMultiselectComponent<T>>(BsMultiselectComponent);
     multiselect.headerTemplate = template;
   }
 

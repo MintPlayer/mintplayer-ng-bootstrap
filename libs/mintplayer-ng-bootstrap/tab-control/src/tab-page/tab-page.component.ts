@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ContentChild, computed, input, ElementRef, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ContentChild, computed, inject, input, ElementRef, signal } from '@angular/core';
 import { BsTabControlComponent } from '../tab-control/tab-control.component';
 import { BsTabPageHeaderDirective } from '../tab-page-header/tab-page-header.directive';
 
@@ -10,15 +10,12 @@ import { BsTabPageHeaderDirective } from '../tab-page-header/tab-page-header.dir
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsTabPageComponent {
+  element = inject(ElementRef);
+  tabControl = inject(BsTabControlComponent);
 
-  constructor(tabControl: BsTabControlComponent, element: ElementRef<any>) {
-    this.element = element;
-    this.tabControl = tabControl;
+  constructor() {
     this.tabId = signal(++this.tabControl.tabCounter);
   }
-
-  element: ElementRef<any>;
-  tabControl: BsTabControlComponent;
   tabId = signal<number>(0);
   tabName = computed(() => `${this.tabControl.tabControlName()}-${this.tabId()}`);
 

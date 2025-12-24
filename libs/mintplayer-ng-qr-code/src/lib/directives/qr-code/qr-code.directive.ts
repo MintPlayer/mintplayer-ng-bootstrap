@@ -1,4 +1,4 @@
-import { Directive, Input, OnChanges, ViewContainerRef } from '@angular/core';
+import { Directive, inject, Input, OnChanges, ViewContainerRef } from '@angular/core';
 import { QRCodeErrorCorrectionLevel } from '@mintplayer/qr-code';
 import * as qrCodeService from '@mintplayer/qr-code';
 import { RgbaColor } from '../../types/rgba-color';
@@ -8,8 +8,7 @@ import { RgbaColor } from '../../types/rgba-color';
   standalone: true
 })
 export class QrCodeDirective implements OnChanges {
-
-  constructor(private viewContainerRef: ViewContainerRef) {}
+  private viewContainerRef = inject(ViewContainerRef);
 
   static readonly VALID_COLOR_REGEX = /^#(?:[0-9a-fA-F]{3,4}){1,2}$/;
   static readonly DEFAULT_ERROR_CORRECTION_LEVEL: QRCodeErrorCorrectionLevel = 'M';

@@ -1,5 +1,5 @@
 import { CdkDragDrop, CdkDragStart, moveItemInArray } from '@angular/cdk/drag-drop';
-import { ChangeDetectionStrategy, Component, computed, ContentChildren, effect, ElementRef, HostBinding, input, QueryList, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, ContentChildren, effect, ElementRef, HostBinding, inject, input, QueryList, signal } from '@angular/core';
 import { BsTabPageComponent } from '../tab-page/tab-page.component';
 import { BsTabsPosition } from '../tabs-position';
 
@@ -14,10 +14,10 @@ import { BsTabsPosition } from '../tabs-position';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsTabControlComponent {
+  element = inject(ElementRef);
 
-  constructor(element: ElementRef<any>) {
+  constructor() {
     this.tabControlId = signal(++BsTabControlComponent.tabControlCounter);
-    this.element = element;
 
     effect(() => {
       const tabPages = this.tabPages();
@@ -48,7 +48,6 @@ export class BsTabControlComponent {
   allowDragDrop = input(false);
 
   dragBoundarySelector = computed(() => this.restrictDragging() ? 'ul' : '');
-  element: ElementRef<any>;
   tabPages = signal<QueryList<BsTabPageComponent> | null>(null);
   activeTab = signal<BsTabPageComponent | null>(null);
   orderedTabPages: BsTabPageComponent[] = [];

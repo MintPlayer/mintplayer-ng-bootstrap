@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ContentChildren, forwardRef, HostBinding, model, QueryList, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ContentChildren, forwardRef, HostBinding, inject, model, QueryList, computed, signal } from '@angular/core';
 import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
 import { BsAccordionComponent } from '../accordion/accordion.component';
 
@@ -11,14 +11,12 @@ import { BsAccordionComponent } from '../accordion/accordion.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsAccordionTabComponent {
-
-  accordion: BsAccordionComponent;
+  accordion = inject(BsAccordionComponent);
   accordionTabId = signal<number>(0);
   accordionTabName = computed(() => `${this.accordion.accordionName()}-${this.accordionTabId()}`);
   @ContentChildren(forwardRef(() => BsAccordionComponent)) childAccordions!: QueryList<BsAccordionComponent>;
 
-  constructor(accordion: BsAccordionComponent) {
-    this.accordion = accordion;
+  constructor() {
     this.accordionTabId.set(++this.accordion.accordionTabCounter);
   }
 

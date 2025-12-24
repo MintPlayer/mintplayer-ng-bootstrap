@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, input, Renderer2, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, input, Renderer2, ViewChild } from '@angular/core';
 import { BsSelectSize } from '../types/select-size';
 
 @Component({
@@ -9,7 +9,9 @@ import { BsSelectSize } from '../types/select-size';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsSelectComponent {
-  constructor(private renderer: Renderer2) {
+  private renderer = inject(Renderer2);
+
+  constructor() {
     effect(() => {
       const disabled = this.disabled();
       if (this.selectBox) {

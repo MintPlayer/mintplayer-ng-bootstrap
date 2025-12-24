@@ -1,4 +1,4 @@
-import { Directive, effect, HostBinding } from '@angular/core';
+import { Directive, effect, HostBinding, inject } from '@angular/core';
 import { BsPlaceholderComponent } from '../placeholder/placeholder.component';
 
 @Directive({
@@ -6,8 +6,9 @@ import { BsPlaceholderComponent } from '../placeholder/placeholder.component';
   standalone: false,
 })
 export class BsPlaceholderFieldDirective {
+  private placeholder = inject(BsPlaceholderComponent);
 
-  constructor(private placeholder: BsPlaceholderComponent) {
+  constructor() {
     effect(() => {
       const isLoading = this.placeholder.isLoading();
       this.placeholderClass = isLoading;

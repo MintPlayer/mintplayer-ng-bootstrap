@@ -1,4 +1,4 @@
-import { Directive, effect, Input, isSignal, TemplateRef, untracked, WritableSignal } from '@angular/core';
+import { Directive, effect, inject, Input, isSignal, TemplateRef, untracked, WritableSignal } from '@angular/core';
 import { BsSelect2Component } from '../../component/select2.component';
 import { HasId } from '@mintplayer/ng-bootstrap/has-id';
 
@@ -7,11 +7,13 @@ import { HasId } from '@mintplayer/ng-bootstrap/has-id';
   standalone: false,
 })
 export class BsItemTemplateDirective<T extends HasId<U>, U> {
+  private select2component = inject<BsSelect2Component<T, U>>(BsSelect2Component);
+  private templateRef = inject<TemplateRef<T>>(TemplateRef);
   private sourceSignal?: WritableSignal<T[]>;
   private lastSourceValue?: T[];
 
-  constructor(private select2component: BsSelect2Component<T, U>, templateRef: TemplateRef<T>) {
-    this.select2component.itemTemplate = templateRef;
+  constructor() {
+    this.select2component.itemTemplate = this.templateRef;
 
     // Sync changes from component back to source signal
     effect(() => {

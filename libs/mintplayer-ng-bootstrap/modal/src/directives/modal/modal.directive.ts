@@ -1,4 +1,4 @@
-import { Directive, TemplateRef } from '@angular/core';
+import { Directive, inject, TemplateRef } from '@angular/core';
 import { BsModalHostComponent } from '../../components/modal-host/modal-host.component';
 
 @Directive({
@@ -7,8 +7,10 @@ import { BsModalHostComponent } from '../../components/modal-host/modal-host.com
 })
 export class BsModalDirective {
 
-  constructor(template: TemplateRef<any>, host: BsModalHostComponent) {
+  constructor() {
+    const template = inject<TemplateRef<any>>(TemplateRef);
+    const host = inject(BsModalHostComponent);
     host.template = template;
   }
-  
+
 }

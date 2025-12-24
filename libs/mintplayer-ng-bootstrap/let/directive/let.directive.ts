@@ -1,4 +1,4 @@
-import { Directive, Input, TemplateRef, ViewContainerRef } from '@angular/core';
+import { Directive, inject, Input, TemplateRef, ViewContainerRef } from '@angular/core';
 import { BsLetContext } from '../interfaces/let-context';
 
 @Directive({
@@ -6,12 +6,11 @@ import { BsLetContext } from '../interfaces/let-context';
   standalone: true,
 })
 export class BsLetDirective<T> {
+  private viewContainer = inject(ViewContainerRef);
+  private templateRef = inject<TemplateRef<BsLetContext<T>>>(TemplateRef);
 
   private context: BsLetContext<T | null> = { bsLet: null, $implicit: null };
   private hasView: boolean = false;
-
-  // eslint-disable-next-line no-unused-vars
-  constructor(private viewContainer: ViewContainerRef, private templateRef: TemplateRef<BsLetContext<T>>) { }
 
   @Input() set bsLet(value: T) {
       this.context.$implicit = this.context.bsLet = value;

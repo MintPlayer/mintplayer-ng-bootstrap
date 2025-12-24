@@ -1,6 +1,6 @@
 /// <reference types="../../types" />
 
-import { Component, DestroyRef, ElementRef, EventEmitter, HostListener, Input, Output, QueryList, signal, ViewChildren } from '@angular/core';
+import { Component, DestroyRef, ElementRef, EventEmitter, HostListener, inject, Input, Output, QueryList, signal, ViewChildren } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, combineLatest, filter, map, Observable, take } from 'rxjs';
 import { BsCalendarMonthService } from '@mintplayer/ng-bootstrap/calendar-month';
@@ -27,7 +27,12 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
   standalone: false,
 })
 export class BsSchedulerComponent {
-  constructor(private sanitizer: DomSanitizer, private calendarMonthService: BsCalendarMonthService, private timelineService: BsTimelineService, private destroy: DestroyRef) {
+  private sanitizer = inject(DomSanitizer);
+  private calendarMonthService = inject(BsCalendarMonthService);
+  private timelineService = inject(BsTimelineService);
+  private destroy = inject(DestroyRef);
+
+  constructor() {
     const monday = this.calendarMonthService.getMondayBefore(new Date());
     this.currentWeekOrMonth$ = new BehaviorSubject<Date>(monday);
 
@@ -178,10 +183,10 @@ export class BsSchedulerComponent {
     //   .pipe(filter(([mode, scale]) => mode === ESchedulerMode.timeline))
 
     import('bootstrap-icons/icons/chevron-left.svg').then((icon) => {
-      this.chevronLeft.set(sanitizer.bypassSecurityTrustHtml(icon.default));
+      this.chevronLeft.set(this.sanitizer.bypassSecurityTrustHtml(icon.default));
     });
     import('bootstrap-icons/icons/chevron-right.svg').then((icon) => {
-      this.chevronRight.set(sanitizer.bypassSecurityTrustHtml(icon.default));
+      this.chevronRight.set(this.sanitizer.bypassSecurityTrustHtml(icon.default));
     });
   }
 

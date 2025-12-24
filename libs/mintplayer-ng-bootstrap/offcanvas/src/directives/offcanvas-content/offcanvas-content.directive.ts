@@ -1,4 +1,4 @@
-import { Directive, TemplateRef } from '@angular/core';
+import { Directive, inject, TemplateRef } from '@angular/core';
 import { BsOffcanvasHostComponent } from '../../components/offcanvas-host/offcanvas-host.component';
 
 @Directive({
@@ -6,7 +6,9 @@ import { BsOffcanvasHostComponent } from '../../components/offcanvas-host/offcan
   standalone: false,
 })
 export class BsOffcanvasContentDirective {
-  constructor(offcanvasHost: BsOffcanvasHostComponent, template: TemplateRef<any>) {
+  constructor() {
+    const offcanvasHost = inject(BsOffcanvasHostComponent);
+    const template = inject<TemplateRef<any>>(TemplateRef);
     offcanvasHost.content = template;
   }
 }

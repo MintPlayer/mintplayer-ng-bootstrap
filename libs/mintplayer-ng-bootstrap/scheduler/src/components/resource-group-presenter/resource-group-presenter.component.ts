@@ -1,4 +1,4 @@
-import { Component, Input, signal } from '@angular/core';
+import { Component, inject, Input, signal } from '@angular/core';
 import { BehaviorSubject, filter, map, Observable } from 'rxjs';
 import { Resource, ResourceGroup } from '../../interfaces';
 import { ResourceOrGroup } from '../../interfaces/resource-or-group';
@@ -12,8 +12,9 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
   standalone: false,
 })
 export class ResourceGroupPresenterComponent {
-  
-  constructor(private sanitizer: DomSanitizer) {
+  private sanitizer = inject(DomSanitizer);
+
+  constructor() {
     this.data$ = this.resourceOrGroup$
       .pipe(map((resourceOrGroup) => {
         if (!resourceOrGroup) {
@@ -40,10 +41,10 @@ export class ResourceGroupPresenterComponent {
       ));
 
     import('bootstrap-icons/icons/chevron-down.svg').then((icon) => {
-      this.chevronDown.set(sanitizer.bypassSecurityTrustHtml(icon.default));
+      this.chevronDown.set(this.sanitizer.bypassSecurityTrustHtml(icon.default));
     });
     import('bootstrap-icons/icons/chevron-right.svg').then((icon) => {
-      this.chevronRight.set(sanitizer.bypassSecurityTrustHtml(icon.default));
+      this.chevronRight.set(this.sanitizer.bypassSecurityTrustHtml(icon.default));
     });
   }
 

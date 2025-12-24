@@ -1,6 +1,6 @@
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { AfterViewInit, Component, ComponentFactoryResolver, ComponentRef, EventEmitter, HostListener, Inject, Injector, Input, OnDestroy, Output, TemplateRef } from '@angular/core';
+import { AfterViewInit, Component, ComponentFactoryResolver, ComponentRef, EventEmitter, HostListener, inject, Injector, Input, OnDestroy, Output, TemplateRef } from '@angular/core';
 import { MODAL_CONTENT } from '../../providers/modal-content.provider';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
 import { BsModalComponent } from '../modal/modal.component';
@@ -12,8 +12,10 @@ import { BsModalComponent } from '../modal/modal.component';
   standalone: false,
 })
 export class BsModalHostComponent implements AfterViewInit, OnDestroy {
-
-  constructor(private overlay: Overlay, private parentInjector: Injector, @Inject(PORTAL_FACTORY) private portalFactory: (injector: Injector) => ComponentPortal<BsModalComponent>, private componentFactoryResolver: ComponentFactoryResolver) {}
+  private overlay = inject(Overlay);
+  private parentInjector = inject(Injector);
+  private portalFactory = inject<(injector: Injector) => ComponentPortal<BsModalComponent>>(PORTAL_FACTORY);
+  private componentFactoryResolver = inject(ComponentFactoryResolver);
 
   overlayRef!: OverlayRef;
   componentInstance?: ComponentRef<BsModalComponent>;

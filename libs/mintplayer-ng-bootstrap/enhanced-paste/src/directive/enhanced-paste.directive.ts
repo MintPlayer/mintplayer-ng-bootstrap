@@ -1,4 +1,4 @@
-import { Directive, ElementRef, EventEmitter, HostListener, Output } from '@angular/core';
+import { Directive, ElementRef, EventEmitter, HostListener, inject, Output } from '@angular/core';
 import { NgModel } from '@angular/forms';
 import { NumberOverflow } from '../interfaces/number-overflow';
 
@@ -7,8 +7,8 @@ import { NumberOverflow } from '../interfaces/number-overflow';
   standalone: true,
 })
 export class EnhancedPasteDirective {
-
-  constructor(private element: ElementRef<HTMLInputElement>, private model: NgModel) {}
+  private element = inject<ElementRef<HTMLInputElement>>(ElementRef);
+  private model = inject(NgModel);
 
   @Output() public numberOverflow = new EventEmitter<NumberOverflow>();
 

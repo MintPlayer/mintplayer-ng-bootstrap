@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Directive, ElementRef, Renderer2 } from '@angular/core';
+import { ChangeDetectorRef, Directive, ElementRef, inject, Renderer2 } from '@angular/core';
 import { Router, RouterLinkActive } from '@angular/router';
 
 // Here we extend the RouterLinkActiveDirective
@@ -10,8 +10,8 @@ import { Router, RouterLinkActive } from '@angular/router';
 })
 export class NavbarRouterLinkActiveDirective extends RouterLinkActive {
 
-  constructor(router: Router, element: ElementRef<any>, renderer: Renderer2, cdr: ChangeDetectorRef) {
-    super(router, element, renderer, cdr);
+  constructor() {
+    super(inject(Router), inject(ElementRef), inject(Renderer2), inject(ChangeDetectorRef));
     this.routerLinkActive = 'active';
   }
 

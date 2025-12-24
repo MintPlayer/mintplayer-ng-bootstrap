@@ -1,4 +1,4 @@
-import { Directive, TemplateRef } from '@angular/core';
+import { Directive, inject, TemplateRef } from '@angular/core';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 
 @Directive({
@@ -7,7 +7,9 @@ import { BsNavbarComponent } from '../navbar/navbar.component';
 })
 export class BsExpandButtonDirective {
 
-  constructor(navbar: BsNavbarComponent, templateRef: TemplateRef<any>) {
+  constructor() {
+    const navbar = inject(BsNavbarComponent);
+    const templateRef = inject<TemplateRef<any>>(TemplateRef);
     navbar.expandButtonTemplate = templateRef;
   }
   

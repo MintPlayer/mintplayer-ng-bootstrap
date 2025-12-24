@@ -1,5 +1,5 @@
 import { animate, AnimationBuilder, AnimationMetadata, style } from '@angular/animations';
-import { Directive, effect, ElementRef, input } from '@angular/core';
+import { Directive, effect, ElementRef, inject, input } from '@angular/core';
 import { BsOffcanvasHostComponent } from '../../components';
 
 @Directive({
@@ -7,7 +7,10 @@ import { BsOffcanvasHostComponent } from '../../components';
   standalone: false,
 })
 export class BsOffcanvasPushDirective {
-  constructor(private element: ElementRef<HTMLElement>, private builder: AnimationBuilder) {
+  private element = inject<ElementRef<HTMLElement>>(ElementRef);
+  private builder = inject(AnimationBuilder);
+
+  constructor() {
     let previousIsVisible: boolean | null = null;
 
     effect(() => {

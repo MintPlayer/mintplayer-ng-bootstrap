@@ -1,6 +1,6 @@
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { AfterViewInit, Component, ComponentRef, effect, Inject, Injector, model, OnDestroy, output, signal, TemplateRef } from '@angular/core';
+import { AfterViewInit, Component, ComponentRef, effect, inject, Injector, model, OnDestroy, output, signal, TemplateRef } from '@angular/core';
 import { Position } from '@mintplayer/ng-bootstrap';
 import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
@@ -13,8 +13,11 @@ import { BsOffcanvasComponent } from '../offcanvas/offcanvas.component';
   standalone: false,
 })
 export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
+  private overlayService = inject(Overlay);
+  private rootInjector = inject(Injector);
+  private portalFactory = inject<(injector: Injector) => ComponentPortal<any>>(PORTAL_FACTORY);
 
-  constructor(private overlayService: Overlay, private rootInjector: Injector, @Inject(PORTAL_FACTORY) private portalFactory: (injector: Injector) => ComponentPortal<any>) {
+  constructor() {
     // Effect to sync isVisible with the inner component
     effect(() => {
       const isVisible = this.isVisible();

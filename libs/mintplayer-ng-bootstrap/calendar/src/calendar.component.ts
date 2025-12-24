@@ -1,6 +1,6 @@
 /// <reference types="./types" />
 
-import { ChangeDetectionStrategy, Component, computed, input, model, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, model, signal } from '@angular/core';
 import { BsCalendarMonthService, BsMonthNamePipe, BsWeekdayNamePipe, DateDayOfMonth, WeekDay } from '@mintplayer/ng-bootstrap/calendar-month';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { BsUcFirstPipe } from '@mintplayer/ng-bootstrap/uc-first';
@@ -14,12 +14,15 @@ import { BsUcFirstPipe } from '@mintplayer/ng-bootstrap/uc-first';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsCalendarComponent {
-  constructor(private sanitizer: DomSanitizer, private calendarMonthService: BsCalendarMonthService) {
+  private sanitizer = inject(DomSanitizer);
+  private calendarMonthService = inject(BsCalendarMonthService);
+
+  constructor() {
     import('bootstrap-icons/icons/chevron-left.svg').then((icon) => {
-      this.chevronLeft.set(sanitizer.bypassSecurityTrustHtml(icon.default));
+      this.chevronLeft.set(this.sanitizer.bypassSecurityTrustHtml(icon.default));
     });
     import('bootstrap-icons/icons/chevron-right.svg').then((icon) => {
-      this.chevronRight.set(sanitizer.bypassSecurityTrustHtml(icon.default));
+      this.chevronRight.set(this.sanitizer.bypassSecurityTrustHtml(icon.default));
     });
   }
 

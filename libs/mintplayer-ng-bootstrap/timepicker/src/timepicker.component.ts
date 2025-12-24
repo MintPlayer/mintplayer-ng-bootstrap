@@ -1,7 +1,7 @@
 /// <reference types="./types" />
 
 import { DatePipe, DecimalPipe } from '@angular/common';
-import { Component, model, signal } from '@angular/core';
+import { Component, inject, model, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Color } from '@mintplayer/ng-bootstrap';
@@ -21,8 +21,9 @@ import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
   imports: [DatePipe, DecimalPipe, FormsModule, EnhancedPasteDirective, BsFormModule, BsDropdownModule, BsDropdownMenuModule, BsInputGroupComponent, BsButtonTypeDirective, BsHasOverlayComponent]
 })
 export class BsTimepickerComponent {
+  private sanitizer = inject(DomSanitizer);
 
-  constructor(sanitizer: DomSanitizer) {
+  constructor() {
     const today = new Date();
     today.setHours(0); today.setMinutes(0); today.setSeconds(0);
 
@@ -36,7 +37,7 @@ export class BsTimepickerComponent {
 
 
     import('bootstrap-icons/icons/clock.svg').then((icon) => {
-      this.clock.set(sanitizer.bypassSecurityTrustHtml(icon.default));
+      this.clock.set(this.sanitizer.bypassSecurityTrustHtml(icon.default));
     });
   }
 
