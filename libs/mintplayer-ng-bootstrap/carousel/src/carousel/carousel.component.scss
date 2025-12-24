@@ -115,14 +115,24 @@
         position: static;
         flex-direction: column;
         justify-content: center;
-        align-items: stretch;
+        align-items: center;
         margin: 0;
         gap: .5rem;
         height: 100%;
 
         [data-bs-target] {
-            width: auto;
-            height: .75rem;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: rgba(0, 0, 0, 0.5);
+            border: 5px solid transparent;
+            box-shadow: none;
+            opacity: 0.5;
+            transition: opacity 0.15s ease;
+
+            &.active {
+                opacity: 1;
+            }
         }
     }
 
