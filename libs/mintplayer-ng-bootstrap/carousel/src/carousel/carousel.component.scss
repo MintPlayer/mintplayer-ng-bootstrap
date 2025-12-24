@@ -60,6 +60,15 @@
         background-color: var(--bs-carousel-indicator-active-bg, #fff);
     }
 
+    .carousel-control-prev-icon,
+    .carousel-control-next-icon {
+        background-color: rgba(0, 0, 0, 0.5);
+        border-radius: 50%;
+        padding: 1.5rem;
+        background-size: 50%;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
     .carousel.carousel-vertical {
         display: flex;
         flex-direction: row;
