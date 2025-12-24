@@ -1,5 +1,5 @@
 import { DOCUMENT, isPlatformServer } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ContentChildren, computed, effect, ElementRef, forwardRef, inject, Injector, input, PLATFORM_ID, QueryList, signal, SkipSelf, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ContentChildren, computed, DestroyRef, effect, ElementRef, forwardRef, inject, Injector, input, OnDestroy, PLATFORM_ID, QueryList, signal, SkipSelf, ViewChild } from '@angular/core';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
 import { DomPortal } from '@angular/cdk/portal';
@@ -12,7 +12,7 @@ import { OverlayRef } from '@angular/cdk/overlay';
   standalone: false,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class BsNavbarDropdownComponent {
+export class BsNavbarDropdownComponent implements OnDestroy {
 
   private navbar = inject(BsNavbarComponent);
   parentDropdown = inject(BsNavbarDropdownComponent, { skipSelf: true, optional: true });
@@ -23,6 +23,7 @@ export class BsNavbarDropdownComponent {
   private platformId = inject(PLATFORM_ID);
 
   private isAttached = false;
+  private isDestroyed = false;
   private domPortal?: DomPortal;
   private overlay?: OverlayRef;
 
@@ -74,6 +75,10 @@ export class BsNavbarDropdownComponent {
 
     if (!!this.parentDropdown && this.isBrowser) {
       import('@angular/cdk/overlay').then(({ Overlay }) => {
+        // Guard against accessing injector after component is destroyed
+        if (this.isDestroyed) {
+          return;
+        }
         const overlayService = this.injector.get(Overlay);
         this.domPortal = new DomPortal(this.element);
         this.overlay = overlayService.create({
@@ -85,6 +90,10 @@ export class BsNavbarDropdownComponent {
         });
       });
     }
+  }
+
+  ngOnDestroy() {
+    this.isDestroyed = true;
   }
 
   public set showInOverlay(value: boolean) {
