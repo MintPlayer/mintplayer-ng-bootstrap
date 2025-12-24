@@ -26,6 +26,7 @@ export class BsNavbarDropdownComponent implements OnDestroy {
   private isDestroyed = false;
   private domPortal?: DomPortal;
   private overlay?: OverlayRef;
+  private pendingShowInOverlay: boolean | null = null;
 
   autoclose = input(true);
   @ViewChild('dd') dropdownElement!: ElementRef<HTMLDivElement>;
@@ -88,6 +89,16 @@ export class BsNavbarDropdownComponent implements OnDestroy {
               { originX: 'end', originY: 'top', overlayX: 'start', overlayY: 'top', offsetX: -9, offsetY: -9 }
             ])
         });
+
+        // Apply pending showInOverlay state if it was set before overlay was ready
+        // Use setTimeout to avoid ExpressionChangedAfterItHasBeenCheckedError
+        if (this.pendingShowInOverlay !== null) {
+          const pending = this.pendingShowInOverlay;
+          this.pendingShowInOverlay = null;
+          setTimeout(() => {
+            this.showInOverlay = pending;
+          });
+        }
       });
     }
   }
@@ -106,6 +117,9 @@ export class BsNavbarDropdownComponent implements OnDestroy {
         this.overlay.detach();
         this.isAttached = false;
       }
+    } else {
+      // Store the value to apply once the overlay is ready
+      this.pendingShowInOverlay = value;
     }
   }
 

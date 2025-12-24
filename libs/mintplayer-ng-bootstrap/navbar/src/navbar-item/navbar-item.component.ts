@@ -1,4 +1,4 @@
-import { AfterContentChecked, ChangeDetectionStrategy, Component, ContentChildren, DestroyRef, effect, ElementRef, forwardRef, inject, PLATFORM_ID, QueryList } from '@angular/core';
+import { AfterContentChecked, AfterContentInit, ChangeDetectionStrategy, Component, ContentChildren, DestroyRef, effect, ElementRef, forwardRef, inject, PLATFORM_ID, QueryList } from '@angular/core';
 import { isPlatformServer } from '@angular/common';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
@@ -10,7 +10,7 @@ import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.co
   standalone: false,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class BsNavbarItemComponent implements AfterContentChecked {
+export class BsNavbarItemComponent implements AfterContentInit, AfterContentChecked {
 
   private navbar = inject(BsNavbarComponent);
   element = inject(ElementRef);
@@ -23,11 +23,21 @@ export class BsNavbarItemComponent implements AfterContentChecked {
   @ContentChildren(forwardRef(() => BsNavbarDropdownComponent)) dropdowns!: QueryList<BsNavbarDropdownComponent>;
 
   constructor() {
+    // Effect handles future isSmallMode changes after content is initialized
     effect(() => {
       const isSmallMode = this.navbar.isSmallMode();
       this.dropdowns?.forEach((dropdown) => {
         dropdown.showInOverlay = !isSmallMode;
       });
+    });
+  }
+
+  ngAfterContentInit() {
+    // Set initial showInOverlay state after content children are resolved
+    // This is needed because the effect runs before @ContentChildren is populated
+    const isSmallMode = this.navbar.isSmallMode();
+    this.dropdowns?.forEach((dropdown) => {
+      dropdown.showInOverlay = !isSmallMode;
     });
   }
 
