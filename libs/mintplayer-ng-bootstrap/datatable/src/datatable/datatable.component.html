@@ -26,10 +26,10 @@
                     <div bsRow>
                         <div [md]="12">
                             <bs-pagination class="float-start" [pageNumbers]="settings().perPage.values"
-                                [(selectedPageNumber)]="settings().perPage.selected" (selectedPageNumberChange)="emitSettingsChange()"
+                                [selectedPageNumber]="settings().perPage.selected" (selectedPageNumberChange)="onPerPageChange($event)"
                                 [showArrows]="false"></bs-pagination>
                             <bs-pagination class="float-end" [pageNumbers]="settings().page.values"
-                                [(selectedPageNumber)]="settings().page.selected" (selectedPageNumberChange)="emitSettingsChange()"
+                                [selectedPageNumber]="settings().page.selected" (selectedPageNumberChange)="onPageChange($event)"
                                 [showArrows]="true"></bs-pagination>
                         </div>
                     </div>

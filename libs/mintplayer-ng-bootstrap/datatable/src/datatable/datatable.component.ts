@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, ContentChildren, Input, input, model, signal, TemplateRef } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, ContentChildren, Input, model, signal, TemplateRef } from '@angular/core';
 import { PaginationResponse } from '@mintplayer/pagination';
 import { DatatableSettings } from '../datatable-settings';
 import { BsDatatableColumnDirective } from '../datatable-column/datatable-column.directive';
@@ -13,15 +13,6 @@ import { BsRowTemplateContext } from '../row-template/row-template.directive';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsDatatableComponent<TData> {
-
-  constructor() {
-    const defaultSettings = new DatatableSettings();
-    defaultSettings.sortProperty = '';
-    defaultSettings.sortDirection = 'ascending';
-    defaultSettings.perPage = { values: [10, 20, 50], selected: 20 };
-    defaultSettings.page = { values: [1], selected: 1 };
-    this.settings.set(defaultSettings);
-  }
 
   private _columns = signal<BsDatatableColumnDirective[]>([]);
   numberOfColumns = computed(() => this._columns().length);
@@ -57,16 +48,21 @@ export class BsDatatableComponent<TData> {
       } else {
         currentSettings.sortDirection = 'descending';
       }
-      const newSettings = new DatatableSettings(currentSettings);
-      // model() automatically emits settingsChange when set() is called
-      this.settings.set(newSettings);
+      this.settings.set(new DatatableSettings(currentSettings));
     }
   }
 
-  // Helper method to trigger settings change (used by template for pagination)
-  emitSettingsChange() {
-    // Create a new settings object to trigger the model's change emission
-    this.settings.set(new DatatableSettings(this.settings()));
+  onPerPageChange(perPage: number) {
+    const currentSettings = this.settings();
+    currentSettings.perPage.selected = perPage;
+    currentSettings.page.selected = 1;
+    this.settings.set(new DatatableSettings(currentSettings));
+  }
+
+  onPageChange(page: number) {
+    const currentSettings = this.settings();
+    currentSettings.page.selected = page;
+    this.settings.set(new DatatableSettings(currentSettings));
   }
 
 }
