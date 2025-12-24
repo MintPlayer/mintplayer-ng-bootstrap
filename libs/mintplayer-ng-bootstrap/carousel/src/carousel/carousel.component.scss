@@ -95,7 +95,10 @@
 
         .carousel-item {
             flex: 0 0 auto;
-            display: block;
+            display: flex !important;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
     }
 
