@@ -1,7 +1,6 @@
-import { Component, ContentChild, Directive, ElementRef, Input } from '@angular/core';
+import { Component, ContentChild, Directive, ElementRef, input, model, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsDropdownDirective } from '../dropdown/dropdown.directive';
-import { BehaviorSubject } from 'rxjs';
 import { BsDropdownMenuDirective } from './dropdown-menu.directive';
 import { OverlayModule } from '@angular/cdk/overlay';
 
@@ -42,13 +41,14 @@ class BsDropdownToggleMockDirective {
 })
 class BsDropdownMockDirective {
 
-  public isOpen$ = new BehaviorSubject<boolean>(false);
+  elementRef = { nativeElement: document.createElement('div') };
+  isOpen = model<boolean>(false);
+  hasBackdrop = input(false);
+  closeOnClickOutside = input(false);
+  sameDropdownWidth = input(false);
 
   @ContentChild(BsDropdownMenuDirective, {static: false}) menu!: BsDropdownMenuDirective;
   @ContentChild(BsDropdownToggleMockDirective, {static: false}) toggle!: BsDropdownToggleMockDirective;
-  
-  @Input() public hasBackdrop = false;
-  @Input() public closeOnClickOutside = false;
 }
 
 describe('BsDropdownMenuDirective', () => {
@@ -85,39 +85,3 @@ describe('BsDropdownMenuDirective', () => {
     expect(component).toBeTruthy();
   });
 });
-
-// @Component({
-//   selector: 'bs-dropdown-menu-test',
-//   template: `
-//     <div bsDropdown [closeOnClickOutside]="true">
-//       <button bsDropdownToggle>Dropdown</button>
-//       <div *bsDropdownMenu>
-//         Dropdown contents
-//       </div>
-//     </div>`
-// })
-// class BsDropdownMenuTestComponent {
-// }
-
-// describe('BsDropdownMenuDirective', () => {
-//   let component: BsDropdownMenuTestComponent;
-//   let fixture: ComponentFixture<BsDropdownMenuTestComponent>;
-
-//   beforeEach(async () => {
-//     await TestBed.configureTestingModule(
-//       MockBuilder(BsDropdownMenuDirective, BsDropdownModule)
-//       .build()
-//     )
-//     .compileComponents();
-//   });
-
-//   beforeEach(() => {
-//     fixture = TestBed.createComponent(BsDropdownMenuTestComponent);
-//     component = fixture.componentInstance;
-//     fixture.detectChanges();
-//   });
-
-//   it('should create an instance', () => {
-//     expect(component).toBeTruthy();
-//   });
-// });

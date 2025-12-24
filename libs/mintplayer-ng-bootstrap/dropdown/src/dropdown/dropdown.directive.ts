@@ -1,6 +1,5 @@
-import { ContentChild, Directive, ElementRef, EventEmitter, HostListener, Inject, Input, Optional, Output } from '@angular/core';
+import { ContentChild, Directive, effect, ElementRef, HostListener, inject, input, model, Optional } from '@angular/core';
 import { BS_DEVELOPMENT } from '@mintplayer/ng-bootstrap';
-import { BehaviorSubject } from 'rxjs';
 import { BsDropdownMenuDirective } from '../dropdown-menu/dropdown-menu.directive';
 import { BsDropdownToggleDirective } from '../dropdown-toggle/dropdown-toggle.directive';
 
@@ -10,38 +9,21 @@ import { BsDropdownToggleDirective } from '../dropdown-toggle/dropdown-toggle.di
 })
 export class BsDropdownDirective {
 
-  constructor(elementRef: ElementRef<any>, @Optional() @Inject(BS_DEVELOPMENT) private bsDevelopment?: boolean) {
-    this.elementRef = elementRef;
-  }
+  elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private bsDevelopment = inject(BS_DEVELOPMENT, { optional: true });
 
-  isOpen$ = new BehaviorSubject<boolean>(false);
-
-  elementRef: ElementRef<HTMLElement>;
   @ContentChild(BsDropdownMenuDirective, {static: false}) menu!: BsDropdownMenuDirective;
   @ContentChild(BsDropdownToggleDirective, {static: false}) toggle: BsDropdownToggleDirective | null = null;
-  
-  @Input() public hasBackdrop = false;
-  @Input() public sameWidth = false;
-  @Input() public closeOnClickOutside = true;
-  @Input() public sameDropdownWidth = false;
 
-  //#region IsOpen
-  public get isOpen() {
-    return this.isOpen$.value;
-  }
-  @Output() public isOpenChange = new EventEmitter<boolean>();
-  @Input() public set isOpen(value: boolean) {
-    if (this.isOpen$.value !== value) {
-      this.isOpen$.next(value);
-      this.isOpenChange.emit(value);
-    }
-  }
-  //#endregion
+  hasBackdrop = input(false);
+  sameWidth = input(false);
+  closeOnClickOutside = input(true);
+  sameDropdownWidth = input(false);
+  isOpen = model<boolean>(false);
 
   @HostListener('window:blur') onBlur() {
-    if (this.closeOnClickOutside && !this.bsDevelopment) {
-      this.isOpen = false;
+    if (this.closeOnClickOutside() && !this.bsDevelopment) {
+      this.isOpen.set(false);
     }
   }
-
 }

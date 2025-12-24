@@ -1,68 +1,47 @@
-import { Directive, HostBinding, Input, DestroyRef } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, combineLatest, map } from 'rxjs';
+import { Directive, HostBinding, Input, computed, input } from '@angular/core';
 
 @Directive({
   selector: '[xxs],[xs],[sm],[md],[lg],[xl],[xxl]',
   standalone: false,
 })
 export class BsGridColumnDirective {
-  constructor(destroy: DestroyRef) {
-    combineLatest([this.xxs$, this.xs$, this.sm$, this.md$, this.lg$, this.xl$, this.xxl$])
-      .pipe(map(([xxs, xs, sm, md, lg, xl, xxl]) => ({ xxs, xs, sm, md, lg, xl, xxl })))
-      .pipe(map((sizes) => {
-        return Object.keys(sizes)
-          .map(key => ({
-            key,
-            value: (<any>sizes)[key],
-          }))
-          .filter(v => v.value)
-          .map(v => {
-            switch (v.key) {
-              case '': return 'col';
-              case 'xxs': return `col-${v.value}`;
-              default: return `col-${v.key}-${v.value}`;
-            }
-          })
-          .join(' ');
+
+  xxs = input<number | undefined>(undefined);
+  xs = input<number | undefined>(undefined);
+  sm = input<number | undefined>(undefined);
+  md = input<number | undefined>(undefined);
+  lg = input<number | undefined>(undefined);
+  xl = input<number | undefined>(undefined);
+  xxl = input<number | undefined>(undefined);
+
+  classList = computed(() => {
+    const sizes = {
+      xxs: this.xxs(),
+      xs: this.xs(),
+      sm: this.sm(),
+      md: this.md(),
+      lg: this.lg(),
+      xl: this.xl(),
+      xxl: this.xxl(),
+    };
+    return Object.keys(sizes)
+      .map(key => ({
+        key,
+        value: (<any>sizes)[key],
       }))
-      .pipe(takeUntilDestroyed(destroy))
-      .subscribe((classList) => {
-        this.classList = classList;
-      });
-  }
+      .filter(v => v.value)
+      .map(v => {
+        switch (v.key) {
+          case '': return 'col';
+          case 'xxs': return `col-${v.value}`;
+          default: return `col-${v.key}-${v.value}`;
+        }
+      })
+      .join(' ');
+  });
 
-  // private customColClasses$ = new BehaviorSubject<[col]Definition | '' | undefined>(undefined);
-  @HostBinding('class') classList: string | null = null
-
-  xxs$ = new BehaviorSubject<number | undefined>(undefined);
-  xs$ = new BehaviorSubject<number | undefined>(undefined);
-  sm$ = new BehaviorSubject<number | undefined>(undefined);
-  md$ = new BehaviorSubject<number | undefined>(undefined);
-  lg$ = new BehaviorSubject<number | undefined>(undefined);
-  xl$ = new BehaviorSubject<number | undefined>(undefined);
-  xxl$ = new BehaviorSubject<number | undefined>(undefined);
-
-  @Input() public set xxs(value: number | undefined) {
-    this.xxs$.next(value);
-  }
-  @Input() public set xs(value: number | undefined) {
-    this.xs$.next(value);
-  }
-  @Input() public set sm(value: number | undefined) {
-    this.sm$.next(value);
-  }
-  @Input() public set md(value: number | undefined) {
-    this.md$.next(value);
-  }
-  @Input() public set lg(value: number | undefined) {
-    this.lg$.next(value);
-  }
-  @Input() public set xl(value: number | undefined) {
-    this.xl$.next(value);
-  }
-  @Input() public set xxl(value: number | undefined) {
-    this.xxl$.next(value);
+  @HostBinding('class') get classBinding() {
+    return this.classList() || null;
   }
 }
 

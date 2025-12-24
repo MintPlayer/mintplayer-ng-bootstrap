@@ -1,38 +1,33 @@
-import { AsyncPipe } from '@angular/common';
-import { Component, EventEmitter, HostListener, Input, Output } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, distinctUntilChanged } from 'rxjs';
+import { ChangeDetectionStrategy, Component, effect, HostListener, input, model, output, signal } from '@angular/core';
 
 @Component({
   selector: 'bs-playlist-toggler',
   standalone: true,
   templateUrl: './playlist-toggler.component.html',
   styleUrls: ['./playlist-toggler.component.scss'],
-  imports: [AsyncPipe],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsPlaylistTogglerComponent {
+  state = model<boolean>(false);
+  stateChange = output<boolean>();
+  toggleOnClick = input(true);
+
+  private previousState: boolean | undefined;
+
   constructor() {
-    this.state$.pipe(distinctUntilChanged(), takeUntilDestroyed())
-      .subscribe(state => this.stateChange.emit(state));
+    effect(() => {
+      const currentState = this.state();
+      if (currentState !== this.previousState) {
+        this.previousState = currentState;
+        this.stateChange.emit(currentState);
+      }
+    });
   }
-
-  //#region State
-  state$ = new BehaviorSubject<boolean>(false);
-  @Output() public stateChange = new EventEmitter<boolean>();
-  public get state() {
-    return this.state$.value;
-  }
-  @Input() public set state(value: boolean) {
-    this.state$.next(value);
-  }
-  //#endregion
-
-  @Input() public toggleOnClick = true;
 
   @HostListener('click', ['$event'])
   toggleState(ev: MouseEvent) {
-    if (this.toggleOnClick) {
-      this.state$.next(!this.state);
+    if (this.toggleOnClick()) {
+      this.state.set(!this.state());
     }
   }
 }

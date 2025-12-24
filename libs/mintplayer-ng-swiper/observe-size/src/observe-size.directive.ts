@@ -1,6 +1,5 @@
 import { isPlatformServer } from '@angular/common';
-import { AfterViewInit, Directive, ElementRef, Inject, NgZone, OnDestroy, PLATFORM_ID } from '@angular/core';
-import { BehaviorSubject, Observable, Subject, map } from 'rxjs';
+import { AfterViewInit, computed, Directive, ElementRef, inject, NgZone, OnDestroy, PLATFORM_ID, signal } from '@angular/core';
 import { Size } from './size';
 
 @Directive({
@@ -9,27 +8,28 @@ import { Size } from './size';
   exportAs: 'bsObserveSize'
 })
 export class BsObserveSizeDirective implements AfterViewInit, OnDestroy {
-  constructor(private element: ElementRef, @Inject(PLATFORM_ID) private platformId: any, private zone: NgZone) {
-    if (!isPlatformServer(this.platformId) && typeof ResizeObserver !== 'undefined') {
-      this.observer = new ResizeObserver((entries) => {
-        // console.log('resized', entries[0].contentRect);
-        this.zone.run(() => this.size$.next(entries[0].contentRect));
-      });
-    }
-
-    this.width$ = this.size$.pipe(map(size => size?.width));
-    this.height$ = this.size$.pipe(map(size => size?.height));
-  }
+  private element = inject(ElementRef);
+  private platformId = inject(PLATFORM_ID);
+  private zone = inject(NgZone);
 
   private observer?: ResizeObserver;
-  size$ = new BehaviorSubject<Size | undefined>(undefined);
-  width$: Observable<number | undefined>;
-  height$: Observable<number | undefined>;
+
+  constructor() {
+    if (!isPlatformServer(this.platformId) && typeof ResizeObserver !== 'undefined') {
+      this.observer = new ResizeObserver((entries) => {
+        this.zone.run(() => this.size$.set(entries[0].contentRect));
+      });
+    }
+  }
+
+  size$ = signal<Size | undefined>(undefined);
+  width$ = computed(() => this.size$()?.width);
+  height$ = computed(() => this.size$()?.height);
 
   ngAfterViewInit() {
     const el: HTMLElement = this.element.nativeElement;
     this.observer?.observe(el);
-    this.size$.next({ width: el.clientWidth, height: el.clientHeight });
+    this.size$.set({ width: el.clientWidth, height: el.clientHeight });
   }
 
   ngOnDestroy() {

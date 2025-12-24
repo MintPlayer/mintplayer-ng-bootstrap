@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { BsNavbarComponent } from '../navbar/navbar.component';
@@ -32,7 +32,7 @@ describe('BsNavbarItemComponent', () => {
         // Pages
         PageAComponent,
         PageBCComponent,
-      
+
         // Testbench
         BsNavbarItemTestComponent
       ],
@@ -84,13 +84,16 @@ class BsNavbarItemTestComponent {
   <nav>
     <div>
       <ng-content></ng-content>
-    </div>  
+    </div>
   </nav>`,
   providers: [
     { provide: BsNavbarComponent, useExisting: BsNavbarMockComponent }
   ]
 })
 class BsNavbarMockComponent {
+  isExpanded = signal<boolean>(false);
+  isSmallMode = signal<boolean>(true);
+  autoclose = signal<boolean>(true);
 }
 
 @Component({
@@ -100,7 +103,7 @@ class BsNavbarMockComponent {
   <div>
     <ul>
       <ng-content></ng-content>
-    </ul>  
+    </ul>
   </div>`
 })
 class BsNavbarNavMockComponent {

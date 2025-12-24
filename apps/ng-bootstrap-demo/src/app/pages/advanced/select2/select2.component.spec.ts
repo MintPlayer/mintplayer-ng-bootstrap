@@ -1,7 +1,7 @@
-import { HttpClientModule } from '@angular/common/http';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsSelect2Module } from '@mintplayer/ng-bootstrap/select2';
-import { MockModule, MockProvider } from 'ng-mocks';
+import { MockProvider } from 'ng-mocks';
 import { SubjectService } from '../../../services/subject/subject.service';
 import { TagService } from '../../../services/tag/tag.service';
 
@@ -13,17 +13,14 @@ describe('Select2Component', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [
-        HttpClientModule,
-        MockModule(BsSelect2Module),
-        Select2Component,
-      ],
+      imports: [Select2Component],
       providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
         MockProvider(SubjectService),
         MockProvider(TagService),
       ]
-    })
-    .compileComponents();
+    }).compileComponents();
   });
 
   beforeEach(() => {

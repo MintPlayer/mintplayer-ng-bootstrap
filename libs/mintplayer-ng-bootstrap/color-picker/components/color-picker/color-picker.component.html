@@ -1,10 +1,10 @@
-@let letDisabled = (disabled$ | async)!;
-@let letHS = (hs$ | async)!;
-@let letLuminosity = (luminosity$ | async)!;
-@let letAlpha = (alpha$ | async)!;
+@let letDisabled = disabled$();
+@let letHS = hs$();
+@let letLuminosity = luminosity$();
+@let letAlpha = alpha$();
 
-<bs-color-wheel [hs]="letHS" (hsChange)="hs$.next($event)" [luminosity]="letLuminosity" [width]="(size$ | async) ?? 150" [height]="(size$ | async) ?? 150" #wheel></bs-color-wheel>
-<bs-luminosity-strip [hs]="letHS" [luminosity]="letLuminosity" (luminosityChange)="luminosity$.next($event)" class="d-block mt-2" [style.width.px]="size$ | async" #strip></bs-luminosity-strip>
-@if (allowAlpha$ | async) {
-    <bs-alpha-strip [hs]="letHS" [luminosity]="letLuminosity" [alpha]="letAlpha" (alphaChange)="alpha$.next($event)" class="d-block mt-2" [style.width.px]="size$ | async" #alpha></bs-alpha-strip>
+<bs-color-wheel [hs]="letHS" (hsChange)="hs$.set($event)" [luminosity]="letLuminosity" [width]="size$() ?? 150" [height]="size$() ?? 150" #wheel></bs-color-wheel>
+<bs-luminosity-strip [hs]="letHS" [luminosity]="letLuminosity" (luminosityChange)="luminosity$.set($event)" class="d-block mt-2" [style.width.px]="size$()" #strip></bs-luminosity-strip>
+@if (allowAlpha$()) {
+    <bs-alpha-strip [hs]="letHS" [luminosity]="letLuminosity" [alpha]="letAlpha" (alphaChange)="alpha$.set($event)" class="d-block mt-2" [style.width.px]="size$()" #alpha></bs-alpha-strip>
 }

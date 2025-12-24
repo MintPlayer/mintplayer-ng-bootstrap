@@ -1,6 +1,6 @@
 /// <reference types="../types" />
 
-import { Component, ContentChild, HostListener } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ContentChild, inject } from '@angular/core';
 import { BsTreeviewComponent } from '../treeview/treeview.component';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
@@ -9,22 +9,25 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
   templateUrl: './treeview-item.component.html',
   styleUrls: ['./treeview-item.component.scss'],
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsTreeviewItemComponent {
-  readonly parent: BsTreeviewComponent;
-  constructor(parent: BsTreeviewComponent, private sanitizer: DomSanitizer) {
-    this.parent = parent;
-    import('bootstrap-icons/icons/chevron-right.svg').then((icon) => {
-      this.chevronRight = sanitizer.bypassSecurityTrustHtml(icon.default);
-    });
-  }
+
+  readonly parent = inject(BsTreeviewComponent);
+  private sanitizer = inject(DomSanitizer);
 
   @ContentChild(BsTreeviewComponent, { descendants: false }) childTree?: BsTreeviewComponent;
   chevronRight?: SafeHtml;
 
+  constructor() {
+    import('bootstrap-icons/icons/chevron-right.svg').then((icon) => {
+      this.chevronRight = this.sanitizer.bypassSecurityTrustHtml(icon.default);
+    });
+  }
+
   onClick(ev: MouseEvent) {
     if (this.childTree) {
-      this.childTree.isExpanded = !this.childTree.isExpanded;
+      this.childTree.isExpanded.update(v => !v);
     }
   }
 }

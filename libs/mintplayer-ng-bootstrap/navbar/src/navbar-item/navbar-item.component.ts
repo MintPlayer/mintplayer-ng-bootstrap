@@ -1,6 +1,5 @@
-import { AfterContentChecked, Component, ContentChildren, DestroyRef, ElementRef, forwardRef, Inject, Optional, PLATFORM_ID, QueryList, ViewContainerRef } from '@angular/core';
+import { AfterContentChecked, ChangeDetectionStrategy, Component, ContentChildren, DestroyRef, effect, ElementRef, forwardRef, inject, PLATFORM_ID, QueryList } from '@angular/core';
 import { isPlatformServer } from '@angular/common';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
 
@@ -9,25 +8,28 @@ import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.co
   templateUrl: './navbar-item.component.html',
   styleUrls: ['./navbar-item.component.scss'],
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsNavbarItemComponent implements AfterContentChecked {
 
-  constructor(
-    private navbar: BsNavbarComponent,
-    element: ElementRef,
-    private destroy: DestroyRef,
-    @Inject(PLATFORM_ID) private platformId: Object,
-    @Optional() @Inject(forwardRef(() => BsNavbarDropdownComponent)) parentDropdown: BsNavbarDropdownComponent,
-  ) {
-    this.element = element;
-    this.parentDropdown = parentDropdown;
-  }
+  private navbar = inject(BsNavbarComponent);
+  element = inject(ElementRef);
+  private destroy = inject(DestroyRef);
+  private platformId = inject(PLATFORM_ID);
+  parentDropdown = inject(forwardRef(() => BsNavbarDropdownComponent), { optional: true });
 
-  element: ElementRef;
-  parentDropdown: BsNavbarDropdownComponent;
   hasDropdown = false;
   anchorTag: HTMLAnchorElement | null = null;
   @ContentChildren(forwardRef(() => BsNavbarDropdownComponent)) dropdowns!: QueryList<BsNavbarDropdownComponent>;
+
+  constructor() {
+    effect(() => {
+      const isSmallMode = this.navbar.isSmallMode();
+      this.dropdowns?.forEach((dropdown) => {
+        dropdown.showInOverlay = !isSmallMode;
+      });
+    });
+  }
 
   ngAfterContentChecked() {
     this.anchorTag = this.element.nativeElement.querySelector('li a');
@@ -39,37 +41,16 @@ export class BsNavbarItemComponent implements AfterContentChecked {
         if (isPlatformServer(this.platformId)) {
           this.anchorTag.href = 'javascript:;';
         }
-  
+
         if (!this.anchorTag.getAttribute('close-init-b')) {
           this.anchorTag.setAttribute('close-init-b', '1');
           this.anchorTag.addEventListener('click', (ev: MouseEvent) => {
             ev.preventDefault();
-            // Normally there should be only one dropdown in this list
             this.dropdowns.forEach((dropdown) => {
-              if (!(dropdown.isVisible = !dropdown.isVisible)) {
-                dropdown.childDropdowns.forEach((child) => child.isVisible = false);
-              } else if (this.parentDropdown) {
-                // import('@angular/cdk/overlay').then(({ OverlayModule, Overlay }) => {
-                //   const overlayService = this.injector.get(Overlay);
-                //   return overlayService;
-                // }).then((overlayService) => {
-
-                //   const p = new DomPortal(dropdown.element);
-                //   const overlayRef = overlayService.create({
-                //     positionStrategy: overlayService.position()
-                //       .flexibleConnectedTo(this.element)
-                //       .withPositions([
-                //         { originX: 'end', originY: 'top', overlayX: 'start', overlayY: 'top' }
-                //       ])
-                //   });
-                  // overlayRef.attach(p);
-
-                // });
-                // dropdown.showInOverlay = true;
-
-                this.navbar.isSmallMode$
-                  .pipe(takeUntilDestroyed(this.destroy))
-                  .subscribe((isSmallMode) => dropdown.showInOverlay = !isSmallMode);
+              const newVisible = !dropdown.isVisible();
+              dropdown.isVisible.set(newVisible);
+              if (!newVisible) {
+                dropdown.childDropdowns.forEach((child) => child.isVisible.set(false));
               }
             });
             return false;
@@ -78,17 +59,16 @@ export class BsNavbarItemComponent implements AfterContentChecked {
       }
     } else {
 
-      // Close if this is a link
       if ((this.dropdowns.length === 0) && this.anchorTag && !this.anchorTag.getAttribute('close-init-a')) {
         this.anchorTag.setAttribute('close-init-a', '1');
         this.anchorTag.addEventListener('click', (ev: MouseEvent) => {
           let d = this.parentDropdown;
-          while (d && d.autoclose) {
-            d.isVisible = false;
+          while (d && d.autoclose()) {
+            d.isVisible.set(false);
             d = d.parentDropdown;
           }
-          if (this.navbar.autoclose) {
-            this.navbar.isExpanded$.next(false);
+          if (this.navbar.autoclose()) {
+            this.navbar.isExpanded.set(false);
           }
         });
       }

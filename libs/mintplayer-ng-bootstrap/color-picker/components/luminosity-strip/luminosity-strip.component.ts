@@ -1,6 +1,4 @@
-import { Component, EventEmitter, Input, Output, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
-import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, model, output, ViewChild } from '@angular/core';
 import { HS } from '../../interfaces/hs';
 
 @Component({
@@ -8,19 +6,32 @@ import { HS } from '../../interfaces/hs';
   templateUrl: './luminosity-strip.component.html',
   styleUrls: ['./luminosity-strip.component.scss'],
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class BsLuminosityStripComponent implements AfterViewInit {
+export class BsLuminosityStripComponent {
+  @ViewChild('canvas') canvas!: ElementRef<HTMLCanvasElement>;
+
+  hs$ = model<HS>({ hue: 0, saturation: 0 });
+  luminosity$ = model<number>(0.5);
+  luminosityChange = output<number>();
+
+  private canvasContext: CanvasRenderingContext2D | null = null;
+
+  resultBackground$ = computed(() => {
+    const hs = this.hs$();
+    const luminosity = this.luminosity$();
+    return `hsl(${hs.hue}, ${hs.saturation * 100}%, ${luminosity * 100}%)`;
+  });
+
   constructor() {
-    this.hs$.pipe(takeUntilDestroyed()).subscribe((hs) => {
+    // Draw gradient when HS changes
+    effect(() => {
+      const hs = this.hs$();
       if (this.canvasContext) {
-        const width = this.canvas.nativeElement.width, height = this.canvas.nativeElement.height;
+        const width = this.canvas.nativeElement.width;
+        const height = this.canvas.nativeElement.height;
         this.canvasContext.clearRect(0, 0, width, height);
         this.canvasContext.save();
-
-        // HSL
-        // - H: 0 - 359
-        // - S: "0%" - "100%"
-        // - L: "0%" - "50%" - "100%"
 
         const gradient = this.canvasContext.createLinearGradient(0, 0, width, 0);
         gradient.addColorStop(0, `hsl(${hs.hue}, ${hs.saturation * 100}%, 0%)`);
@@ -30,43 +41,17 @@ export class BsLuminosityStripComponent implements AfterViewInit {
         this.canvasContext.fillRect(0, 0, width, height);
       }
     });
-    
-    this.resultBackground$ = combineLatest([this.hs$, this.luminosity$])
-      .pipe(map(([hs, luminosity]) => {
-        return `hsl(${hs.hue}, ${hs.saturation * 100}%, ${luminosity * 100}%)`;
-      }));
-      
-    this.luminosity$.pipe(takeUntilDestroyed())
-      .subscribe(luminosity => this.luminosityChange.emit(luminosity));
+
+    // Emit luminosity changes
+    effect(() => {
+      const luminosity = this.luminosity$();
+      this.luminosityChange.emit(luminosity);
+    });
   }
 
-  //#region HS
-  hs$ = new BehaviorSubject<HS>({ hue: 0, saturation: 0 });
-  public get hs() {
-    return this.hs$.value;
-  }
-  @Input() public set hs(value: HS) {
-    this.hs$.next(value);
-  }
-  //#endregion
-  //#region Luminosity
-  luminosity$ = new BehaviorSubject<number>(0.5);
-  @Output() luminosityChange = new EventEmitter<number>();
-  public get luminosity() {
-    return this.luminosity$.value;
-  }
-  @Input() public set luminosity(value: number) {
-    this.luminosity$.next(value);
-  }
-  //#endregion
-
-  private canvasContext: CanvasRenderingContext2D | null = null;
-  @ViewChild('canvas') canvas!: ElementRef<HTMLCanvasElement>;
   ngAfterViewInit() {
     if (typeof window !== 'undefined') {
       this.canvasContext = this.canvas.nativeElement.getContext('2d', { willReadFrequently: true });
     }
   }
-
-  resultBackground$: Observable<string>;
 }

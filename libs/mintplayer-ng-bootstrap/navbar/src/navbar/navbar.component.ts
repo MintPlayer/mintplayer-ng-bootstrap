@@ -1,7 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, ElementRef, HostListener, input, signal, TemplateRef, ViewChild } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, HostListener, inject, input, signal, TemplateRef, ViewChild } from '@angular/core';
 import { Breakpoint, Color } from '@mintplayer/ng-bootstrap';
-import { debounceTime } from 'rxjs';
 
 @Component({
   selector: 'bs-navbar',
@@ -12,10 +10,12 @@ import { debounceTime } from 'rxjs';
 })
 export class BsNavbarComponent {
 
-  constructor(private destroy: DestroyRef) {
-    toObservable(this.windowWidth)
-      .pipe(debounceTime(300), takeUntilDestroyed())
-      .subscribe(() => this.isResizing.set(false));
+  constructor() {
+    effect((onCleanup) => {
+      const windowWidth = this.windowWidth();
+      const timeout = setTimeout(() => this.isResizing.set(false), 300);
+      onCleanup(() => clearTimeout(timeout));
+    });
 
     this.onWindowResize();
   }

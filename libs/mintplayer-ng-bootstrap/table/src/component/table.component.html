@@ -1,8 +1,8 @@
-<div class="d-block" [class.table-responsive]="isResponsive$ | async" [class.nowrap]="isResponsive$ | async">
+<div class="d-block" [class.table-responsive]="isResponsive()" [class.nowrap]="isResponsive()">
     <table class="table" cellspacing="0" role="grid"
-        [class.mb-0]="isResponsive$ | async"
-        [class.table-striped]="striped$ | async"
-        [class.table-hover]="hover$ | async">
+        [class.mb-0]="isResponsive()"
+        [class.table-striped]="striped()"
+        [class.table-hover]="hover()">
 
         <ng-content></ng-content>
 

@@ -1,7 +1,7 @@
 <bs-table [isResponsive]="true" [striped]="true" [hover]="true" class="mb-3">
     <thead>
         <tr>
-            @for (column of (columns$ | async); track column) {
+            @for (column of columnsArray; track column) {
                 <th class="text-nowrap"
                     [class.sort]="column.sortable"
                     [class.sort-asc]="column.sortable && (settings.sortProperty === column.name) && (settings.sortDirection === 'ascending')"
@@ -14,14 +14,14 @@
     </thead>
     <tbody>
         @if (!!data && !!rowTemplate) {
-            @for (item of data.data; track item) {
+            @for (item of data!.data; track item) {
                 <ng-container *ngTemplateOutlet="rowTemplate; context: { $implicit: item }"></ng-container>
             }
         }
     </tbody>
     <tfoot>
         <tr>
-            <td [colSpan]="numberOfColumns$ | async">
+            <td [colSpan]="numberOfColumns()">
                 <bs-grid [stopFullWidthAt]="'never'">
                     <div bsRow>
                         <div [md]="12">

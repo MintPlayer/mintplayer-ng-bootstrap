@@ -1,7 +1,6 @@
-import { HttpClientModule } from '@angular/common/http';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsDatatableModule } from '@mintplayer/ng-bootstrap/datatable';
-import { MockModule, MockProvider } from 'ng-mocks';
 import { ArtistService } from '../../../services/artist/artist.service';
 import { DatatablesComponent } from './datatables.component';
 
@@ -12,12 +11,17 @@ describe('DatatablesComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        HttpClientModule,
-        MockModule(BsDatatableModule),
         DatatablesComponent,
       ],
       providers: [
-        ArtistService,
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        {
+          provide: ArtistService,
+          useValue: {
+            pageArtists: () => Promise.resolve({ data: [], count: 0, perPage: 10, page: 1 })
+          }
+        },
       ]
     })
     .compileComponents();

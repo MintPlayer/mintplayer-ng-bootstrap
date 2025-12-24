@@ -2,39 +2,38 @@
 <div bsDropdown [(isOpen)]="isOpen" [hasBackdrop]="false" [sameDropdownWidth]="true">
     <button [color]="colors.primary" class="d-flex w-100" bsDropdownToggle>
         <div class="flex-grow-1">
-            @if (!selectedItem) {
+            @if (!selectedItem()) {
                 <ng-content></ng-content>
             } @else if (suggestionTemplate) {
-                <ng-container *ngTemplateOutlet="suggestionTemplate; context: { $implicit: selectedItem, searchbox: this }"></ng-container>
+                <ng-container *ngTemplateOutlet="suggestionTemplate; context: { $implicit: selectedItem(), searchbox: this }"></ng-container>
             }
         </div>
-        <span [innerHTML]="isOpen ? caretUpFill : caretDownFill" class="float-end"></span>
+        <span [innerHTML]="isOpen() ? caretUpFill : caretDownFill" class="float-end"></span>
     </button>
     <bs-dropdown-menu *bsDropdownMenu>
-        @let isBusy = isBusy$ | async;
-        @if (isBusy) {
+        @if (isBusy()) {
             <bs-progress [isIndeterminate]="true" class="prog">
                 <bs-progress-bar></bs-progress-bar>
             </bs-progress>
         }
         <div class="w-100 px-2 mb-2">
-            <input type="text" #textbox autofocus class="form-control d-block" [ngModel]="searchterm$ | async" (ngModelChange)="onSearchtermChange($event)">
+            <input type="text" #textbox autofocus class="form-control d-block" [ngModel]="searchterm()" (ngModelChange)="onSearchtermChange($event)">
         </div>
-        
-        @if (searchterm === '') {
+
+        @if (searchterm() === '') {
             <bs-dropdown-item [disabled]="true">
                 <ng-container *ngTemplateOutlet="enterSearchtermTemplate ?? defaultEnterSearchtermTemplate; context: { }"></ng-container>
             </bs-dropdown-item>
         } @else {
             <div class="overflow-y-auto" [style.max-height.px]="200">
-                @for (suggestion of suggestions; track suggestion) {
-                    <bs-dropdown-item (click)="onSuggestionClicked(suggestion)" [isSelected]="selectedItem?.id === suggestion.id" [disabled]="isBusy ?? true">
+                @for (suggestion of suggestions(); track suggestion) {
+                    <bs-dropdown-item (click)="onSuggestionClicked(suggestion)" [isSelected]="selectedItem()?.id === suggestion.id" [disabled]="isBusy()">
                         @if (suggestionTemplate) {
                             <ng-container *ngTemplateOutlet="suggestionTemplate; context: { $implicit: suggestion, searchbox: this }"></ng-container>
                         }
                     </bs-dropdown-item>
                 }
-                @if (suggestions.length === 0) {
+                @if (suggestions().length === 0) {
                     <bs-dropdown-item [disabled]="true">
                         <ng-container *ngTemplateOutlet="noResultsTemplate ?? defaultNoResultsTemplate; context: { }"></ng-container>
                     </bs-dropdown-item>

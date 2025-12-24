@@ -1,8 +1,6 @@
-import { DestroyRef, Directive, HostBinding, HostListener, input } from "@angular/core";
+import { computed, Directive, effect, HostBinding, HostListener, inject, input } from "@angular/core";
 import { BsObserveSizeDirective } from "@mintplayer/ng-swiper/observe-size";
-import { combineLatest, filter, take } from "rxjs";
 import { BsSwipeContainerDirective } from "../swipe-container/swipe-container.directive";
-import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 
 @Directive({
   selector: '[bsSwipe]',
@@ -10,27 +8,23 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
   standalone: false,
 })
 export class BsSwipeDirective {
-
-  constructor(private container: BsSwipeContainerDirective, observeSize: BsObserveSizeDirective, private destroy: DestroyRef) {
-    this.observeSize = observeSize;
-    this.container.orientation$
-      .pipe(takeUntilDestroyed())
-      .subscribe(orientation => {
-        this.inlineBlock = (orientation === 'horizontal');
-        this.block = (orientation === 'vertical');
-      });
-
-    combineLatest([this.container.maxSlideHeight$, this.container.orientation$])
-      .pipe(takeUntilDestroyed())
-      .subscribe(([maxHeight, orientation]) => {
-        const targetHeight = (orientation === 'vertical') ? maxHeight : null;
-        this.slideHeight = (targetHeight && targetHeight > 0) ? targetHeight : null;
-      });
-  }
-
-  observeSize: BsObserveSizeDirective;
+  private container = inject(BsSwipeContainerDirective);
+  observeSize = inject(BsObserveSizeDirective);
 
   public offside = input(false);
+
+  private orientationEffect = effect(() => {
+    const orientation = this.container.orientation$();
+    this.inlineBlock = (orientation === 'horizontal');
+    this.block = (orientation === 'vertical');
+  });
+
+  private heightEffect = effect(() => {
+    const maxHeight = this.container.maxSlideHeight$();
+    const orientation = this.container.orientation$();
+    const targetHeight = (orientation === 'vertical') ? maxHeight : null;
+    this.slideHeight = (targetHeight && targetHeight > 0) ? targetHeight : null;
+  });
 
   @HostBinding('class.align-top')
   @HostBinding('class.float-none')
@@ -50,14 +44,14 @@ export class BsSwipeDirective {
       this.container.pendingAnimation?.finish();
 
       setTimeout(() => {
-        this.container.startTouch$.next({
+        this.container.startTouch$.set({
           position: {
             x: ev.touches[0].clientX,
             y: ev.touches[0].clientY,
           },
           timestamp: Date.now(),
         });
-        this.container.lastTouch$.next({
+        this.container.lastTouch$.set({
           position: {
             x: ev.touches[0].clientX,
             y: ev.touches[0].clientY,
@@ -70,7 +64,7 @@ export class BsSwipeDirective {
 
   @HostListener('touchmove', ['$event'])
   onTouchMove(ev: TouchEvent) {
-    this.container.lastTouch$.next({
+    this.container.lastTouch$.set({
       position: {
         x: ev.touches[0].clientX,
         y: ev.touches[0].clientY,
@@ -81,17 +75,16 @@ export class BsSwipeDirective {
 
   @HostListener('touchend', ['$event'])
   onTouchEnd(ev: TouchEvent) {
-    combineLatest([this.container.startTouch$, this.container.lastTouch$, this.container.orientation$])
-      .pipe(filter(([startTouch, lastTouch]) => !!startTouch && !!lastTouch))
-      .pipe(take(1), takeUntilDestroyed(this.destroy))
-      .subscribe(([startTouch, lastTouch, orientation]) => {
-        if (!!startTouch && !!lastTouch) {
-          const distance = (orientation === 'horizontal')
-            ? lastTouch.position.x - startTouch.position.x
-            : lastTouch.position.y - startTouch.position.y;
-          this.container.onSwipe(distance);
-        }
-      });
+    const startTouch = this.container.startTouch$();
+    const lastTouch = this.container.lastTouch$();
+    const orientation = this.container.orientation$();
+
+    if (!!startTouch && !!lastTouch) {
+      const distance = (orientation === 'horizontal')
+        ? lastTouch.position.x - startTouch.position.x
+        : lastTouch.position.y - startTouch.position.y;
+      this.container.onSwipe(distance);
+    }
   }
 
 }

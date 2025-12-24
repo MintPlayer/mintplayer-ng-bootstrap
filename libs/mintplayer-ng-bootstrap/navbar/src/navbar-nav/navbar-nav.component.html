@@ -1,4 +1,4 @@
-<div class="navbar-collapse w-100 show" [class.collapse]="collapse$ | async" [@slideUpDown]="showNavs$ | async" [@.disabled]="isResizing$ | async">
+<div class="navbar-collapse w-100 show" [class.collapse]="collapse()" [@slideUpDown]="showNavs()" [@.disabled]="isResizing()">
     <ul class="navbar-nav mr-auto">
         <ng-content></ng-content>
     </ul>

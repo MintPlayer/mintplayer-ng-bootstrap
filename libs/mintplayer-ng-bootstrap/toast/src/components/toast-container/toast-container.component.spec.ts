@@ -1,5 +1,6 @@
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MockComponent, MockProvider } from 'ng-mocks';
+import { MockComponent } from 'ng-mocks';
 import { BsToastContainerComponent } from './toast-container.component';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { BsToastService } from '../../services/toast/toast.service';
@@ -15,7 +16,12 @@ describe('BsToastContainerComponent', () => {
       ],
       declarations: [BsToastContainerComponent],
       providers: [
-        MockProvider(BsToastService),
+        {
+          provide: BsToastService,
+          useValue: {
+            toasts: signal([])
+          }
+        },
       ],
     }).compileComponents();
 

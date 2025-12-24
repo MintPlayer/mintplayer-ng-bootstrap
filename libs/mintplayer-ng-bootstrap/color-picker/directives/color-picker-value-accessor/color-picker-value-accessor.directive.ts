@@ -1,34 +1,33 @@
-import { Directive, Inject, forwardRef, AfterViewInit, DestroyRef } from '@angular/core';
+import { Directive, effect, forwardRef, inject } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { combineLatest } from 'rxjs';
 import { BsColorPickerComponent } from '../../components/color-picker/color-picker.component';
 import { RgbColor } from '../../interfaces/rgb-color';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Directive({
   selector: 'bs-color-picker',
   standalone: false,
   providers: [{
     provide: NG_VALUE_ACCESSOR,
-    // useExisting: BsColorPickerValueAccessor,
     useExisting: forwardRef(() => BsColorPickerValueAccessor),
     multi: true
   }],
   exportAs: 'bsColorPicker'
 })
-export class BsColorPickerValueAccessor implements AfterViewInit, ControlValueAccessor {
+export class BsColorPickerValueAccessor implements ControlValueAccessor {
+  private host = inject(BsColorPickerComponent);
 
-  constructor(@Inject(forwardRef(() => BsColorPickerComponent)) private host: BsColorPickerComponent, private destroy: DestroyRef) {
-  }
+  onValueChange?: (value: string) => void;
+  onTouched?: () => void;
 
-  ngAfterViewInit() {
-    combineLatest([this.host.hs$, this.host.luminosity$])
-      .pipe(takeUntilDestroyed(this.destroy))
-      .subscribe(([hs, luminosity]) => {
-        const rgb = this.hsl2rgb(hs.hue, hs.saturation, luminosity);
-        const hex = this.rgb2hex(rgb);
-        setTimeout(() => this.onValueChange && this.onValueChange(hex), 10);
-      })
+  constructor() {
+    // Effect to emit value changes
+    effect(() => {
+      const hs = this.host.hs$();
+      const luminosity = this.host.luminosity$();
+      const rgb = this.hsl2rgb(hs.hue, hs.saturation, luminosity);
+      const hex = this.rgb2hex(rgb);
+      setTimeout(() => this.onValueChange && this.onValueChange(hex), 10);
+    });
   }
 
   public hsl2rgb(h: number, s: number, l: number) {
@@ -39,14 +38,11 @@ export class BsColorPickerValueAccessor implements AfterViewInit, ControlValueAc
     return retValue;
   }
 
-  onValueChange?: (value: string) => void;
-  onTouched?: () => void;
-
   //#region ControlValueAccessor implementation
   registerOnChange(fn: (_: any) => void) {
     this.onValueChange = fn;
   }
-  
+
   registerOnTouched(fn: () => void) {
     this.onTouched = fn;
   }
@@ -56,15 +52,15 @@ export class BsColorPickerValueAccessor implements AfterViewInit, ControlValueAc
       if (value) {
         const rgb = this.hex2rgb(value);
         const hsl = this.rgb2Hsl(rgb);
-        this.host.hs$.next({ hue: hsl.h, saturation: hsl.s });
-        this.host.luminosity$.next(hsl.l);
+        this.host.hs$.set({ hue: hsl.h, saturation: hsl.s });
+        this.host.luminosity$.set(hsl.l);
       }
     }
   }
 
   setDisabledState(isDisabled: boolean) {
     if (this.host && this.host.colorWheel) {
-      this.host.colorWheel.disabled$.next(isDisabled);
+      this.host.colorWheel.disabled$.set(isDisabled);
     }
   }
   //#endregion

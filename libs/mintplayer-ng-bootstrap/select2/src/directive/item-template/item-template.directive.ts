@@ -16,7 +16,7 @@ export class BsItemTemplateDirective<T extends HasId<U>, U> {
   }
 
   @Input() set bsItemTemplateOf(value: T[]) {
-    this.select2component.selectedItems = value;
+    this.select2component.selectedItems.set(value);
   }
 }
 

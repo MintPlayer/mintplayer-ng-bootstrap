@@ -1,73 +1,67 @@
-import { AsyncPipe } from '@angular/common';
-import { Component, ElementRef, EventEmitter, Input, Output, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, input, model, output, signal, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BsDropdownModule } from '@mintplayer/ng-bootstrap/dropdown';
 import { BsDropdownMenuModule } from '@mintplayer/ng-bootstrap/dropdown-menu';
 import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { BsProgressBarModule } from '@mintplayer/ng-bootstrap/progress-bar';
-import { BehaviorSubject, map, Observable } from 'rxjs';
 
 @Component({
   selector: 'bs-typeahead',
   templateUrl: './typeahead.component.html',
   styleUrls: ['./typeahead.component.scss'],
   standalone: true,
-  imports: [AsyncPipe, FormsModule, BsFormModule, BsDropdownModule, BsDropdownMenuModule, BsProgressBarModule, BsHasOverlayComponent]
+  imports: [FormsModule, BsFormModule, BsDropdownModule, BsDropdownMenuModule, BsProgressBarModule, BsHasOverlayComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsTypeaheadComponent {
 
-  isOpen = false;
-  
-  suggestions$ = new BehaviorSubject<any[]>([]);
-  isLoading$ = new BehaviorSubject<boolean>(false);
-  showNoSuggestions$: Observable<boolean>;
-  
+  isOpen = signal(false);
+
+  suggestions = input<any[]>([]);
+  isLoading = signal<boolean>(false);
+  showNoSuggestions = computed(() => this.suggestions().length === 0);
+
   @ViewChild('textbox') textbox!: ElementRef<HTMLInputElement>;
-  @Input() searchterm = '';
-  @Input() public isLoadingText = 'Loading...';
-  @Input() public noSuggestionsText = 'No suggestions found';
-  @Output() public provideSuggestions = new EventEmitter<string>();
-  @Output() suggestionSelected = new EventEmitter<any>();
-  @Output() searchtermChange = new EventEmitter<string>();
-  @Output() submitted = new EventEmitter<string>();
-  
+  searchterm = model('');
+  isLoadingText = input('Loading...');
+  noSuggestionsText = input('No suggestions found');
+  provideSuggestions = output<string>();
+  suggestionSelected = output<any>();
+  submitted = output<string>();
+
   constructor() {
-    this.showNoSuggestions$ = this.suggestions$
-      .pipe(map(suggestions => suggestions.length === 0));
+    effect(() => {
+      const suggestions = this.suggestions();
+      if (suggestions) {
+        this.isLoading.set(false);
+      }
+    });
   }
 
   onProvideSuggestions(value: string) {
-    this.searchtermChange.emit(value);
+    this.searchterm.set(value);
     if (value === '') {
-      this.isOpen = false;
-      this.suggestions$.next([]);
+      this.isOpen.set(false);
     } else {
-      this.isLoading$.next(true);
-      this.isOpen = true;
+      this.isLoading.set(true);
+      this.isOpen.set(true);
       this.provideSuggestions.emit(value);
     }
   }
 
-  @Input() public set suggestions(value: any[]) {
-    this.isLoading$.next(false);
-    this.suggestions$.next(value);
-  }
   suggestionClicked(suggestion: any) {
-    this.searchterm = suggestion.text;
-    this.searchtermChange.emit(this.searchterm);
-
-    this.isOpen = false;
+    this.searchterm.set(suggestion.text);
+    this.isOpen.set(false);
     this.suggestionSelected.emit(suggestion);
   }
 
   onSubmit() {
-    this.isOpen = false;
-    this.submitted.emit(this.searchterm);
+    this.isOpen.set(false);
+    this.submitted.emit(this.searchterm());
   }
 
   public focus() {
     this.textbox.nativeElement.focus();
   }
-
 }

@@ -1,11 +1,9 @@
 /// <reference types="../types" />
 
-import { Component, ElementRef, EventEmitter, Input, Optional, Output, TemplateRef, ViewChild } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, input, model, output, signal, TemplateRef, ViewChild } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 import { HasId } from '@mintplayer/ng-bootstrap/has-id';
-import { BehaviorSubject, debounceTime } from 'rxjs';
 import { BsSuggestionTemplateContext } from '../directives';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
@@ -14,95 +12,87 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
   templateUrl: './searchbox.component.html',
   styleUrls: ['./searchbox.component.scss'],
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsSearchboxComponent<T extends HasId<U>, U> {
-  constructor(@Optional() bsForm: BsFormComponent, sanitizer: DomSanitizer) {
-    if (!bsForm) {
-      throw '<bs-searchbox> must be inside a <bs-form>';
-    }
 
-    this.searchterm$.pipe(debounceTime(200), takeUntilDestroyed()).subscribe((searchterm) => {
-      if (searchterm === '') {
-        this.suggestions = [];
-      } else {
-        this.isBusy$.next(true);
-        this.provideSuggestions.emit(searchterm);
-      }
-    });
-    
-    import('bootstrap-icons/icons/caret-up-fill.svg').then((icon) => {
-      this.caretUpFill = sanitizer.bypassSecurityTrustHtml(icon.default);
-    });
-    import('bootstrap-icons/icons/caret-down-fill.svg').then((icon) => {
-      this.caretDownFill = sanitizer.bypassSecurityTrustHtml(icon.default);
-    });
-  }
+  private bsForm = inject(BsFormComponent, { optional: true });
+  private sanitizer = inject(DomSanitizer);
 
   caretUpFill?: SafeHtml;
   caretDownFill?: SafeHtml;
   colors = Color;
-  isBusy$ = new BehaviorSubject<boolean>(false);
+  isBusy = signal<boolean>(false);
   @ViewChild('textbox') textbox!: ElementRef<HTMLInputElement>;
-  
-  //#region isOpen
-  private _isOpen = false;
-  public get isOpen() {
-    return this._isOpen;
-  }
-  @Input() public set isOpen(value: boolean) {
-    const changed = (this._isOpen !== value);
-    this._isOpen = value;
-    if (changed && value) {
-      setTimeout(() => this.textbox.nativeElement.setSelectionRange(0, -1), 20);
-    }
-  }
-  //#endregion
 
-  //#region suggestions
-  private _suggestions: T[] = [];
-  public get suggestions() {
-    return this._suggestions;
-  }
-  @Input() public set suggestions(value: T[]) {
-    this._suggestions = value;
-    this.isBusy$.next(false);
-  }
-  //#endregion
+  isOpen = model(false);
+  selectedItem = model<T | undefined>(undefined);
+  searchterm = model('');
 
-  //#region selectedItem
-  private _selectedItem?: T;
-  public get selectedItem() {
-    return this._selectedItem;
+  // Use a writable signal so the directive can set it programmatically
+  private _suggestions = signal<T[]>([]);
+  get suggestions(): T[] {
+    return this._suggestions();
   }
-  @Input() public set selectedItem(value: T | undefined) {
-    this._selectedItem = value;
-    this.selectedItemChange.emit(value);
-  };
-  @Output() selectedItemChange = new EventEmitter<T | undefined>();
-  //#endregion
-
-  //#region searchterm
-  searchterm$ = new BehaviorSubject<string>('');
-  public get searchterm() {
-    return this.searchterm$.value;
+  set suggestions(value: T[]) {
+    this._suggestions.set(value);
   }
-  @Input() public set searchterm(value: string) {
-    this.searchterm$.next(value);
-  }
-  //#endregion
 
   suggestionTemplate?: TemplateRef<BsSuggestionTemplateContext<T, U>>;
   enterSearchtermTemplate?: TemplateRef<T>;
   noResultsTemplate?: TemplateRef<T>;
-  @Output() provideSuggestions = new EventEmitter<string>();
+  provideSuggestions = output<string>();
+
+  private debouncedSearchterm = signal('');
+  private debounceTimeout: any;
+
+  constructor() {
+    if (!this.bsForm) {
+      throw '<bs-searchbox> must be inside a <bs-form>';
+    }
+
+    effect(() => {
+      const searchterm = this.searchterm();
+      clearTimeout(this.debounceTimeout);
+      this.debounceTimeout = setTimeout(() => {
+        if (searchterm === '') {
+          // clear suggestions - will be handled by the template
+        } else {
+          this.isBusy.set(true);
+          this.provideSuggestions.emit(searchterm);
+        }
+      }, 200);
+    });
+
+    effect(() => {
+      const suggestions = this._suggestions();
+      if (suggestions) {
+        this.isBusy.set(false);
+      }
+    });
+
+    effect(() => {
+      const isOpen = this.isOpen();
+      if (isOpen) {
+        setTimeout(() => this.textbox?.nativeElement?.setSelectionRange(0, -1), 20);
+      }
+    });
+
+    import('bootstrap-icons/icons/caret-up-fill.svg').then((icon) => {
+      this.caretUpFill = this.sanitizer.bypassSecurityTrustHtml(icon.default);
+    });
+    import('bootstrap-icons/icons/caret-down-fill.svg').then((icon) => {
+      this.caretDownFill = this.sanitizer.bypassSecurityTrustHtml(icon.default);
+    });
+  }
 
   onSearchtermChange(searchterm: string) {
-    this.searchterm$.next(searchterm);
+    this.searchterm.set(searchterm);
   }
 
   onSuggestionClicked(suggestion: T) {
-    this.selectedItem = suggestion;
-    this.isOpen = false;
-    this.searchterm = '';
+    this.selectedItem.set(suggestion);
+    this.isOpen.set(false);
+    this.searchterm.set('');
   }
 }
