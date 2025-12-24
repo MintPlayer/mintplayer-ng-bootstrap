@@ -14,7 +14,7 @@
     </thead>
     <tbody>
         @if (!!data && !!rowTemplate) {
-            @for (item of data!.data; track item) {
+            @for (item of data!.data; track $index) {
                 <ng-container *ngTemplateOutlet="rowTemplate; context: { $implicit: item }"></ng-container>
             }
         }
@@ -26,10 +26,10 @@
                     <div bsRow>
                         <div [md]="12">
                             <bs-pagination class="float-start" [pageNumbers]="settings().perPage.values"
-                                [(selectedPageNumber)]="settings().perPage.selected" (selectedPageNumberChange)="settingsChange.emit(settings())"
+                                [(selectedPageNumber)]="settings().perPage.selected" (selectedPageNumberChange)="emitSettingsChange()"
                                 [showArrows]="false"></bs-pagination>
                             <bs-pagination class="float-end" [pageNumbers]="settings().page.values"
-                                [(selectedPageNumber)]="settings().page.selected" (selectedPageNumberChange)="settingsChange.emit(settings())"
+                                [(selectedPageNumber)]="settings().page.selected" (selectedPageNumberChange)="emitSettingsChange()"
                                 [showArrows]="true"></bs-pagination>
                         </div>
                     </div>

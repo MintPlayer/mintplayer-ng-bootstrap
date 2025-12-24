@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, ContentChildren, Input, input, model, output, signal, TemplateRef } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, ContentChildren, Input, input, model, signal, TemplateRef } from '@angular/core';
 import { PaginationResponse } from '@mintplayer/pagination';
 import { DatatableSettings } from '../datatable-settings';
 import { BsDatatableColumnDirective } from '../datatable-column/datatable-column.directive';
@@ -45,7 +45,6 @@ export class BsDatatableComponent<TData> {
   }
 
   rowTemplate?: TemplateRef<BsRowTemplateContext<TData>>;
-  settingsChange = output<DatatableSettings>();
 
   columnHeaderClicked(column: BsDatatableColumnDirective) {
     if (column.sortable) {
@@ -59,9 +58,15 @@ export class BsDatatableComponent<TData> {
         currentSettings.sortDirection = 'descending';
       }
       const newSettings = new DatatableSettings(currentSettings);
+      // model() automatically emits settingsChange when set() is called
       this.settings.set(newSettings);
-      this.settingsChange.emit(newSettings);
     }
+  }
+
+  // Helper method to trigger settings change (used by template for pagination)
+  emitSettingsChange() {
+    // Create a new settings object to trigger the model's change emission
+    this.settings.set(new DatatableSettings(this.settings()));
   }
 
 }
