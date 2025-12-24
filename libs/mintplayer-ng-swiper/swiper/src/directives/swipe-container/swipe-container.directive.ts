@@ -155,8 +155,6 @@ export class BsSwipeContainerDirective implements AfterViewInit {
     return result > 10 ? result : null;
   });
 
-  private previousOrientation: 'horizontal' | 'vertical' | undefined;
-
   constructor() {
     // Effect to update offsetLeft/offsetTopPx based on offsetPrimary and orientation
     effect(() => {
@@ -208,18 +206,6 @@ export class BsSwipeContainerDirective implements AfterViewInit {
     effect(() => {
       const imageIndex = this.imageIndex$();
       this.imageIndexChange.emit(imageIndex);
-    });
-
-    // Effect to reset offsets when orientation changes
-    effect(() => {
-      const orientation = this.orientation$();
-      if (this.previousOrientation !== undefined && this.previousOrientation !== orientation) {
-        this.offsetLeft = null;
-        this.offsetRight = null;
-        this.offsetTopPx = null;
-        this.offsetBottomPx = null;
-      }
-      this.previousOrientation = orientation;
     });
   }
 
