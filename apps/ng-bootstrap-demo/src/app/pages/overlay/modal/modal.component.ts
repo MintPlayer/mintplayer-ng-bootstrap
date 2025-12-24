@@ -25,7 +25,7 @@ export class ModalComponent {
   colors = Color;
   gitRepo: string;
   tagSuggestions = signal<Tag[]>([]);
-  selectedTags: Tag[] = [];
+  selectedTags = signal<Tag[]>([]);
 
   onProvideTagSuggestions(search: string) {
     this.tagService.suggestTags(search, true).then((tags) => {

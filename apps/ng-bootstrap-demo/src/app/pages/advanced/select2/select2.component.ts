@@ -23,7 +23,7 @@ export class Select2Component {
 
   artistSuggestions = signal<Artist[]>([]);
   tagSuggestions = signal<Tag[]>([]);
-  selectedTags: Tag[] = [];
+  selectedTags = signal<Tag[]>([]);
 
   onProvideArtistSuggestions(search: string) {
     this.subjectService.suggest(search, [ESubjectType.artist])
