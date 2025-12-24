@@ -1,8 +1,15 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MockComponent, MockModule, MockProvider } from 'ng-mocks';
+import { MockModule } from 'ng-mocks';
+import { computed, model } from '@angular/core';
 import { BsTreeviewItemComponent } from './treeview-item.component';
 import { BsTreeviewComponent } from '../treeview/treeview.component';
 import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
+
+class BsTreeviewComponentStub {
+  level = computed(() => 0);
+  indentation = computed(() => 0);
+  isExpanded = model<boolean>(true);
+}
 
 describe('BsTreeviewItemComponent', () => {
   let component: BsTreeviewItemComponent;
@@ -14,11 +21,10 @@ describe('BsTreeviewItemComponent', () => {
         MockModule(BsListGroupModule)
       ],
       declarations: [
-        MockComponent(BsTreeviewComponent),
         BsTreeviewItemComponent
       ],
       providers: [
-        MockProvider(BsTreeviewComponent)
+        { provide: BsTreeviewComponent, useClass: BsTreeviewComponentStub }
       ]
     }).compileComponents();
 

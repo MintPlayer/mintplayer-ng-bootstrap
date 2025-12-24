@@ -18,16 +18,16 @@ export class BsSliderComponent {
 
   value = model<number>(0.5);
   valueChange = output<number>();
-  private isPointerDown$ = signal<boolean>(false);
+  private isPointerDown = signal<boolean>(false);
 
-  thumbMarginLeft$ = computed(() => {
+  thumbMarginLeft = computed(() => {
     const value = this.value();
     const res = value * this.element.nativeElement.clientWidth - 12;
     return res;
   });
 
-  cursorClass$ = computed(() => {
-    return this.isPointerDown$() ? 'cursor-grabbing' : 'cursor-grab';
+  cursorClass = computed(() => {
+    return this.isPointerDown() ? 'cursor-grabbing' : 'cursor-grab';
   });
 
   constructor() {
@@ -39,13 +39,13 @@ export class BsSliderComponent {
 
   onPointerDown(ev: MouseEvent | TouchEvent) {
     ev.preventDefault();
-    this.zone.run(() => this.isPointerDown$.set(true));
+    this.zone.run(() => this.isPointerDown.set(true));
     this.updateColor(ev);
   }
 
   @HostListener('document:mousemove', ['$event'])
   onPointerMove(ev: MouseEvent | TouchEvent) {
-    if (this.isPointerDown$()) {
+    if (this.isPointerDown()) {
       ev.preventDefault();
       ev.stopPropagation();
       this.updateColor(ev);
@@ -54,7 +54,7 @@ export class BsSliderComponent {
 
   @HostListener('document:mouseup', ['$event'])
   onPointerUp(ev: MouseEvent | TouchEvent) {
-    this.isPointerDown$.set(false);
+    this.isPointerDown.set(false);
   }
 
   private updateColor(ev: MouseEvent | TouchEvent) {

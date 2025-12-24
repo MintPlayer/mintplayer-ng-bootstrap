@@ -1,12 +1,13 @@
 import { Component, computed, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Directive, forwardRef } from '@angular/core';
+import { NgFor } from '@angular/common';
 import { BsSwipeContainerDirective } from '../swipe-container/swipe-container.directive';
 import { BsSwipeDirective } from './swipe.directive';
 
 @Directive({
   selector: '[bsSwipeContainer]',
-  standalone: false,
+  standalone: true,
   providers: [
     { provide: BsSwipeContainerDirective, useExisting: forwardRef(() => BsSwipeContainerDirectiveStub) }
   ]
@@ -23,7 +24,8 @@ class BsSwipeContainerDirectiveStub {
 
 @Component({
   selector: 'swipe-test-component',
-  standalone: false,
+  standalone: true,
+  imports: [NgFor, BsSwipeContainerDirectiveStub, BsSwipeDirective],
   template: `
     <div bsSwipeContainer>
       <div *ngFor="let n of images" bsSwipe>Slide {{ n }}</div>
@@ -38,17 +40,7 @@ describe('BsSwipeDirective', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [],
-      declarations: [
-        // Unit to test
-        BsSwipeDirective,
-
-        // Mock dependencies
-        BsSwipeContainerDirectiveStub,
-
-        // Testbench
-        SwipeTestComponent
-      ]
+      imports: [SwipeTestComponent]
     })
     .compileComponents();
 

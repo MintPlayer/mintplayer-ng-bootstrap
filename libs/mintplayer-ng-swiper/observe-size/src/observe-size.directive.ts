@@ -17,19 +17,19 @@ export class BsObserveSizeDirective implements AfterViewInit, OnDestroy {
   constructor() {
     if (!isPlatformServer(this.platformId) && typeof ResizeObserver !== 'undefined') {
       this.observer = new ResizeObserver((entries) => {
-        this.zone.run(() => this.size$.set(entries[0].contentRect));
+        this.zone.run(() => this.size.set(entries[0].contentRect));
       });
     }
   }
 
-  size$ = signal<Size | undefined>(undefined);
-  width$ = computed(() => this.size$()?.width);
-  height$ = computed(() => this.size$()?.height);
+  size = signal<Size | undefined>(undefined);
+  width = computed(() => this.size()?.width);
+  height = computed(() => this.size()?.height);
 
   ngAfterViewInit() {
     const el: HTMLElement = this.element.nativeElement;
     this.observer?.observe(el);
-    this.size$.set({ width: el.clientWidth, height: el.clientHeight });
+    this.size.set({ width: el.clientWidth, height: el.clientHeight });
   }
 
   ngOnDestroy() {

@@ -62,7 +62,7 @@ export class BsSwipeContainerDirective implements AfterViewInit {
     const imageIndex = this.imageIndex$();
     const isViewInited = this.isViewInited$();
     const orientation = this.orientation$();
-    const containerSize = this.observeSize.size$();
+    const containerSize = this.observeSize.size();
     const maxSlideHeight = this.maxSlideHeight$();
 
     if (!isViewInited) {
@@ -133,8 +133,8 @@ export class BsSwipeContainerDirective implements AfterViewInit {
     if (!actualSwipes || actualSwipes.length === 0) {
       return [];
     }
-    // Reading each swipe's size$() creates reactive dependencies
-    return actualSwipes.map(swipe => swipe.observeSize.size$());
+    // Reading each swipe's size() creates reactive dependencies
+    return actualSwipes.map(swipe => swipe.observeSize.size());
   });
 
   maxSlideHeight$ = computed(() => {

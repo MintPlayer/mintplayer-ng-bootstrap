@@ -16,7 +16,7 @@ export class BsStickyFooterComponent implements AfterViewInit {
 
   ngAfterViewInit() {
     effect(() => {
-      const height = this.sizeObserver.height$();
+      const height = this.sizeObserver.height();
       if (height !== undefined) {
         this.parent.marginBottom = height;
       }

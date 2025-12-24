@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, HostListener, input, model, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, input, model } from '@angular/core';
 
 @Component({
   selector: 'bs-playlist-toggler',
@@ -9,25 +9,12 @@ import { ChangeDetectionStrategy, Component, effect, HostListener, input, model,
 })
 export class BsPlaylistTogglerComponent {
   state = model<boolean>(false);
-  stateChange = output<boolean>();
   toggleOnClick = input(true);
-
-  private previousState: boolean | undefined;
-
-  constructor() {
-    effect(() => {
-      const currentState = this.state();
-      if (currentState !== this.previousState) {
-        this.previousState = currentState;
-        this.stateChange.emit(currentState);
-      }
-    });
-  }
 
   @HostListener('click', ['$event'])
   toggleState(ev: MouseEvent) {
     if (this.toggleOnClick()) {
-      this.state.set(!this.state());
+      this.state.update(v => !v);
     }
   }
 }
