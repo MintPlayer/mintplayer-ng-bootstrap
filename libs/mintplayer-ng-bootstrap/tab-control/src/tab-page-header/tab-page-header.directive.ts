@@ -5,5 +5,5 @@ import { Directive, inject, TemplateRef } from '@angular/core';
   standalone: false,
 })
 export class BsTabPageHeaderDirective {
-  template = inject<TemplateRef<any>>(TemplateRef);
+  template = inject(TemplateRef);
 }

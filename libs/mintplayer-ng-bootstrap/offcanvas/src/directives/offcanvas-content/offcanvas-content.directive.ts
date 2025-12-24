@@ -8,7 +8,7 @@ import { BsOffcanvasHostComponent } from '../../components/offcanvas-host/offcan
 export class BsOffcanvasContentDirective {
   constructor() {
     const offcanvasHost = inject(BsOffcanvasHostComponent);
-    const template = inject<TemplateRef<any>>(TemplateRef);
+    const template = inject(TemplateRef);
     offcanvasHost.content = template;
   }
 }

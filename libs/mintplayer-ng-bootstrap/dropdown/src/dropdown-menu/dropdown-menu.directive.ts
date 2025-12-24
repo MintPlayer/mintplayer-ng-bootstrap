@@ -13,7 +13,7 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
 
   private dropdown = inject(forwardRef(() => BsDropdownDirective));
   private viewContainerRef = inject(ViewContainerRef);
-  private templateRef = inject<TemplateRef<any>>(TemplateRef);
+  private templateRef = inject(TemplateRef);
   private overlay = inject(Overlay);
   private destroy = inject(DestroyRef);
   private bsDevelopment = inject(BS_DEVELOPMENT, { optional: true });

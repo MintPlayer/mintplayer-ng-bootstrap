@@ -1,4 +1,4 @@
-import { Component, Inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Color, Position } from '@mintplayer/ng-bootstrap';
 import { BsAccordionModule } from '@mintplayer/ng-bootstrap/accordion';
@@ -10,6 +10,7 @@ import { BsDropdownMenuModule } from '@mintplayer/ng-bootstrap/dropdown-menu';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsOffcanvasModule } from '@mintplayer/ng-bootstrap/offcanvas';
 import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
+import { GIT_REPO } from '../../../providers/git-repo.provider';
 
 @Component({
   selector: 'demo-offcanvas',
@@ -19,17 +20,12 @@ import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
   imports: [RouterLink, BsGridModule, BsCloseComponent, BsDropdownModule, BsButtonTypeDirective, BsButtonGroupComponent, BsDropdownMenuModule, BsOffcanvasModule, BsAccordionModule, BsToggleButtonModule]
 })
 export class OffcanvasComponent {
-
-  constructor(@Inject('GIT_REPO') gitRepo: string) {
-    this.gitRepo = gitRepo;
-  }
+  gitRepo = inject(GIT_REPO);
 
   colors = Color;
   position = signal<Position>('start');
   offcanvasVisible = signal(false);
   sidebarVisible = signal(false);
-
-  gitRepo: string;
   showOffcanvas(position: Position) {
     this.position.set(position);
     this.offcanvasVisible.set(true);

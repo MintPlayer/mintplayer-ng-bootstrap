@@ -10,7 +10,7 @@ export class BsFileUploadTemplateDirective {
   private fileUploadComponent = inject(BsFileUploadComponent);
 
   constructor() {
-    const templateRef = inject<TemplateRef<any>>(TemplateRef);
+    const templateRef = inject(TemplateRef);
     this.fileUploadComponent.fileTemplate = templateRef;
   }
 

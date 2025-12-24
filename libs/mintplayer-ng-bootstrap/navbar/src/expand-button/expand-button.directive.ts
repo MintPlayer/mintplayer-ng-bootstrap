@@ -9,7 +9,7 @@ export class BsExpandButtonDirective {
 
   constructor() {
     const navbar = inject(BsNavbarComponent);
-    const templateRef = inject<TemplateRef<any>>(TemplateRef);
+    const templateRef = inject(TemplateRef);
     navbar.expandButtonTemplate = templateRef;
   }
   

@@ -8,6 +8,7 @@ import { BsSelect2Module } from '@mintplayer/ng-bootstrap/select2';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { FocusOnLoadDirective } from '@mintplayer/ng-focus-on-load';
 import { BsFontColorPipe } from '@mintplayer/ng-bootstrap/font-color';
+import { GIT_REPO } from '../../../providers/git-repo.provider';
 
 @Component({
   selector: 'demo-modal',
@@ -18,7 +19,7 @@ import { BsFontColorPipe } from '@mintplayer/ng-bootstrap/font-color';
 })
 export class ModalComponent {
   private tagService = inject(TagService);
-  gitRepo = inject<string>('GIT_REPO');
+  gitRepo = inject(GIT_REPO);
 
   isOpen = false;
   colors = Color;

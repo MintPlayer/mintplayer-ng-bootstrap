@@ -8,7 +8,7 @@ import { BsShellComponent } from '../shell/shell.component';
 export class BsShellSidebarDirective {
   constructor() {
     const shell = inject(BsShellComponent);
-    const template = inject<TemplateRef<any>>(TemplateRef);
+    const template = inject(TemplateRef);
     shell.sidebarTemplate = template;
   }
 }

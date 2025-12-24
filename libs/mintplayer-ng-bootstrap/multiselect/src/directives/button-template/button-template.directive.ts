@@ -8,7 +8,7 @@ import { BsMultiselectComponent } from '../../component/multiselect.component';
 export class BsButtonTemplateDirective<T> {
 
   constructor() {
-    const template = inject<TemplateRef<any>>(TemplateRef);
+    const template = inject(TemplateRef);
     const multiselect = inject<BsMultiselectComponent<T>>(BsMultiselectComponent);
     multiselect.buttonTemplate = template;
   }
