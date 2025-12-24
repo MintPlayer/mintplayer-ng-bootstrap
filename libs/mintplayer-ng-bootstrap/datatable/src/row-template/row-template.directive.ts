@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Directive, inject, Input, TemplateRef } from '@angular/core';
+import { Directive, inject, Input, TemplateRef } from '@angular/core';
 import { PaginationResponse } from '@mintplayer/pagination';
 import { BsDatatableComponent } from '../datatable/datatable.component';
 
@@ -8,7 +8,6 @@ import { BsDatatableComponent } from '../datatable/datatable.component';
 })
 export class BsRowTemplateDirective<TData> {
 
-  private cdr = inject(ChangeDetectorRef);
   private datatableComponent = inject<BsDatatableComponent<TData>>(BsDatatableComponent);
   private templateRef = inject<TemplateRef<BsRowTemplateContext<TData>>>(TemplateRef);
 
@@ -17,12 +16,7 @@ export class BsRowTemplateDirective<TData> {
   }
 
   @Input() set bsRowTemplateOf(value: PaginationResponse<TData> | undefined) {
-    // Defer the data update to avoid ExpressionChangedAfterItHasBeenCheckedError
-    // when data is loaded asynchronously after settings change
-    queueMicrotask(() => {
-      this.datatableComponent.data = value;
-      this.cdr.markForCheck();
-    });
+    this.datatableComponent.data = value;
   }
   
   public static ngTemplateContextGuard<TData>(
