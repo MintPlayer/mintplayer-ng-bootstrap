@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
@@ -13,14 +13,6 @@ import { BsCarouselModule } from '@mintplayer/ng-bootstrap/carousel';
   imports: [FormsModule, BsFormModule, BsGridModule, BsSelectModule, BsCarouselModule]
 })
 export class CarouselComponent {
-  mode: 'slide' | 'fade' = 'slide';
-  orientation: 'horizontal' | 'vertical' = 'horizontal';
-
-  onModeChange(value: any) {
-    this.mode = value;
-  }
-
-  onOrientationChange(value: any) {
-    this.orientation = value;
-  }
+  mode = signal<'slide' | 'fade'>('slide');
+  orientation = signal<'horizontal' | 'vertical'>('horizontal');
 }

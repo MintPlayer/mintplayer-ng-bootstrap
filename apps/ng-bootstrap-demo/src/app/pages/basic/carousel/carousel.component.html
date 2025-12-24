@@ -4,7 +4,7 @@
         <h2>Demo</h2>
         <div bsRow class="mb-3">
             <div [col]>
-                <bs-carousel [orientation]="orientation" [animation]="mode" [indicators]="true" class="mx-auto">
+                <bs-carousel [orientation]="orientation()" [animation]="mode()" [indicators]="true" class="mx-auto">
                     <img *bsCarouselImage src="/assets/resized/deer.png">
                     <img *bsCarouselImage src="/assets/resized/duck.png">
                     <img *bsCarouselImage src="/assets/resized/leopard.png">
@@ -19,7 +19,7 @@
                 Carousel mode
             </span>
             <div [col]>
-                <bs-select [ngModel]="mode" (ngModelChange)="onModeChange($event)" class="d-inline-block">
+                <bs-select [(ngModel)]="mode" class="d-inline-block">
                     <option value="slide">Slide</option>
                     <option value="fade">Fade</option>
                 </bs-select>
@@ -30,7 +30,7 @@
                 Orientation
             </span>
             <div [col]>
-                <bs-select [ngModel]="orientation" (ngModelChange)="onOrientationChange($event)" class="d-inline-block">
+                <bs-select [(ngModel)]="orientation" class="d-inline-block">
                     <option value="horizontal">Horizontal</option>
                     <option value="vertical">Vertical</option>
                 </bs-select>

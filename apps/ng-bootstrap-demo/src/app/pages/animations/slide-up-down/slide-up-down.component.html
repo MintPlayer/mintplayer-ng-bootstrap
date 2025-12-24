@@ -2,16 +2,16 @@
 <bs-grid>
     <div bsRow>
         <div [md]="6">
-            <button (click)="slideUpDownState = !slideUpDownState" [color]="colors.primary" class="d-block w-100 rounded-0">Toggle</button>
-            <div [@slideUpDown]="slideUpDownState" class="overflow-hidden">
+            <button (click)="slideUpDownState.set(!slideUpDownState())" [color]="colors.primary" class="d-block w-100 rounded-0">Toggle</button>
+            <div [@slideUpDown]="slideUpDownState()" class="overflow-hidden">
                 @for (num of numbers; track num) {
                     <button [color]="colors.primary" class="d-block w-100 rounded-0">Button {{ num }}</button>
                 }
             </div>
         </div>
         <div [md]="6">
-            <button (click)="slideUpDownNgifState = !slideUpDownNgifState" [color]="colors.secondary" class="d-block w-100 rounded-0">Toggle using <code class="text-light">*ngIf</code></button>
-            @if (slideUpDownNgifState) {
+            <button (click)="slideUpDownNgifState.set(!slideUpDownNgifState())" [color]="colors.secondary" class="d-block w-100 rounded-0">Toggle using <code class="text-light">*ngIf</code></button>
+            @if (slideUpDownNgifState()) {
                 <div [@slideUpDownNgif] class="overflow-hidden">
                     @for (num of numbers; track num) {
                         <button [color]="colors.secondary" class="d-block w-100 rounded-0">Button {{ num }}</button>

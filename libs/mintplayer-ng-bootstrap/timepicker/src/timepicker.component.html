@@ -19,7 +19,7 @@
     <bs-has-overlay></bs-has-overlay>
     <bs-dropdown-menu class="overflow-auto" *bsDropdownMenu>
         @for (timestamp of presetTimestamps; track timestamp) {
-            <bs-dropdown-item [isSelected]="timesEqual(selectedTime, timestamp)" (click)="setTime(timestamp)">
+            <bs-dropdown-item [isSelected]="timesEqual(selectedTime(), timestamp)" (click)="setTime(timestamp)">
                 {{ timestamp | date: 'HH:mm' }}
             </bs-dropdown-item>
         }

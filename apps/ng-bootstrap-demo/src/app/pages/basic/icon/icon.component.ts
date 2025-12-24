@@ -1,6 +1,6 @@
 /// <reference types="../../../../types" />
 
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
@@ -18,12 +18,12 @@ import { dedent } from 'ts-dedent';
 export class IconComponent {
   constructor(private sanitizer: DomSanitizer) {
     import('bootstrap-icons/icons/bootstrap.svg').then((icon) => {
-      this.icon = sanitizer.bypassSecurityTrustHtml(icon.default);
+      this.icon.set(sanitizer.bypassSecurityTrustHtml(icon.default));
     });
   }
 
   colors = Color;
-  icon?: SafeHtml;
+  icon = signal<SafeHtml | undefined>(undefined);
 
   componentCode = dedent`
     constructor(private sanitizer: DomSanitizer) {

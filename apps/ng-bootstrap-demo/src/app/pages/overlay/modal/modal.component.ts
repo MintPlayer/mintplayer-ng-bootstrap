@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, signal } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { Tag } from '../../../entities/tag';
 import { TagService } from '../../../services/tag/tag.service';
@@ -24,13 +24,13 @@ export class ModalComponent {
   isOpen = false;
   colors = Color;
   gitRepo: string;
-  tagSuggestions: Tag[] = [];
+  tagSuggestions = signal<Tag[]>([]);
   selectedTags: Tag[] = [];
 
   onProvideTagSuggestions(search: string) {
     this.tagService.suggestTags(search, true).then((tags) => {
       if (tags) {
-        this.tagSuggestions = tags;
+        this.tagSuggestions.set(tags);
       }
     });
   }

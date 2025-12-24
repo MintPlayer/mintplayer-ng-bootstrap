@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsFileUploadModule, FileUpload } from '@mintplayer/ng-bootstrap/file-upload';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
@@ -12,8 +12,8 @@ import { BsProgressBarModule } from '@mintplayer/ng-bootstrap/progress-bar';
   imports: [BsGridModule, BsFileUploadModule, BsProgressBarModule],
 })
 export class FileUploadComponent {
-  
-  files: FileUpload[] = [];
+
+  files = signal<FileUpload[]>([]);
   colors = Color;
 
   logFilesForUpload(files: FileUpload[]) {
@@ -33,6 +33,6 @@ export class FileUploadComponent {
   }
 
   removeFile(file: FileUpload) {
-    this.files.splice(this.files.indexOf(file), 1);
+    this.files.update(list => list.filter(f => f !== file));
   }
 }

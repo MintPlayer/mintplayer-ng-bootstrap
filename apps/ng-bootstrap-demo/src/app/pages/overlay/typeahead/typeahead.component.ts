@@ -1,5 +1,5 @@
 import { AsyncPipe, JsonPipe } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { BsTypeaheadComponent } from '@mintplayer/ng-bootstrap/typeahead';
 import { BehaviorSubject } from 'rxjs';
 
@@ -15,7 +15,7 @@ export class TypeaheadComponent {
 
   constructor(private jsonPipe: JsonPipe) { }
 
-  searchterm = '';
+  searchterm = signal('');
   suggestions$ = new BehaviorSubject<any[]>([]);
   items: any[] = [
     { id: 1, firstName: 'Michael', lastName: 'Jackson', text: 'Michael Jackson' },

@@ -3,7 +3,7 @@
 <bs-grid>
     <div bsRow>
         <div [md]="6">
-            <bs-color-picker class="d-inline-block mb-5" [(ngModel)]="selectedColor" [(alpha)]="selectedAlpha" [size]="200" [allowAlpha]="allowAlpha"></bs-color-picker>
+            <bs-color-picker class="d-inline-block mb-5" [(ngModel)]="selectedColor" [(alpha)]="selectedAlpha" [size]="200" [allowAlpha]="allowAlpha()"></bs-color-picker>
         </div>
         <div [md]="6">
             <div bsRow class="mb-3">
@@ -25,12 +25,12 @@
                     <span class="me-2 align-middle">Native color picker:</span>
                     <input type="color" [(ngModel)]="selectedColor" class="align-middle">
                 </div>
-                @if (allowAlpha) {
+                @if (allowAlpha()) {
                     <div [col]>
                         <span class="me-2 align-middle">
                             <span>Alpha:</span>
                             &nbsp;
-                            <span>{{ selectedAlpha | number: '1.2' }}</span>
+                            <span>{{ selectedAlpha() | number: '1.2' }}</span>
                         </span>
                         <bs-range [(ngModel)]="selectedAlpha" [min]="0" [max]="1" [step]="0.01"></bs-range>
                     </div>

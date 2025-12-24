@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
@@ -20,13 +20,13 @@ import { DecimalPipe } from '@angular/common';
 export class ColorPickerComponent {
 
   colors = Color;
-  allowAlpha = false;
-  selectedColor = '#0000FF';
-  selectedAlpha = 1;
+  allowAlpha = signal(false);
+  selectedColor = signal('#0000FF');
+  selectedAlpha = signal(1);
 
   setColor(color: string) {
-    this.selectedColor = color;
-    this.selectedAlpha = 1;
+    this.selectedColor.set(color);
+    this.selectedAlpha.set(1);
   }
 
 }

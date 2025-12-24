@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { SlideUpDownAnimation, SlideUpDownNgifAnimation } from '@mintplayer/ng-animations';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
@@ -16,6 +16,6 @@ export class SlideUpDownComponent {
   colors = Color;
   numbers = [...Array.from(Array(7)).keys()];
 
-  slideUpDownState = false;
-  slideUpDownNgifState = false;
+  slideUpDownState = signal(false);
+  slideUpDownNgifState = signal(false);
 }

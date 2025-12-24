@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { BsNavbarTogglerComponent } from '@mintplayer/ng-bootstrap/navbar-toggler';
 import { BsPlaylistTogglerComponent } from '@mintplayer/ng-bootstrap/playlist-toggler';
 
@@ -10,5 +10,5 @@ import { BsPlaylistTogglerComponent } from '@mintplayer/ng-bootstrap/playlist-to
   imports: [BsNavbarTogglerComponent, BsPlaylistTogglerComponent]
 })
 export class ToggleButtonsComponent {
-  state = false;
+  state = signal(false);
 }

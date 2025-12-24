@@ -1,6 +1,7 @@
 <div class="dock-demo">
   <bs-dock-manager
-    [(layout)]="layout"
+    [layout]="layout()"
+    (layoutChange)="$event && layout.set($event)"
     class="dock-demo__surface"
     (layoutSnapshotChange)="onLayoutSnapshot($event)"
     >
@@ -47,9 +48,9 @@
     <div class="dock-demo__snapshots">
       <div class="dock-demo__snapshot">
         <h4 class="dock-demo__snapshot-title">Live layout</h4>
-        <pre class="dock-demo__snapshot-json">{{ liveLayout | json }}</pre>
+        <pre class="dock-demo__snapshot-json">{{ liveLayout() | json }}</pre>
       </div>
-      @if (savedLayout; as snapshot) {
+      @if (savedLayout(); as snapshot) {
         <div class="dock-demo__snapshot">
           <h4 class="dock-demo__snapshot-title">Captured snapshot</h4>
           <pre class="dock-demo__snapshot-json">{{ snapshot | json }}</pre>

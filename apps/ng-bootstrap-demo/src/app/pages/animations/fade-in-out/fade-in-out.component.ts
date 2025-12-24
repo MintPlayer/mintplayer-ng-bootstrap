@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Color } from '@mintplayer/ng-bootstrap';
@@ -15,5 +15,5 @@ import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
 })
 export class FadeInOutComponent {
   colors = Color;
-  fadeInOutState = false;
+  fadeInOutState = signal(false);
 }

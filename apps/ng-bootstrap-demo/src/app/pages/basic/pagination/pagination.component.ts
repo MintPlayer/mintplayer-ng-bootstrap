@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { BsPaginationComponent } from '@mintplayer/ng-bootstrap/pagination';
 
 @Component({
@@ -10,16 +10,15 @@ import { BsPaginationComponent } from '@mintplayer/ng-bootstrap/pagination';
 })
 export class PaginationComponent {
 
-  example1PageNumbers: number[] = [10, 20, 50];
-  example1SelectedPageNumber = 20;
-  
-  example2PageNumbers: number[] = [10, 20, 50];
-  example2SelectedPageNumber = 20;
+  example1PageNumbers = signal<number[]>([10, 20, 50]);
+  example1_2SelectedPageNumber = signal(20);
 
-  example3PageNumbers: number[] = [...Array(10).keys()].map((p) => p + 1);
-  example3SelectedPageNumber = 5;
+  example2PageNumbers = signal<number[]>([10, 20, 50]);
 
-  example4PageNumbers: number[] = [...Array(30).keys()].map((p) => p + 1);
-  example4SelectedPageNumber = 15;
+  example3PageNumbers = signal<number[]>([...Array(10).keys()].map((p) => p + 1));
+  example3SelectedPageNumber = signal(5);
+
+  example4PageNumbers = signal<number[]>([...Array(30).keys()].map((p) => p + 1));
+  example4SelectedPageNumber = signal(15);
 
 }

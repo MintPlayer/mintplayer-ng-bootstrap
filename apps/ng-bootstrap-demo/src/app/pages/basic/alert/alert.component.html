@@ -12,11 +12,11 @@
     Cras justo odio
     <bs-alert-close></bs-alert-close>
 </bs-alert>
-<button type="button" [color]="colors.primary" (click)="alert1Visible = alert2Visible = alert3Visible = true">
+<button type="button" [color]="colors.primary" (click)="alert1Visible.set(true); alert2Visible.set(true); alert3Visible.set(true)">
     Show all alerts again
 </button>
 <h2 class="mt-4">Alerts list</h2>
-@for (alertItem of alertsList; track alertItem.id) {
+@for (alertItem of alertsList(); track alertItem.id) {
     <bs-alert [type]="colors.danger" (afterOpenedOrClosed)="alertVisibleChange(alertItem, $event)">
         {{ alertItem.text }}
         <bs-alert-close></bs-alert-close>
@@ -29,7 +29,7 @@
     </bs-input-group>
 </bs-form>
 <ul class="mt-3">
-    @for (alertItem of alertsList; track alertItem.id) {
+    @for (alertItem of alertsList(); track alertItem.id) {
         <li>{{ alertItem.text }}</li>
     }
 </ul>

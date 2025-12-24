@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
@@ -12,5 +12,5 @@ import { QrCodeComponent as LibQrCodeComponent } from '@mintplayer/ng-qr-code';
   imports: [FormsModule, BsFormModule, BsGridModule, LibQrCodeComponent]
 })
 export class QrCodeComponent {
-  text = 'QR code viewer';
+  text = signal('QR code viewer');
 }

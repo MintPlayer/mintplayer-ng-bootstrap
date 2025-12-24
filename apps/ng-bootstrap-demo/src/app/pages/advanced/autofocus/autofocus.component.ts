@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { BsSelect2Module } from '@mintplayer/ng-bootstrap/select2';
 import { BsFontColorPipe } from '@mintplayer/ng-bootstrap/font-color';
 import { FocusOnLoadDirective } from '@mintplayer/ng-focus-on-load';
@@ -22,19 +22,19 @@ export class AutofocusComponent {
   tagService = inject(TagService);
   destroy = inject(DestroyRef);
 
-  artistSuggestions: Artist[] = [];
-  tagSuggestions: Tag[] = [];
+  artistSuggestions = signal<Artist[]>([]);
+  tagSuggestions = signal<Tag[]>([]);
   selectedTags: Tag[] = [];
 
   onProvideArtistSuggestions(search: string) {
     this.subjectService.suggest(search, [ESubjectType.artist])
       .pipe(takeUntilDestroyed(this.destroy))
-      .subscribe(artists => this.artistSuggestions = <Artist[]>artists.map(s => <Artist>s));
+      .subscribe(artists => this.artistSuggestions.set(<Artist[]>artists.map(s => <Artist>s)));
   }
   onProvideTagSuggestions(search: string) {
     this.tagService.suggestTags(search, true).then((tags) => {
       if (tags) {
-        this.tagSuggestions = tags;
+        this.tagSuggestions.set(tags);
       }
     });
   }

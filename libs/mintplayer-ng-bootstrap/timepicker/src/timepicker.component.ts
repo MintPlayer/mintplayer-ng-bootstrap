@@ -1,7 +1,7 @@
 /// <reference types="./types" />
 
 import { DatePipe, DecimalPipe } from '@angular/common';
-import { ChangeDetectorRef, Component, EventEmitter, Input, NgZone, Output, Renderer2, signal } from '@angular/core';
+import { Component, model, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Color } from '@mintplayer/ng-bootstrap';
@@ -22,7 +22,7 @@ import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
 })
 export class BsTimepickerComponent {
 
-  constructor(private ref: ChangeDetectorRef, private zone: NgZone, private renderer: Renderer2, private sanitizer: DomSanitizer) {
+  constructor(sanitizer: DomSanitizer) {
     const today = new Date();
     today.setHours(0); today.setMinutes(0); today.setSeconds(0);
 
@@ -34,7 +34,7 @@ export class BsTimepickerComponent {
         return clone;
       });
 
-      
+
     import('bootstrap-icons/icons/clock.svg').then((icon) => {
       this.clock.set(sanitizer.bypassSecurityTrustHtml(icon.default));
     });
@@ -72,50 +72,31 @@ export class BsTimepickerComponent {
   }
 
   setTime(time: Date) {
-    this.selectedTime = time;
+    this.selectedTime.set(time);
     this.isOpen = false;
   }
 
-  //#region SelectedTime
-  private _selectedTime = new Date();
-  @Output() public selectedTimeChange = new EventEmitter<Date>();
-  public get selectedTime() {
-    return this._selectedTime;
+  selectedTime = model<Date>(new Date());
+
+  //#region Hours
+  get hours() {
+    return this.selectedTime().getHours();
   }
-  @Input() public set selectedTime(value: Date) {
-    // this.hours = value.getHours();
-    // this.minutes = value.getMinutes();
-    this._selectedTime = value;
-    this.selectedTimeChange.emit(this._selectedTime);
+  set hours(value: number) {
+    const clone = new Date(this.selectedTime());
+    clone.setHours(value);
+    this.selectedTime.set(clone);
   }
   //#endregion
 
-  //#region Hours
-  // private _hours = 0;
-  get hours() {
-    // return this._hours;
-    return this.selectedTime.getHours();
-  }
-  set hours(value: number) {
-    // this._hours = value;
-    const clone = new Date(this.selectedTime);
-    clone.setHours(value);
-    this.selectedTime = clone;
-  }
-  // hours = 0;
-  //#endregion
   //#region Minutes
-  // private _minutes = 0;
   get minutes() {
-    // return this._minutes;
-    return this.selectedTime.getMinutes();
+    return this.selectedTime().getMinutes();
   }
   set minutes(value: number) {
-    // this._minutes = value;
-    // this.selectedTime.setMinutes(value);
-    const clone = new Date(this.selectedTime);
+    const clone = new Date(this.selectedTime());
     clone.setMinutes(value);
-    this.selectedTime = clone;
+    this.selectedTime.set(clone);
   }
   //#endregion
 

@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { Artist } from '../../../entities/artist';
 import { SubjectService } from '../../../services/subject/subject.service';
 import { ESubjectType } from '../../../enums/subject-type';
@@ -21,16 +21,13 @@ export class SearchboxComponent {
   subjectService = inject(SubjectService);
   destroy = inject(DestroyRef);
 
-  suggestions: Artist[] = [
-    // { id: 1, name: 'Dario G', yearStarted: 1997, yearQuit: null, media: [], tags: [], text: 'Dario G' },
-    // { id: 2, name: 'Oasis', yearStarted: 1980, yearQuit: null, media: [], tags: [], text: 'Oasis' },
-  ];
-  selectedArtist?: Artist;
+  suggestions = signal<Artist[]>([]);
+  selectedArtist = signal<Artist | undefined>(undefined);
 
   onProvideSuggestions(searchterm: string) {
     this.subjectService.suggest(searchterm, [ESubjectType.artist], false)
       .pipe(delay(2000), takeUntilDestroyed(this.destroy))
-      .subscribe(artists => this.suggestions = artists.map(s => <Artist>s));
+      .subscribe(artists => this.suggestions.set(artists.map(s => <Artist>s)));
   }
 
 }

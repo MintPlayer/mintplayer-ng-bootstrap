@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
@@ -16,15 +16,15 @@ import { BsSelectModule } from '@mintplayer/ng-bootstrap/select';
   imports: [FormsModule, BsCardModule, BsFormModule, BsInputGroupComponent, BsButtonTypeDirective, BsSelectModule, BsSchedulerModule]
 })
 export class SchedulerComponent {
-  weekOptions: WeekOptions = { unitHeight: 30 };
-  timelineOptions: TimelineOptions = { unitWidth: 50 };
+  weekOptions = signal<WeekOptions>({ unitHeight: 30 });
+  timelineOptions = signal<TimelineOptions>({ unitWidth: 50 });
   colors = Color;
   modes = ESchedulerMode;
-  mode = ESchedulerMode.week;
-  resources: (Resource | ResourceGroup)[] = [];
+  mode = signal(ESchedulerMode.week);
+  resources = signal<(Resource | ResourceGroup)[]>([]);
 
   fillData() {
-    this.resources = [
+    this.resources.set([
       <ResourceGroup>{
         description: 'Machines',
         children: [
@@ -158,6 +158,6 @@ export class SchedulerComponent {
             }]
           }
         ]
-    }];
+    }]);
   }
 }
