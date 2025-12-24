@@ -40,8 +40,7 @@
             <div class="carousel slide mx-auto" [class.carousel-vertical]="orientation() === 'vertical'"
                 [style.height.px]="swipeContainer?.currentSlideHeight$()">
                 @if (indicators()) {
-                    <div class="carousel-indicators" [class.carousel-indicators-vertical]="orientation() === 'vertical'"
-                        [style.height.px]="orientation() === 'vertical' ? swipeContainer?.maxSlideHeight$() : null">
+                    <div class="carousel-indicators" [class.carousel-indicators-vertical]="orientation() === 'vertical'">
                         @for (image of images(); track image.id; let i = $index) {
                             <button type="button" (click)="swipeContainer?.goto(i)"
                                 [class.active]="swipeContainer?.imageIndex$() === i" data-bs-target
