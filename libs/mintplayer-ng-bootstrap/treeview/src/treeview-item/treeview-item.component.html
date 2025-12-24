@@ -1,6 +1,6 @@
 <bs-list-group-item (click)="onClick($event)" class="d-block cursor-pointer list-group-item-action">
     <span [style.padding-left.px]="parent.indentation()">
-        <span [innerHTML]="chevronRight" [class.open]="childTree?.isExpanded()" [class.invisible]="!childTree" class="d-inline-block me-2"></span>
+        <span [innerHTML]="chevronRight()" [class.open]="childTree?.isExpanded()" [class.invisible]="!childTree" class="d-inline-block me-2"></span>
         <ng-content></ng-content>
     </span>
 </bs-list-group-item>

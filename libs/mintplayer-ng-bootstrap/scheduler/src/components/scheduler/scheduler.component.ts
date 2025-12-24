@@ -1,6 +1,6 @@
 /// <reference types="../../types" />
 
-import { Component, DestroyRef, ElementRef, EventEmitter, HostListener, Input, Output, QueryList, ViewChildren } from '@angular/core';
+import { Component, DestroyRef, ElementRef, EventEmitter, HostListener, Input, Output, QueryList, signal, ViewChildren } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, combineLatest, filter, map, Observable, take } from 'rxjs';
 import { BsCalendarMonthService } from '@mintplayer/ng-bootstrap/calendar-month';
@@ -178,15 +178,15 @@ export class BsSchedulerComponent {
     //   .pipe(filter(([mode, scale]) => mode === ESchedulerMode.timeline))
 
     import('bootstrap-icons/icons/chevron-left.svg').then((icon) => {
-      this.chevronLeft = sanitizer.bypassSecurityTrustHtml(icon.default);
+      this.chevronLeft.set(sanitizer.bypassSecurityTrustHtml(icon.default));
     });
     import('bootstrap-icons/icons/chevron-right.svg').then((icon) => {
-      this.chevronRight = sanitizer.bypassSecurityTrustHtml(icon.default);
+      this.chevronRight.set(sanitizer.bypassSecurityTrustHtml(icon.default));
     });
   }
 
-  chevronLeft?: SafeHtml;
-  chevronRight?: SafeHtml;
+  chevronLeft = signal<SafeHtml | undefined>(undefined);
+  chevronRight = signal<SafeHtml | undefined>(undefined);
   resources$ = new BehaviorSubject<(Resource | ResourceGroup)[]>([]);
   events$: Observable<SchedulerEvent[]>;
   eventParts$: Observable<SchedulerEventWithParts[]>;

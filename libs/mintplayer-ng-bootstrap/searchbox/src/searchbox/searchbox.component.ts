@@ -19,8 +19,8 @@ export class BsSearchboxComponent<T extends HasId<U>, U> {
   private bsForm = inject(BsFormComponent, { optional: true });
   private sanitizer = inject(DomSanitizer);
 
-  caretUpFill?: SafeHtml;
-  caretDownFill?: SafeHtml;
+  caretUpFill = signal<SafeHtml | undefined>(undefined);
+  caretDownFill = signal<SafeHtml | undefined>(undefined);
   colors = Color;
   isBusy = signal<boolean>(false);
   @ViewChild('textbox') textbox!: ElementRef<HTMLInputElement>;
@@ -79,10 +79,10 @@ export class BsSearchboxComponent<T extends HasId<U>, U> {
     });
 
     import('bootstrap-icons/icons/caret-up-fill.svg').then((icon) => {
-      this.caretUpFill = this.sanitizer.bypassSecurityTrustHtml(icon.default);
+      this.caretUpFill.set(this.sanitizer.bypassSecurityTrustHtml(icon.default));
     });
     import('bootstrap-icons/icons/caret-down-fill.svg').then((icon) => {
-      this.caretDownFill = this.sanitizer.bypassSecurityTrustHtml(icon.default);
+      this.caretDownFill.set(this.sanitizer.bypassSecurityTrustHtml(icon.default));
     });
   }
 

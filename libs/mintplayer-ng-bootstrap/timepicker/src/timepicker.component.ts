@@ -1,7 +1,7 @@
 /// <reference types="./types" />
 
 import { DatePipe, DecimalPipe } from '@angular/common';
-import { ChangeDetectorRef, Component, EventEmitter, Input, NgZone, Output, Renderer2 } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, NgZone, Output, Renderer2, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Color } from '@mintplayer/ng-bootstrap';
@@ -36,11 +36,11 @@ export class BsTimepickerComponent {
 
       
     import('bootstrap-icons/icons/clock.svg').then((icon) => {
-      this.clock = sanitizer.bypassSecurityTrustHtml(icon.default);
+      this.clock.set(sanitizer.bypassSecurityTrustHtml(icon.default));
     });
   }
 
-  clock?: SafeHtml;
+  clock = signal<SafeHtml | undefined>(undefined);
   colors = Color;
   isOpen = false;
   presetTimestamps: Date[] = [];

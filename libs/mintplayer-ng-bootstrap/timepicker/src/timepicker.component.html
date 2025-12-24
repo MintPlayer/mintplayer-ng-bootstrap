@@ -12,7 +12,7 @@
                 </div>
             </span>
             <button [color]="colors.secondary" (click)="isOpen = !isOpen">
-                <span [innerHTML]="clock"></span>
+                <span [innerHTML]="clock()"></span>
             </button>
         </bs-input-group>
     </bs-form>

@@ -1,6 +1,6 @@
 /// <reference types="../types" />
 
-import { ChangeDetectionStrategy, Component, ContentChild, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ContentChild, inject, signal } from '@angular/core';
 import { BsTreeviewComponent } from '../treeview/treeview.component';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
@@ -17,11 +17,11 @@ export class BsTreeviewItemComponent {
   private sanitizer = inject(DomSanitizer);
 
   @ContentChild(BsTreeviewComponent, { descendants: false }) childTree?: BsTreeviewComponent;
-  chevronRight?: SafeHtml;
+  chevronRight = signal<SafeHtml | undefined>(undefined);
 
   constructor() {
     import('bootstrap-icons/icons/chevron-right.svg').then((icon) => {
-      this.chevronRight = this.sanitizer.bypassSecurityTrustHtml(icon.default);
+      this.chevronRight.set(this.sanitizer.bypassSecurityTrustHtml(icon.default));
     });
   }
 

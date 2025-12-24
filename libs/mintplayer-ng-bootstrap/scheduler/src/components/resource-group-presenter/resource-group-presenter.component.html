@@ -9,9 +9,9 @@
                     <td class="p-2 cursor-pointer" [colSpan]="colspan + 1" (click)="toggleExpanded()">
                         <span class="p-2 align-middle position-sticky">
                             @if (isExpanded$ | async) {
-                                <span [innerHTML]="chevronDown" [style.padding-left.px]="level * 20"></span>
+                                <span [innerHTML]="chevronDown()" [style.padding-left.px]="level * 20"></span>
                             } @else {
-                                <span [innerHTML]="chevronRight" [style.padding-left.px]="level * 20"></span>
+                                <span [innerHTML]="chevronRight()" [style.padding-left.px]="level * 20"></span>
                             }
                             {{ data.resourceGroup.description }}
                         </span>

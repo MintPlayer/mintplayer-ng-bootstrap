@@ -2,7 +2,7 @@
     <tr>
         <td>
             <button class="btn btn-default" (click)="previousMonth()">
-                <span [innerHTML]="chevronLeft" class="fw-bolder"></span>
+                <span [innerHTML]="chevronLeft()" class="fw-bolder"></span>
             </button>
         </td>
         <td colspan="6" class="fw-bolder">
@@ -11,7 +11,7 @@
         </td>
         <td>
             <button class="btn btn-default border-bottom-0" (click)="nextMonth()">
-                <span [innerHTML]="chevronRight" class="fw-bolder"></span>
+                <span [innerHTML]="chevronRight()" class="fw-bolder"></span>
             </button>
         </td>
     </tr>

@@ -5,10 +5,10 @@
                 <div class="w-100 d-flex flex-row">
                     <div class="d-flex calendar-left justify-content-between">
                         <button class="btn btn-default flex-start" (click)="onPreviousWeekOrMonth()">
-                            <span [innerHTML]="chevronLeft" class="px-0"></span>
+                            <span [innerHTML]="chevronLeft()" class="px-0"></span>
                         </button>
                         <button class="btn btn-default flex-end" (click)="onNextWeekOrMonth()">
-                            <span [innerHTML]="chevronRight" class="px-0"></span>
+                            <span [innerHTML]="chevronRight()" class="px-0"></span>
                         </button>
                     </div>
                     @for (day of (shownDays$ | async); track day) {
@@ -90,11 +90,11 @@
         <div class="d-flex flex-column-100 overflow-y-auto mb-0 bg-white timeline">
             <div class="calendar-head d-flex">
                 <button class="btn flex-start" (click)="onPreviousWeekOrMonth()">
-                    <span [innerHTML]="chevronLeft" class="px-0"></span>
+                    <span [innerHTML]="chevronLeft()" class="px-0"></span>
                 </button>
                 <div class="flex-grow-1 h3 py-2 mb-0 text-center">{{ currentWeekOrMonth$ | async | date: 'MMMM yyyy' }}</div>
                 <button class="btn flex-start" (click)="onNextWeekOrMonth()">
-                    <span [innerHTML]="chevronRight" class="px-0"></span>
+                    <span [innerHTML]="chevronRight()" class="px-0"></span>
                 </button>
             </div>
             

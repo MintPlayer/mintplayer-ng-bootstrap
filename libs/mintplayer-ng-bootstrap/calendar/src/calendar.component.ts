@@ -1,6 +1,6 @@
 /// <reference types="./types" />
 
-import { ChangeDetectionStrategy, Component, computed, input, model } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, model, signal } from '@angular/core';
 import { BsCalendarMonthService, BsMonthNamePipe, BsWeekdayNamePipe, DateDayOfMonth, WeekDay } from '@mintplayer/ng-bootstrap/calendar-month';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { BsUcFirstPipe } from '@mintplayer/ng-bootstrap/uc-first';
@@ -16,15 +16,15 @@ import { BsUcFirstPipe } from '@mintplayer/ng-bootstrap/uc-first';
 export class BsCalendarComponent {
   constructor(private sanitizer: DomSanitizer, private calendarMonthService: BsCalendarMonthService) {
     import('bootstrap-icons/icons/chevron-left.svg').then((icon) => {
-      this.chevronLeft = sanitizer.bypassSecurityTrustHtml(icon.default);
+      this.chevronLeft.set(sanitizer.bypassSecurityTrustHtml(icon.default));
     });
     import('bootstrap-icons/icons/chevron-right.svg').then((icon) => {
-      this.chevronRight = sanitizer.bypassSecurityTrustHtml(icon.default);
+      this.chevronRight.set(sanitizer.bypassSecurityTrustHtml(icon.default));
     });
   }
 
-  chevronLeft?: SafeHtml;
-  chevronRight?: SafeHtml;
+  chevronLeft = signal<SafeHtml | undefined>(undefined);
+  chevronRight = signal<SafeHtml | undefined>(undefined);
 
   currentMonth = model<Date>(new Date());
   selectedDate = model<Date>(new Date());

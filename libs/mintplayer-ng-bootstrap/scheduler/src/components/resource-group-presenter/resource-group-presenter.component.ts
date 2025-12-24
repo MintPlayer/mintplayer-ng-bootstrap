@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, signal } from '@angular/core';
 import { BehaviorSubject, filter, map, Observable } from 'rxjs';
 import { Resource, ResourceGroup } from '../../interfaces';
 import { ResourceOrGroup } from '../../interfaces/resource-or-group';
@@ -40,15 +40,15 @@ export class ResourceGroupPresenterComponent {
       ));
 
     import('bootstrap-icons/icons/chevron-down.svg').then((icon) => {
-      this.chevronDown = sanitizer.bypassSecurityTrustHtml(icon.default);
+      this.chevronDown.set(sanitizer.bypassSecurityTrustHtml(icon.default));
     });
     import('bootstrap-icons/icons/chevron-right.svg').then((icon) => {
-      this.chevronRight = sanitizer.bypassSecurityTrustHtml(icon.default);
+      this.chevronRight.set(sanitizer.bypassSecurityTrustHtml(icon.default));
     });
   }
 
-  chevronDown?: SafeHtml;
-  chevronRight?: SafeHtml;
+  chevronDown = signal<SafeHtml | undefined>(undefined);
+  chevronRight = signal<SafeHtml | undefined>(undefined);
   @Input() level = 0;
   resourceOrGroup$ = new BehaviorSubject<Resource | ResourceGroup | null>(null);
   timeSlots$ = new BehaviorSubject<SchedulerStampWithSlots[]>([]);
