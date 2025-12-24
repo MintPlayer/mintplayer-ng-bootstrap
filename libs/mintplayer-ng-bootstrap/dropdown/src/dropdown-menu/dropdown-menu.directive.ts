@@ -31,6 +31,11 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
     effect(() => {
       const isOpen = this.dropdown.isOpen();
       if (isOpen) {
+        // Prevent creating duplicate overlays if effect re-runs while still open
+        if (this.overlayRef) {
+          return;
+        }
+
         this.wait = true;
         setTimeout(() => this.wait = false, 100);
 

@@ -1,7 +1,7 @@
 <table class="table w-auto mb-0">
     <tr>
         <td>
-            <button class="btn btn-default" (click)="previousMonth()">
+            <button type="button" class="btn btn-default" (click)="previousMonth()">
                 <span [innerHTML]="chevronLeft()" class="fw-bolder"></span>
             </button>
         </td>
@@ -10,7 +10,7 @@
             {{ currentMonth()?.getFullYear() }}
         </td>
         <td>
-            <button class="btn btn-default border-bottom-0" (click)="nextMonth()">
+            <button type="button" class="btn btn-default border-bottom-0" (click)="nextMonth()">
                 <span [innerHTML]="chevronRight()" class="fw-bolder"></span>
             </button>
         </td>

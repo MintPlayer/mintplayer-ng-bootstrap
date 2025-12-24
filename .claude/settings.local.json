@@ -17,7 +17,9 @@
       "mcp__playwright__browser_close",
       "mcp__github__get_pull_request_comments",
       "mcp__github__get_pull_request_reviews",
-      "mcp__github__get_pull_request_status"
+      "mcp__github__get_pull_request_status",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_press_key"
     ]
   },
   "enableAllProjectMcpServers": true,
