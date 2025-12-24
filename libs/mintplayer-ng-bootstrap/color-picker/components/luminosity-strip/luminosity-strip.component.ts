@@ -11,22 +11,22 @@ import { HS } from '../../interfaces/hs';
 export class BsLuminosityStripComponent {
   @ViewChild('canvas') canvas!: ElementRef<HTMLCanvasElement>;
 
-  hs$ = model<HS>({ hue: 0, saturation: 0 });
-  luminosity$ = model<number>(0.5);
+  hs = model<HS>({ hue: 0, saturation: 0 });
+  luminosity = model<number>(0.5);
   luminosityChange = output<number>();
 
   private canvasContext: CanvasRenderingContext2D | null = null;
 
-  resultBackground$ = computed(() => {
-    const hs = this.hs$();
-    const luminosity = this.luminosity$();
+  resultBackground = computed(() => {
+    const hs = this.hs();
+    const luminosity = this.luminosity();
     return `hsl(${hs.hue}, ${hs.saturation * 100}%, ${luminosity * 100}%)`;
   });
 
   constructor() {
     // Draw gradient when HS changes
     effect(() => {
-      const hs = this.hs$();
+      const hs = this.hs();
       if (this.canvasContext) {
         const width = this.canvas.nativeElement.width;
         const height = this.canvas.nativeElement.height;
@@ -44,7 +44,7 @@ export class BsLuminosityStripComponent {
 
     // Emit luminosity changes
     effect(() => {
-      const luminosity = this.luminosity$();
+      const luminosity = this.luminosity();
       this.luminosityChange.emit(luminosity);
     });
   }

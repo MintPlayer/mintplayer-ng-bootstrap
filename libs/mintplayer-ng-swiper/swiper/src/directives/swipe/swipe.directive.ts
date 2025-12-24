@@ -1,11 +1,11 @@
-import { computed, Directive, effect, HostBinding, HostListener, inject, input } from "@angular/core";
+import { Directive, effect, HostBinding, HostListener, inject, input } from "@angular/core";
 import { BsObserveSizeDirective } from "@mintplayer/ng-swiper/observe-size";
 import { BsSwipeContainerDirective } from "../swipe-container/swipe-container.directive";
 
 @Directive({
   selector: '[bsSwipe]',
   hostDirectives: [BsObserveSizeDirective],
-  standalone: false,
+  standalone: true,
 })
 export class BsSwipeDirective {
   private container = inject(BsSwipeContainerDirective);
@@ -41,6 +41,7 @@ export class BsSwipeDirective {
   onTouchStart(ev: TouchEvent) {
     if (ev.touches.length === 1) {
       ev.preventDefault();
+      ev.stopPropagation();
       this.container.pendingAnimation?.finish();
 
       setTimeout(() => {
@@ -64,6 +65,8 @@ export class BsSwipeDirective {
 
   @HostListener('touchmove', ['$event'])
   onTouchMove(ev: TouchEvent) {
+    ev.preventDefault();
+    ev.stopPropagation();
     this.container.lastTouch$.set({
       position: {
         x: ev.touches[0].clientX,
@@ -75,6 +78,7 @@ export class BsSwipeDirective {
 
   @HostListener('touchend', ['$event'])
   onTouchEnd(ev: TouchEvent) {
+    ev.stopPropagation();
     const startTouch = this.container.startTouch$();
     const lastTouch = this.container.lastTouch$();
     const orientation = this.container.orientation$();

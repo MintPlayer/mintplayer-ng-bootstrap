@@ -13,7 +13,7 @@ export class BsTreeviewComponent {
 
   private parent = inject(BsTreeviewComponent, { skipSelf: true, optional: true });
 
-  level = computed(() => !this.parent ? 0 : this.parent.level() + 1);
+  level = computed<number>((): number => !this.parent ? 0 : this.parent.level() + 1);
   indentation = computed(() => this.level() * 30);
   isExpanded = model<boolean>(!this.parent);
 }

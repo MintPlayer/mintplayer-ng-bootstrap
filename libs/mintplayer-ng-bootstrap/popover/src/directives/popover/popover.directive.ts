@@ -65,14 +65,14 @@ export class BsPopoverDirective implements AfterViewInit, OnDestroy {
     effect(() => {
       const position = this.bsPopover();
       if (this.component) {
-        this.component.instance.position = position;
+        this.component.setInput('position', position);
       }
     });
 
     effect(() => {
       const isVisible = this.isVisible();
       if (this.component) {
-        this.component.instance.isVisible = isVisible;
+        this.component.setInput('isVisible', isVisible);
       }
     });
 
@@ -102,7 +102,7 @@ export class BsPopoverDirective implements AfterViewInit, OnDestroy {
         .withPositions([connectedPosition]),
     });
     this.component = this.overlayRef.attach<BsPopoverComponent>(this.portal);
-    this.component.instance.position = this.bsPopover();
+    this.component.setInput('position', this.bsPopover());
 
     this.parent.nativeElement.onclick = () => {
       if (this.updatePosition()) {

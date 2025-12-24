@@ -85,7 +85,7 @@ export class BsTooltipDirective implements OnDestroy {
         .withPositions(positions),
     });
     const component = this.overlayRef.attach<BsTooltipComponent>(this.portal);
-    component.instance.position = this.bsTooltip;
+    component.setInput('position', this.bsTooltip);
   }
 
   hideTooltip() {

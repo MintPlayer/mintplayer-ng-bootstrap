@@ -1,13 +1,13 @@
 <canvas
     class="d-block"
-    [width]="width$()"
-    [height]="height$()"
+    [width]="width()"
+    [height]="height()"
     (mousedown)="onPointerDown($event)"
     (touchstart)="onPointerDown($event)"
     (touchmove)="onPointerMove($event)"
     (touchend)="onPointerUp($event)"
     #canvas></canvas>
 
-@if (markerPosition$(); as markerPosition) {
+@if (markerPosition(); as markerPosition) {
     <div class="thumb position-absolute pe-none" [style.left.px]="markerPosition.x" [style.top.px]="markerPosition.y"></div>
 }

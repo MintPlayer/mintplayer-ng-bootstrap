@@ -11,25 +11,25 @@ import { HS } from '../../interfaces/hs';
 export class BsAlphaStripComponent {
   @ViewChild('track') canvas!: ElementRef<HTMLCanvasElement>;
 
-  hs$ = model<HS>({ hue: 0, saturation: 0 });
-  luminosity$ = model<number>(0.5);
-  alpha$ = model<number>(1);
+  hs = model<HS>({ hue: 0, saturation: 0 });
+  luminosity = model<number>(0.5);
+  alpha = model<number>(1);
   alphaChange = output<number>();
 
   private canvasContext: CanvasRenderingContext2D | null = null;
 
-  resultBackground$ = computed(() => {
-    const hs = this.hs$();
-    const luminosity = this.luminosity$();
-    const alpha = this.alpha$();
+  resultBackground = computed(() => {
+    const hs = this.hs();
+    const luminosity = this.luminosity();
+    const alpha = this.alpha();
     return `hsla(${hs.hue}, ${hs.saturation * 100}%, ${luminosity * 100}%, ${alpha})`;
   });
 
   constructor() {
     // Draw gradient when HS or luminosity changes
     effect(() => {
-      const hs = this.hs$();
-      const luminosity = this.luminosity$();
+      const hs = this.hs();
+      const luminosity = this.luminosity();
       setTimeout(() => {
         if (this.canvasContext) {
           const width = this.canvas.nativeElement.width;
@@ -48,7 +48,7 @@ export class BsAlphaStripComponent {
 
     // Emit alpha changes
     effect(() => {
-      const alpha = this.alpha$();
+      const alpha = this.alpha();
       this.alphaChange.emit(alpha);
     });
   }

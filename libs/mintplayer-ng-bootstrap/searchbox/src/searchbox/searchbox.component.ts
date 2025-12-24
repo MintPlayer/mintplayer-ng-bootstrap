@@ -1,6 +1,6 @@
 /// <reference types="../types" />
 
-import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, input, model, output, signal, TemplateRef, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, Input, input, model, output, signal, TemplateRef, ViewChild } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 import { HasId } from '@mintplayer/ng-bootstrap/has-id';
@@ -29,12 +29,12 @@ export class BsSearchboxComponent<T extends HasId<U>, U> {
   selectedItem = model<T | undefined>(undefined);
   searchterm = model('');
 
-  // Use a writable signal so the directive can set it programmatically
+  // Use getter/setter pattern because directive sets this programmatically
   private _suggestions = signal<T[]>([]);
   get suggestions(): T[] {
     return this._suggestions();
   }
-  set suggestions(value: T[]) {
+  @Input() set suggestions(value: T[]) {
     this._suggestions.set(value);
   }
 

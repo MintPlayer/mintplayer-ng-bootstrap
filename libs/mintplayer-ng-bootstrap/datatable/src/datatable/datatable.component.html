@@ -4,8 +4,8 @@
             @for (column of columnsArray; track column) {
                 <th class="text-nowrap"
                     [class.sort]="column.sortable"
-                    [class.sort-asc]="column.sortable && (settings.sortProperty === column.name) && (settings.sortDirection === 'ascending')"
-                    [class.sort-desc]="column.sortable && (settings.sortProperty === column.name) && (settings.sortDirection === 'descending')"
+                    [class.sort-asc]="column.sortable && (settings().sortProperty === column.name) && (settings().sortDirection === 'ascending')"
+                    [class.sort-desc]="column.sortable && (settings().sortProperty === column.name) && (settings().sortDirection === 'descending')"
                     (click)="columnHeaderClicked(column)">
                     <ng-container *ngTemplateOutlet="column.templateRef"></ng-container>
                 </th>
@@ -25,11 +25,11 @@
                 <bs-grid [stopFullWidthAt]="'never'">
                     <div bsRow>
                         <div [md]="12">
-                            <bs-pagination class="float-start" [pageNumbers]="settings.perPage.values"
-                                [(selectedPageNumber)]="settings.perPage.selected" (selectedPageNumberChange)="settingsChange.emit(settings)"
+                            <bs-pagination class="float-start" [pageNumbers]="settings().perPage.values"
+                                [(selectedPageNumber)]="settings().perPage.selected" (selectedPageNumberChange)="settingsChange.emit(settings())"
                                 [showArrows]="false"></bs-pagination>
-                            <bs-pagination class="float-end" [pageNumbers]="settings.page.values"
-                                [(selectedPageNumber)]="settings.page.selected" (selectedPageNumberChange)="settingsChange.emit(settings)"
+                            <bs-pagination class="float-end" [pageNumbers]="settings().page.values"
+                                [(selectedPageNumber)]="settings().page.selected" (selectedPageNumberChange)="settingsChange.emit(settings())"
                                 [showArrows]="true"></bs-pagination>
                         </div>
                     </div>

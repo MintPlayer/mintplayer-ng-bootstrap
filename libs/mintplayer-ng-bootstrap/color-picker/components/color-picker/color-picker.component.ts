@@ -13,19 +13,19 @@ export class BsColorPickerComponent {
 
   @ViewChild('wheel') colorWheel!: BsColorWheelComponent;
 
-  size$ = input<number>(150);
-  disabled$ = signal<boolean>(false);
-  allowAlpha$ = input<boolean>(true);
+  size = input<number>(150);
+  disabled = signal<boolean>(false);
+  allowAlpha = input<boolean>(true);
 
-  hs$ = signal<HS>({ hue: 0, saturation: 0 });
-  luminosity$ = signal<number>(0);
+  hs = signal<HS>({ hue: 0, saturation: 0 });
+  luminosity = signal<number>(0);
 
-  alpha$ = model<number>(1);
+  alpha = model<number>(1);
   alphaChange = output<number>();
 
   constructor() {
     effect(() => {
-      const alpha = this.alpha$();
+      const alpha = this.alpha();
       this.alphaChange.emit(alpha);
     });
   }

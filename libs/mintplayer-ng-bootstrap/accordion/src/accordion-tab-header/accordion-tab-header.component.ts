@@ -17,6 +17,6 @@ export class BsAccordionTabHeaderComponent {
 
   headerClicked(event: MouseEvent) {
     event.preventDefault();
-    this.accordionTab.isActive = !this.accordionTab.isActive;
+    this.accordionTab.setActive(!this.accordionTab.isActive());
   }
 }

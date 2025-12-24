@@ -1,6 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { animate, AnimationBuilder, AnimationPlayer, style } from '@angular/animations';
-import { AfterViewInit, computed, ContentChildren, Directive, effect, ElementRef, forwardRef, HostBinding, inject, input, output, QueryList, signal } from '@angular/core';
+import { AfterViewInit, computed, ContentChildren, Directive, effect, ElementRef, forwardRef, HostBinding, inject, Input, input, output, QueryList, signal } from '@angular/core';
 import { BsObserveSizeDirective, Size } from '@mintplayer/ng-swiper/observe-size';
 import { LastTouch } from '../../interfaces/last-touch';
 import { StartTouch } from '../../interfaces/start-touch';
@@ -9,7 +9,7 @@ import { BsSwipeDirective } from '../swipe/swipe.directive';
 @Directive({
   selector: '[bsSwipeContainer]',
   exportAs: 'bsSwipeContainer',
-  standalone: false,
+  standalone: true,
   hostDirectives: [BsObserveSizeDirective],
 })
 export class BsSwipeContainerDirective implements AfterViewInit {
@@ -28,9 +28,25 @@ export class BsSwipeContainerDirective implements AfterViewInit {
   }
 
   minimumOffset = input(50);
+  animation$ = signal<'slide' | 'fade' | 'none'>('slide');
   orientation$ = signal<'horizontal' | 'vertical'>('horizontal');
   imageIndex$ = signal<number>(0);
   imageIndexChange = output<number>();
+  animationStart = output<void>();
+  animationEnd = output<void>();
+
+  // Input setters to update internal signals
+  @Input() set orientation(value: 'horizontal' | 'vertical') {
+    this.orientation$.set(value);
+  }
+
+  @Input() set imageIndex(value: number) {
+    this.imageIndex$.set(value);
+  }
+
+  @Input() set animation(value: 'slide' | 'fade' | 'none') {
+    this.animation$.set(value);
+  }
 
   isViewInited$ = signal<boolean>(false);
   startTouch$ = signal<StartTouch | null>(null);
@@ -107,8 +123,15 @@ export class BsSwipeContainerDirective implements AfterViewInit {
     }
   });
 
-  // For slide sizes, we'll use a signal that gets updated when swipes change
-  private slideSizes$ = signal<(Size | undefined)[]>([]);
+  // Computed signal that reactively tracks all swipe sizes
+  private slideSizes$ = computed(() => {
+    const actualSwipes = this.actualSwipes$();
+    if (!actualSwipes || actualSwipes.length === 0) {
+      return [];
+    }
+    // Reading each swipe's size$() creates reactive dependencies
+    return actualSwipes.map(swipe => swipe.observeSize.size$());
+  });
 
   maxSlideHeight$ = computed(() => {
     const slideSizes = this.slideSizes$();
@@ -172,17 +195,6 @@ export class BsSwipeContainerDirective implements AfterViewInit {
       }
       this.previousOrientation = orientation;
     });
-
-    // Effect to update slide sizes when actual swipes change
-    effect(() => {
-      const actualSwipes = this.actualSwipes$();
-      if (actualSwipes && actualSwipes.length > 0) {
-        setTimeout(() => {
-          const sizes = actualSwipes.map(swipe => swipe.observeSize.size$());
-          this.slideSizes$.set(sizes);
-        }, 400);
-      }
-    });
   }
 
   ngAfterViewInit() {
@@ -204,9 +216,28 @@ export class BsSwipeContainerDirective implements AfterViewInit {
   }
 
   animateToIndex(oldIndex: number, newIndex: number, distance: number, totalSlides: number) {
+    const animation = this.animation$();
     const orientation = this.orientation$();
     const containerElement = this.containerElement.nativeElement;
     const containerLength = orientation === 'horizontal' ? containerElement.clientWidth : containerElement.clientHeight;
+
+    this.animationStart.emit();
+
+    // Handle 'none' animation mode - instant transition
+    if (animation === 'none') {
+      // Correct the image index immediately
+      if (newIndex === -1) {
+        this.imageIndex$.set(totalSlides - 1);
+      } else if (newIndex === totalSlides) {
+        this.imageIndex$.set(0);
+      } else {
+        this.imageIndex$.set(newIndex);
+      }
+      this.startTouch$.set(null);
+      this.lastTouch$.set(null);
+      this.animationEnd.emit();
+      return;
+    }
 
     if (orientation === 'horizontal') {
       this.pendingAnimation = this.animationBuilder.build([
@@ -244,6 +275,7 @@ export class BsSwipeContainerDirective implements AfterViewInit {
       this.lastTouch$.set(null);
       this.pendingAnimation?.destroy();
       this.pendingAnimation = undefined;
+      this.animationEnd.emit();
     });
     this.pendingAnimation.play();
   }

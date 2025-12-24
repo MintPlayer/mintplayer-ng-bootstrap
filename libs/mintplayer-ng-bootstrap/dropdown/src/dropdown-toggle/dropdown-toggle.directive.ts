@@ -1,5 +1,4 @@
 import { Directive, ElementRef, HostListener } from '@angular/core';
-import { take } from 'rxjs';
 import { BsDropdownDirective } from '../dropdown/dropdown.directive';
 // import { BsDropdownComponent } from '../dropdown/dropdown.component';
 
@@ -21,6 +20,6 @@ export class BsDropdownToggleDirective {
 
   @HostListener('click')
   onClick() {
-    this.dropdown.isOpen = !this.dropdown.isOpen$.value;
+    this.dropdown.isOpen.set(!this.dropdown.isOpen());
   }
 }

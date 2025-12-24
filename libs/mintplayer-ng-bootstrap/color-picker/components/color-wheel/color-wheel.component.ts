@@ -17,34 +17,34 @@ export class BsColorWheelComponent {
   @ViewChild('canvas') canvas!: ElementRef<HTMLCanvasElement>;
 
   // Inputs
-  width$ = model<number>(150);
-  height$ = model<number>(150);
-  diameterRatio$ = model<number>(0);
-  luminosity$ = model<number>(0);
+  width = model<number>(150);
+  height = model<number>(150);
+  diameterRatio = model<number>(0);
+  luminosity = model<number>(0);
 
   // HS model with output
-  hs$ = model<HS>({ hue: 0, saturation: 0 });
+  hs = model<HS>({ hue: 0, saturation: 0 });
   hsChange = output<HS>();
 
   // Internal state
-  disabled$ = signal<boolean>(false);
-  viewInited$ = signal<boolean>(false);
+  disabled = signal<boolean>(false);
+  viewInited = signal<boolean>(false);
   private isPointerDown = false;
   private canvasContext: CanvasRenderingContext2D | null = null;
 
   // Computed values
-  squareSize$ = computed(() => {
-    const width = this.width$();
-    const height = this.height$();
+  squareSize = computed(() => {
+    const width = this.width();
+    const height = this.height();
     if (width === null || height === null) {
       return null;
     }
     return Math.min(width, height);
   });
 
-  shiftX$ = computed(() => {
-    const width = this.width$();
-    const height = this.height$();
+  shiftX = computed(() => {
+    const width = this.width();
+    const height = this.height();
     if (width === null || height === null) {
       return null;
     } else if (width < height) {
@@ -54,9 +54,9 @@ export class BsColorWheelComponent {
     }
   });
 
-  shiftY$ = computed(() => {
-    const width = this.width$();
-    const height = this.height$();
+  shiftY = computed(() => {
+    const width = this.width();
+    const height = this.height();
     if (width === null || height === null) {
       return null;
     } else if (width < height) {
@@ -66,9 +66,9 @@ export class BsColorWheelComponent {
     }
   });
 
-  innerRadius$ = computed(() => {
-    const squareSize = this.squareSize$();
-    const diameterRatio = this.diameterRatio$();
+  innerRadius = computed(() => {
+    const squareSize = this.squareSize();
+    const diameterRatio = this.diameterRatio();
     if (squareSize) {
       return squareSize / 2 * diameterRatio;
     } else {
@@ -76,8 +76,8 @@ export class BsColorWheelComponent {
     }
   });
 
-  outerRadius$ = computed(() => {
-    const squareSize = this.squareSize$();
+  outerRadius = computed(() => {
+    const squareSize = this.squareSize();
     if (squareSize) {
       return squareSize / 2;
     } else {
@@ -85,10 +85,10 @@ export class BsColorWheelComponent {
     }
   });
 
-  markerPosition$ = computed(() => {
-    const hs = this.hs$();
-    const shiftX = this.shiftX$() ?? 0;
-    const shiftY = this.shiftY$() ?? 0;
+  markerPosition = computed(() => {
+    const hs = this.hs();
+    const shiftX = this.shiftX() ?? 0;
+    const shiftY = this.shiftY() ?? 0;
     const position = this.color2position(hs);
     return {
       x: position.x + shiftX,
@@ -99,10 +99,10 @@ export class BsColorWheelComponent {
   constructor() {
     // Draw color wheel when dimensions change
     effect(() => {
-      const innerRadius = this.innerRadius$();
-      const outerRadius = this.outerRadius$();
-      const shiftX = this.shiftX$();
-      const shiftY = this.shiftY$();
+      const innerRadius = this.innerRadius();
+      const outerRadius = this.outerRadius();
+      const shiftX = this.shiftX();
+      const shiftY = this.shiftY();
 
       // Use setTimeout to debounce slightly
       setTimeout(() => {
@@ -129,20 +129,20 @@ export class BsColorWheelComponent {
 
     // Emit HS changes
     effect(() => {
-      const hs = this.hs$();
+      const hs = this.hs();
       this.hsChange.emit(hs);
     });
   }
 
   ngAfterViewInit() {
-    this.viewInited$.set(true);
+    this.viewInited.set(true);
     if (typeof window !== 'undefined') {
       this.canvasContext = this.canvas.nativeElement.getContext('2d', { willReadFrequently: true });
     }
   }
 
   onPointerDown(ev: MouseEvent | TouchEvent) {
-    if (!this.disabled$()) {
+    if (!this.disabled()) {
       ev.preventDefault();
       this.isPointerDown = true;
       this.updateColor(ev, !('touches' in ev));
@@ -184,16 +184,16 @@ export class BsColorWheelComponent {
 
     const color = this.position2color(co.x, co.y);
     if (color) {
-      this.hs$.set({ hue: color.hue, saturation: color.saturation });
+      this.hs.set({ hue: color.hue, saturation: color.saturation });
     } else {
       console.warn('Color is null');
     }
   }
 
   private isInsideCircle(x: number, y: number) {
-    const squareSize = this.squareSize$();
-    const shiftX = this.shiftX$();
-    const shiftY = this.shiftY$();
+    const squareSize = this.squareSize();
+    const shiftX = this.shiftX();
+    const shiftY = this.shiftY();
 
     // Position to the square
     const sx: number = x - (shiftX ?? 0);
@@ -225,8 +225,8 @@ export class BsColorWheelComponent {
   }
 
   private color2position(hs: HS) {
-    let innerRadius = this.innerRadius$();
-    let outerRadius = this.outerRadius$();
+    let innerRadius = this.innerRadius();
+    let outerRadius = this.outerRadius();
 
     if (innerRadius === null) {
       innerRadius = 0;

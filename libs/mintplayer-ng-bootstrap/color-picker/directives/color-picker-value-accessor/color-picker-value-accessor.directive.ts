@@ -22,8 +22,8 @@ export class BsColorPickerValueAccessor implements ControlValueAccessor {
   constructor() {
     // Effect to emit value changes
     effect(() => {
-      const hs = this.host.hs$();
-      const luminosity = this.host.luminosity$();
+      const hs = this.host.hs();
+      const luminosity = this.host.luminosity();
       const rgb = this.hsl2rgb(hs.hue, hs.saturation, luminosity);
       const hex = this.rgb2hex(rgb);
       setTimeout(() => this.onValueChange && this.onValueChange(hex), 10);
@@ -52,15 +52,15 @@ export class BsColorPickerValueAccessor implements ControlValueAccessor {
       if (value) {
         const rgb = this.hex2rgb(value);
         const hsl = this.rgb2Hsl(rgb);
-        this.host.hs$.set({ hue: hsl.h, saturation: hsl.s });
-        this.host.luminosity$.set(hsl.l);
+        this.host.hs.set({ hue: hsl.h, saturation: hsl.s });
+        this.host.luminosity.set(hsl.l);
       }
     }
   }
 
   setDisabledState(isDisabled: boolean) {
     if (this.host && this.host.colorWheel) {
-      this.host.colorWheel.disabled$.set(isDisabled);
+      this.host.colorWheel.disabled.set(isDisabled);
     }
   }
   //#endregion

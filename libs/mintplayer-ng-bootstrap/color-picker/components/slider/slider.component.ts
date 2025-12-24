@@ -16,12 +16,12 @@ export class BsSliderComponent {
   @ViewChild('track') track!: ElementRef<HTMLDivElement>;
   @ViewChild('thumb') thumb!: ElementRef<HTMLDivElement>;
 
-  value$ = model<number>(0.5);
+  value = model<number>(0.5);
   valueChange = output<number>();
   private isPointerDown$ = signal<boolean>(false);
 
   thumbMarginLeft$ = computed(() => {
-    const value = this.value$();
+    const value = this.value();
     const res = value * this.element.nativeElement.clientWidth - 12;
     return res;
   });
@@ -32,7 +32,7 @@ export class BsSliderComponent {
 
   constructor() {
     effect(() => {
-      const value = this.value$();
+      const value = this.value();
       this.valueChange.emit(value);
     });
   }
@@ -72,7 +72,7 @@ export class BsSliderComponent {
 
     const percent = co.x / this.track.nativeElement.clientWidth;
     const limited = Math.max(0, Math.min(1, percent));
-    this.value$.set(limited);
+    this.value.set(limited);
   }
 }
 

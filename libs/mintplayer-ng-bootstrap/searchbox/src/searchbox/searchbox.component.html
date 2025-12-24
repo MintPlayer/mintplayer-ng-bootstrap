@@ -26,14 +26,14 @@
             </bs-dropdown-item>
         } @else {
             <div class="overflow-y-auto" [style.max-height.px]="200">
-                @for (suggestion of suggestions(); track suggestion) {
+                @for (suggestion of suggestions; track suggestion) {
                     <bs-dropdown-item (click)="onSuggestionClicked(suggestion)" [isSelected]="selectedItem()?.id === suggestion.id" [disabled]="isBusy()">
                         @if (suggestionTemplate) {
                             <ng-container *ngTemplateOutlet="suggestionTemplate; context: { $implicit: suggestion, searchbox: this }"></ng-container>
                         }
                     </bs-dropdown-item>
                 }
-                @if (suggestions().length === 0) {
+                @if (suggestions.length === 0) {
                     <bs-dropdown-item [disabled]="true">
                         <ng-container *ngTemplateOutlet="noResultsTemplate ?? defaultNoResultsTemplate; context: { }"></ng-container>
                     </bs-dropdown-item>

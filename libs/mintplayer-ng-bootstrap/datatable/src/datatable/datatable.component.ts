@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, ContentChildren, input, output, signal, TemplateRef } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, ContentChildren, Input, input, model, output, signal, TemplateRef } from '@angular/core';
 import { PaginationResponse } from '@mintplayer/pagination';
 import { DatatableSettings } from '../datatable-settings';
 import { BsDatatableColumnDirective } from '../datatable-column/datatable-column.directive';
@@ -20,7 +20,7 @@ export class BsDatatableComponent<TData> {
     defaultSettings.sortDirection = 'ascending';
     defaultSettings.perPage = { values: [10, 20, 50], selected: 20 };
     defaultSettings.page = { values: [1], selected: 1 };
-    this._settings.set(defaultSettings);
+    this.settings.set(defaultSettings);
   }
 
   private _columns = signal<BsDatatableColumnDirective[]>([]);
@@ -33,20 +33,14 @@ export class BsDatatableComponent<TData> {
     return this._columns();
   }
 
-  private _settings = signal<DatatableSettings>(new DatatableSettings());
-  get settings(): DatatableSettings {
-    return this._settings();
-  }
-  set settings(value: DatatableSettings) {
-    this._settings.set(value);
-  }
+  settings = model<DatatableSettings>(new DatatableSettings());
 
   // Use a writable signal so the directive can set it programmatically
   private _data = signal<PaginationResponse<TData> | undefined>(undefined);
   get data(): PaginationResponse<TData> | undefined {
     return this._data();
   }
-  set data(value: PaginationResponse<TData> | undefined) {
+  @Input() set data(value: PaginationResponse<TData> | undefined) {
     this._data.set(value);
   }
 
@@ -55,7 +49,7 @@ export class BsDatatableComponent<TData> {
 
   columnHeaderClicked(column: BsDatatableColumnDirective) {
     if (column.sortable) {
-      const currentSettings = this._settings();
+      const currentSettings = this.settings();
       if (currentSettings.sortProperty !== column.name) {
         currentSettings.sortProperty = column.name;
         currentSettings.sortDirection = 'ascending';
@@ -64,8 +58,9 @@ export class BsDatatableComponent<TData> {
       } else {
         currentSettings.sortDirection = 'descending';
       }
-      this._settings.set({ ...currentSettings });
-      this.settingsChange.emit(currentSettings);
+      const newSettings = new DatatableSettings(currentSettings);
+      this.settings.set(newSettings);
+      this.settingsChange.emit(newSettings);
     }
   }
 

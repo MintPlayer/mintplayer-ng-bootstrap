@@ -1,41 +1,50 @@
-import { isPlatformServer } from '@angular/common';
-import { AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, ContentChildren, ElementRef, forwardRef, HostBinding, HostListener, Inject, input, OnDestroy, PLATFORM_ID, QueryList, signal, TemplateRef, ViewChild } from '@angular/core';
+import { isPlatformServer, NgTemplateOutlet } from '@angular/common';
+import { AfterViewInit, ChangeDetectionStrategy, Component, computed, ContentChildren, DestroyRef, effect, ElementRef, forwardRef, HostBinding, HostListener, inject, input, OnDestroy, output, PLATFORM_ID, QueryList, signal, TemplateRef, ViewChild } from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Color } from '@mintplayer/ng-bootstrap';
-import { BsSwipeContainerDirective } from '@mintplayer/ng-swiper/swiper';
+import { BsSwipeContainerDirective, BsSwipeDirective } from '@mintplayer/ng-swiper/swiper';
+import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
 import { BsCarouselImageDirective } from '../carousel-image/carousel-image.directive';
 
 @Component({
   selector: 'bs-carousel',
   templateUrl: './carousel.component.html',
   styleUrls: ['./carousel.component.scss'],
-  standalone: false,
+  standalone: true,
+  imports: [
+    NgTemplateOutlet,
+    BsSwipeContainerDirective,
+    BsSwipeDirective,
+    BsNoNoscriptDirective,
+  ],
   animations: [FadeInOutAnimation],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsCarouselComponent implements AfterViewInit, OnDestroy {
-
-  constructor(@Inject(PLATFORM_ID) platformId: any, private cdRef: ChangeDetectorRef) {
-    this.isServerSide = isPlatformServer(platformId);
-
-    if (!isPlatformServer(platformId)) {
-      this.resizeObserver = new ResizeObserver(() => {
-        this.cdRef.detectChanges();
-      });
-    }
-  }
+  private platformId = inject(PLATFORM_ID);
+  private destroyRef = inject(DestroyRef);
 
   colors = Color;
-  isServerSide: boolean;
-  currentImageIndex = 0;
+  isServerSide = isPlatformServer(this.platformId);
+  currentImageIndex = signal(0);
   images = signal<QueryList<BsCarouselImageDirective> | null>(null);
   resizeObserver?: ResizeObserver;
+  private intervalId?: ReturnType<typeof setInterval>;
 
+  // Inputs
   indicators = input(false);
   keyboardEvents = input(true);
   orientation = input<'horizontal' | 'vertical'>('horizontal');
-  animation = input<'fade' | 'slide'>('slide');
+  animation = input<'fade' | 'slide' | 'none'>('slide');
+  interval = input<number | null>(null);
+  wrap = input(true);
 
+  // Outputs
+  slideChange = output<number>();
+  animationStart = output<void>();
+  animationEnd = output<void>();
+
+  // Computed signals
   imageCount = computed(() => this.images()?.length ?? 0);
 
   firstImageTemplate = computed<TemplateRef<any> | null>(() => {
@@ -81,25 +90,25 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
       switch (ev.key) {
         case 'ArrowLeft':
           if (orientation === 'horizontal') {
-            this.previousImage();
+            this.previous();
             handled = true;
           }
           break;
         case 'ArrowRight':
           if (orientation === 'horizontal') {
-            this.nextImage();
+            this.next();
             handled = true;
           }
           break;
         case 'ArrowUp':
           if (orientation === 'vertical') {
-            this.previousImage();
+            this.previous();
             handled = true;
           }
           break;
         case 'ArrowDown':
           if (orientation === 'vertical') {
-            this.nextImage();
+            this.next();
             handled = true;
           }
           break;
@@ -110,32 +119,122 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  previousImage() {
-    switch (this.animation()) {
+  constructor() {
+    // Setup auto-advance interval effect
+    effect(() => {
+      const intervalTime = this.interval();
+      this.clearAutoAdvance();
+
+      if (intervalTime && intervalTime > 0) {
+        this.intervalId = setInterval(() => {
+          this.next();
+        }, intervalTime);
+      }
+    });
+
+    // Emit slideChange when currentImageIndex changes
+    effect(() => {
+      const index = this.currentImageIndex();
+      this.slideChange.emit(index);
+    });
+
+    // Cleanup on destroy
+    this.destroyRef.onDestroy(() => {
+      this.clearAutoAdvance();
+      this.resizeObserver?.disconnect();
+    });
+  }
+
+  private clearAutoAdvance() {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = undefined;
+    }
+  }
+
+  previous() {
+    const animation = this.animation();
+    const imageCount = this.imageCount();
+    const wrap = this.wrap();
+
+    switch (animation) {
       case 'fade':
-        if (this.currentImageIndex > 0) {
-          this.currentImageIndex--;
-        } else {
-          this.currentImageIndex = this.images()!.length - 1;
+      case 'none': {
+        const currentIndex = this.currentImageIndex();
+        if (currentIndex > 0) {
+          if (animation === 'none') {
+            this.animationStart.emit();
+          }
+          this.currentImageIndex.set(currentIndex - 1);
+          if (animation === 'none') {
+            this.animationEnd.emit();
+          }
+        } else if (wrap) {
+          if (animation === 'none') {
+            this.animationStart.emit();
+          }
+          this.currentImageIndex.set(imageCount - 1);
+          if (animation === 'none') {
+            this.animationEnd.emit();
+          }
         }
         break;
+      }
       case 'slide':
         this.swipeContainer.previous();
         break;
     }
   }
 
-  nextImage() {
-    switch (this.animation()) {
+  next() {
+    const animation = this.animation();
+    const imageCount = this.imageCount();
+    const wrap = this.wrap();
+
+    switch (animation) {
       case 'fade':
-        if (this.currentImageIndex < this.images()!.length - 1) {
-          this.currentImageIndex++;
-        } else {
-          this.currentImageIndex = 0;
+      case 'none': {
+        const currentIndex = this.currentImageIndex();
+        if (currentIndex < imageCount - 1) {
+          if (animation === 'none') {
+            this.animationStart.emit();
+          }
+          this.currentImageIndex.set(currentIndex + 1);
+          if (animation === 'none') {
+            this.animationEnd.emit();
+          }
+        } else if (wrap) {
+          if (animation === 'none') {
+            this.animationStart.emit();
+          }
+          this.currentImageIndex.set(0);
+          if (animation === 'none') {
+            this.animationEnd.emit();
+          }
+        }
+        break;
+      }
+      case 'slide':
+        this.swipeContainer.next();
+        break;
+    }
+  }
+
+  goto(index: number) {
+    const animation = this.animation();
+    switch (animation) {
+      case 'fade':
+      case 'none':
+        if (animation === 'none') {
+          this.animationStart.emit();
+        }
+        this.currentImageIndex.set(index);
+        if (animation === 'none') {
+          this.animationEnd.emit();
         }
         break;
       case 'slide':
-        this.swipeContainer.next();
+        this.swipeContainer.goto(index);
         break;
     }
   }
@@ -143,11 +242,30 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
   imageCounter = 1;
 
   ngAfterViewInit() {
-    this.resizeObserver?.observe(this.innerElement.nativeElement);
+    if (!this.isServerSide) {
+      this.resizeObserver = new ResizeObserver(() => {
+        // Signals automatically trigger change detection in zoneless mode
+        // The resize will be picked up by the observe-size directive
+      });
+      this.resizeObserver.observe(this.innerElement.nativeElement);
+    }
   }
 
   ngOnDestroy() {
-    this.resizeObserver?.unobserve(this.innerElement.nativeElement);
+    this.resizeObserver?.unobserve(this.innerElement?.nativeElement);
     this.resizeObserver?.disconnect();
+    this.clearAutoAdvance();
+  }
+
+  onContainerAnimationStart() {
+    this.animationStart.emit();
+  }
+
+  onContainerAnimationEnd() {
+    this.animationEnd.emit();
+  }
+
+  onImageIndexChange(index: number) {
+    this.currentImageIndex.set(index);
   }
 }

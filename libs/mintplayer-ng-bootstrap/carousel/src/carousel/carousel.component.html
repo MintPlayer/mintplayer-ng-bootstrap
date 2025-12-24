@@ -38,22 +38,25 @@
     @switch (animation()) {
         @case ('slide') {
             <div class="carousel slide mx-auto" [class.carousel-vertical]="orientation() === 'vertical'"
-                [style.height.px]="swipeContainer?.currentSlideHeight$ | async">
+                [style.height.px]="swipeContainer?.currentSlideHeight$()">
                 @if (indicators()) {
                     <div class="carousel-indicators" [class.carousel-indicators-vertical]="orientation() === 'vertical'"
-                        [style.height.px]="orientation() === 'vertical' ? (swipeContainer?.maxSlideHeight$ | async) : null">
+                        [style.height.px]="orientation() === 'vertical' ? swipeContainer?.maxSlideHeight$() : null">
                         @for (image of images(); track image.id; let i = $index) {
                             <button type="button" (click)="swipeContainer?.goto(i)"
-                                [class.active]="(swipeContainer?.imageIndex$ | async) === i" data-bs-target
-                                [attr.aria-current]="(swipeContainer?.imageIndex$ | async) === i ? true : null"
+                                [class.active]="swipeContainer?.imageIndex$() === i" data-bs-target
+                                [attr.aria-current]="swipeContainer?.imageIndex$() === i ? true : null"
                                 [attr.aria-label]="'Slide ' + i"></button>
                         }
                     </div>
                 }
                 <div class="carousel-inner overflow-hidden pe-none" [class.text-nowrap]="orientation() === 'horizontal'"
                     [class.carousel-inner-vertical]="orientation() === 'vertical'" #innerElement
-                    [style.height.px]="swipeContainer?.currentSlideHeight$ | async">
-                    <div bsSwipeContainer #container="bsSwipeContainer" [minimumOffset]="50" [(imageIndex)]="currentImageIndex"
+                    [style.height.px]="swipeContainer?.currentSlideHeight$()">
+                    <div bsSwipeContainer #container="bsSwipeContainer" [minimumOffset]="50"
+                        (imageIndexChange)="onImageIndexChange($event)"
+                        (animationStart)="onContainerAnimationStart()"
+                        (animationEnd)="onContainerAnimationEnd()"
                         [orientation]="orientation()">
                         <div class="carousel-item" bsSwipe [offside]="true">
                             <ng-container *ngTemplateOutlet="lastImageTemplate()"></ng-container>
@@ -68,13 +71,15 @@
                         </div>
                     </div>
                 </div>
-                <button class="carousel-control-prev" type="button" (click)="previousImage()"
-                    [class.carousel-control-vertical]="orientation() === 'vertical'">
+                <button class="carousel-control-prev" type="button" (click)="previous()"
+                    [class.carousel-control-vertical]="orientation() === 'vertical'"
+                    aria-label="Previous slide">
                     <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                     <span class="visually-hidden">Previous</span>
                 </button>
-                <button class="carousel-control-next" type="button" (click)="nextImage()"
-                    [class.carousel-control-vertical]="orientation() === 'vertical'">
+                <button class="carousel-control-next" type="button" (click)="next()"
+                    [class.carousel-control-vertical]="orientation() === 'vertical'"
+                    aria-label="Next slide">
                     <span class="carousel-control-next-icon" aria-hidden="true"></span>
                     <span class="visually-hidden">Next</span>
                 </button>
@@ -83,32 +88,68 @@
         @case ('fade') {
             <div class="carousel fade mx-auto" [class.carousel-vertical]="orientation() === 'vertical'">
                 @if (indicators()) {
-                    <div class="carousel-indicators" [class.carousel-indicators-vertical]="orientation() === 'vertical'"
-                        [style.height.px]="orientation() === 'vertical' ? (swipeContainer?.currentSlideHeight$ | async) : null">
+                    <div class="carousel-indicators" [class.carousel-indicators-vertical]="orientation() === 'vertical'">
                         @for (image of images(); track image.id; let i = $index) {
-                            <button type="button" (click)="currentImageIndex = i"
-                                [class.active]="currentImageIndex === i" data-bs-target
-                                [attr.aria-current]="currentImageIndex === i ? true : null"
+                            <button type="button" (click)="goto(i)"
+                                [class.active]="currentImageIndex() === i" data-bs-target
+                                [attr.aria-current]="currentImageIndex() === i ? true : null"
                                 [attr.aria-label]="'Slide ' + i"></button>
                         }
                     </div>
                 }
-                <div class="carousel-inner" [class.carousel-inner-vertical]="orientation() === 'vertical'">
+                <div class="carousel-inner" [class.carousel-inner-vertical]="orientation() === 'vertical'" #innerElement>
                     @for (image of images(); track image.id; let i = $index) {
-                        @if (currentImageIndex === i) {
+                        @if (currentImageIndex() === i) {
                             <div class="carousel-item" [class.active]="true" @fadeInOut>
                                 <ng-container [ngTemplateOutlet]="image.itemTemplate"></ng-container>
                             </div>
                         }
                     }
                 </div>
-                <button class="carousel-control-prev" type="button" (click)="previousImage()"
-                    [class.carousel-control-vertical]="orientation() === 'vertical'">
+                <button class="carousel-control-prev" type="button" (click)="previous()"
+                    [class.carousel-control-vertical]="orientation() === 'vertical'"
+                    aria-label="Previous slide">
                     <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                     <span class="visually-hidden">Previous</span>
                 </button>
-                <button class="carousel-control-next" type="button" (click)="nextImage()"
-                    [class.carousel-control-vertical]="orientation() === 'vertical'">
+                <button class="carousel-control-next" type="button" (click)="next()"
+                    [class.carousel-control-vertical]="orientation() === 'vertical'"
+                    aria-label="Next slide">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
+            </div>
+        }
+        @case ('none') {
+            <div class="carousel mx-auto" [class.carousel-vertical]="orientation() === 'vertical'">
+                @if (indicators()) {
+                    <div class="carousel-indicators" [class.carousel-indicators-vertical]="orientation() === 'vertical'">
+                        @for (image of images(); track image.id; let i = $index) {
+                            <button type="button" (click)="goto(i)"
+                                [class.active]="currentImageIndex() === i" data-bs-target
+                                [attr.aria-current]="currentImageIndex() === i ? true : null"
+                                [attr.aria-label]="'Slide ' + i"></button>
+                        }
+                    </div>
+                }
+                <div class="carousel-inner" [class.carousel-inner-vertical]="orientation() === 'vertical'" #innerElement>
+                    @for (image of images(); track image.id; let i = $index) {
+                        @if (currentImageIndex() === i) {
+                            <div class="carousel-item" [class.active]="true">
+                                <ng-container [ngTemplateOutlet]="image.itemTemplate"></ng-container>
+                            </div>
+                        }
+                    }
+                </div>
+                <button class="carousel-control-prev" type="button" (click)="previous()"
+                    [class.carousel-control-vertical]="orientation() === 'vertical'"
+                    aria-label="Previous slide">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" (click)="next()"
+                    [class.carousel-control-vertical]="orientation() === 'vertical'"
+                    aria-label="Next slide">
                     <span class="carousel-control-next-icon" aria-hidden="true"></span>
                     <span class="visually-hidden">Next</span>
                 </button>
