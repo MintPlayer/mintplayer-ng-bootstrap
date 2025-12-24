@@ -49,6 +49,7 @@ export class BsSwipeContainerDirective implements AfterViewInit {
   }
 
   isViewInited$ = signal<boolean>(false);
+  isAnimating$ = signal<boolean>(false);
   startTouch$ = signal<StartTouch | null>(null);
   lastTouch$ = signal<LastTouch | null>(null);
   swipes$ = signal<QueryList<BsSwipeDirective> | null>(null);
@@ -159,6 +160,13 @@ export class BsSwipeContainerDirective implements AfterViewInit {
       const offsetPrimary = this.offsetPrimary$();
       const orientation = this.orientation$();
       const maxSlideHeight = this.maxSlideHeight$();
+      const isAnimating = this.isAnimating$();
+
+      // Skip updating offsets during animation to avoid interfering with CSS animation
+      if (isAnimating) {
+        return;
+      }
+
       if (orientation === 'horizontal') {
         this.offsetLeft = offsetPrimary;
         this.offsetTopPx = null;
@@ -176,6 +184,13 @@ export class BsSwipeContainerDirective implements AfterViewInit {
       const offsetSecondary = this.offsetSecondary$();
       const orientation = this.orientation$();
       const maxSlideHeight = this.maxSlideHeight$();
+      const isAnimating = this.isAnimating$();
+
+      // Skip updating offsets during animation to avoid interfering with CSS animation
+      if (isAnimating) {
+        return;
+      }
+
       if (orientation === 'horizontal') {
         this.offsetRight = offsetSecondary;
         this.offsetBottomPx = null;
@@ -227,7 +242,11 @@ export class BsSwipeContainerDirective implements AfterViewInit {
     const animation = this.animation$();
     const orientation = this.orientation$();
     const containerElement = this.containerElement.nativeElement;
-    const containerLength = orientation === 'horizontal' ? containerElement.clientWidth : containerElement.clientHeight;
+    const maxSlideHeight = this.maxSlideHeight$();
+    // For vertical mode, use maxSlideHeight instead of container height
+    const containerLength = orientation === 'horizontal'
+      ? containerElement.clientWidth
+      : maxSlideHeight;
 
     this.animationStart.emit();
 
@@ -245,6 +264,16 @@ export class BsSwipeContainerDirective implements AfterViewInit {
       this.lastTouch$.set(null);
       this.animationEnd.emit();
       return;
+    }
+
+    // Set animating flag and clear host bindings so animation has full control
+    this.isAnimating$.set(true);
+    if (orientation === 'horizontal') {
+      this.offsetLeft = null;
+      this.offsetRight = null;
+    } else {
+      this.offsetTopPx = null;
+      this.offsetBottomPx = null;
     }
 
     if (orientation === 'horizontal') {
@@ -283,6 +312,8 @@ export class BsSwipeContainerDirective implements AfterViewInit {
       this.lastTouch$.set(null);
       this.pendingAnimation?.destroy();
       this.pendingAnimation = undefined;
+      // Clear animating flag so effects can update offsets again
+      this.isAnimating$.set(false);
       this.animationEnd.emit();
     });
     this.pendingAnimation.play();
