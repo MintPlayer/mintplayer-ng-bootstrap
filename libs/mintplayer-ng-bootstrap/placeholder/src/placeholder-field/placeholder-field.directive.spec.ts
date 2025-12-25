@@ -1,4 +1,4 @@
-import { Component, input, model } from '@angular/core';
+import { Component, model } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsPlaceholderComponent } from '../placeholder/placeholder.component';
 import { BsPlaceholderFieldDirective } from './placeholder-field.directive';
@@ -15,6 +15,7 @@ import { BsPlaceholderFieldDirective } from './placeholder-field.directive';
   ]
 })
 class BsPlaceholderMockComponent {
+  bsPlaceholder = model<boolean>(false);
   isLoading = model<boolean>(false);
 }
 

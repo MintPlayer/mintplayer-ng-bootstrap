@@ -1,4 +1,4 @@
-import { Component, forwardRef, model, ViewChild } from '@angular/core';
+import { Component, forwardRef, input, model, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BsAlertComponent } from '../alert/alert.component';
@@ -14,6 +14,7 @@ import { BsAlertCloseComponent } from './alert-close.component';
   ]
 })
 class BsAlertComponentStub {
+  type = input<number>();
   isVisible = model<boolean>(true);
 }
 

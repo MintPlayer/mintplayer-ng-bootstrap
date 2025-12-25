@@ -6,6 +6,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { MockModule } from 'ng-mocks';
 import { BsNavbarModule } from '@mintplayer/ng-bootstrap/navbar';
 import { AppComponent } from './app.component';
+import { BOOTSTRAP_VERSION } from './providers/bootstrap-version.provider';
 
 describe('AppComponent', () => {
   beforeEach(async () => {
@@ -27,7 +28,7 @@ describe('AppComponent', () => {
       ],
       providers: [
         JsonPipe,
-        { provide: 'BOOTSTRAP_VERSION', useValue: '0.0.0' }
+        { provide: BOOTSTRAP_VERSION, useValue: '0.0.0' }
       ],
     }).compileComponents();
   });
