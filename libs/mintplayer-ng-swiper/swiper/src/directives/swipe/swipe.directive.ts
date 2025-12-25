@@ -14,14 +14,14 @@ export class BsSwipeDirective {
   public offside = input(false);
 
   private orientationEffect = effect(() => {
-    const orientation = this.container.orientation$();
+    const orientation = this.container.orientation();
     this.inlineBlock = (orientation === 'horizontal');
     this.block = (orientation === 'vertical');
   });
 
   private heightEffect = effect(() => {
-    const maxHeight = this.container.maxSlideHeight$();
-    const orientation = this.container.orientation$();
+    const maxHeight = this.container.maxSlideHeight();
+    const orientation = this.container.orientation();
     // Only set height when we have valid measurements (> 10px threshold)
     // to avoid circular dependency during initial load
     const targetHeight = (orientation === 'vertical' && maxHeight > 10) ? maxHeight : null;
@@ -47,14 +47,14 @@ export class BsSwipeDirective {
       this.container.pendingAnimation?.finish();
 
       setTimeout(() => {
-        this.container.startTouch$.set({
+        this.container.startTouch.set({
           position: {
             x: ev.touches[0].clientX,
             y: ev.touches[0].clientY,
           },
           timestamp: Date.now(),
         });
-        this.container.lastTouch$.set({
+        this.container.lastTouch.set({
           position: {
             x: ev.touches[0].clientX,
             y: ev.touches[0].clientY,
@@ -69,7 +69,7 @@ export class BsSwipeDirective {
   onTouchMove(ev: TouchEvent) {
     ev.preventDefault();
     ev.stopPropagation();
-    this.container.lastTouch$.set({
+    this.container.lastTouch.set({
       position: {
         x: ev.touches[0].clientX,
         y: ev.touches[0].clientY,
@@ -81,9 +81,9 @@ export class BsSwipeDirective {
   @HostListener('touchend', ['$event'])
   onTouchEnd(ev: TouchEvent) {
     ev.stopPropagation();
-    const startTouch = this.container.startTouch$();
-    const lastTouch = this.container.lastTouch$();
-    const orientation = this.container.orientation$();
+    const startTouch = this.container.startTouch();
+    const lastTouch = this.container.lastTouch();
+    const orientation = this.container.orientation();
 
     if (!!startTouch && !!lastTouch) {
       const distance = (orientation === 'horizontal')

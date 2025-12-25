@@ -1,6 +1,6 @@
 /// <reference types="../types" />
 
-import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, Input, input, model, output, signal, TemplateRef, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, ElementRef, inject, input, model, output, signal, TemplateRef, ViewChild } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 import { HasId } from '@mintplayer/ng-bootstrap/has-id';
@@ -29,14 +29,7 @@ export class BsSearchboxComponent<T extends HasId<U>, U> {
   selectedItem = model<T | undefined>(undefined);
   searchterm = model('');
 
-  // Use getter/setter pattern because directive sets this programmatically
-  private _suggestions = signal<T[]>([]);
-  get suggestions(): T[] {
-    return this._suggestions();
-  }
-  @Input() set suggestions(value: T[]) {
-    this._suggestions.set(value);
-  }
+  suggestions = input<T[]>([]);
 
   suggestionTemplate?: TemplateRef<BsSuggestionTemplateContext<T, U>>;
   enterSearchtermTemplate?: TemplateRef<T>;
@@ -65,7 +58,7 @@ export class BsSearchboxComponent<T extends HasId<U>, U> {
     });
 
     effect(() => {
-      const suggestions = this._suggestions();
+      const suggestions = this.suggestions();
       if (suggestions) {
         this.isBusy.set(false);
       }

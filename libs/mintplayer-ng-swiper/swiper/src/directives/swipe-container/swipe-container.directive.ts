@@ -1,6 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { animate, AnimationBuilder, AnimationPlayer, style } from '@angular/animations';
-import { AfterViewInit, computed, ContentChildren, Directive, effect, ElementRef, forwardRef, HostBinding, inject, Input, input, output, QueryList, signal } from '@angular/core';
+import { AfterViewInit, computed, ContentChildren, Directive, effect, ElementRef, forwardRef, HostBinding, inject, input, model, output, QueryList, signal } from '@angular/core';
 import { BsObserveSizeDirective, Size } from '@mintplayer/ng-swiper/observe-size';
 import { LastTouch } from '../../interfaces/last-touch';
 import { StartTouch } from '../../interfaces/start-touch';
@@ -24,46 +24,32 @@ export class BsSwipeContainerDirective implements AfterViewInit {
   @HostBinding('style.margin-bottom.px') offsetBottomPx: number | null = null;
 
   @ContentChildren(forwardRef(() => BsSwipeDirective)) set swipes(value: QueryList<BsSwipeDirective>) {
-    setTimeout(() => this.swipes$.set(value));
+    setTimeout(() => this._swipes.set(value));
   }
 
   minimumOffset = input(50);
-  animation$ = signal<'slide' | 'fade' | 'none'>('slide');
-  orientation$ = signal<'horizontal' | 'vertical'>('horizontal');
-  imageIndex$ = signal<number>(0);
-  imageIndexChange = output<number>();
+  animation = input<'slide' | 'fade' | 'none'>('slide');
+  orientation = input<'horizontal' | 'vertical'>('horizontal');
+  imageIndex = model<number>(0);
   animationStart = output<void>();
   animationEnd = output<void>();
 
-  // Input setters to update internal signals
-  @Input() set orientation(value: 'horizontal' | 'vertical') {
-    this.orientation$.set(value);
-  }
-
-  @Input() set imageIndex(value: number) {
-    this.imageIndex$.set(value);
-  }
-
-  @Input() set animation(value: 'slide' | 'fade' | 'none') {
-    this.animation$.set(value);
-  }
-
-  isViewInited$ = signal<boolean>(false);
-  isAnimating$ = signal<boolean>(false);
-  startTouch$ = signal<StartTouch | null>(null);
-  lastTouch$ = signal<LastTouch | null>(null);
-  swipes$ = signal<QueryList<BsSwipeDirective> | null>(null);
+  isViewInited = signal<boolean>(false);
+  isAnimating = signal<boolean>(false);
+  startTouch = signal<StartTouch | null>(null);
+  lastTouch = signal<LastTouch | null>(null);
+  _swipes = signal<QueryList<BsSwipeDirective> | null>(null);
   pendingAnimation?: AnimationPlayer;
 
   // Computed signals for derived state
-  offset$ = computed(() => {
-    const startTouch = this.startTouch$();
-    const lastTouch = this.lastTouch$();
-    const imageIndex = this.imageIndex$();
-    const isViewInited = this.isViewInited$();
-    const orientation = this.orientation$();
+  offset = computed(() => {
+    const startTouch = this.startTouch();
+    const lastTouch = this.lastTouch();
+    const imageIndex = this.imageIndex();
+    const isViewInited = this.isViewInited();
+    const orientation = this.orientation();
     const containerSize = this.observeSize.size();
-    const maxSlideHeight = this.maxSlideHeight$();
+    const maxSlideHeight = this.maxSlideHeight();
 
     if (!isViewInited) {
       return (-imageIndex * 100);
@@ -85,8 +71,8 @@ export class BsSwipeContainerDirective implements AfterViewInit {
     }
   });
 
-  padLeft$ = computed(() => {
-    const swipes = this.swipes$();
+  padLeft = computed(() => {
+    const swipes = this._swipes();
     if (!swipes) return 0;
 
     let count = 0;
@@ -100,8 +86,8 @@ export class BsSwipeContainerDirective implements AfterViewInit {
     return count;
   });
 
-  padRight$ = computed(() => {
-    const swipes = this.swipes$();
+  padRight = computed(() => {
+    const swipes = this._swipes();
     if (!swipes) return 0;
 
     let count = 0;
@@ -115,11 +101,11 @@ export class BsSwipeContainerDirective implements AfterViewInit {
     return count;
   });
 
-  offsetPrimary$ = computed(() => this.offset$() - this.padLeft$() * 100);
-  offsetSecondary$ = computed(() => -(this.offset$() - this.padLeft$() * 100) - (this.padRight$() - 1) * 100);
+  offsetPrimary = computed(() => this.offset() - this.padLeft() * 100);
+  offsetSecondary = computed(() => -(this.offset() - this.padLeft() * 100) - (this.padRight() - 1) * 100);
 
-  actualSwipes$ = computed(() => {
-    const swipes = this.swipes$();
+  actualSwipes = computed(() => {
+    const swipes = this._swipes();
     if (swipes) {
       return swipes.filter(swipe => !swipe.offside());
     } else {
@@ -128,8 +114,8 @@ export class BsSwipeContainerDirective implements AfterViewInit {
   });
 
   // Computed signal that reactively tracks all swipe sizes
-  private slideSizes$ = computed(() => {
-    const actualSwipes = this.actualSwipes$();
+  private slideSizes = computed(() => {
+    const actualSwipes = this.actualSwipes();
     if (!actualSwipes || actualSwipes.length === 0) {
       return [];
     }
@@ -137,16 +123,16 @@ export class BsSwipeContainerDirective implements AfterViewInit {
     return actualSwipes.map(swipe => swipe.observeSize.size());
   });
 
-  maxSlideHeight$ = computed(() => {
-    const slideSizes = this.slideSizes$();
+  maxSlideHeight = computed(() => {
+    const slideSizes = this.slideSizes();
     const heights = slideSizes.map(s => s?.height ?? 1);
     return heights.length ? Math.max(...heights) : 1;
   });
 
-  currentSlideHeight$ = computed<number | null>(() => {
-    const slideSizes = this.slideSizes$();
-    const imageIndex = this.imageIndex$();
-    const orientation = this.orientation$();
+  currentSlideHeight = computed<number | null>(() => {
+    const slideSizes = this.slideSizes();
+    const imageIndex = this.imageIndex();
+    const orientation = this.orientation();
     const heights = slideSizes.map(s => s?.height ?? 0);
     const maxHeight = heights.length ? Math.max(...heights) : 0;
     const currHeight: number = slideSizes[imageIndex]?.height ?? maxHeight;
@@ -158,10 +144,10 @@ export class BsSwipeContainerDirective implements AfterViewInit {
   constructor() {
     // Effect to update offsetLeft/offsetTopPx based on offsetPrimary and orientation
     effect(() => {
-      const offsetPrimary = this.offsetPrimary$();
-      const orientation = this.orientation$();
-      const maxSlideHeight = this.maxSlideHeight$();
-      const isAnimating = this.isAnimating$();
+      const offsetPrimary = this.offsetPrimary();
+      const orientation = this.orientation();
+      const maxSlideHeight = this.maxSlideHeight();
+      const isAnimating = this.isAnimating();
 
       // Skip updating offsets during animation to avoid interfering with CSS animation
       if (isAnimating) {
@@ -182,10 +168,10 @@ export class BsSwipeContainerDirective implements AfterViewInit {
 
     // Effect to update offsetRight/offsetBottomPx based on offsetSecondary and orientation
     effect(() => {
-      const offsetSecondary = this.offsetSecondary$();
-      const orientation = this.orientation$();
-      const maxSlideHeight = this.maxSlideHeight$();
-      const isAnimating = this.isAnimating$();
+      const offsetSecondary = this.offsetSecondary();
+      const orientation = this.orientation();
+      const maxSlideHeight = this.maxSlideHeight();
+      const isAnimating = this.isAnimating();
 
       // Skip updating offsets during animation to avoid interfering with CSS animation
       if (isAnimating) {
@@ -202,20 +188,15 @@ export class BsSwipeContainerDirective implements AfterViewInit {
       }
     });
 
-    // Effect to emit imageIndexChange
-    effect(() => {
-      const imageIndex = this.imageIndex$();
-      this.imageIndexChange.emit(imageIndex);
-    });
   }
 
   ngAfterViewInit() {
-    this.isViewInited$.set(true);
+    this.isViewInited.set(true);
   }
 
   animateToIndexByDx(distance: number) {
-    const imageIndex = this.imageIndex$();
-    const actualSwipes = this.actualSwipes$();
+    const imageIndex = this.imageIndex();
+    const actualSwipes = this.actualSwipes();
 
     let newIndex: number;
     if (Math.abs(distance) < this.minimumOffset()) {
@@ -228,10 +209,10 @@ export class BsSwipeContainerDirective implements AfterViewInit {
   }
 
   animateToIndex(oldIndex: number, newIndex: number, distance: number, totalSlides: number) {
-    const animation = this.animation$();
-    const orientation = this.orientation$();
+    const animation = this.animation();
+    const orientation = this.orientation();
     const containerElement = this.containerElement.nativeElement;
-    const maxSlideHeight = this.maxSlideHeight$();
+    const maxSlideHeight = this.maxSlideHeight();
     // For vertical mode, use maxSlideHeight instead of container height
     const containerLength = orientation === 'horizontal'
       ? containerElement.clientWidth
@@ -243,20 +224,20 @@ export class BsSwipeContainerDirective implements AfterViewInit {
     if (animation === 'none') {
       // Correct the image index immediately
       if (newIndex === -1) {
-        this.imageIndex$.set(totalSlides - 1);
+        this.imageIndex.set(totalSlides - 1);
       } else if (newIndex === totalSlides) {
-        this.imageIndex$.set(0);
+        this.imageIndex.set(0);
       } else {
-        this.imageIndex$.set(newIndex);
+        this.imageIndex.set(newIndex);
       }
-      this.startTouch$.set(null);
-      this.lastTouch$.set(null);
+      this.startTouch.set(null);
+      this.lastTouch.set(null);
       this.animationEnd.emit();
       return;
     }
 
     // Set animating flag and clear host bindings so animation has full control
-    this.isAnimating$.set(true);
+    this.isAnimating.set(true);
     if (orientation === 'horizontal') {
       this.offsetLeft = null;
       this.offsetRight = null;
@@ -291,18 +272,18 @@ export class BsSwipeContainerDirective implements AfterViewInit {
     this.pendingAnimation.onDone(() => {
       // Correct the image index
       if (newIndex === -1) {
-        this.imageIndex$.set(totalSlides - 1);
+        this.imageIndex.set(totalSlides - 1);
       } else if (newIndex === totalSlides) {
-        this.imageIndex$.set(0);
+        this.imageIndex.set(0);
       } else {
-        this.imageIndex$.set(newIndex);
+        this.imageIndex.set(newIndex);
       }
-      this.startTouch$.set(null);
-      this.lastTouch$.set(null);
+      this.startTouch.set(null);
+      this.lastTouch.set(null);
       this.pendingAnimation?.destroy();
       this.pendingAnimation = undefined;
       // Clear animating flag so effects can update offsets again
-      this.isAnimating$.set(false);
+      this.isAnimating.set(false);
       this.animationEnd.emit();
     });
     this.pendingAnimation.play();
@@ -328,8 +309,8 @@ export class BsSwipeContainerDirective implements AfterViewInit {
     this.pendingAnimation?.finish();
     setTimeout(() => {
       this.pendingAnimation?.finish();
-      const actualSwipes = this.actualSwipes$();
-      const imageIndex = this.imageIndex$();
+      const actualSwipes = this.actualSwipes();
+      const imageIndex = this.imageIndex();
       const idx = (type === 'relative') ? imageIndex + index : index;
       this.animateToIndex(imageIndex, idx, 0, actualSwipes?.length ?? 1);
     }, 20);

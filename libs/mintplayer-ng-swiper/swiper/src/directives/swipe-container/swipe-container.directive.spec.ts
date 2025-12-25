@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
@@ -11,7 +10,9 @@ import { BsSwipeContainerDirective } from './swipe-container.directive';
   standalone: false,
   template: `
     <div bsSwipeContainer>
-      <div *ngFor="let n of images" bsSwipe>Slide {{ n }}</div>
+      @for (n of images; track n) {
+        <div bsSwipe>Slide {{ n }}</div>
+      }
     </div>`
 })
 class SwipeTestComponent {

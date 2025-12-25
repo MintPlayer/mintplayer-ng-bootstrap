@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, ElementRef, HostBinding, HostListener, Input, input, model, output, signal, TemplateRef, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, ElementRef, HostBinding, HostListener, input, model, output, signal, TemplateRef, ViewChild } from '@angular/core';
 import { HasId } from '@mintplayer/ng-bootstrap/has-id';
 
 @Component({
@@ -13,14 +13,7 @@ export class BsSelect2Component<T extends HasId<U>, U> {
   isOpen = signal(false);
   isLoading = signal<boolean>(false);
 
-  // Use getter/setter pattern because directive sets this programmatically
-  private _suggestions = signal<T[]>([]);
-  get suggestions(): T[] {
-    return this._suggestions();
-  }
-  @Input() set suggestions(value: T[]) {
-    this._suggestions.set(value);
-  }
+  suggestions = input<T[]>([]);
 
   @ViewChild('defaultItemTemplate', { static: true }) defaultItemTemplate!: TemplateRef<any>;
   @ViewChild('searchBox') searchBox!: ElementRef<HTMLInputElement>;
@@ -38,7 +31,7 @@ export class BsSelect2Component<T extends HasId<U>, U> {
 
   constructor() {
     effect(() => {
-      const suggestions = this._suggestions();
+      const suggestions = this.suggestions();
       if (suggestions) {
         this.isLoading.set(false);
       }

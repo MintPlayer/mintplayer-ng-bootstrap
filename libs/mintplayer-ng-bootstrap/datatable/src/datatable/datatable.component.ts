@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, ContentChildren, Input, model, signal, TemplateRef } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, ContentChildren, input, model, signal, TemplateRef } from '@angular/core';
 import { PaginationResponse } from '@mintplayer/pagination';
 import { DatatableSettings } from '../datatable-settings';
 import { BsDatatableColumnDirective } from '../datatable-column/datatable-column.directive';
@@ -25,15 +25,7 @@ export class BsDatatableComponent<TData> {
   }
 
   settings = model<DatatableSettings>(new DatatableSettings());
-
-  // Use a writable signal so the directive can set it programmatically
-  private _data = signal<PaginationResponse<TData> | undefined>(undefined);
-  get data(): PaginationResponse<TData> | undefined {
-    return this._data();
-  }
-  @Input() set data(value: PaginationResponse<TData> | undefined) {
-    this._data.set(value);
-  }
+  data = input<PaginationResponse<TData> | undefined>(undefined);
 
   rowTemplate?: TemplateRef<BsRowTemplateContext<TData>>;
 

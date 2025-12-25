@@ -1,7 +1,5 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, Directive, forwardRef, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Directive, forwardRef } from '@angular/core';
-import { NgFor } from '@angular/common';
 import { BsSwipeContainerDirective } from '../swipe-container/swipe-container.directive';
 import { BsSwipeDirective } from './swipe.directive';
 
@@ -13,10 +11,10 @@ import { BsSwipeDirective } from './swipe.directive';
   ]
 })
 class BsSwipeContainerDirectiveStub {
-  orientation$ = signal<'horizontal' | 'vertical'>('horizontal');
-  maxSlideHeight$ = computed(() => 100);
-  startTouch$ = signal<any>(null);
-  lastTouch$ = signal<any>(null);
+  orientation = signal<'horizontal' | 'vertical'>('horizontal');
+  maxSlideHeight = computed(() => 100);
+  startTouch = signal<any>(null);
+  lastTouch = signal<any>(null);
   pendingAnimation: { finish(): void } | null = null;
 
   onSwipe(_distance: number) {}
@@ -25,10 +23,12 @@ class BsSwipeContainerDirectiveStub {
 @Component({
   selector: 'swipe-test-component',
   standalone: true,
-  imports: [NgFor, BsSwipeContainerDirectiveStub, BsSwipeDirective],
+  imports: [BsSwipeContainerDirectiveStub, BsSwipeDirective],
   template: `
     <div bsSwipeContainer>
-      <div *ngFor="let n of images" bsSwipe>Slide {{ n }}</div>
+      @for (n of images; track n) {
+        <div bsSwipe>Slide {{ n }}</div>
+      }
     </div>`
 })
 class SwipeTestComponent {
