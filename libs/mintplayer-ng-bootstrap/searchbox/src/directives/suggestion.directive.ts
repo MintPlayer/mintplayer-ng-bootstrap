@@ -22,7 +22,7 @@ export class BsSuggestionTemplateDirective<TData extends HasId<U>, U> {
   }
 
   @Input() set bsSuggestionTemplateOf(value: TData[]) {
-    this.searchbox.suggestions = value;
+    this.searchbox.suggestions.set(value);
   }
 }
 

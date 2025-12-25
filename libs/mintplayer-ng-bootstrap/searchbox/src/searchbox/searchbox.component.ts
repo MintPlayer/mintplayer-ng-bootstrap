@@ -29,7 +29,7 @@ export class BsSearchboxComponent<T extends HasId<U>, U> {
   selectedItem = model<T | undefined>(undefined);
   searchterm = model('');
 
-  suggestions = input<T[]>([]);
+  suggestions = model<T[]>([]);
 
   suggestionTemplate?: TemplateRef<BsSuggestionTemplateContext<T, U>>;
   enterSearchtermTemplate?: TemplateRef<T>;

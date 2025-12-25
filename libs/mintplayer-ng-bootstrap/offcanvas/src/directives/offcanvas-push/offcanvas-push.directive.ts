@@ -53,7 +53,7 @@ export class BsOffcanvasPushDirective {
           animate('250ms', style({ 'margin-left': '0', 'margin-right': '0' })),
         ];
       }
-      const b = builder.build(data);
+      const b = this.builder.build(data);
       const player = b.create(this.element.nativeElement, { });
 
       if (!isVisible) {

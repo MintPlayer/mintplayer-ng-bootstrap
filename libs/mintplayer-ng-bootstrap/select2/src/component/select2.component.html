@@ -12,7 +12,7 @@
         [style.width.px]="searchWidth()"
         #searchBox />
     <bs-dropdown-menu *bsDropdownMenu [maxHeight]="200">
-        @for (suggestion of suggestions; track $index) {
+        @for (suggestion of suggestions(); track $index) {
             <bs-dropdown-item (click)="onSuggestionClicked(suggestion)" [isSelected]="selectedItems() | bsInList:suggestion.id">
                 <ng-container *ngTemplateOutlet="suggestionTemplate ?? defaultSuggestionTemplate; context: { $implicit: suggestion, select2: this }"></ng-container>
             </bs-dropdown-item>

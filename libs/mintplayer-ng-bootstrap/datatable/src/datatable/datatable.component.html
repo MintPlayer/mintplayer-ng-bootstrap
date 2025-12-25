@@ -13,8 +13,8 @@
         </tr>
     </thead>
     <tbody>
-        @if (!!data && !!rowTemplate) {
-            @for (item of data!.data; track $index) {
+        @if (!!data() && !!rowTemplate) {
+            @for (item of data()!.data; track $index) {
                 <ng-container *ngTemplateOutlet="rowTemplate; context: { $implicit: item }"></ng-container>
             }
         }

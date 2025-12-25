@@ -19,7 +19,7 @@ export class BsSuggestionTemplateDirective<T extends HasId<U>, U> {
   }
 
   @Input() set bsSuggestionTemplateOf(value: T[]) {
-    this.select2component.suggestions = value;
+    this.select2component.suggestions.set(value);
   }
 }
 

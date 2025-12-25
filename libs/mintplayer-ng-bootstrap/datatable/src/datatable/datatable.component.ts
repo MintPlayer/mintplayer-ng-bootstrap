@@ -25,7 +25,7 @@ export class BsDatatableComponent<TData> {
   }
 
   settings = model<DatatableSettings>(new DatatableSettings());
-  data = input<PaginationResponse<TData> | undefined>(undefined);
+  data = model<PaginationResponse<TData> | undefined>(undefined);
 
   rowTemplate?: TemplateRef<BsRowTemplateContext<TData>>;
 

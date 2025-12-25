@@ -13,7 +13,7 @@ export class BsSelect2Component<T extends HasId<U>, U> {
   isOpen = signal(false);
   isLoading = signal<boolean>(false);
 
-  suggestions = input<T[]>([]);
+  suggestions = model<T[]>([]);
 
   @ViewChild('defaultItemTemplate', { static: true }) defaultItemTemplate!: TemplateRef<any>;
   @ViewChild('searchBox') searchBox!: ElementRef<HTMLInputElement>;
