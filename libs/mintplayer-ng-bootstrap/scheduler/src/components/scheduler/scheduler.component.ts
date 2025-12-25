@@ -1,563 +1,361 @@
-/// <reference types="../../types" />
+import {
+  Component,
+  ElementRef,
+  ViewChild,
+  AfterViewInit,
+  OnDestroy,
+  ChangeDetectionStrategy,
+  CUSTOM_ELEMENTS_SCHEMA,
+  input,
+  output,
+  model,
+  computed,
+  effect,
+  signal,
+  Injector,
+  inject,
+  runInInjectionContext,
+} from '@angular/core';
 
-import { Component, DestroyRef, ElementRef, EventEmitter, HostListener, inject, Input, Output, QueryList, signal, ViewChildren } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, combineLatest, filter, map, Observable, take } from 'rxjs';
-import { BsCalendarMonthService } from '@mintplayer/ng-bootstrap/calendar-month';
-import { ESchedulerMode } from '../../enums/scheduler-mode';
-import { EDragOperation } from '../../enums/drag-operation';
-import { DragOperation } from '../../interfaces/drag-operation';
-import { PreviewEvent } from '../../interfaces/preview-event';
-import { SchedulerEvent } from '../../interfaces/scheduler-event';
-import { SchedulerEventPart } from '../../interfaces/scheduler-event-part';
-import { SchedulerEventWithParts } from '../../interfaces/scheduler-event-with-parts';
-import { TimeSlot } from '../../interfaces/time-slot';
-import { BsTimelineService } from '../../services/timeline/timeline.service';
-import { ResourceGroup } from '../../interfaces/resource-group';
-import { Resource } from '../../interfaces/resource';
-import { SchedulerStampWithSlots } from '../../interfaces/scheduler-stamp-with-slots';
-import { WeekOptions } from '../../interfaces/week-options';
-import { TimelineOptions } from '../../interfaces/timeline-options';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import {
+  ViewType,
+  SchedulerEvent,
+  Resource,
+  ResourceGroup,
+  SchedulerOptions,
+} from '@mintplayer/scheduler-core';
 
+/**
+ * Interface for the mp-scheduler web component element
+ */
+interface MpSchedulerElement extends HTMLElement {
+  view: ViewType;
+  date: Date;
+  events: SchedulerEvent[];
+  resources: (Resource | ResourceGroup)[];
+  options: Partial<SchedulerOptions>;
+  next(): void;
+  prev(): void;
+  today(): void;
+  gotoDate(date: Date): void;
+  changeView(view: ViewType): void;
+  addEvent(event: SchedulerEvent): void;
+  updateEvent(event: SchedulerEvent): void;
+  removeEvent(eventId: string): void;
+  getEventById(eventId: string): SchedulerEvent | null;
+  refetchEvents(): void;
+}
+
+/**
+ * Event click event detail
+ */
+export interface SchedulerEventClickEvent {
+  event: SchedulerEvent;
+  originalEvent?: Event;
+}
+
+/**
+ * Event create event detail
+ */
+export interface SchedulerEventCreateEvent {
+  event: SchedulerEvent;
+  resource?: Resource;
+  originalEvent?: Event;
+}
+
+/**
+ * Event update event detail
+ */
+export interface SchedulerEventUpdateEvent {
+  event: SchedulerEvent;
+  oldEvent: SchedulerEvent;
+  originalEvent?: Event;
+}
+
+/**
+ * Event delete event detail
+ */
+export interface SchedulerEventDeleteEvent {
+  event: SchedulerEvent;
+  originalEvent?: Event;
+}
+
+/**
+ * Date click event detail
+ */
+export interface DateClickEvent {
+  date: Date;
+  resource?: Resource;
+  originalEvent?: Event;
+}
+
+/**
+ * Date select event detail
+ */
+export interface DateSelectEvent {
+  start: Date;
+  end: Date;
+  resource?: Resource;
+  originalEvent?: Event;
+}
+
+/**
+ * View change event detail
+ */
+export interface ViewChangeEvent {
+  view: ViewType;
+  date: Date;
+}
+
+/**
+ * Angular wrapper for the mp-scheduler web component using signals
+ */
 @Component({
   selector: 'bs-scheduler',
-  templateUrl: './scheduler.component.html',
-  styleUrls: ['./scheduler.component.scss'],
-  standalone: false,
+  standalone: true,
+  template: `<mp-scheduler #scheduler></mp-scheduler>`,
+  styles: [`
+    :host {
+      display: block;
+      height: 100%;
+    }
+    mp-scheduler {
+      display: block;
+      height: 100%;
+    }
+  `],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
-export class BsSchedulerComponent {
-  private sanitizer = inject(DomSanitizer);
-  private calendarMonthService = inject(BsCalendarMonthService);
-  private timelineService = inject(BsTimelineService);
-  private destroy = inject(DestroyRef);
+export class BsSchedulerComponent implements AfterViewInit, OnDestroy {
+  private readonly injector = inject(Injector);
 
-  constructor() {
-    const monday = this.calendarMonthService.getMondayBefore(new Date());
-    this.currentWeekOrMonth$ = new BehaviorSubject<Date>(monday);
+  @ViewChild('scheduler', { static: true })
+  private schedulerRef!: ElementRef<MpSchedulerElement>;
 
-    this.shownDays$ = combineLatest([this.currentWeekOrMonth$, this.mode$])
-      .pipe(map(([currentDay, mode]) => {
-        currentDay.setHours(0);
-        currentDay.setMinutes(0);
-        currentDay.setSeconds(0);
-        currentDay.setMilliseconds(0);
-        switch (mode) {
-          case ESchedulerMode.week: {
-            return Array.from(Array(7).keys()).map((x) => this.addDays(currentDay, x));
-          }
-          case ESchedulerMode.timeline: {
-            const firstDay = new Date(currentDay.getFullYear(), currentDay.getMonth(), 1);
-            const daysOfMonth = new Date(currentDay.getFullYear(), currentDay.getMonth() + 1, 0).getDate();
-            return Array.from(Array(daysOfMonth).keys()).map((x) => this.addDays(firstDay, x));
-          }
-        }
-      })
+  // Input signals
+  readonly view = input<ViewType>('week');
+  readonly date = input<Date>(new Date());
+  readonly events = input<SchedulerEvent[]>([]);
+  readonly resources = input<(Resource | ResourceGroup)[]>([]);
+  readonly options = input<Partial<SchedulerOptions>>({});
+
+  // Two-way binding model signals
+  readonly selectedEvent = model<SchedulerEvent | null>(null);
+  readonly selectedRange = model<{ start: Date; end: Date } | null>(null);
+
+  // Output signals (events)
+  readonly eventClick = output<SchedulerEventClickEvent>();
+  readonly eventDblClick = output<SchedulerEventClickEvent>();
+  readonly eventCreate = output<SchedulerEventCreateEvent>();
+  readonly eventUpdate = output<SchedulerEventUpdateEvent>();
+  readonly eventDelete = output<SchedulerEventDeleteEvent>();
+  readonly dateClick = output<DateClickEvent>();
+  readonly dateSelect = output<DateSelectEvent>();
+  readonly viewChange = output<ViewChangeEvent>();
+
+  // Computed signals
+  readonly currentWeekStart = computed(() => {
+    const d = new Date(this.date());
+    const day = d.getDay();
+    const diff = (day === 0 ? 6 : day - 1); // Adjust for Monday start
+    d.setDate(d.getDate() - diff);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  });
+
+  readonly currentWeekEnd = computed(() => {
+    const start = this.currentWeekStart();
+    const end = new Date(start);
+    end.setDate(end.getDate() + 6);
+    end.setHours(23, 59, 59, 999);
+    return end;
+  });
+
+  readonly visibleEvents = computed(() => {
+    const start = this.currentWeekStart();
+    const end = this.currentWeekEnd();
+    return this.events().filter(
+      (e) => e.start < end && e.end > start
     );
+  });
 
-    this.daysOfWeekWithTimestamps$ = this.shownDays$
-      .pipe(map((shownDays) => ({ start: shownDays[0].getTime(), end: shownDays[shownDays.length - 1].getTime() + 24 * 60 * 60 * 1000 })));
-    
-    this.events$ = this.resources$
-      .pipe(map((resourcesOrGroups) => resourcesOrGroups.map(resOrGroup => this.getResourcesForGroup(resOrGroup))))
-      .pipe(map(jaggedResources => jaggedResources.reduce((flat, toFlatten) => flat.concat(toFlatten), [])))
-      .pipe(map(resources => resources.map(res => res.events)))
-      .pipe(map(jaggedEvents => jaggedEvents.reduce((flat, toFlatten) => flat.concat(toFlatten), [])));
+  // Internal state
+  private readonly initialized = signal(false);
+  private eventListeners: Array<{ type: string; listener: EventListener }> = [];
 
-      // groups.reduce((flat, toFlatten) => flat.concat(toFlatten.children), [])
-    this.eventParts$ = this.events$.pipe(
-      map((events) =>  events.map((ev) => this.timelineService.splitInParts(ev)))
-    );
-
-    this.eventPartsForThisWeek$ = combineLatest([
-      this.daysOfWeekWithTimestamps$,
-      this.eventParts$
-        .pipe(map(eventParts => eventParts.map(evp => evp.parts)))
-        .pipe(map(jaggedParts =>  jaggedParts.reduce((flat, toFlatten) => flat.concat(toFlatten), [])))
-      ])
-      .pipe(map(([startAndEnd, eventParts]) => {
-        return eventParts.filter(eventPart => {
-          return !((eventPart.end.getTime() <= startAndEnd.start) || (eventPart.start.getTime() >= startAndEnd.end));
-        });
-      }));
-
-    this.previewEventParts$ = this.previewEvent$.pipe(
-      map((event) => {
-        if (event) {
-          return this.timelineService.splitInParts(event)
-        } else {
-          return null;
+  ngAfterViewInit(): void {
+    runInInjectionContext(this.injector, () => {
+      // Set up effects to sync inputs to web component
+      effect(() => {
+        const el = this.schedulerRef?.nativeElement;
+        if (el) {
+          el.view = this.view();
         }
-      })
-    );
-    this.previewEventPartsForThisWeek$ = combineLatest([this.daysOfWeekWithTimestamps$, this.previewEventParts$])
-      .pipe(map(([startAndEnd, previewEventParts]) => {
-        if (previewEventParts) {
-          return previewEventParts.parts.filter(eventPart => {
-            return !((eventPart.end.getTime() <= startAndEnd.start) || (eventPart.start.getTime() >= startAndEnd.end));
-          });
-        } else {
-          return [];
-        }
-      }));
-
-    this.timelinedEventPartsForThisWeek$ = this.eventPartsForThisWeek$
-      .pipe(map(eventParts => {
-        // We'll only use the events for this week
-        const events = eventParts.map(ep => ep.event)
-          .filter((e, i, list) => list.indexOf(e) === i)
-          .filter((e) => !!e)
-          .map((e) => <SchedulerEvent>e);
-        const timeline = this.timelineService.getTimeline(events);
-
-        const result = timeline.map(track => track.events.map(ev => ({ event: ev, index: track.index })))
-          .reduce((flat, toFlatten) => flat.concat(toFlatten), [])
-          .map((evi) => eventParts.filter(p => p.event === evi.event).map(p => ({ part: p, index: evi.index })))
-          .reduce((flat, toFlatten) => flat.concat(toFlatten), []);
-
-        return {
-          total: timeline.length,
-          parts: result
-        };
-      }));
-
-    combineLatest([this.mode$, this.shownDays$, this.timeSlotDuration$])
-      .pipe(filter(([mode, shownDays, duration]) => mode !== null))
-      .pipe(map(([mode, shownDays, duration]) => {
-        switch (mode) {
-          case ESchedulerMode.week: {
-            const timeSlotsPerDay = Math.floor((60 * 60 * 24) / duration);
-            return Array.from(Array(timeSlotsPerDay).keys()).map((index) => {
-              const timeslotForMonday = this.createTimeslot(shownDays[0], index, duration);
-
-              return <SchedulerStampWithSlots>{
-                slots: shownDays.map((day) => {
-                  const start = new Date(day);
-                  start.setHours(timeslotForMonday.start.getHours());
-                  start.setMinutes(timeslotForMonday.start.getMinutes());
-                  start.setSeconds(timeslotForMonday.start.getSeconds());
-                  start.setMilliseconds(timeslotForMonday.start.getMilliseconds());
-      
-                  const end = new Date(day);
-                  end.setHours(timeslotForMonday.end.getHours());
-                  end.setMinutes(timeslotForMonday.end.getMinutes());
-                  end.setSeconds(timeslotForMonday.end.getSeconds());
-                  end.setMilliseconds(timeslotForMonday.end.getMilliseconds());
-                  end.setDate(end.getDate() + timeslotForMonday.end.getDate() - timeslotForMonday.start.getDate());
-      
-                  return <TimeSlot>{ start, end };
-                }),
-                stamp: timeslotForMonday.start
-              };
-            });
-          }
-          case ESchedulerMode.timeline: {
-            const totalTimeslots = (24 * 60 * 60) / duration;
-            return shownDays.map((day) => {
-              return <SchedulerStampWithSlots>{
-                slots: Array.from(Array(totalTimeslots).keys())
-                  .map((index) => {
-                    return this.createTimeslot(day, index, duration);
-                  }),
-                stamp: day
-              } 
-            });
-          }
-          default: {
-            throw 'Unknown value for Mode: ' + mode;
-          }
-        }
-      }))
-      .pipe(takeUntilDestroyed(this.destroy))
-      .subscribe((timeslots) => {
-        // For performance reasons, we're not using an observable here, but persist the timeslots in a BehaviorSubject.
-        this.timeSlots$.next(timeslots);
       });
-    
-    this.weekOptions$.pipe(takeUntilDestroyed())
-      .subscribe(weekOptions => this.weekOptionsChange.emit(weekOptions));
-    this.timelineOptions$.pipe(takeUntilDestroyed())
-      .subscribe(timelineOptions => this.timelineOptionsChange.emit(timelineOptions));
 
-    // combineLatest([this.mode$, this.scale$])
-    //   .pipe(filter(([mode, scale]) => mode === ESchedulerMode.timeline))
-
-    import('bootstrap-icons/icons/chevron-left.svg').then((icon) => {
-      this.chevronLeft.set(this.sanitizer.bypassSecurityTrustHtml(icon.default));
-    });
-    import('bootstrap-icons/icons/chevron-right.svg').then((icon) => {
-      this.chevronRight.set(this.sanitizer.bypassSecurityTrustHtml(icon.default));
-    });
-  }
-
-  chevronLeft = signal<SafeHtml | undefined>(undefined);
-  chevronRight = signal<SafeHtml | undefined>(undefined);
-  resources$ = new BehaviorSubject<(Resource | ResourceGroup)[]>([]);
-  events$: Observable<SchedulerEvent[]>;
-  eventParts$: Observable<SchedulerEventWithParts[]>;
-  eventPartsForThisWeek$: Observable<SchedulerEventPart[]>;
-  timelinedEventPartsForThisWeek$: Observable<{ total: number, parts: { part: SchedulerEventPart, index: number}[] }>;
-  weekOptions$ = new BehaviorSubject<WeekOptions>({ unitHeight: 30 });
-  timelineOptions$ = new BehaviorSubject<TimelineOptions>({ unitWidth: 50 });
-  
-  previewEvent$ = new BehaviorSubject<PreviewEvent | null>(null);
-  previewEventParts$: Observable<SchedulerEventWithParts | null>;
-  previewEventPartsForThisWeek$: Observable<SchedulerEventPart[]>;
-  
-  currentWeekOrMonth$: BehaviorSubject<Date>;
-  shownDays$: Observable<Date[]>;
-  daysOfWeekWithTimestamps$: Observable<{start: number, end: number}>;
-  timeSlotDuration$ = new BehaviorSubject<number>(1800);
-  timeSlots$ = new BehaviorSubject<SchedulerStampWithSlots[]>([]);
-  mouseState$ = new BehaviorSubject<boolean>(false);
-  hoveredTimeSlot$ = new BehaviorSubject<TimeSlot | null>(null);
-  hoveredEvent$ = new BehaviorSubject<SchedulerEvent | null>(null);
-  resourceGroupPresenterCounter = 1;
-
-  @ViewChildren('slot') timeSlotElements!: QueryList<ElementRef<HTMLDivElement>>;
-
-  createTimeslot(date: Date, index: number, duration: number) {
-    const timeSlotStart = new Date(date);
-    timeSlotStart.setTime(+timeSlotStart.getTime() + index * duration * 1000);
-    const timeSlotEnd = new Date(timeSlotStart);
-    timeSlotEnd.setTime(+timeSlotEnd.getTime() + duration * 1000);
-
-    return <TimeSlot>{ start: timeSlotStart, end: timeSlotEnd };
-  }
-
-  getResourcesForGroup(resourceOrGroup: Resource | ResourceGroup) : Resource[] {
-    if ('children' in resourceOrGroup) {
-      return resourceOrGroup.children
-        .map((child) => this.getResourcesForGroup(child))
-        .reduce((flat, toFlatten) => flat.concat(toFlatten), []);
-    } else {
-      return [resourceOrGroup];
-    }
-  }
-
-  //#region Mode
-  modes = ESchedulerMode;
-  mode$ = new BehaviorSubject<ESchedulerMode>(ESchedulerMode.week);
-  @Output() public modeChange = new EventEmitter<ESchedulerMode>();
-  public get mode() {
-    return this.mode$.value;
-  }
-  @Input() public set mode(value: ESchedulerMode) {
-    this.mode$.next(value);
-  }
-  //#endregion
-  // //#region Scale
-  // scale$ = new BehaviorSubject<SchedulerScale>(availableScales[4]);
-  // @Output() public scaleChange = new EventEmitter<SchedulerScale>();
-  // public get scale() {
-  //   return this.scale$.value;
-  // }
-  // @Input() public set scale(value: SchedulerScale) {
-  //   this.scale$.next(value);
-  // }
-  // //#endregion
-  //#region WeekOptions
-  @Output() public weekOptionsChange = new EventEmitter<WeekOptions>();
-  public get weekOptions() {
-    return this.weekOptions$.value;
-  }
-  @Input() public set weekOptions(value: WeekOptions) {
-    this.weekOptions$.next(value);
-  }
-  //#endregion
-  //#region TimelineOptions
-  @Output() public timelineOptionsChange = new EventEmitter<TimelineOptions>();
-  public get timelineOptions() {
-    return this.timelineOptions$.value;
-  }
-  @Input() public set timelineOptions(value: TimelineOptions) {
-    this.timelineOptions$.next(value);
-  }
-  //#endregion
-  //#region maxInnerHeight
-  @Input() public maxInnerHeight: number | null = null;
-  //#endregion
-  //#region Resources
-  public get resources() {
-    return this.resources$.value;
-  }
-  @Input() public set resources(value: (Resource | ResourceGroup)[]) {
-    this.resources$.next(value);
-  }
-  //#endregion
-
-  private addDays(date: Date, days: number) {
-    const result = new Date(date);
-    result.setDate(result.getDate() + days);
-    return result;
-  }
-
-  onPreviousWeekOrMonth() {
-    this.onChangeWeekOrMonth(false);
-  }
-
-  onNextWeekOrMonth() {
-    this.onChangeWeekOrMonth(true);
-  }
-
-  private onChangeWeekOrMonth(next: boolean) {
-    combineLatest([this.currentWeekOrMonth$, this.mode$])
-      .pipe(map(([currentWeekOrMonth, mode]) => {
-        switch (mode) {
-          case ESchedulerMode.week: {
-            return this.addDays(currentWeekOrMonth, (next ? 7 : -7));
-          }
-          case ESchedulerMode.timeline: {
-            return new Date(currentWeekOrMonth.getFullYear(), currentWeekOrMonth.getMonth() + (next ? 1 : -1), 1);
-          }
+      effect(() => {
+        const el = this.schedulerRef?.nativeElement;
+        if (el) {
+          el.date = this.date();
         }
-      }), take(1), takeUntilDestroyed(this.destroy))
-      .subscribe((w) => this.currentWeekOrMonth$.next(w));
+      });
+
+      effect(() => {
+        const el = this.schedulerRef?.nativeElement;
+        if (el) {
+          el.events = this.events();
+        }
+      });
+
+      effect(() => {
+        const el = this.schedulerRef?.nativeElement;
+        if (el) {
+          el.resources = this.resources();
+        }
+      });
+
+      effect(() => {
+        const el = this.schedulerRef?.nativeElement;
+        if (el) {
+          el.options = this.options();
+        }
+      });
+    });
+
+    // Set up event listeners
+    this.setupEventListeners();
+    this.initialized.set(true);
   }
 
-  onHoverEvent(ev: SchedulerEvent | null) {
-    this.hoveredEvent$.next(ev);
+  ngOnDestroy(): void {
+    this.removeEventListeners();
   }
 
-  onLeaveEvent(ev: SchedulerEvent | null) {
-    this.hoveredEvent$.next(null);
-  }
+  private setupEventListeners(): void {
+    const el = this.schedulerRef?.nativeElement;
+    if (!el) return;
 
-  operation: DragOperation | null = null;
-  dragStartTimeslot: TimeSlot | null = null;
-  onCreateEvent(ev: MouseEvent, slot: TimeSlot) {
-    ev.preventDefault();
-    this.mouseState$.next(true);
-    this.dragStartTimeslot = slot;
-    this.operation = {
-      operation: EDragOperation.createEvent,
-      event: {
-        start: slot.start,
-        end: slot.end,
-        color: '#F00',
-        description: 'Test event',
-      },
-      meta: null,
+    const addListener = (type: string, handler: (e: CustomEvent) => void) => {
+      const listener = (e: Event) => handler(e as CustomEvent);
+      el.addEventListener(type, listener);
+      this.eventListeners.push({ type, listener });
     };
-    this.previewEvent$.next({ start: slot.start, end: slot.end });
-  }
 
-  randomColor() {
-    const brightness = 128;
-    return '#' + this.randomChannel(brightness) + this.randomChannel(brightness) + this.randomChannel(brightness);
-  }
-  randomChannel(brightness: number){
-    const r = 255-brightness;
-    const n = 0|((Math.random() * r) + brightness);
-    const s = n.toString(16);
-    return (s.length==1) ? '0'+s : s;
-  }
+    addListener('event-click', (e) => {
+      this.eventClick.emit(e.detail);
+      this.selectedEvent.set(e.detail.event);
+    });
 
-  onStartDragEvent(eventPart: SchedulerEventPart, ev: MouseEvent) {
-    ev.preventDefault();
-    this.hoveredTimeSlot$.pipe(take(1), takeUntilDestroyed(this.destroy)).subscribe((hoveredTimeSlot) => {
-      if (eventPart.event) {
-        this.dragStartTimeslot = hoveredTimeSlot;
-        this.operation = {
-          operation: EDragOperation.moveEvent,
-          event: eventPart.event,
-          meta: null,
-        };
-        this.previewEvent$.next({ start: eventPart.event.start, end: eventPart.event.end });
-      }
+    addListener('event-dblclick', (e) => {
+      this.eventDblClick.emit(e.detail);
+    });
+
+    addListener('event-create', (e) => {
+      this.eventCreate.emit(e.detail);
+    });
+
+    addListener('event-update', (e) => {
+      this.eventUpdate.emit(e.detail);
+    });
+
+    addListener('event-delete', (e) => {
+      this.eventDelete.emit(e.detail);
+    });
+
+    addListener('date-click', (e) => {
+      this.dateClick.emit(e.detail);
+    });
+
+    addListener('date-select', (e) => {
+      this.dateSelect.emit(e.detail);
+      this.selectedRange.set({ start: e.detail.start, end: e.detail.end });
+    });
+
+    addListener('view-change', (e) => {
+      this.viewChange.emit(e.detail);
     });
   }
 
-  onStartResizeEvent(event: SchedulerEvent | null, position: 'top' | 'bottom') {
-    if (event) {
-      switch (position) {
-        case 'top': {
-          this.operation = {
-            operation: EDragOperation.resizeEvent,
-            event: event,
-            meta: { position },
-          }
-          this.previewEvent$.next({ start: event.start, end: event.end });
-        } break;
-        case 'bottom': {
-          this.operation = {
-            operation: EDragOperation.resizeEvent,
-            event: event,
-            meta: { position },
-          }
-          this.previewEvent$.next({ start: event.start, end: event.end });
-        } break;
-      }
+  private removeEventListeners(): void {
+    const el = this.schedulerRef?.nativeElement;
+    if (!el) return;
+
+    for (const { type, listener } of this.eventListeners) {
+      el.removeEventListener(type, listener);
     }
+    this.eventListeners = [];
   }
 
-  //#region hoveredTimeslot$
-  private getHoveredTimeslot(ev: MouseEvent, timeSlots: SchedulerStampWithSlots[]) {
-    const hoveredSlots = this.timeSlotElements.filter((el) => {
-      const rct = el.nativeElement.getBoundingClientRect();
-      if (rct.left <= ev.x && ev.x <= rct.right && rct.top <= ev.y && ev.y <= rct.bottom) {
-        return true;
-      } else {
-        return false;
-      }
-    });
+  // Public API methods (delegate to web component)
 
-    if (!hoveredSlots || hoveredSlots.length === 0) {
-      return null;
-    }
-
-    const slotElement = hoveredSlots[0].nativeElement;
-
-    const strRow = slotElement.getAttribute('data-row');
-    if (!strRow) {
-      return null;
-    }
-    const row = parseInt(strRow);
-
-    const strColumn = slotElement.getAttribute('data-column');
-    if (!strColumn) {
-      return null;
-    }
-    const column = parseInt(strColumn);
-
-    const slot = timeSlots[row].slots[column];
-    return slot;
+  /**
+   * Navigate to next period
+   */
+  next(): void {
+    this.schedulerRef?.nativeElement?.next();
   }
 
-  @HostListener('document:mousemove', ['$event'])
-  onMousemove(ev: MouseEvent) {
-    this.timeSlots$.pipe(take(1), takeUntilDestroyed(this.destroy)).subscribe((timeSlots) => {
-      const hovered = this.getHoveredTimeslot(ev, timeSlots);
-      this.hoveredTimeSlot$.next(hovered);
-
-      if (this.operation) {
-        switch (this.operation.operation) {
-          case EDragOperation.createEvent: {
-            if (this.operation.event && this.dragStartTimeslot && hovered && (this.operation.event.end.getTime() != hovered.end.getTime())) {
-              if (this.dragStartTimeslot.start.getTime() === hovered.start.getTime()) {
-                // 1 slot
-              } else if (this.dragStartTimeslot.start.getTime() < hovered.start.getTime()) {
-                // Drag down
-                this.previewEvent$
-                  .pipe(filter((ev) => !!ev && !!this.dragStartTimeslot))
-                  .pipe(map((ev) => {
-                    if (ev && this.dragStartTimeslot) {
-                      ev.start = this.dragStartTimeslot.start;
-                      ev.end = hovered.end;
-                    }
-                    return ev;
-                  }))
-                  .pipe(take(1), takeUntilDestroyed(this.destroy))
-                  .subscribe((ev) => this.previewEvent$.next(ev));
-              } else if (this.dragStartTimeslot.start.getTime() > hovered.start.getTime()) {
-                // Drag up
-                this.previewEvent$
-                  .pipe(filter((ev) => !!ev && !!this.dragStartTimeslot))
-                  .pipe(map((ev) => {
-                    if (ev && this.dragStartTimeslot) {
-                      ev.start = hovered.start;
-                      ev.end = this.dragStartTimeslot.end;
-                    }
-                    return ev;
-                  }))
-                  .pipe(take(1), takeUntilDestroyed(this.destroy))
-                  .subscribe((ev) => this.previewEvent$.next(ev));
-              }
-            }
-          } break;
-          case EDragOperation.moveEvent: {
-            if (hovered && this.dragStartTimeslot) {
-              this.previewEvent$
-                .pipe(filter((ev) => !!ev && !!this.dragStartTimeslot))
-                .pipe(map((ev) => {
-                  if (ev && this.dragStartTimeslot) {
-                    const result =  <PreviewEvent>{
-                      start: new Date(ev.start.getTime() + hovered.start.getTime() - this.dragStartTimeslot.start.getTime()),
-                      end: new Date(ev.end.getTime() + hovered.start.getTime() - this.dragStartTimeslot.start.getTime())
-                    };
-                    
-                    this.dragStartTimeslot = hovered;
-
-                    return result;
-                  } else {
-                    return ev;
-                  }
-                }))
-                .pipe(take(1), takeUntilDestroyed(this.destroy))
-                .subscribe(ev => this.previewEvent$.next(ev));
-            }
-          } break;
-          case EDragOperation.resizeEvent: {
-            if (hovered) {
-              this.previewEvent$
-                .pipe(filter((ev) => !!ev))
-                .pipe(map((ev) => {
-                  if (ev && this.operation && this.operation.event) {
-                    if (this.operation.meta.position === 'top') {
-                      ev.start = hovered.start;
-                      ev.end = this.operation.event.end;
-                    } else if (this.operation.meta.position === 'bottom') {
-                      ev.start = this.operation.event.start;
-                      ev.end = hovered.end;
-                    }
-                  }
-                  return ev;
-                }))
-                .pipe(take(1), takeUntilDestroyed(this.destroy))
-                .subscribe((ev) => this.previewEvent$.next(ev));
-            }
-          } break;
-        }
-      }
-
-    });
+  /**
+   * Navigate to previous period
+   */
+  prev(): void {
+    this.schedulerRef?.nativeElement?.prev();
   }
-  //#endregion
 
-  @HostListener('document:mouseup', ['$event'])
-  onMouseUp(ev: MouseEvent) {
-    if (this.operation) {
-      switch (this.operation.operation) {
-        case EDragOperation.createEvent: {
-          combineLatest([this.previewEvent$])
-            .pipe(take(1), takeUntilDestroyed(this.destroy))
-            .subscribe(([previewEvent]) => {
-              if (previewEvent) {
-                this.operation = null;
-                this.dragStartTimeslot = null;
-                this.resources$.next([
-                  ...this.resources$.value,
-                  <Resource>{
-                    description: 'New resource group',
-                    events: [{
-                      start: previewEvent.start,
-                      end: previewEvent.end,
-                      color: this.randomColor(),
-                      description: 'New event'
-                    }]
-                  }
-                ]);
-                this.previewEvent$.next(null);
-              }
-            });
-        } break;
-        case EDragOperation.moveEvent:
-        case EDragOperation.resizeEvent: {
-          this.previewEvent$
-            .pipe(filter((ev) => !!ev))
-            .pipe(take(1), takeUntilDestroyed(this.destroy))
-            .subscribe((previewEvent) => {
-              if (this.operation && this.operation.event && previewEvent) {
-                this.operation.event.start = previewEvent.start;
-                this.operation.event.end = previewEvent.end;
-                this.operation = null;
-                this.dragStartTimeslot = null;
-                this.resources$.next(this.resources$.value);
-                this.previewEvent$.next(null);
-              }
-            });
-        } break;
-      }
-    }
+  /**
+   * Navigate to today
+   */
+  today(): void {
+    this.schedulerRef?.nativeElement?.today();
+  }
+
+  /**
+   * Navigate to a specific date
+   */
+  gotoDate(date: Date): void {
+    this.schedulerRef?.nativeElement?.gotoDate(date);
+  }
+
+  /**
+   * Change the current view
+   */
+  changeView(view: ViewType): void {
+    this.schedulerRef?.nativeElement?.changeView(view);
+  }
+
+  /**
+   * Add an event
+   */
+  addEvent(event: SchedulerEvent): void {
+    this.schedulerRef?.nativeElement?.addEvent(event);
+  }
+
+  /**
+   * Update an event
+   */
+  updateEvent(event: SchedulerEvent): void {
+    this.schedulerRef?.nativeElement?.updateEvent(event);
+  }
+
+  /**
+   * Remove an event
+   */
+  removeEvent(eventId: string): void {
+    this.schedulerRef?.nativeElement?.removeEvent(eventId);
+  }
+
+  /**
+   * Get an event by ID
+   */
+  getEventById(eventId: string): SchedulerEvent | null {
+    return this.schedulerRef?.nativeElement?.getEventById(eventId) ?? null;
+  }
+
+  /**
+   * Refetch/refresh events
+   */
+  refetchEvents(): void {
+    this.schedulerRef?.nativeElement?.refetchEvents();
   }
 }

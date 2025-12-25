@@ -1,0 +1,32 @@
+{
+  "name": "@mintplayer/scheduler-wc",
+  "private": false,
+  "type": "module",
+  "version": "0.0.1",
+  "description": "Web Component for the MintPlayer Scheduler",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MintPlayer/mintplayer-ng-bootstrap",
+    "directory": "libs/mp-scheduler-wc"
+  },
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "dependencies": {
+    "tslib": "^2.3.0"
+  },
+  "peerDependencies": {
+    "@mintplayer/scheduler-core": "^0.0.1"
+  },
+  "author": {
+    "name": "Pieterjan De Clippel",
+    "url": "https://github.com/MintPlayer",
+    "email": "info@mintplayer.com"
+  },
+  "keywords": [
+    "scheduler",
+    "calendar",
+    "web-component",
+    "custom-element",
+    "timeline"
+  ]
+}
