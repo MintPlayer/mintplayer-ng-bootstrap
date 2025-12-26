@@ -45,6 +45,7 @@ export class MpScheduler extends HTMLElement {
   // Track previous state for change detection
   private previousView: ViewType | null = null;
   private previousDate: Date | null = null;
+  private previousSelectedEventId: string | null = null;
 
   // Event handlers bound to this
   private boundHandleMouseDown: (e: MouseEvent) => void;
@@ -168,6 +169,22 @@ export class MpScheduler extends HTMLElement {
 
   set options(value: Partial<SchedulerOptions>) {
     this.stateManager.setOptions(value);
+  }
+
+  get selectedEvent(): SchedulerEvent | null {
+    return this.stateManager.getState().selectedEvent;
+  }
+
+  set selectedEvent(value: SchedulerEvent | null) {
+    this.stateManager.setSelectedEvent(value);
+  }
+
+  get selectedRange(): { start: Date; end: Date } | null {
+    const state = this.stateManager.getState();
+    if (state.previewEvent) {
+      return { start: state.previewEvent.start, end: state.previewEvent.end };
+    }
+    return null;
   }
 
   next(): void {
@@ -371,6 +388,8 @@ export class MpScheduler extends HTMLElement {
     // Detect view/date changes and dispatch events
     const viewChanged = this.previousView !== null && this.previousView !== state.view;
     const dateChanged = this.previousDate !== null && this.previousDate.getTime() !== state.date.getTime();
+    const selectedEventId = state.selectedEvent?.id ?? null;
+    const selectionChanged = this.previousSelectedEventId !== null && this.previousSelectedEventId !== selectedEventId;
 
     // Dispatch view-change event if view or date changed (but not on initial render)
     if (viewChanged || dateChanged) {
@@ -382,9 +401,20 @@ export class MpScheduler extends HTMLElement {
       );
     }
 
+    // Dispatch selection-change event if selected event changed (but not on initial render)
+    if (selectionChanged) {
+      this.dispatchEvent(
+        new CustomEvent('selection-change', {
+          detail: { selectedEvent: state.selectedEvent },
+          bubbles: true,
+        })
+      );
+    }
+
     // Update previous state tracking
     this.previousView = state.view;
     this.previousDate = new Date(state.date);
+    this.previousSelectedEventId = selectedEventId;
 
     // Update title
     this.updateTitle();

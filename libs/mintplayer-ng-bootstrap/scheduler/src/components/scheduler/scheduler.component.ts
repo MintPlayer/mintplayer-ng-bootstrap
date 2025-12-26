@@ -37,6 +37,8 @@ interface MpSchedulerElement extends HTMLElement {
   events: SchedulerEvent[];
   resources: (Resource | ResourceGroup)[];
   options: Partial<SchedulerOptions>;
+  selectedEvent: SchedulerEvent | null;
+  selectedRange: { start: Date; end: Date } | null;
   next(): void;
   prev(): void;
   today(): void;
@@ -224,6 +226,14 @@ export class BsSchedulerComponent implements AfterViewInit, OnDestroy {
           el.options = this.options();
         }
       });
+
+      // Sync selectedEvent to web component
+      effect(() => {
+        const el = this.schedulerRef?.nativeElement;
+        if (el) {
+          el.selectedEvent = this.selectedEvent();
+        }
+      });
     });
 
     // Set up event listeners
@@ -277,6 +287,10 @@ export class BsSchedulerComponent implements AfterViewInit, OnDestroy {
 
     addListener('view-change', (e) => {
       this.viewChange.emit(e.detail);
+    });
+
+    addListener('selection-change', (e) => {
+      this.selectedEvent.set(e.detail.selectedEvent);
     });
   }
 

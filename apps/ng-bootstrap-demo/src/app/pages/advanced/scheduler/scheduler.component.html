@@ -39,6 +39,7 @@
         [events]="events()"
         [resources]="resources()"
         [options]="options()"
+        [(selectedEvent)]="selectedEvent"
         (eventClick)="onEventClick($event)"
         (eventCreate)="onEventCreate($event)"
         (eventUpdate)="onEventUpdate($event)"
@@ -68,6 +69,7 @@
         <div class="state-debug" style="font-size: 11px; max-height: 300px; overflow: auto;">
           <div><strong>View:</strong> {{ view() }}</div>
           <div><strong>Date:</strong> {{ date() | date:'medium' }}</div>
+          <div><strong>Selected:</strong> {{ selectedEvent()?.title ?? 'None' }}</div>
           <hr>
           <div><strong>Events:</strong></div>
           <pre style="font-size: 10px; margin: 0;">{{ events() | json }}</pre>

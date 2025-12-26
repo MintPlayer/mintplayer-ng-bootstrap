@@ -69,6 +69,9 @@ export class SchedulerComponent {
   events = signal<SchedulerEvent[]>([]);
   resources = signal<(Resource | ResourceGroup)[]>([]);
 
+  // Selection state
+  selectedEvent = signal<SchedulerEvent | null>(null);
+
   // Event log
   eventLog = signal<string[]>([]);
 
