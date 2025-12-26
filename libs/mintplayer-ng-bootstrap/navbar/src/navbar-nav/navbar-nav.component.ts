@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, HostListener, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, effect, HostListener, inject, input, signal } from '@angular/core';
 import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 
@@ -12,6 +12,7 @@ import { BsNavbarComponent } from '../navbar/navbar.component';
 })
 export class BsNavbarNavComponent {
 
+  private cdr = inject(ChangeDetectorRef);
   bsNavbar = inject(BsNavbarComponent);
 
   windowWidth = signal<number | null>(null);
@@ -37,7 +38,10 @@ export class BsNavbarNavComponent {
   constructor() {
     effect((onCleanup) => {
       const windowWidth = this.windowWidth();
-      const timeout = setTimeout(() => this.isResizing.set(false), 300);
+      const timeout = setTimeout(() => {
+        this.isResizing.set(false);
+        this.cdr.markForCheck();
+      }, 300);
       onCleanup(() => clearTimeout(timeout));
     });
 
