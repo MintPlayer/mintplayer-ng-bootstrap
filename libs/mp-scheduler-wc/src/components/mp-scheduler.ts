@@ -42,6 +42,10 @@ export class MpScheduler extends HTMLElement {
   private currentView: BaseView | null = null;
   private contentContainer: HTMLElement | null = null;
 
+  // Track previous state for change detection
+  private previousView: ViewType | null = null;
+  private previousDate: Date | null = null;
+
   // Event handlers bound to this
   private boundHandleMouseDown: (e: MouseEvent) => void;
   private boundHandleMouseMove: (e: MouseEvent) => void;
@@ -364,6 +368,24 @@ export class MpScheduler extends HTMLElement {
   }
 
   private onStateChange(state: SchedulerState): void {
+    // Detect view/date changes and dispatch events
+    const viewChanged = this.previousView !== null && this.previousView !== state.view;
+    const dateChanged = this.previousDate !== null && this.previousDate.getTime() !== state.date.getTime();
+
+    // Dispatch view-change event if view or date changed (but not on initial render)
+    if (viewChanged || dateChanged) {
+      this.dispatchEvent(
+        new CustomEvent('view-change', {
+          detail: { view: state.view, date: state.date },
+          bubbles: true,
+        })
+      );
+    }
+
+    // Update previous state tracking
+    this.previousView = state.view;
+    this.previousDate = new Date(state.date);
+
     // Update title
     this.updateTitle();
 
@@ -377,8 +399,8 @@ export class MpScheduler extends HTMLElement {
     // Update or re-render view
     if (this.currentView) {
       // Check if view type changed
-      const viewChanged = this.viewTypeChanged(state.view);
-      if (viewChanged) {
+      const viewTypeChanged = this.viewTypeChanged(state.view);
+      if (viewTypeChanged) {
         this.renderView();
       } else {
         this.currentView.update(state);

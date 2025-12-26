@@ -49,9 +49,9 @@
     </div>
   </div>
   <div class="col-md-3">
-    <bs-card>
+    <bs-card class="d-block mb-3">
       <bs-card-header>Event Log</bs-card-header>
-      <div class="card-body">
+      <div class="p-3">
         <div class="event-log">
           @if (eventLog().length === 0) {
             <p class="text-muted">No events yet. Try clicking on the scheduler or loading sample data.</p>
@@ -59,6 +59,18 @@
           @for (entry of eventLog(); track entry) {
             <div class="log-entry">{{ entry }}</div>
           }
+        </div>
+      </div>
+    </bs-card>
+    <bs-card class="d-block">
+      <bs-card-header>State ({{ events().length }} events)</bs-card-header>
+      <div class="p-3">
+        <div class="state-debug" style="font-size: 11px; max-height: 300px; overflow: auto;">
+          <div><strong>View:</strong> {{ view() }}</div>
+          <div><strong>Date:</strong> {{ date() | date:'medium' }}</div>
+          <hr>
+          <div><strong>Events:</strong></div>
+          <pre style="font-size: 10px; margin: 0;">{{ events() | json }}</pre>
         </div>
       </div>
     </bs-card>
