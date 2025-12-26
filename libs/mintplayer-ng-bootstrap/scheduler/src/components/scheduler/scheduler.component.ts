@@ -25,6 +25,9 @@ import {
   SchedulerOptions,
 } from '@mintplayer/scheduler-core';
 
+// Import the web component to ensure it gets registered
+import '@mintplayer/scheduler-wc';
+
 /**
  * Interface for the mp-scheduler web component element
  */
