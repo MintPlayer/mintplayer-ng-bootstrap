@@ -40,6 +40,7 @@ export class MpScheduler extends HTMLElement {
   private shadow: ShadowRoot;
   private stateManager: SchedulerStateManager;
   private currentView: BaseView | null = null;
+  private currentViewType: ViewType | null = null;
   private contentContainer: HTMLElement | null = null;
 
   // Track previous state for change detection
@@ -399,22 +400,28 @@ export class MpScheduler extends HTMLElement {
 
     const state = this.stateManager.getState();
 
-    // Create new view
+    // Create new view and track the type
+    // (we track type separately because constructor.name is minified in production)
     switch (state.view) {
       case 'year':
         this.currentView = new YearView(this.contentContainer, state);
+        this.currentViewType = 'year';
         break;
       case 'month':
         this.currentView = new MonthView(this.contentContainer, state);
+        this.currentViewType = 'month';
         break;
       case 'week':
         this.currentView = new WeekView(this.contentContainer, state);
+        this.currentViewType = 'week';
         break;
       case 'day':
         this.currentView = new DayView(this.contentContainer, state);
+        this.currentViewType = 'day';
         break;
       case 'timeline':
         this.currentView = new TimelineView(this.contentContainer, state);
+        this.currentViewType = 'timeline';
         break;
     }
 
@@ -515,8 +522,9 @@ export class MpScheduler extends HTMLElement {
   private viewTypeChanged(newView: ViewType): boolean {
     if (!this.currentView) return true;
 
-    const viewClass = this.currentView.constructor.name.toLowerCase();
-    return !viewClass.includes(newView);
+    // Compare against tracked view type instead of constructor.name
+    // (constructor.name is minified in production builds)
+    return this.currentViewType !== newView;
   }
 
   private attachEventListeners(): void {
