@@ -21,6 +21,8 @@
       "mcp__playwright__browser_take_screenshot",
       "mcp__playwright__browser_press_key",
       "mcp__playwright__browser_type",
+      "mcp__playwright__browser_run_code",
+      "mcp__playwright__browser_select_option",
       "mcp__github__get_issue",
       "WebFetch(domain:github.com)"
     ]
