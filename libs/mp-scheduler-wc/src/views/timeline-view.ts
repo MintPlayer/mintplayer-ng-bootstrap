@@ -267,10 +267,11 @@ export class TimelineView extends BaseView {
 
   update(state: SchedulerState): void {
     const dateChanged = this.state.date.getTime() !== state.date.getTime();
+    const optionsChanged = this.optionsRequireRerender(this.state.options, state.options);
     this.state = state;
 
-    // If date changed, we need to re-render the entire view
-    if (dateChanged) {
+    // If date or relevant options changed, we need to re-render the entire view
+    if (dateChanged || optionsChanged) {
       this.render();
       return;
     }
@@ -281,6 +282,15 @@ export class TimelineView extends BaseView {
     // Re-render events
     const days = dateService.getWeekDays(state.date, state.options.firstDayOfWeek);
     this.renderEvents(days);
+  }
+
+  private optionsRequireRerender(oldOpts: SchedulerState['options'], newOpts: SchedulerState['options']): boolean {
+    return oldOpts.slotDuration !== newOpts.slotDuration ||
+           oldOpts.timeFormat !== newOpts.timeFormat ||
+           oldOpts.firstDayOfWeek !== newOpts.firstDayOfWeek ||
+           oldOpts.slotMinTime !== newOpts.slotMinTime ||
+           oldOpts.slotMaxTime !== newOpts.slotMaxTime ||
+           oldOpts.locale !== newOpts.locale;
   }
 
   private updateGreyedSlots(): void {

@@ -151,15 +151,22 @@ export class MonthView extends BaseView {
   update(state: SchedulerState): void {
     const dateChanged = this.state.date.getMonth() !== state.date.getMonth() ||
                         this.state.date.getFullYear() !== state.date.getFullYear();
+    const optionsChanged = this.optionsRequireRerender(this.state.options, state.options);
     this.state = state;
 
-    // If month changed, we need to re-render the entire view
-    if (dateChanged) {
+    // If month or relevant options changed, we need to re-render the entire view
+    if (dateChanged || optionsChanged) {
       this.render();
       return;
     }
 
     this.renderEvents();
+  }
+
+  private optionsRequireRerender(oldOpts: SchedulerState['options'], newOpts: SchedulerState['options']): boolean {
+    return oldOpts.firstDayOfWeek !== newOpts.firstDayOfWeek ||
+           oldOpts.dayMaxEvents !== newOpts.dayMaxEvents ||
+           oldOpts.locale !== newOpts.locale;
   }
 
   destroy(): void {
