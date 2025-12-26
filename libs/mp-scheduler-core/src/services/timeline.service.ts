@@ -144,6 +144,17 @@ export class TimelineService {
 
   /**
    * Get track assignment for event parts (for rendering)
+   *
+   * Each event gets a totalTracks value based on the number of tracks that
+   * actually overlap with that specific event's time range. This ensures events
+   * are displayed as wide as possible:
+   * - An event with no overlapping events gets 100% width (totalTracks: 1)
+   * - An event overlapping with 1 other gets 50% width (totalTracks: 2)
+   * - An event overlapping with 2 others gets 33.33% width (totalTracks: 3)
+   * - etc.
+   *
+   * The trackIndex returned is relative to the overlapping tracks, not global.
+   * This ensures correct positioning when events have different overlap groups.
    */
   getTimelinedParts(
     eventParts: SchedulerEventPart[]
@@ -158,19 +169,68 @@ export class TimelineService {
     // Get timeline tracks for the events
     const tracks = this.getTimeline(events);
 
-    // Map parts to their track indices
+    // Map parts to their track indices with correct totalTracks per event
     return eventParts.map((part) => {
       if (!part.event) {
         return { part, trackIndex: 0, totalTracks: 1 };
       }
 
-      const track = tracks.find((t) => t.events.some((e) => e.id === part.event.id));
+      const globalTrack = tracks.find((t) => t.events.some((e) => e.id === part.event.id));
+      const globalTrackIndex = globalTrack?.index ?? 0;
+
+      // Get the tracks that overlap with this part and calculate relative position
+      const { relativeIndex, overlappingCount } = this.getRelativeTrackPosition(
+        tracks,
+        part,
+        globalTrackIndex
+      );
+
       return {
         part,
-        trackIndex: track?.index ?? 0,
-        totalTracks: tracks.length,
+        trackIndex: relativeIndex,
+        totalTracks: overlappingCount,
       };
     });
+  }
+
+  /**
+   * Calculate the relative track position for an event part
+   *
+   * Returns:
+   * - relativeIndex: The position of this event among overlapping tracks (0-based)
+   * - overlappingCount: Total number of tracks that overlap with this part
+   *
+   * Example:
+   * If global tracks are [0, 1, 2] and only tracks 1 and 2 overlap with this event,
+   * and the event is on track 2, returns { relativeIndex: 1, overlappingCount: 2 }
+   */
+  private getRelativeTrackPosition(
+    tracks: TimelineTrack[],
+    part: SchedulerEventPart,
+    globalTrackIndex: number
+  ): { relativeIndex: number; overlappingCount: number } {
+    // Find all track indices that have events overlapping with this part
+    const overlappingTrackIndices: number[] = [];
+
+    for (const track of tracks) {
+      const hasOverlap = track.events.some((event) =>
+        event.start < part.end && event.end > part.start
+      );
+      if (hasOverlap) {
+        overlappingTrackIndices.push(track.index);
+      }
+    }
+
+    // Sort to ensure consistent ordering
+    overlappingTrackIndices.sort((a, b) => a - b);
+
+    // Find the relative position of this event's track among overlapping tracks
+    const relativeIndex = overlappingTrackIndices.indexOf(globalTrackIndex);
+
+    return {
+      relativeIndex: relativeIndex >= 0 ? relativeIndex : 0,
+      overlappingCount: Math.max(1, overlappingTrackIndices.length),
+    };
   }
 
   /**

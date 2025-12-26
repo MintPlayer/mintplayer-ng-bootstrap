@@ -38,20 +38,20 @@
     @switch (animation()) {
         @case ('slide') {
             <div class="carousel slide mx-auto" [class.carousel-vertical]="orientation() === 'vertical'"
-                [style.height.px]="swipeContainer?.currentSlideHeight()">
+                [style.height.px]="swipeContainer.currentSlideHeight()">
                 @if (indicators()) {
                     <div class="carousel-indicators" [class.carousel-indicators-vertical]="orientation() === 'vertical'">
                         @for (image of images(); track image.id; let i = $index) {
-                            <button type="button" (click)="swipeContainer?.goto(i)"
-                                [class.active]="swipeContainer?.imageIndex() === i" data-bs-target
-                                [attr.aria-current]="swipeContainer?.imageIndex() === i ? true : null"
+                            <button type="button" (click)="swipeContainer.goto(i)"
+                                [class.active]="swipeContainer.imageIndex() === i" data-bs-target
+                                [attr.aria-current]="swipeContainer.imageIndex() === i ? true : null"
                                 [attr.aria-label]="'Slide ' + i"></button>
                         }
                     </div>
                 }
                 <div class="carousel-inner overflow-hidden pe-none" [class.text-nowrap]="orientation() === 'horizontal'"
                     [class.carousel-inner-vertical]="orientation() === 'vertical'" #innerElement
-                    [style.height.px]="swipeContainer?.currentSlideHeight()">
+                    [style.height.px]="swipeContainer.currentSlideHeight()">
                     <div bsSwipeContainer #container="bsSwipeContainer" [minimumOffset]="50"
                         (imageIndexChange)="onImageIndexChange($event)"
                         (animationStart)="onContainerAnimationStart()"

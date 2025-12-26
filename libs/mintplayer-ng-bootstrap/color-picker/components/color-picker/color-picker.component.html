@@ -3,7 +3,7 @@
 @let letLuminosity = luminosity();
 @let letAlpha = alpha();
 
-<bs-color-wheel [hs]="letHS" (hsChange)="hs.set($event)" [luminosity]="letLuminosity" [width]="size() ?? 150" [height]="size() ?? 150" #wheel></bs-color-wheel>
+<bs-color-wheel [hs]="letHS" (hsChange)="hs.set($event)" [luminosity]="letLuminosity" [width]="size()" [height]="size()" #wheel></bs-color-wheel>
 <bs-luminosity-strip [hs]="letHS" [luminosity]="letLuminosity" (luminosityChange)="luminosity.set($event)" class="d-block mt-2" [style.width.px]="size()" #strip></bs-luminosity-strip>
 @if (allowAlpha()) {
     <bs-alpha-strip [hs]="letHS" [luminosity]="letLuminosity" [alpha]="letAlpha" (alphaChange)="alpha.set($event)" class="d-block mt-2" [style.width.px]="size()" #alphaStrip></bs-alpha-strip>

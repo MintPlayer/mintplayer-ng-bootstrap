@@ -14,13 +14,21 @@ describe('TimelineService', () => {
     startHour: number,
     endHour: number,
     day: number = 15
-  ): SchedulerEvent => ({
-    id,
-    title: `Event ${id}`,
-    start: new Date(2025, 0, day, startHour, 0),
-    end: new Date(2025, 0, day, endHour, 0),
-    color: '#3788d8',
-  });
+  ): SchedulerEvent => {
+    // Handle fractional hours (e.g., 10.5 = 10:30)
+    const startH = Math.floor(startHour);
+    const startM = Math.round((startHour - startH) * 60);
+    const endH = Math.floor(endHour);
+    const endM = Math.round((endHour - endH) * 60);
+
+    return {
+      id,
+      title: `Event ${id}`,
+      start: new Date(2025, 0, day, startH, startM),
+      end: new Date(2025, 0, day, endH, endM),
+      color: '#3788d8',
+    };
+  };
 
   const createMultiDayEvent = (
     id: string,
@@ -176,6 +184,157 @@ describe('TimelineService', () => {
       expect(event2Part?.trackIndex).toBe(1);
       expect(event1Part?.totalTracks).toBe(2);
       expect(event2Part?.totalTracks).toBe(2);
+    });
+
+    it('should give non-overlapping event full width (totalTracks: 1)', () => {
+      // Event A: 9:00-9:30 (no overlaps)
+      // Event B: 10:00-11:00 (overlaps with C)
+      // Event C: 10:30-11:30 (overlaps with B)
+      const eventA = createEvent('A', 9, 9.5);  // 9:00-9:30
+      const eventB = createEvent('B', 10, 11);  // 10:00-11:00
+      const eventC = createEvent('C', 10.5, 11.5);  // 10:30-11:30
+
+      const partsA = service.splitInParts(eventA).parts;
+      const partsB = service.splitInParts(eventB).parts;
+      const partsC = service.splitInParts(eventC).parts;
+
+      const result = service.getTimelinedParts([...partsA, ...partsB, ...partsC]);
+
+      const eventAPart = result.find((r) => r.part.event?.id === 'A');
+      const eventBPart = result.find((r) => r.part.event?.id === 'B');
+      const eventCPart = result.find((r) => r.part.event?.id === 'C');
+
+      // Event A has no overlaps, should get full width
+      expect(eventAPart?.totalTracks).toBe(1);
+      expect(eventAPart?.trackIndex).toBe(0);
+
+      // Events B and C overlap with each other, should get 50% each
+      expect(eventBPart?.totalTracks).toBe(2);
+      expect(eventCPart?.totalTracks).toBe(2);
+    });
+
+    it('should handle three overlapping events (33% width each)', () => {
+      const event1 = createEvent('1', 9, 12);
+      const event2 = createEvent('2', 10, 13);
+      const event3 = createEvent('3', 11, 14);
+
+      const parts1 = service.splitInParts(event1).parts;
+      const parts2 = service.splitInParts(event2).parts;
+      const parts3 = service.splitInParts(event3).parts;
+
+      const result = service.getTimelinedParts([...parts1, ...parts2, ...parts3]);
+
+      const event1Part = result.find((r) => r.part.event?.id === '1');
+      const event2Part = result.find((r) => r.part.event?.id === '2');
+      const event3Part = result.find((r) => r.part.event?.id === '3');
+
+      // All three events overlap (at least partially), so each gets 1/3 width
+      expect(event1Part?.totalTracks).toBe(3);
+      expect(event2Part?.totalTracks).toBe(3);
+      expect(event3Part?.totalTracks).toBe(3);
+
+      // Track indices should be relative (0, 1, 2)
+      expect(event1Part?.trackIndex).toBe(0);
+      expect(event2Part?.trackIndex).toBe(1);
+      expect(event3Part?.trackIndex).toBe(2);
+    });
+
+    it('should use relative track indices for non-consecutive overlaps', () => {
+      // Event A: 9:00-10:00 (track 0, overlaps with B)
+      // Event B: 9:00-10:30 (track 1, overlaps with A and C)
+      // Event C: 10:00-11:00 (track 0, doesn't overlap with A since A ends exactly when C starts)
+      //
+      // Track assignment:
+      // - Track 0: A (9:00-10:00), C (10:00-11:00) - back-to-back, no overlap
+      // - Track 1: B (9:00-10:30)
+      const eventA = createEvent('A', 9, 10);
+      const eventB = createEvent('B', 9, 10.5);  // 9:00-10:30
+      const eventC = createEvent('C', 10, 11);
+
+      const partsA = service.splitInParts(eventA).parts;
+      const partsB = service.splitInParts(eventB).parts;
+      const partsC = service.splitInParts(eventC).parts;
+
+      const result = service.getTimelinedParts([...partsA, ...partsB, ...partsC]);
+
+      const eventAPart = result.find((r) => r.part.event?.id === 'A');
+      const eventBPart = result.find((r) => r.part.event?.id === 'B');
+      const eventCPart = result.find((r) => r.part.event?.id === 'C');
+
+      // Event A (9:00-10:00) overlaps with B (9:00-10:30), both on tracks 0 and 1
+      expect(eventAPart?.totalTracks).toBe(2);
+      expect(eventAPart?.trackIndex).toBe(0);
+
+      // Event B (9:00-10:30) overlaps with A (9:00-10:00) and C (10:00-10:30)
+      // Both A and C are on track 0, B is on track 1 → 2 tracks total
+      expect(eventBPart?.totalTracks).toBe(2);
+      expect(eventBPart?.trackIndex).toBe(1);
+
+      // Event C (10:00-11:00) overlaps with B (10:00-10:30) but not with A
+      // C is on track 0, B is on track 1 → 2 tracks overlap
+      expect(eventCPart?.totalTracks).toBe(2);
+      expect(eventCPart?.trackIndex).toBe(0);
+    });
+
+    it('should handle three truly concurrent events correctly', () => {
+      // All three events overlap at 10:00-10:30, requiring 3 separate tracks
+      // Event A: 9:00-11:00 (track 0)
+      // Event B: 10:00-12:00 (track 1, overlaps with A)
+      // Event C: 10:00-10:30 (track 2, overlaps with both A and B)
+      const eventA = createEvent('A', 9, 11);
+      const eventB = createEvent('B', 10, 12);
+      const eventC = createEvent('C', 10, 10.5);
+
+      const partsA = service.splitInParts(eventA).parts;
+      const partsB = service.splitInParts(eventB).parts;
+      const partsC = service.splitInParts(eventC).parts;
+
+      const result = service.getTimelinedParts([...partsA, ...partsB, ...partsC]);
+
+      const eventAPart = result.find((r) => r.part.event?.id === 'A');
+      const eventBPart = result.find((r) => r.part.event?.id === 'B');
+      const eventCPart = result.find((r) => r.part.event?.id === 'C');
+
+      // All events overlap during 10:00-10:30, so all get 3 tracks
+      expect(eventAPart?.totalTracks).toBe(3);
+      expect(eventBPart?.totalTracks).toBe(3);
+      expect(eventCPart?.totalTracks).toBe(3);
+
+      // Track indices should be 0, 1, 2
+      expect(eventAPart?.trackIndex).toBe(0);
+      expect(eventBPart?.trackIndex).toBe(1);
+      expect(eventCPart?.trackIndex).toBe(2);
+    });
+
+    it('should handle mixed overlap scenarios correctly', () => {
+      // Event 1: 9:00-10:00 (alone)
+      // Event 2: 11:00-12:00 (overlaps with 3)
+      // Event 3: 11:30-12:30 (overlaps with 2)
+      // Event 4: 14:00-15:00 (alone)
+      const event1 = createEvent('1', 9, 10);
+      const event2 = createEvent('2', 11, 12);
+      const event3 = createEvent('3', 11.5, 12.5);
+      const event4 = createEvent('4', 14, 15);
+
+      const parts1 = service.splitInParts(event1).parts;
+      const parts2 = service.splitInParts(event2).parts;
+      const parts3 = service.splitInParts(event3).parts;
+      const parts4 = service.splitInParts(event4).parts;
+
+      const result = service.getTimelinedParts([...parts1, ...parts2, ...parts3, ...parts4]);
+
+      const event1Part = result.find((r) => r.part.event?.id === '1');
+      const event2Part = result.find((r) => r.part.event?.id === '2');
+      const event3Part = result.find((r) => r.part.event?.id === '3');
+      const event4Part = result.find((r) => r.part.event?.id === '4');
+
+      // Events 1 and 4 have no overlaps → full width
+      expect(event1Part?.totalTracks).toBe(1);
+      expect(event4Part?.totalTracks).toBe(1);
+
+      // Events 2 and 3 overlap with each other → 50% width
+      expect(event2Part?.totalTracks).toBe(2);
+      expect(event3Part?.totalTracks).toBe(2);
     });
   });
 

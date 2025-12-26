@@ -7,7 +7,7 @@
         </td>
         <td colspan="6" class="fw-bolder">
             {{ currentMonth() | monthName | bsUcFirst }}
-            {{ currentMonth()?.getFullYear() }}
+            {{ currentMonth().getFullYear() }}
         </td>
         <td>
             <button type="button" class="btn btn-default border-bottom-0" (click)="nextMonth()">
