@@ -211,6 +211,21 @@ export class DateService {
   }
 
   /**
+   * Detect time format preference based on locale
+   * Uses the Intl API to determine if the locale uses 12-hour or 24-hour time
+   */
+  detectTimeFormat(locale?: string): TimeFormat {
+    const resolvedLocale = locale || (typeof navigator !== 'undefined' ? navigator.language : 'en-US');
+    try {
+      const options = new Intl.DateTimeFormat(resolvedLocale, { hour: 'numeric' }).resolvedOptions();
+      return options.hour12 ? '12h' : '24h';
+    } catch {
+      // Fallback to 24h if detection fails
+      return '24h';
+    }
+  }
+
+  /**
    * Format time according to format preference
    */
   formatTime(date: Date, format: TimeFormat = '24h'): string {

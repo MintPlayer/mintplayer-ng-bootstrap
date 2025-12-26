@@ -25,6 +25,7 @@ import {
   generateEventId,
   generateResourceId,
   generateGroupId,
+  dateService,
 } from '@mintplayer/scheduler-core';
 
 @Component({
@@ -52,7 +53,7 @@ export class SchedulerComponent {
 
   // Configuration
   slotDuration = signal<number>(1800); // 30 minutes
-  timeFormat = signal<'12h' | '24h'>('24h');
+  timeFormat = signal<'12h' | '24h'>(dateService.detectTimeFormat());
   firstDayOfWeek = signal<0 | 1>(1); // Monday
 
   // Options computed from signals
