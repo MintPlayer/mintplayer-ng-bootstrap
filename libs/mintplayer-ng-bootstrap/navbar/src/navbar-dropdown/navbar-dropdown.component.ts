@@ -2,8 +2,8 @@ import { DOCUMENT, isPlatformServer } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ContentChildren, computed, DestroyRef, effect, ElementRef, forwardRef, inject, Injector, input, OnDestroy, PLATFORM_ID, QueryList, signal, SkipSelf, ViewChild } from '@angular/core';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
-import { DomPortal } from '@angular/cdk/portal';
-import { OverlayRef } from '@angular/cdk/overlay';
+import type { DomPortal } from '@angular/cdk/portal';
+import type { OverlayRef } from '@angular/cdk/overlay';
 
 @Component({
   selector: 'bs-navbar-dropdown',
@@ -75,7 +75,10 @@ export class BsNavbarDropdownComponent implements OnDestroy {
     });
 
     if (!!this.parentDropdown && this.isBrowser) {
-      import('@angular/cdk/overlay').then(({ Overlay }) => {
+      Promise.all([
+        import('@angular/cdk/overlay'),
+        import('@angular/cdk/portal')
+      ]).then(([{ Overlay }, { DomPortal }]) => {
         // Guard against accessing injector after component is destroyed
         if (this.isDestroyed) {
           return;

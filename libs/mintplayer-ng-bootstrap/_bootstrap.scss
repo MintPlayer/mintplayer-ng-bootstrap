@@ -1,65 +1,372 @@
-// Import our own utilities
-@import "bootstrap/scss/bootstrap-utilities.scss";
+@use "sass:map";
+
+// Bootstrap Configuration - Import functions, variables, mixins first
+@import "bootstrap/scss/functions";
+@import "bootstrap/scss/variables";
+@import "bootstrap/scss/variables-dark";
+@import "bootstrap/scss/maps";
+@import "bootstrap/scss/mixins";
+
+// Define only the utilities that are actually used in the application
+// This dramatically reduces CSS size compared to importing all utilities
+$utilities: (
+  // Display utilities: d-none, d-block, d-flex, d-inline-block, d-grid
+  "display": (
+    responsive: true,
+    print: true,
+    property: display,
+    class: d,
+    values: none block flex inline-block grid
+  ),
+  // Flexbox utilities
+  "flex-direction": (
+    responsive: true,
+    property: flex-direction,
+    class: flex,
+    values: row column
+  ),
+  "flex-grow": (
+    property: flex-grow,
+    class: flex,
+    values: (
+      grow-0: 0,
+      grow-1: 1,
+    )
+  ),
+  "flex-wrap": (
+    property: flex-wrap,
+    class: flex,
+    values: wrap nowrap
+  ),
+  "justify-content": (
+    responsive: true,
+    property: justify-content,
+    class: justify-content,
+    values: (
+      start: flex-start,
+      end: flex-end,
+      center: center,
+      between: space-between,
+      around: space-around,
+      evenly: space-evenly,
+    )
+  ),
+  "align-items": (
+    responsive: true,
+    property: align-items,
+    class: align-items,
+    values: (
+      start: flex-start,
+      end: flex-end,
+      center: center,
+      baseline: baseline,
+      stretch: stretch,
+    )
+  ),
+  "align-self": (
+    responsive: true,
+    property: align-self,
+    class: align-self,
+    values: (
+      start: flex-start,
+      end: flex-end,
+      center: center,
+      baseline: baseline,
+      stretch: stretch,
+    )
+  ),
+  // Margin utilities
+  "margin": (
+    responsive: true,
+    property: margin,
+    class: m,
+    values: map-merge($spacers, (auto: auto))
+  ),
+  "margin-x": (
+    responsive: true,
+    property: margin-right margin-left,
+    class: mx,
+    values: map-merge($spacers, (auto: auto))
+  ),
+  "margin-y": (
+    responsive: true,
+    property: margin-top margin-bottom,
+    class: my,
+    values: map-merge($spacers, (auto: auto))
+  ),
+  "margin-top": (
+    responsive: true,
+    property: margin-top,
+    class: mt,
+    values: map-merge($spacers, (auto: auto))
+  ),
+  "margin-end": (
+    responsive: true,
+    property: margin-right,
+    class: me,
+    values: map-merge($spacers, (auto: auto))
+  ),
+  "margin-bottom": (
+    responsive: true,
+    property: margin-bottom,
+    class: mb,
+    values: map-merge($spacers, (auto: auto))
+  ),
+  "margin-start": (
+    responsive: true,
+    property: margin-left,
+    class: ms,
+    values: map-merge($spacers, (auto: auto))
+  ),
+  // Padding utilities
+  "padding": (
+    responsive: true,
+    property: padding,
+    class: p,
+    values: $spacers
+  ),
+  "padding-x": (
+    responsive: true,
+    property: padding-right padding-left,
+    class: px,
+    values: $spacers
+  ),
+  "padding-y": (
+    responsive: true,
+    property: padding-top padding-bottom,
+    class: py,
+    values: $spacers
+  ),
+  "padding-top": (
+    responsive: true,
+    property: padding-top,
+    class: pt,
+    values: $spacers
+  ),
+  "padding-end": (
+    responsive: true,
+    property: padding-right,
+    class: pe,
+    values: map-merge($spacers, (none: none, all: all))
+  ),
+  "padding-bottom": (
+    responsive: true,
+    property: padding-bottom,
+    class: pb,
+    values: $spacers
+  ),
+  "padding-start": (
+    responsive: true,
+    property: padding-left,
+    class: ps,
+    values: $spacers
+  ),
+  // Text utilities
+  "text-align": (
+    responsive: true,
+    property: text-align,
+    class: text,
+    values: (
+      start: left,
+      end: right,
+      center: center,
+    )
+  ),
+  "text-wrap": (
+    property: white-space,
+    class: text,
+    values: (
+      wrap: normal,
+      nowrap: nowrap,
+    )
+  ),
+  "text-transform": (
+    property: text-transform,
+    class: text,
+    values: lowercase uppercase capitalize
+  ),
+  "white-space": (
+    property: white-space,
+    class: text,
+    values: (
+      truncate: nowrap,
+    )
+  ),
+  "font-weight": (
+    property: font-weight,
+    class: fw,
+    values: (
+      lighter: $font-weight-lighter,
+      light: $font-weight-light,
+      normal: $font-weight-normal,
+      medium: $font-weight-medium,
+      semibold: $font-weight-semibold,
+      bold: $font-weight-bold,
+      bolder: $font-weight-bolder,
+    )
+  ),
+  // Background colors
+  "background-color": (
+    property: background-color,
+    class: bg,
+    local-vars: (
+      "bg-opacity": 1
+    ),
+    values: map-merge(
+      $utilities-bg-colors,
+      (
+        "transparent": transparent,
+        "body-secondary": rgba(var(--#{$prefix}secondary-bg-rgb), var(--#{$prefix}bg-opacity)),
+        "body-tertiary": rgba(var(--#{$prefix}tertiary-bg-rgb), var(--#{$prefix}bg-opacity)),
+      )
+    )
+  ),
+  // Text colors
+  "color": (
+    property: color,
+    class: text,
+    local-vars: (
+      "text-opacity": 1
+    ),
+    values: map-merge(
+      $utilities-text-colors,
+      (
+        "muted": var(--#{$prefix}secondary-color),
+        "reset": inherit,
+      )
+    )
+  ),
+  // Width and height
+  "width": (
+    property: width,
+    class: w,
+    values: (
+      25: 25%,
+      50: 50%,
+      75: 75%,
+      100: 100%,
+      auto: auto
+    )
+  ),
+  "height": (
+    property: height,
+    class: h,
+    values: (
+      25: 25%,
+      50: 50%,
+      75: 75%,
+      100: 100%,
+      auto: auto
+    )
+  ),
+  // Position utilities
+  "position": (
+    property: position,
+    values: static relative absolute fixed sticky
+  ),
+  // Overflow
+  "overflow": (
+    property: overflow,
+    values: auto hidden visible scroll,
+  ),
+  "overflow-x": (
+    property: overflow-x,
+    values: auto hidden visible scroll,
+  ),
+  "overflow-y": (
+    property: overflow-y,
+    values: auto hidden visible scroll,
+  ),
+  // Border
+  "border": (
+    property: border,
+    values: (
+      null: var(--#{$prefix}border-width) var(--#{$prefix}border-style) var(--#{$prefix}border-color),
+      0: 0,
+    )
+  ),
+  "border-bottom": (
+    property: border-bottom,
+    values: (
+      null: var(--#{$prefix}border-width) var(--#{$prefix}border-style) var(--#{$prefix}border-color),
+      0: 0,
+    )
+  ),
+  // Border radius
+  "rounded": (
+    property: border-radius,
+    class: rounded,
+    values: (
+      null: var(--#{$prefix}border-radius),
+      0: 0,
+      1: var(--#{$prefix}border-radius-sm),
+      2: var(--#{$prefix}border-radius),
+      3: var(--#{$prefix}border-radius-lg),
+      4: var(--#{$prefix}border-radius-xl),
+      5: var(--#{$prefix}border-radius-xxl),
+      circle: 50%,
+      pill: var(--#{$prefix}border-radius-pill)
+    )
+  ),
+  // Shadow
+  "shadow": (
+    property: box-shadow,
+    class: shadow,
+    values: (
+      null: var(--#{$prefix}box-shadow),
+      sm: var(--#{$prefix}box-shadow-sm),
+      lg: var(--#{$prefix}box-shadow-lg),
+      none: none,
+    )
+  ),
+  // Float
+  "float": (
+    responsive: true,
+    property: float,
+    values: (
+      start: left,
+      end: right,
+      none: none,
+    )
+  ),
+  // Vertical align
+  "align": (
+    property: vertical-align,
+    class: align,
+    values: baseline top middle bottom text-bottom text-top
+  ),
+  // Visibility
+  "visibility": (
+    property: visibility,
+    class: null,
+    values: (
+      visible: visible,
+      invisible: hidden,
+    )
+  ),
+  // Pointer events
+  "pointer-events": (
+    property: pointer-events,
+    class: pe,
+    values: none auto,
+  ),
+);
+
+// Import our custom utilities (they merge with $utilities)
 @import './src/styles/utilities/cursor.scss';
 @import './src/styles/utilities/white-space.scss';
 @import './src/styles/utilities/overflow.scss';
 @import './src/styles/utilities/width.scss';
 
-// Finally import the bootstrap
-// @import "~bootstrap/scss/bootstrap.scss";
-
-// @import "bootstrap/scss/mixins/banner";
-// @include bsBanner("");
-
-// @import 'node_modules/@angular/cdk/overlay-prebuilt';
-
-
-// scss-docs-start import-stack
-// Configuration
-// @import "~bootstrap/scss/functions";
-// @import "~bootstrap/scss/variables";
-// @import "../../../../../../../bootstrap/scss/variables-dark";
-// @import "~bootstrap/scss/maps";
-// @import "~bootstrap/scss/mixins";
-@import "bootstrap/scss/utilities";
-
-// Layout & components
-
+// Layout & components (only what's needed globally)
 @import "bootstrap/scss/root";
 @import "bootstrap/scss/reboot";
 @import "bootstrap/scss/type";
 @import "bootstrap/scss/images";
-// @import "~bootstrap/scss/containers";
-// @import "~bootstrap/scss/grid";
-// @import "~bootstrap/scss/tables";
-// @import "~bootstrap/scss/forms";
 @import "bootstrap/scss/buttons";
-// @import "~bootstrap/scss/transitions";
-// @import "~bootstrap/scss/dropdown";
-// @import "~bootstrap/scss/button-group";
-// @import "~bootstrap/scss/nav";
-// @import "~bootstrap/scss/navbar";
-// @import "~bootstrap/scss/card";
-// // @import "~bootstrap/scss/accordion";
-// @import "~bootstrap/scss/breadcrumb";
-// @import "~bootstrap/scss/pagination";
-// @import "~bootstrap/scss/badge";
-// @import "~bootstrap/scss/alert";
-// @import "~bootstrap/scss/progress";
-// @import "~bootstrap/scss/list-group";
-// @import "~bootstrap/scss/close";
-// @import "~bootstrap/scss/toasts";
-// @import "~bootstrap/scss/modal";
-// @import "~bootstrap/scss/tooltip";
-// @import "~bootstrap/scss/popover";
-// @import "~bootstrap/scss/carousel";
-// @import "bootstrap/scss/spinners";
-// @import "~bootstrap/scss/offcanvas";
-// @import "~bootstrap/scss/placeholders";
 
 // Helpers
 @import "bootstrap/scss/helpers";
 
-// Utilities
+// Generate utility classes
 @import "bootstrap/scss/utilities/api";
-// scss-docs-end import-stack

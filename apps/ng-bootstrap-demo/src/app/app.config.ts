@@ -1,6 +1,6 @@
 import { provideHttpClient, withFetch } from "@angular/common/http";
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZonelessChangeDetection } from "@angular/core";
-import { provideAnimations } from "@angular/platform-browser/animations";
+import { provideAnimationsAsync } from "@angular/platform-browser/animations/async";
 import { PreloadAllModules, provideRouter, withEnabledBlockingInitialNavigation, withPreloading, withInMemoryScrolling } from "@angular/router";
 import { provideHighlightOptions } from 'ngx-highlightjs';
 import { provideAsyncHostBindings } from "@mintplayer/ng-bootstrap/async-host-binding";
@@ -10,7 +10,7 @@ import { BOOTSTRAP_VERSION } from "./providers/bootstrap-version.provider";
 
 export const config: ApplicationConfig = {
     providers: [
-        provideAnimations(),
+        provideAnimationsAsync(),
         provideHttpClient(withFetch()),
         provideZonelessChangeDetection(),
         provideBrowserGlobalErrorListeners(),
