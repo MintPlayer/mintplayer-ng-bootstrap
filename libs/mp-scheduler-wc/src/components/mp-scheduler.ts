@@ -65,6 +65,10 @@ export class MpScheduler extends HTMLElement {
   private readonly TOUCH_HOLD_DURATION = 500; // ms before touch drag activates
   private readonly TOUCH_MOVE_THRESHOLD = 10; // pixels of movement before canceling hold
 
+  // RAF scheduling for drag updates (ensures browser can repaint during drag)
+  private pendingDragUpdate: number | null = null;
+  private latestDragState: SchedulerState | null = null;
+
   // Event handlers bound to this
   private boundHandleMouseDown: (e: MouseEvent) => void;
   private boundHandleMouseMove: (e: MouseEvent) => void;
@@ -107,6 +111,13 @@ export class MpScheduler extends HTMLElement {
   disconnectedCallback(): void {
     this.detachEventListeners();
     this.currentView?.destroy();
+
+    // Cancel any pending RAF to prevent memory leaks
+    if (this.pendingDragUpdate !== null) {
+      cancelAnimationFrame(this.pendingDragUpdate);
+      this.pendingDragUpdate = null;
+    }
+    this.latestDragState = null;
   }
 
   attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
@@ -459,9 +470,46 @@ export class MpScheduler extends HTMLElement {
       if (viewTypeChanged) {
         this.renderView();
       } else {
-        this.currentView.update(state);
+        // During drag operations, use requestAnimationFrame to ensure the browser
+        // can repaint between updates. This fixes the issue where drag previews
+        // don't appear in production builds with zoneless Angular.
+        if (state.dragState || state.previewEvent) {
+          this.scheduleDragUpdate(state);
+        } else {
+          // For non-drag updates, process synchronously for responsiveness
+          this.currentView.update(state);
+        }
       }
     }
+  }
+
+  /**
+   * Schedule a drag-related view update using requestAnimationFrame.
+   * This ensures the browser has time to repaint between drag updates,
+   * which is necessary for drag previews to appear in production builds.
+   */
+  private scheduleDragUpdate(state: SchedulerState): void {
+    // Store the latest state
+    this.latestDragState = state;
+
+    // If there's already a pending update, don't schedule another one
+    // The pending update will use the latest state when it executes
+    if (this.pendingDragUpdate !== null) {
+      return;
+    }
+
+    // Schedule the update for the next animation frame
+    this.pendingDragUpdate = requestAnimationFrame(() => {
+      this.pendingDragUpdate = null;
+
+      // Use the latest state (in case multiple updates were batched)
+      const stateToApply = this.latestDragState;
+      this.latestDragState = null;
+
+      if (stateToApply && this.currentView) {
+        this.currentView.update(stateToApply);
+      }
+    });
   }
 
   private viewTypeChanged(newView: ViewType): boolean {
