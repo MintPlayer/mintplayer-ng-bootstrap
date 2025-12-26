@@ -252,6 +252,44 @@ jobs:
         access: 'public'
         provenance: true
 
+    ## scheduler-core
+    - name: Push to NPM
+      uses: JS-DevTools/npm-publish@v3
+      with:
+        package: 'dist/libs/mp-scheduler-core/package.json'
+        registry: 'https://registry.npmjs.org'
+        token: ${{ secrets.PUBLISH_TO_NPMJS }}
+        access: 'public'
+        provenance: true
+
+    - name: Push to Github
+      uses: JS-DevTools/npm-publish@v3
+      with:
+        package: 'dist/libs/mp-scheduler-core/package.json'
+        registry: 'https://npm.pkg.github.com'
+        token: ${{ github.token }}
+        access: 'public'
+        provenance: true
+
+    ## scheduler-wc
+    - name: Push to NPM
+      uses: JS-DevTools/npm-publish@v3
+      with:
+        package: 'dist/libs/mp-scheduler-wc/package.json'
+        registry: 'https://registry.npmjs.org'
+        token: ${{ secrets.PUBLISH_TO_NPMJS }}
+        access: 'public'
+        provenance: true
+
+    - name: Push to Github
+      uses: JS-DevTools/npm-publish@v3
+      with:
+        package: 'dist/libs/mp-scheduler-wc/package.json'
+        registry: 'https://npm.pkg.github.com'
+        token: ${{ github.token }}
+        access: 'public'
+        provenance: true
+
     ## ng-bootstrap
     - name: Push to NPM
       id: publish_ng_bootstrap
