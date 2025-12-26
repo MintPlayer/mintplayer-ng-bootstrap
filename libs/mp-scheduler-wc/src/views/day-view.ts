@@ -154,6 +154,11 @@ export class DayView extends BaseView {
     const event = part.event;
     const eventEl = this.createElement('div', 'scheduler-event');
 
+    // Mark as selected if this is the selected event
+    if (this.state.selectedEvent?.id === event.id) {
+      eventEl.classList.add('selected');
+    }
+
     // Calculate position
     const dayStart = new Date(part.start);
     dayStart.setHours(0, 0, 0, 0);

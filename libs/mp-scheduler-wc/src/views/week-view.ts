@@ -133,6 +133,7 @@ export class WeekView extends BaseView {
   update(state: SchedulerState): void {
     const dateChanged = this.state.date.getTime() !== state.date.getTime();
     const optionsChanged = this.optionsRequireRerender(this.state.options, state.options);
+    const selectionChanged = this.state.selectedEvent?.id !== state.selectedEvent?.id;
     this.state = state;
 
     // If date or relevant options changed, we need to re-render the entire view
@@ -144,8 +145,12 @@ export class WeekView extends BaseView {
     // Update greyed slots based on drag state
     this.updateGreyedSlots();
 
-    // Re-render events if needed
-    this.renderEvents();
+    // Re-render events if selection changed or needed
+    if (selectionChanged) {
+      this.renderEvents();
+    } else {
+      this.renderEvents();
+    }
 
     // Render preview event
     this.renderPreviewEvent();
@@ -218,6 +223,11 @@ export class WeekView extends BaseView {
   ): HTMLElement {
     const event = part.event;
     const eventEl = this.createElement('div', 'scheduler-event');
+
+    // Mark as selected if this is the selected event
+    if (this.state.selectedEvent?.id === event.id) {
+      eventEl.classList.add('selected');
+    }
 
     // Calculate position
     const dayStart = new Date(part.start);

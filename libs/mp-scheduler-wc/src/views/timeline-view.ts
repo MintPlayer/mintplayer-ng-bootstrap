@@ -234,6 +234,11 @@ export class TimelineView extends BaseView {
   ): HTMLElement {
     const eventEl = this.createElement('div', 'scheduler-timeline-event');
 
+    // Mark as selected if this is the selected event
+    if (this.state.selectedEvent?.id === event.id) {
+      eventEl.classList.add('selected');
+    }
+
     // Clamp event to view bounds
     const eventStart = Math.max(event.start.getTime(), viewStart.getTime());
     const viewEndTime = viewStart.getTime() + 7 * 24 * 60 * 60 * 1000;

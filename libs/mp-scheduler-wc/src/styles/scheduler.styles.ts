@@ -230,6 +230,10 @@ export const schedulerStyles = `
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   }
 
+  .scheduler-event.selected {
+    box-shadow: 0 0 0 3px #212529;
+  }
+
   .scheduler-event .event-title {
     font-weight: 500;
     white-space: nowrap;
@@ -522,6 +526,10 @@ export const schedulerStyles = `
     overflow: hidden;
     cursor: pointer;
     pointer-events: auto;
+  }
+
+  .scheduler-timeline-event.selected {
+    box-shadow: 0 0 0 3px #212529;
   }
 
   /* Loading state */

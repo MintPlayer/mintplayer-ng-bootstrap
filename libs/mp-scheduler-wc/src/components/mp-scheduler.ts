@@ -47,6 +47,16 @@ export class MpScheduler extends HTMLElement {
   private previousDate: Date | null = null;
   private previousSelectedEventId: string | null = null;
 
+  // Pending drag state (before actual drag starts)
+  private pendingDrag: {
+    type: DragOperationType;
+    event: SchedulerEvent | null;
+    startX: number;
+    startY: number;
+    slotEl?: HTMLElement;
+  } | null = null;
+  private readonly DRAG_THRESHOLD = 5; // pixels before drag starts
+
   // Event handlers bound to this
   private boundHandleMouseDown: (e: MouseEvent) => void;
   private boundHandleMouseMove: (e: MouseEvent) => void;
@@ -471,7 +481,7 @@ export class MpScheduler extends HTMLElement {
 
     const target = e.target as HTMLElement;
 
-    // Check for resize handle
+    // Check for resize handle - start drag immediately (no click behavior)
     const resizeHandle = target.closest('.resize-handle') as HTMLElement;
     if (resizeHandle) {
       const eventEl = resizeHandle.closest('.scheduler-event') as HTMLElement;
@@ -480,34 +490,69 @@ export class MpScheduler extends HTMLElement {
 
       if (event) {
         const handleType = resizeHandle.dataset['handle'] as 'start' | 'end';
-        this.startDrag('resize-' + handleType as DragOperationType, event, e);
+        this.pendingDrag = {
+          type: ('resize-' + handleType) as DragOperationType,
+          event,
+          startX: e.clientX,
+          startY: e.clientY,
+        };
         e.preventDefault();
         return;
       }
     }
 
-    // Check for event drag
+    // Check for event - set up pending drag (actual drag starts on mouse move)
     const eventEl = target.closest('.scheduler-event:not(.preview)') as HTMLElement;
     if (eventEl && !eventEl.classList.contains('preview')) {
       const eventId = eventEl.dataset['eventId'];
       const event = eventId ? this.getEventById(eventId) : null;
 
       if (event && event.draggable !== false) {
-        this.startDrag('move', event, e);
+        this.pendingDrag = {
+          type: 'move',
+          event,
+          startX: e.clientX,
+          startY: e.clientY,
+        };
         e.preventDefault();
         return;
       }
     }
 
-    // Check for slot click (create event)
+    // Check for slot - set up pending drag for create
     const slotEl = target.closest('.scheduler-time-slot, .scheduler-timeline-slot') as HTMLElement;
     if (slotEl && state.options.selectable) {
-      this.startDrag('create', null, e, slotEl);
+      this.pendingDrag = {
+        type: 'create',
+        event: null,
+        startX: e.clientX,
+        startY: e.clientY,
+        slotEl,
+      };
       e.preventDefault();
     }
   }
 
   private handleMouseMove(e: MouseEvent): void {
+    // Check if we have a pending drag that should start
+    if (this.pendingDrag) {
+      const dx = e.clientX - this.pendingDrag.startX;
+      const dy = e.clientY - this.pendingDrag.startY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance >= this.DRAG_THRESHOLD) {
+        // Start the actual drag
+        this.startDrag(
+          this.pendingDrag.type,
+          this.pendingDrag.event,
+          e,
+          this.pendingDrag.slotEl
+        );
+        this.pendingDrag = null;
+      }
+      return;
+    }
+
     const state = this.stateManager.getState();
     if (!state.dragState) return;
 
@@ -521,6 +566,24 @@ export class MpScheduler extends HTMLElement {
   }
 
   private handleMouseUp(e: MouseEvent): void {
+    // If we had a pending drag that never started, it's a click
+    if (this.pendingDrag) {
+      const { type, event } = this.pendingDrag;
+      this.pendingDrag = null;
+
+      // If it was on an event, select it
+      if (type === 'move' && event) {
+        this.stateManager.setSelectedEvent(event);
+        this.dispatchEvent(
+          new CustomEvent('event-click', {
+            detail: { event, originalEvent: e },
+            bubbles: true,
+          })
+        );
+      }
+      return;
+    }
+
     const state = this.stateManager.getState();
     if (!state.dragState) return;
 
@@ -597,22 +660,11 @@ export class MpScheduler extends HTMLElement {
       }
     }
 
-    // Event click
+    // Event clicks are handled in handleMouseUp (via pendingDrag)
+    // Skip event click handling here to avoid duplicates
     const eventEl = target.closest('.scheduler-event') as HTMLElement;
     if (eventEl) {
-      const eventId = eventEl.dataset['eventId'];
-      const event = eventId ? this.getEventById(eventId) : null;
-
-      if (event) {
-        this.stateManager.setSelectedEvent(event);
-        this.dispatchEvent(
-          new CustomEvent('event-click', {
-            detail: { event, originalEvent: e },
-            bubbles: true,
-          })
-        );
-        return;
-      }
+      return;
     }
 
     // Date click
