@@ -149,7 +149,16 @@ export class MonthView extends BaseView {
   }
 
   update(state: SchedulerState): void {
+    const dateChanged = this.state.date.getMonth() !== state.date.getMonth() ||
+                        this.state.date.getFullYear() !== state.date.getFullYear();
     this.state = state;
+
+    // If month changed, we need to re-render the entire view
+    if (dateChanged) {
+      this.render();
+      return;
+    }
+
     this.renderEvents();
   }
 

@@ -131,7 +131,14 @@ export class WeekView extends BaseView {
   }
 
   update(state: SchedulerState): void {
+    const dateChanged = this.state.date.getTime() !== state.date.getTime();
     this.state = state;
+
+    // If date changed, we need to re-render the entire view
+    if (dateChanged) {
+      this.render();
+      return;
+    }
 
     // Update greyed slots based on drag state
     this.updateGreyedSlots();
