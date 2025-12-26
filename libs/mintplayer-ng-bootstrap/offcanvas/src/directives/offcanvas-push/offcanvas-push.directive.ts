@@ -1,5 +1,5 @@
 import { animate, AnimationBuilder, AnimationMetadata, style } from '@angular/animations';
-import { Directive, effect, ElementRef, input } from '@angular/core';
+import { Directive, effect, ElementRef, inject, input } from '@angular/core';
 import { BsOffcanvasHostComponent } from '../../components';
 
 @Directive({
@@ -7,7 +7,10 @@ import { BsOffcanvasHostComponent } from '../../components';
   standalone: false,
 })
 export class BsOffcanvasPushDirective {
-  constructor(private element: ElementRef<HTMLElement>, private builder: AnimationBuilder) {
+  private element = inject<ElementRef<HTMLElement>>(ElementRef);
+  private builder = inject(AnimationBuilder);
+
+  constructor() {
     let previousIsVisible: boolean | null = null;
 
     effect(() => {
@@ -50,7 +53,7 @@ export class BsOffcanvasPushDirective {
           animate('250ms', style({ 'margin-left': '0', 'margin-right': '0' })),
         ];
       }
-      const b = builder.build(data);
+      const b = this.builder.build(data);
       const player = b.create(this.element.nativeElement, { });
 
       if (!isVisible) {

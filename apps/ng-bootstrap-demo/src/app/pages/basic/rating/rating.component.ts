@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsRatingComponent } from '@mintplayer/ng-bootstrap/rating';
 
@@ -10,6 +10,6 @@ import { BsRatingComponent } from '@mintplayer/ng-bootstrap/rating';
   imports: [BsGridModule, BsRatingComponent]
 })
 export class RatingComponent {
-  ratingValue = 3;
-  previewValue = 3;
+  ratingValue = signal(3);
+  previewValue = signal(3);
 }

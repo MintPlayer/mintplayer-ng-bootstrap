@@ -1,10 +1,22 @@
-import { Component, ViewChild } from '@angular/core';
+import { Component, forwardRef, input, model, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { MockComponent } from 'ng-mocks';
 import { BsAlertComponent } from '../alert/alert.component';
 
 import { BsAlertCloseComponent } from './alert-close.component';
+
+@Component({
+  selector: 'bs-alert',
+  standalone: false,
+  template: '<ng-content></ng-content>',
+  providers: [
+    { provide: BsAlertComponent, useExisting: forwardRef(() => BsAlertComponentStub) }
+  ]
+})
+class BsAlertComponentStub {
+  type = input<number>();
+  isVisible = model<boolean>(true);
+}
 
 describe('BsAlertCloseComponent', () => {
   let component: BsAlertCloseTestComponent;
@@ -15,9 +27,9 @@ describe('BsAlertCloseComponent', () => {
       declarations: [
         // Unit to test
         BsAlertCloseComponent,
-      
+
         // Mock components
-        MockComponent(BsAlertComponent),
+        BsAlertComponentStub,
 
         // Testbench
         BsAlertCloseTestComponent
@@ -48,7 +60,7 @@ describe('BsAlertCloseComponent', () => {
     }
 
     closeBtn.click();
-    expect(component.alert.isVisible).toBe(false);
+    expect(component.alert.isVisible()).toBe(false);
   });
 });
 
@@ -62,6 +74,6 @@ describe('BsAlertCloseComponent', () => {
   </bs-alert>`
 })
 class BsAlertCloseTestComponent {
-  @ViewChild('alert') alert!: BsAlertComponent;
+  @ViewChild('alert') alert!: BsAlertComponentStub;
   @ViewChild('alertClose') alertClose!: BsAlertCloseComponent;
 }

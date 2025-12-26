@@ -1,22 +1,12 @@
-import { Component, EventEmitter, HostBinding, Input } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { ChangeDetectionStrategy, Component, input, model } from '@angular/core';
 
 @Component({
   selector: 'bs-placeholder',
   templateUrl: './placeholder.component.html',
   styleUrls: ['./placeholder.component.scss'],
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsPlaceholderComponent {
-  //#region isLoading
-  isLoading$ = new BehaviorSubject<boolean>(false);
-  isLoadingChange = new EventEmitter<boolean>();
-  public get isLoading() {
-    return this.isLoading$.value;
-  }
-  @Input() public set isLoading(value: boolean) {
-    this.isLoading$.next(value);
-    this.isLoadingChange.emit(value);
-  }
-  //#endregion
+  isLoading = model<boolean>(false);
 }

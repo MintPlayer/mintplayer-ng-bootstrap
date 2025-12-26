@@ -1,4 +1,4 @@
-import { Directive, Input, TemplateRef } from '@angular/core';
+import { Directive, inject, Input, TemplateRef } from '@angular/core';
 import { BsSelect2Component } from '../../component/select2.component';
 import { HasId } from '@mintplayer/ng-bootstrap/has-id';
 
@@ -7,7 +7,10 @@ import { HasId } from '@mintplayer/ng-bootstrap/has-id';
   standalone: false,
 })
 export class BsSuggestionTemplateDirective<T extends HasId<U>, U> {
-  constructor(private select2component: BsSelect2Component<T, U>, templateRef: TemplateRef<T>) {
+  private select2component = inject<BsSelect2Component<T, U>>(BsSelect2Component);
+
+  constructor() {
+    const templateRef = inject<TemplateRef<T>>(TemplateRef);
     this.select2component.suggestionTemplate = templateRef;
   }
 
@@ -16,7 +19,7 @@ export class BsSuggestionTemplateDirective<T extends HasId<U>, U> {
   }
 
   @Input() set bsSuggestionTemplateOf(value: T[]) {
-    this.select2component.suggestions = value;
+    this.select2component.suggestions.set(value);
   }
 }
 

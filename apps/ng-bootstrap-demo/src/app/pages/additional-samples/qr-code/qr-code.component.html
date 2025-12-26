@@ -6,7 +6,7 @@
                 <textarea [(ngModel)]="text" class="mb-3"></textarea>
             </div>
             <div [xl]="6" class="text-center">
-                <qr-code [value]="text"></qr-code>
+                <qr-code [value]="text()"></qr-code>
             </div>
         </div>
     </bs-grid>

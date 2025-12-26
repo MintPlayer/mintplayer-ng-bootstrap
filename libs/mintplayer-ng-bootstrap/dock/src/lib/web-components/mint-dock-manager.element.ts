@@ -2932,6 +2932,7 @@ export class MintDockManagerElement extends HTMLElement {
     }
 
     event.preventDefault();
+    event.stopPropagation();
     this.lastDragPointerPosition = { x: touch.clientX, y: touch.clientY };
     this.updateDraggedFloatingPositionFromPoint(touch.clientX, touch.clientY);
   }

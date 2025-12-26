@@ -1,5 +1,5 @@
 import { JsonPipe } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
@@ -12,16 +12,16 @@ import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
   imports: [JsonPipe, FormsModule, BsGridModule, BsToggleButtonModule]
 })
 export class ToggleButtonComponent {
-  darkMode: boolean | null = true;
+  darkMode = signal<boolean | null>(true);
 
   // Checkbox - Multi mode
-  favoriteColors: string[] = [];
+  favoriteColors = signal<string[]>([]);
 
   // Checkbox - Single mode
-  isAllDisabled = false;
-  isHstsEnabled = true;
-  isCrossPlatform = false;
+  isAllDisabled = signal(false);
+  isHstsEnabled = signal(true);
+  isCrossPlatform = signal(false);
 
   // Radio
-  theme: 'light' | 'dark' | 'contrast' | 'disabled' = 'light';
+  theme = signal<'light' | 'dark' | 'contrast' | 'disabled'>('light');
 }

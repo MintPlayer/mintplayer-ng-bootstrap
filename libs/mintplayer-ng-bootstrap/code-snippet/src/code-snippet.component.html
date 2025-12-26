@@ -1,6 +1,6 @@
 <div class="position-relative">
     <button #copyBtn [bsCopy]="codeToCopy()" (bsCopied)="copiedHtml()" class="btn btn-link rounded-0 text-light position-absolute copy-btn">
-        Copy {{ language$ | async }}
+        Copy {{ detectedLanguageValue() }}
     </button>
     <pre class="white-space-normal">
         <code class="d-block white-space-pre" [highlight]="codeToCopy()" [language]="language()" (highlighted)="onHighlighted($event)"></code>

@@ -1,13 +1,80 @@
 <h1 class="text-center">Scheduler</h1>
-<bs-form>
-    <bs-input-group>
-        <input type="number" placeholder="Slot height" [(ngModel)]="weekOptions.unitHeight">
-        <bs-select [(ngModel)]="mode">
-            <option [ngValue]="modes.week">Week</option>
-            <option [ngValue]="modes.timeline">Timeline</option>
+
+<div class="row mb-3">
+  <div class="col-md-8">
+    <bs-form>
+      <bs-input-group>
+        <bs-select [ngModel]="view()" (ngModelChange)="view.set($event)">
+          @for (opt of viewOptions; track opt.value) {
+            <option [ngValue]="opt.value">{{ opt.label }}</option>
+          }
         </bs-select>
-        <button (click)="fillData()" [color]="colors.primary">Fill data</button>
-    </bs-input-group>
-</bs-form>
-<hr>
-<bs-scheduler [(weekOptions)]="weekOptions" [(timelineOptions)]="timelineOptions" [(mode)]="mode" [resources]="resources"></bs-scheduler>
+        <bs-select [ngModel]="slotDuration()" (ngModelChange)="slotDuration.set($event)">
+          @for (opt of slotDurationOptions; track opt.value) {
+            <option [ngValue]="opt.value">{{ opt.label }}</option>
+          }
+        </bs-select>
+        <bs-select [ngModel]="timeFormat()" (ngModelChange)="timeFormat.set($event)">
+          <option value="24h">24h</option>
+          <option value="12h">12h</option>
+        </bs-select>
+        <button (click)="fillData()" [color]="colors.primary">Load Sample Data</button>
+        <button (click)="clearData()" [color]="colors.secondary">Clear</button>
+      </bs-input-group>
+    </bs-form>
+  </div>
+  <div class="col-md-4">
+    <small class="text-muted">
+      <strong>Keyboard shortcuts:</strong> ← → (navigate), T (today), Y/M/W/D (views)
+    </small>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-9">
+    <div class="scheduler-container">
+      <bs-scheduler
+        [view]="view()"
+        [date]="date()"
+        [events]="events()"
+        [resources]="resources()"
+        [options]="options()"
+        [(selectedEvent)]="selectedEvent"
+        (eventClick)="onEventClick($event)"
+        (eventCreate)="onEventCreate($event)"
+        (eventUpdate)="onEventUpdate($event)"
+        (eventDelete)="onEventDelete($event)"
+        (dateClick)="onDateClick($event)"
+        (viewChange)="onViewChange($event)">
+      </bs-scheduler>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <bs-card class="d-block mb-3">
+      <bs-card-header>Event Log</bs-card-header>
+      <div class="p-3">
+        <div class="event-log">
+          @if (eventLog().length === 0) {
+            <p class="text-muted">No events yet. Try clicking on the scheduler or loading sample data.</p>
+          }
+          @for (entry of eventLog(); track entry) {
+            <div class="log-entry">{{ entry }}</div>
+          }
+        </div>
+      </div>
+    </bs-card>
+    <bs-card class="d-block">
+      <bs-card-header>State ({{ events().length }} events)</bs-card-header>
+      <div class="p-3">
+        <div class="state-debug" style="font-size: 11px; max-height: 300px; overflow: auto;">
+          <div><strong>View:</strong> {{ view() }}</div>
+          <div><strong>Date:</strong> {{ date() | date:'medium' }}</div>
+          <div><strong>Selected:</strong> {{ selectedEvent()?.title ?? 'None' }}</div>
+          <hr>
+          <div><strong>Events:</strong></div>
+          <pre style="font-size: 10px; margin: 0;">{{ events() | json }}</pre>
+        </div>
+      </div>
+    </bs-card>
+  </div>
+</div>

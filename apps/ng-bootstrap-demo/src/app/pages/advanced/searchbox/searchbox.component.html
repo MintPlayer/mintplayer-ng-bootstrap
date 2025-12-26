@@ -6,11 +6,11 @@
                 <bs-searchbox (provideSuggestions)="onProvideSuggestions($event)" [(selectedItem)]="selectedArtist">
                     Search for artists
                     <div *bsEnterSearchTermTemplate>Start typing...</div>
-                    <div *bsSuggestionTemplate="let suggestion of suggestions">{{ suggestion.name }}</div>
+                    <div *bsSuggestionTemplate="let suggestion of suggestions()">{{ suggestion.name }}</div>
                 </bs-searchbox>
             </div>
             <div [md]="6">
-                <pre><code>{{ selectedArtist | json }}</code></pre>
+                <pre><code>{{ selectedArtist() | json }}</code></pre>
             </div>
         </div>
     </bs-grid>

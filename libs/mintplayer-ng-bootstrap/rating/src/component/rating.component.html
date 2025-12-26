@@ -1,4 +1,4 @@
-@for (star of (stars$ | async); let i = $index; track i) {
+@for (star of stars(); let i = $index; track i) {
     <span class="cursor-pointer" (mouseenter)="hoverValue(i)" (click)="selectValue(i)">
         {{ star ? '&#9733;' : '&#9734;' }}
     </span>

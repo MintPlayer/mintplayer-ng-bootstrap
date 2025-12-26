@@ -1,49 +1,47 @@
 import { DOCUMENT } from '@angular/common';
-import { AfterContentInit, AfterViewInit, Component, ContentChildren, ElementRef, HostListener, Inject, NgZone, QueryList, ViewChildren } from '@angular/core';
-import { BehaviorSubject, combineLatest, filter, take } from 'rxjs';
+import { AfterContentInit, AfterViewInit, ChangeDetectionStrategy, Component, ContentChildren, effect, ElementRef, HostListener, inject, NgZone, QueryList, signal, ViewChildren } from '@angular/core';
 import { BsScrollOffsetService } from '../services/scroll-offset/scroll-offset.service';
 import { BsScrollspyDirective } from '../directives/scrollspy.directive';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'bs-scrollspy',
   templateUrl: './scrollspy.component.html',
   styleUrls: ['./scrollspy.component.scss'],
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsScrollspyComponent implements AfterViewInit, AfterContentInit {
 
-  constructor(
-    private scrollOffsetService: BsScrollOffsetService,
-    @Inject(DOCUMENT) document: any,
-    private zone: NgZone) {
-    this.doc = <Document>document;
-    combineLatest([this.viewInit$, this.contentInit$])
-      .pipe(filter(([viewInit, contentInit]) => viewInit && contentInit), take(1))
-      .pipe(takeUntilDestroyed())
-      .subscribe(() => {
-        // this.setActiveDirective();
-        this.scrollToCurrentInSpy();
-      });
-  }
+  private scrollOffsetService = inject(BsScrollOffsetService);
+  private zone = inject(NgZone);
+  doc = inject<Document>(DOCUMENT);
 
-  private viewInit$ = new BehaviorSubject<boolean>(false);
-  private contentInit$ = new BehaviorSubject<boolean>(false);
+  private viewInit = signal<boolean>(false);
+  private contentInit = signal<boolean>(false);
 
   @ContentChildren(BsScrollspyDirective, { descendants: true }) directives!: QueryList<BsScrollspyDirective>;
   @ViewChildren('anchor') anchors!: QueryList<ElementRef<HTMLSpanElement>>;
 
-  doc: Document;
   activeDirective: BsScrollspyDirective | null = null;
 
+  constructor() {
+    effect(() => {
+      const viewInit = this.viewInit();
+      const contentInit = this.contentInit();
+      if (viewInit && contentInit) {
+        this.scrollToCurrentInSpy();
+      }
+    });
+  }
+
   ngAfterViewInit() {
-    this.viewInit$.next(true);
+    this.viewInit.set(true);
   }
 
   ngAfterContentInit() {
-    this.contentInit$.next(true);
+    this.contentInit.set(true);
   }
-  
+
   @HostListener('window:scroll')
   onWindowScroll() {
     this.setActiveDirective();
@@ -74,7 +72,7 @@ export class BsScrollspyComponent implements AfterViewInit, AfterContentInit {
       }
     }
   }
-  
+
   scrollToHeader(directive: BsScrollspyDirective) {
     if (typeof window !== 'undefined') {
       const header = directive.element.nativeElement;
@@ -83,5 +81,4 @@ export class BsScrollspyComponent implements AfterViewInit, AfterContentInit {
       window.scrollTo({top: y, behavior: 'smooth'});
     }
   }
-
 }

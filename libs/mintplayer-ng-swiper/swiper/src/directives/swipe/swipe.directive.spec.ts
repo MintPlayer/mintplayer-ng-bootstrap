@@ -1,22 +1,20 @@
-import { Component } from '@angular/core';
+import { Component, computed, Directive, forwardRef, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Directive, forwardRef } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
 import { BsSwipeContainerDirective } from '../swipe-container/swipe-container.directive';
 import { BsSwipeDirective } from './swipe.directive';
 
 @Directive({
   selector: '[bsSwipeContainer]',
-  standalone: false,
+  standalone: true,
   providers: [
     { provide: BsSwipeContainerDirective, useExisting: forwardRef(() => BsSwipeContainerDirectiveStub) }
   ]
 })
 class BsSwipeContainerDirectiveStub {
-  orientation$ = new BehaviorSubject<'horizontal' | 'vertical'>('horizontal');
-  maxSlideHeight$ = new BehaviorSubject<number>(100);
-  startTouch$ = new BehaviorSubject<any>(null);
-  lastTouch$ = new BehaviorSubject<any>(null);
+  orientation = signal<'horizontal' | 'vertical'>('horizontal');
+  maxSlideHeight = computed(() => 100);
+  startTouch = signal<any>(null);
+  lastTouch = signal<any>(null);
   pendingAnimation: { finish(): void } | null = null;
 
   onSwipe(_distance: number) {}
@@ -24,10 +22,13 @@ class BsSwipeContainerDirectiveStub {
 
 @Component({
   selector: 'swipe-test-component',
-  standalone: false,
+  standalone: true,
+  imports: [BsSwipeContainerDirectiveStub, BsSwipeDirective],
   template: `
     <div bsSwipeContainer>
-      <div *ngFor="let n of images" bsSwipe>Slide {{ n }}</div>
+      @for (n of images; track n) {
+        <div bsSwipe>Slide {{ n }}</div>
+      }
     </div>`
 })
 class SwipeTestComponent {
@@ -36,20 +37,10 @@ class SwipeTestComponent {
 
 describe('BsSwipeDirective', () => {
   let fixture: ComponentFixture<SwipeTestComponent>;
-  
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [],
-      declarations: [
-        // Unit to test
-        BsSwipeDirective,
-
-        // Mock dependencies
-        BsSwipeContainerDirectiveStub,
-
-        // Testbench
-        SwipeTestComponent
-      ]
+      imports: [SwipeTestComponent]
     })
     .compileComponents();
 

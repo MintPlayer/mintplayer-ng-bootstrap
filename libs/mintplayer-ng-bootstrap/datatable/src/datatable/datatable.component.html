@@ -1,11 +1,11 @@
 <bs-table [isResponsive]="true" [striped]="true" [hover]="true" class="mb-3">
     <thead>
         <tr>
-            @for (column of (columns$ | async); track column) {
+            @for (column of columnsArray; track column) {
                 <th class="text-nowrap"
                     [class.sort]="column.sortable"
-                    [class.sort-asc]="column.sortable && (settings.sortProperty === column.name) && (settings.sortDirection === 'ascending')"
-                    [class.sort-desc]="column.sortable && (settings.sortProperty === column.name) && (settings.sortDirection === 'descending')"
+                    [class.sort-asc]="column.sortable && (settings().sortProperty === column.name) && (settings().sortDirection === 'ascending')"
+                    [class.sort-desc]="column.sortable && (settings().sortProperty === column.name) && (settings().sortDirection === 'descending')"
                     (click)="columnHeaderClicked(column)">
                     <ng-container *ngTemplateOutlet="column.templateRef"></ng-container>
                 </th>
@@ -13,23 +13,23 @@
         </tr>
     </thead>
     <tbody>
-        @if (!!data && !!rowTemplate) {
-            @for (item of data.data; track item) {
+        @if (!!data() && !!rowTemplate) {
+            @for (item of data()!.data; track $index) {
                 <ng-container *ngTemplateOutlet="rowTemplate; context: { $implicit: item }"></ng-container>
             }
         }
     </tbody>
     <tfoot>
         <tr>
-            <td [colSpan]="numberOfColumns$ | async">
+            <td [colSpan]="numberOfColumns()">
                 <bs-grid [stopFullWidthAt]="'never'">
                     <div bsRow>
                         <div [md]="12">
-                            <bs-pagination class="float-start" [pageNumbers]="settings.perPage.values"
-                                [(selectedPageNumber)]="settings.perPage.selected" (selectedPageNumberChange)="settingsChange.emit(settings)"
+                            <bs-pagination class="float-start" [pageNumbers]="settings().perPage.values"
+                                [selectedPageNumber]="settings().perPage.selected" (selectedPageNumberChange)="onPerPageChange($event)"
                                 [showArrows]="false"></bs-pagination>
-                            <bs-pagination class="float-end" [pageNumbers]="settings.page.values"
-                                [(selectedPageNumber)]="settings.page.selected" (selectedPageNumberChange)="settingsChange.emit(settings)"
+                            <bs-pagination class="float-end" [pageNumbers]="settings().page.values"
+                                [selectedPageNumber]="settings().page.selected" (selectedPageNumberChange)="onPageChange($event)"
                                 [showArrows]="true"></bs-pagination>
                         </div>
                     </div>

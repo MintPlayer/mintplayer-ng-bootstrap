@@ -1,16 +1,17 @@
-import { provideHttpClient } from "@angular/common/http";
+import { provideHttpClient, withFetch } from "@angular/common/http";
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZonelessChangeDetection } from "@angular/core";
 import { provideAnimations } from "@angular/platform-browser/animations";
 import { PreloadAllModules, provideRouter, withEnabledBlockingInitialNavigation, withPreloading, withInMemoryScrolling } from "@angular/router";
-import { HIGHLIGHT_OPTIONS, provideHighlightOptions } from 'ngx-highlightjs';
-import { HighlightOptions } from 'highlight.js';
+import { provideHighlightOptions } from 'ngx-highlightjs';
 import { provideAsyncHostBindings } from "@mintplayer/ng-bootstrap/async-host-binding";
 import ngBootstrapJson from '@mintplayer/ng-bootstrap/package.json';
+import { GIT_REPO } from "./providers/git-repo.provider";
+import { BOOTSTRAP_VERSION } from "./providers/bootstrap-version.provider";
 
 export const config: ApplicationConfig = {
     providers: [
         provideAnimations(),
-        provideHttpClient(),
+        provideHttpClient(withFetch()),
         provideZonelessChangeDetection(),
         provideBrowserGlobalErrorListeners(),
         provideRouter(
@@ -29,7 +30,7 @@ export const config: ApplicationConfig = {
             fullLibraryLoader: () => import('highlight.js'),
             themePath: 'solarized-dark.css'
         }),
-        { provide: 'GIT_REPO', useValue: 'https://github.com/MintPlayer/mintplayer-ng-bootstrap/tree/master/apps/ng-bootstrap-demo/src/app/' },
-        { provide: 'BOOTSTRAP_VERSION', useValue: ngBootstrapJson.version },
+        { provide: GIT_REPO, useValue: 'https://github.com/MintPlayer/mintplayer-ng-bootstrap/tree/master/apps/ng-bootstrap-demo/src/app/' },
+        { provide: BOOTSTRAP_VERSION, useValue: ngBootstrapJson.version },
     ]
 };

@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsTimepickerComponent } from '@mintplayer/ng-bootstrap/timepicker';
@@ -12,5 +12,5 @@ import { BsTimepickerComponent } from '@mintplayer/ng-bootstrap/timepicker';
   imports: [DatePipe, BsFormModule, BsGridModule, BsTimepickerComponent]
 })
 export class TimepickerComponent {
-  selectedTime = new Date();
+  selectedTime = signal(new Date());
 }

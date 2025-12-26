@@ -1,6 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BehaviorSubject, map, Observable } from 'rxjs';
 import { BsTabControlComponent } from '../tab-control/tab-control.component';
 
 import { BsTabPageComponent } from './tab-page.component';
@@ -83,7 +82,7 @@ class BsTabControlTestComponent {}
 })
 class BsTabControlMockComponent {
   tabCounter = 0;
-  tabControlId$ = new BehaviorSubject<number>(1);
-  tabControlName$: Observable<string> = this.tabControlId$.pipe(map((id) => `bs-tab-control-${id}`));
+  tabControlId = signal<number>(1);
+  tabControlName = computed(() => `bs-tab-control-${this.tabControlId()}`);
+  activeTab = signal<BsTabPageComponent | null>(null);
 }
-

@@ -8,7 +8,19 @@
       "Bash(npx nx build:*)",
       "Bash(npm run test:*)",
       "Bash(npm view:*)",
-      "Bash(npm ls:*)"
+      "Bash(npm ls:*)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_evaluate",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_wait_for",
+      "mcp__playwright__browser_snapshot",
+      "mcp__playwright__browser_close",
+      "mcp__github__get_pull_request_comments",
+      "mcp__github__get_pull_request_reviews",
+      "mcp__github__get_pull_request_status",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_press_key",
+      "mcp__playwright__browser_type"
     ]
   },
   "enableAllProjectMcpServers": true,

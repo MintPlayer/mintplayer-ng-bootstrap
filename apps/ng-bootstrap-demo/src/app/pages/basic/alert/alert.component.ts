@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, signal, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
@@ -15,22 +15,23 @@ import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
 })
 export class AlertComponent {
   colors = Color;
-  alert1Visible = true;
-  alert2Visible = true;
-  alert3Visible = true;
+  alert1Visible = signal(true);
+  alert2Visible = signal(true);
+  alert3Visible = signal(true);
 
-  newAlertId = 1;
-  newAlertItem = '';
-  alertsList: AlertItem[] = [];
+  newAlertId = signal(1);
+  newAlertItem = signal('');
+  alertsList = signal<AlertItem[]>([]);
   @ViewChild('txtNewAlert') txtNewAlert!: ElementRef<HTMLInputElement>;
   alertVisibleChange(alert: AlertItem, isVisible: boolean) {
     if (!isVisible) {
-      this.alertsList.splice(this.alertsList.indexOf(alert), 1);
+      this.alertsList.update(list => list.filter(a => a !== alert));
     }
   }
   addAlertItem() {
-    this.alertsList.push({ id: this.newAlertId++, text: this.newAlertItem });
-    this.newAlertItem = '';
+    this.alertsList.update(list => [...list, { id: this.newAlertId(), text: this.newAlertItem() }]);
+    this.newAlertId.update(id => id + 1);
+    this.newAlertItem.set('');
     this.txtNewAlert.nativeElement.focus();
   }
 }

@@ -1,7 +1,7 @@
 {
   "name": "@mintplayer/ng-qr-code",
   "private": false,
-  "version": "21.0.0",
+  "version": "21.1.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/MintPlayer/mintplayer-ng-bootstrap",

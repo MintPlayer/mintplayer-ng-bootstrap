@@ -61,21 +61,6 @@
     }
 
     .carousel.carousel-vertical {
-        display: flex;
-        flex-direction: row;
-        align-items: stretch;
-        gap: 1rem;
-        flex-wrap: nowrap;
-
-        .carousel-inner {
-            order: 1;
-            flex: 1 1 auto;
-        }
-
-        .carousel-indicators {
-            order: 0;
-        }
-
         .carousel-control-prev,
         .carousel-control-next {
             width: 100%;
@@ -87,31 +72,58 @@
         .carousel-control-next.carousel-control-vertical {
             justify-content: center;
         }
+
+        .carousel-control-prev-icon,
+        .carousel-control-next-icon {
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 50%;
+            padding: 1.5rem;
+            background-size: 50%;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
     }
 
     .carousel-inner-vertical {
         display: flex;
         flex-direction: column;
-        height: 100%;
 
         .carousel-item {
-            flex: 1 1 auto;
-            display: block;
+            flex: 0 0 auto;
+            display: flex !important;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
     }
 
     .carousel-indicators-vertical {
-        position: static;
+        position: absolute;
+        left: 0;
+        top: 50%;
+        right: auto;
+        bottom: auto;
+        transform: translateY(-50%);
         flex-direction: column;
         justify-content: center;
-        align-items: stretch;
+        align-items: center;
         margin: 0;
+        margin-left: 0.5rem;
         gap: .5rem;
-        height: 100%;
 
         [data-bs-target] {
-            width: auto;
-            height: .75rem;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.5);
+            border: none;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            opacity: 0.7;
+            transition: opacity 0.15s ease;
+
+            &.active {
+                opacity: 1;
+                background-color: #fff;
+            }
         }
     }
 

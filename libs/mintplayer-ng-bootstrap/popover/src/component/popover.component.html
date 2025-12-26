@@ -1,6 +1,6 @@
-@if (isVisible$ | async) {
+@if (isVisible()) {
     <div class="popover position-relative fade show" role="tooltip"
-        [class]="[marginClass$ | async, positionClass$ | async]"
+        [class]="[marginClass(), positionClass()]"
         [@fadeInOut]>
         <ng-container *ngTemplateOutlet="template"></ng-container>
         <div class="popover-arrow position-absolute"></div>

@@ -1,6 +1,6 @@
 <h1 class="text-center">Fade in/out animation</h1>
-<button (click)="fadeInOutState = !fadeInOutState" [color]="colors.primary" class="d-block w-100 rounded-0">Toggle</button>
-@if (fadeInOutState) {
+<button (click)="fadeInOutState.set(!fadeInOutState())" [color]="colors.primary" class="d-block w-100 rounded-0">Toggle</button>
+@if (fadeInOutState()) {
     <div [@fadeInOut] class="overflow-hidden">
         <button [color]="colors.primary" class="d-block w-100 rounded-0">Button 1</button>
         <button [color]="colors.primary" class="d-block w-100 rounded-0">Button 2</button>

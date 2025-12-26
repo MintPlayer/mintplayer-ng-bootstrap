@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { Artist } from '../../../entities/artist';
 import { Tag } from '../../../entities/tag';
 import { ESubjectType } from '../../../enums/subject-type';
@@ -21,19 +21,19 @@ export class Select2Component {
   tagService = inject(TagService);
   destroy = inject(DestroyRef);
 
-  artistSuggestions: Artist[] = [];
-  tagSuggestions: Tag[] = [];
-  selectedTags: Tag[] = [];
+  artistSuggestions = signal<Artist[]>([]);
+  tagSuggestions = signal<Tag[]>([]);
+  selectedTags = signal<Tag[]>([]);
 
   onProvideArtistSuggestions(search: string) {
     this.subjectService.suggest(search, [ESubjectType.artist])
       .pipe(takeUntilDestroyed(this.destroy))
-      .subscribe(artists => this.artistSuggestions = artists.map(s => <Artist>s));
+      .subscribe(artists => this.artistSuggestions.set(artists.map(s => <Artist>s)));
   }
   onProvideTagSuggestions(search: string) {
     this.tagService.suggestTags(search, true).then((tags) => {
       if (tags) {
-        this.tagSuggestions = tags;
+        this.tagSuggestions.set(tags);
       }
     });
   }

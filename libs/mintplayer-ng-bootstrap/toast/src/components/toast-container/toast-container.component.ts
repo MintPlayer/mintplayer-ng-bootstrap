@@ -1,4 +1,4 @@
-import { Component, HostBinding } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostBinding, inject } from '@angular/core';
 import { BsToastService } from '../../services/toast/toast.service';
 
 @Component({
@@ -6,13 +6,10 @@ import { BsToastService } from '../../services/toast/toast.service';
   templateUrl: './toast-container.component.html',
   styleUrls: ['./toast-container.component.scss'],
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsToastContainerComponent {
-  constructor(toastService: BsToastService) {
-    this.toastService = toastService;
-  }
-
-  toastService: BsToastService;
+  toastService = inject(BsToastService);
 
   @HostBinding('style.overflow-y') overflowY = 'auto';
 }

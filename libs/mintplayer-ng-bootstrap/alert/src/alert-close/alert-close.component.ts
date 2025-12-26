@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { BsAlertComponent } from '../alert/alert.component';
 
 @Component({
@@ -8,13 +8,11 @@ import { BsAlertComponent } from '../alert/alert.component';
   standalone: false,
 })
 export class BsAlertCloseComponent {
-
-  constructor(private alert: BsAlertComponent) {
-  }
+  private alert = inject(BsAlertComponent);
 
   closeAlert() {
-    this.alert.isVisible = false;
+    this.alert.isVisible.set(false);
     return false;
   }
-  
+
 }

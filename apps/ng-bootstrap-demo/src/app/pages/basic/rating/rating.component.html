@@ -2,8 +2,8 @@
 <bs-grid>
     <div bsRow>
         <div [md]="12">
-            <bs-rating [maximum]="10" [(value)]="ratingValue" (starsChange)="previewValue = $event"></bs-rating>
-            <span>{{ previewValue }}</span>
+            <bs-rating [maximum]="10" [(value)]="ratingValue" (starsChange)="previewValue.set($event)"></bs-rating>
+            <span>{{ previewValue() }}</span>
         </div>
     </div>
 </bs-grid>

@@ -1,4 +1,6 @@
 {
     "nxConsole.generateAiAgentRules": true,
-    "typescript.tsdk": "node_modules/typescript/lib"
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "vitest.workspaceConfig": "./vitest.workspace.ts",
+    "vitest.maximumConfigs": 20
 }

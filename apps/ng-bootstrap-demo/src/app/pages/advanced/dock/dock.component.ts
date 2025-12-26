@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ViewChild } from '@angular/core';
+import { Component, signal, ViewChild } from '@angular/core';
 import { BsBadgeComponent } from '@mintplayer/ng-bootstrap/badge';
 import {
   BsDockManagerComponent,
@@ -20,7 +20,7 @@ export class DockComponent {
 
   readonly Color = Color;
 
-  layout: DockLayoutSnapshot = {
+  layout = signal<DockLayoutSnapshot>({
     root: {
       kind: 'split',
       direction: 'horizontal',
@@ -79,20 +79,20 @@ export class DockComponent {
       'panel-5': 'Panel 5',
       'panel-floating': 'Floating Utilities',
     },
-  };
+  });
 
-  liveLayout?: DockLayoutSnapshot;
-  savedLayout?: DockLayoutSnapshot;
+  liveLayout = signal<DockLayoutSnapshot | undefined>(undefined);
+  savedLayout = signal<DockLayoutSnapshot | undefined>(undefined);
 
   saveLayout(): void {
     if (!this.dockManager) {
       return;
     }
 
-    this.savedLayout = this.dockManager.captureLayout();
+    this.savedLayout.set(this.dockManager.captureLayout());
   }
 
   onLayoutSnapshot(snapshot: DockLayoutSnapshot): void {
-    this.liveLayout = snapshot;
+    this.liveLayout.set(snapshot);
   }
 }

@@ -1,6 +1,5 @@
-import { Component, forwardRef, Input, TemplateRef, ViewChild } from '@angular/core';
+import { Component, signal, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MockComponent } from 'ng-mocks';
 import { BsDatatableComponent } from '../datatable/datatable.component';
 import { BsRowTemplateDirective } from './row-template.directive';
 
@@ -16,7 +15,7 @@ describe('BsRowTemplateDirective', () => {
         BsRowTemplateDirective,
 
         // Mock components
-        MockComponent(BsDatatableComponent),
+        MockBsDatatableComponent,
 
         // Testbench
         BsRowTemplateTestComponent,
@@ -47,6 +46,17 @@ interface Artist {
 }
 
 @Component({
+  selector: 'bs-datatable',
+  standalone: false,
+  template: `<ng-content></ng-content>`,
+  providers: [{ provide: BsDatatableComponent, useExisting: MockBsDatatableComponent }]
+})
+class MockBsDatatableComponent<TData> {
+  data = signal<any>(undefined);
+  rowTemplate?: TemplateRef<any>;
+}
+
+@Component({
   selector: 'bs-row-template-test',
   standalone: false,
   template: `
@@ -59,7 +69,7 @@ interface Artist {
     </bs-datatable>`
 })
 class BsRowTemplateTestComponent {
-  @ViewChild('table') table!: BsDatatableComponent<Artist>;
+  @ViewChild('table') table!: MockBsDatatableComponent<Artist>;
 
   artists?: Artist[] = [
     { id: 1, name: 'Dario G', yearStarted: 1993, yearQuit: null, text: 'Dario G' },

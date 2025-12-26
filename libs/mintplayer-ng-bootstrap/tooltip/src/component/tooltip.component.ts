@@ -1,5 +1,4 @@
-import { Component, HostBinding, Inject, Input, TemplateRef } from '@angular/core';
-import { BehaviorSubject, map, Observable } from 'rxjs';
+import { ChangeDetectionStrategy, Component, computed, HostBinding, Inject, input, TemplateRef } from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Position } from '@mintplayer/ng-bootstrap';
 import { TOOLTIP_CONTENT } from '../providers/tooltip-content.provider';
@@ -10,37 +9,26 @@ import { TOOLTIP_CONTENT } from '../providers/tooltip-content.provider';
   styleUrls: ['./tooltip.component.scss'],
   standalone: false,
   animations: [FadeInOutAnimation],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsTooltipComponent {
   constructor(@Inject(TOOLTIP_CONTENT) content: TemplateRef<any>) {
-    this.template = content;  
-    this.positionClass$ = this.position$
-      .pipe(map(position => `bs-tooltip-${position}`));
-    this.marginClass$ = this.position$
-      .pipe(map(position => {
-        switch (position) {
-          case 'start': return 'me-1';
-          case 'end': return 'ms-1';
-          case 'top': return 'mb-1';
-          case 'bottom': return 'mt-1';
-        }
-      }));
+    this.template = content;
   }
 
-  //#region Position
-  position$ = new BehaviorSubject<Position>('bottom');
-  public get position() {
-    return this.position$.value;
-  }
-  @Input() public set position(value: Position) {
-    this.position$.next(value);
-  }
-  //#endregion
-
+  position = input<Position>('bottom');
   template: TemplateRef<any>;
-  positionClass$: Observable<string>;
-  marginClass$: Observable<string>;
+
+  positionClass = computed(() => `bs-tooltip-${this.position()}`);
+
+  marginClass = computed(() => {
+    switch (this.position()) {
+      case 'start': return 'me-1';
+      case 'end': return 'ms-1';
+      case 'top': return 'mb-1';
+      case 'bottom': return 'mt-1';
+    }
+  });
 
   @HostBinding('class.position-relative') positionRelative = true;
-
 }

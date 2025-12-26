@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { BsDatatableModule, DatatableSettings } from '@mintplayer/ng-bootstrap/datatable';
 import { PaginationResponse } from '@mintplayer/pagination';
 import { Artist } from '../../../entities/artist';
@@ -13,9 +13,9 @@ import { ArtistService } from '../../../services/artist/artist.service';
 })
 export class DatatablesComponent implements OnInit {
 
-  constructor(private artistService: ArtistService) {}
+  private artistService = inject(ArtistService);
 
-  artists?: PaginationResponse<Artist>;
+  artists = signal<PaginationResponse<Artist> | undefined>(undefined);
   settings: DatatableSettings = new DatatableSettings({
     sortProperty: 'YearStarted',
     sortDirection: 'ascending',
@@ -28,7 +28,7 @@ export class DatatablesComponent implements OnInit {
       selected: 1
     }
   });
-  
+
   ngOnInit() {
     this.loadArtists();
   }
@@ -36,7 +36,7 @@ export class DatatablesComponent implements OnInit {
   loadArtists() {
     this.artistService.pageArtists(this.settings.toPagination())
       .then((response) => {
-        this.artists = response;
+        this.artists.set(response);
         if (response) {
           this.settings.page.values = Array.from(Array(response.totalPages).keys()).map((p) => p + 1);
         }

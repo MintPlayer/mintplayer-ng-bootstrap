@@ -6,6 +6,7 @@ import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsOffcanvasModule } from '@mintplayer/ng-bootstrap/offcanvas';
 import { MockComponent, MockDirective, MockModule } from 'ng-mocks';
+import { GIT_REPO } from '../../../providers/git-repo.provider';
 
 import { OffcanvasComponent } from './offcanvas.component';
 
@@ -27,7 +28,7 @@ describe('OffcanvasComponent', () => {
         OffcanvasComponent,
       ],
       providers: [
-        { provide: 'GIT_REPO', useValue: 'https://github.com' },
+        { provide: GIT_REPO, useValue: 'https://github.com' },
       ]
     })
     .compileComponents();

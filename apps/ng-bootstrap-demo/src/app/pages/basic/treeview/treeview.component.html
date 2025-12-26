@@ -2,48 +2,48 @@
 <bs-treeview>
     <bs-treeview-item>
         <span>
-            <span [innerHTML]="inboxFill"></span>
+            <span [innerHTML]="inboxFill()"></span>
             Inbox
         </span>
         <bs-treeview>
             <bs-treeview-item>
                 <span>
-                    <span [innerHTML]="building"></span>
+                    <span [innerHTML]="building()"></span>
                     Office
                 </span>
                 <bs-treeview>
                     <bs-treeview-item>
-                        <span [innerHTML]="peopleFill"></span>
+                        <span [innerHTML]="peopleFill()"></span>
                         Customers
                     </bs-treeview-item>
                     <bs-treeview-item>
-                        <span [innerHTML]="personBoundingBox"></span>
+                        <span [innerHTML]="personBoundingBox()"></span>
                         Co-Workers
                     </bs-treeview-item>
                 </bs-treeview>
             </bs-treeview-item>
             <bs-treeview-item>
                 <span>
-                    <span [innerHTML]="inbox"></span>
+                    <span [innerHTML]="inbox()"></span>
                     Others
                 </span>
             </bs-treeview-item>
         </bs-treeview>
     </bs-treeview-item>
     <bs-treeview-item>
-        <span [innerHTML]="archiveFill"></span>
+        <span [innerHTML]="archiveFill()"></span>
         Drafts
     </bs-treeview-item>
     <bs-treeview-item>
-        <span [innerHTML]="calendar3"></span>
+        <span [innerHTML]="calendar3()"></span>
         Calendar
     </bs-treeview-item>
     <bs-treeview-item>
-        <span [innerHTML]="personLinesFill"></span>
+        <span [innerHTML]="personLinesFill()"></span>
         Contacts
     </bs-treeview-item>
     <bs-treeview-item>
-        <span [innerHTML]="trashFill"></span>
+        <span [innerHTML]="trashFill()"></span>
         Deleted Items
     </bs-treeview-item>
 </bs-treeview>

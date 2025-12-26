@@ -1,4 +1,4 @@
-import { Pipe, PipeTransform, SecurityContext } from '@angular/core';
+import { inject, Pipe, PipeTransform, SecurityContext } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Pipe({
@@ -7,8 +7,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
   pure: true,
 })
 export class BsBoldPipe implements PipeTransform {
-
-  constructor(private domSanitizer: DomSanitizer) {}
+  private domSanitizer = inject(DomSanitizer);
 
   transform(value: string | SafeHtml | null, numberOfStars: number = 2, classList: string[] = []): SafeHtml | null {
     const txt = `\\*{${numberOfStars}}\\b(?<boldtext>[^\\*]+)\\b\\*{${numberOfStars}}`;

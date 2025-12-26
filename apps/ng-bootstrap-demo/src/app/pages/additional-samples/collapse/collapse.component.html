@@ -2,9 +2,9 @@
 
 <h2>Demo</h2>
 <div class="d-block mb-3">
-    <button (click)="collapseVisible = !collapseVisible" [color]="colors.primary">Expand/collapse</button>
+    <button (click)="collapseVisible.set(!collapseVisible())" [color]="colors.primary">Expand/collapse</button>
 </div>
-@if (collapseVisible) {
+@if (collapseVisible()) {
     <div class="overflow-hidden" [@slideUpDownNgif]>
         <bs-grid>
             <div bsRow>

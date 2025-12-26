@@ -1,9 +1,8 @@
-import { Component, Directive, Input } from '@angular/core';
+import { Component, computed, Directive, ElementRef, Input, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
-import { MockComponent, MockModule } from 'ng-mocks';
-import { BehaviorSubject, map, Observable } from 'rxjs';
+import { MockComponent } from 'ng-mocks';
 import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 
@@ -93,11 +92,11 @@ class BsNavbarDropdownTestComponent {
   ]
 })
 class BsNavbarMockComponent {
-  isExpanded$ = new BehaviorSubject<boolean>(false);
-  windowWidth$ = new BehaviorSubject<number | null>(1024);
-  breakPoint$ = new BehaviorSubject<string | null>('md');
-  expandAt$: Observable<number | null> = this.breakPoint$.pipe(map((breakpoint) => {
-    switch (breakpoint) {
+  isExpanded = signal<boolean>(false);
+  windowWidth = signal<number | null>(1024);
+  breakpoint = signal<string | null>('md');
+  expandAt = computed(() => {
+    switch (this.breakpoint()) {
       case 'xxl': return 1400;
       case 'xl': return 1200;
       case 'lg': return 992;
@@ -106,8 +105,8 @@ class BsNavbarMockComponent {
       case 'xs': return 0;
       default: return null;
     }
-  }));
-  isSmallMode$ = new BehaviorSubject<boolean>(false);
+  });
+  isSmallMode = signal<boolean>(false);
 }
 
 @Component({
@@ -117,7 +116,7 @@ class BsNavbarMockComponent {
   <div>
     <ul>
       <ng-content></ng-content>
-    </ul>  
+    </ul>
   </div>`
 })
 class BsNavbarNavMockComponent {
@@ -135,6 +134,7 @@ class BsNavbarNavMockComponent {
   ]
 })
 class BsNavbarItemMockComponent {
+  element = { nativeElement: document.createElement('div') };
 }
 
 @Component({

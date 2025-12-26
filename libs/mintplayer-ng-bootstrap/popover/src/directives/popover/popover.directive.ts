@@ -1,9 +1,7 @@
-import { ConnectedPosition, Overlay, OverlayRef, PositionStrategy } from '@angular/cdk/overlay';
+import { ConnectedPosition, Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { Position } from '@mintplayer/ng-bootstrap';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, delay, map, Observable, take } from 'rxjs';
-import { AfterViewInit, ComponentRef, DestroyRef, Directive, ElementRef, Host, Inject, Injector, Input, OnDestroy, SkipSelf, TemplateRef } from '@angular/core';
+import { AfterViewInit, ComponentRef, Directive, ElementRef, Host, inject, Injector, input, OnDestroy, signal, SkipSelf, TemplateRef, computed, effect } from '@angular/core';
 import { BsPopoverComponent } from '../../component/popover.component';
 import { POPOVER_CONTENT } from '../../providers/popover-content.provider';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
@@ -14,105 +12,103 @@ import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
 })
 export class BsPopoverDirective implements AfterViewInit, OnDestroy {
 
-  constructor(
-    private overlay: Overlay,
-    private destroy: DestroyRef,
-    private templateRef: TemplateRef<any>,
-    private parentInjector: Injector,
-    @Inject(PORTAL_FACTORY) private portalFactory: (injector: Injector) => ComponentPortal<any>,
-    @Host() @SkipSelf() private parent: ElementRef
-  ) {
-    this.position$.pipe(takeUntilDestroyed()).subscribe((position) => {
-      if (this.component) {
-        this.component.instance.position = position;
-      }
-    });
-    this.isVisible$.pipe(takeUntilDestroyed()).subscribe((isVisible) => {
-      if (this.component) {
-        this.component.instance.isVisible = isVisible;
-      }
-    });
-    this.connectedPosition$ = this.position$
-      .pipe(delay(20), map((position) => {
-        switch (position) {
-          case 'top':
-            return <ConnectedPosition>{
-              originX: "center",
-              originY: "top", //<--
-              overlayX: "center",
-              overlayY: "bottom"
-            };
-          case 'start':
-            return <ConnectedPosition>{
-              originX: "start", //<--
-              originY: "center",
-              overlayX: "end",
-              overlayY: "center",
-            };
-          case 'end':
-            return <ConnectedPosition>{
-              originX: "end", //<--
-              originY: "center",
-              overlayX: "start",
-              overlayY: "center"
-            };
-          default:
-            return <ConnectedPosition>{
-              originX: "center",
-              originY: "bottom", //<--
-              overlayX: "center",
-              overlayY: "top"
-            };
-        }
-      }));
+  private overlay = inject(Overlay);
+  private templateRef = inject(TemplateRef<any>);
+  private parentInjector = inject(Injector);
+  private portalFactory = inject(PORTAL_FACTORY);
+  private parent = inject(ElementRef, { host: true, skipSelf: true });
 
-    this.connectedPosition$
-      .pipe(takeUntilDestroyed())
-      .subscribe((connectedPosition) => {
-        if (this.overlayRef) {
-          this.overlayRef.updatePositionStrategy(this.overlay.position()
-            .flexibleConnectedTo(this.parent)
-            .withPositions([connectedPosition]));
-        }
-      });
-  }
+  bsPopover = input<Position>('bottom');
+  updatePosition = input(false);
 
-  @Input() public set bsPopover(value: Position) {
-    this.position$.next(value);
-  }
-
-  @Input() public updatePosition = false;
-
-  private injector: Injector | null = null;
+  private localInjector: Injector | null = null;
   private portal: ComponentPortal<any> | null = null;
   private overlayRef: OverlayRef | null = null;
   private component: ComponentRef<BsPopoverComponent> | null = null;
-  position$ = new BehaviorSubject<Position>('bottom');
-  connectedPosition$: Observable<ConnectedPosition>;
-  isVisible$ = new BehaviorSubject<boolean>(false);
+  isVisible = signal<boolean>(false);
+
+  connectedPosition = computed<ConnectedPosition>(() => {
+    const position = this.bsPopover();
+    switch (position) {
+      case 'top':
+        return {
+          originX: "center",
+          originY: "top",
+          overlayX: "center",
+          overlayY: "bottom"
+        };
+      case 'start':
+        return {
+          originX: "start",
+          originY: "center",
+          overlayX: "end",
+          overlayY: "center",
+        };
+      case 'end':
+        return {
+          originX: "end",
+          originY: "center",
+          overlayX: "start",
+          overlayY: "center"
+        };
+      default:
+        return {
+          originX: "center",
+          originY: "bottom",
+          overlayX: "center",
+          overlayY: "top"
+        };
+    }
+  });
+
+  constructor() {
+    effect(() => {
+      const position = this.bsPopover();
+      if (this.component) {
+        this.component.setInput('position', position);
+      }
+    });
+
+    effect(() => {
+      const isVisible = this.isVisible();
+      if (this.component) {
+        this.component.setInput('isVisible', isVisible);
+      }
+    });
+
+    effect(() => {
+      const connectedPosition = this.connectedPosition();
+      if (this.overlayRef) {
+        setTimeout(() => {
+          this.overlayRef?.updatePositionStrategy(this.overlay.position()
+            .flexibleConnectedTo(this.parent)
+            .withPositions([connectedPosition]));
+        }, 20);
+      }
+    });
+  }
 
   ngAfterViewInit() {
-    this.connectedPosition$.pipe(take(1), takeUntilDestroyed(this.destroy)).subscribe((connectedPosition) => {
-      this.injector = Injector.create({
-        providers: [{ provide: POPOVER_CONTENT, useValue: this.templateRef }],
-        parent: this.parentInjector
-      });
-      this.portal = this.portalFactory(this.injector);
-      this.overlayRef = this.overlay.create({
-        scrollStrategy: this.overlay.scrollStrategies.reposition(),
-        positionStrategy: this.overlay.position()
-          .flexibleConnectedTo(this.parent)
-          .withPositions([connectedPosition]),
-      });
-      this.component = this.overlayRef.attach<BsPopoverComponent>(this.portal);
-      this.component.instance.position = this.position$.value;
+    const connectedPosition = this.connectedPosition();
+    this.localInjector = Injector.create({
+      providers: [{ provide: POPOVER_CONTENT, useValue: this.templateRef }],
+      parent: this.parentInjector
     });
-    
+    this.portal = this.portalFactory(this.localInjector);
+    this.overlayRef = this.overlay.create({
+      scrollStrategy: this.overlay.scrollStrategies.reposition(),
+      positionStrategy: this.overlay.position()
+        .flexibleConnectedTo(this.parent)
+        .withPositions([connectedPosition]),
+    });
+    this.component = this.overlayRef.attach<BsPopoverComponent>(this.portal);
+    this.component.setInput('position', this.bsPopover());
+
     this.parent.nativeElement.onclick = () => {
-      if (this.updatePosition) {
+      if (this.updatePosition()) {
         this.overlayRef?.updatePosition();
       }
-      this.isVisible$.next(!this.isVisible$.value);
+      this.isVisible.set(!this.isVisible());
     };
   }
 

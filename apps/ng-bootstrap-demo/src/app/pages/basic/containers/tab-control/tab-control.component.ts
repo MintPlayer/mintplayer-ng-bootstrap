@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BsForDirective } from '@mintplayer/ng-bootstrap/for';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
@@ -14,7 +14,7 @@ import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
   imports: [FormsModule, BsForDirective, BsGridModule, BsSelectModule, BsTabControlModule, BsToggleButtonModule]
 })
 export class TabControlComponent {
-  tabsPosition: BsTabsPosition = 'top';
+  tabsPosition = signal<BsTabsPosition>('top');
   numbers = Array.from(Array(20).keys()).map(i => i + 1);
-  allowDragDrop = true;
+  allowDragDrop = signal(true);
 }

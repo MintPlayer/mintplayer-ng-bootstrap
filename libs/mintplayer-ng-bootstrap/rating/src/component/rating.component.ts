@@ -1,66 +1,44 @@
-import { AsyncPipe } from '@angular/common';
-import { Component, EventEmitter, HostListener, Input, Output } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
+import { ChangeDetectionStrategy, Component, computed, effect, HostListener, input, model, output, signal } from '@angular/core';
 
 @Component({
   selector: 'bs-rating',
   standalone: true,
   templateUrl: './rating.component.html',
   styleUrls: ['./rating.component.scss'],
-  imports: [AsyncPipe],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsRatingComponent {
 
   constructor() {
-    this.stars$ = combineLatest([this.maximum$, this.previewValue$, this.value$])
-      .pipe(map(([maximum, previewValue, value]) => {
-        const v = previewValue ?? value;
-        return [
-          ...[...Array(v).keys()].map(i => true),
-          ...[...Array(maximum - v).keys()].map(i => false)
-        ];
-      }));
-
-    combineLatest([this.previewValue$, this.value$])
-      .pipe(takeUntilDestroyed())
-      .subscribe(([previewValue, value]) => {
-        const v = previewValue ?? value;
-        this.starsChange.emit(v);
-      });
+    effect(() => {
+      const v = this.previewValue() ?? this.value();
+      this.starsChange.emit(v);
+    });
   }
 
-  maximum$ = new BehaviorSubject<number>(5);
-  value$ = new BehaviorSubject<number>(3);
-  previewValue$ = new BehaviorSubject<number | null>(null);
-  stars$: Observable<boolean[]>;
+  maximum = input<number>(5);
+  value = model<number>(3);
+  previewValue = signal<number | null>(null);
+  starsChange = output<number>();
 
-  //#region Maximum
-  @Input() public set maximum(value: number) {
-    this.maximum$.next(value);
-  }
-  //#endregion
-
-  //#region Value
-  @Output() public valueChange = new EventEmitter<number>();
-  @Output() public starsChange = new EventEmitter<number>();
-  public get value() {
-    return this.value$.value;
-  }
-  @Input() public set value(value: number) {
-    this.value$.next(value);
-    this.valueChange.emit(value);
-  }
-  //#endregion
+  stars = computed(() => {
+    const v = this.previewValue() ?? this.value();
+    const max = this.maximum();
+    return [
+      ...[...Array(v).keys()].map(() => true),
+      ...[...Array(max - v).keys()].map(() => false)
+    ];
+  });
 
   hoverValue(index: number) {
-    this.previewValue$.next(index + 1);
+    this.previewValue.set(index + 1);
   }
+
   selectValue(index: number) {
-    this.value = index + 1;
+    this.value.set(index + 1);
   }
 
   @HostListener('mouseleave') onMouseLeave() {
-    this.previewValue$.next(null);
+    this.previewValue.set(null);
   }
 }

@@ -1,5 +1,4 @@
-import { Component, ContentChild, TemplateRef, Input, ElementRef } from '@angular/core';
-import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
+import { ChangeDetectionStrategy, Component, ContentChild, computed, inject, input, ElementRef, signal } from '@angular/core';
 import { BsTabControlComponent } from '../tab-control/tab-control.component';
 import { BsTabPageHeaderDirective } from '../tab-page-header/tab-page-header.directive';
 
@@ -8,23 +7,18 @@ import { BsTabPageHeaderDirective } from '../tab-page-header/tab-page-header.dir
   templateUrl: './tab-page.component.html',
   styleUrls: ['./tab-page.component.scss'],
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsTabPageComponent {
+  element = inject(ElementRef);
+  tabControl = inject(BsTabControlComponent);
 
-  constructor(tabControl: BsTabControlComponent, element: ElementRef<any>) {
-    this.element = element;
-    this.tabControl = tabControl;
-    this.tabId$ = new BehaviorSubject<number>(++this.tabControl.tabCounter);
-    this.tabName$ = combineLatest([this.tabControl.tabControlName$, this.tabId$])
-      .pipe(map(([tabControlName, tabId]) =>  `${tabControlName}-${tabId}`));
+  constructor() {
+    this.tabId = signal(++this.tabControl.tabCounter);
   }
+  tabId = signal<number>(0);
+  tabName = computed(() => `${this.tabControl.tabControlName()}-${this.tabId()}`);
 
-  element: ElementRef<any>;
-  tabControl: BsTabControlComponent;
-  tabId$: BehaviorSubject<number>;
-  tabName$: Observable<string>;
-
-  @Input() disabled = false;
+  disabled = input(false);
   @ContentChild(BsTabPageHeaderDirective) headerTemplate!: BsTabPageHeaderDirective;
-
 }

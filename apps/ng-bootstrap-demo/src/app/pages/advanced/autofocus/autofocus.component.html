@@ -4,5 +4,5 @@
     It focuses the elements (or even components that implement the <b>focus()</b> method) as soon as they appear, either through navigation or through *ngIf.
 </p>
 
-<bs-select2 (provideSuggestions)="onProvideArtistSuggestions($event)" [suggestions]="artistSuggestions" autofocus>
+<bs-select2 (provideSuggestions)="onProvideArtistSuggestions($event)" [suggestions]="artistSuggestions()" autofocus>
 </bs-select2>

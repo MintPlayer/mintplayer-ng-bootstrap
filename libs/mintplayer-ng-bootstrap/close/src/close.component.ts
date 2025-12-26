@@ -1,13 +1,15 @@
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, output } from '@angular/core';
 
 @Component({
   selector: 'bs-close',
   templateUrl: './close.component.html',
   styleUrls: ['./close.component.scss'],
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsCloseComponent {
-  @Output() click = new EventEmitter<any>();
+  click = output<void>();
+
   onClose(ev: MouseEvent) {
     this.click.emit();
     ev.stopImmediatePropagation();

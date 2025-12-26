@@ -1,4 +1,4 @@
-import { Directive, TemplateRef } from '@angular/core';
+import { Directive, inject, TemplateRef } from '@angular/core';
 import { BsShellComponent } from '../shell/shell.component';
 
 @Directive({
@@ -6,7 +6,9 @@ import { BsShellComponent } from '../shell/shell.component';
   standalone: false,
 })
 export class BsShellSidebarDirective {
-  constructor(private shell: BsShellComponent, private template: TemplateRef<any>) {
+  constructor() {
+    const shell = inject(BsShellComponent);
+    const template = inject(TemplateRef);
     shell.sidebarTemplate = template;
   }
 }

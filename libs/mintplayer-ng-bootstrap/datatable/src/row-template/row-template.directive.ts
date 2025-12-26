@@ -1,4 +1,4 @@
-import { Directive, Input, TemplateRef } from '@angular/core';
+import { Directive, inject, Input, TemplateRef } from '@angular/core';
 import { PaginationResponse } from '@mintplayer/pagination';
 import { BsDatatableComponent } from '../datatable/datatable.component';
 
@@ -8,12 +8,15 @@ import { BsDatatableComponent } from '../datatable/datatable.component';
 })
 export class BsRowTemplateDirective<TData> {
 
-  constructor(private datatableComponent: BsDatatableComponent<TData>, templateRef: TemplateRef<BsRowTemplateContext<TData>>) {
-    this.datatableComponent.rowTemplate = templateRef;
+  private datatableComponent = inject<BsDatatableComponent<TData>>(BsDatatableComponent);
+  private templateRef = inject<TemplateRef<BsRowTemplateContext<TData>>>(TemplateRef);
+
+  constructor() {
+    this.datatableComponent.rowTemplate = this.templateRef;
   }
 
   @Input() set bsRowTemplateOf(value: PaginationResponse<TData> | undefined) {
-    this.datatableComponent.data = value;
+    this.datatableComponent.data.set(value);
   }
   
   public static ngTemplateContextGuard<TData>(

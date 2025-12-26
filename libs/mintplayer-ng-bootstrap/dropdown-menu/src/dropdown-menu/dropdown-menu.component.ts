@@ -18,7 +18,7 @@ export class BsDropdownMenuComponent implements AfterViewInit {
 
   @HostListener('window:resize')
   onResize() {
-    if ((typeof window !== 'undefined') && this.bsDropdown && this.bsDropdown.sameDropdownWidth) {
+    if ((typeof window !== 'undefined') && this.bsDropdown && this.bsDropdown.sameDropdownWidth()) {
       const element = this.bsDropdown.elementRef.nativeElement;
       this.dropdownWith = window.getComputedStyle(element).width;
     }

@@ -1,5 +1,4 @@
-import { Component, ElementRef, Input, OnInit, Renderer2, ViewChild } from '@angular/core';
-import { BehaviorSubject, map, Observable } from 'rxjs';
+import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, input, Renderer2, ViewChild } from '@angular/core';
 import { BsSelectSize } from '../types/select-size';
 
 @Component({
@@ -7,76 +6,46 @@ import { BsSelectSize } from '../types/select-size';
   templateUrl: './select.component.html',
   styleUrls: ['./select.component.scss'],
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class BsSelectComponent implements OnInit {
-  constructor(private renderer: Renderer2) {
-    this.sizeClass$ = this.size$.pipe(map((size) => {
-      switch (size) {
-        case 'sm':
-        case 'lg':
-          return `form-select-${size}`;
-        default:
-          return null;
-      }
-    }));
+export class BsSelectComponent {
+  private renderer = inject(Renderer2);
 
-    this.multipleValue$ = this.multiple$.pipe(map((multiple) => {
-      if (multiple) {
-        return true;
-      } else {
-        return null;
+  constructor() {
+    effect(() => {
+      const disabled = this.disabled();
+      if (this.selectBox) {
+        this.renderer.setProperty(this.selectBox.nativeElement, 'disabled', disabled);
       }
-    }));
+    });
   }
 
   // For debugging purposes
-  @Input() public identifier = 0;
+  identifier = input(0);
 
-  @ViewChild('selectBox') selectBox!: ElementRef<HTMLSelectElement>; 
+  @ViewChild('selectBox') selectBox!: ElementRef<HTMLSelectElement>;
 
-  ngOnInit(): void {}
+  size = input<BsSelectSize>('md');
+  multiple = input<boolean>(false);
+  numberVisible = input<number | null>(null);
+  disabled = input<boolean>(false);
 
-  //#region Size
-  size$ = new BehaviorSubject<BsSelectSize>('md');
-  public get size() {
-    return this.size$.value;
-  }
-  @Input() public set size(value: BsSelectSize) {
-    this.size$.next(value);
-  }
-  //#endregion
-
-  //#region Multiple
-  multiple$ = new BehaviorSubject<boolean>(false);
-  public get multiple() {
-    return this.multiple$.value;
-  }
-  @Input() public set multiple(value: boolean) {
-    this.multiple$.next(value);
-  }
-  //#endregion
-
-  //#region NumberVisible
-  numberVisible$ = new BehaviorSubject<number | null>(null);
-  public get numberVisible() {
-    return this.numberVisible$.value;
-  }
-  @Input() public set numberVisible(value: number | null) {
-    this.numberVisible$.next(value);
-  }
-  //#endregion
-
-  //#region Disabled
-  public get disabled() {
-    return this.selectBox!.nativeElement.disabled;
-  }
-  @Input() public set disabled(value: boolean) {
-    if (this.selectBox) {
-      this.renderer.setProperty(this.selectBox.nativeElement, 'disabled', value);
+  sizeClass = computed(() => {
+    const size = this.size();
+    switch (size) {
+      case 'sm':
+      case 'lg':
+        return `form-select-${size}`;
+      default:
+        return null;
     }
-  }
-  //#endregion
+  });
 
-  sizeClass$: Observable<string | null>;
-  multipleValue$: Observable<boolean | null>;
+  multipleValue = computed(() => {
+    if (this.multiple()) {
+      return true;
+    } else {
+      return null;
+    }
+  });
 }

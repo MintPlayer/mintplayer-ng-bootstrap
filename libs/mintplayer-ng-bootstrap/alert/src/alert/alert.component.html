@@ -1,6 +1,6 @@
-@if (isVisible) {
-    <div class="mb-3 overflow-hidden" [@fadeInOut] (@fadeInOut.done)="onAfterOpenedOrClosed(isVisible)">
-        <div class="alert mb-0" [class]="'alert-' + colors[type]">
+@if (isVisible()) {
+    <div class="mb-3 overflow-hidden" [@fadeInOut] (@fadeInOut.done)="onAfterOpenedOrClosed(isVisible())">
+        <div class="alert mb-0" [class]="'alert-' + colors[type()]">
             <ng-content></ng-content>
         </div>
     </div>

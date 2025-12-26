@@ -1,57 +1,52 @@
-import { Component, Directive, ElementRef, EventEmitter, HostBinding, HostListener, Input, Output, ViewChild, NgZone } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, map, Observable } from 'rxjs';
+import { ChangeDetectionStrategy, Component, computed, Directive, effect, ElementRef, HostBinding, HostListener, inject, model, NgZone, output, signal, ViewChild } from '@angular/core';
 
 @Component({
   selector: 'bs-slider',
   templateUrl: './slider.component.html',
   styleUrls: ['./slider.component.scss'],
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsSliderComponent {
-  constructor(private element: ElementRef<HTMLElement>, private zone: NgZone) {
-    this.value$.pipe(takeUntilDestroyed())
-      .subscribe((value) => this.valueChange.emit(value));
-
-    this.thumbMarginLeft$ = this.value$.pipe(map((value) => {
-      const res = value * element.nativeElement.clientWidth - 12;
-      return res;
-    }));
-
-    this.cursorClass$ = this.isPointerDown$.pipe(map((isPointerDown) => {
-      return isPointerDown ? 'cursor-grabbing' : 'cursor-grab';
-    }));
-  }
+  private element = inject(ElementRef<HTMLElement>);
+  private zone = inject(NgZone);
 
   @HostBinding('class.d-block') dBlock = true;
   @HostBinding('class.position-relative') positionRelative = true;
-  thumbMarginLeft$: Observable<number>;
   @ViewChild('track') track!: ElementRef<HTMLDivElement>;
   @ViewChild('thumb') thumb!: ElementRef<HTMLDivElement>;
 
-  //#region Value
-  value$ = new BehaviorSubject<number>(0.5);
-  @Output() valueChange = new EventEmitter<number>();
-  public get value() {
-    return this.value$.value;
-  }
-  @Input() public set value(value: number) {
-    this.value$.next(value);
-  }
-  //#endregion
+  value = model<number>(0.5);
+  valueChange = output<number>();
+  private isPointerDown = signal<boolean>(false);
 
-  private isPointerDown$ = new BehaviorSubject<boolean>(false);
-  cursorClass$: Observable<string>;
+  thumbMarginLeft = computed(() => {
+    const value = this.value();
+    const res = value * this.element.nativeElement.clientWidth - 12;
+    return res;
+  });
+
+  cursorClass = computed(() => {
+    return this.isPointerDown() ? 'cursor-grabbing' : 'cursor-grab';
+  });
+
+  constructor() {
+    effect(() => {
+      const value = this.value();
+      this.valueChange.emit(value);
+    });
+  }
 
   onPointerDown(ev: MouseEvent | TouchEvent) {
     ev.preventDefault();
-    this.zone.run(() => this.isPointerDown$.next(true));
+    ev.stopPropagation();
+    this.zone.run(() => this.isPointerDown.set(true));
     this.updateColor(ev);
   }
 
   @HostListener('document:mousemove', ['$event'])
   onPointerMove(ev: MouseEvent | TouchEvent) {
-    if (this.isPointerDown$.value) {
+    if (this.isPointerDown()) {
       ev.preventDefault();
       ev.stopPropagation();
       this.updateColor(ev);
@@ -60,7 +55,7 @@ export class BsSliderComponent {
 
   @HostListener('document:mouseup', ['$event'])
   onPointerUp(ev: MouseEvent | TouchEvent) {
-    this.isPointerDown$.next(false);
+    this.isPointerDown.set(false);
   }
 
   private updateColor(ev: MouseEvent | TouchEvent) {
@@ -75,10 +70,10 @@ export class BsSliderComponent {
         x: ev.clientX - rect.left,
       };
     }
-    
+
     const percent = co.x / this.track.nativeElement.clientWidth;
     const limited = Math.max(0, Math.min(1, percent));
-    this.value$.next(limited);
+    this.value.set(limited);
   }
 }
 

@@ -1,6 +1,6 @@
 import { OverlayModule } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { Component, ElementRef, Injectable, Injector, TemplateRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, Injector, signal, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
 import { BsToastService } from './toast.service';
@@ -34,9 +34,9 @@ class BsToastTestComponent {
   standalone: true,
   imports: [CommonModule],
   template: `
-    <ng-container *ngFor="let toast of (toastService.toasts$ | async); let i = index">
+    @for (toast of toastService.toasts(); let i = $index; track i) {
       <ng-container [ngTemplateOutlet]="toast.template" [ngTemplateOutletContext]="toast.context"></ng-container>
-    </ng-container>`
+    }`
 })
 class BsToastContainerComponent {
   constructor(toastService: BsToastService) {
@@ -59,7 +59,7 @@ describe('BsToastService', () => {
       ],
       imports: [
         OverlayModule,
-        
+
         // Unit to test
         BsToastContainerComponent,
       ],
@@ -87,7 +87,7 @@ describe('BsToastService', () => {
 
   it('should show a toast message', async () => {
     component.showToast();
-    expect(component.toastService.toasts$.value.length).toEqual(1);
+    expect(component.toastService.toasts().length).toEqual(1);
 
     fixture.detectChanges();
     const allToastLabels = component.toaster.nativeElement.querySelectorAll('label');

@@ -1,4 +1,5 @@
-import { Component, computed, effect, Inject, output, signal, TemplateRef, untracked } from '@angular/core';
+import { isPlatformServer } from '@angular/common';
+import { Component, computed, effect, Inject, output, PLATFORM_ID, signal, TemplateRef, untracked } from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Position } from '@mintplayer/ng-bootstrap';
 import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
@@ -12,7 +13,7 @@ import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
 })
 export class BsOffcanvasComponent {
 
-  constructor(@Inject(OFFCANVAS_CONTENT) contentTemplate: TemplateRef<any>) {
+  constructor(@Inject(OFFCANVAS_CONTENT) contentTemplate: TemplateRef<any>, @Inject(PLATFORM_ID) private platformId: Object) {
     this.contentTemplate = contentTemplate;
 
     // Effect to handle position changes - disable transition temporarily
@@ -23,9 +24,11 @@ export class BsOffcanvasComponent {
         this.disableTransition.set(true);
         this.offcanvasClass.set(`offcanvas-${position}`);
         // Re-enable transitions after browser has processed position change
-        requestAnimationFrame(() => {
-          this.disableTransition.set(false);
-        });
+        if (!isPlatformServer(this.platformId)) {
+          requestAnimationFrame(() => {
+            this.disableTransition.set(false);
+          });
+        }
       });
     });
 
@@ -37,11 +40,13 @@ export class BsOffcanvasComponent {
           // When showing: set visibility immediately, then add .show class after position is applied
           this.visibility.set('visible');
           // Delay adding .show class to allow position to be applied first
-          requestAnimationFrame(() => {
+          if (!isPlatformServer(this.platformId)) {
             requestAnimationFrame(() => {
-              this.show.set(true);
+              requestAnimationFrame(() => {
+                this.show.set(true);
+              });
             });
-          });
+          }
         } else {
           // When hiding: remove .show class immediately, delay visibility for animation
           this.show.set(false);

@@ -4,7 +4,7 @@
         <h2>Demo</h2>
         <div bsRow class="mb-3">
             <div [col]>
-                <bs-carousel [animation]="mode" [indicators]="true" class="mx-auto">
+                <bs-carousel [orientation]="orientation()" [animation]="mode()" [indicators]="true" class="mx-auto">
                     <img *bsCarouselImage src="/assets/resized/deer.png">
                     <img *bsCarouselImage src="/assets/resized/duck.png">
                     <img *bsCarouselImage src="/assets/resized/leopard.png">
@@ -14,14 +14,25 @@
                 </bs-carousel>
             </div>
         </div>
-        <div bsRow>
+        <div bsRow class="mb-3">
             <span [col] bsColFormLabel class="text-end">
                 Carousel mode
             </span>
             <div [col]>
-                <bs-select [ngModel]="mode" (ngModelChange)="onModeChange($event)" class="d-inline-block">
+                <bs-select [(ngModel)]="mode" class="d-inline-block">
                     <option value="slide">Slide</option>
                     <option value="fade">Fade</option>
+                </bs-select>
+            </div>
+        </div>
+        <div bsRow>
+            <span [col] bsColFormLabel class="text-end">
+                Orientation
+            </span>
+            <div [col]>
+                <bs-select [(ngModel)]="orientation" class="d-inline-block">
+                    <option value="horizontal">Horizontal</option>
+                    <option value="vertical">Vertical</option>
                 </bs-select>
             </div>
         </div>
@@ -32,19 +43,6 @@
                     <li>Touch-event support</li>
                     <li><code>&lt;noscript&gt;</code> support</li>
                 </ul>
-            </div>
-        </div>
-        <h2>Vertical carousel</h2>
-        <div bsRow>
-            <div [col]>
-                <bs-carousel [orientation]="'vertical'" [animation]="mode" [indicators]="true" class="mx-auto">
-                    <img *bsCarouselImage src="/assets/resized/deer.png">
-                    <img *bsCarouselImage src="/assets/resized/duck.png" loading="lazy">
-                    <img *bsCarouselImage src="/assets/resized/leopard.png" loading="lazy">
-                    <img *bsCarouselImage src="/assets/resized/lion.png" loading="lazy">
-                    <img *bsCarouselImage src="/assets/resized/peacock.png" loading="lazy">
-                    <img *bsCarouselImage src="/assets/resized/tiger.png" loading="lazy">
-                </bs-carousel>
             </div>
         </div>
     </bs-grid>

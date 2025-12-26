@@ -32,6 +32,7 @@ export class BsResizeGlyphDirective {
 
   @HostListener('touchstart', ['$event']) onTouchStart(ev: TouchEvent) {
     ev.preventDefault();
+    ev.stopPropagation();
     this.onPointerDown();
   }
 
@@ -41,6 +42,8 @@ export class BsResizeGlyphDirective {
 
   @HostListener('touchmove', ['$event']) onTouchMove(ev: TouchEvent) {
     if (ev.touches.length === 1) {
+      ev.preventDefault();
+      ev.stopPropagation();
       this.onPointerMove({ clientX: ev.touches[0].clientX, clientY: ev.touches[0].clientY, preventDefault: () => ev.preventDefault() });
     }
   }
@@ -49,21 +52,23 @@ export class BsResizeGlyphDirective {
     this.onPointerUp();
   }
 
-  @HostListener('touchend', ['$event']) onTouchEnd(ev: Event) {
+  @HostListener('touchend', ['$event']) onTouchEnd(ev: TouchEvent) {
+    ev.preventDefault();
+    ev.stopPropagation();
     this.onPointerUp();
   }
 
   onPointerDown() {
     let action: ResizeAction = {
-      positioning: this.resizable.positioning
+      positioning: this.resizable.positioning()
     };
     const rect = this.resizable.element.nativeElement.getBoundingClientRect();
     const styles = window.getComputedStyle(this.resizable.element.nativeElement);
 
-    const marginLeft = (this.resizable.positioning === 'absolute') ? undefined : parseFloat(styles.marginLeft.slice(0, -2));
-    const marginRight = (this.resizable.positioning === 'absolute') ? undefined : parseFloat(styles.marginRight.slice(0, -2));
-    const marginTop = (this.resizable.positioning === 'absolute') ? undefined : parseFloat(styles.marginTop.slice(0, -2));
-    const marginBottom = (this.resizable.positioning === 'absolute') ? undefined : parseFloat(styles.marginBottom.slice(0, -2));
+    const marginLeft = (this.resizable.positioning() === 'absolute') ? undefined : parseFloat(styles.marginLeft.slice(0, -2));
+    const marginRight = (this.resizable.positioning() === 'absolute') ? undefined : parseFloat(styles.marginRight.slice(0, -2));
+    const marginTop = (this.resizable.positioning() === 'absolute') ? undefined : parseFloat(styles.marginTop.slice(0, -2));
+    const marginBottom = (this.resizable.positioning() === 'absolute') ? undefined : parseFloat(styles.marginBottom.slice(0, -2));
 
     if (this.positions?.includes('start')) {
       action = {
@@ -123,7 +128,7 @@ export class BsResizeGlyphDirective {
       if (this.resizable.resizeAction.start && this.positions?.includes('end')) {
         // Right glyph
         const x = (ev.clientX < rct.left + 10) ? rct.left + 10 : ev.clientX;
-        switch (this.resizable.positioning) {
+        switch (this.resizable.positioning()) {
           case 'inline': {
             const initalMargin = this.resizable.marginRight ?? 0;
             this.resizable.marginRight = initalMargin - (x - rct.right);
@@ -135,7 +140,7 @@ export class BsResizeGlyphDirective {
       } else if (this.resizable.resizeAction.end && this.positions?.includes('start')) {
         // Left glyph
         const x = (ev.clientX > rct.right - 10) ? rct.right - 10 : ev.clientX;
-        switch (this.resizable.positioning) {
+        switch (this.resizable.positioning()) {
           case 'inline': {
             const initalMargin = this.resizable.marginLeft ?? 0;
             this.resizable.marginLeft = initalMargin + x - rct.left;
@@ -150,7 +155,7 @@ export class BsResizeGlyphDirective {
       if (this.resizable.resizeAction.top && this.positions?.includes('bottom')) {
         // Bottom glyph
         const y = (ev.clientY < rct.top + 10) ? rct.top + 10 : ev.clientY;
-        switch (this.resizable.positioning) {
+        switch (this.resizable.positioning()) {
           case 'inline': {
             const initalMargin = this.resizable.marginBottom ?? 0;
             this.resizable.height = y - rct.top;
@@ -163,7 +168,7 @@ export class BsResizeGlyphDirective {
       } else if (this.resizable.resizeAction.bottom && this.positions?.includes('top')) {
         // Top glyph
         const y = (ev.clientY > rct.bottom - 10) ? rct.bottom - 10 : ev.clientY;
-        switch (this.resizable.positioning) {
+        switch (this.resizable.positioning()) {
           case 'inline': {
             const initalMargin = this.resizable.marginTop ?? 0;
             this.resizable.height = rct.bottom - y;

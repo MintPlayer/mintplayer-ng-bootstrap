@@ -1,5 +1,5 @@
 <h1 class="text-center">Datepicker</h1>
 <bs-datepicker [(selectedDate)]="selectedDate" [disableDateFn]="disableDate"></bs-datepicker>
 <div>
-    The selected date is: {{ selectedDate | date }}
+    The selected date is: {{ selectedDate() | date }}
 </div>
