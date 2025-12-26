@@ -15,6 +15,8 @@ export const schedulerStyles = `
     --scheduler-now-indicator-color: #dc3545;
     --scheduler-preview-bg: rgba(0, 123, 255, 0.3);
     --scheduler-greyed-slot-bg: rgba(0, 0, 0, 0.1);
+    --scheduler-column-min-width: 120px;
+    --scheduler-touch-hold-duration: 500ms;
   }
 
   * {
@@ -123,10 +125,12 @@ export const schedulerStyles = `
     position: sticky;
     top: 0;
     z-index: 10;
+    min-width: fit-content;
   }
 
   .scheduler-day-header {
-    flex: 1;
+    flex: 1 0 var(--scheduler-column-min-width);
+    min-width: var(--scheduler-column-min-width);
     text-align: center;
     padding: 8px 4px;
     border-right: 1px solid var(--scheduler-border-color);
@@ -156,6 +160,7 @@ export const schedulerStyles = `
   .scheduler-time-grid {
     display: flex;
     position: relative;
+    min-width: fit-content;
   }
 
   .scheduler-time-gutter {
@@ -180,10 +185,12 @@ export const schedulerStyles = `
     display: flex;
     flex: 1;
     position: relative;
+    min-width: fit-content;
   }
 
   .scheduler-day-column {
-    flex: 1;
+    flex: 1 0 var(--scheduler-column-min-width);
+    min-width: var(--scheduler-column-min-width);
     position: relative;
     border-right: 1px solid var(--scheduler-border-color);
   }
@@ -550,6 +557,43 @@ export const schedulerStyles = `
     height: 200px;
     color: #666;
     font-style: italic;
+  }
+
+  /* Touch drag mode indicator */
+  .scheduler-container.touch-drag-mode {
+    cursor: grabbing;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .scheduler-container.touch-drag-mode .scheduler-content {
+    overflow: hidden;
+  }
+
+  .scheduler-event.touch-hold-pending {
+    animation: touch-hold-pulse 0.5s ease-in-out;
+  }
+
+  .scheduler-event.touch-hold-active {
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 100;
+  }
+
+  .scheduler-time-slot.touch-hold-pending,
+  .scheduler-timeline-slot.touch-hold-pending {
+    animation: touch-hold-pulse 0.5s ease-in-out;
+  }
+
+  .scheduler-time-slot.touch-hold-active,
+  .scheduler-timeline-slot.touch-hold-active {
+    background: var(--scheduler-preview-bg);
+  }
+
+  @keyframes touch-hold-pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
   }
 
   /* Scrollbar styling */

@@ -57,6 +57,14 @@ export class MpScheduler extends HTMLElement {
   } | null = null;
   private readonly DRAG_THRESHOLD = 5; // pixels before drag starts
 
+  // Touch state
+  private touchHoldTimer: ReturnType<typeof setTimeout> | null = null;
+  private touchStartPosition: { x: number; y: number } | null = null;
+  private isTouchDragMode = false;
+  private touchHoldTarget: HTMLElement | null = null;
+  private readonly TOUCH_HOLD_DURATION = 500; // ms before touch drag activates
+  private readonly TOUCH_MOVE_THRESHOLD = 10; // pixels of movement before canceling hold
+
   // Event handlers bound to this
   private boundHandleMouseDown: (e: MouseEvent) => void;
   private boundHandleMouseMove: (e: MouseEvent) => void;
@@ -64,6 +72,10 @@ export class MpScheduler extends HTMLElement {
   private boundHandleClick: (e: MouseEvent) => void;
   private boundHandleDblClick: (e: MouseEvent) => void;
   private boundHandleKeyDown: (e: KeyboardEvent) => void;
+  private boundHandleTouchStart: (e: TouchEvent) => void;
+  private boundHandleTouchMove: (e: TouchEvent) => void;
+  private boundHandleTouchEnd: (e: TouchEvent) => void;
+  private boundHandleTouchCancel: (e: TouchEvent) => void;
 
   constructor() {
     super();
@@ -78,6 +90,10 @@ export class MpScheduler extends HTMLElement {
     this.boundHandleClick = this.handleClick.bind(this);
     this.boundHandleDblClick = this.handleDblClick.bind(this);
     this.boundHandleKeyDown = this.handleKeyDown.bind(this);
+    this.boundHandleTouchStart = this.handleTouchStart.bind(this);
+    this.boundHandleTouchMove = this.handleTouchMove.bind(this);
+    this.boundHandleTouchEnd = this.handleTouchEnd.bind(this);
+    this.boundHandleTouchCancel = this.handleTouchCancel.bind(this);
 
     // Subscribe to state changes
     this.stateManager.subscribe((state) => this.onStateChange(state));
@@ -463,6 +479,12 @@ export class MpScheduler extends HTMLElement {
     root.addEventListener('click', this.boundHandleClick as EventListener);
     root.addEventListener('dblclick', this.boundHandleDblClick as EventListener);
     this.addEventListener('keydown', this.boundHandleKeyDown);
+
+    // Touch events
+    root.addEventListener('touchstart', this.boundHandleTouchStart as EventListener, { passive: false });
+    root.addEventListener('touchmove', this.boundHandleTouchMove as EventListener, { passive: false });
+    root.addEventListener('touchend', this.boundHandleTouchEnd as EventListener);
+    root.addEventListener('touchcancel', this.boundHandleTouchCancel as EventListener);
   }
 
   private detachEventListeners(): void {
@@ -473,6 +495,13 @@ export class MpScheduler extends HTMLElement {
     root.removeEventListener('click', this.boundHandleClick as EventListener);
     root.removeEventListener('dblclick', this.boundHandleDblClick as EventListener);
     this.removeEventListener('keydown', this.boundHandleKeyDown);
+
+    // Touch events
+    root.removeEventListener('touchstart', this.boundHandleTouchStart as EventListener);
+    root.removeEventListener('touchmove', this.boundHandleTouchMove as EventListener);
+    root.removeEventListener('touchend', this.boundHandleTouchEnd as EventListener);
+    root.removeEventListener('touchcancel', this.boundHandleTouchCancel as EventListener);
+    this.cancelTouchHold();
   }
 
   private handleMouseDown(e: MouseEvent): void {
@@ -873,6 +902,324 @@ export class MpScheduler extends HTMLElement {
       start: new Date(startStr),
       end: new Date(endStr),
     };
+  }
+
+  // Touch event handlers
+
+  private handleTouchStart(e: TouchEvent): void {
+    const state = this.stateManager.getState();
+    if (!state.options.editable) return;
+
+    // Only handle single touch
+    if (e.touches.length !== 1) {
+      this.cancelTouchHold();
+      return;
+    }
+
+    const touch = e.touches[0];
+    const target = touch.target as HTMLElement;
+
+    this.touchStartPosition = { x: touch.clientX, y: touch.clientY };
+
+    // Check if touching an event or slot that could be dragged
+    const eventEl = target.closest('.scheduler-event:not(.preview)') as HTMLElement;
+    const resizeHandle = target.closest('.resize-handle') as HTMLElement;
+    const slotEl = target.closest('.scheduler-time-slot, .scheduler-timeline-slot') as HTMLElement;
+
+    if (!eventEl && !slotEl) {
+      // Not touching a draggable element
+      return;
+    }
+
+    // Store the target for the hold callback
+    this.touchHoldTarget = eventEl || slotEl;
+
+    // Add visual feedback class
+    if (eventEl) {
+      eventEl.classList.add('touch-hold-pending');
+    } else if (slotEl) {
+      slotEl.classList.add('touch-hold-pending');
+    }
+
+    // Start the hold timer
+    this.touchHoldTimer = setTimeout(() => {
+      this.activateTouchDragMode(touch, resizeHandle);
+    }, this.TOUCH_HOLD_DURATION);
+  }
+
+  private activateTouchDragMode(touch: Touch, resizeHandle: HTMLElement | null): void {
+    const state = this.stateManager.getState();
+    const target = this.touchHoldTarget;
+
+    if (!target) return;
+
+    // Trigger haptic feedback if available
+    this.triggerHapticFeedback();
+
+    // Enter touch drag mode
+    this.isTouchDragMode = true;
+
+    // Add visual feedback
+    const container = this.shadow.querySelector('.scheduler-container');
+    container?.classList.add('touch-drag-mode');
+
+    // Remove pending class, add active class
+    target.classList.remove('touch-hold-pending');
+    target.classList.add('touch-hold-active');
+
+    // Determine the drag type and start the drag
+    const eventEl = target.closest('.scheduler-event:not(.preview)') as HTMLElement;
+
+    if (resizeHandle) {
+      // Resize operation
+      const parentEventEl = resizeHandle.closest('.scheduler-event') as HTMLElement;
+      const eventId = parentEventEl?.dataset['eventId'];
+      const event = eventId ? this.getEventById(eventId) : null;
+
+      if (event) {
+        const handleType = resizeHandle.dataset['handle'] as 'start' | 'end';
+        this.startDragFromTouch(
+          ('resize-' + handleType) as DragOperationType,
+          event,
+          touch.clientX,
+          touch.clientY
+        );
+      }
+    } else if (eventEl) {
+      // Move operation
+      const eventId = eventEl.dataset['eventId'];
+      const event = eventId ? this.getEventById(eventId) : null;
+
+      if (event && event.draggable !== false) {
+        this.startDragFromTouch('move', event, touch.clientX, touch.clientY);
+      }
+    } else if (target.matches('.scheduler-time-slot, .scheduler-timeline-slot') && state.options.selectable) {
+      // Create operation
+      this.startDragFromTouch('create', null, touch.clientX, touch.clientY, target);
+    }
+  }
+
+  private handleTouchMove(e: TouchEvent): void {
+    if (e.touches.length !== 1) {
+      this.cancelTouchHold();
+      return;
+    }
+
+    const touch = e.touches[0];
+
+    // If we have a pending touch hold, check if user moved too much
+    if (this.touchHoldTimer && this.touchStartPosition) {
+      const dx = touch.clientX - this.touchStartPosition.x;
+      const dy = touch.clientY - this.touchStartPosition.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance > this.TOUCH_MOVE_THRESHOLD) {
+        // User moved too much, cancel the hold and allow normal scrolling
+        this.cancelTouchHold();
+        return;
+      }
+
+      // Still waiting for hold, prevent default to avoid scroll during hold detection
+      // But only if we're close to the threshold
+      if (distance < this.TOUCH_MOVE_THRESHOLD / 2) {
+        // Don't prevent default yet to allow small movements
+      }
+      return;
+    }
+
+    // If in touch drag mode, handle the drag
+    if (this.isTouchDragMode) {
+      e.preventDefault(); // Prevent scrolling while dragging
+
+      const state = this.stateManager.getState();
+      if (!state.dragState) return;
+
+      const slot = this.getSlotAtPosition(touch.clientX, touch.clientY);
+      if (!slot) return;
+
+      const preview = this.calculatePreview(state.dragState.type, state.dragState, slot);
+      if (preview) {
+        this.stateManager.updateDrag(slot, preview);
+      }
+    }
+  }
+
+  private handleTouchEnd(e: TouchEvent): void {
+    // If we had a pending hold that never activated, treat as a tap
+    if (this.touchHoldTimer) {
+      this.cancelTouchHold();
+
+      // Handle as a tap/click on the target
+      if (this.touchHoldTarget) {
+        const eventEl = this.touchHoldTarget.closest('.scheduler-event:not(.preview)') as HTMLElement;
+        if (eventEl) {
+          const eventId = eventEl.dataset['eventId'];
+          const event = eventId ? this.getEventById(eventId) : null;
+          if (event) {
+            this.stateManager.setSelectedEvent(event);
+            this.dispatchEvent(
+              new CustomEvent('event-click', {
+                detail: { event, originalEvent: e },
+                bubbles: true,
+              })
+            );
+          }
+        }
+      }
+      this.touchHoldTarget = null;
+      return;
+    }
+
+    // If in touch drag mode, finalize the drag
+    if (this.isTouchDragMode) {
+      const state = this.stateManager.getState();
+
+      if (state.dragState) {
+        const { type, event, preview } = state.dragState;
+
+        if (preview) {
+          if (type === 'create') {
+            const newEvent: SchedulerEvent = {
+              id: generateEventId(),
+              title: 'New Event',
+              start: preview.start,
+              end: preview.end,
+              color: '#3788d8',
+            };
+
+            this.stateManager.addEvent(newEvent);
+            this.dispatchEvent(
+              new CustomEvent('event-create', {
+                detail: { event: newEvent, originalEvent: e },
+                bubbles: true,
+              })
+            );
+          } else if (type === 'move' && event) {
+            const oldEvent = { ...event };
+            const updatedEvent: SchedulerEvent = {
+              ...event,
+              start: preview.start,
+              end: preview.end,
+            };
+
+            this.stateManager.updateEvent(updatedEvent);
+            this.dispatchEvent(
+              new CustomEvent('event-update', {
+                detail: { event: updatedEvent, oldEvent, originalEvent: e },
+                bubbles: true,
+              })
+            );
+          } else if ((type === 'resize-start' || type === 'resize-end') && event) {
+            const oldEvent = { ...event };
+            const updatedEvent: SchedulerEvent = {
+              ...event,
+              start: preview.start,
+              end: preview.end,
+            };
+
+            this.stateManager.updateEvent(updatedEvent);
+            this.dispatchEvent(
+              new CustomEvent('event-update', {
+                detail: { event: updatedEvent, oldEvent, originalEvent: e },
+                bubbles: true,
+              })
+            );
+          }
+        }
+
+        this.stateManager.endDrag();
+      }
+
+      this.exitTouchDragMode();
+    }
+  }
+
+  private handleTouchCancel(_e: TouchEvent): void {
+    this.cancelTouchHold();
+
+    if (this.isTouchDragMode) {
+      this.stateManager.endDrag();
+      this.exitTouchDragMode();
+    }
+  }
+
+  private cancelTouchHold(): void {
+    if (this.touchHoldTimer) {
+      clearTimeout(this.touchHoldTimer);
+      this.touchHoldTimer = null;
+    }
+
+    // Remove pending visual feedback
+    if (this.touchHoldTarget) {
+      this.touchHoldTarget.classList.remove('touch-hold-pending');
+      this.touchHoldTarget.classList.remove('touch-hold-active');
+    }
+
+    this.touchStartPosition = null;
+  }
+
+  private exitTouchDragMode(): void {
+    this.isTouchDragMode = false;
+    this.touchStartPosition = null;
+    this.touchHoldTarget = null;
+
+    // Remove visual feedback
+    const container = this.shadow.querySelector('.scheduler-container');
+    container?.classList.remove('touch-drag-mode');
+
+    // Remove active classes from all elements
+    this.shadow.querySelectorAll('.touch-hold-active, .touch-hold-pending').forEach((el) => {
+      el.classList.remove('touch-hold-active', 'touch-hold-pending');
+    });
+  }
+
+  private triggerHapticFeedback(): void {
+    // Use Vibration API if available
+    if ('vibrate' in navigator) {
+      navigator.vibrate(50); // Short vibration (50ms)
+    }
+  }
+
+  private startDragFromTouch(
+    type: DragOperationType,
+    event: SchedulerEvent | null,
+    clientX: number,
+    clientY: number,
+    slotEl?: HTMLElement
+  ): void {
+    const slot = slotEl
+      ? this.getSlotFromElement(slotEl)
+      : this.getSlotAtPosition(clientX, clientY);
+
+    if (!slot) return;
+
+    let preview: PreviewEvent;
+
+    if (type === 'create') {
+      preview = {
+        start: slot.start,
+        end: slot.end,
+      };
+    } else if (event) {
+      preview = {
+        start: event.start,
+        end: event.end,
+      };
+    } else {
+      return;
+    }
+
+    this.stateManager.startDrag({
+      type,
+      event,
+      startSlot: slot,
+      currentSlot: slot,
+      preview,
+      originalEvent: event ? { ...event } : undefined,
+      meta: type.startsWith('resize-')
+        ? { resizeHandle: type.replace('resize-', '') as 'start' | 'end' }
+        : undefined,
+    });
   }
 }
 
