@@ -39,6 +39,7 @@ export class BsSliderComponent {
 
   onPointerDown(ev: MouseEvent | TouchEvent) {
     ev.preventDefault();
+    ev.stopPropagation();
     this.zone.run(() => this.isPointerDown.set(true));
     this.updateColor(ev);
   }

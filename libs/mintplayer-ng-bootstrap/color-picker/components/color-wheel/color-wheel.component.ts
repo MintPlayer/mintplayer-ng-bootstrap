@@ -144,6 +144,7 @@ export class BsColorWheelComponent {
   onPointerDown(ev: MouseEvent | TouchEvent) {
     if (!this.disabled()) {
       ev.preventDefault();
+      ev.stopPropagation();
       this.isPointerDown = true;
       this.updateColor(ev, !('touches' in ev));
     }

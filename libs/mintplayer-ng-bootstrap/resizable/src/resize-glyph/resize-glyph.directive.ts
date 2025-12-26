@@ -32,6 +32,7 @@ export class BsResizeGlyphDirective {
 
   @HostListener('touchstart', ['$event']) onTouchStart(ev: TouchEvent) {
     ev.preventDefault();
+    ev.stopPropagation();
     this.onPointerDown();
   }
 
@@ -41,6 +42,8 @@ export class BsResizeGlyphDirective {
 
   @HostListener('touchmove', ['$event']) onTouchMove(ev: TouchEvent) {
     if (ev.touches.length === 1) {
+      ev.preventDefault();
+      ev.stopPropagation();
       this.onPointerMove({ clientX: ev.touches[0].clientX, clientY: ev.touches[0].clientY, preventDefault: () => ev.preventDefault() });
     }
   }
@@ -49,7 +52,9 @@ export class BsResizeGlyphDirective {
     this.onPointerUp();
   }
 
-  @HostListener('touchend', ['$event']) onTouchEnd(ev: Event) {
+  @HostListener('touchend', ['$event']) onTouchEnd(ev: TouchEvent) {
+    ev.preventDefault();
+    ev.stopPropagation();
     this.onPointerUp();
   }
 

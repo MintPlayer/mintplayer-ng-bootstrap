@@ -32,6 +32,7 @@ export class BsSignaturePadComponent implements AfterViewInit {
   @HostListener('touchmove', ['$event']) onTouchMove(ev: TouchEvent) {
     if (this.isDrawing) {
       ev.preventDefault();
+      ev.stopPropagation();
     }
   }
   @HostListener('pointerdown', ['$event']) onPointerStart(ev: PointerEvent) {
