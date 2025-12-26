@@ -2,7 +2,7 @@
   "name": "@mintplayer/scheduler-wc",
   "private": false,
   "type": "module",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Web Component for the MintPlayer Scheduler",
   "repository": {
     "type": "git",
@@ -15,7 +15,7 @@
     "tslib": "^2.3.0"
   },
   "peerDependencies": {
-    "@mintplayer/scheduler-core": "^0.0.1"
+    "@mintplayer/scheduler-core": "^1.0.0"
   },
   "author": {
     "name": "Pieterjan De Clippel",
