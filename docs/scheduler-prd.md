@@ -539,6 +539,225 @@ interface EventPosition {
 
 ---
 
+## Event Track Display System
+
+### Overview
+
+Events within the same time range must be displayed **without visual overlap**. The system uses a track-based layout where events are assigned to separate horizontal tracks (columns) when they overlap in time.
+
+### Width Distribution Requirements
+
+Events should be displayed **as wide as possible** based on the number of concurrent (overlapping) events:
+
+| Concurrent Events | Width per Event | Layout |
+|-------------------|-----------------|--------|
+| 1 (no overlap)    | 100%            | Full width |
+| 2                 | 50%             | Side-by-side |
+| 3                 | 33.33%          | Three columns |
+| N                 | 100% / N        | N equal columns |
+
+### Visual Example
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│ TIME │                    DAY COLUMN                         │
+├──────┼───────────────────────────────────────────────────────┤
+│      │                                                       │
+│ 9:00 │ ┌───────────────────────────────────────────────────┐ │
+│      │ │                                                   │ │
+│      │ │              Meeting A (100% width)               │ │
+│      │ │          No overlapping events → full width       │ │
+│ 9:30 │ └───────────────────────────────────────────────────┘ │
+│      │                                                       │
+│10:00 │ ┌─────────────────────┐ ┌─────────────────────────┐   │
+│      │ │                     │ │                         │   │
+│      │ │   Meeting B         │ │     Meeting C           │   │
+│      │ │   (50% width)       │ │     (50% width)         │   │
+│10:30 │ │                     │ └─────────────────────────┘   │
+│      │ │  2 events overlap   │                               │
+│      │ │  → 50/50 split      │                               │
+│11:00 │ └─────────────────────┘                               │
+│      │                                                       │
+│11:30 │ ┌───────────────┐ ┌───────────────┐ ┌───────────────┐ │
+│      │ │   Meeting D   │ │   Meeting E   │ │   Meeting F   │ │
+│      │ │   (33.33%)    │ │   (33.33%)    │ │   (33.33%)    │ │
+│      │ │               │ │               │ │               │ │
+│12:00 │ └───────────────┘ └───────────────┘ └───────────────┘ │
+│      │  3 events overlap → 33/33/33 split                    │
+└──────┴───────────────────────────────────────────────────────┘
+```
+
+### Track Assignment Algorithm
+
+The `TimelineService.getTimeline()` method assigns events to non-overlapping tracks:
+
+```typescript
+function getTimeline(events: SchedulerEvent[]): TimelineTrack[] {
+  // 1. Sort events by start time
+  const sortedEvents = [...events].sort((a, b) =>
+    a.start.getTime() - b.start.getTime()
+  );
+
+  // 2. Get all unique timestamps (start and end times)
+  const timestamps = getUniqueTimestamps(sortedEvents);
+
+  // 3. Assign events to tracks
+  const tracks: TimelineTrack[] = [];
+
+  for (const event of sortedEvents) {
+    // Find a track where this event doesn't overlap with existing events
+    const freeTrack = tracks.find(track =>
+      isTrackFreeForEvent(track, event)
+    );
+
+    if (freeTrack) {
+      // Add to existing track
+      freeTrack.events.push(event);
+    } else {
+      // Create new track
+      tracks.push({
+        index: tracks.length,
+        events: [event]
+      });
+    }
+  }
+
+  return tracks;
+}
+
+function isTrackFreeForEvent(track: TimelineTrack, event: SchedulerEvent): boolean {
+  // Check if any event in the track overlaps with the new event
+  return !track.events.some(existing =>
+    event.start < existing.end && event.end > existing.start
+  );
+}
+```
+
+### Width Calculation
+
+For each event, the width is calculated based on the **maximum number of concurrent events** at any point during the event's duration:
+
+```typescript
+function calculateEventWidth(
+  event: SchedulerEvent,
+  allTracks: TimelineTrack[]
+): { widthPercent: number; trackIndex: number } {
+
+  // Find which track this event is assigned to
+  const trackIndex = allTracks.findIndex(track =>
+    track.events.some(e => e.id === event.id)
+  );
+
+  // Count how many tracks have events that overlap with this event
+  const overlappingTracks = allTracks.filter(track =>
+    track.events.some(e =>
+      e.start < event.end && e.end > event.start
+    )
+  ).length;
+
+  // Width is 100% divided by number of overlapping tracks
+  const widthPercent = 100 / overlappingTracks;
+
+  return { widthPercent, trackIndex };
+}
+```
+
+### Position Calculation (Week/Day Views)
+
+```typescript
+function calculateEventPosition(
+  event: SchedulerEventPart,
+  trackIndex: number,
+  totalTracks: number,
+  slotDuration: number,
+  slotHeight: number
+): EventPosition {
+
+  // Vertical positioning (time-based)
+  const dayStart = new Date(event.start);
+  dayStart.setHours(0, 0, 0, 0);
+
+  const startMinutes = (event.start.getTime() - dayStart.getTime()) / (1000 * 60);
+  const endMinutes = (event.end.getTime() - dayStart.getTime()) / (1000 * 60);
+  const durationMinutes = endMinutes - startMinutes;
+
+  const slotMinutes = slotDuration / 60;
+  const top = (startMinutes / slotMinutes) * slotHeight;
+  const height = Math.max((durationMinutes / slotMinutes) * slotHeight, 20);
+
+  // Horizontal positioning (track-based)
+  const widthPercent = 100 / totalTracks;
+  const leftPercent = trackIndex * widthPercent;
+
+  return {
+    top,
+    left: leftPercent,
+    width: widthPercent,
+    height,
+    zIndex: trackIndex + 1
+  };
+}
+```
+
+### CSS Implementation
+
+```css
+.scheduler-event {
+  position: absolute;
+  box-sizing: border-box;
+  overflow: hidden;
+  border-radius: 4px;
+  padding: 2px 4px;
+  cursor: pointer;
+  /* Width calculated dynamically: calc(widthPercent% - gap) */
+}
+
+/* Example for 2 overlapping events (50% each) */
+.scheduler-event[data-track="0"][data-total-tracks="2"] {
+  left: 0%;
+  width: calc(50% - 2px);
+}
+
+.scheduler-event[data-track="1"][data-total-tracks="2"] {
+  left: 50%;
+  width: calc(50% - 2px);
+}
+
+/* Example for 3 overlapping events (33.33% each) */
+.scheduler-event[data-track="0"][data-total-tracks="3"] {
+  left: 0%;
+  width: calc(33.33% - 2px);
+}
+
+.scheduler-event[data-track="1"][data-total-tracks="3"] {
+  left: 33.33%;
+  width: calc(33.33% - 2px);
+}
+
+.scheduler-event[data-track="2"][data-total-tracks="3"] {
+  left: 66.66%;
+  width: calc(33.33% - 2px);
+}
+```
+
+### Edge Cases
+
+1. **Partial Overlaps**: When Event A overlaps with Event B, but Event B also overlaps with Event C (which doesn't overlap with A), all three events should still be displayed in separate tracks to maintain visual clarity.
+
+2. **Back-to-Back Events**: Events that end exactly when another starts (same timestamp) should NOT be considered overlapping and can share the same track.
+
+3. **All-Day Events**: All-day events are displayed in a separate section above the time grid and follow the same track assignment logic.
+
+4. **Multi-Day Events**: Each day portion (EventPart) is assigned to tracks independently within its respective day column.
+
+### Performance Considerations
+
+- Track assignment (`getTimeline()`) is called **only when events are added, updated, or deleted** - NOT during drag operations
+- During drag operations, a lightweight preview is shown without recalculating all tracks
+- The algorithm is O(n²) in the worst case but optimized for typical calendar usage (few overlapping events)
+
+---
+
 ## Implementation Phases
 
 ### Phase 1: Web Component Core (Foundation)
