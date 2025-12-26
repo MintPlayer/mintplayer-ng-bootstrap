@@ -24,7 +24,8 @@
       "mcp__playwright__browser_run_code",
       "mcp__playwright__browser_select_option",
       "mcp__github__get_issue",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "mcp__playwright__browser_console_messages"
     ]
   },
   "enableAllProjectMcpServers": true,
