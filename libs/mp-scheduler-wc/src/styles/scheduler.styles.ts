@@ -10,7 +10,7 @@ export const schedulerStyles = `
     --scheduler-header-bg: #f8f9fa;
     --scheduler-today-bg: #fff3cd;
     --scheduler-slot-height: 40px;
-    --scheduler-time-gutter-width: 60px;
+    --scheduler-time-gutter-width: 80px;
     --scheduler-event-border-radius: 4px;
     --scheduler-now-indicator-color: #dc3545;
     --scheduler-preview-bg: rgba(0, 123, 255, 0.3);
@@ -173,6 +173,7 @@ export const schedulerStyles = `
     text-align: right;
     position: relative;
     top: -8px;
+    white-space: nowrap;
   }
 
   .scheduler-days-container {
