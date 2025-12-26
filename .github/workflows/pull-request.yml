@@ -38,21 +38,58 @@ jobs:
     
     - name: Build
       id: BuildWithCloud
-      # continue-on-error: true
-      run: npx nx build --configuration=production --no-cloud
       timeout-minutes: 15
+      run: |
+        set +e
+        npx nx build --configuration=production 2>&1 | tee build_output.txt
+        BUILD_EXIT_CODE=${PIPESTATUS[0]}
 
-    # - name: BuildWithoutCloud
-    #   id: BuildWithoutCloud
-    #   if: ${{ steps.BuildWithCloud.outcome == 'failure' }}
-    #   run: npx nx build --configuration=production --no-cloud
+        if [ $BUILD_EXIT_CODE -eq 0 ]; then
+          echo "Build succeeded with NX Cloud"
+          exit 0
+        fi
+
+        # Check if failure was due to NX Cloud credits/plan limits
+        if grep -qiE "(out of credits|credit limit|quota exceeded|no cloud credits|credits exhausted|unable to be authorized|disabled due to exceeding|This Nx Cloud organization has been disabled due to exceeding the)" build_output.txt; then
+          echo "NX_CLOUD_CREDITS_EXHAUSTED=true" >> $GITHUB_OUTPUT
+          echo "Build failed due to NX Cloud credits - will retry without cloud"
+          exit 0
+        else
+          echo "Build failed due to actual errors"
+          cat build_output.txt
+          exit 1
+        fi
+
+    - name: BuildWithoutCloud
+      id: BuildWithoutCloud
+      if: ${{ steps.BuildWithCloud.outputs.NX_CLOUD_CREDITS_EXHAUSTED == 'true' }}
+      timeout-minutes: 15
+      run: npx nx build --configuration=production --no-cloud
 
     - name: Test
       id: TestWithCloud
-      continue-on-error: true
-      run: npx nx affected --target=test --watch=false --parallel=true --base=${{ github.event.pull_request.base.sha }} --head=${{ github.event.pull_request.head.sha }}
+      run: |
+        set +e
+        npx nx affected --target=test --watch=false --parallel=true --base=${{ github.event.pull_request.base.sha }} --head=${{ github.event.pull_request.head.sha }} 2>&1 | tee test_output.txt
+        TEST_EXIT_CODE=${PIPESTATUS[0]}
+
+        if [ $TEST_EXIT_CODE -eq 0 ]; then
+          echo "Tests succeeded with NX Cloud"
+          exit 0
+        fi
+
+        # Check if failure was due to NX Cloud credits/plan limits
+        if grep -qiE "(out of credits|credit limit|quota exceeded|no cloud credits|credits exhausted|unable to be authorized|disabled due to exceeding|This Nx Cloud organization has been disabled due to exceeding the)" test_output.txt; then
+          echo "NX_CLOUD_CREDITS_EXHAUSTED=true" >> $GITHUB_OUTPUT
+          echo "Tests failed due to NX Cloud credits - will retry without cloud"
+          exit 0
+        else
+          echo "Tests failed due to actual errors"
+          cat test_output.txt
+          exit 1
+        fi
 
     - name: TestWithoutCloud
       id: TestWithoutCloud
-      if: ${{ steps.TestWithCloud.outcome == 'failure' }}
+      if: ${{ steps.TestWithCloud.outputs.NX_CLOUD_CREDITS_EXHAUSTED == 'true' }}
       run: npx nx affected --target=test --watch=false --parallel=true --base=${{ github.event.pull_request.base.sha }} --head=${{ github.event.pull_request.head.sha }} --no-cloud
