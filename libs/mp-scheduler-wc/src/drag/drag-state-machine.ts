@@ -146,7 +146,7 @@ export class DragStateMachine {
       return this.state;
     }
 
-    const { target, position, slot, slotElement } = event;
+    const { target, position, slot, slotElement, immediate } = event;
 
     // Determine operation type from target
     const operationType = this.getOperationType(target);
@@ -160,6 +160,39 @@ export class DragStateMachine {
     // Check if this event is draggable
     if (schedulerEvent && schedulerEvent.draggable === false) {
       return this.state;
+    }
+
+    // For touch-initiated drags, skip pending and go directly to active
+    if (immediate) {
+      // For move operations without a slot, create one from the event's times
+      let startSlot = slot;
+      if (!startSlot && schedulerEvent && operationType === 'move') {
+        startSlot = {
+          start: schedulerEvent.start,
+          end: schedulerEvent.end,
+        };
+      }
+
+      if (startSlot) {
+        const preview = this.previewCalculator.calculatePreview(
+          operationType,
+          startSlot,
+          startSlot,
+          schedulerEvent
+        );
+
+        if (preview) {
+          return {
+            phase: 'active',
+            operationType,
+            event: schedulerEvent,
+            startSlot,
+            currentSlot: startSlot,
+            preview,
+            originalEvent: schedulerEvent ?? undefined,
+          };
+        }
+      }
     }
 
     return {

@@ -54,10 +54,12 @@ export class DragManager {
 
   /**
    * Handle pointer down - may start pending drag.
+   * @param immediate If true, skip pending state (for touch-initiated drags)
    */
   handlePointerDown(
     pointer: NormalizedPointerEvent,
-    target: PointerTarget
+    target: PointerTarget,
+    immediate = false
   ): void {
     const slot = this.getSlotAtPosition?.(pointer.clientX, pointer.clientY) ?? null;
 
@@ -67,6 +69,7 @@ export class DragManager {
       position: { x: pointer.clientX, y: pointer.clientY },
       slot,
       slotElement: target.slotElement,
+      immediate,
     });
 
     // If we started a drag, update state manager
@@ -79,6 +82,11 @@ export class DragManager {
    * Handle pointer move - may activate drag or update preview.
    */
   handlePointerMove(pointer: NormalizedPointerEvent): void {
+    console.log('[DragManager.handlePointerMove]', {
+      isDragging: this.stateMachine.isDragging(),
+      phase: this.stateMachine.getPhase(),
+    });
+
     if (!this.stateMachine.isDragging()) {
       return;
     }

@@ -91,6 +91,8 @@ export type DragMachineEvent =
       position: Position;
       slot: TimeSlot | null;
       slotElement?: HTMLElement;
+      /** If true, skip pending state and go directly to active (for touch drags) */
+      immediate?: boolean;
     }
   | {
       type: 'POINTER_MOVE';

@@ -12,7 +12,7 @@ import { PointerTarget } from '../drag/drag-types';
  */
 export interface InputHandlerCallbacks {
   /** Called when pointer goes down on a valid target */
-  onPointerDown: (pointer: NormalizedPointerEvent, target: PointerTarget) => void;
+  onPointerDown: (pointer: NormalizedPointerEvent, target: PointerTarget, immediate?: boolean) => void;
   /** Called when pointer moves (during drag) */
   onPointerMove: (pointer: NormalizedPointerEvent) => void;
   /** Called when pointer is released */
@@ -251,6 +251,29 @@ export class InputHandler {
     this.touchHoldTarget = pointer.target;
     this.touchHoldPointer = pointer;
 
+    // Add document-level listeners IMMEDIATELY for event touches
+    // This ensures we capture touchmove even if DOM re-renders during hold
+    if (target.type === 'event' || target.type === 'resize-handle') {
+      console.log('[handleTouchStart] Adding listeners for event touch');
+      const self = this;
+
+      // Try adding listener directly to the touched element
+      const touchedElement = pointer.target;
+      touchedElement.addEventListener('touchmove', function(e: TouchEvent) {
+        console.log('[ELEMENT touchmove] on original element');
+        self.handleTouchMove(e);
+      }, { passive: false });
+
+      // Also add to document with capture
+      document.addEventListener('touchmove', function(e: TouchEvent) {
+        console.log('[DOC touchmove CAPTURE]', { target: (e.target as Element)?.className });
+        self.handleTouchMove(e);
+      }, { passive: false, capture: true });
+
+      document.addEventListener('touchend', this.boundHandleTouchEnd, { capture: true });
+      document.addEventListener('touchcancel', this.boundHandleTouchCancel, { capture: true });
+    }
+
     // Add visual feedback
     this.addTouchFeedback(pointer.target, 'pending');
 
@@ -264,6 +287,13 @@ export class InputHandler {
   }
 
   private handleTouchMove(e: TouchEvent): void {
+    console.log('[handleTouchMove]', {
+      touchCount: e.touches.length,
+      isTouchDragMode: this.isTouchDragMode,
+      hasTouchHoldTimer: !!this.touchHoldTimer,
+      hasTouchStartPosition: !!this.touchStartPosition,
+    });
+
     if (e.touches.length !== 1) {
       this.cancelTouchHold();
       return;
@@ -287,7 +317,11 @@ export class InputHandler {
         return;
       }
 
-      // Still waiting for hold
+      // Still waiting for hold - prevent scroll while waiting
+      // This is critical: we must prevent the browser from starting scroll
+      // intervention during the hold period, otherwise it will take over
+      // and subsequent touchmove events become non-cancelable
+      e.preventDefault();
       return;
     }
 
@@ -349,12 +383,21 @@ export class InputHandler {
     target: PointerTarget
   ): void {
     this.touchHoldTimer = null;
+    this.touchStartPosition = null; // Clear so touchmove doesn't think we're still pending
 
     // Trigger haptic feedback
     this.triggerHapticFeedback();
 
     // Enter touch drag mode
     this.isTouchDragMode = true;
+
+    // Document listeners were already added in handleTouchStart for event touches
+    // For slot touches, add them now
+    if (!this.touchHoldTarget?.closest('.scheduler-event')) {
+      document.addEventListener('touchmove', this.boundHandleTouchMove, { passive: false });
+      document.addEventListener('touchend', this.boundHandleTouchEnd);
+      document.addEventListener('touchcancel', this.boundHandleTouchCancel);
+    }
 
     // Update visual feedback
     if (this.touchHoldTarget) {
@@ -369,8 +412,8 @@ export class InputHandler {
     // Notify callback
     this.callbacks.onTouchDragActivated?.();
 
-    // Start the drag
-    this.callbacks.onPointerDown(pointer, target);
+    // Start the drag immediately (skip pending threshold for touch)
+    this.callbacks.onPointerDown(pointer, target, true);
   }
 
   private cancelTouchHold(): void {
@@ -378,6 +421,11 @@ export class InputHandler {
       clearTimeout(this.touchHoldTimer);
       this.touchHoldTimer = null;
     }
+
+    // Remove document listeners that were added in handleTouchStart
+    document.removeEventListener('touchmove', this.boundHandleTouchMove);
+    document.removeEventListener('touchend', this.boundHandleTouchEnd);
+    document.removeEventListener('touchcancel', this.boundHandleTouchCancel);
 
     // Remove pending visual feedback
     if (this.touchHoldTarget) {
@@ -393,6 +441,11 @@ export class InputHandler {
     this.touchStartPosition = null;
     this.touchHoldTarget = null;
     this.touchHoldPointer = null;
+
+    // Remove document-level listeners added during drag mode
+    document.removeEventListener('touchmove', this.boundHandleTouchMove);
+    document.removeEventListener('touchend', this.boundHandleTouchEnd);
+    document.removeEventListener('touchcancel', this.boundHandleTouchCancel);
 
     // Remove container class
     const container = this.config.shadowRoot.querySelector('.scheduler-container');
@@ -430,8 +483,6 @@ export class InputHandler {
   }
 
   private triggerHapticFeedback(): void {
-    if ('vibrate' in navigator) {
-      navigator.vibrate(50);
-    }
+    // Vibration API removed - can cause issues on some devices
   }
 }

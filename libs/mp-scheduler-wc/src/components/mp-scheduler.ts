@@ -84,7 +84,7 @@ export class MpScheduler extends HTMLElement {
         isSelectable: () => this.stateManager.getState().options.selectable ?? true,
       },
       {
-        onPointerDown: (pointer, target) => this.handlePointerDown(pointer, target),
+        onPointerDown: (pointer, target, immediate) => this.handlePointerDown(pointer, target, immediate),
         onPointerMove: (pointer) => this.handlePointerMove(pointer),
         onPointerUp: (pointer) => this.handlePointerUp(pointer),
         onClick: (pointer, target) => this.handleClick(pointer, target),
@@ -513,9 +513,10 @@ export class MpScheduler extends HTMLElement {
 
   private handlePointerDown(
     pointer: NormalizedPointerEvent,
-    target: PointerTarget
+    target: PointerTarget,
+    immediate?: boolean
   ): void {
-    this.dragManager.handlePointerDown(pointer, target);
+    this.dragManager.handlePointerDown(pointer, target, immediate);
   }
 
   private handlePointerMove(pointer: NormalizedPointerEvent): void {
@@ -693,11 +694,18 @@ export class MpScheduler extends HTMLElement {
   // ============================================
 
   private getSlotAtPosition(clientX: number, clientY: number): TimeSlot | null {
-    const slotEl = this.shadow
-      .elementsFromPoint(clientX, clientY)
-      .find((el) =>
-        el.matches('.scheduler-time-slot, .scheduler-timeline-slot')
-      ) as HTMLElement | undefined;
+    const elements = this.shadow.elementsFromPoint(clientX, clientY);
+    const slotEl = elements.find((el) =>
+      el.matches('.scheduler-time-slot, .scheduler-timeline-slot')
+    ) as HTMLElement | undefined;
+
+    console.log('[getSlotAtPosition]', {
+      clientX,
+      clientY,
+      elementsFound: elements.length,
+      elementClasses: elements.slice(0, 5).map(e => e.className),
+      slotFound: !!slotEl,
+    });
 
     return slotEl ? this.getSlotFromElement(slotEl) : null;
   }
