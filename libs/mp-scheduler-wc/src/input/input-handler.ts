@@ -251,29 +251,27 @@ export class InputHandler {
     this.touchHoldTarget = pointer.target;
     this.touchHoldPointer = pointer;
 
-    // Add element-level listener IMMEDIATELY for event touches
+    // Add element-level listeners IMMEDIATELY for ALL drag-initiating touches
     // CRITICAL: Use e.target (the actual touched element) not pointer.target
     // In shadow DOM, touch.target and e.target can differ due to event retargeting.
     // Only the listener on e.target will continue to receive events after DOM replacement
-    // (e.g., when Lit re-renders and replaces the element).
-    if (target.type === 'event' || target.type === 'resize-handle') {
-      const self = this;
-      const touchedElement = e.target as HTMLElement;
+    // (e.g., when Lit re-renders and replaces the element due to visual feedback classes).
+    const self = this;
+    const touchedElement = e.target as HTMLElement;
 
-      // Add listener directly to the touched element - this is the ONLY listener
-      // that will work after the element is replaced during re-render
-      touchedElement.addEventListener('touchmove', function(evt: TouchEvent) {
-        self.handleTouchMove(evt);
-      }, { passive: false });
+    // Add listener directly to the touched element - this is the ONLY listener
+    // that will work after the element is replaced during re-render
+    touchedElement.addEventListener('touchmove', function(evt: TouchEvent) {
+      self.handleTouchMove(evt);
+    }, { passive: false });
 
-      touchedElement.addEventListener('touchend', function(evt: TouchEvent) {
-        self.handleTouchEnd(evt);
-      });
+    touchedElement.addEventListener('touchend', function(evt: TouchEvent) {
+      self.handleTouchEnd(evt);
+    });
 
-      touchedElement.addEventListener('touchcancel', function(evt: TouchEvent) {
-        self.handleTouchCancel(evt);
-      });
-    }
+    touchedElement.addEventListener('touchcancel', function(evt: TouchEvent) {
+      self.handleTouchCancel(evt);
+    });
 
     // Add visual feedback
     this.addTouchFeedback(pointer.target, 'pending');
