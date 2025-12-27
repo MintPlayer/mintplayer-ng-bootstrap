@@ -253,29 +253,24 @@ export class InputHandler {
 
     // Add element-level listener IMMEDIATELY for event touches
     // CRITICAL: Use e.target (the actual touched element) not pointer.target
-    // In shadow DOM, touch.target and e.target can differ due to event retargeting
+    // In shadow DOM, touch.target and e.target can differ due to event retargeting.
     // Only the listener on e.target will continue to receive events after DOM replacement
+    // (e.g., when Lit re-renders and replaces the element).
     if (target.type === 'event' || target.type === 'resize-handle') {
-      console.log('[handleTouchStart] Adding element listener for event touch');
       const self = this;
       const touchedElement = e.target as HTMLElement;
-
-      console.log('[handleTouchStart] e.target:', touchedElement?.className, 'pointer.target:', pointer.target?.className);
 
       // Add listener directly to the touched element - this is the ONLY listener
       // that will work after the element is replaced during re-render
       touchedElement.addEventListener('touchmove', function(evt: TouchEvent) {
-        console.log('[ELEMENT touchmove] on original element');
         self.handleTouchMove(evt);
       }, { passive: false });
 
       touchedElement.addEventListener('touchend', function(evt: TouchEvent) {
-        console.log('[ELEMENT touchend] on original element');
         self.handleTouchEnd(evt);
       });
 
       touchedElement.addEventListener('touchcancel', function(evt: TouchEvent) {
-        console.log('[ELEMENT touchcancel] on original element');
         self.handleTouchCancel(evt);
       });
     }
@@ -293,13 +288,6 @@ export class InputHandler {
   }
 
   private handleTouchMove(e: TouchEvent): void {
-    console.log('[handleTouchMove]', {
-      touchCount: e.touches.length,
-      isTouchDragMode: this.isTouchDragMode,
-      hasTouchHoldTimer: !!this.touchHoldTimer,
-      hasTouchStartPosition: !!this.touchStartPosition,
-    });
-
     if (e.touches.length !== 1) {
       this.cancelTouchHold();
       return;

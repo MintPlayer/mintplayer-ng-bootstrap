@@ -287,3 +287,15 @@ I touchstart-ed on the inner div.
 (index):46 Original element still in DOM? false
 326(index):46 ELEMENT touchmove - on original element
 ```
+
+### Finding 9
+```
+  Root Cause: When touching an event element in the shadow DOM, after Lit re-renders and replaces the element, touch events were lost because:       
+  1. Document-level and shadow-root-level listeners don't receive touchmove events after the original touch target is removed from the DOM
+  2. Only listeners attached directly to the original touched element (e.target) continue to receive events
+
+  The Fix (input-handler.ts:259-276):
+  - Changed from using pointer.target (from normalizeTouchEvent) to e.target directly
+  - Added touchmove/touchend/touchcancel listeners to the actual touched element at touchstart time
+  - These listeners continue to work even after Lit re-renders and replaces the DOM element
+```

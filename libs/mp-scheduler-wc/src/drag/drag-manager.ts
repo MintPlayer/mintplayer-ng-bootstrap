@@ -82,11 +82,6 @@ export class DragManager {
    * Handle pointer move - may activate drag or update preview.
    */
   handlePointerMove(pointer: NormalizedPointerEvent): void {
-    console.log('[DragManager.handlePointerMove]', {
-      isDragging: this.stateMachine.isDragging(),
-      phase: this.stateMachine.getPhase(),
-    });
-
     if (!this.stateMachine.isDragging()) {
       return;
     }

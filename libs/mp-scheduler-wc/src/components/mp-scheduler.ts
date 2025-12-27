@@ -699,14 +699,6 @@ export class MpScheduler extends HTMLElement {
       el.matches('.scheduler-time-slot, .scheduler-timeline-slot')
     ) as HTMLElement | undefined;
 
-    console.log('[getSlotAtPosition]', {
-      clientX,
-      clientY,
-      elementsFound: elements.length,
-      elementClasses: elements.slice(0, 5).map(e => e.className),
-      slotFound: !!slotEl,
-    });
-
     return slotEl ? this.getSlotFromElement(slotEl) : null;
   }
 
