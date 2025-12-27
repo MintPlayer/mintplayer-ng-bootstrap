@@ -81,9 +81,15 @@
             .event-box.dragging {
               background: #dc3545;
             }
+            .inner-text {
+              padding: 10px;
+              background: rgba(255,255,255,0.2);
+            }
           </style>
           <div class="container">
-            <div class="event-box" id="target">Touch & Hold Me</div>
+            <div class="event-box" id="target">
+              <span class="inner-text">Touch & Hold Me</span>
+            </div>
           </div>
         `;
       }
@@ -137,24 +143,25 @@
       }
 
       simulateReRender() {
-        // This simulates what Angular/the scheduler does: replace the DOM element
+        // This simulates what Lit/the scheduler does: re-render the container
         const container = this.shadow.querySelector('.container');
         const oldBox = this.shadow.getElementById('target');
 
         log('Old element reference: ' + (oldBox ? 'exists' : 'null'));
+        log('Original touch target class: ' + this.originalElement?.className);
 
-        // Create new element (simulating framework re-render)
-        const newBox = document.createElement('div');
-        newBox.className = 'event-box dragging';
-        newBox.id = 'target';
-        newBox.textContent = 'DRAGGING (new element)';
-
-        // Replace old with new
-        container.replaceChild(newBox, oldBox);
+        // Lit-style re-render: replace innerHTML of container
+        // This is closer to what happens when Lit re-renders a template
+        container.innerHTML = `
+          <div class="event-box dragging" id="target">
+            <span class="inner-text">DRAGGING (new element)</span>
+          </div>
+        `;
 
         const newElement = this.shadow.getElementById('target');
         log('New element reference: ' + (newElement ? 'exists' : 'null'));
         log('Same element? ' + (this.originalElement === newElement));
+        log('Original element still in DOM? ' + document.contains(this.originalElement));
       }
 
       cleanup() {

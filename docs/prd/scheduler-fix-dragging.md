@@ -261,7 +261,7 @@ false
 
 ### Finding 7
 ```
-● Created docs/touch-test.html. Open it in a browser on your mobile device. It:
+● Created docs\touch-test\index.html. Open it in a browser on your mobile device. It:
 
   1. Has a shadow DOM component with a touchable box
   2. On touchstart, adds listeners to document (capture) and the element
@@ -269,4 +269,21 @@ false
   4. Logs all events to see what happens
 
   Test it by touching and holding the box, then dragging after it turns green. This will tell us if it's a browser behavior with shadow DOM + touch events + element replacement.
+```
+
+### Finding 8
+Here's the logs for the touch-test/index.html file.
+I touchstart-ed on the inner div.
+
+```
+(index):46 SHADOW touchstart - target: inner-text
+(index):46 Adding document touchmove listener (capture)
+(index):46 Adding element touchmove listener
+(index):46 === HOLD ACTIVATED - Simulating re-render ===
+(index):46 Old element reference: exists
+(index):46 Original touch target class: inner-text
+(index):46 New element reference: exists
+(index):46 Same element? false
+(index):46 Original element still in DOM? false
+326(index):46 ELEMENT touchmove - on original element
 ```

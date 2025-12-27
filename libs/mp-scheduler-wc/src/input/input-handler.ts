@@ -251,27 +251,33 @@ export class InputHandler {
     this.touchHoldTarget = pointer.target;
     this.touchHoldPointer = pointer;
 
-    // Add document-level listeners IMMEDIATELY for event touches
-    // This ensures we capture touchmove even if DOM re-renders during hold
+    // Add element-level listener IMMEDIATELY for event touches
+    // CRITICAL: Use e.target (the actual touched element) not pointer.target
+    // In shadow DOM, touch.target and e.target can differ due to event retargeting
+    // Only the listener on e.target will continue to receive events after DOM replacement
     if (target.type === 'event' || target.type === 'resize-handle') {
-      console.log('[handleTouchStart] Adding listeners for event touch');
+      console.log('[handleTouchStart] Adding element listener for event touch');
       const self = this;
+      const touchedElement = e.target as HTMLElement;
 
-      // Try adding listener directly to the touched element
-      const touchedElement = pointer.target;
-      touchedElement.addEventListener('touchmove', function(e: TouchEvent) {
+      console.log('[handleTouchStart] e.target:', touchedElement?.className, 'pointer.target:', pointer.target?.className);
+
+      // Add listener directly to the touched element - this is the ONLY listener
+      // that will work after the element is replaced during re-render
+      touchedElement.addEventListener('touchmove', function(evt: TouchEvent) {
         console.log('[ELEMENT touchmove] on original element');
-        self.handleTouchMove(e);
+        self.handleTouchMove(evt);
       }, { passive: false });
 
-      // Also add to document with capture
-      document.addEventListener('touchmove', function(e: TouchEvent) {
-        console.log('[DOC touchmove CAPTURE]', { target: (e.target as Element)?.className });
-        self.handleTouchMove(e);
-      }, { passive: false, capture: true });
+      touchedElement.addEventListener('touchend', function(evt: TouchEvent) {
+        console.log('[ELEMENT touchend] on original element');
+        self.handleTouchEnd(evt);
+      });
 
-      document.addEventListener('touchend', this.boundHandleTouchEnd, { capture: true });
-      document.addEventListener('touchcancel', this.boundHandleTouchCancel, { capture: true });
+      touchedElement.addEventListener('touchcancel', function(evt: TouchEvent) {
+        console.log('[ELEMENT touchcancel] on original element');
+        self.handleTouchCancel(evt);
+      });
     }
 
     // Add visual feedback
