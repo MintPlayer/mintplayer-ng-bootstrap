@@ -61,14 +61,24 @@ export class MpScheduler extends HTMLElement {
   // Touch state
   private touchHoldTimer: ReturnType<typeof setTimeout> | null = null;
   private touchStartPosition: { x: number; y: number } | null = null;
+  private touchLastPosition: { x: number; y: number } | null = null;
+  private isTouchPanning = false;
+  private touchPanTriggered = false;
+  private touchHoldCanceled = false;
+  private touchScrollContainer: HTMLElement | null = null;
   private isTouchDragMode = false;
   private touchHoldTarget: HTMLElement | null = null;
-  private readonly TOUCH_HOLD_DURATION = 500; // ms before touch drag activates
-  private readonly TOUCH_MOVE_THRESHOLD = 10; // pixels of movement before canceling hold
+  private readonly TOUCH_HOLD_DURATION = 600; // ms before touch drag activates
+  private readonly TOUCH_MOVE_THRESHOLD = 15; // pixels of movement before canceling hold
+  private ignoreMouseUntil = 0;
 
   // RAF scheduling for drag updates (ensures browser can repaint during drag)
   private pendingDragUpdate: number | null = null;
   private latestDragState: SchedulerState | null = null;
+
+  // Transparent overlay elements for hit-testing during drag
+  private overlayContainer: HTMLElement | null = null;
+  private overlayElements: Map<string, HTMLElement> = new Map();
 
   // Event handlers bound to this
   private boundHandleMouseDown: (e: MouseEvent) => void;
@@ -81,6 +91,7 @@ export class MpScheduler extends HTMLElement {
   private boundHandleTouchMove: (e: TouchEvent) => void;
   private boundHandleTouchEnd: (e: TouchEvent) => void;
   private boundHandleTouchCancel: (e: TouchEvent) => void;
+  private boundPreventWindowScroll: (e: TouchEvent) => void;
 
   constructor() {
     super();
@@ -99,6 +110,7 @@ export class MpScheduler extends HTMLElement {
     this.boundHandleTouchMove = this.handleTouchMove.bind(this);
     this.boundHandleTouchEnd = this.handleTouchEnd.bind(this);
     this.boundHandleTouchCancel = this.handleTouchCancel.bind(this);
+    this.boundPreventWindowScroll = this.preventWindowScroll.bind(this);
 
     // Subscribe to state changes
     this.stateManager.subscribe((state) => this.onStateChange(state));
@@ -119,6 +131,16 @@ export class MpScheduler extends HTMLElement {
       this.pendingDragUpdate = null;
     }
     this.latestDragState = null;
+
+    // Clean up any remaining overlays
+    this.destroyDragOverlays();
+
+    // Clean up window scroll prevention if component is removed during drag
+    if (this.isTouchDragMode) {
+      document.removeEventListener('touchmove', this.boundPreventWindowScroll);
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    }
   }
 
   attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
@@ -561,6 +583,7 @@ export class MpScheduler extends HTMLElement {
   }
 
   private handleMouseDown(e: MouseEvent): void {
+    if (Date.now() < this.ignoreMouseUntil) return;
     const state = this.stateManager.getState();
     if (!state.options.editable) return;
 
@@ -619,6 +642,7 @@ export class MpScheduler extends HTMLElement {
   }
 
   private handleMouseMove(e: MouseEvent): void {
+    if (Date.now() < this.ignoreMouseUntil) return;
     // Check if we have a pending drag that should start
     if (this.pendingDrag) {
       const dx = e.clientX - this.pendingDrag.startX;
@@ -641,7 +665,8 @@ export class MpScheduler extends HTMLElement {
     const state = this.stateManager.getState();
     if (!state.dragState) return;
 
-    const slot = this.getSlotAtPosition(e.clientX, e.clientY);
+    // Use overlay-based hit-testing for reliable slot detection during drag
+    const slot = this.getSlotAtPositionWithOverlay(e.clientX, e.clientY);
     if (!slot) return;
 
     const preview = this.calculatePreview(state.dragState.type, state.dragState, slot);
@@ -651,6 +676,7 @@ export class MpScheduler extends HTMLElement {
   }
 
   private handleMouseUp(e: MouseEvent): void {
+    if (Date.now() < this.ignoreMouseUntil) return;
     // If we had a pending drag that never started, it's a click
     if (this.pendingDrag) {
       const { type, event } = this.pendingDrag;
@@ -728,6 +754,8 @@ export class MpScheduler extends HTMLElement {
       }
     }
 
+    // Clean up overlays and end drag
+    this.destroyDragOverlays();
     this.stateManager.endDrag();
   }
 
@@ -856,6 +884,8 @@ export class MpScheduler extends HTMLElement {
         break;
       case 'Escape':
         if (state.dragState) {
+          // Clean up overlays and end drag
+          this.destroyDragOverlays();
           this.stateManager.endDrag();
         }
         break;
@@ -889,6 +919,9 @@ export class MpScheduler extends HTMLElement {
     } else {
       return;
     }
+
+    // Create transparent overlays for reliable hit-testing during drag
+    this.createDragOverlays();
 
     this.stateManager.startDrag({
       type,
@@ -942,8 +975,13 @@ export class MpScheduler extends HTMLElement {
   }
 
   private getSlotAtPosition(clientX: number, clientY: number): TimeSlot | null {
-    const slotEl = this.shadow.elementsFromPoint(clientX, clientY)
-      .find((el) => el.matches('.scheduler-time-slot, .scheduler-timeline-slot')) as HTMLElement | undefined;
+    const elements =
+      typeof (this.shadow as unknown as ShadowRoot).elementsFromPoint === 'function'
+        ? (this.shadow as unknown as ShadowRoot).elementsFromPoint(clientX, clientY)
+        : document.elementsFromPoint(clientX, clientY);
+    const slotEl = elements.find((el) =>
+      (el as HTMLElement).matches?.('.scheduler-time-slot, .scheduler-timeline-slot')
+    ) as HTMLElement | undefined;
 
     return slotEl ? this.getSlotFromElement(slotEl) : null;
   }
@@ -960,22 +998,138 @@ export class MpScheduler extends HTMLElement {
     };
   }
 
+  // Transparent overlay system for reliable hit-testing during drag operations
+
+  /**
+   * Creates transparent overlay elements that exactly match the timeslots.
+   * These overlays are placed in front of events (higher z-index) to ensure
+   * reliable hit-testing with elementsFromPoint during drag operations.
+   */
+  private createDragOverlays(): void {
+    // Remove any existing overlays first
+    this.destroyDragOverlays();
+
+    // Create overlay container
+    const overlayContainer = document.createElement('div');
+    overlayContainer.className = 'scheduler-drag-overlay-container';
+    this.overlayContainer = overlayContainer;
+
+    // Find all timeslot elements and create overlay copies
+    const slots = this.shadow.querySelectorAll('.scheduler-time-slot, .scheduler-timeline-slot');
+
+    slots.forEach((slot, index) => {
+      const slotEl = slot as HTMLElement;
+      const rect = slotEl.getBoundingClientRect();
+
+      // Skip slots that are not visible (zero dimensions)
+      if (rect.width === 0 || rect.height === 0) return;
+
+      const overlay = document.createElement('div');
+      overlay.className = 'scheduler-drag-overlay-slot';
+
+      // Copy the data attributes for slot identification
+      if (slotEl.dataset['start']) overlay.dataset['start'] = slotEl.dataset['start'];
+      if (slotEl.dataset['end']) overlay.dataset['end'] = slotEl.dataset['end'];
+      if (slotEl.dataset['dayIndex']) overlay.dataset['dayIndex'] = slotEl.dataset['dayIndex'];
+      if (slotEl.dataset['slotIndex']) overlay.dataset['slotIndex'] = slotEl.dataset['slotIndex'];
+      if (slotEl.dataset['resourceId']) overlay.dataset['resourceId'] = slotEl.dataset['resourceId'];
+
+      // Position the overlay exactly over the slot using fixed positioning
+      overlay.style.position = 'fixed';
+      overlay.style.left = `${rect.left}px`;
+      overlay.style.top = `${rect.top}px`;
+      overlay.style.width = `${rect.width}px`;
+      overlay.style.height = `${rect.height}px`;
+
+      const key = `overlay-${index}`;
+      this.overlayElements.set(key, overlay);
+      overlayContainer.appendChild(overlay);
+    });
+
+    // Append overlay container to shadow root
+    this.shadow.appendChild(overlayContainer);
+  }
+
+  /**
+   * Updates the positions of overlay elements.
+   * Called during scroll or if the layout changes during drag.
+   */
+  private updateDragOverlayPositions(): void {
+    if (!this.overlayContainer) return;
+
+    const slots = this.shadow.querySelectorAll('.scheduler-time-slot, .scheduler-timeline-slot');
+
+    slots.forEach((slot, index) => {
+      const slotEl = slot as HTMLElement;
+      const rect = slotEl.getBoundingClientRect();
+
+      const key = `overlay-${index}`;
+      const overlay = this.overlayElements.get(key);
+      if (overlay) {
+        overlay.style.left = `${rect.left}px`;
+        overlay.style.top = `${rect.top}px`;
+        overlay.style.width = `${rect.width}px`;
+        overlay.style.height = `${rect.height}px`;
+      }
+    });
+  }
+
+  /**
+   * Removes all overlay elements.
+   */
+  private destroyDragOverlays(): void {
+    if (this.overlayContainer) {
+      this.overlayContainer.remove();
+      this.overlayContainer = null;
+    }
+    this.overlayElements.clear();
+  }
+
+  /**
+   * Gets the slot at the given position, using overlay elements if available.
+   * Falls back to direct element detection if overlays are not present.
+   */
+  private getSlotAtPositionWithOverlay(clientX: number, clientY: number): TimeSlot | null {
+    const elements =
+      typeof (this.shadow as unknown as ShadowRoot).elementsFromPoint === 'function'
+        ? (this.shadow as unknown as ShadowRoot).elementsFromPoint(clientX, clientY)
+        : document.elementsFromPoint(clientX, clientY);
+    const overlayEl = elements.find((el) =>
+      (el as HTMLElement).classList?.contains('scheduler-drag-overlay-slot')
+    ) as HTMLElement | undefined;
+
+    if (overlayEl) {
+      return this.getSlotFromElement(overlayEl);
+    }
+
+    // Fall back to regular slot detection in shadow DOM
+    return this.getSlotAtPosition(clientX, clientY);
+  }
+
   // Touch event handlers
 
   private handleTouchStart(e: TouchEvent): void {
+    this.ignoreMouseUntil = Date.now() + 1000;
     const state = this.stateManager.getState();
     if (!state.options.editable) return;
 
     // Only handle single touch
     if (e.touches.length !== 1) {
       this.cancelTouchHold();
+      this.stopTouchPanning();
       return;
     }
 
     const touch = e.touches[0];
     const target = touch.target as HTMLElement;
 
+    this.touchHoldTarget = null;
     this.touchStartPosition = { x: touch.clientX, y: touch.clientY };
+    this.touchLastPosition = { x: touch.clientX, y: touch.clientY };
+    this.touchScrollContainer = this.getTouchScrollContainer(target);
+    this.isTouchPanning = false;
+    this.touchPanTriggered = false;
+    this.touchHoldCanceled = false;
 
     // Check if touching an event or slot that could be dragged
     const eventEl = target.closest('.scheduler-event:not(.preview)') as HTMLElement;
@@ -983,7 +1137,7 @@ export class MpScheduler extends HTMLElement {
     const slotEl = target.closest('.scheduler-time-slot, .scheduler-timeline-slot') as HTMLElement;
 
     if (!eventEl && !slotEl) {
-      // Not touching a draggable element
+      // Not touching a draggable element; allow pan behavior only
       return;
     }
 
@@ -1007,10 +1161,19 @@ export class MpScheduler extends HTMLElement {
     const state = this.stateManager.getState();
     const target = this.touchHoldTarget;
 
-    if (!target) return;
+    if (!target || this.touchHoldCanceled || this.touchPanTriggered || this.isTouchPanning) {
+      return;
+    }
 
     // Trigger haptic feedback if available
     this.triggerHapticFeedback();
+
+    if (this.touchHoldTimer) {
+      clearTimeout(this.touchHoldTimer);
+      this.touchHoldTimer = null;
+    }
+
+    this.stopTouchPanning();
 
     // Enter touch drag mode
     this.isTouchDragMode = true;
@@ -1018,6 +1181,11 @@ export class MpScheduler extends HTMLElement {
     // Add visual feedback
     const container = this.shadow.querySelector('.scheduler-container');
     container?.classList.add('touch-drag-mode');
+
+    // Prevent window/document scrolling during touch drag
+    document.addEventListener('touchmove', this.boundPreventWindowScroll, { passive: false });
+    document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';
 
     // Remove pending class, add active class
     target.classList.remove('touch-hold-pending');
@@ -1056,32 +1224,14 @@ export class MpScheduler extends HTMLElement {
   }
 
   private handleTouchMove(e: TouchEvent): void {
+    this.ignoreMouseUntil = Date.now() + 1000;
     if (e.touches.length !== 1) {
       this.cancelTouchHold();
+      this.stopTouchPanning();
       return;
     }
 
     const touch = e.touches[0];
-
-    // If we have a pending touch hold, check if user moved too much
-    if (this.touchHoldTimer && this.touchStartPosition) {
-      const dx = touch.clientX - this.touchStartPosition.x;
-      const dy = touch.clientY - this.touchStartPosition.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-
-      if (distance > this.TOUCH_MOVE_THRESHOLD) {
-        // User moved too much, cancel the hold and allow normal scrolling
-        this.cancelTouchHold();
-        return;
-      }
-
-      // Still waiting for hold, prevent default to avoid scroll during hold detection
-      // But only if we're close to the threshold
-      if (distance < this.TOUCH_MOVE_THRESHOLD / 2) {
-        // Don't prevent default yet to allow small movements
-      }
-      return;
-    }
 
     // If in touch drag mode, handle the drag
     if (this.isTouchDragMode) {
@@ -1090,39 +1240,62 @@ export class MpScheduler extends HTMLElement {
       const state = this.stateManager.getState();
       if (!state.dragState) return;
 
-      const slot = this.getSlotAtPosition(touch.clientX, touch.clientY);
+      // Use overlay-based hit-testing for reliable slot detection during drag
+      const slot = this.getSlotAtPositionWithOverlay(touch.clientX, touch.clientY);
       if (!slot) return;
 
       const preview = this.calculatePreview(state.dragState.type, state.dragState, slot);
       if (preview) {
         this.stateManager.updateDrag(slot, preview);
       }
+      return;
+    }
+
+    // If we have a pending touch hold, check if user moved too much
+    if (this.touchHoldTimer && this.touchStartPosition) {
+      const dx = touch.clientX - this.touchStartPosition.x;
+      const dy = touch.clientY - this.touchStartPosition.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance > this.TOUCH_MOVE_THRESHOLD) {
+        // User moved too much, cancel the hold and start panning
+        this.cancelTouchHold();
+        this.touchHoldTarget = null;
+        this.touchPanTriggered = true;
+        this.startTouchPanning(touch);
+        this.handleTouchPan(touch, e);
+        return;
+      }
+
+      // Still waiting for hold
+      return;
+    }
+
+    if (!this.isTouchPanning && this.touchStartPosition) {
+      const dx = touch.clientX - this.touchStartPosition.x;
+      const dy = touch.clientY - this.touchStartPosition.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance > this.TOUCH_MOVE_THRESHOLD) {
+        this.startTouchPanning(touch);
+      }
+    }
+
+    if (this.isTouchPanning) {
+      this.handleTouchPan(touch, e);
     }
   }
 
   private handleTouchEnd(e: TouchEvent): void {
-    // If we had a pending hold that never activated, treat as a tap
-    if (this.touchHoldTimer) {
-      this.cancelTouchHold();
-
-      // Handle as a tap/click on the target
-      if (this.touchHoldTarget) {
-        const eventEl = this.touchHoldTarget.closest('.scheduler-event:not(.preview)') as HTMLElement;
-        if (eventEl) {
-          const eventId = eventEl.dataset['eventId'];
-          const event = eventId ? this.getEventById(eventId) : null;
-          if (event) {
-            this.stateManager.setSelectedEvent(event);
-            this.dispatchEvent(
-              new CustomEvent('event-click', {
-                detail: { event, originalEvent: e },
-                bubbles: true,
-              })
-            );
-          }
-        }
+    this.ignoreMouseUntil = Date.now() + 1000;
+    if (this.isTouchPanning || this.touchPanTriggered) {
+      this.stopTouchPanning();
+      this.touchPanTriggered = false;
+      if (this.stateManager.getState().dragState) {
+        this.destroyDragOverlays();
+        this.stateManager.endDrag();
+        this.exitTouchDragMode();
       }
-      this.touchHoldTarget = null;
       return;
     }
 
@@ -1183,17 +1356,48 @@ export class MpScheduler extends HTMLElement {
           }
         }
 
+        // Clean up overlays and end drag
+        this.destroyDragOverlays();
         this.stateManager.endDrag();
       }
 
       this.exitTouchDragMode();
+      return;
+    }
+
+    // If we had a pending hold that never activated, treat as a tap
+    if (this.touchHoldTimer) {
+      this.cancelTouchHold();
+
+      // Handle as a tap/click on the target
+      if (this.touchHoldTarget) {
+        const eventEl = this.touchHoldTarget.closest('.scheduler-event:not(.preview)') as HTMLElement;
+        if (eventEl) {
+          const eventId = eventEl.dataset['eventId'];
+          const event = eventId ? this.getEventById(eventId) : null;
+          if (event) {
+            this.stateManager.setSelectedEvent(event);
+            this.dispatchEvent(
+              new CustomEvent('event-click', {
+                detail: { event, originalEvent: e },
+                bubbles: true,
+              })
+            );
+          }
+        }
+      }
+      this.touchHoldTarget = null;
+      return;
     }
   }
 
   private handleTouchCancel(_e: TouchEvent): void {
     this.cancelTouchHold();
+    this.stopTouchPanning();
 
     if (this.isTouchDragMode) {
+      // Clean up overlays and end drag
+      this.destroyDragOverlays();
       this.stateManager.endDrag();
       this.exitTouchDragMode();
     }
@@ -1204,6 +1408,7 @@ export class MpScheduler extends HTMLElement {
       clearTimeout(this.touchHoldTimer);
       this.touchHoldTimer = null;
     }
+    this.touchHoldCanceled = true;
 
     // Remove pending visual feedback
     if (this.touchHoldTarget) {
@@ -1212,6 +1417,43 @@ export class MpScheduler extends HTMLElement {
     }
 
     this.touchStartPosition = null;
+  }
+
+  private startTouchPanning(touch: Touch): void {
+    if (!this.touchScrollContainer) return;
+    this.isTouchPanning = true;
+    this.touchPanTriggered = true;
+    this.touchLastPosition = { x: touch.clientX, y: touch.clientY };
+    this.touchHoldTarget = null;
+  }
+
+  private stopTouchPanning(): void {
+    this.isTouchPanning = false;
+    this.touchLastPosition = null;
+    this.touchScrollContainer = null;
+    this.touchStartPosition = null;
+    this.touchHoldCanceled = true;
+  }
+
+  private handleTouchPan(touch: Touch, e: TouchEvent): void {
+    if (!this.isTouchPanning || !this.touchLastPosition || !this.touchScrollContainer) return;
+
+    e.preventDefault();
+
+    const dx = touch.clientX - this.touchLastPosition.x;
+    const dy = touch.clientY - this.touchLastPosition.y;
+
+    this.touchScrollContainer.scrollLeft -= dx;
+    this.touchScrollContainer.scrollTop -= dy;
+
+    this.touchLastPosition = { x: touch.clientX, y: touch.clientY };
+  }
+
+  private getTouchScrollContainer(target: HTMLElement): HTMLElement | null {
+    return (
+      (target.closest('.scheduler-timeline-body') as HTMLElement | null) ??
+      (this.shadow.querySelector('.scheduler-content') as HTMLElement | null)
+    );
   }
 
   private exitTouchDragMode(): void {
@@ -1223,6 +1465,11 @@ export class MpScheduler extends HTMLElement {
     const container = this.shadow.querySelector('.scheduler-container');
     container?.classList.remove('touch-drag-mode');
 
+    // Restore window/document scrolling
+    document.removeEventListener('touchmove', this.boundPreventWindowScroll);
+    document.body.style.overflow = '';
+    document.body.style.touchAction = '';
+
     // Remove active classes from all elements
     this.shadow.querySelectorAll('.touch-hold-active, .touch-hold-pending').forEach((el) => {
       el.classList.remove('touch-hold-active', 'touch-hold-pending');
@@ -1233,6 +1480,17 @@ export class MpScheduler extends HTMLElement {
     // Use Vibration API if available
     if ('vibrate' in navigator) {
       navigator.vibrate(50); // Short vibration (50ms)
+    }
+  }
+
+  /**
+   * Prevents window/document scrolling during touch drag operations.
+   * This handler is added to document during touch drag mode.
+   */
+  private preventWindowScroll(e: TouchEvent): void {
+    if (this.isTouchDragMode) {
+      e.preventDefault();
+      e.stopPropagation();
     }
   }
 
@@ -1264,6 +1522,9 @@ export class MpScheduler extends HTMLElement {
     } else {
       return;
     }
+
+    // Create transparent overlays for reliable hit-testing during drag
+    this.createDragOverlays();
 
     this.stateManager.startDrag({
       type,

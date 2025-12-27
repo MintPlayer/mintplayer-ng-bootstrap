@@ -30,6 +30,12 @@ The scheduler component needs to support consistent event creation and dragging 
 - Both event types must produce identical behavior
 - Touch events should extract coordinates from `event.touches[0]` or `event.changedTouches[0]`
 - Prevent default touch behaviors (scrolling) when drag operation is active
+- Touch hold duration for drag activation is **600ms**
+
+### 2.1 Touch Pan Behavior
+
+- A touch move that exceeds the movement threshold before hold activation should **pan the scheduler**
+- Panning should scroll the scheduler content (not the page)
 
 ### 3. Hit-Testing with Transparent Overlay Timeslots
 
@@ -141,6 +147,7 @@ When hit-testing is required for determining which timeslot is being hovered dur
 - [ ] Overlay timeslots are perfectly aligned with actual timeslots
 - [ ] Overlay timeslots do not affect visual appearance (fully transparent)
 - [ ] **No scrolling occurs during touch drag on mobile devices (calendar or window)**
+- [ ] Touch move beyond threshold pans the scheduler content (not the page)
 - [ ] All Playwright tests pass
 - [ ] No regressions in existing scheduler functionality
 

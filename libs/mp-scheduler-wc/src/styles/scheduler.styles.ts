@@ -16,7 +16,7 @@ export const schedulerStyles = `
     --scheduler-preview-bg: rgba(0, 123, 255, 0.3);
     --scheduler-greyed-slot-bg: rgba(0, 0, 0, 0.1);
     --scheduler-column-min-width: 120px;
-    --scheduler-touch-hold-duration: 500ms;
+    --scheduler-touch-hold-duration: 600ms;
   }
 
   * {
@@ -564,10 +564,22 @@ export const schedulerStyles = `
     cursor: grabbing;
     user-select: none;
     -webkit-user-select: none;
+    /* Prevent all touch actions (scrolling, zooming) during drag */
+    touch-action: none;
+    -webkit-touch-callout: none;
   }
 
   .scheduler-container.touch-drag-mode .scheduler-content {
+    /* Prevent internal scrolling during drag */
     overflow: hidden;
+    /* Prevent scroll chaining to parent elements */
+    overscroll-behavior: none;
+  }
+
+  .scheduler-container.touch-drag-mode .scheduler-timeline-body {
+    /* Prevent timeline scrolling during drag */
+    overflow: hidden;
+    overscroll-behavior: none;
   }
 
   .scheduler-event.touch-hold-pending {
@@ -594,6 +606,24 @@ export const schedulerStyles = `
     0% { opacity: 1; }
     50% { opacity: 0.7; }
     100% { opacity: 1; }
+  }
+
+  /* Transparent drag overlay system for reliable hit-testing */
+  .scheduler-drag-overlay-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  .scheduler-drag-overlay-slot {
+    pointer-events: auto;
+    background: transparent;
+    /* Debug mode - uncomment to visualize overlays */
+    /* background: rgba(255, 0, 0, 0.1); */
   }
 
   /* Scrollbar styling */
