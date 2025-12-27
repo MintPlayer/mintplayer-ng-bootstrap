@@ -6,7 +6,6 @@ export const schedulerStyles = `
     display: block;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
     font-size: 14px;
-    touch-action: none; /* Prevent browser touch gestures - scheduler handles touch internally */
     --scheduler-border-color: #ddd;
     --scheduler-header-bg: #f8f9fa;
     --scheduler-today-bg: #fff3cd;
@@ -204,7 +203,6 @@ export const schedulerStyles = `
     height: var(--scheduler-slot-height);
     border-bottom: 1px solid #eee;
     position: relative;
-    touch-action: none; /* Prevent browser touch gestures on draggable slots */
   }
 
   .scheduler-time-slot:nth-child(2n) {
@@ -234,7 +232,6 @@ export const schedulerStyles = `
     cursor: pointer;
     pointer-events: auto;
     border-left: 3px solid rgba(0, 0, 0, 0.2);
-    touch-action: none; /* Prevent browser touch gestures on draggable events */
   }
 
   .scheduler-event:hover {
@@ -512,7 +509,6 @@ export const schedulerStyles = `
     flex-shrink: 0;
     border-right: 1px solid #eee;
     height: 100%;
-    touch-action: none; /* Prevent browser touch gestures on draggable slots */
   }
 
   .scheduler-timeline-slot.greyed {
@@ -538,7 +534,6 @@ export const schedulerStyles = `
     overflow: hidden;
     cursor: pointer;
     pointer-events: auto;
-    touch-action: none; /* Prevent browser touch gestures on draggable events */
   }
 
   .scheduler-timeline-event.selected {

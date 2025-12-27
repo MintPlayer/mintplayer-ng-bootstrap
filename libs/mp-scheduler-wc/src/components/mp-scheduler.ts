@@ -81,6 +81,7 @@ export class MpScheduler extends HTMLElement {
   private boundHandleTouchMove: (e: TouchEvent) => void;
   private boundHandleTouchEnd: (e: TouchEvent) => void;
   private boundHandleTouchCancel: (e: TouchEvent) => void;
+  private boundHandleDocumentTouchMove: (e: TouchEvent) => void;
 
   constructor() {
     super();
@@ -99,6 +100,7 @@ export class MpScheduler extends HTMLElement {
     this.boundHandleTouchMove = this.handleTouchMove.bind(this);
     this.boundHandleTouchEnd = this.handleTouchEnd.bind(this);
     this.boundHandleTouchCancel = this.handleTouchCancel.bind(this);
+    this.boundHandleDocumentTouchMove = this.handleDocumentTouchMove.bind(this);
 
     // Subscribe to state changes
     this.stateManager.subscribe((state) => this.onStateChange(state));
@@ -541,6 +543,9 @@ export class MpScheduler extends HTMLElement {
     root.addEventListener('touchmove', this.boundHandleTouchMove as EventListener, { passive: false });
     root.addEventListener('touchend', this.boundHandleTouchEnd as EventListener);
     root.addEventListener('touchcancel', this.boundHandleTouchCancel as EventListener);
+
+    // Document-level touchmove to prevent page scrolling during drag mode
+    document.addEventListener('touchmove', this.boundHandleDocumentTouchMove, { passive: false });
   }
 
   private detachEventListeners(): void {
@@ -557,6 +562,7 @@ export class MpScheduler extends HTMLElement {
     root.removeEventListener('touchmove', this.boundHandleTouchMove as EventListener);
     root.removeEventListener('touchend', this.boundHandleTouchEnd as EventListener);
     root.removeEventListener('touchcancel', this.boundHandleTouchCancel as EventListener);
+    document.removeEventListener('touchmove', this.boundHandleDocumentTouchMove);
     this.cancelTouchHold();
   }
 
@@ -987,10 +993,7 @@ export class MpScheduler extends HTMLElement {
       return;
     }
 
-    // Prevent default to stop scroll from starting while we wait for the hold
-    // (if user moves beyond threshold before hold activates, we cancel and allow normal scroll)
-    e.preventDefault();
-
+    // Don't prevent default here - allow scrolling until hold timer fires
     // Store the target for the hold callback
     this.touchHoldTarget = eventEl || slotEl;
 
@@ -1079,8 +1082,8 @@ export class MpScheduler extends HTMLElement {
         return;
       }
 
-      // Still waiting for hold - prevent default to stop scroll from interfering
-      e.preventDefault();
+      // Still waiting for hold - don't prevent default, allow scrolling
+      // If user scrolls, that's fine - drag mode only activates after hold completes
       return;
     }
 
@@ -1098,6 +1101,14 @@ export class MpScheduler extends HTMLElement {
       if (preview) {
         this.stateManager.updateDrag(slot, preview);
       }
+    }
+  }
+
+  private handleDocumentTouchMove(e: TouchEvent): void {
+    // Only prevent default when we're actively in drag mode
+    // This prevents page scrolling during drag operations
+    if (this.isTouchDragMode) {
+      e.preventDefault();
     }
   }
 
