@@ -232,6 +232,7 @@ export const schedulerStyles = `
     cursor: pointer;
     pointer-events: auto;
     border-left: 3px solid rgba(0, 0, 0, 0.2);
+    touch-action: none; /* Prevent browser from handling touch on events */
   }
 
   .scheduler-event:hover {

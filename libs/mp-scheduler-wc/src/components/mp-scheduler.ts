@@ -63,8 +63,13 @@ export class MpScheduler extends HTMLElement {
   private touchStartPosition: { x: number; y: number } | null = null;
   private isTouchDragMode = false;
   private touchHoldTarget: HTMLElement | null = null;
+  private activeTouchId: number | null = null; // Track the specific touch we're handling
   private readonly TOUCH_HOLD_DURATION = 500; // ms before touch drag activates
   private readonly TOUCH_MOVE_THRESHOLD = 10; // pixels of movement before canceling hold
+
+  // Debug
+  private debugLogs: string[] = [];
+  private debugEl: HTMLElement | null = null;
 
   // RAF scheduling for drag updates (ensures browser can repaint during drag)
   private pendingDragUpdate: number | null = null;
@@ -81,7 +86,6 @@ export class MpScheduler extends HTMLElement {
   private boundHandleTouchMove: (e: TouchEvent) => void;
   private boundHandleTouchEnd: (e: TouchEvent) => void;
   private boundHandleTouchCancel: (e: TouchEvent) => void;
-  private boundHandleDocumentTouchMove: (e: TouchEvent) => void;
 
   constructor() {
     super();
@@ -100,7 +104,6 @@ export class MpScheduler extends HTMLElement {
     this.boundHandleTouchMove = this.handleTouchMove.bind(this);
     this.boundHandleTouchEnd = this.handleTouchEnd.bind(this);
     this.boundHandleTouchCancel = this.handleTouchCancel.bind(this);
-    this.boundHandleDocumentTouchMove = this.handleDocumentTouchMove.bind(this);
 
     // Subscribe to state changes
     this.stateManager.subscribe((state) => this.onStateChange(state));
@@ -273,7 +276,29 @@ export class MpScheduler extends HTMLElement {
   private render(): void {
     // Add styles
     const style = document.createElement('style');
-    style.textContent = schedulerStyles;
+    style.textContent = schedulerStyles + `
+      .debug-panel {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        width: 300px;
+        max-height: 200px;
+        overflow-y: scroll;
+        -webkit-overflow-scrolling: touch;
+        background: rgba(0,0,0,0.9);
+        color: #0f0;
+        font-family: monospace;
+        font-size: 11px;
+        padding: 8px;
+        border-radius: 4px;
+        z-index: 10000;
+        touch-action: pan-y;
+      }
+      .debug-panel div {
+        margin: 2px 0;
+        white-space: nowrap;
+      }
+    `;
     this.shadow.appendChild(style);
 
     // Create container
@@ -289,10 +314,120 @@ export class MpScheduler extends HTMLElement {
     this.contentContainer.className = 'scheduler-content';
     container.appendChild(this.contentContainer);
 
+    // Debug panel - tap to copy logs to clipboard
+    this.debugEl = document.createElement('div');
+    this.debugEl.className = 'debug-panel';
+    this.debugEl.innerHTML = '<div>Touch Debug Panel (tap to copy)</div>';
+
+    // Debounce to prevent double-triggering from both touch and click
+    let lastCopyTime = 0;
+    const DEBOUNCE_MS = 300;
+
+    const copyLogs = () => {
+      const now = Date.now();
+      if (now - lastCopyTime < DEBOUNCE_MS) {
+        return; // Debounce
+      }
+      lastCopyTime = now;
+
+      const logText = this.debugLogs.join('\n');
+
+      // Visual feedback immediately
+      const origBg = this.debugEl!.style.background;
+      this.debugEl!.style.background = 'rgba(0,128,0,0.9)';
+      setTimeout(() => {
+        if (this.debugEl) this.debugEl.style.background = origBg;
+      }, 300);
+
+      // Try multiple clipboard methods for Android compatibility
+      const fallbackCopy = () => {
+        // Fallback: use execCommand with a temporary textarea
+        const textarea = document.createElement('textarea');
+        textarea.value = logText;
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        textarea.style.top = '0';
+        textarea.setAttribute('readonly', ''); // Prevent keyboard on mobile
+        document.body.appendChild(textarea);
+        textarea.select();
+        textarea.setSelectionRange(0, logText.length); // For mobile
+
+        let success = false;
+        try {
+          success = document.execCommand('copy');
+        } catch (err) {
+          success = false;
+        }
+
+        document.body.removeChild(textarea);
+
+        if (!success) {
+          // Last resort: show alert with logs
+          alert(logText);
+        }
+      };
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(logText).then(() => {
+          // Success
+        }).catch(() => {
+          fallbackCopy();
+        });
+      } else {
+        fallbackCopy();
+      }
+    };
+
+    // Track touch state for tap detection
+    let debugTouchStarted = false;
+    let debugTouchStartPos = { x: 0, y: 0 };
+
+    this.debugEl.addEventListener('touchstart', (e: TouchEvent) => {
+      e.stopPropagation(); // Prevent scheduler's touch handlers from interfering
+      debugTouchStarted = true;
+      if (e.touches.length > 0) {
+        debugTouchStartPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      }
+    }, { passive: true });
+
+    this.debugEl.addEventListener('touchend', (e: TouchEvent) => {
+      e.stopPropagation(); // Prevent scheduler's touch handlers from interfering
+      if (debugTouchStarted && e.changedTouches.length > 0) {
+        const touch = e.changedTouches[0];
+        const dx = touch.clientX - debugTouchStartPos.x;
+        const dy = touch.clientY - debugTouchStartPos.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        // Only copy if it was a tap (minimal movement), not a scroll
+        if (distance < 10) {
+          copyLogs();
+        }
+      }
+      debugTouchStarted = false;
+    }, { passive: true });
+
+    // Click handler for desktop
+    this.debugEl.addEventListener('click', (e: MouseEvent) => {
+      e.stopPropagation(); // Prevent other click handlers
+      copyLogs();
+    });
+
+    container.appendChild(this.debugEl);
+
     this.shadow.appendChild(container);
 
     // Initial view render
     this.renderView();
+  }
+
+  private debugLog(msg: string): void {
+    console.log('[TOUCH]', msg);
+    this.debugLogs.push(msg);
+    if (this.debugLogs.length > 50) this.debugLogs.shift();
+    if (this.debugEl) {
+      this.debugEl.innerHTML = this.debugLogs.map(l => `<div>${l}</div>`).join('');
+      this.debugEl.scrollTop = this.debugEl.scrollHeight;
+    }
   }
 
   private createHeader(): HTMLElement {
@@ -538,14 +673,12 @@ export class MpScheduler extends HTMLElement {
     root.addEventListener('dblclick', this.boundHandleDblClick as EventListener);
     this.addEventListener('keydown', this.boundHandleKeyDown);
 
-    // Touch events
+    // Touch events - use window with capture:true to intercept events before any other handlers
+    // This is critical on mobile browsers that may stop sending touchmove to document listeners
     root.addEventListener('touchstart', this.boundHandleTouchStart as EventListener, { passive: false });
-    root.addEventListener('touchmove', this.boundHandleTouchMove as EventListener, { passive: false });
-    root.addEventListener('touchend', this.boundHandleTouchEnd as EventListener);
-    root.addEventListener('touchcancel', this.boundHandleTouchCancel as EventListener);
-
-    // Document-level touchmove to prevent page scrolling during drag mode
-    document.addEventListener('touchmove', this.boundHandleDocumentTouchMove, { passive: false });
+    window.addEventListener('touchmove', this.boundHandleTouchMove as EventListener, { passive: false, capture: true });
+    window.addEventListener('touchend', this.boundHandleTouchEnd as EventListener, { capture: true });
+    window.addEventListener('touchcancel', this.boundHandleTouchCancel as EventListener, { capture: true });
   }
 
   private detachEventListeners(): void {
@@ -559,10 +692,9 @@ export class MpScheduler extends HTMLElement {
 
     // Touch events
     root.removeEventListener('touchstart', this.boundHandleTouchStart as EventListener);
-    root.removeEventListener('touchmove', this.boundHandleTouchMove as EventListener);
-    root.removeEventListener('touchend', this.boundHandleTouchEnd as EventListener);
-    root.removeEventListener('touchcancel', this.boundHandleTouchCancel as EventListener);
-    document.removeEventListener('touchmove', this.boundHandleDocumentTouchMove);
+    window.removeEventListener('touchmove', this.boundHandleTouchMove as EventListener, { capture: true });
+    window.removeEventListener('touchend', this.boundHandleTouchEnd as EventListener, { capture: true });
+    window.removeEventListener('touchcancel', this.boundHandleTouchCancel as EventListener, { capture: true });
     this.cancelTouchHold();
   }
 
@@ -948,8 +1080,32 @@ export class MpScheduler extends HTMLElement {
   }
 
   private getSlotAtPosition(clientX: number, clientY: number): TimeSlot | null {
+    // During drag, temporarily hide the dragged event so elementsFromPoint can see slots beneath
+    const state = this.stateManager.getState();
+    let draggedEventEl: HTMLElement | null = null;
+
+    if (state.dragState?.type === 'move' && state.dragState.event) {
+      // Find the event element - use a loop to avoid querySelector issues with special chars in ID
+      const eventId = state.dragState.event.id;
+      const allEvents = this.shadow.querySelectorAll('.scheduler-event');
+      for (let i = 0; i < allEvents.length; i++) {
+        if ((allEvents[i] as HTMLElement).dataset['eventId'] === eventId) {
+          draggedEventEl = allEvents[i] as HTMLElement;
+          break;
+        }
+      }
+      if (draggedEventEl) {
+        draggedEventEl.style.pointerEvents = 'none';
+      }
+    }
+
     const slotEl = this.shadow.elementsFromPoint(clientX, clientY)
       .find((el) => el.matches('.scheduler-time-slot, .scheduler-timeline-slot')) as HTMLElement | undefined;
+
+    // Restore pointer-events
+    if (draggedEventEl) {
+      draggedEventEl.style.pointerEvents = '';
+    }
 
     return slotEl ? this.getSlotFromElement(slotEl) : null;
   }
@@ -979,21 +1135,45 @@ export class MpScheduler extends HTMLElement {
     }
 
     const touch = e.touches[0];
-    const target = touch.target as HTMLElement;
 
+    // Use elementFromPoint within shadow root to find the actual element
+    // This is necessary because touch simulation (e.g., Chrome DevTools mobile mode)
+    // may set touch.target to the host element rather than the shadow DOM element
+    const elementAtPoint = this.shadow.elementFromPoint(touch.clientX, touch.clientY) as HTMLElement;
+    const target = elementAtPoint || (touch.target as HTMLElement);
+
+    // Skip if touching the debug panel
+    if (target?.closest('.debug-panel')) {
+      return;
+    }
+
+    this.debugLog('touchstart fired');
+    this.debugLog(`target: ${target?.tagName} ${target?.className?.substring(0, 30)}`);
+
+    // Store the touch identifier so we can track this specific touch
+    this.activeTouchId = touch.identifier;
     this.touchStartPosition = { x: touch.clientX, y: touch.clientY };
 
     // Check if touching an event or slot that could be dragged
     const eventEl = target.closest('.scheduler-event:not(.preview)') as HTMLElement;
     const resizeHandle = target.closest('.resize-handle') as HTMLElement;
     const slotEl = target.closest('.scheduler-time-slot, .scheduler-timeline-slot') as HTMLElement;
+    this.debugLog(`eventEl: ${!!eventEl}, slotEl: ${!!slotEl}`);
 
     if (!eventEl && !slotEl) {
       // Not touching a draggable element
+      this.debugLog('no draggable element found');
       return;
     }
+    this.debugLog('starting hold timer (500ms)');
 
-    // Don't prevent default here - allow scrolling until hold timer fires
+    // For events, we MUST preventDefault on touchstart to receive touchmove events
+    // Without this, mobile browsers may handle the touch gesture natively
+    if (eventEl) {
+      this.debugLog('preventDefault on touchstart (event)');
+      e.preventDefault();
+    }
+
     // Store the target for the hold callback
     this.touchHoldTarget = eventEl || slotEl;
 
@@ -1011,16 +1191,24 @@ export class MpScheduler extends HTMLElement {
   }
 
   private activateTouchDragMode(touch: Touch, resizeHandle: HTMLElement | null): void {
+    this.debugLog('*** HOLD COMPLETE - DRAG MODE ***');
     const state = this.stateManager.getState();
     const target = this.touchHoldTarget;
 
-    if (!target) return;
+    if (!target) {
+      this.debugLog('ERROR: no target');
+      return;
+    }
+
+    // Clear the hold timer reference so handleTouchMove knows we're in drag mode
+    this.touchHoldTimer = null;
 
     // Trigger haptic feedback if available
     this.triggerHapticFeedback();
 
     // Enter touch drag mode
     this.isTouchDragMode = true;
+    this.debugLog('isTouchDragMode = TRUE');
 
     // Add visual feedback
     const container = this.shadow.querySelector('.scheduler-container');
@@ -1032,9 +1220,11 @@ export class MpScheduler extends HTMLElement {
 
     // Determine the drag type and start the drag
     const eventEl = target.closest('.scheduler-event:not(.preview)') as HTMLElement;
+    this.debugLog(`eventEl in activate: ${!!eventEl}`);
 
     if (resizeHandle) {
       // Resize operation
+      this.debugLog('RESIZE operation');
       const parentEventEl = resizeHandle.closest('.scheduler-event') as HTMLElement;
       const eventId = parentEventEl?.dataset['eventId'];
       const event = eventId ? this.getEventById(eventId) : null;
@@ -1052,69 +1242,113 @@ export class MpScheduler extends HTMLElement {
       // Move operation
       const eventId = eventEl.dataset['eventId'];
       const event = eventId ? this.getEventById(eventId) : null;
+      this.debugLog(`MOVE: eventId=${eventId}, event=${!!event}`);
 
       if (event && event.draggable !== false) {
+        this.debugLog(`1) Starting MOVE drag for: ${event.title}`);
         this.startDragFromTouch('move', event, touch.clientX, touch.clientY);
+      } else {
+        this.debugLog(`MOVE skipped: event=${!!event}, draggable=${event?.draggable}`);
       }
     } else if (target.matches('.scheduler-time-slot, .scheduler-timeline-slot') && state.options.selectable) {
       // Create operation
+      this.debugLog('CREATE operation');
       this.startDragFromTouch('create', null, touch.clientX, touch.clientY, target);
     }
   }
 
   private handleTouchMove(e: TouchEvent): void {
-    if (e.touches.length !== 1) {
-      this.cancelTouchHold();
-      return;
-    }
+    try {
+      // Early log to confirm handler is called
+      this.debugLog(`tm: touches=${e.touches.length}, activeId=${this.activeTouchId}`);
 
-    const touch = e.touches[0];
+      // Find our tracked touch by identifier
+      let touch: Touch | null = null;
+      for (let i = 0; i < e.touches.length; i++) {
+        if (e.touches[i].identifier === this.activeTouchId) {
+          touch = e.touches[i];
+          break;
+        }
+      }
+
+      // If we're not tracking this touch, ignore
+      if (!touch && this.activeTouchId === null) {
+        return;
+      }
+
+      // If we lost our touch, cancel
+      if (!touch && this.activeTouchId !== null) {
+        this.debugLog('lost tracked touch');
+        this.cancelTouchHold();
+        return;
+      }
+
+      this.debugLog(`touchmove id=${touch!.identifier}`);
 
     // If we have a pending touch hold, check if user moved too much
-    if (this.touchHoldTimer && this.touchStartPosition) {
+    if (this.touchHoldTimer && this.touchStartPosition && touch) {
       const dx = touch.clientX - this.touchStartPosition.x;
       const dy = touch.clientY - this.touchStartPosition.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
 
       if (distance > this.TOUCH_MOVE_THRESHOLD) {
         // User moved too much, cancel the hold and allow normal scrolling
+        this.debugLog(`moved ${distance.toFixed(0)}px > 10, CANCEL hold`);
         this.cancelTouchHold();
+        // Don't preventDefault here - allow scrolling to start
         return;
       }
 
-      // Still waiting for hold - don't prevent default, allow scrolling
-      // If user scrolls, that's fine - drag mode only activates after hold completes
+      // Still waiting for hold - prevent default to stop browser from starting scroll
+      // This is critical: if we don't preventDefault during the hold wait,
+      // the browser may commit to scrolling before the hold timer fires
+      this.debugLog(`hold wait, dist=${distance.toFixed(0)}, preventDefault`);
+      e.preventDefault();
+      e.stopPropagation();
       return;
     }
 
     // If in touch drag mode, handle the drag
-    if (this.isTouchDragMode) {
-      e.preventDefault(); // Prevent scrolling while dragging
+    if (this.isTouchDragMode && touch) {
+      this.debugLog('drag mode touchmove - preventDefault');
+      e.preventDefault();
+      e.stopPropagation();
 
       const state = this.stateManager.getState();
-      if (!state.dragState) return;
+      if (!state.dragState) {
+        this.debugLog('ERROR: no dragState!');
+        return;
+      }
+
+      this.debugLog(`drag type: ${state.dragState.type}, pos=${touch.clientX.toFixed(0)},${touch.clientY.toFixed(0)}`);
 
       const slot = this.getSlotAtPosition(touch.clientX, touch.clientY);
-      if (!slot) return;
+      if (!slot) {
+        this.debugLog('no slot at position');
+        // Debug: what elements are at this position?
+        const elements = this.shadow.elementsFromPoint(touch.clientX, touch.clientY);
+        this.debugLog(`elements: ${elements.map(e => e.className?.substring(0, 20) || e.tagName).join(', ')}`);
+        return;
+      }
 
+      this.debugLog(`slot: ${slot.start.toISOString().substring(11, 16)}`);
       const preview = this.calculatePreview(state.dragState.type, state.dragState, slot);
       if (preview) {
         this.stateManager.updateDrag(slot, preview);
       }
+    } else if (!this.isTouchDragMode && !this.touchHoldTimer) {
+      this.debugLog(`move ignored: timer=${!!this.touchHoldTimer} drag=${this.isTouchDragMode}`);
     }
-  }
-
-  private handleDocumentTouchMove(e: TouchEvent): void {
-    // Only prevent default when we're actively in drag mode
-    // This prevents page scrolling during drag operations
-    if (this.isTouchDragMode) {
-      e.preventDefault();
+    } catch (err: unknown) {
+      this.debugLog(`ERR: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 
   private handleTouchEnd(e: TouchEvent): void {
+    this.debugLog('touchend');
     // If we had a pending hold that never activated, treat as a tap
     if (this.touchHoldTimer) {
+      this.debugLog('hold timer still active, treating as tap');
       this.cancelTouchHold();
 
       // Handle as a tap/click on the target
@@ -1224,12 +1458,15 @@ export class MpScheduler extends HTMLElement {
     }
 
     this.touchStartPosition = null;
+    this.activeTouchId = null;
   }
 
   private exitTouchDragMode(): void {
+    this.debugLog('exitTouchDragMode');
     this.isTouchDragMode = false;
     this.touchStartPosition = null;
     this.touchHoldTarget = null;
+    this.activeTouchId = null;
 
     // Remove visual feedback
     const container = this.shadow.querySelector('.scheduler-container');
@@ -1255,11 +1492,29 @@ export class MpScheduler extends HTMLElement {
     clientY: number,
     slotEl?: HTMLElement
   ): void {
-    const slot = slotEl
+    this.debugLog(`startDragFromTouch: type=${type}`);
+
+    let slot = slotEl
       ? this.getSlotFromElement(slotEl)
       : this.getSlotAtPosition(clientX, clientY);
 
-    if (!slot) return;
+    // If no slot found at position (e.g., touching on event element which is above slots),
+    // try to find the slot under the event by temporarily hiding pointer-events
+    if (!slot && type === 'move' && event) {
+      this.debugLog('No slot at position, using event time');
+      // Create a slot from the event's start time
+      slot = {
+        start: new Date(event.start),
+        end: new Date(event.end),
+      };
+    }
+
+    if (!slot) {
+      this.debugLog('ERROR: No slot found!');
+      return;
+    }
+
+    this.debugLog(`slot found: ${slot.start.toISOString()}`);
 
     let preview: PreviewEvent;
 
@@ -1288,6 +1543,7 @@ export class MpScheduler extends HTMLElement {
         ? { resizeHandle: type.replace('resize-', '') as 'start' | 'end' }
         : undefined,
     });
+    this.debugLog('dragState created!');
   }
 }
 
