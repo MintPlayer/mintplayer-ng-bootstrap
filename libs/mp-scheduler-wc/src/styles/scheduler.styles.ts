@@ -16,7 +16,7 @@ export const schedulerStyles = `
     --scheduler-preview-bg: rgba(0, 123, 255, 0.3);
     --scheduler-greyed-slot-bg: rgba(0, 0, 0, 0.1);
     --scheduler-column-min-width: 120px;
-    --scheduler-touch-hold-duration: 500ms;
+    --scheduler-touch-hold-duration: 600ms;
   }
 
   * {
@@ -31,6 +31,7 @@ export const schedulerStyles = `
     border-radius: 4px;
     overflow: hidden;
     background: #fff;
+    position: relative;
   }
 
   /* Header */
@@ -232,6 +233,10 @@ export const schedulerStyles = `
     cursor: pointer;
     pointer-events: auto;
     border-left: 3px solid rgba(0, 0, 0, 0.2);
+    touch-action: none; /* Prevent browser scrolling */
+    user-select: none; /* v21: Prevent text selection on long-press */
+    -webkit-user-select: none;
+    -webkit-touch-callout: none; /* Prevent iOS callout menu */
   }
 
   .scheduler-event:hover {
@@ -564,14 +569,17 @@ export const schedulerStyles = `
     cursor: grabbing;
     user-select: none;
     -webkit-user-select: none;
+    touch-action: none; /* Prevent window scrolling during drag */
+    -webkit-touch-callout: none; /* Disable iOS callout */
   }
 
   .scheduler-container.touch-drag-mode .scheduler-content {
     overflow: hidden;
+    touch-action: none; /* Prevent scheduler scrolling during drag */
   }
 
   .scheduler-event.touch-hold-pending {
-    animation: touch-hold-pulse 0.5s ease-in-out;
+    animation: touch-hold-pulse 0.6s ease-in-out;
   }
 
   .scheduler-event.touch-hold-active {
@@ -582,7 +590,7 @@ export const schedulerStyles = `
 
   .scheduler-time-slot.touch-hold-pending,
   .scheduler-timeline-slot.touch-hold-pending {
-    animation: touch-hold-pulse 0.5s ease-in-out;
+    animation: touch-hold-pulse 0.6s ease-in-out;
   }
 
   .scheduler-time-slot.touch-hold-active,
