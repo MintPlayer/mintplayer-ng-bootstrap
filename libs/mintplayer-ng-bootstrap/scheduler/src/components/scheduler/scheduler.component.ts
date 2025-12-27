@@ -39,6 +39,7 @@ interface MpSchedulerElement extends HTMLElement {
   options: Partial<SchedulerOptions>;
   selectedEvent: SchedulerEvent | null;
   selectedRange: { start: Date; end: Date } | null;
+  debug: boolean;
   next(): void;
   prev(): void;
   today(): void;
@@ -144,6 +145,7 @@ export class BsSchedulerComponent implements AfterViewInit, OnDestroy {
   readonly events = input<SchedulerEvent[]>([]);
   readonly resources = input<(Resource | ResourceGroup)[]>([]);
   readonly options = input<Partial<SchedulerOptions>>({});
+  readonly debug = input<boolean>(false);
 
   // Two-way binding model signals
   readonly selectedEvent = model<SchedulerEvent | null>(null);
@@ -232,6 +234,14 @@ export class BsSchedulerComponent implements AfterViewInit, OnDestroy {
         const el = this.schedulerRef?.nativeElement;
         if (el) {
           el.selectedEvent = this.selectedEvent();
+        }
+      });
+
+      // Sync debug to web component
+      effect(() => {
+        const el = this.schedulerRef?.nativeElement;
+        if (el) {
+          el.debug = this.debug();
         }
       });
     });

@@ -35,6 +35,7 @@ export class MpScheduler extends HTMLElement {
     'time-format',
     'editable',
     'selectable',
+    'debug',
   ];
 
   private shadow: ShadowRoot;
@@ -70,6 +71,7 @@ export class MpScheduler extends HTMLElement {
   // Debug
   private debugLogs: string[] = [];
   private debugEl: HTMLElement | null = null;
+  private _debug = false;
 
   // RAF scheduling for drag updates (ensures browser can repaint during drag)
   private pendingDragUpdate: number | null = null;
@@ -169,6 +171,9 @@ export class MpScheduler extends HTMLElement {
       case 'selectable':
         this.stateManager.setOptions({ selectable: newValue !== 'false' });
         break;
+      case 'debug':
+        this.debug = newValue !== null && newValue !== 'false';
+        break;
     }
   }
 
@@ -228,6 +233,15 @@ export class MpScheduler extends HTMLElement {
       return { start: state.previewEvent.start, end: state.previewEvent.end };
     }
     return null;
+  }
+
+  get debug(): boolean {
+    return this._debug;
+  }
+
+  set debug(value: boolean) {
+    this._debug = value;
+    this.updateDebugPanelVisibility();
   }
 
   next(): void {
@@ -317,6 +331,7 @@ export class MpScheduler extends HTMLElement {
     // Debug panel - tap to copy logs to clipboard
     this.debugEl = document.createElement('div');
     this.debugEl.className = 'debug-panel';
+    this.debugEl.style.display = this._debug ? 'block' : 'none'; // Hidden by default
     this.debugEl.innerHTML = '<div>Touch Debug Panel (tap to copy)</div>';
 
     // Debounce to prevent double-triggering from both touch and click
@@ -421,12 +436,23 @@ export class MpScheduler extends HTMLElement {
   }
 
   private debugLog(msg: string): void {
+    if (!this._debug) return; // Skip logging if debug mode is off
     console.log('[TOUCH]', msg);
     this.debugLogs.push(msg);
     if (this.debugLogs.length > 50) this.debugLogs.shift();
     if (this.debugEl) {
       this.debugEl.innerHTML = this.debugLogs.map(l => `<div>${l}</div>`).join('');
       this.debugEl.scrollTop = this.debugEl.scrollHeight;
+    }
+  }
+
+  private updateDebugPanelVisibility(): void {
+    if (this.debugEl) {
+      this.debugEl.style.display = this._debug ? 'block' : 'none';
+      // Clear logs when hiding
+      if (!this._debug) {
+        this.debugLogs = [];
+      }
     }
   }
 

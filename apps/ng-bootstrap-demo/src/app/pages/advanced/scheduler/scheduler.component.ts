@@ -76,6 +76,9 @@ export class SchedulerComponent {
   // Event log
   eventLog = signal<string[]>([]);
 
+  // Debug mode for touch event logging on mobile
+  debugMode = signal<boolean>(false);
+
   // View options for dropdown
   viewOptions: { value: ViewType; label: string }[] = [
     { value: 'year', label: 'Year' },

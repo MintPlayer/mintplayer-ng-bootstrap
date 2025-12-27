@@ -20,6 +20,9 @@
         </bs-select>
         <button (click)="fillData()" [color]="colors.primary">Load Sample Data</button>
         <button (click)="clearData()" [color]="colors.secondary">Clear</button>
+        <button (click)="debugMode.set(!debugMode())" [color]="debugMode() ? colors.warning : colors.secondary">
+          {{ debugMode() ? '🔍 Debug ON' : 'Debug' }}
+        </button>
       </bs-input-group>
     </bs-form>
   </div>
@@ -39,6 +42,7 @@
         [events]="events()"
         [resources]="resources()"
         [options]="options()"
+        [debug]="debugMode()"
         [(selectedEvent)]="selectedEvent"
         (eventClick)="onEventClick($event)"
         (eventCreate)="onEventCreate($event)"
