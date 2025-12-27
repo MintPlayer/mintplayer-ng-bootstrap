@@ -234,6 +234,12 @@ export const schedulerStyles = `
     border-left: 3px solid rgba(0, 0, 0, 0.2);
   }
 
+  /* Prevent browser from handling touch gestures on events (enables drag) */
+  .scheduler-event:not(.preview) {
+    touch-action: none;
+    -ms-touch-action: none;
+  }
+
   .scheduler-event:hover {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   }
@@ -564,20 +570,28 @@ export const schedulerStyles = `
     cursor: grabbing;
     user-select: none;
     -webkit-user-select: none;
+    touch-action: none;
+    -ms-touch-action: none;
   }
 
   .scheduler-container.touch-drag-mode .scheduler-content {
     overflow: hidden;
+    touch-action: none;
+    -ms-touch-action: none;
   }
 
   .scheduler-event.touch-hold-pending {
     animation: touch-hold-pulse 0.5s ease-in-out;
+    touch-action: none;
+    -ms-touch-action: none;
   }
 
   .scheduler-event.touch-hold-active {
     transform: scale(1.02);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     z-index: 100;
+    touch-action: none;
+    -ms-touch-action: none;
   }
 
   .scheduler-time-slot.touch-hold-pending,

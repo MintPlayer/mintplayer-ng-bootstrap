@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Touch Event Shadow DOM Test</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+    }
+    #log {
+      background: #f0f0f0;
+      padding: 10px;
+      height: 300px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    .log-entry {
+      margin: 2px 0;
+      padding: 2px 4px;
+    }
+    .touchstart { background: #d4edda; }
+    .touchmove { background: #cce5ff; }
+    .touchend { background: #f8d7da; }
+  </style>
+</head>
+<body>
+  <h1>Touch Event Shadow DOM Test</h1>
+  <p>Touch and hold the colored box for 500ms, then drag.</p>
+
+  <test-component></test-component>
+
+  <h3>Event Log:</h3>
+  <div id="log"></div>
+  <button onclick="document.getElementById('log').innerHTML = ''">Clear Log</button>
+
+  <script>
+    const logEl = document.getElementById('log');
+    function log(msg, type = '') {
+      const entry = document.createElement('div');
+      entry.className = 'log-entry ' + type;
+      entry.textContent = `[${new Date().toISOString().substr(11, 12)}] ${msg}`;
+      logEl.appendChild(entry);
+      logEl.scrollTop = logEl.scrollHeight;
+      console.log(msg);
+    }
+
+    class TestComponent extends HTMLElement {
+      constructor() {
+        super();
+        this.shadow = this.attachShadow({ mode: 'open' });
+        this.originalElement = null;
+        this.holdTimer = null;
+        this.render();
+        this.setupListeners();
+      }
+
+      render() {
+        this.shadow.innerHTML = `
+          <style>
+            .container {
+              padding: 20px;
+              border: 2px solid #ccc;
+              margin: 20px 0;
+            }
+            .event-box {
+              width: 200px;
+              height: 100px;
+              background: #007bff;
+              color: white;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              touch-action: none;
+              user-select: none;
+            }
+            .event-box.holding {
+              background: #28a745;
+            }
+            .event-box.dragging {
+              background: #dc3545;
+            }
+            .inner-text {
+              padding: 10px;
+              background: rgba(255,255,255,0.2);
+            }
+          </style>
+          <div class="container">
+            <div class="event-box" id="target">
+              <span class="inner-text">Touch & Hold Me</span>
+            </div>
+          </div>
+        `;
+      }
+
+      setupListeners() {
+        const target = this.shadow.getElementById('target');
+
+        // Shadow root listeners
+        this.shadow.addEventListener('touchstart', (e) => {
+          log('SHADOW touchstart - target: ' + e.target.className, 'touchstart');
+          this.originalElement = e.target;
+
+          // Add document listener immediately
+          log('Adding document touchmove listener (capture)');
+          document.addEventListener('touchmove', this.docTouchMove, { passive: false, capture: true });
+
+          // Also add to the element directly
+          log('Adding element touchmove listener');
+          e.target.addEventListener('touchmove', this.elTouchMove, { passive: false });
+
+          // Start hold timer
+          this.holdTimer = setTimeout(() => {
+            log('=== HOLD ACTIVATED - Simulating re-render ===');
+            target.classList.add('holding');
+
+            // Simulate what happens in the scheduler: re-render the element
+            this.simulateReRender();
+
+          }, 500);
+        }, { passive: false });
+
+        this.shadow.addEventListener('touchmove', (e) => {
+          log('SHADOW touchmove', 'touchmove');
+          e.preventDefault();
+        }, { passive: false });
+
+        this.shadow.addEventListener('touchend', (e) => {
+          log('SHADOW touchend', 'touchend');
+          this.cleanup();
+        });
+
+        // Document listener handler
+        this.docTouchMove = (e) => {
+          log('DOCUMENT touchmove (capture) - target: ' + (e.target?.className || 'unknown'), 'touchmove');
+        };
+
+        // Element listener handler
+        this.elTouchMove = (e) => {
+          log('ELEMENT touchmove - on original element', 'touchmove');
+        };
+      }
+
+      simulateReRender() {
+        // This simulates what Lit/the scheduler does: re-render the container
+        const container = this.shadow.querySelector('.container');
+        const oldBox = this.shadow.getElementById('target');
+
+        log('Old element reference: ' + (oldBox ? 'exists' : 'null'));
+        log('Original touch target class: ' + this.originalElement?.className);
+
+        // Lit-style re-render: replace innerHTML of container
+        // This is closer to what happens when Lit re-renders a template
+        container.innerHTML = `
+          <div class="event-box dragging" id="target">
+            <span class="inner-text">DRAGGING (new element)</span>
+          </div>
+        `;
+
+        const newElement = this.shadow.getElementById('target');
+        log('New element reference: ' + (newElement ? 'exists' : 'null'));
+        log('Same element? ' + (this.originalElement === newElement));
+        log('Original element still in DOM? ' + document.contains(this.originalElement));
+      }
+
+      cleanup() {
+        if (this.holdTimer) {
+          clearTimeout(this.holdTimer);
+          this.holdTimer = null;
+        }
+        document.removeEventListener('touchmove', this.docTouchMove, { capture: true });
+        const target = this.shadow.getElementById('target');
+        if (target) {
+          target.classList.remove('holding', 'dragging');
+          target.textContent = 'Touch & Hold Me';
+        }
+      }
+    }
+
+    customElements.define('test-component', TestComponent);
+
+    // Also add a global document listener to see ALL touch events
+    document.addEventListener('touchmove', (e) => {
+      log('GLOBAL document touchmove (bubble)', 'touchmove');
+    }, { passive: false });
+  </script>
+</body>
+</html>
