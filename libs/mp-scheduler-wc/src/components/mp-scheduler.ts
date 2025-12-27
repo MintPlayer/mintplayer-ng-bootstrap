@@ -119,6 +119,9 @@ export class MpScheduler extends HTMLElement {
       this.pendingDragUpdate = null;
     }
     this.latestDragState = null;
+
+    // Ensure scroll lock is removed
+    this.toggleScrollLock(false);
   }
 
   attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
@@ -271,7 +274,12 @@ export class MpScheduler extends HTMLElement {
   private render(): void {
     // Add styles
     const style = document.createElement('style');
-    style.textContent = schedulerStyles;
+    style.textContent = schedulerStyles + `
+      .scheduler-event {
+        user-select: none;
+        -webkit-user-select: none;
+      }
+    `;
     this.shadow.appendChild(style);
 
     // Create container
@@ -1012,8 +1020,12 @@ export class MpScheduler extends HTMLElement {
     // Trigger haptic feedback if available
     this.triggerHapticFeedback();
 
+    // Clear the timer so handleTouchMove knows we are no longer waiting
+    this.touchHoldTimer = null;
+
     // Enter touch drag mode
     this.isTouchDragMode = true;
+    this.toggleScrollLock(true);
 
     // Add visual feedback
     const container = this.shadow.querySelector('.scheduler-container');
@@ -1022,6 +1034,26 @@ export class MpScheduler extends HTMLElement {
     // Remove pending class, add active class
     target.classList.remove('touch-hold-pending');
     target.classList.add('touch-hold-active');
+
+    // Prevent the touch target from being destroyed during view updates
+    // by moving it to the shadow root (outside the view container).
+    // This ensures touch events continue to fire.
+    if (target.classList.contains('scheduler-event')) {
+      const rect = target.getBoundingClientRect();
+      
+      target.style.position = 'fixed';
+      target.style.left = `${rect.left}px`;
+      target.style.top = `${rect.top}px`;
+      target.style.width = `${rect.width}px`;
+      target.style.height = `${rect.height}px`;
+      target.style.zIndex = '1000';
+      target.style.opacity = '0';
+      target.style.pointerEvents = 'none';
+      target.style.touchAction = 'none';
+      target.style.userSelect = 'none';
+      
+      this.shadow.appendChild(target);
+    }
 
     // Determine the drag type and start the drag
     const eventEl = target.closest('.scheduler-event:not(.preview)') as HTMLElement;
@@ -1215,9 +1247,15 @@ export class MpScheduler extends HTMLElement {
   }
 
   private exitTouchDragMode(): void {
+    // Clean up the protected touch target if it was moved
+    if (this.touchHoldTarget && this.touchHoldTarget.parentNode === this.shadow) {
+      this.shadow.removeChild(this.touchHoldTarget);
+    }
+
     this.isTouchDragMode = false;
     this.touchStartPosition = null;
     this.touchHoldTarget = null;
+    this.toggleScrollLock(false);
 
     // Remove visual feedback
     const container = this.shadow.querySelector('.scheduler-container');
@@ -1227,6 +1265,29 @@ export class MpScheduler extends HTMLElement {
     this.shadow.querySelectorAll('.touch-hold-active, .touch-hold-pending').forEach((el) => {
       el.classList.remove('touch-hold-active', 'touch-hold-pending');
     });
+  }
+
+  private toggleScrollLock(locked: boolean): void {
+    const cls = 'mp-scheduler-scroll-lock';
+    if (locked) {
+      document.documentElement.classList.add(cls);
+      document.body.classList.add(cls);
+      
+      if (!document.getElementById('mp-scheduler-global-styles')) {
+        const style = document.createElement('style');
+        style.id = 'mp-scheduler-global-styles';
+        style.textContent = `
+          .${cls} {
+            overflow: hidden !important;
+            overscroll-behavior: none !important;
+          }
+        `;
+        document.head.appendChild(style);
+      }
+    } else {
+      document.documentElement.classList.remove(cls);
+      document.body.classList.remove(cls);
+    }
   }
 
   private triggerHapticFeedback(): void {
