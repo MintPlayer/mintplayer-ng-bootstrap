@@ -258,3 +258,15 @@ afterDragStart = $0
 originalElement == afterDragStart
 false
 ```
+
+### Finding 7
+```
+● Created docs/touch-test.html. Open it in a browser on your mobile device. It:
+
+  1. Has a shadow DOM component with a touchable box
+  2. On touchstart, adds listeners to document (capture) and the element
+  3. After 500ms hold, replaces the DOM element (simulating Angular re-render)
+  4. Logs all events to see what happens
+
+  Test it by touching and holding the box, then dragging after it turns green. This will tell us if it's a browser behavior with shadow DOM + touch events + element replacement.
+```
