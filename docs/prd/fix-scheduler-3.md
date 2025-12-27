@@ -33,3 +33,8 @@ On mobile, while dragging, it is absolutely imperative that no scrolling occurs.
 
 # Note
 Each specification in this document MUST be fulfilled.
+If necessary:
+- use Playwright
+- open devtools (F12)
+- enable mobile mode (ctrl + shift + M)
+- verify the behavior satisfies this document
