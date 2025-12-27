@@ -2,7 +2,7 @@
   "name": "@mintplayer/scheduler-wc",
   "private": false,
   "type": "module",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "Web Component for the MintPlayer Scheduler",
   "repository": {
     "type": "git",
