@@ -8,7 +8,7 @@ At the moment the scheduler isn't working as expected.
     - desktop: works fine
     - mobile: not working
 
-An animated gif is available here: docs\scheduler-recording.mp4
+An animated gif is available here: docs/scheduler-recording.mp4
 
 The gif shows:
 - [v] start dragging in a free slot: a new event is created
