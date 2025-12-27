@@ -987,6 +987,10 @@ export class MpScheduler extends HTMLElement {
       return;
     }
 
+    // Prevent default to stop scroll from starting while we wait for the hold
+    // (if user moves beyond threshold before hold activates, we cancel and allow normal scroll)
+    e.preventDefault();
+
     // Store the target for the hold callback
     this.touchHoldTarget = eventEl || slotEl;
 
@@ -1075,11 +1079,8 @@ export class MpScheduler extends HTMLElement {
         return;
       }
 
-      // Still waiting for hold, prevent default to avoid scroll during hold detection
-      // But only if we're close to the threshold
-      if (distance < this.TOUCH_MOVE_THRESHOLD / 2) {
-        // Don't prevent default yet to allow small movements
-      }
+      // Still waiting for hold - prevent default to stop scroll from interfering
+      e.preventDefault();
       return;
     }
 
