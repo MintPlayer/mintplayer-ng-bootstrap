@@ -193,7 +193,7 @@ export class WeekView extends BaseView {
     this.eventElements.clear();
 
     // Render each event part
-    for (const { part, trackIndex, totalTracks } of timelinedParts) {
+    for (const { part, trackIndex, totalTracks, colspan } of timelinedParts) {
       if (!part.event) continue;
 
       const dayIndex = days.findIndex((d) => dateService.isSameDay(d, part.start));
@@ -207,6 +207,7 @@ export class WeekView extends BaseView {
         part,
         trackIndex,
         totalTracks,
+        colspan,
         options.slotDuration ?? 1800
       );
 
@@ -219,6 +220,7 @@ export class WeekView extends BaseView {
     part: SchedulerEventPart,
     trackIndex: number,
     totalTracks: number,
+    colspan: number,
     slotDuration: number
   ): HTMLElement {
     const event = part.event;
@@ -242,9 +244,10 @@ export class WeekView extends BaseView {
     const top = (startMinutes / slotMinutes) * 40; // 40px per slot
     const height = Math.max((durationMinutes / slotMinutes) * 40, 20);
 
-    // Calculate width based on tracks
-    const widthPercent = 100 / totalTracks;
-    const leftPercent = trackIndex * widthPercent;
+    // Calculate width based on tracks and colspan
+    // colspan allows events to span multiple columns when there's no blocking event
+    const leftPercent = (trackIndex / totalTracks) * 100;
+    const widthPercent = (colspan / totalTracks) * 100;
 
     eventEl.style.top = `${top}px`;
     eventEl.style.height = `${height}px`;

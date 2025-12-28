@@ -4,6 +4,7 @@ import {
   SchedulerEventWithParts,
   PreviewEvent,
   TimelineTrack,
+  EventLayoutInfo,
 } from '../models/event';
 import { dateService } from './date.service';
 
@@ -143,22 +144,21 @@ export class TimelineService {
   }
 
   /**
-   * Get track assignment for event parts (for rendering)
+   * Get track assignment for event parts using colspan algorithm (for rendering)
    *
-   * Each event gets a totalTracks value based on the number of tracks that
-   * actually overlap with that specific event's time range. This ensures events
-   * are displayed as wide as possible:
-   * - An event with no overlapping events gets 100% width (totalTracks: 1)
-   * - An event overlapping with 1 other gets 50% width (totalTracks: 2)
-   * - An event overlapping with 2 others gets 33.33% width (totalTracks: 3)
-   * - etc.
+   * This uses a colspan-based algorithm similar to Outlook/Google Calendar:
+   * 1. Build overlap groups (connected components of overlapping events)
+   * 2. Assign columns within each group using a greedy algorithm
+   * 3. Compute colspan - how many columns each event can span
    *
-   * The trackIndex returned is relative to the overlapping tracks, not global.
-   * This ensures correct positioning when events have different overlap groups.
+   * This ensures events are displayed as wide as possible:
+   * - An event with no overlapping events gets 100% width
+   * - Events only share space with events they actually overlap with
+   * - An event can span multiple columns if there's no blocking event to its right
    */
   getTimelinedParts(
     eventParts: SchedulerEventPart[]
-  ): { part: SchedulerEventPart; trackIndex: number; totalTracks: number }[] {
+  ): { part: SchedulerEventPart; trackIndex: number; totalTracks: number; colspan: number }[] {
     // Group parts by their parent event
     const eventIds = new Set(eventParts.filter(p => p.event).map((p) => p.event.id));
     const events = Array.from(eventIds).map((id) => {
@@ -166,43 +166,191 @@ export class TimelineService {
       return part?.event;
     }).filter((e): e is SchedulerEvent => e !== undefined);
 
-    // Get timeline tracks for the events
-    const tracks = this.getTimeline(events);
+    // Get layout info using colspan algorithm
+    const layoutMap = this.getColspanLayout(events);
 
-    // Map parts to their track indices with correct totalTracks per event
+    // Map parts to their layout info
     return eventParts.map((part) => {
       if (!part.event) {
-        return { part, trackIndex: 0, totalTracks: 1 };
+        return { part, trackIndex: 0, totalTracks: 1, colspan: 1 };
       }
 
-      const globalTrack = tracks.find((t) => t.events.some((e) => e.id === part.event.id));
-      const globalTrackIndex = globalTrack?.index ?? 0;
-
-      // Get the tracks that overlap with this part and calculate relative position
-      const { relativeIndex, overlappingCount } = this.getRelativeTrackPosition(
-        tracks,
-        part,
-        globalTrackIndex
-      );
+      const layout = layoutMap.get(part.event.id);
+      if (!layout) {
+        return { part, trackIndex: 0, totalTracks: 1, colspan: 1 };
+      }
 
       return {
         part,
-        trackIndex: relativeIndex,
-        totalTracks: overlappingCount,
+        trackIndex: layout.col,
+        totalTracks: layout.columnCount,
+        colspan: layout.colspan,
       };
     });
   }
 
   /**
-   * Calculate the relative track position for an event part
+   * Compute colspan-based layout for events (Outlook/Google Calendar algorithm)
    *
-   * Returns:
-   * - relativeIndex: The position of this event among overlapping tracks (0-based)
-   * - overlappingCount: Total number of tracks that overlap with this part
-   *
-   * Example:
-   * If global tracks are [0, 1, 2] and only tracks 1 and 2 overlap with this event,
-   * and the event is on track 2, returns { relativeIndex: 1, overlappingCount: 2 }
+   * Phase 1: Build overlap groups (connected components)
+   * Phase 2: Assign columns within each group
+   * Phase 3: Compute colspan for each event
+   */
+  getColspanLayout(events: SchedulerEvent[]): Map<string, EventLayoutInfo> {
+    const layoutMap = new Map<string, EventLayoutInfo>();
+
+    if (events.length === 0) {
+      return layoutMap;
+    }
+
+    // Phase 1: Build overlap groups
+    const groups = this.buildOverlapGroups(events);
+
+    for (const group of groups) {
+      // Phase 2: Assign columns
+      this.assignColumns(group, layoutMap);
+
+      // Get column count for this group
+      const columnCount = Math.max(...group.map(e => layoutMap.get(e.id)?.col ?? 0)) + 1;
+
+      // Phase 3: Compute colspan for each event
+      for (const event of group) {
+        const col = layoutMap.get(event.id)?.col ?? 0;
+        const colspan = this.computeColspan(event, col, group, layoutMap, columnCount);
+
+        layoutMap.set(event.id, {
+          col,
+          colspan,
+          columnCount,
+        });
+      }
+    }
+
+    return layoutMap;
+  }
+
+  /**
+   * Build overlap groups (connected components)
+   * Events belong to the same group if they overlap directly or indirectly
+   */
+  private buildOverlapGroups(events: SchedulerEvent[]): SchedulerEvent[][] {
+    const groups: SchedulerEvent[][] = [];
+    const visited = new Set<string>();
+
+    for (const event of events) {
+      if (visited.has(event.id)) continue;
+
+      // BFS to find all connected events
+      const group: SchedulerEvent[] = [];
+      const queue: SchedulerEvent[] = [event];
+
+      while (queue.length > 0) {
+        const current = queue.shift()!;
+        if (visited.has(current.id)) continue;
+        visited.add(current.id);
+        group.push(current);
+
+        // Find all events that overlap with current
+        for (const other of events) {
+          if (!visited.has(other.id) && this.eventsOverlap(current, other)) {
+            queue.push(other);
+          }
+        }
+      }
+
+      groups.push(group);
+    }
+
+    return groups;
+  }
+
+  /**
+   * Assign columns to events within an overlap group
+   * Uses a greedy algorithm: place each event in the first available column
+   */
+  private assignColumns(
+    group: SchedulerEvent[],
+    layoutMap: Map<string, EventLayoutInfo>
+  ): void {
+    // Sort by start time, then end time, then id (for stability)
+    const sorted = [...group].sort((a, b) =>
+      a.start.getTime() - b.start.getTime() ||
+      a.end.getTime() - b.end.getTime() ||
+      a.id.localeCompare(b.id)
+    );
+
+    // Track end time of each column
+    const colEnds: number[] = [];
+
+    for (const event of sorted) {
+      let col = -1;
+
+      // Find first available column
+      for (let i = 0; i < colEnds.length; i++) {
+        if (colEnds[i] <= event.start.getTime()) {
+          col = i;
+          break;
+        }
+      }
+
+      if (col === -1) {
+        col = colEnds.length;
+        colEnds.push(event.end.getTime());
+      } else {
+        colEnds[col] = event.end.getTime();
+      }
+
+      // Store initial layout (colspan will be computed later)
+      layoutMap.set(event.id, {
+        col,
+        colspan: 1,
+        columnCount: colEnds.length,
+      });
+    }
+  }
+
+  /**
+   * Compute colspan for an event
+   * An event can span multiple columns if there's no overlapping event to its right
+   */
+  private computeColspan(
+    event: SchedulerEvent,
+    eventCol: number,
+    group: SchedulerEvent[],
+    layoutMap: Map<string, EventLayoutInfo>,
+    columnCount: number
+  ): number {
+    // Find the nearest blocking column to the right
+    let block = Infinity;
+
+    for (const other of group) {
+      if (other.id === event.id) continue;
+      if (!this.eventsOverlap(event, other)) continue;
+
+      const otherCol = layoutMap.get(other.id)?.col ?? 0;
+      if (otherCol > eventCol) {
+        block = Math.min(block, otherCol);
+      }
+    }
+
+    // Calculate colspan
+    if (block !== Infinity) {
+      return block - eventCol;
+    } else {
+      return columnCount - eventCol;
+    }
+  }
+
+  /**
+   * Check if two events overlap in time
+   */
+  private eventsOverlap(a: SchedulerEvent, b: SchedulerEvent): boolean {
+    return a.start < b.end && b.start < a.end;
+  }
+
+  /**
+   * Calculate the relative track position for an event part (legacy method)
+   * @deprecated Use getColspanLayout instead for better layout
    */
   private getRelativeTrackPosition(
     tracks: TimelineTrack[],
