@@ -5,6 +5,7 @@ import {
   Resource,
   ResourceGroup,
   SchedulerEvent,
+  SchedulerEventPart,
   isResource,
   isResourceGroup,
   FlattenedResource,
@@ -205,21 +206,30 @@ export class TimelineView extends BaseView {
         (e) => e.start < weekEnd && e.end > weekStart
       );
 
-      // Get timeline tracks for this resource's events
-      const tracks = timelineService.getTimeline(resourceEvents);
+      // Split events into parts and get layout using colspan algorithm
+      const allParts: SchedulerEventPart[] = [];
+      for (const event of resourceEvents) {
+        const { parts } = timelineService.splitInParts(event);
+        allParts.push(...parts);
+      }
 
-      for (const track of tracks) {
-        for (const event of track.events) {
-          const eventEl = this.createEventElement(
-            event,
-            track.index,
-            tracks.length,
-            weekStart,
-            totalWidth,
-            options.slotDuration ?? 1800
-          );
-          eventsContainer.appendChild(eventEl);
-        }
+      // Get timelened parts with track info (uses colspan algorithm)
+      const timelinedParts = timelineService.getTimelinedParts(allParts);
+
+      // Render each event part
+      for (const { part, trackIndex, totalTracks, colspan } of timelinedParts) {
+        if (!part.event) continue;
+
+        const eventEl = this.createEventElement(
+          part.event,
+          trackIndex,
+          totalTracks,
+          colspan,
+          weekStart,
+          totalWidth,
+          options.slotDuration ?? 1800
+        );
+        eventsContainer.appendChild(eventEl);
       }
     }
   }
@@ -228,6 +238,7 @@ export class TimelineView extends BaseView {
     event: SchedulerEvent,
     trackIndex: number,
     totalTracks: number,
+    colspan: number,
     viewStart: Date,
     totalWidth: number,
     slotDuration: number
@@ -252,14 +263,15 @@ export class TimelineView extends BaseView {
     const left = (startOffset / viewDuration) * totalWidth;
     const width = Math.max((duration / viewDuration) * totalWidth, 20);
 
-    // Calculate vertical position based on track
-    const trackHeight = 100 / Math.max(totalTracks, 1);
-    const top = trackIndex * trackHeight;
+    // Calculate vertical position based on track and colspan
+    // colspan allows events to span multiple tracks when there's no blocking event
+    const top = (trackIndex / totalTracks) * 100;
+    const heightPercent = (colspan / totalTracks) * 100;
 
     eventEl.style.left = `${left}px`;
     eventEl.style.width = `${width}px`;
     eventEl.style.top = `${top}%`;
-    eventEl.style.height = `${trackHeight}%`;
+    eventEl.style.height = `${heightPercent}%`;
     eventEl.style.backgroundColor = event.color ?? '#3788d8';
     eventEl.style.color = event.textColor ?? getContrastColor(event.color ?? '#3788d8');
 
