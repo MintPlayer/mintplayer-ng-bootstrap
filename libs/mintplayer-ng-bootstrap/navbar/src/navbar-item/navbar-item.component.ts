@@ -1,7 +1,10 @@
 import { AfterContentChecked, AfterContentInit, ChangeDetectionStrategy, Component, ContentChildren, DestroyRef, effect, ElementRef, forwardRef, inject, PLATFORM_ID, QueryList } from '@angular/core';
-import { isPlatformServer } from '@angular/common';
+import { isPlatformServer, ViewportScroller } from '@angular/common';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
+
+/** Duration of the navbar collapse animation in milliseconds */
+const NAVBAR_ANIMATION_DURATION = 300;
 
 @Component({
   selector: 'bs-navbar-item',
@@ -16,6 +19,7 @@ export class BsNavbarItemComponent implements AfterContentInit, AfterContentChec
   element = inject(ElementRef);
   private destroy = inject(DestroyRef);
   private platformId = inject(PLATFORM_ID);
+  private viewportScroller = inject(ViewportScroller);
   parentDropdown = inject(forwardRef(() => BsNavbarDropdownComponent), { optional: true });
 
   hasDropdown = false;
@@ -78,7 +82,25 @@ export class BsNavbarItemComponent implements AfterContentInit, AfterContentChec
             d = d.parentDropdown;
           }
           if (this.navbar.autoclose()) {
-            this.navbar.isExpanded.set(false);
+            // Get the fragment from the link's href
+            const href = this.anchorTag?.getAttribute('href') ?? '';
+            const fragmentMatch = href.match(/#(.+)$/);
+            const fragment = fragmentMatch ? fragmentMatch[1] : null;
+
+            // Check if we're in small mode and have a fragment to scroll to
+            if (this.navbar.isSmallMode() && fragment) {
+              // Collapse the navbar first
+              this.navbar.isExpanded.set(false);
+
+              // After the collapse animation completes, scroll to the anchor
+              // This ensures correct scroll position since navbar height is stable
+              setTimeout(() => {
+                this.viewportScroller.scrollToAnchor(fragment);
+              }, NAVBAR_ANIMATION_DURATION);
+            } else {
+              // No fragment or not in small mode - just collapse immediately
+              this.navbar.isExpanded.set(false);
+            }
           }
         });
       }
