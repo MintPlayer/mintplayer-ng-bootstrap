@@ -7,5 +7,6 @@ export const ROUTES: Routes = [
   { path: 'drag-drop', loadComponent: () => import('./drag-drop/drag-drop.component').then(m => m.DragDropComponent) },
   { path: 'qr-code', loadComponent: () => import('./qr-code/qr-code.component').then(m => m.QrCodeComponent) },
   { path: 'swiper', loadComponent: () => import('./swiper/swiper.component').then(m => m.SwiperComponent) },
-  { path: 'parentify', loadComponent: () => import('./parentify/parentify.component').then(m => m.ParentifyComponent) }
+  { path: 'parentify', loadComponent: () => import('./parentify/parentify.component').then(m => m.ParentifyComponent) },
+  { path: 'anchor-scrolling', loadComponent: () => import('./anchor-scrolling/anchor-scrolling.component').then(m => m.AnchorScrollingComponent) }
 ];

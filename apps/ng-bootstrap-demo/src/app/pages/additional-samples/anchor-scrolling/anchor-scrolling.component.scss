@@ -1,0 +1,18 @@
+.anchor-section {
+  min-height: 400px;
+  padding: 20px 0;
+  border-bottom: 1px solid #dee2e6;
+
+  &:last-child {
+    border-bottom: none;
+    min-height: 600px; // Extra height for last section to allow scrolling
+  }
+
+  h2 {
+    margin-bottom: 20px;
+  }
+
+  p {
+    line-height: 1.8;
+  }
+}
