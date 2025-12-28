@@ -198,10 +198,12 @@ Using our example events:
 
 ```
 After Phase 2 (Column Assignment):
-Event 1: col=0 (06:00-08:00)
-Event 2: col=0 (08:00-10:00) - doesn't overlap with E1, reuses col 0
-Event 3: col=1 (07:00-10:00) - overlaps with E1 and E2
-Event 4: col=2 (09:00-11:00) - overlaps with E2 and E3
+Events sorted by start time: E1, E3, E2, E4
+
+Event 1: col=0 (06:00-08:00) - first event, gets col 0
+Event 3: col=1 (07:00-10:00) - starts at 07:00, col 0 busy until 08:00, gets col 1
+Event 2: col=0 (08:00-10:00) - starts at 08:00, col 0 free (E1 ended), reuses col 0
+Event 4: col=2 (09:00-11:00) - starts at 09:00, col 0 and 1 busy, gets col 2
 
 Total columns in group: 3
 
@@ -329,9 +331,9 @@ Expect: E1 width=50%, E2 width=50%
 Input:  E1(06:00-08:00), E2(07:00-09:00), E3(08:00-10:00)
 Note:   E1 overlaps E2, E2 overlaps E3, but E1 doesn't overlap E3
 Expect: All in same overlap group, 2 columns
-        E1: col=0, colspan=1 (blocked by E2)
-        E2: col=1, colspan=1 (blocked by E3 at col=1)
-        E3: col=0, colspan=1 (blocked by E2)
+        E1: col=0, colspan=1 (blocked by E2 at col=1)
+        E2: col=1, colspan=1 (no blocker to right, colspan = columnCount - col = 2 - 1 = 1)
+        E3: col=0, colspan=1 (blocked by E2 at col=1)
 ```
 
 ### Test Case 4: The PRD Example
