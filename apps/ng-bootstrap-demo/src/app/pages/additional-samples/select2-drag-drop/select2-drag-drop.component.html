@@ -1,0 +1,25 @@
+<h1 class="text-center">Select2 with Drag-drop</h1>
+
+<p>This example demonstrates the select2 component with the ability to drag and reorder the selected items.</p>
+
+<h2>Sortable Select2</h2>
+<bs-select2 cdkDropList cdkDropListOrientation="horizontal" (cdkDropListDropped)="onTagDropped($event)"
+    (provideSuggestions)="onProvideTagSuggestions($event)" [suggestions]="tagSuggestions()" [(selectedItems)]="selectedTags">
+    <span *bsItemTemplate="let item of selectedTags(); let select2=select2" cdkDrag class="select2-item" [style.background]="item.category?.color" [style.color]="item.category?.color | bsFontColor: '#000'">
+        <span class="drag-handle">&#9776;</span>
+        <span [style.color]="item.category?.color | bsFontColor: '#000'" (click)="select2.onRemoveItem(item,$event)">&times;</span>
+        {{ item.description }}
+    </span>
+    <span *bsSuggestionTemplate="let suggestion of tagSuggestions()" class="select2-item cursor-pointer m-0" [style.background]="suggestion.category?.color" [style.color]="suggestion.category?.color | bsFontColor: '#000'">
+        {{ suggestion.description }}
+    </span>
+</bs-select2>
+
+<div class="mt-3">
+    <strong>Selected tags (in order):</strong>
+    <ul>
+        @for (tag of selectedTags(); track tag.id) {
+            <li>{{ tag.description }}</li>
+        }
+    </ul>
+</div>
