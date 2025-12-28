@@ -80,6 +80,7 @@ export class BsSwipeDirective {
 
   @HostListener('touchend', ['$event'])
   onTouchEnd(ev: TouchEvent) {
+    ev.preventDefault();
     ev.stopPropagation();
     const startTouch = this.container.startTouch();
     const lastTouch = this.container.lastTouch();
