@@ -206,12 +206,18 @@ export class TimelineView extends BaseView {
         (e) => e.start < weekEnd && e.end > weekStart
       );
 
-      // Split events into parts and get layout using colspan algorithm
-      const allParts: SchedulerEventPart[] = [];
-      for (const event of resourceEvents) {
-        const { parts } = timelineService.splitInParts(event);
-        allParts.push(...parts);
-      }
+      // Create event parts for layout (don't split into daily parts for timeline view)
+      // For timeline view, treat each event as a single entity for layout purposes
+      const allParts: SchedulerEventPart[] = resourceEvents.map((event) => ({
+        id: event.id,
+        event: event,
+        start: event.start,
+        end: event.end,
+        isStart: true,
+        isEnd: true,
+        dayIndex: 0,
+        totalDays: 1,
+      }));
 
       // Get timelened parts with track info (uses colspan algorithm)
       const timelinedParts = timelineService.getTimelinedParts(allParts);

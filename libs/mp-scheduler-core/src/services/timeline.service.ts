@@ -159,12 +159,14 @@ export class TimelineService {
   getTimelinedParts(
     eventParts: SchedulerEventPart[]
   ): { part: SchedulerEventPart; trackIndex: number; totalTracks: number; colspan: number }[] {
-    // Group parts by their parent event
-    const eventIds = new Set(eventParts.filter(p => p.event).map((p) => p.event.id));
-    const events = Array.from(eventIds).map((id) => {
-      const part = eventParts.find((p) => p.event?.id === id);
-      return part?.event;
-    }).filter((e): e is SchedulerEvent => e !== undefined);
+    // Collect unique events in a single pass (O(N) instead of O(N*M))
+    const eventMap = new Map<string, SchedulerEvent>();
+    for (const part of eventParts) {
+      if (part.event && !eventMap.has(part.event.id)) {
+        eventMap.set(part.event.id, part.event);
+      }
+    }
+    const events = Array.from(eventMap.values());
 
     // Get layout info using colspan algorithm
     const layoutMap = this.getColspanLayout(events);
@@ -207,16 +209,13 @@ export class TimelineService {
     const groups = this.buildOverlapGroups(events);
 
     for (const group of groups) {
-      // Phase 2: Assign columns
-      this.assignColumns(group, layoutMap);
-
-      // Get column count for this group
-      const columnCount = Math.max(...group.map(e => layoutMap.get(e.id)?.col ?? 0)) + 1;
+      // Phase 2: Assign columns (returns assignments and column count)
+      const { assignments, columnCount } = this.assignColumns(group);
 
       // Phase 3: Compute colspan for each event
       for (const event of group) {
-        const col = layoutMap.get(event.id)?.col ?? 0;
-        const colspan = this.computeColspan(event, col, group, layoutMap, columnCount);
+        const col = assignments.get(event.id) ?? 0;
+        const colspan = this.computeColspan(event, col, group, assignments, columnCount);
 
         layoutMap.set(event.id, {
           col,
@@ -267,11 +266,13 @@ export class TimelineService {
   /**
    * Assign columns to events within an overlap group
    * Uses a greedy algorithm: place each event in the first available column
+   * Returns the column assignments and total column count
    */
   private assignColumns(
-    group: SchedulerEvent[],
-    layoutMap: Map<string, EventLayoutInfo>
-  ): void {
+    group: SchedulerEvent[]
+  ): { assignments: Map<string, number>; columnCount: number } {
+    const assignments = new Map<string, number>();
+
     // Sort by start time, then end time, then id (for stability)
     const sorted = [...group].sort((a, b) =>
       a.start.getTime() - b.start.getTime() ||
@@ -300,13 +301,10 @@ export class TimelineService {
         colEnds[col] = event.end.getTime();
       }
 
-      // Store initial layout (colspan will be computed later)
-      layoutMap.set(event.id, {
-        col,
-        colspan: 1,
-        columnCount: colEnds.length,
-      });
+      assignments.set(event.id, col);
     }
+
+    return { assignments, columnCount: colEnds.length };
   }
 
   /**
@@ -317,7 +315,7 @@ export class TimelineService {
     event: SchedulerEvent,
     eventCol: number,
     group: SchedulerEvent[],
-    layoutMap: Map<string, EventLayoutInfo>,
+    assignments: Map<string, number>,
     columnCount: number
   ): number {
     // Find the nearest blocking column to the right
@@ -327,7 +325,7 @@ export class TimelineService {
       if (other.id === event.id) continue;
       if (!this.eventsOverlap(event, other)) continue;
 
-      const otherCol = layoutMap.get(other.id)?.col ?? 0;
+      const otherCol = assignments.get(other.id) ?? 0;
       if (otherCol > eventCol) {
         block = Math.min(block, otherCol);
       }
