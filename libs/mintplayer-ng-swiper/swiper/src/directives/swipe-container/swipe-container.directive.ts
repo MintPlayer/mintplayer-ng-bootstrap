@@ -74,7 +74,7 @@ export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
 
   padLeft = computed(() => {
     const swipes = this._swipes();
-    if (!swipes) return 0;
+    if (!swipes) return 1; // Default to 1 to prevent container collapse before swipes are loaded
 
     let count = 0;
     for (const s of swipes) {
@@ -89,7 +89,7 @@ export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
 
   padRight = computed(() => {
     const swipes = this._swipes();
-    if (!swipes) return 0;
+    if (!swipes) return 1; // Default to 1 to prevent container collapse before swipes are loaded
 
     let count = 0;
     for (const s of swipes.toArray().reverse()) {

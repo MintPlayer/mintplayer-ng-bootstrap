@@ -1,5 +1,5 @@
 import { isPlatformServer, NgTemplateOutlet } from '@angular/common';
-import { AfterViewInit, ChangeDetectionStrategy, Component, computed, ContentChildren, DestroyRef, effect, ElementRef, forwardRef, HostBinding, HostListener, inject, input, OnDestroy, output, PLATFORM_ID, QueryList, signal, TemplateRef, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, computed, ContentChildren, DestroyRef, effect, ElementRef, forwardRef, HostBinding, HostListener, inject, input, OnDestroy, output, PLATFORM_ID, QueryList, signal, TemplateRef, ViewChild, viewChild } from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsSwipeContainerDirective, BsSwipeDirective } from '@mintplayer/ng-swiper/swiper';
@@ -47,6 +47,16 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
 
   // Computed signals
   imageCount = computed(() => this.images()?.length ?? 0);
+
+  // Signal-based viewChild for swipeContainer to enable reactive height tracking
+  swipeContainerSignal = viewChild<BsSwipeContainerDirective>('container');
+
+  // Returns 200 when swipeContainer isn't ready or height is null/0, ensuring images render and ResizeObserver triggers
+  slideHeight = computed(() => {
+    const container = this.swipeContainerSignal();
+    const height = container?.currentSlideHeight();
+    return (height && height > 0) ? height : 200;
+  });
 
   firstImageTemplate = computed<TemplateRef<any> | null>(() => {
     const images = this.images();
