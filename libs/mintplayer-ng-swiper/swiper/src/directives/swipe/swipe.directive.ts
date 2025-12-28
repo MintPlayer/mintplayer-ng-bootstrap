@@ -13,10 +13,18 @@ export class BsSwipeDirective {
 
   public offside = input(false);
 
+  // Track if we've detected a swipe (vs a tap)
+  private isSwipeDetected = false;
+  private readonly SWIPE_THRESHOLD = 10; // pixels
+
   private orientationEffect = effect(() => {
     const orientation = this.container.orientation();
     this.inlineBlock = (orientation === 'horizontal');
     this.block = (orientation === 'vertical');
+    // Tell browser which axis we handle, allowing scroll on the other axis
+    // pan-y = allow vertical scroll, we handle horizontal swipes
+    // pan-x = allow horizontal scroll, we handle vertical swipes
+    this.touchAction = (orientation === 'horizontal') ? 'pan-y' : 'pan-x';
   });
 
   private heightEffect = effect(() => {
@@ -38,12 +46,13 @@ export class BsSwipeDirective {
   @HostBinding('class.d-inline-block') inlineBlock = true;
   @HostBinding('class.d-block') block = false;
   @HostBinding('style.height.px') slideHeight: number | null = null;
+  @HostBinding('style.touch-action') touchAction: 'pan-x' | 'pan-y' = 'pan-y';
 
   @HostListener('touchstart', ['$event'])
   onTouchStart(ev: TouchEvent) {
     if (ev.touches.length === 1) {
-      ev.preventDefault();
-      ev.stopPropagation();
+      ev.stopPropagation(); // Prevent bubbling, but allow clicks
+      this.isSwipeDetected = false;
       this.container.pendingAnimation?.finish();
 
       setTimeout(() => {
@@ -67,8 +76,19 @@ export class BsSwipeDirective {
 
   @HostListener('touchmove', ['$event'])
   onTouchMove(ev: TouchEvent) {
-    ev.preventDefault();
     ev.stopPropagation();
+
+    // Only prevent default (page scroll) if movement exceeds threshold
+    const startTouch = this.container.startTouch();
+    if (startTouch) {
+      const dx = Math.abs(ev.touches[0].clientX - startTouch.position.x);
+      const dy = Math.abs(ev.touches[0].clientY - startTouch.position.y);
+      if (dx > this.SWIPE_THRESHOLD || dy > this.SWIPE_THRESHOLD) {
+        this.isSwipeDetected = true;
+        ev.preventDefault(); // Now we're swiping, prevent scroll
+      }
+    }
+
     this.container.lastTouch.set({
       position: {
         x: ev.touches[0].clientX,
@@ -80,8 +100,11 @@ export class BsSwipeDirective {
 
   @HostListener('touchend', ['$event'])
   onTouchEnd(ev: TouchEvent) {
-    ev.preventDefault();
     ev.stopPropagation();
+    if (this.isSwipeDetected) {
+      ev.preventDefault();
+    }
+
     const startTouch = this.container.startTouch();
     const lastTouch = this.container.lastTouch();
     const orientation = this.container.orientation();
