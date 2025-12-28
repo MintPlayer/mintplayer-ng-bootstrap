@@ -67,11 +67,17 @@ nav {
                 overflow-y: hidden;
             }
 
+            // Prevent dropdown-menu from exceeding navbar width in small mode
+            ::ng-deep .dropdown-menu {
+                min-width: 0;
+                max-width: 100%;
+            }
+
             &.position-fixed {
                 max-height: 100%;
                 overflow-y: scroll;
             }
-            
+
             &.os-windows {
                 margin-right: -17px;
             }

@@ -296,6 +296,26 @@
         <bs-navbar-item>
           <a [routerLink]='["/additional-samples", "parentify"]'>Parentify</a>
         </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/additional-samples", "anchor-scrolling"]'>Anchor scrolling</a>
+          <bs-navbar-dropdown>
+            <bs-navbar-item>
+              <a [routerLink]='["/additional-samples", "anchor-scrolling"]' fragment="section1">Section 1</a>
+            </bs-navbar-item>
+            <bs-navbar-item>
+              <a [routerLink]='["/additional-samples", "anchor-scrolling"]' fragment="section2">Section 2</a>
+            </bs-navbar-item>
+            <bs-navbar-item>
+              <a [routerLink]='["/additional-samples", "anchor-scrolling"]' fragment="section3">Section 3</a>
+            </bs-navbar-item>
+            <bs-navbar-item>
+              <a [routerLink]='["/additional-samples", "anchor-scrolling"]' fragment="section4">Section 4</a>
+            </bs-navbar-item>
+            <bs-navbar-item>
+              <a [routerLink]='["/additional-samples", "anchor-scrolling"]' fragment="section5">Section 5</a>
+            </bs-navbar-item>
+          </bs-navbar-dropdown>
+        </bs-navbar-item>
       </bs-navbar-dropdown>
     </bs-navbar-item>
   </bs-navbar-nav>

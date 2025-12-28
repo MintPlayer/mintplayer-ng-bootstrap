@@ -1,6 +1,6 @@
 /// <reference types="../types" />
 
-import { ChangeDetectionStrategy, Component, effect, ElementRef, inject, input, model, output, signal, TemplateRef, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, ElementRef, inject, input, model, OnDestroy, output, signal, TemplateRef, ViewChild } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 import { HasId } from '@mintplayer/ng-bootstrap/has-id';
@@ -14,7 +14,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
   standalone: false,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class BsSearchboxComponent<T extends HasId<U>, U> {
+export class BsSearchboxComponent<T extends HasId<U>, U> implements OnDestroy {
 
   private bsForm = inject(BsFormComponent, { optional: true });
   private sanitizer = inject(DomSanitizer);
@@ -77,6 +77,10 @@ export class BsSearchboxComponent<T extends HasId<U>, U> {
     import('bootstrap-icons/icons/caret-down-fill.svg').then((icon) => {
       this.caretDownFill.set(this.sanitizer.bypassSecurityTrustHtml(icon.default));
     });
+  }
+
+  ngOnDestroy() {
+    clearTimeout(this.debounceTimeout);
   }
 
   onSearchtermChange(searchterm: string) {
