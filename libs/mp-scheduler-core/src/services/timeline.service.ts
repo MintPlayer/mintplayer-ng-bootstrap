@@ -248,11 +248,13 @@ export class TimelineService {
       if (visited.has(event.id)) continue;
 
       // BFS to find all connected events
+      // Use pointer-based iteration instead of shift() to avoid O(N) re-indexing
       const group: SchedulerEvent[] = [];
       const queue: SchedulerEvent[] = [event];
+      let queueHead = 0;
 
-      while (queue.length > 0) {
-        const current = queue.shift()!;
+      while (queueHead < queue.length) {
+        const current = queue[queueHead++];
         if (visited.has(current.id)) continue;
         visited.add(current.id);
         group.push(current);
