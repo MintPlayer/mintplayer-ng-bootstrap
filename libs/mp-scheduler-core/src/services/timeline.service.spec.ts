@@ -278,9 +278,10 @@ describe('TimelineService', () => {
 
     it('should handle three truly concurrent events correctly', () => {
       // All three events overlap at 10:00-10:30, requiring 3 separate tracks
-      // Event A: 9:00-11:00 (track 0)
-      // Event B: 10:00-12:00 (track 1, overlaps with A)
-      // Event C: 10:00-10:30 (track 2, overlaps with both A and B)
+      // Event A: 9:00-11:00 (starts first, gets track 0)
+      // Event C: 10:00-10:30 (starts same as B but ends earlier, gets track 1)
+      // Event B: 10:00-12:00 (starts same as C but ends later, gets track 2)
+      // Note: Algorithm sorts by start time, then end time, then id
       const eventA = createEvent('A', 9, 11);
       const eventB = createEvent('B', 10, 12);
       const eventC = createEvent('C', 10, 10.5);
@@ -300,10 +301,10 @@ describe('TimelineService', () => {
       expect(eventBPart?.totalTracks).toBe(3);
       expect(eventCPart?.totalTracks).toBe(3);
 
-      // Track indices should be 0, 1, 2
+      // Track indices based on sort order: A (starts first), C (shorter), B (longer)
       expect(eventAPart?.trackIndex).toBe(0);
-      expect(eventBPart?.trackIndex).toBe(1);
-      expect(eventCPart?.trackIndex).toBe(2);
+      expect(eventCPart?.trackIndex).toBe(1);
+      expect(eventBPart?.trackIndex).toBe(2);
     });
 
     it('should handle mixed overlap scenarios correctly', () => {

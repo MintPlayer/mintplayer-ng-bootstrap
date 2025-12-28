@@ -1,7 +1,7 @@
 {
   "name": "@mintplayer/ng-bootstrap",
   "private": false,
-  "version": "21.3.0",
+  "version": "21.4.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/MintPlayer/mintplayer-ng-bootstrap",
@@ -27,8 +27,8 @@
     "@mintplayer/ng-focus-on-load": "^21.1.0",
     "@mintplayer/ng-swiper": "^21.1.0",
     "@mintplayer/parentify": "^1.1.0",
-    "@mintplayer/scheduler-core": "^1.0.0",
-    "@mintplayer/scheduler-wc": "^1.1.0"
+    "@mintplayer/scheduler-core": "^1.1.0",
+    "@mintplayer/scheduler-wc": "^1.2.0"
   },
   "dependencies": {
     "tslib": "^2.3.0"

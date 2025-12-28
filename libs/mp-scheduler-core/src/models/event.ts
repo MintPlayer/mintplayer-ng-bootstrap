@@ -99,3 +99,16 @@ export interface EventPosition {
   /** Z-index for stacking */
   zIndex: number;
 }
+
+/**
+ * Layout information for an event within its overlap group
+ * Used for colspan-based positioning algorithm
+ */
+export interface EventLayoutInfo {
+  /** Column index within the overlap group (0-based) */
+  col: number;
+  /** Number of columns this event can span */
+  colspan: number;
+  /** Total number of columns in the overlap group */
+  columnCount: number;
+}
