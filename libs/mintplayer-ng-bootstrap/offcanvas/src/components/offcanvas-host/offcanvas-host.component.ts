@@ -1,6 +1,6 @@
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { AfterViewInit, Component, ComponentRef, effect, inject, Injector, model, OnDestroy, output, signal, TemplateRef } from '@angular/core';
+import { AfterViewInit, Component, ComponentRef, effect, inject, Injector, model, OnDestroy, output, OutputRefSubscription, signal, TemplateRef } from '@angular/core';
 import { Position } from '@mintplayer/ng-bootstrap';
 import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
@@ -54,6 +54,7 @@ export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
   content!: TemplateRef<any>;
   overlayRef!: OverlayRef;
   component!: ComponentRef<BsOffcanvasComponent>;
+  private backdropClickSubscription?: OutputRefSubscription;
 
   // Signals
   viewInited = signal<boolean>(false);
@@ -82,7 +83,7 @@ export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
 
     this.component = this.overlayRef.attach<BsOffcanvasComponent>(portal);
 
-    this.component.instance.backdropClick.subscribe((ev) => this.backdropClick.emit(ev));
+    this.backdropClickSubscription = this.component.instance.backdropClick.subscribe((ev) => this.backdropClick.emit(ev));
 
     // Initialize the inner component with current values
     this.component.instance.isVisible.set(this.isVisible());
@@ -94,6 +95,7 @@ export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.backdropClickSubscription?.unsubscribe();
     this.isVisible.set(false);
     setTimeout(() => this.overlayRef && this.overlayRef.dispose(), 3000);
   }

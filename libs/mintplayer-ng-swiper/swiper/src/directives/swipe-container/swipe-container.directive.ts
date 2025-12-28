@@ -1,6 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { animate, AnimationBuilder, AnimationPlayer, style } from '@angular/animations';
-import { AfterViewInit, computed, ContentChildren, Directive, effect, ElementRef, forwardRef, HostBinding, inject, input, model, output, QueryList, signal } from '@angular/core';
+import { AfterViewInit, computed, ContentChildren, Directive, effect, ElementRef, forwardRef, HostBinding, inject, input, model, OnDestroy, output, QueryList, signal } from '@angular/core';
 import { BsObserveSizeDirective, Size } from '@mintplayer/ng-swiper/observe-size';
 import { LastTouch } from '../../interfaces/last-touch';
 import { StartTouch } from '../../interfaces/start-touch';
@@ -12,7 +12,7 @@ import { BsSwipeDirective } from '../swipe/swipe.directive';
   standalone: true,
   hostDirectives: [BsObserveSizeDirective],
 })
-export class BsSwipeContainerDirective implements AfterViewInit {
+export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
   private animationBuilder = inject(AnimationBuilder);
   private observeSize = inject(BsObserveSizeDirective);
   containerElement = inject(ElementRef<HTMLDivElement>);
@@ -36,6 +36,7 @@ export class BsSwipeContainerDirective implements AfterViewInit {
 
   isViewInited = signal<boolean>(false);
   isAnimating = signal<boolean>(false);
+  private isDestroyed = false;
   startTouch = signal<StartTouch | null>(null);
   lastTouch = signal<LastTouch | null>(null);
   _swipes = signal<QueryList<BsSwipeDirective> | null>(null);
@@ -194,6 +195,11 @@ export class BsSwipeContainerDirective implements AfterViewInit {
     this.isViewInited.set(true);
   }
 
+  ngOnDestroy() {
+    this.isDestroyed = true;
+    this.pendingAnimation?.destroy();
+  }
+
   animateToIndexByDx(distance: number) {
     const imageIndex = this.imageIndex();
     const actualSwipes = this.actualSwipes();
@@ -270,6 +276,7 @@ export class BsSwipeContainerDirective implements AfterViewInit {
       ]).create(containerElement);
     }
     this.pendingAnimation.onDone(() => {
+      if (this.isDestroyed) return;
       // Correct the image index
       if (newIndex === -1) {
         this.imageIndex.set(totalSlides - 1);
@@ -308,6 +315,7 @@ export class BsSwipeContainerDirective implements AfterViewInit {
   private gotoAnimate(index: number, type: 'absolute' | 'relative') {
     this.pendingAnimation?.finish();
     setTimeout(() => {
+      if (this.isDestroyed) return;
       this.pendingAnimation?.finish();
       const actualSwipes = this.actualSwipes();
       const imageIndex = this.imageIndex();

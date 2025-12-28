@@ -30,6 +30,7 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
   images = signal<QueryList<BsCarouselImageDirective> | null>(null);
   resizeObserver?: ResizeObserver;
   private intervalId?: ReturnType<typeof setInterval>;
+  private isDestroyed = false;
 
   // Inputs
   indicators = input(false);
@@ -135,11 +136,14 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
     // Emit slideChange when currentImageIndex changes
     effect(() => {
       const index = this.currentImageIndex();
-      this.slideChange.emit(index);
+      if (!this.isDestroyed) {
+        this.slideChange.emit(index);
+      }
     });
 
     // Cleanup on destroy
     this.destroyRef.onDestroy(() => {
+      this.isDestroyed = true;
       this.clearAutoAdvance();
       this.resizeObserver?.disconnect();
     });
@@ -252,6 +256,7 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.isDestroyed = true;
     this.resizeObserver?.unobserve(this.innerElement?.nativeElement);
     this.resizeObserver?.disconnect();
     this.clearAutoAdvance();
