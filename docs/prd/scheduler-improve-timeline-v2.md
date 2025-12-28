@@ -87,7 +87,7 @@ private getRelativeTrackPosition(
 Instead of giving each event a fixed width, calculate how many columns each event can safely **span** for its entire duration. This is achieved in three phases:
 
 1. **Build overlap groups** (connected components)
-2. **Assign columns** using a greedy algorithm (current `getTimeline` already does this)
+2. **Assign columns** using an improved greedy algorithm (sorts by start time, end time, and ID for optimal packing)
 3. **Compute colspan per event** - the new piece
 
 ### Algorithm Details

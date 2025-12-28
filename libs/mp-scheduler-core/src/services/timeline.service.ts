@@ -231,12 +231,20 @@ export class TimelineService {
   /**
    * Build overlap groups (connected components)
    * Events belong to the same group if they overlap directly or indirectly
+   *
+   * Optimized to reduce comparisons by pre-sorting events by start time
+   * and breaking early when events can no longer overlap
    */
   private buildOverlapGroups(events: SchedulerEvent[]): SchedulerEvent[][] {
+    if (events.length === 0) return [];
+
     const groups: SchedulerEvent[][] = [];
     const visited = new Set<string>();
 
-    for (const event of events) {
+    // Sort events by start time for efficient overlap checking
+    const sorted = [...events].sort((a, b) => a.start.getTime() - b.start.getTime());
+
+    for (const event of sorted) {
       if (visited.has(event.id)) continue;
 
       // BFS to find all connected events
@@ -249,9 +257,17 @@ export class TimelineService {
         visited.add(current.id);
         group.push(current);
 
-        // Find all events that overlap with current
-        for (const other of events) {
-          if (!visited.has(other.id) && this.eventsOverlap(current, other)) {
+        const currentEnd = current.end.getTime();
+
+        // Find overlapping events efficiently using sorted order
+        for (const other of sorted) {
+          if (visited.has(other.id)) continue;
+
+          // Since sorted by start time, if other starts at or after current ends,
+          // no more events in sorted order can overlap with current
+          if (other.start.getTime() >= currentEnd) break;
+
+          if (this.eventsOverlap(current, other)) {
             queue.push(other);
           }
         }
