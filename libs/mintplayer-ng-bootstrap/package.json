@@ -26,7 +26,6 @@
     "@mintplayer/pagination": "^2.2.0",
     "@mintplayer/ng-focus-on-load": "^21.1.0",
     "@mintplayer/ng-swiper": "^21.1.1",
-    "@mintplayer/parentify": "^1.1.0",
     "@mintplayer/scheduler-core": "^1.1.0",
     "@mintplayer/scheduler-wc": "^1.2.0",
     "@mintplayer/splitter": "^1.0.0"

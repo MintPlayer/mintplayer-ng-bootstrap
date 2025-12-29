@@ -35,7 +35,6 @@
       "@mintplayer/ng-swiper": ["libs/mintplayer-ng-swiper/src/index.ts"],
       "@mintplayer/ng-swiper/*": ["libs/mintplayer-ng-swiper/*"],
       "@mintplayer/pagination": ["libs/mintplayer-pagination/src/index.ts"],
-      "@mintplayer/parentify": ["libs/mintplayer-parentify/src/index.ts"],
       "@mintplayer/qr-code": ["libs/mintplayer-qr-code/src/index.ts"],
       "@mintplayer/scheduler-core": ["libs/mp-scheduler-core/src/index.ts"],
       "@mintplayer/scheduler-wc": ["libs/mp-scheduler-wc/src/index.ts"],
