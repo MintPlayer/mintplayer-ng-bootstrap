@@ -1,0 +1,43 @@
+.status-panel {
+    position: sticky;
+    top: 0;
+    z-index: 19;
+    background: transparent;
+    padding: 4rem 0;
+    margin-bottom: 1rem;
+}
+
+.spacer {
+    height: 50vh;
+}
+
+.demo-box {
+    padding: 2rem;
+    border-radius: 0.5rem;
+    text-align: center;
+
+    &.box-1 {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    &.box-2 {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+    }
+
+    &.box-3 {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+    }
+
+    h3 {
+        margin-bottom: 1rem;
+    }
+
+    code {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 0.2rem 0.4rem;
+        border-radius: 0.25rem;
+    }
+}
