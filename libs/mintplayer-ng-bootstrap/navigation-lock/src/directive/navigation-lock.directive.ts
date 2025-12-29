@@ -1,7 +1,7 @@
 import { DestroyRef, Directive, HostListener, inject, Input, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { take, Observable } from 'rxjs';
-import { BS_NAVIGATION_LOCK_SERVICE } from '../tokens/navigation-lock.token';
+import { BsNavigationLockService } from '../service/navigation-lock.service';
 
 
 /**
@@ -34,7 +34,7 @@ import { BS_NAVIGATION_LOCK_SERVICE } from '../tokens/navigation-lock.token';
 })
 export class BsNavigationLockDirective implements OnInit {
   private destroy = inject(DestroyRef);
-  private navigationLockService = inject(BS_NAVIGATION_LOCK_SERVICE);
+  private navigationLockService = inject(BsNavigationLockService);
 
   @Input() canExit?: boolean | (() => boolean) | Observable<boolean>;
   @Input() exitMessage?: string;
