@@ -610,6 +610,12 @@ export const schedulerStyles = `
     100% { opacity: 1; }
   }
 
+  /* Pan mode styling */
+  .scheduler-content.pan-mode {
+    cursor: grabbing;
+    user-select: none;
+  }
+
   /* Scrollbar styling */
   .scheduler-content::-webkit-scrollbar {
     width: 8px;

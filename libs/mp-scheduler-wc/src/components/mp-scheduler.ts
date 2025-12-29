@@ -89,6 +89,7 @@ export class MpScheduler extends HTMLElement {
         onPointerUp: (pointer) => this.handlePointerUp(pointer),
         onClick: (pointer, target) => this.handleClick(pointer, target),
         onDoubleClick: (pointer, target) => this.handleDoubleClick(pointer, target),
+        getScrollContainer: () => this.contentContainer,
       }
     );
 
