@@ -194,25 +194,6 @@ jobs:
         access: 'public'
         provenance: true
 
-    ## parentify
-    - name: Push to NPM
-      uses: JS-DevTools/npm-publish@v3
-      with:
-        package: 'dist/libs/mintplayer-parentify/package.json'
-        registry: 'https://registry.npmjs.org'
-        token: ${{ secrets.PUBLISH_TO_NPMJS }}
-        access: 'public'
-        provenance: true
-
-    - name: Push to Github
-      uses: JS-DevTools/npm-publish@v3
-      with:
-        package: 'dist/libs/mintplayer-parentify/package.json'
-        registry: 'https://npm.pkg.github.com'
-        token: ${{ github.token }}
-        access: 'public'
-        provenance: true
-
     ## qr-code
     - name: Push to NPM
       uses: JS-DevTools/npm-publish@v3

@@ -8,6 +8,5 @@ export const ROUTES: Routes = [
   { path: 'select2-drag-drop', loadComponent: () => import('./select2-drag-drop/select2-drag-drop.component').then(m => m.Select2DragDropComponent) },
   { path: 'qr-code', loadComponent: () => import('./qr-code/qr-code.component').then(m => m.QrCodeComponent) },
   { path: 'swiper', loadComponent: () => import('./swiper/swiper.component').then(m => m.SwiperComponent) },
-  { path: 'parentify', loadComponent: () => import('./parentify/parentify.component').then(m => m.ParentifyComponent) },
   { path: 'anchor-scrolling', loadComponent: () => import('./anchor-scrolling/anchor-scrolling.component').then(m => m.AnchorScrollingComponent) }
 ];

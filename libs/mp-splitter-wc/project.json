@@ -1,0 +1,41 @@
+{
+  "name": "mp-splitter-wc",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/mp-splitter-wc/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/mp-splitter-wc",
+        "main": "libs/mp-splitter-wc/src/index.ts",
+        "tsConfig": "libs/mp-splitter-wc/tsconfig.lib.json",
+        "assets": ["libs/mp-splitter-wc/*.md"]
+      }
+    },
+    "publish": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node tools/scripts/publish.mjs mp-splitter-wc {args.ver} {args.tag}"
+      },
+      "dependsOn": [
+        {
+          "target": "build"
+        }
+      ]
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"]
+    },
+    "test": {
+      "executor": "@analogjs/vitest-angular:test",
+      "outputs": ["{workspaceRoot}/coverage/libs/mp-splitter-wc"],
+      "options": {
+        "configFile": "vitest.config.ts"
+      }
+    }
+  }
+}
