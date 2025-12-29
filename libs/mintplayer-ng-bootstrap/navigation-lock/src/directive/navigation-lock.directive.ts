@@ -1,37 +1,51 @@
-import { DestroyRef, Directive, HostListener, inject, Input, OnDestroy } from '@angular/core';
+import { DestroyRef, Directive, HostListener, inject, Input, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
 import { take, Observable } from 'rxjs';
+import { BS_NAVIGATION_LOCK_SERVICE } from '../tokens/navigation-lock.token';
 
 
 /**
  * Places a navigation lock on this page.
  *
- * Don't forget to add the following to your route:
+ * ## Usage:
  *
+ * 1. Add `provideNavigationLock()` to your app providers:
  * ```ts
- * canDeactivate: [BsNavigationLockGuard]
+ * // app.config.ts
+ * import { provideNavigationLock } from '@mintplayer/ng-bootstrap/navigation-lock';
+ *
+ * export const config: ApplicationConfig = {
+ *   providers: [
+ *     provideNavigationLock(),
+ *     // ... other providers
+ *   ]
+ * };
  * ```
  *
- * and implement the `BsHasNavigationLock` on the page:
- *
- * ```ts
- * ViewChild('navigationLock') navigationLock!: BsNavigationLockDirective;
+ * 2. Use the directive in your template:
+ * ```html
+ * <ng-container bsNavigationLock [canExit]="canExit"></ng-container>
  * ```
- *
  **/
 @Directive({
   selector: '[bsNavigationLock]',
   standalone: false,
   exportAs: 'bsNavigationLock',
 })
-export class BsNavigationLockDirective {
-  private router = inject(Router);
-  private route = inject(ActivatedRoute);
+export class BsNavigationLockDirective implements OnInit {
   private destroy = inject(DestroyRef);
+  private navigationLockService = inject(BS_NAVIGATION_LOCK_SERVICE);
 
   @Input() canExit?: boolean | (() => boolean) | Observable<boolean>;
   @Input() exitMessage?: string;
+
+  ngOnInit(): void {
+    this.navigationLockService.register(this);
+
+    this.destroy.onDestroy(() => {
+      this.navigationLockService.unregister(this);
+    });
+  }
 
   requestCanExit() {
     return new Promise<boolean>((resolve, reject) => {

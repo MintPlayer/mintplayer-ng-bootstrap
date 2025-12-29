@@ -1,5 +1,4 @@
 import { Routes } from '@angular/router';
-import { BsNavigationLockGuard } from '@mintplayer/ng-bootstrap/navigation-lock';
 
 export const ROUTES: Routes = [
   { path: '', loadChildren: () => [], pathMatch: 'full', canActivate: [() => false] },
@@ -16,7 +15,7 @@ export const ROUTES: Routes = [
   { path: 'lazy-loading-components', loadComponent: () => import('./lazy-loading/lazy-loading.component').then(m => m.LazyLoadingComponent) },
   { path: 'ordinal-number', loadComponent: () => import('./ordinal-number/ordinal-number.component').then(m => m.OrdinalNumberComponent) },
   { path: 'markdown', loadComponent: () => import('./markdown/markdown.component').then(m => m.MarkdownComponent) },
-  { path: 'navigation-lock', loadComponent: () => import('./navigation-lock/navigation-lock.component').then(m => m.NavigationLockComponent), canDeactivate: [BsNavigationLockGuard] },
+  { path: 'navigation-lock', loadComponent: () => import('./navigation-lock/navigation-lock.component').then(m => m.NavigationLockComponent) },
   { path: 'splitter', loadComponent: () => import('./splitter/splitter.component').then(m => m.SplitterComponent) },
   { path: 'dock', loadComponent: () => import('./dock/dock.component').then(m => m.DockComponent) },
   { path: 'instance-of', loadComponent: () => import('./instance-of/instance-of.component').then(m => m.InstanceOfComponent) },

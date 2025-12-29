@@ -1,4 +1,5 @@
 export * from './navigation-lock.module';
-export * from './guard/navigation-lock.guard';
 export * from './directive/navigation-lock.directive';
-export * from './interface/has-navigation-lock';
+export * from './providers/navigation-lock.provider';
+export * from './service/navigation-lock.service';
+export * from './tokens/navigation-lock.token';
