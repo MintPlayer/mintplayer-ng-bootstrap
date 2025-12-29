@@ -93,3 +93,95 @@ jobs:
       id: TestWithoutCloud
       if: ${{ steps.TestWithCloud.outputs.NX_CLOUD_CREDITS_EXHAUSTED == 'true' }}
       run: npx nx affected --target=test --watch=false --parallel=true --base=${{ github.event.pull_request.base.sha }} --head=${{ github.event.pull_request.head.sha }} --no-cloud
+
+    ## Dry-run publish to verify package.json files exist in dist
+    - name: Dry-run publish ng-animations
+      uses: JS-DevTools/npm-publish@v3
+      with:
+        package: 'dist/libs/mintplayer-ng-animations/package.json'
+        token: ${{ secrets.PUBLISH_TO_NPMJS }}
+        dry-run: true
+
+    - name: Dry-run publish ng-click-outside
+      uses: JS-DevTools/npm-publish@v3
+      with:
+        package: 'dist/libs/mintplayer-ng-click-outside/package.json'
+        token: ${{ secrets.PUBLISH_TO_NPMJS }}
+        dry-run: true
+
+    - name: Dry-run publish ng-focus-on-load
+      uses: JS-DevTools/npm-publish@v3
+      with:
+        package: 'dist/libs/mintplayer-ng-focus-on-load/package.json'
+        token: ${{ secrets.PUBLISH_TO_NPMJS }}
+        dry-run: true
+
+    - name: Dry-run publish encode-utf8
+      uses: JS-DevTools/npm-publish@v3
+      with:
+        package: 'dist/libs/mintplayer-encode-utf8/package.json'
+        token: ${{ secrets.PUBLISH_TO_NPMJS }}
+        dry-run: true
+
+    - name: Dry-run publish dijkstra
+      uses: JS-DevTools/npm-publish@v3
+      with:
+        package: 'dist/libs/mintplayer-dijkstra/package.json'
+        token: ${{ secrets.PUBLISH_TO_NPMJS }}
+        dry-run: true
+
+    - name: Dry-run publish qr-code
+      uses: JS-DevTools/npm-publish@v3
+      with:
+        package: 'dist/libs/mintplayer-qr-code/package.json'
+        token: ${{ secrets.PUBLISH_TO_NPMJS }}
+        dry-run: true
+
+    - name: Dry-run publish pagination
+      uses: JS-DevTools/npm-publish@v3
+      with:
+        package: 'dist/libs/mintplayer-pagination/package.json'
+        token: ${{ secrets.PUBLISH_TO_NPMJS }}
+        dry-run: true
+
+    - name: Dry-run publish ng-qr-code
+      uses: JS-DevTools/npm-publish@v3
+      with:
+        package: 'dist/libs/mintplayer-ng-qr-code/package.json'
+        token: ${{ secrets.PUBLISH_TO_NPMJS }}
+        dry-run: true
+
+    - name: Dry-run publish ng-swiper
+      uses: JS-DevTools/npm-publish@v3
+      with:
+        package: 'dist/libs/mintplayer-ng-swiper/package.json'
+        token: ${{ secrets.PUBLISH_TO_NPMJS }}
+        dry-run: true
+
+    - name: Dry-run publish scheduler-core
+      uses: JS-DevTools/npm-publish@v3
+      with:
+        package: 'dist/libs/mp-scheduler-core/package.json'
+        token: ${{ secrets.PUBLISH_TO_NPMJS }}
+        dry-run: true
+
+    - name: Dry-run publish scheduler-wc
+      uses: JS-DevTools/npm-publish@v3
+      with:
+        package: 'dist/libs/mp-scheduler-wc/package.json'
+        token: ${{ secrets.PUBLISH_TO_NPMJS }}
+        dry-run: true
+
+    - name: Dry-run publish splitter-wc
+      uses: JS-DevTools/npm-publish@v3
+      with:
+        package: 'dist/libs/mp-splitter-wc/package.json'
+        token: ${{ secrets.PUBLISH_TO_NPMJS }}
+        dry-run: true
+
+    - name: Dry-run publish ng-bootstrap
+      uses: JS-DevTools/npm-publish@v3
+      with:
+        package: 'dist/libs/mintplayer-ng-bootstrap/package.json'
+        token: ${{ secrets.PUBLISH_TO_NPMJS }}
+        dry-run: true
