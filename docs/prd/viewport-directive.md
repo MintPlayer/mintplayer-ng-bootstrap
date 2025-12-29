@@ -1,9 +1,13 @@
 # Add a viewport directive
 ## Goal
 The goal is to add a new entrypoint with a new directive to the `@mintplayer/ng-bootstrap` library.
-This `bsViewport` directive should look like this:
-- enteredView: event
-- leftView: event
+This `bsInViewport` directive should have a single output with the same name as the selector:
+- bsInViewport: event that emits `true` when entering the viewport and `false` when leaving
+
+## Usage
+```html
+<div (bsInViewport)="onViewportChange($event)"></div>
+```
 
 ## Implementation
 The code can use the IntersectionObserver API, and should attach the IntersectionObserver to the host element.

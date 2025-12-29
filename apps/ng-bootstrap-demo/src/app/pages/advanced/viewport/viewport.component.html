@@ -1,0 +1,40 @@
+<h1 class="text-center">Viewport directive</h1>
+
+<p>The <code>bsInViewport</code> directive detects when an element enters or leaves the viewport using the IntersectionObserver API.</p>
+
+<div class="status-panel">
+    <bs-alert [type]="box1InViewport ? colors.success : colors.secondary">
+        Box 1 is {{ box1InViewport ? 'in' : 'out of' }} viewport
+    </bs-alert>
+    <bs-alert [type]="box2InViewport ? colors.success : colors.secondary">
+        Box 2 is {{ box2InViewport ? 'in' : 'out of' }} viewport
+    </bs-alert>
+    <bs-alert [type]="box3InViewport ? colors.success : colors.secondary">
+        Box 3 is {{ box3InViewport ? 'in' : 'out of' }} viewport
+    </bs-alert>
+</div>
+
+<p class="text-muted">Scroll down to see the boxes enter and leave the viewport.</p>
+
+<div class="spacer"></div>
+
+<div class="demo-box box-1" (bsInViewport)="onBox1ViewportChange($event)">
+    <h3>Box 1</h3>
+    <p>This box is being tracked by the viewport directive.</p>
+</div>
+
+<div class="spacer"></div>
+
+<div class="demo-box box-2" (bsInViewport)="onBox2ViewportChange($event)">
+    <h3>Box 2</h3>
+    <p>Scroll up and down to see the status change.</p>
+</div>
+
+<div class="spacer"></div>
+
+<div class="demo-box box-3" (bsInViewport)="onBox3ViewportChange($event)">
+    <h3>Box 3</h3>
+    <p>The directive emits <code>true</code> when entering and <code>false</code> when leaving.</p>
+</div>
+
+<div class="spacer"></div>

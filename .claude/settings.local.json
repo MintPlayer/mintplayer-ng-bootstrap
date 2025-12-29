@@ -29,7 +29,8 @@
       "mcp__playwright__browser_resize",
       "mcp__github__get_pull_request",
       "WebFetch(domain:stackblitz.com)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:api.github.com)"
     ]
   },
   "enableAllProjectMcpServers": true,
