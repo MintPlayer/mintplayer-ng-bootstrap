@@ -1,5 +1,10 @@
 @if (isOpen) {
-    <div class="modal d-block" [@fadeInOut] [@enterFromTop]>
+    <div class="modal d-block"
+        [@fadeInOut]
+        [@enterFromTop]
+        role="dialog"
+        aria-modal="true"
+        tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
                 <ng-container *ngTemplateOutlet="template"></ng-container>
@@ -8,6 +13,6 @@
     </div>
 
     <div [@fadeInOut]>
-        <div class="modal-backdrop fade" [class.show]="isOpen"></div>
+        <div class="modal-backdrop fade" [class.show]="isOpen" aria-hidden="true"></div>
     </div>
 }

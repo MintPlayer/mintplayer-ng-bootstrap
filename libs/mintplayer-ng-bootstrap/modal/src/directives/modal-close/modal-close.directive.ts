@@ -1,4 +1,4 @@
-import { Directive, HostListener, inject } from '@angular/core';
+import { Directive, HostBinding, HostListener, inject } from '@angular/core';
 import { BsModalHostComponent } from '../../components/modal-host/modal-host.component';
 
 @Directive({
@@ -7,6 +7,8 @@ import { BsModalHostComponent } from '../../components/modal-host/modal-host.com
 })
 export class BsModalCloseDirective {
   private host = inject(BsModalHostComponent);
+
+  @HostBinding('attr.aria-label') ariaLabel = 'Close';
 
   @HostListener('click') onClick() {
     this.host.isOpen = false;

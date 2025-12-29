@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, HostListener, inject, input, signal, TemplateRef, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, ElementRef, HostListener, input, signal, TemplateRef, ViewChild } from '@angular/core';
 import { Breakpoint, Color } from '@mintplayer/ng-bootstrap';
 
 @Component({
@@ -10,13 +10,9 @@ import { Breakpoint, Color } from '@mintplayer/ng-bootstrap';
 })
 export class BsNavbarComponent {
 
-  constructor() {
-    effect((onCleanup) => {
-      const windowWidth = this.windowWidth();
-      const timeout = setTimeout(() => this.isResizing.set(false), 300);
-      onCleanup(() => clearTimeout(timeout));
-    });
+  private resizeTimeout: ReturnType<typeof setTimeout> | null = null;
 
+  constructor() {
     this.onWindowResize();
   }
 
@@ -26,6 +22,16 @@ export class BsNavbarComponent {
     if (typeof window !== 'undefined') {
       this.windowWidth.set(window.innerWidth);
     }
+
+    // Clear any existing timeout to debounce
+    if (this.resizeTimeout) {
+      clearTimeout(this.resizeTimeout);
+    }
+
+    // Reset isResizing after debounce period
+    this.resizeTimeout = setTimeout(() => {
+      this.isResizing.set(false);
+    }, 300);
   }
 
   @ViewChild('nav') nav!: ElementRef;

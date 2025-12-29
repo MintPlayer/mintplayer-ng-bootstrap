@@ -1,8 +1,10 @@
-<div [class.border-0]="false" [@.disabled]="accordion.disableAnimations" bsNoNoscript>
-
-    <input type="radio" class="d-none" [name]="accordion.accordionName()" [id]="accordionTabName()">
+<div [@.disabled]="accordion.disableAnimations" bsNoNoscript>
     <ng-content select="bs-accordion-tab-header"></ng-content>
-    <div class="accordion-collapse collapse show overflow-hidden" [@slideUpDown]="isActive()">
+    <div [id]="accordionTabName() + '-content'"
+        class="accordion-collapse collapse show overflow-hidden"
+        role="region"
+        [attr.aria-labelledby]="accordionTabName() + '-header'"
+        [@slideUpDown]="isActive()">
         <div class="accordion-body p-0">
             <ng-content></ng-content>
         </div>

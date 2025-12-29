@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, effect, HostListener, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, HostListener, inject, input, signal } from '@angular/core';
 import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 
@@ -19,6 +19,8 @@ export class BsNavbarNavComponent {
   isResizing = signal<boolean>(false);
   collapse = input<boolean>(true);
 
+  private resizeTimeout: ReturnType<typeof setTimeout> | null = null;
+
   showNavs = computed(() => {
     const isExpanded = this.bsNavbar.isExpanded();
     const expandAt = this.bsNavbar.expandAt();
@@ -36,15 +38,6 @@ export class BsNavbarNavComponent {
   });
 
   constructor() {
-    effect((onCleanup) => {
-      const windowWidth = this.windowWidth();
-      const timeout = setTimeout(() => {
-        this.isResizing.set(false);
-        this.cdr.markForCheck();
-      }, 300);
-      onCleanup(() => clearTimeout(timeout));
-    });
-
     this.onWindowResize();
   }
 
@@ -54,5 +47,16 @@ export class BsNavbarNavComponent {
     if (typeof window !== 'undefined') {
       this.windowWidth.set(window.innerWidth);
     }
+
+    // Clear any existing timeout to debounce
+    if (this.resizeTimeout) {
+      clearTimeout(this.resizeTimeout);
+    }
+
+    // Reset isResizing after debounce period
+    this.resizeTimeout = setTimeout(() => {
+      this.isResizing.set(false);
+      this.cdr.markForCheck();
+    }, 300);
   }
 }

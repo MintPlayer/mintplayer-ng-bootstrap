@@ -1,7 +1,8 @@
 <bs-has-overlay></bs-has-overlay>
 <div [@fadeInOut] class="tooltip position-absolute show"
-    [class]="[positionClass(), marginClass()]">
-    <div class="tooltip-arrow position-absolute"></div>
+    [class]="[positionClass(), marginClass()]"
+    role="tooltip">
+    <div class="tooltip-arrow position-absolute" aria-hidden="true"></div>
     <div class="tooltip-inner">
         <ng-container *ngTemplateOutlet="template"></ng-container>
     </div>

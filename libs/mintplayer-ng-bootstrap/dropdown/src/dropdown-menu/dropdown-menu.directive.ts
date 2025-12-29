@@ -1,4 +1,4 @@
-import { DestroyRef, Directive, effect, ElementRef, forwardRef, HostBinding, HostListener, inject, NgZone, PLATFORM_ID, TemplateRef, ViewContainerRef } from '@angular/core';
+import { DestroyRef, Directive, effect, ElementRef, forwardRef, HostListener, inject, NgZone, PLATFORM_ID, TemplateRef, ViewContainerRef } from '@angular/core';
 import { TemplatePortal } from '@angular/cdk/portal';
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ClickOutsideDirective } from '@mintplayer/ng-click-outside';
@@ -73,7 +73,6 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
     });
   }
 
-  @HostBinding('class.show') get show() { return this.dropdown.isOpen(); }
   @HostListener('clickOutside', ['$event']) clickedOutside(event: Event) {
     const ev = event as MouseEvent;
     if (!this.bsDevelopment) {

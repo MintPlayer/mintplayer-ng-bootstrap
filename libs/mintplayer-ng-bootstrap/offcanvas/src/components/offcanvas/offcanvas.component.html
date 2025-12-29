@@ -1,6 +1,6 @@
 @if (showBackdrop()) {
     <div [@fadeInOut]="{value: ':leave', params: {duration: '300ms'} }">
-        <div class="modal-backdrop show" (click)="onBackdropClick($event)"></div>
+        <div class="modal-backdrop show" (click)="onBackdropClick($event)" aria-hidden="true"></div>
     </div>
 }
 <div class="offcanvas"
@@ -8,6 +8,9 @@
     [class.disable-transition]="disableTransition()"
     [class]="[offcanvasClass(), overflowClass()]"
     [style.height.px]="height()"
-    [style.width.px]="width()">
+    [style.width.px]="width()"
+    role="dialog"
+    aria-modal="true"
+    tabindex="-1">
     <ng-container *ngTemplateOutlet="contentTemplate"></ng-container>
 </div>
