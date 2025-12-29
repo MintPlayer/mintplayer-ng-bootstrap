@@ -1,0 +1,30 @@
+{
+  "name": "@mintplayer/splitter-wc",
+  "private": false,
+  "type": "module",
+  "version": "1.0.0",
+  "description": "Web Component for a resizable splitter panel",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MintPlayer/mintplayer-ng-bootstrap",
+    "directory": "libs/mp-splitter-wc"
+  },
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "dependencies": {
+    "tslib": "^2.3.0"
+  },
+  "author": {
+    "name": "Pieterjan De Clippel",
+    "url": "https://github.com/MintPlayer",
+    "email": "info@mintplayer.com"
+  },
+  "keywords": [
+    "splitter",
+    "resizable",
+    "panels",
+    "web-component",
+    "custom-element",
+    "split-view"
+  ]
+}
