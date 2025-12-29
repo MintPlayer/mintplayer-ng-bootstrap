@@ -77,6 +77,9 @@ export class InputHandler {
   private mouseStartPosition: { x: number; y: number } | null = null;
   private isMousePanCandidate = false;
 
+  // Scroll blocking state (saved styles for restoration)
+  private savedBodyStyles: { overflow: string; touchAction: string } | null = null;
+
   // Bound event handlers
   private readonly boundHandleMouseDown: (e: MouseEvent) => void;
   private readonly boundHandleMouseMove: (e: MouseEvent) => void;
@@ -146,6 +149,7 @@ export class InputHandler {
     this.cancelTouchHold();
     this.cleanupMousePanState();
     this.exitPanMode();
+    this.removeScrollBlock();
   }
 
   /**
@@ -508,6 +512,9 @@ export class InputHandler {
     const container = this.config.shadowRoot.querySelector('.scheduler-container');
     container?.classList.add('touch-drag-mode');
 
+    // Apply scroll blocking to document body and scheduler-content
+    this.applyScrollBlock();
+
     // Notify callback
     this.callbacks.onTouchDragActivated?.();
 
@@ -550,6 +557,9 @@ export class InputHandler {
     // Remove container class
     const container = this.config.shadowRoot.querySelector('.scheduler-container');
     container?.classList.remove('touch-drag-mode');
+
+    // Remove scroll blocking
+    this.removeScrollBlock();
 
     // Remove all feedback classes
     this.config.shadowRoot
@@ -634,5 +644,40 @@ export class InputHandler {
     // Apply scroll
     container.scrollLeft = this.panStartScroll.left + deltaX;
     container.scrollTop = this.panStartScroll.top + deltaY;
+  }
+
+  // Scroll blocking helpers
+
+  private applyScrollBlock(): void {
+    // Save current body styles for restoration
+    this.savedBodyStyles = {
+      overflow: document.body.style.overflow,
+      touchAction: document.body.style.touchAction,
+    };
+
+    // Block scrolling on document body
+    document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';
+
+    // Block scrolling on scheduler-content
+    const scrollContainer = this.callbacks.getScrollContainer?.();
+    if (scrollContainer) {
+      scrollContainer.classList.add('scroll-blocked');
+    }
+  }
+
+  private removeScrollBlock(): void {
+    // Restore body styles
+    if (this.savedBodyStyles) {
+      document.body.style.overflow = this.savedBodyStyles.overflow;
+      document.body.style.touchAction = this.savedBodyStyles.touchAction;
+      this.savedBodyStyles = null;
+    }
+
+    // Remove scroll blocking from scheduler-content
+    const scrollContainer = this.callbacks.getScrollContainer?.();
+    if (scrollContainer) {
+      scrollContainer.classList.remove('scroll-blocked');
+    }
   }
 }

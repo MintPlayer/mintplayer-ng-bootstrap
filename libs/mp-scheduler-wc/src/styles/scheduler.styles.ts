@@ -616,6 +616,12 @@ export const schedulerStyles = `
     user-select: none;
   }
 
+  /* Scroll blocking during drag operations */
+  .scheduler-content.scroll-blocked {
+    overflow: hidden !important;
+    touch-action: none !important;
+  }
+
   /* Scrollbar styling */
   .scheduler-content::-webkit-scrollbar {
     width: 8px;
