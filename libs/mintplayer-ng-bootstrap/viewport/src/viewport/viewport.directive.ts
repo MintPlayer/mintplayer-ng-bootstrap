@@ -9,6 +9,7 @@ export class BsInViewportDirective implements AfterViewInit, OnDestroy {
   private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly platformId = inject(PLATFORM_ID);
   private observer: IntersectionObserver | null = null;
+  private isDestroyed = false;
 
   @Output() bsInViewport = new EventEmitter<boolean>();
 
@@ -18,8 +19,10 @@ export class BsInViewportDirective implements AfterViewInit, OnDestroy {
     }
 
     this.observer = new IntersectionObserver((entries) => {
-      for (const entry of entries) {
-        this.bsInViewport.emit(entry.isIntersecting);
+      if (!this.isDestroyed) {
+        for (const entry of entries) {
+          this.bsInViewport.emit(entry.isIntersecting);
+        }
       }
     });
 
@@ -27,6 +30,7 @@ export class BsInViewportDirective implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.isDestroyed = true;
     if (this.observer) {
       this.observer.disconnect();
       this.observer = null;
