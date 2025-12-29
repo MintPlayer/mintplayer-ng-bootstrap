@@ -1,4 +1,9 @@
 # Improvements to the navigation-lock feature
+## Relevant files
+- libs\mintplayer-ng-bootstrap\navigation-lock
+- apps\ng-bootstrap-demo\src\app\pages\advanced\navigation-lock
+- apps\ng-bootstrap-demo\src\app\pages\advanced\advanced.routes.ts line 19
+
 ## Problem 1
 ### Description
 At the moment the navigation-lock seems to malfunction.
