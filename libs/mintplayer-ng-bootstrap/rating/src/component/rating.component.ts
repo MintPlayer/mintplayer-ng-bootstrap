@@ -8,7 +8,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, HostBinding, Host
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsRatingComponent {
-  @HostBinding('attr.role') role = 'group';
+  @HostBinding('attr.role') role = 'radiogroup';
   @HostBinding('attr.aria-label') ariaLabel = 'Rating';
 
   constructor() {

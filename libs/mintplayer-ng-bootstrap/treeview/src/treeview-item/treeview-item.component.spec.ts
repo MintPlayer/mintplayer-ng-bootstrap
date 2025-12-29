@@ -9,6 +9,12 @@ class BsTreeviewComponentStub {
   level = computed(() => 0);
   indentation = computed(() => 0);
   isExpanded = model<boolean>(true);
+
+  // Roving tabindex methods
+  registerItem = () => {};
+  unregisterItem = () => {};
+  setFocusedItem = () => {};
+  isFocusedItem = () => true;
 }
 
 describe('BsTreeviewItemComponent', () => {

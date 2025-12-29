@@ -8,8 +8,9 @@
             (keyup.enter)="onSubmit()"
             aria-autocomplete="list"
             aria-haspopup="listbox"
+            [attr.aria-controls]="isOpen() ? listboxId : null"
             autocomplete="off" />
-        <bs-dropdown-menu *bsDropdownMenu role="listbox">
+        <bs-dropdown-menu *bsDropdownMenu role="listbox" [id]="listboxId">
             @if (isLoading()) {
                 <bs-progress [height]="2" [isIndeterminate]="true"></bs-progress>
                 <bs-dropdown-item [disabled]="true" role="option" aria-disabled="true">

@@ -6,6 +6,8 @@ import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { BsProgressBarModule } from '@mintplayer/ng-bootstrap/progress-bar';
 
+let typeaheadIdCounter = 0;
+
 @Component({
   selector: 'bs-typeahead',
   templateUrl: './typeahead.component.html',
@@ -17,6 +19,7 @@ import { BsProgressBarModule } from '@mintplayer/ng-bootstrap/progress-bar';
 export class BsTypeaheadComponent {
 
   isOpen = signal(false);
+  listboxId = `typeahead-listbox-${typeaheadIdCounter++}`;
 
   suggestions = input<any[]>([]);
   isLoading = signal<boolean>(false);
