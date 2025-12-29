@@ -197,7 +197,7 @@ export class MpSplitter extends HTMLElement {
 
       wrapper.appendChild(namedSlot);
       this.panelWrappers.push(wrapper);
-      this.container.appendChild(wrapper);
+      this.container!.appendChild(wrapper);
 
       // Add divider between panels
       if (index < children.length - 1) {
@@ -205,7 +205,7 @@ export class MpSplitter extends HTMLElement {
         divider.className = 'divider';
         this.inputHandler.attachDividerListeners(divider, index);
         this.dividers.push(divider);
-        this.container.appendChild(divider);
+        this.container!.appendChild(divider);
       }
     });
   }
