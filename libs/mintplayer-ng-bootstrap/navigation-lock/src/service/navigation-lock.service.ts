@@ -1,33 +1,28 @@
-import { Injectable, DestroyRef, inject, signal } from '@angular/core';
+import { Injectable, DestroyRef, inject, signal, NgZone } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Router, NavigationStart, NavigationCancel, NavigationEnd } from '@angular/router';
+import { Router, NavigationStart, NavigationEnd } from '@angular/router';
 import { Location } from '@angular/common';
 import { filter } from 'rxjs';
 import type { BsNavigationLockDirective } from '../directive/navigation-lock.directive';
-
-interface NavigationState {
-  id: number;
-  url: string;
-  trigger: 'imperative' | 'popstate' | 'hashchange';
-}
 
 @Injectable()
 export class BsNavigationLockService {
   private router = inject(Router);
   private location = inject(Location);
   private destroy = inject(DestroyRef);
+  private ngZone = inject(NgZone);
 
   // Track registered navigation locks
   private activeLocks = signal<Set<BsNavigationLockDirective>>(new Set());
 
-  // Track navigation state for history restoration
-  private pendingNavigation: NavigationState | null = null;
-  private savedUrl: string = '';
-  private isRestoringHistory = false;
+  // Track state for navigation blocking
+  private currentUrl: string = '';
+  private isCheckingLocks = false;
+  private isNavigatingBack = false;
 
   constructor() {
-    this.savedUrl = this.router.url;
-    this.subscribeToRouterEvents();
+    this.currentUrl = this.router.url;
+    this.setupNavigationInterception();
   }
 
   register(lock: BsNavigationLockDirective): void {
@@ -61,55 +56,64 @@ export class BsNavigationLockService {
     return true;
   }
 
-  private subscribeToRouterEvents(): void {
-    // Track NavigationStart to capture navigation details
+  private setupNavigationInterception(): void {
+    // Intercept NavigationStart to check locks before navigation completes
     this.router.events.pipe(
       filter((event): event is NavigationStart => event instanceof NavigationStart),
       takeUntilDestroyed(this.destroy)
-    ).subscribe(event => {
-      if (!this.isRestoringHistory) {
-        this.pendingNavigation = {
-          id: event.id,
-          url: event.url,
-          trigger: event.navigationTrigger ?? 'imperative'
-        };
+    ).subscribe(async (event) => {
+      // Skip if we're navigating back after a failed lock check
+      if (this.isNavigatingBack) {
+        return;
+      }
+
+      // Skip if we're already checking locks (prevent recursion)
+      if (this.isCheckingLocks) {
+        return;
+      }
+
+      // Skip if no active locks
+      if (!this.hasActiveLocks()) {
+        return;
+      }
+
+      // Check all locks
+      this.isCheckingLocks = true;
+      const canNavigate = await this.checkAllLocks();
+      this.isCheckingLocks = false;
+
+      if (!canNavigate) {
+        // Navigation was blocked - restore to previous URL
+        this.isNavigatingBack = true;
+
+        // Use setTimeout to let the current navigation complete first,
+        // then navigate back
+        this.ngZone.run(() => {
+          // For popstate navigation, we need to go forward in history
+          // For imperative navigation, we navigate back to saved URL
+          if (event.navigationTrigger === 'popstate') {
+            // Browser back/forward was pressed - restore history position
+            history.go(1);
+          } else {
+            // Programmatic navigation - go back to where we were
+            this.router.navigateByUrl(this.currentUrl, { replaceUrl: true });
+          }
+
+          setTimeout(() => {
+            this.isNavigatingBack = false;
+          }, 50);
+        });
       }
     });
 
-    // Handle NavigationCancel - restore history if needed
-    this.router.events.pipe(
-      filter((event): event is NavigationCancel => event instanceof NavigationCancel),
-      takeUntilDestroyed(this.destroy)
-    ).subscribe(event => {
-      if (this.pendingNavigation?.trigger === 'popstate' && this.pendingNavigation.id === event.id && !this.isRestoringHistory) {
-        // Navigation was cancelled and it was a popstate navigation
-        // Restore the browser history to the correct position
-        this.restoreHistoryPosition();
-      }
-      this.pendingNavigation = null;
-    });
-
-    // Update saved URL on successful navigation
+    // Update currentUrl after successful navigation
     this.router.events.pipe(
       filter((event): event is NavigationEnd => event instanceof NavigationEnd),
       takeUntilDestroyed(this.destroy)
     ).subscribe(event => {
-      this.savedUrl = event.urlAfterRedirects;
-      this.pendingNavigation = null;
+      if (!this.isNavigatingBack) {
+        this.currentUrl = event.urlAfterRedirects;
+      }
     });
-  }
-
-  private restoreHistoryPosition(): void {
-    // Push current state back to history to restore position
-    // Use history.pushState to add a new entry that matches the saved URL
-    this.isRestoringHistory = true;
-
-    // Use Location service to maintain consistency with Angular's router
-    this.location.go(this.savedUrl);
-
-    // Reset the flag after the navigation completes
-    setTimeout(() => {
-      this.isRestoringHistory = false;
-    }, 0);
   }
 }

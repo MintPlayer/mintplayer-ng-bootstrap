@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
 import { BsNavigationLockModule } from '@mintplayer/ng-bootstrap/navigation-lock';
 import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
 import { Observable } from 'rxjs';
@@ -9,7 +10,7 @@ import { Observable } from 'rxjs';
   templateUrl: './navigation-lock.component.html',
   styleUrls: ['./navigation-lock.component.scss'],
   standalone: true,
-  imports: [FormsModule, BsToggleButtonModule, BsNavigationLockModule]
+  imports: [FormsModule, BsFormModule, BsToggleButtonModule, BsNavigationLockModule]
 })
 export class NavigationLockComponent {
   allowExit: boolean | null = false;
@@ -25,4 +26,6 @@ export class NavigationLockComponent {
       }
     }
   });
+
+  message = '';
 }
