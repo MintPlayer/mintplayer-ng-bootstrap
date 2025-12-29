@@ -2,3 +2,79 @@
     height: 500px;
     max-height: calc(100% - 100px);
 }
+
+// CSS variables for fallback divider styling
+$splitter-size: 8px;
+$splitter-thumb-margin: 3px;
+$splitter-divider-color: #eee;
+
+// Fallback styles for when JavaScript is disabled
+// These styles will be overridden by the shadow DOM when JS is enabled
+mp-splitter:not(:defined) {
+    display: flex;
+    width: 100%;
+    height: 100%;
+
+    // Default horizontal layout
+    flex-direction: row;
+
+    > * {
+        flex-grow: 1;
+        overflow: hidden;
+        position: relative;
+
+        &:not(:first-child) {
+            margin-left: calc(-1 * $splitter-thumb-margin);
+        }
+        &:not(:last-child) {
+            margin-right: calc(-1 * $splitter-thumb-margin);
+        }
+
+        // Add divider after each panel except the last one
+        &:not(:last-child)::after {
+            content: "";
+            display: block;
+            position: absolute;
+            right: calc(-1 * ($splitter-size / 2 + $splitter-thumb-margin));
+            top: 0;
+            width: calc($splitter-size + 2 * $splitter-thumb-margin);
+            height: 100%;
+            border-left: $splitter-thumb-margin solid transparent;
+            border-right: $splitter-thumb-margin solid transparent;
+            background-color: $splitter-divider-color;
+            background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==);
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-clip: content-box;
+            z-index: 3;
+        }
+    }
+}
+
+mp-splitter[orientation="vertical"]:not(:defined) {
+    flex-direction: column;
+
+    > * {
+        &:not(:first-child) {
+            margin-left: 0;
+            margin-top: calc(-1 * $splitter-thumb-margin);
+        }
+        &:not(:last-child) {
+            margin-right: 0;
+            margin-bottom: calc(-1 * $splitter-thumb-margin);
+        }
+
+        &:not(:last-child)::after {
+            right: 0;
+            bottom: calc(-1 * ($splitter-size / 2 + $splitter-thumb-margin));
+            top: auto;
+            width: 100%;
+            height: calc($splitter-size + 2 * $splitter-thumb-margin);
+            border-left: 0;
+            border-right: 0;
+            border-top: $splitter-thumb-margin solid transparent;
+            border-bottom: $splitter-thumb-margin solid transparent;
+            background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAFCAMAAABl/6zIAAAABlBMVEUAAADMzMzIT8AyAAAAAXRSTlMAQObYZgAAABRJREFUeAFjYGRkwIMJSeMHlBkOABP7AEGzSuPKAAAAAElFTkSuQmCC);
+        }
+    }
+}

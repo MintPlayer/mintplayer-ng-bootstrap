@@ -35,9 +35,6 @@ export const splitterStyles = `
 .panel-wrapper {
   overflow: hidden;
   position: relative;
-}
-
-.panel-wrapper.flex-grow {
   flex-grow: 1;
 }
 
@@ -46,7 +43,6 @@ export const splitterStyles = `
   flex-shrink: 0;
   transition: background-color 0.15s ease-in-out;
   z-index: 3;
-  position: relative;
   touch-action: none;
 }
 
@@ -56,7 +52,6 @@ export const splitterStyles = `
   background-color: var(--mp-splitter-divider-color);
   background-position: center center;
   background-repeat: no-repeat;
-  position: absolute;
 }
 
 .divider:hover::before,
@@ -70,14 +65,23 @@ export const splitterStyles = `
   width: calc(var(--mp-splitter-size) + 2 * var(--mp-splitter-thumb-margin));
   height: 100%;
   cursor: col-resize;
+  border-left: var(--mp-splitter-thumb-margin) solid transparent;
+  border-right: var(--mp-splitter-thumb-margin) solid transparent;
 }
 
 .splitter-container.horizontal > .divider::before {
   height: 100%;
   width: var(--mp-splitter-size);
-  left: var(--mp-splitter-thumb-margin);
-  top: 0;
+  margin: 0 auto;
   background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==);
+}
+
+.splitter-container.horizontal > .panel-wrapper:not(:first-child) {
+  margin-left: calc(-1 * var(--mp-splitter-thumb-margin));
+}
+
+.splitter-container.horizontal > .panel-wrapper:not(:last-child) {
+  margin-right: calc(-1 * var(--mp-splitter-thumb-margin));
 }
 
 /* Vertical splitter styles */
@@ -85,14 +89,23 @@ export const splitterStyles = `
   width: 100%;
   height: calc(var(--mp-splitter-size) + 2 * var(--mp-splitter-thumb-margin));
   cursor: row-resize;
+  border-top: var(--mp-splitter-thumb-margin) solid transparent;
+  border-bottom: var(--mp-splitter-thumb-margin) solid transparent;
 }
 
 .splitter-container.vertical > .divider::before {
-  width: 100%;
   height: var(--mp-splitter-size);
-  top: var(--mp-splitter-thumb-margin);
-  left: 0;
+  width: 100%;
+  margin: auto 0;
   background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAFCAMAAABl/6zIAAAABlBMVEUAAADMzMzIT8AyAAAAAXRSTlMAQObYZgAAABRJREFUeAFjYGRkwIMJSeMHlBkOABP7AEGzSuPKAAAAAElFTkSuQmCC);
+}
+
+.splitter-container.vertical > .panel-wrapper:not(:first-child) {
+  margin-top: calc(-1 * var(--mp-splitter-thumb-margin));
+}
+
+.splitter-container.vertical > .panel-wrapper:not(:last-child) {
+  margin-bottom: calc(-1 * var(--mp-splitter-thumb-margin));
 }
 
 /* Resizing state */
