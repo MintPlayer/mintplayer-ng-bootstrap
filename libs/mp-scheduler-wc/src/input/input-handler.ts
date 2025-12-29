@@ -25,6 +25,8 @@ export interface InputHandlerCallbacks {
   onTouchDragActivated?: () => void;
   /** Called when touch drag mode is deactivated */
   onTouchDragDeactivated?: () => void;
+  /** Called to get the scrollable container for panning */
+  getScrollContainer?: () => HTMLElement | null;
 }
 
 /**
@@ -45,8 +47,9 @@ export interface InputHandlerConfig {
   touchMoveThreshold?: number;
 }
 
-const DEFAULT_TOUCH_HOLD_DURATION = 500;
+const DEFAULT_TOUCH_HOLD_DURATION = 600;
 const DEFAULT_TOUCH_MOVE_THRESHOLD = 10;
+const DEFAULT_MOUSE_PAN_TIMEOUT = 600;
 
 /**
  * Unified input handler for mouse and touch events.
@@ -62,6 +65,20 @@ export class InputHandler {
   private isTouchDragMode = false;
   private touchHoldTarget: HTMLElement | null = null;
   private touchHoldPointer: NormalizedPointerEvent | null = null;
+
+  // Pan mode state (for panning when touch/mouse starts on event and moves quickly)
+  private isPanMode = false;
+  private panStartPosition: { x: number; y: number } | null = null;
+  private panStartScroll: { left: number; top: number } | null = null;
+  private panStartedOnEvent = false;
+
+  // Mouse pan state (for panning when mousedown on event and move within timeout)
+  private mousePanTimer: ReturnType<typeof setTimeout> | null = null;
+  private mouseStartPosition: { x: number; y: number } | null = null;
+  private isMousePanCandidate = false;
+
+  // Scroll blocking state (saved styles for restoration)
+  private savedBodyStyles: { overflow: string; touchAction: string } | null = null;
 
   // Bound event handlers
   private readonly boundHandleMouseDown: (e: MouseEvent) => void;
@@ -130,6 +147,9 @@ export class InputHandler {
     root.removeEventListener('touchcancel', this.boundHandleTouchCancel as EventListener);
 
     this.cancelTouchHold();
+    this.cleanupMousePanState();
+    this.exitPanMode();
+    this.removeScrollBlock();
   }
 
   /**
@@ -196,17 +216,83 @@ export class InputHandler {
     if (target.type === 'slot' && !this.config.isSelectable()) return;
 
     e.preventDefault();
+
+    // For events/resize handles, set up mouse pan candidate (can pan if moved quickly)
+    if (target.type === 'event' || target.type === 'resize-handle') {
+      this.mouseStartPosition = { x: pointer.clientX, y: pointer.clientY };
+      this.isMousePanCandidate = true;
+
+      // Start timer - after this time, regular drag behavior takes over
+      this.mousePanTimer = setTimeout(() => {
+        // Timer expired without entering pan mode, so this is a drag operation
+        this.isMousePanCandidate = false;
+        this.mousePanTimer = null;
+      }, DEFAULT_MOUSE_PAN_TIMEOUT);
+    }
+
     this.callbacks.onPointerDown(pointer, target);
   }
 
   private handleMouseMove(e: MouseEvent): void {
     const pointer = normalizeMouseEvent(e);
+
+    // If in pan mode, continue panning
+    if (this.isPanMode) {
+      e.preventDefault();
+      this.performPan(pointer.clientX, pointer.clientY);
+      return;
+    }
+
+    // Check if we should enter pan mode (mouse on event + moved > threshold within timeout)
+    if (this.isMousePanCandidate && this.mouseStartPosition) {
+      const threshold =
+        this.config.touchMoveThreshold ?? DEFAULT_TOUCH_MOVE_THRESHOLD;
+      const distance = getPointerDistance(this.mouseStartPosition, {
+        x: pointer.clientX,
+        y: pointer.clientY,
+      });
+
+      if (distance > threshold) {
+        // Cancel the pan timer
+        if (this.mousePanTimer) {
+          clearTimeout(this.mousePanTimer);
+          this.mousePanTimer = null;
+        }
+        this.isMousePanCandidate = false;
+
+        // Enter pan mode
+        this.enterPanMode(pointer.clientX, pointer.clientY);
+        e.preventDefault();
+        return;
+      }
+    }
+
     this.callbacks.onPointerMove(pointer);
   }
 
   private handleMouseUp(e: MouseEvent): void {
     const pointer = normalizeMouseEvent(e);
+
+    // If in pan mode, exit it
+    if (this.isPanMode) {
+      this.exitPanMode();
+      this.cleanupMousePanState();
+      return;
+    }
+
+    // Clean up mouse pan candidate state
+    this.cleanupMousePanState();
+
     this.callbacks.onPointerUp(pointer);
+  }
+
+  private cleanupMousePanState(): void {
+    if (this.mousePanTimer) {
+      clearTimeout(this.mousePanTimer);
+      this.mousePanTimer = null;
+    }
+    this.mouseStartPosition = null;
+    this.isMousePanCandidate = false;
   }
 
   private handleClick(e: MouseEvent): void {
@@ -251,6 +337,9 @@ export class InputHandler {
     this.touchHoldTarget = pointer.target;
     this.touchHoldPointer = pointer;
 
+    // Track if touch started on an event (for pan support)
+    this.panStartedOnEvent = target.type === 'event' || target.type === 'resize-handle';
+
     // Add element-level listeners IMMEDIATELY for ALL drag-initiating touches
     // CRITICAL: Use e.target (the actual touched element) not pointer.target
     // In shadow DOM, touch.target and e.target can differ due to event retargeting.
@@ -288,11 +377,19 @@ export class InputHandler {
   private handleTouchMove(e: TouchEvent): void {
     if (e.touches.length !== 1) {
       this.cancelTouchHold();
+      this.exitPanMode();
       return;
     }
 
     const pointer = normalizeTouchEvent(e);
     if (!pointer) return;
+
+    // If in pan mode, continue panning
+    if (this.isPanMode) {
+      e.preventDefault();
+      this.performPan(pointer.clientX, pointer.clientY);
+      return;
+    }
 
     // If we have a pending touch hold, check if user moved too much
     if (this.touchHoldTimer && this.touchStartPosition) {
@@ -304,8 +401,15 @@ export class InputHandler {
       });
 
       if (distance > threshold) {
-        // User moved too much, cancel hold and allow scroll
+        // User moved too much during hold period
         this.cancelTouchHold();
+
+        // If touch started on an event, enter pan mode instead of allowing native scroll
+        if (this.panStartedOnEvent) {
+          this.enterPanMode(pointer.clientX, pointer.clientY);
+          e.preventDefault();
+        }
+        // Otherwise, allow native scroll (no preventDefault)
         return;
       }
 
@@ -326,6 +430,12 @@ export class InputHandler {
 
   private handleTouchEnd(e: TouchEvent): void {
     const pointer = normalizeTouchEvent(e);
+
+    // If in pan mode, exit it
+    if (this.isPanMode) {
+      this.exitPanMode();
+      return;
+    }
 
     // If we had a pending hold that never activated, treat as tap
     if (this.touchHoldTimer) {
@@ -350,6 +460,7 @@ export class InputHandler {
 
   private handleTouchCancel(_e: TouchEvent): void {
     this.cancelTouchHold();
+    this.exitPanMode();
 
     if (this.isTouchDragMode) {
       // Notify pointer up to cancel the drag
@@ -401,6 +512,9 @@ export class InputHandler {
     const container = this.config.shadowRoot.querySelector('.scheduler-container');
     container?.classList.add('touch-drag-mode');
 
+    // Apply scroll blocking to document body and scheduler-content
+    this.applyScrollBlock();
+
     // Notify callback
     this.callbacks.onTouchDragActivated?.();
 
@@ -425,7 +539,8 @@ export class InputHandler {
       this.removeTouchFeedback(this.touchHoldTarget, 'active');
     }
 
-    this.touchStartPosition = null;
+    // Note: Don't reset touchStartPosition here as it may be needed for pan mode
+    // Also don't reset panStartedOnEvent - it's needed after cancelTouchHold
   }
 
   private exitTouchDragMode(): void {
@@ -442,6 +557,9 @@ export class InputHandler {
     // Remove container class
     const container = this.config.shadowRoot.querySelector('.scheduler-container');
     container?.classList.remove('touch-drag-mode');
+
+    // Remove scroll blocking
+    this.removeScrollBlock();
 
     // Remove all feedback classes
     this.config.shadowRoot
@@ -476,5 +594,90 @@ export class InputHandler {
 
   private triggerHapticFeedback(): void {
     // Vibration API removed - can cause issues on some devices
+  }
+
+  // Pan helpers
+
+  private enterPanMode(clientX: number, clientY: number): void {
+    const container = this.callbacks.getScrollContainer?.();
+    if (!container) return;
+
+    this.isPanMode = true;
+    this.panStartPosition = { x: clientX, y: clientY };
+    this.panStartScroll = { left: container.scrollLeft, top: container.scrollTop };
+
+    // Add visual feedback for pan mode
+    container.classList.add('pan-mode');
+
+    // Remove hold feedback if any
+    if (this.touchHoldTarget) {
+      this.removeTouchFeedback(this.touchHoldTarget, 'pending');
+      this.removeTouchFeedback(this.touchHoldTarget, 'active');
+    }
+  }
+
+  private exitPanMode(): void {
+    if (!this.isPanMode) return;
+
+    this.isPanMode = false;
+    this.panStartPosition = null;
+    this.panStartScroll = null;
+    this.panStartedOnEvent = false;
+    this.touchStartPosition = null;
+    this.touchHoldTarget = null;
+
+    // Remove visual feedback
+    const container = this.callbacks.getScrollContainer?.();
+    container?.classList.remove('pan-mode');
+  }
+
+  private performPan(clientX: number, clientY: number): void {
+    if (!this.isPanMode || !this.panStartPosition || !this.panStartScroll) return;
+
+    const container = this.callbacks.getScrollContainer?.();
+    if (!container) return;
+
+    // Calculate delta from start position
+    const deltaX = this.panStartPosition.x - clientX;
+    const deltaY = this.panStartPosition.y - clientY;
+
+    // Apply scroll
+    container.scrollLeft = this.panStartScroll.left + deltaX;
+    container.scrollTop = this.panStartScroll.top + deltaY;
+  }
+
+  // Scroll blocking helpers
+
+  private applyScrollBlock(): void {
+    // Save current body styles for restoration
+    this.savedBodyStyles = {
+      overflow: document.body.style.overflow,
+      touchAction: document.body.style.touchAction,
+    };
+
+    // Block scrolling on document body
+    document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';
+
+    // Block scrolling on scheduler-content
+    const scrollContainer = this.callbacks.getScrollContainer?.();
+    if (scrollContainer) {
+      scrollContainer.classList.add('scroll-blocked');
+    }
+  }
+
+  private removeScrollBlock(): void {
+    // Restore body styles
+    if (this.savedBodyStyles) {
+      document.body.style.overflow = this.savedBodyStyles.overflow;
+      document.body.style.touchAction = this.savedBodyStyles.touchAction;
+      this.savedBodyStyles = null;
+    }
+
+    // Remove scroll blocking from scheduler-content
+    const scrollContainer = this.callbacks.getScrollContainer?.();
+    if (scrollContainer) {
+      scrollContainer.classList.remove('scroll-blocked');
+    }
   }
 }

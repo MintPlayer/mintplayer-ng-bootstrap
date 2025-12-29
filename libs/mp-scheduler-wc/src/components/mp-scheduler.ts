@@ -64,6 +64,9 @@ export class MpScheduler extends HTMLElement {
   // Keyboard handler
   private boundHandleKeyDown: (e: KeyboardEvent) => void;
 
+  // Now indicator update timer
+  private nowIndicatorTimer: ReturnType<typeof setInterval> | null = null;
+
   constructor() {
     super();
 
@@ -89,6 +92,7 @@ export class MpScheduler extends HTMLElement {
         onPointerUp: (pointer) => this.handlePointerUp(pointer),
         onClick: (pointer, target) => this.handleClick(pointer, target),
         onDoubleClick: (pointer, target) => this.handleDoubleClick(pointer, target),
+        getScrollContainer: () => this.contentContainer,
       }
     );
 
@@ -103,6 +107,9 @@ export class MpScheduler extends HTMLElement {
     this.render();
     this.inputHandler.attach();
     this.addEventListener('keydown', this.boundHandleKeyDown);
+
+    // Start now indicator update timer (every minute)
+    this.startNowIndicatorTimer();
   }
 
   disconnectedCallback(): void {
@@ -110,6 +117,9 @@ export class MpScheduler extends HTMLElement {
     this.removeEventListener('keydown', this.boundHandleKeyDown);
     this.currentView?.destroy();
     this.dragManager.destroy();
+
+    // Stop now indicator timer
+    this.stopNowIndicatorTimer();
 
     // Cancel any pending RAF
     if (this.pendingDragUpdate !== null) {
@@ -686,6 +696,24 @@ export class MpScheduler extends HTMLElement {
           this.dragManager.cancel();
         }
         break;
+    }
+  }
+
+  // ============================================
+  // Now Indicator Timer
+  // ============================================
+
+  private startNowIndicatorTimer(): void {
+    // Update every minute (60000ms)
+    this.nowIndicatorTimer = setInterval(() => {
+      this.currentView?.updateNowIndicator();
+    }, 60000);
+  }
+
+  private stopNowIndicatorTimer(): void {
+    if (this.nowIndicatorTimer !== null) {
+      clearInterval(this.nowIndicatorTimer);
+      this.nowIndicatorTimer = null;
     }
   }
 

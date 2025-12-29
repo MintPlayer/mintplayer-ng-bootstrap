@@ -403,6 +403,40 @@ export class WeekView extends BaseView {
     dayColumn.appendChild(indicator);
   }
 
+  override updateNowIndicator(): void {
+    if (!this.state.options.nowIndicator) return;
+
+    const { date, options } = this.state;
+    const days = dateService.getWeekDays(date, options.firstDayOfWeek);
+
+    const now = new Date();
+    const todayIndex = days.findIndex((d) => dateService.isSameDay(d, now));
+    if (todayIndex === -1) return;
+
+    const dayColumn = this.dayColumns[todayIndex];
+    if (!dayColumn) return;
+
+    // Find existing indicator
+    const existingIndicator = dayColumn.querySelector('.scheduler-now-indicator');
+
+    // Calculate new position
+    const dayStart = new Date(now);
+    dayStart.setHours(0, 0, 0, 0);
+    const minutesFromMidnight = (now.getTime() - dayStart.getTime()) / (1000 * 60);
+    const slotMinutes = (options.slotDuration ?? 1800) / 60;
+    const top = (minutesFromMidnight / slotMinutes) * 40;
+
+    if (existingIndicator) {
+      // Update position of existing indicator
+      (existingIndicator as HTMLElement).style.top = `${top}px`;
+    } else {
+      // Create new indicator if it doesn't exist
+      const indicator = this.createElement('div', 'scheduler-now-indicator');
+      indicator.style.top = `${top}px`;
+      dayColumn.appendChild(indicator);
+    }
+  }
+
   destroy(): void {
     this.eventElements.clear();
     this.slotElements.clear();

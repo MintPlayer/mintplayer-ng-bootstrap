@@ -28,6 +28,14 @@ export abstract class BaseView {
   abstract destroy(): void;
 
   /**
+   * Update the now indicator position (called every minute)
+   * Default implementation does nothing - override in views that have a now indicator
+   */
+  updateNowIndicator(): void {
+    // Default: do nothing
+  }
+
+  /**
    * Get the view's root element
    */
   getElement(): HTMLElement {

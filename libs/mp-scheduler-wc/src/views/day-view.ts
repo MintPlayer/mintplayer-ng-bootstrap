@@ -13,6 +13,7 @@ import { SchedulerState } from '../state/scheduler-state';
 export class DayView extends BaseView {
   private eventsContainer: HTMLElement | null = null;
   private slotElements: Map<number, HTMLElement> = new Map();
+  private dayColumn: HTMLElement | null = null;
 
   render(): void {
     this.clearContainer();
@@ -75,7 +76,8 @@ export class DayView extends BaseView {
 
     // Day column
     const daysContainer = this.createElement('div', 'scheduler-days-container');
-    const dayColumn = this.createElement('div', 'scheduler-day-column');
+    this.dayColumn = this.createElement('div', 'scheduler-day-column');
+    const dayColumn = this.dayColumn;
 
     // Create time slots
     for (let slotIndex = 0; slotIndex < slots.length; slotIndex++) {
@@ -228,6 +230,32 @@ export class DayView extends BaseView {
     dayColumn.appendChild(indicator);
   }
 
+  override updateNowIndicator(): void {
+    if (!this.dayColumn) return;
+    if (!this.state.options.nowIndicator) return;
+    if (!dateService.isToday(this.state.date)) return;
+
+    // Find existing indicator
+    const existingIndicator = this.dayColumn.querySelector('.scheduler-now-indicator');
+
+    // Calculate new position
+    const now = new Date();
+    const dayStart = new Date(now);
+    dayStart.setHours(0, 0, 0, 0);
+
+    const minutesFromMidnight = (now.getTime() - dayStart.getTime()) / (1000 * 60);
+    const slotMinutes = (this.state.options.slotDuration ?? 1800) / 60;
+    const top = (minutesFromMidnight / slotMinutes) * 40;
+
+    if (existingIndicator) {
+      // Update position of existing indicator
+      (existingIndicator as HTMLElement).style.top = `${top}px`;
+    } else {
+      // Create new indicator if it doesn't exist
+      this.renderNowIndicator(this.dayColumn);
+    }
+  }
+
   update(state: SchedulerState): void {
     const dateChanged = this.state.date.getTime() !== state.date.getTime();
     const optionsChanged = this.optionsRequireRerender(this.state.options, state.options);
@@ -322,6 +350,7 @@ export class DayView extends BaseView {
 
   destroy(): void {
     this.eventsContainer = null;
+    this.dayColumn = null;
     this.slotElements.clear();
     this.clearContainer();
   }
