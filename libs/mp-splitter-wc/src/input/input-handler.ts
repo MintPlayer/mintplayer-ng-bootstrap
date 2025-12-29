@@ -58,9 +58,9 @@ export class InputHandler {
     event.preventDefault();
     this.startResize(event, dividerIndex, dividerElement);
 
-    dividerElement.addEventListener('touchmove', this.boundTouchMove, { passive: false });
-    dividerElement.addEventListener('touchend', this.boundTouchEnd);
-    dividerElement.addEventListener('touchcancel', this.boundTouchEnd);
+    document.addEventListener('touchmove', this.boundTouchMove, { passive: false });
+    document.addEventListener('touchend', this.boundTouchEnd);
+    document.addEventListener('touchcancel', this.boundTouchEnd);
   }
 
   private handleTouchMove(event: TouchEvent): void {
@@ -73,11 +73,9 @@ export class InputHandler {
     if (!this.isActive) return;
     this.endResize(event);
 
-    if (this.currentDividerElement) {
-      this.currentDividerElement.removeEventListener('touchmove', this.boundTouchMove);
-      this.currentDividerElement.removeEventListener('touchend', this.boundTouchEnd);
-      this.currentDividerElement.removeEventListener('touchcancel', this.boundTouchEnd);
-    }
+    document.removeEventListener('touchmove', this.boundTouchMove);
+    document.removeEventListener('touchend', this.boundTouchEnd);
+    document.removeEventListener('touchcancel', this.boundTouchEnd);
   }
 
   private startResize(event: MouseEvent | TouchEvent, dividerIndex: number, dividerElement: HTMLElement): void {
@@ -98,11 +96,9 @@ export class InputHandler {
     document.removeEventListener('mousemove', this.boundMouseMove);
     document.removeEventListener('mouseup', this.boundMouseUp);
 
-    if (this.currentDividerElement) {
-      this.currentDividerElement.removeEventListener('touchmove', this.boundTouchMove);
-      this.currentDividerElement.removeEventListener('touchend', this.boundTouchEnd);
-      this.currentDividerElement.removeEventListener('touchcancel', this.boundTouchEnd);
-    }
+    document.removeEventListener('touchmove', this.boundTouchMove);
+    document.removeEventListener('touchend', this.boundTouchEnd);
+    document.removeEventListener('touchcancel', this.boundTouchEnd);
 
     this.isActive = false;
     this.currentDividerIndex = -1;

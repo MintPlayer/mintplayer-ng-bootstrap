@@ -79,9 +79,8 @@ export class MpSplitter extends HTMLElement {
         this.updateContainerOrientation();
         break;
       case 'min-panel-size':
-        this.resizeManager.setMinPanelSize(
-          newValue ? parseInt(newValue, 10) : 50
-        );
+        const parsedSize = newValue ? parseInt(newValue, 10) : 50;
+        this.resizeManager.setMinPanelSize(!isNaN(parsedSize) ? parsedSize : 50);
         break;
       case 'touch-mode':
         // Handled by CSS via :host([touch-mode])
@@ -198,9 +197,7 @@ export class MpSplitter extends HTMLElement {
 
       wrapper.appendChild(namedSlot);
       this.panelWrappers.push(wrapper);
-      if (this.container) {
-        this.container.appendChild(wrapper);
-      }
+      this.container.appendChild(wrapper);
 
       // Add divider between panels
       if (index < children.length - 1) {
@@ -208,9 +205,7 @@ export class MpSplitter extends HTMLElement {
         divider.className = 'divider';
         this.inputHandler.attachDividerListeners(divider, index);
         this.dividers.push(divider);
-        if (this.container) {
-          this.container.appendChild(divider);
-        }
+        this.container.appendChild(divider);
       }
     });
   }
