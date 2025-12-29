@@ -74,6 +74,7 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
   }
 
   @HostBinding('class.show') get show() { return this.dropdown.isOpen(); }
+  @HostBinding('attr.role') role = 'menu';
   @HostListener('clickOutside', ['$event']) clickedOutside(event: Event) {
     const ev = event as MouseEvent;
     if (!this.bsDevelopment) {

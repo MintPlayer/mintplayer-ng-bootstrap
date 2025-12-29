@@ -1,5 +1,5 @@
 <bs-has-overlay></bs-has-overlay>
-<div bsDropdown [(isOpen)]="isOpen" [hasBackdrop]="false" [sameDropdownWidth]="true" #itemsBox class="items-box text-wrap">
+<div bsDropdown [(isOpen)]="isOpen" [hasBackdrop]="false" [sameDropdownWidth]="true" #itemsBox class="items-box text-wrap" role="combobox" [attr.aria-expanded]="isOpen()">
     @for (item of selectedItems(); track item) {
         <ng-container *ngTemplateOutlet="itemTemplate ?? defaultItemTemplate; context: { $implicit: item, select2: this }"></ng-container>
     }
@@ -10,10 +10,12 @@
         (focus)="isFocused=true"
         (blur)="isFocused=false"
         [style.width.px]="searchWidth()"
+        aria-autocomplete="list"
+        aria-haspopup="listbox"
         #searchBox />
-    <bs-dropdown-menu *bsDropdownMenu [maxHeight]="200">
+    <bs-dropdown-menu *bsDropdownMenu [maxHeight]="200" role="listbox">
         @for (suggestion of suggestions(); track $index) {
-            <bs-dropdown-item (click)="onSuggestionClicked(suggestion)" [isSelected]="selectedItems() | bsInList:suggestion.id">
+            <bs-dropdown-item (click)="onSuggestionClicked(suggestion)" [isSelected]="selectedItems() | bsInList:suggestion.id" role="option" [attr.aria-selected]="(selectedItems() | bsInList:suggestion.id) || null">
                 <ng-container *ngTemplateOutlet="suggestionTemplate ?? defaultSuggestionTemplate; context: { $implicit: suggestion, select2: this }"></ng-container>
             </bs-dropdown-item>
         }
@@ -22,7 +24,7 @@
 
 <ng-template #defaultItemTemplate let-item let-select2="select2">
     <span class="select2-item">
-        <span (click)="select2.onRemoveItem(item,$event)">×</span>
+        <button type="button" (click)="select2.onRemoveItem(item,$event)" aria-label="Remove item" class="btn-close-inline">×</button>
         {{ item.text }}
     </span>
 </ng-template>

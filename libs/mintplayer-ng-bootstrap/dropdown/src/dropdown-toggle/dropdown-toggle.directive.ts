@@ -1,6 +1,5 @@
-import { Directive, ElementRef, HostListener } from '@angular/core';
+import { Directive, ElementRef, HostBinding, HostListener } from '@angular/core';
 import { BsDropdownDirective } from '../dropdown/dropdown.directive';
-// import { BsDropdownComponent } from '../dropdown/dropdown.component';
 
 @Directive({
   selector: '[bsDropdownToggle]',
@@ -10,13 +9,16 @@ export class BsDropdownToggleDirective {
 
   constructor(
     private dropdown: BsDropdownDirective,
-    // private dropdown: BsDropdownComponent,
     toggleButton: ElementRef) {
       this.toggleButton = toggleButton;
     }
 
   toggleButton: ElementRef;
 
+  @HostBinding('attr.aria-haspopup') ariaHasPopup = 'true';
+  @HostBinding('attr.aria-expanded') get ariaExpanded() {
+    return this.dropdown.isOpen();
+  }
 
   @HostListener('click')
   onClick() {

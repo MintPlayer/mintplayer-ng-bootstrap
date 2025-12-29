@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, HostListener, input, model, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, HostBinding, HostListener, input, model, output, signal } from '@angular/core';
 
 @Component({
   selector: 'bs-rating',
@@ -8,6 +8,8 @@ import { ChangeDetectionStrategy, Component, computed, effect, HostListener, inp
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsRatingComponent {
+  @HostBinding('attr.role') role = 'group';
+  @HostBinding('attr.aria-label') ariaLabel = 'Rating';
 
   constructor() {
     effect(() => {

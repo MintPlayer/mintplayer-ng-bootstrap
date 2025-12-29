@@ -1,5 +1,10 @@
 @for (star of stars(); let i = $index; track i) {
-    <span class="cursor-pointer" (mouseenter)="hoverValue(i)" (click)="selectValue(i)">
-        {{ star ? '&#9733;' : '&#9734;' }}
-    </span>
+    <button type="button"
+        class="cursor-pointer btn-star"
+        (mouseenter)="hoverValue(i)"
+        (click)="selectValue(i)"
+        [attr.aria-label]="'Rate ' + (i + 1) + ' out of ' + maximum() + ' stars'"
+        [attr.aria-pressed]="value() === (i + 1)">
+        <span aria-hidden="true">{{ star ? '&#9733;' : '&#9734;' }}</span>
+    </button>
 }

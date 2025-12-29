@@ -1,10 +1,19 @@
 <bs-container>
-    <nav #nav class="navbar position-fixed" [class]="navClassList()" bsUserAgent bsNoNoscript>
+    <nav #nav class="navbar position-fixed" [class]="navClassList()" bsUserAgent bsNoNoscript aria-label="Main navigation">
         <div class="container-fluid nav-wrapper">
             <div class="d-flex w-100" [class]="wAutoClass()">
                 <ng-content select="bs-navbar-brand"></ng-content>
                 <div class="flex-end d-flex tw" [class]="dNoneClass()">
-                    <button (click)="toggleExpanded()" title="Expand/collapse menu" class="align-self-center" [class.navbar-toggler]="!expandButtonTemplate" [class.bg-transparent]="expandButtonTemplate" [class.shadow-none]="expandButtonTemplate" [class.border-0]="expandButtonTemplate" type="button">
+                    <button (click)="toggleExpanded()"
+                        class="align-self-center"
+                        [class.navbar-toggler]="!expandButtonTemplate"
+                        [class.bg-transparent]="expandButtonTemplate"
+                        [class.shadow-none]="expandButtonTemplate"
+                        [class.border-0]="expandButtonTemplate"
+                        type="button"
+                        aria-label="Toggle navigation"
+                        [attr.aria-expanded]="isExpanded()"
+                        aria-controls="navbar-collapse">
                         <ng-container *ngTemplateOutlet="expandButtonTemplate ?? defaultExpandButton; context: { $implicit: isExpanded() }"></ng-container>
                     </button>
                 </div>
@@ -15,5 +24,5 @@
 </bs-container>
 
 <ng-template #defaultExpandButton>
-    <span class="navbar-toggler-icon"></span>
+    <span class="navbar-toggler-icon" aria-hidden="true"></span>
 </ng-template>

@@ -1,4 +1,8 @@
-<input type="radio" bsNoNoscript class="d-none" [name]="tabControl.tabControlName()" [id]="tabName()">
-<div class="tab-page-content" [class.d-block]="tabControl.activeTab() === this">
+<div [id]="tabName() + '-panel'"
+    class="tab-page-content"
+    role="tabpanel"
+    [attr.aria-labelledby]="tabName()"
+    [class.d-block]="tabControl.activeTab() === this"
+    [attr.tabindex]="tabControl.activeTab() === this ? 0 : null">
     <ng-content></ng-content>
 </div>
