@@ -5,10 +5,10 @@ But this behavior does not extend to events.
 When the user wants to pan the scheduler, and first drags from the event, the scheduler doesn't pan.
 
 ## Solution
-When touchstart/mousedown on an event, and triggering a touchmove/mousemove within 0.6s that exceeds the threshold, the scheduler should pan too.
+When a `touchstart` or `mousedown` event occurs on a scheduler event, if a subsequent `touchmove` or `mousemove` event is triggered within 600ms that exceeds a defined pixel movement threshold (e.g., 10px), the scheduler view should begin to pan (scroll).
 
 ## Other existing behavior
-At the moment the user can already touchstart/mousedown events. And if the pointer doesn't exceed the threshold (px) within 0.6s, the scheduler already starts a event-drag-operation. The new code must not interfere with this behavior.
+The current behavior for initiating an event drag must be preserved. If a user performs a `touchstart` or `mousedown` on an event and holds for 600ms without moving beyond the pixel threshold, the component should initiate an event-drag operation. The new panning logic must not interfere with this.
 
 ## Related files
 - Demo: apps\ng-bootstrap-demo\src\app\pages\advanced\scheduler
