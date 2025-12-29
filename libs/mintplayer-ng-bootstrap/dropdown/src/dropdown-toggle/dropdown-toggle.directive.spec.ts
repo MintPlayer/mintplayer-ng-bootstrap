@@ -1,9 +1,33 @@
-import { Component } from '@angular/core';
+import { Component, ContentChild, Directive, ElementRef, input, model } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsDropdownDirective } from '../dropdown/dropdown.directive';
 import { BsDropdownToggleDirective } from './dropdown-toggle.directive';
-import { MockDirectives } from 'ng-mocks';
 import { BsDropdownMenuDirective } from '../dropdown-menu/dropdown-menu.directive';
+
+@Directive({
+  selector: '[bsDropdownMenu]',
+  standalone: false,
+})
+class BsDropdownMenuMockDirective {
+}
+
+@Directive({
+  selector: '[bsDropdown]',
+  standalone: false,
+  providers: [
+    { provide: BsDropdownDirective, useExisting: BsDropdownMockDirective }
+  ]
+})
+class BsDropdownMockDirective {
+  elementRef = { nativeElement: document.createElement('div') };
+  isOpen = model<boolean>(false);
+  hasBackdrop = input(false);
+  closeOnClickOutside = input(true);
+  sameDropdownWidth = input(false);
+
+  @ContentChild(BsDropdownMenuMockDirective, {static: false}) menu!: BsDropdownMenuMockDirective;
+  @ContentChild(BsDropdownToggleDirective, {static: false}) toggle!: BsDropdownToggleDirective;
+}
 
 @Component({
   selector: 'bs-dropdown-toggle-test',
@@ -31,7 +55,8 @@ describe('BsDropdownToggleDirective', () => {
         BsDropdownToggleDirective,
 
         // Mock directives
-        MockDirectives(BsDropdownDirective, BsDropdownMenuDirective),
+        BsDropdownMockDirective,
+        BsDropdownMenuMockDirective,
 
         // Testbench
         BsDropdownToggleTestComponent
