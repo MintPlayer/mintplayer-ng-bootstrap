@@ -10,4 +10,4 @@ Reference: libs\mintplayer-ng-bootstrap\splitter\src\splitter\splitter.component
 Turn the Splitter component into a webcomponent. By using content-projection through the shadow-dom we can flawlessly render the panels at the correct location.
 
 ## Requirements
-I prefer to see the webcomponents in a new typescript library (`@mintplayer/splitter-wc`). The same already happened for the scheduler component too.
+I prefer to see the webcomponents in a new typescript library (`@mintplayer/splitter`). The same already happened for the scheduler component too.

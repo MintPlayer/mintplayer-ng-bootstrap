@@ -1,7 +1,7 @@
 import { Component, CUSTOM_ELEMENTS_SCHEMA, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
-import '@mintplayer/splitter-wc';
+import '@mintplayer/splitter';
 
 @Component({
   selector: 'demo-splitter',
