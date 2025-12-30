@@ -1,4 +1,4 @@
-import { Component, Input, TemplateRef, TrackByFunction, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, TemplateRef, TrackByFunction, ViewChild } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 
 @Component({
@@ -6,6 +6,7 @@ import { Color } from '@mintplayer/ng-bootstrap';
   templateUrl: './multiselect.component.html',
   styleUrls: ['./multiselect.component.scss'],
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsMultiselectComponent<T> {
 

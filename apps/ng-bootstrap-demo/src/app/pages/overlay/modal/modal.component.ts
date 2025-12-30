@@ -21,7 +21,7 @@ export class ModalComponent {
   private tagService = inject(TagService);
   gitRepo = inject(GIT_REPO);
 
-  isOpen = false;
+  isOpen = signal(false);
   colors = Color;
   tagSuggestions = signal<Tag[]>([]);
   selectedTags = signal<Tag[]>([]);

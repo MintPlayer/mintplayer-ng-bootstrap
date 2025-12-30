@@ -17,6 +17,7 @@ export class BsAccordionComponent {
   @ContentChildren(forwardRef(() => BsAccordionTabComponent)) tabPages!: QueryList<BsAccordionTabComponent>;
   disableAnimations = false;
   highlightActiveTab = input(false);
+  multi = input(false);
 
   accordionId = signal<number>(0);
   accordionName = computed(() => `bs-accordion-${this.accordionId()}`);

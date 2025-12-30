@@ -1,14 +1,13 @@
-import { AsyncPipe, JsonPipe } from '@angular/common';
+import { JsonPipe } from '@angular/common';
 import { Component, signal } from '@angular/core';
 import { BsTypeaheadComponent } from '@mintplayer/ng-bootstrap/typeahead';
-import { BehaviorSubject } from 'rxjs';
 
 @Component({
   selector: 'demo-typeahead',
   templateUrl: './typeahead.component.html',
   styleUrls: ['./typeahead.component.scss'],
   standalone: true,
-  imports: [BsTypeaheadComponent, AsyncPipe, JsonPipe],
+  imports: [BsTypeaheadComponent, JsonPipe],
   providers: [JsonPipe]
 })
 export class TypeaheadComponent {
@@ -16,7 +15,7 @@ export class TypeaheadComponent {
   constructor(private jsonPipe: JsonPipe) { }
 
   searchterm = signal('');
-  suggestions$ = new BehaviorSubject<any[]>([]);
+  suggestions = signal<any[]>([]);
   items: any[] = [
     { id: 1, firstName: 'Michael', lastName: 'Jackson', text: 'Michael Jackson' },
     { id: 2, firstName: 'Paul', lastName: 'Spencer', text: 'Paul Spencer' },
@@ -25,7 +24,7 @@ export class TypeaheadComponent {
   ];
   provideSuggestions(searchTerm: string) {
     setTimeout(() => {
-      this.suggestions$.next(this.items.filter(i => (i.firstName + ' ' + i.lastName).indexOf(searchTerm) > -1));
+      this.suggestions.set(this.items.filter(i => (i.firstName + ' ' + i.lastName).indexOf(searchTerm) > -1));
     }, 3000);
   }
   gotoArtist(suggestion: any) {

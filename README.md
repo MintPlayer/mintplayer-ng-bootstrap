@@ -99,3 +99,30 @@ Then run following commands
 - Uses per-component styles. Only non-generic bootstrap styles are bundled in the main bundle
 - Carousel: supports touch-events
 - Noscript support for **Navbar** and **Carousel**, requires `@angular/universal`
+
+## Performance Optimizations
+
+This library is optimized for minimal bundle size and maximum performance:
+
+### OnPush Change Detection
+All components use `ChangeDetectionStrategy.OnPush` for optimal change detection performance. This reduces unnecessary change detection cycles in your application.
+
+### Zoneless Compatibility
+The library is fully compatible with Angular's zoneless change detection (`provideZonelessChangeDetection()`). Components use Angular signals where appropriate, allowing you to run your application without zone.js for reduced bundle size.
+
+### RxJS-Free
+The library components don't depend on RxJS internally, helping to keep your bundle size minimal if you choose not to use RxJS in your application.
+
+## Bundle Analysis
+
+To analyze your application's bundle size, you can use the included scripts:
+
+```bash
+# Build with source maps
+npm run build:sme
+
+# Analyze the bundle
+npm run sme
+```
+
+This will open `source-map-explorer` to visualize what's included in your bundle.

@@ -11,6 +11,6 @@ export class BsModalCloseDirective {
   @HostBinding('attr.aria-label') ariaLabel = 'Close';
 
   @HostListener('click') onClick() {
-    this.host.isOpen = false;
+    this.host.isOpen.set(false);
   }
 }

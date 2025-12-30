@@ -1,7 +1,6 @@
 import { Component, HostBinding, Input, OnInit, OnDestroy } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
-import { interval, Subscription } from 'rxjs';
 
 @Component({
   selector: "demo-hello",
@@ -22,18 +21,22 @@ export class HelloComponent implements OnInit, OnDestroy {
   @HostBinding('class.fw-bold')
   isBold = false;
 
-  private subscription?: Subscription;
+  private intervalId?: ReturnType<typeof setInterval>;
+  private counter = 0;
 
   ngOnInit() {
-    this.subscription = interval(1000).subscribe(value => {
-      console.log(value);
-      this.padding = value;
-      this.isBold = value % 2 === 1;
-    });
+    this.intervalId = setInterval(() => {
+      console.log(this.counter);
+      this.padding = this.counter;
+      this.isBold = this.counter % 2 === 1;
+      this.counter++;
+    }, 1000);
   }
 
   ngOnDestroy() {
-    this.subscription?.unsubscribe();
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+    }
   }
 }
 

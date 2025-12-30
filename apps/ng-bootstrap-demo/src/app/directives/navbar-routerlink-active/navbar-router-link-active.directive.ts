@@ -1,7 +1,5 @@
-import { AfterContentChecked, ChangeDetectorRef, DestroyRef, Directive, ElementRef, inject, Input, Renderer2 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NavigationEnd, Router, RouterLinkActive } from '@angular/router';
-import { filter } from 'rxjs';
+import { AfterContentChecked, ChangeDetectorRef, Directive, ElementRef, inject, Input, Renderer2 } from '@angular/core';
+import { Router, RouterLinkActive } from '@angular/router';
 
 // Here we extend the RouterLinkActiveDirective
 // to have the "active" value for each <a> with a routerLink attribute
@@ -16,21 +14,12 @@ export class NavbarRouterLinkActiveDirective extends RouterLinkActive implements
   private _router = inject(Router);
   private _elementRef = inject(ElementRef);
   private _renderer = inject(Renderer2);
-  private _destroyRef = inject(DestroyRef);
 
   @Input() fragment?: string;
 
   constructor() {
     super(inject(Router), inject(ElementRef), inject(Renderer2), inject(ChangeDetectorRef));
     this.routerLinkActive = 'active';
-
-    // Subscribe to navigation events to handle fragment-based active state
-    this._router.events.pipe(
-      filter((event): event is NavigationEnd => event instanceof NavigationEnd),
-      takeUntilDestroyed(this._destroyRef)
-    ).subscribe(() => {
-      this.updateFragmentActiveState();
-    });
   }
 
   ngAfterContentChecked(): void {

@@ -1,4 +1,4 @@
-import { Component, Input, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, computed, input } from '@angular/core';
 
 
 @Component({
@@ -7,6 +7,7 @@ import { Component, Input, computed, input } from '@angular/core';
   templateUrl: './parallax.component.html',
   styleUrl: './parallax.component.scss',
   imports: [],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsParallaxComponent {
   height = input<number>(150);

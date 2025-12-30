@@ -1,4 +1,4 @@
-import { Component, EventEmitter, HostListener, Input, Output, TemplateRef } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, HostListener, Input, Output, TemplateRef } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { FileUpload } from '../file-upload';
 
@@ -7,6 +7,7 @@ import { FileUpload } from '../file-upload';
   templateUrl: './file-upload.component.html',
   styleUrls: ['./file-upload.component.scss'],
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsFileUploadComponent {
 

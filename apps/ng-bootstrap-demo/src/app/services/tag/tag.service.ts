@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { PaginationRequest, PaginationResponse } from '@mintplayer/pagination';
 import { Tag } from '../../entities/tag';
 
@@ -7,53 +6,70 @@ import { Tag } from '../../entities/tag';
   providedIn: 'root'
 })
 export class TagService {
-  constructor(private httpClient: HttpClient) {
-  }
-
   private baseUrl = 'https://mintplayer.com';
 
-  public pageTags(request: PaginationRequest) {
-    return this.httpClient.post<PaginationResponse<Tag>>(`${this.baseUrl}/api/v1/Tag/page`, request).toPromise();
+  public async pageTags(request: PaginationRequest): Promise<PaginationResponse<Tag> | undefined> {
+    const response = await fetch(`${this.baseUrl}/api/v1/Tag/page`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request)
+    });
+    return response.json();
   }
 
-  public suggestTags(search: string, includeRelations: boolean = false) {
-    return this.httpClient.post<Tag[]>(`${this.baseUrl}/web/v3/Tag/suggest`, {
-      searchTerm: search
-    }, {
+  public async suggestTags(search: string, includeRelations: boolean = false): Promise<Tag[] | undefined> {
+    const response = await fetch(`${this.baseUrl}/web/v3/Tag/suggest`, {
+      method: 'POST',
       headers: {
-        include_relations: String(includeRelations)
-      }
-    }).toPromise();
+        'Content-Type': 'application/json',
+        'include_relations': String(includeRelations)
+      },
+      body: JSON.stringify({ searchTerm: search })
+    });
+    return response.json();
   }
 
-  public searchTags(search: string) {
-    return this.httpClient.post<Tag[]>(`${this.baseUrl}/api/v1/Tag/search`, { searchTerm: search }).toPromise();
+  public async searchTags(search: string): Promise<Tag[] | undefined> {
+    const response = await fetch(`${this.baseUrl}/api/v1/Tag/search`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ searchTerm: search })
+    });
+    return response.json();
   }
 
-  public getTags(include_relations: boolean) {
-    return this.httpClient.get<Tag[]>(`${this.baseUrl}/api/v1/Tag`, {
-      headers: {
-        'include_relations': String(include_relations)
-      }
-    }).toPromise();
+  public async getTags(include_relations: boolean): Promise<Tag[] | undefined> {
+    const response = await fetch(`${this.baseUrl}/api/v1/Tag`, {
+      headers: { 'include_relations': String(include_relations) }
+    });
+    return response.json();
   }
 
-  public getTag(id: number, include_relations: boolean) {
-    return this.httpClient.get<Tag>(`${this.baseUrl}/api/v1/Tag/${id}`, {
-      headers: {
-        'include_relations': String(include_relations)
-      }
-    }).toPromise();
+  public async getTag(id: number, include_relations: boolean): Promise<Tag | undefined> {
+    const response = await fetch(`${this.baseUrl}/api/v1/Tag/${id}`, {
+      headers: { 'include_relations': String(include_relations) }
+    });
+    return response.json();
   }
 
-  public createTag(tag: Tag) {
+  public async createTag(tag: Tag): Promise<Tag | undefined> {
     const clone = this.removeSubjects(tag);
-    return this.httpClient.post<Tag>(`${this.baseUrl}/api/v1/Tag`, clone).toPromise();
+    const response = await fetch(`${this.baseUrl}/api/v1/Tag`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(clone)
+    });
+    return response.json();
   }
 
-  public updateTag(tag: Tag) {
+  public async updateTag(tag: Tag): Promise<Tag | undefined> {
     const clone = this.removeSubjects(tag);
-    return this.httpClient.put<Tag>(`${this.baseUrl}/api/v1/Tag/${tag.id}`, clone).toPromise();
+    const response = await fetch(`${this.baseUrl}/api/v1/Tag/${tag.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(clone)
+    });
+    return response.json();
   }
 
   private removeSubjects(tag: Tag) {
@@ -67,7 +83,9 @@ export class TagService {
     return clone;
   }
 
-  public deleteTag(tag: Tag) {
-    return this.httpClient.delete(`${this.baseUrl}/api/v1/Tag/${tag.id}`).toPromise();
+  public async deleteTag(tag: Tag): Promise<void> {
+    await fetch(`${this.baseUrl}/api/v1/Tag/${tag.id}`, {
+      method: 'DELETE'
+    });
   }
 }

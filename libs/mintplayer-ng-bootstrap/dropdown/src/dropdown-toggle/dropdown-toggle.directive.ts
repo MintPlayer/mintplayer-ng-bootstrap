@@ -1,27 +1,31 @@
-import { Directive, ElementRef, HostBinding, HostListener } from '@angular/core';
+import { ApplicationRef, Directive, effect, ElementRef, inject, Renderer2 } from '@angular/core';
 import { BsDropdownDirective } from '../dropdown/dropdown.directive';
 
 @Directive({
   selector: '[bsDropdownToggle]',
   standalone: false,
+  host: {
+    '[attr.aria-haspopup]': '"true"',
+    '(click)': 'onClick()',
+  }
 })
 export class BsDropdownToggleDirective {
+  private dropdown = inject(BsDropdownDirective);
+  private renderer = inject(Renderer2);
+  private elementRef = inject(ElementRef);
+  private appRef = inject(ApplicationRef);
 
-  constructor(
-    private dropdown: BsDropdownDirective,
-    toggleButton: ElementRef) {
-      this.toggleButton = toggleButton;
-    }
+  toggleButton = this.elementRef;
 
-  toggleButton: ElementRef;
-
-  @HostBinding('attr.aria-haspopup') ariaHasPopup = 'true';
-  @HostBinding('attr.aria-expanded') get ariaExpanded() {
-    return this.dropdown.isOpen();
+  constructor() {
+    effect(() => {
+      const isOpen = this.dropdown.isOpen();
+      this.renderer.setAttribute(this.elementRef.nativeElement, 'aria-expanded', String(isOpen));
+    });
   }
 
-  @HostListener('click')
   onClick() {
     this.dropdown.isOpen.set(!this.dropdown.isOpen());
+    this.appRef.tick();
   }
 }

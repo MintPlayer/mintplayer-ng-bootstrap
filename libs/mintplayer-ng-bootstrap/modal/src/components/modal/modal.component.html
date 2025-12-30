@@ -1,4 +1,4 @@
-@if (isOpen) {
+@if (isOpen()) {
     <div class="modal d-block"
         [@fadeInOut]
         [@enterFromTop]
@@ -13,6 +13,6 @@
     </div>
 
     <div [@fadeInOut]>
-        <div class="modal-backdrop fade" [class.show]="isOpen" aria-hidden="true"></div>
+        <div class="modal-backdrop fade" [class.show]="isOpen()" aria-hidden="true"></div>
     </div>
 }

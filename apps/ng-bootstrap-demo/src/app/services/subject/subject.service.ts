@@ -1,4 +1,3 @@
-import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Subject } from '../../entities/subject';
 import { ESubjectType } from '../../enums/subject-type';
@@ -7,19 +6,20 @@ import { ESubjectType } from '../../enums/subject-type';
   providedIn: 'root'
 })
 export class SubjectService {
-  constructor(private httpClient: HttpClient) {
-  }
-
   private baseUrl = 'https://mintplayer.com';
 
-  public suggest(search: string, subjects: ESubjectType[], includeRelations = false) {
-    return this.httpClient.post<Subject[]>(`${this.baseUrl}/api/v1/subject/search/suggest`, {
-      searchTerm: search,
-      subjectTypes: subjects
-    }, {
+  public async suggest(search: string, subjects: ESubjectType[], includeRelations = false): Promise<Subject[]> {
+    const response = await fetch(`${this.baseUrl}/api/v1/subject/search/suggest`, {
+      method: 'POST',
       headers: {
-        include_relations: String(includeRelations)
-      }
+        'Content-Type': 'application/json',
+        'include_relations': String(includeRelations)
+      },
+      body: JSON.stringify({
+        searchTerm: search,
+        subjectTypes: subjects
+      })
     });
+    return response.json();
   }
 }

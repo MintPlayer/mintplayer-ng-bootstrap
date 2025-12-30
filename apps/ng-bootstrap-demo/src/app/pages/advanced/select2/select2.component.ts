@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { Artist } from '../../../entities/artist';
 import { Tag } from '../../../entities/tag';
 import { ESubjectType } from '../../../enums/subject-type';
@@ -6,7 +6,6 @@ import { SubjectService } from '../../../services/subject/subject.service';
 import { TagService } from '../../../services/tag/tag.service';
 import { BsSelect2Module } from '@mintplayer/ng-bootstrap/select2';
 import { BsFontColorPipe } from '@mintplayer/ng-bootstrap/font-color';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'demo-select2',
@@ -19,23 +18,20 @@ export class Select2Component {
 
   subjectService = inject(SubjectService);
   tagService = inject(TagService);
-  destroy = inject(DestroyRef);
 
   artistSuggestions = signal<Artist[]>([]);
   tagSuggestions = signal<Tag[]>([]);
   selectedTags = signal<Tag[]>([]);
 
-  onProvideArtistSuggestions(search: string) {
-    this.subjectService.suggest(search, [ESubjectType.artist])
-      .pipe(takeUntilDestroyed(this.destroy))
-      .subscribe(artists => this.artistSuggestions.set(artists.map(s => <Artist>s)));
+  async onProvideArtistSuggestions(search: string) {
+    const artists = await this.subjectService.suggest(search, [ESubjectType.artist]);
+    this.artistSuggestions.set(artists.map(s => s as Artist));
   }
-  onProvideTagSuggestions(search: string) {
-    this.tagService.suggestTags(search, true).then((tags) => {
-      if (tags) {
-        this.tagSuggestions.set(tags);
-      }
-    });
+  async onProvideTagSuggestions(search: string) {
+    const tags = await this.tagService.suggestTags(search, true);
+    if (tags) {
+      this.tagSuggestions.set(tags);
+    }
   }
 
 }

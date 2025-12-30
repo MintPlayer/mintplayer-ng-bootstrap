@@ -1,10 +1,11 @@
-import { Component, ElementRef, Input, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, Input, ViewChild } from '@angular/core';
 
 @Component({
   selector: 'bs-range',
   templateUrl: './range.component.html',
   styleUrls: ['./range.component.scss'],
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsRangeComponent {
   @ViewChild('slider') slider!: ElementRef<HTMLInputElement>;

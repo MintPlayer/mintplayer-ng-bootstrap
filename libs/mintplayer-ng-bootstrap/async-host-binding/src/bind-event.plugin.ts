@@ -1,6 +1,4 @@
 import { EventManager } from '@angular/platform-browser';
-import { EMPTY } from 'rxjs';
-import { switchMap, take } from 'rxjs/operators';
 
 export class BsBindEventPlugin {
   manager!: EventManager;
@@ -11,14 +9,40 @@ export class BsBindEventPlugin {
 
   addEventListener(element: HTMLElement, event: string) {
     const el = <any>element;
-    el[event] = EMPTY;
+    el[event] = undefined;
 
     const method = this.getMethod(element, event);
-    const sub = this.manager.getZone()
-      .onStable.pipe(take(1), switchMap(() => el[event]))
-      .subscribe((value) => method(value));
+    let lastValue: unknown = undefined;
+    let isDestroyed = false;
 
-    return () => sub.unsubscribe();
+    // Use queueMicrotask to defer initial check until after current task
+    queueMicrotask(() => {
+      if (isDestroyed) return;
+
+      // Poll for value changes using requestAnimationFrame
+      const checkValue = () => {
+        if (isDestroyed) return;
+
+        const currentValue = el[event];
+        // Check if it's a signal (callable function)
+        const value = typeof currentValue === 'function' ? currentValue() : currentValue;
+
+        if (value !== lastValue) {
+          lastValue = value;
+          if (value !== undefined) {
+            method(value);
+          }
+        }
+
+        requestAnimationFrame(checkValue);
+      };
+
+      checkValue();
+    });
+
+    return () => {
+      isDestroyed = true;
+    };
   }
 
   private getMethod(element: HTMLElement, event: string) {
