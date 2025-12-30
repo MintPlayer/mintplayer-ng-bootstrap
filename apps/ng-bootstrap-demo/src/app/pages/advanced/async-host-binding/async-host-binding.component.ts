@@ -1,25 +1,24 @@
-import { Component, HostBinding, Input, OnInit, OnDestroy } from '@angular/core';
+import { Component, input, OnInit, OnDestroy, signal } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
 
 @Component({
   selector: "demo-hello",
-  template: `Hello {{ name }}!`,
+  template: `Hello {{ name() }}!`,
   standalone: true,
+  host: {
+    '[class.d-inline-block]': 'true',
+    '[class.border]': 'true',
+    '[class.mw-100]': 'true',
+    '[style.padding.px]': 'padding()',
+    '[class.fw-bold]': 'isBold()',
+  },
 })
 export class HelloComponent implements OnInit, OnDestroy {
-  @Input() name!: string;
+  name = input.required<string>();
 
-  @HostBinding('class.d-inline-block')
-  @HostBinding('class.border')
-  @HostBinding('class.mw-100')
-  classes = true;
-
-  @HostBinding('style.padding.px')
-  padding = 0;
-
-  @HostBinding('class.fw-bold')
-  isBold = false;
+  padding = signal(0);
+  isBold = signal(false);
 
   private intervalId?: ReturnType<typeof setInterval>;
   private counter = 0;
@@ -27,8 +26,8 @@ export class HelloComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.intervalId = setInterval(() => {
       console.log(this.counter);
-      this.padding = this.counter;
-      this.isBold = this.counter % 2 === 1;
+      this.padding.set(this.counter);
+      this.isBold.set(this.counter % 2 === 1);
       this.counter++;
     }, 1000);
   }
