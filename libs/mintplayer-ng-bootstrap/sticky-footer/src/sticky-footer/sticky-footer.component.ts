@@ -19,7 +19,7 @@ export class BsStickyFooterComponent implements AfterViewInit {
     effect(() => {
       const height = this.sizeObserver.height();
       if (height !== undefined) {
-        this.parent.marginBottom = height;
+        this.parent.marginBottom.set(height);
       }
     }, { injector: this.injector });
   }

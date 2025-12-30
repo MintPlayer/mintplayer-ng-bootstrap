@@ -1,9 +1,12 @@
-import { Directive, HostBinding } from '@angular/core';
+import { Directive, signal } from '@angular/core';
 
 @Directive({
   selector: '[bsStickyFooterParent]',
   standalone: false,
+  host: {
+    '[style.margin-bottom.px]': 'marginBottom()',
+  },
 })
 export class BsStickyFooterParentDirective {
-  @HostBinding('style.margin-bottom.px') marginBottom?: number;
+  marginBottom = signal<number | undefined>(undefined);
 }

@@ -11,5 +11,5 @@ import { BsStickyFooterModule } from '@mintplayer/ng-bootstrap/sticky-footer';
   imports: [BsGridModule, BsAccordionModule, BsStickyFooterModule]
 })
 export class StickyFooterComponent {
-  numbers = [...Array(5).keys()];
+  numbers = [...Array(3).keys()];
 }
