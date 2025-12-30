@@ -156,11 +156,7 @@ export class BsResizeGlyphDirective {
         // Bottom glyph
         const y = (ev.clientY < rct.top + 10) ? rct.top + 10 : ev.clientY;
         switch (this.resizable.positioning()) {
-          case 'inline': {
-            const initalMargin = this.resizable.marginBottom ?? 0;
-            this.resizable.height = y - rct.top;
-            this.resizable.marginBottom = initalMargin - (y - rct.bottom);
-          } break;
+          case 'inline':
           case 'absolute': {
             this.resizable.height = y - rct.top;
           } break;
