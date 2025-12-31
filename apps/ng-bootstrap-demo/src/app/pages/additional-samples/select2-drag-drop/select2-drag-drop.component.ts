@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, model, signal } from '@angular/core';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { BsSelect2Module } from '@mintplayer/ng-bootstrap/select2';
 import { BsFontColorPipe } from '@mintplayer/ng-bootstrap/font-color';
@@ -17,7 +17,7 @@ export class Select2DragDropComponent {
   tagService = inject(TagService);
 
   tagSuggestions = signal<Tag[]>([]);
-  selectedTags = signal<Tag[]>([]);
+  selectedTags = model<Tag[]>([]);
 
   onProvideTagSuggestions(search: string) {
     this.tagService.suggestTags(search, true).then((tags) => {
