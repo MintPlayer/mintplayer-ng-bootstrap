@@ -1,4 +1,6 @@
 import { Component } from '@angular/core';
+import { Color } from '@mintplayer/ng-bootstrap';
+import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
 import { BsInstanceOfModule } from '@mintplayer/ng-bootstrap/instance-of';
 
 @Component({
@@ -6,7 +8,7 @@ import { BsInstanceOfModule } from '@mintplayer/ng-bootstrap/instance-of';
   templateUrl: './instance-of.component.html',
   styleUrls: ['./instance-of.component.scss'],
   standalone: true,
-  imports: [BsInstanceOfModule],
+  imports: [BsInstanceOfModule, BsAlertModule],
 })
 export class InstanceOfComponent {
   items: (Base | null)[] = [
@@ -19,6 +21,8 @@ export class InstanceOfComponent {
   A = A;
   B = B;
   C = C;
+
+  colors = Color;
 }
 
 class Base {

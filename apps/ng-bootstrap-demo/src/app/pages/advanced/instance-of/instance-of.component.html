@@ -1,5 +1,12 @@
 <h1 class="text-center">Instance of</h1>
 <h2>Demo</h2>
+<bs-alert [type]="colors.info">
+    The Angular 21.2 compiler will allow you to use <code>instanceof</code> directly in templates.
+    However, it's not sure if the feature will land in version 21.2 - it may be introduced in version 22,
+    which is usually planned to release new experimental features.
+    (<a href="https://github.com/angular/angular/commit/72534e2a3458df4e1bb097973872f00bbb92be42" target="_blank" rel="noopener noreferrer">commit</a>)
+</bs-alert>
+
 <ul>
     @for (item of items; track $index) {
         <li>
