@@ -1,0 +1,26 @@
+{
+  "name": "mintplayer-bootstrap",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/mintplayer-bootstrap/scss",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/dist/libs/mintplayer-bootstrap"],
+      "options": {
+        "commands": [
+          "sass libs/mintplayer-bootstrap/scss/bootstrap.scss dist/libs/mintplayer-bootstrap/css/bootstrap.css --style=expanded --source-map",
+          "sass libs/mintplayer-bootstrap/scss/bootstrap.scss dist/libs/mintplayer-bootstrap/css/bootstrap.min.css --style=compressed --source-map",
+          "sass libs/mintplayer-bootstrap/scss/bootstrap-grid.scss dist/libs/mintplayer-bootstrap/css/bootstrap-grid.css --style=expanded --source-map",
+          "sass libs/mintplayer-bootstrap/scss/bootstrap-grid.scss dist/libs/mintplayer-bootstrap/css/bootstrap-grid.min.css --style=compressed --source-map",
+          "sass libs/mintplayer-bootstrap/scss/bootstrap-reboot.scss dist/libs/mintplayer-bootstrap/css/bootstrap-reboot.css --style=expanded --source-map",
+          "sass libs/mintplayer-bootstrap/scss/bootstrap-reboot.scss dist/libs/mintplayer-bootstrap/css/bootstrap-reboot.min.css --style=compressed --source-map",
+          "sass libs/mintplayer-bootstrap/scss/bootstrap-utilities.scss dist/libs/mintplayer-bootstrap/css/bootstrap-utilities.css --style=expanded --source-map",
+          "sass libs/mintplayer-bootstrap/scss/bootstrap-utilities.scss dist/libs/mintplayer-bootstrap/css/bootstrap-utilities.min.css --style=compressed --source-map"
+        ],
+        "parallel": false
+      }
+    }
+  }
+}
