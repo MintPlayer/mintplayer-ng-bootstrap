@@ -3,7 +3,7 @@ import { Artist } from '../../../entities/artist';
 import { SubjectService } from '../../../services/subject/subject.service';
 import { ESubjectType } from '../../../enums/subject-type';
 import { delay } from 'rxjs';
-import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
+import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsSearchboxComponent, BsEnterSearchTermTemplateDirective, BsSuggestionTemplateDirective } from '@mintplayer/ng-bootstrap/searchbox';
 import { JsonPipe } from '@angular/common';
@@ -13,7 +13,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   selector: 'demo-searchbox',
   templateUrl: './searchbox.component.html',
   styleUrls: ['./searchbox.component.scss'],
-  imports: [JsonPipe, BsFormComponent, BsFormControlDirective, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsSearchboxComponent, BsEnterSearchTermTemplateDirective, BsSuggestionTemplateDirective],
+  imports: [JsonPipe, BsFormComponent, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsSearchboxComponent, BsEnterSearchTermTemplateDirective, BsSuggestionTemplateDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SearchboxComponent {

@@ -2,13 +2,13 @@ import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
 import { BsCarouselComponent, BsCarouselImageDirective } from '@mintplayer/ng-bootstrap/carousel';
-import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective } from '@mintplayer/ng-bootstrap/grid';
+import { BsGridComponent, BsGridRowDirective, BsGridColDirective } from '@mintplayer/ng-bootstrap/grid';
 
 @Component({
   selector: 'demo-swiper',
   templateUrl: './swiper.component.html',
   styleUrls: ['./swiper.component.scss'],
-  imports: [BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective, BsAlertComponent, BsCarouselComponent, BsCarouselImageDirective],
+  imports: [BsGridComponent, BsGridRowDirective, BsGridColDirective, BsAlertComponent, BsCarouselComponent, BsCarouselImageDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SwiperComponent {
