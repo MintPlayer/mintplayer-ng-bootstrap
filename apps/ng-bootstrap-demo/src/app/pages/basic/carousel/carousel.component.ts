@@ -1,4 +1,4 @@
-import { Component, signal, ChangeDetectionStrategy} from '@angular/core';
+import { Component, model, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 import { BsGridComponent, BsGridRowDirective, BsGridColDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
@@ -13,6 +13,6 @@ import { BsCarouselComponent, BsCarouselImageDirective } from '@mintplayer/ng-bo
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CarouselComponent {
-  mode = signal<'slide' | 'fade'>('slide');
-  orientation = signal<'horizontal' | 'vertical'>('horizontal');
+  mode = model<'slide' | 'fade'>('slide');
+  orientation = model<'horizontal' | 'vertical'>('horizontal');
 }

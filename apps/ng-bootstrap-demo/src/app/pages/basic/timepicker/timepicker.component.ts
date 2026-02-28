@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, signal, ChangeDetectionStrategy} from '@angular/core';
+import { Component, model, ChangeDetectionStrategy} from '@angular/core';
 import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsTimepickerComponent } from '@mintplayer/ng-bootstrap/timepicker';
@@ -12,5 +12,5 @@ import { BsTimepickerComponent } from '@mintplayer/ng-bootstrap/timepicker';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TimepickerComponent {
-  selectedTime = signal(new Date());
+  selectedTime = model(new Date());
 }

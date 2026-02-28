@@ -1,4 +1,4 @@
-import { Component, signal, computed, ChangeDetectionStrategy} from '@angular/core';
+import { Component, model, signal, computed, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Color } from '@mintplayer/ng-bootstrap';
@@ -6,7 +6,7 @@ import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsCardComponent, BsCardHeaderComponent } from '@mintplayer/ng-bootstrap/card';
 import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
-import { BsSelectComponent } from '@mintplayer/ng-bootstrap/select';
+import { BsSelectComponent, BsSelectOption } from '@mintplayer/ng-bootstrap/select';
 import {
   BsSchedulerComponent,
   SchedulerEventClickEvent,
@@ -41,6 +41,7 @@ import {
     BsInputGroupComponent,
     BsButtonTypeDirective,
     BsSelectComponent,
+    BsSelectOption,
     BsSchedulerComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -72,7 +73,7 @@ export class SchedulerComponent {
   resources = signal<(Resource | ResourceGroup)[]>([]);
 
   // Selection state
-  selectedEvent = signal<SchedulerEvent | null>(null);
+  selectedEvent = model<SchedulerEvent | null>(null);
 
   // Event log
   eventLog = signal<string[]>([]);

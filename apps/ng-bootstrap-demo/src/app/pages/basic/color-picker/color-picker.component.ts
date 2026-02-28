@@ -1,4 +1,4 @@
-import { Component, signal, ChangeDetectionStrategy} from '@angular/core';
+import { Component, model, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective } from '@mintplayer/ng-bootstrap/grid';
@@ -20,9 +20,9 @@ import { DecimalPipe } from '@angular/common';
 export class ColorPickerComponent {
 
   colors = Color;
-  allowAlpha = signal(false);
-  selectedColor = signal('#0000FF');
-  selectedAlpha = signal(1);
+  allowAlpha = model(false);
+  selectedColor = model('#0000FF');
+  selectedAlpha = model(1);
 
   setColor(color: string) {
     this.selectedColor.set(color);

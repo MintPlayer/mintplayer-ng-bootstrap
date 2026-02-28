@@ -29,7 +29,7 @@ import { BsInListPipe } from '@mintplayer/ng-bootstrap/in-list';
 })
 export class BsSelect2Component<T extends HasId<U>, U> {
 
-  isOpen = signal(false);
+  isOpen = model(false);
   isLoading = signal<boolean>(false);
 
   suggestions = model<T[]>([]);

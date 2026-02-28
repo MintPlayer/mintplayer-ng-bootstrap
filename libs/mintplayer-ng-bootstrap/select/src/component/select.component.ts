@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, input, Renderer2, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, forwardRef, inject, input, Renderer2, viewChild } from '@angular/core';
 import { BsSelectValueAccessor } from '../value-accessors/select-value-accessor';
 import { BsSelectSize } from '../types/select-size';
 
@@ -8,7 +8,7 @@ import { BsSelectSize } from '../types/select-size';
   styleUrls: ['./select.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   hostDirectives: [{
-    directive: BsSelectValueAccessor,
+    directive: forwardRef(() => BsSelectValueAccessor),
     inputs: ['compareWith'],
   }],
 })

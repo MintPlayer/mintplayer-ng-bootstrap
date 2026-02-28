@@ -1,4 +1,4 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA, signal, ChangeDetectionStrategy} from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, model, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
 import '@mintplayer/splitter';
@@ -12,5 +12,5 @@ import '@mintplayer/splitter';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SplitterComponent {
-  bgWarning = signal(false);
+  bgWarning = model(false);
 }

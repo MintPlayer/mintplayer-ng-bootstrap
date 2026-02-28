@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, input, output, signal, TemplateRef, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, input, model, output, signal, TemplateRef, viewChild } from '@angular/core';
 import { BsCopyDirective } from '@mintplayer/ng-bootstrap/copy';
 import { BsOffcanvasHostComponent, BsOffcanvasContentDirective } from '@mintplayer/ng-bootstrap/offcanvas';
 import { HighlightModule } from 'ngx-highlightjs';
@@ -20,7 +20,7 @@ export class BsCodeSnippetComponent {
     });
   }
 
-  offcanvasVisible = signal(false);
+  offcanvasVisible = model(false);
   codeToCopy = input<string>('');
   language = input<string>('');
   readonly copiedTemplate = viewChild.required<TemplateRef<any>>('copiedTemplate');

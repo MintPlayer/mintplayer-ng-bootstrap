@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, signal, ChangeDetectionStrategy} from '@angular/core';
+import { Component, DestroyRef, inject, model, signal, ChangeDetectionStrategy} from '@angular/core';
 import { Artist } from '../../../entities/artist';
 import { SubjectService } from '../../../services/subject/subject.service';
 import { ESubjectType } from '../../../enums/subject-type';
@@ -22,7 +22,7 @@ export class SearchboxComponent {
   destroy = inject(DestroyRef);
 
   suggestions = signal<Artist[]>([]);
-  selectedArtist = signal<Artist | undefined>(undefined);
+  selectedArtist = model<Artist | undefined>(undefined);
 
   onProvideSuggestions(searchterm: string) {
     this.subjectService.suggest(searchterm, [ESubjectType.artist], false)

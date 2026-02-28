@@ -43,7 +43,7 @@ export class BsTimepickerComponent {
 
   clock = signal<SafeHtml | undefined>(undefined);
   colors = Color;
-  isOpen = signal(false);
+  isOpen = model(false);
   presetTimestamps: Date[] = [];
   isFocused = signal(false);
 

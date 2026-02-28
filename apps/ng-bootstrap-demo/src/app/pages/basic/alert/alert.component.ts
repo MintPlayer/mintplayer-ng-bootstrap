@@ -1,4 +1,4 @@
-import { Component, ElementRef, signal, viewChild, ChangeDetectionStrategy} from '@angular/core';
+import { Component, ElementRef, model, signal, viewChild, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsAlertComponent, BsAlertCloseComponent } from '@mintplayer/ng-bootstrap/alert';
@@ -15,12 +15,12 @@ import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
 })
 export class AlertComponent {
   colors = Color;
-  alert1Visible = signal(true);
-  alert2Visible = signal(true);
-  alert3Visible = signal(true);
+  alert1Visible = model(true);
+  alert2Visible = model(true);
+  alert3Visible = model(true);
 
   newAlertId = signal(1);
-  newAlertItem = signal('');
+  newAlertItem = model('');
   alertsList = signal<AlertItem[]>([]);
   readonly txtNewAlert = viewChild.required<ElementRef<HTMLInputElement>>('txtNewAlert');
   alertVisibleChange(alert: AlertItem, isVisible: boolean) {

@@ -1,4 +1,4 @@
-import { Component, inject, signal, ChangeDetectionStrategy} from '@angular/core';
+import { Component, inject, model, signal, ChangeDetectionStrategy} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Color, Position } from '@mintplayer/ng-bootstrap';
 import { BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderComponent } from '@mintplayer/ng-bootstrap/accordion';
@@ -24,8 +24,8 @@ export class OffcanvasComponent {
 
   colors = Color;
   position = signal<Position>('start');
-  offcanvasVisible = signal(false);
-  sidebarVisible = signal(false);
+  offcanvasVisible = model(false);
+  sidebarVisible = model(false);
   showOffcanvas(position: Position) {
     this.position.set(position);
     this.offcanvasVisible.set(true);

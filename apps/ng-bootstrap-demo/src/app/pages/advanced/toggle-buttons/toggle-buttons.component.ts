@@ -1,4 +1,4 @@
-import { Component, signal, ChangeDetectionStrategy} from '@angular/core';
+import { Component, model, ChangeDetectionStrategy} from '@angular/core';
 import { BsNavbarTogglerComponent } from '@mintplayer/ng-bootstrap/navbar-toggler';
 import { BsPlaylistTogglerComponent } from '@mintplayer/ng-bootstrap/playlist-toggler';
 
@@ -10,5 +10,5 @@ import { BsPlaylistTogglerComponent } from '@mintplayer/ng-bootstrap/playlist-to
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ToggleButtonsComponent {
-  state = signal(false);
+  state = model(false);
 }

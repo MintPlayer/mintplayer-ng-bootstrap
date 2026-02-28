@@ -1,4 +1,4 @@
-import { Component, signal, ChangeDetectionStrategy} from '@angular/core';
+import { Component, model, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsRangeComponent } from '@mintplayer/ng-bootstrap/range';
@@ -13,7 +13,7 @@ import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button'
 })
 export class RangeComponent {
 
-  rangeValue = signal(2);
-  isDisabled = signal(false);
+  rangeValue = model(2);
+  isDisabled = model(false);
 
 }

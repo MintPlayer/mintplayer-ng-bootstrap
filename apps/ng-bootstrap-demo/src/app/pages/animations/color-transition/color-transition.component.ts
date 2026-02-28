@@ -1,4 +1,4 @@
-import { Component, computed, signal, ChangeDetectionStrategy} from '@angular/core';
+import { Component, computed, model, ChangeDetectionStrategy} from '@angular/core';
 import { ColorTransitionAnimation } from '@mintplayer/ng-animations';
 import { FormsModule } from '@angular/forms';
 import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
@@ -13,6 +13,6 @@ import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button'
 })
 export class ColorTransitionComponent {
 
-  state = signal(false);
+  state = model(false);
   currentColor = computed(() => this.state() ? 'color1' : 'color2');
 }
