@@ -1,4 +1,4 @@
-import { Component, input, output, TemplateRef, ChangeDetectionStrategy} from '@angular/core';
+import { Component, input, model, output, TemplateRef, ChangeDetectionStrategy} from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { BsForDirective } from '@mintplayer/ng-bootstrap/for';
 import { BsListGroupComponent } from '@mintplayer/ng-bootstrap/list-group';
@@ -31,7 +31,7 @@ export class BsFileUploadComponent {
   colors = Color;
   isDraggingFile = false;
   fileTemplate?: TemplateRef<FileUpload>;
-  readonly files = input<FileUpload[]>([]);
+  readonly files = model<FileUpload[]>([]);
   readonly filesDropped = output<FileUpload[]>();
 
   onChange(event: Event) {
@@ -76,7 +76,7 @@ export class BsFileUploadComponent {
       .filter(f => !!f)
       .map((file, index) => <FileUpload>{ file, progress: 0, index: this.files().length + index });
 
-    this.files().push(...newFiles);
+    this.files.update(f => [...f, ...newFiles]);
     this.filesDropped.emit(newFiles);
   }
 }

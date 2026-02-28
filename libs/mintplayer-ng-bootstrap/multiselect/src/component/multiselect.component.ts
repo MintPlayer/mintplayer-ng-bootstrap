@@ -1,4 +1,4 @@
-import { Component, input, TemplateRef, TrackByFunction, viewChild, ChangeDetectionStrategy} from '@angular/core';
+import { Component, input, model, TemplateRef, TrackByFunction, viewChild, ChangeDetectionStrategy} from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
@@ -24,16 +24,16 @@ export class BsMultiselectComponent<T> {
 
 
   readonly items = input<T[]>([]);
-  readonly selectedItems = input<T[]>([]);
+  readonly selectedItems = model<T[]>([]);
   readonly defaultButtonTemplate = viewChild.required<TemplateRef<any>>('defaultButtonTemplate');
 
   // itemChange(item: any, ev: Event) {
   itemChange(item: T, value: boolean | null) {
     // const value = (<any>ev.target).checked;
     if (value) {
-      this.selectedItems().push(item);
+      this.selectedItems.update(v => [...v, item]);
     } else {
-      this.selectedItems().splice(this.selectedItems().findIndex((i) => i === item), 1);
+      this.selectedItems.update(v => v.filter(i => i !== item));
     }
   }
 
