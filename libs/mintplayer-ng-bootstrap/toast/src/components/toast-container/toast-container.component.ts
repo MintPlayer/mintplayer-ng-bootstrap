@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, effect, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { BsAddPropertiesPipe } from '../../pipes/add-properties.pipe';
 import { BsToastService } from '../../services/toast/toast.service';
@@ -16,12 +16,4 @@ import { BsToastService } from '../../services/toast/toast.service';
 })
 export class BsToastContainerComponent {
   toastService = inject(BsToastService);
-  private cdr = inject(ChangeDetectorRef);
-
-  constructor() {
-    effect(() => {
-      this.toastService.toasts();
-      this.cdr.markForCheck();
-    });
-  }
 }
