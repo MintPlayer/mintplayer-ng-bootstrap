@@ -27,7 +27,7 @@ describe('BsNavigationLockDirective', () => {
 
         // Testbench
         NavigationLockTestComponent
-      ],
+      ],
     })
     .compileComponents();
 

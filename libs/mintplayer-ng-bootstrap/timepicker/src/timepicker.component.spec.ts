@@ -26,7 +26,7 @@ describe('BsTimepickerComponent', () => {
         MockComponent(BsHasOverlayComponent),
         MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
         MockDirective(BsDropdownDirective), MockDirective(BsDropdownMenuDirective), MockDirective(BsDropdownToggleDirective),
-      ],
+      ],
     })
     .compileComponents();
   });

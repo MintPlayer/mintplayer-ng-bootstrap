@@ -49,7 +49,7 @@ describe('BsModalHostComponent', () => {
 
         // Testbench
         BsModalTestComponent
-      ],
+      ],
       providers: [
         {
           provide: PORTAL_FACTORY,

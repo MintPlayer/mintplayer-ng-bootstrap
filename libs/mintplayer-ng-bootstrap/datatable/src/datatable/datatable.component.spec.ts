@@ -18,7 +18,7 @@ describe('BsDatatableComponent', () => {
         MockComponent(BsPaginationComponent),
         // Unit to test
         BsDatatableComponent,
-      ],
+      ],
     })
     .compileComponents();
   });

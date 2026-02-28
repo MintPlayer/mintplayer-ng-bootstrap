@@ -24,7 +24,7 @@ describe('TypeaheadComponent', () => {
         MockDirective(BsDropdownDirective), MockDirective(BsDropdownMenuDirective), MockDirective(BsDropdownToggleDirective),
         MockComponent(BsHasOverlayComponent),
         MockDirective(ClickOutsideDirective),
-      ],
+      ],
     })
     .compileComponents();
   });

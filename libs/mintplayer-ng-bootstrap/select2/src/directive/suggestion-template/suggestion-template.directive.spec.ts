@@ -39,7 +39,7 @@ describe('BsSuggestionTemplateDirective', () => {
                 
         // Testbench
         BsSuggestionTemplateTestComponent,
-      ],
+      ],
       providers: [{
         provide: BsSelect2Component,
         useClass: MockBsSelect2Component

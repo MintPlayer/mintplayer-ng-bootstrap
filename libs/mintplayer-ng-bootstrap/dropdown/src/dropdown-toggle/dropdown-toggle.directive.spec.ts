@@ -59,7 +59,7 @@ describe('BsDropdownToggleDirective', () => {
 
         // Testbench
         BsDropdownToggleTestComponent
-      ],
+      ],
     })
     .compileComponents();
   });

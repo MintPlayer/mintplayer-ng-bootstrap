@@ -23,7 +23,7 @@ describe('NavbarRouterLinkActiveDirective', () => {
   
         // Testbench
         RouterLinkTestComponent
-      ],
+      ],
     })
     .compileComponents();
 

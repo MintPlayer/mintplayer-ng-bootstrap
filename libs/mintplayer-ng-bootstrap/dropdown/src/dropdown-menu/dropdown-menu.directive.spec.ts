@@ -68,7 +68,7 @@ describe('BsDropdownMenuDirective', () => {
 
         // Testbench
         BsDropdownMenuTestComponent
-      ],
+      ],
     })
     .compileComponents();
   });

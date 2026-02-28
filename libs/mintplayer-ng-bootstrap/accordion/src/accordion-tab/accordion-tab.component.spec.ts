@@ -32,7 +32,7 @@ describe('BsAccordionTabComponent', () => {
 
         // Testbench
         BsAccordionTestComponent,
-      ],
+      ],
       providers: [
         { provide: BsAccordionComponent, useClass: BsAccordionMockProvider },
       ]

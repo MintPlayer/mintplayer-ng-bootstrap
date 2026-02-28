@@ -37,7 +37,7 @@ describe('BsNavbarDropdownComponent', () => {
 
         // Testbench
         BsNavbarDropdownTestComponent
-      ],
+      ],
     })
     .compileComponents();
   });

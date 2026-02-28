@@ -34,7 +34,7 @@ describe('BsNavbarNavComponent', () => {
 
         // Testbench
         BsNavbarNavTestComponent
-      ],
+      ],
       providers: [
         { provide: BsNavbarComponent, useClass: BsNavbarMockComponent }
       ]

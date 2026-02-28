@@ -26,7 +26,7 @@ describe('BsTreeviewItemComponent', () => {
       imports: [
         MockComponent(BsListGroupComponent), MockComponent(BsListGroupItemComponent),
         BsTreeviewItemComponent
-      ],
+      ],
       providers: [
         { provide: BsTreeviewComponent, useClass: BsTreeviewComponentStub }
       ]

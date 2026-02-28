@@ -14,7 +14,7 @@ describe('BsToastContainerComponent', () => {
       imports: [
         MockComponent(BsHasOverlayComponent),
         BsToastContainerComponent
-      ],
+      ],
       providers: [
         {
           provide: BsToastService,

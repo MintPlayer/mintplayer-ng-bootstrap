@@ -33,7 +33,7 @@ describe('BsOffcanvasHostComponent', () => {
 
         // Testbench
         BsOffcanvasTestComponent,
-      ],
+      ],
       providers: [{
         provide: PORTAL_FACTORY,
         useValue: (injector: Injector) => {

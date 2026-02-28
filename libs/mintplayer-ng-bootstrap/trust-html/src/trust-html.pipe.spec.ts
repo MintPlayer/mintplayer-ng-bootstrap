@@ -21,7 +21,7 @@ describe('BsTrustHtmlPipe', () => {
       imports: [
         BsTrustHtmlPipe,
         BsTrustHtmlTestComponent
-      ],
+      ],
     }).compileComponents();
   });
 

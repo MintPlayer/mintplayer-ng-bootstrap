@@ -20,7 +20,7 @@ describe('BsSelect2Component', () => {
         MockDirective(BsDropdownDirective), MockDirective(BsDropdownMenuDirective), MockDirective(BsDropdownToggleDirective),
         // Unit to test
         BsSelect2Component,
-      ],
+      ],
     })
     .compileComponents();
   });

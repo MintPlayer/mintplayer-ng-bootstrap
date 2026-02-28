@@ -20,7 +20,7 @@ describe('BsLetDirective', () => {
       imports: [
         BsLetDirective,
         BsLetTestComponent
-      ],
+      ],
     }).compileComponents();
   });
 

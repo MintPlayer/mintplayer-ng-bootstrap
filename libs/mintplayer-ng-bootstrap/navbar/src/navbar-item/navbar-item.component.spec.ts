@@ -33,7 +33,7 @@ describe('BsNavbarItemComponent', () => {
 
         // Testbench
         BsNavbarItemTestComponent
-      ],
+      ],
       providers: [
         { provide: BsNavbarDropdownComponent, useClass: BsNavbarDropdownMockComponent }
       ]

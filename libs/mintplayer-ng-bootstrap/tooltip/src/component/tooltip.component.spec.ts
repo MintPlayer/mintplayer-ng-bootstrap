@@ -48,7 +48,7 @@ describe('BsTooltipComponent', () => {
 
         // Testbench
         BsTooltipTestComponent,
-      ],
+      ],
     }).compileComponents();
   });
 

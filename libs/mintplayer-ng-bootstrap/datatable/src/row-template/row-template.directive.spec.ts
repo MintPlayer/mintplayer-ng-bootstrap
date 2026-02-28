@@ -18,7 +18,7 @@ describe('BsRowTemplateDirective', () => {
 
         // Testbench
         BsRowTemplateTestComponent,
-      ],
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BsRowTemplateTestComponent);

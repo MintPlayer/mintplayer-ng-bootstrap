@@ -21,7 +21,7 @@ describe('BsFileUploadComponent', () => {
 
         // Mock dependencies
         MockPipe(BsFormatBytesPipe),
-      ],
+      ],
     })
     .compileComponents();
   });

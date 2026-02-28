@@ -34,7 +34,7 @@ describe('BsSwipeContainerDirective', () => {
 
         // Testbench
         SwipeTestComponent
-      ],
+      ],
     })
     .compileComponents();
 

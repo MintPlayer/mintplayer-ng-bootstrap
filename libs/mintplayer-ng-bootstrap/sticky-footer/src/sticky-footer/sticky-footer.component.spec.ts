@@ -48,7 +48,7 @@ describe('BsStickyFooterComponent', () => {
 
         // Testbench
         BsStickyFooterTestComponent
-      ],
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BsStickyFooterTestComponent);

@@ -47,7 +47,7 @@ describe('BsOffcanvasComponent', () => {
       
         // Testbench
         OffcanvasTestComponent
-      ],
+      ],
     })
     .compileComponents();
   });

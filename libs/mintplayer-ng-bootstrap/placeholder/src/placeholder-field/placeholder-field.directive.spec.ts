@@ -47,7 +47,7 @@ describe('BsPlaceholderFieldDirective', () => {
 
         // Testbench
         BsPlaceholderTestComponent,
-      ],
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BsPlaceholderTestComponent);

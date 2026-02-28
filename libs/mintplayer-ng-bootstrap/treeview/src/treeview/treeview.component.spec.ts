@@ -14,7 +14,7 @@ describe('BsTreeviewComponent', () => {
         NoopAnimationsModule,
         MockComponent(BsListGroupComponent), MockComponent(BsListGroupItemComponent),
         BsTreeviewComponent
-      ],
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BsTreeviewComponent);

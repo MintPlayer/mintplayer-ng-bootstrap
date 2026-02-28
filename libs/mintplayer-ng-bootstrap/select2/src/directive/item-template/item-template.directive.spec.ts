@@ -41,7 +41,7 @@ describe('BsItemTemplateDirective', () => {
         
         // Testbench
         BsItemTemplateTestComponent,
-      ],
+      ],
       providers: [{
         provide: BsSelect2Component,
         useClass: MockBsSelect2Component
