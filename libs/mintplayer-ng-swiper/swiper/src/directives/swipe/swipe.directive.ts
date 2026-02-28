@@ -1,4 +1,4 @@
-import { Directive, effect, inject, input } from "@angular/core";
+import { afterNextRender, DestroyRef, Directive, effect, ElementRef, inject, input } from "@angular/core";
 import { BsObserveSizeDirective } from "@mintplayer/ng-swiper/observe-size";
 import { BsSwipeContainerDirective } from "../swipe-container/swipe-container.directive";
 
@@ -16,13 +16,12 @@ import { BsSwipeContainerDirective } from "../swipe-container/swipe-container.di
     '[class.d-block]': 'block',
     '[style.height.px]': 'slideHeight',
     '[style.touch-action]': 'touchAction',
-    '(touchstart)': 'onTouchStart($event)',
-    '(touchmove)': 'onTouchMove($event)',
-    '(touchend)': 'onTouchEnd($event)',
   },
 })
 export class BsSwipeDirective {
   private container = inject(BsSwipeContainerDirective);
+  private el = inject(ElementRef<HTMLElement>);
+  private destroyRef = inject(DestroyRef);
   observeSize = inject(BsObserveSizeDirective);
 
   public offside = input(false);
@@ -54,6 +53,29 @@ export class BsSwipeDirective {
   block = false;
   slideHeight: number | null = null;
   touchAction: 'pan-x' | 'pan-y' = 'pan-y';
+
+  constructor() {
+    // Register touch listeners manually with { passive: false } for touchmove/touchend.
+    // Angular's host event bindings register passive listeners by default for touch events,
+    // which silently ignores preventDefault(). This caused Firefox Android's PullToRefresh
+    // to trigger because the browser's default action was never actually cancelled.
+    afterNextRender(() => {
+      const elem = this.el.nativeElement;
+      const onTouchStart = (ev: TouchEvent) => this.onTouchStart(ev);
+      const onTouchMove = (ev: TouchEvent) => this.onTouchMove(ev);
+      const onTouchEnd = (ev: TouchEvent) => this.onTouchEnd(ev);
+
+      elem.addEventListener('touchstart', onTouchStart, { passive: true });
+      elem.addEventListener('touchmove', onTouchMove, { passive: false });
+      elem.addEventListener('touchend', onTouchEnd, { passive: false });
+
+      this.destroyRef.onDestroy(() => {
+        elem.removeEventListener('touchstart', onTouchStart);
+        elem.removeEventListener('touchmove', onTouchMove);
+        elem.removeEventListener('touchend', onTouchEnd);
+      });
+    });
+  }
 
   onTouchStart(ev: TouchEvent) {
     if (ev.touches.length === 1) {
