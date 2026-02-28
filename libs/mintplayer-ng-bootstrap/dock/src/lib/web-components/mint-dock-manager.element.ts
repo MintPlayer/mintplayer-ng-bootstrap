@@ -4471,8 +4471,3 @@ if (typeof customElements !== 'undefined' && !customElements.get(tagName)) {
   customElements.define(tagName, MintDockManagerElement);
 }
 
-declare global {
-  interface HTMLElementTagNameMap {
-    'mint-dock-manager': MintDockManagerElement;
-  }
-}
