@@ -4,7 +4,7 @@ import { inject, Injectable, Injector, signal, TemplateRef } from '@angular/core
 import { BsToastContainerComponent } from '../../components/toast-container/toast-container.component';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class BsToastService {
 
   private overlayService = inject(Overlay);
