@@ -1,7 +1,7 @@
 <div class="sidebar-root" [class]="[stateClass(), breakpointClass()]" #root>
     <div class="sidebar position-fixed pe-none">
         <div class="sidebar-body d-flex flex-column pe-all">
-            <ng-container *ngTemplateOutlet="sidebarTemplate"></ng-container>
+            <ng-container *ngTemplateOutlet="sidebarTemplate()"></ng-container>
         </div>
     </div>
     <div class="content">

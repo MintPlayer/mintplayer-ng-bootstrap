@@ -41,8 +41,7 @@ export class BsModalHostComponent implements AfterViewInit, OnDestroy {
     effect(() => {
       const value = this.isOpen();
       if (this.componentInstance) {
-        this.componentInstance.instance.isOpen = value;
-        this.componentInstance.changeDetectorRef.detectChanges();
+        this.componentInstance.instance.isOpen.set(value);
       }
     });
   }
@@ -64,8 +63,7 @@ export class BsModalHostComponent implements AfterViewInit, OnDestroy {
       hasBackdrop: false
     });
     this.componentInstance = this.overlayRef.attach<BsModalComponent>(portal);
-    this.componentInstance.instance.isOpen = this.isOpen();
-    this.componentInstance.changeDetectorRef.detectChanges();
+    this.componentInstance.instance.isOpen.set(this.isOpen());
   }
 
   ngOnDestroy() {

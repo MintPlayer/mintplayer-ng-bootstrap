@@ -1,4 +1,4 @@
-<div [@.disabled]="accordion.disableAnimations" bsNoNoscript>
+<div [@.disabled]="accordion.disableAnimations()" bsNoNoscript>
     <ng-content select="bs-accordion-tab-header"></ng-content>
     <div [id]="accordionTabName() + '-content'"
         class="accordion-collapse collapse show overflow-hidden"

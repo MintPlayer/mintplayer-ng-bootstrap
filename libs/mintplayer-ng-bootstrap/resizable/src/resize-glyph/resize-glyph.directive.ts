@@ -1,4 +1,4 @@
-import { Directive, effect, inject, input, forwardRef } from '@angular/core';
+import { Directive, effect, inject, input, signal, forwardRef } from '@angular/core';
 import { Position } from '@mintplayer/ng-bootstrap';
 import type { BsResizableComponent } from '../resizable/resizable.component';
 import { ResizeAction } from '../interfaces/resize-action';
@@ -8,9 +8,9 @@ import { RESIZABLE } from '../providers/resizable.provider';
 @Directive({
   selector: '[bsResizeGlyph]',
   host: {
-    '[class]': 'positions',
+    '[class]': 'positions()',
     '[class.glyph]': 'true',
-    '[class.active]': 'activeClass',
+    '[class.active]': 'activeClass()',
     '(mousedown)': 'onMouseDown($event)',
     '(touchstart)': 'onTouchStart($event)',
     '(document:mousemove)': 'onMouseMove($event)',
@@ -27,12 +27,12 @@ export class BsResizeGlyphDirective {
   constructor() {
     effect(() => {
       const value = this.bsResizeGlyph();
-      this.positions = value.join(' ');
+      this.positions.set(value.join(' '));
     });
   }
 
-  positions = '';
-  activeClass = false;
+  positions = signal('');
+  activeClass = signal(false);
 
   readonly bsResizeGlyph = input<Position[]>([]);
 
@@ -81,7 +81,8 @@ export class BsResizeGlyphDirective {
     const marginTop = (this.resizable.positioning() === 'absolute') ? undefined : parseFloat(styles.marginTop.slice(0, -2));
     const marginBottom = (this.resizable.positioning() === 'absolute') ? undefined : parseFloat(styles.marginBottom.slice(0, -2));
 
-    if (this.positions?.includes('start')) {
+
+    if (this.positions()?.includes('start')) {
       action = {
         ...action,
         end: {
@@ -92,7 +93,7 @@ export class BsResizeGlyphDirective {
         },
       };
     }
-    if (this.positions?.includes('end')) {
+    if (this.positions()?.includes('end')) {
       action = {
         ...action,
         start: {
@@ -103,7 +104,7 @@ export class BsResizeGlyphDirective {
         },
       };
     }
-    if (this.positions?.includes('top')) {
+    if (this.positions()?.includes('top')) {
       action = {
         ...action,
         bottom: {
@@ -114,7 +115,7 @@ export class BsResizeGlyphDirective {
         },
       };
     }
-    if (this.positions?.includes('bottom')) {
+    if (this.positions()?.includes('bottom')) {
       action = {
         ...action,
         top: {
@@ -127,7 +128,7 @@ export class BsResizeGlyphDirective {
     }
 
     this.resizable.resizeAction = action;
-    this.activeClass = true;
+    this.activeClass.set(true);
   }
 
   private isBusy = false;
@@ -136,58 +137,58 @@ export class BsResizeGlyphDirective {
       ev.preventDefault();
       this.isBusy = true;
       const rct = this.resizable.element.nativeElement.getBoundingClientRect();
-      if (this.resizable.resizeAction.start && this.positions?.includes('end')) {
+      if (this.resizable.resizeAction.start && this.positions()?.includes('end')) {
         // Right glyph
         const x = (ev.clientX < rct.left + 10) ? rct.left + 10 : ev.clientX;
         switch (this.resizable.positioning()) {
           case 'inline': {
-            const initalMargin = this.resizable.marginRight ?? 0;
-            this.resizable.marginRight = initalMargin - (x - rct.right);
+            const initalMargin = this.resizable.marginRight() ?? 0;
+            this.resizable.marginRight.set(initalMargin - (x - rct.right));
           } break;
           case 'absolute': {
-            this.resizable.width = x - rct.left;
+            this.resizable.width.set(x - rct.left);
           } break;
         }
-      } else if (this.resizable.resizeAction.end && this.positions?.includes('start')) {
+      } else if (this.resizable.resizeAction.end && this.positions()?.includes('start')) {
         // Left glyph
         const x = (ev.clientX > rct.right - 10) ? rct.right - 10 : ev.clientX;
         switch (this.resizable.positioning()) {
           case 'inline': {
-            const initalMargin = this.resizable.marginLeft ?? 0;
-            this.resizable.marginLeft = initalMargin + x - rct.left;
+            const initalMargin = this.resizable.marginLeft() ?? 0;
+            this.resizable.marginLeft.set(initalMargin + x - rct.left);
           } break;
           case 'absolute': {
-            this.resizable.left = x;
-            this.resizable.width = this.resizable.resizeAction.end.edge - x;
+            this.resizable.left.set(x);
+            this.resizable.width.set(this.resizable.resizeAction.end.edge - x);
           } break;
         }
       }
 
-      if (this.resizable.resizeAction.top && this.positions?.includes('bottom')) {
+      if (this.resizable.resizeAction.top && this.positions()?.includes('bottom')) {
         // Bottom glyph
         const y = (ev.clientY < rct.top + 10) ? rct.top + 10 : ev.clientY;
         switch (this.resizable.positioning()) {
           case 'inline': {
-            const initalMargin = this.resizable.marginBottom ?? 0;
-            this.resizable.height = y - rct.top;
-            this.resizable.marginBottom = initalMargin - (y - rct.bottom);
+            const initalMargin = this.resizable.marginBottom() ?? 0;
+            this.resizable.height.set(y - rct.top);
+            this.resizable.marginBottom.set(initalMargin - (y - rct.bottom));
           } break;
           case 'absolute': {
-            this.resizable.height = y - rct.top;
+            this.resizable.height.set(y - rct.top);
           } break;
         }
-      } else if (this.resizable.resizeAction.bottom && this.positions?.includes('top')) {
+      } else if (this.resizable.resizeAction.bottom && this.positions()?.includes('top')) {
         // Top glyph
         const y = (ev.clientY > rct.bottom - 10) ? rct.bottom - 10 : ev.clientY;
         switch (this.resizable.positioning()) {
           case 'inline': {
-            const initalMargin = this.resizable.marginTop ?? 0;
-            this.resizable.height = rct.bottom - y;
-            this.resizable.marginTop = initalMargin + y - rct.top;
+            const initalMargin = this.resizable.marginTop() ?? 0;
+            this.resizable.height.set(rct.bottom - y);
+            this.resizable.marginTop.set(initalMargin + y - rct.top);
           } break;
           case 'absolute': {
-            this.resizable.top = y;
-            this.resizable.height = this.resizable.resizeAction.bottom.edge - y;
+            this.resizable.top.set(y);
+            this.resizable.height.set(this.resizable.resizeAction.bottom.edge - y);
           } break;
         }
       }
@@ -197,6 +198,6 @@ export class BsResizeGlyphDirective {
   
   onPointerUp() {
     this.resizable.resizeAction = undefined;
-    this.activeClass = false;
+    this.activeClass.set(false);
   }
 }

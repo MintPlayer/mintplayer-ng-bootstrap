@@ -15,14 +15,14 @@ import { BsResizeGlyphDirective } from '../resize-glyph/resize-glyph.directive';
     { provide: RESIZABLE, useExisting: forwardRef(() => BsResizableComponent) }
   ],
   host: {
-    '[style.margin-left.px]': 'marginLeft',
-    '[style.margin-right.px]': 'marginRight',
-    '[style.margin-top.px]': 'marginTop',
-    '[style.margin-bottom.px]': 'marginBottom',
-    '[style.width.px]': 'width',
-    '[style.height.px]': 'height',
-    '[style.left.px]': 'left',
-    '[style.top.px]': 'top',
+    '[style.margin-left.px]': 'marginLeft()',
+    '[style.margin-right.px]': 'marginRight()',
+    '[style.margin-top.px]': 'marginTop()',
+    '[style.margin-bottom.px]': 'marginBottom()',
+    '[style.width.px]': 'width()',
+    '[style.height.px]': 'height()',
+    '[style.left.px]': 'left()',
+    '[style.top.px]': 'top()',
     '[class.d-block]': 'true',
     '[class.border]': 'true',
     '[class]': 'hostPosition()',
@@ -59,21 +59,24 @@ export class BsResizableComponent {
         if (this.positioning() === 'inline') {
           throw 'presetPosition currently only supported in absolute positioning';
         }
-        this.width = value.width;
-        this.height = value.height;
-        this.left = value.left;
-        this.top = value.top;
-        this.marginTop = this.marginBottom = this.marginLeft = this.marginRight = undefined;
+        this.width.set(value.width);
+        this.height.set(value.height);
+        this.left.set(value.left);
+        this.top.set(value.top);
+        this.marginTop.set(undefined);
+        this.marginBottom.set(undefined);
+        this.marginLeft.set(undefined);
+        this.marginRight.set(undefined);
       }
     });
   }
 
-  marginLeft?: number;
-  marginRight?: number;
-  marginTop?: number;
-  marginBottom?: number;
-  width?: number;
-  height?: number;
-  left?: number;
-  top?: number;
+  marginLeft = signal<number | undefined>(undefined);
+  marginRight = signal<number | undefined>(undefined);
+  marginTop = signal<number | undefined>(undefined);
+  marginBottom = signal<number | undefined>(undefined);
+  width = signal<number | undefined>(undefined);
+  height = signal<number | undefined>(undefined);
+  left = signal<number | undefined>(undefined);
+  top = signal<number | undefined>(undefined);
 }

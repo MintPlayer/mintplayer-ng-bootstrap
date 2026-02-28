@@ -9,7 +9,7 @@
 			[cdkDropListDisabled]="disableDragDrop()"
 			class="nav nav-tabs flex-nowrap overflow-x-auto overflow-y-hidden"
 			role="tablist">
-			@for (tab of orderedTabPages; track tab) {
+			@for (tab of orderedTabPages(); track tab) {
 				@if (tab.headerTemplate()) {
 					<li class="nav-item" role="presentation" cdkDrag [cdkDragBoundary]="dragBoundarySelector()" [cdkDragStartDelay]="500" (cdkDragStarted)="startDragTab($event)">
 						<button type="button"
@@ -44,7 +44,7 @@
 			[cdkDropListDisabled]="disableDragDrop()"
 			class="nav nav-tabs flex-nowrap overflow-x-auto overflow-y-hidden"
 			role="tablist">
-			@for (tab of orderedTabPages; track tab) {
+			@for (tab of orderedTabPages(); track tab) {
 				@if (tab.headerTemplate()) {
 					<li class="nav-item" role="presentation" cdkDrag [cdkDragBoundary]="dragBoundarySelector()" [cdkDragStartDelay]="500" (cdkDragStarted)="startDragTab($event)">
 						<button type="button"

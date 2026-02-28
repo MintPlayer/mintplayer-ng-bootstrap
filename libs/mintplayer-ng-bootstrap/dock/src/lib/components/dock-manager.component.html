@@ -1,7 +1,7 @@
 <mint-dock-manager
   #manager
   class="bs-dock-manager"
-  [attr.layout]="layoutString"
+  [attr.layout]="layoutString()"
   (dock-layout-changed)="onLayoutChanged($event)"
   >
   @for (pane of panes(); track trackByPane($index, pane)) {

@@ -43,7 +43,7 @@ export class BsNavbarComponent {
   readonly nav = viewChild.required<ElementRef>('nav');
   autoclose = input(true);
 
-  expandButtonTemplate: TemplateRef<any> | null = null;
+  expandButtonTemplate = signal<TemplateRef<any> | null>(null);
 
   isExpanded = signal<boolean>(false);
   windowWidth = signal<number | null>(null);

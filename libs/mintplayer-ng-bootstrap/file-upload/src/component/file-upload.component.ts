@@ -1,4 +1,4 @@
-import { Component, input, model, output, TemplateRef, ChangeDetectionStrategy} from '@angular/core';
+import { Component, input, model, output, signal, TemplateRef, ChangeDetectionStrategy} from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { BsForDirective } from '@mintplayer/ng-bootstrap/for';
 import { BsListGroupComponent } from '@mintplayer/ng-bootstrap/list-group';
@@ -27,7 +27,7 @@ export class BsFileUploadComponent {
   readonly placeholder = input('Drop files to upload');
 
   colors = Color;
-  isDraggingFile = false;
+  isDraggingFile = signal(false);
   fileTemplate?: TemplateRef<FileUpload>;
   readonly files = model<FileUpload[]>([]);
   readonly filesDropped = output<FileUpload[]>();
@@ -48,7 +48,7 @@ export class BsFileUploadComponent {
     event.stopPropagation();
 
     if (event.dataTransfer) {
-      this.isDraggingFile = true;
+      this.isDraggingFile.set(true);
       event.dataTransfer.effectAllowed = "copy";
     }
   }
@@ -56,13 +56,13 @@ export class BsFileUploadComponent {
   onDragLeave(event: DragEvent) {
     event.preventDefault();
     event.stopPropagation();
-    this.isDraggingFile = false;
+    this.isDraggingFile.set(false);
   }
 
   onDrop(event: DragEvent) {
     event.preventDefault();
     event.stopPropagation();
-    this.isDraggingFile = false;
+    this.isDraggingFile.set(false);
     if (event.dataTransfer && event.dataTransfer.files) {
       this.processDroppedFiles(event.dataTransfer.files);
     }

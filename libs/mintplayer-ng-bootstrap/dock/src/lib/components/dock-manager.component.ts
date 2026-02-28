@@ -10,6 +10,7 @@ import {
   input,
   output,
   viewChild,
+  signal,
 } from '@angular/core';
 import { DOCUMENT, NgTemplateOutlet } from '@angular/common';
 import {
@@ -41,7 +42,7 @@ export class BsDockManagerComponent implements AfterViewInit {
   readonly layoutChange = output<DockLayoutSnapshot | null>();
   readonly layoutSnapshotChange = output<DockLayoutSnapshot>();
 
-  layoutString: string | null = null;
+  layoutString = signal<string | null>(null);
 
   readonly panes = contentChildren(BsDockPaneComponent);
   readonly managerRef = viewChild<ElementRef<MintDockManagerElement>>('manager');
@@ -60,7 +61,7 @@ export class BsDockManagerComponent implements AfterViewInit {
       const value = this.layout();
       const snapshot = this.cloneLayout(this.ensureSnapshot(value));
       this._layout = snapshot;
-      this.layoutString = this.stringifyLayout(snapshot);
+      this.layoutString.set(this.stringifyLayout(snapshot));
       this.applyLayout();
     });
   }
@@ -81,7 +82,7 @@ export class BsDockManagerComponent implements AfterViewInit {
         floating: [],
       };
     this._layout = this.cloneLayout(snapshot);
-    this.layoutString = this.stringifyLayout(this._layout);
+    this.layoutString.set(this.stringifyLayout(this._layout));
     this.layoutChange.emit(this.layoutSnapshot);
     this.layoutSnapshotChange.emit(this.cloneLayout(snapshot));
   }

@@ -43,14 +43,14 @@ export class BsTimepickerComponent {
 
   clock = signal<SafeHtml | undefined>(undefined);
   colors = Color;
-  isOpen = false;
+  isOpen = signal(false);
   presetTimestamps: Date[] = [];
-  isFocused = false;
+  isFocused = signal(false);
 
   selectAll(box: HTMLInputElement) {
     box.select();
     // box.setSelectionRange(0, box.value.length);
-    this.isFocused = true;
+    this.isFocused.set(true);
   }
 
   setNumber(event: Event, max: number, nextInput: HTMLInputElement | null) {
@@ -74,7 +74,7 @@ export class BsTimepickerComponent {
 
   setTime(time: Date) {
     this.selectedTime.set(time);
-    this.isOpen = false;
+    this.isOpen.set(false);
   }
 
   selectedTime = model<Date>(new Date());

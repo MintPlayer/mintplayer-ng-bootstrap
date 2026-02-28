@@ -23,7 +23,7 @@ import { BsInListPipe } from '@mintplayer/ng-bootstrap/in-list';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    '[class.focus]': 'isFocused',
+    '[class.focus]': 'isFocused()',
     '(click)': 'focus()',
   },
 })
@@ -39,7 +39,7 @@ export class BsSelect2Component<T extends HasId<U>, U> {
   readonly itemsBox = viewChild.required<ElementRef<HTMLDivElement>>('itemsBox');
   searchterm = model('');
   provideSuggestions = output<string>();
-  isFocused = false;
+  isFocused = signal(false);
 
   selectedItems = model<T[]>([]);
 
