@@ -1,4 +1,4 @@
-import { DestroyRef, Directive, effect, ElementRef, forwardRef, HostListener, inject, NgZone, PLATFORM_ID, TemplateRef, ViewContainerRef } from '@angular/core';
+import { DestroyRef, Directive, effect, forwardRef, inject, TemplateRef, ViewContainerRef } from '@angular/core';
 import { TemplatePortal } from '@angular/cdk/portal';
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ClickOutsideDirective } from '@mintplayer/ng-click-outside';
@@ -7,7 +7,10 @@ import { BsDropdownDirective } from '../dropdown/dropdown.directive';
 
 @Directive({
   selector: '[bsDropdownMenu]',
-  standalone: false,
+  host: {
+    '(clickOutside)': 'clickedOutside($event)',
+    '(document:keydown.escape)': 'onEscape($event)',
+  },
 })
 export class BsDropdownMenuDirective extends ClickOutsideDirective {
 
@@ -23,10 +26,7 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
   private templatePortal: TemplatePortal<any> | null = null;
 
   constructor() {
-    const elementRef = inject(ElementRef);
-    const zone = inject(NgZone);
-    const platformId = inject(PLATFORM_ID);
-    super(elementRef, zone, platformId);
+    super();
 
     effect(() => {
       const isOpen = this.dropdown.isOpen();
@@ -43,7 +43,7 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
           hasBackdrop: this.dropdown.hasBackdrop(),
           scrollStrategy: this.overlay.scrollStrategies.reposition(),
           positionStrategy: this.overlay.position()
-            .flexibleConnectedTo(!this.dropdown.toggle ? this.dropdown.elementRef : this.dropdown.toggle.toggleButton)
+            .flexibleConnectedTo(!this.dropdown.toggle() ? this.dropdown.elementRef : this.dropdown.toggle()!.toggleButton)
             .withPositions([
               { originX: "start", originY: "bottom", overlayX: "start", overlayY: "top", offsetY: 0 },
               { originX: "start", originY: "top", overlayX: "start", overlayY: "bottom", offsetY: 0 },
@@ -73,7 +73,7 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
     });
   }
 
-  @HostListener('clickOutside', ['$event']) clickedOutside(event: Event) {
+  clickedOutside(event: Event) {
     const ev = event as MouseEvent;
     if (!this.bsDevelopment) {
       if (!this.wait) {
@@ -84,7 +84,7 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
     }
   }
 
-  @HostListener('document:keydown.escape', ['$event']) onEscape(event: Event) {
+  onEscape(event: Event) {
     this.doClose();
   }
 

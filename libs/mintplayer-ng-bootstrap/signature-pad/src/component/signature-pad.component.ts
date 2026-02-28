@@ -1,12 +1,19 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, HostBinding, HostListener, input, model, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, input, model, viewChild } from '@angular/core';
 import { Signature } from '../interfaces/signature';
 
 @Component({
   selector: 'bs-signature-pad',
   templateUrl: './signature-pad.component.html',
   styleUrls: ['./signature-pad.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    'class': 'border d-inline-block',
+    '[style.min-height.rem]': 'minHeight',
+    '(touchmove)': 'onTouchMove($event)',
+    '(pointerdown)': 'onPointerStart($event)',
+    '(pointermove)': 'onPointerMove($event)',
+    '(window:pointerup)': 'onPointerEnd($event)',
+  },
 })
 export class BsSignaturePadComponent implements AfterViewInit {
 
@@ -14,28 +21,25 @@ export class BsSignaturePadComponent implements AfterViewInit {
   width = input(500);
   height = input(300);
 
-  @HostBinding('class.border')
-  @HostBinding('class.d-inline-block')
-  classes = true;
-
+  minHeight = 5;
   isDrawing = false;
-  @ViewChild('canvas') canvas!: ElementRef<HTMLCanvasElement>;
+  readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
   context: CanvasRenderingContext2D | null = null;
 
   ngAfterViewInit() {
     if (typeof window !== 'undefined') {
-      this.context = this.canvas.nativeElement.getContext('2d', { willReadFrequently: true });
+      this.context = this.canvas().nativeElement.getContext('2d', { willReadFrequently: true });
     }
   }
 
-  @HostBinding('style.min-height.rem') minHeight = 5;
-  @HostListener('touchmove', ['$event']) onTouchMove(ev: TouchEvent) {
+  onTouchMove(ev: TouchEvent) {
     if (this.isDrawing) {
       ev.preventDefault();
       ev.stopPropagation();
     }
   }
-  @HostListener('pointerdown', ['$event']) onPointerStart(ev: PointerEvent) {
+
+  onPointerStart(ev: PointerEvent) {
     ev.preventDefault();
     this.isDrawing = true;
     if (this.context) {
@@ -50,7 +54,8 @@ export class BsSignaturePadComponent implements AfterViewInit {
       this.context.moveTo(ev.offsetX, ev.offsetY);
     }
   }
-  @HostListener('pointermove', ['$event']) onPointerMove(ev: PointerEvent) {
+
+  onPointerMove(ev: PointerEvent) {
     if (this.isDrawing && this.context) {
       ev.preventDefault();
 
@@ -62,7 +67,8 @@ export class BsSignaturePadComponent implements AfterViewInit {
       this.context.stroke();
     }
   }
-  @HostListener('window:pointerup', ['$event']) onPointerEnd(ev: PointerEvent) {
+
+  onPointerEnd(ev: PointerEvent) {
     if (this.isDrawing && this.context) {
       ev.preventDefault();
       this.isDrawing = false;

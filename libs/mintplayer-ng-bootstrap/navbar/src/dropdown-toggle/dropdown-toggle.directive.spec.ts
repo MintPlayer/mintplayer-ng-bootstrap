@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
-import { MockComponent, MockDirective } from 'ng-mocks';
+import { MockComponent, MockDirective, MockInstance } from 'ng-mocks';
 import { BsNavbarBrandComponent } from '../navbar-brand/navbar-brand.component';
 import { BsNavbarContentDirective } from '../navbar-content/navbar-content.directive';
 import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
@@ -14,6 +14,12 @@ describe('DropdownToggleDirective', () => {
   let component: BsDropdownToggleTestComponent;
   let fixture: ComponentFixture<BsDropdownToggleTestComponent>;
 
+  MockInstance.scope();
+
+  beforeEach(() => {
+    MockInstance(BsNavbarItemComponent, 'dropdowns', signal([]));
+  });
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
@@ -22,9 +28,7 @@ describe('DropdownToggleDirective', () => {
           { path: 'b', children: [
             { path: 'c', component: PageBCComponent }
           ]}
-        ])
-      ],
-      declarations: [
+        ]),
         // Directive to test
         DropdownToggleDirective,
 
@@ -42,7 +46,7 @@ describe('DropdownToggleDirective', () => {
 
         // Testbench
         BsDropdownToggleTestComponent,
-      ]
+      ],
     })
     .compileComponents();
   });
@@ -60,7 +64,6 @@ describe('DropdownToggleDirective', () => {
 
 @Component({
   selector: 'bs-dropdown-toggle-test',
-  standalone: false,
   template: `
     <bs-navbar>
       <bs-navbar-nav>
@@ -83,7 +86,6 @@ class BsDropdownToggleTestComponent {
 
 @Component({
   selector: 'page-a',
-  standalone: false,
   template: `<div>Page A</div>`
 })
 class PageAComponent {
@@ -91,7 +93,6 @@ class PageAComponent {
 
 @Component({
   selector: 'page-bc',
-  standalone: false,
   template: `<div>Page B - C</div>`
 })
 class PageBCComponent {

@@ -1,16 +1,20 @@
 import { isPlatformServer } from '@angular/common';
-import { Directive, HostBinding, Inject, PLATFORM_ID } from '@angular/core';
+import { Directive, inject, PLATFORM_ID } from '@angular/core';
 
 @Directive({
   selector: '[bsNoNoscript]',
-  standalone: true,
+  host: {
+    '[class.noscript]': 'isNoScript',
+  },
 })
 export class BsNoNoscriptDirective {
-  constructor(@Inject(PLATFORM_ID) private platformId: Object) {
-    if (isPlatformServer(platformId)) {
+  private platformId = inject(PLATFORM_ID);
+
+  constructor() {
+    if (isPlatformServer(this.platformId)) {
       this.isNoScript = true;
     }
   }
 
-  @HostBinding('class.noscript') isNoScript = false;
+  isNoScript = false;
 }

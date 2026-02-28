@@ -1,13 +1,15 @@
 import { ConnectedPosition, Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { Directive, ElementRef, Host, HostListener, Injector, Input, OnDestroy, SkipSelf, TemplateRef } from '@angular/core';
+import { Directive, ElementRef, Host, input, Injector, OnDestroy, SkipSelf, TemplateRef } from '@angular/core';
 import { Position } from '@mintplayer/ng-bootstrap';
 import { BsTooltipComponent } from '../component/tooltip.component';
 import { TOOLTIP_CONTENT } from '../providers/tooltip-content.provider';
 
 @Directive({
   selector: '*[bsTooltip]',
-  standalone: false,
+  host: {
+    '(window:blur)': 'onBlur()',
+  },
 })
 export class BsTooltipDirective implements OnDestroy {
 
@@ -31,19 +33,19 @@ export class BsTooltipDirective implements OnDestroy {
     }
   }
 
-  @Input() public bsTooltip: Position = 'bottom';
+  readonly bsTooltip = input<Position>('bottom');
 
   private injector: Injector;
   private portal: ComponentPortal<any>;
   private overlayRef: OverlayRef | null = null;
 
-  @HostListener('window:blur') onBlur() {
+  onBlur() {
     this.hideTooltip();
   }
 
   showTooltip() {
     const positions: ConnectedPosition[] = [];
-    switch (this.bsTooltip) {
+    switch (this.bsTooltip()) {
       case 'bottom': {
         positions.push({
           originX: "center",
@@ -85,7 +87,7 @@ export class BsTooltipDirective implements OnDestroy {
         .withPositions(positions),
     });
     const component = this.overlayRef.attach<BsTooltipComponent>(this.portal);
-    component.setInput('position', this.bsTooltip);
+    component.setInput('position', this.bsTooltip());
   }
 
   hideTooltip() {

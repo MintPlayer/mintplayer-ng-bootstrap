@@ -1,29 +1,34 @@
 import { isPlatformServer } from '@angular/common';
-import { AfterViewInit, Directive, EventEmitter, HostBinding, Inject, Output, PLATFORM_ID } from '@angular/core';
+import { AfterViewInit, Directive, inject, output, PLATFORM_ID } from '@angular/core';
 import { BsUserAgent } from '../interfaces/user-agent';
 import { BsOperatingSystem } from '../types/operating-system.type';
 import { BsWebbrowser } from '../types/webbrowser.type';
 
 @Directive({
   selector: '[bsUserAgent]',
-  standalone: true,
+  host: {
+    '[class.os-android]': 'isAndroid',
+    '[class.os-ios]': 'isIos',
+    '[class.os-windows]': 'isWindows',
+    '[class]': 'browserClass',
+  },
 })
 export class BsUserAgentDirective implements AfterViewInit {
-  constructor(@Inject(PLATFORM_ID) private platformId: Object) { }
+  private platformId = inject(PLATFORM_ID);
 
-  @HostBinding('class.os-android') get isAndroid() {
+  get isAndroid() {
     return !isPlatformServer(this.platformId) && !!navigator && !!navigator.userAgent.match(/Android/i);
   }
 
-  @HostBinding('class.os-ios') get isIos() {
+  get isIos() {
     return !isPlatformServer(this.platformId) && !!navigator && !!navigator.userAgent.match(/iPhone|iPad|iPod/i);
   }
 
-  @HostBinding('class.os-windows') get isWindows() {
+  get isWindows() {
     return !isPlatformServer(this.platformId) && !!navigator && !!navigator.userAgent.match(/Windows/i);
   }
 
-  @HostBinding('class') get browserClass() {  
+  get browserClass() {
     const browser = this.getBrowser();
     if (!browser) {
       return null;
@@ -72,5 +77,5 @@ export class BsUserAgentDirective implements AfterViewInit {
     });
   }
 
-  @Output() detected = new EventEmitter<BsUserAgent>();
+  readonly detected = output<BsUserAgent>();
 }

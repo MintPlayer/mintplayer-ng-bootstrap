@@ -5,7 +5,7 @@ import { By } from '@angular/platform-browser';
 
 @Component({
   selector: 'bs-strikethrough-test',
-  standalone: false,
+  imports: [BsStrikethroughPipe],
   template: `<span [innerHTML]="'~~Hello world~~' | bsStrikethrough"></span>`
 })
 class BsStrikethroughTestComponent {}
@@ -19,8 +19,6 @@ describe('BsStrikethroughPipe', () => {
       imports: [
         // Pipe to test
         BsStrikethroughPipe,
-      ],
-      declarations: [
         // Testbench
         BsStrikethroughTestComponent
       ],

@@ -1,5 +1,8 @@
 import { DOCUMENT, isPlatformServer } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ContentChildren, computed, DestroyRef, effect, ElementRef, forwardRef, inject, Injector, input, OnDestroy, PLATFORM_ID, QueryList, signal, SkipSelf, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, contentChildren, computed, DestroyRef, effect, ElementRef, forwardRef, inject, Injector, input, OnDestroy, PLATFORM_ID, signal, SkipSelf, viewChild } from '@angular/core';
+import { ClickOutsideDirective } from '@mintplayer/ng-click-outside';
+import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
+import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
 import { DomPortal } from '@angular/cdk/portal';
@@ -9,7 +12,7 @@ import { OverlayRef } from '@angular/cdk/overlay';
   selector: 'bs-navbar-dropdown',
   templateUrl: './navbar-dropdown.component.html',
   styleUrls: ['./navbar-dropdown.component.scss'],
-  standalone: false,
+  imports: [BsHasOverlayComponent, BsNoNoscriptDirective, ClickOutsideDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsNavbarDropdownComponent implements OnDestroy {
@@ -29,7 +32,7 @@ export class BsNavbarDropdownComponent implements OnDestroy {
   private pendingShowInOverlay: boolean | null = null;
 
   autoclose = input(true);
-  @ViewChild('dd') dropdownElement!: ElementRef<HTMLDivElement>;
+  readonly dropdownElement = viewChild.required<ElementRef<HTMLDivElement>>('dd');
   isBrowser = !isPlatformServer(this.platformId);
 
   isVisible = signal<boolean>(false);
@@ -40,8 +43,8 @@ export class BsNavbarDropdownComponent implements OnDestroy {
     const w: Window | null = this.document.defaultView;
     if (!topPos) {
       return null;
-    } else if (w && this.dropdownElement) {
-      const style = w.getComputedStyle(this.dropdownElement.nativeElement);
+    } else if (w && this.dropdownElement()) {
+      const style = w.getComputedStyle(this.dropdownElement().nativeElement);
       return `calc(100vh - ${topPos}px - ${style.getPropertyValue('padding-top')} - ${style.getPropertyValue('padding-bottom')})`;
     } else {
       return null;
@@ -127,5 +130,5 @@ export class BsNavbarDropdownComponent implements OnDestroy {
     return [this.navbarItem.anchorTag].filter((a) => a).map((a) => <HTMLElement>a);
   }
 
-  @ContentChildren(forwardRef(() => BsNavbarDropdownComponent), { descendants: true }) childDropdowns!: QueryList<BsNavbarDropdownComponent>;
+  readonly childDropdowns = contentChildren<BsNavbarDropdownComponent>(forwardRef(() => BsNavbarDropdownComponent), { descendants: true });
 }

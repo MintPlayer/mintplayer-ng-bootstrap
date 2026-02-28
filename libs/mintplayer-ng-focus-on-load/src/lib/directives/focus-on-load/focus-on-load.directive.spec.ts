@@ -7,7 +7,7 @@ import { FocusOnLoadDirective } from './focus-on-load.directive';
 
 @Component({
   selector: 'focus-on-load-test-component',
-  standalone: false,
+  imports: [FocusOnLoadDirective],
   template: `
     <div #wrapper>
       <input type="text" [autofocus] #textbox>
@@ -27,13 +27,11 @@ describe('FocusOnLoadDirective', () => {
         
         // Unit to test
         FocusOnLoadDirective,
-      ],
-      declarations: [
         // Mock dependencies
 
         // Testbench
         FocusOnLoadTestComponent
-      ]
+      ],
     })
     .compileComponents();
 

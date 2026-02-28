@@ -1,4 +1,4 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, computed, ElementRef, HostBinding, input, model, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, computed, ElementRef, input, model, viewChild } from '@angular/core';
 import { BsToggleButtonGroupDirective } from '../directives/toggle-button-group/toggle-button-group.directive';
 import { BsCheckStyle } from '../types/check-style';
 
@@ -6,13 +6,14 @@ import { BsCheckStyle } from '../types/check-style';
   selector: 'bs-toggle-button',
   templateUrl: './toggle-button.component.html',
   styleUrls: ['./toggle-button.component.scss'],
-  standalone: false,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    'class': 'd-inline-block',
+  },
 })
 export class BsToggleButtonComponent implements AfterViewInit {
 
-  @ViewChild('checkbox') checkbox!: ElementRef<HTMLInputElement>;
-  @HostBinding('class.d-inline-block') dInlineBlockClass = true;
+  readonly checkbox = viewChild.required<ElementRef<HTMLInputElement>>('checkbox');
 
   disableAnimations = true;
 

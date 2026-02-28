@@ -1,24 +1,24 @@
-import { ChangeDetectionStrategy, Component, computed, effect, HostBinding, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 
 @Component({
   selector: 'bs-progress-bar',
   templateUrl: './progress-bar.component.html',
   styleUrls: ['./progress-bar.component.scss'],
-  standalone: false,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[class.progress-bar]': 'true',
+    '[class.progress-bar-striped]': 'striped()',
+    '[class.progress-bar-animated]': 'animated()',
+    '[class]': 'colorClassComputed()',
+    '[style.width]': 'width()',
+    '[attr.role]': '"progressbar"',
+    '[attr.aria-valuenow]': 'value()',
+    '[attr.aria-valuemin]': 'minimum()',
+    '[attr.aria-valuemax]': 'maximum()',
+  },
 })
 export class BsProgressBarComponent {
-
-  constructor() {
-    effect(() => {
-      this.colorClass = this.colorClassComputed();
-      this.widthStyle = this.width();
-      this.valueNow = this.value();
-      this.valueMin = this.minimum();
-      this.valueMax = this.maximum();
-    });
-  }
 
   minimum = input<number>(0);
   maximum = input<number>(100);
@@ -40,14 +40,4 @@ export class BsProgressBarComponent {
     const name = Color[this.color()];
     return `bg-${name}`;
   });
-
-  @HostBinding('class.progress-bar') progressBar = true;
-  @HostBinding('class.progress-bar-striped') get stripedClass() { return this.striped(); }
-  @HostBinding('class.progress-bar-animated') get animatedClass() { return this.animated(); }
-  @HostBinding('class') colorClass = 'bg-primary';
-  @HostBinding('style.width') widthStyle = '0';
-  @HostBinding('attr.role') role = 'progressbar';
-  @HostBinding('attr.aria-valuenow') valueNow = 50;
-  @HostBinding('attr.aria-valuemin') valueMin = 0;
-  @HostBinding('attr.aria-valuemax') valueMax = 100;
 }

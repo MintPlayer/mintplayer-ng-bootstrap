@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsCloseComponent } from '@mintplayer/ng-bootstrap/close';
-import { MockComponent, MockModule } from 'ng-mocks';
+import { MockComponent } from 'ng-mocks';
 import { CloseComponent } from './close.component';
 
 describe('CloseComponent', () => {

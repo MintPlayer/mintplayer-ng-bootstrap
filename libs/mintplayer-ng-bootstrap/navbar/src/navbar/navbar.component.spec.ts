@@ -4,7 +4,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { BsNavbarComponent } from './navbar.component';
-import { MockComponent, MockModule } from 'ng-mocks';
+import { MockComponent } from 'ng-mocks';
 import { BsContainerComponent } from '@mintplayer/ng-bootstrap/container';
 
 describe('BsNavbarComponent', () => {
@@ -22,8 +22,6 @@ describe('BsNavbarComponent', () => {
           ]}
         ]),
         MockComponent(BsContainerComponent),
-      ],
-      declarations: [
         // Component to test
         BsNavbarComponent,
         BsNavbarNavMockComponent,
@@ -36,7 +34,7 @@ describe('BsNavbarComponent', () => {
 
         // Testbench
         BsNavbarTestComponent,
-      ]
+      ],
     })
     .compileComponents();
   });
@@ -54,7 +52,6 @@ describe('BsNavbarComponent', () => {
 
 @Component({
   selector: 'bs-navbar-test',
-  standalone: false,
   template: `
     <bs-navbar>
       <bs-navbar-nav>
@@ -77,7 +74,6 @@ class BsNavbarTestComponent {
 
 @Component({
   selector: 'bs-navbar-nav',
-  standalone: false,
   template: `
     <div>
       <ul>
@@ -90,7 +86,6 @@ class BsNavbarNavMockComponent {
 
 @Component({
   selector: 'bs-navbar-dropdown',
-  standalone: false,
   template: `
     <ul>
       <ng-content></ng-content>
@@ -101,7 +96,6 @@ class BsNavbarDropdownMockComponent {
 
 @Component({
   selector: 'bs-navbar-item',
-  standalone: false,
   template: `
     <li>
       <ng-content></ng-content>
@@ -112,7 +106,6 @@ class BsNavbarItemMockComponent {
 
 @Component({
   selector: 'page-a',
-  standalone: false,
   template: `<div>Page A</div>`
 })
 class PageAComponent {
@@ -120,7 +113,6 @@ class PageAComponent {
 
 @Component({
   selector: 'page-bc',
-  standalone: false,
   template: `<div>Page B - C</div>`
 })
 class PageBCComponent {

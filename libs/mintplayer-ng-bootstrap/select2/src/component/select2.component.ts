@@ -1,12 +1,31 @@
-import { ChangeDetectionStrategy, Component, effect, ElementRef, HostBinding, HostListener, input, model, output, signal, TemplateRef, ViewChild } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { ChangeDetectionStrategy, Component, effect, ElementRef, input, model, output, signal, TemplateRef, viewChild } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { HasId } from '@mintplayer/ng-bootstrap/has-id';
+import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
+import { BsDropdownDirective, BsDropdownMenuDirective } from '@mintplayer/ng-bootstrap/dropdown';
+import { BsDropdownMenuComponent, BsDropdownItemComponent } from '@mintplayer/ng-bootstrap/dropdown-menu';
+import { BsInListPipe } from '@mintplayer/ng-bootstrap/in-list';
 
 @Component({
   selector: 'bs-select2',
   templateUrl: './select2.component.html',
   styleUrls: ['./select2.component.scss'],
-  standalone: false,
+  imports: [
+    NgTemplateOutlet,
+    FormsModule,
+    BsHasOverlayComponent,
+    BsDropdownDirective,
+    BsDropdownMenuDirective,
+    BsDropdownMenuComponent,
+    BsDropdownItemComponent,
+    BsInListPipe,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[class.focus]': 'isFocused',
+    '(click)': 'focus()',
+  },
 })
 export class BsSelect2Component<T extends HasId<U>, U> {
 
@@ -15,12 +34,12 @@ export class BsSelect2Component<T extends HasId<U>, U> {
 
   suggestions = model<T[]>([]);
 
-  @ViewChild('defaultItemTemplate', { static: true }) defaultItemTemplate!: TemplateRef<any>;
-  @ViewChild('searchBox') searchBox!: ElementRef<HTMLInputElement>;
-  @ViewChild('itemsBox') itemsBox!: ElementRef<HTMLDivElement>;
+  readonly defaultItemTemplate = viewChild.required<TemplateRef<any>>('defaultItemTemplate');
+  readonly searchBox = viewChild.required<ElementRef<HTMLInputElement>>('searchBox');
+  readonly itemsBox = viewChild.required<ElementRef<HTMLDivElement>>('itemsBox');
   searchterm = model('');
   provideSuggestions = output<string>();
-  @HostBinding('class.focus') isFocused = false;
+  isFocused = false;
 
   selectedItems = model<T[]>([]);
 
@@ -62,7 +81,7 @@ export class BsSelect2Component<T extends HasId<U>, U> {
       this.selectedItems.set(currentItems.filter(item => item.id !== suggestion.id));
     }
 
-    this.searchBox.nativeElement.focus();
+    this.searchBox().nativeElement.focus();
   }
 
   onRemoveItem(item: T, event: MouseEvent) {
@@ -72,8 +91,7 @@ export class BsSelect2Component<T extends HasId<U>, U> {
     this.focus();
   }
 
-  @HostListener('click')
   public focus() {
-    this.searchBox.nativeElement.focus();
+    this.searchBox().nativeElement.focus();
   }
 }

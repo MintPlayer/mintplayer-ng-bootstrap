@@ -19,13 +19,11 @@ describe('NavbarRouterLinkActiveDirective', () => {
 
         // Directive to test
         NavbarRouterLinkActiveDirective,
-      ],
-      declarations: [
         // Mock dependencies
   
         // Testbench
         RouterLinkTestComponent
-      ]
+      ],
     })
     .compileComponents();
 
@@ -43,7 +41,6 @@ describe('NavbarRouterLinkActiveDirective', () => {
 
 @Component({
   selector: 'router-link-test',
-  standalone: false,
   template: `
     <a [routerLink]='["/"]' #link>
       Home
@@ -55,7 +52,6 @@ class RouterLinkTestComponent {
 
 @Component({
   selector: 'page-home',
-  standalone: true,
   template: `<div>Home</div>`,
 })
 class PageHomeComponent {}

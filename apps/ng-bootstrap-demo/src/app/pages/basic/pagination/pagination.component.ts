@@ -1,12 +1,12 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy} from '@angular/core';
 import { BsPaginationComponent } from '@mintplayer/ng-bootstrap/pagination';
 
 @Component({
   selector: 'demo-pagination',
   templateUrl: './pagination.component.html',
   styleUrls: ['./pagination.component.scss'],
-  standalone: true,
-  imports: [BsPaginationComponent]
+  imports: [BsPaginationComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PaginationComponent {
 

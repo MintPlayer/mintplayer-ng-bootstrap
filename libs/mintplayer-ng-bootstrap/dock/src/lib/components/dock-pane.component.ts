@@ -1,18 +1,18 @@
-import { AfterContentInit, Component, Input, TemplateRef, ViewChild } from '@angular/core';
+import { AfterContentInit, Component, input, TemplateRef, viewChild, ChangeDetectionStrategy} from '@angular/core';
 
 @Component({
   selector: 'bs-dock-pane',
   template: `<ng-template><ng-content></ng-content></ng-template>`,
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsDockPaneComponent implements AfterContentInit {
-  @Input() name!: string;
-  @Input() title?: string;
+  readonly name = input.required<string>();
+  readonly title = input<string | undefined>(undefined);
 
-  @ViewChild(TemplateRef, { static: true }) template!: TemplateRef<unknown>;
+  readonly template = viewChild.required(TemplateRef);
 
   ngAfterContentInit(): void {
-    if (!this.name) {
+    if (!this.name()) {
       throw new Error('bs-dock-pane requires a unique "name" input.');
     }
   }

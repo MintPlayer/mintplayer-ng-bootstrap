@@ -9,7 +9,6 @@ import { BsModalComponent } from './modal.component';
 
 @Component({
   selector: 'bs-modal-test',
-  standalone: false,
   template: `
     <bs-modal [(isOpen)]="isOpen">
       <div *bsModal>
@@ -29,9 +28,7 @@ describe('BsModalComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         MockModule(OverlayModule),
-        NoopAnimationsModule
-      ],
-      declarations: [
+        NoopAnimationsModule,
         // Unit to test
         BsModalComponent,
 
@@ -41,7 +38,7 @@ describe('BsModalComponent', () => {
 
         // Testbench
         BsModalTestComponent
-      ]
+      ],
     })
     .compileComponents();
   });

@@ -1,23 +1,25 @@
-import { ChangeDetectionStrategy, Component, computed, HostBinding, Inject, input, TemplateRef } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, inject, input, TemplateRef } from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Position } from '@mintplayer/ng-bootstrap';
+import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { TOOLTIP_CONTENT } from '../providers/tooltip-content.provider';
 
 @Component({
   selector: 'bs-tooltip',
   templateUrl: './tooltip.component.html',
   styleUrls: ['./tooltip.component.scss'],
-  standalone: false,
+  imports: [NgTemplateOutlet, BsHasOverlayComponent],
   animations: [FadeInOutAnimation],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[class.position-relative]': 'true',
+  },
 })
 export class BsTooltipComponent {
-  constructor(@Inject(TOOLTIP_CONTENT) content: TemplateRef<any>) {
-    this.template = content;
-  }
+  template = inject<TemplateRef<any>>(TOOLTIP_CONTENT);
 
   position = input<Position>('bottom');
-  template: TemplateRef<any>;
 
   positionClass = computed(() => `bs-tooltip-${this.position()}`);
 
@@ -29,6 +31,4 @@ export class BsTooltipComponent {
       case 'bottom': return 'mt-1';
     }
   });
-
-  @HostBinding('class.position-relative') positionRelative = true;
 }

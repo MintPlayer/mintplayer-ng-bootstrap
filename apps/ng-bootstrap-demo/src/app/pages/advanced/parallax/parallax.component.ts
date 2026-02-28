@@ -1,13 +1,13 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 
 import { BsParallaxComponent } from '@mintplayer/ng-bootstrap/parallax';
 
 @Component({
   selector: 'demo-parallax',
-  standalone: true,
   imports: [BsParallaxComponent],
   templateUrl: './parallax.component.html',
   styleUrl: './parallax.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ParallaxComponent {
   images = [

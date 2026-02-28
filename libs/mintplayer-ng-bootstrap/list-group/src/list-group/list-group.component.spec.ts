@@ -8,7 +8,7 @@ describe('BsListGroupComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ BsListGroupComponent ]
+      imports: [ BsListGroupComponent ]
     })
     .compileComponents();
   });

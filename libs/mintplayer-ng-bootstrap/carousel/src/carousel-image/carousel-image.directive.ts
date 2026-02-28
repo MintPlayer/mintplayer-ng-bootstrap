@@ -3,7 +3,6 @@ import { BsCarouselComponent } from '../carousel/carousel.component';
 
 @Directive({
   selector: '*[bsCarouselImage]',
-  standalone: true,
 })
 export class BsCarouselImageDirective {
   private templateRef = inject(TemplateRef<any>);

@@ -9,7 +9,6 @@ import { BS_DEVELOPMENT } from '@mintplayer/ng-bootstrap';
 
 @Component({
   selector: 'bs-dropdown-test',
-  standalone: false,
   template: `
     <div bsDropdown [closeOnClickOutside]="true">
       <button bsDropdownToggle>Dropdown</button>
@@ -29,8 +28,6 @@ describe('BsDropdownDirective', () => {
     await TestBed.configureTestingModule({
       imports: [
         MockModule(OverlayModule),
-      ],
-      declarations: [
         // Directive to test
         BsDropdownDirective,
 

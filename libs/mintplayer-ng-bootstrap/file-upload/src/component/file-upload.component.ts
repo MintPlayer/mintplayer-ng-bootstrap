@@ -1,24 +1,37 @@
-import { Component, EventEmitter, HostListener, Input, Output, TemplateRef } from '@angular/core';
+import { Component, input, model, output, TemplateRef, ChangeDetectionStrategy} from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { BsForDirective } from '@mintplayer/ng-bootstrap/for';
+import { BsListGroupComponent } from '@mintplayer/ng-bootstrap/list-group';
+import { BsListGroupItemComponent } from '@mintplayer/ng-bootstrap/list-group';
+import { BsProgressComponent, BsProgressBarComponent } from '@mintplayer/ng-bootstrap/progress-bar';
+import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { FileUpload } from '../file-upload';
+import { BsFormatBytesPipe } from '../pipes/format-bytes/format-bytes.pipe';
 
 @Component({
   selector: 'bs-file-upload',
   templateUrl: './file-upload.component.html',
   styleUrls: ['./file-upload.component.scss'],
-  standalone: false,
+  imports: [NgTemplateOutlet, BsForDirective, BsListGroupComponent, BsListGroupItemComponent, BsProgressComponent, BsProgressBarComponent, BsButtonTypeDirective, BsFormatBytesPipe],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(dragover)': 'onDragOver($event)',
+    '(dragleave)': 'onDragLeave($event)',
+    '(drop)': 'onDrop($event)',
+  },
 })
 export class BsFileUploadComponent {
 
-  @Input() public dropFilesCaption = 'Drop your files here';
-  @Input() public browseFilesCaption = 'Browse for files';
-  @Input() public placeholder = 'Drop files to upload';
+  readonly dropFilesCaption = input('Drop your files here');
+  readonly browseFilesCaption = input('Browse for files');
+  readonly placeholder = input('Drop files to upload');
 
   colors = Color;
   isDraggingFile = false;
   fileTemplate?: TemplateRef<FileUpload>;
-  @Input() public files: FileUpload[] = [];
-  @Output() public filesDropped = new EventEmitter<FileUpload[]>();
+  readonly files = model<FileUpload[]>([]);
+  readonly filesDropped = output<FileUpload[]>();
 
   onChange(event: Event) {
     if (!event.target) return;
@@ -27,29 +40,26 @@ export class BsFileUploadComponent {
 
     const files = (<HTMLInputElement>event.target).files;
     if (!files) return;
-    
+
     this.processDroppedFiles(files);
   }
 
-  @HostListener('dragover', ['$event'])
   onDragOver(event: DragEvent) {
     event.preventDefault();
     event.stopPropagation();
-    
+
     if (event.dataTransfer) {
       this.isDraggingFile = true;
       event.dataTransfer.effectAllowed = "copy";
     }
   }
 
-  @HostListener('dragleave', ['$event'])
   onDragLeave(event: DragEvent) {
     event.preventDefault();
     event.stopPropagation();
     this.isDraggingFile = false;
   }
 
-  @HostListener('drop', ['$event'])
   onDrop(event: DragEvent) {
     event.preventDefault();
     event.stopPropagation();
@@ -63,9 +73,9 @@ export class BsFileUploadComponent {
     const newFiles = [...Array(fileList.length).keys()]
       .map(i => fileList.item(i))
       .filter(f => !!f)
-      .map((file, index) => <FileUpload>{ file, progress: 0, index: this.files.length + index });
-    
-    this.files.push(...newFiles);
+      .map((file, index) => <FileUpload>{ file, progress: 0, index: this.files().length + index });
+
+    this.files.update(f => [...f, ...newFiles]);
     this.filesDropped.emit(newFiles);
   }
 }

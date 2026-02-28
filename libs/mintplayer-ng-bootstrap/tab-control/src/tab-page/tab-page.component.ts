@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ContentChild, computed, inject, input, ElementRef, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, contentChild, computed, inject, input, ElementRef, signal } from '@angular/core';
 import { BsTabControlComponent } from '../tab-control/tab-control.component';
 import { BsTabPageHeaderDirective } from '../tab-page-header/tab-page-header.directive';
 
@@ -6,7 +6,6 @@ import { BsTabPageHeaderDirective } from '../tab-page-header/tab-page-header.dir
   selector: 'bs-tab-page',
   templateUrl: './tab-page.component.html',
   styleUrls: ['./tab-page.component.scss'],
-  standalone: false,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsTabPageComponent {
@@ -20,5 +19,5 @@ export class BsTabPageComponent {
   tabName = computed(() => `${this.tabControl.tabControlName()}-${this.tabId()}`);
 
   disabled = input(false);
-  @ContentChild(BsTabPageHeaderDirective) headerTemplate!: BsTabPageHeaderDirective;
+  readonly headerTemplate = contentChild(BsTabPageHeaderDirective);
 }

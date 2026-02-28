@@ -1,10 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
-import { MockDirective, MockModule } from 'ng-mocks';
+import { MockDirective, MockComponent } from 'ng-mocks';
 
 import { SlideUpDownComponent } from './slide-up-down.component';
+import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
 
 describe('SlideUpDownComponent', () => {
   let component: SlideUpDownComponent;
@@ -14,7 +14,7 @@ describe('SlideUpDownComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         NoopAnimationsModule,
-        MockModule(BsGridModule),
+        MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
         MockDirective(BsButtonTypeDirective),
         SlideUpDownComponent,
       ]

@@ -1,14 +1,14 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
-import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
+import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
+import { BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
 
 @Component({
   selector: 'demo-anchor-scrolling',
   templateUrl: './anchor-scrolling.component.html',
   styleUrls: ['./anchor-scrolling.component.scss'],
-  standalone: true,
-  imports: [BsGridModule, BsAlertModule],
+  imports: [BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsAlertComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AnchorScrollingComponent {
   colors = Color;

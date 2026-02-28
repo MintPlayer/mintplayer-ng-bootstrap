@@ -7,7 +7,6 @@ import { BsSwipeContainerDirective } from './swipe-container.directive';
 
 @Component({
   selector: 'swipe-test-component',
-  standalone: false,
   template: `
     <div bsSwipeContainer>
       @for (n of images; track n) {
@@ -25,9 +24,7 @@ describe('BsSwipeContainerDirective', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        NoopAnimationsModule
-      ],
-      declarations: [
+        NoopAnimationsModule,
         // Unit to test
         BsSwipeContainerDirective,
 
@@ -36,7 +33,7 @@ describe('BsSwipeContainerDirective', () => {
 
         // Testbench
         SwipeTestComponent
-      ]
+      ],
     })
     .compileComponents();
 

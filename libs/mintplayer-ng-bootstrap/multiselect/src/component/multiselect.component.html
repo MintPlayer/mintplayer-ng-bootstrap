@@ -1,15 +1,15 @@
 <bs-has-overlay></bs-has-overlay>
 <div bsDropdown [hasBackdrop]="true" [closeOnClickOutside]="true">
     <button bsDropdownToggle [color]="colors.primary">
-        <ng-container *ngTemplateOutlet="buttonTemplate ?? defaultButtonTemplate; context: { $implicit: selectedItems.length }"></ng-container>
+        <ng-container *ngTemplateOutlet="buttonTemplate ?? defaultButtonTemplate; context: { $implicit: selectedItems().length }"></ng-container>
     </button>
     <div *bsDropdownMenu class="bg-white mw-250px p-3 border rounded shadow">
         <ng-container *ngTemplateOutlet="headerTemplate"></ng-container>
         @if (headerTemplate) {
             <hr class="my-2">
         }
-        @for (item of items; track item) {
-            <bs-toggle-button [ngModel]="selectedItems.indexOf(item) > -1" (ngModelChange)="itemChange(item, $event)" class="d-block">{{ item }}</bs-toggle-button>
+        @for (item of items(); track item) {
+            <bs-toggle-button [ngModel]="selectedItems().indexOf(item) > -1" (ngModelChange)="itemChange(item, $event)" class="d-block">{{ item }}</bs-toggle-button>
         }
         @if (footerTemplate) {
             <hr class="my-2">

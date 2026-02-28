@@ -4,23 +4,7 @@ import { BsMultiselectComponent } from '../../component/multiselect.component';
 import { BsButtonTemplateDirective } from './button-template.directive';
 
 @Component({
-  selector: 'bs-button-template-test',
-  standalone: false,
-  template: `
-    <bs-multiselect #multiselect>
-      <ng-template bsButtonTemplate let-count>
-          {{ count }} geselecteerd
-      </ng-template>
-    </bs-multiselect>`
-})
-class BsButtonTemplateTestComponent {
-  @ViewChild('modalTemplate') modalTemplate!: TemplateRef<any>;
-  @ViewChild('multiselect') multiselect!: BsMultiselectMockComponent;
-}
-
-@Component({
   selector: 'bs-multiselect',
-  standalone: false,
   template: `
     <button>
       <ng-container *ngTemplateOutlet="buttonTemplate ?? defaultButtonTemplate; context: { $implicit: 0 }"></ng-container>
@@ -33,14 +17,28 @@ class BsMultiselectMockComponent {
   buttonTemplate!: TemplateRef<any>;
 }
 
+@Component({
+  selector: 'bs-button-template-test',
+  imports: [BsMultiselectMockComponent, BsButtonTemplateDirective],
+  template: `
+    <bs-multiselect #multiselect>
+      <ng-template bsButtonTemplate let-count>
+          {{ count }} geselecteerd
+      </ng-template>
+    </bs-multiselect>`
+})
+class BsButtonTemplateTestComponent {
+  @ViewChild('modalTemplate') modalTemplate!: TemplateRef<any>;
+  @ViewChild('multiselect') multiselect!: BsMultiselectMockComponent;
+}
+
 describe('BsButtonTemplateDirective', () => {
   let component: BsButtonTemplateTestComponent;
   let fixture: ComponentFixture<BsButtonTemplateTestComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [],
-      declarations: [
+      imports: [
         // Directive to test
         BsButtonTemplateDirective,
 
@@ -49,7 +47,7 @@ describe('BsButtonTemplateDirective', () => {
 
         // Testbench
         BsButtonTemplateTestComponent
-      ]
+      ],
     }).compileComponents();
   });
 

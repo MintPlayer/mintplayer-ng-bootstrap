@@ -1,4 +1,4 @@
-import { Directive, Input, DoCheck, ViewContainerRef, Optional, Host, TemplateRef } from "@angular/core";
+import { Directive, input, DoCheck, ViewContainerRef, inject, TemplateRef } from "@angular/core";
 import { SwitchView } from "./switch-view";
 import { BsInstanceOfContext } from "../interfaces/instance-of-context";
 import { AbstractType } from "../types/abstract.type";
@@ -6,22 +6,20 @@ import { BsInstanceOfDirective } from "./instanceof.directive";
 
 @Directive({
   selector: '[bsInstanceofCase]',
-  standalone: false,
 })
 export class BsInstanceofCaseDirective<T> implements DoCheck {
-  @Input() public bsInstanceofCase!: AbstractType<T>;
+  readonly bsInstanceofCase = input.required<AbstractType<T>>();
 
   private _view: SwitchView<T>;
+  private bsInstanceof = inject(BsInstanceOfDirective, { optional: true, host: true })!;
 
-  public constructor(
-    viewContainer: ViewContainerRef,
-    templateRef: TemplateRef<BsInstanceOfContext<T>>,
-    @Optional() @Host() private bsInstanceof: BsInstanceOfDirective
-  ) {
-    if (!bsInstanceof) {
+  public constructor() {
+    const viewContainer = inject(ViewContainerRef);
+    const templateRef = inject<TemplateRef<BsInstanceOfContext<T>>>(TemplateRef);
+    if (!this.bsInstanceof) {
       this.throwError('bsInstanceofCase');
     }
-    bsInstanceof._addCase();
+    this.bsInstanceof._addCase();
     this._view = new SwitchView<T>(viewContainer, templateRef);
   }
 
@@ -41,7 +39,7 @@ export class BsInstanceofCaseDirective<T> implements DoCheck {
 
   public ngDoCheck() {
     this._view.enforceState(
-      this.bsInstanceof._matchCase(this.bsInstanceofCase)
+      this.bsInstanceof._matchCase(this.bsInstanceofCase())
     );
   }
 

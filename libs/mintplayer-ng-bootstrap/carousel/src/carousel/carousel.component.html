@@ -42,9 +42,9 @@
                 @if (indicators()) {
                     <div class="carousel-indicators" [class.carousel-indicators-vertical]="orientation() === 'vertical'">
                         @for (image of images(); track image.id; let i = $index) {
-                            <button type="button" (click)="swipeContainer?.goto(i)"
-                                [class.active]="swipeContainer?.imageIndex() === i" data-bs-target
-                                [attr.aria-current]="swipeContainer?.imageIndex() === i ? true : null"
+                            <button type="button" (click)="swipeContainer()?.goto(i)"
+                                [class.active]="swipeContainer()?.imageIndex() === i" data-bs-target
+                                [attr.aria-current]="swipeContainer()?.imageIndex() === i ? true : null"
                                 [attr.aria-label]="'Slide ' + i"></button>
                         }
                     </div>

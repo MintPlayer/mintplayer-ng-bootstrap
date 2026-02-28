@@ -1,10 +1,9 @@
-import { Directive, Input } from "@angular/core";
+import { Directive, effect, input } from "@angular/core";
 import { SwitchView } from "./switch-view";
 import { AbstractType } from "../types/abstract.type";
 
 @Directive({
   selector: '[bsInstanceof]',
-  standalone: false,
 })
 export class BsInstanceOfDirective {
   private _defaultViews!: SwitchView[];
@@ -12,14 +11,16 @@ export class BsInstanceOfDirective {
   private _caseCount = 0;
   private _lastCaseCheckIndex = 0;
   private _lastCasesMatched = false;
-  private _instanceof: any;
 
-  @Input()
-  public set bsInstanceof(newValue: any) {
-    this._instanceof = newValue;
-    if (this._caseCount === 0) {
-      this._updateDefaultCases(true);
-    }
+  readonly bsInstanceof = input<any>(undefined);
+
+  constructor() {
+    effect(() => {
+      const newValue = this.bsInstanceof();
+      if (this._caseCount === 0) {
+        this._updateDefaultCases(true);
+      }
+    });
   }
 
   /** @internal */
@@ -37,9 +38,10 @@ export class BsInstanceOfDirective {
 
   /** @internal */
   public _matchCase<T>(type: AbstractType<T>): T | undefined {
+    const value = this.bsInstanceof();
     const matched =
-      this._instanceof instanceof type
-        ? this._instanceof
+      value instanceof type
+        ? value
         : undefined;
     this._lastCasesMatched = this._lastCasesMatched || !!matched;
     this._lastCaseCheckIndex++;

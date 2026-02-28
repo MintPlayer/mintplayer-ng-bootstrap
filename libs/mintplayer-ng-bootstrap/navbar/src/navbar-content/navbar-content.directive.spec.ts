@@ -20,9 +20,7 @@ describe('DropdownToggleDirective', () => {
           { path: 'b', children: [
             { path: 'c', component: PageBCComponent }
           ]}
-        ])
-      ],
-      declarations: [
+        ]),
         // Directive to test
         BsNavbarContentDirective,
 
@@ -35,7 +33,7 @@ describe('DropdownToggleDirective', () => {
 
         // Testbench
         BsNavbarContentTestComponent,
-      ]
+      ],
     })
     .compileComponents();
   });
@@ -53,7 +51,6 @@ describe('DropdownToggleDirective', () => {
 
 @Component({
   selector: 'bs-navbar-test',
-  standalone: false,
   template: `
   <bs-navbar>
     <bs-navbar-nav>
@@ -76,7 +73,6 @@ class BsNavbarContentTestComponent {
 
 @Component({
   selector: 'page-a',
-  standalone: false,
   template: `<div>Page A</div>`
 })
 class PageAComponent {
@@ -84,7 +80,6 @@ class PageAComponent {
 
 @Component({
   selector: 'page-bc',
-  standalone: false,
   template: `<div>Page B - C</div>`
 })
 class PageBCComponent {

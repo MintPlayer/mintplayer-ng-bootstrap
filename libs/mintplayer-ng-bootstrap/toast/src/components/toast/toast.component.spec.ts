@@ -8,7 +8,7 @@ describe('BsToastComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [BsToastComponent],
+      imports: [BsToastComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BsToastComponent);

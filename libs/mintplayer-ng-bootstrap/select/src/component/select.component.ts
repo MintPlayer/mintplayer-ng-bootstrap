@@ -1,11 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, input, Renderer2, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, input, Renderer2, viewChild } from '@angular/core';
 import { BsSelectSize } from '../types/select-size';
 
 @Component({
   selector: 'bs-select',
   templateUrl: './select.component.html',
   styleUrls: ['./select.component.scss'],
-  standalone: false,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsSelectComponent {
@@ -14,8 +13,9 @@ export class BsSelectComponent {
   constructor() {
     effect(() => {
       const disabled = this.disabled();
-      if (this.selectBox) {
-        this.renderer.setProperty(this.selectBox.nativeElement, 'disabled', disabled);
+      const selectBox = this.selectBox();
+      if (selectBox) {
+        this.renderer.setProperty(selectBox.nativeElement, 'disabled', disabled);
       }
     });
   }
@@ -23,7 +23,7 @@ export class BsSelectComponent {
   // For debugging purposes
   identifier = input(0);
 
-  @ViewChild('selectBox') selectBox!: ElementRef<HTMLSelectElement>;
+  readonly selectBox = viewChild.required<ElementRef<HTMLSelectElement>>('selectBox');
 
   size = input<BsSelectSize>('md');
   multiple = input<boolean>(false);

@@ -1,15 +1,16 @@
-import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, model, output, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, model, output, viewChild } from '@angular/core';
 import { HS } from '../../interfaces/hs';
+import { BsSliderComponent, BsThumbDirective, BsTrackDirective } from '../slider/slider.component';
 
 @Component({
   selector: 'bs-luminosity-strip',
   templateUrl: './luminosity-strip.component.html',
   styleUrls: ['./luminosity-strip.component.scss'],
-  standalone: false,
+  imports: [BsSliderComponent, BsThumbDirective, BsTrackDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsLuminosityStripComponent {
-  @ViewChild('canvas') canvas!: ElementRef<HTMLCanvasElement>;
+  readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
 
   hs = model<HS>({ hue: 0, saturation: 0 });
   luminosity = model<number>(0.5);
@@ -28,8 +29,8 @@ export class BsLuminosityStripComponent {
     effect(() => {
       const hs = this.hs();
       if (this.canvasContext) {
-        const width = this.canvas.nativeElement.width;
-        const height = this.canvas.nativeElement.height;
+        const width = this.canvas().nativeElement.width;
+        const height = this.canvas().nativeElement.height;
         this.canvasContext.clearRect(0, 0, width, height);
         this.canvasContext.save();
 
@@ -51,7 +52,7 @@ export class BsLuminosityStripComponent {
 
   ngAfterViewInit() {
     if (typeof window !== 'undefined') {
-      this.canvasContext = this.canvas.nativeElement.getContext('2d', { willReadFrequently: true });
+      this.canvasContext = this.canvas().nativeElement.getContext('2d', { willReadFrequently: true });
     }
   }
 }

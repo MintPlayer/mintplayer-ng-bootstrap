@@ -8,7 +8,7 @@ describe('BsShellComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [BsShellComponent]
+      imports: [BsShellComponent]
     })
     .compileComponents();
     

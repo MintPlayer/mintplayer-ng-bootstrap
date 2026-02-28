@@ -5,7 +5,7 @@ import { ClickOutsideDirective } from './click-outside.directive';
 
 @Component({
   selector: 'click-outside-test-component',
-  standalone: false,
+  imports: [ClickOutsideDirective],
   template: `
     <div #wrapper>
       <div #div (clickOutside)="increment()">
@@ -35,13 +35,11 @@ describe('ClickOutsideDirective', () => {
 
         // Unit to test
         ClickOutsideDirective,
-      ],
-      declarations: [
         // Mock dependencies
 
         // Testbench
         ClickOutsideTestComponent
-      ]
+      ],
     })
     .compileComponents();
 

@@ -3,7 +3,6 @@ import { BsModalHostComponent } from '../../components/modal-host/modal-host.com
 
 @Directive({
   selector: '[bsModal]',
-  standalone: false,
 })
 export class BsModalDirective {
 

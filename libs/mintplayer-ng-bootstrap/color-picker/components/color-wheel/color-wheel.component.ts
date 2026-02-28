@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, HostBinding, HostListener, inject, model, output, signal, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, model, output, signal, viewChild } from '@angular/core';
 import { HS } from '../../interfaces/hs';
 import { HslColor } from '../../interfaces/hsl-color';
 import { RgbColor } from '../../interfaces/rgb-color';
@@ -7,14 +7,16 @@ import { RgbColor } from '../../interfaces/rgb-color';
   selector: 'bs-color-wheel',
   templateUrl: './color-wheel.component.html',
   styleUrls: ['./color-wheel.component.scss'],
-  standalone: false,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    'class': 'position-relative',
+    '(document:mousemove)': 'onMouseMove($event)',
+    '(document:mouseup)': 'onPointerUp($event)',
+  },
 })
 export class BsColorWheelComponent {
   private element = inject(ElementRef<HTMLElement>);
-
-  @HostBinding('class.position-relative') positionRelative = true;
-  @ViewChild('canvas') canvas!: ElementRef<HTMLCanvasElement>;
+  readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
 
   // Inputs
   width = model<number>(150);
@@ -107,7 +109,7 @@ export class BsColorWheelComponent {
       // Use setTimeout to debounce slightly
       setTimeout(() => {
         if (this.canvasContext && innerRadius !== null && outerRadius !== null && shiftX !== null && shiftY !== null) {
-          this.canvasContext.clearRect(0, 0, this.canvas.nativeElement.width, this.canvas.nativeElement.height);
+          this.canvasContext.clearRect(0, 0, this.canvas().nativeElement.width, this.canvas().nativeElement.height);
           this.canvasContext.save();
           this.canvasContext.translate(shiftX + outerRadius, shiftY + outerRadius);
 
@@ -137,7 +139,7 @@ export class BsColorWheelComponent {
   ngAfterViewInit() {
     this.viewInited.set(true);
     if (typeof window !== 'undefined') {
-      this.canvasContext = this.canvas.nativeElement.getContext('2d', { willReadFrequently: true });
+      this.canvasContext = this.canvas().nativeElement.getContext('2d', { willReadFrequently: true });
     }
   }
 
@@ -158,19 +160,17 @@ export class BsColorWheelComponent {
     }
   }
 
-  @HostListener('document:mousemove', ['$event'])
   onMouseMove(ev: MouseEvent) {
     this.onPointerMove(ev);
   }
 
-  @HostListener('document:mouseup', ['$event'])
   onPointerUp(ev: MouseEvent | TouchEvent) {
     this.isPointerDown = false;
   }
 
   private updateColor(ev: MouseEvent | TouchEvent, subtract: boolean) {
     let co: { x: number, y: number };
-    const rect = this.canvas.nativeElement.getBoundingClientRect();
+    const rect = this.canvas().nativeElement.getBoundingClientRect();
     if ('touches' in ev) {
       co = {
         x: ev.touches[0].clientX - rect.left,

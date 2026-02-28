@@ -9,7 +9,7 @@ describe('BsScrollspyComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ BsScrollspyComponent ],
+      imports: [ BsScrollspyComponent ],
       providers: [{
         provide: ROUTER_CONFIGURATION,
         useValue: <ExtraOptions>{

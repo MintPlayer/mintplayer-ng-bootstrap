@@ -7,7 +7,7 @@ import { BsFileUploadTemplateDirective } from './file-upload-template.directive'
 
 @Component({
   selector: 'file-upload-template-test-component',
-  standalone: false,
+  imports: [MockComponent(BsFileUploadComponent), BsFileUploadTemplateDirective],
   template: `
     <bs-file-upload [files]="files" #fileUpload>
       <ng-template bsFileUploadTemplate let-upload>
@@ -36,10 +36,7 @@ describe('BsContextMenuDirective', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        CommonModule
-      ],
-      providers: [],
-      declarations: [
+        CommonModule,
         // Unit to test
         BsFileUploadTemplateDirective,
 
@@ -48,7 +45,8 @@ describe('BsContextMenuDirective', () => {
 
         // Testbench
         FileUploadTestComponent
-      ]
+      ],
+      providers: [],
     })
     .compileComponents();
   });

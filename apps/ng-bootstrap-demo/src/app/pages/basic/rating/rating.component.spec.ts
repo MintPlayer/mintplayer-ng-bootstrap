@@ -1,8 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsRatingComponent } from '@mintplayer/ng-bootstrap/rating';
-import { MockComponent, MockModule } from 'ng-mocks';
+import { MockComponent, MockDirective } from 'ng-mocks';
 import { RatingComponent } from './rating.component';
+import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
 
 describe('RatingComponent', () => {
   let component: RatingComponent;
@@ -11,7 +11,7 @@ describe('RatingComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        MockModule(BsGridModule),
+        MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
         MockComponent(BsRatingComponent),
         RatingComponent,
       ]

@@ -1,5 +1,4 @@
 export * from './components';
-export * from './scheduler.module';
 
 // Re-export core types for convenience
 export {

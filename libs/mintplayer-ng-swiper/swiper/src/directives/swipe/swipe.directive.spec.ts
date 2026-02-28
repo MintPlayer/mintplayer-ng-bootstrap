@@ -5,7 +5,6 @@ import { BsSwipeDirective } from './swipe.directive';
 
 @Directive({
   selector: '[bsSwipeContainer]',
-  standalone: true,
   providers: [
     { provide: BsSwipeContainerDirective, useExisting: forwardRef(() => BsSwipeContainerDirectiveStub) }
   ]
@@ -22,7 +21,6 @@ class BsSwipeContainerDirectiveStub {
 
 @Component({
   selector: 'swipe-test-component',
-  standalone: true,
   imports: [BsSwipeContainerDirectiveStub, BsSwipeDirective],
   template: `
     <div bsSwipeContainer>

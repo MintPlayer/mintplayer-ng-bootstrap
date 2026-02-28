@@ -6,7 +6,6 @@ import { BsScrollspyDirective } from './scrollspy.directive';
 
 @Component({
   selector: 'bs-scrollspy-test',
-  standalone: false,
   template: `
     <bs-scrollspy>
       <h1 bsScrollspy>Main title</h1>
@@ -37,8 +36,7 @@ describe('BsScrollspyDirective', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [],
-      declarations: [
+      imports: [
         // Directive to test
         BsScrollspyDirective,
 
@@ -47,7 +45,7 @@ describe('BsScrollspyDirective', () => {
 
         // Testbench
         BsScrollspyTestComponent
-      ]
+      ],
     })
     .compileComponents();
   });

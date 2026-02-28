@@ -8,7 +8,7 @@ describe('BsCardHeaderComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ BsCardHeaderComponent ]
+      imports: [ BsCardHeaderComponent ]
     })
     .compileComponents();
   });

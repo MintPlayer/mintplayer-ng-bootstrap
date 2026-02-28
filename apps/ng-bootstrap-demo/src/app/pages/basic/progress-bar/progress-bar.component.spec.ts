@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsProgressBarModule } from '@mintplayer/ng-bootstrap/progress-bar';
-import { MockModule } from 'ng-mocks';
+import { MockComponent } from 'ng-mocks';
 import { ProgressBarComponent } from './progress-bar.component';
+import { BsProgressComponent, BsProgressBarComponent } from '@mintplayer/ng-bootstrap/progress-bar';
 
 describe('ProgressBarComponent', () => {
   let component: ProgressBarComponent;
@@ -10,7 +10,7 @@ describe('ProgressBarComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        MockModule(BsProgressBarModule),
+        MockComponent(BsProgressComponent), MockComponent(BsProgressBarComponent),
         ProgressBarComponent,
       ]
     })

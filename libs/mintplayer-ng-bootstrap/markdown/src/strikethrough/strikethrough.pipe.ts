@@ -3,7 +3,6 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Pipe({
   name: 'bsStrikethrough',
-  standalone: true,
   pure: true,
 })
 export class BsStrikethroughPipe implements PipeTransform {

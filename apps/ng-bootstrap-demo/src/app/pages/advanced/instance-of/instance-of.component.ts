@@ -1,14 +1,14 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
-import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
-import { BsInstanceOfModule } from '@mintplayer/ng-bootstrap/instance-of';
+import { BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
+import { BsInstanceOfDirective, BsInstanceofCaseDirective, BsInstanceOfDefaultDirective } from '@mintplayer/ng-bootstrap/instance-of';
 
 @Component({
   selector: 'demo-instance-of',
   templateUrl: './instance-of.component.html',
   styleUrls: ['./instance-of.component.scss'],
-  standalone: true,
-  imports: [BsInstanceOfModule, BsAlertModule],
+  imports: [BsInstanceOfDirective, BsInstanceofCaseDirective, BsInstanceOfDefaultDirective, BsAlertComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class InstanceOfComponent {
   items: (Base | null)[] = [

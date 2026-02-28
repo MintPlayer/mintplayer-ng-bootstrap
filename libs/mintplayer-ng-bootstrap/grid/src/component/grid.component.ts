@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { Breakpoint } from '@mintplayer/ng-bootstrap';
+import { BsContainerComponent } from '@mintplayer/ng-bootstrap/container';
 
 @Component({
   selector: 'bs-grid',
   templateUrl: './grid.component.html',
   styleUrls: ['./grid.component.scss'],
-  standalone: false,
+  imports: [BsContainerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsGridComponent {

@@ -10,9 +10,9 @@ describe('BsGridComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [BsGridComponent],
       imports: [
-        MockComponent(BsContainerComponent)
+        MockComponent(BsContainerComponent),
+        BsGridComponent
       ]
     }).compileComponents();
 

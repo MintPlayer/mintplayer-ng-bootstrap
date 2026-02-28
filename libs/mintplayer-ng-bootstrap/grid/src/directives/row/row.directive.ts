@@ -1,9 +1,10 @@
-import { Directive, HostBinding } from '@angular/core';
+import { Directive } from '@angular/core';
 
 @Directive({
   selector: '[bsRow]',
-  standalone: false,
+  host: {
+    '[class.row]': 'true',
+  },
 })
 export class BsGridRowDirective {
-  @HostBinding('class.row') rowClass = true;
 }

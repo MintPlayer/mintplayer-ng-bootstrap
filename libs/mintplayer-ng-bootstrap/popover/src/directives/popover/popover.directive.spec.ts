@@ -11,7 +11,6 @@ enum Position { top, left, bottom, right }
 
 @Component({
   selector: 'bs-Popover-directive-test',
-  standalone: false,
   template: `
     <button #button>
       Bottom
@@ -38,8 +37,6 @@ describe('BsPopoverDirective', () => {
     await TestBed.configureTestingModule({
       imports: [
         OverlayModule,
-      ],
-      declarations: [
         // Unit to test
         BsPopoverDirective,
 

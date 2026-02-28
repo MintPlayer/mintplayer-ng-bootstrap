@@ -1,9 +1,20 @@
 /// <reference types="../types" />
 
-import { ChangeDetectionStrategy, Component, effect, ElementRef, inject, input, model, OnDestroy, output, signal, TemplateRef, ViewChild } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { ChangeDetectionStrategy, Component, effect, ElementRef, inject, input, model, OnDestroy, output, signal, TemplateRef, viewChild } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 import { HasId } from '@mintplayer/ng-bootstrap/has-id';
+import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
+import { BsDropdownDirective } from '@mintplayer/ng-bootstrap/dropdown';
+import { BsDropdownToggleDirective } from '@mintplayer/ng-bootstrap/dropdown';
+import { BsDropdownMenuDirective } from '@mintplayer/ng-bootstrap/dropdown';
+import { BsDropdownMenuComponent } from '@mintplayer/ng-bootstrap/dropdown-menu';
+import { BsDropdownItemComponent } from '@mintplayer/ng-bootstrap/dropdown-menu';
+import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
+import { BsProgressComponent } from '@mintplayer/ng-bootstrap/progress-bar';
+import { BsProgressBarComponent } from '@mintplayer/ng-bootstrap/progress-bar';
 import { BsSuggestionTemplateContext } from '../directives';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
@@ -11,7 +22,19 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
   selector: 'bs-searchbox',
   templateUrl: './searchbox.component.html',
   styleUrls: ['./searchbox.component.scss'],
-  standalone: false,
+  imports: [
+    NgTemplateOutlet,
+    FormsModule,
+    BsHasOverlayComponent,
+    BsDropdownDirective,
+    BsDropdownToggleDirective,
+    BsDropdownMenuDirective,
+    BsDropdownMenuComponent,
+    BsDropdownItemComponent,
+    BsButtonTypeDirective,
+    BsProgressComponent,
+    BsProgressBarComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsSearchboxComponent<T extends HasId<U>, U> implements OnDestroy {
@@ -23,7 +46,7 @@ export class BsSearchboxComponent<T extends HasId<U>, U> implements OnDestroy {
   caretDownFill = signal<SafeHtml | undefined>(undefined);
   colors = Color;
   isBusy = signal<boolean>(false);
-  @ViewChild('textbox') textbox!: ElementRef<HTMLInputElement>;
+  readonly textbox = viewChild.required<ElementRef<HTMLInputElement>>('textbox');
 
   isOpen = model(false);
   selectedItem = model<T | undefined>(undefined);
@@ -67,7 +90,7 @@ export class BsSearchboxComponent<T extends HasId<U>, U> implements OnDestroy {
     effect(() => {
       const isOpen = this.isOpen();
       if (isOpen) {
-        setTimeout(() => this.textbox?.nativeElement?.setSelectionRange(0, -1), 20);
+        setTimeout(() => this.textbox()?.nativeElement?.setSelectionRange(0, -1), 20);
       }
     });
 

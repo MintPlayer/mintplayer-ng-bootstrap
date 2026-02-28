@@ -1,28 +1,28 @@
-import { ChangeDetectionStrategy, Component, ContentChildren, forwardRef, HostBinding, inject, model, QueryList, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, contentChildren, forwardRef, inject, model, computed, signal } from '@angular/core';
 import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
+import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
 import { BsAccordionComponent } from '../accordion/accordion.component';
 
 @Component({
   selector: 'bs-accordion-tab',
   templateUrl: './accordion-tab.component.html',
   styleUrls: ['./accordion-tab.component.scss'],
-  standalone: false,
+  imports: [BsNoNoscriptDirective],
   animations: [SlideUpDownAnimation],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    'class': 'accordion-item d-block',
+  },
 })
 export class BsAccordionTabComponent {
   accordion = inject(BsAccordionComponent);
   accordionTabId = signal<number>(0);
   accordionTabName = computed(() => `${this.accordion.accordionName()}-${this.accordionTabId()}`);
-  @ContentChildren(forwardRef(() => BsAccordionComponent)) childAccordions!: QueryList<BsAccordionComponent>;
+  readonly childAccordions = contentChildren<BsAccordionComponent>(forwardRef(() => BsAccordionComponent));
 
   constructor() {
     this.accordionTabId.set(++this.accordion.accordionTabCounter);
   }
-
-  @HostBinding('class.accordion-item') accordionItemClass = true;
-  @HostBinding('class.d-block') dBlock = true;
-  @HostBinding('class.border-0') noBorder = false;
 
   isActive = model<boolean>(false);
 
@@ -30,14 +30,14 @@ export class BsAccordionTabComponent {
     if (this.isActive() !== value) {
       this.isActive.set(value);
       if (value) {
-        this.accordion.tabPages.filter((tab) => {
+        this.accordion.tabPages().filter((tab) => {
           return tab !== this;
         }).forEach((tab) => {
           tab.isActive.set(false);
         });
       } else {
-        this.childAccordions.forEach((accordion) => {
-          accordion.tabPages.forEach((tab) => {
+        this.childAccordions().forEach((accordion) => {
+          accordion.tabPages().forEach((tab: BsAccordionTabComponent) => {
             tab.isActive.set(false);
           });
         });

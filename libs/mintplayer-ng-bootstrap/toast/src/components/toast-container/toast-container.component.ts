@@ -1,15 +1,19 @@
-import { ChangeDetectionStrategy, Component, HostBinding, inject } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
+import { BsAddPropertiesPipe } from '../../pipes/add-properties.pipe';
 import { BsToastService } from '../../services/toast/toast.service';
 
 @Component({
   selector: 'bs-toast-container',
   templateUrl: './toast-container.component.html',
   styleUrls: ['./toast-container.component.scss'],
-  standalone: false,
+  imports: [NgTemplateOutlet, BsHasOverlayComponent, BsAddPropertiesPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[style.overflow-y]': '"auto"',
+  },
 })
 export class BsToastContainerComponent {
   toastService = inject(BsToastService);
-
-  @HostBinding('style.overflow-y') overflowY = 'auto';
 }

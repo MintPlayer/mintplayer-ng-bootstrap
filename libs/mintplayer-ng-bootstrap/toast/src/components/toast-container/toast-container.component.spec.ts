@@ -13,8 +13,8 @@ describe('BsToastContainerComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         MockComponent(BsHasOverlayComponent),
+        BsToastContainerComponent
       ],
-      declarations: [BsToastContainerComponent],
       providers: [
         {
           provide: BsToastService,

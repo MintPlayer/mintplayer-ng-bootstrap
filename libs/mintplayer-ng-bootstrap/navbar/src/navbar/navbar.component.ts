@@ -1,12 +1,19 @@
-import { ChangeDetectionStrategy, Component, computed, ElementRef, HostListener, input, signal, TemplateRef, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, ElementRef, input, signal, TemplateRef, viewChild } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { BsContainerComponent } from '@mintplayer/ng-bootstrap/container';
+import { BsUserAgentDirective } from '@mintplayer/ng-bootstrap/user-agent';
+import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
 import { Breakpoint, Color } from '@mintplayer/ng-bootstrap';
 
 @Component({
   selector: 'bs-navbar',
   templateUrl: './navbar.component.html',
   styleUrls: ['./navbar.component.scss'],
-  standalone: false,
+  imports: [NgTemplateOutlet, BsContainerComponent, BsUserAgentDirective, BsNoNoscriptDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(window:resize)': 'onWindowResize()',
+  },
 })
 export class BsNavbarComponent {
 
@@ -16,7 +23,6 @@ export class BsNavbarComponent {
     this.onWindowResize();
   }
 
-  @HostListener('window:resize')
   onWindowResize() {
     this.isResizing.set(true);
     if (typeof window !== 'undefined') {
@@ -34,7 +40,7 @@ export class BsNavbarComponent {
     }, 300);
   }
 
-  @ViewChild('nav') nav!: ElementRef;
+  readonly nav = viewChild.required<ElementRef>('nav');
   autoclose = input(true);
 
   expandButtonTemplate: TemplateRef<any> | null = null;

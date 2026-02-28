@@ -23,8 +23,6 @@ describe('BsAccordionTabComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         NoopAnimationsModule,
-      ],
-      declarations: [
         // Unit to test
         BsAccordionTabComponent,
 
@@ -55,7 +53,6 @@ describe('BsAccordionTabComponent', () => {
 
 @Component({
   selector: 'bs-accordion-test',
-  standalone: false,
   template: `
   <bs-accordion>
     <bs-accordion-tab>

@@ -8,7 +8,12 @@ import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
 
 @Directive({
   selector: '*[bsPopover]',
-  standalone: false,
+  providers: [{
+    provide: PORTAL_FACTORY,
+    useValue: (injector: Injector) => {
+      return new ComponentPortal(BsPopoverComponent, null, injector);
+    }
+  }],
 })
 export class BsPopoverDirective implements AfterViewInit, OnDestroy {
 

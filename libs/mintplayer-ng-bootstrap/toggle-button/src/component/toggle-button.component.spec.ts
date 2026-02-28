@@ -9,8 +9,10 @@ describe('BsToggleButtonComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ BsToggleButtonComponent ],
-      imports: [NoopAnimationsModule]
+      imports: [
+        NoopAnimationsModule,
+        BsToggleButtonComponent
+      ]
     })
     .compileComponents();
   });

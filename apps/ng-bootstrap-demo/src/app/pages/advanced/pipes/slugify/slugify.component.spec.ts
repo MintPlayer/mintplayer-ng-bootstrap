@@ -1,10 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MockModule, MockPipe } from 'ng-mocks';
+import { MockPipe, MockComponent, MockDirective } from 'ng-mocks';
 import { FormsModule } from '@angular/forms';
-import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
 
 import { SlugifyComponent } from './slugify.component';
 import { BsSlugifyPipe } from '@mintplayer/ng-bootstrap/slugify';
+import { BsFormComponent, BsFormGroupDirective, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 
 describe('SlugifyComponent', () => {
   let component: SlugifyComponent;
@@ -14,7 +14,7 @@ describe('SlugifyComponent', () => {
     TestBed.configureTestingModule({
       imports: [
         FormsModule,
-        MockModule(BsFormModule),
+        MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
         MockPipe(BsSlugifyPipe),
         SlugifyComponent,
       ]

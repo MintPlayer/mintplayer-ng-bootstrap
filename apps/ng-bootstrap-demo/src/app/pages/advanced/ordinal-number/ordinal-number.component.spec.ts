@@ -1,10 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
-import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
 import { BsOrdinalNumberPipe } from '@mintplayer/ng-bootstrap/ordinal-number';
-import { MockModule, MockPipe } from 'ng-mocks';
+import { MockModule, MockPipe, MockComponent, MockDirective } from 'ng-mocks';
 
 import { OrdinalNumberComponent } from './ordinal-number.component';
+import { BsFormComponent, BsFormGroupDirective, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 
 describe('OrdinalNumberComponent', () => {
   let component: OrdinalNumberComponent;
@@ -14,7 +14,7 @@ describe('OrdinalNumberComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         MockModule(FormsModule),
-        MockModule(BsFormModule),
+        MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
         MockPipe(BsOrdinalNumberPipe),
         OrdinalNumberComponent,
       ]

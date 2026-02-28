@@ -4,8 +4,19 @@ import { BsModalHostComponent } from '../../components/modal-host/modal-host.com
 import { BsModalDirective } from './modal.directive';
 
 @Component({
+  selector: 'bs-modal',
+  template: ``,
+  providers: [
+    { provide: BsModalHostComponent, useExisting: BsModalHostMockComponent }
+  ]
+})
+class BsModalHostMockComponent {
+  template!: TemplateRef<any>;
+}
+
+@Component({
   selector: 'bs-modal-test',
-  standalone: false,
+  imports: [BsModalHostMockComponent, BsModalDirective],
   template: `
     <bs-modal #modal>
       <div *bsModal>
@@ -20,26 +31,13 @@ class BsModalTestComponent {
   @ViewChild('modal') modal!: BsModalHostMockComponent;
 }
 
-@Component({
-  selector: 'bs-modal',
-  standalone: false,
-  template: ``,
-  providers: [
-    { provide: BsModalHostComponent, useExisting: BsModalHostMockComponent }
-  ]
-})
-class BsModalHostMockComponent {
-  template!: TemplateRef<any>;
-}
-
 describe('BsModalDirective', () => {
   let component: BsModalTestComponent;
   let fixture: ComponentFixture<BsModalTestComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [],
-      declarations: [
+      imports: [
         // Unit to test
         BsModalDirective,
 
@@ -48,7 +46,7 @@ describe('BsModalDirective', () => {
 
         // Testbench
         BsModalTestComponent
-      ]
+      ],
     })
     .compileComponents();
   });

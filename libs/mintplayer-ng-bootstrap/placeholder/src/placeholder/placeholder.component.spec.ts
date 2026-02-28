@@ -8,7 +8,7 @@ describe('BsPlaceholderComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [BsPlaceholderComponent],
+      imports: [BsPlaceholderComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BsPlaceholderComponent);

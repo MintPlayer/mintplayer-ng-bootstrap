@@ -5,7 +5,6 @@ import { RgbColor } from '../../interfaces/rgb-color';
 
 @Directive({
   selector: 'bs-color-picker',
-  standalone: false,
   providers: [{
     provide: NG_VALUE_ACCESSOR,
     useExisting: forwardRef(() => BsColorPickerValueAccessor),
@@ -48,7 +47,7 @@ export class BsColorPickerValueAccessor implements ControlValueAccessor {
   }
 
   writeValue(value: string | null) {
-    if (this.host && this.host.colorWheel) {
+    if (this.host && this.host.colorWheel()) {
       if (value) {
         const rgb = this.hex2rgb(value);
         const hsl = this.rgb2Hsl(rgb);
@@ -59,8 +58,8 @@ export class BsColorPickerValueAccessor implements ControlValueAccessor {
   }
 
   setDisabledState(isDisabled: boolean) {
-    if (this.host && this.host.colorWheel) {
-      this.host.colorWheel.disabled.set(isDisabled);
+    if (this.host && this.host.colorWheel()) {
+      this.host.colorWheel().disabled.set(isDisabled);
     }
   }
   //#endregion

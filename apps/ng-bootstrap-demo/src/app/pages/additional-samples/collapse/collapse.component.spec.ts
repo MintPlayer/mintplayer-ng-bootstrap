@@ -1,13 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsScrollspyDirective } from '@mintplayer/ng-bootstrap/scrollspy';
-import { MockComponent, MockDirective, MockModule } from 'ng-mocks';
+import { MockComponent, MockDirective } from 'ng-mocks';
 
 import { CollapseComponent } from './collapse.component';
+import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
+import { BsAlertComponent, BsAlertCloseComponent } from '@mintplayer/ng-bootstrap/alert';
 
 describe('CollapseComponent', () => {
   let component: CollapseComponent;
@@ -19,17 +19,15 @@ describe('CollapseComponent', () => {
         NoopAnimationsModule,
 
         // Mock dependencies
-        MockModule(BsGridModule),
-        MockModule(BsAlertModule),
+        MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
+        MockComponent(BsAlertComponent), MockComponent(BsAlertCloseComponent),
         MockDirective(BsButtonTypeDirective),
         MockComponent(BsCodeSnippetComponent),
 
         // Unit to test (standalone)
         CollapseComponent,
-      ],
-      declarations: [
         MockDirective(BsScrollspyDirective),
-      ]
+      ],
     })
     .compileComponents();
   });

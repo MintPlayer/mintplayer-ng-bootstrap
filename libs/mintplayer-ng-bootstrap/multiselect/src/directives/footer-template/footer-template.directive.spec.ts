@@ -6,7 +6,7 @@ import { MockComponent } from 'ng-mocks';
 
 @Component({
   selector: 'bs-footer-template-test',
-  standalone: false,
+  imports: [MockComponent(BsMultiselectComponent), BsFooterTemplateDirective],
   template: `
     <bs-multiselect #multiselect>
       <ng-container *bsFooterTemplate="let count">{{ count }} geselecteerd</ng-container>
@@ -24,8 +24,6 @@ describe('BsFooterTemplateDirective', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-      ],
-      declarations: [
         // Directive to test
         BsFooterTemplateDirective,
 
@@ -34,7 +32,7 @@ describe('BsFooterTemplateDirective', () => {
         
         // Testbench
         BsFooterTemplateTestComponent,
-      ]
+      ],
     }).compileComponents();
   });
 

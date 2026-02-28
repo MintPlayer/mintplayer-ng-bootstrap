@@ -4,7 +4,6 @@ import { ChangeDetectionStrategy, Component, output } from '@angular/core';
   selector: 'bs-close',
   templateUrl: './close.component.html',
   styleUrls: ['./close.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsCloseComponent {

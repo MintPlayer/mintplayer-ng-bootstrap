@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, HostBinding, HostListener, Input, Optional } from '@angular/core';
+import { AfterViewInit, Component, inject, input, ChangeDetectionStrategy} from '@angular/core';
 import { BsDropdownDirective } from '@mintplayer/ng-bootstrap/dropdown';
 // import { BsDropdownComponent } from '@mintplayer/ng-bootstrap/dropdown';
 
@@ -6,17 +6,18 @@ import { BsDropdownDirective } from '@mintplayer/ng-bootstrap/dropdown';
   selector: 'bs-dropdown-menu',
   templateUrl: './dropdown-menu.component.html',
   styleUrls: ['./dropdown-menu.component.scss'],
-  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[style.width]': 'dropdownWith',
+    '(window:resize)': 'onResize()',
+  },
 })
 export class BsDropdownMenuComponent implements AfterViewInit {
-  constructor(@Optional() private bsDropdown?: BsDropdownDirective) {
-  }
+  private bsDropdown = inject(BsDropdownDirective, { optional: true });
 
-  @HostBinding('class.position-relative') positionRelative = false;
-  @Input() maxHeight: number | null = null;
-  @HostBinding('style.width') dropdownWith: string | null = null;
+  readonly maxHeight = input<number | null>(null);
+  dropdownWith: string | null = null;
 
-  @HostListener('window:resize')
   onResize() {
     if ((typeof window !== 'undefined') && this.bsDropdown && this.bsDropdown.sameDropdownWidth()) {
       const element = this.bsDropdown.elementRef.nativeElement;

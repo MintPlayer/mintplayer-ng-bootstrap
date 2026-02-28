@@ -1,10 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
-import { BsTooltipModule } from '@mintplayer/ng-bootstrap/tooltip';
-import { MockDirective, MockModule } from 'ng-mocks';
+import { MockDirective, MockComponent } from 'ng-mocks';
 import { GIT_REPO } from '../../../providers/git-repo.provider';
 import { TooltipComponent } from './tooltip.component';
+import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
+import { BsTooltipDirective } from '@mintplayer/ng-bootstrap/tooltip';
 
 
 describe('TooltipComponent', () => {
@@ -14,8 +14,8 @@ describe('TooltipComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        MockModule(BsGridModule),
-        MockModule(BsTooltipModule),
+        MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
+        MockDirective(BsTooltipDirective),
         MockDirective(BsButtonTypeDirective),
         TooltipComponent,
       ],

@@ -1,28 +1,28 @@
 import { DOCUMENT } from '@angular/common';
-import { Directive, EventEmitter, HostListener, Inject, Input, Output } from '@angular/core';
+import { Directive, inject, input, output } from '@angular/core';
 
 @Directive({
   selector: '[bsCopy]',
-  standalone: true,
+  host: {
+    '(click)': 'click($event)',
+  },
 })
 export class BsCopyDirective {
-  private doc: Document;
-  constructor(@Inject(DOCUMENT) doc: any) {
-    this.doc = doc;
-  }
+  private doc = inject<Document>(DOCUMENT);
 
-  @Input() public bsCopy: string | null = null;
-  @Output() public bsCopied = new EventEmitter<string>();
+  readonly bsCopy = input<string | null>(null);
+  readonly bsCopied = output<string>();
 
-  @HostListener('click', ['$event']) click(event: MouseEvent) {
+  click(event: MouseEvent) {
     event.preventDefault();
     const listener = (e: ClipboardEvent) => {
-      if (!!this.bsCopy && !!window) {
+      const bsCopyValue = this.bsCopy();
+      if (!!bsCopyValue && !!window) {
         const clipboard = e.clipboardData || <DataTransfer | null>(<any>window)['clipboardData'] || null;
         if (clipboard) {
-          clipboard.setData('text', this.bsCopy?.toString());
+          clipboard.setData('text', bsCopyValue.toString());
           e.preventDefault();
-          this.bsCopied.emit(this.bsCopy);
+          this.bsCopied.emit(bsCopyValue);
         }
       }
     };

@@ -8,7 +8,7 @@ describe('BsColorWheelComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ BsColorWheelComponent ]
+      imports: [ BsColorWheelComponent ]
     })
     .compileComponents();
 

@@ -1,8 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ResizableComponent } from './resizable.component';
-import { MockModule } from 'ng-mocks';
-import { BsResizableModule } from '@mintplayer/ng-bootstrap/resizable';
+import { MockComponent, MockDirective } from 'ng-mocks';
+import { BsResizableComponent, BsResizeGlyphDirective } from '@mintplayer/ng-bootstrap/resizable';
 
 describe('ResizableComponent', () => {
   let component: ResizableComponent;
@@ -11,7 +11,7 @@ describe('ResizableComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        MockModule(BsResizableModule),
+        MockComponent(BsResizableComponent), MockDirective(BsResizeGlyphDirective),
         ResizableComponent,
       ]
     })

@@ -5,7 +5,7 @@ import { BsBoldPipe } from './bold.pipe';
 
 @Component({
   selector: 'bs-bold-test',
-  standalone: false,
+  imports: [BsBoldPipe],
   template: `<span [innerHTML]="'**Hello world**' | bsBold"></span>`
 })
 class BsBoldTestComponent {}
@@ -19,8 +19,6 @@ describe('BsBoldPipe', () => {
       imports: [
         // Pipe to test
         BsBoldPipe,
-      ],
-      declarations: [
         // Testbench
         BsBoldTestComponent
       ],

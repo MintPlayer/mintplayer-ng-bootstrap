@@ -1,14 +1,26 @@
-import { Directive, effect, HostBinding, HostListener, inject, input } from "@angular/core";
+import { afterNextRender, DestroyRef, Directive, effect, ElementRef, inject, input } from "@angular/core";
 import { BsObserveSizeDirective } from "@mintplayer/ng-swiper/observe-size";
 import { BsSwipeContainerDirective } from "../swipe-container/swipe-container.directive";
 
 @Directive({
   selector: '[bsSwipe]',
   hostDirectives: [BsObserveSizeDirective],
-  standalone: true,
+  host: {
+    '[class.align-top]': 'true',
+    '[class.float-none]': 'true',
+    '[class.w-100]': 'true',
+    '[class.pe-auto]': 'true',
+    '[class.me-0]': 'true',
+    '[class.d-inline-block]': 'inlineBlock',
+    '[class.d-block]': 'block',
+    '[style.height.px]': 'slideHeight',
+    '[style.touch-action]': 'touchAction',
+  },
 })
 export class BsSwipeDirective {
   private container = inject(BsSwipeContainerDirective);
+  private el = inject(ElementRef<HTMLElement>);
+  private destroyRef = inject(DestroyRef);
   observeSize = inject(BsObserveSizeDirective);
 
   public offside = input(false);
@@ -36,19 +48,34 @@ export class BsSwipeDirective {
     this.slideHeight = targetHeight;
   });
 
-  @HostBinding('class.align-top')
-  @HostBinding('class.float-none')
-  @HostBinding('class.w-100')
-  @HostBinding('class.pe-auto')
-  @HostBinding('class.me-0')
-  classes = true;
+  inlineBlock = true;
+  block = false;
+  slideHeight: number | null = null;
+  touchAction: 'pan-x' | 'pan-y' = 'pan-y';
 
-  @HostBinding('class.d-inline-block') inlineBlock = true;
-  @HostBinding('class.d-block') block = false;
-  @HostBinding('style.height.px') slideHeight: number | null = null;
-  @HostBinding('style.touch-action') touchAction: 'pan-x' | 'pan-y' = 'pan-y';
+  constructor() {
+    // Register touch listeners manually with { passive: false } for touchmove/touchend.
+    // Angular's host event bindings register passive listeners by default for touch events,
+    // which silently ignores preventDefault(). This caused Firefox Android's PullToRefresh
+    // to trigger because the browser's default action was never actually cancelled.
+    afterNextRender(() => {
+      const elem = this.el.nativeElement;
+      const onTouchStart = (ev: TouchEvent) => this.onTouchStart(ev);
+      const onTouchMove = (ev: TouchEvent) => this.onTouchMove(ev);
+      const onTouchEnd = (ev: TouchEvent) => this.onTouchEnd(ev);
 
-  @HostListener('touchstart', ['$event'])
+      elem.addEventListener('touchstart', onTouchStart, { passive: true });
+      elem.addEventListener('touchmove', onTouchMove, { passive: false });
+      elem.addEventListener('touchend', onTouchEnd, { passive: false });
+
+      this.destroyRef.onDestroy(() => {
+        elem.removeEventListener('touchstart', onTouchStart);
+        elem.removeEventListener('touchmove', onTouchMove);
+        elem.removeEventListener('touchend', onTouchEnd);
+      });
+    });
+  }
+
   onTouchStart(ev: TouchEvent) {
     if (ev.touches.length === 1) {
       ev.stopPropagation(); // Prevent bubbling, but allow clicks
@@ -74,7 +101,6 @@ export class BsSwipeDirective {
     }
   }
 
-  @HostListener('touchmove', ['$event'])
   onTouchMove(ev: TouchEvent) {
     ev.stopPropagation();
 
@@ -98,7 +124,6 @@ export class BsSwipeDirective {
     });
   }
 
-  @HostListener('touchend', ['$event'])
   onTouchEnd(ev: TouchEvent) {
     ev.stopPropagation();
     if (this.isSwipeDetected) {

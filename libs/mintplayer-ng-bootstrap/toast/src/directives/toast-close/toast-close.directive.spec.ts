@@ -11,7 +11,6 @@ import { BsToastComponent } from '../../components/toast/toast.component';
 
 @Component({
   selector: 'bs-toast-test',
-  standalone: false,
   template: `
     <ng-template #toastTemplate let-message="message" let-isVisible="isVisible">
       <bs-toast [isVisible]="isVisible">
@@ -40,8 +39,6 @@ describe('BsToastCloseDirective', () => {
       imports: [
         OverlayModule,
         MockComponent(BsCloseComponent),
-      ],
-      declarations: [
         // Unit to test
         BsToastCloseDirective,
 

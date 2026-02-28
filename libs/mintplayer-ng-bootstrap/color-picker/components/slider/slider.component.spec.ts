@@ -8,7 +8,7 @@ describe('BsSliderComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ BsSliderComponent ]
+      imports: [ BsSliderComponent ]
     })
     .compileComponents();
 

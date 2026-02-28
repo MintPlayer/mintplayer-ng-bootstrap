@@ -7,8 +7,24 @@ import { BsToastService } from './toast.service';
 import { CommonModule } from '@angular/common';
 
 @Component({
+  selector: 'bs-toast-container',
+  imports: [CommonModule],
+  template: `
+    @for (toast of toastService.toasts(); let i = $index; track i) {
+      <ng-container [ngTemplateOutlet]="toast.template" [ngTemplateOutletContext]="toast.context"></ng-container>
+    }`
+})
+class BsToastContainerComponent {
+  constructor(toastService: BsToastService) {
+    this.toastService = toastService;
+  }
+
+  toastService: BsToastService;
+}
+
+@Component({
   selector: 'bs-toast-test',
-  standalone: false,
+  imports: [BsToastContainerComponent],
   template: `
     <ng-template #toastTemplate let-message="message" let-isVisible="isVisible">
       <label>{{ message }}</label>
@@ -29,39 +45,19 @@ class BsToastTestComponent {
   }
 }
 
-@Component({
-  selector: 'bs-toast-container',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
-    @for (toast of toastService.toasts(); let i = $index; track i) {
-      <ng-container [ngTemplateOutlet]="toast.template" [ngTemplateOutletContext]="toast.context"></ng-container>
-    }`
-})
-class BsToastContainerComponent {
-  constructor(toastService: BsToastService) {
-    this.toastService = toastService;
-  }
-
-  toastService: BsToastService;
-}
-
 describe('BsToastService', () => {
   let component: BsToastTestComponent;
   let fixture: ComponentFixture<BsToastTestComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [
-
-        // Testbench
-        BsToastTestComponent
-      ],
       imports: [
         OverlayModule,
 
         // Unit to test
         BsToastContainerComponent,
+        // Testbench
+        BsToastTestComponent
       ],
       providers: [
         {

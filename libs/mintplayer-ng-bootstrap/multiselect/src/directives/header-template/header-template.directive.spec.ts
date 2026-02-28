@@ -4,23 +4,7 @@ import { BsMultiselectComponent } from '../../component/multiselect.component';
 import { BsHeaderTemplateDirective } from './header-template.directive';
 
 @Component({
-  selector: 'bs-header-template-test',
-  standalone: false,
-  template: `
-    <bs-multiselect #multiselect>
-      <ng-template bsHeaderTemplate let-count>
-          {{ count }} geselecteerd
-      </ng-template>
-    </bs-multiselect>`
-})
-class BsHeaderTemplateTestComponent {
-  @ViewChild('modalTemplate') modalTemplate!: TemplateRef<any>;
-  @ViewChild('multiselect') multiselect!: BsMultiselectMockComponent;
-}
-
-@Component({
   selector: 'bs-multiselect',
-  standalone: false,
   template: `
     <button>
       <ng-container *ngTemplateOutlet="headerTemplate ?? defaultHeaderTemplate; context: { $implicit: 0 }"></ng-container>
@@ -33,14 +17,28 @@ class BsMultiselectMockComponent {
   headerTemplate!: TemplateRef<any>;
 }
 
+@Component({
+  selector: 'bs-header-template-test',
+  imports: [BsMultiselectMockComponent, BsHeaderTemplateDirective],
+  template: `
+    <bs-multiselect #multiselect>
+      <ng-template bsHeaderTemplate let-count>
+          {{ count }} geselecteerd
+      </ng-template>
+    </bs-multiselect>`
+})
+class BsHeaderTemplateTestComponent {
+  @ViewChild('modalTemplate') modalTemplate!: TemplateRef<any>;
+  @ViewChild('multiselect') multiselect!: BsMultiselectMockComponent;
+}
+
 describe('BsHeaderTemplateDirective', () => {
   let component: BsHeaderTemplateTestComponent;
   let fixture: ComponentFixture<BsHeaderTemplateTestComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [],
-      declarations: [
+      imports: [
         // Directive to test
         BsHeaderTemplateDirective,
 
@@ -49,7 +47,7 @@ describe('BsHeaderTemplateDirective', () => {
 
         // Testbench
         BsHeaderTemplateTestComponent
-      ]
+      ],
     }).compileComponents();
   });
 

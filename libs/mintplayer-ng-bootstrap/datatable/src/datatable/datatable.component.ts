@@ -1,5 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, ContentChildren, input, model, signal, TemplateRef } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, contentChildren, input, model, TemplateRef } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { PaginationResponse } from '@mintplayer/pagination';
+import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
+import { BsTableComponent } from '@mintplayer/ng-bootstrap/table';
+import { BsPaginationComponent } from '@mintplayer/ng-bootstrap/pagination';
 import { DatatableSettings } from '../datatable-settings';
 import { BsDatatableColumnDirective } from '../datatable-column/datatable-column.directive';
 import { BsRowTemplateContext } from '../row-template/row-template.directive';
@@ -9,19 +13,16 @@ import { BsRowTemplateContext } from '../row-template/row-template.directive';
   selector: 'bs-datatable',
   templateUrl: './datatable.component.html',
   styleUrls: ['./datatable.component.scss'],
-  standalone: false,
+  imports: [NgTemplateOutlet, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsTableComponent, BsPaginationComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsDatatableComponent<TData> {
 
-  private _columns = signal<BsDatatableColumnDirective[]>([]);
-  numberOfColumns = computed(() => this._columns().length);
+  readonly columns = contentChildren(BsDatatableColumnDirective);
+  numberOfColumns = computed(() => this.columns().length);
 
-  @ContentChildren(BsDatatableColumnDirective) set columns(value: BsDatatableColumnDirective[]) {
-    this._columns.set([...value]);
-  }
   get columnsArray() {
-    return this._columns();
+    return this.columns();
   }
 
   settings = model<DatatableSettings>(new DatatableSettings());

@@ -1,10 +1,13 @@
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
-import { Directive, ElementRef, Host, HostListener, SkipSelf, TemplateRef, ViewContainerRef } from '@angular/core';
+import { Directive, ElementRef, Host, SkipSelf, TemplateRef, ViewContainerRef } from '@angular/core';
 
 @Directive({
   selector: '[bsContextMenu]',
-  standalone: false,
+  host: {
+    '(document:click)': 'clickAnywhere($event)',
+    '(window:blur)': 'onBlur()',
+  },
 })
 export class BsContextMenuDirective {
 
@@ -53,12 +56,11 @@ export class BsContextMenuDirective {
   private overlayRef: OverlayRef | null = null;
   private templatePortal: TemplatePortal<any> | null = null;
 
-  @HostListener('document:click', ['$event']) clickAnywhere(ev: MouseEvent) {
+  clickAnywhere(ev: MouseEvent) {
     this.checkAndCloseExisting(ev);
   }
-  
-  
-  @HostListener('window:blur') onBlur() {
+
+  onBlur() {
     this.close();
   }
 

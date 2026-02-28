@@ -3,10 +3,10 @@ import { HttpClientModule } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
-import { MockModule } from 'ng-mocks';
-import { BsNavbarModule } from '@mintplayer/ng-bootstrap/navbar';
+import { MockComponent, MockDirective } from 'ng-mocks';
 import { AppComponent } from './app.component';
 import { BOOTSTRAP_VERSION } from './providers/bootstrap-version.provider';
+import { BsNavbarComponent, BsNavbarBrandComponent, BsNavbarNavComponent, BsNavbarDropdownComponent, BsNavbarItemComponent, BsNavbarContentDirective, BsExpandButtonDirective } from '@mintplayer/ng-bootstrap/navbar';
 
 describe('AppComponent', () => {
   beforeEach(async () => {
@@ -18,7 +18,7 @@ describe('AppComponent', () => {
         ]),
 
         // Mock dependencies
-        MockModule(BsNavbarModule),
+        MockComponent(BsNavbarComponent), MockComponent(BsNavbarBrandComponent), MockComponent(BsNavbarNavComponent), MockComponent(BsNavbarDropdownComponent), MockComponent(BsNavbarItemComponent), MockDirective(BsNavbarContentDirective), MockDirective(BsExpandButtonDirective),
 
         // Component to test (standalone)
         AppComponent,
@@ -43,7 +43,6 @@ describe('AppComponent', () => {
 
 @Component({
   selector: 'a-b-c',
-  standalone: true,
   template: 'Page ABC',
 })
 class PageAbcComponent {

@@ -1,11 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
-import { BsModalModule } from '@mintplayer/ng-bootstrap/modal';
-import { MockDirective, MockModule, MockProvider } from 'ng-mocks';
+import { MockDirective, MockProvider, MockComponent } from 'ng-mocks';
 import { GIT_REPO } from '../../../providers/git-repo.provider';
 import { TagService } from '../../../services/tag/tag.service';
 import { ModalComponent } from './modal.component';
+import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
+import { BsModalComponent, BsModalHostComponent, BsModalDirective, BsModalHeaderDirective, BsModalBodyDirective, BsModalFooterDirective, BsModalCloseDirective } from '@mintplayer/ng-bootstrap/modal';
 
 describe('ModalComponent', () => {
   let component: ModalComponent;
@@ -14,8 +14,8 @@ describe('ModalComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        MockModule(BsGridModule),
-        MockModule(BsModalModule),
+        MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
+        MockComponent(BsModalComponent), MockComponent(BsModalHostComponent), MockDirective(BsModalDirective), MockDirective(BsModalHeaderDirective), MockDirective(BsModalBodyDirective), MockDirective(BsModalFooterDirective), MockDirective(BsModalCloseDirective),
         MockDirective(BsButtonTypeDirective),
 
         // Unit to test (standalone)

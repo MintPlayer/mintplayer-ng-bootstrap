@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, ElementRef, input, TemplateRef, ViewChild } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, ElementRef, input, TemplateRef, viewChild } from '@angular/core';
 import { BsShellState } from '../shell-state';
 import { Breakpoint } from '@mintplayer/ng-bootstrap';
 
@@ -6,13 +7,13 @@ import { Breakpoint } from '@mintplayer/ng-bootstrap';
   selector: 'bs-shell',
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.scss',
-  standalone: false,
+  imports: [NgTemplateOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsShellComponent {
 
   sidebarTemplate: TemplateRef<any> | null = null;
-  @ViewChild('root') rootElement!: ElementRef<HTMLDivElement>;
+  readonly rootElement = viewChild.required<ElementRef<HTMLDivElement>>('root');
 
   state = input<BsShellState>('auto');
   breakpoint = input<Breakpoint>('md');
@@ -26,6 +27,6 @@ export class BsShellComponent {
   breakpointClass = computed(() => `shell-${this.breakpoint()}`);
 
   public setSize(size: string) {
-    this.rootElement.nativeElement.style.setProperty('--size', size);
+    this.rootElement().nativeElement.style.setProperty('--size', size);
   }
 }

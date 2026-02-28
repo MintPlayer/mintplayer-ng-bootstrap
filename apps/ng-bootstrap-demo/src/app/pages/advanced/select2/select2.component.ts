@@ -1,10 +1,10 @@
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal, ChangeDetectionStrategy} from '@angular/core';
 import { Artist } from '../../../entities/artist';
 import { Tag } from '../../../entities/tag';
 import { ESubjectType } from '../../../enums/subject-type';
 import { SubjectService } from '../../../services/subject/subject.service';
 import { TagService } from '../../../services/tag/tag.service';
-import { BsSelect2Module } from '@mintplayer/ng-bootstrap/select2';
+import { BsSelect2Component, BsItemTemplateDirective, BsSuggestionTemplateDirective } from '@mintplayer/ng-bootstrap/select2';
 import { BsFontColorPipe } from '@mintplayer/ng-bootstrap/font-color';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
@@ -12,8 +12,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   selector: 'demo-select2',
   templateUrl: './select2.component.html',
   styleUrls: ['./select2.component.scss'],
-  standalone: true,
-  imports: [BsSelect2Module, BsFontColorPipe]
+  imports: [BsSelect2Component, BsItemTemplateDirective, BsSuggestionTemplateDirective, BsFontColorPipe],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Select2Component {
 

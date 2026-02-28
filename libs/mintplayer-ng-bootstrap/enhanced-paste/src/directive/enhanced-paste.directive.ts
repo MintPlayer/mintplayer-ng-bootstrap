@@ -1,18 +1,19 @@
-import { Directive, ElementRef, EventEmitter, HostListener, inject, Output } from '@angular/core';
+import { Directive, ElementRef, inject, output } from '@angular/core';
 import { NgModel } from '@angular/forms';
 import { NumberOverflow } from '../interfaces/number-overflow';
 
 @Directive({
   selector: 'input[type="number"][bsEnhancedPaste]',
-  standalone: true,
+  host: {
+    '(paste)': 'onPaste($event)',
+  },
 })
 export class EnhancedPasteDirective {
   private element = inject<ElementRef<HTMLInputElement>>(ElementRef);
   private model = inject(NgModel);
 
-  @Output() public numberOverflow = new EventEmitter<NumberOverflow>();
+  readonly numberOverflow = output<NumberOverflow>();
 
-  @HostListener('paste', ['$event'])
   onPaste(event: ClipboardEvent) {
     // Prevent the default paste event
     event.preventDefault();

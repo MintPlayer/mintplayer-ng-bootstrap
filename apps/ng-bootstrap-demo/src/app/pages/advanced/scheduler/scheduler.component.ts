@@ -1,12 +1,12 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
-import { BsCardModule } from '@mintplayer/ng-bootstrap/card';
-import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
+import { BsCardComponent, BsCardHeaderComponent } from '@mintplayer/ng-bootstrap/card';
+import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
-import { BsSelectModule } from '@mintplayer/ng-bootstrap/select';
+import { BsSelectComponent } from '@mintplayer/ng-bootstrap/select';
 import {
   BsSchedulerComponent,
   SchedulerEventClickEvent,
@@ -32,17 +32,19 @@ import {
   selector: 'demo-scheduler',
   templateUrl: './scheduler.component.html',
   styleUrls: ['./scheduler.component.scss'],
-  standalone: true,
   imports: [
     CommonModule,
     FormsModule,
-    BsCardModule,
-    BsFormModule,
+    BsCardComponent,
+    BsCardHeaderComponent,
+    BsFormComponent,
+    BsFormControlDirective,
     BsInputGroupComponent,
     BsButtonTypeDirective,
-    BsSelectModule,
+    BsSelectComponent,
     BsSchedulerComponent,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SchedulerComponent {
   colors = Color;

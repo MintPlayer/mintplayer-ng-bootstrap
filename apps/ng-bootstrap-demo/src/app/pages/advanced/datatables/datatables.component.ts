@@ -1,5 +1,5 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
-import { BsDatatableModule, DatatableSettings } from '@mintplayer/ng-bootstrap/datatable';
+import { Component, inject, OnInit, signal, ChangeDetectionStrategy} from '@angular/core';
+import { BsDatatableComponent, BsDatatableColumnDirective, BsRowTemplateDirective, DatatableSettings } from '@mintplayer/ng-bootstrap/datatable';
 import { PaginationResponse } from '@mintplayer/pagination';
 import { Artist } from '../../../entities/artist';
 import { ArtistService } from '../../../services/artist/artist.service';
@@ -8,8 +8,8 @@ import { ArtistService } from '../../../services/artist/artist.service';
   selector: 'demo-datatables',
   templateUrl: './datatables.component.html',
   styleUrls: ['./datatables.component.scss'],
-  standalone: true,
-  imports: [BsDatatableModule],
+  imports: [BsDatatableComponent, BsDatatableColumnDirective, BsRowTemplateDirective],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DatatablesComponent implements OnInit {
 

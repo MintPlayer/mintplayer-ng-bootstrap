@@ -4,7 +4,6 @@ import { PageWithSelection } from '../../interfaces/page-with-selection';
 
 @Component({
   selector: 'bs-pagination',
-  standalone: true,
   templateUrl: './pagination.component.html',
   styleUrls: ['./pagination.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -1,5 +1,5 @@
 <div class="progress">
-    @if (isIndeterminate) {
+    @if (isIndeterminate()) {
         <div class="progress-bar progress-bar-infinite bg-primary" role="progressbar" aria-valuenow="infinite"></div>
     } @else {
         <ng-content></ng-content>

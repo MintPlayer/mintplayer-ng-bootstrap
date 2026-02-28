@@ -1,15 +1,18 @@
-import { Directive, ElementRef, forwardRef, Host, HostListener, inject, Input, OnDestroy, Optional, Renderer2 } from "@angular/core";
+import { Directive, effect, ElementRef, forwardRef, inject, input, OnDestroy, Renderer2 } from "@angular/core";
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from "@angular/forms";
 import { BsSelectComponent } from "../component/select.component";
 
 @Directive({
   selector: 'bs-select',
-  standalone: false,
   providers: [{
     provide: NG_VALUE_ACCESSOR,
     useExisting: forwardRef(() => BsSelectValueAccessor),
     multi: true,
   }],
+  host: {
+    '(change)': 'hostOnChange($event)',
+    '(blur)': 'hostBlur($event)',
+  },
 })
 export class BsSelectValueAccessor implements ControlValueAccessor {
   private _renderer = inject(Renderer2);
@@ -37,16 +40,16 @@ export class BsSelectValueAccessor implements ControlValueAccessor {
     // if (this._elementRef) {
     //   this._renderer.setProperty(this._elementRef.nativeElement, key, value);
     // }
-    if (this.selectBox.selectBox) {
-      this._renderer.setProperty(this.selectBox.selectBox.nativeElement, key, value);
+    if (this.selectBox.selectBox()) {
+      this._renderer.setProperty(this.selectBox.selectBox().nativeElement, key, value);
     }
   }
 
-  @HostListener('change', ['$event']) hostOnChange(event: Event) {
+  hostOnChange(event: Event) {
     this.onChange((<any>event.target).value);
   }
 
-  @HostListener('blur', ['$event']) hostBlur(ev: Event) {
+  hostBlur(ev: Event) {
     this.onTouched();
   }
 
@@ -55,11 +58,18 @@ export class BsSelectValueAccessor implements ControlValueAccessor {
   idCounter = 0;
 
   private compareWithFunction: (value1: any, value2: any) => boolean = Object.is;
-  @Input() set compareWith(value: (value1: any, value2: any) => boolean) {
-    if (typeof value !== 'function') {
-      throw new Error('compareWith must be a function');
-    }
-    this.compareWithFunction = value;
+  readonly compareWith = input<((value1: any, value2: any) => boolean) | undefined>(undefined);
+
+  constructor() {
+    effect(() => {
+      const value = this.compareWith();
+      if (value !== undefined) {
+        if (typeof value !== 'function') {
+          throw new Error('compareWith must be a function');
+        }
+        this.compareWithFunction = value;
+      }
+    });
   }
 
   buildValueString(id: string | null, value: any) {
@@ -112,7 +122,6 @@ export class BsSelectValueAccessor implements ControlValueAccessor {
 
 @Directive({
   selector: 'option',
-  standalone: false,
 })
 export class BsSelectOption implements OnDestroy {
   private element = inject(ElementRef);
@@ -123,25 +132,32 @@ export class BsSelectOption implements OnDestroy {
     if (this.select) {
       this.id = this.select.registerOption();
     }
+
+    effect(() => {
+      const val = this.ngValue();
+      if (val !== undefined && this.select) {
+        this.select.optionMap.set(this.id, val);
+        this.setElementValue(this.select.buildValueString(this.id, val));
+        this.select.writeValue(this.select.value);
+      }
+    });
+
+    effect(() => {
+      const val = this.value();
+      if (val !== undefined) {
+        this.setElementValue(val);
+        if (this.select) {
+          this.select.writeValue(this.select.value);
+        }
+      }
+    });
   }
-  
+
   id!: string;
 
-  @Input('ngValue') set ngValue(value: any) {
-    if (this.select) {
-      this.select.optionMap.set(this.id, value);
-      this.setElementValue(this.select.buildValueString(this.id, value));
-      // console.log('ngValue', this.select.value);
-      this.select.writeValue(this.select.value);
-    }
-  }
+  readonly ngValue = input<any>(undefined, { alias: 'ngValue' });
 
-  @Input('value') set value(value: any) {
-    this.setElementValue(value);
-    if (this.select) {
-      this.select.writeValue(this.select.value);
-    }
-  }
+  readonly value = input<any>(undefined, { alias: 'value' });
 
   setElementValue(value: string) {
     // console.log('setElementValue', value);

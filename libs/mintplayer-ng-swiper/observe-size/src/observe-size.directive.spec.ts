@@ -5,7 +5,6 @@ import { BsObserveSizeDirective } from './observe-size.directive';
 
 @Component({
   selector: 'test-host',
-  standalone: true,
   imports: [BsObserveSizeDirective],
   template: `<div bsObserveSize></div>`
 })

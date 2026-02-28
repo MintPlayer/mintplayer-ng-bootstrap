@@ -12,7 +12,7 @@ describe('BsAccordionComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [
+      imports: [
         // Component to test
         BsAccordionComponent,
 
@@ -40,7 +40,6 @@ describe('BsAccordionComponent', () => {
 
 @Component({
   selector: 'bs-accordion-test',
-  standalone: false,
   template: `
   <bs-accordion>
     <bs-accordion-tab>

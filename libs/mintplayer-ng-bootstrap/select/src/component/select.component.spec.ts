@@ -8,7 +8,7 @@ describe('BsSelectComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [BsSelectComponent],
+      imports: [BsSelectComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BsSelectComponent);

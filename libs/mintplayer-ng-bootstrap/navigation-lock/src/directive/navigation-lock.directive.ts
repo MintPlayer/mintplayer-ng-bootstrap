@@ -1,4 +1,4 @@
-import { DestroyRef, Directive, HostListener, inject, Input, OnDestroy } from '@angular/core';
+import { DestroyRef, Directive, inject, input } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { take, Observable } from 'rxjs';
@@ -22,34 +22,37 @@ import { take, Observable } from 'rxjs';
  **/
 @Directive({
   selector: '[bsNavigationLock]',
-  standalone: false,
   exportAs: 'bsNavigationLock',
+  host: {
+    '(window:beforeunload)': 'onBeforeUnload($event)',
+    '(window:unload)': 'onUnload($event)',
+  },
 })
 export class BsNavigationLockDirective {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private destroy = inject(DestroyRef);
 
-  @Input() canExit?: boolean | (() => boolean) | Observable<boolean>;
-  @Input() exitMessage?: string;
+  readonly canExit = input<boolean | (() => boolean) | Observable<boolean> | undefined>(undefined);
+  readonly exitMessage = input<string | undefined>(undefined);
 
   requestCanExit() {
+    const canExit = this.canExit();
     return new Promise<boolean>((resolve, reject) => {
-      if (typeof this.canExit === 'undefined') {
+      if (typeof canExit === 'undefined') {
         resolve(true);
-      } else if (typeof this.canExit === 'boolean') {
-        resolve(this.canExit);
-      } else if (typeof this.canExit === 'function') {
-        const result = this.canExit();
+      } else if (typeof canExit === 'boolean') {
+        resolve(canExit);
+      } else if (typeof canExit === 'function') {
+        const result = canExit();
         resolve(result);
       } else {
-        this.canExit.pipe(take(1), takeUntilDestroyed(this.destroy))
+        canExit.pipe(take(1), takeUntilDestroyed(this.destroy))
           .subscribe((result) => resolve(result));
       }
     });
   }
 
-  @HostListener('window:beforeunload', ['$event'])
   async onBeforeUnload(ev: BeforeUnloadEvent): Promise<string | undefined> {
     const canExit = await this.requestCanExit();
     if (!canExit) {
@@ -61,7 +64,6 @@ export class BsNavigationLockDirective {
     }
   }
 
-  @HostListener('window:unload', ['$event'])
   onUnload(ev: Event) {
 
   }

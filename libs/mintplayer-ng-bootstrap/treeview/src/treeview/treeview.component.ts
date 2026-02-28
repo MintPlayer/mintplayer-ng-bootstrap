@@ -1,12 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, inject, model, signal } from '@angular/core';
 import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
+import { BsListGroupComponent } from '@mintplayer/ng-bootstrap/list-group';
 import type { BsTreeviewItemComponent } from '../treeview-item/treeview-item.component';
 
 @Component({
   selector: 'bs-treeview',
   templateUrl: './treeview.component.html',
   styleUrls: ['./treeview.component.scss'],
-  standalone: false,
+  imports: [BsListGroupComponent],
   animations: [SlideUpDownAnimation],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

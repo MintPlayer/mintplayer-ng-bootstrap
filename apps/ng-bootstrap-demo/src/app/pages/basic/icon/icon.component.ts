@@ -1,9 +1,9 @@
 /// <reference types="../../../../types" />
 
-import { Component, signal } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy} from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Color } from '@mintplayer/ng-bootstrap';
-import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
+import { BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
 
@@ -12,8 +12,8 @@ import { dedent } from 'ts-dedent';
   selector: 'demo-icon',
   templateUrl: './icon.component.html',
   styleUrls: ['./icon.component.scss'],
-  standalone: true,
-  imports: [BsAlertModule, BsCodeSnippetComponent]
+  imports: [BsAlertComponent, BsCodeSnippetComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class IconComponent {
   constructor(private sanitizer: DomSanitizer) {

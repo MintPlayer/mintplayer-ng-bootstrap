@@ -6,7 +6,6 @@ const codeToCopy = 'Hello world';
 
 @Component({
   selector: 'bs-copy-test',
-  standalone: false,
   template: `
     <button #copyBtn [bsCopy]="codeToCopy" (bsCopied)="copiedHtml()">
       Copy html
@@ -26,11 +25,9 @@ describe('BsCopyDirective', () => {
       imports: [
         // Directive to test
         BsCopyDirective,
-      ],
-      declarations: [
         // Testbench
         BsCopyTestComponent,
-      ]
+      ],
     })
     .compileComponents();
   });

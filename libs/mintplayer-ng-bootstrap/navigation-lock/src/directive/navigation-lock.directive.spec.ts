@@ -5,7 +5,6 @@ import { BsNavigationLockDirective } from './navigation-lock.directive';
 
 @Component({
   selector: 'navigation-lock-test',
-  standalone: false,
   template: `
     <ng-container bsNavigationLock [canExit]="canExit" #navigationLock="bsNavigationLock">
     </ng-container>`
@@ -21,15 +20,13 @@ describe('BsNavigationLockDirective', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        RouterTestingModule.withRoutes([])
-      ],
-      declarations: [
+        RouterTestingModule.withRoutes([]),
         // Unit to test
         BsNavigationLockDirective,
 
         // Testbench
         NavigationLockTestComponent
-      ]
+      ],
     })
     .compileComponents();
 

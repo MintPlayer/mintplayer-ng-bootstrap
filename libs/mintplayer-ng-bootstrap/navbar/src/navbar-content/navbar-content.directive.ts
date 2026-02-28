@@ -4,7 +4,6 @@ import { BsNavbarComponent } from '../navbar/navbar.component';
 
 @Directive({
   selector: '[bsNavbarContent]',
-  standalone: false,
 })
 export class BsNavbarContentDirective implements AfterViewInit, OnDestroy {
 
@@ -26,7 +25,7 @@ export class BsNavbarContentDirective implements AfterViewInit, OnDestroy {
           this.element.nativeElement.style.paddingTop = (this.initialPadding + 58) + 'px';
         } else {
           this.resizeObserver = new ResizeObserver((entries) => {
-            const height = navbar.nav.nativeElement.offsetHeight;
+            const height = navbar.nav().nativeElement.offsetHeight;
             this.element.nativeElement.style.paddingTop = (this.initialPadding + height) + 'px';
           });
 
@@ -34,7 +33,7 @@ export class BsNavbarContentDirective implements AfterViewInit, OnDestroy {
           const pt = parseInt(px.replace(/px$/, ''));
           this.initialPadding = isNaN(pt) ? 0 : pt;
           if (this.resizeObserver && navbar) {
-            this.resizeObserver.observe(navbar.nav.nativeElement);
+            this.resizeObserver.observe(navbar.nav().nativeElement);
           }
         }
       }
@@ -48,7 +47,7 @@ export class BsNavbarContentDirective implements AfterViewInit, OnDestroy {
   ngOnDestroy() {
     const navbar = this.navbar();
     if (navbar) {
-      this.resizeObserver?.unobserve(navbar.nav.nativeElement);
+      this.resizeObserver?.unobserve(navbar.nav().nativeElement);
     }
   }
 }

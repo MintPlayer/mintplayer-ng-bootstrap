@@ -1,11 +1,10 @@
-import { ChangeDetectionStrategy, Component, ContentChildren, forwardRef, input, QueryList, signal, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, contentChildren, forwardRef, input, signal, computed } from '@angular/core';
 import { BsAccordionTabComponent } from '../accordion-tab/accordion-tab.component';
 
 @Component({
   selector: 'bs-accordion',
   templateUrl: './accordion.component.html',
   styleUrls: ['./accordion.component.scss'],
-  standalone: false,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsAccordionComponent {
@@ -14,7 +13,7 @@ export class BsAccordionComponent {
     this.accordionId = signal(++BsAccordionComponent.accordionCounter);
   }
 
-  @ContentChildren(forwardRef(() => BsAccordionTabComponent)) tabPages!: QueryList<BsAccordionTabComponent>;
+  readonly tabPages = contentChildren<BsAccordionTabComponent>(forwardRef(() => BsAccordionTabComponent));
   disableAnimations = false;
   highlightActiveTab = input(false);
 
