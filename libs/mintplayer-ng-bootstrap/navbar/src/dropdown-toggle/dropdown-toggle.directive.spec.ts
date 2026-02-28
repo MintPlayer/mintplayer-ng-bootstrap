@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
-import { MockComponent, MockDirective } from 'ng-mocks';
+import { MockComponent, MockDirective, MockInstance } from 'ng-mocks';
 import { BsNavbarBrandComponent } from '../navbar-brand/navbar-brand.component';
 import { BsNavbarContentDirective } from '../navbar-content/navbar-content.directive';
 import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
@@ -13,6 +13,12 @@ import { DropdownToggleDirective } from './dropdown-toggle.directive';
 describe('DropdownToggleDirective', () => {
   let component: BsDropdownToggleTestComponent;
   let fixture: ComponentFixture<BsDropdownToggleTestComponent>;
+
+  MockInstance.scope();
+
+  beforeEach(() => {
+    MockInstance(BsNavbarItemComponent, 'dropdowns', signal([]));
+  });
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({

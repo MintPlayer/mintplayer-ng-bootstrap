@@ -80,7 +80,7 @@ export class BsToggleButtonValueAccessor implements ControlValueAccessor {
           break;
         default:
           if (this.host.group()) {
-            checkbox.nativeElement.checked = (<string[]>value).includes(this.host.value()!);
+            checkbox.nativeElement.checked = Array.isArray(value) && value.includes(this.host.value()!);
           } else {
             checkbox.nativeElement.checked = <boolean>value;
           }

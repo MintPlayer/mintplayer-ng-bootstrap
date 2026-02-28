@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { BsInstanceOfModule } from '@mintplayer/ng-bootstrap/instance-of';
 import { MockModule } from 'ng-mocks';
 
@@ -13,7 +14,10 @@ describe('InstanceOfComponent', () => {
       imports: [
         MockModule(BsInstanceOfModule),
         InstanceOfComponent,
-      ]
+      ],
+      providers: [
+        provideNoopAnimations(),
+      ],
     })
     .compileComponents();
 
