@@ -58,9 +58,7 @@ export class BsColorPickerValueAccessor implements ControlValueAccessor {
   }
 
   setDisabledState(isDisabled: boolean) {
-    if (this.host && this.host.colorWheel()) {
-      this.host.colorWheel().disabled.set(isDisabled);
-    }
+    this.host.disabled.set(isDisabled);
   }
   //#endregion
 

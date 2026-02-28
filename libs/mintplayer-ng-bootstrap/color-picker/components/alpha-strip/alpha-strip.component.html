@@ -1,4 +1,4 @@
-<bs-slider [value]="alpha()" (valueChange)="alphaChange.emit($event)">
+<bs-slider [disabled]="disabled()" [value]="alpha()" (valueChange)="alphaChange.emit($event)">
     <canvas bsTrack class=" track position-absolute w-100" #track></canvas>
 
     <!-- [style.background]="resultBackground()" -->
