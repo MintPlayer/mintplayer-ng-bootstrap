@@ -1,4 +1,5 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, computed, ElementRef, input, model, viewChild } from '@angular/core';
+import { BsToggleButtonValueAccessor } from '../value-accessor/toggle-button-value-accessor';
 import { BsToggleButtonGroupDirective } from '../directives/toggle-button-group/toggle-button-group.directive';
 import { BsCheckStyle } from '../types/check-style';
 
@@ -7,6 +8,7 @@ import { BsCheckStyle } from '../types/check-style';
   templateUrl: './toggle-button.component.html',
   styleUrls: ['./toggle-button.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  hostDirectives: [BsToggleButtonValueAccessor],
   host: {
     'class': 'd-inline-block',
   },

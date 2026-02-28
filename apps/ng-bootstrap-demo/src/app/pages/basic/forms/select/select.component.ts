@@ -3,13 +3,13 @@ import { Component, signal, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsSelectComponent } from '@mintplayer/ng-bootstrap/select';
-import { BsToggleButtonComponent, BsToggleButtonValueAccessor } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
 
 @Component({
   selector: 'demo-select',
   templateUrl: './select.component.html',
   styleUrls: ['./select.component.scss'],
-  imports: [JsonPipe, FormsModule, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective, BsSelectComponent, BsToggleButtonComponent, BsToggleButtonValueAccessor],
+  imports: [JsonPipe, FormsModule, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective, BsSelectComponent, BsToggleButtonComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SelectComponent {

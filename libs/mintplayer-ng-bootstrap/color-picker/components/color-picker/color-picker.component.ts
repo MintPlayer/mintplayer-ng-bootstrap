@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, effect, input, model, output, signal, viewChild } from "@angular/core";
 import { HS } from "../../interfaces/hs";
+import { BsColorPickerValueAccessor } from "../../directives/color-picker-value-accessor/color-picker-value-accessor.directive";
 import { BsColorWheelComponent } from "../color-wheel/color-wheel.component";
 import { BsLuminosityStripComponent } from "../luminosity-strip/luminosity-strip.component";
 import { BsAlphaStripComponent } from "../alpha-strip/alpha-strip.component";
@@ -10,6 +11,7 @@ import { BsAlphaStripComponent } from "../alpha-strip/alpha-strip.component";
   styleUrls: ['./color-picker.component.scss'],
   imports: [BsColorWheelComponent, BsLuminosityStripComponent, BsAlphaStripComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  hostDirectives: [BsColorPickerValueAccessor],
 })
 export class BsColorPickerComponent {
 

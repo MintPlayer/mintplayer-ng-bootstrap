@@ -7,7 +7,7 @@ import { MockComponent, MockDirective } from 'ng-mocks';
 import { SchedulerComponent } from './scheduler.component';
 import { BsCardComponent, BsCardHeaderComponent } from '@mintplayer/ng-bootstrap/card';
 import { BsFormComponent, BsFormGroupDirective, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
-import { BsSelectComponent, BsSelectValueAccessor, BsSelectOption } from '@mintplayer/ng-bootstrap/select';
+import { BsSelectComponent } from '@mintplayer/ng-bootstrap/select';
 import { BsSchedulerComponent } from '@mintplayer/ng-bootstrap/scheduler';
 
 describe('SchedulerComponent', () => {
@@ -23,7 +23,7 @@ describe('SchedulerComponent', () => {
         MockDirective(BsButtonTypeDirective),
         MockComponent(BsInputGroupComponent),
         MockComponent(BsCardComponent), MockComponent(BsCardHeaderComponent),
-        MockComponent(BsSelectComponent), MockDirective(BsSelectValueAccessor), MockDirective(BsSelectOption),
+        MockComponent(BsSelectComponent),
         DatePipe, JsonPipe,
 
         // Unit to test (standalone)

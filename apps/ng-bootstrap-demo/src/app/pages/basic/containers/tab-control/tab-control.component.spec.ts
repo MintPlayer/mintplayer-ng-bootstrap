@@ -4,9 +4,9 @@ import { BsForDirective } from '@mintplayer/ng-bootstrap/for';
 import { MockDirective, MockComponent } from 'ng-mocks';
 import { TabControlComponent } from './tab-control.component';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
-import { BsToggleButtonComponent, BsToggleButtonGroupDirective, BsToggleButtonValueAccessor } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsToggleButtonComponent, BsToggleButtonGroupDirective } from '@mintplayer/ng-bootstrap/toggle-button';
 import { BsTabControlComponent, BsTabPageComponent, BsTabPageHeaderDirective } from '@mintplayer/ng-bootstrap/tab-control';
-import { BsSelectComponent, BsSelectValueAccessor, BsSelectOption } from '@mintplayer/ng-bootstrap/select';
+import { BsSelectComponent } from '@mintplayer/ng-bootstrap/select';
 
 describe('TabControlComponent', () => {
   let component: TabControlComponent;
@@ -19,8 +19,8 @@ describe('TabControlComponent', () => {
         MockComponent(BsTabControlComponent), MockComponent(BsTabPageComponent), MockDirective(BsTabPageHeaderDirective),
         MockDirective(BsForDirective),
         MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsGridColDirective), MockDirective(BsColFormLabelDirective),
-        MockComponent(BsSelectComponent), MockDirective(BsSelectValueAccessor), MockDirective(BsSelectOption),
-        MockComponent(BsToggleButtonComponent), MockDirective(BsToggleButtonValueAccessor), MockDirective(BsToggleButtonGroupDirective),
+        MockComponent(BsSelectComponent),
+        MockComponent(BsToggleButtonComponent), MockDirective(BsToggleButtonGroupDirective),
 
         // Unit to test (standalone)
         TabControlComponent,

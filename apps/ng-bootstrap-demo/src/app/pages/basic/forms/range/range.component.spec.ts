@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { MockComponent, MockDirective } from 'ng-mocks';
 import { RangeComponent } from './range.component';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
-import { BsToggleButtonComponent, BsToggleButtonGroupDirective, BsToggleButtonValueAccessor } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsToggleButtonComponent, BsToggleButtonGroupDirective } from '@mintplayer/ng-bootstrap/toggle-button';
 import { BsRangeComponent } from '@mintplayer/ng-bootstrap/range';
 
 describe('RangeComponent', () => {
@@ -16,7 +16,7 @@ describe('RangeComponent', () => {
         FormsModule,
         MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
         MockComponent(BsRangeComponent),
-        MockComponent(BsToggleButtonComponent), MockDirective(BsToggleButtonValueAccessor), MockDirective(BsToggleButtonGroupDirective),
+        MockComponent(BsToggleButtonComponent), MockDirective(BsToggleButtonGroupDirective),
         RangeComponent,
       ]
     })
