@@ -8,7 +8,6 @@ import { ArtistService } from '../../../services/artist/artist.service';
   selector: 'demo-datatables',
   templateUrl: './datatables.component.html',
   styleUrls: ['./datatables.component.scss'],
-  standalone: true,
   imports: [BsDatatableComponent, BsDatatableColumnDirective, BsRowTemplateDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

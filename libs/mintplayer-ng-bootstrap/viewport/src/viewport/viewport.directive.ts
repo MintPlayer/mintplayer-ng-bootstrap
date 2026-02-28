@@ -3,7 +3,6 @@ import { isPlatformServer } from '@angular/common';
 
 @Directive({
   selector: '[bsInViewport]',
-  standalone: true,
 })
 export class BsInViewportDirective implements AfterViewInit, OnDestroy {
   private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);

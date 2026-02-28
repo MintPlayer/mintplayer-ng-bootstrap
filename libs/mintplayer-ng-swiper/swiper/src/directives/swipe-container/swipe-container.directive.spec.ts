@@ -7,7 +7,6 @@ import { BsSwipeContainerDirective } from './swipe-container.directive';
 
 @Component({
   selector: 'swipe-test-component',
-  standalone: true,
   template: `
     <div bsSwipeContainer>
       @for (n of images; track n) {

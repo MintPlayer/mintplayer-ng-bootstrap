@@ -7,7 +7,6 @@ import { BsDropdownDirective } from '../dropdown/dropdown.directive';
 
 @Directive({
   selector: '[bsDropdownMenu]',
-  standalone: true,
   host: {
     '(clickOutside)': 'clickedOutside($event)',
     '(document:keydown.escape)': 'onEscape($event)',

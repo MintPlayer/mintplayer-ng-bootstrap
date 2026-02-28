@@ -11,7 +11,6 @@ import { BsInListPipe } from '@mintplayer/ng-bootstrap/in-list';
   selector: 'bs-select2',
   templateUrl: './select2.component.html',
   styleUrls: ['./select2.component.scss'],
-  standalone: true,
   imports: [
     NgTemplateOutlet,
     FormsModule,

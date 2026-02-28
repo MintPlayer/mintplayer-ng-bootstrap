@@ -8,7 +8,6 @@ import { BsTreeviewComponent, BsTreeviewItemComponent } from '@mintplayer/ng-boo
   selector: 'demo-treeview',
   templateUrl: './treeview.component.html',
   styleUrls: ['./treeview.component.scss'],
-  standalone: true,
   imports: [BsTreeviewComponent, BsTreeviewItemComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

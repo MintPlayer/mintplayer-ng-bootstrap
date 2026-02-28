@@ -3,7 +3,6 @@ import { BsModalHostComponent } from '../../components/modal-host/modal-host.com
 
 @Directive({
   selector: '[bsModalClose]',
-  standalone: true,
   host: {
     '[attr.aria-label]': '"Close"',
     '(click)': 'onClick()',

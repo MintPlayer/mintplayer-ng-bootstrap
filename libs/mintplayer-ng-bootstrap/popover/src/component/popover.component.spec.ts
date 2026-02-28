@@ -7,7 +7,6 @@ import { BsPopoverComponent } from './popover.component';
 
 @Component({
   selector: 'bs-popover-test',
-  standalone: true,
   template: `
     <ng-template #popoverTemplate>
       Hello <b>world</b>

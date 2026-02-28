@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, input, model } from '@angular/core'
 
 @Component({
   selector: 'bs-playlist-toggler',
-  standalone: true,
   templateUrl: './playlist-toggler.component.html',
   styleUrls: ['./playlist-toggler.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

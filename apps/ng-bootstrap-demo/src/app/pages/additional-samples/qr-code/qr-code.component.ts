@@ -8,7 +8,6 @@ import { QrCodeComponent as LibQrCodeComponent } from '@mintplayer/ng-qr-code';
   selector: 'demo-qr-code',
   templateUrl: './qr-code.component.html',
   styleUrls: ['./qr-code.component.scss'],
-  standalone: true,
   imports: [FormsModule, BsFormComponent, BsFormControlDirective, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, LibQrCodeComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -9,7 +9,6 @@ import { BsTooltipComponent } from './tooltip.component';
 
 @Component({
   selector: 'bs-tooltip-test',
-  standalone: true,
   template: `
   <ng-template #tooltipTemplate>
     Hello <b>world</b>

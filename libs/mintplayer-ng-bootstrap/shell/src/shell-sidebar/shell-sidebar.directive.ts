@@ -3,7 +3,6 @@ import { BsShellComponent } from '../shell/shell.component';
 
 @Directive({
   selector: '[bsShellSidebar]',
-  standalone: true,
 })
 export class BsShellSidebarDirective {
   constructor() {

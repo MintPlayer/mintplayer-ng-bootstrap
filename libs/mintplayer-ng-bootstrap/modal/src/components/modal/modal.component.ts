@@ -7,7 +7,6 @@ import { MODAL_CONTENT } from '../../providers/modal-content.provider';
   selector: 'bs-modal-content',
   templateUrl: './modal.component.html',
   styleUrls: ['./modal.component.scss'],
-  standalone: true,
   imports: [NgTemplateOutlet],
   animations: [FadeInOutAnimation, EnterFromTopAnimation],
   changeDetection: ChangeDetectionStrategy.OnPush,

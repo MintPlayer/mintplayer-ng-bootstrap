@@ -7,7 +7,6 @@ import { BsContextMenuDirective } from './context-menu.directive';
 
 @Component({
   selector: 'context-menu-test-component',
-  standalone: true,
   template: `
     <div class="has-custom-context-menu">
       <ul class="dropdown-menu show" *bsContextMenu>

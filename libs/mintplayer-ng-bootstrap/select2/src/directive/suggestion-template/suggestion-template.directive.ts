@@ -4,7 +4,6 @@ import { HasId } from '@mintplayer/ng-bootstrap/has-id';
 
 @Directive({
   selector: '[bsSuggestionTemplate]',
-  standalone: true,
 })
 export class BsSuggestionTemplateDirective<T extends HasId<U>, U> {
   private select2component = inject<BsSelect2Component<T, U>>(BsSelect2Component);

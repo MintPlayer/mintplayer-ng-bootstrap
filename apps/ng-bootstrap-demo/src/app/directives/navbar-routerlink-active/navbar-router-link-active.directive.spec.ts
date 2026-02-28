@@ -41,7 +41,6 @@ describe('NavbarRouterLinkActiveDirective', () => {
 
 @Component({
   selector: 'router-link-test',
-  standalone: true,
   template: `
     <a [routerLink]='["/"]' #link>
       Home
@@ -53,7 +52,6 @@ class RouterLinkTestComponent {
 
 @Component({
   selector: 'page-home',
-  standalone: true,
   template: `<div>Home</div>`,
 })
 class PageHomeComponent {}

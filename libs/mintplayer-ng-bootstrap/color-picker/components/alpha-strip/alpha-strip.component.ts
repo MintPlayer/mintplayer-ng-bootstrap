@@ -6,7 +6,6 @@ import { BsSliderComponent, BsThumbDirective, BsTrackDirective } from '../slider
   selector: 'bs-alpha-strip',
   templateUrl: './alpha-strip.component.html',
   styleUrls: ['./alpha-strip.component.scss'],
-  standalone: true,
   imports: [BsSliderComponent, BsThumbDirective, BsTrackDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

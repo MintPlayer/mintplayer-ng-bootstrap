@@ -5,7 +5,6 @@ import { BsBoldPipe } from './bold.pipe';
 
 @Component({
   selector: 'bs-bold-test',
-  standalone: true,
   imports: [BsBoldPipe],
   template: `<span [innerHTML]="'**Hello world**' | bsBold"></span>`
 })

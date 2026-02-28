@@ -7,7 +7,6 @@ import '@mintplayer/splitter';
   selector: 'demo-splitter',
   templateUrl: './splitter.component.html',
   styleUrls: ['./splitter.component.scss'],
-  standalone: true,
   imports: [FormsModule, BsToggleButtonComponent, BsToggleButtonValueAccessor],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,

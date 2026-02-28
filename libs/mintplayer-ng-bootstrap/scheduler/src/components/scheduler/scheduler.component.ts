@@ -117,7 +117,6 @@ export interface ViewChangeEvent {
  */
 @Component({
   selector: 'bs-scheduler',
-  standalone: true,
   template: `<mp-scheduler #scheduler></mp-scheduler>`,
   styles: [`
     :host {

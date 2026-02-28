@@ -6,7 +6,6 @@ import { BsBreadcrumbComponent, BsBreadcrumbItemComponent } from '@mintplayer/ng
   selector: 'demo-breadcrumb',
   templateUrl: './breadcrumb.component.html',
   styleUrls: ['./breadcrumb.component.scss'],
-  standalone: true,
   imports: [RouterLink, BsBreadcrumbComponent, BsBreadcrumbItemComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

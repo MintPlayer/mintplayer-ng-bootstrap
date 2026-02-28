@@ -6,7 +6,6 @@ import { BsSliderComponent, BsThumbDirective, BsTrackDirective } from '../slider
   selector: 'bs-luminosity-strip',
   templateUrl: './luminosity-strip.component.html',
   styleUrls: ['./luminosity-strip.component.scss'],
-  standalone: true,
   imports: [BsSliderComponent, BsThumbDirective, BsTrackDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

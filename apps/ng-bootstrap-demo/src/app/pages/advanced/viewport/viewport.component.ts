@@ -7,7 +7,6 @@ import { BsInViewportDirective } from '@mintplayer/ng-bootstrap/viewport';
   selector: 'demo-viewport',
   templateUrl: './viewport.component.html',
   styleUrls: ['./viewport.component.scss'],
-  standalone: true,
   imports: [BsAlertComponent, BsInViewportDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

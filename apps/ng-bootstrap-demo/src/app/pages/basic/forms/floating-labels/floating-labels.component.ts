@@ -6,7 +6,6 @@ import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstra
   selector: 'demo-floating-labels',
   templateUrl: './floating-labels.component.html',
   styleUrls: ['./floating-labels.component.scss'],
-  standalone: true,
   imports: [BsFormComponent, BsFormControlDirective, BsFloatingLabelComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

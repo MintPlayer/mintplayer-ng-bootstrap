@@ -9,7 +9,6 @@ import { TagService } from '../../../services/tag/tag.service';
   selector: 'demo-select2-drag-drop',
   templateUrl: './select2-drag-drop.component.html',
   styleUrls: ['./select2-drag-drop.component.scss'],
-  standalone: true,
   imports: [BsSelect2Component, BsItemTemplateDirective, BsFontColorPipe, DragDropModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

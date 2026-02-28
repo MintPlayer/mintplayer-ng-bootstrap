@@ -7,7 +7,6 @@ import { FocusOnLoadDirective } from './focus-on-load.directive';
 
 @Component({
   selector: 'focus-on-load-test-component',
-  standalone: true,
   imports: [FocusOnLoadDirective],
   template: `
     <div #wrapper>

@@ -6,7 +6,6 @@ import { BsScrollspyDirective } from './scrollspy.directive';
 
 @Component({
   selector: 'bs-scrollspy-test',
-  standalone: true,
   template: `
     <bs-scrollspy>
       <h1 bsScrollspy>Main title</h1>

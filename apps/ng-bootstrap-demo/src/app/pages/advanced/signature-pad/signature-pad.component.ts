@@ -5,7 +5,6 @@ import { BsSignaturePadComponent, Signature } from '@mintplayer/ng-bootstrap/sig
   selector: 'demo-signature-pad',
   templateUrl: './signature-pad.component.html',
   styleUrls: ['./signature-pad.component.scss'],
-  standalone: true,
   imports: [BsSignaturePadComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

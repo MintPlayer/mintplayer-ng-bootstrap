@@ -7,7 +7,6 @@ import { EnumItem, EnumService } from '@mintplayer/ng-bootstrap/enum';
   selector: 'demo-button-type',
   templateUrl: './button-type.component.html',
   styleUrls: ['./button-type.component.scss'],
-  standalone: true,
   imports: [BsButtonTypeDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -32,7 +32,6 @@ import {
   selector: 'demo-scheduler',
   templateUrl: './scheduler.component.html',
   styleUrls: ['./scheduler.component.scss'],
-  standalone: true,
   imports: [
     CommonModule,
     FormsModule,

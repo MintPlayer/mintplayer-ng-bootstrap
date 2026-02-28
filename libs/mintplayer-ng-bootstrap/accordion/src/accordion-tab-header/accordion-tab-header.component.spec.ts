@@ -35,7 +35,6 @@ describe('AccordionTabHeaderComponent', () => {
 
 @Component({
   selector: 'bs-accordion-test',
-  standalone: true,
   template: `
   <bs-accordion>
     <bs-accordion-tab>

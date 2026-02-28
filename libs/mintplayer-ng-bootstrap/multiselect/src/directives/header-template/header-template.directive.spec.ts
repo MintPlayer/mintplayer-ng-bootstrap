@@ -5,7 +5,6 @@ import { BsHeaderTemplateDirective } from './header-template.directive';
 
 @Component({
   selector: 'bs-multiselect',
-  standalone: true,
   template: `
     <button>
       <ng-container *ngTemplateOutlet="headerTemplate ?? defaultHeaderTemplate; context: { $implicit: 0 }"></ng-container>
@@ -20,7 +19,6 @@ class BsMultiselectMockComponent {
 
 @Component({
   selector: 'bs-header-template-test',
-  standalone: true,
   imports: [BsMultiselectMockComponent, BsHeaderTemplateDirective],
   template: `
     <bs-multiselect #multiselect>

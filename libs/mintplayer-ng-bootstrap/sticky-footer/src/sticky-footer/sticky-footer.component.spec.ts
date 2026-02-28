@@ -7,7 +7,6 @@ import { BsObserveSizeDirective } from '@mintplayer/ng-swiper/observe-size';
 
 @Directive({
   selector: '[bsObserveSize]',
-  standalone: true,
   exportAs: 'bsObserveSize',
   providers: [
     { provide: BsObserveSizeDirective, useExisting: forwardRef(() => BsObserveSizeDirectiveStub) }
@@ -21,7 +20,6 @@ class BsObserveSizeDirectiveStub {
 
 @Component({
   selector: 'sticky-footer-test',
-  standalone: true,
   template: `
     <div bsStickyFooterParent>
       <bs-sticky-footer>

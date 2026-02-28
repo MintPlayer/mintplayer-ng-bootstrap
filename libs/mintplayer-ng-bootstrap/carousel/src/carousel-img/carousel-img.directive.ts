@@ -3,7 +3,6 @@ import { BsCarouselImageDirective } from '../carousel-image/carousel-image.direc
 
 @Directive({
   selector: 'img',
-  standalone: true,
   host: {
     '[attr.fetch-priority]': 'fetchPriority',
   },

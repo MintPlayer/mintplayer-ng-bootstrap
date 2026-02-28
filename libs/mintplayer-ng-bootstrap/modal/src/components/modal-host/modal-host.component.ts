@@ -10,7 +10,6 @@ import { BsModalComponent } from '../modal/modal.component';
   selector: 'bs-modal',
   templateUrl: './modal-host.component.html',
   styleUrls: ['./modal-host.component.scss'],
-  standalone: true,
   imports: [BsHasOverlayComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [{

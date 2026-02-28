@@ -7,7 +7,6 @@ import { BsAlertCloseComponent } from './alert-close.component';
 
 @Component({
   selector: 'bs-alert',
-  standalone: true,
   template: '<ng-content></ng-content>',
   providers: [
     { provide: BsAlertComponent, useExisting: forwardRef(() => BsAlertComponentStub) }
@@ -66,7 +65,6 @@ describe('BsAlertCloseComponent', () => {
 
 @Component({
   selector: 'bs-alert-close-test',
-  standalone: true,
   imports: [BsAlertComponentStub, BsAlertCloseComponent],
   template: `
   <bs-alert [type]="4" #alert>

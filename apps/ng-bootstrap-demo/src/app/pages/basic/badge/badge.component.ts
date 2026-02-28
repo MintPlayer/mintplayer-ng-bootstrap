@@ -6,7 +6,6 @@ import { BsBadgeComponent } from '@mintplayer/ng-bootstrap/badge';
   selector: 'demo-badge',
   templateUrl: './badge.component.html',
   styleUrls: ['./badge.component.scss'],
-  standalone: true,
   imports: [BsBadgeComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

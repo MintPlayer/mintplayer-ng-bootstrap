@@ -9,7 +9,6 @@ import { BsCarouselComponent, BsCarouselImageDirective } from '@mintplayer/ng-bo
   selector: 'demo-carousel',
   templateUrl: './carousel.component.html',
   styleUrls: ['./carousel.component.scss'],
-  standalone: true,
   imports: [FormsModule, BsFormComponent, BsFormControlDirective, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective, BsColFormLabelDirective, BsSelectComponent, BsCarouselComponent, BsCarouselImageDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

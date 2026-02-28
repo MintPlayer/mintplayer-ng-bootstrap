@@ -4,7 +4,6 @@ import { Component, ElementRef, input, viewChild, ChangeDetectionStrategy} from 
   selector: 'bs-range',
   templateUrl: './range.component.html',
   styleUrls: ['./range.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsRangeComponent {

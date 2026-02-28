@@ -4,7 +4,6 @@ import { BsNavbarComponent } from '../navbar/navbar.component';
 
 @Directive({
   selector: '[bsNavbarContent]',
-  standalone: true,
 })
 export class BsNavbarContentDirective implements AfterViewInit, OnDestroy {
 

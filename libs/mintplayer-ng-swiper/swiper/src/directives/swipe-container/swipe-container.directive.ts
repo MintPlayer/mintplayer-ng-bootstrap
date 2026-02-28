@@ -9,7 +9,6 @@ import { BsSwipeDirective } from '../swipe/swipe.directive';
 @Directive({
   selector: '[bsSwipeContainer]',
   exportAs: 'bsSwipeContainer',
-  standalone: true,
   hostDirectives: [BsObserveSizeDirective],
   host: {
     '[style.margin-left.%]': 'offsetLeft',

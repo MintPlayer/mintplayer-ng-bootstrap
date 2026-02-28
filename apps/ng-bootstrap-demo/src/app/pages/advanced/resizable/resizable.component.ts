@@ -5,7 +5,6 @@ import { BsResizableComponent } from '@mintplayer/ng-bootstrap/resizable';
   selector: 'demo-resizable',
   templateUrl: './resizable.component.html',
   styleUrls: ['./resizable.component.scss'],
-  standalone: true,
   imports: [BsResizableComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

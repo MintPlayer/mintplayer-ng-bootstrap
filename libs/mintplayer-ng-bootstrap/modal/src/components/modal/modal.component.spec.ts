@@ -9,7 +9,6 @@ import { BsModalComponent } from './modal.component';
 
 @Component({
   selector: 'bs-modal-test',
-  standalone: true,
   template: `
     <bs-modal [(isOpen)]="isOpen">
       <div *bsModal>

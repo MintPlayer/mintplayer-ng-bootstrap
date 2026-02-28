@@ -6,7 +6,6 @@ import { BsContainerComponent } from '@mintplayer/ng-bootstrap/container';
   selector: 'bs-grid',
   templateUrl: './grid.component.html',
   styleUrls: ['./grid.component.scss'],
-  standalone: true,
   imports: [BsContainerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

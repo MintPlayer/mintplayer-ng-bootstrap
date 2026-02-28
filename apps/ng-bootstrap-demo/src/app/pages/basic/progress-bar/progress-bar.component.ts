@@ -6,7 +6,6 @@ import { BsProgressComponent, BsProgressBarComponent } from '@mintplayer/ng-boot
   selector: 'demo-progress-bar',
   templateUrl: './progress-bar.component.html',
   styleUrls: ['./progress-bar.component.scss'],
-  standalone: true,
   imports: [BsProgressComponent, BsProgressBarComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

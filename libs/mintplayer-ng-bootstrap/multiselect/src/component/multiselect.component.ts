@@ -11,7 +11,6 @@ import { Color } from '@mintplayer/ng-bootstrap';
   selector: 'bs-multiselect',
   templateUrl: './multiselect.component.html',
   styleUrls: ['./multiselect.component.scss'],
-  standalone: true,
   imports: [NgTemplateOutlet, FormsModule, BsHasOverlayComponent, BsDropdownDirective, BsDropdownToggleDirective, BsDropdownMenuDirective, BsToggleButtonComponent, BsToggleButtonValueAccessor, BsButtonTypeDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

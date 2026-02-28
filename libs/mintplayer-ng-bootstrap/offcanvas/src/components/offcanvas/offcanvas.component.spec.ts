@@ -9,7 +9,6 @@ import { BsOffcanvasComponent } from './offcanvas.component';
 
 @Component({
   selector: 'offcanvas-test-component',
-  standalone: true,
   template: `
     <ng-template #offcanvasTemplate let-offcanvas>
       <div>Notifications</div>

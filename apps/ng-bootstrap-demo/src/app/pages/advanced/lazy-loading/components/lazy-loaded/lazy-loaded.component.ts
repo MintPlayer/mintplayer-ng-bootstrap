@@ -6,7 +6,6 @@ import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstra
   selector: 'demo-lazy-loaded',
   templateUrl: './lazy-loaded.component.html',
   styleUrls: ['./lazy-loaded.component.scss'],
-  standalone: true,
   imports: [FormsModule, BsFormComponent, BsFormControlDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

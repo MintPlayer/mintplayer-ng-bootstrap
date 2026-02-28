@@ -13,7 +13,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   selector: 'demo-searchbox',
   templateUrl: './searchbox.component.html',
   styleUrls: ['./searchbox.component.scss'],
-  standalone: true,
   imports: [JsonPipe, BsFormComponent, BsFormControlDirective, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsSearchboxComponent, BsEnterSearchTermTemplateDirective, BsSuggestionTemplateDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -12,7 +12,6 @@ let typeaheadIdCounter = 0;
   selector: 'bs-typeahead',
   templateUrl: './typeahead.component.html',
   styleUrls: ['./typeahead.component.scss'],
-  standalone: true,
   imports: [FormsModule, BsFormComponent, BsDropdownDirective, BsDropdownToggleDirective, BsDropdownMenuDirective, BsDropdownMenuComponent, BsDropdownItemComponent, BsProgressComponent, BsHasOverlayComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

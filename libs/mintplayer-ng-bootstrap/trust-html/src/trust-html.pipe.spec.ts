@@ -4,7 +4,6 @@ import { BsTrustHtmlPipe } from './trust-html.pipe';
 
 @Component({
   selector: 'bs-trust-html-test',
-  standalone: true,
   imports: [BsTrustHtmlPipe],
   template: `<span [innerHTML]="html | bsTrustHtml"></span>`
 })

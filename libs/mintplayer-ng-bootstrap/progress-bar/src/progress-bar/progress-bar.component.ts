@@ -5,7 +5,6 @@ import { Color } from '@mintplayer/ng-bootstrap';
   selector: 'bs-progress-bar',
   templateUrl: './progress-bar.component.html',
   styleUrls: ['./progress-bar.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[class.progress-bar]': 'true',

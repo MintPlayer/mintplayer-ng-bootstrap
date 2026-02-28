@@ -9,7 +9,6 @@ import { TOOLTIP_CONTENT } from '../providers/tooltip-content.provider';
   selector: 'bs-tooltip',
   templateUrl: './tooltip.component.html',
   styleUrls: ['./tooltip.component.scss'],
-  standalone: true,
   imports: [NgTemplateOutlet, BsHasOverlayComponent],
   animations: [FadeInOutAnimation],
   changeDetection: ChangeDetectionStrategy.OnPush,

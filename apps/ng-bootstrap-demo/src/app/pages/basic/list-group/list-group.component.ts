@@ -5,7 +5,6 @@ import { BsListGroupComponent, BsListGroupItemComponent } from '@mintplayer/ng-b
   selector: 'demo-list-group',
   templateUrl: './list-group.component.html',
   styleUrls: ['./list-group.component.scss'],
-  standalone: true,
   imports: [BsListGroupComponent, BsListGroupItemComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

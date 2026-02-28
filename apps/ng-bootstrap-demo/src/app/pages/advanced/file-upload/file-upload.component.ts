@@ -8,7 +8,6 @@ import { BsProgressComponent, BsProgressBarComponent } from '@mintplayer/ng-boot
   selector: 'demo-file-upload',
   templateUrl: './file-upload.component.html',
   styleUrls: ['./file-upload.component.scss'],
-  standalone: true,
   imports: [BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsFileUploadComponent, BsFileUploadTemplateDirective, BsFormatBytesPipe, BsProgressComponent, BsProgressBarComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

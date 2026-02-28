@@ -13,7 +13,6 @@ import { BOOTSTRAP_VERSION } from './providers/bootstrap-version.provider';
   selector: 'demo-bootstrap-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
-  standalone: true,
   imports: [RouterOutlet, RouterLink, BsNavbarComponent, BsNavbarNavComponent, BsNavbarDropdownComponent, BsNavbarItemComponent, BsNavbarContentDirective, BsNavbarBrandComponent, BsExpandButtonDirective, BsDropdownDividerDirective, BsNavbarTogglerComponent, NavbarRouterLinkActiveDirective],
   animations: [SlideUpDownAnimation],
   changeDetection: ChangeDetectionStrategy.OnPush,

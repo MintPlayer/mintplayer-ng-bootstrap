@@ -5,7 +5,6 @@ import { RgbColor } from '../../interfaces/rgb-color';
 
 @Directive({
   selector: 'bs-color-picker',
-  standalone: true,
   providers: [{
     provide: NG_VALUE_ACCESSOR,
     useExisting: forwardRef(() => BsColorPickerValueAccessor),

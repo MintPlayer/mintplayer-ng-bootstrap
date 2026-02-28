@@ -46,7 +46,6 @@ interface Artist {
 
 @Component({
   selector: 'bs-datatable',
-  standalone: true,
   template: `<ng-content></ng-content>`,
   providers: [{ provide: BsDatatableComponent, useExisting: MockBsDatatableComponent }]
 })
@@ -57,7 +56,6 @@ class MockBsDatatableComponent<TData> {
 
 @Component({
   selector: 'bs-row-template-test',
-  standalone: true,
   imports: [MockBsDatatableComponent, BsRowTemplateDirective],
   template: `
     <bs-datatable #table>

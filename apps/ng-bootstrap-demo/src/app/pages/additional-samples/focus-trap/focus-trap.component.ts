@@ -13,7 +13,6 @@ import { FocusOnLoadDirective } from '@mintplayer/ng-focus-on-load';
   selector: 'demo-focus-trap',
   templateUrl: './focus-trap.component.html',
   styleUrls: ['./focus-trap.component.scss'],
-  standalone: true,
   imports: [A11yModule, BsForDirective, BsFormComponent, BsFormControlDirective, BsFormGroupDirective, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective, BsCloseComponent, BsModalHostComponent, BsModalDirective, BsModalHeaderDirective, BsModalBodyDirective, BsModalFooterDirective, BsModalCloseDirective, BsButtonTypeDirective, FocusOnLoadDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

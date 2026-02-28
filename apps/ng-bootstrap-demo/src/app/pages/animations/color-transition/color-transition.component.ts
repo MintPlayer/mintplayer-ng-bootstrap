@@ -8,7 +8,6 @@ import { BsToggleButtonComponent, BsToggleButtonValueAccessor } from '@mintplaye
   templateUrl: './color-transition.component.html',
   styleUrls: ['./color-transition.component.scss'],
   animations: [ColorTransitionAnimation],
-  standalone: true,
   imports: [FormsModule, BsToggleButtonComponent, BsToggleButtonValueAccessor],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -12,7 +12,6 @@ import { Color } from '@mintplayer/ng-bootstrap';
   selector: 'demo-dock',
   templateUrl: './dock.component.html',
   styleUrls: ['./dock.component.scss'],
-  standalone: true,
   imports: [CommonModule, BsDockManagerComponent, BsDockPaneComponent, BsBadgeComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

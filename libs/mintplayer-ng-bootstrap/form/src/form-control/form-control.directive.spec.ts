@@ -4,7 +4,6 @@ import { BsFormControlDirective } from './form-control.directive';
 
 @Component({
   selector: 'test-host',
-  standalone: true,
   template: `<div></div>`,
 })
 class TestHostComponent {}

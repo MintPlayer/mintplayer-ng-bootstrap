@@ -9,7 +9,6 @@ import { BsSplitStringPipe } from '@mintplayer/ng-bootstrap/split-string';
   selector: 'demo-split-string',
   templateUrl: './split-string.component.html',
   styleUrls: ['./split-string.component.scss'],
-  standalone: true,
   imports: [FormsModule, BsFormComponent, BsFormControlDirective, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsListGroupComponent, BsListGroupItemComponent, BsSplitStringPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

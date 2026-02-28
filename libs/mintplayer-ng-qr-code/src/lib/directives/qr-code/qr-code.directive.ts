@@ -5,7 +5,6 @@ import { RgbaColor } from '../../types/rgba-color';
 
 @Directive({
   selector: 'canvas[qrCode]',
-  standalone: true
 })
 export class QrCodeDirective {
   private viewContainerRef = inject(ViewContainerRef);

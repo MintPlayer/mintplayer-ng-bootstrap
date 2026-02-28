@@ -5,7 +5,6 @@ import { BsPlaceholderFieldDirective } from './placeholder-field.directive';
 
 @Component({
   selector: '[bsPlaceholder]',
-  standalone: true,
   template: `
     <div class="placeholder-glow">
       <ng-content></ng-content>
@@ -22,7 +21,6 @@ class BsPlaceholderMockComponent {
 
 @Component({
   selector: 'bs-placeholder-test',
-  standalone: true,
   template: `
     <p class="card-text" [bsPlaceholder]="isLoadingValue">
       <span bsPlaceholderField>{{ isLoadingValue ? '' : lines[0] }}</span>

@@ -6,7 +6,6 @@ import { MockComponent } from 'ng-mocks';
 
 @Component({
   selector: 'bs-footer-template-test',
-  standalone: true,
   imports: [MockComponent(BsMultiselectComponent), BsFooterTemplateDirective],
   template: `
     <bs-multiselect #multiselect>

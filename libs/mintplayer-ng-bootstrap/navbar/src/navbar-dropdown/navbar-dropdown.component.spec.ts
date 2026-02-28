@@ -55,7 +55,6 @@ describe('BsNavbarDropdownComponent', () => {
 
 @Component({
   selector: 'bs-navbar-test',
-  standalone: true,
   template: `
   <bs-navbar>
     <bs-navbar-nav>
@@ -78,7 +77,6 @@ class BsNavbarDropdownTestComponent {
 
 @Component({
   selector: 'bs-navbar',
-  standalone: true,
   template: `
     <nav>
       <div>
@@ -109,7 +107,6 @@ class BsNavbarMockComponent {
 
 @Component({
   selector: 'bs-navbar-nav',
-  standalone: true,
   template: `
   <div>
     <ul>
@@ -122,7 +119,6 @@ class BsNavbarNavMockComponent {
 
 @Component({
   selector: 'bs-navbar-item',
-  standalone: true,
   template: `
   <li>
     <ng-content></ng-content>
@@ -137,7 +133,6 @@ class BsNavbarItemMockComponent {
 
 @Component({
   selector: 'page-a',
-  standalone: true,
   template: `<div>Page A</div>`
 })
 class PageAComponent {
@@ -145,7 +140,6 @@ class PageAComponent {
 
 @Component({
   selector: 'page-bc',
-  standalone: true,
   template: `<div>Page B - C</div>`
 })
 class PageBCComponent {
@@ -153,7 +147,6 @@ class PageBCComponent {
 
 @Directive({
   selector: '[clickOutside]',
-  standalone: true,
 })
 class ClickOutsideDirective {
   @Input() exclude: HTMLElement[] = [];

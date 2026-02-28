@@ -5,7 +5,6 @@ import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDi
   selector: 'demo-grid',
   templateUrl: './grid.component.html',
   styleUrls: ['./grid.component.scss'],
-  standalone: true,
   imports: [BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

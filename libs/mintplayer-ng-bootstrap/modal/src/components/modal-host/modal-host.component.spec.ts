@@ -13,7 +13,6 @@ import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 
 @Component({
   selector: 'bs-modal-test',
-  standalone: true,
   template: `
     <bs-modal [(isOpen)]="isOpen">
       <div *bsModal>

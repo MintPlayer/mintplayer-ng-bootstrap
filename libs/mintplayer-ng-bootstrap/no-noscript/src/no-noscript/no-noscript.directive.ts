@@ -3,7 +3,6 @@ import { Directive, inject, PLATFORM_ID } from '@angular/core';
 
 @Directive({
   selector: '[bsNoNoscript]',
-  standalone: true,
   host: {
     '[class.noscript]': 'isNoScript',
   },

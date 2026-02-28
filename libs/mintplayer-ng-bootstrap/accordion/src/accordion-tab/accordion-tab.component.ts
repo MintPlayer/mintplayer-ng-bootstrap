@@ -7,7 +7,6 @@ import { BsAccordionComponent } from '../accordion/accordion.component';
   selector: 'bs-accordion-tab',
   templateUrl: './accordion-tab.component.html',
   styleUrls: ['./accordion-tab.component.scss'],
-  standalone: true,
   imports: [BsNoNoscriptDirective],
   animations: [SlideUpDownAnimation],
   changeDetection: ChangeDetectionStrategy.OnPush,

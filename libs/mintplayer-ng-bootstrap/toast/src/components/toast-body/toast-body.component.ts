@@ -4,7 +4,6 @@ import { Component, ChangeDetectionStrategy} from '@angular/core';
   selector: 'bs-toast-body',
   templateUrl: './toast-body.component.html',
   styleUrls: ['./toast-body.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[class.d-flex]': 'true',

@@ -4,7 +4,6 @@ import { Directive, ElementRef, Host, SkipSelf, TemplateRef, ViewContainerRef } 
 
 @Directive({
   selector: '[bsContextMenu]',
-  standalone: true,
   host: {
     '(document:click)': 'clickAnywhere($event)',
     '(window:blur)': 'onBlur()',

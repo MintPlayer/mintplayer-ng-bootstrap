@@ -9,7 +9,6 @@ import { BsToggleButtonComponent, BsToggleButtonValueAccessor } from '@mintplaye
   selector: 'demo-select',
   templateUrl: './select.component.html',
   styleUrls: ['./select.component.scss'],
-  standalone: true,
   imports: [JsonPipe, FormsModule, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective, BsSelectComponent, BsToggleButtonComponent, BsToggleButtonValueAccessor],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

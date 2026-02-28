@@ -10,7 +10,6 @@ import { BsToggleButtonComponent, BsToggleButtonValueAccessor } from '@mintplaye
   templateUrl: './fade-in-out.component.html',
   styleUrls: ['./fade-in-out.component.scss'],
   animations: [FadeInOutAnimation],
-  standalone: true,
   imports: [FormsModule, BsButtonTypeDirective, BsToggleButtonComponent, BsToggleButtonValueAccessor],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

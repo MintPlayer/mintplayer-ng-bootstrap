@@ -6,7 +6,6 @@ import { HighlightResult } from 'highlight.js';
 
 @Component({
   selector: 'bs-code-snippet',
-  standalone: true,
   templateUrl: './code-snippet.component.html',
   styleUrls: ['./code-snippet.component.scss'],
   imports: [BsCopyDirective, BsOffcanvasHostComponent, BsOffcanvasContentDirective, HighlightModule],

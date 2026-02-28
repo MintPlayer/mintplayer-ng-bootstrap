@@ -8,7 +8,6 @@ import { BsToggleButtonComponent, BsToggleButtonValueAccessor } from '@mintplaye
   selector: 'demo-range',
   templateUrl: './range.component.html',
   styleUrls: ['./range.component.scss'],
-  standalone: true,
   imports: [FormsModule, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective, BsRangeComponent, BsRangeValueAccessor, BsToggleButtonComponent, BsToggleButtonValueAccessor],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

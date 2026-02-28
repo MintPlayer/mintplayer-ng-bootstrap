@@ -40,7 +40,6 @@ describe('BsTabPageComponent', () => {
 
 @Component({
   selector: 'bs-tab-control-test',
-  standalone: true,
   template: `
     <bs-tab-control>
       <bs-tab-page>
@@ -77,7 +76,6 @@ class BsTabControlTestComponent {}
 
 @Component({
   selector: 'bs-tab-control',
-  standalone: true,
   template: 'tab-control works'
 })
 class BsTabControlMockComponent {

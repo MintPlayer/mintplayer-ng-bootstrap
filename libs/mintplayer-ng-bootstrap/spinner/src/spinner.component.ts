@@ -5,7 +5,6 @@ import { Color } from '@mintplayer/ng-bootstrap';
   selector: 'bs-spinner',
   templateUrl: './spinner.component.html',
   styleUrls: ['./spinner.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsSpinnerComponent {

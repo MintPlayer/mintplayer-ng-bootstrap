@@ -4,7 +4,6 @@ import { ChangeDetectionStrategy, Component, input, model } from '@angular/core'
   selector: 'bs-navbar-toggler',
   templateUrl: './navbar-toggler.component.html',
   styleUrls: ['./navbar-toggler.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '(click)': 'toggleState($event)',

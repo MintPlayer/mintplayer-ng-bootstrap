@@ -8,7 +8,6 @@ import { dedent } from 'ts-dedent';
   selector: 'demo-copy',
   templateUrl: './copy.component.html',
   styleUrls: ['./copy.component.scss'],
-  standalone: true,
   imports: [BsCopyDirective, BsOffcanvasHostComponent, BsOffcanvasContentDirective, HighlightModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -7,7 +7,6 @@ import { TOOLTIP_CONTENT } from '../providers/tooltip-content.provider';
 
 @Directive({
   selector: '*[bsTooltip]',
-  standalone: true,
   host: {
     '(window:blur)': 'onBlur()',
   },

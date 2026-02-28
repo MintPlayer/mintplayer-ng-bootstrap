@@ -9,7 +9,6 @@ import { BsResizeGlyphDirective } from '../resize-glyph/resize-glyph.directive';
   selector: 'bs-resizable',
   templateUrl: './resizable.component.html',
   styleUrls: ['./resizable.component.scss'],
-  standalone: true,
   imports: [BsResizeGlyphDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [

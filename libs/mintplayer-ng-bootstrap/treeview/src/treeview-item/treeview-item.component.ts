@@ -9,7 +9,6 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
   selector: 'bs-treeview-item',
   templateUrl: './treeview-item.component.html',
   styleUrls: ['./treeview-item.component.scss'],
-  standalone: true,
   imports: [BsListGroupItemComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

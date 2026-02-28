@@ -10,7 +10,6 @@ import { BsCarouselImageDirective } from '../carousel-image/carousel-image.direc
   selector: 'bs-carousel',
   templateUrl: './carousel.component.html',
   styleUrls: ['./carousel.component.scss'],
-  standalone: true,
   imports: [
     NgTemplateOutlet,
     BsSwipeContainerDirective,

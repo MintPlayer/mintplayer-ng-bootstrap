@@ -8,14 +8,12 @@ import { BsBreadcrumbComponent, BsBreadcrumbItemComponent } from '@mintplayer/ng
 @Component({
   selector: 'page-home',
   template: 'Home',
-  standalone: true,
 })
 class PageHomeComponent { }
 
 @Component({
   selector: 'page-basic',
   template: 'Basic',
-  standalone: true,
 })
 class PageBasicComponent { }
 

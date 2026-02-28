@@ -8,7 +8,6 @@ import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDi
   selector: 'demo-swiper',
   templateUrl: './swiper.component.html',
   styleUrls: ['./swiper.component.scss'],
-  standalone: true,
   imports: [BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective, BsAlertComponent, BsCarouselComponent, BsCarouselImageDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

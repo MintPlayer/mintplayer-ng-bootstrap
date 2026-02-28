@@ -4,7 +4,6 @@ import { ChangeDetectionStrategy, Component, computed, Directive, effect, Elemen
   selector: 'bs-slider',
   templateUrl: './slider.component.html',
   styleUrls: ['./slider.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     'class': 'd-block position-relative',
@@ -78,7 +77,6 @@ export class BsSliderComponent {
 
 @Directive({
   selector: '[bsThumb]',
-  standalone: true,
   host: {
     'class': 'thumb position-absolute',
   },
@@ -88,7 +86,6 @@ export class BsThumbDirective {
 
 @Directive({
   selector: '[bsTrack]',
-  standalone: true,
   host: {
     'class': 'track',
   },

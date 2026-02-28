@@ -8,7 +8,6 @@ import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
 
 @Directive({
   selector: '*[bsPopover]',
-  standalone: true,
   providers: [{
     provide: PORTAL_FACTORY,
     useValue: (injector: Injector) => {

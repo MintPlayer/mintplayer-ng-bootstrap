@@ -2,7 +2,6 @@ import { computed, input, ViewContainerRef, Directive, AfterViewInit } from '@an
 
 @Directive({
   selector: '*[autofocus]',
-  standalone: true,
 })
 export class FocusOnLoadDirective implements AfterViewInit {
 

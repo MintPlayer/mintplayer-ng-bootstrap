@@ -7,7 +7,6 @@ import { BsInstanceOfDirective, BsInstanceofCaseDirective, BsInstanceOfDefaultDi
   selector: 'demo-instance-of',
   templateUrl: './instance-of.component.html',
   styleUrls: ['./instance-of.component.scss'],
-  standalone: true,
   imports: [BsInstanceOfDirective, BsInstanceofCaseDirective, BsInstanceOfDefaultDirective, BsAlertComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

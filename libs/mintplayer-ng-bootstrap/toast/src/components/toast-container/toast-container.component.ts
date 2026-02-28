@@ -8,7 +8,6 @@ import { BsToastService } from '../../services/toast/toast.service';
   selector: 'bs-toast-container',
   templateUrl: './toast-container.component.html',
   styleUrls: ['./toast-container.component.scss'],
-  standalone: true,
   imports: [NgTemplateOutlet, BsHasOverlayComponent, BsAddPropertiesPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {

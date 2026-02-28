@@ -8,7 +8,6 @@ import { BsBoldPipe, BsItalicPipe, BsStrikethroughPipe, BsUnderlinePipe } from '
   selector: 'demo-markdown',
   templateUrl: './markdown.component.html',
   styleUrls: ['./markdown.component.scss'],
-  standalone: true,
   imports: [FormsModule, BsFormComponent, BsFormControlDirective, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsBoldPipe, BsItalicPipe, BsStrikethroughPipe, BsUnderlinePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -6,14 +6,12 @@ import { BsDropdownMenuDirective } from '../dropdown-menu/dropdown-menu.directiv
 
 @Directive({
   selector: '[bsDropdownMenu]',
-  standalone: true,
 })
 class BsDropdownMenuMockDirective {
 }
 
 @Directive({
   selector: '[bsDropdown]',
-  standalone: true,
   providers: [
     { provide: BsDropdownDirective, useExisting: BsDropdownMockDirective }
   ]
@@ -31,7 +29,6 @@ class BsDropdownMockDirective {
 
 @Component({
   selector: 'bs-dropdown-toggle-test',
-  standalone: true,
   template: `
     <div bsDropdown [closeOnClickOutside]="true">
       <button bsDropdownToggle>Dropdown</button>

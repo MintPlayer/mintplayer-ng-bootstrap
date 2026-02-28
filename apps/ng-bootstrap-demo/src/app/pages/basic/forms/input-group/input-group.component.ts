@@ -8,7 +8,6 @@ import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
   selector: 'demo-input-group',
   templateUrl: './input-group.component.html',
   styleUrls: ['./input-group.component.scss'],
-  standalone: true,
   imports: [BsFormComponent, BsFormControlDirective, BsInputGroupComponent, BsButtonTypeDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

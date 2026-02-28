@@ -9,7 +9,6 @@ import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
   selector: 'demo-dropdown',
   templateUrl: './dropdown.component.html',
   styleUrls: ['./dropdown.component.scss'],
-  standalone: true,
   imports: [BsCalendarComponent, BsDropdownDirective, BsDropdownToggleDirective, BsDropdownMenuDirective, BsHasOverlayComponent, BsButtonTypeDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

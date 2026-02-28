@@ -6,7 +6,6 @@ import { BsWebbrowser } from '../types/webbrowser.type';
 
 @Directive({
   selector: '[bsUserAgent]',
-  standalone: true,
   host: {
     '[class.os-android]': 'isAndroid',
     '[class.os-ios]': 'isIos',

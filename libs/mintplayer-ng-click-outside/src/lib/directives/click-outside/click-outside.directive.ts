@@ -3,7 +3,6 @@ import { Directive, ElementRef, effect, inject, input, OnDestroy, OnInit, output
 
 @Directive({
   selector: '[clickOutside]',
-  standalone: true
 })
 export class ClickOutsideDirective implements OnInit, OnDestroy {
 

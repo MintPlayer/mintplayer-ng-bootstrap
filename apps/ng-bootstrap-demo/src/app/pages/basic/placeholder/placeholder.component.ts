@@ -10,7 +10,6 @@ import { BsToggleButtonComponent, BsToggleButtonValueAccessor } from '@mintplaye
   selector: 'demo-placeholder',
   templateUrl: './placeholder.component.html',
   styleUrls: ['./placeholder.component.scss'],
-  standalone: true,
   imports: [FormsModule, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsCardComponent, BsCardHeaderComponent, BsPlaceholderComponent, BsPlaceholderFieldDirective, BsToggleButtonComponent, BsToggleButtonValueAccessor],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

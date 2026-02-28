@@ -4,7 +4,6 @@ import { BsDatatableComponent } from '../datatable/datatable.component';
 
 @Directive({
   selector: '[bsRowTemplate]',
-  standalone: true,
 })
 export class BsRowTemplateDirective<TData> {
 

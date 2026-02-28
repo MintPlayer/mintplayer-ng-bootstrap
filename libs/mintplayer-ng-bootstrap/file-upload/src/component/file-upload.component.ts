@@ -13,7 +13,6 @@ import { BsFormatBytesPipe } from '../pipes/format-bytes/format-bytes.pipe';
   selector: 'bs-file-upload',
   templateUrl: './file-upload.component.html',
   styleUrls: ['./file-upload.component.scss'],
-  standalone: true,
   imports: [NgTemplateOutlet, BsForDirective, BsListGroupComponent, BsListGroupItemComponent, BsProgressComponent, BsProgressBarComponent, BsButtonTypeDirective, BsFormatBytesPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {

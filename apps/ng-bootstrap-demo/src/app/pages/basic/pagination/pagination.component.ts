@@ -5,7 +5,6 @@ import { BsPaginationComponent } from '@mintplayer/ng-bootstrap/pagination';
   selector: 'demo-pagination',
   templateUrl: './pagination.component.html',
   styleUrls: ['./pagination.component.scss'],
-  standalone: true,
   imports: [BsPaginationComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

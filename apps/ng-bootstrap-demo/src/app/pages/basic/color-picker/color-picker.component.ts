@@ -14,7 +14,6 @@ import { DecimalPipe } from '@angular/common';
   selector: 'demo-color-picker',
   templateUrl: './color-picker.component.html',
   styleUrls: ['./color-picker.component.scss'],
-  standalone: true,
   imports: [DecimalPipe, FormsModule, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective, BsButtonTypeDirective, BsButtonGroupComponent, BsColorPickerComponent, BsColorPickerValueAccessor, BsToggleButtonComponent, BsToggleButtonValueAccessor, BsRangeComponent, BsRangeValueAccessor, BsListGroupComponent, BsListGroupItemComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

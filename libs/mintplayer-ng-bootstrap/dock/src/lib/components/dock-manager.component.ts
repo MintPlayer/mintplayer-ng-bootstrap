@@ -24,7 +24,6 @@ import { MintDockManagerElement } from '../web-components/mint-dock-manager.elem
   selector: 'bs-dock-manager',
   templateUrl: './dock-manager.component.html',
   styleUrls: ['./dock-manager.component.scss'],
-  standalone: true,
   imports: [NgTemplateOutlet],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -7,7 +7,6 @@ import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
   selector: 'demo-context-menu',
   templateUrl: './context-menu.component.html',
   styleUrls: ['./context-menu.component.scss'],
-  standalone: true,
   imports: [BsDropdownMenuComponent, BsDropdownItemComponent, BsContextMenuDirective, BsHasOverlayComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

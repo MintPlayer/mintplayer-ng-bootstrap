@@ -22,7 +22,6 @@ import { take, Observable } from 'rxjs';
  **/
 @Directive({
   selector: '[bsNavigationLock]',
-  standalone: true,
   exportAs: 'bsNavigationLock',
   host: {
     '(window:beforeunload)': 'onBeforeUnload($event)',

@@ -5,7 +5,6 @@ import { BsAccordionTabComponent } from '../accordion-tab/accordion-tab.componen
   selector: 'bs-accordion-tab-header',
   templateUrl: './accordion-tab-header.component.html',
   styleUrls: ['./accordion-tab-header.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsAccordionTabHeaderComponent {

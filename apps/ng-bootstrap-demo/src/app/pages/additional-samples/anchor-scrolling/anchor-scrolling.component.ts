@@ -7,7 +7,6 @@ import { BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
   selector: 'demo-anchor-scrolling',
   templateUrl: './anchor-scrolling.component.html',
   styleUrls: ['./anchor-scrolling.component.scss'],
-  standalone: true,
   imports: [BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsAlertComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

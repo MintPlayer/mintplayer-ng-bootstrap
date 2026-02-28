@@ -6,7 +6,6 @@ import { BsTypeaheadComponent } from '@mintplayer/ng-bootstrap/typeahead';
   selector: 'demo-typeahead',
   templateUrl: './typeahead.component.html',
   styleUrls: ['./typeahead.component.scss'],
-  standalone: true,
   imports: [BsTypeaheadComponent, JsonPipe],
   providers: [JsonPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,

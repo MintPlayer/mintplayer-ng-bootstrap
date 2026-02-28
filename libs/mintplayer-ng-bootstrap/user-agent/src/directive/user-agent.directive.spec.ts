@@ -4,7 +4,6 @@ import { BsUserAgentDirective } from './user-agent.directive';
 
 @Component({
   selector: 'test-host',
-  standalone: true,
   imports: [BsUserAgentDirective],
   template: `<div bsUserAgent></div>`,
 })

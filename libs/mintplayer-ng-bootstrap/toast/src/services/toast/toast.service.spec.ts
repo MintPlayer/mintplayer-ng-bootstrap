@@ -8,7 +8,6 @@ import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'bs-toast-container',
-  standalone: true,
   imports: [CommonModule],
   template: `
     @for (toast of toastService.toasts(); let i = $index; track i) {
@@ -25,7 +24,6 @@ class BsToastContainerComponent {
 
 @Component({
   selector: 'bs-toast-test',
-  standalone: true,
   imports: [BsToastContainerComponent],
   template: `
     <ng-template #toastTemplate let-message="message" let-isVisible="isVisible">

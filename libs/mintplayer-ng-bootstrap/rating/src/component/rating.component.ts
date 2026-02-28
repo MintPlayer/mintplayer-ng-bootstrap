@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, computed, effect, input, model, out
 
 @Component({
   selector: 'bs-rating',
-  standalone: true,
   templateUrl: './rating.component.html',
   styleUrls: ['./rating.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

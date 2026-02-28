@@ -3,7 +3,6 @@ import { Directive, inject, input, output } from '@angular/core';
 
 @Directive({
   selector: '[bsCopy]',
-  standalone: true,
   host: {
     '(click)': 'click($event)',
   },

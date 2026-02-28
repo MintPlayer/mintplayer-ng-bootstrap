@@ -14,7 +14,6 @@ interface Item {
 
 @Component({
   selector: 'searchbox-test',
-  standalone: true,
   template: `
     <bs-form>
       <bs-searchbox [suggestions]="suggestions"></bs-searchbox>

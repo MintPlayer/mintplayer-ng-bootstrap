@@ -7,7 +7,6 @@ import { BsFileUploadTemplateDirective } from './file-upload-template.directive'
 
 @Component({
   selector: 'file-upload-template-test-component',
-  standalone: true,
   imports: [MockComponent(BsFileUploadComponent), BsFileUploadTemplateDirective],
   template: `
     <bs-file-upload [files]="files" #fileUpload>

@@ -9,7 +9,6 @@ import { BsToggleButtonComponent, BsToggleButtonValueAccessor } from '@mintplaye
   selector: 'demo-has-property',
   templateUrl: './has-property.component.html',
   styleUrls: ['./has-property.component.scss'],
-  standalone: true,
   imports: [JsonPipe, FormsModule, BsHasPropertyPipe, BsCodeSnippetComponent, BsToggleButtonComponent, BsToggleButtonValueAccessor],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

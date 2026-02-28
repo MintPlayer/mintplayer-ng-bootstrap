@@ -11,7 +11,6 @@ enum Position { top, left, bottom, right }
 
 @Component({
   selector: 'bs-Popover-directive-test',
-  standalone: true,
   template: `
     <button #button>
       Bottom

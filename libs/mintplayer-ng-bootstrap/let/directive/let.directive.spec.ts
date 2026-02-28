@@ -4,7 +4,6 @@ import { BsLetDirective } from './let.directive';
 
 @Component({
   selector: 'bs-let-test',
-  standalone: true,
   template: `<ng-container *bsLet="value as item">{{ item }}</ng-container>`
 })
 class BsLetTestComponent {

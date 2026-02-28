@@ -5,7 +5,6 @@ import { Signature } from '../interfaces/signature';
   selector: 'bs-signature-pad',
   templateUrl: './signature-pad.component.html',
   styleUrls: ['./signature-pad.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     'class': 'border d-inline-block',

@@ -22,7 +22,6 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
   selector: 'bs-searchbox',
   templateUrl: './searchbox.component.html',
   styleUrls: ['./searchbox.component.scss'],
-  standalone: true,
   imports: [
     NgTemplateOutlet,
     FormsModule,

@@ -5,7 +5,6 @@ import { BsInstanceOfDirective } from "./instanceof.directive";
 
 @Directive({
   selector: '[bsInstanceofDefault]',
-  standalone: true,
 })
 export class BsInstanceOfDefaultDirective {
   public constructor() {

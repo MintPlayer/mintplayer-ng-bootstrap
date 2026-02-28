@@ -4,7 +4,6 @@ import { BsForDirective } from './for.directive';
 
 @Component({
   selector: 'test-host',
-  standalone: true,
   imports: [BsForDirective],
   template: `<label>Test</label>`,
 })

@@ -3,7 +3,6 @@ import { Color } from '@mintplayer/ng-bootstrap';
 
 @Component({
   selector: 'bs-badge',
-  standalone: true,
   templateUrl: './badge.component.html',
   styleUrls: ['./badge.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

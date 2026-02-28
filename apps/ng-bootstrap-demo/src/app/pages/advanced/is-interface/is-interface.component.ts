@@ -19,7 +19,6 @@ interface Visitor {
 
 @Pipe({
   name: 'asVisitor',
-  standalone: true,
   pure: true, // Not necessary
 })
 export class AsVisitorPipe implements PipeTransform {
@@ -31,7 +30,6 @@ export class AsVisitorPipe implements PipeTransform {
 
 @Pipe({
   name: 'asEmployee',
-  standalone: true,
   pure: true, // Not necessary
 })
 export class AsEmployeePipe implements PipeTransform {
@@ -43,7 +41,6 @@ export class AsEmployeePipe implements PipeTransform {
 
 @Component({
   selector: 'demo-is-interface',
-  standalone: true,
   imports: [
     BsTableComponent,
     BsButtonTypeDirective,

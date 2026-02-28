@@ -9,7 +9,6 @@ import { BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
   selector: 'demo-track-by',
   templateUrl: './track-by.component.html',
   styleUrls: ['./track-by.component.scss'],
-  standalone: true,
   imports: [BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsButtonTypeDirective, BsListGroupComponent, BsListGroupItemComponent, BsAlertComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

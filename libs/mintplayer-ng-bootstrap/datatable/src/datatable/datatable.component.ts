@@ -13,7 +13,6 @@ import { BsRowTemplateContext } from '../row-template/row-template.directive';
   selector: 'bs-datatable',
   templateUrl: './datatable.component.html',
   styleUrls: ['./datatable.component.scss'],
-  standalone: true,
   imports: [NgTemplateOutlet, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsTableComponent, BsPaginationComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -53,7 +53,6 @@ describe('NavLinkDirective', () => {
 
 @Component({
   selector: 'bs-nav-link-test',
-  standalone: true,
   template: `
     <bs-navbar>
       <bs-navbar-nav>
@@ -76,7 +75,6 @@ class BsNavLinkTestComponent {
 
 @Component({
   selector: 'bs-navbar',
-  standalone: true,
   template: `
     <nav>
       <div>
@@ -89,7 +87,6 @@ class BsNavbarMockComponent {
 
 @Component({
   selector: 'bs-navbar-nav',
-  standalone: true,
   template: `
     <div>
       <ul>
@@ -102,7 +99,6 @@ class BsNavbarNavMockComponent {
 
 @Component({
   selector: 'bs-navbar-dropdown',
-  standalone: true,
   template: `
     <ul>
       <ng-content></ng-content>
@@ -113,7 +109,6 @@ class BsNavbarDropdownMockComponent {
 
 @Component({
   selector: 'bs-navbar-item',
-  standalone: true,
   template: `
     <li>
       <ng-content></ng-content>
@@ -124,7 +119,6 @@ class BsNavbarItemMockComponent {
 
 @Component({
   selector: 'page-a',
-  standalone: true,
   template: `<div>Page A</div>`
 })
 class PageAComponent {
@@ -132,7 +126,6 @@ class PageAComponent {
 
 @Component({
   selector: 'page-bc',
-  standalone: true,
   template: `<div>Page B - C</div>`
 })
 class PageBCComponent {

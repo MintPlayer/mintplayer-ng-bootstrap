@@ -17,7 +17,6 @@ import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
   selector: 'bs-timepicker',
   templateUrl: './timepicker.component.html',
   styleUrls: ['./timepicker.component.scss'],
-  standalone: true,
   imports: [DatePipe, DecimalPipe, FormsModule, EnhancedPasteDirective, BsFormComponent, BsDropdownDirective, BsDropdownMenuDirective, BsDropdownMenuComponent, BsDropdownItemComponent, BsInputGroupComponent, BsButtonTypeDirective, BsHasOverlayComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -5,7 +5,6 @@ import { BsModalDirective } from './modal.directive';
 
 @Component({
   selector: 'bs-modal',
-  standalone: true,
   template: ``,
   providers: [
     { provide: BsModalHostComponent, useExisting: BsModalHostMockComponent }
@@ -17,7 +16,6 @@ class BsModalHostMockComponent {
 
 @Component({
   selector: 'bs-modal-test',
-  standalone: true,
   imports: [BsModalHostMockComponent, BsModalDirective],
   template: `
     <bs-modal #modal>

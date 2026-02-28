@@ -5,7 +5,6 @@ import { BsButtonTemplateDirective } from './button-template.directive';
 
 @Component({
   selector: 'bs-multiselect',
-  standalone: true,
   template: `
     <button>
       <ng-container *ngTemplateOutlet="buttonTemplate ?? defaultButtonTemplate; context: { $implicit: 0 }"></ng-container>
@@ -20,7 +19,6 @@ class BsMultiselectMockComponent {
 
 @Component({
   selector: 'bs-button-template-test',
-  standalone: true,
   imports: [BsMultiselectMockComponent, BsButtonTemplateDirective],
   template: `
     <bs-multiselect #multiselect>

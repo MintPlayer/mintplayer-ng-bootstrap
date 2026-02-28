@@ -12,7 +12,6 @@ import { OverlayRef } from '@angular/cdk/overlay';
   selector: 'bs-navbar-dropdown',
   templateUrl: './navbar-dropdown.component.html',
   styleUrls: ['./navbar-dropdown.component.scss'],
-  standalone: true,
   imports: [BsHasOverlayComponent, BsNoNoscriptDirective, ClickOutsideDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

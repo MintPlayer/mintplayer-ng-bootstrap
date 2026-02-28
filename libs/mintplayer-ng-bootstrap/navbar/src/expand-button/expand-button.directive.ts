@@ -3,7 +3,6 @@ import { BsNavbarComponent } from '../navbar/navbar.component';
 
 @Directive({
   selector: '[bsExpandButton]',
-  standalone: true,
 })
 export class BsExpandButtonDirective {
 

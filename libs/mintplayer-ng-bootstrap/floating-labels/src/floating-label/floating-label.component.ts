@@ -3,7 +3,6 @@ import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 
 @Component({
   selector: 'bs-floating-label',
-  standalone: true,
   templateUrl: './floating-label.component.html',
   styleUrls: ['./floating-label.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

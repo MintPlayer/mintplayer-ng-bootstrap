@@ -7,7 +7,6 @@ import { BsStickyFooterComponent, BsStickyFooterParentDirective } from '@mintpla
   selector: 'demo-sticky-footer',
   templateUrl: './sticky-footer.component.html',
   styleUrls: ['./sticky-footer.component.scss'],
-  standalone: true,
   imports: [BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderComponent, BsStickyFooterComponent, BsStickyFooterParentDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

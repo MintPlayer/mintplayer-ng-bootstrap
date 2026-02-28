@@ -9,7 +9,6 @@ import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
   templateUrl: './slide-up-down.component.html',
   styleUrls: ['./slide-up-down.component.scss'],
   animations: [SlideUpDownAnimation, SlideUpDownNgifAnimation],
-  standalone: true,
   imports: [BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsButtonTypeDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

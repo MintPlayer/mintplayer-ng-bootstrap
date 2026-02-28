@@ -2,7 +2,6 @@ import { Directive, effect, input } from '@angular/core';
 
 @Directive({
   selector: 'label[bsFor]',
-  standalone: true,
   host: {
     '[class.cursor-default]': 'true',
     '[attr.for]': 'forValue',

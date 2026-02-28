@@ -7,7 +7,6 @@ import type { BsTreeviewItemComponent } from '../treeview-item/treeview-item.com
   selector: 'bs-treeview',
   templateUrl: './treeview.component.html',
   styleUrls: ['./treeview.component.scss'],
-  standalone: true,
   imports: [BsListGroupComponent],
   animations: [SlideUpDownAnimation],
   changeDetection: ChangeDetectionStrategy.OnPush,

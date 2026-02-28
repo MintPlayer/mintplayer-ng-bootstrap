@@ -10,7 +10,6 @@ import { BsToggleButtonComponent, BsToggleButtonValueAccessor } from '@mintplaye
   selector: 'demo-tab-control',
   templateUrl: './tab-control.component.html',
   styleUrls: ['./tab-control.component.scss'],
-  standalone: true,
   imports: [FormsModule, BsForDirective, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective, BsSelectComponent, BsTabControlComponent, BsTabPageComponent, BsTabPageHeaderDirective, BsToggleButtonComponent, BsToggleButtonValueAccessor],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

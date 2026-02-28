@@ -9,7 +9,6 @@ import { filter } from 'rxjs';
 
 @Directive({
   selector: 'a[routerLink]',
-  standalone: true
 })
 export class NavbarRouterLinkActiveDirective extends RouterLinkActive implements AfterContentChecked {
 

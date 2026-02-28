@@ -3,7 +3,6 @@ import { BsOffcanvasHostComponent } from '../../components/offcanvas-host/offcan
 
 @Directive({
   selector: '[bsOffcanvasContent]',
-  standalone: true,
 })
 export class BsOffcanvasContentDirective {
   constructor() {

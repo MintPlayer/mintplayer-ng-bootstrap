@@ -8,7 +8,6 @@ import { Observable } from 'rxjs';
   selector: 'demo-navigation-lock',
   templateUrl: './navigation-lock.component.html',
   styleUrls: ['./navigation-lock.component.scss'],
-  standalone: true,
   imports: [FormsModule, BsToggleButtonComponent, BsToggleButtonValueAccessor, BsNavigationLockDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

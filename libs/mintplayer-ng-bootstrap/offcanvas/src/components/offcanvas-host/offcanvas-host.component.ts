@@ -11,7 +11,6 @@ import { BsOffcanvasComponent } from '../offcanvas/offcanvas.component';
   selector: 'bs-offcanvas',
   templateUrl: './offcanvas-host.component.html',
   styleUrls: ['./offcanvas-host.component.scss'],
-  standalone: true,
   imports: [BsHasOverlayComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [{

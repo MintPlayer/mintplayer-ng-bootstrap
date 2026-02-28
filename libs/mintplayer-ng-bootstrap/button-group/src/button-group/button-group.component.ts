@@ -4,7 +4,6 @@ import { Component, ChangeDetectionStrategy} from '@angular/core';
   selector: 'bs-button-group',
   templateUrl: './button-group.component.html',
   styleUrls: ['./button-group.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsButtonGroupComponent {}

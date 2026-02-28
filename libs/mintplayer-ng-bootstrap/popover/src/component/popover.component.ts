@@ -9,7 +9,6 @@ import { POPOVER_CONTENT } from '../providers/popover-content.provider';
   selector: 'bs-popover',
   templateUrl: './popover.component.html',
   styleUrls: ['./popover.component.scss'],
-  standalone: true,
   imports: [NgTemplateOutlet, BsHasOverlayComponent],
   animations: [FadeInOutAnimation],
   changeDetection: ChangeDetectionStrategy.OnPush,

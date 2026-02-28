@@ -3,7 +3,6 @@ import { Component, Input, computed, input, ChangeDetectionStrategy} from '@angu
 
 @Component({
   selector: 'bs-parallax',
-  standalone: true,
   templateUrl: './parallax.component.html',
   styleUrl: './parallax.component.scss',
   imports: [],

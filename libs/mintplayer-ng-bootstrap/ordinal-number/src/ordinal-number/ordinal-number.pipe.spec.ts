@@ -6,7 +6,6 @@ import { BsOrdinalNumberPipe } from './ordinal-number.pipe';
 @Component({
   selector: 'ordinal-number-test',
   template: `<span id="number-span" [innerHtml]="text | ordinalNumber: 'st'"></span>`,
-  standalone: true,
   imports: [BsOrdinalNumberPipe],
 })
 class OrdinalNumberTestComponent {

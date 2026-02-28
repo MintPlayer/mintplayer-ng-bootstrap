@@ -7,7 +7,6 @@ import { ToastComponent } from './toast.component';
 
 @Component({
   selector: 'demo-toast-test',
-  standalone: true,
   template: `
     <ng-template #toastTemplate let-message="message" let-isVisible="isVisible">
       <bs-toast [isVisible]="isVisible">

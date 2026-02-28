@@ -9,7 +9,6 @@ import { Breakpoint, Color } from '@mintplayer/ng-bootstrap';
   selector: 'bs-navbar',
   templateUrl: './navbar.component.html',
   styleUrls: ['./navbar.component.scss'],
-  standalone: true,
   imports: [NgTemplateOutlet, BsContainerComponent, BsUserAgentDirective, BsNoNoscriptDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {

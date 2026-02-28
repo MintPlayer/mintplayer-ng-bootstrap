@@ -5,7 +5,6 @@ import { BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
 @Component({
   selector: "demo-hello",
   template: `Hello {{ name() }}!`,
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[class.d-inline-block]': 'true',
@@ -40,7 +39,6 @@ export class HelloComponent {
   selector: 'demo-async-host-binding',
   templateUrl: './async-host-binding.component.html',
   styleUrls: ['./async-host-binding.component.scss'],
-  standalone: true,
   imports: [
     BsAlertComponent,
     HelloComponent

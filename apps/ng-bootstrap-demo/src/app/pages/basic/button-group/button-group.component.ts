@@ -7,7 +7,6 @@ import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
   selector: 'demo-button-group',
   templateUrl: './button-group.component.html',
   styleUrls: ['./button-group.component.scss'],
-  standalone: true,
   imports: [BsButtonTypeDirective, BsButtonGroupComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

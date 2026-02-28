@@ -7,7 +7,6 @@ import { FocusOnLoadDirective } from '@mintplayer/ng-focus-on-load';
   selector: 'demo-multiselect-dropdown',
   templateUrl: './multiselect-dropdown.component.html',
   styleUrls: ['./multiselect-dropdown.component.scss'],
-  standalone: true,
   imports: [BsFormComponent, BsFormControlDirective, BsMultiselectComponent, BsHeaderTemplateDirective, BsFooterTemplateDirective, BsButtonTemplateDirective, FocusOnLoadDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

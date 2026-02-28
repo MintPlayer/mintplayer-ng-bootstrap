@@ -6,7 +6,6 @@ import { BsListGroupComponent, BsListGroupItemComponent } from '@mintplayer/ng-b
   selector: 'demo-card',
   templateUrl: './card.component.html',
   styleUrls: ['./card.component.scss'],
-  standalone: true,
   imports: [BsCardComponent, BsCardHeaderComponent, BsListGroupComponent, BsListGroupItemComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

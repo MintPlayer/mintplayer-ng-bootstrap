@@ -9,7 +9,6 @@ import { BsToggleButtonComponent, BsToggleButtonValueAccessor, BsToggleButtonGro
 
 @Component({
   selector: 'demo-shell',
-  standalone: true,
   imports: [FormsModule, BsShellComponent, BsShellSidebarDirective, BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderComponent, BsButtonGroupComponent, BsButtonTypeDirective, BsToggleButtonComponent, BsToggleButtonValueAccessor, BsToggleButtonGroupDirective],
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.scss',

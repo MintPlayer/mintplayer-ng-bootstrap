@@ -7,7 +7,6 @@ import { BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
   selector: 'demo-user-agent',
   templateUrl: './user-agent.component.html',
   styleUrls: ['./user-agent.component.scss'],
-  standalone: true,
   imports: [BsAlertComponent, BsUserAgentDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -14,7 +14,6 @@ import { GIT_REPO } from '../../../providers/git-repo.provider';
   selector: 'demo-modal',
   templateUrl: './modal.component.html',
   styleUrls: ['./modal.component.scss'],
-  standalone: true,
   imports: [BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective, BsColFormLabelDirective, BsModalHostComponent, BsModalDirective, BsModalHeaderDirective, BsModalBodyDirective, BsModalFooterDirective, BsModalCloseDirective, BsSelect2Component, BsItemTemplateDirective, BsButtonTypeDirective, FocusOnLoadDirective, BsFontColorPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

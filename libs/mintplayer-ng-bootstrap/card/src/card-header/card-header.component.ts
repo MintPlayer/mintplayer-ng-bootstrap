@@ -4,7 +4,6 @@ import { Component, input, ChangeDetectionStrategy} from '@angular/core';
   selector: 'bs-card-header',
   templateUrl: './card-header.component.html',
   styleUrls: ['./card-header.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsCardHeaderComponent {

@@ -4,7 +4,6 @@ import { BsNoNoscriptDirective } from './no-noscript.directive';
 
 @Component({
   selector: 'no-noscript-test-component',
-  standalone: true,
   template: `<div bsNoNoscript></div>`
 })
 class NoNoscriptTestComponent {}

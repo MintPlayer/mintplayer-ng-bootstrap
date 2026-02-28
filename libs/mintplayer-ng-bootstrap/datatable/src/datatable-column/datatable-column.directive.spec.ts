@@ -38,7 +38,6 @@ describe('BsDatatableColumnDirective', () => {
 
 @Component({
   selector: 'bs-datatable-column-test',
-  standalone: true,
   template: `
     <bs-datatable>
       <div *bsDatatableColumn="'Name'; sortable: true">

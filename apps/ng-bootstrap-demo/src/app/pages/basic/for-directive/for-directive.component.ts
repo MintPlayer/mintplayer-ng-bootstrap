@@ -7,7 +7,6 @@ import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLa
   selector: 'demo-for-directive',
   templateUrl: './for-directive.component.html',
   styleUrls: ['./for-directive.component.scss'],
-  standalone: true,
   imports: [BsForDirective, BsFormComponent, BsFormControlDirective, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

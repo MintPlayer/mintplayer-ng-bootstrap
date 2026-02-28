@@ -7,7 +7,6 @@ import { Breakpoint } from '@mintplayer/ng-bootstrap';
   selector: 'bs-shell',
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.scss',
-  standalone: true,
   imports: [NgTemplateOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -5,7 +5,6 @@ import { BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderComp
   selector: 'demo-accordion',
   templateUrl: './accordion.component.html',
   styleUrls: ['./accordion.component.scss'],
-  standalone: true,
   imports: [BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

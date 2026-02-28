@@ -5,7 +5,6 @@ import { BsModalCloseDirective } from './modal-close.directive';
 
 @Component({
   selector: 'bs-modal',
-  standalone: true,
   template: ``,
   providers: [
     { provide: BsModalHostComponent, useExisting: BsModalHostMockComponent }
@@ -32,7 +31,6 @@ class BsModalHostMockComponent {
 
 @Directive({
   selector: '[bsModal]',
-  standalone: true,
 })
 class BsModalMockDirective {
   constructor(template: TemplateRef<any>, host: BsModalHostComponent) {
@@ -42,7 +40,6 @@ class BsModalMockDirective {
 
 @Component({
   selector: 'bs-modal-test',
-  standalone: true,
   imports: [BsModalHostMockComponent, BsModalMockDirective, BsModalCloseDirective],
   template: `
     <bs-modal [(isOpen)]="isOpen" #modal>

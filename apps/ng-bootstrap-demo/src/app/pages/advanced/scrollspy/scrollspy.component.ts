@@ -5,7 +5,6 @@ import { BsScrollspyComponent, BsScrollspyDirective } from '@mintplayer/ng-boots
   selector: 'demo-scrollspy',
   templateUrl: './scrollspy.component.html',
   styleUrls: ['./scrollspy.component.scss'],
-  standalone: true,
   imports: [BsScrollspyComponent, BsScrollspyDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

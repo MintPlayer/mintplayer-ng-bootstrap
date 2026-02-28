@@ -40,7 +40,6 @@ describe('BsExpandButtonDirective', () => {
 
 @Component({
   selector: 'bs-navbar',
-  standalone: true,
   template: `
     <nav>
       <div>
@@ -56,7 +55,6 @@ class BsNavbarMockComponent {
 
 @Component({
   selector: 'bs-nav-link-test',
-  standalone: true,
   imports: [BsNavbarMockComponent, BsExpandButtonDirective],
   template: `
     <bs-navbar #navbar>

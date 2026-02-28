@@ -4,7 +4,6 @@ import { FileUpload } from '../file-upload';
 
 @Directive({
   selector: '[bsFileUploadTemplate]',
-  standalone: true,
 })
 export class BsFileUploadTemplateDirective {
   private fileUploadComponent = inject(BsFileUploadComponent);

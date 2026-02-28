@@ -4,7 +4,6 @@ import { BsGridColumnDirective } from './column.directive';
 
 @Component({
   selector: 'test-host',
-  standalone: true,
   template: `<div [md]="6"></div>`
 })
 class TestHostComponent {}

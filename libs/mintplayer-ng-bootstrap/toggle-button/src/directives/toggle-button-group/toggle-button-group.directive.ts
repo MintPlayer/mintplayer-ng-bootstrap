@@ -3,7 +3,6 @@ import { BsToggleButtonComponent } from '../../component/toggle-button.component
 
 @Directive({
   selector: '[bsToggleButtonGroup]',
-  standalone: true,
   exportAs: 'bsToggleButtonGroup',
 })
 export class BsToggleButtonGroupDirective {

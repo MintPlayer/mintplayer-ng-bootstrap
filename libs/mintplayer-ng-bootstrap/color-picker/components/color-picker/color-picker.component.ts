@@ -8,7 +8,6 @@ import { BsAlphaStripComponent } from "../alpha-strip/alpha-strip.component";
   selector: 'bs-color-picker',
   templateUrl: './color-picker.component.html',
   styleUrls: ['./color-picker.component.scss'],
-  standalone: true,
   imports: [BsColorWheelComponent, BsLuminosityStripComponent, BsAlphaStripComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

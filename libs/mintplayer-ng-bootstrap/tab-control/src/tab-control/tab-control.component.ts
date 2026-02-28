@@ -9,7 +9,6 @@ import { BsTabsPosition } from '../tabs-position';
   selector: 'bs-tab-control',
   templateUrl: './tab-control.component.html',
   styleUrls: ['./tab-control.component.scss'],
-  standalone: true,
   imports: [NgTemplateOutlet, DragDropModule, BsNoNoscriptDirective],
   providers: [
     { provide: 'TAB_CONTROL', useExisting: BsTabControlComponent }

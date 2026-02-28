@@ -7,7 +7,6 @@ import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@min
   selector: 'demo-drag-drop',
   templateUrl: './drag-drop.component.html',
   styleUrls: ['./drag-drop.component.scss'],
-  standalone: true,
   imports: [CdkDragDropModule, BsGridComponent, BsGridRowDirective, BsGridColumnDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

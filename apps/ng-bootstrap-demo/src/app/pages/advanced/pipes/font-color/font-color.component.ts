@@ -7,7 +7,6 @@ import { BsFontColorPipe } from '@mintplayer/ng-bootstrap/font-color';
   selector: 'demo-font-color',
   templateUrl: './font-color.component.html',
   styleUrls: ['./font-color.component.scss'],
-  standalone: true,
   imports: [FormsModule, BsColorPickerComponent, BsColorPickerValueAccessor, BsFontColorPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

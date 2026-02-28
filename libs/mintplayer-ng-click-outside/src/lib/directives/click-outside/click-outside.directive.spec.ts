@@ -5,7 +5,6 @@ import { ClickOutsideDirective } from './click-outside.directive';
 
 @Component({
   selector: 'click-outside-test-component',
-  standalone: true,
   imports: [ClickOutsideDirective],
   template: `
     <div #wrapper>

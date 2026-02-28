@@ -7,7 +7,6 @@ import { BsScrollspyDirective } from '../directives/scrollspy.directive';
   selector: 'bs-scrollspy',
   templateUrl: './scrollspy.component.html',
   styleUrls: ['./scrollspy.component.scss'],
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '(window:scroll)': 'onWindowScroll()',

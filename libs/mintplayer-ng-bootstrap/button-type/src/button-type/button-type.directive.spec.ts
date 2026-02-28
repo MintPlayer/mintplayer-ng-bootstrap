@@ -4,7 +4,6 @@ import { BsButtonTypeDirective } from './button-type.directive';
 
 @Component({
   selector: 'test-host',
-  standalone: true,
   imports: [BsButtonTypeDirective],
   template: `<button>Test</button>`,
 })
