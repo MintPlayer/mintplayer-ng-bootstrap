@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, Inject, input, TemplateRef } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, TemplateRef } from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Position } from '@mintplayer/ng-bootstrap';
 import { POPOVER_CONTENT } from '../providers/popover-content.provider';
@@ -15,9 +15,7 @@ import { POPOVER_CONTENT } from '../providers/popover-content.provider';
   },
 })
 export class BsPopoverComponent {
-  constructor(@Inject(POPOVER_CONTENT) content: TemplateRef<any>) {
-    this.template = content;
-  }
+  template = inject<TemplateRef<any>>(POPOVER_CONTENT);
 
   position = input<Position>('bottom');
   isVisible = input<boolean>(false);
@@ -32,6 +30,4 @@ export class BsPopoverComponent {
   });
 
   positionClass = computed(() => `bs-popover-${this.position()}`);
-
-  template: TemplateRef<any>;
 }

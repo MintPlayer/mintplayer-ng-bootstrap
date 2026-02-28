@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, Inject, input, TemplateRef } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, TemplateRef } from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Position } from '@mintplayer/ng-bootstrap';
 import { TOOLTIP_CONTENT } from '../providers/tooltip-content.provider';
@@ -15,12 +15,9 @@ import { TOOLTIP_CONTENT } from '../providers/tooltip-content.provider';
   },
 })
 export class BsTooltipComponent {
-  constructor(@Inject(TOOLTIP_CONTENT) content: TemplateRef<any>) {
-    this.template = content;
-  }
+  template = inject<TemplateRef<any>>(TOOLTIP_CONTENT);
 
   position = input<Position>('bottom');
-  template: TemplateRef<any>;
 
   positionClass = computed(() => `bs-tooltip-${this.position()}`);
 

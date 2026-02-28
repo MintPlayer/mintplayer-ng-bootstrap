@@ -1,5 +1,5 @@
 import { isPlatformServer } from '@angular/common';
-import { AfterViewInit, Directive, Inject, output, PLATFORM_ID } from '@angular/core';
+import { AfterViewInit, Directive, inject, output, PLATFORM_ID } from '@angular/core';
 import { BsUserAgent } from '../interfaces/user-agent';
 import { BsOperatingSystem } from '../types/operating-system.type';
 import { BsWebbrowser } from '../types/webbrowser.type';
@@ -15,7 +15,7 @@ import { BsWebbrowser } from '../types/webbrowser.type';
   },
 })
 export class BsUserAgentDirective implements AfterViewInit {
-  constructor(@Inject(PLATFORM_ID) private platformId: Object) { }
+  private platformId = inject(PLATFORM_ID);
 
   get isAndroid() {
     return !isPlatformServer(this.platformId) && !!navigator && !!navigator.userAgent.match(/Android/i);

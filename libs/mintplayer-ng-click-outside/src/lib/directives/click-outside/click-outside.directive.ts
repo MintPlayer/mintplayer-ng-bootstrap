@@ -1,5 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
-import { Directive, ElementRef, effect, Inject, input, OnDestroy, OnInit, output, PLATFORM_ID } from '@angular/core';
+import { Directive, ElementRef, effect, inject, input, OnDestroy, OnInit, output, PLATFORM_ID } from '@angular/core';
 
 @Directive({
   selector: '[clickOutside]',
@@ -20,14 +20,14 @@ export class ClickOutsideDirective implements OnInit, OnDestroy {
 
   readonly clickOutside = output<Event>();
 
+  private element = inject(ElementRef);
+  private platformId = inject(PLATFORM_ID);
+
   private _nodesExcluded: Array<HTMLElement> = [];
   private _events: Array<string> = ['click'];
   private _initialized = false;
 
-  constructor(
-      private element: ElementRef,
-      @Inject(PLATFORM_ID) private platformId: Object
-  ) {
+  constructor() {
     this._initOnClickBody = this._initOnClickBody.bind(this);
     this._onClickBody = this._onClickBody.bind(this);
     this._onWindowBlur = this._onWindowBlur.bind(this);

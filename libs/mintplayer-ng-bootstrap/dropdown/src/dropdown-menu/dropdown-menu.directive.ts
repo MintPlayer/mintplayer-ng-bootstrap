@@ -1,4 +1,4 @@
-import { DestroyRef, Directive, effect, ElementRef, forwardRef, inject, PLATFORM_ID, TemplateRef, ViewContainerRef } from '@angular/core';
+import { DestroyRef, Directive, effect, forwardRef, inject, TemplateRef, ViewContainerRef } from '@angular/core';
 import { TemplatePortal } from '@angular/cdk/portal';
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ClickOutsideDirective } from '@mintplayer/ng-click-outside';
@@ -27,9 +27,7 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
   private templatePortal: TemplatePortal<any> | null = null;
 
   constructor() {
-    const elementRef = inject(ElementRef);
-    const platformId = inject(PLATFORM_ID);
-    super(elementRef, platformId);
+    super();
 
     effect(() => {
       const isOpen = this.dropdown.isOpen();

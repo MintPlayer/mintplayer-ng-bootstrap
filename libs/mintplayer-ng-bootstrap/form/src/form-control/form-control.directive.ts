@@ -1,4 +1,4 @@
-import { Directive, Optional } from '@angular/core';
+import { Directive, inject } from '@angular/core';
 import { BsFormComponent } from '../form/form.component';
 
 @Directive({
@@ -9,8 +9,6 @@ import { BsFormComponent } from '../form/form.component';
   },
 })
 export class BsFormControlDirective {
-  constructor(@Optional() form?: BsFormComponent) {
-    this.formControlClass = !!form;
-  }
-  formControlClass: boolean;
+  private form = inject(BsFormComponent, { optional: true });
+  formControlClass = !!this.form;
 }

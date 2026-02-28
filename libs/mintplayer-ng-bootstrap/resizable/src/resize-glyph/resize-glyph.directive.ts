@@ -1,4 +1,4 @@
-import { Directive, effect, Inject, input, forwardRef, Optional } from '@angular/core';
+import { Directive, effect, inject, input, forwardRef } from '@angular/core';
 import { Position } from '@mintplayer/ng-bootstrap';
 import type { BsResizableComponent } from '../resizable/resizable.component';
 import { ResizeAction } from '../interfaces/resize-action';
@@ -23,10 +23,9 @@ import { RESIZABLE } from '../providers/resizable.provider';
 export class BsResizeGlyphDirective {
 
   // Can't use typed DI because of the `import type`
-  private readonly resizable: BsResizableComponent;
-  constructor(@Inject(RESIZABLE) resizable: any) {
-    this.resizable = resizable;
+  private readonly resizable: BsResizableComponent = inject(RESIZABLE);
 
+  constructor() {
     effect(() => {
       const value = this.bsResizeGlyph();
       this.positions = value.join(' ');

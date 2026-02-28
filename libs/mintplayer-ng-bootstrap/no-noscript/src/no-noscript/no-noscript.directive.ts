@@ -1,5 +1,5 @@
 import { isPlatformServer } from '@angular/common';
-import { Directive, Inject, PLATFORM_ID } from '@angular/core';
+import { Directive, inject, PLATFORM_ID } from '@angular/core';
 
 @Directive({
   selector: '[bsNoNoscript]',
@@ -9,8 +9,10 @@ import { Directive, Inject, PLATFORM_ID } from '@angular/core';
   },
 })
 export class BsNoNoscriptDirective {
-  constructor(@Inject(PLATFORM_ID) private platformId: Object) {
-    if (isPlatformServer(platformId)) {
+  private platformId = inject(PLATFORM_ID);
+
+  constructor() {
+    if (isPlatformServer(this.platformId)) {
       this.isNoScript = true;
     }
   }

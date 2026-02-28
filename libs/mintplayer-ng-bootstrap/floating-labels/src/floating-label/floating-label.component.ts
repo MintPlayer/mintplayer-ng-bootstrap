@@ -1,4 +1,4 @@
-import { Optional, Component, ChangeDetectionStrategy} from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy} from '@angular/core';
 import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 
 @Component({
@@ -9,15 +9,10 @@ import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsFloatingLabelComponent {
-  constructor(@Optional() bsForm: BsFormComponent) {
+  constructor() {
+    const bsForm = inject(BsFormComponent, { optional: true });
     if (!bsForm) {
       throw '<bs-floating-label> must be inside a <bs-form>';
     }
   }
-
-  // @ContentChild(BsFloatingFormControlDirective, { read: ElementRef }) input!: ElementRef<HTMLInputElement>;
-
-  // ngAfterContentInit() {
-  //   this.input.nativeElement.classList.add('form-control');
-  // }
 }

@@ -5,7 +5,7 @@ import {
   contentChildren,
   effect,
   ElementRef,
-  Inject,
+  inject,
   input,
   output,
   viewChild,
@@ -48,9 +48,8 @@ export class BsDockManagerComponent implements AfterViewInit {
 
   private _layout: DockLayoutSnapshot = { root: null, floating: [] };
 
-  constructor(
-    @Inject(DOCUMENT) documentRef: Document,
-  ) {
+  constructor() {
+    const documentRef = inject(DOCUMENT);
     if (documentRef) {
       MintDockManagerElement.configureDocument(documentRef);
     }

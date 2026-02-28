@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { ExtraOptions, ROUTER_CONFIGURATION } from '@angular/router';
 
 @Injectable({
@@ -6,9 +6,7 @@ import { ExtraOptions, ROUTER_CONFIGURATION } from '@angular/router';
 })
 export class BsScrollOffsetService {
 
-  constructor(
-    @Inject(ROUTER_CONFIGURATION) private routerConfig: ExtraOptions
-  ) { }
+  private routerConfig = inject<ExtraOptions>(ROUTER_CONFIGURATION);
 
   getScrollOffset(): [number, number] {
     if (!this.routerConfig.scrollOffset) {

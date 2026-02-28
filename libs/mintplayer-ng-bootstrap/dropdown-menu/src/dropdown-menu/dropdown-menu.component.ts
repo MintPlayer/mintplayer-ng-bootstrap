@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, input, Optional, ChangeDetectionStrategy} from '@angular/core';
+import { AfterViewInit, Component, inject, input, ChangeDetectionStrategy} from '@angular/core';
 import { BsDropdownDirective } from '@mintplayer/ng-bootstrap/dropdown';
 // import { BsDropdownComponent } from '@mintplayer/ng-bootstrap/dropdown';
 
@@ -14,8 +14,7 @@ import { BsDropdownDirective } from '@mintplayer/ng-bootstrap/dropdown';
   },
 })
 export class BsDropdownMenuComponent implements AfterViewInit {
-  constructor(@Optional() private bsDropdown?: BsDropdownDirective) {
-  }
+  private bsDropdown = inject(BsDropdownDirective, { optional: true });
 
   readonly maxHeight = input<number | null>(null);
   dropdownWith: string | null = null;

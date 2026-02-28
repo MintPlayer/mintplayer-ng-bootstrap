@@ -1,4 +1,4 @@
-import { Directive, ViewContainerRef, Optional, Host, TemplateRef } from "@angular/core";
+import { Directive, ViewContainerRef, inject, TemplateRef } from "@angular/core";
 import { SwitchView } from "./switch-view";
 import { BsInstanceOfContext } from "../interfaces/instance-of-context";
 import { BsInstanceOfDirective } from "./instanceof.directive";
@@ -8,15 +8,14 @@ import { BsInstanceOfDirective } from "./instanceof.directive";
   standalone: false,
 })
 export class BsInstanceOfDefaultDirective {
-  public constructor(
-    viewContainer: ViewContainerRef,
-    templateRef: TemplateRef<BsInstanceOfContext>,
-    @Optional() @Host() bsInstanceof: BsInstanceOfDirective
-  ) {
+  public constructor() {
+    const viewContainer = inject(ViewContainerRef);
+    const templateRef = inject<TemplateRef<BsInstanceOfContext>>(TemplateRef);
+    const bsInstanceof = inject(BsInstanceOfDirective, { optional: true, host: true });
     if (!bsInstanceof) {
       this.throwError('bsInstanceofDefault');
     }
-    bsInstanceof._addDefault(new SwitchView(viewContainer, templateRef));
+    bsInstanceof!._addDefault(new SwitchView(viewContainer, templateRef));
   }
 
   throwError(directiveName: string) {

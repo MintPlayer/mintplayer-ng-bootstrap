@@ -1,6 +1,6 @@
 import { Overlay, OverlayModule } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { Component, Inject, Injectable, Injector, TemplateRef, ViewChild } from '@angular/core';
+import { Component, inject, Injectable, Injector, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsOffcanvasCloseDirective } from './offcanvas-close.directive';
 
@@ -10,11 +10,7 @@ import { BsOffcanvasCloseDirective } from './offcanvas-close.directive';
   template: `<ng-container *ngTemplateOutlet="content; context: { $implicit: this }"></ng-container>`
 })
 class BsOffcanvasMockComponent {
-  constructor(@Inject('OFFCANVAS_CONTENT') content: TemplateRef<any>) {
-    this.content = content;
-  }
-
-  content: TemplateRef<any>;
+  content = inject<TemplateRef<any>>('OFFCANVAS_CONTENT' as any);
 }
 
 @Component({

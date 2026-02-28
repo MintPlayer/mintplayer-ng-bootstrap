@@ -1,4 +1,4 @@
-import { Component, Inject, TemplateRef, ChangeDetectionStrategy} from '@angular/core';
+import { Component, inject, TemplateRef, ChangeDetectionStrategy} from '@angular/core';
 import { EnterFromTopAnimation, FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { MODAL_CONTENT } from '../../providers/modal-content.provider';
 
@@ -12,11 +12,7 @@ import { MODAL_CONTENT } from '../../providers/modal-content.provider';
 })
 export class BsModalComponent {
 
-  constructor(@Inject(MODAL_CONTENT) template: TemplateRef<any>) {
-    this.template = template;
-  }
-
+  template = inject<TemplateRef<any>>(MODAL_CONTENT);
   isOpen = false;
-  template: TemplateRef<any>;
 
 }
