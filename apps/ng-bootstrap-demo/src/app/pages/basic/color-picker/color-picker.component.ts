@@ -1,13 +1,13 @@
 import { Component, signal, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Color } from '@mintplayer/ng-bootstrap';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
-import { BsRangeModule } from '@mintplayer/ng-bootstrap/range';
-import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
+import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective } from '@mintplayer/ng-bootstrap/grid';
+import { BsRangeComponent, BsRangeValueAccessor } from '@mintplayer/ng-bootstrap/range';
+import { BsListGroupComponent, BsListGroupItemComponent } from '@mintplayer/ng-bootstrap/list-group';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsButtonGroupComponent } from '@mintplayer/ng-bootstrap/button-group';
-import { BsColorPickerModule } from '@mintplayer/ng-bootstrap/color-picker';
-import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsColorPickerComponent, BsColorPickerValueAccessor } from '@mintplayer/ng-bootstrap/color-picker';
+import { BsToggleButtonComponent, BsToggleButtonValueAccessor } from '@mintplayer/ng-bootstrap/toggle-button';
 import { DecimalPipe } from '@angular/common';
 
 @Component({
@@ -15,7 +15,7 @@ import { DecimalPipe } from '@angular/common';
   templateUrl: './color-picker.component.html',
   styleUrls: ['./color-picker.component.scss'],
   standalone: true,
-  imports: [DecimalPipe, FormsModule, BsGridModule, BsButtonTypeDirective, BsButtonGroupComponent, BsColorPickerModule, BsToggleButtonModule, BsRangeModule, BsListGroupModule],
+  imports: [DecimalPipe, FormsModule, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective, BsButtonTypeDirective, BsButtonGroupComponent, BsColorPickerComponent, BsColorPickerValueAccessor, BsToggleButtonComponent, BsToggleButtonValueAccessor, BsRangeComponent, BsRangeValueAccessor, BsListGroupComponent, BsListGroupItemComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ColorPickerComponent {

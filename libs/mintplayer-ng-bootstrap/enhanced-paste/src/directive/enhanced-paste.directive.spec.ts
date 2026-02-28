@@ -6,7 +6,7 @@ import { EnhancedPasteDirective } from './enhanced-paste.directive';
 
 @Component({
   selector: 'enhanced-paste-test',
-  standalone: false,
+  standalone: true,
   template: `<input type="number" [min]="0" [max]="59" (input)="setNumber($event, 59, null)" bsEnhancedPaste [(ngModel)]="minutes" #inputBox>`
 })
 class EnhancedPasteTestComponent {
@@ -26,8 +26,6 @@ describe('EnhancedPasteDirective', () => {
         
         // Unit to test
         EnhancedPasteDirective,
-      ],
-      declarations: [
         // Testbench
         EnhancedPasteTestComponent,
       ],

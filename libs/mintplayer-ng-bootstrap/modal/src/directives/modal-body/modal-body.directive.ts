@@ -2,7 +2,7 @@ import { Directive } from '@angular/core';
 
 @Directive({
   selector: '[bsModalBody]',
-  standalone: false,
+  standalone: true,
   host: {
     '[class.modal-body]': 'true',
   },

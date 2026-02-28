@@ -4,7 +4,7 @@ import { Component, ChangeDetectionStrategy} from '@angular/core';
   selector: 'bs-breadcrumb-item',
   templateUrl: './breadcrumb-item.component.html',
   styleUrls: ['./breadcrumb-item.component.scss'],
-  standalone: false,
+  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[class.breadcrumb-item]': 'true',

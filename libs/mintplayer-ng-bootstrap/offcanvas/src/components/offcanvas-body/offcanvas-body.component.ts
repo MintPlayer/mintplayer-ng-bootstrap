@@ -4,7 +4,7 @@ import { Component, input, ChangeDetectionStrategy} from '@angular/core';
   selector: 'bs-offcanvas-body',
   templateUrl: './offcanvas-body.component.html',
   styleUrls: ['./offcanvas-body.component.scss'],
-  standalone: false,
+  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OffcanvasBodyComponent {

@@ -1,7 +1,7 @@
 import { Component, computed, signal, ChangeDetectionStrategy} from '@angular/core';
 import { ColorTransitionAnimation } from '@mintplayer/ng-animations';
 import { FormsModule } from '@angular/forms';
-import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsToggleButtonComponent, BsToggleButtonValueAccessor } from '@mintplayer/ng-bootstrap/toggle-button';
 
 @Component({
   selector: 'demo-color-transition',
@@ -9,7 +9,7 @@ import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
   styleUrls: ['./color-transition.component.scss'],
   animations: [ColorTransitionAnimation],
   standalone: true,
-  imports: [FormsModule, BsToggleButtonModule],
+  imports: [FormsModule, BsToggleButtonComponent, BsToggleButtonValueAccessor],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ColorTransitionComponent {

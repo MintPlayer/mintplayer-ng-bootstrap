@@ -1,12 +1,14 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
-import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
 import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
-import { BsSchedulerModule } from '@mintplayer/ng-bootstrap/scheduler';
-import { BsSelectModule } from '@mintplayer/ng-bootstrap/select';
-import { MockComponent, MockDirective, MockModule } from 'ng-mocks';
+import { DatePipe, JsonPipe } from '@angular/common';
+import { MockComponent, MockDirective } from 'ng-mocks';
 import { SchedulerComponent } from './scheduler.component';
+import { BsCardComponent, BsCardHeaderComponent } from '@mintplayer/ng-bootstrap/card';
+import { BsFormComponent, BsFormGroupDirective, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
+import { BsSelectComponent, BsSelectValueAccessor, BsSelectOption } from '@mintplayer/ng-bootstrap/select';
+import { BsSchedulerComponent } from '@mintplayer/ng-bootstrap/scheduler';
 
 describe('SchedulerComponent', () => {
   let component: SchedulerComponent;
@@ -16,11 +18,13 @@ describe('SchedulerComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         FormsModule,
-        MockModule(BsFormModule),
-        MockModule(BsSchedulerModule),
+        MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
+        MockComponent(BsSchedulerComponent),
         MockDirective(BsButtonTypeDirective),
         MockComponent(BsInputGroupComponent),
-        MockModule(BsSelectModule),
+        MockComponent(BsCardComponent), MockComponent(BsCardHeaderComponent),
+        MockComponent(BsSelectComponent), MockDirective(BsSelectValueAccessor), MockDirective(BsSelectOption),
+        DatePipe, JsonPipe,
 
         // Unit to test (standalone)
         SchedulerComponent,
@@ -32,7 +36,6 @@ describe('SchedulerComponent', () => {
   beforeEach(() => {
     fixture = TestBed.createComponent(SchedulerComponent);
     component = fixture.componentInstance;
-    fixture.detectChanges();
   });
 
   it('should create', () => {

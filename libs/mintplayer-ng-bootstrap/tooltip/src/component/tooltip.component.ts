@@ -1,13 +1,16 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, TemplateRef } from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Position } from '@mintplayer/ng-bootstrap';
+import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { TOOLTIP_CONTENT } from '../providers/tooltip-content.provider';
 
 @Component({
   selector: 'bs-tooltip',
   templateUrl: './tooltip.component.html',
   styleUrls: ['./tooltip.component.scss'],
-  standalone: false,
+  standalone: true,
+  imports: [NgTemplateOutlet, BsHasOverlayComponent],
   animations: [FadeInOutAnimation],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {

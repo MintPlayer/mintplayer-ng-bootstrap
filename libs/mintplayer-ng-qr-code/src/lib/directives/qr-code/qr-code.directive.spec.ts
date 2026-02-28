@@ -4,7 +4,7 @@ import { QrCodeDirective } from './qr-code.directive';
 
 @Component({
   selector: 'qr-code-test-component',
-  standalone: false,
+  standalone: true,
   template: `
     <canvas *ngIf="value"
       [qrCode]="value"
@@ -30,11 +30,9 @@ describe('QrCodeDirective', () => {
       imports: [
         // Directive to test
         QrCodeDirective,
-      ],
-      declarations: [
         // Testbench
         QrcodeTestComponent
-      ]
+      ],
     }).compileComponents();
   });
 

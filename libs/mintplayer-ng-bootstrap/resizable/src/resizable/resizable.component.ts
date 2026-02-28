@@ -3,12 +3,14 @@ import { ResizeAction } from '../interfaces/resize-action';
 import { RESIZABLE } from '../providers/resizable.provider';
 import { ResizablePositioning } from '../types/positioning';
 import { PresetPosition } from '../interfaces/preset-position';
+import { BsResizeGlyphDirective } from '../resize-glyph/resize-glyph.directive';
 
 @Component({
   selector: 'bs-resizable',
   templateUrl: './resizable.component.html',
   styleUrls: ['./resizable.component.scss'],
-  standalone: false,
+  standalone: true,
+  imports: [BsResizeGlyphDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     { provide: RESIZABLE, useExisting: forwardRef(() => BsResizableComponent) }

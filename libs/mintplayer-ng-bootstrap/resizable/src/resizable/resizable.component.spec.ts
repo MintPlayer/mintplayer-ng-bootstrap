@@ -11,7 +11,7 @@ describe('BsResizableComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [
+      imports: [
         // Unit to test
         BsResizableComponent,
         

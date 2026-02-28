@@ -2,11 +2,11 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ShellComponent } from './shell.component';
-import { MockComponent, MockDirective, MockModule } from 'ng-mocks';
-import { BsAccordionModule } from '@mintplayer/ng-bootstrap/accordion';
+import { MockComponent, MockDirective } from 'ng-mocks';
+import { BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderComponent } from '@mintplayer/ng-bootstrap/accordion';
 import { BsButtonGroupComponent } from '@mintplayer/ng-bootstrap/button-group';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
-import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsToggleButtonComponent, BsToggleButtonGroupDirective } from '@mintplayer/ng-bootstrap/toggle-button';
 
 describe('ShellComponent', () => {
   let component: ShellComponent;
@@ -21,10 +21,10 @@ describe('ShellComponent', () => {
         ShellComponent,
 
         // Mock dependencies
-        MockModule(BsAccordionModule),
+        MockComponent(BsAccordionComponent), MockComponent(BsAccordionTabComponent), MockComponent(BsAccordionTabHeaderComponent),
         MockComponent(BsButtonGroupComponent),
         MockDirective(BsButtonTypeDirective),
-        MockModule(BsToggleButtonModule),
+        MockComponent(BsToggleButtonComponent), MockDirective(BsToggleButtonGroupDirective),
       ]
     })
     .compileComponents();

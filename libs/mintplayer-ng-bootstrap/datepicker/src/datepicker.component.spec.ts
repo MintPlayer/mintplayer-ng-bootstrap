@@ -1,8 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsDropdownModule } from '@mintplayer/ng-bootstrap/dropdown';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
-import { MockDirective, MockModule } from 'ng-mocks';
+import { MockDirective } from 'ng-mocks';
 import { BsDatepickerComponent } from './datepicker.component';
+import { BsDropdownDirective, BsDropdownMenuDirective, BsDropdownToggleDirective } from '@mintplayer/ng-bootstrap/dropdown';
 
 describe('BsDatepickerComponent', () => {
   let component: BsDatepickerComponent;
@@ -11,13 +11,12 @@ describe('BsDatepickerComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        MockModule(BsDropdownModule),
+        MockDirective(BsDropdownDirective), MockDirective(BsDropdownMenuDirective), MockDirective(BsDropdownToggleDirective),
         MockDirective(BsButtonTypeDirective),
 
         // Unit to test
         BsDatepickerComponent,
       ],
-      declarations: []
     })
     .compileComponents();
   });

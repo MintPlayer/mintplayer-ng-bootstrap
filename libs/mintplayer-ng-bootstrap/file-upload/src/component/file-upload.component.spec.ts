@@ -1,10 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MockDirective, MockModule, MockPipe } from 'ng-mocks';
+import { MockDirective, MockPipe, MockComponent } from 'ng-mocks';
 import { BsForDirective } from '@mintplayer/ng-bootstrap/for';
-import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
-import { BsProgressBarModule } from '@mintplayer/ng-bootstrap/progress-bar';
 import { BsFormatBytesPipe } from '../pipes/format-bytes/format-bytes.pipe';
 import { BsFileUploadComponent } from './file-upload.component';
+import { BsListGroupComponent, BsListGroupItemComponent } from '@mintplayer/ng-bootstrap/list-group';
+import { BsProgressComponent, BsProgressBarComponent } from '@mintplayer/ng-bootstrap/progress-bar';
 
 describe('BsFileUploadComponent', () => {
   let component: BsFileUploadComponent;
@@ -14,16 +14,14 @@ describe('BsFileUploadComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         MockDirective(BsForDirective),
-        MockModule(BsListGroupModule),
-        MockModule(BsProgressBarModule),
-      ],
-      declarations: [
+        MockComponent(BsListGroupComponent), MockComponent(BsListGroupItemComponent),
+        MockComponent(BsProgressComponent), MockComponent(BsProgressBarComponent),
         // Unit to test
         BsFileUploadComponent,
 
         // Mock dependencies
         MockPipe(BsFormatBytesPipe),
-      ]
+      ],
     })
     .compileComponents();
   });

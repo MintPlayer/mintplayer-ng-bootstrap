@@ -1,6 +1,7 @@
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { AfterViewInit, Component, ComponentFactoryResolver, ComponentRef, effect, inject, Injector, input, model, OnDestroy, TemplateRef, ChangeDetectionStrategy} from '@angular/core';
+import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { MODAL_CONTENT } from '../../providers/modal-content.provider';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
 import { BsModalComponent } from '../modal/modal.component';
@@ -9,8 +10,15 @@ import { BsModalComponent } from '../modal/modal.component';
   selector: 'bs-modal',
   templateUrl: './modal-host.component.html',
   styleUrls: ['./modal-host.component.scss'],
-  standalone: false,
+  standalone: true,
+  imports: [BsHasOverlayComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [{
+    provide: PORTAL_FACTORY,
+    useValue: (injector: Injector) => {
+      return new ComponentPortal(BsModalComponent, null, injector);
+    }
+  }],
   host: {
     '(document:keydown)': 'onKeyDown($event)',
   },

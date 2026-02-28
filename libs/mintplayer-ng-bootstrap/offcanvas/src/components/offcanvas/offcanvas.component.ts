@@ -1,4 +1,4 @@
-import { isPlatformServer } from '@angular/common';
+import { isPlatformServer, NgTemplateOutlet } from '@angular/common';
 import { Component, computed, effect, inject, output, PLATFORM_ID, signal, TemplateRef, untracked, ChangeDetectionStrategy} from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Position } from '@mintplayer/ng-bootstrap';
@@ -8,7 +8,8 @@ import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
   selector: 'bs-offcanvas-holder',
   templateUrl: './offcanvas.component.html',
   styleUrls: ['./offcanvas.component.scss'],
-  standalone: false,
+  standalone: true,
+  imports: [NgTemplateOutlet],
   animations: [FadeInOutAnimation],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

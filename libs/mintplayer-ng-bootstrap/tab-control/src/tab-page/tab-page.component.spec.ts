@@ -10,7 +10,7 @@ describe('BsTabPageComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [
+      imports: [
         // Component to test
         BsTabPageComponent,
 
@@ -40,7 +40,7 @@ describe('BsTabPageComponent', () => {
 
 @Component({
   selector: 'bs-tab-control-test',
-  standalone: false,
+  standalone: true,
   template: `
     <bs-tab-control>
       <bs-tab-page>
@@ -77,7 +77,7 @@ class BsTabControlTestComponent {}
 
 @Component({
   selector: 'bs-tab-control',
-  standalone: false,
+  standalone: true,
   template: 'tab-control works'
 })
 class BsTabControlMockComponent {

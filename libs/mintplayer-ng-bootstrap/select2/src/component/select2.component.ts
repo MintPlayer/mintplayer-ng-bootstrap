@@ -1,11 +1,27 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, effect, ElementRef, input, model, output, signal, TemplateRef, viewChild } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { HasId } from '@mintplayer/ng-bootstrap/has-id';
+import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
+import { BsDropdownDirective, BsDropdownMenuDirective } from '@mintplayer/ng-bootstrap/dropdown';
+import { BsDropdownMenuComponent, BsDropdownItemComponent } from '@mintplayer/ng-bootstrap/dropdown-menu';
+import { BsInListPipe } from '@mintplayer/ng-bootstrap/in-list';
 
 @Component({
   selector: 'bs-select2',
   templateUrl: './select2.component.html',
   styleUrls: ['./select2.component.scss'],
-  standalone: false,
+  standalone: true,
+  imports: [
+    NgTemplateOutlet,
+    FormsModule,
+    BsHasOverlayComponent,
+    BsDropdownDirective,
+    BsDropdownMenuDirective,
+    BsDropdownMenuComponent,
+    BsDropdownItemComponent,
+    BsInListPipe,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[class.focus]': 'isFocused',

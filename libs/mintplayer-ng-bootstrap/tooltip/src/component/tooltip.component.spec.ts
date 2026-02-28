@@ -3,13 +3,13 @@ import { ComponentPortal } from '@angular/cdk/portal';
 import { Component, ComponentRef, Injector, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
-import { MockComponent, MockModule } from 'ng-mocks';
+import { MockComponent } from 'ng-mocks';
 import { TOOLTIP_CONTENT } from '../providers/tooltip-content.provider';
 import { BsTooltipComponent } from './tooltip.component';
 
 @Component({
   selector: 'bs-tooltip-test',
-  standalone: false,
+  standalone: true,
   template: `
   <ng-template #tooltipTemplate>
     Hello <b>world</b>
@@ -43,14 +43,12 @@ describe('BsTooltipComponent', () => {
       imports: [
         OverlayModule,
         MockComponent(BsHasOverlayComponent),
-      ],
-      declarations: [
         // Unit to test
         BsTooltipComponent,
 
         // Testbench
         BsTooltipTestComponent,
-      ],
+      ],
     }).compileComponents();
   });
 

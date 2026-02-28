@@ -12,7 +12,8 @@ describe('ColorPickerComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [
+      imports: [
+        // Mock dependencies,
         // Unit to test
         BsColorPickerComponent,
 
@@ -20,9 +21,6 @@ describe('ColorPickerComponent', () => {
         MockComponent(BsAlphaStripComponent),
         MockComponent(BsLuminosityStripComponent),
         MockComponent(BsColorWheelComponent),
-      ],
-      imports: [
-        // Mock dependencies
       ]
     })
     .compileComponents();

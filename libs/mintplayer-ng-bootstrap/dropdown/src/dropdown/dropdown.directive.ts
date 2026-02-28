@@ -5,7 +5,7 @@ import { BsDropdownToggleDirective } from '../dropdown-toggle/dropdown-toggle.di
 
 @Directive({
   selector: '[bsDropdown]',
-  standalone: false,
+  standalone: true,
   host: {
     '(window:blur)': 'onBlur()',
   },

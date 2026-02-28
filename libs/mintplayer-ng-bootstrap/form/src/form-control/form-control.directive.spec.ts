@@ -1,11 +1,10 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsFormControlDirective } from './form-control.directive';
-import { BsFormModule } from '../form.module';
 
 @Component({
   selector: 'test-host',
-  standalone: false,
+  standalone: true,
   template: `<div></div>`,
 })
 class TestHostComponent {}
@@ -15,8 +14,10 @@ describe('BsFormControlDirective', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [BsFormModule],
-      declarations: [TestHostComponent],
+      imports: [
+        BsFormControlDirective,
+        TestHostComponent
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(TestHostComponent);

@@ -2,7 +2,7 @@ import { Directive } from '@angular/core';
 
 @Directive({
   selector: '[bsModalHeader]',
-  standalone: false,
+  standalone: true,
   host: {
     '[class.modal-header]': 'true',
   },

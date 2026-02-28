@@ -1,6 +1,6 @@
 import { Component, DestroyRef, inject, input, signal, ChangeDetectionStrategy} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
-import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
+import { BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
 
 @Component({
   selector: "demo-hello",
@@ -42,7 +42,7 @@ export class HelloComponent {
   styleUrls: ['./async-host-binding.component.scss'],
   standalone: true,
   imports: [
-    BsAlertModule,
+    BsAlertComponent,
     HelloComponent
   ]
 })

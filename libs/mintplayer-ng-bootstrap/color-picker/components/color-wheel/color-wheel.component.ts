@@ -7,7 +7,7 @@ import { RgbColor } from '../../interfaces/rgb-color';
   selector: 'bs-color-wheel',
   templateUrl: './color-wheel.component.html',
   styleUrls: ['./color-wheel.component.scss'],
-  standalone: false,
+  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     'class': 'position-relative',

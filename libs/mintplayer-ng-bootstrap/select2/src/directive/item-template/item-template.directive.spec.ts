@@ -7,7 +7,7 @@ import { BsSelect2Component } from '../../component/select2.component';
 
 @Component({
   selector: 'item-template-test-component',
-  standalone: false,
+  standalone: true,
   template: `
     <select2>
       <ng-template itemTemplate>
@@ -36,14 +36,12 @@ describe('BsItemTemplateDirective', () => {
         
         // Mock dependencies
         MockBsSelect2Component,
-      ],
-      declarations: [
         // Unit to test
         BsItemTemplateDirective,
         
         // Testbench
         BsItemTemplateTestComponent,
-      ],
+      ],
       providers: [{
         provide: BsSelect2Component,
         useClass: MockBsSelect2Component

@@ -5,7 +5,8 @@ import { BsItalicPipe } from './italic.pipe';
 
 @Component({
   selector: 'bs-italic-test',
-  standalone: false,
+  standalone: true,
+  imports: [BsItalicPipe],
   template: `<span [innerHTML]="'*Hello world*' | bsItalic"></span>`
 })
 class BsItalicTestComponent {}
@@ -19,8 +20,6 @@ describe('BsItalicPipe', () => {
       imports: [
         // Pipe to test
         BsItalicPipe,
-      ],
-      declarations: [
         // Testbench
         BsItalicTestComponent
       ],

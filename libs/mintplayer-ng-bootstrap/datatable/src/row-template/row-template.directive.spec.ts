@@ -9,8 +9,7 @@ describe('BsRowTemplateDirective', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [],
-      declarations: [
+      imports: [
         // Directive to test
         BsRowTemplateDirective,
 
@@ -19,7 +18,7 @@ describe('BsRowTemplateDirective', () => {
 
         // Testbench
         BsRowTemplateTestComponent,
-      ]
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BsRowTemplateTestComponent);
@@ -47,7 +46,7 @@ interface Artist {
 
 @Component({
   selector: 'bs-datatable',
-  standalone: false,
+  standalone: true,
   template: `<ng-content></ng-content>`,
   providers: [{ provide: BsDatatableComponent, useExisting: MockBsDatatableComponent }]
 })
@@ -58,7 +57,8 @@ class MockBsDatatableComponent<TData> {
 
 @Component({
   selector: 'bs-row-template-test',
-  standalone: false,
+  standalone: true,
+  imports: [MockBsDatatableComponent, BsRowTemplateDirective],
   template: `
     <bs-datatable #table>
       <tr *bsRowTemplate="let artist of artists">

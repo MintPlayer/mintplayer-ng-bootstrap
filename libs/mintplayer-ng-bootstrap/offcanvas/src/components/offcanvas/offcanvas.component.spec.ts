@@ -3,13 +3,13 @@ import { ComponentPortal } from '@angular/cdk/portal';
 import { Component, Injector, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
-import { MockComponent, MockModule } from 'ng-mocks';
+import { MockComponent } from 'ng-mocks';
 import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
 import { BsOffcanvasComponent } from './offcanvas.component';
 
 @Component({
   selector: 'offcanvas-test-component',
-  standalone: false,
+  standalone: true,
   template: `
     <ng-template #offcanvasTemplate let-offcanvas>
       <div>Notifications</div>
@@ -42,14 +42,12 @@ describe('BsOffcanvasComponent', () => {
       imports: [
         OverlayModule,
         MockComponent(BsHasOverlayComponent),
-      ],
-      declarations: [
         // Unit to test
         BsOffcanvasComponent,
       
         // Testbench
         OffcanvasTestComponent
-      ]
+      ],
     })
     .compileComponents();
   });

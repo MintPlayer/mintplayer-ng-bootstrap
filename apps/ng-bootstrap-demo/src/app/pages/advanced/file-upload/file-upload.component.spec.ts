@@ -1,9 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsFileUploadModule } from '@mintplayer/ng-bootstrap/file-upload';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
-import { BsProgressBarModule } from '@mintplayer/ng-bootstrap/progress-bar';
-import { MockModule } from 'ng-mocks';
+import { MockComponent, MockDirective } from 'ng-mocks';
 import { FileUploadComponent } from './file-upload.component';
+import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
+import { BsProgressComponent, BsProgressBarComponent } from '@mintplayer/ng-bootstrap/progress-bar';
+import { BsFileUploadComponent, BsFileUploadTemplateDirective } from '@mintplayer/ng-bootstrap/file-upload';
 
 describe('FileUploadComponent', () => {
   let component: FileUploadComponent;
@@ -12,9 +12,9 @@ describe('FileUploadComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        MockModule(BsGridModule),
-        MockModule(BsFileUploadModule),
-        MockModule(BsProgressBarModule),
+        MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
+        MockComponent(BsFileUploadComponent), MockDirective(BsFileUploadTemplateDirective),
+        MockComponent(BsProgressComponent), MockComponent(BsProgressBarComponent),
         FileUploadComponent,
       ]
     })

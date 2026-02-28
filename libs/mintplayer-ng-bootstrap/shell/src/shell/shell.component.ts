@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, ElementRef, input, TemplateRef, viewChild } from '@angular/core';
 import { BsShellState } from '../shell-state';
 import { Breakpoint } from '@mintplayer/ng-bootstrap';
@@ -6,7 +7,8 @@ import { Breakpoint } from '@mintplayer/ng-bootstrap';
   selector: 'bs-shell',
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.scss',
-  standalone: false,
+  standalone: true,
+  imports: [NgTemplateOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsShellComponent {

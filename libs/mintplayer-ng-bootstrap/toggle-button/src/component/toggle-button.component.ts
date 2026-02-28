@@ -6,7 +6,7 @@ import { BsCheckStyle } from '../types/check-style';
   selector: 'bs-toggle-button',
   templateUrl: './toggle-button.component.html',
   styleUrls: ['./toggle-button.component.scss'],
-  standalone: false,
+  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     'class': 'd-inline-block',

@@ -4,7 +4,8 @@ import { BsTrustHtmlPipe } from './trust-html.pipe';
 
 @Component({
   selector: 'bs-trust-html-test',
-  standalone: false,
+  standalone: true,
+  imports: [BsTrustHtmlPipe],
   template: `<span [innerHTML]="html | bsTrustHtml"></span>`
 })
 class BsTrustHtmlTestComponent {
@@ -17,8 +18,10 @@ describe('BsTrustHtmlPipe', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [BsTrustHtmlPipe],
-      declarations: [BsTrustHtmlTestComponent],
+      imports: [
+        BsTrustHtmlPipe,
+        BsTrustHtmlTestComponent
+      ],
     }).compileComponents();
   });
 

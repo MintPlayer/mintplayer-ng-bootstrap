@@ -4,7 +4,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   selector: 'bs-toast',
   templateUrl: './toast.component.html',
   styleUrls: ['./toast.component.scss'],
-  standalone: false,
+  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsToastComponent {

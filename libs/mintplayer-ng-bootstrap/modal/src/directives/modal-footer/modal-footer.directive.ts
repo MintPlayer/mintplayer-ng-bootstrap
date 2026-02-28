@@ -2,7 +2,7 @@ import { Directive } from '@angular/core';
 
 @Directive({
   selector: '[bsModalFooter]',
-  standalone: false,
+  standalone: true,
   host: {
     '[class.modal-footer]': 'true',
   },

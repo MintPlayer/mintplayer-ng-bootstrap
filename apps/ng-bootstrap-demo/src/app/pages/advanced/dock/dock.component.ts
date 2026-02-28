@@ -3,7 +3,7 @@ import { Component, signal, viewChild, ChangeDetectionStrategy} from '@angular/c
 import { BsBadgeComponent } from '@mintplayer/ng-bootstrap/badge';
 import {
   BsDockManagerComponent,
-  BsDockModule,
+  BsDockPaneComponent,
   DockLayoutSnapshot,
 } from '@mintplayer/ng-bootstrap/dock';
 import { Color } from '@mintplayer/ng-bootstrap';
@@ -13,7 +13,7 @@ import { Color } from '@mintplayer/ng-bootstrap';
   templateUrl: './dock.component.html',
   styleUrls: ['./dock.component.scss'],
   standalone: true,
-  imports: [CommonModule, BsDockModule, BsBadgeComponent],
+  imports: [CommonModule, BsDockManagerComponent, BsDockPaneComponent, BsBadgeComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DockComponent {

@@ -6,7 +6,7 @@ import { OverlayModule } from '@angular/cdk/overlay';
 
 @Component({
   selector: 'bs-dropdown-menu-test',
-  standalone: false,
+  standalone: true,
   template: `
     <div bsDropdown [closeOnClickOutside]="true">
       <button bsDropdownToggle class="btn btn-primary">Dropdown</button>
@@ -20,7 +20,7 @@ class BsDropdownMenuTestComponent {
 
 @Directive({
   selector: '[bsDropdownToggle]',
-  standalone: false,
+  standalone: true,
 })
 class BsDropdownToggleMockDirective {
 
@@ -34,7 +34,7 @@ class BsDropdownToggleMockDirective {
 
 @Directive({
   selector: '[bsDropdown]',
-  standalone: false,
+  standalone: true,
   providers: [
     { provide: BsDropdownDirective, useExisting: BsDropdownMockDirective }
   ]
@@ -58,9 +58,7 @@ describe('BsDropdownMenuDirective', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        OverlayModule
-      ],
-      declarations: [
+        OverlayModule,
         // Directive to test
         BsDropdownMenuDirective,
 
@@ -70,7 +68,7 @@ describe('BsDropdownMenuDirective', () => {
 
         // Testbench
         BsDropdownMenuTestComponent
-      ]
+      ],
     })
     .compileComponents();
   });

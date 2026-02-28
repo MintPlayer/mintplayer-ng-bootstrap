@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   contentChildren,
+  CUSTOM_ELEMENTS_SCHEMA,
   effect,
   ElementRef,
   inject,
@@ -10,7 +11,7 @@ import {
   output,
   viewChild,
 } from '@angular/core';
-import { DOCUMENT } from '@angular/common';
+import { DOCUMENT, NgTemplateOutlet } from '@angular/common';
 import {
   DockLayout,
   DockLayoutNode,
@@ -23,7 +24,9 @@ import { MintDockManagerElement } from '../web-components/mint-dock-manager.elem
   selector: 'bs-dock-manager',
   templateUrl: './dock-manager.component.html',
   styleUrls: ['./dock-manager.component.scss'],
-  standalone: false,
+  standalone: true,
+  imports: [NgTemplateOutlet],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsDockManagerComponent implements AfterViewInit {

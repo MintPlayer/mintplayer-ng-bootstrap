@@ -4,7 +4,7 @@ import { BsOffcanvasHostComponent } from '../../components';
 
 @Directive({
   selector: '[bsOffcanvasPush]',
-  standalone: false,
+  standalone: true,
 })
 export class BsOffcanvasPushDirective {
   private element = inject<ElementRef<HTMLElement>>(ElementRef);

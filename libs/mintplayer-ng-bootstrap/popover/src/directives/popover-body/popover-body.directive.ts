@@ -2,7 +2,7 @@ import { Directive } from '@angular/core';
 
 @Directive({
   selector: '[bsPopoverBody]',
-  standalone: false,
+  standalone: true,
   host: {
     '[class.popover-body]': 'true',
   },

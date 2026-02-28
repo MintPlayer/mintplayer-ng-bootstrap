@@ -22,7 +22,7 @@ class BsPlaceholderMockComponent {
 
 @Component({
   selector: 'bs-placeholder-test',
-  standalone: false,
+  standalone: true,
   template: `
     <p class="card-text" [bsPlaceholder]="isLoadingValue">
       <span bsPlaceholderField>{{ isLoadingValue ? '' : lines[0] }}</span>
@@ -42,14 +42,12 @@ describe('BsPlaceholderFieldDirective', () => {
       imports: [
         // Mock dependencies
         BsPlaceholderMockComponent,
-      ],
-      declarations: [
         // Unit to test
         BsPlaceholderFieldDirective,
 
         // Testbench
         BsPlaceholderTestComponent,
-      ],
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BsPlaceholderTestComponent);

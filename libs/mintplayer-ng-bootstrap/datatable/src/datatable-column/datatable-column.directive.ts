@@ -2,7 +2,7 @@ import { Directive, inject, Input, TemplateRef } from '@angular/core';
 
 @Directive({
   selector: '[bsDatatableColumn]',
-  standalone: false,
+  standalone: true,
 })
 export class BsDatatableColumnDirective {
   templateRef = inject(TemplateRef);

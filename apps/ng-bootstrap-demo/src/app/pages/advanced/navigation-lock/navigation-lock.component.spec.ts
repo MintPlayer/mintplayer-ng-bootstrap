@@ -2,11 +2,11 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
-import { MockModule } from 'ng-mocks';
-import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
-import { BsNavigationLockModule } from '@mintplayer/ng-bootstrap/navigation-lock';
+import { MockComponent, MockDirective } from 'ng-mocks';
 
 import { NavigationLockComponent } from './navigation-lock.component';
+import { BsToggleButtonComponent, BsToggleButtonGroupDirective, BsToggleButtonValueAccessor } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsNavigationLockDirective } from '@mintplayer/ng-bootstrap/navigation-lock';
 
 describe('NavigationLockComponent', () => {
   let component: NavigationLockComponent;
@@ -18,8 +18,8 @@ describe('NavigationLockComponent', () => {
         NoopAnimationsModule,
         RouterTestingModule,
         FormsModule,
-        MockModule(BsToggleButtonModule),
-        MockModule(BsNavigationLockModule),
+        MockComponent(BsToggleButtonComponent), MockDirective(BsToggleButtonValueAccessor), MockDirective(BsToggleButtonGroupDirective),
+        MockDirective(BsNavigationLockDirective),
         NavigationLockComponent,
       ]
     })

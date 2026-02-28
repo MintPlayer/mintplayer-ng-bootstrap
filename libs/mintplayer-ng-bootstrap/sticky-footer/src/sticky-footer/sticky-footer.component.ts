@@ -6,7 +6,8 @@ import { BsObserveSizeDirective } from '@mintplayer/ng-swiper/observe-size';
   selector: 'bs-sticky-footer',
   templateUrl: './sticky-footer.component.html',
   styleUrls: ['./sticky-footer.component.scss'],
-  standalone: false,
+  standalone: true,
+  imports: [BsObserveSizeDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsStickyFooterComponent implements AfterViewInit {

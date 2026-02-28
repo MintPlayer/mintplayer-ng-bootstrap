@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
+import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsWordCountPipe } from '@mintplayer/ng-bootstrap/word-count';
 
 @Component({
@@ -8,7 +8,7 @@ import { BsWordCountPipe } from '@mintplayer/ng-bootstrap/word-count';
   templateUrl: './word-count.component.html',
   styleUrls: ['./word-count.component.scss'],
   standalone: true,
-  imports: [FormsModule, BsFormModule, BsWordCountPipe],
+  imports: [FormsModule, BsFormComponent, BsFormControlDirective, BsWordCountPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WordCountComponent {

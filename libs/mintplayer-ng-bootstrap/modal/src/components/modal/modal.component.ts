@@ -1,4 +1,5 @@
 import { Component, inject, TemplateRef, ChangeDetectionStrategy} from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { EnterFromTopAnimation, FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { MODAL_CONTENT } from '../../providers/modal-content.provider';
 
@@ -6,7 +7,8 @@ import { MODAL_CONTENT } from '../../providers/modal-content.provider';
   selector: 'bs-modal-content',
   templateUrl: './modal.component.html',
   styleUrls: ['./modal.component.scss'],
-  standalone: false,
+  standalone: true,
+  imports: [NgTemplateOutlet],
   animations: [FadeInOutAnimation, EnterFromTopAnimation],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

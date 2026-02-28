@@ -4,7 +4,7 @@ import { Component, input, ChangeDetectionStrategy} from '@angular/core';
   selector: 'bs-progress',
   templateUrl: './progress.component.html',
   styleUrls: ['./progress.component.scss'],
-  standalone: false,
+  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[style.height.px]': 'height()',

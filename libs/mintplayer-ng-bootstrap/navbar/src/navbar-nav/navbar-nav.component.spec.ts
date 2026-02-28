@@ -24,9 +24,6 @@ describe('BsNavbarNavComponent', () => {
         // Pages
         PageAComponent,
         PageBCComponent,
-
-      ],
-      declarations: [
         // Component to test
         BsNavbarNavComponent,
 
@@ -37,7 +34,7 @@ describe('BsNavbarNavComponent', () => {
 
         // Testbench
         BsNavbarNavTestComponent
-      ],
+      ],
       providers: [
         { provide: BsNavbarComponent, useClass: BsNavbarMockComponent }
       ]
@@ -58,7 +55,7 @@ describe('BsNavbarNavComponent', () => {
 
 @Component({
   selector: 'bs-navbar-test',
-  standalone: false,
+  standalone: true,
   template: `
   <bs-navbar>
     <bs-navbar-nav>
@@ -81,7 +78,7 @@ class BsNavbarNavTestComponent {
 
 @Component({
   selector: 'bs-navbar',
-  standalone: false,
+  standalone: true,
   template: `
     <nav>
       <div>
@@ -107,7 +104,7 @@ class BsNavbarMockComponent {
 
 @Component({
   selector: 'bs-navbar-dropdown',
-  standalone: false,
+  standalone: true,
   template: `
     <ul>
       <ng-content></ng-content>
@@ -118,7 +115,7 @@ class BsNavbarDropdownMockComponent {
 
 @Component({
   selector: 'bs-navbar-item',
-  standalone: false,
+  standalone: true,
   template: `
     <li>
       <ng-content></ng-content>

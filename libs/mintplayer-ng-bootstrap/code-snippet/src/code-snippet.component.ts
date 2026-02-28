@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, effect, input, output, signal, TemplateRef, viewChild } from '@angular/core';
 import { BsCopyDirective } from '@mintplayer/ng-bootstrap/copy';
-import { BsOffcanvasModule } from '@mintplayer/ng-bootstrap/offcanvas';
+import { BsOffcanvasHostComponent, BsOffcanvasContentDirective } from '@mintplayer/ng-bootstrap/offcanvas';
 import { HighlightModule } from 'ngx-highlightjs';
 import { HighlightResult } from 'highlight.js';
 
@@ -9,7 +9,7 @@ import { HighlightResult } from 'highlight.js';
   standalone: true,
   templateUrl: './code-snippet.component.html',
   styleUrls: ['./code-snippet.component.scss'],
-  imports: [BsCopyDirective, BsOffcanvasModule, HighlightModule],
+  imports: [BsCopyDirective, BsOffcanvasHostComponent, BsOffcanvasContentDirective, HighlightModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsCodeSnippetComponent {

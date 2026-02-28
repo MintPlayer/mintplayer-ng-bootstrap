@@ -3,9 +3,9 @@ import { FormsModule } from '@angular/forms';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsCloseComponent } from '@mintplayer/ng-bootstrap/close';
-import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
+import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
-import { BsToastModule, BsToastService } from '@mintplayer/ng-bootstrap/toast';
+import { BsToastComponent, BsToastBodyComponent, BsToastHeaderComponent, BsToastCloseDirective, BsToastService } from '@mintplayer/ng-bootstrap/toast';
 import { FocusOnLoadDirective } from '@mintplayer/ng-focus-on-load';
 
 @Component({
@@ -13,7 +13,7 @@ import { FocusOnLoadDirective } from '@mintplayer/ng-focus-on-load';
   templateUrl: './toast.component.html',
   styleUrls: ['./toast.component.scss'],
   standalone: true,
-  imports: [FormsModule, FocusOnLoadDirective, BsFormModule, BsToastModule, BsCloseComponent, BsInputGroupComponent, BsButtonTypeDirective],
+  imports: [FormsModule, FocusOnLoadDirective, BsFormComponent, BsFormControlDirective, BsToastComponent, BsToastBodyComponent, BsToastHeaderComponent, BsToastCloseDirective, BsCloseComponent, BsInputGroupComponent, BsButtonTypeDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ToastComponent {

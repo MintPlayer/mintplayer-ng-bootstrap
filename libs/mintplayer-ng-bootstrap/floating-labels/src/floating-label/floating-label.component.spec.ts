@@ -6,7 +6,7 @@ import { BsFloatingLabelComponent } from './floating-label.component';
 
 @Component({
   selector: 'bs-floating-label-test',
-  standalone: false,
+  standalone: true,
   template: `
     <bs-form>
       <bs-floating-label>
@@ -26,8 +26,6 @@ describe('BsFloatingLabelComponent', () => {
       imports: [
         // Unit to test
         BsFloatingLabelComponent,
-      ],
-      declarations: [
         // Mock dependencies
         MockComponent(BsFormComponent),
       

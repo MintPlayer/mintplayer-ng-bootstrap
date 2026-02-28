@@ -4,7 +4,7 @@ import { AbstractType } from "../types/abstract.type";
 
 @Directive({
   selector: '[bsInstanceof]',
-  standalone: false,
+  standalone: true,
 })
 export class BsInstanceOfDirective {
   private _defaultViews!: SwitchView[];

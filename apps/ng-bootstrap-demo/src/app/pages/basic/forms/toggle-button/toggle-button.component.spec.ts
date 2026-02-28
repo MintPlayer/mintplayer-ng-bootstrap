@@ -1,9 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
-import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
-import { MockModule } from 'ng-mocks';
+import { MockComponent, MockDirective } from 'ng-mocks';
 import { ToggleButtonComponent } from './toggle-button.component';
+import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
+import { BsToggleButtonComponent, BsToggleButtonGroupDirective, BsToggleButtonValueAccessor } from '@mintplayer/ng-bootstrap/toggle-button';
 
 describe('ToggleButtonComponent', () => {
   let component: ToggleButtonComponent;
@@ -13,8 +13,8 @@ describe('ToggleButtonComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         FormsModule,
-        MockModule(BsGridModule),
-        MockModule(BsToggleButtonModule),
+        MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
+        MockComponent(BsToggleButtonComponent), MockDirective(BsToggleButtonValueAccessor), MockDirective(BsToggleButtonGroupDirective),
         ToggleButtonComponent,
       ]
     })

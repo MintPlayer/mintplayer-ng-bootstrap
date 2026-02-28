@@ -4,7 +4,7 @@ import { Component, input, output, ChangeDetectionStrategy} from '@angular/core'
   selector: 'bs-form',
   templateUrl: './form.component.html',
   styleUrls: ['./form.component.scss'],
-  standalone: false,
+  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsFormComponent {

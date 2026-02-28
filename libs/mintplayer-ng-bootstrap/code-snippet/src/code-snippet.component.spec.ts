@@ -1,11 +1,12 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsCopyDirective } from '@mintplayer/ng-bootstrap/copy';
-import { BsOffcanvasModule } from '@mintplayer/ng-bootstrap/offcanvas';
-import { MockDirective, MockModule } from 'ng-mocks';
+import { MockDirective, MockModule, MockComponent } from 'ng-mocks';
 import { HighlightModule, HighlightLoader, HIGHLIGHT_OPTIONS } from 'ngx-highlightjs';
 
 import { BsCodeSnippetComponent } from './code-snippet.component';
+import { BsOffcanvasHostComponent } from '@mintplayer/ng-bootstrap/offcanvas';
+import { BsOffcanvasContentDirective } from '@mintplayer/ng-bootstrap/offcanvas';
 
 // Mock the highlight loader to prevent the "Highlight.js library was not imported!" error
 class MockHighlightLoader {
@@ -24,7 +25,7 @@ describe('BsCodeSnippetComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         MockDirective(BsCopyDirective),
-        MockModule(BsOffcanvasModule),
+        MockComponent(BsOffcanvasHostComponent), MockDirective(BsOffcanvasContentDirective),
         MockModule(HighlightModule),
 
         // Unit to test

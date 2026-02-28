@@ -2,7 +2,7 @@ import { Directive } from '@angular/core';
 
 @Directive({
   selector: '[bsPopoverHeader]',
-  standalone: false,
+  standalone: true,
   host: {
     '[class.popover-header]': 'true',
   },

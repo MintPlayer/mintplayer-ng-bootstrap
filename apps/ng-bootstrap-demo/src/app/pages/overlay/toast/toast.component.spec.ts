@@ -1,13 +1,13 @@
 import { OverlayModule } from '@angular/cdk/overlay';
 import { Component, ElementRef, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsToastModule, BsToastService } from '@mintplayer/ng-bootstrap/toast';
-import { MockModule } from 'ng-mocks';
+import { BsToastService, BsToastComponent, BsToastHeaderComponent, BsToastBodyComponent, BsToastContainerComponent, BsToastCloseDirective } from '@mintplayer/ng-bootstrap/toast';
+import { MockComponent, MockDirective } from 'ng-mocks';
 import { ToastComponent } from './toast.component';
 
 @Component({
   selector: 'demo-toast-test',
-  standalone: false,
+  standalone: true,
   template: `
     <ng-template #toastTemplate let-message="message" let-isVisible="isVisible">
       <bs-toast [isVisible]="isVisible">
@@ -43,15 +43,16 @@ describe('ToastComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         OverlayModule,
-        MockModule(BsToastModule),
+        MockComponent(BsToastComponent), MockComponent(BsToastHeaderComponent), MockComponent(BsToastBodyComponent), MockComponent(BsToastContainerComponent), MockDirective(BsToastCloseDirective),
 
         // Unit to test (standalone)
         ToastComponent,
-      ],
-      declarations: [
         // Testbench
         BsToastTestComponent
-      ]
+      ],
+      providers: [
+        { provide: BsToastService, useValue: { pushToast: () => {}, close: () => {} } },
+      ],
     })
     .compileComponents();
   });

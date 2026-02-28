@@ -1,11 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, model, output, viewChild } from '@angular/core';
 import { HS } from '../../interfaces/hs';
+import { BsSliderComponent, BsThumbDirective, BsTrackDirective } from '../slider/slider.component';
 
 @Component({
   selector: 'bs-alpha-strip',
   templateUrl: './alpha-strip.component.html',
   styleUrls: ['./alpha-strip.component.scss'],
-  standalone: false,
+  standalone: true,
+  imports: [BsSliderComponent, BsThumbDirective, BsTrackDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsAlphaStripComponent {

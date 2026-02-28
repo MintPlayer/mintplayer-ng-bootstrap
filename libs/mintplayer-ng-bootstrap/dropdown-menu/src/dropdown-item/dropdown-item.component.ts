@@ -4,7 +4,7 @@ import { Component, input, ChangeDetectionStrategy} from '@angular/core';
   selector: 'bs-dropdown-item',
   templateUrl: './dropdown-item.component.html',
   styleUrls: ['./dropdown-item.component.scss'],
-  standalone: false,
+  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsDropdownItemComponent {

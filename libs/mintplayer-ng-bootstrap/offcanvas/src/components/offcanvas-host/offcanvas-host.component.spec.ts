@@ -8,7 +8,7 @@ import { BsOffcanvasComponent } from '../offcanvas/offcanvas.component';
 import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { MockComponent, MockModule } from 'ng-mocks';
+import { MockComponent } from 'ng-mocks';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { Position } from '@mintplayer/ng-bootstrap';
 
@@ -22,8 +22,6 @@ describe('BsOffcanvasHostComponent', () => {
         CommonModule,
         OverlayModule,
         MockComponent(BsHasOverlayComponent),
-      ],
-      declarations: [
         // Unit to test
         BsOffcanvasHostComponent,
       
@@ -35,7 +33,7 @@ describe('BsOffcanvasHostComponent', () => {
 
         // Testbench
         BsOffcanvasTestComponent,
-      ],
+      ],
       providers: [{
         provide: PORTAL_FACTORY,
         useValue: (injector: Injector) => {
@@ -61,7 +59,7 @@ type OffcanvasPosition = 'top' | 'bottom' | 'start' | 'end';
 
 @Component({
   selector: 'bs-offcanvas-test',
-  standalone: false,
+  standalone: true,
   template: `
     <bs-offcanvas [(isVisible)]="offcanvasVisible" [position]="position" [hasBackdrop]="true" (backdropClick)="isOffcanvasVisible = false">
         <div *bsOffcanvasContent>
@@ -81,7 +79,7 @@ class BsOffcanvasTestComponent {
 
 @Directive({
   selector: '[bsOffcanvasContent]',
-  standalone: false,
+  standalone: true,
 })
 class BsOffcanvasContentMockDirective {
   constructor(offcanvasHost: BsOffcanvasHostComponent, template: TemplateRef<any>) {
@@ -91,7 +89,7 @@ class BsOffcanvasContentMockDirective {
 
 @Component({
   selector: 'bs-offcanvas-holder',
-  standalone: false,
+  standalone: true,
   template: `
     <div>
       <ng-container *ngTemplateOutlet="contentTemplate"></ng-container>
@@ -113,7 +111,7 @@ class BsOffcanvasMockComponent {
 
 @Component({
   selector: 'bs-offcanvas-header',
-  standalone: false,
+  standalone: true,
   template: `
     <div class="offcanvas-header">
       <ng-content></ng-content>
@@ -123,7 +121,7 @@ class BsOffcanvasHeaderMockComponent {}
 
 @Component({
   selector: 'bs-offcanvas-body',
-  standalone: false,
+  standalone: true,
   template: `
     <div class="offcanvas-body">
       <ng-content></ng-content>

@@ -1,8 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
-import { MockModule } from 'ng-mocks';
+import { MockComponent } from 'ng-mocks';
 import { BsTreeviewComponent } from './treeview.component';
+import { BsListGroupComponent, BsListGroupItemComponent } from '@mintplayer/ng-bootstrap/list-group';
 
 describe('BsTreeviewComponent', () => {
   let component: BsTreeviewComponent;
@@ -12,9 +12,9 @@ describe('BsTreeviewComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         NoopAnimationsModule,
-        MockModule(BsListGroupModule)
-      ],
-      declarations: [BsTreeviewComponent],
+        MockComponent(BsListGroupComponent), MockComponent(BsListGroupItemComponent),
+        BsTreeviewComponent
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BsTreeviewComponent);

@@ -4,7 +4,7 @@ import { ChangeDetectionStrategy, Component, input, model } from '@angular/core'
   selector: 'bs-placeholder',
   templateUrl: './placeholder.component.html',
   styleUrls: ['./placeholder.component.scss'],
-  standalone: false,
+  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsPlaceholderComponent {

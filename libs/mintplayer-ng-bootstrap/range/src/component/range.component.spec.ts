@@ -8,7 +8,7 @@ describe('BsRangeComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [BsRangeComponent],
+      imports: [BsRangeComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BsRangeComponent);

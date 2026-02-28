@@ -1,12 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
-import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
 import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
-import { MockComponent, MockDirective, MockModule } from 'ng-mocks';
+import { MockComponent, MockDirective } from 'ng-mocks';
 import { AlertComponent } from './alert.component';
+import { BsFormComponent, BsFormGroupDirective, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
+import { BsAlertComponent, BsAlertCloseComponent } from '@mintplayer/ng-bootstrap/alert';
 
 describe('AlertComponent', () => {
   let component: AlertComponent;
@@ -17,8 +17,8 @@ describe('AlertComponent', () => {
       imports: [
         NoopAnimationsModule,
         FormsModule,
-        MockModule(BsFormModule),
-        MockModule(BsAlertModule),
+        MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
+        MockComponent(BsAlertComponent), MockComponent(BsAlertCloseComponent),
         MockComponent(BsInputGroupComponent),
         MockDirective(BsButtonTypeDirective),
 

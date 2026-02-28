@@ -21,7 +21,7 @@ class BsObserveSizeDirectiveStub {
 
 @Component({
   selector: 'sticky-footer-test',
-  standalone: false,
+  standalone: true,
   template: `
     <div bsStickyFooterParent>
       <bs-sticky-footer>
@@ -40,8 +40,6 @@ describe('BsStickyFooterComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         BsObserveSizeDirectiveStub,
-      ],
-      declarations: [
         // Unit test
         BsStickyFooterComponent,
 
@@ -50,7 +48,7 @@ describe('BsStickyFooterComponent', () => {
 
         // Testbench
         BsStickyFooterTestComponent
-      ],
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BsStickyFooterTestComponent);

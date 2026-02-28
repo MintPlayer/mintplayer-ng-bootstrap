@@ -11,7 +11,7 @@ const NAVBAR_ANIMATION_DURATION = 300;
   selector: 'bs-navbar-item',
   templateUrl: './navbar-item.component.html',
   styleUrls: ['./navbar-item.component.scss'],
-  standalone: false,
+  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsNavbarItemComponent implements AfterContentInit, AfterContentChecked {

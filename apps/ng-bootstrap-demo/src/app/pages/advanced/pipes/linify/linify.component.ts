@@ -1,10 +1,10 @@
 import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
+import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsLinifyPipe } from '@mintplayer/ng-bootstrap/linify';
-import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
-import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsListGroupComponent, BsListGroupItemComponent } from '@mintplayer/ng-bootstrap/list-group';
+import { BsToggleButtonComponent, BsToggleButtonValueAccessor } from '@mintplayer/ng-bootstrap/toggle-button';
 import { dedent } from 'ts-dedent';
 
 @Component({
@@ -12,7 +12,7 @@ import { dedent } from 'ts-dedent';
   templateUrl: './linify.component.html',
   styleUrls: ['./linify.component.scss'],
   standalone: true,
-  imports: [FormsModule, BsFormModule, BsGridModule, BsLinifyPipe, BsListGroupModule, BsToggleButtonModule],
+  imports: [FormsModule, BsFormComponent, BsFormControlDirective, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsLinifyPipe, BsListGroupComponent, BsListGroupItemComponent, BsToggleButtonComponent, BsToggleButtonValueAccessor],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LinifyComponent {

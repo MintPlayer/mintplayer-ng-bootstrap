@@ -1,4 +1,3 @@
-export * from './navbar.module';
 export * from './navbar/navbar.component';
 export * from './navbar-brand/navbar-brand.component';
 export * from './navbar-nav/navbar-nav.component';

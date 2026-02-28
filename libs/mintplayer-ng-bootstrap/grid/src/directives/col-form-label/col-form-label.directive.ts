@@ -2,7 +2,7 @@ import { Directive } from '@angular/core';
 
 @Directive({
   selector: '[bsColFormLabel]',
-  standalone: false,
+  standalone: true,
   host: {
     '[class.col-form-label]': 'true',
   },

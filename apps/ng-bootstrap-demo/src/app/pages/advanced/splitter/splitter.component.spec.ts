@@ -1,9 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
-import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
-import { MockModule } from 'ng-mocks';
+import { MockComponent, MockDirective } from 'ng-mocks';
 
 import { SplitterComponent } from './splitter.component';
+import { BsToggleButtonComponent, BsToggleButtonGroupDirective, BsToggleButtonValueAccessor } from '@mintplayer/ng-bootstrap/toggle-button';
 
 describe('SplitterComponent', () => {
   let component: SplitterComponent;
@@ -13,7 +13,7 @@ describe('SplitterComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         FormsModule,
-        MockModule(BsToggleButtonModule),
+        MockComponent(BsToggleButtonComponent), MockDirective(BsToggleButtonValueAccessor), MockDirective(BsToggleButtonGroupDirective),
         SplitterComponent,
       ]
     })

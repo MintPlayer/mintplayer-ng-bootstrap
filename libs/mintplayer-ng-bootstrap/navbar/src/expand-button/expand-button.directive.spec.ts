@@ -9,7 +9,7 @@ describe('BsExpandButtonDirective', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [
+      imports: [
         // Directive to test
         BsExpandButtonDirective,
 
@@ -40,7 +40,7 @@ describe('BsExpandButtonDirective', () => {
 
 @Component({
   selector: 'bs-navbar',
-  standalone: false,
+  standalone: true,
   template: `
     <nav>
       <div>
@@ -56,7 +56,8 @@ class BsNavbarMockComponent {
 
 @Component({
   selector: 'bs-nav-link-test',
-  standalone: false,
+  standalone: true,
+  imports: [BsNavbarMockComponent, BsExpandButtonDirective],
   template: `
     <bs-navbar #navbar>
       <ng-template bsExpandButton let-state>

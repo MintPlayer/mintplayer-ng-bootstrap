@@ -1,9 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsFloatingLabelComponent } from '@mintplayer/ng-bootstrap/floating-labels';
-import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
-import { MockComponent, MockModule } from 'ng-mocks';
+import { MockComponent, MockDirective } from 'ng-mocks';
 
 import { FloatingLabelsComponent } from './floating-labels.component';
+import { BsFormComponent, BsFormGroupDirective, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 
 describe('FloatingLabelsComponent', () => {
   let component: FloatingLabelsComponent;
@@ -12,7 +12,7 @@ describe('FloatingLabelsComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        MockModule(BsFormModule),
+        MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
         MockComponent(BsFloatingLabelComponent),
         FloatingLabelsComponent,
       ]

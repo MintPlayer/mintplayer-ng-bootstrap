@@ -1,11 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, model, output, viewChild } from '@angular/core';
 import { HS } from '../../interfaces/hs';
+import { BsSliderComponent, BsThumbDirective, BsTrackDirective } from '../slider/slider.component';
 
 @Component({
   selector: 'bs-luminosity-strip',
   templateUrl: './luminosity-strip.component.html',
   styleUrls: ['./luminosity-strip.component.scss'],
-  standalone: false,
+  standalone: true,
+  imports: [BsSliderComponent, BsThumbDirective, BsTrackDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsLuminosityStripComponent {

@@ -5,7 +5,8 @@ import { BsUnderlinePipe } from './underline.pipe';
 
 @Component({
   selector: 'bs-underline-test',
-  standalone: false,
+  standalone: true,
+  imports: [BsUnderlinePipe],
   template: `<span [innerHTML]="'<ins>Hello world</ins>' | bsUnderline"></span>`
 })
 class BsUnderlineTestComponent {}
@@ -19,8 +20,6 @@ describe('BsUnderlinePipe', () => {
       imports: [
         // Pipe to test
         BsUnderlinePipe,
-      ],
-      declarations: [
         // Testbench
         BsUnderlineTestComponent
       ],

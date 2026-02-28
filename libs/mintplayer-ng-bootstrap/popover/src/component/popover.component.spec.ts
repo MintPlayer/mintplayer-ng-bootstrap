@@ -7,7 +7,7 @@ import { BsPopoverComponent } from './popover.component';
 
 @Component({
   selector: 'bs-popover-test',
-  standalone: false,
+  standalone: true,
   template: `
     <ng-template #popoverTemplate>
       Hello <b>world</b>
@@ -40,8 +40,6 @@ describe('BsPopoverComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         OverlayModule,
-      ],
-      declarations: [
         // Unit to test
         BsPopoverComponent,
       

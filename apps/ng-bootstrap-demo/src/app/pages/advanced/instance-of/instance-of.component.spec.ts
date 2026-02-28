@@ -1,9 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
-import { BsInstanceOfModule } from '@mintplayer/ng-bootstrap/instance-of';
-import { MockModule } from 'ng-mocks';
+import { MockDirective, MockPipe } from 'ng-mocks';
 
 import { InstanceOfComponent } from './instance-of.component';
+import { BsInstanceOfDirective, BsInstanceofCaseDirective, BsInstanceOfDefaultDirective, BsInstanceofPipe } from '@mintplayer/ng-bootstrap/instance-of';
 
 describe('InstanceOfComponent', () => {
   let component: InstanceOfComponent;
@@ -12,7 +12,7 @@ describe('InstanceOfComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        MockModule(BsInstanceOfModule),
+        MockDirective(BsInstanceOfDirective), MockDirective(BsInstanceofCaseDirective), MockDirective(BsInstanceOfDefaultDirective), MockPipe(BsInstanceofPipe),
         InstanceOfComponent,
       ],
       providers: [

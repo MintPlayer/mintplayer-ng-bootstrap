@@ -1,14 +1,14 @@
 import { Component, ChangeDetectionStrategy} from '@angular/core';
-import { BsAccordionModule } from '@mintplayer/ng-bootstrap/accordion';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
-import { BsStickyFooterModule } from '@mintplayer/ng-bootstrap/sticky-footer';
+import { BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderComponent } from '@mintplayer/ng-bootstrap/accordion';
+import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
+import { BsStickyFooterComponent, BsStickyFooterParentDirective } from '@mintplayer/ng-bootstrap/sticky-footer';
 
 @Component({
   selector: 'demo-sticky-footer',
   templateUrl: './sticky-footer.component.html',
   styleUrls: ['./sticky-footer.component.scss'],
   standalone: true,
-  imports: [BsGridModule, BsAccordionModule, BsStickyFooterModule],
+  imports: [BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderComponent, BsStickyFooterComponent, BsStickyFooterParentDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StickyFooterComponent {

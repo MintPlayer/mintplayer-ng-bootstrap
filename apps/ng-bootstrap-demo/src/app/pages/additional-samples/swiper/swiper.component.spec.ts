@@ -1,12 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
-import { BsCarouselModule } from '@mintplayer/ng-bootstrap/carousel';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
-import { MockModule } from 'ng-mocks';
+import { MockComponent, MockDirective } from 'ng-mocks';
 import { vi } from 'vitest';
 
 import { SwiperComponent } from './swiper.component';
+import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
+import { BsAlertComponent, BsAlertCloseComponent } from '@mintplayer/ng-bootstrap/alert';
+import { BsCarouselComponent, BsCarouselImageDirective, BsCarouselImgDirective } from '@mintplayer/ng-bootstrap/carousel';
 
 describe('SwiperComponent', () => {
   let component: SwiperComponent;
@@ -24,9 +24,9 @@ describe('SwiperComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         NoopAnimationsModule,
-        MockModule(BsGridModule),
-        MockModule(BsAlertModule),
-        MockModule(BsCarouselModule),
+        MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
+        MockComponent(BsAlertComponent), MockComponent(BsAlertCloseComponent),
+        MockComponent(BsCarouselComponent), MockDirective(BsCarouselImageDirective), MockDirective(BsCarouselImgDirective),
         SwiperComponent,
       ]
     })

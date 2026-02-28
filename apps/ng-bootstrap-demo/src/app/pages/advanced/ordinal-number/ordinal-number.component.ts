@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
+import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsOrdinalNumberPipe } from '@mintplayer/ng-bootstrap/ordinal-number';
 
 @Component({
@@ -8,7 +8,7 @@ import { BsOrdinalNumberPipe } from '@mintplayer/ng-bootstrap/ordinal-number';
   templateUrl: './ordinal-number.component.html',
   styleUrls: ['./ordinal-number.component.scss'],
   standalone: true,
-  imports: [FormsModule, BsFormModule, BsOrdinalNumberPipe],
+  imports: [FormsModule, BsFormComponent, BsFormControlDirective, BsOrdinalNumberPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OrdinalNumberComponent {

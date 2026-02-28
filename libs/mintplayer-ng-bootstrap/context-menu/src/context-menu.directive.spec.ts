@@ -7,7 +7,7 @@ import { BsContextMenuDirective } from './context-menu.directive';
 
 @Component({
   selector: 'context-menu-test-component',
-  standalone: false,
+  standalone: true,
   template: `
     <div class="has-custom-context-menu">
       <ul class="dropdown-menu show" *bsContextMenu>
@@ -30,14 +30,12 @@ describe('BsContextMenuDirective', () => {
       imports: [
         CommonModule,
         MockModule(OverlayModule),
-      ],
-      declarations: [
         // Unit to test
         BsContextMenuDirective,
 
         // Testbench
         ContextMenuTestComponent
-      ]
+      ],
     })
     .compileComponents();
   });

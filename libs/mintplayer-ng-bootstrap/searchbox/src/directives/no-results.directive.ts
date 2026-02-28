@@ -4,7 +4,7 @@ import { BsSearchboxComponent } from '../searchbox/searchbox.component';
 
 @Directive({
   selector: '[bsNoResultsTemplate]',
-  standalone: false,
+  standalone: true,
 })
 export class BsNoResultsTemplateDirective<T extends HasId<U>, U> {
   constructor() {

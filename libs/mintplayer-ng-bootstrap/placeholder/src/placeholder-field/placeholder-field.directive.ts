@@ -3,7 +3,7 @@ import { BsPlaceholderComponent } from '../placeholder/placeholder.component';
 
 @Directive({
   selector: '[bsPlaceholderField]',
-  standalone: false,
+  standalone: true,
   host: {
     '[attr.innerHtml]': 'html',
     '[style.min-width.px]': '80',

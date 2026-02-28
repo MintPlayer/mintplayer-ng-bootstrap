@@ -4,7 +4,7 @@ import { BsToastComponent } from '../../components/toast/toast.component';
 
 @Directive({
   selector: 'bs-close',
-  standalone: false,
+  standalone: true,
   host: {
     '(click)': 'onClick()',
   },

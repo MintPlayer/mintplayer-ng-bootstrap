@@ -2,9 +2,9 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { AsyncHostBindingComponent, HelloComponent } from './async-host-binding.component';
-import { MockComponent, MockModule } from 'ng-mocks';
-import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
+import { MockComponent } from 'ng-mocks';
 import { provideAsyncHostBindings } from '@mintplayer/ng-bootstrap/async-host-binding';
+import { BsAlertComponent, BsAlertCloseComponent } from '@mintplayer/ng-bootstrap/alert';
 
 describe('AsyncHostBindingComponent', () => {
   let component: AsyncHostBindingComponent;
@@ -14,7 +14,7 @@ describe('AsyncHostBindingComponent', () => {
     TestBed.configureTestingModule({
       imports: [
         NoopAnimationsModule,
-        MockModule(BsAlertModule),
+        MockComponent(BsAlertComponent), MockComponent(BsAlertCloseComponent),
         MockComponent(HelloComponent),
         AsyncHostBindingComponent,
       ],

@@ -8,7 +8,7 @@ describe('BsBreadcrumbItemComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [BsBreadcrumbItemComponent],
+      imports: [BsBreadcrumbItemComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BsBreadcrumbItemComponent);

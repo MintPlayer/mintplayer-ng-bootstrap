@@ -5,7 +5,7 @@ import { BsAlertComponent } from '../alert/alert.component';
   selector: 'bs-alert-close',
   templateUrl: './alert-close.component.html',
   styleUrls: ['./alert-close.component.scss'],
-  standalone: false,
+  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsAlertCloseComponent {

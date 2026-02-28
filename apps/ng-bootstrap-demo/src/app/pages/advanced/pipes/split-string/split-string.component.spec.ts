@@ -1,12 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
-import { MockModule, MockPipe } from 'ng-mocks';
-import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
-import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
+import { MockPipe, MockComponent, MockDirective } from 'ng-mocks';
 import { BsSplitStringPipe } from '@mintplayer/ng-bootstrap/split-string';
 
 import { SplitStringComponent } from './split-string.component';
+import { BsFormComponent, BsFormGroupDirective, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
+import { BsListGroupComponent, BsListGroupItemComponent } from '@mintplayer/ng-bootstrap/list-group';
+import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
 
 describe('SplitStringComponent', () => {
   let component: SplitStringComponent;
@@ -17,9 +17,9 @@ describe('SplitStringComponent', () => {
       imports: [
         // Mock dependencies
         FormsModule,
-        MockModule(BsFormModule),
-        MockModule(BsGridModule),
-        MockModule(BsListGroupModule),
+        MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
+        MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
+        MockComponent(BsListGroupComponent), MockComponent(BsListGroupItemComponent),
         MockPipe(BsSplitStringPipe),
 
         // Unit to test (standalone)

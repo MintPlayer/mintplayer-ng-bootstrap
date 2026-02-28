@@ -13,8 +13,6 @@ describe('BsTabControlComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         MockModule(DragDropModule),
-      ],
-      declarations: [
         // Component to test
         BsTabControlComponent,
 
@@ -23,7 +21,7 @@ describe('BsTabControlComponent', () => {
 
         // Mock components
         BsTabPageMockComponent,
-      ]
+      ],
     })
     .compileComponents();
   });
@@ -41,7 +39,7 @@ describe('BsTabControlComponent', () => {
 
 @Component({
   selector: 'bs-tab-control-test',
-  standalone: false,
+  standalone: true,
   template: `
     <bs-tab-control>
       <bs-tab-page>
@@ -78,7 +76,7 @@ class BsTabControlTestComponent {}
 
 @Component({
   selector: 'bs-tab-page',
-  standalone: false,
+  standalone: true,
   template: 'tab-page works',
 })
 class BsTabPageMockComponent {}

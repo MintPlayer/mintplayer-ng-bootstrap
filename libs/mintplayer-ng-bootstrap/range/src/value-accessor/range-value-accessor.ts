@@ -4,7 +4,7 @@ import { BsRangeComponent } from '../component/range.component';
 
 @Directive({
   selector: 'bs-range',
-  standalone: false,
+  standalone: true,
   providers: [{
     provide: NG_VALUE_ACCESSOR,
     useExisting: forwardRef(() => BsRangeValueAccessor),

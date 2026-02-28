@@ -6,14 +6,14 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { BsModalHostComponent } from './modal-host.component';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
-import { MockComponent, MockDirective, MockModule, MockProvider } from 'ng-mocks';
+import { MockComponent, MockDirective, MockProvider } from 'ng-mocks';
 import { BsModalComponent } from '../modal/modal.component';
 import { BsModalDirective } from '../../directives/modal/modal.directive';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 
 @Component({
   selector: 'bs-modal-test',
-  standalone: false,
+  standalone: true,
   template: `
     <bs-modal [(isOpen)]="isOpen">
       <div *bsModal>
@@ -40,8 +40,6 @@ describe('BsModalHostComponent', () => {
         OverlayModule,
         MockComponent(BsHasOverlayComponent),
         NoopAnimationsModule,
-      ],
-      declarations: [
         // Unit to test
         BsModalHostComponent,
 
@@ -51,7 +49,7 @@ describe('BsModalHostComponent', () => {
 
         // Testbench
         BsModalTestComponent
-      ],
+      ],
       providers: [
         {
           provide: PORTAL_FACTORY,

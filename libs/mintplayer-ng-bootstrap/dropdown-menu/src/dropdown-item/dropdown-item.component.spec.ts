@@ -8,7 +8,7 @@ describe('BsDropdownItemComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [BsDropdownItemComponent],
+      imports: [BsDropdownItemComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BsDropdownItemComponent);

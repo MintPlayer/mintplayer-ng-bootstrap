@@ -9,8 +9,10 @@ describe('AlertComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ NoopAnimationsModule ],
-      declarations: [ BsAlertComponent ]
+      imports: [
+        NoopAnimationsModule,
+        BsAlertComponent
+      ],
     })
     .compileComponents();
   });

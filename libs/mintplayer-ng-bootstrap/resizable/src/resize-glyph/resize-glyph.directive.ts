@@ -7,7 +7,7 @@ import { RESIZABLE } from '../providers/resizable.provider';
 
 @Directive({
   selector: '[bsResizeGlyph]',
-  standalone: false,
+  standalone: true,
   host: {
     '[class]': 'positions',
     '[class.glyph]': 'true',

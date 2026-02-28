@@ -4,7 +4,7 @@ import { BsGridColumnDirective } from './column.directive';
 
 @Component({
   selector: 'test-host',
-  standalone: false,
+  standalone: true,
   template: `<div [md]="6"></div>`
 })
 class TestHostComponent {}
@@ -14,7 +14,7 @@ describe('BsGridColumnDirective', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [BsGridColumnDirective, TestHostComponent]
+      imports: [BsGridColumnDirective, TestHostComponent]
     }).compileComponents();
 
     fixture = TestBed.createComponent(TestHostComponent);

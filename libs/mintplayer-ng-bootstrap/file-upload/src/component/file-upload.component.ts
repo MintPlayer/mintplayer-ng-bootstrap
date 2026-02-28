@@ -1,12 +1,20 @@
 import { Component, input, output, TemplateRef, ChangeDetectionStrategy} from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { BsForDirective } from '@mintplayer/ng-bootstrap/for';
+import { BsListGroupComponent } from '@mintplayer/ng-bootstrap/list-group';
+import { BsListGroupItemComponent } from '@mintplayer/ng-bootstrap/list-group';
+import { BsProgressComponent, BsProgressBarComponent } from '@mintplayer/ng-bootstrap/progress-bar';
+import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { FileUpload } from '../file-upload';
+import { BsFormatBytesPipe } from '../pipes/format-bytes/format-bytes.pipe';
 
 @Component({
   selector: 'bs-file-upload',
   templateUrl: './file-upload.component.html',
   styleUrls: ['./file-upload.component.scss'],
-  standalone: false,
+  standalone: true,
+  imports: [NgTemplateOutlet, BsForDirective, BsListGroupComponent, BsListGroupItemComponent, BsProgressComponent, BsProgressBarComponent, BsButtonTypeDirective, BsFormatBytesPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '(dragover)': 'onDragOver($event)',

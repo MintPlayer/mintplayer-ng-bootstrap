@@ -3,7 +3,7 @@ import { BsOffcanvasHostComponent } from '../../components/offcanvas-host/offcan
 
 @Directive({
   selector: '[bsOffcanvasClose]',
-  standalone: false,
+  standalone: true,
   host: {
     '[attr.aria-label]': '"Close"',
     '(click)': 'onClick()',

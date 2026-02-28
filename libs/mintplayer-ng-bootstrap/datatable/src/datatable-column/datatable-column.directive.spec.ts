@@ -10,8 +10,7 @@ describe('BsDatatableColumnDirective', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [],
-      declarations: [
+      imports: [
         // Directive to test
         BsDatatableColumnDirective,
 
@@ -39,7 +38,7 @@ describe('BsDatatableColumnDirective', () => {
 
 @Component({
   selector: 'bs-datatable-column-test',
-  standalone: false,
+  standalone: true,
   template: `
     <bs-datatable>
       <div *bsDatatableColumn="'Name'; sortable: true">

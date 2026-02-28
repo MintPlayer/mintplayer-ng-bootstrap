@@ -6,14 +6,14 @@ import { BsDropdownMenuDirective } from '../dropdown-menu/dropdown-menu.directiv
 
 @Directive({
   selector: '[bsDropdownMenu]',
-  standalone: false,
+  standalone: true,
 })
 class BsDropdownMenuMockDirective {
 }
 
 @Directive({
   selector: '[bsDropdown]',
-  standalone: false,
+  standalone: true,
   providers: [
     { provide: BsDropdownDirective, useExisting: BsDropdownMockDirective }
   ]
@@ -31,7 +31,7 @@ class BsDropdownMockDirective {
 
 @Component({
   selector: 'bs-dropdown-toggle-test',
-  standalone: false,
+  standalone: true,
   template: `
     <div bsDropdown [closeOnClickOutside]="true">
       <button bsDropdownToggle>Dropdown</button>
@@ -49,8 +49,7 @@ describe('BsDropdownToggleDirective', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [],
-      declarations: [
+      imports: [
         // Directive to test
         BsDropdownToggleDirective,
 
@@ -60,7 +59,7 @@ describe('BsDropdownToggleDirective', () => {
 
         // Testbench
         BsDropdownToggleTestComponent
-      ]
+      ],
     })
     .compileComponents();
   });

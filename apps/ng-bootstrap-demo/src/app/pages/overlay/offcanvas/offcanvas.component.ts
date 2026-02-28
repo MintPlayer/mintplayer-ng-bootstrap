@@ -1,15 +1,15 @@
 import { Component, inject, signal, ChangeDetectionStrategy} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Color, Position } from '@mintplayer/ng-bootstrap';
-import { BsAccordionModule } from '@mintplayer/ng-bootstrap/accordion';
+import { BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderComponent } from '@mintplayer/ng-bootstrap/accordion';
 import { BsButtonGroupComponent } from '@mintplayer/ng-bootstrap/button-group';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsCloseComponent } from '@mintplayer/ng-bootstrap/close';
-import { BsDropdownModule } from '@mintplayer/ng-bootstrap/dropdown';
-import { BsDropdownMenuModule } from '@mintplayer/ng-bootstrap/dropdown-menu';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
-import { BsOffcanvasModule } from '@mintplayer/ng-bootstrap/offcanvas';
-import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsDropdownDirective, BsDropdownToggleDirective, BsDropdownMenuDirective } from '@mintplayer/ng-bootstrap/dropdown';
+import { BsDropdownMenuComponent, BsDropdownItemComponent } from '@mintplayer/ng-bootstrap/dropdown-menu';
+import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
+import { BsOffcanvasHostComponent, BsOffcanvasContentDirective, BsOffcanvasCloseDirective, OffcanvasHeaderComponent, OffcanvasBodyComponent, BsOffcanvasPushDirective } from '@mintplayer/ng-bootstrap/offcanvas';
+import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
 import { GIT_REPO } from '../../../providers/git-repo.provider';
 
 @Component({
@@ -17,7 +17,7 @@ import { GIT_REPO } from '../../../providers/git-repo.provider';
   templateUrl: './offcanvas.component.html',
   styleUrls: ['./offcanvas.component.scss'],
   standalone: true,
-  imports: [RouterLink, BsGridModule, BsCloseComponent, BsDropdownModule, BsButtonTypeDirective, BsButtonGroupComponent, BsDropdownMenuModule, BsOffcanvasModule, BsAccordionModule, BsToggleButtonModule],
+  imports: [RouterLink, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsCloseComponent, BsDropdownDirective, BsDropdownToggleDirective, BsDropdownMenuDirective, BsButtonTypeDirective, BsButtonGroupComponent, BsDropdownMenuComponent, BsDropdownItemComponent, BsOffcanvasHostComponent, BsOffcanvasContentDirective, BsOffcanvasCloseDirective, OffcanvasHeaderComponent, OffcanvasBodyComponent, BsOffcanvasPushDirective, BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderComponent, BsToggleButtonComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OffcanvasComponent {

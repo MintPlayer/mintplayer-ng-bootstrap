@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, input, model, output, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { BsDropdownModule } from '@mintplayer/ng-bootstrap/dropdown';
-import { BsDropdownMenuModule } from '@mintplayer/ng-bootstrap/dropdown-menu';
-import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
+import { BsDropdownDirective, BsDropdownToggleDirective, BsDropdownMenuDirective } from '@mintplayer/ng-bootstrap/dropdown';
+import { BsDropdownMenuComponent, BsDropdownItemComponent } from '@mintplayer/ng-bootstrap/dropdown-menu';
+import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
-import { BsProgressBarModule } from '@mintplayer/ng-bootstrap/progress-bar';
+import { BsProgressComponent } from '@mintplayer/ng-bootstrap/progress-bar';
 
 let typeaheadIdCounter = 0;
 
@@ -13,7 +13,7 @@ let typeaheadIdCounter = 0;
   templateUrl: './typeahead.component.html',
   styleUrls: ['./typeahead.component.scss'],
   standalone: true,
-  imports: [FormsModule, BsFormModule, BsDropdownModule, BsDropdownMenuModule, BsProgressBarModule, BsHasOverlayComponent],
+  imports: [FormsModule, BsFormComponent, BsDropdownDirective, BsDropdownToggleDirective, BsDropdownMenuDirective, BsDropdownMenuComponent, BsDropdownItemComponent, BsProgressComponent, BsHasOverlayComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsTypeaheadComponent {

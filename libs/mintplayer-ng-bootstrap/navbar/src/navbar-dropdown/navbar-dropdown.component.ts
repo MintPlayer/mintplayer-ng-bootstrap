@@ -1,5 +1,8 @@
 import { DOCUMENT, isPlatformServer } from '@angular/common';
 import { ChangeDetectionStrategy, Component, contentChildren, computed, DestroyRef, effect, ElementRef, forwardRef, inject, Injector, input, OnDestroy, PLATFORM_ID, signal, SkipSelf, viewChild } from '@angular/core';
+import { ClickOutsideDirective } from '@mintplayer/ng-click-outside';
+import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
+import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
 import { DomPortal } from '@angular/cdk/portal';
@@ -9,7 +12,8 @@ import { OverlayRef } from '@angular/cdk/overlay';
   selector: 'bs-navbar-dropdown',
   templateUrl: './navbar-dropdown.component.html',
   styleUrls: ['./navbar-dropdown.component.scss'],
-  standalone: false,
+  standalone: true,
+  imports: [BsHasOverlayComponent, BsNoNoscriptDirective, ClickOutsideDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsNavbarDropdownComponent implements OnDestroy {

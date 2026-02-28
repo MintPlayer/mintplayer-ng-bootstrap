@@ -1,6 +1,7 @@
 /// <reference types="../types" />
 
 import { ChangeDetectionStrategy, Component, computed, contentChild, DestroyRef, inject, signal } from '@angular/core';
+import { BsListGroupItemComponent } from '@mintplayer/ng-bootstrap/list-group';
 import { BsTreeviewComponent } from '../treeview/treeview.component';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
@@ -8,7 +9,8 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
   selector: 'bs-treeview-item',
   templateUrl: './treeview-item.component.html',
   styleUrls: ['./treeview-item.component.scss'],
-  standalone: false,
+  standalone: true,
+  imports: [BsListGroupItemComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsTreeviewItemComponent {

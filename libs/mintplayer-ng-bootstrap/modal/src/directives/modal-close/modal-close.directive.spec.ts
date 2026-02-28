@@ -4,25 +4,8 @@ import { BsModalHostComponent } from '../../components/modal-host/modal-host.com
 import { BsModalCloseDirective } from './modal-close.directive';
 
 @Component({
-  selector: 'bs-modal-test',
-  standalone: false,
-  template: `
-    <bs-modal [(isOpen)]="isOpen" #modal>
-      <div *bsModal>
-        <div bsModalHeader><h5>Title</h5></div>
-        <div bsModalBody>Content</div>
-        <div bsModalFooter><button bsModalClose>Close</button></div>
-      </div>
-    </bs-modal>`
-})
-class BsModalTestComponent {
-  isOpen = false;
-  @ViewChild('modal') modal!: BsModalHostMockComponent;
-}
-
-@Component({
   selector: 'bs-modal',
-  standalone: false,
+  standalone: true,
   template: ``,
   providers: [
     { provide: BsModalHostComponent, useExisting: BsModalHostMockComponent }
@@ -30,7 +13,7 @@ class BsModalTestComponent {
 })
 class BsModalHostMockComponent {
   template!: TemplateRef<any>;
-  
+
   //#region isOpen
   private _isOpen = false;
   get isOpen() {
@@ -49,12 +32,30 @@ class BsModalHostMockComponent {
 
 @Directive({
   selector: '[bsModal]',
-  standalone: false,
+  standalone: true,
 })
 class BsModalMockDirective {
   constructor(template: TemplateRef<any>, host: BsModalHostComponent) {
     host.template = template;
   }
+}
+
+@Component({
+  selector: 'bs-modal-test',
+  standalone: true,
+  imports: [BsModalHostMockComponent, BsModalMockDirective, BsModalCloseDirective],
+  template: `
+    <bs-modal [(isOpen)]="isOpen" #modal>
+      <div *bsModal>
+        <div bsModalHeader><h5>Title</h5></div>
+        <div bsModalBody>Content</div>
+        <div bsModalFooter><button bsModalClose>Close</button></div>
+      </div>
+    </bs-modal>`
+})
+class BsModalTestComponent {
+  isOpen = false;
+  @ViewChild('modal') modal!: BsModalHostMockComponent;
 }
 
 describe('BsModalCloseDirective', () => {
@@ -63,8 +64,7 @@ describe('BsModalCloseDirective', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [],
-      declarations: [
+      imports: [
         // Unit to test
         BsModalCloseDirective,
 
@@ -74,7 +74,7 @@ describe('BsModalCloseDirective', () => {
 
         // Testbench
         BsModalTestComponent
-      ]
+      ],
     })
     .compileComponents();
   });

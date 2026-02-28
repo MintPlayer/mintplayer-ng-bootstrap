@@ -1,9 +1,20 @@
 /// <reference types="../types" />
 
+import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, effect, ElementRef, inject, input, model, OnDestroy, output, signal, TemplateRef, viewChild } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 import { HasId } from '@mintplayer/ng-bootstrap/has-id';
+import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
+import { BsDropdownDirective } from '@mintplayer/ng-bootstrap/dropdown';
+import { BsDropdownToggleDirective } from '@mintplayer/ng-bootstrap/dropdown';
+import { BsDropdownMenuDirective } from '@mintplayer/ng-bootstrap/dropdown';
+import { BsDropdownMenuComponent } from '@mintplayer/ng-bootstrap/dropdown-menu';
+import { BsDropdownItemComponent } from '@mintplayer/ng-bootstrap/dropdown-menu';
+import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
+import { BsProgressComponent } from '@mintplayer/ng-bootstrap/progress-bar';
+import { BsProgressBarComponent } from '@mintplayer/ng-bootstrap/progress-bar';
 import { BsSuggestionTemplateContext } from '../directives';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
@@ -11,7 +22,20 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
   selector: 'bs-searchbox',
   templateUrl: './searchbox.component.html',
   styleUrls: ['./searchbox.component.scss'],
-  standalone: false,
+  standalone: true,
+  imports: [
+    NgTemplateOutlet,
+    FormsModule,
+    BsHasOverlayComponent,
+    BsDropdownDirective,
+    BsDropdownToggleDirective,
+    BsDropdownMenuDirective,
+    BsDropdownMenuComponent,
+    BsDropdownItemComponent,
+    BsButtonTypeDirective,
+    BsProgressComponent,
+    BsProgressBarComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsSearchboxComponent<T extends HasId<U>, U> implements OnDestroy {

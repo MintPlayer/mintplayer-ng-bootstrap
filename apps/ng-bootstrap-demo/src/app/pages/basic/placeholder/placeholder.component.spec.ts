@@ -1,12 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
-import { BsCardModule } from '@mintplayer/ng-bootstrap/card';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
-import { BsPlaceholderModule } from '@mintplayer/ng-bootstrap/placeholder';
-import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
-import { MockModule } from 'ng-mocks';
+import { MockComponent, MockDirective } from 'ng-mocks';
 
 import { PlaceholderComponent } from './placeholder.component';
+import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
+import { BsToggleButtonComponent, BsToggleButtonGroupDirective, BsToggleButtonValueAccessor } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsCardComponent, BsCardHeaderComponent } from '@mintplayer/ng-bootstrap/card';
+import { BsPlaceholderComponent, BsPlaceholderFieldDirective } from '@mintplayer/ng-bootstrap/placeholder';
 
 describe('PlaceholderComponent', () => {
   let component: PlaceholderComponent;
@@ -16,10 +16,10 @@ describe('PlaceholderComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         FormsModule,
-        MockModule(BsCardModule),
-        MockModule(BsGridModule),
-        MockModule(BsToggleButtonModule),
-        MockModule(BsPlaceholderModule),
+        MockComponent(BsCardComponent), MockComponent(BsCardHeaderComponent),
+        MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
+        MockComponent(BsToggleButtonComponent), MockDirective(BsToggleButtonValueAccessor), MockDirective(BsToggleButtonGroupDirective),
+        MockComponent(BsPlaceholderComponent), MockDirective(BsPlaceholderFieldDirective),
 
         // Unit to test (standalone)
         PlaceholderComponent,

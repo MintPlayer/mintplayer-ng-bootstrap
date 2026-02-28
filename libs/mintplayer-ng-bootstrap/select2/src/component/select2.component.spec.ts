@@ -1,11 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
-import { BsDropdownModule } from '@mintplayer/ng-bootstrap/dropdown';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { ClickOutsideDirective } from '@mintplayer/ng-click-outside';
-import { MockComponent, MockDirective, MockModule } from 'ng-mocks';
+import { MockComponent, MockDirective } from 'ng-mocks';
 
 import { BsSelect2Component } from './select2.component';
+import { BsDropdownDirective, BsDropdownMenuDirective, BsDropdownToggleDirective } from '@mintplayer/ng-bootstrap/dropdown';
 
 describe('BsSelect2Component', () => {
   let component: BsSelect2Component<any, number>;
@@ -17,12 +17,10 @@ describe('BsSelect2Component', () => {
         FormsModule,
         MockComponent(BsHasOverlayComponent),
         MockDirective(ClickOutsideDirective),
-        MockModule(BsDropdownModule),
-      ],
-      declarations: [
+        MockDirective(BsDropdownDirective), MockDirective(BsDropdownMenuDirective), MockDirective(BsDropdownToggleDirective),
         // Unit to test
         BsSelect2Component,
-      ],
+      ],
     })
     .compileComponents();
   });

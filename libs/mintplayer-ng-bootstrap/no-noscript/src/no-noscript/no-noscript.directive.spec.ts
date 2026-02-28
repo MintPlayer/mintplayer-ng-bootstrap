@@ -4,7 +4,7 @@ import { BsNoNoscriptDirective } from './no-noscript.directive';
 
 @Component({
   selector: 'no-noscript-test-component',
-  standalone: false,
+  standalone: true,
   template: `<div bsNoNoscript></div>`
 })
 class NoNoscriptTestComponent {}
@@ -18,13 +18,11 @@ describe('BsNoNoscriptDirective', () => {
       imports: [
         // Directive to test
         BsNoNoscriptDirective,
-      ],
-      declarations: [
         // Mock dependencies
 
         // Testbench
         NoNoscriptTestComponent,
-      ]
+      ],
     }).compileComponents();
   });
 

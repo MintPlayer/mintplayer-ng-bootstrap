@@ -1,15 +1,15 @@
 import { JsonPipe } from '@angular/common';
 import { Component, signal, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
-import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
+import { BsToggleButtonComponent, BsToggleButtonValueAccessor, BsToggleButtonGroupDirective } from '@mintplayer/ng-bootstrap/toggle-button';
 
 @Component({
   selector: 'demo-toggle-button',
   templateUrl: './toggle-button.component.html',
   styleUrls: ['./toggle-button.component.scss'],
   standalone: true,
-  imports: [JsonPipe, FormsModule, BsGridModule, BsToggleButtonModule],
+  imports: [JsonPipe, FormsModule, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsToggleButtonComponent, BsToggleButtonValueAccessor, BsToggleButtonGroupDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ToggleButtonComponent {

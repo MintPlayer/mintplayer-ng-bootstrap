@@ -1,14 +1,14 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
-import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsLinifyPipe } from '@mintplayer/ng-bootstrap/linify';
-import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
-import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
-import { MockDirective, MockModule, MockPipe } from 'ng-mocks';
+import { MockDirective, MockPipe, MockComponent } from 'ng-mocks';
 
 import { LinifyComponent } from './linify.component';
+import { BsFormComponent, BsFormGroupDirective, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
+import { BsListGroupComponent, BsListGroupItemComponent } from '@mintplayer/ng-bootstrap/list-group';
+import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
+import { BsToggleButtonComponent, BsToggleButtonGroupDirective, BsToggleButtonValueAccessor } from '@mintplayer/ng-bootstrap/toggle-button';
 
 describe('LinifyComponent', () => {
   let component: LinifyComponent;
@@ -18,12 +18,12 @@ describe('LinifyComponent', () => {
     TestBed.configureTestingModule({
       imports: [
         FormsModule,
-        MockModule(BsFormModule),
-        MockModule(BsGridModule),
+        MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
+        MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
         MockPipe(BsLinifyPipe),
-        MockModule(BsListGroupModule),
+        MockComponent(BsListGroupComponent), MockComponent(BsListGroupItemComponent),
         MockDirective(BsButtonTypeDirective),
-        MockModule(BsToggleButtonModule),
+        MockComponent(BsToggleButtonComponent), MockDirective(BsToggleButtonValueAccessor), MockDirective(BsToggleButtonGroupDirective),
 
         // Unit to test (standalone)
         LinifyComponent,

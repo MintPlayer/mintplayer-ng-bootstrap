@@ -1,5 +1,7 @@
-import { CdkDragDrop, CdkDragStart, moveItemInArray } from '@angular/cdk/drag-drop';
+import { CdkDragDrop, CdkDragStart, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
+import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, contentChildren, effect, ElementRef, inject, input, signal } from '@angular/core';
+import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
 import { BsTabPageComponent } from '../tab-page/tab-page.component';
 import { BsTabsPosition } from '../tabs-position';
 
@@ -7,7 +9,8 @@ import { BsTabsPosition } from '../tabs-position';
   selector: 'bs-tab-control',
   templateUrl: './tab-control.component.html',
   styleUrls: ['./tab-control.component.scss'],
-  standalone: false,
+  standalone: true,
+  imports: [NgTemplateOutlet, DragDropModule, BsNoNoscriptDirective],
   providers: [
     { provide: 'TAB_CONTROL', useExisting: BsTabControlComponent }
   ],

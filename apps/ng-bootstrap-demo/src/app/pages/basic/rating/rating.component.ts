@@ -1,5 +1,5 @@
 import { Component, signal, ChangeDetectionStrategy} from '@angular/core';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsRatingComponent } from '@mintplayer/ng-bootstrap/rating';
 
 @Component({
@@ -7,7 +7,7 @@ import { BsRatingComponent } from '@mintplayer/ng-bootstrap/rating';
   templateUrl: './rating.component.html',
   styleUrls: ['./rating.component.scss'],
   standalone: true,
-  imports: [BsGridModule, BsRatingComponent],
+  imports: [BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsRatingComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RatingComponent {

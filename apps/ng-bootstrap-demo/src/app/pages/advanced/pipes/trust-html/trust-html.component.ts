@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
-import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
+import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
+import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsTrustHtmlPipe } from '@mintplayer/ng-bootstrap/trust-html';
 
 @Component({
@@ -9,7 +9,7 @@ import { BsTrustHtmlPipe } from '@mintplayer/ng-bootstrap/trust-html';
   templateUrl: './trust-html.component.html',
   styleUrls: ['./trust-html.component.scss'],
   standalone: true,
-  imports: [FormsModule, BsFormModule, BsGridModule, BsTrustHtmlPipe],
+  imports: [FormsModule, BsFormComponent, BsFormControlDirective, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsTrustHtmlPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TrustHtmlComponent {

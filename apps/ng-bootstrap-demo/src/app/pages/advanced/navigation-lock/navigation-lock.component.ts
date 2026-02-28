@@ -1,7 +1,7 @@
 import { Component, viewChild, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { BsHasNavigationLock, BsNavigationLockDirective, BsNavigationLockModule } from '@mintplayer/ng-bootstrap/navigation-lock';
-import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsHasNavigationLock, BsNavigationLockDirective } from '@mintplayer/ng-bootstrap/navigation-lock';
+import { BsToggleButtonComponent, BsToggleButtonValueAccessor } from '@mintplayer/ng-bootstrap/toggle-button';
 import { Observable } from 'rxjs';
 
 @Component({
@@ -9,7 +9,7 @@ import { Observable } from 'rxjs';
   templateUrl: './navigation-lock.component.html',
   styleUrls: ['./navigation-lock.component.scss'],
   standalone: true,
-  imports: [FormsModule, BsToggleButtonModule, BsNavigationLockModule],
+  imports: [FormsModule, BsToggleButtonComponent, BsToggleButtonValueAccessor, BsNavigationLockDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NavigationLockComponent implements BsHasNavigationLock {

@@ -5,7 +5,7 @@ import { BsSelectSize } from '../types/select-size';
   selector: 'bs-select',
   templateUrl: './select.component.html',
   styleUrls: ['./select.component.scss'],
-  standalone: false,
+  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsSelectComponent {

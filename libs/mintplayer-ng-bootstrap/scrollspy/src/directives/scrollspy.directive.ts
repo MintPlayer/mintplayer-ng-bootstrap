@@ -2,7 +2,7 @@ import { Directive, ElementRef, inject } from '@angular/core';
 
 @Directive({
   selector: '[bsScrollspy]',
-  standalone: false,
+  standalone: true,
 })
 export class BsScrollspyDirective {
   element = inject(ElementRef);

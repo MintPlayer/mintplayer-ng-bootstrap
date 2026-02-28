@@ -8,7 +8,7 @@ import { BsNavbarComponent } from '../navbar/navbar.component';
   // selector: 'bs-navbar-item > a[routerLink]'
   // Below selector seems to target other a's that aren't even remotely inside a bs-navbar-item
   // selector: 'bs-navbar-item:first-child > a'
-  standalone: false,
+  standalone: true,
   host: {
     '[class.cursor-pointer]': 'cursorPointer',
   },

@@ -3,7 +3,7 @@ import { BsMultiselectComponent } from '../../component/multiselect.component';
 
 @Directive({
   selector: '[bsFooterTemplate]',
-  standalone: false,
+  standalone: true,
 })
 export class BsFooterTemplateDirective<T> {
 

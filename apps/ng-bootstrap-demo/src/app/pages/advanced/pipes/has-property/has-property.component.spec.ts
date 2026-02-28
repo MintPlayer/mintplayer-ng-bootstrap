@@ -1,11 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
-import { MockComponent, MockModule, MockPipe } from 'ng-mocks';
+import { MockComponent, MockPipe, MockDirective } from 'ng-mocks';
 import { BsHasPropertyPipe } from '@mintplayer/ng-bootstrap/has-property';
-import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
 
 import { HasPropertyComponent } from './has-property.component';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
+import { BsToggleButtonComponent, BsToggleButtonGroupDirective, BsToggleButtonValueAccessor } from '@mintplayer/ng-bootstrap/toggle-button';
 
 describe('HasPropertyComponent', () => {
   let component: HasPropertyComponent;
@@ -16,7 +16,7 @@ describe('HasPropertyComponent', () => {
       imports: [
         FormsModule,
         MockPipe(BsHasPropertyPipe),
-        MockModule(BsToggleButtonModule),
+        MockComponent(BsToggleButtonComponent), MockDirective(BsToggleButtonValueAccessor), MockDirective(BsToggleButtonGroupDirective),
         MockComponent(BsCodeSnippetComponent),
         HasPropertyComponent,
       ]

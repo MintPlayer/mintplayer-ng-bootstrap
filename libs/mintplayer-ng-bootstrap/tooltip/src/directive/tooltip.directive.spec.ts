@@ -7,7 +7,7 @@ enum Position { top, left, bottom, right }
 
 @Component({
   selector: 'bs-tooltip-directive-test',
-  standalone: false,
+  standalone: true,
   template: `
     <button>
         Bottom
@@ -33,7 +33,7 @@ describe('BsTooltipDirective', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [
+      imports: [
         // Unit to test
         BsTooltipDirective,
 

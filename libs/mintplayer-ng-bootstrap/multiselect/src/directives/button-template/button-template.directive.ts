@@ -3,7 +3,7 @@ import { BsMultiselectComponent } from '../../component/multiselect.component';
 
 @Directive({
   selector: '[bsButtonTemplate]',
-  standalone: false,
+  standalone: true,
 })
 export class BsButtonTemplateDirective<T> {
 

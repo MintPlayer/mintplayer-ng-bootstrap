@@ -6,7 +6,7 @@ import { BsOffcanvasCloseDirective } from './offcanvas-close.directive';
 
 @Component({
   selector: 'bs-offcanvas-holder',
-  standalone: false,
+  standalone: true,
   template: `<ng-container *ngTemplateOutlet="content; context: { $implicit: this }"></ng-container>`
 })
 class BsOffcanvasMockComponent {
@@ -15,7 +15,7 @@ class BsOffcanvasMockComponent {
 
 @Component({
   selector: 'offcanvas-close-test-component',
-  standalone: false,
+  standalone: true,
   template: `
     <ng-template #offcanvasTemplate let-offcanvas>
       <div>
@@ -49,9 +49,7 @@ describe('BsOffcanvasCloseDirective', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        OverlayModule
-      ],
-      declarations: [
+        OverlayModule,
         // Directive to test
         BsOffcanvasCloseDirective,
 
@@ -60,7 +58,7 @@ describe('BsOffcanvasCloseDirective', () => {
 
         // Testbench
         OffcanvasCloseTestComponent
-      ]
+      ],
     }).compileComponents();
   });
 

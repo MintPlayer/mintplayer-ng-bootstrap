@@ -1,9 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MockModule } from 'ng-mocks';
+import { MockComponent } from 'ng-mocks';
 import { computed, model } from '@angular/core';
 import { BsTreeviewItemComponent } from './treeview-item.component';
 import { BsTreeviewComponent } from '../treeview/treeview.component';
-import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
+import { BsListGroupComponent, BsListGroupItemComponent } from '@mintplayer/ng-bootstrap/list-group';
 
 class BsTreeviewComponentStub {
   level = computed(() => 0);
@@ -24,11 +24,9 @@ describe('BsTreeviewItemComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        MockModule(BsListGroupModule)
-      ],
-      declarations: [
+        MockComponent(BsListGroupComponent), MockComponent(BsListGroupItemComponent),
         BsTreeviewItemComponent
-      ],
+      ],
       providers: [
         { provide: BsTreeviewComponent, useClass: BsTreeviewComponentStub }
       ]

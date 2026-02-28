@@ -1,9 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsCopyDirective } from '@mintplayer/ng-bootstrap/copy';
-import { BsOffcanvasModule } from '@mintplayer/ng-bootstrap/offcanvas';
-import { MockDirective, MockModule } from 'ng-mocks';
-import { Highlight, HighlightModule, provideHighlightOptions } from 'ngx-highlightjs';
+import { MockDirective, MockComponent } from 'ng-mocks';
+import { Highlight, provideHighlightOptions } from 'ngx-highlightjs';
 import { CopyComponent } from './copy.component';
+import { BsOffcanvasComponent, OffcanvasHeaderComponent, OffcanvasBodyComponent, BsOffcanvasHostComponent } from '@mintplayer/ng-bootstrap/offcanvas';
 
 describe('CopyComponent', () => {
   let component: CopyComponent;
@@ -13,10 +13,8 @@ describe('CopyComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         MockDirective(BsCopyDirective),
-        MockModule(BsOffcanvasModule),
-        // MockModule(HighlightModule),
+        MockComponent(BsOffcanvasComponent), MockComponent(OffcanvasHeaderComponent), MockComponent(OffcanvasBodyComponent), MockComponent(BsOffcanvasHostComponent),
         MockDirective(Highlight),
-        // Highlight,
 
         // Unit to test (standalone)
         CopyComponent,

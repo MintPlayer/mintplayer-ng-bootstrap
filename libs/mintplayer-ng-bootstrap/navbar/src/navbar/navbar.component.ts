@@ -1,11 +1,16 @@
 import { ChangeDetectionStrategy, Component, computed, ElementRef, input, signal, TemplateRef, viewChild } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { BsContainerComponent } from '@mintplayer/ng-bootstrap/container';
+import { BsUserAgentDirective } from '@mintplayer/ng-bootstrap/user-agent';
+import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
 import { Breakpoint, Color } from '@mintplayer/ng-bootstrap';
 
 @Component({
   selector: 'bs-navbar',
   templateUrl: './navbar.component.html',
   styleUrls: ['./navbar.component.scss'],
-  standalone: false,
+  standalone: true,
+  imports: [NgTemplateOutlet, BsContainerComponent, BsUserAgentDirective, BsNoNoscriptDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '(window:resize)': 'onWindowResize()',

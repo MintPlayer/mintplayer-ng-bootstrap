@@ -10,9 +10,9 @@ describe('BsNavbarBrandComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        RouterTestingModule.withRoutes([])
+        RouterTestingModule.withRoutes([]),
+        BsNavbarBrandComponent
       ],
-      declarations: [ BsNavbarBrandComponent ]
     })
     .compileComponents();
   });

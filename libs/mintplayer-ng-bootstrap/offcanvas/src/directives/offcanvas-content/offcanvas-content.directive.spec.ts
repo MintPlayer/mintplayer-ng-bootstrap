@@ -16,8 +16,8 @@ describe('BsOffcanvasContentDirective', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ CommonModule, OverlayModule ],
-      declarations: [
+      imports: [
+        CommonModule, OverlayModule,
         // Unit to test
         BsOffcanvasContentDirective,
         
@@ -29,7 +29,7 @@ describe('BsOffcanvasContentDirective', () => {
 
         // Testbench
         BsOffcanvasTestComponent,
-      ]
+      ],
     })
     .compileComponents();
   });
@@ -49,7 +49,7 @@ type OffcanvasPosition = 'top' | 'bottom' | 'start' | 'end';
 
 @Component({
   selector: 'bs-offcanvas-test',
-  standalone: false,
+  standalone: true,
   template: `
     <bs-offcanvas [(isVisible)]="isOffcanvasVisible" [position]="position" [hasBackdrop]="true" (backdropClick)="isOffcanvasVisible = false">
         <div *bsOffcanvasContent>

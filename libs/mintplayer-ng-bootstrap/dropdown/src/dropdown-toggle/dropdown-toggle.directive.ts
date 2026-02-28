@@ -3,7 +3,7 @@ import { BsDropdownDirective } from '../dropdown/dropdown.directive';
 
 @Directive({
   selector: '[bsDropdownToggle]',
-  standalone: false,
+  standalone: true,
   host: {
     '[attr.aria-haspopup]': '"true"',
     '[attr.aria-expanded]': 'dropdown.isOpen()',

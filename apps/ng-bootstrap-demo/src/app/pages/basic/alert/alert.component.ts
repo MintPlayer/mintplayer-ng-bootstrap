@@ -1,9 +1,9 @@
 import { Component, ElementRef, signal, viewChild, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Color } from '@mintplayer/ng-bootstrap';
-import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
+import { BsAlertComponent, BsAlertCloseComponent } from '@mintplayer/ng-bootstrap/alert';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
-import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
+import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
 
 @Component({
@@ -11,7 +11,7 @@ import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
   templateUrl: './alert.component.html',
   styleUrls: ['./alert.component.scss'],
   standalone: true,
-  imports: [FormsModule, BsFormModule, BsAlertModule, BsInputGroupComponent, BsButtonTypeDirective],
+  imports: [FormsModule, BsFormComponent, BsFormControlDirective, BsAlertComponent, BsAlertCloseComponent, BsInputGroupComponent, BsButtonTypeDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AlertComponent {

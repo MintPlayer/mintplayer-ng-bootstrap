@@ -7,7 +7,7 @@ import { BsSelect2Component } from '../../component/select2.component';
 
 @Component({
   selector: 'item-template-test-component',
-  standalone: false,
+  standalone: true,
   template: `
     <select2>
       <span *bsSuggestionTemplate>Suggestion template</span>
@@ -34,14 +34,12 @@ describe('BsSuggestionTemplateDirective', () => {
         
         // Mock dependencies
         MockBsSelect2Component,
-      ],
-      declarations: [
         // Unit to test
         BsSuggestionTemplateDirective,
                 
         // Testbench
         BsSuggestionTemplateTestComponent,
-      ],
+      ],
       providers: [{
         provide: BsSelect2Component,
         useClass: MockBsSelect2Component

@@ -18,7 +18,6 @@ describe('CalendarComponent', () => {
         // Unit to test
         BsCalendarComponent,
       ],
-      declarations: []
     })
     .compileComponents();
   });

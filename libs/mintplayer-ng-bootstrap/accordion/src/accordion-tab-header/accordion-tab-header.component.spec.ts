@@ -1,9 +1,8 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MockBuilder, MockComponent, MockComponents, MockProvider, MockProviders } from 'ng-mocks';
+import { MockComponent } from 'ng-mocks';
 import { BsAccordionTabComponent } from '../accordion-tab/accordion-tab.component';
 import { BsAccordionComponent } from '../accordion/accordion.component';
-import { BsAccordionModule } from '../accordion.module';
 import { BsAccordionTabHeaderComponent } from './accordion-tab-header.component';
 
 describe('AccordionTabHeaderComponent', () => {
@@ -11,10 +10,14 @@ describe('AccordionTabHeaderComponent', () => {
   let fixture: ComponentFixture<BsAccordionTestComponent>;
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule(
-      MockBuilder(BsAccordionTabHeaderComponent, BsAccordionModule)
-      .build()
-    )
+    await TestBed.configureTestingModule({
+      imports: [
+        BsAccordionTabHeaderComponent,
+        MockComponent(BsAccordionComponent),
+        MockComponent(BsAccordionTabComponent),
+        BsAccordionTestComponent,
+      ],
+    })
     .compileComponents();
   });
 
@@ -32,7 +35,7 @@ describe('AccordionTabHeaderComponent', () => {
 
 @Component({
   selector: 'bs-accordion-test',
-  standalone: false,
+  standalone: true,
   template: `
   <bs-accordion>
     <bs-accordion-tab>
