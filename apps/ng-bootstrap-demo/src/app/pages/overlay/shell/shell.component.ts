@@ -1,4 +1,4 @@
-import { Component, ViewChild } from '@angular/core';
+import { Component, viewChild, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsAccordionModule } from '@mintplayer/ng-bootstrap/accordion';
@@ -12,14 +12,15 @@ import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
   standalone: true,
   imports: [FormsModule, BsShellModule, BsAccordionModule, BsButtonGroupComponent, BsButtonTypeDirective, BsToggleButtonModule],
   templateUrl: './shell.component.html',
-  styleUrl: './shell.component.scss'
+  styleUrl: './shell.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ShellComponent {
   colors = Color;
   shellState: 'auto' | 'show' | 'hide' = 'auto';
-  @ViewChild('shell') shell!: BsShellComponent;
+  readonly shell = viewChild.required<BsShellComponent>('shell');
 
   setSize(rem: number) {
-    this.shell.setSize(`${rem}rem`);
+    this.shell().setSize(`${rem}rem`);
   }
 }

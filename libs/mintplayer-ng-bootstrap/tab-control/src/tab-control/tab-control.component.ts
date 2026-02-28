@@ -1,5 +1,5 @@
 import { CdkDragDrop, CdkDragStart, moveItemInArray } from '@angular/cdk/drag-drop';
-import { ChangeDetectionStrategy, Component, computed, ContentChildren, effect, ElementRef, HostBinding, inject, input, QueryList, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, contentChildren, effect, ElementRef, inject, input, signal } from '@angular/core';
 import { BsTabPageComponent } from '../tab-page/tab-page.component';
 import { BsTabsPosition } from '../tabs-position';
 
@@ -12,6 +12,9 @@ import { BsTabsPosition } from '../tabs-position';
     { provide: 'TAB_CONTROL', useExisting: BsTabControlComponent }
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    'class': 'd-block position-relative',
+  },
 })
 export class BsTabControlComponent {
   element = inject(ElementRef);
@@ -23,22 +26,20 @@ export class BsTabControlComponent {
       const tabPages = this.tabPages();
       const activeTab = this.activeTab();
       const selectFirstTab = this.selectFirstTab();
-      if (tabPages && (!activeTab || !tabPages.some(tp => tp === activeTab)) && selectFirstTab) {
+      if (tabPages.length > 0 && (!activeTab || !tabPages.some(tp => tp === activeTab)) && selectFirstTab) {
         const notDisabled = tabPages.filter((tp) => !tp.disabled());
         if (notDisabled.length > 0) {
           setTimeout(() => this.activeTab.set(notDisabled[0]));
         }
       }
     });
-  }
 
-  @HostBinding('class.d-block') dBlock = true;
-  @HostBinding('class.position-relative') positionRelative = true;
-  @ContentChildren(BsTabPageComponent) set setTabPages(value: QueryList<BsTabPageComponent>) {
-    this.tabPages.set(value);
-    const list = value.toArray();
-    const toAdd = value.filter(tp => !this.orderedTabPages.includes(tp));
-    this.orderedTabPages = this.orderedTabPages.concat(toAdd).filter((tp) => list.includes(tp));
+    // Update orderedTabPages whenever content children change
+    effect(() => {
+      const list = this.tabPages();
+      const toAdd = list.filter(tp => !this.orderedTabPages.includes(tp));
+      this.orderedTabPages = this.orderedTabPages.concat(toAdd).filter((tp) => list.includes(tp));
+    });
   }
 
   border = input(true);
@@ -48,7 +49,7 @@ export class BsTabControlComponent {
   allowDragDrop = input(false);
 
   dragBoundarySelector = computed(() => this.restrictDragging() ? 'ul' : '');
-  tabPages = signal<QueryList<BsTabPageComponent> | null>(null);
+  readonly tabPages = contentChildren(BsTabPageComponent);
   activeTab = signal<BsTabPageComponent | null>(null);
   orderedTabPages: BsTabPageComponent[] = [];
   tabControlId = signal<number>(0);
@@ -72,7 +73,7 @@ export class BsTabControlComponent {
     }
   }
 
-  moveTab(ev: CdkDragDrop<QueryList<BsTabPageComponent> | null>) {
+  moveTab(ev: CdkDragDrop<readonly BsTabPageComponent[]>) {
     if (ev.previousContainer === ev.container) {
       moveItemInArray(
         this.orderedTabPages,

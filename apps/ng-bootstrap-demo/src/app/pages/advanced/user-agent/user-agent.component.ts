@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsUserAgentDirective, BsUserAgent } from '@mintplayer/ng-bootstrap/user-agent';
 import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
@@ -8,7 +8,8 @@ import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
   templateUrl: './user-agent.component.html',
   styleUrls: ['./user-agent.component.scss'],
   standalone: true,
-  imports: [BsAlertModule, BsUserAgentDirective]
+  imports: [BsAlertModule, BsUserAgentDirective],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UserAgentComponent {
   

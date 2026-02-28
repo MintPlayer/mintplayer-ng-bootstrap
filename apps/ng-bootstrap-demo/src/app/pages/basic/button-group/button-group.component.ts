@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsButtonGroupComponent } from '@mintplayer/ng-bootstrap/button-group';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
@@ -8,7 +8,8 @@ import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
   templateUrl: './button-group.component.html',
   styleUrls: ['./button-group.component.scss'],
   standalone: true,
-  imports: [BsButtonTypeDirective, BsButtonGroupComponent]
+  imports: [BsButtonTypeDirective, BsButtonGroupComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ButtonGroupComponent {
   colors = Color;

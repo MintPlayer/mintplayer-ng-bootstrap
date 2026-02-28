@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { BsResizableModule } from '@mintplayer/ng-bootstrap/resizable';
 
 @Component({
@@ -6,6 +6,7 @@ import { BsResizableModule } from '@mintplayer/ng-bootstrap/resizable';
   templateUrl: './resizable.component.html',
   styleUrls: ['./resizable.component.scss'],
   standalone: true,
-  imports: [BsResizableModule]
+  imports: [BsResizableModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ResizableComponent {}

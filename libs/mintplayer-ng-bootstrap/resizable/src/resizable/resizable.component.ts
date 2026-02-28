@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, ElementRef, HostBinding, inject, input, Input, forwardRef, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, input, forwardRef, signal } from '@angular/core';
 import { ResizeAction } from '../interfaces/resize-action';
 import { RESIZABLE } from '../providers/resizable.provider';
 import { ResizablePositioning } from '../types/positioning';
@@ -13,6 +13,19 @@ import { PresetPosition } from '../interfaces/preset-position';
   providers: [
     { provide: RESIZABLE, useExisting: forwardRef(() => BsResizableComponent) }
   ],
+  host: {
+    '[style.margin-left.px]': 'marginLeft',
+    '[style.margin-right.px]': 'marginRight',
+    '[style.margin-top.px]': 'marginTop',
+    '[style.margin-bottom.px]': 'marginBottom',
+    '[style.width.px]': 'width',
+    '[style.height.px]': 'height',
+    '[style.left.px]': 'left',
+    '[style.top.px]': 'top',
+    '[class.d-block]': 'true',
+    '[class.border]': 'true',
+    '[class]': 'hostPosition()',
+  },
 })
 export class BsResizableComponent {
   element = inject(ElementRef<HTMLElement>);
@@ -36,32 +49,30 @@ export class BsResizableComponent {
     }
   });
 
-  @Input() public set presetPosition(value: PresetPosition) {
-    if (this.positioning() === 'inline') {
-      throw 'presetPosition currently only supported in absolute positioning';
-    }
-    this.width = value.width;
-    this.height = value.height;
-    this.left = value.left;
-    this.top = value.top;
-    this.marginTop = this.marginBottom = this.marginLeft = this.marginRight = undefined;
+  readonly presetPosition = input<PresetPosition | undefined>(undefined);
+
+  constructor() {
+    effect(() => {
+      const value = this.presetPosition();
+      if (value) {
+        if (this.positioning() === 'inline') {
+          throw 'presetPosition currently only supported in absolute positioning';
+        }
+        this.width = value.width;
+        this.height = value.height;
+        this.left = value.left;
+        this.top = value.top;
+        this.marginTop = this.marginBottom = this.marginLeft = this.marginRight = undefined;
+      }
+    });
   }
 
-  @HostBinding('style.margin-left.px') marginLeft?: number;
-  @HostBinding('style.margin-right.px') marginRight?: number;
-  @HostBinding('style.margin-top.px') marginTop?: number;
-  @HostBinding('style.margin-bottom.px') marginBottom?: number;
-  @HostBinding('style.width.px') width?: number;
-  @HostBinding('style.height.px') height?: number;
-  @HostBinding('style.left.px') left?: number;
-  @HostBinding('style.top.px') top?: number;
-
-  @HostBinding('class.d-block')
-  @HostBinding('class.border')
-  classes = true;
-
-  @HostBinding('class')
-  get hostClass(): string | null {
-    return this.hostPosition();
-  }
+  marginLeft?: number;
+  marginRight?: number;
+  marginTop?: number;
+  marginBottom?: number;
+  width?: number;
+  height?: number;
+  left?: number;
+  top?: number;
 }

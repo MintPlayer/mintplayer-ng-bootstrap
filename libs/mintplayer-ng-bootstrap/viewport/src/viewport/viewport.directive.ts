@@ -1,4 +1,4 @@
-import { AfterViewInit, Directive, ElementRef, EventEmitter, inject, OnDestroy, Output, PLATFORM_ID } from '@angular/core';
+import { AfterViewInit, Directive, ElementRef, inject, OnDestroy, output, PLATFORM_ID } from '@angular/core';
 import { isPlatformServer } from '@angular/common';
 
 @Directive({
@@ -11,7 +11,7 @@ export class BsInViewportDirective implements AfterViewInit, OnDestroy {
   private observer: IntersectionObserver | null = null;
   private isDestroyed = false;
 
-  @Output() bsInViewport = new EventEmitter<boolean>();
+  readonly bsInViewport = output<boolean>();
 
   ngAfterViewInit() {
     if (isPlatformServer(this.platformId)) {

@@ -1,4 +1,4 @@
-import { Directive, inject, Input, TemplateRef, ViewContainerRef } from '@angular/core';
+import { Directive, effect, inject, input, TemplateRef, ViewContainerRef } from '@angular/core';
 import { BsLetContext } from '../interfaces/let-context';
 
 @Directive({
@@ -12,12 +12,19 @@ export class BsLetDirective<T> {
   private context: BsLetContext<T | null> = { bsLet: null, $implicit: null };
   private hasView: boolean = false;
 
-  @Input() set bsLet(value: T) {
-      this.context.$implicit = this.context.bsLet = value;
-      if (!this.hasView) {
+  readonly bsLet = input<T | undefined>(undefined);
+
+  constructor() {
+    effect(() => {
+      const value = this.bsLet();
+      if (value !== undefined) {
+        this.context.$implicit = this.context.bsLet = value;
+        if (!this.hasView) {
           this.hasView = true;
           this.viewContainer.createEmbeddedView(this.templateRef, this.context);
+        }
       }
+    });
   }
 
   /** @internal */

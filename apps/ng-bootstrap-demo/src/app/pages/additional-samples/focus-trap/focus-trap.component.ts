@@ -1,5 +1,5 @@
 import { A11yModule } from '@angular/cdk/a11y';
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsCloseComponent } from '@mintplayer/ng-bootstrap/close';
@@ -14,7 +14,8 @@ import { FocusOnLoadDirective } from '@mintplayer/ng-focus-on-load';
   templateUrl: './focus-trap.component.html',
   styleUrls: ['./focus-trap.component.scss'],
   standalone: true,
-  imports: [A11yModule, BsForDirective, BsFormModule, BsGridModule, BsCloseComponent, BsModalModule, BsButtonTypeDirective, FocusOnLoadDirective]
+  imports: [A11yModule, BsForDirective, BsFormModule, BsGridModule, BsCloseComponent, BsModalModule, BsButtonTypeDirective, FocusOnLoadDirective],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FocusTrapComponent {
 

@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Color, Position } from '@mintplayer/ng-bootstrap';
 import { BsAccordionModule } from '@mintplayer/ng-bootstrap/accordion';
@@ -17,7 +17,8 @@ import { GIT_REPO } from '../../../providers/git-repo.provider';
   templateUrl: './offcanvas.component.html',
   styleUrls: ['./offcanvas.component.scss'],
   standalone: true,
-  imports: [RouterLink, BsGridModule, BsCloseComponent, BsDropdownModule, BsButtonTypeDirective, BsButtonGroupComponent, BsDropdownMenuModule, BsOffcanvasModule, BsAccordionModule, BsToggleButtonModule]
+  imports: [RouterLink, BsGridModule, BsCloseComponent, BsDropdownModule, BsButtonTypeDirective, BsButtonGroupComponent, BsDropdownMenuModule, BsOffcanvasModule, BsAccordionModule, BsToggleButtonModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OffcanvasComponent {
   gitRepo = inject(GIT_REPO);

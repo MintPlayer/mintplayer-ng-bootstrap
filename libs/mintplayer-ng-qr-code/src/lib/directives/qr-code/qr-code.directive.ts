@@ -1,4 +1,4 @@
-import { Directive, inject, Input, OnChanges, ViewContainerRef } from '@angular/core';
+import { computed, Directive, effect, inject, input, ViewContainerRef } from '@angular/core';
 import { QRCodeErrorCorrectionLevel } from '@mintplayer/qr-code';
 import * as qrCodeService from '@mintplayer/qr-code';
 import { RgbaColor } from '../../types/rgba-color';
@@ -7,44 +7,52 @@ import { RgbaColor } from '../../types/rgba-color';
   selector: 'canvas[qrCode]',
   standalone: true
 })
-export class QrCodeDirective implements OnChanges {
+export class QrCodeDirective {
   private viewContainerRef = inject(ViewContainerRef);
 
   static readonly VALID_COLOR_REGEX = /^#(?:[0-9a-fA-F]{3,4}){1,2}$/;
   static readonly DEFAULT_ERROR_CORRECTION_LEVEL: QRCodeErrorCorrectionLevel = 'M';
   static readonly DEFAULT_CENTER_IMAGE_SIZE = 40;
 
-  @Input('qrCode') value!: string;
+  readonly value = input.required<string>({ alias: 'qrCode' });
 
   //#region Version
-  private version: number | null = null;
-  @Input() set qrCodeVersion(value: number | null) {
+  readonly qrCodeVersion = input<number | null>(null);
+  private version = computed(() => {
+    const value = this.qrCodeVersion();
     if (value && (value > 40)) {
-      this.version = 40;
+      return 40;
     } else if (value && (value < 1)) {
-      this.version = 1;
+      return 1;
     } else {
-      this.version = null;
+      return null;
     }
-  }
+  });
   //#endregion
 
-  
-  @Input() width?: number;
-  @Input() height?: number;
-  @Input() darkColor?: RgbaColor = '#000000FF';
-  @Input() lightColor?: RgbaColor = '#FFFFFFFF';
-  
-  @Input('qrCodeErrorCorrectionLevel') errorCorrectionLevel?: QRCodeErrorCorrectionLevel = QrCodeDirective.DEFAULT_ERROR_CORRECTION_LEVEL;
-  @Input('qrCodeCenterImageSrc') centerImageSrc?: string;
-  @Input('qrCodeCenterImageWidth') centerImageWidth?: number | string;
-  @Input('qrCodeCenterImageHeight') centerImageHeight?: number | string;
-  @Input('qrCodeMargin') margin? = 16;
+
+  readonly width = input<number | undefined>(undefined);
+  readonly height = input<number | undefined>(undefined);
+  readonly darkColor = input<RgbaColor | undefined>('#000000FF');
+  readonly lightColor = input<RgbaColor | undefined>('#FFFFFFFF');
+
+  readonly errorCorrectionLevel = input<QRCodeErrorCorrectionLevel | undefined>(QrCodeDirective.DEFAULT_ERROR_CORRECTION_LEVEL, { alias: 'qrCodeErrorCorrectionLevel' });
+  readonly centerImageSrc = input<string | undefined>(undefined, { alias: 'qrCodeCenterImageSrc' });
+  readonly centerImageWidth = input<number | string | undefined>(undefined, { alias: 'qrCodeCenterImageWidth' });
+  readonly centerImageHeight = input<number | string | undefined>(undefined, { alias: 'qrCodeCenterImageHeight' });
+  readonly margin = input<number | undefined>(16, { alias: 'qrCodeMargin' });
 
   private centerImage?: HTMLImageElement;
 
-  async ngOnChanges() {
-    if (!this.value) {
+  constructor() {
+    effect(() => {
+      this.renderQrCode();
+    });
+  }
+
+  private async renderQrCode() {
+    const value = this.value();
+    if (!value) {
       return;
     }
 
@@ -59,34 +67,36 @@ export class QrCodeDirective implements OnChanges {
       if (context) {
         context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 
-        const errorCorrectionLevel = this.errorCorrectionLevel ?? QrCodeDirective.DEFAULT_ERROR_CORRECTION_LEVEL
+        const errorCorrectionLevel = this.errorCorrectionLevel() ?? QrCodeDirective.DEFAULT_ERROR_CORRECTION_LEVEL;
+        const darkColor = this.darkColor();
+        const lightColor = this.lightColor();
 
-        const dark = !this.darkColor 
+        const dark = !darkColor
           ? undefined
-          : QrCodeDirective.VALID_COLOR_REGEX.test(this.darkColor)
-          ? this.darkColor
+          : QrCodeDirective.VALID_COLOR_REGEX.test(darkColor)
+          ? darkColor
           : undefined;
-        const light = !this.lightColor
+        const light = !lightColor
           ? undefined
-          : QrCodeDirective.VALID_COLOR_REGEX.test(this.lightColor)
-          ? this.lightColor
+          : QrCodeDirective.VALID_COLOR_REGEX.test(lightColor)
+          ? lightColor
           : undefined;
 
         await qrCodeService
-          .toCanvas(canvas, this.value, {
-            version: this.version ?? undefined,
+          .toCanvas(canvas, value, {
+            version: this.version() ?? undefined,
             errorCorrectionLevel,
-            width: this.width,
-            margin: this.margin,
+            width: this.width(),
+            margin: this.margin(),
             color: {
               dark,
               light,
             },
           });
 
-        const centerImageSrc = this.centerImageSrc;
-        const centerImageWidth = this.getIntOrDefault(this.centerImageWidth, QrCodeDirective.DEFAULT_CENTER_IMAGE_SIZE);
-        const centerImageHeight = this.getIntOrDefault(this.centerImageHeight, QrCodeDirective.DEFAULT_CENTER_IMAGE_SIZE);
+        const centerImageSrc = this.centerImageSrc();
+        const centerImageWidth = this.getIntOrDefault(this.centerImageWidth(), QrCodeDirective.DEFAULT_CENTER_IMAGE_SIZE);
+        const centerImageHeight = this.getIntOrDefault(this.centerImageHeight(), QrCodeDirective.DEFAULT_CENTER_IMAGE_SIZE);
 
         if (centerImageSrc && context) {
 

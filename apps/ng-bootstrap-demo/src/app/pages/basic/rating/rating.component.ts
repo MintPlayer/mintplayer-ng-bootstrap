@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy} from '@angular/core';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsRatingComponent } from '@mintplayer/ng-bootstrap/rating';
 
@@ -7,7 +7,8 @@ import { BsRatingComponent } from '@mintplayer/ng-bootstrap/rating';
   templateUrl: './rating.component.html',
   styleUrls: ['./rating.component.scss'],
   standalone: true,
-  imports: [BsGridModule, BsRatingComponent]
+  imports: [BsGridModule, BsRatingComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RatingComponent {
   ratingValue = signal(3);

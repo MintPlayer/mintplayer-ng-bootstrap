@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
@@ -10,7 +10,8 @@ import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
   templateUrl: './track-by.component.html',
   styleUrls: ['./track-by.component.scss'],
   standalone: true,
-  imports: [BsGridModule, BsButtonTypeDirective, BsListGroupModule, BsAlertModule]
+  imports: [BsGridModule, BsButtonTypeDirective, BsListGroupModule, BsAlertModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TrackByComponent {
   people: Person[] = [];

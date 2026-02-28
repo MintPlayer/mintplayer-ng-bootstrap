@@ -89,8 +89,7 @@
     "typescript": "5.9.3",
     "vite": "^6.4.1",
     "vitest": "^4.0.16",
-    "webpack-bundle-analyzer": "~4.9.0",
-    "zone.js": "^0.15.1"
+    "webpack-bundle-analyzer": "~4.9.0"
   },
   "overrides": {
     "ng-mocks": {

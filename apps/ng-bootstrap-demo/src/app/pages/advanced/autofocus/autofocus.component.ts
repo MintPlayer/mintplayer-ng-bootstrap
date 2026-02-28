@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal, ChangeDetectionStrategy} from '@angular/core';
 import { BsSelect2Module } from '@mintplayer/ng-bootstrap/select2';
 import { BsFontColorPipe } from '@mintplayer/ng-bootstrap/font-color';
 import { FocusOnLoadDirective } from '@mintplayer/ng-focus-on-load';
@@ -15,6 +15,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   styleUrls: ['./autofocus.component.scss'],
   standalone: true,
   imports: [BsSelect2Module, BsFontColorPipe, FocusOnLoadDirective],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AutofocusComponent {
 

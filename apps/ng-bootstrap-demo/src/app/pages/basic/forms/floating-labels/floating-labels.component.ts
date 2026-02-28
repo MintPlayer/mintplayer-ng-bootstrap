@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { BsFloatingLabelComponent } from '@mintplayer/ng-bootstrap/floating-labels';
 import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
 
@@ -7,6 +7,7 @@ import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
   templateUrl: './floating-labels.component.html',
   styleUrls: ['./floating-labels.component.scss'],
   standalone: true,
-  imports: [BsFormModule, BsFloatingLabelComponent]
+  imports: [BsFormModule, BsFloatingLabelComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FloatingLabelsComponent {}

@@ -1,11 +1,12 @@
-import { Component, Input } from '@angular/core';
+import { Component, input, ChangeDetectionStrategy} from '@angular/core';
 
 @Component({
   selector: 'bs-card',
   templateUrl: './card.component.html',
   styleUrls: ['./card.component.scss'],
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsCardComponent {
-  @Input() rounded = true;
+  readonly rounded = input(true);
 }

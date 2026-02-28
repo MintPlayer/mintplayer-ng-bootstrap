@@ -1,4 +1,4 @@
-import { AfterContentChecked, ChangeDetectorRef, DestroyRef, Directive, ElementRef, inject, Input, Renderer2 } from '@angular/core';
+import { AfterContentChecked, ChangeDetectorRef, DestroyRef, Directive, ElementRef, inject, input, Renderer2 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLinkActive } from '@angular/router';
 import { filter } from 'rxjs';
@@ -18,7 +18,7 @@ export class NavbarRouterLinkActiveDirective extends RouterLinkActive implements
   private _renderer = inject(Renderer2);
   private _destroyRef = inject(DestroyRef);
 
-  @Input() fragment?: string;
+  readonly fragment = input<string | undefined>(undefined);
 
   constructor() {
     super(inject(Router), inject(ElementRef), inject(Renderer2), inject(ChangeDetectorRef));
@@ -40,9 +40,10 @@ export class NavbarRouterLinkActiveDirective extends RouterLinkActive implements
 
   private updateFragmentActiveState(): void {
     // If this link has a fragment, we need custom handling
-    if (this.fragment) {
+    const fragmentValue = this.fragment();
+    if (fragmentValue) {
       const currentFragment = this._router.routerState.snapshot.root.fragment;
-      const isFragmentMatch = currentFragment === this.fragment;
+      const isFragmentMatch = currentFragment === fragmentValue;
 
       // If fragments don't match, remove the active class even if the route matches
       if (!isFragmentMatch) {

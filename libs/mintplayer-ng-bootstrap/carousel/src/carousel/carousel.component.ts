@@ -1,5 +1,5 @@
 import { isPlatformServer, NgTemplateOutlet } from '@angular/common';
-import { AfterViewInit, ChangeDetectionStrategy, Component, computed, ContentChildren, DestroyRef, effect, ElementRef, forwardRef, HostBinding, HostListener, inject, input, OnDestroy, output, PLATFORM_ID, QueryList, signal, TemplateRef, ViewChild, viewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, computed, contentChildren, DestroyRef, effect, ElementRef, forwardRef, inject, input, OnDestroy, output, PLATFORM_ID, signal, TemplateRef, viewChild } from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsSwipeContainerDirective, BsSwipeDirective } from '@mintplayer/ng-swiper/swiper';
@@ -19,6 +19,13 @@ import { BsCarouselImageDirective } from '../carousel-image/carousel-image.direc
   ],
   animations: [FadeInOutAnimation],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[@.disabled]': 'animationsDisabled',
+    '(document:keydown.ArrowLeft)': 'onKeyPress($event)',
+    '(document:keydown.ArrowRight)': 'onKeyPress($event)',
+    '(document:keydown.ArrowUp)': 'onKeyPress($event)',
+    '(document:keydown.ArrowDown)': 'onKeyPress($event)',
+  },
 })
 export class BsCarouselComponent implements AfterViewInit, OnDestroy {
   private platformId = inject(PLATFORM_ID);
@@ -27,7 +34,7 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
   colors = Color;
   isServerSide = isPlatformServer(this.platformId);
   currentImageIndex = signal(0);
-  images = signal<QueryList<BsCarouselImageDirective> | null>(null);
+  readonly images = contentChildren<BsCarouselImageDirective>(forwardRef(() => BsCarouselImageDirective));
   resizeObserver?: ResizeObserver;
   private intervalId?: ReturnType<typeof setInterval>;
   private isDestroyed = false;
@@ -46,24 +53,23 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
   animationEnd = output<void>();
 
   // Computed signals
-  imageCount = computed(() => this.images()?.length ?? 0);
+  imageCount = computed(() => this.images().length);
 
-  // Signal-based viewChild for swipeContainer to enable reactive height tracking
-  swipeContainerSignal = viewChild<BsSwipeContainerDirective>('container');
+  readonly innerElement = viewChild<ElementRef<HTMLDivElement>>('innerElement');
+  readonly swipeContainer = viewChild<BsSwipeContainerDirective>('container');
 
   // Returns 200 when swipeContainer isn't ready or height is null/0, ensuring images render and ResizeObserver triggers
   slideHeight = computed(() => {
-    const container = this.swipeContainerSignal();
+    const container = this.swipeContainer();
     const height = container?.currentSlideHeight();
     return (height && height > 0) ? height : 200;
   });
 
   firstImageTemplate = computed<TemplateRef<any> | null>(() => {
     const images = this.images();
-    if (!images) return null;
     if (images.length === 0) return null;
 
-    const img = images.get(0);
+    const img = images[0];
     if (!img) return null;
 
     return img.itemTemplate;
@@ -71,28 +77,16 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
 
   lastImageTemplate = computed<TemplateRef<any> | null>(() => {
     const images = this.images();
-    if (!images) return null;
     if (images.length === 0) return null;
 
-    const img = images.get(images.length - 1);
+    const img = images[images.length - 1];
     if (!img) return null;
 
     return img.itemTemplate;
   });
 
-  @ViewChild('innerElement') innerElement!: ElementRef<HTMLDivElement>;
-  @ViewChild('container') swipeContainer!: BsSwipeContainerDirective;
-  @ContentChildren(forwardRef(() => BsCarouselImageDirective)) set imagesQuery(value: QueryList<BsCarouselImageDirective>) {
-    this.images.set(value);
-    value.forEach((item, index) => item.isFirst = (index === 0));
-  }
+  public animationsDisabled = false;
 
-  @HostBinding('@.disabled') public animationsDisabled = false;
-
-  @HostListener('document:keydown.ArrowLeft', ['$event'])
-  @HostListener('document:keydown.ArrowRight', ['$event'])
-  @HostListener('document:keydown.ArrowUp', ['$event'])
-  @HostListener('document:keydown.ArrowDown', ['$event'])
   onKeyPress(event: Event) {
     const ev = event as KeyboardEvent;
     if (this.keyboardEvents()) {
@@ -131,6 +125,12 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
   }
 
   constructor() {
+    // Mark first image whenever images change
+    effect(() => {
+      const images = this.images();
+      images.forEach((item, index) => item.isFirst = (index === 0));
+    });
+
     // Setup auto-advance interval effect
     effect(() => {
       const intervalTime = this.interval();
@@ -195,7 +195,7 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
         break;
       }
       case 'slide':
-        this.swipeContainer.previous();
+        this.swipeContainer()?.previous();
         break;
     }
   }
@@ -229,7 +229,7 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
         break;
       }
       case 'slide':
-        this.swipeContainer.next();
+        this.swipeContainer()?.next();
         break;
     }
   }
@@ -248,7 +248,7 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
         }
         break;
       case 'slide':
-        this.swipeContainer.goto(index);
+        this.swipeContainer()?.goto(index);
         break;
     }
   }
@@ -261,13 +261,19 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
         // Signals automatically trigger change detection in zoneless mode
         // The resize will be picked up by the observe-size directive
       });
-      this.resizeObserver.observe(this.innerElement.nativeElement);
+      const el = this.innerElement();
+      if (el) {
+        this.resizeObserver.observe(el.nativeElement);
+      }
     }
   }
 
   ngOnDestroy() {
     this.isDestroyed = true;
-    this.resizeObserver?.unobserve(this.innerElement?.nativeElement);
+    const innerEl = this.innerElement();
+    if (innerEl) {
+      this.resizeObserver?.unobserve(innerEl.nativeElement);
+    }
     this.resizeObserver?.disconnect();
     this.clearAutoAdvance();
   }

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, ElementRef, HostListener, input, signal, TemplateRef, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, ElementRef, input, signal, TemplateRef, viewChild } from '@angular/core';
 import { Breakpoint, Color } from '@mintplayer/ng-bootstrap';
 
 @Component({
@@ -7,6 +7,9 @@ import { Breakpoint, Color } from '@mintplayer/ng-bootstrap';
   styleUrls: ['./navbar.component.scss'],
   standalone: false,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(window:resize)': 'onWindowResize()',
+  },
 })
 export class BsNavbarComponent {
 
@@ -16,7 +19,6 @@ export class BsNavbarComponent {
     this.onWindowResize();
   }
 
-  @HostListener('window:resize')
   onWindowResize() {
     this.isResizing.set(true);
     if (typeof window !== 'undefined') {
@@ -34,7 +36,7 @@ export class BsNavbarComponent {
     }, 300);
   }
 
-  @ViewChild('nav') nav!: ElementRef;
+  readonly nav = viewChild.required<ElementRef>('nav');
   autoclose = input(true);
 
   expandButtonTemplate: TemplateRef<any> | null = null;

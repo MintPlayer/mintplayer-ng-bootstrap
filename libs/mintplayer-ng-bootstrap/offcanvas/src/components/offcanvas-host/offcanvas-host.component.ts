@@ -1,6 +1,6 @@
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { AfterViewInit, Component, ComponentRef, effect, inject, Injector, model, OnDestroy, output, OutputRefSubscription, signal, TemplateRef } from '@angular/core';
+import { AfterViewInit, Component, ComponentRef, effect, inject, Injector, model, OnDestroy, output, OutputRefSubscription, signal, TemplateRef, ChangeDetectionStrategy} from '@angular/core';
 import { Position } from '@mintplayer/ng-bootstrap';
 import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
@@ -11,6 +11,7 @@ import { BsOffcanvasComponent } from '../offcanvas/offcanvas.component';
   templateUrl: './offcanvas-host.component.html',
   styleUrls: ['./offcanvas-host.component.scss'],
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsOffcanvasHostComponent implements AfterViewInit, OnDestroy {
   private overlayService = inject(Overlay);

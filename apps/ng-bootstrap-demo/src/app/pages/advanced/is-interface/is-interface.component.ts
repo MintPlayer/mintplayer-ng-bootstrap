@@ -1,4 +1,4 @@
-import { Component, Pipe, PipeTransform } from '@angular/core';
+import { Component, Pipe, PipeTransform, ChangeDetectionStrategy} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsTableComponent } from '@mintplayer/ng-bootstrap/table';
@@ -52,6 +52,7 @@ export class AsEmployeePipe implements PipeTransform {
   ],
   templateUrl: './is-interface.component.html',
   styleUrl: './is-interface.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class IsInterfaceComponent {
   employeesOrVisitors: (Employee | Visitor)[] = [

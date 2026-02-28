@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, Directive, effect, ElementRef, HostBinding, HostListener, inject, model, NgZone, output, signal, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, Directive, effect, ElementRef, inject, model, output, signal, viewChild } from '@angular/core';
 
 @Component({
   selector: 'bs-slider',
@@ -6,15 +6,16 @@ import { ChangeDetectionStrategy, Component, computed, Directive, effect, Elemen
   styleUrls: ['./slider.component.scss'],
   standalone: false,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    'class': 'd-block position-relative',
+    '(document:mousemove)': 'onPointerMove($event)',
+    '(document:mouseup)': 'onPointerUp($event)',
+  },
 })
 export class BsSliderComponent {
   private element = inject(ElementRef<HTMLElement>);
-  private zone = inject(NgZone);
-
-  @HostBinding('class.d-block') dBlock = true;
-  @HostBinding('class.position-relative') positionRelative = true;
-  @ViewChild('track') track!: ElementRef<HTMLDivElement>;
-  @ViewChild('thumb') thumb!: ElementRef<HTMLDivElement>;
+  readonly track = viewChild.required<ElementRef<HTMLDivElement>>('track');
+  readonly thumb = viewChild.required<ElementRef<HTMLDivElement>>('thumb');
 
   value = model<number>(0.5);
   valueChange = output<number>();
@@ -40,11 +41,10 @@ export class BsSliderComponent {
   onPointerDown(ev: MouseEvent | TouchEvent) {
     ev.preventDefault();
     ev.stopPropagation();
-    this.zone.run(() => this.isPointerDown.set(true));
+    this.isPointerDown.set(true);
     this.updateColor(ev);
   }
 
-  @HostListener('document:mousemove', ['$event'])
   onPointerMove(ev: MouseEvent | TouchEvent) {
     if (this.isPointerDown()) {
       ev.preventDefault();
@@ -53,14 +53,13 @@ export class BsSliderComponent {
     }
   }
 
-  @HostListener('document:mouseup', ['$event'])
   onPointerUp(ev: MouseEvent | TouchEvent) {
     this.isPointerDown.set(false);
   }
 
   private updateColor(ev: MouseEvent | TouchEvent) {
     let co: { x: number };
-    const rect = this.track.nativeElement.getBoundingClientRect();
+    const rect = this.track().nativeElement.getBoundingClientRect();
     if ('touches' in ev) {
       co = {
         x: ev.touches[0].clientX - rect.left,
@@ -71,7 +70,7 @@ export class BsSliderComponent {
       };
     }
 
-    const percent = co.x / this.track.nativeElement.clientWidth;
+    const percent = co.x / this.track().nativeElement.clientWidth;
     const limited = Math.max(0, Math.min(1, percent));
     this.value.set(limited);
   }
@@ -80,17 +79,19 @@ export class BsSliderComponent {
 @Directive({
   selector: '[bsThumb]',
   standalone: false,
+  host: {
+    'class': 'thumb position-absolute',
+  },
 })
 export class BsThumbDirective {
-  @HostBinding('class.thumb')
-  @HostBinding('class.position-absolute')
-  thumbClass = true;
 }
 
 @Directive({
   selector: '[bsTrack]',
   standalone: false,
+  host: {
+    'class': 'track',
+  },
 })
 export class BsTrackDirective {
-  @HostBinding('class.track') trackClass = true;
 }

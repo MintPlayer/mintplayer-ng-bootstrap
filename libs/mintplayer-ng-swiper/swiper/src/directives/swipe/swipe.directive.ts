@@ -1,4 +1,4 @@
-import { Directive, effect, HostBinding, HostListener, inject, input } from "@angular/core";
+import { Directive, effect, inject, input } from "@angular/core";
 import { BsObserveSizeDirective } from "@mintplayer/ng-swiper/observe-size";
 import { BsSwipeContainerDirective } from "../swipe-container/swipe-container.directive";
 
@@ -6,6 +6,20 @@ import { BsSwipeContainerDirective } from "../swipe-container/swipe-container.di
   selector: '[bsSwipe]',
   hostDirectives: [BsObserveSizeDirective],
   standalone: true,
+  host: {
+    '[class.align-top]': 'true',
+    '[class.float-none]': 'true',
+    '[class.w-100]': 'true',
+    '[class.pe-auto]': 'true',
+    '[class.me-0]': 'true',
+    '[class.d-inline-block]': 'inlineBlock',
+    '[class.d-block]': 'block',
+    '[style.height.px]': 'slideHeight',
+    '[style.touch-action]': 'touchAction',
+    '(touchstart)': 'onTouchStart($event)',
+    '(touchmove)': 'onTouchMove($event)',
+    '(touchend)': 'onTouchEnd($event)',
+  },
 })
 export class BsSwipeDirective {
   private container = inject(BsSwipeContainerDirective);
@@ -36,19 +50,11 @@ export class BsSwipeDirective {
     this.slideHeight = targetHeight;
   });
 
-  @HostBinding('class.align-top')
-  @HostBinding('class.float-none')
-  @HostBinding('class.w-100')
-  @HostBinding('class.pe-auto')
-  @HostBinding('class.me-0')
-  classes = true;
+  inlineBlock = true;
+  block = false;
+  slideHeight: number | null = null;
+  touchAction: 'pan-x' | 'pan-y' = 'pan-y';
 
-  @HostBinding('class.d-inline-block') inlineBlock = true;
-  @HostBinding('class.d-block') block = false;
-  @HostBinding('style.height.px') slideHeight: number | null = null;
-  @HostBinding('style.touch-action') touchAction: 'pan-x' | 'pan-y' = 'pan-y';
-
-  @HostListener('touchstart', ['$event'])
   onTouchStart(ev: TouchEvent) {
     if (ev.touches.length === 1) {
       ev.stopPropagation(); // Prevent bubbling, but allow clicks
@@ -74,7 +80,6 @@ export class BsSwipeDirective {
     }
   }
 
-  @HostListener('touchmove', ['$event'])
   onTouchMove(ev: TouchEvent) {
     ev.stopPropagation();
 
@@ -98,7 +103,6 @@ export class BsSwipeDirective {
     });
   }
 
-  @HostListener('touchend', ['$event'])
   onTouchEnd(ev: TouchEvent) {
     ev.stopPropagation();
     if (this.isSwipeDetected) {

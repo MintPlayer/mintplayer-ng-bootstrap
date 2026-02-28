@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, input, model, output, signal, ViewChild } from "@angular/core";
+import { ChangeDetectionStrategy, Component, effect, input, model, output, signal, viewChild } from "@angular/core";
 import { HS } from "../../interfaces/hs";
 import { BsColorWheelComponent } from "../color-wheel/color-wheel.component";
 
@@ -11,7 +11,7 @@ import { BsColorWheelComponent } from "../color-wheel/color-wheel.component";
 })
 export class BsColorPickerComponent {
 
-  @ViewChild('wheel') colorWheel!: BsColorWheelComponent;
+  readonly colorWheel = viewChild.required<BsColorWheelComponent>('wheel');
 
   size = input<number>(150);
   disabled = signal<boolean>(false);

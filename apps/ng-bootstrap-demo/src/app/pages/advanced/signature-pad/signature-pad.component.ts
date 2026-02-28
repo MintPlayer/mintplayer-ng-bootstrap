@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { BsSignaturePadComponent, Signature } from '@mintplayer/ng-bootstrap/signature-pad';
 
 @Component({
@@ -6,7 +6,8 @@ import { BsSignaturePadComponent, Signature } from '@mintplayer/ng-bootstrap/sig
   templateUrl: './signature-pad.component.html',
   styleUrls: ['./signature-pad.component.scss'],
   standalone: true,
-  imports: [BsSignaturePadComponent]
+  imports: [BsSignaturePadComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SignaturePadComponent {
   signature: Signature = { strokes: [] };

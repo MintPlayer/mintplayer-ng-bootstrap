@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
 import { BsMultiselectModule } from '@mintplayer/ng-bootstrap/multiselect';
 import { FocusOnLoadDirective } from '@mintplayer/ng-focus-on-load';
@@ -8,7 +8,8 @@ import { FocusOnLoadDirective } from '@mintplayer/ng-focus-on-load';
   templateUrl: './multiselect-dropdown.component.html',
   styleUrls: ['./multiselect-dropdown.component.scss'],
   standalone: true,
-  imports: [BsFormModule, BsMultiselectModule, FocusOnLoadDirective]
+  imports: [BsFormModule, BsMultiselectModule, FocusOnLoadDirective],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MultiselectDropdownComponent {
 

@@ -1,4 +1,4 @@
-import { Component, ElementRef, signal, ViewChild } from '@angular/core';
+import { Component, ElementRef, signal, viewChild, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
@@ -11,7 +11,8 @@ import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
   templateUrl: './alert.component.html',
   styleUrls: ['./alert.component.scss'],
   standalone: true,
-  imports: [FormsModule, BsFormModule, BsAlertModule, BsInputGroupComponent, BsButtonTypeDirective]
+  imports: [FormsModule, BsFormModule, BsAlertModule, BsInputGroupComponent, BsButtonTypeDirective],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AlertComponent {
   colors = Color;
@@ -22,7 +23,7 @@ export class AlertComponent {
   newAlertId = signal(1);
   newAlertItem = signal('');
   alertsList = signal<AlertItem[]>([]);
-  @ViewChild('txtNewAlert') txtNewAlert!: ElementRef<HTMLInputElement>;
+  readonly txtNewAlert = viewChild.required<ElementRef<HTMLInputElement>>('txtNewAlert');
   alertVisibleChange(alert: AlertItem, isVisible: boolean) {
     if (!isVisible) {
       this.alertsList.update(list => list.filter(a => a !== alert));
@@ -32,7 +33,7 @@ export class AlertComponent {
     this.alertsList.update(list => [...list, { id: this.newAlertId(), text: this.newAlertItem() }]);
     this.newAlertId.update(id => id + 1);
     this.newAlertItem.set('');
-    this.txtNewAlert.nativeElement.focus();
+    this.txtNewAlert().nativeElement.focus();
   }
 }
 

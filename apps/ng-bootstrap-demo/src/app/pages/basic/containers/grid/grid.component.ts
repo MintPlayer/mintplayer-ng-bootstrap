@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 
 @Component({
@@ -6,6 +6,7 @@ import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
   templateUrl: './grid.component.html',
   styleUrls: ['./grid.component.scss'],
   standalone: true,
-  imports: [BsGridModule]
+  imports: [BsGridModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GridComponent {}

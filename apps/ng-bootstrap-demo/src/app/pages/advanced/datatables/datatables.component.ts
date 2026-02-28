@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, ChangeDetectionStrategy} from '@angular/core';
 import { BsDatatableModule, DatatableSettings } from '@mintplayer/ng-bootstrap/datatable';
 import { PaginationResponse } from '@mintplayer/pagination';
 import { Artist } from '../../../entities/artist';
@@ -10,6 +10,7 @@ import { ArtistService } from '../../../services/artist/artist.service';
   styleUrls: ['./datatables.component.scss'],
   standalone: true,
   imports: [BsDatatableModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DatatablesComponent implements OnInit {
 

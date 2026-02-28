@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BsForDirective } from '@mintplayer/ng-bootstrap/for';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
@@ -11,7 +11,8 @@ import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
   templateUrl: './tab-control.component.html',
   styleUrls: ['./tab-control.component.scss'],
   standalone: true,
-  imports: [FormsModule, BsForDirective, BsGridModule, BsSelectModule, BsTabControlModule, BsToggleButtonModule]
+  imports: [FormsModule, BsForDirective, BsGridModule, BsSelectModule, BsTabControlModule, BsToggleButtonModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TabControlComponent {
   tabsPosition = signal<BsTabsPosition>('top');

@@ -1,6 +1,6 @@
 /// <reference types="../types" />
 
-import { ChangeDetectionStrategy, Component, computed, ContentChild, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, contentChild, DestroyRef, inject, signal } from '@angular/core';
 import { BsTreeviewComponent } from '../treeview/treeview.component';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
@@ -17,7 +17,7 @@ export class BsTreeviewItemComponent {
   private sanitizer = inject(DomSanitizer);
   private destroyRef = inject(DestroyRef);
 
-  @ContentChild(BsTreeviewComponent, { descendants: false }) childTree?: BsTreeviewComponent;
+  readonly childTree = contentChild(BsTreeviewComponent, { descendants: false });
   chevronRight = signal<SafeHtml | undefined>(undefined);
 
   // Roving tabindex: only the focused item has tabindex 0
@@ -39,8 +39,9 @@ export class BsTreeviewItemComponent {
     // Set this item as focused when clicked
     this.parent.setFocusedItem(this);
 
-    if (this.childTree) {
-      this.childTree.isExpanded.update(v => !v);
+    const childTree = this.childTree();
+    if (childTree) {
+      childTree.isExpanded.update(v => !v);
     }
   }
 }

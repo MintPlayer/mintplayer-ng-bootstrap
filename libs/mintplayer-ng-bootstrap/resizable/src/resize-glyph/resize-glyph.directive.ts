@@ -1,4 +1,4 @@
-import { Directive, HostBinding, HostListener, Inject, Input, forwardRef, Optional } from '@angular/core';
+import { Directive, effect, Inject, input, forwardRef, Optional } from '@angular/core';
 import { Position } from '@mintplayer/ng-bootstrap';
 import type { BsResizableComponent } from '../resizable/resizable.component';
 import { ResizeAction } from '../interfaces/resize-action';
@@ -8,6 +8,17 @@ import { RESIZABLE } from '../providers/resizable.provider';
 @Directive({
   selector: '[bsResizeGlyph]',
   standalone: false,
+  host: {
+    '[class]': 'positions',
+    '[class.glyph]': 'true',
+    '[class.active]': 'activeClass',
+    '(mousedown)': 'onMouseDown($event)',
+    '(touchstart)': 'onTouchStart($event)',
+    '(document:mousemove)': 'onMouseMove($event)',
+    '(touchmove)': 'onTouchMove($event)',
+    '(document:mouseup)': 'onMouseUp($event)',
+    '(touchend)': 'onTouchEnd($event)',
+  },
 })
 export class BsResizeGlyphDirective {
 
@@ -15,32 +26,34 @@ export class BsResizeGlyphDirective {
   private readonly resizable: BsResizableComponent;
   constructor(@Inject(RESIZABLE) resizable: any) {
     this.resizable = resizable;
+
+    effect(() => {
+      const value = this.bsResizeGlyph();
+      this.positions = value.join(' ');
+    });
   }
 
-  @HostBinding('class') positions = '';
-  @HostBinding('class.glyph') glyphClass = true;
-  @HostBinding('class.active') activeClass = false;
+  positions = '';
+  activeClass = false;
 
-  @Input() set bsResizeGlyph(value: Position[]) {
-    this.positions = value.join(' ');
-  }
+  readonly bsResizeGlyph = input<Position[]>([]);
 
-  @HostListener('mousedown', ['$event']) onMouseDown(ev: MouseEvent) {
+  onMouseDown(ev: MouseEvent) {
     ev.preventDefault();
     this.onPointerDown()
   }
 
-  @HostListener('touchstart', ['$event']) onTouchStart(ev: TouchEvent) {
+  onTouchStart(ev: TouchEvent) {
     ev.preventDefault();
     ev.stopPropagation();
     this.onPointerDown();
   }
 
-  @HostListener('document:mousemove', ['$event']) onMouseMove(ev: MouseEvent) {
+  onMouseMove(ev: MouseEvent) {
     this.onPointerMove({ clientX: ev.clientX, clientY: ev.clientY, preventDefault: () => ev.preventDefault() });
   }
 
-  @HostListener('touchmove', ['$event']) onTouchMove(ev: TouchEvent) {
+  onTouchMove(ev: TouchEvent) {
     if (ev.touches.length === 1) {
       ev.preventDefault();
       ev.stopPropagation();
@@ -48,11 +61,11 @@ export class BsResizeGlyphDirective {
     }
   }
 
-  @HostListener('document:mouseup', ['$event']) onMouseUp(ev: Event) {
+  onMouseUp(ev: Event) {
     this.onPointerUp();
   }
 
-  @HostListener('touchend', ['$event']) onTouchEnd(ev: TouchEvent) {
+  onTouchEnd(ev: TouchEvent) {
     ev.preventDefault();
     ev.stopPropagation();
     this.onPointerUp();

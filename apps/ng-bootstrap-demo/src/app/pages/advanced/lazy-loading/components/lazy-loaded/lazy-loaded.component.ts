@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
 
@@ -7,7 +7,8 @@ import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
   templateUrl: './lazy-loaded.component.html',
   styleUrls: ['./lazy-loaded.component.scss'],
   standalone: true,
-  imports: [FormsModule, BsFormModule]
+  imports: [FormsModule, BsFormModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LazyLoadedComponent {
   text = 'Lazy-loaded';

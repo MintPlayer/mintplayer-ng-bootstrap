@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
@@ -10,7 +10,8 @@ import { GIT_REPO } from '../../../providers/git-repo.provider';
   templateUrl: './tooltip.component.html',
   styleUrls: ['./tooltip.component.scss'],
   standalone: true,
-  imports: [BsGridModule, BsTooltipModule, BsButtonTypeDirective]
+  imports: [BsGridModule, BsTooltipModule, BsButtonTypeDirective],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TooltipComponent {
   gitRepo = inject(GIT_REPO);

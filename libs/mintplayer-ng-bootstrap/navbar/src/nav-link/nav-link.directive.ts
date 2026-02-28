@@ -1,4 +1,4 @@
-import { Directive, ElementRef, forwardRef, HostBinding, Inject, Optional, PLATFORM_ID } from '@angular/core';
+import { Directive, ElementRef, forwardRef, Inject, Optional } from '@angular/core';
 import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 
@@ -9,6 +9,9 @@ import { BsNavbarComponent } from '../navbar/navbar.component';
   // Below selector seems to target other a's that aren't even remotely inside a bs-navbar-item
   // selector: 'bs-navbar-item:first-child > a'
   standalone: false,
+  host: {
+    '[class.cursor-pointer]': 'cursorPointer',
+  },
 })
 export class NavLinkDirective {
 
@@ -27,6 +30,6 @@ export class NavLinkDirective {
     this.cursorPointer = !!parentNavbar;
   }
 
-  @HostBinding('class.cursor-pointer') cursorPointer: boolean;
+  cursorPointer: boolean;
 
 }

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
 import { BsInstanceOfModule } from '@mintplayer/ng-bootstrap/instance-of';
@@ -9,6 +9,7 @@ import { BsInstanceOfModule } from '@mintplayer/ng-bootstrap/instance-of';
   styleUrls: ['./instance-of.component.scss'],
   standalone: true,
   imports: [BsInstanceOfModule, BsAlertModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class InstanceOfComponent {
   items: (Base | null)[] = [

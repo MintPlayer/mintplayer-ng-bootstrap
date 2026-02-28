@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { BsBreadcrumbModule } from '@mintplayer/ng-bootstrap/breadcrumb';
 
@@ -7,6 +7,7 @@ import { BsBreadcrumbModule } from '@mintplayer/ng-bootstrap/breadcrumb';
   templateUrl: './breadcrumb.component.html',
   styleUrls: ['./breadcrumb.component.scss'],
   standalone: true,
-  imports: [RouterLink, BsBreadcrumbModule]
+  imports: [RouterLink, BsBreadcrumbModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BreadcrumbComponent {}

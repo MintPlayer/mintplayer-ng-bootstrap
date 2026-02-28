@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal, ChangeDetectionStrategy} from '@angular/core';
 import { Artist } from '../../../entities/artist';
 import { SubjectService } from '../../../services/subject/subject.service';
 import { ESubjectType } from '../../../enums/subject-type';
@@ -14,7 +14,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   templateUrl: './searchbox.component.html',
   styleUrls: ['./searchbox.component.scss'],
   standalone: true,
-  imports: [JsonPipe, BsFormModule, BsGridModule, BsSearchboxModule]
+  imports: [JsonPipe, BsFormModule, BsGridModule, BsSearchboxModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SearchboxComponent {
 

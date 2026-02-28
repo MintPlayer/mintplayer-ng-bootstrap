@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, HostBinding, Inject, input, TemplateRef } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, Inject, input, TemplateRef } from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Position } from '@mintplayer/ng-bootstrap';
 import { TOOLTIP_CONTENT } from '../providers/tooltip-content.provider';
@@ -10,6 +10,9 @@ import { TOOLTIP_CONTENT } from '../providers/tooltip-content.provider';
   standalone: false,
   animations: [FadeInOutAnimation],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[class.position-relative]': 'true',
+  },
 })
 export class BsTooltipComponent {
   constructor(@Inject(TOOLTIP_CONTENT) content: TemplateRef<any>) {
@@ -29,6 +32,4 @@ export class BsTooltipComponent {
       case 'bottom': return 'mt-1';
     }
   });
-
-  @HostBinding('class.position-relative') positionRelative = true;
 }

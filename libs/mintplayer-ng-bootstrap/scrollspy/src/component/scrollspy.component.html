@@ -1,6 +1,6 @@
 <div class="spy">
     <ul class="text-muted">
-        @for (dir of directives; track dir; let i = $index) {
+        @for (dir of directives(); track dir; let i = $index) {
             <li>
                 <span [attr.data-index]="i" class="cursor-pointer" [class]="'nav' + dir.element.nativeElement.tagName" [class.fw-bold]="activeDirective?.element === dir.element" (click)="scrollToHeader(dir)" [title]="dir.element.nativeElement.textContent" #anchor>
                     {{ dir.element.nativeElement.textContent }}

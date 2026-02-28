@@ -1,16 +1,14 @@
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
-  ChangeDetectorRef,
   Component,
-  ContentChildren,
+  contentChildren,
+  effect,
   ElementRef,
-  EventEmitter,
   Inject,
-  Input,
-  Output,
-  QueryList,
-  ViewChild,
+  input,
+  output,
+  viewChild,
 } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import {
@@ -29,39 +27,41 @@ import { MintDockManagerElement } from '../web-components/mint-dock-manager.elem
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsDockManagerComponent implements AfterViewInit {
-  @Input()
-  set layout(value: DockLayoutNode | DockLayout | null) {
-    const snapshot = this.cloneLayout(this.ensureSnapshot(value));
-    this._layout = snapshot;
-    this.layoutString = this.stringifyLayout(snapshot);
-    this.applyLayout();
-  }
-  get layout(): DockLayoutSnapshot | null {
+  readonly layout = input<DockLayoutNode | DockLayout | null>(null);
+
+  get layoutSnapshot(): DockLayoutSnapshot | null {
     if (!this._layout.root && this._layout.floating.length === 0) {
       return null;
     }
     return this.cloneLayout(this._layout);
   }
 
-  @Output() layoutChange = new EventEmitter<DockLayoutSnapshot | null>();
-  @Output() layoutSnapshotChange = new EventEmitter<DockLayoutSnapshot>();
+  readonly layoutChange = output<DockLayoutSnapshot | null>();
+  readonly layoutSnapshotChange = output<DockLayoutSnapshot>();
 
   layoutString: string | null = null;
 
-  @ContentChildren(BsDockPaneComponent) panes: QueryList<BsDockPaneComponent> = new QueryList();
-  @ViewChild('manager', { static: true }) managerRef!: ElementRef<MintDockManagerElement>;
+  readonly panes = contentChildren(BsDockPaneComponent);
+  readonly managerRef = viewChild<ElementRef<MintDockManagerElement>>('manager');
 
-  protected readonly trackByPane = (_: number, pane: BsDockPaneComponent) => pane.name;
+  protected readonly trackByPane = (_: number, pane: BsDockPaneComponent) => pane.name();
 
   private _layout: DockLayoutSnapshot = { root: null, floating: [] };
 
   constructor(
-    private readonly changeDetector: ChangeDetectorRef,
     @Inject(DOCUMENT) documentRef: Document,
   ) {
     if (documentRef) {
       MintDockManagerElement.configureDocument(documentRef);
     }
+
+    effect(() => {
+      const value = this.layout();
+      const snapshot = this.cloneLayout(this.ensureSnapshot(value));
+      this._layout = snapshot;
+      this.layoutString = this.stringifyLayout(snapshot);
+      this.applyLayout();
+    });
   }
 
   ngAfterViewInit(): void {
@@ -69,7 +69,7 @@ export class BsDockManagerComponent implements AfterViewInit {
   }
 
   captureLayout(): DockLayoutSnapshot {
-    const element = this.managerRef?.nativeElement;
+    const element = this.managerRef()?.nativeElement;
     return element?.snapshot ?? { root: null, floating: [] };
   }
 
@@ -81,18 +81,18 @@ export class BsDockManagerComponent implements AfterViewInit {
       };
     this._layout = this.cloneLayout(snapshot);
     this.layoutString = this.stringifyLayout(this._layout);
-    this.layoutChange.emit(this.layout);
+    this.layoutChange.emit(this.layoutSnapshot);
     this.layoutSnapshotChange.emit(this.cloneLayout(snapshot));
-    this.changeDetector.markForCheck();
   }
 
   private applyLayout(): void {
-    if (!this.managerRef) {
+    const ref = this.managerRef();
+    if (!ref) {
       return;
     }
 
-    const element = this.managerRef.nativeElement;
-    const layout = this.layout;
+    const element = ref.nativeElement;
+    const layout = this.layoutSnapshot;
     element.layout = layout ?? null;
   }
 

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, HostBinding, HostListener, input, model, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, input, model, output, signal } from '@angular/core';
 
 @Component({
   selector: 'bs-rating',
@@ -6,10 +6,13 @@ import { ChangeDetectionStrategy, Component, computed, effect, HostBinding, Host
   templateUrl: './rating.component.html',
   styleUrls: ['./rating.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    'role': 'radiogroup',
+    'aria-label': 'Rating',
+    '(mouseleave)': 'onMouseLeave()',
+  },
 })
 export class BsRatingComponent {
-  @HostBinding('attr.role') role = 'radiogroup';
-  @HostBinding('attr.aria-label') ariaLabel = 'Rating';
 
   constructor() {
     effect(() => {
@@ -40,7 +43,7 @@ export class BsRatingComponent {
     this.value.set(index + 1);
   }
 
-  @HostListener('mouseleave') onMouseLeave() {
+  onMouseLeave() {
     this.previewValue.set(null);
   }
 }

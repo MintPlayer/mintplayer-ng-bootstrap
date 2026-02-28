@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, HostListener, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 
@@ -9,10 +9,12 @@ import { BsNavbarComponent } from '../navbar/navbar.component';
   standalone: false,
   animations: [SlideUpDownAnimation],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(window:resize)': 'onWindowResize()',
+  },
 })
 export class BsNavbarNavComponent {
 
-  private cdr = inject(ChangeDetectorRef);
   bsNavbar = inject(BsNavbarComponent);
 
   windowWidth = signal<number | null>(null);
@@ -41,7 +43,6 @@ export class BsNavbarNavComponent {
     this.onWindowResize();
   }
 
-  @HostListener('window:resize')
   onWindowResize() {
     this.isResizing.set(true);
     if (typeof window !== 'undefined') {
@@ -56,7 +57,6 @@ export class BsNavbarNavComponent {
     // Reset isResizing after debounce period
     this.resizeTimeout = setTimeout(() => {
       this.isResizing.set(false);
-      this.cdr.markForCheck();
     }, 300);
   }
 }

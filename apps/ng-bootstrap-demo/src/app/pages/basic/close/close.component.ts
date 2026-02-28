@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { BsCloseComponent } from '@mintplayer/ng-bootstrap/close';
 
 @Component({
@@ -6,7 +6,8 @@ import { BsCloseComponent } from '@mintplayer/ng-bootstrap/close';
   templateUrl: './close.component.html',
   styleUrls: ['./close.component.scss'],
   standalone: true,
-  imports: [BsCloseComponent]
+  imports: [BsCloseComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CloseComponent {
 

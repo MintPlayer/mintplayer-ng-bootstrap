@@ -1,6 +1,6 @@
 /// <reference types="../types" />
 
-import { ChangeDetectionStrategy, Component, effect, ElementRef, inject, input, model, OnDestroy, output, signal, TemplateRef, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, ElementRef, inject, input, model, OnDestroy, output, signal, TemplateRef, viewChild } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 import { HasId } from '@mintplayer/ng-bootstrap/has-id';
@@ -23,7 +23,7 @@ export class BsSearchboxComponent<T extends HasId<U>, U> implements OnDestroy {
   caretDownFill = signal<SafeHtml | undefined>(undefined);
   colors = Color;
   isBusy = signal<boolean>(false);
-  @ViewChild('textbox') textbox!: ElementRef<HTMLInputElement>;
+  readonly textbox = viewChild.required<ElementRef<HTMLInputElement>>('textbox');
 
   isOpen = model(false);
   selectedItem = model<T | undefined>(undefined);
@@ -67,7 +67,7 @@ export class BsSearchboxComponent<T extends HasId<U>, U> implements OnDestroy {
     effect(() => {
       const isOpen = this.isOpen();
       if (isOpen) {
-        setTimeout(() => this.textbox?.nativeElement?.setSelectionRange(0, -1), 20);
+        setTimeout(() => this.textbox()?.nativeElement?.setSelectionRange(0, -1), 20);
       }
     });
 

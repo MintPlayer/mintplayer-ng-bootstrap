@@ -1,4 +1,4 @@
-import { Component, inject, model, signal } from '@angular/core';
+import { Component, inject, model, signal, ChangeDetectionStrategy} from '@angular/core';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { BsSelect2Module } from '@mintplayer/ng-bootstrap/select2';
 import { BsFontColorPipe } from '@mintplayer/ng-bootstrap/font-color';
@@ -10,7 +10,8 @@ import { TagService } from '../../../services/tag/tag.service';
   templateUrl: './select2-drag-drop.component.html',
   styleUrls: ['./select2-drag-drop.component.scss'],
   standalone: true,
-  imports: [BsSelect2Module, BsFontColorPipe, DragDropModule]
+  imports: [BsSelect2Module, BsFontColorPipe, DragDropModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Select2DragDropComponent {
 

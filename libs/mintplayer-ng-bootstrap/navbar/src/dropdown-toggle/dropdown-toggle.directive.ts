@@ -22,7 +22,7 @@ export class DropdownToggleDirective implements AfterContentInit {
   childDropdowns!: QueryList<BsNavbarDropdownComponent>;
 
   ngAfterContentInit() {
-    if (this.bsNavbarItem.dropdowns.length > 0) {
+    if (this.bsNavbarItem.dropdowns().length > 0) {
       this.bsNavbarItem.hasDropdown = true;
     }
   }

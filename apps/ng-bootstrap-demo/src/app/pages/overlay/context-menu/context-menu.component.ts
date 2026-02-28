@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { BsContextMenuModule } from '@mintplayer/ng-bootstrap/context-menu';
 import { BsDropdownMenuModule } from '@mintplayer/ng-bootstrap/dropdown-menu';
 
@@ -7,6 +7,7 @@ import { BsDropdownMenuModule } from '@mintplayer/ng-bootstrap/dropdown-menu';
   templateUrl: './context-menu.component.html',
   styleUrls: ['./context-menu.component.scss'],
   standalone: true,
-  imports: [BsDropdownMenuModule, BsContextMenuModule]
+  imports: [BsDropdownMenuModule, BsContextMenuModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ContextMenuComponent {}

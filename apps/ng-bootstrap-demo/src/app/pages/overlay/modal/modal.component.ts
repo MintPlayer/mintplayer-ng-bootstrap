@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { Tag } from '../../../entities/tag';
 import { TagService } from '../../../services/tag/tag.service';
@@ -15,7 +15,8 @@ import { GIT_REPO } from '../../../providers/git-repo.provider';
   templateUrl: './modal.component.html',
   styleUrls: ['./modal.component.scss'],
   standalone: true,
-  imports: [BsGridModule, BsModalModule, BsSelect2Module, BsButtonTypeDirective, FocusOnLoadDirective, BsFontColorPipe]
+  imports: [BsGridModule, BsModalModule, BsSelect2Module, BsButtonTypeDirective, FocusOnLoadDirective, BsFontColorPipe],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ModalComponent {
   private tagService = inject(TagService);

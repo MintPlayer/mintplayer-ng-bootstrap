@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsTableComponent } from '@mintplayer/ng-bootstrap/table';
@@ -10,7 +10,8 @@ import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
   templateUrl: './table.component.html',
   styleUrls: ['./table.component.scss'],
   standalone: true,
-  imports: [DatePipe, FormsModule, BsGridModule, BsTableComponent, BsToggleButtonModule]
+  imports: [DatePipe, FormsModule, BsGridModule, BsTableComponent, BsToggleButtonModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TableComponent {
 

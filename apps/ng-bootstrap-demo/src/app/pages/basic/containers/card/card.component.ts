@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { BsCardModule } from '@mintplayer/ng-bootstrap/card';
 import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
 
@@ -7,6 +7,7 @@ import { BsListGroupModule } from '@mintplayer/ng-bootstrap/list-group';
   templateUrl: './card.component.html',
   styleUrls: ['./card.component.scss'],
   standalone: true,
-  imports: [BsCardModule, BsListGroupModule]
+  imports: [BsCardModule, BsListGroupModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CardComponent {}

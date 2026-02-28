@@ -1,4 +1,4 @@
-import { Component, Inject, TemplateRef } from '@angular/core';
+import { Component, Inject, TemplateRef, ChangeDetectionStrategy} from '@angular/core';
 import { EnterFromTopAnimation, FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { MODAL_CONTENT } from '../../providers/modal-content.provider';
 
@@ -8,6 +8,7 @@ import { MODAL_CONTENT } from '../../providers/modal-content.provider';
   styleUrls: ['./modal.component.scss'],
   standalone: false,
   animations: [FadeInOutAnimation, EnterFromTopAnimation],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsModalComponent {
 

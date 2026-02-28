@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { BsCalendarComponent } from '@mintplayer/ng-bootstrap/calendar';
 
 @Component({
@@ -6,6 +6,7 @@ import { BsCalendarComponent } from '@mintplayer/ng-bootstrap/calendar';
   templateUrl: './calendar.component.html',
   styleUrls: ['./calendar.component.scss'],
   standalone: true,
-  imports: [BsCalendarComponent]
+  imports: [BsCalendarComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CalendarComponent {}

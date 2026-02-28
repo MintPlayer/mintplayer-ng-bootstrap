@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsBadgeComponent } from '@mintplayer/ng-bootstrap/badge';
 
@@ -7,7 +7,8 @@ import { BsBadgeComponent } from '@mintplayer/ng-bootstrap/badge';
   templateUrl: './badge.component.html',
   styleUrls: ['./badge.component.scss'],
   standalone: true,
-  imports: [BsBadgeComponent]
+  imports: [BsBadgeComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BadgeComponent {
   colors = Color;

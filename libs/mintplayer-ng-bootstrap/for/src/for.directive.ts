@@ -1,29 +1,37 @@
-import { Directive, HostBinding, HostListener, Input } from '@angular/core';
+import { Directive, effect, input } from '@angular/core';
 
 @Directive({
   selector: 'label[bsFor]',
   standalone: true,
+  host: {
+    '[class.cursor-default]': 'true',
+    '[attr.for]': 'forValue',
+  },
 })
 export class BsForDirective {
 
-  @HostBinding('class.cursor-default') defaultCursor = true;
-
   static counter = 1;
   private target: any;
-  @Input() public set bsFor(value: any) {
-    this.target = value;
-    if (this.target instanceof HTMLElement) {
-      if (!this.target.id) {
-        const count = BsForDirective.counter++;
-        this.target.id = `for-target-${count}`;
+  readonly bsFor = input<any>(undefined);
+
+  constructor() {
+    effect(() => {
+      const value = this.bsFor();
+      if (value !== undefined) {
+        this.target = value;
+        if (this.target instanceof HTMLElement) {
+          if (!this.target.id) {
+            const count = BsForDirective.counter++;
+            this.target.id = `for-target-${count}`;
+          }
+          this.forValue = this.target.id;
+        }
       }
-      this.forValue = this.target.id;
-    }
-    // console.log('target', this.target);
+    });
   }
 
-  @HostBinding('attr.for') forValue?: string;
-  
+  forValue?: string;
+
   // @HostListener('click') onMouseClick() {
   //   if (!('tagName' in this.target)) {
   //     // Not a form-control, let's just assume the class has some "focus" method

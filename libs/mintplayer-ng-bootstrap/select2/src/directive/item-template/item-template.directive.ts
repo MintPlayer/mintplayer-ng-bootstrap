@@ -1,4 +1,4 @@
-import { Directive, effect, inject, Input, isSignal, TemplateRef, untracked, WritableSignal } from '@angular/core';
+import { Directive, effect, inject, input, isSignal, TemplateRef, untracked, WritableSignal } from '@angular/core';
 import { BsSelect2Component } from '../../component/select2.component';
 import { HasId } from '@mintplayer/ng-bootstrap/has-id';
 
@@ -14,6 +14,23 @@ export class BsItemTemplateDirective<T extends HasId<U>, U> {
 
   constructor() {
     this.select2component.itemTemplate = this.templateRef;
+
+    // Sync input value to component
+    effect(() => {
+      const value = this.bsItemTemplateOf();
+      if (value) {
+        if (isSignal(value)) {
+          // Store the signal reference for two-way binding
+          this.sourceSignal = value as WritableSignal<T[]>;
+          this.lastSourceValue = value();
+          this.select2component.selectedItems.set(value());
+        } else {
+          // Plain array - one-way binding (backward compatible)
+          this.sourceSignal = undefined;
+          this.select2component.selectedItems.set(value as T[]);
+        }
+      }
+    });
 
     // Sync changes from component back to source signal
     effect(() => {
@@ -45,18 +62,7 @@ export class BsItemTemplateDirective<T extends HasId<U>, U> {
     return true;
   }
 
-  @Input() set bsItemTemplateOf(value: T[] | WritableSignal<T[]>) {
-    if (isSignal(value)) {
-      // Store the signal reference for two-way binding
-      this.sourceSignal = value as WritableSignal<T[]>;
-      this.lastSourceValue = value();
-      this.select2component.selectedItems.set(value());
-    } else {
-      // Plain array - one-way binding (backward compatible)
-      this.sourceSignal = undefined;
-      this.select2component.selectedItems.set(value as T[]);
-    }
-  }
+  readonly bsItemTemplateOf = input<T[] | WritableSignal<T[]> | undefined>(undefined);
 }
 
 export class BsItemTemplateContext<T extends HasId<U>, U> {

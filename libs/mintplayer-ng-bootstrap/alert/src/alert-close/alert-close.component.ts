@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy} from '@angular/core';
 import { BsAlertComponent } from '../alert/alert.component';
 
 @Component({
@@ -6,6 +6,7 @@ import { BsAlertComponent } from '../alert/alert.component';
   templateUrl: './alert-close.component.html',
   styleUrls: ['./alert-close.component.scss'],
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsAlertCloseComponent {
   private alert = inject(BsAlertComponent);

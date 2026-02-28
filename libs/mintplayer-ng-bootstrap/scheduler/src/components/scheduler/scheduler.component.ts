@@ -1,7 +1,7 @@
 import {
   Component,
   ElementRef,
-  ViewChild,
+  viewChild,
   AfterViewInit,
   OnDestroy,
   ChangeDetectionStrategy,
@@ -135,8 +135,7 @@ export interface ViewChangeEvent {
 export class BsSchedulerComponent implements AfterViewInit, OnDestroy {
   private readonly injector = inject(Injector);
 
-  @ViewChild('scheduler', { static: true })
-  private schedulerRef!: ElementRef<MpSchedulerElement>;
+  private readonly schedulerRef = viewChild.required<ElementRef<MpSchedulerElement>>('scheduler');
 
   // Input signals
   readonly view = input<ViewType>('week');
@@ -193,35 +192,35 @@ export class BsSchedulerComponent implements AfterViewInit, OnDestroy {
     runInInjectionContext(this.injector, () => {
       // Set up effects to sync inputs to web component
       effect(() => {
-        const el = this.schedulerRef?.nativeElement;
+        const el = this.schedulerRef()?.nativeElement;
         if (el) {
           el.view = this.view();
         }
       });
 
       effect(() => {
-        const el = this.schedulerRef?.nativeElement;
+        const el = this.schedulerRef()?.nativeElement;
         if (el) {
           el.date = this.date();
         }
       });
 
       effect(() => {
-        const el = this.schedulerRef?.nativeElement;
+        const el = this.schedulerRef()?.nativeElement;
         if (el) {
           el.events = this.events();
         }
       });
 
       effect(() => {
-        const el = this.schedulerRef?.nativeElement;
+        const el = this.schedulerRef()?.nativeElement;
         if (el) {
           el.resources = this.resources();
         }
       });
 
       effect(() => {
-        const el = this.schedulerRef?.nativeElement;
+        const el = this.schedulerRef()?.nativeElement;
         if (el) {
           el.options = this.options();
         }
@@ -229,7 +228,7 @@ export class BsSchedulerComponent implements AfterViewInit, OnDestroy {
 
       // Sync selectedEvent to web component
       effect(() => {
-        const el = this.schedulerRef?.nativeElement;
+        const el = this.schedulerRef()?.nativeElement;
         if (el) {
           el.selectedEvent = this.selectedEvent();
         }
@@ -246,7 +245,7 @@ export class BsSchedulerComponent implements AfterViewInit, OnDestroy {
   }
 
   private setupEventListeners(): void {
-    const el = this.schedulerRef?.nativeElement;
+    const el = this.schedulerRef()?.nativeElement;
     if (!el) return;
 
     const addListener = (type: string, handler: (e: CustomEvent) => void) => {
@@ -295,7 +294,7 @@ export class BsSchedulerComponent implements AfterViewInit, OnDestroy {
   }
 
   private removeEventListeners(): void {
-    const el = this.schedulerRef?.nativeElement;
+    const el = this.schedulerRef()?.nativeElement;
     if (!el) return;
 
     for (const { type, listener } of this.eventListeners) {
@@ -310,69 +309,69 @@ export class BsSchedulerComponent implements AfterViewInit, OnDestroy {
    * Navigate to next period
    */
   next(): void {
-    this.schedulerRef?.nativeElement?.next();
+    this.schedulerRef()?.nativeElement?.next();
   }
 
   /**
    * Navigate to previous period
    */
   prev(): void {
-    this.schedulerRef?.nativeElement?.prev();
+    this.schedulerRef()?.nativeElement?.prev();
   }
 
   /**
    * Navigate to today
    */
   today(): void {
-    this.schedulerRef?.nativeElement?.today();
+    this.schedulerRef()?.nativeElement?.today();
   }
 
   /**
    * Navigate to a specific date
    */
   gotoDate(date: Date): void {
-    this.schedulerRef?.nativeElement?.gotoDate(date);
+    this.schedulerRef()?.nativeElement?.gotoDate(date);
   }
 
   /**
    * Change the current view
    */
   changeView(view: ViewType): void {
-    this.schedulerRef?.nativeElement?.changeView(view);
+    this.schedulerRef()?.nativeElement?.changeView(view);
   }
 
   /**
    * Add an event
    */
   addEvent(event: SchedulerEvent): void {
-    this.schedulerRef?.nativeElement?.addEvent(event);
+    this.schedulerRef()?.nativeElement?.addEvent(event);
   }
 
   /**
    * Update an event
    */
   updateEvent(event: SchedulerEvent): void {
-    this.schedulerRef?.nativeElement?.updateEvent(event);
+    this.schedulerRef()?.nativeElement?.updateEvent(event);
   }
 
   /**
    * Remove an event
    */
   removeEvent(eventId: string): void {
-    this.schedulerRef?.nativeElement?.removeEvent(eventId);
+    this.schedulerRef()?.nativeElement?.removeEvent(eventId);
   }
 
   /**
    * Get an event by ID
    */
   getEventById(eventId: string): SchedulerEvent | null {
-    return this.schedulerRef?.nativeElement?.getEventById(eventId) ?? null;
+    return this.schedulerRef()?.nativeElement?.getEventById(eventId) ?? null;
   }
 
   /**
    * Refetch/refresh events
    */
   refetchEvents(): void {
-    this.schedulerRef?.nativeElement?.refetchEvents();
+    this.schedulerRef()?.nativeElement?.refetchEvents();
   }
 }

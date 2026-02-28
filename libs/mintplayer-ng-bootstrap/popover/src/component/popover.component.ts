@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, HostBinding, Inject, input, TemplateRef } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, Inject, input, TemplateRef } from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Position } from '@mintplayer/ng-bootstrap';
 import { POPOVER_CONTENT } from '../providers/popover-content.provider';
@@ -10,6 +10,9 @@ import { POPOVER_CONTENT } from '../providers/popover-content.provider';
   standalone: false,
   animations: [FadeInOutAnimation],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[class.position-relative]': 'true',
+  },
 })
 export class BsPopoverComponent {
   constructor(@Inject(POPOVER_CONTENT) content: TemplateRef<any>) {
@@ -31,6 +34,4 @@ export class BsPopoverComponent {
   positionClass = computed(() => `bs-popover-${this.position()}`);
 
   template: TemplateRef<any>;
-
-  @HostBinding('class.position-relative') positionRelative = true;
 }

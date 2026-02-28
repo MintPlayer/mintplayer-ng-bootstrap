@@ -1,20 +1,23 @@
-import { Directive, HostListener, inject, Input } from '@angular/core';
+import { Directive, inject, input } from '@angular/core';
 import { BsToastService } from '../../services/toast/toast.service';
 import { BsToastComponent } from '../../components/toast/toast.component';
 
 @Directive({
   selector: 'bs-close',
   standalone: false,
+  host: {
+    '(click)': 'onClick()',
+  },
 })
 export class BsToastCloseDirective {
   private toast = inject(BsToastComponent);
   private toastService = inject(BsToastService);
 
-  @HostListener('click') onClick() {
-    if (this.index !== null) {
-      this.toastService.close(this.index);
+  onClick() {
+    if (this.index() !== null) {
+      this.toastService.close(this.index()!);
     }
   }
 
-  @Input() index: number | null = null;
+  readonly index = input<number | null>(null);
 }

@@ -1,7 +1,5 @@
-import { AfterViewInit, DestroyRef, Directive, forwardRef, inject } from '@angular/core';
+import { Directive, forwardRef, inject } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { fromEvent } from 'rxjs';
 import { BsRangeComponent } from '../component/range.component';
 
 @Directive({
@@ -12,43 +10,41 @@ import { BsRangeComponent } from '../component/range.component';
     useExisting: forwardRef(() => BsRangeValueAccessor),
     multi: true,
   }],
+  host: {
+    '(input)': 'onInputEvent($event)',
+  },
 })
-export class BsRangeValueAccessor implements ControlValueAccessor, AfterViewInit {
+export class BsRangeValueAccessor implements ControlValueAccessor {
   private host = inject(BsRangeComponent);
-  private destroy = inject(DestroyRef);
 
   onValueChange?: (value: number) => void;
   onTouched?: () => void;
 
-  ngAfterViewInit() {
-    fromEvent(this.host.slider.nativeElement, 'input')
-      .pipe(takeUntilDestroyed(this.destroy))
-      .subscribe((ev) => {
-        if (this.onValueChange) {
-          const val = parseFloat((<HTMLInputElement>ev.target).value);
-          this.onValueChange(val);
-        }
-      });
+  onInputEvent(ev: Event) {
+    if (this.onValueChange) {
+      const val = parseFloat((<HTMLInputElement>ev.target).value);
+      this.onValueChange(val);
+    }
   }
 
   //#region ControlValueAccessor implementation
   registerOnChange(fn: (_: any) => void) {
     this.onValueChange = fn;
   }
-  
+
   registerOnTouched(fn: () => void) {
     this.onTouched = fn;
   }
 
   writeValue(value?: number) {
-    if (this.host.slider && (typeof value === 'number')) {
-      this.host.slider.nativeElement.value = value.toString();
+    if (this.host.slider() && (typeof value === 'number')) {
+      this.host.slider().nativeElement.value = value.toString();
     }
   }
 
   setDisabledState(isDisabled: boolean) {
-    if (this.host.slider) {
-      this.host.slider.nativeElement.disabled = isDisabled;
+    if (this.host.slider()) {
+      this.host.slider().nativeElement.disabled = isDisabled;
     }
   }
   //#endregion

@@ -1,5 +1,5 @@
 import { JsonPipe } from '@angular/common';
-import { Component, signal } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
@@ -9,7 +9,8 @@ import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
   templateUrl: './toggle-button.component.html',
   styleUrls: ['./toggle-button.component.scss'],
   standalone: true,
-  imports: [JsonPipe, FormsModule, BsGridModule, BsToggleButtonModule]
+  imports: [JsonPipe, FormsModule, BsGridModule, BsToggleButtonModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ToggleButtonComponent {
   darkMode = signal<boolean | null>(true);

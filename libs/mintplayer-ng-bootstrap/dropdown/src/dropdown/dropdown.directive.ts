@@ -1,4 +1,4 @@
-import { ContentChild, Directive, effect, ElementRef, HostListener, inject, input, model, Optional } from '@angular/core';
+import { contentChild, Directive, effect, ElementRef, inject, input, model, Optional } from '@angular/core';
 import { BS_DEVELOPMENT } from '@mintplayer/ng-bootstrap';
 import { BsDropdownMenuDirective } from '../dropdown-menu/dropdown-menu.directive';
 import { BsDropdownToggleDirective } from '../dropdown-toggle/dropdown-toggle.directive';
@@ -6,14 +6,17 @@ import { BsDropdownToggleDirective } from '../dropdown-toggle/dropdown-toggle.di
 @Directive({
   selector: '[bsDropdown]',
   standalone: false,
+  host: {
+    '(window:blur)': 'onBlur()',
+  },
 })
 export class BsDropdownDirective {
 
   elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private bsDevelopment = inject(BS_DEVELOPMENT, { optional: true });
 
-  @ContentChild(BsDropdownMenuDirective, {static: false}) menu!: BsDropdownMenuDirective;
-  @ContentChild(BsDropdownToggleDirective, {static: false}) toggle: BsDropdownToggleDirective | null = null;
+  readonly menu = contentChild.required(BsDropdownMenuDirective);
+  readonly toggle = contentChild(BsDropdownToggleDirective);
 
   hasBackdrop = input(false);
   sameWidth = input(false);
@@ -21,7 +24,7 @@ export class BsDropdownDirective {
   sameDropdownWidth = input(false);
   isOpen = model<boolean>(false);
 
-  @HostListener('window:blur') onBlur() {
+  onBlur() {
     if (this.closeOnClickOutside() && !this.bsDevelopment) {
       this.isOpen.set(false);
     }

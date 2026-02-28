@@ -1,6 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { animate, AnimationBuilder, AnimationPlayer, style } from '@angular/animations';
-import { AfterViewInit, computed, ContentChildren, Directive, effect, ElementRef, forwardRef, HostBinding, inject, input, model, OnDestroy, output, QueryList, signal } from '@angular/core';
+import { AfterViewInit, computed, contentChildren, Directive, effect, ElementRef, inject, input, model, OnDestroy, output, signal } from '@angular/core';
 import { BsObserveSizeDirective, Size } from '@mintplayer/ng-swiper/observe-size';
 import { LastTouch } from '../../interfaces/last-touch';
 import { StartTouch } from '../../interfaces/start-touch';
@@ -11,6 +11,12 @@ import { BsSwipeDirective } from '../swipe/swipe.directive';
   exportAs: 'bsSwipeContainer',
   standalone: true,
   hostDirectives: [BsObserveSizeDirective],
+  host: {
+    '[style.margin-left.%]': 'offsetLeft',
+    '[style.margin-right.%]': 'offsetRight',
+    '[style.margin-top.px]': 'offsetTopPx',
+    '[style.margin-bottom.px]': 'offsetBottomPx',
+  },
 })
 export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
   private animationBuilder = inject(AnimationBuilder);
@@ -18,14 +24,12 @@ export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
   containerElement = inject(ElementRef<HTMLDivElement>);
   document = inject(DOCUMENT) as Document;
 
-  @HostBinding('style.margin-left.%') offsetLeft: number | null = null;
-  @HostBinding('style.margin-right.%') offsetRight: number | null = null;
-  @HostBinding('style.margin-top.px') offsetTopPx: number | null = null;
-  @HostBinding('style.margin-bottom.px') offsetBottomPx: number | null = null;
+  offsetLeft: number | null = null;
+  offsetRight: number | null = null;
+  offsetTopPx: number | null = null;
+  offsetBottomPx: number | null = null;
 
-  @ContentChildren(forwardRef(() => BsSwipeDirective)) set swipes(value: QueryList<BsSwipeDirective>) {
-    setTimeout(() => this._swipes.set(value));
-  }
+  readonly swipes = contentChildren(BsSwipeDirective);
 
   minimumOffset = input(50);
   animation = input<'slide' | 'fade' | 'none'>('slide');
@@ -39,7 +43,6 @@ export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
   private isDestroyed = false;
   startTouch = signal<StartTouch | null>(null);
   lastTouch = signal<LastTouch | null>(null);
-  _swipes = signal<QueryList<BsSwipeDirective> | null>(null);
   pendingAnimation?: AnimationPlayer;
 
   // Computed signals for derived state
@@ -73,8 +76,8 @@ export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
   });
 
   padLeft = computed(() => {
-    const swipes = this._swipes();
-    if (!swipes) return 1; // Default to 1 to prevent container collapse before swipes are loaded
+    const swipes = this.swipes();
+    if (swipes.length === 0) return 1; // Default to 1 to prevent container collapse before swipes are loaded
 
     let count = 0;
     for (const s of swipes) {
@@ -88,11 +91,11 @@ export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
   });
 
   padRight = computed(() => {
-    const swipes = this._swipes();
-    if (!swipes) return 1; // Default to 1 to prevent container collapse before swipes are loaded
+    const swipes = this.swipes();
+    if (swipes.length === 0) return 1; // Default to 1 to prevent container collapse before swipes are loaded
 
     let count = 0;
-    for (const s of swipes.toArray().reverse()) {
+    for (const s of [...swipes].reverse()) {
       if (!s.offside()) {
         break;
       } else {
@@ -106,12 +109,8 @@ export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
   offsetSecondary = computed(() => -(this.offset() - this.padLeft() * 100) - (this.padRight() - 1) * 100);
 
   actualSwipes = computed(() => {
-    const swipes = this._swipes();
-    if (swipes) {
-      return swipes.filter(swipe => !swipe.offside());
-    } else {
-      return [];
-    }
+    const swipes = this.swipes();
+    return swipes.filter(swipe => !swipe.offside());
   });
 
   // Computed signal that reactively tracks all swipe sizes

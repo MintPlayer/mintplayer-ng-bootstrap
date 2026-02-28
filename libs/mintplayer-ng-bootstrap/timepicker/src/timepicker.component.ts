@@ -1,7 +1,7 @@
 /// <reference types="./types" />
 
 import { DatePipe, DecimalPipe } from '@angular/common';
-import { Component, inject, model, signal } from '@angular/core';
+import { Component, inject, model, signal, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Color } from '@mintplayer/ng-bootstrap';
@@ -18,7 +18,8 @@ import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
   templateUrl: './timepicker.component.html',
   styleUrls: ['./timepicker.component.scss'],
   standalone: true,
-  imports: [DatePipe, DecimalPipe, FormsModule, EnhancedPasteDirective, BsFormModule, BsDropdownModule, BsDropdownMenuModule, BsInputGroupComponent, BsButtonTypeDirective, BsHasOverlayComponent]
+  imports: [DatePipe, DecimalPipe, FormsModule, EnhancedPasteDirective, BsFormModule, BsDropdownModule, BsDropdownMenuModule, BsInputGroupComponent, BsButtonTypeDirective, BsHasOverlayComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsTimepickerComponent {
   private sanitizer = inject(DomSanitizer);

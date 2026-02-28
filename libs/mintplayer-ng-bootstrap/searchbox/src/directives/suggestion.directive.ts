@@ -1,4 +1,4 @@
-import { Directive, inject, Input, TemplateRef } from '@angular/core';
+import { Directive, effect, inject, input, TemplateRef } from '@angular/core';
 import { HasId } from '@mintplayer/ng-bootstrap/has-id';
 import { BsSearchboxComponent } from '../searchbox/searchbox.component';
 
@@ -12,8 +12,15 @@ export class BsSuggestionTemplateDirective<TData extends HasId<U>, U> {
   constructor() {
     const template = inject<TemplateRef<BsSuggestionTemplateContext<TData, U>>>(TemplateRef);
     this.searchbox.suggestionTemplate = template;
+
+    effect(() => {
+      const value = this.bsSuggestionTemplateOf();
+      if (value) {
+        this.searchbox.suggestions.set(value);
+      }
+    });
   }
-  
+
   public static ngTemplateContextGuard<TData extends HasId<U>, U>(
     dir: BsSuggestionTemplateDirective<TData, U>,
     ctx: any
@@ -21,9 +28,7 @@ export class BsSuggestionTemplateDirective<TData extends HasId<U>, U> {
     return true;
   }
 
-  @Input() set bsSuggestionTemplateOf(value: TData[]) {
-    this.searchbox.suggestions.set(value);
-  }
+  readonly bsSuggestionTemplateOf = input<TData[] | undefined>(undefined);
 }
 
 export class BsSuggestionTemplateContext<TData extends HasId<U>, U> {

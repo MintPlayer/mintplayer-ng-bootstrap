@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { SlideUpDownAnimation, SlideUpDownNgifAnimation } from '@mintplayer/ng-animations';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
@@ -10,7 +10,8 @@ import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
   styleUrls: ['./slide-up-down.component.scss'],
   animations: [SlideUpDownAnimation, SlideUpDownNgifAnimation],
   standalone: true,
-  imports: [BsGridModule, BsButtonTypeDirective]
+  imports: [BsGridModule, BsButtonTypeDirective],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SlideUpDownComponent {
   colors = Color;

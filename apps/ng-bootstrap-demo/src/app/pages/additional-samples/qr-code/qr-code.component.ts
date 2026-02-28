@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
@@ -9,7 +9,8 @@ import { QrCodeComponent as LibQrCodeComponent } from '@mintplayer/ng-qr-code';
   templateUrl: './qr-code.component.html',
   styleUrls: ['./qr-code.component.scss'],
   standalone: true,
-  imports: [FormsModule, BsFormModule, BsGridModule, LibQrCodeComponent]
+  imports: [FormsModule, BsFormModule, BsGridModule, LibQrCodeComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class QrCodeComponent {
   text = signal('QR code viewer');

@@ -1,4 +1,4 @@
-import { ContentChildren, Directive, Input, QueryList } from '@angular/core';
+import { contentChildren, Directive } from '@angular/core';
 import { BsToggleButtonComponent } from '../../component/toggle-button.component';
 
 @Directive({
@@ -7,5 +7,5 @@ import { BsToggleButtonComponent } from '../../component/toggle-button.component
   exportAs: 'bsToggleButtonGroup',
 })
 export class BsToggleButtonGroupDirective {
-  @ContentChildren(BsToggleButtonComponent, { descendants: true }) toggleButtons!: QueryList<BsToggleButtonComponent>;
+  readonly toggleButtons = contentChildren(BsToggleButtonComponent, { descendants: true });
 }

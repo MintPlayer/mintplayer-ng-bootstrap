@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsFileUploadModule, FileUpload } from '@mintplayer/ng-bootstrap/file-upload';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
@@ -10,6 +10,7 @@ import { BsProgressBarModule } from '@mintplayer/ng-bootstrap/progress-bar';
   styleUrls: ['./file-upload.component.scss'],
   standalone: true,
   imports: [BsGridModule, BsFileUploadModule, BsProgressBarModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FileUploadComponent {
 

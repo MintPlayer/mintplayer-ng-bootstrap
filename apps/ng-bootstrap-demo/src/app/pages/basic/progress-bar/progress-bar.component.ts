@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsProgressBarModule } from '@mintplayer/ng-bootstrap/progress-bar';
 
@@ -7,7 +7,8 @@ import { BsProgressBarModule } from '@mintplayer/ng-bootstrap/progress-bar';
   templateUrl: './progress-bar.component.html',
   styleUrls: ['./progress-bar.component.scss'],
   standalone: true,
-  imports: [BsProgressBarModule]
+  imports: [BsProgressBarModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProgressBarComponent {
   colors = Color;

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy} from '@angular/core';
 import { BsAccordionTabComponent } from '../accordion-tab/accordion-tab.component';
 
 @Component({
@@ -6,6 +6,7 @@ import { BsAccordionTabComponent } from '../accordion-tab/accordion-tab.componen
   templateUrl: './accordion-tab-header.component.html',
   styleUrls: ['./accordion-tab-header.component.scss'],
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsAccordionTabHeaderComponent {
   accordionTab = inject(BsAccordionTabComponent);

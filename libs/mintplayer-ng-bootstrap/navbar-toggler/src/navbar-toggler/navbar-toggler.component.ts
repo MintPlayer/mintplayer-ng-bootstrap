@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, HostListener, input, model } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, model } from '@angular/core';
 
 @Component({
   selector: 'bs-navbar-toggler',
@@ -6,12 +6,14 @@ import { ChangeDetectionStrategy, Component, HostListener, input, model } from '
   styleUrls: ['./navbar-toggler.component.scss'],
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(click)': 'toggleState($event)',
+  },
 })
 export class BsNavbarTogglerComponent {
   state = model<boolean>(false);
   toggleOnClick = input<boolean>(true);
 
-  @HostListener('click', ['$event'])
   toggleState(ev: MouseEvent) {
     if (this.toggleOnClick()) {
       this.state.update(v => !v);

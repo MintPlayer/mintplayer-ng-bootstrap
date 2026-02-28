@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { BsForDirective } from '@mintplayer/ng-bootstrap/for';
 import { BsFormModule } from '@mintplayer/ng-bootstrap/form';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
@@ -8,6 +8,7 @@ import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
   templateUrl: './for-directive.component.html',
   styleUrls: ['./for-directive.component.scss'],
   standalone: true,
-  imports: [BsForDirective, BsFormModule, BsGridModule]
+  imports: [BsForDirective, BsFormModule, BsGridModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ForDirectiveComponent {}

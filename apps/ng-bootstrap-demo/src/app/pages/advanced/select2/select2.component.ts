@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal, ChangeDetectionStrategy} from '@angular/core';
 import { Artist } from '../../../entities/artist';
 import { Tag } from '../../../entities/tag';
 import { ESubjectType } from '../../../enums/subject-type';
@@ -13,7 +13,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   templateUrl: './select2.component.html',
   styleUrls: ['./select2.component.scss'],
   standalone: true,
-  imports: [BsSelect2Module, BsFontColorPipe]
+  imports: [BsSelect2Module, BsFontColorPipe],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Select2Component {
 

@@ -1,8 +1,11 @@
-import { Directive, HostBinding, Input, computed, input } from '@angular/core';
+import { Directive, computed, input } from '@angular/core';
 
 @Directive({
   selector: '[xxs],[xs],[sm],[md],[lg],[xl],[xxl]',
   standalone: false,
+  host: {
+    '[class]': 'classList()',
+  },
 })
 export class BsGridColumnDirective {
 
@@ -37,19 +40,17 @@ export class BsGridColumnDirective {
           default: return `col-${v.key}-${v.value}`;
         }
       })
-      .join(' ');
+      .join(' ') || null;
   });
-
-  @HostBinding('class') get classBinding() {
-    return this.classList() || null;
-  }
 }
 
 @Directive({
   selector: '[col]',
   standalone: false,
+  host: {
+    '[class.col]': 'true',
+  },
 })
 export class BsGridColDirective {
-  @HostBinding('class.col') colClass = true;
-  @Input() set col(value: undefined) {}
+  readonly col = input<undefined>(undefined);
 }

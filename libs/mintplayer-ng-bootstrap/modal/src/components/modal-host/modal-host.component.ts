@@ -1,6 +1,6 @@
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { AfterViewInit, Component, ComponentFactoryResolver, ComponentRef, EventEmitter, HostListener, inject, Injector, Input, OnDestroy, Output, TemplateRef } from '@angular/core';
+import { AfterViewInit, Component, ComponentFactoryResolver, ComponentRef, effect, inject, Injector, input, model, OnDestroy, TemplateRef, ChangeDetectionStrategy} from '@angular/core';
 import { MODAL_CONTENT } from '../../providers/modal-content.provider';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
 import { BsModalComponent } from '../modal/modal.component';
@@ -10,6 +10,10 @@ import { BsModalComponent } from '../modal/modal.component';
   templateUrl: './modal-host.component.html',
   styleUrls: ['./modal-host.component.scss'],
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(document:keydown)': 'onKeyDown($event)',
+  },
 })
 export class BsModalHostComponent implements AfterViewInit, OnDestroy {
   private overlay = inject(Overlay);
@@ -22,21 +26,19 @@ export class BsModalHostComponent implements AfterViewInit, OnDestroy {
   template!: TemplateRef<any>;
 
   //#region isOpen
-  private _isOpen = false;
-  get isOpen() {
-    return this._isOpen;
-  }
-  @Input() set isOpen(value: boolean) {
-    this._isOpen = value;
-    if (this.componentInstance) {
-      this.componentInstance.instance.isOpen = value;
-      this.componentInstance.changeDetectorRef.detectChanges();
-    }
-    this.isOpenChange.emit(value);
-  }
-  @Output() isOpenChange = new EventEmitter<boolean>();
+  readonly isOpen = model<boolean>(false);
   //#endregion
-  @Input() closeOnEscape = true;
+  readonly closeOnEscape = input(true);
+
+  constructor() {
+    effect(() => {
+      const value = this.isOpen();
+      if (this.componentInstance) {
+        this.componentInstance.instance.isOpen = value;
+        this.componentInstance.changeDetectorRef.detectChanges();
+      }
+    });
+  }
 
   ngAfterViewInit() {
     const injector = Injector.create({
@@ -55,20 +57,19 @@ export class BsModalHostComponent implements AfterViewInit, OnDestroy {
       hasBackdrop: false
     });
     this.componentInstance = this.overlayRef.attach<BsModalComponent>(portal);
-    this.componentInstance.instance.isOpen = this._isOpen;
+    this.componentInstance.instance.isOpen = this.isOpen();
     this.componentInstance.changeDetectorRef.detectChanges();
   }
 
   ngOnDestroy() {
-    this.isOpen = false;
+    this.isOpen.set(false);
     setTimeout(() => this.overlayRef && this.overlayRef.dispose(), 500);
   }
-  
-  @HostListener('document:keydown', ['$event'])
+
   onKeyDown(event: Event) {
     const ev = event as KeyboardEvent;
-    if (this.isOpen && this.closeOnEscape && ev.code === 'Escape') {
-      this.isOpen = false;
+    if (this.isOpen() && this.closeOnEscape() && ev.code === 'Escape') {
+      this.isOpen.set(false);
     }
   }
 }

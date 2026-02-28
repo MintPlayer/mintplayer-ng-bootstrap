@@ -1,9 +1,15 @@
-import { Directive, effect, HostBinding, inject } from '@angular/core';
+import { Directive, effect, inject } from '@angular/core';
 import { BsPlaceholderComponent } from '../placeholder/placeholder.component';
 
 @Directive({
   selector: '[bsPlaceholderField]',
   standalone: false,
+  host: {
+    '[attr.innerHtml]': 'html',
+    '[style.min-width.px]': '80',
+    '[style.margin-bottom.px]': 'marginBottom',
+    '[class.placeholder]': 'placeholderClass',
+  },
 })
 export class BsPlaceholderFieldDirective {
   private placeholder = inject(BsPlaceholderComponent);
@@ -17,8 +23,7 @@ export class BsPlaceholderFieldDirective {
     });
   }
 
-  @HostBinding('attr.innerHtml') html?: string = undefined;
-  @HostBinding('style.min-width.px') minWidth = 80;
-  @HostBinding('style.margin-bottom.px') marginBottom = 0;
-  @HostBinding('class.placeholder') placeholderClass = true;
+  html?: string = undefined;
+  marginBottom = 0;
+  placeholderClass = true;
 }

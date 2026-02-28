@@ -1,5 +1,5 @@
 import { isPlatformServer } from '@angular/common';
-import { AfterViewInit, computed, Directive, ElementRef, inject, NgZone, OnDestroy, PLATFORM_ID, signal } from '@angular/core';
+import { AfterViewInit, computed, Directive, ElementRef, inject, OnDestroy, PLATFORM_ID, signal } from '@angular/core';
 import { Size } from './size';
 
 @Directive({
@@ -10,14 +10,13 @@ import { Size } from './size';
 export class BsObserveSizeDirective implements AfterViewInit, OnDestroy {
   private element = inject(ElementRef);
   private platformId = inject(PLATFORM_ID);
-  private zone = inject(NgZone);
 
   private observer?: ResizeObserver;
 
   constructor() {
     if (!isPlatformServer(this.platformId) && typeof ResizeObserver !== 'undefined') {
       this.observer = new ResizeObserver((entries) => {
-        this.zone.run(() => this.size.set(entries[0].contentRect));
+        this.size.set(entries[0].contentRect);
       });
     }
   }

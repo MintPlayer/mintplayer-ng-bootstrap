@@ -1,4 +1,4 @@
-import { AfterContentChecked, AfterContentInit, ChangeDetectionStrategy, Component, ContentChildren, DestroyRef, effect, ElementRef, forwardRef, inject, PLATFORM_ID, QueryList } from '@angular/core';
+import { AfterContentChecked, AfterContentInit, ChangeDetectionStrategy, Component, contentChildren, DestroyRef, effect, ElementRef, forwardRef, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformServer } from '@angular/common';
 import { Router } from '@angular/router';
 import { BsNavbarComponent } from '../navbar/navbar.component';
@@ -25,13 +25,13 @@ export class BsNavbarItemComponent implements AfterContentInit, AfterContentChec
 
   hasDropdown = false;
   anchorTag: HTMLAnchorElement | null = null;
-  @ContentChildren(forwardRef(() => BsNavbarDropdownComponent)) dropdowns!: QueryList<BsNavbarDropdownComponent>;
+  readonly dropdowns = contentChildren<BsNavbarDropdownComponent>(forwardRef(() => BsNavbarDropdownComponent));
 
   constructor() {
     // Effect handles future isSmallMode changes after content is initialized
     effect(() => {
       const isSmallMode = this.navbar.isSmallMode();
-      this.dropdowns?.forEach((dropdown) => {
+      this.dropdowns().forEach((dropdown) => {
         dropdown.showInOverlay = !isSmallMode;
       });
     });
@@ -41,7 +41,7 @@ export class BsNavbarItemComponent implements AfterContentInit, AfterContentChec
     // Set initial showInOverlay state after content children are resolved
     // This is needed because the effect runs before @ContentChildren is populated
     const isSmallMode = this.navbar.isSmallMode();
-    this.dropdowns?.forEach((dropdown) => {
+    this.dropdowns().forEach((dropdown) => {
       dropdown.showInOverlay = !isSmallMode;
     });
   }
@@ -61,11 +61,11 @@ export class BsNavbarItemComponent implements AfterContentInit, AfterContentChec
           this.anchorTag.setAttribute('close-init-b', '1');
           this.anchorTag.addEventListener('click', (ev: MouseEvent) => {
             ev.preventDefault();
-            this.dropdowns.forEach((dropdown) => {
+            this.dropdowns().forEach((dropdown) => {
               const newVisible = !dropdown.isVisible();
               dropdown.isVisible.set(newVisible);
               if (!newVisible) {
-                dropdown.childDropdowns.forEach((child) => child.isVisible.set(false));
+                dropdown.childDropdowns().forEach((child) => child.isVisible.set(false));
               }
             });
             return false;
@@ -74,7 +74,7 @@ export class BsNavbarItemComponent implements AfterContentInit, AfterContentChec
       }
     } else {
 
-      if ((this.dropdowns.length === 0) && this.anchorTag && !this.anchorTag.getAttribute('close-init-a')) {
+      if ((this.dropdowns().length === 0) && this.anchorTag && !this.anchorTag.getAttribute('close-init-a')) {
         this.anchorTag.setAttribute('close-init-a', '1');
         this.anchorTag.addEventListener('click', (ev: MouseEvent) => {
           let d = this.parentDropdown;

@@ -1,9 +1,12 @@
 import { isPlatformServer } from '@angular/common';
-import { Directive, HostBinding, Inject, PLATFORM_ID } from '@angular/core';
+import { Directive, Inject, PLATFORM_ID } from '@angular/core';
 
 @Directive({
   selector: '[bsNoNoscript]',
   standalone: true,
+  host: {
+    '[class.noscript]': 'isNoScript',
+  },
 })
 export class BsNoNoscriptDirective {
   constructor(@Inject(PLATFORM_ID) private platformId: Object) {
@@ -12,5 +15,5 @@ export class BsNoNoscriptDirective {
     }
   }
 
-  @HostBinding('class.noscript') isNoScript = false;
+  isNoScript = false;
 }

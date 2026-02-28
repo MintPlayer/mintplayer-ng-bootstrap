@@ -1,6 +1,6 @@
 /// <reference types="../../../../types" />
 
-import { Component, signal } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy} from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { BsTreeviewModule } from '@mintplayer/ng-bootstrap/treeview';
 
@@ -9,7 +9,8 @@ import { BsTreeviewModule } from '@mintplayer/ng-bootstrap/treeview';
   templateUrl: './treeview.component.html',
   styleUrls: ['./treeview.component.scss'],
   standalone: true,
-  imports: [BsTreeviewModule]
+  imports: [BsTreeviewModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TreeviewComponent {
   constructor(private sanitizer: DomSanitizer) {

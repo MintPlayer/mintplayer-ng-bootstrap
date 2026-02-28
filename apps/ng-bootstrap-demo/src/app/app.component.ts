@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy} from '@angular/core';
 import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsNavbarModule } from '@mintplayer/ng-bootstrap/navbar';
@@ -13,7 +13,8 @@ import { BOOTSTRAP_VERSION } from './providers/bootstrap-version.provider';
   styleUrls: ['./app.component.scss'],
   standalone: true,
   imports: [RouterOutlet, RouterLink, BsNavbarModule, NavbarRouterLinkActiveDirective],
-  animations: [SlideUpDownAnimation]
+  animations: [SlideUpDownAnimation],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent {
   versionInfo = inject(BOOTSTRAP_VERSION);

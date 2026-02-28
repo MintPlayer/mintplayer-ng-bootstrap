@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
@@ -12,7 +12,8 @@ import { BsToggleButtonModule } from '@mintplayer/ng-bootstrap/toggle-button';
   templateUrl: './placeholder.component.html',
   styleUrls: ['./placeholder.component.scss'],
   standalone: true,
-  imports: [FormsModule, BsGridModule, BsCardModule, BsAlertModule, BsPlaceholderModule, BsToggleButtonModule]
+  imports: [FormsModule, BsGridModule, BsCardModule, BsAlertModule, BsPlaceholderModule, BsToggleButtonModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PlaceholderComponent {
 

@@ -1,4 +1,4 @@
-import { Optional, Component, ContentChild, ElementRef } from '@angular/core';
+import { Optional, Component, ChangeDetectionStrategy} from '@angular/core';
 import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 
 @Component({
@@ -6,6 +6,7 @@ import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
   standalone: true,
   templateUrl: './floating-label.component.html',
   styleUrls: ['./floating-label.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsFloatingLabelComponent {
   constructor(@Optional() bsForm: BsFormComponent) {

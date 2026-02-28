@@ -1,11 +1,11 @@
 <div class="dropzone border position-relative p-5" [class.dragging]="isDraggingFile">
-    <input type="file" multiple #fileUpload (change)="onChange($event)" [title]="placeholder" [placeholder]="placeholder" class="position-absolute w-100 h-100">
-    <!-- <img src="/assets/ic-file-upload.svg" [alt]="placeholder"> -->
-    <span class="h3 d-block">{{ dropFilesCaption }}</span>
-    <label class="btn btn-primary position-relative" [bsFor]="fileUpload">{{ browseFilesCaption }}</label>
+    <input type="file" multiple #fileUpload (change)="onChange($event)" [title]="placeholder()" [placeholder]="placeholder()" class="position-absolute w-100 h-100">
+    <!-- <img src="/assets/ic-file-upload.svg" [alt]="placeholder()"> -->
+    <span class="h3 d-block">{{ dropFilesCaption() }}</span>
+    <label class="btn btn-primary position-relative" [bsFor]="fileUpload">{{ browseFilesCaption() }}</label>
 </div>
 <bs-list-group class="files-list">
-    @for (upload of files; track upload.index) {
+    @for (upload of files(); track upload.index) {
         <bs-list-group-item>
             <ng-container *ngTemplateOutlet="fileTemplate ?? defaultFileTemplate; context: { $implicit: upload }"></ng-container>
         </bs-list-group-item>

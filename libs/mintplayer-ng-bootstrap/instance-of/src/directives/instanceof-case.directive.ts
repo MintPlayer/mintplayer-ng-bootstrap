@@ -1,4 +1,4 @@
-import { Directive, Input, DoCheck, ViewContainerRef, Optional, Host, TemplateRef } from "@angular/core";
+import { Directive, input, DoCheck, ViewContainerRef, Optional, Host, TemplateRef } from "@angular/core";
 import { SwitchView } from "./switch-view";
 import { BsInstanceOfContext } from "../interfaces/instance-of-context";
 import { AbstractType } from "../types/abstract.type";
@@ -9,7 +9,7 @@ import { BsInstanceOfDirective } from "./instanceof.directive";
   standalone: false,
 })
 export class BsInstanceofCaseDirective<T> implements DoCheck {
-  @Input() public bsInstanceofCase!: AbstractType<T>;
+  readonly bsInstanceofCase = input.required<AbstractType<T>>();
 
   private _view: SwitchView<T>;
 
@@ -41,7 +41,7 @@ export class BsInstanceofCaseDirective<T> implements DoCheck {
 
   public ngDoCheck() {
     this._view.enforceState(
-      this.bsInstanceof._matchCase(this.bsInstanceofCase)
+      this.bsInstanceof._matchCase(this.bsInstanceofCase())
     );
   }
 

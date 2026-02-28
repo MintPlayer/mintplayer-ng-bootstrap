@@ -1,39 +1,38 @@
-import { Component, HostBinding, Input, OnInit, OnDestroy } from '@angular/core';
+import { Component, DestroyRef, inject, input, signal, ChangeDetectionStrategy} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
-import { interval, Subscription } from 'rxjs';
 
 @Component({
   selector: "demo-hello",
-  template: `Hello {{ name }}!`,
+  template: `Hello {{ name() }}!`,
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[class.d-inline-block]': 'true',
+    '[class.border]': 'true',
+    '[class.mw-100]': 'true',
+    '[style.padding.px]': 'padding()',
+    '[class.fw-bold]': 'isBold()',
+  },
 })
-export class HelloComponent implements OnInit, OnDestroy {
-  @Input() name!: string;
+export class HelloComponent {
+  readonly name = input.required<string>();
 
-  @HostBinding('class.d-inline-block')
-  @HostBinding('class.border')
-  @HostBinding('class.mw-100')
-  classes = true;
+  padding = signal(0);
 
-  @HostBinding('style.padding.px')
-  padding = 0;
+  isBold = signal(false);
 
-  @HostBinding('class.fw-bold')
-  isBold = false;
+  private destroyRef = inject(DestroyRef);
 
-  private subscription?: Subscription;
-
-  ngOnInit() {
-    this.subscription = interval(1000).subscribe(value => {
-      console.log(value);
-      this.padding = value;
-      this.isBold = value % 2 === 1;
-    });
-  }
-
-  ngOnDestroy() {
-    this.subscription?.unsubscribe();
+  constructor() {
+    let counter = 0;
+    const id = setInterval(() => {
+      console.log(counter);
+      this.padding.set(counter);
+      this.isBold.set(counter % 2 === 1);
+      counter++;
+    }, 1000);
+    this.destroyRef.onDestroy(() => clearInterval(id));
   }
 }
 

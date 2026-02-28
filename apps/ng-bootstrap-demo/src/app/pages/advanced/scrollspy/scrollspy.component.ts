@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { BsScrollspyModule } from '@mintplayer/ng-bootstrap/scrollspy';
 
 @Component({
@@ -6,6 +6,7 @@ import { BsScrollspyModule } from '@mintplayer/ng-bootstrap/scrollspy';
   templateUrl: './scrollspy.component.html',
   styleUrls: ['./scrollspy.component.scss'],
   standalone: true,
-  imports: [BsScrollspyModule]
+  imports: [BsScrollspyModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ScrollspyComponent {}

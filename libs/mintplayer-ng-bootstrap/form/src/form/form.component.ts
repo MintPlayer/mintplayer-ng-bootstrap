@@ -1,16 +1,17 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, input, output, ChangeDetectionStrategy} from '@angular/core';
 
 @Component({
   selector: 'bs-form',
   templateUrl: './form.component.html',
   styleUrls: ['./form.component.scss'],
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsFormComponent {
-  @Input() action?: string;
-  @Input() method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  readonly action = input<string | undefined>(undefined);
+  readonly method = input<'GET' | 'POST' | 'PUT' | 'DELETE' | undefined>(undefined);
 
-  @Output() submitted = new EventEmitter<Event>();
+  readonly submitted = output<Event>();
   onSubmit(ev: Event) {
     this.submitted.emit(ev);
     return false;

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsAlertModule } from '@mintplayer/ng-bootstrap/alert';
 import { BsInViewportDirective } from '@mintplayer/ng-bootstrap/viewport';
@@ -8,7 +8,8 @@ import { BsInViewportDirective } from '@mintplayer/ng-bootstrap/viewport';
   templateUrl: './viewport.component.html',
   styleUrls: ['./viewport.component.scss'],
   standalone: true,
-  imports: [BsAlertModule, BsInViewportDirective]
+  imports: [BsAlertModule, BsInViewportDirective],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ViewportComponent {
   colors = Color;

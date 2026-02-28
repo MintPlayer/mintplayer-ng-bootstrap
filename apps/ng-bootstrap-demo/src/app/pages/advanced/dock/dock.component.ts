@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, signal, ViewChild } from '@angular/core';
+import { Component, signal, viewChild, ChangeDetectionStrategy} from '@angular/core';
 import { BsBadgeComponent } from '@mintplayer/ng-bootstrap/badge';
 import {
   BsDockManagerComponent,
@@ -14,9 +14,10 @@ import { Color } from '@mintplayer/ng-bootstrap';
   styleUrls: ['./dock.component.scss'],
   standalone: true,
   imports: [CommonModule, BsDockModule, BsBadgeComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DockComponent {
-  @ViewChild(BsDockManagerComponent) dockManager?: BsDockManagerComponent;
+  readonly dockManager = viewChild(BsDockManagerComponent);
 
   readonly Color = Color;
 
@@ -85,11 +86,11 @@ export class DockComponent {
   savedLayout = signal<DockLayoutSnapshot | undefined>(undefined);
 
   saveLayout(): void {
-    if (!this.dockManager) {
+    if (!this.dockManager()) {
       return;
     }
 
-    this.savedLayout.set(this.dockManager.captureLayout());
+    this.savedLayout.set(this.dockManager()!.captureLayout());
   }
 
   onLayoutSnapshot(snapshot: DockLayoutSnapshot): void {

@@ -1,4 +1,4 @@
-import { Component, ContentChildren, QueryList } from '@angular/core';
+import { Component, contentChildren, ChangeDetectionStrategy} from '@angular/core';
 import { BsListGroupItemComponent } from '../list-group-item/list-group-item.component';
 
 @Component({
@@ -6,7 +6,8 @@ import { BsListGroupItemComponent } from '../list-group-item/list-group-item.com
   templateUrl: './list-group.component.html',
   styleUrls: ['./list-group.component.scss'],
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsListGroupComponent {
-  @ContentChildren(BsListGroupItemComponent) items!: QueryList<BsListGroupItemComponent>;
+  readonly items = contentChildren(BsListGroupItemComponent);
 }

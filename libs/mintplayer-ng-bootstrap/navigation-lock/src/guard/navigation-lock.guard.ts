@@ -11,10 +11,10 @@ export class BsNavigationLockGuard  {
     currentRoute: ActivatedRouteSnapshot,
     currentState: RouterStateSnapshot,
     nextState?: RouterStateSnapshot): Promise<boolean | UrlTree> {
-      if (component.navigationLock) {
-        return component.navigationLock.requestCanExit();
+      if (component.navigationLock()) {
+        return component.navigationLock().requestCanExit();
       } else {
-        console.warn('When using <bs-navigation-lock>, you should implement BsHasNavigationLock and add "@ViewChild(\'navigationLock\') navigationLock!: BsNavigationLockDirective;" to your page');
+        console.warn('When using <bs-navigation-lock>, you should implement BsHasNavigationLock and add "readonly navigationLock = viewChild.required<BsNavigationLockDirective>(\'navigationLock\');" to your page');
         return new Promise<boolean>(resolve => resolve(false));
       }
   }

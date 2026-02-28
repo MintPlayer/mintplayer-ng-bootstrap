@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
@@ -15,7 +15,8 @@ import { DecimalPipe } from '@angular/common';
   templateUrl: './color-picker.component.html',
   styleUrls: ['./color-picker.component.scss'],
   standalone: true,
-  imports: [DecimalPipe, FormsModule, BsGridModule, BsButtonTypeDirective, BsButtonGroupComponent, BsColorPickerModule, BsToggleButtonModule, BsRangeModule, BsListGroupModule]
+  imports: [DecimalPipe, FormsModule, BsGridModule, BsButtonTypeDirective, BsButtonGroupComponent, BsColorPickerModule, BsToggleButtonModule, BsRangeModule, BsListGroupModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ColorPickerComponent {
 

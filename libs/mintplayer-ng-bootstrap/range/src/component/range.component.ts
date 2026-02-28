@@ -1,15 +1,16 @@
-import { Component, ElementRef, Input, ViewChild } from '@angular/core';
+import { Component, ElementRef, input, viewChild, ChangeDetectionStrategy} from '@angular/core';
 
 @Component({
   selector: 'bs-range',
   templateUrl: './range.component.html',
   styleUrls: ['./range.component.scss'],
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsRangeComponent {
-  @ViewChild('slider') slider!: ElementRef<HTMLInputElement>;
-  
-  @Input() min = 0;
-  @Input() max = 10;
-  @Input() step = 1;
+  readonly slider = viewChild.required<ElementRef<HTMLInputElement>>('slider');
+
+  readonly min = input(0);
+  readonly max = input(10);
+  readonly step = input(1);
 }

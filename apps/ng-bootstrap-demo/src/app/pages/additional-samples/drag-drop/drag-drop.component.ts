@@ -1,5 +1,5 @@
 import { CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { DragDropModule as CdkDragDropModule } from '@angular/cdk/drag-drop';
 import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
 
@@ -8,7 +8,8 @@ import { BsGridModule } from '@mintplayer/ng-bootstrap/grid';
   templateUrl: './drag-drop.component.html',
   styleUrls: ['./drag-drop.component.scss'],
   standalone: true,
-  imports: [CdkDragDropModule, BsGridModule]
+  imports: [CdkDragDropModule, BsGridModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DragDropComponent {
 

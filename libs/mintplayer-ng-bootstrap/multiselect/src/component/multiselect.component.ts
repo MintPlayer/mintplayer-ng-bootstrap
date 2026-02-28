@@ -1,4 +1,4 @@
-import { Component, Input, TemplateRef, TrackByFunction, ViewChild } from '@angular/core';
+import { Component, input, TemplateRef, TrackByFunction, viewChild, ChangeDetectionStrategy} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 
 @Component({
@@ -6,6 +6,7 @@ import { Color } from '@mintplayer/ng-bootstrap';
   templateUrl: './multiselect.component.html',
   styleUrls: ['./multiselect.component.scss'],
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsMultiselectComponent<T> {
 
@@ -15,17 +16,17 @@ export class BsMultiselectComponent<T> {
   colors = Color;
 
 
-  @Input() public items: T[] = [];
-  @Input() public selectedItems: T[] = [];
-  @ViewChild('defaultButtonTemplate') defaultButtonTemplate!: TemplateRef<any>;
+  readonly items = input<T[]>([]);
+  readonly selectedItems = input<T[]>([]);
+  readonly defaultButtonTemplate = viewChild.required<TemplateRef<any>>('defaultButtonTemplate');
 
   // itemChange(item: any, ev: Event) {
   itemChange(item: T, value: boolean | null) {
     // const value = (<any>ev.target).checked;
     if (value) {
-      this.selectedItems.push(item);
+      this.selectedItems().push(item);
     } else {
-      this.selectedItems.splice(this.selectedItems.findIndex((i) => i === item), 1);
+      this.selectedItems().splice(this.selectedItems().findIndex((i) => i === item), 1);
     }
   }
 
