@@ -1,4 +1,4 @@
-<div class="dropzone border position-relative p-5" [class.dragging]="isDraggingFile">
+<div class="dropzone border position-relative p-5" [class.dragging]="isDraggingFile()">
     <input type="file" multiple #fileUpload (change)="onChange($event)" [title]="placeholder()" [placeholder]="placeholder()" class="position-absolute w-100 h-100">
     <!-- <img src="/assets/ic-file-upload.svg" [alt]="placeholder()"> -->
     <span class="h3 d-block">{{ dropFilesCaption() }}</span>

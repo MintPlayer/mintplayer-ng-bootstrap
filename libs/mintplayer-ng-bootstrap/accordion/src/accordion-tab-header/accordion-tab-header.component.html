@@ -1,12 +1,15 @@
 <h2 class="accordion-header">
-    <button type="button"
+    <label role="button"
+        tabindex="0"
         class="accordion-button"
+        [for]="accordionTab.accordionTabName()"
         [id]="accordionTab.accordionTabName() + '-header'"
         [class.collapsed]="!accordionTab.isActive()"
         [class.bg-unset]="!accordionTab.accordion.highlightActiveTab()"
         [attr.aria-expanded]="accordionTab.isActive()"
         [attr.aria-controls]="accordionTab.accordionTabName() + '-content'"
-        (click)="headerClicked($event)">
+        (click)="headerClicked($event)"
+        (keydown)="headerKeydown($event)">
         <ng-content></ng-content>
-    </button>
+    </label>
 </h2>

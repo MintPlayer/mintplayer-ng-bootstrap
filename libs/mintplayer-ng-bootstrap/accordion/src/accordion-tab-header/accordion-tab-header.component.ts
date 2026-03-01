@@ -10,8 +10,15 @@ import { BsAccordionTabComponent } from '../accordion-tab/accordion-tab.componen
 export class BsAccordionTabHeaderComponent {
   accordionTab = inject(BsAccordionTabComponent);
 
-  headerClicked(event: MouseEvent) {
+  headerClicked(event: Event) {
     event.preventDefault();
     this.accordionTab.setActive(!this.accordionTab.isActive());
+  }
+
+  headerKeydown(event: KeyboardEvent) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      this.accordionTab.setActive(!this.accordionTab.isActive());
+    }
   }
 }

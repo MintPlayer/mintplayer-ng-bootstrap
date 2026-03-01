@@ -1,4 +1,4 @@
-import { Component, ElementRef, inject, signal, TemplateRef, viewChild, ChangeDetectionStrategy} from '@angular/core';
+import { Component, ElementRef, inject, model, signal, TemplateRef, viewChild, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
@@ -20,7 +20,7 @@ export class ToastComponent {
 
   colors = Color;
   myCounter = signal(0);
-  itemToAdd = signal('');
+  itemToAdd = model('');
   readonly txtItem = viewChild.required<ElementRef<HTMLInputElement>>('txtItem');
 
   addToast(template: TemplateRef<any>, message: string) {

@@ -6,15 +6,15 @@
                 <div class="flex-end d-flex tw" [class]="dNoneClass()">
                     <button (click)="toggleExpanded()"
                         class="align-self-center"
-                        [class.navbar-toggler]="!expandButtonTemplate"
-                        [class.bg-transparent]="expandButtonTemplate"
-                        [class.shadow-none]="expandButtonTemplate"
-                        [class.border-0]="expandButtonTemplate"
+                        [class.navbar-toggler]="!expandButtonTemplate()"
+                        [class.bg-transparent]="expandButtonTemplate()"
+                        [class.shadow-none]="expandButtonTemplate()"
+                        [class.border-0]="expandButtonTemplate()"
                         type="button"
                         aria-label="Toggle navigation"
                         [attr.aria-expanded]="isExpanded()"
                         aria-controls="navbar-collapse">
-                        <ng-container *ngTemplateOutlet="expandButtonTemplate ?? defaultExpandButton; context: { $implicit: isExpanded() }"></ng-container>
+                        <ng-container *ngTemplateOutlet="expandButtonTemplate() ?? defaultExpandButton; context: { $implicit: isExpanded() }"></ng-container>
                     </button>
                 </div>
             </div>

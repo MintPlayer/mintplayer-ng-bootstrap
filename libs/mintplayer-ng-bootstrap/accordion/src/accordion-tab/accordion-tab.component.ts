@@ -29,13 +29,14 @@ export class BsAccordionTabComponent {
   setActive(value: boolean) {
     if (this.isActive() !== value) {
       this.isActive.set(value);
-      if (value) {
+      if (value && !this.accordion.multi()) {
         this.accordion.tabPages().filter((tab) => {
           return tab !== this;
         }).forEach((tab) => {
           tab.isActive.set(false);
         });
-      } else {
+      }
+      if (!value) {
         this.childAccordions().forEach((accordion) => {
           accordion.tabPages().forEach((tab: BsAccordionTabComponent) => {
             tab.isActive.set(false);

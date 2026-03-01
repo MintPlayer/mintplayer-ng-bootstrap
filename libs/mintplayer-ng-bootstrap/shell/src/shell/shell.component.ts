@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, ElementRef, input, TemplateRef, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, ElementRef, input, signal, TemplateRef, viewChild } from '@angular/core';
 import { BsShellState } from '../shell-state';
 import { Breakpoint } from '@mintplayer/ng-bootstrap';
 
@@ -12,7 +12,7 @@ import { Breakpoint } from '@mintplayer/ng-bootstrap';
 })
 export class BsShellComponent {
 
-  sidebarTemplate: TemplateRef<any> | null = null;
+  sidebarTemplate = signal<TemplateRef<any> | null>(null);
   readonly rootElement = viewChild.required<ElementRef<HTMLDivElement>>('root');
 
   state = input<BsShellState>('auto');

@@ -8,6 +8,6 @@ export class BsShellSidebarDirective {
   constructor() {
     const shell = inject(BsShellComponent);
     const template = inject(TemplateRef);
-    shell.sidebarTemplate = template;
+    shell.sidebarTemplate.set(template);
   }
 }

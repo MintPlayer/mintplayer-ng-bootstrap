@@ -23,7 +23,7 @@ export class BsScrollspyComponent implements AfterViewInit, AfterContentInit {
   readonly directives = contentChildren(BsScrollspyDirective, { descendants: true });
   readonly anchors = viewChildren<ElementRef<HTMLSpanElement>>('anchor');
 
-  activeDirective: BsScrollspyDirective | null = null;
+  activeDirective = signal<BsScrollspyDirective | null>(null);
 
   constructor() {
     effect(() => {
@@ -54,18 +54,18 @@ export class BsScrollspyComponent implements AfterViewInit, AfterContentInit {
     const dirs = allDirectives.filter((d) => d.element.nativeElement.getBoundingClientRect().y < offsetY);
 
     if (allDirectives.length === 0) {
-      this.activeDirective = null;
+      this.activeDirective.set(null);
     } else if (dirs.length === 0) {
-      this.activeDirective = allDirectives[0] ?? null;
+      this.activeDirective.set(allDirectives[0] ?? null);
     } else {
-      this.activeDirective = dirs[dirs.length - 1];
+      this.activeDirective.set(dirs[dirs.length - 1]);
     }
   }
 
   scrollToCurrentInSpy() {
     if ((typeof window !== 'undefined') && (window.innerWidth >= 768)) {
-      if (this.activeDirective) {
-        const index = this.directives().findIndex((v, i) => v === this.activeDirective);
+      if (this.activeDirective()) {
+        const index = this.directives().findIndex((v, i) => v === this.activeDirective());
         const anchor = this.anchors()[index];
         if (anchor && anchor.nativeElement.parentElement) {
           anchor.nativeElement.scrollIntoView({ block: 'nearest', inline: 'nearest' });

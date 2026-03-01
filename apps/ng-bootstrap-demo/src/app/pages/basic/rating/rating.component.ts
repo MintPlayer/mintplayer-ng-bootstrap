@@ -1,4 +1,4 @@
-import { Component, signal, ChangeDetectionStrategy} from '@angular/core';
+import { Component, model, signal, ChangeDetectionStrategy} from '@angular/core';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsRatingComponent } from '@mintplayer/ng-bootstrap/rating';
 
@@ -10,6 +10,6 @@ import { BsRatingComponent } from '@mintplayer/ng-bootstrap/rating';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RatingComponent {
-  ratingValue = signal(3);
+  ratingValue = model(3);
   previewValue = signal(3);
 }

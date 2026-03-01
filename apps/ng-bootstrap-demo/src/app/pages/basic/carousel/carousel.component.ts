@@ -1,7 +1,7 @@
-import { Component, signal, ChangeDetectionStrategy} from '@angular/core';
+import { Component, model, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
-import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
+import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
+import { BsGridComponent, BsGridRowDirective, BsGridColDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsSelectComponent } from '@mintplayer/ng-bootstrap/select';
 import { BsCarouselComponent, BsCarouselImageDirective } from '@mintplayer/ng-bootstrap/carousel';
 
@@ -9,10 +9,10 @@ import { BsCarouselComponent, BsCarouselImageDirective } from '@mintplayer/ng-bo
   selector: 'demo-carousel',
   templateUrl: './carousel.component.html',
   styleUrls: ['./carousel.component.scss'],
-  imports: [FormsModule, BsFormComponent, BsFormControlDirective, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective, BsColFormLabelDirective, BsSelectComponent, BsCarouselComponent, BsCarouselImageDirective],
+  imports: [FormsModule, BsFormComponent, BsGridComponent, BsGridRowDirective, BsGridColDirective, BsColFormLabelDirective, BsSelectComponent, BsCarouselComponent, BsCarouselImageDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CarouselComponent {
-  mode = signal<'slide' | 'fade'>('slide');
-  orientation = signal<'horizontal' | 'vertical'>('horizontal');
+  mode = model<'slide' | 'fade'>('slide');
+  orientation = model<'horizontal' | 'vertical'>('horizontal');
 }

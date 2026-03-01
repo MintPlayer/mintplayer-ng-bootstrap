@@ -5,7 +5,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { MockComponent, MockDirective } from 'ng-mocks';
 
 import { NavigationLockComponent } from './navigation-lock.component';
-import { BsToggleButtonComponent, BsToggleButtonGroupDirective, BsToggleButtonValueAccessor } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsToggleButtonComponent, BsToggleButtonGroupDirective } from '@mintplayer/ng-bootstrap/toggle-button';
 import { BsNavigationLockDirective } from '@mintplayer/ng-bootstrap/navigation-lock';
 
 describe('NavigationLockComponent', () => {
@@ -18,7 +18,7 @@ describe('NavigationLockComponent', () => {
         NoopAnimationsModule,
         RouterTestingModule,
         FormsModule,
-        MockComponent(BsToggleButtonComponent), MockDirective(BsToggleButtonValueAccessor), MockDirective(BsToggleButtonGroupDirective),
+        MockComponent(BsToggleButtonComponent), MockDirective(BsToggleButtonGroupDirective),
         MockDirective(BsNavigationLockDirective),
         NavigationLockComponent,
       ]

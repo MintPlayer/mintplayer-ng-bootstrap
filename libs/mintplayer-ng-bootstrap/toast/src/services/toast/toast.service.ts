@@ -4,7 +4,7 @@ import { inject, Injectable, Injector, signal, TemplateRef } from '@angular/core
 import { BsToastContainerComponent } from '../../components/toast-container/toast-container.component';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class BsToastService {
 
   private overlayService = inject(Overlay);
@@ -32,23 +32,22 @@ export class BsToastService {
 
     context = context ?? {};
     const ctx = Object.assign(context, { isVisible: false });
-    const currentToasts = this.toasts();
-    currentToasts.push({ template: toast, context: ctx });
-    this.toasts.set([...currentToasts]);
-    setTimeout(() => ctx.isVisible = true, 20);
+    const item: ToastItem = { template: toast, context: ctx };
+    this.toasts.update(toasts => [...toasts, item]);
+    setTimeout(() => {
+      this.toasts.update(toasts => toasts.map(t =>
+        t === item ? { ...t, context: Object.assign({}, t.context, { isVisible: true }) } : t
+      ));
+    }, 20);
   }
 
   public close(index: number) {
-    const toasts = this.toasts();
-    const toast = toasts[index];
-    if (toast && toast.context) {
-      (<any>toast.context).isVisible = false;
-    }
+    this.toasts.update(toasts => toasts.map((t, i) =>
+      i === index ? { ...t, context: Object.assign({}, t.context, { isVisible: false }) } : t
+    ));
 
     setTimeout(() => {
-      const currentToasts = this.toasts();
-      currentToasts.splice(index, 1);
-      this.toasts.set([...currentToasts]);
+      this.toasts.update(toasts => toasts.filter((_, i) => i !== index));
     }, 400);
   }
 }

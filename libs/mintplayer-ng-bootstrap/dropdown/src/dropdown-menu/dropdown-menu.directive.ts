@@ -77,6 +77,9 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
     const ev = event as MouseEvent;
     if (!this.bsDevelopment) {
       if (!this.wait) {
+        if (this.dropdown.elementRef.nativeElement.contains(ev.target as Node)) {
+          return;
+        }
         if (!this.overlayRef?.overlayElement.contains(<any>ev.target)) {
           this.doClose();
         }

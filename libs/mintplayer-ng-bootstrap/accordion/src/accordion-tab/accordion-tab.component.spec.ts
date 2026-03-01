@@ -12,7 +12,9 @@ class BsAccordionMockProvider {
   accordionId = signal<number>(1);
   accordionName = computed(() => `bs-accordion-${this.accordionId()}`);
   tabPages: BsAccordionTabComponent[] = [];
-  disableAnimations = false;
+  disableAnimations = signal(false);
+  highlightActiveTab = signal(false);
+  multi = signal(false);
 }
 
 describe('BsAccordionTabComponent', () => {

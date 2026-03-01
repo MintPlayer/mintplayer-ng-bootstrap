@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, model, output, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, input, model, output, viewChild } from '@angular/core';
 import { HS } from '../../interfaces/hs';
 import { BsSliderComponent, BsThumbDirective, BsTrackDirective } from '../slider/slider.component';
 
@@ -12,6 +12,7 @@ import { BsSliderComponent, BsThumbDirective, BsTrackDirective } from '../slider
 export class BsAlphaStripComponent {
   readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('track');
 
+  disabled = input<boolean>(false);
   hs = model<HS>({ hue: 0, saturation: 0 });
   luminosity = model<number>(0.5);
   alpha = model<number>(1);

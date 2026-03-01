@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, Directive, effect, ElementRef, inject, model, output, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, Directive, effect, ElementRef, inject, input, model, output, signal, viewChild } from '@angular/core';
 
 @Component({
   selector: 'bs-slider',
@@ -16,6 +16,7 @@ export class BsSliderComponent {
   readonly track = viewChild.required<ElementRef<HTMLDivElement>>('track');
   readonly thumb = viewChild.required<ElementRef<HTMLDivElement>>('thumb');
 
+  disabled = input<boolean>(false);
   value = model<number>(0.5);
   valueChange = output<number>();
   private isPointerDown = signal<boolean>(false);
@@ -38,6 +39,7 @@ export class BsSliderComponent {
   }
 
   onPointerDown(ev: MouseEvent | TouchEvent) {
+    if (this.disabled()) return;
     ev.preventDefault();
     ev.stopPropagation();
     this.isPointerDown.set(true);

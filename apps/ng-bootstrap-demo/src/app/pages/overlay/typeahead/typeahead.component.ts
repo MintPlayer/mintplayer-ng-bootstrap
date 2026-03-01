@@ -1,19 +1,20 @@
 import { JsonPipe } from '@angular/common';
-import { Component, signal, ChangeDetectionStrategy} from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy} from '@angular/core';
 import { BsTypeaheadComponent } from '@mintplayer/ng-bootstrap/typeahead';
 
 @Component({
   selector: 'demo-typeahead',
   templateUrl: './typeahead.component.html',
   styleUrls: ['./typeahead.component.scss'],
-  imports: [BsTypeaheadComponent, JsonPipe],
+  imports: [BsTypeaheadComponent],
   providers: [JsonPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TypeaheadComponent {
 
-  constructor(private jsonPipe: JsonPipe) { }
+  private jsonPipe = inject(JsonPipe);
 
+  
   searchterm = signal('');
   suggestions = signal<any[]>([]);
   items: any[] = [

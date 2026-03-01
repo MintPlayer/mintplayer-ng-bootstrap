@@ -1,4 +1,14 @@
-<div [@.disabled]="accordion.disableAnimations" bsNoNoscript>
+<div [@.disabled]="accordion.disableAnimations()" bsNoNoscript>
+    @if (accordion.multi()) {
+        <input type="checkbox" class="d-none"
+            [id]="accordionTabName()"
+            [checked]="isActive()">
+    } @else {
+        <input type="radio" class="d-none"
+            [name]="accordion.accordionName()"
+            [id]="accordionTabName()"
+            [checked]="isActive()">
+    }
     <ng-content select="bs-accordion-tab-header"></ng-content>
     <div [id]="accordionTabName() + '-content'"
         class="accordion-collapse collapse show overflow-hidden"

@@ -1,6 +1,5 @@
 import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { LazyLoadedComponent } from './components/lazy-loaded/lazy-loaded.component';
-import { AsyncPipe } from '@angular/common';
 import { BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
 import { Color } from '@mintplayer/ng-bootstrap';
 
@@ -8,7 +7,7 @@ import { Color } from '@mintplayer/ng-bootstrap';
   selector: 'demo-lazy-loading',
   templateUrl: './lazy-loading.component.html',
   styleUrls: ['./lazy-loading.component.scss'],
-  imports: [AsyncPipe, BsAlertComponent, LazyLoadedComponent],
+  imports: [BsAlertComponent, LazyLoadedComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LazyLoadingComponent {

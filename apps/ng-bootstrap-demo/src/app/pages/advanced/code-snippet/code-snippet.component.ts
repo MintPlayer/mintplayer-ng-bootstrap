@@ -1,13 +1,12 @@
 import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
-import { BsOffcanvasHostComponent, BsOffcanvasContentDirective } from '@mintplayer/ng-bootstrap/offcanvas';
 import { dedent } from 'ts-dedent';
 
 @Component({
   selector: 'demo-code-snippet',
   templateUrl: './code-snippet.component.html',
   styleUrls: ['./code-snippet.component.scss'],
-  imports: [BsOffcanvasHostComponent, BsOffcanvasContentDirective, BsCodeSnippetComponent],
+  imports: [BsCodeSnippetComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CodeSnippetComponent {

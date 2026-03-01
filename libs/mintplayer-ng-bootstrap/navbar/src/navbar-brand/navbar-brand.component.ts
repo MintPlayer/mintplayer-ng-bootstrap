@@ -1,4 +1,4 @@
-import { Component, input, ChangeDetectionStrategy} from '@angular/core';
+import { AfterContentChecked, Component, ElementRef, inject, input, ChangeDetectionStrategy} from '@angular/core';
 
 @Component({
   selector: 'bs-navbar-brand',
@@ -9,6 +9,14 @@ import { Component, input, ChangeDetectionStrategy} from '@angular/core';
     '[class.mx-auto]': 'true',
   },
 })
-export class BsNavbarBrandComponent {
+export class BsNavbarBrandComponent implements AfterContentChecked {
+  private element = inject(ElementRef);
   readonly routerLink = input<any[]>([]);
+
+  ngAfterContentChecked() {
+    const anchor = this.element.nativeElement.querySelector('a');
+    if (anchor) {
+      anchor.classList.add('nav-link');
+    }
+  }
 }

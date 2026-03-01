@@ -5,8 +5,8 @@ import { MockComponent, MockDirective } from 'ng-mocks';
 import { JsonPipe } from '@angular/common';
 import { SelectComponent } from './select.component';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
-import { BsToggleButtonComponent, BsToggleButtonGroupDirective, BsToggleButtonValueAccessor } from '@mintplayer/ng-bootstrap/toggle-button';
-import { BsSelectComponent, BsSelectValueAccessor, BsSelectOption } from '@mintplayer/ng-bootstrap/select';
+import { BsToggleButtonComponent, BsToggleButtonGroupDirective } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsSelectComponent } from '@mintplayer/ng-bootstrap/select';
 
 describe('SelectComponent', () => {
   let component: SelectComponent;
@@ -17,8 +17,8 @@ describe('SelectComponent', () => {
       imports: [
         FormsModule,
         MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsGridColDirective), MockDirective(BsColFormLabelDirective),
-        MockComponent(BsSelectComponent), MockDirective(BsSelectValueAccessor), MockDirective(BsSelectOption),
-        MockComponent(BsToggleButtonComponent), MockDirective(BsToggleButtonValueAccessor), MockDirective(BsToggleButtonGroupDirective),
+        MockComponent(BsSelectComponent),
+        MockComponent(BsToggleButtonComponent), MockDirective(BsToggleButtonGroupDirective),
         JsonPipe,
         SelectComponent,
       ]

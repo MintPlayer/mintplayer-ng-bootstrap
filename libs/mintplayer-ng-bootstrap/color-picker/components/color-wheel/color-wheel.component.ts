@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, model, output, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, input, model, output, signal, viewChild } from '@angular/core';
 import { HS } from '../../interfaces/hs';
 import { HslColor } from '../../interfaces/hsl-color';
 import { RgbColor } from '../../interfaces/rgb-color';
@@ -29,7 +29,7 @@ export class BsColorWheelComponent {
   hsChange = output<HS>();
 
   // Internal state
-  disabled = signal<boolean>(false);
+  disabled = input<boolean>(false);
   viewInited = signal<boolean>(false);
   private isPointerDown = false;
   private canvasContext: CanvasRenderingContext2D | null = null;

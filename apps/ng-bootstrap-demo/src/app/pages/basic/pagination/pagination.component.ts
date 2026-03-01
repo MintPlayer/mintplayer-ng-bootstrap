@@ -1,4 +1,4 @@
-import { Component, signal, ChangeDetectionStrategy} from '@angular/core';
+import { Component, model, signal, ChangeDetectionStrategy} from '@angular/core';
 import { BsPaginationComponent } from '@mintplayer/ng-bootstrap/pagination';
 
 @Component({
@@ -11,14 +11,14 @@ import { BsPaginationComponent } from '@mintplayer/ng-bootstrap/pagination';
 export class PaginationComponent {
 
   example1PageNumbers = signal<number[]>([10, 20, 50]);
-  example1_2SelectedPageNumber = signal(20);
+  example1_2SelectedPageNumber = model(20);
 
   example2PageNumbers = signal<number[]>([10, 20, 50]);
 
   example3PageNumbers = signal<number[]>([...Array(10).keys()].map((p) => p + 1));
-  example3SelectedPageNumber = signal(5);
+  example3SelectedPageNumber = model(5);
 
   example4PageNumbers = signal<number[]>([...Array(30).keys()].map((p) => p + 1));
-  example4SelectedPageNumber = signal(15);
+  example4SelectedPageNumber = model(15);
 
 }

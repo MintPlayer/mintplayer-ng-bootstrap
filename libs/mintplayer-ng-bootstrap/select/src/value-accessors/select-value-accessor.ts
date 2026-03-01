@@ -37,9 +37,6 @@ export class BsSelectValueAccessor implements ControlValueAccessor {
     this.setProperty('disabled', isDisabled);
   }
   protected setProperty(key: string, value: any): void {
-    // if (this._elementRef) {
-    //   this._renderer.setProperty(this._elementRef.nativeElement, key, value);
-    // }
     if (this.selectBox.selectBox()) {
       this._renderer.setProperty(this.selectBox.selectBox().nativeElement, key, value);
     }
@@ -90,7 +87,6 @@ export class BsSelectValueAccessor implements ControlValueAccessor {
 
   writeValue(value: any) {
     this.value = value;
-    // console.log(`WriteValue ${this.selectBox.identifier}`, value);
 
     const id = this.getOptionId(value);
     const valueString = this.buildValueString(id, value);

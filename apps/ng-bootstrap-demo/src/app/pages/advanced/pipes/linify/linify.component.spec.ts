@@ -8,7 +8,7 @@ import { LinifyComponent } from './linify.component';
 import { BsFormComponent, BsFormGroupDirective, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsListGroupComponent, BsListGroupItemComponent } from '@mintplayer/ng-bootstrap/list-group';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
-import { BsToggleButtonComponent, BsToggleButtonGroupDirective, BsToggleButtonValueAccessor } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsToggleButtonComponent, BsToggleButtonGroupDirective } from '@mintplayer/ng-bootstrap/toggle-button';
 
 describe('LinifyComponent', () => {
   let component: LinifyComponent;
@@ -23,7 +23,7 @@ describe('LinifyComponent', () => {
         MockPipe(BsLinifyPipe),
         MockComponent(BsListGroupComponent), MockComponent(BsListGroupItemComponent),
         MockDirective(BsButtonTypeDirective),
-        MockComponent(BsToggleButtonComponent), MockDirective(BsToggleButtonValueAccessor), MockDirective(BsToggleButtonGroupDirective),
+        MockComponent(BsToggleButtonComponent), MockDirective(BsToggleButtonGroupDirective),
 
         // Unit to test (standalone)
         LinifyComponent,

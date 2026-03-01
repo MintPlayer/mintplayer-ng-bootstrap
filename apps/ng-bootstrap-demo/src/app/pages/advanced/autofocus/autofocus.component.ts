@@ -1,6 +1,5 @@
 import { Component, DestroyRef, inject, signal, ChangeDetectionStrategy} from '@angular/core';
-import { BsSelect2Component, BsItemTemplateDirective, BsSuggestionTemplateDirective } from '@mintplayer/ng-bootstrap/select2';
-import { BsFontColorPipe } from '@mintplayer/ng-bootstrap/font-color';
+import { BsSelect2Component } from '@mintplayer/ng-bootstrap/select2';
 import { FocusOnLoadDirective } from '@mintplayer/ng-focus-on-load';
 import { Artist } from '../../../entities/artist';
 import { Tag } from '../../../entities/tag';
@@ -13,7 +12,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   selector: 'demo-autofocus',
   templateUrl: './autofocus.component.html',
   styleUrls: ['./autofocus.component.scss'],
-  imports: [BsSelect2Component, BsItemTemplateDirective, BsSuggestionTemplateDirective, BsFontColorPipe, FocusOnLoadDirective],
+  imports: [BsSelect2Component, FocusOnLoadDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AutofocusComponent {

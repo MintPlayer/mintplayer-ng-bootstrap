@@ -5,7 +5,7 @@ import { MockComponent, MockDirective } from 'ng-mocks';
 
 import { TableComponent } from './table.component';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
-import { BsToggleButtonComponent, BsToggleButtonGroupDirective, BsToggleButtonValueAccessor } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsToggleButtonComponent, BsToggleButtonGroupDirective } from '@mintplayer/ng-bootstrap/toggle-button';
 
 describe('TableComponent', () => {
   let component: TableComponent;
@@ -17,7 +17,7 @@ describe('TableComponent', () => {
         FormsModule,
         MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
         MockComponent(BsTableComponent),
-        MockComponent(BsToggleButtonComponent), MockDirective(BsToggleButtonValueAccessor), MockDirective(BsToggleButtonGroupDirective),
+        MockComponent(BsToggleButtonComponent), MockDirective(BsToggleButtonGroupDirective),
         TableComponent,
       ]
     })

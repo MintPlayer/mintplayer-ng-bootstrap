@@ -1,10 +1,9 @@
-import { Component, input, model, output, TemplateRef, ChangeDetectionStrategy} from '@angular/core';
+import { Component, input, model, output, signal, TemplateRef, ChangeDetectionStrategy} from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { BsForDirective } from '@mintplayer/ng-bootstrap/for';
 import { BsListGroupComponent } from '@mintplayer/ng-bootstrap/list-group';
 import { BsListGroupItemComponent } from '@mintplayer/ng-bootstrap/list-group';
 import { BsProgressComponent, BsProgressBarComponent } from '@mintplayer/ng-bootstrap/progress-bar';
-import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { FileUpload } from '../file-upload';
 import { BsFormatBytesPipe } from '../pipes/format-bytes/format-bytes.pipe';
@@ -13,7 +12,7 @@ import { BsFormatBytesPipe } from '../pipes/format-bytes/format-bytes.pipe';
   selector: 'bs-file-upload',
   templateUrl: './file-upload.component.html',
   styleUrls: ['./file-upload.component.scss'],
-  imports: [NgTemplateOutlet, BsForDirective, BsListGroupComponent, BsListGroupItemComponent, BsProgressComponent, BsProgressBarComponent, BsButtonTypeDirective, BsFormatBytesPipe],
+  imports: [NgTemplateOutlet, BsForDirective, BsListGroupComponent, BsListGroupItemComponent, BsProgressComponent, BsProgressBarComponent, BsFormatBytesPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '(dragover)': 'onDragOver($event)',
@@ -28,7 +27,7 @@ export class BsFileUploadComponent {
   readonly placeholder = input('Drop files to upload');
 
   colors = Color;
-  isDraggingFile = false;
+  isDraggingFile = signal(false);
   fileTemplate?: TemplateRef<FileUpload>;
   readonly files = model<FileUpload[]>([]);
   readonly filesDropped = output<FileUpload[]>();
@@ -49,7 +48,7 @@ export class BsFileUploadComponent {
     event.stopPropagation();
 
     if (event.dataTransfer) {
-      this.isDraggingFile = true;
+      this.isDraggingFile.set(true);
       event.dataTransfer.effectAllowed = "copy";
     }
   }
@@ -57,13 +56,13 @@ export class BsFileUploadComponent {
   onDragLeave(event: DragEvent) {
     event.preventDefault();
     event.stopPropagation();
-    this.isDraggingFile = false;
+    this.isDraggingFile.set(false);
   }
 
   onDrop(event: DragEvent) {
     event.preventDefault();
     event.stopPropagation();
-    this.isDraggingFile = false;
+    this.isDraggingFile.set(false);
     if (event.dataTransfer && event.dataTransfer.files) {
       this.processDroppedFiles(event.dataTransfer.files);
     }

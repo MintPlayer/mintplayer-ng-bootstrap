@@ -5,7 +5,6 @@ import { Pipe, PipeTransform } from '@angular/core';
 })
 export class BsAddPropertiesPipe implements PipeTransform {
   transform(value: Object | null, toAdd: Object) {
-    const result = Object.assign(value ?? {}, toAdd);
-    return result;
+    return Object.assign({}, value ?? {}, toAdd);
   }
 }

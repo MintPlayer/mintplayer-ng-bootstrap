@@ -1,7 +1,7 @@
 /// <reference types="./types" />
 
 import { ChangeDetectionStrategy, Component, computed, inject, input, model, signal } from '@angular/core';
-import { BsCalendarMonthService, BsMonthNamePipe, BsWeekdayNamePipe, DateDayOfMonth, WeekDay } from '@mintplayer/ng-bootstrap/calendar-month';
+import { BsCalendarMonthService, BsMonthNamePipe, DateDayOfMonth, WeekDay } from '@mintplayer/ng-bootstrap/calendar-month';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { BsUcFirstPipe } from '@mintplayer/ng-bootstrap/uc-first';
 
@@ -9,7 +9,7 @@ import { BsUcFirstPipe } from '@mintplayer/ng-bootstrap/uc-first';
   selector: 'bs-calendar',
   templateUrl: './calendar.component.html',
   styleUrls: ['./calendar.component.scss'],
-  imports: [BsUcFirstPipe, BsMonthNamePipe, BsWeekdayNamePipe],
+  imports: [BsUcFirstPipe, BsMonthNamePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsCalendarComponent {

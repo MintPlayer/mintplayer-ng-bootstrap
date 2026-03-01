@@ -39,8 +39,10 @@ export class BsTabControlComponent {
     // Update orderedTabPages whenever content children change
     effect(() => {
       const list = this.tabPages();
-      const toAdd = list.filter(tp => !this.orderedTabPages.includes(tp));
-      this.orderedTabPages = this.orderedTabPages.concat(toAdd).filter((tp) => list.includes(tp));
+      this.orderedTabPages.update(current => {
+        const toAdd = list.filter(tp => !current.includes(tp));
+        return current.concat(toAdd).filter((tp) => list.includes(tp));
+      });
     });
   }
 
@@ -53,7 +55,7 @@ export class BsTabControlComponent {
   dragBoundarySelector = computed(() => this.restrictDragging() ? 'ul' : '');
   readonly tabPages = contentChildren(BsTabPageComponent);
   activeTab = signal<BsTabPageComponent | null>(null);
-  orderedTabPages: BsTabPageComponent[] = [];
+  orderedTabPages = signal<BsTabPageComponent[]>([]);
   tabControlId = signal<number>(0);
   tabControlName = computed(() => `bs-tab-control-${this.tabControlId()}`);
   topTabs = computed(() => this.tabsPosition() === 'top');
@@ -77,10 +79,11 @@ export class BsTabControlComponent {
 
   moveTab(ev: CdkDragDrop<readonly BsTabPageComponent[]>) {
     if (ev.previousContainer === ev.container) {
-      moveItemInArray(
-        this.orderedTabPages,
-        ev.previousIndex,
-        ev.currentIndex);
+      this.orderedTabPages.update(current => {
+        const copy = [...current];
+        moveItemInArray(copy, ev.previousIndex, ev.currentIndex);
+        return copy;
+      });
     }
   }
 }

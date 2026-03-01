@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, signal, ChangeDetectionStrategy} from '@angular/core';
+import { Component, model, ChangeDetectionStrategy} from '@angular/core';
 import { BsDatepickerComponent } from '@mintplayer/ng-bootstrap/datepicker';
 
 @Component({
@@ -11,7 +11,7 @@ import { BsDatepickerComponent } from '@mintplayer/ng-bootstrap/datepicker';
 })
 export class DatepickerComponent {
 
-  selectedDate = signal(new Date());
+  selectedDate = model(new Date());
   disableDate = (date: Date) => {
     return date.getDate() % 2 === 0;
   }
