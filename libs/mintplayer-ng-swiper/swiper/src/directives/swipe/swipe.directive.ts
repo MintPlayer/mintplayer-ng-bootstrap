@@ -29,6 +29,11 @@ export class BsSwipeDirective {
   private isSwipeDetected = false;
   private readonly SWIPE_THRESHOLD = 10; // pixels
 
+  // Synchronous copy of start position for use during the 20ms gap
+  // before startTouch signal is set (needed to call preventDefault
+  // on early touchmove events to block Firefox Android PullToRefresh)
+  private touchStartPos: { x: number, y: number } | null = null;
+
   private orientationEffect = effect(() => {
     const orientation = this.container.orientation();
     this.inlineBlock = (orientation === 'horizontal');
@@ -80,6 +85,7 @@ export class BsSwipeDirective {
     if (ev.touches.length === 1) {
       ev.stopPropagation(); // Prevent bubbling, but allow clicks
       this.isSwipeDetected = false;
+      this.touchStartPos = { x: ev.touches[0].clientX, y: ev.touches[0].clientY };
       this.container.pendingAnimation?.finish();
 
       setTimeout(() => {
@@ -104,11 +110,15 @@ export class BsSwipeDirective {
   onTouchMove(ev: TouchEvent) {
     ev.stopPropagation();
 
-    // Only prevent default (page scroll) if movement exceeds threshold
+    // Only prevent default (page scroll) if movement exceeds threshold.
+    // Use synchronous touchStartPos as fallback during the 20ms gap before
+    // the startTouch signal is set, so preventDefault is called on early
+    // touchmove events (prevents Firefox Android PullToRefresh).
     const startTouch = this.container.startTouch();
-    if (startTouch) {
-      const dx = Math.abs(ev.touches[0].clientX - startTouch.position.x);
-      const dy = Math.abs(ev.touches[0].clientY - startTouch.position.y);
+    const refPos = startTouch?.position ?? this.touchStartPos;
+    if (refPos) {
+      const dx = Math.abs(ev.touches[0].clientX - refPos.x);
+      const dy = Math.abs(ev.touches[0].clientY - refPos.y);
       if (dx > this.SWIPE_THRESHOLD || dy > this.SWIPE_THRESHOLD) {
         this.isSwipeDetected = true;
         ev.preventDefault(); // Now we're swiping, prevent scroll
@@ -126,6 +136,7 @@ export class BsSwipeDirective {
 
   onTouchEnd(ev: TouchEvent) {
     ev.stopPropagation();
+    this.touchStartPos = null;
     if (this.isSwipeDetected) {
       ev.preventDefault();
     }
