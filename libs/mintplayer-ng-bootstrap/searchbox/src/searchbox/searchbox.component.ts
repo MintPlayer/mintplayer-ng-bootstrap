@@ -15,6 +15,7 @@ import { BsDropdownItemComponent } from '@mintplayer/ng-bootstrap/dropdown-menu'
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsProgressComponent } from '@mintplayer/ng-bootstrap/progress-bar';
 import { BsProgressBarComponent } from '@mintplayer/ng-bootstrap/progress-bar';
+import { FocusOnLoadDirective } from '@mintplayer/ng-focus-on-load';
 import { BsSuggestionTemplateContext } from '../directives';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
@@ -25,6 +26,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
   imports: [
     NgTemplateOutlet,
     FormsModule,
+    FocusOnLoadDirective,
     BsHasOverlayComponent,
     BsDropdownDirective,
     BsDropdownToggleDirective,

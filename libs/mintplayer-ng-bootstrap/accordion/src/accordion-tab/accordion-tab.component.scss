@@ -7,10 +7,16 @@
 }
 
 :host ::ng-deep {
-    .noscript > input[type="radio"]:checked {
+    // Noscript: hide all tab content by default
+    .noscript > .accordion-collapse {
+        height: 0 !important;
+    }
+
+    // Noscript: show content and style header when input is checked
+    .noscript > input[type="radio"]:checked,
+    .noscript > input[type="checkbox"]:checked {
         + bs-accordion-tab-header > h2 > label {
-            background-color: #e7f1ff; // !important;
-            // background-color: var(--bs-accordion-active-bg);
+            background-color: #e7f1ff;
 
             &::after {
                 transform: var(--bs-accordion-btn-icon-transform);

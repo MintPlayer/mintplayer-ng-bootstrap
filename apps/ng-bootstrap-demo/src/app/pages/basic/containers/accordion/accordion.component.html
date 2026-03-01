@@ -24,6 +24,30 @@ Requires the <b>BrowserAnimationsModule</b> to be imported in the AppModule.
         <span class="d-block px-3 py-2">Label 3</span>
     </bs-accordion-tab>
 </bs-accordion>
+<h2>Multi (multiple tabs open)</h2>
+<bs-accordion class="d-block mb-3" [multi]="true">
+    <bs-accordion-tab>
+        <bs-accordion-tab-header>
+            <span class="triangle mr-2"></span>
+            Profile
+        </bs-accordion-tab-header>
+        <span class="d-block px-3 py-2">Label 1</span>
+    </bs-accordion-tab>
+    <bs-accordion-tab>
+        <bs-accordion-tab-header>
+            <span class="triangle mr-2"></span>
+            Sign in
+        </bs-accordion-tab-header>
+        <span class="d-block px-3 py-2">Label 2</span>
+    </bs-accordion-tab>
+    <bs-accordion-tab>
+        <bs-accordion-tab-header>
+            <span class="triangle mr-2"></span>
+            Payment
+        </bs-accordion-tab-header>
+        <span class="d-block px-3 py-2">Label 3</span>
+    </bs-accordion-tab>
+</bs-accordion>
 <h2>Multi-level</h2>
 <bs-accordion class="d-block mb-3 multi-level">
     <bs-accordion-tab>
