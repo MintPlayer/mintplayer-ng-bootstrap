@@ -28,6 +28,18 @@
         color: #333;
       }
     }
+
+    > button {
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      color: #999;
+
+      &:hover {
+        color: #333;
+      }
+    }
   }
 
   input {
