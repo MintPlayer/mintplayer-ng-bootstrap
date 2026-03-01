@@ -11,10 +11,10 @@ import { BsSwipeDirective } from '../swipe/swipe.directive';
   exportAs: 'bsSwipeContainer',
   hostDirectives: [BsObserveSizeDirective],
   host: {
-    '[style.margin-left.%]': 'offsetLeft',
-    '[style.margin-right.%]': 'offsetRight',
-    '[style.margin-top.px]': 'offsetTopPx',
-    '[style.margin-bottom.px]': 'offsetBottomPx',
+    '[style.margin-left.%]': 'offsetLeft()',
+    '[style.margin-right.%]': 'offsetRight()',
+    '[style.margin-top.px]': 'offsetTopPx()',
+    '[style.margin-bottom.px]': 'offsetBottomPx()',
   },
 })
 export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
@@ -23,10 +23,10 @@ export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
   containerElement = inject(ElementRef<HTMLDivElement>);
   document = inject(DOCUMENT) as Document;
 
-  offsetLeft: number | null = null;
-  offsetRight: number | null = null;
-  offsetTopPx: number | null = null;
-  offsetBottomPx: number | null = null;
+  offsetLeft = signal<number | null>(null);
+  offsetRight = signal<number | null>(null);
+  offsetTopPx = signal<number | null>(null);
+  offsetBottomPx = signal<number | null>(null);
 
   readonly swipes = contentChildren(BsSwipeDirective);
 
@@ -154,14 +154,14 @@ export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
       }
 
       if (orientation === 'horizontal') {
-        this.offsetLeft = offsetPrimary;
-        this.offsetTopPx = null;
+        this.offsetLeft.set(offsetPrimary);
+        this.offsetTopPx.set(null);
       } else {
         // For vertical mode, convert percentage to pixels using slide height
         // offsetPrimary is in percentage units (e.g., -100 means -100%)
         // We need to convert to pixels based on actual slide height
-        this.offsetTopPx = (offsetPrimary / 100) * maxSlideHeight;
-        this.offsetLeft = null;
+        this.offsetTopPx.set((offsetPrimary / 100) * maxSlideHeight);
+        this.offsetLeft.set(null);
       }
     });
 
@@ -178,12 +178,12 @@ export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
       }
 
       if (orientation === 'horizontal') {
-        this.offsetRight = offsetSecondary;
-        this.offsetBottomPx = null;
+        this.offsetRight.set(offsetSecondary);
+        this.offsetBottomPx.set(null);
       } else {
         // For vertical mode, convert percentage to pixels using slide height
-        this.offsetBottomPx = (offsetSecondary / 100) * maxSlideHeight;
-        this.offsetRight = null;
+        this.offsetBottomPx.set((offsetSecondary / 100) * maxSlideHeight);
+        this.offsetRight.set(null);
       }
     });
 
@@ -243,11 +243,11 @@ export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
     // Set animating flag and clear host bindings so animation has full control
     this.isAnimating.set(true);
     if (orientation === 'horizontal') {
-      this.offsetLeft = null;
-      this.offsetRight = null;
+      this.offsetLeft.set(null);
+      this.offsetRight.set(null);
     } else {
-      this.offsetTopPx = null;
-      this.offsetBottomPx = null;
+      this.offsetTopPx.set(null);
+      this.offsetBottomPx.set(null);
     }
 
     if (orientation === 'horizontal') {
