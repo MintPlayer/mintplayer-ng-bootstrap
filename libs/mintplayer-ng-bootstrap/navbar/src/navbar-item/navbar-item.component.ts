@@ -50,13 +50,14 @@ export class BsNavbarItemComponent implements AfterContentInit, AfterContentChec
     this.hasDropdown = this.dropdowns().length > 0;
 
     // Add nav-link or dropdown-item class (previously done by NavLinkDirective)
-    if (this.anchorTag) {
+    if (this.anchorTag && !this.anchorTag.getAttribute('nav-link-class-added')) {
       if (this.parentDropdown === null) {
         this.anchorTag.classList.add('nav-link');
       } else {
         this.anchorTag.classList.add('dropdown-item');
       }
       this.anchorTag.classList.add('cursor-pointer');
+      this.anchorTag.setAttribute('nav-link-class-added', 'true');
     }
 
     if (this.hasDropdown) {
