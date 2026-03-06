@@ -14,10 +14,7 @@
     "analyze:sme": "source-map-explorer dist/apps/ng-bootstrap-demo/browser/browser/*",
     "test": "nx run-many --target=test --all --parallel",
     "test:watch": "vitest --workspace=vitest.workspace.ts",
-    "dev:ssr": "nx run ng-bootstrap-demo:serve-ssr",
-    "serve:ssr": "node dist/ng-bootstrap-demo/server/main.js",
-    "build:ssr": "nx build && nx run ng-bootstrap-demo:server",
-    "prerender": "nx run ng-bootstrap-demo:prerender"
+    "dev:ssr": "nx serve ng-bootstrap-demo"
   },
   "private": true,
   "dependencies": {
