@@ -61,14 +61,28 @@ export class BsTabControlComponent {
   topTabs = computed(() => this.tabsPosition() === 'top');
   bottomTabs = computed(() => this.tabsPosition() === 'bottom');
   disableDragDrop = computed(() => !this.allowDragDrop());
+  checkedTab = computed(() => {
+    const active = this.activeTab();
+    if (active) return active;
+    if (!this.selectFirstTab()) return null;
+    return this.orderedTabPages().find(t => !t.disabled()) ?? null;
+  });
   static tabControlCounter = 0;
   tabCounter = 0;
 
-  setActiveTab(tab: BsTabPageComponent) {
+  setActiveTab(tab: BsTabPageComponent, event?: Event) {
+    event?.preventDefault();
     if (!tab.disabled()) {
       this.activeTab.set(tab);
     }
     return false;
+  }
+
+  headerKeydown(tab: BsTabPageComponent, event: KeyboardEvent) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      this.setActiveTab(tab);
+    }
   }
 
   startDragTab(ev: CdkDragStart<BsTabPageComponent>) {
