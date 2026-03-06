@@ -92,19 +92,20 @@
     cursor: pointer;
 }
 
-// Noscript: active tab header styling + content visibility
+// Noscript: active tab header styling
+@for $i from 1 through 20 {
+    :host input.noscript:nth-of-type(#{$i}):checked ~ .tsc .nav-item:nth-child(#{$i}) > .nav-link {
+        color: var(--bs-nav-tabs-link-active-color);
+        background-color: var(--bs-nav-tabs-link-active-bg);
+        border-color: var(--bs-nav-tabs-link-active-border-color);
+    }
+}
+
+// Noscript: content visibility
 :host ::ng-deep {
     @for $i from 1 through 20 {
-        input.noscript:nth-of-type(#{$i}):checked {
-            & ~ .tsc .nav-item:nth-child(#{$i}) > .nav-link {
-                color: var(--bs-nav-tabs-link-active-color);
-                background-color: var(--bs-nav-tabs-link-active-bg);
-                border-color: var(--bs-nav-tabs-link-active-border-color);
-            }
-
-            & ~ .tab-content > bs-tab-page:nth-child(#{$i}) > .tab-page-content {
-                display: block;
-            }
+        input.noscript:nth-of-type(#{$i}):checked ~ .tab-content > bs-tab-page:nth-child(#{$i}) > .tab-page-content {
+            display: block;
         }
     }
 }
