@@ -1,10 +1,16 @@
+<input type="checkbox" class="d-none shell-toggle" bsNoNoscript
+    [id]="shellToggleId()"
+    [checked]="state() === 'show'"
+    [indeterminate]="state() === 'auto'">
 <div class="sidebar-root" [class]="[stateClass(), breakpointClass()]" #root>
     <div class="sidebar position-fixed pe-none">
         <div class="sidebar-body d-flex flex-column pe-all">
+            <label class="sidebar-close" [for]="shellToggleId()" bsNoNoscript>&times;</label>
             <ng-container *ngTemplateOutlet="sidebarTemplate()"></ng-container>
         </div>
     </div>
     <div class="content">
+        <label class="sidebar-open" [for]="shellToggleId()" bsNoNoscript>&#9776;</label>
         <ng-content></ng-content>
     </div>
 </div>

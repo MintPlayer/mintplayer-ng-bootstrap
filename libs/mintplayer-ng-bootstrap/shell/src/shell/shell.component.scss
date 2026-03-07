@@ -99,3 +99,44 @@
     //     }
     // }
 }
+
+// Noscript toggle labels (hidden by default)
+.sidebar-open, .sidebar-close {
+    display: none;
+}
+
+@each $name, $value in $grid-breakpoints {
+    .sidebar-root.shell-#{$name} .sidebar-open.noscript,
+    .sidebar-root.shell-#{$name} .sidebar-close.noscript {
+        @include media-breakpoint-down($name, $grid-breakpoints) {
+            display: block;
+            cursor: pointer;
+        }
+    }
+}
+
+.sidebar-open.noscript {
+    padding: .25rem .75rem;
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
+.sidebar-close.noscript {
+    padding: .25rem .75rem;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: rgba(255, 255, 255, 0.75);
+    align-self: flex-end;
+}
+
+// Noscript: checkbox checked → show sidebar
+@each $name, $value in $grid-breakpoints {
+    input.noscript.shell-toggle:checked ~ .sidebar-root.shell-#{$name} {
+        @include media-breakpoint-down($name, $grid-breakpoints) {
+            @include sidebar-show-narrow();
+        }
+        @include media-breakpoint-up($name, $grid-breakpoints) {
+            @include sidebar-show-wide();
+        }
+    }
+}
