@@ -1,5 +1,6 @@
 @forward '../../../libs/mintplayer-ng-bootstrap/bootstrap';
 
+html, body { height: 100%; }
 body { padding: 1rem; }
 
 @media (min-width: 768px) {
