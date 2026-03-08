@@ -7,6 +7,7 @@
                         [class.sort]="column.sortable"
                         [class.sort-asc]="column.sortable && getSortDirection(column.name) === 'ascending'"
                         [class.sort-desc]="column.sortable && getSortDirection(column.name) === 'descending'"
+                        (mousedown)="onHeaderMouseDown($event)"
                         (click)="columnHeaderClicked(column, $event)">
                         <ng-container *ngTemplateOutlet="column.templateRef"></ng-container>
                         @if (settings().sortColumns.length > 1 && getSortIndex(column.name) >= 0) {

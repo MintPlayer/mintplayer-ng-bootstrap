@@ -39,9 +39,14 @@ export class BsDatatableComponent<TData> {
     return col?.direction ?? null;
   }
 
+  onHeaderMouseDown(event: MouseEvent) {
+    if (event.shiftKey) {
+      event.preventDefault();
+    }
+  }
+
   columnHeaderClicked(column: BsDatatableColumnDirective, event: MouseEvent) {
     if (!column.sortable) return;
-    event.preventDefault();
 
     const currentSettings = this.settings();
 
