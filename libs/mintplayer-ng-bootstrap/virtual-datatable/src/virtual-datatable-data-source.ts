@@ -1,6 +1,6 @@
 import { CollectionViewer, DataSource } from '@angular/cdk/collections';
 import { BehaviorSubject, Observable, Subscription, from, of } from 'rxjs';
-import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators';
+import { catchError, distinctUntilChanged, filter, map, startWith, switchMap } from 'rxjs/operators';
 
 export class VirtualDatatableDataSource<T> extends DataSource<T> {
   private readonly fetchFn: (skip: number, take: number) => Promise<{ data: T[]; totalRecords: number }>;
@@ -22,6 +22,7 @@ export class VirtualDatatableDataSource<T> extends DataSource<T> {
   connect(collectionViewer: CollectionViewer): Observable<T[]> {
     this.subscription = collectionViewer.viewChange.pipe(
       startWith({ start: 0, end: this.pageSize }),
+      filter(range => range.end > range.start),
       map(range => this.getPageIndices(range)),
       distinctUntilChanged((a, b) => a.join() === b.join()),
       switchMap(pages => from(this.fetchPages(pages)).pipe(
