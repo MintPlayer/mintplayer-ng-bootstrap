@@ -40,6 +40,11 @@
           }
         ],
         "scripts": [],
+        "stylePreprocessorOptions": {
+          "includePaths": [
+            "libs/mintplayer-ng-bootstrap/datatable/src"
+          ]
+        },
         "loader": {
           ".svg": "text"
         }
