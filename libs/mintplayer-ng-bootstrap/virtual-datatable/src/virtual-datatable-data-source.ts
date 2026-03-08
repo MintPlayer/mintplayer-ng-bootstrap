@@ -7,7 +7,7 @@ export class VirtualDatatableDataSource<T> extends DataSource<T> {
   private readonly pageSize: number;
   private readonly cachedPages = new Map<number, T[]>();
   private totalRecords = 0;
-  private readonly dataStream = new BehaviorSubject<T[]>([]);
+  private dataStream = new BehaviorSubject<T[]>([]);
   private subscription?: Subscription;
 
   constructor(
@@ -20,6 +20,11 @@ export class VirtualDatatableDataSource<T> extends DataSource<T> {
   }
 
   connect(collectionViewer: CollectionViewer): Observable<T[]> {
+    // Support reconnection after disconnect (which completes the previous dataStream)
+    this.dataStream = new BehaviorSubject<T[]>([]);
+    this.cachedPages.clear();
+    this.totalRecords = 0;
+
     this.subscription = collectionViewer.viewChange.pipe(
       startWith({ start: 0, end: this.pageSize }),
       filter(range => range.end > range.start),

@@ -24,8 +24,12 @@
             <table class="table table-striped table-hover">
                 <tbody>
                     <tr *cdkVirtualFor="let item of dataSource()" class="virtual-row">
-                        @if (rowTemplate) {
+                        @if (item && rowTemplate) {
                             <ng-container *ngTemplateOutlet="rowTemplate; context: { $implicit: item }"></ng-container>
+                        } @else {
+                            @for (column of columnsArray; track column) {
+                                <td>&nbsp;</td>
+                            }
                         }
                     </tr>
                 </tbody>
