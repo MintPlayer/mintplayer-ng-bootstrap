@@ -1,34 +1,32 @@
-import { ChangeDetectionStrategy, Component, computed, contentChildren, input, model, TemplateRef } from '@angular/core';
+import { ChangeDetectionStrategy, Component, contentChildren, input, model, TemplateRef } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import { PaginationResponse } from '@mintplayer/pagination';
-import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
+import { ScrollingModule } from '@angular/cdk/scrolling';
 import { BsTableComponent } from '@mintplayer/ng-bootstrap/table';
-import { BsPaginationComponent } from '@mintplayer/ng-bootstrap/pagination';
-import { DatatableSettings } from '../datatable-settings';
-import { BsDatatableColumnDirective } from '../datatable-column/datatable-column.directive';
-import { BsRowTemplateContext } from '../row-template/row-template.directive';
-
+import { DatatableSettings } from '@mintplayer/ng-bootstrap/datatable';
+import { BsDatatableColumnDirective } from '@mintplayer/ng-bootstrap/datatable';
+import { VirtualDatatableDataSource } from '../virtual-datatable-data-source';
+import { BsVirtualRowTemplateContext } from '../virtual-row-template/virtual-row-template.directive';
 
 @Component({
-  selector: 'bs-datatable',
-  templateUrl: './datatable.component.html',
-  styleUrls: ['./datatable.component.scss'],
-  imports: [NgTemplateOutlet, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsTableComponent, BsPaginationComponent],
+  selector: 'bs-virtual-datatable',
+  templateUrl: './virtual-datatable.component.html',
+  styleUrls: ['./virtual-datatable.component.scss'],
+  imports: [NgTemplateOutlet, ScrollingModule, BsTableComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class BsDatatableComponent<TData> {
+export class BsVirtualDatatableComponent<TData> {
 
   readonly columns = contentChildren(BsDatatableColumnDirective);
-  numberOfColumns = computed(() => this.columns().length);
 
   get columnsArray() {
     return this.columns();
   }
 
   settings = model<DatatableSettings>(new DatatableSettings());
-  data = model<PaginationResponse<TData> | undefined>(undefined);
+  dataSource = input.required<VirtualDatatableDataSource<TData>>();
+  itemSize = input(48);
 
-  rowTemplate?: TemplateRef<BsRowTemplateContext<TData>>;
+  rowTemplate?: TemplateRef<BsVirtualRowTemplateContext<TData>>;
 
   getSortIndex(columnName: string): number {
     return this.settings().sortColumns.findIndex(c => c.property === columnName);
@@ -45,7 +43,6 @@ export class BsDatatableComponent<TData> {
     const currentSettings = this.settings();
 
     if (event.shiftKey) {
-      // Multi-column: add/toggle/remove
       const existingIndex = currentSettings.sortColumns.findIndex(c => c.property === column.name);
       if (existingIndex === -1) {
         currentSettings.sortColumns = [...currentSettings.sortColumns, { property: column.name, direction: 'ascending' }];
@@ -57,7 +54,6 @@ export class BsDatatableComponent<TData> {
         currentSettings.sortColumns = currentSettings.sortColumns.filter((_, i) => i !== existingIndex);
       }
     } else {
-      // Single-column: replace all
       const existingSingle = currentSettings.sortColumns.length === 1 && currentSettings.sortColumns[0].property === column.name;
       currentSettings.sortColumns = [{
         property: column.name,
@@ -67,18 +63,4 @@ export class BsDatatableComponent<TData> {
 
     this.settings.set(new DatatableSettings(currentSettings));
   }
-
-  onPerPageChange(perPage: number) {
-    const currentSettings = this.settings();
-    currentSettings.perPage.selected = perPage;
-    currentSettings.page.selected = 1;
-    this.settings.set(new DatatableSettings(currentSettings));
-  }
-
-  onPageChange(page: number) {
-    const currentSettings = this.settings();
-    currentSettings.page.selected = page;
-    this.settings.set(new DatatableSettings(currentSettings));
-  }
-
 }

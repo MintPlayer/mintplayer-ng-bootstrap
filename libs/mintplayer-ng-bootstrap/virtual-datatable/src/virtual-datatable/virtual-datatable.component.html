@@ -1,0 +1,32 @@
+<div class="virtual-datatable-container">
+    <bs-table [isResponsive]="true" [striped]="true" [hover]="true">
+        <thead>
+            <tr>
+                @for (column of columnsArray; track column) {
+                    <th class="text-nowrap"
+                        [class.sort]="column.sortable"
+                        [class.sort-asc]="column.sortable && getSortDirection(column.name) === 'ascending'"
+                        [class.sort-desc]="column.sortable && getSortDirection(column.name) === 'descending'"
+                        (click)="columnHeaderClicked(column, $event)">
+                        <ng-container *ngTemplateOutlet="column.templateRef"></ng-container>
+                        @if (settings().sortColumns.length > 1 && getSortIndex(column.name) >= 0) {
+                            <span class="sort-priority">{{ getSortIndex(column.name) + 1 }}</span>
+                        }
+                    </th>
+                }
+            </tr>
+        </thead>
+    </bs-table>
+
+    <cdk-virtual-scroll-viewport [itemSize]="itemSize()" class="virtual-scroll-viewport">
+        <table class="table table-striped table-hover">
+            <tbody>
+                <tr *cdkVirtualFor="let item of dataSource()" class="virtual-row">
+                    @if (rowTemplate) {
+                        <ng-container *ngTemplateOutlet="rowTemplate; context: { $implicit: item }"></ng-container>
+                    }
+                </tr>
+            </tbody>
+        </table>
+    </cdk-virtual-scroll-viewport>
+</div>

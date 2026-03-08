@@ -4,10 +4,13 @@
             @for (column of columnsArray; track column) {
                 <th class="text-nowrap"
                     [class.sort]="column.sortable"
-                    [class.sort-asc]="column.sortable && (settings().sortProperty === column.name) && (settings().sortDirection === 'ascending')"
-                    [class.sort-desc]="column.sortable && (settings().sortProperty === column.name) && (settings().sortDirection === 'descending')"
-                    (click)="columnHeaderClicked(column)">
+                    [class.sort-asc]="column.sortable && getSortDirection(column.name) === 'ascending'"
+                    [class.sort-desc]="column.sortable && getSortDirection(column.name) === 'descending'"
+                    (click)="columnHeaderClicked(column, $event)">
                     <ng-container *ngTemplateOutlet="column.templateRef"></ng-container>
+                    @if (settings().sortColumns.length > 1 && getSortIndex(column.name) >= 0) {
+                        <span class="sort-priority">{{ getSortIndex(column.name) + 1 }}</span>
+                    }
                 </th>
             }
         </tr>
