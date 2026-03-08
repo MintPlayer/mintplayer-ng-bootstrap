@@ -17,8 +17,7 @@ export class DatatablesComponent implements OnInit {
 
   artists = signal<PaginationResponse<Artist> | undefined>(undefined);
   settings: DatatableSettings = new DatatableSettings({
-    sortProperty: 'YearStarted',
-    sortDirection: 'ascending',
+    sortColumns: [{ property: 'YearStarted', direction: 'ascending' }],
     perPage: {
       values: [10, 20, 50],
       selected: 20
