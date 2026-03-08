@@ -39,6 +39,7 @@ export class BsVirtualDatatableComponent<TData> {
 
   columnHeaderClicked(column: BsDatatableColumnDirective, event: MouseEvent) {
     if (!column.sortable) return;
+    event.preventDefault();
 
     const currentSettings = this.settings();
 

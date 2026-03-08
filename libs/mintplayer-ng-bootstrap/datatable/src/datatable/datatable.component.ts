@@ -41,6 +41,7 @@ export class BsDatatableComponent<TData> {
 
   columnHeaderClicked(column: BsDatatableColumnDirective, event: MouseEvent) {
     if (!column.sortable) return;
+    event.preventDefault();
 
     const currentSettings = this.settings();
 
