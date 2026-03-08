@@ -1,6 +1,6 @@
 import { CollectionViewer, DataSource } from '@angular/cdk/collections';
-import { BehaviorSubject, Observable, Subscription } from 'rxjs';
-import { distinctUntilChanged, map, switchMap } from 'rxjs/operators';
+import { BehaviorSubject, Observable, Subscription, from, of } from 'rxjs';
+import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators';
 
 export class VirtualDatatableDataSource<T> extends DataSource<T> {
   private readonly fetchFn: (skip: number, take: number) => Promise<{ data: T[]; totalRecords: number }>;
@@ -23,7 +23,9 @@ export class VirtualDatatableDataSource<T> extends DataSource<T> {
     this.subscription = collectionViewer.viewChange.pipe(
       map(range => this.getPageIndices(range)),
       distinctUntilChanged((a, b) => a.join() === b.join()),
-      switchMap(pages => this.fetchPages(pages))
+      switchMap(pages => from(this.fetchPages(pages)).pipe(
+        catchError(() => of(this.dataStream.value))
+      ))
     ).subscribe(data => this.dataStream.next(data));
 
     return this.dataStream;
@@ -57,14 +59,20 @@ export class VirtualDatatableDataSource<T> extends DataSource<T> {
   private async fetchPages(pageIndices: number[]): Promise<T[]> {
     const uncachedPages = pageIndices.filter(p => !this.cachedPages.has(p));
 
-    await Promise.all(
+    const results = await Promise.all(
       uncachedPages.map(async pageIndex => {
         const skip = pageIndex * this.pageSize;
         const result = await this.fetchFn(skip, this.pageSize);
-        this.totalRecords = result.totalRecords;
-        this.cachedPages.set(pageIndex, result.data);
+        return { pageIndex, result };
       })
     );
+
+    for (const { pageIndex, result } of results) {
+      this.cachedPages.set(pageIndex, result.data);
+    }
+    if (results.length > 0) {
+      this.totalRecords = results[0].result.totalRecords;
+    }
 
     // Build the full data array with placeholders for unloaded pages
     const totalPages = Math.ceil(this.totalRecords / this.pageSize);

@@ -4,10 +4,6 @@ export class DatatableSettings {
     constructor(data?: Partial<DatatableSettings>) {
         Object.assign(this, data);
 
-        if (data && data.sortColumns) {
-            this.sortColumns = data.sortColumns;
-        }
-
         if (data && data.perPage) {
             this.perPage = data.perPage;
         } else {
