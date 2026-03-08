@@ -1,11 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, contentChildren, input, model, TemplateRef } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, model, TemplateRef } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { PaginationResponse } from '@mintplayer/pagination';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsTableComponent } from '@mintplayer/ng-bootstrap/table';
 import { BsPaginationComponent } from '@mintplayer/ng-bootstrap/pagination';
 import { DatatableSettings } from '../datatable-settings';
-import { BsDatatableColumnDirective } from '../datatable-column/datatable-column.directive';
+import { DatatableSortBase } from '../datatable-sort-base';
 import { BsRowTemplateContext } from '../row-template/row-template.directive';
 
 
@@ -16,46 +16,29 @@ import { BsRowTemplateContext } from '../row-template/row-template.directive';
   imports: [NgTemplateOutlet, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsTableComponent, BsPaginationComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class BsDatatableComponent<TData> {
+export class BsDatatableComponent<TData> extends DatatableSortBase {
 
-  readonly columns = contentChildren(BsDatatableColumnDirective);
   numberOfColumns = computed(() => this.columns().length);
 
-  get columnsArray() {
-    return this.columns();
-  }
-
-  settings = model<DatatableSettings>(new DatatableSettings());
   data = model<PaginationResponse<TData> | undefined>(undefined);
 
   rowTemplate?: TemplateRef<BsRowTemplateContext<TData>>;
 
-  columnHeaderClicked(column: BsDatatableColumnDirective) {
-    if (column.sortable) {
-      const currentSettings = this.settings();
-      if (currentSettings.sortProperty !== column.name) {
-        currentSettings.sortProperty = column.name;
-        currentSettings.sortDirection = 'ascending';
-      } else if (currentSettings.sortDirection === 'descending') {
-        currentSettings.sortDirection = 'ascending';
-      } else {
-        currentSettings.sortDirection = 'descending';
-      }
-      this.settings.set(new DatatableSettings(currentSettings));
-    }
-  }
-
   onPerPageChange(perPage: number) {
     const currentSettings = this.settings();
-    currentSettings.perPage.selected = perPage;
-    currentSettings.page.selected = 1;
-    this.settings.set(new DatatableSettings(currentSettings));
+    this.settings.set(new DatatableSettings({
+      ...currentSettings,
+      perPage: { ...currentSettings.perPage, selected: perPage },
+      page: { ...currentSettings.page, selected: 1 },
+    }));
   }
 
   onPageChange(page: number) {
     const currentSettings = this.settings();
-    currentSettings.page.selected = page;
-    this.settings.set(new DatatableSettings(currentSettings));
+    this.settings.set(new DatatableSettings({
+      ...currentSettings,
+      page: { ...currentSettings.page, selected: page },
+    }));
   }
 
 }

@@ -1,10 +1,12 @@
-<div class="d-block" [class.table-responsive]="isResponsive()" [class.nowrap]="isResponsive()">
-    <table class="table" cellspacing="0" role="grid"
-        [class.mb-0]="isResponsive()"
-        [class.table-striped]="striped()"
-        [class.table-hover]="hover()">
+<bs-table-styles>
+    <div class="d-block" [class.table-responsive]="isResponsive()" [class.nowrap]="isResponsive()">
+        <table class="table" cellspacing="0" role="grid"
+            [class.mb-0]="isResponsive()"
+            [class.table-striped]="striped()"
+            [class.table-hover]="hover()">
 
-        <ng-content></ng-content>
+            <ng-content></ng-content>
 
-    </table>
-</div>
+        </table>
+    </div>
+</bs-table-styles>

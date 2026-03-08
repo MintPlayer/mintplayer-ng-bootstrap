@@ -1,3 +1,9 @@
+:host {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
 .brand {
     height: 57px;
     border: 1px solid white;

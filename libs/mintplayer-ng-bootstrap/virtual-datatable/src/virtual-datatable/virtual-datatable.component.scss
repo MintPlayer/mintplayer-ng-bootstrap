@@ -1,0 +1,31 @@
+@use 'datatable-sort';
+
+:host {
+  display: block;
+  height: 100%;
+}
+
+.virtual-datatable-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  bs-table {
+    flex-shrink: 0;
+  }
+}
+
+// Sync column widths between the header and body tables
+bs-table ::ng-deep table,
+.virtual-scroll-viewport table {
+  table-layout: fixed;
+}
+
+.virtual-scroll-viewport {
+  flex: 1 1 auto;
+  min-height: 0;
+
+  table {
+    margin-bottom: 0;
+  }
+}

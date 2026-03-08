@@ -1,4 +1,4 @@
-import { PaginationRequest } from "@mintplayer/pagination";
+import { PaginationRequest, SortColumn } from "@mintplayer/pagination";
 
 export class DatatableSettings {
     constructor(data?: Partial<DatatableSettings>) {
@@ -13,7 +13,7 @@ export class DatatableSettings {
                 selected: 20
             };
         }
-        
+
         if (data && data.page) {
             this.page = data.page;
         } else {
@@ -25,15 +25,13 @@ export class DatatableSettings {
         }
     }
 
-    public sortProperty = '';
-    public sortDirection: 'ascending' | 'descending' = 'ascending';
+    public sortColumns: SortColumn[] = [];
     public perPage: { values: number[], selected: number };
     public page: { values: number[], selected: number };
 
     public toPagination() {
         const res = <PaginationRequest>{
-            sortProperty: this.sortProperty,
-            sortDirection: this.sortDirection,
+            sortColumns: this.sortColumns,
             perPage: this.perPage.selected,
             page: this.page.selected
         };

@@ -1,8 +1,7 @@
-import { SortDirection } from "../types/sort-direction";
+import { SortColumn } from "./sort-column";
 
 export class PaginationRequest {
     perPage = 20;
     page = 1;
-    sortProperty = '';
-    sortDirection: SortDirection = 'ascending';
+    sortColumns: SortColumn[] = [];
 }
