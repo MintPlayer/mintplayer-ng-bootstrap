@@ -1,8 +1,14 @@
 @use 'datatable-sort';
 
+:host {
+  display: block;
+  height: 100%;
+}
+
 .virtual-datatable-container {
   display: flex;
   flex-direction: column;
+  height: 100%;
 
   bs-table {
     flex-shrink: 0;
