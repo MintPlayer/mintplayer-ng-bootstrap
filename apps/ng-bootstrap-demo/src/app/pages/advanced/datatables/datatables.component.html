@@ -1,18 +1,46 @@
 <h1 class="text-center">Datatable</h1>
-<bs-datatable #tabel [(settings)]="settings" (settingsChange)="loadArtists()">
-  <div *bsDatatableColumn="'Name'; sortable: true">
-    1. Artist
-  </div>
-  <div *bsDatatableColumn="'YearStarted'; sortable: true">
-    2. Year started
-  </div>
-  <div *bsDatatableColumn="'YearQuit'; sortable: true">
-    3. Year quit
-  </div>
 
-  <tr *bsRowTemplate="let artist of artists()">
-    <td class="text-nowrap">{{ artist.name }}</td>
-    <td class="text-nowrap">{{ artist.yearStarted }}</td>
-    <td class="text-nowrap">{{ artist.yearQuit }}</td>
-  </tr>
-</bs-datatable>
+<bs-select [ngModel]="mode()" (ngModelChange)="mode.set($event)" class="mb-3">
+  <option value="regular">Regular datatable</option>
+  <option value="virtual">Virtual datatable</option>
+</bs-select>
+
+@if (mode() === 'regular') {
+  <bs-datatable #tabel [(settings)]="settings" (settingsChange)="loadArtists()">
+    <div *bsDatatableColumn="'Name'; sortable: true">
+      1. Artist
+    </div>
+    <div *bsDatatableColumn="'YearStarted'; sortable: true">
+      2. Year started
+    </div>
+    <div *bsDatatableColumn="'YearQuit'; sortable: true">
+      3. Year quit
+    </div>
+
+    <tr *bsRowTemplate="let artist of artists()">
+      <td class="text-nowrap">{{ artist.name }}</td>
+      <td class="text-nowrap">{{ artist.yearStarted }}</td>
+      <td class="text-nowrap">{{ artist.yearQuit }}</td>
+    </tr>
+  </bs-datatable>
+} @else {
+  <div class="virtual-datatable-wrapper">
+    <bs-virtual-datatable [dataSource]="virtualDataSource()" [(settings)]="virtualSettings" (settingsChange)="onVirtualSettingsChange()" [itemSize]="40">
+      <div *bsDatatableColumn="'Name'; sortable: true">
+        1. Artist
+      </div>
+      <div *bsDatatableColumn="'YearStarted'; sortable: true">
+        2. Year started
+      </div>
+      <div *bsDatatableColumn="'YearQuit'; sortable: true">
+        3. Year quit
+      </div>
+
+      <ng-template bsVirtualRowTemplate let-artist>
+        <td class="text-nowrap">{{ artist?.name }}</td>
+        <td class="text-nowrap">{{ artist?.yearStarted }}</td>
+        <td class="text-nowrap">{{ artist?.yearQuit }}</td>
+      </ng-template>
+    </bs-virtual-datatable>
+  </div>
+}
