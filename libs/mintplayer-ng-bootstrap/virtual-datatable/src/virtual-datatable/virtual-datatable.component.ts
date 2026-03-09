@@ -92,25 +92,21 @@ export class BsVirtualDatatableComponent<TData> extends DatatableSortBase implem
         bodyCells[i].style.minWidth = '';
       }
 
-      // Measure natural widths and compute max
-      let changed = false;
+      // Measure natural widths and update tracked maximums
       for (let i = 0; i < columnCount; i++) {
         const headerW = headerCells[i].offsetWidth;
         const bodyW = bodyCells[i].offsetWidth;
         const natural = Math.max(headerW, bodyW);
         if (!maxWidths[i] || natural > maxWidths[i]) {
           maxWidths[i] = natural;
-          changed = true;
         }
       }
 
-      // Apply max widths to both tables
-      if (changed) {
-        for (let i = 0; i < columnCount; i++) {
-          const w = `${maxWidths[i]}px`;
-          headerCells[i].style.minWidth = w;
-          bodyCells[i].style.minWidth = w;
-        }
+      // Always re-apply max widths (cells were cleared above for measurement)
+      for (let i = 0; i < columnCount; i++) {
+        const w = `${maxWidths[i]}px`;
+        headerCells[i].style.minWidth = w;
+        bodyCells[i].style.minWidth = w;
       }
     };
 
