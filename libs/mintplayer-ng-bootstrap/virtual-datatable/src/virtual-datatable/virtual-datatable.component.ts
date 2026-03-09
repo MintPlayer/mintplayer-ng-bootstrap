@@ -17,7 +17,7 @@ export class BsVirtualDatatableComponent<TData> extends DatatableSortBase implem
 
   private readonly elementRef = inject(ElementRef);
   private readonly ngZone = inject(NgZone);
-  private scrollCleanup?: () => void;
+  private cleanup: (() => void)[] = [];
 
   dataSource = input.required<VirtualDatatableDataSource<TData>>();
   itemSize = input(48);
@@ -26,10 +26,11 @@ export class BsVirtualDatatableComponent<TData> extends DatatableSortBase implem
 
   ngAfterViewInit() {
     this.setupScrollSync();
+    this.setupColumnWidthSync();
   }
 
   ngOnDestroy() {
-    this.scrollCleanup?.();
+    this.cleanup.forEach(fn => fn());
   }
 
   private setupScrollSync() {
@@ -60,9 +61,73 @@ export class BsVirtualDatatableComponent<TData> extends DatatableSortBase implem
       viewport.addEventListener('scroll', onViewportScroll, { passive: true });
     });
 
-    this.scrollCleanup = () => {
+    this.cleanup.push(() => {
       headerScrollContainer.removeEventListener('scroll', onHeaderScroll);
       viewport.removeEventListener('scroll', onViewportScroll);
+    });
+  }
+
+  private setupColumnWidthSync() {
+    const el = this.elementRef.nativeElement as HTMLElement;
+    const bodyTableBody = el.querySelector('cdk-virtual-scroll-viewport tbody') as HTMLElement;
+
+    if (!bodyTableBody) return;
+
+    // Track the max width seen for each column so we only grow, never shrink
+    // (prevents layout jumps as rows scroll in/out of view).
+    const maxWidths: number[] = [];
+
+    const syncWidths = () => {
+      const headerCells = el.querySelectorAll<HTMLElement>('bs-table thead th');
+      const firstBodyRow = el.querySelector<HTMLElement>('cdk-virtual-scroll-viewport tbody tr');
+      const bodyCells = firstBodyRow?.querySelectorAll<HTMLElement>('td');
+
+      if (!headerCells.length || !bodyCells?.length) return;
+
+      const columnCount = Math.min(headerCells.length, bodyCells.length);
+
+      // Clear inline widths so we can measure natural sizes
+      for (let i = 0; i < columnCount; i++) {
+        headerCells[i].style.minWidth = '';
+        bodyCells[i].style.minWidth = '';
+      }
+
+      // Measure natural widths and compute max
+      let changed = false;
+      for (let i = 0; i < columnCount; i++) {
+        const headerW = headerCells[i].offsetWidth;
+        const bodyW = bodyCells[i].offsetWidth;
+        const natural = Math.max(headerW, bodyW);
+        if (!maxWidths[i] || natural > maxWidths[i]) {
+          maxWidths[i] = natural;
+          changed = true;
+        }
+      }
+
+      // Apply max widths to both tables
+      if (changed) {
+        for (let i = 0; i < columnCount; i++) {
+          const w = `${maxWidths[i]}px`;
+          headerCells[i].style.minWidth = w;
+          bodyCells[i].style.minWidth = w;
+        }
+      }
     };
+
+    // Sync after first render
+    this.ngZone.runOutsideAngular(() => {
+      requestAnimationFrame(() => syncWidths());
+    });
+
+    // Re-sync when body rows change (virtual scroll swaps rows)
+    const observer = new MutationObserver(() => {
+      requestAnimationFrame(() => syncWidths());
+    });
+
+    this.ngZone.runOutsideAngular(() => {
+      observer.observe(bodyTableBody, { childList: true, subtree: true });
+    });
+
+    this.cleanup.push(() => observer.disconnect());
   }
 }

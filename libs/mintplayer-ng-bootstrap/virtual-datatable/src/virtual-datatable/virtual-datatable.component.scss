@@ -15,10 +15,17 @@
   }
 }
 
-// Sync column widths between the header and body tables
+// Use auto layout so columns size to content and the table can overflow
+// horizontally when content is wider than the container.
 bs-table ::ng-deep table,
 .virtual-scroll-viewport table {
-  table-layout: fixed;
+  table-layout: auto;
+}
+
+// Prevent text wrapping so cells grow to fit content, enabling horizontal scroll.
+bs-table ::ng-deep th,
+.virtual-scroll-viewport td {
+  white-space: nowrap;
 }
 
 // Reserve scrollbar gutter in both header and body to keep columns aligned.
