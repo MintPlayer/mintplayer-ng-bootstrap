@@ -87,6 +87,13 @@ export class BsVirtualDatatableComponent<TData> extends DatatableSortBase implem
 
       const columnCount = Math.min(headerCells.length, bodyCells.length);
 
+      // Save scroll positions before measurement (clearing min-width can shrink
+      // the table and cause the browser to clamp scrollLeft to 0).
+      const headerScrollContainer = el.querySelector('.table-responsive') as HTMLElement;
+      const viewport = el.querySelector('cdk-virtual-scroll-viewport') as HTMLElement;
+      const savedHeaderScroll = headerScrollContainer?.scrollLeft ?? 0;
+      const savedViewportScroll = viewport?.scrollLeft ?? 0;
+
       // Clear inline widths so we can measure natural sizes
       for (let i = 0; i < columnCount; i++) {
         headerCells[i].style.minWidth = '';
@@ -109,6 +116,10 @@ export class BsVirtualDatatableComponent<TData> extends DatatableSortBase implem
         headerCells[i].style.minWidth = w;
         bodyCells[i].style.minWidth = w;
       }
+
+      // Restore scroll positions after min-widths are re-applied
+      if (headerScrollContainer) headerScrollContainer.scrollLeft = savedHeaderScroll;
+      if (viewport) viewport.scrollLeft = savedViewportScroll;
     };
 
     // Sync after first render

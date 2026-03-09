@@ -1,5 +1,5 @@
 import { CollectionViewer, DataSource } from '@angular/cdk/collections';
-import { BehaviorSubject, Observable, Subscription, from, of } from 'rxjs';
+import { BehaviorSubject, Observable, Subject, Subscription, from, merge, of } from 'rxjs';
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap } from 'rxjs/operators';
 
 export class VirtualDatatableDataSource<T> extends DataSource<T> {
@@ -9,6 +9,8 @@ export class VirtualDatatableDataSource<T> extends DataSource<T> {
   private totalRecords = 0;
   private dataStream = new BehaviorSubject<T[]>([]);
   private subscription?: Subscription;
+  private resetSubject = new Subject<void>();
+  private resetVersion = 0;
 
   constructor(
     fetchFn: (skip: number, take: number) => Promise<{ data: T[]; totalRecords: number }>,
@@ -25,12 +27,17 @@ export class VirtualDatatableDataSource<T> extends DataSource<T> {
     this.cachedPages.clear();
     this.totalRecords = 0;
 
-    this.subscription = collectionViewer.viewChange.pipe(
-      startWith({ start: 0, end: this.pageSize }),
+    // Track the last viewport range so reset() can re-trigger a fetch.
+    // resetVersion is incremented on reset() to bypass distinctUntilChanged.
+    let lastRange = { start: 0, end: this.pageSize };
+    this.subscription = merge(
+      collectionViewer.viewChange.pipe(startWith(lastRange)),
+      this.resetSubject.pipe(map(() => lastRange))
+    ).pipe(
       filter(range => range.end > range.start),
-      map(range => this.getPageIndices(range)),
-      distinctUntilChanged((a, b) => a.join() === b.join()),
-      switchMap(pages => from(this.fetchPages(pages)).pipe(
+      map(range => { lastRange = range; return { pages: this.getPageIndices(range), version: this.resetVersion }; }),
+      distinctUntilChanged((a, b) => a.version === b.version && a.pages.join() === b.pages.join()),
+      switchMap(({ pages }) => from(this.fetchPages(pages)).pipe(
         catchError(() => of(this.dataStream.value))
       ))
     ).subscribe(data => this.dataStream.next(data));
@@ -49,8 +56,8 @@ export class VirtualDatatableDataSource<T> extends DataSource<T> {
 
   reset(): void {
     this.cachedPages.clear();
-    this.totalRecords = 0;
-    this.dataStream.next([]);
+    this.resetVersion++;
+    this.resetSubject.next();
   }
 
   private getPageIndices(range: { start: number; end: number }): number[] {
