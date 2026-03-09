@@ -22,9 +22,10 @@ bs-table ::ng-deep table,
   table-layout: auto;
 }
 
-// Prevent text wrapping so cells grow to fit content, enabling horizontal scroll.
-bs-table ::ng-deep th,
-.virtual-scroll-viewport td {
+// When responsive, prevent text wrapping so cells grow to fit content.
+// The header's bs-table handles its own nowrap via the .nowrap class.
+// The body table gets it via the .nowrap class applied conditionally.
+.virtual-scroll-viewport .nowrap td {
   white-space: nowrap;
 }
 

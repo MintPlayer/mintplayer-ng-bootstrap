@@ -1,5 +1,5 @@
 <div class="virtual-datatable-container">
-    <bs-table [isResponsive]="true" [striped]="true" [hover]="true">
+    <bs-table [isResponsive]="isResponsive()" [striped]="true" [hover]="true">
         <thead>
             <tr>
                 @for (column of columnsArray; track column) {
@@ -21,7 +21,7 @@
 
     <bs-table-styles>
         <cdk-virtual-scroll-viewport [itemSize]="itemSize()" class="virtual-scroll-viewport">
-            <table class="table table-striped table-hover">
+            <table class="table table-striped table-hover" [class.nowrap]="isResponsive()">
                 <tbody>
                     <tr *cdkVirtualFor="let item of dataSource()" class="virtual-row">
                         @if (item && rowTemplate) {

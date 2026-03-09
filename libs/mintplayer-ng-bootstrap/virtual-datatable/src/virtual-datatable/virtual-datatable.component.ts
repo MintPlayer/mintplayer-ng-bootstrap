@@ -20,6 +20,7 @@ export class BsVirtualDatatableComponent<TData> extends DatatableSortBase implem
   private cleanup: (() => void)[] = [];
 
   dataSource = input.required<VirtualDatatableDataSource<TData>>();
+  isResponsive = input(false);
   itemSize = input(48);
 
   rowTemplate?: TemplateRef<BsVirtualRowTemplateContext<TData>>;

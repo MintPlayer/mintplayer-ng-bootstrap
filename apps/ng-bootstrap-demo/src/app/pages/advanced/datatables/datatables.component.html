@@ -24,7 +24,7 @@
     </tr>
   </bs-datatable>
 } @else {
-  <bs-virtual-datatable class="flex-grow-1 overflow-hidden" [dataSource]="virtualDataSource()" [(settings)]="virtualSettings" (settingsChange)="onVirtualSettingsChange()" [itemSize]="40">
+  <bs-virtual-datatable class="flex-grow-1 overflow-hidden" [isResponsive]="true" [dataSource]="virtualDataSource()" [(settings)]="virtualSettings" (settingsChange)="onVirtualSettingsChange()" [itemSize]="40">
     <div *bsDatatableColumn="'Name'; sortable: true">
       1. Artist
     </div>
