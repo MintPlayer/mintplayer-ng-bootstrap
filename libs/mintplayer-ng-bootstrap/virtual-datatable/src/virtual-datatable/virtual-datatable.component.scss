@@ -21,9 +21,18 @@ bs-table ::ng-deep table,
   table-layout: fixed;
 }
 
+// Reserve scrollbar gutter in both header and body to keep columns aligned.
+// The header's .table-responsive div (from bs-table) and the viewport both
+// reserve space for a vertical scrollbar, so columns line up even when only
+// the viewport actually shows one.
+bs-table ::ng-deep .table-responsive {
+  scrollbar-gutter: stable;
+}
+
 .virtual-scroll-viewport {
   flex: 1 1 auto;
   min-height: 0;
+  scrollbar-gutter: stable;
 
   table {
     margin-bottom: 0;

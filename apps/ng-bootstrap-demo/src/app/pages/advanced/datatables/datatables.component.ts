@@ -27,7 +27,7 @@ export class DatatablesComponent implements OnInit {
 
   // Regular datatable
   artists = signal<PaginationResponse<Artist> | undefined>(undefined);
-  settings: DatatableSettings = new DatatableSettings({
+  settings = signal(new DatatableSettings({
     sortColumns: [{ property: 'YearStarted', direction: 'ascending' }],
     perPage: {
       values: [10, 20, 50],
@@ -37,12 +37,12 @@ export class DatatablesComponent implements OnInit {
       values: [1],
       selected: 1
     }
-  });
+  }));
 
   // Virtual datatable
-  virtualSettings: DatatableSettings = new DatatableSettings({
+  virtualSettings = signal(new DatatableSettings({
     sortColumns: [{ property: 'YearStarted', direction: 'ascending' }],
-  });
+  }));
   virtualDataSource = signal(this.createVirtualDataSource());
 
   ngOnInit() {
@@ -50,11 +50,11 @@ export class DatatablesComponent implements OnInit {
   }
 
   loadArtists() {
-    this.artistService.pageArtists(this.settings.toPagination())
+    this.artistService.pageArtists(this.settings().toPagination())
       .then((response) => {
         this.artists.set(response);
         if (response) {
-          this.settings.page.values = Array.from(Array(response.totalPages).keys()).map((p) => p + 1);
+          this.settings().page.values = Array.from(Array(response.totalPages).keys()).map((p) => p + 1);
         }
       });
   }
@@ -66,7 +66,7 @@ export class DatatablesComponent implements OnInit {
   private createVirtualDataSource(): VirtualDatatableDataSource<Artist> {
     return new VirtualDatatableDataSource<Artist>(
       (skip, take) => this.artistService.pageArtists({
-        sortColumns: this.virtualSettings.sortColumns,
+        sortColumns: this.virtualSettings().sortColumns,
         perPage: take,
         page: Math.floor(skip / take) + 1,
       }).then(response => ({
