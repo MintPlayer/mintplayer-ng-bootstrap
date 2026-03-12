@@ -1,10 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, Directive, effect, ElementRef, inject, input, model, output, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, Directive, ElementRef, effect, inject, input, model, output, signal, viewChild } from '@angular/core';
+import { BsObserveSizeDirective } from '@mintplayer/ng-swiper/observe-size';
 
 @Component({
   selector: 'bs-slider',
   templateUrl: './slider.component.html',
   styleUrls: ['./slider.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  hostDirectives: [BsObserveSizeDirective],
   host: {
     'class': 'd-block position-relative',
     '(document:mousemove)': 'onPointerMove($event)',
@@ -12,7 +14,7 @@ import { ChangeDetectionStrategy, Component, computed, Directive, effect, Elemen
   },
 })
 export class BsSliderComponent {
-  private element = inject(ElementRef<HTMLElement>);
+  private observeSize = inject(BsObserveSizeDirective);
   readonly track = viewChild.required<ElementRef<HTMLDivElement>>('track');
   readonly thumb = viewChild.required<ElementRef<HTMLDivElement>>('thumb');
 
@@ -23,8 +25,8 @@ export class BsSliderComponent {
 
   thumbMarginLeft = computed(() => {
     const value = this.value();
-    const res = value * this.element.nativeElement.clientWidth - 12;
-    return res;
+    const width = this.observeSize.width() ?? 0;
+    return value * width - 12;
   });
 
   cursorClass = computed(() => {
