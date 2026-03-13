@@ -74,13 +74,10 @@ export class BsVirtualDatatableComponent<TData> extends DatatableSortBase implem
 
     if (!bodyTableBody) return;
 
-    // Track the max width seen for each column so we only grow, never shrink
-    // (prevents layout jumps as rows scroll in/out of view).
-    const maxWidths: number[] = [];
-
     const syncWidths = () => {
       const headerCells = el.querySelectorAll<HTMLElement>('bs-table thead th');
-      const firstBodyRow = el.querySelector<HTMLElement>('cdk-virtual-scroll-viewport tbody tr');
+      const allBodyRows = el.querySelectorAll<HTMLElement>('cdk-virtual-scroll-viewport tbody tr');
+      const firstBodyRow = allBodyRows[0];
       const bodyCells = firstBodyRow?.querySelectorAll<HTMLElement>('td');
 
       if (!headerCells.length || !bodyCells?.length) return;
@@ -94,25 +91,37 @@ export class BsVirtualDatatableComponent<TData> extends DatatableSortBase implem
       const savedHeaderScroll = headerScrollContainer?.scrollLeft ?? 0;
       const savedViewportScroll = viewport?.scrollLeft ?? 0;
 
-      // Clear inline widths so we can measure natural sizes
+      // Clear inline min-widths on ALL body rows. CDK virtual scroll recycles
+      // <tr> DOM elements, so rows that were previously the "first row" retain
+      // stale min-width styles. With table-layout: auto the column width is
+      // determined by the widest cell across all visible rows, so stale
+      // min-widths on any row prevent columns from ever shrinking.
+      for (const row of allBodyRows) {
+        const tds = row.querySelectorAll<HTMLElement>('td');
+        for (let i = 0; i < Math.min(tds.length, columnCount); i++) {
+          tds[i].style.minWidth = '';
+        }
+      }
       for (let i = 0; i < columnCount; i++) {
         headerCells[i].style.minWidth = '';
-        bodyCells[i].style.minWidth = '';
       }
 
-      // Measure natural widths and update tracked maximums
+      // Measure natural widths across all visible rows
+      const widths: number[] = [];
       for (let i = 0; i < columnCount; i++) {
-        const headerW = headerCells[i].offsetWidth;
-        const bodyW = bodyCells[i].offsetWidth;
-        const natural = Math.max(headerW, bodyW);
-        if (!maxWidths[i] || natural > maxWidths[i]) {
-          maxWidths[i] = natural;
+        widths[i] = headerCells[i].offsetWidth;
+      }
+      for (const row of allBodyRows) {
+        const tds = row.querySelectorAll<HTMLElement>('td');
+        for (let i = 0; i < Math.min(tds.length, columnCount); i++) {
+          const w = tds[i].offsetWidth;
+          if (w > widths[i]) widths[i] = w;
         }
       }
 
-      // Always re-apply max widths (cells were cleared above for measurement)
+      // Apply measured widths to header and first body row to keep them in sync
       for (let i = 0; i < columnCount; i++) {
-        const w = `${maxWidths[i]}px`;
+        const w = `${widths[i]}px`;
         headerCells[i].style.minWidth = w;
         bodyCells[i].style.minWidth = w;
       }
