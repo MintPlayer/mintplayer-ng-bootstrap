@@ -74,6 +74,10 @@ export class BsVirtualDatatableComponent<TData> extends DatatableSortBase implem
 
     if (!bodyTableBody) return;
 
+    // Track the max width seen for each column so columns only grow, never
+    // shrink (prevents layout jumps as rows scroll in/out of view).
+    const maxWidths: number[] = [];
+
     const syncWidths = () => {
       const headerCells = el.querySelectorAll<HTMLElement>('bs-table thead th');
       const allBodyRows = Array.from(bodyTableBody.querySelectorAll<HTMLTableRowElement>('tr'));
@@ -106,24 +110,48 @@ export class BsVirtualDatatableComponent<TData> extends DatatableSortBase implem
         headerCells[i].style.minWidth = '';
       }
 
-      // Measure natural widths across all visible rows
-      const widths: number[] = [];
+      // Temporarily force both tables to size to content only, overriding
+      // Bootstrap's width:100% which causes table-layout:auto to redistribute
+      // extra space across columns. Without this, measured widths include
+      // redistributed space that varies with each data slice.
+      const headerTable = el.querySelector<HTMLElement>('bs-table table');
+      const bodyTable = el.querySelector<HTMLElement>('cdk-virtual-scroll-viewport table');
+      headerTable?.style.setProperty('width', 'max-content', 'important');
+      bodyTable?.style.setProperty('width', 'max-content', 'important');
+
+      // Measure natural content widths across all visible rows
       for (let i = 0; i < columnCount; i++) {
-        widths[i] = headerCells[i].offsetWidth;
-      }
-      for (const row of allBodyRows) {
-        const tds = row.cells;
-        for (let i = 0; i < Math.min(tds.length, columnCount); i++) {
-          const w = tds[i].offsetWidth;
-          if (w > widths[i]) widths[i] = w;
+        let colWidth = headerCells[i].offsetWidth;
+        for (const row of allBodyRows) {
+          const tds = row.cells;
+          if (i < tds.length) {
+            const w = tds[i].offsetWidth;
+            if (w > colWidth) colWidth = w;
+          }
+        }
+        // Update tracked maximum so columns only grow, never shrink
+        if (!maxWidths[i] || colWidth > maxWidths[i]) {
+          maxWidths[i] = colWidth;
         }
       }
 
-      // Apply measured widths to header and first body row to keep them in sync
+      // Remove temporary width override so tables render normally
+      headerTable?.style.removeProperty('width');
+      bodyTable?.style.removeProperty('width');
+
+      // Apply max widths to header and ALL body rows to keep them in sync.
+      // Setting min-width on every row prevents table-layout:auto from
+      // redistributing extra space differently across the two tables when
+      // some rows contain placeholder content.
       for (let i = 0; i < columnCount; i++) {
-        const w = `${widths[i]}px`;
+        const w = `${maxWidths[i]}px`;
         headerCells[i].style.minWidth = w;
-        bodyCells[i].style.minWidth = w;
+        for (const row of allBodyRows) {
+          const tds = row.cells;
+          if (i < tds.length) {
+            tds[i].style.minWidth = w;
+          }
+        }
       }
 
       // Restore scroll positions after min-widths are re-applied

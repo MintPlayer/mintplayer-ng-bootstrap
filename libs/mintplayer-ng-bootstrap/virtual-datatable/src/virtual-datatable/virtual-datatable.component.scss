@@ -17,9 +17,13 @@
 
 // Use auto layout so columns size to content and the table can overflow
 // horizontally when content is wider than the container.
+// Override Bootstrap's width:100% to prevent table-layout:auto from
+// redistributing extra space across columns — keeps header and body
+// column widths aligned and stable across scroll events.
 bs-table ::ng-deep table,
 .virtual-scroll-viewport table {
   table-layout: auto;
+  width: max-content;
 }
 
 // When responsive, prevent text wrapping so cells grow to fit content.
