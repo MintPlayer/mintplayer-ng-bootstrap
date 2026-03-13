@@ -76,9 +76,9 @@ export class BsVirtualDatatableComponent<TData> extends DatatableSortBase implem
 
     const syncWidths = () => {
       const headerCells = el.querySelectorAll<HTMLElement>('bs-table thead th');
-      const allBodyRows = el.querySelectorAll<HTMLElement>('cdk-virtual-scroll-viewport tbody tr');
+      const allBodyRows = Array.from(bodyTableBody.querySelectorAll<HTMLTableRowElement>('tr'));
       const firstBodyRow = allBodyRows[0];
-      const bodyCells = firstBodyRow?.querySelectorAll<HTMLElement>('td');
+      const bodyCells = firstBodyRow?.cells;
 
       if (!headerCells.length || !bodyCells?.length) return;
 
@@ -97,7 +97,7 @@ export class BsVirtualDatatableComponent<TData> extends DatatableSortBase implem
       // determined by the widest cell across all visible rows, so stale
       // min-widths on any row prevent columns from ever shrinking.
       for (const row of allBodyRows) {
-        const tds = row.querySelectorAll<HTMLElement>('td');
+        const tds = row.cells;
         for (let i = 0; i < Math.min(tds.length, columnCount); i++) {
           tds[i].style.minWidth = '';
         }
@@ -112,7 +112,7 @@ export class BsVirtualDatatableComponent<TData> extends DatatableSortBase implem
         widths[i] = headerCells[i].offsetWidth;
       }
       for (const row of allBodyRows) {
-        const tds = row.querySelectorAll<HTMLElement>('td');
+        const tds = row.cells;
         for (let i = 0; i < Math.min(tds.length, columnCount); i++) {
           const w = tds[i].offsetWidth;
           if (w > widths[i]) widths[i] = w;
