@@ -12,4 +12,5 @@ export class BsTableComponent {
   isResponsive = input(false);
   striped = input(false);
   hover = input(false);
+  border = input(false);
 }
