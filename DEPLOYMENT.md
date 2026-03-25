@@ -75,7 +75,7 @@ The [`docker-compose.yml`](docker-compose.yml) configures:
 To manually deploy on the VPS:
 
 ```bash
-cd /var/www/ng-bootstrap-demo
+cd /var/www/ng-bootstrap
 docker compose pull
 docker compose down
 docker compose up -d

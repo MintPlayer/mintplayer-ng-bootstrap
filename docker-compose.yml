@@ -1,11 +1,11 @@
 services:
-  ng-bootstrap-demo:
+  ng-bootstrap:
     image: ghcr.io/mintplayer/mintplayer-ng-bootstrap:master
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.ng-bootstrap-demo.rule=Host(`bootstrap.mintplayer.com`)"
-      - "traefik.http.routers.ng-bootstrap-demo.entrypoints=websecure"
-      - "traefik.http.routers.ng-bootstrap-demo.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.ng-bootstrap.rule=Host(`bootstrap.mintplayer.com`)"
+      - "traefik.http.routers.ng-bootstrap.entrypoints=websecure"
+      - "traefik.http.routers.ng-bootstrap.tls.certresolver=letsencrypt"
     networks:
       - web
     restart: unless-stopped
