@@ -51,6 +51,9 @@ Alternatively you can run the docker image which is published on GitHub Containe
 
 and visit [http://localhost:4200](http://localhost:4200).
 
+## Deployment
+See [deployment documentation](DEPLOYMENT.md) for instructions on setting up automatic deployment to a VPS.
+
 ## Fonts
 The `<bs-icon>` uses fonts from bootstrap-icons which need to be included in the application. Since there's no `"assets"` field in an angular library its project configuration, we seem to have no other option than to explicitly tell the application to include them.
 
