@@ -1,4 +1,4 @@
-import { Component, input, model, TemplateRef, TrackByFunction, viewChild, ChangeDetectionStrategy} from '@angular/core';
+import { Component, computed, model, signal, TemplateRef, viewChild, ChangeDetectionStrategy } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
@@ -16,19 +16,21 @@ import { Color } from '@mintplayer/ng-bootstrap';
 })
 export class BsMultiselectComponent<T> {
 
-  headerTemplate?: TemplateRef<any>;
-  footerTemplate?: TemplateRef<any>;
-  buttonTemplate?: TemplateRef<any>;
-  colors = Color;
+  readonly headerTemplate = signal<TemplateRef<any> | undefined>(undefined);
+  readonly footerTemplate = signal<TemplateRef<any> | undefined>(undefined);
+  readonly buttonTemplate = signal<TemplateRef<any> | undefined>(undefined);
+  readonly itemTemplate = signal<TemplateRef<any> | undefined>(undefined);
+  readonly colors = Color;
 
-
-  readonly items = input<T[]>([]);
+  readonly items = model<T[]>([]);
   readonly selectedItems = model<T[]>([]);
   readonly defaultButtonTemplate = viewChild.required<TemplateRef<any>>('defaultButtonTemplate');
+  readonly defaultItemTemplate = viewChild.required<TemplateRef<any>>('defaultItemTemplate');
 
-  // itemChange(item: any, ev: Event) {
+  readonly resolvedButtonTemplate = computed(() => this.buttonTemplate() ?? this.defaultButtonTemplate());
+  readonly resolvedItemTemplate = computed(() => this.itemTemplate() ?? this.defaultItemTemplate());
+
   itemChange(item: T, value: boolean | null) {
-    // const value = (<any>ev.target).checked;
     if (value) {
       this.selectedItems.update(v => [...v, item]);
     } else {

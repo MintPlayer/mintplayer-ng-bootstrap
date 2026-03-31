@@ -1,18 +1,18 @@
-import { Component, ChangeDetectionStrategy} from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
 import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
-import { BsMultiselectComponent, BsHeaderTemplateDirective, BsFooterTemplateDirective, BsButtonTemplateDirective } from '@mintplayer/ng-bootstrap/multiselect';
+import { BsMultiselectComponent, BsHeaderTemplateDirective, BsFooterTemplateDirective, BsButtonTemplateDirective, BsItemTemplateDirective } from '@mintplayer/ng-bootstrap/multiselect';
 import { FocusOnLoadDirective } from '@mintplayer/ng-focus-on-load';
 
 @Component({
   selector: 'demo-multiselect-dropdown',
   templateUrl: './multiselect-dropdown.component.html',
   styleUrls: ['./multiselect-dropdown.component.scss'],
-  imports: [BsFormComponent, BsFormControlDirective, BsMultiselectComponent, BsHeaderTemplateDirective, BsFooterTemplateDirective, BsButtonTemplateDirective, FocusOnLoadDirective],
+  imports: [BsFormComponent, BsFormControlDirective, BsMultiselectComponent, BsHeaderTemplateDirective, BsFooterTemplateDirective, BsButtonTemplateDirective, BsItemTemplateDirective, FocusOnLoadDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MultiselectDropdownComponent {
 
-  availableItems = ['Blue', 'Red', 'Green', 'Yellow', 'Orange', 'Purple', 'Pink'];
-  selectedItems: string[] = [];
+  readonly availableItems = signal(['Blue', 'Red', 'Green', 'Yellow', 'Orange', 'Purple', 'Pink']);
+  readonly selectedItems = signal<string[]>([]);
 
 }

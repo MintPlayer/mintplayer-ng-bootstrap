@@ -9,9 +9,9 @@ export class BsButtonTemplateDirective<T> {
   constructor() {
     const template = inject(TemplateRef);
     const multiselect = inject<BsMultiselectComponent<T>>(BsMultiselectComponent);
-    multiselect.buttonTemplate = template;
+    multiselect.buttonTemplate.set(template);
   }
-  
+
   public static ngTemplateContextGuard<TData>(
     dir: BsButtonTemplateDirective<TData>,
     ctx: any

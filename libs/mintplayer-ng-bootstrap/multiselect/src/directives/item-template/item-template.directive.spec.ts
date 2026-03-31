@@ -1,57 +1,58 @@
 import { Component, signal, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsMultiselectComponent } from '../../component/multiselect.component';
-import { BsHeaderTemplateDirective } from './header-template.directive';
+import { BsItemTemplateDirective } from './item-template.directive';
 
 @Component({
   selector: 'bs-multiselect',
   template: `
     <button>
-      <ng-container *ngTemplateOutlet="headerTemplate(); context: { $implicit: 0 }"></ng-container>
+      <ng-container *ngTemplateOutlet="itemTemplate(); context: { $implicit: 'test' }"></ng-container>
     </button>`,
   providers: [
     { provide: BsMultiselectComponent, useExisting: BsMultiselectMockComponent }
   ]
 })
 class BsMultiselectMockComponent {
-  readonly headerTemplate = signal<TemplateRef<any> | undefined>(undefined);
+  readonly itemTemplate = signal<TemplateRef<any> | undefined>(undefined);
+  readonly items = signal<any[]>([]);
 }
 
 @Component({
-  selector: 'bs-header-template-test',
-  imports: [BsMultiselectMockComponent, BsHeaderTemplateDirective],
+  selector: 'bs-item-template-test',
+  imports: [BsMultiselectMockComponent, BsItemTemplateDirective],
   template: `
     <bs-multiselect #multiselect>
-      <ng-template bsHeaderTemplate let-count>
-          {{ count }} geselecteerd
+      <ng-template bsItemTemplate let-item>
+          {{ item }}
       </ng-template>
     </bs-multiselect>`
 })
-class BsHeaderTemplateTestComponent {
+class BsItemTemplateTestComponent {
   @ViewChild('multiselect') multiselect!: BsMultiselectMockComponent;
 }
 
-describe('BsHeaderTemplateDirective', () => {
-  let component: BsHeaderTemplateTestComponent;
-  let fixture: ComponentFixture<BsHeaderTemplateTestComponent>;
+describe('BsItemTemplateDirective', () => {
+  let component: BsItemTemplateTestComponent;
+  let fixture: ComponentFixture<BsItemTemplateTestComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
         // Directive to test
-        BsHeaderTemplateDirective,
+        BsItemTemplateDirective,
 
         // Mock dependencies
         BsMultiselectMockComponent,
 
         // Testbench
-        BsHeaderTemplateTestComponent
+        BsItemTemplateTestComponent
       ],
     }).compileComponents();
   });
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(BsHeaderTemplateTestComponent);
+    fixture = TestBed.createComponent(BsItemTemplateTestComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
@@ -60,7 +61,7 @@ describe('BsHeaderTemplateDirective', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should contain a header template', () => {
-    expect(component.multiselect.headerTemplate()).toBeTruthy();
+  it('should contain an item template', () => {
+    expect(component.multiselect.itemTemplate()).toBeTruthy();
   });
 });

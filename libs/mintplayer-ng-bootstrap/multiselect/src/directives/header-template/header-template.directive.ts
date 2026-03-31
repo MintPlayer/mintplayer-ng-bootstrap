@@ -9,7 +9,7 @@ export class BsHeaderTemplateDirective<T> {
   constructor() {
     const template = inject(TemplateRef);
     const multiselect = inject<BsMultiselectComponent<T>>(BsMultiselectComponent);
-    multiselect.headerTemplate = template;
+    multiselect.headerTemplate.set(template);
   }
 
 }
