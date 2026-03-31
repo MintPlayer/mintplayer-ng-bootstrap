@@ -9,7 +9,7 @@
             <hr class="my-2">
         }
         @for (item of items(); track item) {
-            <bs-toggle-button [ngModel]="selectedItems().indexOf(item) > -1" (ngModelChange)="itemChange(item, $event)" class="d-block">{{ item }}</bs-toggle-button>
+            <bs-toggle-button [ngModel]="selectedItems().indexOf(item) > -1" (ngModelChange)="itemChange(item, $event)" class="d-block"><ng-container *ngTemplateOutlet="itemTemplate ?? defaultItemTemplate; context: { $implicit: item }"></ng-container></bs-toggle-button>
         }
         @if (footerTemplate) {
             <hr class="my-2">
@@ -20,3 +20,4 @@
 <ng-template #defaultButtonTemplate let-count>
     {{ count }} selected
 </ng-template>
+<ng-template #defaultItemTemplate let-item>{{ item }}</ng-template>

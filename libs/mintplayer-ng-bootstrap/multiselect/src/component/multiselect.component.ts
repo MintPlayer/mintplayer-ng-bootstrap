@@ -19,12 +19,14 @@ export class BsMultiselectComponent<T> {
   headerTemplate?: TemplateRef<any>;
   footerTemplate?: TemplateRef<any>;
   buttonTemplate?: TemplateRef<any>;
+  itemTemplate?: TemplateRef<any>;
   colors = Color;
 
 
   readonly items = input<T[]>([]);
   readonly selectedItems = model<T[]>([]);
   readonly defaultButtonTemplate = viewChild.required<TemplateRef<any>>('defaultButtonTemplate');
+  readonly defaultItemTemplate = viewChild.required<TemplateRef<any>>('defaultItemTemplate');
 
   // itemChange(item: any, ev: Event) {
   itemChange(item: T, value: boolean | null) {

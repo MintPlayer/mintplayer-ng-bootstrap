@@ -10,6 +10,9 @@
         <ng-container *bsButtonTemplate="let count">
             {{ count }} geselecteerd
         </ng-container>
+        <ng-template bsItemTemplate let-item>
+            Color: {{ item }}
+        </ng-template>
     </bs-multiselect>
     Selected items:
     @for (item of selectedItems; track item) {
