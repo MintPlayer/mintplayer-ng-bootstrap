@@ -23,7 +23,7 @@ export class BsMultiselectComponent<T> {
   colors = Color;
 
 
-  readonly items = input<T[]>([]);
+  readonly items = model<T[]>([]);
   readonly selectedItems = model<T[]>([]);
   readonly defaultButtonTemplate = viewChild.required<TemplateRef<any>>('defaultButtonTemplate');
   readonly defaultItemTemplate = viewChild.required<TemplateRef<any>>('defaultItemTemplate');

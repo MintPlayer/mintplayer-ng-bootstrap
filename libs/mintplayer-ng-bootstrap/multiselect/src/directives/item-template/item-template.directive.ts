@@ -1,15 +1,22 @@
-import { Directive, inject, input, TemplateRef } from '@angular/core';
+import { Directive, effect, inject, input, TemplateRef } from '@angular/core';
 import { BsMultiselectComponent } from '../../component/multiselect.component';
 
 @Directive({
   selector: '[bsItemTemplate]',
 })
 export class BsItemTemplateDirective<T> {
+  private multiselect = inject<BsMultiselectComponent<T>>(BsMultiselectComponent);
 
   constructor() {
     const template = inject(TemplateRef);
-    const multiselect = inject<BsMultiselectComponent<T>>(BsMultiselectComponent);
-    multiselect.itemTemplate = template;
+    this.multiselect.itemTemplate = template;
+
+    effect(() => {
+      const value = this.bsItemTemplateOf();
+      if (value) {
+        this.multiselect.items.set(value);
+      }
+    });
   }
 
   public static ngTemplateContextGuard<TData>(
@@ -19,7 +26,7 @@ export class BsItemTemplateDirective<T> {
     return true;
   }
 
-  /** Used for type inference — pass the same array as [items] on bs-multiselect */
+  /** Pass the items array — forwards to BsMultiselectComponent.items */
   readonly bsItemTemplateOf = input<T[] | undefined>(undefined);
 }
 
