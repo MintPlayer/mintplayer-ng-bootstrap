@@ -1,4 +1,4 @@
-import { Directive, inject, TemplateRef } from '@angular/core';
+import { Directive, inject, input, TemplateRef } from '@angular/core';
 import { BsMultiselectComponent } from '../../component/multiselect.component';
 
 @Directive({
@@ -15,10 +15,12 @@ export class BsItemTemplateDirective<T> {
   public static ngTemplateContextGuard<TData>(
     dir: BsItemTemplateDirective<TData>,
     ctx: any
-  ): ctx is BsItemTemplateContext<TData> {
+  ): ctx is BsItemTemplateContext<Exclude<TData, false | 0 | '' | null | undefined>> {
     return true;
   }
 
+  /** Used for type inference — pass the same array as [items] on bs-multiselect */
+  readonly bsItemTemplateOf = input<T[] | undefined>(undefined);
 }
 
 export class BsItemTemplateContext<T> {
