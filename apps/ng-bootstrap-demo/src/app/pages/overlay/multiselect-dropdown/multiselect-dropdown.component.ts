@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy} from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
 import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsMultiselectComponent, BsHeaderTemplateDirective, BsFooterTemplateDirective, BsButtonTemplateDirective, BsItemTemplateDirective } from '@mintplayer/ng-bootstrap/multiselect';
 import { FocusOnLoadDirective } from '@mintplayer/ng-focus-on-load';
@@ -12,7 +12,7 @@ import { FocusOnLoadDirective } from '@mintplayer/ng-focus-on-load';
 })
 export class MultiselectDropdownComponent {
 
-  availableItems = ['Blue', 'Red', 'Green', 'Yellow', 'Orange', 'Purple', 'Pink'];
-  selectedItems: string[] = [];
+  readonly availableItems = signal(['Blue', 'Red', 'Green', 'Yellow', 'Orange', 'Purple', 'Pink']);
+  readonly selectedItems = signal<string[]>([]);
 
 }

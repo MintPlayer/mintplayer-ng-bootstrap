@@ -1,4 +1,4 @@
-import { Component, TemplateRef, ViewChild } from '@angular/core';
+import { Component, signal, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsMultiselectComponent } from '../../component/multiselect.component';
 import { BsButtonTemplateDirective } from './button-template.directive';
@@ -7,14 +7,14 @@ import { BsButtonTemplateDirective } from './button-template.directive';
   selector: 'bs-multiselect',
   template: `
     <button>
-      <ng-container *ngTemplateOutlet="buttonTemplate ?? defaultButtonTemplate; context: { $implicit: 0 }"></ng-container>
+      <ng-container *ngTemplateOutlet="buttonTemplate(); context: { $implicit: 0 }"></ng-container>
     </button>`,
   providers: [
     { provide: BsMultiselectComponent, useExisting: BsMultiselectMockComponent }
   ]
 })
 class BsMultiselectMockComponent {
-  buttonTemplate!: TemplateRef<any>;
+  readonly buttonTemplate = signal<TemplateRef<any> | undefined>(undefined);
 }
 
 @Component({
@@ -28,7 +28,6 @@ class BsMultiselectMockComponent {
     </bs-multiselect>`
 })
 class BsButtonTemplateTestComponent {
-  @ViewChild('modalTemplate') modalTemplate!: TemplateRef<any>;
   @ViewChild('multiselect') multiselect!: BsMultiselectMockComponent;
 }
 
@@ -62,6 +61,6 @@ describe('BsButtonTemplateDirective', () => {
   });
 
   it('should contain a button template', () => {
-    expect(component.multiselect.buttonTemplate).toBeTruthy();
+    expect(component.multiselect.buttonTemplate()).toBeTruthy();
   });
 });

@@ -1,6 +1,6 @@
 <h1 class="text-center">Multiselect dropdown</h1>
 <bs-form>
-    <bs-multiselect [selectedItems]="selectedItems">
+    <bs-multiselect [(selectedItems)]="selectedItems">
         <div *bsHeaderTemplate>
             <input type="text" autofocus>
         </div>
@@ -10,12 +10,12 @@
         <ng-container *bsButtonTemplate="let count">
             {{ count }} geselecteerd
         </ng-container>
-        <ng-container *bsItemTemplate="let item of availableItems">
+        <ng-container *bsItemTemplate="let item of availableItems()">
             Color: {{ item }}
         </ng-container>
     </bs-multiselect>
     Selected items:
-    @for (item of selectedItems; track item) {
+    @for (item of selectedItems(); track item) {
         <span>{{ item }}, </span>
     }
 </bs-form>

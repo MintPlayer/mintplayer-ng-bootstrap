@@ -1,4 +1,4 @@
-import { Component, TemplateRef, ViewChild } from '@angular/core';
+import { Component, signal, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsMultiselectComponent } from '../../component/multiselect.component';
 import { BsItemTemplateDirective } from './item-template.directive';
@@ -7,14 +7,15 @@ import { BsItemTemplateDirective } from './item-template.directive';
   selector: 'bs-multiselect',
   template: `
     <button>
-      <ng-container *ngTemplateOutlet="itemTemplate ?? defaultItemTemplate; context: { $implicit: 'test' }"></ng-container>
+      <ng-container *ngTemplateOutlet="itemTemplate(); context: { $implicit: 'test' }"></ng-container>
     </button>`,
   providers: [
     { provide: BsMultiselectComponent, useExisting: BsMultiselectMockComponent }
   ]
 })
 class BsMultiselectMockComponent {
-  itemTemplate!: TemplateRef<any>;
+  readonly itemTemplate = signal<TemplateRef<any> | undefined>(undefined);
+  readonly items = signal<any[]>([]);
 }
 
 @Component({
@@ -61,6 +62,6 @@ describe('BsItemTemplateDirective', () => {
   });
 
   it('should contain an item template', () => {
-    expect(component.multiselect.itemTemplate).toBeTruthy();
+    expect(component.multiselect.itemTemplate()).toBeTruthy();
   });
 });

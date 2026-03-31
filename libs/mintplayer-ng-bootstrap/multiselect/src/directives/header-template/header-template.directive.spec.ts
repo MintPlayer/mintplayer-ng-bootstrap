@@ -1,4 +1,4 @@
-import { Component, TemplateRef, ViewChild } from '@angular/core';
+import { Component, signal, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsMultiselectComponent } from '../../component/multiselect.component';
 import { BsHeaderTemplateDirective } from './header-template.directive';
@@ -7,14 +7,14 @@ import { BsHeaderTemplateDirective } from './header-template.directive';
   selector: 'bs-multiselect',
   template: `
     <button>
-      <ng-container *ngTemplateOutlet="headerTemplate ?? defaultHeaderTemplate; context: { $implicit: 0 }"></ng-container>
+      <ng-container *ngTemplateOutlet="headerTemplate(); context: { $implicit: 0 }"></ng-container>
     </button>`,
   providers: [
     { provide: BsMultiselectComponent, useExisting: BsMultiselectMockComponent }
   ]
 })
 class BsMultiselectMockComponent {
-  headerTemplate!: TemplateRef<any>;
+  readonly headerTemplate = signal<TemplateRef<any> | undefined>(undefined);
 }
 
 @Component({
@@ -28,7 +28,6 @@ class BsMultiselectMockComponent {
     </bs-multiselect>`
 })
 class BsHeaderTemplateTestComponent {
-  @ViewChild('modalTemplate') modalTemplate!: TemplateRef<any>;
   @ViewChild('multiselect') multiselect!: BsMultiselectMockComponent;
 }
 
@@ -62,6 +61,6 @@ describe('BsHeaderTemplateDirective', () => {
   });
 
   it('should contain a header template', () => {
-    expect(component.multiselect.headerTemplate).toBeTruthy();
+    expect(component.multiselect.headerTemplate()).toBeTruthy();
   });
 });

@@ -1,20 +1,32 @@
-import { Component, TemplateRef, ViewChild } from '@angular/core';
+import { Component, signal, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsMultiselectComponent } from '../../component/multiselect.component';
 import { BsFooterTemplateDirective } from './footer-template.directive';
-import { MockComponent } from 'ng-mocks';
+
+@Component({
+  selector: 'bs-multiselect',
+  template: `
+    <button>
+      <ng-container *ngTemplateOutlet="footerTemplate(); context: { $implicit: 0 }"></ng-container>
+    </button>`,
+  providers: [
+    { provide: BsMultiselectComponent, useExisting: BsMultiselectMockComponent }
+  ]
+})
+class BsMultiselectMockComponent {
+  readonly footerTemplate = signal<TemplateRef<any> | undefined>(undefined);
+}
 
 @Component({
   selector: 'bs-footer-template-test',
-  imports: [MockComponent(BsMultiselectComponent), BsFooterTemplateDirective],
+  imports: [BsMultiselectMockComponent, BsFooterTemplateDirective],
   template: `
     <bs-multiselect #multiselect>
       <ng-container *bsFooterTemplate="let count">{{ count }} geselecteerd</ng-container>
     </bs-multiselect>`
 })
 class BsFooterTemplateTestComponent {
-  @ViewChild('modalTemplate') modalTemplate!: TemplateRef<any>;
-  @ViewChild('multiselect') multiselect!: BsMultiselectComponent<any>;
+  @ViewChild('multiselect') multiselect!: BsMultiselectMockComponent;
 }
 
 describe('BsFooterTemplateDirective', () => {
@@ -28,8 +40,8 @@ describe('BsFooterTemplateDirective', () => {
         BsFooterTemplateDirective,
 
         // Mock dependencies
-        MockComponent(BsMultiselectComponent),
-        
+        BsMultiselectMockComponent,
+
         // Testbench
         BsFooterTemplateTestComponent,
       ],
@@ -47,6 +59,6 @@ describe('BsFooterTemplateDirective', () => {
   });
 
   it('should contain a footer template', () => {
-    expect(component.multiselect.footerTemplate).toBeTruthy();
+    expect(component.multiselect.footerTemplate()).toBeTruthy();
   });
 });

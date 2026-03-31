@@ -9,7 +9,7 @@ export class BsItemTemplateDirective<T> {
 
   constructor() {
     const template = inject(TemplateRef);
-    this.multiselect.itemTemplate = template;
+    this.multiselect.itemTemplate.set(template);
 
     effect(() => {
       const value = this.bsItemTemplateOf();
