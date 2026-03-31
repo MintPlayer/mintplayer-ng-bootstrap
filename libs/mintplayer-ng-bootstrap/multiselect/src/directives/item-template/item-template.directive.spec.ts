@@ -28,7 +28,6 @@ class BsMultiselectMockComponent {
     </bs-multiselect>`
 })
 class BsItemTemplateTestComponent {
-  @ViewChild('modalTemplate') modalTemplate!: TemplateRef<any>;
   @ViewChild('multiselect') multiselect!: BsMultiselectMockComponent;
 }
 
