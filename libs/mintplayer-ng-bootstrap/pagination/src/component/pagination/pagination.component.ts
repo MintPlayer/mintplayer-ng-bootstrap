@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, model } from '@angular/core';
 import { Size } from '@mintplayer/ng-bootstrap';
 import { PageWithSelection } from '../../interfaces/page-with-selection';
+import { PageNumberType } from '../../types/page-number.type';
 
 @Component({
   selector: 'bs-pagination',
@@ -148,8 +149,10 @@ export class BsPaginationComponent {
     return pageNumbers.indexOf(selectedPageNumber) === pageNumbers.length - 1;
   });
 
-  onSelectPage(event: MouseEvent, page: number) {
-    this.selectedPageNumber.set(page);
+  onSelectPage(event: MouseEvent, page: PageNumberType) {
+    if (typeof page === 'number') {
+      this.selectedPageNumber.set(page);
+    }
     return false;
   }
 
