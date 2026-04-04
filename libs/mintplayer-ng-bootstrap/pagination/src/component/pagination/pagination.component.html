@@ -7,9 +7,14 @@
             </a>
         </li>
     }
-    @for (pageNumber of shownPageNumbers(); track pageNumber.page) {
+    @for (pageNumber of shownPageNumbers(); track $index) {
         <li class="page-item">
-            @if (pageNumber.page != '...') {
+            @if (pageNumber.page === '...') {
+                <a class="page-link disabled" aria-disabled="true">
+                    <span aria-hidden="true">&hellip;</span>
+                    <span class="visually-hidden">More pages</span>
+                </a>
+            } @else {
                 <a class="page-link" href="" (click)="onSelectPage($event, pageNumber.page)" [class.active]="pageNumber.selected">
                     {{ pageNumber.page }}
                     @if (pageNumber.selected) {

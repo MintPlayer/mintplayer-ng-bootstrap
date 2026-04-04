@@ -34,7 +34,7 @@
                                 [showArrows]="false"></bs-pagination>
                             <bs-pagination class="float-end" [pageNumbers]="settings().page.values"
                                 [selectedPageNumber]="settings().page.selected" (selectedPageNumberChange)="onPageChange($event)"
-                                [showArrows]="true"></bs-pagination>
+                                [showArrows]="true" [numberOfBoxes]="settings().pageNumberOfBoxes"></bs-pagination>
                         </div>
                     </div>
                 </bs-grid>

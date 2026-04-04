@@ -36,51 +36,102 @@ export class BsPaginationComponent {
     }
   });
 
-  /** Indicates whether there are too many numbers to the left-hand side of the current page. */
-  isLeftOverflow = computed(() => {
-    const pageNumbers = this.pageNumbers();
-    const selectedPageNumber = this.selectedPageNumber();
-    const visibleNumberOfNumberBoxes = this.visibleNumberOfNumberBoxes();
-    const index = pageNumbers.indexOf(selectedPageNumber);
-    const middle = Math.floor(visibleNumberOfNumberBoxes / 2);
-    return index > middle;
-  });
-
-  /** Indicates whether there are too many numbers to the right-hand side of the current page. */
-  isRightOverflow = computed(() => {
-    const pageNumbers = this.pageNumbers();
-    const selectedPageNumber = this.selectedPageNumber();
-    const visibleNumberOfNumberBoxes = this.visibleNumberOfNumberBoxes();
-    const index = pageNumbers.indexOf(selectedPageNumber);
-    const middle = Math.floor(visibleNumberOfNumberBoxes / 2);
-    return (pageNumbers.length - index) < middle;
-  });
-
-  /** Page numbers to be displayed to the user. */
+  /** Page numbers to be displayed to the user, with ellipsis entries where pages are omitted. */
   shownPageNumbers = computed<PageWithSelection[]>(() => {
     const pageNumbers = this.pageNumbers();
     const selectedPageNumber = this.selectedPageNumber();
-    const visibleNumberOfNumberBoxes = this.visibleNumberOfNumberBoxes();
+    const budget = this.visibleNumberOfNumberBoxes();
 
-    let startIndex = 0;
-    const half = Math.round((visibleNumberOfNumberBoxes - 1) / 2);
-    if (pageNumbers.indexOf(selectedPageNumber) < half) {
-      startIndex = 0;
-    } else if (
-      pageNumbers.indexOf(selectedPageNumber) >=
-      pageNumbers.length - half
-    ) {
-      startIndex = pageNumbers.length - visibleNumberOfNumberBoxes;
-    } else {
-      startIndex = pageNumbers.indexOf(selectedPageNumber) - half;
+    // No truncation needed
+    if (budget <= 0 || budget >= pageNumbers.length) {
+      return pageNumbers.map((p) => <PageWithSelection>{
+        page: p,
+        selected: p === selectedPageNumber,
+      });
     }
 
-    return [...Array(visibleNumberOfNumberBoxes).keys()]
-      .map((p) => p + startIndex)
-      .map((p) => <PageWithSelection>{
-        page: pageNumbers[p],
-        selected: pageNumbers[p] === selectedPageNumber,
+    const selectedIndex = Math.max(0, Math.min(
+      pageNumbers.indexOf(selectedPageNumber),
+      pageNumbers.length - 1
+    ));
+    const lastIndex = pageNumbers.length - 1;
+
+    // Centers a window of the given size on selectedIndex, clamped to valid range
+    const calcWindow = (size: number): [number, number] => {
+      const half = Math.floor((size - 1) / 2);
+      let ws = selectedIndex - half;
+      let we = ws + size - 1;
+      if (ws < 0) { we = Math.min(lastIndex, we - ws); ws = 0; }
+      if (we > lastIndex) { ws = Math.max(0, ws - (we - lastIndex)); we = lastIndex; }
+      return [ws, we];
+    };
+
+    // For small budgets (< 5), just show a centered window — not enough room for anchors + ellipsis
+    if (budget < 5) {
+      const [ws, we] = calcWindow(budget);
+      return Array.from({ length: we - ws + 1 }, (_, i) => <PageWithSelection>{
+        page: pageNumbers[ws + i],
+        selected: pageNumbers[ws + i] === selectedPageNumber,
       });
+    }
+
+    // For budget >= 5: reserve slots for first/last anchors and ellipsis, then fill the inner window.
+    // Overhead per side: 0 (window reaches edge), 1 (window is 1 away from edge), or 2 (anchor + ellipsis/bridge).
+    // Iterate until stable — converges in 2–4 iterations.
+    let leftOverhead = 2;
+    let rightOverhead = 2;
+    let windowStart = 0;
+    let windowEnd = 0;
+
+    for (let iteration = 0; iteration < 4; iteration++) {
+      const innerBudget = Math.max(1, budget - leftOverhead - rightOverhead);
+      [windowStart, windowEnd] = calcWindow(innerBudget);
+
+      const newLeftOverhead = windowStart === 0 ? 0 : windowStart === 1 ? 1 : 2;
+      const newRightOverhead = windowEnd === lastIndex ? 0 : windowEnd === lastIndex - 1 ? 1 : 2;
+
+      if (newLeftOverhead === leftOverhead && newRightOverhead === rightOverhead) break;
+      leftOverhead = newLeftOverhead;
+      rightOverhead = newRightOverhead;
+    }
+
+    // Build result
+    const result: PageWithSelection[] = [];
+    const pushPage = (index: number) => {
+      result.push(<PageWithSelection>{
+        page: pageNumbers[index],
+        selected: pageNumbers[index] === selectedPageNumber,
+      });
+    };
+
+    // Left anchor or bridge
+    if (windowStart >= 3) {
+      pushPage(0);
+      result.push({ page: '...', selected: false });
+    } else if (windowStart === 2) {
+      pushPage(0);
+      pushPage(1);
+    } else if (windowStart === 1) {
+      pushPage(0);
+    }
+
+    // Inner window
+    for (let i = windowStart; i <= windowEnd; i++) {
+      pushPage(i);
+    }
+
+    // Right bridge or anchor
+    if (windowEnd <= lastIndex - 3) {
+      result.push({ page: '...', selected: false });
+      pushPage(lastIndex);
+    } else if (windowEnd === lastIndex - 2) {
+      pushPage(lastIndex - 1);
+      pushPage(lastIndex);
+    } else if (windowEnd === lastIndex - 1) {
+      pushPage(lastIndex);
+    }
+
+    return result;
   });
 
   /** Indicates if first value is selected. */
