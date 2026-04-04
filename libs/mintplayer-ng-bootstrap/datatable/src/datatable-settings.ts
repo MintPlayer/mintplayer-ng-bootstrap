@@ -28,6 +28,7 @@ export class DatatableSettings {
     public sortColumns: SortColumn[] = [];
     public perPage: { values: number[], selected: number };
     public page: { values: number[], selected: number };
+    public pageNumberOfBoxes: number = 11;
 
     public toPagination() {
         const res = <PaginationRequest>{

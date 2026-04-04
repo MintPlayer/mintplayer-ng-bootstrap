@@ -21,4 +21,7 @@ export class PaginationComponent {
   example4PageNumbers = signal<number[]>([...Array(30).keys()].map((p) => p + 1));
   example4SelectedPageNumber = model(15);
 
+  example5PageNumbers = signal<number[]>([...Array(1000).keys()].map((p) => p + 1));
+  example5SelectedPageNumber = model(500);
+
 }
