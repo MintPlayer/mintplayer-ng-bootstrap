@@ -1,4 +1,4 @@
-import { Directive, inject, Input, TemplateRef } from '@angular/core';
+import { Directive, inject, input, TemplateRef } from '@angular/core';
 import { Breakpoint } from '@mintplayer/ng-bootstrap';
 
 @Directive({
@@ -7,8 +7,8 @@ import { Breakpoint } from '@mintplayer/ng-bootstrap';
 export class BsPriorityNavItemDirective {
   templateRef = inject(TemplateRef);
 
-  @Input('bsPriorityNavItem') priority: number | null = null;
-  @Input('bsPriorityNavItemHideBelow') hideBelow: Breakpoint | null = null;
+  priority = input<number | null>(null, { alias: 'bsPriorityNavItem' });
+  hideBelow = input<Breakpoint | null>(null, { alias: 'bsPriorityNavItemHideBelow' });
 
   readonly id: number = ++BsPriorityNavItemDirective.idCounter;
   private static idCounter = 0;

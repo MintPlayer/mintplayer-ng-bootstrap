@@ -21,10 +21,10 @@ describe('BsPriorityNavItemDirective', () => {
 
     const items = fixture.componentInstance.items.toArray();
     expect(items.length).toBe(2);
-    expect(items[0].priority).toBe(5);
-    expect(items[0].hideBelow).toBe('md');
-    expect(items[1].priority).toBeNull();
-    expect(items[1].hideBelow).toBeNull();
+    expect(items[0].priority()).toBe(5);
+    expect(items[0].hideBelow()).toBe('md');
+    expect(items[1].priority()).toBeNull();
+    expect(items[1].hideBelow()).toBeNull();
   });
 
   it('assigns unique ids', () => {

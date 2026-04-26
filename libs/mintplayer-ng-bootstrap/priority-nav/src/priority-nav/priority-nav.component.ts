@@ -71,9 +71,6 @@ export class BsPriorityNavComponent {
     return w > 0 && w < bp;
   });
 
-  // Items in declaration order
-  itemList = computed(() => this.items());
-
   // Items in overflow order. Convention: a LOWER priority number means MORE
   // important (priority: 1 stays visible longest). Items without a priority
   // are treated as least important and overflow before any prioritized item.
@@ -83,15 +80,15 @@ export class BsPriorityNavComponent {
     const items = this.items();
     const fromEnd = this.overflowFrom() === 'end';
     return [...items]
-      .map((item, index) => ({ item, index }))
+      .map((item, index) => ({ item, index, priority: item.priority() }))
       .sort((a, b) => {
-        const pa = a.item.priority;
-        const pb = b.item.priority;
         // Unprioritized items overflow first
-        if (pa === null && pb !== null) return -1;
-        if (pa !== null && pb === null) return 1;
+        if (a.priority === null && b.priority !== null) return -1;
+        if (a.priority !== null && b.priority === null) return 1;
         // Both prioritized: higher number overflows first (less important)
-        if (pa !== null && pb !== null && pa !== pb) return pb - pa;
+        if (a.priority !== null && b.priority !== null && a.priority !== b.priority) {
+          return b.priority - a.priority;
+        }
         // Tiebreaker by declaration order
         return fromEnd ? b.index - a.index : a.index - b.index;
       })
@@ -186,6 +183,7 @@ export class BsPriorityNavComponent {
   }
 
   hideBelowClass(item: BsPriorityNavItemDirective): string {
-    return item.hideBelow ? `priority-nav-item-hide-below-${item.hideBelow}` : '';
+    const breakpoint = item.hideBelow();
+    return breakpoint ? `priority-nav-item-hide-below-${breakpoint}` : '';
   }
 }
