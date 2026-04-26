@@ -1,8 +1,10 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, input, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { interval, map } from 'rxjs';
+import { dedent } from 'ts-dedent';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
+import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 
 @Component({
   selector: "demo-hello",
@@ -58,10 +60,35 @@ export class RxjsHostComponent {
   styleUrls: ['./async-host-binding.component.scss'],
   imports: [
     BsAlertComponent,
+    BsCodeSnippetComponent,
     HelloComponent,
     RxjsHostComponent
   ]
 })
 export class AsyncHostBindingComponent {
   colors = Color;
+
+  signalHostExample = dedent`
+    @Component({
+      selector: 'my-thing',
+      template: \`...\`,
+      host: {
+        '[style.padding.px]': 'padding()',
+        '[class.fw-bold]':    'isBold()',
+      },
+    })
+    export class MyThing {
+      padding = signal(0);
+      isBold  = signal(false);
+    }`;
+
+  toSignalExample = dedent`
+    import { toSignal } from '@angular/core/rxjs-interop';
+
+    @Component({
+      host: { '[style.padding.px]': 'tick()' },
+    })
+    export class MyThing {
+      readonly tick = toSignal(this.someService.tick$, { initialValue: 0 });
+    }`;
 }
