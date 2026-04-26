@@ -1,4 +1,4 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, input, model, viewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, input, model, signal, viewChild } from '@angular/core';
 import { Signature } from '../interfaces/signature';
 
 @Component({
@@ -22,7 +22,7 @@ export class BsSignaturePadComponent implements AfterViewInit {
   height = input(300);
 
   readonly minHeight = 5;
-  isDrawing = false;
+  readonly isDrawing = signal<boolean>(false);
   readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
   context: CanvasRenderingContext2D | null = null;
 
@@ -33,7 +33,7 @@ export class BsSignaturePadComponent implements AfterViewInit {
   }
 
   onTouchMove(ev: TouchEvent) {
-    if (this.isDrawing) {
+    if (this.isDrawing()) {
       ev.preventDefault();
       ev.stopPropagation();
     }
@@ -41,7 +41,7 @@ export class BsSignaturePadComponent implements AfterViewInit {
 
   onPointerStart(ev: PointerEvent) {
     ev.preventDefault();
-    this.isDrawing = true;
+    this.isDrawing.set(true);
     if (this.context) {
       const sig = this.signature();
       sig.strokes.push({
@@ -56,7 +56,7 @@ export class BsSignaturePadComponent implements AfterViewInit {
   }
 
   onPointerMove(ev: PointerEvent) {
-    if (this.isDrawing && this.context) {
+    if (this.isDrawing() && this.context) {
       ev.preventDefault();
 
       const sig = this.signature();
@@ -69,9 +69,9 @@ export class BsSignaturePadComponent implements AfterViewInit {
   }
 
   onPointerEnd(ev: PointerEvent) {
-    if (this.isDrawing && this.context) {
+    if (this.isDrawing()) {
       ev.preventDefault();
-      this.isDrawing = false;
+      this.isDrawing.set(false);
     }
   }
 }
