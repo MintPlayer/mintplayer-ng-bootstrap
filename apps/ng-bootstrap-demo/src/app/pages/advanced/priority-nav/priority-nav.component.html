@@ -8,7 +8,7 @@
 
 <h2>Resize me</h2>
 <p>Drag the handle on the right to shrink the container and watch items move into the More menu.</p>
-<bs-resizable>
+<bs-resizable [vertical]="false" [corners]="false">
     <div class="p-2 demo-box">
         <bs-priority-nav>
             @for (link of links; track link.label) {
