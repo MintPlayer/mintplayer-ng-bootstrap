@@ -16,6 +16,7 @@ import { BsPriorityNavItemDirective } from '../priority-nav-item/priority-nav-it
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '(document:click)': 'onDocumentClick($event)',
+    '(document:keydown.escape)': 'onEscape()',
     '(window:resize)': 'onWindowResize()',
   },
 })
@@ -43,8 +44,9 @@ export class BsPriorityNavComponent {
 
   // Per-item width measurements (from the off-screen measure strip)
   private measureSizers = viewChildren<BsObserveSizeDirective>('measureItem');
-  // Visible strip width
+  // Visible strip width and its element (for reading computed `column-gap`)
   stripSizer = viewChild<BsObserveSizeDirective>('stripSize');
+  private stripElement = viewChild('stripSize', { read: ElementRef });
   // More button width
   moreSizer = viewChild<BsObserveSizeDirective>('moreSize');
 
@@ -110,6 +112,21 @@ export class BsPriorityNavComponent {
     return map;
   });
 
+  // The strip's `column-gap` (or `gap`) value in pixels. Read from computed
+  // style so consumers' `gap` declarations get factored into the overflow math
+  // — without this, items overflow late or layout-shift when a gap is set.
+  // Re-read whenever the strip width changes (covers media-query gap changes
+  // that piggy-back on the same breakpoint).
+  itemGap = computed(() => {
+    if (this.isServerSide) return 0;
+    this.stripSizer()?.width();
+    const el = this.stripElement()?.nativeElement as HTMLElement | undefined;
+    if (!el) return 0;
+    const cs = getComputedStyle(el);
+    const raw = parseFloat(cs.columnGap || cs.gap || '0');
+    return Number.isFinite(raw) ? raw : 0;
+  });
+
   overflowingIds = computed<Set<number>>(() => {
     if (this.isServerSide) return new Set();
     if (this.forceCollapse()) {
@@ -119,21 +136,27 @@ export class BsPriorityNavComponent {
     const stripWidth = this.stripSizer()?.width() ?? 0;
     const moreWidth = this.moreSizer()?.width() ?? 0;
     const widths = this.itemWidths();
+    const gap = this.itemGap();
 
     if (stripWidth === 0 || widths.size === 0) return new Set();
 
-    const totalNeeded = Array.from(widths.values()).reduce((a, b) => a + b, 0);
-    if (totalNeeded <= stripWidth) return new Set();
+    // Layout when all items fit (no More toggle): N items separated by N-1 gaps
+    const sumWidths = Array.from(widths.values()).reduce((a, b) => a + b, 0);
+    const allVisibleWidth = sumWidths + gap * Math.max(0, widths.size - 1);
+    if (allVisibleWidth <= stripWidth) return new Set();
 
-    // Reserve space for the More toggle, then walk overflow order kicking items out.
+    // Need overflow → More toggle is shown. Layout when K items are kicked:
+    //   (N - K) items + 1 More toggle = (N - K + 1) elements with (N - K) gaps
     const overflowing = new Set<number>();
-    let used = totalNeeded;
-    const budget = stripWidth - moreWidth;
+    let visibleSum = sumWidths;
+    let visibleCount = widths.size;
 
     for (const item of this.overflowOrder()) {
-      if (used <= budget) break;
+      const totalWithMore = visibleSum + moreWidth + gap * visibleCount;
+      if (totalWithMore <= stripWidth) break;
+      visibleSum -= widths.get(item.id) ?? 0;
+      visibleCount -= 1;
       overflowing.add(item.id);
-      used -= widths.get(item.id) ?? 0;
     }
     return overflowing;
   });
@@ -172,7 +195,7 @@ export class BsPriorityNavComponent {
   });
 
   constructor() {
-    if (typeof window !== 'undefined') {
+    if (!this.isServerSide) {
       this.windowWidth.set(window.innerWidth);
     }
 
@@ -184,7 +207,7 @@ export class BsPriorityNavComponent {
   }
 
   onWindowResize() {
-    if (typeof window !== 'undefined') {
+    if (!this.isServerSide) {
       this.windowWidth.set(window.innerWidth);
     }
   }
@@ -193,8 +216,12 @@ export class BsPriorityNavComponent {
     this.isMoreOpen.update(v => !v);
   }
 
+  onEscape() {
+    if (this.isMoreOpen()) this.isMoreOpen.set(false);
+  }
+
   onDocumentClick(event: MouseEvent) {
-    if (!this.isMoreOpen()) return;
+    if (event.button !== 0 || !this.isMoreOpen()) return;
     if (!this.element.nativeElement.contains(event.target as Node)) {
       this.isMoreOpen.set(false);
     }

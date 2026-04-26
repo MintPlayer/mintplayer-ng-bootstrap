@@ -26,7 +26,9 @@
 
         @if (isServerSide) {
             <label [for]="uid + '-more'" class="priority-nav-more-toggle priority-nav-more-toggle-noscript"
-                   role="button" tabindex="0">
+                   role="button" tabindex="0"
+                   aria-haspopup="true"
+                   [attr.aria-controls]="uid + '-overflow'">
                 <ng-container *ngTemplateOutlet="moreLabelTemplate() ?? defaultMoreLabel; context: { $implicit: false }"></ng-container>
             </label>
         } @else {
@@ -34,17 +36,22 @@
                     class="priority-nav-more-toggle"
                     [class.priority-nav-hidden]="!showMoreButton()"
                     (click)="toggleMore()"
+                    aria-haspopup="true"
+                    [attr.aria-controls]="uid + '-overflow'"
                     [attr.aria-expanded]="isMoreOpen()">
                 <ng-container *ngTemplateOutlet="moreLabelTemplate() ?? defaultMoreLabel; context: { $implicit: isMoreOpen() }"></ng-container>
             </button>
         }
     </div>
 
-    <div class="priority-nav-overflow"
+    <div [id]="uid + '-overflow'"
+         class="priority-nav-overflow"
+         role="menu"
          [class.priority-nav-overflow-open]="!isServerSide && isMoreOpen()"
          [class.priority-nav-overflow-align-start]="!isServerSide && fullyCollapsed()">
         @for (entry of itemsWithMeta(); track entry.item.id) {
             <span class="priority-nav-overflow-item"
+                  role="menuitem"
                   [class.priority-nav-overflow-hidden]="entry.hideInOverflow"
                   [ngClass]="entry.hideBelowClass">
                 <ng-container *ngTemplateOutlet="entry.item.templateRef"></ng-container>
