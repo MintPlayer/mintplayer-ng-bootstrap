@@ -21,7 +21,7 @@ export class BsSignaturePadComponent implements AfterViewInit {
   width = input(500);
   height = input(300);
 
-  minHeight = 5;
+  readonly minHeight = 5;
   isDrawing = false;
   readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
   context: CanvasRenderingContext2D | null = null;

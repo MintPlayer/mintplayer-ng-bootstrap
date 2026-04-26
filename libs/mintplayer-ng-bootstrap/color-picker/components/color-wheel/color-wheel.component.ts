@@ -31,7 +31,7 @@ export class BsColorWheelComponent {
   // Internal state
   disabled = input<boolean>(false);
   viewInited = signal<boolean>(false);
-  private isPointerDown = false;
+  private readonly isPointerDown = signal<boolean>(false);
   private canvasContext: CanvasRenderingContext2D | null = null;
 
   // Computed values
@@ -147,13 +147,13 @@ export class BsColorWheelComponent {
     if (!this.disabled()) {
       ev.preventDefault();
       ev.stopPropagation();
-      this.isPointerDown = true;
+      this.isPointerDown.set(true);
       this.updateColor(ev, !('touches' in ev));
     }
   }
 
   onPointerMove(ev: MouseEvent | TouchEvent) {
-    if (this.isPointerDown) {
+    if (this.isPointerDown()) {
       ev.preventDefault();
       ev.stopPropagation();
       this.updateColor(ev, !('touches' in ev));
@@ -165,7 +165,7 @@ export class BsColorWheelComponent {
   }
 
   onPointerUp(ev: MouseEvent | TouchEvent) {
-    this.isPointerDown = false;
+    this.isPointerDown.set(false);
   }
 
   private updateColor(ev: MouseEvent | TouchEvent, subtract: boolean) {

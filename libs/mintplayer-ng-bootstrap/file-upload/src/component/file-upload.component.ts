@@ -26,7 +26,7 @@ export class BsFileUploadComponent {
   readonly browseFilesCaption = input('Browse for files');
   readonly placeholder = input('Drop files to upload');
 
-  colors = Color;
+  readonly colors = Color;
   isDraggingFile = signal(false);
   fileTemplate?: TemplateRef<FileUpload>;
   readonly files = model<FileUpload[]>([]);

@@ -8,7 +8,7 @@ import { Color } from '@mintplayer/ng-bootstrap';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsSpinnerComponent {
-  colors = Color;
+  readonly colors = Color;
 
   type = input<'border' | 'grow'>('border');
   color = input<Color>(Color.dark);
