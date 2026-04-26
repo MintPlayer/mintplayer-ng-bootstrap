@@ -94,13 +94,10 @@ export class BsNavbarDropdownComponent implements OnDestroy {
         });
 
         // Apply pending showInOverlay state if it was set before overlay was ready
-        // Use setTimeout to avoid ExpressionChangedAfterItHasBeenCheckedError
         if (this.pendingShowInOverlay !== null) {
           const pending = this.pendingShowInOverlay;
           this.pendingShowInOverlay = null;
-          setTimeout(() => {
-            this.showInOverlay = pending;
-          });
+          this.showInOverlay = pending;
         }
       });
     }

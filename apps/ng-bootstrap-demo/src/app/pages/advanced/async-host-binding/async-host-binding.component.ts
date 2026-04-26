@@ -1,4 +1,6 @@
-import { Component, DestroyRef, inject, input, signal, ChangeDetectionStrategy} from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, input, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { interval, map } from 'rxjs';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
 
@@ -18,7 +20,6 @@ export class HelloComponent {
   readonly name = input.required<string>();
 
   padding = signal(0);
-
   isBold = signal(false);
 
   private destroyRef = inject(DestroyRef);
@@ -26,7 +27,6 @@ export class HelloComponent {
   constructor() {
     let counter = 0;
     const id = setInterval(() => {
-      console.log(counter);
       this.padding.set(counter);
       this.isBold.set(counter % 2 === 1);
       counter++;
@@ -36,12 +36,30 @@ export class HelloComponent {
 }
 
 @Component({
+  selector: 'demo-rxjs-host',
+  template: `Driven by an RxJS Observable (tick {{ tick() }})`,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[class.d-inline-block]': 'true',
+    '[class.border]': 'true',
+    '[style.padding.px]': 'tick()',
+    '[class.text-bg-primary]': '(tick() % 2) === 0',
+  },
+})
+export class RxjsHostComponent {
+  // Wrap any Observable with toSignal() so it can drive a host binding
+  // (or template binding) in zoneless mode.
+  readonly tick = toSignal(interval(750).pipe(map(i => i % 16)), { initialValue: 0 });
+}
+
+@Component({
   selector: 'demo-async-host-binding',
   templateUrl: './async-host-binding.component.html',
   styleUrls: ['./async-host-binding.component.scss'],
   imports: [
     BsAlertComponent,
-    HelloComponent
+    HelloComponent,
+    RxjsHostComponent
   ]
 })
 export class AsyncHostBindingComponent {

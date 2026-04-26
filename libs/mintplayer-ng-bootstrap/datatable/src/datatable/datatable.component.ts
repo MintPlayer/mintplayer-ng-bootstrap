@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, model, TemplateRef } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, model, signal, TemplateRef } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { PaginationResponse } from '@mintplayer/pagination';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
@@ -22,7 +22,7 @@ export class BsDatatableComponent<TData> extends DatatableSortBase {
 
   data = model<PaginationResponse<TData> | undefined>(undefined);
 
-  rowTemplate?: TemplateRef<BsRowTemplateContext<TData>>;
+  readonly rowTemplate = signal<TemplateRef<BsRowTemplateContext<TData>> | undefined>(undefined);
 
   onPerPageChange(perPage: number) {
     const currentSettings = this.settings();

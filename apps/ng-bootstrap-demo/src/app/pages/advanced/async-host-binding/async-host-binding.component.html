@@ -1,5 +1,46 @@
-<h1 class="text-center">Async &#64;HostBinding</h1>
-<h2>Demo</h2>
+<h1 class="text-center">Host Bindings with Signals</h1>
+
+<bs-alert [type]="colors.info">
+  This page used to demonstrate <code>provideAsyncHostBindings()</code>, a custom event manager plugin that let you bind
+  host properties to RxJS observables (e.g. <code>($.style.padding.px)="padding$"</code>). That plugin relied on
+  zone.js's <code>NgZone.onStable</code>, which no longer reflects app stability under
+  <code>provideZonelessChangeDetection()</code>. Modern Angular gives you a built-in solution: bind host properties
+  directly to signals.
+</bs-alert>
+
+<h2>Demo &mdash; signal-driven host bindings</h2>
 <demo-hello [name]="'ng-bootstrap'"></demo-hello>
-<h2>Notes</h2>
-<bs-alert [type]="colors.danger">You must call <code>provideAsyncHostBindings()</code> in <code>app.config.ts</code></bs-alert>
+
+<h2>Demo &mdash; observable-driven host bindings via <code>toSignal()</code></h2>
+<demo-rxjs-host></demo-rxjs-host>
+
+<h2>How to do it</h2>
+<p>Declare a signal (or wrap an Observable with <code>toSignal()</code>) and call it from the <code>host</code> metadata:</p>
+
+<pre><code>{{ '@Component({\n'
++ '  selector: "my-thing",\n'
++ '  template: `...`,\n'
++ '  host: {\n'
++ '    "[style.padding.px]": "padding()",\n'
++ '    "[class.fw-bold]":   "isBold()",\n'
++ '  },\n'
++ '})\n'
++ 'export class MyThing {\n'
++ '  padding = signal(0);\n'
++ '  isBold  = signal(false);\n'
++ '}\n' }}</code></pre>
+
+<p>For a value that arrives from an Observable, use <code>toSignal()</code> from <code>&#64;angular/core/rxjs-interop</code>:</p>
+
+<pre><code>{{ 'import { toSignal } from "@angular/core/rxjs-interop";\n\n'
++ '@Component({\n'
++ '  host: { "[style.padding.px]": "tick()" },\n'
++ '})\n'
++ 'export class MyThing {\n'
++ '  readonly tick = toSignal(this.someService.tick$, { initialValue: 0 });\n'
++ '}\n' }}</code></pre>
+
+<bs-alert [type]="colors.success">
+  No special provider is needed. Signals integrate natively with Angular's change detector, in both zone-based and
+  zoneless apps.
+</bs-alert>

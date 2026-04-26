@@ -11,7 +11,7 @@ export class BsRowTemplateDirective<TData> {
   private templateRef = inject<TemplateRef<BsRowTemplateContext<TData>>>(TemplateRef);
 
   constructor() {
-    this.datatableComponent.rowTemplate = this.templateRef;
+    this.datatableComponent.rowTemplate.set(this.templateRef);
 
     effect(() => {
       const value = this.bsRowTemplateOf();

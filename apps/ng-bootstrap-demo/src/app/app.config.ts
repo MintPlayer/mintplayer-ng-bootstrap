@@ -3,7 +3,6 @@ import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZonelessC
 import { provideAnimations } from "@angular/platform-browser/animations";
 import { PreloadAllModules, provideRouter, withEnabledBlockingInitialNavigation, withPreloading, withInMemoryScrolling } from "@angular/router";
 import { provideHighlightOptions } from 'ngx-highlightjs';
-import { provideAsyncHostBindings } from "@mintplayer/ng-bootstrap/async-host-binding";
 import ngBootstrapJson from '@mintplayer/ng-bootstrap/package.json';
 import { GIT_REPO } from "./providers/git-repo.provider";
 import { BOOTSTRAP_VERSION } from "./providers/bootstrap-version.provider";
@@ -25,7 +24,6 @@ export const config: ApplicationConfig = {
                 anchorScrolling: 'enabled',
             })
         ),
-        provideAsyncHostBindings(),
         provideHighlightOptions({
             fullLibraryLoader: () => import('highlight.js'),
             themePath: 'solarized-dark.css'

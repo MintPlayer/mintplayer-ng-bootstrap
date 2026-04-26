@@ -1,4 +1,4 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, inject, input, NgZone, OnDestroy, TemplateRef } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, inject, input, OnDestroy, signal, TemplateRef } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { BsTableComponent, BsTableStylesComponent } from '@mintplayer/ng-bootstrap/table';
@@ -16,14 +16,13 @@ import { BsVirtualRowTemplateContext } from '../virtual-row-template/virtual-row
 export class BsVirtualDatatableComponent<TData> extends DatatableSortBase implements AfterViewInit, OnDestroy {
 
   private readonly elementRef = inject(ElementRef);
-  private readonly ngZone = inject(NgZone);
   private cleanup: (() => void)[] = [];
 
   dataSource = input.required<VirtualDatatableDataSource<TData>>();
   isResponsive = input(false);
   itemSize = input(48);
 
-  rowTemplate?: TemplateRef<BsVirtualRowTemplateContext<TData>>;
+  readonly rowTemplate = signal<TemplateRef<BsVirtualRowTemplateContext<TData>> | undefined>(undefined);
 
   ngAfterViewInit() {
     this.setupScrollSync();
@@ -57,10 +56,8 @@ export class BsVirtualDatatableComponent<TData> extends DatatableSortBase implem
       syncing = false;
     };
 
-    this.ngZone.runOutsideAngular(() => {
-      headerScrollContainer.addEventListener('scroll', onHeaderScroll, { passive: true });
-      viewport.addEventListener('scroll', onViewportScroll, { passive: true });
-    });
+    headerScrollContainer.addEventListener('scroll', onHeaderScroll, { passive: true });
+    viewport.addEventListener('scroll', onViewportScroll, { passive: true });
 
     this.cleanup.push(() => {
       headerScrollContainer.removeEventListener('scroll', onHeaderScroll);
@@ -160,18 +157,14 @@ export class BsVirtualDatatableComponent<TData> extends DatatableSortBase implem
     };
 
     // Sync after first render
-    this.ngZone.runOutsideAngular(() => {
-      requestAnimationFrame(() => syncWidths());
-    });
+    requestAnimationFrame(() => syncWidths());
 
     // Re-sync when body rows change (virtual scroll swaps rows)
     const observer = new MutationObserver(() => {
       requestAnimationFrame(() => syncWidths());
     });
 
-    this.ngZone.runOutsideAngular(() => {
-      observer.observe(bodyTableBody, { childList: true, subtree: true });
-    });
+    observer.observe(bodyTableBody, { childList: true, subtree: true });
 
     this.cleanup.push(() => observer.disconnect());
   }

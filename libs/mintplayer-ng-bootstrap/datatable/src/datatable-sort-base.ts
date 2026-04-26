@@ -29,16 +29,17 @@ export abstract class DatatableSortBase {
   }
 
   columnHeaderClicked(column: BsDatatableColumnDirective, event: MouseEvent) {
-    if (!column.sortable) return;
+    if (!column.sortable()) return;
 
+    const columnName = column.name();
     const currentSettings = this.settings();
     let sortColumns = currentSettings.sortColumns;
 
     if (event.shiftKey) {
       // Multi-column: add/toggle/remove
-      const existingIndex = sortColumns.findIndex(c => c.property === column.name);
+      const existingIndex = sortColumns.findIndex(c => c.property === columnName);
       if (existingIndex === -1) {
-        sortColumns = [...sortColumns, { property: column.name, direction: 'ascending' as const }];
+        sortColumns = [...sortColumns, { property: columnName, direction: 'ascending' as const }];
       } else if (sortColumns[existingIndex].direction === 'ascending') {
         sortColumns = sortColumns.map((c, i) =>
           i === existingIndex ? { ...c, direction: 'descending' as const } : c
@@ -48,9 +49,9 @@ export abstract class DatatableSortBase {
       }
     } else {
       // Single-column: replace all
-      const existingSingle = sortColumns.length === 1 && sortColumns[0].property === column.name;
+      const existingSingle = sortColumns.length === 1 && sortColumns[0].property === columnName;
       sortColumns = [{
-        property: column.name,
+        property: columnName,
         direction: existingSingle && sortColumns[0].direction === 'ascending' ? 'descending' as const : 'ascending' as const
       }];
     }

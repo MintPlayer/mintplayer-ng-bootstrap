@@ -28,12 +28,14 @@ export class BsTimepickerComponent {
     today.setHours(0); today.setMinutes(0); today.setSeconds(0);
 
     const interval = 900;
-    this.presetTimestamps = Array.from(Array(24 * 60 * 60 / interval).keys())
-      .map(i => {
-        const clone = new Date(today);
-        clone.setTime(clone.getTime() + i * interval * 1000);
-        return clone;
-      });
+    this.presetTimestamps.set(
+      Array.from(Array(24 * 60 * 60 / interval).keys())
+        .map(i => {
+          const clone = new Date(today);
+          clone.setTime(clone.getTime() + i * interval * 1000);
+          return clone;
+        })
+    );
 
 
     import('bootstrap-icons/icons/clock.svg').then((icon) => {
@@ -44,7 +46,7 @@ export class BsTimepickerComponent {
   clock = signal<SafeHtml | undefined>(undefined);
   colors = Color;
   isOpen = model(false);
-  presetTimestamps: Date[] = [];
+  readonly presetTimestamps = signal<Date[]>([]);
   isFocused = signal(false);
 
   selectAll(box: HTMLInputElement) {

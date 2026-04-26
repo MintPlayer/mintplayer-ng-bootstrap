@@ -32,7 +32,7 @@ describe('BsRowTemplateDirective', () => {
   });
 
   it('should contain a rowTemplate', () => {
-    expect(component.table.rowTemplate).toBeDefined();
+    expect(component.table.rowTemplate()).toBeDefined();
   });
 });
 
@@ -51,7 +51,7 @@ interface Artist {
 })
 class MockBsDatatableComponent<TData> {
   data = signal<any>(undefined);
-  rowTemplate?: TemplateRef<any>;
+  rowTemplate = signal<TemplateRef<any> | undefined>(undefined);
 }
 
 @Component({

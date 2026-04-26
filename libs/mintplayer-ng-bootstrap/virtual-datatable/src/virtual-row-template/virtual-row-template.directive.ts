@@ -10,7 +10,7 @@ export class BsVirtualRowTemplateDirective<TData> {
   private templateRef = inject<TemplateRef<BsVirtualRowTemplateContext<TData>>>(TemplateRef);
 
   constructor() {
-    this.datatableComponent.rowTemplate = this.templateRef;
+    this.datatableComponent.rowTemplate.set(this.templateRef);
   }
 
   public static ngTemplateContextGuard<TData>(
