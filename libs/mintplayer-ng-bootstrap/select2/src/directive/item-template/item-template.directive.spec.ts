@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, DebugElement, TemplateRef } from '@angular/core';
+import { Component, DebugElement, signal, TemplateRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BsItemTemplateDirective } from './item-template.directive';
@@ -20,7 +20,7 @@ class BsItemTemplateTestComponent { }
   selector: 'select2',
 })
 class MockBsSelect2Component {
-  itemTemplate?: TemplateRef<any>;
+  readonly itemTemplate = signal<TemplateRef<any> | undefined>(undefined);
 }
 
 describe('BsItemTemplateDirective', () => {
