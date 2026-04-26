@@ -10,6 +10,7 @@ export const ROUTES: Routes = [
   { path: 'autofocus', loadComponent: () => import('./autofocus/autofocus.component').then(m => m.AutofocusComponent) },
   { path: 'scrollspy', loadComponent: () => import('./scrollspy/scrollspy.component').then(m => m.ScrollspyComponent) },
   { path: 'parallax', loadComponent: () => import('./parallax/parallax.component').then(m => m.ParallaxComponent) },
+  { path: 'priority-nav', loadComponent: () => import('./priority-nav/priority-nav.component').then(m => m.PriorityNavComponent) },
   { path: 'code-snippet', loadComponent: () => import('./code-snippet/code-snippet.component').then(m => m.CodeSnippetComponent) },
   { path: 'scheduler', loadComponent: () => import('./scheduler/scheduler.component').then(m => m.SchedulerComponent) },
   { path: 'user-agent', loadComponent: () => import('./user-agent/user-agent.component').then(m => m.UserAgentComponent) },

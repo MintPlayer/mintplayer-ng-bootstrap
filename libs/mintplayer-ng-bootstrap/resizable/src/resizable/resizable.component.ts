@@ -33,6 +33,11 @@ export class BsResizableComponent {
 
   resizeAction?: ResizeAction;
   positioning = input<ResizablePositioning>('inline');
+  horizontal = input(true);
+  vertical = input(true);
+  corners = input(true);
+
+  showCorners = computed(() => this.horizontal() && this.vertical() && this.corners());
 
   hostPosition = computed(() => {
     const positioning = this.positioning();

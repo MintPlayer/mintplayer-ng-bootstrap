@@ -136,59 +136,73 @@ export class BsResizeGlyphDirective {
     if (this.resizable.resizeAction && !this.isBusy) {
       ev.preventDefault();
       this.isBusy = true;
-      const rct = this.resizable.element.nativeElement.getBoundingClientRect();
-      if (this.resizable.resizeAction.start && this.positions()?.includes('end')) {
-        // Right glyph
-        const x = (ev.clientX < rct.left + 10) ? rct.left + 10 : ev.clientX;
+      const action = this.resizable.resizeAction;
+      // Note: the live bounding rect must NOT be used in the size/margin math.
+      // Reading it per-frame creates a feedback loop when content inside the
+      // host changes layout during the drag (e.g. a child component that
+      // shows/hides items in response to width). Use the captured `action`
+      // values from pointer-down — they're stable for the duration of the drag.
+
+      if (action.start && this.positions()?.includes('end')) {
+        // Right glyph — fixed left edge
+        const initialLeft = action.start.edge;
+        const initialRight = action.start.edge + action.start.size;
+        const x = (ev.clientX < initialLeft + 10) ? initialLeft + 10 : ev.clientX;
         switch (this.resizable.positioning()) {
           case 'inline': {
-            const initalMargin = this.resizable.marginRight() ?? 0;
-            this.resizable.marginRight.set(initalMargin - (x - rct.right));
+            const initialMargin = action.start.dragMargin ?? 0;
+            this.resizable.marginRight.set(initialMargin + (initialRight - x));
           } break;
           case 'absolute': {
-            this.resizable.width.set(x - rct.left);
+            this.resizable.width.set(x - initialLeft);
           } break;
         }
-      } else if (this.resizable.resizeAction.end && this.positions()?.includes('start')) {
-        // Left glyph
-        const x = (ev.clientX > rct.right - 10) ? rct.right - 10 : ev.clientX;
+      } else if (action.end && this.positions()?.includes('start')) {
+        // Left glyph — fixed right edge
+        const initialRight = action.end.edge;
+        const initialLeft = action.end.edge - action.end.size;
+        const x = (ev.clientX > initialRight - 10) ? initialRight - 10 : ev.clientX;
         switch (this.resizable.positioning()) {
           case 'inline': {
-            const initalMargin = this.resizable.marginLeft() ?? 0;
-            this.resizable.marginLeft.set(initalMargin + x - rct.left);
+            const initialMargin = action.end.dragMargin ?? 0;
+            this.resizable.marginLeft.set(initialMargin + (x - initialLeft));
           } break;
           case 'absolute': {
             this.resizable.left.set(x);
-            this.resizable.width.set(this.resizable.resizeAction.end.edge - x);
+            this.resizable.width.set(initialRight - x);
           } break;
         }
       }
 
-      if (this.resizable.resizeAction.top && this.positions()?.includes('bottom')) {
-        // Bottom glyph
-        const y = (ev.clientY < rct.top + 10) ? rct.top + 10 : ev.clientY;
+      if (action.top && this.positions()?.includes('bottom')) {
+        // Bottom glyph — fixed top edge. action.top.edge = captured rect.top
+        const initialTop = action.top.edge;
+        const initialBottom = action.top.edge + action.top.size;
+        const y = (ev.clientY < initialTop + 10) ? initialTop + 10 : ev.clientY;
         switch (this.resizable.positioning()) {
           case 'inline': {
-            const initalMargin = this.resizable.marginBottom() ?? 0;
-            this.resizable.height.set(y - rct.top);
-            this.resizable.marginBottom.set(initalMargin - (y - rct.bottom));
+            const initialMargin = action.top.dragMargin ?? 0;
+            this.resizable.height.set(y - initialTop);
+            this.resizable.marginBottom.set(initialMargin + (initialBottom - y));
           } break;
           case 'absolute': {
-            this.resizable.height.set(y - rct.top);
+            this.resizable.height.set(y - initialTop);
           } break;
         }
-      } else if (this.resizable.resizeAction.bottom && this.positions()?.includes('top')) {
-        // Top glyph
-        const y = (ev.clientY > rct.bottom - 10) ? rct.bottom - 10 : ev.clientY;
+      } else if (action.bottom && this.positions()?.includes('top')) {
+        // Top glyph — fixed bottom edge. action.bottom.edge = captured rect.bottom
+        const initialBottom = action.bottom.edge;
+        const initialTop = action.bottom.edge - action.bottom.size;
+        const y = (ev.clientY > initialBottom - 10) ? initialBottom - 10 : ev.clientY;
         switch (this.resizable.positioning()) {
           case 'inline': {
-            const initalMargin = this.resizable.marginTop() ?? 0;
-            this.resizable.height.set(rct.bottom - y);
-            this.resizable.marginTop.set(initalMargin + y - rct.top);
+            const initialMargin = action.bottom.dragMargin ?? 0;
+            this.resizable.height.set(initialBottom - y);
+            this.resizable.marginTop.set(initialMargin + (y - initialTop));
           } break;
           case 'absolute': {
             this.resizable.top.set(y);
-            this.resizable.height.set(this.resizable.resizeAction.bottom.edge - y);
+            this.resizable.height.set(initialBottom - y);
           } break;
         }
       }
