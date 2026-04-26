@@ -56,9 +56,9 @@ export class BsSearchboxComponent<T extends HasId<U>, U> implements OnDestroy {
 
   suggestions = model<T[]>([]);
 
-  suggestionTemplate?: TemplateRef<BsSuggestionTemplateContext<T, U>>;
-  enterSearchtermTemplate?: TemplateRef<T>;
-  noResultsTemplate?: TemplateRef<T>;
+  readonly suggestionTemplate = signal<TemplateRef<BsSuggestionTemplateContext<T, U>> | undefined>(undefined);
+  readonly enterSearchtermTemplate = signal<TemplateRef<T> | undefined>(undefined);
+  readonly noResultsTemplate = signal<TemplateRef<T> | undefined>(undefined);
   provideSuggestions = output<string>();
 
   private debouncedSearchterm = signal('');

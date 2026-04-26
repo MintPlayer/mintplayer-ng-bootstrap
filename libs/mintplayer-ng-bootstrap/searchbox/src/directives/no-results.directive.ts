@@ -9,6 +9,6 @@ export class BsNoResultsTemplateDirective<T extends HasId<U>, U> {
   constructor() {
     const searchbox = inject<BsSearchboxComponent<T, U>>(BsSearchboxComponent);
     const template = inject<TemplateRef<T>>(TemplateRef);
-    searchbox.noResultsTemplate = template;
+    searchbox.noResultsTemplate.set(template);
   }
 }

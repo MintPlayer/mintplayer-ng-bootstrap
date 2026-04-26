@@ -5,6 +5,18 @@ package version aligns its major with the supported Angular major.
 
 ## [Unreleased]
 
+## [21.18.0] — 2026-04-27
+
+### Breaking
+
+- `BsSearchboxComponent.suggestionTemplate`, `.enterSearchtermTemplate`, and
+  `.noResultsTemplate` are now `WritableSignal<TemplateRef<…> | undefined>`.
+  Code that wrote `component.suggestionTemplate = ref` (or either of the
+  others) must call `.set(ref)`. The `BsSuggestionTemplateDirective`,
+  `BsEnterSearchTermTemplateDirective`, and `BsNoResultsTemplateDirective`
+  do this transparently — only direct assignments to the fields are
+  affected.
+
 ## [21.17.0] — 2026-04-27
 
 ### Breaking
