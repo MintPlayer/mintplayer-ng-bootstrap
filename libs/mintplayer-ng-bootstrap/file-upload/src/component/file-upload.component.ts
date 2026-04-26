@@ -28,7 +28,7 @@ export class BsFileUploadComponent {
 
   readonly colors = Color;
   isDraggingFile = signal(false);
-  fileTemplate?: TemplateRef<FileUpload>;
+  readonly fileTemplate = signal<TemplateRef<FileUpload> | undefined>(undefined);
   readonly files = model<FileUpload[]>([]);
   readonly filesDropped = output<FileUpload[]>();
 

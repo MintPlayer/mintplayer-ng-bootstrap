@@ -7,7 +7,7 @@
 <bs-list-group class="files-list">
     @for (upload of files(); track upload.index) {
         <bs-list-group-item>
-            <ng-container *ngTemplateOutlet="fileTemplate ?? defaultFileTemplate; context: { $implicit: upload }"></ng-container>
+            <ng-container *ngTemplateOutlet="fileTemplate() ?? defaultFileTemplate; context: { $implicit: upload }"></ng-container>
         </bs-list-group-item>
     }
 </bs-list-group>

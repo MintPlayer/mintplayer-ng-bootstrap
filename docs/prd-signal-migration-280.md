@@ -150,10 +150,10 @@ For nullish-coalesce patterns (`foo ?? defaultFoo`):
 *ngTemplateOutlet="foo ?? defaultFoo; context: …"
 
 <!-- after -->
-*ngTemplateOutlet="foo()! ?? defaultFoo; context: …"
+*ngTemplateOutlet="foo() ?? defaultFoo; context: …"
 ```
 
-The `!` is needed because `signal<X | undefined>` typing keeps `undefined` in the union; the `??` short-circuits at runtime, but the type system doesn't know that without help.
+**No `!` here.** The `??` operator already widens the type from `TemplateRef<TContext> | undefined` to `TemplateRef<TContext> | TemplateRef<TDefaultContext>`. Adding `!` over-tightens the left side to `TemplateRef<TContext>` only and breaks Angular's strict template type-checker for any `context:` argument that isn't shape-compatible with `TContext` (verified empirically — broke the file-upload build with `TS2353: '$implicit' does not exist on type 'FileUpload'`). Use `!` only when the surrounding `@if`/guard already proved non-null and the TS narrowing didn't carry across the signal call.
 
 ### Pattern D — Post-increment (only `imageCounter`)
 

@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, TemplateRef, ViewChild } from '@angular/core';
+import { Component, Input, signal, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MockComponent } from 'ng-mocks';
+import { MockComponent, MockInstance } from 'ng-mocks';
 import { BsFileUploadComponent } from '../component/file-upload.component';
 import { BsFileUploadTemplateDirective } from './file-upload-template.directive';
 
@@ -32,7 +32,13 @@ interface MockFileUpload {
 
 describe('BsContextMenuDirective', () => {
   let fixture: ComponentFixture<FileUploadTestComponent>;
-  
+
+  MockInstance.scope();
+
+  beforeEach(() => {
+    MockInstance(BsFileUploadComponent, 'fileTemplate', signal<TemplateRef<any> | undefined>(undefined));
+  });
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
@@ -61,6 +67,6 @@ describe('BsContextMenuDirective', () => {
   });
 
   it('should contain a template', () => {
-    expect(fixture.componentInstance.fileUpload.fileTemplate).toBeDefined();
+    expect(fixture.componentInstance.fileUpload.fileTemplate()).toBeDefined();
   });
 });

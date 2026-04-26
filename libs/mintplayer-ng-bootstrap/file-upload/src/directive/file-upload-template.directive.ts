@@ -10,7 +10,7 @@ export class BsFileUploadTemplateDirective {
 
   constructor() {
     const templateRef = inject(TemplateRef);
-    this.fileUploadComponent.fileTemplate = templateRef;
+    this.fileUploadComponent.fileTemplate.set(templateRef);
 
     // TODO: fileUploadComponent.files is now an input() signal and cannot be assigned from the directive.
     // Consider converting files to model() on BsFileUploadComponent to restore this functionality.
