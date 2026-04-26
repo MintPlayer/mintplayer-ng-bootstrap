@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, signal, TemplateRef, ViewChild } from '@angular/core';
+import { Component, signal, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MockComponent, MockInstance } from 'ng-mocks';
 import { BsFileUploadComponent } from '../component/file-upload.component';
@@ -30,7 +30,7 @@ interface MockFileUpload {
   progress: number;
 }
 
-describe('BsContextMenuDirective', () => {
+describe('BsFileUploadTemplateDirective', () => {
   let fixture: ComponentFixture<FileUploadTestComponent>;
 
   MockInstance.scope();
