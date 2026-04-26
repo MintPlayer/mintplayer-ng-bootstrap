@@ -68,7 +68,9 @@ export class RxjsHostComponent {
 export class AsyncHostBindingComponent {
   colors = Color;
 
-  signalHostExample = dedent`
+  readonly signalHostExample = dedent`
+    import { Component, signal } from '@angular/core';
+
     @Component({
       selector: 'my-thing',
       template: \`...\`,
@@ -82,7 +84,8 @@ export class AsyncHostBindingComponent {
       isBold  = signal(false);
     }`;
 
-  toSignalExample = dedent`
+  readonly toSignalExample = dedent`
+    import { Component } from '@angular/core';
     import { toSignal } from '@angular/core/rxjs-interop';
 
     @Component({
