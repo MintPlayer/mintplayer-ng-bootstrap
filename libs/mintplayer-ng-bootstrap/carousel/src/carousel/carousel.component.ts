@@ -19,7 +19,7 @@ import { BsCarouselImageDirective } from '../carousel-image/carousel-image.direc
   animations: [FadeInOutAnimation],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    '[@.disabled]': 'animationsDisabled',
+    '[@.disabled]': 'animationsDisabled()',
     '(document:keydown.ArrowLeft)': 'onKeyPress($event)',
     '(document:keydown.ArrowRight)': 'onKeyPress($event)',
     '(document:keydown.ArrowUp)': 'onKeyPress($event)',
@@ -84,7 +84,7 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
     return img.itemTemplate;
   });
 
-  public animationsDisabled = false;
+  readonly animationsDisabled = signal<boolean>(false);
 
   onKeyPress(event: Event) {
     const ev = event as KeyboardEvent;
@@ -252,7 +252,7 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  imageCounter = 1;
+  readonly imageCounter = signal<number>(1);
 
   ngAfterViewInit() {
     if (!this.isServerSide) {

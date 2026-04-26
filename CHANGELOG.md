@@ -16,6 +16,16 @@ package version aligns its major with the supported Angular major.
   `BsEnterSearchTermTemplateDirective`, and `BsNoResultsTemplateDirective`
   do this transparently — only direct assignments to the fields are
   affected.
+- `BsCarouselComponent.imageCounter` is now a `WritableSignal<number>`.
+  `BsCarouselImageDirective` reads it via `imageCounter()` and updates
+  via `.update(c => c + 1)`, preserving the original post-increment
+  semantics (each image still gets a unique sequential `id`). External
+  code that read or wrote the field directly must adopt the same pattern.
+- `BsCarouselComponent.animationsDisabled` is now a `WritableSignal<boolean>`.
+  Read access changes from `cmp.animationsDisabled` to
+  `cmp.animationsDisabled()`. The host binding `'[@.disabled]'` was
+  updated to `'animationsDisabled()'` accordingly. No external writers
+  exist in the repo.
 
 ## [21.17.0] — 2026-04-27
 
