@@ -5,6 +5,12 @@ package version aligns its major with the supported Angular major.
 
 ## [Unreleased]
 
+### Fixed
+
+- `BsNavbarDropdownComponent` now disposes its `OverlayRef` in `ngOnDestroy`.
+  Previously the overlay (and any attached DOM portal) leaked when the
+  component was destroyed.
+
 ### Internal
 
 - Added `readonly` to fields that are initialized once and never reassigned

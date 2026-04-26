@@ -105,6 +105,7 @@ export class BsNavbarDropdownComponent implements OnDestroy {
 
   ngOnDestroy() {
     this.isDestroyed.set(true);
+    this.overlay?.dispose();
   }
 
   public set showInOverlay(value: boolean) {
