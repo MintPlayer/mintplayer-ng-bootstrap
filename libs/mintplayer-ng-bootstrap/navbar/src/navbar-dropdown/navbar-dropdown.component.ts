@@ -25,8 +25,8 @@ export class BsNavbarDropdownComponent implements OnDestroy {
   private document = inject(DOCUMENT);
   private platformId = inject(PLATFORM_ID);
 
-  private isAttached = false;
-  private isDestroyed = false;
+  private readonly isAttached = signal<boolean>(false);
+  private readonly isDestroyed = signal<boolean>(false);
   private domPortal?: DomPortal;
   private overlay?: OverlayRef;
   private pendingShowInOverlay: boolean | null = null;
@@ -80,7 +80,7 @@ export class BsNavbarDropdownComponent implements OnDestroy {
     if (!!this.parentDropdown && this.isBrowser) {
       import('@angular/cdk/overlay').then(({ Overlay }) => {
         // Guard against accessing injector after component is destroyed
-        if (this.isDestroyed) {
+        if (this.isDestroyed()) {
           return;
         }
         const overlayService = this.injector.get(Overlay);
@@ -104,18 +104,18 @@ export class BsNavbarDropdownComponent implements OnDestroy {
   }
 
   ngOnDestroy() {
-    this.isDestroyed = true;
+    this.isDestroyed.set(true);
   }
 
   public set showInOverlay(value: boolean) {
     if (this.overlay && this.domPortal) {
-      if (value && !this.isAttached) {
+      if (value && !this.isAttached()) {
         this.overlay.attach(this.domPortal);
-        this.isAttached = true;
+        this.isAttached.set(true);
       }
-      if (!value && this.isAttached) {
+      if (!value && this.isAttached()) {
         this.overlay.detach();
-        this.isAttached = false;
+        this.isAttached.set(false);
       }
     } else {
       // Store the value to apply once the overlay is ready

@@ -15,7 +15,7 @@ import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 })
 export class BsDatepickerComponent {
 
-  colors = Color;
+  readonly colors = Color;
 
   selectedDate = model<Date>(new Date());
   currentMonth = model<Date>(new Date());

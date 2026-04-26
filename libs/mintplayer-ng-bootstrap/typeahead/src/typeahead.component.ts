@@ -18,7 +18,7 @@ let typeaheadIdCounter = 0;
 export class BsTypeaheadComponent {
 
   isOpen = model(false);
-  listboxId = `typeahead-listbox-${typeaheadIdCounter++}`;
+  readonly listboxId = `typeahead-listbox-${typeaheadIdCounter++}`;
 
   suggestions = input<any[]>([]);
   isLoading = signal<boolean>(false);

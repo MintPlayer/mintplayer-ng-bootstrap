@@ -43,7 +43,7 @@ export class BsSelect2Component<T extends HasId<U>, U> {
 
   selectedItems = model<T[]>([]);
 
-  private charWidth = 10;
+  private readonly charWidth = 10;
   searchWidth = signal(20);
   itemTemplate?: TemplateRef<T>;
   suggestionTemplate?: TemplateRef<T>;

@@ -30,8 +30,8 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
   private platformId = inject(PLATFORM_ID);
   private destroyRef = inject(DestroyRef);
 
-  colors = Color;
-  isServerSide = isPlatformServer(this.platformId);
+  readonly colors = Color;
+  readonly isServerSide = isPlatformServer(this.platformId);
   currentImageIndex = signal(0);
   readonly images = contentChildren<BsCarouselImageDirective>(forwardRef(() => BsCarouselImageDirective));
   resizeObserver?: ResizeObserver;
