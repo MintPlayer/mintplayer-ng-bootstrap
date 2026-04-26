@@ -5,6 +5,16 @@ package version aligns its major with the supported Angular major.
 
 ## [Unreleased]
 
+## [21.16.0] — 2026-04-27
+
+### Breaking
+
+- `BsFileUploadComponent.fileTemplate` is now a
+  `WritableSignal<TemplateRef<FileUpload> | undefined>`. Code that wrote
+  `component.fileTemplate = ref` must now call
+  `component.fileTemplate.set(ref)`. The `BsFileUploadTemplateDirective` does
+  this transparently — only direct assignments to the field are affected.
+
 ## [21.15.0] — 2026-04-27
 
 ### Breaking
