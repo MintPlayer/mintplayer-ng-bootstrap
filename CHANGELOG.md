@@ -5,6 +5,17 @@ package version aligns its major with the supported Angular major.
 
 ## [Unreleased]
 
+## [21.15.0] — 2026-04-27
+
+### Breaking
+
+- `BsNavbarItemComponent.hasDropdown` is now a `WritableSignal<boolean>`. The
+  `DropdownToggleDirective` updates it internally; only code that wrote
+  `navbarItem.hasDropdown = …` directly is affected.
+- `BsSignaturePadComponent.isDrawing` is now a `WritableSignal<boolean>`. Read
+  access changes from `cmp.isDrawing` to `cmp.isDrawing()`. No external
+  writers exist in the repo.
+
 ### Fixed
 
 - `BsNavbarDropdownComponent` now disposes its `OverlayRef` in `ngOnDestroy`.
