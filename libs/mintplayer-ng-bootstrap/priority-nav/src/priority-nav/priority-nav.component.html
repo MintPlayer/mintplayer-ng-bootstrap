@@ -1,0 +1,58 @@
+<div class="priority-nav" [class.noscript]="isServerSide" bsNoNoscript>
+    @if (isServerSide) {
+        <input type="checkbox" [id]="uid + '-more'" class="priority-nav-more-checkbox d-none" bsNoNoscript>
+    }
+
+    @if (!isServerSide) {
+        <div class="priority-nav-measure-wrapper" aria-hidden="true">
+            <div class="priority-nav-measure">
+                @for (item of itemList(); track item.id) {
+                    <span #measureItem="bsObserveSize" bsObserveSize class="priority-nav-measure-item">
+                        <ng-container *ngTemplateOutlet="item.templateRef"></ng-container>
+                    </span>
+                }
+            </div>
+        </div>
+    }
+
+    <div bsObserveSize #stripSize="bsObserveSize" class="priority-nav-strip">
+        @for (item of itemList(); track item.id) {
+            <span class="priority-nav-item"
+                  [class.priority-nav-hidden]="!isServerSide && isOverflowing(item)"
+                  [ngClass]="hideBelowClass(item)">
+                <ng-container *ngTemplateOutlet="item.templateRef"></ng-container>
+            </span>
+        }
+
+        @if (isServerSide) {
+            <label [for]="uid + '-more'" class="priority-nav-more-toggle priority-nav-more-toggle-noscript"
+                   role="button" tabindex="0">
+                <ng-container *ngTemplateOutlet="moreLabelTemplate() ?? defaultMoreLabel; context: { $implicit: false }"></ng-container>
+            </label>
+        } @else {
+            <button bsObserveSize #moreSize="bsObserveSize" type="button"
+                    class="priority-nav-more-toggle"
+                    [class.priority-nav-hidden]="!showMoreButton()"
+                    (click)="toggleMore()"
+                    [attr.aria-expanded]="isMoreOpen()">
+                <ng-container *ngTemplateOutlet="moreLabelTemplate() ?? defaultMoreLabel; context: { $implicit: isMoreOpen() }"></ng-container>
+            </button>
+        }
+    </div>
+
+    <div class="priority-nav-overflow"
+         [class.priority-nav-overflow-open]="!isServerSide && isMoreOpen()">
+        @for (item of itemList(); track item.id) {
+            <span class="priority-nav-overflow-item"
+                  [class.priority-nav-overflow-hidden]="!isServerSide && !isOverflowing(item)"
+                  [ngClass]="hideBelowClass(item)">
+                <ng-container *ngTemplateOutlet="item.templateRef"></ng-container>
+            </span>
+        }
+    </div>
+</div>
+
+<ng-template #defaultMoreLabel let-isOpen>
+    <span class="priority-nav-more-label">{{ moreLabel() }}</span>
+    <span class="priority-nav-caret" aria-hidden="true">&#9662;</span>
+</ng-template>
