@@ -99,6 +99,13 @@
     display: block;
 }
 
+// When every item has overflowed, the toggle is at the start edge of the
+// strip — anchor the dropdown to the same side so it stays attached.
+.priority-nav-overflow-align-start {
+    left: 0;
+    right: auto;
+}
+
 // ---------- Noscript fallback ----------
 
 .priority-nav.noscript {

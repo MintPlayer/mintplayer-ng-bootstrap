@@ -144,6 +144,14 @@ export class BsPriorityNavComponent {
   hasAnyOverflow = computed(() => this.overflowingIds().size > 0);
   showMoreButton = computed(() => !this.hideEmptyMore() || this.hasAnyOverflow());
 
+  // When every item is overflowing the toggle ends up at the start edge of
+  // the strip (no inline items push it). Anchor the dropdown to that side
+  // so it stays visually attached to the toggle.
+  fullyCollapsed = computed(() => {
+    const items = this.items();
+    return items.length > 0 && this.overflowingIds().size === items.length;
+  });
+
   constructor() {
     if (typeof window !== 'undefined') {
       this.windowWidth.set(window.innerWidth);

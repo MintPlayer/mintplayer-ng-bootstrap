@@ -41,7 +41,8 @@
     </div>
 
     <div class="priority-nav-overflow"
-         [class.priority-nav-overflow-open]="!isServerSide && isMoreOpen()">
+         [class.priority-nav-overflow-open]="!isServerSide && isMoreOpen()"
+         [class.priority-nav-overflow-align-start]="!isServerSide && fullyCollapsed()">
         @for (item of itemList(); track item.id) {
             <span class="priority-nav-overflow-item"
                   [class.priority-nav-overflow-hidden]="!isServerSide && !isOverflowing(item)"
