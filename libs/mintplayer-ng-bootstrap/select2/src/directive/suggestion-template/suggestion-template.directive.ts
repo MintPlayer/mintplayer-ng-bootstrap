@@ -10,7 +10,7 @@ export class BsSuggestionTemplateDirective<T extends HasId<U>, U> {
 
   constructor() {
     const templateRef = inject<TemplateRef<T>>(TemplateRef);
-    this.select2component.suggestionTemplate = templateRef;
+    this.select2component.suggestionTemplate.set(templateRef);
 
     effect(() => {
       const value = this.bsSuggestionTemplateOf();

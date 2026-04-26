@@ -45,8 +45,8 @@ export class BsSelect2Component<T extends HasId<U>, U> {
 
   private readonly charWidth = 10;
   searchWidth = signal(20);
-  itemTemplate?: TemplateRef<T>;
-  suggestionTemplate?: TemplateRef<T>;
+  readonly itemTemplate = signal<TemplateRef<T> | undefined>(undefined);
+  readonly suggestionTemplate = signal<TemplateRef<T> | undefined>(undefined);
 
   constructor() {
     effect(() => {

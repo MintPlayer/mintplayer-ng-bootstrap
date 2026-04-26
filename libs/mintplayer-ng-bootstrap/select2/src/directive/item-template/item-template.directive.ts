@@ -12,7 +12,7 @@ export class BsItemTemplateDirective<T extends HasId<U>, U> {
   private lastSourceValue?: T[];
 
   constructor() {
-    this.select2component.itemTemplate = this.templateRef;
+    this.select2component.itemTemplate.set(this.templateRef);
 
     // Sync input value to component
     effect(() => {

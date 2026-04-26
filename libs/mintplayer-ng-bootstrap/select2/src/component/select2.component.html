@@ -1,7 +1,7 @@
 <bs-has-overlay></bs-has-overlay>
 <div bsDropdown [(isOpen)]="isOpen" [hasBackdrop]="false" [sameDropdownWidth]="true" #itemsBox class="items-box text-wrap" role="combobox" [attr.aria-expanded]="isOpen()">
     @for (item of selectedItems(); track item) {
-        <ng-container *ngTemplateOutlet="itemTemplate ?? defaultItemTemplate; context: { $implicit: item, select2: this }"></ng-container>
+        <ng-container *ngTemplateOutlet="itemTemplate() ?? defaultItemTemplate; context: { $implicit: item, select2: this }"></ng-container>
     }
 
     <input type="text" autocomplete="off"
@@ -16,7 +16,7 @@
     <bs-dropdown-menu *bsDropdownMenu [maxHeight]="200" role="listbox">
         @for (suggestion of suggestions(); track $index) {
             <bs-dropdown-item (click)="onSuggestionClicked(suggestion)" [isSelected]="selectedItems() | bsInList:suggestion.id" role="option" [attr.aria-selected]="(selectedItems() | bsInList:suggestion.id) || null">
-                <ng-container *ngTemplateOutlet="suggestionTemplate ?? defaultSuggestionTemplate; context: { $implicit: suggestion, select2: this }"></ng-container>
+                <ng-container *ngTemplateOutlet="suggestionTemplate() ?? defaultSuggestionTemplate; context: { $implicit: suggestion, select2: this }"></ng-container>
             </bs-dropdown-item>
         }
     </bs-dropdown-menu>

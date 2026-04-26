@@ -5,6 +5,24 @@ package version aligns its major with the supported Angular major.
 
 ## [Unreleased]
 
+## [21.17.0] — 2026-04-27
+
+### Breaking
+
+- `BsSelect2Component.itemTemplate` and `BsSelect2Component.suggestionTemplate`
+  are now `WritableSignal<TemplateRef<T> | undefined>`. Code that wrote
+  `component.itemTemplate = ref` or `component.suggestionTemplate = ref` must
+  call `.set(ref)`. The `BsItemTemplateDirective` and
+  `BsSuggestionTemplateDirective` do this transparently — only direct
+  assignments to the fields are affected.
+
+### Fixed
+
+- `BsSuggestionTemplateDirective`'s spec mock declared `itemTemplate`
+  (a copy-paste from the item-template spec) instead of
+  `suggestionTemplate`. Plain assignment masked the bug at runtime; the
+  signal migration surfaced it. Now declares `suggestionTemplate`.
+
 ## [21.16.0] — 2026-04-27
 
 ### Breaking
