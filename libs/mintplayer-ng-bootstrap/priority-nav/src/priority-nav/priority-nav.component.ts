@@ -149,6 +149,28 @@ export class BsPriorityNavComponent {
     return items.length > 0 && this.overflowingIds().size === items.length;
   });
 
+  // Derived per-item view used by all three rendering passes (measure strip,
+  // inline strip, overflow menu). Pre-computes the breakpoint class string and
+  // the JS-mode-only hide flags so the template can stay purely declarative —
+  // no method calls, no inline `!isServerSide` guards. The SSR/noscript path
+  // relies on CSS media queries instead of these flags, so both `hideInline`
+  // and `hideInOverflow` are forced to false on the server.
+  itemsWithMeta = computed(() => {
+    const items = this.items();
+    const overflowing = this.overflowingIds();
+    const ssr = this.isServerSide;
+    return items.map(item => {
+      const bp = item.hideBelow();
+      const isOverflowing = overflowing.has(item.id);
+      return {
+        item,
+        hideBelowClass: bp ? `priority-nav-item-hide-below-${bp}` : '',
+        hideInline: !ssr && isOverflowing,
+        hideInOverflow: !ssr && !isOverflowing,
+      };
+    });
+  });
+
   constructor() {
     if (typeof window !== 'undefined') {
       this.windowWidth.set(window.innerWidth);
@@ -178,12 +200,4 @@ export class BsPriorityNavComponent {
     }
   }
 
-  isOverflowing(item: BsPriorityNavItemDirective): boolean {
-    return this.overflowingIds().has(item.id);
-  }
-
-  hideBelowClass(item: BsPriorityNavItemDirective): string {
-    const breakpoint = item.hideBelow();
-    return breakpoint ? `priority-nav-item-hide-below-${breakpoint}` : '';
-  }
 }
