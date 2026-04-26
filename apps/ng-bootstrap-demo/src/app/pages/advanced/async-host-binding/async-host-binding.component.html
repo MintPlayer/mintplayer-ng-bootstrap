@@ -15,30 +15,11 @@
 <demo-rxjs-host></demo-rxjs-host>
 
 <h2>How to do it</h2>
-<p>Declare a signal (or wrap an Observable with <code>toSignal()</code>) and call it from the <code>host</code> metadata:</p>
-
-<pre><code>{{ '@Component({\n'
-+ '  selector: "my-thing",\n'
-+ '  template: `...`,\n'
-+ '  host: {\n'
-+ '    "[style.padding.px]": "padding()",\n'
-+ '    "[class.fw-bold]":   "isBold()",\n'
-+ '  },\n'
-+ '})\n'
-+ 'export class MyThing {\n'
-+ '  padding = signal(0);\n'
-+ '  isBold  = signal(false);\n'
-+ '}\n' }}</code></pre>
+<p>Declare a signal and call it from the <code>host</code> metadata:</p>
+<bs-code-snippet [codeToCopy]="signalHostExample" [language]="'ts'"></bs-code-snippet>
 
 <p>For a value that arrives from an Observable, use <code>toSignal()</code> from <code>&#64;angular/core/rxjs-interop</code>:</p>
-
-<pre><code>{{ 'import { toSignal } from "@angular/core/rxjs-interop";\n\n'
-+ '@Component({\n'
-+ '  host: { "[style.padding.px]": "tick()" },\n'
-+ '})\n'
-+ 'export class MyThing {\n'
-+ '  readonly tick = toSignal(this.someService.tick$, { initialValue: 0 });\n'
-+ '}\n' }}</code></pre>
+<bs-code-snippet [codeToCopy]="toSignalExample" [language]="'ts'"></bs-code-snippet>
 
 <bs-alert [type]="colors.success">
   No special provider is needed. Signals integrate natively with Angular's change detector, in both zone-based and
