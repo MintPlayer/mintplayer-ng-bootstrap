@@ -9,9 +9,12 @@ package version aligns its major with the supported Angular major.
 
 ### Breaking
 
-- `BsNavbarItemComponent.hasDropdown` is now a `WritableSignal<boolean>`. The
-  `DropdownToggleDirective` updates it internally; only code that wrote
-  `navbarItem.hasDropdown = …` directly is affected.
+- `BsNavbarItemComponent.hasDropdown` is now a `Signal<boolean>` derived from
+  `dropdowns()` (a `computed`, not a `WritableSignal`). Read access changes
+  from `cmp.hasDropdown` to `cmp.hasDropdown()`. Code that wrote to
+  `hasDropdown` should drop the write — the value is now derived
+  automatically. The previous manual update in
+  `DropdownToggleDirective.ngAfterContentInit` has been removed.
 - `BsSignaturePadComponent.isDrawing` is now a `WritableSignal<boolean>`. Read
   access changes from `cmp.isDrawing` to `cmp.isDrawing()`. No external
   writers exist in the repo.
@@ -21,6 +24,10 @@ package version aligns its major with the supported Angular major.
 - `BsNavbarDropdownComponent` now disposes its `OverlayRef` in `ngOnDestroy`.
   Previously the overlay (and any attached DOM portal) leaked when the
   component was destroyed.
+- `BsSignaturePadComponent.onPointerEnd` no longer keeps `isDrawing` stuck at
+  `true` when `context` is unavailable. The flag was set unconditionally in
+  `onPointerStart` but only reset when `context` was non-null, leaving the
+  pad in an inconsistent "still drawing" state under SSR/getContext failure.
 
 ### Internal
 

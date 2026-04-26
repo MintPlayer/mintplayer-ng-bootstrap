@@ -69,7 +69,7 @@ export class BsSignaturePadComponent implements AfterViewInit {
   }
 
   onPointerEnd(ev: PointerEvent) {
-    if (this.isDrawing() && this.context) {
+    if (this.isDrawing()) {
       ev.preventDefault();
       this.isDrawing.set(false);
     }

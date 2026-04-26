@@ -1,4 +1,4 @@
-import { AfterContentChecked, AfterContentInit, ChangeDetectionStrategy, Component, contentChildren, DestroyRef, effect, ElementRef, forwardRef, inject, PLATFORM_ID, signal } from '@angular/core';
+import { AfterContentChecked, AfterContentInit, ChangeDetectionStrategy, Component, computed, contentChildren, DestroyRef, effect, ElementRef, forwardRef, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformServer } from '@angular/common';
 import { Router } from '@angular/router';
 import { BsNavbarComponent } from '../navbar/navbar.component';
@@ -22,7 +22,7 @@ export class BsNavbarItemComponent implements AfterContentInit, AfterContentChec
   private router = inject(Router);
   parentDropdown = inject(forwardRef(() => BsNavbarDropdownComponent), { optional: true });
 
-  readonly hasDropdown = signal<boolean>(false);
+  readonly hasDropdown = computed(() => this.dropdowns().length > 0);
   anchorTag: HTMLAnchorElement | null = null;
   readonly dropdowns = contentChildren<BsNavbarDropdownComponent>(forwardRef(() => BsNavbarDropdownComponent));
 
@@ -47,7 +47,6 @@ export class BsNavbarItemComponent implements AfterContentInit, AfterContentChec
 
   ngAfterContentChecked() {
     this.anchorTag = this.element.nativeElement.querySelector('li a');
-    this.hasDropdown.set(this.dropdowns().length > 0);
 
     // Add nav-link or dropdown-item class (previously done by NavLinkDirective)
     if (this.anchorTag && !this.anchorTag.getAttribute('nav-link-class-added')) {
