@@ -137,11 +137,15 @@ this.parent.foo.set(this.templateRef);
 <!-- template — before -->
 @if (foo) { <ng-container *ngTemplateOutlet="foo; …"></ng-container> }
 
-<!-- template — after -->
+<!-- template — after — preferred (Angular 21+) -->
+@let tpl = foo();
+@if (tpl) { <ng-container *ngTemplateOutlet="tpl; …"></ng-container> }
+
+<!-- template — after — alternative if @let isn't usable -->
 @if (foo()) { <ng-container *ngTemplateOutlet="foo()!; …"></ng-container> }
 ```
 
-Note the `!` after `foo()` inside `*ngTemplateOutlet` — the outlet wants a non-null `TemplateRef`, and the `@if` already proved it's non-null, but TypeScript's narrowing doesn't carry across the signal call.
+The `@let` form (Angular 21+) is preferred: it calls the signal once, lets the `@if` narrowing carry into the outlet binding, and avoids the non-null assertion. The `foo()!` form works too but calls the signal twice and needs `!` because TypeScript's narrowing doesn't carry across separate signal calls.
 
 For nullish-coalesce patterns (`foo ?? defaultFoo`):
 

@@ -10,7 +10,7 @@ export class BsSuggestionTemplateDirective<TData extends HasId<U>, U> {
 
   constructor() {
     const template = inject<TemplateRef<BsSuggestionTemplateContext<TData, U>>>(TemplateRef);
-    this.searchbox.suggestionTemplate = template;
+    this.searchbox.suggestionTemplate.set(template);
 
     effect(() => {
       const value = this.bsSuggestionTemplateOf();

@@ -15,6 +15,8 @@ export class BsCarouselImageDirective {
 
   constructor() {
     this.itemTemplate = this.templateRef;
-    this.id = this.carousel.imageCounter++;
+    // Post-increment semantics: this.id gets the OLD value, then the counter increments.
+    this.id = this.carousel.imageCounter();
+    this.carousel.imageCounter.update(c => c + 1);
   }
 }
