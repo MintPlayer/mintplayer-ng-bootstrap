@@ -86,6 +86,7 @@
     .carousel-inner-vertical {
         display: flex;
         flex-direction: column;
+        overscroll-behavior: contain;
 
         .carousel-item {
             flex: 0 0 auto;

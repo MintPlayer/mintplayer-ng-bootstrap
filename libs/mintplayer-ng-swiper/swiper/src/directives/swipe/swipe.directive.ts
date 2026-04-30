@@ -27,7 +27,10 @@ export class BsSwipeDirective {
 
   // Track if we've detected a swipe (vs a tap)
   private isSwipeDetected = false;
-  private readonly SWIPE_THRESHOLD = 10; // pixels
+  // 3px instead of a larger threshold so preventDefault() fires on the first or
+  // second touchmove — Firefox Android's APZ can otherwise claim a downward
+  // gesture as pull-to-refresh before our handler arbitrates the direction.
+  private readonly SWIPE_THRESHOLD = 3; // pixels
 
   // Synchronous copy of start position for use during the 20ms gap
   // before startTouch signal is set (needed to call preventDefault
@@ -63,6 +66,9 @@ export class BsSwipeDirective {
     // Angular's host event bindings register passive listeners by default for touch events,
     // which silently ignores preventDefault(). This caused Firefox Android's PullToRefresh
     // to trigger because the browser's default action was never actually cancelled.
+    // Wrapped in afterNextRender so it doesn't run during SSR (nativeElement is not a real
+    // DOM element on the server); the callback fires before the next paint, so it always
+    // attaches before the user can physically touch the slide.
     afterNextRender(() => {
       const elem = this.el.nativeElement;
       const onTouchStart = (ev: TouchEvent) => this.onTouchStart(ev);
@@ -110,18 +116,27 @@ export class BsSwipeDirective {
   onTouchMove(ev: TouchEvent) {
     ev.stopPropagation();
 
-    // Only prevent default (page scroll) if movement exceeds threshold.
-    // Use synchronous touchStartPos as fallback during the 20ms gap before
-    // the startTouch signal is set, so preventDefault is called on early
-    // touchmove events (prevents Firefox Android PullToRefresh).
+    // Direction lock: only own the gesture when movement on our axis exceeds the
+    // threshold AND dominates the perpendicular axis. Without the dominance check,
+    // a small primary-axis jitter combined with a real perpendicular scroll would
+    // wrongly block native page scrolling. Once locked in, keep calling
+    // preventDefault for the rest of the stroke.
+    // Use synchronous touchStartPos as fallback during the 20ms gap before the
+    // startTouch signal is set, so preventDefault fires on early touchmove events
+    // (prevents Firefox Android PullToRefresh).
     const startTouch = this.container.startTouch();
     const refPos = startTouch?.position ?? this.touchStartPos;
     if (refPos) {
       const dx = Math.abs(ev.touches[0].clientX - refPos.x);
       const dy = Math.abs(ev.touches[0].clientY - refPos.y);
-      if (dx > this.SWIPE_THRESHOLD || dy > this.SWIPE_THRESHOLD) {
+      const orientation = this.container.orientation();
+      const primary = orientation === 'horizontal' ? dx : dy;
+      const perpendicular = orientation === 'horizontal' ? dy : dx;
+      if (!this.isSwipeDetected && primary > this.SWIPE_THRESHOLD && primary >= perpendicular) {
         this.isSwipeDetected = true;
-        ev.preventDefault(); // Now we're swiping, prevent scroll
+      }
+      if (this.isSwipeDetected) {
+        ev.preventDefault();
       }
     }
 
