@@ -15,6 +15,8 @@ import { BsSwipeDirective } from '../swipe/swipe.directive';
     '[style.margin-right.%]': 'offsetRight()',
     '[style.margin-top.px]': 'offsetTopPx()',
     '[style.margin-bottom.px]': 'offsetBottomPx()',
+    '[style.touch-action]': 'touchAction()',
+    '[style.overscroll-behavior]': '"contain"',
   },
 })
 export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
@@ -33,6 +35,10 @@ export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
   minimumOffset = input(50);
   animation = input<'slide' | 'fade' | 'none'>('slide');
   orientation = input<'horizontal' | 'vertical'>('horizontal');
+  // Mirror swiper.js's .swiper-horizontal / .swiper-vertical: declare the axis
+  // we own at the container level so Firefox Android's APZ excludes the
+  // perpendicular gesture (incl. pull-to-refresh) at touchstart arbitration time.
+  touchAction = computed(() => this.orientation() === 'horizontal' ? 'pan-y' : 'pan-x');
   imageIndex = model<number>(0);
   animationStart = output<void>();
   animationEnd = output<void>();

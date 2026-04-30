@@ -1,4 +1,4 @@
-import { afterNextRender, DestroyRef, Directive, effect, ElementRef, inject, input } from "@angular/core";
+import { DestroyRef, Directive, effect, ElementRef, inject, input } from "@angular/core";
 import { BsObserveSizeDirective } from "@mintplayer/ng-swiper/observe-size";
 import { BsSwipeContainerDirective } from "../swipe-container/swipe-container.directive";
 
@@ -27,7 +27,10 @@ export class BsSwipeDirective {
 
   // Track if we've detected a swipe (vs a tap)
   private isSwipeDetected = false;
-  private readonly SWIPE_THRESHOLD = 10; // pixels
+  // 3px instead of a larger threshold so preventDefault() fires on the first or
+  // second touchmove — Firefox Android's APZ can otherwise claim a downward
+  // gesture as pull-to-refresh before our handler arbitrates the direction.
+  private readonly SWIPE_THRESHOLD = 3; // pixels
 
   // Synchronous copy of start position for use during the 20ms gap
   // before startTouch signal is set (needed to call preventDefault
@@ -63,21 +66,21 @@ export class BsSwipeDirective {
     // Angular's host event bindings register passive listeners by default for touch events,
     // which silently ignores preventDefault(). This caused Firefox Android's PullToRefresh
     // to trigger because the browser's default action was never actually cancelled.
-    afterNextRender(() => {
-      const elem = this.el.nativeElement;
-      const onTouchStart = (ev: TouchEvent) => this.onTouchStart(ev);
-      const onTouchMove = (ev: TouchEvent) => this.onTouchMove(ev);
-      const onTouchEnd = (ev: TouchEvent) => this.onTouchEnd(ev);
+    // Attached eagerly (not via afterNextRender) so a first-paint touch hits the
+    // non-passive handler immediately instead of the passive default.
+    const elem = this.el.nativeElement;
+    const onTouchStart = (ev: TouchEvent) => this.onTouchStart(ev);
+    const onTouchMove = (ev: TouchEvent) => this.onTouchMove(ev);
+    const onTouchEnd = (ev: TouchEvent) => this.onTouchEnd(ev);
 
-      elem.addEventListener('touchstart', onTouchStart, { passive: true });
-      elem.addEventListener('touchmove', onTouchMove, { passive: false });
-      elem.addEventListener('touchend', onTouchEnd, { passive: false });
+    elem.addEventListener('touchstart', onTouchStart, { passive: true });
+    elem.addEventListener('touchmove', onTouchMove, { passive: false });
+    elem.addEventListener('touchend', onTouchEnd, { passive: false });
 
-      this.destroyRef.onDestroy(() => {
-        elem.removeEventListener('touchstart', onTouchStart);
-        elem.removeEventListener('touchmove', onTouchMove);
-        elem.removeEventListener('touchend', onTouchEnd);
-      });
+    this.destroyRef.onDestroy(() => {
+      elem.removeEventListener('touchstart', onTouchStart);
+      elem.removeEventListener('touchmove', onTouchMove);
+      elem.removeEventListener('touchend', onTouchEnd);
     });
   }
 
