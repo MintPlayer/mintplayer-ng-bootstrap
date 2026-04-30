@@ -1,4 +1,4 @@
-import { DestroyRef, Directive, effect, ElementRef, inject, input } from "@angular/core";
+import { afterNextRender, DestroyRef, Directive, effect, ElementRef, inject, input } from "@angular/core";
 import { BsObserveSizeDirective } from "@mintplayer/ng-swiper/observe-size";
 import { BsSwipeContainerDirective } from "../swipe-container/swipe-container.directive";
 
@@ -66,21 +66,24 @@ export class BsSwipeDirective {
     // Angular's host event bindings register passive listeners by default for touch events,
     // which silently ignores preventDefault(). This caused Firefox Android's PullToRefresh
     // to trigger because the browser's default action was never actually cancelled.
-    // Attached eagerly (not via afterNextRender) so a first-paint touch hits the
-    // non-passive handler immediately instead of the passive default.
-    const elem = this.el.nativeElement;
-    const onTouchStart = (ev: TouchEvent) => this.onTouchStart(ev);
-    const onTouchMove = (ev: TouchEvent) => this.onTouchMove(ev);
-    const onTouchEnd = (ev: TouchEvent) => this.onTouchEnd(ev);
+    // Wrapped in afterNextRender so it doesn't run during SSR (nativeElement is not a real
+    // DOM element on the server); the callback fires before the next paint, so it always
+    // attaches before the user can physically touch the slide.
+    afterNextRender(() => {
+      const elem = this.el.nativeElement;
+      const onTouchStart = (ev: TouchEvent) => this.onTouchStart(ev);
+      const onTouchMove = (ev: TouchEvent) => this.onTouchMove(ev);
+      const onTouchEnd = (ev: TouchEvent) => this.onTouchEnd(ev);
 
-    elem.addEventListener('touchstart', onTouchStart, { passive: true });
-    elem.addEventListener('touchmove', onTouchMove, { passive: false });
-    elem.addEventListener('touchend', onTouchEnd, { passive: false });
+      elem.addEventListener('touchstart', onTouchStart, { passive: true });
+      elem.addEventListener('touchmove', onTouchMove, { passive: false });
+      elem.addEventListener('touchend', onTouchEnd, { passive: false });
 
-    this.destroyRef.onDestroy(() => {
-      elem.removeEventListener('touchstart', onTouchStart);
-      elem.removeEventListener('touchmove', onTouchMove);
-      elem.removeEventListener('touchend', onTouchEnd);
+      this.destroyRef.onDestroy(() => {
+        elem.removeEventListener('touchstart', onTouchStart);
+        elem.removeEventListener('touchmove', onTouchMove);
+        elem.removeEventListener('touchend', onTouchEnd);
+      });
     });
   }
 
@@ -113,18 +116,27 @@ export class BsSwipeDirective {
   onTouchMove(ev: TouchEvent) {
     ev.stopPropagation();
 
-    // Only prevent default (page scroll) if movement exceeds threshold.
-    // Use synchronous touchStartPos as fallback during the 20ms gap before
-    // the startTouch signal is set, so preventDefault is called on early
-    // touchmove events (prevents Firefox Android PullToRefresh).
+    // Direction lock: only own the gesture when movement on our axis exceeds the
+    // threshold AND dominates the perpendicular axis. Without the dominance check,
+    // a small primary-axis jitter combined with a real perpendicular scroll would
+    // wrongly block native page scrolling. Once locked in, keep calling
+    // preventDefault for the rest of the stroke.
+    // Use synchronous touchStartPos as fallback during the 20ms gap before the
+    // startTouch signal is set, so preventDefault fires on early touchmove events
+    // (prevents Firefox Android PullToRefresh).
     const startTouch = this.container.startTouch();
     const refPos = startTouch?.position ?? this.touchStartPos;
     if (refPos) {
       const dx = Math.abs(ev.touches[0].clientX - refPos.x);
       const dy = Math.abs(ev.touches[0].clientY - refPos.y);
-      if (dx > this.SWIPE_THRESHOLD || dy > this.SWIPE_THRESHOLD) {
+      const orientation = this.container.orientation();
+      const primary = orientation === 'horizontal' ? dx : dy;
+      const perpendicular = orientation === 'horizontal' ? dy : dx;
+      if (!this.isSwipeDetected && primary > this.SWIPE_THRESHOLD && primary >= perpendicular) {
         this.isSwipeDetected = true;
-        ev.preventDefault(); // Now we're swiping, prevent scroll
+      }
+      if (this.isSwipeDetected) {
+        ev.preventDefault();
       }
     }
 
