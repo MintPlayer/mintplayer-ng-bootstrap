@@ -60,6 +60,7 @@ export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
   startTouch = signal<StartTouch | null>(null);
   lastTouch = signal<LastTouch | null>(null);
   pendingAnimation?: AnimationPlayer;
+  private pendingFadeTimeoutId?: ReturnType<typeof setTimeout>;
 
   // Computed signals for derived state
   offset = computed(() => {
@@ -230,6 +231,10 @@ export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
   ngOnDestroy() {
     this.isDestroyed = true;
     this.pendingAnimation?.destroy();
+    if (this.pendingFadeTimeoutId !== undefined) {
+      clearTimeout(this.pendingFadeTimeoutId);
+      this.pendingFadeTimeoutId = undefined;
+    }
   }
 
   animateToIndexByDx(distance: number) {
@@ -280,6 +285,11 @@ export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
     // consumers waiting on it (e.g. auto-advance pacing) still see consistent
     // event timing across animation modes.
     if (animation === 'fade') {
+      // If a previous fade is still pending its animationEnd, cancel it so we
+      // don't double-emit when navigation is triggered rapidly.
+      if (this.pendingFadeTimeoutId !== undefined) {
+        clearTimeout(this.pendingFadeTimeoutId);
+      }
       if (newIndex === -1) {
         this.imageIndex.set(totalSlides - 1);
       } else if (newIndex === totalSlides) {
@@ -289,7 +299,8 @@ export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
       }
       this.startTouch.set(null);
       this.lastTouch.set(null);
-      setTimeout(() => {
+      this.pendingFadeTimeoutId = setTimeout(() => {
+        this.pendingFadeTimeoutId = undefined;
         if (!this.isDestroyed) this.animationEnd.emit();
       }, 500);
       return;

@@ -174,6 +174,7 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
   }
 
   goto(index: number) {
+    if (index < 0 || index >= this.imageCount()) return;
     this.swipeContainer()?.goto(index);
   }
 
