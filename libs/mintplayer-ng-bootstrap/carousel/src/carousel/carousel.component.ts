@@ -1,6 +1,5 @@
 import { isPlatformServer, NgTemplateOutlet } from '@angular/common';
 import { AfterViewInit, ChangeDetectionStrategy, Component, computed, contentChildren, DestroyRef, effect, ElementRef, forwardRef, inject, input, OnDestroy, output, PLATFORM_ID, signal, TemplateRef, viewChild } from '@angular/core';
-import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsSwipeContainerDirective, BsSwipeDirective } from '@mintplayer/ng-swiper/swiper';
 import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
@@ -16,7 +15,6 @@ import { BsCarouselImageDirective } from '../carousel-image/carousel-image.direc
     BsSwipeDirective,
     BsNoNoscriptDirective,
   ],
-  animations: [FadeInOutAnimation],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[@.disabled]': 'animationsDisabled()',
@@ -166,90 +164,17 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
   }
 
   previous() {
-    const animation = this.animation();
-    const imageCount = this.imageCount();
-    const wrap = this.wrap();
-
-    switch (animation) {
-      case 'fade':
-      case 'none': {
-        const currentIndex = this.currentImageIndex();
-        if (currentIndex > 0) {
-          if (animation === 'none') {
-            this.animationStart.emit();
-          }
-          this.currentImageIndex.set(currentIndex - 1);
-          if (animation === 'none') {
-            this.animationEnd.emit();
-          }
-        } else if (wrap) {
-          if (animation === 'none') {
-            this.animationStart.emit();
-          }
-          this.currentImageIndex.set(imageCount - 1);
-          if (animation === 'none') {
-            this.animationEnd.emit();
-          }
-        }
-        break;
-      }
-      case 'slide':
-        this.swipeContainer()?.previous();
-        break;
-    }
+    if (!this.wrap() && this.currentImageIndex() === 0) return;
+    this.swipeContainer()?.previous();
   }
 
   next() {
-    const animation = this.animation();
-    const imageCount = this.imageCount();
-    const wrap = this.wrap();
-
-    switch (animation) {
-      case 'fade':
-      case 'none': {
-        const currentIndex = this.currentImageIndex();
-        if (currentIndex < imageCount - 1) {
-          if (animation === 'none') {
-            this.animationStart.emit();
-          }
-          this.currentImageIndex.set(currentIndex + 1);
-          if (animation === 'none') {
-            this.animationEnd.emit();
-          }
-        } else if (wrap) {
-          if (animation === 'none') {
-            this.animationStart.emit();
-          }
-          this.currentImageIndex.set(0);
-          if (animation === 'none') {
-            this.animationEnd.emit();
-          }
-        }
-        break;
-      }
-      case 'slide':
-        this.swipeContainer()?.next();
-        break;
-    }
+    if (!this.wrap() && this.currentImageIndex() === this.imageCount() - 1) return;
+    this.swipeContainer()?.next();
   }
 
   goto(index: number) {
-    const animation = this.animation();
-    switch (animation) {
-      case 'fade':
-      case 'none':
-        if (animation === 'none') {
-          this.animationStart.emit();
-        }
-        this.currentImageIndex.set(index);
-        if (animation === 'none') {
-          this.animationEnd.emit();
-        }
-        break;
-      case 'slide':
-        this.swipeContainer()?.goto(index);
-        break;
-    }
+    this.swipeContainer()?.goto(index);
   }
 
   readonly imageCounter = signal<number>(1);

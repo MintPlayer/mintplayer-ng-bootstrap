@@ -160,6 +160,7 @@ export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
   constructor() {
     // Effect to update offsetLeft/offsetTopPx based on offsetPrimary and orientation
     effect(() => {
+      const animation = this.animation();
       const offsetPrimary = this.offsetPrimary();
       const orientation = this.orientation();
       const maxSlideHeight = this.maxSlideHeight();
@@ -167,6 +168,15 @@ export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
 
       // Skip updating offsets during animation to avoid interfering with CSS animation
       if (isAnimating) {
+        return;
+      }
+
+      // In fade mode slides are positioned by CSS (position: absolute) rather
+      // than by margin offsets — keep the host margins null so they don't
+      // visually shift the absolute layer's containing block.
+      if (animation === 'fade') {
+        this.offsetLeft.set(null);
+        this.offsetTopPx.set(null);
         return;
       }
 
@@ -184,6 +194,7 @@ export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
 
     // Effect to update offsetRight/offsetBottomPx based on offsetSecondary and orientation
     effect(() => {
+      const animation = this.animation();
       const offsetSecondary = this.offsetSecondary();
       const orientation = this.orientation();
       const maxSlideHeight = this.maxSlideHeight();
@@ -191,6 +202,12 @@ export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
 
       // Skip updating offsets during animation to avoid interfering with CSS animation
       if (isAnimating) {
+        return;
+      }
+
+      if (animation === 'fade') {
+        this.offsetRight.set(null);
+        this.offsetBottomPx.set(null);
         return;
       }
 
@@ -254,6 +271,27 @@ export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
       this.startTouch.set(null);
       this.lastTouch.set(null);
       this.animationEnd.emit();
+      return;
+    }
+
+    // Handle 'fade' animation mode - opacity is driven by CSS in the consumer
+    // (via [class.active] + a CSS transition). Update the index synchronously
+    // and defer animationEnd to roughly match the CSS transition duration so
+    // consumers waiting on it (e.g. auto-advance pacing) still see consistent
+    // event timing across animation modes.
+    if (animation === 'fade') {
+      if (newIndex === -1) {
+        this.imageIndex.set(totalSlides - 1);
+      } else if (newIndex === totalSlides) {
+        this.imageIndex.set(0);
+      } else {
+        this.imageIndex.set(newIndex);
+      }
+      this.startTouch.set(null);
+      this.lastTouch.set(null);
+      setTimeout(() => {
+        if (!this.isDestroyed) this.animationEnd.emit();
+      }, 500);
       return;
     }
 

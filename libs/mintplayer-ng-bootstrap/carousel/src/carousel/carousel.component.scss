@@ -60,6 +60,28 @@
         background-color: var(--bs-carousel-indicator-active-bg, #fff);
     }
 
+    // Fade mode renders all slides inside bsSwipeContainer (the directive
+    // suppresses its margin offsets in this mode); slides overlap via
+    // absolute positioning and only the active one is opaque. Bootstrap's
+    // own fade rules don't apply because the bsSwipe directive's d-inline-
+    // block / d-block utilities override the `display: none` filtering they
+    // depend on, so we provide our own.
+    .carousel.fade {
+        .carousel-item {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            opacity: 0;
+            transition: opacity 500ms ease-in-out;
+            pointer-events: none;
+            &.active {
+                opacity: 1;
+                pointer-events: auto;
+            }
+        }
+    }
+
     .carousel.carousel-vertical {
         .carousel-control-prev,
         .carousel-control-next {
