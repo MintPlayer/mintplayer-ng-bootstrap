@@ -20,9 +20,11 @@ Branches 3 and 4 are **~99% identical** — they differ only by an `@fadeInOut` 
 
 Cost is mostly maintainability — every change to the indicator markup, control markup, or wrapping container has to be made four times in lock-step. Bundle size is also affected (Angular compiles each branch to its own `TView`), but that's secondary.
 
+> **Post-#293 note:** [PR #293](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/293) hoisted swipe-layout primitives onto the `bsSwipeContainer` directive and stripped four utility classes (`overflow-hidden`, `pe-none`, `text-nowrap`, `carousel-inner-vertical`) from the slide-branch's outer `.carousel-inner` div. That made the slide branch *leaner* but did not touch the four-way duplication this PRD targets — the problem and the recommended approach below stay the same.
+
 ## 2. Current state — hard numbers
 
-Counted occurrences in `carousel.component.html` (current master):
+Counted occurrences in `carousel.component.html` (current master, post-#293):
 
 | Element | SSR | Slide | Fade | None | **Total** |
 |---|---|---|---|---|---|
@@ -160,11 +162,10 @@ Replace the entire `@else { @switch (animation()) { ... } }` block (lines 37-157
 
 ```html
 @else {
-    <div class="carousel mx-auto" #innerElement
+    <div class="carousel mx-auto"
          [class.slide]="animation() === 'slide'"
          [class.fade]="animation() === 'fade'"
-         [class.carousel-vertical]="orientation() === 'vertical'"
-         [style.height.px]="slideHeight()">
+         [class.carousel-vertical]="orientation() === 'vertical'">
 
         @if (indicators()) {
             <div class="carousel-indicators"
@@ -178,7 +179,7 @@ Replace the entire `@else { @switch (animation()) { ... } }` block (lines 37-157
             </div>
         }
 
-        <div class="carousel-inner" [style.height.px]="slideHeight()">
+        <div class="carousel-inner" #innerElement [style.height.px]="slideHeight()">
             <div bsSwipeContainer #container="bsSwipeContainer"
                  [minimumOffset]="50"
                  [animation]="animation()"
