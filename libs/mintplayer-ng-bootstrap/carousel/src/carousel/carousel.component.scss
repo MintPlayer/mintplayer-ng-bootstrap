@@ -49,6 +49,18 @@
             .carousel-indicators {
                 z-index: 10;
             }
+
+            // The .carousel-item > * { width: 100% !important; } rule below
+            // doesn't reach the image in the noscript path because there's an
+            // extra .w-100.position-relative wrapper between the carousel-item
+            // and the rendered <img> (the wrapper hosts per-slide indicator
+            // labels for the radio-driven CSS-only navigation). Constrain the
+            // image directly so it can't render at its intrinsic width during
+            // the pre-hydration paint.
+            .carousel-item img {
+                width: 100%;
+                height: auto;
+            }
         }
 
         .carousel-item > * {
