@@ -83,18 +83,16 @@
         }
     }
 
-    .carousel-inner-vertical {
-        display: flex;
+    // display, flex-direction, overscroll-behavior, pointer-events, white-space
+    // and touch-action live on the bsSwipeContainer host. Only the per-slide
+    // alignment rules remain here, scoped to slide-animation mode via the
+    // [bsSwipeContainer] attribute so fade/none modes are unaffected.
+    .carousel.carousel-vertical [bsSwipeContainer] .carousel-item {
+        flex: 0 0 auto;
+        display: flex !important;
         flex-direction: column;
-        overscroll-behavior: contain;
-
-        .carousel-item {
-            flex: 0 0 auto;
-            display: flex !important;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
+        justify-content: center;
+        align-items: center;
     }
 
     .carousel-indicators-vertical {
