@@ -49,14 +49,13 @@
                         }
                     </div>
                 }
-                <div class="carousel-inner overflow-hidden pe-none" [class.text-nowrap]="orientation() === 'horizontal'"
-                    [class.carousel-inner-vertical]="orientation() === 'vertical'" #innerElement
-                    [style.height.px]="slideHeight()">
-                    <div bsSwipeContainer #container="bsSwipeContainer" [minimumOffset]="50"
+                <div class="carousel-inner" #innerElement [style.height.px]="slideHeight()">
+                    <div bsSwipeContainer #container="bsSwipeContainer"
+                        [minimumOffset]="50"
+                        [orientation]="orientation()"
                         (imageIndexChange)="onImageIndexChange($event)"
                         (animationStart)="onContainerAnimationStart()"
-                        (animationEnd)="onContainerAnimationEnd()"
-                        [orientation]="orientation()">
+                        (animationEnd)="onContainerAnimationEnd()">
                         <div class="carousel-item" bsSwipe [offside]="true">
                             <ng-container *ngTemplateOutlet="lastImageTemplate()"></ng-container>
                         </div>

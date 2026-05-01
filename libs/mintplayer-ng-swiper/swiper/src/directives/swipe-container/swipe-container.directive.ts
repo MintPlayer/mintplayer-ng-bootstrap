@@ -17,6 +17,17 @@ import { BsSwipeDirective } from '../swipe/swipe.directive';
     '[style.margin-bottom.px]': 'offsetBottomPx()',
     '[style.touch-action]': 'touchAction()',
     '[style.overscroll-behavior]': '"contain"',
+    // Pairs with bsSwipe's [class.pe-auto]: gaps between slides are click-through,
+    // slides themselves remain interactive.
+    '[style.pointer-events]': '"none"',
+    // Horizontal mode lays slides out as inline-block in a single row; nowrap
+    // prevents them wrapping when their combined width exceeds the container.
+    '[style.white-space]': 'orientation() === "horizontal" ? "nowrap" : null',
+    // Vertical mode stacks slides as a column. Horizontal mode is explicitly
+    // 'block' so a consumer-applied class (e.g. d-flex) can't silently change
+    // the layout model — the directive's slides assume an inline-block flow.
+    '[style.display]': 'orientation() === "vertical" ? "flex" : "block"',
+    '[style.flex-direction]': 'orientation() === "vertical" ? "column" : null',
   },
 })
 export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
