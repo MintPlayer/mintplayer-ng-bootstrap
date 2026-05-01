@@ -180,7 +180,9 @@ The per-slide `touch-action` is harmless and provides a fallback if a consumer e
 
 ## 11. Follow-up: directive consolidation
 
-> **Implementation status:** ✅ shipping in [PR #293](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/293) together with this PRD. One deviation from §11.3.3 — see the note in that section.
+> **Implementation status:** ✅ shipping in [PR #293](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/293) together with this PRD. **Two deviations from the original plan**:
+> 1. **§11.3.2 (template merge) was reverted at implementation time** — see the note in that section. The directive's host bindings still hoist (the §11.1 motivation is mostly preserved), but the two-div structure stays.
+> 2. **§11.3.3 (SCSS rescope)** uses an attribute-narrowed selector — see the note in that section.
 
 ### 11.1 Motivation
 
@@ -258,6 +260,15 @@ After:
 
 Net: one fewer DOM node, the directive is self-sufficient, the bootstrap-specific class stays where it belongs.
 
+> **Reverted at implementation time (PR #293).** Tested locally and the merged structure broke the carousel: the entire viewport shifted off-screen as soon as the directive applied its first non-zero margin. The two-div structure is **load-bearing for the slide-track scrolling mechanism**:
+> - The directive scrolls the slide track by setting `margin-left` / `margin-top` on its host element.
+> - For that visual offset to read as "scroll", the host has to move *inside* a separate `overflow: hidden` viewport. CSS `overflow: hidden` clips an element's *children*, not the element itself — when the directive's host is also the viewport, the negative margin moves the viewport along with the slides.
+> - The shipped code keeps `<div class="carousel-inner">` as a separate viewport and `<div bsSwipeContainer>` as the moving inner layer.
+>
+> **What survives**: the directive still owns every CSS primitive listed in §11.3.1 via host bindings, so the directive is functionally self-sufficient. The carousel template's outer `<div class="carousel-inner">` is now stripped down to just `class="carousel-inner"` + `#innerElement` + `[style.height.px]="slideHeight()"` — every utility class (`overflow-hidden`, `pe-none`, `text-nowrap`, `carousel-inner-vertical`) is gone, replaced by the directive's host bindings on the inner element.
+>
+> **Net DOM**: same number of `<div>` levels as before, but four fewer utility classes on the outer one. The §11.1 motivation (directive doesn't depend on bootstrap utility classes) is still met.
+
 #### 11.3.3 Carousel SCSS (`carousel.component.scss` lines 86-97)
 
 Replace:
@@ -298,7 +309,7 @@ The parent-level `display: flex; flex-direction: column; overscroll-behavior: co
 
 1. Vertical and horizontal carousels render and behave identically to before, both visually and in terms of swipe response. Pixel-diff demo screenshots before/after. *(pending real-device smoke test)*
 2. Original §7 acceptance criteria (Firefox Android PTR, regression tests) still pass. *(pending real-device smoke test)*
-3. ✅ Generated DOM has one fewer `<div>` between `.carousel` and the slides.
+3. ~~Generated DOM has one fewer `<div>` between `.carousel` and the slides.~~ *Dropped — the §11.3.2 merge was reverted; the two-div structure is required for the slide-track scrolling mechanism. Four utility classes were removed from the outer div instead, so the DOM is leaner without being shorter.*
 4. ✅ `nx test mintplayer-ng-swiper` passes (verified in PR #293).
 5. ✅ `nx build mintplayer-ng-swiper` and `nx build mintplayer-ng-bootstrap` pass (verified in PR #293).
 
