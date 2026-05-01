@@ -90,6 +90,15 @@ Add `overscroll-behavior-y: contain` to `html`/`body` in the demo app.
 
 ## 6. Required changes
 
+> **Implementation status (PR #291, merged 2026-04-30; validated on real Firefox Android device):**
+> - §6.1 — ✅ shipped as proposed.
+> - §6.2 — ✅ shipped as proposed (no code change, intentional).
+> - §6.3 — ✅ shipped at 3 px, **plus an additional change during review**: the touchmove check is now orientation-aware with a directional dominance guard (`primary > threshold && primary >= perpendicular`), so off-axis jitter no longer triggers the swipe lock. See §6.3 below for the original proposal and the **Review amendment** note that follows it.
+> - §6.4 — ❌ **reverted during review.** `afterNextRender` was retained for SSR safety; the "first-paint race" the eager attach was meant to close turned out to be theoretical. See the strikethrough below.
+> - §6.5 — ✅ shipped, **but §11 follow-up identifies this as redundant** with the directive-level `overscroll-behavior` host binding. To be removed when §11 lands.
+>
+> Vertical swipe on Firefox Android currently works as expected on real devices.
+
 ### 6.1 Move `touch-action` onto the swipe container
 
 **File:** `libs/mintplayer-ng-swiper/swiper/src/directives/swipe-container/swipe-container.directive.ts`
@@ -111,16 +120,26 @@ The per-slide `touch-action` is harmless and provides a fallback if a consumer e
   - 10 px equates to several frames of finger travel on a 60-Hz device — long enough for APZ to arbitrate.
   - 3 px is small enough to fire `preventDefault` on the first or second `touchmove` while still being tap-tolerant (real taps stay below 3 px in practice; if it proves too sensitive in QA, fall back to 5 px).
 
-### 6.4 Attach listeners eagerly
+> **Review amendment (shipped):** the original proposal kept the existing `dx > T || dy > T` condition. Gemini's review correctly flagged that at 3 px, an off-axis 4 px jitter would block native page scrolling. The shipped fix replaces the OR with an **orientation-aware directional lock**: `preventDefault` only fires when the primary axis exceeds the threshold *and* dominates the perpendicular axis (`primary > T && primary >= perpendicular`). Once locked in, `preventDefault` keeps firing for the rest of the stroke. This mirrors swiper.js's directional-lock semantics.
 
-**File:** `libs/mintplayer-ng-swiper/swiper/src/directives/swipe/swipe.directive.ts`
-- Move the `addEventListener` calls out of `afterNextRender(...)` and into a normal lifecycle hook that runs as soon as the host element is available (e.g. directly in the constructor using the injected `ElementRef`, or `ngOnInit`). The listeners do not depend on anything that requires "next render" — only on the native element, which already exists. Removing the `afterNextRender` wrapper closes the first-paint race described in §3.3.
+### 6.4 ~~Attach listeners eagerly~~ *(reverted during review — kept `afterNextRender`)*
+
+> **Reverted.** The original proposal moved listener attachment out of `afterNextRender(...)` to close a hypothetical first-paint race. Gemini's review pointed out two problems:
+> 1. **SSR safety.** Direct `nativeElement.addEventListener` in the constructor crashes during server-side rendering (`nativeElement` isn't a real DOM element on the server). `afterNextRender` is a no-op during SSR, which avoids the crash.
+> 2. **The race wasn't real.** `afterNextRender` runs before the next browser paint. The user can't physically touch a slide before it's painted, so listeners are always attached before any possible touch.
+>
+> The shipped code keeps the `afterNextRender(...)` wrapper. The original §6.4 proposal below is preserved as historical record.
+>
+> ~~**File:** `libs/mintplayer-ng-swiper/swiper/src/directives/swipe/swipe.directive.ts`~~
+> ~~Move the `addEventListener` calls out of `afterNextRender(...)` and into a normal lifecycle hook that runs as soon as the host element is available (e.g. directly in the constructor using the injected `ElementRef`, or `ngOnInit`). The listeners do not depend on anything that requires "next render" — only on the native element, which already exists. Removing the `afterNextRender` wrapper closes the first-paint race described in §3.3.~~
 
 ### 6.5 Carousel CSS — defence in depth
 
 **File:** `libs/mintplayer-ng-bootstrap/carousel/src/carousel/carousel.component.scss` (or the SCSS file that defines `.carousel-vertical`)
 - Add `overscroll-behavior: contain;` to `.carousel-vertical .carousel-inner`.
 - This is harmless when `touch-action` is already doing the work, and provides a safety net for older Firefox builds.
+
+> **Status:** shipped, but identified as redundant during the §11 follow-up review. The directive's host binding `'[style.overscroll-behavior]': '"contain"'` (added in §6.1) already covers every consumer, making this SCSS rule dead weight. Slated for removal as part of §11.
 
 ### 6.6 What is *not* required
 - No browser sniffing — swiper.js does not sniff and neither should we.
