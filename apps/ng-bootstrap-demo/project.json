@@ -1,6 +1,6 @@
 {
   "name": "ng-bootstrap-demo",
-  "$schema": "..\\..\\node_modules\\nx\\schemas\\project-schema.json",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "sourceRoot": "apps/ng-bootstrap-demo/src",
   "prefix": "demo",
@@ -88,6 +88,11 @@
         },
         "development": {
           "buildTarget": "ng-bootstrap-demo:build:development"
+        },
+        "network": {
+          "buildTarget": "ng-bootstrap-demo:build:development",
+          "host": "0.0.0.0",
+          "allowedHosts": ["localhost"]
         }
       },
       "defaultConfiguration": "development",

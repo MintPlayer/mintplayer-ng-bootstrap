@@ -38,8 +38,26 @@ app.use(
 
 /**
  * Handle all other requests by rendering the Angular application.
+ *
+ * For LAN-IP requests (e.g. when accessing the dev server from a phone on
+ * the same Wi-Fi via `npm run start:network`), rewrite the Host header to
+ * `localhost`. Angular's SSR SSRF prevention only matches hosts literally
+ * (or via `*.suffix`) and there is no wildcard pattern that covers
+ * arbitrary IPv4 addresses, so without this rewrite SSR would reject every
+ * request from a non-localhost host with "URL with hostname X is not
+ * allowed". Public-domain hosts (e.g. production traffic from
+ * bootstrap.mintplayer.com) don't match the LAN pattern and pass through
+ * untouched.
  */
+const LAN_IP_REGEX = /^(127\.|192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.)/;
 app.use((req, res, next) => {
+  const hostHeader = req.headers.host;
+  if (hostHeader) {
+    const hostnameOnly = hostHeader.split(':')[0];
+    if (LAN_IP_REGEX.test(hostnameOnly)) {
+      req.headers.host = 'localhost';
+    }
+  }
   angularApp
     .handle(req)
     .then((response) =>
