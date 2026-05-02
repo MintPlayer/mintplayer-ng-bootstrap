@@ -92,7 +92,7 @@
         "network": {
           "buildTarget": "ng-bootstrap-demo:build:development",
           "host": "0.0.0.0",
-          "allowedHosts": ["all"]
+          "allowedHosts": true
         }
       },
       "defaultConfiguration": "development",
