@@ -1,5 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, ElementRef, input, signal, TemplateRef, viewChild } from '@angular/core';
+import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
 import { BsShellState } from '../shell-state';
 import { Breakpoint } from '@mintplayer/ng-bootstrap';
 
@@ -7,7 +8,7 @@ import { Breakpoint } from '@mintplayer/ng-bootstrap';
   selector: 'bs-shell',
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.scss',
-  imports: [NgTemplateOutlet],
+  imports: [NgTemplateOutlet, BsNoNoscriptDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsShellComponent {
@@ -25,6 +26,10 @@ export class BsShellComponent {
   });
 
   breakpointClass = computed(() => `shell-${this.breakpoint()}`);
+
+  static shellCounter = 0;
+  shellId = signal(++BsShellComponent.shellCounter);
+  shellToggleId = computed(() => `bs-shell-toggle-${this.shellId()}`);
 
   public setSize(size: string) {
     this.rootElement().nativeElement.style.setProperty('--size', size);
