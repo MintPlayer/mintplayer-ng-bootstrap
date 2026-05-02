@@ -88,6 +88,11 @@
         },
         "development": {
           "buildTarget": "ng-bootstrap-demo:build:development"
+        },
+        "network": {
+          "buildTarget": "ng-bootstrap-demo:build:development",
+          "host": "0.0.0.0",
+          "allowedHosts": ["all"]
         }
       },
       "defaultConfiguration": "development",
