@@ -1,10 +1,12 @@
 import { afterNextRender, DestroyRef, Directive, effect, ElementRef, inject, input } from "@angular/core";
 import { BsObserveSizeDirective } from "@mintplayer/ng-swiper/observe-size";
 import { BsSwipeContainerDirective } from "../swipe-container/swipe-container.directive";
+import { BS_SWIPE_SLIDE, BsSwipeSlide } from "../../tokens/bs-swipe-slide";
 
 @Directive({
   selector: '[bsSwipe]',
   hostDirectives: [BsObserveSizeDirective],
+  providers: [{ provide: BS_SWIPE_SLIDE, useExisting: BsSwipeDirective }],
   host: {
     '[class.align-top]': 'true',
     '[class.float-none]': 'true',
@@ -17,7 +19,7 @@ import { BsSwipeContainerDirective } from "../swipe-container/swipe-container.di
     '[style.touch-action]': 'touchAction',
   },
 })
-export class BsSwipeDirective {
+export class BsSwipeDirective implements BsSwipeSlide {
   private container = inject(BsSwipeContainerDirective);
   private el = inject(ElementRef<HTMLElement>);
   private destroyRef = inject(DestroyRef);

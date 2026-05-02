@@ -4,7 +4,7 @@ import { AfterViewInit, computed, contentChildren, Directive, effect, ElementRef
 import { BsObserveSizeDirective, Size } from '@mintplayer/ng-swiper/observe-size';
 import { LastTouch } from '../../interfaces/last-touch';
 import { StartTouch } from '../../interfaces/start-touch';
-import { BsSwipeDirective } from '../swipe/swipe.directive';
+import { BS_SWIPE_SLIDE } from '../../tokens/bs-swipe-slide';
 
 @Directive({
   selector: '[bsSwipeContainer]',
@@ -41,7 +41,7 @@ export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
   offsetTopPx = signal<number | null>(null);
   offsetBottomPx = signal<number | null>(null);
 
-  readonly swipes = contentChildren(BsSwipeDirective);
+  readonly swipes = contentChildren(BS_SWIPE_SLIDE);
 
   minimumOffset = input(50);
   animation = input<'slide' | 'fade' | 'none'>('slide');

@@ -40,8 +40,7 @@ describe('BsSwipeContainerDirective', () => {
     fixture = TestBed.createComponent(SwipeTestComponent);
   });
 
-  // Skip: Directive with async host bindings causes NG0100 in test environment
-  it.skip('should create an instance', () => {
+  it('should create an instance', () => {
     expect(fixture).toBeTruthy();
   });
 });
