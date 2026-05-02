@@ -1,7 +1,7 @@
 import { isPlatformServer, NgTemplateOutlet } from '@angular/common';
 import { AfterViewInit, ChangeDetectionStrategy, Component, computed, contentChildren, DestroyRef, effect, ElementRef, forwardRef, inject, input, OnDestroy, output, PLATFORM_ID, signal, TemplateRef, viewChild } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
-import { BsSwipeContainerDirective, BsSwipeDirective } from '@mintplayer/ng-swiper/swiper';
+import { BsSwipeContainerDirective, BsSwipeDirective, BsSwipeViewportDirective } from '@mintplayer/ng-swiper/swiper';
 import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
 import { BsCarouselImageDirective } from '../carousel-image/carousel-image.directive';
 
@@ -13,6 +13,7 @@ import { BsCarouselImageDirective } from '../carousel-image/carousel-image.direc
     NgTemplateOutlet,
     BsSwipeContainerDirective,
     BsSwipeDirective,
+    BsSwipeViewportDirective,
     BsNoNoscriptDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,

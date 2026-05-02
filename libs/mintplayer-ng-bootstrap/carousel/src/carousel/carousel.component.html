@@ -49,7 +49,7 @@
                 }
             </div>
         }
-        <div class="carousel-inner" #innerElement [style.height.px]="slideHeight()">
+        <div class="carousel-inner" bsSwipeViewport #innerElement [style.height.px]="slideHeight()">
             <div bsSwipeContainer #container="bsSwipeContainer"
                 [minimumOffset]="50"
                 [animation]="animation()"
