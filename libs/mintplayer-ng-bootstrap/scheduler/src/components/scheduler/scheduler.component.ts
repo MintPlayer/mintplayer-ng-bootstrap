@@ -117,17 +117,8 @@ export interface ViewChangeEvent {
  */
 @Component({
   selector: 'bs-scheduler',
-  template: `<mp-scheduler #scheduler></mp-scheduler>`,
-  styles: [`
-    :host {
-      display: block;
-      height: 100%;
-    }
-    mp-scheduler {
-      display: block;
-      height: 100%;
-    }
-  `],
+  templateUrl: './scheduler.component.html',
+  styleUrls: ['./scheduler.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })

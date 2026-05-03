@@ -1,3 +1,4 @@
+import { LitElement, html, type TemplateResult } from 'lit';
 import {
   ViewType,
   SchedulerEvent,
@@ -29,19 +30,23 @@ import { SchedulerEventEmitter } from '../events';
  * - InputHandler: Normalizes mouse/touch input
  * - SchedulerEventEmitter: Dispatches custom events
  */
-export class MpScheduler extends HTMLElement {
-  static observedAttributes = [
-    'view',
-    'date',
-    'locale',
-    'first-day-of-week',
-    'slot-duration',
-    'time-format',
-    'editable',
-    'selectable',
-  ];
+export class MpScheduler extends LitElement {
+  static override styles = [schedulerStyles];
 
-  private shadow: ShadowRoot;
+  static override get observedAttributes(): string[] {
+    return [
+      ...(super.observedAttributes ?? []),
+      'view',
+      'date',
+      'locale',
+      'first-day-of-week',
+      'slot-duration',
+      'time-format',
+      'editable',
+      'selectable',
+    ];
+  }
+
   private stateManager: SchedulerStateManager;
   private currentView: BaseView | null = null;
   private currentViewType: ViewType | null = null;
@@ -49,7 +54,7 @@ export class MpScheduler extends HTMLElement {
 
   // Managers
   private dragManager: DragManager;
-  private inputHandler: InputHandler;
+  private inputHandler: InputHandler | null = null;
   private eventEmitter: SchedulerEventEmitter;
 
   // Track previous state for change detection
@@ -70,31 +75,13 @@ export class MpScheduler extends HTMLElement {
   constructor() {
     super();
 
-    this.shadow = this.attachShadow({ mode: 'open' });
     this.stateManager = new SchedulerStateManager();
     this.eventEmitter = new SchedulerEventEmitter(this);
 
-    // Initialize drag manager
+    // Initialize drag manager (input handler is deferred to firstUpdated()
+    // because it needs the shadow root, which Lit creates after construction).
     this.dragManager = new DragManager(this.stateManager);
     this.dragManager.setSlotResolver((x, y) => this.getSlotAtPosition(x, y));
-
-    // Initialize input handler
-    this.inputHandler = new InputHandler(
-      {
-        shadowRoot: this.shadow,
-        getEventById: (id) => this.getEventById(id),
-        isEditable: () => this.stateManager.getState().options.editable ?? true,
-        isSelectable: () => this.stateManager.getState().options.selectable ?? true,
-      },
-      {
-        onPointerDown: (pointer, target, immediate) => this.handlePointerDown(pointer, target, immediate),
-        onPointerMove: (pointer) => this.handlePointerMove(pointer),
-        onPointerUp: (pointer) => this.handlePointerUp(pointer),
-        onClick: (pointer, target) => this.handleClick(pointer, target),
-        onDoubleClick: (pointer, target) => this.handleDoubleClick(pointer, target),
-        getScrollContainer: () => this.contentContainer,
-      }
-    );
 
     // Bind keyboard handler
     this.boundHandleKeyDown = this.handleKeyDown.bind(this);
@@ -103,17 +90,19 @@ export class MpScheduler extends HTMLElement {
     this.stateManager.subscribe((state) => this.onStateChange(state));
   }
 
-  connectedCallback(): void {
-    this.render();
-    this.inputHandler.attach();
+  override connectedCallback(): void {
+    super.connectedCallback();
+    if (this.inputHandler) {
+      this.inputHandler.attach();
+    }
     this.addEventListener('keydown', this.boundHandleKeyDown);
 
     // Start now indicator update timer (every minute)
     this.startNowIndicatorTimer();
   }
 
-  disconnectedCallback(): void {
-    this.inputHandler.detach();
+  override disconnectedCallback(): void {
+    this.inputHandler?.detach();
     this.removeEventListener('keydown', this.boundHandleKeyDown);
     this.currentView?.destroy();
     this.dragManager.destroy();
@@ -127,13 +116,15 @@ export class MpScheduler extends HTMLElement {
       this.pendingDragUpdate = null;
     }
     this.latestDragState = null;
+    super.disconnectedCallback();
   }
 
-  attributeChangedCallback(
+  override attributeChangedCallback(
     name: string,
     oldValue: string | null,
     newValue: string | null
   ): void {
+    super.attributeChangedCallback(name, oldValue, newValue);
     if (oldValue === newValue) return;
 
     switch (name) {
@@ -285,29 +276,44 @@ export class MpScheduler extends HTMLElement {
   // Rendering
   // ============================================
 
-  private render(): void {
-    const style = document.createElement('style');
-    style.textContent = schedulerStyles;
-    this.shadow.appendChild(style);
+  override render(): TemplateResult {
+    return html`
+      <div class="scheduler-container">
+        <header class="scheduler-header"></header>
+        <div class="scheduler-content"></div>
+      </div>
+    `;
+  }
 
-    const container = document.createElement('div');
-    container.className = 'scheduler-container';
+  protected override firstUpdated(): void {
+    const headerEl = this.shadowRoot!.querySelector('.scheduler-header') as HTMLElement;
+    this.contentContainer = this.shadowRoot!.querySelector('.scheduler-content') as HTMLElement;
 
-    const header = this.createHeader();
-    container.appendChild(header);
+    this.populateHeader(headerEl);
 
-    this.contentContainer = document.createElement('div');
-    this.contentContainer.className = 'scheduler-content';
-    container.appendChild(this.contentContainer);
+    // Construct InputHandler now that shadowRoot is available, then attach.
+    this.inputHandler = new InputHandler(
+      {
+        shadowRoot: this.shadowRoot!,
+        getEventById: (id) => this.getEventById(id),
+        isEditable: () => this.stateManager.getState().options.editable ?? true,
+        isSelectable: () => this.stateManager.getState().options.selectable ?? true,
+      },
+      {
+        onPointerDown: (pointer, target, immediate) => this.handlePointerDown(pointer, target, immediate),
+        onPointerMove: (pointer) => this.handlePointerMove(pointer),
+        onPointerUp: (pointer) => this.handlePointerUp(pointer),
+        onClick: (pointer, target) => this.handleClick(pointer, target),
+        onDoubleClick: (pointer, target) => this.handleDoubleClick(pointer, target),
+        getScrollContainer: () => this.contentContainer,
+      }
+    );
+    this.inputHandler.attach();
 
-    this.shadow.appendChild(container);
     this.renderView();
   }
 
-  private createHeader(): HTMLElement {
-    const header = document.createElement('header');
-    header.className = 'scheduler-header';
-
+  private populateHeader(header: HTMLElement): void {
     // Navigation
     const nav = document.createElement('nav');
     nav.className = 'scheduler-nav';
@@ -361,12 +367,10 @@ export class MpScheduler extends HTMLElement {
     header.appendChild(nav);
     header.appendChild(title);
     header.appendChild(viewSwitcher);
-
-    return header;
   }
 
   private updateTitle(titleEl?: HTMLElement): void {
-    const title = titleEl ?? this.shadow.querySelector('.scheduler-title');
+    const title = titleEl ?? this.shadowRoot!.querySelector('.scheduler-title');
     if (!title) return;
 
     const state = this.stateManager.getState();
@@ -480,7 +484,7 @@ export class MpScheduler extends HTMLElement {
     this.updateTitle();
 
     // Update view switcher active state
-    const buttons = this.shadow.querySelectorAll('.scheduler-view-switcher button');
+    const buttons = this.shadowRoot!.querySelectorAll('.scheduler-view-switcher button');
     buttons.forEach((btn) => {
       const btnEl = btn as HTMLButtonElement;
       btnEl.classList.toggle('active', btnEl.dataset['view'] === state.view);
@@ -722,7 +726,7 @@ export class MpScheduler extends HTMLElement {
   // ============================================
 
   private getSlotAtPosition(clientX: number, clientY: number): TimeSlot | null {
-    const elements = this.shadow.elementsFromPoint(clientX, clientY);
+    const elements = this.shadowRoot!.elementsFromPoint(clientX, clientY);
     const slotEl = elements.find((el) =>
       el.matches('.scheduler-time-slot, .scheduler-timeline-slot')
     ) as HTMLElement | undefined;

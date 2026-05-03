@@ -6,8 +6,22 @@
   "prefix": "bs",
   "tags": [],
   "targets": {
+    "codegen-wc": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/**/web-components/*.element.template.ts"],
+      "inputs": [
+        "{projectRoot}/**/web-components/*.element.html",
+        "{projectRoot}/**/web-components/*.element.scss",
+        "{workspaceRoot}/tools/scripts/build-web-components.mjs"
+      ],
+      "cache": true,
+      "options": {
+        "command": "node tools/scripts/build-web-components.mjs libs/mintplayer-ng-bootstrap"
+      }
+    },
     "build": {
       "executor": "@nx/angular:package",
+      "dependsOn": ["^build", "codegen-wc"],
       "outputs": ["{workspaceRoot}/dist/libs/mintplayer-ng-bootstrap"],
       "options": {
         "tsConfig": "libs/mintplayer-ng-bootstrap/tsconfig.lib.json",
