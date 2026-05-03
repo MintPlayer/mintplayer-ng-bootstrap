@@ -2,7 +2,7 @@
   "name": "@mintplayer/splitter",
   "private": false,
   "type": "module",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Web Component for a resizable splitter panel",
   "repository": {
     "type": "git",
