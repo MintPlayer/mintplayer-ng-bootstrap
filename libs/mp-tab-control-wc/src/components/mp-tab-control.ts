@@ -55,7 +55,8 @@ export class MpTabControl extends LitElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
-    this.setAttribute('role', 'tablist');
+    // role="tablist" lives on the inner <ul> that directly contains the tab
+    // buttons — we deliberately don't repeat it on the host.
     this.mutationObserver = new MutationObserver(() => this.refreshTabs());
     this.mutationObserver.observe(this, {
       childList: true,
@@ -214,6 +215,15 @@ export class MpTabControl extends LitElement {
       case ' ':
         this.activate(tab, ev);
         return;
+      case 'Home':
+      case 'End': {
+        ev.preventDefault();
+        const enabled = this.tabs.filter((t) => !t.disabled);
+        if (enabled.length === 0) return;
+        const target = ev.key === 'Home' ? enabled[0] : enabled[enabled.length - 1];
+        this.moveFocusAndActivate(target, ev);
+        return;
+      }
       case 'ArrowLeft':
       case 'ArrowRight': {
         ev.preventDefault();
@@ -223,22 +233,25 @@ export class MpTabControl extends LitElement {
         const currentIdx = enabled.findIndex((t) => t.tabId === tab.tabId);
         const nextIdx =
           (currentIdx + dir + enabled.length) % enabled.length;
-        const nextTab = enabled[nextIdx];
-        this.setAttribute('active-tab', nextTab.tabId);
-        const newButton = this.shadowRoot?.querySelector<HTMLButtonElement>(
-          `button[id="${nextTab.tabId}-header-button"]`,
-        );
-        newButton?.focus();
-        this.dispatchEvent(
-          new CustomEvent<TabActivateEventDetail>('tab-activate', {
-            detail: { tabId: nextTab.tabId, originalEvent: ev },
-            bubbles: true,
-            composed: true,
-          }),
-        );
+        this.moveFocusAndActivate(enabled[nextIdx], ev);
         return;
       }
     }
+  }
+
+  private moveFocusAndActivate(target: TabInfo, ev: Event): void {
+    this.setAttribute('active-tab', target.tabId);
+    const button = this.shadowRoot?.querySelector<HTMLButtonElement>(
+      `button[id="${target.tabId}-header-button"]`,
+    );
+    button?.focus();
+    this.dispatchEvent(
+      new CustomEvent<TabActivateEventDetail>('tab-activate', {
+        detail: { tabId: target.tabId, originalEvent: ev },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 }
 
