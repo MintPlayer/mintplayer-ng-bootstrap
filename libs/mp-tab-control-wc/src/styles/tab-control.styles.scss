@@ -47,6 +47,10 @@
   flex-shrink: 0;
 
   .nav.nav-tabs {
+    // <ul> inherits margin-top: 1em (~16px) from the user-agent stylesheet, and
+    // Bootstrap's .nav doesn't reset it. Without this, the strip pushes the
+    // tab-content body downward — visually intersecting it inside .tsc.
+    margin-top: 0;
     border-bottom: 0;
   }
 
