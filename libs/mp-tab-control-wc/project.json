@@ -1,0 +1,59 @@
+{
+  "name": "mp-tab-control-wc",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/mp-tab-control-wc/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "codegen-wc": {
+      "executor": "nx:run-commands",
+      "outputs": [
+        "{projectRoot}/**/*.styles.ts",
+        "{projectRoot}/**/web-components/*.element.template.ts"
+      ],
+      "inputs": [
+        "{projectRoot}/**/*.styles.scss",
+        "{projectRoot}/**/web-components/*.element.html",
+        "{projectRoot}/**/web-components/*.element.scss",
+        "{workspaceRoot}/tools/scripts/build-web-components.mjs"
+      ],
+      "cache": true,
+      "options": {
+        "command": "node tools/scripts/build-web-components.mjs libs/mp-tab-control-wc"
+      }
+    },
+    "build": {
+      "executor": "@nx/js:tsc",
+      "dependsOn": ["^build", "codegen-wc"],
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/mp-tab-control-wc",
+        "main": "libs/mp-tab-control-wc/src/index.ts",
+        "tsConfig": "libs/mp-tab-control-wc/tsconfig.lib.json",
+        "assets": ["libs/mp-tab-control-wc/*.md"]
+      }
+    },
+    "publish": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node tools/scripts/publish.mjs mp-tab-control-wc {args.ver} {args.tag}"
+      },
+      "dependsOn": [
+        {
+          "target": "build"
+        }
+      ]
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"]
+    },
+    "test": {
+      "executor": "@analogjs/vitest-angular:test",
+      "outputs": ["{workspaceRoot}/coverage/libs/mp-tab-control-wc"],
+      "options": {
+        "configFile": "vitest.config.ts"
+      }
+    }
+  }
+}

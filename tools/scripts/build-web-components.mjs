@@ -80,7 +80,7 @@ function compileScss(scssPath) {
   const result = sass.compile(scssPath, {
     style: 'expanded',
     sourceMap: false,
-    loadPaths: [dirname(scssPath)],
+    loadPaths: [dirname(scssPath), join(repoRoot, 'node_modules')],
   });
   return result.css;
 }

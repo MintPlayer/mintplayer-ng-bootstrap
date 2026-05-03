@@ -7,6 +7,12 @@ import { BsTabPageHeaderDirective } from '../tab-page-header/tab-page-header.dir
   templateUrl: './tab-page.component.html',
   styleUrls: ['./tab-page.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    // Used by <mp-tab-control> to project the active page into its content slot.
+    '[attr.slot]': 'contentSlotName()',
+    // Tells <mp-tab-control> the tab is disabled without inspecting child types.
+    '[attr.data-disabled]': 'disabled() ? "" : null',
+  },
 })
 export class BsTabPageComponent {
   element = inject(ElementRef);
@@ -17,6 +23,9 @@ export class BsTabPageComponent {
   }
   tabId = signal<number>(0);
   tabName = computed(() => `${this.tabControl.tabControlName()}-${this.tabId()}`);
+  contentSlotName = computed(() =>
+    this.tabControl.isServerSide ? null : `${this.tabName()}-content`,
+  );
 
   disabled = input(false);
   readonly headerTemplate = contentChild(BsTabPageHeaderDirective);

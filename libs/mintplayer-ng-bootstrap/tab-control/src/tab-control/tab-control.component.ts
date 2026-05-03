@@ -1,7 +1,9 @@
 import { CdkDragDrop, CdkDragStart, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
-import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, contentChildren, effect, ElementRef, inject, input, signal } from '@angular/core';
+import { isPlatformServer, NgTemplateOutlet } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, contentChildren, CUSTOM_ELEMENTS_SCHEMA, effect, ElementRef, inject, input, PLATFORM_ID, signal } from '@angular/core';
 import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
+import '@mintplayer/tab-control-wc';
+import type { TabActivateEventDetail } from '@mintplayer/tab-control-wc';
 import { BsTabPageComponent } from '../tab-page/tab-page.component';
 import { BsTabsPosition } from '../tabs-position';
 
@@ -14,12 +16,16 @@ import { BsTabsPosition } from '../tabs-position';
     { provide: 'TAB_CONTROL', useExisting: BsTabControlComponent }
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   host: {
     'class': 'd-block position-relative',
   },
 })
 export class BsTabControlComponent {
   element = inject(ElementRef);
+  private platformId = inject(PLATFORM_ID);
+
+  readonly isServerSide = isPlatformServer(this.platformId);
 
   constructor() {
     this.tabControlId = signal(++BsTabControlComponent.tabControlCounter);
@@ -67,6 +73,8 @@ export class BsTabControlComponent {
     if (!this.selectFirstTab()) return null;
     return this.orderedTabPages().find(t => !t.disabled()) ?? null;
   });
+  // Stable string ID of the active tab, fed to <mp-tab-control [active-tab]>.
+  activeTabName = computed(() => this.checkedTab()?.tabName() ?? null);
   static tabControlCounter = 0;
   tabCounter = 0;
 
@@ -78,14 +86,16 @@ export class BsTabControlComponent {
     return false;
   }
 
-  headerKeydown(tab: BsTabPageComponent, event: KeyboardEvent) {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      this.setActiveTab(tab);
+  onTabActivate(event: Event) {
+    const ce = event as CustomEvent<TabActivateEventDetail>;
+    const tabName = ce.detail.tabId;
+    const tab = this.tabPages().find(tp => tp.tabName() === tabName);
+    if (tab && !tab.disabled()) {
+      this.activeTab.set(tab);
     }
   }
 
-  startDragTab(ev: CdkDragStart<BsTabPageComponent>) {
+  startDragTab(_ev: CdkDragStart<BsTabPageComponent>) {
     if ('vibrate' in navigator) {
       navigator.vibrate([30]);
     }
