@@ -42,8 +42,15 @@
 }
 
 // Tab-strip container.
+//
+// `overflow: hidden` clips the inner <ul>'s native horizontal scrollbar so it
+// stays hidden behind the tab-content area below. The user can still scroll
+// horizontally via mouse wheel / touch / keyboard — only the visual scrollbar
+// is clipped. This matches the master `bs-tab-control` template, where the
+// outer wrapper had `class="overflow-hidden ... tsc"`.
 .tsc {
   max-height: 41px;
+  overflow: hidden;
   flex-shrink: 0;
 
   .nav.nav-tabs {
