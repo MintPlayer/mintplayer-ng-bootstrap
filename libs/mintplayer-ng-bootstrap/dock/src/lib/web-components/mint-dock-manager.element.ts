@@ -1635,6 +1635,43 @@ export class MintDockManagerElement extends LitElement {
     );
   }
 
+  /**
+   * Returns the dividers inside an `<mp-splitter>`'s shadow DOM, in DOM order.
+   * mp-splitter renders one `.divider` between each pair of adjacent panels,
+   * so for an N-child split, length N-1.
+   */
+  private getSplitterDividers(splitter: HTMLElement): HTMLElement[] {
+    if (splitter.tagName !== 'MP-SPLITTER') return [];
+    return Array.from(
+      splitter.shadowRoot?.querySelectorAll<HTMLElement>('.divider') ?? [],
+    );
+  }
+
+  /**
+   * Returns the panel wrappers inside an `<mp-splitter>`'s shadow DOM, in
+   * DOM order. These are the elements mp-splitter sizes (via setPanelSizes)
+   * during a divider drag — the dock reads their geometry for intersection
+   * handle math and snap markers.
+   */
+  private getSplitterPanels(splitter: HTMLElement): HTMLElement[] {
+    if (splitter.tagName !== 'MP-SPLITTER') return [];
+    return Array.from(
+      splitter.shadowRoot?.querySelectorAll<HTMLElement>('.panel-wrapper') ?? [],
+    );
+  }
+
+  /**
+   * Locate the rendered `<mp-splitter>` element for a given DockPath
+   * `segments` value (the split-tree path). Searches the dock's shadow.
+   */
+  private findSplitterByPath(segments: number[]): HTMLElement | null {
+    return (
+      this.shadowRoot?.querySelector<HTMLElement>(
+        `.dock-split[data-path="${segments.join('/')}"]`,
+      ) ?? null
+    );
+  }
+
   private beginResize(
     event: PointerEvent,
     container: HTMLElement,
