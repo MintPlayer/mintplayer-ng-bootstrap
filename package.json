@@ -5,7 +5,7 @@
   "scripts": {
     "ng": "nx",
     "nx": "nx",
-    "postinstall": "node ./decorate-angular-cli.js && node ./tools/scripts/build-web-components.mjs libs/mintplayer-ng-bootstrap libs/mp-scheduler-wc",
+    "postinstall": "node ./decorate-angular-cli.js && nx run-many --target=codegen-wc",
     "start": "nx serve",
     "start:network": "nx serve --configuration=network",
     "build": "nx build",

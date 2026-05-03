@@ -1,3 +1,4 @@
+import { LitElement, html, type TemplateResult } from 'lit';
 import { SplitterStateManager } from '../state';
 import { InputHandler } from '../input';
 import { ResizeManager } from '../managers';
@@ -9,8 +10,18 @@ export interface SplitterResizeEventDetail {
   orientation: Direction;
 }
 
-export class MpSplitter extends HTMLElement {
-  private shadow: ShadowRoot;
+export class MpSplitter extends LitElement {
+  static override styles = [splitterStyles];
+
+  static override get observedAttributes(): string[] {
+    return [
+      ...(super.observedAttributes ?? []),
+      'orientation',
+      'min-panel-size',
+      'touch-mode',
+    ];
+  }
+
   private stateManager: SplitterStateManager;
   private inputHandler: InputHandler;
   private resizeManager: ResizeManager;
@@ -23,12 +34,9 @@ export class MpSplitter extends HTMLElement {
   private mutationObserver: MutationObserver | null = null;
   private unsubscribeState: (() => void) | null = null;
 
-  static observedAttributes = ['orientation', 'min-panel-size', 'touch-mode'];
-
   constructor() {
     super();
 
-    this.shadow = this.attachShadow({ mode: 'open' });
     this.stateManager = new SplitterStateManager();
     this.resizeManager = new ResizeManager();
 
@@ -39,8 +47,24 @@ export class MpSplitter extends HTMLElement {
     });
   }
 
-  connectedCallback(): void {
-    this.render();
+  override render(): TemplateResult {
+    return html`
+      <div class="splitter-container"></div>
+      <slot></slot>
+    `;
+  }
+
+  protected override firstUpdated(): void {
+    this.container = this.shadowRoot!.querySelector('.splitter-container') as HTMLDivElement;
+    this.container.classList.add(this.orientation);
+
+    this.slotElement = this.shadowRoot!.querySelector('slot') as HTMLSlotElement;
+    // Hide the default slot - we'll project content ourselves via named slots.
+    this.slotElement.style.display = 'none';
+    this.slotElement.addEventListener('slotchange', () => {
+      this.updatePanelsFromSlot();
+    });
+
     this.setupMutationObserver();
     this.subscribeToState();
 
@@ -50,7 +74,7 @@ export class MpSplitter extends HTMLElement {
     });
   }
 
-  disconnectedCallback(): void {
+  override disconnectedCallback(): void {
     this.inputHandler.dispose();
 
     if (this.mutationObserver) {
@@ -62,13 +86,15 @@ export class MpSplitter extends HTMLElement {
       this.unsubscribeState();
       this.unsubscribeState = null;
     }
+    super.disconnectedCallback();
   }
 
-  attributeChangedCallback(
+  override attributeChangedCallback(
     name: string,
     oldValue: string | null,
     newValue: string | null
   ): void {
+    super.attributeChangedCallback(name, oldValue, newValue);
     if (oldValue === newValue) return;
 
     switch (name) {
@@ -128,27 +154,6 @@ export class MpSplitter extends HTMLElement {
   }
 
   // Private methods
-  private render(): void {
-    const style = document.createElement('style');
-    style.textContent = splitterStyles;
-
-    this.container = document.createElement('div');
-    this.container.className = `splitter-container ${this.orientation}`;
-
-    this.slotElement = document.createElement('slot');
-
-    this.shadow.appendChild(style);
-    this.shadow.appendChild(this.container);
-    this.shadow.appendChild(this.slotElement);
-
-    // Hide the default slot - we'll project content ourselves
-    this.slotElement.style.display = 'none';
-
-    this.slotElement.addEventListener('slotchange', () => {
-      this.updatePanelsFromSlot();
-    });
-  }
-
   private setupMutationObserver(): void {
     this.mutationObserver = new MutationObserver(() => {
       this.updatePanelsFromSlot();
