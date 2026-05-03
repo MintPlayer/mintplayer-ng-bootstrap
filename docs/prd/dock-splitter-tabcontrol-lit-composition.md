@@ -174,9 +174,11 @@ Stays in Angular `BsTabControlComponent`:
 - Signal-based `input()` API surface for Angular consumers.
 - `contentChildren(BsTabPageComponent)` query — translates Angular component tree into WC DOM children.
 - `effect()`-driven auto-select-first-tab logic — keep here, the WC just exposes `active` + emits `tab-activate`.
-- CDK drag-drop reorder — Angular consumers expect `cdkDrag` ergonomics; the wrapper renders `bs-tab-page` children with CDK handlers, and projects the resulting reordered DOM into `<mp-tab-control>`.
 - `*bsTabPageHeader` directive + `NgTemplateOutlet` for header projection — the wrapper renders the directive's template into a `<span slot="header">` inside each `<mp-tab-page>` projection.
 - Dependency-injection provider (`{ provide: 'TAB_CONTROL', useExisting: BsTabControlComponent }`) for `bs-tab-page` registration.
+
+Dropped from `BsTabControlComponent`:
+- CDK drag-drop reorder. The Lit WC owns the tab-strip DOM and the host-side reorder ergonomics didn't carry through Shadow DOM cleanly. Consumers who need reorder can apply `cdkDrag` to their own projected tab content, or wait for the WC to grow a built-in reorder mode (out of scope).
 
 Moves into Lit `MpTabControl`:
 - Tab strip rendering (Lit `html\`\`` with Bootstrap `nav nav-tabs`).
