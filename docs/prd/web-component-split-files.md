@@ -2,10 +2,10 @@
 
 ## Problem
 
-`libs/mintplayer-ng-bootstrap/dock/src/lib/web-components/mint-dock-manager.element.ts` is a single 4 473-line file that defines a vanilla custom element (`class MintDockManagerElement extends HTMLElement`). It bundles three concerns into one TypeScript module:
+`libs/mintplayer-ng-bootstrap/dock/src/lib/web-components/mint-dock-manager.element.ts` is a single 4,473-line file that defines a vanilla custom element (`class MintDockManagerElement extends HTMLElement`). It bundles three concerns into one TypeScript module:
 
 - A 485-line ES template-literal `templateHtml` (lines 32–516) that **mixes** a `<style>...</style>` block (~330 lines of CSS) **and** the element's HTML markup.
-- The full TypeScript class with state, drag/drop logic, layout math, and DOM wiring (~3 950 lines).
+- The full TypeScript class with state, drag/drop logic, layout math, and DOM wiring (~3,950 lines).
 - The `customElements.define(...)` registration at the bottom.
 
 This is hard to maintain:
@@ -29,14 +29,14 @@ We want to author this element (and any future `*.element.ts`) as three co-locat
 
 - Replacing the runtime web-component pattern with Lit or Stencil. The class extends `HTMLElement` directly and that stays.
 - Changing the public API of `MintDockManagerElement` or `BsDockManagerComponent`.
-- Splitting the 4 000-line class itself into smaller modules. That is a separate refactor; this PRD is about file-format only.
+- Splitting the 4,000-line class itself into smaller modules. That is a separate refactor; this PRD is about file-format only.
 - Building web-components for consumption outside the Angular library (i.e. as standalone `<script>` artefacts). The output remains a normal entry of the published `@mintplayer/ng-bootstrap` package.
 
 ## Current state
 
 ```text
 libs/mintplayer-ng-bootstrap/dock/src/lib/web-components/
-└── mint-dock-manager.element.ts     ← TS class + <style> + HTML, 4 473 lines
+└── mint-dock-manager.element.ts     ← TS class + <style> + HTML, 4,473 lines
 ```
 
 Build today:
@@ -104,7 +104,7 @@ The generated `.template.ts` exports a single string built from `<style>${compil
 export const templateHtml = `<style>...</style>...markup...`;
 ```
 
-This preserves the existing runtime contract exactly (one string fed into `template.innerHTML`), so the 4 000-line class needs only a one-line change at the import site.
+This preserves the existing runtime contract exactly (one string fed into `template.innerHTML`), so the 4,000-line class needs only a one-line change at the import site.
 
 ### Build-time wiring
 
@@ -156,7 +156,7 @@ libs/**/web-components/*.element.template.ts
 
 ### Type-check ergonomics
 
-The generated `.template.ts` is committed-out but referenced by an `import` in the hand-written `.element.ts`. Two safeguards so the IDE doesn't complain on a fresh clone:
+The generated `.template.ts` is gitignored but referenced by an `import` in the hand-written `.element.ts`. Two safeguards so the IDE doesn't complain on a fresh clone:
 
 1. `tsconfig.lib.json` already covers `**/*.ts` — no change needed.
 2. Add a `postinstall` step (or document `npm run codegen:wc`) that runs the codegen once after `npm install`, so red squigglies disappear without needing a full `nx build`. Cheapest place: extend the existing `postinstall` in `package.json`.
