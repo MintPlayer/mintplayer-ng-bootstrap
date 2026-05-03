@@ -5,8 +5,26 @@
   "projectType": "library",
   "tags": [],
   "targets": {
+    "codegen-wc": {
+      "executor": "nx:run-commands",
+      "outputs": [
+        "{projectRoot}/**/*.styles.ts",
+        "{projectRoot}/**/web-components/*.element.template.ts"
+      ],
+      "inputs": [
+        "{projectRoot}/**/*.styles.scss",
+        "{projectRoot}/**/web-components/*.element.html",
+        "{projectRoot}/**/web-components/*.element.scss",
+        "{workspaceRoot}/tools/scripts/build-web-components.mjs"
+      ],
+      "cache": true,
+      "options": {
+        "command": "node tools/scripts/build-web-components.mjs libs/mp-scheduler-wc"
+      }
+    },
     "build": {
       "executor": "@nx/js:tsc",
+      "dependsOn": ["^build", "codegen-wc"],
       "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/libs/mp-scheduler-wc",

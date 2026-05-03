@@ -12,6 +12,7 @@
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
   "dependencies": {
+    "lit": "^3.3.0",
     "tslib": "^2.3.0"
   },
   "peerDependencies": {

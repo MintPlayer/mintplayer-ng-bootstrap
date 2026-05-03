@@ -1,4 +1,5 @@
 
+import { LitElement, type TemplateResult } from 'lit';
 import {
   DockFloatingStackLayout,
   DockLayout,
@@ -7,6 +8,7 @@ import {
   DockSplitNode,
   DockStackNode,
 } from '../types/dock-layout';
+import { template, styles } from './mint-dock-manager.element.template';
 
 type DockPath =
   | { type: 'docked'; segments: number[] }
@@ -29,506 +31,9 @@ type FloatingResizeEdges = {
   vertical: 'top' | 'bottom' | 'none';
 };
 
-const templateHtml = `
-  <style>
-    :host {
-      display: block;
-      position: relative;
-      width: 100%;
-      height: 100%;
-      contain: layout paint size style;
-      box-sizing: border-box;
-      font-family: inherit;
-      color: inherit;
-      --dock-split-gap: 0.25rem;
-    }
+export class MintDockManagerElement extends LitElement {
+  static override styles = [styles];
 
-    .dock-root,
-    .dock-docked,
-    .dock-split,
-    .dock-split__child,
-    .dock-stack,
-    .dock-stack__content,
-    .dock-stack__pane {
-      box-sizing: border-box;
-      min-width: 0;
-      min-height: 0;
-    }
-
-    .dock-root {
-      position: relative;
-      width: 100%;
-      height: 100%;
-    }
-
-    .dock-docked {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      z-index: 0;
-    }
-
-    .dock-floating-layer {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      z-index: 5;
-    }
-
-    .dock-intersections-layer {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      z-index: 120;
-    }
-
-    .dock-floating {
-      position: absolute;
-      display: flex;
-      flex-direction: column;
-      pointer-events: auto;
-      border: 1px solid rgba(0, 0, 0, 0.3);
-      border-radius: 0.5rem;
-      background: rgba(255, 255, 255, 0.92);
-      box-shadow: 0 16px 32px rgba(15, 23, 42, 0.25);
-      overflow: hidden;
-      min-width: 12rem;
-      min-height: 8rem;
-    }
-
-    .dock-floating__chrome {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.35rem 0.75rem;
-      cursor: move;
-      background: linear-gradient(
-        to bottom,
-        rgba(148, 163, 184, 0.6),
-        rgba(148, 163, 184, 0.25)
-      );
-      border-bottom: 1px solid rgba(148, 163, 184, 0.5);
-      user-select: none;
-      -webkit-user-select: none;
-    }
-
-    .dock-floating__title {
-      flex: 1 1 auto;
-      font-size: 0.875rem;
-      font-weight: 500;
-      color: rgba(30, 41, 59, 0.95);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .dock-floating > .dock-stack {
-      flex: 1 1 auto;
-      min-width: 12rem;
-      min-height: 8rem;
-    }
-
-    .dock-floating__resizer {
-      position: absolute;
-      pointer-events: auto;
-      z-index: 2;
-      background: rgba(148, 163, 184, 0.25);
-      transition: background 120ms ease;
-    }
-
-    .dock-floating__resizer:hover,
-    .dock-floating__resizer[data-resizing='true'] {
-      background: rgba(148, 163, 184, 0.4);
-    }
-
-    .dock-floating__resizer--top,
-    .dock-floating__resizer--bottom {
-      left: 0.75rem;
-      right: 0.75rem;
-      height: 0.5rem;
-    }
-
-    .dock-floating__resizer--top {
-      top: 0;
-      cursor: n-resize;
-    }
-
-    .dock-floating__resizer--bottom {
-      bottom: 0;
-      cursor: s-resize;
-    }
-
-    .dock-floating__resizer--left,
-    .dock-floating__resizer--right {
-      top: 1.75rem;
-      bottom: 0.75rem;
-      width: 0.5rem;
-    }
-
-    .dock-floating__resizer--left {
-      left: 0;
-      cursor: w-resize;
-    }
-
-    .dock-floating__resizer--right {
-      right: 0;
-      cursor: e-resize;
-    }
-
-    .dock-floating__resizer--top-left,
-    .dock-floating__resizer--top-right,
-    .dock-floating__resizer--bottom-left,
-    .dock-floating__resizer--bottom-right {
-      width: 0.75rem;
-      height: 0.75rem;
-    }
-
-    .dock-floating__resizer--top-left {
-      top: 0;
-      left: 0;
-      cursor: nw-resize;
-    }
-
-    .dock-floating__resizer--top-right {
-      top: 0;
-      right: 0;
-      cursor: ne-resize;
-    }
-
-    .dock-floating__resizer--bottom-left {
-      bottom: 0;
-      left: 0;
-      cursor: sw-resize;
-    }
-
-    .dock-floating__resizer--bottom-right {
-      right: 0;
-      bottom: 0;
-      cursor: se-resize;
-    }
-
-    .dock-split {
-      display: flex;
-      flex: 1 1 0;
-      gap: var(--dock-split-gap);
-      position: relative;
-    }
-
-    .dock-split[data-direction="vertical"] {
-      flex-direction: column;
-    }
-
-    .dock-split[data-direction="horizontal"] {
-      flex-direction: row;
-    }
-
-    .dock-split__child {
-      display: flex;
-      flex: 1 1 0;
-      position: relative;
-    }
-
-    .dock-split__divider {
-      position: relative;
-      flex: 0 0 auto;
-      background: rgba(0, 0, 0, 0.08);
-      transition: background 120ms ease;
-    }
-
-    .dock-split[data-direction="horizontal"] > .dock-split__divider {
-      width: 0.5rem;
-      cursor: col-resize;
-      /* Extend through perpendicular gaps for visual continuity */
-      margin-top: calc(var(--dock-split-gap) * -1);
-      margin-bottom: calc(var(--dock-split-gap) * -1);
-    }
-
-    .dock-split[data-direction="vertical"] > .dock-split__divider {
-      height: 0.5rem;
-      cursor: row-resize;
-      /* Extend through perpendicular gaps for visual continuity */
-      margin-left: calc(var(--dock-split-gap) * -1);
-      margin-right: calc(var(--dock-split-gap) * -1);
-    }
-
-    .dock-split__divider::after {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      border-radius: 999px;
-      background: rgba(0, 0, 0, 0.25);
-    }
-
-    .dock-split[data-direction="horizontal"] > .dock-split__divider::after {
-      width: 0.125rem;
-      height: 60%;
-    }
-
-    .dock-split[data-direction="vertical"] > .dock-split__divider::after {
-      width: 60%;
-      height: 0.125rem;
-    }
-
-    .dock-split__divider:hover,
-    .dock-split__divider:focus-visible,
-    .dock-split__divider[data-resizing='true'] {
-      background: rgba(59, 130, 246, 0.35);
-    }
-
-    .dock-intersection-handle {
-      position: absolute;
-      width: 1rem;
-      height: 1rem;
-      margin-left: -0.5rem;
-      margin-top: -0.5rem;
-      border-radius: 0.375rem;
-      background: rgba(59, 130, 246, 0.2);
-      border: 1px solid rgba(59, 130, 246, 0.6);
-      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.2);
-      cursor: all-scroll;
-      pointer-events: auto;
-      opacity: 0;
-      transition: background 120ms ease, border-color 120ms ease, opacity 120ms ease;
-    }
-
-    .dock-intersection-handle:hover,
-    .dock-intersection-handle:focus-visible,
-    .dock-intersection-handle[data-visible='true'],
-    .dock-intersection-handle[data-resizing='true'] {
-      background: rgba(59, 130, 246, 0.35);
-      border-color: rgba(59, 130, 246, 0.9);
-      opacity: 1;
-      outline: none;
-    }
-
-    .dock-snap-marker {
-      position: absolute;
-      width: 6px;
-      height: 6px;
-      margin-left: -3px;
-      margin-top: -3px;
-      border-radius: 50%;
-      background: rgba(59, 130, 246, 0.7);
-      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
-      pointer-events: none;
-      z-index: 130;
-    }
-
-    .dock-stack {
-      display: flex;
-      flex-direction: column;
-      flex: 1 1 0;
-      border: 1px solid rgba(0, 0, 0, 0.2);
-      border-radius: 0.25rem;
-      background: rgba(255, 255, 255, 0.75);
-      backdrop-filter: blur(4px);
-    }
-
-    .dock-stack__header {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.25rem;
-      padding: 0.25rem;
-      background: rgba(0, 0, 0, 0.05);
-      border-bottom: 1px solid rgba(0, 0, 0, 0.15);
-    }
-
-    .dock-tab {
-      appearance: none;
-      border: none;
-      padding: 0.25rem 0.5rem;
-      border-radius: 0.25rem;
-      background: transparent;
-      color: inherit;
-      font: inherit;
-      cursor: grab;
-      transition: background 160ms ease;
-    }
-
-    .dock-tab:active {
-      cursor: grabbing;
-    }
-
-    .dock-tab:hover {
-      background: rgba(0, 0, 0, 0.05);
-    }
-
-    .dock-tab:focus-visible {
-      outline: 2px solid rgba(59, 130, 246, 0.8);
-      outline-offset: 1px;
-    }
-
-    .dock-tab--active {
-      background: rgba(59, 130, 246, 0.15);
-    }
-
-    .dock-stack__content {
-      position: relative;
-      flex: 1 1 auto;
-      display: flex;
-      overflow: hidden;
-    }
-
-    .dock-stack__pane {
-      position: relative;
-      flex: 1 1 100%;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .dock-stack__pane[hidden] {
-      display: none !important;
-    }
-
-    .dock-drop-indicator {
-      position: absolute;
-      pointer-events: none;
-      border: 2px solid rgba(59, 130, 246, 0.9);
-      background: rgba(59, 130, 246, 0.2);
-      border-radius: 0.25rem;
-      opacity: 0;
-      transition: opacity 120ms ease;
-      z-index: 100;
-    }
-
-    .dock-drop-indicator[data-visible='true'] {
-      opacity: 1;
-    }
-
-    .dock-drop-joystick {
-      position: absolute;
-      display: grid;
-      grid-template-columns: repeat(3, min-content);
-      grid-template-rows: repeat(3, min-content);
-      gap: 0.125rem;
-      padding: 0.125rem;
-      border-radius: 999px;
-      background: rgba(15, 23, 42, 0.15);
-      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
-      pointer-events: none;
-      transform: translate(-50%, -50%);
-      z-index: 110;
-    }
-
-    .dock-drop-joystick__spacer {
-      width: 1.75rem;
-      height: 1.75rem;
-      pointer-events: none;
-    }
-
-    .dock-drop-joystick__button {
-      width: 1.75rem;
-      height: 1.75rem;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 0.375rem;
-      border: 1px solid rgba(59, 130, 246, 0.4);
-      background: rgba(255, 255, 255, 0.9);
-      color: rgba(30, 64, 175, 0.9);
-      font-size: 0.75rem;
-      line-height: 1;
-      font-weight: 600;
-      pointer-events: auto;
-      cursor: pointer;
-      transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
-    }
-
-    .dock-drop-joystick__button[data-active='true'],
-    .dock-drop-joystick__button:hover,
-    .dock-drop-joystick__button:focus-visible {
-      background: rgba(59, 130, 246, 0.25);
-      border-color: rgba(59, 130, 246, 0.8);
-      color: rgba(30, 64, 175, 1);
-    }
-
-    .dock-drop-joystick__button:focus-visible {
-      outline: 2px solid rgba(59, 130, 246, 0.9);
-      outline-offset: 1px;
-    }
-
-    .dock-drop-joystick__button[data-zone='center'] {
-      border-radius: 0.5rem;
-    }
-
-    ::slotted(*) {
-      flex: 1 1 auto;
-      display: block;
-      min-width: 0;
-      min-height: 0;
-    }
-  </style>
-  <div class="dock-root">
-    <div class="dock-docked"></div>
-    <div class="dock-floating-layer"></div>
-    <div class="dock-intersections-layer dock-intersection-layer"></div>
-  </div>
-  <div class="dock-drop-indicator"></div>
-  <div class="dock-drop-joystick" data-visible="false">
-    <div class="dock-drop-joystick__spacer"></div>
-    <button
-      class="dock-drop-joystick__button"
-      type="button"
-      data-zone="top"
-      aria-label="Dock to top"
-    >
-      ↑
-    </button>
-    <div class="dock-drop-joystick__spacer"></div>
-    <button
-      class="dock-drop-joystick__button"
-      type="button"
-      data-zone="left"
-      aria-label="Dock to left"
-    >
-      ←
-    </button>
-    <button
-      class="dock-drop-joystick__button"
-      type="button"
-      data-zone="center"
-      aria-label="Dock to center"
-    >
-      •
-    </button>
-    <button
-      class="dock-drop-joystick__button"
-      type="button"
-      data-zone="right"
-      aria-label="Dock to right"
-    >
-      →
-    </button>
-    <div class="dock-drop-joystick__spacer"></div>
-    <button
-      class="dock-drop-joystick__button"
-      type="button"
-      data-zone="bottom"
-      aria-label="Dock to bottom"
-    >
-      ↓
-    </button>
-    <div class="dock-drop-joystick__spacer"></div>
-  </div>
-`;
-
-let cachedTemplate: HTMLTemplateElement | null = null;
-let cachedTemplateDocument: Document | null = null;
-
-function ensureTemplate(documentRef: Document): HTMLTemplateElement {
-  if (!cachedTemplate || cachedTemplateDocument !== documentRef) {
-    cachedTemplate = documentRef.createElement('template');
-    cachedTemplate.innerHTML = templateHtml;
-    cachedTemplateDocument = documentRef;
-  }
-
-  return cachedTemplate;
-}
-
-export class MintDockManagerElement extends HTMLElement {
   private static documentRef: Document | null =
     typeof document !== 'undefined' ? document : null;
 
@@ -538,21 +43,20 @@ export class MintDockManagerElement extends HTMLElement {
     }
   }
 
-  static get observedAttributes(): string[] {
-    return ['layout'];
-    // return ['layout', 'debug-snap-markers'];
+  static override get observedAttributes(): string[] {
+    return [...(super.observedAttributes ?? []), 'layout'];
   }
 
   private static instanceCounter = 0;
 
-  private readonly documentRef: Document;
-  private readonly windowRef: (Window & typeof globalThis) | null;
-  private readonly rootEl: HTMLElement;
-  private readonly dockedEl: HTMLElement;
-  private readonly floatingLayerEl: HTMLElement;
-  private readonly dropIndicator: HTMLElement;
-  private readonly dropJoystick: HTMLElement;
-  private readonly dropJoystickButtons: HTMLButtonElement[];
+  private documentRef!: Document;
+  private windowRef!: (Window & typeof globalThis) | null;
+  private rootEl!: HTMLElement;
+  private dockedEl!: HTMLElement;
+  private floatingLayerEl!: HTMLElement;
+  private dropIndicator!: HTMLElement;
+  private dropJoystick!: HTMLElement;
+  private dropJoystickButtons!: HTMLButtonElement[];
   private readonly instanceId: string;
   private dropJoystickTarget: HTMLElement | null = null;
   private rootLayout: DockLayoutNode | null = null;
@@ -747,52 +251,6 @@ export class MintDockManagerElement extends HTMLElement {
 
   constructor() {
     super();
-    const documentRef = this.resolveDocument();
-    this.documentRef = documentRef;
-    this.windowRef = this.resolveWindow(documentRef);
-    const shadowRoot = this.attachShadow({ mode: 'open' });
-    const template = ensureTemplate(documentRef);
-    shadowRoot.appendChild(template.content.cloneNode(true));
-    const root = shadowRoot.querySelector<HTMLElement>('.dock-root');
-    if (!root) {
-      throw new Error('mint-dock-manager template is missing the root element.');
-    }
-
-    const docked = shadowRoot.querySelector<HTMLElement>('.dock-docked');
-    if (!docked) {
-      throw new Error('mint-dock-manager template is missing the docked surface element.');
-    }
-
-    const floatingLayer = shadowRoot.querySelector<HTMLElement>(
-      '.dock-floating-layer',
-    );
-    if (!floatingLayer) {
-      throw new Error('mint-dock-manager template is missing the floating layer element.');
-    }
-
-    const indicator = shadowRoot.querySelector<HTMLElement>('.dock-drop-indicator');
-    if (!indicator) {
-      throw new Error('mint-dock-manager template is missing the drop indicator element.');
-    }
-
-    const joystick = shadowRoot.querySelector<HTMLElement>('.dock-drop-joystick');
-    if (!joystick) {
-      throw new Error('mint-dock-manager template is missing the drop joystick element.');
-    }
-
-    const joystickButtons = Array.from(
-      joystick.querySelectorAll<HTMLButtonElement>('.dock-drop-joystick__button[data-zone]'),
-    );
-    if (joystickButtons.length === 0) {
-      throw new Error('mint-dock-manager template is missing drop joystick buttons.');
-    }
-
-    this.rootEl = root;
-    this.dockedEl = docked;
-    this.floatingLayerEl = floatingLayer;
-    this.dropIndicator = indicator;
-    this.dropJoystick = joystick;
-    this.dropJoystickButtons = joystickButtons;
     this.instanceId = `mint-dock-${++MintDockManagerElement.instanceCounter}`;
     this.onPointerMove = this.onPointerMove.bind(this);
     this.onPointerUp = this.onPointerUp.bind(this);
@@ -809,22 +267,63 @@ export class MintDockManagerElement extends HTMLElement {
     this.onWindowResize = this.onWindowResize.bind(this);
   }
 
-  connectedCallback(): void {
-    if (!this.hasAttribute('role')) {
-      this.setAttribute('role', 'application');
+  override render(): TemplateResult {
+    return template;
+  }
+
+  protected override firstUpdated(): void {
+    // Resolve document and window now that we are connected.
+    const documentRef = this.resolveDocument();
+    this.documentRef = documentRef;
+    this.windowRef = this.resolveWindow(documentRef);
+
+    // Query the rendered shadow DOM for the dock skeleton.
+    const shadowRoot = this.shadowRoot!;
+    const root = shadowRoot.querySelector<HTMLElement>('.dock-root');
+    if (!root) {
+      throw new Error('mint-dock-manager template is missing the root element.');
     }
+    const docked = shadowRoot.querySelector<HTMLElement>('.dock-docked');
+    if (!docked) {
+      throw new Error('mint-dock-manager template is missing the docked surface element.');
+    }
+    const floatingLayer = shadowRoot.querySelector<HTMLElement>('.dock-floating-layer');
+    if (!floatingLayer) {
+      throw new Error('mint-dock-manager template is missing the floating layer element.');
+    }
+    const indicator = shadowRoot.querySelector<HTMLElement>('.dock-drop-indicator');
+    if (!indicator) {
+      throw new Error('mint-dock-manager template is missing the drop indicator element.');
+    }
+    const joystick = shadowRoot.querySelector<HTMLElement>('.dock-drop-joystick');
+    if (!joystick) {
+      throw new Error('mint-dock-manager template is missing the drop joystick element.');
+    }
+    const joystickButtons = Array.from(
+      joystick.querySelectorAll<HTMLButtonElement>('.dock-drop-joystick__button[data-zone]'),
+    );
+    if (joystickButtons.length === 0) {
+      throw new Error('mint-dock-manager template is missing drop joystick buttons.');
+    }
+
+    this.rootEl = root;
+    this.dockedEl = docked;
+    this.floatingLayerEl = floatingLayer;
+    this.dropIndicator = indicator;
+    this.dropJoystick = joystick;
+    this.dropJoystickButtons = joystickButtons;
+
     // Tag the docked surface with a root path so it can act as
     // a drop target when the main layout is empty.
     this.dockedEl.dataset['path'] = this.formatPath({ type: 'docked', segments: [] });
-    this.render();
+
+    // Now safe to attach shadow-DOM-targeted event listeners.
     this.rootEl.addEventListener('dragover', this.onDragOver);
     this.rootEl.addEventListener('drop', this.onDrop);
     this.rootEl.addEventListener('dragleave', this.onDragLeave);
     this.dropJoystick.addEventListener('dragover', this.onDragOver);
     this.dropJoystick.addEventListener('drop', this.onDrop);
     this.dropJoystick.addEventListener('dragleave', this.onDragLeave);
-    // Strengthen zone tracking by reacting to dragenter/dragover directly on the buttons.
-    // This avoids relying solely on hit-testing each frame which can be jittery during HTML5 drag.
     this.dropJoystickButtons.forEach((btn) => {
       const handler = (e: DragEvent) => {
         if (!this.dragState) return;
@@ -837,6 +336,16 @@ export class MintDockManagerElement extends HTMLElement {
       btn.addEventListener('dragenter', handler);
       btn.addEventListener('dragover', handler);
     });
+
+    // Render any layout that was set before the shadow DOM existed.
+    this.renderLayout();
+  }
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    if (!this.hasAttribute('role')) {
+      this.setAttribute('role', 'application');
+    }
     const win = this.windowRef;
     win?.addEventListener('dragover', this.onGlobalDragOver);
     win?.addEventListener('drag', this.onDrag);
@@ -844,13 +353,13 @@ export class MintDockManagerElement extends HTMLElement {
     win?.addEventListener('resize', this.onWindowResize);
   }
 
-  disconnectedCallback(): void {
-    this.rootEl.removeEventListener('dragover', this.onDragOver);
-    this.rootEl.removeEventListener('drop', this.onDrop);
-    this.rootEl.removeEventListener('dragleave', this.onDragLeave);
-    this.dropJoystick.removeEventListener('dragover', this.onDragOver);
-    this.dropJoystick.removeEventListener('drop', this.onDrop);
-    this.dropJoystick.removeEventListener('dragleave', this.onDragLeave);
+  override disconnectedCallback(): void {
+    this.rootEl?.removeEventListener('dragover', this.onDragOver);
+    this.rootEl?.removeEventListener('drop', this.onDrop);
+    this.rootEl?.removeEventListener('dragleave', this.onDragLeave);
+    this.dropJoystick?.removeEventListener('dragover', this.onDragOver);
+    this.dropJoystick?.removeEventListener('drop', this.onDrop);
+    this.dropJoystick?.removeEventListener('dragleave', this.onDragLeave);
     const win = this.windowRef;
     win?.removeEventListener('dragover', this.onGlobalDragOver);
     win?.removeEventListener('drag', this.onDrag);
@@ -859,11 +368,12 @@ export class MintDockManagerElement extends HTMLElement {
     win?.removeEventListener('pointermove', this.onPointerMove);
     win?.removeEventListener('pointerup', this.onPointerUp);
     this.pointerTrackingActive = false;
-    const win2 = this.windowRef;
-    win2?.removeEventListener('resize', this.onWindowResize);
+    win?.removeEventListener('resize', this.onWindowResize);
+    super.disconnectedCallback();
   }
 
-  attributeChangedCallback(name: string, _oldValue: string | null, newValue: string | null): void {
+  override attributeChangedCallback(name: string, _oldValue: string | null, newValue: string | null): void {
+    super.attributeChangedCallback(name, _oldValue, newValue);
     if (name === 'layout') {
       this.layout = newValue ? this.parseLayout(newValue) : null;
     } else if (name === 'debug-snap-markers') {
@@ -887,7 +397,7 @@ export class MintDockManagerElement extends HTMLElement {
     this.rootLayout = this.cloneLayoutNode(snapshot.root);
     this.floatingLayouts = this.cloneFloatingArray(snapshot.floating);
     this.titles = snapshot.titles ? { ...snapshot.titles } : {};
-    this.render();
+    this.renderLayout();
   }
 
   get snapshot(): DockLayoutSnapshot {
@@ -961,7 +471,11 @@ export class MintDockManagerElement extends HTMLElement {
     };
   }
 
-  private render(): void {
+  private renderLayout(): void {
+    // The layout setter may run before firstUpdated() has populated the
+    // shadow-DOM fields (e.g. when an attribute is set on the markup).
+    // Bail out; firstUpdated() will call renderLayout() once ready.
+    if (!this.dockedEl) return;
     this.dockedEl.innerHTML = '';
     this.floatingLayerEl.innerHTML = '';
     this.hideDropIndicator();
@@ -3024,7 +2538,7 @@ export class MintDockManagerElement extends HTMLElement {
 
     this.floatingLayouts.push(floatingLayout);
     const newIndex = this.floatingLayouts.length - 1;
-    this.render();
+    this.renderLayout();
     const wrapper = this.getFloatingWrapper(newIndex);
     if (wrapper) {
       this.promoteFloatingPane(newIndex, wrapper);
@@ -3140,7 +2654,7 @@ export class MintDockManagerElement extends HTMLElement {
         if (location) {
           const idx = this.computeHeaderInsertIndex(header, clientX);
           this.reorderPaneInLocationAtIndex(location, this.dragState.pane, idx);
-          this.render();
+          this.renderLayout();
           this.dispatchLayoutChanged();
           this.dragState.dropHandled = true;
           return;
@@ -3257,7 +2771,7 @@ export class MintDockManagerElement extends HTMLElement {
           if (location) {
             const idx = this.computeHeaderInsertIndex(header, x);
             this.reorderPaneInLocationAtIndex(location, this.dragState.pane, idx);
-            this.render();
+            this.renderLayout();
             this.dispatchLayoutChanged();
             this.dragState.dropHandled = true;
             this.endPaneDrag();
@@ -3338,7 +2852,7 @@ export class MintDockManagerElement extends HTMLElement {
       if (stackEmptied) {
         this.cleanupLocation(source);
       }
-      this.render();
+      this.renderLayout();
       this.dispatchLayoutChanged();
       if (this.dragState) {
         this.dragState.dropHandled = true;
@@ -3355,7 +2869,7 @@ export class MintDockManagerElement extends HTMLElement {
         return;
       }
       this.reorderPaneInLocation(source, pane);
-      this.render();
+      this.renderLayout();
       this.dispatchLayoutChanged();
       if (this.dragState) {
         this.dragState.dropHandled = true;
@@ -3371,7 +2885,7 @@ export class MintDockManagerElement extends HTMLElement {
       if (stackEmptied) {
         this.cleanupLocation(source);
       }
-      this.render();
+      this.renderLayout();
       this.dispatchLayoutChanged();
       if (this.dragState) {
         this.dragState.dropHandled = true;
@@ -3393,7 +2907,7 @@ export class MintDockManagerElement extends HTMLElement {
         if (stackEmptied) {
           this.cleanupLocation(source);
         }
-        this.render();
+        this.renderLayout();
         this.dispatchLayoutChanged();
         return;
       }
@@ -3406,7 +2920,7 @@ export class MintDockManagerElement extends HTMLElement {
       this.cleanupLocation(source);
     }
 
-    this.render();
+    this.renderLayout();
     this.dispatchLayoutChanged();
     if (this.dragState) {
       this.dragState.dropHandled = true;
@@ -3426,7 +2940,7 @@ export class MintDockManagerElement extends HTMLElement {
     if (!target && targetPath.type === 'docked' && !this.rootLayout) {
       this.rootLayout = this.cloneLayoutNode(source.root);
       this.removeFloatingAt(sourceIndex);
-      this.render();
+      this.renderLayout();
       this.dispatchLayoutChanged();
       return true;
     }
@@ -3458,7 +2972,7 @@ export class MintDockManagerElement extends HTMLElement {
       }
 
       this.removeFloatingAt(sourceIndex);
-      this.render();
+      this.renderLayout();
       this.dispatchLayoutChanged();
       return true;
     }
@@ -3472,14 +2986,14 @@ export class MintDockManagerElement extends HTMLElement {
       floating.root = this.dockNodeBeside(floating.root, target.node, source.root, zone);
       floating.activePane = source.activePane ?? this.findFirstPaneName(source.root) ?? undefined;
       this.removeFloatingAt(sourceIndex);
-      this.render();
+      this.renderLayout();
       this.dispatchLayoutChanged();
       return true;
     }
 
     this.rootLayout = this.dockNodeBeside(this.rootLayout, target.node, source.root, zone);
     this.removeFloatingAt(sourceIndex);
-    this.render();
+    this.renderLayout();
     this.dispatchLayoutChanged();
     return true;
   }

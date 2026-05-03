@@ -48,3 +48,7 @@ Thumbs.db
 
 # Environment variables (generated on VPS at deploy time)
 .env
+
+# Generated web-component artefacts (built from sibling .html / .scss)
+libs/**/web-components/*.element.template.ts
+libs/**/*.styles.ts
