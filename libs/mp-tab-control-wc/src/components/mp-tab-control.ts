@@ -14,6 +14,10 @@ interface TabInfo {
   disabled: boolean;
 }
 
+const isHidden = (el: Element): boolean =>
+  el.hasAttribute('data-hidden') &&
+  el.getAttribute('data-hidden') !== 'false';
+
 /**
  * <mp-tab-control>
  *
@@ -62,7 +66,7 @@ export class MpTabControl extends LitElement {
       childList: true,
       subtree: false,
       attributes: true,
-      attributeFilter: ['slot', 'data-disabled'],
+      attributeFilter: ['slot', 'data-disabled', 'data-hidden'],
     });
   }
 
@@ -114,6 +118,10 @@ export class MpTabControl extends LitElement {
       if (!slot) continue;
       const m = slot.match(/^(.+)-content$/);
       if (!m) continue;
+      // `data-hidden` excludes a tab from the strip and content entirely.
+      // Used by hosts (like the dock manager) to suppress a tab visually
+      // mid-drag without churning slot projection.
+      if (isHidden(child)) continue;
       const tabId = m[1];
       const disabled = child.hasAttribute('data-disabled') &&
         child.getAttribute('data-disabled') !== 'false';
