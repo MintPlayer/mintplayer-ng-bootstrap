@@ -13,9 +13,7 @@
 .dock-root,
 .dock-docked,
 .dock-split,
-.dock-split__child,
 .dock-stack,
-.dock-stack__content,
 .dock-stack__pane {
   box-sizing: border-box;
   min-width: 0;
@@ -174,74 +172,12 @@
   cursor: se-resize;
 }
 
+// `.dock-split` is now an <mp-splitter> element. Layout (flex, orientation,
+// dividers) is owned by the WC's shadow DOM. This rule just makes sure the
+// splitter fills its dock-flex parent.
 .dock-split {
-  display: flex;
-  flex: 1 1 0;
-  gap: var(--dock-split-gap);
-  position: relative;
-}
-
-.dock-split[data-direction="vertical"] {
-  flex-direction: column;
-}
-
-.dock-split[data-direction="horizontal"] {
-  flex-direction: row;
-}
-
-.dock-split__child {
-  display: flex;
   flex: 1 1 0;
   position: relative;
-}
-
-.dock-split__divider {
-  position: relative;
-  flex: 0 0 auto;
-  background: rgba(0, 0, 0, 0.08);
-  transition: background 120ms ease;
-}
-
-.dock-split[data-direction="horizontal"] > .dock-split__divider {
-  width: 0.5rem;
-  cursor: col-resize;
-  /* Extend through perpendicular gaps for visual continuity */
-  margin-top: calc(var(--dock-split-gap) * -1);
-  margin-bottom: calc(var(--dock-split-gap) * -1);
-}
-
-.dock-split[data-direction="vertical"] > .dock-split__divider {
-  height: 0.5rem;
-  cursor: row-resize;
-  /* Extend through perpendicular gaps for visual continuity */
-  margin-left: calc(var(--dock-split-gap) * -1);
-  margin-right: calc(var(--dock-split-gap) * -1);
-}
-
-.dock-split__divider::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.25);
-}
-
-.dock-split[data-direction="horizontal"] > .dock-split__divider::after {
-  width: 0.125rem;
-  height: 60%;
-}
-
-.dock-split[data-direction="vertical"] > .dock-split__divider::after {
-  width: 60%;
-  height: 0.125rem;
-}
-
-.dock-split__divider:hover,
-.dock-split__divider:focus-visible,
-.dock-split__divider[data-resizing='true'] {
-  background: rgba(59, 130, 246, 0.35);
 }
 
 .dock-intersection-handle {
@@ -283,9 +219,11 @@
   z-index: 130;
 }
 
+// `.dock-stack` is now an <mp-tab-control> element. Strip layout, button
+// styling, active-tab class, and pane visibility are all owned by the WC.
+// This rule just gives the host the dock's chrome (border, background) and
+// makes it fill its dock-flex parent.
 .dock-stack {
-  display: flex;
-  flex-direction: column;
   flex: 1 1 0;
   border: 1px solid rgba(0, 0, 0, 0.2);
   border-radius: 0.25rem;
@@ -293,61 +231,28 @@
   backdrop-filter: blur(4px);
 }
 
-.dock-stack__header {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-  padding: 0.25rem;
-  background: rgba(0, 0, 0, 0.05);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.15);
-}
-
+// `.dock-tab` is on the slotted <span slot="*-header"> the dock provides
+// for each tab; the WC projects it into the strip's <button>. We style the
+// drag-handle cursor so users see the tab is draggable. Active-tab styling
+// (background highlight) lives in the WC's shadow stylesheet (Bootstrap's
+// .nav-link.active).
 .dock-tab {
-  appearance: none;
-  border: none;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  background: transparent;
-  color: inherit;
-  font: inherit;
   cursor: grab;
-  transition: background 160ms ease;
 }
 
 .dock-tab:active {
   cursor: grabbing;
 }
 
-.dock-tab:hover {
-  background: rgba(0, 0, 0, 0.05);
-}
-
-.dock-tab:focus-visible {
-  outline: 2px solid rgba(59, 130, 246, 0.8);
-  outline-offset: 1px;
-}
-
-.dock-tab--active {
-  background: rgba(59, 130, 246, 0.15);
-}
-
-.dock-stack__content {
-  position: relative;
-  flex: 1 1 auto;
-  display: flex;
-  overflow: hidden;
-}
-
+// `.dock-stack__pane` is the slotted content wrapper. The WC projects it
+// into its body slot only when the tab is active, so we don't need a
+// hidden-state rule here. Just match the inherited flex layout for content.
 .dock-stack__pane {
   position: relative;
-  flex: 1 1 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-}
-
-.dock-stack__pane[hidden] {
-  display: none !important;
+  height: 100%;
 }
 
 .dock-drop-indicator {
