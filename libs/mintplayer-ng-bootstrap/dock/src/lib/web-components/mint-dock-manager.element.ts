@@ -4,6 +4,9 @@ import { LitElement, type TemplateResult } from 'lit';
 // Each dock stack is rendered as <mp-tab-control>, so the dock depends on this
 // lib being loaded before any layout is rendered.
 import '@mintplayer/tab-control-wc';
+// Side-effect import: registers <mp-splitter>. Each DockSplitNode is rendered
+// as a nested <mp-splitter>, so this lib must load before any layout renders.
+import '@mintplayer/splitter';
 import {
   DockFloatingStackLayout,
   DockLayout,
@@ -1420,55 +1423,72 @@ export class MintDockManagerElement extends LitElement {
     path: number[],
     floatingIndex?: number,
   ): HTMLElement {
-    const container = this.documentRef.createElement('div');
-    container.classList.add('dock-split');
-    container.dataset['direction'] = node.direction;
-    container.dataset['path'] = path.join('/');
+    // Each DockSplitNode renders as <mp-splitter>. The dock keeps its `.dock-split`
+    // class on the host so existing `closest('.dock-split')` queries continue to
+    // resolve, and stamps `data-direction` / `data-path` for the tree-driven
+    // intersection-handle math.
+    const splitter = this.documentRef.createElement('mp-splitter') as HTMLElement;
+    splitter.classList.add('dock-split');
+    splitter.dataset['direction'] = node.direction;
+    splitter.dataset['path'] = path.join('/');
+    // mp-splitter uses 'horizontal' (left-right) and 'vertical' (top-bottom).
+    // The dock's DockSplitNode.direction matches that vocabulary 1:1.
+    splitter.setAttribute('orientation', node.direction);
 
-    const sizes = Array.isArray(node.sizes) ? node.sizes : [];
+    const splitPath: DockPath =
+      typeof floatingIndex === 'number'
+        ? { type: 'floating', index: floatingIndex, segments: [...path] }
+        : { type: 'docked', segments: [...path] };
+
     node.children.forEach((child, index) => {
-      const childWrapper = this.documentRef.createElement('div');
-      childWrapper.classList.add('dock-split__child');
-      childWrapper.dataset['index'] = String(index);
+      // mp-splitter accepts direct children — it wraps each in a panel-wrapper
+      // inside its shadow DOM and projects via a named slot per index.
+      splitter.appendChild(this.renderNode(child, [...path, index], floatingIndex));
+    });
 
-      const size = sizes[index];
-      if (typeof size === 'number' && Number.isFinite(size)) {
-        childWrapper.style.flex = `${Math.max(size, 0)} 1 0`;
-      } else {
-        childWrapper.style.flex = '1 1 0';
-      }
+    // Apply persisted sizes from the layout tree once mp-splitter has built
+    // its panel wrappers. mp-splitter's setPanelSizes interprets values as
+    // pixel widths/heights; the dock's saved sizes are flex weights, so
+    // convert using the splitter's measured cross-axis container size.
+    const sizes = Array.isArray(node.sizes) ? node.sizes : [];
+    if (sizes.length > 0) {
+      requestAnimationFrame(() => {
+        const totalWeight = sizes.reduce((s, w) => s + Math.max(w, 0), 0);
+        if (totalWeight <= 0) return;
+        const containerSize =
+          node.direction === 'horizontal'
+            ? splitter.getBoundingClientRect().width
+            : splitter.getBoundingClientRect().height;
+        if (!Number.isFinite(containerSize) || containerSize <= 0) return;
+        const px = sizes.map((w) => (Math.max(w, 0) / totalWeight) * containerSize);
+        (splitter as unknown as { setPanelSizes?: (sizes: number[]) => void })
+          .setPanelSizes?.(px);
+      });
+    }
 
-      childWrapper.appendChild(this.renderNode(child, [...path, index], floatingIndex));
-      container.appendChild(childWrapper);
-
-      if (index < node.children.length - 1) {
-        const divider = this.documentRef.createElement('div');
-        divider.classList.add('dock-split__divider');
-        divider.setAttribute('role', 'separator');
-        divider.tabIndex = 0;
-        // Tag divider with metadata for intersection detection
-        const dividerPath: DockPath =
-          typeof floatingIndex === 'number'
-            ? { type: 'floating', index: floatingIndex, segments: [...path] }
-            : { type: 'docked', segments: [...path] };
-        divider.dataset['path'] = this.formatPath(dividerPath);
-        divider.dataset['index'] = String(index);
-        divider.dataset['orientation'] = node.direction;
-        divider.addEventListener('pointerdown', (event) =>
-          this.beginResize(
-            event,
-            container,
-            floatingIndex !== undefined
-              ? { type: 'floating', index: floatingIndex, segments: [...path] }
-              : { type: 'docked', segments: [...path] },
-            index,
-          ),
+    // mp-splitter fires resize-end with pixel sizes after a divider drag.
+    // Convert back to flex weights (sum to a stable total — keep current sum
+    // so future renders interpret consistently) and persist to the layout tree.
+    splitter.addEventListener('resize-end', (event) => {
+      const detail = (event as CustomEvent<{ sizes: number[] }>).detail;
+      if (!Array.isArray(detail?.sizes) || detail.sizes.length === 0) return;
+      const splitNode = this.resolveSplitNode(splitPath);
+      if (!splitNode) return;
+      const previousTotal = (splitNode.sizes ?? []).reduce(
+        (s, w) => s + Math.max(w, 0),
+        0,
+      );
+      const total = detail.sizes.reduce((s, v) => s + Math.max(v, 0), 0);
+      const targetTotal = previousTotal > 0 ? previousTotal : detail.sizes.length;
+      if (total > 0) {
+        splitNode.sizes = detail.sizes.map(
+          (px) => (Math.max(px, 0) / total) * targetTotal,
         );
-        container.appendChild(divider);
+        this.dispatchLayoutChanged();
       }
     });
 
-    return container;
+    return splitter;
   }
 
   private renderStack(
