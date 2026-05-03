@@ -39,7 +39,8 @@
       "@mintplayer/qr-code": ["libs/mintplayer-qr-code/src/index.ts"],
       "@mintplayer/scheduler-core": ["libs/mp-scheduler-core/src/index.ts"],
       "@mintplayer/scheduler-wc": ["libs/mp-scheduler-wc/src/index.ts"],
-      "@mintplayer/splitter": ["libs/mp-splitter-wc/src/index.ts"]
+      "@mintplayer/splitter": ["libs/mp-splitter-wc/src/index.ts"],
+      "@mintplayer/tab-control-wc": ["libs/mp-tab-control-wc/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

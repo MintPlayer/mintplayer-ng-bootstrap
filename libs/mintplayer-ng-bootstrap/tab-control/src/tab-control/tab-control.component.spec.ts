@@ -1,7 +1,5 @@
-import { DragDropModule } from '@angular/cdk/drag-drop';
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MockModule } from 'ng-mocks';
 
 import { BsTabControlComponent } from './tab-control.component';
 
@@ -12,7 +10,6 @@ describe('BsTabControlComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        MockModule(DragDropModule),
         // Component to test
         BsTabControlComponent,
 

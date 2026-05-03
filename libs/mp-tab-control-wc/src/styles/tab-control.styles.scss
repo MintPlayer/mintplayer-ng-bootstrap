@@ -1,0 +1,117 @@
+// Bootstrap configuration partials. These compile to no CSS on their own —
+// they exist so the @import 'bootstrap/scss/nav' below can resolve $prefix,
+// mixin references, the colour map, etc.
+@import 'bootstrap/scss/functions';
+@import 'bootstrap/scss/variables';
+@import 'bootstrap/scss/variables-dark';
+@import 'bootstrap/scss/maps';
+@import 'bootstrap/scss/mixins';
+@import 'bootstrap/scss/utilities';
+
+// .nav, .nav-tabs, .nav-link, .tab-content, .tab-pane.
+@import 'bootstrap/scss/nav';
+
+// We deliberately do NOT @import 'bootstrap/scss/root' — it targets :root,
+// which doesn't cross Shadow DOM. The host page's :root --bs-* variables
+// inherit through the shadow boundary via custom-property cascade, so the
+// :host of this WC picks them up automatically when the consumer page has
+// Bootstrap globally available.
+//
+// We also do NOT pull bootstrap/scss/utilities/_api — that would inject ~50 KB
+// of utility classes for the handful we actually use. Inline equivalents below.
+
+:host {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+// Bootstrap utility-class equivalents needed by the shadow template. Authored
+// inline because the global utilities API doesn't cross Shadow DOM.
+.flex-nowrap { flex-wrap: nowrap; }
+.flex-grow-1 { flex-grow: 1; }
+.overflow-auto { overflow: auto; }
+.overflow-x-auto { overflow-x: auto; }
+.overflow-y-hidden { overflow-y: hidden; }
+.text-nowrap { white-space: nowrap; }
+.border {
+  border: var(--bs-border-width, 1px) var(--bs-border-style, solid) var(--bs-border-color, #dee2e6) !important;
+}
+.border-top {
+  border-top: var(--bs-border-width, 1px) var(--bs-border-style, solid) var(--bs-border-color, #dee2e6) !important;
+}
+
+// Tab-strip container.
+//
+// `overflow: hidden` clips the inner <ul>'s native horizontal scrollbar so it
+// stays hidden behind the tab-content area below. The user can still scroll
+// horizontally via mouse wheel / touch / keyboard — only the visual scrollbar
+// is clipped. This matches the master `bs-tab-control` template, where the
+// outer wrapper had `class="overflow-hidden ... tsc"`.
+.tsc {
+  max-height: 41px;
+  overflow: hidden;
+  flex-shrink: 0;
+  // Lift the strip above .tab-content so the active tab's bottom border (which
+  // matches the page background) visually "punches through" the content's
+  // top border. Without this, both 1px borders stack and a continuous line
+  // appears under the active tab handle. Flex item, so position is unneeded.
+  z-index: 1;
+
+  .nav.nav-tabs {
+    // <ul> inherits margin-top: 1em (~16px) from the user-agent stylesheet, and
+    // Bootstrap's .nav doesn't reset it. Without this, the strip pushes the
+    // tab-content body downward — visually intersecting it inside .tsc.
+    margin-top: 0;
+    border-bottom: 0;
+  }
+
+  &.bottom-tabs {
+    margin-top: -1px;
+
+    .nav.nav-tabs {
+      border-bottom-width: 0;
+
+      .nav-link {
+        border: 1px solid transparent;
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
+        border-bottom-left-radius: 0.25rem;
+        border-bottom-right-radius: 0.25rem;
+      }
+
+      .nav-item {
+        margin-bottom: 2px;
+        margin-top: -1px;
+      }
+
+      .nav-item.show .nav-link,
+      .nav-link.active {
+        border-color: #fff #dee2e6 #dee2e6 #dee2e6;
+      }
+    }
+  }
+}
+
+.tsc .nav-link {
+  cursor: pointer;
+  // Strip the user-agent <button> chrome — these are rendered as <button>
+  // for keyboard/ARIA but should look like Bootstrap's nav-link <a>s.
+  background: transparent;
+  font: inherit;
+  text-align: inherit;
+}
+
+.tsc .nav-link.disabled {
+  cursor: not-allowed;
+}
+
+.tab-content {
+  // Pull up by 1px so the active tab's bottom border merges with the panel border.
+  margin-top: -1px;
+}
+
+// Each <mp-tab-page> handles its own visibility via :host([active]). When
+// `<mp-tab-page>` is wrapped (e.g. by an Angular `<bs-tab-page>` host element),
+// the wrapper itself stays display: block; the inner mp-tab-page hides its own
+// shadow content unless [active] is set.

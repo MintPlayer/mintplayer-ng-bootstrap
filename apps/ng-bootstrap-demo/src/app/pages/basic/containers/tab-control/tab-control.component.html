@@ -1,6 +1,6 @@
 <h1 class="text-center">Tab control</h1>
 <h2>Demo</h2>
-<bs-tab-control [border]="true"  [restrictDragging]="true" [tabsPosition]="tabsPosition()" [allowDragDrop]="allowDragDrop()">
+<bs-tab-control [border]="true" [tabsPosition]="tabsPosition()">
     @for (n of numbers; track $index) {
         <bs-tab-page [disabled]="n === 3">
             <ng-container *bsTabPageHeader>
@@ -26,10 +26,4 @@
             </bs-select>
         </div>
     </div>
-    <div bsRow>
-        <div [col]>
-            <bs-toggle-button class="py-2" [type]="'checkbox'" [(ngModel)]="allowDragDrop">Allow drag/drop</bs-toggle-button>
-        </div>
-    </div>
 </bs-grid>
-
