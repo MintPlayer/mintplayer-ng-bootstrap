@@ -1,5 +1,9 @@
 
 import { LitElement, type TemplateResult } from 'lit';
+// Side-effect import: registers <mp-tab-control> + <mp-tab-page> custom elements.
+// Each dock stack is rendered as <mp-tab-control>, so the dock depends on this
+// lib being loaded before any layout is rendered.
+import '@mintplayer/tab-control-wc';
 import {
   DockFloatingStackLayout,
   DockLayout,
@@ -1472,27 +1476,34 @@ export class MintDockManagerElement extends LitElement {
     path: number[],
     floatingIndex?: number,
   ): HTMLElement {
-    const stack = this.documentRef.createElement('div');
+    // Dock stacks are rendered as <mp-tab-control>. The dock keeps `.dock-stack`
+    // as a class on the host so existing `closest('.dock-stack')` queries
+    // continue to resolve. The tab strip + body slot projection are owned by
+    // mp-tab-control; the dock just provides the slotted header/content
+    // elements and listens for tab-activate to drive layout-tree updates.
+    const stack = this.documentRef.createElement('mp-tab-control') as HTMLElement;
     stack.classList.add('dock-stack');
+    // Dock controls activation; tell mp-tab-control not to auto-pick.
+    stack.setAttribute('select-first-tab', 'false');
+    stack.setAttribute('border', 'false');
+
     const location: DockPath =
       typeof floatingIndex === 'number'
         ? { type: 'floating', index: floatingIndex, segments: [...path] }
         : { type: 'docked', segments: [...path] };
     stack.dataset['path'] = this.formatPath(location);
 
-    const header = this.documentRef.createElement('div');
-    header.classList.add('dock-stack__header');
-    header.setAttribute('role', 'tablist');
-    const content = this.documentRef.createElement('div');
-    content.classList.add('dock-stack__content');
-
     const panes = Array.from(new Set(node.panes));
     if (panes.length === 0) {
+      const emptyHeader = this.documentRef.createElement('span');
+      emptyHeader.setAttribute('slot', '__empty__-header');
+      emptyHeader.textContent = '(empty)';
       const empty = this.documentRef.createElement('div');
+      empty.setAttribute('slot', '__empty__-content');
       empty.classList.add('dock-stack__pane');
       empty.textContent = 'No panes configured';
-      content.appendChild(empty);
-      stack.append(header, content);
+      stack.append(emptyHeader, empty);
+      stack.setAttribute('active-tab', '__empty__');
       return stack;
     }
 
@@ -1503,41 +1514,69 @@ export class MintDockManagerElement extends LitElement {
     const baseSlug = path.length ? path.join('-') : 'root';
     const pathSlug =
       typeof floatingIndex === 'number' ? `f${floatingIndex}-${baseSlug}` : baseSlug;
+
     panes.forEach((paneName) => {
       const paneSlugRaw = paneName.replace(/[^a-zA-Z0-9_-]/g, '-');
       const paneSlug = paneSlugRaw.length > 0 ? paneSlugRaw : 'pane';
       const tabId = `${this.instanceId}-tab-${pathSlug}-${paneSlug}`;
       const panelId = `${this.instanceId}-panel-${pathSlug}-${paneSlug}`;
 
-      const button = this.documentRef.createElement('button');
-      button.type = 'button';
-      button.classList.add('dock-tab');
-      button.dataset['pane'] = paneName;
-      button.id = tabId;
-      button.textContent = this.titles[paneName] ?? paneName;
-      button.setAttribute('role', 'tab');
-      button.setAttribute('aria-controls', panelId);
-      if (paneName === activePane) {
-        button.classList.add('dock-tab--active');
-      }
-      button.setAttribute('aria-selected', String(paneName === activePane));
-      button.draggable = true;
-      button.addEventListener('pointerdown', (event) => {
-        const stackEl = button.closest<HTMLElement>('.dock-stack');
-        this.captureTabDragMetrics(event, stackEl ?? null);
+      // Header span — projected via mp-tab-control's `${tabId}-header` slot
+      // into the strip's button content. Carries the dock's drag handlers.
+      const headerSpan = this.documentRef.createElement('span');
+      headerSpan.setAttribute('slot', `${tabId}-header`);
+      headerSpan.classList.add('dock-tab');
+      headerSpan.dataset['pane'] = paneName;
+      headerSpan.dataset['tabId'] = tabId;
+      headerSpan.textContent = this.titles[paneName] ?? paneName;
+      headerSpan.draggable = true;
+
+      headerSpan.addEventListener('pointerdown', (event) => {
+        this.captureTabDragMetrics(event, stack);
         event.stopPropagation();
       });
-      button.addEventListener('pointerup', () => this.clearPendingTabDragMetrics());
-      button.addEventListener('pointercancel', () => this.clearPendingTabDragMetrics());
-      button.addEventListener('dragstart', (event) => {
-        const stackEl = button.closest<HTMLElement>('.dock-stack');
-        this.beginPaneDrag(event, this.clonePath(location), paneName, stackEl ?? null);
+      headerSpan.addEventListener('pointerup', () => this.clearPendingTabDragMetrics());
+      headerSpan.addEventListener('pointercancel', () => this.clearPendingTabDragMetrics());
+      headerSpan.addEventListener('dragstart', (event) => {
+        this.beginPaneDrag(event, this.clonePath(location), paneName, stack);
       });
-      button.addEventListener('dragend', () => {
+      headerSpan.addEventListener('dragend', () => {
         this.endPaneDrag();
         this.clearPendingTabDragMetrics();
       });
-      button.addEventListener('click', () => {
+
+      // Content wrapper — projected via mp-tab-control's `${tabId}-content`
+      // slot only when this tab is active. Holds the dock manager's per-pane
+      // <slot> for the consumer's content.
+      const paneHost = this.documentRef.createElement('div');
+      paneHost.setAttribute('slot', `${tabId}-content`);
+      paneHost.classList.add('dock-stack__pane');
+      paneHost.dataset['pane'] = paneName;
+      paneHost.dataset['tabId'] = tabId;
+      paneHost.id = panelId;
+
+      const slotEl = this.documentRef.createElement('slot');
+      slotEl.name = paneName;
+      paneHost.appendChild(slotEl);
+
+      stack.append(headerSpan, paneHost);
+
+      if (paneName === activePane) {
+        stack.setAttribute('active-tab', tabId);
+      }
+    });
+
+    stack.dataset['activePane'] = activePane;
+
+    // Drive activatePane from mp-tab-control's tab-activate event. We map the
+    // tabId back to the original paneName via the header span's data-pane.
+    stack.addEventListener('tab-activate', (event) => {
+      const detail = (event as CustomEvent<{ tabId: string }>).detail;
+      const headerSpan = stack.querySelector<HTMLElement>(
+        `:scope > [data-tab-id="${detail.tabId}"]`,
+      );
+      const paneName = headerSpan?.dataset['pane'];
+      if (paneName) {
         this.activatePane(stack, paneName, this.clonePath(location));
         this.dispatchEvent(
           new CustomEvent('dock-pane-activated', {
@@ -1546,28 +1585,34 @@ export class MintDockManagerElement extends LitElement {
             composed: true,
           }),
         );
-      });
-      header.appendChild(button);
-
-      const paneHost = this.documentRef.createElement('div');
-      paneHost.classList.add('dock-stack__pane');
-      paneHost.dataset['pane'] = paneName;
-      paneHost.id = panelId;
-      paneHost.setAttribute('role', 'tabpanel');
-      paneHost.setAttribute('aria-labelledby', tabId);
-      if (paneName !== activePane) {
-        paneHost.setAttribute('hidden', '');
       }
-
-      const slotEl = this.documentRef.createElement('slot');
-      slotEl.name = paneName;
-      paneHost.appendChild(slotEl);
-      content.appendChild(paneHost);
     });
 
-    stack.dataset['activePane'] = activePane;
-    stack.append(header, content);
     return stack;
+  }
+
+  /**
+   * Returns the strip (`.tsc`) element inside an `<mp-tab-control>`'s shadow
+   * DOM. Used by drag/drop logic that needs the strip's geometry instead of
+   * the host element's bounds.
+   */
+  private getStackStripEl(stack: HTMLElement): HTMLElement | null {
+    if (stack.tagName !== 'MP-TAB-CONTROL') return null;
+    return stack.shadowRoot?.querySelector<HTMLElement>('.tsc') ?? null;
+  }
+
+  /**
+   * Returns the rendered tab buttons inside an `<mp-tab-control>`'s shadow
+   * strip — the light-DOM `.dock-tab` spans the dock owns are projected into
+   * these buttons via `<slot>`. Use these for geometry / position queries
+   * (insert-index computation, drop-indicator placement). Use the light-DOM
+   * `.dock-tab` spans for data queries (paneName, drag listeners).
+   */
+  private getStackTabButtons(stack: HTMLElement): HTMLButtonElement[] {
+    if (stack.tagName !== 'MP-TAB-CONTROL') return [];
+    return Array.from(
+      stack.shadowRoot?.querySelectorAll<HTMLButtonElement>('button.nav-link') ?? [],
+    );
   }
 
   private beginResize(
@@ -1851,8 +1896,9 @@ export class MintDockManagerElement extends LitElement {
       pointerOffsetY,
     } = this.preparePaneDragSource(path, pane, stackEl, event);
 
-    // Capture header bounds for detecting when to convert to floating
-    const headerEl = stackEl?.querySelector<HTMLElement>('.dock-stack__header') ?? null;
+    // Capture header bounds for detecting when to convert to floating.
+    // The strip lives inside the mp-tab-control's shadow as `.tsc`.
+    const headerEl = stackEl ? this.getStackStripEl(stackEl) : null;
     const headerRect = headerEl ? headerEl.getBoundingClientRect() : null;
     const headerBounds = headerRect
       ? { left: headerRect.left, top: headerRect.top, right: headerRect.right, bottom: headerRect.bottom }
@@ -2272,16 +2318,15 @@ export class MintDockManagerElement extends LitElement {
       const inHeaderByBounds = !!this.dragState.sourceHeaderBounds && this.isPointWithinBounds(this.dragState.sourceHeaderBounds, clientX, clientY);
       const inHeaderByHitTest = this.isPointerOverSourceHeader(clientX, clientY);
       if (inHeaderByBounds || inHeaderByHitTest) {
-        const header = stack.querySelector<HTMLElement>('.dock-stack__header');
-        if (header) {
-          // Ensure placeholder exists and move it as the pointer moves
-          this.ensureHeaderDragPlaceholder(header, this.dragState.pane);
-          const idx = this.computeHeaderInsertIndex(header, clientX);
-          if (this.dragState.liveReorderIndex !== idx) {
-            this.updateHeaderDragPlaceholderPosition(header, idx);
-            // Keep model reordering until drop; only move the placeholder now
-            this.dragState.liveReorderIndex = idx;
-          }
+        // Ensure placeholder exists and move it as the pointer moves.
+        // Placeholder management mutates the slotted children of the
+        // mp-tab-control stack; the WC re-renders the strip on slotchange.
+        this.ensureHeaderDragPlaceholder(stack, this.dragState.pane);
+        const idx = this.computeHeaderInsertIndex(stack, clientX);
+        if (this.dragState.liveReorderIndex !== idx) {
+          this.updateHeaderDragPlaceholderPosition(stack, idx);
+          // Keep model reordering until drop; only move the placeholder now
+          this.dragState.liveReorderIndex = idx;
         }
         this.hideDropIndicator();
         return;
@@ -2296,26 +2341,23 @@ export class MintDockManagerElement extends LitElement {
     this.showDropIndicator(stack, zone);
   }
 
-  // Returns true when the pointer is currently over the source stack's header (tab strip)
+  // Returns true when the pointer is currently over the source stack's header (tab strip).
+  // The strip lives inside the mp-tab-control's shadow as `.tsc`, so we test
+  // bounds directly rather than using elementsFromPoint(/contains) which won't
+  // pierce the shadow boundary cleanly.
   private isPointerOverSourceHeader(clientX: number, clientY: number): boolean {
     const state = this.dragState;
     if (!state) {
       return false;
     }
     const stackEl = state.sourceStackEl ?? null;
-    const header = stackEl?.querySelector('.dock-stack__header') as HTMLElement | null;
-    if (!header) {
-      // Be conservative: if we cannot resolve the header, treat as inside
+    const strip = stackEl ? this.getStackStripEl(stackEl) : null;
+    if (!strip) {
+      // Be conservative: if we cannot resolve the strip, treat as inside
       return true;
     }
-    const sr = this.shadowRoot;
-    const elements = sr ? sr.elementsFromPoint(clientX, clientY) : [];
-    for (const el of elements) {
-      if (el instanceof HTMLElement && header.contains(el)) {
-        return true;
-      }
-    }
-    return false;
+    const r = strip.getBoundingClientRect();
+    return clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom;
   }
 
   private isPointWithinBounds(
@@ -2326,59 +2368,111 @@ export class MintDockManagerElement extends LitElement {
     return x >= bounds.left && x <= bounds.right && y >= bounds.top && y <= bounds.bottom;
   }
 
-  // Ensure a placeholder tab exists during in-header drag and hide the real dragged tab visually
-  private ensureHeaderDragPlaceholder(header: HTMLElement, pane: string): void {
-    if (this.dragState?.placeholderHeader === header && this.dragState.placeholderEl) {
+  // Ensure a placeholder tab exists during in-header drag and hide the real dragged tab visually.
+  // Operates on the mp-tab-control stack: the dragged content div gets `data-hidden`
+  // (mp-tab-control then skips its tab in the strip), and a placeholder header+content
+  // pair is appended as light-DOM children of the stack. mp-tab-control's mutation
+  // observer picks up the change and renders the placeholder as a tab.
+  private ensureHeaderDragPlaceholder(stack: HTMLElement, pane: string): void {
+    if (stack.tagName !== 'MP-TAB-CONTROL') return;
+    if (this.dragState?.placeholderHeader === stack && this.dragState.placeholderEl) {
       return;
     }
-    const dragged = Array.from(header.querySelectorAll<HTMLElement>('.dock-tab')).find((t) => t.dataset['pane'] === pane) ?? null;
-    if (!dragged) {
-      return;
-    }
-    // Create placeholder
-    const placeholder = this.documentRef.createElement('button');
-    placeholder.type = 'button';
-    placeholder.classList.add('dock-tab');
-    placeholder.dataset['placeholder'] = 'true';
-    // Keep the placeholder visually empty but reserving the same width
-    placeholder.textContent = '';
-    placeholder.setAttribute('aria-hidden', 'true');
-    placeholder.style.width = `${dragged.offsetWidth}px`;
-    // Hide the original dragged tab so it doesn't duplicate visually and free up its slot
-    dragged.style.display = 'none';
-    // Insert placeholder in the original position of the dragged tab
-    header.insertBefore(placeholder, dragged);
+    const draggedHeader = stack.querySelector<HTMLElement>(
+      `:scope > .dock-tab[data-pane="${CSS.escape(pane)}"]`,
+    );
+    const draggedContent = stack.querySelector<HTMLElement>(
+      `:scope > .dock-stack__pane[data-pane="${CSS.escape(pane)}"]`,
+    );
+    if (!draggedHeader || !draggedContent) return;
+
+    // Hide the dragged tab from mp-tab-control's strip (frees up the slot).
+    draggedContent.setAttribute('data-hidden', '');
+
+    // Approximate the dragged tab's strip-button width so the placeholder
+    // visually fills the gap. Use the rendered button geometry, not the
+    // light-DOM span (the span is just header content).
+    const buttons = this.getStackTabButtons(stack);
+    const draggedTabId = draggedHeader.dataset['tabId'];
+    const draggedButton = buttons.find((b) => b.id === `${draggedTabId}-header-button`) ?? null;
+    const widthPx = draggedButton ? draggedButton.offsetWidth : draggedHeader.offsetWidth;
+
+    // Build placeholder header + content. The placeholder uses a unique tabId
+    // (`__dock-placeholder__`) so its slot names don't collide with real panes.
+    const placeholderTabId = '__dock-placeholder__';
+    const phHeader = this.documentRef.createElement('span');
+    phHeader.setAttribute('slot', `${placeholderTabId}-header`);
+    phHeader.classList.add('dock-tab');
+    phHeader.dataset['placeholder'] = 'true';
+    phHeader.dataset['tabId'] = placeholderTabId;
+    phHeader.setAttribute('aria-hidden', 'true');
+    phHeader.style.minWidth = `${widthPx}px`;
+
+    const phContent = this.documentRef.createElement('div');
+    phContent.setAttribute('slot', `${placeholderTabId}-content`);
+    phContent.classList.add('dock-stack__pane');
+    phContent.dataset['placeholder'] = 'true';
+
+    // Insert before the dragged header span so the placeholder appears in
+    // the dragged tab's original strip position. The mutation observer in
+    // mp-tab-control will refresh the tab list automatically.
+    stack.insertBefore(phHeader, draggedHeader);
+    stack.insertBefore(phContent, draggedContent);
+
     if (this.dragState) {
-      this.dragState.placeholderHeader = header;
-      this.dragState.placeholderEl = placeholder;
+      this.dragState.placeholderHeader = stack;
+      this.dragState.placeholderEl = phHeader;
     }
   }
 
-  // Move the placeholder to the computed target index within the header
-  private updateHeaderDragPlaceholderPosition(header: HTMLElement, targetIndex: number): void {
-    const placeholder = this.dragState?.placeholderEl ?? null;
-    if (!placeholder) {
-      return;
-    }
+  // Move the placeholder to the computed target index within the strip.
+  // We reorder light-DOM children (header span + matching content div); the
+  // mp-tab-control then re-renders the strip in the new order on slotchange.
+  private updateHeaderDragPlaceholderPosition(stack: HTMLElement, targetIndex: number): void {
+    if (stack.tagName !== 'MP-TAB-CONTROL') return;
+    const phHeader = this.dragState?.placeholderEl ?? null;
+    if (!phHeader) return;
+
     const draggedPane = this.dragState?.pane ?? null;
-    const tabs = Array.from(header.querySelectorAll<HTMLElement>('.dock-tab'))
-      .filter((t) => t !== placeholder && (!draggedPane || t.dataset['pane'] !== draggedPane));
-    const clampedTarget = Math.max(0, Math.min(targetIndex, tabs.length));
-    const ref = tabs[clampedTarget] ?? null;
-    header.insertBefore(placeholder, ref);
+    // Find all real header spans (excluding the placeholder + the hidden dragged one).
+    const realHeaders = Array.from(
+      stack.querySelectorAll<HTMLElement>(':scope > .dock-tab'),
+    ).filter(
+      (h) =>
+        h !== phHeader &&
+        (!draggedPane || h.dataset['pane'] !== draggedPane),
+    );
+    const clampedTarget = Math.max(0, Math.min(targetIndex, realHeaders.length));
+    const ref = realHeaders[clampedTarget] ?? null;
+    stack.insertBefore(phHeader, ref);
+
+    // Keep the placeholder content adjacent to its header so child-order
+    // remains predictable for slotchange-driven re-renders.
+    const phContent = stack.querySelector<HTMLElement>(
+      `:scope > .dock-stack__pane[data-placeholder="true"]`,
+    );
+    if (phContent && phHeader.nextElementSibling !== phContent) {
+      stack.insertBefore(phContent, phHeader.nextElementSibling);
+    }
   }
 
-  // Remove placeholder and restore original tab visibility
+  // Remove placeholder and restore the dragged tab's visibility.
   private clearHeaderDragPlaceholder(): void {
     const ph = this.dragState?.placeholderEl ?? null;
-    const header = this.dragState?.placeholderHeader ?? null;
-    if (header) {
-      const dragged = this.dragState?.pane
-        ? (Array.from(header.querySelectorAll<HTMLElement>('.dock-tab')).find((t) => t.dataset['pane'] === this.dragState?.pane) ?? null)
-        : null;
-      if (dragged) {
-        dragged.style.display = '';
+    const stack = this.dragState?.placeholderHeader ?? null;
+    if (stack) {
+      // Restore the dragged content div's visibility so its strip tab returns.
+      if (this.dragState?.pane) {
+        const draggedContent = stack.querySelector<HTMLElement>(
+          `:scope > .dock-stack__pane[data-pane="${CSS.escape(this.dragState.pane)}"]`,
+        );
+        draggedContent?.removeAttribute('data-hidden');
       }
+      // Remove the placeholder content div sibling.
+      const phContent = stack.querySelector<HTMLElement>(
+        `:scope > .dock-stack__pane[data-placeholder="true"]`,
+      );
+      phContent?.remove();
     }
     if (ph && ph.parentElement) {
       ph.parentElement.removeChild(ph);
@@ -2551,22 +2645,26 @@ export class MintDockManagerElement extends LitElement {
     this.dispatchLayoutChanged();
   }
 
-  // Compute the intended tab insert index within a header based on pointer X
-  // Adds a slight rightward bias and uses the placeholder rect (if present)
-  // to ensure offsets are correct even when the dragged tab is display:none.
-  private computeHeaderInsertIndex(header: HTMLElement, clientX: number): number {
-    const allTabs = Array.from(header.querySelectorAll<HTMLElement>('.dock-tab'));
-    if (allTabs.length === 0) {
+  // Compute the intended tab insert index within a stack's strip based on pointer X.
+  // Uses the rendered tab buttons inside mp-tab-control's shadow strip for geometry;
+  // the dragged tab is hidden during drag (its content has data-hidden), and the
+  // placeholder button (if present) gives us the dragged-position reference.
+  private computeHeaderInsertIndex(stack: HTMLElement, clientX: number): number {
+    if (stack.tagName !== 'MP-TAB-CONTROL') return 0;
+    const allTabButtons = this.getStackTabButtons(stack);
+    if (allTabButtons.length === 0) {
       return 0;
     }
 
-    const draggedPane = this.dragState?.pane ?? null;
-    const draggedEl = draggedPane
-      ? (allTabs.find((t) => t.dataset['pane'] === draggedPane) ?? null)
+    const placeholderHeader = stack.querySelector<HTMLElement>(
+      ':scope > .dock-tab[data-placeholder="true"]',
+    );
+    const placeholderTabId = placeholderHeader?.dataset['tabId'];
+    const placeholderButton = placeholderTabId
+      ? allTabButtons.find((b) => b.id === `${placeholderTabId}-header-button`) ?? null
       : null;
-    const placeholderEl = header.querySelector<HTMLElement>('.dock-tab[data-placeholder="true"]');
 
-    const targets = allTabs.filter((t) => t !== draggedEl && t !== placeholderEl);
+    const targets = allTabButtons.filter((b) => b !== placeholderButton);
     if (targets.length === 0) {
       return 0;
     }
@@ -2574,12 +2672,8 @@ export class MintDockManagerElement extends LitElement {
     const rightBias = 12;
     const leftBias = 0;
 
-    const baseRect = placeholderEl
-      ? placeholderEl.getBoundingClientRect()
-      : draggedEl
-      ? draggedEl.getBoundingClientRect()
-      : null;
-    const rectValid = !!baseRect && Number.isFinite(baseRect.width) && (baseRect as DOMRect).width > 0;
+    const baseRect = placeholderButton ? placeholderButton.getBoundingClientRect() : null;
+    const rectValid = !!baseRect && Number.isFinite(baseRect.width) && baseRect.width > 0;
     const draggedCenter = rectValid && baseRect ? baseRect.left + baseRect.width / 2 : null;
 
     for (let i = 0; i < targets.length; i += 1) {
@@ -2648,17 +2742,14 @@ export class MintDockManagerElement extends LitElement {
       this.pathsEqual(stackPath, this.dragState.sourcePath) &&
       (!zone || zone === 'center')
     ) {
-      const header = stack.querySelector<HTMLElement>('.dock-stack__header');
-      if (header) {
-        const location = this.resolveStackLocation(path);
-        if (location) {
-          const idx = this.computeHeaderInsertIndex(header, clientX);
-          this.reorderPaneInLocationAtIndex(location, this.dragState.pane, idx);
-          this.renderLayout();
-          this.dispatchLayoutChanged();
-          this.dragState.dropHandled = true;
-          return;
-        }
+      const location = this.resolveStackLocation(path);
+      if (location) {
+        const idx = this.computeHeaderInsertIndex(stack, clientX);
+        this.reorderPaneInLocationAtIndex(location, this.dragState.pane, idx);
+        this.renderLayout();
+        this.dispatchLayoutChanged();
+        this.dragState.dropHandled = true;
+        return;
       }
     }
 
@@ -2763,20 +2854,17 @@ export class MintDockManagerElement extends LitElement {
       this.pathsEqual(path, this.dragState.sourcePath) &&
       (!zone || zone === 'center')
     ) {
-      const header = stack.querySelector<HTMLElement>('.dock-stack__header');
-      if (header) {
-        const x = (point ? point.clientX : event.clientX) as number;
-        if (Number.isFinite(x)) {
-          const location = this.resolveStackLocation(path);
-          if (location) {
-            const idx = this.computeHeaderInsertIndex(header, x);
-            this.reorderPaneInLocationAtIndex(location, this.dragState.pane, idx);
-            this.renderLayout();
-            this.dispatchLayoutChanged();
-            this.dragState.dropHandled = true;
-            this.endPaneDrag();
-            return;
-          }
+      const x = (point ? point.clientX : event.clientX) as number;
+      if (Number.isFinite(x)) {
+        const location = this.resolveStackLocation(path);
+        if (location) {
+          const idx = this.computeHeaderInsertIndex(stack, x);
+          this.reorderPaneInLocationAtIndex(location, this.dragState.pane, idx);
+          this.renderLayout();
+          this.dispatchLayoutChanged();
+          this.dragState.dropHandled = true;
+          this.endPaneDrag();
+          return;
         }
       }
     }
@@ -3413,21 +3501,18 @@ export class MintDockManagerElement extends LitElement {
   private activatePane(stack: HTMLElement, paneName: string, path: DockPath): void {
     stack.dataset['activePane'] = paneName;
 
-    const headerButtons = stack.querySelectorAll<HTMLButtonElement>('.dock-tab');
-    headerButtons.forEach((button) => {
-      const isSelected = button.dataset['pane'] === paneName;
-      button.classList.toggle('dock-tab--active', isSelected);
-      button.setAttribute('aria-selected', String(isSelected));
-    });
-
-    const panes = stack.querySelectorAll<HTMLElement>('.dock-stack__pane');
-    panes.forEach((pane) => {
-      if (pane.dataset['pane'] === paneName) {
-        pane.removeAttribute('hidden');
-      } else {
-        pane.setAttribute('hidden', '');
+    // Reflect to mp-tab-control's `active-tab` attribute. The WC handles
+    // strip button styling (active class, aria-selected) + body-slot
+    // projection automatically via the named-slot pattern.
+    if (stack.tagName === 'MP-TAB-CONTROL') {
+      const headerSpan = stack.querySelector<HTMLElement>(
+        `:scope > .dock-tab[data-pane="${CSS.escape(paneName)}"]`,
+      );
+      const tabId = headerSpan?.dataset['tabId'];
+      if (tabId) {
+        stack.setAttribute('active-tab', tabId);
       }
-    });
+    }
 
     const location = this.resolveStackLocation(path);
     if (!location) {
