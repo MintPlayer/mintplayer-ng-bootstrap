@@ -52,6 +52,11 @@
   max-height: 41px;
   overflow: hidden;
   flex-shrink: 0;
+  // Lift the strip above .tab-content so the active tab's bottom border (which
+  // matches the page background) visually "punches through" the content's
+  // top border. Without this, both 1px borders stack and a continuous line
+  // appears under the active tab handle. Flex item, so position is unneeded.
+  z-index: 1;
 
   .nav.nav-tabs {
     // <ul> inherits margin-top: 1em (~16px) from the user-agent stylesheet, and
