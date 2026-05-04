@@ -327,7 +327,7 @@ export class MintDockManagerElement extends LitElement {
     this.dockedEl?.removeEventListener('resizing', this.onSplitterResize);
     this.dockedEl?.removeEventListener('resize-end', this.onSplitterResize);
     if (this.intersectionRaf !== null) {
-      this.windowRef?.cancelAnimationFrame(this.intersectionRaf);
+      this.windowRef?.clearTimeout(this.intersectionRaf);
       this.intersectionRaf = null;
     }
     super.disconnectedCallback();
@@ -618,10 +618,20 @@ export class MintDockManagerElement extends LitElement {
     if (this.intersectionRaf !== null) return;
     const win = this.windowRef;
     if (!win) return;
-    this.intersectionRaf = win.requestAnimationFrame(() => {
+    // Defer with setTimeout(5) instead of rAF so we run AFTER any
+    // flex-redistribution settles. Sequence we have to wait through:
+    //   (1) DOM mutation (e.g. panel removed by drop)
+    //   (2) microtasks: <mp-splitter>'s slotchange + size-pinning rAF
+    //   (3) layout flush
+    // A bare rAF can fire before (2) resolves, so getBoundingClientRect on
+    // the dividers reads a transient flex-distributed position and the
+    // glyph lands ~tens of pixels off. 5ms is past the microtask queue and
+    // past splitter's pinning rAF in practice, so the divider rects we
+    // read are the settled, post-pin values.
+    this.intersectionRaf = win.setTimeout(() => {
       this.intersectionRaf = null;
       this.renderIntersectionHandles();
-    });
+    }, 5) as unknown as number;
   }
 
   private renderIntersectionHandles(): void {
