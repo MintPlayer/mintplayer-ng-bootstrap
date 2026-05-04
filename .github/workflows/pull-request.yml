@@ -113,27 +113,6 @@ jobs:
         token: ${{ secrets.PUBLISH_TO_NPMJS }}
         dry-run: true
 
-    - name: Dry-run publish scheduler-core
-      uses: JS-DevTools/npm-publish@v3
-      with:
-        package: 'dist/libs/mp-scheduler-core/package.json'
-        token: ${{ secrets.PUBLISH_TO_NPMJS }}
-        dry-run: true
-
-    - name: Dry-run publish scheduler-wc
-      uses: JS-DevTools/npm-publish@v3
-      with:
-        package: 'dist/libs/mp-scheduler-wc/package.json'
-        token: ${{ secrets.PUBLISH_TO_NPMJS }}
-        dry-run: true
-
-    - name: Dry-run publish splitter-wc
-      uses: JS-DevTools/npm-publish@v3
-      with:
-        package: 'dist/libs/mp-splitter-wc/package.json'
-        token: ${{ secrets.PUBLISH_TO_NPMJS }}
-        dry-run: true
-
     - name: Dry-run publish ng-bootstrap
       uses: JS-DevTools/npm-publish@v3
       with:

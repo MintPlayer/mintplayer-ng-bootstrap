@@ -13,9 +13,7 @@
 .dock-root,
 .dock-docked,
 .dock-split,
-.dock-split__child,
 .dock-stack,
-.dock-stack__content,
 .dock-stack__pane {
   box-sizing: border-box;
   min-width: 0;
@@ -54,13 +52,22 @@
   display: flex;
   flex-direction: column;
   pointer-events: auto;
-  border: 1px solid rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--bs-border-color);
   border-radius: 0.5rem;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.25);
+  background: var(--bs-body-bg);
+  box-shadow: var(--bs-box-shadow-lg);
   overflow: hidden;
   min-width: 12rem;
   min-height: 8rem;
+}
+
+// While a pane is being dragged out of (or while floating in) this wrapper,
+// make the wrapper transparent to elementsFromPoint so findStackAtPoint can
+// see through to the docked stack underneath and show drop zones on it.
+// The drag itself isn't affected — pointermove/pointerup listen on `window`,
+// not on the wrapper.
+.dock-floating[data-dragging='true'] {
+  pointer-events: none;
 }
 
 .dock-floating__chrome {
@@ -69,12 +76,15 @@
   gap: 0.5rem;
   padding: 0.35rem 0.75rem;
   cursor: move;
+  // Original was slate (rgb 148, 163, 184) — a blue-grey. --bs-secondary-bg
+  // alone reads as flat gray, so compose the gradient on --bs-primary-rgb at
+  // low alpha to keep the blue cast tied to the rest of the dock palette.
   background: linear-gradient(
     to bottom,
-    rgba(148, 163, 184, 0.6),
-    rgba(148, 163, 184, 0.25)
+    rgba(var(--bs-primary-rgb), 0.15),
+    rgba(var(--bs-primary-rgb), 0.05)
   );
-  border-bottom: 1px solid rgba(148, 163, 184, 0.5);
+  border-bottom: 1px solid var(--bs-primary-border-subtle);
   user-select: none;
   -webkit-user-select: none;
 }
@@ -83,7 +93,7 @@
   flex: 1 1 auto;
   font-size: 0.875rem;
   font-weight: 500;
-  color: rgba(30, 41, 59, 0.95);
+  color: var(--bs-body-color);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -99,13 +109,15 @@
   position: absolute;
   pointer-events: auto;
   z-index: 2;
-  background: rgba(148, 163, 184, 0.25);
+  // Match the chrome's blue tint so resizer affordances stay visually
+  // tied to the floating window's identity.
+  background: rgba(var(--bs-primary-rgb), 0.1);
   transition: background 120ms ease;
 }
 
 .dock-floating__resizer:hover,
 .dock-floating__resizer[data-resizing='true'] {
-  background: rgba(148, 163, 184, 0.4);
+  background: rgba(var(--bs-primary-rgb), 0.3);
 }
 
 .dock-floating__resizer--top,
@@ -174,74 +186,12 @@
   cursor: se-resize;
 }
 
+// `.dock-split` is now an <mp-splitter> element. Layout (flex, orientation,
+// dividers) is owned by the WC's shadow DOM. This rule just makes sure the
+// splitter fills its dock-flex parent.
 .dock-split {
-  display: flex;
-  flex: 1 1 0;
-  gap: var(--dock-split-gap);
-  position: relative;
-}
-
-.dock-split[data-direction="vertical"] {
-  flex-direction: column;
-}
-
-.dock-split[data-direction="horizontal"] {
-  flex-direction: row;
-}
-
-.dock-split__child {
-  display: flex;
   flex: 1 1 0;
   position: relative;
-}
-
-.dock-split__divider {
-  position: relative;
-  flex: 0 0 auto;
-  background: rgba(0, 0, 0, 0.08);
-  transition: background 120ms ease;
-}
-
-.dock-split[data-direction="horizontal"] > .dock-split__divider {
-  width: 0.5rem;
-  cursor: col-resize;
-  /* Extend through perpendicular gaps for visual continuity */
-  margin-top: calc(var(--dock-split-gap) * -1);
-  margin-bottom: calc(var(--dock-split-gap) * -1);
-}
-
-.dock-split[data-direction="vertical"] > .dock-split__divider {
-  height: 0.5rem;
-  cursor: row-resize;
-  /* Extend through perpendicular gaps for visual continuity */
-  margin-left: calc(var(--dock-split-gap) * -1);
-  margin-right: calc(var(--dock-split-gap) * -1);
-}
-
-.dock-split__divider::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.25);
-}
-
-.dock-split[data-direction="horizontal"] > .dock-split__divider::after {
-  width: 0.125rem;
-  height: 60%;
-}
-
-.dock-split[data-direction="vertical"] > .dock-split__divider::after {
-  width: 60%;
-  height: 0.125rem;
-}
-
-.dock-split__divider:hover,
-.dock-split__divider:focus-visible,
-.dock-split__divider[data-resizing='true'] {
-  background: rgba(59, 130, 246, 0.35);
 }
 
 .dock-intersection-handle {
@@ -251,12 +201,14 @@
   margin-left: -0.5rem;
   margin-top: -0.5rem;
   border-radius: 0.375rem;
-  background: rgba(59, 130, 246, 0.2);
-  border: 1px solid rgba(59, 130, 246, 0.6);
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.2);
+  background: var(--bs-primary-bg-subtle);
+  border: 1px solid var(--bs-primary-border-subtle);
+  box-shadow: var(--bs-box-shadow-sm);
   cursor: all-scroll;
   pointer-events: auto;
-  opacity: 0;
+  // Visible-but-quiet at rest so users can discover the corner-drag affordance
+  // without a hover. Hover/focus/[data-resizing] escalates to opacity:1 below.
+  opacity: 0.45;
   transition: background 120ms ease, border-color 120ms ease, opacity 120ms ease;
 }
 
@@ -264,8 +216,11 @@
 .dock-intersection-handle:focus-visible,
 .dock-intersection-handle[data-visible='true'],
 .dock-intersection-handle[data-resizing='true'] {
-  background: rgba(59, 130, 246, 0.35);
-  border-color: rgba(59, 130, 246, 0.9);
+  // Slightly punchier than the resting state so hover stays distinct from
+  // --bs-primary-bg-subtle. Compose on --bs-primary-rgb to keep the alpha
+  // bump from the original rgba(59, 130, 246, 0.35).
+  background: rgba(var(--bs-primary-rgb), 0.35);
+  border-color: var(--bs-primary);
   opacity: 1;
   outline: none;
 }
@@ -277,84 +232,69 @@
   margin-left: -3px;
   margin-top: -3px;
   border-radius: 50%;
-  background: rgba(59, 130, 246, 0.7);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+  background: var(--bs-primary);
+  box-shadow: 0 0 0 2px var(--bs-primary-bg-subtle);
   pointer-events: none;
   z-index: 130;
 }
 
+// `.dock-stack` is now an <mp-tab-control> element. Strip layout, button
+// styling, active-tab class, and pane visibility are all owned by the WC.
+// This rule just gives the host the dock's chrome (border, background) and
+// makes it fill its dock-flex parent.
 .dock-stack {
-  display: flex;
-  flex-direction: column;
   flex: 1 1 0;
-  border: 1px solid rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--bs-border-color);
   border-radius: 0.25rem;
-  background: rgba(255, 255, 255, 0.75);
+  background: var(--bs-body-bg);
   backdrop-filter: blur(4px);
 }
 
-.dock-stack__header {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-  padding: 0.25rem;
-  background: rgba(0, 0, 0, 0.05);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.15);
-}
-
+// `.dock-tab` is on the slotted <span slot="*-header"> the dock provides
+// for each tab; the WC projects it into the strip's <button>. We style the
+// drag-handle cursor so users see the tab is draggable. Active-tab styling
+// (background highlight) lives in the WC's shadow stylesheet (Bootstrap's
+// .nav-link.active).
+//
+// `display: block` + matching `padding`/negative `margin` extend the span's
+// hit area to cover the entire `.nav-link` button. Without this, only the
+// span's text rect is draggable — the button's own padding (the area around
+// the text) doesn't trigger dragstart, since `draggable="true"` is on the
+// span (not the button it's slotted into). Padding values mirror Bootstrap's
+// default `.nav-link` padding (0.5rem 1rem); the negative margin pulls the
+// span's box back over the button's padding so clicks anywhere on the button
+// land on the span.
 .dock-tab {
-  appearance: none;
-  border: none;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  background: transparent;
-  color: inherit;
-  font: inherit;
   cursor: grab;
-  transition: background 160ms ease;
+  display: block;
+  padding: 0.5rem 1rem;
+  margin: -0.5rem -1rem;
 }
 
 .dock-tab:active {
   cursor: grabbing;
 }
 
-.dock-tab:hover {
-  background: rgba(0, 0, 0, 0.05);
-}
-
-.dock-tab:focus-visible {
-  outline: 2px solid rgba(59, 130, 246, 0.8);
-  outline-offset: 1px;
-}
-
-.dock-tab--active {
-  background: rgba(59, 130, 246, 0.15);
-}
-
-.dock-stack__content {
-  position: relative;
-  flex: 1 1 auto;
-  display: flex;
-  overflow: hidden;
-}
-
+// `.dock-stack__pane` is the slotted content wrapper. The WC projects it
+// into its body slot only when the tab is active, so we don't need a
+// hidden-state rule here. Just match the inherited flex layout for content.
 .dock-stack__pane {
   position: relative;
-  flex: 1 1 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-}
-
-.dock-stack__pane[hidden] {
-  display: none !important;
+  height: 100%;
 }
 
 .dock-drop-indicator {
   position: absolute;
   pointer-events: none;
-  border: 2px solid rgba(59, 130, 246, 0.9);
-  background: rgba(59, 130, 246, 0.2);
+  border: 2px solid var(--bs-primary);
+  // Original was `rgba(59, 130, 246, 0.2)` — translucent so the underlying
+  // panel stays visible behind the dropzone hint. The PRD's mapping to
+  // --bs-primary-bg-subtle made it solid; compose on --bs-primary-rgb to
+  // keep the see-through fill.
+  background: rgba(var(--bs-primary-rgb), 0.2);
   border-radius: 0.25rem;
   opacity: 0;
   transition: opacity 120ms ease;
@@ -373,8 +313,8 @@
   gap: 0.125rem;
   padding: 0.125rem;
   border-radius: 999px;
-  background: rgba(15, 23, 42, 0.15);
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+  background: var(--bs-tertiary-bg);
+  box-shadow: var(--bs-box-shadow);
   pointer-events: none;
   transform: translate(-50%, -50%);
   z-index: 110;
@@ -393,9 +333,9 @@
   align-items: center;
   justify-content: center;
   border-radius: 0.375rem;
-  border: 1px solid rgba(59, 130, 246, 0.4);
-  background: rgba(255, 255, 255, 0.9);
-  color: rgba(30, 64, 175, 0.9);
+  border: 1px solid var(--bs-primary-border-subtle);
+  background: var(--bs-body-bg);
+  color: var(--bs-primary);
   font-size: 0.75rem;
   line-height: 1;
   font-weight: 600;
@@ -407,13 +347,13 @@
 .dock-drop-joystick__button[data-active='true'],
 .dock-drop-joystick__button:hover,
 .dock-drop-joystick__button:focus-visible {
-  background: rgba(59, 130, 246, 0.25);
-  border-color: rgba(59, 130, 246, 0.8);
-  color: rgba(30, 64, 175, 1);
+  background: var(--bs-primary-bg-subtle);
+  border-color: var(--bs-primary);
+  color: var(--bs-primary);
 }
 
 .dock-drop-joystick__button:focus-visible {
-  outline: 2px solid rgba(59, 130, 246, 0.9);
+  outline: 2px solid var(--bs-primary);
   outline-offset: 1px;
 }
 

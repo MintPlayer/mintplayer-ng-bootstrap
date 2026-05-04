@@ -1,7 +1,7 @@
 import { Component, CUSTOM_ELEMENTS_SCHEMA, model, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
-import '@mintplayer/splitter';
+import '@mintplayer/ng-bootstrap/web-components/splitter';
 
 @Component({
   selector: 'demo-splitter',

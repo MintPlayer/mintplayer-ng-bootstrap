@@ -1,8 +1,8 @@
 import { isPlatformServer, NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, contentChildren, CUSTOM_ELEMENTS_SCHEMA, effect, ElementRef, inject, input, PLATFORM_ID, signal } from '@angular/core';
 import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
-import '@mintplayer/tab-control-wc';
-import type { TabActivateEventDetail } from '@mintplayer/tab-control-wc';
+import '@mintplayer/ng-bootstrap/web-components/tab-control';
+import type { TabActivateEventDetail } from '@mintplayer/ng-bootstrap/web-components/tab-control';
 import { BsTabPageComponent } from '../tab-page/tab-page.component';
 import { BsTabsPosition } from '../tabs-position';
 

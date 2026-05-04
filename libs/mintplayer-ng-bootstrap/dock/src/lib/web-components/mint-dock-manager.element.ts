@@ -1,5 +1,12 @@
 
 import { LitElement, type TemplateResult } from 'lit';
+// Side-effect import: registers <mp-tab-control> + <mp-tab-page> custom elements.
+// Each dock stack is rendered as <mp-tab-control>, so the dock depends on this
+// lib being loaded before any layout is rendered.
+import '@mintplayer/ng-bootstrap/web-components/tab-control';
+// Side-effect import: registers <mp-splitter>. Each DockSplitNode is rendered
+// as a nested <mp-splitter>, so this lib must load before any layout renders.
+import '@mintplayer/ng-bootstrap/web-components/splitter';
 import {
   DockFloatingStackLayout,
   DockLayout,
@@ -74,20 +81,6 @@ export class MintDockManagerElement extends LitElement {
         startClientY: number;
       }
     | null = null;
-  private resizeState:
-    | {
-        path: DockPath;
-        index: number;
-        pointerId: number;
-        orientation: 'horizontal' | 'vertical';
-        container: HTMLElement;
-        divider: HTMLElement;
-        startPos: number;
-        initialSizes: number[];
-        beforeSize: number;
-        afterSize: number;
-      }
-    | null = null;
   private dragState: {
     pane: string;
     sourcePath: DockPath;
@@ -133,7 +126,8 @@ export class MintDockManagerElement extends LitElement {
       }
     | null = null;
   private intersectionRaf: number | null = null;
-  private intersectionHandles: Map<string, HTMLElement> = new Map();
+  private rootResizeObserver: ResizeObserver | null = null;
+  private dockedMutationObserver: MutationObserver | null = null;
   private cornerResizeState:
     | {
         pointerId: number;
@@ -163,43 +157,11 @@ export class MintDockManagerElement extends LitElement {
   private pointerTrackingActive = false;
   private dragPointerTrackingActive = false;
   private lastDragPointerPosition: { x: number; y: number } | null = null;
-  // Localized snapping while dragging a divider
-  private activeSnapAxis: 'x' | 'y' | null = null;
-  private activeSnapTargets: number[] = [];
   // Localized snapping while dragging an intersection handle
   private cornerSnapXTargets: number[] = [];
   private cornerSnapYTargets: number[] = [];
   // Debug: render snap markers while dragging
   private showSnapMarkers = false;
-  private renderSnapMarkersForDivider(): void {
-    if (!this.showSnapMarkers) return;
-    const layer = this.shadowRoot?.querySelector<HTMLElement>('.dock-intersections-layer, .dock-intersection-layer');
-    if (!layer) return;
-    // Clear previous
-    Array.from(layer.querySelectorAll('.dock-snap-marker')).forEach((el) => el.remove());
-    if (!this.resizeState || !this.activeSnapAxis || this.activeSnapTargets.length === 0) return;
-    const rootRect = this.rootEl.getBoundingClientRect();
-    const dRect = this.resizeState.divider.getBoundingClientRect();
-    if (this.activeSnapAxis === 'x') {
-      const y = dRect.top + dRect.height / 2 - rootRect.top;
-      this.activeSnapTargets.forEach((sx) => {
-        const dot = this.documentRef.createElement('div');
-        dot.className = 'dock-snap-marker';
-        dot.style.left = `${rootRect.left + sx - rootRect.left}px`;
-        dot.style.top = `${y}px`;
-        layer.appendChild(dot);
-      });
-    } else if (this.activeSnapAxis === 'y') {
-      const x = dRect.left + dRect.width / 2 - rootRect.left;
-      this.activeSnapTargets.forEach((sy) => {
-        const dot = this.documentRef.createElement('div');
-        dot.className = 'dock-snap-marker';
-        dot.style.left = `${x}px`;
-        dot.style.top = `${rootRect.top + sy - rootRect.top}px`;
-        layer.appendChild(dot);
-      });
-    }
-  }
 
   private renderSnapMarkersForCorner(): void {
     if (!this.showSnapMarkers) return;
@@ -208,16 +170,22 @@ export class MintDockManagerElement extends LitElement {
     Array.from(layer.querySelectorAll('.dock-snap-marker')).forEach((el) => el.remove());
     if (!this.cornerResizeState) return;
     const rootRect = this.rootEl.getBoundingClientRect();
-    // Compute representative center lines from first entries
+    // Compute representative center lines from the dividers being resized.
+    // st.{hs,vs}[i].container is the <mp-splitter>; the divider lives in its
+    // shadow at getSplitterDividers(splitter)[index].
     let centerX: number | null = null;
     let centerY: number | null = null;
     const st = this.cornerResizeState;
     if (st.vs.length > 0) {
-      const vRect = st.vs[0].container.querySelector<HTMLElement>(':scope > .dock-split__divider')?.getBoundingClientRect();
+      const v0 = st.vs[0];
+      const vDiv = this.getSplitterDividers(v0.container)[v0.index];
+      const vRect = vDiv?.getBoundingClientRect();
       if (vRect) centerX = vRect.left + vRect.width / 2 - rootRect.left;
     }
     if (st.hs.length > 0) {
-      const hRect = st.hs[0].container.querySelector<HTMLElement>(':scope > .dock-split__divider')?.getBoundingClientRect();
+      const h0 = st.hs[0];
+      const hDiv = this.getSplitterDividers(h0.container)[h0.index];
+      const hRect = hDiv?.getBoundingClientRect();
       if (hRect) centerY = hRect.top + hRect.height / 2 - rootRect.top;
     }
     if (centerY != null) {
@@ -252,19 +220,19 @@ export class MintDockManagerElement extends LitElement {
   constructor() {
     super();
     this.instanceId = `mint-dock-${++MintDockManagerElement.instanceCounter}`;
+    // Set windowRef eagerly so connectedCallback's window-level drag listeners
+    // (added before firstUpdated runs) can actually attach. Without this,
+    // win?.addEventListener was a silent no-op on first connect and HTML5
+    // drag-to-detach gestures never reached the dock — the floating wrapper
+    // was created but stayed at its conversion-time coordinates because the
+    // 'drag' listener that updates its position was never attached.
+    this.windowRef = typeof window !== 'undefined' ? window : null;
     this.onPointerMove = this.onPointerMove.bind(this);
     this.onPointerUp = this.onPointerUp.bind(this);
-    this.onDragOver = this.onDragOver.bind(this);
-    this.onGlobalDragOver = this.onGlobalDragOver.bind(this);
-    this.onGlobalDragEnd = this.onGlobalDragEnd.bind(this);
-    this.onDrop = this.onDrop.bind(this);
-    this.onDragLeave = this.onDragLeave.bind(this);
-    this.onDrag = this.onDrag.bind(this);
-    this.onDragMouseMove = this.onDragMouseMove.bind(this);
-    this.onDragTouchMove = this.onDragTouchMove.bind(this);
-    this.onDragMouseUp = this.onDragMouseUp.bind(this);
-    this.onDragTouchEnd = this.onDragTouchEnd.bind(this);
-    this.onWindowResize = this.onWindowResize.bind(this);
+    this.onDragPointerMove = this.onDragPointerMove.bind(this);
+    this.onDragPointerUp = this.onDragPointerUp.bind(this);
+    this.onDragPointerCancel = this.onDragPointerCancel.bind(this);
+    this.onSplitterResize = this.onSplitterResize.bind(this);
   }
 
   override render(): TemplateResult {
@@ -317,28 +285,26 @@ export class MintDockManagerElement extends LitElement {
     // a drop target when the main layout is empty.
     this.dockedEl.dataset['path'] = this.formatPath({ type: 'docked', segments: [] });
 
-    // Now safe to attach shadow-DOM-targeted event listeners.
-    this.rootEl.addEventListener('dragover', this.onDragOver);
-    this.rootEl.addEventListener('drop', this.onDrop);
-    this.rootEl.addEventListener('dragleave', this.onDragLeave);
-    this.dropJoystick.addEventListener('dragover', this.onDragOver);
-    this.dropJoystick.addEventListener('drop', this.onDrop);
-    this.dropJoystick.addEventListener('dragleave', this.onDragLeave);
-    this.dropJoystickButtons.forEach((btn) => {
-      const handler = (e: DragEvent) => {
-        if (!this.dragState) return;
-        const z = btn.dataset['zone'];
-        if (this.isDropZone(z)) {
-          this.updateDropJoystickActiveZone(z);
-          e.preventDefault();
-        }
-      };
-      btn.addEventListener('dragenter', handler);
-      btn.addEventListener('dragover', handler);
-    });
+    // Drop targeting (drop indicator + joystick zone selection) runs entirely
+    // off pointer-based hit-testing in updatePaneDragDropTargetFromPoint and
+    // findDropZoneByPoint — no HTML5 dragover/drop/dragleave listeners needed.
 
     // Render any layout that was set before the shadow DOM existed.
     this.renderLayout();
+
+    // Reactive triggers for intersection-handle re-rendering. Each observer
+    // wakes scheduleRenderIntersectionHandles() (rAF-coalesced), which means
+    // multiple notifications in the same frame collapse to one render and
+    // the rAF tick gives <mp-splitter> elements time to populate their
+    // shadow roots before we query their dividers.
+    this.rootResizeObserver = new ResizeObserver(() => this.scheduleRenderIntersectionHandles());
+    this.rootResizeObserver.observe(this.rootEl);
+    this.dockedMutationObserver = new MutationObserver(() => this.scheduleRenderIntersectionHandles());
+    this.dockedMutationObserver.observe(this.dockedEl, { childList: true, subtree: true });
+    // mp-splitter dispatches bubbling 'resizing' / 'resize-end' on user drag;
+    // delegating on dockedEl catches every nested splitter without per-instance wiring.
+    this.dockedEl.addEventListener('resizing', this.onSplitterResize);
+    this.dockedEl.addEventListener('resize-end', this.onSplitterResize);
   }
 
   override connectedCallback(): void {
@@ -346,29 +312,24 @@ export class MintDockManagerElement extends LitElement {
     if (!this.hasAttribute('role')) {
       this.setAttribute('role', 'application');
     }
-    const win = this.windowRef;
-    win?.addEventListener('dragover', this.onGlobalDragOver);
-    win?.addEventListener('drag', this.onDrag);
-    win?.addEventListener('dragend', this.onGlobalDragEnd, true);
-    win?.addEventListener('resize', this.onWindowResize);
   }
 
   override disconnectedCallback(): void {
-    this.rootEl?.removeEventListener('dragover', this.onDragOver);
-    this.rootEl?.removeEventListener('drop', this.onDrop);
-    this.rootEl?.removeEventListener('dragleave', this.onDragLeave);
-    this.dropJoystick?.removeEventListener('dragover', this.onDragOver);
-    this.dropJoystick?.removeEventListener('drop', this.onDrop);
-    this.dropJoystick?.removeEventListener('dragleave', this.onDragLeave);
     const win = this.windowRef;
-    win?.removeEventListener('dragover', this.onGlobalDragOver);
-    win?.removeEventListener('drag', this.onDrag);
-    win?.removeEventListener('dragend', this.onGlobalDragEnd, true);
     this.stopDragPointerTracking();
     win?.removeEventListener('pointermove', this.onPointerMove);
     win?.removeEventListener('pointerup', this.onPointerUp);
     this.pointerTrackingActive = false;
-    win?.removeEventListener('resize', this.onWindowResize);
+    this.rootResizeObserver?.disconnect();
+    this.rootResizeObserver = null;
+    this.dockedMutationObserver?.disconnect();
+    this.dockedMutationObserver = null;
+    this.dockedEl?.removeEventListener('resizing', this.onSplitterResize);
+    this.dockedEl?.removeEventListener('resize-end', this.onSplitterResize);
+    if (this.intersectionRaf !== null) {
+      this.windowRef?.clearTimeout(this.intersectionRaf);
+      this.intersectionRaf = null;
+    }
     super.disconnectedCallback();
   }
 
@@ -394,10 +355,53 @@ export class MintDockManagerElement extends LitElement {
 
   set layout(value: DockLayoutSnapshot | DockLayout | DockLayoutNode | null) {
     const snapshot = this.ensureSnapshot(value);
+    // While a drag/resize is in flight, the dock manager is the source of
+    // truth for layout state — its mid-drag mutations (e.g. floating bounds
+    // updated every mousemove, or a stack split during a pane-drag-to-floating
+    // conversion) race the host's two-way binding round-trip. The host re-
+    // feeds the layout we *just* dispatched via `dock-layout-changed`, but by
+    // the time the round-trip arrives the user has moved the cursor again, so
+    // the structural-equality guard below would let it through and clobber the
+    // in-progress state (e.g. snap a freshly-detached floating window back to
+    // the converted-at coordinates instead of letting it follow the cursor).
+    // Reject any external layout write during interaction; the host will sync
+    // back to the dock's final state when interaction ends and the dock fires
+    // a fresh dock-layout-changed event.
+    if (this.isInteracting()) return;
+    // Skip renderLayout when the incoming layout is structurally identical
+    // to the current state. After a divider drag the dock dispatches
+    // dock-layout-changed; an Angular host doing two-way binding will feed
+    // that snapshot right back through `[layout]` (and through the
+    // `[attr.layout]` round-trip). Without this guard, every drag-end
+    // tears down and rebuilds the whole splitter tree, giving a one-frame
+    // flash of `flex: 1 1 0` equal-share before the pin restores sizes.
+    const currentJson = JSON.stringify({
+      root: this.rootLayout,
+      floating: this.floatingLayouts,
+      titles: this.titles,
+    });
+    const newJson = JSON.stringify(snapshot);
+    if (currentJson === newJson) return;
+
     this.rootLayout = this.cloneLayoutNode(snapshot.root);
     this.floatingLayouts = this.cloneFloatingArray(snapshot.floating);
     this.titles = snapshot.titles ? { ...snapshot.titles } : {};
     this.renderLayout();
+  }
+
+  /**
+   * True while the user is actively interacting with the dock — pane drag,
+   * floating window drag, floating window resize, or intersection corner
+   * resize. The `set layout` setter consults this to refuse external
+   * round-trips that would overwrite in-progress drag state.
+   */
+  private isInteracting(): boolean {
+    return !!(
+      this.dragState ||
+      this.floatingDragState ||
+      this.floatingResizeState ||
+      this.cornerResizeState
+    );
   }
 
   get snapshot(): DockLayoutSnapshot {
@@ -486,7 +490,10 @@ export class MintDockManagerElement extends LitElement {
     }
 
     this.renderFloatingPanes();
-    this.scheduleRenderIntersectionHandles();
+    // Note: intersection handles are repositioned reactively via observers
+    // wired up in firstUpdated (rootResizeObserver, dockedMutationObserver,
+    // and delegated 'resizing' / 'resize-end' events). The MutationObserver
+    // on dockedEl fires when the renderNode subtree above is appended.
   }
 
   private renderNode(
@@ -600,129 +607,97 @@ export class MintDockManagerElement extends LitElement {
     });
   }
 
-  private onWindowResize(): void {
-    // Recompute intersection handles on window resize
+  private onSplitterResize(): void {
+    // mp-splitter dispatches 'resizing' continuously during a divider drag
+    // and 'resize-end' when the user releases. Both keep the handle glued
+    // to the new intersection coordinate.
     this.scheduleRenderIntersectionHandles();
   }
 
   private scheduleRenderIntersectionHandles(): void {
-    this.intersectionRaf = null;
-    this.renderIntersectionHandles();
+    if (this.intersectionRaf !== null) return;
+    const win = this.windowRef;
+    if (!win) return;
+    // Defer with setTimeout(5) instead of rAF so we run AFTER any
+    // flex-redistribution settles. Sequence we have to wait through:
+    //   (1) DOM mutation (e.g. panel removed by drop)
+    //   (2) microtasks: <mp-splitter>'s slotchange + size-pinning rAF
+    //   (3) layout flush
+    // A bare rAF can fire before (2) resolves, so getBoundingClientRect on
+    // the dividers reads a transient flex-distributed position and the
+    // glyph lands ~tens of pixels off. 5ms is past the microtask queue and
+    // past splitter's pinning rAF in practice, so the divider rects we
+    // read are the settled, post-pin values.
+    this.intersectionRaf = win.setTimeout(() => {
+      this.intersectionRaf = null;
+      this.renderIntersectionHandles();
+    }, 5) as unknown as number;
   }
 
   private renderIntersectionHandles(): void {
     const layer = this.shadowRoot?.querySelector<HTMLElement>('.dock-intersections-layer, .dock-intersection-layer');
     if (!layer) return;
-    // Keep existing handles; we will diff and update positions
-    // 1) Clean up legacy handles (created before keying) that lack a data-key
-    Array.from(layer.querySelectorAll('.dock-intersection-handle'))
-      .filter((el) => !(el as HTMLElement).dataset['key'])
-      .forEach((el) => el.remove());
-
-    // 2) Rebuild the internal map from DOM to avoid drifting state and dedupe duplicates
-    const domByKey = new Map<string, HTMLElement>();
-    Array.from(layer.querySelectorAll<HTMLElement>('.dock-intersection-handle[data-key]')).forEach((el) => {
-      const key = el.dataset['key'] ?? '';
-      if (!key) return;
-      if (domByKey.has(key)) {
-        // Remove duplicates with the same key, keep the first one
-        el.remove();
-        return;
-      }
-      domByKey.set(key, el);
-      // Ensure listener is attached only once
-      if (!el.dataset['listener']) {
-        el.dataset['listener'] = '1';
-        // Listener will be (re)assigned later when we know the current h/v pair
-      }
-    });
-    // Sync internal map with DOM
-    this.intersectionHandles = domByKey;
 
     const rootRect = this.rootEl.getBoundingClientRect();
 
-    // If a corner resize is active, only update that handle's position and avoid creating new ones
+    // Active corner-resize: keep st.handle alive (it owns pointer capture and
+    // the cornerResizeState references it). Update its position from current
+    // divider rects, drop every other handle by reference.
     if (this.cornerResizeState) {
       const st = this.cornerResizeState;
       const h0 = st.hs[0];
       const v0 = st.vs[0];
-      const hPathStr = this.formatPath(h0.path);
-      const vPathStr = this.formatPath(v0.path);
-      const key = `${hPathStr}:${h0.index}|${vPathStr}:${v0.index}`;
-      // Find divider elements corresponding to active paths
-      const hDiv = this.shadowRoot?.querySelector<HTMLElement>(
-        `.dock-split__divider[data-path="${hPathStr}"][data-index="${h0.index}"]`,
-      );
-      const vDiv = this.shadowRoot?.querySelector<HTMLElement>(
-        `.dock-split__divider[data-path="${vPathStr}"][data-index="${v0.index}"]`,
-      );
+      const hSplitter = this.findSplitterByPath(h0.path.segments);
+      const vSplitter = this.findSplitterByPath(v0.path.segments);
+      const hDiv = hSplitter ? this.getSplitterDividers(hSplitter)[h0.index] : null;
+      const vDiv = vSplitter ? this.getSplitterDividers(vSplitter)[v0.index] : null;
       if (hDiv && vDiv) {
         const hr = hDiv.getBoundingClientRect();
         const vr = vDiv.getBoundingClientRect();
         const x = vr.left + vr.width / 2 - rootRect.left;
         const y = hr.top + hr.height / 2 - rootRect.top;
-        const handle = st.handle;
-        if (!handle.dataset['key']) {
-          handle.dataset['key'] = key;
-        }
-        this.intersectionHandles.set(key, handle);
-        handle.style.left = `${x}px`;
-        handle.style.top = `${y}px`;
-        // Remove any other handles that don't match the active key
+        st.handle.style.left = `${x}px`;
+        st.handle.style.top = `${y}px`;
         Array.from(layer.querySelectorAll<HTMLElement>('.dock-intersection-handle')).forEach((el) => {
-          if ((el.dataset['key'] ?? '') !== key) {
-            el.remove();
-          }
+          if (el !== st.handle) el.remove();
         });
-        // Normalize internal map as well
-        this.intersectionHandles = new Map([[key, handle]]);
       }
       return;
     }
-    const allDividers = Array.from(
-      this.shadowRoot?.querySelectorAll<HTMLElement>('.dock-split__divider') ?? [],
+
+    // Idle path: full clear + rebuild. Cheaper to reason about than incremental
+    // diffing, and handles' positions are always derived from current divider
+    // rects so a layout change (drop, splitter restructure, flex redistribution)
+    // can never leave a stale glyph behind.
+    layer.replaceChildren();
+
+    type DividerInfo = {
+      rect: DOMRect;
+      pathStr: string;
+      index: number;
+    };
+    const hDividers: DividerInfo[] = [];
+    const vDividers: DividerInfo[] = [];
+
+    const allSplitters = Array.from(
+      this.shadowRoot?.querySelectorAll<HTMLElement>('.dock-split') ?? [],
     );
-
-    const hDividers: {
-      el: HTMLElement;
-      rect: DOMRect;
-      path: DockPath | null;
-      pathStr?: string;
-      index: number;
-      container: HTMLElement;
-    }[] = [];
-    const vDividers: {
-      el: HTMLElement;
-      rect: DOMRect;
-      path: DockPath | null;
-      pathStr?: string;
-      index: number;
-      container: HTMLElement;
-    }[] = [];
-
-    allDividers.forEach((el) => {
-      const orientation = (el.dataset['orientation'] as 'horizontal' | 'vertical' | undefined) ?? undefined;
-      const rect = el.getBoundingClientRect();
-      const container = el.closest('.dock-split') as HTMLElement | null;
-      const path = this.parsePath(el.dataset['path']);
-      const pathStr = el.dataset['path'] ?? '';
-      const index = Number.parseInt(el.dataset['index'] ?? '', 10);
-      if (!container || !Number.isFinite(index)) return;
-      const info = { el, rect, path, pathStr, index, container };
-      // Note: node.direction === 'horizontal' means the split lays out children left-to-right,
-      // which yields a VERTICAL divider bar. So mapping is inverted here.
-      if (orientation === 'horizontal') {
-        vDividers.push(info);
-      } else if (orientation === 'vertical') {
-        hDividers.push(info);
-      }
+    allSplitters.forEach((splitter) => {
+      const direction = splitter.dataset['direction'] as 'horizontal' | 'vertical' | undefined;
+      const pathStr = splitter.dataset['path'] ?? '';
+      this.getSplitterDividers(splitter).forEach((el, index) => {
+        const info: DividerInfo = { rect: el.getBoundingClientRect(), pathStr, index };
+        // direction='horizontal' means children flow left-to-right, so the
+        // divider bars between them are VERTICAL (and vice-versa).
+        if (direction === 'horizontal') vDividers.push(info);
+        else if (direction === 'vertical') hDividers.push(info);
+      });
     });
 
-    const desiredKeys = new Set<string>();
-
-    const tol = 24; // px tolerance to account for gaps and subpixel layout
-    const groupMap = new Map<string, HTMLElement>();
-    const groupPairs = new Map<string, Array<{ h: { pathStr: string; index: number }; v: { pathStr: string; index: number } }>>();
+    // Group intersections that round to the same on-screen pixel, so two
+    // sibling splitters whose dividers happen to overlap share one handle.
+    const tol = 24;
+    const groups = new Map<string, { x: number; y: number; pairs: Array<{ h: { pathStr: string; index: number }; v: { pathStr: string; index: number } }> }>();
     hDividers.forEach((h) => {
       const hCenterY = h.rect.top + h.rect.height / 2;
       vDividers.forEach((v) => {
@@ -730,57 +705,36 @@ export class MintDockManagerElement extends LitElement {
         const dx = vCenterX < h.rect.left ? h.rect.left - vCenterX : vCenterX > h.rect.right ? vCenterX - h.rect.right : 0;
         const dy = hCenterY < v.rect.top ? v.rect.top - hCenterY : hCenterY > v.rect.bottom ? hCenterY - v.rect.bottom : 0;
         if (dx > tol || dy > tol) return;
-
         const x = vCenterX - rootRect.left;
         const y = hCenterY - rootRect.top;
-        const key = `${h.pathStr}:${h.index}|${v.pathStr}:${v.index}`;
         const gk = `${Math.round(x)}:${Math.round(y)}`;
-        let handle = groupMap.get(gk);
-        if (!handle) {
-          // Try reuse via existing pair mapping
-          handle = this.intersectionHandles.get(key) ?? null as any;
-          if (!handle) {
-            handle = this.documentRef.createElement('div');
-            handle.classList.add('dock-intersection-handle', 'glyph');
-            handle.setAttribute('role', 'separator');
-            handle.setAttribute('aria-label', 'Resize split intersection');
-            handle.dataset['key'] = key;
-            handle.dataset['listener'] = '1';
-            handle.addEventListener('pointerdown', (ev) => this.beginCornerResize(ev, h, v, handle!));
-            handle.addEventListener('dblclick', (ev) => this.onIntersectionDoubleClick(ev, handle!));
-            layer.appendChild(handle);
-          }
-          groupMap.set(gk, handle);
-        }
-        // Track pairs for this group and map all pair keys to the same handle
-        const arr = groupPairs.get(gk) ?? [];
-        arr.push({ h: { pathStr: h.pathStr ?? '', index: h.index }, v: { pathStr: v.pathStr ?? '', index: v.index } });
-        groupPairs.set(gk, arr);
-        this.intersectionHandles.set(key, handle);
-        // Update position for the grouped handle
-        handle.style.left = `${x}px`;
-        handle.style.top = `${y}px`;
+        const group = groups.get(gk) ?? { x, y, pairs: [] };
+        group.pairs.push({ h: { pathStr: h.pathStr, index: h.index }, v: { pathStr: v.pathStr, index: v.index } });
+        groups.set(gk, group);
       });
     });
 
-    // Attach grouped pairs data to each handle and prune stale ones
-    const keep = new Set<HTMLElement>(groupMap.values());
-    groupMap.forEach((handle, gk) => {
-      const pairs = groupPairs.get(gk) ?? [];
-      handle.dataset['pairs'] = JSON.stringify(pairs);
+    groups.forEach((group, gk) => {
+      const handle = this.documentRef.createElement('div');
+      handle.classList.add('dock-intersection-handle', 'glyph');
+      handle.setAttribute('role', 'separator');
+      handle.setAttribute('aria-label', 'Resize split intersection');
+      const firstPair = group.pairs[0];
+      const key = `${firstPair.h.pathStr}:${firstPair.h.index}|${firstPair.v.pathStr}:${firstPair.v.index}`;
+      handle.dataset['key'] = key;
+      handle.dataset['pairs'] = JSON.stringify(group.pairs);
+      handle.style.left = `${group.x}px`;
+      handle.style.top = `${group.y}px`;
+      // beginCornerResize/onIntersectionDoubleClick read data-pairs to
+      // reconstruct the (h, v) pair list, so the (h, v) args we pass here
+      // are only used as a fallback when data-pairs is empty — safe to use
+      // the first pair's structure as the seed.
+      const seedH = { path: this.parsePath(firstPair.h.pathStr), index: firstPair.h.index, container: this.findSplitterByPath(this.parsePath(firstPair.h.pathStr)?.segments ?? []) ?? this.rootEl, rect: new DOMRect() };
+      const seedV = { path: this.parsePath(firstPair.v.pathStr), index: firstPair.v.index, container: this.findSplitterByPath(this.parsePath(firstPair.v.pathStr)?.segments ?? []) ?? this.rootEl, rect: new DOMRect() };
+      handle.addEventListener('pointerdown', (ev) => this.beginCornerResize(ev, seedH, seedV, handle));
+      handle.addEventListener('dblclick', (ev) => this.onIntersectionDoubleClick(ev, handle));
+      layer.appendChild(handle);
     });
-    Array.from(layer.querySelectorAll<HTMLElement>('.dock-intersection-handle')).forEach((el) => {
-      if (!keep.has(el)) {
-        el.remove();
-      }
-    });
-    // Reset intersectionHandles to only currently mapped keys
-    const newMap = new Map<string, HTMLElement>();
-    groupPairs.forEach((pairs, gk) => {
-      const handle = groupMap.get(gk)!;
-      pairs.forEach((p) => newMap.set(`${p.h.pathStr}:${p.h.index}|${p.v.pathStr}:${p.v.index}`, handle));
-    });
-    this.intersectionHandles = newMap;
   }
 
   private beginCornerResize(
@@ -801,18 +755,18 @@ export class MintDockManagerElement extends LitElement {
     const ensureHV = (pathStr: string, index: number, axis: 'h'|'v') => {
       const path = this.parsePath(pathStr);
       if (!path) return;
-      const div = this.shadowRoot?.querySelector<HTMLElement>(`.dock-split__divider[data-path="${pathStr}"][data-index="${index}"]`) ?? null;
-      const container = div?.closest('.dock-split') as HTMLElement | null;
-      if (!container) return;
-      if (axis === 'h') {
-        const children = Array.from(container.querySelectorAll<HTMLElement>(':scope > .dock-split__child'));
-        const initial = children.map((c) => c.getBoundingClientRect().height);
-        hs.push({ path, index, container, initialSizes: initial, before: initial[index], after: initial[index+1] });
-      } else {
-        const children = Array.from(container.querySelectorAll<HTMLElement>(':scope > .dock-split__child'));
-        const initial = children.map((c) => c.getBoundingClientRect().width);
-        vs.push({ path, index, container, initialSizes: initial, before: initial[index], after: initial[index+1] });
-      }
+      const splitter = this.findSplitterByPath(path.segments);
+      if (!splitter) return;
+      // Initial pixel sizes come from each panel-wrapper inside the splitter's
+      // shadow root. We capture them once on pointerdown and feed deltas to
+      // setPanelSizes() during the drag.
+      const panels = this.getSplitterPanels(splitter);
+      if (panels.length === 0) return;
+      const dim: 'height' | 'width' = axis === 'h' ? 'height' : 'width';
+      const initial = panels.map((p) => p.getBoundingClientRect()[dim]);
+      const entry = { path, index, container: splitter, initialSizes: initial, before: initial[index], after: initial[index + 1] };
+      if (axis === 'h') hs.push(entry);
+      else vs.push(entry);
     };
 
     if (parsed.length > 0) {
@@ -846,42 +800,47 @@ export class MintDockManagerElement extends LitElement {
     // Compute localized snap targets for this intersection
     try {
       const rootRect = this.rootEl.getBoundingClientRect();
-      // Use first pair to define the crossing lines
+      // Use first pair to define the crossing lines. Resolve dividers via
+      // each splitter's shadow root.
       let centerX: number | null = null;
       let centerY: number | null = null;
-      // Resolve one vertical bar (from vs) and one horizontal bar (from hs)
       if (vs.length > 0) {
         const vPair = vs[0];
-        const vPathStr = this.formatPath(vPair.path);
-        const vDiv = this.shadowRoot?.querySelector<HTMLElement>(`.dock-split__divider[data-path="${vPathStr}"][data-index="${vPair.index}"]`) ?? null;
+        const vDiv = this.getSplitterDividers(vPair.container)[vPair.index];
         const vr = vDiv?.getBoundingClientRect();
         if (vr) centerX = vr.left + vr.width / 2;
       }
       if (hs.length > 0) {
         const hPair = hs[0];
-        const hPathStr = this.formatPath(hPair.path);
-        const hDiv = this.shadowRoot?.querySelector<HTMLElement>(`.dock-split__divider[data-path="${hPathStr}"][data-index="${hPair.index}"]`) ?? null;
+        const hDiv = this.getSplitterDividers(hPair.container)[hPair.index];
         const hr = hDiv?.getBoundingClientRect();
         if (hr) centerY = hr.top + hr.height / 2;
       }
 
       const xTargets: number[] = [];
       const yTargets: number[] = [];
-      const allDividers = Array.from(this.shadowRoot?.querySelectorAll<HTMLElement>('.dock-split__divider') ?? []);
-      allDividers.forEach((el) => {
-        const o = (el.dataset['orientation'] as 'horizontal' | 'vertical' | undefined) ?? undefined;
-        const r = el.getBoundingClientRect();
-        if (o === 'horizontal' && centerY != null) {
-          // vertical bar → contributes X if it crosses centerY
-          if (centerY >= r.top && centerY <= r.bottom) {
-            xTargets.push(r.left + r.width / 2 - rootRect.left);
+      // Iterate every splitter, then flat-map its shadow dividers — a
+      // splitter's data-direction tells us whether its bars are vertical
+      // (horizontal split) or horizontal (vertical split).
+      const allSplitters = Array.from(
+        this.shadowRoot?.querySelectorAll<HTMLElement>('.dock-split') ?? [],
+      );
+      allSplitters.forEach((splitter) => {
+        const direction = (splitter.dataset['direction'] as 'horizontal' | 'vertical' | undefined) ?? undefined;
+        this.getSplitterDividers(splitter).forEach((el) => {
+          const r = el.getBoundingClientRect();
+          if (direction === 'horizontal' && centerY != null) {
+            // vertical bar → contributes X if it crosses centerY
+            if (centerY >= r.top && centerY <= r.bottom) {
+              xTargets.push(r.left + r.width / 2 - rootRect.left);
+            }
+          } else if (direction === 'vertical' && centerX != null) {
+            // horizontal bar → contributes Y if it crosses centerX
+            if (centerX >= r.left && centerX <= r.right) {
+              yTargets.push(r.top + r.height / 2 - rootRect.top);
+            }
           }
-        } else if (o === 'vertical' && centerX != null) {
-          // horizontal bar → contributes Y if it crosses centerX
-          if (centerX >= r.left && centerX <= r.right) {
-            yTargets.push(r.top + r.height / 2 - rootRect.top);
-          }
-        }
+        });
       });
       this.cornerSnapXTargets = xTargets;
       this.cornerSnapYTargets = yTargets;
@@ -925,47 +884,48 @@ export class MintDockManagerElement extends LitElement {
       if (bestDist <= tol) clientY = best;
     }
 
-    // Update all horizontal bars (vertical splits) with Y delta
-    state.hs.forEach((h) => {
-      const node = this.resolveSplitNode(h.path);
+    // Apply the new pair sizes to one splitter's panel-wrappers via
+    // mp-splitter's setPanelSizes(pixels) API. We persist the normalized
+    // ratios on the layout node so renderSplit's initial sizing stays in sync.
+    const applyPairSize = (
+      entry: {
+        path: DockPath;
+        index: number;
+        container: HTMLElement;
+        beforeSize: number;
+        afterSize: number;
+        initialSizes: number[];
+      },
+      delta: number,
+    ): void => {
+      const node = this.resolveSplitNode(entry.path);
       if (!node) return;
-      const deltaY = clientY - h.startY;
       const minSize = 48;
-      const pairTotal = h.beforeSize + h.afterSize;
-      let newBefore = Math.min(Math.max(h.beforeSize + deltaY, minSize), pairTotal - minSize);
+      const pairTotal = entry.beforeSize + entry.afterSize;
+      let newBefore = Math.min(Math.max(entry.beforeSize + delta, minSize), pairTotal - minSize);
       newBefore = snapValue(newBefore, pairTotal, event.shiftKey);
       const newAfter = pairTotal - newBefore;
-      const sizesPx = [...h.initialSizes];
-      sizesPx[h.index] = newBefore;
-      sizesPx[h.index+1] = newAfter;
-      const total = sizesPx.reduce((a,s)=>a+s,0);
-      const normalized = total>0 ? sizesPx.map((s)=>s/total) : [];
-      node.sizes = normalized;
-      const children = Array.from(h.container.querySelectorAll<HTMLElement>(':scope > .dock-split__child'));
-      normalized.forEach((size, idx) => { if (children[idx]) children[idx].style.flex = `${Math.max(size,0)} 1 0`; });
-    });
+      const sizesPx = [...entry.initialSizes];
+      sizesPx[entry.index] = newBefore;
+      sizesPx[entry.index + 1] = newAfter;
+      const total = sizesPx.reduce((a, s) => a + s, 0);
+      node.sizes = total > 0 ? sizesPx.map((s) => s / total) : [];
+      (entry.container as unknown as { setPanelSizes?: (sizes: number[]) => void })
+        .setPanelSizes?.(sizesPx);
+    };
 
-    // Update all vertical bars (horizontal splits) with X delta
-    state.vs.forEach((v) => {
-      const node = this.resolveSplitNode(v.path);
-      if (!node) return;
-      const deltaX = clientX - v.startX;
-      const minSize = 48;
-      const pairTotal = v.beforeSize + v.afterSize;
-      let newBefore = Math.min(Math.max(v.beforeSize + deltaX, minSize), pairTotal - minSize);
-      newBefore = snapValue(newBefore, pairTotal, event.shiftKey);
-      const newAfter = pairTotal - newBefore;
-      const sizesPx = [...v.initialSizes];
-      sizesPx[v.index] = newBefore;
-      sizesPx[v.index+1] = newAfter;
-      const total = sizesPx.reduce((a,s)=>a+s,0);
-      const normalized = total>0 ? sizesPx.map((s)=>s/total) : [];
-      node.sizes = normalized;
-      const children = Array.from(v.container.querySelectorAll<HTMLElement>(':scope > .dock-split__child'));
-      normalized.forEach((size, idx) => { if (children[idx]) children[idx].style.flex = `${Math.max(size,0)} 1 0`; });
-    });
+    // Update all horizontal bars (vertical splits) with Y delta, then all
+    // vertical bars (horizontal splits) with X delta.
+    state.hs.forEach((h) => applyPairSize(h, clientY - h.startY));
+    state.vs.forEach((v) => applyPairSize(v, clientX - v.startX));
 
     this.dispatchLayoutChanged();
+    // setPanelSizes() is programmatic and doesn't fire 'resizing' events, so
+    // the delegated listener on dockedEl doesn't wake during a corner drag.
+    // Schedule the handle repositioning ourselves; renderIntersectionHandles
+    // has a fast-path for the active cornerResizeState that just updates
+    // left/top from the new divider rects.
+    this.scheduleRenderIntersectionHandles();
   }
 
   private endCornerResize(pointerId: number): void {
@@ -1010,23 +970,34 @@ export class MintDockManagerElement extends LitElement {
     let hasStored = false;
     splitKeys.forEach((k) => { if (this.previousSplitSizes.has(k)) hasStored = true; });
 
-    const applySizes = (pathStr: string, mutate: (sizes: number[], index: number) => number[]) => {
+    // Persist `node.sizes` (normalized) and push pixel sizes into the
+    // matching <mp-splitter> via setPanelSizes(). The splitter's panel
+    // wrappers live in its shadow DOM, so direct flex mutation is no
+    // longer an option.
+    const pushSizesToSplitter = (path: DockPath, normalized: number[]): void => {
+      const splitter = this.findSplitterByPath(path.segments);
+      if (!splitter) return;
+      const direction = (splitter.dataset['direction'] as 'horizontal' | 'vertical' | undefined) ?? 'horizontal';
+      const containerSize = direction === 'horizontal'
+        ? splitter.getBoundingClientRect().width
+        : splitter.getBoundingClientRect().height;
+      if (!Number.isFinite(containerSize) || containerSize <= 0) return;
+      const totalWeight = normalized.reduce((s, w) => s + Math.max(w, 0), 0);
+      if (totalWeight <= 0) return;
+      const px = normalized.map((w) => (Math.max(w, 0) / totalWeight) * containerSize);
+      (splitter as unknown as { setPanelSizes?: (sizes: number[]) => void })
+        .setPanelSizes?.(px);
+    };
+
+    const applySizes = (pathStr: string, dividerIndex: number, mutate: (sizes: number[], index: number) => number[]) => {
       const path = this.parsePath(pathStr);
       if (!path) return;
       const node = this.resolveSplitNode(path);
       if (!node) return;
       const sizes = this.normalizeSizesArray(node.sizes ?? [], node.children.length);
-      // Find divider index from any divider belonging to this path
-      const divEl = this.shadowRoot?.querySelector<HTMLElement>(`.dock-split__divider[data-path="${pathStr}"]`);
-      const index = divEl ? Number.parseInt(divEl.dataset['index'] ?? '0', 10) : 0;
-      const newSizes = mutate([...sizes], index);
+      const newSizes = mutate([...sizes], dividerIndex);
       node.sizes = newSizes;
-      const segments = path.segments.join('/');
-      const container = this.shadowRoot?.querySelector<HTMLElement>(`.dock-split[data-path="${segments}"]`);
-      if (container) {
-        const children = Array.from(container.querySelectorAll<HTMLElement>(':scope > .dock-split__child'));
-        newSizes.forEach((s, i) => { if (children[i]) children[i].style.flex = `${Math.max(s, 0)} 1 0`; });
-      }
+      pushSizesToSplitter(path, newSizes);
     };
 
     if (hasStored) {
@@ -1034,15 +1005,10 @@ export class MintDockManagerElement extends LitElement {
       this.previousSplitSizes.forEach((sizes, pathStr) => {
         const path = this.parsePath(pathStr);
         const node = path ? this.resolveSplitNode(path) : null;
-        if (!node) return;
+        if (!node || !path) return;
         const norm = this.normalizeSizesArray(sizes, node.children.length);
         node.sizes = norm;
-        const segments = path!.segments.join('/');
-        const container = this.shadowRoot?.querySelector<HTMLElement>(`.dock-split[data-path="${segments}"]`);
-        if (container) {
-          const children = Array.from(container.querySelectorAll<HTMLElement>(':scope > .dock-split__child'));
-          norm.forEach((s, i) => { if (children[i]) children[i].style.flex = `${Math.max(s, 0)} 1 0`; });
-        }
+        pushSizesToSplitter(path, norm);
       });
       this.previousSplitSizes.clear();
     } else {
@@ -1058,22 +1024,16 @@ export class MintDockManagerElement extends LitElement {
           }
           touched.add(key);
         });
-        applySizes(p.h.pathStr, (sizes, idx) => {
+        const equalize = (sizes: number[], idx: number): number[] => {
           const total = (sizes[idx] ?? 0) + (sizes[idx + 1] ?? 0);
           if (total <= 0) return sizes;
           sizes[idx] = total / 2;
           sizes[idx + 1] = total / 2;
           const sum = sizes.reduce((a, s) => a + s, 0);
           return sum > 0 ? sizes.map((s) => s / sum) : sizes;
-        });
-        applySizes(p.v.pathStr, (sizes, idx) => {
-          const total = (sizes[idx] ?? 0) + (sizes[idx + 1] ?? 0);
-          if (total <= 0) return sizes;
-          sizes[idx] = total / 2;
-          sizes[idx + 1] = total / 2;
-          const sum = sizes.reduce((a, s) => a + s, 0);
-          return sum > 0 ? sizes.map((s) => s / sum) : sizes;
-        });
+        };
+        applySizes(p.h.pathStr, p.h.index, equalize);
+        applySizes(p.v.pathStr, p.v.index, equalize);
       });
     }
 
@@ -1191,10 +1151,12 @@ export class MintDockManagerElement extends LitElement {
 
     try {
       state.handle.releasePointerCapture(state.pointerId);
-      delete state.handle.dataset['resizing'];
     } catch (err) {
       /* no-op */
     }
+    // Clear outside the try so a thrown releasePointerCapture (capture
+    // already lost) doesn't strand the handle in its visual drag state.
+    delete state.handle.dataset['resizing'];
 
     const dropHandled = state.dropTarget
       ? this.handleFloatingStackDrop(state.index, state.dropTarget.path, state.dropTarget.zone)
@@ -1303,6 +1265,12 @@ export class MintDockManagerElement extends LitElement {
     } catch (err) {
       /* no-op */
     }
+    // Clear `data-resizing` outside the try — releasePointerCapture can
+    // throw if the capture was already lost (e.g., the pointer left the
+    // window), and we still need to drop the resizing attribute or the
+    // CSS rule `.dock-floating__resizer[data-resizing='true']` keeps the
+    // border dark-blue forever.
+    delete state.handle.dataset['resizing'];
 
     this.floatingResizeState = null;
     this.dispatchLayoutChanged();
@@ -1361,7 +1329,6 @@ export class MintDockManagerElement extends LitElement {
   private stopPointerTrackingIfIdle(): void {
     if (
       this.pointerTrackingActive &&
-      !this.resizeState &&
       !this.floatingDragState &&
       !this.floatingResizeState &&
       !this.cornerResizeState
@@ -1416,55 +1383,77 @@ export class MintDockManagerElement extends LitElement {
     path: number[],
     floatingIndex?: number,
   ): HTMLElement {
-    const container = this.documentRef.createElement('div');
-    container.classList.add('dock-split');
-    container.dataset['direction'] = node.direction;
-    container.dataset['path'] = path.join('/');
+    // Each DockSplitNode renders as <mp-splitter>. The dock keeps its `.dock-split`
+    // class on the host so existing `closest('.dock-split')` queries continue to
+    // resolve, and stamps `data-direction` / `data-path` for the tree-driven
+    // intersection-handle math.
+    const splitter = this.documentRef.createElement('mp-splitter') as HTMLElement;
+    splitter.classList.add('dock-split');
+    splitter.dataset['direction'] = node.direction;
+    splitter.dataset['path'] = path.join('/');
+    // mp-splitter uses 'horizontal' (left-right) and 'vertical' (top-bottom).
+    // The dock's DockSplitNode.direction matches that vocabulary 1:1.
+    splitter.setAttribute('orientation', node.direction);
 
-    const sizes = Array.isArray(node.sizes) ? node.sizes : [];
+    const splitPath: DockPath =
+      typeof floatingIndex === 'number'
+        ? { type: 'floating', index: floatingIndex, segments: [...path] }
+        : { type: 'docked', segments: [...path] };
+
     node.children.forEach((child, index) => {
-      const childWrapper = this.documentRef.createElement('div');
-      childWrapper.classList.add('dock-split__child');
-      childWrapper.dataset['index'] = String(index);
+      // mp-splitter accepts direct children — it wraps each in a panel-wrapper
+      // inside its shadow DOM and projects via a named slot per index.
+      splitter.appendChild(this.renderNode(child, [...path, index], floatingIndex));
+    });
 
-      const size = sizes[index];
-      if (typeof size === 'number' && Number.isFinite(size)) {
-        childWrapper.style.flex = `${Math.max(size, 0)} 1 0`;
-      } else {
-        childWrapper.style.flex = '1 1 0';
-      }
+    // Apply persisted sizes from the layout tree once mp-splitter has built
+    // its panel wrappers. mp-splitter's setPanelSizes interprets values as
+    // pixel widths/heights; the dock's saved sizes are flex weights, so
+    // convert using the splitter's measured cross-axis container size.
+    const sizes = Array.isArray(node.sizes) ? node.sizes : [];
+    if (sizes.length > 0) {
+      requestAnimationFrame(() => {
+        const totalWeight = sizes.reduce((s, w) => s + Math.max(w, 0), 0);
+        if (totalWeight <= 0) return;
+        const containerSize =
+          node.direction === 'horizontal'
+            ? splitter.getBoundingClientRect().width
+            : splitter.getBoundingClientRect().height;
+        if (!Number.isFinite(containerSize) || containerSize <= 0) return;
+        const px = sizes.map((w) => (Math.max(w, 0) / totalWeight) * containerSize);
+        (splitter as unknown as { setPanelSizes?: (sizes: number[]) => void })
+          .setPanelSizes?.(px);
+      });
+    }
 
-      childWrapper.appendChild(this.renderNode(child, [...path, index], floatingIndex));
-      container.appendChild(childWrapper);
-
-      if (index < node.children.length - 1) {
-        const divider = this.documentRef.createElement('div');
-        divider.classList.add('dock-split__divider');
-        divider.setAttribute('role', 'separator');
-        divider.tabIndex = 0;
-        // Tag divider with metadata for intersection detection
-        const dividerPath: DockPath =
-          typeof floatingIndex === 'number'
-            ? { type: 'floating', index: floatingIndex, segments: [...path] }
-            : { type: 'docked', segments: [...path] };
-        divider.dataset['path'] = this.formatPath(dividerPath);
-        divider.dataset['index'] = String(index);
-        divider.dataset['orientation'] = node.direction;
-        divider.addEventListener('pointerdown', (event) =>
-          this.beginResize(
-            event,
-            container,
-            floatingIndex !== undefined
-              ? { type: 'floating', index: floatingIndex, segments: [...path] }
-              : { type: 'docked', segments: [...path] },
-            index,
-          ),
+    // mp-splitter fires resize-end with pixel sizes after a divider drag.
+    // Convert back to flex weights (sum to a stable total — keep current sum
+    // so future renders interpret consistently) and persist to the layout tree.
+    splitter.addEventListener('resize-end', (event) => {
+      // resize-end bubbles, so a nested mp-splitter's drag end would also
+      // reach this listener. Only react to events from THIS splitter, not
+      // from a descendant — otherwise we'd apply the inner's sizes to the
+      // outer's splitNode and mangle the outer's weights.
+      if (event.target !== splitter) return;
+      const detail = (event as CustomEvent<{ sizes: number[] }>).detail;
+      if (!Array.isArray(detail?.sizes) || detail.sizes.length === 0) return;
+      const splitNode = this.resolveSplitNode(splitPath);
+      if (!splitNode) return;
+      const previousTotal = (splitNode.sizes ?? []).reduce(
+        (s, w) => s + Math.max(w, 0),
+        0,
+      );
+      const total = detail.sizes.reduce((s, v) => s + Math.max(v, 0), 0);
+      const targetTotal = previousTotal > 0 ? previousTotal : detail.sizes.length;
+      if (total > 0) {
+        splitNode.sizes = detail.sizes.map(
+          (px) => (Math.max(px, 0) / total) * targetTotal,
         );
-        container.appendChild(divider);
+        this.dispatchLayoutChanged();
       }
     });
 
-    return container;
+    return splitter;
   }
 
   private renderStack(
@@ -1472,27 +1461,39 @@ export class MintDockManagerElement extends LitElement {
     path: number[],
     floatingIndex?: number,
   ): HTMLElement {
-    const stack = this.documentRef.createElement('div');
+    // Dock stacks are rendered as <mp-tab-control>. The dock keeps `.dock-stack`
+    // as a class on the host so existing `closest('.dock-stack')` queries
+    // continue to resolve. The tab strip + body slot projection are owned by
+    // mp-tab-control; the dock just provides the slotted header/content
+    // elements and listens for tab-activate to drive layout-tree updates.
+    const stack = this.documentRef.createElement('mp-tab-control') as HTMLElement;
     stack.classList.add('dock-stack');
+    // Dock controls activation; tell mp-tab-control not to auto-pick.
+    stack.setAttribute('select-first-tab', 'false');
+    // `border="top"` gives us the strip-cutout line under the tabs (so the
+    // active tab visually punches through into the body) without adding the
+    // full Bootstrap frame, which would double up with the dock's own outer
+    // chrome border on `.dock-stack` (and on `.dock-floating` for floating
+    // panels).
+    stack.setAttribute('border', 'top');
+
     const location: DockPath =
       typeof floatingIndex === 'number'
         ? { type: 'floating', index: floatingIndex, segments: [...path] }
         : { type: 'docked', segments: [...path] };
     stack.dataset['path'] = this.formatPath(location);
 
-    const header = this.documentRef.createElement('div');
-    header.classList.add('dock-stack__header');
-    header.setAttribute('role', 'tablist');
-    const content = this.documentRef.createElement('div');
-    content.classList.add('dock-stack__content');
-
     const panes = Array.from(new Set(node.panes));
     if (panes.length === 0) {
+      const emptyHeader = this.documentRef.createElement('span');
+      emptyHeader.setAttribute('slot', '__empty__-header');
+      emptyHeader.textContent = '(empty)';
       const empty = this.documentRef.createElement('div');
+      empty.setAttribute('slot', '__empty__-content');
       empty.classList.add('dock-stack__pane');
       empty.textContent = 'No panes configured';
-      content.appendChild(empty);
-      stack.append(header, content);
+      stack.append(emptyHeader, empty);
+      stack.setAttribute('active-tab', '__empty__');
       return stack;
     }
 
@@ -1503,41 +1504,66 @@ export class MintDockManagerElement extends LitElement {
     const baseSlug = path.length ? path.join('-') : 'root';
     const pathSlug =
       typeof floatingIndex === 'number' ? `f${floatingIndex}-${baseSlug}` : baseSlug;
+
     panes.forEach((paneName) => {
       const paneSlugRaw = paneName.replace(/[^a-zA-Z0-9_-]/g, '-');
       const paneSlug = paneSlugRaw.length > 0 ? paneSlugRaw : 'pane';
       const tabId = `${this.instanceId}-tab-${pathSlug}-${paneSlug}`;
       const panelId = `${this.instanceId}-panel-${pathSlug}-${paneSlug}`;
 
-      const button = this.documentRef.createElement('button');
-      button.type = 'button';
-      button.classList.add('dock-tab');
-      button.dataset['pane'] = paneName;
-      button.id = tabId;
-      button.textContent = this.titles[paneName] ?? paneName;
-      button.setAttribute('role', 'tab');
-      button.setAttribute('aria-controls', panelId);
-      if (paneName === activePane) {
-        button.classList.add('dock-tab--active');
-      }
-      button.setAttribute('aria-selected', String(paneName === activePane));
-      button.draggable = true;
-      button.addEventListener('pointerdown', (event) => {
-        const stackEl = button.closest<HTMLElement>('.dock-stack');
-        this.captureTabDragMetrics(event, stackEl ?? null);
+      // Header span — projected via mp-tab-control's `${tabId}-header` slot
+      // into the strip's button content. Carries the dock's drag handlers.
+      const headerSpan = this.documentRef.createElement('span');
+      headerSpan.setAttribute('slot', `${tabId}-header`);
+      headerSpan.classList.add('dock-tab');
+      headerSpan.dataset['pane'] = paneName;
+      headerSpan.dataset['tabId'] = tabId;
+      headerSpan.textContent = this.titles[paneName] ?? paneName;
+
+      // Pointer-only drag (no HTML5 dnd). pointerdown captures metrics + arms
+      // a threshold gesture; once the pointer moves >threshold pixels we
+      // promote it to a real pane drag via beginPaneDrag. Using pointer
+      // events sidesteps the entire class of HTML5 dnd quirks (cancellation
+      // when source DOM is removed mid-drag, suppressed mousemove, bogus 0/0
+      // coordinates in Firefox, browser-specific drag-image behavior).
+      headerSpan.addEventListener('pointerdown', (event) => {
+        this.captureTabDragMetrics(event, stack);
+        this.armPaneDragGesture(event, this.clonePath(location), paneName, stack);
         event.stopPropagation();
       });
-      button.addEventListener('pointerup', () => this.clearPendingTabDragMetrics());
-      button.addEventListener('pointercancel', () => this.clearPendingTabDragMetrics());
-      button.addEventListener('dragstart', (event) => {
-        const stackEl = button.closest<HTMLElement>('.dock-stack');
-        this.beginPaneDrag(event, this.clonePath(location), paneName, stackEl ?? null);
-      });
-      button.addEventListener('dragend', () => {
-        this.endPaneDrag();
-        this.clearPendingTabDragMetrics();
-      });
-      button.addEventListener('click', () => {
+
+      // Content wrapper — projected via mp-tab-control's `${tabId}-content`
+      // slot only when this tab is active. Holds the dock manager's per-pane
+      // <slot> for the consumer's content.
+      const paneHost = this.documentRef.createElement('div');
+      paneHost.setAttribute('slot', `${tabId}-content`);
+      paneHost.classList.add('dock-stack__pane');
+      paneHost.dataset['pane'] = paneName;
+      paneHost.dataset['tabId'] = tabId;
+      paneHost.id = panelId;
+
+      const slotEl = this.documentRef.createElement('slot');
+      slotEl.name = paneName;
+      paneHost.appendChild(slotEl);
+
+      stack.append(headerSpan, paneHost);
+
+      if (paneName === activePane) {
+        stack.setAttribute('active-tab', tabId);
+      }
+    });
+
+    stack.dataset['activePane'] = activePane;
+
+    // Drive activatePane from mp-tab-control's tab-activate event. We map the
+    // tabId back to the original paneName via the header span's data-pane.
+    stack.addEventListener('tab-activate', (event) => {
+      const detail = (event as CustomEvent<{ tabId: string }>).detail;
+      const headerSpan = stack.querySelector<HTMLElement>(
+        `:scope > [data-tab-id="${detail.tabId}"]`,
+      );
+      const paneName = headerSpan?.dataset['pane'];
+      if (paneName) {
         this.activatePane(stack, paneName, this.clonePath(location));
         this.dispatchEvent(
           new CustomEvent('dock-pane-activated', {
@@ -1546,201 +1572,76 @@ export class MintDockManagerElement extends LitElement {
             composed: true,
           }),
         );
-      });
-      header.appendChild(button);
-
-      const paneHost = this.documentRef.createElement('div');
-      paneHost.classList.add('dock-stack__pane');
-      paneHost.dataset['pane'] = paneName;
-      paneHost.id = panelId;
-      paneHost.setAttribute('role', 'tabpanel');
-      paneHost.setAttribute('aria-labelledby', tabId);
-      if (paneName !== activePane) {
-        paneHost.setAttribute('hidden', '');
       }
-
-      const slotEl = this.documentRef.createElement('slot');
-      slotEl.name = paneName;
-      paneHost.appendChild(slotEl);
-      content.appendChild(paneHost);
     });
 
-    stack.dataset['activePane'] = activePane;
-    stack.append(header, content);
     return stack;
   }
 
-  private beginResize(
-    event: PointerEvent,
-    container: HTMLElement,
-    path: DockPath,
-    index: number,
-  ): void {
-    event.preventDefault();
-    const divider = event.currentTarget as HTMLElement | null;
-    if (!divider) {
-      return;
-    }
+  /**
+   * Returns the strip (`.tsc`) element inside an `<mp-tab-control>`'s shadow
+   * DOM. Used by drag/drop logic that needs the strip's geometry instead of
+   * the host element's bounds.
+   */
+  private getStackStripEl(stack: HTMLElement): HTMLElement | null {
+    if (stack.tagName !== 'MP-TAB-CONTROL') return null;
+    return stack.shadowRoot?.querySelector<HTMLElement>('.tsc') ?? null;
+  }
 
-    const orientation = (container.dataset['direction'] as 'horizontal' | 'vertical') ?? 'horizontal';
-    const children = Array.from(container.querySelectorAll<HTMLElement>(':scope > .dock-split__child'));
-    const initialSizes = children.map((child) => {
-      const rect = child.getBoundingClientRect();
-      return orientation === 'horizontal' ? rect.width : rect.height;
-    });
+  /**
+   * Returns the rendered tab buttons inside an `<mp-tab-control>`'s shadow
+   * strip — the light-DOM `.dock-tab` spans the dock owns are projected into
+   * these buttons via `<slot>`. Use these for geometry / position queries
+   * (insert-index computation, drop-indicator placement). Use the light-DOM
+   * `.dock-tab` spans for data queries (paneName, drag listeners).
+   */
+  private getStackTabButtons(stack: HTMLElement): HTMLButtonElement[] {
+    if (stack.tagName !== 'MP-TAB-CONTROL') return [];
+    return Array.from(
+      stack.shadowRoot?.querySelectorAll<HTMLButtonElement>('button.nav-link') ?? [],
+    );
+  }
 
-    const beforeSize = initialSizes[index];
-    const afterSize = initialSizes[index + 1];
-    const startPos = orientation === 'horizontal' ? event.clientX : event.clientY;
+  /**
+   * Returns the dividers inside an `<mp-splitter>`'s shadow DOM, in DOM order.
+   * mp-splitter renders one `.divider` between each pair of adjacent panels,
+   * so for an N-child split, length N-1.
+   */
+  private getSplitterDividers(splitter: HTMLElement): HTMLElement[] {
+    if (splitter.tagName !== 'MP-SPLITTER') return [];
+    return Array.from(
+      splitter.shadowRoot?.querySelectorAll<HTMLElement>('.divider') ?? [],
+    );
+  }
 
-    divider.setPointerCapture(event.pointerId);
-    divider.dataset['resizing'] = 'true';
-    this.resizeState = {
-      path: this.clonePath(path),
-      index,
-      pointerId: event.pointerId,
-      orientation,
-      container,
-      divider,
-      startPos,
-      initialSizes,
-      beforeSize,
-      afterSize,
-    };
+  /**
+   * Returns the panel wrappers inside an `<mp-splitter>`'s shadow DOM, in
+   * DOM order. These are the elements mp-splitter sizes (via setPanelSizes)
+   * during a divider drag — the dock reads their geometry for intersection
+   * handle math and snap markers.
+   */
+  private getSplitterPanels(splitter: HTMLElement): HTMLElement[] {
+    if (splitter.tagName !== 'MP-SPLITTER') return [];
+    return Array.from(
+      splitter.shadowRoot?.querySelectorAll<HTMLElement>('.panel-wrapper') ?? [],
+    );
+  }
 
-    this.startPointerTracking();
-    // Compute localized snap targets: intersections with perpendicular dividers near this divider
-    try {
-      const rootRect = this.rootEl.getBoundingClientRect();
-      const dividerRect = divider.getBoundingClientRect();
-      const allDividers = Array.from(
-        this.shadowRoot?.querySelectorAll<HTMLElement>('.dock-split__divider') ?? [],
-      );
-      const targets: number[] = [];
-      if (orientation === 'horizontal') {
-        // Current bar is vertical → snap X to centers of other vertical bars (no crossing check needed)
-        allDividers.forEach((el) => {
-          if (el === divider) return;
-          const o = (el.dataset['orientation'] as 'horizontal' | 'vertical' | undefined) ?? undefined;
-          if (o !== 'horizontal') return; // vertical divider bars (split direction horizontal)
-          const r = el.getBoundingClientRect();
-          const xCenter = r.left + r.width / 2 - rootRect.left;
-          targets.push(xCenter);
-        });
-        this.activeSnapAxis = 'x';
-        this.activeSnapTargets = targets;
-        this.renderSnapMarkersForDivider();
-      } else {
-        // Current bar is horizontal → snap Y to centers of other horizontal bars (no crossing check needed)
-        allDividers.forEach((el) => {
-          if (el === divider) return;
-          const o = (el.dataset['orientation'] as 'horizontal' | 'vertical' | undefined) ?? undefined;
-          if (o !== 'vertical') return; // horizontal divider bars (split direction vertical)
-          const r = el.getBoundingClientRect();
-          const yCenter = r.top + r.height / 2 - rootRect.top;
-          targets.push(yCenter);
-        });
-        this.activeSnapAxis = 'y';
-        this.activeSnapTargets = targets;
-        this.renderSnapMarkersForDivider();
-      }
-    } catch {
-      this.activeSnapAxis = null;
-      this.activeSnapTargets = [];
-      this.clearSnapMarkers();
-    }
+  /**
+   * Locate the rendered `<mp-splitter>` element for a given DockPath
+   * `segments` value (the split-tree path). Searches the dock's shadow.
+   */
+  private findSplitterByPath(segments: number[]): HTMLElement | null {
+    return (
+      this.shadowRoot?.querySelector<HTMLElement>(
+        `.dock-split[data-path="${segments.join('/')}"]`,
+      ) ?? null
+    );
   }
 
   private onPointerMove(event: PointerEvent): void {
     if (this.cornerResizeState && event.pointerId === this.cornerResizeState.pointerId) {
       this.handleCornerResizeMove(event);
-    }
-    if (this.resizeState && event.pointerId === this.resizeState.pointerId) {
-      const state = this.resizeState;
-      const splitNode = this.resolveSplitNode(state.path);
-      if (!splitNode) {
-        return;
-      }
-
-      let currentPos = state.orientation === 'horizontal' ? event.clientX : event.clientY;
-      // Localized axis snap near neighboring intersections
-      const tol = 10;
-      const rootRect = this.rootEl.getBoundingClientRect();
-      if (this.activeSnapTargets.length) {
-        if (state.orientation === 'horizontal' && this.activeSnapAxis === 'x') {
-          // Vertical divider snapping along X
-          let closest = Number.POSITIVE_INFINITY;
-          let best = currentPos;
-          const pointerX = event.clientX;
-          this.activeSnapTargets.forEach((sx) => {
-            const px = rootRect.left + sx;
-            const d = Math.abs(pointerX - px);
-            if (d < closest) { closest = d; best = px; }
-          });
-          if (closest <= tol) currentPos = best;
-          this.renderSnapMarkersForDivider();
-        } else if (state.orientation === 'vertical' && this.activeSnapAxis === 'y') {
-          // Horizontal divider snapping along Y
-          let closest = Number.POSITIVE_INFINITY;
-          let best = currentPos;
-          const pointerY = event.clientY;
-          this.activeSnapTargets.forEach((sy) => {
-            const py = rootRect.top + sy;
-            const d = Math.abs(pointerY - py);
-            if (d < closest) { closest = d; best = py; }
-          });
-          if (closest <= tol) currentPos = best;
-          this.renderSnapMarkersForDivider();
-        }
-      }
-      const delta = currentPos - state.startPos;
-      const minSize = 48;
-      const pairTotal = state.beforeSize + state.afterSize;
-
-      let newBefore = state.beforeSize + delta;
-      // Optional snap with Shift
-      if (event.shiftKey && pairTotal > 0) {
-        const ratios = [1 / 3, 1 / 2, 2 / 3];
-        const target = newBefore / pairTotal;
-        let best = ratios[0];
-        let bestDist = Math.abs(target - best);
-        for (let i = 1; i < ratios.length; i++) {
-          const d = Math.abs(target - ratios[i]);
-          if (d < bestDist) {
-            best = ratios[i];
-            bestDist = d;
-          }
-        }
-        newBefore = best * pairTotal;
-      }
-
-      newBefore = Math.min(Math.max(newBefore, minSize), pairTotal - minSize);
-      let newAfter = pairTotal - newBefore;
-
-      if (!Number.isFinite(newBefore) || !Number.isFinite(newAfter)) {
-        return;
-      }
-
-      if (newAfter < minSize) {
-        newAfter = minSize;
-        newBefore = pairTotal - minSize;
-      }
-
-      const newSizesPixels = [...state.initialSizes];
-      newSizesPixels[state.index] = newBefore;
-      newSizesPixels[state.index + 1] = newAfter;
-
-      const total = newSizesPixels.reduce((acc, size) => acc + size, 0);
-      const normalized = total > 0 ? newSizesPixels.map((size) => size / total) : [];
-
-      splitNode.sizes = normalized;
-      const children = Array.from(state.container.querySelectorAll<HTMLElement>(':scope > .dock-split__child'));
-      normalized.forEach((size, idx) => {
-        if (children[idx]) {
-          children[idx].style.flex = `${Math.max(size, 0)} 1 0`;
-        }
-      });
-      this.dispatchLayoutChanged();
     }
 
     if (this.floatingResizeState && event.pointerId === this.floatingResizeState.pointerId) {
@@ -1755,15 +1656,6 @@ export class MintDockManagerElement extends LitElement {
   private onPointerUp(event: PointerEvent): void {
     if (this.cornerResizeState && event.pointerId === this.cornerResizeState.pointerId) {
       this.endCornerResize(event.pointerId);
-    }
-    if (this.resizeState && event.pointerId === this.resizeState.pointerId) {
-      const divider = this.resizeState.divider;
-      divider.dataset['resizing'] = 'false';
-      divider.releasePointerCapture(this.resizeState.pointerId);
-      this.resizeState = null;
-      this.scheduleRenderIntersectionHandles();
-      this.activeSnapAxis = null;
-      this.activeSnapTargets = [];
     }
 
     if (this.floatingDragState && event.pointerId === this.floatingDragState.pointerId) {
@@ -1814,36 +1706,61 @@ export class MintDockManagerElement extends LitElement {
     this.pendingTabDragMetrics = null;
   }
 
-  private beginPaneDrag(
-    event: DragEvent,
+  /**
+   * Pointerdown handler arms a "may become a drag" gesture. Once the pointer
+   * moves past `threshold` pixels we promote it to an actual pane drag via
+   * {@link beginPaneDrag}; if the user releases first we just clear the
+   * pending tab metrics. All listeners self-clean on resolve so the gesture
+   * stays scoped to a single pointerdown.
+   */
+  private armPaneDragGesture(
+    startEvent: PointerEvent,
     path: DockPath,
     pane: string,
     stackEl: HTMLElement | null,
   ): void {
-    if (!event.dataTransfer) {
-      return;
-    }
+    if (startEvent.pointerType === 'mouse' && startEvent.button !== 0) return;
+    const win = this.windowRef;
+    if (!win) return;
+    const startX = startEvent.clientX;
+    const startY = startEvent.clientY;
+    const pointerId = startEvent.pointerId;
+    const threshold = 5;
+    let resolved = false;
 
-    // Create a ghost element for the drag image. This prevents the browser from cancelling
-    // the drag operation when the original element is removed from the DOM during re-render.
-    const ghost = (event.currentTarget as HTMLElement).cloneNode(true) as HTMLElement;
-    ghost.style.position = 'absolute';
-    ghost.style.left = '-9999px';
-    ghost.style.top = '-9999px';
-    ghost.style.width = `${(event.currentTarget as HTMLElement).offsetWidth}px`;
-    ghost.style.height = `${(event.currentTarget as HTMLElement).offsetHeight}px`;
-    this.shadowRoot?.appendChild(ghost);
+    const cleanup = (): void => {
+      resolved = true;
+      win.removeEventListener('pointermove', onMove, true);
+      win.removeEventListener('pointerup', onRelease, true);
+      win.removeEventListener('pointercancel', onRelease, true);
+    };
 
-    // Use the ghost element as the drag image.
-    // The offset is set to where the user's cursor is on the original element.
-    const dragImgOffsetX = Number.isFinite((event as any).offsetX) ? (event as any).offsetX : 0;
-    const dragImgOffsetY = Number.isFinite((event as any).offsetY) ? (event as any).offsetY : 0;
-    event.dataTransfer.setDragImage(ghost, dragImgOffsetX, dragImgOffsetY);
+    const onMove = (event: PointerEvent): void => {
+      if (resolved || event.pointerId !== pointerId) return;
+      const dx = event.clientX - startX;
+      const dy = event.clientY - startY;
+      if (Math.hypot(dx, dy) < threshold) return;
+      cleanup();
+      this.beginPaneDrag(event, path, pane, stackEl);
+    };
 
-    // The ghost element is no longer needed after the drag image is set.
-    // We defer its removal to ensure the browser has captured it.
-    setTimeout(() => ghost.remove(), 0);
+    const onRelease = (event: PointerEvent): void => {
+      if (resolved || event.pointerId !== pointerId) return;
+      cleanup();
+      this.clearPendingTabDragMetrics();
+    };
 
+    win.addEventListener('pointermove', onMove, true);
+    win.addEventListener('pointerup', onRelease, true);
+    win.addEventListener('pointercancel', onRelease, true);
+  }
+
+  private beginPaneDrag(
+    event: PointerEvent,
+    path: DockPath,
+    pane: string,
+    stackEl: HTMLElement | null,
+  ): void {
     const {
       path: sourcePath,
       floatingIndex,
@@ -1851,8 +1768,9 @@ export class MintDockManagerElement extends LitElement {
       pointerOffsetY,
     } = this.preparePaneDragSource(path, pane, stackEl, event);
 
-    // Capture header bounds for detecting when to convert to floating
-    const headerEl = stackEl?.querySelector<HTMLElement>('.dock-stack__header') ?? null;
+    // Capture header bounds for detecting when to convert to floating.
+    // The strip lives inside the mp-tab-control's shadow as `.tsc`.
+    const headerEl = stackEl ? this.getStackStripEl(stackEl) : null;
     const headerRect = headerEl ? headerEl.getBoundingClientRect() : null;
     const headerBounds = headerRect
       ? { left: headerRect.left, top: headerRect.top, right: headerRect.right, bottom: headerRect.bottom }
@@ -1871,39 +1789,27 @@ export class MintDockManagerElement extends LitElement {
       startClientX:
         metrics && Number.isFinite(metrics.startClientX)
           ? metrics.startClientX
-          : Number.isFinite(event.clientX)
-          ? event.clientX
-          : undefined,
+          : event.clientX,
       startClientY:
         metrics && Number.isFinite(metrics.startClientY)
           ? metrics.startClientY
-          : Number.isFinite(event.clientY)
-          ? event.clientY
-          : undefined,
+          : event.clientY,
     };
-    // Seed last known pointer position from pointerdown metrics to avoid (0,0) glitches in Firefox
-    if (
-      this.dragState.startClientX !== undefined &&
-      this.dragState.startClientY !== undefined &&
-      Number.isFinite(this.dragState.startClientX) &&
-      Number.isFinite(this.dragState.startClientY)
-    ) {
-      this.lastDragPointerPosition = {
-        x: this.dragState.startClientX as number,
-        y: this.dragState.startClientY as number,
-      };
-    }
-    // Prefer the pointer offset relative to the dragged tab to avoid jumps on conversion
-    if (Number.isFinite((event as any).offsetX)) {
-      this.dragState.pointerOffsetX = (event as any).offsetX as number;
-    }
-    if (Number.isFinite((event as any).offsetY)) {
-      this.dragState.pointerOffsetY = (event as any).offsetY as number;
-    }
-    this.updateDraggedFloatingPosition(event);
+    this.lastDragPointerPosition = {
+      x: this.dragState.startClientX as number,
+      y: this.dragState.startClientY as number,
+    };
+    // pointerOffsetX/Y from preparePaneDragSource is the offset within the
+    // source stack rect captured at pointerdown by captureTabDragMetrics.
+    // Don't overwrite with event.offsetX/Y here — the threshold-trigger
+    // pointermove fired on window, so its offset is in window-local coords
+    // (≈ clientX/Y) which would crash the conversion math to ~(0,0).
+    this.updateDraggedFloatingPositionFromPoint(event.clientX, event.clientY);
     this.startDragPointerTracking();
-    event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData('text/plain', pane);
+    // Mark the source floating wrapper (if any) so its CSS rule kicks in and
+    // pointer-events:none lets findStackAtPoint see through to the docked
+    // stack underneath, enabling drop zones over the dock during the drag.
+    this.markDraggedFloatingWrapper();
 
     // Preferred UX: if the dragged tab is the only one in its stack,
     // immediately convert to a floating window unless it is already the
@@ -1912,17 +1818,15 @@ export class MintDockManagerElement extends LitElement {
       const loc = this.resolveStackLocation(this.dragState.sourcePath);
       if (loc && Array.isArray(loc.node.panes) && loc.node.panes.length === 1) {
         let shouldConvert = false;
-        if (loc.context === "docked") {
+        if (loc.context === 'docked') {
           shouldConvert = true;
-        } else if (loc.context === "floating") {
+        } else if (loc.context === 'floating') {
           const floating = this.floatingLayouts[loc.index];
           const totalPanes = floating && floating.root ? this.countPanesInTree(floating.root) : 0;
-          shouldConvert = totalPanes > 1; // not the only pane in this floating window
+          shouldConvert = totalPanes > 1;
         }
         if (shouldConvert) {
-          const startX = Number.isFinite(event.clientX) ? event.clientX : (this.dragState.startClientX ?? 0);
-          const startY = Number.isFinite(event.clientY) ? event.clientY : (this.dragState.startClientY ?? 0);
-          this.convertPendingTabDragToFloating(startX, startY);
+          this.convertPendingTabDragToFloating(event.clientX, event.clientY);
         }
       }
     }
@@ -1932,7 +1836,7 @@ export class MintDockManagerElement extends LitElement {
     path: DockPath,
     pane: string,
     stackEl: HTMLElement | null,
-    event: DragEvent,
+    event: PointerEvent,
   ): { path: DockPath; floatingIndex: number | null; pointerOffsetX: number; pointerOffsetY: number } {
     const location = this.resolveStackLocation(path);
     if (!location || !location.node.panes.includes(pane)) {
@@ -2024,153 +1928,26 @@ export class MintDockManagerElement extends LitElement {
 
   private endPaneDrag(): void {
     this.clearPendingDragEndTimeout();
+    // Restore the dragged tab's `data-hidden` and remove the placeholder span
+    // BEFORE we null out dragState — clearHeaderDragPlaceholder reads
+    // `dragState.placeholderEl`, `dragState.placeholderHeader`, and
+    // `dragState.pane` to know what to restore. If dragState is nulled first,
+    // this becomes a silent no-op and the dragged pane stays hidden in its
+    // source stack while the placeholder span lingers in the strip — which
+    // is exactly the "Panel disappears, only a small tab-thumb remains"
+    // regression the multi-pane drag-out path can otherwise trigger when
+    // no renderLayout() runs between conversion and end (e.g. user releases
+    // outside any drop zone, or HTML5 dragend fires without a drop).
+    this.clearHeaderDragPlaceholder();
+    this.clearDraggedFloatingWrapperMarkers();
     const state = this.dragState;
     this.dragState = null;
     this.hideDropIndicator();
-    this.clearHeaderDragPlaceholder();
     this.stopDragPointerTracking();
     this.lastDragPointerPosition = null;
     if (state && state.floatingIndex !== null && !state.dropHandled) {
       this.dispatchLayoutChanged();
     }
-  }
-
-  private onDragOver(event: DragEvent): void {
-    if (!this.dragState) {
-      return;
-    }
-    event.preventDefault();
-    // Keep internal pointer tracking up-to-date.
-    this.updateDraggedFloatingPosition(event);
-    if (event.dataTransfer) {
-      event.dataTransfer.dropEffect = 'move';
-    }
-
-    // Some browsers intermittently report (0,0) for dragover coordinates.
-    // Mirror the robust logic used in onDrop: prefer actual event coordinates
-    // when valid, otherwise fall back to the last tracked pointer position.
-    const pointFromEvent =
-      Number.isFinite(event.clientX) && Number.isFinite(event.clientY)
-        ? { clientX: event.clientX, clientY: event.clientY }
-        : null;
-
-    const point =
-      pointFromEvent ??
-      (this.lastDragPointerPosition
-        ? { clientX: this.lastDragPointerPosition.x, clientY: this.lastDragPointerPosition.y }
-        : null);
-
-    const stack =
-      this.findStackElement(event) ??
-      (point ? this.findStackAtPoint(point.clientX, point.clientY) : null);
-    if (!stack) {
-      if (this.dropJoystick.dataset['visible'] !== 'true') {
-        this.hideDropIndicator();
-      }
-      return;
-    }
-
-    const path = this.parsePath(stack.dataset['path']);
-    // While reordering within the same header, suppress the joystick/indicator entirely
-    if (
-      this.dragState &&
-      this.dragState.floatingIndex !== null &&
-      this.dragState.floatingIndex < 0 &&
-      path &&
-      this.pathsEqual(path, this.dragState.sourcePath)
-    ) {
-      const px = (point ? point.clientX : event.clientX) as number;
-      const py = (point ? point.clientY : event.clientY) as number;
-      if (Number.isFinite(px) && Number.isFinite(py) && this.isPointerOverSourceHeader(px, py)) {
-        // Drive live reorder using the unified path so we update instantly.
-        this.updatePaneDragDropTargetFromPoint(px, py);
-        this.hideDropIndicator();
-        return;
-      }
-    }
-    // If the hovered stack changed, clear any sticky zone from the previous
-    // target before computing the new zone.
-    if (this.dropJoystickTarget && this.dropJoystickTarget !== stack) {
-      delete this.dropJoystick.dataset['zone'];
-      this.updateDropJoystickActiveZone(null);
-    }
-
-    const eventZoneHint = this.extractDropZoneFromEvent(event);
-    const pointZoneHint = point ? this.findDropZoneByPoint(point.clientX, point.clientY) : null;
-    const zone = this.computeDropZone(stack, point ?? event, pointZoneHint ?? eventZoneHint);
-    this.showDropIndicator(stack, zone);
-  }
-
-  private updateDraggedFloatingPosition(event: DragEvent): void {
-    if (!this.dragState) {
-      return;
-    }
-
-    const { clientX, clientY } = event;
-    const hasValidCoordinates =
-      Number.isFinite(clientX) &&
-      Number.isFinite(clientY) &&
-      !(clientX === 0 && clientY === 0);
-
-    if (hasValidCoordinates) {
-      this.lastDragPointerPosition = { x: clientX, y: clientY };
-      this.updateDraggedFloatingPositionFromPoint(clientX, clientY);
-      return;
-    }
-
-    if (this.lastDragPointerPosition) {
-      const { x, y } = this.lastDragPointerPosition;
-      this.updateDraggedFloatingPositionFromPoint(x, y);
-    }
-  }
-
-  private onGlobalDragOver(event: DragEvent): void {
-    if (!this.dragState) {
-      return;
-    }
-    this.updateDraggedFloatingPosition(event);
-  }
-
-  private onDrag(event: DragEvent): void {
-    if (!this.dragState) {
-      return;
-    }
-    this.updateDraggedFloatingPosition(event);
-  }
-
-  private onGlobalDragEnd(): void {
-    // Attempt to finalize a drop even if the drop event doesn't reach us (Firefox/edge cases)
-    const state = this.dragState;
-    const pos = this.lastDragPointerPosition;
-    if (state && pos) {
-      const stack = this.findStackAtPoint(pos.x, pos.y);
-      const joystickVisible = this.dropJoystick.dataset['visible'] === 'true';
-      const joystickPath = this.parsePath(this.dropJoystick.dataset['path']);
-      const joystickTarget = this.dropJoystickTarget;
-      const joystickTargetPath = joystickTarget ? this.parsePath(joystickTarget.dataset['path']) : null;
-      const path = stack ? this.parsePath(stack.dataset['path']) : (joystickPath ?? joystickTargetPath);
-      const joystickZone = this.dropJoystick.dataset['zone'] as DropZone | undefined;
-      const zone = this.isDropZone(joystickZone)
-        ? joystickZone
-        : (stack ? this.computeDropZone(stack, { clientX: pos.x, clientY: pos.y }, null) : null);
-      
-      if (path && this.isDropZone(zone)) {
-        this.handleDrop(path, zone!);
-        this.hideDropIndicator();
-        if (this.dragState) {
-          this.dragState.dropHandled = true;
-        }
-      }
-    } else {
-      this.hideDropIndicator();
-    }
-
-    if (!this.dragState) {
-      this.clearPendingTabDragMetrics();
-      return;
-    }
-    this.endPaneDrag();
-    this.clearPendingTabDragMetrics();
   }
 
   private updateDraggedFloatingPositionFromPoint(
@@ -2182,10 +1959,6 @@ export class MintDockManagerElement extends LitElement {
     }
 
     if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) {
-      return;
-    }
-    // Ignore obviously bogus coordinates sometimes seen during HTML5 drag
-    if (clientX === 0 && clientY === 0) {
       return;
     }
 
@@ -2272,16 +2045,15 @@ export class MintDockManagerElement extends LitElement {
       const inHeaderByBounds = !!this.dragState.sourceHeaderBounds && this.isPointWithinBounds(this.dragState.sourceHeaderBounds, clientX, clientY);
       const inHeaderByHitTest = this.isPointerOverSourceHeader(clientX, clientY);
       if (inHeaderByBounds || inHeaderByHitTest) {
-        const header = stack.querySelector<HTMLElement>('.dock-stack__header');
-        if (header) {
-          // Ensure placeholder exists and move it as the pointer moves
-          this.ensureHeaderDragPlaceholder(header, this.dragState.pane);
-          const idx = this.computeHeaderInsertIndex(header, clientX);
-          if (this.dragState.liveReorderIndex !== idx) {
-            this.updateHeaderDragPlaceholderPosition(header, idx);
-            // Keep model reordering until drop; only move the placeholder now
-            this.dragState.liveReorderIndex = idx;
-          }
+        // Ensure placeholder exists and move it as the pointer moves.
+        // Placeholder management mutates the slotted children of the
+        // mp-tab-control stack; the WC re-renders the strip on slotchange.
+        this.ensureHeaderDragPlaceholder(stack, this.dragState.pane);
+        const idx = this.computeHeaderInsertIndex(stack, clientX);
+        if (this.dragState.liveReorderIndex !== idx) {
+          this.updateHeaderDragPlaceholderPosition(stack, idx);
+          // Keep model reordering until drop; only move the placeholder now
+          this.dragState.liveReorderIndex = idx;
         }
         this.hideDropIndicator();
         return;
@@ -2296,26 +2068,23 @@ export class MintDockManagerElement extends LitElement {
     this.showDropIndicator(stack, zone);
   }
 
-  // Returns true when the pointer is currently over the source stack's header (tab strip)
+  // Returns true when the pointer is currently over the source stack's header (tab strip).
+  // The strip lives inside the mp-tab-control's shadow as `.tsc`, so we test
+  // bounds directly rather than using elementsFromPoint(/contains) which won't
+  // pierce the shadow boundary cleanly.
   private isPointerOverSourceHeader(clientX: number, clientY: number): boolean {
     const state = this.dragState;
     if (!state) {
       return false;
     }
     const stackEl = state.sourceStackEl ?? null;
-    const header = stackEl?.querySelector('.dock-stack__header') as HTMLElement | null;
-    if (!header) {
-      // Be conservative: if we cannot resolve the header, treat as inside
+    const strip = stackEl ? this.getStackStripEl(stackEl) : null;
+    if (!strip) {
+      // Be conservative: if we cannot resolve the strip, treat as inside
       return true;
     }
-    const sr = this.shadowRoot;
-    const elements = sr ? sr.elementsFromPoint(clientX, clientY) : [];
-    for (const el of elements) {
-      if (el instanceof HTMLElement && header.contains(el)) {
-        return true;
-      }
-    }
-    return false;
+    const r = strip.getBoundingClientRect();
+    return clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom;
   }
 
   private isPointWithinBounds(
@@ -2326,59 +2095,129 @@ export class MintDockManagerElement extends LitElement {
     return x >= bounds.left && x <= bounds.right && y >= bounds.top && y <= bounds.bottom;
   }
 
-  // Ensure a placeholder tab exists during in-header drag and hide the real dragged tab visually
-  private ensureHeaderDragPlaceholder(header: HTMLElement, pane: string): void {
-    if (this.dragState?.placeholderHeader === header && this.dragState.placeholderEl) {
+  // Ensure a placeholder tab exists during in-header drag and hide the real dragged tab visually.
+  // Operates on the mp-tab-control stack: the dragged content div gets `data-hidden`
+  // (mp-tab-control then skips its tab in the strip), and a placeholder header+content
+  // pair is appended as light-DOM children of the stack. mp-tab-control's mutation
+  // observer picks up the change and renders the placeholder as a tab.
+  private ensureHeaderDragPlaceholder(stack: HTMLElement, pane: string): void {
+    if (stack.tagName !== 'MP-TAB-CONTROL') return;
+    if (this.dragState?.placeholderHeader === stack && this.dragState.placeholderEl) {
       return;
     }
-    const dragged = Array.from(header.querySelectorAll<HTMLElement>('.dock-tab')).find((t) => t.dataset['pane'] === pane) ?? null;
-    if (!dragged) {
-      return;
-    }
-    // Create placeholder
-    const placeholder = this.documentRef.createElement('button');
-    placeholder.type = 'button';
-    placeholder.classList.add('dock-tab');
-    placeholder.dataset['placeholder'] = 'true';
-    // Keep the placeholder visually empty but reserving the same width
-    placeholder.textContent = '';
-    placeholder.setAttribute('aria-hidden', 'true');
-    placeholder.style.width = `${dragged.offsetWidth}px`;
-    // Hide the original dragged tab so it doesn't duplicate visually and free up its slot
-    dragged.style.display = 'none';
-    // Insert placeholder in the original position of the dragged tab
-    header.insertBefore(placeholder, dragged);
+    const draggedHeader = stack.querySelector<HTMLElement>(
+      `:scope > .dock-tab[data-pane="${CSS.escape(pane)}"]`,
+    );
+    const draggedContent = stack.querySelector<HTMLElement>(
+      `:scope > .dock-stack__pane[data-pane="${CSS.escape(pane)}"]`,
+    );
+    if (!draggedHeader || !draggedContent) return;
+
+    // Measure the dragged tab's text-only width BEFORE hiding it. The
+    // `.dock-tab` rule applies padding (matching the strip button's padding so
+    // the span fills the button as a drag handle), so `offsetWidth` is
+    // text + padding — we subtract the span's own padding to get just the
+    // text width. That's the natural slot content width we want the
+    // placeholder to reserve; the placeholder span will re-apply the same
+    // padding on top, mirroring the original tab's geometry exactly.
+    const draggedCS = this.windowRef
+      ? this.windowRef.getComputedStyle(draggedHeader)
+      : globalThis.getComputedStyle(draggedHeader);
+    const draggedHorizontalPadding =
+      parseFloat(draggedCS.paddingLeft) + parseFloat(draggedCS.paddingRight);
+    const slotContentWidth = Math.max(
+      0,
+      draggedHeader.offsetWidth - draggedHorizontalPadding,
+    );
+
+    // Hide the dragged tab from mp-tab-control's strip (frees up the slot).
+    draggedContent.setAttribute('data-hidden', '');
+
+    // Build placeholder header + content. The placeholder uses a unique tabId
+    // (`__dock-placeholder__`) so its slot names don't collide with real panes.
+    // We mirror the dragged tab's text into the placeholder (dimmed via opacity)
+    // so the strip reads as "this tab is being dragged" rather than "empty slot".
+    const placeholderTabId = '__dock-placeholder__';
+    const phHeader = this.documentRef.createElement('span');
+    phHeader.setAttribute('slot', `${placeholderTabId}-header`);
+    phHeader.classList.add('dock-tab');
+    phHeader.dataset['placeholder'] = 'true';
+    phHeader.dataset['tabId'] = placeholderTabId;
+    phHeader.setAttribute('aria-hidden', 'true');
+    phHeader.textContent = draggedHeader.textContent;
+    // `display: inline-block` is required for `min-width` to take effect on the
+    // span. Without it, an inline element ignores min-width and the placeholder
+    // collapses to its content width (or 0 if textContent is also empty),
+    // leaving a "mini-thumb" in the strip.
+    phHeader.style.display = 'inline-block';
+    phHeader.style.minWidth = `${slotContentWidth}px`;
+    phHeader.style.opacity = '0.5';
+
+    const phContent = this.documentRef.createElement('div');
+    phContent.setAttribute('slot', `${placeholderTabId}-content`);
+    phContent.classList.add('dock-stack__pane');
+    phContent.dataset['placeholder'] = 'true';
+
+    // Insert before the dragged header span so the placeholder appears in
+    // the dragged tab's original strip position. The mutation observer in
+    // mp-tab-control will refresh the tab list automatically.
+    stack.insertBefore(phHeader, draggedHeader);
+    stack.insertBefore(phContent, draggedContent);
+
     if (this.dragState) {
-      this.dragState.placeholderHeader = header;
-      this.dragState.placeholderEl = placeholder;
+      this.dragState.placeholderHeader = stack;
+      this.dragState.placeholderEl = phHeader;
     }
   }
 
-  // Move the placeholder to the computed target index within the header
-  private updateHeaderDragPlaceholderPosition(header: HTMLElement, targetIndex: number): void {
-    const placeholder = this.dragState?.placeholderEl ?? null;
-    if (!placeholder) {
-      return;
-    }
+  // Move the placeholder to the computed target index within the strip.
+  // We reorder light-DOM children (header span + matching content div); the
+  // mp-tab-control then re-renders the strip in the new order on slotchange.
+  private updateHeaderDragPlaceholderPosition(stack: HTMLElement, targetIndex: number): void {
+    if (stack.tagName !== 'MP-TAB-CONTROL') return;
+    const phHeader = this.dragState?.placeholderEl ?? null;
+    if (!phHeader) return;
+
     const draggedPane = this.dragState?.pane ?? null;
-    const tabs = Array.from(header.querySelectorAll<HTMLElement>('.dock-tab'))
-      .filter((t) => t !== placeholder && (!draggedPane || t.dataset['pane'] !== draggedPane));
-    const clampedTarget = Math.max(0, Math.min(targetIndex, tabs.length));
-    const ref = tabs[clampedTarget] ?? null;
-    header.insertBefore(placeholder, ref);
+    // Find all real header spans (excluding the placeholder + the hidden dragged one).
+    const realHeaders = Array.from(
+      stack.querySelectorAll<HTMLElement>(':scope > .dock-tab'),
+    ).filter(
+      (h) =>
+        h !== phHeader &&
+        (!draggedPane || h.dataset['pane'] !== draggedPane),
+    );
+    const clampedTarget = Math.max(0, Math.min(targetIndex, realHeaders.length));
+    const ref = realHeaders[clampedTarget] ?? null;
+    stack.insertBefore(phHeader, ref);
+
+    // Keep the placeholder content adjacent to its header so child-order
+    // remains predictable for slotchange-driven re-renders.
+    const phContent = stack.querySelector<HTMLElement>(
+      `:scope > .dock-stack__pane[data-placeholder="true"]`,
+    );
+    if (phContent && phHeader.nextElementSibling !== phContent) {
+      stack.insertBefore(phContent, phHeader.nextElementSibling);
+    }
   }
 
-  // Remove placeholder and restore original tab visibility
+  // Remove placeholder and restore the dragged tab's visibility.
   private clearHeaderDragPlaceholder(): void {
     const ph = this.dragState?.placeholderEl ?? null;
-    const header = this.dragState?.placeholderHeader ?? null;
-    if (header) {
-      const dragged = this.dragState?.pane
-        ? (Array.from(header.querySelectorAll<HTMLElement>('.dock-tab')).find((t) => t.dataset['pane'] === this.dragState?.pane) ?? null)
-        : null;
-      if (dragged) {
-        dragged.style.display = '';
+    const stack = this.dragState?.placeholderHeader ?? null;
+    if (stack) {
+      // Restore the dragged content div's visibility so its strip tab returns.
+      if (this.dragState?.pane) {
+        const draggedContent = stack.querySelector<HTMLElement>(
+          `:scope > .dock-stack__pane[data-pane="${CSS.escape(this.dragState.pane)}"]`,
+        );
+        draggedContent?.removeAttribute('data-hidden');
       }
+      // Remove the placeholder content div sibling.
+      const phContent = stack.querySelector<HTMLElement>(
+        `:scope > .dock-stack__pane[data-placeholder="true"]`,
+      );
+      phContent?.remove();
     }
     if (ph && ph.parentElement) {
       ph.parentElement.removeChild(ph);
@@ -2395,11 +2234,9 @@ export class MintDockManagerElement extends LitElement {
     }
     this.lastDragPointerPosition = null;
     const win = this.windowRef;
-    win?.addEventListener('mousemove', this.onDragMouseMove, true);
-    win?.addEventListener('touchmove', this.onDragTouchMove, { passive: false });
-    win?.addEventListener('mouseup', this.onDragMouseUp, true);
-    win?.addEventListener('touchend', this.onDragTouchEnd, true);
-    win?.addEventListener('touchcancel', this.onDragTouchEnd, true);
+    win?.addEventListener('pointermove', this.onDragPointerMove, true);
+    win?.addEventListener('pointerup', this.onDragPointerUp, true);
+    win?.addEventListener('pointercancel', this.onDragPointerCancel, true);
     this.dragPointerTrackingActive = true;
   }
 
@@ -2408,57 +2245,39 @@ export class MintDockManagerElement extends LitElement {
       return;
     }
     const win = this.windowRef;
-    win?.removeEventListener('mousemove', this.onDragMouseMove, true);
-    win?.removeEventListener('touchmove', this.onDragTouchMove);
-    win?.removeEventListener('mouseup', this.onDragMouseUp, true);
-    win?.removeEventListener('touchend', this.onDragTouchEnd, true);
-    win?.removeEventListener('touchcancel', this.onDragTouchEnd, true);
+    win?.removeEventListener('pointermove', this.onDragPointerMove, true);
+    win?.removeEventListener('pointerup', this.onDragPointerUp, true);
+    win?.removeEventListener('pointercancel', this.onDragPointerCancel, true);
     this.dragPointerTrackingActive = false;
     this.lastDragPointerPosition = null;
     this.clearPendingDragEndTimeout();
   }
 
-  private onDragMouseMove(event: MouseEvent): void {
+  private onDragPointerMove(event: PointerEvent): void {
     if (!this.dragState) {
       this.stopDragPointerTracking();
       return;
     }
-
-    if (event.buttons === 0) {
-      this.scheduleDeferredDragEnd();
-      return;
-    }
-
     this.lastDragPointerPosition = { x: event.clientX, y: event.clientY };
     this.updateDraggedFloatingPositionFromPoint(event.clientX, event.clientY);
   }
 
-  private onDragTouchMove(event: TouchEvent): void {
-    if (!this.dragState) {
-      this.stopDragPointerTracking();
-      return;
-    }
-
-    const touch = event.touches[0];
-    if (!touch) {
-      this.scheduleDeferredDragEnd();
-      return;
-    }
-
-    event.preventDefault();
-    event.stopPropagation();
-    this.lastDragPointerPosition = { x: touch.clientX, y: touch.clientY };
-    this.updateDraggedFloatingPositionFromPoint(touch.clientX, touch.clientY);
-  }
-
-  private onDragMouseUp(): void {
-    // Prefer committing a drop from pointer-up since some browsers suppress drop events
+  private onDragPointerUp(event: PointerEvent): void {
+    // Commit the drop from pointer release; the pointer-up coordinates are
+    // authoritative for which stack/zone the user dropped into.
     if (this.dragState) {
-      const pos = this.lastDragPointerPosition;
-      if (pos) {
-        this.finalizeDropFromPoint(pos.x, pos.y);
+      const x = Number.isFinite(event.clientX) ? event.clientX : this.lastDragPointerPosition?.x;
+      const y = Number.isFinite(event.clientY) ? event.clientY : this.lastDragPointerPosition?.y;
+      if (x !== undefined && y !== undefined) {
+        this.finalizeDropFromPoint(x, y);
       }
     }
+    this.handleDragPointerUpCommon();
+  }
+
+  private onDragPointerCancel(): void {
+    // OS-level cancel (e.g. pointer capture lost): end the drag without
+    // committing a drop.
     this.handleDragPointerUpCommon();
   }
 
@@ -2499,23 +2318,37 @@ export class MintDockManagerElement extends LitElement {
         ? stackRect.height
         : fallbackHeight;
 
-    const pointerOffsetX = Number.isFinite(this.dragState?.pointerOffsetX as number)
-      ? (this.dragState!.pointerOffsetX as number)
-      : metrics && Number.isFinite(metrics.pointerOffsetX)
-      ? (metrics.pointerOffsetX as number)
-      : width / 2;
-    const pointerOffsetY = Number.isFinite(this.dragState?.pointerOffsetY as number)
-      ? (this.dragState!.pointerOffsetY as number)
-      : metrics && Number.isFinite(metrics.pointerOffsetY)
-      ? (metrics.pointerOffsetY as number)
-      : height / 2;
+    // Place the floating wrapper exactly where the docked stack was, so the
+    // pane appears in-place at the moment of detach instead of jumping under
+    // the cursor. metrics.left/top are host-relative (captured at pointerdown
+    // in captureTabDragMetrics). Compensate for the floating wrapper's 1px
+    // border so the visible content edge lines up with the original stack's
+    // visible content edge (the docked .dock-stack also has a 1px border, so
+    // the inner content rectangles match after this offset).
+    const FLOATING_BORDER = 1;
+    const initialLeft =
+      metrics && Number.isFinite(metrics.left)
+        ? metrics.left - FLOATING_BORDER
+        : Number.isFinite(clientX)
+        ? clientX - hostRect.left - width / 2
+        : 0;
+    const initialTop =
+      metrics && Number.isFinite(metrics.top)
+        ? metrics.top - FLOATING_BORDER
+        : Number.isFinite(clientY)
+        ? clientY - hostRect.top - height / 2
+        : 0;
 
-    const pointerLeft = Number.isFinite(clientX)
-      ? clientX - hostRect.left - pointerOffsetX
-      : 0;
-    const pointerTop = Number.isFinite(clientY)
-      ? clientY - hostRect.top - pointerOffsetY
-      : 0;
+    // Derive pointerOffset from the cursor's actual position relative to the
+    // freshly-placed wrapper (not from pointerdown metrics) so the very next
+    // pointermove translates into a wrapper move of exactly the cursor delta
+    // — no jump, no drift.
+    const pointerOffsetX = Number.isFinite(clientX)
+      ? clientX - hostRect.left - initialLeft
+      : width / 2;
+    const pointerOffsetY = Number.isFinite(clientY)
+      ? clientY - hostRect.top - initialTop
+      : height / 2;
 
     // Remove pane from its current stack and create a new floating entry
     this.removePaneFromLocation(location, pane);
@@ -2527,8 +2360,8 @@ export class MintDockManagerElement extends LitElement {
 
     const floatingLayout: DockFloatingStackLayout = {
       bounds: {
-        left: pointerLeft,
-        top: pointerTop,
+        left: initialLeft,
+        top: initialTop,
         width,
         height,
       },
@@ -2548,25 +2381,51 @@ export class MintDockManagerElement extends LitElement {
     state.floatingIndex = newIndex;
     state.pointerOffsetX = pointerOffsetX;
     state.pointerOffsetY = pointerOffsetY;
+    // Now that the wrapper exists, mark it so pointer-events:none kicks in
+    // and findStackAtPoint can see through to docked stacks underneath.
+    this.markDraggedFloatingWrapper();
     this.dispatchLayoutChanged();
   }
 
-  // Compute the intended tab insert index within a header based on pointer X
-  // Adds a slight rightward bias and uses the placeholder rect (if present)
-  // to ensure offsets are correct even when the dragged tab is display:none.
-  private computeHeaderInsertIndex(header: HTMLElement, clientX: number): number {
-    const allTabs = Array.from(header.querySelectorAll<HTMLElement>('.dock-tab'));
-    if (allTabs.length === 0) {
+  // Toggle data-dragging on the floating wrapper currently associated with
+  // the active pane drag (dragState.floatingIndex), if any. Used to make the
+  // wrapper transparent to elementsFromPoint so drop zones can be shown on
+  // stacks underneath. clearDraggedFloatingWrapper() is the inverse.
+  private markDraggedFloatingWrapper(): void {
+    const fi = this.dragState?.floatingIndex;
+    if (fi === null || fi === undefined || fi < 0) return;
+    const wrapper = this.getFloatingWrapper(fi);
+    if (wrapper) wrapper.dataset['dragging'] = 'true';
+  }
+
+  private clearDraggedFloatingWrapperMarkers(): void {
+    const layer = this.floatingLayerEl;
+    if (!layer) return;
+    layer.querySelectorAll<HTMLElement>('.dock-floating[data-dragging="true"]').forEach((el) => {
+      delete el.dataset['dragging'];
+    });
+  }
+
+  // Compute the intended tab insert index within a stack's strip based on pointer X.
+  // Uses the rendered tab buttons inside mp-tab-control's shadow strip for geometry;
+  // the dragged tab is hidden during drag (its content has data-hidden), and the
+  // placeholder button (if present) gives us the dragged-position reference.
+  private computeHeaderInsertIndex(stack: HTMLElement, clientX: number): number {
+    if (stack.tagName !== 'MP-TAB-CONTROL') return 0;
+    const allTabButtons = this.getStackTabButtons(stack);
+    if (allTabButtons.length === 0) {
       return 0;
     }
 
-    const draggedPane = this.dragState?.pane ?? null;
-    const draggedEl = draggedPane
-      ? (allTabs.find((t) => t.dataset['pane'] === draggedPane) ?? null)
+    const placeholderHeader = stack.querySelector<HTMLElement>(
+      ':scope > .dock-tab[data-placeholder="true"]',
+    );
+    const placeholderTabId = placeholderHeader?.dataset['tabId'];
+    const placeholderButton = placeholderTabId
+      ? allTabButtons.find((b) => b.id === `${placeholderTabId}-header-button`) ?? null
       : null;
-    const placeholderEl = header.querySelector<HTMLElement>('.dock-tab[data-placeholder="true"]');
 
-    const targets = allTabs.filter((t) => t !== draggedEl && t !== placeholderEl);
+    const targets = allTabButtons.filter((b) => b !== placeholderButton);
     if (targets.length === 0) {
       return 0;
     }
@@ -2574,12 +2433,8 @@ export class MintDockManagerElement extends LitElement {
     const rightBias = 12;
     const leftBias = 0;
 
-    const baseRect = placeholderEl
-      ? placeholderEl.getBoundingClientRect()
-      : draggedEl
-      ? draggedEl.getBoundingClientRect()
-      : null;
-    const rectValid = !!baseRect && Number.isFinite(baseRect.width) && (baseRect as DOMRect).width > 0;
+    const baseRect = placeholderButton ? placeholderButton.getBoundingClientRect() : null;
+    const rectValid = !!baseRect && Number.isFinite(baseRect.width) && baseRect.width > 0;
     const draggedCenter = rectValid && baseRect ? baseRect.left + baseRect.width / 2 : null;
 
     for (let i = 0; i < targets.length; i += 1) {
@@ -2615,10 +2470,6 @@ export class MintDockManagerElement extends LitElement {
     }
   }
 
-  private onDragTouchEnd(): void {
-    this.handleDragPointerUpCommon();
-  }
-
   // Commit a drop using current pointer coordinates and joystick state
   private finalizeDropFromPoint(clientX: number, clientY: number): void {
     if (!this.dragState) {
@@ -2648,17 +2499,14 @@ export class MintDockManagerElement extends LitElement {
       this.pathsEqual(stackPath, this.dragState.sourcePath) &&
       (!zone || zone === 'center')
     ) {
-      const header = stack.querySelector<HTMLElement>('.dock-stack__header');
-      if (header) {
-        const location = this.resolveStackLocation(path);
-        if (location) {
-          const idx = this.computeHeaderInsertIndex(header, clientX);
-          this.reorderPaneInLocationAtIndex(location, this.dragState.pane, idx);
-          this.renderLayout();
-          this.dispatchLayoutChanged();
-          this.dragState.dropHandled = true;
-          return;
-        }
+      const location = this.resolveStackLocation(path);
+      if (location) {
+        const idx = this.computeHeaderInsertIndex(stack, clientX);
+        this.reorderPaneInLocationAtIndex(location, this.dragState.pane, idx);
+        this.renderLayout();
+        this.dispatchLayoutChanged();
+        this.dragState.dropHandled = true;
+        return;
       }
     }
 
@@ -2700,131 +2548,6 @@ export class MintDockManagerElement extends LitElement {
     this.pendingDragEndTimeout = win
       ? win.setTimeout(completeDrag, 0)
       : setTimeout(completeDrag, 0);
-  }
-
-  private onDrop(event: DragEvent): void {
-    if (!this.dragState) {
-      return;
-    }
-    event.preventDefault();
-
-    const pointFromEvent =
-      Number.isFinite(event.clientX) && Number.isFinite(event.clientY)
-        ? { clientX: event.clientX, clientY: event.clientY }
-        : null;
-
-    const point =
-      pointFromEvent ??
-      (this.lastDragPointerPosition
-        ? {
-            clientX: this.lastDragPointerPosition.x,
-            clientY: this.lastDragPointerPosition.y,
-          }
-        : null);
-
-    const stack =
-      this.findStackElement(event) ??
-      (point ? this.findStackAtPoint(point.clientX, point.clientY) : null);
-
-    // Prefer joystick's stored target path when the joystick is visible (drop over buttons)
-    const joystickVisible = this.dropJoystick.dataset['visible'] === 'true';
-    const joystickPath = this.parsePath(this.dropJoystick.dataset['path']);
-    const joystickTarget = this.dropJoystickTarget;
-    const joystickTargetPath = joystickTarget ? this.parsePath(joystickTarget.dataset['path']) : null;
-    let path = stack
-      ? this.parsePath(stack.dataset['path'])
-      : (joystickPath ?? joystickTargetPath);
-    if (!path && joystickVisible) {
-      // As a last resort, target the main dock surface only when empty
-      const dockPath = this.parsePath(this.dockedEl.dataset['path']);
-      path = (!this.rootLayout ? dockPath : null);
-    }
-
-    // Defer same-header reorder decision until after zone resolution below
-
-    // Prefer joystick's active zone if available, else infer from event/point
-    const joystickZone = this.dropJoystick.dataset['zone'] as DropZone | undefined;
-    const eventZoneHint = this.extractDropZoneFromEvent(event);
-    const pointZoneHint = point ? this.findDropZoneByPoint(point.clientX, point.clientY) : null;
-    const zone = this.isDropZone(joystickZone)
-      ? joystickZone
-      : stack
-      ? this.computeDropZone(stack, point ?? event, pointZoneHint ?? eventZoneHint)
-      : (this.isDropZone(pointZoneHint ?? eventZoneHint) ? (pointZoneHint ?? eventZoneHint) : null);
-
-    
-    // If still in same header and no side zone chosen, treat as in-header reorder
-    if (
-      this.dragState &&
-      this.dragState.floatingIndex !== null &&
-      this.dragState.floatingIndex < 0 &&
-      stack &&
-      path &&
-      this.pathsEqual(path, this.dragState.sourcePath) &&
-      (!zone || zone === 'center')
-    ) {
-      const header = stack.querySelector<HTMLElement>('.dock-stack__header');
-      if (header) {
-        const x = (point ? point.clientX : event.clientX) as number;
-        if (Number.isFinite(x)) {
-          const location = this.resolveStackLocation(path);
-          if (location) {
-            const idx = this.computeHeaderInsertIndex(header, x);
-            this.reorderPaneInLocationAtIndex(location, this.dragState.pane, idx);
-            this.renderLayout();
-            this.dispatchLayoutChanged();
-            this.dragState.dropHandled = true;
-            this.endPaneDrag();
-            return;
-          }
-        }
-      }
-    }
-    // If joystick is visible and both path and zone are resolved, force using joystick as authoritative
-    if (joystickVisible && path && this.isDropZone(joystickZone)) {
-      this.handleDrop(path, joystickZone);
-      this.endPaneDrag();
-      return;
-    }
-    if (!zone) {
-      this.hideDropIndicator();
-      this.endPaneDrag();
-      return;
-    }
-    this.handleDrop(path, zone);
-    this.endPaneDrag();
-  }
-
-  private onDragLeave(event: DragEvent): void {
-    const related = event.relatedTarget as Node | null;
-
-    // During active drags, browsers can emit spurious dragleave with null
-    // relatedTarget while the pointer is still over the joystick/buttons.
-    // Be conservative: if we can resolve a stack/joystick at the last known
-    // pointer position, don’t hide (prevents flicker of active state).
-    if (this.dragState) {
-      const pos =
-        (Number.isFinite((event as DragEvent).clientX) && Number.isFinite((event as DragEvent).clientY))
-          ? { x: (event as DragEvent).clientX, y: (event as DragEvent).clientY }
-          : this.lastDragPointerPosition;
-      if (pos) {
-        const stackAtPoint = this.findStackAtPoint(pos.x, pos.y);
-        if (stackAtPoint) {
-          return; // still inside our drop area; ignore this dragleave
-        }
-      }
-    }
-
-    if (!related) {
-      this.hideDropIndicator();
-      return;
-    }
-
-    const rootContains = this.rootEl.contains(related);
-    const joystickContains = this.dropJoystick.contains(related);
-    if (!rootContains && !joystickContains) {
-      this.hideDropIndicator();
-    }
   }
 
   private handleDrop(targetPath: DockPath | null, zone: DropZone): void {
@@ -3109,8 +2832,8 @@ export class MintDockManagerElement extends LitElement {
       return null;
     }
 
-    if (typeof (event as DragEvent).composedPath === 'function') {
-      const path = (event as DragEvent).composedPath();
+    if (typeof event.composedPath === 'function') {
+      const path = event.composedPath();
       const zone = this.findDropZoneInTargets(path);
       if (zone) {
         return zone;
@@ -3368,28 +3091,6 @@ export class MintDockManagerElement extends LitElement {
     return null;
   }
 
-  private findStackElement(event: DragEvent): HTMLElement | null {
-    const path = event.composedPath();
-    const stack = this.findStackInTargets(path);
-    if (stack) {
-      return stack;
-    }
-
-    // If the root dock area is empty, treat the docked surface as a valid
-    // target when it appears in the composed path.
-    if (!this.rootLayout) {
-      for (const target of path) {
-        if (
-          target instanceof HTMLElement &&
-          (target === this.dockedEl || target.classList.contains('dock-docked'))
-        ) {
-          return this.dockedEl;
-        }
-      }
-    }
-    return null;
-  }
-
   private findStackInTargets(targets: Iterable<EventTarget>): HTMLElement | null {
     for (const element of targets) {
       if (!(element instanceof HTMLElement)) {
@@ -3413,21 +3114,18 @@ export class MintDockManagerElement extends LitElement {
   private activatePane(stack: HTMLElement, paneName: string, path: DockPath): void {
     stack.dataset['activePane'] = paneName;
 
-    const headerButtons = stack.querySelectorAll<HTMLButtonElement>('.dock-tab');
-    headerButtons.forEach((button) => {
-      const isSelected = button.dataset['pane'] === paneName;
-      button.classList.toggle('dock-tab--active', isSelected);
-      button.setAttribute('aria-selected', String(isSelected));
-    });
-
-    const panes = stack.querySelectorAll<HTMLElement>('.dock-stack__pane');
-    panes.forEach((pane) => {
-      if (pane.dataset['pane'] === paneName) {
-        pane.removeAttribute('hidden');
-      } else {
-        pane.setAttribute('hidden', '');
+    // Reflect to mp-tab-control's `active-tab` attribute. The WC handles
+    // strip button styling (active class, aria-selected) + body-slot
+    // projection automatically via the named-slot pattern.
+    if (stack.tagName === 'MP-TAB-CONTROL') {
+      const headerSpan = stack.querySelector<HTMLElement>(
+        `:scope > .dock-tab[data-pane="${CSS.escape(paneName)}"]`,
+      );
+      const tabId = headerSpan?.dataset['tabId'];
+      if (tabId) {
+        stack.setAttribute('active-tab', tabId);
       }
-    });
+    }
 
     const location = this.resolveStackLocation(path);
     if (!location) {
@@ -3704,7 +3402,10 @@ export class MintDockManagerElement extends LitElement {
   }
 
   private parsePath(path: string | null | undefined): DockPath | null {
-    if (!path) {
+    // The root splitter is tagged with data-path="" (raw segments-join of an
+    // empty array) so empty string is a valid path representing root docked.
+    // Only null/undefined is "no path".
+    if (path == null) {
       return null;
     }
 

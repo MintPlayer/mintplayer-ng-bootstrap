@@ -6,7 +6,7 @@
 /out-tsc
 
 # dependencies
-/node_modules
+**/node_modules
 /.nx
 
 # IDEs and editors
@@ -44,7 +44,9 @@ Thumbs.db
 
 .cursor/rules/nx-rules.mdc
 .github/instructions/nx.instructions.md
-**/node_modules/.vite/
+
+# Playwright MCP local artefacts (screenshots, traces)
+.playwright-mcp/
 
 # Environment variables (generated on VPS at deploy time)
 .env
@@ -52,3 +54,4 @@ Thumbs.db
 # Generated web-component artefacts (built from sibling .html / .scss)
 libs/**/web-components/*.element.template.ts
 libs/**/*.styles.ts
+.claude/worktrees
