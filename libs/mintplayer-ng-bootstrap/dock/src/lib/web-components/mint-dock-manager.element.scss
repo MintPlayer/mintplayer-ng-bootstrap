@@ -52,10 +52,10 @@
   display: flex;
   flex-direction: column;
   pointer-events: auto;
-  border: 1px solid rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--bs-border-color);
   border-radius: 0.5rem;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.25);
+  background: var(--bs-body-bg);
+  box-shadow: var(--bs-box-shadow-lg);
   overflow: hidden;
   min-width: 12rem;
   min-height: 8rem;
@@ -67,12 +67,14 @@
   gap: 0.5rem;
   padding: 0.35rem 0.75rem;
   cursor: move;
+  // Preserve the 0.6 → 0.25 alpha fade by composing on the secondary-bg
+  // RGB triplet. --bs-secondary-bg alone is solid and would lose the gradient.
   background: linear-gradient(
     to bottom,
-    rgba(148, 163, 184, 0.6),
-    rgba(148, 163, 184, 0.25)
+    rgba(var(--bs-secondary-bg-rgb), 0.6),
+    rgba(var(--bs-secondary-bg-rgb), 0.25)
   );
-  border-bottom: 1px solid rgba(148, 163, 184, 0.5);
+  border-bottom: 1px solid var(--bs-border-color);
   user-select: none;
   -webkit-user-select: none;
 }
@@ -81,7 +83,7 @@
   flex: 1 1 auto;
   font-size: 0.875rem;
   font-weight: 500;
-  color: rgba(30, 41, 59, 0.95);
+  color: var(--bs-body-color);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -97,13 +99,13 @@
   position: absolute;
   pointer-events: auto;
   z-index: 2;
-  background: rgba(148, 163, 184, 0.25);
+  background: var(--bs-secondary-bg-subtle);
   transition: background 120ms ease;
 }
 
 .dock-floating__resizer:hover,
 .dock-floating__resizer[data-resizing='true'] {
-  background: rgba(148, 163, 184, 0.4);
+  background: var(--bs-secondary-bg);
 }
 
 .dock-floating__resizer--top,
@@ -187,9 +189,9 @@
   margin-left: -0.5rem;
   margin-top: -0.5rem;
   border-radius: 0.375rem;
-  background: rgba(59, 130, 246, 0.2);
-  border: 1px solid rgba(59, 130, 246, 0.6);
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.2);
+  background: var(--bs-primary-bg-subtle);
+  border: 1px solid var(--bs-primary-border-subtle);
+  box-shadow: var(--bs-box-shadow-sm);
   cursor: all-scroll;
   pointer-events: auto;
   opacity: 0;
@@ -200,8 +202,11 @@
 .dock-intersection-handle:focus-visible,
 .dock-intersection-handle[data-visible='true'],
 .dock-intersection-handle[data-resizing='true'] {
-  background: rgba(59, 130, 246, 0.35);
-  border-color: rgba(59, 130, 246, 0.9);
+  // Slightly punchier than the resting state so hover stays distinct from
+  // --bs-primary-bg-subtle. Compose on --bs-primary-rgb to keep the alpha
+  // bump from the original rgba(59, 130, 246, 0.35).
+  background: rgba(var(--bs-primary-rgb), 0.35);
+  border-color: var(--bs-primary);
   opacity: 1;
   outline: none;
 }
@@ -213,8 +218,8 @@
   margin-left: -3px;
   margin-top: -3px;
   border-radius: 50%;
-  background: rgba(59, 130, 246, 0.7);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+  background: var(--bs-primary);
+  box-shadow: 0 0 0 2px var(--bs-primary-bg-subtle);
   pointer-events: none;
   z-index: 130;
 }
@@ -225,9 +230,9 @@
 // makes it fill its dock-flex parent.
 .dock-stack {
   flex: 1 1 0;
-  border: 1px solid rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--bs-border-color);
   border-radius: 0.25rem;
-  background: rgba(255, 255, 255, 0.75);
+  background: var(--bs-body-bg);
   backdrop-filter: blur(4px);
 }
 
@@ -258,8 +263,8 @@
 .dock-drop-indicator {
   position: absolute;
   pointer-events: none;
-  border: 2px solid rgba(59, 130, 246, 0.9);
-  background: rgba(59, 130, 246, 0.2);
+  border: 2px solid var(--bs-primary);
+  background: var(--bs-primary-bg-subtle);
   border-radius: 0.25rem;
   opacity: 0;
   transition: opacity 120ms ease;
@@ -278,8 +283,8 @@
   gap: 0.125rem;
   padding: 0.125rem;
   border-radius: 999px;
-  background: rgba(15, 23, 42, 0.15);
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+  background: var(--bs-tertiary-bg);
+  box-shadow: var(--bs-box-shadow);
   pointer-events: none;
   transform: translate(-50%, -50%);
   z-index: 110;
@@ -298,9 +303,9 @@
   align-items: center;
   justify-content: center;
   border-radius: 0.375rem;
-  border: 1px solid rgba(59, 130, 246, 0.4);
-  background: rgba(255, 255, 255, 0.9);
-  color: rgba(30, 64, 175, 0.9);
+  border: 1px solid var(--bs-primary-border-subtle);
+  background: var(--bs-body-bg);
+  color: var(--bs-primary);
   font-size: 0.75rem;
   line-height: 1;
   font-weight: 600;
@@ -312,13 +317,13 @@
 .dock-drop-joystick__button[data-active='true'],
 .dock-drop-joystick__button:hover,
 .dock-drop-joystick__button:focus-visible {
-  background: rgba(59, 130, 246, 0.25);
-  border-color: rgba(59, 130, 246, 0.8);
-  color: rgba(30, 64, 175, 1);
+  background: var(--bs-primary-bg-subtle);
+  border-color: var(--bs-primary);
+  color: var(--bs-primary);
 }
 
 .dock-drop-joystick__button:focus-visible {
-  outline: 2px solid rgba(59, 130, 246, 0.9);
+  outline: 2px solid var(--bs-primary);
   outline-offset: 1px;
 }
 

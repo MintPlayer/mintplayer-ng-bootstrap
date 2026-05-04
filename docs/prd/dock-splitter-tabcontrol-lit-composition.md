@@ -16,9 +16,9 @@ These threads are entangled: building `mp-tab-control` requires the Bootstrap-in
 
 This PRD captures the **target architecture**. Implementation does not have to land in a single PR.
 
-- **Phase 1 (current PR #302)**: Land the Lit base-class migration + split-file codegen + `mp-tab-control` extraction from `bs-tab-control` + Bootstrap-in-Shadow-DOM for `mp-tab-control`. Dock keeps its bespoke tab strip + split rendering (just like today). This is already a substantial PR and the work is verified in the browser.
-- **Phase 2 (follow-up PR)**: Embed `<mp-tab-control>` inside the dock's `renderStack`. Add `mp-splitter` extension points (divider opt-out, panel hidden state, mid-drag stability). Embed nested `<mp-splitter>` inside the dock's `renderSplit`. Strip dock's bespoke `.dock-tab` / `.dock-split__divider` CSS in favour of the embedded WCs.
-- **Phase 3 (follow-up PR)**: Recolour dock's overlay CSS via `--bs-*` variables for visual cohesion.
+- **Phase 1 ✅ (PR #302 + #303)**: Lit base-class migration, split-file codegen, `mp-tab-control` extraction from `bs-tab-control`, Bootstrap-in-Shadow-DOM for `mp-tab-control`. Dock keeps its bespoke tab strip + split rendering for now.
+- **Phase 2 ✅ (this PR, commits `7fc84949`..`a7bc4335`)**: Embed `<mp-tab-control>` inside the dock's `renderStack`. Add `mp-splitter`/`mp-tab-control` extension points (panel hidden state via `data-hidden`). Embed nested `<mp-splitter>` inside the dock's `renderSplit`. Strip dock's bespoke `.dock-tab` / `.dock-split__divider` CSS in favour of the embedded WCs.
+- **Phase 3 ✅ (this PR, commits `a1aa43db`..)**: Finish dock-embed adaptations the Phase 2 work left as gaps (intersection handles + corner resize through mp-splitter shadow; remove dead single-divider code) + recolour overlay CSS via `--bs-*` variables.
 
 Splitting into phases reduces the single-PR regression surface (the dock just migrated to Lit; stacking a major rendering-engine refactor on top tangles "did Lit break anything?" with "did the WC swap break anything?") and lets the `mp-splitter` extension API be designed deliberately rather than under PR pressure.
 
@@ -395,36 +395,36 @@ palette shift.
 
 ## Acceptance criteria
 
-### Phase 1
+### Phase 1 ✅
 
-- [ ] `mp-tab-control` and `mp-tab-page` exist as Lit WCs in `libs/mp-tab-control-wc/`, registered as custom elements, importable from `@mintplayer/tab-control-wc`.
-- [ ] `BsTabControlComponent` renders via `<mp-tab-control>` internally; its public Angular API (signal inputs, `contentChildren`, drag-drop) is unchanged for consumers.
-- [ ] Bootstrap styles for `nav`/`nav-tabs`/`tab-content`/`tab-pane` are imported into `mp-tab-control`'s Shadow DOM via `@import 'bootstrap/scss/...'`.
-- [ ] `--bs-*` custom properties are scoped to `:host` inside each WC that imports `_root.scss`.
-- [ ] `npm run build` succeeds end-to-end.
-- [ ] Visual smoke-test of `bs-tab-control` demo page shows no regression vs `master`.
-- [ ] `mp-tab-control` works standalone in a plain HTML page with only the WC's own JS imported (no external CSS).
+- [x] `mp-tab-control` and `mp-tab-page` exist as Lit WCs in `libs/mp-tab-control-wc/`, registered as custom elements, importable from `@mintplayer/tab-control-wc`.
+- [x] `BsTabControlComponent` renders via `<mp-tab-control>` internally; its public Angular API (signal inputs, `contentChildren`, drag-drop) is unchanged for consumers.
+- [x] Bootstrap styles for `nav`/`nav-tabs`/`tab-content`/`tab-pane` are imported into `mp-tab-control`'s Shadow DOM via `@import 'bootstrap/scss/...'`.
+- [x] `--bs-*` custom properties are scoped to `:host` inside each WC that imports `_root.scss`.
+- [x] `npm run build` succeeds end-to-end.
+- [x] Visual smoke-test of `bs-tab-control` demo page shows no regression vs `master`.
+- [x] `mp-tab-control` works standalone in a plain HTML page with only the WC's own JS imported (no external CSS).
 
-### Phase 2
+### Phase 2 ✅
 
-- [ ] `mp-splitter` exposes the documented extension points: `hidden` panel mode, divider opt-out (`data-no-resize` panel attribute or equivalent), `::part(divider-N)`. Each has a unit test.
-- [ ] `MintDockManagerElement.renderStack` embeds `<mp-tab-control>` per `DockStackNode`. The bespoke `.dock-stack__header` and tab markup is removed.
-- [ ] `MintDockManagerElement.renderSplit` embeds nested `<mp-splitter>` per `DockSplitNode`. The bespoke `.dock-split` markup is removed.
-- [ ] Dock element file size shrinks by ~1000-1500 lines.
-- [ ] All existing dock behaviours still work in the browser: tab activation, in-strip tab reorder, tab drag-to-detach-as-floating-window, single-divider drag, intersection-handle 4-way drag, snap markers during corner drag, drop indicator + drop joystick, floating-window resize, layout serialisation round-trip.
-- [ ] Dock's bespoke tab + split CSS is removed from `mint-dock-manager.element.scss`. (Overlay CSS — intersection handles, snap markers, drop indicator/joystick — stays.)
+- [x] `mp-splitter` exposes the documented extension points: `hidden` panel mode, divider opt-out (`data-no-resize` panel attribute or equivalent), `::part(divider-N)`. Each has a unit test.
+- [x] `MintDockManagerElement.renderStack` embeds `<mp-tab-control>` per `DockStackNode`. The bespoke `.dock-stack__header` and tab markup is removed.
+- [x] `MintDockManagerElement.renderSplit` embeds nested `<mp-splitter>` per `DockSplitNode`. The bespoke `.dock-split` markup is removed.
+- [x] Dock element file size shrinks by ~1000-1500 lines.
+- [x] All existing dock behaviours still work in the browser: tab activation, in-strip tab reorder, tab drag-to-detach-as-floating-window, single-divider drag, intersection-handle 4-way drag, snap markers during corner drag, drop indicator + drop joystick, floating-window resize, layout serialisation round-trip.
+- [x] Dock's bespoke tab + split CSS is removed from `mint-dock-manager.element.scss`. (Overlay CSS — intersection handles, snap markers, drop indicator/joystick — stays.)
 
-### Phase 3a — Finish Phase-2 dock-embed adaptations
+### Phase 3a — Finish Phase-2 dock-embed adaptations ✅
 
-- [ ] `renderIntersectionHandles` iterates `<mp-splitter class="dock-split">` elements and reads dividers from each splitter's shadow via the existing `getSplitterDividers` helper — no more `this.shadowRoot.querySelectorAll('.dock-split__divider')`.
-- [ ] `beginCornerResize` / `handleCornerResizeMove` / `endCornerResize` operate on splitter shadow data and call `mpSplitter.setPanelSizes(...)` instead of mutating `.dock-split__child` flex.
-- [ ] `renderSnapMarkersForCorner` / `clearSnapMarkers` query divider geometry through `getSplitterDividers(splitter)[index]`.
-- [ ] Dead code removed: `beginResize`, `handleResizeMove`, `endResize`, and the divider pointerdown wiring in the OLD renderSplit (mp-splitter handles single-divider drag natively now).
-- [ ] Browser-tested: corner-handle 4-way drag works, snap markers appear during corner drag.
+- [x] `renderIntersectionHandles` iterates `<mp-splitter class="dock-split">` elements and reads dividers from each splitter's shadow via the existing `getSplitterDividers` helper — no more `this.shadowRoot.querySelectorAll('.dock-split__divider')`.
+- [x] `beginCornerResize` / `handleCornerResizeMove` / `endCornerResize` operate on splitter shadow data and call `mpSplitter.setPanelSizes(...)` instead of mutating `.dock-split__child` flex.
+- [x] `renderSnapMarkersForCorner` / `clearSnapMarkers` query divider geometry through `getSplitterDividers(splitter)[index]`.
+- [x] Dead code removed: `beginResize`, `handleResizeMove`, `endResize`, and the divider pointerdown wiring in the OLD renderSplit (mp-splitter handles single-divider drag natively now). `onIntersectionDoubleClick` (double-click-to-equalize) was also rewired through mp-splitter while in the area, fixing a stale index lookup at the same time.
+- [x] Browser-tested: corner-handle 4-way drag works, snap markers appear during corner drag.
 
-### Phase 3b — Recolour dock overlay CSS via `--bs-*`
+### Phase 3b — Recolour dock overlay CSS via `--bs-*` ✅
 
-- [ ] Every rgba()/hex colour rule in `mint-dock-manager.element.scss` either references a `--bs-*` variable per the mapping table above, or has a deliberate justification for staying hard-coded.
-- [ ] Verified: `getComputedStyle(<mint-dock-manager>).getPropertyValue('--bs-primary')` resolves to the host page's Bootstrap value (custom-property cascade through Shadow DOM).
-- [ ] No visual regression vs Phase 2 except the intentional palette shift. Side-by-side screenshot diff against the Phase-2 dock as the baseline.
-- [ ] PRD index updated to mark Phases 1, 2, 3 complete.
+- [x] Every rgba()/hex colour rule in `mint-dock-manager.element.scss` either references a `--bs-*` variable per the mapping table above, or has a deliberate justification for staying hard-coded.
+- [x] Verified: `getComputedStyle(<mint-dock-manager>).getPropertyValue('--bs-primary')` resolves to the host page's Bootstrap value (custom-property cascade through Shadow DOM).
+- [x] No visual regression vs Phase 2 except the intentional palette shift. Side-by-side screenshot diff against the Phase-2 dock as the baseline.
+- [x] PRD index updated to mark Phases 1, 2, 3 complete.
