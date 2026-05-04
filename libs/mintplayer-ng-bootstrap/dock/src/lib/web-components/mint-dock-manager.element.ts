@@ -127,6 +127,8 @@ export class MintDockManagerElement extends LitElement {
     | null = null;
   private intersectionRaf: number | null = null;
   private intersectionHandles: Map<string, HTMLElement> = new Map();
+  private rootResizeObserver: ResizeObserver | null = null;
+  private dockedMutationObserver: MutationObserver | null = null;
   private cornerResizeState:
     | {
         pointerId: number;
@@ -231,7 +233,7 @@ export class MintDockManagerElement extends LitElement {
     this.onDragTouchMove = this.onDragTouchMove.bind(this);
     this.onDragMouseUp = this.onDragMouseUp.bind(this);
     this.onDragTouchEnd = this.onDragTouchEnd.bind(this);
-    this.onWindowResize = this.onWindowResize.bind(this);
+    this.onSplitterResize = this.onSplitterResize.bind(this);
   }
 
   override render(): TemplateResult {
@@ -306,6 +308,20 @@ export class MintDockManagerElement extends LitElement {
 
     // Render any layout that was set before the shadow DOM existed.
     this.renderLayout();
+
+    // Reactive triggers for intersection-handle re-rendering. Each observer
+    // wakes scheduleRenderIntersectionHandles() (rAF-coalesced), which means
+    // multiple notifications in the same frame collapse to one render and
+    // the rAF tick gives <mp-splitter> elements time to populate their
+    // shadow roots before we query their dividers.
+    this.rootResizeObserver = new ResizeObserver(() => this.scheduleRenderIntersectionHandles());
+    this.rootResizeObserver.observe(this.rootEl);
+    this.dockedMutationObserver = new MutationObserver(() => this.scheduleRenderIntersectionHandles());
+    this.dockedMutationObserver.observe(this.dockedEl, { childList: true, subtree: true });
+    // mp-splitter dispatches bubbling 'resizing' / 'resize-end' on user drag;
+    // delegating on dockedEl catches every nested splitter without per-instance wiring.
+    this.dockedEl.addEventListener('resizing', this.onSplitterResize);
+    this.dockedEl.addEventListener('resize-end', this.onSplitterResize);
   }
 
   override connectedCallback(): void {
@@ -317,7 +333,6 @@ export class MintDockManagerElement extends LitElement {
     win?.addEventListener('dragover', this.onGlobalDragOver);
     win?.addEventListener('drag', this.onDrag);
     win?.addEventListener('dragend', this.onGlobalDragEnd, true);
-    win?.addEventListener('resize', this.onWindowResize);
   }
 
   override disconnectedCallback(): void {
@@ -335,7 +350,16 @@ export class MintDockManagerElement extends LitElement {
     win?.removeEventListener('pointermove', this.onPointerMove);
     win?.removeEventListener('pointerup', this.onPointerUp);
     this.pointerTrackingActive = false;
-    win?.removeEventListener('resize', this.onWindowResize);
+    this.rootResizeObserver?.disconnect();
+    this.rootResizeObserver = null;
+    this.dockedMutationObserver?.disconnect();
+    this.dockedMutationObserver = null;
+    this.dockedEl?.removeEventListener('resizing', this.onSplitterResize);
+    this.dockedEl?.removeEventListener('resize-end', this.onSplitterResize);
+    if (this.intersectionRaf !== null) {
+      this.windowRef?.cancelAnimationFrame(this.intersectionRaf);
+      this.intersectionRaf = null;
+    }
     super.disconnectedCallback();
   }
 
@@ -496,7 +520,10 @@ export class MintDockManagerElement extends LitElement {
     }
 
     this.renderFloatingPanes();
-    this.scheduleRenderIntersectionHandles();
+    // Note: intersection handles are repositioned reactively via observers
+    // wired up in firstUpdated (rootResizeObserver, dockedMutationObserver,
+    // and delegated 'resizing' / 'resize-end' events). The MutationObserver
+    // on dockedEl fires when the renderNode subtree above is appended.
   }
 
   private renderNode(
@@ -610,14 +637,21 @@ export class MintDockManagerElement extends LitElement {
     });
   }
 
-  private onWindowResize(): void {
-    // Recompute intersection handles on window resize
+  private onSplitterResize(): void {
+    // mp-splitter dispatches 'resizing' continuously during a divider drag
+    // and 'resize-end' when the user releases. Both keep the handle glued
+    // to the new intersection coordinate.
     this.scheduleRenderIntersectionHandles();
   }
 
   private scheduleRenderIntersectionHandles(): void {
-    this.intersectionRaf = null;
-    this.renderIntersectionHandles();
+    if (this.intersectionRaf !== null) return;
+    const win = this.windowRef;
+    if (!win) return;
+    this.intersectionRaf = win.requestAnimationFrame(() => {
+      this.intersectionRaf = null;
+      this.renderIntersectionHandles();
+    });
   }
 
   private renderIntersectionHandles(): void {
@@ -651,14 +685,15 @@ export class MintDockManagerElement extends LitElement {
 
     const rootRect = this.rootEl.getBoundingClientRect();
 
-    // If a corner resize is active, only update that handle's position and avoid creating new ones
+    // If a corner resize is active, only update that handle's position and avoid creating new ones.
+    // The keys stored on handles use the raw splitter dataset['path'] format
+    // (segments joined with '/'), matching how the main rendering path below
+    // tags them. Use reference equality on st.handle for dedupe — that way
+    // we don't depend on any key-format round-trip during the drag.
     if (this.cornerResizeState) {
       const st = this.cornerResizeState;
       const h0 = st.hs[0];
       const v0 = st.vs[0];
-      const hPathStr = this.formatPath(h0.path);
-      const vPathStr = this.formatPath(v0.path);
-      const key = `${hPathStr}:${h0.index}|${vPathStr}:${v0.index}`;
       // Resolve the dividers via each splitter's shadow root.
       const hSplitter = this.findSplitterByPath(h0.path.segments);
       const vSplitter = this.findSplitterByPath(v0.path.segments);
@@ -670,20 +705,16 @@ export class MintDockManagerElement extends LitElement {
         const x = vr.left + vr.width / 2 - rootRect.left;
         const y = hr.top + hr.height / 2 - rootRect.top;
         const handle = st.handle;
-        if (!handle.dataset['key']) {
-          handle.dataset['key'] = key;
-        }
-        this.intersectionHandles.set(key, handle);
         handle.style.left = `${x}px`;
         handle.style.top = `${y}px`;
-        // Remove any other handles that don't match the active key
+        // Drop any sibling handles by reference; only the active one survives.
         Array.from(layer.querySelectorAll<HTMLElement>('.dock-intersection-handle')).forEach((el) => {
-          if ((el.dataset['key'] ?? '') !== key) {
+          if (el !== handle) {
             el.remove();
           }
         });
-        // Normalize internal map as well
-        this.intersectionHandles = new Map([[key, handle]]);
+        const key = handle.dataset['key'] ?? '';
+        this.intersectionHandles = key ? new Map([[key, handle]]) : new Map();
       }
       return;
     }
@@ -976,6 +1007,12 @@ export class MintDockManagerElement extends LitElement {
     state.vs.forEach((v) => applyPairSize(v, clientX - v.startX));
 
     this.dispatchLayoutChanged();
+    // setPanelSizes() is programmatic and doesn't fire 'resizing' events, so
+    // the delegated listener on dockedEl doesn't wake during a corner drag.
+    // Schedule the handle repositioning ourselves; renderIntersectionHandles
+    // has a fast-path for the active cornerResizeState that just updates
+    // left/top from the new divider rects.
+    this.scheduleRenderIntersectionHandles();
   }
 
   private endCornerResize(pointerId: number): void {
@@ -3717,7 +3754,10 @@ export class MintDockManagerElement extends LitElement {
   }
 
   private parsePath(path: string | null | undefined): DockPath | null {
-    if (!path) {
+    // The root splitter is tagged with data-path="" (raw segments-join of an
+    // empty array) so empty string is a valid path representing root docked.
+    // Only null/undefined is "no path".
+    if (path == null) {
       return null;
     }
 

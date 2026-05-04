@@ -33,7 +33,6 @@ Splitting into phases reduces the single-PR regression surface (the dock just mi
 
 ### Non-goals
 
-- Reactive `html\`...\``-driven re-rendering of the dock's overlay layers (intersection handles, drop indicator, drop joystick). The current "imperative DOM construction inside `firstUpdated()`" pattern (preserved from PR #302) stays.
 - Removing `bs-tab-control`'s public Angular API. The wrapper stays; only its internals change.
 - Replacing the dock's layout-tree data model (`DockLayoutNode` / `DockSplitNode` / `DockStackNode`). The tree stays as the source of truth; the dock just renders the tree by composing WC primitives instead of building DOM from scratch.
 - Replacing the dock's drag-to-floating logic. The dock continues to own pane drag, floating-window state, and drop targeting. `mp-tab-control` and `mp-splitter` are rendering primitives, not interaction owners.

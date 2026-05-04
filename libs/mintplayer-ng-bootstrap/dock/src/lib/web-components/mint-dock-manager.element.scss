@@ -197,7 +197,9 @@
   box-shadow: var(--bs-box-shadow-sm);
   cursor: all-scroll;
   pointer-events: auto;
-  opacity: 0;
+  // Visible-but-quiet at rest so users can discover the corner-drag affordance
+  // without a hover. Hover/focus/[data-resizing] escalates to opacity:1 below.
+  opacity: 0.45;
   transition: background 120ms ease, border-color 120ms ease, opacity 120ms ease;
 }
 
