@@ -244,8 +244,20 @@
 // drag-handle cursor so users see the tab is draggable. Active-tab styling
 // (background highlight) lives in the WC's shadow stylesheet (Bootstrap's
 // .nav-link.active).
+//
+// `display: block` + matching `padding`/negative `margin` extend the span's
+// hit area to cover the entire `.nav-link` button. Without this, only the
+// span's text rect is draggable — the button's own padding (the area around
+// the text) doesn't trigger dragstart, since `draggable="true"` is on the
+// span (not the button it's slotted into). Padding values mirror Bootstrap's
+// default `.nav-link` padding (0.5rem 1rem); the negative margin pulls the
+// span's box back over the button's padding so clicks anywhere on the button
+// land on the span.
 .dock-tab {
   cursor: grab;
+  display: block;
+  padding: 0.5rem 1rem;
+  margin: -0.5rem -1rem;
 }
 
 .dock-tab:active {
