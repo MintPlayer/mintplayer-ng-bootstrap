@@ -314,7 +314,19 @@ export class MpSplitter extends LitElement {
       (sum, divider) => sum + divider.getBoundingClientRect()[dividerProperty],
       0
     );
-    const targetPanelTotal = Math.max(0, containerSize - dividerTotal);
+    // Adjacent panel-wrappers carry negative margins (`margin-left` /
+    // `margin-right` of `-thumb-margin`) so they visually overlap the
+    // divider's transparent borders. In the flex calculation those negative
+    // margins reduce a divider's effective width contribution; if we ignore
+    // them we under-target by 2 * (N-1) * thumb px and the container gets
+    // a gap at the trailing edge.
+    const startMarginProp = this.orientation === 'horizontal' ? 'marginLeft' : 'marginTop';
+    const endMarginProp = this.orientation === 'horizontal' ? 'marginRight' : 'marginBottom';
+    const marginTotal = this.panelWrappers.reduce((sum, wrapper) => {
+      const cs = getComputedStyle(wrapper);
+      return sum + parseFloat(cs[startMarginProp]) + parseFloat(cs[endMarginProp]);
+    }, 0);
+    const targetPanelTotal = Math.max(0, containerSize - dividerTotal - marginTotal);
     const previousPanelTotal = stored.reduce((a, b) => a + b, 0);
     if (previousPanelTotal <= 0) return;
 
