@@ -34,7 +34,18 @@
 .panel-wrapper {
   overflow: hidden;
   position: relative;
-  flex-grow: 1;
+}
+
+// Only applies in the brief window before pinSizesFromCurrentLayout writes
+// explicit pixel sizes. `flex: 1 1 0` (not the `flex-grow: 1` longhand) keeps
+// `flex-basis: 0` so a nested splitter's pinned children can't push their
+// intrinsic width up through this wrapper's basis and visibly shift the
+// parent during a drag. After the pin runs, applyPanelSizes() removes the
+// `.flex-grow` class and writes inline width/height — the wrapper falls
+// back to the default `flex: 0 1 auto` where `flex-basis: auto` takes its
+// value from the inline width, holding the panel at the pinned size.
+.panel-wrapper.flex-grow {
+  flex: 1 1 0;
 }
 
 /* Divider base styles */

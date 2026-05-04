@@ -32,6 +32,7 @@ export class MpSplitter extends LitElement {
   private slotElement: HTMLSlotElement | null = null;
 
   private mutationObserver: MutationObserver | null = null;
+  private containerResizeObserver: ResizeObserver | null = null;
   private unsubscribeState: (() => void) | null = null;
 
   constructor() {
@@ -67,6 +68,7 @@ export class MpSplitter extends LitElement {
 
     this.setupMutationObserver();
     this.subscribeToState();
+    this.setupContainerResizeObserver();
 
     // Initial setup after first render
     requestAnimationFrame(() => {
@@ -80,6 +82,11 @@ export class MpSplitter extends LitElement {
     if (this.mutationObserver) {
       this.mutationObserver.disconnect();
       this.mutationObserver = null;
+    }
+
+    if (this.containerResizeObserver) {
+      this.containerResizeObserver.disconnect();
+      this.containerResizeObserver = null;
     }
 
     if (this.unsubscribeState) {
@@ -220,12 +227,104 @@ export class MpSplitter extends LitElement {
     //      the wrappers (e.g., the dock schedules its own raf inside
     //      renderSplit) — without this, the early call is silently dropped.
     //   2. Slot children change after a drag (e.g., layout re-render) — the
-    //      wrappers get recreated with `flex-grow` (equal sizes) and would
+    //      wrappers get recreated with `flex: 1 1 0` (equal sizes) and would
     //      otherwise discard the user's drag result.
     const storedSizes = this.stateManager.getState().panelSizes;
     if (storedSizes.length > 0 && storedSizes.length === this.panelWrappers.length) {
       this.applyPanelSizes(storedSizes);
+      // Consumer-supplied sizes (e.g., from the dock's renderSplit) often
+      // sum to the full container size because the consumer doesn't know
+      // mp-splitter's internal divider widths. Defer one raf so dividers
+      // have laid out, then rescale stored sizes against the actual panel
+      // space (container - dividers). Without this step ResizeObserver
+      // alone can't catch the discrepancy because the container size
+      // hasn't changed — only the panel/divider split inside it has.
+      requestAnimationFrame(() => this.handleContainerResize());
+      return;
     }
+
+    // No stored sizes (or count mismatch) — pin from the measured layout
+    // once the browser has run layout for the new wrappers. A nested raf
+    // is needed because the wrappers were created in this very turn and
+    // their getBoundingClientRect would return 0 if read synchronously.
+    requestAnimationFrame(() => {
+      const current = this.stateManager.getState().panelSizes;
+      if (current.length === this.panelWrappers.length && current.length > 0) {
+        // A consumer (e.g., the dock) called setPanelSizes() between our
+        // raf scheduling and execution. Honour their values instead of
+        // overwriting with measurements.
+        this.applyPanelSizes(current);
+        return;
+      }
+      this.pinSizesFromCurrentLayout();
+    });
+  }
+
+  /**
+   * Read each panel-wrapper's measured pixel size and persist it as the
+   * authoritative panel size. After this runs, every wrapper carries an
+   * inline `width` (or `height`) — content intrinsic size cannot leak into
+   * the parent flex container, so a nested splitter's drag does not shift
+   * the parent's layout.
+   */
+  private pinSizesFromCurrentLayout(): void {
+    if (this.panelWrappers.length === 0) return;
+    const sizeProperty = this.orientation === 'horizontal' ? 'width' : 'height';
+    const measured = this.panelWrappers.map(
+      (wrapper) => wrapper.getBoundingClientRect()[sizeProperty]
+    );
+    // Layout hasn't run yet for these wrappers — bail rather than write
+    // 0 px sizes that would collapse every panel.
+    if (measured.every((v) => v <= 0)) return;
+    this.applyPanelSizes(measured);
+    this.stateManager.setPanelSizes(measured);
+  }
+
+  private setupContainerResizeObserver(): void {
+    if (!this.container || typeof ResizeObserver === 'undefined') return;
+    this.containerResizeObserver = new ResizeObserver(() => {
+      this.handleContainerResize();
+    });
+    this.containerResizeObserver.observe(this.container);
+  }
+
+  /**
+   * When the splitter's container resizes (window resize, parent splitter
+   * pinning its sizes, etc.), scale every panel-wrapper proportionally so
+   * the existing ratios are preserved. Without this we'd be stuck with the
+   * original pixel sizes when the surrounding viewport changes — what
+   * `flex-basis: 0` gave master "for free".
+   */
+  private handleContainerResize(): void {
+    if (!this.container || this.panelWrappers.length === 0) return;
+    // applyPanelSizes runs continuously during a drag; its writes can fire
+    // ResizeObserver via subpixel rounding. The drag math already keeps
+    // panels summing to the container — don't fight it.
+    if (this.stateManager.isResizing()) return;
+
+    const stored = this.stateManager.getState().panelSizes;
+    if (stored.length === 0 || stored.length !== this.panelWrappers.length) return;
+
+    const rect = this.container.getBoundingClientRect();
+    const containerSize = this.orientation === 'horizontal' ? rect.width : rect.height;
+    if (containerSize <= 0) return;
+
+    const dividerProperty = this.orientation === 'horizontal' ? 'width' : 'height';
+    const dividerTotal = this.dividers.reduce(
+      (sum, divider) => sum + divider.getBoundingClientRect()[dividerProperty],
+      0
+    );
+    const targetPanelTotal = Math.max(0, containerSize - dividerTotal);
+    const previousPanelTotal = stored.reduce((a, b) => a + b, 0);
+    if (previousPanelTotal <= 0) return;
+
+    // Below 1 px we'd be amplifying our own subpixel writes. Skip.
+    if (Math.abs(targetPanelTotal - previousPanelTotal) < 1) return;
+
+    const scale = targetPanelTotal / previousPanelTotal;
+    const newSizes = stored.map((s) => s * scale);
+    this.applyPanelSizes(newSizes);
+    this.stateManager.setPanelSizes(newSizes);
   }
 
   private updateContainerOrientation(): void {

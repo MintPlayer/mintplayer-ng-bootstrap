@@ -1429,6 +1429,11 @@ export class MintDockManagerElement extends LitElement {
     // Convert back to flex weights (sum to a stable total — keep current sum
     // so future renders interpret consistently) and persist to the layout tree.
     splitter.addEventListener('resize-end', (event) => {
+      // resize-end bubbles, so a nested mp-splitter's drag end would also
+      // reach this listener. Only react to events from THIS splitter, not
+      // from a descendant — otherwise we'd apply the inner's sizes to the
+      // outer's splitNode and mangle the outer's weights.
+      if (event.target !== splitter) return;
       const detail = (event as CustomEvent<{ sizes: number[] }>).detail;
       if (!Array.isArray(detail?.sizes) || detail.sizes.length === 0) return;
       const splitNode = this.resolveSplitNode(splitPath);
