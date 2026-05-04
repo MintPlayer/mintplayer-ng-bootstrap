@@ -213,6 +213,19 @@ export class MpSplitter extends LitElement {
         this.container!.appendChild(divider);
       }
     });
+
+    // Re-apply previously-stored sizes when the panel count still matches.
+    // Two cases where this matters:
+    //   1. setPanelSizes() was called before firstUpdated's raf populated
+    //      the wrappers (e.g., the dock schedules its own raf inside
+    //      renderSplit) — without this, the early call is silently dropped.
+    //   2. Slot children change after a drag (e.g., layout re-render) — the
+    //      wrappers get recreated with `flex-grow` (equal sizes) and would
+    //      otherwise discard the user's drag result.
+    const storedSizes = this.stateManager.getState().panelSizes;
+    if (storedSizes.length > 0 && storedSizes.length === this.panelWrappers.length) {
+      this.applyPanelSizes(storedSizes);
+    }
   }
 
   private updateContainerOrientation(): void {
