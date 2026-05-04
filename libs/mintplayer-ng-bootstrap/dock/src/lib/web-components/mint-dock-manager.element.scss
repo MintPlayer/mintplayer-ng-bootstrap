@@ -76,6 +76,10 @@
   gap: 0.5rem;
   padding: 0.35rem 0.75rem;
   cursor: move;
+  // Stop the browser from claiming a finger drag as a page scroll. Without
+  // this, on Android Chrome the pointermove that should reposition the
+  // floating window is arbitrated as scroll and pointercancel kills the drag.
+  touch-action: none;
   // Original was slate (rgb 148, 163, 184) — a blue-grey. --bs-secondary-bg
   // alone reads as flat gray, so compose the gradient on --bs-primary-rgb at
   // low alpha to keep the blue cast tied to the rest of the dock palette.
@@ -113,6 +117,8 @@
   // tied to the floating window's identity.
   background: rgba(var(--bs-primary-rgb), 0.1);
   transition: background 120ms ease;
+  // Touch resize on Android otherwise loses pointermoves to the page scroller.
+  touch-action: none;
 }
 
 .dock-floating__resizer:hover,
@@ -206,6 +212,10 @@
   box-shadow: var(--bs-box-shadow-sm);
   cursor: all-scroll;
   pointer-events: auto;
+  // Required so the corner-resize gesture isn't intermittently arbitrated as
+  // a page scroll on touch — `event.preventDefault()` on pointerdown alone
+  // doesn't beat the browser's compositor-thread scroll-claim on Android.
+  touch-action: none;
   // Visible-but-quiet at rest so users can discover the corner-drag affordance
   // without a hover. Hover/focus/[data-resizing] escalates to opacity:1 below.
   opacity: 0.45;
@@ -269,6 +279,12 @@
   display: block;
   padding: 0.5rem 1rem;
   margin: -0.5rem -1rem;
+  // Block the browser's touch-gesture arbitration. On Android Chrome, without
+  // this the first pointermove still fires (so the tab undocks once the 5px
+  // threshold is crossed), but immediately after the browser claims the
+  // gesture for page scroll, fires pointercancel, and the floating pane is
+  // stranded. See docs/prd/dock-tab-drag-android-touch.md.
+  touch-action: none;
 }
 
 .dock-tab:active {
