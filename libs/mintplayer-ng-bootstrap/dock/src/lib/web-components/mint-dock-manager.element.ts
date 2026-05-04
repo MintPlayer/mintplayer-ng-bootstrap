@@ -1530,13 +1530,11 @@ export class MintDockManagerElement extends LitElement {
         this.captureTabDragMetrics(event, stack);
         this.armPaneDragGesture(event, this.clonePath(location), paneName, stack);
         event.stopPropagation();
-        // Belt-and-braces with `touch-action: none` on `.dock-tab`: cancel any
-        // residual default behavior the browser might still synthesise from
-        // this touch (tap-to-scroll, focus shuffle). Skip for mouse so click
-        // and text-selection on tabs keep working.
-        if (event.pointerType !== 'mouse') {
-          event.preventDefault();
-        }
+        // Do NOT call event.preventDefault() here. On touch, that suppresses
+        // the synthesized click on the parent .nav-link button — which is how
+        // mp-tab-control fires `tab-activate`. `touch-action: none` on
+        // `.dock-tab` already prevents the browser from arbitrating the
+        // gesture for scroll, so preventDefault would be redundant + harmful.
       });
 
       // Content wrapper — projected via mp-tab-control's `${tabId}-content`

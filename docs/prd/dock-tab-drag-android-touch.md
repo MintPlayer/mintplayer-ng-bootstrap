@@ -90,25 +90,13 @@ This is **scoped to the dock**: only the elements the dock owns are touch-action
 
 The `.dock-tab` span has `display: block` + `padding: 0.5rem 1rem` + `margin: -0.5rem -1rem`, which makes it cover the entire `.nav-link` button it's slotted into. The user's finger lands on the span, not on the button's padding, so `touch-action` on `.dock-tab` is effective in practice. Slotted elements participate in the rendered tree for touch-action arbitration, so this works across the shadow-DOM boundary.
 
-### 5.2 Secondary: pointerdown hardening
+### 5.2 Considered and rejected: `event.preventDefault()` on pointerdown
 
-In `mint-dock-manager.element.ts:1529`, augment the tab-header pointerdown to:
+An earlier revision of this PRD proposed calling `event.preventDefault()` on the tab-header pointerdown for non-mouse pointers as a "belt-and-braces" guard. This was **rejected** during code review (gemini-code-assist on PR #305) for a correct and important reason:
 
-```ts
-headerSpan.addEventListener('pointerdown', (event) => {
-  this.captureTabDragMetrics(event, stack);
-  this.armPaneDragGesture(event, this.clonePath(location), paneName, stack);
-  event.stopPropagation();
-  // Belt-and-braces: even with touch-action: none, calling preventDefault
-  // on the pointerdown removes any residual arbitration window where the
-  // browser might still treat the touch as a candidate scroll.
-  if (event.pointerType !== 'mouse') {
-    event.preventDefault();
-  }
-});
-```
+`mp-tab-control` activates tabs via a `@click` handler on the `.nav-link` button (`mp-tab-control.ts:205`). On touch, that click is synthesised from the pointer-up that ends a no-move tap. Per the Pointer Events spec, calling `preventDefault()` on a primary `pointerdown` suppresses the subsequent synthesised click. Adding the guard would silently break tap-to-activate on touch — a much worse failure mode than the bug being fixed.
 
-Skipping `preventDefault` for mouse preserves text-selection and click semantics on desktop. On touch, `preventDefault` is harmless (it only prevents the implicit mouse-event synthesis and any default scroll-claim).
+`touch-action: none` on `.dock-tab` is sufficient on its own: it removes the browser's ability to arbitrate the gesture for scrolling at the compositor level, before any JS runs. There is no residual arbitration window for `preventDefault` to close.
 
 ### 5.3 No change to pointercancel handling
 
@@ -125,25 +113,24 @@ Skipping `preventDefault` for mouse preserves text-selection and click semantics
 - Desktop Chrome / Firefox: confirm mouse drag still works, tab activation on click still works (the click after a no-move pointerdown should still fire — `armPaneDragGesture` resolves on `pointerup` without promoting if the threshold isn't crossed).
 
 **Automated**
-- Existing `mint-dock-manager.element.spec.ts` already exercises the threshold→drag→drop flow with synthetic PointerEvents (`spec.ts:101-120`). Add a regression test that asserts `.dock-tab` has `touch-action: none` in computed style after render. This is a cheap structural test — it doesn't need a real touch event.
+- Existing `mint-dock-manager.element.spec.ts` already exercises the threshold→drag→drop flow with synthetic PointerEvents (`spec.ts:101-120`). Still passes after the change.
 
 **Visual / non-regression**
 - Splitter divider drag on touch: unchanged.
 - Intersection handle drag on touch: unchanged.
-- Tab activation by click (no drag) on desktop: unchanged.
+- Tab activation by click on desktop AND tap on touch: unchanged (no `preventDefault` on pointerdown — see §5.2).
 - Tab strip horizontal scroll (when the strip overflows) outside the dock: unchanged, because the touch-action change is scoped to `.dock-tab` (not `.nav-link`).
 
 ## 7. Risks / things to watch
 
 - **Tab strip horizontal overflow scroll inside the dock.** When a dock has many tabs and the strip overflows, swiping the strip to scroll horizontally would now be blocked on the `.dock-tab` spans (the user's finger would land on a span and `touch-action: none` would prevent the scroll). The buttons' padding outside the spans (~0 px after the negative margin) is too small to use as a scroll gutter. Mitigation: this is a **theoretical** regression — tab strips inside the dock don't currently support horizontal overflow scroll on touch anyway (the scrollbar is hidden via `overflow: hidden` on `.tsc`). No real loss. Worth noting in case strip-scroll is added later.
 - **Finger landing on the button's padding rather than the span.** With the negative-margin trick the span covers the button's text padding, but if a future change to `.nav-link` padding outpaces `.dock-tab`'s margin, a few pixels of `.nav-link` would become reachable and would not have `touch-action: none`. Mitigation: keep `.dock-tab`'s padding/margin in sync with `.nav-link`'s padding, as the existing comment at `mint-dock-manager.element.scss:262-266` already documents.
-- **`event.preventDefault()` on pointerdown may suppress synthetic mousedown** on the slotted button. mp-tab-control's tab activation listens for `click`, not `mousedown`, so the click still fires on `pointerup` if the threshold isn't crossed. Verify this in the existing spec.
 
 ## 8. Decision
 
-**Yes, this is fixable**, and cheaply. The fix is two CSS lines + a small pointerdown guard, all scoped to the dock manager. It mirrors the pattern already proven in the splitter and scheduler in this same workspace, and the same gesture-arbitration principle established in `vertical-swipe-firefox-android.md`.
+**Yes, this is fixable**, and cheaply. The fix is purely CSS — `touch-action: none` on the four dock-owned drag surfaces — scoped to the dock manager. It mirrors the pattern already proven in the splitter and scheduler in this same workspace, and the same gesture-arbitration principle established in `vertical-swipe-firefox-android.md`.
 
-Estimated change: ~5 lines of CSS, ~3 lines of TS, plus one assertion in the existing spec. Single PR, no API surface change.
+Estimated change: ~16 lines of CSS, no TS code change. Single PR, no API surface change.
 
 ## 9. References
 
