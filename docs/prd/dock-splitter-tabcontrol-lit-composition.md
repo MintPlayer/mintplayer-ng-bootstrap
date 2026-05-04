@@ -429,7 +429,7 @@ palette shift.
 - [x] No visual regression vs Phase 2 except the intentional palette shift. Side-by-side screenshot diff against the Phase-2 dock as the baseline.
 - [x] PRD index updated to mark Phases 1, 2, 3 complete.
 
-### Phase 4 — Stabilise nested-splitter sizing
+### Phase 4 — Stabilise nested-splitter sizing ✅
 
 #### Problem statement
 
@@ -674,32 +674,176 @@ container size.
 
 #### Acceptance criteria
 
-- [ ] `mp-splitter` panel-wrappers have explicit `width` (horizontal) or
+- [x] `mp-splitter` panel-wrappers have explicit `width` (horizontal) or
       `height` (vertical) after the first animation frame, even when the
       consumer never calls `setPanelSizes`. Verified by browser inspection
       of `getComputedStyle(wrapper).width` returning a px value, not `auto`.
-- [ ] Dragging an inner mp-splitter's divider does not shift the parent
+- [x] Dragging an inner mp-splitter's divider does not shift the parent
       mp-splitter's panel sizes during the drag. Verified by dispatching
       `mousedown` + a sequence of `mousemove`s on the inner divider and
       measuring the parent's panel-wrapper rects on each step — the parent
       widths must remain constant (within ±1 px subpixel rounding).
-- [ ] When the splitter's container resizes (e.g., window resize), every
+- [x] When the splitter's container resizes (e.g., window resize), every
       panel-wrapper scales proportionally to the container delta. Verified
       by scripting `mint-dock-manager`'s host element to a new size and
       asserting the ratios between panel widths are preserved within
       ±1 px.
-- [ ] After dragging an inner divider with no initial `node.sizes`, the
+- [x] After dragging an inner divider with no initial `node.sizes`, the
       dock's serialised layout (via `dispatchLayoutChanged` → `[attr.layout]`)
       reflects the post-drag pixel ratios. Round-tripping the layout
       through `setAttribute('layout', JSON.stringify(layout))` produces the
       same visible panel sizes.
 - [ ] Existing `mp-splitter` unit tests pass unchanged. New unit test for
-      the auto-pin invariant lands as part of this phase.
-- [ ] No regression in master's existing dock behaviours: tab activation,
+      the auto-pin invariant lands as part of this phase. *(Implementation
+      landed in `7c49bed4`; dedicated unit test is still TODO.)*
+- [x] No regression in master's existing dock behaviours: tab activation,
       tab drag-to-detach, single-divider drag in non-nested splits,
       intersection-handle 4-way drag, snap markers during corner drag,
       drop indicator + drop joystick, floating-window resize, layout
       serialisation round-trip.
-- [ ] `splitter.styles.scss`'s `.panel-wrapper { flex-grow: 1 }` rule is
+- [x] `splitter.styles.scss`'s `.panel-wrapper { flex-grow: 1 }` rule is
       removed (or kept only as a fallback before the first raf, with a
-      comment).
+      comment). *(Kept as fallback, scoped to `.panel-wrapper.flex-grow`
+      with a comment explaining why `flex: 1 1 0` (basis-0) is required to
+      avoid intrinsic-size leak.)*
+
+### Post-Phase-4 polish (landed on `dock-embed-mp-wc`, not yet on master)
+
+These commits accumulated on the `dock-embed-mp-wc` branch after Phase 4
+landed (`7c49bed4`). They are bug fixes / small UX polish on top of the
+Phase 1-4 architecture, not new phases — recorded here so the next
+session knows the current state of the branch.
+
+**`mp-tab-control` API addition:**
+
+- New `border="top"` value (alongside `"true"`/`"false"`). Renders only
+  `border-top` on the content `<div>` so consumers can opt into the
+  Bootstrap "strip cutout" line (active tab visually punches through
+  into body) without the full Bootstrap frame around the content. The
+  dock now uses `border="top"` to get the cutout line back without
+  doubling against `.dock-stack` / `.dock-floating`'s outer chrome
+  border. Commit: `837f8dc7`.
+
+**Dock fixes:**
+
+- `.dock-tab` now extends its drag-handle hit area to fill the strip
+  button via `display: block` + `padding: 0.5rem 1rem` + matching
+  negative `margin: -0.5rem -1rem`. Without this, only the slotted
+  `<span>`'s text rect (~50×21) was draggable; clicks on the button's
+  surrounding padding didn't initiate dragstart. Commits: `c896b741`,
+  `73a4f194` (the second corrects the placeholder width measurement
+  to subtract the new padding).
+- In-strip drag placeholder mirrors the dragged tab's text at 0.5
+  opacity and uses `display: inline-block` so its `min-width` is
+  honoured. Previously the inline span ignored `min-width` and the
+  strip button collapsed to padding-only width (~34×18), leaving a
+  textless "mini-thumb" stub at drag start. Commit: `837f8dc7`.
+- `endFloatingResize` now clears `data-resizing` on the resizer handle
+  outside the `releasePointerCapture` try/catch so the dark-blue resize
+  affordance doesn't get stuck after mouseout (cleanup symmetry with
+  `endCornerResize` / `endFloatingDrag`). Commit: `cd631dd8`.
+- `endPaneDrag` clears the header drag placeholder *before* nulling
+  `dragState`; `set layout` now rejects external writes during any
+  active interaction (`isInteracting()` guard). Together these fix two
+  drag-to-detach regressions: Panel 2's content disappearing when
+  pulled out of a multi-pane stack, and Panel 3's floating window not
+  following the cursor after detaching from a single-pane stack.
+  Commit: `cb13ef66`.
+- `set layout` short-circuits when the incoming snapshot is structurally
+  identical to the current state (JSON-equality guard) — eliminates the
+  brief equal-share flash users saw after divider drag, caused by the
+  Angular host re-applying its own `(layoutChange)` echo. Commit:
+  `39e0e707`.
+- `.dock-drop-indicator` background restored to translucent
+  `rgba(var(--bs-primary-rgb), 0.2)` (was solid
+  `--bs-primary-bg-subtle` after Phase 3b). Commit: `98e4c3d0`.
+- `mp-splitter`'s `handleContainerResize` now subtracts the
+  panel-wrappers' negative margins (the `.divider` thumb-margin overlap)
+  from `targetPanelTotal`, otherwise the layout undersized by 6 px and
+  left visible gaps between panels. Commit: `e31e5cfe`.
+
+**Repo hygiene:**
+
+- `tsconfig.base.json` dropped deprecated `baseUrl` + `ignoreDeprecations`,
+  bumped `moduleResolution` to `bundler`, `target` to `es2020`. All
+  workspace tsconfigs got `./` prefixes on `include`/`exclude` globs to
+  match the explicit-relative semantics needed without `baseUrl`. Commit:
+  `01c2c8e8`.
+
+### Phase 5 — Intersection glyphs (proposed, not started)
+
+#### Problem statement
+
+The dock's intersection handles (`.dock-intersection-handle`) are
+invisible-by-default 1rem squares that become a coloured dot on hover
+and a slightly punchier dot during drag. They sit at the corners where
+two perpendicular `<mp-splitter>` instances meet; dragging one moves
+both adjacent dividers in sync (the 4-way orchestration described in
+Phase 2). They're functional but visually under-communicated — a
+first-time user has no affordance signalling that the corner is
+draggable until they happen to hover it.
+
+The Phase 4 work makes this worse in one respect: nested splits now
+preserve sizes correctly, so users actually keep nested layouts alive
+long enough to hit corner-resize as a regular workflow. The handles
+need to *announce themselves*.
+
+#### Goals (sketch — to refine in the dedicated session)
+
+1. Render a small glyph inside each intersection handle (cross / plus /
+   four-way arrow) so the affordance is visible at rest, not only on
+   hover.
+2. Match the existing `--bs-primary-*` palette already used by the
+   handle's hover/drag states. The glyph should fade in alongside the
+   handle's `opacity: 0` → `opacity: 1` hover transition rather than
+   appearing as a separate layer.
+3. Preserve the current keyboard-accessibility story
+   (`focus-visible` reveals the handle).
+4. No regression in the 4-way orchestration: the glyph is purely
+   decorative and does not interfere with pointer/touch capture or with
+   `setPanelSizes` calls on the two adjacent splitters.
+
+#### Open design questions
+
+- **Glyph source.** Inline SVG (single shape, no external dep), a
+  Bootstrap Icons class via `<i class="bi bi-arrows-move">` (depends on
+  whether the demo page already loads `bootstrap-icons`), or a CSS-only
+  pseudo-element (cheapest, but limited to simple shapes)?
+- **Visibility default.** Always-visible at low opacity (~0.3) so the
+  affordance is permanent, vs. only on hover/drag (consistent with
+  current behaviour). Always-visible reads better but adds visual
+  noise to dense layouts.
+- **Resting size.** The handle is currently `1rem × 1rem`. A glyph
+  filling it would be ~12 px — readable but small. Larger handles
+  improve discoverability but eat into panel content area.
+- **Touch story.** On touch, hover doesn't fire; the handle is currently
+  hard to find. Should the always-visible mode be the touch default?
+
+#### Files involved
+
+- `mint-dock-manager.element.ts` — `renderIntersectionHandles` (handle
+  DOM construction).
+- `mint-dock-manager.element.scss` — `.dock-intersection-handle` styles
+  (background, border, opacity transitions).
+
+#### Out of scope for Phase 5
+
+- Reorganising the 4-way orchestration logic. Glyphs are a presentation
+  layer change; handle behaviour stays as-is.
+- New keyboard shortcuts for corner-resize.
+- Drag-to-resize feedback animations beyond the existing
+  `data-resizing` colour swap.
+
+#### Acceptance criteria (sketch)
+
+- [ ] Each intersection handle shows a glyph (TBD shape) at rest.
+- [ ] Glyph + handle background use only `--bs-*` tokens; no
+      hard-coded rgba.
+- [ ] Hover, focus-visible, and `data-resizing` states all transition
+      smoothly between resting and active appearances (no flicker).
+- [ ] Existing 4-way orchestration still works: dragging the handle
+      moves both adjacent dividers in lockstep, snap markers still
+      appear during the drag, double-click still reset-to-equal-share.
+- [ ] Manual smoke test on the dock demo page: nested
+      horizontal-in-horizontal layout, all four corner directions
+      reachable, glyph readable at the smallest splitter size.
