@@ -4,43 +4,41 @@
     "rootDir": ".",
     "sourceMap": true,
     "declaration": false,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "emitDecoratorMetadata": false,
     "experimentalDecorators": true,
     "importHelpers": true,
-    "target": "es2015",
+    "target": "es2020",
     "module": "esnext",
     "lib": ["es2022", "dom"],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
-    "baseUrl": ".",
-    "ignoreDeprecations": "5.0",
     "paths": {
-      "@mintplayer/dijkstra": ["libs/mintplayer-dijkstra/src/index.ts"],
-      "@mintplayer/encode-utf8": ["libs/mintplayer-encode-utf8/src/index.ts"],
+      "@mintplayer/dijkstra": ["./libs/mintplayer-dijkstra/src/index.ts"],
+      "@mintplayer/encode-utf8": ["./libs/mintplayer-encode-utf8/src/index.ts"],
       "@mintplayer/ng-animations": [
-        "libs/mintplayer-ng-animations/src/index.ts"
+        "./libs/mintplayer-ng-animations/src/index.ts"
       ],
-      "@mintplayer/ng-bootstrap": ["libs/mintplayer-ng-bootstrap/src/index.ts"],
-      "@mintplayer/ng-bootstrap/*": ["libs/mintplayer-ng-bootstrap/*"],
+      "@mintplayer/ng-bootstrap": ["./libs/mintplayer-ng-bootstrap/src/index.ts"],
+      "@mintplayer/ng-bootstrap/*": ["./libs/mintplayer-ng-bootstrap/*"],
       "@mintplayer/ng-bootstrap/package.json": [
-        "libs/mintplayer-ng-bootstrap/package.ts"
+        "./libs/mintplayer-ng-bootstrap/package.ts"
       ],
       "@mintplayer/ng-click-outside": [
-        "libs/mintplayer-ng-click-outside/src/index.ts"
+        "./libs/mintplayer-ng-click-outside/src/index.ts"
       ],
       "@mintplayer/ng-focus-on-load": [
-        "libs/mintplayer-ng-focus-on-load/src/index.ts"
+        "./libs/mintplayer-ng-focus-on-load/src/index.ts"
       ],
-      "@mintplayer/ng-qr-code": ["libs/mintplayer-ng-qr-code/src/index.ts"],
-      "@mintplayer/ng-swiper": ["libs/mintplayer-ng-swiper/src/index.ts"],
-      "@mintplayer/ng-swiper/*": ["libs/mintplayer-ng-swiper/*"],
-      "@mintplayer/pagination": ["libs/mintplayer-pagination/src/index.ts"],
-      "@mintplayer/qr-code": ["libs/mintplayer-qr-code/src/index.ts"],
-      "@mintplayer/scheduler-core": ["libs/mp-scheduler-core/src/index.ts"],
-      "@mintplayer/scheduler-wc": ["libs/mp-scheduler-wc/src/index.ts"],
-      "@mintplayer/splitter": ["libs/mp-splitter-wc/src/index.ts"],
-      "@mintplayer/tab-control-wc": ["libs/mp-tab-control-wc/src/index.ts"]
+      "@mintplayer/ng-qr-code": ["./libs/mintplayer-ng-qr-code/src/index.ts"],
+      "@mintplayer/ng-swiper": ["./libs/mintplayer-ng-swiper/src/index.ts"],
+      "@mintplayer/ng-swiper/*": ["./libs/mintplayer-ng-swiper/*"],
+      "@mintplayer/pagination": ["./libs/mintplayer-pagination/src/index.ts"],
+      "@mintplayer/qr-code": ["./libs/mintplayer-qr-code/src/index.ts"],
+      "@mintplayer/scheduler-core": ["./libs/mp-scheduler-core/src/index.ts"],
+      "@mintplayer/scheduler-wc": ["./libs/mp-scheduler-wc/src/index.ts"],
+      "@mintplayer/splitter": ["./libs/mp-splitter-wc/src/index.ts"],
+      "@mintplayer/tab-control-wc": ["./libs/mp-tab-control-wc/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]
