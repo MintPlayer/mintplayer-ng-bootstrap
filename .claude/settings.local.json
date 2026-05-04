@@ -30,7 +30,17 @@
       "mcp__github__get_pull_request",
       "WebFetch(domain:stackblitz.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "WebFetch(domain:api.github.com)"
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:css-tricks.com)",
+      "WebFetch(domain:www.npmjs.com)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:4200)",
+      "PowerShell(Get-NetTCPConnection *)",
+      "PowerShell(Get-CimInstance *)",
+      "PowerShell(Stop-Process *)",
+      "WebSearch",
+      "WebFetch(domain:bugzilla.mozilla.org)",
+      "mcp__github__search_code",
+      "mcp__github__get_file_contents"
     ]
   },
   "enableAllProjectMcpServers": true,
