@@ -267,7 +267,11 @@
   position: absolute;
   pointer-events: none;
   border: 2px solid var(--bs-primary);
-  background: var(--bs-primary-bg-subtle);
+  // Original was `rgba(59, 130, 246, 0.2)` — translucent so the underlying
+  // panel stays visible behind the dropzone hint. The PRD's mapping to
+  // --bs-primary-bg-subtle made it solid; compose on --bs-primary-rgb to
+  // keep the see-through fill.
+  background: rgba(var(--bs-primary-rgb), 0.2);
   border-radius: 0.25rem;
   opacity: 0;
   transition: opacity 120ms ease;
