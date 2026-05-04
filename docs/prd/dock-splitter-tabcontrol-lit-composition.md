@@ -269,10 +269,106 @@ After Phase 1 the dock still uses its bespoke tab strip + split rendering — sa
 11. **Strip dock's bespoke tab + split CSS** from `mint-dock-manager.element.scss` (`.dock-tab*`, `.dock-stack__header`, `.dock-stack__content`, `.dock-stack__pane`, `.dock-split*`).
 12. **Smoke-test dock demo page**: tab activation, tab reorder, tab drag-to-detach (single-pane and multi-pane stacks), divider drag, intersection-handle 4-way drag, snap markers during drag, drop indicator + joystick, floating-window resize, layout serialisation round-trip.
 
-### Phase 3 (follow-up PR — visual polish)
+### Phase 3 (follow-up PR — visual polish + Phase-2 dock-embed clean-up)
 
-13. **Recolour dock's overlay CSS** (intersection handles, snap markers, drop indicator, drop joystick, floating chrome) via `--bs-*` variables for visual cohesion. Drop hand-coded `rgba(...)` colours where there's a `--bs-*` equivalent.
-14. **Update `docs/prd/` index** to reflect the now-completed migration.
+Phase 3 covers two distinct concerns. Either can be split into its own PR if the
+combined diff is too large for one review.
+
+#### 3a. Finish the dock-embed adaptations Phase 2 left as known gaps
+
+Phase 2 swapped the dock's bespoke `renderStack` / `renderSplit` for embedded
+`<mp-tab-control>` and `<mp-splitter>` elements, but the dock's
+**intersection-handle 4-way drag** and **snap markers during corner drag** were
+left non-functional. The cause: the dock queries `.dock-split__divider` from
+its own shadow root, but those dividers now live inside each `<mp-splitter>`'s
+shadow root. Helpers (`getSplitterDividers`, `getSplitterPanels`,
+`findSplitterByPath`) are already in place on the dock element from
+commit `49c9ed5b` — they just aren't wired into the consumer methods yet.
+
+13. **Adapt `renderIntersectionHandles`** to iterate `<mp-splitter
+    class="dock-split">` elements via the dock's shadow root, then pull each
+    splitter's dividers from its shadow via `getSplitterDividers(splitter)`.
+    Replace the existing `this.shadowRoot.querySelectorAll('.dock-split__divider')`
+    pattern with a flat-map over splitters. The divider geometry comes from
+    `getBoundingClientRect()` on the shadow divider elements (works across
+    shadow boundaries).
+14. **Adapt `beginCornerResize` / `handleCornerResizeMove` / `endCornerResize`**
+    so the corner-handle pointerdrag calls `mpSplitter.setPanelSizes(...)` on
+    each affected splitter instead of mutating `.dock-split__child` flex sizes
+    directly. Capture initial sizes via `getSplitterPanels(splitter).map(p => p.getBoundingClientRect()...)`
+    in the appropriate axis.
+15. **Adapt `renderSnapMarkersForCorner` / `clearSnapMarkers`** to read divider
+    geometry via `getSplitterDividers(splitter)[index]` instead of
+    `container.querySelector(':scope > .dock-split__divider')`.
+16. **Dead-code cleanup** — `beginResize`, `handleResizeMove`, `endResize`,
+    and the per-divider pointerdown wiring inside the OLD `renderSplit` are
+    unreachable in Phase 2 (the rendering swap means dock dividers no longer
+    exist). Remove or document as private API kept for the corner-handle
+    sibling case.
+
+Acceptance for 3a: corner-handle drag works the same as on master, snap
+markers appear during corner drag, no divider-related dead code remains.
+
+#### 3b. Recolour dock's overlay CSS via `--bs-*` variables
+
+17. **Recolour dock's overlay CSS** (intersection handles, snap markers, drop
+    indicator, drop joystick, floating chrome) via `--bs-*` variables for
+    visual cohesion. Drop hand-coded `rgba(...)` colours where there's a
+    `--bs-*` equivalent.
+18. **Update `docs/prd/` index** to reflect the now-completed migration.
+
+##### Concrete rgba → `--bs-*` mapping
+
+Read the current values from `libs/mintplayer-ng-bootstrap/dock/src/lib/web-components/mint-dock-manager.element.scss`.
+The proposed mapping (verify against the latest checkout — line numbers drift):
+
+| Selector | Current colour | Proposed Bootstrap variable |
+|---|---|---|
+| `.dock-floating` border | `rgba(0, 0, 0, 0.3)` | `var(--bs-border-color)` |
+| `.dock-floating` background | `rgba(255, 255, 255, 0.92)` | `var(--bs-body-bg)` (slight opacity loss — acceptable) |
+| `.dock-floating` box-shadow | `rgba(15, 23, 42, 0.25)` | `var(--bs-box-shadow)` (Bootstrap 5.3 token) |
+| `.dock-floating__chrome` background gradient | `rgba(148, 163, 184, ...)` | `var(--bs-secondary-bg)` |
+| `.dock-floating__chrome` border-bottom | `rgba(148, 163, 184, 0.5)` | `var(--bs-border-color)` |
+| `.dock-floating__title` colour | `rgba(30, 41, 59, 0.95)` | `var(--bs-body-color)` |
+| `.dock-floating__resizer` background | `rgba(148, 163, 184, 0.25)` | `var(--bs-secondary-bg-subtle)` |
+| `.dock-floating__resizer:hover` | `rgba(148, 163, 184, 0.4)` | `var(--bs-secondary-bg)` |
+| `.dock-stack` border | `rgba(0, 0, 0, 0.2)` | `var(--bs-border-color)` |
+| `.dock-stack` background | `rgba(255, 255, 255, 0.75)` | `var(--bs-body-bg)` |
+| `.dock-intersection-handle` background | `rgba(59, 130, 246, 0.2)` | `var(--bs-primary-bg-subtle)` |
+| `.dock-intersection-handle` border | `rgba(59, 130, 246, 0.6)` | `var(--bs-primary-border-subtle)` |
+| `.dock-intersection-handle:hover` background | `rgba(59, 130, 246, 0.35)` | `var(--bs-primary-bg-subtle)` w/ opacity tweak, or just `var(--bs-primary)` w/ low alpha |
+| `.dock-snap-marker` background | `rgba(59, 130, 246, 0.7)` | `var(--bs-primary)` |
+| `.dock-snap-marker` shadow | `rgba(59, 130, 246, 0.15)` | `var(--bs-primary-bg-subtle)` |
+| `.dock-drop-indicator` border | `rgba(59, 130, 246, 0.9)` | `var(--bs-primary)` |
+| `.dock-drop-indicator` background | `rgba(59, 130, 246, 0.2)` | `var(--bs-primary-bg-subtle)` |
+| `.dock-drop-joystick` background | `rgba(15, 23, 42, 0.15)` | `var(--bs-tertiary-bg)` |
+| `.dock-drop-joystick__button` border | `rgba(59, 130, 246, 0.4)` | `var(--bs-primary-border-subtle)` |
+| `.dock-drop-joystick__button` colour | `rgba(30, 64, 175, 0.9)` | `var(--bs-primary)` |
+| `.dock-drop-joystick__button:hover` | `rgba(59, 130, 246, 0.25)` | `var(--bs-primary-bg-subtle)` |
+
+Where the original alpha matters for visual layering, prefer the
+`*-bg-subtle` / `*-border-subtle` Bootstrap tokens over manually composing
+`rgba(var(--bs-primary-rgb), 0.2)` — Bootstrap 5.3 already provides those
+pre-computed variants.
+
+##### Cascade through Shadow DOM
+
+`--bs-*` variables defined on `:root` (Bootstrap's `_root.scss`) **inherit
+through Shadow DOM** via standard CSS custom-property cascade. The dock's
+`<mint-dock-manager>` element lives inside the consuming page (where Bootstrap
+is loaded globally), so its shadow rules pick up `--bs-*` automatically.
+**No `_root.scss` import is needed** in the dock's SCSS — verify with a
+`getComputedStyle(host).getPropertyValue('--bs-primary')` in the browser
+console after first render.
+
+For standalone-WC use (no host Bootstrap), the colours fall back to whatever
+default the SCSS uses. Document this in the dock's package readme if it
+becomes a real concern; not in scope here.
+
+Acceptance for 3b: every colour rule in `mint-dock-manager.element.scss`
+either references a `--bs-*` variable or has a deliberate justification for
+staying hard-coded. No visual regression vs Phase 2 except the intentional
+palette shift.
 
 ## Risks
 
@@ -318,7 +414,17 @@ After Phase 1 the dock still uses its bespoke tab strip + split rendering — sa
 - [ ] All existing dock behaviours still work in the browser: tab activation, in-strip tab reorder, tab drag-to-detach-as-floating-window, single-divider drag, intersection-handle 4-way drag, snap markers during corner drag, drop indicator + drop joystick, floating-window resize, layout serialisation round-trip.
 - [ ] Dock's bespoke tab + split CSS is removed from `mint-dock-manager.element.scss`. (Overlay CSS — intersection handles, snap markers, drop indicator/joystick — stays.)
 
-### Phase 3
+### Phase 3a — Finish Phase-2 dock-embed adaptations
 
-- [ ] Dock's overlay CSS references `--bs-*` variables (intersection handle uses `--bs-primary`, snap markers use `--bs-primary`, drop indicator uses `--bs-primary` + `--bs-primary-bg-subtle`, etc.).
-- [ ] No visual regression vs Phase 2 except the colour palette shift (which is intentional).
+- [ ] `renderIntersectionHandles` iterates `<mp-splitter class="dock-split">` elements and reads dividers from each splitter's shadow via the existing `getSplitterDividers` helper — no more `this.shadowRoot.querySelectorAll('.dock-split__divider')`.
+- [ ] `beginCornerResize` / `handleCornerResizeMove` / `endCornerResize` operate on splitter shadow data and call `mpSplitter.setPanelSizes(...)` instead of mutating `.dock-split__child` flex.
+- [ ] `renderSnapMarkersForCorner` / `clearSnapMarkers` query divider geometry through `getSplitterDividers(splitter)[index]`.
+- [ ] Dead code removed: `beginResize`, `handleResizeMove`, `endResize`, and the divider pointerdown wiring in the OLD renderSplit (mp-splitter handles single-divider drag natively now).
+- [ ] Browser-tested: corner-handle 4-way drag works, snap markers appear during corner drag.
+
+### Phase 3b — Recolour dock overlay CSS via `--bs-*`
+
+- [ ] Every rgba()/hex colour rule in `mint-dock-manager.element.scss` either references a `--bs-*` variable per the mapping table above, or has a deliberate justification for staying hard-coded.
+- [ ] Verified: `getComputedStyle(<mint-dock-manager>).getPropertyValue('--bs-primary')` resolves to the host page's Bootstrap value (custom-property cascade through Shadow DOM).
+- [ ] No visual regression vs Phase 2 except the intentional palette shift. Side-by-side screenshot diff against the Phase-2 dock as the baseline.
+- [ ] PRD index updated to mark Phases 1, 2, 3 complete.
