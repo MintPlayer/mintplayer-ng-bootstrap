@@ -1520,7 +1520,12 @@ export class MintDockManagerElement extends LitElement {
     stack.classList.add('dock-stack');
     // Dock controls activation; tell mp-tab-control not to auto-pick.
     stack.setAttribute('select-first-tab', 'false');
-    stack.setAttribute('border', 'false');
+    // `border="top"` gives us the strip-cutout line under the tabs (so the
+    // active tab visually punches through into the body) without adding the
+    // full Bootstrap frame, which would double up with the dock's own outer
+    // chrome border on `.dock-stack` (and on `.dock-floating` for floating
+    // panels).
+    stack.setAttribute('border', 'top');
 
     const location: DockPath =
       typeof floatingIndex === 'number'
@@ -2291,19 +2296,19 @@ export class MintDockManagerElement extends LitElement {
     );
     if (!draggedHeader || !draggedContent) return;
 
+    // Measure the dragged tab's slot-content width BEFORE hiding it. The slotted
+    // span is `display: inline`, so its offsetWidth equals the rendered text
+    // width — that's exactly what we want as the placeholder's reserved space
+    // (the strip button adds its own padding on top).
+    const slotContentWidth = draggedHeader.offsetWidth;
+
     // Hide the dragged tab from mp-tab-control's strip (frees up the slot).
     draggedContent.setAttribute('data-hidden', '');
 
-    // Approximate the dragged tab's strip-button width so the placeholder
-    // visually fills the gap. Use the rendered button geometry, not the
-    // light-DOM span (the span is just header content).
-    const buttons = this.getStackTabButtons(stack);
-    const draggedTabId = draggedHeader.dataset['tabId'];
-    const draggedButton = buttons.find((b) => b.id === `${draggedTabId}-header-button`) ?? null;
-    const widthPx = draggedButton ? draggedButton.offsetWidth : draggedHeader.offsetWidth;
-
     // Build placeholder header + content. The placeholder uses a unique tabId
     // (`__dock-placeholder__`) so its slot names don't collide with real panes.
+    // We mirror the dragged tab's text into the placeholder (dimmed via opacity)
+    // so the strip reads as "this tab is being dragged" rather than "empty slot".
     const placeholderTabId = '__dock-placeholder__';
     const phHeader = this.documentRef.createElement('span');
     phHeader.setAttribute('slot', `${placeholderTabId}-header`);
@@ -2311,7 +2316,14 @@ export class MintDockManagerElement extends LitElement {
     phHeader.dataset['placeholder'] = 'true';
     phHeader.dataset['tabId'] = placeholderTabId;
     phHeader.setAttribute('aria-hidden', 'true');
-    phHeader.style.minWidth = `${widthPx}px`;
+    phHeader.textContent = draggedHeader.textContent;
+    // `display: inline-block` is required for `min-width` to take effect on the
+    // span. Without it, an inline element ignores min-width and the placeholder
+    // collapses to its content width (or 0 if textContent is also empty),
+    // leaving a "mini-thumb" in the strip.
+    phHeader.style.display = 'inline-block';
+    phHeader.style.minWidth = `${slotContentWidth}px`;
+    phHeader.style.opacity = '0.5';
 
     const phContent = this.documentRef.createElement('div');
     phContent.setAttribute('slot', `${placeholderTabId}-content`);

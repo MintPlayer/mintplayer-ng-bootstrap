@@ -95,10 +95,12 @@ export class MpTabControl extends LitElement {
     return v === 'bottom' ? 'bottom' : 'top';
   }
 
-  private get border(): boolean {
-    return this.hasAttribute('border')
-      ? this.getAttribute('border') !== 'false'
-      : true;
+  private get border(): 'full' | 'top' | 'none' {
+    if (!this.hasAttribute('border')) return 'full';
+    const v = this.getAttribute('border');
+    if (v === 'false') return 'none';
+    if (v === 'top') return 'top';
+    return 'full';
   }
 
   private get selectFirstTab(): boolean {
@@ -159,13 +161,18 @@ export class MpTabControl extends LitElement {
         </ul>
       </div>
     `;
+    const borderMode = this.border;
+    const borderClass =
+      borderMode === 'none'
+        ? ''
+        : borderMode === 'top'
+        ? ' border-top'
+        : activeId
+        ? ' border'
+        : ' border-top';
     const content = html`
       <div
-        class="tab-content flex-grow-1 overflow-auto${this.border
-          ? activeId
-            ? ' border'
-            : ' border-top'
-          : ''}"
+        class="tab-content flex-grow-1 overflow-auto${borderClass}"
       >
         <slot name=${activeId ? `${activeId}-content` : '__none__'}></slot>
       </div>
