@@ -45,6 +45,9 @@ Thumbs.db
 .cursor/rules/nx-rules.mdc
 .github/instructions/nx.instructions.md
 
+# Playwright MCP local artefacts (screenshots, traces)
+.playwright-mcp/
+
 # Environment variables (generated on VPS at deploy time)
 .env
 
