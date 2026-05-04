@@ -81,20 +81,6 @@ export class MintDockManagerElement extends LitElement {
         startClientY: number;
       }
     | null = null;
-  private resizeState:
-    | {
-        path: DockPath;
-        index: number;
-        pointerId: number;
-        orientation: 'horizontal' | 'vertical';
-        container: HTMLElement;
-        divider: HTMLElement;
-        startPos: number;
-        initialSizes: number[];
-        beforeSize: number;
-        afterSize: number;
-      }
-    | null = null;
   private dragState: {
     pane: string;
     sourcePath: DockPath;
@@ -170,43 +156,11 @@ export class MintDockManagerElement extends LitElement {
   private pointerTrackingActive = false;
   private dragPointerTrackingActive = false;
   private lastDragPointerPosition: { x: number; y: number } | null = null;
-  // Localized snapping while dragging a divider
-  private activeSnapAxis: 'x' | 'y' | null = null;
-  private activeSnapTargets: number[] = [];
   // Localized snapping while dragging an intersection handle
   private cornerSnapXTargets: number[] = [];
   private cornerSnapYTargets: number[] = [];
   // Debug: render snap markers while dragging
   private showSnapMarkers = false;
-  private renderSnapMarkersForDivider(): void {
-    if (!this.showSnapMarkers) return;
-    const layer = this.shadowRoot?.querySelector<HTMLElement>('.dock-intersections-layer, .dock-intersection-layer');
-    if (!layer) return;
-    // Clear previous
-    Array.from(layer.querySelectorAll('.dock-snap-marker')).forEach((el) => el.remove());
-    if (!this.resizeState || !this.activeSnapAxis || this.activeSnapTargets.length === 0) return;
-    const rootRect = this.rootEl.getBoundingClientRect();
-    const dRect = this.resizeState.divider.getBoundingClientRect();
-    if (this.activeSnapAxis === 'x') {
-      const y = dRect.top + dRect.height / 2 - rootRect.top;
-      this.activeSnapTargets.forEach((sx) => {
-        const dot = this.documentRef.createElement('div');
-        dot.className = 'dock-snap-marker';
-        dot.style.left = `${rootRect.left + sx - rootRect.left}px`;
-        dot.style.top = `${y}px`;
-        layer.appendChild(dot);
-      });
-    } else if (this.activeSnapAxis === 'y') {
-      const x = dRect.left + dRect.width / 2 - rootRect.left;
-      this.activeSnapTargets.forEach((sy) => {
-        const dot = this.documentRef.createElement('div');
-        dot.className = 'dock-snap-marker';
-        dot.style.left = `${x}px`;
-        dot.style.top = `${rootRect.top + sy - rootRect.top}px`;
-        layer.appendChild(dot);
-      });
-    }
-  }
 
   private renderSnapMarkersForCorner(): void {
     if (!this.showSnapMarkers) return;
@@ -215,16 +169,22 @@ export class MintDockManagerElement extends LitElement {
     Array.from(layer.querySelectorAll('.dock-snap-marker')).forEach((el) => el.remove());
     if (!this.cornerResizeState) return;
     const rootRect = this.rootEl.getBoundingClientRect();
-    // Compute representative center lines from first entries
+    // Compute representative center lines from the dividers being resized.
+    // st.{hs,vs}[i].container is the <mp-splitter>; the divider lives in its
+    // shadow at getSplitterDividers(splitter)[index].
     let centerX: number | null = null;
     let centerY: number | null = null;
     const st = this.cornerResizeState;
     if (st.vs.length > 0) {
-      const vRect = st.vs[0].container.querySelector<HTMLElement>(':scope > .dock-split__divider')?.getBoundingClientRect();
+      const v0 = st.vs[0];
+      const vDiv = this.getSplitterDividers(v0.container)[v0.index];
+      const vRect = vDiv?.getBoundingClientRect();
       if (vRect) centerX = vRect.left + vRect.width / 2 - rootRect.left;
     }
     if (st.hs.length > 0) {
-      const hRect = st.hs[0].container.querySelector<HTMLElement>(':scope > .dock-split__divider')?.getBoundingClientRect();
+      const h0 = st.hs[0];
+      const hDiv = this.getSplitterDividers(h0.container)[h0.index];
+      const hRect = hDiv?.getBoundingClientRect();
       if (hRect) centerY = hRect.top + hRect.height / 2 - rootRect.top;
     }
     if (centerY != null) {
@@ -656,13 +616,11 @@ export class MintDockManagerElement extends LitElement {
       const hPathStr = this.formatPath(h0.path);
       const vPathStr = this.formatPath(v0.path);
       const key = `${hPathStr}:${h0.index}|${vPathStr}:${v0.index}`;
-      // Find divider elements corresponding to active paths
-      const hDiv = this.shadowRoot?.querySelector<HTMLElement>(
-        `.dock-split__divider[data-path="${hPathStr}"][data-index="${h0.index}"]`,
-      );
-      const vDiv = this.shadowRoot?.querySelector<HTMLElement>(
-        `.dock-split__divider[data-path="${vPathStr}"][data-index="${v0.index}"]`,
-      );
+      // Resolve the dividers via each splitter's shadow root.
+      const hSplitter = this.findSplitterByPath(h0.path.segments);
+      const vSplitter = this.findSplitterByPath(v0.path.segments);
+      const hDiv = hSplitter ? this.getSplitterDividers(hSplitter)[h0.index] : null;
+      const vDiv = vSplitter ? this.getSplitterDividers(vSplitter)[v0.index] : null;
       if (hDiv && vDiv) {
         const hr = hDiv.getBoundingClientRect();
         const vr = vDiv.getBoundingClientRect();
@@ -686,43 +644,45 @@ export class MintDockManagerElement extends LitElement {
       }
       return;
     }
-    const allDividers = Array.from(
-      this.shadowRoot?.querySelectorAll<HTMLElement>('.dock-split__divider') ?? [],
+    // Each <mp-splitter class="dock-split"> hosts its dividers inside its
+    // shadow root. Walk every splitter, then flat-map its shadow dividers
+    // into the h/v buckets driven by the splitter's data-direction.
+    const allSplitters = Array.from(
+      this.shadowRoot?.querySelectorAll<HTMLElement>('.dock-split') ?? [],
     );
 
-    const hDividers: {
+    type DividerInfo = {
       el: HTMLElement;
       rect: DOMRect;
       path: DockPath | null;
-      pathStr?: string;
+      pathStr: string;
       index: number;
       container: HTMLElement;
-    }[] = [];
-    const vDividers: {
-      el: HTMLElement;
-      rect: DOMRect;
-      path: DockPath | null;
-      pathStr?: string;
-      index: number;
-      container: HTMLElement;
-    }[] = [];
+    };
+    const hDividers: DividerInfo[] = [];
+    const vDividers: DividerInfo[] = [];
 
-    allDividers.forEach((el) => {
-      const orientation = (el.dataset['orientation'] as 'horizontal' | 'vertical' | undefined) ?? undefined;
-      const rect = el.getBoundingClientRect();
-      const container = el.closest('.dock-split') as HTMLElement | null;
-      const path = this.parsePath(el.dataset['path']);
-      const pathStr = el.dataset['path'] ?? '';
-      const index = Number.parseInt(el.dataset['index'] ?? '', 10);
-      if (!container || !Number.isFinite(index)) return;
-      const info = { el, rect, path, pathStr, index, container };
-      // Note: node.direction === 'horizontal' means the split lays out children left-to-right,
-      // which yields a VERTICAL divider bar. So mapping is inverted here.
-      if (orientation === 'horizontal') {
-        vDividers.push(info);
-      } else if (orientation === 'vertical') {
-        hDividers.push(info);
-      }
+    allSplitters.forEach((splitter) => {
+      const direction = (splitter.dataset['direction'] as 'horizontal' | 'vertical' | undefined) ?? undefined;
+      const pathStr = splitter.dataset['path'] ?? '';
+      const path = this.parsePath(pathStr);
+      this.getSplitterDividers(splitter).forEach((el, index) => {
+        const info: DividerInfo = {
+          el,
+          rect: el.getBoundingClientRect(),
+          path,
+          pathStr,
+          index,
+          container: splitter,
+        };
+        // node.direction === 'horizontal' means children flow left-to-right,
+        // which yields VERTICAL divider bars (and vice-versa).
+        if (direction === 'horizontal') {
+          vDividers.push(info);
+        } else if (direction === 'vertical') {
+          hDividers.push(info);
+        }
+      });
     });
 
     const desiredKeys = new Set<string>();
@@ -808,18 +768,18 @@ export class MintDockManagerElement extends LitElement {
     const ensureHV = (pathStr: string, index: number, axis: 'h'|'v') => {
       const path = this.parsePath(pathStr);
       if (!path) return;
-      const div = this.shadowRoot?.querySelector<HTMLElement>(`.dock-split__divider[data-path="${pathStr}"][data-index="${index}"]`) ?? null;
-      const container = div?.closest('.dock-split') as HTMLElement | null;
-      if (!container) return;
-      if (axis === 'h') {
-        const children = Array.from(container.querySelectorAll<HTMLElement>(':scope > .dock-split__child'));
-        const initial = children.map((c) => c.getBoundingClientRect().height);
-        hs.push({ path, index, container, initialSizes: initial, before: initial[index], after: initial[index+1] });
-      } else {
-        const children = Array.from(container.querySelectorAll<HTMLElement>(':scope > .dock-split__child'));
-        const initial = children.map((c) => c.getBoundingClientRect().width);
-        vs.push({ path, index, container, initialSizes: initial, before: initial[index], after: initial[index+1] });
-      }
+      const splitter = this.findSplitterByPath(path.segments);
+      if (!splitter) return;
+      // Initial pixel sizes come from each panel-wrapper inside the splitter's
+      // shadow root. We capture them once on pointerdown and feed deltas to
+      // setPanelSizes() during the drag.
+      const panels = this.getSplitterPanels(splitter);
+      if (panels.length === 0) return;
+      const dim: 'height' | 'width' = axis === 'h' ? 'height' : 'width';
+      const initial = panels.map((p) => p.getBoundingClientRect()[dim]);
+      const entry = { path, index, container: splitter, initialSizes: initial, before: initial[index], after: initial[index + 1] };
+      if (axis === 'h') hs.push(entry);
+      else vs.push(entry);
     };
 
     if (parsed.length > 0) {
@@ -853,42 +813,47 @@ export class MintDockManagerElement extends LitElement {
     // Compute localized snap targets for this intersection
     try {
       const rootRect = this.rootEl.getBoundingClientRect();
-      // Use first pair to define the crossing lines
+      // Use first pair to define the crossing lines. Resolve dividers via
+      // each splitter's shadow root.
       let centerX: number | null = null;
       let centerY: number | null = null;
-      // Resolve one vertical bar (from vs) and one horizontal bar (from hs)
       if (vs.length > 0) {
         const vPair = vs[0];
-        const vPathStr = this.formatPath(vPair.path);
-        const vDiv = this.shadowRoot?.querySelector<HTMLElement>(`.dock-split__divider[data-path="${vPathStr}"][data-index="${vPair.index}"]`) ?? null;
+        const vDiv = this.getSplitterDividers(vPair.container)[vPair.index];
         const vr = vDiv?.getBoundingClientRect();
         if (vr) centerX = vr.left + vr.width / 2;
       }
       if (hs.length > 0) {
         const hPair = hs[0];
-        const hPathStr = this.formatPath(hPair.path);
-        const hDiv = this.shadowRoot?.querySelector<HTMLElement>(`.dock-split__divider[data-path="${hPathStr}"][data-index="${hPair.index}"]`) ?? null;
+        const hDiv = this.getSplitterDividers(hPair.container)[hPair.index];
         const hr = hDiv?.getBoundingClientRect();
         if (hr) centerY = hr.top + hr.height / 2;
       }
 
       const xTargets: number[] = [];
       const yTargets: number[] = [];
-      const allDividers = Array.from(this.shadowRoot?.querySelectorAll<HTMLElement>('.dock-split__divider') ?? []);
-      allDividers.forEach((el) => {
-        const o = (el.dataset['orientation'] as 'horizontal' | 'vertical' | undefined) ?? undefined;
-        const r = el.getBoundingClientRect();
-        if (o === 'horizontal' && centerY != null) {
-          // vertical bar → contributes X if it crosses centerY
-          if (centerY >= r.top && centerY <= r.bottom) {
-            xTargets.push(r.left + r.width / 2 - rootRect.left);
+      // Iterate every splitter, then flat-map its shadow dividers — a
+      // splitter's data-direction tells us whether its bars are vertical
+      // (horizontal split) or horizontal (vertical split).
+      const allSplitters = Array.from(
+        this.shadowRoot?.querySelectorAll<HTMLElement>('.dock-split') ?? [],
+      );
+      allSplitters.forEach((splitter) => {
+        const direction = (splitter.dataset['direction'] as 'horizontal' | 'vertical' | undefined) ?? undefined;
+        this.getSplitterDividers(splitter).forEach((el) => {
+          const r = el.getBoundingClientRect();
+          if (direction === 'horizontal' && centerY != null) {
+            // vertical bar → contributes X if it crosses centerY
+            if (centerY >= r.top && centerY <= r.bottom) {
+              xTargets.push(r.left + r.width / 2 - rootRect.left);
+            }
+          } else if (direction === 'vertical' && centerX != null) {
+            // horizontal bar → contributes Y if it crosses centerX
+            if (centerX >= r.left && centerX <= r.right) {
+              yTargets.push(r.top + r.height / 2 - rootRect.top);
+            }
           }
-        } else if (o === 'vertical' && centerX != null) {
-          // horizontal bar → contributes Y if it crosses centerX
-          if (centerX >= r.left && centerX <= r.right) {
-            yTargets.push(r.top + r.height / 2 - rootRect.top);
-          }
-        }
+        });
       });
       this.cornerSnapXTargets = xTargets;
       this.cornerSnapYTargets = yTargets;
@@ -932,45 +897,40 @@ export class MintDockManagerElement extends LitElement {
       if (bestDist <= tol) clientY = best;
     }
 
-    // Update all horizontal bars (vertical splits) with Y delta
-    state.hs.forEach((h) => {
-      const node = this.resolveSplitNode(h.path);
+    // Apply the new pair sizes to one splitter's panel-wrappers via
+    // mp-splitter's setPanelSizes(pixels) API. We persist the normalized
+    // ratios on the layout node so renderSplit's initial sizing stays in sync.
+    const applyPairSize = (
+      entry: {
+        path: DockPath;
+        index: number;
+        container: HTMLElement;
+        beforeSize: number;
+        afterSize: number;
+        initialSizes: number[];
+      },
+      delta: number,
+    ): void => {
+      const node = this.resolveSplitNode(entry.path);
       if (!node) return;
-      const deltaY = clientY - h.startY;
       const minSize = 48;
-      const pairTotal = h.beforeSize + h.afterSize;
-      let newBefore = Math.min(Math.max(h.beforeSize + deltaY, minSize), pairTotal - minSize);
+      const pairTotal = entry.beforeSize + entry.afterSize;
+      let newBefore = Math.min(Math.max(entry.beforeSize + delta, minSize), pairTotal - minSize);
       newBefore = snapValue(newBefore, pairTotal, event.shiftKey);
       const newAfter = pairTotal - newBefore;
-      const sizesPx = [...h.initialSizes];
-      sizesPx[h.index] = newBefore;
-      sizesPx[h.index+1] = newAfter;
-      const total = sizesPx.reduce((a,s)=>a+s,0);
-      const normalized = total>0 ? sizesPx.map((s)=>s/total) : [];
-      node.sizes = normalized;
-      const children = Array.from(h.container.querySelectorAll<HTMLElement>(':scope > .dock-split__child'));
-      normalized.forEach((size, idx) => { if (children[idx]) children[idx].style.flex = `${Math.max(size,0)} 1 0`; });
-    });
+      const sizesPx = [...entry.initialSizes];
+      sizesPx[entry.index] = newBefore;
+      sizesPx[entry.index + 1] = newAfter;
+      const total = sizesPx.reduce((a, s) => a + s, 0);
+      node.sizes = total > 0 ? sizesPx.map((s) => s / total) : [];
+      (entry.container as unknown as { setPanelSizes?: (sizes: number[]) => void })
+        .setPanelSizes?.(sizesPx);
+    };
 
-    // Update all vertical bars (horizontal splits) with X delta
-    state.vs.forEach((v) => {
-      const node = this.resolveSplitNode(v.path);
-      if (!node) return;
-      const deltaX = clientX - v.startX;
-      const minSize = 48;
-      const pairTotal = v.beforeSize + v.afterSize;
-      let newBefore = Math.min(Math.max(v.beforeSize + deltaX, minSize), pairTotal - minSize);
-      newBefore = snapValue(newBefore, pairTotal, event.shiftKey);
-      const newAfter = pairTotal - newBefore;
-      const sizesPx = [...v.initialSizes];
-      sizesPx[v.index] = newBefore;
-      sizesPx[v.index+1] = newAfter;
-      const total = sizesPx.reduce((a,s)=>a+s,0);
-      const normalized = total>0 ? sizesPx.map((s)=>s/total) : [];
-      node.sizes = normalized;
-      const children = Array.from(v.container.querySelectorAll<HTMLElement>(':scope > .dock-split__child'));
-      normalized.forEach((size, idx) => { if (children[idx]) children[idx].style.flex = `${Math.max(size,0)} 1 0`; });
-    });
+    // Update all horizontal bars (vertical splits) with Y delta, then all
+    // vertical bars (horizontal splits) with X delta.
+    state.hs.forEach((h) => applyPairSize(h, clientY - h.startY));
+    state.vs.forEach((v) => applyPairSize(v, clientX - v.startX));
 
     this.dispatchLayoutChanged();
   }
@@ -1017,23 +977,34 @@ export class MintDockManagerElement extends LitElement {
     let hasStored = false;
     splitKeys.forEach((k) => { if (this.previousSplitSizes.has(k)) hasStored = true; });
 
-    const applySizes = (pathStr: string, mutate: (sizes: number[], index: number) => number[]) => {
+    // Persist `node.sizes` (normalized) and push pixel sizes into the
+    // matching <mp-splitter> via setPanelSizes(). The splitter's panel
+    // wrappers live in its shadow DOM, so direct flex mutation is no
+    // longer an option.
+    const pushSizesToSplitter = (path: DockPath, normalized: number[]): void => {
+      const splitter = this.findSplitterByPath(path.segments);
+      if (!splitter) return;
+      const direction = (splitter.dataset['direction'] as 'horizontal' | 'vertical' | undefined) ?? 'horizontal';
+      const containerSize = direction === 'horizontal'
+        ? splitter.getBoundingClientRect().width
+        : splitter.getBoundingClientRect().height;
+      if (!Number.isFinite(containerSize) || containerSize <= 0) return;
+      const totalWeight = normalized.reduce((s, w) => s + Math.max(w, 0), 0);
+      if (totalWeight <= 0) return;
+      const px = normalized.map((w) => (Math.max(w, 0) / totalWeight) * containerSize);
+      (splitter as unknown as { setPanelSizes?: (sizes: number[]) => void })
+        .setPanelSizes?.(px);
+    };
+
+    const applySizes = (pathStr: string, dividerIndex: number, mutate: (sizes: number[], index: number) => number[]) => {
       const path = this.parsePath(pathStr);
       if (!path) return;
       const node = this.resolveSplitNode(path);
       if (!node) return;
       const sizes = this.normalizeSizesArray(node.sizes ?? [], node.children.length);
-      // Find divider index from any divider belonging to this path
-      const divEl = this.shadowRoot?.querySelector<HTMLElement>(`.dock-split__divider[data-path="${pathStr}"]`);
-      const index = divEl ? Number.parseInt(divEl.dataset['index'] ?? '0', 10) : 0;
-      const newSizes = mutate([...sizes], index);
+      const newSizes = mutate([...sizes], dividerIndex);
       node.sizes = newSizes;
-      const segments = path.segments.join('/');
-      const container = this.shadowRoot?.querySelector<HTMLElement>(`.dock-split[data-path="${segments}"]`);
-      if (container) {
-        const children = Array.from(container.querySelectorAll<HTMLElement>(':scope > .dock-split__child'));
-        newSizes.forEach((s, i) => { if (children[i]) children[i].style.flex = `${Math.max(s, 0)} 1 0`; });
-      }
+      pushSizesToSplitter(path, newSizes);
     };
 
     if (hasStored) {
@@ -1041,15 +1012,10 @@ export class MintDockManagerElement extends LitElement {
       this.previousSplitSizes.forEach((sizes, pathStr) => {
         const path = this.parsePath(pathStr);
         const node = path ? this.resolveSplitNode(path) : null;
-        if (!node) return;
+        if (!node || !path) return;
         const norm = this.normalizeSizesArray(sizes, node.children.length);
         node.sizes = norm;
-        const segments = path!.segments.join('/');
-        const container = this.shadowRoot?.querySelector<HTMLElement>(`.dock-split[data-path="${segments}"]`);
-        if (container) {
-          const children = Array.from(container.querySelectorAll<HTMLElement>(':scope > .dock-split__child'));
-          norm.forEach((s, i) => { if (children[i]) children[i].style.flex = `${Math.max(s, 0)} 1 0`; });
-        }
+        pushSizesToSplitter(path, norm);
       });
       this.previousSplitSizes.clear();
     } else {
@@ -1065,22 +1031,16 @@ export class MintDockManagerElement extends LitElement {
           }
           touched.add(key);
         });
-        applySizes(p.h.pathStr, (sizes, idx) => {
+        const equalize = (sizes: number[], idx: number): number[] => {
           const total = (sizes[idx] ?? 0) + (sizes[idx + 1] ?? 0);
           if (total <= 0) return sizes;
           sizes[idx] = total / 2;
           sizes[idx + 1] = total / 2;
           const sum = sizes.reduce((a, s) => a + s, 0);
           return sum > 0 ? sizes.map((s) => s / sum) : sizes;
-        });
-        applySizes(p.v.pathStr, (sizes, idx) => {
-          const total = (sizes[idx] ?? 0) + (sizes[idx + 1] ?? 0);
-          if (total <= 0) return sizes;
-          sizes[idx] = total / 2;
-          sizes[idx + 1] = total / 2;
-          const sum = sizes.reduce((a, s) => a + s, 0);
-          return sum > 0 ? sizes.map((s) => s / sum) : sizes;
-        });
+        };
+        applySizes(p.h.pathStr, p.h.index, equalize);
+        applySizes(p.v.pathStr, p.v.index, equalize);
       });
     }
 
@@ -1368,7 +1328,6 @@ export class MintDockManagerElement extends LitElement {
   private stopPointerTrackingIfIdle(): void {
     if (
       this.pointerTrackingActive &&
-      !this.resizeState &&
       !this.floatingDragState &&
       !this.floatingResizeState &&
       !this.cornerResizeState
@@ -1672,177 +1631,9 @@ export class MintDockManagerElement extends LitElement {
     );
   }
 
-  private beginResize(
-    event: PointerEvent,
-    container: HTMLElement,
-    path: DockPath,
-    index: number,
-  ): void {
-    event.preventDefault();
-    const divider = event.currentTarget as HTMLElement | null;
-    if (!divider) {
-      return;
-    }
-
-    const orientation = (container.dataset['direction'] as 'horizontal' | 'vertical') ?? 'horizontal';
-    const children = Array.from(container.querySelectorAll<HTMLElement>(':scope > .dock-split__child'));
-    const initialSizes = children.map((child) => {
-      const rect = child.getBoundingClientRect();
-      return orientation === 'horizontal' ? rect.width : rect.height;
-    });
-
-    const beforeSize = initialSizes[index];
-    const afterSize = initialSizes[index + 1];
-    const startPos = orientation === 'horizontal' ? event.clientX : event.clientY;
-
-    divider.setPointerCapture(event.pointerId);
-    divider.dataset['resizing'] = 'true';
-    this.resizeState = {
-      path: this.clonePath(path),
-      index,
-      pointerId: event.pointerId,
-      orientation,
-      container,
-      divider,
-      startPos,
-      initialSizes,
-      beforeSize,
-      afterSize,
-    };
-
-    this.startPointerTracking();
-    // Compute localized snap targets: intersections with perpendicular dividers near this divider
-    try {
-      const rootRect = this.rootEl.getBoundingClientRect();
-      const dividerRect = divider.getBoundingClientRect();
-      const allDividers = Array.from(
-        this.shadowRoot?.querySelectorAll<HTMLElement>('.dock-split__divider') ?? [],
-      );
-      const targets: number[] = [];
-      if (orientation === 'horizontal') {
-        // Current bar is vertical → snap X to centers of other vertical bars (no crossing check needed)
-        allDividers.forEach((el) => {
-          if (el === divider) return;
-          const o = (el.dataset['orientation'] as 'horizontal' | 'vertical' | undefined) ?? undefined;
-          if (o !== 'horizontal') return; // vertical divider bars (split direction horizontal)
-          const r = el.getBoundingClientRect();
-          const xCenter = r.left + r.width / 2 - rootRect.left;
-          targets.push(xCenter);
-        });
-        this.activeSnapAxis = 'x';
-        this.activeSnapTargets = targets;
-        this.renderSnapMarkersForDivider();
-      } else {
-        // Current bar is horizontal → snap Y to centers of other horizontal bars (no crossing check needed)
-        allDividers.forEach((el) => {
-          if (el === divider) return;
-          const o = (el.dataset['orientation'] as 'horizontal' | 'vertical' | undefined) ?? undefined;
-          if (o !== 'vertical') return; // horizontal divider bars (split direction vertical)
-          const r = el.getBoundingClientRect();
-          const yCenter = r.top + r.height / 2 - rootRect.top;
-          targets.push(yCenter);
-        });
-        this.activeSnapAxis = 'y';
-        this.activeSnapTargets = targets;
-        this.renderSnapMarkersForDivider();
-      }
-    } catch {
-      this.activeSnapAxis = null;
-      this.activeSnapTargets = [];
-      this.clearSnapMarkers();
-    }
-  }
-
   private onPointerMove(event: PointerEvent): void {
     if (this.cornerResizeState && event.pointerId === this.cornerResizeState.pointerId) {
       this.handleCornerResizeMove(event);
-    }
-    if (this.resizeState && event.pointerId === this.resizeState.pointerId) {
-      const state = this.resizeState;
-      const splitNode = this.resolveSplitNode(state.path);
-      if (!splitNode) {
-        return;
-      }
-
-      let currentPos = state.orientation === 'horizontal' ? event.clientX : event.clientY;
-      // Localized axis snap near neighboring intersections
-      const tol = 10;
-      const rootRect = this.rootEl.getBoundingClientRect();
-      if (this.activeSnapTargets.length) {
-        if (state.orientation === 'horizontal' && this.activeSnapAxis === 'x') {
-          // Vertical divider snapping along X
-          let closest = Number.POSITIVE_INFINITY;
-          let best = currentPos;
-          const pointerX = event.clientX;
-          this.activeSnapTargets.forEach((sx) => {
-            const px = rootRect.left + sx;
-            const d = Math.abs(pointerX - px);
-            if (d < closest) { closest = d; best = px; }
-          });
-          if (closest <= tol) currentPos = best;
-          this.renderSnapMarkersForDivider();
-        } else if (state.orientation === 'vertical' && this.activeSnapAxis === 'y') {
-          // Horizontal divider snapping along Y
-          let closest = Number.POSITIVE_INFINITY;
-          let best = currentPos;
-          const pointerY = event.clientY;
-          this.activeSnapTargets.forEach((sy) => {
-            const py = rootRect.top + sy;
-            const d = Math.abs(pointerY - py);
-            if (d < closest) { closest = d; best = py; }
-          });
-          if (closest <= tol) currentPos = best;
-          this.renderSnapMarkersForDivider();
-        }
-      }
-      const delta = currentPos - state.startPos;
-      const minSize = 48;
-      const pairTotal = state.beforeSize + state.afterSize;
-
-      let newBefore = state.beforeSize + delta;
-      // Optional snap with Shift
-      if (event.shiftKey && pairTotal > 0) {
-        const ratios = [1 / 3, 1 / 2, 2 / 3];
-        const target = newBefore / pairTotal;
-        let best = ratios[0];
-        let bestDist = Math.abs(target - best);
-        for (let i = 1; i < ratios.length; i++) {
-          const d = Math.abs(target - ratios[i]);
-          if (d < bestDist) {
-            best = ratios[i];
-            bestDist = d;
-          }
-        }
-        newBefore = best * pairTotal;
-      }
-
-      newBefore = Math.min(Math.max(newBefore, minSize), pairTotal - minSize);
-      let newAfter = pairTotal - newBefore;
-
-      if (!Number.isFinite(newBefore) || !Number.isFinite(newAfter)) {
-        return;
-      }
-
-      if (newAfter < minSize) {
-        newAfter = minSize;
-        newBefore = pairTotal - minSize;
-      }
-
-      const newSizesPixels = [...state.initialSizes];
-      newSizesPixels[state.index] = newBefore;
-      newSizesPixels[state.index + 1] = newAfter;
-
-      const total = newSizesPixels.reduce((acc, size) => acc + size, 0);
-      const normalized = total > 0 ? newSizesPixels.map((size) => size / total) : [];
-
-      splitNode.sizes = normalized;
-      const children = Array.from(state.container.querySelectorAll<HTMLElement>(':scope > .dock-split__child'));
-      normalized.forEach((size, idx) => {
-        if (children[idx]) {
-          children[idx].style.flex = `${Math.max(size, 0)} 1 0`;
-        }
-      });
-      this.dispatchLayoutChanged();
     }
 
     if (this.floatingResizeState && event.pointerId === this.floatingResizeState.pointerId) {
@@ -1857,15 +1648,6 @@ export class MintDockManagerElement extends LitElement {
   private onPointerUp(event: PointerEvent): void {
     if (this.cornerResizeState && event.pointerId === this.cornerResizeState.pointerId) {
       this.endCornerResize(event.pointerId);
-    }
-    if (this.resizeState && event.pointerId === this.resizeState.pointerId) {
-      const divider = this.resizeState.divider;
-      divider.dataset['resizing'] = 'false';
-      divider.releasePointerCapture(this.resizeState.pointerId);
-      this.resizeState = null;
-      this.scheduleRenderIntersectionHandles();
-      this.activeSnapAxis = null;
-      this.activeSnapTargets = [];
     }
 
     if (this.floatingDragState && event.pointerId === this.floatingDragState.pointerId) {
