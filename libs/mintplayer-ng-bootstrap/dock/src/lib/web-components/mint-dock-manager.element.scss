@@ -67,14 +67,15 @@
   gap: 0.5rem;
   padding: 0.35rem 0.75rem;
   cursor: move;
-  // Preserve the 0.6 → 0.25 alpha fade by composing on the secondary-bg
-  // RGB triplet. --bs-secondary-bg alone is solid and would lose the gradient.
+  // Original was slate (rgb 148, 163, 184) — a blue-grey. --bs-secondary-bg
+  // alone reads as flat gray, so compose the gradient on --bs-primary-rgb at
+  // low alpha to keep the blue cast tied to the rest of the dock palette.
   background: linear-gradient(
     to bottom,
-    rgba(var(--bs-secondary-bg-rgb), 0.6),
-    rgba(var(--bs-secondary-bg-rgb), 0.25)
+    rgba(var(--bs-primary-rgb), 0.15),
+    rgba(var(--bs-primary-rgb), 0.05)
   );
-  border-bottom: 1px solid var(--bs-border-color);
+  border-bottom: 1px solid var(--bs-primary-border-subtle);
   user-select: none;
   -webkit-user-select: none;
 }
@@ -99,13 +100,15 @@
   position: absolute;
   pointer-events: auto;
   z-index: 2;
-  background: var(--bs-secondary-bg-subtle);
+  // Match the chrome's blue tint so resizer affordances stay visually
+  // tied to the floating window's identity.
+  background: rgba(var(--bs-primary-rgb), 0.1);
   transition: background 120ms ease;
 }
 
 .dock-floating__resizer:hover,
 .dock-floating__resizer[data-resizing='true'] {
-  background: var(--bs-secondary-bg);
+  background: rgba(var(--bs-primary-rgb), 0.3);
 }
 
 .dock-floating__resizer--top,
