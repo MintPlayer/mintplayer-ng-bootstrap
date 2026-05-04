@@ -428,3 +428,278 @@ palette shift.
 - [x] Verified: `getComputedStyle(<mint-dock-manager>).getPropertyValue('--bs-primary')` resolves to the host page's Bootstrap value (custom-property cascade through Shadow DOM).
 - [x] No visual regression vs Phase 2 except the intentional palette shift. Side-by-side screenshot diff against the Phase-2 dock as the baseline.
 - [x] PRD index updated to mark Phases 1, 2, 3 complete.
+
+### Phase 4 — Stabilise nested-splitter sizing
+
+#### Problem statement
+
+After Phase 2 swapped each `DockSplitNode` for a `<mp-splitter>`, dragging an
+inner divider can shift the **parent** splitter's panel sizes mid-drag. The
+user-reported symptom: "in the dock, when resizing a horizontal splitter, the
+adjacent (parent) splitter is also shifting at the moment." On `master`
+(commit `c5272ad2`, before the embed refactor) the same nested-split
+configuration resized cleanly — only the two children adjacent to the dragged
+divider moved.
+
+##### Reproducible measurement (initial layout, no `node.sizes`)
+
+Layout: horizontal split where the second child is itself a horizontal split
+(two stacks). All `DockSplitNode.sizes` empty, so `renderSplit`'s
+`if (sizes.length > 0)` branch never fires and `setPanelSizes` is never
+called. Both splitters' panel-wrappers stay in their initial state: class
+`panel-wrapper flex-grow`, computed `flex: 1 1 auto`, no inline width.
+
+Dispatching `mousedown` on the inner divider, then `mousemove` on `document`
+with `clientX` shifted by -120 px:
+
+| Phase                  | Outer panel widths (px) | Inner panel widths (px) |
+|------------------------|--------------------------|--------------------------|
+| before drag            | 803.19 / 946.81          | 610.33 / 328.48          |
+| first inner mousemove  | **670.58 / 1079.42**     | 556.63 / 514.80          |
+| ...                    | 670.58 / 1079.42         | (continues to track)     |
+| mouseup                | 670.58 / 1079.42         | 796.63 / 274.80          |
+
+The outer panel containing the inner splitter jumps from 946.81 px to
+1079.42 px on the **very first** inner-mousemove — a +132.61 px shift, while
+the user's pointer has only moved one delta on the inner divider. The outer
+shift is irreversible during the drag (it stays at 670.58 / 1079.42 even as
+the inner panels keep moving) because the outer wrappers never had explicit
+sizes to revert to.
+
+The same drag with `sizes: [1, 1.5]` on the outer node and `sizes: [2, 1]`
+on the inner node (so the dock calls `setPanelSizes` on both during render):
+outer widths stay rock-solid at 700 / 1050 throughout the entire drag. No
+shift.
+
+##### Comparison with master
+
+`mint-dock-manager.element.ts` on `master` rendered each `DockSplitNode`'s
+children directly (`renderSplit` lines 1414-1468) with this critical line
+(line 1432):
+
+```ts
+if (typeof size === 'number' && Number.isFinite(size)) {
+  childWrapper.style.flex = `${Math.max(size, 0)} 1 0`;
+} else {
+  childWrapper.style.flex = '1 1 0';   // ← flex-basis: 0
+}
+```
+
+Every `.dock-split__child`, including those without persisted sizes, got
+`flex-basis: 0`. CSS spec: with `flex-basis: 0`, the flex item's preferred
+size is 0 and free space distributes by `flex-grow` ratio — **content
+intrinsic size cannot leak through**. mp-splitter today does the opposite:
+`splitter.styles.scss:37` sets `flex-grow: 1` (which resolves to
+`flex: 1 1 auto`, basis `auto`), so each panel-wrapper's preferred size is
+its content's intrinsic size. When an inner mp-splitter assigns explicit
+pixel widths to its own wrappers, those widths roll up through `auto` basis
+into the inner-splitter container's intrinsic width, which becomes the
+parent wrapper's preferred size, which the parent's flex-redistribution then
+honours.
+
+The dock on master also imperatively rewrote every child's `flex` value on
+every `pointermove` (lines 1737-1742), keeping the basis-0 contract intact
+through the drag.
+
+#### Root cause
+
+`.panel-wrapper { flex-grow: 1 }` in
+`libs/mp-splitter-wc/src/styles/splitter.styles.scss:37` is the longhand,
+not the `flex: 1` shorthand. The longhand leaves `flex-basis` at its
+initial `auto`, which lets each panel-wrapper's preferred size equal its
+content's intrinsic size. mp-splitter's `applyPanelSizes` only sets explicit
+`width` / `height` on wrappers it has sizes for
+(`mp-splitter.ts:321-333`); on initial layout (no `setPanelSizes` call yet)
+**no** wrapper has explicit sizes — they are all `flex: 1 1 auto`. As soon
+as a nested mp-splitter starts a drag and writes `width: Xpx` on its own
+wrappers, the nested splitter's flex container develops an intrinsic width
+that differs from what the outer flex distributed. The outer wrapper's
+`flex-basis: auto` resolves to that new intrinsic width, the outer flex
+container redistributes, and the parent's panels visibly shift.
+
+Three subordinate findings rule in/out the alternative hypotheses listed
+in the original investigation brief:
+
+- **`::slotted(*) { width: 100%; height: 100% }` (splitter.styles.scss:121)**
+  is irrelevant. The slotted content fills its panel-wrapper, but
+  panel-wrapper itself sits inside the flex container, and it's the
+  panel-wrapper's `flex-basis: auto` that lets intrinsic content size leak.
+  Setting `100%` on the slotted child doesn't change the wrapper's basis.
+- **The dock's `dispatchLayoutChanged` round-trip is not implicated**
+  during the live drag — `dispatchLayoutChanged` only fires on
+  `resize-end`, not during `pointermove`. Repeated measurement during the
+  drag confirms the parent shift happens on the first inner mousemove,
+  before any layout-changed dispatch.
+- **Subpixel rounding** is not the mechanism. The shift is +132 px on a
+  ~1750 px container — three orders of magnitude too large to be rounding.
+
+So: only the `flex-basis: auto` hypothesis matches the measurements.
+
+#### Design
+
+The fix belongs in mp-splitter, not the dock. The dock has no business
+knowing whether a sibling splitter happens to be using `flex-basis: 0` vs
+`auto`; mp-splitter is the one that owns its panel-wrappers' flex sizing.
+The user's preferred phrasing — "after the first layout-phase, the
+splitters will have to store the sizes of all regions" — captures the
+right invariant: **once mp-splitter has measured itself, every
+panel-wrapper has an explicit pixel size, never `flex: 1 1 auto`.**
+
+##### Approach: pin all panel sizes after first measure (favoured)
+
+In `firstUpdated`'s existing `requestAnimationFrame` callback (mp-splitter.ts
+line 72-74), after `updatePanelsFromSlot()`:
+
+1. If no explicit sizes have been set (the stateManager's `panelSizes` is
+   empty), measure each panel-wrapper's current size via `getBoundingClientRect()`
+   on the splitter's main axis.
+2. Call `applyPanelSizes(measuredSizes)` so every wrapper gets `width: Xpx` /
+   `height: Xpx` and loses the `flex-grow` class.
+3. Persist the measured sizes into the stateManager so a later `getPanelSizes`
+   reflects reality and so `updatePanelsFromSlot`'s "re-apply stored sizes"
+   branch (mp-splitter.ts:226-228, added in commit `7033e1a8`) keeps working
+   across slot churn.
+
+This makes the contract: **mp-splitter is in flex-grow mode for at most one
+animation frame after first connect; thereafter every wrapper is explicitly
+sized in pixels.** A nested mp-splitter starting a drag now finds itself
+inside a parent wrapper that is `width: Xpx` (not `auto`), so the parent
+doesn't reflow.
+
+The `dispatchEvent('resize-start')` already fires on every drag start, but
+no event is needed for the initial pin — it is purely a render-time
+internal operation. No public API change required.
+
+##### Container resize behaviour
+
+Pinning panels in pixels naively means the splitter no longer redistributes
+when its container grows or shrinks (e.g., window resize). Master inherited
+correct behaviour from `flex-grow` ratios (basis 0). To match master:
+mp-splitter installs a `ResizeObserver` on its splitter-container. When the
+container's main-axis size changes, the splitter scales every wrapper's
+pinned pixel size by `newContainerSize / oldContainerSize`, then calls
+`applyPanelSizes` with the scaled values. This preserves the proportions
+the user has set while keeping wrappers in explicit-pixel mode.
+
+The ResizeObserver replaces the implicit "let flexbox handle it" flow that
+master got for free. Cost: ~30 LoC + one new field for the last-observed
+container size.
+
+##### Alternatives considered
+
+- **Change `.panel-wrapper { flex-grow: 1 }` → `.panel-wrapper { flex: 1 1 0 }`**.
+  This is the master-equivalent CSS-only fix. It works for the live-drag
+  case (intrinsic content can no longer leak through). But mp-splitter's
+  `applyPanelSizes` writes `width: Xpx`, not `flex: <ratio> 1 0`, so once a
+  drag has happened the wrappers are no longer in flex-grow mode — they
+  become `flex: 1 1 0` *plus* an explicit `width`, and the resolved size is
+  the explicit width regardless of free space. That's fine for the
+  drag-active case but means container resize after a drag stops working
+  (the wrappers are pinned to pre-resize widths, no scaling). To get the
+  master-equivalent post-drag-resize behaviour we'd have to either rewrite
+  `applyPanelSizes` to emit `flex: <ratio> 1 0` (deviating from the
+  current public-API contract that `setPanelSizes(sizes)` interprets `sizes`
+  as pixels), or add the same ResizeObserver. Either way the ResizeObserver
+  solution is the lower-risk delta — and it composes with the pin-on-first-
+  measure invariant.
+- **Push the responsibility onto the dock**: the dock would call
+  `setPanelSizes(measuredPixels)` on every `<mp-splitter>` after first
+  render even when `node.sizes` is empty, then write the measured sizes
+  back into the layout tree. This works, but mp-splitter is the natural
+  owner of "my own panel-wrapper sizes" and a non-Angular consumer
+  embedding `<mp-splitter>` directly would hit the same bug. Fixing it in
+  the splitter benefits every consumer.
+- **Drop the per-drag pin and rely on `flex-basis: 0` permanently**: this
+  is master's behaviour. The downside is that mp-splitter loses the
+  ability to expose absolute pixel sizes via `getPanelSizes` — every read
+  becomes a relative ratio. The current API contract says
+  `getPanelSizes(): number[]` returns measured pixels, and the dock
+  serialises those into `node.sizes` as ratios. Keeping the
+  pixel-internal model and adding a one-frame-late pin matches the
+  existing contract.
+
+##### Touch points with existing API
+
+- `setPanelSizes(sizes: number[])`: unchanged signature and contract
+  (pixel sizes). Internal: still calls `applyPanelSizes`. After Phase 4 the
+  function is called automatically once on first measure when the
+  consumer hasn't supplied initial sizes.
+- `getPanelSizes(): number[]`: unchanged. After Phase 4 it returns
+  measured pixel sizes for the initial layout case too (instead of an
+  empty array, which is what the current state manager returns when
+  no resize has happened yet — verify in `SplitterStateManager`).
+- `resize-start` / `resizing` / `resize-end` events: unchanged. The
+  initial pin does **not** dispatch a `resize-end` (no user action
+  occurred).
+- The dock's `renderSplit` (`mint-dock-manager.element.ts:1380-1451`) needs
+  no changes. The dock keeps converting `node.sizes` weights → pixels via
+  `setPanelSizes` for non-empty cases, and now relies on mp-splitter's
+  internal pin for the empty-sizes case. The dock's `resize-end` handler
+  also keeps working unchanged because mp-splitter still fires the same
+  pixel sizes.
+
+#### Implementation steps
+
+1. **Add `pinSizesFromCurrentLayout()` private method to `MpSplitter`**: walk
+   `this.panelWrappers`, read `getBoundingClientRect()[axis]` for each, and
+   call `this.applyPanelSizes(measured)` plus
+   `this.stateManager.setPanelSizes(measured)`. Idempotent — calling twice
+   in a row is a no-op visually.
+2. **Wire it into `firstUpdated`'s raf**: after `updatePanelsFromSlot()`, if
+   `stateManager.getState().panelSizes.length === 0`, call
+   `pinSizesFromCurrentLayout()`. Order matters: panel-wrappers must exist
+   first, which is why this lives inside the existing raf, not at the top
+   of `firstUpdated`.
+3. **Wire it into `updatePanelsFromSlot` for the slotchange-after-mount
+   path**: when the wrapper count changes (panel added/removed) and the
+   stateManager has no stored sizes, re-pin from the measured layout. The
+   existing "re-apply stored sizes" branch (lines 226-228) handles the
+   has-stored-sizes case; this is its mirror for the no-stored-sizes case.
+4. **Install `ResizeObserver` on `splitter-container`**: in `firstUpdated`
+   after panel pin. On container size change, compute scaling factor on
+   the main axis and call `applyPanelSizes(currentSizes.map(s => s * scale))`,
+   then update stateManager. Bail out if no stored sizes (the pin in step 1
+   hasn't run yet) or if the change is below a 1-pixel threshold (avoid
+   feedback loops with subpixel rounding from the scaling itself).
+5. **Drop the `flex-grow` CSS class entirely** from
+   `splitter.styles.scss:34-38` once steps 1-4 are in place — every wrapper
+   has an explicit `width` / `height` after the first raf, so the class
+   serves no purpose. Optional but tidies up.
+6. **Add a unit test in `libs/mp-splitter-wc/`** that mounts a splitter with
+   no initial sizes, runs one raf, and asserts every panel-wrapper has an
+   inline `width` (or `height`) and no `flex-grow` class.
+7. **Add a Playwright integration test in the dock demo** that reproduces the
+   nested-horizontal-in-horizontal layout, drags the inner divider, and
+   asserts the outer panel widths are unchanged across the drag.
+
+#### Acceptance criteria
+
+- [ ] `mp-splitter` panel-wrappers have explicit `width` (horizontal) or
+      `height` (vertical) after the first animation frame, even when the
+      consumer never calls `setPanelSizes`. Verified by browser inspection
+      of `getComputedStyle(wrapper).width` returning a px value, not `auto`.
+- [ ] Dragging an inner mp-splitter's divider does not shift the parent
+      mp-splitter's panel sizes during the drag. Verified by dispatching
+      `mousedown` + a sequence of `mousemove`s on the inner divider and
+      measuring the parent's panel-wrapper rects on each step — the parent
+      widths must remain constant (within ±1 px subpixel rounding).
+- [ ] When the splitter's container resizes (e.g., window resize), every
+      panel-wrapper scales proportionally to the container delta. Verified
+      by scripting `mint-dock-manager`'s host element to a new size and
+      asserting the ratios between panel widths are preserved within
+      ±1 px.
+- [ ] After dragging an inner divider with no initial `node.sizes`, the
+      dock's serialised layout (via `dispatchLayoutChanged` → `[attr.layout]`)
+      reflects the post-drag pixel ratios. Round-tripping the layout
+      through `setAttribute('layout', JSON.stringify(layout))` produces the
+      same visible panel sizes.
+- [ ] Existing `mp-splitter` unit tests pass unchanged. New unit test for
+      the auto-pin invariant lands as part of this phase.
+- [ ] No regression in master's existing dock behaviours: tab activation,
+      tab drag-to-detach, single-divider drag in non-nested splits,
+      intersection-handle 4-way drag, snap markers during corner drag,
+      drop indicator + drop joystick, floating-window resize, layout
+      serialisation round-trip.
+- [ ] `splitter.styles.scss`'s `.panel-wrapper { flex-grow: 1 }` rule is
+      removed (or kept only as a fallback before the first raf, with a
+      comment).
