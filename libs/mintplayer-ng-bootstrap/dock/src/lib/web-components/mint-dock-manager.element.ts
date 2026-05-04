@@ -126,7 +126,6 @@ export class MintDockManagerElement extends LitElement {
       }
     | null = null;
   private intersectionRaf: number | null = null;
-  private intersectionHandles: Map<string, HTMLElement> = new Map();
   private rootResizeObserver: ResizeObserver | null = null;
   private dockedMutationObserver: MutationObserver | null = null;
   private cornerResizeState:
@@ -221,18 +220,18 @@ export class MintDockManagerElement extends LitElement {
   constructor() {
     super();
     this.instanceId = `mint-dock-${++MintDockManagerElement.instanceCounter}`;
+    // Set windowRef eagerly so connectedCallback's window-level drag listeners
+    // (added before firstUpdated runs) can actually attach. Without this,
+    // win?.addEventListener was a silent no-op on first connect and HTML5
+    // drag-to-detach gestures never reached the dock — the floating wrapper
+    // was created but stayed at its conversion-time coordinates because the
+    // 'drag' listener that updates its position was never attached.
+    this.windowRef = typeof window !== 'undefined' ? window : null;
     this.onPointerMove = this.onPointerMove.bind(this);
     this.onPointerUp = this.onPointerUp.bind(this);
-    this.onDragOver = this.onDragOver.bind(this);
-    this.onGlobalDragOver = this.onGlobalDragOver.bind(this);
-    this.onGlobalDragEnd = this.onGlobalDragEnd.bind(this);
-    this.onDrop = this.onDrop.bind(this);
-    this.onDragLeave = this.onDragLeave.bind(this);
-    this.onDrag = this.onDrag.bind(this);
-    this.onDragMouseMove = this.onDragMouseMove.bind(this);
-    this.onDragTouchMove = this.onDragTouchMove.bind(this);
-    this.onDragMouseUp = this.onDragMouseUp.bind(this);
-    this.onDragTouchEnd = this.onDragTouchEnd.bind(this);
+    this.onDragPointerMove = this.onDragPointerMove.bind(this);
+    this.onDragPointerUp = this.onDragPointerUp.bind(this);
+    this.onDragPointerCancel = this.onDragPointerCancel.bind(this);
     this.onSplitterResize = this.onSplitterResize.bind(this);
   }
 
@@ -286,25 +285,9 @@ export class MintDockManagerElement extends LitElement {
     // a drop target when the main layout is empty.
     this.dockedEl.dataset['path'] = this.formatPath({ type: 'docked', segments: [] });
 
-    // Now safe to attach shadow-DOM-targeted event listeners.
-    this.rootEl.addEventListener('dragover', this.onDragOver);
-    this.rootEl.addEventListener('drop', this.onDrop);
-    this.rootEl.addEventListener('dragleave', this.onDragLeave);
-    this.dropJoystick.addEventListener('dragover', this.onDragOver);
-    this.dropJoystick.addEventListener('drop', this.onDrop);
-    this.dropJoystick.addEventListener('dragleave', this.onDragLeave);
-    this.dropJoystickButtons.forEach((btn) => {
-      const handler = (e: DragEvent) => {
-        if (!this.dragState) return;
-        const z = btn.dataset['zone'];
-        if (this.isDropZone(z)) {
-          this.updateDropJoystickActiveZone(z);
-          e.preventDefault();
-        }
-      };
-      btn.addEventListener('dragenter', handler);
-      btn.addEventListener('dragover', handler);
-    });
+    // Drop targeting (drop indicator + joystick zone selection) runs entirely
+    // off pointer-based hit-testing in updatePaneDragDropTargetFromPoint and
+    // findDropZoneByPoint — no HTML5 dragover/drop/dragleave listeners needed.
 
     // Render any layout that was set before the shadow DOM existed.
     this.renderLayout();
@@ -329,23 +312,10 @@ export class MintDockManagerElement extends LitElement {
     if (!this.hasAttribute('role')) {
       this.setAttribute('role', 'application');
     }
-    const win = this.windowRef;
-    win?.addEventListener('dragover', this.onGlobalDragOver);
-    win?.addEventListener('drag', this.onDrag);
-    win?.addEventListener('dragend', this.onGlobalDragEnd, true);
   }
 
   override disconnectedCallback(): void {
-    this.rootEl?.removeEventListener('dragover', this.onDragOver);
-    this.rootEl?.removeEventListener('drop', this.onDrop);
-    this.rootEl?.removeEventListener('dragleave', this.onDragLeave);
-    this.dropJoystick?.removeEventListener('dragover', this.onDragOver);
-    this.dropJoystick?.removeEventListener('drop', this.onDrop);
-    this.dropJoystick?.removeEventListener('dragleave', this.onDragLeave);
     const win = this.windowRef;
-    win?.removeEventListener('dragover', this.onGlobalDragOver);
-    win?.removeEventListener('drag', this.onDrag);
-    win?.removeEventListener('dragend', this.onGlobalDragEnd, true);
     this.stopDragPointerTracking();
     win?.removeEventListener('pointermove', this.onPointerMove);
     win?.removeEventListener('pointerup', this.onPointerUp);
@@ -657,44 +627,16 @@ export class MintDockManagerElement extends LitElement {
   private renderIntersectionHandles(): void {
     const layer = this.shadowRoot?.querySelector<HTMLElement>('.dock-intersections-layer, .dock-intersection-layer');
     if (!layer) return;
-    // Keep existing handles; we will diff and update positions
-    // 1) Clean up legacy handles (created before keying) that lack a data-key
-    Array.from(layer.querySelectorAll('.dock-intersection-handle'))
-      .filter((el) => !(el as HTMLElement).dataset['key'])
-      .forEach((el) => el.remove());
-
-    // 2) Rebuild the internal map from DOM to avoid drifting state and dedupe duplicates
-    const domByKey = new Map<string, HTMLElement>();
-    Array.from(layer.querySelectorAll<HTMLElement>('.dock-intersection-handle[data-key]')).forEach((el) => {
-      const key = el.dataset['key'] ?? '';
-      if (!key) return;
-      if (domByKey.has(key)) {
-        // Remove duplicates with the same key, keep the first one
-        el.remove();
-        return;
-      }
-      domByKey.set(key, el);
-      // Ensure listener is attached only once
-      if (!el.dataset['listener']) {
-        el.dataset['listener'] = '1';
-        // Listener will be (re)assigned later when we know the current h/v pair
-      }
-    });
-    // Sync internal map with DOM
-    this.intersectionHandles = domByKey;
 
     const rootRect = this.rootEl.getBoundingClientRect();
 
-    // If a corner resize is active, only update that handle's position and avoid creating new ones.
-    // The keys stored on handles use the raw splitter dataset['path'] format
-    // (segments joined with '/'), matching how the main rendering path below
-    // tags them. Use reference equality on st.handle for dedupe — that way
-    // we don't depend on any key-format round-trip during the drag.
+    // Active corner-resize: keep st.handle alive (it owns pointer capture and
+    // the cornerResizeState references it). Update its position from current
+    // divider rects, drop every other handle by reference.
     if (this.cornerResizeState) {
       const st = this.cornerResizeState;
       const h0 = st.hs[0];
       const v0 = st.vs[0];
-      // Resolve the dividers via each splitter's shadow root.
       const hSplitter = this.findSplitterByPath(h0.path.segments);
       const vSplitter = this.findSplitterByPath(v0.path.segments);
       const hDiv = hSplitter ? this.getSplitterDividers(hSplitter)[h0.index] : null;
@@ -704,66 +646,48 @@ export class MintDockManagerElement extends LitElement {
         const vr = vDiv.getBoundingClientRect();
         const x = vr.left + vr.width / 2 - rootRect.left;
         const y = hr.top + hr.height / 2 - rootRect.top;
-        const handle = st.handle;
-        handle.style.left = `${x}px`;
-        handle.style.top = `${y}px`;
-        // Drop any sibling handles by reference; only the active one survives.
+        st.handle.style.left = `${x}px`;
+        st.handle.style.top = `${y}px`;
         Array.from(layer.querySelectorAll<HTMLElement>('.dock-intersection-handle')).forEach((el) => {
-          if (el !== handle) {
-            el.remove();
-          }
+          if (el !== st.handle) el.remove();
         });
-        const key = handle.dataset['key'] ?? '';
-        this.intersectionHandles = key ? new Map([[key, handle]]) : new Map();
       }
       return;
     }
-    // Each <mp-splitter class="dock-split"> hosts its dividers inside its
-    // shadow root. Walk every splitter, then flat-map its shadow dividers
-    // into the h/v buckets driven by the splitter's data-direction.
-    const allSplitters = Array.from(
-      this.shadowRoot?.querySelectorAll<HTMLElement>('.dock-split') ?? [],
-    );
+
+    // Idle path: full clear + rebuild. Cheaper to reason about than incremental
+    // diffing, and handles' positions are always derived from current divider
+    // rects so a layout change (drop, splitter restructure, flex redistribution)
+    // can never leave a stale glyph behind.
+    layer.replaceChildren();
 
     type DividerInfo = {
-      el: HTMLElement;
       rect: DOMRect;
-      path: DockPath | null;
       pathStr: string;
       index: number;
-      container: HTMLElement;
     };
     const hDividers: DividerInfo[] = [];
     const vDividers: DividerInfo[] = [];
 
+    const allSplitters = Array.from(
+      this.shadowRoot?.querySelectorAll<HTMLElement>('.dock-split') ?? [],
+    );
     allSplitters.forEach((splitter) => {
-      const direction = (splitter.dataset['direction'] as 'horizontal' | 'vertical' | undefined) ?? undefined;
+      const direction = splitter.dataset['direction'] as 'horizontal' | 'vertical' | undefined;
       const pathStr = splitter.dataset['path'] ?? '';
-      const path = this.parsePath(pathStr);
       this.getSplitterDividers(splitter).forEach((el, index) => {
-        const info: DividerInfo = {
-          el,
-          rect: el.getBoundingClientRect(),
-          path,
-          pathStr,
-          index,
-          container: splitter,
-        };
-        // node.direction === 'horizontal' means children flow left-to-right,
-        // which yields VERTICAL divider bars (and vice-versa).
-        if (direction === 'horizontal') {
-          vDividers.push(info);
-        } else if (direction === 'vertical') {
-          hDividers.push(info);
-        }
+        const info: DividerInfo = { rect: el.getBoundingClientRect(), pathStr, index };
+        // direction='horizontal' means children flow left-to-right, so the
+        // divider bars between them are VERTICAL (and vice-versa).
+        if (direction === 'horizontal') vDividers.push(info);
+        else if (direction === 'vertical') hDividers.push(info);
       });
     });
 
-    const desiredKeys = new Set<string>();
-
-    const tol = 24; // px tolerance to account for gaps and subpixel layout
-    const groupMap = new Map<string, HTMLElement>();
-    const groupPairs = new Map<string, Array<{ h: { pathStr: string; index: number }; v: { pathStr: string; index: number } }>>();
+    // Group intersections that round to the same on-screen pixel, so two
+    // sibling splitters whose dividers happen to overlap share one handle.
+    const tol = 24;
+    const groups = new Map<string, { x: number; y: number; pairs: Array<{ h: { pathStr: string; index: number }; v: { pathStr: string; index: number } }> }>();
     hDividers.forEach((h) => {
       const hCenterY = h.rect.top + h.rect.height / 2;
       vDividers.forEach((v) => {
@@ -771,57 +695,36 @@ export class MintDockManagerElement extends LitElement {
         const dx = vCenterX < h.rect.left ? h.rect.left - vCenterX : vCenterX > h.rect.right ? vCenterX - h.rect.right : 0;
         const dy = hCenterY < v.rect.top ? v.rect.top - hCenterY : hCenterY > v.rect.bottom ? hCenterY - v.rect.bottom : 0;
         if (dx > tol || dy > tol) return;
-
         const x = vCenterX - rootRect.left;
         const y = hCenterY - rootRect.top;
-        const key = `${h.pathStr}:${h.index}|${v.pathStr}:${v.index}`;
         const gk = `${Math.round(x)}:${Math.round(y)}`;
-        let handle = groupMap.get(gk);
-        if (!handle) {
-          // Try reuse via existing pair mapping
-          handle = this.intersectionHandles.get(key) ?? null as any;
-          if (!handle) {
-            handle = this.documentRef.createElement('div');
-            handle.classList.add('dock-intersection-handle', 'glyph');
-            handle.setAttribute('role', 'separator');
-            handle.setAttribute('aria-label', 'Resize split intersection');
-            handle.dataset['key'] = key;
-            handle.dataset['listener'] = '1';
-            handle.addEventListener('pointerdown', (ev) => this.beginCornerResize(ev, h, v, handle!));
-            handle.addEventListener('dblclick', (ev) => this.onIntersectionDoubleClick(ev, handle!));
-            layer.appendChild(handle);
-          }
-          groupMap.set(gk, handle);
-        }
-        // Track pairs for this group and map all pair keys to the same handle
-        const arr = groupPairs.get(gk) ?? [];
-        arr.push({ h: { pathStr: h.pathStr ?? '', index: h.index }, v: { pathStr: v.pathStr ?? '', index: v.index } });
-        groupPairs.set(gk, arr);
-        this.intersectionHandles.set(key, handle);
-        // Update position for the grouped handle
-        handle.style.left = `${x}px`;
-        handle.style.top = `${y}px`;
+        const group = groups.get(gk) ?? { x, y, pairs: [] };
+        group.pairs.push({ h: { pathStr: h.pathStr, index: h.index }, v: { pathStr: v.pathStr, index: v.index } });
+        groups.set(gk, group);
       });
     });
 
-    // Attach grouped pairs data to each handle and prune stale ones
-    const keep = new Set<HTMLElement>(groupMap.values());
-    groupMap.forEach((handle, gk) => {
-      const pairs = groupPairs.get(gk) ?? [];
-      handle.dataset['pairs'] = JSON.stringify(pairs);
+    groups.forEach((group, gk) => {
+      const handle = this.documentRef.createElement('div');
+      handle.classList.add('dock-intersection-handle', 'glyph');
+      handle.setAttribute('role', 'separator');
+      handle.setAttribute('aria-label', 'Resize split intersection');
+      const firstPair = group.pairs[0];
+      const key = `${firstPair.h.pathStr}:${firstPair.h.index}|${firstPair.v.pathStr}:${firstPair.v.index}`;
+      handle.dataset['key'] = key;
+      handle.dataset['pairs'] = JSON.stringify(group.pairs);
+      handle.style.left = `${group.x}px`;
+      handle.style.top = `${group.y}px`;
+      // beginCornerResize/onIntersectionDoubleClick read data-pairs to
+      // reconstruct the (h, v) pair list, so the (h, v) args we pass here
+      // are only used as a fallback when data-pairs is empty — safe to use
+      // the first pair's structure as the seed.
+      const seedH = { path: this.parsePath(firstPair.h.pathStr), index: firstPair.h.index, container: this.findSplitterByPath(this.parsePath(firstPair.h.pathStr)?.segments ?? []) ?? this.rootEl, rect: new DOMRect() };
+      const seedV = { path: this.parsePath(firstPair.v.pathStr), index: firstPair.v.index, container: this.findSplitterByPath(this.parsePath(firstPair.v.pathStr)?.segments ?? []) ?? this.rootEl, rect: new DOMRect() };
+      handle.addEventListener('pointerdown', (ev) => this.beginCornerResize(ev, seedH, seedV, handle));
+      handle.addEventListener('dblclick', (ev) => this.onIntersectionDoubleClick(ev, handle));
+      layer.appendChild(handle);
     });
-    Array.from(layer.querySelectorAll<HTMLElement>('.dock-intersection-handle')).forEach((el) => {
-      if (!keep.has(el)) {
-        el.remove();
-      }
-    });
-    // Reset intersectionHandles to only currently mapped keys
-    const newMap = new Map<string, HTMLElement>();
-    groupPairs.forEach((pairs, gk) => {
-      const handle = groupMap.get(gk)!;
-      pairs.forEach((p) => newMap.set(`${p.h.pathStr}:${p.h.index}|${p.v.pathStr}:${p.v.index}`, handle));
-    });
-    this.intersectionHandles = newMap;
   }
 
   private beginCornerResize(
@@ -1606,20 +1509,17 @@ export class MintDockManagerElement extends LitElement {
       headerSpan.dataset['pane'] = paneName;
       headerSpan.dataset['tabId'] = tabId;
       headerSpan.textContent = this.titles[paneName] ?? paneName;
-      headerSpan.draggable = true;
 
+      // Pointer-only drag (no HTML5 dnd). pointerdown captures metrics + arms
+      // a threshold gesture; once the pointer moves >threshold pixels we
+      // promote it to a real pane drag via beginPaneDrag. Using pointer
+      // events sidesteps the entire class of HTML5 dnd quirks (cancellation
+      // when source DOM is removed mid-drag, suppressed mousemove, bogus 0/0
+      // coordinates in Firefox, browser-specific drag-image behavior).
       headerSpan.addEventListener('pointerdown', (event) => {
         this.captureTabDragMetrics(event, stack);
+        this.armPaneDragGesture(event, this.clonePath(location), paneName, stack);
         event.stopPropagation();
-      });
-      headerSpan.addEventListener('pointerup', () => this.clearPendingTabDragMetrics());
-      headerSpan.addEventListener('pointercancel', () => this.clearPendingTabDragMetrics());
-      headerSpan.addEventListener('dragstart', (event) => {
-        this.beginPaneDrag(event, this.clonePath(location), paneName, stack);
-      });
-      headerSpan.addEventListener('dragend', () => {
-        this.endPaneDrag();
-        this.clearPendingTabDragMetrics();
       });
 
       // Content wrapper — projected via mp-tab-control's `${tabId}-content`
@@ -1796,36 +1696,61 @@ export class MintDockManagerElement extends LitElement {
     this.pendingTabDragMetrics = null;
   }
 
-  private beginPaneDrag(
-    event: DragEvent,
+  /**
+   * Pointerdown handler arms a "may become a drag" gesture. Once the pointer
+   * moves past `threshold` pixels we promote it to an actual pane drag via
+   * {@link beginPaneDrag}; if the user releases first we just clear the
+   * pending tab metrics. All listeners self-clean on resolve so the gesture
+   * stays scoped to a single pointerdown.
+   */
+  private armPaneDragGesture(
+    startEvent: PointerEvent,
     path: DockPath,
     pane: string,
     stackEl: HTMLElement | null,
   ): void {
-    if (!event.dataTransfer) {
-      return;
-    }
+    if (startEvent.pointerType === 'mouse' && startEvent.button !== 0) return;
+    const win = this.windowRef;
+    if (!win) return;
+    const startX = startEvent.clientX;
+    const startY = startEvent.clientY;
+    const pointerId = startEvent.pointerId;
+    const threshold = 5;
+    let resolved = false;
 
-    // Create a ghost element for the drag image. This prevents the browser from cancelling
-    // the drag operation when the original element is removed from the DOM during re-render.
-    const ghost = (event.currentTarget as HTMLElement).cloneNode(true) as HTMLElement;
-    ghost.style.position = 'absolute';
-    ghost.style.left = '-9999px';
-    ghost.style.top = '-9999px';
-    ghost.style.width = `${(event.currentTarget as HTMLElement).offsetWidth}px`;
-    ghost.style.height = `${(event.currentTarget as HTMLElement).offsetHeight}px`;
-    this.shadowRoot?.appendChild(ghost);
+    const cleanup = (): void => {
+      resolved = true;
+      win.removeEventListener('pointermove', onMove, true);
+      win.removeEventListener('pointerup', onRelease, true);
+      win.removeEventListener('pointercancel', onRelease, true);
+    };
 
-    // Use the ghost element as the drag image.
-    // The offset is set to where the user's cursor is on the original element.
-    const dragImgOffsetX = Number.isFinite((event as any).offsetX) ? (event as any).offsetX : 0;
-    const dragImgOffsetY = Number.isFinite((event as any).offsetY) ? (event as any).offsetY : 0;
-    event.dataTransfer.setDragImage(ghost, dragImgOffsetX, dragImgOffsetY);
+    const onMove = (event: PointerEvent): void => {
+      if (resolved || event.pointerId !== pointerId) return;
+      const dx = event.clientX - startX;
+      const dy = event.clientY - startY;
+      if (Math.hypot(dx, dy) < threshold) return;
+      cleanup();
+      this.beginPaneDrag(event, path, pane, stackEl);
+    };
 
-    // The ghost element is no longer needed after the drag image is set.
-    // We defer its removal to ensure the browser has captured it.
-    setTimeout(() => ghost.remove(), 0);
+    const onRelease = (event: PointerEvent): void => {
+      if (resolved || event.pointerId !== pointerId) return;
+      cleanup();
+      this.clearPendingTabDragMetrics();
+    };
 
+    win.addEventListener('pointermove', onMove, true);
+    win.addEventListener('pointerup', onRelease, true);
+    win.addEventListener('pointercancel', onRelease, true);
+  }
+
+  private beginPaneDrag(
+    event: PointerEvent,
+    path: DockPath,
+    pane: string,
+    stackEl: HTMLElement | null,
+  ): void {
     const {
       path: sourcePath,
       floatingIndex,
@@ -1854,39 +1779,25 @@ export class MintDockManagerElement extends LitElement {
       startClientX:
         metrics && Number.isFinite(metrics.startClientX)
           ? metrics.startClientX
-          : Number.isFinite(event.clientX)
-          ? event.clientX
-          : undefined,
+          : event.clientX,
       startClientY:
         metrics && Number.isFinite(metrics.startClientY)
           ? metrics.startClientY
-          : Number.isFinite(event.clientY)
-          ? event.clientY
-          : undefined,
+          : event.clientY,
     };
-    // Seed last known pointer position from pointerdown metrics to avoid (0,0) glitches in Firefox
-    if (
-      this.dragState.startClientX !== undefined &&
-      this.dragState.startClientY !== undefined &&
-      Number.isFinite(this.dragState.startClientX) &&
-      Number.isFinite(this.dragState.startClientY)
-    ) {
-      this.lastDragPointerPosition = {
-        x: this.dragState.startClientX as number,
-        y: this.dragState.startClientY as number,
-      };
+    this.lastDragPointerPosition = {
+      x: this.dragState.startClientX as number,
+      y: this.dragState.startClientY as number,
+    };
+    // Prefer the pointer offset relative to the dragged tab to avoid jumps on conversion.
+    if (Number.isFinite(event.offsetX)) {
+      this.dragState.pointerOffsetX = event.offsetX;
     }
-    // Prefer the pointer offset relative to the dragged tab to avoid jumps on conversion
-    if (Number.isFinite((event as any).offsetX)) {
-      this.dragState.pointerOffsetX = (event as any).offsetX as number;
+    if (Number.isFinite(event.offsetY)) {
+      this.dragState.pointerOffsetY = event.offsetY;
     }
-    if (Number.isFinite((event as any).offsetY)) {
-      this.dragState.pointerOffsetY = (event as any).offsetY as number;
-    }
-    this.updateDraggedFloatingPosition(event);
+    this.updateDraggedFloatingPositionFromPoint(event.clientX, event.clientY);
     this.startDragPointerTracking();
-    event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData('text/plain', pane);
 
     // Preferred UX: if the dragged tab is the only one in its stack,
     // immediately convert to a floating window unless it is already the
@@ -1895,17 +1806,15 @@ export class MintDockManagerElement extends LitElement {
       const loc = this.resolveStackLocation(this.dragState.sourcePath);
       if (loc && Array.isArray(loc.node.panes) && loc.node.panes.length === 1) {
         let shouldConvert = false;
-        if (loc.context === "docked") {
+        if (loc.context === 'docked') {
           shouldConvert = true;
-        } else if (loc.context === "floating") {
+        } else if (loc.context === 'floating') {
           const floating = this.floatingLayouts[loc.index];
           const totalPanes = floating && floating.root ? this.countPanesInTree(floating.root) : 0;
-          shouldConvert = totalPanes > 1; // not the only pane in this floating window
+          shouldConvert = totalPanes > 1;
         }
         if (shouldConvert) {
-          const startX = Number.isFinite(event.clientX) ? event.clientX : (this.dragState.startClientX ?? 0);
-          const startY = Number.isFinite(event.clientY) ? event.clientY : (this.dragState.startClientY ?? 0);
-          this.convertPendingTabDragToFloating(startX, startY);
+          this.convertPendingTabDragToFloating(event.clientX, event.clientY);
         }
       }
     }
@@ -1915,7 +1824,7 @@ export class MintDockManagerElement extends LitElement {
     path: DockPath,
     pane: string,
     stackEl: HTMLElement | null,
-    event: DragEvent,
+    event: PointerEvent,
   ): { path: DockPath; floatingIndex: number | null; pointerOffsetX: number; pointerOffsetY: number } {
     const location = this.resolveStackLocation(path);
     if (!location || !location.node.panes.includes(pane)) {
@@ -2028,144 +1937,6 @@ export class MintDockManagerElement extends LitElement {
     }
   }
 
-  private onDragOver(event: DragEvent): void {
-    if (!this.dragState) {
-      return;
-    }
-    event.preventDefault();
-    // Keep internal pointer tracking up-to-date.
-    this.updateDraggedFloatingPosition(event);
-    if (event.dataTransfer) {
-      event.dataTransfer.dropEffect = 'move';
-    }
-
-    // Some browsers intermittently report (0,0) for dragover coordinates.
-    // Mirror the robust logic used in onDrop: prefer actual event coordinates
-    // when valid, otherwise fall back to the last tracked pointer position.
-    const pointFromEvent =
-      Number.isFinite(event.clientX) && Number.isFinite(event.clientY)
-        ? { clientX: event.clientX, clientY: event.clientY }
-        : null;
-
-    const point =
-      pointFromEvent ??
-      (this.lastDragPointerPosition
-        ? { clientX: this.lastDragPointerPosition.x, clientY: this.lastDragPointerPosition.y }
-        : null);
-
-    const stack =
-      this.findStackElement(event) ??
-      (point ? this.findStackAtPoint(point.clientX, point.clientY) : null);
-    if (!stack) {
-      if (this.dropJoystick.dataset['visible'] !== 'true') {
-        this.hideDropIndicator();
-      }
-      return;
-    }
-
-    const path = this.parsePath(stack.dataset['path']);
-    // While reordering within the same header, suppress the joystick/indicator entirely
-    if (
-      this.dragState &&
-      this.dragState.floatingIndex !== null &&
-      this.dragState.floatingIndex < 0 &&
-      path &&
-      this.pathsEqual(path, this.dragState.sourcePath)
-    ) {
-      const px = (point ? point.clientX : event.clientX) as number;
-      const py = (point ? point.clientY : event.clientY) as number;
-      if (Number.isFinite(px) && Number.isFinite(py) && this.isPointerOverSourceHeader(px, py)) {
-        // Drive live reorder using the unified path so we update instantly.
-        this.updatePaneDragDropTargetFromPoint(px, py);
-        this.hideDropIndicator();
-        return;
-      }
-    }
-    // If the hovered stack changed, clear any sticky zone from the previous
-    // target before computing the new zone.
-    if (this.dropJoystickTarget && this.dropJoystickTarget !== stack) {
-      delete this.dropJoystick.dataset['zone'];
-      this.updateDropJoystickActiveZone(null);
-    }
-
-    const eventZoneHint = this.extractDropZoneFromEvent(event);
-    const pointZoneHint = point ? this.findDropZoneByPoint(point.clientX, point.clientY) : null;
-    const zone = this.computeDropZone(stack, point ?? event, pointZoneHint ?? eventZoneHint);
-    this.showDropIndicator(stack, zone);
-  }
-
-  private updateDraggedFloatingPosition(event: DragEvent): void {
-    if (!this.dragState) {
-      return;
-    }
-
-    const { clientX, clientY } = event;
-    const hasValidCoordinates =
-      Number.isFinite(clientX) &&
-      Number.isFinite(clientY) &&
-      !(clientX === 0 && clientY === 0);
-
-    if (hasValidCoordinates) {
-      this.lastDragPointerPosition = { x: clientX, y: clientY };
-      this.updateDraggedFloatingPositionFromPoint(clientX, clientY);
-      return;
-    }
-
-    if (this.lastDragPointerPosition) {
-      const { x, y } = this.lastDragPointerPosition;
-      this.updateDraggedFloatingPositionFromPoint(x, y);
-    }
-  }
-
-  private onGlobalDragOver(event: DragEvent): void {
-    if (!this.dragState) {
-      return;
-    }
-    this.updateDraggedFloatingPosition(event);
-  }
-
-  private onDrag(event: DragEvent): void {
-    if (!this.dragState) {
-      return;
-    }
-    this.updateDraggedFloatingPosition(event);
-  }
-
-  private onGlobalDragEnd(): void {
-    // Attempt to finalize a drop even if the drop event doesn't reach us (Firefox/edge cases)
-    const state = this.dragState;
-    const pos = this.lastDragPointerPosition;
-    if (state && pos) {
-      const stack = this.findStackAtPoint(pos.x, pos.y);
-      const joystickVisible = this.dropJoystick.dataset['visible'] === 'true';
-      const joystickPath = this.parsePath(this.dropJoystick.dataset['path']);
-      const joystickTarget = this.dropJoystickTarget;
-      const joystickTargetPath = joystickTarget ? this.parsePath(joystickTarget.dataset['path']) : null;
-      const path = stack ? this.parsePath(stack.dataset['path']) : (joystickPath ?? joystickTargetPath);
-      const joystickZone = this.dropJoystick.dataset['zone'] as DropZone | undefined;
-      const zone = this.isDropZone(joystickZone)
-        ? joystickZone
-        : (stack ? this.computeDropZone(stack, { clientX: pos.x, clientY: pos.y }, null) : null);
-      
-      if (path && this.isDropZone(zone)) {
-        this.handleDrop(path, zone!);
-        this.hideDropIndicator();
-        if (this.dragState) {
-          this.dragState.dropHandled = true;
-        }
-      }
-    } else {
-      this.hideDropIndicator();
-    }
-
-    if (!this.dragState) {
-      this.clearPendingTabDragMetrics();
-      return;
-    }
-    this.endPaneDrag();
-    this.clearPendingTabDragMetrics();
-  }
-
   private updateDraggedFloatingPositionFromPoint(
     clientX: number,
     clientY: number,
@@ -2175,10 +1946,6 @@ export class MintDockManagerElement extends LitElement {
     }
 
     if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) {
-      return;
-    }
-    // Ignore obviously bogus coordinates sometimes seen during HTML5 drag
-    if (clientX === 0 && clientY === 0) {
       return;
     }
 
@@ -2454,11 +2221,9 @@ export class MintDockManagerElement extends LitElement {
     }
     this.lastDragPointerPosition = null;
     const win = this.windowRef;
-    win?.addEventListener('mousemove', this.onDragMouseMove, true);
-    win?.addEventListener('touchmove', this.onDragTouchMove, { passive: false });
-    win?.addEventListener('mouseup', this.onDragMouseUp, true);
-    win?.addEventListener('touchend', this.onDragTouchEnd, true);
-    win?.addEventListener('touchcancel', this.onDragTouchEnd, true);
+    win?.addEventListener('pointermove', this.onDragPointerMove, true);
+    win?.addEventListener('pointerup', this.onDragPointerUp, true);
+    win?.addEventListener('pointercancel', this.onDragPointerCancel, true);
     this.dragPointerTrackingActive = true;
   }
 
@@ -2467,57 +2232,39 @@ export class MintDockManagerElement extends LitElement {
       return;
     }
     const win = this.windowRef;
-    win?.removeEventListener('mousemove', this.onDragMouseMove, true);
-    win?.removeEventListener('touchmove', this.onDragTouchMove);
-    win?.removeEventListener('mouseup', this.onDragMouseUp, true);
-    win?.removeEventListener('touchend', this.onDragTouchEnd, true);
-    win?.removeEventListener('touchcancel', this.onDragTouchEnd, true);
+    win?.removeEventListener('pointermove', this.onDragPointerMove, true);
+    win?.removeEventListener('pointerup', this.onDragPointerUp, true);
+    win?.removeEventListener('pointercancel', this.onDragPointerCancel, true);
     this.dragPointerTrackingActive = false;
     this.lastDragPointerPosition = null;
     this.clearPendingDragEndTimeout();
   }
 
-  private onDragMouseMove(event: MouseEvent): void {
+  private onDragPointerMove(event: PointerEvent): void {
     if (!this.dragState) {
       this.stopDragPointerTracking();
       return;
     }
-
-    if (event.buttons === 0) {
-      this.scheduleDeferredDragEnd();
-      return;
-    }
-
     this.lastDragPointerPosition = { x: event.clientX, y: event.clientY };
     this.updateDraggedFloatingPositionFromPoint(event.clientX, event.clientY);
   }
 
-  private onDragTouchMove(event: TouchEvent): void {
-    if (!this.dragState) {
-      this.stopDragPointerTracking();
-      return;
-    }
-
-    const touch = event.touches[0];
-    if (!touch) {
-      this.scheduleDeferredDragEnd();
-      return;
-    }
-
-    event.preventDefault();
-    event.stopPropagation();
-    this.lastDragPointerPosition = { x: touch.clientX, y: touch.clientY };
-    this.updateDraggedFloatingPositionFromPoint(touch.clientX, touch.clientY);
-  }
-
-  private onDragMouseUp(): void {
-    // Prefer committing a drop from pointer-up since some browsers suppress drop events
+  private onDragPointerUp(event: PointerEvent): void {
+    // Commit the drop from pointer release; the pointer-up coordinates are
+    // authoritative for which stack/zone the user dropped into.
     if (this.dragState) {
-      const pos = this.lastDragPointerPosition;
-      if (pos) {
-        this.finalizeDropFromPoint(pos.x, pos.y);
+      const x = Number.isFinite(event.clientX) ? event.clientX : this.lastDragPointerPosition?.x;
+      const y = Number.isFinite(event.clientY) ? event.clientY : this.lastDragPointerPosition?.y;
+      if (x !== undefined && y !== undefined) {
+        this.finalizeDropFromPoint(x, y);
       }
     }
+    this.handleDragPointerUpCommon();
+  }
+
+  private onDragPointerCancel(): void {
+    // OS-level cancel (e.g. pointer capture lost): end the drag without
+    // committing a drop.
     this.handleDragPointerUpCommon();
   }
 
@@ -2674,10 +2421,6 @@ export class MintDockManagerElement extends LitElement {
     }
   }
 
-  private onDragTouchEnd(): void {
-    this.handleDragPointerUpCommon();
-  }
-
   // Commit a drop using current pointer coordinates and joystick state
   private finalizeDropFromPoint(clientX: number, clientY: number): void {
     if (!this.dragState) {
@@ -2756,128 +2499,6 @@ export class MintDockManagerElement extends LitElement {
     this.pendingDragEndTimeout = win
       ? win.setTimeout(completeDrag, 0)
       : setTimeout(completeDrag, 0);
-  }
-
-  private onDrop(event: DragEvent): void {
-    if (!this.dragState) {
-      return;
-    }
-    event.preventDefault();
-
-    const pointFromEvent =
-      Number.isFinite(event.clientX) && Number.isFinite(event.clientY)
-        ? { clientX: event.clientX, clientY: event.clientY }
-        : null;
-
-    const point =
-      pointFromEvent ??
-      (this.lastDragPointerPosition
-        ? {
-            clientX: this.lastDragPointerPosition.x,
-            clientY: this.lastDragPointerPosition.y,
-          }
-        : null);
-
-    const stack =
-      this.findStackElement(event) ??
-      (point ? this.findStackAtPoint(point.clientX, point.clientY) : null);
-
-    // Prefer joystick's stored target path when the joystick is visible (drop over buttons)
-    const joystickVisible = this.dropJoystick.dataset['visible'] === 'true';
-    const joystickPath = this.parsePath(this.dropJoystick.dataset['path']);
-    const joystickTarget = this.dropJoystickTarget;
-    const joystickTargetPath = joystickTarget ? this.parsePath(joystickTarget.dataset['path']) : null;
-    let path = stack
-      ? this.parsePath(stack.dataset['path'])
-      : (joystickPath ?? joystickTargetPath);
-    if (!path && joystickVisible) {
-      // As a last resort, target the main dock surface only when empty
-      const dockPath = this.parsePath(this.dockedEl.dataset['path']);
-      path = (!this.rootLayout ? dockPath : null);
-    }
-
-    // Defer same-header reorder decision until after zone resolution below
-
-    // Prefer joystick's active zone if available, else infer from event/point
-    const joystickZone = this.dropJoystick.dataset['zone'] as DropZone | undefined;
-    const eventZoneHint = this.extractDropZoneFromEvent(event);
-    const pointZoneHint = point ? this.findDropZoneByPoint(point.clientX, point.clientY) : null;
-    const zone = this.isDropZone(joystickZone)
-      ? joystickZone
-      : stack
-      ? this.computeDropZone(stack, point ?? event, pointZoneHint ?? eventZoneHint)
-      : (this.isDropZone(pointZoneHint ?? eventZoneHint) ? (pointZoneHint ?? eventZoneHint) : null);
-
-    
-    // If still in same header and no side zone chosen, treat as in-header reorder
-    if (
-      this.dragState &&
-      this.dragState.floatingIndex !== null &&
-      this.dragState.floatingIndex < 0 &&
-      stack &&
-      path &&
-      this.pathsEqual(path, this.dragState.sourcePath) &&
-      (!zone || zone === 'center')
-    ) {
-      const x = (point ? point.clientX : event.clientX) as number;
-      if (Number.isFinite(x)) {
-        const location = this.resolveStackLocation(path);
-        if (location) {
-          const idx = this.computeHeaderInsertIndex(stack, x);
-          this.reorderPaneInLocationAtIndex(location, this.dragState.pane, idx);
-          this.renderLayout();
-          this.dispatchLayoutChanged();
-          this.dragState.dropHandled = true;
-          this.endPaneDrag();
-          return;
-        }
-      }
-    }
-    // If joystick is visible and both path and zone are resolved, force using joystick as authoritative
-    if (joystickVisible && path && this.isDropZone(joystickZone)) {
-      this.handleDrop(path, joystickZone);
-      this.endPaneDrag();
-      return;
-    }
-    if (!zone) {
-      this.hideDropIndicator();
-      this.endPaneDrag();
-      return;
-    }
-    this.handleDrop(path, zone);
-    this.endPaneDrag();
-  }
-
-  private onDragLeave(event: DragEvent): void {
-    const related = event.relatedTarget as Node | null;
-
-    // During active drags, browsers can emit spurious dragleave with null
-    // relatedTarget while the pointer is still over the joystick/buttons.
-    // Be conservative: if we can resolve a stack/joystick at the last known
-    // pointer position, don’t hide (prevents flicker of active state).
-    if (this.dragState) {
-      const pos =
-        (Number.isFinite((event as DragEvent).clientX) && Number.isFinite((event as DragEvent).clientY))
-          ? { x: (event as DragEvent).clientX, y: (event as DragEvent).clientY }
-          : this.lastDragPointerPosition;
-      if (pos) {
-        const stackAtPoint = this.findStackAtPoint(pos.x, pos.y);
-        if (stackAtPoint) {
-          return; // still inside our drop area; ignore this dragleave
-        }
-      }
-    }
-
-    if (!related) {
-      this.hideDropIndicator();
-      return;
-    }
-
-    const rootContains = this.rootEl.contains(related);
-    const joystickContains = this.dropJoystick.contains(related);
-    if (!rootContains && !joystickContains) {
-      this.hideDropIndicator();
-    }
   }
 
   private handleDrop(targetPath: DockPath | null, zone: DropZone): void {
@@ -3162,8 +2783,8 @@ export class MintDockManagerElement extends LitElement {
       return null;
     }
 
-    if (typeof (event as DragEvent).composedPath === 'function') {
-      const path = (event as DragEvent).composedPath();
+    if (typeof event.composedPath === 'function') {
+      const path = event.composedPath();
       const zone = this.findDropZoneInTargets(path);
       if (zone) {
         return zone;
@@ -3418,28 +3039,6 @@ export class MintDockManagerElement extends LitElement {
       }
     }
 
-    return null;
-  }
-
-  private findStackElement(event: DragEvent): HTMLElement | null {
-    const path = event.composedPath();
-    const stack = this.findStackInTargets(path);
-    if (stack) {
-      return stack;
-    }
-
-    // If the root dock area is empty, treat the docked surface as a valid
-    // target when it appears in the composed path.
-    if (!this.rootLayout) {
-      for (const target of path) {
-        if (
-          target instanceof HTMLElement &&
-          (target === this.dockedEl || target.classList.contains('dock-docked'))
-        ) {
-          return this.dockedEl;
-        }
-      }
-    }
     return null;
   }
 
