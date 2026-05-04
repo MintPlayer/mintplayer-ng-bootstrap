@@ -1789,13 +1789,11 @@ export class MintDockManagerElement extends LitElement {
       x: this.dragState.startClientX as number,
       y: this.dragState.startClientY as number,
     };
-    // Prefer the pointer offset relative to the dragged tab to avoid jumps on conversion.
-    if (Number.isFinite(event.offsetX)) {
-      this.dragState.pointerOffsetX = event.offsetX;
-    }
-    if (Number.isFinite(event.offsetY)) {
-      this.dragState.pointerOffsetY = event.offsetY;
-    }
+    // pointerOffsetX/Y from preparePaneDragSource is the offset within the
+    // source stack rect captured at pointerdown by captureTabDragMetrics.
+    // Don't overwrite with event.offsetX/Y here — the threshold-trigger
+    // pointermove fired on window, so its offset is in window-local coords
+    // (≈ clientX/Y) which would crash the conversion math to ~(0,0).
     this.updateDraggedFloatingPositionFromPoint(event.clientX, event.clientY);
     this.startDragPointerTracking();
 
@@ -2305,23 +2303,37 @@ export class MintDockManagerElement extends LitElement {
         ? stackRect.height
         : fallbackHeight;
 
-    const pointerOffsetX = Number.isFinite(this.dragState?.pointerOffsetX as number)
-      ? (this.dragState!.pointerOffsetX as number)
-      : metrics && Number.isFinite(metrics.pointerOffsetX)
-      ? (metrics.pointerOffsetX as number)
-      : width / 2;
-    const pointerOffsetY = Number.isFinite(this.dragState?.pointerOffsetY as number)
-      ? (this.dragState!.pointerOffsetY as number)
-      : metrics && Number.isFinite(metrics.pointerOffsetY)
-      ? (metrics.pointerOffsetY as number)
-      : height / 2;
+    // Place the floating wrapper exactly where the docked stack was, so the
+    // pane appears in-place at the moment of detach instead of jumping under
+    // the cursor. metrics.left/top are host-relative (captured at pointerdown
+    // in captureTabDragMetrics). Compensate for the floating wrapper's 1px
+    // border so the visible content edge lines up with the original stack's
+    // visible content edge (the docked .dock-stack also has a 1px border, so
+    // the inner content rectangles match after this offset).
+    const FLOATING_BORDER = 1;
+    const initialLeft =
+      metrics && Number.isFinite(metrics.left)
+        ? metrics.left - FLOATING_BORDER
+        : Number.isFinite(clientX)
+        ? clientX - hostRect.left - width / 2
+        : 0;
+    const initialTop =
+      metrics && Number.isFinite(metrics.top)
+        ? metrics.top - FLOATING_BORDER
+        : Number.isFinite(clientY)
+        ? clientY - hostRect.top - height / 2
+        : 0;
 
-    const pointerLeft = Number.isFinite(clientX)
-      ? clientX - hostRect.left - pointerOffsetX
-      : 0;
-    const pointerTop = Number.isFinite(clientY)
-      ? clientY - hostRect.top - pointerOffsetY
-      : 0;
+    // Derive pointerOffset from the cursor's actual position relative to the
+    // freshly-placed wrapper (not from pointerdown metrics) so the very next
+    // pointermove translates into a wrapper move of exactly the cursor delta
+    // — no jump, no drift.
+    const pointerOffsetX = Number.isFinite(clientX)
+      ? clientX - hostRect.left - initialLeft
+      : width / 2;
+    const pointerOffsetY = Number.isFinite(clientY)
+      ? clientY - hostRect.top - initialTop
+      : height / 2;
 
     // Remove pane from its current stack and create a new floating entry
     this.removePaneFromLocation(location, pane);
@@ -2333,8 +2345,8 @@ export class MintDockManagerElement extends LitElement {
 
     const floatingLayout: DockFloatingStackLayout = {
       bounds: {
-        left: pointerLeft,
-        top: pointerTop,
+        left: initialLeft,
+        top: initialTop,
         width,
         height,
       },
