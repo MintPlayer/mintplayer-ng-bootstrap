@@ -2296,11 +2296,22 @@ export class MintDockManagerElement extends LitElement {
     );
     if (!draggedHeader || !draggedContent) return;
 
-    // Measure the dragged tab's slot-content width BEFORE hiding it. The slotted
-    // span is `display: inline`, so its offsetWidth equals the rendered text
-    // width — that's exactly what we want as the placeholder's reserved space
-    // (the strip button adds its own padding on top).
-    const slotContentWidth = draggedHeader.offsetWidth;
+    // Measure the dragged tab's text-only width BEFORE hiding it. The
+    // `.dock-tab` rule applies padding (matching the strip button's padding so
+    // the span fills the button as a drag handle), so `offsetWidth` is
+    // text + padding — we subtract the span's own padding to get just the
+    // text width. That's the natural slot content width we want the
+    // placeholder to reserve; the placeholder span will re-apply the same
+    // padding on top, mirroring the original tab's geometry exactly.
+    const draggedCS = this.windowRef
+      ? this.windowRef.getComputedStyle(draggedHeader)
+      : globalThis.getComputedStyle(draggedHeader);
+    const draggedHorizontalPadding =
+      parseFloat(draggedCS.paddingLeft) + parseFloat(draggedCS.paddingRight);
+    const slotContentWidth = Math.max(
+      0,
+      draggedHeader.offsetWidth - draggedHorizontalPadding,
+    );
 
     // Hide the dragged tab from mp-tab-control's strip (frees up the slot).
     draggedContent.setAttribute('data-hidden', '');
