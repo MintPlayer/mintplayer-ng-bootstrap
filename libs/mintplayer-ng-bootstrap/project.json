@@ -8,10 +8,14 @@
   "targets": {
     "codegen-wc": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/**/web-components/*.element.template.ts"],
+      "outputs": [
+        "{projectRoot}/**/web-components/*.element.template.ts",
+        "{projectRoot}/**/*.styles.ts"
+      ],
       "inputs": [
         "{projectRoot}/**/web-components/*.element.html",
         "{projectRoot}/**/web-components/*.element.scss",
+        "{projectRoot}/**/*.styles.scss",
         "{workspaceRoot}/tools/scripts/build-web-components.mjs"
       ],
       "cache": true,
