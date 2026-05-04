@@ -1201,10 +1201,12 @@ export class MintDockManagerElement extends LitElement {
 
     try {
       state.handle.releasePointerCapture(state.pointerId);
-      delete state.handle.dataset['resizing'];
     } catch (err) {
       /* no-op */
     }
+    // Clear outside the try so a thrown releasePointerCapture (capture
+    // already lost) doesn't strand the handle in its visual drag state.
+    delete state.handle.dataset['resizing'];
 
     const dropHandled = state.dropTarget
       ? this.handleFloatingStackDrop(state.index, state.dropTarget.path, state.dropTarget.zone)
@@ -1313,6 +1315,12 @@ export class MintDockManagerElement extends LitElement {
     } catch (err) {
       /* no-op */
     }
+    // Clear `data-resizing` outside the try — releasePointerCapture can
+    // throw if the capture was already lost (e.g., the pointer left the
+    // window), and we still need to drop the resizing attribute or the
+    // CSS rule `.dock-floating__resizer[data-resizing='true']` keeps the
+    // border dark-blue forever.
+    delete state.handle.dataset['resizing'];
 
     this.floatingResizeState = null;
     this.dispatchLayoutChanged();
