@@ -90,14 +90,5 @@
     "vite": "^6.4.1",
     "vitest": "^4.0.16",
     "webpack-bundle-analyzer": "~4.9.0"
-  },
-  "overrides": {
-    "ng-mocks": {
-      "@angular/common": "$@angular/common",
-      "@angular/core": "$@angular/core",
-      "@angular/forms": "$@angular/forms",
-      "@angular/platform-browser": "$@angular/platform-browser",
-      "@angular/router": "$@angular/router"
-    }
   }
 }
