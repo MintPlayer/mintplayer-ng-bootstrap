@@ -361,6 +361,21 @@ export class MintDockManagerElement extends LitElement {
 
   set layout(value: DockLayoutSnapshot | DockLayout | DockLayoutNode | null) {
     const snapshot = this.ensureSnapshot(value);
+    // Skip renderLayout when the incoming layout is structurally identical
+    // to the current state. After a divider drag the dock dispatches
+    // dock-layout-changed; an Angular host doing two-way binding will feed
+    // that snapshot right back through `[layout]` (and through the
+    // `[attr.layout]` round-trip). Without this guard, every drag-end
+    // tears down and rebuilds the whole splitter tree, giving a one-frame
+    // flash of `flex: 1 1 0` equal-share before the pin restores sizes.
+    const currentJson = JSON.stringify({
+      root: this.rootLayout,
+      floating: this.floatingLayouts,
+      titles: this.titles,
+    });
+    const newJson = JSON.stringify(snapshot);
+    if (currentJson === newJson) return;
+
     this.rootLayout = this.cloneLayoutNode(snapshot.root);
     this.floatingLayouts = this.cloneFloatingArray(snapshot.floating);
     this.titles = snapshot.titles ? { ...snapshot.titles } : {};
