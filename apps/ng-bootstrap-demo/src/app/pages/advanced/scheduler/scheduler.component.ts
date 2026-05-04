@@ -26,7 +26,7 @@ import {
   generateResourceId,
   generateGroupId,
   dateService,
-} from '@mintplayer/scheduler-core';
+} from '@mintplayer/ng-bootstrap/web-components/scheduler-core';
 
 @Component({
   selector: 'demo-scheduler',

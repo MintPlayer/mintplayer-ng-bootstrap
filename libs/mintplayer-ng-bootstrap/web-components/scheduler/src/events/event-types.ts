@@ -1,4 +1,4 @@
-import { SchedulerEvent, ViewType } from '@mintplayer/scheduler-core';
+import { SchedulerEvent, ViewType } from '@mintplayer/ng-bootstrap/web-components/scheduler-core';
 
 /**
  * All custom events the scheduler can emit.

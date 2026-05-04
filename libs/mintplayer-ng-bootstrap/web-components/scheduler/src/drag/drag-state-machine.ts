@@ -1,4 +1,4 @@
-import { DragOperationType, PreviewEvent, SchedulerEvent, TimeSlot } from '@mintplayer/scheduler-core';
+import { DragOperationType, PreviewEvent, SchedulerEvent, TimeSlot } from '@mintplayer/ng-bootstrap/web-components/scheduler-core';
 import {
   DragMachineState,
   DragMachineEvent,

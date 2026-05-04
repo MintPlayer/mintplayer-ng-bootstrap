@@ -1,6 +1,6 @@
 import { DragStateMachine } from './drag-state-machine';
 import { DragMachineEvent, PointerTarget } from './drag-types';
-import { SchedulerEvent, TimeSlot } from '@mintplayer/scheduler-core';
+import { SchedulerEvent, TimeSlot } from '@mintplayer/ng-bootstrap/web-components/scheduler-core';
 
 describe('DragStateMachine', () => {
   let machine: DragStateMachine;

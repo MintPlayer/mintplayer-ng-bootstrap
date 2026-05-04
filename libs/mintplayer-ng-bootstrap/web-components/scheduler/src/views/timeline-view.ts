@@ -10,7 +10,7 @@ import {
   isResourceGroup,
   FlattenedResource,
   getContrastColor,
-} from '@mintplayer/scheduler-core';
+} from '@mintplayer/ng-bootstrap/web-components/scheduler-core';
 import { BaseView } from './base-view';
 import { SchedulerState } from '../state/scheduler-state';
 

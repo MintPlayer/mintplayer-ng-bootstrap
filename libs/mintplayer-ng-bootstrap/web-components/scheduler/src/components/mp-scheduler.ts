@@ -8,7 +8,7 @@ import {
   TimeSlot,
   dateService,
   generateEventId,
-} from '@mintplayer/scheduler-core';
+} from '@mintplayer/ng-bootstrap/web-components/scheduler-core';
 import { SchedulerStateManager, SchedulerState } from '../state/scheduler-state';
 import { BaseView } from '../views/base-view';
 import { YearView } from '../views/year-view';

@@ -1,4 +1,4 @@
-import { SchedulerEvent, TimeSlot } from '@mintplayer/scheduler-core';
+import { SchedulerEvent, TimeSlot } from '@mintplayer/ng-bootstrap/web-components/scheduler-core';
 import {
   NormalizedPointerEvent,
   normalizeMouseEvent,

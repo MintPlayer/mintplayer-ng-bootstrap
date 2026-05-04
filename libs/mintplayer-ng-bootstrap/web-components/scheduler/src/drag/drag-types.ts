@@ -3,7 +3,7 @@ import {
   PreviewEvent,
   SchedulerEvent,
   TimeSlot,
-} from '@mintplayer/scheduler-core';
+} from '@mintplayer/ng-bootstrap/web-components/scheduler-core';
 
 /**
  * Simple position with x/y coordinates.

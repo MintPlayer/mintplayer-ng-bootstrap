@@ -3,10 +3,10 @@ import { LitElement, type TemplateResult } from 'lit';
 // Side-effect import: registers <mp-tab-control> + <mp-tab-page> custom elements.
 // Each dock stack is rendered as <mp-tab-control>, so the dock depends on this
 // lib being loaded before any layout is rendered.
-import '@mintplayer/tab-control-wc';
+import '@mintplayer/ng-bootstrap/web-components/tab-control';
 // Side-effect import: registers <mp-splitter>. Each DockSplitNode is rendered
 // as a nested <mp-splitter>, so this lib must load before any layout renders.
-import '@mintplayer/splitter';
+import '@mintplayer/ng-bootstrap/web-components/splitter';
 import {
   DockFloatingStackLayout,
   DockLayout,

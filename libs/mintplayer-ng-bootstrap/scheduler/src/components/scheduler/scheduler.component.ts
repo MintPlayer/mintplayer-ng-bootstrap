@@ -23,10 +23,10 @@ import {
   Resource,
   ResourceGroup,
   SchedulerOptions,
-} from '@mintplayer/scheduler-core';
+} from '@mintplayer/ng-bootstrap/web-components/scheduler-core';
 
 // Import the web component to ensure it gets registered
-import '@mintplayer/scheduler-wc';
+import '@mintplayer/ng-bootstrap/web-components/scheduler';
 
 /**
  * Interface for the mp-scheduler web component element

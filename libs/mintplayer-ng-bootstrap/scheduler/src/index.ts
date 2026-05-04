@@ -13,4 +13,4 @@ export {
   generateEventId,
   generateResourceId,
   generateGroupId,
-} from '@mintplayer/scheduler-core';
+} from '@mintplayer/ng-bootstrap/web-components/scheduler-core';

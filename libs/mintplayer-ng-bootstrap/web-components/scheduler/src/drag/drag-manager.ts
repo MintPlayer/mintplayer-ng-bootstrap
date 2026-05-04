@@ -2,7 +2,7 @@ import {
   SchedulerEvent,
   TimeSlot,
   generateEventId,
-} from '@mintplayer/scheduler-core';
+} from '@mintplayer/ng-bootstrap/web-components/scheduler-core';
 import { SchedulerStateManager } from '../state/scheduler-state';
 import { DragStateMachine } from './drag-state-machine';
 import {
