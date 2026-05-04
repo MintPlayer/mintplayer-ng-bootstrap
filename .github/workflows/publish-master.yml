@@ -346,11 +346,11 @@ jobs:
             # Pull latest image
             docker compose --env-file .env pull
 
-            # Stop and remove old containers
-            docker compose --env-file .env down
+            # Stop and remove old containers (including any orphans from prior service renames)
+            docker compose --env-file .env down --remove-orphans
 
             # Start new containers
-            docker compose --env-file .env up -d
+            docker compose --env-file .env up -d --remove-orphans
 
             # Clean up old images
             docker image prune -f
