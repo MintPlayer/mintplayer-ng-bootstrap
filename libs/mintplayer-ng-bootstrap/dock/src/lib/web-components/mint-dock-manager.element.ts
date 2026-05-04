@@ -361,6 +361,19 @@ export class MintDockManagerElement extends LitElement {
 
   set layout(value: DockLayoutSnapshot | DockLayout | DockLayoutNode | null) {
     const snapshot = this.ensureSnapshot(value);
+    // While a drag/resize is in flight, the dock manager is the source of
+    // truth for layout state — its mid-drag mutations (e.g. floating bounds
+    // updated every mousemove, or a stack split during a pane-drag-to-floating
+    // conversion) race the host's two-way binding round-trip. The host re-
+    // feeds the layout we *just* dispatched via `dock-layout-changed`, but by
+    // the time the round-trip arrives the user has moved the cursor again, so
+    // the structural-equality guard below would let it through and clobber the
+    // in-progress state (e.g. snap a freshly-detached floating window back to
+    // the converted-at coordinates instead of letting it follow the cursor).
+    // Reject any external layout write during interaction; the host will sync
+    // back to the dock's final state when interaction ends and the dock fires
+    // a fresh dock-layout-changed event.
+    if (this.isInteracting()) return;
     // Skip renderLayout when the incoming layout is structurally identical
     // to the current state. After a divider drag the dock dispatches
     // dock-layout-changed; an Angular host doing two-way binding will feed
@@ -380,6 +393,21 @@ export class MintDockManagerElement extends LitElement {
     this.floatingLayouts = this.cloneFloatingArray(snapshot.floating);
     this.titles = snapshot.titles ? { ...snapshot.titles } : {};
     this.renderLayout();
+  }
+
+  /**
+   * True while the user is actively interacting with the dock — pane drag,
+   * floating window drag, floating window resize, or intersection corner
+   * resize. The `set layout` setter consults this to refuse external
+   * round-trips that would overwrite in-progress drag state.
+   */
+  private isInteracting(): boolean {
+    return !!(
+      this.dragState ||
+      this.floatingDragState ||
+      this.floatingResizeState ||
+      this.cornerResizeState
+    );
   }
 
   get snapshot(): DockLayoutSnapshot {
@@ -1929,10 +1957,20 @@ export class MintDockManagerElement extends LitElement {
 
   private endPaneDrag(): void {
     this.clearPendingDragEndTimeout();
+    // Restore the dragged tab's `data-hidden` and remove the placeholder span
+    // BEFORE we null out dragState — clearHeaderDragPlaceholder reads
+    // `dragState.placeholderEl`, `dragState.placeholderHeader`, and
+    // `dragState.pane` to know what to restore. If dragState is nulled first,
+    // this becomes a silent no-op and the dragged pane stays hidden in its
+    // source stack while the placeholder span lingers in the strip — which
+    // is exactly the "Panel disappears, only a small tab-thumb remains"
+    // regression the multi-pane drag-out path can otherwise trigger when
+    // no renderLayout() runs between conversion and end (e.g. user releases
+    // outside any drop zone, or HTML5 dragend fires without a drop).
+    this.clearHeaderDragPlaceholder();
     const state = this.dragState;
     this.dragState = null;
     this.hideDropIndicator();
-    this.clearHeaderDragPlaceholder();
     this.stopDragPointerTracking();
     this.lastDragPointerPosition = null;
     if (state && state.floatingIndex !== null && !state.dropHandled) {
