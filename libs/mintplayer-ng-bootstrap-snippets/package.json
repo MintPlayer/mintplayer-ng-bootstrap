@@ -3,7 +3,7 @@
   "displayName": "ng-bootstrap snippets for VS Code",
   "description": "This package contains @mintplayer/ng-bootstrap snippets for VS Code",
   "private": false,
-  "version": "21.0.0",
+  "version": "21.1.0",
   "icon": "images/ng-bootstrap.png",
   "publisher": "MintPlayer",
   "galleryBanner": {
