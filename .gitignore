@@ -6,7 +6,7 @@
 /out-tsc
 
 # dependencies
-/node_modules
+**/node_modules
 /.nx
 
 # IDEs and editors
@@ -44,7 +44,6 @@ Thumbs.db
 
 .cursor/rules/nx-rules.mdc
 .github/instructions/nx.instructions.md
-**/node_modules/.vite/
 
 # Environment variables (generated on VPS at deploy time)
 .env
