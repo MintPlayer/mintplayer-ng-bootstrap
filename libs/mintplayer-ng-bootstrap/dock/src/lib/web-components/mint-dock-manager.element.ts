@@ -1796,6 +1796,10 @@ export class MintDockManagerElement extends LitElement {
     // (≈ clientX/Y) which would crash the conversion math to ~(0,0).
     this.updateDraggedFloatingPositionFromPoint(event.clientX, event.clientY);
     this.startDragPointerTracking();
+    // Mark the source floating wrapper (if any) so its CSS rule kicks in and
+    // pointer-events:none lets findStackAtPoint see through to the docked
+    // stack underneath, enabling drop zones over the dock during the drag.
+    this.markDraggedFloatingWrapper();
 
     // Preferred UX: if the dragged tab is the only one in its stack,
     // immediately convert to a floating window unless it is already the
@@ -1925,6 +1929,7 @@ export class MintDockManagerElement extends LitElement {
     // no renderLayout() runs between conversion and end (e.g. user releases
     // outside any drop zone, or HTML5 dragend fires without a drop).
     this.clearHeaderDragPlaceholder();
+    this.clearDraggedFloatingWrapperMarkers();
     const state = this.dragState;
     this.dragState = null;
     this.hideDropIndicator();
@@ -2366,7 +2371,29 @@ export class MintDockManagerElement extends LitElement {
     state.floatingIndex = newIndex;
     state.pointerOffsetX = pointerOffsetX;
     state.pointerOffsetY = pointerOffsetY;
+    // Now that the wrapper exists, mark it so pointer-events:none kicks in
+    // and findStackAtPoint can see through to docked stacks underneath.
+    this.markDraggedFloatingWrapper();
     this.dispatchLayoutChanged();
+  }
+
+  // Toggle data-dragging on the floating wrapper currently associated with
+  // the active pane drag (dragState.floatingIndex), if any. Used to make the
+  // wrapper transparent to elementsFromPoint so drop zones can be shown on
+  // stacks underneath. clearDraggedFloatingWrapper() is the inverse.
+  private markDraggedFloatingWrapper(): void {
+    const fi = this.dragState?.floatingIndex;
+    if (fi === null || fi === undefined || fi < 0) return;
+    const wrapper = this.getFloatingWrapper(fi);
+    if (wrapper) wrapper.dataset['dragging'] = 'true';
+  }
+
+  private clearDraggedFloatingWrapperMarkers(): void {
+    const layer = this.floatingLayerEl;
+    if (!layer) return;
+    layer.querySelectorAll<HTMLElement>('.dock-floating[data-dragging="true"]').forEach((el) => {
+      delete el.dataset['dragging'];
+    });
   }
 
   // Compute the intended tab insert index within a stack's strip based on pointer X.

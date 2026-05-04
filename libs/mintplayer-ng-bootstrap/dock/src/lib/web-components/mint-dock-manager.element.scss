@@ -61,6 +61,15 @@
   min-height: 8rem;
 }
 
+// While a pane is being dragged out of (or while floating in) this wrapper,
+// make the wrapper transparent to elementsFromPoint so findStackAtPoint can
+// see through to the docked stack underneath and show drop zones on it.
+// The drag itself isn't affected — pointermove/pointerup listen on `window`,
+// not on the wrapper.
+.dock-floating[data-dragging='true'] {
+  pointer-events: none;
+}
+
 .dock-floating__chrome {
   display: flex;
   align-items: center;
