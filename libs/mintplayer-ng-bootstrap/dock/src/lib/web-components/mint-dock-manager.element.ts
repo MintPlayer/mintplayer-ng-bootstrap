@@ -56,6 +56,14 @@ export class MintDockManagerElement extends LitElement {
 
   private static instanceCounter = 0;
 
+  // Touch tab-drag gesture: a finger that lands on a tab header must be able
+  // to scroll the tabstrip natively. We require a stationary hold before
+  // arming the drag, so a horizontal swipe scrolls instead of undocking.
+  // See docs/prd/dock-touch-long-press-drag.md.
+  private static readonly TOUCH_LONG_PRESS_MS = 600;
+  private static readonly TOUCH_LONG_PRESS_SLOP_PX = 10;
+  private static readonly TOUCH_PRESS_FEEDBACK_DELAY_MS = 150;
+
   private documentRef!: Document;
   private windowRef!: (Window & typeof globalThis) | null;
   private rootEl!: HTMLElement;
@@ -1712,11 +1720,12 @@ export class MintDockManagerElement extends LitElement {
   }
 
   /**
-   * Pointerdown handler arms a "may become a drag" gesture. Once the pointer
-   * moves past `threshold` pixels we promote it to an actual pane drag via
-   * {@link beginPaneDrag}; if the user releases first we just clear the
-   * pending tab metrics. All listeners self-clean on resolve so the gesture
-   * stays scoped to a single pointerdown.
+   * Pointerdown handler arms a "may become a drag" gesture. Mouse / pen use a
+   * 5 px distance threshold and arm immediately; touch dispatches to
+   * {@link armPaneDragGestureTouch} which requires a 600 ms stationary hold
+   * (so the user can scroll the tabstrip natively without undocking).
+   * Once armed, both paths converge on {@link beginPaneDrag}. All listeners
+   * self-clean on resolve so the gesture stays scoped to a single pointerdown.
    */
   private armPaneDragGesture(
     startEvent: PointerEvent,
@@ -1724,6 +1733,10 @@ export class MintDockManagerElement extends LitElement {
     pane: string,
     stackEl: HTMLElement | null,
   ): void {
+    if (startEvent.pointerType === 'touch') {
+      this.armPaneDragGestureTouch(startEvent, path, pane, stackEl);
+      return;
+    }
     if (startEvent.pointerType === 'mouse' && startEvent.button !== 0) return;
     const win = this.windowRef;
     if (!win) return;
@@ -1758,6 +1771,122 @@ export class MintDockManagerElement extends LitElement {
     win.addEventListener('pointermove', onMove, true);
     win.addEventListener('pointerup', onRelease, true);
     win.addEventListener('pointercancel', onRelease, true);
+  }
+
+  /**
+   * Touch-specific gesture arming. Waits {@link TOUCH_LONG_PRESS_MS} for a
+   * stationary hold (within {@link TOUCH_LONG_PRESS_SLOP_PX} of the start
+   * point); on success, claims the gesture via setPointerCapture and runs
+   * {@link beginPaneDrag} with the latest pointer position. Movement past
+   * slop, pointerup, or pointercancel before the timer fires aborts cleanly
+   * — letting the browser scroll the tabstrip natively or fire the
+   * synthesized click that drives `tab-activate`.
+   *
+   * `.dock-tab` is `touch-action: pan-x` (not `none`), so the browser claims
+   * the gesture for horizontal scroll and fires `pointercancel` while the
+   * finger is "deciding". That pointercancel transitions us to abandoned and
+   * leaves the panel docked. After the long-press fires, setPointerCapture
+   * on the host stops the browser from arbitrating subsequent moves.
+   */
+  private armPaneDragGestureTouch(
+    startEvent: PointerEvent,
+    path: DockPath,
+    pane: string,
+    stackEl: HTMLElement | null,
+  ): void {
+    const win = this.windowRef;
+    if (!win) return;
+    const startX = startEvent.clientX;
+    const startY = startEvent.clientY;
+    const pointerId = startEvent.pointerId;
+    let latestX = startX;
+    let latestY = startY;
+    let resolved = false;
+    let pressFeedbackApplied = false;
+
+    const tabSpan: HTMLElement | null =
+      startEvent.currentTarget instanceof HTMLElement
+        ? startEvent.currentTarget
+        : startEvent.target instanceof HTMLElement
+        ? startEvent.target.closest('.dock-tab')
+        : null;
+
+    const cleanup = (): void => {
+      if (resolved) return;
+      resolved = true;
+      win.clearTimeout(longPressTimeout);
+      win.clearTimeout(pressFeedbackTimeout);
+      win.removeEventListener('pointermove', onMove, true);
+      win.removeEventListener('pointerup', onRelease, true);
+      win.removeEventListener('pointercancel', onCancel, true);
+      if (pressFeedbackApplied && tabSpan) {
+        tabSpan.removeAttribute('data-pressing');
+      }
+    };
+
+    const onMove = (event: PointerEvent): void => {
+      if (resolved || event.pointerId !== pointerId) return;
+      latestX = event.clientX;
+      latestY = event.clientY;
+      const dx = event.clientX - startX;
+      const dy = event.clientY - startY;
+      if (Math.hypot(dx, dy) > MintDockManagerElement.TOUCH_LONG_PRESS_SLOP_PX) {
+        cleanup();
+        this.clearPendingTabDragMetrics();
+      }
+    };
+
+    const onRelease = (event: PointerEvent): void => {
+      if (resolved || event.pointerId !== pointerId) return;
+      cleanup();
+      this.clearPendingTabDragMetrics();
+    };
+
+    const onCancel = (event: PointerEvent): void => {
+      if (resolved || event.pointerId !== pointerId) return;
+      cleanup();
+      this.clearPendingTabDragMetrics();
+    };
+
+    const longPressTimeout = win.setTimeout(() => {
+      if (resolved) return;
+      cleanup();
+      // Claim the gesture before the browser can arbitrate a late scroll.
+      try {
+        this.setPointerCapture(pointerId);
+      } catch {
+        // setPointerCapture throws if the pointer is no longer active
+        // (e.g. timer raced a pointerup we didn't see). Drag will abort
+        // naturally on the next event.
+      }
+      if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+        try {
+          navigator.vibrate(10);
+        } catch {
+          // ignore
+        }
+      }
+      const synthEvent = new PointerEvent('pointermove', {
+        pointerId,
+        pointerType: 'touch',
+        isPrimary: true,
+        clientX: latestX,
+        clientY: latestY,
+        bubbles: false,
+        cancelable: false,
+      });
+      this.beginPaneDrag(synthEvent, path, pane, stackEl);
+    }, MintDockManagerElement.TOUCH_LONG_PRESS_MS);
+
+    const pressFeedbackTimeout = win.setTimeout(() => {
+      if (resolved || !tabSpan) return;
+      pressFeedbackApplied = true;
+      tabSpan.setAttribute('data-pressing', 'true');
+    }, MintDockManagerElement.TOUCH_PRESS_FEEDBACK_DELAY_MS);
+
+    win.addEventListener('pointermove', onMove, true);
+    win.addEventListener('pointerup', onRelease, true);
+    win.addEventListener('pointercancel', onCancel, true);
   }
 
   private beginPaneDrag(

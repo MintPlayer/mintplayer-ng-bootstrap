@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import './mint-dock-manager.element';
 import type { MintDockManagerElement } from './mint-dock-manager.element';
 
@@ -28,14 +28,23 @@ function makeRect(left: number, top: number, width: number, height: number): DOM
 
 function makePointerEvent(
   type: string,
-  init: { clientX: number; clientY: number; pointerId?: number; offsetX?: number; offsetY?: number; button?: number; buttons?: number },
+  init: {
+    clientX: number;
+    clientY: number;
+    pointerId?: number;
+    offsetX?: number;
+    offsetY?: number;
+    button?: number;
+    buttons?: number;
+    pointerType?: 'mouse' | 'touch' | 'pen';
+  },
 ): PointerEvent {
   return new PointerEvent(type, {
     bubbles: true,
     composed: true,
     cancelable: true,
     pointerId: init.pointerId ?? 1,
-    pointerType: 'mouse',
+    pointerType: init.pointerType ?? 'mouse',
     isPrimary: true,
     button: init.button ?? 0,
     buttons: init.buttons ?? 1,
@@ -126,5 +135,135 @@ describe('mint-dock-manager — drag-to-detach follows the cursor mid-gesture', 
     // The wrapper must have moved in the same direction and magnitude as the cursor.
     expect(movedLeft - initialLeft).toBeCloseTo(moveDX, 0);
     expect(movedTop - initialTop).toBeCloseTo(moveDY, 0);
+  });
+});
+
+describe('mint-dock-manager — touch long-press arming', () => {
+  let dock: MintDockManagerElement;
+
+  beforeEach(async () => {
+    // Fake setTimeout / clearTimeout only — leave requestAnimationFrame real
+    // so Lit can flush re-renders normally between assertions.
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+
+    dock = document.createElement('mint-dock-manager') as MintDockManagerElement;
+    document.body.appendChild(dock);
+
+    dock.getBoundingClientRect = () => makeRect(HOST_LEFT, HOST_TOP, HOST_WIDTH, HOST_HEIGHT);
+
+    dock.layout = {
+      root: { kind: 'stack', panes: ['Panel4'], activePane: 'Panel4' },
+      titles: { Panel4: 'Panel 4' },
+      floating: [],
+    } as never;
+
+    await (dock as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+
+    if (dock.shadowRoot) {
+      (dock.shadowRoot as unknown as { elementsFromPoint: (x: number, y: number) => Element[] }).elementsFromPoint =
+        () => [];
+    }
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    dock.remove();
+  });
+
+  function getHeaderSpan(): HTMLElement {
+    const headerSpan = dock.shadowRoot!.querySelector<HTMLElement>('.dock-tab[data-pane="Panel4"]');
+    if (!headerSpan) throw new Error('header span not rendered');
+    headerSpan.getBoundingClientRect = () => makeRect(TAB_LEFT, TAB_TOP, TAB_WIDTH, TAB_HEIGHT);
+    return headerSpan;
+  }
+
+  function getFloatingWrapper(): HTMLElement | null {
+    return dock.shadowRoot!.querySelector<HTMLElement>('.dock-floating-layer .dock-floating');
+  }
+
+  it('does not arm a drag immediately on touch pointerdown', () => {
+    const headerSpan = getHeaderSpan();
+    const startX = TAB_LEFT + 20;
+    const startY = TAB_TOP + 16;
+    headerSpan.dispatchEvent(makePointerEvent('pointerdown', { clientX: startX, clientY: startY, pointerType: 'touch' }));
+    // Advance just enough for the press-feedback timer (150 ms) but not the
+    // 600 ms long-press timer.
+    vi.advanceTimersByTime(200);
+    expect(getFloatingWrapper()).toBeNull();
+    expect(headerSpan.getAttribute('data-pressing')).toBe('true');
+  });
+
+  it('arms the drag after the long-press hold elapses', async () => {
+    const headerSpan = getHeaderSpan();
+    const startX = TAB_LEFT + 20;
+    const startY = TAB_TOP + 16;
+    headerSpan.dispatchEvent(makePointerEvent('pointerdown', { clientX: startX, clientY: startY, pointerType: 'touch' }));
+    vi.advanceTimersByTime(700);
+    await nextRaf();
+    expect(getFloatingWrapper()).toBeTruthy();
+    // Press-feedback class must be cleared once the drag is armed.
+    expect(headerSpan.getAttribute('data-pressing')).toBeNull();
+  });
+
+  it('abandons the gesture if the finger moves past slop before the hold elapses', async () => {
+    const headerSpan = getHeaderSpan();
+    const startX = TAB_LEFT + 20;
+    const startY = TAB_TOP + 16;
+    headerSpan.dispatchEvent(makePointerEvent('pointerdown', { clientX: startX, clientY: startY, pointerType: 'touch' }));
+    // 30 px move — well past the 10 px slop.
+    window.dispatchEvent(makePointerEvent('pointermove', { clientX: startX + 30, clientY: startY, pointerType: 'touch' }));
+    vi.advanceTimersByTime(700);
+    await nextRaf();
+    expect(getFloatingWrapper()).toBeNull();
+    expect(headerSpan.getAttribute('data-pressing')).toBeNull();
+  });
+
+  it('keeps waiting if the finger trembles within slop', async () => {
+    const headerSpan = getHeaderSpan();
+    const startX = TAB_LEFT + 20;
+    const startY = TAB_TOP + 16;
+    headerSpan.dispatchEvent(makePointerEvent('pointerdown', { clientX: startX, clientY: startY, pointerType: 'touch' }));
+    // 5 px move — within the 10 px slop.
+    window.dispatchEvent(makePointerEvent('pointermove', { clientX: startX + 5, clientY: startY, pointerType: 'touch' }));
+    vi.advanceTimersByTime(700);
+    await nextRaf();
+    expect(getFloatingWrapper()).toBeTruthy();
+  });
+
+  it('treats a release before the hold elapses as a tap (no drag)', async () => {
+    const headerSpan = getHeaderSpan();
+    const startX = TAB_LEFT + 20;
+    const startY = TAB_TOP + 16;
+    headerSpan.dispatchEvent(makePointerEvent('pointerdown', { clientX: startX, clientY: startY, pointerType: 'touch' }));
+    vi.advanceTimersByTime(200);
+    window.dispatchEvent(makePointerEvent('pointerup', { clientX: startX, clientY: startY, pointerType: 'touch' }));
+    vi.advanceTimersByTime(700);
+    await nextRaf();
+    expect(getFloatingWrapper()).toBeNull();
+    expect(headerSpan.getAttribute('data-pressing')).toBeNull();
+  });
+
+  it('abandons the gesture on pointercancel before the hold elapses', async () => {
+    const headerSpan = getHeaderSpan();
+    const startX = TAB_LEFT + 20;
+    const startY = TAB_TOP + 16;
+    headerSpan.dispatchEvent(makePointerEvent('pointerdown', { clientX: startX, clientY: startY, pointerType: 'touch' }));
+    vi.advanceTimersByTime(200);
+    window.dispatchEvent(makePointerEvent('pointercancel', { clientX: startX, clientY: startY, pointerType: 'touch' }));
+    vi.advanceTimersByTime(700);
+    await nextRaf();
+    expect(getFloatingWrapper()).toBeNull();
+    expect(headerSpan.getAttribute('data-pressing')).toBeNull();
+  });
+
+  it('treats pen as mouse — immediate 5 px arming, no hold required', async () => {
+    const headerSpan = getHeaderSpan();
+    const startX = TAB_LEFT + 20;
+    const startY = TAB_TOP + 16;
+    headerSpan.dispatchEvent(makePointerEvent('pointerdown', { clientX: startX, clientY: startY, pointerType: 'pen' }));
+    window.dispatchEvent(makePointerEvent('pointermove', { clientX: startX + 10, clientY: startY + 10, pointerType: 'pen' }));
+    await nextRaf();
+    expect(getFloatingWrapper()).toBeTruthy();
   });
 });
