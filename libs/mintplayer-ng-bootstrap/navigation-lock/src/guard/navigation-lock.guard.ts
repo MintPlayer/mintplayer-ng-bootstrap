@@ -1,22 +1,19 @@
-import { Injectable } from '@angular/core';
-import { ActivatedRouteSnapshot, RouterStateSnapshot, UrlTree } from '@angular/router';
-import { BsHasNavigationLock } from '../interface/has-navigation-lock';
+import { inject } from '@angular/core';
+import { CanActivateChildFn } from '@angular/router';
+import { BsNavigationLockService } from '../service/navigation-lock.service';
 
-@Injectable({
-  providedIn: 'root'
-})
-export class BsNavigationLockGuard  {
-  canDeactivate(
-    component: BsHasNavigationLock,
-    currentRoute: ActivatedRouteSnapshot,
-    currentState: RouterStateSnapshot,
-    nextState?: RouterStateSnapshot): Promise<boolean | UrlTree> {
-      if (component.navigationLock()) {
-        return component.navigationLock().requestCanExit();
-      } else {
-        console.warn('When using <bs-navigation-lock>, you should implement BsHasNavigationLock and add "readonly navigationLock = viewChild.required<BsNavigationLockDirective>(\'navigationLock\');" to your page');
-        return new Promise<boolean>(resolve => resolve(false));
-      }
-  }
-  
-}
+/**
+ * Functional guard the consumer registers ONCE at the root route:
+ *
+ * ```ts
+ * { path: '', canActivateChild: [bsNavigationLockGuard], children: [...] }
+ * ```
+ *
+ * Delegates to `BsNavigationLockService.requestExit()`. No first-class
+ * "trigger reason" is available inside `CanActivateChildFn`; programmatic
+ * call sites that need a reason should call `service.requestExit(reason)`
+ * directly.
+ */
+export const bsNavigationLockGuard: CanActivateChildFn = () => {
+  return inject(BsNavigationLockService).requestExit();
+};

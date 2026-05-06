@@ -1,33 +1,35 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { provideRouter, withRouterConfig } from '@angular/router';
 import { MockComponent, MockDirective } from 'ng-mocks';
-
-import { NavigationLockComponent } from './navigation-lock.component';
-import { BsToggleButtonComponent, BsToggleButtonGroupDirective } from '@mintplayer/ng-bootstrap/toggle-button';
 import { BsNavigationLockDirective } from '@mintplayer/ng-bootstrap/navigation-lock';
 
-describe('NavigationLockComponent', () => {
-  let component: NavigationLockComponent;
-  let fixture: ComponentFixture<NavigationLockComponent>;
+import { ChildAComponent } from './child-a.component';
+import { ConfirmDialogComponent } from '../../../../components/confirm-dialog/confirm-dialog.component';
+
+describe('ChildAComponent', () => {
+  let component: ChildAComponent;
+  let fixture: ComponentFixture<ChildAComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        NoopAnimationsModule,
         FormsModule,
-        MockComponent(BsToggleButtonComponent), MockDirective(BsToggleButtonGroupDirective),
         MockDirective(BsNavigationLockDirective),
-        NavigationLockComponent,
+        MockComponent(ConfirmDialogComponent),
+
+        // Unit to test (standalone)
+        ChildAComponent,
       ],
       providers: [
         provideRouter([], withRouterConfig({ canceledNavigationResolution: 'computed' })),
       ],
     })
     .compileComponents();
+  });
 
-    fixture = TestBed.createComponent(NavigationLockComponent);
+  beforeEach(() => {
+    fixture = TestBed.createComponent(ChildAComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

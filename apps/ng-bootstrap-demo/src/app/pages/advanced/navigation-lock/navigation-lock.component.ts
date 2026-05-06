@@ -1,8 +1,7 @@
-import { Component, viewChild, ChangeDetectionStrategy} from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { BsHasNavigationLock, BsNavigationLockDirective } from '@mintplayer/ng-bootstrap/navigation-lock';
+import { BsNavigationLockDirective } from '@mintplayer/ng-bootstrap/navigation-lock';
 import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
-import { Observable } from 'rxjs';
 
 @Component({
   selector: 'demo-navigation-lock',
@@ -11,29 +10,14 @@ import { Observable } from 'rxjs';
   imports: [FormsModule, BsToggleButtonComponent, BsNavigationLockDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class NavigationLockComponent implements BsHasNavigationLock {
-  readonly navigationLock = viewChild.required<BsNavigationLockDirective>('navigationLock');
+export class NavigationLockComponent {
   allowExit: boolean | null = false;
-  canExit = new Observable<boolean>((sub) => {
+  exitMessage = 'Are you sure you want to leave this page?';
+
+  canExit = (): boolean => {
     if (this.allowExit === true) {
-      sub.next(true);
-    } else {
-      if (confirm(this.navigationLock().exitMessage() ?? 'Are you sure you want to leave this page?')) {
-        sub.next(true);
-      } else {
-        sub.next(false);
-      }
+      return true;
     }
-  });
-  // canExit = () => {
-  //   if (this.allowExit === true) {
-  //     return true;
-  //   } else {
-  //     if (confirm(this.navigationLock.exitMessage ?? 'Are you sure you want to leave this page?')) {
-  //       return true;
-  //     } else {
-  //       return false;
-  //     }
-  //   }
-  // };
+    return confirm(this.exitMessage);
+  };
 }

@@ -1,9 +1,10 @@
 import { provideHttpClient, withFetch } from "@angular/common/http";
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZonelessChangeDetection } from "@angular/core";
 import { provideAnimations } from "@angular/platform-browser/animations";
-import { PreloadAllModules, provideRouter, withEnabledBlockingInitialNavigation, withPreloading, withInMemoryScrolling } from "@angular/router";
+import { PreloadAllModules, provideRouter, withEnabledBlockingInitialNavigation, withPreloading, withInMemoryScrolling, withRouterConfig } from "@angular/router";
 import { provideHighlightOptions } from 'ngx-highlightjs';
 import ngBootstrapJson from '@mintplayer/ng-bootstrap/package.json';
+import { bsNavigationLockGuard, provideNavigationLock } from '@mintplayer/ng-bootstrap/navigation-lock';
 import { GIT_REPO } from "./providers/git-repo.provider";
 import { BOOTSTRAP_VERSION } from "./providers/bootstrap-version.provider";
 
@@ -15,15 +16,17 @@ export const config: ApplicationConfig = {
         provideBrowserGlobalErrorListeners(),
         provideRouter(
             [
-                { path: '', loadChildren: () => import('./pages/pages.routes').then(m => m.ROUTES) },
+                { path: '', canActivateChild: [bsNavigationLockGuard], loadChildren: () => import('./pages/pages.routes').then(m => m.ROUTES) },
             ],
             withPreloading(PreloadAllModules),
             withEnabledBlockingInitialNavigation(),
             withInMemoryScrolling({
                 scrollPositionRestoration: 'enabled',
                 anchorScrolling: 'enabled',
-            })
+            }),
+            withRouterConfig({ canceledNavigationResolution: 'computed' })
         ),
+        provideNavigationLock(),
         provideHighlightOptions({
             fullLibraryLoader: () => import('highlight.js'),
             themePath: 'solarized-dark.css'

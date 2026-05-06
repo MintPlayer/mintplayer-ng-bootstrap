@@ -1,0 +1,8 @@
+<form bsNavigationLock [canExit]="canExit">
+  <h2>Child A</h2>
+  <label>
+    <input type="checkbox" [checked]="dirty()" (change)="dirty.set(!!$any($event.target).checked)">
+    Form is dirty (will block navigation)
+  </label>
+</form>
+<demo-confirm-dialog title="Leave Child A?"></demo-confirm-dialog>

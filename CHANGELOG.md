@@ -5,6 +5,39 @@ package version aligns its major with the supported Angular major.
 
 ## [Unreleased]
 
+### Breaking
+
+- **Navigation-lock redesign** (#169, see `docs/prd/navigation-lock-redesign.md`).
+  The opt-in directive + per-route guard pair is replaced by a global
+  `CanActivateChild` guard backed by a registry service. Migration:
+
+  1. Drop `canDeactivate: [BsNavigationLockGuard]` from any route definition.
+  2. Drop `implements BsHasNavigationLock` and any
+     `viewChild.required<BsNavigationLockDirective>('navigationLock')` from
+     your page component.
+  3. Drop the `#navigationLock="bsNavigationLock"` template ref unless you
+     use it for your own logic.
+  4. Move `[bsNavigationLock]` from an empty `<ng-container>` onto a
+     meaningful element (the `<form>`).
+  5. Wrap your top-level routes in
+     `{ path: '', canActivateChild: [bsNavigationLockGuard], children: [...] }`.
+     Import `bsNavigationLockGuard` from
+     `@mintplayer/ng-bootstrap/navigation-lock`.
+  6. Add `withRouterConfig({ canceledNavigationResolution: 'computed' })`
+     to your `provideRouter(...)` call. Required for popstate-cancel to
+     restore the history stack correctly.
+
+  API delta:
+  - REMOVED: `BsNavigationLockGuard` (class), `BsHasNavigationLock`
+    (interface).
+  - ADDED: `bsNavigationLockGuard` (functional `CanActivateChildFn`),
+    `BsNavigationLockService`, `BsNavigationLockHandle`,
+    `BS_NAVIGATION_LOCK_CONFIRM`, `provideNavigationLock`.
+  - CHANGED: `BsNavigationLockDirective.requestCanExit()` returns
+    `boolean | Promise<boolean> | Observable<boolean>` (was
+    `Promise<boolean>`); the `canExit` function-shape input now accepts an
+    optional `reason: string` argument.
+
 ## [21.18.0] — 2026-04-27
 
 ### Breaking
