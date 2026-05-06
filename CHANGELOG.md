@@ -5,6 +5,10 @@ package version aligns its major with the supported Angular major.
 
 ## [Unreleased]
 
+### Added
+
+- `@mintplayer/ng-bootstrap/navbar`: `BsNavbarTriggerDirective` (`[bsNavbarTrigger]`) for dropdown trigger anchors. Replaces `routerLink` + `routerLinkActive` on triggers — drives the active CSS class via `Router.events` without RouterLink's programmatic-navigate behaviour. Use `routerLink` on the items INSIDE the dropdown for actual navigation; use `bsNavbarTrigger` on the trigger anchor that opens the dropdown.
+
 ### Breaking
 
 - **Navigation-lock redesign** (#169, see `docs/prd/navigation-lock-redesign.md`).

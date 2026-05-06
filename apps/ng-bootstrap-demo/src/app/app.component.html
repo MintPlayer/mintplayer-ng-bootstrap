@@ -12,13 +12,13 @@
       <a [routerLink]='["/"]' [routerLinkActiveOptions]="{exact: true}">Home</a>
     </bs-navbar-item>
     <bs-navbar-item>
-      <a [routerLink]="['/basic']">Basic</a>
+      <a bsNavbarTrigger="/basic">Basic</a>
       <bs-navbar-dropdown>
         <bs-navbar-item>
           <a [routerLink]='["/basic", "alert"]'>Alert</a>
         </bs-navbar-item>
         <bs-navbar-item>
-          <a [routerLink]="['/basic', 'forms']">Forms</a>
+          <a bsNavbarTrigger="/basic/forms">Forms</a>
           <bs-navbar-dropdown>
             <bs-navbar-item>
               <a [routerLink]='["/basic", "forms", "floating-labels"]'>Floating labels</a>
@@ -38,7 +38,7 @@
           </bs-navbar-dropdown>
         </bs-navbar-item>
         <bs-navbar-item>
-          <a [routerLink]='["/basic", "containers"]'>Containers</a>
+          <a bsNavbarTrigger="/basic/containers">Containers</a>
           <bs-navbar-dropdown>
             <bs-navbar-item>
               <a [routerLink]='["/basic", "containers", "grid"]'>Grid</a>
@@ -121,7 +121,7 @@
       </bs-navbar-dropdown>
     </bs-navbar-item>
     <bs-navbar-item>
-      <a [routerLink]="['/overlays']">Overlays</a>
+      <a bsNavbarTrigger="/overlays">Overlays</a>
       <bs-navbar-dropdown>
         <bs-navbar-item>
           <a [routerLink]='["/overlays", "modals"]'>Modals</a>
@@ -156,7 +156,7 @@
       </bs-navbar-dropdown>
     </bs-navbar-item>
     <bs-navbar-item>
-      <a [routerLink]="['/advanced']">Advanced</a>
+      <a bsNavbarTrigger="/advanced">Advanced</a>
       <bs-navbar-dropdown>
         <bs-navbar-item>
           <a [routerLink]='["/advanced", "copy"]'>Copy</a>
@@ -165,7 +165,7 @@
           <a [routerLink]='["/advanced", "code-snippet"]'>Code snippet</a>
         </bs-navbar-item>
         <bs-navbar-item>
-          <a [routerLink]='["/advanced", "pipes"]'>Pipes</a>
+          <a bsNavbarTrigger="/advanced/pipes">Pipes</a>
           <bs-navbar-dropdown>
             <bs-navbar-item>
               <a [routerLink]='["/advanced", "pipes", "trust-html"]'>Trust-html</a>
@@ -268,7 +268,7 @@
       </bs-navbar-dropdown>
     </bs-navbar-item>
     <bs-navbar-item>
-      <a [routerLink]="['/animations']">Animations</a>
+      <a bsNavbarTrigger="/animations">Animations</a>
       <bs-navbar-dropdown>
         <bs-navbar-item>
           <a [routerLink]='["/animations", "slide-up-down"]'>Slide up/down</a>
@@ -282,7 +282,7 @@
       </bs-navbar-dropdown>
     </bs-navbar-item>
     <bs-navbar-item>
-      <a [routerLink]="['/additional-samples']">Additional samples</a>
+      <a bsNavbarTrigger="/additional-samples">Additional samples</a>
       <bs-navbar-dropdown>
         <bs-navbar-item>
           <a [routerLink]='["/additional-samples", "collapse"]'>Collapse</a>
@@ -303,7 +303,7 @@
           <a [routerLink]='["/additional-samples", "swiper"]'>Swiper</a>
         </bs-navbar-item>
         <bs-navbar-item>
-          <a [routerLink]='["/additional-samples", "anchor-scrolling"]'>Anchor scrolling</a>
+          <a bsNavbarTrigger="/additional-samples/anchor-scrolling">Anchor scrolling</a>
           <bs-navbar-dropdown>
             <bs-navbar-item>
               <a [routerLink]='["/additional-samples", "anchor-scrolling"]' fragment="section1">Section 1</a>
