@@ -18,6 +18,7 @@ export class BsNavigationLockService {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly destroy = inject(DestroyRef);
   private readonly locks = new Set<BsNavigationLockHandle>();
+  private pending: Promise<boolean> | null = null;
 
   constructor() {
     if (isDevMode()) {
@@ -56,8 +57,20 @@ export class BsNavigationLockService {
   /**
    * Programmatic check: ask every active lock if exit is OK.
    * Resolves true only when every lock allows exit. Short-circuits on first false.
+   *
+   * Re-entrant calls while a check is already in flight return the same Promise
+   * — only the first `reason` is consulted. This dedups both router-driven
+   * fires (e.g. `canMatch` running once) and programmatic call sites that
+   * might invoke `requestExit` multiple times in the same tick.
    */
-  async requestExit(reason?: string): Promise<boolean> {
+  requestExit(reason?: string): Promise<boolean> {
+    if (this.pending) return this.pending;
+    this.pending = this.doRequestExit(reason);
+    this.pending.finally(() => { this.pending = null; });
+    return this.pending;
+  }
+
+  private async doRequestExit(reason?: string): Promise<boolean> {
     for (const lock of this.locks) {
       const ok = await this.normalise(lock.requestCanExit(reason));
       if (!ok) return false;

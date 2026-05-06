@@ -20,8 +20,10 @@ package version aligns its major with the supported Angular major.
   4. Move `[bsNavigationLock]` from an empty `<ng-container>` onto a
      meaningful element (the `<form>`).
   5. Wrap your top-level routes in
-     `{ path: '', canActivateChild: [bsNavigationLockGuard], children: [...] }`.
-     Import `bsNavigationLockGuard` from
+     `{ path: '', canMatch: [bsNavigationLockGuard], children: [...] }`.
+     **Use `canMatch`, not `canActivateChild`** — `canActivateChild` fires
+     once per descendant activation, so deep destinations would prompt N
+     times. Import `bsNavigationLockGuard` from
      `@mintplayer/ng-bootstrap/navigation-lock`.
   6. Add `withRouterConfig({ canceledNavigationResolution: 'computed' })`
      to your `provideRouter(...)` call. Required for popstate-cancel to
@@ -30,13 +32,18 @@ package version aligns its major with the supported Angular major.
   API delta:
   - REMOVED: `BsNavigationLockGuard` (class), `BsHasNavigationLock`
     (interface).
-  - ADDED: `bsNavigationLockGuard` (functional `CanActivateChildFn`),
+  - ADDED: `bsNavigationLockGuard` (functional `CanMatchFn`),
     `BsNavigationLockService`, `BsNavigationLockHandle`,
     `BS_NAVIGATION_LOCK_CONFIRM`, `provideNavigationLock`.
   - CHANGED: `BsNavigationLockDirective.requestCanExit()` returns
     `boolean | Promise<boolean> | Observable<boolean>` (was
     `Promise<boolean>`); the `canExit` function-shape input now accepts an
     optional `reason: string` argument.
+
+  Note: `canMatch` returns false to indicate non-match; if your app has a
+  wildcard `**` route the navigation may fall through there instead of
+  staying put. If that's a concern, also apply `bsNavigationLockGuard` to
+  the wildcard route.
 
 ## [21.18.0] — 2026-04-27
 

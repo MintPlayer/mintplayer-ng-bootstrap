@@ -70,12 +70,14 @@ Total external surface: one directive, one guard, one interface, one provider-of
 
 ### 4.1 `BsNavigationLockService` (root-provided) + `bsNavigationLockGuard`
 
-Cancellation is driven by a functional guard the lib exports — `bsNavigationLockGuard: CanActivateChildFn` — which the consumer registers ONCE at their root route:
+Cancellation is driven by a functional guard the lib exports — `bsNavigationLockGuard: CanMatchFn` — which the consumer registers ONCE at their root route:
+
+> **Why `canMatch` and not `canActivateChild`:** `canActivateChild` fires once per descendant route activation in the destination URL tree. For a destination like `/basic/forms/range` (3 child segments) it would fire 3 times — and because Angular runs guards sequentially, accepting the first prompt advances to the next guard, which fires another prompt. The user sees N prompts where N is the destination depth. `canMatch` runs once per route-match attempt regardless of nesting, which is the right semantic for "should this navigation start at all".
 
 ```ts
 // app.routes.ts
 export const routes: Routes = [
-  { path: '', canActivateChild: [bsNavigationLockGuard], children: [/* all real routes */] }
+  { path: '', canMatch: [bsNavigationLockGuard], children: [/* all real routes */] }
 ];
 
 // app.config.ts
@@ -91,6 +93,7 @@ Why a guard and not `Router.events` interception: in `Router.events.NavigationSt
 
 The service no longer subscribes to `Router.events` for cancellation. It still:
 - Owns the lock registry (`register`/`unregister`).
+- Dedups in-flight `requestExit` calls. Re-entrant invocations within a single resolution share the same Promise — guards against any future re-entry path (programmatic call sites, stacking guards) prompting the user multiple times.
 - Owns the single `window:beforeunload` listener.
 - Exposes `requestExit(reason?: string): Promise<boolean>` for both the guard and programmatic consumers (e.g., "logout" buttons, "switch workspace" actions).
 - Exposes the `BS_NAVIGATION_LOCK_CONFIRM` injection token.
@@ -222,7 +225,7 @@ We document this clearly: **for `beforeunload` to behave intuitively, prefer a s
 **After**:
 - `BsNavigationLockDirective` (directive — same selector, same inputs, same `exportAs`, `host` bindings removed)
 - `BsNavigationLockService` (root-provided service — public API: `requestExit(reason?: string): Promise<boolean>`)
-- `bsNavigationLockGuard: CanActivateChildFn` (functional guard, registered once at the root route — see §4.1)
+- `bsNavigationLockGuard: CanMatchFn` (functional guard, registered once at the root route — see §4.1)
 - `BsNavigationLockHandle` (structural interface — what the service registers internally; consumers can register arbitrary handles for advanced cases)
 - `provideNavigationLock(opts?)` (provider function for optional configuration)
 - `BS_NAVIGATION_LOCK_CONFIRM` (injection token for the optional confirm hook — see §5.5)
@@ -239,7 +242,7 @@ There are exactly two consumers in this workspace today: the navigation-lock ent
 2. Drop the `implements BsHasNavigationLock` and the `viewChild.required<...>('navigationLock')` from the component.
 3. Drop the `#navigationLock="bsNavigationLock"` template ref unless the consumer is using it for its own purposes.
 4. Move the `[bsNavigationLock]` directive onto a meaningful element (the `<form>`) when one exists, instead of an empty `ng-container`.
-5. Wrap your existing top-level routes in a single `{ path: '', canActivateChild: [bsNavigationLockGuard], children: [...] }` entry.
+5. Wrap your existing top-level routes in a single `{ path: '', canMatch: [bsNavigationLockGuard], children: [...] }` entry (use `canMatch`, **not** `canActivateChild` — see §4.1 for why).
 6. If your `provideRouter(...)` call doesn't already set `canceledNavigationResolution: 'computed'`, add `withRouterConfig({ canceledNavigationResolution: 'computed' })`. Required for clean popstate-cancel.
 
 CHANGELOG entry calls these out as a breaking change for external consumers, with the same migration recipe.
@@ -278,6 +281,7 @@ CHANGELOG entry calls these out as a breaking change for external consumers, wit
 - **Order of `requestCanExit` calls.** Multiple locks → registration order. If a consumer has two locks and the first prompts the user but the second auto-resolves `false`, the user is prompted before they need to be. Mitigation: short-circuit the registry walk on the first `false`. Document the order so consumers can place their cheapest check first.
 - **SSR.** The service registers `window:beforeunload` only when `isPlatformBrowser` is true. The directive's register/unregister calls are no-ops on the server (registry exists, `Router.events` interception still works for in-SPA navigation, just no `beforeunload`).
 - **Module federation / lazy-loaded routes.** Each lazy bundle that uses `BsNavigationLockDirective` re-imports it; the service is `providedIn: 'root'` so it's a singleton across the app shell — fine for the standard case. Federated remotes with their own router instances are out of scope (they are out of scope for the entire workspace today).
+- **`canMatch` returning false makes the route "not match".** If the consumer's app has a wildcard `**` route, the navigation may fall through there instead of cancelling cleanly. Most apps don't have a `**` redirect that conflicts with this. If yours does, additionally apply `bsNavigationLockGuard` to the wildcard route so the lock fires there too.
 
 ## 10. Open questions
 
@@ -285,10 +289,11 @@ CHANGELOG entry calls these out as a breaking change for external consumers, wit
 2. **Do we need `requestExit(reason)` at all in v1?** The programmatic API is cheap to add and proves the architecture, but no in-tree consumer needs it yet. **Recommendation:** include it. The implementation cost is roughly zero given the registry is already there; leaving it out and adding it later is more churn than just shipping it. **Resolved:** yes, include it — and `reason` propagates through to the directive's `canExit(reason)` callback (see §5.5, §4.2).
 3. **Keep `unload` listener?** Today's directive binds `(window:unload)` but the handler is empty. Drop it as part of this refactor.
 4. **Cancellation mechanic.** Originally proposed as `Router.events` interception (subscribe to `NavigationStart`, await locks, restore URL on cancel). Code review surfaced the destroy-then-restore problem: at `NavigationStart` the source component is destroyed before any async lock can resolve, so a "restore" navigation re-mounts it with fresh state and the user loses unsaved data. **Resolved** by switching to a `CanActivateChildFn` registered at the root route: the router consults the guard before activation/destruction, the source component stays mounted, state is preserved.
+5. **Resolved post-implementation:** the original guard plan used `canActivateChild` at the root. Browser testing surfaced an N-prompts-per-navigation bug for deep destinations (one prompt per descendant route activation; users only see >1 if they accept the first). Switched to `canMatch` and added in-flight `requestExit` dedup as defence in depth.
 
 ## 11. Decision
 
-**Yes, redesign.** The current architecture mis-models the lock's lifetime (route-scoped instead of directive-scoped), which produces both reported failures as direct symptoms. Moving the lock's lifetime to the directive instance, centralising the `beforeunload` listener in a root service, and replacing the per-route `canDeactivate` guard with a single root-level `CanActivateChildFn`, eliminates both the false-positive (because route geometry no longer determines lock activity) and the boilerplate (because the bridge classes that exist only to connect route → component → directive disappear). The reference architecture from Shlomi Assaf's article is the same shape; this PRD's specifics are tuned to the workspace's signal-input directive pattern and to the BC posture documented in workspace memory.
+**Yes, redesign.** The current architecture mis-models the lock's lifetime (route-scoped instead of directive-scoped), which produces both reported failures as direct symptoms. Moving the lock's lifetime to the directive instance, centralising the `beforeunload` listener in a root service, and replacing the per-route `canDeactivate` guard with a single root-level functional guard, eliminates both the false-positive (because route geometry no longer determines lock activity) and the boilerplate (because the bridge classes that exist only to connect route → component → directive disappear). The reference architecture from Shlomi Assaf's article is the same shape; this PRD's specifics are tuned to the workspace's signal-input directive pattern and to the BC posture documented in workspace memory. The chosen guard hook is `canMatch`, not `canActivateChild` — see §4.1 for the depth-fires bug surfaced post-implementation.
 
 Estimated change footprint:
 - `libs/mintplayer-ng-bootstrap/navigation-lock/src/`: delete the old `guard/` (per-route `canDeactivate` class) and `interface/`, modify `directive/`, create `service/navigation-lock.service.ts`, create `guard/navigation-lock.guard.ts` (the new functional `CanActivateChildFn`; same path is fine since the old guard is deleted), create `providers/navigation-lock.provider.ts`, and the `BsNavigationLockHandle` interface (co-located in `service/`). Net file delta: roughly even, with the service and directive each ~80–120 lines and the guard a thin delegator.

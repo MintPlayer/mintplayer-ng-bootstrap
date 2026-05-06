@@ -1,14 +1,14 @@
 import { vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
+import { Route, UrlSegment } from '@angular/router';
 import { bsNavigationLockGuard } from './navigation-lock.guard';
 import { BsNavigationLockService } from '../service/navigation-lock.service';
 
 function runGuard(): boolean | Promise<boolean> | unknown {
   return TestBed.runInInjectionContext(() =>
     bsNavigationLockGuard(
-      {} as ActivatedRouteSnapshot,
-      {} as RouterStateSnapshot,
+      {} as Route,
+      [] as UrlSegment[],
     ),
   );
 }
@@ -56,7 +56,7 @@ describe('bsNavigationLockGuard', () => {
       providers: [{ provide: BsNavigationLockService, useValue: service }],
     }).compileComponents();
 
-    // The guard takes no trigger argument — sanity check the same call returns
+    // The guard ignores its arguments — sanity check the same call returns
     // the same shape both times.
     const a = await runGuard();
     const b = await runGuard();

@@ -16,7 +16,7 @@ export const config: ApplicationConfig = {
         provideBrowserGlobalErrorListeners(),
         provideRouter(
             [
-                { path: '', canActivateChild: [bsNavigationLockGuard], loadChildren: () => import('./pages/pages.routes').then(m => m.ROUTES) },
+                { path: '', canMatch: [bsNavigationLockGuard], loadChildren: () => import('./pages/pages.routes').then(m => m.ROUTES) },
             ],
             withPreloading(PreloadAllModules),
             withEnabledBlockingInitialNavigation(),

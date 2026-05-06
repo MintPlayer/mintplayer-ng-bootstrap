@@ -149,6 +149,32 @@ describe('BsNavigationLockService', () => {
       subj.complete();
       await expect(promise).resolves.toBe(false);
     });
+
+    it('returns the same in-flight promise for re-entrant calls', async () => {
+      const spy = vi.fn().mockImplementation(
+        () => new Promise<boolean>((resolve) => setTimeout(() => resolve(true), 10)),
+      );
+      service.register(makeHandle({ requestCanExit: spy }));
+
+      const a = service.requestExit('a');
+      const b = service.requestExit('b');
+      expect(a).toBe(b); // same Promise
+
+      const [ra, rb] = await Promise.all([a, b]);
+      expect(ra).toBe(true);
+      expect(rb).toBe(true);
+      expect(spy).toHaveBeenCalledTimes(1); // only the first reason was consulted
+      expect(spy).toHaveBeenCalledWith('a');
+    });
+
+    it('starts a fresh request after the previous resolves', async () => {
+      const spy = vi.fn().mockReturnValue(true);
+      service.register(makeHandle({ requestCanExit: spy }));
+
+      await service.requestExit();
+      await service.requestExit();
+      expect(spy).toHaveBeenCalledTimes(2);
+    });
   });
 
   describe('SSR (server platform)', () => {
