@@ -1,6 +1,6 @@
 # PRD: NavigationLock redesign — single-directive, router-event-driven
 
-**Status:** Draft, awaiting review.
+**Status:** Implemented on branch `docs/prd-navigation-lock-redesign`, awaiting PR.
 **Author:** Pieterjan
 **Date:** 2026-05-06
 **Library:** `@mintplayer/ng-bootstrap/navigation-lock`
