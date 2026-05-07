@@ -5,6 +5,57 @@ package version aligns its major with the supported Angular major.
 
 ## [Unreleased]
 
+### Added
+
+- `@mintplayer/ng-bootstrap/navbar`: `BsNavbarTriggerDirective` (`[bsNavbarTrigger]`) for dropdown trigger anchors. Replaces `routerLink` + `routerLinkActive` on triggers — drives the active CSS class via `Router.events` without RouterLink's programmatic-navigate behaviour. Use `routerLink` on the items INSIDE the dropdown for actual navigation; use `bsNavbarTrigger` on the trigger anchor that opens the dropdown.
+- `@mintplayer/ng-bootstrap/navigation-lock`: `provideNavigationLockRouter(routes, ...features)` — single-call router setup that wraps your routes in the required `canMatch: [bsNavigationLockGuard]` and applies `canceledNavigationResolution: 'computed'`. Use in place of `provideRouter(...)` to avoid having to remember both pieces.
+
+### Breaking
+
+- **Navigation-lock redesign** (#169, see `docs/prd/navigation-lock-redesign.md`).
+  The opt-in directive + per-route guard pair is replaced by a global
+  `CanActivateChild` guard backed by a registry service. Migration:
+
+  1. Drop `canDeactivate: [BsNavigationLockGuard]` from any route definition.
+  2. Drop `implements BsHasNavigationLock` and any
+     `viewChild.required<BsNavigationLockDirective>('navigationLock')` from
+     your page component.
+  3. Drop the `#navigationLock="bsNavigationLock"` template ref unless you
+     use it for your own logic.
+  4. Move `[bsNavigationLock]` from an empty `<ng-container>` onto a
+     meaningful element (the `<form>`).
+  5. Replace your `provideRouter(routes, ...features)` call with
+     `provideNavigationLockRouter(routes, ...features)`. The helper wraps
+     your routes in the required `canMatch: [bsNavigationLockGuard]` and
+     applies `withRouterConfig({ canceledNavigationResolution: 'computed' })`
+     (needed for popstate-cancel to restore the history stack).
+
+     If your router setup is too custom for the helper, wire it manually:
+     wrap your top-level routes in
+     `{ path: '', canMatch: [bsNavigationLockGuard], children: [...] }`
+     (use **`canMatch`**, not `canActivateChild` — `canActivateChild` fires
+     once per descendant activation, so deep destinations would prompt N
+     times) and add
+     `withRouterConfig({ canceledNavigationResolution: 'computed' })` to
+     your `provideRouter(...)` call.
+
+  API delta:
+  - REMOVED: `BsNavigationLockGuard` (class), `BsHasNavigationLock`
+    (interface).
+  - ADDED: `bsNavigationLockGuard` (functional `CanMatchFn`),
+    `BsNavigationLockService`, `BsNavigationLockHandle`,
+    `BS_NAVIGATION_LOCK_CONFIRM`, `provideNavigationLock`,
+    `provideNavigationLockRouter`.
+  - CHANGED: `BsNavigationLockDirective.requestCanExit()` returns
+    `boolean | Promise<boolean> | Observable<boolean>` (was
+    `Promise<boolean>`); the `canExit` function-shape input now accepts an
+    optional `reason: string` argument.
+
+  Note: `canMatch` returns false to indicate non-match; if your app has a
+  wildcard `**` route the navigation may fall through there instead of
+  staying put. If that's a concern, also apply `bsNavigationLockGuard` to
+  the wildcard route.
+
 ## [21.18.0] — 2026-04-27
 
 ### Breaking

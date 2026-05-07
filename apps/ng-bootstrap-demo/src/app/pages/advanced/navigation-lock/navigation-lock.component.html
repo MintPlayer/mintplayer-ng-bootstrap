@@ -1,6 +1,27 @@
 <h1 class="text-center">Navigation lock</h1>
-<bs-toggle-button [type]="'checkbox'" [(ngModel)]="allowExit">Allow exit</bs-toggle-button>
-<br>
-
-<!-- [canExit]="allowExit ?? true" -->
-<ng-container bsNavigationLock [canExit]="canExit" #navigationLock="bsNavigationLock"></ng-container>
+<section bsNavigationLock [canExit]="canExit">
+  <p>Type something below, toggle "Allow exit" off, then click a different navbar item. Cancel the confirm &mdash; your text is still here.</p>
+  <bs-form>
+    <bs-grid>
+      <div bsRow class="mb-3">
+        <label [md]="4" bsColFormLabel [bsFor]="firstNameInput">First name</label>
+        <div [md]="8">
+          <input type="text" name="firstName" #firstNameInput [(ngModel)]="firstName">
+        </div>
+      </div>
+      <div bsRow class="mb-3">
+        <label [md]="4" bsColFormLabel [bsFor]="lastNameInput">Last name</label>
+        <div [md]="8">
+          <input type="text" name="lastName" #lastNameInput [(ngModel)]="lastName">
+        </div>
+      </div>
+      <div bsRow class="mb-3">
+        <label [md]="4" bsColFormLabel [bsFor]="notesInput">Notes</label>
+        <div [md]="8">
+          <textarea name="notes" rows="4" #notesInput [(ngModel)]="notes"></textarea>
+        </div>
+      </div>
+    </bs-grid>
+  </bs-form>
+  <bs-toggle-button [type]="'checkbox'" [(ngModel)]="allowExit">Allow exit</bs-toggle-button>
+</section>

@@ -1,39 +1,30 @@
-import { Component, viewChild, ChangeDetectionStrategy} from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { BsHasNavigationLock, BsNavigationLockDirective } from '@mintplayer/ng-bootstrap/navigation-lock';
+import { BsForDirective } from '@mintplayer/ng-bootstrap/for';
+import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
+import { BsColFormLabelDirective, BsGridColumnDirective, BsGridComponent, BsGridRowDirective } from '@mintplayer/ng-bootstrap/grid';
+import { BsNavigationLockDirective } from '@mintplayer/ng-bootstrap/navigation-lock';
 import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
-import { Observable } from 'rxjs';
 
 @Component({
   selector: 'demo-navigation-lock',
   templateUrl: './navigation-lock.component.html',
   styleUrls: ['./navigation-lock.component.scss'],
-  imports: [FormsModule, BsToggleButtonComponent, BsNavigationLockDirective],
+  imports: [FormsModule, BsForDirective, BsFormComponent, BsFormControlDirective, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective, BsToggleButtonComponent, BsNavigationLockDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class NavigationLockComponent implements BsHasNavigationLock {
-  readonly navigationLock = viewChild.required<BsNavigationLockDirective>('navigationLock');
+export class NavigationLockComponent {
   allowExit: boolean | null = false;
-  canExit = new Observable<boolean>((sub) => {
+  exitMessage = 'Are you sure you want to leave this page?';
+
+  firstName = '';
+  lastName = '';
+  notes = '';
+
+  canExit = (): boolean => {
     if (this.allowExit === true) {
-      sub.next(true);
-    } else {
-      if (confirm(this.navigationLock().exitMessage() ?? 'Are you sure you want to leave this page?')) {
-        sub.next(true);
-      } else {
-        sub.next(false);
-      }
+      return true;
     }
-  });
-  // canExit = () => {
-  //   if (this.allowExit === true) {
-  //     return true;
-  //   } else {
-  //     if (confirm(this.navigationLock.exitMessage ?? 'Are you sure you want to leave this page?')) {
-  //       return true;
-  //     } else {
-  //       return false;
-  //     }
-  //   }
-  // };
+    return confirm(this.exitMessage);
+  };
 }

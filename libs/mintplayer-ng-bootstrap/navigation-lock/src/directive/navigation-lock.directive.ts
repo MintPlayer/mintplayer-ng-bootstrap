@@ -1,70 +1,48 @@
 import { DestroyRef, Directive, inject, input } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
-import { take, Observable } from 'rxjs';
-
+import { Observable } from 'rxjs';
+import { BS_NAVIGATION_LOCK_CONFIRM, BsNavigationLockService } from '../service/navigation-lock.service';
+import { BsNavigationLockHandle } from '../service/navigation-lock-handle';
 
 /**
- * Places a navigation lock on this page.
+ * Marks the host as a navigation-blocker. Drop `[bsNavigationLock]` on a real
+ * element (typically the form). Set `[canExit]` to a boolean, function, or
+ * Observable. The service consults every active lock on Router navigation
+ * (via `bsNavigationLockGuard` registered at the root) and on `beforeunload`.
  *
- * Don't forget to add the following to your route:
- *
- * ```ts
- * canDeactivate: [BsNavigationLockGuard]
- * ```
- *
- * and implement the `BsHasNavigationLock` on the page:
- *
- * ```ts
- * ViewChild('navigationLock') navigationLock!: BsNavigationLockDirective;
- * ```
- *
- **/
+ * Fallback: if `canExit` is not set but `exitMessage` is, the directive uses
+ * the injected `BS_NAVIGATION_LOCK_CONFIRM` hook with that message.
+ */
 @Directive({
   selector: '[bsNavigationLock]',
   exportAs: 'bsNavigationLock',
-  host: {
-    '(window:beforeunload)': 'onBeforeUnload($event)',
-    '(window:unload)': 'onUnload($event)',
-  },
 })
-export class BsNavigationLockDirective {
-  private router = inject(Router);
-  private route = inject(ActivatedRoute);
-  private destroy = inject(DestroyRef);
+export class BsNavigationLockDirective implements BsNavigationLockHandle {
+  private readonly destroy = inject(DestroyRef);
+  private readonly service = inject(BsNavigationLockService);
+  private readonly confirmFn = inject(BS_NAVIGATION_LOCK_CONFIRM);
 
-  readonly canExit = input<boolean | (() => boolean) | Observable<boolean> | undefined>(undefined);
+  readonly canExit = input<
+    | boolean
+    | ((reason?: string) => boolean | Promise<boolean> | Observable<boolean>)
+    | Observable<boolean>
+    | undefined
+  >(undefined);
   readonly exitMessage = input<string | undefined>(undefined);
 
-  requestCanExit() {
+  constructor() {
+    this.service.register(this);
+    this.destroy.onDestroy(() => this.service.unregister(this));
+  }
+
+  requestCanExit(reason?: string): boolean | Promise<boolean> | Observable<boolean> {
     const canExit = this.canExit();
-    return new Promise<boolean>((resolve, reject) => {
-      if (typeof canExit === 'undefined') {
-        resolve(true);
-      } else if (typeof canExit === 'boolean') {
-        resolve(canExit);
-      } else if (typeof canExit === 'function') {
-        const result = canExit();
-        resolve(result);
-      } else {
-        canExit.pipe(take(1), takeUntilDestroyed(this.destroy))
-          .subscribe((result) => resolve(result));
-      }
-    });
-  }
-
-  async onBeforeUnload(ev: BeforeUnloadEvent): Promise<string | undefined> {
-    const canExit = await this.requestCanExit();
-    if (!canExit) {
-      ev.preventDefault();
-      ev.returnValue = false;
-      return 'Are you sure?';
-    } else {
-      return undefined;
+    if (canExit === undefined) {
+      const msg = this.exitMessage();
+      if (msg) return Promise.resolve(this.confirmFn(msg));
+      return true;
     }
-  }
-
-  onUnload(ev: Event) {
-
+    if (typeof canExit === 'boolean') return canExit;
+    if (typeof canExit === 'function') return canExit(reason);
+    return canExit; // Observable<boolean>
   }
 }
