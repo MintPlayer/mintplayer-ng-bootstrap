@@ -279,16 +279,14 @@
   display: block;
   padding: 0.5rem 1rem;
   margin: -0.5rem -1rem;
-  // Allow horizontal scroll on the tabstrip while the long-press timer is
-  // running. The browser may claim the gesture for pan-x and fire
-  // pointercancel — armPaneDragGestureTouch interprets that as "user is
-  // scrolling" and leaves the panel docked. Once the long-press fires we
-  // call setPointerCapture on the host so subsequent moves drive the drag
-  // without further arbitration. Mouse / pen are unaffected because they
-  // don't go through the touch-action gesture path.
-  // See docs/prd/dock-touch-long-press-drag.md and
-  // docs/prd/dock-tab-drag-android-touch.md.
-  touch-action: pan-x;
+  // touch-action is consulted at touchstart and frozen for the lifetime of
+  // the gesture — `pan-x` cannot be promoted to "anything goes" mid-gesture
+  // even with setPointerCapture (the compositor has already arbitrated the
+  // touch). So we set `none` and own the gesture from frame 1: the browser
+  // never claims it for scroll or selection, and JS drives strip scroll
+  // programmatically during the pending window before the long-press fires.
+  // See docs/prd/dock-touch-long-press-drag.md.
+  touch-action: none;
   // Suppress iOS magnifier loupe / text selection on long-press.
   user-select: none;
   -webkit-user-select: none;

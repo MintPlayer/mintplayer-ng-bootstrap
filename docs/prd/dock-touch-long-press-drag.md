@@ -81,7 +81,7 @@ if (startEvent.pointerType === 'touch') {
 
 Pen is treated as mouse — pen jitter is small and pen users expect direct-manipulation precision. If a future device class needs nuance, it gets its own branch.
 
-### 4.2 Touch arming — long-press timer with movement slop
+### 4.2 Touch arming — long-press timer with JS-driven strip scroll
 
 A new private method `armPaneDragGestureTouch` runs the touch-specific arming:
 
@@ -94,24 +94,31 @@ A new private method `armPaneDragGestureTouch` runs the touch-specific arming:
 - **State machine** (per-gesture, scoped to one pointerdown):
   | State | Entered when | Exit conditions |
   | --- | --- | --- |
-  | `pending` | `pointerdown` on a tab header | timer fires → `armed`; movement >slop → `abandoned`; `pointerup` → `tap`; `pointercancel` → `abandoned` |
+  | `pending` | `pointerdown` on a tab header | timer fires → `armed`; horizontal move >slop on overflowing strip → `scrolling`; any other move >slop → `abandoned`; `pointerup` → `tap`; `pointercancel` → `abandoned` |
   | `armed` | hold timer fires while `pending` | `beginPaneDrag` runs synchronously with the most recent pointer position |
+  | `scrolling` | horizontal move >slop while `pending`, strip is `scrollWidth > clientWidth` | each subsequent `pointermove` does `ul.scrollLeft -= dx`; `pointerup` / `pointercancel` → cleanup |
   | `tap` | `pointerup` arrived first | clear pending metrics; let browser-synthesized click drive `tab-activate` (no `preventDefault`) |
-  | `abandoned` | movement >slop, or `pointercancel`, or visibility change | clear pending metrics; do nothing; native scroll proceeds |
+  | `abandoned` | non-horizontal move >slop, or `pointercancel`, or `pointerup` after a non-tap | clear pending metrics; do nothing |
 
 - **Listeners** (registered on `window` with `capture: true`, mirroring the mouse path):
-  - `pointermove` — track `latestClientX/Y`; if `Math.hypot(dx, dy) > SLOP` while `pending` → cancel timer, transition to `abandoned`, remove listeners.
-  - `pointerup` — if `pending` → cancel timer, transition to `tap`, remove listeners.
-  - `pointercancel` — if `pending` → cancel timer, transition to `abandoned`, remove listeners.
+  - `pointermove` — drives the `pending` → `scrolling` / `abandoned` decision and the `scrolling` scroll updates.
+  - `pointerup` — `cleanup`, no drag.
+  - `pointercancel` — `cleanup`, no drag.
+
+- **`pending` → `scrolling` transition** (the new piece):
+  When the first move past `TOUCH_LONG_PRESS_SLOP_PX` arrives:
+  1. If `Math.abs(dx) > Math.abs(dy)` AND the strip's `<ul>` has `scrollWidth > clientWidth` → enter `scrolling`. Clear the long-press timer and the press-feedback timer, remove the `data-pressing` attribute, set `lastScrollX = clientX`, apply the initial `dx` as `ul.scrollLeft -= dx` so the strip moves on the same frame as the decision. Keep all three window listeners attached.
+  2. Otherwise → `abandoned` (full `cleanup`).
+  In `scrolling`, each subsequent `pointermove` reads `dx = clientX - lastScrollX`, updates `lastScrollX`, and applies `ul.scrollLeft -= dx`. No drag, no momentum — direct 1:1 finger-follows-strip.
 
 - **Timer firing path** (`pending` → `armed`):
-  1. Call `setPointerCapture(pointerId)` on the dock host (`this`). This re-routes subsequent pointer events away from the browser's scroll arbitration to the dock element and is the key handshake that lets us start a drag mid-gesture without `pointercancel` hitting us.
-  2. Synthesise the call to `beginPaneDrag` using the latest tracked `clientX/Y` and the same `pointerId`. `beginPaneDrag` already accepts a `PointerEvent`-shaped argument; we either pass the most recent move event we held a reference to, or construct a minimal `{ clientX, clientY, pointerId, pointerType: 'touch' }` shim — whichever is cleaner at implementation time.
-  3. From here, the existing pipeline takes over: `dragState` is set, `startDragPointerTracking` runs (`:1813`), and the existing reorder-vs-undock 8 px header-bounds threshold (`:1976`) governs subsequent behavior. This is the part of the spec that matches "initially to reorder tabs within the tabstrip without undocking; when the tabstrip is exited by the thumb turn into a floating panel."
+  1. Call `setPointerCapture(pointerId)` on the dock host. With `touch-action: none` on `.dock-tab` the browser never tries to scroll or select to begin with; capture is kept as a safety net so events reach the dock host even if the originating `.dock-tab` is replaced by a re-render.
+  2. Synthesise a `pointermove` event from the latest tracked `clientX/Y` and pass it to `beginPaneDrag`.
+  3. From here, the existing pipeline takes over: `dragState` is set, `startDragPointerTracking` runs, and the reorder-vs-undock 8 px header-bounds threshold governs subsequent behavior.
 
-- **Self-cleanup** matches the mouse path: every exit path runs `cleanup()` which clears the timeout and removes all three window listeners.
+- **Self-cleanup** matches the mouse path: every terminal exit path (`armed`, `tap`, `abandoned`, `scrolling` end) runs `cleanup()` which clears the timeouts and removes all three window listeners.
 
-### 4.3 CSS — let the strip scroll until the long-press fires
+### 4.3 CSS — `touch-action: none` on `.dock-tab`
 
 `mint-dock-manager.element.scss` change to `.dock-tab`:
 
@@ -121,13 +128,13 @@ A new private method `armPaneDragGestureTouch` runs the touch-specific arming:
   padding: 0.5rem 1rem;
   margin: -0.5rem -1rem;
 
-  // Allow horizontal scroll on the tabstrip while the finger is "deciding"
-  // (the long-press hasn't fired yet). The browser claims the gesture for
-  // pan-x and fires pointercancel — armPaneDragGestureTouch interprets that
-  // as "user is scrolling" and leaves the panel docked. Once the long-press
-  // fires we call setPointerCapture on the host and the browser stops
-  // arbitrating, so subsequent moves drive the drag normally.
-  touch-action: pan-x;
+  // touch-action is consulted at touchstart and frozen for the lifetime of
+  // the gesture. `pan-x` cannot be promoted to "anything goes" mid-gesture
+  // even with setPointerCapture (the compositor has already arbitrated the
+  // touch). So we set `none` and own the gesture from frame 1: the browser
+  // never claims it for scroll or selection, and JS drives strip scroll
+  // programmatically during the pending window before the long-press fires.
+  touch-action: none;
 
   // Suppress iOS magnifier loupe / selection on long-press.
   user-select: none;
@@ -136,9 +143,7 @@ A new private method `armPaneDragGestureTouch` runs the touch-specific arming:
 }
 ```
 
-`pan-x` is the right policy because the strip itself is `overflow-x: auto`. If a stack ever ships with a vertical-scroll strip, this becomes `pan-y` — but that's not a current configuration.
-
-The other `touch-action: none` declarations (`.dock-floating__chrome` `:82`, `.dock-floating__resizer` `:121`, `.dock-intersection-handle` `:218`) stay as-is. They guard surfaces that have no competing native gesture.
+The other `touch-action: none` declarations (`.dock-floating__chrome`, `.dock-floating__resizer`, `.dock-intersection-handle`) stay as-is. They guard surfaces that have no competing native gesture.
 
 ### 4.4 Press feedback during the hold
 
@@ -195,6 +200,21 @@ Use Vitest's `vi.useFakeTimers()` for the 600 ms wait; the existing spec already
 
 Bump the touch threshold from 5 px to ~30 px so a "scroll-y" swipe doesn't undock. **Rejected.** The strip is `overflow-x: auto` — a horizontal swipe to scroll *is* the gesture we need to allow. A larger distance threshold delays the drag-undock by a similar amount but doesn't free the strip to scroll.
 
+### 6.1a `touch-action: pan-x` + setPointerCapture mid-gesture
+
+The original draft of this PRD specced `touch-action: pan-x` on `.dock-tab` and called `setPointerCapture` from the long-press timer to "claim" the gesture. **Rejected after measurement.** `touch-action` is consulted by the browser at the *first* touchstart and frozen for the lifetime of that gesture; `setPointerCapture` only retargets event delivery, it does not promote a `pan-x`-arbitrated gesture into a free-form one. Real-touch trace via Chrome DevTools `Input.dispatchTouchEvent`:
+
+```
+t=0     pointerdown   (touch)
+t=600   long-press timer fires → panel undocks, setPointerCapture called
+t=707   pointermove   (first move after long-press)
+t=722   pointercancel ← compositor still enforcing pan-x → 15 ms later
+t=807   touchmove     (delivered to JS, but pointer pipeline is dead)
+t=891   touchend
+```
+
+Result: the panel undocks but is stranded at the original tab location because window-level `pointermove` listeners stop firing after `pointercancel`. On iOS the long-press also triggers the magnifier/selection UI because `pan-x` doesn't suppress that. The only model that holds is `touch-action: none` (so the browser never arbitrates the gesture in the first place) plus JS-implemented strip scroll for the swipe-to-scroll affordance — see §4.2 / §4.3.
+
 ### 6.2 Dedicated drag handle (grip icon)
 
 Add a `<span class="dock-tab__grip">⋮⋮</span>` to each tab header; only the grip arms a drag. **Rejected.** Doubles header width, fights the existing dense `.nav-link` padding, and is contrary to direct-manipulation expectations on touch (no other touch tab UI does this).
@@ -242,8 +262,9 @@ These are explicitly *not* in this PRD's scope. Logged here so we don't lose the
 
 | File | Change |
 | --- | --- |
-| `libs/mintplayer-ng-bootstrap/dock/src/lib/web-components/mint-dock-manager.element.ts` | Add `TOUCH_LONG_PRESS_MS` / `TOUCH_LONG_PRESS_SLOP_PX` constants; add `armPaneDragGestureTouch` private method; branch `armPaneDragGesture` (`:1727`) on `pointerType === 'touch'`; ensure `setPointerCapture` is called on `armed` transition; press-feedback `data-pressing` attribute toggling; navigator.vibrate ping. |
-| `libs/mintplayer-ng-bootstrap/dock/src/lib/web-components/mint-dock-manager.element.scss` | `.dock-tab` `touch-action: none` → `touch-action: pan-x`; add `user-select: none`, `-webkit-user-select: none`, `-webkit-touch-callout: none`; add `.dock-tab[data-pressing='true']` press-feedback rule; comment update. |
-| `libs/mintplayer-ng-bootstrap/dock/src/lib/web-components/mint-dock-manager.element.spec.ts` | New `describe('touch long-press arming', …)` block, six cases. |
+| `libs/mintplayer-ng-bootstrap/dock/src/lib/web-components/mint-dock-manager.element.ts` | Add `TOUCH_LONG_PRESS_MS` / `TOUCH_LONG_PRESS_SLOP_PX` / `TOUCH_PRESS_FEEDBACK_DELAY_MS` constants; add `armPaneDragGestureTouch` private method with `pending`/`scrolling`/`armed`/`tap`/`abandoned` state machine; branch `armPaneDragGesture` on `pointerType === 'touch'`; press-feedback `data-pressing` attribute toggling; navigator.vibrate ping. |
+| `libs/mintplayer-ng-bootstrap/dock/src/lib/web-components/mint-dock-manager.element.scss` | `.dock-tab` keeps `touch-action: none`; add `user-select: none`, `-webkit-user-select: none`, `-webkit-touch-callout: none`; add `.dock-tab[data-pressing='true']` press-feedback rule; updated comment. |
+| `libs/mintplayer-ng-bootstrap/dock/src/lib/web-components/mint-dock-manager.element.template.ts` | Regenerated via `nx run mintplayer-ng-bootstrap:codegen-wc`. (The `unsafeCSS` block embedded in the Lit component must be regenerated whenever `*.element.scss` changes — the SCSS source is not loaded at runtime.) |
+| `libs/mintplayer-ng-bootstrap/dock/src/lib/web-components/mint-dock-manager.element.spec.ts` | New `describe('touch long-press arming', …)` block: tap activates, hold-then-drag undocks, horizontal swipe scrolls strip without undock, vertical swipe abandons. |
 
 No template, demo app, public-API, or `<mp-tab-control>` changes.

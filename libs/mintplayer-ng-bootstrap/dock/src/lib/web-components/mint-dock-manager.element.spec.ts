@@ -267,3 +267,111 @@ describe('mint-dock-manager — touch long-press arming', () => {
     expect(getFloatingWrapper()).toBeTruthy();
   });
 });
+
+describe('mint-dock-manager — touch swipe scrolls the tabstrip', () => {
+  let dock: MintDockManagerElement;
+
+  beforeEach(async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+
+    dock = document.createElement('mint-dock-manager') as MintDockManagerElement;
+    document.body.appendChild(dock);
+    dock.getBoundingClientRect = () => makeRect(HOST_LEFT, HOST_TOP, HOST_WIDTH, HOST_HEIGHT);
+
+    // Multi-pane stack so the strip has several tabs and can overflow.
+    dock.layout = {
+      root: { kind: 'stack', panes: ['A', 'B', 'C', 'D', 'E'], activePane: 'A' },
+      titles: { A: 'Alpha', B: 'Bravo', C: 'Charlie', D: 'Delta', E: 'Echo' },
+      floating: [],
+    } as never;
+
+    await (dock as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+
+    if (dock.shadowRoot) {
+      (dock.shadowRoot as unknown as { elementsFromPoint: (x: number, y: number) => Element[] }).elementsFromPoint =
+        () => [];
+    }
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    dock.remove();
+  });
+
+  function getStripUl(): HTMLElement {
+    const stack = dock.shadowRoot!.querySelector('mp-tab-control');
+    if (!stack) throw new Error('mp-tab-control not rendered');
+    const ul = stack.shadowRoot?.querySelector<HTMLElement>('ul.nav.nav-tabs');
+    if (!ul) throw new Error('strip <ul> not rendered');
+    // jsdom returns 0 for scrollWidth/clientWidth; mock to force overflow.
+    Object.defineProperty(ul, 'scrollWidth', { configurable: true, value: 600 });
+    Object.defineProperty(ul, 'clientWidth', { configurable: true, value: 200 });
+    return ul;
+  }
+
+  function getHeaderSpan(pane: string): HTMLElement {
+    const headerSpan = dock.shadowRoot!.querySelector<HTMLElement>(`.dock-tab[data-pane="${pane}"]`);
+    if (!headerSpan) throw new Error(`header span for ${pane} not rendered`);
+    headerSpan.getBoundingClientRect = () => makeRect(TAB_LEFT, TAB_TOP, TAB_WIDTH, TAB_HEIGHT);
+    return headerSpan;
+  }
+
+  it('horizontal swipe before the long-press fires drives ul.scrollLeft and does not undock', async () => {
+    const ul = getStripUl();
+    const headerSpan = getHeaderSpan('A');
+    const startX = TAB_LEFT + 20;
+    const startY = TAB_TOP + 16;
+
+    headerSpan.dispatchEvent(makePointerEvent('pointerdown', { clientX: startX, clientY: startY, pointerType: 'touch' }));
+    // First move: 30 px left, past the 10 px slop. Enters `scrolling`,
+    // applies the initial delta to scrollLeft.
+    window.dispatchEvent(makePointerEvent('pointermove', { clientX: startX - 30, clientY: startY, pointerType: 'touch' }));
+    expect(ul.scrollLeft).toBe(30);
+    // Subsequent moves continue to scroll directly.
+    window.dispatchEvent(makePointerEvent('pointermove', { clientX: startX - 60, clientY: startY, pointerType: 'touch' }));
+    expect(ul.scrollLeft).toBe(60);
+
+    // Long-press timer would fire here in real time — but since we entered
+    // `scrolling`, the timer was cleared. No undock.
+    vi.advanceTimersByTime(700);
+    await nextRaf();
+    expect(dock.shadowRoot!.querySelector('.dock-floating-layer .dock-floating')).toBeNull();
+  });
+
+  it('vertical swipe past slop abandons — no scroll and no drag', async () => {
+    const ul = getStripUl();
+    const headerSpan = getHeaderSpan('A');
+    const startX = TAB_LEFT + 20;
+    const startY = TAB_TOP + 16;
+
+    headerSpan.dispatchEvent(makePointerEvent('pointerdown', { clientX: startX, clientY: startY, pointerType: 'touch' }));
+    // 30 px vertical move, well past slop, but |dy| > |dx| → abandoned.
+    window.dispatchEvent(makePointerEvent('pointermove', { clientX: startX, clientY: startY + 30, pointerType: 'touch' }));
+    expect(ul.scrollLeft).toBe(0);
+
+    vi.advanceTimersByTime(700);
+    await nextRaf();
+    expect(dock.shadowRoot!.querySelector('.dock-floating-layer .dock-floating')).toBeNull();
+  });
+
+  it('horizontal swipe on a non-overflowing strip abandons — does not pretend to scroll', async () => {
+    const stack = dock.shadowRoot!.querySelector('mp-tab-control')!;
+    const ul = stack.shadowRoot!.querySelector<HTMLElement>('ul.nav.nav-tabs')!;
+    // Override the helper's overflow mock — clientWidth >= scrollWidth.
+    Object.defineProperty(ul, 'scrollWidth', { configurable: true, value: 200 });
+    Object.defineProperty(ul, 'clientWidth', { configurable: true, value: 600 });
+
+    const headerSpan = getHeaderSpan('A');
+    const startX = TAB_LEFT + 20;
+    const startY = TAB_TOP + 16;
+
+    headerSpan.dispatchEvent(makePointerEvent('pointerdown', { clientX: startX, clientY: startY, pointerType: 'touch' }));
+    window.dispatchEvent(makePointerEvent('pointermove', { clientX: startX - 30, clientY: startY, pointerType: 'touch' }));
+    expect(ul.scrollLeft).toBe(0);
+
+    vi.advanceTimersByTime(700);
+    await nextRaf();
+    expect(dock.shadowRoot!.querySelector('.dock-floating-layer .dock-floating')).toBeNull();
+  });
+});
