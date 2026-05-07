@@ -8,6 +8,7 @@ package version aligns its major with the supported Angular major.
 ### Added
 
 - `@mintplayer/ng-bootstrap/navbar`: `BsNavbarTriggerDirective` (`[bsNavbarTrigger]`) for dropdown trigger anchors. Replaces `routerLink` + `routerLinkActive` on triggers — drives the active CSS class via `Router.events` without RouterLink's programmatic-navigate behaviour. Use `routerLink` on the items INSIDE the dropdown for actual navigation; use `bsNavbarTrigger` on the trigger anchor that opens the dropdown.
+- `@mintplayer/ng-bootstrap/navigation-lock`: `provideNavigationLockRouter(routes, ...features)` — single-call router setup that wraps your routes in the required `canMatch: [bsNavigationLockGuard]` and applies `canceledNavigationResolution: 'computed'`. Use in place of `provideRouter(...)` to avoid having to remember both pieces.
 
 ### Breaking
 
@@ -23,22 +24,28 @@ package version aligns its major with the supported Angular major.
      use it for your own logic.
   4. Move `[bsNavigationLock]` from an empty `<ng-container>` onto a
      meaningful element (the `<form>`).
-  5. Wrap your top-level routes in
-     `{ path: '', canMatch: [bsNavigationLockGuard], children: [...] }`.
-     **Use `canMatch`, not `canActivateChild`** — `canActivateChild` fires
+  5. Replace your `provideRouter(routes, ...features)` call with
+     `provideNavigationLockRouter(routes, ...features)`. The helper wraps
+     your routes in the required `canMatch: [bsNavigationLockGuard]` and
+     applies `withRouterConfig({ canceledNavigationResolution: 'computed' })`
+     (needed for popstate-cancel to restore the history stack).
+
+     If your router setup is too custom for the helper, wire it manually:
+     wrap your top-level routes in
+     `{ path: '', canMatch: [bsNavigationLockGuard], children: [...] }`
+     (use **`canMatch`**, not `canActivateChild` — `canActivateChild` fires
      once per descendant activation, so deep destinations would prompt N
-     times. Import `bsNavigationLockGuard` from
-     `@mintplayer/ng-bootstrap/navigation-lock`.
-  6. Add `withRouterConfig({ canceledNavigationResolution: 'computed' })`
-     to your `provideRouter(...)` call. Required for popstate-cancel to
-     restore the history stack correctly.
+     times) and add
+     `withRouterConfig({ canceledNavigationResolution: 'computed' })` to
+     your `provideRouter(...)` call.
 
   API delta:
   - REMOVED: `BsNavigationLockGuard` (class), `BsHasNavigationLock`
     (interface).
   - ADDED: `bsNavigationLockGuard` (functional `CanMatchFn`),
     `BsNavigationLockService`, `BsNavigationLockHandle`,
-    `BS_NAVIGATION_LOCK_CONFIRM`, `provideNavigationLock`.
+    `BS_NAVIGATION_LOCK_CONFIRM`, `provideNavigationLock`,
+    `provideNavigationLockRouter`.
   - CHANGED: `BsNavigationLockDirective.requestCanExit()` returns
     `boolean | Promise<boolean> | Observable<boolean>` (was
     `Promise<boolean>`); the `canExit` function-shape input now accepts an

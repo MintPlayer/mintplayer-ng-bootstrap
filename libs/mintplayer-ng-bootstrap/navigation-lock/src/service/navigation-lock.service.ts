@@ -1,7 +1,7 @@
 import { isPlatformBrowser } from '@angular/common';
 import { DestroyRef, inject, Injectable, InjectionToken, isDevMode, PLATFORM_ID } from '@angular/core';
 import { ROUTER_CONFIGURATION } from '@angular/router';
-import { firstValueFrom, isObservable, Observable, take } from 'rxjs';
+import { defaultIfEmpty, firstValueFrom, isObservable, Observable, take } from 'rxjs';
 import { BsNavigationLockHandle } from './navigation-lock-handle';
 
 /** Confirm hook used by the directive's fallback path (canExit undefined + exitMessage set). */
@@ -66,16 +66,19 @@ export class BsNavigationLockService {
   requestExit(reason?: string): Promise<boolean> {
     if (this.pending) return this.pending;
     this.pending = this.doRequestExit(reason);
-    this.pending.finally(() => { this.pending = null; });
     return this.pending;
   }
 
   private async doRequestExit(reason?: string): Promise<boolean> {
-    for (const lock of this.locks) {
-      const ok = await this.normalise(lock.requestCanExit(reason));
-      if (!ok) return false;
+    try {
+      for (const lock of this.locks) {
+        const ok = await this.normalise(lock.requestCanExit(reason));
+        if (!ok) return false;
+      }
+      return true;
+    } finally {
+      this.pending = null;
     }
-    return true;
   }
 
   private onBeforeUnload(ev: BeforeUnloadEvent): void {
@@ -95,7 +98,7 @@ export class BsNavigationLockService {
 
   private normalise(r: boolean | Promise<boolean> | Observable<boolean>): Promise<boolean> {
     if (typeof r === 'boolean') return Promise.resolve(r);
-    if (isObservable(r)) return firstValueFrom(r.pipe(take(1)));
+    if (isObservable(r)) return firstValueFrom(r.pipe(take(1), defaultIfEmpty(true)));
     return r;
   }
 }
