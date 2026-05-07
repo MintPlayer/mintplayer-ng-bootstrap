@@ -375,3 +375,82 @@ describe('mint-dock-manager — touch swipe scrolls the tabstrip', () => {
     expect(dock.shadowRoot!.querySelector('.dock-floating-layer .dock-floating')).toBeNull();
   });
 });
+
+describe('mint-dock-manager — computeHeaderInsertIndex excludes the dragged tab', () => {
+  // mp-tab-control's strip refreshes on a microtask after data-hidden is set.
+  // beginPaneDrag calls updateDraggedFloatingPositionFromPoint synchronously
+  // right after preparePaneDragSource, so computeHeaderInsertIndex runs before
+  // that refresh — the dragged button is still in the strip's shadow. Without
+  // the explicit exclusion, the loop counts the dragged tab as a real target
+  // and the placeholder gets appended past the live tabs (visible on touch
+  // long-press, where the finger doesn't move and the user sees the
+  // mis-positioned placeholder for the duration of the hold).
+  let dock: MintDockManagerElement;
+
+  beforeEach(async () => {
+    dock = document.createElement('mint-dock-manager') as MintDockManagerElement;
+    document.body.appendChild(dock);
+    dock.getBoundingClientRect = () => makeRect(HOST_LEFT, HOST_TOP, HOST_WIDTH, HOST_HEIGHT);
+
+    dock.layout = {
+      root: { kind: 'stack', panes: ['A', 'B', 'C'], activePane: 'A' },
+      titles: { A: 'Alpha', B: 'Bravo', C: 'Charlie' },
+      floating: [],
+    } as never;
+
+    await (dock as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+  });
+
+  afterEach(() => {
+    dock.remove();
+  });
+
+  it('returns the dragged tab\'s original index, not the appended end', () => {
+    const stack = dock.shadowRoot!.querySelector('mp-tab-control') as HTMLElement;
+    const draggedPane = 'B';
+    const draggedHeader = stack.querySelector<HTMLElement>(
+      `.dock-tab[data-pane="${draggedPane}"]`,
+    )!;
+    const draggedContent = stack.querySelector<HTMLElement>(
+      `.dock-stack__pane[data-pane="${draggedPane}"]`,
+    )!;
+
+    // Reproduce the synchronous state ensureHeaderDragPlaceholder leaves
+    // behind right before mp-tab-control's MutationObserver gets a chance to
+    // refresh its strip: dragged content has data-hidden, placeholder span
+    // is in light DOM before the dragged header, but shadow buttons are
+    // still [A, B, C].
+    draggedContent.setAttribute('data-hidden', '');
+    const phHeader = document.createElement('span');
+    phHeader.setAttribute('slot', '__dock-placeholder__-header');
+    phHeader.classList.add('dock-tab');
+    phHeader.dataset['placeholder'] = 'true';
+    phHeader.dataset['tabId'] = '__dock-placeholder__';
+    stack.insertBefore(phHeader, draggedHeader);
+
+    // Set dragState so the function knows which pane is being dragged.
+    (dock as unknown as { dragState: unknown }).dragState = { pane: draggedPane };
+
+    // Stub each strip button's geometry. A:[0,60), B:[60,120), C:[120,180).
+    const buttons = Array.from(
+      stack.shadowRoot!.querySelectorAll<HTMLButtonElement>('button.nav-link'),
+    );
+    expect(buttons.length).toBe(3);
+    buttons[0].getBoundingClientRect = () => makeRect(0, 0, 60, 32);
+    buttons[1].getBoundingClientRect = () => makeRect(60, 0, 60, 32);
+    buttons[2].getBoundingClientRect = () => makeRect(120, 0, 60, 32);
+
+    // clientX = 90 → center of B. Pre-fix the loop would count B as a real
+    // target and return 2 (index past B), which clamps to length-2 of
+    // [A, C] in updateHeaderDragPlaceholderPosition → null ref → APPEND.
+    // Post-fix targets = [A, C], the loop returns 1 (insert before C),
+    // which lands the placeholder between A and C — i.e. B's old spot.
+    const idx = (
+      dock as unknown as {
+        computeHeaderInsertIndex(stack: HTMLElement, clientX: number): number;
+      }
+    ).computeHeaderInsertIndex(stack, 90);
+    expect(idx).toBe(1);
+  });
+});

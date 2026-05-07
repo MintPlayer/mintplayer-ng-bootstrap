@@ -2602,7 +2602,37 @@ export class MintDockManagerElement extends LitElement {
       ? allTabButtons.find((b) => b.id === `${placeholderTabId}-header-button`) ?? null
       : null;
 
-    const targets = allTabButtons.filter((b) => b !== placeholderButton);
+    // The dragged pane's content is `data-hidden`, but mp-tab-control's strip
+    // re-render is async (its MutationObserver schedules a Lit microtask). When
+    // beginPaneDrag calls updateDraggedFloatingPositionFromPoint synchronously
+    // right after preparePaneDragSource, this runs before that re-render — so
+    // the dragged button is still in the strip's shadow. We must exclude it
+    // explicitly, otherwise the loop counts it as a real target and the
+    // placeholder gets appended past the live tabs (visible on touch
+    // long-press, where the finger doesn't move and the user sees the
+    // mis-positioned placeholder for the duration of the hold).
+    const draggedPane = this.dragState?.pane ?? null;
+    let draggedTabId: string | null = null;
+    if (draggedPane) {
+      for (const child of Array.from(stack.children)) {
+        if (
+          child instanceof HTMLElement &&
+          child.classList.contains('dock-tab') &&
+          !child.hasAttribute('data-placeholder') &&
+          child.dataset['pane'] === draggedPane
+        ) {
+          draggedTabId = child.dataset['tabId'] ?? null;
+          break;
+        }
+      }
+    }
+    const draggedButton = draggedTabId
+      ? allTabButtons.find((b) => b.id === `${draggedTabId}-header-button`) ?? null
+      : null;
+
+    const targets = allTabButtons.filter(
+      (b) => b !== placeholderButton && b !== draggedButton,
+    );
     if (targets.length === 0) {
       return 0;
     }
