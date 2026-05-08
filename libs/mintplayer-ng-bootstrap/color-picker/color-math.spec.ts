@@ -10,6 +10,16 @@ describe('color-math', () => {
       expect(hex2rgb('#f80')).toEqual({ r: 255, g: 136, b: 0 });
     });
 
+    it('returns black for invalid hex input', () => {
+      const black = { r: 0, g: 0, b: 0 };
+      expect(hex2rgb('#xyz')).toEqual(black);
+      expect(hex2rgb('#1234')).toEqual(black);
+      expect(hex2rgb('#12')).toEqual(black);
+      expect(hex2rgb('#')).toEqual(black);
+      expect(hex2rgb('')).toEqual(black);
+      expect(hex2rgb('#12345g')).toEqual(black);
+    });
+
     it('round-trips rgb -> hex -> rgb', () => {
       const samples = [
         { r: 0, g: 0, b: 0 },

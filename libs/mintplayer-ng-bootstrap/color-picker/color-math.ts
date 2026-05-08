@@ -17,11 +17,15 @@ const TWO_PI = Math.PI * 2;
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 const clamp255 = (n: number) => Math.max(0, Math.min(255, Math.round(n)));
 
+const HEX6_RE = /^[0-9a-fA-F]{6}$/;
+const BLACK: RgbColor = { r: 0, g: 0, b: 0 };
+
 export function hex2rgb(hex: string): RgbColor {
     const stripped = hex.startsWith('#') ? hex.slice(1) : hex;
     const expanded = stripped.length === 3
         ? stripped.split('').map(c => c + c).join('')
         : stripped;
+    if (!HEX6_RE.test(expanded)) return { ...BLACK };
     return {
         r: parseInt(expanded.slice(0, 2), 16),
         g: parseInt(expanded.slice(2, 4), 16),

@@ -18,13 +18,19 @@ export class BsColorPickerValueAccessor implements ControlValueAccessor {
   onValueChange?: (value: string) => void;
   onTouched?: () => void;
 
+  // The hex most recently observed (either written by the form or emitted to it).
+  // Lets the emit effect dedup the echo from writeValue, breaking the round-trip loop.
+  private lastHex: string | null = null;
+
   constructor() {
     effect(() => {
       const hs = this.host.hs();
       const brightness = this.host.brightness();
       const rgb = hsv2rgb({ hue: hs.hue, saturation: hs.saturation, value: brightness });
       const hex = rgb2hex(rgb);
-      setTimeout(() => this.onValueChange?.(hex), 10);
+      if (hex === this.lastHex) return;
+      this.lastHex = hex;
+      this.onValueChange?.(hex);
     });
   }
 
@@ -37,8 +43,9 @@ export class BsColorPickerValueAccessor implements ControlValueAccessor {
   }
 
   writeValue(value: string | null) {
-    if (!value || !this.host || !this.host.colorWheel()) return;
+    if (!value) return;
     const hsv = hex2hsv(value);
+    this.lastHex = rgb2hex(hsv2rgb(hsv));
     this.host.hs.set({ hue: hsv.hue, saturation: hsv.saturation });
     this.host.brightness.set(hsv.value);
   }
