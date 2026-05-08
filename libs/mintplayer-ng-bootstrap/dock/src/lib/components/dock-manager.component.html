@@ -2,7 +2,7 @@
   #manager
   class="bs-dock-manager"
   [attr.layout]="layoutString()"
-  [attr.debug-layout-integrity]="debugLayoutIntegrity() ? '' : null"
+  [attr.debug-layout-integrity]="debugLayoutIntegrityAttr()"
   (dock-layout-changed)="onLayoutChanged($event)"
   >
   @for (pane of panes(); track trackByPane($index, pane)) {

@@ -2,6 +2,7 @@ import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
+  computed,
   contentChildren,
   CUSTOM_ELEMENTS_SCHEMA,
   effect,
@@ -38,6 +39,9 @@ export class BsDockManagerComponent implements AfterViewInit {
    * enable in development to catch layout-logic bugs loudly.
    */
   readonly debugLayoutIntegrity = input<boolean>(false);
+  protected readonly debugLayoutIntegrityAttr = computed(() =>
+    this.debugLayoutIntegrity() ? '' : null,
+  );
 
   get layoutSnapshot(): DockLayoutSnapshot | null {
     if (!this._layout.root && this._layout.floating.length === 0) {
