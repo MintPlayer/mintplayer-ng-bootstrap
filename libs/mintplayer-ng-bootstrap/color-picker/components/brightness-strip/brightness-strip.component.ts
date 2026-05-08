@@ -1,32 +1,33 @@
 import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, input, model, output, viewChild } from '@angular/core';
 import { HS } from '../../interfaces/hs';
 import { BsSliderComponent, BsThumbDirective, BsTrackDirective } from '../slider/slider.component';
+import { hsv2rgb } from '../../color-math';
 
 @Component({
-  selector: 'bs-luminosity-strip',
-  templateUrl: './luminosity-strip.component.html',
-  styleUrls: ['./luminosity-strip.component.scss'],
+  selector: 'bs-brightness-strip',
+  templateUrl: './brightness-strip.component.html',
+  styleUrls: ['./brightness-strip.component.scss'],
   imports: [BsSliderComponent, BsThumbDirective, BsTrackDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class BsLuminosityStripComponent {
+export class BsBrightnessStripComponent {
   readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
 
   disabled = input<boolean>(false);
   hs = model<HS>({ hue: 0, saturation: 0 });
-  luminosity = model<number>(0.5);
-  luminosityChange = output<number>();
+  brightness = model<number>(1);
+  brightnessChange = output<number>();
 
   private canvasContext: CanvasRenderingContext2D | null = null;
 
   resultBackground = computed(() => {
     const hs = this.hs();
-    const luminosity = this.luminosity();
-    return `hsl(${hs.hue}, ${hs.saturation * 100}%, ${luminosity * 100}%)`;
+    const brightness = this.brightness();
+    const rgb = hsv2rgb({ hue: hs.hue, saturation: hs.saturation, value: brightness });
+    return `rgb(${Math.round(rgb.r)}, ${Math.round(rgb.g)}, ${Math.round(rgb.b)})`;
   });
 
   constructor() {
-    // Draw gradient when HS changes
     effect(() => {
       const hs = this.hs();
       if (this.canvasContext) {
@@ -35,19 +36,18 @@ export class BsLuminosityStripComponent {
         this.canvasContext.clearRect(0, 0, width, height);
         this.canvasContext.save();
 
+        const peak = hsv2rgb({ hue: hs.hue, saturation: hs.saturation, value: 1 });
         const gradient = this.canvasContext.createLinearGradient(0, 0, width, 0);
-        gradient.addColorStop(0, `hsl(${hs.hue}, ${hs.saturation * 100}%, 0%)`);
-        gradient.addColorStop(0.5, `hsl(${hs.hue}, ${hs.saturation * 100}%, 50%)`);
-        gradient.addColorStop(1, `hsl(${hs.hue}, ${hs.saturation * 100}%, 100%)`);
+        gradient.addColorStop(0, 'rgb(0, 0, 0)');
+        gradient.addColorStop(1, `rgb(${Math.round(peak.r)}, ${Math.round(peak.g)}, ${Math.round(peak.b)})`);
         this.canvasContext.fillStyle = gradient;
         this.canvasContext.fillRect(0, 0, width, height);
       }
     });
 
-    // Emit luminosity changes
     effect(() => {
-      const luminosity = this.luminosity();
-      this.luminosityChange.emit(luminosity);
+      const brightness = this.brightness();
+      this.brightnessChange.emit(brightness);
     });
   }
 

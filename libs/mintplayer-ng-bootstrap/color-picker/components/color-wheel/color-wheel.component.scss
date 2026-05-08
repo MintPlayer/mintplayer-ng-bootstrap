@@ -1,5 +1,20 @@
 $thumb-size: 30px;
 
+.wheel-surface {
+    border-radius: 50%;
+    background:
+        radial-gradient(circle closest-side, #fff, transparent),
+        conic-gradient(from 90deg, hsl(0, 100%, 50%), hsl(60, 100%, 50%), hsl(120, 100%, 50%), hsl(180, 100%, 50%), hsl(240, 100%, 50%), hsl(300, 100%, 50%), hsl(360, 100%, 50%));
+    touch-action: none;
+    cursor: crosshair;
+}
+
+.brightness-overlay {
+    background: #000;
+    border-radius: 50%;
+    transition: opacity 60ms linear;
+}
+
 .thumb {
     width: $thumb-size;
     height: $thumb-size;
@@ -9,4 +24,5 @@ $thumb-size: 30px;
     box-sizing: border-box;
     border: 2px solid white;
     box-shadow: rgb(0 0 0 / 10%) 0px 0px 10px 5px;
+    pointer-events: none;
 }

@@ -2,25 +2,22 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MockComponent } from 'ng-mocks';
 import { BsSliderComponent } from '../slider/slider.component';
 
-import { BsLuminosityStripComponent } from './luminosity-strip.component';
+import { BsBrightnessStripComponent } from './brightness-strip.component';
 
-describe('BsLuminosityStripComponent', () => {
-  let component: BsLuminosityStripComponent;
-  let fixture: ComponentFixture<BsLuminosityStripComponent>;
+describe('BsBrightnessStripComponent', () => {
+  let component: BsBrightnessStripComponent;
+  let fixture: ComponentFixture<BsBrightnessStripComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        // Unit to test
-        BsLuminosityStripComponent,
-
-        // Mock dependencies
+        BsBrightnessStripComponent,
         MockComponent(BsSliderComponent),
       ]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(BsLuminosityStripComponent);
+    fixture = TestBed.createComponent(BsBrightnessStripComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

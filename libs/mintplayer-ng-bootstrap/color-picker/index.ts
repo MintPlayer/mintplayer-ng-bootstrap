@@ -1,3 +1,4 @@
+export * from './color-math';
 export * from './components';
 export * from './directives';
 export * from './interfaces';
