@@ -15,7 +15,7 @@ $thumb-size: 30px;
     transition: opacity 60ms linear;
 }
 
-.thumb {
+.marker {
     width: $thumb-size;
     height: $thumb-size;
     border-radius: calc($thumb-size / 2);

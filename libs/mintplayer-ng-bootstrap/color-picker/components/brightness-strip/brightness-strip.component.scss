@@ -1,0 +1,16 @@
+$size: 8px;
+$thumb: 3 * $size;
+
+.track {
+    height: $size;
+    border-radius: $size;
+}
+
+.thumb {
+    width: $thumb;
+    height: $thumb;
+    top: 0;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    box-shadow: 0 0 0 0.1rem rgba(100, 107, 114, 0.25);
+}
