@@ -2,6 +2,7 @@ import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
+  computed,
   contentChildren,
   CUSTOM_ELEMENTS_SCHEMA,
   effect,
@@ -31,6 +32,16 @@ import { MintDockManagerElement } from '../web-components/mint-dock-manager.elem
 })
 export class BsDockManagerComponent implements AfterViewInit {
   readonly layout = input<DockLayoutNode | DockLayout | null>(null);
+  /**
+   * Dev-mode integrity guard. When `true`, the inner web component throws
+   * after each render if any registered pane has no projection slot in the
+   * shadow DOM — a signal that the layout tree got corrupted. Off by default;
+   * enable in development to catch layout-logic bugs loudly.
+   */
+  readonly debugLayoutIntegrity = input<boolean>(false);
+  protected readonly debugLayoutIntegrityAttr = computed(() =>
+    this.debugLayoutIntegrity() ? '' : null,
+  );
 
   get layoutSnapshot(): DockLayoutSnapshot | null {
     if (!this._layout.root && this._layout.floating.length === 0) {

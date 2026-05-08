@@ -1,6 +1,7 @@
 <div class="dock-demo">
   <bs-dock-manager
     [layout]="layout()"
+    [debugLayoutIntegrity]="isDevMode"
     (layoutChange)="$event && layout.set($event)"
     class="dock-demo__surface"
     (layoutSnapshotChange)="onLayoutSnapshot($event)"
