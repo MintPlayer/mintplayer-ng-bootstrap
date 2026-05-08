@@ -10,7 +10,7 @@ $thumb: 3 * $size;
     padding-bottom: $size;
 }
 
-::ng-deep {
+:host ::ng-deep {
     .thumb {
         width: $thumb;
         height: $thumb;
