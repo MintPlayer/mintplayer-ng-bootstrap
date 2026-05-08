@@ -51,7 +51,7 @@ export class MintDockManagerElement extends LitElement {
   }
 
   static override get observedAttributes(): string[] {
-    return [...(super.observedAttributes ?? []), 'layout'];
+    return [...(super.observedAttributes ?? []), 'layout', 'debug-layout-integrity'];
   }
 
   private static instanceCounter = 0;
@@ -170,6 +170,11 @@ export class MintDockManagerElement extends LitElement {
   private cornerSnapYTargets: number[] = [];
   // Debug: render snap markers while dragging
   private showSnapMarkers = false;
+  // Debug: assert every pane has a projection slot in shadow DOM after each
+  // render. Off by default so production hosts pay no overhead; demo enables
+  // it via the `debug-layout-integrity` attribute to catch layout-tree bugs
+  // loudly during development.
+  debugLayoutIntegrity = false;
 
   private renderSnapMarkersForCorner(): void {
     if (!this.showSnapMarkers) return;
@@ -350,6 +355,8 @@ export class MintDockManagerElement extends LitElement {
       if (!this.showSnapMarkers) {
         this.clearSnapMarkers();
       }
+    } else if (name === 'debug-layout-integrity') {
+      this.debugLayoutIntegrity = !(newValue === null || newValue === 'false' || newValue === '0');
     }
   }
 
@@ -394,6 +401,9 @@ export class MintDockManagerElement extends LitElement {
     this.rootLayout = this.cloneLayoutNode(snapshot.root);
     this.floatingLayouts = this.cloneFloatingArray(snapshot.floating);
     this.titles = snapshot.titles ? { ...snapshot.titles } : {};
+    // Sanitize whatever the host fed us: empty stacks, 0/1-child splits, and
+    // nested same-direction splits get pruned/flattened before we render.
+    this.normalizeAllLayouts();
     this.renderLayout();
   }
 
@@ -502,6 +512,8 @@ export class MintDockManagerElement extends LitElement {
     // wired up in firstUpdated (rootResizeObserver, dockedMutationObserver,
     // and delegated 'resizing' / 'resize-end' events). The MutationObserver
     // on dockedEl fires when the renderNode subtree above is appended.
+
+    this.verifyProjectionSlots();
   }
 
   private renderNode(
@@ -2772,16 +2784,14 @@ export class MintDockManagerElement extends LitElement {
       if (!source) {
         return;
       }
-      const stackEmptied = this.removePaneFromLocation(source, pane, true);
+      this.removePaneFromLocation(source, pane, true);
       const newRoot: DockStackNode = {
         kind: 'stack',
         panes: [pane],
         activePane: pane,
       };
       this.rootLayout = newRoot;
-      if (stackEmptied) {
-        this.cleanupLocation(source);
-      }
+      this.normalizeAllLayouts();
       this.renderLayout();
       this.dispatchLayoutChanged();
       if (this.dragState) {
@@ -2799,6 +2809,7 @@ export class MintDockManagerElement extends LitElement {
         return;
       }
       this.reorderPaneInLocation(source, pane);
+      this.normalizeAllLayouts();
       this.renderLayout();
       this.dispatchLayoutChanged();
       if (this.dragState) {
@@ -2807,14 +2818,12 @@ export class MintDockManagerElement extends LitElement {
       return;
     }
 
-    const stackEmptied = this.removePaneFromLocation(source, pane, true);
+    this.removePaneFromLocation(source, pane, true);
 
     if (zone === 'center') {
       this.addPaneToLocation(target, pane);
       this.setActivePaneForLocation(target, pane);
-      if (stackEmptied) {
-        this.cleanupLocation(source);
-      }
+      this.normalizeAllLayouts();
       this.renderLayout();
       this.dispatchLayoutChanged();
       if (this.dragState) {
@@ -2834,9 +2843,7 @@ export class MintDockManagerElement extends LitElement {
     } else {
       const floating = this.floatingLayouts[target.index];
       if (!floating) {
-        if (stackEmptied) {
-          this.cleanupLocation(source);
-        }
+        this.normalizeAllLayouts();
         this.renderLayout();
         this.dispatchLayoutChanged();
         return;
@@ -2846,10 +2853,7 @@ export class MintDockManagerElement extends LitElement {
       floating.activePane = pane;
     }
 
-    if (stackEmptied) {
-      this.cleanupLocation(source);
-    }
-
+    this.normalizeAllLayouts();
     this.renderLayout();
     this.dispatchLayoutChanged();
     if (this.dragState) {
@@ -2870,6 +2874,7 @@ export class MintDockManagerElement extends LitElement {
     if (!target && targetPath.type === 'docked' && !this.rootLayout) {
       this.rootLayout = this.cloneLayoutNode(source.root);
       this.removeFloatingAt(sourceIndex);
+      this.normalizeAllLayouts();
       this.renderLayout();
       this.dispatchLayoutChanged();
       return true;
@@ -2902,6 +2907,7 @@ export class MintDockManagerElement extends LitElement {
       }
 
       this.removeFloatingAt(sourceIndex);
+      this.normalizeAllLayouts();
       this.renderLayout();
       this.dispatchLayoutChanged();
       return true;
@@ -2916,6 +2922,7 @@ export class MintDockManagerElement extends LitElement {
       floating.root = this.dockNodeBeside(floating.root, target.node, source.root, zone);
       floating.activePane = source.activePane ?? this.findFirstPaneName(source.root) ?? undefined;
       this.removeFloatingAt(sourceIndex);
+      this.normalizeAllLayouts();
       this.renderLayout();
       this.dispatchLayoutChanged();
       return true;
@@ -2923,6 +2930,7 @@ export class MintDockManagerElement extends LitElement {
 
     this.rootLayout = this.dockNodeBeside(this.rootLayout, target.node, source.root, zone);
     this.removeFloatingAt(sourceIndex);
+    this.normalizeAllLayouts();
     this.renderLayout();
     this.dispatchLayoutChanged();
     return true;
@@ -2963,7 +2971,7 @@ export class MintDockManagerElement extends LitElement {
       return true;
     }
 
-    this.rootLayout = this.cleanupEmptyStackInTree(this.rootLayout, stack);
+    this.normalizeAllLayouts();
     return true;
   }
 
@@ -3408,63 +3416,6 @@ export class MintDockManagerElement extends LitElement {
     return root;
   }
 
-  private cleanupEmptyStackInTree(
-    root: DockLayoutNode | null,
-    stack: DockStackNode,
-  ): DockLayoutNode | null {
-    if (!root || stack.panes.length > 0) {
-      return root;
-    }
-
-    const parentInfo = this.findParentSplit(root, stack);
-    if (!parentInfo) {
-      return root === stack ? null : root;
-    }
-
-    const parent = parentInfo.parent;
-    const index = parent.children.indexOf(stack);
-    if (index === -1) {
-      return root;
-    }
-
-    parent.children.splice(index, 1);
-    if (Array.isArray(parent.sizes)) {
-      parent.sizes.splice(index, 1);
-    }
-    this.normalizeSplitNode(parent);
-
-    return this.cleanupSplitIfNecessary(root, parent);
-  }
-
-  private cleanupSplitIfNecessary(
-    root: DockLayoutNode | null,
-    split: DockSplitNode,
-  ): DockLayoutNode | null {
-    if (split.children.length === 1) {
-      return this.replaceNodeInTree(root, split, split.children[0]);
-    }
-
-    if (split.children.length === 0) {
-      const parentInfo = this.findParentSplit(root, split);
-      if (!parentInfo) {
-        return null;
-      }
-
-      const parent = parentInfo.parent;
-      const index = parent.children.indexOf(split);
-      if (index !== -1) {
-        parent.children.splice(index, 1);
-        if (Array.isArray(parent.sizes)) {
-          parent.sizes.splice(index, 1);
-        }
-        this.normalizeSplitNode(parent);
-        return this.cleanupSplitIfNecessary(root, parent);
-      }
-    }
-
-    return root;
-  }
-
   private dockNodeBeside(
     root: DockLayoutNode | null,
     targetNode: DockStackNode,
@@ -3748,22 +3699,6 @@ export class MintDockManagerElement extends LitElement {
     }
   }
 
-  private cleanupLocation(location: ResolvedLocation): void {
-    if (location.context === 'docked') {
-      this.rootLayout = this.cleanupEmptyStackInTree(this.rootLayout, location.node);
-    } else {
-      const floating = this.floatingLayouts[location.index];
-      if (!floating) {
-        return;
-      }
-
-      floating.root = this.cleanupEmptyStackInTree(floating.root, location.node);
-      if (!floating.root) {
-        this.removeFloatingAt(location.index);
-      }
-    }
-  }
-
   private reorderPaneInLocation(location: ResolvedLocation, pane: string): void {
     const panes = location.node.panes;
     const index = panes.indexOf(pane);
@@ -3830,11 +3765,7 @@ export class MintDockManagerElement extends LitElement {
       return true;
     }
 
-    floating.root = this.cleanupEmptyStackInTree(floating.root, node);
-    if (!floating.root) {
-      this.removeFloatingAt(index);
-    }
-
+    this.normalizeAllLayouts();
     return true;
   }
 
@@ -3858,6 +3789,123 @@ export class MintDockManagerElement extends LitElement {
 
   private normalizeSplitNode(split: DockSplitNode): void {
     split.sizes = this.normalizeSizesArray(split.sizes, split.children.length);
+  }
+
+  /**
+   * Bottom-up layout sanitizer. Returns a normalized version of `node` where:
+   * - Empty stacks (panes.length === 0) are dropped (returned as null).
+   * - A stack's `activePane` is repaired if it no longer references one of `panes`.
+   * - Splits whose direction matches a child split are flattened, with sizes
+   *   combined multiplicatively so the resulting on-screen pixel layout is
+   *   identical to the pre-merge one.
+   * - Splits with 0 children become null. Splits with 1 child are unwrapped.
+   *
+   * Idempotent: passing the result back through this method yields the same
+   * structure. Mutates the input tree in place but only returns nodes that
+   * remain part of the layout.
+   */
+  private normalizeLayoutNode(node: DockLayoutNode | null): DockLayoutNode | null {
+    if (!node) return null;
+
+    if (node.kind === 'stack') {
+      if (node.panes.length === 0) return null;
+      if (!node.activePane || !node.panes.includes(node.activePane)) {
+        node.activePane = node.panes[0];
+      }
+      return node;
+    }
+
+    const slotSizes = this.normalizeSizesArray(node.sizes, node.children.length);
+    const survivors: DockLayoutNode[] = [];
+    const survivorSizes: number[] = [];
+
+    for (let i = 0; i < node.children.length; i += 1) {
+      const child = this.normalizeLayoutNode(node.children[i]);
+      if (!child) continue;
+
+      if (child.kind === 'split' && child.direction === node.direction) {
+        // Same-direction merge: splice the inner children up into this split,
+        // with each inner size scaled by the slot the inner split used to
+        // occupy. A 0.4 slot containing [0.3, 0.7] becomes [0.12, 0.28].
+        const innerSizes = this.normalizeSizesArray(child.sizes, child.children.length);
+        child.children.forEach((grandchild, idx) => {
+          survivors.push(grandchild);
+          survivorSizes.push(slotSizes[i] * innerSizes[idx]);
+        });
+        continue;
+      }
+
+      survivors.push(child);
+      survivorSizes.push(slotSizes[i]);
+    }
+
+    if (survivors.length === 0) return null;
+    if (survivors.length === 1) return survivors[0];
+
+    node.children = survivors;
+    node.sizes = this.normalizeSizesArray(survivorSizes, survivors.length);
+    return node;
+  }
+
+  /**
+   * Apply `normalizeLayoutNode` to `rootLayout` and every floating window's
+   * root, drop floating windows whose root collapses to null, and repair
+   * stale `activePane` references on each floating window. Run this at the
+   * end of every public mutation entry point (drop handlers, layout setter,
+   * pane removal) so the tree the renderer sees is always in canonical form.
+   */
+  private normalizeAllLayouts(): void {
+    this.rootLayout = this.normalizeLayoutNode(this.rootLayout);
+
+    for (let i = this.floatingLayouts.length - 1; i >= 0; i -= 1) {
+      const floating = this.floatingLayouts[i];
+      floating.root = this.normalizeLayoutNode(floating.root);
+      if (!floating.root) {
+        this.floatingLayouts.splice(i, 1);
+        continue;
+      }
+
+      const panes = this.collectPaneNames(floating.root);
+      if (!floating.activePane || !panes.includes(floating.activePane)) {
+        const fallback = this.findFirstPaneName(floating.root);
+        if (fallback) {
+          floating.activePane = fallback;
+        } else {
+          delete floating.activePane;
+        }
+      }
+    }
+  }
+
+  /**
+   * Dev-mode integrity guard: walks every pane referenced by the current
+   * layout and asserts that the rendered shadow DOM contains a matching
+   * `<slot name="${pane}">`. A missing slot means the layout tree got into
+   * a state the renderer can't display — typically a missed normalize() call
+   * or a render bug. Opt in via the `debug-layout-integrity` attribute or
+   * the `debugLayoutIntegrity` property; off by default.
+   */
+  private verifyProjectionSlots(): void {
+    if (!this.debugLayoutIntegrity) return;
+    const root = this.shadowRoot;
+    if (!root) return;
+
+    const panes = new Set<string>();
+    this.collectPaneNames(this.rootLayout).forEach((p) => panes.add(p));
+    this.floatingLayouts.forEach((f) =>
+      this.collectPaneNames(f.root).forEach((p) => panes.add(p)),
+    );
+
+    panes.forEach((pane) => {
+      const slot = root.querySelector(`slot[name="${CSS.escape(pane)}"]`);
+      if (!slot) {
+        throw new Error(
+          `mint-dock-manager: pane "${pane}" has no projection slot in the shadow DOM. ` +
+            `The layout tree got into a state the renderer can't display — likely a ` +
+            `missing normalize() call or a render bug.`,
+        );
+      }
+    });
   }
 
   private dispatchLayoutChanged(): void {
