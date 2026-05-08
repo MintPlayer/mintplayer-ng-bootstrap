@@ -690,11 +690,13 @@ describe('mint-dock-manager — layout normalization', () => {
         split('horizontal', [0.3, 0.7], stack('b'), stack('c')),
       ),
     ];
-    inputs.forEach((input) => {
-      const once = JSON.parse(JSON.stringify(normalize(JSON.parse(JSON.stringify(input)))));
-      const twice = JSON.parse(JSON.stringify(normalize(JSON.parse(JSON.stringify(once)))));
-      expect(twice).toEqual(once);
-    });
+    inputs
+      .map((input) => {
+        const once = JSON.parse(JSON.stringify(normalize(JSON.parse(JSON.stringify(input)))));
+        const twice = JSON.parse(JSON.stringify(normalize(JSON.parse(JSON.stringify(once)))));
+        return { once, twice };
+      })
+      .map(({ once, twice }) => expect(twice).toEqual(once));
   });
 
   // --- intake (gap D) ------------------------------------------------------

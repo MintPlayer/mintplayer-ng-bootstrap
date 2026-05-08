@@ -3816,34 +3816,32 @@ export class MintDockManagerElement extends LitElement {
     }
 
     const slotSizes = this.normalizeSizesArray(node.sizes, node.children.length);
-    const survivors: DockLayoutNode[] = [];
-    const survivorSizes: number[] = [];
 
-    for (let i = 0; i < node.children.length; i += 1) {
-      const child = this.normalizeLayoutNode(node.children[i]);
-      if (!child) continue;
-
-      if (child.kind === 'split' && child.direction === node.direction) {
-        // Same-direction merge: splice the inner children up into this split,
-        // with each inner size scaled by the slot the inner split used to
-        // occupy. A 0.4 slot containing [0.3, 0.7] becomes [0.12, 0.28].
-        const innerSizes = this.normalizeSizesArray(child.sizes, child.children.length);
-        child.children.forEach((grandchild, idx) => {
-          survivors.push(grandchild);
-          survivorSizes.push(slotSizes[i] * innerSizes[idx]);
-        });
-        continue;
-      }
-
-      survivors.push(child);
-      survivorSizes.push(slotSizes[i]);
-    }
+    // Pair each child with its slot weight, drop nulls, then expand any
+    // same-direction child split into its grandchildren with sizes scaled
+    // multiplicatively. A 0.4 slot containing [0.3, 0.7] becomes [0.12, 0.28].
+    const survivors = node.children
+      .map((child, i) => ({ child: this.normalizeLayoutNode(child), slot: slotSizes[i] }))
+      .filter((p): p is { child: DockLayoutNode; slot: number } => p.child !== null)
+      .flatMap(({ child, slot }) => {
+        if (child.kind === 'split' && child.direction === node.direction) {
+          const innerSizes = this.normalizeSizesArray(child.sizes, child.children.length);
+          return child.children.map((grandchild, idx) => ({
+            child: grandchild,
+            slot: slot * innerSizes[idx],
+          }));
+        }
+        return [{ child, slot }];
+      });
 
     if (survivors.length === 0) return null;
-    if (survivors.length === 1) return survivors[0];
+    if (survivors.length === 1) return survivors[0].child;
 
-    node.children = survivors;
-    node.sizes = this.normalizeSizesArray(survivorSizes, survivors.length);
+    node.children = survivors.map((s) => s.child);
+    node.sizes = this.normalizeSizesArray(
+      survivors.map((s) => s.slot),
+      survivors.length,
+    );
     return node;
   }
 
@@ -3857,24 +3855,23 @@ export class MintDockManagerElement extends LitElement {
   private normalizeAllLayouts(): void {
     this.rootLayout = this.normalizeLayoutNode(this.rootLayout);
 
-    for (let i = this.floatingLayouts.length - 1; i >= 0; i -= 1) {
-      const floating = this.floatingLayouts[i];
-      floating.root = this.normalizeLayoutNode(floating.root);
-      if (!floating.root) {
-        this.floatingLayouts.splice(i, 1);
-        continue;
-      }
+    this.floatingLayouts = this.floatingLayouts
+      .map((floating) => {
+        floating.root = this.normalizeLayoutNode(floating.root);
+        if (!floating.root) return null;
 
-      const panes = this.collectPaneNames(floating.root);
-      if (!floating.activePane || !panes.includes(floating.activePane)) {
-        const fallback = this.findFirstPaneName(floating.root);
-        if (fallback) {
-          floating.activePane = fallback;
-        } else {
-          delete floating.activePane;
+        const panes = this.collectPaneNames(floating.root);
+        if (!floating.activePane || !panes.includes(floating.activePane)) {
+          const fallback = this.findFirstPaneName(floating.root);
+          if (fallback) {
+            floating.activePane = fallback;
+          } else {
+            delete floating.activePane;
+          }
         }
-      }
-    }
+        return floating;
+      })
+      .filter((f): f is DockFloatingStackLayout => f !== null);
   }
 
   /**
@@ -3890,22 +3887,29 @@ export class MintDockManagerElement extends LitElement {
     const root = this.shadowRoot;
     if (!root) return;
 
-    const panes = new Set<string>();
-    this.collectPaneNames(this.rootLayout).forEach((p) => panes.add(p));
-    this.floatingLayouts.forEach((f) =>
-      this.collectPaneNames(f.root).forEach((p) => panes.add(p)),
+    // Collect every slot the renderer produced. Walking the rendered DOM
+    // (instead of building a CSS selector per pane) sidesteps environment
+    // differences — e.g. jsdom does not expose `CSS.escape`, which would
+    // crash the guard during unit tests before the assertion runs.
+    const slotNames = new Set(
+      Array.from(root.querySelectorAll('slot'))
+        .map((slot) => slot.getAttribute('name'))
+        .filter((name): name is string => !!name),
     );
 
-    panes.forEach((pane) => {
-      const slot = root.querySelector(`slot[name="${CSS.escape(pane)}"]`);
-      if (!slot) {
-        throw new Error(
-          `mint-dock-manager: pane "${pane}" has no projection slot in the shadow DOM. ` +
-            `The layout tree got into a state the renderer can't display — likely a ` +
-            `missing normalize() call or a render bug.`,
-        );
-      }
-    });
+    const panes = [
+      ...this.collectPaneNames(this.rootLayout),
+      ...this.floatingLayouts.flatMap((f) => this.collectPaneNames(f.root)),
+    ];
+
+    const missing = panes.find((pane) => !slotNames.has(pane));
+    if (missing) {
+      throw new Error(
+        `mint-dock-manager: pane "${missing}" has no projection slot in the shadow DOM. ` +
+          `The layout tree got into a state the renderer can't display — likely a ` +
+          `missing normalize() call or a render bug.`,
+      );
+    }
   }
 
   private dispatchLayoutChanged(): void {
