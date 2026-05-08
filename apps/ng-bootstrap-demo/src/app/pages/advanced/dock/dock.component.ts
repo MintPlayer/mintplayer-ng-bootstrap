@@ -7,12 +7,13 @@ import {
   DockLayoutSnapshot,
 } from '@mintplayer/ng-bootstrap/dock';
 import { Color } from '@mintplayer/ng-bootstrap';
+import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 
 @Component({
   selector: 'demo-dock',
   templateUrl: './dock.component.html',
   styleUrls: ['./dock.component.scss'],
-  imports: [CommonModule, BsDockManagerComponent, BsDockPaneComponent, BsBadgeComponent],
+  imports: [CommonModule, BsButtonTypeDirective, BsDockManagerComponent, BsDockPaneComponent, BsBadgeComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DockComponent {

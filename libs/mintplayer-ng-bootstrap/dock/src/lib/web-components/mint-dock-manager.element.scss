@@ -279,16 +279,34 @@
   display: block;
   padding: 0.5rem 1rem;
   margin: -0.5rem -1rem;
-  // Block the browser's touch-gesture arbitration. On Android Chrome, without
-  // this the first pointermove still fires (so the tab undocks once the 5px
-  // threshold is crossed), but immediately after the browser claims the
-  // gesture for page scroll, fires pointercancel, and the floating pane is
-  // stranded. See docs/prd/dock-tab-drag-android-touch.md.
+  // touch-action is consulted at touchstart and frozen for the lifetime of
+  // the gesture — `pan-x` cannot be promoted to "anything goes" mid-gesture
+  // even with setPointerCapture (the compositor has already arbitrated the
+  // touch). So we set `none` and own the gesture from frame 1: the browser
+  // never claims it for scroll or selection, and JS drives strip scroll
+  // programmatically during the pending window before the long-press fires.
+  // See docs/prd/dock-touch-long-press-drag.md.
   touch-action: none;
+  // Suppress iOS magnifier loupe / text selection on long-press.
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .dock-tab:active {
   cursor: grabbing;
+}
+
+// Visual feedback during the touch long-press hold. Applied 150 ms into the
+// hold (after the initial settle), removed on any state transition out of
+// pending. The transform is small enough not to clip in the strip but large
+// enough to read as "I see your press."
+.dock-tab[data-pressing='true'] {
+  background-color: var(--bs-secondary-bg-subtle, rgba(0, 0, 0, 0.05));
+  transform: scale(1.02);
+  transition:
+    background-color 100ms ease-out,
+    transform 100ms ease-out;
 }
 
 // `.dock-stack__pane` is the slotted content wrapper. The WC projects it
