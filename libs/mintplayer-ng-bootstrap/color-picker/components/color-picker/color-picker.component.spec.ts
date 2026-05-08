@@ -3,7 +3,7 @@ import { MockComponent, MockDirective } from 'ng-mocks';
 
 import { BsColorPickerComponent } from './color-picker.component';
 import { BsAlphaStripComponent } from '../alpha-strip/alpha-strip.component';
-import { BsLuminosityStripComponent } from '../luminosity-strip/luminosity-strip.component';
+import { BsBrightnessStripComponent } from '../brightness-strip/brightness-strip.component';
 import { BsColorWheelComponent } from '../color-wheel/color-wheel.component';
 
 describe('ColorPickerComponent', () => {
@@ -19,7 +19,7 @@ describe('ColorPickerComponent', () => {
 
         // Mock dependencies
         MockComponent(BsAlphaStripComponent),
-        MockComponent(BsLuminosityStripComponent),
+        MockComponent(BsBrightnessStripComponent),
         MockComponent(BsColorWheelComponent),
       ]
     })

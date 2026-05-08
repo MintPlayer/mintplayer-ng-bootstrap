@@ -2,14 +2,14 @@ import { ChangeDetectionStrategy, Component, effect, input, model, output, signa
 import { HS } from "../../interfaces/hs";
 import { BsColorPickerValueAccessor } from "../../directives/color-picker-value-accessor/color-picker-value-accessor.directive";
 import { BsColorWheelComponent } from "../color-wheel/color-wheel.component";
-import { BsLuminosityStripComponent } from "../luminosity-strip/luminosity-strip.component";
+import { BsBrightnessStripComponent } from "../brightness-strip/brightness-strip.component";
 import { BsAlphaStripComponent } from "../alpha-strip/alpha-strip.component";
 
 @Component({
   selector: 'bs-color-picker',
   templateUrl: './color-picker.component.html',
   styleUrls: ['./color-picker.component.scss'],
-  imports: [BsColorWheelComponent, BsLuminosityStripComponent, BsAlphaStripComponent],
+  imports: [BsColorWheelComponent, BsBrightnessStripComponent, BsAlphaStripComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   hostDirectives: [BsColorPickerValueAccessor],
 })
@@ -22,7 +22,7 @@ export class BsColorPickerComponent {
   allowAlpha = input<boolean>(true);
 
   hs = signal<HS>({ hue: 0, saturation: 0 });
-  luminosity = signal<number>(0);
+  brightness = signal<number>(1);
 
   alpha = model<number>(1);
   alphaChange = output<number>();

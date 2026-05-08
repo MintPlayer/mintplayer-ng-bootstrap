@@ -1,10 +1,10 @@
 @let letDisabled = disabled();
 @let letHS = hs();
-@let letLuminosity = luminosity();
+@let letBrightness = brightness();
 @let letAlpha = alpha();
 
-<bs-color-wheel [disabled]="letDisabled" [hs]="letHS" (hsChange)="hs.set($event)" [luminosity]="letLuminosity" [width]="size()" [height]="size()" #wheel></bs-color-wheel>
-<bs-luminosity-strip [disabled]="letDisabled" [hs]="letHS" [luminosity]="letLuminosity" (luminosityChange)="luminosity.set($event)" class="d-block mt-2" [style.width.px]="size()" #strip></bs-luminosity-strip>
+<bs-color-wheel [disabled]="letDisabled" [hs]="letHS" (hsChange)="hs.set($event)" [brightness]="letBrightness" [width]="size()" [height]="size()" #wheel></bs-color-wheel>
+<bs-brightness-strip [disabled]="letDisabled" [hs]="letHS" [brightness]="letBrightness" (brightnessChange)="brightness.set($event)" class="d-block mt-2" [style.width.px]="size()" #strip></bs-brightness-strip>
 @if (allowAlpha()) {
-    <bs-alpha-strip [disabled]="letDisabled" [hs]="letHS" [luminosity]="letLuminosity" [alpha]="letAlpha" (alphaChange)="alpha.set($event)" class="d-block mt-2" [style.width.px]="size()" #alphaStrip></bs-alpha-strip>
+    <bs-alpha-strip [disabled]="letDisabled" [hs]="letHS" [brightness]="letBrightness" [alpha]="letAlpha" (alphaChange)="alpha.set($event)" class="d-block mt-2" [style.width.px]="size()" #alphaStrip></bs-alpha-strip>
 }

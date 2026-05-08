@@ -1,5 +1,15 @@
 $thumb-size: 30px;
 
+canvas {
+    touch-action: none;
+}
+
+.brightness-overlay {
+    background: #000;
+    border-radius: 50%;
+    transition: opacity 60ms linear;
+}
+
 .thumb {
     width: $thumb-size;
     height: $thumb-size;

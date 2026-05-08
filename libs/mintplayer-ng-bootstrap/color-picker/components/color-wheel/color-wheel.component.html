@@ -1,12 +1,21 @@
 <canvas
     class="d-block"
-    [width]="width()"
-    [height]="height()"
+    [attr.width]="canvasPixelWidth()"
+    [attr.height]="canvasPixelHeight()"
+    [style.width.px]="width()"
+    [style.height.px]="height()"
     (mousedown)="onPointerDown($event)"
     (touchstart)="onPointerDown($event)"
     (touchmove)="onPointerMove($event)"
     (touchend)="onPointerUp($event)"
     #canvas></canvas>
+
+<div class="brightness-overlay position-absolute pe-none"
+     [style.opacity]="overlayOpacity()"
+     [style.left.px]="shiftX()"
+     [style.top.px]="shiftY()"
+     [style.width.px]="squareSize()"
+     [style.height.px]="squareSize()"></div>
 
 @if (markerPosition(); as markerPosition) {
     <div class="thumb position-absolute pe-none" [style.left.px]="markerPosition.x" [style.top.px]="markerPosition.y"></div>
