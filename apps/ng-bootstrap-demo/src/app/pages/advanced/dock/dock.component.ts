@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, signal, viewChild, ChangeDetectionStrategy} from '@angular/core';
+import { Component, isDevMode, signal, viewChild, ChangeDetectionStrategy} from '@angular/core';
 import { BsBadgeComponent } from '@mintplayer/ng-bootstrap/badge';
 import {
   BsDockManagerComponent,
@@ -20,6 +20,7 @@ export class DockComponent {
   readonly dockManager = viewChild(BsDockManagerComponent);
 
   readonly Color = Color;
+  readonly isDevMode = isDevMode();
 
   layout = signal<DockLayoutSnapshot>({
     root: {
