@@ -21,7 +21,7 @@ export class BsSliderComponent {
 
   thumbLeft = computed(() => `${this.value() * 100}%`);
 
-  cursorClass = computed(() => 'position-absolute ' + (this.isPointerDown() ? 'cursor-grabbing' : 'cursor-grab'));
+  cursorClass = computed(() => 'position-absolute top-0 ' + (this.isPointerDown() ? 'cursor-grabbing' : 'cursor-grab'));
 
   onPointerDown(ev: MouseEvent | TouchEvent) {
     if (this.disabled()) return;
