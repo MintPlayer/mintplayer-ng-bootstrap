@@ -43,4 +43,9 @@ export class BsColorPickerComponent {
     this.brightness.set(brightness);
     this.userChanged.next();
   }
+
+  onUserAlphaChange(alpha: number) {
+    this.alpha.set(alpha);
+    this.userChanged.next();
+  }
 }

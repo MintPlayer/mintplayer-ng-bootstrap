@@ -24,6 +24,7 @@ export class BsColorPickerValueAccessor implements ControlValueAccessor {
   }
 
   private emit() {
+    this.onTouched?.();
     if (!this.onValueChange) return;
     const hs = this.host.hs();
     const brightness = this.host.brightness();
