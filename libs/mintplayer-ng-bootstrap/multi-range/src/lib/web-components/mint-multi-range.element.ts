@@ -265,15 +265,18 @@ export class MintMultiRangeElement extends LitElement {
     segment: { from: number; to: number },
     vertical: boolean,
   ): TemplateResult {
+    // Use logical `inset-inline-start` so the fill flips correctly in RTL;
+    // works as `left` in LTR and `right` in RTL.
     const style = vertical
       ? `bottom: ${segment.from}%; height: ${segment.to - segment.from}%;`
-      : `left: ${segment.from}%; width: ${segment.to - segment.from}%;`;
+      : `inset-inline-start: ${segment.from}%; width: ${segment.to - segment.from}%;`;
     return html`<div class="fill" part="fill" style=${style}></div>`;
   }
 
   private renderThumb(value: number, index: number, vertical: boolean): TemplateResult {
     const pct = this.percent(value);
-    const style = vertical ? `bottom: ${pct}%;` : `left: ${pct}%;`;
+    // Logical `inset-inline-start` so the thumb position flips in RTL.
+    const style = vertical ? `bottom: ${pct}%;` : `inset-inline-start: ${pct}%;`;
     const formatted = this.formatThumb(value);
     const isDragging = this.dragState?.thumbIndex === index;
     // aria-valuetext only when formatValue is provided — otherwise aria-valuenow alone is read out.

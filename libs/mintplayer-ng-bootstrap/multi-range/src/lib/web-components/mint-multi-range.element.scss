@@ -97,6 +97,18 @@
   transform: translate(-50%, -50%) scale(1.1);
 }
 
+// In RTL, `inset-inline-start: V%` resolves to `right: V%`, anchoring the
+// element by its right edge instead of its left. Translating -50% in document
+// coords would push it further away from the anchor; we need +50% so the
+// element's center sits on the anchor point.
+:host([orientation='horizontal']:dir(rtl)) .thumb {
+  transform: translate(50%, -50%);
+}
+
+:host([orientation='horizontal']:dir(rtl)) .thumb:active {
+  transform: translate(50%, -50%) scale(1.1);
+}
+
 :host([orientation='vertical']) .thumb {
   left: 50%;
   transform: translate(-50%, 50%);
