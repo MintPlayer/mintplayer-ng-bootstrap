@@ -19,6 +19,9 @@
 :host([orientation='vertical']) {
   width: auto;
   height: 100%;
+  // Hard floor so a vertical slider stays interactive when its parent has no
+  // explicit height. Callers wanting taller tracks should size the parent
+  // (the percentage-height chain only resolves when the parent has a definite height).
   min-height: 8rem;
 }
 

@@ -128,14 +128,18 @@ Closes the most-requested missing form primitive in the library. Differentiates 
 4. [x] Navbar entry inserted between "Input group" and "Range" in `app.component.html`.
 5. [x] `multi-range.component.spec.ts` — `should create` test, dependencies mocked via `ng-mocks` (mirrors `range.component.spec.ts`).
 
-### Phase 7: Verification
-1. `npx nx build mintplayer-ng-bootstrap` — clean compile.
-2. `npx nx build ng-bootstrap-demo` — clean compile.
-3. `npx nx test mintplayer-ng-bootstrap --testPathPattern=multi-range` — unit tests pass.
-4. `npx nx test ng-bootstrap-demo --testPathPattern=multi-range` — demo spec passes.
-5. `npx nx serve ng-bootstrap-demo` — visit `/basic/forms/multi-range` and walk every example.
-6. Cross-browser smoke: Chromium + Firefox (flex-shrink memory), keyboard nav with screen reader.
-7. Touch smoke: phone/tablet emulation in DevTools, confirm drag works without click being suppressed.
+### Phase 7: Verification ✅
+1. [x] `npx nx build mintplayer-ng-bootstrap` — clean compile.
+2. [x] `npx nx build ng-bootstrap-demo` — clean compile.
+3. [x] `npx nx test mintplayer-ng-bootstrap --testPathPattern=multi-range` — 464 tests pass.
+4. [x] `npx nx test ng-bootstrap-demo --testPathPattern=multi-range` — 93 tests pass.
+5. [x] `npx nx serve ng-bootstrap-demo` + Playwright smoke at `/basic/forms/multi-range` — all 8 examples render correctly with right thumb counts and values; keyboard nav + minDistance + disabled-focus-rejection verified.
+6. [ ] Manual Firefox + NVDA smoke deferred to PR review.
+7. [ ] Manual touch smoke deferred to PR review.
+
+### Bug fixes discovered during smoke test
+- **Wrapper `value` model default raced `writeValue()`**: a `model<number[]>([])` default ran the wrapper's effect and pushed `[]` to the WC, clobbering the form-control's initial value pushed by the value accessor. Fixed by defaulting to `undefined` and skipping the effect when undefined. Confirmed the FormControl example at `/basic/forms/multi-range` now renders 3 thumbs at `[10, 40, 70]`.
+- **Vertical orientation collapsed to 0 height**: wrapper's `:host([orientation='vertical']) { height: 100% }` rule wasn't matching because the wrapper's host had no `orientation` attribute. Fixed by adding `host: { '[attr.orientation]': 'orientation()' }` to the wrapper component, so the percentage-height chain from `.vertical-host` → `<bs-multi-range>` → `<mp-multi-range>` → `.track` now resolves end-to-end.
 
 ---
 

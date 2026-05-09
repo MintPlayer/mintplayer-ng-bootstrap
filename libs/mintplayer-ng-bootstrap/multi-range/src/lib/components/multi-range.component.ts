@@ -33,9 +33,12 @@ import { MultiRangeOrientation } from '../types/multi-range-orientation';
   `,
   styles: [`
     :host { display: block; width: 100%; }
-    .bs-multi-range { display: block; width: 100%; }
+    .bs-multi-range { display: block; width: 100%; height: 100%; }
     :host([orientation='vertical']) { width: auto; height: 100%; }
   `],
+  host: {
+    '[attr.orientation]': 'orientation()',
+  },
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   hostDirectives: [BsMultiRangeValueAccessor],
@@ -50,7 +53,10 @@ export class BsMultiRangeComponent {
   readonly formatValue = input<((value: number) => string) | null>(null);
   readonly label = input<string | null>(null);
 
-  readonly value = model<number[]>([]);
+  // Default is `undefined` so the effect doesn't clobber a writeValue() from a
+  // form-control binding that hasn't fired yet. Once the model is set (either
+  // by [(value)] binding or by user interaction), the effect drives the WC.
+  readonly value = model<number[] | undefined>(undefined);
 
   readonly valueChange = output<number[]>();
   readonly valueInput = output<number[]>();
@@ -63,7 +69,9 @@ export class BsMultiRangeComponent {
     effect(() => {
       const ref = this.elementRef();
       if (!ref) return;
-      ref.nativeElement.value = this.value();
+      const v = this.value();
+      if (v === undefined) return;
+      ref.nativeElement.value = v;
     });
     effect(() => {
       const ref = this.elementRef();

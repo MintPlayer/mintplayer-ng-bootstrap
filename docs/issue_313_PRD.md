@@ -111,9 +111,11 @@ A new N-thumb range-slider primitive `bs-multi-range` for `@mintplayer/ng-bootst
 - [x] `multi-range.component.spec.ts` — `should create` test passes (mocking dependencies via ng-mocks, mirroring the range demo's spec).
 
 ### Milestone 7: PR-ready
-- [ ] All P0 acceptance criteria green.
-- [ ] Manual smoke test on Chromium + Firefox + touch viewport.
-- [ ] Screenshots / GIFs for the PR description.
+- [x] All P0 acceptance criteria green. 464 library tests + 93 demo tests pass.
+- [x] Manual smoke test on Chromium via Playwright — keyboard nav, minDistance constraint enforcement at the keyboard entry point, disabled-state focus rejection all verified. Vertical orientation rendered correctly after smoke-test fix below.
+- [x] **Smoke-test bug fix #1**: wrapper `value` model defaulted to `[]`, racing the value-accessor's `writeValue()` and rendering `[min, max]` instead of the form-control's initial value. Changed default to `undefined` and the effect skips when undefined — only an explicit `[(value)]` binding or user interaction sets the model.
+- [x] **Smoke-test bug fix #2**: vertical orientation was rendering as a 0-height collapsed track. Wrapper's `:host([orientation='vertical'])` selector wasn't matching because `orientation` wasn't on the wrapper's host. Added `host: { '[attr.orientation]': 'orientation()' }` so the percentage-height chain (`.vertical-host { height: 12rem }` → `<bs-multi-range>` → `<mp-multi-range>` → `.track`) resolves end-to-end.
+- [ ] Manual Firefox + touch + NVDA smoke deferred to PR review (not blocking).
 
 ---
 
