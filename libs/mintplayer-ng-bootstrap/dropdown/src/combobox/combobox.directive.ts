@@ -1,5 +1,5 @@
 import { computed, Directive, inject, input, output } from '@angular/core';
-import { BsDropdownDirective } from '@mintplayer/ng-bootstrap/dropdown';
+import { BsDropdownDirective } from '../dropdown/dropdown.directive';
 
 export type BsComboboxAutocomplete = 'none' | 'list' | 'inline' | 'both';
 export type BsComboboxNavigateDirection = 'next' | 'prev' | 'first' | 'last';
@@ -13,45 +13,55 @@ export type BsComboboxNavigateDirection = 'next' | 'prev' | 'first' | 'last';
     '[attr.aria-haspopup]': '"listbox"',
     '[attr.aria-expanded]': 'expanded()',
     '[attr.aria-controls]': 'controls()',
-    '[attr.aria-activedescendant]': 'activeDescendant()',
+    '[attr.aria-activedescendant]': 'resolvedActiveDescendant()',
     '(keydown)': 'onKeydown($event)',
   },
 })
 export class BsComboboxDirective {
   private dropdown = inject(BsDropdownDirective, { optional: true });
 
-  readonly autocomplete = input<BsComboboxAutocomplete>('list');
+  /** Aliased to bsComboboxAutocomplete to avoid colliding with the host input's native HTML autocomplete attribute. */
+  readonly autocomplete = input<BsComboboxAutocomplete>('list', { alias: 'bsComboboxAutocomplete' });
+  /** Override the auto-derived activeDescendant. Defaults to dropdown.rovingFocus()'s id when present. */
   readonly activeDescendant = input<string | null>(null);
 
   readonly expanded = computed(() => this.dropdown?.isOpen() ?? false);
   readonly controls = computed(() => this.dropdown?.menuId ?? null);
+  readonly resolvedActiveDescendant = computed(() =>
+    this.activeDescendant() ?? this.dropdown?.rovingFocus()?.activeDescendantId() ?? null);
 
+  /** Fires only when no BsRovingFocus is found inside the parent dropdown — otherwise arrow keys are forwarded automatically. */
   readonly navigate = output<BsComboboxNavigateDirection>();
   readonly activate = output<KeyboardEvent>();
   readonly cancel = output<KeyboardEvent>();
 
   onKeydown(event: KeyboardEvent): void {
     const isOpen = this.expanded();
+    const rf = this.dropdown?.rovingFocus();
     switch (event.key) {
       case 'ArrowDown':
         if (!isOpen) this.dropdown?.isOpen.set(true);
+        else if (rf) rf.next();
         else this.navigate.emit('next');
         event.preventDefault();
         break;
       case 'ArrowUp':
         if (!isOpen) this.dropdown?.isOpen.set(true);
+        else if (rf) rf.prev();
         else this.navigate.emit('prev');
         event.preventDefault();
         break;
       case 'Home':
         if (isOpen) {
-          this.navigate.emit('first');
+          if (rf) rf.focusFirst();
+          else this.navigate.emit('first');
           event.preventDefault();
         }
         break;
       case 'End':
         if (isOpen) {
-          this.navigate.emit('last');
+          if (rf) rf.focusLast();
+          else this.navigate.emit('last');
           event.preventDefault();
         }
         break;

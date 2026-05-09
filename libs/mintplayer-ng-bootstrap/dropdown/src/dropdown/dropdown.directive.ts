@@ -1,6 +1,6 @@
 import { contentChild, Directive, ElementRef, inject, input, model } from '@angular/core';
 import { BS_DEVELOPMENT } from '@mintplayer/ng-bootstrap';
-import { BsIdService } from '@mintplayer/ng-bootstrap/a11y';
+import { BsIdService, BsRovingFocusDirective } from '@mintplayer/ng-bootstrap/a11y';
 import { BsDropdownMenuDirective } from '../dropdown-menu/dropdown-menu.directive';
 import { BsDropdownToggleDirective } from '../dropdown-toggle/dropdown-toggle.directive';
 
@@ -21,6 +21,7 @@ export class BsDropdownDirective {
 
   readonly menu = contentChild.required(BsDropdownMenuDirective);
   readonly toggle = contentChild(BsDropdownToggleDirective);
+  readonly rovingFocus = contentChild(BsRovingFocusDirective, { descendants: true });
 
   hasBackdrop = input(false);
   sameWidth = input(false);

@@ -1,30 +1,36 @@
 import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, input, model, output, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { BsDropdownDirective, BsDropdownMenuDirective } from '@mintplayer/ng-bootstrap/dropdown';
+import { BsRovingFocusDirective, BsRovingFocusItemDirective } from '@mintplayer/ng-bootstrap/a11y';
+import { BsComboboxDirective, BsDropdownDirective, BsDropdownMenuDirective } from '@mintplayer/ng-bootstrap/dropdown';
 import { BsDropdownMenuComponent, BsDropdownItemComponent } from '@mintplayer/ng-bootstrap/dropdown-menu';
 import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { BsProgressComponent } from '@mintplayer/ng-bootstrap/progress-bar';
 
-let typeaheadIdCounter = 0;
-
 @Component({
   selector: 'bs-typeahead',
   templateUrl: './typeahead.component.html',
   styleUrls: ['./typeahead.component.scss'],
-  imports: [FormsModule, BsFormComponent, BsFormControlDirective, BsDropdownDirective, BsDropdownMenuDirective, BsDropdownMenuComponent, BsDropdownItemComponent, BsProgressComponent, BsHasOverlayComponent],
+  imports: [
+    FormsModule,
+    BsFormComponent, BsFormControlDirective,
+    BsDropdownDirective, BsDropdownMenuDirective, BsDropdownMenuComponent, BsDropdownItemComponent,
+    BsComboboxDirective,
+    BsRovingFocusDirective, BsRovingFocusItemDirective,
+    BsProgressComponent, BsHasOverlayComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsTypeaheadComponent {
 
   isOpen = model(false);
-  readonly listboxId = `typeahead-listbox-${typeaheadIdCounter++}`;
 
   suggestions = input<any[]>([]);
   isLoading = signal<boolean>(false);
   showNoSuggestions = computed(() => this.suggestions().length === 0);
 
   readonly textbox = viewChild.required<ElementRef<HTMLInputElement>>('textbox');
+  readonly rovingFocus = viewChild(BsRovingFocusDirective);
   searchterm = model('');
   isLoadingText = input('Loading...');
   noSuggestionsText = input('No suggestions found');
@@ -56,6 +62,19 @@ export class BsTypeaheadComponent {
     this.searchterm.set(suggestion.text);
     this.isOpen.set(false);
     this.suggestionSelected.emit(suggestion);
+  }
+
+  onActivate() {
+    const rf = this.rovingFocus();
+    if (!rf) return;
+    const suggestion = this.suggestions()[rf.activeIndex()];
+    if (suggestion) {
+      this.suggestionClicked(suggestion);
+    }
+  }
+
+  onCancel() {
+    // dropdown was already closed by bsCombobox; no extra work needed
   }
 
   onSubmit() {

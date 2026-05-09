@@ -3,9 +3,11 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { OverlayModule } from '@angular/cdk/overlay';
 import { MockProvider } from 'ng-mocks';
 import { BS_DEVELOPMENT } from '@mintplayer/ng-bootstrap';
-import { BsDropdownDirective, BsDropdownMenuDirective, BsDropdownToggleDirective } from '@mintplayer/ng-bootstrap/dropdown';
 import { BsDropdownMenuComponent } from '@mintplayer/ng-bootstrap/dropdown-menu';
 import { BsComboboxDirective, BsComboboxNavigateDirection } from './combobox.directive';
+import { BsDropdownDirective } from '../dropdown/dropdown.directive';
+import { BsDropdownMenuDirective } from '../dropdown-menu/dropdown-menu.directive';
+import { BsDropdownToggleDirective } from '../dropdown-toggle/dropdown-toggle.directive';
 
 @Component({
   selector: 'bs-combobox-harness',
