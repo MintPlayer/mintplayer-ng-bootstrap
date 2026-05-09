@@ -1,6 +1,6 @@
 <div class="progress">
     @if (isIndeterminate()) {
-        <div class="progress-bar progress-bar-infinite bg-primary" role="progressbar" aria-valuenow="infinite"></div>
+        <div class="progress-bar progress-bar-infinite bg-primary" role="progressbar" [attr.aria-label]="ariaLabel()"></div>
     } @else {
         <ng-content></ng-content>
     }

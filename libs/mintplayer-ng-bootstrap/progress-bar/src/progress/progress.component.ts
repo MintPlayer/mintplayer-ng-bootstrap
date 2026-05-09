@@ -14,4 +14,5 @@ import { Component, input, ChangeDetectionStrategy} from '@angular/core';
 export class BsProgressComponent {
   readonly height = input<number | null>(null);
   readonly isIndeterminate = input(false);
+  readonly ariaLabel = input<string>('Loading');
 }
