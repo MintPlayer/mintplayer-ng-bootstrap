@@ -1,35 +1,34 @@
-<ul class="pagination">
-    @if (showArrows()) {
-        <li class="page-item">
-            <a class="page-link" href="" (click)="onPrevious()" [class.disabled]="isFirstPage()" aria-label="Previous">
-                <span aria-hidden="true">&laquo;</span>
-                <span class="visually-hidden">Previous</span>
-            </a>
-        </li>
-    }
-    @for (pageNumber of shownPageNumbers(); track $index) {
-        <li class="page-item">
-            @if (pageNumber.page === '...') {
-                <a class="page-link disabled" aria-disabled="true">
-                    <span aria-hidden="true">&hellip;</span>
-                    <span class="visually-hidden">More pages</span>
+<nav [attr.aria-label]="ariaLabel()">
+    <ul class="pagination">
+        @if (showArrows()) {
+            <li class="page-item">
+                <a class="page-link" href="" (click)="onPrevious()" [class.disabled]="isFirstPage()" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                    <span class="visually-hidden">Previous</span>
                 </a>
-            } @else {
-                <a class="page-link" href="" (click)="onSelectPage($event, pageNumber.page)" [class.active]="pageNumber.selected">
-                    {{ pageNumber.page }}
-                    @if (pageNumber.selected) {
-                        <span class="visually-hidden">(current)</span>
-                    }
+            </li>
+        }
+        @for (pageNumber of shownPageNumbers(); track $index) {
+            <li class="page-item" [class.active]="pageNumber.selected">
+                @if (pageNumber.page === '...') {
+                    <span class="page-link disabled" aria-disabled="true">
+                        <span aria-hidden="true">&hellip;</span>
+                        <span class="visually-hidden">More pages</span>
+                    </span>
+                } @else {
+                    <a class="page-link" href="" (click)="onSelectPage($event, pageNumber.page)" [class.active]="pageNumber.selected" [attr.aria-current]="pageNumber.selected ? 'page' : null">
+                        {{ pageNumber.page }}
+                    </a>
+                }
+            </li>
+        }
+        @if (showArrows()) {
+            <li class="page-item">
+                <a class="page-link" href="" (click)="onNext()" [class.disabled]="isLastPage()" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                    <span class="visually-hidden">Next</span>
                 </a>
-            }
-        </li>
-    }
-    @if (showArrows()) {
-        <li class="page-item">
-            <a class="page-link" href="" (click)="onNext()" [class.disabled]="isLastPage()" aria-label="Next">
-                <span aria-hidden="true">&raquo;</span>
-                <span class="visually-hidden">Next</span>
-            </a>
-        </li>
-    }
-</ul>
+            </li>
+        }
+    </ul>
+</nav>
