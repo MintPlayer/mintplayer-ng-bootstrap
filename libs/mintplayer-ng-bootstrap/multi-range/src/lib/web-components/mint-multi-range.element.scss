@@ -1,0 +1,150 @@
+:host {
+  display: block;
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  --bs-multi-range-track-bg: var(--bs-tertiary-bg, #e9ecef);
+  --bs-multi-range-track-radius: 1rem;
+  --bs-multi-range-track-thickness: 0.5rem;
+  --bs-multi-range-thumb-bg: var(--bs-primary, #0d6efd);
+  --bs-multi-range-thumb-bg-disabled: var(--bs-secondary, #6c757d);
+  --bs-multi-range-thumb-size: 1rem;
+  --bs-multi-range-thumb-shadow: 0 0.1rem 0.25rem rgba(0, 0, 0, 0.1);
+  --bs-multi-range-fill-bg: var(--bs-primary, #0d6efd);
+  --bs-multi-range-fill-bg-disabled: var(--bs-secondary, #6c757d);
+  --bs-multi-range-tooltip-bg: var(--bs-dark, #212529);
+  --bs-multi-range-tooltip-color: var(--bs-light, #f8f9fa);
+}
+
+:host([orientation='vertical']) {
+  width: auto;
+  height: 100%;
+  min-height: 8rem;
+}
+
+:host([disabled]) {
+  cursor: not-allowed;
+}
+
+.track {
+  position: relative;
+  background: var(--bs-multi-range-track-bg);
+  border-radius: var(--bs-multi-range-track-radius);
+  touch-action: none;
+}
+
+:host([orientation='horizontal']) .track {
+  width: 100%;
+  height: var(--bs-multi-range-track-thickness);
+  margin: calc(var(--bs-multi-range-thumb-size) / 2) 0;
+}
+
+:host([orientation='vertical']) .track {
+  width: var(--bs-multi-range-track-thickness);
+  height: 100%;
+  margin: 0 calc(var(--bs-multi-range-thumb-size) / 2);
+}
+
+.fill {
+  position: absolute;
+  background: var(--bs-multi-range-fill-bg);
+  border-radius: var(--bs-multi-range-track-radius);
+}
+
+:host([orientation='horizontal']) .fill {
+  top: 0;
+  bottom: 0;
+}
+
+:host([orientation='vertical']) .fill {
+  left: 0;
+  right: 0;
+}
+
+:host([disabled]) .fill {
+  background: var(--bs-multi-range-fill-bg-disabled);
+}
+
+.thumb {
+  position: absolute;
+  width: var(--bs-multi-range-thumb-size);
+  height: var(--bs-multi-range-thumb-size);
+  background: var(--bs-multi-range-thumb-bg);
+  border: 0;
+  border-radius: 50%;
+  box-shadow: var(--bs-multi-range-thumb-shadow);
+  cursor: grab;
+  touch-action: none;
+  padding: 0;
+  outline: none;
+  transition: transform 100ms ease-out;
+}
+
+.thumb:active {
+  cursor: grabbing;
+  transform: scale(1.1);
+}
+
+:host([orientation='horizontal']) .thumb {
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+:host([orientation='horizontal']) .thumb:active {
+  transform: translate(-50%, -50%) scale(1.1);
+}
+
+:host([orientation='vertical']) .thumb {
+  left: 50%;
+  transform: translate(-50%, 50%);
+}
+
+:host([orientation='vertical']) .thumb:active {
+  transform: translate(-50%, 50%) scale(1.1);
+}
+
+:host([disabled]) .thumb {
+  background: var(--bs-multi-range-thumb-bg-disabled);
+  cursor: not-allowed;
+}
+
+.thumb:focus-visible {
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.35), var(--bs-multi-range-thumb-shadow);
+}
+
+.tooltip {
+  position: absolute;
+  background: var(--bs-multi-range-tooltip-bg);
+  color: var(--bs-multi-range-tooltip-color);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  pointer-events: none;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+  z-index: 2;
+}
+
+.tooltip.is-visible {
+  opacity: 1;
+}
+
+:host([orientation='horizontal']) .tooltip {
+  bottom: calc(100% - var(--bs-multi-range-thumb-size) / 2 + 0.25rem);
+  transform: translateX(-50%);
+}
+
+:host([orientation='vertical']) .tooltip {
+  left: calc(100% + 0.5rem);
+  transform: translateY(50%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thumb,
+  .tooltip {
+    transition: none;
+  }
+}

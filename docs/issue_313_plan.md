@@ -80,13 +80,14 @@ Closes the most-requested missing form primitive in the library. Differentiates 
 
 ## Implementation Plan
 
-### Phase 1: Library scaffolding + WC skeleton
-1. Create `libs/mintplayer-ng-bootstrap/multi-range/` directory tree mirroring `tile-manager/`.
-2. Stub `MintMultiRangeElement extends LitElement` with `value`, `min`, `max`, `step`, `minDistance`, `orientation`, `disabled`, `formatValue` properties; `customElements.define('mint-multi-range', …)`.
-3. Stub `.element.html` with track + N thumbs `repeat`-rendered + tooltip span + fill segments. Stub `.element.scss` importing Bootstrap variables (mirror `range.component.scss` imports).
-4. Run `npm run postinstall` (or the codegen-wc Nx target) to verify `.element.template.ts` is generated.
-5. Create `BsMultiRangeComponent` wrapper, side-effect import the WC element, expose `model<number[]>('value')`, signal inputs for the rest, sync via `effect()`.
-6. Verify `npx nx build mintplayer-ng-bootstrap` passes with the empty component.
+### Phase 1: Library scaffolding + WC skeleton ✅
+1. [x] Create `libs/mintplayer-ng-bootstrap/multi-range/` directory tree mirroring `tile-manager/`.
+2. [x] Stub `MintMultiRangeElement extends LitElement` with `value`, `min`, `max`, `step`, `minDistance`, `orientation`, `disabled`, `formatValue` properties; `customElements.define('mp-multi-range', …)` (registered name uses `mp-` prefix per tile-manager precedent).
+3. [x] `.element.html` is the codegen stub (template unused — render() draws the tree). `.element.scss` defines all CSS custom properties + visual structure for track / fill / thumb / tooltip / orientations. No Bootstrap SCSS imports — Lit shadow DOM is isolated, so theming is via `--bs-*` CSS variables that pierce shadow boundaries.
+4. [x] Codegen-wc target run via `npx nx run-many --target=codegen-wc`; `.element.template.ts` generated.
+5. [x] Wrapper component `BsMultiRangeComponent` with signal inputs, `model<number[]>('value')`, `effect()` syncing `value` and `formatValue` (function — must go via property, not attribute). Listens for `(value-input)` and `(value-change)` events.
+6. [x] Value accessor scaffolded: `(value-input)` host listener for live updates, `(value-change)` for touched. `writeValue` pushes to the WC's `value` property; `setDisabledState` toggles the `disabled` attribute.
+7. [x] `npx nx build mintplayer-ng-bootstrap` passes; `dist/libs/mintplayer-ng-bootstrap/fesm2022/mintplayer-ng-bootstrap-multi-range.mjs` emitted.
 
 ### Phase 2: Drag interaction (pointer + keyboard)
 1. Implement pointer-drag on each thumb: `pointerdown` → `setPointerCapture`, `pointermove` → compute new value from coordinate, apply Block clamp + minDistance, dispatch `value-input` event (drag in progress), commit on `pointerup` with `value-change`.

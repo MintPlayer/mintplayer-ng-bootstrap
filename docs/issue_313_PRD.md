@@ -71,11 +71,11 @@ A new N-thumb range-slider primitive `bs-multi-range` for `@mintplayer/ng-bootst
 ## Timeline & Milestones
 
 ### Milestone 1: Library scaffold + empty WC
-- [ ] `libs/mintplayer-ng-bootstrap/multi-range/` directory tree mirrors `tile-manager/`.
-- [ ] `MintMultiRangeElement extends LitElement` registered as `mint-multi-range`.
-- [ ] codegen-wc emits `.element.template.ts` from `.html`/`.scss` source.
-- [ ] `BsMultiRangeComponent` wrapper compiles, side-effect imports the WC.
-- [ ] `npx nx build mintplayer-ng-bootstrap` passes.
+- [x] `libs/mintplayer-ng-bootstrap/multi-range/` directory tree mirrors `tile-manager/`.
+- [x] `MintMultiRangeElement extends LitElement` registered as `mp-multi-range`.
+- [x] codegen-wc emits `.element.template.ts` from `.html`/`.scss` source.
+- [x] `BsMultiRangeComponent` wrapper compiles, side-effect imports the WC.
+- [x] `npx nx build mintplayer-ng-bootstrap` passes (entry point `@mintplayer/ng-bootstrap/multi-range` built without any tsconfig/package.json edits).
 
 ### Milestone 2: Drag + keyboard interaction
 - [ ] Pointer drag with `setPointerCapture`, Block-crossing + `minDistance` enforced.
@@ -119,7 +119,7 @@ A new N-thumb range-slider primitive `bs-multi-range` for `@mintplayer/ng-bootst
 ## Technical Notes (Issue-Specific)
 
 - **Most recent WC precedent is `tile-manager` (PR #321)** — the WC lives at `libs/mintplayer-ng-bootstrap/<name>/src/lib/web-components/mint-<name>.element.ts`, NOT under a top-level `libs/mp-<name>-wc/` directory and NOT under `libs/mintplayer-ng-bootstrap/web-components/<name>/` (that older path was used by `scheduler`). Match `tile-manager` exactly for the multi-range layout.
-- **Element name uses `mint-` prefix** (matches `mint-tile-manager`, `mint-dock-manager`), not the older `mp-` prefix used by `mp-scheduler` / `mp-splitter` / `mp-tab-control`.
+- **Element-name convention is split**: the source file + class use the `mint-` / `Mint` prefix (`mint-multi-range.element.ts`, `MintMultiRangeElement`), but the registered custom-element name uses `mp-` (`customElements.define('mp-multi-range', ...)`). This matches the tile-manager precedent exactly — the file/class follow the newer `mint-` convention while the rendered element keeps the `mp-` prefix used elsewhere in the project.
 - **Codegen-wc is a postinstall step** — `tools/scripts/build-web-components.mjs` reads `<name>.element.html` + `<name>.element.scss` and writes `<name>.element.template.ts` (Lit `TemplateResult` + `CSSResult` exports). Hand-editing the generated file is wrong; edit `.html`/`.scss` and re-run.
 - **Pointer events, not HTML5 dnd** — slider drag is a click-and-drag UI, the WC's source DOM is stable, but per memory `feedback_pointer_over_html5_dnd.md` the project's standing rule is to use `pointerdown` over HTML5 native drag-and-drop regardless. `setPointerCapture` to keep events flowing while the user drags off the thumb.
 - **Touch correctness** — `touch-action: none` on the track at all times (per memory `feedback_touch_action_immutable.md`, can't be promoted mid-gesture). No `preventDefault()` on touch pointerdown (per memory `feedback_pointerdown_preventdefault.md`, suppresses the synthesized click on touch).
