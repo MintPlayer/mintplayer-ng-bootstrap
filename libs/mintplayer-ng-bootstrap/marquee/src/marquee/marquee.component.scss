@@ -12,6 +12,13 @@
 	animation: marquee 15s linear infinite;
 }
 
+@media (prefers-reduced-motion: reduce) {
+	.marquee > span {
+		animation: none;
+		padding-left: 0;
+	}
+}
+
 @keyframes marquee {
 	0% {
 		transform: translate(0, 0);
