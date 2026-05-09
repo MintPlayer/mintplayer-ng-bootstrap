@@ -2,7 +2,7 @@
 
 **Issue**: #251
 **Title**: Migrate e2e tests from Cypress to Playwright
-**Status**: Draft
+**Status**: Complete
 **Created**: 2026-05-09
 **Last Updated**: 2026-05-09
 
@@ -32,16 +32,16 @@ Replace the dormant Cypress e2e setup in `apps/ng-bootstrap-demo-e2e` with `@nx/
 
 ### Must Have (P0)
 
-- [ ] **FR-1**: `apps/ng-bootstrap-demo-e2e` uses `@nx/playwright:playwright`. Cypress, `@nx/cypress`, the `cypress.json`, and the `src/` tree are removed.
-- [ ] **FR-2**: `playwright.config.ts` defines two browser projects (`chromium`, `firefox`) and a `webServer` that serves `dist/apps/ng-bootstrap-demo` (production build) on a stable port.
-- [ ] **FR-3**: Six specs exist in `apps/ng-bootstrap-demo-e2e/e2e/` — `smoke`, `routing`, `modal`, `dropdown`, `datepicker`, `dock` — each pinned to a specific demo route and a behaviour-level assertion (not just route-loaded).
-- [ ] **FR-4**: `nx run-many --targets=test,e2e --parallel=2` runs both targets concurrently. The `e2e` target depends on `ng-bootstrap-demo:build` so the prod artifact is always fresh.
-- [ ] **FR-5**: `.github/workflows/pull-request.yml` installs Playwright browsers (`chromium`, `firefox`) with `--with-deps`, then runs `nx affected --targets=test,e2e --parallel=2` in place of the current `test`-only step.
+- [x] **FR-1**: `apps/ng-bootstrap-demo-e2e` uses `@nx/playwright:playwright`. Cypress, `@nx/cypress`, the `cypress.json`, and the `src/` tree are removed.
+- [x] **FR-2**: `playwright.config.ts` defines two browser projects (`chromium`, `firefox`) and a `webServer` that serves the production build. (Implemented as `node dist/apps/ng-bootstrap-demo/server/server.mjs` — runs the built SSR server, which serves `dist/apps/ng-bootstrap-demo/browser/` statically with SSR fallback. Cleaner than spinning up a separate static server, no extra deps.)
+- [x] **FR-3**: Six specs exist in `apps/ng-bootstrap-demo-e2e/e2e/` — `smoke`, `routing`, `modal`, `dropdown`, `datepicker`, `dock` — each pinned to a specific demo route and a behaviour-level assertion (not just route-loaded).
+- [x] **FR-4**: `nx run-many --targets=test,e2e --parallel=2` runs both targets concurrently. The `e2e` target depends on `ng-bootstrap-demo:build` so the prod artifact is always fresh.
+- [x] **FR-5**: `.github/workflows/pull-request.yml` installs Playwright browsers (`chromium`, `firefox`) with `--with-deps`, then runs `nx affected --targets=test,e2e --parallel=2` in place of the current `test`-only step.
 
 ### Should Have (P1)
 
-- [ ] **FR-6**: A `nx e2e ng-bootstrap-demo-e2e -- <spec>` invocation can target a single spec file for fast local iteration.
-- [ ] **FR-7**: The dock spec uses pointer events (`pointerdown`/`pointermove`/`pointerup`), not HTML5 native drag events — per the project's pointer-events rule.
+- [x] **FR-6**: A `nx e2e ng-bootstrap-demo-e2e -- <spec>` invocation can target a single spec file for fast local iteration. (Playwright's CLI accepts spec-path filters; Nx forwards everything after `--` to the executor.)
+- [x] ~~**FR-7**: The dock spec uses pointer events (`pointerdown`/`pointermove`/`pointerup`), not HTML5 native drag events — per the project's pointer-events rule.~~ **Deferred along with the drag-to-split scenario itself** (see M3 deviation note). When a future drag-to-split spec is added, it will use pointer events per this rule. The current dock spec exercises the capture button — no drag at all.
 
 ---
 
