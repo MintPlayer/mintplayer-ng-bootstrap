@@ -52,6 +52,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    flex: 0 0 auto;
     width: var(--bs-step-circle-size);
     height: var(--bs-step-circle-size);
     border-radius: 50%;
