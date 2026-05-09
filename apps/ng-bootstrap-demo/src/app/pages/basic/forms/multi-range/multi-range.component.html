@@ -19,6 +19,12 @@
             <bs-toggle-button [(ngModel)]="isDisabled" [type]="'checkbox'">Disabled</bs-toggle-button>
         </div>
     </div>
+    <div bsRow class="mt-2">
+        <div [col]>
+            <bs-code-snippet [codeToCopy]="basicTs" [language]="'ts'"></bs-code-snippet>
+            <bs-code-snippet [codeToCopy]="basicHtml" [language]="'html'"></bs-code-snippet>
+        </div>
+    </div>
 
     <div bsRow class="mt-5">
         <div [col]>
@@ -32,6 +38,12 @@
         </div>
         <div [md]="1">
             <span>{{ threeThumbValue() | json }}</span>
+        </div>
+    </div>
+    <div bsRow class="mt-2">
+        <div [col]>
+            <bs-code-snippet [codeToCopy]="threeThumbTs" [language]="'ts'"></bs-code-snippet>
+            <bs-code-snippet [codeToCopy]="threeThumbHtml" [language]="'html'"></bs-code-snippet>
         </div>
     </div>
 
@@ -49,6 +61,12 @@
             <span>{{ minDistanceValue() | json }}</span>
         </div>
     </div>
+    <div bsRow class="mt-2">
+        <div [col]>
+            <bs-code-snippet [codeToCopy]="minDistanceTs" [language]="'ts'"></bs-code-snippet>
+            <bs-code-snippet [codeToCopy]="minDistanceHtml" [language]="'html'"></bs-code-snippet>
+        </div>
+    </div>
 
     <div bsRow class="mt-5">
         <div [col]>
@@ -62,6 +80,12 @@
         </div>
         <div [md]="1">
             <span>{{ currencyFormatter(currencyValue()[0]) }} – {{ currencyFormatter(currencyValue()[1]) }}</span>
+        </div>
+    </div>
+    <div bsRow class="mt-2">
+        <div [col]>
+            <bs-code-snippet [codeToCopy]="currencyTs" [language]="'ts'"></bs-code-snippet>
+            <bs-code-snippet [codeToCopy]="currencyHtml" [language]="'html'"></bs-code-snippet>
         </div>
     </div>
 
@@ -81,6 +105,12 @@
             <span>{{ verticalValue() | json }}</span>
         </div>
     </div>
+    <div bsRow class="mt-2">
+        <div [col]>
+            <bs-code-snippet [codeToCopy]="verticalTs" [language]="'ts'"></bs-code-snippet>
+            <bs-code-snippet [codeToCopy]="verticalHtml" [language]="'html'"></bs-code-snippet>
+        </div>
+    </div>
 
     <div bsRow class="mt-5">
         <div [col]>
@@ -98,6 +128,12 @@
             <span>{{ rtlValue() | json }}</span>
         </div>
     </div>
+    <div bsRow class="mt-2">
+        <div [col]>
+            <bs-code-snippet [codeToCopy]="rtlTs" [language]="'ts'"></bs-code-snippet>
+            <bs-code-snippet [codeToCopy]="rtlHtml" [language]="'html'"></bs-code-snippet>
+        </div>
+    </div>
 
     <div bsRow class="mt-5">
         <div [col]>
@@ -113,6 +149,12 @@
             <span>{{ disabledValue() | json }}</span>
         </div>
     </div>
+    <div bsRow class="mt-2">
+        <div [col]>
+            <bs-code-snippet [codeToCopy]="disabledTs" [language]="'ts'"></bs-code-snippet>
+            <bs-code-snippet [codeToCopy]="disabledHtml" [language]="'html'"></bs-code-snippet>
+        </div>
+    </div>
 
     <div bsRow class="mt-5">
         <div [col]>
@@ -126,6 +168,12 @@
         </div>
         <div [md]="1">
             <code>{{ reactiveJson() }}</code>
+        </div>
+    </div>
+    <div bsRow class="mt-2">
+        <div [col]>
+            <bs-code-snippet [codeToCopy]="reactiveTs" [language]="'ts'"></bs-code-snippet>
+            <bs-code-snippet [codeToCopy]="reactiveHtml" [language]="'html'"></bs-code-snippet>
         </div>
     </div>
 </bs-grid>
