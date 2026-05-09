@@ -5,15 +5,14 @@ import { ChangeDetectionStrategy, Component, input, model } from '@angular/core'
   templateUrl: './navbar-toggler.component.html',
   styleUrls: ['./navbar-toggler.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: {
-    '(click)': 'toggleState($event)',
-  },
 })
 export class BsNavbarTogglerComponent {
   state = model<boolean>(false);
   toggleOnClick = input<boolean>(true);
+  ariaLabel = input<string>('Toggle navigation');
+  controls = input<string | null>(null);
 
-  toggleState(ev: MouseEvent) {
+  toggleState() {
     if (this.toggleOnClick()) {
       this.state.update(v => !v);
     }

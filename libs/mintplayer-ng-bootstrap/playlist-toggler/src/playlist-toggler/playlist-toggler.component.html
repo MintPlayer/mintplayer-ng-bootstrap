@@ -1,5 +1,12 @@
-<div class="playlist-toggler float-left" [class.open]="state()">
+<button
+    type="button"
+    class="playlist-toggler float-left"
+    [class.open]="state()"
+    [attr.aria-label]="ariaLabel()"
+    [attr.aria-expanded]="state()"
+    [attr.aria-controls]="controls()"
+    (click)="toggleState()">
     <div></div>
     <div></div>
     <div></div>
-</div>
+</button>
