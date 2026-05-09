@@ -7,6 +7,7 @@ import { Component, ChangeDetectionStrategy} from '@angular/core';
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[class.list-group-item]': 'true',
+    'role': 'listitem',
   },
 })
 export class BsListGroupItemComponent {
