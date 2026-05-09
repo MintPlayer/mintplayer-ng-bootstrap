@@ -71,10 +71,12 @@ Replace the dormant Cypress e2e setup in `apps/ng-bootstrap-demo-e2e` with `@nx/
 
 **Deviation from plan:** dock spec does *not* drag-to-split via pointer events. Reproducing that scripted gesture requires reverse-engineering the dock-manager's drop-zone protocol; the spec would couple to internal Lit drag handlers and break on every tweak. Capture-button assertion exercises dock-manager rendering and the capture API end-to-end at a stable boundary instead. A future drag-to-split spec can be added once the dock exposes a documented test hook for synthesising splits.
 
-### Milestone 4: Wire CI and validate
-- [ ] Update `pull-request.yml` (install browsers, run `nx affected --targets=test,e2e --parallel=2`).
-- [ ] Local `nx e2e ng-bootstrap-demo-e2e` green on both engines.
-- [ ] PR run shows test + e2e concurrent execution; both green.
+### Milestone 4: Wire CI and validate ✅
+- [x] Update `pull-request.yml`: add `Install Playwright browsers` step (`npx playwright install --with-deps chromium firefox`); replace single-target `Test` step with `npx nx affected --targets=test,e2e --watch=false --parallel=2 …`.
+- [x] Local `nx e2e ng-bootstrap-demo-e2e` green on both Chromium and Firefox — 12/12 passing in 46.7s.
+- [ ] PR run shows test + e2e concurrent execution; both green. *(awaits push + PR)*
+
+**Hydration fix during validation:** initial run showed 5/12 failures concentrated in Firefox click-and-assert specs plus the datepicker text assertion. Root cause: the demo uses Angular SSR but does *not* call `provideClientHydration()`, so each navigation does a destructive client bootstrap — there's a window where SSR HTML is in the DOM but click handlers are not yet bound. Chromium happens to bootstrap fast enough; Firefox doesn't. Fix: `await page.waitForLoadState('networkidle')` after every `goto` in click-driven specs (modal, dropdown, datepicker, dock). Datepicker also needed the `^` regex anchor dropped — Playwright's text matching includes leading whitespace the anchor didn't tolerate.
 
 ---
 

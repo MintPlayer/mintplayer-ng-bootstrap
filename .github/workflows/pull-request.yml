@@ -41,13 +41,16 @@ jobs:
 
     - name: Install dependencies
       run: npm ci
-    
+
+    - name: Install Playwright browsers
+      run: npx playwright install --with-deps chromium firefox
+
     - name: Build
       timeout-minutes: 15
       run: npx nx build --configuration=production
 
-    - name: Test
-      run: npx nx affected --target=test --watch=false --parallel=true --base=${{ github.event.pull_request.base.sha }} --head=${{ github.event.pull_request.head.sha }}
+    - name: Test (unit + e2e in parallel)
+      run: npx nx affected --targets=test,e2e --watch=false --parallel=2 --base=${{ github.event.pull_request.base.sha }} --head=${{ github.event.pull_request.head.sha }}
 
     ## Dry-run publish to verify package.json files exist in dist
     - name: Dry-run publish ng-animations

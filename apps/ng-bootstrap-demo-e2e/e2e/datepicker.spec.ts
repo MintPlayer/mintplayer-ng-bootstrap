@@ -2,9 +2,10 @@ import { test, expect } from '@playwright/test';
 
 test('datepicker selects a date in the next month and updates the display', async ({ page }) => {
   await page.goto('/basic/datepicker');
+  await page.waitForLoadState('networkidle');
 
   // Sanity: the demo's "selected date" line is on screen.
-  const dateDisplay = page.getByText(/^The selected date is:/);
+  const dateDisplay = page.getByText(/The selected date is:/);
   await expect(dateDisplay).toBeVisible();
   const initial = (await dateDisplay.textContent())?.trim();
 
