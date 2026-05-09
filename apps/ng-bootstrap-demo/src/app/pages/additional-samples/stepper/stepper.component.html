@@ -90,7 +90,7 @@
 
                 <div class="step-nav">
                     <button cdkStepperPrevious [color]="colors.secondary">Back</button>
-                    @if (signupStepper.selectedIndex === signupStepper.steps.length - 1) {
+                    @if (isSignupLastStep()) {
                         <button [color]="colors.success">Submit</button>
                     } @else {
                         <button cdkStepperNext [color]="colors.primary">Next</button>
@@ -184,7 +184,7 @@
 
                 <div class="step-nav">
                     <button cdkStepperPrevious [color]="colors.secondary">Back</button>
-                    @if (checkoutStepper.selectedIndex === checkoutStepper.steps.length - 1) {
+                    @if (isCheckoutLastStep()) {
                         <button [color]="colors.success">Place order</button>
                     } @else {
                         <button cdkStepperNext [color]="colors.primary">Next</button>

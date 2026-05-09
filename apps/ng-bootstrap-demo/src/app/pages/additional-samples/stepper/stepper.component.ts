@@ -1,6 +1,6 @@
-import { CdkStepperModule } from '@angular/cdk/stepper';
+import { CdkStepper, CdkStepperModule } from '@angular/cdk/stepper';
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, viewChild } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
@@ -28,6 +28,18 @@ import { BsGridColDirective, BsGridComponent, BsGridRowDirective } from '@mintpl
 })
 export class StepperComponent {
   colors = Color;
+
+  readonly signupStepper = viewChild.required<CdkStepper>('signupStepper');
+  readonly checkoutStepper = viewChild.required<CdkStepper>('checkoutStepper');
+
+  readonly isSignupLastStep = computed(() => {
+    const s = this.signupStepper();
+    return s.selectedIndex === s.steps.length - 1;
+  });
+  readonly isCheckoutLastStep = computed(() => {
+    const s = this.checkoutStepper();
+    return s.selectedIndex === s.steps.length - 1;
+  });
 
   // Linear · Horizontal — signup wizard
   signupAccount = new FormGroup({

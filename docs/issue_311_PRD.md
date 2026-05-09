@@ -2,9 +2,9 @@
 
 **Issue**: #311
 **Title**: Stepper demo using angular CDK
-**Status**: Draft
+**Status**: Implemented (PR #322)
 **Created**: 2026-05-09
-**Last Updated**: 2026-05-09
+**Last Updated**: 2026-05-09 (post-implementation; reflects PR #322 + Gemini review follow-up)
 
 ---
 
@@ -32,49 +32,53 @@ Add a new demo page under `Additional samples → Stepper` in `apps/ng-bootstrap
 ## Functional Requirements
 
 ### Must Have (P0)
-- [ ] **FR-1**: New route `/additional-samples/stepper` registered in `additional-samples.routes.ts`, lazy-loading a new `StepperComponent`.
-- [ ] **FR-2**: New navbar entry "Stepper" inside the existing "Additional samples" dropdown in `app.component.html`.
-- [ ] **FR-3**: Four working stepper instances on the page, covering all four cells of the `linear` × `orientation` matrix:
+- [x] **FR-1**: New route `/additional-samples/stepper` registered in `additional-samples.routes.ts`, lazy-loading a new `StepperComponent`.
+- [x] **FR-2**: New navbar entry "Stepper" inside the existing "Additional samples" dropdown in `app.component.html`.
+- [x] **FR-3**: Four working stepper instances on the page, covering all four cells of the `linear` × `orientation` matrix:
   - Linear · Horizontal (with reactive forms)
   - Linear · Vertical (with reactive forms)
   - Non-linear · Horizontal (free navigation, no forms)
   - Non-linear · Vertical (free navigation, no forms)
-- [ ] **FR-4**: Linear examples use `ReactiveFormsModule` with `[stepControl]` bound to a `FormGroup`. Next button is disabled until the current step's form is valid.
-- [ ] **FR-5**: Non-linear examples allow clicking any step header to jump to that step.
-- [ ] **FR-6**: Each example has Back, Next, and Reset controls rendered as plain `<button>` elements with `[color]` applied via `BsButtonTypeDirective` (imported from `@mintplayer/ng-bootstrap/button-type`). Last step shows Submit instead of Next on the linear examples.
-- [ ] **FR-7**: Step headers render as numbered circles + label, with visual states for `active` and `completed`. Styling is local to `stepper.component.scss` using Bootstrap utility classes.
-- [ ] **FR-8**: A `<bs-alert [type]="colors.info">` near the top of the page contains a hyperlink labelled "Angular CDK stepper documentation" pointing to the upstream Angular CDK stepper docs (`https://material.angular.dev/cdk/stepper/overview`), opening in a new tab.
-- [ ] **FR-9**: `stepper.component.spec.ts` covers at minimum a `should create` test, mirroring `drag-drop.component.spec.ts`.
+- [x] **FR-4**: Linear examples use `ReactiveFormsModule` with `[stepControl]` bound to a `FormGroup`. Next button is disabled until the current step's form is valid.
+- [x] **FR-5**: Non-linear examples allow clicking any step header to jump to that step.
+- [x] **FR-6**: Each example has Back, Next, and Reset controls rendered as plain `<button>` elements with `[color]` applied via `BsButtonTypeDirective` (imported from `@mintplayer/ng-bootstrap/button-type`). Last step shows Submit instead of Next on the linear examples.
+- [x] **FR-7**: Step headers render as numbered circles + label, with visual states for `active` and `completed`. Styling is local to `stepper.component.scss` using Bootstrap utility classes.
+- [x] **FR-8**: A `<bs-alert [type]="colors.info">` near the top of the page contains a hyperlink labelled "Angular CDK stepper documentation" pointing to the upstream Angular CDK stepper docs (`https://material.angular.dev/cdk/stepper/overview`), opening in a new tab.
+- [x] **FR-9**: `stepper.component.spec.ts` covers at minimum a `should create` test, mirroring `drag-drop.component.spec.ts`.
 
 ### Should Have (P1)
-- [ ] **FR-10**: Reset button on each example calls `stepper.reset()` via `@ViewChild(CdkStepper)`. After reset the first step is selected and any form state is cleared on the linear examples.
-- [ ] **FR-11**: Honour `prefers-reduced-motion: reduce` for any transitions on step header state changes.
+- [x] **FR-10**: Reset button on each example calls `stepper.reset()` via a template ref (`#stepper="cdkStepper"`). After reset the first step is selected and any form state is cleared on the linear examples.
+- [x] **FR-11**: Honour `prefers-reduced-motion: reduce` for any transitions on step header state changes.
 
 ---
 
 ## Timeline & Milestones
 
 ### Milestone 1: Scaffold and routing
-- [ ] Create `stepper/` folder with empty component skeleton (mirrors swiper).
-- [ ] Add route to `additional-samples.routes.ts`.
-- [ ] Add navbar entry to `app.component.html`.
-- [ ] `npx nx serve ng-bootstrap-demo` shows the page (empty content) at the new URL.
+- [x] Create `stepper/` folder with empty component skeleton (mirrors swiper).
+- [x] Add route to `additional-samples.routes.ts`.
+- [x] Add navbar entry to `app.component.html`.
+- [x] `npx nx serve ng-bootstrap-demo` shows the page (empty content) at the new URL.
 
 ### Milestone 2: Linear examples with forms
-- [ ] Build `linear · horizontal` stepper with 3 reactive-form steps and `[stepControl]`.
-- [ ] Build `linear · vertical` mirror of the same.
-- [ ] Confirm Next is disabled on invalid forms and enabled on valid forms.
+- [x] Build `linear · horizontal` stepper with 3 reactive-form steps and `[stepControl]`.
+- [x] Build `linear · vertical` mirror of the same.
+- [x] Confirm Next is disabled on invalid forms and enabled on valid forms.
 
 ### Milestone 3: Non-linear examples
-- [ ] Build `non-linear · horizontal` with static content and clickable headers.
-- [ ] Build `non-linear · vertical`.
+- [x] Build `non-linear · horizontal` with static content and clickable headers.
+- [x] Build `non-linear · vertical`.
 
 ### Milestone 4: Styling polish + docs link + tests
-- [ ] Step circles, connecting lines, active/completed states finalised in scss.
-- [ ] `<bs-alert>` with the documentation link added at top of page.
-- [ ] Reset wired to `stepper.reset()` via `@ViewChild`.
-- [ ] `stepper.component.spec.ts` passes.
-- [ ] Manual smoke test on desktop + 320px viewport.
+- [x] Step circles, connecting lines, active/completed states finalised in scss.
+- [x] `<bs-alert>` with the documentation link added at top of page.
+- [x] Reset wired to `stepper.reset()` via template ref.
+- [x] `stepper.component.spec.ts` passes.
+- [x] Manual smoke test on desktop + 360px viewport.
+
+### Milestone 5: PR feedback (added 2026-05-09 after Gemini review on PR #322)
+- [x] Refactor Submit-vs-Next visibility to use `viewChild.required<CdkStepper>` + `computed()` for `isSignupLastStep` and `isCheckoutLastStep`, replacing the inline ternary `signupStepper.selectedIndex === signupStepper.steps.length - 1` in the template (per the PRD's own Technical Notes / `feedback_computed_signals_in_template`).
+- [x] (Rejected) Apply `bsFormControl` to inputs/selects — directive auto-applies via the CSS selector `bs-form input:not(.no-form-control), bs-form textarea:not(.no-form-control)`; there is no `bsFormControl` attribute selector, and `<select>` uses the Bootstrap `form-select` class (no library directive exists for selects).
 
 ---
 
