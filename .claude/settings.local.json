@@ -48,7 +48,8 @@
       "WebFetch(domain:www.infragistics.com)",
       "PowerShell(Get-Process *)",
       "mcp__github__update_issue",
-      "Skill(dcg:pr_create)"
+      "Skill(dcg:pr_create)",
+      "WebFetch(domain:angular.love)"
     ]
   },
   "enableAllProjectMcpServers": true,

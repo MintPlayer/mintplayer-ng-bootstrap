@@ -18,15 +18,14 @@ export default defineConfig({
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
     { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
   ],
-  // Run the built Angular SSR server against the production artifact.
-  // server.ts respects $PORT and serves dist/apps/ng-bootstrap-demo/browser/
-  // statically with SSR fallback for unmatched routes.
+  // Use Angular's dev-server in production mode. AOT, prod env replacements,
+  // and prod budgets all apply — only the on-disk artifact bytes differ from
+  // a real `nx build` output. Avoids the brittle "test against the built
+  // SSR server.mjs" path which struggles with Nx's cache lifecycle.
   webServer: {
-    command: 'node dist/apps/ng-bootstrap-demo/server/server.mjs',
-    cwd: '../..',
-    env: { PORT: String(PORT) },
+    command: `npx nx serve ng-bootstrap-demo --configuration=production --port=${PORT}`,
     url: baseURL,
     reuseExistingServer: !process.env['CI'],
-    timeout: 120_000,
+    timeout: 180_000,
   },
 });
