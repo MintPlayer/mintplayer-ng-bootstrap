@@ -6,49 +6,53 @@
     time. Layout auto-persists to <code>localStorage</code> — reload to verify.
   </p>
 
-  <div class="row g-3 my-3">
-    <div class="col-md-3">
-      <label class="form-label">Columns</label>
-      <select class="form-select" [ngModel]="columnCount() ?? ''" (ngModelChange)="columnCount.set($event === '' ? null : +$event)">
-        <option value="">auto-fit</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4">4</option>
-        <option value="6">6</option>
-      </select>
-    </div>
-    <div class="col-md-3">
-      <label class="form-label">Drag mode</label>
-      <select class="form-select" [ngModel]="dragMode()" (ngModelChange)="dragMode.set($event)">
-        <option value="header">header</option>
-        <option value="tile">tile (whole)</option>
-        <option value="off">off</option>
-      </select>
-    </div>
-    <div class="col-md-3">
-      <label class="form-label">Resize mode</label>
-      <select class="form-select" [ngModel]="resizeMode()" (ngModelChange)="resizeMode.set($event)">
-        <option value="hover">hover</option>
-        <option value="always">always</option>
-        <option value="off">off</option>
-      </select>
-    </div>
-    <div class="col-md-3">
-      <label class="form-label">Gap</label>
-      <select class="form-select" [ngModel]="gap()" (ngModelChange)="gap.set($event)">
-        <option value="0.25rem">tight</option>
-        <option value="0.5rem">small</option>
-        <option value="0.75rem">comfortable</option>
-        <option value="1.25rem">spacious</option>
-      </select>
-    </div>
-    <div class="col-md-3">
-      <div class="form-check">
-        <input class="form-check-input" id="animateReflow" type="checkbox" [ngModel]="animateReflow()" (ngModelChange)="animateReflow.set($event)" />
-        <label class="form-check-label" for="animateReflow">Animate reflow</label>
+  <bs-form class="my-3">
+    <bs-grid>
+      <div bsRow>
+        <div [md]="3" class="mb-3">
+          <label class="form-label">Columns</label>
+          <bs-select [ngModel]="columnCount() ?? ''" (ngModelChange)="columnCount.set($event === '' ? null : +$event)">
+            <option value="">auto-fit</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="6">6</option>
+          </bs-select>
+        </div>
+        <div [md]="3" class="mb-3">
+          <label class="form-label">Drag mode</label>
+          <bs-select [ngModel]="dragMode()" (ngModelChange)="dragMode.set($event)">
+            <option value="header">header</option>
+            <option value="tile">tile (whole)</option>
+            <option value="off">off</option>
+          </bs-select>
+        </div>
+        <div [md]="3" class="mb-3">
+          <label class="form-label">Resize mode</label>
+          <bs-select [ngModel]="resizeMode()" (ngModelChange)="resizeMode.set($event)">
+            <option value="hover">hover</option>
+            <option value="always">always</option>
+            <option value="off">off</option>
+          </bs-select>
+        </div>
+        <div [md]="3" class="mb-3">
+          <label class="form-label">Gap</label>
+          <bs-select [ngModel]="gap()" (ngModelChange)="gap.set($event)">
+            <option value="0.25rem">tight</option>
+            <option value="0.5rem">small</option>
+            <option value="0.75rem">comfortable</option>
+            <option value="1.25rem">spacious</option>
+          </bs-select>
+        </div>
+        <div [md]="3" class="mb-3">
+          <div class="form-check">
+            <input class="form-check-input" id="animateReflow" type="checkbox" [ngModel]="animateReflow()" (ngModelChange)="animateReflow.set($event)" />
+            <label class="form-check-label" for="animateReflow">Animate reflow</label>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
+    </bs-grid>
+  </bs-form>
 
   <div class="mb-2">
     <strong>Lock tiles:</strong>
