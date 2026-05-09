@@ -2,8 +2,10 @@ import { ConnectedPosition, Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { Position } from '@mintplayer/ng-bootstrap';
 import { AfterViewInit, ComponentRef, Directive, ElementRef, Host, inject, Injector, input, OnDestroy, signal, SkipSelf, TemplateRef, computed, effect } from '@angular/core';
+import { BsIdService } from '@mintplayer/ng-bootstrap/a11y';
 import { BsPopoverComponent } from '../../component/popover.component';
 import { POPOVER_CONTENT } from '../../providers/popover-content.provider';
+import { POPOVER_ID } from '../../providers/popover-id.provider';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
 
 @Directive({
@@ -14,6 +16,9 @@ import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
       return new ComponentPortal(BsPopoverComponent, null, injector);
     }
   }],
+  host: {
+    '(document:keydown.escape)': 'onEscape()',
+  },
 })
 export class BsPopoverDirective implements AfterViewInit, OnDestroy {
 
@@ -22,6 +27,8 @@ export class BsPopoverDirective implements AfterViewInit, OnDestroy {
   private parentInjector = inject(Injector);
   private portalFactory = inject(PORTAL_FACTORY);
   private parent = inject(ElementRef, { host: true, skipSelf: true });
+  private ids = inject(BsIdService);
+  private readonly popoverId = this.ids.next('bs-popover');
 
   bsPopover = input<Position>('bottom');
   updatePosition = input(false);
@@ -79,6 +86,7 @@ export class BsPopoverDirective implements AfterViewInit, OnDestroy {
       if (this.component) {
         this.component.setInput('isVisible', isVisible);
       }
+      this.parent.nativeElement.setAttribute('aria-expanded', isVisible ? 'true' : 'false');
     });
 
     effect(() => {
@@ -96,7 +104,10 @@ export class BsPopoverDirective implements AfterViewInit, OnDestroy {
   ngAfterViewInit() {
     const connectedPosition = this.connectedPosition();
     this.localInjector = Injector.create({
-      providers: [{ provide: POPOVER_CONTENT, useValue: this.templateRef }],
+      providers: [
+        { provide: POPOVER_CONTENT, useValue: this.templateRef },
+        { provide: POPOVER_ID, useValue: this.popoverId },
+      ],
       parent: this.parentInjector
     });
     this.portal = this.portalFactory(this.localInjector);
@@ -109,12 +120,23 @@ export class BsPopoverDirective implements AfterViewInit, OnDestroy {
     this.component = this.overlayRef.attach<BsPopoverComponent>(this.portal);
     this.component.setInput('position', this.bsPopover());
 
+    // Trigger ARIA: identifies the trigger as a disclosure that opens a dialog.
+    this.parent.nativeElement.setAttribute('aria-haspopup', 'dialog');
+    this.parent.nativeElement.setAttribute('aria-controls', this.popoverId);
+    this.parent.nativeElement.setAttribute('aria-expanded', 'false');
+
     this.parent.nativeElement.onclick = () => {
       if (this.updatePosition()) {
         this.overlayRef?.updatePosition();
       }
       this.isVisible.set(!this.isVisible());
     };
+  }
+
+  onEscape() {
+    if (this.isVisible()) {
+      this.isVisible.set(false);
+    }
   }
 
   ngOnDestroy() {
