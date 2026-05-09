@@ -47,10 +47,15 @@ jobs:
 
     - name: Build
       timeout-minutes: 15
-      run: npx nx build --configuration=production
+      # --skip-nx-cache: existing remote-cache entries were written before the
+      # build target's outputs spec was widened to include dist/.../server/.
+      # Cache restore would wipe server/ and break the e2e webServer. Drop
+      # this flag once a master push has repopulated the cache with the new
+      # outputs spec.
+      run: npx nx build --configuration=production --skip-nx-cache
 
     - name: Test (unit + e2e in parallel)
-      run: npx nx affected --targets=test,e2e --parallel=2 --base=${{ github.event.pull_request.base.sha }} --head=${{ github.event.pull_request.head.sha }}
+      run: npx nx affected --targets=test,e2e --parallel=2 --skip-nx-cache --base=${{ github.event.pull_request.base.sha }} --head=${{ github.event.pull_request.head.sha }}
 
     ## Dry-run publish to verify package.json files exist in dist
     - name: Dry-run publish ng-animations
