@@ -33,7 +33,7 @@ A library that's sold as a Bootstrap-replacement-with-Angular-ergonomics needs t
 - **WCAG AAA** conformance. AA is the bar; AAA is per-feature on request.
 - **Screen-reader-specific shims.** We target the spec; we don't paper over individual SR/browser bugs unless they cause total breakage.
 - **Translation of `aria-label` defaults.** Strings like `"Close"`, `"Toggle navigation"` stay English in this PRD; i18n is its own track.
-- **Replacement of native HTML controls.** Where a native `<select>`, `<input type="range">`, `<button>`, or `<details>` does the job, we keep it and don't add ARIA on top.
+- **Replacement of working native HTML controls with custom ARIA widgets.** Where a native `<select>`, `<input type="range">`, `<button>`, or `<details>` does the job, we keep the native element instead of rebuilding it as a `role="listbox"` / `role="slider"` widget. **However**, the Angular components that wrap those natives — `bs-select`, `bs-range`, `bs-toggle-button`, etc. — still need full ARIA wiring: accessible names (from `<label>`, `aria-label`, `aria-labelledby`, or floating-label association), `aria-describedby` to help/error text, and mirrored `aria-invalid` / `aria-required` / `aria-disabled` / `aria-busy` from bound state. That wiring is **in scope** and called out per-component in §5 (e.g. `range` lacks `aria-label`, `select` ships a placeholder label, `toggle-button` has no fallback name when used standalone).
 
 ## 3. Scope
 
@@ -64,10 +64,7 @@ Findings were consolidated into the gap matrix in §5.
 | Component | File ref | Issue |
 |---|---|---|
 | `signature-pad` | `signature-pad.component.html:1` | Canvas has no `role`, no `aria-label`, no keyboard support — completely invisible/unusable to SR + keyboard users. |
-| `searchbox` | `searchbox.component.html:1`–`56` | Combobox pattern with no `role="combobox"`, no `aria-expanded`, no `role="listbox"` on dropdown, no `role="option"` on items, no `aria-controls`, input has no accessible name. |
-| `multiselect` | `multiselect.component.html:1`–`24` | Custom multi-select with no combobox/listbox semantics, no `aria-expanded`, no `aria-selected` on items. |
-| `select2` | `select2.component.html:13`–`18` | Has combobox + listbox roles, but missing `aria-controls` linking input to listbox, missing `aria-activedescendant` for keyboard nav signaling. |
-| `typeahead` | `typeahead.component.html:9`–`27` | Has combobox + listbox + `aria-controls`, but missing `aria-activedescendant` — keyboard users can't see which option is focused. |
+| `searchbox`, `multiselect`, `select2`, `typeahead` (all four share the same dropdown plumbing) | `bsDropdown` directive set, `select2.component.html:2,16,18`, `typeahead.component.html:9-27` | All four are combobox patterns built on `[bsDropdown]` + `bsDropdownToggle` + `<bs-dropdown-menu>` + `<bs-dropdown-item>`. The dropdown directives today emit only `aria-haspopup="true"` and `aria-expanded` on the toggle — and `"true"` should be `"menu"` or `"listbox"` (`dropdown-toggle.directive.ts:7`). The menu and item templates emit no role. `select2` and `typeahead` *manually* re-add `role="combobox"`/`"listbox"`/`"option"` on each instance; `searchbox` and `multiselect` don't, so they get nothing. **The fix is to teach the dropdown directives a `role: 'menu' \| 'listbox'` mode** (default `'menu'`); that lifts the role assignment, `aria-haspopup` value, and `aria-selected` mirroring (already wired via `[isSelected]`) into the shared primitive. Combobox-specific wiring on the **input** element — `role="combobox"`, `aria-controls` to the menu ID, `aria-activedescendant` of the highlighted option — stays in a small `bsCombobox` directive that pairs an input with a dropdown menu. |
 | `calendar` | `calendar.component.html:1`–`43` | Day grid is a bare `<table>` with no `role="grid"`/`role="presentation"`, day cells lack `role="gridcell"`, no `aria-selected` on selected date, no `aria-current="date"` on today, no arrow-key navigation. |
 | `timepicker` | `timepicker.component.html:1`–`27` | Hour/minute inputs have no `role="spinbutton"`, no `aria-valuenow/min/max`, no `aria-label`. Preset items have no `aria-selected`. |
 | `color-picker` (wheel + sliders) | `color-wheel.component.ts:16`, `slider.component.ts:14` | Wheel and brightness/alpha sliders have no `role`, no `aria-label`, no `aria-valuenow/min/max`, no keyboard support — pointer-only. |
@@ -75,7 +72,7 @@ Findings were consolidated into the gap matrix in §5.
 | `offcanvas` | `offcanvas.component.ts:15` | Same pattern, same gaps as modal. |
 | `popover` | `popover.component.ts:19` | Click-triggered disclosure tagged `role="tooltip"`. Wrong pattern; should be `role="dialog"` (or `role="menu"` if menu-like). No `aria-labelledby`. |
 | `tooltip` | `tooltip.component.ts:19`, `tooltip.directive.ts:14` | Trigger element has no `aria-describedby` linking to tooltip — tooltip exists but is not associated with anything for SR. |
-| `dropdown-toggle` + `dropdown-menu` | `dropdown-toggle.directive.ts:7`–`8`, `dropdown-menu.component.html:1` | Toggle has `aria-haspopup="true"` (should be `"menu"`). Menu `<ul>` has no `role="menu"`. Items have no `role="menuitem"`. No roving tabindex / arrow-key navigation. |
+| `dropdown-toggle` + `dropdown-menu` + `dropdown-item` | `dropdown-toggle.directive.ts:7`–`8`, `dropdown-menu.component.html:1`, `dropdown-item.component.html:1` | Same primitive as the combobox row above. In `'menu'` mode (default), toggle should emit `aria-haspopup="menu"`, menu `<ul>` should be `role="menu"`, items `<li>` should be `role="menuitem"`. Today none of those are emitted. Roving tabindex / ArrowUp/Down navigation is also missing — that's a separate concern handled by the `BsRovingFocus` primitive in §8 Phase A. |
 | `context-menu` | `context-menu.directive.ts:12` | Overlay has no `role="menu"`, items no `role="menuitem"`, no Escape, no keyboard nav. |
 | `navbar` | `navbar.component.html:16` | Toggler `aria-controls="navbar-collapse"` references an ID that doesn't exist in the rendered DOM. |
 | `navbar-toggler` | `navbar-toggler.component.html:1` | Renders as `<div><div><div></div></div></div>` — not a `<button>`, no role, no `aria-label`/`aria-expanded`/`aria-controls`, no keyboard handler. |
@@ -145,9 +142,28 @@ These show up in multiple components and want one shared solution rather than N 
 
 Today **none** of them do all four. Build this once in a shared `BsOverlayFocusManager` (or extend `has-overlay`, which already exists and is conspicuously empty) and adopt it from every overlay component.
 
-### 6.2 Combobox pattern toolkit
+### 6.2 ARIA-aware dropdown directives + thin combobox
 
-`searchbox`, `multiselect`, `select2`, `typeahead` all implement variations of APG Combobox. The required attribute set is identical (input `role="combobox"` + `aria-expanded` + `aria-controls` + `aria-activedescendant`; popup `role="listbox"`; options `role="option"` + `aria-selected`). Build a single directive set (`bsCombobox`, `bsComboboxListbox`, `bsComboboxOption`) and let the four components compose it instead of each reimplementing the wiring.
+The library already has a unified dropdown primitive (`[bsDropdown]` + `bsDropdownToggle` + `<bs-dropdown-menu>` + `<bs-dropdown-item>`). It's used by **plain dropdown menus, context menus, searchbox, multiselect, select2, typeahead, and priority-nav's overflow** — every menu and combobox in the library. The cleanest way to fix all of them is to teach the existing primitive about ARIA modes, not to introduce a parallel combobox directive set.
+
+Concretely:
+
+- Add a `role: 'menu' | 'listbox'` input on `[bsDropdown]` (default `'menu'`).
+- `bsDropdownToggle` emits `aria-haspopup="menu" | "listbox"` based on the mode (replaces today's hardcoded `"true"`).
+- `<bs-dropdown-menu>` template binds `[attr.role]` to `'menu' | 'listbox'`.
+- `<bs-dropdown-item>` template binds `[attr.role]` to `'menuitem' | 'option'`, and in listbox mode mirrors the existing `[isSelected]` input to `aria-selected`.
+- The dropdown directive auto-generates IDs for the menu and items (so `aria-controls` / `aria-activedescendant` consumers have stable targets to point at).
+
+That covers ~70% of the searchbox/multiselect/select2/typeahead fix and 100% of the dropdown/context-menu fix in one change.
+
+The remaining ~30% — **combobox-specific wiring on the `<input>` element** — lives in a thin `bsCombobox` directive applied to the input. It's a separate directive because the input isn't part of the dropdown directive set: it sits next to the toggle, not on it. `bsCombobox` is responsible for:
+
+- `role="combobox"`, `aria-autocomplete="list"`, `aria-haspopup="listbox"` on the input.
+- `aria-controls` pointing at the dropdown's auto-generated menu ID.
+- `aria-activedescendant` updated as the user arrows through options (interop with the `BsRovingFocus`/active-descendant primitive in §6.3).
+- Forwarding `aria-expanded` from the dropdown's `isOpen` state.
+
+Consumers (`searchbox`, `multiselect`, `select2`, `typeahead`) drop their hand-rolled `role="combobox"` / `role="listbox"` / `role="option"` template attributes once they set `[role]="'listbox'"` on `[bsDropdown]` and add `bsCombobox` to their input.
 
 ### 6.3 Keyboard navigation for menu / tab / tree patterns
 
@@ -168,7 +184,37 @@ A `BsLiveAnnouncer` service (or just adopt CDK's `LiveAnnouncer`) fixes all of t
 
 `carousel` auto-advance, `marquee`, `parallax`, `tile-manager` reflow animation, `dock` panel transitions, accordion open animation. Add a `prefers-reduced-motion: reduce` media query branch to each, or wire it once via a shared `BsReducedMotionService`.
 
-### 6.6 Default `aria-label` strings
+### 6.6 ID generation for ARIA relationships
+
+ARIA relationship attributes (`aria-controls`, `aria-labelledby`, `aria-describedby`, `aria-activedescendant`) require the target element to have an `id`. Many components need to generate IDs at runtime: dropdown menu ↔ toggle, modal ↔ title, accordion header ↔ panel, tab ↔ tabpanel, calendar grid ↔ caption, combobox input ↔ listbox option.
+
+Approach: a small `BsIdService` in `@mintplayer/ng-bootstrap/a11y`:
+
+```ts
+@Injectable({ providedIn: 'root' })
+export class BsIdService {
+  private counter = 0;
+  next(prefix: string): string { return `${prefix}-${++this.counter}`; }
+}
+```
+
+Why a service rather than a module-level `let counter = 0`:
+
+- **SSR isolation** — each server request gets a fresh injector, so the counter doesn't leak across concurrent requests on the same Node process.
+- **Mockable in unit tests** — vitest specs override the service to return deterministic IDs (`'test-1'`, `'test-2'`), so `aria-controls` assertions are stable across runs.
+- **Future-proof** — if the workspace later commits to `@angular/cdk/a11y`'s `_IdGenerator` (already a transitive dep via the recent stepper PR), we swap the implementation without touching consumers.
+
+Consumer pattern — honour an explicit `id` on the host element when present, generate one otherwise:
+
+```ts
+private el = inject(ElementRef<HTMLElement>);
+private ids = inject(BsIdService);
+readonly menuId = computed(() => this.el.nativeElement.id || this.ids.next('bs-dropdown'));
+```
+
+This is the standard CDK/Material pattern. It plays well with consumers who already label elements for tests or anchors and falls back gracefully when they don't.
+
+### 6.7 Default `aria-label` strings
 
 Several components ship hardcoded English placeholders (`"Default select example"`, `"Basic example"`). These are demo-doc detritus that leaked into runtime. Either remove the default entirely (force consumer to provide) or expose an input with a sensible default that matches the component's role.
 
@@ -208,11 +254,12 @@ Quick map from component to APG pattern. Implementations should follow the patte
 
 This PRD does not ship as a single PR — there are 23 critical components, each with its own pattern and complexity. The shape is:
 
-**Phase A — shared infrastructure** (single PR each, must land first because subsequent fixes depend on them):
+**Phase A — shared infrastructure**, all housed in a new `@mintplayer/ng-bootstrap/a11y` entry point. Each lands as its own PR; subsequent component fixes depend on them:
 
+0. `BsIdService` — see §6.6. The smallest piece; the other primitives all depend on it for `aria-controls` / `aria-labelledby` / `aria-activedescendant` targets. Lands first.
 1. `BsOverlayFocusManager` (or finish `has-overlay`) — focus trap + return-focus + background `inert`. Reused by `modal`, `offcanvas`, `popover`, `context-menu`, `datepicker`.
-2. `BsRovingFocus` directive — arrow-key navigation primitive. Reused by `dropdown-menu`, `context-menu`, `tab-control`, `treeview`, `rating`, `priority-nav`.
-3. `BsCombobox` directive set — combobox + listbox + option wiring with `aria-controls` + `aria-activedescendant`. Reused by `searchbox`, `multiselect`, `select2`, `typeahead`.
+2. `BsRovingFocus` directive — arrow-key navigation + active-descendant primitive. Reused by `dropdown-menu`, `context-menu`, `tab-control`, `treeview`, `rating`, `priority-nav`, and the listbox side of `bsCombobox`.
+3. **Dropdown ARIA mode + `bsCombobox`** (see §6.2 for full design). Extend the existing `[bsDropdown]` / `bsDropdownToggle` / `bs-dropdown-menu` / `bs-dropdown-item` primitive with a `role: 'menu' | 'listbox'` input and auto-generated IDs (via `BsIdService`); add a thin `bsCombobox` directive for the input-side `role="combobox"` + `aria-controls` + `aria-activedescendant` wiring. Reused by `searchbox`, `multiselect`, `select2`, `typeahead`, **and** fixes the menu-mode gaps on `dropdown` + `context-menu` + `priority-nav` overflow in the same change.
 4. `BsLiveAnnouncer` service (or adopt `@angular/cdk/a11y`'s) — single live region for all "thing happened" announcements.
 
 **Phase B — per-component fixes** (one PR per component, can run in parallel after Phase A lands):
