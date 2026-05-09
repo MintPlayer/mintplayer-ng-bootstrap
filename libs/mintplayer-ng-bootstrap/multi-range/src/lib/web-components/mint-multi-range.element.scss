@@ -128,18 +128,27 @@
   z-index: 2;
 }
 
-.tooltip.is-visible {
-  opacity: 1;
-}
-
 :host([orientation='horizontal']) .tooltip {
-  bottom: calc(100% - var(--bs-multi-range-thumb-size) / 2 + 0.25rem);
+  bottom: calc(100% + 0.5rem);
+  left: 50%;
   transform: translateX(-50%);
 }
 
 :host([orientation='vertical']) .tooltip {
   left: calc(100% + 0.5rem);
-  transform: translateY(50%);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.thumb:hover .tooltip,
+.thumb:focus-visible .tooltip,
+.thumb:active .tooltip,
+.thumb[data-dragging='true'] .tooltip {
+  opacity: 1;
+}
+
+:host([disabled]) .tooltip {
+  display: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

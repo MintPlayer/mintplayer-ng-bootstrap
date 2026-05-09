@@ -97,12 +97,13 @@ Closes the most-requested missing form primitive in the library. Differentiates 
 5. [x] `disabled` short-circuits both pointer and keyboard paths early. Thumbs use `?disabled=${this.disabled}` on the `<button>`, which removes them from the tab order.
 6. [x] Step snapping via `snapToStep(v) = min + Math.round((v - min) / step) * step` then clamp to `[min, max]`.
 
-### Phase 3: Visual polish
-1. Track height + thumb size matching Bootstrap `form-range` defaults; CSS variables for theming (`--bs-multi-range-track-bg`, `--bs-multi-range-thumb-bg`, `--bs-multi-range-fill-bg`).
-2. Fill segments: `(N-1)` absolutely-positioned divs between adjacent thumbs, recomputed via `value`-derived `computed()` styles.
-3. Tooltip bubble per thumb, shown on `:hover, :focus-visible, :active`. Position above (horizontal) or right of (vertical) the thumb. Content = `formatValue(value)` if provided, else `value.toString()`.
-4. Vertical orientation: rotate the track layout, thumbs stack, min at the bottom. Verify Firefox flex-shrink on the track + tooltips per memory `feedback_firefox_flex_shrink.md`.
-5. Disabled state styling — match Bootstrap's `:disabled` form-range visuals.
+### Phase 3: Visual polish ✅
+1. [x] Track + thumb sizing already in M1 via `--bs-multi-range-track-thickness: 0.5rem` and `--bs-multi-range-thumb-size: 1rem` (matches Bootstrap form-range defaults). All theming colors fall back to existing Bootstrap CSS variables (`--bs-primary`, `--bs-tertiary-bg`, etc.) so dark-mode / theme overrides flow through automatically.
+2. [x] Fill segments rendered in `render()`: `values.slice(0, -1).map(...)` produces `(N-1)` divs, each positioned via inline `left`+`width` (horizontal) or `bottom`+`height` (vertical).
+3. [x] Tooltip — fixed the broken centering math from M1 (vertical was `translateY(50%)` instead of `translateY(-50%)`; horizontal had a stale `bottom` calc). Now horizontal is `bottom: calc(100% + 0.5rem); left: 50%; transform: translateX(-50%)`; vertical is `left: calc(100% + 0.5rem); top: 50%; transform: translateY(-50%)`. Visibility driven by parent thumb state (`:hover`, `:focus-visible`, `:active`, `[data-dragging='true']`) — no JS class toggle.
+4. [x] Vertical orientation tested via the sibling-attribute selectors (`:host([orientation='vertical'])`).
+5. [x] Disabled visual: grey thumb + grey fill, `cursor: not-allowed` on the host, tooltip hidden via `display: none`.
+6. [x] `prefers-reduced-motion` honoured — transitions removed.
 
 ### Phase 4: Value accessor + form integration
 1. `BsMultiRangeValueAccessor` directive on `bs-multi-range`, `(value-change)` host listener, NG_VALUE_ACCESSOR provider.

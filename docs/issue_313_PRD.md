@@ -85,10 +85,11 @@ A new N-thumb range-slider primitive `bs-multi-range` for `@mintplayer/ng-bootst
 - [x] Events `value-input` (continuous, fires on every drag pointermove + keyboard step) and `value-change` (commit; pointerup, keyboard step) — both `bubbles: true, composed: true` so the Angular wrapper's host listeners pick them up across the shadow boundary.
 
 ### Milestone 3: Visual polish
-- [ ] Track + thumb + (N-1) fill segments rendered with Bootstrap-ish styling and CSS variables for theming.
-- [ ] Tooltip bubble per thumb on `:hover` / `:focus-visible` / `:active`.
-- [ ] Vertical orientation (min at bottom).
-- [ ] Disabled visual matches Bootstrap.
+- [x] Track + thumb + (N-1) fill segments rendered with Bootstrap-ish styling. Theming via `--bs-multi-range-{track,fill,thumb,tooltip}-bg` etc., falling back to Bootstrap's `--bs-primary`/`--bs-tertiary-bg`/etc.
+- [x] Tooltip bubble per thumb visible on `:hover`, `:focus-visible`, `:active`. Position: above (horizontal), right of (vertical). Hidden when `:host([disabled])`.
+- [x] Vertical orientation correctly lays out track + thumbs + tooltips with min at the bottom.
+- [x] Disabled state — grey thumb + grey fill, `cursor: not-allowed`, no tooltip.
+- [x] `prefers-reduced-motion: reduce` removes thumb/tooltip transitions.
 
 ### Milestone 4: Forms integration
 - [ ] `BsMultiRangeValueAccessor` directive: writeValue sorts + clamps; default = `[min, max]` when no value.
