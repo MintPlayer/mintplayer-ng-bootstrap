@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, ElementRef, input, signal, TemplateRef, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, ElementRef, inject, input, signal, TemplateRef, viewChild } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { BsContainerComponent } from '@mintplayer/ng-bootstrap/container';
 import { BsUserAgentDirective } from '@mintplayer/ng-bootstrap/user-agent';
 import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
 import { Breakpoint, Color } from '@mintplayer/ng-bootstrap';
+import { BsIdService } from '@mintplayer/ng-bootstrap/a11y';
 
 @Component({
   selector: 'bs-navbar',
@@ -18,6 +19,7 @@ import { Breakpoint, Color } from '@mintplayer/ng-bootstrap';
 export class BsNavbarComponent {
 
   private resizeTimeout: ReturnType<typeof setTimeout> | null = null;
+  private ids = inject(BsIdService);
 
   constructor() {
     this.onWindowResize();
@@ -42,6 +44,8 @@ export class BsNavbarComponent {
 
   readonly nav = viewChild.required<ElementRef>('nav');
   autoclose = input(true);
+  ariaLabel = input<string>('Main navigation');
+  collapseId = input<string>(this.ids.next('bs-navbar-collapse'));
 
   expandButtonTemplate = signal<TemplateRef<any> | null>(null);
 
