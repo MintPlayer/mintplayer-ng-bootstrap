@@ -47,10 +47,12 @@ Replace the dormant Cypress e2e setup in `apps/ng-bootstrap-demo-e2e` with `@nx/
 
 ## Timeline & Milestones
 
-### Milestone 1: Strip Cypress, install Playwright
-- [ ] Drop `cypress` + `@nx/cypress` from `package.json`.
-- [ ] Add `@playwright/test` + `@nx/playwright@22.7.1`.
-- [ ] Delete `cypress.json`, `src/integration/`, `src/support/`, `src/fixtures/`.
+### Milestone 1: Strip Cypress, install Playwright ✅
+- [x] Drop `cypress`, `@nx/cypress`, and `eslint-plugin-cypress` from `package.json`.
+- [x] Add `@playwright/test@^1.59.1` + `@nx/playwright@22.7.1`.
+- [x] Delete `cypress.json`, `src/` tree, and project `.eslintrc.json` (project will inherit root eslint).
+- [x] Flip `nx.json` `generators."@nx/angular:application".e2eTestRunner` from `cypress` to `playwright`.
+- [x] Install Chromium + Firefox browser binaries locally (`npx playwright install chromium firefox`).
 
 ### Milestone 2: Scaffold Playwright project
 - [ ] Write `playwright.config.ts` with `webServer`, `baseURL`, `projects: [chromium, firefox]`.
