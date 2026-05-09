@@ -1,0 +1,179 @@
+<h1 class="text-center">Multi-range</h1>
+<bs-grid>
+    <div bsRow>
+        <div [col]>
+            <h2>Basic 2-thumb (ngModel)</h2>
+            <p class="text-muted">Two thumbs over <code>[0, 100]</code>. Block-crossing — value[0] is always lowest.</p>
+        </div>
+    </div>
+    <div bsRow>
+        <div [md]="11">
+            <bs-multi-range [min]="0" [max]="100" [(ngModel)]="basicValue" [disabled]="isDisabled()" label="Basic range"></bs-multi-range>
+        </div>
+        <div [md]="1">
+            <span>{{ basicValue() | json }}</span>
+        </div>
+    </div>
+    <div bsRow>
+        <div [col] class="text-center">
+            <bs-toggle-button [(ngModel)]="isDisabled" [type]="'checkbox'">Disabled</bs-toggle-button>
+        </div>
+    </div>
+    <div bsRow class="mt-2">
+        <div [col]>
+            <bs-code-snippet [codeToCopy]="basicTs" [language]="'ts'"></bs-code-snippet>
+            <bs-code-snippet [codeToCopy]="basicHtml" [language]="'html'"></bs-code-snippet>
+        </div>
+    </div>
+
+    <div bsRow class="mt-5">
+        <div [col]>
+            <h2>3 thumbs</h2>
+            <p class="text-muted">Initial value <code>[2, 5, 8]</code> on <code>[0, 10]</code>.</p>
+        </div>
+    </div>
+    <div bsRow>
+        <div [md]="11">
+            <bs-multi-range [min]="0" [max]="10" [step]="0.5" [(ngModel)]="threeThumbValue" label="Three thumbs"></bs-multi-range>
+        </div>
+        <div [md]="1">
+            <span>{{ threeThumbValue() | json }}</span>
+        </div>
+    </div>
+    <div bsRow class="mt-2">
+        <div [col]>
+            <bs-code-snippet [codeToCopy]="threeThumbTs" [language]="'ts'"></bs-code-snippet>
+            <bs-code-snippet [codeToCopy]="threeThumbHtml" [language]="'html'"></bs-code-snippet>
+        </div>
+    </div>
+
+    <div bsRow class="mt-5">
+        <div [col]>
+            <h2>minDistance</h2>
+            <p class="text-muted">Thumbs cannot get closer than <code>20</code> units.</p>
+        </div>
+    </div>
+    <div bsRow>
+        <div [md]="11">
+            <bs-multi-range [min]="0" [max]="100" [minDistance]="20" [(ngModel)]="minDistanceValue" label="Min distance 20"></bs-multi-range>
+        </div>
+        <div [md]="1">
+            <span>{{ minDistanceValue() | json }}</span>
+        </div>
+    </div>
+    <div bsRow class="mt-2">
+        <div [col]>
+            <bs-code-snippet [codeToCopy]="minDistanceTs" [language]="'ts'"></bs-code-snippet>
+            <bs-code-snippet [codeToCopy]="minDistanceHtml" [language]="'html'"></bs-code-snippet>
+        </div>
+    </div>
+
+    <div bsRow class="mt-5">
+        <div [col]>
+            <h2>formatValue (currency)</h2>
+            <p class="text-muted">Tooltip + <code>aria-valuetext</code> formatted via <code>(v) =&gt; '$' + v.toFixed(2)</code>.</p>
+        </div>
+    </div>
+    <div bsRow>
+        <div [md]="11">
+            <bs-multi-range [min]="0" [max]="100" [(ngModel)]="currencyValue" [formatValue]="currencyFormatter" label="Price range in dollars"></bs-multi-range>
+        </div>
+        <div [md]="1">
+            <span>{{ currencyFormatter(currencyValue()[0]) }} – {{ currencyFormatter(currencyValue()[1]) }}</span>
+        </div>
+    </div>
+    <div bsRow class="mt-2">
+        <div [col]>
+            <bs-code-snippet [codeToCopy]="currencyTs" [language]="'ts'"></bs-code-snippet>
+            <bs-code-snippet [codeToCopy]="currencyHtml" [language]="'html'"></bs-code-snippet>
+        </div>
+    </div>
+
+    <div bsRow class="mt-5">
+        <div [col]>
+            <h2>Vertical orientation</h2>
+            <p class="text-muted">Min at the bottom (thermometer convention). Tooltip appears to the right.</p>
+        </div>
+    </div>
+    <div bsRow>
+        <div [md]="6">
+            <div class="vertical-host">
+                <bs-multi-range [min]="0" [max]="100" [(ngModel)]="verticalValue" [orientation]="'vertical'" label="Vertical range"></bs-multi-range>
+            </div>
+        </div>
+        <div [md]="6">
+            <span>{{ verticalValue() | json }}</span>
+        </div>
+    </div>
+    <div bsRow class="mt-2">
+        <div [col]>
+            <bs-code-snippet [codeToCopy]="verticalTs" [language]="'ts'"></bs-code-snippet>
+            <bs-code-snippet [codeToCopy]="verticalHtml" [language]="'html'"></bs-code-snippet>
+        </div>
+    </div>
+
+    <div bsRow class="mt-5">
+        <div [col]>
+            <h2>RTL</h2>
+            <p class="text-muted">Wrapper has <code>dir="rtl"</code>; pointer + ←/→ keyboard math invert. Vertical mode unaffected by direction.</p>
+        </div>
+    </div>
+    <div bsRow>
+        <div [md]="11">
+            <div dir="rtl">
+                <bs-multi-range [min]="0" [max]="100" [(ngModel)]="rtlValue" label="RTL range"></bs-multi-range>
+            </div>
+        </div>
+        <div [md]="1">
+            <span>{{ rtlValue() | json }}</span>
+        </div>
+    </div>
+    <div bsRow class="mt-2">
+        <div [col]>
+            <bs-code-snippet [codeToCopy]="rtlTs" [language]="'ts'"></bs-code-snippet>
+            <bs-code-snippet [codeToCopy]="rtlHtml" [language]="'html'"></bs-code-snippet>
+        </div>
+    </div>
+
+    <div bsRow class="mt-5">
+        <div [col]>
+            <h2>Disabled</h2>
+            <p class="text-muted">Static state — cannot be focused or dragged.</p>
+        </div>
+    </div>
+    <div bsRow>
+        <div [md]="11">
+            <bs-multi-range [min]="0" [max]="100" [(ngModel)]="disabledValue" [disabled]="true" label="Disabled range"></bs-multi-range>
+        </div>
+        <div [md]="1">
+            <span>{{ disabledValue() | json }}</span>
+        </div>
+    </div>
+    <div bsRow class="mt-2">
+        <div [col]>
+            <bs-code-snippet [codeToCopy]="disabledTs" [language]="'ts'"></bs-code-snippet>
+            <bs-code-snippet [codeToCopy]="disabledHtml" [language]="'html'"></bs-code-snippet>
+        </div>
+    </div>
+
+    <div bsRow class="mt-5">
+        <div [col]>
+            <h2>Reactive forms (FormControl)</h2>
+            <p class="text-muted">Bound via <code>[formControl]</code>. The JSON below reflects the live <code>formControl.value</code>.</p>
+        </div>
+    </div>
+    <div bsRow>
+        <div [md]="11">
+            <bs-multi-range [min]="0" [max]="100" [formControl]="reactiveControl" label="Reactive range"></bs-multi-range>
+        </div>
+        <div [md]="1">
+            <code>{{ reactiveJson() }}</code>
+        </div>
+    </div>
+    <div bsRow class="mt-2">
+        <div [col]>
+            <bs-code-snippet [codeToCopy]="reactiveTs" [language]="'ts'"></bs-code-snippet>
+            <bs-code-snippet [codeToCopy]="reactiveHtml" [language]="'html'"></bs-code-snippet>
+        </div>
+    </div>
+</bs-grid>
