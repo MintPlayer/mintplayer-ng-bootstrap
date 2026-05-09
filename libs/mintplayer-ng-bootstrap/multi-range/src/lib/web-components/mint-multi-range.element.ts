@@ -54,9 +54,20 @@ export class MintMultiRangeElement extends LitElement {
   private _value: number[] | null = null;
   private dragState: { thumbIndex: number; pointerId: number } | null = null;
 
+  // Cached references / state to keep the per-pointermove path off the hot path
+  // for getComputedStyle and querySelector. Track ref is set in firstUpdated()
+  // and is stable across renders. RTL is captured at gesture start so a single
+  // drag stream sees a coherent direction even if the host's `dir` changes mid-air.
+  private trackEl: HTMLElement | null = null;
+  private rtlDuringGesture: boolean | null = null;
+
   override connectedCallback(): void {
     super.connectedCallback();
     if (!this.hasAttribute('role')) this.setAttribute('role', 'group');
+  }
+
+  protected override firstUpdated(): void {
+    this.trackEl = this.renderRoot.querySelector<HTMLElement>('.track');
   }
 
   get value(): number[] {
@@ -65,8 +76,21 @@ export class MintMultiRangeElement extends LitElement {
 
   set value(next: number[] | null | undefined) {
     const old = this._value;
-    this._value = this.normalise(next);
+    const normalised = this.normalise(next);
+    // Skip the update entirely when the incoming array is shallow-equal to the
+    // current state — the wrapper's effect re-pushes the value on every
+    // value-input event during a drag, so without this we'd queue a redundant
+    // Lit update for every pointermove.
+    if (this.arraysEqual(old, normalised)) return;
+    this._value = normalised;
     this.requestUpdate('value', old);
+  }
+
+  private arraysEqual(a: number[] | null, b: number[] | null): boolean {
+    if (a === b) return true;
+    if (a === null || b === null) return false;
+    if (a.length !== b.length) return false;
+    return a.every((v, i) => v === b[i]);
   }
 
   private normalise(input: number[] | null | undefined): number[] | null {
@@ -102,7 +126,14 @@ export class MintMultiRangeElement extends LitElement {
     return this.orientation === 'vertical';
   }
 
+  /**
+   * Returns whether the host renders in RTL. Uses the cached value if a gesture
+   * is active (set in startDrag / onTrackPointerDown), otherwise reads
+   * getComputedStyle fresh — direction can come from any ancestor's `dir`,
+   * so document.dir or our own attribute aren't sufficient.
+   */
   private isRtl(): boolean {
+    if (this.rtlDuringGesture !== null) return this.rtlDuringGesture;
     return getComputedStyle(this).direction === 'rtl';
   }
 
@@ -118,7 +149,7 @@ export class MintMultiRangeElement extends LitElement {
 
   /** Map a pointer coordinate inside the track rect to a value in [min, max]. */
   private valueFromPointer(clientX: number, clientY: number): number {
-    const track = this.renderRoot.querySelector<HTMLElement>('.track');
+    const track = this.trackEl ?? this.renderRoot.querySelector<HTMLElement>('.track');
     if (!track) return this.min;
     const rect = track.getBoundingClientRect();
     let pct: number;
@@ -160,6 +191,9 @@ export class MintMultiRangeElement extends LitElement {
 
   private startDrag(thumbIndex: number, pointerId: number, target: HTMLElement): void {
     if (this.disabled) return;
+    if (this.rtlDuringGesture === null) {
+      this.rtlDuringGesture = getComputedStyle(this).direction === 'rtl';
+    }
     target.setPointerCapture(pointerId);
     target.focus();
     this.dragState = { thumbIndex, pointerId };
@@ -176,6 +210,9 @@ export class MintMultiRangeElement extends LitElement {
     // Ignore clicks that originated on a thumb — those are handled by the thumb's own pointerdown.
     const path = ev.composedPath();
     if (path.some(node => node instanceof HTMLElement && node.classList?.contains('thumb'))) return;
+    // Capture direction up-front so the first valueFromPointer / nearest-thumb
+    // calculation in this gesture sees a consistent value.
+    this.rtlDuringGesture = getComputedStyle(this).direction === 'rtl';
     const targetValue = this.valueFromPointer(ev.clientX, ev.clientY);
     const values = this.value;
     const nearestIndex = this.nearestThumbIndex(values, targetValue);
@@ -187,11 +224,23 @@ export class MintMultiRangeElement extends LitElement {
     if (thumbEl) this.startDrag(nearestIndex, ev.pointerId, thumbEl);
   };
 
+  /**
+   * Returns the index of the thumb closest to `target`. Ties (multiple thumbs
+   * stacked at the same value) are broken by direction: clicks to the right of
+   * the stack pick the highest-index thumb, clicks to the left pick the
+   * lowest. Without this, a stack would always select the lowest-index thumb,
+   * which is blocked by its higher-indexed neighbours and can't move toward
+   * the click — the user would see no response.
+   */
   private nearestThumbIndex(values: number[], target: number): number {
-    return values.reduce(
-      (best, v, i) => (Math.abs(v - target) < Math.abs(values[best] - target) ? i : best),
-      0,
-    );
+    return values.reduce((best, v, i) => {
+      const dBest = Math.abs(values[best] - target);
+      const dCur = Math.abs(v - target);
+      if (dCur < dBest) return i;
+      if (dCur > dBest) return best;
+      // Tie. Prefer the thumb on the side of the target so it can move toward it.
+      return target > v ? i : best;
+    }, 0);
   }
 
   private onPointerMove = (ev: PointerEvent): void => {
@@ -207,6 +256,7 @@ export class MintMultiRangeElement extends LitElement {
       target.releasePointerCapture(ev.pointerId);
     }
     this.dragState = null;
+    this.rtlDuringGesture = null;
     this.requestUpdate();
     this.dispatchValueChange();
   };

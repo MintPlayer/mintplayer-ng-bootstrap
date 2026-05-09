@@ -142,6 +142,17 @@ Closes the most-requested missing form primitive in the library. Differentiates 
 - **Vertical orientation collapsed to 0 height**: wrapper's `:host([orientation='vertical']) { height: 100% }` rule wasn't matching because the wrapper's host had no `orientation` attribute. Fixed by adding `host: { '[attr.orientation]': 'orientation()' }` to the wrapper component, so the percentage-height chain from `.vertical-host` → `<bs-multi-range>` → `<mp-multi-range>` → `.track` now resolves end-to-end.
 - **RTL rendered LTR-style with flipped value math**: thumbs and fill used inline `left: V%` so in RTL the visual position was opposite to the value math (which already flipped via `getComputedStyle.direction`). Result: dragging a thumb LEFT made the value increase but the thumb visually moved RIGHT. Fixed by switching the inline style to logical `inset-inline-start: V%` for both thumbs and fill segments, and adding a `:host([orientation='horizontal']:dir(rtl)) .thumb { transform: translate(50%, -50%) }` rule so the thumb's center continues to sit on its anchor point in RTL (where the anchor is the right edge instead of the left). Verified via Playwright at `/basic/forms/multi-range`: thumb at value 15 now sits 15% from the RIGHT in RTL; ArrowLeft on it increases the value and visually moves it left; ArrowRight decreases the value and visually moves it right.
 
+### PR #325 review feedback (gemini-code-assist)
+
+Four review comments on `mint-multi-range.element.ts` addressed in a follow-up commit:
+
+1. **`value` setter — equality check** (line 70): the wrapper's `effect` re-pushes the value on every `value-input` event during a drag, so each pointermove queued a redundant Lit update. Added a shallow array equality check in the setter; identical writes now early-return without a `requestUpdate`.
+2. **Cache RTL direction at gesture start** (line 107): `isRtl()` was calling `getComputedStyle(this).direction` on every pointermove via `valueFromPointer`. Now cached in `rtlDuringGesture` set in `startDrag()` / `onTrackPointerDown` and cleared on `pointerup`. Keyboard reads stay fresh (rare events).
+3. **Cache `.track` reference** (line 121): `valueFromPointer` was calling `renderRoot.querySelector('.track')` on every pointermove. Now stored in `trackEl` set in `firstUpdated()`, with a querySelector fallback for environments where `firstUpdated` hasn't run yet (test envs).
+4. **Tie-breaking in `nearestThumbIndex`** (line 195): when multiple thumbs share a value (a stack), the old code always picked index 0, which is then blocked by its higher-indexed neighbours and can't move toward the click target — so nothing happened. Now ties break by direction: clicks to the right of the stack pick the highest-index thumb, clicks to the left pick the lowest. The chosen thumb has room to move toward the target.
+
+E2E regression spec (`apps/ng-bootstrap-demo-e2e/e2e/multi-range.spec.ts`) still passes after these changes.
+
 ---
 
 ## Test Scenarios
