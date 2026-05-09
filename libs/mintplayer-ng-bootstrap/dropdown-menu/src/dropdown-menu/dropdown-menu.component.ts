@@ -1,6 +1,5 @@
-import { AfterViewInit, Component, inject, input, signal, ChangeDetectionStrategy} from '@angular/core';
+import { AfterViewInit, Component, computed, inject, input, signal, ChangeDetectionStrategy } from '@angular/core';
 import { BsDropdownDirective } from '@mintplayer/ng-bootstrap/dropdown';
-// import { BsDropdownComponent } from '@mintplayer/ng-bootstrap/dropdown';
 
 @Component({
   selector: 'bs-dropdown-menu',
@@ -10,6 +9,8 @@ import { BsDropdownDirective } from '@mintplayer/ng-bootstrap/dropdown';
   host: {
     '[style.width]': 'dropdownWith()',
     '(window:resize)': 'onResize()',
+    '[attr.role]': 'menuRole()',
+    '[attr.id]': 'menuId()',
   },
 })
 export class BsDropdownMenuComponent implements AfterViewInit {
@@ -17,6 +18,9 @@ export class BsDropdownMenuComponent implements AfterViewInit {
 
   readonly maxHeight = input<number | null>(null);
   dropdownWith = signal<string | null>(null);
+
+  readonly menuRole = computed(() => this.bsDropdown?.popupRole() ?? null);
+  readonly menuId = computed(() => this.bsDropdown?.menuId ?? null);
 
   onResize() {
     if ((typeof window !== 'undefined') && this.bsDropdown && this.bsDropdown.sameDropdownWidth()) {
