@@ -61,13 +61,15 @@ Replace the dormant Cypress e2e setup in `apps/ng-bootstrap-demo-e2e` with `@nx/
 - [x] Add `.gitignore` for Playwright artifacts (`test-results/`, `playwright-report/`, `blob-report/`, `playwright/.cache/`).
 - [x] `webServer` runs the built SSR server (`node dist/apps/ng-bootstrap-demo/server/server.mjs`) — tests against the actual prod artifact, not just the prod-mode compiler.
 
-### Milestone 3: Author the six specs
-- [ ] `smoke.spec.ts`
-- [ ] `routing.spec.ts`
-- [ ] `modal.spec.ts`
-- [ ] `dropdown.spec.ts`
-- [ ] `datepicker.spec.ts`
-- [ ] `dock.spec.ts` (pointer events, not native dnd)
+### Milestone 3: Author the six specs ✅
+- [x] `smoke.spec.ts` — home loads, navbar brand + 6 main sections (Home/Basic/Overlays/Advanced/Animations/Additional samples) visible.
+- [x] `routing.spec.ts` — open the Basic dropdown in the navbar, click Alert, assert URL `/basic/alert` and `<h1>Alert</h1>` visible.
+- [x] `modal.spec.ts` — click "Show modal", assert "Modal title" visible, click "Close", assert it's gone.
+- [x] `dropdown.spec.ts` — click "Dropdown" toggle, assert `bs-calendar` visible, click outside (page h1), assert calendar gone.
+- [x] `datepicker.spec.ts` — open picker, click next-month chevron, click day "1" (odd → not disabled by demo's even-day rule), assert "The selected date is:" line changed.
+- [x] `dock.spec.ts` — assert Panel 1 visible; click "Capture layout JSON", assert "Captured snapshot" header appears.
+
+**Deviation from plan:** dock spec does *not* drag-to-split via pointer events. Reproducing that scripted gesture requires reverse-engineering the dock-manager's drop-zone protocol; the spec would couple to internal Lit drag handlers and break on every tweak. Capture-button assertion exercises dock-manager rendering and the capture API end-to-end at a stable boundary instead. A future drag-to-split spec can be added once the dock exposes a documented test hook for synthesising splits.
 
 ### Milestone 4: Wire CI and validate
 - [ ] Update `pull-request.yml` (install browsers, run `nx affected --targets=test,e2e --parallel=2`).
