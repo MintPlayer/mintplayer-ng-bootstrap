@@ -1,5 +1,5 @@
 <bs-has-overlay></bs-has-overlay>
-<div bsDropdown [(isOpen)]="isOpen" [hasBackdrop]="false" [sameDropdownWidth]="true">
+<div bsDropdown popupRole="listbox" [(isOpen)]="isOpen" [hasBackdrop]="false" [sameDropdownWidth]="true">
     <button [color]="colors.primary" class="d-flex w-100" bsDropdownToggle>
         <div class="flex-grow-1">
             @if (!selectedItem()) {
@@ -20,7 +20,7 @@
             </bs-progress>
         }
         <div class="w-100 px-2 mb-2">
-            <input type="text" #textbox autofocus class="form-control d-block" [ngModel]="searchterm()" (ngModelChange)="onSearchtermChange($event)">
+            <input type="search" #textbox autofocus class="form-control d-block" [attr.aria-label]="ariaLabel()" [ngModel]="searchterm()" (ngModelChange)="onSearchtermChange($event)">
         </div>
 
         @if (searchterm() === '') {

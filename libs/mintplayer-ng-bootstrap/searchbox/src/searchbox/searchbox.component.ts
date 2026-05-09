@@ -53,6 +53,7 @@ export class BsSearchboxComponent<T extends HasId<U>, U> implements OnDestroy {
   isOpen = model(false);
   selectedItem = model<T | undefined>(undefined);
   searchterm = model('');
+  ariaLabel = input<string>('Search');
 
   suggestions = model<T[]>([]);
 
