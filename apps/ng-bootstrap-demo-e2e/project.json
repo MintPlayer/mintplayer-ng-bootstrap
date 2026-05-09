@@ -7,7 +7,8 @@
     "e2e": {
       "executor": "@nx/playwright:playwright",
       "options": {
-        "config": "apps/ng-bootstrap-demo-e2e/playwright.config.ts"
+        "config": "apps/ng-bootstrap-demo-e2e/playwright.config.ts",
+        "skipInstall": true
       },
       "dependsOn": ["ng-bootstrap-demo:build"]
     },
