@@ -350,7 +350,7 @@ export class MintTileManagerElement extends LitElement {
 
   private shouldAnimate(): boolean {
     if (!this.animateReflow) return false;
-    if (typeof window === 'undefined') return false;
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
     return !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   }
 
@@ -782,9 +782,13 @@ export class MintTileManagerElement extends LitElement {
     return this.tiles.map((t) => ({ id: t.id, position: { ...t.position } }));
   }
 
-  /** True while a drag/resize is in flight. The Angular wrapper uses this to avoid clobbering `tiles` mid-gesture. */
+  /**
+   * True while a drag or resize is in flight. The Angular wrapper uses this to
+   * avoid clobbering `tiles` mid-gesture. Touch long-press arming does NOT
+   * count — the WC isn't yet owning the layout during the hold.
+   */
   get isGestureActive(): boolean {
-    return this.gestureState.kind !== 'idle';
+    return this.gestureState.kind === 'drag' || this.gestureState.kind === 'resize';
   }
 
   // ---------------- Keyboard ----------------

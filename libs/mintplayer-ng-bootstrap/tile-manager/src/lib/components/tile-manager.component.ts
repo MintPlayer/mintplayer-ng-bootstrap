@@ -127,7 +127,11 @@ export class BsTileManagerComponent implements AfterViewInit {
   /** Returns the current layout. Mirrors `BsDockManagerComponent.captureLayout()`. */
   captureLayout(): TileLayoutSnapshot {
     const ref = this.managerRef();
-    return ref ? ref.nativeElement.captureLayout() : [];
+    if (!ref) return [];
+    return Array.from(ref.nativeElement.tiles ?? []).map((t) => ({
+      id: t.id,
+      position: { ...t.position },
+    }));
   }
 
   protected onLayoutChange(event: Event): void {
