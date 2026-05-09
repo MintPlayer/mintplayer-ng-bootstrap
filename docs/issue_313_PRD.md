@@ -105,9 +105,10 @@ A new N-thumb range-slider primitive `bs-multi-range` for `@mintplayer/ng-bootst
 - [ ] Firefox flex-shrink + NVDA smoke test → deferred to M7 manual smoke pass.
 
 ### Milestone 6: Demo page
-- [ ] 8 examples at `/basic/forms/multi-range` (incl. reactive-form example with live JSON).
-- [ ] Route + navbar entry wired.
-- [ ] Demo spec passes.
+- [x] 8 examples at `/basic/forms/multi-range` — basic 2-thumb, 3-thumb, `minDistance`, `formatValue` (currency), vertical, RTL, disabled, **reactive form (FormControl) with live JSON sidebar**.
+- [x] Route added in `forms.routes.ts` between `input-group` and `range` (alphabetical).
+- [x] Navbar entry "Multi-range" added in `app.component.html` between "Input group" and "Range".
+- [x] `multi-range.component.spec.ts` — `should create` test passes (mocking dependencies via ng-mocks, mirroring the range demo's spec).
 
 ### Milestone 7: PR-ready
 - [ ] All P0 acceptance criteria green.

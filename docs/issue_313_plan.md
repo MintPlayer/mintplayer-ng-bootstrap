@@ -121,20 +121,12 @@ Closes the most-requested missing form primitive in the library. Differentiates 
 5. [ ] **Manual: Firefox flex-shrink check on track/tooltips** — deferred to M7 smoke pass.
 6. [ ] **Manual: NVDA smoke test** — deferred to M7 smoke pass.
 
-### Phase 6: Demo page
-1. Scaffold `apps/ng-bootstrap-demo/src/app/pages/basic/forms/multi-range/`. Mirror `range/` shape (standalone, OnPush, no tabs, `BsGrid*` layout).
-2. Eight examples in a feature grid:
-   1. Basic 2-thumb with `[(ngModel)]` + a disabled toggle.
-   2. 3-thumb (initial value `[2, 5, 8]`).
-   3. `minDistance="2"` on a 0–100 range.
-   4. `formatValue` producing currency strings (`$0.00`).
-   5. Vertical orientation.
-   6. RTL (wrap example in `<div dir="rtl">`).
-   7. Disabled.
-   8. **Reactive Forms**: `FormControl<number[]>([10, 40, 70])`, with a side panel showing the live `formControl.value` JSON.
-3. Add route in `forms.routes.ts`.
-4. Add navbar entry in `app.component.html` after the Range entry.
-5. `multi-range.component.spec.ts` with a `should create` test mirroring `range.component.spec.ts`.
+### Phase 6: Demo page ✅
+1. [x] `apps/ng-bootstrap-demo/src/app/pages/basic/forms/multi-range/` scaffolded — standalone, OnPush, `JsonPipe` import, FormsModule + ReactiveFormsModule both present.
+2. [x] All 8 examples implemented: basic 2-thumb (with disabled toggle), 3-thumb (`[2, 5, 8]` over `[0, 10]` step `0.5`), `minDistance=20`, currency `formatValue`, vertical (in a 12rem-tall host div so the track has room), RTL (wrapped in `dir="rtl"`), disabled, reactive `FormControl<number[]>([10, 40, 70])` with `toSignal(...valueChanges)` driving a `computed()` JSON readout.
+3. [x] Route added between `input-group` and `range` (alphabetical) in `forms.routes.ts`.
+4. [x] Navbar entry inserted between "Input group" and "Range" in `app.component.html`.
+5. [x] `multi-range.component.spec.ts` — `should create` test, dependencies mocked via `ng-mocks` (mirrors `range.component.spec.ts`).
 
 ### Phase 7: Verification
 1. `npx nx build mintplayer-ng-bootstrap` — clean compile.
