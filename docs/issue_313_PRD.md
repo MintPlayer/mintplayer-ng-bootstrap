@@ -92,8 +92,9 @@ A new N-thumb range-slider primitive `bs-multi-range` for `@mintplayer/ng-bootst
 - [x] `prefers-reduced-motion: reduce` removes thumb/tooltip transitions.
 
 ### Milestone 4: Forms integration
-- [ ] `BsMultiRangeValueAccessor` directive: writeValue sorts + clamps; default = `[min, max]` when no value.
-- [ ] Round-trip verified for `[(ngModel)]` and `FormControl<number[]>`.
+- [x] `BsMultiRangeValueAccessor` directive: writeValue delegates to the WC's `value` setter, which sorts ascending + clamps to `[min, max]`. Default = `[min, max]` when value is `null`/`undefined`/`[]` (handled inside the WC's getter, not the value accessor — single source of truth).
+- [x] `setDisabledState` toggles the WC's `disabled` attribute.
+- [x] Round-trip verified for `[(ngModel)]` and `FormControl<number[]>` via `multi-range.component.spec.ts` (5 specs covering value-input emission, setDisabledState, and value-change marking the control as touched). All 464 library tests still pass.
 
 ### Milestone 5: ARIA + RTL + cross-browser
 - [ ] Per-thumb ARIA attributes; NVDA smoke test.

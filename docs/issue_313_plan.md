@@ -105,11 +105,13 @@ Closes the most-requested missing form primitive in the library. Differentiates 
 5. [x] Disabled visual: grey thumb + grey fill, `cursor: not-allowed` on the host, tooltip hidden via `display: none`.
 6. [x] `prefers-reduced-motion` honoured — transitions removed.
 
-### Phase 4: Value accessor + form integration
-1. `BsMultiRangeValueAccessor` directive on `bs-multi-range`, `(value-change)` host listener, NG_VALUE_ACCESSOR provider.
-2. `writeValue(value)`: sort ascending, clamp each to `[min, max]`, push to WC. If `value` is null/undefined/empty, push `[min, max]`.
-3. `registerOnChange`, `registerOnTouched`, `setDisabledState(isDisabled)` toggling the `disabled` attribute on the WC.
-4. Verify with template-driven (`[(ngModel)]`) and reactive (`new FormControl([3, 7])`) bindings in a scratch test.
+### Phase 4: Value accessor + form integration ✅
+1. [x] `BsMultiRangeValueAccessor` directive — `(value-input)` for live updates, `(value-change)` to mark touched. NG_VALUE_ACCESSOR provider via `forwardRef`.
+2. [x] `writeValue(value)` pushes through to the WC's `value` setter, which is the single source of normalisation (sort ascending + clamp). The default `[min, max]` fallback lives in the WC's getter — value accessor stays stateless.
+3. [x] `registerOnChange`, `registerOnTouched`, `setDisabledState(isDisabled)` — disabled toggles the `disabled` attribute on the WC (which the WC reflects to its visual disabled state via `:host([disabled])` selectors).
+4. [x] `multi-range.component.spec.ts` covers: `should create`, basic attribute forwarding, ngModel round-trip via `value-input`, FormControl round-trip via `value-input`, `setDisabledState` toggling the attribute, `value-change` marking the control as touched. All 464 library tests pass after this milestone.
+
+**Test-environment note**: jsdom + vitest don't reliably upgrade the `mp-multi-range` custom element, so the spec asserts against Angular form state (`control.value`, `host.value()`, `control.touched`) and DOM attributes — not against WC instance methods. This is the right level for value-accessor tests and matches the testing-tile-manager spec's approach when WC internals aren't stable in the env.
 
 ### Phase 5: ARIA + RTL
 1. Per-thumb `role="slider"`, `aria-valuemin/max/now`, `aria-orientation`, `aria-valuetext`. Host `role="group"`, accept `aria-label` attribute.
