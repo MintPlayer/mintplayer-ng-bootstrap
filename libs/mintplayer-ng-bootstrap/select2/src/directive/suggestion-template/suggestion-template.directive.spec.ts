@@ -6,20 +6,23 @@ import { BsSuggestionTemplateDirective } from './suggestion-template.directive';
 import { BsSelect2Component } from '../../component/select2.component';
 
 @Component({
-  selector: 'item-template-test-component',
-  template: `
-    <select2>
-      <span *bsSuggestionTemplate>Suggestion template</span>
-    </select2>`
-})
-class BsSuggestionTemplateTestComponent { }
-
-@Component({
   selector: 'select2',
 })
 class MockBsSelect2Component {
   readonly suggestionTemplate = signal<TemplateRef<any> | undefined>(undefined);
 }
+
+@Component({
+  selector: 'item-template-test-component',
+  template: `
+    <select2>
+      <span *bsSuggestionTemplate>Suggestion template</span>
+    </select2>`,
+  imports: [
+    MockBsSelect2Component,
+  ],
+})
+class BsSuggestionTemplateTestComponent { }
 
 describe('BsSuggestionTemplateDirective', () => {
   let fixture: ComponentFixture<BsSuggestionTemplateTestComponent>;

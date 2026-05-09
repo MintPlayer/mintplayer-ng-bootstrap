@@ -20,7 +20,10 @@ import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
         <div bsModalBody>Content</div>
         <div bsModalFooter>Footer</div>
       </div>
-    </bs-modal>`
+    </bs-modal>`,
+  imports: [
+    MockComponent(BsModalHostComponent),
+  ],
 })
 class BsModalTestComponent {
   isOpen = false;

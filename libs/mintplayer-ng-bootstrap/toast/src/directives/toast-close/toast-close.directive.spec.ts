@@ -22,7 +22,14 @@ import { BsToastComponent } from '../../components/toast/toast.component';
         <bs-toast-body>{{ message }}</bs-toast-body>
       </bs-toast>
     </ng-template>
-    <bs-toast-container #toaster></bs-toast-container>`
+    <bs-toast-container #toaster></bs-toast-container>`,
+  imports: [
+    MockComponent(BsToastContainerComponent),
+    MockComponent(BsToastComponent),
+    MockComponent(BsToastHeaderComponent),
+    MockComponent(BsToastBodyComponent),
+    MockComponent(BsCloseComponent),
+  ],
 })
 class BsToastTestComponent {
   @ViewChild('toaster', { read: ElementRef }) toaster!: ElementRef<HTMLElement>;

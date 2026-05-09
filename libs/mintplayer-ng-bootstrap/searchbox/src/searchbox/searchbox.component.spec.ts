@@ -17,7 +17,11 @@ interface Item {
   template: `
     <bs-form>
       <bs-searchbox [suggestions]="suggestions"></bs-searchbox>
-    </bs-form>`
+    </bs-form>`,
+  imports: [
+    MockComponent(BsFormComponent),
+    BsSearchboxComponent,
+  ],
 })
 class BsSearchboxTestComponent {
   suggestions: Item[] = [];

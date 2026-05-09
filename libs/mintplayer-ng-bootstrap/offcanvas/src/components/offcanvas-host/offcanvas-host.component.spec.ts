@@ -57,25 +57,6 @@ describe('BsOffcanvasHostComponent', () => {
 
 type OffcanvasPosition = 'top' | 'bottom' | 'start' | 'end';
 
-@Component({
-  selector: 'bs-offcanvas-test',
-  template: `
-    <bs-offcanvas [(isVisible)]="offcanvasVisible" [position]="position" [hasBackdrop]="true" (backdropClick)="isOffcanvasVisible = false">
-        <div *bsOffcanvasContent>
-            <bs-offcanvas-header>
-                <h5>Offcanvas</h5>
-            </bs-offcanvas-header>
-            <bs-offcanvas-body>
-                <span>Content</span>
-            </bs-offcanvas-body>
-        </div>
-    </bs-offcanvas>`
-})
-class BsOffcanvasTestComponent {
-  offcanvasVisible = false;
-  position: OffcanvasPosition = 'start';
-}
-
 @Directive({
   selector: '[bsOffcanvasContent]',
 })
@@ -123,3 +104,28 @@ class BsOffcanvasHeaderMockComponent {}
     </div>`
 })
 class BsOffcanvasBodyMockComponent {}
+
+@Component({
+  selector: 'bs-offcanvas-test',
+  template: `
+    <bs-offcanvas [(isVisible)]="offcanvasVisible" [position]="position" [hasBackdrop]="true" (backdropClick)="isOffcanvasVisible = false">
+        <div *bsOffcanvasContent>
+            <bs-offcanvas-header>
+                <h5>Offcanvas</h5>
+            </bs-offcanvas-header>
+            <bs-offcanvas-body>
+                <span>Content</span>
+            </bs-offcanvas-body>
+        </div>
+    </bs-offcanvas>`,
+  imports: [
+    MockComponent(BsOffcanvasHostComponent),
+    BsOffcanvasHeaderMockComponent,
+    BsOffcanvasBodyMockComponent,
+    BsOffcanvasContentMockDirective,
+  ],
+})
+class BsOffcanvasTestComponent {
+  offcanvasVisible = false;
+  position: OffcanvasPosition = 'start';
+}

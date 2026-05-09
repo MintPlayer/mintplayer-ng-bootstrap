@@ -25,7 +25,10 @@ import { BsScrollspyDirective } from './scrollspy.directive';
       <div class="w-100">
         Container 4
       </div>
-    </bs-scrollspy>`
+    </bs-scrollspy>`,
+  imports: [
+    MockComponent(BsScrollspyComponent),
+  ],
 })
 class BsScrollspyTestComponent {
 }

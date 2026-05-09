@@ -59,7 +59,13 @@ type OffcanvasPosition = 'top' | 'bottom' | 'start' | 'end';
                 <span>Content</span>
             </bs-offcanvas-body>
         </div>
-    </bs-offcanvas>`
+    </bs-offcanvas>`,
+  imports: [
+    BsOffcanvasContentDirective,
+    MockComponent(BsOffcanvasHostComponent),
+    MockComponent(OffcanvasHeaderComponent),
+    MockComponent(OffcanvasBodyComponent),
+  ],
 })
 class BsOffcanvasTestComponent {
   isOffcanvasVisible = false;

@@ -66,7 +66,10 @@ describe('DropdownToggleDirective', () => {
         </bs-navbar-dropdown>
       </bs-navbar-item>
     </bs-navbar-nav>
-  </bs-navbar>`
+  </bs-navbar>`,
+  imports: [
+    ...MockComponents(BsNavbarComponent, BsNavbarNavComponent, BsNavbarDropdownComponent, BsNavbarItemComponent),
+  ],
 })
 class BsNavbarContentTestComponent {
 }
