@@ -1,0 +1,302 @@
+<h1 class="text-center">Stepper</h1>
+<bs-grid>
+    <div bsRow class="mb-4">
+        <div [col]>
+            <bs-alert [type]="colors.info">
+                The CDK stepper from <code>&#64;angular/cdk/stepper</code> is an unstyled primitive.
+                See the
+                <a href="https://material.angular.dev/cdk/stepper/overview" target="_blank" rel="noopener">
+                    Angular CDK stepper documentation
+                </a>
+                for the full API. The four examples below cover the cross of <code>linear</code>
+                (forms gate Next) and <code>orientation</code> (horizontal vs. vertical).
+            </bs-alert>
+        </div>
+    </div>
+
+    <!-- ============ 1. Linear · Horizontal — signup wizard ============ -->
+    <div bsRow class="mb-5">
+        <div [col]>
+            <h2>Linear &middot; Horizontal</h2>
+            <p class="text-body-secondary">
+                Reactive-form wizard. <kbd>Next</kbd> stays disabled until the current step's form is valid.
+            </p>
+
+            <div cdkStepper #signupStepper="cdkStepper" [linear]="true" orientation="horizontal" class="step-wrapper">
+                <cdk-step [stepControl]="signupAccount" label="Account">
+                    <bs-form>
+                        <form [formGroup]="signupAccount">
+                            <div class="mb-2">
+                                <label class="form-label">Name</label>
+                                <input formControlName="name" placeholder="Ada Lovelace">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Email</label>
+                                <input type="email" formControlName="email" placeholder="ada@example.com">
+                            </div>
+                        </form>
+                    </bs-form>
+                </cdk-step>
+                <cdk-step [stepControl]="signupAddress" label="Address">
+                    <bs-form>
+                        <form [formGroup]="signupAddress">
+                            <div class="mb-2">
+                                <label class="form-label">Street</label>
+                                <input formControlName="street" placeholder="221B Baker Street">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">City</label>
+                                <input formControlName="city" placeholder="London">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Postal code</label>
+                                <input formControlName="zip" placeholder="NW1 6XE">
+                            </div>
+                        </form>
+                    </bs-form>
+                </cdk-step>
+                <cdk-step label="Review">
+                    <p>Review your details:</p>
+                    <ul>
+                        <li><strong>Name:</strong> {{ signupAccount.value.name || '—' }}</li>
+                        <li><strong>Email:</strong> {{ signupAccount.value.email || '—' }}</li>
+                        <li><strong>Address:</strong>
+                            {{ signupAddress.value.street || '—' }},
+                            {{ signupAddress.value.city || '—' }}
+                            {{ signupAddress.value.zip }}
+                        </li>
+                    </ul>
+                </cdk-step>
+
+                <div class="step-headers step-headers--horizontal">
+                    @for (step of signupStepper.steps; track $index) {
+                        <button cdkStepHeader type="button"
+                                class="step-header"
+                                [class.step-header--active]="signupStepper.selectedIndex === $index"
+                                [class.step-header--completed]="step.completed"
+                                [disabled]="signupStepper.linear && $index > signupStepper.selectedIndex && !step.completed"
+                                (click)="signupStepper.selectedIndex = $index">
+                            <span class="step-circle">{{ $index + 1 }}</span>
+                            <span class="step-label">{{ step.label }}</span>
+                        </button>
+                    }
+                </div>
+
+                <div class="step-body">
+                    @if (signupStepper.selected) {
+                        <ng-container [ngTemplateOutlet]="signupStepper.selected.content"></ng-container>
+                    }
+                </div>
+
+                <div class="step-nav">
+                    <button cdkStepperPrevious [color]="colors.secondary">Back</button>
+                    @if (isSignupLastStep()) {
+                        <button [color]="colors.success">Submit</button>
+                    } @else {
+                        <button cdkStepperNext [color]="colors.primary">Next</button>
+                    }
+                    <button type="button" [color]="colors.secondary"
+                            (click)="signupStepper.reset(); resetSignupForms()">
+                        Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ 2. Linear · Vertical — checkout ============ -->
+    <div bsRow class="mb-5">
+        <div [col]>
+            <h2>Linear &middot; Vertical</h2>
+            <p class="text-body-secondary">
+                Reactive-form checkout flow. Same gating, vertical layout — headers stack and the
+                active step's body renders below its header.
+            </p>
+
+            <div cdkStepper #checkoutStepper="cdkStepper" [linear]="true" orientation="vertical" class="step-wrapper">
+                <cdk-step [stepControl]="checkoutContact" label="Contact">
+                    <bs-form>
+                        <form [formGroup]="checkoutContact">
+                            <div class="mb-2">
+                                <label class="form-label">Full name</label>
+                                <input formControlName="fullName">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Phone</label>
+                                <input formControlName="phone" type="tel">
+                            </div>
+                        </form>
+                    </bs-form>
+                </cdk-step>
+                <cdk-step [stepControl]="checkoutShipping" label="Shipping">
+                    <bs-form>
+                        <form [formGroup]="checkoutShipping">
+                            <div class="mb-2">
+                                <label class="form-label">Method</label>
+                                <select formControlName="method" class="form-select">
+                                    <option value="standard">Standard (3-5 days)</option>
+                                    <option value="express">Express (1-2 days)</option>
+                                    <option value="overnight">Overnight</option>
+                                </select>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Notes</label>
+                                <textarea formControlName="notes" rows="2"></textarea>
+                            </div>
+                        </form>
+                    </bs-form>
+                </cdk-step>
+                <cdk-step [stepControl]="checkoutPayment" label="Payment">
+                    <bs-form>
+                        <form [formGroup]="checkoutPayment">
+                            <div class="mb-2">
+                                <label class="form-label">Cardholder</label>
+                                <input formControlName="cardholder">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Card number</label>
+                                <input formControlName="cardNumber" inputmode="numeric"
+                                       placeholder="At least 12 digits">
+                            </div>
+                        </form>
+                    </bs-form>
+                </cdk-step>
+
+                @for (step of checkoutStepper.steps; track $index) {
+                    <div class="step-row"
+                         [class.step-row--last]="$index === checkoutStepper.steps.length - 1">
+                        <button cdkStepHeader type="button"
+                                class="step-header"
+                                [class.step-header--active]="checkoutStepper.selectedIndex === $index"
+                                [class.step-header--completed]="step.completed"
+                                [disabled]="checkoutStepper.linear && $index > checkoutStepper.selectedIndex && !step.completed"
+                                (click)="checkoutStepper.selectedIndex = $index">
+                            <span class="step-circle">{{ $index + 1 }}</span>
+                            <span class="step-label">{{ step.label }}</span>
+                        </button>
+                        @if (checkoutStepper.selectedIndex === $index) {
+                            <div class="step-body step-body--vertical">
+                                <ng-container [ngTemplateOutlet]="step.content"></ng-container>
+                            </div>
+                        }
+                    </div>
+                }
+
+                <div class="step-nav">
+                    <button cdkStepperPrevious [color]="colors.secondary">Back</button>
+                    @if (isCheckoutLastStep()) {
+                        <button [color]="colors.success">Place order</button>
+                    } @else {
+                        <button cdkStepperNext [color]="colors.primary">Next</button>
+                    }
+                    <button type="button" [color]="colors.secondary"
+                            (click)="checkoutStepper.reset(); resetCheckoutForms()">
+                        Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ 3. Non-linear · Horizontal — guided tour ============ -->
+    <div bsRow class="mb-5">
+        <div [col]>
+            <h2>Non-linear &middot; Horizontal</h2>
+            <p class="text-body-secondary">
+                Free navigation — click any header to jump to that step. No form validation gates progress.
+            </p>
+
+            <div cdkStepper #tourStepper="cdkStepper" [linear]="false" orientation="horizontal" class="step-wrapper">
+                <cdk-step label="Welcome">
+                    <p>Welcome to the demo. This stepper is non-linear: click any of the headers above to skip ahead.</p>
+                </cdk-step>
+                <cdk-step label="Setup">
+                    <p>The setup step would normally configure something. Here it's just static prose for the demo.</p>
+                </cdk-step>
+                <cdk-step label="Try it">
+                    <bs-alert [type]="colors.warning" class="mb-0">
+                        Try clicking on step <strong>Welcome</strong> in the header — you'll jump straight back without
+                        having to use the Back button.
+                    </bs-alert>
+                </cdk-step>
+                <cdk-step label="Done">
+                    <p>That's it. With <code>linear=false</code>, the user is in charge of their own flow.</p>
+                </cdk-step>
+
+                <div class="step-headers step-headers--horizontal">
+                    @for (step of tourStepper.steps; track $index) {
+                        <button cdkStepHeader type="button"
+                                class="step-header step-header--clickable"
+                                [class.step-header--active]="tourStepper.selectedIndex === $index"
+                                (click)="tourStepper.selectedIndex = $index">
+                            <span class="step-circle">{{ $index + 1 }}</span>
+                            <span class="step-label">{{ step.label }}</span>
+                        </button>
+                    }
+                </div>
+
+                <div class="step-body">
+                    @if (tourStepper.selected) {
+                        <ng-container [ngTemplateOutlet]="tourStepper.selected.content"></ng-container>
+                    }
+                </div>
+
+                <div class="step-nav">
+                    <button cdkStepperPrevious [color]="colors.secondary">Back</button>
+                    <button cdkStepperNext [color]="colors.primary">Next</button>
+                    <button type="button" [color]="colors.secondary" (click)="tourStepper.reset()">
+                        Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ 4. Non-linear · Vertical — settings panel ============ -->
+    <div bsRow class="mb-5">
+        <div [col]>
+            <h2>Non-linear &middot; Vertical</h2>
+            <p class="text-body-secondary">
+                Settings-style panel: click any section header to expand its content; no required order.
+            </p>
+
+            <div cdkStepper #settingsStepper="cdkStepper" [linear]="false" orientation="vertical" class="step-wrapper">
+                <cdk-step label="Profile">
+                    <p>Avatar, display name, bio.</p>
+                </cdk-step>
+                <cdk-step label="Notifications">
+                    <p>Email digest, push notifications, mention mentions.</p>
+                </cdk-step>
+                <cdk-step label="Privacy">
+                    <p>Visibility, blocking, search indexing.</p>
+                </cdk-step>
+                <cdk-step label="Account">
+                    <p>Password, two-factor auth, sessions, delete account.</p>
+                </cdk-step>
+
+                @for (step of settingsStepper.steps; track $index) {
+                    <div class="step-row"
+                         [class.step-row--last]="$index === settingsStepper.steps.length - 1">
+                        <button cdkStepHeader type="button"
+                                class="step-header step-header--clickable"
+                                [class.step-header--active]="settingsStepper.selectedIndex === $index"
+                                (click)="settingsStepper.selectedIndex = $index">
+                            <span class="step-circle">{{ $index + 1 }}</span>
+                            <span class="step-label">{{ step.label }}</span>
+                        </button>
+                        @if (settingsStepper.selectedIndex === $index) {
+                            <div class="step-body step-body--vertical">
+                                <ng-container [ngTemplateOutlet]="step.content"></ng-container>
+                            </div>
+                        }
+                    </div>
+                }
+
+                <div class="step-nav">
+                    <button cdkStepperPrevious [color]="colors.secondary">Back</button>
+                    <button cdkStepperNext [color]="colors.primary">Next</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</bs-grid>
