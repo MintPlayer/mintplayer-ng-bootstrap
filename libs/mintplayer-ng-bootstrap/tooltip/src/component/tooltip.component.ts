@@ -4,6 +4,7 @@ import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Position } from '@mintplayer/ng-bootstrap';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { TOOLTIP_CONTENT } from '../providers/tooltip-content.provider';
+import { TOOLTIP_ID } from '../providers/tooltip-id.provider';
 
 @Component({
   selector: 'bs-tooltip',
@@ -18,6 +19,7 @@ import { TOOLTIP_CONTENT } from '../providers/tooltip-content.provider';
 })
 export class BsTooltipComponent {
   template = inject<TemplateRef<any>>(TOOLTIP_CONTENT);
+  tooltipId = inject(TOOLTIP_ID);
 
   position = input<Position>('bottom');
 
