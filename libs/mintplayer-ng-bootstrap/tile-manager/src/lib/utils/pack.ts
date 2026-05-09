@@ -115,18 +115,30 @@ function firstFit(
   const cols = columnCount - size.colSpan + 1;
   if (cols < 1) return null;
 
-  return (
-    Array.from({ length: rowsToTry }, (_, r) => r + 1)
-      .flatMap((rowStart) =>
-        Array.from({ length: cols }, (_, c) => ({
-          rowStart,
-          colStart: c + 1,
-          colSpan: size.colSpan,
-          rowSpan: size.rowSpan,
-        })),
-      )
-      .find((rect) => !obstacles.some((o) => rectsOverlap(rect, o.position))) ?? null
-  );
+  // Imperative loops here are deliberate — this runs on every pointermove
+  // during a drag (live reflow) and the array-allocation patterns previously
+  // used here generated GC pressure visible as drag jank.
+  for (let rowStart = 1; rowStart <= rowsToTry; rowStart++) {
+    for (let c = 0; c < cols; c++) {
+      const colStart = c + 1;
+      let collides = false;
+      for (let i = 0; i < obstacles.length; i++) {
+        if (
+          rectsOverlap(
+            { rowStart, colStart, colSpan: size.colSpan, rowSpan: size.rowSpan },
+            obstacles[i].position,
+          )
+        ) {
+          collides = true;
+          break;
+        }
+      }
+      if (!collides) {
+        return { rowStart, colStart, colSpan: size.colSpan, rowSpan: size.rowSpan };
+      }
+    }
+  }
+  return null;
 }
 
 function compactStable(
@@ -177,12 +189,16 @@ function compactOnce(
 
 function slideUp(pos: TilePosition, others: ReadonlyArray<Placement>): TilePosition {
   if (pos.rowStart <= 1) return pos;
-  const target =
-    Array.from({ length: pos.rowStart - 1 }, (_, i) => i + 1).find(
-      (rowStart) =>
-        !others.some((o) =>
-          rectsOverlap({ ...pos, rowStart }, o.position),
-        ),
-    ) ?? null;
-  return target !== null ? { ...pos, rowStart: target } : pos;
+  // Same hot path as firstFit — keep imperative for GC-pressure reasons.
+  for (let rowStart = 1; rowStart < pos.rowStart; rowStart++) {
+    let collides = false;
+    for (let i = 0; i < others.length; i++) {
+      if (rectsOverlap({ ...pos, rowStart }, others[i].position)) {
+        collides = true;
+        break;
+      }
+    }
+    if (!collides) return { ...pos, rowStart };
+  }
+  return pos;
 }

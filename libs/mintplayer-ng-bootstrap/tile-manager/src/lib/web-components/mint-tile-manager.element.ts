@@ -114,6 +114,11 @@ export class MintTileManagerElement extends LitElement {
   private hostResizeObserver: ResizeObserver | null = null;
   private flipPreviousRects: Map<string, DOMRect> = new Map();
 
+  // Cached layout metrics. Refreshed lazily in updated()/firstUpdated() and on
+  // ResizeObserver ticks — never from render(), so the per-tile pointer-move
+  // path stays free of getComputedStyle / getBoundingClientRect calls.
+  private cellMetrics = { width: 0, height: 0, gapX: 0, gapY: 0 };
+
   // Bound handlers — created once so add/remove pair correctly.
   private readonly onWindowPointerMove = (e: PointerEvent) => this.handlePointerMove(e);
   private readonly onWindowPointerUp = (e: PointerEvent) => this.handlePointerUp(e);
@@ -124,19 +129,23 @@ export class MintTileManagerElement extends LitElement {
   };
 
   override render(): TemplateResult {
-    this.effectiveColumnCount = this.computeEffectiveColumnCount();
     const layoutSource = this.previewLayout ?? this.tiles.map((t) => ({ id: t.id, position: t.position }));
     const tileById = new Map(this.tiles.map((t) => [t.id, t]));
 
     const gridStyle = this.computeGridStyle();
 
+    // ARIA grid hierarchy is grid > row > gridcell. A single role="row"
+    // wrapper with display: contents lets us satisfy that without disturbing
+    // the CSS Grid placement of the gridcell children.
     return html`
       <div class="tile-grid" role="grid" aria-label=${this.label ?? nothing} style=${gridStyle}>
-        ${layoutSource.map((entry) => {
-          const tile = tileById.get(entry.id);
-          if (!tile) return nothing;
-          return this.renderTile(tile, entry.position);
-        })}
+        <div role="row" style="display: contents;">
+          ${layoutSource.map((entry) => {
+            const tile = tileById.get(entry.id);
+            if (!tile) return nothing;
+            return this.renderTile(tile, entry.position);
+          })}
+        </div>
       </div>
       <div class="tile-grid__live-region" aria-live="polite" aria-atomic="true">${this.liveRegionMessage}</div>
     `;
@@ -207,57 +216,53 @@ export class MintTileManagerElement extends LitElement {
     ].join('; ');
   }
 
-  private computeEffectiveColumnCount(): number {
-    if (this.columnCount && this.columnCount > 0) return this.columnCount;
+  /**
+   * Refresh the cached layout metrics by reading layout / computed-style state
+   * once. Called from firstUpdated, the ResizeObserver tick, and updated()
+   * when an input that affects metrics changes — never from render().
+   */
+  private updateLayoutCache(): void {
     const grid = this.shadowRoot?.querySelector<HTMLElement>('.tile-grid');
     if (!grid) {
-      // First render — best guess from inputs; will be corrected after layout.
-      return 1;
+      this.effectiveColumnCount =
+        this.columnCount && this.columnCount > 0 ? this.columnCount : 1;
+      return;
     }
     const cs = getComputedStyle(grid);
-    const tracks = cs.gridTemplateColumns.split(/\s+/).filter(Boolean);
-    return Math.max(1, tracks.length);
+    if (this.columnCount && this.columnCount > 0) {
+      this.effectiveColumnCount = this.columnCount;
+    } else {
+      const tracks = cs.gridTemplateColumns.split(/\s+/).filter(Boolean);
+      this.effectiveColumnCount = Math.max(1, tracks.length);
+    }
+    const rect = grid.getBoundingClientRect();
+    const cols = this.effectiveColumnCount;
+    const gapX = parseFloat(cs.columnGap) || 0;
+    const gapY = parseFloat(cs.rowGap) || 0;
+    const width = (rect.width - (cols - 1) * gapX) / cols;
+    const height = parseFloat(cs.gridAutoRows) || rect.width / cols;
+    this.cellMetrics = { width, height, gapX, gapY };
   }
 
   private computeActiveTransform(id: string): string | null {
     const g = this.gestureState;
-    if (g.kind === 'drag' && g.tileId === id) {
-      // Pointer-pixel-precise translate over the snapped grid cell.
-      const tile = this.tiles.find((t) => t.id === id);
-      if (!tile) return null;
-      const grid = this.shadowRoot?.querySelector<HTMLElement>('.tile-grid');
-      if (!grid) return null;
-      const cell = this.cellSize(grid);
-      const snapped = g.currentRect;
-      const pointerOffset = g.pointerOffset;
-      const pointer = this.lastPointerPosition;
-      if (!pointer) return null;
-      const gridRect = grid.getBoundingClientRect();
-      // Where the tile *should* be visually (pointer minus offset, in grid-relative px)
-      const desiredLeft = pointer.x - gridRect.left - pointerOffset.dx;
-      const desiredTop = pointer.y - gridRect.top - pointerOffset.dy;
-      // Where the snapped cell is (in grid-relative px)
-      const snappedLeft = (snapped.colStart - 1) * (cell.width + cell.gapX);
-      const snappedTop = (snapped.rowStart - 1) * (cell.height + cell.gapY);
-      const dx = Math.round(desiredLeft - snappedLeft);
-      const dy = Math.round(desiredTop - snappedTop);
-      return `translate(${dx}px, ${dy}px)`;
-    }
-    return null;
-  }
-
-  private cellSize(grid: HTMLElement): { width: number; height: number; gapX: number; gapY: number } {
-    const cs = getComputedStyle(grid);
-    const tracks = cs.gridTemplateColumns.split(/\s+/).filter(Boolean);
-    const cols = Math.max(1, tracks.length);
-    const rect = grid.getBoundingClientRect();
-    const gapX = parseFloat(cs.columnGap) || 0;
-    const gapY = parseFloat(cs.rowGap) || 0;
-    const width = (rect.width - (cols - 1) * gapX) / cols;
-    // Height of a grid auto-row: parse computed gridAutoRows.
-    const heightStr = cs.gridAutoRows;
-    const height = parseFloat(heightStr) || rect.width / cols; // crude fallback
-    return { width, height, gapX, gapY };
+    if (g.kind !== 'drag' || g.tileId !== id) return null;
+    const pointer = this.lastPointerPosition;
+    if (!pointer) return null;
+    const grid = this.shadowRoot?.querySelector<HTMLElement>('.tile-grid');
+    if (!grid) return null;
+    // Cached cellMetrics is stale by at most one frame after a resize — fine
+    // for the visual translate. gridRect read here is unavoidable: we need
+    // the live grid origin to convert pointer (viewport coords) into
+    // grid-relative space. One read per render, not one per tile.
+    const gridRect = grid.getBoundingClientRect();
+    const cell = this.cellMetrics;
+    const snapped = g.currentRect;
+    const desiredLeft = pointer.x - gridRect.left - g.pointerOffset.dx;
+    const desiredTop = pointer.y - gridRect.top - g.pointerOffset.dy;
+    const snappedLeft = (snapped.colStart - 1) * (cell.width + cell.gapX);
+    const snappedTop = (snapped.rowStart - 1) * (cell.height + cell.gapY);
+    return `translate(${Math.round(desiredLeft - snappedLeft)}px, ${Math.round(desiredTop - snappedTop)}px)`;
   }
 
   // ---------------- Lifecycle ----------------
@@ -280,6 +285,9 @@ export class MintTileManagerElement extends LitElement {
   }
 
   protected override firstUpdated(): void {
+    // Seed the layout cache once the shadow DOM is in place. Subsequent
+    // refreshes happen on host resize and on relevant property changes.
+    this.updateLayoutCache();
     let scheduled = false;
     this.hostResizeObserver = new ResizeObserver(() => {
       if (scheduled) return;
@@ -289,10 +297,7 @@ export class MintTileManagerElement extends LitElement {
       // completed with undelivered notifications" warnings.
       requestAnimationFrame(() => {
         scheduled = false;
-        const next = this.computeEffectiveColumnCount();
-        if (next !== this.effectiveColumnCount) {
-          this.effectiveColumnCount = next;
-        }
+        this.updateLayoutCache();
       });
     });
     this.hostResizeObserver.observe(this);
@@ -321,7 +326,17 @@ export class MintTileManagerElement extends LitElement {
     });
   }
 
-  protected override updated(_changed: PropertyValues): void {
+  protected override updated(changed: PropertyValues): void {
+    // Refresh cached layout metrics when an input that determines them changes.
+    // Reading layout in updated() is safe — the new style is already applied.
+    if (
+      changed.has('columnCount') ||
+      changed.has('minColumnWidth') ||
+      changed.has('minRowHeight') ||
+      changed.has('gap')
+    ) {
+      this.updateLayoutCache();
+    }
     if (!this.shouldAnimate() || this.flipPreviousRects.size === 0) return;
     const grid = this.shadowRoot?.querySelector<HTMLElement>('.tile-grid');
     if (!grid) return;
@@ -498,9 +513,12 @@ export class MintTileManagerElement extends LitElement {
 
   private beginDragFromTouchArm(tile: MintTile, startX: number, startY: number, pointerId: number): void {
     // Synthesize the same begin call as for mouse, with a fake pointer event.
+    // Refresh the layout cache once at gesture start — guarantees fresh metrics
+    // even if the grid has resized since the last cache tick.
+    this.updateLayoutCache();
     const grid = this.shadowRoot?.querySelector<HTMLElement>('.tile-grid');
     if (!grid) return;
-    const cell = this.cellSize(grid);
+    const cell = this.cellMetrics;
     const gridRect = grid.getBoundingClientRect();
     const tileLeft = gridRect.left + (tile.position.colStart - 1) * (cell.width + cell.gapX);
     const tileTop = gridRect.top + (tile.position.rowStart - 1) * (cell.height + cell.gapY);
@@ -519,9 +537,10 @@ export class MintTileManagerElement extends LitElement {
   }
 
   private beginDrag(event: PointerEvent, tile: MintTile): void {
+    this.updateLayoutCache();
     const grid = this.shadowRoot?.querySelector<HTMLElement>('.tile-grid');
     if (!grid) return;
-    const cell = this.cellSize(grid);
+    const cell = this.cellMetrics;
     const gridRect = grid.getBoundingClientRect();
     const tileLeft = gridRect.left + (tile.position.colStart - 1) * (cell.width + cell.gapX);
     const tileTop = gridRect.top + (tile.position.rowStart - 1) * (cell.height + cell.gapY);
@@ -619,7 +638,7 @@ export class MintTileManagerElement extends LitElement {
     if (!rect) return;
     g.currentRect = rect;
 
-    const cols = this.computeEffectiveColumnCount();
+    const cols = this.effectiveColumnCount;
     const result = pack(
       this.tiles.map((t) => ({ id: t.id, position: t.position, locked: t.disableMove })),
       { id: tile.id, rect },
@@ -634,8 +653,8 @@ export class MintTileManagerElement extends LitElement {
   private computeDragRect(g: Extract<GestureState, { kind: 'drag' }>, tile: MintTile): GridRect | null {
     const grid = this.shadowRoot?.querySelector<HTMLElement>('.tile-grid');
     if (!grid) return null;
-    const cell = this.cellSize(grid);
-    const cols = this.computeEffectiveColumnCount();
+    const cell = this.cellMetrics;
+    const cols = this.effectiveColumnCount;
     const pointer = this.lastPointerPosition;
     if (!pointer) return null;
     const gridRect = grid.getBoundingClientRect();
@@ -656,10 +675,8 @@ export class MintTileManagerElement extends LitElement {
     g: Extract<GestureState, { kind: 'resize' }>,
     tile: MintTile,
   ): GridRect | null {
-    const grid = this.shadowRoot?.querySelector<HTMLElement>('.tile-grid');
-    if (!grid) return null;
-    const cell = this.cellSize(grid);
-    const cols = this.computeEffectiveColumnCount();
+    const cell = this.cellMetrics;
+    const cols = this.effectiveColumnCount;
     const pointer = this.lastPointerPosition;
     if (!pointer) return null;
     const dx = pointer.x - g.startPointer.x;
@@ -824,7 +841,7 @@ export class MintTileManagerElement extends LitElement {
   }
 
   private applyKeyboardStep(tile: MintTile, key: ArrowKey, isResize: boolean): void {
-    const cols = this.computeEffectiveColumnCount();
+    const cols = this.effectiveColumnCount;
     const dx = key === 'ArrowLeft' ? -1 : key === 'ArrowRight' ? 1 : 0;
     const dy = key === 'ArrowUp' ? -1 : key === 'ArrowDown' ? 1 : 0;
     const newRect: GridRect = isResize
