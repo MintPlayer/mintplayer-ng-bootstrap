@@ -54,10 +54,12 @@ Replace the dormant Cypress e2e setup in `apps/ng-bootstrap-demo-e2e` with `@nx/
 - [x] Flip `nx.json` `generators."@nx/angular:application".e2eTestRunner` from `cypress` to `playwright`.
 - [x] Install Chromium + Firefox browser binaries locally (`npx playwright install chromium firefox`).
 
-### Milestone 2: Scaffold Playwright project
-- [ ] Write `playwright.config.ts` with `webServer`, `baseURL`, `projects: [chromium, firefox]`.
-- [ ] Rewrite `project.json` with `@nx/playwright:playwright` executor and `dependsOn: ['ng-bootstrap-demo:build']`.
-- [ ] Update `tsconfig.json` types/include for Playwright.
+### Milestone 2: Scaffold Playwright project ✅
+- [x] Write `playwright.config.ts` with `webServer`, `baseURL`, `projects: [chromium, firefox]`.
+- [x] Rewrite `project.json` with `@nx/playwright:playwright` executor and `dependsOn: ['ng-bootstrap-demo:build']`.
+- [x] Update `tsconfig.json` types/include for Playwright.
+- [x] Add `.gitignore` for Playwright artifacts (`test-results/`, `playwright-report/`, `blob-report/`, `playwright/.cache/`).
+- [x] `webServer` runs the built SSR server (`node dist/apps/ng-bootstrap-demo/server/server.mjs`) — tests against the actual prod artifact, not just the prod-mode compiler.
 
 ### Milestone 3: Author the six specs
 - [ ] `smoke.spec.ts`

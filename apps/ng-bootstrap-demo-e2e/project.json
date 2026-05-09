@@ -1,24 +1,18 @@
 {
   "name": "ng-bootstrap-demo-e2e",
-  "$schema": "..\\..\\node_modules\\nx\\schemas\\project-schema.json",
-  "sourceRoot": "apps/ng-bootstrap-demo-e2e/src",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/ng-bootstrap-demo-e2e",
   "projectType": "application",
   "targets": {
     "e2e": {
-      "executor": "@nx/cypress:cypress",
+      "executor": "@nx/playwright:playwright",
       "options": {
-        "cypressConfig": "apps/ng-bootstrap-demo-e2e/cypress.json",
-        "devServerTarget": "ng-bootstrap-demo:serve:development"
+        "config": "apps/ng-bootstrap-demo-e2e/playwright.config.ts"
       },
-      "configurations": {
-        "production": {
-          "devServerTarget": "ng-bootstrap-demo:serve:production"
-        }
-      }
+      "dependsOn": ["ng-bootstrap-demo:build"]
     },
     "lint": {
-      "executor": "@nx/eslint:lint",
-      "outputs": ["{options.outputFile}"]
+      "executor": "@nx/eslint:lint"
     }
   },
   "tags": [],
