@@ -26,7 +26,7 @@ export class BsComboboxDirective {
   readonly activeDescendant = input<string | null>(null);
 
   readonly expanded = computed(() => this.dropdown?.isOpen() ?? false);
-  readonly controls = computed(() => this.dropdown?.menuId ?? null);
+  readonly controls = computed(() => this.dropdown?.menuId() || null);
   readonly resolvedActiveDescendant = computed(() =>
     this.activeDescendant() ?? this.dropdown?.rovingFocus()?.activeDescendantId() ?? null);
 

@@ -6,7 +6,7 @@ import { BsDropdownDirective } from '../dropdown/dropdown.directive';
   host: {
     '[attr.aria-haspopup]': 'dropdown.popupRole()',
     '[attr.aria-expanded]': 'dropdown.isOpen()',
-    '[attr.aria-controls]': 'dropdown.menuId',
+    '[attr.aria-controls]': 'dropdown.menuId() || null',
     '(click)': 'onClick()',
   },
 })

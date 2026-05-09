@@ -1,4 +1,4 @@
-import { Component, computed, ElementRef, inject, input, ChangeDetectionStrategy } from '@angular/core';
+import { afterNextRender, Component, computed, ElementRef, inject, input, ChangeDetectionStrategy } from '@angular/core';
 import { BsDropdownDirective } from '@mintplayer/ng-bootstrap/dropdown';
 import { BsIdService } from '@mintplayer/ng-bootstrap/a11y';
 
@@ -11,7 +11,6 @@ import { BsIdService } from '@mintplayer/ng-bootstrap/a11y';
     '[attr.role]': 'itemRole()',
     '[attr.aria-selected]': 'ariaSelected()',
     '[attr.aria-disabled]': 'disabled() ? "true" : null',
-    '[attr.id]': 'itemId',
   },
 })
 export class BsDropdownItemComponent {
@@ -30,6 +29,21 @@ export class BsDropdownItemComponent {
     return this.isSelected() ? 'true' : 'false';
   });
 
-  readonly itemId = this.elementRef.nativeElement.id
-    || this.ids.next('bs-dropdown-item');
+  /**
+   * Resolved after first render so static `id="…"` attributes set by the consumer
+   * and any sibling host bindings have applied first. Read-only access for any
+   * other directive on the same element (e.g. BsRovingFocusItem) that needs a
+   * stable target id for aria-activedescendant.
+   */
+  get itemId(): string {
+    return this.elementRef.nativeElement.id;
+  }
+
+  constructor() {
+    afterNextRender(() => {
+      if (!this.elementRef.nativeElement.id) {
+        this.elementRef.nativeElement.id = this.ids.next('bs-dropdown-item');
+      }
+    });
+  }
 }

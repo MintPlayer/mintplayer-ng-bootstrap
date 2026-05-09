@@ -20,7 +20,7 @@ export class BsDropdownMenuComponent implements AfterViewInit {
   dropdownWith = signal<string | null>(null);
 
   readonly menuRole = computed(() => this.bsDropdown?.popupRole() ?? null);
-  readonly menuId = computed(() => this.bsDropdown?.menuId ?? null);
+  readonly menuId = computed(() => this.bsDropdown?.menuId() || null);
 
   onResize() {
     if ((typeof window !== 'undefined') && this.bsDropdown && this.bsDropdown.sameDropdownWidth()) {

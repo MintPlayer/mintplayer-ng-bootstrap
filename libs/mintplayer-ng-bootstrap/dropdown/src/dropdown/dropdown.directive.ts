@@ -1,4 +1,4 @@
-import { contentChild, Directive, ElementRef, inject, input, model } from '@angular/core';
+import { afterNextRender, contentChild, Directive, ElementRef, inject, input, model, signal } from '@angular/core';
 import { BS_DEVELOPMENT } from '@mintplayer/ng-bootstrap';
 import { BsIdService, BsRovingFocusDirective } from '@mintplayer/ng-bootstrap/a11y';
 import { BsDropdownMenuDirective } from '../dropdown-menu/dropdown-menu.directive';
@@ -30,9 +30,16 @@ export class BsDropdownDirective {
   isOpen = model<boolean>(false);
   readonly popupRole = input<BsDropdownPopupRole>('menu');
 
-  readonly menuId = this.elementRef.nativeElement.id
-    ? `${this.elementRef.nativeElement.id}-menu`
-    : this.ids.next('bs-dropdown-menu');
+  /** Reactive id used for the menu's host id and for the toggle's aria-controls. Empty until afterNextRender resolves the host's static id (or generates one), so sibling host bindings on the wrapper element get a chance to land first. */
+  private _menuId = signal<string>('');
+  readonly menuId = this._menuId.asReadonly();
+
+  constructor() {
+    afterNextRender(() => {
+      const hostId = this.elementRef.nativeElement.id;
+      this._menuId.set(hostId ? `${hostId}-menu` : this.ids.next('bs-dropdown-menu'));
+    });
+  }
 
   onBlur() {
     if (this.closeOnClickOutside() && !this.bsDevelopment) {
