@@ -1,0 +1,115 @@
+<div class="container py-3">
+  <h1>Tile manager</h1>
+  <p class="text-muted">
+    Drag a tile by its header to move it; drag a side / bottom / corner adorner
+    to resize. Neighbouring tiles get pushed and gravity-compacted upward in real
+    time. Layout auto-persists to <code>localStorage</code> — reload to verify.
+  </p>
+
+  <bs-form class="my-3">
+    <bs-grid>
+      <div bsRow>
+        <div [md]="3" class="mb-3">
+          <label class="form-label">Columns</label>
+          <bs-select [ngModel]="columnCount() ?? ''" (ngModelChange)="columnCount.set($event === '' ? null : +$event)">
+            <option value="">auto-fit</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="6">6</option>
+          </bs-select>
+        </div>
+        <div [md]="3" class="mb-3">
+          <label class="form-label">Drag mode</label>
+          <bs-select [ngModel]="dragMode()" (ngModelChange)="dragMode.set($event)">
+            <option value="header">header</option>
+            <option value="tile">tile (whole)</option>
+            <option value="off">off</option>
+          </bs-select>
+        </div>
+        <div [md]="3" class="mb-3">
+          <label class="form-label">Resize mode</label>
+          <bs-select [ngModel]="resizeMode()" (ngModelChange)="resizeMode.set($event)">
+            <option value="hover">hover</option>
+            <option value="always">always</option>
+            <option value="off">off</option>
+          </bs-select>
+        </div>
+        <div [md]="3" class="mb-3">
+          <label class="form-label">Gap</label>
+          <bs-select [ngModel]="gap()" (ngModelChange)="gap.set($event)">
+            <option value="0.25rem">tight</option>
+            <option value="0.5rem">small</option>
+            <option value="0.75rem">comfortable</option>
+            <option value="1.25rem">spacious</option>
+          </bs-select>
+        </div>
+        <div [md]="3" class="mb-3 d-flex align-items-end">
+          <bs-toggle-button [type]="'checkbox'" [ngModel]="animateReflow()" (ngModelChange)="animateReflow.set($event)">
+            Animate reflow
+          </bs-toggle-button>
+        </div>
+      </div>
+    </bs-grid>
+  </bs-form>
+
+  <div class="mb-2">
+    <strong>Lock tiles:</strong>
+    @for (tile of tiles(); track tile.id) {
+      <button
+        type="button"
+        class="btn btn-sm me-1 mb-1"
+        [class.btn-warning]="tile.locked"
+        [class.btn-outline-secondary]="!tile.locked"
+        (click)="toggleLocked(tile.id)"
+      >
+        {{ tile.locked ? '🔒 ' : '' }}{{ tile.title }}
+      </button>
+    }
+  </div>
+
+  <bs-tile-manager
+    [columnCount]="columnCount()"
+    [minColumnWidth]="minColumnWidth()"
+    [minRowHeight]="minRowHeight()"
+    [gap]="gap()"
+    [dragMode]="dragMode()"
+    [resizeMode]="resizeMode()"
+    [animateReflow]="animateReflow()"
+    [label]="'Demo dashboard'"
+    (layoutChange)="onLayoutChange($event)"
+    (gestureBlocked)="onGestureBlocked($event)"
+  >
+    @for (tile of tiles(); track tile.id) {
+      <bs-tile
+        [id]="tile.id"
+        [position]="tile.position"
+        [disableMove]="tile.locked"
+        [disableResize]="tile.locked"
+        [label]="tile.title"
+        (positionChange)="onTilePositionChange(tile.id, $event)"
+      >
+        <bs-tile-header>{{ tile.title }}</bs-tile-header>
+        <div class="tile-body">{{ tile.body }}</div>
+      </bs-tile>
+    }
+  </bs-tile-manager>
+
+  <div class="row g-3 mt-3">
+    <div class="col-md-6">
+      <div class="d-flex gap-2 mb-2">
+        <button type="button" class="btn btn-primary btn-sm" (click)="saveNow()">Save to localStorage</button>
+        <button type="button" class="btn btn-outline-danger btn-sm" (click)="reset()">Reset</button>
+      </div>
+      @if (latestBlocked(); as blocked) {
+        <div class="alert alert-warning py-2">
+          Last gesture blocked: <code>{{ blocked.id }}</code> — <code>{{ blocked.reason }}</code>
+        </div>
+      }
+    </div>
+    <div class="col-md-6">
+      <strong class="d-block mb-1">Live snapshot</strong>
+      <pre class="snapshot-pre"><code>{{ snapshotJson() }}</code></pre>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,16 @@
+.tile-body {
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  color: var(--bs-secondary-color, #6c757d);
+}
+
+.snapshot-pre {
+  background: var(--bs-secondary-bg, #f8f9fa);
+  border: 1px solid var(--bs-border-color, #dee2e6);
+  border-radius: 0.375rem;
+  padding: 0.75rem;
+  font-size: 0.75rem;
+  max-height: 18rem;
+  overflow: auto;
+  margin: 0;
+}

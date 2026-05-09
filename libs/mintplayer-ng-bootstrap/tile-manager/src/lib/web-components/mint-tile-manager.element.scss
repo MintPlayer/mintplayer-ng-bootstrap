@@ -1,0 +1,194 @@
+:host {
+  display: block;
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  contain: layout paint style;
+  --bs-tile-radius: 0.5rem;
+  --bs-tile-bg: var(--bs-body-bg, #fff);
+  --bs-tile-border: var(--bs-border-color, #dee2e6);
+  --bs-tile-shadow: var(--bs-box-shadow-sm, 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075));
+  --bs-tile-handle-color: var(--bs-secondary, #6c757d);
+  --bs-tile-blocked-color: var(--bs-danger, #dc3545);
+}
+
+.tile-grid {
+  display: grid;
+  grid-auto-rows: var(--mp-tile-row-height, 8rem);
+  gap: var(--mp-tile-gap, 0.5rem);
+  width: 100%;
+  position: relative;
+}
+
+.tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--bs-tile-bg);
+  border: 1px solid var(--bs-tile-border);
+  border-radius: var(--bs-tile-radius);
+  box-shadow: var(--bs-tile-shadow);
+  overflow: hidden;
+  min-width: 0;
+  min-height: 0;
+  transition: transform 150ms cubic-bezier(0.2, 0, 0, 1);
+  will-change: transform;
+}
+
+.tile[data-dragging='true'] {
+  z-index: 5;
+  cursor: grabbing;
+  box-shadow: var(--bs-box-shadow, 0 0.5rem 1rem rgba(0, 0, 0, 0.15));
+  transition: none;
+}
+
+.tile[data-resizing='true'] {
+  z-index: 4;
+  transition: none;
+}
+
+.tile[data-blocked='true'] {
+  outline: 2px solid var(--bs-tile-blocked-color);
+  outline-offset: -2px;
+  animation: tile-shake 200ms ease-in-out;
+}
+
+@keyframes tile-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+
+.tile[data-pressing='true'] {
+  filter: brightness(0.96);
+  transition: filter 100ms ease-out;
+}
+
+.tile__header-shell {
+  flex: 0 0 auto;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  cursor: grab;
+}
+
+.tile[data-drag-mode='off'] .tile__header-shell,
+.tile[data-locked-move='true'] .tile__header-shell {
+  cursor: default;
+}
+
+.tile__content-shell {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+.tile__resize-side,
+.tile__resize-bottom,
+.tile__resize-corner {
+  position: absolute;
+  z-index: 2;
+  background: transparent;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+}
+
+.tile:hover .tile__resize-side,
+.tile:hover .tile__resize-bottom,
+.tile:hover .tile__resize-corner,
+:host([resize-mode='always']) .tile__resize-side,
+:host([resize-mode='always']) .tile__resize-bottom,
+:host([resize-mode='always']) .tile__resize-corner {
+  opacity: 1;
+}
+
+@media (pointer: coarse) {
+  .tile__resize-side,
+  .tile__resize-bottom,
+  .tile__resize-corner {
+    opacity: 1;
+  }
+}
+
+.tile__resize-side {
+  right: -2px;
+  top: 25%;
+  bottom: 25%;
+  width: 6px;
+  cursor: ew-resize;
+}
+
+.tile__resize-bottom {
+  left: 25%;
+  right: 25%;
+  bottom: -2px;
+  height: 6px;
+  cursor: ns-resize;
+}
+
+.tile__resize-corner {
+  right: -2px;
+  bottom: -2px;
+  width: 14px;
+  height: 14px;
+  cursor: nwse-resize;
+}
+
+.tile__resize-corner::before {
+  content: '';
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--bs-tile-handle-color);
+  border-bottom: 2px solid var(--bs-tile-handle-color);
+  border-bottom-right-radius: 2px;
+}
+
+:host([resize-mode='off']) .tile__resize-side,
+:host([resize-mode='off']) .tile__resize-bottom,
+:host([resize-mode='off']) .tile__resize-corner {
+  display: none;
+}
+
+.tile[data-locked-resize='true'] .tile__resize-side,
+.tile[data-locked-resize='true'] .tile__resize-bottom,
+.tile[data-locked-resize='true'] .tile__resize-corner {
+  display: none;
+}
+
+.tile-grid__live-region {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile {
+    transition: none !important;
+  }
+  .tile[data-blocked='true'] {
+    animation: none;
+  }
+}
+
+:host(:focus-visible) {
+  outline: 2px solid var(--bs-primary, #0d6efd);
+  outline-offset: 2px;
+}
+
+.tile:focus-visible {
+  outline: 2px solid var(--bs-primary, #0d6efd);
+  outline-offset: -2px;
+}
