@@ -1,9 +1,10 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, effect, ElementRef, input, model, output, signal, TemplateRef, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { BsRovingFocusDirective, BsRovingFocusItemDirective } from '@mintplayer/ng-bootstrap/a11y';
 import { HasId } from '@mintplayer/ng-bootstrap/has-id';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
-import { BsDropdownDirective, BsDropdownMenuDirective } from '@mintplayer/ng-bootstrap/dropdown';
+import { BsComboboxDirective, BsDropdownDirective, BsDropdownMenuDirective } from '@mintplayer/ng-bootstrap/dropdown';
 import { BsDropdownMenuComponent, BsDropdownItemComponent } from '@mintplayer/ng-bootstrap/dropdown-menu';
 import { BsInListPipe } from '@mintplayer/ng-bootstrap/in-list';
 
@@ -19,6 +20,9 @@ import { BsInListPipe } from '@mintplayer/ng-bootstrap/in-list';
     BsDropdownMenuDirective,
     BsDropdownMenuComponent,
     BsDropdownItemComponent,
+    BsComboboxDirective,
+    BsRovingFocusDirective,
+    BsRovingFocusItemDirective,
     BsInListPipe,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -37,6 +41,7 @@ export class BsSelect2Component<T extends HasId<U>, U> {
   readonly defaultItemTemplate = viewChild.required<TemplateRef<any>>('defaultItemTemplate');
   readonly searchBox = viewChild.required<ElementRef<HTMLInputElement>>('searchBox');
   readonly itemsBox = viewChild.required<ElementRef<HTMLDivElement>>('itemsBox');
+  readonly rovingFocus = viewChild(BsRovingFocusDirective);
   searchterm = model('');
   provideSuggestions = output<string>();
   isFocused = signal(false);
@@ -82,6 +87,15 @@ export class BsSelect2Component<T extends HasId<U>, U> {
     }
 
     this.searchBox().nativeElement.focus();
+  }
+
+  onActivate() {
+    const rf = this.rovingFocus();
+    if (!rf) return;
+    const suggestion = this.suggestions()[rf.activeIndex()];
+    if (suggestion) {
+      this.onSuggestionClicked(suggestion);
+    }
   }
 
   onRemoveItem(item: T, event: MouseEvent) {
