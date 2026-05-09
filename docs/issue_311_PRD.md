@@ -17,7 +17,7 @@ Add a new demo page under `Additional samples → Stepper` in `apps/ng-bootstrap
 ## Goals & Objectives
 
 ### Primary Goals
-- Close the documentation gap: visitors evaluating `@mintplayer/ng-bootstrap` can see CDK stepper composed with the library's chrome (`bs-button`, `bs-grid`, `bs-form-control`, `bs-alert`).
+- Close the documentation gap: visitors evaluating `@mintplayer/ng-bootstrap` can see CDK stepper composed with the library's chrome (`BsButtonTypeDirective`, `bs-grid`, `bs-form-control`, `bs-alert`).
 - Show all four canonical CDK stepper configurations in one place, with realistic content.
 - Link out to the upstream Angular CDK stepper docs so a reader can drill into the API reference without leaving the page.
 
@@ -41,7 +41,7 @@ Add a new demo page under `Additional samples → Stepper` in `apps/ng-bootstrap
   - Non-linear · Vertical (free navigation, no forms)
 - [ ] **FR-4**: Linear examples use `ReactiveFormsModule` with `[stepControl]` bound to a `FormGroup`. Next button is disabled until the current step's form is valid.
 - [ ] **FR-5**: Non-linear examples allow clicking any step header to jump to that step.
-- [ ] **FR-6**: Each example has Back, Next, and Reset controls rendered as `<button bsButton>`. Last step shows Submit instead of Next on the linear examples.
+- [ ] **FR-6**: Each example has Back, Next, and Reset controls rendered as plain `<button>` elements with `[color]` applied via `BsButtonTypeDirective` (imported from `@mintplayer/ng-bootstrap/button-type`). Last step shows Submit instead of Next on the linear examples.
 - [ ] **FR-7**: Step headers render as numbered circles + label, with visual states for `active` and `completed`. Styling is local to `stepper.component.scss` using Bootstrap utility classes.
 - [ ] **FR-8**: A `<bs-alert [type]="colors.info">` near the top of the page contains a hyperlink labelled "Angular CDK stepper documentation" pointing to the upstream Angular CDK stepper docs (`https://material.angular.dev/cdk/stepper/overview`), opening in a new tab.
 - [ ] **FR-9**: `stepper.component.spec.ts` covers at minimum a `should create` test, mirroring `drag-drop.component.spec.ts`.
@@ -80,7 +80,7 @@ Add a new demo page under `Additional samples → Stepper` in `apps/ng-bootstrap
 
 ## Open Questions
 
-> None at PRD draft time. All design decisions were resolved in the planning grill (4 examples covering the 2×2 cross; reactive forms on linear examples; Bootstrap utilities + `bsButton`; alert with docs link).
+> None at PRD draft time. All design decisions were resolved in the planning grill (4 examples covering the 2×2 cross; reactive forms on linear examples; Bootstrap utilities + `BsButtonTypeDirective`; alert with docs link).
 
 ---
 

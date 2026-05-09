@@ -17,7 +17,7 @@ Add a new demo page under `Additional samples → Stepper` that showcases Angula
 The demo app's "Additional samples" menu lists Collapse, FocusTrap, Drag-drop, Select2 drag-drop, QR-code viewer, Swiper, and Anchor scrolling — but no stepper. Users evaluating the library can see CDK Drag-Drop integrated but have no example for CDK Stepper.
 
 ### Expected Behavior
-A new menu entry `Additional samples → Stepper` opens `/additional-samples/stepper`. The page shows four runnable stepper instances covering linear/non-linear and horizontal/vertical, each styled with Bootstrap utilities + `bsButton`, plus an info alert linking to the Angular CDK stepper docs.
+A new menu entry `Additional samples → Stepper` opens `/additional-samples/stepper`. The page shows four runnable stepper instances covering linear/non-linear and horizontal/vertical, each styled with Bootstrap utilities and `BsButtonTypeDirective` (`[color]` on plain `<button>`), plus an info alert linking to the Angular CDK stepper docs.
 
 ### Impact
 Closes a documentation gap. Demonstrates that the Bootstrap library composes cleanly with Angular CDK primitives (precedent: drag-drop). No runtime impact on consumers.
@@ -39,13 +39,14 @@ Closes a documentation gap. Demonstrates that the Bootstrap library composes cle
 ### Dependencies
 - `@angular/cdk` (v21.2.9, already installed) — uses the `@angular/cdk/stepper` entry point.
 - `@angular/forms` (v21.2.9, already installed) — `ReactiveFormsModule`, `FormGroup`, `FormControl`, `Validators`.
-- `@mintplayer/ng-bootstrap/grid`, `/button`, `/alert`, `/form` — already used by sibling demos.
+- `@mintplayer/ng-bootstrap/grid`, `/button-type` (`BsButtonTypeDirective` — applied as `[color]` on a plain `<button>`), `/alert`, `/form` — already used by sibling demos.
 - No new packages.
 
 ### Architecture Considerations
 - Match the existing demo conventions seen in `swiper.component.ts` and `drag-drop.component.ts`: standalone component, `OnPush` change detection, `templateUrl`/`styleUrls`, demo selector prefix `demo-stepper`.
-- Use the CDK stepper's `cdkStepper` directive applied to a host element, with `*cdkStepDef`-style step definitions (`<cdk-step>`), `*cdkStepHeader` for header rendering, and `cdkStepperNext`/`cdkStepperPrevious` directives on `bsButton` for navigation.
+- Use the CDK stepper's `cdkStepper` directive applied to a host element, with `*cdkStepDef`-style step definitions (`<cdk-step>`), `*cdkStepHeader` for header rendering, and `cdkStepperNext`/`cdkStepperPrevious` directives on plain `<button>` elements (styled via `[color]` from `BsButtonTypeDirective`) for navigation.
 - The `linear` and `orientation` inputs come straight from `CdkStepper`. Forms gate Next on linear examples via `[stepControl]` bound to a `FormGroup`.
+- Buttons use the `BsButtonTypeDirective` API: `<button [color]="colors.primary">…</button>` — there is no `<bs-button>` component or `bsButton` attribute selector. Reference: `apps/ng-bootstrap-demo/src/app/pages/basic/button-type/button-type.component.{ts,html}`.
 - All styling local to `stepper.component.scss`. No new Bootstrap library tokens.
 
 ---
