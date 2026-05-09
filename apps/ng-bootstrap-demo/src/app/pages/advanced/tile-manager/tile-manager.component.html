@@ -44,11 +44,10 @@
             <option value="1.25rem">spacious</option>
           </bs-select>
         </div>
-        <div [md]="3" class="mb-3">
-          <div class="form-check">
-            <input class="form-check-input" id="animateReflow" type="checkbox" [ngModel]="animateReflow()" (ngModelChange)="animateReflow.set($event)" />
-            <label class="form-check-label" for="animateReflow">Animate reflow</label>
-          </div>
+        <div [md]="3" class="mb-3 d-flex align-items-end">
+          <bs-toggle-button [type]="'checkbox'" [ngModel]="animateReflow()" (ngModelChange)="animateReflow.set($event)">
+            Animate reflow
+          </bs-toggle-button>
         </div>
       </div>
     </bs-grid>

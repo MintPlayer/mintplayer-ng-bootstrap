@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsSelectComponent, BsSelectOption } from '@mintplayer/ng-bootstrap/select';
+import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
 import {
   BsTileManagerComponent,
   BsTileComponent,
@@ -47,6 +48,7 @@ const DEFAULT_TILES: ReadonlyArray<Pick<DemoTile, 'id' | 'title' | 'body' | 'def
     BsGridColumnDirective,
     BsSelectComponent,
     BsSelectOption,
+    BsToggleButtonComponent,
     BsTileManagerComponent,
     BsTileComponent,
     BsTileHeaderComponent,
