@@ -26,6 +26,7 @@ import { MultiRangeOrientation } from '../types/multi-range-orientation';
       [attr.min-distance]="minDistance()"
       [attr.orientation]="orientation()"
       [attr.disabled]="disabledAttr()"
+      [attr.aria-label]="label()"
       (value-input)="onValueInput($event)"
       (value-change)="onValueChange($event)"
     ></mp-multi-range>
@@ -47,6 +48,7 @@ export class BsMultiRangeComponent {
   readonly orientation = input<MultiRangeOrientation>('horizontal');
   readonly disabled = input(false);
   readonly formatValue = input<((value: number) => string) | null>(null);
+  readonly label = input<string | null>(null);
 
   readonly value = model<number[]>([]);
 

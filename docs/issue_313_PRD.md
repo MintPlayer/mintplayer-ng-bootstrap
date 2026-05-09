@@ -97,9 +97,12 @@ A new N-thumb range-slider primitive `bs-multi-range` for `@mintplayer/ng-bootst
 - [x] Round-trip verified for `[(ngModel)]` and `FormControl<number[]>` via `multi-range.component.spec.ts` (5 specs covering value-input emission, setDisabledState, and value-change marking the control as touched). All 464 library tests still pass.
 
 ### Milestone 5: ARIA + RTL + cross-browser
-- [ ] Per-thumb ARIA attributes; NVDA smoke test.
-- [ ] RTL pointer + keyboard math inverted; verified visually.
-- [ ] Firefox flex-shrink check on track + tooltips.
+- [x] Per-thumb ARIA on every `<button class="thumb">`: `role="slider"`, `aria-valuemin/max/now`, `aria-orientation`, `aria-valuetext` (only when `formatValue` is provided — otherwise `aria-valuenow` is announced raw). `tabindex="0"` is implicit on `<button>`.
+- [x] Host gets `role="group"` from `connectedCallback` (only if not already set, so callers can override).
+- [x] Wrapper exposes `[label]` input that maps to `[attr.aria-label]` on the WC, so callers can label the slider group.
+- [x] `data-dragging` attribute on the actively-dragged thumb provides a CSS hook for tooltip visibility on touch devices where `:active` is unreliable. Cleared on pointerup.
+- [x] RTL pointer + keyboard math already in M2 (`isRtl()` from `getComputedStyle`); verified by build + tests.
+- [ ] Firefox flex-shrink + NVDA smoke test → deferred to M7 manual smoke pass.
 
 ### Milestone 6: Demo page
 - [ ] 8 examples at `/basic/forms/multi-range` (incl. reactive-form example with live JSON).

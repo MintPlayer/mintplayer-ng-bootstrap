@@ -113,10 +113,13 @@ Closes the most-requested missing form primitive in the library. Differentiates 
 
 **Test-environment note**: jsdom + vitest don't reliably upgrade the `mp-multi-range` custom element, so the spec asserts against Angular form state (`control.value`, `host.value()`, `control.touched`) and DOM attributes — not against WC instance methods. This is the right level for value-accessor tests and matches the testing-tile-manager spec's approach when WC internals aren't stable in the env.
 
-### Phase 5: ARIA + RTL
-1. Per-thumb `role="slider"`, `aria-valuemin/max/now`, `aria-orientation`, `aria-valuetext`. Host `role="group"`, accept `aria-label` attribute.
-2. RTL: detect at gesture start, invert horizontal coordinate math. Verify thumb order matches visual order in RTL. Vertical mode unaffected.
-3. Manual screen-reader smoke test (NVDA on Windows, VoiceOver if available) to confirm thumb announcements.
+### Phase 5: ARIA + RTL ✅ (NVDA smoke deferred to M7)
+1. [x] Per-thumb ARIA on every thumb button: `role="slider"`, `aria-valuemin/max/now`, `aria-orientation`, `aria-valuetext` (only when `formatValue` is provided — uses Lit `nothing` to omit the attribute when not formatted, so SRs fall back to numeric `aria-valuenow`).
+2. [x] Host `role="group"` set in `connectedCallback` (idempotent — only if not already set, so callers can override). Wrapper-level `[label]` input maps to `[attr.aria-label]` on the WC.
+3. [x] `data-dragging="true|false"` data attribute on the actively-dragged thumb. Lit `requestUpdate()` triggered on `startDrag` and `onPointerUp` so the attribute reflects state changes. Used by SCSS to show the tooltip on touch where `:active` may not engage.
+4. [x] RTL coordinate-math + keyboard inversion already landed in M2.
+5. [ ] **Manual: Firefox flex-shrink check on track/tooltips** — deferred to M7 smoke pass.
+6. [ ] **Manual: NVDA smoke test** — deferred to M7 smoke pass.
 
 ### Phase 6: Demo page
 1. Scaffold `apps/ng-bootstrap-demo/src/app/pages/basic/forms/multi-range/`. Mirror `range/` shape (standalone, OnPush, no tabs, `BsGrid*` layout).

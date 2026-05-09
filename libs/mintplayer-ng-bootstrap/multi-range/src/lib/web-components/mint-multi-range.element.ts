@@ -1,4 +1,4 @@
-import { LitElement, html, type TemplateResult } from 'lit';
+import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { styles } from './mint-multi-range.element.template';
 import { MultiRangeOrientation } from '../types/multi-range-orientation';
 
@@ -53,6 +53,11 @@ export class MintMultiRangeElement extends LitElement {
 
   private _value: number[] | null = null;
   private dragState: { thumbIndex: number; pointerId: number } | null = null;
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    if (!this.hasAttribute('role')) this.setAttribute('role', 'group');
+  }
 
   get value(): number[] {
     return this._value ?? [this.min, this.max];
@@ -158,6 +163,7 @@ export class MintMultiRangeElement extends LitElement {
     target.setPointerCapture(pointerId);
     target.focus();
     this.dragState = { thumbIndex, pointerId };
+    this.requestUpdate();
   }
 
   private onThumbPointerDown = (thumbIndex: number, ev: PointerEvent): void => {
@@ -201,6 +207,7 @@ export class MintMultiRangeElement extends LitElement {
       target.releasePointerCapture(ev.pointerId);
     }
     this.dragState = null;
+    this.requestUpdate();
     this.dispatchValueChange();
   };
 
@@ -267,18 +274,29 @@ export class MintMultiRangeElement extends LitElement {
   private renderThumb(value: number, index: number, vertical: boolean): TemplateResult {
     const pct = this.percent(value);
     const style = vertical ? `bottom: ${pct}%;` : `left: ${pct}%;`;
+    const formatted = this.formatThumb(value);
+    const isDragging = this.dragState?.thumbIndex === index;
+    // aria-valuetext only when formatValue is provided — otherwise aria-valuenow alone is read out.
+    const valueText = this.formatValue ? formatted : null;
     return html`
       <button
         class="thumb"
         part="thumb"
         type="button"
+        role="slider"
         data-thumb-index=${index}
+        data-dragging=${isDragging ? 'true' : 'false'}
+        aria-valuemin=${this.min}
+        aria-valuemax=${this.max}
+        aria-valuenow=${value}
+        aria-orientation=${this.orientation}
+        aria-valuetext=${valueText ?? nothing}
         ?disabled=${this.disabled}
         style=${style}
         @pointerdown=${(ev: PointerEvent) => this.onThumbPointerDown(index, ev)}
         @keydown=${(ev: KeyboardEvent) => this.onThumbKeyDown(index, ev)}
       >
-        <span class="tooltip" part="tooltip">${this.formatThumb(value)}</span>
+        <span class="tooltip" part="tooltip">${formatted}</span>
       </button>
     `;
   }
