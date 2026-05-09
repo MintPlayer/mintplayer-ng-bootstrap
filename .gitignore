@@ -48,6 +48,12 @@ Thumbs.db
 # Playwright MCP local artefacts (screenshots, traces)
 .playwright-mcp/
 
+# Playwright e2e run artefacts
+/test-results
+/playwright-report
+/blob-report
+/playwright/.cache
+
 # Environment variables (generated on VPS at deploy time)
 .env
 

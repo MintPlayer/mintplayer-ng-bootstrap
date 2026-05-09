@@ -54,28 +54,6 @@ describe('BsNavbarDropdownComponent', () => {
 });
 
 @Component({
-  selector: 'bs-navbar-test',
-  template: `
-  <bs-navbar>
-    <bs-navbar-nav>
-      <bs-navbar-item>
-        <a [routerLink]='["/a"]'>a</a>
-      </bs-navbar-item>
-      <bs-navbar-item>
-        <a [routerLink]='[]'>dropdown</a>
-        <bs-navbar-dropdown>
-          <bs-navbar-item>
-            <a [routerLink]='["/b", "c"]'>bc</a>
-          </bs-navbar-item>
-        </bs-navbar-dropdown>
-      </bs-navbar-item>
-    </bs-navbar-nav>
-  </bs-navbar>`
-})
-class BsNavbarDropdownTestComponent {
-}
-
-@Component({
   selector: 'bs-navbar',
   template: `
     <nav>
@@ -129,6 +107,34 @@ class BsNavbarNavMockComponent {
 })
 class BsNavbarItemMockComponent {
   element = { nativeElement: document.createElement('div') };
+}
+
+@Component({
+  selector: 'bs-navbar-test',
+  template: `
+  <bs-navbar>
+    <bs-navbar-nav>
+      <bs-navbar-item>
+        <a [routerLink]='["/a"]'>a</a>
+      </bs-navbar-item>
+      <bs-navbar-item>
+        <a [routerLink]='[]'>dropdown</a>
+        <bs-navbar-dropdown>
+          <bs-navbar-item>
+            <a [routerLink]='["/b", "c"]'>bc</a>
+          </bs-navbar-item>
+        </bs-navbar-dropdown>
+      </bs-navbar-item>
+    </bs-navbar-nav>
+  </bs-navbar>`,
+  imports: [
+    BsNavbarMockComponent,
+    BsNavbarNavMockComponent,
+    BsNavbarItemMockComponent,
+    BsNavbarDropdownComponent,
+  ],
+})
+class BsNavbarDropdownTestComponent {
 }
 
 @Component({

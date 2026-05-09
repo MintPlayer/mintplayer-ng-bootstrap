@@ -25,7 +25,11 @@ class BsObserveSizeDirectiveStub {
       <bs-sticky-footer>
         Content
       </bs-sticky-footer>
-    </div>`
+    </div>`,
+  imports: [
+    BsStickyFooterComponent,
+    MockDirective(BsStickyFooterParentDirective),
+  ],
 })
 class BsStickyFooterTestComponent {
 }

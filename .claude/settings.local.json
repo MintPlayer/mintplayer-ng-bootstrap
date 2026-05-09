@@ -40,7 +40,16 @@
       "WebSearch",
       "WebFetch(domain:bugzilla.mozilla.org)",
       "mcp__github__search_code",
-      "mcp__github__get_file_contents"
+      "mcp__github__get_file_contents",
+      "Skill(dcg:issue_plan)",
+      "WebFetch(domain:iro.js.org)",
+      "Skill(dcg:pr_resolve)",
+      "WebFetch(domain:angular.dev)",
+      "WebFetch(domain:www.infragistics.com)",
+      "PowerShell(Get-Process *)",
+      "mcp__github__update_issue",
+      "Skill(dcg:pr_create)",
+      "WebFetch(domain:angular.love)"
     ]
   },
   "enableAllProjectMcpServers": true,

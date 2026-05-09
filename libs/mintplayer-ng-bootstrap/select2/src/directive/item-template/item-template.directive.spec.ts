@@ -6,22 +6,25 @@ import { BsItemTemplateDirective } from './item-template.directive';
 import { BsSelect2Component } from '../../component/select2.component';
 
 @Component({
+  selector: 'select2',
+})
+class MockBsSelect2Component {
+  readonly itemTemplate = signal<TemplateRef<any> | undefined>(undefined);
+}
+
+@Component({
   selector: 'item-template-test-component',
   template: `
     <select2>
       <ng-template itemTemplate>
         <span>item template</span>
       </ng-template>
-    </select2>`
+    </select2>`,
+  imports: [
+    MockBsSelect2Component,
+  ],
 })
 class BsItemTemplateTestComponent { }
-
-@Component({
-  selector: 'select2',
-})
-class MockBsSelect2Component {
-  readonly itemTemplate = signal<TemplateRef<any> | undefined>(undefined);
-}
 
 describe('BsItemTemplateDirective', () => {
   let fixture: ComponentFixture<BsItemTemplateTestComponent>;

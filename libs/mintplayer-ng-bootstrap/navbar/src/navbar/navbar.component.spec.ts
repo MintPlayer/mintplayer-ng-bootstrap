@@ -6,6 +6,9 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { BsNavbarComponent } from './navbar.component';
 import { MockComponent } from 'ng-mocks';
 import { BsContainerComponent } from '@mintplayer/ng-bootstrap/container';
+import { BsNavbarNavComponent } from '../navbar-nav/navbar-nav.component';
+import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
+import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
 
 describe('BsNavbarComponent', () => {
   let component: BsNavbarComponent;
@@ -67,7 +70,13 @@ describe('BsNavbarComponent', () => {
           </bs-navbar-dropdown>
         </bs-navbar-item>
       </bs-navbar-nav>
-    </bs-navbar>`
+    </bs-navbar>`,
+  imports: [
+    BsNavbarComponent,
+    MockComponent(BsNavbarNavComponent),
+    MockComponent(BsNavbarDropdownComponent),
+    MockComponent(BsNavbarItemComponent),
+  ],
 })
 class BsNavbarTestComponent {
 }

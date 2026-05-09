@@ -49,7 +49,10 @@ describe('BsDatatableColumnDirective', () => {
       <div *bsDatatableColumn="'YearQuit'; sortable: true">
         3. Year quit
       </div>
-    </bs-datatable>`
+    </bs-datatable>`,
+  imports: [
+    MockComponent(BsDatatableComponent),
+  ],
 })
 class BsDatatableColumnTestComponent {
 }

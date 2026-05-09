@@ -1,6 +1,10 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
+import { MockComponent } from 'ng-mocks';
+import { BsNavbarComponent } from '../navbar/navbar.component';
+import { BsNavbarNavComponent } from '../navbar-nav/navbar-nav.component';
+import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
 import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
 import { NavLinkDirective } from './nav-link.directive';
 
@@ -68,7 +72,13 @@ describe('NavLinkDirective', () => {
           </bs-navbar-dropdown>
         </bs-navbar-item>
       </bs-navbar-nav>
-    </bs-navbar>`
+    </bs-navbar>`,
+  imports: [
+    MockComponent(BsNavbarComponent),
+    MockComponent(BsNavbarNavComponent),
+    MockComponent(BsNavbarItemComponent),
+    MockComponent(BsNavbarDropdownComponent),
+  ],
 })
 class BsNavLinkTestComponent {
 }

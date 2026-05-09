@@ -12,7 +12,11 @@ import { BsFloatingLabelComponent } from './floating-label.component';
         <input type="email">
         <label>Email address</label>
       </bs-floating-label>
-    </bs-form>`
+    </bs-form>`,
+  imports: [
+    MockComponent(BsFormComponent),
+    BsFloatingLabelComponent,
+  ],
 })
 class FloatingLabelTestComponent {}
 

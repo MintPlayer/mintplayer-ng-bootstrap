@@ -61,6 +61,11 @@ describe('BsAccordionTabComponent', () => {
       <bs-accordion-tab-header>
       </bs-accordion-tab-header>
     </bs-accordion-tab>
-  </bs-accordion>`
+  </bs-accordion>`,
+  imports: [
+    MockComponent(BsAccordionComponent),
+    MockComponent(BsAccordionTabComponent),
+    MockComponent(BsAccordionTabHeaderComponent),
+  ],
 })
 class BsAccordionTestComponent {}

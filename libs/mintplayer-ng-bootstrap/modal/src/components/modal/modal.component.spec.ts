@@ -16,7 +16,10 @@ import { BsModalComponent } from './modal.component';
         <div bsModalBody>Modal body</div>
         <div bsModalFooter>Footer</div>
       </div>
-    </bs-modal>`
+    </bs-modal>`,
+  imports: [
+    MockComponent(BsModalHostComponent),
+  ],
 })
 class BsModalTestComponent { }
 
