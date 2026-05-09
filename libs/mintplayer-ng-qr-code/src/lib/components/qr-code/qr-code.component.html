@@ -1,5 +1,7 @@
 @if (value()) {
     <canvas
+        role="img"
+        [attr.aria-label]="accessibleLabel()"
         [qrCode]="value()!"
         [qrCodeErrorCorrectionLevel]="errorCorrectionLevel()"
         [qrCodeCenterImageSrc]="centerImageSrc()"
