@@ -89,12 +89,13 @@ Closes the most-requested missing form primitive in the library. Differentiates 
 6. [x] Value accessor scaffolded: `(value-input)` host listener for live updates, `(value-change)` for touched. `writeValue` pushes to the WC's `value` property; `setDisabledState` toggles the `disabled` attribute.
 7. [x] `npx nx build mintplayer-ng-bootstrap` passes; `dist/libs/mintplayer-ng-bootstrap/fesm2022/mintplayer-ng-bootstrap-multi-range.mjs` emitted.
 
-### Phase 2: Drag interaction (pointer + keyboard)
-1. Implement pointer-drag on each thumb: `pointerdown` → `setPointerCapture`, `pointermove` → compute new value from coordinate, apply Block clamp + minDistance, dispatch `value-input` event (drag in progress), commit on `pointerup` with `value-change`.
-2. Track-click jump: clicking the track moves the **nearest** thumb to that position.
-3. Keyboard handler on each thumb (←/→/↑/↓/Home/End/PageUp/PageDown), respecting RTL inversion for ←/→.
-4. `touch-action: none` on the track. No `preventDefault` on touch pointerdown.
-5. `disabled` attribute disables pointer + keyboard handlers; thumbs lose `tabindex`.
+### Phase 2: Drag interaction (pointer + keyboard) ✅
+1. [x] Pointer-drag on each thumb: `pointerdown` → `setPointerCapture` + focus thumb, `pointermove` → `valueFromPointer` + `moveThumb`, `pointerup` → `releasePointerCapture` + dispatch `value-change`.
+2. [x] Track-click jump: `onTrackPointerDown` finds the nearest thumb, jumps it, then transfers drag to that thumb so press-and-drag keeps moving it.
+3. [x] Keyboard handler on each thumb covering Arrow{Left,Right,Up,Down}, Home, End, PageUp, PageDown. `keyboardTarget()` computes the absolute target value; RTL inverts Arrow{Left,Right} only when not vertical.
+4. [x] `touch-action: none` already set on `.track` and `.thumb` in M1's SCSS. No `preventDefault` on pointerdown (only on the keyboard handler — and only when a key is bound, to suppress page-scroll on Page{Up,Down}/Arrow{Up,Down}).
+5. [x] `disabled` short-circuits both pointer and keyboard paths early. Thumbs use `?disabled=${this.disabled}` on the `<button>`, which removes them from the tab order.
+6. [x] Step snapping via `snapToStep(v) = min + Math.round((v - min) / step) * step` then clamp to `[min, max]`.
 
 ### Phase 3: Visual polish
 1. Track height + thumb size matching Bootstrap `form-range` defaults; CSS variables for theming (`--bs-multi-range-track-bg`, `--bs-multi-range-thumb-bg`, `--bs-multi-range-fill-bg`).

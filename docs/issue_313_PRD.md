@@ -78,10 +78,11 @@ A new N-thumb range-slider primitive `bs-multi-range` for `@mintplayer/ng-bootst
 - [x] `npx nx build mintplayer-ng-bootstrap` passes (entry point `@mintplayer/ng-bootstrap/multi-range` built without any tsconfig/package.json edits).
 
 ### Milestone 2: Drag + keyboard interaction
-- [ ] Pointer drag with `setPointerCapture`, Block-crossing + `minDistance` enforced.
-- [ ] Track-click jumps nearest thumb.
-- [ ] Keyboard handler with all 8 keys, RTL inversion.
-- [ ] `disabled` attribute disables all input.
+- [x] Pointer drag with `setPointerCapture`, Block-crossing + `minDistance` enforced via `constrainThumb()` (clamps to `[value[i-1] + minDistance, value[i+1] - minDistance]`).
+- [x] Track-click jumps nearest thumb (chosen by smallest `Math.abs(value[i] - target)`); a continued press transfers drag to that thumb.
+- [x] Keyboard handler — Arrow{Up,Down,Left,Right}, PageUp/PageDown (×10 step), Home/End. RTL inverts only horizontal Arrow{Left,Right}.
+- [x] `disabled` short-circuits both `pointerdown` and `keydown` paths.
+- [x] Events `value-input` (continuous, fires on every drag pointermove + keyboard step) and `value-change` (commit; pointerup, keyboard step) — both `bubbles: true, composed: true` so the Angular wrapper's host listeners pick them up across the shadow boundary.
 
 ### Milestone 3: Visual polish
 - [ ] Track + thumb + (N-1) fill segments rendered with Bootstrap-ish styling and CSS variables for theming.
