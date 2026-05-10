@@ -1,4 +1,4 @@
-import { ConfigurableFocusTrap, ConfigurableFocusTrapFactory } from '@angular/cdk/a11y';
+import { ConfigurableFocusTrap, ConfigurableFocusTrapFactory, InteractivityChecker } from '@angular/cdk/a11y';
 import { DestroyRef, Directive, effect, ElementRef, inject, input } from '@angular/core';
 
 export type BsOverlayInitialFocus = HTMLElement | 'first' | 'self' | 'none';
@@ -20,6 +20,7 @@ export type BsOverlayInitialFocus = HTMLElement | 'first' | 'self' | 'none';
 export class BsOverlayFocusDirective {
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private trapFactory = inject(ConfigurableFocusTrapFactory);
+  private interactivityChecker = inject(InteractivityChecker);
   private destroyRef = inject(DestroyRef);
 
   readonly active = input(true, { alias: 'bsOverlayFocus' });
@@ -59,9 +60,19 @@ export class BsOverlayFocusDirective {
   }
 
   private focusFirstTabbable(): void {
-    const sel = 'a[href], area[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), iframe, object, embed, [tabindex]:not([tabindex="-1"]), [contenteditable="true"]';
-    const tabbable = this.elementRef.nativeElement.querySelector<HTMLElement>(sel);
-    tabbable?.focus();
+    // Walk the host's subtree and let CDK decide what's tabbable — handles
+    // disabled fieldsets, inert ancestors, hidden visibility, and the long
+    // tail of edge cases the inline selector would have to re-implement.
+    const root = this.elementRef.nativeElement;
+    const walker = (root.ownerDocument ?? document).createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+    let node: Node | null = walker.currentNode;
+    while (node) {
+      if (node instanceof HTMLElement && this.interactivityChecker.isFocusable(node) && this.interactivityChecker.isTabbable(node)) {
+        node.focus();
+        return;
+      }
+      node = walker.nextNode();
+    }
   }
 
   private disengage(): void {

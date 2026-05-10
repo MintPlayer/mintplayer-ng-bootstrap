@@ -69,6 +69,40 @@ describe('BsOverlayFocusDirective', () => {
     expect(document.activeElement).toBe(trigger);
   });
 
+  it('skips elements inside a disabled fieldset when picking initial focus', async () => {
+    @Component({
+      selector: 'bs-disabled-fieldset',
+      imports: [BsOverlayFocusDirective],
+      template: `
+        <button type="button" data-testid="trigger">Open</button>
+        <div [bsOverlayFocus]="active()" tabindex="-1">
+          <fieldset disabled>
+            <button type="button" data-testid="inside-disabled">X</button>
+          </fieldset>
+          <button type="button" data-testid="reachable">Y</button>
+        </div>
+      `,
+    })
+    class DisabledFieldsetHarness {
+      active = signal(false);
+    }
+
+    await TestBed.resetTestingModule().configureTestingModule({
+      imports: [A11yModule, DisabledFieldsetHarness],
+    }).compileComponents();
+    const f = TestBed.createComponent(DisabledFieldsetHarness);
+    document.body.appendChild(f.nativeElement);
+    const trigger = f.nativeElement.querySelector<HTMLElement>('[data-testid="trigger"]')!;
+    trigger.focus();
+
+    f.componentInstance.active.set(true);
+    f.detectChanges();
+    await Promise.resolve();
+
+    expect(document.activeElement).toBe(f.nativeElement.querySelector('[data-testid="reachable"]'));
+    f.nativeElement.remove();
+  });
+
   it('skips return-focus when [returnFocus] is false', async () => {
     @Component({
       selector: 'bs-no-return',
