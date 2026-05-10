@@ -9,8 +9,14 @@ import { hs2polar, polar2hs } from '../../color-math';
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     'class': 'position-relative',
+    'role': 'application',
+    '[attr.aria-label]': 'ariaLabel()',
+    '[attr.aria-valuetext]': 'ariaValueText()',
+    '[attr.aria-disabled]': 'disabled() ? "true" : null',
+    '[attr.tabindex]': 'disabled() ? -1 : 0',
     '(document:mousemove)': 'onPointerMove($event)',
     '(document:mouseup)': 'onPointerUp($event)',
+    '(keydown)': 'onKeydown($event)',
   },
 })
 export class BsColorWheelComponent {
@@ -24,6 +30,7 @@ export class BsColorWheelComponent {
   hsChange = output<HS>();
 
   disabled = input<boolean>(false);
+  ariaLabel = input<string>('Color wheel: arrow left and right adjust hue, arrow up and down adjust saturation');
   private readonly isPointerDown = signal<boolean>(false);
 
   squareSize = computed(() => Math.min(this.width(), this.height()));
@@ -32,6 +39,11 @@ export class BsColorWheelComponent {
   outerRadius = computed(() => this.squareSize() / 2);
 
   overlayOpacity = computed(() => 1 - this.brightness());
+
+  ariaValueText = computed(() => {
+    const hs = this.hs();
+    return `Hue ${Math.round(hs.hue)}°, saturation ${Math.round(hs.saturation * 100)}%`;
+  });
 
   markerPosition = computed(() => {
     const hs = this.hs();
@@ -66,6 +78,59 @@ export class BsColorWheelComponent {
 
   onPointerUp(_ev: MouseEvent | TouchEvent) {
     this.isPointerDown.set(false);
+  }
+
+  /**
+   * Keyboard model for the 2-D wheel:
+   *  ArrowLeft  / ArrowRight  → -1° / +1° hue          (Shift: stays 1° for "fine")
+   *  ArrowDown / ArrowUp      → -1% / +1% saturation   (Shift: stays 1% for "fine")
+   *  PageDown / PageUp        → -30° / +30° hue
+   *  Home / End               → saturation 100% / 0%
+   *
+   * Hue wraps around; saturation clamps. Sighted-keyboard users get the same
+   * wheel as mouse users; blind users typically prefer the channel sliders
+   * (toggleable in bs-color-picker), since aria-valuetext on a 2-D widget is
+   * harder to spatialise than two 1-D sliders.
+   */
+  onKeydown(ev: KeyboardEvent) {
+    if (this.disabled()) return;
+    const cur = this.hs();
+    const hueStep = ev.shiftKey ? 1 : 5;
+    const satStep = ev.shiftKey ? 0.01 : 0.05;
+    let nextHue = cur.hue;
+    let nextSat = cur.saturation;
+    switch (ev.key) {
+      case 'ArrowRight':
+        nextHue = (cur.hue + hueStep) % 360;
+        break;
+      case 'ArrowLeft':
+        nextHue = (cur.hue - hueStep + 360) % 360;
+        break;
+      case 'ArrowUp':
+        nextSat = Math.min(1, cur.saturation + satStep);
+        break;
+      case 'ArrowDown':
+        nextSat = Math.max(0, cur.saturation - satStep);
+        break;
+      case 'PageUp':
+        nextHue = (cur.hue + 30) % 360;
+        break;
+      case 'PageDown':
+        nextHue = (cur.hue - 30 + 360) % 360;
+        break;
+      case 'Home':
+        nextSat = 1;
+        break;
+      case 'End':
+        nextSat = 0;
+        break;
+      default:
+        return;
+    }
+    ev.preventDefault();
+    if (nextHue !== cur.hue || nextSat !== cur.saturation) {
+      this.hs.set({ hue: nextHue, saturation: nextSat });
+    }
   }
 
   private updateColor(ev: MouseEvent | TouchEvent) {
