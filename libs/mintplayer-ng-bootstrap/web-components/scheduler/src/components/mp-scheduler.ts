@@ -666,6 +666,13 @@ export class MpScheduler extends LitElement {
         this.stateManager.setView('day');
       }
     }
+
+    // Event click — also drives the keyboard-move tab stop. The drag flow
+    // already calls setSelectedEvent on commit, but a plain click on an
+    // event needs to select it too so the focus model can land on it.
+    if (target.type === 'event' && target.event) {
+      this.stateManager.setSelectedEvent(target.event);
+    }
   }
 
   private handleDoubleClick(
@@ -679,6 +686,22 @@ export class MpScheduler extends LitElement {
 
   private handleKeyDown(e: KeyboardEvent): void {
     const state = this.stateManager.getState();
+
+    // Keyboard event-move mode (Phase 6 of WC ARIA PRD) takes precedence over
+    // every other shortcut so its arrow keys, Enter, Esc are always the right
+    // ones in context.
+    if (this.keyboardMove) {
+      this.handleKeyboardMove(e);
+      return;
+    }
+
+    // M on a focused, selected event opens move mode. M with no selection
+    // continues to mean "switch to month view" (the legacy shortcut).
+    if ((e.key === 'm' || e.key === 'M') && state.selectedEvent && this.isEventFocused()) {
+      e.preventDefault();
+      this.enterEventMoveMode(state.selectedEvent);
+      return;
+    }
 
     switch (e.key) {
       case 'ArrowLeft':
@@ -726,6 +749,97 @@ export class MpScheduler extends LitElement {
         }
         break;
     }
+  }
+
+  /**
+   * Active keyboard-driven event move. Captures the original time range so
+   * Escape can revert; the working copy is mutated in place by arrow keys
+   * and committed (or rolled back) on Enter / Escape.
+   */
+  private keyboardMove: {
+    eventId: string;
+    originalStart: Date;
+    originalEnd: Date;
+    workingStart: Date;
+    workingEnd: Date;
+  } | null = null;
+
+  private isEventFocused(): boolean {
+    const active = this.shadowRoot?.activeElement;
+    if (!active) return false;
+    return (
+      active.classList.contains('scheduler-event') ||
+      active.classList.contains('scheduler-timeline-event')
+    );
+  }
+
+  private enterEventMoveMode(event: SchedulerEvent): void {
+    this.keyboardMove = {
+      eventId: event.id,
+      originalStart: new Date(event.start),
+      originalEnd: new Date(event.end),
+      workingStart: new Date(event.start),
+      workingEnd: new Date(event.end),
+    };
+    this.liveAnnouncer.announce(
+      `Move mode enabled for ${event.title}. Arrow keys nudge by ${this.minutesPerSlot()} minutes; Enter to commit, Escape to cancel.`,
+    );
+  }
+
+  private handleKeyboardMove(e: KeyboardEvent): void {
+    if (!this.keyboardMove) return;
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      this.cancelEventMoveMode();
+      return;
+    }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      this.commitEventMoveMode();
+      return;
+    }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      const direction = e.key === 'ArrowRight' ? 1 : -1;
+      this.nudgeKeyboardMove(direction);
+    }
+  }
+
+  private minutesPerSlot(): number {
+    const seconds = this.stateManager.getState().options.slotDuration ?? 1800;
+    return Math.max(1, Math.round(seconds / 60));
+  }
+
+  private nudgeKeyboardMove(direction: 1 | -1): void {
+    if (!this.keyboardMove) return;
+    const slotMs = this.minutesPerSlot() * 60 * 1000 * direction;
+    const newStart = new Date(this.keyboardMove.workingStart.getTime() + slotMs);
+    const newEnd = new Date(this.keyboardMove.workingEnd.getTime() + slotMs);
+    this.keyboardMove.workingStart = newStart;
+    this.keyboardMove.workingEnd = newEnd;
+    const fmt = (d: Date) => d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    this.liveAnnouncer.announce(`${fmt(newStart)}`);
+  }
+
+  private commitEventMoveMode(): void {
+    if (!this.keyboardMove) return;
+    const original = this.getEventById(this.keyboardMove.eventId);
+    if (original) {
+      const updated: SchedulerEvent = {
+        ...original,
+        start: this.keyboardMove.workingStart,
+        end: this.keyboardMove.workingEnd,
+      };
+      this.stateManager.updateEvent(updated);
+      this.eventEmitter.emitEventUpdate(updated, original, new CustomEvent('keyboard-move'));
+      this.liveAnnouncer.announce('Move committed.');
+    }
+    this.keyboardMove = null;
+  }
+
+  private cancelEventMoveMode(): void {
+    this.keyboardMove = null;
+    this.liveAnnouncer.announce('Move cancelled.');
   }
 
   // ============================================

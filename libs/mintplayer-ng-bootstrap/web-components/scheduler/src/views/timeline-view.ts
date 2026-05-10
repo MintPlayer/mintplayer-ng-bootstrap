@@ -280,7 +280,10 @@ export class TimelineView extends BaseView {
     const eventEl = this.createElement('div', 'scheduler-timeline-event');
     const isSelected = this.state.selectedEvent?.id === event.id;
     eventEl.setAttribute('role', 'button');
-    eventEl.setAttribute('tabindex', '-1');
+    // Roving tabindex (Phase 6): the selected event carries tabindex=0 so
+    // Tab into the scheduler lands on it; others stay at -1 and are reachable
+    // via click (which then makes them the new tab stop).
+    eventEl.setAttribute('tabindex', isSelected ? '0' : '-1');
     eventEl.setAttribute(
       'aria-label',
       formatEventAriaLabel(event, resourceTitle, this.state.options.timeFormat),

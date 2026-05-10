@@ -227,7 +227,7 @@ export class WeekView extends BaseView {
     const eventEl = this.createElement('div', 'scheduler-event');
     const isSelected = this.state.selectedEvent?.id === event.id;
     eventEl.setAttribute('role', 'button');
-    eventEl.setAttribute('tabindex', '-1');
+    eventEl.setAttribute('tabindex', isSelected ? '0' : '-1');
     eventEl.setAttribute(
       'aria-label',
       formatEventAriaLabel(event, null, this.state.options.timeFormat),

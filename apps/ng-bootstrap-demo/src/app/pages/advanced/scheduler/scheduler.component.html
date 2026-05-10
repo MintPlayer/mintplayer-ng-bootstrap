@@ -6,8 +6,10 @@
     <li><kbd>Tab</kbd> — focus the navigation buttons (prev / next / today / view-switcher)</li>
     <li><kbd>Enter</kbd> / <kbd>Space</kbd> on a view-switcher button — switch to that view (announced via live region)</li>
     <li><kbd>←</kbd> / <kbd>→</kbd> — previous / next period (when scheduler has focus)</li>
-    <li><kbd>T</kbd> — jump to today; <kbd>Y</kbd> / <kbd>M</kbd> / <kbd>W</kbd> / <kbd>D</kbd> — switch view (year/month/week/day)</li>
-    <li>Cell-by-cell arrow navigation and <kbd>M</kbd>-to-move-event land in a follow-up phase.</li>
+    <li><kbd>T</kbd> — jump to today; <kbd>Y</kbd> / <kbd>W</kbd> / <kbd>D</kbd> — switch view (year/week/day). <kbd>M</kbd> = month view <em>only when no event is focused</em>; otherwise <kbd>M</kbd> opens move-mode on the focused event.</li>
+    <li>Click an event to select it (it becomes the keyboard tab stop). <kbd>Tab</kbd> back into the scheduler lands on it.</li>
+    <li>On a selected event: <kbd>M</kbd> enters move mode → <kbd>←</kbd> / <kbd>→</kbd> nudges the event by one slot · <kbd>Enter</kbd> commits · <kbd>Esc</kbd> cancels.</li>
+    <li><kbd>Delete</kbd> / <kbd>Backspace</kbd> on a selected event — emit event-delete</li>
   </ul>
 </details>
 

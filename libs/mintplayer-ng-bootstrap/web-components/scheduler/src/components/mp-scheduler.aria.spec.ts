@@ -123,3 +123,20 @@ describe('mp-scheduler — live announcer', () => {
     expect(live!.getAttribute('aria-live')).toBe('polite');
   });
 });
+
+describe('mp-scheduler — roving tabindex on events', () => {
+  let el: MpScheduler;
+  afterEach(() => el?.remove());
+
+  it('selected event carries tabindex="0", others "-1"', async () => {
+    el = await mount('timeline');
+    // The event lives on resources[0].events in the timeline view fixture.
+    const resources = (el as unknown as { resources: { events: { id: string }[] }[] }).resources;
+    const event = resources[0].events[0];
+    (el as unknown as { stateManager: { setSelectedEvent: (e: unknown) => void } }).stateManager.setSelectedEvent(event);
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+    const ev = el.shadowRoot!.querySelector('.scheduler-timeline-event')!;
+    expect(ev.getAttribute('tabindex')).toBe('0');
+  });
+});
