@@ -55,6 +55,15 @@ export interface SchedulerState {
   selectionResourceId: string | null;
   /** ID of the event currently in keyboard move-mode (PRD §6.6). Drives `aria-pressed` on the event button. */
   keyboardMoveEventId: string | null;
+
+  // --- Phase B (PRD scheduler-controlled-selection §5) ---
+  /**
+   * Keyboard-focused day on month-view, or first-of-month on year-view.
+   * Distinct from `focusedCell` (which carries a slot range), because month-
+   * and year-view cells aren't time slots — month cells are whole days, year
+   * cells are whole months.
+   */
+  focusedDate: Date | null;
 }
 
 /**
@@ -85,6 +94,7 @@ export function createInitialState(
     selectionExtent: null,
     selectionResourceId: null,
     keyboardMoveEventId: null,
+    focusedDate: null,
   };
 }
 
@@ -409,5 +419,13 @@ export class SchedulerStateManager {
       selectionExtent: null,
       selectionResourceId: null,
     });
+  }
+
+  /**
+   * Move the keyboard focus to a calendar date — used by month and year views
+   * (PRD scheduler-controlled-selection §5). Pass `null` to clear.
+   */
+  setFocusedDate(date: Date | null): void {
+    this.setState({ focusedDate: date });
   }
 }

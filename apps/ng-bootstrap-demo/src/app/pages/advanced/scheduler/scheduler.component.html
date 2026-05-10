@@ -5,6 +5,9 @@
   <ul class="mb-0">
     <li><strong>Navigation</strong>: <kbd>Tab</kbd> walks header → grid → events. Inside the grid, arrow keys walk cells.</li>
     <li><strong>Cell nav</strong> (week/day): <kbd>↑</kbd>/<kbd>↓</kbd> ± one slot in time, <kbd>←</kbd>/<kbd>→</kbd> ± one day (week only). On <em>timeline</em>: <kbd>←</kbd>/<kbd>→</kbd> ± slot in time, <kbd>↑</kbd>/<kbd>↓</kbd> ± resource.</li>
+    <li><strong>Month nav</strong>: <kbd>←</kbd>/<kbd>→</kbd> walk days, <kbd>↑</kbd>/<kbd>↓</kbd> ± one week. Crossing a month boundary auto-advances the displayed month. <kbd>Enter</kbd> on a day fires <code>event-create</code> for that whole day.</li>
+    <li><strong>Year nav</strong>: <kbd>←</kbd>/<kbd>→</kbd> walk months, <kbd>↑</kbd>/<kbd>↓</kbd> ± three months (matching the visual grid). Crossing a year boundary auto-advances. <kbd>Enter</kbd> on a month fires <code>event-create</code> for that whole month.</li>
+    <li><strong>Inter-event nav</strong>: with focus on an event, <kbd>←</kbd>/<kbd>→</kbd> walks to the previous / next event (sorted by start time). No wrap at the ends.</li>
     <li><strong>Cell nav extras</strong>: <kbd>Home</kbd>/<kbd>End</kbd> first/last slot of column · <kbd>Ctrl+Home</kbd>/<kbd>Ctrl+End</kbd> first/last cell of view · <kbd>PageUp</kbd>/<kbd>PageDown</kbd> previous/next period.</li>
     <li><strong>Selection</strong>: <kbd>Shift</kbd>+arrow extends a linear time-range. On week view, <kbd>Shift+→</kbd> at the end of Friday extends into Saturday (the range crosses the day boundary, all slots in between light up).</li>
     <li><strong>Selection commit</strong>: <kbd>Enter</kbd> on a cell or selection (and pointer drag-end) fires an <code>event-create</code> <em>request</em> carrying the range. The scheduler doesn't create or store the event itself — this demo's handler does that with its own defaults, then calls <code>clearSelection()</code>. <kbd>Esc</kbd> clears the selection without emitting a request.</li>

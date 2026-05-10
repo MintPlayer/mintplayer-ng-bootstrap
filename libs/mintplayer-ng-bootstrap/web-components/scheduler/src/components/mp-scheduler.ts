@@ -802,7 +802,9 @@ export class MpScheduler extends LitElement {
     if (!active) return 'other';
     if (
       active.classList.contains('scheduler-time-slot') ||
-      active.classList.contains('scheduler-timeline-slot')
+      active.classList.contains('scheduler-timeline-slot') ||
+      active.classList.contains('scheduler-month-day') ||
+      active.classList.contains('scheduler-year-month')
     ) {
       return 'cell';
     }
@@ -844,11 +846,53 @@ export class MpScheduler extends LitElement {
         e.preventDefault();
         this.focusFocusedCell();
         return;
+      case 'ArrowLeft':
+        e.preventDefault();
+        this.focusAdjacentEvent(ev, -1);
+        return;
+      case 'ArrowRight':
+        e.preventDefault();
+        this.focusAdjacentEvent(ev, +1);
+        return;
     }
+  }
+
+  /**
+   * Inter-event arrow nav (PRD scheduler-controlled-selection §5.3): walk
+   * the events in document order (start time, with id as tiebreaker) by ±1.
+   * No wrap at the ends — matches the APG list/feed pattern.
+   */
+  private focusAdjacentEvent(current: SchedulerEvent, direction: 1 | -1): void {
+    const state = this.stateManager.getState();
+    const ordered = [...state.events].sort((a, b) => {
+      const dt = a.start.getTime() - b.start.getTime();
+      return dt !== 0 ? dt : a.id.localeCompare(b.id);
+    });
+    const idx = ordered.findIndex((e) => e.id === current.id);
+    if (idx < 0) return;
+    const target = ordered[idx + direction];
+    if (!target) return; // boundary — no wrap.
+    const root = this.shadowRoot;
+    if (!root) return;
+    const el = root.querySelector(
+      `[data-event-id="${this.cssEscape(target.id)}"]`,
+    ) as HTMLElement | null;
+    el?.focus({ preventScroll: false });
   }
 
   private handleCellKeyDown(e: KeyboardEvent): void {
     const state = this.stateManager.getState();
+    // Month + year views have their own focus model — `focusedDate` (a whole
+    // day or month) rather than `focusedCell` (a time slot) — and route
+    // through dedicated handlers per PRD scheduler-controlled-selection §5.
+    if (state.view === 'month') {
+      this.handleMonthCellKeyDown(e);
+      return;
+    }
+    if (state.view === 'year') {
+      this.handleYearCellKeyDown(e);
+      return;
+    }
     if (!state.focusedCell) this.initFocusedCellFromActive();
     const shift = e.shiftKey;
     const ctrl = e.ctrlKey || e.metaKey;
@@ -904,6 +948,156 @@ export class MpScheduler extends LitElement {
     const cell: TimeSlot = { start: new Date(startStr), end: new Date(endStr) };
     const resourceId = active.dataset['resourceId'] ?? null;
     this.stateManager.setFocusedCell(cell, resourceId, true);
+  }
+
+  /**
+   * Month-view keyboard handler (PRD scheduler-controlled-selection §5.1).
+   * Arrows walk days; ArrowUp/Down ± one week; cross-month moves auto-
+   * advance the displayed date so the new month renders. Enter emits
+   * `event-create` for the focused day's full range.
+   */
+  private handleMonthCellKeyDown(e: KeyboardEvent): void {
+    // Always re-seed from the active element so click / programmatic-focus
+    // moves win over any stale `focusedDate` that lingered from a prior
+    // view. (Cheap; the alternative would be to clear `focusedDate` on
+    // view-change, which loses the user's last position when they bounce
+    // back.)
+    this.syncFocusedDateFromActive();
+    switch (e.key) {
+      case 'ArrowLeft':  e.preventDefault(); this.moveFocusedDateByDays(-1); return;
+      case 'ArrowRight': e.preventDefault(); this.moveFocusedDateByDays(+1); return;
+      case 'ArrowUp':    e.preventDefault(); this.moveFocusedDateByDays(-7); return;
+      case 'ArrowDown':  e.preventDefault(); this.moveFocusedDateByDays(+7); return;
+      case 'Enter':      e.preventDefault(); this.commitFocusedDateAsCreate(e, 'day'); return;
+    }
+  }
+
+  /**
+   * Year-view keyboard handler (PRD scheduler-controlled-selection §5.2).
+   * The focus unit is a month — ArrowLeft/Right ± 1, ArrowUp/Down ± 3 to
+   * mirror the visual 4×3 layout. Cross-year auto-advances. Enter emits
+   * `event-create` for the focused month's full range.
+   */
+  private handleYearCellKeyDown(e: KeyboardEvent): void {
+    this.syncFocusedDateFromActive();
+    switch (e.key) {
+      case 'ArrowLeft':  e.preventDefault(); this.moveFocusedDateByMonths(-1); return;
+      case 'ArrowRight': e.preventDefault(); this.moveFocusedDateByMonths(+1); return;
+      case 'ArrowUp':    e.preventDefault(); this.moveFocusedDateByMonths(-3); return;
+      case 'ArrowDown':  e.preventDefault(); this.moveFocusedDateByMonths(+3); return;
+      case 'Enter':      e.preventDefault(); this.commitFocusedDateAsCreate(e, 'month'); return;
+    }
+  }
+
+  /**
+   * Sync `focusedDate` from the currently-active month/year cell. Runs at
+   * the top of every Phase B keydown so click-driven and Tab-driven focus
+   * moves are reflected in state before arrow keys read it.
+   */
+  private syncFocusedDateFromActive(): void {
+    const active = this.shadowRoot?.activeElement as HTMLElement | null;
+    if (!active) return;
+    const dateStr = active.dataset['date'] ?? active.dataset['month'];
+    if (!dateStr) return;
+    this.stateManager.setFocusedDate(new Date(dateStr));
+  }
+
+  private moveFocusedDateByDays(deltaDays: number): void {
+    const state = this.stateManager.getState();
+    const current = state.focusedDate ?? state.date;
+    const next = new Date(current);
+    next.setDate(next.getDate() + deltaDays);
+    this.commitFocusedDate(next);
+  }
+
+  private moveFocusedDateByMonths(deltaMonths: number): void {
+    const state = this.stateManager.getState();
+    const current = state.focusedDate ?? state.date;
+    const next = new Date(current);
+    next.setMonth(next.getMonth() + deltaMonths);
+    this.commitFocusedDate(next);
+  }
+
+  /**
+   * Apply a focused-date update. If the new date crosses the displayed
+   * period (different month on month view; different year on year view),
+   * also bump `state.date` so the view re-renders to the new period —
+   * APG date-picker auto-advance behaviour. Then schedule a focus
+   * restoration on the matching cell after the next render.
+   */
+  private commitFocusedDate(next: Date): void {
+    const state = this.stateManager.getState();
+    let advanceTo: Date | null = null;
+    if (state.view === 'month') {
+      const sameMonth =
+        next.getFullYear() === state.date.getFullYear() &&
+        next.getMonth() === state.date.getMonth();
+      if (!sameMonth) advanceTo = next;
+    } else if (state.view === 'year') {
+      if (next.getFullYear() !== state.date.getFullYear()) advanceTo = next;
+    }
+    if (advanceTo) {
+      // setDate triggers the view to re-render with the new month/year, then
+      // we set the focused date so the renderer's tabindex update catches it.
+      this.stateManager.setDate(new Date(advanceTo));
+    }
+    this.stateManager.setFocusedDate(next);
+    // Within-period nav: the target cell is already in the DOM, focus it
+    // synchronously so the next keydown sees the right `activeElement`.
+    // Cross-period nav: the cell only exists after Lit re-renders, so the
+    // rAF re-tries focus on the next frame. The two together cover both
+    // cases without flicker.
+    this.scrollAndFocusDateCell(next);
+    if (advanceTo) {
+      requestAnimationFrame(() => this.scrollAndFocusDateCell(next));
+    }
+  }
+
+  /**
+   * Find the month/year date-cell DOM element by id and focus it. Keys are
+   * built from *local* date components to match `MonthView.dayKey()` /
+   * `YearView.monthKey()` — see those helpers for why ISO is unsafe across
+   * non-UTC timezones.
+   */
+  private scrollAndFocusDateCell(date: Date): void {
+    const state = this.stateManager.getState();
+    const root = this.shadowRoot;
+    if (!root) return;
+    const yyyymm = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    const id =
+      state.view === 'year'
+        ? `scheduler-cell-y-${yyyymm}`
+        : `scheduler-cell-m-${yyyymm}-${String(date.getDate()).padStart(2, '0')}`;
+    const el = root.getElementById(id) as HTMLElement | null;
+    if (!el) return;
+    el.focus({ preventScroll: true });
+    if (typeof el.scrollIntoView === 'function') {
+      el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }
+  }
+
+  /**
+   * Emit `event-create` covering the focused day (month view) or focused
+   * month (year view). No internal mutation per PRD
+   * scheduler-controlled-selection — consumer constructs the actual event.
+   */
+  private commitFocusedDateAsCreate(originalEvent: Event, unit: 'day' | 'month'): void {
+    const state = this.stateManager.getState();
+    const focused = state.focusedDate;
+    if (!focused) return;
+    const start = new Date(focused);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    if (unit === 'day') {
+      end.setDate(end.getDate() + 1);
+    } else {
+      end.setMonth(end.getMonth() + 1);
+    }
+    this.eventEmitter.emitEventCreate(
+      { start, end },
+      state.view,
+      originalEvent,
+    );
   }
 
   private moveCellByTime(direction: 1 | -1, extend: boolean): void {

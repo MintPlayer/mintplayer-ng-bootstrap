@@ -1,6 +1,6 @@
 # PRD: `mp-scheduler` — controlled selection + Phase B keyboard nav (month/year/inter-event)
 
-**Status:** **Proposal — scheduled for `feat/aria-accessibility`.** Two commits planned on this branch: (1) the controlled-selection refactor, (2) Phase B nav layered on top.
+**Status:** **Implemented.** Both commits landed on `feat/aria-accessibility`: (1) `2b275e78` — controlled-selection refactor; (2) Phase B nav (this commit). Browser-verified end-to-end.
 **Author:** Pieterjan (with research input from a Claude exploration team)
 **Date:** 2026-05-11
 **Library:** `@mintplayer/ng-bootstrap/web-components/scheduler` (Lit WC) + `@mintplayer/ng-bootstrap/scheduler` (Angular wrapper)

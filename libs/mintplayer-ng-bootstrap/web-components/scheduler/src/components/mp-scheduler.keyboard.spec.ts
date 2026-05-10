@@ -6,7 +6,7 @@ async function nextRaf(): Promise<void> {
   return new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
 }
 
-async function mount(view: 'week' | 'day' | 'timeline' = 'week'): Promise<MpScheduler> {
+async function mount(view: 'week' | 'day' | 'timeline' | 'month' | 'year' = 'week'): Promise<MpScheduler> {
   const el = document.createElement('mp-scheduler') as MpScheduler;
   document.body.appendChild(el);
   // Tuesday, May 12, 2026 — picked so the week ranges over a Mon-start week.
@@ -29,12 +29,14 @@ function dispatchKey(el: MpScheduler, key: string, init: KeyboardEventInit = {})
 
 function getState(el: MpScheduler): {
   focusedCell: { start: Date; end: Date } | null;
+  focusedDate: Date | null;
   selectionAnchor: { start: Date; end: Date } | null;
   selectionExtent: { start: Date; end: Date } | null;
   keyboardMoveEventId: string | null;
   previewEvent: { start: Date; end: Date } | null;
   events: { id: string; start: Date; end: Date }[];
   date: Date;
+  view: string;
 } {
   return (
     el as unknown as { stateManager: { getState: () => ReturnType<typeof getState> } }
@@ -364,5 +366,199 @@ describe('mp-scheduler — Alt+letter shortcuts (D2)', () => {
     await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
     // Date should be unchanged.
     expect(getState(el).date.getTime()).toBe(before.getTime());
+  });
+});
+
+/**
+ * Helpers shared by Phase B tests — month/year cells aren't time slots so
+ * they have their own focus-by-id helper.
+ */
+function focusMonthCell(el: MpScheduler, isoDate: string): HTMLElement | null {
+  const cell = el.shadowRoot!.querySelector<HTMLElement>(
+    `#scheduler-cell-m-${isoDate}`,
+  );
+  cell?.focus();
+  return cell;
+}
+function focusYearCell(el: MpScheduler, yyyymm: string): HTMLElement | null {
+  const card = el.shadowRoot!.querySelector<HTMLElement>(
+    `#scheduler-cell-y-${yyyymm}`,
+  );
+  card?.focus();
+  return card;
+}
+
+describe('mp-scheduler — Phase B: month-view arrow nav', () => {
+  let el: MpScheduler;
+  afterEach(() => el?.remove());
+
+  it('renders day cells with role=gridcell + deterministic id', async () => {
+    el = await mount('month');
+    const cell = el.shadowRoot!.querySelector<HTMLElement>(
+      '#scheduler-cell-m-2026-05-12',
+    );
+    expect(cell).not.toBeNull();
+    expect(cell!.getAttribute('role')).toBe('gridcell');
+    expect(cell!.getAttribute('aria-selected')).toBe('false');
+    expect(cell!.classList.contains('scheduler-month-day')).toBe(true);
+  });
+
+  it('ArrowRight advances focusedDate by one day', async () => {
+    el = await mount('month');
+    focusMonthCell(el, '2026-05-12');
+    dispatchKey(el, 'ArrowRight');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    const focused = getState(el).focusedDate!;
+    expect(focused.getDate()).toBe(13);
+    expect(focused.getMonth()).toBe(4);
+  });
+
+  it('ArrowDown advances focusedDate by one week', async () => {
+    el = await mount('month');
+    focusMonthCell(el, '2026-05-12');
+    dispatchKey(el, 'ArrowDown');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    const focused = getState(el).focusedDate!;
+    expect(focused.getDate()).toBe(19); // 12 + 7
+  });
+
+  it('ArrowRight at month boundary auto-advances the displayed month (APG date-picker)', async () => {
+    el = await mount('month');
+    // Focus on May 31, 2026.
+    focusMonthCell(el, '2026-05-31');
+    dispatchKey(el, 'ArrowRight');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    const state = getState(el);
+    expect(state.focusedDate!.getMonth()).toBe(5); // June
+    expect(state.focusedDate!.getDate()).toBe(1);
+    expect(state.date.getMonth()).toBe(5); // displayed month flipped to June
+  });
+
+  it('Enter on a focused day fires event-create with the day-long range', async () => {
+    el = await mount('month');
+    focusMonthCell(el, '2026-05-12');
+    dispatchKey(el, 'ArrowRight'); // seed focusedDate
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    let emitted: { range: { start: Date; end: Date }; view: string } | null = null;
+    el.addEventListener('event-create', (ev) => {
+      const d = (ev as CustomEvent).detail;
+      emitted = { range: d.range, view: d.view };
+    });
+    dispatchKey(el, 'Enter');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    expect(emitted).not.toBeNull();
+    expect(emitted!.view).toBe('month');
+    // 2026-05-13 (after the ArrowRight) → start at 00:00, end at next day 00:00.
+    expect(emitted!.range.start.getDate()).toBe(13);
+    expect(emitted!.range.start.getHours()).toBe(0);
+    expect(emitted!.range.end.getDate()).toBe(14);
+  });
+});
+
+describe('mp-scheduler — Phase B: year-view arrow nav', () => {
+  let el: MpScheduler;
+  afterEach(() => el?.remove());
+
+  it('renders month cards with role=gridcell + deterministic id', async () => {
+    el = await mount('year');
+    const card = el.shadowRoot!.querySelector<HTMLElement>(
+      '#scheduler-cell-y-2026-05',
+    );
+    expect(card).not.toBeNull();
+    expect(card!.getAttribute('role')).toBe('gridcell');
+    expect(card!.classList.contains('scheduler-year-month')).toBe(true);
+  });
+
+  it('ArrowRight advances focusedDate by one month', async () => {
+    el = await mount('year');
+    focusYearCell(el, '2026-05');
+    dispatchKey(el, 'ArrowRight');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    expect(getState(el).focusedDate!.getMonth()).toBe(5); // June
+  });
+
+  it('ArrowDown advances focusedDate by three months (visual grid step)', async () => {
+    el = await mount('year');
+    focusYearCell(el, '2026-05');
+    dispatchKey(el, 'ArrowDown');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    expect(getState(el).focusedDate!.getMonth()).toBe(7); // August
+  });
+
+  it('ArrowRight from December auto-advances to next year', async () => {
+    el = await mount('year');
+    focusYearCell(el, '2026-12');
+    dispatchKey(el, 'ArrowRight');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    const state = getState(el);
+    expect(state.focusedDate!.getFullYear()).toBe(2027);
+    expect(state.focusedDate!.getMonth()).toBe(0); // January
+    expect(state.date.getFullYear()).toBe(2027);
+  });
+
+  it('Enter on a focused month fires event-create with the month-long range', async () => {
+    el = await mount('year');
+    focusYearCell(el, '2026-05');
+    dispatchKey(el, 'ArrowRight'); // seed → June
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    let emitted: { range: { start: Date; end: Date }; view: string } | null = null;
+    el.addEventListener('event-create', (ev) => {
+      const d = (ev as CustomEvent).detail;
+      emitted = { range: d.range, view: d.view };
+    });
+    dispatchKey(el, 'Enter');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    expect(emitted).not.toBeNull();
+    expect(emitted!.view).toBe('year');
+    expect(emitted!.range.start.getMonth()).toBe(5); // June
+    expect(emitted!.range.start.getDate()).toBe(1);
+    expect(emitted!.range.end.getMonth()).toBe(6); // July
+  });
+});
+
+describe('mp-scheduler — Phase B: inter-event arrow nav', () => {
+  let el: MpScheduler;
+  afterEach(() => el?.remove());
+
+  it('ArrowRight on a focused event focuses the next event in start-time order', async () => {
+    el = await mount('week');
+    const events = [
+      { id: 'a', title: 'A', start: new Date(2026, 4, 12, 10, 0), end: new Date(2026, 4, 12, 11, 0) },
+      { id: 'b', title: 'B', start: new Date(2026, 4, 12, 13, 0), end: new Date(2026, 4, 12, 14, 0) },
+      { id: 'c', title: 'C', start: new Date(2026, 4, 13, 9, 0),  end: new Date(2026, 4, 13, 10, 0) },
+    ];
+    (el as unknown as { events: unknown[] }).events = events;
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+
+    const evA = el.shadowRoot!.querySelector<HTMLElement>('[data-event-id="a"]')!;
+    evA.focus();
+    await nextRaf();
+    dispatchKey(el, 'ArrowRight');
+    await nextRaf();
+
+    const active = el.shadowRoot!.activeElement as HTMLElement | null;
+    expect(active?.getAttribute('data-event-id')).toBe('b');
+  });
+
+  it('ArrowLeft on the first event is a no-op (no wrap)', async () => {
+    el = await mount('week');
+    const events = [
+      { id: 'a', title: 'A', start: new Date(2026, 4, 12, 10, 0), end: new Date(2026, 4, 12, 11, 0) },
+      { id: 'b', title: 'B', start: new Date(2026, 4, 12, 13, 0), end: new Date(2026, 4, 12, 14, 0) },
+    ];
+    (el as unknown as { events: unknown[] }).events = events;
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+
+    const evA = el.shadowRoot!.querySelector<HTMLElement>('[data-event-id="a"]')!;
+    evA.focus();
+    await nextRaf();
+    dispatchKey(el, 'ArrowLeft');
+    await nextRaf();
+
+    // Focus should stay on A (no wrap).
+    const active = el.shadowRoot!.activeElement as HTMLElement | null;
+    expect(active?.getAttribute('data-event-id')).toBe('a');
   });
 });
