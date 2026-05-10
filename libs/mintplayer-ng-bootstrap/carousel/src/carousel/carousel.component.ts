@@ -1,9 +1,10 @@
 import { isPlatformServer, NgTemplateOutlet } from '@angular/common';
-import { AfterViewInit, ChangeDetectionStrategy, Component, computed, contentChildren, DestroyRef, effect, ElementRef, forwardRef, inject, input, OnDestroy, output, PLATFORM_ID, signal, TemplateRef, viewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, computed, contentChildren, DestroyRef, effect, ElementRef, forwardRef, inject, input, model, OnDestroy, output, PLATFORM_ID, signal, TemplateRef, viewChild } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsSwipeContainerDirective, BsSwipeDirective, BsSwipeViewportDirective } from '@mintplayer/ng-swiper/swiper';
 import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
 import { BsCarouselImageDirective } from '../carousel-image/carousel-image.directive';
+import type { BsCarouselPlayPauseContext } from '../carousel-play-pause/carousel-play-pause.directive';
 
 @Component({
   selector: 'bs-carousel',
@@ -46,6 +47,29 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
   wrap = input(true);
   ariaLabel = input<string | null>(null);
 
+  // Two-way: pause / resume the auto-advance timer. Toggled by the
+  // consumer's `*bsCarouselPlayPause` template via the `toggle` callback in
+  // its context, or by the public `play()` / `pause()` methods. Default
+  // false (auto-advance allowed); has no effect when `interval` is null/0.
+  paused = model<boolean>(false);
+
+  /**
+   * Template projected via `*bsCarouselPlayPause`. When set, the carousel
+   * renders it in a control row above the slides. Per APG, auto-advancing
+   * carousels must expose a play/pause control — this is how consumers
+   * provide one without us imposing a button style.
+   */
+  readonly playPauseTemplate = signal<TemplateRef<BsCarouselPlayPauseContext> | null>(null);
+
+  /**
+   * Live OS preference. When true, auto-advance is suppressed entirely
+   * (matches what tile-manager / scheduler / dock / marquee do — no
+   * silent rotation behind the user's back). Tracks the media query so
+   * runtime changes (system settings toggled with the page open) are
+   * picked up without reload.
+   */
+  private readonly prefersReducedMotion = signal<boolean>(false);
+
   // Outputs
   slideChange = output<number>();
   animationStart = output<void>();
@@ -85,6 +109,22 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
   });
 
   readonly animationsDisabled = signal<boolean>(false);
+
+  /**
+   * `aria-live` value for the slide viewport. Stays `off` while
+   * auto-advance is actually rotating — otherwise the SR would re-read the
+   * active slide every interval — and switches to `polite` whenever the
+   * rotation is paused (by `paused`, missing/zero `interval`, or
+   * `prefers-reduced-motion`), so manual prev/next/indicator clicks get
+   * announced.
+   */
+  readonly slideAriaLive = computed<'off' | 'polite'>(() => {
+    const intervalTime = this.interval();
+    if (!intervalTime || intervalTime <= 0) return 'polite';
+    if (this.paused()) return 'polite';
+    if (this.prefersReducedMotion()) return 'polite';
+    return 'off';
+  });
 
   onKeyPress(event: Event) {
     const ev = event as KeyboardEvent;
@@ -130,17 +170,34 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
       images.forEach((item, index) => item.isFirst = (index === 0));
     });
 
-    // Setup auto-advance interval effect
+    // Setup auto-advance interval effect — gated on the two new axes added
+    // by the APG carousel bundle (PRD aria-accessibility-audit §13.2):
+    //   • `paused` model: lets the consumer (or the projected play/pause
+    //     button) suspend rotation.
+    //   • prefers-reduced-motion: suppresses auto-advance entirely when
+    //     the user opts out of motion at the OS level.
     effect(() => {
       const intervalTime = this.interval();
+      const isPaused = this.paused();
+      const reduceMotion = this.prefersReducedMotion();
       this.clearAutoAdvance();
 
-      if (intervalTime && intervalTime > 0) {
+      if (intervalTime && intervalTime > 0 && !isPaused && !reduceMotion) {
         this.intervalId = setInterval(() => {
           this.next();
         }, intervalTime);
       }
     });
+
+    // Track prefers-reduced-motion live (browser only). matchMedia is the
+    // canonical pattern across this lib (tile-manager, marquee, etc).
+    if (!this.isServerSide && typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+      const mql = window.matchMedia('(prefers-reduced-motion: reduce)');
+      this.prefersReducedMotion.set(mql.matches);
+      const listener = (e: MediaQueryListEvent) => this.prefersReducedMotion.set(e.matches);
+      mql.addEventListener('change', listener);
+      this.destroyRef.onDestroy(() => mql.removeEventListener('change', listener));
+    }
 
     // Emit slideChange when currentImageIndex changes
     effect(() => {
@@ -157,6 +214,21 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
       this.resizeObserver?.disconnect();
     });
   }
+
+  /** Resume auto-advance. No-op if `interval` is unset or reduce-motion is on. */
+  play() {
+    this.paused.set(false);
+  }
+
+  /** Pause auto-advance. Manual prev/next/goto still work. */
+  pause() {
+    this.paused.set(true);
+  }
+
+  /** Toggle the paused state. Used as the `toggle` callback in `BsCarouselPlayPauseContext`. */
+  togglePaused = () => {
+    this.paused.update((p) => !p);
+  };
 
   private clearAutoAdvance() {
     if (this.intervalId) {

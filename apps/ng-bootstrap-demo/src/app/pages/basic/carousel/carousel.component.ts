@@ -15,4 +15,9 @@ import { BsCarouselComponent, BsCarouselImageDirective } from '@mintplayer/ng-bo
 export class CarouselComponent {
   mode = model<'slide' | 'fade'>('slide');
   orientation = model<'horizontal' | 'vertical'>('horizontal');
+  // Auto-advance interval in milliseconds. The carousel honours this only
+  // while not paused and not under prefers-reduced-motion (PRD
+  // aria-accessibility-audit §13.2).
+  interval = model<number>(4000);
+  paused = model<boolean>(false);
 }

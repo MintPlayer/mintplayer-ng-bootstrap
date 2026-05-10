@@ -49,6 +49,11 @@
         [class.slide]="animation() === 'slide'"
         [class.fade]="animation() === 'fade'"
         [class.carousel-vertical]="orientation() === 'vertical'">
+        @if (playPauseTemplate() || (interval() ?? 0) > 0) {
+            <div class="carousel-play-pause">
+                <ng-container *ngTemplateOutlet="playPauseTemplate() ?? defaultPlayPauseTemplate; context: { $implicit: paused(), paused: paused(), toggle: togglePaused }"></ng-container>
+            </div>
+        }
         @if (indicators()) {
             <div class="carousel-indicators" [class.carousel-indicators-vertical]="orientation() === 'vertical'">
                 @for (image of images(); track image.id; let i = $index) {
@@ -59,7 +64,7 @@
                 }
             </div>
         }
-        <div class="carousel-inner" bsSwipeViewport #innerElement [style.height.px]="slideHeight()" [attr.aria-live]="interval() ? 'off' : 'polite'">
+        <div class="carousel-inner" bsSwipeViewport #innerElement [style.height.px]="slideHeight()" [attr.aria-live]="slideAriaLive()">
             <div bsSwipeContainer #container="bsSwipeContainer"
                 [minimumOffset]="50"
                 [animation]="animation()"
@@ -102,3 +107,15 @@
         </button>
     </div>
 }
+
+<!-- Fallback rendered when the consumer does not supply a `*bsCarouselPlayPause`
+     template but auto-advance is configured. APG requires auto-advancing
+     carousels to expose a pause control; this is the carousel's "make it
+     correct by default" path so consumers don't have to write boilerplate. -->
+<ng-template #defaultPlayPauseTemplate let-paused="paused" let-toggle="toggle">
+    <button type="button" class="btn btn-sm btn-outline-secondary"
+            (click)="toggle()" [attr.aria-pressed]="paused"
+            [attr.aria-label]="paused ? 'Resume auto-advance' : 'Pause auto-advance'">
+        {{ paused ? 'Play' : 'Pause' }}
+    </button>
+</ng-template>
