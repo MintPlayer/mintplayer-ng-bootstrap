@@ -60,14 +60,28 @@ export class BsOverlayFocusDirective {
   }
 
   private focusFirstTabbable(): void {
-    // Walk the host's subtree and let CDK decide what's tabbable — handles
-    // disabled fieldsets, inert ancestors, hidden visibility, and the long
-    // tail of edge cases the inline selector would have to re-implement.
+    // Walk the host's subtree and let CDK decide what's focusable — handles
+    // disabled fieldsets, inert ancestors, and the long tail of edge cases
+    // the inline selector would have to re-implement.
+    //
+    // `isFocusable({ ignoreVisibility: true })` because jsdom doesn't lay
+    // elements out, so CDK's default visibility check (`getClientRects()`)
+    // would reject everything in tests; in real browsers visible elements
+    // pass either way. Tabindex < 0 is filtered manually so the host (which
+    // we set `tabindex="-1"` on for the focus trap) doesn't get selected.
     const root = this.elementRef.nativeElement;
     const walker = (root.ownerDocument ?? document).createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
     let node: Node | null = walker.currentNode;
     while (node) {
-      if (node instanceof HTMLElement && this.interactivityChecker.isFocusable(node) && this.interactivityChecker.isTabbable(node)) {
+      if (
+        node instanceof HTMLElement
+        && node.tabIndex >= 0
+        // `:disabled` catches both own `disabled` and the inherited form of
+        // it from an ancestor `<fieldset disabled>` — CDK's isFocusable only
+        // looks at own attributes.
+        && !node.matches(':disabled')
+        && this.interactivityChecker.isFocusable(node, { ignoreVisibility: true })
+      ) {
         node.focus();
         return;
       }
