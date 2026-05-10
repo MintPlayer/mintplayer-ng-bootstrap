@@ -14,7 +14,7 @@
     "build:sme": "nx build --source-map",
     "analyze:sme": "source-map-explorer dist/apps/ng-bootstrap-demo/browser/browser/*",
     "test": "nx run-many --target=test --all --parallel",
-    "test:watch": "vitest --workspace=vitest.workspace.ts",
+    "test:watch": "vitest",
     "dev:ssr": "nx serve ng-bootstrap-demo"
   },
   "private": true,
