@@ -75,6 +75,14 @@ export class MintDockManagerElement extends LitElement {
   private dropJoystickButtons!: HTMLButtonElement[];
   private readonly instanceId: string;
   private readonly liveAnnouncer = new LiveAnnouncerController(this);
+
+  /**
+   * Active keyboard-driven pane move (Phase 7 of WC ARIA PRD). The user
+   * pressed M on a focused tab; until they pick a destination key (T/R/B/L
+   * to dock to a side, F to float) or Escape, we intercept letter keys and
+   * route them to the synthetic-drop pipeline.
+   */
+  private paneMoveMode: { paneName: string; sourcePath: DockPath } | null = null;
   private dropJoystickTarget: HTMLElement | null = null;
   private rootLayout: DockLayoutNode | null = null;
   private floatingLayouts: DockFloatingStackLayout[] = [];
@@ -303,6 +311,10 @@ export class MintDockManagerElement extends LitElement {
     // Drop targeting (drop indicator + joystick zone selection) runs entirely
     // off pointer-based hit-testing in updatePaneDragDropTargetFromPoint and
     // findDropZoneByPoint — no HTML5 dragover/drop/dragleave listeners needed.
+
+    // Keyboard pane-move (Phase 7). Capture phase so we run before mp-tab-control's
+    // shadow-internal handlers preventDefault on Arrow / Home / End / Enter.
+    root.addEventListener('keydown', (ev) => this.onRootKeyDown(ev), { capture: true });
 
     // Render any layout that was set before the shadow DOM existed.
     this.renderLayout();
@@ -3813,6 +3825,138 @@ export class MintDockManagerElement extends LitElement {
       return;
     }
     this.floatingLayouts.splice(index, 1);
+  }
+
+  /**
+   * Keyboard handler on the dock root, registered in capture phase so it
+   * runs before mp-tab-control's shadow-internal handlers swallow Arrow /
+   * Home / End / Enter. M opens move mode on a focused tab; subsequent
+   * letter keys (T/R/B/L/F) commit the move; Escape cancels.
+   */
+  private onRootKeyDown(event: KeyboardEvent): void {
+    if (this.paneMoveMode) {
+      this.handlePaneMoveModeKey(event);
+      return;
+    }
+    if (event.key !== 'm' && event.key !== 'M') return;
+    const focused = this.findFocusedPaneOrigin();
+    if (!focused) return;
+    event.preventDefault();
+    event.stopPropagation();
+    this.paneMoveMode = focused;
+    const title = this.titles[focused.paneName] ?? focused.paneName;
+    this.liveAnnouncer.announce(
+      `Move mode for pane ${title}. Press T, R, B, or L to dock to top, right, bottom, or left of the current stack. Press F to float. Escape to cancel.`,
+    );
+  }
+
+  private handlePaneMoveModeKey(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      this.paneMoveMode = null;
+      this.liveAnnouncer.announce('Move cancelled.');
+      return;
+    }
+    const key = event.key.toLowerCase();
+    const zoneByKey: Record<string, DropZone | 'float' | undefined> = {
+      t: 'top', r: 'right', b: 'bottom', l: 'left', f: 'float',
+    };
+    const choice = zoneByKey[key];
+    if (!choice) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (choice === 'float') this.commitPaneMoveAsFloat();
+    else this.commitPaneMoveToZone(choice);
+  }
+
+  /**
+   * Walk the focused element through nested shadow roots to find a focused
+   * tab button, then map it back to the dock's pane name + source path via
+   * the data attributes on the slotted .dock-tab span.
+   */
+  private findFocusedPaneOrigin(): { paneName: string; sourcePath: DockPath } | null {
+    if (!this.shadowRoot) return null;
+    let active: Element | null = this.shadowRoot.activeElement;
+    while (active && active.shadowRoot && active.shadowRoot.activeElement) {
+      active = active.shadowRoot.activeElement;
+    }
+    if (!active || active.getAttribute('role') !== 'tab') return null;
+    const tabId = active.id;
+    const headerSpan = this.shadowRoot.querySelector<HTMLElement>(
+      `.dock-tab[data-tab-id="${tabId}"]`,
+    );
+    if (!headerSpan) return null;
+    const stack = headerSpan.closest<HTMLElement>('.dock-stack');
+    if (!stack) return null;
+    const path = this.parsePath(stack.dataset['path']);
+    if (!path) return null;
+    return { paneName: headerSpan.dataset['pane']!, sourcePath: path };
+  }
+
+  /**
+   * Synthesise a minimal dragState so handleDrop's existing pipeline can
+   * commit the keyboard-driven move. handleDrop reads {pane, sourcePath,
+   * dropHandled} — the rest of dragState is pointer-drag bookkeeping that
+   * doesn't apply here.
+   */
+  private synthesiseDragStateForKeyboardMove(): void {
+    if (!this.paneMoveMode) return;
+    this.dragState = {
+      pane: this.paneMoveMode.paneName,
+      sourcePath: this.clonePath(this.paneMoveMode.sourcePath),
+      floatingIndex: this.paneMoveMode.sourcePath.type === 'floating'
+        ? this.paneMoveMode.sourcePath.index
+        : null,
+      pointerOffsetX: 0,
+      pointerOffsetY: 0,
+      dropHandled: false,
+      sourceStackEl: null,
+      sourceHeaderBounds: null,
+      startClientX: 0,
+      startClientY: 0,
+    } as never;
+  }
+
+  private commitPaneMoveToZone(zone: DropZone): void {
+    if (!this.paneMoveMode) return;
+    const move = this.paneMoveMode;
+    this.synthesiseDragStateForKeyboardMove();
+    // Source stack is also the target stack — handleDrop creates a sibling
+    // split with the moved pane on the chosen side.
+    this.handleDrop(move.sourcePath, zone);
+    this.dragState = null;
+    this.paneMoveMode = null;
+    const title = this.titles[move.paneName] ?? move.paneName;
+    this.liveAnnouncer.announce(`Pane ${title} docked to ${zone}.`);
+  }
+
+  private commitPaneMoveAsFloat(): void {
+    if (!this.paneMoveMode) return;
+    const move = this.paneMoveMode;
+    const source = this.resolveStackLocation(move.sourcePath);
+    if (!source) {
+      this.paneMoveMode = null;
+      return;
+    }
+    this.removePaneFromLocation(source, move.paneName, true);
+    const floatingLayout: DockFloatingStackLayout = {
+      bounds: {
+        left: 100 + this.floatingLayouts.length * 24,
+        top: 100 + this.floatingLayouts.length * 24,
+        width: 320,
+        height: 200,
+      },
+      root: { kind: 'stack', panes: [move.paneName], activePane: move.paneName },
+      activePane: move.paneName,
+    };
+    this.floatingLayouts.push(floatingLayout);
+    this.normalizeAllLayouts();
+    this.renderLayout();
+    this.dispatchLayoutChanged();
+    this.paneMoveMode = null;
+    const title = this.titles[move.paneName] ?? move.paneName;
+    this.liveAnnouncer.announce(`Pane ${title} torn off into a floating window.`);
   }
 
   /**

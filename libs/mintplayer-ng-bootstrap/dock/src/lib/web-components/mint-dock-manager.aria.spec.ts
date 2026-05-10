@@ -135,3 +135,51 @@ describe('mint-dock-manager — live announcer', () => {
 // unit-level "render then click the handle" test isn't viable here. The
 // keyboard delegation path is covered at the splitter side via
 // MpSplitter.resizeDividerBy() (see mp-splitter.aria.spec.ts).
+
+describe('mint-dock-manager — keyboard pane move (M to enter, T/R/B/L/F to commit)', () => {
+  let dock: MintDockManagerElement;
+  beforeEach(async () => {
+    dock = document.createElement('mint-dock-manager') as MintDockManagerElement;
+    document.body.appendChild(dock);
+    dock.getBoundingClientRect = () => makeRect(0, 0, HOST_WIDTH, HOST_HEIGHT);
+    dock.layout = {
+      root: { kind: 'stack', panes: ['Alpha', 'Beta'], activePane: 'Alpha' },
+      titles: { Alpha: 'Alpha', Beta: 'Beta' },
+      floating: [],
+    } as never;
+    await (dock as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+  });
+  afterEach(() => dock.remove());
+
+  // The capture-phase keydown listener is wired in firstUpdated, but
+  // jsdom's composed-event traversal through nested shadow roots doesn't
+  // reliably surface a focused button inside mp-tab-control's shadow root
+  // back to the dock root via shadowRoot.activeElement. We exercise the
+  // commit pipeline directly: the higher-level "find focused tab + dispatch
+  // composed event" path is covered by the manual NVDA + Playwright passes
+  // documented in the PRD's §9 test strategy.
+  it('commitPaneMoveAsFloat tears off the named pane into a floating window', async () => {
+    const internals = dock as unknown as {
+      paneMoveMode: { paneName: string; sourcePath: { type: 'docked'; segments: number[] } } | null;
+      commitPaneMoveAsFloat: () => void;
+    };
+    internals.paneMoveMode = { paneName: 'Alpha', sourcePath: { type: 'docked', segments: [] } };
+    internals.commitPaneMoveAsFloat();
+    await (dock as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+
+    expect(dock.shadowRoot!.querySelectorAll('.dock-floating').length).toBe(1);
+  });
+
+  it('Escape exits move mode without altering the layout', () => {
+    const internals = dock as unknown as {
+      paneMoveMode: { paneName: string; sourcePath: { type: 'docked'; segments: number[] } } | null;
+      handlePaneMoveModeKey: (e: KeyboardEvent) => void;
+    };
+    internals.paneMoveMode = { paneName: 'Alpha', sourcePath: { type: 'docked', segments: [] } };
+    internals.handlePaneMoveModeKey(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true }));
+    expect(internals.paneMoveMode).toBeNull();
+    expect(dock.shadowRoot!.querySelectorAll('.dock-floating').length).toBe(0);
+  });
+});
