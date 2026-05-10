@@ -11,7 +11,7 @@ import {
   FlattenedResource,
   getContrastColor,
 } from '@mintplayer/ng-bootstrap/web-components/scheduler-core';
-import { BaseView } from './base-view';
+import { BaseView, formatEventAriaLabel } from './base-view';
 import { SchedulerState } from '../state/scheduler-state';
 
 /**
@@ -27,15 +27,26 @@ export class TimelineView extends BaseView {
 
     const { date, options, resources, collapsedGroups } = this.state;
     const days = dateService.getWeekDays(date, options.firstDayOfWeek);
+    const flattenedPreview = resourceService.flatten(resources, collapsedGroups);
+    const visibleRowCount = flattenedPreview.filter((f) => f.visible).length + 1; // +1 for the day-header row
 
-    // Create timeline structure
+    // Create timeline structure with role=grid (APG Grid pattern, PRD §10 Q5)
     const timeline = this.createElement('div', 'scheduler-timeline');
+    timeline.setAttribute('role', 'grid');
+    timeline.setAttribute(
+      'aria-label',
+      `Resource timeline for week starting ${dateService.formatDateWithWeekday(days[0], options.locale)}`,
+    );
+    timeline.setAttribute('aria-rowcount', String(visibleRowCount));
 
-    // Header
+    // Header (row containing day labels)
     const header = this.createElement('div', 'scheduler-timeline-header');
+    header.setAttribute('role', 'row');
+    header.setAttribute('aria-rowindex', '1');
 
-    // Resource column header
+    // Resource column header (top-left corner)
     const resourceHeader = this.createElement('div', 'scheduler-resource-header');
+    resourceHeader.setAttribute('role', 'columnheader');
     resourceHeader.textContent = 'Resources';
     header.appendChild(resourceHeader);
 
@@ -53,6 +64,7 @@ export class TimelineView extends BaseView {
       // Day header spanning multiple slots
       const daySlots = slots.length;
       const dayHeader = this.createElement('div', 'scheduler-timeline-slot-header');
+      dayHeader.setAttribute('role', 'columnheader');
       dayHeader.style.width = `${daySlots * this.slotWidth}px`;
       dayHeader.textContent = dateService.formatDateWithWeekday(day, options.locale);
       dayHeader.style.borderBottom = '1px solid var(--scheduler-border-color)';
@@ -80,6 +92,7 @@ export class TimelineView extends BaseView {
 
       for (const slot of slots) {
         const slotHeader = this.createElement('div', 'scheduler-timeline-slot-header');
+        slotHeader.setAttribute('role', 'columnheader');
         slotHeader.style.width = `${this.slotWidth}px`;
         slotHeader.textContent = dateService.formatTime(slot.start, options.timeFormat);
         slotHeader.style.fontSize = '10px';
@@ -96,11 +109,14 @@ export class TimelineView extends BaseView {
     // Flatten resources
     const flattened = resourceService.flatten(resources, collapsedGroups);
 
+    let rowIndex = 2; // 1 = header row above
     for (const flat of flattened) {
       if (!flat.visible) continue;
 
       const row = this.createResourceRow(flat, days);
+      row.setAttribute('aria-rowindex', String(rowIndex));
       body.appendChild(row);
+      rowIndex++;
     }
 
     timeline.appendChild(body);
@@ -113,18 +129,26 @@ export class TimelineView extends BaseView {
   private createResourceRow(flat: FlattenedResource, days: Date[]): HTMLElement {
     const { options } = this.state;
     const row = this.createElement('div', 'scheduler-timeline-row');
+    row.setAttribute('role', 'row');
 
     if (isResourceGroup(flat.item)) {
       row.classList.add('group');
     }
 
-    // Resource cell
+    // Resource cell — role="rowheader" labels the row for SR users.
     const resourceCell = this.createElement('div', 'scheduler-resource-cell');
+    resourceCell.setAttribute('role', 'rowheader');
     resourceCell.style.paddingLeft = `${8 + flat.depth * 16}px`;
 
     if (isResourceGroup(flat.item)) {
-      const toggle = this.createElement('span', 'expand-toggle');
-      toggle.textContent = this.state.collapsedGroups.has(flat.item.id) ? '▶' : '▼';
+      // Native <button> for the expand/collapse — gets keyboard activation
+      // (Enter/Space) for free, plus aria-expanded reflects collapsed state.
+      const toggle = this.createElement('button', 'expand-toggle');
+      toggle.type = 'button';
+      const isCollapsed = this.state.collapsedGroups.has(flat.item.id);
+      toggle.textContent = isCollapsed ? '▶' : '▼';
+      toggle.setAttribute('aria-expanded', String(!isCollapsed));
+      toggle.setAttribute('aria-label', `${isCollapsed ? 'Expand' : 'Collapse'} ${flat.item.title}`);
       this.setData(toggle, { groupId: flat.item.id });
       resourceCell.appendChild(toggle);
     }
@@ -148,6 +172,8 @@ export class TimelineView extends BaseView {
 
       for (const slot of slots) {
         const slotEl = this.createElement('div', 'scheduler-timeline-slot');
+        slotEl.setAttribute('role', 'gridcell');
+        slotEl.setAttribute('tabindex', '-1');
         slotEl.style.width = `${this.slotWidth}px`;
         this.setData(slotEl, {
           resourceId: flat.item.id,
@@ -233,7 +259,8 @@ export class TimelineView extends BaseView {
           colspan,
           weekStart,
           totalWidth,
-          options.slotDuration ?? 1800
+          options.slotDuration ?? 1800,
+          resource.title,
         );
         eventsContainer.appendChild(eventEl);
       }
@@ -247,12 +274,19 @@ export class TimelineView extends BaseView {
     colspan: number,
     viewStart: Date,
     totalWidth: number,
-    slotDuration: number
+    slotDuration: number,
+    resourceTitle: string | null = null,
   ): HTMLElement {
     const eventEl = this.createElement('div', 'scheduler-timeline-event');
-
-    // Mark as selected if this is the selected event
-    if (this.state.selectedEvent?.id === event.id) {
+    const isSelected = this.state.selectedEvent?.id === event.id;
+    eventEl.setAttribute('role', 'button');
+    eventEl.setAttribute('tabindex', '-1');
+    eventEl.setAttribute(
+      'aria-label',
+      formatEventAriaLabel(event, resourceTitle, this.state.options.timeFormat),
+    );
+    if (isSelected) {
+      eventEl.setAttribute('aria-current', 'true');
       eventEl.classList.add('selected');
     }
 

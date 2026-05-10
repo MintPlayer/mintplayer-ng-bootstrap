@@ -1,4 +1,23 @@
+import { dateService, type SchedulerEvent } from '@mintplayer/ng-bootstrap/web-components/scheduler-core';
 import { SchedulerState } from '../state/scheduler-state';
+
+/**
+ * Build the descriptive aria-label for an event block. Used by every view.
+ * Format: "{title}, {start}–{end} on {resource}". Resource is omitted when
+ * the event has no resource or the caller doesn't have it (week/day views).
+ */
+export function formatEventAriaLabel(
+  event: SchedulerEvent,
+  resourceTitle: string | null,
+  timeFormat: '12h' | '24h' = '24h',
+): string {
+  const start = dateService.formatTime(event.start, timeFormat);
+  const end = dateService.formatTime(event.end, timeFormat);
+  const day = event.start.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+  const parts = [`${event.title}, ${start}–${end}`, day];
+  if (resourceTitle) parts.push(`on ${resourceTitle}`);
+  return parts.join(', ');
+}
 
 /**
  * Base class for scheduler views

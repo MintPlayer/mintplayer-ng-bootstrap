@@ -6,7 +6,7 @@ import {
   TimeSlot,
   getContrastColor,
 } from '@mintplayer/ng-bootstrap/web-components/scheduler-core';
-import { BaseView } from './base-view';
+import { BaseView, formatEventAriaLabel } from './base-view';
 import { SchedulerState } from '../state/scheduler-state';
 
 /**
@@ -225,9 +225,15 @@ export class WeekView extends BaseView {
   ): HTMLElement {
     const event = part.event;
     const eventEl = this.createElement('div', 'scheduler-event');
-
-    // Mark as selected if this is the selected event
-    if (this.state.selectedEvent?.id === event.id) {
+    const isSelected = this.state.selectedEvent?.id === event.id;
+    eventEl.setAttribute('role', 'button');
+    eventEl.setAttribute('tabindex', '-1');
+    eventEl.setAttribute(
+      'aria-label',
+      formatEventAriaLabel(event, null, this.state.options.timeFormat),
+    );
+    if (isSelected) {
+      eventEl.setAttribute('aria-current', 'true');
       eventEl.classList.add('selected');
     }
 

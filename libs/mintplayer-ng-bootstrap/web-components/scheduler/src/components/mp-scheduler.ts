@@ -1,4 +1,5 @@
 import { LitElement, html, type TemplateResult } from 'lit';
+import { LiveAnnouncerController } from '@mintplayer/ng-bootstrap/web-components/a11y';
 import {
   ViewType,
   SchedulerEvent,
@@ -71,6 +72,8 @@ export class MpScheduler extends LitElement {
 
   // Now indicator update timer
   private nowIndicatorTimer: ReturnType<typeof setInterval> | null = null;
+
+  private readonly liveAnnouncer = new LiveAnnouncerController(this);
 
   constructor() {
     super();
@@ -250,18 +253,23 @@ export class MpScheduler extends LitElement {
 
   changeView(view: ViewType): void {
     this.stateManager.setView(view);
+    this.liveAnnouncer.announce(`View changed to ${view}.`);
   }
 
   addEvent(event: SchedulerEvent): void {
     this.stateManager.addEvent(event);
+    this.liveAnnouncer.announce(`Event ${event.title} added.`);
   }
 
   updateEvent(event: SchedulerEvent): void {
     this.stateManager.updateEvent(event);
+    this.liveAnnouncer.announce(`Event ${event.title} updated.`);
   }
 
   removeEvent(eventId: string): void {
+    const ev = this.getEventById(eventId);
     this.stateManager.removeEvent(eventId);
+    if (ev) this.liveAnnouncer.announce(`Event ${ev.title} removed.`);
   }
 
   getEventById(eventId: string): SchedulerEvent | null {
@@ -282,6 +290,7 @@ export class MpScheduler extends LitElement {
         <header class="scheduler-header"></header>
         <div class="scheduler-content"></div>
       </div>
+      ${this.liveAnnouncer.template()}
     `;
   }
 
@@ -317,33 +326,44 @@ export class MpScheduler extends LitElement {
     // Navigation
     const nav = document.createElement('nav');
     nav.className = 'scheduler-nav';
+    nav.setAttribute('aria-label', 'Scheduler navigation');
 
     const prevBtn = document.createElement('button');
+    prevBtn.type = 'button';
     prevBtn.textContent = '‹';
+    prevBtn.setAttribute('aria-label', 'Previous period');
     prevBtn.title = 'Previous';
     prevBtn.addEventListener('click', () => this.prev());
 
     const nextBtn = document.createElement('button');
+    nextBtn.type = 'button';
     nextBtn.textContent = '›';
+    nextBtn.setAttribute('aria-label', 'Next period');
     nextBtn.title = 'Next';
     nextBtn.addEventListener('click', () => this.next());
 
     const todayBtn = document.createElement('button');
+    todayBtn.type = 'button';
     todayBtn.textContent = 'Today';
+    todayBtn.setAttribute('aria-label', 'Jump to today');
     todayBtn.addEventListener('click', () => this.today());
 
     nav.appendChild(prevBtn);
     nav.appendChild(nextBtn);
     nav.appendChild(todayBtn);
 
-    // Title
+    // Title — assertive live region so navigation announces the new period.
     const title = document.createElement('div');
     title.className = 'scheduler-title';
+    title.setAttribute('aria-live', 'polite');
+    title.setAttribute('aria-atomic', 'true');
     this.updateTitle(title);
 
-    // View switcher
+    // View switcher — toolbar of toggle-buttons; aria-pressed mirrors active state.
     const viewSwitcher = document.createElement('div');
     viewSwitcher.className = 'scheduler-view-switcher';
+    viewSwitcher.setAttribute('role', 'group');
+    viewSwitcher.setAttribute('aria-label', 'Switch view');
 
     const views: { key: ViewType; label: string }[] = [
       { key: 'year', label: 'Year' },
@@ -355,9 +375,12 @@ export class MpScheduler extends LitElement {
 
     for (const { key, label } of views) {
       const btn = document.createElement('button');
+      btn.type = 'button';
       btn.textContent = label;
       btn.dataset['view'] = key;
-      if (key === this.view) {
+      const isActive = key === this.view;
+      btn.setAttribute('aria-pressed', String(isActive));
+      if (isActive) {
         btn.classList.add('active');
       }
       btn.addEventListener('click', () => this.changeView(key));
@@ -483,11 +506,13 @@ export class MpScheduler extends LitElement {
   private updateUI(state: SchedulerState): void {
     this.updateTitle();
 
-    // Update view switcher active state
+    // Update view switcher active state — visual class + aria-pressed in lockstep.
     const buttons = this.shadowRoot!.querySelectorAll('.scheduler-view-switcher button');
     buttons.forEach((btn) => {
       const btnEl = btn as HTMLButtonElement;
-      btnEl.classList.toggle('active', btnEl.dataset['view'] === state.view);
+      const isActive = btnEl.dataset['view'] === state.view;
+      btnEl.classList.toggle('active', isActive);
+      btnEl.setAttribute('aria-pressed', String(isActive));
     });
 
     // Update or re-render view
