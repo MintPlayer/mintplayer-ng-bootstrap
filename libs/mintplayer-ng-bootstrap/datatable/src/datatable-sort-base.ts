@@ -28,7 +28,7 @@ export abstract class DatatableSortBase {
     }
   }
 
-  columnHeaderClicked(column: BsDatatableColumnDirective, event: MouseEvent) {
+  columnHeaderClicked(column: BsDatatableColumnDirective, event: MouseEvent | KeyboardEvent) {
     if (!column.sortable()) return;
 
     const columnName = column.name();
