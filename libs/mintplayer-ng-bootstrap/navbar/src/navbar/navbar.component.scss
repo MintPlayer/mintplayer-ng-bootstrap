@@ -17,7 +17,22 @@
         z-index: 20 !important;
 
         &.noscript {
-            &:not(:focus-within) > div > bs-navbar-nav > div.navbar-collapse {
+            // Without JS the toggler button is inert (no click handler runs),
+            // so users in narrow / responsive mode would have no way to expose
+            // the menu at all. Use :focus-within as the JS-free toggle: tab
+            // onto the toggler — or onto any item inside the menu — and the
+            // collapse content reveals. Tab away and it collapses.
+            //
+            // Above the navbar's expand-breakpoint Bootstrap forces
+            // `display: flex !important` on .navbar-collapse via its
+            // .navbar-expand-{bp} media queries, so the rule below only takes
+            // effect when the layout is actually collapsed.
+            //
+            // Selector uses descendant (not child) because bs-navbar-nav is
+            // projected one level deeper than this scss originally assumed —
+            // it sits inside the [id]=collapseId wrapper div in the navbar
+            // template.
+            &:not(:focus-within) bs-navbar-nav .navbar-collapse {
                 display: none;
             }
 
