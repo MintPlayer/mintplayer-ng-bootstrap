@@ -44,6 +44,7 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
   animation = input<'fade' | 'slide' | 'none'>('slide');
   interval = input<number | null>(null);
   wrap = input(true);
+  ariaLabel = input<string | null>(null);
 
   // Outputs
   slideChange = output<number>();
