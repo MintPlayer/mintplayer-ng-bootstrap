@@ -17,11 +17,18 @@
 
 // Use auto layout so columns size to content and the table can overflow
 // horizontally when content is wider than the container.
-// Override Bootstrap's width:100% to prevent table-layout:auto from
-// redistributing extra space across columns — keeps header and body
-// column widths aligned and stable across scroll events.
-bs-table ::ng-deep table,
-.virtual-scroll-viewport table {
+//
+// Override Bootstrap's `.table { width: 100% }` (which lives in
+// `bs-table-styles`'s `:host ::ng-deep` import → specificity 0,2,0).
+// The header override has to pierce `bs-table` via `::ng-deep`, which
+// drops the encapsulation attribute on the trailing `table` selector,
+// so we bump specificity by anchoring on `.virtual-datatable-container`.
+// Without the anchor, the header selector was 0,1,2 (loses to Bootstrap)
+// and the body selector was 0,2,2 (wins) — that asymmetry is why the
+// header column widths used to bloat to fill the container while the
+// body stayed at content width.
+.virtual-datatable-container bs-table ::ng-deep table,
+.virtual-datatable-container .virtual-scroll-viewport table {
   table-layout: auto;
   width: max-content;
 }
