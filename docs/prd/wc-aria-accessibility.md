@@ -144,7 +144,7 @@ The recent commit `ca7a0c9d` ("perf(tile-manager): cache layout metrics; tighten
 | Discoverability of move mode | No visual or announced cue that **Space** activates move mode on Tab-into-board | — |
 | Drag-begin / drag-blocked announcements | Pointer drag emits no live message; only commit does | `mint-tile-manager.element.ts:532, 613, 689` |
 
-**Pattern decision needed:** stick with `role="grid"` (and add the rowindex/colindex/span attributes to honour the contract), or switch to `role="region"` with managed focus + no grid attributes. The grid is dynamic (tiles reflow on user interaction), so dimensions can drift — `role="region"` may actually be the cleaner fit. Decision in §10.
+**Pattern decision (resolved §10 Q1):** switch to `role="region"` with managed focus and `role="button"` on tiles. The grid hierarchy `ca7a0c9d` shipped is walked back — dynamic dimensions don't fit a static grid contract well, and the region pattern reads cleaner for a freeform tile board.
 
 **Severity: Major** across all six.
 
@@ -152,16 +152,16 @@ The recent commit `ca7a0c9d` ("perf(tile-manager): cache layout metrics; tighten
 
 ### 6.1 Drag-and-drop keyboard alternative — shared interaction model
 
-Three of four WCs (dock, scheduler, tile-manager) have pointer-only drag. Tile-manager already implements a **move-mode** pattern (Space to enter, arrow keys nudge, Enter commits, Escape cancels, live region narrates). That pattern should be the template for the others. Concretely:
+Three of four WCs (dock, scheduler, tile-manager) have pointer-only drag. The shared keymap is **`M` to enter move/resize mode**, arrow keys nudge, Enter commits, Escape cancels, live region narrates each step. Tile-manager already implements the model (it shipped using Space — Phase 3 retrofits it to `M` to align library-wide; see §10 Q2 decision). Concretely:
 
 | Component | Trigger | Arrows | Shift+arrows | Enter | Escape |
 |---|---|---|---|---|---|
-| `mp-splitter` divider | Focused divider (Tab) | resize ±10px | resize ±1px (fine) | (commit live; no separate "enter mode") | revert to drag-start size |
-| `mint-tile-manager` tile | Space on focused tile | move 1 cell | resize 1 cell | commit | cancel |
-| `mint-dock-manager` tab/pane | Space (or `M`) on focused tab header | cycle through drop targets (dock zones + floating windows) | — | commit move | cancel |
-| `mp-scheduler` event block | Space on focused event | nudge by `slotDuration` along time axis; up/down = next resource row | — | commit | revert to original time |
+| `mp-splitter` divider | Focused divider (Tab) | resize ±10% | resize ±1% (fine) | (commit live; no separate "enter mode") | revert to drag-start size |
+| `mint-tile-manager` tile | `M` on focused tile | move 1 cell | resize 1 cell | commit | cancel |
+| `mint-dock-manager` tab/pane | `M` on focused tab header | cycle through drop targets (dock zones + floating windows) | — | commit move | cancel |
+| `mp-scheduler` event block | `M` on focused event | nudge by `slotDuration` along time axis; up/down = next resource row | — | commit | revert to original time |
 
-Splitter is the simplest (no separate "mode" — focus + arrows immediately resize, like the existing `BsResizeGlyphDirective`). Dock is the most complex (move targets are a list, not a 2D grid). Tile-manager is the precedent.
+Splitter is the simplest (no separate "mode" — focus + arrows immediately resize, like the existing `BsResizeGlyphDirective`). Dock is the most complex (move targets are a list, not a 2D grid). Tile-manager is the precedent for the modal pattern.
 
 ### 6.2 Live announcer — share the primitive
 
@@ -203,8 +203,8 @@ Each phase ships as one PR. Within each phase, audits + tests land with the impl
 ### Phase 1 — `mp-splitter` (1 PR)
 - **1.1** `mp-splitter.ts:215–221` divider creation: emit `role="separator"`, `aria-orientation`, `aria-label`, `tabindex="0"`. ([precedent](../../libs/mintplayer-ng-bootstrap/resizable/src/lib/components/resizable.component.ts))
 - **1.2** `mp-splitter.ts:199–212` panel wrappers: assign deterministic IDs (`{instanceId}-panel-{i}`); expose adjacent-pair IDs to dividers via a host-level data attribute (§6.3).
-- **1.3** Track current/min/max sizes per divider; mirror to `aria-valuenow/min/max` live during drag (subscribe `stateManager.previewSizes`).
-- **1.4** New `input-handler.ts` keydown branch — Arrow keys ±10px (Shift = ±1px), Home/End to min/max, modelled on `BsResizeGlyphDirective.onKeydown` (`resizable.component.ts:247–282`).
+- **1.3** Track current/min/max sizes per divider; mirror to `aria-valuenow/min/max` as **percent of container** (§10 Q3) live during drag (subscribe `stateManager.previewSizes`, divide by container size each frame).
+- **1.4** New `input-handler.ts` keydown branch — Arrow keys ±10% (Shift = ±1%), Home/End to min/max, modelled on `BsResizeGlyphDirective.onKeydown` (`resizable.component.ts:247–282`).
 - **1.5** Vitest: `mp-splitter.a11y.spec.ts` — assert role/label/orientation, focus, and that ArrowLeft on horizontal-orientation shrinks left panel by 10px.
 
 ### Phase 2 — `mp-tab-control` tab-panel role (1 small PR)
@@ -212,14 +212,15 @@ Each phase ships as one PR. Within each phase, audits + tests land with the impl
 - **2.2** Vitest assertion in existing `mp-tab-control.spec.ts`.
 
 ### Phase 3 — `mint-tile-manager` (1 PR)
-- **3.1** **Decide the role contract first** (§10 Q1): `role="grid"` + dynamic rowindex/colindex/span, or `role="region"` + managed focus.
-- **3.2** `mint-tile-manager.element.ts:141` — fallback `aria-label="Tile board"` when consumer doesn't pass `label`.
+Decision recorded (§10 Q1): switch from `role="grid"` to `role="region"` + `role="button"` tiles. Decision recorded (§10 Q2): retrofit move-mode key from Space to `M`.
+- **3.1** `mint-tile-manager.element.ts:141` — replace `role="grid"` with `role="region"`; fallback `aria-label="Tile board"` when consumer doesn't pass `label`. Drop the `role="row"` wrapper (line 142, added in `ca7a0c9d`).
+- **3.2** `mint-tile-manager.element.ts:170–203` — replace `role="gridcell"` on each tile with `role="button"`; tiles keep their consumer-provided `aria-label`. Remove host's `role="application"` set in `connectedCallback` (lines 271–274) — region pattern doesn't need it.
 - **3.3** `mint-tile-manager.element.ts:150` — add `role="status"` to the live region.
-- **3.4** `mint-tile-manager.element.ts:170–203` — if grid path: emit `aria-rowindex`/`colindex`/`rowspan`/`colspan` per tile from `tile.position`. If region path: drop `role="gridcell"` from tiles; use `role="button"` + descriptive label.
-- **3.5** Hidden `<div id="tile-instructions">` near the live region with the keymap text; tiles set `aria-describedby="tile-instructions"`.
-- **3.6** Roving tabindex: track `focusedTileId` in element state; render only the focused tile with `tabindex="0"`. Wire ArrowUp/Down/Home/End in `onTileKeyDown` to move focus between tiles in row-major order.
+- **3.4** Hidden `<div id="tile-instructions">` near the live region with the keymap text ("Press M to enter move mode. In move mode, arrow keys move, Shift+arrow resizes, Enter commits, Escape cancels."); tiles set `aria-describedby="tile-instructions"`.
+- **3.5** Roving tabindex: track `focusedTileId` in element state; render only the focused tile with `tabindex="0"`, others `tabindex="-1"`. Wire ArrowUp/Down/Left/Right and Home/End in `onTileKeyDown` to move focus between tiles in row-major order **when not in move mode**. Inside move mode, arrows still control the active tile's position/size.
+- **3.6** Retrofit move-mode trigger key from Space → `M` (`onTileKeyDown` at `mint-tile-manager.element.ts:813–841`). Update the live-region message at line 821 to reflect the new key. **Breaking change** — document in the changelog; per BC memory, no shim.
 - **3.7** Pointer drag — call `liveAnnouncer.announce()` on drag-begin and on `blocked: true` reflow result (`element.ts:613, 689`).
-- **3.8** Vitest: extend `mint-tile-manager.element.spec.ts` with the new assertions.
+- **3.8** Vitest: rewrite the role/keyboard assertions in `mint-tile-manager.element.spec.ts` for the region+button+M model.
 
 ### Phase 4 — `mint-dock-manager` non-DnD ARIA (1 PR)
 - **4.1** Use the live announcer (Phase 0) to narrate `dispatchLayoutChanged` calls (lines 1296, 1358, 1472, 1600) — "Pane X moved to dock {zone}", "Floating pane X closed", "Split resized".
@@ -243,7 +244,7 @@ Each phase ships as one PR. Within each phase, audits + tests land with the impl
 ### Phase 6 — `mp-scheduler` keyboard event-move (1 PR, separate from Phase 5)
 - **6.1** Roving focus across grid cells: only one cell `tabindex="0"`; `mp-scheduler.ts:655–704` `handleKeyDown` handles ArrowLeft/Right/Up/Down between cells, Home/End row edges, Ctrl+Home/End grid edges. Reuse the cell-grid focus model in `mint-tile-manager` Phase 3 if it generalises.
 - **6.2** Tab into board lands on first cell (or selected event if any).
-- **6.3** Space on focused event → enter move mode (set `data-move-mode` on event, announce keymap).
+- **6.3** `M` on focused event → enter move mode (set `data-move-mode` on event, announce keymap).
 - **6.4** ArrowLeft/Right while in move mode → call `dragManager.nudgeEventTime(±slotDuration)`; live region announces new start time (verbose first nudge, terse afterwards).
 - **6.5** Enter → commit via existing `handleDragComplete()` path (`mp-scheduler.ts:576–593`).
 - **6.6** Escape → revert via existing drag-cancel path.
@@ -252,7 +253,7 @@ Each phase ships as one PR. Within each phase, audits + tests land with the impl
 
 ### Phase 7 — `mint-dock-manager` move-mode for panes (1 PR, biggest)
 - **7.1** Move-target enumeration: build the list of valid drop destinations (dock zones × stacks + each floating window). Hoist from the pointer drop-zone code (`element.ts:1223–1260`) so the same model serves both inputs.
-- **7.2** Tab-header keymap: focused tab → Space (or `M`) → enter move mode → arrow keys cycle the move-target list → live region narrates current target.
+- **7.2** Tab-header keymap: focused tab → `M` → enter move mode → arrow keys cycle the move-target list → live region narrates current target.
 - **7.3** Enter commits via existing pane-move pipeline; Escape cancels.
 - **7.4** Cross-cutting: pressing Escape during *any* drag (pointer or keyboard) cancels and announces.
 - **7.5** Vitest + a Playwright smoke spec in `apps/ng-bootstrap-demo-e2e/` for the move-mode happy path.
@@ -260,7 +261,15 @@ Each phase ships as one PR. Within each phase, audits + tests land with the impl
 ### Phase 8 — Polish (1 PR)
 - **8.1** `prefers-reduced-motion` guards across dock and scheduler.
 - **8.2** `axe-core/playwright` run on the dock, scheduler, and tile-manager demo pages; capture baseline; fail CI on `critical`/`serious`.
-- **8.3** Update demo pages (`apps/ng-bootstrap-demo/src/app/pages/advanced/{dock,tile-manager}/`, scheduler equivalent) with a short keyboard-help section so the keymap is discoverable for sighted users too.
+- **8.3** Surface the keymap on the demo pages — this is part of the deliverable, not a nice-to-have. Each affected demo page (`apps/ng-bootstrap-demo/src/app/pages/advanced/{dock,tile-manager}/`, scheduler equivalent, splitter equivalent) gets a visible "Keyboard shortcuts" panel listing the keys for that component, e.g.:
+  - **`M`** — enter move/resize mode (tile-manager, dock pane, scheduler event)
+  - **Arrow keys** — move 1 unit (or resize with Shift) while in move mode; navigate between focused items otherwise
+  - **Enter** — commit the move/resize
+  - **Escape** — cancel and revert
+  - **Tab / Shift+Tab** — move focus between tiles / events / panes / dividers
+  - **Home / End** — first / last in row (grid components) or min / max (splitter)
+
+  The keymap is also exposed in-component via the `aria-describedby` instructions string (see Phase 3.4, Phase 5.x, Phase 7.2), so SR users get the same content. The visible panel covers sighted keyboard users who don't read SR text.
 
 ## 8. Severity matrix
 
@@ -283,27 +292,28 @@ Mirroring the companion PRD §7:
 
 ## 10. Open questions
 
-1. **Tile-manager: `role="grid"` vs. `role="region"`?** The component's grid is dynamic (tiles reflow on each user interaction), and `aria-rowcount`/`aria-colcount` are conventionally static. Two paths:
-   - **(a) Stay with `role="grid"`** + emit `aria-rowindex`/`aria-colindex`/`aria-rowspan`/`aria-colspan` per tile, omit `aria-rowcount/colcount`. Honours the contract `ca7a0c9d` already opted into. SR users get position info.
-   - **(b) Switch to `role="region"`** with `aria-label` + roving focus + tile `role="button"`. Cleaner for a dynamic layout, but throws away the grid semantics shipped in `ca7a0c9d`.
-   - **Recommendation:** (a). The ARIA grid hierarchy is already there; finish it rather than walk it back. Resolve this before Phase 3 starts.
+All seven resolved 2026-05-10 ahead of implementation.
 
-2. **Dock move-mode: Space, `M`, or `Enter`?** Space is consistent with tile-manager's move-mode (already shipped). `M` is APG-suggestive ("move"). Enter conflicts with tab-activate (already wired in `mp-tab-control`).
-   - **Recommendation:** Space. Consistency with tile-manager is worth more than mnemonic clarity, and Space is otherwise a no-op on tab buttons.
+1. **Tile-manager: `role="grid"` vs. `role="region"`?**
+   - **Decision: `role="region"`.** Walk back the grid hierarchy `ca7a0c9d` shipped. Tiles become `role="button"`; the row wrapper and `role="application"` are dropped. Cleaner for a dynamic, freeform layout where grid dimensions drift under user interaction.
 
-3. **Splitter `aria-valuenow` in pixels or percent?** Internally tracked as pixels (`mp-splitter.ts:432`). APG examples use the unit native to the implementation.
-   - **Recommendation:** Pixels. Optional `[ariaValueFormat]` knob deferred until a real consumer asks.
+2. **Dock move-mode trigger key — Space, `M`, or `Enter`?**
+   - **Decision: `M`.** Mnemonic for "move", aligns with APG examples. Tile-manager (which shipped using Space in `ca7a0c9d`) is retrofitted to `M` in Phase 3 step 3.6 — breaking change, no shim. `M` is the single library-wide trigger across tile-manager, dock, scheduler.
 
-4. **Scheduler keyboard nudge granularity?** The renderer already exposes `options.slotDuration` (`mp-scheduler.ts:156–159`), typically 5/15/30 min.
-   - **Recommendation:** Use `slotDuration` — matches the visual snap users already learn from drag.
+3. **Splitter `aria-valuenow` in pixels or percent?**
+   - **Decision: percent of container.** More intuitive for SR users ("50%"); arrow steps are 10% (Shift = 1%). Conversion happens once per drag-preview frame — negligible cost.
 
-5. **Scheduler full grid vs. region+buttons?** Full grid (Phase 5) is more powerful for SR users but heavier. Region+buttons + skip-link is cheaper but loses 2D nav.
-   - **Recommendation:** Full grid. The scheduler is a complex enough widget that AT users benefit from explicit structure, and the implementation cost is contained to one helper in `views/`.
+4. **Scheduler keyboard nudge granularity?**
+   - **Decision: `options.slotDuration`.** Matches the visual snap users learn from drag. Already exposed at `mp-scheduler.ts:156–159`.
 
-6. **Move-mode in the WC or the Angular wrapper?** The audit on the dock raised this; consistent answer needed across components.
-   - **Recommendation:** WC. Lit owns the DOM and the keymap; wrappers stay thin. The few cases where Angular state needs to react (e.g. layout-change emit) already flow through CustomEvents.
+5. **Scheduler full grid vs. region+buttons?**
+   - **Decision: full `role="grid"`.** Worth the ~200 LOC cost for the AT experience on a complex widget.
 
-7. **Cross-shadow `aria-controls` reliability** (§6.3). Where the chosen pattern requires shadow→light reference (e.g. splitter divider→panel), is the design willing to expose stable IDs on the consumer's side, or do we add a public getter? Answer drives the splitter's API surface.
+6. **Move-mode in the WC or the Angular wrapper?**
+   - **Decision: Lit WC.** Keymap lives where the DOM lives. Wrappers stay thin. Layout-change reactions flow through CustomEvents.
+
+7. **Cross-shadow `aria-controls` reliability** (§6.3).
+   - **Decision: auto-generate panel IDs internally.** `mp-splitter` assigns deterministic IDs (`{instanceId}-panel-{i}`) to its slot wrappers and exposes the divider→panel adjacency via a host-level data attribute. Zero consumer burden.
 
 ## 11. Risks and mitigations
 
