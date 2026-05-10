@@ -103,6 +103,33 @@
   white-space: nowrap;
 }
 
+.dock-floating__close {
+  flex: 0 0 auto;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  color: var(--bs-body-color);
+  cursor: pointer;
+  font-size: 1.25rem;
+  line-height: 1;
+  padding: 0 0.4rem;
+  border-radius: 3px;
+  // Default flex-row baseline alignment offsets the visual centre of the ×
+  // glyph relative to the title text — re-centre with margin-top so the
+  // close button reads as a row-aligned action, not a stray drift.
+  margin-top: -1px;
+  // The chrome's pointerdown initiates a window drag. The button's own
+  // pointerdown handler stops propagation, but we still want the cursor to
+  // read as clickable rather than grabby.
+  &:hover {
+    background: rgba(var(--bs-primary-rgb), 0.15);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: 1px;
+  }
+}
+
 .dock-floating > .dock-stack {
   flex: 1 1 auto;
   min-width: 12rem;

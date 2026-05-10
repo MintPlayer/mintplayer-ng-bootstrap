@@ -1,4 +1,14 @@
 <div class="dock-demo">
+  <details class="mb-2">
+    <summary>Keyboard shortcuts</summary>
+    <ul class="mb-0">
+      <li><kbd>Tab</kbd> / <kbd>Shift+Tab</kbd> — move focus into and across the tabstrip</li>
+      <li><kbd>←</kbd> / <kbd>→</kbd> / <kbd>Home</kbd> / <kbd>End</kbd> — navigate between tabs in the focused stack</li>
+      <li><kbd>Enter</kbd> / <kbd>Space</kbd> on a tab — activate it</li>
+      <li>Floating pane close button (×) — also focusable; <kbd>Enter</kbd> / <kbd>Space</kbd> closes</li>
+      <li><em>Move-mode</em> (<kbd>M</kbd> on a focused tab to move a pane between dock zones) lands in a follow-up phase.</li>
+    </ul>
+  </details>
   <bs-dock-manager
     [layout]="layout()"
     [debugLayoutIntegrity]="isDevMode"

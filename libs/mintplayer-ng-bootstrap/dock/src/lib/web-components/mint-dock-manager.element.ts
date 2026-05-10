@@ -1,5 +1,5 @@
 
-import { LitElement, type TemplateResult } from 'lit';
+import { html, LitElement, type TemplateResult } from 'lit';
 // Side-effect import: registers <mp-tab-control> + <mp-tab-page> custom elements.
 // Each dock stack is rendered as <mp-tab-control>, so the dock depends on this
 // lib being loaded before any layout is rendered.
@@ -7,6 +7,7 @@ import '@mintplayer/ng-bootstrap/web-components/tab-control';
 // Side-effect import: registers <mp-splitter>. Each DockSplitNode is rendered
 // as a nested <mp-splitter>, so this lib must load before any layout renders.
 import '@mintplayer/ng-bootstrap/web-components/splitter';
+import { LiveAnnouncerController } from '@mintplayer/ng-bootstrap/web-components/a11y';
 import {
   DockFloatingStackLayout,
   DockLayout,
@@ -73,6 +74,7 @@ export class MintDockManagerElement extends LitElement {
   private dropJoystick!: HTMLElement;
   private dropJoystickButtons!: HTMLButtonElement[];
   private readonly instanceId: string;
+  private readonly liveAnnouncer = new LiveAnnouncerController(this);
   private dropJoystickTarget: HTMLElement | null = null;
   private rootLayout: DockLayoutNode | null = null;
   private floatingLayouts: DockFloatingStackLayout[] = [];
@@ -249,7 +251,7 @@ export class MintDockManagerElement extends LitElement {
   }
 
   override render(): TemplateResult {
-    return template;
+    return html`${template}${this.liveAnnouncer.template()}`;
   }
 
   protected override firstUpdated(): void {
@@ -539,6 +541,15 @@ export class MintDockManagerElement extends LitElement {
         segments: [],
       });
 
+      const titleText = this.getFloatingWindowTitle(floating);
+      const titleId = `${this.instanceId}-floating-${index}-title`;
+      // role=dialog announces the window-like region; aria-modal=false because
+      // floating panes don't trap focus — users can still interact with docked
+      // panes behind them.
+      wrapper.setAttribute('role', 'dialog');
+      wrapper.setAttribute('aria-labelledby', titleId);
+      wrapper.setAttribute('aria-modal', 'false');
+
       const { left, top, width, height } = floating.bounds;
       wrapper.style.left = `${left}px`;
       wrapper.style.top = `${top}px`;
@@ -556,8 +567,22 @@ export class MintDockManagerElement extends LitElement {
 
       const title = this.documentRef.createElement('div');
       title.classList.add('dock-floating__title');
-      title.textContent = this.getFloatingWindowTitle(floating);
+      title.id = titleId;
+      title.textContent = titleText;
       chrome.appendChild(title);
+
+      const closeBtn = this.documentRef.createElement('button');
+      closeBtn.type = 'button';
+      closeBtn.classList.add('dock-floating__close');
+      closeBtn.setAttribute('aria-label', `Close pane: ${titleText}`);
+      closeBtn.textContent = '×';
+      closeBtn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        this.closeFloatingPane(index);
+      });
+      // The chrome's pointerdown otherwise begins a drag on the close button.
+      closeBtn.addEventListener('pointerdown', (ev) => ev.stopPropagation());
+      chrome.appendChild(closeBtn);
 
       wrapper.appendChild(chrome);
 
@@ -618,6 +643,23 @@ export class MintDockManagerElement extends LitElement {
       resizerConfigs.forEach(({ classes, edges }) => {
         const resizer = this.documentRef.createElement('div');
         resizer.classList.add(...classes);
+        resizer.setAttribute('role', 'separator');
+        // For corner resizers (both axes), aria-orientation is omitted —
+        // separator's default is "horizontal" but corner == both, so neither
+        // value is correct. SR users still hear "separator" with the label.
+        const isPureHorizontal = edges.horizontal === 'none' && edges.vertical !== 'none';
+        const isPureVertical = edges.vertical === 'none' && edges.horizontal !== 'none';
+        if (isPureHorizontal) resizer.setAttribute('aria-orientation', 'horizontal');
+        else if (isPureVertical) resizer.setAttribute('aria-orientation', 'vertical');
+        const labelParts: string[] = [];
+        if (edges.vertical === 'top') labelParts.push('top');
+        else if (edges.vertical === 'bottom') labelParts.push('bottom');
+        if (edges.horizontal === 'left') labelParts.push('left');
+        else if (edges.horizontal === 'right') labelParts.push('right');
+        resizer.setAttribute(
+          'aria-label',
+          `Resize pane ${labelParts.length === 2 ? 'corner ' : 'edge '}${labelParts.join('-')}`,
+        );
         resizer.addEventListener('pointerdown', (event) =>
           this.beginFloatingResize(event, index, wrapper, resizer, edges),
         );
@@ -2565,6 +2607,7 @@ export class MintDockManagerElement extends LitElement {
     if (wrapper) {
       this.promoteFloatingPane(newIndex, wrapper);
     }
+    this.liveAnnouncer.announce(`Pane ${this.titles[pane] ?? pane} torn off into a floating window.`);
     // Update drag state so subsequent moves reposition the floating window
     state.sourcePath = { type: 'floating', index: newIndex, segments: [] };
     state.floatingIndex = newIndex;
@@ -3721,6 +3764,23 @@ export class MintDockManagerElement extends LitElement {
       return;
     }
     this.floatingLayouts.splice(index, 1);
+  }
+
+  /**
+   * Close a floating pane via the chrome's close button (or any external
+   * caller). Announces the close to SR users, redraws the dock, and emits a
+   * layout-changed event. Phase 4 of the WC ARIA PRD — the floating chrome
+   * had no close affordance before this; users had to programmatically pop
+   * the pane out of `floatingLayouts`.
+   */
+  private closeFloatingPane(index: number): void {
+    const floating = this.floatingLayouts[index];
+    if (!floating) return;
+    const title = this.getFloatingWindowTitle(floating);
+    this.removeFloatingAt(index);
+    this.renderLayout();
+    this.dispatchLayoutChanged();
+    this.liveAnnouncer.announce(`Closed floating pane ${title}.`);
   }
 
   private removePaneFromFloating(
