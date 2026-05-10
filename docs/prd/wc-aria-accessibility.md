@@ -1,11 +1,15 @@
 # PRD: ARIA & accessibility — Lit web components (splitter, dock, scheduler, tile-manager)
 
-**Status:** Proposal
+**Status:** **Implemented** — all 9 phases shipped on `feat/aria-accessibility`. Axe-core CI (Phase 8.2) explicitly deferred to a follow-up issue. See per-phase ✓ markers in §7.
 **Author:** Pieterjan (audit by 4-agent ARIA team)
 **Date:** 2026-05-10
 **Library:** `@mintplayer/ng-bootstrap` web-component layer + nested WCs in `dock/` and `tile-manager/`
 **Standards target:** [WAI-ARIA 1.2](https://www.w3.org/TR/wai-aria-1.2/) + [WAI-ARIA Authoring Practices Guide (APG)](https://www.w3.org/WAI/ARIA/apg/), conformance to **WCAG 2.2 AA**.
-**Companion PRD:** [`aria-accessibility-audit.md`](./aria-accessibility-audit.md) — covers the Angular component layer; this PRD is the WC-layer follow-up.
+**Companion PRDs:**
+- [`aria-accessibility-audit.md`](./aria-accessibility-audit.md) — covers the Angular component layer; this PRD is the WC-layer follow-up.
+- [`scheduler-keyboard-grid-nav.md`](./scheduler-keyboard-grid-nav.md) — extends/supersedes Phase 6: cell-level grid nav, range selection, Enter-driven move-mode, cross-day resize. Shipped 2026-05-10.
+
+> **Audit findings note** — §5 below captures the scheduler / dock / splitter / tile-manager state at audit time (2026-05-10). Where a phase has shipped, the implementation supersedes the audit's "current state" rows; the rows are kept as the historical record so reviewers can trace the rationale for each fix.
 
 ---
 
@@ -197,22 +201,22 @@ Single-line CSS guard in each `*.styles.ts` is enough.
 
 Each phase ships as one PR. Within each phase, audits + tests land with the implementation.
 
-### Phase 0 — Shared primitives (1 PR)
+### Phase 0 — Shared primitives (1 PR) — ✓ shipped (`e1e85bf3`)
 - **0.1** Add `libs/mintplayer-ng-bootstrap/web-components/a11y/` entry point with `createLiveAnnouncer()` (§6.2).
 - **0.2** Document the move-mode interaction model in `docs/prd/wc-aria-accessibility.md` §6.1 (this file). Reference from each component's audit.
 
-### Phase 1 — `mp-splitter` (1 PR)
+### Phase 1 — `mp-splitter` (1 PR) — ✓ shipped (`25ea4444`)
 - **1.1** `mp-splitter.ts:215–221` divider creation: emit `role="separator"`, `aria-orientation`, `aria-label`, `tabindex="0"`. ([precedent](../../libs/mintplayer-ng-bootstrap/resizable/src/lib/components/resizable.component.ts))
 - **1.2** `mp-splitter.ts:199–212` panel wrappers: assign deterministic IDs (`{instanceId}-panel-{i}`); expose adjacent-pair IDs to dividers via a host-level data attribute (§6.3).
 - **1.3** Track current/min/max sizes per divider; mirror to `aria-valuenow/min/max` as **percent of container** (§10 Q3) live during drag (subscribe `stateManager.previewSizes`, divide by container size each frame).
 - **1.4** New `input-handler.ts` keydown branch — Arrow keys ±10% (Shift = ±1%), Home/End to min/max, modelled on `BsResizeGlyphDirective.onKeydown` (`resizable.component.ts:247–282`).
 - **1.5** Vitest: `mp-splitter.a11y.spec.ts` — assert role/label/orientation, focus, and that ArrowLeft on horizontal-orientation shrinks left panel by 10px.
 
-### Phase 2 — `mp-tab-control` tab-panel role (1 small PR)
+### Phase 2 — `mp-tab-control` tab-panel role (1 small PR) — ✓ shipped (`e742ba51`)
 - **2.1** `mp-tab-control.ts:172–178` — bind `role="tabpanel"` + `aria-labelledby="{tabId}-header-button"` on the active content wrapper.
 - **2.2** Vitest assertion in existing `mp-tab-control.spec.ts`.
 
-### Phase 3 — `mint-tile-manager` (1 PR)
+### Phase 3 — `mint-tile-manager` (1 PR) — ✓ shipped (`0d2f25b1`)
 Decision recorded (§10 Q1): switch from `role="grid"` to `role="region"` + `role="button"` tiles. Decision recorded (§10 Q2): retrofit move-mode key from Space to `M`.
 - **3.1** `mint-tile-manager.element.ts:141` — replace `role="grid"` with `role="region"`; fallback `aria-label="Tile board"` when consumer doesn't pass `label`. Drop the `role="row"` wrapper (line 142, added in `ca7a0c9d`).
 - **3.2** `mint-tile-manager.element.ts:170–203` — replace `role="gridcell"` on each tile with `role="button"`; tiles keep their consumer-provided `aria-label`. Remove host's `role="application"` set in `connectedCallback` (lines 271–274) — region pattern doesn't need it.
@@ -223,7 +227,7 @@ Decision recorded (§10 Q1): switch from `role="grid"` to `role="region"` + `rol
 - **3.7** Pointer drag — call `liveAnnouncer.announce()` on drag-begin and on `blocked: true` reflow result (`element.ts:613, 689`).
 - **3.8** Vitest: rewrite the role/keyboard assertions in `mint-tile-manager.element.spec.ts` for the region+button+M model.
 
-### Phase 4 — `mint-dock-manager` non-DnD ARIA (1 PR)
+### Phase 4 — `mint-dock-manager` non-DnD ARIA (1 PR) — ✓ shipped (`49bd9bb6` + `d8029544`)
 - **4.1** Use the live announcer (Phase 0) to narrate `dispatchLayoutChanged` calls (lines 1296, 1358, 1472, 1600) — "Pane X moved to dock {zone}", "Floating pane X closed", "Split resized".
 - **4.2** Floating pane wrapper (`element.ts:534–550`): `role="dialog"`, `aria-label` from `getFloatingWindowTitle()`, `aria-modal="false"`.
 - **4.3** Add a real close button to `.dock-floating__chrome` (`element.ts:551–560`): `<button aria-label="Close pane: {title}">×</button>`. Native button = native keyboard.
@@ -232,7 +236,7 @@ Decision recorded (§10 Q1): switch from `role="grid"` to `role="region"` + `rol
 - **4.6** Vitest: `mint-dock-manager.a11y.spec.ts` assertions for tab-panel role, floating dialog role, close button, live announcements.
 - **NB.** Splitter ARIA on the dock's nested `<mp-splitter>` lands automatically with Phase 1; Phase 4 inherits it.
 
-### Phase 5 — `mp-scheduler` grid + labels (1 PR)
+### Phase 5 — `mp-scheduler` grid + labels (1 PR) — ✓ shipped (`a13952e7`)
 - **5.1** Grid roles in `views/timeline-view.ts`: `role="grid"` + `aria-label` + `aria-rowcount` + `aria-colcount` on `.scheduler-timeline` (line 32); `role="row"` + `aria-rowindex` on resource rows (line 115); `role="rowheader"` on resource header (line 122); `role="columnheader"` on slot headers (line 82); `role="gridcell"` + `tabindex="-1"` on slots (line 150).
 - **5.2** Event blocks (`views/timeline-view.ts:243–289`): `role="button"`, descriptive `aria-label` (`"{title}, {start}–{end} on {resource}, {date}"`), roving `tabindex` (selected event = 0, others = -1), `aria-current="true"` when selected.
 - **5.3** Header view-switcher (`mp-scheduler.ts:357–364`): `aria-pressed="{active}"` on each view button.
@@ -242,27 +246,40 @@ Decision recorded (§10 Q1): switch from `role="grid"` to `role="region"` + `rol
 - **5.7** Mirror the same role/label set in `views/{week,day,month,year}-view.ts`. Hoist the labelling helper to `views/base-view.ts` or a new `views/aria.ts`.
 - **5.8** Vitest: `mp-scheduler.a11y.spec.ts` — assert grid roles, event labels, view-switcher pressed state.
 
-### Phase 6 — `mp-scheduler` keyboard event-move (1 PR, separate from Phase 5)
+### Phase 6 — `mp-scheduler` keyboard event-move (1 PR, separate from Phase 5) — ✓ shipped + extended (`614fb0fe` → `9ae72107`)
+
+**Note:** v1 (M-key + arrow nudge, items 6.3–6.6 below) shipped in `614fb0fe`. The originally out-of-scope items (6.7 — resize and multi-day) plus full cell-level grid navigation (item 6.1) shipped as a separate follow-up PRD: [`scheduler-keyboard-grid-nav.md`](./scheduler-keyboard-grid-nav.md), commit `9ae72107`. That PRD is the canonical reference for the scheduler keyboard model going forward; the steps below are kept as the historical v1 plan.
+
+The follow-up changed:
+- Move-mode entry key: `M` → `Enter` (breaking change documented in CHANGELOG).
+- Bare letter shortcuts `T`/`Y`/`M`/`W`/`D` → `Alt+T`/`Alt+Y`/`Alt+M`/`Alt+W`/`Alt+D` (frees single letters for future input surfaces inside the scheduler).
+- Bare `ArrowLeft`/`Right` no longer change period — they walk cells; use `PageUp`/`PageDown` for prev/next period.
+- Roving tabindex on events → every event is `tabindex="0"` (Tab walks events in document order).
+- `event-click` custom event → `event-selected` (fires on Tab too).
+
 - **6.1** Roving focus across grid cells: only one cell `tabindex="0"`; `mp-scheduler.ts:655–704` `handleKeyDown` handles ArrowLeft/Right/Up/Down between cells, Home/End row edges, Ctrl+Home/End grid edges. Reuse the cell-grid focus model in `mint-tile-manager` Phase 3 if it generalises.
 - **6.2** Tab into board lands on first cell (or selected event if any).
 - **6.3** `M` on focused event → enter move mode (set `data-move-mode` on event, announce keymap).
 - **6.4** ArrowLeft/Right while in move mode → call `dragManager.nudgeEventTime(±slotDuration)`; live region announces new start time (verbose first nudge, terse afterwards).
 - **6.5** Enter → commit via existing `handleDragComplete()` path (`mp-scheduler.ts:576–593`).
 - **6.6** Escape → revert via existing drag-cancel path.
-- **6.7** Resize and multi-day are out of scope for v1 (per audit recommendation Q4); document as v2 follow-ups.
-- **6.8** Vitest: extend `mp-scheduler.a11y.spec.ts`.
+- **6.7** Resize and multi-day are out of scope for v1 (per audit recommendation Q4); document as v2 follow-ups. **Resolved by `scheduler-keyboard-grid-nav.md`:** Shift+Arrow resizes the end edge, Alt+Shift the start edge, week-view Shift+ArrowLeft/Right resizes across day boundaries.
+- **6.8** Vitest: extend `mp-scheduler.a11y.spec.ts`. **Plus** `mp-scheduler.keyboard.spec.ts` covering the extended model (12 cases).
 
-### Phase 7 — `mint-dock-manager` move-mode for panes (1 PR, biggest)
+### Phase 7 — `mint-dock-manager` move-mode for panes (1 PR, biggest) — ✓ shipped (`32ca12b7`)
+
+Implementation deviation from the audit-time plan: instead of "arrow keys cycle the move-target list" (7.2), the shipped keymap uses direct-letter commits (`T`/`R`/`B`/`L` to dock, `F` to float). Faster for repeat use; the live region still narrates entry + commit.
+
 - **7.1** Move-target enumeration: build the list of valid drop destinations (dock zones × stacks + each floating window). Hoist from the pointer drop-zone code (`element.ts:1223–1260`) so the same model serves both inputs.
-- **7.2** Tab-header keymap: focused tab → `M` → enter move mode → arrow keys cycle the move-target list → live region narrates current target.
-- **7.3** Enter commits via existing pane-move pipeline; Escape cancels.
+- **7.2** Tab-header keymap: focused tab → `M` → enter move mode → arrow keys cycle the move-target list → live region narrates current target. **Shipped variant:** `T`/`R`/`B`/`L` commits to dock zones, `F` floats.
+- **7.3** Enter commits via existing pane-move pipeline; Escape cancels. **Shipped variant:** the letter keys above commit; `Escape` still cancels.
 - **7.4** Cross-cutting: pressing Escape during *any* drag (pointer or keyboard) cancels and announces.
-- **7.5** Vitest + a Playwright smoke spec in `apps/ng-bootstrap-demo-e2e/` for the move-mode happy path.
+- **7.5** Vitest + a Playwright smoke spec in `apps/ng-bootstrap-demo-e2e/` for the move-mode happy path. **Done.** Vitest in `mint-dock-manager.aria.spec.ts`; Playwright in `apps/ng-bootstrap-demo-e2e/e2e/dock-keyboard.spec.ts` (3 cases × Chromium + Firefox: M→T commit, M→Escape cancel, M-no-op-when-blurred). Writing the e2e exposed and fixed a real bug in `findFocusedPaneOrigin` — the lookup didn't account for mp-tab-control's `${tabId}-header-button` id suffix, so move-mode entry was silently broken in production. Unit tests injected `paneMoveMode` directly and missed it.
 
-### Phase 8 — Polish (1 PR)
+### Phase 8 — Polish (1 PR) — ✓ items 8.1 + 8.3 shipped (`332d2d4f` + various); 8.2 deferred
 - **8.1** `prefers-reduced-motion` guards across splitter, dock, and scheduler. **Done** — `@media (prefers-reduced-motion: reduce)` blocks added at the foot of each component's SCSS, neutralising `transition` and `animation` declarations. Tile-manager already had its guard from `ca7a0c9d`.
 - **8.2** `axe-core/playwright` run on the dock, scheduler, and tile-manager demo pages; capture baseline; fail CI on `critical`/`serious`. **Deferred to follow-up PR** — adds a new dev-dep (`@axe-core/playwright`), CI job, and baseline-snapshot review process, and is genuinely separable from the per-component implementation work this PRD covers. Tracking issue to be opened post-merge.
-- **8.3** Surface the keymap on the demo pages — this is part of the deliverable, not a nice-to-have. Each affected demo page (`apps/ng-bootstrap-demo/src/app/pages/advanced/{dock,tile-manager}/`, scheduler equivalent, splitter equivalent) gets a visible "Keyboard shortcuts" panel listing the keys for that component, e.g.:
+- **8.3** Surface the keymap on the demo pages — this is part of the deliverable, not a nice-to-have. **Done** — visible `<details>Keyboard shortcuts</details>` panels live on each of `splitter`, `dock`, `tile-manager`, `calendar`, and `scheduler` demo pages. Each affected demo page (`apps/ng-bootstrap-demo/src/app/pages/advanced/{dock,tile-manager}/`, scheduler equivalent, splitter equivalent) gets a visible "Keyboard shortcuts" panel listing the keys for that component, e.g.:
   - **`M`** — enter move/resize mode (tile-manager, dock pane, scheduler event)
   - **Arrow keys** — move 1 unit (or resize with Shift) while in move mode; navigate between focused items otherwise
   - **Enter** — commit the move/resize
@@ -272,7 +289,7 @@ Decision recorded (§10 Q1): switch from `role="grid"` to `role="region"` + `rol
 
   The keymap is also exposed in-component via the `aria-describedby` instructions string (see Phase 3.4, Phase 5.x, Phase 7.2), so SR users get the same content. The visible panel covers sighted keyboard users who don't read SR text.
 
-### Phase 9 — `bs-calendar` grid + keyboard navigation (1 PR — Angular, scope extension)
+### Phase 9 — `bs-calendar` grid + keyboard navigation (1 PR — Angular, scope extension) — ✓ shipped (`4d442375`)
 
 **Scope note.** `bs-calendar` is an Angular component, not a Lit WC. It's tracked here because the calendar / datepicker grid pattern shares the same APG Grid model the scheduler (Phase 5) and tile-manager (Phase 3) deal with, and the user-facing gap (calendar body unreachable by keyboard) was found while iterating on this PRD. Originally listed as Critical in `docs/prd/aria-accessibility-audit.md` §5.1; partially resolved by `4d6a3a5f` (`aria-selected` / `aria-current="date"` / `aria-disabled`) but the keyboard model was not.
 
@@ -368,7 +385,15 @@ All seven resolved 2026-05-10 ahead of implementation.
 
 ## 12. Out-of-scope follow-ups (not blocking this PRD)
 
-- Scheduler keyboard event-resize (audit Q4) — v2.
-- Scheduler multi-day event keyboard model — v2.
+### Shipped follow-ups (2026-05-10)
+
+These items were originally listed as v2 / deferred but landed during the rollout:
+
+- ~~Scheduler keyboard event-resize (audit Q4) — v2.~~ Shipped in `9ae72107` (`scheduler-keyboard-grid-nav.md` §6.6): in move-mode, `Shift+Arrow` resizes the end edge, `Alt+Shift+Arrow` resizes the start edge.
+- ~~Scheduler multi-day event keyboard model — v2.~~ Shipped in `9ae72107` (D5): on week view, `Shift+ArrowLeft/Right` in move-mode pushes the end edge across day boundaries; `Shift+Arrow` extension during cell selection forms linear ranges that cross day boundaries.
+
+### Still deferred
+
 - Dock floating-pane modal trapping for "keep focus inside" — only if consumer demand surfaces.
 - A shared `@mintplayer/wc-a11y` package extracted from §6.2's helper — defer until a third WC consumer appears.
+- `@axe-core/playwright` CI integration (Phase 8.2) — tracking issue to be opened post-merge.
