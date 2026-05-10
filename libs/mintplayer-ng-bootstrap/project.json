@@ -29,7 +29,12 @@
       "outputs": ["{workspaceRoot}/dist/libs/mintplayer-ng-bootstrap"],
       "options": {
         "tsConfig": "libs/mintplayer-ng-bootstrap/tsconfig.lib.json",
-        "project": "libs/mintplayer-ng-bootstrap/ng-package.json"
+        "project": "libs/mintplayer-ng-bootstrap/ng-package.json",
+        "stylePreprocessorOptions": {
+          "sass": {
+            "silenceDeprecations": ["import"]
+          }
+        }
       },
       "configurations": {
         "production": {
