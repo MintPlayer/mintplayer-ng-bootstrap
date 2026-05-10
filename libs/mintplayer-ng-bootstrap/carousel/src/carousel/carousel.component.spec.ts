@@ -62,6 +62,53 @@ describe('BsCarouselComponent', () => {
       }
     });
   });
+
+  // External-contract tests — verify the rendered carousel still emits the
+  // expected ARIA / keyboard surface after the swiper-aria PRD migration
+  // (`docs/prd/swiper-aria.md`). The directives now own these attributes;
+  // the carousel must not regress what consumers see.
+  describe('post-swiper-aria-migration: rendered ARIA contract', () => {
+    function visibleSlides(): HTMLElement[] {
+      return fixture.debugElement
+        .queryAll(By.directive(BsSwipeDirective))
+        .map(d => d.nativeElement as HTMLElement)
+        .filter(el => el.getAttribute('aria-hidden') !== 'true');
+    }
+
+    it('every visible slide carries role="group" + aria-roledescription="slide" + "N of M" label', () => {
+      const slides = visibleSlides();
+      expect(slides.length).toBe(3);
+      slides.forEach((el, i) => {
+        expect(el.getAttribute('role')).toBe('group');
+        expect(el.getAttribute('aria-roledescription')).toBe('slide');
+        expect(el.getAttribute('aria-label')).toBe(`${i + 1} of 3`);
+      });
+    });
+
+    it('offside (clone) slides carry aria-hidden="true" and no label', () => {
+      const all = fixture.debugElement.queryAll(By.directive(BsSwipeDirective));
+      const offside = all
+        .map(d => d.nativeElement as HTMLElement)
+        .filter(el => el.getAttribute('aria-hidden') === 'true');
+      // slide animation mode renders 2 offside clones (first + last)
+      expect(offside.length).toBe(2);
+      for (const el of offside) {
+        expect(el.getAttribute('aria-label')).toBeNull();
+        expect(el.getAttribute('aria-roledescription')).toBeNull();
+      }
+    });
+
+    it('the swipe container exposes aria-orientation matching the carousel', () => {
+      const container = fixture.debugElement.query(By.directive(BsSwipeContainerDirective)).nativeElement as HTMLElement;
+      // CarouselTestComponent uses orientation="vertical"
+      expect(container.getAttribute('aria-orientation')).toBe('vertical');
+    });
+
+    it('the swipe container advertises aria-keyshortcuts for the active orientation', () => {
+      const container = fixture.debugElement.query(By.directive(BsSwipeContainerDirective)).nativeElement as HTMLElement;
+      expect(container.getAttribute('aria-keyshortcuts')).toBe('ArrowUp ArrowDown Home End');
+    });
+  });
 });
 
 @Component({

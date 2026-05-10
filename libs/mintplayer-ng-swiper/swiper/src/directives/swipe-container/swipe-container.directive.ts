@@ -28,6 +28,14 @@ import { BS_SWIPE_SLIDE } from '../../tokens/bs-swipe-slide';
     // the layout model — the directive's slides assume an inline-block flow.
     '[style.display]': 'orientation() === "vertical" ? "flex" : "block"',
     '[style.flex-direction]': 'orientation() === "vertical" ? "column" : null',
+    '[attr.aria-orientation]': 'orientation()',
+    '[attr.aria-keyshortcuts]': 'ariaKeyshortcuts()',
+    '(document:keydown.ArrowLeft)': 'onKeyPress($event)',
+    '(document:keydown.ArrowRight)': 'onKeyPress($event)',
+    '(document:keydown.ArrowUp)': 'onKeyPress($event)',
+    '(document:keydown.ArrowDown)': 'onKeyPress($event)',
+    '(document:keydown.Home)': 'onKeyPress($event)',
+    '(document:keydown.End)': 'onKeyPress($event)',
   },
 })
 export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
@@ -46,10 +54,29 @@ export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
   minimumOffset = input(50);
   animation = input<'slide' | 'fade' | 'none'>('slide');
   orientation = input<'horizontal' | 'vertical'>('horizontal');
+  /**
+   * When true, the container handles ArrowLeft/Right (horizontal) or
+   * ArrowUp/Down (vertical) plus Home/End to move between slides. Listens
+   * on `document` to preserve parity with `bs-carousel`'s historical
+   * behaviour. A future PRD will tighten the scope to `host:keydown` +
+   * focus-within.
+   */
+  keyboardEvents = input(true);
   // Mirror swiper.js's .swiper-horizontal / .swiper-vertical: declare the axis
   // we own at the container level so Firefox Android's APZ excludes the
   // perpendicular gesture (incl. pull-to-refresh) at touchstart arbitration time.
   touchAction = computed(() => this.orientation() === 'horizontal' ? 'pan-y' : 'pan-x');
+  /**
+   * Computed `aria-keyshortcuts` value advertising the keys the directive
+   * actually responds to. Returns `null` (attribute removed) when keyboard
+   * handling is disabled, so SRs never advertise shortcuts that won't fire.
+   */
+  ariaKeyshortcuts = computed(() => {
+    if (!this.keyboardEvents()) return null;
+    return this.orientation() === 'horizontal'
+      ? 'ArrowLeft ArrowRight Home End'
+      : 'ArrowUp ArrowDown Home End';
+  });
   imageIndex = model<number>(0);
   animationStart = output<void>();
   animationEnd = output<void>();
@@ -362,6 +389,43 @@ export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
 
   onSwipe(distance: number) {
     this.animateToIndexByDx(distance);
+  }
+
+  /**
+   * Document-scoped keydown handler. Maps the four arrow keys (orientation-aware)
+   * plus Home / End to slide navigation. Calls `preventDefault()` only for
+   * the keys this directive actually consumed, so cross-orientation arrows
+   * (e.g. ArrowUp on a horizontal swiper) still scroll the page normally.
+   *
+   * Parameter typed as `Event` because Angular host listeners infer `Event`
+   * from the template-style binding string; cast inside.
+   */
+  onKeyPress(event: Event) {
+    if (!this.keyboardEvents()) return;
+    const ev = event as KeyboardEvent;
+    const orientation = this.orientation();
+    let handled = false;
+    switch (ev.key) {
+      case 'ArrowLeft':
+        if (orientation === 'horizontal') { this.previous(); handled = true; }
+        break;
+      case 'ArrowRight':
+        if (orientation === 'horizontal') { this.next(); handled = true; }
+        break;
+      case 'ArrowUp':
+        if (orientation === 'vertical') { this.previous(); handled = true; }
+        break;
+      case 'ArrowDown':
+        if (orientation === 'vertical') { this.next(); handled = true; }
+        break;
+      case 'Home':
+        this.goto(0); handled = true;
+        break;
+      case 'End':
+        this.goto(Math.max(0, this.actualSwipes().length - 1)); handled = true;
+        break;
+    }
+    if (handled) ev.preventDefault();
   }
 
   previous() {

@@ -64,30 +64,30 @@
                 }
             </div>
         }
-        <div class="carousel-inner" bsSwipeViewport #innerElement [style.height.px]="slideHeight()" [attr.aria-live]="slideAriaLive()">
+        <div class="carousel-inner" bsSwipeViewport #innerElement [style.height.px]="slideHeight()"
+            [ariaLive]="slideAriaLive()"
+            [ariaBusy]="container.isAnimating() ? true : null">
             <div bsSwipeContainer #container="bsSwipeContainer"
                 [minimumOffset]="50"
                 [animation]="animation()"
                 [orientation]="orientation()"
+                [keyboardEvents]="keyboardEvents()"
                 [(imageIndex)]="currentImageIndex"
                 (animationStart)="onContainerAnimationStart()"
                 (animationEnd)="onContainerAnimationEnd()">
                 @if (animation() === 'slide') {
-                    <div class="carousel-item" bsSwipe [offside]="true" aria-hidden="true">
+                    <div class="carousel-item" bsSwipe [offside]="true">
                         <ng-container *ngTemplateOutlet="lastImageTemplate()"></ng-container>
                     </div>
                 }
                 @for (image of images(); track image.id; let i = $index) {
                     <div class="carousel-item" bsSwipe
-                        role="group"
-                        aria-roledescription="slide"
-                        [attr.aria-label]="(i + 1) + ' of ' + imageCount()"
                         [class.active]="currentImageIndex() === i">
                         <ng-container *ngTemplateOutlet="image.itemTemplate"></ng-container>
                     </div>
                 }
                 @if (animation() === 'slide') {
-                    <div class="carousel-item" bsSwipe [offside]="true" aria-hidden="true">
+                    <div class="carousel-item" bsSwipe [offside]="true">
                         <ng-container *ngTemplateOutlet="firstImageTemplate()"></ng-container>
                     </div>
                 }

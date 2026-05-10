@@ -22,10 +22,6 @@ import type { BsCarouselPlayPauseContext } from '../carousel-play-pause/carousel
   hostDirectives: [BsReducedMotionDirective],
   host: {
     '[@.disabled]': 'animationsDisabled()',
-    '(document:keydown.ArrowLeft)': 'onKeyPress($event)',
-    '(document:keydown.ArrowRight)': 'onKeyPress($event)',
-    '(document:keydown.ArrowUp)': 'onKeyPress($event)',
-    '(document:keydown.ArrowDown)': 'onKeyPress($event)',
   },
 })
 export class BsCarouselComponent implements AfterViewInit, OnDestroy {
@@ -119,43 +115,6 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
     if (this.reducedMotion.matches()) return 'polite';
     return 'off';
   });
-
-  onKeyPress(event: Event) {
-    const ev = event as KeyboardEvent;
-    if (this.keyboardEvents()) {
-      let handled = false;
-      const orientation = this.orientation();
-      switch (ev.key) {
-        case 'ArrowLeft':
-          if (orientation === 'horizontal') {
-            this.previous();
-            handled = true;
-          }
-          break;
-        case 'ArrowRight':
-          if (orientation === 'horizontal') {
-            this.next();
-            handled = true;
-          }
-          break;
-        case 'ArrowUp':
-          if (orientation === 'vertical') {
-            this.previous();
-            handled = true;
-          }
-          break;
-        case 'ArrowDown':
-          if (orientation === 'vertical') {
-            this.next();
-            handled = true;
-          }
-          break;
-      }
-      if (handled) {
-        ev.preventDefault();
-      }
-    }
-  }
 
   constructor() {
     // Mark first image whenever images change
