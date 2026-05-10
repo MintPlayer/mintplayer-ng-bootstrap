@@ -175,10 +175,26 @@ export class MintTileManagerElement extends LitElement {
     const isPressing = this.gestureKind === 'arming-touch-drag' && this.activeTileId() === tile.id;
     const transform = this.computeActiveTransform(tile.id);
 
+    // Inline width/height during a pointer-resize gesture so the tile pixel
+    // size can ride a CSS transition between span states. The grid still
+    // allocates the new span area instantly; the active tile's visible size
+    // lags 150ms behind. Without this, grid-column/grid-row span changes are
+    // not animatable in CSS and the tile snaps. Reduced-motion is gated by
+    // the global `@media (prefers-reduced-motion: reduce)` rule in SCSS.
+    const cell = this.cellMetrics;
+    const inlineSize = isResizing && cell.width > 0
+      ? {
+          width: pos.colSpan * cell.width + (pos.colSpan - 1) * cell.gapX,
+          height: pos.rowSpan * cell.height + (pos.rowSpan - 1) * cell.gapY,
+        }
+      : null;
+
     const style = [
       `grid-column: ${pos.colStart} / span ${pos.colSpan}`,
       `grid-row: ${pos.rowStart} / span ${pos.rowSpan}`,
       transform ? `transform: ${transform}` : '',
+      inlineSize ? `width: ${inlineSize.width}px` : '',
+      inlineSize ? `height: ${inlineSize.height}px` : '',
     ]
       .filter(Boolean)
       .join('; ');

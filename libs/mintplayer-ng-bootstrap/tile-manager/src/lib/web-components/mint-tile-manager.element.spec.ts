@@ -390,3 +390,94 @@ describe('mint-tile-manager — events', () => {
     expect(events.length).toBe(0);
   });
 });
+
+describe('mint-tile-manager — resize animation', () => {
+  let el: MintTileManagerElement;
+  afterEach(() => el?.remove());
+
+  // The data-resizing SCSS rule transitions width/height; without inline pixel
+  // dimensions on the active tile, those properties have no animatable values
+  // and the tile would snap. JSDOM does not populate getComputedStyle on the
+  // shadow grid, so we seed cellMetrics to drive the calculation
+  // deterministically.
+  function seedCellMetrics(host: MintTileManagerElement): void {
+    (host as unknown as {
+      cellMetrics: { width: number; height: number; gapX: number; gapY: number };
+    }).cellMetrics = { width: 100, height: 80, gapX: 8, gapY: 8 };
+  }
+
+  it('inlines width/height on the active tile during a pointer-resize gesture', async () => {
+    el = await mount((m) => {
+      m.columnCount = 2;
+      m.resizeMode = 'always';
+      m.tiles = [
+        tile('a', { colStart: 1, rowStart: 1, colSpan: 1, rowSpan: 1 }),
+        tile('b', { colStart: 2, rowStart: 1, colSpan: 1, rowSpan: 1 }),
+      ];
+    });
+    seedCellMetrics(el);
+
+    const corner = el.shadowRoot!.querySelector<HTMLElement>(
+      '.tile[data-tile-id="a"] .tile__resize-corner',
+    )!;
+    corner.dispatchEvent(makePointerEvent('pointerdown', { clientX: 100, clientY: 80 }));
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+
+    const a = el.shadowRoot!.querySelector<HTMLElement>('.tile[data-tile-id="a"]')!;
+    expect(a.dataset['resizing']).toBe('true');
+    const style = a.getAttribute('style') ?? '';
+    // 1×1 tile @ 100×80 cell, no gap contribution at span=1.
+    expect(style).toContain('width: 100px');
+    expect(style).toContain('height: 80px');
+  });
+
+  it('inlined size grows with the spans the gesture is targeting', async () => {
+    el = await mount((m) => {
+      m.columnCount = 4;
+      m.resizeMode = 'always';
+      m.tiles = [
+        tile('a', { colStart: 1, rowStart: 1, colSpan: 1, rowSpan: 1 }),
+      ];
+    });
+    seedCellMetrics(el);
+
+    const corner = el.shadowRoot!.querySelector<HTMLElement>(
+      '.tile[data-tile-id="a"] .tile__resize-corner',
+    )!;
+    corner.dispatchEvent(makePointerEvent('pointerdown', { clientX: 100, clientY: 80 }));
+    // Drag far enough to bump colSpan to 2 and rowSpan to 2 (cell+gap = 108×88).
+    window.dispatchEvent(makePointerEvent('pointermove', { clientX: 100 + 108, clientY: 80 + 88 }));
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+
+    const a = el.shadowRoot!.querySelector<HTMLElement>('.tile[data-tile-id="a"]')!;
+    const style = a.getAttribute('style') ?? '';
+    // colSpan=2 → 2*100 + 1*8 = 208; rowSpan=2 → 2*80 + 1*8 = 168.
+    expect(style).toContain('width: 208px');
+    expect(style).toContain('height: 168px');
+  });
+
+  it('clears inline width/height when the gesture commits', async () => {
+    el = await mount((m) => {
+      m.columnCount = 2;
+      m.resizeMode = 'always';
+      m.tiles = [
+        tile('a', { colStart: 1, rowStart: 1, colSpan: 1, rowSpan: 1 }),
+        tile('b', { colStart: 2, rowStart: 1, colSpan: 1, rowSpan: 1 }),
+      ];
+    });
+    seedCellMetrics(el);
+
+    const corner = el.shadowRoot!.querySelector<HTMLElement>(
+      '.tile[data-tile-id="a"] .tile__resize-corner',
+    )!;
+    corner.dispatchEvent(makePointerEvent('pointerdown', { clientX: 100, clientY: 80 }));
+    window.dispatchEvent(makePointerEvent('pointerup', { clientX: 100, clientY: 80 }));
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+
+    const a = el.shadowRoot!.querySelector<HTMLElement>('.tile[data-tile-id="a"]')!;
+    expect(a.dataset['resizing']).toBe('false');
+    const style = a.getAttribute('style') ?? '';
+    expect(style).not.toContain('width:');
+    expect(style).not.toContain('height:');
+  });
+});
