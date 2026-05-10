@@ -111,4 +111,49 @@ describe('BsTypeaheadComponent ARIA — primitive migration', () => {
 
     expect(host.isOpen()).toBe(false);
   });
+
+  it('Tab inside the open list advances aria-activedescendant without leaving the input', () => {
+    host.isOpen.set(true);
+    fixture.detectChanges();
+
+    input().focus();
+    const event = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
+    input().dispatchEvent(event);
+    fixture.detectChanges();
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(input().getAttribute('aria-activedescendant')).toBe(items()[1].id);
+    expect(document.activeElement).toBe(input());
+    expect(host.isOpen()).toBe(true);
+  });
+
+  it('Tab on the last option closes the dropdown and lets focus exit', () => {
+    host.isOpen.set(true);
+    fixture.detectChanges();
+
+    input().focus();
+    press('End'); // jump to last option
+
+    const event = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
+    input().dispatchEvent(event);
+    fixture.detectChanges();
+
+    expect(event.defaultPrevented).toBe(false); // browser handles tab traversal
+    expect(host.isOpen()).toBe(false);
+  });
+
+  it('Shift+Tab on the first option closes the dropdown and lets focus exit', () => {
+    host.isOpen.set(true);
+    fixture.detectChanges();
+
+    input().focus();
+    // Already on first option (activeIndex=0)
+
+    const event = new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, cancelable: true });
+    input().dispatchEvent(event);
+    fixture.detectChanges();
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(host.isOpen()).toBe(false);
+  });
 });

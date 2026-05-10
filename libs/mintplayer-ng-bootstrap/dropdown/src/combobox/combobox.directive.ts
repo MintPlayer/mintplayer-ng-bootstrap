@@ -78,6 +78,28 @@ export class BsComboboxDirective {
           event.preventDefault();
         }
         break;
+      case 'Tab':
+        // Hybrid combobox TAB: when the popup is open and a roving-focus is
+        // present, TAB advances the active descendant (focus stays in the
+        // input). At the boundary, close the popup and fall through to the
+        // browser's default tab traversal so focus exits the combobox.
+        if (!isOpen || !rf) break;
+        if (event.shiftKey) {
+          if (rf.activeIndex() <= rf.firstEnabledIndex()) {
+            this.dropdown?.isOpen.set(false);
+          } else {
+            rf.prev();
+            event.preventDefault();
+          }
+        } else {
+          if (rf.activeIndex() >= rf.lastEnabledIndex()) {
+            this.dropdown?.isOpen.set(false);
+          } else {
+            rf.next();
+            event.preventDefault();
+          }
+        }
+        break;
     }
   }
 }

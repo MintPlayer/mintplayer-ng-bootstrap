@@ -81,12 +81,13 @@ export class BsRovingFocusDirective {
     if (consumed) event.preventDefault();
   }
 
-  private firstEnabledIndex(): number {
+  /** Public so consumers (e.g. BsComboboxDirective's TAB handling) can detect edges without re-implementing the disabled-aware scan. */
+  firstEnabledIndex(): number {
     const items = this.items();
     return items.findIndex(it => !it.disabled());
   }
 
-  private lastEnabledIndex(): number {
+  lastEnabledIndex(): number {
     const items = this.items();
     for (let i = items.length - 1; i >= 0; i--) {
       if (!items[i].disabled()) return i;
