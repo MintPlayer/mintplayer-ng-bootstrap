@@ -4,8 +4,9 @@ import { BsDropdownDirective } from '../dropdown/dropdown.directive';
 @Directive({
   selector: '[bsDropdownToggle]',
   host: {
-    '[attr.aria-haspopup]': '"true"',
+    '[attr.aria-haspopup]': 'dropdown.popupRole()',
     '[attr.aria-expanded]': 'dropdown.isOpen()',
+    '[attr.aria-controls]': 'dropdown.menuId() || null',
     '(click)': 'onClick()',
   },
 })

@@ -3,6 +3,7 @@ import { ComponentPortal } from '@angular/cdk/portal';
 import { Component, ComponentRef, Injector, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { POPOVER_CONTENT } from '../providers/popover-content.provider';
+import { POPOVER_ID } from '../providers/popover-id.provider';
 import { BsPopoverComponent } from './popover.component';
 
 @Component({
@@ -22,7 +23,10 @@ class BsPopoverTestComponent {
   
   renderPopover() {
     this.injector = Injector.create({
-      providers: [{ provide: POPOVER_CONTENT, useValue: this.popoverTemplate }],
+      providers: [
+        { provide: POPOVER_CONTENT, useValue: this.popoverTemplate },
+        { provide: POPOVER_ID, useValue: 'test-popover-id' },
+      ],
       parent: this.injector
     });
     const portal = new ComponentPortal(BsPopoverComponent, null, this.injector);

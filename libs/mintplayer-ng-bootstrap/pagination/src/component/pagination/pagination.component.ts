@@ -20,6 +20,8 @@ export class BsPaginationComponent {
   showArrows = input<boolean>(true);
   /** Page number size. */
   size = input<Size>('medium');
+  /** Accessible name on the surrounding `<nav>` landmark. */
+  ariaLabel = input<string>('Pagination');
 
   /** The number of boxes (excluding arrows) that's being shown on the pagination component. */
   visibleNumberOfNumberBoxes = computed(() => {

@@ -1,5 +1,6 @@
-import { Component, input, model, output, signal, TemplateRef, ChangeDetectionStrategy} from '@angular/core';
+import { Component, inject, input, model, output, signal, TemplateRef, ChangeDetectionStrategy } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
+import { BsLiveAnnouncerService } from '@mintplayer/ng-bootstrap/a11y';
 import { BsForDirective } from '@mintplayer/ng-bootstrap/for';
 import { BsListGroupComponent } from '@mintplayer/ng-bootstrap/list-group';
 import { BsListGroupItemComponent } from '@mintplayer/ng-bootstrap/list-group';
@@ -21,10 +22,13 @@ import { BsFormatBytesPipe } from '../pipes/format-bytes/format-bytes.pipe';
   },
 })
 export class BsFileUploadComponent {
+  private announcer = inject(BsLiveAnnouncerService);
 
   readonly dropFilesCaption = input('Drop your files here');
   readonly browseFilesCaption = input('Browse for files');
   readonly placeholder = input('Drop files to upload');
+  readonly ariaLabel = input<string>('File upload drop zone');
+  readonly inputAriaLabel = input<string>('Choose files to upload');
 
   readonly colors = Color;
   isDraggingFile = signal(false);
@@ -76,5 +80,11 @@ export class BsFileUploadComponent {
 
     this.files.update(f => [...f, ...newFiles]);
     this.filesDropped.emit(newFiles);
+
+    if (newFiles.length === 1) {
+      this.announcer.announce(`Added ${newFiles[0].file.name}`);
+    } else if (newFiles.length > 1) {
+      this.announcer.announce(`Added ${newFiles.length} files`);
+    }
   }
 }

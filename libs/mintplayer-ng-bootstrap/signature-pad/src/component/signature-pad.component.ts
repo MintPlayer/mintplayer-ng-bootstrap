@@ -20,6 +20,7 @@ export class BsSignaturePadComponent implements AfterViewInit {
   signature = model<Signature>({ strokes: [] });
   width = input(500);
   height = input(300);
+  ariaLabel = input<string>('Signature pad');
 
   readonly minHeight = 5;
   readonly isDrawing = signal<boolean>(false);

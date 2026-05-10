@@ -1,7 +1,9 @@
 @for (star of stars(); let i = $index; track i) {
     <button type="button"
+        #star
         class="cursor-pointer btn-star"
         role="radio"
+        [attr.tabindex]="value() === (i + 1) ? 0 : -1"
         (mouseenter)="hoverValue(i)"
         (click)="selectValue(i)"
         [attr.aria-label]="'Rate ' + (i + 1) + ' out of ' + maximum() + ' stars'"

@@ -1,4 +1,4 @@
-import { afterNextRender, DestroyRef, Directive, effect, ElementRef, inject, input } from "@angular/core";
+import { afterNextRender, computed, DestroyRef, Directive, effect, ElementRef, inject, input } from "@angular/core";
 import { BsObserveSizeDirective } from "@mintplayer/ng-swiper/observe-size";
 import { BsSwipeContainerDirective } from "../swipe-container/swipe-container.directive";
 import { BS_SWIPE_SLIDE, BsSwipeSlide } from "../../tokens/bs-swipe-slide";
@@ -17,6 +17,10 @@ import { BS_SWIPE_SLIDE, BsSwipeSlide } from "../../tokens/bs-swipe-slide";
     '[class.d-block]': 'block',
     '[style.height.px]': 'slideHeight',
     '[style.touch-action]': 'touchAction',
+    '[attr.role]': '"group"',
+    '[attr.aria-roledescription]': 'effectiveAriaRoledescription()',
+    '[attr.aria-label]': 'effectiveAriaLabel()',
+    '[attr.aria-hidden]': 'offside() ? "true" : null',
   },
 })
 export class BsSwipeDirective implements BsSwipeSlide {
@@ -26,6 +30,40 @@ export class BsSwipeDirective implements BsSwipeSlide {
   observeSize = inject(BsObserveSizeDirective);
 
   public offside = input(false);
+
+  /**
+   * Word read by SRs after the position label. Default `'slide'` matches the
+   * APG carousel pattern; consumers building image galleries / step wizards
+   * can override (e.g. `'image'`, `'step'`). Pass `null` or `''` to suppress
+   * the attribute entirely (useful for non-paginated swipe UIs).
+   */
+  ariaRoledescription = input<string | null>('slide');
+
+  /**
+   * Override the auto-computed `"N of M"` label. When `null` (the default),
+   * the directive computes it from this slide's index among non-offside
+   * siblings and the total non-offside count. Offside (clone) slides get
+   * no label and rely on `aria-hidden` instead.
+   */
+  ariaLabel = input<string | null>(null);
+
+  readonly effectiveAriaRoledescription = computed(() => {
+    if (this.offside()) return null;
+    const value = this.ariaRoledescription();
+    return value ? value : null;
+  });
+
+  readonly effectiveAriaLabel = computed(() => {
+    if (this.offside()) return null;
+    const explicit = this.ariaLabel();
+    if (explicit !== null) return explicit;
+    const visible = this.container.actualSwipes();
+    const i = visible.indexOf(this);
+    if (i < 0) return null;
+    const total = visible.length;
+    if (total === 0) return null;
+    return `${i + 1} of ${total}`;
+  });
 
   // Track if we've detected a swipe (vs a tap)
   private isSwipeDetected = false;

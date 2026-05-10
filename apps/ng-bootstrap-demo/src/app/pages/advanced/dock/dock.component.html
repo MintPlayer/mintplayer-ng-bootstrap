@@ -1,4 +1,17 @@
 <div class="dock-demo">
+  <details class="mb-2">
+    <summary>Keyboard shortcuts</summary>
+    <ul class="mb-0">
+      <li><kbd>Tab</kbd> / <kbd>Shift+Tab</kbd> — move focus through tabstrips, splitter dividers, intersection handles, and floating-pane close buttons</li>
+      <li><kbd>←</kbd> / <kbd>→</kbd> / <kbd>Home</kbd> / <kbd>End</kbd> — navigate between tabs in the focused stack</li>
+      <li>On a focused splitter divider: <kbd>←</kbd>/<kbd>→</kbd> (or <kbd>↑</kbd>/<kbd>↓</kbd> for vertical splits) resize by 10% (<kbd>Shift</kbd>: 1%), <kbd>Home</kbd>/<kbd>End</kbd> to limits</li>
+      <li>On a focused intersection handle (the round glyph at split crossings): same arrow keys, but <kbd>←</kbd>/<kbd>→</kbd> drives the vertical divider and <kbd>↑</kbd>/<kbd>↓</kbd> drives the horizontal one</li>
+      <li><kbd>Enter</kbd> / <kbd>Space</kbd> on a tab — activate it</li>
+      <li>Floating pane close button (×) — also focusable; <kbd>Enter</kbd> / <kbd>Space</kbd> closes</li>
+      <li><kbd>M</kbd> on a focused tab — enter pane move mode</li>
+      <li>In move mode: <kbd>T</kbd> / <kbd>R</kbd> / <kbd>B</kbd> / <kbd>L</kbd> docks the pane to the top / right / bottom / left of the current stack · <kbd>F</kbd> tears it off into a floating window · <kbd>Esc</kbd> cancels</li>
+    </ul>
+  </details>
   <bs-dock-manager
     [layout]="layout()"
     [debugLayoutIntegrity]="isDevMode"

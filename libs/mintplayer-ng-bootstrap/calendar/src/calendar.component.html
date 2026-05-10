@@ -1,38 +1,50 @@
-<table class="table w-auto mb-0">
+<table class="table w-auto mb-0" role="grid" [attr.aria-labelledby]="monthLabelId">
     <tr>
         <td>
-            <button type="button" class="btn btn-default" (click)="previousMonth()">
-                <span [innerHTML]="chevronLeft()" class="fw-bolder"></span>
+            <button type="button" class="btn btn-light" (click)="previousMonth()" aria-label="Previous month">
+                <span [innerHTML]="chevronLeft()" class="fw-bolder" aria-hidden="true"></span>
             </button>
         </td>
-        <td colspan="6" class="fw-bolder">
+        <td colspan="6" [id]="monthLabelId" class="fw-bolder" aria-live="polite">
             {{ currentMonth() | monthName | bsUcFirst }}
             {{ currentMonth().getFullYear() }}
         </td>
         <td>
-            <button type="button" class="btn btn-default border-bottom-0" (click)="nextMonth()">
-                <span [innerHTML]="chevronRight()" class="fw-bolder"></span>
+            <button type="button" class="btn btn-light" (click)="nextMonth()" aria-label="Next month">
+                <span [innerHTML]="chevronRight()" class="fw-bolder" aria-hidden="true"></span>
             </button>
         </td>
     </tr>
-    <tr>
-        <th></th>
+    <tr role="row">
+        <th aria-hidden="true"></th>
         @for (dayOfWeek of shownDays(); track dayOfWeek.long) {
-            <th [title]="dayOfWeek.long">
+            <th scope="col" role="columnheader" [title]="dayOfWeek.long">
                 {{ dayOfWeek.short }}
             </th>
         }
     </tr>
     @for (week of weeks(); track week.number) {
-        <tr>
-            <th>
+        <tr role="row">
+            <th scope="row" role="rowheader">
                 {{ week.number }}
             </th>
             @for (day of week.days; track day?.date) {
                 @let showSpan = (day !== null) && day.isInMonth;
                 @let disableFn = disableDateFn();
                 @let disabled = disableFn && day && disableFn(day.date);
-                <td [class.selected]="day === null ? false : !day.isInMonth ? false : isSameDate(selectedDate(), day.date)" [class.cursor-pointer]="showSpan && !disabled" (click)="goto(day)">
+                @let selected = (day !== null) && day.isInMonth && isSameDate(selectedDate(), day.date);
+                @let todayCell = (day !== null) && day.isInMonth && isToday(day.date);
+                @let isFocusable = (day !== null) && day.isInMonth && isSameDate(focusableDate(), day.date);
+                <td role="gridcell"
+                    [id]="day && day.isInMonth ? cellId(day.date) : null"
+                    [attr.tabindex]="showSpan ? (isFocusable ? 0 : -1) : null"
+                    [class.selected]="selected"
+                    [class.cursor-pointer]="showSpan && !disabled"
+                    [attr.aria-selected]="showSpan ? (selected ? 'true' : 'false') : null"
+                    [attr.aria-current]="todayCell ? 'date' : null"
+                    [attr.aria-disabled]="disabled ? 'true' : null"
+                    (click)="goto(day)"
+                    (keydown)="onCellKeyDown($event, day)">
                     @if (showSpan) {
                         <span [class.text-muted]="disabled">{{ day.dayOfMonth }}</span>
                     }

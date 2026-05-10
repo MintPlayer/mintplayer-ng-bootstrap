@@ -1,4 +1,5 @@
-import { SchedulerCustomEvent, EventDetail } from './event-types';
+import { SchedulerCustomEvent, EventDetail, TimeRange } from './event-types';
+import { ViewType } from '@mintplayer/ng-bootstrap/web-components/scheduler-core';
 
 /**
  * Handles dispatching custom events from the scheduler.
@@ -22,13 +23,14 @@ export class SchedulerEventEmitter {
   }
 
   /**
-   * Emit an event-click event.
+   * Emit an event-selected event. Fired both by mouse click and by keyboard
+   * Tab landing on an event (mouse-parity, PRD scheduler-keyboard-grid-nav D3).
    */
-  emitEventClick(
-    event: EventDetail<'event-click'>['event'],
+  emitEventSelected(
+    event: EventDetail<'event-selected'>['event'],
     originalEvent: Event
   ): void {
-    this.emit({ type: 'event-click', event, originalEvent });
+    this.emit({ type: 'event-selected', event, originalEvent });
   }
 
   /**
@@ -42,13 +44,17 @@ export class SchedulerEventEmitter {
   }
 
   /**
-   * Emit an event-create event.
+   * Emit an `event-create` *request*. Per PRD scheduler-controlled-selection,
+   * the scheduler does not mutate its internal events list — the consumer
+   * receives the range and decides whether to construct an event from it.
    */
   emitEventCreate(
-    event: EventDetail<'event-create'>['event'],
-    originalEvent: Event
+    range: TimeRange,
+    view: ViewType,
+    originalEvent: Event,
+    resourceId?: string,
   ): void {
-    this.emit({ type: 'event-create', event, originalEvent });
+    this.emit({ type: 'event-create', range, view, resourceId, originalEvent });
   }
 
   /**
@@ -87,11 +93,16 @@ export class SchedulerEventEmitter {
   }
 
   /**
-   * Emit a selection-change event.
+   * Emit a selection-change event. Carries both the single-event focus and
+   * the time-range selection — either may be null. Fires on every transition
+   * so consumers can react to the selection clearing without polling.
    */
   emitSelectionChange(
-    selectedEvent: EventDetail<'selection-change'>['selectedEvent']
+    selectedEvent: EventDetail<'selection-change'>['selectedEvent'],
+    range: TimeRange | null,
+    view: ViewType,
+    resourceId?: string,
   ): void {
-    this.emit({ type: 'selection-change', selectedEvent });
+    this.emit({ type: 'selection-change', selectedEvent, range, view, resourceId });
   }
 }

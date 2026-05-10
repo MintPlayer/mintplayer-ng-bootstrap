@@ -1,9 +1,11 @@
 import { isPlatformServer, NgTemplateOutlet } from '@angular/common';
-import { AfterViewInit, ChangeDetectionStrategy, Component, computed, contentChildren, DestroyRef, effect, ElementRef, forwardRef, inject, input, OnDestroy, output, PLATFORM_ID, signal, TemplateRef, viewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, computed, contentChildren, DestroyRef, effect, ElementRef, forwardRef, inject, input, model, OnDestroy, output, PLATFORM_ID, signal, TemplateRef, viewChild } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsSwipeContainerDirective, BsSwipeDirective, BsSwipeViewportDirective } from '@mintplayer/ng-swiper/swiper';
 import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
+import { BsReducedMotionDirective } from '@mintplayer/ng-bootstrap/reduced-motion';
 import { BsCarouselImageDirective } from '../carousel-image/carousel-image.directive';
+import type { BsCarouselPlayPauseContext } from '../carousel-play-pause/carousel-play-pause.directive';
 
 @Component({
   selector: 'bs-carousel',
@@ -17,17 +19,15 @@ import { BsCarouselImageDirective } from '../carousel-image/carousel-image.direc
     BsNoNoscriptDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  hostDirectives: [BsReducedMotionDirective],
   host: {
     '[@.disabled]': 'animationsDisabled()',
-    '(document:keydown.ArrowLeft)': 'onKeyPress($event)',
-    '(document:keydown.ArrowRight)': 'onKeyPress($event)',
-    '(document:keydown.ArrowUp)': 'onKeyPress($event)',
-    '(document:keydown.ArrowDown)': 'onKeyPress($event)',
   },
 })
 export class BsCarouselComponent implements AfterViewInit, OnDestroy {
   private platformId = inject(PLATFORM_ID);
   private destroyRef = inject(DestroyRef);
+  private readonly reducedMotion = inject(BsReducedMotionDirective);
 
   readonly colors = Color;
   readonly isServerSide = isPlatformServer(this.platformId);
@@ -44,6 +44,21 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
   animation = input<'fade' | 'slide' | 'none'>('slide');
   interval = input<number | null>(null);
   wrap = input(true);
+  ariaLabel = input<string | null>(null);
+
+  // Two-way: pause / resume the auto-advance timer. Toggled by the
+  // consumer's `*bsCarouselPlayPause` template via the `toggle` callback in
+  // its context, or by the public `play()` / `pause()` methods. Default
+  // false (auto-advance allowed); has no effect when `interval` is null/0.
+  paused = model<boolean>(false);
+
+  /**
+   * Template projected via `*bsCarouselPlayPause`. When set, the carousel
+   * renders it in a control row above the slides. Per APG, auto-advancing
+   * carousels must expose a play/pause control — this is how consumers
+   * provide one without us imposing a button style.
+   */
+  readonly playPauseTemplate = signal<TemplateRef<BsCarouselPlayPauseContext> | null>(null);
 
   // Outputs
   slideChange = output<number>();
@@ -85,42 +100,21 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
 
   readonly animationsDisabled = signal<boolean>(false);
 
-  onKeyPress(event: Event) {
-    const ev = event as KeyboardEvent;
-    if (this.keyboardEvents()) {
-      let handled = false;
-      const orientation = this.orientation();
-      switch (ev.key) {
-        case 'ArrowLeft':
-          if (orientation === 'horizontal') {
-            this.previous();
-            handled = true;
-          }
-          break;
-        case 'ArrowRight':
-          if (orientation === 'horizontal') {
-            this.next();
-            handled = true;
-          }
-          break;
-        case 'ArrowUp':
-          if (orientation === 'vertical') {
-            this.previous();
-            handled = true;
-          }
-          break;
-        case 'ArrowDown':
-          if (orientation === 'vertical') {
-            this.next();
-            handled = true;
-          }
-          break;
-      }
-      if (handled) {
-        ev.preventDefault();
-      }
-    }
-  }
+  /**
+   * `aria-live` value for the slide viewport. Stays `off` while
+   * auto-advance is actually rotating — otherwise the SR would re-read the
+   * active slide every interval — and switches to `polite` whenever the
+   * rotation is paused (by `paused`, missing/zero `interval`, or
+   * `prefers-reduced-motion`), so manual prev/next/indicator clicks get
+   * announced.
+   */
+  readonly slideAriaLive = computed<'off' | 'polite'>(() => {
+    const intervalTime = this.interval();
+    if (!intervalTime || intervalTime <= 0) return 'polite';
+    if (this.paused()) return 'polite';
+    if (this.reducedMotion.matches()) return 'polite';
+    return 'off';
+  });
 
   constructor() {
     // Mark first image whenever images change
@@ -129,12 +123,19 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
       images.forEach((item, index) => item.isFirst = (index === 0));
     });
 
-    // Setup auto-advance interval effect
+    // Setup auto-advance interval effect — gated on the two new axes added
+    // by the APG carousel bundle (PRD aria-accessibility-audit §13.2):
+    //   • `paused` model: lets the consumer (or the projected play/pause
+    //     button) suspend rotation.
+    //   • prefers-reduced-motion: suppresses auto-advance entirely when
+    //     the user opts out of motion at the OS level.
     effect(() => {
       const intervalTime = this.interval();
+      const isPaused = this.paused();
+      const reduceMotion = this.reducedMotion.matches();
       this.clearAutoAdvance();
 
-      if (intervalTime && intervalTime > 0) {
+      if (intervalTime && intervalTime > 0 && !isPaused && !reduceMotion) {
         this.intervalId = setInterval(() => {
           this.next();
         }, intervalTime);
@@ -156,6 +157,21 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
       this.resizeObserver?.disconnect();
     });
   }
+
+  /** Resume auto-advance. No-op if `interval` is unset or reduce-motion is on. */
+  play() {
+    this.paused.set(false);
+  }
+
+  /** Pause auto-advance. Manual prev/next/goto still work. */
+  pause() {
+    this.paused.set(true);
+  }
+
+  /** Toggle the paused state. Used as the `toggle` callback in `BsCarouselPlayPauseContext`. */
+  togglePaused = () => {
+    this.paused.update((p) => !p);
+  };
 
   private clearAutoAdvance() {
     if (this.intervalId) {

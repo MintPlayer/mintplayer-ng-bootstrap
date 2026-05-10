@@ -19,8 +19,12 @@ export class BsTreeviewComponent {
   indentation = computed(() => this.level() * 30);
   isExpanded = model<boolean>(!this.parent);
 
-  // Roving tabindex: track which item is focused
-  private items = signal<BsTreeviewItemComponent[]>([]);
+  /**
+   * Direct-child items of THIS tree (not descendants). Used to compute
+   * aria-setsize and aria-posinset for each item among its siblings.
+   */
+  items = signal<BsTreeviewItemComponent[]>([]);
+  /** Roving tabindex tracking — only stored on the root tree. */
   focusedItem = signal<BsTreeviewItemComponent | null>(null);
 
   private getRootTree(): BsTreeviewComponent {
@@ -28,19 +32,19 @@ export class BsTreeviewComponent {
   }
 
   registerItem(item: BsTreeviewItemComponent) {
+    this.items.update((items: BsTreeviewItemComponent[]) => [...items, item]);
+    // First item gets focus by default (root-level state)
     const root = this.getRootTree();
-    root.items.update((items: BsTreeviewItemComponent[]) => [...items, item]);
-    // First item gets focus by default
     if (root.focusedItem() === null) {
       root.focusedItem.set(item);
     }
   }
 
   unregisterItem(item: BsTreeviewItemComponent) {
+    this.items.update((items: BsTreeviewItemComponent[]) => items.filter(i => i !== item));
     const root = this.getRootTree();
-    root.items.update((items: BsTreeviewItemComponent[]) => items.filter(i => i !== item));
     if (root.focusedItem() === item) {
-      const remaining = root.items();
+      const remaining = this.items();
       root.focusedItem.set(remaining.length > 0 ? remaining[0] : null);
     }
   }

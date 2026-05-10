@@ -6,7 +6,7 @@ import {
   TimeSlot,
   getContrastColor,
 } from '@mintplayer/ng-bootstrap/web-components/scheduler-core';
-import { BaseView } from './base-view';
+import { BaseView, formatEventAriaLabel, isSlotInSelection } from './base-view';
 import { SchedulerState } from '../state/scheduler-state';
 
 /**
@@ -100,6 +100,10 @@ export class WeekView extends BaseView {
         );
 
         const slotEl = this.createElement('div', 'scheduler-time-slot');
+        slotEl.setAttribute('role', 'gridcell');
+        slotEl.setAttribute('tabindex', '-1');
+        slotEl.setAttribute('aria-selected', 'false');
+        slotEl.id = `scheduler-cell-w-${dayIndex}-${slotIndex}`;
         this.setData(slotEl, {
           dayIndex,
           slotIndex,
@@ -125,6 +129,9 @@ export class WeekView extends BaseView {
 
     // Render events
     this.renderEvents();
+
+    // Reflect any pre-existing focused cell / selection (e.g. after view switch).
+    this.updateCellFocusAndSelection();
 
     // Render now indicator
     this.renderNowIndicator(days, slots);
@@ -152,8 +159,42 @@ export class WeekView extends BaseView {
       this.renderEvents();
     }
 
+    // Reflect focusedCell + selection range into per-slot ARIA + tabindex.
+    this.updateCellFocusAndSelection();
+
     // Render preview event
     this.renderPreviewEvent();
+  }
+
+  /**
+   * Apply roving tabindex and aria-selected to each cached slot element. Also
+   * toggles the `.selected` class so the existing `.scheduler-time-slot.selected`
+   * styling lights up cells in the keyboard-driven range. A linear time-range
+   * selection (PRD D1) lights up every slot whose [start, end) intersects
+   * the range, including across day boundaries on week view.
+   */
+  private updateCellFocusAndSelection(): void {
+    const focused = this.state.focusedCell;
+    let foundFocused = false;
+    let firstEl: HTMLElement | null = null;
+    for (const [, slotEl] of this.slotElements) {
+      if (!firstEl) firstEl = slotEl;
+      const startStr = slotEl.dataset['start'];
+      const endStr = slotEl.dataset['end'];
+      if (!startStr || !endStr) continue;
+      const slot = { start: new Date(startStr), end: new Date(endStr) };
+      const isFocused =
+        !!focused && slot.start.getTime() === focused.start.getTime();
+      slotEl.setAttribute('tabindex', isFocused ? '0' : '-1');
+      const inSelection = isSlotInSelection(slot, this.state, null);
+      slotEl.setAttribute('aria-selected', inSelection ? 'true' : 'false');
+      slotEl.classList.toggle('selected', inSelection);
+      if (isFocused) foundFocused = true;
+    }
+    // Grid must be Tab-reachable: if focusedCell hasn't been set yet (first
+    // mount, or focused cell isn't visible after a date change), fall back
+    // to the top-left cell so Tab from the header lands somewhere.
+    if (!foundFocused && firstEl) firstEl.setAttribute('tabindex', '0');
   }
 
   private optionsRequireRerender(oldOpts: SchedulerState['options'], newOpts: SchedulerState['options']): boolean {
@@ -225,9 +266,19 @@ export class WeekView extends BaseView {
   ): HTMLElement {
     const event = part.event;
     const eventEl = this.createElement('div', 'scheduler-event');
-
-    // Mark as selected if this is the selected event
-    if (this.state.selectedEvent?.id === event.id) {
+    const isSelected = this.state.selectedEvent?.id === event.id;
+    const inMoveMode = this.state.keyboardMoveEventId === event.id;
+    eventEl.setAttribute('role', 'button');
+    // Every event is in the Tab order (PRD §6.1) — Tab cycles through events
+    // in document order. Selected event still gets aria-current for SR cue.
+    eventEl.setAttribute('tabindex', '0');
+    eventEl.setAttribute(
+      'aria-label',
+      formatEventAriaLabel(event, null, this.state.options.timeFormat),
+    );
+    if (inMoveMode) eventEl.setAttribute('aria-pressed', 'true');
+    if (isSelected) {
+      eventEl.setAttribute('aria-current', 'true');
       eventEl.classList.add('selected');
     }
 

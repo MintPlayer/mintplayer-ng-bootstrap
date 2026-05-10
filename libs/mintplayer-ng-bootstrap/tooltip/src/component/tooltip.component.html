@@ -1,6 +1,7 @@
 <bs-has-overlay></bs-has-overlay>
 <div [@fadeInOut] class="tooltip position-absolute show"
     [class]="[positionClass(), marginClass()]"
+    [id]="tooltipId"
     role="tooltip">
     <div class="tooltip-arrow position-absolute" aria-hidden="true"></div>
     <div class="tooltip-inner">

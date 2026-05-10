@@ -43,7 +43,10 @@
         "stylePreprocessorOptions": {
           "includePaths": [
             "libs/mintplayer-ng-bootstrap/datatable/src"
-          ]
+          ],
+          "sass": {
+            "silenceDeprecations": ["import"]
+          }
         },
         "loader": {
           ".svg": "text"

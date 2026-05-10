@@ -1,4 +1,4 @@
-import { Component, computed, model, signal, TemplateRef, viewChild, ChangeDetectionStrategy } from '@angular/core';
+import { Component, computed, input, model, signal, TemplateRef, viewChild, ChangeDetectionStrategy } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
@@ -24,6 +24,7 @@ export class BsMultiselectComponent<T> {
 
   readonly items = model<T[]>([]);
   readonly selectedItems = model<T[]>([]);
+  readonly ariaLabel = input<string>('Select options');
   readonly defaultButtonTemplate = viewChild.required<TemplateRef<any>>('defaultButtonTemplate');
   readonly defaultItemTemplate = viewChild.required<TemplateRef<any>>('defaultItemTemplate');
 

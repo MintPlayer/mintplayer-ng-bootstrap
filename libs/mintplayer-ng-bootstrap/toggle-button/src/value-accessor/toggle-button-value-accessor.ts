@@ -35,7 +35,7 @@ export class BsToggleButtonValueAccessor implements ControlValueAccessor {
             const itemValue = this.host.checkbox().nativeElement.value;
 
             const result = group.toggleButtons()
-              .map(tb => ({ value: tb.value(), checked: tb.checkbox().nativeElement.checked }))
+              .map(tb => ({ value: tb.value(), checked: !!tb.isToggled() }))
               .filter(tb => !!tb.value && tb.checked)
               .map(tb => <string>tb.value);
 
@@ -68,23 +68,18 @@ export class BsToggleButtonValueAccessor implements ControlValueAccessor {
   }
 
   writeValue(value: boolean | string | string[]) {
-    const checkbox = this.host.checkbox();
-    if (checkbox) {
-      switch (this.host.type()) {
-        case 'radio':
-        case 'radio_toggle_button':
-          if (<string>value === this.host.value()) {
-            checkbox.nativeElement.checked = true;
-          }
-          break;
-        default:
-          if (this.host.group()) {
-            checkbox.nativeElement.checked = Array.isArray(value) && value.includes(this.host.value()!);
-          } else {
-            checkbox.nativeElement.checked = <boolean>value;
-          }
-          break;
-      }
+    switch (this.host.type()) {
+      case 'radio':
+      case 'radio_toggle_button':
+        this.host.isToggled.set(<string>value === this.host.value());
+        break;
+      default:
+        if (this.host.group()) {
+          this.host.isToggled.set(Array.isArray(value) && value.includes(this.host.value()!));
+        } else {
+          this.host.isToggled.set(<boolean>value);
+        }
+        break;
     }
   }
 

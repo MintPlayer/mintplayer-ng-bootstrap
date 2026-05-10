@@ -79,6 +79,30 @@ export class BsToggleButtonComponent implements AfterViewInit {
     }
   });
 
+  /**
+   * ARIA role override per type. We let `checkbox`, `radio`, and `radio_toggle_button`
+   * keep their implicit roles (`checkbox` / `radio`) — those are already correct.
+   * `switch` gets `role="switch"`. `toggle_button` is exposed as the ARIA toggle-button
+   * pattern (`role="button"` + `aria-pressed`), which is how SRs announce it as a
+   * toggle button rather than a checkbox.
+   */
+  ariaRole = computed<string | null>(() => {
+    switch (this.type()) {
+      case 'switch':
+        return 'switch';
+      case 'toggle_button':
+        return 'button';
+      default:
+        return null;
+    }
+  });
+
+  /** Only meaningful for the toggle-button (role=button) variant. */
+  ariaPressed = computed<string | null>(() => {
+    if (this.type() !== 'toggle_button') return null;
+    return this.isToggled() ? 'true' : 'false';
+  });
+
   nameResult = computed(() => {
     const type = this.type();
     const name = this.name();
@@ -99,6 +123,10 @@ export class BsToggleButtonComponent implements AfterViewInit {
         throw 'Invalid value';
     }
   });
+
+  onInputChange(ev: Event) {
+    this.isToggled.set((ev.target as HTMLInputElement).checked);
+  }
 
   ngAfterViewInit() {
     this.disableAnimations.set(false);

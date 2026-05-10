@@ -40,6 +40,30 @@ export interface SchedulerState {
   isMouseDown: boolean;
   /** Loading state */
   isLoading: boolean;
+
+  // --- Keyboard grid navigation (PRD scheduler-keyboard-grid-nav) ---
+  /** Currently keyboard-focused cell. Drives roving tabindex inside the grid. */
+  focusedCell: TimeSlot | null;
+  /** Resource pinned to the focused cell (timeline view only). */
+  focusedResourceId: string | null;
+  /** The cell where the user first held Shift to begin a range selection. */
+  selectionAnchor: TimeSlot | null;
+  /** Current end-cell of the keyboard-driven selection. Range spans from the
+   *  earliest cell.start to the latest cell.end across both anchor and extent. */
+  selectionExtent: TimeSlot | null;
+  /** Resource pinned at the anchor (timeline only); cross-resource selection is intentionally ignored (PRD D1). */
+  selectionResourceId: string | null;
+  /** ID of the event currently in keyboard move-mode (PRD §6.6). Drives `aria-pressed` on the event button. */
+  keyboardMoveEventId: string | null;
+
+  // --- Phase B (PRD scheduler-controlled-selection §5) ---
+  /**
+   * Keyboard-focused day on month-view, or first-of-month on year-view.
+   * Distinct from `focusedCell` (which carries a slot range), because month-
+   * and year-view cells aren't time slots — month cells are whole days, year
+   * cells are whole months.
+   */
+  focusedDate: Date | null;
 }
 
 /**
@@ -64,6 +88,13 @@ export function createInitialState(
     collapsedGroups: new Set(),
     isMouseDown: false,
     isLoading: false,
+    focusedCell: null,
+    focusedResourceId: null,
+    selectionAnchor: null,
+    selectionExtent: null,
+    selectionResourceId: null,
+    keyboardMoveEventId: null,
+    focusedDate: null,
   };
 }
 
@@ -330,5 +361,71 @@ export class SchedulerStateManager {
    */
   gotoDate(date: Date): void {
     this.setState({ date });
+  }
+
+  /**
+   * Move the keyboard focus to a cell. Setting `clearSelection` (default)
+   * also drops any active range selection — used for plain Arrow nav, where
+   * Shift would have stayed held to keep the range alive.
+   */
+  setFocusedCell(
+    cell: TimeSlot | null,
+    resourceId: string | null = null,
+    clearSelection: boolean = true,
+  ): void {
+    if (clearSelection) {
+      this.setState({
+        focusedCell: cell,
+        focusedResourceId: resourceId,
+        selectionAnchor: null,
+        selectionExtent: null,
+        selectionResourceId: null,
+      });
+    } else {
+      this.setState({
+        focusedCell: cell,
+        focusedResourceId: resourceId,
+      });
+    }
+  }
+
+  /**
+   * Begin or extend a range selection. Anchor is set on first call (when
+   * Shift is first held), pinned at the *previously-focused* cell. Extent
+   * moves with each subsequent Shift+Arrow.
+   */
+  extendSelection(
+    extent: TimeSlot,
+    resourceId: string | null = null,
+  ): void {
+    this.setState((state) => {
+      const anchor = state.selectionAnchor ?? state.focusedCell ?? extent;
+      const pinnedResource =
+        state.selectionResourceId ?? state.focusedResourceId ?? resourceId;
+      return {
+        selectionAnchor: anchor,
+        selectionExtent: extent,
+        selectionResourceId: pinnedResource,
+      };
+    });
+  }
+
+  /**
+   * Clear any active range selection without touching the focused cell.
+   */
+  clearSelection(): void {
+    this.setState({
+      selectionAnchor: null,
+      selectionExtent: null,
+      selectionResourceId: null,
+    });
+  }
+
+  /**
+   * Move the keyboard focus to a calendar date — used by month and year views
+   * (PRD scheduler-controlled-selection §5). Pass `null` to clear.
+   */
+  setFocusedDate(date: Date | null): void {
+    this.setState({ focusedDate: date });
   }
 }

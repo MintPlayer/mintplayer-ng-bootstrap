@@ -34,6 +34,7 @@ export class BsSelectComponent {
   multiple = input<boolean>(false);
   numberVisible = input<number | null>(null);
   disabled = input<boolean>(false);
+  ariaLabel = input<string | null>(null);
 
   sizeClass = computed(() => {
     const size = this.size();

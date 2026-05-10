@@ -44,6 +44,7 @@ interface MpSchedulerElement extends HTMLElement {
   today(): void;
   gotoDate(date: Date): void;
   changeView(view: ViewType): void;
+  clearSelection(): void;
   addEvent(event: SchedulerEvent): void;
   updateEvent(event: SchedulerEvent): void;
   removeEvent(eventId: string): void;
@@ -52,20 +53,41 @@ interface MpSchedulerElement extends HTMLElement {
 }
 
 /**
- * Event click event detail
+ * Event-selected event detail. Fires on mouse click and on keyboard Tab
+ * landing on an event (PRD scheduler-keyboard-grid-nav D3 — renamed from
+ * `event-click` because keyboard now triggers the same notification).
  */
-export interface SchedulerEventClickEvent {
+export interface SchedulerEventSelectedEvent {
   event: SchedulerEvent;
   originalEvent?: Event;
 }
 
 /**
- * Event create event detail
+ * Event create *request* event. Per PRD scheduler-controlled-selection, the
+ * `mp-scheduler` web-component no longer constructs an event itself on drag-end
+ * or `Enter` — it emits the selected range and the consumer decides whether
+ * to push a `SchedulerEvent` into its `[events]` input.
  */
 export interface SchedulerEventCreateEvent {
-  event: SchedulerEvent;
-  resource?: Resource;
+  /** The selected time range. */
+  range: { start: Date; end: Date };
+  /** Resource the request targets (timeline view only). */
+  resourceId?: string;
+  /** View that produced the request. */
+  view: ViewType;
   originalEvent?: Event;
+}
+
+/**
+ * Selection-change event. Fires on every transition — including the
+ * transition to an empty selection. `selectedEvent` and `range` are
+ * independent dimensions of the selection state.
+ */
+export interface SchedulerSelectionChangeEvent {
+  selectedEvent: SchedulerEvent | null;
+  range: { start: Date; end: Date } | null;
+  view: ViewType;
+  resourceId?: string;
 }
 
 /**
@@ -139,14 +161,15 @@ export class BsSchedulerComponent implements AfterViewInit, OnDestroy {
   readonly selectedRange = model<{ start: Date; end: Date } | null>(null);
 
   // Output signals (events)
-  readonly eventClick = output<SchedulerEventClickEvent>();
-  readonly eventDblClick = output<SchedulerEventClickEvent>();
+  readonly eventSelected = output<SchedulerEventSelectedEvent>();
+  readonly eventDblClick = output<SchedulerEventSelectedEvent>();
   readonly eventCreate = output<SchedulerEventCreateEvent>();
   readonly eventUpdate = output<SchedulerEventUpdateEvent>();
   readonly eventDelete = output<SchedulerEventDeleteEvent>();
   readonly dateClick = output<DateClickEvent>();
   readonly dateSelect = output<DateSelectEvent>();
   readonly viewChange = output<ViewChangeEvent>();
+  readonly selectionChange = output<SchedulerSelectionChangeEvent>();
 
   // Computed signals
   readonly currentWeekStart = computed(() => {
@@ -244,8 +267,8 @@ export class BsSchedulerComponent implements AfterViewInit, OnDestroy {
       this.eventListeners.push({ type, listener });
     };
 
-    addListener('event-click', (e) => {
-      this.eventClick.emit(e.detail);
+    addListener('event-selected', (e) => {
+      this.eventSelected.emit(e.detail);
       this.selectedEvent.set(e.detail.event);
     });
 
@@ -279,7 +302,9 @@ export class BsSchedulerComponent implements AfterViewInit, OnDestroy {
     });
 
     addListener('selection-change', (e) => {
+      this.selectionChange.emit(e.detail);
       this.selectedEvent.set(e.detail.selectedEvent);
+      this.selectedRange.set(e.detail.range);
     });
   }
 
@@ -328,6 +353,15 @@ export class BsSchedulerComponent implements AfterViewInit, OnDestroy {
    */
   changeView(view: ViewType): void {
     this.schedulerRef()?.nativeElement?.changeView(view);
+  }
+
+  /**
+   * Clear the time-range selection and the focused-cell selection. Call this
+   * from your `(eventCreate)` handler if you want the post-create selection
+   * cleared — the scheduler no longer auto-clears (PRD: scheduler-controlled-selection).
+   */
+  clearSelection(): void {
+    this.schedulerRef()?.nativeElement?.clearSelection();
   }
 
   /**

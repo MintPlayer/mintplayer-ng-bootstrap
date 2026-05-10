@@ -11,6 +11,9 @@
     [style.width.px]="width()"
     role="dialog"
     aria-modal="true"
+    [attr.aria-labelledby]="context.headerId()"
+    [attr.aria-describedby]="context.bodyId()"
+    [bsOverlayFocus]="isVisible()"
     tabindex="-1">
-    <ng-container *ngTemplateOutlet="contentTemplate"></ng-container>
+    <ng-container *ngTemplateOutlet="contentTemplate; injector: injector"></ng-container>
 </div>

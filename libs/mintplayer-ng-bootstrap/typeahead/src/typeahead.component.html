@@ -1,30 +1,30 @@
 <bs-has-overlay></bs-has-overlay>
 <bs-form>
-    <div bsDropdown [(isOpen)]="isOpen" [hasBackdrop]="false" [sameDropdownWidth]="true" role="combobox" [attr.aria-expanded]="isOpen()">
+    <div bsDropdown popupRole="listbox" [(isOpen)]="isOpen" [hasBackdrop]="false" [sameDropdownWidth]="true">
         <input type="text"
             #textbox
             [ngModel]="searchterm()"
             (ngModelChange)="onProvideSuggestions($event)"
-            (keyup.enter)="onSubmit()"
-            aria-autocomplete="list"
-            aria-haspopup="listbox"
-            [attr.aria-controls]="isOpen() ? listboxId : null"
+            bsCombobox
+            (activate)="onActivate()"
+            (cancel)="onCancel()"
+            (keydown.enter)="onSubmit($event)"
             autocomplete="off" />
-        <bs-dropdown-menu *bsDropdownMenu role="listbox" [id]="listboxId">
+        <bs-dropdown-menu *bsDropdownMenu bsRovingFocus mode="activedescendant">
             @if (isLoading()) {
                 <bs-progress [height]="2" [isIndeterminate]="true"></bs-progress>
-                <bs-dropdown-item [disabled]="true" role="option" aria-disabled="true">
+                <bs-dropdown-item [disabled]="true">
                     {{ isLoadingText() }}
                 </bs-dropdown-item>
             }
             @if (!isLoading()) {
                 @if (showNoSuggestions()) {
-                    <bs-dropdown-item [disabled]="true" role="option" aria-disabled="true">
+                    <bs-dropdown-item [disabled]="true">
                         {{ noSuggestionsText() }}
                     </bs-dropdown-item>
                 }
                 @for (suggestion of suggestions(); track suggestion) {
-                    <bs-dropdown-item (click)="suggestionClicked(suggestion)" role="option">
+                    <bs-dropdown-item bsRovingFocusItem (click)="suggestionClicked(suggestion)">
                         {{ suggestion.text }}
                     </bs-dropdown-item>
                 }

@@ -1,9 +1,9 @@
 <bs-has-overlay></bs-has-overlay>
 <div bsDropdown [hasBackdrop]="true" [closeOnClickOutside]="true">
-    <button type="button" bsDropdownToggle [color]="colors.primary">
+    <button type="button" bsDropdownToggle [color]="colors.primary" [attr.aria-label]="ariaLabel()">
         <ng-container *ngTemplateOutlet="resolvedButtonTemplate(); context: { $implicit: selectedItems().length }"></ng-container>
     </button>
-    <div *bsDropdownMenu class="bg-white mw-250px p-3 border rounded shadow">
+    <div *bsDropdownMenu [attr.aria-label]="ariaLabel()" class="bg-white mw-250px p-3 border rounded shadow">
         <ng-container *ngTemplateOutlet="headerTemplate()"></ng-container>
         @if (headerTemplate()) {
             <hr class="my-2">

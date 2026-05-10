@@ -5,6 +5,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { MockComponent } from 'ng-mocks';
 import { TOOLTIP_CONTENT } from '../providers/tooltip-content.provider';
+import { TOOLTIP_ID } from '../providers/tooltip-id.provider';
 import { BsTooltipComponent } from './tooltip.component';
 
 @Component({
@@ -24,7 +25,10 @@ class BsTooltipTestComponent {
 
   renderTooltip() {
     this.injector = Injector.create({
-      providers: [{ provide: TOOLTIP_CONTENT, useValue: this.tooltipTemplate }],
+      providers: [
+        { provide: TOOLTIP_CONTENT, useValue: this.tooltipTemplate },
+        { provide: TOOLTIP_ID, useValue: 'test-tooltip-id' },
+      ],
       parent: this.injector
     });
     const portal = new ComponentPortal(BsTooltipComponent, null, this.injector);

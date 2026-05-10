@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, ElementRef, input, signal, TemplateRef, viewChild } from '@angular/core';
-import { NgTemplateOutlet } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, ElementRef, inject, input, PLATFORM_ID, signal, TemplateRef, viewChild } from '@angular/core';
+import { isPlatformServer, NgTemplateOutlet } from '@angular/common';
 import { BsContainerComponent } from '@mintplayer/ng-bootstrap/container';
 import { BsUserAgentDirective } from '@mintplayer/ng-bootstrap/user-agent';
 import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
 import { Breakpoint, Color } from '@mintplayer/ng-bootstrap';
+import { BsIdService } from '@mintplayer/ng-bootstrap/a11y';
 
 @Component({
   selector: 'bs-navbar',
@@ -18,6 +19,14 @@ import { Breakpoint, Color } from '@mintplayer/ng-bootstrap';
 export class BsNavbarComponent {
 
   private resizeTimeout: ReturnType<typeof setTimeout> | null = null;
+  private ids = inject(BsIdService);
+  private platformId = inject(PLATFORM_ID);
+
+  /** True only during SSR — drives the noscript-friendly checkbox+label
+   *  toggler in the template. In the browser, even during hydration, this is
+   *  false so the original <button> renders.
+   */
+  readonly isServerSide = isPlatformServer(this.platformId);
 
   constructor() {
     this.onWindowResize();
@@ -42,6 +51,10 @@ export class BsNavbarComponent {
 
   readonly nav = viewChild.required<ElementRef>('nav');
   autoclose = input(true);
+  ariaLabel = input<string>('Main navigation');
+  collapseId = input<string>(this.ids.next('bs-navbar-collapse'));
+  /** Stable id for the noscript-friendly toggler-checkbox (label[for] target). */
+  readonly togglerCheckboxId = this.ids.next('bs-navbar-toggler');
 
   expandButtonTemplate = signal<TemplateRef<any> | null>(null);
 

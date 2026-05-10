@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy} from '@angular/core';
+import { Component, ChangeDetectionStrategy, input } from '@angular/core';
 
 @Component({
   selector: 'bs-button-group',
@@ -6,4 +6,6 @@ import { Component, ChangeDetectionStrategy} from '@angular/core';
   styleUrls: ['./button-group.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class BsButtonGroupComponent {}
+export class BsButtonGroupComponent {
+  ariaLabel = input<string | null>(null);
+}

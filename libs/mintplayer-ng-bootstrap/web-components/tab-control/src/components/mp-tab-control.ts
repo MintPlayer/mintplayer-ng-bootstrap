@@ -173,6 +173,10 @@ export class MpTabControl extends LitElement {
     const content = html`
       <div
         class="tab-content flex-grow-1 overflow-auto${borderClass}"
+        role=${activeId ? 'tabpanel' : nothing}
+        id=${activeId ? `${activeId}-panel` : nothing}
+        aria-labelledby=${activeId ? `${activeId}-header-button` : nothing}
+        tabindex=${activeId ? '0' : nothing}
       >
         <slot name=${activeId ? `${activeId}-content` : '__none__'}></slot>
       </div>

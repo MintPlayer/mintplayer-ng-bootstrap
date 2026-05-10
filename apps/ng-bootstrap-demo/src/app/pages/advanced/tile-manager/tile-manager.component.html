@@ -6,6 +6,18 @@
     time. Layout auto-persists to <code>localStorage</code> — reload to verify.
   </p>
 
+  <details class="mb-3">
+    <summary>Keyboard shortcuts</summary>
+    <ul class="mb-0">
+      <li><kbd>Tab</kbd> — focus the tile board</li>
+      <li><kbd>↑</kbd> / <kbd>↓</kbd> / <kbd>←</kbd> / <kbd>→</kbd> — move focus between tiles (row-major)</li>
+      <li><kbd>Home</kbd> / <kbd>End</kbd> — first / last tile</li>
+      <li><kbd>M</kbd> — enter move mode on the focused tile</li>
+      <li>In move mode: <kbd>↑</kbd> / <kbd>↓</kbd> / <kbd>←</kbd> / <kbd>→</kbd> nudge the tile, <kbd>Shift</kbd> + arrow resizes it</li>
+      <li><kbd>Enter</kbd> — commit · <kbd>Esc</kbd> — cancel and revert</li>
+    </ul>
+  </details>
+
   <bs-form class="my-3">
     <bs-grid>
       <div bsRow>
@@ -95,21 +107,23 @@
     }
   </bs-tile-manager>
 
-  <div class="row g-3 mt-3">
-    <div class="col-md-6">
-      <div class="d-flex gap-2 mb-2">
-        <button type="button" class="btn btn-primary btn-sm" (click)="saveNow()">Save to localStorage</button>
-        <button type="button" class="btn btn-outline-danger btn-sm" (click)="reset()">Reset</button>
-      </div>
-      @if (latestBlocked(); as blocked) {
-        <div class="alert alert-warning py-2">
-          Last gesture blocked: <code>{{ blocked.id }}</code> — <code>{{ blocked.reason }}</code>
+  <bs-grid class="mt-3">
+    <div bsRow>
+      <div [md]="6">
+        <div class="d-flex gap-2 mb-2">
+          <button type="button" class="btn btn-primary btn-sm" (click)="saveNow()">Save to localStorage</button>
+          <button type="button" class="btn btn-outline-danger btn-sm" (click)="reset()">Reset</button>
         </div>
-      }
+        @if (latestBlocked(); as blocked) {
+          <div class="alert alert-warning py-2">
+            Last gesture blocked: <code>{{ blocked.id }}</code> — <code>{{ blocked.reason }}</code>
+          </div>
+        }
+      </div>
+      <div [md]="6">
+        <strong class="d-block mb-1">Live snapshot</strong>
+        <pre class="snapshot-pre"><code>{{ snapshotJson() }}</code></pre>
+      </div>
     </div>
-    <div class="col-md-6">
-      <strong class="d-block mb-1">Live snapshot</strong>
-      <pre class="snapshot-pre"><code>{{ snapshotJson() }}</code></pre>
-    </div>
-  </div>
+  </bs-grid>
 </div>

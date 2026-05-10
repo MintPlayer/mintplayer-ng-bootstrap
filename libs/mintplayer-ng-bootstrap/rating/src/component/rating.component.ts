@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, input, model, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, input, model, output, signal, viewChildren } from '@angular/core';
 
 @Component({
   selector: 'bs-rating',
@@ -9,6 +9,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, input, model, out
     'role': 'radiogroup',
     'aria-label': 'Rating',
     '(mouseleave)': 'onMouseLeave()',
+    '(keydown)': 'onKeydown($event)',
   },
 })
 export class BsRatingComponent {
@@ -24,6 +25,8 @@ export class BsRatingComponent {
   value = model<number>(3);
   previewValue = signal<number | null>(null);
   starsChange = output<number>();
+
+  readonly starButtons = viewChildren<ElementRef<HTMLButtonElement>>('star');
 
   stars = computed(() => {
     const v = this.previewValue() ?? this.value();
@@ -44,5 +47,34 @@ export class BsRatingComponent {
 
   onMouseLeave() {
     this.previewValue.set(null);
+  }
+
+  onKeydown(event: KeyboardEvent) {
+    const max = this.maximum();
+    const cur = this.value();
+    let next: number | null = null;
+    switch (event.key) {
+      case 'ArrowRight':
+      case 'ArrowDown':
+        next = Math.min(cur + 1, max);
+        break;
+      case 'ArrowLeft':
+      case 'ArrowUp':
+        next = Math.max(cur - 1, 1);
+        break;
+      case 'Home':
+        next = 1;
+        break;
+      case 'End':
+        next = max;
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+    if (next !== cur) {
+      this.value.set(next);
+    }
+    this.starButtons()[next - 1]?.nativeElement.focus();
   }
 }

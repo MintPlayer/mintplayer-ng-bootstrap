@@ -6,8 +6,12 @@
                     [class.sort]="column.sortable()"
                     [class.sort-asc]="column.sortable() && getSortDirection(column.name()) === 'ascending'"
                     [class.sort-desc]="column.sortable() && getSortDirection(column.name()) === 'descending'"
+                    [attr.aria-sort]="column.sortable() ? (getSortDirection(column.name()) ?? 'none') : null"
+                    [attr.tabindex]="column.sortable() ? 0 : null"
                     (mousedown)="onHeaderMouseDown($event)"
-                    (click)="columnHeaderClicked(column, $event)">
+                    (click)="columnHeaderClicked(column, $event)"
+                    (keydown.enter)="columnHeaderClicked(column, $event); $event.preventDefault()"
+                    (keydown.space)="columnHeaderClicked(column, $event); $event.preventDefault()">
                     <ng-container *ngTemplateOutlet="column.templateRef"></ng-container>
                     @if (settings().sortColumns.length > 1 && getSortIndex(column.name()) >= 0) {
                         <span class="sort-priority">{{ getSortIndex(column.name()) + 1 }}</span>

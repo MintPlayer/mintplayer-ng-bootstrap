@@ -1,4 +1,4 @@
-<div class="priority-nav" [class.noscript]="isServerSide" bsNoNoscript>
+<nav class="priority-nav" [class.noscript]="isServerSide" [attr.aria-label]="ariaLabel()" bsNoNoscript>
     @if (isServerSide) {
         <input type="checkbox" [id]="uid + '-more'" class="priority-nav-more-checkbox d-none" bsNoNoscript>
     }
@@ -58,7 +58,7 @@
             </span>
         }
     </div>
-</div>
+</nav>
 
 <ng-template #defaultMoreLabel let-isOpen>
     <span class="priority-nav-more-label">{{ moreLabel() }}</span>

@@ -38,6 +38,26 @@ export class BsNavbarDropdownComponent implements OnDestroy {
   isVisible = signal<boolean>(false);
   topPos = signal<number | null>(null);
 
+  /**
+   * Top-level dropdowns render in-place; only nested submenus go through the
+   * CDK overlay. The visible-flash bug only affects the overlay path.
+   */
+  private readonly isOverlayMounted = computed(() => !!this.parentDropdown && this.isBrowser);
+
+  /**
+   * `.show` is gated on this for overlay-mounted submenus so the user never
+   * sees the menu at its stale top-left position. False until updatePosition
+   * has run at least once for the current open cycle; reset on close.
+   */
+  private readonly isPositioned = signal<boolean>(false);
+
+  /** What `[class.show]` actually binds to. */
+  readonly showClass = computed(() =>
+    this.isOverlayMounted()
+      ? this.isVisible() && this.isPositioned()
+      : this.isVisible()
+  );
+
   maxHeight = computed(() => {
     const topPos = this.topPos();
     const w: Window | null = this.document.defaultView;
@@ -67,12 +87,17 @@ export class BsNavbarDropdownComponent implements OnDestroy {
     effect(() => {
       const isVisible = this.isVisible();
       if (isVisible) {
-        setTimeout(() => {
-          try { this.overlay?.updatePosition(); }
-          catch (ex) { }
-        }, 20);
+        // Overlay was attached at ngAfterContentInit when the connected
+        // navbar-item was still inside a closed parent dropdown — its
+        // getBoundingClientRect was (0, 0) and the overlay cached top-left.
+        // Compute the real position now, before .show flips on, so the user
+        // never sees the menu painted at the stale top-left.
+        try { this.overlay?.updatePosition(); }
+        catch (ex) { }
+        this.isPositioned.set(true);
         this.topPos.set(this.element.nativeElement.offsetTop);
       } else {
+        this.isPositioned.set(false);
         this.topPos.set(null);
       }
     });

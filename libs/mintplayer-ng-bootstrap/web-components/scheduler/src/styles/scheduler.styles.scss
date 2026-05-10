@@ -210,6 +210,17 @@
   background: var(--scheduler-greyed-slot-bg);
 }
 
+.scheduler-time-slot.selected {
+  background: var(--scheduler-preview-bg);
+}
+
+.scheduler-time-slot:focus-visible,
+.scheduler-time-slot:focus {
+  outline: 2px solid #0d6efd;
+  outline-offset: -2px;
+  z-index: 1;
+}
+
 /* Events */
 .scheduler-events-container {
   position: absolute;
@@ -518,6 +529,17 @@
   background: var(--scheduler-greyed-slot-bg);
 }
 
+.scheduler-timeline-slot.selected {
+  background: var(--scheduler-preview-bg);
+}
+
+.scheduler-timeline-slot:focus-visible,
+.scheduler-timeline-slot:focus {
+  outline: 2px solid #0d6efd;
+  outline-offset: -2px;
+  z-index: 1;
+}
+
 .scheduler-timeline-events {
   position: absolute;
   top: 0;
@@ -636,4 +658,12 @@
 
 .scheduler-content::-webkit-scrollbar-thumb:hover {
   background: #a1a1a1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scheduler-event,
+  .scheduler-timeline-event {
+    animation: none !important;
+    transition: none !important;
+  }
 }

@@ -1,21 +1,26 @@
 import { isPlatformServer, NgTemplateOutlet } from '@angular/common';
-import { Component, computed, effect, inject, output, PLATFORM_ID, signal, TemplateRef, untracked, ChangeDetectionStrategy} from '@angular/core';
+import { Component, computed, effect, inject, Injector, output, PLATFORM_ID, signal, TemplateRef, untracked, ChangeDetectionStrategy } from '@angular/core';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
+import { BsOverlayFocusDirective } from '@mintplayer/ng-bootstrap/a11y';
 import { Position } from '@mintplayer/ng-bootstrap';
 import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
+import { BsOffcanvasContextService } from '../../services/offcanvas-context.service';
 
 @Component({
   selector: 'bs-offcanvas-holder',
   templateUrl: './offcanvas.component.html',
   styleUrls: ['./offcanvas.component.scss'],
-  imports: [NgTemplateOutlet],
+  imports: [NgTemplateOutlet, BsOverlayFocusDirective],
   animations: [FadeInOutAnimation],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [BsOffcanvasContextService],
 })
 export class BsOffcanvasComponent {
 
   contentTemplate = inject<TemplateRef<any>>(OFFCANVAS_CONTENT);
   private platformId = inject(PLATFORM_ID);
+  context = inject(BsOffcanvasContextService);
+  injector = inject(Injector);
 
   constructor() {
     // Effect to handle position changes - disable transition temporarily

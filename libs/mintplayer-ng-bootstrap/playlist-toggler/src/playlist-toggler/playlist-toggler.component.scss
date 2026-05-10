@@ -37,6 +37,9 @@
 .playlist-toggler {
   width: 3.5rem;
   padding: 0.75rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
 
   > div {
     width: 25px;

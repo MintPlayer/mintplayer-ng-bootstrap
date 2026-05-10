@@ -4,7 +4,7 @@ import {
   SchedulerEventPart,
   getContrastColor,
 } from '@mintplayer/ng-bootstrap/web-components/scheduler-core';
-import { BaseView } from './base-view';
+import { BaseView, formatEventAriaLabel, isSlotInSelection } from './base-view';
 import { SchedulerState } from '../state/scheduler-state';
 
 /**
@@ -83,6 +83,10 @@ export class DayView extends BaseView {
     for (let slotIndex = 0; slotIndex < slots.length; slotIndex++) {
       const slot = slots[slotIndex];
       const slotEl = this.createElement('div', 'scheduler-time-slot');
+      slotEl.setAttribute('role', 'gridcell');
+      slotEl.setAttribute('tabindex', '-1');
+      slotEl.setAttribute('aria-selected', 'false');
+      slotEl.id = `scheduler-cell-d-${slotIndex}`;
       this.setData(slotEl, {
         slotIndex,
         start: slot.start.toISOString(),
@@ -103,10 +107,39 @@ export class DayView extends BaseView {
     // Render events
     this.renderEvents();
 
+    // Reflect any pre-existing focused cell / selection.
+    this.updateCellFocusAndSelection();
+
     // Render now indicator
     if (dateService.isToday(date) && options.nowIndicator) {
       this.renderNowIndicator(dayColumn);
     }
+  }
+
+  /**
+   * Apply roving tabindex + aria-selected + `.selected` class to each cached
+   * slot element based on focusedCell and selection range.
+   */
+  private updateCellFocusAndSelection(): void {
+    const focused = this.state.focusedCell;
+    let foundFocused = false;
+    let firstEl: HTMLElement | null = null;
+    for (const [, slotEl] of this.slotElements) {
+      if (!firstEl) firstEl = slotEl;
+      const startStr = slotEl.dataset['start'];
+      const endStr = slotEl.dataset['end'];
+      if (!startStr || !endStr) continue;
+      const slot = { start: new Date(startStr), end: new Date(endStr) };
+      const isFocused =
+        !!focused && slot.start.getTime() === focused.start.getTime();
+      slotEl.setAttribute('tabindex', isFocused ? '0' : '-1');
+      const inSelection = isSlotInSelection(slot, this.state, null);
+      slotEl.setAttribute('aria-selected', inSelection ? 'true' : 'false');
+      slotEl.classList.toggle('selected', inSelection);
+      if (isFocused) foundFocused = true;
+    }
+    // Fallback so the grid is always Tab-reachable (see week-view note).
+    if (!foundFocused && firstEl) firstEl.setAttribute('tabindex', '0');
   }
 
   private renderEvents(): void {
@@ -157,9 +190,18 @@ export class DayView extends BaseView {
   ): HTMLElement {
     const event = part.event;
     const eventEl = this.createElement('div', 'scheduler-event');
-
-    // Mark as selected if this is the selected event
-    if (this.state.selectedEvent?.id === event.id) {
+    const isSelected = this.state.selectedEvent?.id === event.id;
+    const inMoveMode = this.state.keyboardMoveEventId === event.id;
+    eventEl.setAttribute('role', 'button');
+    // Every event is Tab-reachable (PRD §6.1).
+    eventEl.setAttribute('tabindex', '0');
+    eventEl.setAttribute(
+      'aria-label',
+      formatEventAriaLabel(event, null, this.state.options.timeFormat),
+    );
+    if (inMoveMode) eventEl.setAttribute('aria-pressed', 'true');
+    if (isSelected) {
+      eventEl.setAttribute('aria-current', 'true');
       eventEl.classList.add('selected');
     }
 
@@ -272,6 +314,9 @@ export class DayView extends BaseView {
 
     // Re-render events
     this.renderEvents();
+
+    // Refresh cell focus + selection styling.
+    this.updateCellFocusAndSelection();
 
     // Render preview event
     this.renderPreviewEvent();

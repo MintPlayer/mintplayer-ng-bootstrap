@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, effect, input, model, output, signal, TemplateRef, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, input, model, output, signal, TemplateRef, viewChild } from '@angular/core';
+import { BsLiveAnnouncerService } from '@mintplayer/ng-bootstrap/a11y';
 import { BsCopyDirective } from '@mintplayer/ng-bootstrap/copy';
 import { BsOffcanvasHostComponent, BsOffcanvasContentDirective } from '@mintplayer/ng-bootstrap/offcanvas';
 import { HighlightModule } from 'ngx-highlightjs';
@@ -12,6 +13,7 @@ import { HighlightResult } from 'highlight.js';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsCodeSnippetComponent {
+  private announcer = inject(BsLiveAnnouncerService);
 
   constructor() {
     effect(() => {
@@ -29,6 +31,7 @@ export class BsCodeSnippetComponent {
   detectedLanguageValue = signal<string>('code');
 
   copiedHtml() {
+    this.announcer.announce('Copied to clipboard');
     this.offcanvasVisible.set(true);
     setTimeout(() => this.offcanvasVisible.set(false), 3000);
   }

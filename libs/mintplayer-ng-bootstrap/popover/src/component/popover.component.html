@@ -1,9 +1,13 @@
 @if (isVisible()) {
-    <div class="popover position-relative fade show" role="tooltip"
+    <div class="popover position-relative fade show"
+        role="dialog"
+        [id]="popoverId"
+        [attr.aria-labelledby]="context.headerId()"
+        [attr.aria-describedby]="context.bodyId()"
         [class]="[marginClass(), positionClass()]"
         [@fadeInOut]>
-        <ng-container *ngTemplateOutlet="template"></ng-container>
-        <div class="popover-arrow position-absolute"></div>
+        <ng-container *ngTemplateOutlet="template; injector: injector"></ng-container>
+        <div class="popover-arrow position-absolute" aria-hidden="true"></div>
         <bs-has-overlay></bs-has-overlay>
     </div>
 }

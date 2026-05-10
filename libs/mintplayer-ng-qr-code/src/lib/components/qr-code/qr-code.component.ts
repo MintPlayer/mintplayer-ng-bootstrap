@@ -1,4 +1,4 @@
-import { Component, input, ChangeDetectionStrategy} from '@angular/core';
+import { Component, computed, input, ChangeDetectionStrategy } from '@angular/core';
 import { QRCodeErrorCorrectionLevel } from '@mintplayer/qr-code';
 import { RgbaColor } from '../../types/rgba-color';
 import { QrCodeDirective } from '../../directives/qr-code/qr-code.directive';
@@ -19,4 +19,12 @@ export class QrCodeComponent {
   readonly centerImageSrc = input<string | undefined>(undefined);
   readonly centerImageSize = input<string | number | undefined>(undefined);
   readonly margin = input<number | undefined>(undefined);
+  readonly ariaLabel = input<string | undefined>(undefined);
+
+  readonly accessibleLabel = computed(() => {
+    const explicit = this.ariaLabel();
+    if (explicit !== undefined) return explicit;
+    const value = this.value();
+    return value ? `QR code for ${value}` : 'QR code';
+  });
 }

@@ -4,6 +4,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, effect, ElementRef, inject, input, model, OnDestroy, output, signal, TemplateRef, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Color } from '@mintplayer/ng-bootstrap';
+import { BsLiveAnnouncerService } from '@mintplayer/ng-bootstrap/a11y';
 import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 import { HasId } from '@mintplayer/ng-bootstrap/has-id';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
@@ -43,6 +44,7 @@ export class BsSearchboxComponent<T extends HasId<U>, U> implements OnDestroy {
 
   private bsForm = inject(BsFormComponent, { optional: true });
   private sanitizer = inject(DomSanitizer);
+  private announcer = inject(BsLiveAnnouncerService);
 
   caretUpFill = signal<SafeHtml | undefined>(undefined);
   caretDownFill = signal<SafeHtml | undefined>(undefined);
@@ -53,16 +55,21 @@ export class BsSearchboxComponent<T extends HasId<U>, U> implements OnDestroy {
   isOpen = model(false);
   selectedItem = model<T | undefined>(undefined);
   searchterm = model('');
+  ariaLabel = input<string>('Search');
 
   suggestions = model<T[]>([]);
 
   readonly suggestionTemplate = signal<TemplateRef<BsSuggestionTemplateContext<T, U>> | undefined>(undefined);
   readonly enterSearchtermTemplate = signal<TemplateRef<T> | undefined>(undefined);
   readonly noResultsTemplate = signal<TemplateRef<T> | undefined>(undefined);
+  noResultsAnnouncement = input<string>('No results found');
+  resultsAnnouncementSingular = input<string>('1 result found');
+  resultsAnnouncementPlural = input<(count: number) => string>((count) => `${count} results found`);
   provideSuggestions = output<string>();
 
   private debouncedSearchterm = signal('');
   private debounceTimeout: any;
+  private requestInFlight = false;
 
   constructor() {
     if (!this.bsForm) {
@@ -74,8 +81,9 @@ export class BsSearchboxComponent<T extends HasId<U>, U> implements OnDestroy {
       clearTimeout(this.debounceTimeout);
       this.debounceTimeout = setTimeout(() => {
         if (searchterm === '') {
-          // clear suggestions - will be handled by the template
+          this.requestInFlight = false;
         } else {
+          this.requestInFlight = true;
           this.isBusy.set(true);
           this.provideSuggestions.emit(searchterm);
         }
@@ -86,6 +94,10 @@ export class BsSearchboxComponent<T extends HasId<U>, U> implements OnDestroy {
       const suggestions = this.suggestions();
       if (suggestions) {
         this.isBusy.set(false);
+        if (this.requestInFlight) {
+          this.requestInFlight = false;
+          this.announceResults(suggestions.length);
+        }
       }
     });
 
@@ -106,6 +118,16 @@ export class BsSearchboxComponent<T extends HasId<U>, U> implements OnDestroy {
 
   ngOnDestroy() {
     clearTimeout(this.debounceTimeout);
+  }
+
+  private announceResults(count: number) {
+    if (count === 0) {
+      this.announcer.announce(this.noResultsAnnouncement());
+    } else if (count === 1) {
+      this.announcer.announce(this.resultsAnnouncementSingular());
+    } else {
+      this.announcer.announce(this.resultsAnnouncementPlural()(count));
+    }
   }
 
   onSearchtermChange(searchterm: string) {

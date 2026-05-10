@@ -46,6 +46,19 @@ export class MonthView extends BaseView {
 
     // Render events
     this.renderEvents();
+
+    // Apply roving tabindex now that all cells are in place.
+    this.updateDayCellFocus();
+  }
+
+  /**
+   * Build a `YYYY-MM-DD` key from a Date using *local* components. Using
+   * `toISOString()` here would shift the key in any non-UTC timezone (a
+   * local midnight on May 12 in CEST is May 11 22:00 UTC), and the resulting
+   * cell IDs would not match the visible day numbers.
+   */
+  static dayKey(d: Date): string {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
 
   private createDayCell(day: Date): HTMLElement {
@@ -60,6 +73,15 @@ export class MonthView extends BaseView {
       cell.classList.add('today');
     }
 
+    // Phase B keyboard nav: each day cell is a roving-tabindex `gridcell`
+    // with a stable id keyed off the local ISO date. `updateDayCellFocus()`
+    // picks the focused cell out of the cache and promotes its tabindex to 0.
+    const key = MonthView.dayKey(day);
+    cell.setAttribute('role', 'gridcell');
+    cell.setAttribute('tabindex', '-1');
+    cell.setAttribute('aria-selected', 'false');
+    cell.id = `scheduler-cell-m-${key}`;
+
     // Day number
     const dayNumber = this.createElement('div', 'day-number');
     dayNumber.textContent = String(day.getDate());
@@ -70,11 +92,37 @@ export class MonthView extends BaseView {
     cell.appendChild(eventsContainer);
 
     // Store reference
-    const key = day.toISOString().split('T')[0];
     this.dayCells.set(key, cell);
     this.setData(cell, { date: key });
 
     return cell;
+  }
+
+  /**
+   * Apply roving tabindex based on `state.focusedDate`. The grid must always
+   * have exactly one tab-reachable cell, so when no date is focused yet we
+   * fall back to today (if visible) or the first day of the displayed month.
+   */
+  private updateDayCellFocus(): void {
+    const focused = this.state.focusedDate;
+    let promoted = false;
+    const focusedKey = focused ? MonthView.dayKey(focused) : null;
+    for (const [key, cell] of this.dayCells) {
+      const isFocused = key === focusedKey;
+      cell.setAttribute('tabindex', isFocused ? '0' : '-1');
+      cell.setAttribute('aria-selected', isFocused ? 'true' : 'false');
+      if (isFocused) promoted = true;
+    }
+    if (!promoted) {
+      // Fallback: today's cell if it's in the displayed month, else the first
+      // cell that belongs to the displayed month (skip leading other-month
+      // spillover).
+      const fallback =
+        Array.from(this.dayCells.values()).find((c) => c.classList.contains('today') && !c.classList.contains('other-month')) ||
+        Array.from(this.dayCells.values()).find((c) => !c.classList.contains('other-month')) ||
+        this.dayCells.values().next().value;
+      fallback?.setAttribute('tabindex', '0');
+    }
   }
 
   private renderEvents(): void {
@@ -103,7 +151,7 @@ export class MonthView extends BaseView {
       current.setHours(0, 0, 0, 0);
 
       while (current <= eventEnd) {
-        const key = current.toISOString().split('T')[0];
+        const key = MonthView.dayKey(current);
         if (!eventsByDay.has(key)) {
           eventsByDay.set(key, []);
         }
@@ -161,6 +209,8 @@ export class MonthView extends BaseView {
     }
 
     this.renderEvents();
+    // Pick up focused-date changes that don't require a re-render (within month).
+    this.updateDayCellFocus();
   }
 
   private optionsRequireRerender(oldOpts: SchedulerState['options'], newOpts: SchedulerState['options']): boolean {

@@ -7,8 +7,18 @@ import { ChangeDetectionStrategy, Component, computed, Directive, ElementRef, in
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     'class': 'd-block position-relative',
+    'role': 'slider',
+    'aria-valuemin': '0',
+    'aria-orientation': 'horizontal',
+    '[attr.aria-valuemax]': 'valueScale()',
+    '[attr.aria-valuenow]': 'ariaValueNow()',
+    '[attr.aria-valuetext]': 'ariaValueText()',
+    '[attr.aria-label]': 'ariaLabel()',
+    '[attr.aria-disabled]': 'disabled() ? "true" : null',
+    '[attr.tabindex]': 'disabled() ? -1 : 0',
     '(document:mousemove)': 'onPointerMove($event)',
     '(document:mouseup)': 'onPointerUp($event)',
+    '(keydown)': 'onKeydown($event)',
   },
 })
 export class BsSliderComponent {
@@ -17,11 +27,22 @@ export class BsSliderComponent {
 
   disabled = input<boolean>(false);
   value = model<number>(0.5);
+  /** Accessible name for SR users. e.g. "Brightness", "Alpha", "Hue". */
+  ariaLabel = input<string | null>(null);
+  /** Multiplier applied to the 0..1 value when reporting it through aria-valuenow / aria-valuemax / aria-valuetext. 100 = percent (default); 360 = degrees; 255 = byte; etc. */
+  valueScale = input<number>(100);
+  /** Suffix appended to aria-valuetext after the scaled number. Defaults to "%". Use "°" for hue, "" for unitless. */
+  valueUnit = input<string>('%');
   private isPointerDown = signal<boolean>(false);
 
   thumbLeft = computed(() => `${this.value() * 100}%`);
 
   cursorClass = computed(() => 'position-absolute top-0 ' + (this.isPointerDown() ? 'cursor-grabbing' : 'cursor-grab'));
+
+  /** Scaled current value for aria-valuenow (e.g. 0..100 for percent, 0..360 for hue). */
+  ariaValueNow = computed(() => Math.round(this.value() * this.valueScale()));
+  /** Human-readable value for SR with the configured unit. */
+  ariaValueText = computed(() => `${this.ariaValueNow()}${this.valueUnit()}`);
 
   onPointerDown(ev: MouseEvent | TouchEvent) {
     if (this.disabled()) return;
@@ -41,6 +62,40 @@ export class BsSliderComponent {
 
   onPointerUp(_ev: MouseEvent | TouchEvent) {
     this.isPointerDown.set(false);
+  }
+
+  onKeydown(ev: KeyboardEvent) {
+    if (this.disabled()) return;
+    const cur = this.value();
+    const step = ev.shiftKey ? 0.001 : 0.01; // 1% default, 0.1% with Shift
+    const pageStep = 0.1; // 10% with PageUp/PageDown
+    let next: number | null = null;
+    switch (ev.key) {
+      case 'ArrowRight':
+      case 'ArrowUp':
+        next = Math.min(1, cur + step);
+        break;
+      case 'ArrowLeft':
+      case 'ArrowDown':
+        next = Math.max(0, cur - step);
+        break;
+      case 'PageUp':
+        next = Math.min(1, cur + pageStep);
+        break;
+      case 'PageDown':
+        next = Math.max(0, cur - pageStep);
+        break;
+      case 'Home':
+        next = 0;
+        break;
+      case 'End':
+        next = 1;
+        break;
+      default:
+        return;
+    }
+    ev.preventDefault();
+    if (next !== cur) this.value.set(next);
   }
 
   private updateColor(ev: MouseEvent | TouchEvent) {

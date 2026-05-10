@@ -4,6 +4,7 @@ import {
   inject, input, output, PLATFORM_ID, signal, TemplateRef, viewChild, viewChildren
 } from '@angular/core';
 import { Breakpoint } from '@mintplayer/ng-bootstrap';
+import { BsOverlayStackService } from '@mintplayer/ng-bootstrap/a11y';
 import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
 import { BsObserveSizeDirective } from '@mintplayer/ng-swiper/observe-size';
 import { BsPriorityNavItemDirective } from '../priority-nav-item/priority-nav-item.directive';
@@ -23,6 +24,8 @@ import { BsPriorityNavItemDirective } from '../priority-nav-item/priority-nav-it
 export class BsPriorityNavComponent {
   private platformId = inject(PLATFORM_ID);
   private element = inject(ElementRef);
+  private overlayStack = inject(BsOverlayStackService);
+  private stackToken: symbol | null = null;
 
   isServerSide = isPlatformServer(this.platformId);
 
@@ -35,6 +38,7 @@ export class BsPriorityNavComponent {
   collapseAt = input<Breakpoint | null>(null);
   overflowFrom = input<'start' | 'end'>('end');
   hideEmptyMore = input(true);
+  ariaLabel = input<string>('Navigation');
 
   // Outputs
   overflowChange = output<BsPriorityNavItemDirective[]>();
@@ -204,6 +208,16 @@ export class BsPriorityNavComponent {
       const overflowingItems = this.items().filter(i => overflowing.has(i.id));
       this.overflowChange.emit(overflowingItems);
     });
+
+    effect(() => {
+      const open = this.isMoreOpen();
+      if (open && this.stackToken === null) {
+        this.stackToken = this.overlayStack.push();
+      } else if (!open && this.stackToken !== null) {
+        this.overlayStack.release(this.stackToken);
+        this.stackToken = null;
+      }
+    });
   }
 
   onWindowResize() {
@@ -217,7 +231,9 @@ export class BsPriorityNavComponent {
   }
 
   onEscape() {
-    if (this.isMoreOpen()) this.isMoreOpen.set(false);
+    if (this.isMoreOpen() && this.stackToken !== null && this.overlayStack.isTop(this.stackToken)) {
+      this.isMoreOpen.set(false);
+    }
   }
 
   onDocumentClick(event: MouseEvent) {

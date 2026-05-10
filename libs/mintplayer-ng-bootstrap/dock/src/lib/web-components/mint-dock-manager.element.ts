@@ -1,5 +1,5 @@
 
-import { LitElement, type TemplateResult } from 'lit';
+import { html, LitElement, type TemplateResult } from 'lit';
 // Side-effect import: registers <mp-tab-control> + <mp-tab-page> custom elements.
 // Each dock stack is rendered as <mp-tab-control>, so the dock depends on this
 // lib being loaded before any layout is rendered.
@@ -7,6 +7,7 @@ import '@mintplayer/ng-bootstrap/web-components/tab-control';
 // Side-effect import: registers <mp-splitter>. Each DockSplitNode is rendered
 // as a nested <mp-splitter>, so this lib must load before any layout renders.
 import '@mintplayer/ng-bootstrap/web-components/splitter';
+import { LiveAnnouncerController } from '@mintplayer/ng-bootstrap/web-components/a11y';
 import {
   DockFloatingStackLayout,
   DockLayout,
@@ -73,6 +74,15 @@ export class MintDockManagerElement extends LitElement {
   private dropJoystick!: HTMLElement;
   private dropJoystickButtons!: HTMLButtonElement[];
   private readonly instanceId: string;
+  private readonly liveAnnouncer = new LiveAnnouncerController(this);
+
+  /**
+   * Active keyboard-driven pane move (Phase 7 of WC ARIA PRD). The user
+   * pressed M on a focused tab; until they pick a destination key (T/R/B/L
+   * to dock to a side, F to float) or Escape, we intercept letter keys and
+   * route them to the synthetic-drop pipeline.
+   */
+  private paneMoveMode: { paneName: string; sourcePath: DockPath } | null = null;
   private dropJoystickTarget: HTMLElement | null = null;
   private rootLayout: DockLayoutNode | null = null;
   private floatingLayouts: DockFloatingStackLayout[] = [];
@@ -249,7 +259,7 @@ export class MintDockManagerElement extends LitElement {
   }
 
   override render(): TemplateResult {
-    return template;
+    return html`${template}${this.liveAnnouncer.template()}`;
   }
 
   protected override firstUpdated(): void {
@@ -301,6 +311,10 @@ export class MintDockManagerElement extends LitElement {
     // Drop targeting (drop indicator + joystick zone selection) runs entirely
     // off pointer-based hit-testing in updatePaneDragDropTargetFromPoint and
     // findDropZoneByPoint — no HTML5 dragover/drop/dragleave listeners needed.
+
+    // Keyboard pane-move (Phase 7). Capture phase so we run before mp-tab-control's
+    // shadow-internal handlers preventDefault on Arrow / Home / End / Enter.
+    root.addEventListener('keydown', (ev) => this.onRootKeyDown(ev), { capture: true });
 
     // Render any layout that was set before the shadow DOM existed.
     this.renderLayout();
@@ -539,6 +553,15 @@ export class MintDockManagerElement extends LitElement {
         segments: [],
       });
 
+      const titleText = this.getFloatingWindowTitle(floating);
+      const titleId = `${this.instanceId}-floating-${index}-title`;
+      // role=dialog announces the window-like region; aria-modal=false because
+      // floating panes don't trap focus — users can still interact with docked
+      // panes behind them.
+      wrapper.setAttribute('role', 'dialog');
+      wrapper.setAttribute('aria-labelledby', titleId);
+      wrapper.setAttribute('aria-modal', 'false');
+
       const { left, top, width, height } = floating.bounds;
       wrapper.style.left = `${left}px`;
       wrapper.style.top = `${top}px`;
@@ -556,8 +579,22 @@ export class MintDockManagerElement extends LitElement {
 
       const title = this.documentRef.createElement('div');
       title.classList.add('dock-floating__title');
-      title.textContent = this.getFloatingWindowTitle(floating);
+      title.id = titleId;
+      title.textContent = titleText;
       chrome.appendChild(title);
+
+      const closeBtn = this.documentRef.createElement('button');
+      closeBtn.type = 'button';
+      closeBtn.classList.add('dock-floating__close');
+      closeBtn.setAttribute('aria-label', `Close pane: ${titleText}`);
+      closeBtn.textContent = '×';
+      closeBtn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        this.closeFloatingPane(index);
+      });
+      // The chrome's pointerdown otherwise begins a drag on the close button.
+      closeBtn.addEventListener('pointerdown', (ev) => ev.stopPropagation());
+      chrome.appendChild(closeBtn);
 
       wrapper.appendChild(chrome);
 
@@ -618,6 +655,23 @@ export class MintDockManagerElement extends LitElement {
       resizerConfigs.forEach(({ classes, edges }) => {
         const resizer = this.documentRef.createElement('div');
         resizer.classList.add(...classes);
+        resizer.setAttribute('role', 'separator');
+        // For corner resizers (both axes), aria-orientation is omitted —
+        // separator's default is "horizontal" but corner == both, so neither
+        // value is correct. SR users still hear "separator" with the label.
+        const isPureHorizontal = edges.horizontal === 'none' && edges.vertical !== 'none';
+        const isPureVertical = edges.vertical === 'none' && edges.horizontal !== 'none';
+        if (isPureHorizontal) resizer.setAttribute('aria-orientation', 'horizontal');
+        else if (isPureVertical) resizer.setAttribute('aria-orientation', 'vertical');
+        const labelParts: string[] = [];
+        if (edges.vertical === 'top') labelParts.push('top');
+        else if (edges.vertical === 'bottom') labelParts.push('bottom');
+        if (edges.horizontal === 'left') labelParts.push('left');
+        else if (edges.horizontal === 'right') labelParts.push('right');
+        resizer.setAttribute(
+          'aria-label',
+          `Resize pane ${labelParts.length === 2 ? 'corner ' : 'edge '}${labelParts.join('-')}`,
+        );
         resizer.addEventListener('pointerdown', (event) =>
           this.beginFloatingResize(event, index, wrapper, resizer, edges),
         );
@@ -739,6 +793,9 @@ export class MintDockManagerElement extends LitElement {
       handle.classList.add('dock-intersection-handle', 'glyph');
       handle.setAttribute('role', 'separator');
       handle.setAttribute('aria-label', 'Resize split intersection');
+      // tabindex=0 — make the handle keyboard-reachable. Arrow keys then
+      // resize the underlying h/v dividers (handled in onIntersectionKeyDown).
+      handle.setAttribute('tabindex', '0');
       const firstPair = group.pairs[0];
       const key = `${firstPair.h.pathStr}:${firstPair.h.index}|${firstPair.v.pathStr}:${firstPair.v.index}`;
       handle.dataset['key'] = key;
@@ -753,8 +810,54 @@ export class MintDockManagerElement extends LitElement {
       const seedV = { path: this.parsePath(firstPair.v.pathStr), index: firstPair.v.index, container: this.findSplitterByPath(this.parsePath(firstPair.v.pathStr)?.segments ?? []) ?? this.rootEl, rect: new DOMRect() };
       handle.addEventListener('pointerdown', (ev) => this.beginCornerResize(ev, seedH, seedV, handle));
       handle.addEventListener('dblclick', (ev) => this.onIntersectionDoubleClick(ev, handle));
+      handle.addEventListener('keydown', (ev) => this.onIntersectionKeyDown(ev, handle));
       layer.appendChild(handle);
     });
+  }
+
+  /**
+   * Keyboard resize on a focused intersection handle. ArrowLeft/Right resize
+   * the vertical divider the handle sits on; ArrowUp/Down resize the
+   * horizontal divider. Home/End shrink/grow the leading panel of whichever
+   * axis is implied by the key. Shift = fine 1% step.
+   *
+   * Internally delegates to mp-splitter.resizeDividerBy() so the percent-step
+   * + clamp math lives in one place. If a 2D handle straddles multiple split
+   * pairs (sibling splitters whose dividers happen to overlap), the first
+   * pair drives — same precedence as the pointer drag path.
+   */
+  private onIntersectionKeyDown(event: KeyboardEvent, handle: HTMLElement): void {
+    const isVerticalAxis =
+      event.key === 'ArrowLeft' || event.key === 'ArrowRight';
+    const isHorizontalAxis =
+      event.key === 'ArrowUp' || event.key === 'ArrowDown';
+    const isHomeEnd = event.key === 'Home' || event.key === 'End';
+    if (!isVerticalAxis && !isHorizontalAxis && !isHomeEnd) return;
+
+    const pairsJson = handle.dataset['pairs'];
+    if (!pairsJson) return;
+    let pairs: Array<{ h: { pathStr: string; index: number }; v: { pathStr: string; index: number } }>;
+    try {
+      pairs = JSON.parse(pairsJson);
+    } catch {
+      return;
+    }
+    if (pairs.length === 0) return;
+
+    event.preventDefault();
+    const fine = event.shiftKey;
+
+    // Which divider does this key drive? Arrow{Left,Right} → vertical
+    // (h-flow splitter, v-bar divider); Arrow{Up,Down} → horizontal. For
+    // Home/End, default to the vertical-axis divider (matches APG's "drive
+    // the splitter to its limit" convention on a horizontal layout).
+    const drivesVerticalDivider = isVerticalAxis || isHomeEnd;
+    const target = drivesVerticalDivider ? pairs[0].v : pairs[0].h;
+    const path = this.parsePath(target.pathStr);
+    const splitter = this.findSplitterByPath(path?.segments ?? []) as unknown as
+      | { resizeDividerBy?: (i: number, k: string, fine?: boolean) => void }
+      | null;
+    splitter?.resizeDividerBy?.(target.index, event.key, fine);
   }
 
   private beginCornerResize(
@@ -2565,6 +2668,7 @@ export class MintDockManagerElement extends LitElement {
     if (wrapper) {
       this.promoteFloatingPane(newIndex, wrapper);
     }
+    this.liveAnnouncer.announce(`Pane ${this.titles[pane] ?? pane} torn off into a floating window.`);
     // Update drag state so subsequent moves reposition the floating window
     state.sourcePath = { type: 'floating', index: newIndex, segments: [] };
     state.floatingIndex = newIndex;
@@ -3721,6 +3825,158 @@ export class MintDockManagerElement extends LitElement {
       return;
     }
     this.floatingLayouts.splice(index, 1);
+  }
+
+  /**
+   * Keyboard handler on the dock root, registered in capture phase so it
+   * runs before mp-tab-control's shadow-internal handlers swallow Arrow /
+   * Home / End / Enter. M opens move mode on a focused tab; subsequent
+   * letter keys (T/R/B/L/F) commit the move; Escape cancels.
+   */
+  private onRootKeyDown(event: KeyboardEvent): void {
+    if (this.paneMoveMode) {
+      this.handlePaneMoveModeKey(event);
+      return;
+    }
+    if (event.key !== 'm' && event.key !== 'M') return;
+    const focused = this.findFocusedPaneOrigin();
+    if (!focused) return;
+    event.preventDefault();
+    event.stopPropagation();
+    this.paneMoveMode = focused;
+    const title = this.titles[focused.paneName] ?? focused.paneName;
+    this.liveAnnouncer.announce(
+      `Move mode for pane ${title}. Press T, R, B, or L to dock to top, right, bottom, or left of the current stack. Press F to float. Escape to cancel.`,
+    );
+  }
+
+  private handlePaneMoveModeKey(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      this.paneMoveMode = null;
+      this.liveAnnouncer.announce('Move cancelled.');
+      return;
+    }
+    const key = event.key.toLowerCase();
+    const zoneByKey: Record<string, DropZone | 'float' | undefined> = {
+      t: 'top', r: 'right', b: 'bottom', l: 'left', f: 'float',
+    };
+    const choice = zoneByKey[key];
+    if (!choice) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (choice === 'float') this.commitPaneMoveAsFloat();
+    else this.commitPaneMoveToZone(choice);
+  }
+
+  /**
+   * Walk the focused element through nested shadow roots to find a focused
+   * tab button, then map it back to the dock's pane name + source path via
+   * the data attributes on the slotted .dock-tab span.
+   */
+  private findFocusedPaneOrigin(): { paneName: string; sourcePath: DockPath } | null {
+    if (!this.shadowRoot) return null;
+    let active: Element | null = this.shadowRoot.activeElement;
+    while (active && active.shadowRoot && active.shadowRoot.activeElement) {
+      active = active.shadowRoot.activeElement;
+    }
+    if (!active || active.getAttribute('role') !== 'tab') return null;
+    // mp-tab-control assigns the role=tab button id `${tabId}-header-button`,
+    // while the dock's `.dock-tab` slot wrapper carries `data-tab-id=${tabId}`.
+    // Strip the suffix so the lookup matches the slot wrapper.
+    const tabId = active.id.replace(/-header-button$/, '');
+    const headerSpan = this.shadowRoot.querySelector<HTMLElement>(
+      `.dock-tab[data-tab-id="${tabId}"]`,
+    );
+    if (!headerSpan) return null;
+    const stack = headerSpan.closest<HTMLElement>('.dock-stack');
+    if (!stack) return null;
+    const path = this.parsePath(stack.dataset['path']);
+    if (!path) return null;
+    return { paneName: headerSpan.dataset['pane']!, sourcePath: path };
+  }
+
+  /**
+   * Synthesise a minimal dragState so handleDrop's existing pipeline can
+   * commit the keyboard-driven move. handleDrop reads {pane, sourcePath,
+   * dropHandled} — the rest of dragState is pointer-drag bookkeeping that
+   * doesn't apply here.
+   */
+  private synthesiseDragStateForKeyboardMove(): void {
+    if (!this.paneMoveMode) return;
+    this.dragState = {
+      pane: this.paneMoveMode.paneName,
+      sourcePath: this.clonePath(this.paneMoveMode.sourcePath),
+      floatingIndex: this.paneMoveMode.sourcePath.type === 'floating'
+        ? this.paneMoveMode.sourcePath.index
+        : null,
+      pointerOffsetX: 0,
+      pointerOffsetY: 0,
+      dropHandled: false,
+      sourceStackEl: null,
+      sourceHeaderBounds: null,
+      startClientX: 0,
+      startClientY: 0,
+    } as never;
+  }
+
+  private commitPaneMoveToZone(zone: DropZone): void {
+    if (!this.paneMoveMode) return;
+    const move = this.paneMoveMode;
+    this.synthesiseDragStateForKeyboardMove();
+    // Source stack is also the target stack — handleDrop creates a sibling
+    // split with the moved pane on the chosen side.
+    this.handleDrop(move.sourcePath, zone);
+    this.dragState = null;
+    this.paneMoveMode = null;
+    const title = this.titles[move.paneName] ?? move.paneName;
+    this.liveAnnouncer.announce(`Pane ${title} docked to ${zone}.`);
+  }
+
+  private commitPaneMoveAsFloat(): void {
+    if (!this.paneMoveMode) return;
+    const move = this.paneMoveMode;
+    const source = this.resolveStackLocation(move.sourcePath);
+    if (!source) {
+      this.paneMoveMode = null;
+      return;
+    }
+    this.removePaneFromLocation(source, move.paneName, true);
+    const floatingLayout: DockFloatingStackLayout = {
+      bounds: {
+        left: 100 + this.floatingLayouts.length * 24,
+        top: 100 + this.floatingLayouts.length * 24,
+        width: 320,
+        height: 200,
+      },
+      root: { kind: 'stack', panes: [move.paneName], activePane: move.paneName },
+      activePane: move.paneName,
+    };
+    this.floatingLayouts.push(floatingLayout);
+    this.normalizeAllLayouts();
+    this.renderLayout();
+    this.dispatchLayoutChanged();
+    this.paneMoveMode = null;
+    const title = this.titles[move.paneName] ?? move.paneName;
+    this.liveAnnouncer.announce(`Pane ${title} torn off into a floating window.`);
+  }
+
+  /**
+   * Close a floating pane via the chrome's close button (or any external
+   * caller). Announces the close to SR users, redraws the dock, and emits a
+   * layout-changed event. Phase 4 of the WC ARIA PRD — the floating chrome
+   * had no close affordance before this; users had to programmatically pop
+   * the pane out of `floatingLayouts`.
+   */
+  private closeFloatingPane(index: number): void {
+    const floating = this.floatingLayouts[index];
+    if (!floating) return;
+    const title = this.getFloatingWindowTitle(floating);
+    this.removeFloatingAt(index);
+    this.renderLayout();
+    this.dispatchLayoutChanged();
+    this.liveAnnouncer.announce(`Closed floating pane ${title}.`);
   }
 
   private removePaneFromFloating(

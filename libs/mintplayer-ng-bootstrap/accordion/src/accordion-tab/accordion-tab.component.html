@@ -1,4 +1,4 @@
-<div [@.disabled]="accordion.disableAnimations()" bsNoNoscript>
+<div [@.disabled]="accordion.animationsDisabled()" bsNoNoscript>
     @if (accordion.multi()) {
         <input type="checkbox" class="d-none"
             [id]="accordionTabName()"

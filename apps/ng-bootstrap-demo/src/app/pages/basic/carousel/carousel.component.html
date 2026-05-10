@@ -4,7 +4,11 @@
         <h2>Demo</h2>
         <div bsRow class="mb-3">
             <div [col]>
-                <bs-carousel [orientation]="orientation()" [animation]="mode()" [indicators]="true" class="mx-auto">
+                <bs-carousel [orientation]="orientation()" [animation]="mode()" [indicators]="true"
+                             [interval]="interval()" [(paused)]="paused" ariaLabel="Animal photos" class="mx-auto">
+                    <!-- The carousel ships a default Play/Pause button whenever an
+                         interval is set. Consumers wanting a custom button can
+                         project one with *bsCarouselPlayPause (let-paused, let-toggle). -->
                     <img *bsCarouselImage src="/assets/resized/deer.png">
                     <img *bsCarouselImage src="/assets/resized/duck.png">
                     <img *bsCarouselImage src="/assets/resized/leopard.png">

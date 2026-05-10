@@ -3,6 +3,7 @@ import { TemplatePortal } from '@angular/cdk/portal';
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ClickOutsideDirective } from '@mintplayer/ng-click-outside';
 import { BS_DEVELOPMENT } from '@mintplayer/ng-bootstrap';
+import { BsOverlayStackService } from '@mintplayer/ng-bootstrap/a11y';
 import { BsDropdownDirective } from '../dropdown/dropdown.directive';
 
 @Directive({
@@ -20,16 +21,25 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
   private overlay = inject(Overlay);
   private destroy = inject(DestroyRef);
   private bsDevelopment = inject(BS_DEVELOPMENT, { optional: true });
+  private overlayStack = inject(BsOverlayStackService);
 
   private wait = false;
   private overlayRef: OverlayRef | null = null;
   private templatePortal: TemplatePortal<any> | null = null;
+  private stackToken: symbol | null = null;
 
   constructor() {
     super();
 
     effect(() => {
       const isOpen = this.dropdown.isOpen();
+      if (isOpen && this.stackToken === null) {
+        this.stackToken = this.overlayStack.push();
+      } else if (!isOpen && this.stackToken !== null) {
+        this.overlayStack.release(this.stackToken);
+        this.stackToken = null;
+      }
+
       if (isOpen) {
         // Prevent creating duplicate overlays if effect re-runs while still open
         if (this.overlayRef) {
@@ -88,7 +98,9 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
   }
 
   onEscape(event: Event) {
-    this.doClose();
+    if (this.stackToken !== null && this.overlayStack.isTop(this.stackToken)) {
+      this.doClose();
+    }
   }
 
   private doClose() {

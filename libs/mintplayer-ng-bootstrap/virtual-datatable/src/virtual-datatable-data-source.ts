@@ -6,11 +6,18 @@ export class VirtualDatatableDataSource<T> extends DataSource<T> {
   private readonly fetchFn: (skip: number, take: number) => Promise<{ data: T[]; totalRecords: number }>;
   private readonly pageSize: number;
   private readonly cachedPages = new Map<number, T[]>();
-  private totalRecords = 0;
+  private readonly totalRecords$ = new BehaviorSubject<number>(0);
   private dataStream = new BehaviorSubject<T[]>([]);
   private subscription?: Subscription;
   private resetSubject = new Subject<void>();
   private resetVersion = 0;
+
+  /**
+   * Emits the current total record count. Backed by the same value as
+   * `length`, but observable so consumers (e.g. virtual-datatable's ARIA
+   * row-count binding) can react to it without polling.
+   */
+  readonly length$: Observable<number> = this.totalRecords$.asObservable();
 
   constructor(
     fetchFn: (skip: number, take: number) => Promise<{ data: T[]; totalRecords: number }>,
@@ -25,7 +32,7 @@ export class VirtualDatatableDataSource<T> extends DataSource<T> {
     // Support reconnection after disconnect (which completes the previous dataStream)
     this.dataStream = new BehaviorSubject<T[]>([]);
     this.cachedPages.clear();
-    this.totalRecords = 0;
+    this.totalRecords$.next(0);
 
     // Track the last viewport range so reset() can re-trigger a fetch.
     // resetVersion is incremented on reset() to bypass distinctUntilChanged.
@@ -51,7 +58,7 @@ export class VirtualDatatableDataSource<T> extends DataSource<T> {
   }
 
   get length(): number {
-    return this.totalRecords;
+    return this.totalRecords$.value;
   }
 
   reset(): void {
@@ -85,11 +92,12 @@ export class VirtualDatatableDataSource<T> extends DataSource<T> {
       this.cachedPages.set(pageIndex, result.data);
     }
     if (results.length > 0) {
-      this.totalRecords = results[0].result.totalRecords;
+      this.totalRecords$.next(results[0].result.totalRecords);
     }
 
     // Build the full data array with placeholders for unloaded pages
-    const totalPages = Math.ceil(this.totalRecords / this.pageSize);
+    const totalRecords = this.totalRecords$.value;
+    const totalPages = Math.ceil(totalRecords / this.pageSize);
     const data: T[] = [];
     for (let i = 0; i < totalPages; i++) {
       const page = this.cachedPages.get(i);
@@ -97,7 +105,7 @@ export class VirtualDatatableDataSource<T> extends DataSource<T> {
         data.push(...page);
       } else {
         // Fill with empty slots to maintain correct virtual scroll positioning
-        const remaining = Math.min(this.pageSize, this.totalRecords - i * this.pageSize);
+        const remaining = Math.min(this.pageSize, totalRecords - i * this.pageSize);
         data.push(...new Array<T>(remaining));
       }
     }

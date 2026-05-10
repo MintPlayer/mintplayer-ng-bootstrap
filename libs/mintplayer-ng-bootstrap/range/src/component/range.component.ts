@@ -14,4 +14,5 @@ export class BsRangeComponent {
   readonly min = input(0);
   readonly max = input(10);
   readonly step = input(1);
+  readonly ariaLabel = input<string | null>(null);
 }

@@ -1,10 +1,11 @@
 <bs-table-styles>
     <div class="d-block" [class.table-responsive]="isResponsive()" [class.nowrap]="isResponsive()">
-        <table class="table" cellspacing="0" role="grid"
+        <table class="table" cellspacing="0"
             [class.mb-0]="isResponsive()"
             [class.table-striped]="striped()"
             [class.table-hover]="hover()"
-            [class.border]="border()">
+            [class.border]="border()"
+            [attr.aria-rowcount]="ariaRowCount()">
 
             <ng-content></ng-content>
 

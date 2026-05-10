@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, contentChildren, forwardRef, input, signal, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, contentChildren, forwardRef, inject, input, signal, computed } from '@angular/core';
+import { BsReducedMotionDirective } from '@mintplayer/ng-bootstrap/reduced-motion';
 import { BsAccordionTabComponent } from '../accordion-tab/accordion-tab.component';
 
 @Component({
@@ -6,15 +7,17 @@ import { BsAccordionTabComponent } from '../accordion-tab/accordion-tab.componen
   templateUrl: './accordion.component.html',
   styleUrls: ['./accordion.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  hostDirectives: [BsReducedMotionDirective],
 })
 export class BsAccordionComponent {
+  private readonly reducedMotion = inject(BsReducedMotionDirective);
 
   constructor() {
     this.accordionId = signal(++BsAccordionComponent.accordionCounter);
   }
 
   readonly tabPages = contentChildren<BsAccordionTabComponent>(forwardRef(() => BsAccordionTabComponent));
-  disableAnimations = signal(false);
+  readonly animationsDisabled = computed(() => this.reducedMotion.matches());
   highlightActiveTab = input(false);
   multi = input(false);
 

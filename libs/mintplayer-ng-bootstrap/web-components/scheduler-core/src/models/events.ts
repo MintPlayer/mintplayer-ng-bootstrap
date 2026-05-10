@@ -11,21 +11,39 @@ export interface BaseEventDetail {
 }
 
 /**
- * Event click event detail
+ * Event-selected event detail. Fires on mouse click and on keyboard Tab
+ * landing on an event (PRD scheduler-keyboard-grid-nav D3 — renamed from
+ * `EventClickDetail` because keyboard Tab now triggers the same event).
  */
-export interface EventClickDetail extends BaseEventDetail {
-  /** The clicked event */
+export interface EventSelectedDetail extends BaseEventDetail {
+  /** The selected event */
   event: SchedulerEvent;
 }
 
 /**
- * Event create event detail
+ * Event create *request* detail. Per PRD scheduler-controlled-selection,
+ * the scheduler does not construct or store the event itself — the consumer
+ * receives the range and decides whether to add an event for it.
  */
 export interface EventCreateDetail extends BaseEventDetail {
-  /** The newly created event */
-  event: SchedulerEvent;
-  /** Resource the event was created on (if applicable) */
-  resource?: Resource;
+  /** The selected time range. */
+  range: { start: Date; end: Date };
+  /** Resource the request targets (timeline view only). */
+  resourceId?: string;
+  /** View that produced the request. */
+  view: ViewType;
+}
+
+/**
+ * Selection-change detail. Fires on every transition — including the
+ * transition to an empty selection. `selectedEvent` and `range` are
+ * independent dimensions of the selection state.
+ */
+export interface SelectionChangeDetail {
+  selectedEvent: SchedulerEvent | null;
+  range: { start: Date; end: Date } | null;
+  view: ViewType;
+  resourceId?: string;
 }
 
 /**
@@ -82,12 +100,13 @@ export interface ViewChangeDetail {
  * Custom event map for the scheduler web component
  */
 export interface SchedulerEventMap {
-  'event-click': CustomEvent<EventClickDetail>;
-  'event-dblclick': CustomEvent<EventClickDetail>;
+  'event-selected': CustomEvent<EventSelectedDetail>;
+  'event-dblclick': CustomEvent<EventSelectedDetail>;
   'event-create': CustomEvent<EventCreateDetail>;
   'event-update': CustomEvent<EventUpdateDetail>;
   'event-delete': CustomEvent<EventDeleteDetail>;
   'date-click': CustomEvent<DateClickDetail>;
   'date-select': CustomEvent<DateSelectDetail>;
   'view-change': CustomEvent<ViewChangeDetail>;
+  'selection-change': CustomEvent<SelectionChangeDetail>;
 }

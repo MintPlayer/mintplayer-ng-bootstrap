@@ -1,0 +1,8 @@
+// In activedescendant mode (e.g. typeahead/select2 combobox) the item
+// never receives DOM focus, so the browser's :focus style never paints.
+// Mirror Bootstrap's .dropdown-item:hover appearance when the parent
+// roving-focus marks this item as the active descendant.
+:host(.bs-rovingfocus-active) > .dropdown-item:not(.disabled):not(.active) {
+  color: var(--bs-dropdown-link-hover-color);
+  background-color: var(--bs-dropdown-link-hover-bg);
+}

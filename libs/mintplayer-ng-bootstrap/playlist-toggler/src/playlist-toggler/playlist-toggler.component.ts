@@ -5,15 +5,14 @@ import { ChangeDetectionStrategy, Component, input, model } from '@angular/core'
   templateUrl: './playlist-toggler.component.html',
   styleUrls: ['./playlist-toggler.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: {
-    '(click)': 'toggleState($event)',
-  },
 })
 export class BsPlaylistTogglerComponent {
   state = model<boolean>(false);
   toggleOnClick = input(true);
+  ariaLabel = input<string>('Toggle playlist');
+  controls = input<string | null>(null);
 
-  toggleState(ev: MouseEvent) {
+  toggleState() {
     if (this.toggleOnClick()) {
       this.state.update(v => !v);
     }

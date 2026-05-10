@@ -29,6 +29,15 @@ table {
         color: $white;
     }
 
+    td:focus {
+        outline: none;
+    }
+
+    td:focus-visible {
+        outline: 2px solid $primary;
+        outline-offset: -2px;
+    }
+
     th {
         background-color: $light;
     }
