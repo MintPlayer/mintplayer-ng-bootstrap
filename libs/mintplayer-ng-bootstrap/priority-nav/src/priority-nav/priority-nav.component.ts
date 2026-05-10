@@ -35,6 +35,7 @@ export class BsPriorityNavComponent {
   collapseAt = input<Breakpoint | null>(null);
   overflowFrom = input<'start' | 'end'>('end');
   hideEmptyMore = input(true);
+  ariaLabel = input<string>('Navigation');
 
   // Outputs
   overflowChange = output<BsPriorityNavItemDirective[]>();

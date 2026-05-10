@@ -21,7 +21,7 @@ export class BsScrollspyComponent implements AfterViewInit, AfterContentInit {
   private contentInit = signal<boolean>(false);
 
   readonly directives = contentChildren(BsScrollspyDirective, { descendants: true });
-  readonly anchors = viewChildren<ElementRef<HTMLSpanElement>>('anchor');
+  readonly anchors = viewChildren<ElementRef<HTMLButtonElement>>('anchor');
 
   activeDirective = signal<BsScrollspyDirective | null>(null);
 
