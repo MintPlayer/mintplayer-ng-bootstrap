@@ -3,6 +3,7 @@ import { AfterViewInit, ChangeDetectionStrategy, Component, computed, contentChi
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsSwipeContainerDirective, BsSwipeDirective, BsSwipeViewportDirective } from '@mintplayer/ng-swiper/swiper';
 import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
+import { BsReducedMotionDirective } from '@mintplayer/ng-bootstrap/reduced-motion';
 import { BsCarouselImageDirective } from '../carousel-image/carousel-image.directive';
 import type { BsCarouselPlayPauseContext } from '../carousel-play-pause/carousel-play-pause.directive';
 
@@ -18,6 +19,7 @@ import type { BsCarouselPlayPauseContext } from '../carousel-play-pause/carousel
     BsNoNoscriptDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  hostDirectives: [BsReducedMotionDirective],
   host: {
     '[@.disabled]': 'animationsDisabled()',
     '(document:keydown.ArrowLeft)': 'onKeyPress($event)',
@@ -29,6 +31,7 @@ import type { BsCarouselPlayPauseContext } from '../carousel-play-pause/carousel
 export class BsCarouselComponent implements AfterViewInit, OnDestroy {
   private platformId = inject(PLATFORM_ID);
   private destroyRef = inject(DestroyRef);
+  private readonly reducedMotion = inject(BsReducedMotionDirective);
 
   readonly colors = Color;
   readonly isServerSide = isPlatformServer(this.platformId);
@@ -60,15 +63,6 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
    * provide one without us imposing a button style.
    */
   readonly playPauseTemplate = signal<TemplateRef<BsCarouselPlayPauseContext> | null>(null);
-
-  /**
-   * Live OS preference. When true, auto-advance is suppressed entirely
-   * (matches what tile-manager / scheduler / dock / marquee do — no
-   * silent rotation behind the user's back). Tracks the media query so
-   * runtime changes (system settings toggled with the page open) are
-   * picked up without reload.
-   */
-  private readonly prefersReducedMotion = signal<boolean>(false);
 
   // Outputs
   slideChange = output<number>();
@@ -122,7 +116,7 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
     const intervalTime = this.interval();
     if (!intervalTime || intervalTime <= 0) return 'polite';
     if (this.paused()) return 'polite';
-    if (this.prefersReducedMotion()) return 'polite';
+    if (this.reducedMotion.matches()) return 'polite';
     return 'off';
   });
 
@@ -179,7 +173,7 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
     effect(() => {
       const intervalTime = this.interval();
       const isPaused = this.paused();
-      const reduceMotion = this.prefersReducedMotion();
+      const reduceMotion = this.reducedMotion.matches();
       this.clearAutoAdvance();
 
       if (intervalTime && intervalTime > 0 && !isPaused && !reduceMotion) {
@@ -188,16 +182,6 @@ export class BsCarouselComponent implements AfterViewInit, OnDestroy {
         }, intervalTime);
       }
     });
-
-    // Track prefers-reduced-motion live (browser only). matchMedia is the
-    // canonical pattern across this lib (tile-manager, marquee, etc).
-    if (!this.isServerSide && typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
-      const mql = window.matchMedia('(prefers-reduced-motion: reduce)');
-      this.prefersReducedMotion.set(mql.matches);
-      const listener = (e: MediaQueryListEvent) => this.prefersReducedMotion.set(e.matches);
-      mql.addEventListener('change', listener);
-      this.destroyRef.onDestroy(() => mql.removeEventListener('change', listener));
-    }
 
     // Emit slideChange when currentImageIndex changes
     effect(() => {
