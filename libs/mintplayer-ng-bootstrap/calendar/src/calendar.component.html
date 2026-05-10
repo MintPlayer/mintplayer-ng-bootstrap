@@ -1,38 +1,45 @@
-<table class="table w-auto mb-0">
+<table class="table w-auto mb-0" aria-label="Calendar">
     <tr>
         <td>
-            <button type="button" class="btn btn-default" (click)="previousMonth()">
-                <span [innerHTML]="chevronLeft()" class="fw-bolder"></span>
+            <button type="button" class="btn btn-default" (click)="previousMonth()" aria-label="Previous month">
+                <span [innerHTML]="chevronLeft()" class="fw-bolder" aria-hidden="true"></span>
             </button>
         </td>
-        <td colspan="6" class="fw-bolder">
+        <td colspan="6" class="fw-bolder" aria-live="polite">
             {{ currentMonth() | monthName | bsUcFirst }}
             {{ currentMonth().getFullYear() }}
         </td>
         <td>
-            <button type="button" class="btn btn-default border-bottom-0" (click)="nextMonth()">
-                <span [innerHTML]="chevronRight()" class="fw-bolder"></span>
+            <button type="button" class="btn btn-default border-bottom-0" (click)="nextMonth()" aria-label="Next month">
+                <span [innerHTML]="chevronRight()" class="fw-bolder" aria-hidden="true"></span>
             </button>
         </td>
     </tr>
     <tr>
-        <th></th>
+        <th aria-hidden="true"></th>
         @for (dayOfWeek of shownDays(); track dayOfWeek.long) {
-            <th [title]="dayOfWeek.long">
+            <th scope="col" [title]="dayOfWeek.long">
                 {{ dayOfWeek.short }}
             </th>
         }
     </tr>
     @for (week of weeks(); track week.number) {
         <tr>
-            <th>
+            <th scope="row">
                 {{ week.number }}
             </th>
             @for (day of week.days; track day?.date) {
                 @let showSpan = (day !== null) && day.isInMonth;
                 @let disableFn = disableDateFn();
                 @let disabled = disableFn && day && disableFn(day.date);
-                <td [class.selected]="day === null ? false : !day.isInMonth ? false : isSameDate(selectedDate(), day.date)" [class.cursor-pointer]="showSpan && !disabled" (click)="goto(day)">
+                @let selected = (day !== null) && day.isInMonth && isSameDate(selectedDate(), day.date);
+                @let todayCell = (day !== null) && day.isInMonth && isToday(day.date);
+                <td [class.selected]="selected"
+                    [class.cursor-pointer]="showSpan && !disabled"
+                    [attr.aria-selected]="showSpan ? (selected ? 'true' : 'false') : null"
+                    [attr.aria-current]="todayCell ? 'date' : null"
+                    [attr.aria-disabled]="disabled ? 'true' : null"
+                    (click)="goto(day)">
                     @if (showSpan) {
                         <span [class.text-muted]="disabled">{{ day.dayOfMonth }}</span>
                     }

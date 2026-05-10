@@ -34,6 +34,11 @@ export class BsCalendarComponent {
 
   weeks = computed(() => this.calendarMonthService.getWeeks(this.currentMonth()));
 
+  isToday(date: Date): boolean {
+    const now = new Date();
+    return this.isSameDate(date, now);
+  }
+
   shownDays = computed<WeekDay[]>(() => {
     const weeks = this.weeks();
     if (weeks.length <= 1) return [];
