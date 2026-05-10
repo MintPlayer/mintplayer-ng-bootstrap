@@ -15,81 +15,83 @@
   </ul>
 </details>
 
-<div class="row mb-3">
-  <div class="col-md-8">
-    <bs-form>
-      <bs-input-group>
-        <bs-select [ngModel]="view()" (ngModelChange)="view.set($event)">
-          @for (opt of viewOptions; track opt.value) {
-            <option [ngValue]="opt.value">{{ opt.label }}</option>
-          }
-        </bs-select>
-        <bs-select [ngModel]="slotDuration()" (ngModelChange)="slotDuration.set($event)">
-          @for (opt of slotDurationOptions; track opt.value) {
-            <option [ngValue]="opt.value">{{ opt.label }}</option>
-          }
-        </bs-select>
-        <bs-select [ngModel]="timeFormat()" (ngModelChange)="timeFormat.set($event)">
-          <option value="24h">24h</option>
-          <option value="12h">12h</option>
-        </bs-select>
-        <button (click)="fillData()" [color]="colors.primary">Load Sample Data</button>
-        <button (click)="clearData()" [color]="colors.secondary">Clear</button>
-      </bs-input-group>
-    </bs-form>
-  </div>
-  <div class="col-md-4">
-    <small class="text-muted">
-      <strong>Keyboard:</strong> arrow nav cells · Shift+arrow extend selection · Enter create/move · Alt+T/Y/M/W/D switch views
-    </small>
-  </div>
-</div>
-
-<div class="row">
-  <div class="col-md-9">
-    <div class="scheduler-container">
-      <bs-scheduler
-        [view]="view()"
-        [date]="date()"
-        [events]="events()"
-        [resources]="resources()"
-        [options]="options()"
-        [(selectedEvent)]="selectedEvent"
-        (eventSelected)="onEventSelected($event)"
-        (eventCreate)="onEventCreate($event)"
-        (eventUpdate)="onEventUpdate($event)"
-        (eventDelete)="onEventDelete($event)"
-        (dateClick)="onDateClick($event)"
-        (viewChange)="onViewChange($event)">
-      </bs-scheduler>
+<bs-grid stopFullWidthAt="never">
+  <div bsRow class="mb-3">
+    <div [md]="8">
+      <bs-form>
+        <bs-input-group>
+          <bs-select [ngModel]="view()" (ngModelChange)="view.set($event)">
+            @for (opt of viewOptions; track opt.value) {
+              <option [ngValue]="opt.value">{{ opt.label }}</option>
+            }
+          </bs-select>
+          <bs-select [ngModel]="slotDuration()" (ngModelChange)="slotDuration.set($event)">
+            @for (opt of slotDurationOptions; track opt.value) {
+              <option [ngValue]="opt.value">{{ opt.label }}</option>
+            }
+          </bs-select>
+          <bs-select [ngModel]="timeFormat()" (ngModelChange)="timeFormat.set($event)">
+            <option value="24h">24h</option>
+            <option value="12h">12h</option>
+          </bs-select>
+          <button (click)="fillData()" [color]="colors.primary">Load Sample Data</button>
+          <button (click)="clearData()" [color]="colors.secondary">Clear</button>
+        </bs-input-group>
+      </bs-form>
+    </div>
+    <div [md]="4">
+      <small class="text-muted">
+        <strong>Keyboard:</strong> arrow nav cells · Shift+arrow extend selection · Enter create/move · Alt+T/Y/M/W/D switch views
+      </small>
     </div>
   </div>
-  <div class="col-md-3">
-    <bs-card class="d-block mb-3">
-      <bs-card-header>Event Log</bs-card-header>
-      <div class="p-3">
-        <div class="event-log">
-          @if (eventLog().length === 0) {
-            <p class="text-muted">No events yet. Try clicking on the scheduler or loading sample data.</p>
-          }
-          @for (entry of eventLog(); track entry) {
-            <div class="log-entry">{{ entry }}</div>
-          }
-        </div>
+
+  <div bsRow>
+    <div [md]="9">
+      <div class="scheduler-container">
+        <bs-scheduler
+          [view]="view()"
+          [date]="date()"
+          [events]="events()"
+          [resources]="resources()"
+          [options]="options()"
+          [(selectedEvent)]="selectedEvent"
+          (eventSelected)="onEventSelected($event)"
+          (eventCreate)="onEventCreate($event)"
+          (eventUpdate)="onEventUpdate($event)"
+          (eventDelete)="onEventDelete($event)"
+          (dateClick)="onDateClick($event)"
+          (viewChange)="onViewChange($event)">
+        </bs-scheduler>
       </div>
-    </bs-card>
-    <bs-card class="d-block">
-      <bs-card-header>State ({{ events().length }} events)</bs-card-header>
-      <div class="p-3">
-        <div class="state-debug" style="font-size: 11px; max-height: 300px; overflow: auto;">
-          <div><strong>View:</strong> {{ view() }}</div>
-          <div><strong>Date:</strong> {{ date() | date:'medium' }}</div>
-          <div><strong>Selected:</strong> {{ selectedEvent()?.title ?? 'None' }}</div>
-          <hr>
-          <div><strong>Events:</strong></div>
-          <pre style="font-size: 10px; margin: 0;">{{ events() | json }}</pre>
+    </div>
+    <div [md]="3">
+      <bs-card class="d-block mb-3">
+        <bs-card-header>Event Log</bs-card-header>
+        <div class="p-3">
+          <div class="event-log">
+            @if (eventLog().length === 0) {
+              <p class="text-muted">No events yet. Try clicking on the scheduler or loading sample data.</p>
+            }
+            @for (entry of eventLog(); track entry) {
+              <div class="log-entry">{{ entry }}</div>
+            }
+          </div>
         </div>
-      </div>
-    </bs-card>
+      </bs-card>
+      <bs-card class="d-block">
+        <bs-card-header>State ({{ events().length }} events)</bs-card-header>
+        <div class="p-3">
+          <div class="state-debug" style="font-size: 11px; max-height: 300px; overflow: auto;">
+            <div><strong>View:</strong> {{ view() }}</div>
+            <div><strong>Date:</strong> {{ date() | date:'medium' }}</div>
+            <div><strong>Selected:</strong> {{ selectedEvent()?.title ?? 'None' }}</div>
+            <hr>
+            <div><strong>Events:</strong></div>
+            <pre style="font-size: 10px; margin: 0;">{{ events() | json }}</pre>
+          </div>
+        </div>
+      </bs-card>
+    </div>
   </div>
-</div>
+</bs-grid>

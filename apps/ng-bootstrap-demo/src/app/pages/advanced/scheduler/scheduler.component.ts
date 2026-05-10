@@ -5,6 +5,7 @@ import { Color } from '@mintplayer/ng-bootstrap';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsCardComponent, BsCardHeaderComponent } from '@mintplayer/ng-bootstrap/card';
 import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
+import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
 import { BsSelectComponent, BsSelectOption } from '@mintplayer/ng-bootstrap/select';
 import {
@@ -38,6 +39,9 @@ import {
     BsCardComponent,
     BsCardHeaderComponent,
     BsFormComponent,
+    BsGridComponent,
+    BsGridRowDirective,
+    BsGridColumnDirective,
     BsInputGroupComponent,
     BsButtonTypeDirective,
     BsSelectComponent,
