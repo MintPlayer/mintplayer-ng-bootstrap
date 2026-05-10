@@ -260,8 +260,8 @@ Decision recorded (§10 Q1): switch from `role="grid"` to `role="region"` + `rol
 - **7.5** Vitest + a Playwright smoke spec in `apps/ng-bootstrap-demo-e2e/` for the move-mode happy path.
 
 ### Phase 8 — Polish (1 PR)
-- **8.1** `prefers-reduced-motion` guards across dock and scheduler.
-- **8.2** `axe-core/playwright` run on the dock, scheduler, and tile-manager demo pages; capture baseline; fail CI on `critical`/`serious`.
+- **8.1** `prefers-reduced-motion` guards across splitter, dock, and scheduler. **Done** — `@media (prefers-reduced-motion: reduce)` blocks added at the foot of each component's SCSS, neutralising `transition` and `animation` declarations. Tile-manager already had its guard from `ca7a0c9d`.
+- **8.2** `axe-core/playwright` run on the dock, scheduler, and tile-manager demo pages; capture baseline; fail CI on `critical`/`serious`. **Deferred to follow-up PR** — adds a new dev-dep (`@axe-core/playwright`), CI job, and baseline-snapshot review process, and is genuinely separable from the per-component implementation work this PRD covers. Tracking issue to be opened post-merge.
 - **8.3** Surface the keymap on the demo pages — this is part of the deliverable, not a nice-to-have. Each affected demo page (`apps/ng-bootstrap-demo/src/app/pages/advanced/{dock,tile-manager}/`, scheduler equivalent, splitter equivalent) gets a visible "Keyboard shortcuts" panel listing the keys for that component, e.g.:
   - **`M`** — enter move/resize mode (tile-manager, dock pane, scheduler event)
   - **Arrow keys** — move 1 unit (or resize with Shift) while in move mode; navigate between focused items otherwise

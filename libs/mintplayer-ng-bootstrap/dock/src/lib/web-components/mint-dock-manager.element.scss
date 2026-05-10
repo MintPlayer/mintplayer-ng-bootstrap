@@ -432,3 +432,15 @@
   min-width: 0;
   min-height: 0;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .dock-floating,
+  .dock-floating__resizer,
+  .dock-floating__close,
+  .dock-intersection-handle,
+  .dock-drop-indicator,
+  .dock-drop-joystick__button {
+    transition: none !important;
+    animation: none !important;
+  }
+}

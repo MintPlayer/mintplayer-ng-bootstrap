@@ -637,3 +637,11 @@
 .scheduler-content::-webkit-scrollbar-thumb:hover {
   background: #a1a1a1;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .scheduler-event,
+  .scheduler-timeline-event {
+    animation: none !important;
+    transition: none !important;
+  }
+}
