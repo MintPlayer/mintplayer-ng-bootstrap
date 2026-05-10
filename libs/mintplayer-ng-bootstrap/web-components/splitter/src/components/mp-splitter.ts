@@ -1,6 +1,6 @@
 import { LitElement, html, type TemplateResult } from 'lit';
 import { SplitterStateManager } from '../state';
-import { InputHandler } from '../input';
+import { InputHandler, type ResizeKey } from '../input';
 import { ResizeManager } from '../managers';
 import { splitterStyles } from '../styles';
 import type { Direction, Point } from '../types';
@@ -9,6 +9,8 @@ export interface SplitterResizeEventDetail {
   sizes: number[];
   orientation: Direction;
 }
+
+let splitterInstanceCounter = 0;
 
 export class MpSplitter extends LitElement {
   static override styles = [splitterStyles];
@@ -35,6 +37,8 @@ export class MpSplitter extends LitElement {
   private containerResizeObserver: ResizeObserver | null = null;
   private unsubscribeState: (() => void) | null = null;
 
+  private readonly instanceId = `mp-splitter-${++splitterInstanceCounter}`;
+
   constructor() {
     super();
 
@@ -45,6 +49,7 @@ export class MpSplitter extends LitElement {
       onResizeStart: this.handleResizeStart.bind(this),
       onResizeMove: this.handleResizeMove.bind(this),
       onResizeEnd: this.handleResizeEnd.bind(this),
+      onResizeKey: this.handleResizeKey.bind(this),
     });
   }
 
@@ -179,6 +184,40 @@ export class MpSplitter extends LitElement {
       } else {
         this.removeAttribute('resizing');
       }
+      this.updateDividerAriaValues();
+    });
+  }
+
+  /**
+   * Mirror current panel sizes to each divider's aria-valuenow / valuemin /
+   * valuemax as percent of container. Per §10 Q3 of the WC ARIA PRD: percent
+   * is more intuitive for SR users than pixels.
+   *
+   * Per-divider math: divider i sits between panels[i] and panels[i+1] and
+   * "owns" the size of panels[i]. valuemin = minPanelSize as % of container;
+   * valuemax = (panels[i].size + panels[i+1].size - minPanelSize) as %.
+   */
+  private updateDividerAriaValues(): void {
+    if (this.dividers.length === 0 || !this.container) return;
+    const state = this.stateManager.getState();
+    const sizes = state.previewSizes ?? state.panelSizes;
+    if (sizes.length !== this.panelWrappers.length || sizes.length === 0) return;
+    const rect = this.container.getBoundingClientRect();
+    const containerSize = this.orientation === 'horizontal' ? rect.width : rect.height;
+    if (containerSize <= 0) return;
+    const minPanelSize = this.resizeManager.getMinPanelSize();
+
+    this.dividers.forEach((divider, i) => {
+      const before = sizes[i];
+      const after = sizes[i + 1];
+      if (before === undefined || after === undefined) return;
+      const valuenow = Math.round((before / containerSize) * 100);
+      const valuemin = Math.round((minPanelSize / containerSize) * 100);
+      const pairTotal = before + after;
+      const valuemax = Math.round(((pairTotal - minPanelSize) / containerSize) * 100);
+      divider.setAttribute('aria-valuenow', String(valuenow));
+      divider.setAttribute('aria-valuemin', String(valuemin));
+      divider.setAttribute('aria-valuemax', String(valuemax));
     });
   }
 
@@ -197,9 +236,12 @@ export class MpSplitter extends LitElement {
     this.dividers = [];
 
     // Create panel wrappers with slots for each child
+    const panelCount = children.length;
+    const dividerAriaOrientation = this.orientation === 'horizontal' ? 'vertical' : 'horizontal';
     children.forEach((child, index) => {
       const wrapper = document.createElement('div');
       wrapper.className = 'panel-wrapper flex-grow';
+      wrapper.id = `${this.instanceId}-panel-${index}`;
 
       // Create a named slot for this child
       const namedSlot = document.createElement('slot');
@@ -212,9 +254,20 @@ export class MpSplitter extends LitElement {
       this.container!.appendChild(wrapper);
 
       // Add divider between panels
-      if (index < children.length - 1) {
+      if (index < panelCount - 1) {
         const divider = document.createElement('div');
         divider.className = 'divider';
+        divider.setAttribute('role', 'separator');
+        divider.setAttribute('aria-orientation', dividerAriaOrientation);
+        divider.setAttribute('tabindex', '0');
+        divider.setAttribute(
+          'aria-controls',
+          `${this.instanceId}-panel-${index} ${this.instanceId}-panel-${index + 1}`,
+        );
+        divider.setAttribute(
+          'aria-label',
+          `Resize between panel ${index + 1} and panel ${index + 2}`,
+        );
         this.inputHandler.attachDividerListeners(divider, index);
         this.dividers.push(divider);
         this.container!.appendChild(divider);
@@ -337,12 +390,18 @@ export class MpSplitter extends LitElement {
     const newSizes = stored.map((s) => s * scale);
     this.applyPanelSizes(newSizes);
     this.stateManager.setPanelSizes(newSizes);
+    this.updateDividerAriaValues();
   }
 
   private updateContainerOrientation(): void {
     if (!this.container) return;
 
     this.container.className = `splitter-container ${this.orientation}`;
+
+    const dividerAriaOrientation = this.orientation === 'horizontal' ? 'vertical' : 'horizontal';
+    this.dividers.forEach((divider) => {
+      divider.setAttribute('aria-orientation', dividerAriaOrientation);
+    });
   }
 
   private handleResizeStart(
@@ -426,6 +485,88 @@ export class MpSplitter extends LitElement {
           orientation: this.orientation,
         },
       })
+    );
+  }
+
+  /**
+   * Keyboard-driven resize on a focused divider. ArrowKeys ±10% (Shift = ±1%)
+   * along the splitter's axis; Home/End shrink/grow panelBefore to its limit.
+   * Fires resize-start → resize-end with the new sizes so consumers don't
+   * need to special-case keyboard vs. drag.
+   */
+  private handleResizeKey(
+    key: ResizeKey,
+    fine: boolean,
+    dividerIndex: number,
+    dividerElement: HTMLElement,
+  ): void {
+    if (!this.container) return;
+    if (this.panelWrappers.length === 0) return;
+
+    const sizes = [...this.stateManager.getState().panelSizes];
+    if (sizes.length !== this.panelWrappers.length) return;
+
+    const before = sizes[dividerIndex];
+    const after = sizes[dividerIndex + 1];
+    if (before === undefined || after === undefined) return;
+
+    const rect = this.container.getBoundingClientRect();
+    const containerSize = this.orientation === 'horizontal' ? rect.width : rect.height;
+    if (containerSize <= 0) return;
+    const minPanelSize = this.resizeManager.getMinPanelSize();
+
+    const isHorizontal = this.orientation === 'horizontal';
+    const positive = isHorizontal ? 'ArrowRight' : 'ArrowDown';
+    const negative = isHorizontal ? 'ArrowLeft' : 'ArrowUp';
+
+    let direction: 1 | -1 | 0 = 0;
+    if (key === positive) direction = 1;
+    else if (key === negative) direction = -1;
+
+    let newBefore: number;
+    let newAfter: number;
+    if (key === 'Home') {
+      newBefore = minPanelSize;
+      newAfter = before + after - minPanelSize;
+    } else if (key === 'End') {
+      newBefore = before + after - minPanelSize;
+      newAfter = minPanelSize;
+    } else if (direction !== 0) {
+      const stepPercent = fine ? 1 : 10;
+      const deltaPx = (stepPercent / 100) * containerSize * direction;
+      newBefore = before + deltaPx;
+      newAfter = after - deltaPx;
+      // Clamp to min on both sides — symmetric with the pointer path in
+      // ResizeManager.calculatePreviewSizes.
+      if (newBefore < minPanelSize) {
+        newBefore = minPanelSize;
+        newAfter = before + after - minPanelSize;
+      } else if (newAfter < minPanelSize) {
+        newAfter = minPanelSize;
+        newBefore = before + after - minPanelSize;
+      }
+    } else {
+      // Off-axis arrow — silently ignored.
+      return;
+    }
+
+    if (newBefore === before && newAfter === after) return;
+
+    sizes[dividerIndex] = newBefore;
+    sizes[dividerIndex + 1] = newAfter;
+
+    this.applyPanelSizes(sizes);
+    this.stateManager.setPanelSizes(sizes);
+    this.updateDividerAriaValues();
+
+    dividerElement.classList.add('active');
+    queueMicrotask(() => dividerElement.classList.remove('active'));
+
+    this.dispatchEvent(
+      new CustomEvent<SplitterResizeEventDetail>('resize-end', {
+        bubbles: true,
+        detail: { sizes, orientation: this.orientation },
+      }),
     );
   }
 

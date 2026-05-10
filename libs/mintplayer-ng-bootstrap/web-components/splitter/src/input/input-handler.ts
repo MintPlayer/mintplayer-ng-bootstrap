@@ -5,7 +5,19 @@ export interface InputHandlerCallbacks {
   onResizeStart: (event: NormalizedPointerEvent, dividerIndex: number, dividerElement: HTMLElement) => void;
   onResizeMove: (event: NormalizedPointerEvent) => void;
   onResizeEnd: (event: NormalizedPointerEvent) => void;
+  /**
+   * Keyboard-driven resize. Fires once per arrow / Home / End keystroke on a
+   * focused divider. Granularity is encoded as the boolean `fine` (Shift held)
+   * — translation to percent/px lives in the splitter, not the input layer.
+   */
+  onResizeKey?: (key: ResizeKey, fine: boolean, dividerIndex: number, dividerElement: HTMLElement) => void;
 }
+
+export type ResizeKey = 'ArrowLeft' | 'ArrowRight' | 'ArrowUp' | 'ArrowDown' | 'Home' | 'End';
+
+const RESIZE_KEYS: ReadonlySet<string> = new Set([
+  'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End',
+]);
 
 export class InputHandler {
   private isActive = false;
@@ -30,6 +42,14 @@ export class InputHandler {
   attachDividerListeners(divider: HTMLElement, index: number): void {
     divider.addEventListener('mousedown', (e) => this.handleMouseDown(e, index, divider));
     divider.addEventListener('touchstart', (e) => this.handleTouchStart(e, index, divider), { passive: false });
+    divider.addEventListener('keydown', (e) => this.handleKeyDown(e, index, divider));
+  }
+
+  private handleKeyDown(event: KeyboardEvent, dividerIndex: number, dividerElement: HTMLElement): void {
+    if (!this.callbacks.onResizeKey) return;
+    if (!RESIZE_KEYS.has(event.key)) return;
+    event.preventDefault();
+    this.callbacks.onResizeKey(event.key as ResizeKey, event.shiftKey, dividerIndex, dividerElement);
   }
 
   private handleMouseDown(event: MouseEvent, dividerIndex: number, dividerElement: HTMLElement): void {

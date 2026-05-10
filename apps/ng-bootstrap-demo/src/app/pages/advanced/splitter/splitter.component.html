@@ -1,5 +1,15 @@
 <h1 class="text-center">Splitter</h1>
 <bs-toggle-button [(ngModel)]="bgWarning">Yellow background</bs-toggle-button>
+<details class="mt-2 mb-2">
+    <summary>Keyboard shortcuts</summary>
+    <ul class="mb-0">
+        <li><kbd>Tab</kbd> — focus the next divider</li>
+        <li><kbd>←</kbd> / <kbd>→</kbd> — resize a horizontal splitter by 10% (<kbd>Shift</kbd>: 1%)</li>
+        <li><kbd>↑</kbd> / <kbd>↓</kbd> — resize a vertical splitter by 10% (<kbd>Shift</kbd>: 1%)</li>
+        <li><kbd>Home</kbd> — shrink the leading panel to its minimum size</li>
+        <li><kbd>End</kbd> — grow the leading panel to its maximum size</li>
+    </ul>
+</details>
 <div class="dock">
     <mp-splitter orientation="horizontal">
         <div class="d-flex w-100 h-100 align-items-center justify-content-center" [class.bg-warning]="bgWarning()">

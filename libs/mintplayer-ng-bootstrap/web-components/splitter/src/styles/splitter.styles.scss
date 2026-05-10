@@ -65,9 +65,19 @@
 }
 
 .divider:hover::before,
-.divider.active::before {
+.divider.active::before,
+.divider:focus-visible::before {
   background-color: var(--mp-splitter-divider-hover-color);
   border-radius: calc(var(--mp-splitter-size) / 2);
+}
+
+.divider:focus {
+  outline: none;
+}
+
+.divider:focus-visible {
+  outline: 2px solid var(--mp-splitter-divider-hover-color);
+  outline-offset: 1px;
 }
 
 /* Horizontal splitter styles */
