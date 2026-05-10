@@ -24,6 +24,13 @@ export class BsTreeviewItemComponent {
   // Roving tabindex: only the focused item has tabindex 0
   tabIndex = computed(() => this.parent.isFocusedItem(this) ? 0 : -1);
 
+  /** APG tree pattern: 1-based depth. Root tree has level=0; items inside it are level=1. */
+  ariaLevel = computed(() => this.parent.level() + 1);
+  /** Total siblings at this level (within this immediate tree). */
+  ariaSetSize = computed(() => this.parent.items().length);
+  /** 1-based position within siblings. */
+  ariaPosInSet = computed(() => this.parent.items().indexOf(this) + 1);
+
   constructor() {
     import('bootstrap-icons/icons/chevron-right.svg').then((icon) => {
       this.chevronRight.set(this.sanitizer.bypassSecurityTrustHtml(icon.default));

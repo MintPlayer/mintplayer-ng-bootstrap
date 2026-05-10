@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MockComponent } from 'ng-mocks';
-import { computed, model } from '@angular/core';
+import { computed, model, signal } from '@angular/core';
 import { BsTreeviewItemComponent } from './treeview-item.component';
 import { BsTreeviewComponent } from '../treeview/treeview.component';
 import { BsListGroupComponent, BsListGroupItemComponent } from '@mintplayer/ng-bootstrap/list-group';
@@ -9,6 +9,10 @@ class BsTreeviewComponentStub {
   level = computed(() => 0);
   indentation = computed(() => 0);
   isExpanded = model<boolean>(true);
+
+  // Direct-children + focused tracking
+  items = signal<unknown[]>([]);
+  focusedItem = signal<unknown | null>(null);
 
   // Roving tabindex methods
   registerItem = () => {};

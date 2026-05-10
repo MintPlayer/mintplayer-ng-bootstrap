@@ -19,7 +19,7 @@
 							[class.active]="activeTabValue === tab"
 							[class.disabled]="tab.disabled()"
 							role="tab"
-							[attr.tabindex]="tab.disabled() ? -1 : 0"
+							[attr.tabindex]="tab.disabled() ? -1 : (activeTabValue === tab ? 0 : -1)"
 							[attr.aria-selected]="activeTabValue === tab"
 							[attr.aria-controls]="tab.tabName() + '-panel'"
 							[attr.aria-disabled]="tab.disabled() || null">
