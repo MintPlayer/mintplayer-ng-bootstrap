@@ -1,4 +1,5 @@
-import { Directive, input } from '@angular/core';
+import { computed, contentChild, Directive, ElementRef, inject, input } from '@angular/core';
+import { BsSwipeContainerDirective } from '../swipe-container/swipe-container.directive';
 
 /**
  * Marks an element as the static viewport that wraps a `bsSwipeContainer`'s
@@ -20,22 +21,48 @@ import { Directive, input } from '@angular/core';
  *   on the gaps between slides (or on the viewport's letterboxing) pass
  *   through, while the slides themselves remain interactive.
  *
- * Also owns the live-region ARIA tuple (`aria-live`, `aria-atomic`,
- * `aria-relevant`, `aria-busy`) since the viewport is the natural element
- * SRs watch for slide-content changes — see PRD `swiper-aria.md` §4.3.
+ * Owns the focusable, key-handling region for the swiper widget — APG
+ * carousel pattern places the slide-rotation tab stop here, not on the
+ * inner container or per-slide. Adds `tabindex` (default `0`), forwards
+ * `aria-orientation` + `aria-keyshortcuts` from the inner container, and
+ * delegates ArrowLeft/Right/Up/Down + Home/End keydowns to
+ * `BsSwipeContainerDirective.onKeyPress` only when the viewport itself is
+ * the event target — so an input/link inside a slide keeps its own key
+ * behaviour. Also owns the live-region tuple (`aria-live`, `-atomic`,
+ * `-relevant`, `-busy`) since the viewport is what SRs watch for slide
+ * content changes.
  */
 @Directive({
   selector: '[bsSwipeViewport]',
   host: {
     '[style.overscroll-behavior]': '"contain"',
     '[style.pointer-events]': '"none"',
+    '[attr.tabindex]': 'tabIndex()',
     '[attr.aria-live]': 'ariaLive()',
     '[attr.aria-atomic]': 'ariaAtomic()',
     '[attr.aria-relevant]': 'ariaRelevant()',
     '[attr.aria-busy]': 'ariaBusy()',
+    '[attr.aria-orientation]': 'effectiveOrientation()',
+    '[attr.aria-keyshortcuts]': 'effectiveKeyshortcuts()',
+    '(keydown.ArrowLeft)': 'onKeyPress($event)',
+    '(keydown.ArrowRight)': 'onKeyPress($event)',
+    '(keydown.ArrowUp)': 'onKeyPress($event)',
+    '(keydown.ArrowDown)': 'onKeyPress($event)',
+    '(keydown.Home)': 'onKeyPress($event)',
+    '(keydown.End)': 'onKeyPress($event)',
   },
 })
 export class BsSwipeViewportDirective {
+  private readonly el = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  /**
+   * Tabindex on the viewport. Default `0` makes the swiper a single tab
+   * stop — APG carousel pattern. Pass `null` to opt out (e.g., a swipe
+   * card grid that doesn't need a focus stop), or `-1` for
+   * programmatic-only focus.
+   */
+  tabIndex = input<number | null>(0);
+
   /**
    * Drives the `aria-live` host attribute. Auto-advancing consumers can pass
    * a computed signal that flips between `'off'` (during rotation) and
@@ -67,4 +94,26 @@ export class BsSwipeViewportDirective {
    * `isAnimating` signal.
    */
   ariaBusy = input<boolean | null>(null);
+
+  /**
+   * The inner `bsSwipeContainer` is required for the keydown delegation
+   * and the orientation / keyshortcuts forwarding. `contentChild` is the
+   * natural query because the container is always a descendant; the lookup
+   * settles on first CD pass.
+   */
+  private readonly container = contentChild(BsSwipeContainerDirective);
+
+  readonly effectiveOrientation = computed(() => this.container()?.orientation() ?? null);
+  readonly effectiveKeyshortcuts = computed(() => this.container()?.ariaKeyshortcuts() ?? null);
+
+  /**
+   * Forwards the keydown to the container only when the viewport itself
+   * holds focus — `event.target === host` — so a focusable descendant
+   * (form input, link inside a slide) keeps native key handling. APG
+   * carousel pattern requires this guard.
+   */
+  onKeyPress(event: Event) {
+    if (event.target !== this.el.nativeElement) return;
+    this.container()?.onKeyPress(event);
+  }
 }

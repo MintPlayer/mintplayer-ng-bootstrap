@@ -52,8 +52,8 @@ This is a **breaking change** to swiper's directive contract (it now writes ARIA
 
 **Out of scope (deliberate):**
 
-- **Fixing the multi-carousel-on-page keyboard bug.** Today, all carousels on a page respond to a single ArrowLeft because the listener is on `document`. This PRD preserves that behaviour by binding to `document:keydown` on the swipe-container too (matching the user's chosen design call). A separate follow-up — "scope swiper keyboard listeners to host + focus-within" — is logged in §10 as a future PRD.
-- **Adding `tabindex` to the viewport.** APG suggests the rotation region should be programmatically focusable; today carousel relies on its prev/next buttons + indicators carrying tab stops. Adding `tabindex="0"` on `bsSwipeViewport` would change the tab order on every existing consumer. Defer to the same follow-up as the keyboard-scope fix (they're conceptually one piece of work: "make swiper focusable as a unit and stop relying on document-level capture").
+- ~~**Fixing the multi-carousel-on-page keyboard bug.**~~ ✓ shipped on this branch in a follow-up commit. Listeners moved off `document` and onto the `bsSwipeViewport` host; the viewport's `onKeyPress` guards on `event.target === host`, so a key only routes when the viewport itself holds focus. The §10 future follow-up is closed.
+- ~~**Adding `tabindex` to the viewport.**~~ ✓ shipped on this branch in the same follow-up — `bsSwipeViewport` now defaults `tabindex="0"` (consumer can pass `null` to opt out). The carousel demo gains a single tab stop on `.carousel-inner`, matching APG carousel pattern.
 - **Moving carousel's `role="region"` / `aria-roledescription="carousel"` down to swiper.** Those are the APG carousel pattern's landmark — a generic image gallery would want different terms (`region` + `aria-roledescription="image gallery"` or just no roledescription). Carousel keeps them on its own host.
 - **The carousel's SSR branch** (`carousel.component.html:1-43`). The radio-input markup for no-JS doesn't compose swiper at all — the directives don't run on the server in that path. The SSR branch keeps its current inline ARIA. Only the `@else` (JS) branch changes.
 - **`@mintplayer/ng-swiper/observe-size`**. That sub-entrypoint is consumed by `priority-nav` and `sticky-footer` for size measurement only — no swipe semantics, no ARIA implications. Untouched.
@@ -114,26 +114,23 @@ Why "N of M" computed from `actualSwipes()` rather than DOM ordinal: it matches 
 
 **Consumer override path:** any consumer template can do `<div bsSwipe [ariaLabel]="'Sunset over Mt. Rainier, slide 3 of 6'">` to provide rich, per-slide labels. The carousel component doesn't need this — its current label is index-based — but a richer image gallery would.
 
-### 4.2 `BsSwipeContainerDirective` — keyboard nav + container-level ARIA
+### 4.2 `BsSwipeContainerDirective` — keyboard navigation logic
 
 Current carousel keyboard logic (`carousel.component.ts:25-28, 123-158`) is orientation-aware: `ArrowLeft`/`ArrowRight` navigate when `orientation === 'horizontal'`; `ArrowUp`/`ArrowDown` navigate when vertical. It calls `preventDefault()` on the keys it handles to avoid scrolling the page.
 
-This logic moves to the container with three changes:
+The container owns the keyboard logic with two enhancements:
 
-1. **Listener stays on `document`.** Per design call (§3 out-of-scope): preserve current behaviour now, fix as a separate PRD.
-2. **Gate via a new `keyboardEvents` input** (default `true`), matching the carousel's existing API surface.
-3. **Add Home / End** (jump to first / last slide), per APG Carousel pattern §3.2.2. Carousel doesn't have these today; adding them in the swiper layer means every consumer gets them for free without churn in the carousel.
+1. **Gate via a new `keyboardEvents` input** (default `true`), matching the carousel's existing API surface.
+2. **Add Home / End** (jump to first / last slide), per APG Carousel pattern §3.2.2. Carousel doesn't have these today; adding them in the swiper layer means every consumer gets them for free without churn in the carousel.
 
-The container also picks up two new host attributes that derive from existing state — `aria-orientation` and `aria-keyshortcuts`. They're not in the carousel today, but they're defensibly true (the directive owns both pieces of state) and SR-useful.
+The host listeners themselves live on `bsSwipeViewport` (see §4.3) — the viewport is the focusable region, the container is non-focusable inner machinery. The viewport's listener calls into `container.onKeyPress(event)` so the dispatch logic stays here. The container also exposes the `ariaKeyshortcuts` computed for the viewport to forward as a host attribute.
 
 ```ts
-// --- New inputs on BsSwipeContainerDirective ---
+// --- New input on BsSwipeContainerDirective ---
 
 keyboardEvents = input(true);
 
-// --- New computed signals ---
-
-readonly ariaOrientation = computed(() => this.orientation());
+// --- New computed signal (read by bsSwipeViewport for forwarding) ---
 
 readonly ariaKeyshortcuts = computed(() => {
   if (!this.keyboardEvents()) return null;
@@ -142,27 +139,14 @@ readonly ariaKeyshortcuts = computed(() => {
     : 'ArrowUp ArrowDown Home End';
 });
 
-// --- New host bindings ---
+// --- Public dispatcher (called by bsSwipeViewport's host listener) ---
 
-host: {
-  // … existing bindings stay …
-  '[attr.aria-orientation]': 'ariaOrientation()',
-  '[attr.aria-keyshortcuts]': 'ariaKeyshortcuts()',
-  '(document:keydown.ArrowLeft)': 'onKeyPress($event)',
-  '(document:keydown.ArrowRight)': 'onKeyPress($event)',
-  '(document:keydown.ArrowUp)': 'onKeyPress($event)',
-  '(document:keydown.ArrowDown)': 'onKeyPress($event)',
-  '(document:keydown.Home)': 'onKeyPress($event)',
-  '(document:keydown.End)': 'onKeyPress($event)',
-}
-
-// --- New method (lifted + extended from carousel.component.ts:123-158) ---
-
-onKeyPress(event: KeyboardEvent) {
+onKeyPress(event: Event) {
   if (!this.keyboardEvents()) return;
+  const ev = event as KeyboardEvent;
   const orientation = this.orientation();
   let handled = false;
-  switch (event.key) {
+  switch (ev.key) {
     case 'ArrowLeft':  if (orientation === 'horizontal') { this.previous(); handled = true; } break;
     case 'ArrowRight': if (orientation === 'horizontal') { this.next();     handled = true; } break;
     case 'ArrowUp':    if (orientation === 'vertical')   { this.previous(); handled = true; } break;
@@ -170,17 +154,20 @@ onKeyPress(event: KeyboardEvent) {
     case 'Home':       this.goto(0);                                              handled = true; break;
     case 'End':        this.goto(Math.max(0, this.actualSwipes().length - 1));    handled = true; break;
   }
-  if (handled) event.preventDefault();
+  if (handled) ev.preventDefault();
 }
 ```
 
-**Rationale for `aria-orientation`:** mirrors the directive's `orientation` input. Helps SR users understand which axis the arrow keys move on. APG uses it on tablist, slider, scrollbar, separator — analogous to a swipe container.
+**Rationale for `aria-keyshortcuts`:** Modern SRs (NVDA 2020+, VoiceOver) read this to advertise available shortcuts. Computed from the same state that drives the keyboard handler so it can never drift from reality. Returns `null` when `keyboardEvents` is off so the attribute disappears entirely. The viewport binds it as `[attr.aria-keyshortcuts]` because the viewport is the focusable element SRs land on.
 
-**Rationale for `aria-keyshortcuts`:** Modern SRs (NVDA 2020+, VoiceOver) read this to advertise available shortcuts. Computed from the same state that drives the keyboard handler so it can never drift from reality. Returns `null` when `keyboardEvents` is off so the attribute disappears entirely.
+### 4.3 `BsSwipeViewportDirective` — focusable region + keydown delegation + live-region
 
-### 4.3 `BsSwipeViewportDirective` — viewport-level ARIA
+The viewport is the focusable region of the swiper widget — APG carousel pattern places the slide-rotation tab stop here, not on the inner container or per-slide. The directive owns:
 
-The viewport directive currently has only style host bindings. It gains four inputs + four host attribute bindings:
+- `tabindex` so users can land on the swiper as a single tab stop.
+- The keydown listeners that delegate to the inner container's `onKeyPress`, **only when the viewport itself is the event target** (so a focusable descendant — input inside a slide, link in slide content — keeps native key behaviour).
+- `aria-orientation` + `aria-keyshortcuts` forwarded from the inner container, so SRs read them when focus arrives.
+- The live-region tuple (`aria-live` / `-atomic` / `-relevant` / `-busy`).
 
 ```ts
 @Directive({
@@ -188,35 +175,42 @@ The viewport directive currently has only style host bindings. It gains four inp
   host: {
     '[style.overscroll-behavior]': '"contain"',
     '[style.pointer-events]': '"none"',
+    '[attr.tabindex]': 'tabIndex()',
     '[attr.aria-live]': 'ariaLive()',
     '[attr.aria-atomic]': 'ariaAtomic()',
     '[attr.aria-relevant]': 'ariaRelevant()',
     '[attr.aria-busy]': 'ariaBusy()',
+    '[attr.aria-orientation]': 'effectiveOrientation()',
+    '[attr.aria-keyshortcuts]': 'effectiveKeyshortcuts()',
+    '(keydown.ArrowLeft)':  'onKeyPress($event)',
+    '(keydown.ArrowRight)': 'onKeyPress($event)',
+    '(keydown.ArrowUp)':    'onKeyPress($event)',
+    '(keydown.ArrowDown)':  'onKeyPress($event)',
+    '(keydown.Home)':       'onKeyPress($event)',
+    '(keydown.End)':        'onKeyPress($event)',
   },
 })
 export class BsSwipeViewportDirective {
-  /** Drives the `aria-live` host attribute. Consumers that auto-advance
-   *  can pass a computed signal that flips between 'off' (during rotation)
-   *  and 'polite' (when paused / no auto-advance / reduced motion).
-   *  Default 'off' — matches the carousel's "do not announce on every
-   *  rotation tick" baseline. */
-  ariaLive = input<'off' | 'polite' | 'assertive'>('off');
+  private readonly el = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  /** Whether SRs should re-read the entire region on change (true) or only
-   *  the diff (false). Default false — matches typical slide content where
-   *  only the active slide is meaningful. */
-  ariaAtomic = input<boolean | null>(false);
+  /** Default `0` makes the viewport a tab stop — APG carousel. Pass `null`
+   *  to opt out, `-1` for programmatic-only focus. */
+  tabIndex = input<number | null>(0);
 
-  /** Which kinds of mutations should fire the live announcement. Default
-   *  `'additions text'` — covers the common case where slide content is
-   *  swapped or text changes. */
-  ariaRelevant = input<string | null>(null);
+  // ariaLive / ariaAtomic / ariaRelevant / ariaBusy inputs as before.
 
-  /** Hide the region from announcements while a transition is in flight,
-   *  so the SR only reads the *final* slide. Default null (not busy);
-   *  consumers that want the polish wire it to the swipe container's
-   *  `isAnimating` signal. */
-  ariaBusy = input<boolean | null>(null);
+  private readonly container = contentChild(BsSwipeContainerDirective);
+
+  readonly effectiveOrientation = computed(() => this.container()?.orientation() ?? null);
+  readonly effectiveKeyshortcuts = computed(() => this.container()?.ariaKeyshortcuts() ?? null);
+
+  /** Forward only when the viewport itself holds focus — `event.target ===
+   *  host` — so a focusable descendant (form input, link inside a slide)
+   *  keeps native key handling. APG carousel pattern requires this guard. */
+  onKeyPress(event: Event) {
+    if (event.target !== this.el.nativeElement) return;
+    this.container()?.onKeyPress(event);
+  }
 }
 ```
 
@@ -241,9 +235,10 @@ export class BsSwipeViewportDirective {
 
 | Attribute | Element | Source |
 |---|---|---|
-| `aria-orientation="horizontal"` (or `"vertical"`) | `[bsSwipeContainer]` host | computed from `orientation` input |
-| `aria-keyshortcuts="ArrowLeft ArrowRight Home End"` | `[bsSwipeContainer]` host | computed from `orientation` + `keyboardEvents` |
-| Home / End handling | `[bsSwipeContainer]` host listener | new keyboard handler |
+| `tabindex="0"` | `[bsSwipeViewport]` host | makes the viewport a single tab stop, APG carousel |
+| `aria-orientation="horizontal"` (or `"vertical"`) | `[bsSwipeViewport]` host | forwarded from container's `orientation` input |
+| `aria-keyshortcuts="ArrowLeft ArrowRight Home End"` | `[bsSwipeViewport]` host | forwarded from container's `ariaKeyshortcuts` computed |
+| Home / End handling | `[bsSwipeViewport]` host listener → `[bsSwipeContainer]` `onKeyPress` | new keyboard handler |
 | `aria-busy="true"` mid-transition | `[bsSwipeViewport]` host | wired by carousel from `container.isAnimating()` |
 
 **Component class (`carousel.component.ts`):**
@@ -307,15 +302,16 @@ Add to existing spec files (no new `.aria.spec.ts` — match the carousel/schedu
   - Off-axis arrows are no-ops (don't `preventDefault`).
   - Home jumps to first slide; End jumps to last slide (in either orientation).
   - `keyboardEvents=false` suppresses all six.
-  - Listener attached on `document` (assert via spy or direct event dispatch).
-  - `aria-orientation` host attribute matches the `orientation` input.
-  - `aria-keyshortcuts` reflects the keys that will fire — `'ArrowLeft ArrowRight Home End'` horizontal, `'ArrowUp ArrowDown Home End'` vertical, absent when `keyboardEvents=false`.
+  - Test host wraps the container in `bsSwipeViewport` and dispatches keydowns on the viewport element (the listener lives there). Drops events whose target is outside the viewport.
 
 - `swipe-viewport.directive.spec.ts`:
   - `aria-live` default `'off'`; input flips host attribute to `'polite'` / `'assertive'`.
   - `aria-atomic` default `false`; can be set `true`.
   - `aria-relevant` defaults absent; consumer-supplied string becomes the host attribute.
   - `aria-busy` defaults absent; consumer-supplied boolean becomes the host attribute.
+  - `tabindex` default `0`; `null` removes; `-1` for programmatic-only.
+  - `aria-orientation` + `aria-keyshortcuts` forward from the inner container; absent when no container is mounted.
+  - Keydown delegated to `container.onKeyPress` only when `event.target === host` (a focusable descendant — input inside a slide — is dropped).
 
 ### 5.2 Carousel — externally visible parity
 
@@ -356,27 +352,27 @@ Why one commit, not two: the swiper directives' new ARIA would *double-set* with
 
 - **Other repos depending on `@mintplayer/ng-swiper` directly.** Public package; consumers outside this monorepo may compose the directives without `bs-carousel`. Adding `role="group"`, `aria-roledescription="slide"`, `aria-label="N of M"`, `aria-hidden` to every `bsSwipe` element changes their ARIA surface. **Mitigation:** the new inputs (`ariaRoledescription`, `ariaLabel`) are the override path. Document the change in the package CHANGELOG. Not a blocker per `feedback_breaking_changes_ok`.
 - **Slide ARIA may be wrong for non-paginated swipe UIs.** A horizontal scrolling card list with `bsSwipe` per card isn't really a "slide N of M" — it's just a scrollable list. **Mitigation:** the consumer sets `[ariaRoledescription]="''"` (empty string suppresses the attribute) or supplies their own `[ariaLabel]`. Document this idiom in the package README.
-- **Tests asserting on `document:keydown` listener attachment may be flaky.** The existing carousel keyboard tests likely use `dispatchEvent(new KeyboardEvent('keydown'))` on document. Same approach works for swiper — but JSDOM event ordering with multiple instances on a page is the kind of thing the muti-carousel bug interacts with. **Mitigation:** test one instance at a time per test case; keep the multi-instance bug fix to its own follow-up so it gets its own dedicated tests.
+- ~~**Tests asserting on `document:keydown` listener attachment may be flaky.**~~ Listeners no longer live on `document` — the multi-instance bug fix landed in the same branch. Tests dispatch keydowns on the viewport element directly and assert the `event.target === host` guard explicitly.
 - **The auto-computed `"N of M"` label depends on `actualSwipes()` settling.** During initial render, `swipes()` is empty, then becomes populated; the computed label briefly evaluates to `null` (no label) before settling. **Mitigation:** matches carousel's current behaviour (its `imageCount()` has the same shape). Browser-verify nothing reads "0 of 0" mid-render.
 
 ## 8. Open questions for review
 
-None blocking — the two design calls (keyboard scope, slide ARIA ownership) are settled. Document scoping is preserved as a deliberate parity decision; the tighter scope is queued as a separate PRD per §10.
+None — both original design calls (keyboard scope, slide ARIA ownership) settled, and the §10 listener-scope follow-up landed on the same branch.
 
 ## 9. Implementation checklist
 
-- [ ] `BsSwipeDirective`: `ariaRoledescription` input, `ariaLabel` input, `effectiveAriaLabel` computed, host bindings for `role`/`aria-roledescription`/`aria-label`/`aria-hidden`.
-- [ ] `BsSwipeContainerDirective`: `keyboardEvents` input, `ariaOrientation` + `ariaKeyshortcuts` computeds, `onKeyPress` method (with Home/End), six `document:keydown` host bindings, `[attr.aria-orientation]` + `[attr.aria-keyshortcuts]` host bindings.
-- [ ] `BsSwipeViewportDirective`: `ariaLive` / `ariaAtomic` / `ariaRelevant` / `ariaBusy` inputs, four `[attr.aria-*]` host bindings.
-- [ ] `bs-carousel` template: strip the migrated attributes (lines 67, 76, 82-84, 90); add `[keyboardEvents]` to the swiper container; add `[ariaLive]="slideAriaLive()"` and `[ariaBusy]="container.isAnimating()"` to the viewport.
-- [ ] `bs-carousel` component: delete `host:keydown.*` bindings (lines 25-28) and `onKeyPress` method (lines 123-158).
-- [ ] Specs: add ARIA + keyboard assertions to the three swiper specs; update carousel specs to assert the externally-visible attribute set rather than the source.
-- [ ] Browser-verify the carousel demo (touch + mouse + keyboard + SR readout, both orientations, both animation modes; Home / End jumps; mid-transition aria-busy not announced).
-- [ ] Update `aria-accessibility-audit.md` §13 row #1 ("`mintplayer-ng-swiper` keyboard story") to ✓ closed.
-- [ ] Update `project_aria_outstanding_followups.md` to mark item #4 done.
+- [x] `BsSwipeDirective`: `ariaRoledescription` input, `ariaLabel` input, `effectiveAriaLabel` computed, host bindings for `role`/`aria-roledescription`/`aria-label`/`aria-hidden`.
+- [x] `BsSwipeContainerDirective`: `keyboardEvents` input, `ariaKeyshortcuts` computed (read by viewport), public `onKeyPress` method (with Home/End).
+- [x] `BsSwipeViewportDirective`: `tabIndex` (default 0) / `ariaLive` / `ariaAtomic` / `ariaRelevant` / `ariaBusy` inputs, host bindings for `[attr.tabindex]` + four `[attr.aria-*]` + forwarded `[attr.aria-orientation]` + `[attr.aria-keyshortcuts]`, six `(keydown.X)` host listeners with `event.target === host` guard, `contentChild(BsSwipeContainerDirective)`.
+- [x] `bs-carousel` template: strip the migrated attributes (lines 67, 76, 82-84, 90); add `[keyboardEvents]` to the swiper container; add `[ariaLive]="slideAriaLive()"` and `[ariaBusy]="container.isAnimating()"` to the viewport.
+- [x] `bs-carousel` component: delete `host:keydown.*` bindings (lines 25-28) and `onKeyPress` method (lines 123-158).
+- [x] Specs: ARIA + keyboard assertions on the three swiper specs; carousel specs assert the externally-visible attribute set rather than the source.
+- [x] Browser-verify the carousel demo (touch + mouse + keyboard + SR readout, both orientations, both animation modes; Home / End jumps; tab stop on the viewport; arrow keys ignored when focus is outside the viewport).
+- [x] Update `aria-accessibility-audit.md` §13 row #1 ("`mintplayer-ng-swiper` keyboard story") to ✓ closed.
+- [x] Update `project_aria_outstanding_followups.md` to mark item #4 done.
 
 ## 10. Future follow-ups (out-of-scope for this PRD)
 
-- **Scope swiper keyboard listeners to host + focus-within.** Replace `document:keydown` with `host:keydown` on the swipe container, and add `tabindex="0"` to the viewport so the swiper is a single keyboard-focusable region. Closes the latent multi-instance bug. Separate PRD.
+- ~~**Scope swiper keyboard listeners to host + focus-within.**~~ ✓ shipped on this branch. Listeners moved off `document` onto `bsSwipeViewport`'s host with an `event.target === host` guard. The viewport gained `tabindex="0"` (default; `null` to opt out). `aria-orientation` + `aria-keyshortcuts` followed the listener — now host-attrs on the viewport (forwarded from the inner container) so SRs read them when focus arrives.
 - **`slide-changed` live announcer.** A dedicated `BsLiveAnnouncerService` consumer for slide transitions (rather than relying on `aria-live` on the viewport with all slide content inside it). Could land as part of swiper or stay on carousel.
 - **Slide content roles.** APG suggests slide *content* (images, text) doesn't need any extra ARIA, but a swiper used for tab-control content would want `role="tabpanel"`. If a third consumer surfaces, expose a `role` override input on `bsSwipe` (today: hardcoded `"group"`).

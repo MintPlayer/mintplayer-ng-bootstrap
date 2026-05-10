@@ -28,14 +28,6 @@ import { BS_SWIPE_SLIDE } from '../../tokens/bs-swipe-slide';
     // the layout model — the directive's slides assume an inline-block flow.
     '[style.display]': 'orientation() === "vertical" ? "flex" : "block"',
     '[style.flex-direction]': 'orientation() === "vertical" ? "column" : null',
-    '[attr.aria-orientation]': 'orientation()',
-    '[attr.aria-keyshortcuts]': 'ariaKeyshortcuts()',
-    '(document:keydown.ArrowLeft)': 'onKeyPress($event)',
-    '(document:keydown.ArrowRight)': 'onKeyPress($event)',
-    '(document:keydown.ArrowUp)': 'onKeyPress($event)',
-    '(document:keydown.ArrowDown)': 'onKeyPress($event)',
-    '(document:keydown.Home)': 'onKeyPress($event)',
-    '(document:keydown.End)': 'onKeyPress($event)',
   },
 })
 export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
@@ -56,10 +48,10 @@ export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
   orientation = input<'horizontal' | 'vertical'>('horizontal');
   /**
    * When true, the container handles ArrowLeft/Right (horizontal) or
-   * ArrowUp/Down (vertical) plus Home/End to move between slides. Listens
-   * on `document` to preserve parity with `bs-carousel`'s historical
-   * behaviour. A future PRD will tighten the scope to `host:keydown` +
-   * focus-within.
+   * ArrowUp/Down (vertical) plus Home/End to move between slides. The
+   * keydown listeners live on the wrapping `bsSwipeViewport` host (only
+   * fire when focus is on the viewport itself); this input still gates
+   * dispatch inside `onKeyPress`.
    */
   keyboardEvents = input(true);
   // Mirror swiper.js's .swiper-horizontal / .swiper-vertical: declare the axis
@@ -392,9 +384,11 @@ export class BsSwipeContainerDirective implements AfterViewInit, OnDestroy {
   }
 
   /**
-   * Document-scoped keydown handler. Maps the four arrow keys (orientation-aware)
-   * plus Home / End to slide navigation. Calls `preventDefault()` only for
-   * the keys this directive actually consumed, so cross-orientation arrows
+   * Public keydown dispatcher invoked by `bsSwipeViewport`'s host listener
+   * (the viewport is the focusable region; the container is non-focusable
+   * inner machinery). Maps the four arrow keys (orientation-aware) plus
+   * Home / End to slide navigation. Calls `preventDefault()` only for the
+   * keys this directive actually consumed, so cross-orientation arrows
    * (e.g. ArrowUp on a horizontal swiper) still scroll the page normally.
    *
    * Parameter typed as `Event` because Angular host listeners infer `Event`

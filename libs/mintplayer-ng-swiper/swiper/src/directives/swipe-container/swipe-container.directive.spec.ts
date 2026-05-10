@@ -4,6 +4,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { MockDirective } from 'ng-mocks';
 import { BsSwipeDirective } from '../swipe/swipe.directive';
+import { BsSwipeViewportDirective } from '../swipe-viewport/swipe-viewport.directive';
 import { BsSwipeContainerDirective } from './swipe-container.directive';
 
 @Component({
@@ -49,14 +50,16 @@ describe('BsSwipeContainerDirective', () => {
 
 @Component({
   selector: 'swipe-keyboard-host',
-  imports: [BsSwipeContainerDirective, BsSwipeDirective],
+  imports: [BsSwipeViewportDirective, BsSwipeContainerDirective, BsSwipeDirective],
   template: `
-    <div bsSwipeContainer #c="bsSwipeContainer"
-         [orientation]="orientation()"
-         [keyboardEvents]="keyboardEvents()">
-      @for (n of images; track n) {
-        <div bsSwipe>Slide {{ n }}</div>
-      }
+    <div bsSwipeViewport>
+      <div bsSwipeContainer #c="bsSwipeContainer"
+           [orientation]="orientation()"
+           [keyboardEvents]="keyboardEvents()">
+        @for (n of images; track n) {
+          <div bsSwipe>Slide {{ n }}</div>
+        }
+      </div>
     </div>
   `,
 })
@@ -66,15 +69,20 @@ class SwipeKeyboardHost {
   images = ['a', 'b', 'c', 'd'];
 }
 
-describe('BsSwipeContainerDirective — keyboard navigation + ARIA', () => {
+describe('BsSwipeContainerDirective — keyboard navigation', () => {
   let fixture: ComponentFixture<SwipeKeyboardHost>;
   let host: SwipeKeyboardHost;
   let containerDir: BsSwipeContainerDirective;
-  let containerEl: HTMLElement;
+  let viewportEl: HTMLElement;
 
+  /**
+   * Dispatches a `keydown` whose target is the viewport — the only target
+   * that the viewport's host listener forwards. Mirrors a real keyboard
+   * user with focus on the viewport.
+   */
   function dispatch(key: string): KeyboardEvent {
     const ev = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
-    document.dispatchEvent(ev);
+    viewportEl.dispatchEvent(ev);
     fixture.detectChanges();
     return ev;
   }
@@ -89,27 +97,7 @@ describe('BsSwipeContainerDirective — keyboard navigation + ARIA', () => {
 
     const debug = fixture.debugElement.query(By.directive(BsSwipeContainerDirective));
     containerDir = debug.injector.get(BsSwipeContainerDirective);
-    containerEl = debug.nativeElement as HTMLElement;
-  });
-
-  it('aria-orientation host attribute mirrors the [orientation] input', () => {
-    expect(containerEl.getAttribute('aria-orientation')).toBe('horizontal');
-    host.orientation.set('vertical');
-    fixture.detectChanges();
-    expect(containerEl.getAttribute('aria-orientation')).toBe('vertical');
-  });
-
-  it('aria-keyshortcuts advertises the in-axis arrow keys + Home/End', () => {
-    expect(containerEl.getAttribute('aria-keyshortcuts')).toBe('ArrowLeft ArrowRight Home End');
-    host.orientation.set('vertical');
-    fixture.detectChanges();
-    expect(containerEl.getAttribute('aria-keyshortcuts')).toBe('ArrowUp ArrowDown Home End');
-  });
-
-  it('aria-keyshortcuts is removed when keyboardEvents is disabled', () => {
-    host.keyboardEvents.set(false);
-    fixture.detectChanges();
-    expect(containerEl.getAttribute('aria-keyshortcuts')).toBeNull();
+    viewportEl = fixture.debugElement.query(By.directive(BsSwipeViewportDirective)).nativeElement as HTMLElement;
   });
 
   it('ArrowRight calls next() in horizontal orientation; ArrowLeft calls previous()', () => {
@@ -188,5 +176,16 @@ describe('BsSwipeContainerDirective — keyboard navigation + ARIA', () => {
     expect(next).not.toHaveBeenCalled();
     expect(previous).not.toHaveBeenCalled();
     expect(goto).not.toHaveBeenCalled();
+  });
+
+  it('keys do not fire when a different element on the page is the keydown target', () => {
+    // Same widget, but the keydown originates outside the viewport — the
+    // viewport's target guard must drop the event so multiple swipers on
+    // a page do not all respond to one key press.
+    const next = vi.spyOn(containerDir, 'next');
+    const ev = new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true });
+    document.body.dispatchEvent(ev);
+    fixture.detectChanges();
+    expect(next).not.toHaveBeenCalled();
   });
 });

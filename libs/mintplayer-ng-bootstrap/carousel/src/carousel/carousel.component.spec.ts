@@ -98,15 +98,20 @@ describe('BsCarouselComponent', () => {
       }
     });
 
-    it('the swipe container exposes aria-orientation matching the carousel', () => {
-      const container = fixture.debugElement.query(By.directive(BsSwipeContainerDirective)).nativeElement as HTMLElement;
+    it('the swipe viewport exposes aria-orientation matching the carousel', () => {
+      const viewport = fixture.debugElement.query(By.directive(BsSwipeViewportDirective)).nativeElement as HTMLElement;
       // CarouselTestComponent uses orientation="vertical"
-      expect(container.getAttribute('aria-orientation')).toBe('vertical');
+      expect(viewport.getAttribute('aria-orientation')).toBe('vertical');
     });
 
-    it('the swipe container advertises aria-keyshortcuts for the active orientation', () => {
-      const container = fixture.debugElement.query(By.directive(BsSwipeContainerDirective)).nativeElement as HTMLElement;
-      expect(container.getAttribute('aria-keyshortcuts')).toBe('ArrowUp ArrowDown Home End');
+    it('the swipe viewport advertises aria-keyshortcuts for the active orientation', () => {
+      const viewport = fixture.debugElement.query(By.directive(BsSwipeViewportDirective)).nativeElement as HTMLElement;
+      expect(viewport.getAttribute('aria-keyshortcuts')).toBe('ArrowUp ArrowDown Home End');
+    });
+
+    it('the swipe viewport is keyboard-focusable (tabindex="0") so users can tab to the slides', () => {
+      const viewport = fixture.debugElement.query(By.directive(BsSwipeViewportDirective)).nativeElement as HTMLElement;
+      expect(viewport.getAttribute('tabindex')).toBe('0');
     });
   });
 });
