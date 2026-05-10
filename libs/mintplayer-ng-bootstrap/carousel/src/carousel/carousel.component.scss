@@ -72,6 +72,74 @@
         background-color: var(--bs-carousel-indicator-active-bg, #fff);
     }
 
+    // The play/pause control sits above the indicators in horizontal mode.
+    // It MUST be absolutely positioned to clear Bootstrap's `.carousel-control-prev`
+    // hit zone (15% width, full height, anchored top-left) — otherwise the
+    // button is overlapped and unclickable. Z-index 3 puts it above slides (1)
+    // and indicators (2).
+    .carousel-play-pause {
+        position: absolute;
+        bottom: 3rem;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 3;
+        margin: 0;
+    }
+
+    .carousel-play-pause-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.75rem;
+        height: 1.75rem;
+        padding: 0;
+        border: none;
+        border-radius: 50%;
+        background-color: rgba(0, 0, 0, 0.5);
+        color: #fff;
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+
+        &:hover, &:focus-visible {
+            background-color: rgba(0, 0, 0, 0.75);
+        }
+
+        &:focus-visible {
+            outline: 2px solid #fff;
+            outline-offset: 2px;
+        }
+    }
+
+    .carousel-play-pause-icon {
+        display: inline-block;
+        width: 0.75rem;
+        height: 0.75rem;
+        background-repeat: no-repeat;
+        background-position: 50%;
+        background-size: 100% 100%;
+    }
+
+    .carousel-play-pause-paused .carousel-play-pause-icon {
+        // Right-pointing triangle (paused state → press to play)
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23fff'%3E%3Cpath d='M3 1.5v13a.5.5 0 0 0 .77.42l11-6.5a.5.5 0 0 0 0-.84l-11-6.5A.5.5 0 0 0 3 1.5z'/%3E%3C/svg%3E");
+    }
+
+    .carousel-play-pause-playing .carousel-play-pause-icon {
+        // Two vertical bars (playing state → press to pause)
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23fff'%3E%3Cpath d='M5 2h2v12H5zM9 2h2v12H9z'/%3E%3C/svg%3E");
+    }
+
+    // Vertical mode: indicators run down the LEFT side; prev / next sit at top
+    // and bottom across the full width. Park the play / pause control at the
+    // top-right corner so it clears all three zones.
+    .carousel.carousel-vertical .carousel-play-pause {
+        bottom: auto;
+        top: 0.5rem;
+        left: auto;
+        right: 0.5rem;
+        transform: none;
+    }
+
     // Fade mode renders all slides inside bsSwipeContainer (the directive
     // suppresses its margin offsets in this mode); slides overlap via
     // absolute positioning and only the active one is opaque. Bootstrap's

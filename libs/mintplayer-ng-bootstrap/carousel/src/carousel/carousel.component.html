@@ -113,9 +113,12 @@
      carousels to expose a pause control; this is the carousel's "make it
      correct by default" path so consumers don't have to write boilerplate. -->
 <ng-template #defaultPlayPauseTemplate let-paused="paused" let-toggle="toggle">
-    <button type="button" class="btn btn-sm btn-outline-secondary"
+    <button type="button"
+            class="carousel-play-pause-btn"
+            [class.carousel-play-pause-paused]="paused"
+            [class.carousel-play-pause-playing]="!paused"
             (click)="toggle()" [attr.aria-pressed]="paused"
             [attr.aria-label]="paused ? 'Resume auto-advance' : 'Pause auto-advance'">
-        {{ paused ? 'Play' : 'Pause' }}
+        <span class="carousel-play-pause-icon" aria-hidden="true"></span>
     </button>
 </ng-template>

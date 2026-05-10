@@ -242,7 +242,11 @@ describe('BsCarouselComponent — default Play/Pause fallback', () => {
     expect(host).not.toBeNull();
     const button = host!.querySelector('button');
     expect(button).not.toBeNull();
-    expect(button!.textContent?.trim()).toBe('Pause');
+    // The default control is icon-only (triangle when paused, bars when
+    // playing) — assert the state class + icon span rather than text.
+    expect(button!.classList.contains('carousel-play-pause-btn')).toBe(true);
+    expect(button!.classList.contains('carousel-play-pause-playing')).toBe(true);
+    expect(button!.querySelector('.carousel-play-pause-icon')).not.toBeNull();
     expect(button!.getAttribute('aria-pressed')).toBe('false');
   });
 });
