@@ -127,3 +127,11 @@ describe('mint-dock-manager — live announcer', () => {
     expect(live!.getAttribute('aria-live')).toBe('polite');
   });
 });
+
+// Intersection handles' creation in renderIntersectionHandles depends on
+// real layout (getBoundingClientRect on dividers + a setTimeout(5) gate).
+// jsdom returns 0×0 rects for every element, which collapses every divider
+// to coordinate (0,0) and the algorithm produces zero intersections — so a
+// unit-level "render then click the handle" test isn't viable here. The
+// keyboard delegation path is covered at the splitter side via
+// MpSplitter.resizeDividerBy() (see mp-splitter.aria.spec.ts).

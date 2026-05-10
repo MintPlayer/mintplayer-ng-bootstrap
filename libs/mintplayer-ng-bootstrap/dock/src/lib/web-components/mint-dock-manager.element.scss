@@ -259,7 +259,11 @@
   background: rgba(var(--bs-primary-rgb), 0.35);
   border-color: var(--bs-primary);
   opacity: 1;
-  outline: none;
+}
+
+.dock-intersection-handle:focus-visible {
+  outline: 2px solid var(--bs-primary);
+  outline-offset: 1px;
 }
 
 .dock-snap-marker {

@@ -324,4 +324,34 @@ describe('mp-splitter keyboard resize', () => {
     d.dispatchEvent(tab);
     expect(tab.defaultPrevented).toBe(false);
   });
+
+  it('resizeDividerBy() is the public API the dock manager uses to drive resize from intersection-handle keys', async () => {
+    const el = makeSplitter('horizontal', 2);
+    document.body.appendChild(el);
+    await flush(el);
+    await pinEqualSizes(el, 2);
+
+    const before = getSizes(el)[0];
+    el.resizeDividerBy(0, 'ArrowRight');
+    await flush(el);
+    expect(getSizes(el)[0] - before).toBeCloseTo(80, 0);
+
+    // fine=true halves the step to 1% (8px on an 800px container).
+    const beforeFine = getSizes(el)[0];
+    el.resizeDividerBy(0, 'ArrowLeft', true);
+    await flush(el);
+    expect(beforeFine - getSizes(el)[0]).toBeCloseTo(8, 0);
+  });
+
+  it('resizeDividerBy() with an out-of-range index is a no-op', async () => {
+    const el = makeSplitter('horizontal', 2);
+    document.body.appendChild(el);
+    await flush(el);
+    await pinEqualSizes(el, 2);
+
+    const before = getSizes(el);
+    el.resizeDividerBy(99, 'ArrowRight');
+    await flush(el);
+    expect(getSizes(el)).toEqual(before);
+  });
 });

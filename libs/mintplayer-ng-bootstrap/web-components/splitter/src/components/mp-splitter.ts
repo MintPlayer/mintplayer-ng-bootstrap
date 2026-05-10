@@ -181,6 +181,22 @@ export class MpSplitter extends LitElement {
     return this.stateManager.getState().panelSizes;
   }
 
+  /**
+   * Drive a keyboard-style resize on a divider programmatically. Used by the
+   * dock manager's intersection-handle keymap so a single keystroke can
+   * resize both the horizontal and vertical dividers a 2D handle sits on,
+   * without re-implementing the percent-step + clamp math here.
+   *
+   * `key` is one of the keys handled by the divider keymap
+   * (Arrow{Left,Right,Up,Down}, Home, End); `fine` halves the step (matches
+   * Shift modifier on the keyboard path).
+   */
+  resizeDividerBy(dividerIndex: number, key: ResizeKey, fine = false): void {
+    const divider = this.dividers[dividerIndex];
+    if (!divider) return;
+    this.handleResizeKey(key, fine, dividerIndex, divider);
+  }
+
   setPanelSizes(sizes: number[]): void {
     this.applyPanelSizes(sizes);
     this.stateManager.setPanelSizes(sizes);

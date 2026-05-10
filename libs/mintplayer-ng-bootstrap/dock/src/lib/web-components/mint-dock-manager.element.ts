@@ -781,6 +781,9 @@ export class MintDockManagerElement extends LitElement {
       handle.classList.add('dock-intersection-handle', 'glyph');
       handle.setAttribute('role', 'separator');
       handle.setAttribute('aria-label', 'Resize split intersection');
+      // tabindex=0 — make the handle keyboard-reachable. Arrow keys then
+      // resize the underlying h/v dividers (handled in onIntersectionKeyDown).
+      handle.setAttribute('tabindex', '0');
       const firstPair = group.pairs[0];
       const key = `${firstPair.h.pathStr}:${firstPair.h.index}|${firstPair.v.pathStr}:${firstPair.v.index}`;
       handle.dataset['key'] = key;
@@ -795,8 +798,54 @@ export class MintDockManagerElement extends LitElement {
       const seedV = { path: this.parsePath(firstPair.v.pathStr), index: firstPair.v.index, container: this.findSplitterByPath(this.parsePath(firstPair.v.pathStr)?.segments ?? []) ?? this.rootEl, rect: new DOMRect() };
       handle.addEventListener('pointerdown', (ev) => this.beginCornerResize(ev, seedH, seedV, handle));
       handle.addEventListener('dblclick', (ev) => this.onIntersectionDoubleClick(ev, handle));
+      handle.addEventListener('keydown', (ev) => this.onIntersectionKeyDown(ev, handle));
       layer.appendChild(handle);
     });
+  }
+
+  /**
+   * Keyboard resize on a focused intersection handle. ArrowLeft/Right resize
+   * the vertical divider the handle sits on; ArrowUp/Down resize the
+   * horizontal divider. Home/End shrink/grow the leading panel of whichever
+   * axis is implied by the key. Shift = fine 1% step.
+   *
+   * Internally delegates to mp-splitter.resizeDividerBy() so the percent-step
+   * + clamp math lives in one place. If a 2D handle straddles multiple split
+   * pairs (sibling splitters whose dividers happen to overlap), the first
+   * pair drives — same precedence as the pointer drag path.
+   */
+  private onIntersectionKeyDown(event: KeyboardEvent, handle: HTMLElement): void {
+    const isVerticalAxis =
+      event.key === 'ArrowLeft' || event.key === 'ArrowRight';
+    const isHorizontalAxis =
+      event.key === 'ArrowUp' || event.key === 'ArrowDown';
+    const isHomeEnd = event.key === 'Home' || event.key === 'End';
+    if (!isVerticalAxis && !isHorizontalAxis && !isHomeEnd) return;
+
+    const pairsJson = handle.dataset['pairs'];
+    if (!pairsJson) return;
+    let pairs: Array<{ h: { pathStr: string; index: number }; v: { pathStr: string; index: number } }>;
+    try {
+      pairs = JSON.parse(pairsJson);
+    } catch {
+      return;
+    }
+    if (pairs.length === 0) return;
+
+    event.preventDefault();
+    const fine = event.shiftKey;
+
+    // Which divider does this key drive? Arrow{Left,Right} → vertical
+    // (h-flow splitter, v-bar divider); Arrow{Up,Down} → horizontal. For
+    // Home/End, default to the vertical-axis divider (matches APG's "drive
+    // the splitter to its limit" convention on a horizontal layout).
+    const drivesVerticalDivider = isVerticalAxis || isHomeEnd;
+    const target = drivesVerticalDivider ? pairs[0].v : pairs[0].h;
+    const path = this.parsePath(target.pathStr);
+    const splitter = this.findSplitterByPath(path?.segments ?? []) as unknown as
+      | { resizeDividerBy?: (i: number, k: string, fine?: boolean) => void }
+      | null;
+    splitter?.resizeDividerBy?.(target.index, event.key, fine);
   }
 
   private beginCornerResize(
