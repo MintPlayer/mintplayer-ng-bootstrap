@@ -309,10 +309,169 @@ These run on every PR (cheap, fast feedback), are deterministic, and fail loudly
 6. **Sibling libs done too** — `qr-code` canvas labelled, swiper directives have a documented keyboard story (or a follow-up PRD if scope balloons).
 7. **No silent regressions** — Phase C tests block merges that introduce a `critical`/`serious` axe violation or remove an asserted ARIA attribute.
 
-## 10. Open questions
+## 10. Open questions — resolutions
 
-- **Adopt `@angular/cdk/a11y`?** It already provides `FocusTrap`, `FocusKeyManager`, `LiveAnnouncer`, `InteractivityChecker`. Memory note: this workspace is Angular-only (`project_workspace_angular_only`), so the framework-agnostic argument doesn't apply. CDK is the obvious choice unless it conflicts with the Lit-WC migration goal — in which case build the same primitives natively and keep the CDK option for the Angular-shell layer only.
-- **Carousel auto-advance default.** APG recommends auto-advance be **off** by default and require an explicit "Play" button. We currently auto-advance. Breaking change — call out explicitly when the carousel fix lands (`feedback_breaking_changes_ok`).
-- **`role="grid"` on `table`/`datatable`.** Either commit to a true grid (cell-level keyboard nav, `aria-rowindex`, `aria-colindex`) or drop the role and lean on native table semantics + `aria-sort` + `aria-rowcount`. Decision needed before fixing virtual-datatable.
-- **Color-picker wheel keyboard model.** A 2-D control has no native keyboard mapping. Options: (a) two separate sliders for hue + saturation, (b) arrow keys = ± hue / shift+arrow = ± saturation, (c) input field as the keyboard fallback. Decide before implementing.
-- **`scheduler` and `dock` keyboard alternative to drag.** APG's drag-and-drop guidance is "must have a keyboard alternative". For a calendar scheduler that means cut/paste-style keyboard mode. Significant scope — may warrant its own PRD if not trivially reducible to roving focus + Enter-to-grab.
+Originally these were open. The branch `feat/aria-accessibility` resolved them as follows:
+
+- **Adopt `@angular/cdk/a11y`?** **Yes, partially.** `BsOverlayFocusDirective` wraps CDK's `ConfigurableFocusTrap`. `BsLiveAnnouncerService` wraps CDK's `LiveAnnouncer` (adds dedup of consecutive identical messages). `BsRovingFocus` is hand-rolled (CDK's `FocusKeyManager` ties focus management to `@Input` query lists in a way that doesn't compose with our content-projection model). `BsIdService` is hand-rolled (CDK's `_IdGenerator` is `_`-prefixed/unstable; our service is one file). All four primitives live in `@mintplayer/ng-bootstrap/a11y`.
+- **Carousel auto-advance default.** **Not changed.** Carousel still auto-advances; the play/pause button + APG-recommended off-by-default is a tracked follow-up (see §11). Breaking change deferred to a later batch.
+- **`role="grid"` on `table`/`datatable`.** **Dropped.** `bs-table` no longer adds `role="grid"` (it conflicted with native `<table>` semantics). `bs-datatable` adds `aria-sort` to sortable headers + tabindex/Enter/Space keyboard activation. Virtualised `aria-rowcount`/`aria-rowindex` for virtual-datatable is a tracked follow-up (see §11) — needs CDK virtual scroll integration.
+- **Color-picker wheel keyboard model.** **Both (a) and (b).** Wheel itself is keyboard-operable (`role="application"`, ArrowL/R = ±hue, ArrowU/D = ±saturation, Shift = fine, Page = ±30°, Home/End = saturation 100%/0%). Plus a user-toggleable checkbox reveals dedicated 1-D `bs-hue-strip` + `bs-saturation-strip` for users who find 2-D nav hard to spatialise (blind users in particular). The bs-slider primitive grew `[valueScale]` (default 100) and `[valueUnit]` (default "%") inputs so the same slider reports `aria-valuenow` and `aria-valuetext` in the natural unit ("171°" for hue, "47%" for brightness). Browser detection of SR usage is impossible by design (privacy + adversarial-design protections), so the toggle is user-controlled.
+- **`scheduler` and `dock` and `tile-manager` keyboard alternative to drag.** **Deferred to its own PRD.** All three share the same "drag → keyboard cut/paste mode" design problem. Scope is large (focus management, live announcements, mode state machine). Tracked as a single open item in §11.
+
+## 11. Status as of 2026-05-10
+
+Branch: `feat/aria-accessibility`. ~45 commits since branch start (75315daf). The implementation closed every audit item except the drag-keyboard family.
+
+### Closed
+
+**§5.1 Critical (23/24):**
+- ✓ `signature-pad` — canvas role + ariaLabel
+- ✓ `searchbox`, `multiselect`, `select2`, `typeahead` — all four migrated to bsCombobox + popupRole="listbox" + BsRovingFocus (activedescendant mode)
+- ✓ `calendar` — aria-selected/current/disabled, scope, labelled nav buttons (arrow-key nav deferred — see follow-ups)
+- ✓ `datepicker` — popup labelled, inherits calendar fixes
+- ✓ `timepicker` — aria-labels on inputs (native `<input type="number">` provides spinbutton role natively), listbox preset dropdown
+- ✓ `color-picker` — wheel keyboard nav, slider APG-conformant, hue+sat strips behind user toggle
+- ✓ `modal`, `offcanvas` — `[bsOverlayFocus]` (focus trap + return-focus), aria-labelledby/describedby via context service
+- ✓ `popover` — switched from role=tooltip to role=dialog, aria-labelledby/describedby, Esc dismiss
+- ✓ `tooltip` — aria-describedby on trigger, Esc dismiss
+- ✓ `dropdown-menu`, `context-menu` — popupRole-driven roles, items focusable in menu mode with arrow-key nav and Enter/Space activation
+- ✓ `navbar` — aria-controls now points at a real id (collapse wrapper has the id, with `display: contents` to preserve the original flex layout)
+- ✓ `navbar-toggler`, `playlist-toggler` — actual `<button>` elements with aria-expanded/controls
+- ✓ `table`, `virtual-datatable` — role="grid" dropped, aria-sort on sortable headers, keyboard activation
+- ✓ `progress-bar` — invalid `aria-valuenow="infinite"` removed, ariaLabel input added
+- ✓ `resizable` — role=separator on glyphs, aria-orientation, descriptive aria-labels, arrow-key resize
+- ✓ `rating` — arrow-key navigation + roving tabindex (kept inline rather than reusing BsRovingFocus because APG radiogroup auto-selects on arrow)
+- ✓ `qr-code` (sibling lib) — canvas role + derived aria-label
+- ⏳ **`scheduler`** — deferred to its own PRD (drag-keyboard family)
+
+**§5.2 Major (all):**
+- ✓ `range`, `multi-range`, `placeholder`, `marquee` — aria-labels and prefers-reduced-motion handling
+- ✓ `file-upload` — region role, live announcements via BsLiveAnnouncer, per-file progress aria-label
+- ✓ `toast` — explicit role=alert/status, configurable politeness
+- ✓ `has-overlay` — confirmed it's a CSS-injection marker (not a missing-feature placeholder); JSDoc added
+- ✓ `breadcrumb`, `pagination` — listitem roles, aria-current, nav landmarks, ellipsis as `<span>`
+- ✓ `tab-control` — SSR-fallback roving tabindex (the JS `<mp-tab-control>` Lit element was already APG-conformant)
+- ✓ `treeview` — aria-level/setsize/posinset on items
+- ✓ `scrollspy` — `<nav>` landmark, aria-current="location", `<button>` items
+- ✓ `list-group-item` — role="listitem"
+- ✓ `priority-nav` — `<nav>` landmark, ariaLabel input
+- ✓ `carousel` — region role + aria-roledescription, slide labels, conditional aria-live
+- ✓ `button-group`, `select` — placeholder demo aria-labels removed, replaced with input
+- ✓ `datatable` — aria-sort + keyboard activation
+- ✓ `code-snippet` — "Copied to clipboard" announced via BsLiveAnnouncer (first consumer)
+- ⏳ **`dock`, `tile-manager`** — same drag-keyboard family as scheduler; deferred
+
+### Phase A primitives (all shipped, all consumed)
+
+| Primitive | Location | Consumers |
+|---|---|---|
+| `BsIdService` | `a11y/src/service/id.service.ts` | every component that auto-generates ids (modal, offcanvas, popover, dropdown menus, navbar collapse, color-picker toggle, …) |
+| `BsRovingFocusDirective` + `BsRovingFocusItemDirective` | `a11y/src/roving-focus/` | typeahead, select2 (activedescendant mode); rating uses an inline equivalent |
+| `BsOverlayFocusDirective` | `a11y/src/overlay-focus/` | modal, offcanvas |
+| `BsLiveAnnouncerService` | `a11y/src/live-announcer/` | code-snippet, file-upload |
+| `BsComboboxDirective` | `dropdown/src/combobox/` (originally in a11y, moved to break a circular dep) | typeahead, select2 |
+
+### §6 cross-cutting work
+
+- §6.1 overlay focus: `BsOverlayFocusDirective` lands; modal + offcanvas adopt it. Background `inert` is delegated to each consumer (modal hides app-root differently from popover); the directive only owns the focus trap + return-focus.
+- §6.2 dropdown ARIA mode: `popupRole: 'menu' | 'listbox'` input on `[bsDropdown]`. Renamed from `role` because `role` is a standard HTML attribute and consumer template `role="combobox"` on a `[bsDropdown]` wrapper was getting eaten as a directive-input bind. Fix in commit 86939054.
+- §6.3 keyboard nav: `BsRovingFocus` covers the listbox case; `BsDropdownMenuComponent` rolls its own (simpler) menu-mode keyboard handler so it doesn't need the input-forwarding gymnastics. Rating uses an inline implementation because APG radiogroup auto-selects on arrow (different semantics from BsRovingFocus).
+- §6.4 live regions: `BsLiveAnnouncerService` (CDK wrapper with dedup). Two consumers shipped (code-snippet "Copied", file-upload "Added N files"); typeahead/searchbox "N results" + tile-manager "moved" + placeholder "loading" are tracked follow-ups.
+- §6.5 reduced-motion: marquee added, others (carousel auto-advance, parallax, dock/tile-manager reflow) tracked as follow-ups.
+- §6.6 ID generation: `BsIdService` shipped.
+- §6.7 placeholder aria-labels: removed (select, button-group).
+
+## 12. Architectural patterns / gotchas (lessons from the implementation)
+
+These are conventions the rest of the branch follows; future a11y work should match.
+
+### 12.1 Generated ids: read in `afterNextRender`, expose via signal
+
+When two co-located directives both want to set `[attr.id]` (e.g. `BsDropdownItemComponent` and `BsRovingFocusItemDirective`), they race. The robust pattern:
+
+- One directive (the "primary") sets `nativeElement.id` imperatively in `afterNextRender`. No `[attr.id]` host binding.
+- Other directives on the same host READ `nativeElement.id` (also in `afterNextRender`, so it's read AFTER the primary set). They store the value in a **signal**, not a getter, so reactive consumers (like `BsRovingFocusDirective.activeDescendantId` computed) re-run when the id is resolved post-mount.
+
+```ts
+private readonly _itemId = signal<string>('');
+get itemId(): string { return this._itemId(); }
+
+constructor() {
+  afterNextRender(() => {
+    if (!this.elementRef.nativeElement.id) {
+      this.elementRef.nativeElement.id = this.ids.next('bs-rovingitem');
+    }
+    this._itemId.set(this.elementRef.nativeElement.id);
+  });
+}
+```
+
+A plain `get itemId() { return this.elementRef.nativeElement.id; }` getter would be silently cached on first computed read (when id was still '') and never re-read — leading to `aria-activedescendant=""` on combobox inputs even after the items got real ids. Lesson learned the hard way during browser-testing of typeahead.
+
+### 12.2 Avoid name-clashes with HTML attributes
+
+Don't name a directive input the same as a standard HTML attribute the consumer might want to set on the host element. `role` collided (PR 86939054 → renamed to `popupRole`); `autocomplete` collided (B-3b → aliased to `bsComboboxAutocomplete`). The Angular template compiler binds matching static attributes to inputs, hijacking the consumer's intent.
+
+### 12.3 Combobox + dropdown composition
+
+Combobox patterns (typeahead, select2) compose:
+1. `[bsDropdown] popupRole="listbox" [(isOpen)]` on the wrapper — drives roles, ids, aria-haspopup
+2. `<input bsCombobox>` — emits role=combobox + aria-* from injected parent dropdown
+3. `<bs-dropdown-menu *bsDropdownMenu bsRovingFocus mode="activedescendant">` — listbox keyboard model
+4. `<bs-dropdown-item bsRovingFocusItem>` per option
+
+bsCombobox auto-detects the parent's `rovingFocus` content child and forwards arrow keys to it. Falls back to emitting `(navigate)` events if not present.
+
+### 12.4 Dropdown menu mode vs listbox mode
+
+`bs-dropdown-item` participates in keyboard navigation differently per mode:
+- **Menu mode (default):** items are tab targets (roving tabindex), arrow keys move via the menu's own keyboard handler (`BsDropdownMenuComponent.onKeydown`), Enter/Space dispatches click on the host.
+- **Listbox mode:** items are NOT tab-reachable (tabindex=null from bs-dropdown-item; `bsRovingFocusItem` sets -1). Activedescendant is managed externally on a sibling combobox input.
+
+The two paths don't fight because in listbox mode bs-dropdown-item's tabindex computed returns null, leaving the field clear for `bsRovingFocusItem`.
+
+### 12.5 Template inputs are typed `Event`, not `KeyboardEvent`
+
+`(keydown.enter)="handler($event)"` types `$event` as `Event`, NOT `KeyboardEvent`. Functions called from these handlers need a widened parameter type:
+
+```ts
+columnHeaderClicked(column: BsDatatableColumnDirective, event: MouseEvent | KeyboardEvent) { … }
+onActivate(event: Event) { … }
+```
+
+If the handler genuinely needs `KeyboardEvent` shape, use `$any($event)` in the template — but most a11y handlers just read `event.shiftKey` (which exists on both Mouse and Keyboard events) or call `preventDefault()` (Event base class).
+
+### 12.6 ngTemplateOutlet injector forwarding for context services
+
+Modal/offcanvas/popover use a **context service** (e.g. `BsModalContextService`, component-scoped) to let inner directives (`bsModalHeader`, `bsModalBody`) publish their generated ids to the dialog renderer. Because these directives live inside the user's `*bsModal` template (a separate injector chain), forward the host component's injector via `<ng-container *ngTemplateOutlet="template; injector: injector">` so the inner directives can `inject(BsXxxContextService)`.
+
+### 12.7 Vitest workspace modernization
+
+`vitest.workspace.ts` (`defineWorkspace`) was deprecated in Vitest 4. Migrated to a root `vitest.config.ts` with a `projects: ['libs/*/vitest.config.ts', 'apps/*/vitest.config.ts']` field (commit 900331fa). `npm test` (nx run-many) is the canonical workspace runner; `npx vitest run "<pattern>"` from root now works for fast dev iteration. `npm run test:watch` simplified from `vitest --workspace=…` to bare `vitest`.
+
+## 13. Follow-ups — items NOT in the original audit
+
+These were discovered during implementation. None blocks shipping the branch as-is; each is its own future PR.
+
+### 13.1 Critical follow-ups
+
+- **Calendar arrow-key navigation.** Phase B-25 only landed roles + aria-selected/current. APG date-picker dialog requires arrow keys (Left/Right=day, Up/Down=week, PageUp/Down=month, Home/End=week edges). Adds a separate `focusedDate` signal + viewChildren over day cells. Medium scope.
+- **Drag-keyboard family** (`scheduler`, `dock`, `tile-manager`, `mintplayer-ng-swiper`). Per §10 resolution, these need their own PRD. The shape is APG-style cut/paste keyboard mode: focus a tile/event/lane, press Space/Enter to "grab", arrow keys to "move target", Space/Enter to "drop". Live announcer reads each step. Significant design + implementation.
+
+### 13.2 Major follow-ups
+
+- **Carousel play/pause button + auto-advance off by default.** Per APG recommendation. Was deliberately not changed in B-33 to avoid a breaking change in the same commit as the role wiring. (`feedback_breaking_changes_ok` says we can do BC, but cleaner to land in its own commit with a migration note.)
+- **Virtual-datatable aria-rowcount / aria-rowindex.** When SR users navigate a virtualised list, they need to know "row 47 of 10000" — viewport-only rendered rows can't convey that without explicit aria-rowcount on the grid + aria-rowindex on each visible row. Needs CDK virtual scroll integration.
+- **prefers-reduced-motion** on remaining components: carousel auto-advance, parallax scroll effect, dock panel transitions, tile-manager FLIP animations, accordion open animation. (Marquee already shipped.)
+- **More live-announcer consumers** (per §6.4): typeahead/searchbox "N results found", tile-manager "Tile moved to row R, column C", placeholder "Loading complete".
+
+### 13.3 Polish issues found in browser testing
+
+- **Dev server caching.** Angular's vite-based dev server (`nx serve`) sometimes serves stale chunks for lib changes. Forcing a rebuild requires a server restart or `.angular/cache` deletion. `npm test` (nx) is unaffected — it always builds from current source.
+
+## 14. Resolved post-compaction (2026-05-10)
+
+- **Datatable template type error.** Widened `DatatableSortBase.columnHeaderClicked(column, event: Event)` and read `shiftKey` via `(event as MouseEvent | KeyboardEvent).shiftKey`. Dev server builds clean.
+- **Typeahead arrow-key navigation — verified end-to-end via Playwright.** Type "a" → 4 suggestions render; `aria-activedescendant` reports the first item id immediately on populate (the previously-noted "initial empty `aria-activedescendant`" polish issue is no longer reproducible — likely fixed as a side-effect of the signal-backed `_itemId` in `BsRovingFocusItemDirective`). ArrowDown/ArrowUp cycle correctly (item-4 → item-5 → item-6 → item-5). Enter activates the focused suggestion (alert with selected payload fires).
+- **TAB-interception alternative considered, rejected.** For the combobox pattern (typeahead/select2), TAB exiting the input is the WAI-ARIA APG behavior — focus stays on the input, `aria-activedescendant` tracks the active option, arrow keys navigate. We confirmed this works without intercepting TAB. CDK FocusTrap-style TAB rotation would only apply to dialog-like containers (modal, offcanvas) which already use `ConfigurableFocusTrap`. No menu/combobox change needed.

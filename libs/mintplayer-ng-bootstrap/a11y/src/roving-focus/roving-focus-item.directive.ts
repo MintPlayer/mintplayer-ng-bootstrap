@@ -1,4 +1,4 @@
-import { afterNextRender, computed, Directive, ElementRef, forwardRef, inject, input } from '@angular/core';
+import { afterNextRender, computed, Directive, ElementRef, forwardRef, inject, input, signal } from '@angular/core';
 import { BsIdService } from '../service/id.service';
 import { BsRovingFocusDirective } from './roving-focus.directive';
 
@@ -18,9 +18,20 @@ export class BsRovingFocusItemDirective {
 
   readonly disabled = input(false);
 
-  /** The host element's id. Honoured if set externally (e.g. by a sibling directive's [attr.id] host binding); otherwise generated lazily after first render so combobox-style aria-activedescendant has a stable target. */
+  /**
+   * The host element's id. Honoured if set externally (e.g. by a sibling
+   * component's [attr.id] host binding); otherwise generated in afterNextRender
+   * so combobox-style aria-activedescendant has a stable target.
+   *
+   * Backed by a signal so parent computeds (like BsRovingFocusDirective's
+   * activeDescendantId) re-run when the id is resolved post-mount. A plain
+   * `nativeElement.id` getter would be silently cached during the first
+   * computation and never re-read — leading to aria-activedescendant="" on
+   * combobox inputs even after the items got real ids.
+   */
+  private readonly _itemId = signal<string>('');
   get itemId(): string {
-    return this.elementRef.nativeElement.id;
+    return this._itemId();
   }
 
   readonly index = computed(() => this.parent.items().indexOf(this));
@@ -34,11 +45,13 @@ export class BsRovingFocusItemDirective {
   constructor() {
     // After the first render, all sibling host bindings on this element have applied.
     // If no other directive (e.g. BsDropdownItemComponent) supplied an id, generate one
-    // so the parent's activeDescendantId() has a stable target.
+    // so the parent's activeDescendantId() has a stable target. Then publish the
+    // resolved id to the signal so reactive consumers see it.
     afterNextRender(() => {
       if (!this.elementRef.nativeElement.id) {
         this.elementRef.nativeElement.id = this.ids.next('bs-rovingitem');
       }
+      this._itemId.set(this.elementRef.nativeElement.id);
     });
   }
 

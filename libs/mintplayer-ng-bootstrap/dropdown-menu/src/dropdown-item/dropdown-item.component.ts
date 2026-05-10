@@ -70,7 +70,7 @@ export class BsDropdownItemComponent {
     this.menu?.setFocusedItem(this);
   }
 
-  onActivate(event: KeyboardEvent) {
+  onActivate(event: Event) {
     if (this.disabled()) return;
     event.preventDefault();
     this.elementRef.nativeElement.click();

@@ -28,14 +28,15 @@ export abstract class DatatableSortBase {
     }
   }
 
-  columnHeaderClicked(column: BsDatatableColumnDirective, event: MouseEvent | KeyboardEvent) {
+  columnHeaderClicked(column: BsDatatableColumnDirective, event: Event) {
     if (!column.sortable()) return;
 
+    const shiftKey = (event as MouseEvent | KeyboardEvent).shiftKey;
     const columnName = column.name();
     const currentSettings = this.settings();
     let sortColumns = currentSettings.sortColumns;
 
-    if (event.shiftKey) {
+    if (shiftKey) {
       // Multi-column: add/toggle/remove
       const existingIndex = sortColumns.findIndex(c => c.property === columnName);
       if (existingIndex === -1) {
