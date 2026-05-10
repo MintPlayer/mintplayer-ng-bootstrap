@@ -1,0 +1,4 @@
+<bs-slider [disabled]="disabled()" [value]="normalizedHue()" (valueChange)="onValueChange($event)" ariaLabel="Hue" [valueScale]="360" valueUnit="°">
+    <div bsTrack class="position-absolute w-100" [style.background]="trackGradient"></div>
+    <div bsThumb [style.background]="thumbBackground()"></div>
+</bs-slider>

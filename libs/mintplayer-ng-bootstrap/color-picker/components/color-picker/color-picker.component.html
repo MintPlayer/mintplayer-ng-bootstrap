@@ -8,3 +8,13 @@
 @if (allowAlpha()) {
     <bs-alpha-strip [disabled]="letDisabled" [hs]="letHS" [brightness]="letBrightness" [alpha]="letAlpha" (alphaChange)="onUserAlphaChange($event)" class="d-block mt-2" [style.width.px]="size()" #alphaStrip></bs-alpha-strip>
 }
+@if (showAccessibilityToggle()) {
+    <div class="form-check mt-2" [style.width.px]="size()">
+        <input type="checkbox" class="form-check-input" [id]="toggleId" [checked]="channelSlidersVisible()" (change)="onChannelSlidersToggle($event)">
+        <label class="form-check-label" [attr.for]="toggleId">Show hue + saturation sliders</label>
+    </div>
+    @if (channelSlidersVisible()) {
+        <bs-hue-strip [disabled]="letDisabled" [hs]="letHS" (hsChange)="onUserHsChange($event)" class="d-block mt-2" [style.width.px]="size()"></bs-hue-strip>
+        <bs-saturation-strip [disabled]="letDisabled" [hs]="letHS" (hsChange)="onUserHsChange($event)" class="d-block mt-2" [style.width.px]="size()"></bs-saturation-strip>
+    }
+}
