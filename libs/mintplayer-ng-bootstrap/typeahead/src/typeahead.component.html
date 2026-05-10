@@ -8,7 +8,7 @@
             bsCombobox
             (activate)="onActivate()"
             (cancel)="onCancel()"
-            (keyup.enter)="onSubmit()"
+            (keydown.enter)="onSubmit($event)"
             autocomplete="off" />
         <bs-dropdown-menu *bsDropdownMenu bsRovingFocus mode="activedescendant">
             @if (isLoading()) {

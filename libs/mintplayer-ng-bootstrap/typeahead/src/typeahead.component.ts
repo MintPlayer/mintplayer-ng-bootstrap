@@ -77,7 +77,9 @@ export class BsTypeaheadComponent {
     // dropdown was already closed by bsCombobox; no extra work needed
   }
 
-  onSubmit() {
+  onSubmit(event?: Event) {
+    // Suppress browser form-submit; we own the Enter semantics here.
+    event?.preventDefault();
     this.isOpen.set(false);
     this.submitted.emit(this.searchterm());
   }

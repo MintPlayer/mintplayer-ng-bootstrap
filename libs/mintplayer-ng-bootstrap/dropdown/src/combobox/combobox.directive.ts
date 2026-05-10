@@ -76,6 +76,11 @@ export class BsComboboxDirective {
         if (isOpen) {
           this.activate.emit(event);
           event.preventDefault();
+          // Sibling listeners on the same input (e.g. a host-template
+          // (keydown.enter) for "submit free-text search") must not also
+          // fire when this Enter activated a suggestion — otherwise the
+          // queued keyup of the alert-dismiss Enter would re-trigger them.
+          event.stopImmediatePropagation();
         }
         break;
       case 'Tab':
