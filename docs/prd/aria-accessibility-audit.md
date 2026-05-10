@@ -1,10 +1,13 @@
 # PRD: Library-wide ARIA & accessibility audit
 
-**Status:** Proposal
+**Status:** **Implemented** — every Critical + Major item closed on `feat/aria-accessibility`. The drag-keyboard family (scheduler / dock / tile-manager) was split into a companion PRD ([`wc-aria-accessibility.md`](./wc-aria-accessibility.md)) and shipped, then extended by [`scheduler-keyboard-grid-nav.md`](./scheduler-keyboard-grid-nav.md). See §11 + §14 for the fully-tracked closing log.
 **Author:** Pieterjan (audit by 5-agent ARIA team)
-**Date:** 2026-05-09
+**Date:** 2026-05-09 (status last updated 2026-05-10)
 **Library:** `@mintplayer/ng-bootstrap` (all entry points)
 **Standards target:** [WAI-ARIA 1.2](https://www.w3.org/TR/wai-aria-1.2/) + [WAI-ARIA Authoring Practices Guide (APG)](https://www.w3.org/WAI/ARIA/apg/), conformance to **WCAG 2.2 AA**.
+**Companion PRDs:**
+- [`wc-aria-accessibility.md`](./wc-aria-accessibility.md) — splitter / dock / scheduler / tile-manager / calendar Lit-WC layer (resolves the §10 deferred drag-keyboard family).
+- [`scheduler-keyboard-grid-nav.md`](./scheduler-keyboard-grid-nav.md) — extends the scheduler keyboard model with cell nav, range selection, Enter-driven move-mode, cross-day resize.
 
 ---
 
@@ -321,11 +324,11 @@ Originally these were open. The branch `feat/aria-accessibility` resolved them a
 
 ## 11. Status as of 2026-05-10
 
-Branch: `feat/aria-accessibility`. ~45 commits since branch start (75315daf). The implementation closed every audit item except the drag-keyboard family.
+Branch: `feat/aria-accessibility`. ~60 commits since branch start (75315daf). The implementation closed every Critical + Major audit item, including the drag-keyboard family that was originally deferred (resolved via the WC-layer companion PRDs — see header).
 
 ### Closed
 
-**§5.1 Critical (23/24):**
+**§5.1 Critical (24/24):**
 - ✓ `signature-pad` — canvas role + ariaLabel
 - ✓ `searchbox`, `multiselect`, `select2`, `typeahead` — all four migrated to bsCombobox + popupRole="listbox" + BsRovingFocus (activedescendant mode)
 - ✓ `calendar` — aria-selected/current/disabled, scope, labelled nav buttons (arrow-key nav deferred — see follow-ups)
@@ -343,7 +346,7 @@ Branch: `feat/aria-accessibility`. ~45 commits since branch start (75315daf). Th
 - ✓ `resizable` — role=separator on glyphs, aria-orientation, descriptive aria-labels, arrow-key resize
 - ✓ `rating` — arrow-key navigation + roving tabindex (kept inline rather than reusing BsRovingFocus because APG radiogroup auto-selects on arrow)
 - ✓ `qr-code` (sibling lib) — canvas role + derived aria-label
-- ⏳ **`scheduler`** — deferred to its own PRD (drag-keyboard family)
+- ✓ **`scheduler`** — resolved via companion PRDs. Phase 5 (`a13952e7`) shipped APG Grid roles, event labels, view-switcher `aria-pressed`. Phase 6 v1 (`614fb0fe`) shipped M-mode + arrow nudge. The full keyboard model (cell-grid nav, range selection, Enter-driven move-mode, Shift+Arrow resize, cross-day resize) shipped in `9ae72107` per [`scheduler-keyboard-grid-nav.md`](./scheduler-keyboard-grid-nav.md).
 
 **§5.2 Major (all):**
 - ✓ `range`, `multi-range`, `placeholder`, `marquee` — aria-labels and prefers-reduced-motion handling
@@ -360,7 +363,8 @@ Branch: `feat/aria-accessibility`. ~45 commits since branch start (75315daf). Th
 - ✓ `button-group`, `select` — placeholder demo aria-labels removed, replaced with input
 - ✓ `datatable` — aria-sort + keyboard activation
 - ✓ `code-snippet` — "Copied to clipboard" announced via BsLiveAnnouncer (first consumer)
-- ⏳ **`dock`, `tile-manager`** — same drag-keyboard family as scheduler; deferred
+- ✓ **`dock`** — resolved via [`wc-aria-accessibility.md`](./wc-aria-accessibility.md) Phase 4 (`49bd9bb6` + `d8029544`: floating-pane dialog role, close button, intersection-handle keyboard resize) + Phase 7 (`32ca12b7`: pane move-mode `M` → `T`/`R`/`B`/`L`/`F`). Playwright e2e (`cd71ab96`) + a `findFocusedPaneOrigin` bug-fix (`9dc1c78d`) closed the entry-path gap.
+- ✓ **`tile-manager`** — resolved via [`wc-aria-accessibility.md`](./wc-aria-accessibility.md) Phase 3 (`0d2f25b1`: `role="region"` + `role="button"` tiles, `M`-to-move, roving tabindex, drag-begin announcements).
 
 ### Phase A primitives (all shipped, all consumed)
 
@@ -456,15 +460,16 @@ These were discovered during implementation. None blocks shipping the branch as-
 
 ### 13.1 Critical follow-ups
 
-- **Calendar arrow-key navigation.** Phase B-25 only landed roles + aria-selected/current. APG date-picker dialog requires arrow keys (Left/Right=day, Up/Down=week, PageUp/Down=month, Home/End=week edges). Adds a separate `focusedDate` signal + viewChildren over day cells. Medium scope.
-- **Drag-keyboard family** (`scheduler`, `dock`, `tile-manager`, `mintplayer-ng-swiper`). Per §10 resolution, these need their own PRD. The shape is APG-style cut/paste keyboard mode: focus a tile/event/lane, press Space/Enter to "grab", arrow keys to "move target", Space/Enter to "drop". Live announcer reads each step. Significant design + implementation.
+- ~~**Calendar arrow-key navigation.**~~ ✓ **Shipped** in `4d442375` (APG Date Picker grid + arrow-key navigation). Single tab-stop into the body; ArrowLeft/Right=day, ArrowUp/Down=week, PageUp/Down=month, Ctrl+PageUp/Down=year, Home/End=week edges, Enter/Space selects. Implementation tracked under [`wc-aria-accessibility.md`](./wc-aria-accessibility.md) Phase 9 (Angular scope extension).
+- ~~**Drag-keyboard family**~~ ✓ **Shipped** for `scheduler`, `dock`, `tile-manager` via [`wc-aria-accessibility.md`](./wc-aria-accessibility.md) Phases 3/6/7 + the scheduler follow-up [`scheduler-keyboard-grid-nav.md`](./scheduler-keyboard-grid-nav.md). The library-wide trigger key settled on `M` for the dock + tile-manager (T/R/B/L/F commits for dock; arrow-nudge for tile-manager); scheduler later adopted `Enter` after the cell-level grid model shipped. ⏳ **`mintplayer-ng-swiper` still deferred** — the swipe directives compose into existing components that already work via underlying focus order; opening a separate tracking issue if a consumer reports a gap.
 
 ### 13.2 Major follow-ups
 
-- **Carousel play/pause button + auto-advance off by default.** Per APG recommendation. Was deliberately not changed in B-33 to avoid a breaking change in the same commit as the role wiring. (`feedback_breaking_changes_ok` says we can do BC, but cleaner to land in its own commit with a migration note.)
-- **Virtual-datatable aria-rowcount / aria-rowindex.** When SR users navigate a virtualised list, they need to know "row 47 of 10000" — viewport-only rendered rows can't convey that without explicit aria-rowcount on the grid + aria-rowindex on each visible row. Needs CDK virtual scroll integration.
-- **prefers-reduced-motion** on remaining components: carousel auto-advance, parallax scroll effect, dock panel transitions, tile-manager FLIP animations, accordion open animation. (Marquee already shipped.)
-- **More live-announcer consumers** (per §6.4): typeahead/searchbox "N results found", tile-manager "Tile moved to row R, column C", placeholder "Loading complete".
+- ⏳ **Carousel play/pause button + auto-advance off by default.** Per APG recommendation. Was deliberately not changed in B-33 to avoid a breaking change in the same commit as the role wiring. (`feedback_breaking_changes_ok` says we can do BC, but cleaner to land in its own commit with a migration note.) Still pending.
+- ⏳ **Virtual-datatable aria-rowcount / aria-rowindex.** When SR users navigate a virtualised list, they need to know "row 47 of 10000" — viewport-only rendered rows can't convey that without explicit aria-rowcount on the grid + aria-rowindex on each visible row. Needs CDK virtual scroll integration. Still pending.
+- 🟡 **prefers-reduced-motion** on remaining components — partially shipped. ✓ Splitter / dock / scheduler in `332d2d4f`; ✓ marquee already had it; ✓ tile-manager from `ca7a0c9d`. ⏳ Still pending: carousel auto-advance, parallax scroll effect, accordion open animation.
+- 🟡 **More live-announcer consumers** (per §6.4) — partially shipped. ✓ tile-manager "Dragging X" / "Move blocked" (in Phase 3); ✓ scheduler "View changed", "Event added/updated/removed", "Move mode for X", "Move committed/cancelled", per-cell focus narration, selection range narration (Phases 5/6 + scheduler-keyboard-grid-nav PRD); ✓ dock pane move-mode entry/commit/cancel announcements (Phase 7). ⏳ Still pending: typeahead/searchbox "N results found", placeholder "Loading complete".
+- ⏳ **Axe-core CI integration** — tracked separately as `wc-aria-accessibility.md` Phase 8.2 (deferred to follow-up issue).
 
 ### 13.3 Polish issues found in browser testing
 
@@ -475,3 +480,6 @@ These were discovered during implementation. None blocks shipping the branch as-
 - **Datatable template type error.** Widened `DatatableSortBase.columnHeaderClicked(column, event: Event)` and read `shiftKey` via `(event as MouseEvent | KeyboardEvent).shiftKey`. Dev server builds clean.
 - **Typeahead arrow-key navigation — verified end-to-end via Playwright.** Type "a" → 4 suggestions render; `aria-activedescendant` reports the first item id immediately on populate (the previously-noted "initial empty `aria-activedescendant`" polish issue is no longer reproducible — likely fixed as a side-effect of the signal-backed `_itemId` in `BsRovingFocusItemDirective`). ArrowDown/ArrowUp cycle correctly (item-4 → item-5 → item-6 → item-5). Enter activates the focused suggestion (alert with selected payload fires).
 - **Hybrid TAB navigation in combobox.** User explicitly chose this over the strict APG default. `BsComboboxDirective` now intercepts TAB while the popup is open and a roving-focus is present: TAB advances `aria-activedescendant` (focus stays on the input — combobox semantics preserved), Shift+TAB retreats. At the last enabled option a forward TAB closes the popup and lets the browser advance focus normally; symmetric for Shift+TAB at the first option. Items remain `aria-activedescendant`-targeted, NOT focusable — so screen readers still announce "option N of M" as in any combobox. Three new specs in `typeahead.aria.spec.ts` lock the behavior. `BsRovingFocusDirective.firstEnabledIndex` / `lastEnabledIndex` were promoted from private to public for the boundary check.
+- **Drag-keyboard family closed via WC-layer companion PRD.** Originally §10's last open item. [`wc-aria-accessibility.md`](./wc-aria-accessibility.md) ships all four Lit WCs (splitter, dock, tile-manager, scheduler) end-to-end, plus `bs-calendar` (Angular scope extension as Phase 9). Library-wide convention: `M` enters move/resize mode on a focused tile/pane (dock/tile-manager); `Enter` on a focused event (scheduler, post `9ae72107`). Live announcer narrates entry/commit/cancel uniformly via the shared `LiveAnnouncerController` (Lit) and `BsLiveAnnouncerService` (Angular). Demo pages all carry visible keyboard-shortcut panels.
+- **Scheduler keyboard model graduated from Phase 6 v1 to v2.** [`scheduler-keyboard-grid-nav.md`](./scheduler-keyboard-grid-nav.md) shipped `9ae72107`. Cell-level grid nav (Arrow + Home/End/PageUp/Down/Ctrl+Home/End), linear time-range selection that crosses day boundaries on week view (Shift+Arrow), Enter-driven move-mode with `aria-pressed` on the moving event, Shift+Arrow end-edge resize + Alt+Shift start-edge resize, week-view cross-day resize, auto-scroll-on-arrow-nav. Renamed `event-click` → `event-selected` library-wide (fires on Tab too). Bare T/Y/M/W/D shortcuts removed in favour of `Alt+letter`. 656 unit tests + 12 new keyboard cases all green; manual browser smoke test confirmed end-to-end.
+- **Dock keyboard pane move-mode bug-fix.** Discovered while writing the Phase 7.5 Playwright spec: `findFocusedPaneOrigin` looked up `.dock-tab[data-tab-id="${active.id}"]` but `active.id` is `${tabId}-header-button` (mp-tab-control's button id pattern), so the lookup never matched and `M`-on-tab silently failed in production. Stripping the `-header-button` suffix made M-mode entry work, validated by `dock-keyboard.spec.ts` × Chromium + Firefox (`9dc1c78d` + `cd71ab96`). Unit tests had been injecting `paneMoveMode` directly so missed the gap.

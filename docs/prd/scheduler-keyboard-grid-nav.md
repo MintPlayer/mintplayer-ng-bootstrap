@@ -1,6 +1,6 @@
 # PRD: `mp-scheduler` keyboard grid navigation — pointer parity for cells, selections, and event move/resize
 
-**Status:** Proposal
+**Status:** **Implemented** — shipped `9ae72107` on `feat/aria-accessibility`. All Phase A items live; Phase B (month/year arrow nav, inter-event arrow nav) deferred. 656 unit tests + 12 new keyboard cases green; smoke-tested in browser.
 **Author:** Pieterjan (analysis by 4-agent ARIA team)
 **Date:** 2026-05-10
 **Library:** `@mintplayer/ng-bootstrap/web-components/scheduler`
