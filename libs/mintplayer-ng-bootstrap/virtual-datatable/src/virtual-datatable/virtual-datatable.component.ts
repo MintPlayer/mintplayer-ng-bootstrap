@@ -1,4 +1,4 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, inject, input, OnDestroy, signal, TemplateRef } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, effect, ElementRef, inject, input, OnDestroy, signal, TemplateRef } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { BsTableComponent, BsTableStylesComponent } from '@mintplayer/ng-bootstrap/table';
@@ -23,6 +23,26 @@ export class BsVirtualDatatableComponent<TData> extends DatatableSortBase implem
   itemSize = input(48);
 
   readonly rowTemplate = signal<TemplateRef<BsVirtualRowTemplateContext<TData>> | undefined>(undefined);
+
+  /**
+   * Total logical row count for ARIA = data rows + 1 header row.
+   * Stays in sync with `dataSource.length$` so SR users hear "row 47 of
+   * 10000" even though the DOM only renders the visible viewport.
+   */
+  readonly totalRowCount = signal<number>(1);
+
+  constructor() {
+    super();
+    effect((onCleanup) => {
+      const ds = this.dataSource();
+      if (!ds) {
+        this.totalRowCount.set(1);
+        return;
+      }
+      const sub = ds.length$.subscribe((n) => this.totalRowCount.set(n + 1));
+      onCleanup(() => sub.unsubscribe());
+    });
+  }
 
   ngAfterViewInit() {
     this.setupScrollSync();

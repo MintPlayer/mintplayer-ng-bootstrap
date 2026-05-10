@@ -4,7 +4,8 @@
             [class.mb-0]="isResponsive()"
             [class.table-striped]="striped()"
             [class.table-hover]="hover()"
-            [class.border]="border()">
+            [class.border]="border()"
+            [attr.aria-rowcount]="ariaRowCount()">
 
             <ng-content></ng-content>
 
