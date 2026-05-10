@@ -44,6 +44,7 @@ A library that's sold as "Bootstrap drop-in with deep components" needs each of 
 - `libs/mintplayer-ng-bootstrap/dock/src/lib/web-components/` — `mint-dock-manager`
 - `libs/mintplayer-ng-bootstrap/web-components/scheduler/` + `scheduler-core/` — `mp-scheduler`
 - `libs/mintplayer-ng-bootstrap/tile-manager/src/lib/web-components/` — `mint-tile-manager`
+- `libs/mintplayer-ng-bootstrap/calendar/` — `bs-calendar` (Angular; APG Date Picker grid pattern). **Scope extension** added 2026-05-10 to track the calendar's missing grid roles + arrow-key navigation. Shares enough of the grid model with Phase 5 (scheduler) and Phase 3 (tile-manager) to belong with this rollout rather than be tracked separately.
 
 **Out of scope:**
 
@@ -271,6 +272,45 @@ Decision recorded (§10 Q1): switch from `role="grid"` to `role="region"` + `rol
 
   The keymap is also exposed in-component via the `aria-describedby` instructions string (see Phase 3.4, Phase 5.x, Phase 7.2), so SR users get the same content. The visible panel covers sighted keyboard users who don't read SR text.
 
+### Phase 9 — `bs-calendar` grid + keyboard navigation (1 PR — Angular, scope extension)
+
+**Scope note.** `bs-calendar` is an Angular component, not a Lit WC. It's tracked here because the calendar / datepicker grid pattern shares the same APG Grid model the scheduler (Phase 5) and tile-manager (Phase 3) deal with, and the user-facing gap (calendar body unreachable by keyboard) was found while iterating on this PRD. Originally listed as Critical in `docs/prd/aria-accessibility-audit.md` §5.1; partially resolved by `4d6a3a5f` (`aria-selected` / `aria-current="date"` / `aria-disabled`) but the keyboard model was not.
+
+**Current state** (`libs/mintplayer-ng-bootstrap/calendar/src/calendar.component.html`):
+- ✓ `aria-selected` / `aria-current="date"` / `aria-disabled` on day cells
+- ✓ Prev/next nav buttons labelled; polite live region on month title
+- ✓ `<th scope="col"|"row">` headers
+- ✗ No `role="grid"` on the table; no `role="gridcell"` / `role="row"` / `role="columnheader"` / `role="rowheader"`
+- ✗ Day cells have no `tabindex` — **calendar body is not reachable via keyboard at all**
+- ✗ No arrow-key / Home / End / PageUp / PageDown navigation
+
+**Target pattern.** WAI-ARIA APG [Date Picker Dialog](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/examples/datepicker-dialog/) — calendar table is a `role="grid"` with one tab stop into the body, then 2D arrow-key navigation between dates. Keymap:
+
+| Key | Action |
+|---|---|
+| Tab | Prev-button → calendar body (one stop) → Next-button |
+| ArrowLeft / ArrowRight | Previous / next day |
+| ArrowUp / ArrowDown | Previous / next week |
+| Home / End | First / last day of the focused week |
+| PageUp / PageDown | Previous / next month |
+| Ctrl+PageUp / Ctrl+PageDown | Previous / next year |
+| Enter / Space | Select the focused date |
+
+**Implementation outline.**
+
+- **9.1** Calendar table: add `role="grid"` + `aria-labelledby` to the month-title cell so SR users hear the focused month/year as the grid's accessible name.
+- **9.2** Replace bare `<tr>` / `<th>` / `<td>` with role attributes — `role="row"` on each row, `role="columnheader"` on weekday headers (already use `<th scope="col">`, just add the role), `role="rowheader"` on week-number cells, `role="gridcell"` on day cells.
+- **9.3** Roving tabindex on day cells: a single signal-backed `focusedDate` field (defaults to `selectedDate ?? today ?? firstEnabledOfMonth`); template binds `[attr.tabindex]` to `0` for that cell, `-1` for all others. Per the memory rule, derive in a `computed()`, not inline.
+- **9.4** Keyboard handler on the calendar host (or on each cell) implementing the keymap above. Movement that crosses month boundaries triggers the existing `previousMonth()` / `nextMonth()` methods + advances `focusedDate` accordingly. `disableDateFn` is honoured — disabled cells are skipped during arrow nav (or focus lands on them but Enter is a no-op; APG accepts either; pick "skip" for parity with `BsRovingFocusItem`).
+- **9.5** After a keyboard month change, focus the corresponding cell in the new month (Angular `viewChildren` query on cells, or focus by `[id]="dateId"` lookup).
+- **9.6** Visible focus ring on the focused cell (today's `:focus` styling — confirm `:focus-visible` works on `<td>`; if not, paint via the cell's class-bound state).
+- **9.7** Remove the fallback `aria-label="Calendar"` on the table and replace with month/year derived label so SR users know which calendar they're in.
+- **9.8** Datepicker (`libs/mintplayer-ng-bootstrap/datepicker/`) inherits all of this for free since it embeds `bs-calendar`. Confirm: trigger button still has `aria-haspopup="dialog"` + `aria-expanded` (separate gap tracked in the Angular PRD §5.2).
+- **9.9** Vitest: `calendar.aria.spec.ts` — assert grid roles, roving tabindex, ArrowRight moves focus to next day, ArrowDown moves focus to same weekday next week, PageDown advances the month, Home moves to first day of focused week, Enter selects.
+- **9.10** Demo page (`apps/ng-bootstrap-demo/src/app/pages/.../calendar/...`): add a `<details>Keyboard shortcuts</details>` panel mirroring Phase 8.3.
+
+**Severity: Critical** — calendar is operable to mouse users but completely unreachable to keyboard users. Already flagged Critical in the Angular PRD; this phase is the implementation.
+
 ## 8. Severity matrix
 
 | Component | Critical | Major | Minor |
@@ -280,6 +320,7 @@ Decision recorded (§10 Q1): switch from `role="grid"` to `role="region"` + `rol
 | `mint-dock-manager` | DnD keyboard alternative (panes) | tab-panel inherits; floating-pane semantics; live region; intersection-handle valuenow | pane-host region label |
 | `mp-scheduler` | grid roles; event labels + focusability; DnD keyboard alternative (events) | live region; view-switcher pressed; group expanded | reduced-motion auto-pan |
 | `mint-tile-manager` | — | grid coord attrs; instructions describedby; live-region role; roving tabindex; move-mode discoverability; drag-begin announcements | role-choice settled |
+| `bs-calendar` (Angular) | calendar body unreachable by keyboard; no grid roles; no arrow-key / Home/End / PageUp/Down nav | — | focus ring on focused cell |
 
 ## 9. Test strategy
 
