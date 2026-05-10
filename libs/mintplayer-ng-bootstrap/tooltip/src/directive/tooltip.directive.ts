@@ -2,7 +2,7 @@ import { ConnectedPosition, Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { Directive, ElementRef, Host, inject, input, Injector, OnDestroy, SkipSelf, TemplateRef } from '@angular/core';
 import { Position } from '@mintplayer/ng-bootstrap';
-import { BsIdService } from '@mintplayer/ng-bootstrap/a11y';
+import { BsIdService, BsOverlayStackService } from '@mintplayer/ng-bootstrap/a11y';
 import { BsTooltipComponent } from '../component/tooltip.component';
 import { TOOLTIP_CONTENT } from '../providers/tooltip-content.provider';
 import { TOOLTIP_ID } from '../providers/tooltip-id.provider';
@@ -11,12 +11,14 @@ import { TOOLTIP_ID } from '../providers/tooltip-id.provider';
   selector: '*[bsTooltip]',
   host: {
     '(window:blur)': 'onBlur()',
-    '(document:keydown.escape)': 'hideTooltip()',
+    '(document:keydown.escape)': 'onEscape()',
   },
 })
 export class BsTooltipDirective implements OnDestroy {
   private ids = inject(BsIdService);
+  private overlayStack = inject(BsOverlayStackService);
   private readonly tooltipId = this.ids.next('bs-tooltip');
+  private stackToken: symbol | null = null;
 
   constructor(
     private overlay: Overlay,
@@ -49,6 +51,12 @@ export class BsTooltipDirective implements OnDestroy {
 
   onBlur() {
     this.hideTooltip();
+  }
+
+  onEscape() {
+    if (this.stackToken !== null && this.overlayStack.isTop(this.stackToken)) {
+      this.hideTooltip();
+    }
   }
 
   showTooltip() {
@@ -100,6 +108,9 @@ export class BsTooltipDirective implements OnDestroy {
     component.setInput('position', this.bsTooltip());
 
     this.parent.nativeElement.setAttribute('aria-describedby', this.tooltipId);
+    if (this.stackToken === null) {
+      this.stackToken = this.overlayStack.push();
+    }
   }
 
   hideTooltip() {
@@ -109,6 +120,10 @@ export class BsTooltipDirective implements OnDestroy {
       this.overlayRef = null;
     }
     this.parent.nativeElement.removeAttribute('aria-describedby');
+    if (this.stackToken !== null) {
+      this.overlayStack.release(this.stackToken);
+      this.stackToken = null;
+    }
   }
 
   ngOnDestroy() {

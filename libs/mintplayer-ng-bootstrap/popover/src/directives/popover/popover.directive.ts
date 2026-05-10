@@ -2,7 +2,7 @@ import { ConnectedPosition, Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { Position } from '@mintplayer/ng-bootstrap';
 import { AfterViewInit, ComponentRef, Directive, ElementRef, Host, inject, Injector, input, OnDestroy, signal, SkipSelf, TemplateRef, computed, effect } from '@angular/core';
-import { BsIdService } from '@mintplayer/ng-bootstrap/a11y';
+import { BsIdService, BsOverlayStackService } from '@mintplayer/ng-bootstrap/a11y';
 import { BsPopoverComponent } from '../../component/popover.component';
 import { POPOVER_CONTENT } from '../../providers/popover-content.provider';
 import { POPOVER_ID } from '../../providers/popover-id.provider';
@@ -28,7 +28,9 @@ export class BsPopoverDirective implements AfterViewInit, OnDestroy {
   private portalFactory = inject(PORTAL_FACTORY);
   private parent = inject(ElementRef, { host: true, skipSelf: true });
   private ids = inject(BsIdService);
+  private overlayStack = inject(BsOverlayStackService);
   private readonly popoverId = this.ids.next('bs-popover');
+  private stackToken: symbol | null = null;
 
   bsPopover = input<Position>('bottom');
   updatePosition = input(false);
@@ -87,6 +89,13 @@ export class BsPopoverDirective implements AfterViewInit, OnDestroy {
         this.component.setInput('isVisible', isVisible);
       }
       this.parent.nativeElement.setAttribute('aria-expanded', isVisible ? 'true' : 'false');
+
+      if (isVisible && this.stackToken === null) {
+        this.stackToken = this.overlayStack.push();
+      } else if (!isVisible && this.stackToken !== null) {
+        this.overlayStack.release(this.stackToken);
+        this.stackToken = null;
+      }
     });
 
     effect(() => {
@@ -134,12 +143,16 @@ export class BsPopoverDirective implements AfterViewInit, OnDestroy {
   }
 
   onEscape() {
-    if (this.isVisible()) {
+    if (this.isVisible() && this.stackToken !== null && this.overlayStack.isTop(this.stackToken)) {
       this.isVisible.set(false);
     }
   }
 
   ngOnDestroy() {
+    if (this.stackToken !== null) {
+      this.overlayStack.release(this.stackToken);
+      this.stackToken = null;
+    }
     if (this.overlayRef) {
       this.overlayRef.detach();
       this.overlayRef.dispose();

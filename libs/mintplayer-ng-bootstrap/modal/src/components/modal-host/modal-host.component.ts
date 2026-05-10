@@ -1,6 +1,7 @@
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { AfterViewInit, Component, ComponentFactoryResolver, ComponentRef, effect, inject, Injector, input, model, OnDestroy, TemplateRef, ChangeDetectionStrategy} from '@angular/core';
+import { BsOverlayStackService } from '@mintplayer/ng-bootstrap/a11y';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { MODAL_CONTENT } from '../../providers/modal-content.provider';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
@@ -27,6 +28,8 @@ export class BsModalHostComponent implements AfterViewInit, OnDestroy {
   private parentInjector = inject(Injector);
   private portalFactory = inject<(injector: Injector) => ComponentPortal<BsModalComponent>>(PORTAL_FACTORY);
   private componentFactoryResolver = inject(ComponentFactoryResolver);
+  private overlayStack = inject(BsOverlayStackService);
+  private stackToken: symbol | null = null;
 
   overlayRef!: OverlayRef;
   componentInstance?: ComponentRef<BsModalComponent>;
@@ -42,6 +45,13 @@ export class BsModalHostComponent implements AfterViewInit, OnDestroy {
       const value = this.isOpen();
       if (this.componentInstance) {
         this.componentInstance.instance.isOpen.set(value);
+      }
+
+      if (value && this.stackToken === null) {
+        this.stackToken = this.overlayStack.push();
+      } else if (!value && this.stackToken !== null) {
+        this.overlayStack.release(this.stackToken);
+        this.stackToken = null;
       }
     });
   }
@@ -68,13 +78,19 @@ export class BsModalHostComponent implements AfterViewInit, OnDestroy {
 
   ngOnDestroy() {
     this.isOpen.set(false);
+    if (this.stackToken !== null) {
+      this.overlayStack.release(this.stackToken);
+      this.stackToken = null;
+    }
     setTimeout(() => this.overlayRef && this.overlayRef.dispose(), 500);
   }
 
   onKeyDown(event: Event) {
     const ev = event as KeyboardEvent;
     if (this.isOpen() && this.closeOnEscape() && ev.code === 'Escape') {
-      this.isOpen.set(false);
+      if (this.stackToken !== null && this.overlayStack.isTop(this.stackToken)) {
+        this.isOpen.set(false);
+      }
     }
   }
 }
