@@ -1,4 +1,4 @@
-import { Directive, effect, inject, input, signal, forwardRef } from '@angular/core';
+import { computed, Directive, effect, inject, input, signal } from '@angular/core';
 import { Position } from '@mintplayer/ng-bootstrap';
 import type { BsResizableComponent } from '../resizable/resizable.component';
 import { ResizeAction } from '../interfaces/resize-action';
@@ -11,12 +11,17 @@ import { RESIZABLE } from '../providers/resizable.provider';
     '[class]': 'positions()',
     '[class.glyph]': 'true',
     '[class.active]': 'activeClass()',
+    '[attr.role]': '"separator"',
+    '[attr.aria-label]': 'ariaLabel()',
+    '[attr.aria-orientation]': 'ariaOrientation()',
+    '[attr.tabindex]': '"0"',
     '(mousedown)': 'onMouseDown($event)',
     '(touchstart)': 'onTouchStart($event)',
     '(document:mousemove)': 'onMouseMove($event)',
     '(touchmove)': 'onTouchMove($event)',
     '(document:mouseup)': 'onMouseUp($event)',
     '(touchend)': 'onTouchEnd($event)',
+    '(keydown)': 'onKeydown($event)',
   },
 })
 export class BsResizeGlyphDirective {
@@ -35,6 +40,29 @@ export class BsResizeGlyphDirective {
   activeClass = signal(false);
 
   readonly bsResizeGlyph = input<Position[]>([]);
+
+  readonly ariaOrientation = computed(() => {
+    const p = this.bsResizeGlyph();
+    if (p.length !== 1) return null;
+    if (p[0] === 'top' || p[0] === 'bottom') return 'horizontal';
+    if (p[0] === 'start' || p[0] === 'end') return 'vertical';
+    return null;
+  });
+
+  readonly ariaLabel = computed(() => {
+    const p = [...this.bsResizeGlyph()].sort().join(' ');
+    switch (p) {
+      case 'top': return 'Resize from top edge';
+      case 'bottom': return 'Resize from bottom edge';
+      case 'start': return 'Resize from left edge';
+      case 'end': return 'Resize from right edge';
+      case 'start top': return 'Resize from top-left corner';
+      case 'end top': return 'Resize from top-right corner';
+      case 'bottom start': return 'Resize from bottom-left corner';
+      case 'bottom end': return 'Resize from bottom-right corner';
+      default: return 'Resize';
+    }
+  });
 
   onMouseDown(ev: MouseEvent) {
     ev.preventDefault();
@@ -209,9 +237,47 @@ export class BsResizeGlyphDirective {
       this.isBusy = false;
     }
   }
-  
+
   onPointerUp() {
     this.resizable.resizeAction = undefined;
     this.activeClass.set(false);
+  }
+
+  /** Keyboard alternative to drag. Arrow keys resize by 10px from the corresponding edge. */
+  onKeydown(event: KeyboardEvent) {
+    const positions = this.bsResizeGlyph();
+    const step = event.shiftKey ? 1 : 10;
+    let consumed = false;
+
+    const adjustWidth = (dx: number) => {
+      const el = this.resizable.element.nativeElement;
+      const rect = el.getBoundingClientRect();
+      this.resizable.width.set(Math.max(20, rect.width + dx));
+    };
+    const adjustHeight = (dy: number) => {
+      const el = this.resizable.element.nativeElement;
+      const rect = el.getBoundingClientRect();
+      this.resizable.height.set(Math.max(20, rect.height + dy));
+    };
+
+    switch (event.key) {
+      case 'ArrowRight':
+        if (positions.includes('end')) { adjustWidth(step); consumed = true; }
+        else if (positions.includes('start')) { adjustWidth(-step); consumed = true; }
+        break;
+      case 'ArrowLeft':
+        if (positions.includes('end')) { adjustWidth(-step); consumed = true; }
+        else if (positions.includes('start')) { adjustWidth(step); consumed = true; }
+        break;
+      case 'ArrowDown':
+        if (positions.includes('bottom')) { adjustHeight(step); consumed = true; }
+        else if (positions.includes('top')) { adjustHeight(-step); consumed = true; }
+        break;
+      case 'ArrowUp':
+        if (positions.includes('bottom')) { adjustHeight(-step); consumed = true; }
+        else if (positions.includes('top')) { adjustHeight(step); consumed = true; }
+        break;
+    }
+    if (consumed) event.preventDefault();
   }
 }
