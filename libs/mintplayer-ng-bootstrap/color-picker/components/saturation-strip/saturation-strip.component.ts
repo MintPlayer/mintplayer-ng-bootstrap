@@ -2,6 +2,12 @@ import { ChangeDetectionStrategy, Component, computed, input, model } from '@ang
 import { HS } from '../../interfaces/hs';
 import { BsSliderComponent, BsThumbDirective, BsTrackDirective } from '../slider/slider.component';
 
+/**
+ * Saturation picker — a horizontal grey-to-pure-colour strip backed by
+ * `bs-slider`. Two-way `[(hs)]` keeps the hue untouched; only `hs.saturation`
+ * (0–1) changes. The track gradient re-derives from the current hue so the
+ * preview always matches what the user is about to pick.
+ */
 @Component({
   selector: 'bs-saturation-strip',
   templateUrl: './saturation-strip.component.html',

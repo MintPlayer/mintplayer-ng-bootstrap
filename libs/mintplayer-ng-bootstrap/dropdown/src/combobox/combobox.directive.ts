@@ -4,6 +4,29 @@ import { BsDropdownDirective } from '../dropdown/dropdown.directive';
 export type BsComboboxAutocomplete = 'none' | 'list' | 'inline' | 'both';
 export type BsComboboxNavigateDirection = 'next' | 'prev' | 'first' | 'last';
 
+/**
+ * APG Combobox pattern — turns a plain `<input>` into a combobox that drives
+ * an adjacent `bsDropdown` popup (typeahead, select2, multiselect, searchbox).
+ *
+ * The directive owns the input-side ARIA wiring:
+ * - `role="combobox"` on the host
+ * - `aria-expanded` / `aria-controls` derived from the parent dropdown
+ * - `aria-activedescendant` mirroring the dropdown's `bsRovingFocus` active id
+ * - `aria-autocomplete` (defaults to `"list"`)
+ *
+ * Keyboard model:
+ * - **ArrowUp/Down/Home/End** — opens the popup if closed; once open,
+ *   forwards to the dropdown's `bsRovingFocus` (or emits a `navigate` event
+ *   if no roving-focus is found, so consumers can manage navigation manually).
+ * - **Enter** — fires `activate` so the consumer can commit the highlighted
+ *   option. `stopImmediatePropagation` is called to keep sibling
+ *   `(keydown.enter)` listeners on the same input (e.g. "submit free-text
+ *   search") from also firing on the same Enter.
+ * - **Escape** — closes the popup and fires `cancel`.
+ * - **Tab** — hybrid behaviour: while the popup is open and a roving-focus
+ *   is present, Tab advances the active descendant; at the boundary, Tab
+ *   closes the popup and falls through to the browser's default tab order.
+ */
 @Directive({
   selector: 'input[bsCombobox]',
   exportAs: 'bsCombobox',

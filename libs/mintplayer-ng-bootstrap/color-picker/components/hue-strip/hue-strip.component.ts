@@ -2,6 +2,11 @@ import { ChangeDetectionStrategy, Component, computed, input, model } from '@ang
 import { HS } from '../../interfaces/hs';
 import { BsSliderComponent, BsThumbDirective, BsTrackDirective } from '../slider/slider.component';
 
+/**
+ * Hue picker — a horizontal rainbow strip backed by `bs-slider`. Two-way
+ * `[(hs)]` keeps the saturation untouched; only `hs.hue` (0–360°) changes.
+ * Inherits the slider's APG keyboard model (Arrow keys, Home/End, PageUp/Down).
+ */
 @Component({
   selector: 'bs-hue-strip',
   templateUrl: './hue-strip.component.html',

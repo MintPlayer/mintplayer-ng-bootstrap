@@ -2,6 +2,22 @@ import { afterNextRender, computed, Directive, ElementRef, forwardRef, inject, i
 import { BsIdService } from '../service/id.service';
 import { BsRovingFocusDirective } from './roving-focus.directive';
 
+/**
+ * One marker per focusable child of a `bsRovingFocus` container.
+ *
+ * - Mirrors the parent's mode into the host `tabindex` (0 if active in
+ *   `tabindex` mode, -1 otherwise).
+ * - Toggles the `.bs-rovingfocus-active` class so SCSS can paint a focused-
+ *   look highlight on the active item — important in `activedescendant`
+ *   mode, where the item never receives `:focus` and the browser's focus
+ *   ring never paints.
+ * - Auto-generates an `id` if the host doesn't already have one, so combobox
+ *   `aria-activedescendant` always has a stable target. Honours an
+ *   externally-supplied id when present.
+ *
+ * Consumers normally don't interact with this directive directly — they
+ * just stamp it on each list/menu/option element inside `bsRovingFocus`.
+ */
 @Directive({
   selector: '[bsRovingFocusItem]',
   exportAs: 'bsRovingFocusItem',

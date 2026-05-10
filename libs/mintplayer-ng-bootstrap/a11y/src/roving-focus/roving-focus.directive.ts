@@ -4,6 +4,24 @@ import { BsRovingFocusItemDirective } from './roving-focus-item.directive';
 export type BsRovingFocusOrientation = 'vertical' | 'horizontal' | 'both';
 export type BsRovingFocusMode = 'tabindex' | 'activedescendant';
 
+/**
+ * APG roving-tabindex / active-descendant container.
+ *
+ * Place on a list/menu/listbox; mark each focusable child with
+ * `bsRovingFocusItem`. Arrow keys, Home, and End move the active item; the
+ * directive auto-handles disabled items, wrap-around, and orientation.
+ *
+ * Two modes:
+ * - **`tabindex`** (default) — only the active item has `tabindex="0"`; real
+ *   DOM focus moves. Right for menus, treeviews, tablists.
+ * - **`activedescendant`** — items keep `tabindex="-1"`; DOM focus stays on
+ *   an external owner (e.g. a combobox `<input>`) which mirrors the active
+ *   item's id via `aria-activedescendant`. Right for comboboxes/listboxes
+ *   where the user is also typing.
+ *
+ * Consumers that need to react to the active item externally read
+ * `activeIndex()` (signal) or `activeDescendantId()` (computed).
+ */
 @Directive({
   selector: '[bsRovingFocus]',
   exportAs: 'bsRovingFocus',

@@ -12,6 +12,27 @@ export interface SplitterResizeEventDetail {
 
 let splitterInstanceCounter = 0;
 
+/**
+ * `<mp-splitter>` — resizable panel splitter.
+ *
+ * Light-DOM children are projected into named slots (`panel-${i}`) inside a
+ * shadow-DOM flex container with auto-inserted dividers between them. Drag a
+ * divider to redistribute space; sizes survive container resize via a
+ * proportional rescale.
+ *
+ * Pointer + keyboard interactions both flow through the same path:
+ * - Pointer drag → `InputHandler` → `handleResizeStart/Move/End`.
+ * - Arrow keys ±10% (Shift = ±1%), Home/End to limits → `handleResizeKey`.
+ *
+ * ARIA: each divider is a `role="separator"` with `aria-orientation`,
+ * `aria-controls` referencing the deterministic IDs of the two adjacent
+ * panel wrappers, and percent-based `aria-valuenow / valuemin / valuemax`
+ * that update on every drag-preview frame, container resize, and keystroke.
+ *
+ * Public API: `[orientation]`, `[min-panel-size]`, `[touch-mode]`;
+ * `getPanelSizes()` / `setPanelSizes()`; events `resize-start`, `resizing`,
+ * `resize-end` carrying `{ sizes, orientation }`.
+ */
 export class MpSplitter extends LitElement {
   static override styles = [splitterStyles];
 
