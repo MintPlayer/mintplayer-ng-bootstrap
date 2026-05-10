@@ -9,10 +9,7 @@
     <bs-alpha-strip [disabled]="letDisabled" [hs]="letHS" [brightness]="letBrightness" [alpha]="letAlpha" (alphaChange)="onUserAlphaChange($event)" class="d-block mt-2" [style.width.px]="size()" #alphaStrip></bs-alpha-strip>
 }
 @if (showAccessibilityToggle()) {
-    <div class="form-check mt-2" [style.width.px]="size()">
-        <input type="checkbox" class="form-check-input" [id]="toggleId" [checked]="channelSlidersVisible()" (change)="onChannelSlidersToggle($event)">
-        <label class="form-check-label" [attr.for]="toggleId">Show hue + saturation sliders</label>
-    </div>
+    <bs-toggle-button class="mt-2 d-block" type="switch" [(ngModel)]="channelSlidersVisible" [style.width.px]="size()">Show hue + saturation sliders</bs-toggle-button>
     @if (channelSlidersVisible()) {
         <bs-hue-strip [disabled]="letDisabled" [hs]="letHS" (hsChange)="onUserHsChange($event)" class="d-block mt-2" [style.width.px]="size()"></bs-hue-strip>
         <bs-saturation-strip [disabled]="letDisabled" [hs]="letHS" (hsChange)="onUserHsChange($event)" class="d-block mt-2" [style.width.px]="size()"></bs-saturation-strip>

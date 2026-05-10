@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, inject, input, model, signal, viewChild } from "@angular/core";
+import { ChangeDetectionStrategy, Component, input, model, signal, viewChild } from "@angular/core";
+import { FormsModule } from "@angular/forms";
 import { Subject } from "rxjs";
-import { BsIdService } from "@mintplayer/ng-bootstrap/a11y";
+import { BsToggleButtonComponent } from "@mintplayer/ng-bootstrap/toggle-button";
 import { HS } from "../../interfaces/hs";
 import { BsColorPickerValueAccessor } from "../../directives/color-picker-value-accessor/color-picker-value-accessor.directive";
 import { BsColorWheelComponent } from "../color-wheel/color-wheel.component";
@@ -19,12 +20,13 @@ import { BsSaturationStripComponent } from "../saturation-strip/saturation-strip
     BsAlphaStripComponent,
     BsHueStripComponent,
     BsSaturationStripComponent,
+    BsToggleButtonComponent,
+    FormsModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   hostDirectives: [BsColorPickerValueAccessor],
 })
 export class BsColorPickerComponent {
-  private ids = inject(BsIdService);
 
   readonly colorWheel = viewChild.required<BsColorWheelComponent>('wheel');
 
@@ -33,20 +35,17 @@ export class BsColorPickerComponent {
   allowAlpha = input<boolean>(true);
 
   /**
-   * When true (default), a "Show hue + saturation sliders" checkbox is rendered
+   * When true (default), a "Show hue + saturation sliders" toggle is rendered
    * below the picker. Toggling it reveals dedicated 1-D sliders for hue and
    * saturation alongside the existing brightness/alpha strips, giving keyboard
    * and screen-reader users a 1-D path for every channel without having to
-   * spatialise the 2-D wheel. Set to false to hide both the checkbox and the
+   * spatialise the 2-D wheel. Set to false to hide both the toggle and the
    * channel sliders entirely (e.g. when the consuming app provides its own
    * accessibility settings UI).
    */
   showAccessibilityToggle = input<boolean>(true);
 
-  /** Whether the channel sliders (hue + saturation) are currently visible. Driven by the toggle checkbox. */
-  channelSlidersVisible = signal<boolean>(false);
-
-  readonly toggleId = this.ids.next('bs-color-picker-toggle');
+  channelSlidersVisible = model<boolean>(false);
 
   hs = signal<HS>({ hue: 0, saturation: 0 });
   brightness = signal<number>(1);
@@ -73,9 +72,5 @@ export class BsColorPickerComponent {
   onUserAlphaChange(alpha: number) {
     this.alpha.set(alpha);
     this.userChanged.next();
-  }
-
-  onChannelSlidersToggle(event: Event) {
-    this.channelSlidersVisible.set((event.target as HTMLInputElement).checked);
   }
 }

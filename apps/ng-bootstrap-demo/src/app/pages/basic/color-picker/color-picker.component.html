@@ -3,7 +3,7 @@
 <bs-grid>
     <div bsRow>
         <div [md]="6">
-            <bs-color-picker class="d-inline-block mb-5" [(ngModel)]="selectedColor" [(alpha)]="selectedAlpha" [size]="200" [allowAlpha]="allowAlpha()"></bs-color-picker>
+            <bs-color-picker class="d-inline-block mb-5" [(ngModel)]="selectedColor" [(alpha)]="selectedAlpha" [size]="200" [allowAlpha]="allowAlpha()" [showAccessibilityToggle]="screenreaderFriendly()"></bs-color-picker>
         </div>
         <div [md]="6">
             <div bsRow class="mb-3">
@@ -18,6 +18,11 @@
             <div bsRow class="mb-3">
                 <div [col]>
                     <bs-toggle-button [(ngModel)]="allowAlpha">Allow alpha</bs-toggle-button>
+                </div>
+            </div>
+            <div bsRow class="mb-3">
+                <div [col]>
+                    <bs-toggle-button type="checkbox" [(ngModel)]="screenreaderFriendly">Screenreader-friendly</bs-toggle-button>
                 </div>
             </div>
             <div bsRow>

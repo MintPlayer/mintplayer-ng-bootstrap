@@ -21,6 +21,7 @@ export class ColorPickerComponent {
 
   colors = Color;
   allowAlpha = model(false);
+  screenreaderFriendly = model(false);
   selectedColor = model('#0000FF');
   selectedAlpha = model(1);
 
