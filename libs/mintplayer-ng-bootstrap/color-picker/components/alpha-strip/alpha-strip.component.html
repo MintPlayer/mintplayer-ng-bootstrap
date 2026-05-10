@@ -1,4 +1,4 @@
-<bs-slider [disabled]="disabled()" [value]="alpha()" (valueChange)="alpha.set($event)">
+<bs-slider [disabled]="disabled()" [value]="alpha()" (valueChange)="alpha.set($event)" ariaLabel="Alpha">
     <div bsTrack class="position-absolute w-100" [style.background]="trackGradient()"></div>
     <div bsThumb [style.background]="resultBackground()"></div>
 </bs-slider>

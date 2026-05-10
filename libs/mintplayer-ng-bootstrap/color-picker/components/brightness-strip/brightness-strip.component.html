@@ -1,4 +1,4 @@
-<bs-slider [disabled]="disabled()" [value]="brightness()" (valueChange)="brightness.set($event)">
+<bs-slider [disabled]="disabled()" [value]="brightness()" (valueChange)="brightness.set($event)" ariaLabel="Brightness">
     <div bsTrack class="position-absolute w-100" [style.background]="trackGradient()"></div>
     <div bsThumb [style.background]="resultBackground()"></div>
 </bs-slider>
