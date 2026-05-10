@@ -127,26 +127,49 @@ describe('mp-scheduler — selection (Shift+arrow)', () => {
   });
 });
 
-describe('mp-scheduler — Enter on cell creates an event', () => {
+describe('mp-scheduler — Enter on cell emits event-create *request*', () => {
   let el: MpScheduler;
   afterEach(() => el?.remove());
 
-  it('Enter on a focused cell with no selection emits event-create spanning that single cell', async () => {
+  it('Enter on a focused cell with no selection emits event-create with the cell range and view', async () => {
     el = await mount('week');
     focusCell(el, 1, 18);
     dispatchKey(el, 'ArrowDown'); // seed focusedCell
     await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
     const focusedBefore = getState(el).focusedCell!;
-    let emitted: { start: Date; end: Date } | null = null;
+    let emitted: { range: { start: Date; end: Date }; view: string; resourceId?: string } | null = null;
     el.addEventListener('event-create', (ev) => {
       const detail = (ev as CustomEvent).detail;
-      emitted = { start: detail.event.start, end: detail.event.end };
+      emitted = { range: detail.range, view: detail.view, resourceId: detail.resourceId };
     });
+    const eventsBefore = getState(el).events.length;
+
     dispatchKey(el, 'Enter');
     await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+
     expect(emitted).not.toBeNull();
-    expect(emitted!.start.getTime()).toBe(focusedBefore.start.getTime());
-    expect(emitted!.end.getTime()).toBe(focusedBefore.end.getTime());
+    expect(emitted!.range.start.getTime()).toBe(focusedBefore.start.getTime());
+    expect(emitted!.range.end.getTime()).toBe(focusedBefore.end.getTime());
+    expect(emitted!.view).toBe('week');
+    // Per PRD scheduler-controlled-selection: the WC must NOT mutate its
+    // internal events list — that's the consumer's job.
+    expect(getState(el).events.length).toBe(eventsBefore);
+  });
+
+  it('Enter does not auto-clear the selection — consumer decides when to clear', async () => {
+    el = await mount('week');
+    focusCell(el, 1, 18);
+    dispatchKey(el, 'ArrowDown');
+    dispatchKey(el, 'ArrowDown', { shiftKey: true });
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+    expect(getState(el).selectionAnchor).not.toBeNull();
+
+    dispatchKey(el, 'Enter');
+    await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+
+    // Selection persists — the demo's `onEventCreate` handler is what calls
+    // clearSelection() if it wants the post-commit clear behaviour.
+    expect(getState(el).selectionAnchor).not.toBeNull();
   });
 });
 

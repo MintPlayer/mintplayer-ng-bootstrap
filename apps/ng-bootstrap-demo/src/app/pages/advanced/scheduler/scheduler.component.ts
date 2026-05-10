@@ -1,4 +1,4 @@
-import { Component, model, signal, computed, ChangeDetectionStrategy} from '@angular/core';
+import { Component, model, signal, computed, ChangeDetectionStrategy, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Color } from '@mintplayer/ng-bootstrap';
@@ -48,6 +48,11 @@ import {
 })
 export class SchedulerComponent {
   colors = Color;
+
+  // Reference to the scheduler so we can call `clearSelection()` after
+  // committing — per PRD scheduler-controlled-selection the WC no longer
+  // auto-clears, so the demo (or any consumer) decides when to.
+  private schedulerComponent = viewChild<BsSchedulerComponent>(BsSchedulerComponent);
 
   // View state
   view = signal<ViewType>('week');
@@ -182,9 +187,22 @@ export class SchedulerComponent {
   }
 
   onEventCreate(event: SchedulerEventCreateEvent) {
-    // Add the newly created event to our events array
-    this.events.update((events) => [...events, event.event]);
-    this.log(`Event created: ${event.event.title} (${this.formatDate(event.event.start)} - ${this.formatDate(event.event.end)})`);
+    // The WC emits a *request* with the selected range — this demo turns it
+    // into a stored event with its own defaults (id, title, colour). A real
+    // app could open a modal, gate on permissions, or skip creation entirely.
+    const newEvent: SchedulerEvent = {
+      id: generateEventId(),
+      title: 'New Event',
+      start: event.range.start,
+      end: event.range.end,
+      color: '#3788d8',
+      ...(event.resourceId ? { resourceId: event.resourceId } : {}),
+    };
+    this.events.update((events) => [...events, newEvent]);
+    this.log(`Event created: ${newEvent.title} (${this.formatDate(newEvent.start)} - ${this.formatDate(newEvent.end)})`);
+    // Clear the WC's selection so subsequent gestures don't immediately
+    // re-emit the same range.
+    this.schedulerComponent()?.clearSelection();
   }
 
   onEventUpdate(event: SchedulerEventUpdateEvent) {

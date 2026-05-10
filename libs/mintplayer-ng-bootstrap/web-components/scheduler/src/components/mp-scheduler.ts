@@ -10,7 +10,6 @@ import {
   dateService,
   resourceService,
   isResource,
-  generateEventId,
 } from '@mintplayer/ng-bootstrap/web-components/scheduler-core';
 import { SchedulerStateManager, SchedulerState } from '../state/scheduler-state';
 import {
@@ -71,6 +70,11 @@ export class MpScheduler extends LitElement {
   private previousView: ViewType | null = null;
   private previousDate: Date | null = null;
   private previousSelectedEventId: string | null = null;
+  // Sentinel-keyed previous range so we can fire selection-change when the
+  // time-range selection mutates (anchor/extent/resourceId). `__init__`
+  // distinguishes "haven't observed yet" from "currently null" so the very
+  // first emission isn't suppressed.
+  private previousRangeKey: string | null = '__init__';
 
   // RAF scheduling for drag updates
   private pendingDragUpdate: number | null = null;
@@ -267,6 +271,16 @@ export class MpScheduler extends LitElement {
   changeView(view: ViewType): void {
     this.stateManager.setView(view);
     this.liveAnnouncer.announce(`View changed to ${view}.`);
+  }
+
+  /**
+   * Clear the time-range selection and the focused-cell selection. Public
+   * because — per PRD scheduler-controlled-selection — the WC no longer
+   * auto-clears on commit; consumers call this from their `event-create`
+   * handler if they want the post-create selection cleared.
+   */
+  clearSelection(): void {
+    this.stateManager.clearSelection();
   }
 
   addEvent(event: SchedulerEvent): void {
@@ -504,22 +518,34 @@ export class MpScheduler extends LitElement {
       this.previousDate !== null &&
       this.previousDate.getTime() !== state.date.getTime();
     const selectedEventId = state.selectedEvent?.id ?? null;
-    // Selection-change fires on every change including the first
-    // null → eventId transition (selectedEvent's initial state is null,
-    // so the !== null guard used elsewhere would suppress that case).
-    const selectionChanged = this.previousSelectedEventId !== selectedEventId;
+    const range = selectionRange(state);
+    // Encode the range + resource into a single key so we fire selection-change
+    // on any movement of anchor/extent/resourceId, including the transition
+    // back to null (per PRD: consumers shouldn't have to poll).
+    const rangeKey = range
+      ? `${range.start.getTime()}-${range.end.getTime()}-${state.selectionResourceId ?? ''}`
+      : null;
+    const selectionChanged =
+      this.previousSelectedEventId !== selectedEventId ||
+      this.previousRangeKey !== rangeKey;
 
     if (viewChanged || dateChanged) {
       this.eventEmitter.emitViewChange(state.view, state.date);
     }
 
     if (selectionChanged) {
-      this.eventEmitter.emitSelectionChange(state.selectedEvent);
+      this.eventEmitter.emitSelectionChange(
+        state.selectedEvent,
+        range,
+        state.view,
+        state.selectionResourceId ?? undefined,
+      );
     }
 
     this.previousView = state.view;
     this.previousDate = new Date(state.date);
     this.previousSelectedEventId = selectedEventId;
+    this.previousRangeKey = rangeKey;
   }
 
   private updateUI(state: SchedulerState): void {
@@ -605,15 +631,16 @@ export class MpScheduler extends LitElement {
     // Handle actual drag completion
     switch (result.type) {
       case 'create': {
-        const newEvent: SchedulerEvent = {
-          id: generateEventId(),
-          title: 'New Event',
-          start: result.preview.start,
-          end: result.preview.end,
-          color: '#3788d8',
-        };
-        this.stateManager.addEvent(newEvent);
-        this.eventEmitter.emitEventCreate(newEvent, originalEvent);
+        // Per PRD scheduler-controlled-selection: the scheduler does not
+        // construct or store the event itself — it emits the range as a
+        // request, the consumer constructs the SchedulerEvent.
+        const state = this.stateManager.getState();
+        this.eventEmitter.emitEventCreate(
+          { start: result.preview.start, end: result.preview.end },
+          state.view,
+          originalEvent,
+          result.preview.resourceId,
+        );
         break;
       }
 
@@ -1101,42 +1128,37 @@ export class MpScheduler extends LitElement {
 
   /**
    * Emit `event-create` covering the active selection range, or a single
-   * cell when no selection is active. Mirrors the mouse drag-create path:
-   * same payload shape, same custom event.
+   * cell when no selection is active. Per PRD scheduler-controlled-selection,
+   * this is a *request* — no internal state mutation, no auto-clear, no
+   * auto-focus. The consumer constructs the SchedulerEvent and decides
+   * whether/when to clear the selection.
    */
   private createEventFromCellOrSelection(originalEvent: Event): void {
     const state = this.stateManager.getState();
     const range = selectionRange(state);
     let start: Date;
     let end: Date;
+    let resourceId: string | undefined;
     if (range) {
       start = range.start;
       end = range.end;
+      resourceId = state.selectionResourceId ?? undefined;
     } else if (state.focusedCell) {
       start = state.focusedCell.start;
       end = state.focusedCell.end;
+      resourceId = state.focusedResourceId ?? undefined;
     } else {
       return;
     }
-    const newEvent: SchedulerEvent = {
-      id: generateEventId(),
-      title: 'New Event',
-      start,
-      end,
-      color: '#3788d8',
-    };
-    this.stateManager.addEvent(newEvent);
-    this.eventEmitter.emitEventCreate(newEvent, originalEvent);
-    this.stateManager.clearSelection();
-    this.liveAnnouncer.announce(
-      `Event created: ${dateService.formatTime(start, state.options.timeFormat)}–${dateService.formatTime(end, state.options.timeFormat)}.`,
+    this.eventEmitter.emitEventCreate(
+      { start, end },
+      state.view,
+      originalEvent,
+      resourceId,
     );
-    // After re-render, focus the new event so subsequent Tab/Enter act on it.
-    requestAnimationFrame(() => {
-      const sel = `[data-event-id="${this.cssEscape(newEvent.id)}"]`;
-      const el = this.shadowRoot?.querySelector(sel) as HTMLElement | null;
-      el?.focus({ preventScroll: false });
-    });
+    this.liveAnnouncer.announce(
+      `Selection committed: ${dateService.formatTime(start, state.options.timeFormat)}–${dateService.formatTime(end, state.options.timeFormat)}.`,
+    );
   }
 
   /**
