@@ -1,6 +1,6 @@
 # PRD: Post-review fixes for `feat/aria-accessibility` (PR #327)
 
-**Status:** Draft — to be handled on this branch before merge
+**Status:** **Implemented** — all four steps shipped on `feat/aria-accessibility` (commits `f2e04db2`, `d89c1812`, `a712c3fd`, plus this closure).
 **Author:** Pieterjan (with review input from Claude + gemini-code-assist bot on PR #327)
 **Date:** 2026-05-10
 **Library:** `@mintplayer/ng-bootstrap/a11y`, `@mintplayer/ng-bootstrap/dropdown`, `@mintplayer/ng-bootstrap/popover`, `@mintplayer/ng-bootstrap/tooltip`, `@mintplayer/ng-bootstrap/priority-nav`, `@mintplayer/ng-bootstrap/modal`
