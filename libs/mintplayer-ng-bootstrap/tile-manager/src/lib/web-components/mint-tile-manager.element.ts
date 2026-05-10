@@ -1,9 +1,14 @@
 import { LitElement, html, type TemplateResult, type PropertyValues, nothing } from 'lit';
+import { LiveAnnouncerController } from '@mintplayer/ng-bootstrap/web-components/a11y';
 import { TilePosition } from '../types/tile-position';
 import { TileLayoutSnapshot, TileGestureBlocked } from '../types/tile-layout-snapshot';
 import { GridRect } from '../types/grid-rect';
 import { pack } from '../utils/pack';
 import { styles } from './mint-tile-manager.element.template';
+
+const TILE_INSTRUCTIONS =
+  'Press M to enter move mode. In move mode, arrow keys move the tile, Shift with arrow keys resize it, Enter commits, Escape cancels.';
+let tileManagerInstanceCounter = 0;
 
 export interface MintTile {
   id: string;
@@ -88,7 +93,7 @@ export class MintTileManagerElement extends LitElement {
     blocked: { state: true },
     effectiveColumnCount: { state: true },
     keyboardMode: { state: true },
-    liveRegionMessage: { state: true },
+    focusedTileId: { state: true },
   };
 
   tiles: ReadonlyArray<MintTile> = [];
@@ -109,7 +114,13 @@ export class MintTileManagerElement extends LitElement {
   protected gestureKind: GestureState['kind'] = 'idle';
   protected blocked = false;
   protected effectiveColumnCount = 1;
-  protected liveRegionMessage = '';
+  protected focusedTileId: string | null = null;
+
+  private readonly liveAnnouncer = new LiveAnnouncerController(this);
+  private readonly instanceId = `mp-tile-manager-${++tileManagerInstanceCounter}`;
+  private get instructionsId(): string {
+    return `${this.instanceId}-instructions`;
+  }
 
   private hostResizeObserver: ResizeObserver | null = null;
   private flipPreviousRects: Map<string, DOMRect> = new Map();
@@ -134,20 +145,26 @@ export class MintTileManagerElement extends LitElement {
 
     const gridStyle = this.computeGridStyle();
 
-    // ARIA grid hierarchy is grid > row > gridcell. A single role="row"
-    // wrapper with display: contents lets us satisfy that without disturbing
-    // the CSS Grid placement of the gridcell children.
+    // role="region" + button-per-tile (PRD §10 Q1): a tile board's dimensions
+    // change under user reflow, so the static grid contract (rowindex/colindex)
+    // is a poor fit. Tiles are activatable buttons whose move/resize is
+    // discoverable through aria-describedby's instructions string.
     return html`
-      <div class="tile-grid" role="grid" aria-label=${this.label ?? nothing} style=${gridStyle}>
-        <div role="row" style="display: contents;">
-          ${layoutSource.map((entry) => {
-            const tile = tileById.get(entry.id);
-            if (!tile) return nothing;
-            return this.renderTile(tile, entry.position);
-          })}
-        </div>
+      <div
+        class="tile-grid"
+        role="region"
+        aria-label=${this.label ?? 'Tile board'}
+        aria-describedby=${this.instructionsId}
+        style=${gridStyle}
+      >
+        ${layoutSource.map((entry) => {
+          const tile = tileById.get(entry.id);
+          if (!tile) return nothing;
+          return this.renderTile(tile, entry.position);
+        })}
       </div>
-      <div class="tile-grid__live-region" aria-live="polite" aria-atomic="true">${this.liveRegionMessage}</div>
+      <div id=${this.instructionsId} class="tile-grid__sr-only">${TILE_INSTRUCTIONS}</div>
+      ${this.liveAnnouncer.template()}
     `;
   }
 
@@ -166,11 +183,12 @@ export class MintTileManagerElement extends LitElement {
       .filter(Boolean)
       .join('; ');
 
+    const isFocusableStop = this.resolveFocusableTileId() === tile.id;
     return html`
       <div
         class="tile"
-        role="gridcell"
-        tabindex="0"
+        role="button"
+        tabindex=${isFocusableStop ? '0' : '-1'}
         data-tile-id=${tile.id}
         data-dragging=${isDragging ? 'true' : 'false'}
         data-resizing=${isResizing ? 'true' : 'false'}
@@ -183,6 +201,7 @@ export class MintTileManagerElement extends LitElement {
         style=${style}
         @pointerdown=${(e: PointerEvent) => this.onTilePointerDown(e, tile)}
         @keydown=${(e: KeyboardEvent) => this.onTileKeyDown(e, tile)}
+        @focus=${() => this.onTileFocus(tile)}
       >
         <div class="tile__header-shell">
           <slot name=${`${tile.id}-header`}></slot>
@@ -269,9 +288,6 @@ export class MintTileManagerElement extends LitElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
-    if (!this.hasAttribute('role')) {
-      this.setAttribute('role', 'application');
-    }
     document.addEventListener('visibilitychange', this.onVisibilityChange);
   }
 
@@ -533,6 +549,7 @@ export class MintTileManagerElement extends LitElement {
     this.gestureKind = 'drag';
     this.lastPointerPosition = { x: startX, y: startY };
     this.attachWindowListeners();
+    this.announceDragBegin(tile);
     this.requestUpdate();
   }
 
@@ -555,6 +572,7 @@ export class MintTileManagerElement extends LitElement {
     this.gestureKind = 'drag';
     this.lastPointerPosition = { x: event.clientX, y: event.clientY };
     this.attachWindowListeners();
+    this.announceDragBegin(tile);
     this.runPackerForCurrentGesture();
   }
 
@@ -572,7 +590,18 @@ export class MintTileManagerElement extends LitElement {
     this.gestureKind = 'resize';
     this.lastPointerPosition = { x: event.clientX, y: event.clientY };
     this.attachWindowListeners();
+    this.announceResizeBegin(tile);
     this.runPackerForCurrentGesture();
+  }
+
+  private announceDragBegin(tile: MintTile): void {
+    const label = tile.label ?? `tile at row ${tile.position.rowStart}, column ${tile.position.colStart}`;
+    this.liveAnnouncer.announce(`Dragging ${label}.`);
+  }
+
+  private announceResizeBegin(tile: MintTile): void {
+    const label = tile.label ?? `tile at row ${tile.position.rowStart}, column ${tile.position.colStart}`;
+    this.liveAnnouncer.announce(`Resizing ${label}.`);
   }
 
   private attachWindowListeners(): void {
@@ -645,7 +674,11 @@ export class MintTileManagerElement extends LitElement {
       cols,
     );
     this.previewLayout = result.layout;
+    const wasBlocked = g.blocked;
     g.blocked = result.blocked;
+    if (result.blocked && !wasBlocked) {
+      this.liveAnnouncer.announce('Move blocked by a locked tile.');
+    }
     this.blocked = result.blocked;
     this.requestUpdate();
   }
@@ -739,10 +772,11 @@ export class MintTileManagerElement extends LitElement {
 
     const movedTile = finalLayout.find((p) => p.id === g.tileId);
     if (movedTile) {
-      this.liveRegionMessage =
+      this.liveAnnouncer.announce(
         g.kind === 'drag'
           ? `Tile moved to row ${movedTile.position.rowStart}, column ${movedTile.position.colStart}`
-          : `Tile resized to ${movedTile.position.colSpan} columns by ${movedTile.position.rowSpan} rows`;
+          : `Tile resized to ${movedTile.position.colSpan} columns by ${movedTile.position.rowSpan} rows`,
+      );
     }
 
     this.cleanupGesture();
@@ -811,16 +845,21 @@ export class MintTileManagerElement extends LitElement {
   // ---------------- Keyboard ----------------
 
   private onTileKeyDown(event: KeyboardEvent, tile: MintTile): void {
-    if (tile.disableMove && tile.disableResize) return;
     const km = this.keyboardState;
 
     if (km.kind === 'idle') {
-      if (event.key === ' ' && !tile.disableMove) {
+      // Outside move mode: arrow keys traverse focus between tiles, Home/End
+      // jump to first/last, M enters move mode if the tile allows it.
+      if (event.key === 'm' || event.key === 'M') {
+        if (tile.disableMove && tile.disableResize) return;
         event.preventDefault();
         this.keyboardState = { kind: 'move', tileId: tile.id };
-        this.liveRegionMessage = 'Move mode enabled. Use arrow keys to move; Enter to commit, Escape to cancel.';
+        this.liveAnnouncer.announce(
+          'Move mode enabled. Use arrow keys to move, Shift with arrow keys to resize, Enter to commit, Escape to cancel.',
+        );
         return;
       }
+      if (this.handleFocusNavigation(event, tile)) return;
       return;
     }
 
@@ -829,7 +868,7 @@ export class MintTileManagerElement extends LitElement {
     if (event.key === 'Escape' || event.key === 'Enter') {
       event.preventDefault();
       this.keyboardState = { kind: 'idle' };
-      this.liveRegionMessage = event.key === 'Enter' ? 'Move committed.' : 'Move cancelled.';
+      this.liveAnnouncer.announce(event.key === 'Enter' ? 'Move committed.' : 'Move cancelled.');
       return;
     }
 
@@ -838,6 +877,69 @@ export class MintTileManagerElement extends LitElement {
       const isResize = event.shiftKey;
       this.applyKeyboardStep(tile, event.key as ArrowKey, isResize);
     }
+  }
+
+  /**
+   * Outside move mode, arrow keys move *focus* between tiles (row-major
+   * order — top-to-bottom, left-to-right by gridcell position). Home/End
+   * jump to first/last enabled tile. Returns true if the event was handled.
+   */
+  private handleFocusNavigation(event: KeyboardEvent, current: MintTile): boolean {
+    const navKey =
+      event.key === 'ArrowUp' || event.key === 'ArrowDown' ||
+      event.key === 'ArrowLeft' || event.key === 'ArrowRight' ||
+      event.key === 'Home' || event.key === 'End';
+    if (!navKey) return false;
+    if (this.tiles.length <= 1) return false;
+
+    const ordered = [...this.tiles].sort((a, b) => {
+      if (a.position.rowStart !== b.position.rowStart) return a.position.rowStart - b.position.rowStart;
+      return a.position.colStart - b.position.colStart;
+    });
+    const idx = ordered.findIndex((t) => t.id === current.id);
+    if (idx < 0) return false;
+
+    let nextIdx = idx;
+    if (event.key === 'Home') nextIdx = 0;
+    else if (event.key === 'End') nextIdx = ordered.length - 1;
+    else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') nextIdx = (idx + 1) % ordered.length;
+    else nextIdx = (idx - 1 + ordered.length) % ordered.length;
+
+    if (nextIdx === idx) return true;
+    event.preventDefault();
+    const target = ordered[nextIdx];
+    this.focusedTileId = target.id;
+    this.requestUpdate();
+    queueMicrotask(() => {
+      const el = this.shadowRoot?.querySelector<HTMLElement>(`.tile[data-tile-id="${target.id}"]`);
+      el?.focus();
+    });
+    return true;
+  }
+
+  private onTileFocus(tile: MintTile): void {
+    if (this.focusedTileId !== tile.id) {
+      this.focusedTileId = tile.id;
+      this.requestUpdate();
+    }
+  }
+
+  /**
+   * The single tile that should carry `tabindex="0"` to act as the board's
+   * tab stop. Defaults to the previously-focused tile, then the first tile in
+   * row-major order. All other tiles render with `tabindex="-1"` so Tab from
+   * outside the board lands on exactly one tile.
+   */
+  private resolveFocusableTileId(): string | null {
+    if (this.tiles.length === 0) return null;
+    if (this.focusedTileId && this.tiles.some((t) => t.id === this.focusedTileId)) {
+      return this.focusedTileId;
+    }
+    const ordered = [...this.tiles].sort((a, b) => {
+      if (a.position.rowStart !== b.position.rowStart) return a.position.rowStart - b.position.rowStart;
+      return a.position.colStart - b.position.colStart;
+    });
+    return ordered[0]?.id ?? null;
   }
 
   private applyKeyboardStep(tile: MintTile, key: ArrowKey, isResize: boolean): void {
@@ -864,7 +966,7 @@ export class MintTileManagerElement extends LitElement {
       cols,
     );
     if (result.blocked) {
-      this.liveRegionMessage = 'Move blocked.';
+      this.liveAnnouncer.announce('Move blocked.');
       return;
     }
     const newTiles: MintTile[] = this.tiles.map((t) => {
@@ -888,9 +990,11 @@ export class MintTileManagerElement extends LitElement {
         }),
       );
     });
-    this.liveRegionMessage = isResize
-      ? `Tile resized to ${newRect.colSpan} columns by ${newRect.rowSpan} rows`
-      : `Tile moved to row ${newRect.rowStart}, column ${newRect.colStart}`;
+    this.liveAnnouncer.announce(
+      isResize
+        ? `Tile resized to ${newRect.colSpan} columns by ${newRect.rowSpan} rows`
+        : `Tile moved to row ${newRect.rowStart}, column ${newRect.colStart}`,
+    );
   }
 }
 

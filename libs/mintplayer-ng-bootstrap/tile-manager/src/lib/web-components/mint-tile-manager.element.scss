@@ -162,7 +162,8 @@
   display: none;
 }
 
-.tile-grid__live-region {
+.tile-grid__live-region,
+.tile-grid__sr-only {
   position: absolute;
   width: 1px;
   height: 1px;

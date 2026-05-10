@@ -126,12 +126,12 @@ describe('mint-tile-manager — layout rendering', () => {
     expect(locked.querySelector('.tile__resize-corner')).toBeFalsy();
   });
 
-  it('renders an aria-live polite region for keyboard announcements', async () => {
+  it('renders a polite role="status" region (via the shared LiveAnnouncerController)', async () => {
     el = await mount((m) => {
       m.tiles = fourTiles;
       m.columnCount = 2;
     });
-    const live = el.shadowRoot!.querySelector('.tile-grid__live-region');
+    const live = el.shadowRoot!.querySelector('[role="status"]');
     expect(live?.getAttribute('aria-live')).toBe('polite');
   });
 });
@@ -282,7 +282,7 @@ describe('mint-tile-manager — keyboard mode', () => {
       events.push((e as CustomEvent<TileLayoutSnapshot>).detail),
     );
 
-    a.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }));
+    a.dispatchEvent(new KeyboardEvent('keydown', { key: 'm', bubbles: true, cancelable: true }));
     a.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
 
     expect(events.length).toBe(1);
@@ -302,7 +302,7 @@ describe('mint-tile-manager — keyboard mode', () => {
       events.push((e as CustomEvent<TileLayoutSnapshot>).detail),
     );
 
-    a.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }));
+    a.dispatchEvent(new KeyboardEvent('keydown', { key: 'm', bubbles: true, cancelable: true }));
     a.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', shiftKey: true, bubbles: true, cancelable: true }));
 
     const aFinal = events[0].find((p) => p.id === 'a')!;
@@ -316,7 +316,7 @@ describe('mint-tile-manager — keyboard mode', () => {
     });
     const a = focusTile('a');
 
-    a.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }));
+    a.dispatchEvent(new KeyboardEvent('keydown', { key: 'm', bubbles: true, cancelable: true }));
     a.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
 
     // After escape, an arrow key should no longer trigger a move.
@@ -344,7 +344,7 @@ describe('mint-tile-manager — keyboard mode', () => {
       events.push((e as CustomEvent<TileLayoutSnapshot>).detail),
     );
 
-    a.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }));
+    a.dispatchEvent(new KeyboardEvent('keydown', { key: 'm', bubbles: true, cancelable: true }));
     a.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
 
     // Moving 'a' onto the locked neighbour with the rest of the grid
@@ -369,7 +369,7 @@ describe('mint-tile-manager — events', () => {
       positionEvents.push((e as CustomEvent<{ id: string; position: TilePosition }>).detail),
     );
 
-    a.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }));
+    a.dispatchEvent(new KeyboardEvent('keydown', { key: 'm', bubbles: true, cancelable: true }));
     a.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
 
     // At minimum the moved tile (a) gets a position event.
