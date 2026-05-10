@@ -1,6 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, input, model, output, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, input, model, output, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { BsRovingFocusDirective, BsRovingFocusItemDirective } from '@mintplayer/ng-bootstrap/a11y';
+import { BsLiveAnnouncerService, BsRovingFocusDirective, BsRovingFocusItemDirective } from '@mintplayer/ng-bootstrap/a11y';
 import { BsComboboxDirective, BsDropdownDirective, BsDropdownMenuDirective } from '@mintplayer/ng-bootstrap/dropdown';
 import { BsDropdownMenuComponent, BsDropdownItemComponent } from '@mintplayer/ng-bootstrap/dropdown-menu';
 import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
@@ -22,6 +22,7 @@ import { BsProgressComponent } from '@mintplayer/ng-bootstrap/progress-bar';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsTypeaheadComponent {
+  private announcer = inject(BsLiveAnnouncerService);
 
   isOpen = model(false);
 
@@ -34,24 +35,44 @@ export class BsTypeaheadComponent {
   searchterm = model('');
   isLoadingText = input('Loading...');
   noSuggestionsText = input('No suggestions found');
+  resultsAnnouncementSingular = input<string>('1 result found');
+  resultsAnnouncementPlural = input<(count: number) => string>((count) => `${count} results found`);
   provideSuggestions = output<string>();
   suggestionSelected = output<any>();
   submitted = output<string>();
+
+  private requestInFlight = false;
 
   constructor() {
     effect(() => {
       const suggestions = this.suggestions();
       if (suggestions) {
         this.isLoading.set(false);
+        if (this.requestInFlight) {
+          this.requestInFlight = false;
+          this.announceResults(suggestions.length);
+        }
       }
     });
+  }
+
+  private announceResults(count: number) {
+    if (count === 0) {
+      this.announcer.announce(this.noSuggestionsText());
+    } else if (count === 1) {
+      this.announcer.announce(this.resultsAnnouncementSingular());
+    } else {
+      this.announcer.announce(this.resultsAnnouncementPlural()(count));
+    }
   }
 
   onProvideSuggestions(value: string) {
     this.searchterm.set(value);
     if (value === '') {
       this.isOpen.set(false);
+      this.requestInFlight = false;
     } else {
+      this.requestInFlight = true;
       this.isLoading.set(true);
       this.isOpen.set(true);
       this.provideSuggestions.emit(value);

@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, input, model } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, input, model } from '@angular/core';
+import { BsLiveAnnouncerService } from '@mintplayer/ng-bootstrap/a11y';
 
 @Component({
   selector: 'bs-placeholder',
@@ -11,5 +12,20 @@ import { ChangeDetectionStrategy, Component, input, model } from '@angular/core'
   },
 })
 export class BsPlaceholderComponent {
+  private announcer = inject(BsLiveAnnouncerService);
+
   isLoading = model<boolean>(false);
+  loadingCompleteText = input<string>('Loading complete');
+
+  private wasLoading = false;
+
+  constructor() {
+    effect(() => {
+      const isLoading = this.isLoading();
+      if (this.wasLoading && !isLoading) {
+        this.announcer.announce(this.loadingCompleteText());
+      }
+      this.wasLoading = isLoading;
+    });
+  }
 }
