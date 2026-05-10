@@ -317,8 +317,8 @@ These run on every PR (cheap, fast feedback), are deterministic, and fail loudly
 Originally these were open. The branch `feat/aria-accessibility` resolved them as follows:
 
 - **Adopt `@angular/cdk/a11y`?** **Yes, partially.** `BsOverlayFocusDirective` wraps CDK's `ConfigurableFocusTrap`. `BsLiveAnnouncerService` wraps CDK's `LiveAnnouncer` (adds dedup of consecutive identical messages). `BsRovingFocus` is hand-rolled (CDK's `FocusKeyManager` ties focus management to `@Input` query lists in a way that doesn't compose with our content-projection model). `BsIdService` is hand-rolled (CDK's `_IdGenerator` is `_`-prefixed/unstable; our service is one file). All four primitives live in `@mintplayer/ng-bootstrap/a11y`.
-- **Carousel auto-advance default.** **Not changed.** Carousel still auto-advances; the play/pause button + APG-recommended off-by-default is a tracked follow-up (see §11). Breaking change deferred to a later batch.
-- **`role="grid"` on `table`/`datatable`.** **Dropped.** `bs-table` no longer adds `role="grid"` (it conflicted with native `<table>` semantics). `bs-datatable` adds `aria-sort` to sortable headers + tabindex/Enter/Space keyboard activation. Virtualised `aria-rowcount`/`aria-rowindex` for virtual-datatable is a tracked follow-up (see §11) — needs CDK virtual scroll integration.
+- ~~**Carousel auto-advance default.**~~ ✓ resolved 2026-05-11. The "off by default" half was already satisfied (`[interval]` defaulted to `null`); the play/pause control shipped with the APG bundle (`b953970d`) plus the icon-button polish (`68711714`). See §13.2.
+- **`role="grid"` on `table`/`datatable`.** **Dropped.** `bs-table` no longer adds `role="grid"` (it conflicted with native `<table>` semantics). `bs-datatable` adds `aria-sort` to sortable headers + tabindex/Enter/Space keyboard activation. ✓ Virtualised `aria-rowcount` / `aria-rowindex` for virtual-datatable shipped 2026-05-11 (`2283818b` — see §13.2).
 - **Color-picker wheel keyboard model.** **Both (a) and (b).** Wheel itself is keyboard-operable (`role="application"`, ArrowL/R = ±hue, ArrowU/D = ±saturation, Shift = fine, Page = ±30°, Home/End = saturation 100%/0%). Plus a user-toggleable checkbox reveals dedicated 1-D `bs-hue-strip` + `bs-saturation-strip` for users who find 2-D nav hard to spatialise (blind users in particular). The bs-slider primitive grew `[valueScale]` (default 100) and `[valueUnit]` (default "%") inputs so the same slider reports `aria-valuenow` and `aria-valuetext` in the natural unit ("171°" for hue, "47%" for brightness). Browser detection of SR usage is impossible by design (privacy + adversarial-design protections), so the toggle is user-controlled.
 - **`scheduler` and `dock` and `tile-manager` keyboard alternative to drag.** **Deferred to its own PRD.** All three share the same "drag → keyboard cut/paste mode" design problem. Scope is large (focus management, live announcements, mode state machine). Tracked as a single open item in §11.
 
@@ -331,7 +331,7 @@ Branch: `feat/aria-accessibility`. ~60 commits since branch start (75315daf). Th
 **§5.1 Critical (24/24):**
 - ✓ `signature-pad` — canvas role + ariaLabel
 - ✓ `searchbox`, `multiselect`, `select2`, `typeahead` — all four migrated to bsCombobox + popupRole="listbox" + BsRovingFocus (activedescendant mode)
-- ✓ `calendar` — aria-selected/current/disabled, scope, labelled nav buttons (arrow-key nav deferred — see follow-ups)
+- ✓ `calendar` — aria-selected/current/disabled, scope, labelled nav buttons + arrow-key grid navigation (`4d442375`, see §13.1)
 - ✓ `datepicker` — popup labelled, inherits calendar fixes
 - ✓ `timepicker` — aria-labels on inputs (native `<input type="number">` provides spinbutton role natively), listbox preset dropdown
 - ✓ `color-picker` — wheel keyboard nav, slider APG-conformant, hue+sat strips behind user toggle

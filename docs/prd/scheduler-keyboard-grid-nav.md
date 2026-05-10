@@ -1,6 +1,6 @@
 # PRD: `mp-scheduler` keyboard grid navigation — pointer parity for cells, selections, and event move/resize
 
-**Status:** **Implemented** — shipped `9ae72107` on `feat/aria-accessibility`. All Phase A items live; Phase B (month/year arrow nav, inter-event arrow nav) deferred. 656 unit tests + 12 new keyboard cases green; smoke-tested in browser.
+**Status:** **Implemented** — Phase A shipped `9ae72107`; Phase B (month/year arrow nav, inter-event arrow nav) shipped `ae8653da` via the [`scheduler-controlled-selection.md`](./scheduler-controlled-selection.md) follow-up PRD. Both on `feat/aria-accessibility`. Browser-verified end-to-end.
 **Author:** Pieterjan (analysis by 4-agent ARIA team)
 **Date:** 2026-05-10
 **Library:** `@mintplayer/ng-bootstrap/web-components/scheduler`
@@ -311,12 +311,10 @@ What's **new** with this PRD (no precedent on this branch): cell-level Shift+arr
 11. Demo page: keymap legend below the scheduler, matching memory rule.
 12. Tests: `mp-scheduler.keyboard.spec.ts` covering each row of §5's parity table — assert keyboard path emits the same custom event with the same payload as the pointer path. Includes a cross-day-Shift+Arrow case (D1) and a cross-day-resize case (D5).
 
-**Phase B (follow-up, optional, only if v1 ships clean):**
-- `month-view` arrow nav between days (no in-cell time selection — month view's "cell" is a whole day).
-- `year-view` arrow nav between months.
-- ArrowLeft/Right between focused events (deferred from §6.5).
-
-Per memory *PRD scope — multi-part features ship together*, prefer one PR for Phase A; Phase B is genuinely different surfaces (month/year views) and can ship later.
+**Phase B** ✓ shipped `ae8653da` via [`scheduler-controlled-selection.md`](./scheduler-controlled-selection.md):
+- ✓ `month-view` ArrowLeft/Right ±1 day, ArrowUp/Down ±7 days, cross-month auto-advance (APG date-picker pattern).
+- ✓ `year-view` ArrowLeft/Right ±1 month, ArrowUp/Down ±3 months, cross-year auto-advance.
+- ✓ ArrowLeft/Right between focused events — walks events in start-time order, no wrap.
 
 ## 9. Acceptance criteria
 
