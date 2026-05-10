@@ -17,23 +17,36 @@
         z-index: 20 !important;
 
         &.noscript {
-            // Without JS the toggler button is inert (no click handler runs),
-            // so users in narrow / responsive mode would have no way to expose
-            // the menu at all. Use :focus-within as the JS-free toggle: tab
-            // onto the toggler — or onto any item inside the menu — and the
-            // collapse content reveals. Tab away and it collapses.
+            // Without JS the toggler is inert from the click-handler side, so
+            // we need a CSS-only path to expose the menu. Two complications:
             //
-            // Above the navbar's expand-breakpoint Bootstrap forces
-            // `display: flex !important` on .navbar-collapse via its
-            // .navbar-expand-{bp} media queries, so the rule below only takes
-            // effect when the layout is actually collapsed.
+            //  1. SSR runs `[@slideUpDown]` with showNavs=false (windowWidth
+            //     is null on the server), which bakes `height: 0` inline into
+            //     the rendered HTML. That inline style sticks in noscript and
+            //     hides the menu regardless of any display rule we add. We
+            //     have to override the height explicitly.
+            //  2. The toggler is rendered as `<input type="checkbox">` +
+            //     `<label for=…>` (see navbar.component.html) so the click
+            //     toggles a checkbox via the label — which works regardless
+            //     of browser focus-on-click behavior (Safari + macOS Chrome
+            //     don't focus a `<button>` on mouse click, so :focus-within
+            //     alone wasn't enough).
             //
-            // Selector uses descendant (not child) because bs-navbar-nav is
-            // projected one level deeper than this scss originally assumed —
-            // it sits inside the [id]=collapseId wrapper div in the navbar
-            // template.
-            &:not(:focus-within) bs-navbar-nav .navbar-collapse {
-                display: none;
+            // Reveal path: the toggler-checkbox is :checked, OR the navbar
+            // has any focus inside (Tab into the toggler, or into a menu
+            // item). Above the navbar's expand-breakpoint Bootstrap forces
+            // `display: flex !important` on .navbar-collapse via its media
+            // queries; the height override below is gated on small mode by
+            // the :has(checkbox) / :focus-within conditions never firing
+            // when the user can already see the menu.
+            bs-navbar-nav .navbar-collapse {
+                overflow: hidden;
+            }
+
+            &:has(.navbar-toggler-checkbox:checked) bs-navbar-nav .navbar-collapse,
+            &:focus-within bs-navbar-nav .navbar-collapse {
+                height: auto !important;
+                overflow: visible;
             }
 
             li.nav-item:focus-within > bs-navbar-dropdown > ul {

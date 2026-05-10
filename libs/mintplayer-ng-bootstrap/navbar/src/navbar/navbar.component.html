@@ -4,18 +4,54 @@
             <div class="d-flex w-100" [class]="wAutoClass()">
                 <ng-content select="bs-navbar-brand"></ng-content>
                 <div class="flex-end d-flex tw" [class]="dNoneClass()">
-                    <button (click)="toggleExpanded()"
-                        class="align-self-center"
-                        [class.navbar-toggler]="!expandButtonTemplate()"
-                        [class.bg-transparent]="expandButtonTemplate()"
-                        [class.shadow-none]="expandButtonTemplate()"
-                        [class.border-0]="expandButtonTemplate()"
-                        type="button"
-                        aria-label="Toggle navigation"
-                        [attr.aria-expanded]="isExpanded()"
-                        [attr.aria-controls]="collapseId()">
-                        <ng-container *ngTemplateOutlet="expandButtonTemplate() ?? defaultExpandButton; context: { $implicit: isExpanded() }"></ng-container>
-                    </button>
+                    @if (isServerSide) {
+                        <!--
+                            SSR-only toggler: hidden checkbox + visible label.
+                            Works as a CSS-only toggle in noscript because:
+                            - The label[for=…] toggles the checkbox on click,
+                              regardless of browser focus-on-click behavior
+                              (Safari + macOS Chrome don't focus buttons on
+                              click, so a plain :focus-within rule fails).
+                            - The input is focusable (Tab + Space toggles it),
+                              so keyboard users get the same behavior.
+                            - The checkbox's :checked state drives a CSS rule
+                              on .navbar.noscript that overrides the SSR-baked
+                              height:0 the @slideUpDown void state emits.
+                            In the browser, isServerSide is false even during
+                            hydration so the @else branch's plain <button>
+                            renders and the JS click handler does the work.
+                        -->
+                        <input type="checkbox"
+                            [id]="togglerCheckboxId"
+                            class="navbar-toggler-checkbox visually-hidden"
+                            [checked]="isExpanded()"
+                            aria-label="Toggle navigation"
+                            [attr.aria-expanded]="isExpanded()"
+                            [attr.aria-controls]="collapseId()" />
+                        <label
+                            [attr.for]="togglerCheckboxId"
+                            class="align-self-center cursor-pointer mb-0"
+                            [class.navbar-toggler]="!expandButtonTemplate()"
+                            [class.bg-transparent]="expandButtonTemplate()"
+                            [class.shadow-none]="expandButtonTemplate()"
+                            [class.border-0]="expandButtonTemplate()"
+                            aria-hidden="true">
+                            <ng-container *ngTemplateOutlet="expandButtonTemplate() ?? defaultExpandButton; context: { $implicit: isExpanded() }"></ng-container>
+                        </label>
+                    } @else {
+                        <button (click)="toggleExpanded()"
+                            class="align-self-center"
+                            [class.navbar-toggler]="!expandButtonTemplate()"
+                            [class.bg-transparent]="expandButtonTemplate()"
+                            [class.shadow-none]="expandButtonTemplate()"
+                            [class.border-0]="expandButtonTemplate()"
+                            type="button"
+                            aria-label="Toggle navigation"
+                            [attr.aria-expanded]="isExpanded()"
+                            [attr.aria-controls]="collapseId()">
+                            <ng-container *ngTemplateOutlet="expandButtonTemplate() ?? defaultExpandButton; context: { $implicit: isExpanded() }"></ng-container>
+                        </button>
+                    }
                 </div>
             </div>
             <div [id]="collapseId()" style="display: contents;">
