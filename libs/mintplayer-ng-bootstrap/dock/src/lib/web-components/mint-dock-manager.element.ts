@@ -3882,7 +3882,10 @@ export class MintDockManagerElement extends LitElement {
       active = active.shadowRoot.activeElement;
     }
     if (!active || active.getAttribute('role') !== 'tab') return null;
-    const tabId = active.id;
+    // mp-tab-control assigns the role=tab button id `${tabId}-header-button`,
+    // while the dock's `.dock-tab` slot wrapper carries `data-tab-id=${tabId}`.
+    // Strip the suffix so the lookup matches the slot wrapper.
+    const tabId = active.id.replace(/-header-button$/, '');
     const headerSpan = this.shadowRoot.querySelector<HTMLElement>(
       `.dock-tab[data-tab-id="${tabId}"]`,
     );
