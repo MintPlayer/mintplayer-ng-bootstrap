@@ -52,9 +52,11 @@ interface MpSchedulerElement extends HTMLElement {
 }
 
 /**
- * Event click event detail
+ * Event-selected event detail. Fires on mouse click and on keyboard Tab
+ * landing on an event (PRD scheduler-keyboard-grid-nav D3 — renamed from
+ * `event-click` because keyboard now triggers the same notification).
  */
-export interface SchedulerEventClickEvent {
+export interface SchedulerEventSelectedEvent {
   event: SchedulerEvent;
   originalEvent?: Event;
 }
@@ -139,8 +141,8 @@ export class BsSchedulerComponent implements AfterViewInit, OnDestroy {
   readonly selectedRange = model<{ start: Date; end: Date } | null>(null);
 
   // Output signals (events)
-  readonly eventClick = output<SchedulerEventClickEvent>();
-  readonly eventDblClick = output<SchedulerEventClickEvent>();
+  readonly eventSelected = output<SchedulerEventSelectedEvent>();
+  readonly eventDblClick = output<SchedulerEventSelectedEvent>();
   readonly eventCreate = output<SchedulerEventCreateEvent>();
   readonly eventUpdate = output<SchedulerEventUpdateEvent>();
   readonly eventDelete = output<SchedulerEventDeleteEvent>();
@@ -244,8 +246,8 @@ export class BsSchedulerComponent implements AfterViewInit, OnDestroy {
       this.eventListeners.push({ type, listener });
     };
 
-    addListener('event-click', (e) => {
-      this.eventClick.emit(e.detail);
+    addListener('event-selected', (e) => {
+      this.eventSelected.emit(e.detail);
       this.selectedEvent.set(e.detail.event);
     });
 

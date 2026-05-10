@@ -3,13 +3,15 @@
 <details class="mb-2">
   <summary>Keyboard shortcuts</summary>
   <ul class="mb-0">
-    <li><kbd>Tab</kbd> — focus the navigation buttons (prev / next / today / view-switcher)</li>
-    <li><kbd>Enter</kbd> / <kbd>Space</kbd> on a view-switcher button — switch to that view (announced via live region)</li>
-    <li><kbd>←</kbd> / <kbd>→</kbd> — previous / next period (when scheduler has focus)</li>
-    <li><kbd>T</kbd> — jump to today; <kbd>Y</kbd> / <kbd>W</kbd> / <kbd>D</kbd> — switch view (year/week/day). <kbd>M</kbd> = month view <em>only when no event is focused</em>; otherwise <kbd>M</kbd> opens move-mode on the focused event.</li>
-    <li>Click an event to select it (it becomes the keyboard tab stop). <kbd>Tab</kbd> back into the scheduler lands on it.</li>
-    <li>On a selected event: <kbd>M</kbd> enters move mode → <kbd>←</kbd> / <kbd>→</kbd> nudges the event by one slot · <kbd>Enter</kbd> commits · <kbd>Esc</kbd> cancels.</li>
-    <li><kbd>Delete</kbd> / <kbd>Backspace</kbd> on a selected event — emit event-delete</li>
+    <li><strong>Navigation</strong>: <kbd>Tab</kbd> walks header → grid → events. Inside the grid, arrow keys walk cells.</li>
+    <li><strong>Cell nav</strong> (week/day): <kbd>↑</kbd>/<kbd>↓</kbd> ± one slot in time, <kbd>←</kbd>/<kbd>→</kbd> ± one day (week only). On <em>timeline</em>: <kbd>←</kbd>/<kbd>→</kbd> ± slot in time, <kbd>↑</kbd>/<kbd>↓</kbd> ± resource.</li>
+    <li><strong>Cell nav extras</strong>: <kbd>Home</kbd>/<kbd>End</kbd> first/last slot of column · <kbd>Ctrl+Home</kbd>/<kbd>Ctrl+End</kbd> first/last cell of view · <kbd>PageUp</kbd>/<kbd>PageDown</kbd> previous/next period.</li>
+    <li><strong>Selection</strong>: <kbd>Shift</kbd>+arrow extends a linear time-range. On week view, <kbd>Shift+→</kbd> at the end of Friday extends into Saturday (the range crosses the day boundary, all slots in between light up).</li>
+    <li><strong>Create event</strong>: <kbd>Enter</kbd> on a cell or selection emits <code>event-create</code> spanning the range. <kbd>Esc</kbd> clears the selection.</li>
+    <li><strong>Event focus</strong>: every event is in the Tab order. <kbd>Tab</kbd> to one and the scheduler emits <code>event-selected</code>.</li>
+    <li><strong>Move mode</strong>: <kbd>Enter</kbd> on a focused event enters move mode. Arrow keys nudge time (<em>or</em> resource on timeline). <kbd>Shift</kbd>+arrow resizes the end edge; <kbd>Alt+Shift</kbd>+arrow resizes the start edge. On week view, horizontal Shift+arrow pushes the end across day boundaries. <kbd>Enter</kbd> commits, <kbd>Esc</kbd> cancels.</li>
+    <li><strong>Delete</strong>: <kbd>Delete</kbd> / <kbd>Backspace</kbd> on a focused event emits <code>event-delete</code>.</li>
+    <li><strong>View shortcuts</strong>: <kbd>Alt+T</kbd> today · <kbd>Alt+Y</kbd> year · <kbd>Alt+M</kbd> month · <kbd>Alt+W</kbd> week · <kbd>Alt+D</kbd> day. (Bare letters are no longer hot-keys.)</li>
   </ul>
 </details>
 
@@ -38,7 +40,7 @@
   </div>
   <div class="col-md-4">
     <small class="text-muted">
-      <strong>Keyboard shortcuts:</strong> ← → (navigate), T (today), Y/M/W/D (views)
+      <strong>Keyboard:</strong> arrow nav cells · Shift+arrow extend selection · Enter create/move · Alt+T/Y/M/W/D switch views
     </small>
   </div>
 </div>
@@ -53,7 +55,7 @@
         [resources]="resources()"
         [options]="options()"
         [(selectedEvent)]="selectedEvent"
-        (eventClick)="onEventClick($event)"
+        (eventSelected)="onEventSelected($event)"
         (eventCreate)="onEventCreate($event)"
         (eventUpdate)="onEventUpdate($event)"
         (eventDelete)="onEventDelete($event)"

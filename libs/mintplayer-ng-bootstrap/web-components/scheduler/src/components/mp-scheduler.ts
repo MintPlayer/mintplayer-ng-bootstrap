@@ -8,10 +8,19 @@ import {
   SchedulerOptions,
   TimeSlot,
   dateService,
+  resourceService,
+  isResource,
   generateEventId,
 } from '@mintplayer/ng-bootstrap/web-components/scheduler-core';
 import { SchedulerStateManager, SchedulerState } from '../state/scheduler-state';
-import { BaseView } from '../views/base-view';
+import {
+  BaseView,
+  selectionRange,
+  formatCellAnnouncement,
+  formatSelectionAnnouncement,
+  formatMoveAnnouncement,
+  formatResizeAnnouncement,
+} from '../views/base-view';
 import { YearView } from '../views/year-view';
 import { MonthView } from '../views/month-view';
 import { WeekView } from '../views/week-view';
@@ -69,6 +78,7 @@ export class MpScheduler extends LitElement {
 
   // Keyboard handler
   private boundHandleKeyDown: (e: KeyboardEvent) => void;
+  private boundHandleFocusIn: (e: FocusEvent) => void;
 
   // Now indicator update timer
   private nowIndicatorTimer: ReturnType<typeof setInterval> | null = null;
@@ -88,6 +98,7 @@ export class MpScheduler extends LitElement {
 
     // Bind keyboard handler
     this.boundHandleKeyDown = this.handleKeyDown.bind(this);
+    this.boundHandleFocusIn = this.handleFocusIn.bind(this);
 
     // Subscribe to state changes
     this.stateManager.subscribe((state) => this.onStateChange(state));
@@ -99,6 +110,7 @@ export class MpScheduler extends LitElement {
       this.inputHandler.attach();
     }
     this.addEventListener('keydown', this.boundHandleKeyDown);
+    // focusin listener is registered in firstUpdated() once the shadowRoot exists.
 
     // Start now indicator update timer (every minute)
     this.startNowIndicatorTimer();
@@ -107,6 +119,7 @@ export class MpScheduler extends LitElement {
   override disconnectedCallback(): void {
     this.inputHandler?.detach();
     this.removeEventListener('keydown', this.boundHandleKeyDown);
+    this.shadowRoot?.removeEventListener('focusin', this.boundHandleFocusIn as EventListener);
     this.currentView?.destroy();
     this.dragManager.destroy();
 
@@ -319,6 +332,11 @@ export class MpScheduler extends LitElement {
     );
     this.inputHandler.attach();
 
+    // focusin on shadowRoot so e.target is the actual focused element
+    // (avoids cross-shadow retargeting back to the host). Cast — focusin
+    // isn't in the typed ShadowRootEventMap but the runtime supports it.
+    this.shadowRoot!.addEventListener('focusin', this.boundHandleFocusIn as EventListener);
+
     this.renderView();
   }
 
@@ -486,9 +504,10 @@ export class MpScheduler extends LitElement {
       this.previousDate !== null &&
       this.previousDate.getTime() !== state.date.getTime();
     const selectedEventId = state.selectedEvent?.id ?? null;
-    const selectionChanged =
-      this.previousSelectedEventId !== null &&
-      this.previousSelectedEventId !== selectedEventId;
+    // Selection-change fires on every change including the first
+    // null → eventId transition (selectedEvent's initial state is null,
+    // so the !== null guard used elsewhere would suppress that case).
+    const selectionChanged = this.previousSelectedEventId !== selectedEventId;
 
     if (viewChanged || dateChanged) {
       this.eventEmitter.emitViewChange(state.view, state.date);
@@ -578,7 +597,7 @@ export class MpScheduler extends LitElement {
       // It was a click, not a drag
       if (result.event) {
         this.stateManager.setSelectedEvent(result.event);
-        this.eventEmitter.emitEventClick(result.event, originalEvent);
+        this.eventEmitter.emitEventSelected(result.event, originalEvent);
       }
       return;
     }
@@ -684,77 +703,446 @@ export class MpScheduler extends LitElement {
     }
   }
 
-  private handleKeyDown(e: KeyboardEvent): void {
-    const state = this.stateManager.getState();
+  /**
+   * When focus lands on an event block (Tab, programmatic, or click), select
+   * the event and emit `event-selected` for mouse-parity (PRD §6.5 D3). The
+   * subsequent setSelectedEvent call routes through detectAndEmitChanges
+   * which fires `selection-change`.
+   *
+   * `focusin` bubbles across shadow boundaries but `e.target` is retargeted
+   * to the host. Use composedPath()[0] for the actual focused element.
+   */
+  private handleFocusIn(e: FocusEvent): void {
+    const path = (e.composedPath?.() ?? []) as EventTarget[];
+    const target = (path[0] ?? e.target) as HTMLElement | null;
+    if (!target || !target.dataset) return;
+    const eventId = target.dataset['eventId'];
+    if (!eventId) return;
+    if (!target.classList.contains('scheduler-event') &&
+        !target.classList.contains('scheduler-timeline-event')) {
+      return;
+    }
+    const ev = this.getEventById(eventId);
+    if (!ev) return;
+    if (this.stateManager.getState().selectedEvent?.id === ev.id) {
+      // Already selected — Tab landed on the same event again. Don't re-emit
+      // event-selected to avoid noise from programmatic focus restoration
+      // (e.g. after move-mode commit re-focuses the moved event).
+      return;
+    }
+    this.stateManager.setSelectedEvent(ev);
+    this.eventEmitter.emitEventSelected(ev, e);
+    // setSelectedEvent triggers a re-render that destroys the event's DOM
+    // node (renderEvents tears down + rebuilds). Restore focus so subsequent
+    // keypresses (Enter to enter move-mode, Delete to delete) still see the
+    // event as the active element.
+    requestAnimationFrame(() => {
+      const sel = `[data-event-id="${this.cssEscape(ev.id)}"]`;
+      const newEl = this.shadowRoot?.querySelector(sel) as HTMLElement | null;
+      newEl?.focus({ preventScroll: true });
+    });
+  }
 
-    // Keyboard event-move mode (Phase 6 of WC ARIA PRD) takes precedence over
-    // every other shortcut so its arrow keys, Enter, Esc are always the right
-    // ones in context.
+  private handleKeyDown(e: KeyboardEvent): void {
+    // Move-mode owns every key while active so arrows/Enter/Esc go to it.
     if (this.keyboardMove) {
       this.handleKeyboardMove(e);
       return;
     }
 
-    // M on a focused, selected event opens move mode. M with no selection
-    // continues to mean "switch to month view" (the legacy shortcut).
-    if ((e.key === 'm' || e.key === 'M') && state.selectedEvent && this.isEventFocused()) {
-      e.preventDefault();
-      this.enterEventMoveMode(state.selectedEvent);
+    // Cancel pointer drag with Escape regardless of focus.
+    if (e.key === 'Escape' && this.dragManager.isDragging()) {
+      this.dragManager.cancel();
       return;
     }
 
+    // Alt+letter view shortcuts work from any focus (PRD D2). Bare letters
+    // are no longer hot-keys — that frees them for future input surfaces.
+    if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+      if (this.handleAltShortcut(e)) return;
+    }
+
+    const kind = this.getFocusedKind();
+    if (kind === 'cell') {
+      this.handleCellKeyDown(e);
+    } else if (kind === 'event') {
+      this.handleEventKeyDown(e);
+    }
+  }
+
+  private getFocusedKind(): 'cell' | 'event' | 'other' {
+    const active = this.shadowRoot?.activeElement as HTMLElement | null;
+    if (!active) return 'other';
+    if (
+      active.classList.contains('scheduler-time-slot') ||
+      active.classList.contains('scheduler-timeline-slot')
+    ) {
+      return 'cell';
+    }
+    if (
+      active.classList.contains('scheduler-event') ||
+      active.classList.contains('scheduler-timeline-event')
+    ) {
+      return 'event';
+    }
+    return 'other';
+  }
+
+  private handleAltShortcut(e: KeyboardEvent): boolean {
+    switch (e.key.toLowerCase()) {
+      case 't': this.today(); e.preventDefault(); return true;
+      case 'y': this.changeView('year'); e.preventDefault(); return true;
+      case 'm': this.changeView('month'); e.preventDefault(); return true;
+      case 'w': this.changeView('week'); e.preventDefault(); return true;
+      case 'd': this.changeView('day'); e.preventDefault(); return true;
+    }
+    return false;
+  }
+
+  private handleEventKeyDown(e: KeyboardEvent): void {
+    const state = this.stateManager.getState();
+    const ev = state.selectedEvent;
+    if (!ev) return;
     switch (e.key) {
-      case 'ArrowLeft':
-        this.prev();
+      case 'Enter':
         e.preventDefault();
-        break;
-      case 'ArrowRight':
-        this.next();
-        e.preventDefault();
-        break;
-      case 't':
-      case 'T':
-        this.today();
-        e.preventDefault();
-        break;
-      case 'y':
-      case 'Y':
-        this.changeView('year');
-        e.preventDefault();
-        break;
-      case 'm':
-      case 'M':
-        this.changeView('month');
-        e.preventDefault();
-        break;
-      case 'w':
-      case 'W':
-        this.changeView('week');
-        e.preventDefault();
-        break;
-      case 'd':
-      case 'D':
-        this.changeView('day');
-        e.preventDefault();
-        break;
+        this.enterEventMoveMode(ev);
+        return;
       case 'Delete':
       case 'Backspace':
-        if (state.selectedEvent) {
-          this.eventEmitter.emitEventDelete(state.selectedEvent);
-        }
-        break;
+        e.preventDefault();
+        this.eventEmitter.emitEventDelete(ev);
+        return;
       case 'Escape':
-        if (this.dragManager.isDragging()) {
-          this.dragManager.cancel();
-        }
+        e.preventDefault();
+        this.focusFocusedCell();
+        return;
+    }
+  }
+
+  private handleCellKeyDown(e: KeyboardEvent): void {
+    const state = this.stateManager.getState();
+    if (!state.focusedCell) this.initFocusedCellFromActive();
+    const shift = e.shiftKey;
+    const ctrl = e.ctrlKey || e.metaKey;
+    // Arrow mapping is physical-direction-aware:
+    //   week/day: time is vertical → ArrowUp/Down nudge time, ArrowLeft/Right
+    //             walk days (week only).
+    //   timeline: time is horizontal → ArrowLeft/Right nudge time,
+    //             ArrowUp/Down walk resources (rows).
+    const timelineLayout = state.view === 'timeline';
+    switch (e.key) {
+      case 'ArrowUp':
+        e.preventDefault();
+        timelineLayout ? this.moveCellByResource(-1, shift) : this.moveCellByTime(-1, shift);
         break;
+      case 'ArrowDown':
+        e.preventDefault();
+        timelineLayout ? this.moveCellByResource(+1, shift) : this.moveCellByTime(+1, shift);
+        break;
+      case 'ArrowLeft':
+        e.preventDefault();
+        timelineLayout ? this.moveCellByTime(-1, shift) : this.moveCellByDay(-1, shift);
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        timelineLayout ? this.moveCellByTime(+1, shift) : this.moveCellByDay(+1, shift);
+        break;
+      case 'Home':
+        e.preventDefault();
+        ctrl ? this.moveCellToViewExtreme('start', shift) : this.moveCellToColumnExtreme('start', shift);
+        break;
+      case 'End':
+        e.preventDefault();
+        ctrl ? this.moveCellToViewExtreme('end', shift) : this.moveCellToColumnExtreme('end', shift);
+        break;
+      case 'PageUp':     e.preventDefault(); this.moveCellByPeriod(-1); break;
+      case 'PageDown':   e.preventDefault(); this.moveCellByPeriod(+1); break;
+      case 'Enter':      e.preventDefault(); this.createEventFromCellOrSelection(e); break;
+      case 'Escape':     e.preventDefault(); this.stateManager.clearSelection(); break;
     }
   }
 
   /**
-   * Active keyboard-driven event move. Captures the original time range so
-   * Escape can revert; the working copy is mutated in place by arrow keys
-   * and committed (or rolled back) on Enter / Escape.
+   * If a cell is the active element but state.focusedCell is empty (e.g.
+   * Tab landed on the fallback first cell), seed the state from the
+   * active element's data attributes.
+   */
+  private initFocusedCellFromActive(): void {
+    const active = this.shadowRoot?.activeElement as HTMLElement | null;
+    if (!active) return;
+    const startStr = active.dataset['start'];
+    const endStr = active.dataset['end'];
+    if (!startStr || !endStr) return;
+    const cell: TimeSlot = { start: new Date(startStr), end: new Date(endStr) };
+    const resourceId = active.dataset['resourceId'] ?? null;
+    this.stateManager.setFocusedCell(cell, resourceId, true);
+  }
+
+  private moveCellByTime(direction: 1 | -1, extend: boolean): void {
+    const state = this.stateManager.getState();
+    const f = state.focusedCell;
+    if (!f) return;
+    const slotMs = (state.options.slotDuration ?? 1800) * 1000;
+    const newStart = new Date(f.start.getTime() + direction * slotMs);
+    const newEnd = new Date(newStart.getTime() + slotMs);
+    if (!this.cellIsWithinView(newStart, state)) return;
+    this.commitFocusMove({ start: newStart, end: newEnd }, state.focusedResourceId, extend);
+  }
+
+  /** Week view ArrowLeft/Right: ±1 day, same time-of-day. No-op on day view. */
+  private moveCellByDay(direction: 1 | -1, extend: boolean): void {
+    const state = this.stateManager.getState();
+    const f = state.focusedCell;
+    if (!f) return;
+    if (state.view !== 'week') return;
+    const slotMs = (state.options.slotDuration ?? 1800) * 1000;
+    const newStart = new Date(f.start);
+    newStart.setDate(newStart.getDate() + direction);
+    const newEnd = new Date(newStart.getTime() + slotMs);
+    if (!this.cellIsWithinView(newStart, state)) return;
+    this.commitFocusMove({ start: newStart, end: newEnd }, null, extend);
+  }
+
+  /** Timeline ArrowUp/Down: ±1 resource, same time-of-day. PRD D1: cross-resource
+   *  Shift+Arrow is intentionally ignored (resource is categorical). */
+  private moveCellByResource(direction: 1 | -1, extend: boolean): void {
+    const state = this.stateManager.getState();
+    const f = state.focusedCell;
+    if (!f) return;
+    if (state.view !== 'timeline') return;
+    if (extend) return;
+    const next = this.adjacentResource(state.focusedResourceId, direction, state);
+    if (!next) return;
+    this.commitFocusMove(f, next, false);
+  }
+
+  private moveCellToColumnExtreme(end: 'start' | 'end', extend: boolean): void {
+    const state = this.stateManager.getState();
+    const f = state.focusedCell;
+    if (!f) return;
+    const day = new Date(f.start);
+    day.setHours(0, 0, 0, 0);
+    const slots = dateService.getTimeSlots(
+      day,
+      state.options.slotDuration,
+      state.options.slotMinTime,
+      state.options.slotMaxTime,
+    );
+    const target = end === 'start' ? slots[0] : slots[slots.length - 1];
+    if (target) this.commitFocusMove(target, state.focusedResourceId, extend);
+  }
+
+  private moveCellToViewExtreme(end: 'start' | 'end', extend: boolean): void {
+    const state = this.stateManager.getState();
+    let target: TimeSlot | null = null;
+    let resourceId: string | null = state.focusedResourceId;
+    switch (state.view) {
+      case 'day': {
+        const slots = dateService.getTimeSlots(state.date, state.options.slotDuration, state.options.slotMinTime, state.options.slotMaxTime);
+        target = end === 'start' ? slots[0] : slots[slots.length - 1];
+        break;
+      }
+      case 'week': {
+        const days = dateService.getWeekDays(state.date, state.options.firstDayOfWeek);
+        const day = end === 'start' ? days[0] : days[6];
+        const slots = dateService.getTimeSlots(day, state.options.slotDuration, state.options.slotMinTime, state.options.slotMaxTime);
+        target = end === 'start' ? slots[0] : slots[slots.length - 1];
+        break;
+      }
+      case 'timeline': {
+        const flattened = resourceService.flatten(state.resources, state.collapsedGroups);
+        const visible = flattened.filter((f) => f.visible && isResource(f.item));
+        if (visible.length === 0) return;
+        resourceId = end === 'start' ? visible[0].item.id : visible[visible.length - 1].item.id;
+        const days = dateService.getWeekDays(state.date, state.options.firstDayOfWeek);
+        const day = end === 'start' ? days[0] : days[6];
+        const slots = dateService.getTimeSlots(day, state.options.slotDuration, state.options.slotMinTime, state.options.slotMaxTime);
+        target = end === 'start' ? slots[0] : slots[slots.length - 1];
+        break;
+      }
+    }
+    if (target) this.commitFocusMove(target, resourceId, extend);
+  }
+
+  /**
+   * PageUp/PageDown — advance one period (week or day) and re-focus the same
+   * day-of-week + time-of-day in the new period. Selection is cleared since
+   * crossing a period boundary breaks the linear-range invariant.
+   */
+  private moveCellByPeriod(direction: 1 | -1): void {
+    const state = this.stateManager.getState();
+    const f = state.focusedCell;
+    const oldDate = state.date;
+    if (direction > 0) this.next(); else this.prev();
+    if (!f) return;
+    const newState = this.stateManager.getState();
+    let newStart: Date;
+    if (newState.view === 'day') {
+      newStart = new Date(newState.date);
+      newStart.setHours(f.start.getHours(), f.start.getMinutes(), f.start.getSeconds(), 0);
+    } else {
+      // week / timeline — preserve day-of-week index.
+      const oldDays = dateService.getWeekDays(oldDate, state.options.firstDayOfWeek);
+      const newDays = dateService.getWeekDays(newState.date, newState.options.firstDayOfWeek);
+      const oldIdx = oldDays.findIndex((d) => dateService.isSameDay(d, f.start));
+      const targetDay = newDays[Math.max(0, oldIdx)] ?? newDays[0];
+      newStart = new Date(targetDay);
+      newStart.setHours(f.start.getHours(), f.start.getMinutes(), f.start.getSeconds(), 0);
+    }
+    const slotMs = (newState.options.slotDuration ?? 1800) * 1000;
+    const cell: TimeSlot = { start: newStart, end: new Date(newStart.getTime() + slotMs) };
+    this.commitFocusMove(cell, state.focusedResourceId, false);
+  }
+
+  /**
+   * Apply the focus move to state and DOM. `extend` grows the selection
+   * range; otherwise selection is cleared. Live-region announces the new
+   * focused cell or selection range.
+   */
+  private commitFocusMove(cell: TimeSlot, resourceId: string | null, extend: boolean): void {
+    const state = this.stateManager.getState();
+    const slotDuration = state.options.slotDuration ?? 1800;
+    if (extend) {
+      this.stateManager.extendSelection(cell, resourceId);
+      this.stateManager.setFocusedCell(cell, resourceId, false);
+      const newState = this.stateManager.getState();
+      this.liveAnnouncer.announce(formatSelectionAnnouncement(newState, slotDuration, state.options.timeFormat));
+    } else {
+      this.stateManager.setFocusedCell(cell, resourceId, true);
+      const resourceTitle = this.getResourceTitle(resourceId);
+      this.liveAnnouncer.announce(formatCellAnnouncement(cell, state.options.timeFormat, resourceTitle));
+    }
+    this.scrollAndFocusCell(cell, resourceId);
+  }
+
+  private cellIsWithinView(start: Date, state: SchedulerState): boolean {
+    switch (state.view) {
+      case 'day': {
+        const dayStart = this.parseTimeOnDay(state.date, state.options.slotMinTime);
+        const dayEnd = this.parseTimeOnDay(state.date, state.options.slotMaxTime);
+        return start.getTime() >= dayStart.getTime() && start.getTime() < dayEnd.getTime();
+      }
+      case 'week':
+      case 'timeline': {
+        const days = dateService.getWeekDays(state.date, state.options.firstDayOfWeek);
+        const viewStart = this.parseTimeOnDay(days[0], state.options.slotMinTime);
+        const viewEnd = this.parseTimeOnDay(days[6], state.options.slotMaxTime);
+        return start.getTime() >= viewStart.getTime() && start.getTime() < viewEnd.getTime();
+      }
+      default:
+        return false;
+    }
+  }
+
+  private parseTimeOnDay(day: Date, timeStr?: string): Date {
+    const [h, m, s] = (timeStr ?? '00:00:00').split(':').map(Number);
+    const d = new Date(day);
+    d.setHours(0, 0, 0, 0);
+    d.setSeconds((h ?? 0) * 3600 + (m ?? 0) * 60 + (s ?? 0));
+    return d;
+  }
+
+  private adjacentResource(currentId: string | null, direction: 1 | -1, state: SchedulerState): string | null {
+    const flattened = resourceService.flatten(state.resources, state.collapsedGroups);
+    const visible = flattened.filter((f) => f.visible && isResource(f.item));
+    if (visible.length === 0) return null;
+    if (!currentId) return visible[0].item.id;
+    const idx = visible.findIndex((f) => f.item.id === currentId);
+    if (idx < 0) return visible[0].item.id;
+    const next = idx + direction;
+    if (next < 0 || next >= visible.length) return null;
+    return visible[next].item.id;
+  }
+
+  private getResourceTitle(id: string | null): string | null {
+    if (!id) return null;
+    for (const r of resourceService.getAllResources(this.stateManager.getState().resources)) {
+      if (r.id === id) return r.title;
+    }
+    return null;
+  }
+
+  /**
+   * Find the cell DOM element for a (slot, resource) pair and call .focus()
+   * on it. scrollIntoView with block:nearest provides parity with mouse
+   * drag-near-edge auto-pan (PRD D6).
+   */
+  private scrollAndFocusCell(cell: TimeSlot, resourceId: string | null): void {
+    const startIso = cell.start.toISOString();
+    const root = this.shadowRoot;
+    if (!root) return;
+    const sel = resourceId
+      ? `.scheduler-timeline-slot[data-resource-id="${this.cssEscape(resourceId)}"][data-start="${startIso}"]`
+      : `.scheduler-time-slot[data-start="${startIso}"]`;
+    const el = root.querySelector(sel) as HTMLElement | null;
+    if (!el) return;
+    el.focus({ preventScroll: true });
+    // jsdom doesn't implement scrollIntoView — guard so unit tests don't crash.
+    if (typeof el.scrollIntoView === 'function') {
+      el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }
+  }
+
+  /** Re-focus whatever cell the keyboard model currently considers focused. */
+  private focusFocusedCell(): void {
+    const state = this.stateManager.getState();
+    if (state.focusedCell) {
+      this.scrollAndFocusCell(state.focusedCell, state.focusedResourceId);
+    }
+  }
+
+  private cssEscape(value: string): string {
+    // Lightweight CSS.escape polyfill — sufficient for resource ids that are
+    // ULID/UUIDs or simple strings. Falls back to the native API where it exists.
+    if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') return CSS.escape(value);
+    return value.replace(/[^a-zA-Z0-9_-]/g, (c) => `\\${c}`);
+  }
+
+  /**
+   * Emit `event-create` covering the active selection range, or a single
+   * cell when no selection is active. Mirrors the mouse drag-create path:
+   * same payload shape, same custom event.
+   */
+  private createEventFromCellOrSelection(originalEvent: Event): void {
+    const state = this.stateManager.getState();
+    const range = selectionRange(state);
+    let start: Date;
+    let end: Date;
+    if (range) {
+      start = range.start;
+      end = range.end;
+    } else if (state.focusedCell) {
+      start = state.focusedCell.start;
+      end = state.focusedCell.end;
+    } else {
+      return;
+    }
+    const newEvent: SchedulerEvent = {
+      id: generateEventId(),
+      title: 'New Event',
+      start,
+      end,
+      color: '#3788d8',
+    };
+    this.stateManager.addEvent(newEvent);
+    this.eventEmitter.emitEventCreate(newEvent, originalEvent);
+    this.stateManager.clearSelection();
+    this.liveAnnouncer.announce(
+      `Event created: ${dateService.formatTime(start, state.options.timeFormat)}–${dateService.formatTime(end, state.options.timeFormat)}.`,
+    );
+    // After re-render, focus the new event so subsequent Tab/Enter act on it.
+    requestAnimationFrame(() => {
+      const sel = `[data-event-id="${this.cssEscape(newEvent.id)}"]`;
+      const el = this.shadowRoot?.querySelector(sel) as HTMLElement | null;
+      el?.focus({ preventScroll: false });
+    });
+  }
+
+  /**
+   * Active keyboard-driven event move. Captures the original time range and
+   * (timeline) resource so Escape can revert; the working copy is mutated in
+   * place by arrow keys and committed or rolled back on Enter / Escape.
    */
   private keyboardMove: {
     eventId: string;
@@ -762,46 +1150,121 @@ export class MpScheduler extends LitElement {
     originalEnd: Date;
     workingStart: Date;
     workingEnd: Date;
+    workingResourceId: string | null;
   } | null = null;
 
-  private isEventFocused(): boolean {
-    const active = this.shadowRoot?.activeElement;
-    if (!active) return false;
-    return (
-      active.classList.contains('scheduler-event') ||
-      active.classList.contains('scheduler-timeline-event')
-    );
-  }
-
+  /**
+   * Enter keyboard event-move mode. Captures the working copy and a snapshot
+   * of the resource (timeline). Visual feedback is provided by routing the
+   * working start/end through the existing previewEvent state — the same
+   * channel used for mouse drag — so the event renders at the projected
+   * destination as the user nudges.
+   */
   private enterEventMoveMode(event: SchedulerEvent): void {
+    const resourceId = event.resourceId ?? null;
     this.keyboardMove = {
       eventId: event.id,
       originalStart: new Date(event.start),
       originalEnd: new Date(event.end),
       workingStart: new Date(event.start),
       workingEnd: new Date(event.end),
+      workingResourceId: resourceId,
     };
+    this.stateManager.setState({
+      keyboardMoveEventId: event.id,
+      previewEvent: {
+        start: new Date(event.start),
+        end: new Date(event.end),
+        ...(resourceId ? { resourceId } : {}),
+      },
+    });
+    const minutes = this.minutesPerSlot();
     this.liveAnnouncer.announce(
-      `Move mode enabled for ${event.title}. Arrow keys nudge by ${this.minutesPerSlot()} minutes; Enter to commit, Escape to cancel.`,
+      `Move mode for ${event.title}. Arrow keys nudge by ${minutes} minutes; Shift with arrow keys resizes the end edge; Alt with Shift resizes the start edge; Enter commits, Escape cancels.`,
     );
+    // setState above tore down and rebuilt the focused event element. Re-focus
+    // the new node so subsequent arrow keystrokes still reach our keydown
+    // listener (otherwise focus falls back to <body> and our listener is
+    // bypassed).
+    requestAnimationFrame(() => {
+      const sel = `[data-event-id="${this.cssEscape(event.id)}"]`;
+      const el = this.shadowRoot?.querySelector(sel) as HTMLElement | null;
+      el?.focus({ preventScroll: true });
+    });
   }
 
+  /**
+   * Move-mode keymap. Layered on the existing M-mode foundation:
+   *   - bare Arrow keys nudge the event
+   *   - Shift+Arrow resizes the end edge
+   *   - Alt+Shift+Arrow resizes the start edge
+   *   - on week view, Shift+ArrowLeft/Right pushes the end edge across the
+   *     day boundary (PRD D5) — symmetric with Shift+ArrowDown for time.
+   *   - Enter commits, Escape reverts.
+   */
   private handleKeyboardMove(e: KeyboardEvent): void {
     if (!this.keyboardMove) return;
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      this.cancelEventMoveMode();
-      return;
-    }
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      this.commitEventMoveMode();
-      return;
-    }
-    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-      e.preventDefault();
-      const direction = e.key === 'ArrowRight' ? 1 : -1;
-      this.nudgeKeyboardMove(direction);
+    if (e.key === 'Escape') { e.preventDefault(); this.cancelEventMoveMode(); return; }
+    if (e.key === 'Enter')  { e.preventDefault(); this.commitEventMoveMode();  return; }
+
+    const view = this.stateManager.getState().view;
+    const timelineLayout = view === 'timeline';
+    const slotMs = this.minutesPerSlot() * 60 * 1000;
+    const dayMs = 24 * 60 * 60 * 1000;
+    const shift = e.shiftKey;
+    const alt = e.altKey;
+
+    switch (e.key) {
+      case 'ArrowUp':
+        e.preventDefault();
+        if (timelineLayout) {
+          if (!shift && !alt) this.nudgeKeyboardMoveResource(-1);
+        } else if (shift && alt) {
+          this.resizeKeyboardMoveEdge('start', -slotMs);
+        } else if (shift) {
+          this.resizeKeyboardMoveEdge('end', -slotMs);
+        } else {
+          this.nudgeKeyboardMove(-slotMs);
+        }
+        return;
+      case 'ArrowDown':
+        e.preventDefault();
+        if (timelineLayout) {
+          if (!shift && !alt) this.nudgeKeyboardMoveResource(+1);
+        } else if (shift && alt) {
+          this.resizeKeyboardMoveEdge('start', +slotMs);
+        } else if (shift) {
+          this.resizeKeyboardMoveEdge('end', +slotMs);
+        } else {
+          this.nudgeKeyboardMove(+slotMs);
+        }
+        return;
+      case 'ArrowLeft':
+        e.preventDefault();
+        if (timelineLayout) {
+          if (shift && alt) this.resizeKeyboardMoveEdge('start', -slotMs);
+          else if (shift) this.resizeKeyboardMoveEdge('end', -slotMs);
+          else this.nudgeKeyboardMove(-slotMs);
+        } else if (view === 'week') {
+          // Week view (D5): Shift+Arrow on the column axis resizes the end edge
+          // across the day boundary by 24h. Alt+Shift moves the start edge.
+          if (shift && alt) this.resizeKeyboardMoveEdge('start', -dayMs);
+          else if (shift) this.resizeKeyboardMoveEdge('end', -dayMs);
+          else this.nudgeKeyboardMove(-dayMs);
+        }
+        return;
+      case 'ArrowRight':
+        e.preventDefault();
+        if (timelineLayout) {
+          if (shift && alt) this.resizeKeyboardMoveEdge('start', +slotMs);
+          else if (shift) this.resizeKeyboardMoveEdge('end', +slotMs);
+          else this.nudgeKeyboardMove(+slotMs);
+        } else if (view === 'week') {
+          if (shift && alt) this.resizeKeyboardMoveEdge('start', +dayMs);
+          else if (shift) this.resizeKeyboardMoveEdge('end', +dayMs);
+          else this.nudgeKeyboardMove(+dayMs);
+        }
+        return;
     }
   }
 
@@ -810,15 +1273,80 @@ export class MpScheduler extends LitElement {
     return Math.max(1, Math.round(seconds / 60));
   }
 
-  private nudgeKeyboardMove(direction: 1 | -1): void {
+  /** Shift the working event by `deltaMs` along the time axis (preserves duration). */
+  private nudgeKeyboardMove(deltaMs: number): void {
     if (!this.keyboardMove) return;
-    const slotMs = this.minutesPerSlot() * 60 * 1000 * direction;
-    const newStart = new Date(this.keyboardMove.workingStart.getTime() + slotMs);
-    const newEnd = new Date(this.keyboardMove.workingEnd.getTime() + slotMs);
+    const newStart = new Date(this.keyboardMove.workingStart.getTime() + deltaMs);
+    const newEnd = new Date(this.keyboardMove.workingEnd.getTime() + deltaMs);
     this.keyboardMove.workingStart = newStart;
     this.keyboardMove.workingEnd = newEnd;
-    const fmt = (d: Date) => d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-    this.liveAnnouncer.announce(`${fmt(newStart)}`);
+    this.applyKeyboardMovePreview();
+    this.liveAnnouncer.announce(formatMoveAnnouncement(newStart, newEnd, this.stateManager.getState().options.timeFormat));
+  }
+
+  /** Walk to the next/previous resource (timeline only). Updates the preview's resourceId. */
+  private nudgeKeyboardMoveResource(direction: 1 | -1): void {
+    if (!this.keyboardMove) return;
+    const next = this.adjacentResource(this.keyboardMove.workingResourceId, direction, this.stateManager.getState());
+    if (!next) return;
+    this.keyboardMove.workingResourceId = next;
+    this.applyKeyboardMovePreview();
+    const title = this.getResourceTitle(next) ?? next;
+    this.liveAnnouncer.announce(`Moved to resource ${title}.`);
+  }
+
+  /**
+   * Resize one edge of the working event. Clamps to a minimum duration of
+   * one slot to keep the event valid, and refuses to invert (start ≤ end).
+   */
+  private resizeKeyboardMoveEdge(edge: 'start' | 'end', deltaMs: number): void {
+    if (!this.keyboardMove) return;
+    const minDurationMs = this.minutesPerSlot() * 60 * 1000;
+    let newStart = this.keyboardMove.workingStart;
+    let newEnd = this.keyboardMove.workingEnd;
+    if (edge === 'end') {
+      newEnd = new Date(newEnd.getTime() + deltaMs);
+      if (newEnd.getTime() - newStart.getTime() < minDurationMs) return;
+    } else {
+      newStart = new Date(newStart.getTime() + deltaMs);
+      if (newEnd.getTime() - newStart.getTime() < minDurationMs) return;
+    }
+    this.keyboardMove.workingStart = newStart;
+    this.keyboardMove.workingEnd = newEnd;
+    this.applyKeyboardMovePreview();
+    this.liveAnnouncer.announce(formatResizeAnnouncement(newStart, newEnd, edge, this.stateManager.getState().options.timeFormat));
+  }
+
+  /** Mirror keyboardMove.working* into state.previewEvent so views render the destination,
+   *  then scroll the destination into view so the sighted-keyboard user can see it (PRD D6). */
+  private applyKeyboardMovePreview(): void {
+    if (!this.keyboardMove) return;
+    const { eventId, workingStart, workingEnd, workingResourceId } = this.keyboardMove;
+    this.stateManager.setState({
+      previewEvent: {
+        start: workingStart,
+        end: workingEnd,
+        ...(workingResourceId ? { resourceId: workingResourceId } : {}),
+      },
+    });
+    // Each move-mode update tears down + rebuilds event elements (renderEvents
+    // is unconditional in week/day/timeline). Re-focus the event so subsequent
+    // arrow keystrokes still reach our keydown listener instead of falling
+    // through to <body>. Also scroll the preview cell into view.
+    requestAnimationFrame(() => {
+      const root = this.shadowRoot;
+      if (!root) return;
+      const eventEl = root.querySelector(`[data-event-id="${this.cssEscape(eventId)}"]`) as HTMLElement | null;
+      eventEl?.focus({ preventScroll: true });
+      const startIso = workingStart.toISOString();
+      const sel = workingResourceId
+        ? `.scheduler-timeline-slot[data-resource-id="${this.cssEscape(workingResourceId)}"][data-start="${startIso}"]`
+        : `.scheduler-time-slot[data-start="${startIso}"]`;
+      const cellEl = root.querySelector(sel) as HTMLElement | null;
+      if (cellEl && typeof cellEl.scrollIntoView === 'function') {
+        cellEl.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      }
+    });
   }
 
   private commitEventMoveMode(): void {
@@ -829,17 +1357,36 @@ export class MpScheduler extends LitElement {
         ...original,
         start: this.keyboardMove.workingStart,
         end: this.keyboardMove.workingEnd,
+        ...(this.keyboardMove.workingResourceId
+          ? { resourceId: this.keyboardMove.workingResourceId }
+          : {}),
       };
       this.stateManager.updateEvent(updated);
       this.eventEmitter.emitEventUpdate(updated, original, new CustomEvent('keyboard-move'));
       this.liveAnnouncer.announce('Move committed.');
     }
     this.keyboardMove = null;
+    this.stateManager.setState({ keyboardMoveEventId: null, previewEvent: null });
+    // Re-focus the moved event after re-render.
+    requestAnimationFrame(() => {
+      const sel = `[data-event-id="${this.cssEscape(original?.id ?? '')}"]`;
+      const el = this.shadowRoot?.querySelector(sel) as HTMLElement | null;
+      el?.focus({ preventScroll: false });
+    });
   }
 
   private cancelEventMoveMode(): void {
+    const id = this.keyboardMove?.eventId ?? null;
     this.keyboardMove = null;
+    this.stateManager.setState({ keyboardMoveEventId: null, previewEvent: null });
     this.liveAnnouncer.announce('Move cancelled.');
+    if (id) {
+      requestAnimationFrame(() => {
+        const sel = `[data-event-id="${this.cssEscape(id)}"]`;
+        const el = this.shadowRoot?.querySelector(sel) as HTMLElement | null;
+        el?.focus({ preventScroll: false });
+      });
+    }
   }
 
   // ============================================

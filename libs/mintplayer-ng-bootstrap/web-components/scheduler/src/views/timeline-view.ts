@@ -11,7 +11,7 @@ import {
   FlattenedResource,
   getContrastColor,
 } from '@mintplayer/ng-bootstrap/web-components/scheduler-core';
-import { BaseView, formatEventAriaLabel } from './base-view';
+import { BaseView, formatEventAriaLabel, isSlotInSelection } from './base-view';
 import { SchedulerState } from '../state/scheduler-state';
 
 /**
@@ -124,6 +124,40 @@ export class TimelineView extends BaseView {
 
     // Render events
     this.renderEvents(days);
+
+    // Reflect any pre-existing focused cell / selection.
+    this.updateCellFocusAndSelection();
+  }
+
+  /**
+   * Apply roving tabindex + aria-selected + `.selected` class to each
+   * timeline-slot element. Selection is constrained to the resource pinned
+   * at the anchor (PRD D1: cross-resource selection ignored).
+   */
+  private updateCellFocusAndSelection(): void {
+    const focused = this.state.focusedCell;
+    const focusedResourceId = this.state.focusedResourceId;
+    const slots = this.container.querySelectorAll<HTMLElement>('.scheduler-timeline-slot');
+    let foundFocused = false;
+    let firstEl: HTMLElement | null = null;
+    slots.forEach((slotEl) => {
+      if (!firstEl) firstEl = slotEl;
+      const startStr = slotEl.dataset['start'];
+      const endStr = slotEl.dataset['end'];
+      const resourceId = slotEl.dataset['resourceId'] ?? null;
+      if (!startStr || !endStr) return;
+      const slot = { start: new Date(startStr), end: new Date(endStr) };
+      const isFocused =
+        !!focused &&
+        slot.start.getTime() === focused.start.getTime() &&
+        focusedResourceId === resourceId;
+      slotEl.setAttribute('tabindex', isFocused ? '0' : '-1');
+      const inSelection = isSlotInSelection(slot, this.state, resourceId);
+      slotEl.setAttribute('aria-selected', inSelection ? 'true' : 'false');
+      slotEl.classList.toggle('selected', inSelection);
+      if (isFocused) foundFocused = true;
+    });
+    if (!foundFocused && firstEl) (firstEl as HTMLElement).setAttribute('tabindex', '0');
   }
 
   private createResourceRow(flat: FlattenedResource, days: Date[]): HTMLElement {
@@ -174,6 +208,8 @@ export class TimelineView extends BaseView {
         const slotEl = this.createElement('div', 'scheduler-timeline-slot');
         slotEl.setAttribute('role', 'gridcell');
         slotEl.setAttribute('tabindex', '-1');
+        slotEl.setAttribute('aria-selected', 'false');
+        slotEl.id = `scheduler-cell-t-${flat.item.id}-${slot.start.getTime()}`;
         slotEl.style.width = `${this.slotWidth}px`;
         this.setData(slotEl, {
           resourceId: flat.item.id,
@@ -279,15 +315,16 @@ export class TimelineView extends BaseView {
   ): HTMLElement {
     const eventEl = this.createElement('div', 'scheduler-timeline-event');
     const isSelected = this.state.selectedEvent?.id === event.id;
+    const inMoveMode = this.state.keyboardMoveEventId === event.id;
     eventEl.setAttribute('role', 'button');
-    // Roving tabindex (Phase 6): the selected event carries tabindex=0 so
-    // Tab into the scheduler lands on it; others stay at -1 and are reachable
-    // via click (which then makes them the new tab stop).
-    eventEl.setAttribute('tabindex', isSelected ? '0' : '-1');
+    // Every event is Tab-reachable (PRD §6.1) — flipped from roving tabindex
+    // so users can Tab through events in document order.
+    eventEl.setAttribute('tabindex', '0');
     eventEl.setAttribute(
       'aria-label',
       formatEventAriaLabel(event, resourceTitle, this.state.options.timeFormat),
     );
+    if (inMoveMode) eventEl.setAttribute('aria-pressed', 'true');
     if (isSelected) {
       eventEl.setAttribute('aria-current', 'true');
       eventEl.classList.add('selected');
@@ -342,6 +379,9 @@ export class TimelineView extends BaseView {
     // Re-render events
     const days = dateService.getWeekDays(state.date, state.options.firstDayOfWeek);
     this.renderEvents(days);
+
+    // Refresh cell focus + selection styling.
+    this.updateCellFocusAndSelection();
   }
 
   private optionsRequireRerender(oldOpts: SchedulerState['options'], newOpts: SchedulerState['options']): boolean {

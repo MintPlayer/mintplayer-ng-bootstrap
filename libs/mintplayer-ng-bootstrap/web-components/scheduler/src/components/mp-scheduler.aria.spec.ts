@@ -88,11 +88,19 @@ describe('mp-scheduler — timeline-view grid roles', () => {
     expect(cell.getAttribute('role')).toBe('rowheader');
   });
 
-  it('time-slot cells are role="gridcell" with tabindex="-1"', async () => {
+  it('time-slot cells are role="gridcell" with a roving tabindex', async () => {
     el = await mount('timeline');
-    const slot = el.shadowRoot!.querySelector('.scheduler-timeline-slot')!;
-    expect(slot.getAttribute('role')).toBe('gridcell');
-    expect(slot.getAttribute('tabindex')).toBe('-1');
+    const slots = el.shadowRoot!.querySelectorAll('.scheduler-timeline-slot');
+    expect(slots.length).toBeGreaterThan(0);
+    // Every cell must be role=gridcell and have either tabindex=0 (the focused
+    // tab stop) or tabindex=-1 (other cells). PRD §6.2 — roving tabindex.
+    for (const s of Array.from(slots)) {
+      expect(s.getAttribute('role')).toBe('gridcell');
+      expect(s.getAttribute('tabindex')).toMatch(/^(0|-1)$/);
+    }
+    // Exactly one cell carries tabindex=0 (the grid's single tab stop).
+    const tabbable = el.shadowRoot!.querySelectorAll('.scheduler-timeline-slot[tabindex="0"]');
+    expect(tabbable.length).toBe(1);
   });
 });
 
@@ -105,7 +113,8 @@ describe('mp-scheduler — event blocks', () => {
     const ev = el.shadowRoot!.querySelector('.scheduler-timeline-event');
     expect(ev).not.toBeNull();
     expect(ev!.getAttribute('role')).toBe('button');
-    expect(ev!.getAttribute('tabindex')).toBe('-1');
+    // PRD §6.1 D3: every event is in the Tab order (flipped from roving).
+    expect(ev!.getAttribute('tabindex')).toBe('0');
     const label = ev!.getAttribute('aria-label') ?? '';
     expect(label).toContain('Standup');
     expect(label).toContain('Alice');
@@ -124,19 +133,22 @@ describe('mp-scheduler — live announcer', () => {
   });
 });
 
-describe('mp-scheduler — roving tabindex on events', () => {
+describe('mp-scheduler — events in tab order (PRD D3)', () => {
   let el: MpScheduler;
   afterEach(() => el?.remove());
 
-  it('selected event carries tabindex="0", others "-1"', async () => {
+  it('every event carries tabindex="0", regardless of selection state', async () => {
     el = await mount('timeline');
-    // The event lives on resources[0].events in the timeline view fixture.
+    const ev = el.shadowRoot!.querySelector('.scheduler-timeline-event')!;
+    expect(ev.getAttribute('tabindex')).toBe('0');
+    // Selecting it shouldn't change tabindex (no longer roving).
     const resources = (el as unknown as { resources: { events: { id: string }[] }[] }).resources;
     const event = resources[0].events[0];
     (el as unknown as { stateManager: { setSelectedEvent: (e: unknown) => void } }).stateManager.setSelectedEvent(event);
     await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
     await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
-    const ev = el.shadowRoot!.querySelector('.scheduler-timeline-event')!;
-    expect(ev.getAttribute('tabindex')).toBe('0');
+    const ev2 = el.shadowRoot!.querySelector('.scheduler-timeline-event')!;
+    expect(ev2.getAttribute('tabindex')).toBe('0');
+    expect(ev2.getAttribute('aria-current')).toBe('true');
   });
 });

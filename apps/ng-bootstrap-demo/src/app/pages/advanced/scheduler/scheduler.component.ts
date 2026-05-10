@@ -9,7 +9,7 @@ import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
 import { BsSelectComponent, BsSelectOption } from '@mintplayer/ng-bootstrap/select';
 import {
   BsSchedulerComponent,
-  SchedulerEventClickEvent,
+  SchedulerEventSelectedEvent,
   SchedulerEventCreateEvent,
   SchedulerEventUpdateEvent,
   SchedulerEventDeleteEvent,
@@ -177,8 +177,8 @@ export class SchedulerComponent {
   }
 
   // Event handlers
-  onEventClick(event: SchedulerEventClickEvent) {
-    this.log(`Event clicked: ${event.event.title}`);
+  onEventSelected(event: SchedulerEventSelectedEvent) {
+    this.log(`Event selected: ${event.event.title}`);
   }
 
   onEventCreate(event: SchedulerEventCreateEvent) {

@@ -210,6 +210,17 @@
   background: var(--scheduler-greyed-slot-bg);
 }
 
+.scheduler-time-slot.selected {
+  background: var(--scheduler-preview-bg);
+}
+
+.scheduler-time-slot:focus-visible,
+.scheduler-time-slot:focus {
+  outline: 2px solid #0d6efd;
+  outline-offset: -2px;
+  z-index: 1;
+}
+
 /* Events */
 .scheduler-events-container {
   position: absolute;
@@ -516,6 +527,17 @@
 
 .scheduler-timeline-slot.greyed {
   background: var(--scheduler-greyed-slot-bg);
+}
+
+.scheduler-timeline-slot.selected {
+  background: var(--scheduler-preview-bg);
+}
+
+.scheduler-timeline-slot:focus-visible,
+.scheduler-timeline-slot:focus {
+  outline: 2px solid #0d6efd;
+  outline-offset: -2px;
+  z-index: 1;
 }
 
 .scheduler-timeline-events {

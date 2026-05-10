@@ -11,10 +11,12 @@ export interface BaseEventDetail {
 }
 
 /**
- * Event click event detail
+ * Event-selected event detail. Fires on mouse click and on keyboard Tab
+ * landing on an event (PRD scheduler-keyboard-grid-nav D3 — renamed from
+ * `EventClickDetail` because keyboard Tab now triggers the same event).
  */
-export interface EventClickDetail extends BaseEventDetail {
-  /** The clicked event */
+export interface EventSelectedDetail extends BaseEventDetail {
+  /** The selected event */
   event: SchedulerEvent;
 }
 
@@ -82,8 +84,8 @@ export interface ViewChangeDetail {
  * Custom event map for the scheduler web component
  */
 export interface SchedulerEventMap {
-  'event-click': CustomEvent<EventClickDetail>;
-  'event-dblclick': CustomEvent<EventClickDetail>;
+  'event-selected': CustomEvent<EventSelectedDetail>;
+  'event-dblclick': CustomEvent<EventSelectedDetail>;
   'event-create': CustomEvent<EventCreateDetail>;
   'event-update': CustomEvent<EventUpdateDetail>;
   'event-delete': CustomEvent<EventDeleteDetail>;

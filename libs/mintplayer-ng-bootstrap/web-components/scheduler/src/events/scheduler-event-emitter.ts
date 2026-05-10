@@ -22,13 +22,14 @@ export class SchedulerEventEmitter {
   }
 
   /**
-   * Emit an event-click event.
+   * Emit an event-selected event. Fired both by mouse click and by keyboard
+   * Tab landing on an event (mouse-parity, PRD scheduler-keyboard-grid-nav D3).
    */
-  emitEventClick(
-    event: EventDetail<'event-click'>['event'],
+  emitEventSelected(
+    event: EventDetail<'event-selected'>['event'],
     originalEvent: Event
   ): void {
-    this.emit({ type: 'event-click', event, originalEvent });
+    this.emit({ type: 'event-selected', event, originalEvent });
   }
 
   /**

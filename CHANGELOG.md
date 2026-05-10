@@ -7,11 +7,20 @@ package version aligns its major with the supported Angular major.
 
 ### Added
 
+- `@mintplayer/ng-bootstrap/scheduler`: keyboard grid navigation across day/week/timeline views. Cells expose `role="gridcell"` with roving tabindex and a deterministic id. Arrow keys walk cells (week: up/down = time, left/right = day; timeline: left/right = time, up/down = resource), Shift+Arrow extends a linear time-range selection that crosses day boundaries on week view, Home/End jump to the column extremes, Ctrl+Home/End to the view extremes, PageUp/PageDown advance one period. Enter on a cell or selection emits `event-create` with the same payload mouse drag-create produces. Every event is in the Tab order; Enter on a focused event enters move-mode (`aria-pressed="true"`), where Arrow keys nudge time/resource, Shift+Arrow resizes the end edge (Alt+Shift the start edge), week-view Shift+ArrowLeft/Right resizes across day boundaries, Enter commits, Escape reverts. The focused cell and the move-mode preview auto-scroll into the viewport. Live-region announcements narrate each transition. See `docs/prd/scheduler-keyboard-grid-nav.md`.
 - `@mintplayer/ng-bootstrap/navbar`: `BsNavbarTriggerDirective` (`[bsNavbarTrigger]`) for dropdown trigger anchors. Replaces `routerLink` + `routerLinkActive` on triggers — drives the active CSS class via `Router.events` without RouterLink's programmatic-navigate behaviour. Use `routerLink` on the items INSIDE the dropdown for actual navigation; use `bsNavbarTrigger` on the trigger anchor that opens the dropdown.
 - `@mintplayer/ng-bootstrap/navigation-lock`: `provideNavigationLockRouter(routes, ...features)` — single-call router setup that wraps your routes in the required `canMatch: [bsNavigationLockGuard]` and applies `canceledNavigationResolution: 'computed'`. Use in place of `provideRouter(...)` to avoid having to remember both pieces.
 - `@mintplayer/ng-bootstrap/tile-manager`: new package. `<bs-tile-manager>` + `<bs-tile>` + `<bs-tile-header>` for dashboard-style grids of self-similar tiles users can drag, resize, and rearrange. Tiles push neighbours out of the way with vertical-compact gravity in real time; the layout serializes to a stable typed `TileLayoutSnapshot` you can persist and restore by re-binding `[(position)]` per tile. Header-only drag by default; touch arms via 600 ms long-press (mirrors `BsDock`); `prefers-reduced-motion: reduce` bypasses the FLIP animator. Architecture mirrors `BsDock`: a Lit web component (`<mp-tile-manager>`) owns gesture mechanics, the packer, FLIP animations, keyboard mode, and shadow-DOM rendering; the Angular wrappers marshal inputs and re-emit custom events as Angular outputs. See `docs/prd/tile-manager.md`.
 
 ### Breaking
+
+- **Scheduler keyboard model rewrite** (see `docs/prd/scheduler-keyboard-grid-nav.md`).
+  - `event-click` custom event renamed to `event-selected`. Fires on mouse click and on keyboard Tab landing on an event ("click" no longer described the trigger). `event-dblclick` is unchanged. Migrate listeners; no shim provided.
+  - `BsSchedulerComponent`: Angular output `(eventClick)` → `(eventSelected)`; type `SchedulerEventClickEvent` → `SchedulerEventSelectedEvent`. Type `EventClickDetail` (scheduler-core) → `EventSelectedDetail`.
+  - Move-mode entry key: `M` on a focused event is removed. Press `Enter` on the focused event instead.
+  - Bare letter shortcuts `T` / `Y` / `M` / `W` / `D` are removed. Use `Alt+T` (today) / `Alt+Y` (year) / `Alt+M` (month) / `Alt+W` (week) / `Alt+D` (day). Frees single letters for future input surfaces inside the scheduler.
+  - Bare `ArrowLeft` / `ArrowRight` no longer navigate periods (they now walk cells inside the grid). Use `PageUp` / `PageDown` for previous/next period. Header prev/next buttons still work.
+  - Events lose their roving tabindex — every event is now `tabindex="0"` so Tab walks through them in document order.
 
 - **Navigation-lock redesign** (#169, see `docs/prd/navigation-lock-redesign.md`).
   The opt-in directive + per-route guard pair is replaced by a global
