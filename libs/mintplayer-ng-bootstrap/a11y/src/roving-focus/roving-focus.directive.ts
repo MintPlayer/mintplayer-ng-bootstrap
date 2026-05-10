@@ -68,6 +68,8 @@ export class BsRovingFocusDirective {
   }
 
   onKeydown(event: KeyboardEvent): void {
+    // Don't intercept browser/OS chords (Alt+Arrow=back, Ctrl+Home=top of doc, Cmd+Arrow=word jump on macOS).
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
     const orient = this.orientation();
     let consumed = true;
     switch (event.key) {

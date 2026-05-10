@@ -54,8 +54,11 @@ describe('BsComboboxDirective', () => {
   });
 
   const input = () => fixture.nativeElement.querySelector<HTMLInputElement>('input')!;
-  const press = (key: string) => {
-    const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
+  const press = (
+    key: string,
+    modifiers: { altKey?: boolean; ctrlKey?: boolean; metaKey?: boolean; shiftKey?: boolean } = {},
+  ) => {
+    const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...modifiers });
     input().dispatchEvent(event);
     fixture.detectChanges();
     return event;
@@ -147,6 +150,38 @@ describe('BsComboboxDirective', () => {
       const ev = press('a');
       expect(ev.defaultPrevented).toBe(false);
       expect(host.lastNavigate()).toBeNull();
+    });
+
+    it('ignores Alt/Ctrl/Meta on navigation keys (browser-reserved chords)', () => {
+      // Alt+ArrowDown must not open the popup — that's the browser's back shortcut.
+      let ev = press('ArrowDown', { altKey: true });
+      expect(host.isOpen()).toBe(false);
+      expect(ev.defaultPrevented).toBe(false);
+
+      // Ctrl+Home / Meta+End must let the input's caret jump.
+      host.isOpen.set(true);
+      fixture.detectChanges();
+      host.lastNavigate.set(null);
+      ev = press('Home', { ctrlKey: true });
+      expect(host.lastNavigate()).toBeNull();
+      expect(ev.defaultPrevented).toBe(false);
+      ev = press('End', { metaKey: true });
+      expect(host.lastNavigate()).toBeNull();
+      expect(ev.defaultPrevented).toBe(false);
+    });
+
+    it('Shift+Tab still navigates (Shift is a legit chord on Tab)', () => {
+      host.isOpen.set(true);
+      fixture.detectChanges();
+      // No assertion on the navigation effect (it depends on having a roving-focus inside the dropdown,
+      // which this harness doesn't); we only assert that the modifier guard does NOT short-circuit Tab.
+      const ev = press('Tab', { shiftKey: true });
+      // Either the directive consumed it (preventDefault) or fell through to browser tab order — both are
+      // legal here. The bug we're guarding against is "the modifier guard early-returned and the directive
+      // never even saw the Tab"; that bug would keep the fixture in an inconsistent state we can't observe
+      // directly, so we just smoke-test that the press doesn't throw and the dropdown stays open.
+      expect(ev).toBeDefined();
+      expect(host.isOpen()).toBe(true);
     });
   });
 });

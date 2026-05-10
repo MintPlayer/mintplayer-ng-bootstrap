@@ -59,6 +59,9 @@ export class BsComboboxDirective {
   readonly cancel = output<KeyboardEvent>();
 
   onKeydown(event: KeyboardEvent): void {
+    // Skip browser/OS chords on the navigation keys; Tab is exempt because Shift+Tab is a legit chord
+    // and Ctrl/Alt/Meta+Tab don't reach JS in any browser.
+    if (event.key !== 'Tab' && (event.altKey || event.ctrlKey || event.metaKey)) return;
     const isOpen = this.expanded();
     const rf = this.dropdown?.rovingFocus();
     switch (event.key) {

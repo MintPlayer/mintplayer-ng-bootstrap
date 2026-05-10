@@ -41,8 +41,8 @@ describe('BsRovingFocusDirective', () => {
 
   const items = () => Array.from(fixture.nativeElement.querySelectorAll<HTMLElement>('li'));
   const container = () => fixture.nativeElement.querySelector<HTMLElement>('[data-testid="container"]')!;
-  const press = (key: string) => {
-    container().dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+  const press = (key: string, modifiers: { altKey?: boolean; ctrlKey?: boolean; metaKey?: boolean; shiftKey?: boolean } = {}) => {
+    container().dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, ...modifiers }));
     fixture.detectChanges();
   };
 
@@ -107,6 +107,22 @@ describe('BsRovingFocusDirective', () => {
       items()[2].focus();
       fixture.detectChanges();
       expect(items()[2].getAttribute('tabindex')).toBe('0');
+    });
+
+    it('ignores Alt/Ctrl/Meta + arrow chords (browser-reserved shortcuts)', () => {
+      items()[0].focus();
+      press('ArrowDown', { altKey: true });
+      expect(items()[0].getAttribute('tabindex')).toBe('0');
+      press('ArrowDown', { ctrlKey: true });
+      expect(items()[0].getAttribute('tabindex')).toBe('0');
+      press('Home', { metaKey: true });
+      expect(items()[0].getAttribute('tabindex')).toBe('0');
+      press('End', { altKey: true });
+      expect(items()[0].getAttribute('tabindex')).toBe('0');
+
+      // Plain ArrowDown still works after a guarded chord.
+      press('ArrowDown');
+      expect(items()[1].getAttribute('tabindex')).toBe('0');
     });
   });
 
