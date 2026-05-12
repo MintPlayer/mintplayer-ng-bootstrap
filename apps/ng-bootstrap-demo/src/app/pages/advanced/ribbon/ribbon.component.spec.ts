@@ -19,8 +19,22 @@ describe('RibbonComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should render tabs', () => {
-    expect(component.tabs.length).toBe(4);
+  it('should render the four primary tabs plus the Picture Tools contextual set', () => {
+    // After the DOM-as-source-of-truth migration, tabs are
+    // <bs-ribbon-tab> light-DOM children inside <bs-ribbon>. The demo
+    // declares four primary tabs (Home / Insert / Design / Layout)
+    // plus two more inside the Picture Tools
+    // <bs-ribbon-contextual-tab-set> (Format / Effects). The contextual
+    // tabs remain in the DOM even when the set is hidden — only the
+    // ribbon's slot-processing logic filters them at render time.
+    const allTabs = fixture.nativeElement.querySelectorAll('bs-ribbon-tab');
+    expect(allTabs.length).toBe(6);
+    const contextualTabs = fixture.nativeElement.querySelectorAll(
+      'bs-ribbon-contextual-tab-set bs-ribbon-tab'
+    );
+    expect(contextualTabs.length).toBe(2);
+    // Primary tabs = total minus the ones nested inside contextual sets.
+    expect(allTabs.length - contextualTabs.length).toBe(4);
   });
 
   it('should toggle minimized state', () => {
