@@ -6,6 +6,9 @@
     <button [color]="colors.secondary" (click)="toggleLayout()">
       {{ layoutLabel() }}
     </button>
+    <button [color]="colors.secondary" (click)="togglePictureTools()">
+      {{ pictureToolsVisible() ? 'Deselect' : 'Select' }} picture
+    </button>
     <label class="control-field">
       Version
       <bs-select [(ngModel)]="version">
@@ -153,6 +156,27 @@
     </bs-ribbon-group>
 
     </bs-ribbon-tab>
+
+    <!-- ============ Picture Tools (contextual) ============ -->
+    <bs-ribbon-contextual-tab-set label="Picture Tools" color="#5BAEFF" [hidden]="!pictureToolsVisible()">
+      <bs-ribbon-tab tabId="picture-format" label="Format">
+        <bs-ribbon-group groupId="picture-styles" label="Picture Styles">
+          <bs-ribbon-button itemId="picture-border" label="Picture Border" icon="▢" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+          <bs-ribbon-button itemId="picture-effects" label="Picture Effects" icon="✨" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+          <bs-ribbon-button itemId="picture-layout" label="Picture Layout" icon="🖼️" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+        </bs-ribbon-group>
+        <bs-ribbon-group groupId="picture-arrange" label="Arrange">
+          <bs-ribbon-button itemId="picture-position" label="Position" icon="⤧" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+          <bs-ribbon-button itemId="picture-wrap-text" label="Wrap Text" icon="↩" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+          <bs-ribbon-button itemId="picture-rotate" label="Rotate" icon="↻" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+        </bs-ribbon-group>
+        <bs-ribbon-group groupId="picture-size" label="Size">
+          <bs-ribbon-button itemId="picture-crop" label="Crop" icon="✂" size="large" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+          <bs-ribbon-button itemId="picture-width" label="Width" icon="↔" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+          <bs-ribbon-button itemId="picture-height" label="Height" icon="↕" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+        </bs-ribbon-group>
+      </bs-ribbon-tab>
+    </bs-ribbon-contextual-tab-set>
 
     <!-- ============ Design tab ============ -->
     <bs-ribbon-tab tabId="design" label="Design">

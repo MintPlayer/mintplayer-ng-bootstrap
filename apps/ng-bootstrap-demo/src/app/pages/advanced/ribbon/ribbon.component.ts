@@ -10,6 +10,7 @@ import { FormsModule } from '@angular/forms';
 import {
   BsRibbonComponent,
   BsRibbonTabComponent,
+  BsRibbonContextualTabSetComponent,
   BsRibbonGroupComponent,
   BsRibbonButtonComponent,
   BsRibbonSplitButtonComponent,
@@ -47,6 +48,7 @@ interface AppAccentOption {
     FormsModule,
     BsRibbonComponent,
     BsRibbonTabComponent,
+    BsRibbonContextualTabSetComponent,
     BsRibbonGroupComponent,
     BsRibbonButtonComponent,
     BsRibbonSplitButtonComponent,
@@ -105,6 +107,12 @@ export class RibbonComponent {
   ];
 
   readonly selectedShape = signal<string>('');
+
+  readonly pictureToolsVisible = signal<boolean>(false);
+
+  togglePictureTools(): void {
+    this.pictureToolsVisible.update((v) => !v);
+  }
 
   readonly minimizeLabel = computed(
     () => `${this.minimized() ? 'Restore' : 'Minimize'} Ribbon (Ctrl+F1)`

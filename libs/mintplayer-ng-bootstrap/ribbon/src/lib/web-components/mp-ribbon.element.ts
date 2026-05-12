@@ -5,6 +5,14 @@ interface TabEntry {
   tabId: string;
   label: string;
   element: HTMLElement;
+  contextualColor?: string;
+  contextualSetLabel?: string;
+}
+
+interface ContextualSetEntry {
+  label: string;
+  color: string;
+  tabIds: string[];
 }
 
 /**
@@ -190,6 +198,36 @@ export class MpRibbon extends LitElement {
       background: var(--bs-ribbon-tabpanel-bg);
       overflow: hidden;
     }
+    .ribbon-contextual-band {
+      display: flex;
+      gap: 8px;
+      padding: 3px 8px;
+      background: var(--bs-ribbon-container-bg);
+      border-bottom: 1px solid var(--bs-ribbon-tabstrip-border);
+    }
+    .ribbon-contextual-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #fff;
+      padding: 2px 10px;
+      border-radius: 2px;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    .ribbon-tab.contextual {
+      border-top: 3px solid
+        var(--ribbon-tab-contextual-color, transparent);
+      padding-top: 7px;
+    }
+    .ribbon-tab.contextual.active {
+      background:
+        linear-gradient(
+          to bottom,
+          color-mix(in srgb, var(--ribbon-tab-contextual-color) 18%, transparent),
+          var(--bs-ribbon-tab-active-bg)
+        );
+      color: var(--ribbon-tab-contextual-color);
+    }
   `;
 
   /** Currently active tab ID. */
@@ -202,6 +240,13 @@ export class MpRibbon extends LitElement {
    */
   @state()
   private tabsList: TabEntry[] = [];
+
+  /** Visible contextual tab sets (for the coloured header band). */
+  @state()
+  private contextualSets: ContextualSetEntry[] = [];
+
+  /** Cached reference to the default slot for re-processing on visibility changes. */
+  private contentSlot: HTMLSlotElement | null = null;
 
   /** Layout mode: 'classic' | 'simplified' */
   @property({ type: String })
@@ -238,13 +283,26 @@ export class MpRibbon extends LitElement {
       this.resizeObserver = new ResizeObserver(() => this.scheduleReflow());
       this.resizeObserver.observe(this);
     }
+
+    this.addEventListener(
+      'contextual-visibility-change',
+      this.onContextualVisibilityChange
+    );
   }
 
   override disconnectedCallback() {
     super.disconnectedCallback();
     this.resizeObserver?.disconnect();
     if (this.reflowFrame) cancelAnimationFrame(this.reflowFrame);
+    this.removeEventListener(
+      'contextual-visibility-change',
+      this.onContextualVisibilityChange
+    );
   }
+
+  private onContextualVisibilityChange = (): void => {
+    if (this.contentSlot) this.processSlot(this.contentSlot);
+  };
 
   override updated(changed: Map<string, unknown>): void {
     if (changed.has('activeTabId')) {
@@ -258,6 +316,17 @@ export class MpRibbon extends LitElement {
   override render(): TemplateResult {
     return html`
       <div class="ribbon-container">
+        ${this.contextualSets.length > 0
+          ? html`<div class="ribbon-contextual-band" role="presentation">
+              ${this.contextualSets.map(
+                (set) =>
+                  html`<span
+                    class="ribbon-contextual-label"
+                    style="background: ${set.color};"
+                  >${set.label}</span>`
+              )}
+            </div>`
+          : nothing}
         <div
           role="tablist"
           class="ribbon-tablist"
@@ -277,13 +346,18 @@ export class MpRibbon extends LitElement {
 
   private renderTabButton(tab: TabEntry, _index: number): TemplateResult {
     const isActive = tab.tabId === this.activeTabId;
+    const isContextual = !!tab.contextualColor;
     const tabIndex = isActive ? 0 : -1;
+    const inlineStyle = isContextual
+      ? `--ribbon-tab-contextual-color: ${tab.contextualColor};`
+      : '';
 
     return html`
       <button
         role="tab"
         id="ribbon-tab-${tab.tabId}"
-        class="ribbon-tab ${isActive ? 'active' : ''}"
+        class="ribbon-tab ${isActive ? 'active' : ''} ${isContextual ? 'contextual' : ''}"
+        style="${inlineStyle}"
         aria-selected="${isActive}"
         aria-controls="ribbon-panel-${tab.tabId}"
         tabindex="${tabIndex}"
@@ -295,28 +369,79 @@ export class MpRibbon extends LitElement {
 
   private onSlotChange = (event: Event): void => {
     const slot = event.target as HTMLSlotElement;
+    this.contentSlot = slot;
+    this.processSlot(slot);
+  };
+
+  private processSlot(slot: HTMLSlotElement): void {
     const newTabs: TabEntry[] = [];
+    const newSets: ContextualSetEntry[] = [];
+
     for (const assigned of slot.assignedElements()) {
+      // Contextual set (or Angular wrapper around one)
+      let setEl: HTMLElement | null = null;
+      if (assigned.tagName === 'MP-RIBBON-CONTEXTUAL-TAB-SET') {
+        setEl = assigned as HTMLElement;
+      } else {
+        setEl = assigned.querySelector<HTMLElement>(
+          'mp-ribbon-contextual-tab-set'
+        );
+      }
+      if (setEl) {
+        const isHidden =
+          setEl.hasAttribute('hidden') || assigned.hasAttribute('hidden');
+        if (isHidden) continue;
+        const color = setEl.getAttribute('color') ?? '#5BAEFF';
+        const label = setEl.getAttribute('label') ?? '';
+        const innerTabs = Array.from(
+          setEl.querySelectorAll<HTMLElement>('mp-ribbon-tab')
+        );
+        const tabIds: string[] = [];
+        for (const tab of innerTabs) {
+          const id = tab.getAttribute('tab-id') ?? '';
+          newTabs.push({
+            tabId: id,
+            label: tab.getAttribute('label') ?? '',
+            element: tab,
+            contextualColor: color,
+            contextualSetLabel: label,
+          });
+          tabIds.push(id);
+        }
+        if (tabIds.length > 0) newSets.push({ label, color, tabIds });
+        continue;
+      }
+
+      // Plain tab (or Angular wrapper)
       let tabEl: HTMLElement | null = null;
       if (assigned.tagName === 'MP-RIBBON-TAB') {
         tabEl = assigned as HTMLElement;
       } else {
         tabEl = assigned.querySelector<HTMLElement>('mp-ribbon-tab');
       }
-      if (!tabEl) continue;
-      newTabs.push({
-        tabId: tabEl.getAttribute('tab-id') ?? '',
-        label: tabEl.getAttribute('label') ?? '',
-        element: tabEl,
-      });
+      if (tabEl) {
+        newTabs.push({
+          tabId: tabEl.getAttribute('tab-id') ?? '',
+          label: tabEl.getAttribute('label') ?? '',
+          element: tabEl,
+        });
+      }
     }
+
     this.tabsList = newTabs;
-    if (!this.activeTabId && newTabs.length > 0) {
+    this.contextualSets = newSets;
+
+    // If the active tab vanished (e.g. its contextual set was hidden), pick
+    // the first visible one.
+    const stillVisible = newTabs.some((t) => t.tabId === this.activeTabId);
+    if (!stillVisible && newTabs.length > 0) {
+      this.activeTabId = newTabs[0].tabId;
+    } else if (!this.activeTabId && newTabs.length > 0) {
       this.activeTabId = newTabs[0].tabId;
     }
     this.applyActiveAttribute();
     this.scheduleReflow();
-  };
+  }
 
   private applyActiveAttribute(): void {
     for (const tab of this.tabsList) {
