@@ -165,16 +165,55 @@ export class MpRibbon extends LitElement {
 
     /* ============================================================
        DARK MODE
-       Two versions ship Microsoft-shipped dark themes:
-         office-2013 → "Dark Gray"
-         office-2016 → "Black"
-       office-2007 / office-2010 keep their existing chrome (those
-       versions never had a Microsoft dark mode — documented as a
-       no-op on [colorScheme]="dark").
+       office-2013 → "Dark Gray" (Microsoft-shipped)
+       office-2016 → "Black" (Microsoft-shipped)
+       office-2007 → reconstructed from the original Black colour scheme
+       office-2010 → reconstructed from the original Black colour scheme
        Each block exists twice: once for explicit [colorScheme]="dark"
        and once under @media (prefers-color-scheme: dark) for
        [colorScheme]="auto" — keeps cascade specificity equal.
+       Each block only sets the tokens that *differ* from its light
+       counterpart; same-value tokens (font-family, tab-radius, etc.)
+       continue to cascade from the per-version light block.
        ============================================================ */
+
+    /* Office 2007 — Black scheme (reconstructed) */
+    :host([color-scheme="dark"][version="office-2007"]) {
+      color: rgba(255, 255, 255, 0.87);
+      --bs-ribbon-container-bg: linear-gradient(#2B2F38, #1E2024);
+      --bs-ribbon-container-border: #15171A;
+      --bs-ribbon-tabstrip-bg: linear-gradient(#252830, #15171A);
+      --bs-ribbon-tabstrip-border: #15171A;
+      --bs-ribbon-tab-idle-color: rgba(255, 255, 255, 0.78);
+      --bs-ribbon-tab-hover-bg: #3A3A3A;
+      --bs-ribbon-tab-active-bg: linear-gradient(#2B2F38, #1E2024);
+      --bs-ribbon-tab-active-color: #FFFFFF;
+      --bs-ribbon-tabpanel-bg: linear-gradient(#2B2F38, #1E2024);
+      --bs-ribbon-group-separator: rgba(255, 255, 255, 0.10);
+      --bs-ribbon-group-label-color: rgba(255, 255, 255, 0.60);
+      --bs-ribbon-item-hover-bg: #3F3F3F;
+      --bs-ribbon-item-hover-border: rgba(255, 255, 255, 0.15);
+      --bs-ribbon-item-pressed-bg: #4A4A4A;
+    }
+
+    /* Office 2010 — Black scheme (reconstructed) */
+    :host([color-scheme="dark"][version="office-2010"]) {
+      color: rgba(255, 255, 255, 0.87);
+      --bs-ribbon-container-bg: #2A2C2F;
+      --bs-ribbon-container-border: #1A1A1A;
+      --bs-ribbon-tabstrip-bg: linear-gradient(#34373B, #25282B);
+      --bs-ribbon-tabstrip-border: #1A1A1A;
+      --bs-ribbon-tab-idle-color: rgba(255, 255, 255, 0.78);
+      --bs-ribbon-tab-hover-bg: #3A3A3A;
+      --bs-ribbon-tab-active-bg: #2A2C2F;
+      --bs-ribbon-tab-active-color: #FFFFFF;
+      --bs-ribbon-tabpanel-bg: #2A2C2F;
+      --bs-ribbon-group-separator: rgba(255, 255, 255, 0.10);
+      --bs-ribbon-group-label-color: rgba(255, 255, 255, 0.60);
+      --bs-ribbon-item-hover-bg: #3F3F3F;
+      --bs-ribbon-item-hover-border: rgba(255, 255, 255, 0.15);
+      --bs-ribbon-item-pressed-bg: #4A4A4A;
+    }
 
     /* Office 2016 — Black */
     :host([color-scheme="dark"][version="office-2016"]) {
@@ -217,6 +256,40 @@ export class MpRibbon extends LitElement {
     }
 
     @media (prefers-color-scheme: dark) {
+      :host([color-scheme="auto"][version="office-2007"]) {
+        color: rgba(255, 255, 255, 0.87);
+        --bs-ribbon-container-bg: linear-gradient(#2B2F38, #1E2024);
+        --bs-ribbon-container-border: #15171A;
+        --bs-ribbon-tabstrip-bg: linear-gradient(#252830, #15171A);
+        --bs-ribbon-tabstrip-border: #15171A;
+        --bs-ribbon-tab-idle-color: rgba(255, 255, 255, 0.78);
+        --bs-ribbon-tab-hover-bg: #3A3A3A;
+        --bs-ribbon-tab-active-bg: linear-gradient(#2B2F38, #1E2024);
+        --bs-ribbon-tab-active-color: #FFFFFF;
+        --bs-ribbon-tabpanel-bg: linear-gradient(#2B2F38, #1E2024);
+        --bs-ribbon-group-separator: rgba(255, 255, 255, 0.10);
+        --bs-ribbon-group-label-color: rgba(255, 255, 255, 0.60);
+        --bs-ribbon-item-hover-bg: #3F3F3F;
+        --bs-ribbon-item-hover-border: rgba(255, 255, 255, 0.15);
+        --bs-ribbon-item-pressed-bg: #4A4A4A;
+      }
+      :host([color-scheme="auto"][version="office-2010"]) {
+        color: rgba(255, 255, 255, 0.87);
+        --bs-ribbon-container-bg: #2A2C2F;
+        --bs-ribbon-container-border: #1A1A1A;
+        --bs-ribbon-tabstrip-bg: linear-gradient(#34373B, #25282B);
+        --bs-ribbon-tabstrip-border: #1A1A1A;
+        --bs-ribbon-tab-idle-color: rgba(255, 255, 255, 0.78);
+        --bs-ribbon-tab-hover-bg: #3A3A3A;
+        --bs-ribbon-tab-active-bg: #2A2C2F;
+        --bs-ribbon-tab-active-color: #FFFFFF;
+        --bs-ribbon-tabpanel-bg: #2A2C2F;
+        --bs-ribbon-group-separator: rgba(255, 255, 255, 0.10);
+        --bs-ribbon-group-label-color: rgba(255, 255, 255, 0.60);
+        --bs-ribbon-item-hover-bg: #3F3F3F;
+        --bs-ribbon-item-hover-border: rgba(255, 255, 255, 0.15);
+        --bs-ribbon-item-pressed-bg: #4A4A4A;
+      }
       :host([color-scheme="auto"][version="office-2016"]) {
         color: rgba(255, 255, 255, 0.87);
         --bs-ribbon-container-bg: #262626;
