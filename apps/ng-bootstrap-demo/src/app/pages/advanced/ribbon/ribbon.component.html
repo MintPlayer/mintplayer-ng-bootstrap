@@ -176,6 +176,18 @@
           <bs-ribbon-button itemId="picture-height" label="Height" icon="↕" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
         </bs-ribbon-group>
       </bs-ribbon-tab>
+      <bs-ribbon-tab tabId="picture-effects" label="Effects">
+        <bs-ribbon-group groupId="picture-adjust" label="Adjust">
+          <bs-ribbon-button itemId="picture-brightness" label="Brightness" icon="🔆" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+          <bs-ribbon-button itemId="picture-contrast" label="Contrast" icon="◐" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+          <bs-ribbon-button itemId="picture-saturation" label="Saturation" icon="🎨" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+        </bs-ribbon-group>
+        <bs-ribbon-group groupId="picture-artistic" label="Artistic">
+          <bs-ribbon-button itemId="picture-blur" label="Blur" icon="◌" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+          <bs-ribbon-button itemId="picture-sharpen" label="Sharpen" icon="◇" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+          <bs-ribbon-button itemId="picture-grayscale" label="Grayscale" icon="◑" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+        </bs-ribbon-group>
+      </bs-ribbon-tab>
     </bs-ribbon-contextual-tab-set>
 
     <!-- ============ Design tab ============ -->
