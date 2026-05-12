@@ -224,12 +224,10 @@ export class MpRibbon extends LitElement {
       text-align: center;
       justify-content: center;
     }
-    .ribbon-tab.contextual {
-      border-top: 3px solid var(--bs-ribbon-contextual-color, transparent);
-      padding-top: 7px;
-    }
-    /* The contextual indicator is the coloured top-border only — keep the
-       text colour in the regular active accent so it stays readable. */
+    /* Contextual tabs no longer need a coloured top-border — the band
+       directly above them is the visual indicator. Keeping their layout
+       identical to plain tabs avoids the colour from the band appearing
+       to bleed 3px down into the tab. */
   `;
 
   /** Currently active tab ID. */
