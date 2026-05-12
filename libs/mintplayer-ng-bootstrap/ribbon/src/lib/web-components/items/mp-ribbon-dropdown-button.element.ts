@@ -12,7 +12,7 @@ export class MpRibbonDropdownButton extends MpRibbonItemBase {
     :host { display: inline-flex; position: relative; }
     .ribbon-dropdown-button {
       display: inline-flex;
-      flex-direction: column;
+      flex-direction: row;
       align-items: center;
       justify-content: center;
       gap: 4px;
@@ -26,6 +26,14 @@ export class MpRibbonDropdownButton extends MpRibbonItemBase {
       padding: 4px 6px;
       min-width: 28px;
     }
+    .ribbon-dropdown-button.ribbon-item-large {
+      flex-direction: column;
+      padding: 6px 10px;
+      min-width: 56px;
+    }
+    .ribbon-dropdown-button.ribbon-item-large .ribbon-button-icon { font-size: 28px; }
+    .ribbon-dropdown-button.ribbon-item-medium { padding: 4px 8px; }
+    .ribbon-dropdown-button.ribbon-item-small { padding: 4px 6px; }
     .ribbon-dropdown-button:hover:not(:disabled) {
       background: var(--bs-ribbon-item-hover-bg, #e9ecef);
       border-color: var(--bs-ribbon-item-hover-border, #ced4da);
@@ -46,13 +54,6 @@ export class MpRibbonDropdownButton extends MpRibbonItemBase {
       white-space: nowrap;
     }
     .ribbon-dropdown-arrow { font-size: 9px; opacity: 0.6; }
-
-    :host(.ribbon-item-large) .ribbon-dropdown-button {
-      flex-direction: column;
-      padding: 6px 10px;
-      min-width: 56px;
-    }
-    :host(.ribbon-item-large) .ribbon-button-icon { font-size: 28px; }
 
     .menu-panel {
       position: fixed;
