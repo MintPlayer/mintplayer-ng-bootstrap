@@ -635,7 +635,11 @@ export class MpRibbon extends LitElement {
 
   override connectedCallback() {
     super.connectedCallback();
-    this.setAttribute('role', 'application');
+    // role="region" + aria-label gives the ribbon a screen-reader landmark
+    // without claiming role="application", which would tell AT to disable
+    // its own keyboard handling. The ribbon plays nicely with the browser's
+    // default tab navigation, so it's a region, not an application.
+    this.setAttribute('role', 'region');
     this.setAttribute('aria-label', 'Ribbon');
 
     if (typeof ResizeObserver !== 'undefined') {
@@ -968,6 +972,13 @@ export class MpRibbon extends LitElement {
   override updated(changed: Map<string, unknown>): void {
     if (changed.has('activeTabId')) {
       this.applyActiveAttribute();
+      // Keep the roving-focus cursor (`currentTabIndex`) aligned with the
+      // active tab. `currentTabIndex` is normally advanced by arrow keys,
+      // but if `activeTabId` is set externally (initial attribute, demo
+      // signal flip, or another script writing the property), the first
+      // subsequent arrow press would otherwise start from the wrong index.
+      const idx = this.tabsList.findIndex((t) => t.tabId === this.activeTabId);
+      if (idx >= 0) this.currentTabIndex = idx;
     }
     if (changed.has('activeTabId') || changed.has('minimized')) {
       this.scheduleReflow();

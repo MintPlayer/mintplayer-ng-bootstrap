@@ -63,6 +63,7 @@ export class MpRibbonButton extends MpRibbonItemBase {
         class="ribbon-button ${this.getSizeClass()}"
         ?disabled="${this.disabled}"
         title="${this.tooltip || this.label}"
+        @click="${this.emitItemClick}"
       >
         <span class="ribbon-button-icon">
           <slot name="icon">${this.icon ? this.icon : ''}</slot>

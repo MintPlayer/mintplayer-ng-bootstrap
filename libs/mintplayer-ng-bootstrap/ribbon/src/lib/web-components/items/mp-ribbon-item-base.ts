@@ -108,12 +108,16 @@ export class MpRibbonItemBase extends LitElement {
   @property({ type: String })
   tooltip: string = '';
 
-  constructor() {
-    super();
-    this.addEventListener('click', (e) => this.onClick(e));
-  }
-
-  protected onClick(_event: MouseEvent): void {
+  /**
+   * Emit the canonical `item-click` event. Subclasses wire this to their
+   * primary activation surface (typically `@click` on the inner button).
+   * Previously the base bound a host-level click listener, which fired on
+   * any bubbled click — clicking a checkbox input, a split-button's
+   * chevron, or a dropdown trigger would all spuriously fire `item-click`
+   * in addition to the kind-specific event. Item kinds now decide
+   * explicitly when an item-click happens.
+   */
+  protected emitItemClick(_event?: Event): void {
     if (this.disabled) return;
     this.dispatchEvent(
       new CustomEvent('item-click', {

@@ -7,10 +7,10 @@ import type { MpRibbon } from './mp-ribbon.element';
 
 /**
  * Behavioural ARIA contract for `mp-ribbon` (FR-13 + FR-2 + FR-9 + FR-14).
- * Asserts the model matches `project_wc_aria_decisions`: role=application
- * root, role=tablist strip, role=tab buttons, role=tabpanel content panes,
- * role=toolbar groups, popup-trigger aria-haspopup/expanded, live region
- * for announcements.
+ * Asserts the model matches `project_wc_aria_decisions`: role=region
+ * root (with aria-label), role=tablist strip, role=tab buttons,
+ * role=tabpanel content panes, role=toolbar groups, popup-trigger
+ * aria-haspopup/expanded, live region for announcements.
  */
 
 function nextRaf(): Promise<void> {
@@ -53,8 +53,8 @@ describe('mp-ribbon — ARIA contract', () => {
     ribbon.parentElement?.remove();
   });
 
-  it('host carries role="application" with aria-label', () => {
-    expect(ribbon.getAttribute('role')).toBe('application');
+  it('host carries role="region" with aria-label', () => {
+    expect(ribbon.getAttribute('role')).toBe('region');
     expect(ribbon.getAttribute('aria-label')).toBe('Ribbon');
   });
 
