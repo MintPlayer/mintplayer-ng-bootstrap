@@ -56,7 +56,7 @@ Audit of `libs/mintplayer-ng-bootstrap/ribbon/` against the requirements below.
 - Intermediate `large` → `medium` → `small` ReduceOrder steps; author-declared `[reduceOrder]` / `[idealSizes]` / `[priority]` API on tabs and groups (FR-6 P0 partial, FR-23). MVP collapse-to-popup landed but only the single rightmost-first → popup default.
 - Menu / sub-item content for split-button / dropdown-button (FR-28/29/30/31). Lit elements have the visual shape and `menu-toggle` event but no slot or overlay; needs `OverlayController` extraction + three new menu-content elements + Angular wrappers.
 - Visual-regression Playwright screenshots committed for each version + a CI assertion (FR-25 closing checkpoint).
-- Office 2007 alternative Black / Silver colour schemes; Office 2016 Dark Gray / Black themes — only the Blue/Colorful variants ship under `office-2007` / `office-2016` (filed for follow-up if requested).
+- **Dark mode** (FR-32 / 33 / 34 / 35 / 36): `[colorScheme]="'light' | 'dark' | 'auto'"` input + reflected `color-scheme` attribute, per-version dark token blocks for office-2013 and office-2016 only, `--bs-ribbon-app-accent-on-dark` brightening, contextual-band dark override, demo Color-scheme picker. Office 2007 alternative Black / Silver schemes remain follow-up.
 - Simplified layout — `[layout]` is accepted but render is identical to Classic (FR-8).
 - Live announcer integration for minimize/restore (FR-9 announcer + Ctrl+F1 binding + double-click toggle).
 - Contextual tab sets (FR-10), Quick Access Toolbar (FR-11), KeyTips (FR-12).
@@ -116,6 +116,11 @@ Audit of `libs/mintplayer-ng-bootstrap/ribbon/` against the requirements below.
 - [x] **FR-25** — Visual **version themes** selectable via `[version]` on `bs-ribbon` / `mp-ribbon`. Four values: `"office-2007" | "office-2010" | "office-2013" | "office-2016"`. Default `"office-2016"`. *(Landed: `[version]` reflects to the `version` attribute on the `<mp-ribbon>` host; shadow-DOM `:host([version="..."])` rule groups in `mp-ribbon.element.ts` define a complete `--bs-ribbon-*` token set per version. **CSS custom properties inherit through light DOM into slotted children automatically**, so no attribute propagation is needed — `mp-ribbon-group` / `mp-ribbon-button` etc. just consume `var(--bs-ribbon-*)` and get the right value. This is the workspace's first per-component visual-variant system.)*
 - [x] **FR-26** — Single `--bs-ribbon-app-accent` CSS custom property serves as the consumer hand-off point for picking an app signature colour (Word `#2B579A` / Excel `#217346` / PowerPoint `#B7472A` / Outlook `#0078D4` / OneNote `#7719AA` / Access `#A4373A`). It cascades into the active-tab label colour (2013) and the full tab strip (2016). Library does NOT ship per-app presets. *(Landed: Angular wrapper exposes `[appAccent]` input, set as inline `[style.--bs-ribbon-app-accent]` on the inner `mp-ribbon`. Fallback default for the per-version blocks is `#2B579A` (Word) for 2013/2016 — falls back to `var(--bs-primary, #0d6efd)` for the neutral baseline.)*
 - [x] **FR-27** — Demo page exposes a version-picker dropdown in the controls bar, cycling through all four versions. Triggers re-render of the existing Home/Insert/Design/Layout content so visual differences are immediately observable. *(Landed: two `<select>` dropdowns in the controls bar — Version (4 options) + App accent (6 Microsoft canonical app colours). Bound via `signal<RibbonVersion>` and `signal<string>` on the demo component.)*
+- [ ] **FR-32** — **Dark mode** via `[colorScheme]` input on `bs-ribbon`, values `'light' | 'dark' | 'auto'`, default `'auto'`. Reflected as the bare `color-scheme="..."` attribute on `<mp-ribbon>` (kebab-case to match the existing `version="..."` attribute style; no `data-` prefix). Each dark-mode-supporting version layers an additional `:host([color-scheme="dark"][version="office-XXXX"]) { ... }` block after its light-mode tokens, plus an `@media (prefers-color-scheme: dark) { :host([color-scheme="auto"][version="..."]) { ... } }` block that mirrors it for OS-preference following. `:host { color-scheme: light dark; }` is set so native `<select>` / `<input type="color">` inside the ribbon render in the matching scheme.
+- [ ] **FR-33** — Dark-mode scope: ship dark variants only for **office-2013** and **office-2016** — these are the only versions where Microsoft actually shipped a dark theme (2013 Dark Gray, 2016 Black). For **office-2007** and **office-2010** the `[colorScheme]="dark"` value is a no-op visually (those versions only had grey "color schemes", never a true dark mode); documented in the PRD as a known limitation rather than a bug.
+- [ ] **FR-34** — **App-accent in dark mode**: introduce `--bs-ribbon-app-accent-on-dark`, defaulting to `color-mix(in oklab, var(--bs-ribbon-app-accent) 55%, white 45%)` so any consumer-supplied accent (Word `#2B579A`, etc.) auto-brightens for readable contrast against dark chrome. In dark mode, `--bs-ribbon-tab-active-color` flips to `#FFFFFF` (Office's own rule — the brand accent on a dark active card is unreadable) and `--bs-ribbon-tab-active-indicator-color` uses the brightened accent for the 2016 bottom-indicator stripe.
+- [ ] **FR-35** — **Contextual band in dark mode**: the luminance-based auto-text rule (FR-10) is bypassed when `color-scheme="dark"` matches. The band's background is darkened + desaturated via `color-mix(in oklab, var(--bs-ribbon-contextual-color) 40%, #1F1F1F 60%)` so it no longer punches through dark chrome, and the label is always white. Matches Office 2016 Black theme's contextual-band rendering.
+- [ ] **FR-36** — Demo gains a third `<bs-select>` in the controls bar — "Color scheme" with Light / Dark / Auto. Bound via `model<'light' | 'dark' | 'auto'>('auto')`. Sits after the existing Version and App-accent pickers.
 - [x] **FR-28** — **Menu / sub-item content** for `mp-ribbon-split-button` and `mp-ribbon-dropdown-button`. *(Landed: both now expose a `<slot name="menu">`, render a `position: fixed` overlay panel when their `OverlayController` is open, dispatch `menu-toggle` on open/close and a new `main-action` event on the split-button's main half. Menu auto-closes on item click. Esc/outside-mousedown close. Two new menu-content Lit elements landed: `mp-ribbon-menu-item` with `kind="action|checkbox|radio"` + `aria-checked` + `delegatesFocus`, and `mp-ribbon-menu-separator` with `role="separator"`. `mp-ribbon-menu-group` not yet shipped — deferred until a demo needs it.)*
    - A `<slot name="menu">` for menu children on each.
    - A `position: fixed` overlay (viewport-clamped horizontally; flips vertically when bottom edge nears the viewport bottom) that renders the slotted content when `menuOpen` is true.
@@ -354,9 +359,110 @@ The existing element `css\`...\`` blocks then consume these tokens with `var(--b
 
 **Out-of-scope variations** (filed for later issues if demand arises):
 - Office 2007's Black / Silver colour schemes (only the Blue scheme is shipped under `office-2007`).
-- Office 2016's Dark Gray / Black themes (the Colorful theme is shipped under `office-2016`).
 - Office 2019 / Microsoft 365 "Coloured Header" / Backstage redesign.
 - Standalone Touch Mode toggle.
+
+### Dark mode — implementation specifics (FR-32 / FR-33 / FR-34 / FR-35)
+
+Sources: [Microsoft Support — Change look and feel of Microsoft 365](https://support.microsoft.com/en-us/office/change-the-look-and-feel-of-microsoft-365-63e65e1c-08d4-4dea-820e-335f54672310), [Microsoft Black-theme rollout (Feb 2016)](https://22point.wordpress.com/2016/02/25/microsoft-office-has-a-new-black-theme/), [InformIT — Shades of Gray (Office 2013 themes)](https://www.informit.com/articles/article.aspx?p=2130753), [Bootstrap 5.3 Color Modes](https://getbootstrap.com/docs/5.3/customize/color-modes/), [MDN `prefers-color-scheme`](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-color-scheme), DevExpress / Syncfusion / Telerik "Office Black" skin colour tables.
+
+**API recap:**
+- `[colorScheme]` on `bs-ribbon` (Angular `input<>` signal input). Reflected to `color-scheme="..."` on `mp-ribbon` via `[attr.color-scheme]`.
+- `mp-ribbon` declares `@property({ type: String, attribute: 'color-scheme', reflect: true }) colorScheme = 'auto'`.
+- Demo uses `model<'light' | 'dark' | 'auto'>('auto')` so the picker can two-way bind via `[(ngModel)]`.
+- `:host { color-scheme: light dark; }` declared so native form controls inside the ribbon's shadow render in the matching scheme — important for `<select>` / `<input type="color">`.
+
+**Precedence (highest wins):**
+1. Explicit `[colorScheme]="dark"` or `[colorScheme]="light"` (always overrides).
+2. Ancestor `data-bs-theme="dark"` — honoured for free under `[colorScheme]="auto"` via the existing Bootstrap-fallback variable chain (`var(--bs-body-bg, ...)` etc.). No extra wiring.
+3. `[colorScheme]="auto"` → `@media (prefers-color-scheme: dark)`.
+
+**Office 2007 / 2010 fallback:** Microsoft never shipped a true dark mode for these. `[colorScheme]="dark"` is a no-op visually — these versions keep their existing chrome (gradient blue or silver). Documented as a known limitation in the README; the input is accepted for API consistency but doesn't change appearance.
+
+**Office 2016 Black — drop-in token cheat sheet** (paste after the existing per-version blocks in `mp-ribbon.element.ts:131-159`):
+
+```css
+:host {
+  color-scheme: light dark;
+}
+
+/* Explicit dark, always-applied */
+:host([color-scheme="dark"][version="office-2016"]) {
+  --bs-ribbon-container-bg:           #262626;
+  --bs-ribbon-container-border:       #1A1A1A;
+  --bs-ribbon-tabstrip-bg:            #1F1F1F;
+  --bs-ribbon-tabstrip-border:        #1A1A1A;
+  --bs-ribbon-tab-idle-color:         rgba(255, 255, 255, 0.78);
+  --bs-ribbon-tab-hover-bg:           #3A3A3A;
+  --bs-ribbon-tab-active-bg:          #363636;
+  --bs-ribbon-tab-active-color:       #FFFFFF;
+  --bs-ribbon-tab-active-indicator-color:
+      color-mix(in oklab, var(--bs-ribbon-app-accent) 55%, white 45%);
+  --bs-ribbon-tabpanel-bg:            #363636;
+  --bs-ribbon-group-separator:        rgba(255, 255, 255, 0.10);
+  --bs-ribbon-group-label-color:      rgba(255, 255, 255, 0.60);
+  --bs-ribbon-item-hover-bg:          #3F3F3F;
+  --bs-ribbon-item-hover-border:      rgba(255, 255, 255, 0.15);
+  --bs-ribbon-item-pressed-bg:        #4A4A4A;
+}
+
+/* Auto: same tokens behind a media query */
+@media (prefers-color-scheme: dark) {
+  :host([color-scheme="auto"][version="office-2016"]) {
+    /* duplicate the 14 declarations from the [dark] block above */
+  }
+}
+```
+
+**Office 2013 Dark Gray — drop-in token cheat sheet** (mirrors the structure; values from §2 of the Office-research report):
+
+```css
+:host([color-scheme="dark"][version="office-2013"]) {
+  --bs-ribbon-container-bg:           #444444;
+  --bs-ribbon-container-border:       #2B2B2B;
+  --bs-ribbon-tabstrip-bg:            #2B2B2B;       /* strip darker than container — 2013-specific inversion */
+  --bs-ribbon-tabstrip-border:        #1F1F1F;
+  --bs-ribbon-tab-idle-color:         rgba(255, 255, 255, 0.70);
+  --bs-ribbon-tab-hover-bg:           #525252;
+  --bs-ribbon-tab-active-bg:          #444444;
+  --bs-ribbon-tab-active-color:       #FFFFFF;
+  --bs-ribbon-tab-active-indicator-color: transparent;  /* 2013 has no underline; the active card is the indicator */
+  --bs-ribbon-tabpanel-bg:            #444444;
+  --bs-ribbon-group-separator:        rgba(255, 255, 255, 0.08);
+  --bs-ribbon-group-label-color:      rgba(255, 255, 255, 0.55);
+  --bs-ribbon-item-hover-bg:          #5A5A5A;
+  --bs-ribbon-item-hover-border:      transparent;        /* 2013 went borderless on hover */
+  --bs-ribbon-item-pressed-bg:        #6A6A6A;
+}
+```
+
+**App-accent on dark (FR-34):**
+- Existing `--bs-ribbon-app-accent` stays consumer-controlled (Word `#2B579A`, etc.).
+- New token `--bs-ribbon-app-accent-on-dark` introduced in the default token block at `mp-ribbon.element.ts:33-51`:
+  ```css
+  --bs-ribbon-app-accent-on-dark:
+    color-mix(in oklab, var(--bs-ribbon-app-accent) 55%, white 45%);
+  ```
+- Per-version dark blocks use `--bs-ribbon-app-accent-on-dark` instead of `--bs-ribbon-app-accent` for the active-tab indicator stripe. Active-tab label stays at `#FFFFFF` regardless of brand colour.
+
+**Contextual band dark rule (FR-35):**
+- Override the luminance-driven `--ribbon-contextual-text` rule from FR-10. In dark mode:
+  ```css
+  :host([color-scheme="dark"]) .ribbon-contextual-group-band,
+  @media (prefers-color-scheme: dark) {
+    :host([color-scheme="auto"]) .ribbon-contextual-group-band {
+      background: color-mix(in oklab, var(--bs-ribbon-contextual-color) 40%, #1F1F1F 60%);
+      color: #FFFFFF;
+    }
+  }
+  ```
+- The luminance auto-rule that drives `--ribbon-contextual-text` inline (`getBandTextColor()` in TS) is *not removed* — the dark CSS overrides it. Simpler than threading a "we're in dark" signal into the TS computation.
+
+**Caveats to flag in the PR review:**
+- 2007/2010 dark fallback (no visual change) is intentional. Document in README + `bs-ribbon` JSDoc.
+- The `oklab` colour space in `color-mix` is Baseline 2023; needs a Chrome 111+/Safari 16.4+ floor. Already aligned with the rest of the workspace's modern-browser stance.
+- Auto mode + ancestor `data-bs-theme="dark"`: works through Bootstrap's variable chain BUT only if the consumer wires Bootstrap's color-modes layer. The ribbon's own tokens cascade independently, so the `[colorScheme]="auto"` + `prefers-color-scheme` path always works.
+- SSR: `prefers-color-scheme` evaluates as `light` on the server. Don't gate `firstUpdated` on it (we don't currently).
 
 ---
 
