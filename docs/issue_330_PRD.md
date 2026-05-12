@@ -48,11 +48,9 @@ Audit of `libs/mintplayer-ng-bootstrap/ribbon/` against the requirements below.
 - **Visual version themes** (FR-25/26/27): `[version]` input on `bs-ribbon` reflects to `version="office-XXXX"` on `mp-ribbon`'s host; per-version `:host([version="..."])` rule groups in `mp-ribbon.element.ts` set a complete `--bs-ribbon-*` token set; all element shadow CSS (ribbon / group / button) is tokenised so it consumes those variables via CSS-variable inheritance (no attribute propagation needed). `--bs-ribbon-app-accent` cascades for tab strip / active label colour. Demo has Version + App-accent dropdowns; verified visually across all four versions and with Word / PowerPoint accents.
 
 **Deviations from the PRD that need to be reconciled before this milestone closes:**
-- **Tabs are a JSON-encoded `[tabs]` array input on `mp-ribbon`**, not declared as `mp-ribbon-tab` light-DOM children. PRD §"DOM is the source of truth" requires the latter; this is the largest architectural deviation and blocks the contextual-tab-set design.
 - **Item sizes are reflected as class `ribbon-item-<size>`** rather than `data-size="<size>"` on the host (FR-5). Affects external CSS hooks.
 - **Group body uses `role="region"` instead of `role="toolbar"`** (FR-13). Affects screen-reader semantics and roving-focus design.
 - **Item icons take a `string` attribute** (emoji / glyph) rather than a `<slot name="icon">` (FR-16). Consumers cannot project SVG/`<i class="bi-*">`.
-- **No Angular wrappers** for the non-Button item kinds yet (FR-4 second half).
 
 **Not yet started:**
 - Intermediate `large` → `medium` → `small` ReduceOrder steps; author-declared `[reduceOrder]` / `[idealSizes]` / `[priority]` API on tabs and groups (FR-6 P0 partial, FR-23). MVP collapse-to-popup landed but only the single rightmost-first → popup default.
@@ -78,7 +76,7 @@ Audit of `libs/mintplayer-ng-bootstrap/ribbon/` against the requirements below.
 ### Must Have (P0)
 
 - [x] **FR-1** — `mp-ribbon` Lit WC + `bs-ribbon` Angular wrapper, secondary entry point `@mintplayer/ng-bootstrap/ribbon`. *(Entry point + Lit element + Angular wrapper landed. ng-package.json present; consumed by demo via `@mintplayer/ng-bootstrap/ribbon` import.)*
-- [ ] **FR-2** — Tab strip with `mp-ribbon-tab` elements; arrow-key navigation; Home/End; manual activation (Enter/Space). *(Keyboard model done. Tabs are currently a JSON `[tabs]` array input on `mp-ribbon` — needs migration to light-DOM `mp-ribbon-tab` children to honour the "DOM is the source of truth" rule.)*
+- [x] **FR-2** — Tab strip with `mp-ribbon-tab` elements; arrow-key navigation; Home/End; manual activation (Enter/Space). *(Landed. `mp-ribbon-tab` is a new Lit element that hides via `:host(:not([active])) { display: none }` and becomes the tabpanel for its slotted groups when active. `mp-ribbon` watches its default slot, builds the tab strip from slotted `<mp-ribbon-tab>` children (handling Angular `<bs-ribbon-tab>` wrappers via the same inside-querySelector fallback used elsewhere), and sets/removes the `active` attribute on the right child. The old JSON `[tabs]` input is gone — clean break per `feedback_breaking_changes_ok`.)*
 - [x] **FR-3** — Groups (`mp-ribbon-group`) with header label, optional dialog launcher button, slot for items. *(Label + dialog launcher render in the group footer; default slot accepts item children. Will need revisiting once toolbar role lands per FR-13.)*
 - [x] **FR-4** — All nine item kinds, each as its own Lit element + Angular wrapper: Button, SplitButton, DropdownButton, ToggleButton, CheckBox, ComboBox, ColorPicker, GroupButton (toggle strip), Gallery (+ GalleryItem), and a TemplateItem custom-slot wrapper. *(All ten Lit elements + all ten Angular wrappers shipped. `mp-ribbon-gallery-item` and `mp-ribbon-template-item` Lit elements added. Each value-bearing wrapper implements `ControlValueAccessor` — see FR-15.)*
 - [ ] **FR-5** — Item sizes: `large` / `medium` / `small` reflected as `data-size` on each item; styled via component SCSS. *(Sizes work but are reflected as a class `ribbon-item-<size>` on the inner element rather than as `data-size` on the host. Rename pending.)*

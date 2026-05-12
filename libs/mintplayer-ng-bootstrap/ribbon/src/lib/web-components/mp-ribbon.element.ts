@@ -1,6 +1,11 @@
 import { css, html, LitElement, nothing, type TemplateResult } from 'lit';
-import { property } from 'lit/decorators.js';
-import { type RibbonTab } from '../types/ribbon.types';
+import { property, state } from 'lit/decorators.js';
+
+interface TabEntry {
+  tabId: string;
+  label: string;
+  element: HTMLElement;
+}
 
 /**
  * mp-ribbon — Microsoft Office–style Ribbon web component.
@@ -185,26 +190,18 @@ export class MpRibbon extends LitElement {
       background: var(--bs-ribbon-tabpanel-bg);
       overflow: hidden;
     }
-    .ribbon-panel[hidden] { display: none; }
-    .ribbon-panel {
-      display: flex;
-      flex-wrap: nowrap;
-      gap: 8px;
-      align-items: stretch;
-      min-width: 0;
-    }
-    ::slotted(*) {
-      flex: 0 0 auto;
-    }
   `;
 
-  /** Array of tab objects: { id, label, [content] } */
-  @property({ type: Array })
-  tabs: RibbonTab[] = [];
-
-  /** Currently active tab ID */
-  @property({ type: String, attribute: 'active-tab-id' })
+  /** Currently active tab ID. */
+  @property({ type: String, attribute: 'active-tab-id', reflect: true })
   activeTabId: string = '';
+
+  /**
+   * Internal list of `<mp-ribbon-tab>` children, populated on slotchange.
+   * Source of truth: light-DOM children of this ribbon.
+   */
+  @state()
+  private tabsList: TabEntry[] = [];
 
   /** Layout mode: 'classic' | 'simplified' */
   @property({ type: String })
@@ -237,12 +234,6 @@ export class MpRibbon extends LitElement {
     this.setAttribute('role', 'application');
     this.setAttribute('aria-label', 'Ribbon');
 
-    // If no active tab, default to first
-    if (!this.activeTabId && this.tabs.length > 0) {
-      this.activeTabId = this.tabs[0].id;
-      this.currentTabIndex = 0;
-    }
-
     if (typeof ResizeObserver !== 'undefined') {
       this.resizeObserver = new ResizeObserver(() => this.scheduleReflow());
       this.resizeObserver.observe(this);
@@ -256,7 +247,10 @@ export class MpRibbon extends LitElement {
   }
 
   override updated(changed: Map<string, unknown>): void {
-    if (changed.has('activeTabId') || changed.has('tabs') || changed.has('minimized')) {
+    if (changed.has('activeTabId')) {
+      this.applyActiveAttribute();
+    }
+    if (changed.has('activeTabId') || changed.has('minimized')) {
       this.scheduleReflow();
     }
   }
@@ -264,66 +258,83 @@ export class MpRibbon extends LitElement {
   override render(): TemplateResult {
     return html`
       <div class="ribbon-container">
-        <!-- Tab strip -->
-        <div role="tablist" class="ribbon-tablist" @keydown="${this.onTabListKeydown}">
-          ${this.tabs.map((tab, index) => this.renderTab(tab, index))}
+        <div
+          role="tablist"
+          class="ribbon-tablist"
+          @keydown="${this.onTabListKeydown}"
+        >
+          ${this.tabsList.map((tab, index) => this.renderTabButton(tab, index))}
         </div>
 
-        <!-- Content area (only visible if not minimized) -->
-        ${!this.minimized ? html`
-          <div class="ribbon-content">
-            ${this.tabs.map((tab) => this.renderTabPanel(tab))}
-          </div>
-        ` : nothing}
+        ${!this.minimized
+          ? html`<div class="ribbon-content">
+              <slot @slotchange="${this.onSlotChange}"></slot>
+            </div>`
+          : html`<div hidden><slot @slotchange="${this.onSlotChange}"></slot></div>`}
       </div>
     `;
   }
 
-  private renderTab(tab: RibbonTab, index: number): TemplateResult {
-    const isActive = tab.id === this.activeTabId;
+  private renderTabButton(tab: TabEntry, _index: number): TemplateResult {
+    const isActive = tab.tabId === this.activeTabId;
     const tabIndex = isActive ? 0 : -1;
 
     return html`
       <button
         role="tab"
+        id="ribbon-tab-${tab.tabId}"
         class="ribbon-tab ${isActive ? 'active' : ''}"
         aria-selected="${isActive}"
-        aria-controls="ribbon-panel-${tab.id}"
+        aria-controls="ribbon-panel-${tab.tabId}"
         tabindex="${tabIndex}"
-        data-tab-id="${tab.id}"
-        @click="${() => this.selectTab(tab.id)}"
-      >
-        ${tab.label}
-      </button>
+        data-tab-id="${tab.tabId}"
+        @click="${() => this.selectTab(tab.tabId)}"
+      >${tab.label}</button>
     `;
   }
 
-  private renderTabPanel(tab: RibbonTab): TemplateResult {
-    const isActive = tab.id === this.activeTabId;
-    return html`
-      <div
-        role="tabpanel"
-        id="ribbon-panel-${tab.id}"
-        class="ribbon-panel ${isActive ? 'active' : ''}"
-        aria-labelledby="ribbon-tab-${tab.id}"
-        ?hidden="${!isActive}"
-      >
-        <slot name="content-${tab.id}"></slot>
-      </div>
-    `;
+  private onSlotChange = (event: Event): void => {
+    const slot = event.target as HTMLSlotElement;
+    const newTabs: TabEntry[] = [];
+    for (const assigned of slot.assignedElements()) {
+      let tabEl: HTMLElement | null = null;
+      if (assigned.tagName === 'MP-RIBBON-TAB') {
+        tabEl = assigned as HTMLElement;
+      } else {
+        tabEl = assigned.querySelector<HTMLElement>('mp-ribbon-tab');
+      }
+      if (!tabEl) continue;
+      newTabs.push({
+        tabId: tabEl.getAttribute('tab-id') ?? '',
+        label: tabEl.getAttribute('label') ?? '',
+        element: tabEl,
+      });
+    }
+    this.tabsList = newTabs;
+    if (!this.activeTabId && newTabs.length > 0) {
+      this.activeTabId = newTabs[0].tabId;
+    }
+    this.applyActiveAttribute();
+    this.scheduleReflow();
+  };
+
+  private applyActiveAttribute(): void {
+    for (const tab of this.tabsList) {
+      if (tab.tabId === this.activeTabId) {
+        tab.element.setAttribute('active', '');
+      } else {
+        tab.element.removeAttribute('active');
+      }
+    }
   }
 
   private selectTab(tabId: string): void {
     const previousTabId = this.activeTabId;
     this.activeTabId = tabId;
-
-    // Update roving tabindex
-    const tabIndex = this.tabs.findIndex((t) => t.id === tabId);
+    const tabIndex = this.tabsList.findIndex((t) => t.tabId === tabId);
     if (tabIndex !== -1) {
       this.currentTabIndex = tabIndex;
     }
-
-    // Dispatch change event
     this.dispatchEvent(
       new CustomEvent('tab-change', {
         detail: { previousTabId, activeTabId: tabId },
@@ -331,8 +342,6 @@ export class MpRibbon extends LitElement {
         composed: true,
       })
     );
-
-    this.requestUpdate();
   }
 
   private onTabListKeydown = (event: KeyboardEvent): void => {
@@ -358,7 +367,7 @@ export class MpRibbon extends LitElement {
         break;
 
       case 'End':
-        this.focusTabAt(this.tabs.length - 1);
+        this.focusTabAt(this.tabsList.length - 1);
         handled = true;
         break;
 
@@ -387,7 +396,7 @@ export class MpRibbon extends LitElement {
   }
 
   private focusNextTab(): void {
-    const newIndex = Math.min(this.tabs.length - 1, this.currentTabIndex + 1);
+    const newIndex = Math.min(this.tabsList.length - 1, this.currentTabIndex + 1);
     this.focusTabAt(newIndex);
   }
 
@@ -420,10 +429,9 @@ export class MpRibbon extends LitElement {
    */
   private reflowOverflow(): void {
     if (this.minimized) return;
-    const panel = this.renderRoot.querySelector<HTMLElement>(
-      `#ribbon-panel-${this.activeTabId}`
-    );
-    if (!panel) return;
+    const activeTab = this.tabsList.find((t) => t.tabId === this.activeTabId);
+    if (!activeTab) return;
+    const panel = activeTab.element;
 
     const groups = this.collectActiveGroups(panel);
     if (groups.length === 0) return;
@@ -488,10 +496,11 @@ export class MpRibbon extends LitElement {
    * Returns the `<mp-ribbon-group>` elements assigned to the active tab's slot.
    * Handles both raw web-component usage and the Angular `<bs-ribbon-group>`
    * wrapper (which delegates to an inner `<mp-ribbon-group>` via Angular's
-   * `display: contents` host).
+   * `display: contents` host). The slot lives in `mp-ribbon-tab`'s shadow
+   * root since each tab owns its own default slot.
    */
   private collectActiveGroups(panel: HTMLElement): HTMLElement[] {
-    const slot = panel.querySelector<HTMLSlotElement>('slot');
+    const slot = panel.shadowRoot?.querySelector<HTMLSlotElement>('slot');
     if (!slot) return [];
     const groups: HTMLElement[] = [];
     for (const assigned of slot.assignedElements()) {

@@ -3,14 +3,12 @@ import {
   Component,
   CUSTOM_ELEMENTS_SCHEMA,
   ElementRef,
-  computed,
-  effect,
   input,
   output,
-  viewChild,
   signal,
+  viewChild,
 } from '@angular/core';
-import { type RibbonTab, type RibbonTabChangeEvent } from '../types/ribbon.types';
+import { type RibbonTabChangeEvent } from '../types/ribbon.types';
 
 @Component({
   selector: 'bs-ribbon',
@@ -18,7 +16,6 @@ import { type RibbonTab, type RibbonTabChangeEvent } from '../types/ribbon.types
     <mp-ribbon
       #ribbon
       class="bs-ribbon"
-      [attr.tabs]="tabsJson()"
       [attr.active-tab-id]="activeTabId()"
       [attr.layout]="layout()"
       [attr.minimized]="minimized() ? '' : null"
@@ -37,7 +34,6 @@ import { type RibbonTab, type RibbonTabChangeEvent } from '../types/ribbon.types
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsRibbonComponent {
-  readonly tabs = input<RibbonTab[]>([]);
   readonly activeTabId = signal<string>('');
   readonly layout = input<'classic' | 'simplified'>('classic');
   readonly minimized = input<boolean>(false);
@@ -46,21 +42,9 @@ export class BsRibbonComponent {
   >('office-2016');
   readonly appAccent = input<string | null>(null);
 
-  readonly tabsJson = computed(() => JSON.stringify(this.tabs()));
-
   readonly tabChange = output<RibbonTabChangeEvent>();
 
   readonly ribbonRef = viewChild.required<ElementRef>('ribbon');
-
-  constructor() {
-    // Initialize activeTabId from first tab if not set
-    effect(() => {
-      const allTabs = this.tabs();
-      if (allTabs.length > 0 && !this.activeTabId()) {
-        this.activeTabId.set(allTabs[0].id);
-      }
-    });
-  }
 
   onTabChange(event: Event): void {
     const detail = (event as CustomEvent<RibbonTabChangeEvent>).detail;

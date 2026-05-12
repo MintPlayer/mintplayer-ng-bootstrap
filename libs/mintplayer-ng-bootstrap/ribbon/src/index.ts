@@ -1,8 +1,9 @@
 // Types
-export type { RibbonTab, RibbonTabChangeEvent } from './lib/types/ribbon.types';
+export type { RibbonTabChangeEvent } from './lib/types/ribbon.types';
 
 // Angular components (wrappers)
 export { BsRibbonComponent } from './lib/components/ribbon.component';
+export { BsRibbonTabComponent } from './lib/components/ribbon-tab.component';
 export { BsRibbonGroupComponent } from './lib/components/ribbon-group.component';
 export { BsRibbonButtonComponent } from './lib/components/ribbon-button.component';
 export { BsRibbonSplitButtonComponent } from './lib/components/ribbon-split-button.component';
@@ -22,6 +23,7 @@ export type { RibbonGroupButtonOption } from './lib/web-components/items/mp-ribb
 
 // Lit WC (core logic)
 export { MpRibbon } from './lib/web-components/mp-ribbon.element';
+export { MpRibbonTab } from './lib/web-components/mp-ribbon-tab.element';
 export { MpRibbonGroup } from './lib/web-components/mp-ribbon-group.element';
 export { OverlayController } from './lib/web-components/overlay-controller';
 export * from './lib/web-components/items';

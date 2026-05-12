@@ -9,6 +9,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   BsRibbonComponent,
+  BsRibbonTabComponent,
   BsRibbonGroupComponent,
   BsRibbonButtonComponent,
   BsRibbonSplitButtonComponent,
@@ -22,7 +23,6 @@ import {
   BsRibbonGroupButtonComponent,
   BsRibbonGalleryComponent,
   BsRibbonGalleryItemComponent,
-  type RibbonTab,
   type RibbonTabChangeEvent,
   type RibbonComboBoxOption,
   type RibbonGroupButtonOption,
@@ -46,6 +46,7 @@ interface AppAccentOption {
     CommonModule,
     FormsModule,
     BsRibbonComponent,
+    BsRibbonTabComponent,
     BsRibbonGroupComponent,
     BsRibbonButtonComponent,
     BsRibbonSplitButtonComponent,
@@ -126,13 +127,6 @@ export class RibbonComponent {
     { label: 'Outlook', value: '#0078D4' },
     { label: 'OneNote', value: '#7719AA' },
     { label: 'Access', value: '#A4373A' },
-  ];
-
-  readonly tabs: RibbonTab[] = [
-    { id: 'home', label: 'Home' },
-    { id: 'insert', label: 'Insert' },
-    { id: 'design', label: 'Design' },
-    { id: 'layout', label: 'Layout' },
   ];
 
   onTabChange(event: RibbonTabChangeEvent): void {
