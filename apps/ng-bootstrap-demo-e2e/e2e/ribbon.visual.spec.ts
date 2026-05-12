@@ -40,9 +40,18 @@ async function selectTab(page: Page, label: string): Promise<void> {
 }
 
 test.describe('ribbon — visual regression per version', () => {
-  // Visual diffs only run on Chromium to keep the snapshot count small and
-  // avoid spurious diffs from cross-engine font rasterisation differences.
+  // Visual diffs only run on Chromium-Win32 to keep the snapshot count
+  // small. Cross-engine font rasterisation differences would produce noise
+  // without adding signal; cross-OS rasterisation differences would do the
+  // same. The baselines committed under `__snapshots__/` are
+  // `*-chromium-win32.png` — Playwright names the file by platform, so on
+  // Linux it would look for `*-chromium-linux.png` and either auto-create
+  // a baseline (locally, with --update-snapshots) or fail (in CI).
   test.skip(({ browserName }) => browserName !== 'chromium', 'Chromium-only baselines');
+  test.skip(
+    process.platform !== 'win32',
+    'Visual baselines were captured on Win32; cross-platform rasterisation diffs would be noisy. Skipped on other OSes and in Linux CI.'
+  );
 
   test.beforeEach(async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 200 });
