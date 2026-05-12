@@ -33,6 +33,7 @@ import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { Color } from '@mintplayer/ng-bootstrap';
 
 type RibbonVersion = 'office-2007' | 'office-2010' | 'office-2013' | 'office-2016';
+type ColorScheme = 'light' | 'dark' | 'auto';
 
 interface AppAccentOption {
   label: string;
@@ -74,6 +75,9 @@ export class RibbonComponent {
   readonly layout = signal<'classic' | 'simplified'>('classic');
   readonly version = model<RibbonVersion>('office-2016');
   readonly appAccent = model<string>('#2B579A');
+  readonly colorScheme = model<ColorScheme>('auto');
+
+  readonly colorSchemes: ColorScheme[] = ['light', 'dark', 'auto'];
 
   readonly pasteMode = signal<{ id: string; label: string; icon: string }>({
     id: 'paste',

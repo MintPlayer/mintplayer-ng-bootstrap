@@ -15,7 +15,7 @@ export class MpRibbonGallery extends MpRibbonItemBase {
       padding: 2px;
       border: 1px solid var(--bs-ribbon-item-hover-border, #ced4da);
       border-radius: var(--bs-ribbon-item-radius, 3px);
-      background: var(--bs-body-bg, #fff);
+      background: var(--bs-ribbon-tabpanel-bg, #fff);
     }
   `;
 

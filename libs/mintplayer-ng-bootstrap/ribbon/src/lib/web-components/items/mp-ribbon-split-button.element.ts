@@ -96,7 +96,7 @@ export class MpRibbonSplitButton extends MpRibbonItemBase {
       position: fixed;
       z-index: 1050;
       background: var(--bs-ribbon-tabpanel-bg, #fff);
-      color: var(--bs-body-color, #212529);
+      color: inherit;
       border: 1px solid var(--bs-ribbon-container-border, #d0d0d0);
       border-radius: 4px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);

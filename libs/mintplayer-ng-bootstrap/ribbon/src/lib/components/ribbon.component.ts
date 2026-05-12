@@ -20,6 +20,7 @@ import { type RibbonTabChangeEvent } from '../types/ribbon.types';
       [attr.layout]="layout()"
       [attr.minimized]="minimized() ? '' : null"
       [attr.version]="version()"
+      [attr.color-scheme]="colorScheme()"
       [style.--bs-ribbon-app-accent]="appAccent()"
       (tab-change)="onTabChange($event)"
     >
@@ -40,6 +41,7 @@ export class BsRibbonComponent {
   readonly version = input<
     'office-2007' | 'office-2010' | 'office-2013' | 'office-2016'
   >('office-2016');
+  readonly colorScheme = input<'light' | 'dark' | 'auto'>('auto');
   readonly appAccent = input<string | null>(null);
 
   readonly tabChange = output<RibbonTabChangeEvent>();

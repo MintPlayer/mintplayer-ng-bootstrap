@@ -25,12 +25,21 @@
         }
       </bs-select>
     </label>
+    <label class="control-field">
+      Color scheme
+      <bs-select [(ngModel)]="colorScheme">
+        @for (c of colorSchemes; track c) {
+          <option [value]="c">{{ c }}</option>
+        }
+      </bs-select>
+    </label>
   </div>
 
   <bs-ribbon
     [minimized]="minimized()"
     [layout]="layout()"
     [version]="version()"
+    [colorScheme]="colorScheme()"
     [appAccent]="appAccent()"
     (tabChange)="onTabChange($event)"
   >

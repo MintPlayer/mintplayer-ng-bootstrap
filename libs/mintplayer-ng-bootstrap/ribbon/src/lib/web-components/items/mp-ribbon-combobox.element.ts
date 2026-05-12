@@ -17,7 +17,7 @@ export class MpRibbonComboBox extends MpRibbonItemBase {
   static override styles = css`
     :host { display: inline-flex; align-items: center; }
     .ribbon-combobox-select {
-      background: var(--bs-body-bg, #fff);
+      background: var(--bs-ribbon-tabpanel-bg, #fff);
       color: inherit;
       border: 1px solid var(--bs-ribbon-item-hover-border, #ced4da);
       border-radius: var(--bs-ribbon-item-radius, 3px);

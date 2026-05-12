@@ -27,8 +27,13 @@ export class MpRibbon extends LitElement {
   static override styles = css`
     :host {
       display: block;
+      /* Tell the UA to pick the right scheme for native form controls
+         inside the ribbon (selects, color inputs, etc). */
+      color-scheme: light dark;
       /* ---- Default tokens (neutral, Bootstrap-anchored) ---- */
       --bs-ribbon-app-accent: var(--bs-primary, #0d6efd);
+      --bs-ribbon-app-accent-on-dark:
+        color-mix(in oklab, var(--bs-ribbon-app-accent) 55%, white 45%);
       --bs-ribbon-font-family: inherit;
       --bs-ribbon-container-bg: var(--bs-body-bg, #fafafa);
       --bs-ribbon-container-border: var(--bs-border-color, #e0e0e0);
@@ -158,6 +163,120 @@ export class MpRibbon extends LitElement {
       --bs-ribbon-item-radius: 0;
     }
 
+    /* ============================================================
+       DARK MODE
+       Two versions ship Microsoft-shipped dark themes:
+         office-2013 → "Dark Gray"
+         office-2016 → "Black"
+       office-2007 / office-2010 keep their existing chrome (those
+       versions never had a Microsoft dark mode — documented as a
+       no-op on [colorScheme]="dark").
+       Each block exists twice: once for explicit [colorScheme]="dark"
+       and once under @media (prefers-color-scheme: dark) for
+       [colorScheme]="auto" — keeps cascade specificity equal.
+       ============================================================ */
+
+    /* Office 2016 — Black */
+    :host([color-scheme="dark"][version="office-2016"]) {
+      color: rgba(255, 255, 255, 0.87);
+      --bs-ribbon-container-bg: #262626;
+      --bs-ribbon-container-border: #1A1A1A;
+      --bs-ribbon-tabstrip-bg: #1F1F1F;
+      --bs-ribbon-tabstrip-border: #1A1A1A;
+      --bs-ribbon-tab-idle-color: rgba(255, 255, 255, 0.78);
+      --bs-ribbon-tab-hover-bg: #3A3A3A;
+      --bs-ribbon-tab-active-bg: #363636;
+      --bs-ribbon-tab-active-color: #FFFFFF;
+      --bs-ribbon-tab-active-indicator-color: var(--bs-ribbon-app-accent-on-dark);
+      --bs-ribbon-tabpanel-bg: #363636;
+      --bs-ribbon-group-separator: rgba(255, 255, 255, 0.10);
+      --bs-ribbon-group-label-color: rgba(255, 255, 255, 0.60);
+      --bs-ribbon-item-hover-bg: #3F3F3F;
+      --bs-ribbon-item-hover-border: rgba(255, 255, 255, 0.15);
+      --bs-ribbon-item-pressed-bg: #4A4A4A;
+    }
+
+    /* Office 2013 — Dark Gray */
+    :host([color-scheme="dark"][version="office-2013"]) {
+      color: rgba(255, 255, 255, 0.87);
+      --bs-ribbon-container-bg: #444444;
+      --bs-ribbon-container-border: #2B2B2B;
+      --bs-ribbon-tabstrip-bg: #2B2B2B;
+      --bs-ribbon-tabstrip-border: #1F1F1F;
+      --bs-ribbon-tab-idle-color: rgba(255, 255, 255, 0.70);
+      --bs-ribbon-tab-hover-bg: #525252;
+      --bs-ribbon-tab-active-bg: #444444;
+      --bs-ribbon-tab-active-color: #FFFFFF;
+      --bs-ribbon-tab-active-indicator-color: transparent;
+      --bs-ribbon-tabpanel-bg: #444444;
+      --bs-ribbon-group-separator: rgba(255, 255, 255, 0.08);
+      --bs-ribbon-group-label-color: rgba(255, 255, 255, 0.55);
+      --bs-ribbon-item-hover-bg: #5A5A5A;
+      --bs-ribbon-item-hover-border: transparent;
+      --bs-ribbon-item-pressed-bg: #6A6A6A;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :host([color-scheme="auto"][version="office-2016"]) {
+        color: rgba(255, 255, 255, 0.87);
+        --bs-ribbon-container-bg: #262626;
+        --bs-ribbon-container-border: #1A1A1A;
+        --bs-ribbon-tabstrip-bg: #1F1F1F;
+        --bs-ribbon-tabstrip-border: #1A1A1A;
+        --bs-ribbon-tab-idle-color: rgba(255, 255, 255, 0.78);
+        --bs-ribbon-tab-hover-bg: #3A3A3A;
+        --bs-ribbon-tab-active-bg: #363636;
+        --bs-ribbon-tab-active-color: #FFFFFF;
+        --bs-ribbon-tab-active-indicator-color: var(--bs-ribbon-app-accent-on-dark);
+        --bs-ribbon-tabpanel-bg: #363636;
+        --bs-ribbon-group-separator: rgba(255, 255, 255, 0.10);
+        --bs-ribbon-group-label-color: rgba(255, 255, 255, 0.60);
+        --bs-ribbon-item-hover-bg: #3F3F3F;
+        --bs-ribbon-item-hover-border: rgba(255, 255, 255, 0.15);
+        --bs-ribbon-item-pressed-bg: #4A4A4A;
+      }
+      :host([color-scheme="auto"][version="office-2013"]) {
+        color: rgba(255, 255, 255, 0.87);
+        --bs-ribbon-container-bg: #444444;
+        --bs-ribbon-container-border: #2B2B2B;
+        --bs-ribbon-tabstrip-bg: #2B2B2B;
+        --bs-ribbon-tabstrip-border: #1F1F1F;
+        --bs-ribbon-tab-idle-color: rgba(255, 255, 255, 0.70);
+        --bs-ribbon-tab-hover-bg: #525252;
+        --bs-ribbon-tab-active-bg: #444444;
+        --bs-ribbon-tab-active-color: #FFFFFF;
+        --bs-ribbon-tab-active-indicator-color: transparent;
+        --bs-ribbon-tabpanel-bg: #444444;
+        --bs-ribbon-group-separator: rgba(255, 255, 255, 0.08);
+        --bs-ribbon-group-label-color: rgba(255, 255, 255, 0.55);
+        --bs-ribbon-item-hover-bg: #5A5A5A;
+        --bs-ribbon-item-hover-border: transparent;
+        --bs-ribbon-item-pressed-bg: #6A6A6A;
+      }
+    }
+
+    /* Contextual band: dark mode bypasses the JS-computed luminance
+       text rule. Hue is desaturated + darkened so it doesn't punch
+       through dark chrome; text is always white. */
+    :host([color-scheme="dark"]) .ribbon-contextual-group-band {
+      background: color-mix(
+        in oklab,
+        var(--bs-ribbon-contextual-color) 40%,
+        #1F1F1F 60%
+      );
+      color: #FFFFFF;
+    }
+    @media (prefers-color-scheme: dark) {
+      :host([color-scheme="auto"]) .ribbon-contextual-group-band {
+        background: color-mix(
+          in oklab,
+          var(--bs-ribbon-contextual-color) 40%,
+          #1F1F1F 60%
+        );
+        color: #FFFFFF;
+      }
+    }
+
     .ribbon-container {
       border: 1px solid;
       border-color: var(--bs-ribbon-container-border);
@@ -260,6 +379,17 @@ export class MpRibbon extends LitElement {
   @property({ type: String, reflect: true })
   version: 'office-2007' | 'office-2010' | 'office-2013' | 'office-2016' =
     'office-2016';
+
+  /**
+   * Light/dark mode. `auto` follows `prefers-color-scheme` and ancestor
+   * `data-bs-theme="dark"` (via the Bootstrap fallback variable chain).
+   * Explicit `dark` / `light` always overrides those. Dark variants ship
+   * for office-2013 (Dark Gray) and office-2016 (Black); on office-2007
+   * and office-2010 `dark` is a documented no-op (those versions never
+   * had a Microsoft-shipped dark mode).
+   */
+  @property({ type: String, attribute: 'color-scheme', reflect: true })
+  colorScheme: 'light' | 'dark' | 'auto' = 'auto';
 
   private currentTabIndex = 0;
   private resizeObserver?: ResizeObserver;
