@@ -20,7 +20,7 @@ export class MpRibbonGroup extends LitElement {
     .ribbon-group {
       display: flex;
       flex-direction: column;
-      padding: 4px 8px;
+      padding: 2px 6px 0;
       border-right: 1px solid var(--bs-border-color, #e0e0e0);
       min-width: 64px;
     }
@@ -30,27 +30,29 @@ export class MpRibbonGroup extends LitElement {
       gap: 4px;
       align-items: flex-start;
       flex: 1;
-      padding: 4px 0;
     }
-    .ribbon-group-header {
+    .ribbon-group-footer {
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
       align-items: center;
-      gap: 4px;
-      border-top: 1px solid var(--bs-border-color, #e0e0e0);
-      padding-top: 4px;
-      margin-top: 4px;
+      gap: 2px;
+      padding: 2px 0;
+      position: relative;
     }
     .ribbon-group-label {
       font-size: 11px;
+      line-height: 1;
       color: var(--bs-secondary-color, #6c757d);
     }
     .ribbon-dialog-launcher {
+      position: absolute;
+      right: 0;
       background: transparent;
       border: none;
       cursor: pointer;
-      padding: 2px 4px;
-      font-size: 12px;
+      padding: 0 2px;
+      font-size: 11px;
+      line-height: 1;
       color: var(--bs-secondary-color, #6c757d);
     }
     .ribbon-dialog-launcher:hover { color: var(--bs-primary, #0d6efd); }
@@ -75,8 +77,10 @@ export class MpRibbonGroup extends LitElement {
   override render(): TemplateResult {
     return html`
       <div class="ribbon-group" role="region" aria-label="${this.label}">
-        <!-- Group header with label + optional dialog launcher -->
-        <div class="ribbon-group-header">
+        <div class="ribbon-group-items">
+          <slot></slot>
+        </div>
+        <div class="ribbon-group-footer">
           <span class="ribbon-group-label">${this.label}</span>
           ${this.dialogLauncher ? html`
             <button
@@ -88,11 +92,6 @@ export class MpRibbonGroup extends LitElement {
               ⬘
             </button>
           ` : ''}
-        </div>
-
-        <!-- Items container with slot -->
-        <div class="ribbon-group-items">
-          <slot></slot>
         </div>
       </div>
     `;
