@@ -44,7 +44,7 @@ export class MpQuickAccessToolbar extends LitElement {
     .qat-label {
       font-size: 11px;
       opacity: 0.75;
-      margin-right: 4px;
+      margin-inline-end: 4px;
       white-space: nowrap;
     }
     .qat-divider {
@@ -113,9 +113,13 @@ export class MpQuickAccessToolbar extends LitElement {
     if (items.length === 0) return;
     const path = event.composedPath();
     const currentIdx = items.findIndex((item) => path.includes(item));
+    // RTL: ArrowLeft moves to the next item (visual direction matches arrow).
+    const rtl = getComputedStyle(this).direction === 'rtl';
+    const goForward = rtl ? key === 'ArrowLeft' : key === 'ArrowRight';
+    const goBackward = rtl ? key === 'ArrowRight' : key === 'ArrowLeft';
     let nextIdx = currentIdx;
-    if (key === 'ArrowLeft') nextIdx = Math.max(0, currentIdx - 1);
-    else if (key === 'ArrowRight') nextIdx = Math.min(items.length - 1, currentIdx + 1);
+    if (goBackward) nextIdx = Math.max(0, currentIdx - 1);
+    else if (goForward) nextIdx = Math.min(items.length - 1, currentIdx + 1);
     else if (key === 'Home') nextIdx = 0;
     else if (key === 'End') nextIdx = items.length - 1;
     if (nextIdx !== currentIdx && nextIdx >= 0) {

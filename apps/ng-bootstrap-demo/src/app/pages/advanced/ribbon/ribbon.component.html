@@ -41,8 +41,17 @@
         }
       </bs-select>
     </label>
+    <label class="control-field">
+      Direction
+      <bs-select [(ngModel)]="direction">
+        @for (d of directions; track d) {
+          <option [value]="d">{{ d }}</option>
+        }
+      </bs-select>
+    </label>
   </div>
 
+  <div class="ribbon-rtl-wrapper" [attr.dir]="direction()">
   <bs-quick-access-toolbar
     label="Quick Access Toolbar"
     [touchMode]="touchMode()"
@@ -268,6 +277,7 @@
     </bs-ribbon-group>
     </bs-ribbon-tab>
   </bs-ribbon>
+  </div>
 
   <section class="keymap" aria-labelledby="ribbon-keymap-heading">
     <h3 id="ribbon-keymap-heading">Keyboard shortcuts</h3>
@@ -353,5 +363,137 @@
       for ribbon minimize / restore, contextual-tab show / hide, and overflow-group
       collapse / expand transitions.
     </p>
+  </section>
+
+  <section class="snippets" aria-labelledby="ribbon-snippets-heading">
+    <h3 id="ribbon-snippets-heading">Code samples</h3>
+    <p class="snippets-intro">
+      Copy-paste starting points for the most common ribbon shapes. Every
+      element has an Angular wrapper (<code>bs-*</code>) over a Lit web
+      component (<code>mp-*</code>); these snippets show the Angular form.
+    </p>
+
+    <article class="snippet-card">
+      <h4>1. Minimal ribbon — one tab, one group, three buttons</h4>
+<pre><code>&lt;bs-ribbon [(minimized)]="minimized"&gt;
+  &lt;bs-ribbon-tab tabId="home" label="Home"&gt;
+    &lt;bs-ribbon-group groupId="clipboard" label="Clipboard"
+                     dialogLauncher="Clipboard Dialog"&gt;
+      &lt;bs-ribbon-button itemId="paste" label="Paste" icon="📋"
+                        size="large" tooltip="Paste (Ctrl+V)"
+                        (itemClick)="onPaste($event)"&gt;&lt;/bs-ribbon-button&gt;
+      &lt;bs-ribbon-button itemId="cut"  label="Cut"  icon="✂️" size="small"
+                        (itemClick)="onCut($event)"&gt;&lt;/bs-ribbon-button&gt;
+      &lt;bs-ribbon-button itemId="copy" label="Copy" icon="📄" size="small"
+                        (itemClick)="onCopy($event)"&gt;&lt;/bs-ribbon-button&gt;
+    &lt;/bs-ribbon-group&gt;
+  &lt;/bs-ribbon-tab&gt;
+&lt;/bs-ribbon&gt;</code></pre>
+      <p class="snippet-note">
+        <code>[(minimized)]</code> two-way binds the minimize state — Ctrl+F1
+        and double-clicking a tab will update your signal.
+      </p>
+    </article>
+
+    <article class="snippet-card">
+      <h4>2. Split-button with a "last-used" menu</h4>
+<pre><code>&lt;bs-ribbon-split-button
+  [itemId]="pasteMode().id"
+  [label]="pasteMode().label"
+  [icon]="pasteMode().icon"
+  size="large"
+  (mainAction)="onPaste($event)"&gt;
+  &lt;bs-ribbon-menu-item itemId="paste" label="Paste" icon="📋"
+                       (menuSelect)="onPasteModeSelect($event)"&gt;&lt;/bs-ribbon-menu-item&gt;
+  &lt;bs-ribbon-menu-item itemId="paste-values" label="Paste Values" icon="123"
+                       (menuSelect)="onPasteModeSelect($event)"&gt;&lt;/bs-ribbon-menu-item&gt;
+  &lt;bs-ribbon-menu-separator&gt;&lt;/bs-ribbon-menu-separator&gt;
+  &lt;bs-ribbon-menu-item itemId="paste-special" label="Paste Special…"
+                       (menuSelect)="onPasteSpecial($event)"&gt;&lt;/bs-ribbon-menu-item&gt;
+&lt;/bs-ribbon-split-button&gt;</code></pre>
+      <p class="snippet-note">
+        The split-button never mutates its own label / icon. Implement the
+        "last-used" pattern in your component by updating
+        <code>pasteMode</code> inside <code>onPasteModeSelect</code>.
+      </p>
+    </article>
+
+    <article class="snippet-card">
+      <h4>3. Value-bearing items with <code>[(ngModel)]</code></h4>
+<pre><code>&lt;bs-ribbon-toggle-button itemId="bold" label="Bold" icon="B" size="small"
+                         [(ngModel)]="boldOn"&gt;&lt;/bs-ribbon-toggle-button&gt;
+
+&lt;bs-ribbon-combo-box itemId="font-family" label="Font Family" size="medium"
+                     [options]="fontFamilyOptions"
+                     [(ngModel)]="fontFamily"&gt;&lt;/bs-ribbon-combo-box&gt;
+
+&lt;bs-ribbon-color-picker itemId="font-color" label="Font Color" size="small"
+                        [(ngModel)]="fontColor"&gt;&lt;/bs-ribbon-color-picker&gt;</code></pre>
+      <p class="snippet-note">
+        Every value-bearing wrapper (toggle-button, check-box, combo-box,
+        color-picker, group-button) implements <code>ControlValueAccessor</code>
+        so it works with both template-driven (<code>ngModel</code>) and
+        reactive forms (<code>formControl</code>).
+      </p>
+    </article>
+
+    <article class="snippet-card">
+      <h4>4. Contextual tab set</h4>
+<pre><code>&lt;bs-ribbon-contextual-tab-set
+  label="Picture Tools"
+  color="#F2C744"
+  [hidden]="!pictureSelected()"&gt;
+  &lt;bs-ribbon-tab tabId="picture-format" label="Format"&gt;
+    &lt;bs-ribbon-group groupId="picture-styles" label="Picture Styles"&gt;
+      …
+    &lt;/bs-ribbon-group&gt;
+  &lt;/bs-ribbon-tab&gt;
+&lt;/bs-ribbon-contextual-tab-set&gt;</code></pre>
+      <p class="snippet-note">
+        Toggling <code>[hidden]</code> on the set fires
+        <code>contextual-visibility-change</code>; the ribbon re-processes its
+        slot and announces "Picture Tools, contextual, now available / hidden"
+        via the live region.
+      </p>
+    </article>
+
+    <article class="snippet-card">
+      <h4>5. Quick Access Toolbar (sibling, not nested)</h4>
+<pre><code>&lt;bs-quick-access-toolbar label="Quick Access Toolbar"
+                         [touchMode]="touchMode()"
+                         [appAccent]="appAccent()"&gt;
+  &lt;bs-ribbon-button itemId="save" label="Save" icon="💾" size="small"
+                    (itemClick)="onSave($event)"&gt;&lt;/bs-ribbon-button&gt;
+  &lt;bs-ribbon-button itemId="undo" label="Undo" icon="↶" size="small"
+                    (itemClick)="onUndo($event)"&gt;&lt;/bs-ribbon-button&gt;
+&lt;/bs-quick-access-toolbar&gt;
+
+&lt;bs-ribbon …&gt; … &lt;/bs-ribbon&gt;</code></pre>
+      <p class="snippet-note">
+        The QAT is deliberately rendered as a sibling — two top-level
+        <code>role="toolbar"</code> regions keep the a11y tree flat.
+        Persistence of pinned commands is up to your app.
+      </p>
+    </article>
+
+    <article class="snippet-card">
+      <h4>6. Per-app appearance + dark mode</h4>
+<pre><code>&lt;bs-ribbon
+  version="office-2016"
+  appAccent="#217346"
+  colorScheme="auto"
+  touchMode="auto"&gt;
+  …
+&lt;/bs-ribbon&gt;</code></pre>
+      <p class="snippet-note">
+        <code>version</code> picks one of <code>office-2007</code> /
+        <code>2010</code> / <code>2013</code> / <code>2016</code>.
+        <code>appAccent</code> drives the brand colour (Word
+        <code>#2B579A</code>, Excel <code>#217346</code>, etc.).
+        <code>colorScheme="auto"</code> follows
+        <code>prefers-color-scheme</code> and ancestor
+        <code>data-bs-theme="dark"</code>.
+      </p>
+    </article>
   </section>
 </div>

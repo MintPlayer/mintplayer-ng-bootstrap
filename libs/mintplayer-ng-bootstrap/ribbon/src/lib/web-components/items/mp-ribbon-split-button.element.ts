@@ -47,7 +47,7 @@ export class MpRibbonSplitButton extends MpRibbonItemBase {
       align-items: center;
       justify-content: center;
       padding: 0 4px;
-      border-left: 1px solid transparent;
+      border-inline-start: 1px solid transparent;
       min-width: 16px;
       font-size: 9px;
     }
@@ -56,7 +56,7 @@ export class MpRibbonSplitButton extends MpRibbonItemBase {
       background: var(--bs-ribbon-item-hover-bg, #e9ecef);
     }
     .ribbon-split-button-main:hover:not(:disabled) + .ribbon-split-button-dropdown {
-      border-left-color: var(--bs-ribbon-item-hover-border, #ced4da);
+      border-inline-start-color: var(--bs-ribbon-item-hover-border, #ced4da);
     }
     .ribbon-split-button-main:focus-visible,
     .ribbon-split-button-dropdown:focus-visible {
@@ -82,13 +82,13 @@ export class MpRibbonSplitButton extends MpRibbonItemBase {
       font-size: 28px;
     }
     :host(.ribbon-item-large) .ribbon-split-button-dropdown {
-      border-left: none;
+      border-inline-start: none;
       border-top: 1px solid transparent;
       padding: 2px 0;
       min-width: 0;
     }
     :host(.ribbon-item-large) .ribbon-split-button-main:hover:not(:disabled) + .ribbon-split-button-dropdown {
-      border-left-color: transparent;
+      border-inline-start-color: transparent;
       border-top-color: var(--bs-ribbon-item-hover-border, #ced4da);
     }
 

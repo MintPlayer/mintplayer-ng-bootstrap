@@ -1,6 +1,7 @@
 import { css, html, LitElement, nothing, type TemplateResult } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { styleMap } from 'lit/directives/style-map.js';
+import { OverlayController } from './overlay-controller';
 
 export interface RibbonGroup {
   id: string;
@@ -15,7 +16,7 @@ export class MpRibbonGroup extends LitElement {
       position: absolute;
       top: var(--bs-ribbon-group-separator-inset, 0px);
       bottom: var(--bs-ribbon-group-separator-inset, 0px);
-      right: 0;
+      inset-inline-end: 0;
       width: 1px;
       background: var(--bs-ribbon-group-separator, rgba(0, 0, 0, 0.12));
       pointer-events: none;
@@ -67,7 +68,7 @@ export class MpRibbonGroup extends LitElement {
     }
     .ribbon-dialog-launcher {
       position: absolute;
-      right: 0;
+      inset-inline-end: 0;
       background: transparent;
       border: none;
       cursor: pointer;
@@ -152,6 +153,9 @@ export class MpRibbonGroup extends LitElement {
   @state()
   private popupTop = 0;
 
+  /** Token held while this group's popup is on the shared overlay stack. */
+  private popupStackToken: symbol | null = null;
+
   /**
    * Selector for focusable item hosts inside this group. Matches every kind
    * that extends `MpRibbonItemBase` (all of which get `delegatesFocus: true`
@@ -186,6 +190,10 @@ export class MpRibbonGroup extends LitElement {
     this.removeEventListener('keydown', this.onGroupKeyDown);
     this.slotObserver?.disconnect();
     this.slotObserver = undefined;
+    if (this.popupStackToken) {
+      OverlayController.releaseFrame(this.popupStackToken);
+      this.popupStackToken = null;
+    }
   }
 
   /**
@@ -265,9 +273,15 @@ export class MpRibbonGroup extends LitElement {
     ) as HTMLElement | undefined;
     const currentIdx = currentItem ? items.indexOf(currentItem) : -1;
 
+    // In RTL, ArrowLeft visually moves to the next item (DOM-order next),
+    // matching the APG "arrow points the direction you go" rule.
+    const rtl = getComputedStyle(this).direction === 'rtl';
+    const goForward = rtl ? key === 'ArrowLeft' : key === 'ArrowRight';
+    const goBackward = rtl ? key === 'ArrowRight' : key === 'ArrowLeft';
+
     let nextIdx = currentIdx;
-    if (key === 'ArrowLeft') nextIdx = currentIdx <= 0 ? items.length - 1 : currentIdx - 1;
-    else if (key === 'ArrowRight') nextIdx = currentIdx >= items.length - 1 ? 0 : currentIdx + 1;
+    if (goBackward) nextIdx = currentIdx <= 0 ? items.length - 1 : currentIdx - 1;
+    else if (goForward) nextIdx = currentIdx >= items.length - 1 ? 0 : currentIdx + 1;
     else if (key === 'Home') nextIdx = 0;
     else if (key === 'End') nextIdx = items.length - 1;
 
@@ -354,6 +368,7 @@ export class MpRibbonGroup extends LitElement {
 
   private async openPopup(): Promise<void> {
     this.popupOpen = true;
+    this.popupStackToken = OverlayController.pushFrame();
     this.setAttribute('data-popup-open', '');
     await this.updateComplete;
     this.positionPopup();
@@ -372,6 +387,10 @@ export class MpRibbonGroup extends LitElement {
   private closePopup(returnFocus = true): void {
     if (!this.popupOpen) return;
     this.popupOpen = false;
+    if (this.popupStackToken) {
+      OverlayController.releaseFrame(this.popupStackToken);
+      this.popupStackToken = null;
+    }
     this.removeAttribute('data-popup-open');
     document.removeEventListener('mousedown', this.onDocMouseDown, true);
     if (returnFocus) {
@@ -415,7 +434,12 @@ export class MpRibbonGroup extends LitElement {
   };
 
   private onKeyDown = (event: KeyboardEvent): void => {
-    if (event.key === 'Escape' && this.popupOpen) {
+    if (
+      event.key === 'Escape' &&
+      this.popupOpen &&
+      this.popupStackToken !== null &&
+      OverlayController.isFrameTop(this.popupStackToken)
+    ) {
       this.closePopup();
       event.preventDefault();
     }

@@ -36,6 +36,7 @@ import { Color } from '@mintplayer/ng-bootstrap';
 type RibbonVersion = 'office-2007' | 'office-2010' | 'office-2013' | 'office-2016';
 type ColorScheme = 'light' | 'dark' | 'auto';
 type TouchMode = 'on' | 'off' | 'auto';
+type Direction = 'ltr' | 'rtl';
 
 interface AppAccentOption {
   label: string;
@@ -80,9 +81,11 @@ export class RibbonComponent {
   readonly appAccent = model<string>('#2B579A');
   readonly colorScheme = model<ColorScheme>('auto');
   readonly touchMode = model<TouchMode>('auto');
+  readonly direction = model<Direction>('ltr');
 
   readonly colorSchemes: ColorScheme[] = ['light', 'dark', 'auto'];
   readonly touchModes: TouchMode[] = ['on', 'off', 'auto'];
+  readonly directions: Direction[] = ['ltr', 'rtl'];
 
   readonly pasteMode = signal<{ id: string; label: string; icon: string }>({
     id: 'paste',

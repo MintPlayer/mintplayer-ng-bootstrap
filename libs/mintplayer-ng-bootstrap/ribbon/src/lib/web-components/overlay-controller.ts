@@ -19,10 +19,46 @@ export interface OverlayControllerOptions {
  * the panel via a CSS rule keyed on the host's `data-menu-open` attribute.
  */
 export class OverlayController implements ReactiveController {
+  /**
+   * LIFO stack of currently-open overlay tokens across every ribbon overlay
+   * instance. Each `open()` pushes a token, `close()` releases it. The Esc
+   * keydown handler only fires when its overlay holds the top token, so nested
+   * overlays unwind one-at-a-time (popup-inside-dropdown-menu-inside-popup
+   * works as expected). This mirrors `BsOverlayStackService` from the a11y lib
+   * but stays self-contained inside the Lit layer, since the Lit elements
+   * can't reach Angular's DI tree.
+   */
+  private static readonly openStack: symbol[] = [];
+
+  /**
+   * Allocate a frame on top of the shared overlay stack. Use this from code
+   * paths that don't own a full `OverlayController` instance (currently the
+   * inline popup logic in `mp-ribbon-group`). Pair every `pushFrame()` with a
+   * `releaseFrame(token)` to keep the stack consistent.
+   */
+  static pushFrame(): symbol {
+    const token = Symbol('overlay-frame-external');
+    OverlayController.openStack.push(token);
+    return token;
+  }
+
+  static releaseFrame(token: symbol): void {
+    const idx = OverlayController.openStack.lastIndexOf(token);
+    if (idx >= 0) OverlayController.openStack.splice(idx, 1);
+  }
+
+  static isFrameTop(token: symbol): boolean {
+    return (
+      OverlayController.openStack.length > 0 &&
+      OverlayController.openStack[OverlayController.openStack.length - 1] === token
+    );
+  }
+
   private readonly host: ReactiveControllerHost & HTMLElement;
   private readonly options: OverlayControllerOptions;
   private _open = false;
   private mouseDownAttached = false;
+  private stackToken: symbol | null = null;
 
   constructor(
     host: ReactiveControllerHost & HTMLElement,
@@ -40,6 +76,7 @@ export class OverlayController implements ReactiveController {
   hostDisconnected(): void {
     document.removeEventListener('keydown', this.onKeyDown);
     this.detachMouseDown();
+    if (this.stackToken) this.releaseStackToken();
   }
 
   get isOpen(): boolean {
@@ -49,6 +86,7 @@ export class OverlayController implements ReactiveController {
   async open(): Promise<void> {
     if (this._open) return;
     this._open = true;
+    this.stackToken = OverlayController.pushFrame();
     this.host.setAttribute('data-menu-open', '');
     this.host.requestUpdate();
     await this.host.updateComplete;
@@ -61,11 +99,22 @@ export class OverlayController implements ReactiveController {
   close(returnFocus = true): void {
     if (!this._open) return;
     this._open = false;
+    this.releaseStackToken();
     this.host.removeAttribute('data-menu-open');
     this.host.requestUpdate();
     this.detachMouseDown();
     if (returnFocus) this.options.trigger()?.focus();
     this.options.onClose?.();
+  }
+
+  private releaseStackToken(): void {
+    if (!this.stackToken) return;
+    OverlayController.releaseFrame(this.stackToken);
+    this.stackToken = null;
+  }
+
+  private isTopOfStack(): boolean {
+    return this.stackToken !== null && OverlayController.isFrameTop(this.stackToken);
   }
 
   async toggle(): Promise<void> {
@@ -116,7 +165,7 @@ export class OverlayController implements ReactiveController {
   }
 
   private onKeyDown = (event: KeyboardEvent): void => {
-    if (event.key === 'Escape' && this._open) {
+    if (event.key === 'Escape' && this._open && this.isTopOfStack()) {
       this.close();
       event.preventDefault();
     }

@@ -569,7 +569,13 @@ export class MpRibbon extends LitElement {
         (n) => n instanceof HTMLElement && n.tagName === 'MP-RIBBON-GROUP'
       ) as HTMLElement | undefined;
       if (fromGroup) {
-        if (this.moveFocusBetweenGroups(fromGroup, event.key === 'ArrowRight' ? 1 : -1)) {
+        // In RTL, ArrowLeft visually points to the "next" group (because DOM
+        // order renders right-to-left), so the direction flips.
+        const rtl = getComputedStyle(this).direction === 'rtl';
+        const rightIsForward = !rtl;
+        const direction =
+          (event.key === 'ArrowRight') === rightIsForward ? 1 : -1;
+        if (this.moveFocusBetweenGroups(fromGroup, direction)) {
           event.preventDefault();
         }
       }
@@ -857,15 +863,27 @@ export class MpRibbon extends LitElement {
   private onTabListKeydown = (event: KeyboardEvent): void => {
     const { key } = event;
     let handled = false;
+    // In RTL, ArrowLeft visually targets the next tab (DOM order is rendered
+    // right-to-left). ArrowUp / ArrowDown are reserved for vertical reading
+    // and stay direction-neutral.
+    const rtl = getComputedStyle(this).direction === 'rtl';
 
     switch (key) {
       case 'ArrowLeft':
+        if (rtl) this.focusNextTab();
+        else this.focusPreviousTab();
+        handled = true;
+        break;
       case 'ArrowUp':
         this.focusPreviousTab();
         handled = true;
         break;
 
       case 'ArrowRight':
+        if (rtl) this.focusPreviousTab();
+        else this.focusNextTab();
+        handled = true;
+        break;
       case 'ArrowDown':
         this.focusNextTab();
         handled = true;
