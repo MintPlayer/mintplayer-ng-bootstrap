@@ -49,7 +49,18 @@
       "PowerShell(Get-Process *)",
       "mcp__github__update_issue",
       "Skill(dcg:pr_create)",
-      "WebFetch(domain:angular.love)"
+      "WebFetch(domain:angular.love)",
+      "PowerShell(Get-ChildItem C:\\\\Repos\\\\mintplayer-ng-bootstrap\\\\libs\\\\mintplayer-ng-bootstrap\\\\range -Recurse -File | Where-Object {$_.Extension -in '.ts','.scss','.html','.json'} | Select-Object FullName)",
+      "PowerShell(Get-ChildItem -Path C:\\\\Repos\\\\mintplayer-ng-bootstrap\\\\libs\\\\mintplayer-ng-bootstrap\\\\range -Recurse -File | Where-Object { $_.Extension -in '.ts','.scss','.html','.json' } | ForEach-Object { $_.FullName })",
+      "PowerShell(Get-ChildItem -Path C:\\\\Repos\\\\mintplayer-ng-bootstrap\\\\libs\\\\mintplayer-ng-bootstrap\\\\tile-manager -Recurse -File | ForEach-Object { $_.FullName.Replace\\('C:\\\\Repos\\\\mintplayer-ng-bootstrap\\\\',''\\) })",
+      "PowerShell(cd \"C:\\\\Repos\\\\mintplayer-ng-bootstrap\\\\libs\\\\mintplayer-ng-bootstrap\"; ls -Directory | Where-Object {$_.Name -in @\\('form','input-group','floating-labels','range','multi-range','rating','toggle-button','file-upload','signature-pad','searchbox'\\)} | ForEach-Object {Write-Host $_.Name})",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Repos\\\\mintplayer-ng-bootstrap\\\\libs\\\\mintplayer-ng-bootstrap\\\\\" -Directory | Select-Object -ExpandProperty Name | Where-Object {$_ -in @\\('multiselect', 'select', 'select2', 'typeahead', 'calendar', 'calendar-month', 'datepicker', 'timepicker', 'color-picker', 'font-color'\\)})",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Repos\\\\mintplayer-ng-bootstrap\\\\libs\\\\mintplayer-ng-bootstrap\" -Directory | Where-Object { $_.Name -in @\\('navbar', 'navbar-toggler', 'breadcrumb', 'pagination', 'tab-control', 'scrollspy', 'treeview', 'priority-nav', 'sticky-footer', 'accordion', 'list-group', 'close'\\) } | Select-Object -ExpandProperty Name)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Repos\\\\mintplayer-ng-bootstrap\\\\libs\\\\mintplayer-ng-bootstrap\" -Directory | Where-Object { $_.Name -in @\\('alert','badge','button-type','button-group','card','carousel','code-snippet','copy','container','datatable','virtual-datatable','table','dock','scheduler','tile-manager','shell','grid','resizable','parallax','viewport','marquee','placeholder','progress-bar','spinner','playlist-toggler','no-noscript'\\) } | Select-Object -ExpandProperty Name)",
+      "PowerShell(New-Item *)",
+      "mcp__ide__getDiagnostics",
+      "mcp__playwright__browser_handle_dialog",
+      "mcp__github__get_pull_request_files"
     ]
   },
   "enableAllProjectMcpServers": true,
