@@ -34,7 +34,20 @@
   >
     <!-- ============ Home tab ============ -->
     <bs-ribbon-group slot="content-home" groupId="clipboard" label="Clipboard" dialogLauncher="Clipboard Dialog">
-      <bs-ribbon-button itemId="paste" label="Paste" icon="📋" size="large" tooltip="Paste (Ctrl+V)" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-split-button
+        [itemId]="pasteMode().id"
+        [label]="pasteMode().label"
+        [icon]="pasteMode().icon"
+        size="large"
+        tooltip="Paste (Ctrl+V)"
+        (mainAction)="onItemClick($event)"
+      >
+        <bs-ribbon-menu-item itemId="paste" label="Paste" icon="📋" (menuSelect)="onPasteModeSelect($event); onItemClick($event)"></bs-ribbon-menu-item>
+        <bs-ribbon-menu-item itemId="paste-values" label="Paste Values" icon="123" (menuSelect)="onPasteModeSelect($event); onItemClick($event)"></bs-ribbon-menu-item>
+        <bs-ribbon-menu-item itemId="paste-formatting" label="Paste Formatting" icon="🎨" (menuSelect)="onPasteModeSelect($event); onItemClick($event)"></bs-ribbon-menu-item>
+        <bs-ribbon-menu-separator></bs-ribbon-menu-separator>
+        <bs-ribbon-menu-item itemId="paste-special" label="Paste Special…" (menuSelect)="onItemClick($event)"></bs-ribbon-menu-item>
+      </bs-ribbon-split-button>
       <bs-ribbon-button itemId="cut" label="Cut" icon="✂️" size="small" tooltip="Cut (Ctrl+X)" (itemClick)="onItemClick($event)"></bs-ribbon-button>
       <bs-ribbon-button itemId="copy" label="Copy" icon="📄" size="small" tooltip="Copy (Ctrl+C)" (itemClick)="onItemClick($event)"></bs-ribbon-button>
       <bs-ribbon-button itemId="format-painter" label="Format Painter" icon="🖌️" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
@@ -50,7 +63,13 @@
     </bs-ribbon-group>
 
     <bs-ribbon-group slot="content-home" groupId="paragraph" label="Paragraph" dialogLauncher="Paragraph Dialog">
-      <bs-ribbon-button itemId="bullets" label="Bullets" icon="•≡" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-dropdown-button itemId="bullets" label="Bullets" icon="•≡" size="small" tooltip="Bullet list">
+        <bs-ribbon-menu-item itemId="bullet-disc" label="Disc" icon="●" (menuSelect)="onItemClick($event)"></bs-ribbon-menu-item>
+        <bs-ribbon-menu-item itemId="bullet-circle" label="Circle" icon="○" (menuSelect)="onItemClick($event)"></bs-ribbon-menu-item>
+        <bs-ribbon-menu-item itemId="bullet-square" label="Square" icon="■" (menuSelect)="onItemClick($event)"></bs-ribbon-menu-item>
+        <bs-ribbon-menu-separator></bs-ribbon-menu-separator>
+        <bs-ribbon-menu-item itemId="define-new-bullet" label="Define New Bullet…" (menuSelect)="onItemClick($event)"></bs-ribbon-menu-item>
+      </bs-ribbon-dropdown-button>
       <bs-ribbon-button itemId="numbering" label="Numbering" icon="1≡" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
       <bs-ribbon-button itemId="indent-decrease" label="Decrease Indent" icon="⇤" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
       <bs-ribbon-button itemId="indent-increase" label="Increase Indent" icon="⇥" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>

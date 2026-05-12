@@ -11,6 +11,10 @@ import {
   BsRibbonComponent,
   BsRibbonGroupComponent,
   BsRibbonButtonComponent,
+  BsRibbonSplitButtonComponent,
+  BsRibbonDropdownButtonComponent,
+  BsRibbonMenuItemComponent,
+  BsRibbonMenuSeparatorComponent,
   type RibbonTab,
   type RibbonTabChangeEvent,
 } from '@mintplayer/ng-bootstrap/ribbon';
@@ -35,6 +39,10 @@ interface AppAccentOption {
     BsRibbonComponent,
     BsRibbonGroupComponent,
     BsRibbonButtonComponent,
+    BsRibbonSplitButtonComponent,
+    BsRibbonDropdownButtonComponent,
+    BsRibbonMenuItemComponent,
+    BsRibbonMenuSeparatorComponent,
     BsSelectComponent,
     BsButtonTypeDirective,
   ],
@@ -47,6 +55,12 @@ export class RibbonComponent {
   readonly layout = signal<'classic' | 'simplified'>('classic');
   readonly version = model<RibbonVersion>('office-2016');
   readonly appAccent = model<string>('#2B579A');
+
+  readonly pasteMode = signal<{ id: string; label: string; icon: string }>({
+    id: 'paste',
+    label: 'Paste',
+    icon: '📋',
+  });
 
   readonly minimizeLabel = computed(
     () => `${this.minimized() ? 'Restore' : 'Minimize'} Ribbon (Ctrl+F1)`
@@ -92,5 +106,19 @@ export class RibbonComponent {
 
   toggleLayout(): void {
     this.layout.update((v) => (v === 'classic' ? 'simplified' : 'classic'));
+  }
+
+  onPasteModeSelect(event: { itemId: string }): void {
+    const modes: Record<string, { id: string; label: string; icon: string }> = {
+      paste: { id: 'paste', label: 'Paste', icon: '📋' },
+      'paste-values': { id: 'paste-values', label: 'Paste Values', icon: '123' },
+      'paste-formatting': {
+        id: 'paste-formatting',
+        label: 'Paste Format',
+        icon: '🎨',
+      },
+    };
+    const next = modes[event.itemId];
+    if (next) this.pasteMode.set(next);
   }
 }

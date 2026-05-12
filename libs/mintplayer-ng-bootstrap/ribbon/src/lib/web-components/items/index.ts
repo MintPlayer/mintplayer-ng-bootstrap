@@ -8,3 +8,5 @@ export { MpRibbonComboBox } from './mp-ribbon-combobox.element';
 export { MpRibbonColorPicker } from './mp-ribbon-color-picker.element';
 export { MpRibbonGroupButton } from './mp-ribbon-group-button.element';
 export { MpRibbonGallery } from './mp-ribbon-gallery.element';
+export { MpRibbonMenuItem } from './mp-ribbon-menu-item.element';
+export { MpRibbonMenuSeparator } from './mp-ribbon-menu-separator.element';
