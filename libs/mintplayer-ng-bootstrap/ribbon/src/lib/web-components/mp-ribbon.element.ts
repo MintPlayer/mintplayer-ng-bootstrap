@@ -52,7 +52,7 @@ export class MpRibbon extends LitElement {
       --bs-ribbon-tab-active-color: #1F3A5F;
       --bs-ribbon-tab-active-indicator-color: transparent;
       --bs-ribbon-tab-active-indicator-width: 0px;
-      --bs-ribbon-tab-radius: 3px 3px 0 0;
+      --bs-ribbon-tab-radius: 6px 6px 0 0;
       --bs-ribbon-tabpanel-bg: linear-gradient(#F4F8FD, #DCE7F5);
       --bs-ribbon-group-separator: rgba(0, 0, 0, 0.18);
       --bs-ribbon-group-separator-inset: 0px;
@@ -76,7 +76,7 @@ export class MpRibbon extends LitElement {
       --bs-ribbon-tab-active-color: #2D2D2D;
       --bs-ribbon-tab-active-indicator-color: transparent;
       --bs-ribbon-tab-active-indicator-width: 0px;
-      --bs-ribbon-tab-radius: 2px 2px 0 0;
+      --bs-ribbon-tab-radius: 0;
       --bs-ribbon-tabpanel-bg: #F2F4F6;
       --bs-ribbon-group-separator: #C8CDD2;
       --bs-ribbon-group-separator-inset: 0px;
