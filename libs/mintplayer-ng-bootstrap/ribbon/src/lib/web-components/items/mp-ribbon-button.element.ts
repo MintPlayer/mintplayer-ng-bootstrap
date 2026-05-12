@@ -9,6 +9,7 @@ import { MpRibbonItemBase } from './mp-ribbon-item-base';
 export class MpRibbonButton extends MpRibbonItemBase {
   static override styles = css`
     :host { display: inline-flex; }
+    :host([size="small"]) { display: flex; width: 100%; }
     .ribbon-button {
       display: inline-flex;
       flex-direction: column;
@@ -46,7 +47,12 @@ export class MpRibbonButton extends MpRibbonItemBase {
     }
     .ribbon-button.ribbon-item-large .ribbon-button-icon { font-size: 28px; }
     .ribbon-button.ribbon-item-medium { flex-direction: row; padding: 4px 8px; }
-    .ribbon-button.ribbon-item-small { flex-direction: row; padding: 4px 6px; }
+    .ribbon-button.ribbon-item-small {
+      flex-direction: row;
+      padding: 4px 6px;
+      width: 100%;
+      justify-content: flex-start;
+    }
     .ribbon-button-icon { line-height: 1; font-size: 16px; }
     .ribbon-button-label { white-space: nowrap; }
   `;

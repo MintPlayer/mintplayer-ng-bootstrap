@@ -37,17 +37,20 @@ export class MpRibbonGroup extends LitElement {
       column-gap: 4px;
       row-gap: 0;
       align-items: center;
-      justify-items: start;
       flex: 1;
     }
     ::slotted([size="large"]),
     ::slotted([size="medium"]) {
       grid-row: 1 / -1;
       align-self: stretch;
+      justify-self: center;
     }
     ::slotted([size="small"]) {
       grid-row: span 1;
       align-self: center;
+      justify-self: stretch;
+      width: 100%;
+      display: flex;
     }
     .ribbon-group-footer {
       display: flex;

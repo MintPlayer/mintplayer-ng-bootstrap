@@ -10,6 +10,7 @@ import { OverlayController } from '../overlay-controller';
 export class MpRibbonDropdownButton extends MpRibbonItemBase {
   static override styles = css`
     :host { display: inline-flex; position: relative; }
+    :host([size="small"]) { display: flex; width: 100%; }
     .ribbon-dropdown-button {
       display: inline-flex;
       flex-direction: row;
@@ -33,7 +34,11 @@ export class MpRibbonDropdownButton extends MpRibbonItemBase {
     }
     .ribbon-dropdown-button.ribbon-item-large .ribbon-button-icon { font-size: 28px; }
     .ribbon-dropdown-button.ribbon-item-medium { padding: 4px 8px; }
-    .ribbon-dropdown-button.ribbon-item-small { padding: 4px 6px; }
+    .ribbon-dropdown-button.ribbon-item-small {
+      padding: 4px 6px;
+      width: 100%;
+      justify-content: flex-start;
+    }
     .ribbon-dropdown-button:hover:not(:disabled) {
       background: var(--bs-ribbon-item-hover-bg, #e9ecef);
       border-color: var(--bs-ribbon-item-hover-border, #ced4da);
