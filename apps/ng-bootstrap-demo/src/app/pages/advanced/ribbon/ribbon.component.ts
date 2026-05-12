@@ -15,8 +15,12 @@ import {
   BsRibbonDropdownButtonComponent,
   BsRibbonMenuItemComponent,
   BsRibbonMenuSeparatorComponent,
+  BsRibbonToggleButtonComponent,
+  BsRibbonCheckBoxComponent,
+  BsRibbonComboBoxComponent,
   type RibbonTab,
   type RibbonTabChangeEvent,
+  type RibbonComboBoxOption,
 } from '@mintplayer/ng-bootstrap/ribbon';
 import { BsSelectComponent } from '@mintplayer/ng-bootstrap/select';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
@@ -43,6 +47,9 @@ interface AppAccentOption {
     BsRibbonDropdownButtonComponent,
     BsRibbonMenuItemComponent,
     BsRibbonMenuSeparatorComponent,
+    BsRibbonToggleButtonComponent,
+    BsRibbonCheckBoxComponent,
+    BsRibbonComboBoxComponent,
     BsSelectComponent,
     BsButtonTypeDirective,
   ],
@@ -61,6 +68,21 @@ export class RibbonComponent {
     label: 'Paste',
     icon: '📋',
   });
+
+  readonly boldOn = model<boolean>(false);
+  readonly italicOn = model<boolean>(false);
+  readonly underlineOn = model<boolean>(false);
+  readonly matchCase = model<boolean>(false);
+
+  readonly fontFamily = model<string>('Calibri');
+  readonly fontFamilyOptions: RibbonComboBoxOption[] = [
+    { label: 'Calibri', value: 'Calibri' },
+    { label: 'Arial', value: 'Arial' },
+    { label: 'Georgia', value: 'Georgia' },
+    { label: 'Times New Roman', value: 'Times New Roman' },
+    { label: 'Courier New', value: 'Courier New' },
+    { label: 'Verdana', value: 'Verdana' },
+  ];
 
   readonly minimizeLabel = computed(
     () => `${this.minimized() ? 'Restore' : 'Minimize'} Ribbon (Ctrl+F1)`

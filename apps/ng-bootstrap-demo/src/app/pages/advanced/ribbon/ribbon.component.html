@@ -54,9 +54,17 @@
     </bs-ribbon-group>
 
     <bs-ribbon-group slot="content-home" groupId="font" label="Font" dialogLauncher="Font Dialog">
-      <bs-ribbon-button itemId="bold" label="Bold" icon="B" size="small" tooltip="Bold (Ctrl+B)" (itemClick)="onItemClick($event)"></bs-ribbon-button>
-      <bs-ribbon-button itemId="italic" label="Italic" icon="I" size="small" tooltip="Italic (Ctrl+I)" (itemClick)="onItemClick($event)"></bs-ribbon-button>
-      <bs-ribbon-button itemId="underline" label="Underline" icon="U" size="small" tooltip="Underline (Ctrl+U)" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-combo-box
+        itemId="font-family"
+        label="Font Family"
+        size="medium"
+        tooltip="Font Family"
+        [options]="fontFamilyOptions"
+        [(ngModel)]="fontFamily"
+      ></bs-ribbon-combo-box>
+      <bs-ribbon-toggle-button itemId="bold" label="Bold" icon="B" size="small" tooltip="Bold (Ctrl+B)" [(ngModel)]="boldOn"></bs-ribbon-toggle-button>
+      <bs-ribbon-toggle-button itemId="italic" label="Italic" icon="I" size="small" tooltip="Italic (Ctrl+I)" [(ngModel)]="italicOn"></bs-ribbon-toggle-button>
+      <bs-ribbon-toggle-button itemId="underline" label="Underline" icon="U" size="small" tooltip="Underline (Ctrl+U)" [(ngModel)]="underlineOn"></bs-ribbon-toggle-button>
       <bs-ribbon-button itemId="strikethrough" label="Strikethrough" icon="S̶" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
       <bs-ribbon-button itemId="subscript" label="Subscript" icon="X₂" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
       <bs-ribbon-button itemId="superscript" label="Superscript" icon="X²" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
@@ -90,6 +98,7 @@
       <bs-ribbon-button itemId="find" label="Find" icon="🔍" size="small" tooltip="Find (Ctrl+F)" (itemClick)="onItemClick($event)"></bs-ribbon-button>
       <bs-ribbon-button itemId="replace" label="Replace" icon="🔁" size="small" tooltip="Replace (Ctrl+H)" (itemClick)="onItemClick($event)"></bs-ribbon-button>
       <bs-ribbon-button itemId="select" label="Select" icon="☐" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-check-box itemId="match-case" label="Match case" size="small" [(ngModel)]="matchCase"></bs-ribbon-check-box>
     </bs-ribbon-group>
 
     <!-- ============ Insert tab ============ -->
