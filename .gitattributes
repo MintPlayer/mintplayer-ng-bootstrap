@@ -1,0 +1,9 @@
+# Playwright visual-regression baselines are binary PNGs that don't compress
+# well in normal git packfiles and bloat the working clone on every CSS tweak
+# that triggers a re-baseline. Store them in Git LFS so they live in a
+# separate blob store instead of the main packfile history.
+#
+# Pattern catches every spec's `-snapshots/` folder (Playwright's default
+# naming) plus any standalone __screenshots__ directory.
+apps/ng-bootstrap-demo-e2e/**/*-snapshots/*.png filter=lfs diff=lfs merge=lfs -text
+apps/ng-bootstrap-demo-e2e/**/__screenshots__/**/*.png filter=lfs diff=lfs merge=lfs -text
