@@ -19,8 +19,7 @@ import {
     </mp-ribbon-group>
   `,
   styles: [`
-    :host { display: block; }
-    mp-ribbon-group { display: block; }
+    :host { display: contents; }
   `],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
