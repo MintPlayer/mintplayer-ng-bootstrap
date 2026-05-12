@@ -328,6 +328,27 @@ export class MpRibbon extends LitElement {
       }
     }
 
+    /* ============================================================
+       TOUCH MODE (FR-37 / FR-38)
+       Bumps tab buttons to WCAG-recommended ≥44px tall when the
+       primary pointer is coarse (touch / stylus) or when the
+       consumer explicitly opts in via [touchMode]="on".
+       Item-level bumps live in mp-ribbon-button / -toggle / -checkbox
+       / etc. so each item kind controls its own padding ramp.
+       ============================================================ */
+    :host([touch-mode="on"]) .ribbon-tab,
+    :host([touch-mode="on"]) .ribbon-contextual-group-tabs > .ribbon-tab {
+      min-height: 44px;
+      padding: 12px 18px;
+    }
+    @media (pointer: coarse) {
+      :host([touch-mode="auto"]) .ribbon-tab,
+      :host([touch-mode="auto"]) .ribbon-contextual-group-tabs > .ribbon-tab {
+        min-height: 44px;
+        padding: 12px 18px;
+      }
+    }
+
     /* Contextual band: dark mode bypasses the JS-computed luminance
        text rule. Hue is desaturated + darkened so it doesn't punch
        through dark chrome; text is always white. */
@@ -362,6 +383,11 @@ export class MpRibbon extends LitElement {
       border-bottom: 1px solid;
       border-bottom-color: var(--bs-ribbon-tabstrip-border);
       background: var(--bs-ribbon-tabstrip-bg);
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+    .ribbon-tab {
+      flex: 0 0 auto;
     }
     .ribbon-tab {
       padding: var(--bs-ribbon-tab-padding);
@@ -463,6 +489,15 @@ export class MpRibbon extends LitElement {
    */
   @property({ type: String, attribute: 'color-scheme', reflect: true })
   colorScheme: 'light' | 'dark' | 'auto' = 'auto';
+
+  /**
+   * Touch-friendly sizing. `on` bumps tab buttons + item buttons + menu
+   * items to ≥44px tall (WCAG 2.5.5 / Apple HIG / Material Design). `auto`
+   * follows `@media (pointer: coarse)`. `off` always uses the dense
+   * desktop sizing regardless of input device.
+   */
+  @property({ type: String, attribute: 'touch-mode', reflect: true })
+  touchMode: 'on' | 'off' | 'auto' = 'auto';
 
   private currentTabIndex = 0;
   private resizeObserver?: ResizeObserver;

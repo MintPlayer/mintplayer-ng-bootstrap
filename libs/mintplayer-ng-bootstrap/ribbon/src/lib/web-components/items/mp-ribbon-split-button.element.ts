@@ -103,7 +103,7 @@ export class MpRibbonSplitButton extends MpRibbonItemBase {
       padding: 4px 0;
       display: none;
       min-width: 180px;
-      max-width: 320px;
+      max-width: min(320px, calc(100vw - 16px));
     }
     :host([data-menu-open]) .menu-panel { display: block; }
   `;

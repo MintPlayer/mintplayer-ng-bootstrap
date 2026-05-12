@@ -124,6 +124,7 @@ export class MpRibbonGroup extends LitElement {
       padding: 4px 6px;
       z-index: 1050;
       min-width: 200px;
+      max-width: calc(100vw - 16px);
     }
   `;
 

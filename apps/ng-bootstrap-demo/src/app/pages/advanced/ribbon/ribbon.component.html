@@ -33,6 +33,14 @@
         }
       </bs-select>
     </label>
+    <label class="control-field">
+      Touch mode
+      <bs-select [(ngModel)]="touchMode">
+        @for (t of touchModes; track t) {
+          <option [value]="t">{{ t }}</option>
+        }
+      </bs-select>
+    </label>
   </div>
 
   <bs-ribbon
@@ -40,6 +48,7 @@
     [layout]="layout()"
     [version]="version()"
     [colorScheme]="colorScheme()"
+    [touchMode]="touchMode()"
     [appAccent]="appAccent()"
     (tabChange)="onTabChange($event)"
   >

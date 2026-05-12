@@ -33,6 +33,12 @@ export class MpRibbonMenuItem extends LitElement {
       opacity: 0.5;
       cursor: not-allowed;
     }
+    @media (pointer: coarse) {
+      .menu-item {
+        min-height: 44px;
+        padding: 10px 14px;
+      }
+    }
     .menu-item-check {
       width: 14px;
       flex: 0 0 auto;
