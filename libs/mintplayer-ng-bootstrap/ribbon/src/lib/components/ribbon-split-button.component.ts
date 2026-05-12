@@ -25,6 +25,7 @@ import {
   styles: [`:host { display: inline-flex; }`],
   host: {
     '[attr.size]': 'size()',
+    '[attr.data-size]': 'size()',
   },
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,

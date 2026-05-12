@@ -1,12 +1,13 @@
 import { css, html, LitElement, type TemplateResult } from 'lit';
 import { property } from 'lit/decorators.js';
+import { RIBBON_ICON_SLOT_STYLES } from './mp-ribbon-item-base';
 
 /**
  * mp-ribbon-gallery-item — One cell inside a `mp-ribbon-gallery`. Renders an
  * icon or label as a clickable tile and emits `gallery-select` on activation.
  */
 export class MpRibbonGalleryItem extends LitElement {
-  static override styles = css`
+  static override styles = [RIBBON_ICON_SLOT_STYLES, css`
     :host { display: inline-flex; }
     .gallery-item {
       display: inline-flex;
@@ -38,7 +39,7 @@ export class MpRibbonGalleryItem extends LitElement {
       opacity: 0.5;
       cursor: not-allowed;
     }
-  `;
+  `];
 
   @property({ type: String, attribute: 'item-id' })
   itemId: string = '';
@@ -66,9 +67,11 @@ export class MpRibbonGalleryItem extends LitElement {
         title="${this.label}"
         @click="${this.onClick}"
       >
-        ${this.icon
-          ? html`<span>${this.icon}</span>`
-          : html`<span>${this.label}</span>`}
+        <slot name="icon">
+          ${this.icon
+            ? html`<span>${this.icon}</span>`
+            : html`<span>${this.label}</span>`}
+        </slot>
       </button>
     `;
   }

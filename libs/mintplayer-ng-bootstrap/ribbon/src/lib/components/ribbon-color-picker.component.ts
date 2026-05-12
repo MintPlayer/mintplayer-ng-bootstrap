@@ -25,6 +25,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
   styles: [`:host { display: inline-flex; }`],
   host: {
     '[attr.size]': 'size()',
+    '[attr.data-size]': 'size()',
   },
   providers: [
     {

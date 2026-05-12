@@ -1,13 +1,13 @@
 import { css, html, type TemplateResult } from 'lit';
 import { property } from 'lit/decorators.js';
-import { MpRibbonItemBase } from './mp-ribbon-item-base';
+import { MpRibbonItemBase, RIBBON_ICON_SLOT_STYLES } from './mp-ribbon-item-base';
 
 /**
  * mp-ribbon-button — Simple button item.
  * Renders a button with label and optional icon.
  */
 export class MpRibbonButton extends MpRibbonItemBase {
-  static override styles = css`
+  static override styles = [RIBBON_ICON_SLOT_STYLES, css`
     :host { display: inline-flex; }
     :host([size="small"]) { display: flex; width: 100%; }
     .ribbon-button {
@@ -55,7 +55,7 @@ export class MpRibbonButton extends MpRibbonItemBase {
     }
     .ribbon-button-icon { line-height: 1; font-size: 16px; }
     .ribbon-button-label { white-space: nowrap; }
-  `;
+  `];
 
   override render(): TemplateResult {
     return html`
@@ -64,7 +64,9 @@ export class MpRibbonButton extends MpRibbonItemBase {
         ?disabled="${this.disabled}"
         title="${this.tooltip || this.label}"
       >
-        ${this.icon ? html`<span class="ribbon-button-icon">${this.icon}</span>` : ''}
+        <span class="ribbon-button-icon">
+          <slot name="icon">${this.icon ? this.icon : ''}</slot>
+        </span>
         ${this.label ? html`<span class="ribbon-button-label">${this.label}</span>` : ''}
       </button>
     `;

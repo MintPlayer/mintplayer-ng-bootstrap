@@ -16,7 +16,9 @@ import {
       [attr.selected]="selected() ? '' : null"
       [attr.disabled]="disabled() ? '' : null"
       (gallery-select)="onSelect($event)"
-    ></mp-ribbon-gallery-item>
+    >
+      <ng-content></ng-content>
+    </mp-ribbon-gallery-item>
   `,
   styles: [`:host { display: inline-flex; }`],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],

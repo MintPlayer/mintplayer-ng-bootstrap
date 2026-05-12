@@ -91,9 +91,9 @@ export class MpRibbonMenuItem extends LitElement {
         ${this.kind !== 'action'
           ? html`<span class="menu-item-check">${this.checked ? '✓' : ''}</span>`
           : nothing}
-        ${this.icon
-          ? html`<span class="menu-item-icon">${this.icon}</span>`
-          : nothing}
+        <span class="menu-item-icon">
+          <slot name="icon">${this.icon ? this.icon : ''}</slot>
+        </span>
         <span class="menu-item-label">${this.label}</span>
       </button>
     `;

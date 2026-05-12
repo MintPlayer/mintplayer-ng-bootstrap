@@ -71,8 +71,19 @@
     [appAccent]="appAccent()"
     (tabChange)="onTabChange($event)"
   >
+    <!-- ============ Tell Me slot (FR-24) ============ -->
+    <input
+      slot="tell-me"
+      type="search"
+      class="demo-tell-me"
+      placeholder="🔍 Tell me what you want to do…"
+      aria-label="Tell me what you want to do"
+    />
+
     <!-- ============ Home tab ============ -->
-    <bs-ribbon-tab tabId="home" label="Home">
+    <bs-ribbon-tab tabId="home" label="Home"
+      [idealSizes]="homeIdealSizes"
+      [reduceOrder]="homeReduceOrder">
     <bs-ribbon-group groupId="clipboard" label="Clipboard" dialogLauncher="Clipboard Dialog">
       <bs-ribbon-split-button
         [itemId]="pasteMode().id"
@@ -149,7 +160,7 @@
       <bs-ribbon-button itemId="page-break" label="Page Break" icon="📑" size="medium" tooltip="Insert page break (Ctrl+Enter)" (itemClick)="onItemClick($event)"></bs-ribbon-button>
     </bs-ribbon-group>
 
-    <bs-ribbon-group groupId="tables" label="Tables" icon="▦">
+    <bs-ribbon-group groupId="tables" label="Tables" icon="▦" [priority]="10">
       <bs-ribbon-button itemId="table" label="Table" icon="▦" size="large" (itemClick)="onItemClick($event)"></bs-ribbon-button>
     </bs-ribbon-group>
 
@@ -348,6 +359,18 @@
       </article>
 
       <article class="keymap-card">
+        <h4>KeyTips (Office shortcut overlay)</h4>
+        <dl>
+          <dt><kbd>Alt</kbd></dt>
+          <dd>Show or hide the KeyTips overlay. Auto-derived from labels; explicit override via <code>data-key-tip="X"</code></dd>
+          <dt><kbd>A</kbd>–<kbd>Z</kbd></dt>
+          <dd>While the overlay is up, press a tip letter to activate that tab. Once a tab opens, press another letter to fire an item</dd>
+          <dt><kbd>Esc</kbd></dt>
+          <dd>Drop back one level: items → tabs → overlay closed</dd>
+        </dl>
+      </article>
+
+      <article class="keymap-card">
         <h4>Quick Access Toolbar</h4>
         <dl>
           <dt><kbd>←</kbd> / <kbd>→</kbd></dt>
@@ -375,20 +398,7 @@
 
     <article class="snippet-card">
       <h4>1. Minimal ribbon — one tab, one group, three buttons</h4>
-<pre><code>&lt;bs-ribbon [(minimized)]="minimized"&gt;
-  &lt;bs-ribbon-tab tabId="home" label="Home"&gt;
-    &lt;bs-ribbon-group groupId="clipboard" label="Clipboard"
-                     dialogLauncher="Clipboard Dialog"&gt;
-      &lt;bs-ribbon-button itemId="paste" label="Paste" icon="📋"
-                        size="large" tooltip="Paste (Ctrl+V)"
-                        (itemClick)="onPaste($event)"&gt;&lt;/bs-ribbon-button&gt;
-      &lt;bs-ribbon-button itemId="cut"  label="Cut"  icon="✂️" size="small"
-                        (itemClick)="onCut($event)"&gt;&lt;/bs-ribbon-button&gt;
-      &lt;bs-ribbon-button itemId="copy" label="Copy" icon="📄" size="small"
-                        (itemClick)="onCopy($event)"&gt;&lt;/bs-ribbon-button&gt;
-    &lt;/bs-ribbon-group&gt;
-  &lt;/bs-ribbon-tab&gt;
-&lt;/bs-ribbon&gt;</code></pre>
+      <bs-code-snippet [codeToCopy]="snippetMinimal" [language]="'html'"></bs-code-snippet>
       <p class="snippet-note">
         <code>[(minimized)]</code> two-way binds the minimize state — Ctrl+F1
         and double-clicking a tab will update your signal.
@@ -397,20 +407,7 @@
 
     <article class="snippet-card">
       <h4>2. Split-button with a "last-used" menu</h4>
-<pre><code>&lt;bs-ribbon-split-button
-  [itemId]="pasteMode().id"
-  [label]="pasteMode().label"
-  [icon]="pasteMode().icon"
-  size="large"
-  (mainAction)="onPaste($event)"&gt;
-  &lt;bs-ribbon-menu-item itemId="paste" label="Paste" icon="📋"
-                       (menuSelect)="onPasteModeSelect($event)"&gt;&lt;/bs-ribbon-menu-item&gt;
-  &lt;bs-ribbon-menu-item itemId="paste-values" label="Paste Values" icon="123"
-                       (menuSelect)="onPasteModeSelect($event)"&gt;&lt;/bs-ribbon-menu-item&gt;
-  &lt;bs-ribbon-menu-separator&gt;&lt;/bs-ribbon-menu-separator&gt;
-  &lt;bs-ribbon-menu-item itemId="paste-special" label="Paste Special…"
-                       (menuSelect)="onPasteSpecial($event)"&gt;&lt;/bs-ribbon-menu-item&gt;
-&lt;/bs-ribbon-split-button&gt;</code></pre>
+      <bs-code-snippet [codeToCopy]="snippetSplitButton" [language]="'html'"></bs-code-snippet>
       <p class="snippet-note">
         The split-button never mutates its own label / icon. Implement the
         "last-used" pattern in your component by updating
@@ -420,15 +417,7 @@
 
     <article class="snippet-card">
       <h4>3. Value-bearing items with <code>[(ngModel)]</code></h4>
-<pre><code>&lt;bs-ribbon-toggle-button itemId="bold" label="Bold" icon="B" size="small"
-                         [(ngModel)]="boldOn"&gt;&lt;/bs-ribbon-toggle-button&gt;
-
-&lt;bs-ribbon-combo-box itemId="font-family" label="Font Family" size="medium"
-                     [options]="fontFamilyOptions"
-                     [(ngModel)]="fontFamily"&gt;&lt;/bs-ribbon-combo-box&gt;
-
-&lt;bs-ribbon-color-picker itemId="font-color" label="Font Color" size="small"
-                        [(ngModel)]="fontColor"&gt;&lt;/bs-ribbon-color-picker&gt;</code></pre>
+      <bs-code-snippet [codeToCopy]="snippetValueItems" [language]="'html'"></bs-code-snippet>
       <p class="snippet-note">
         Every value-bearing wrapper (toggle-button, check-box, combo-box,
         color-picker, group-button) implements <code>ControlValueAccessor</code>
@@ -439,16 +428,7 @@
 
     <article class="snippet-card">
       <h4>4. Contextual tab set</h4>
-<pre><code>&lt;bs-ribbon-contextual-tab-set
-  label="Picture Tools"
-  color="#F2C744"
-  [hidden]="!pictureSelected()"&gt;
-  &lt;bs-ribbon-tab tabId="picture-format" label="Format"&gt;
-    &lt;bs-ribbon-group groupId="picture-styles" label="Picture Styles"&gt;
-      …
-    &lt;/bs-ribbon-group&gt;
-  &lt;/bs-ribbon-tab&gt;
-&lt;/bs-ribbon-contextual-tab-set&gt;</code></pre>
+      <bs-code-snippet [codeToCopy]="snippetContextual" [language]="'html'"></bs-code-snippet>
       <p class="snippet-note">
         Toggling <code>[hidden]</code> on the set fires
         <code>contextual-visibility-change</code>; the ribbon re-processes its
@@ -459,16 +439,7 @@
 
     <article class="snippet-card">
       <h4>5. Quick Access Toolbar (sibling, not nested)</h4>
-<pre><code>&lt;bs-quick-access-toolbar label="Quick Access Toolbar"
-                         [touchMode]="touchMode()"
-                         [appAccent]="appAccent()"&gt;
-  &lt;bs-ribbon-button itemId="save" label="Save" icon="💾" size="small"
-                    (itemClick)="onSave($event)"&gt;&lt;/bs-ribbon-button&gt;
-  &lt;bs-ribbon-button itemId="undo" label="Undo" icon="↶" size="small"
-                    (itemClick)="onUndo($event)"&gt;&lt;/bs-ribbon-button&gt;
-&lt;/bs-quick-access-toolbar&gt;
-
-&lt;bs-ribbon …&gt; … &lt;/bs-ribbon&gt;</code></pre>
+      <bs-code-snippet [codeToCopy]="snippetQat" [language]="'html'"></bs-code-snippet>
       <p class="snippet-note">
         The QAT is deliberately rendered as a sibling — two top-level
         <code>role="toolbar"</code> regions keep the a11y tree flat.
@@ -478,13 +449,7 @@
 
     <article class="snippet-card">
       <h4>6. Per-app appearance + dark mode</h4>
-<pre><code>&lt;bs-ribbon
-  version="office-2016"
-  appAccent="#217346"
-  colorScheme="auto"
-  touchMode="auto"&gt;
-  …
-&lt;/bs-ribbon&gt;</code></pre>
+      <bs-code-snippet [codeToCopy]="snippetTheming" [language]="'html'"></bs-code-snippet>
       <p class="snippet-note">
         <code>version</code> picks one of <code>office-2007</code> /
         <code>2010</code> / <code>2013</code> / <code>2016</code>.
@@ -493,6 +458,21 @@
         <code>colorScheme="auto"</code> follows
         <code>prefers-color-scheme</code> and ancestor
         <code>data-bs-theme="dark"</code>.
+      </p>
+    </article>
+
+    <article class="snippet-card">
+      <h4>7. Slot-based icons (FR-16)</h4>
+      <bs-code-snippet [codeToCopy]="snippetSlotIcons" [language]="'html'"></bs-code-snippet>
+      <p class="snippet-note">
+        Every item exposes a <code>&lt;slot name="icon"&gt;</code> alongside
+        the existing <code>icon</code> string attribute. The host's
+        <code>size</code> attribute auto-sizes slotted icons via
+        <code>::slotted</code> rules; consumers wanting an explicit override
+        apply <code>.ribbon-icon-large</code> / <code>-medium</code> /
+        <code>-small</code> directly on the projected element. The
+        <code>icon=""</code> attribute remains supported as the fallback —
+        consumers can mix-and-match.
       </p>
     </article>
   </section>

@@ -1,6 +1,6 @@
 import { css, html, type TemplateResult } from 'lit';
 import { query } from 'lit/decorators.js';
-import { MpRibbonItemBase } from './mp-ribbon-item-base';
+import { MpRibbonItemBase, RIBBON_ICON_SLOT_STYLES } from './mp-ribbon-item-base';
 import { OverlayController } from '../overlay-controller';
 
 /**
@@ -8,7 +8,7 @@ import { OverlayController } from '../overlay-controller';
  * overlay built from `<slot name="menu">` children.
  */
 export class MpRibbonDropdownButton extends MpRibbonItemBase {
-  static override styles = css`
+  static override styles = [RIBBON_ICON_SLOT_STYLES, css`
     :host { display: inline-flex; position: relative; }
     :host([size="small"]) { display: flex; width: 100%; }
     .ribbon-dropdown-button {
@@ -78,7 +78,7 @@ export class MpRibbonDropdownButton extends MpRibbonItemBase {
       max-width: min(320px, calc(100vw - 16px));
     }
     :host([data-menu-open]) .menu-panel { display: block; }
-  `;
+  `];
 
   @query('.ribbon-dropdown-button')
   private triggerEl!: HTMLElement;
@@ -120,9 +120,9 @@ export class MpRibbonDropdownButton extends MpRibbonItemBase {
         @click="${this.onTriggerClick}"
         @keydown="${this.onTriggerKeyDown}"
       >
-        ${this.icon
-          ? html`<span class="ribbon-button-icon">${this.icon}</span>`
-          : ''}
+        <span class="ribbon-button-icon">
+          <slot name="icon">${this.icon ? this.icon : ''}</slot>
+        </span>
         <span class="ribbon-button-label">
           ${this.label ? html`<span>${this.label}</span>` : ''}
           <span class="ribbon-dropdown-arrow">▼</span>

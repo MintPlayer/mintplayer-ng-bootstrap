@@ -23,6 +23,7 @@ import { type RibbonTabChangeEvent } from '../types/ribbon.types';
       [attr.version]="version()"
       [attr.color-scheme]="colorScheme()"
       [attr.touch-mode]="touchMode()"
+      [attr.key-tips]="keyTips()"
       [style.--bs-ribbon-app-accent]="appAccent()"
       (tab-change)="onTabChange($event)"
       (minimize-toggle)="onMinimizeToggle($event)"
@@ -47,6 +48,8 @@ export class BsRibbonComponent {
   readonly colorScheme = input<'light' | 'dark' | 'auto'>('auto');
   readonly touchMode = input<'on' | 'off' | 'auto'>('auto');
   readonly appAccent = input<string | null>(null);
+  /** Enable / disable Alt-key KeyTips overlay (FR-12). Default `on`. */
+  readonly keyTips = input<'on' | 'off'>('on');
 
   readonly tabChange = output<RibbonTabChangeEvent>();
 

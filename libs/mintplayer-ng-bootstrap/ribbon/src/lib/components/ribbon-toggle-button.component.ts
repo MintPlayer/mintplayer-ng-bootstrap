@@ -21,11 +21,14 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
       [attr.tooltip]="tooltip()"
       [attr.pressed]="pressed() ? '' : null"
       (toggle)="onToggle($event)"
-    ></mp-ribbon-toggle-button>
+    >
+      <ng-content></ng-content>
+    </mp-ribbon-toggle-button>
   `,
   styles: [`:host { display: inline-flex; }`],
   host: {
     '[attr.size]': 'size()',
+    '[attr.data-size]': 'size()',
   },
   providers: [
     {

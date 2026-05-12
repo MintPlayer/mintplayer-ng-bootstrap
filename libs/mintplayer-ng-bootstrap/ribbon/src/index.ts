@@ -1,5 +1,9 @@
 // Types
 export type { RibbonTabChangeEvent } from './lib/types/ribbon.types';
+export type {
+  RibbonGroupSize,
+  RibbonReduceStep,
+} from './lib/web-components/mp-ribbon-tab.element';
 
 // Angular components (wrappers)
 export { BsRibbonComponent } from './lib/components/ribbon.component';

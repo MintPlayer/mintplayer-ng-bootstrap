@@ -28,10 +28,14 @@ import {
   type RibbonTabChangeEvent,
   type RibbonComboBoxOption,
   type RibbonGroupButtonOption,
+  type RibbonGroupSize,
+  type RibbonReduceStep,
 } from '@mintplayer/ng-bootstrap/ribbon';
 import { BsSelectComponent } from '@mintplayer/ng-bootstrap/select';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
+import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { Color } from '@mintplayer/ng-bootstrap';
+import { dedent } from 'ts-dedent';
 
 type RibbonVersion = 'office-2007' | 'office-2010' | 'office-2013' | 'office-2016';
 type ColorScheme = 'light' | 'dark' | 'auto';
@@ -69,6 +73,7 @@ interface AppAccentOption {
     BsRibbonGalleryItemComponent,
     BsSelectComponent,
     BsButtonTypeDirective,
+    BsCodeSnippetComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -121,6 +126,122 @@ export class RibbonComponent {
   readonly selectedShape = signal<string>('');
 
   readonly pictureToolsVisible = signal<boolean>(false);
+
+  /**
+   * FR-6 demo — explicit reduceOrder for the Home tab. Walked top-to-bottom
+   * on shrink. The Editing group is least essential so it collapses first;
+   * Styles drops one size then collapses; the bigger Font / Paragraph groups
+   * step down before going to popup; Clipboard (Paste split-button + cut /
+   * copy) survives the longest.
+   */
+  readonly homeReduceOrder: readonly RibbonReduceStep[] = [
+    ['editing', 'popup'],
+    ['styles', 'medium'],
+    ['styles', 'popup'],
+    ['paragraph', 'medium'],
+    ['font', 'medium'],
+    ['paragraph', 'popup'],
+    ['font', 'popup'],
+  ];
+
+  readonly homeIdealSizes: Record<string, RibbonGroupSize> = {
+    clipboard: 'large',
+    font: 'large',
+    paragraph: 'large',
+    styles: 'large',
+    editing: 'large',
+  };
+
+  readonly snippetMinimal = dedent`
+    <bs-ribbon [(minimized)]="minimized">
+      <bs-ribbon-tab tabId="home" label="Home">
+        <bs-ribbon-group groupId="clipboard" label="Clipboard"
+                         dialogLauncher="Clipboard Dialog">
+          <bs-ribbon-button itemId="paste" label="Paste" icon="📋"
+                            size="large" tooltip="Paste (Ctrl+V)"
+                            (itemClick)="onPaste($event)"></bs-ribbon-button>
+          <bs-ribbon-button itemId="cut"  label="Cut"  icon="✂️" size="small"
+                            (itemClick)="onCut($event)"></bs-ribbon-button>
+          <bs-ribbon-button itemId="copy" label="Copy" icon="📄" size="small"
+                            (itemClick)="onCopy($event)"></bs-ribbon-button>
+        </bs-ribbon-group>
+      </bs-ribbon-tab>
+    </bs-ribbon>`;
+
+  readonly snippetSplitButton = dedent`
+    <bs-ribbon-split-button
+      [itemId]="pasteMode().id"
+      [label]="pasteMode().label"
+      [icon]="pasteMode().icon"
+      size="large"
+      (mainAction)="onPaste($event)">
+      <bs-ribbon-menu-item itemId="paste" label="Paste" icon="📋"
+                           (menuSelect)="onPasteModeSelect($event)"></bs-ribbon-menu-item>
+      <bs-ribbon-menu-item itemId="paste-values" label="Paste Values" icon="123"
+                           (menuSelect)="onPasteModeSelect($event)"></bs-ribbon-menu-item>
+      <bs-ribbon-menu-separator></bs-ribbon-menu-separator>
+      <bs-ribbon-menu-item itemId="paste-special" label="Paste Special…"
+                           (menuSelect)="onPasteSpecial($event)"></bs-ribbon-menu-item>
+    </bs-ribbon-split-button>`;
+
+  readonly snippetValueItems = dedent`
+    <bs-ribbon-toggle-button itemId="bold" label="Bold" icon="B" size="small"
+                             [(ngModel)]="boldOn"></bs-ribbon-toggle-button>
+
+    <bs-ribbon-combo-box itemId="font-family" label="Font Family" size="medium"
+                         [options]="fontFamilyOptions"
+                         [(ngModel)]="fontFamily"></bs-ribbon-combo-box>
+
+    <bs-ribbon-color-picker itemId="font-color" label="Font Color" size="small"
+                            [(ngModel)]="fontColor"></bs-ribbon-color-picker>`;
+
+  readonly snippetContextual = dedent`
+    <bs-ribbon-contextual-tab-set
+      label="Picture Tools"
+      color="#F2C744"
+      [hidden]="!pictureSelected()">
+      <bs-ribbon-tab tabId="picture-format" label="Format">
+        <bs-ribbon-group groupId="picture-styles" label="Picture Styles">
+          …
+        </bs-ribbon-group>
+      </bs-ribbon-tab>
+    </bs-ribbon-contextual-tab-set>`;
+
+  readonly snippetQat = dedent`
+    <bs-quick-access-toolbar label="Quick Access Toolbar"
+                             [touchMode]="touchMode()"
+                             [appAccent]="appAccent()">
+      <bs-ribbon-button itemId="save" label="Save" icon="💾" size="small"
+                        (itemClick)="onSave($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="undo" label="Undo" icon="↶" size="small"
+                        (itemClick)="onUndo($event)"></bs-ribbon-button>
+    </bs-quick-access-toolbar>
+
+    <bs-ribbon …> … </bs-ribbon>`;
+
+  readonly snippetTheming = dedent`
+    <bs-ribbon
+      version="office-2016"
+      appAccent="#217346"
+      colorScheme="auto"
+      touchMode="auto">
+      …
+    </bs-ribbon>`;
+
+  readonly snippetSlotIcons = dedent`
+    <!-- Project any element with slot="icon" — SVGs, <i> from an icon font,
+         images, whatever. The host auto-sizes it from the item's size,
+         or use one of the .ribbon-icon-large / -medium / -small utility
+         classes for an explicit override. -->
+    <bs-ribbon-button itemId="save" label="Save" size="large"
+                      (itemClick)="onSave($event)">
+      <i slot="icon" class="bi bi-save"></i>
+    </bs-ribbon-button>
+
+    <bs-ribbon-button itemId="copy" label="Copy" size="small"
+                      (itemClick)="onCopy($event)">
+      <svg slot="icon" class="ribbon-icon-small" viewBox="0 0 16 16">…</svg>
+    </bs-ribbon-button>`;
 
   togglePictureTools(): void {
     this.pictureToolsVisible.update((v) => !v);

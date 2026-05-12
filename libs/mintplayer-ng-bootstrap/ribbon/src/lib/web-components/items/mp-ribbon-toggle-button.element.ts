@@ -1,13 +1,13 @@
 import { css, html, type TemplateResult } from 'lit';
 import { property } from 'lit/decorators.js';
-import { MpRibbonItemBase } from './mp-ribbon-item-base';
+import { MpRibbonItemBase, RIBBON_ICON_SLOT_STYLES } from './mp-ribbon-item-base';
 
 /**
  * mp-ribbon-toggle-button — Button that maintains pressed/unpressed state.
  * `aria-pressed` mirrors the `pressed` property.
  */
 export class MpRibbonToggleButton extends MpRibbonItemBase {
-  static override styles = css`
+  static override styles = [RIBBON_ICON_SLOT_STYLES, css`
     :host { display: inline-flex; }
     :host([size="small"]) { display: flex; width: 100%; }
     .ribbon-toggle-button {
@@ -57,7 +57,7 @@ export class MpRibbonToggleButton extends MpRibbonItemBase {
     }
     .ribbon-button-icon { line-height: 1; font-size: 16px; }
     .ribbon-button-label { white-space: nowrap; }
-  `;
+  `];
 
   @property({ type: Boolean, reflect: true })
   pressed: boolean = false;
@@ -71,9 +71,9 @@ export class MpRibbonToggleButton extends MpRibbonItemBase {
         title="${this.tooltip || this.label}"
         @click="${this.onToggleClick}"
       >
-        ${this.icon
-          ? html`<span class="ribbon-button-icon">${this.icon}</span>`
-          : ''}
+        <span class="ribbon-button-icon">
+          <slot name="icon">${this.icon ? this.icon : ''}</slot>
+        </span>
         ${this.label
           ? html`<span class="ribbon-button-label">${this.label}</span>`
           : ''}

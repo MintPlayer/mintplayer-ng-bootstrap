@@ -1,6 +1,6 @@
 import { css, html, type TemplateResult } from 'lit';
 import { query } from 'lit/decorators.js';
-import { MpRibbonItemBase } from './mp-ribbon-item-base';
+import { MpRibbonItemBase, RIBBON_ICON_SLOT_STYLES } from './mp-ribbon-item-base';
 import { OverlayController } from '../overlay-controller';
 
 /**
@@ -12,7 +12,7 @@ import { OverlayController } from '../overlay-controller';
  * wrapped in `role="group"` — there is no standard `role="splitbutton"`.
  */
 export class MpRibbonSplitButton extends MpRibbonItemBase {
-  static override styles = css`
+  static override styles = [RIBBON_ICON_SLOT_STYLES, css`
     :host { display: inline-flex; position: relative; }
     .ribbon-split-button {
       display: inline-flex;
@@ -106,7 +106,7 @@ export class MpRibbonSplitButton extends MpRibbonItemBase {
       max-width: min(320px, calc(100vw - 16px));
     }
     :host([data-menu-open]) .menu-panel { display: block; }
-  `;
+  `];
 
   @query('.ribbon-split-button')
   private groupEl!: HTMLElement;
@@ -137,9 +137,9 @@ export class MpRibbonSplitButton extends MpRibbonItemBase {
           title="${this.tooltip || this.label}"
           @click="${this.onMainClick}"
         >
-          ${this.icon
-            ? html`<span class="ribbon-button-icon">${this.icon}</span>`
-            : ''}
+          <span class="ribbon-button-icon">
+            <slot name="icon">${this.icon ? this.icon : ''}</slot>
+          </span>
           ${this.label
             ? html`<span class="ribbon-button-label">${this.label}</span>`
             : ''}

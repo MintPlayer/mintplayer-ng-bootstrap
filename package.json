@@ -15,7 +15,8 @@
     "analyze:sme": "source-map-explorer dist/apps/ng-bootstrap-demo/browser/browser/*",
     "test": "nx run-many --target=test --all --parallel",
     "test:watch": "vitest",
-    "dev:ssr": "nx serve ng-bootstrap-demo"
+    "dev:ssr": "nx serve ng-bootstrap-demo",
+    "check:ribbon-size": "node tools/scripts/check-ribbon-bundle-size.mjs"
   },
   "private": true,
   "dependencies": {
@@ -51,6 +52,7 @@
     "@angular/cli": "~21.2.9",
     "@angular/compiler-cli": "~21.2.9",
     "@angular/language-service": "~21.2.9",
+    "@axe-core/playwright": "^4.11.3",
     "@nx/eslint": "22.7.1",
     "@nx/eslint-plugin": "22.7.1",
     "@nx/js": "22.7.1",

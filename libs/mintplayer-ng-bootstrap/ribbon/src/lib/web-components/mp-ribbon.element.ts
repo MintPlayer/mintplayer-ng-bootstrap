@@ -1,6 +1,9 @@
 import { css, html, LitElement, nothing, type TemplateResult } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { LiveAnnouncerController } from '@mintplayer/ng-bootstrap/web-components/a11y';
+import type { RibbonGroupSize, RibbonReduceStep } from './mp-ribbon-tab.element';
+
+type RibbonItemSize = 'large' | 'medium' | 'small';
 
 interface TabEntry {
   tabId: string;
@@ -8,6 +11,12 @@ interface TabEntry {
   element: HTMLElement;
   contextualColor?: string;
   contextualSetLabel?: string;
+}
+
+interface KeyTipBadge {
+  tip: string;
+  target: HTMLElement;
+  rect: { left: number; top: number };
 }
 
 interface ContextualSetEntry {
@@ -378,18 +387,39 @@ export class MpRibbon extends LitElement {
       background: var(--bs-ribbon-container-bg);
       font-family: var(--bs-ribbon-font-family);
     }
-    .ribbon-tablist {
+    .ribbon-tabstrip {
+      /* Wraps the tablist + tell-me so the search box can sit at the
+         trailing edge VISUALLY without violating ARIA's role=tablist
+         child constraints (axe-core's aria-required-children rule —
+         tablist's allowed children are role=tab only). */
       display: flex;
       align-items: flex-end;
       border-bottom: 1px solid;
       border-bottom-color: var(--bs-ribbon-tabstrip-border);
       background: var(--bs-ribbon-tabstrip-bg);
+    }
+    .ribbon-tablist {
+      display: flex;
+      align-items: flex-end;
+      flex: 1 1 auto;
+      min-width: 0;
       overflow-x: auto;
       scrollbar-width: thin;
     }
     .ribbon-tab {
       flex: 0 0 auto;
     }
+    /* "Tell Me" slot (FR-24): consumer-projected search/command-palette
+       area pinned to the trailing edge of the tab strip. Now a sibling
+       of role="tablist", not a child, so the ARIA tree stays clean. */
+    .ribbon-tell-me {
+      flex: 0 0 auto;
+      padding-inline: 6px;
+      align-self: center;
+      display: flex;
+      align-items: center;
+    }
+    .ribbon-tell-me:empty { display: none; }
     .ribbon-tab {
       padding: var(--bs-ribbon-tab-padding);
       background: transparent;
@@ -401,6 +431,25 @@ export class MpRibbon extends LitElement {
       font-size: 14px;
       color: var(--bs-ribbon-tab-idle-color);
       transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    /* FR-18: honour prefers-reduced-motion. Disable hover/active colour
+       transitions on the tab strip + any future animations inside the
+       ribbon's shadow root. Slotted item elements (mp-ribbon-button etc.)
+       each carry their own reduced-motion block where they introduce
+       transitions; today only the tab strip has any. */
+    @media (prefers-reduced-motion: reduce) {
+      .ribbon-tab,
+      .ribbon-tab:hover,
+      .ribbon-tab.active {
+        transition: none;
+      }
+      * {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+      }
     }
     .ribbon-tab:hover { background: var(--bs-ribbon-tab-hover-bg); }
     .ribbon-tab.active {
@@ -447,6 +496,38 @@ export class MpRibbon extends LitElement {
        directly above them is the visual indicator. Keeping their layout
        identical to plain tabs avoids the colour from the band appearing
        to bleed 3px down into the tab. */
+
+    /* KeyTips overlay (FR-12). Position: fixed badges anchored to each
+       tab / item via getBoundingClientRect; one shadow-DOM layer renders
+       all badges. Office-style yellow tile with a thin border. */
+    .keytip-badge {
+      position: fixed;
+      z-index: 1100;
+      min-width: 18px;
+      padding: 1px 5px;
+      background: #FFFFFF;
+      border: 1px solid #919191;
+      color: #444;
+      font-size: 11px;
+      font-family: var(--bs-ribbon-font-family, "Segoe UI", sans-serif);
+      font-weight: 600;
+      line-height: 1.2;
+      text-align: center;
+      pointer-events: none;
+      box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.15);
+    }
+    :host([color-scheme="dark"]) .keytip-badge {
+      background: #2A2A2A;
+      border-color: #6E6E6E;
+      color: #F2F2F2;
+    }
+    @media (prefers-color-scheme: dark) {
+      :host([color-scheme="auto"]) .keytip-badge {
+        background: #2A2A2A;
+        border-color: #6E6E6E;
+        color: #F2F2F2;
+      }
+    }
   `;
 
   /** Currently active tab ID. */
@@ -467,8 +548,8 @@ export class MpRibbon extends LitElement {
   /** Cached reference to the default slot for re-processing on visibility changes. */
   private contentSlot: HTMLSlotElement | null = null;
 
-  /** Layout mode: 'classic' | 'simplified' */
-  @property({ type: String })
+  /** Layout mode: 'classic' | 'simplified' (FR-8 / FR-39). */
+  @property({ type: String, reflect: true })
   layout: 'classic' | 'simplified' = 'classic';
 
   /** True if ribbon is minimized (shows only tab strip) */
@@ -500,6 +581,26 @@ export class MpRibbon extends LitElement {
   @property({ type: String, attribute: 'touch-mode', reflect: true })
   touchMode: 'on' | 'off' | 'auto' = 'auto';
 
+  /**
+   * KeyTips on/off (FR-12). `on` (default) enables Alt-overlay shortcuts to
+   * tabs + items with two-level drill-down. `off` skips the keydown
+   * registration entirely — useful when KeyTips would conflict with a host
+   * app's own Alt menu, or as a screen-reader-aware disable path.
+   */
+  @property({ type: String, attribute: 'key-tips' })
+  keyTips: 'on' | 'off' = 'on';
+
+  /**
+   * KeyTips state machine: 'off' when overlay is hidden, 'tabs' showing
+   * tip badges next to each tab, 'items' showing tip badges next to each
+   * item in the active tab. Esc unwinds one level at a time.
+   */
+  @state()
+  private keyTipMode: 'off' | 'tabs' | 'items' = 'off';
+
+  @state()
+  private keyTipBadges: KeyTipBadge[] = [];
+
   private currentTabIndex = 0;
   private resizeObserver?: ResizeObserver;
   private reflowFrame: number = 0;
@@ -510,6 +611,19 @@ export class MpRibbon extends LitElement {
   private readonly previousCollapsedGroups = new Set<HTMLElement>();
   /** Last-seen hidden state per contextual-set label; lets us announce only transitions. */
   private readonly contextualSetHiddenState = new Map<string, boolean>();
+
+  /**
+   * FR-6: how many reduceOrder steps the active tab currently has applied.
+   * Keyed by the tab host so per-tab state survives switching.
+   */
+  private readonly appliedReduceSteps = new WeakMap<HTMLElement, number>();
+
+  /**
+   * FR-6: original (consumer-declared) `size` of every slotted item host,
+   * saved the first time the reflow downsizes the item. Restoring this is
+   * how the group "expands back to large" when room reappears.
+   */
+  private readonly originalItemSizes = new WeakMap<HTMLElement, RibbonItemSize>();
 
   private get tabElements(): HTMLElement[] {
     return Array.from(this.renderRoot.querySelectorAll<HTMLElement>('[role="tab"]'));
@@ -534,6 +648,11 @@ export class MpRibbon extends LitElement {
       this.onContextualVisibilityChange
     );
     this.addEventListener('keydown', this.onHostKeyDown);
+    // KeyTips listens at the document level — Alt anywhere on the page
+    // activates the overlay so the user can pop it up without clicking
+    // into the ribbon first. Matches Office's behaviour.
+    document.addEventListener('keydown', this.onKeyTipKeyDown);
+    document.addEventListener('keyup', this.onKeyTipKeyUp);
   }
 
   override disconnectedCallback() {
@@ -545,6 +664,203 @@ export class MpRibbon extends LitElement {
       this.onContextualVisibilityChange
     );
     this.removeEventListener('keydown', this.onHostKeyDown);
+    document.removeEventListener('keydown', this.onKeyTipKeyDown);
+    document.removeEventListener('keyup', this.onKeyTipKeyUp);
+  }
+
+  /** Tracked so we can swallow the browser's "focus menu bar on Alt-up". */
+  private altPressed = false;
+  /** Set when the user combines Alt with another key — suppresses menu-bar focus. */
+  private altUsedForCombo = false;
+
+  private onKeyTipKeyDown = (event: KeyboardEvent): void => {
+    if (this.keyTips !== 'on') return;
+    if (event.key === 'Alt' && !event.repeat) {
+      this.altPressed = true;
+      this.altUsedForCombo = false;
+      return;
+    }
+    if (event.altKey && event.key !== 'Alt') {
+      // Combos like Alt+Tab, Alt+F4 — don't activate KeyTips, but mark Alt
+      // as "consumed" so onKeyTipKeyUp doesn't toggle on release.
+      this.altUsedForCombo = true;
+      return;
+    }
+    if (this.keyTipMode === 'off') return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      if (this.keyTipMode === 'items') this.openKeyTipsTabsLevel();
+      else this.closeKeyTips();
+      return;
+    }
+    if (event.key.length === 1) {
+      const letter = event.key.toUpperCase();
+      const badge = this.keyTipBadges.find((b) => b.tip === letter);
+      if (!badge) return;
+      event.preventDefault();
+      if (this.keyTipMode === 'tabs') {
+        const tabId = badge.target.getAttribute('data-tab-id');
+        if (tabId) this.selectTab(tabId);
+        this.openKeyTipsItemsLevel();
+      } else {
+        this.activateKeyTipTarget(badge.target);
+        this.closeKeyTips();
+      }
+    }
+  };
+
+  private onKeyTipKeyUp = (event: KeyboardEvent): void => {
+    if (this.keyTips !== 'on') return;
+    if (event.key === 'Alt') {
+      this.altPressed = false;
+      if (this.altUsedForCombo) {
+        this.altUsedForCombo = false;
+        return;
+      }
+      // Plain Alt press → toggle KeyTips. preventDefault on keyup suppresses
+      // Chrome / Firefox menu-bar focus on the same Alt press.
+      event.preventDefault();
+      if (this.keyTipMode !== 'off') this.closeKeyTips();
+      else this.openKeyTipsTabsLevel();
+    }
+  };
+
+  private openKeyTipsTabsLevel(): void {
+    this.keyTipMode = 'tabs';
+    this.keyTipBadges = this.deriveTabBadges();
+  }
+
+  private openKeyTipsItemsLevel(): void {
+    this.keyTipMode = 'items';
+    // Wait for tab selection to render before measuring item rects.
+    requestAnimationFrame(() => {
+      this.keyTipBadges = this.deriveItemBadges();
+    });
+  }
+
+  private closeKeyTips(): void {
+    this.keyTipMode = 'off';
+    this.keyTipBadges = [];
+  }
+
+  /**
+   * Activate the underlying target. For tabs, switch tabs (handled in the
+   * caller). For items, dispatch the appropriate event — `mp-ribbon-button`
+   * etc. listen for `click` and fire their own `item-click`; for dropdown
+   * triggers, click opens the menu. delegatesFocus + `click()` covers both.
+   */
+  private activateKeyTipTarget(target: HTMLElement): void {
+    target.focus();
+    target.click();
+  }
+
+  /**
+   * Deterministic 1-letter tip allocator (FR-12). Tries (in order):
+   * 1. Explicit `data-key-tip` attribute on the element.
+   * 2. First letter of the label that isn't already taken.
+   * 3. Subsequent consonants in the label.
+   * 4. Other letters of the label.
+   * 5. Digits 1-9 then 0 (fallback when every letter is taken).
+   */
+  private allocateKeyTip(label: string, explicit: string | null, used: Set<string>): string {
+    if (explicit) {
+      const tip = explicit.toUpperCase().slice(0, 1);
+      used.add(tip);
+      return tip;
+    }
+    const normalized = (label ?? '').toUpperCase();
+    const isVowel = (ch: string) => 'AEIOU'.includes(ch);
+    // First-letter pass
+    if (normalized.length > 0) {
+      const first = normalized[0];
+      if (/[A-Z0-9]/.test(first) && !used.has(first)) {
+        used.add(first);
+        return first;
+      }
+    }
+    // Consonants pass
+    for (let i = 1; i < normalized.length; i++) {
+      const ch = normalized[i];
+      if (/[A-Z]/.test(ch) && !isVowel(ch) && !used.has(ch)) {
+        used.add(ch);
+        return ch;
+      }
+    }
+    // Any remaining letter
+    for (let i = 0; i < normalized.length; i++) {
+      const ch = normalized[i];
+      if (/[A-Z]/.test(ch) && !used.has(ch)) {
+        used.add(ch);
+        return ch;
+      }
+    }
+    // Digits
+    for (const ch of '123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0') {
+      if (!used.has(ch)) {
+        used.add(ch);
+        return ch;
+      }
+    }
+    return '?';
+  }
+
+  /** Compute key-tip badges anchored under each tab button in the strip. */
+  private deriveTabBadges(): KeyTipBadge[] {
+    const result: KeyTipBadge[] = [];
+    const used = new Set<string>();
+    const tabButtons = this.tabElements;
+    for (const button of tabButtons) {
+      const tabId = button.getAttribute('data-tab-id') ?? '';
+      const sourceTab = this.tabsList.find((t) => t.tabId === tabId)?.element;
+      // Explicit `data-key-tip` can live on the rendered button or on the
+      // light-DOM <mp-ribbon-tab> source — the source is the consumer-facing
+      // surface, so check both.
+      const explicit =
+        button.getAttribute('data-key-tip') ??
+        sourceTab?.getAttribute('data-key-tip') ??
+        null;
+      const label = button.textContent ?? '';
+      const tip = this.allocateKeyTip(label, explicit, used);
+      const r = button.getBoundingClientRect();
+      result.push({ tip, target: button, rect: { left: r.left + 4, top: r.bottom - 4 } });
+    }
+    return result;
+  }
+
+  /** Compute key-tip badges for every item inside the currently active tab. */
+  private deriveItemBadges(): KeyTipBadge[] {
+    const activeTab = this.tabsList.find((t) => t.tabId === this.activeTabId);
+    if (!activeTab) return [];
+    const groups = this.collectActiveGroups(activeTab.element);
+    const used = new Set<string>();
+    const result: KeyTipBadge[] = [];
+    for (const group of groups) {
+      // Collapsed groups: badge anchors to the popup trigger button instead.
+      if (group.getAttribute('data-resolved-size') === 'popup') {
+        const trigger = group.shadowRoot?.querySelector<HTMLElement>(
+          '.ribbon-popup-trigger'
+        );
+        if (trigger) {
+          const explicit = group.getAttribute('data-key-tip');
+          const label = group.getAttribute('label') ?? '';
+          const tip = this.allocateKeyTip(label, explicit, used);
+          const r = trigger.getBoundingClientRect();
+          result.push({ tip, target: trigger, rect: { left: r.left + 4, top: r.bottom - 6 } });
+        }
+        continue;
+      }
+      // Expanded group: badge each item inside.
+      const items = this.collectGroupItems(group);
+      for (const item of items) {
+        if (item.hasAttribute('disabled')) continue;
+        const explicit = item.getAttribute('data-key-tip');
+        const label = item.getAttribute('label') ?? '';
+        const tip = this.allocateKeyTip(label, explicit, used);
+        const r = item.getBoundingClientRect();
+        result.push({ tip, target: item, rect: { left: r.left + 2, top: r.bottom - 6 } });
+      }
+    }
+    return result;
   }
 
   /**
@@ -661,17 +977,73 @@ export class MpRibbon extends LitElement {
         this.minimized ? 'Ribbon minimized' : 'Ribbon restored'
       );
     }
+    if (changed.has('layout')) {
+      this.applyLayoutPropagation();
+      this.scheduleReflow();
+    }
+  }
+
+  /**
+   * FR-39: stamp `data-ribbon-layout` on every slotted descendant so each
+   * element's shadow-DOM CSS can switch to its Simplified rendering. Walking
+   * the light-DOM tree is necessary because CSS custom properties can be
+   * read in `var()` values but not as conditional selectors.
+   *
+   * Also force every item's `size` to `small` in Simplified, and restore
+   * the consumer-declared original size (saved in `originalItemSizes` by
+   * the FR-6 path) when switching back to Classic.
+   */
+  private applyLayoutPropagation(): void {
+    const layoutValue = this.layout === 'simplified' ? 'simplified' : 'classic';
+    const descendants = this.querySelectorAll<HTMLElement>(
+      'mp-ribbon-tab, mp-ribbon-group, ' +
+        'mp-ribbon-button, mp-ribbon-toggle-button, mp-ribbon-checkbox, ' +
+        'mp-ribbon-combobox, mp-ribbon-color-picker, mp-ribbon-group-button, ' +
+        'mp-ribbon-split-button, mp-ribbon-dropdown-button, mp-ribbon-gallery'
+    );
+    for (const el of Array.from(descendants)) {
+      el.setAttribute('data-ribbon-layout', layoutValue);
+    }
+    const items = this.querySelectorAll<HTMLElement>(
+      'mp-ribbon-button, mp-ribbon-toggle-button, mp-ribbon-checkbox, ' +
+        'mp-ribbon-combobox, mp-ribbon-color-picker, mp-ribbon-group-button, ' +
+        'mp-ribbon-split-button, mp-ribbon-dropdown-button, mp-ribbon-gallery'
+    );
+    if (this.layout === 'simplified') {
+      for (const item of Array.from(items)) {
+        if (!this.originalItemSizes.has(item)) {
+          const cur = (item.getAttribute('size') as RibbonItemSize) ?? 'medium';
+          this.originalItemSizes.set(item, cur);
+        }
+        if (item.getAttribute('size') !== 'small') {
+          item.setAttribute('size', 'small');
+        }
+      }
+    } else {
+      // Classic: restore each item to the size we saved before the flip.
+      for (const item of Array.from(items)) {
+        const original = this.originalItemSizes.get(item);
+        if (original && item.getAttribute('size') !== original) {
+          item.setAttribute('size', original);
+        }
+      }
+    }
   }
 
   override render(): TemplateResult {
     return html`
       <div class="ribbon-container">
-        <div
-          role="tablist"
-          class="ribbon-tablist"
-          @keydown="${this.onTabListKeydown}"
-        >
-          ${this.renderTabStripItems()}
+        <div class="ribbon-tabstrip">
+          <div
+            role="tablist"
+            class="ribbon-tablist"
+            @keydown="${this.onTabListKeydown}"
+          >
+            ${this.renderTabStripItems()}
+          </div>
+          <div class="ribbon-tell-me">
+            <slot name="tell-me"></slot>
+          </div>
         </div>
 
         ${!this.minimized
@@ -680,7 +1052,22 @@ export class MpRibbon extends LitElement {
             </div>`
           : html`<div hidden><slot @slotchange="${this.onSlotChange}"></slot></div>`}
       </div>
+      ${this.keyTipMode !== 'off' ? this.renderKeyTipOverlay() : nothing}
       ${this.liveAnnouncer.template()}
+    `;
+  }
+
+  private renderKeyTipOverlay(): TemplateResult {
+    return html`
+      ${this.keyTipBadges.map(
+        (b) => html`
+          <span
+            class="keytip-badge"
+            style="left: ${b.rect.left}px; top: ${b.rect.top}px;"
+            aria-hidden="true"
+          >${b.tip}</span>
+        `
+      )}
     `;
   }
 
@@ -831,6 +1218,8 @@ export class MpRibbon extends LitElement {
       this.activeTabId = newTabs[0].tabId;
     }
     this.applyActiveAttribute();
+    // Re-stamp data-ribbon-layout on newly-arrived Angular wrapper children.
+    this.applyLayoutPropagation();
     this.scheduleReflow();
   }
 
@@ -964,11 +1353,47 @@ export class MpRibbon extends LitElement {
     const groups = this.collectActiveGroups(panel);
     if (groups.length === 0) return;
 
+    // FR-39: in Simplified, the per-group popup-chunk reflow is suppressed —
+    // the shared end-of-tab chevron (on mp-ribbon-tab) owns overflow. Strip
+    // any leftover `data-resolved-size="popup"` from a prior Classic session.
+    if (this.layout === 'simplified') {
+      for (const group of groups) {
+        if (group.hasAttribute('data-resolved-size')) {
+          group.removeAttribute('data-resolved-size');
+        }
+      }
+      this.diffCollapsedGroupsAndAnnounce(groups);
+      return;
+    }
+
     // Snapshot each group's expanded width before any mutation.
     for (const group of groups) {
       if (group.getAttribute('data-resolved-size') !== 'popup') {
         this.naturalWidths.set(group, group.offsetWidth);
       }
+    }
+
+    // FR-6: if the active tab carries an author-declared reduceOrder, walk
+    // that strictly instead of the priority-based default. The author's list
+    // can step through intermediate medium/small sizes per group, not just
+    // straight to popup.
+    const tabReduceOrder = (panel as unknown as { reduceOrder?: readonly RibbonReduceStep[] })
+      .reduceOrder;
+    const tabIdealSizes = (panel as unknown as { idealSizes?: Record<string, RibbonGroupSize> })
+      .idealSizes;
+    if (tabReduceOrder && tabReduceOrder.length > 0) {
+      const mutated = this.applyAuthorReduceOrder(
+        panel,
+        groups,
+        tabReduceOrder,
+        tabIdealSizes ?? {}
+      );
+      if (mutated) {
+        this.scheduleReflow();
+        return;
+      }
+      this.diffCollapsedGroupsAndAnnounce(groups);
+      return;
     }
 
     const available = panel.clientWidth;
@@ -980,36 +1405,69 @@ export class MpRibbon extends LitElement {
       );
     let mutated = false;
 
-    // Collapse rightmost-first until content fits or no groups can collapse.
+    const priorityOf = (g: HTMLElement) =>
+      Number(g.getAttribute('priority') ?? '0');
+    const isAutoScale = (g: HTMLElement) =>
+      g.getAttribute('auto-scale') !== 'false';
+
+    // Choose which group to collapse next: among non-popup, auto-scale groups,
+    // pick the one with the lowest priority. Tiebreak: rightmost (DOM-order).
+    const pickCollapseCandidate = (): HTMLElement | null => {
+      let chosen: HTMLElement | null = null;
+      let chosenPriority = Infinity;
+      let chosenIndex = -1;
+      for (let i = 0; i < groups.length; i++) {
+        const g = groups[i];
+        if (g.getAttribute('data-resolved-size') === 'popup') continue;
+        if (!isAutoScale(g)) continue;
+        const p = priorityOf(g);
+        if (p < chosenPriority || (p === chosenPriority && i > chosenIndex)) {
+          chosen = g;
+          chosenPriority = p;
+          chosenIndex = i;
+        }
+      }
+      return chosen;
+    };
+
+    // On grow: expand highest-priority-first; tiebreak leftmost.
+    const pickExpandCandidate = (): HTMLElement | null => {
+      let chosen: HTMLElement | null = null;
+      let chosenPriority = -Infinity;
+      let chosenIndex = Infinity;
+      for (let i = 0; i < groups.length; i++) {
+        const g = groups[i];
+        if (g.getAttribute('data-resolved-size') !== 'popup') continue;
+        const p = priorityOf(g);
+        if (p > chosenPriority || (p === chosenPriority && i < chosenIndex)) {
+          chosen = g;
+          chosenPriority = p;
+          chosenIndex = i;
+        }
+      }
+      return chosen;
+    };
+
+    // Collapse priority-aware until content fits or no groups can collapse.
     let safety = groups.length;
     while (occupied() > available && safety-- > 0) {
-      let collapsed = false;
-      for (let i = groups.length - 1; i >= 0; i--) {
-        if (groups[i].getAttribute('data-resolved-size') !== 'popup') {
-          groups[i].setAttribute('data-resolved-size', 'popup');
-          collapsed = true;
-          mutated = true;
-          break;
-        }
-      }
-      if (!collapsed) break;
+      const candidate = pickCollapseCandidate();
+      if (!candidate) break;
+      candidate.setAttribute('data-resolved-size', 'popup');
+      mutated = true;
     }
 
-    // If we have headroom, try expanding the leftmost popup'd group (which is
-    // the most-recently-collapsed under right-first collapse order).
-    if (occupied() < available) {
-      for (const group of groups) {
-        if (group.getAttribute('data-resolved-size') !== 'popup') continue;
-        const natural = this.naturalWidths.get(group) ?? 0;
-        const current = group.offsetWidth;
-        const projected = occupied() + (natural - current);
-        if (projected <= available) {
-          group.removeAttribute('data-resolved-size');
-          mutated = true;
-        } else {
-          break;
-        }
-      }
+    // If we have headroom, try expanding the highest-priority popup'd group.
+    safety = groups.length;
+    while (occupied() < available && safety-- > 0) {
+      const candidate = pickExpandCandidate();
+      if (!candidate) break;
+      const natural = this.naturalWidths.get(candidate) ?? 0;
+      const current = candidate.offsetWidth;
+      const projected = occupied() + (natural - current);
+      if (projected > available) break;
+      candidate.removeAttribute('data-resolved-size');
+      mutated = true;
     }
 
     // Re-measure once more if we mutated; layout may settle into a new state
@@ -1020,8 +1478,15 @@ export class MpRibbon extends LitElement {
       return;
     }
 
-    // Once layout has settled, diff the popped set against the previous frame
-    // and announce threshold crossings.
+    this.diffCollapsedGroupsAndAnnounce(groups);
+  }
+
+  /**
+   * Diff the popped set against the previous frame and announce threshold
+   * crossings via the live region. Shared by both reflow paths (priority
+   * default + author reduceOrder).
+   */
+  private diffCollapsedGroupsAndAnnounce(groups: HTMLElement[]): void {
     const nowCollapsed = new Set<HTMLElement>();
     for (const group of groups) {
       if (group.getAttribute('data-resolved-size') === 'popup') {
@@ -1032,7 +1497,8 @@ export class MpRibbon extends LitElement {
     }
     for (const group of nowCollapsed) {
       if (!this.previousCollapsedGroups.has(group)) {
-        const label = this.collapsedGroupLabels.get(group) ?? group.getAttribute('label') ?? '';
+        const label =
+          this.collapsedGroupLabels.get(group) ?? group.getAttribute('label') ?? '';
         if (label) this.liveAnnouncer.announce(`${label} group collapsed`);
       }
     }
@@ -1044,6 +1510,158 @@ export class MpRibbon extends LitElement {
     }
     this.previousCollapsedGroups.clear();
     for (const group of nowCollapsed) this.previousCollapsedGroups.add(group);
+  }
+
+  /**
+   * FR-6: walk an author-declared reduceOrder list. Returns true if any
+   * mutation happened (caller re-runs the reflow to settle).
+   *
+   * - On shrink (occupied > available): apply more steps from the front of
+   *   the list, advancing the per-tab `appliedReduceSteps` counter.
+   * - On grow (occupied < available): revert the most-recently-applied
+   *   step IF the reverted layout would still fit. Walks the prefix of the
+   *   list to recompute the "size before step N" for the reverted group.
+   * - Groups with `auto-scale="false"` are still skipped — even if the
+   *   author lists a step for them, we drop a console.warn at validate
+   *   time and the runtime treats it as a no-op.
+   */
+  private applyAuthorReduceOrder(
+    tab: HTMLElement,
+    groups: HTMLElement[],
+    steps: readonly RibbonReduceStep[],
+    idealSizes: Record<string, RibbonGroupSize>
+  ): boolean {
+    const gap = 8;
+    const available = tab.clientWidth;
+    const occupied = () =>
+      groups.reduce(
+        (sum, g, i) => sum + g.offsetWidth + (i > 0 ? gap : 0),
+        0
+      );
+    const groupById = (id: string) =>
+      groups.find((g) => g.getAttribute('group-id') === id) ?? null;
+
+    let applied = this.appliedReduceSteps.get(tab) ?? 0;
+    let mutated = false;
+
+    // Walk forward through steps while we still don't fit.
+    let safety = steps.length - applied;
+    while (occupied() > available && applied < steps.length && safety-- > 0) {
+      const [groupId, target] = steps[applied];
+      const group = groupById(groupId);
+      if (!group || group.getAttribute('auto-scale') === 'false') {
+        applied++;
+        continue;
+      }
+      this.applyGroupSize(group, target, idealSizes);
+      applied++;
+      mutated = true;
+    }
+
+    // Walk backward while we have headroom. Revert the most-recently-applied
+    // step, but only if the projected layout still fits.
+    safety = applied;
+    while (applied > 0 && safety-- > 0) {
+      const [groupId] = steps[applied - 1];
+      const group = groupById(groupId);
+      if (!group) {
+        applied--;
+        continue;
+      }
+      const projectedSize = this.sizeAtStepIndex(steps, applied - 1, groupId, idealSizes);
+      const currentSize = this.sizeAtStepIndex(steps, applied, groupId, idealSizes);
+      // Try the revert tentatively; measure.
+      this.applyGroupSize(group, projectedSize, idealSizes);
+      if (occupied() > available) {
+        // Doesn't fit — roll back.
+        this.applyGroupSize(group, currentSize, idealSizes);
+        break;
+      }
+      applied--;
+      mutated = true;
+    }
+
+    this.appliedReduceSteps.set(tab, applied);
+    return mutated;
+  }
+
+  /**
+   * Compute the resolved size of `groupId` after the first `count` steps of
+   * `steps` have been applied. The starting point is `idealSizes[groupId]`
+   * or `large` if unset.
+   */
+  private sizeAtStepIndex(
+    steps: readonly RibbonReduceStep[],
+    count: number,
+    groupId: string,
+    idealSizes: Record<string, RibbonGroupSize>
+  ): RibbonGroupSize {
+    let size: RibbonGroupSize = idealSizes[groupId] ?? 'large';
+    for (let i = 0; i < count; i++) {
+      if (steps[i][0] === groupId) size = steps[i][1];
+    }
+    return size;
+  }
+
+  /**
+   * Apply a resolved size to a group + mutate slotted item sizes so the
+   * intermediate (`medium` / `small`) sizes have a visible effect. Saves
+   * each item's original `size` to `originalItemSizes` the first time the
+   * group downsizes, so going back to `large` restores it.
+   */
+  private applyGroupSize(
+    group: HTMLElement,
+    target: RibbonGroupSize,
+    idealSizes: Record<string, RibbonGroupSize>
+  ): void {
+    if (target === 'popup') {
+      group.setAttribute('data-resolved-size', 'popup');
+      return;
+    }
+    if (target === 'large') {
+      group.removeAttribute('data-resolved-size');
+    } else {
+      group.setAttribute('data-resolved-size', target);
+    }
+    const items = this.collectGroupItems(group);
+    for (const item of items) {
+      if (!this.originalItemSizes.has(item)) {
+        const cur = (item.getAttribute('size') as RibbonItemSize) ?? 'medium';
+        this.originalItemSizes.set(item, cur);
+      }
+      const original = this.originalItemSizes.get(item)!;
+      const next = this.deriveItemSize(original, target);
+      if (item.getAttribute('size') !== next) {
+        item.setAttribute('size', next);
+      }
+    }
+    // Mark groupId so other code can read this group's idealSize.
+    void idealSizes;
+  }
+
+  /**
+   * Compute the rendered item size given its consumer-declared "original"
+   * size and the group's resolved size. Items can only ever shrink, never
+   * grow above their original.
+   */
+  private deriveItemSize(
+    original: RibbonItemSize,
+    groupSize: Exclude<RibbonGroupSize, 'popup'>
+  ): RibbonItemSize {
+    if (groupSize === 'large') return original;
+    if (groupSize === 'small') return 'small';
+    // groupSize === 'medium' — downsize large → medium; keep medium/small.
+    return original === 'large' ? 'medium' : original;
+  }
+
+  private collectGroupItems(group: HTMLElement): HTMLElement[] {
+    return Array.from(
+      group.querySelectorAll<HTMLElement>(
+        'mp-ribbon-button, mp-ribbon-toggle-button, mp-ribbon-checkbox, mp-ribbon-combobox, ' +
+          'mp-ribbon-color-picker, mp-ribbon-group-button, mp-ribbon-split-button, ' +
+          'mp-ribbon-dropdown-button, mp-ribbon-gallery'
+      )
+    );
   }
 
   /**

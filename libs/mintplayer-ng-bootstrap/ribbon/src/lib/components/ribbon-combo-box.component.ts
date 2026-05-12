@@ -27,6 +27,7 @@ import type { RibbonComboBoxOption } from '../web-components/items/mp-ribbon-com
   styles: [`:host { display: inline-flex; }`],
   host: {
     '[attr.size]': 'size()',
+    '[attr.data-size]': 'size()',
   },
   providers: [
     {

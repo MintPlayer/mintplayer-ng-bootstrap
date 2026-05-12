@@ -27,6 +27,7 @@ import type { RibbonGroupButtonOption } from '../web-components/items/mp-ribbon-
   styles: [`:host { display: inline-flex; }`],
   host: {
     '[attr.size]': 'size()',
+    '[attr.data-size]': 'size()',
   },
   providers: [
     {

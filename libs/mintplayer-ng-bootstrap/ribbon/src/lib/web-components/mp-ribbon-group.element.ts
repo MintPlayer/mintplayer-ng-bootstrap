@@ -127,6 +127,56 @@ export class MpRibbonGroup extends LitElement {
       min-width: 200px;
       max-width: calc(100vw - 16px);
     }
+
+    /* ============================================================
+       SIMPLIFIED LAYOUT (FR-39)
+       Groups become flat horizontal flex rows; the 3-row grid is
+       dropped, the label + dialog launcher footer is hidden, and
+       per-group popup-chunk collapse is suppressed (the shared
+       end-of-tab chevron on mp-ribbon-tab takes over). Items handle
+       their own simplified rendering via the same data attribute.
+       The separator hairline is also hidden — Simplified relies on
+       padding alone for visual separation between groups.
+       ============================================================ */
+    :host([data-ribbon-layout="simplified"])::after {
+      display: none;
+    }
+    :host([data-ribbon-layout="simplified"]) .ribbon-group {
+      flex-direction: row;
+      align-items: center;
+      padding: 4px 8px;
+      min-width: 0;
+      min-height: 36px;
+    }
+    :host([data-ribbon-layout="simplified"]) .ribbon-group-items {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 2px;
+      flex: 0 0 auto;
+    }
+    :host([data-ribbon-layout="simplified"]) .ribbon-group-footer {
+      display: none;
+    }
+    /* Override the 3-row grid placement for slotted items. */
+    :host([data-ribbon-layout="simplified"]) ::slotted([size="large"]),
+    :host([data-ribbon-layout="simplified"]) ::slotted([size="medium"]),
+    :host([data-ribbon-layout="simplified"]) ::slotted([size="small"]) {
+      grid-row: auto;
+      grid-column: auto;
+      align-self: center;
+      justify-self: auto;
+      width: auto;
+      display: inline-flex;
+    }
+    /* Suppress per-group popup-chunk in Simplified — the shared end-of-tab
+       chevron is the overflow story. */
+    :host([data-ribbon-layout="simplified"]) .ribbon-popup-trigger {
+      display: none !important;
+    }
+    :host([data-ribbon-layout="simplified"]) .ribbon-group {
+      display: flex !important;
+    }
   `;
 
   @property({ type: String, attribute: 'group-id' })
@@ -143,6 +193,24 @@ export class MpRibbonGroup extends LitElement {
 
   @property({ type: String, attribute: 'data-resolved-size', reflect: true })
   resolvedSize: 'large' | 'medium' | 'small' | 'popup' | '' = '';
+
+  /**
+   * Group priority hint (FR-23). Lower priority collapses first; higher
+   * priority stays visible longer. When omitted, all groups tie at 0 and
+   * the reflow falls back to DOM-order (rightmost-first), matching the
+   * pre-priority behaviour. Range / sign is consumer-defined; the reflow
+   * only compares values.
+   */
+  @property({ type: Number })
+  priority: number = 0;
+
+  /**
+   * `false` opts this group out of automatic ReduceOrder collapse — it will
+   * never resolve to `popup`. The ribbon's narrow layout then falls back to
+   * horizontal scrolling. Mirrors Office's `autoScale=false` semantic.
+   */
+  @property({ type: String, attribute: 'auto-scale' })
+  autoScale: 'true' | 'false' = 'true';
 
   @state()
   private popupOpen = false;

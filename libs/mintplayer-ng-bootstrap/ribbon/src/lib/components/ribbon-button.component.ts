@@ -17,11 +17,14 @@ import {
       [attr.disabled]="disabled() ? '' : null"
       [attr.tooltip]="tooltip()"
       (item-click)="onItemClick($event)"
-    ></mp-ribbon-button>
+    >
+      <ng-content></ng-content>
+    </mp-ribbon-button>
   `,
   styles: [`:host { display: inline-flex; }`],
   host: {
     '[attr.size]': 'size()',
+    '[attr.data-size]': 'size()',
   },
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,

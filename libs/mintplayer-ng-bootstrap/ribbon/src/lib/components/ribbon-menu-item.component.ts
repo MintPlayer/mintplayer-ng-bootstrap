@@ -17,7 +17,9 @@ import {
       [attr.checked]="checked() ? '' : null"
       [attr.disabled]="disabled() ? '' : null"
       (menu-select)="onMenuSelect($event)"
-    ></mp-ribbon-menu-item>
+    >
+      <ng-content></ng-content>
+    </mp-ribbon-menu-item>
   `,
   host: {
     '[attr.slot]': "'menu'",
