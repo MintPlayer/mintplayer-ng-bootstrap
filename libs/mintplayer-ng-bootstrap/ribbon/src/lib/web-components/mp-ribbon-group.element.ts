@@ -1,19 +1,12 @@
-import { css, html, LitElement, type TemplateResult } from 'lit';
-import { property } from 'lit/decorators.js';
+import { css, html, LitElement, nothing, type TemplateResult } from 'lit';
+import { property, state } from 'lit/decorators.js';
+import { styleMap } from 'lit/directives/style-map.js';
 
 export interface RibbonGroup {
   id: string;
   label: string;
 }
 
-/**
- * mp-ribbon-group — Group container within a ribbon tab.
- *
- * Renders a labeled group with optional dialog launcher button and
- * a slot for item children (Button, SplitButton, etc.).
- *
- * Phase 2: Groups + item composition
- */
 export class MpRibbonGroup extends LitElement {
   static override styles = css`
     :host { display: inline-flex; }
@@ -68,46 +61,207 @@ export class MpRibbonGroup extends LitElement {
       color: var(--bs-secondary-color, #6c757d);
     }
     .ribbon-dialog-launcher:hover { color: var(--bs-primary, #0d6efd); }
+
+    .ribbon-popup-trigger {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 3px;
+      cursor: pointer;
+      padding: 6px 10px;
+      min-width: 56px;
+      font-size: 12px;
+      color: inherit;
+    }
+    .ribbon-popup-trigger:hover {
+      background: var(--bs-secondary-bg, #e9ecef);
+      border-color: var(--bs-border-color, #ced4da);
+    }
+    .ribbon-popup-trigger:focus-visible {
+      outline: 2px solid var(--bs-primary, #0d6efd);
+      outline-offset: -2px;
+    }
+    .ribbon-popup-trigger-icon { font-size: 22px; line-height: 1; }
+    .ribbon-popup-trigger-label {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      white-space: nowrap;
+    }
+    .ribbon-popup-trigger-chevron { font-size: 9px; opacity: 0.6; }
+
+    :host([data-resolved-size="popup"]) .ribbon-group { display: none; }
+    :host([data-resolved-size="popup"]) .ribbon-popup-trigger { display: flex; }
+    :host([data-resolved-size="popup"][data-popup-open]) .ribbon-group {
+      display: flex;
+      position: fixed;
+      background: var(--bs-body-bg, #fff);
+      border: 1px solid var(--bs-border-color, #d0d0d0);
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+      padding: 4px 6px;
+      z-index: 1050;
+      min-width: 200px;
+    }
   `;
 
-  /** Unique identifier for this group */
   @property({ type: String, attribute: 'group-id' })
   groupId: string = '';
 
-  /** Display label for the group */
   @property({ type: String })
   label: string = '';
 
-  /** Optional dialog launcher button label (e.g. "Font Dialog") */
+  @property({ type: String })
+  icon: string = '';
+
   @property({ type: String, attribute: 'dialog-launcher' })
   dialogLauncher: string = '';
 
-  constructor() {
-    super();
+  @property({ type: String, attribute: 'data-resolved-size', reflect: true })
+  resolvedSize: 'large' | 'medium' | 'small' | 'popup' | '' = '';
+
+  @state()
+  private popupOpen = false;
+
+  @state()
+  private popupLeft = 0;
+
+  @state()
+  private popupTop = 0;
+
+  override connectedCallback() {
+    super.connectedCallback();
+    document.addEventListener('keydown', this.onKeyDown);
+  }
+
+  override disconnectedCallback() {
+    super.disconnectedCallback();
+    document.removeEventListener('keydown', this.onKeyDown);
+    document.removeEventListener('mousedown', this.onDocMouseDown, true);
+  }
+
+  override updated(changed: Map<string, unknown>): void {
+    if (changed.has('resolvedSize') && this.resolvedSize !== 'popup') {
+      // If the group expanded back, ensure the popup is closed.
+      if (this.popupOpen) this.closePopup();
+    }
   }
 
   override render(): TemplateResult {
+    const popupStyles = this.popupOpen
+      ? { left: `${this.popupLeft}px`, top: `${this.popupTop}px` }
+      : {};
     return html`
-      <div class="ribbon-group" role="region" aria-label="${this.label}">
+      <div
+        class="ribbon-group"
+        role="region"
+        aria-label="${this.label}"
+        style=${styleMap(popupStyles)}
+      >
         <div class="ribbon-group-items">
           <slot></slot>
         </div>
         <div class="ribbon-group-footer">
           <span class="ribbon-group-label">${this.label}</span>
-          ${this.dialogLauncher ? html`
-            <button
-              class="ribbon-dialog-launcher"
-              title="${this.dialogLauncher}"
-              aria-label="${this.dialogLauncher}"
-              @click="${this.onDialogLauncherClick}"
-            >
-              ⬘
-            </button>
-          ` : ''}
+          ${this.dialogLauncher
+            ? html`<button
+                class="ribbon-dialog-launcher"
+                title="${this.dialogLauncher}"
+                aria-label="${this.dialogLauncher}"
+                @click="${this.onDialogLauncherClick}"
+              >⬘</button>`
+            : nothing}
         </div>
       </div>
+      <button
+        class="ribbon-popup-trigger"
+        aria-haspopup="true"
+        aria-expanded="${this.popupOpen}"
+        aria-label="${this.label}"
+        title="${this.label}"
+        @click="${this.onTriggerClick}"
+      >
+        ${this.icon
+          ? html`<span class="ribbon-popup-trigger-icon">${this.icon}</span>`
+          : nothing}
+        <span class="ribbon-popup-trigger-label">
+          ${this.label}
+          <span class="ribbon-popup-trigger-chevron">▼</span>
+        </span>
+      </button>
     `;
   }
+
+  private onTriggerClick = (event: MouseEvent): void => {
+    event.stopPropagation();
+    if (this.popupOpen) {
+      this.closePopup();
+    } else {
+      this.openPopup();
+    }
+  };
+
+  private async openPopup(): Promise<void> {
+    this.popupOpen = true;
+    this.setAttribute('data-popup-open', '');
+    await this.updateComplete;
+    this.positionPopup();
+    // Defer so the click that opened the popup doesn't immediately close it.
+    setTimeout(() => {
+      document.addEventListener('mousedown', this.onDocMouseDown, true);
+    }, 0);
+  }
+
+  private closePopup(): void {
+    this.popupOpen = false;
+    this.removeAttribute('data-popup-open');
+    document.removeEventListener('mousedown', this.onDocMouseDown, true);
+  }
+
+  private positionPopup(): void {
+    const trigger = this.renderRoot.querySelector<HTMLElement>(
+      '.ribbon-popup-trigger'
+    );
+    const group = this.renderRoot.querySelector<HTMLElement>('.ribbon-group');
+    if (!trigger || !group) return;
+
+    const triggerRect = trigger.getBoundingClientRect();
+    const groupRect = group.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const margin = 8;
+
+    let left = triggerRect.left;
+    if (left + groupRect.width > vw - margin) {
+      left = vw - groupRect.width - margin;
+    }
+    if (left < margin) left = margin;
+
+    const top = triggerRect.bottom + 4;
+
+    this.popupLeft = left;
+    this.popupTop = top;
+  }
+
+  private onDocMouseDown = (event: MouseEvent): void => {
+    const path = event.composedPath();
+    if (path.includes(this)) return;
+    this.closePopup();
+  };
+
+  private onKeyDown = (event: KeyboardEvent): void => {
+    if (event.key === 'Escape' && this.popupOpen) {
+      this.closePopup();
+      const trigger = this.renderRoot.querySelector<HTMLElement>(
+        '.ribbon-popup-trigger'
+      );
+      trigger?.focus();
+      event.preventDefault();
+    }
+  };
 
   private onDialogLauncherClick(): void {
     this.dispatchEvent(

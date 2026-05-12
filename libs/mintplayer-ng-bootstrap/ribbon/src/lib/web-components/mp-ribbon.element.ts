@@ -45,13 +45,18 @@ export class MpRibbon extends LitElement {
     .ribbon-content {
       padding: 0;
       background: var(--bs-body-bg, #fff);
+      overflow: hidden;
     }
     .ribbon-panel[hidden] { display: none; }
     .ribbon-panel {
       display: flex;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       gap: 8px;
       align-items: stretch;
+      min-width: 0;
+    }
+    ::slotted(*) {
+      flex: 0 0 auto;
     }
   `;
 
@@ -72,6 +77,9 @@ export class MpRibbon extends LitElement {
   minimized: boolean = false;
 
   private currentTabIndex = 0;
+  private resizeObserver?: ResizeObserver;
+  private reflowFrame: number = 0;
+  private readonly naturalWidths = new WeakMap<HTMLElement, number>();
 
   private get tabElements(): HTMLElement[] {
     return Array.from(this.renderRoot.querySelectorAll<HTMLElement>('[role="tab"]'));
@@ -90,6 +98,23 @@ export class MpRibbon extends LitElement {
     if (!this.activeTabId && this.tabs.length > 0) {
       this.activeTabId = this.tabs[0].id;
       this.currentTabIndex = 0;
+    }
+
+    if (typeof ResizeObserver !== 'undefined') {
+      this.resizeObserver = new ResizeObserver(() => this.scheduleReflow());
+      this.resizeObserver.observe(this);
+    }
+  }
+
+  override disconnectedCallback() {
+    super.disconnectedCallback();
+    this.resizeObserver?.disconnect();
+    if (this.reflowFrame) cancelAnimationFrame(this.reflowFrame);
+  }
+
+  override updated(changed: Map<string, unknown>): void {
+    if (changed.has('activeTabId') || changed.has('tabs') || changed.has('minimized')) {
+      this.scheduleReflow();
     }
   }
 
@@ -232,6 +257,109 @@ export class MpRibbon extends LitElement {
       // Optionally auto-select on arrow nav (APG Tabs pattern: automatic activation)
       // For now, just focus; Space/Enter required to select.
     }
+  }
+
+  private scheduleReflow(): void {
+    if (this.reflowFrame) return;
+    this.reflowFrame = requestAnimationFrame(() => {
+      this.reflowFrame = 0;
+      this.reflowOverflow();
+    });
+  }
+
+  /**
+   * Walks the active tab's groups and toggles `data-resolved-size="popup"` on
+   * the rightmost group(s) until the tab content fits. On grow, expands the
+   * leftmost popup'd group (i.e. the most-recently-collapsed) when room allows.
+   *
+   * MVP: single step per group (large -> popup). Author-declared reduceOrder
+   * with intermediate sizes is a follow-up (FR-6 P0 deferred to later milestone).
+   */
+  private reflowOverflow(): void {
+    if (this.minimized) return;
+    const panel = this.renderRoot.querySelector<HTMLElement>(
+      `#ribbon-panel-${this.activeTabId}`
+    );
+    if (!panel) return;
+
+    const groups = this.collectActiveGroups(panel);
+    if (groups.length === 0) return;
+
+    // Snapshot each group's expanded width before any mutation.
+    for (const group of groups) {
+      if (group.getAttribute('data-resolved-size') !== 'popup') {
+        this.naturalWidths.set(group, group.offsetWidth);
+      }
+    }
+
+    const available = panel.clientWidth;
+    const gap = 8;
+    const occupied = () =>
+      groups.reduce(
+        (sum, g, i) => sum + g.offsetWidth + (i > 0 ? gap : 0),
+        0
+      );
+    let mutated = false;
+
+    // Collapse rightmost-first until content fits or no groups can collapse.
+    let safety = groups.length;
+    while (occupied() > available && safety-- > 0) {
+      let collapsed = false;
+      for (let i = groups.length - 1; i >= 0; i--) {
+        if (groups[i].getAttribute('data-resolved-size') !== 'popup') {
+          groups[i].setAttribute('data-resolved-size', 'popup');
+          collapsed = true;
+          mutated = true;
+          break;
+        }
+      }
+      if (!collapsed) break;
+    }
+
+    // If we have headroom, try expanding the leftmost popup'd group (which is
+    // the most-recently-collapsed under right-first collapse order).
+    if (occupied() < available) {
+      for (const group of groups) {
+        if (group.getAttribute('data-resolved-size') !== 'popup') continue;
+        const natural = this.naturalWidths.get(group) ?? 0;
+        const current = group.offsetWidth;
+        const projected = occupied() + (natural - current);
+        if (projected <= available) {
+          group.removeAttribute('data-resolved-size');
+          mutated = true;
+        } else {
+          break;
+        }
+      }
+    }
+
+    // Re-measure once more if we mutated; layout may settle into a new state
+    // that itself crosses a threshold (e.g. expanding one then needing to
+    // collapse another).
+    if (mutated) {
+      this.scheduleReflow();
+    }
+  }
+
+  /**
+   * Returns the `<mp-ribbon-group>` elements assigned to the active tab's slot.
+   * Handles both raw web-component usage and the Angular `<bs-ribbon-group>`
+   * wrapper (which delegates to an inner `<mp-ribbon-group>` via Angular's
+   * `display: contents` host).
+   */
+  private collectActiveGroups(panel: HTMLElement): HTMLElement[] {
+    const slot = panel.querySelector<HTMLSlotElement>('slot');
+    if (!slot) return [];
+    const groups: HTMLElement[] = [];
+    for (const assigned of slot.assignedElements()) {
+      if (assigned.tagName === 'MP-RIBBON-GROUP') {
+        groups.push(assigned as HTMLElement);
+        continue;
+      }
+      const inner = assigned.querySelector<HTMLElement>('mp-ribbon-group');
+      if (inner) groups.push(inner);
+    }
+    return groups;
   }
 }
 

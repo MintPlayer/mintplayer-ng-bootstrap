@@ -12,6 +12,7 @@ import {
     <mp-ribbon-group
       [attr.group-id]="groupId()"
       [attr.label]="label()"
+      [attr.icon]="icon()"
       [attr.dialog-launcher]="dialogLauncher()"
       (dialog-launcher-click)="onDialogLauncherClick($event)"
     >
@@ -27,6 +28,7 @@ import {
 export class BsRibbonGroupComponent {
   readonly groupId = input<string>('');
   readonly label = input<string>('');
+  readonly icon = input<string>('');
   readonly dialogLauncher = input<string>('');
 
   readonly dialogLauncherClick = output<{ groupId: string }>();

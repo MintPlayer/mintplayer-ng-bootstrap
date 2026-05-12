@@ -56,17 +56,17 @@
     </bs-ribbon-group>
 
     <!-- ============ Insert tab ============ -->
-    <bs-ribbon-group slot="content-insert" groupId="pages" label="Pages">
+    <bs-ribbon-group slot="content-insert" groupId="pages" label="Pages" icon="📑">
       <bs-ribbon-button itemId="cover-page" label="Cover Page" icon="📑" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
       <bs-ribbon-button itemId="blank-page" label="Blank Page" icon="📄" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
       <bs-ribbon-button itemId="page-break" label="Page Break" icon="📑" size="medium" tooltip="Insert page break (Ctrl+Enter)" (itemClick)="onItemClick($event)"></bs-ribbon-button>
     </bs-ribbon-group>
 
-    <bs-ribbon-group slot="content-insert" groupId="tables" label="Tables">
+    <bs-ribbon-group slot="content-insert" groupId="tables" label="Tables" icon="▦">
       <bs-ribbon-button itemId="table" label="Table" icon="▦" size="large" (itemClick)="onItemClick($event)"></bs-ribbon-button>
     </bs-ribbon-group>
 
-    <bs-ribbon-group slot="content-insert" groupId="illustrations" label="Illustrations">
+    <bs-ribbon-group slot="content-insert" groupId="illustrations" label="Illustrations" icon="🖼️">
       <bs-ribbon-button itemId="pictures" label="Pictures" icon="🖼️" size="large" (itemClick)="onItemClick($event)"></bs-ribbon-button>
       <bs-ribbon-button itemId="shapes" label="Shapes" icon="⬡" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
       <bs-ribbon-button itemId="icons" label="Icons" icon="★" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
@@ -75,19 +75,19 @@
       <bs-ribbon-button itemId="screenshot" label="Screenshot" icon="📸" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
     </bs-ribbon-group>
 
-    <bs-ribbon-group slot="content-insert" groupId="links" label="Links">
+    <bs-ribbon-group slot="content-insert" groupId="links" label="Links" icon="🔗">
       <bs-ribbon-button itemId="link" label="Link" icon="🔗" size="medium" tooltip="Insert hyperlink (Ctrl+K)" (itemClick)="onItemClick($event)"></bs-ribbon-button>
       <bs-ribbon-button itemId="bookmark" label="Bookmark" icon="🔖" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
       <bs-ribbon-button itemId="cross-reference" label="Cross-reference" icon="↗" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
     </bs-ribbon-group>
 
-    <bs-ribbon-group slot="content-insert" groupId="header-footer" label="Header &amp; Footer">
+    <bs-ribbon-group slot="content-insert" groupId="header-footer" label="Header &amp; Footer" icon="▤">
       <bs-ribbon-button itemId="header" label="Header" icon="▔" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
       <bs-ribbon-button itemId="footer" label="Footer" icon="▁" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
       <bs-ribbon-button itemId="page-number" label="Page Number" icon="#" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
     </bs-ribbon-group>
 
-    <bs-ribbon-group slot="content-insert" groupId="text" label="Text">
+    <bs-ribbon-group slot="content-insert" groupId="text" label="Text" icon="🆎">
       <bs-ribbon-button itemId="text-box" label="Text Box" icon="🆎" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
       <bs-ribbon-button itemId="wordart" label="WordArt" icon="🅰️" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
       <bs-ribbon-button itemId="date-time" label="Date &amp; Time" icon="📅" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
