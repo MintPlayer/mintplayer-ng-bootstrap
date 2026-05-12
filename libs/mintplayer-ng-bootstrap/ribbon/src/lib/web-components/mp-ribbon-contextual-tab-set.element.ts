@@ -19,7 +19,7 @@ export class MpRibbonContextualTabSet extends LitElement {
   label: string = '';
 
   @property({ type: String, reflect: true })
-  color: string = '#5BAEFF';
+  color: string = '#F0AF84';
 
   @property({ type: Boolean, reflect: true })
   override hidden: boolean = false;

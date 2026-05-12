@@ -22,6 +22,6 @@ import {
 })
 export class BsRibbonContextualTabSetComponent {
   readonly label = input<string>('');
-  readonly color = input<string>('#5BAEFF');
+  readonly color = input<string>('#F0AF84');
   readonly hidden = input<boolean>(false);
 }

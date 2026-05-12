@@ -166,6 +166,7 @@ export class MpRibbon extends LitElement {
     }
     .ribbon-tablist {
       display: flex;
+      align-items: flex-end;
       border-bottom: 1px solid;
       border-bottom-color: var(--bs-ribbon-tabstrip-border);
       background: var(--bs-ribbon-tabstrip-bg);
@@ -198,36 +199,31 @@ export class MpRibbon extends LitElement {
       background: var(--bs-ribbon-tabpanel-bg);
       overflow: hidden;
     }
-    .ribbon-contextual-band {
-      display: flex;
-      gap: 8px;
-      padding: 3px 8px;
-      background: var(--bs-ribbon-container-bg);
-      border-bottom: 1px solid var(--bs-ribbon-tabstrip-border);
+    .ribbon-contextual-group {
+      display: inline-flex;
+      flex-direction: column;
+      align-self: flex-end;
     }
-    .ribbon-contextual-label {
+    .ribbon-contextual-group-band {
+      background: var(--bs-ribbon-contextual-color, #F0AF84);
+      color: var(--ribbon-contextual-text, #262626);
       font-size: 11px;
-      font-weight: 600;
-      color: #fff;
-      padding: 2px 10px;
-      border-radius: 2px;
-      letter-spacing: 0.02em;
-      text-transform: uppercase;
+      font-weight: 400;
+      line-height: 1.3;
+      padding: 5px 12px;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .ribbon-contextual-group-tabs {
+      display: inline-flex;
+      flex-direction: row;
     }
     .ribbon-tab.contextual {
-      border-top: 3px solid
-        var(--ribbon-tab-contextual-color, transparent);
+      border-top: 3px solid var(--bs-ribbon-contextual-color, transparent);
       padding-top: 7px;
     }
-    .ribbon-tab.contextual.active {
-      background:
-        linear-gradient(
-          to bottom,
-          color-mix(in srgb, var(--ribbon-tab-contextual-color) 18%, transparent),
-          var(--bs-ribbon-tab-active-bg)
-        );
-      color: var(--ribbon-tab-contextual-color);
-    }
+    /* The contextual indicator is the coloured top-border only — keep the
+       text colour in the regular active accent so it stays readable. */
   `;
 
   /** Currently active tab ID. */
@@ -316,23 +312,12 @@ export class MpRibbon extends LitElement {
   override render(): TemplateResult {
     return html`
       <div class="ribbon-container">
-        ${this.contextualSets.length > 0
-          ? html`<div class="ribbon-contextual-band" role="presentation">
-              ${this.contextualSets.map(
-                (set) =>
-                  html`<span
-                    class="ribbon-contextual-label"
-                    style="background: ${set.color};"
-                  >${set.label}</span>`
-              )}
-            </div>`
-          : nothing}
         <div
           role="tablist"
           class="ribbon-tablist"
           @keydown="${this.onTabListKeydown}"
         >
-          ${this.tabsList.map((tab, index) => this.renderTabButton(tab, index))}
+          ${this.renderTabStripItems()}
         </div>
 
         ${!this.minimized
@@ -344,20 +329,70 @@ export class MpRibbon extends LitElement {
     `;
   }
 
+  private renderTabStripItems(): TemplateResult[] {
+    const result: TemplateResult[] = [];
+    let i = 0;
+    while (i < this.tabsList.length) {
+      const tab = this.tabsList[i];
+      if (!tab.contextualColor || !tab.contextualSetLabel) {
+        result.push(this.renderTabButton(tab, i));
+        i++;
+        continue;
+      }
+      const setLabel = tab.contextualSetLabel;
+      const setColor = tab.contextualColor;
+      const runStart = i;
+      while (
+        i < this.tabsList.length &&
+        this.tabsList[i].contextualSetLabel === setLabel &&
+        this.tabsList[i].contextualColor === setColor
+      ) {
+        i++;
+      }
+      const groupTabs = this.tabsList.slice(runStart, i);
+      const textColor = this.getBandTextColor(setColor);
+      const wrapperStyle =
+        `--bs-ribbon-contextual-color: ${setColor};` +
+        `--ribbon-contextual-text: ${textColor};`;
+      result.push(html`
+        <div class="ribbon-contextual-group" style="${wrapperStyle}">
+          <div class="ribbon-contextual-group-band">${setLabel}</div>
+          <div class="ribbon-contextual-group-tabs">
+            ${groupTabs.map((t, idx) =>
+              this.renderTabButton(t, runStart + idx)
+            )}
+          </div>
+        </div>
+      `);
+    }
+    return result;
+  }
+
+  /**
+   * Office-faithful contrast rule: dark text on pastel bands, white text on
+   * saturated bands. Uses W3C relative luminance with a 0.6 cutoff. Accepts
+   * 6-digit hex; falls back to dark on parse failure (safe default).
+   */
+  private getBandTextColor(bg: string): string {
+    const hex = bg.replace('#', '').trim();
+    if (hex.length !== 6 || !/^[0-9a-fA-F]{6}$/.test(hex)) return '#262626';
+    const r = parseInt(hex.substring(0, 2), 16) / 255;
+    const g = parseInt(hex.substring(2, 4), 16) / 255;
+    const b = parseInt(hex.substring(4, 6), 16) / 255;
+    const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    return luminance >= 0.6 ? '#262626' : '#FFFFFF';
+  }
+
   private renderTabButton(tab: TabEntry, _index: number): TemplateResult {
     const isActive = tab.tabId === this.activeTabId;
     const isContextual = !!tab.contextualColor;
     const tabIndex = isActive ? 0 : -1;
-    const inlineStyle = isContextual
-      ? `--ribbon-tab-contextual-color: ${tab.contextualColor};`
-      : '';
 
     return html`
       <button
         role="tab"
         id="ribbon-tab-${tab.tabId}"
         class="ribbon-tab ${isActive ? 'active' : ''} ${isContextual ? 'contextual' : ''}"
-        style="${inlineStyle}"
         aria-selected="${isActive}"
         aria-controls="ribbon-panel-${tab.tabId}"
         tabindex="${tabIndex}"
