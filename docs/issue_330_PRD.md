@@ -2,7 +2,7 @@
 
 **Issue**: #330
 **Title**: Ribbon
-**Status**: In Progress — Milestone 1/2 (skeleton + raw item WCs landed; sizing engine, a11y depth, contextual/QAT/KeyTips still pending)
+**Status**: In Progress — Milestone 7/8. Core ribbon + all ten item kinds + menus + dark mode (all four versions) + contextual tabs (visual) + DOM-as-source-of-truth tabs + mobile/touch accessibility have all shipped. Remaining: Simplified layout proper (FR-8/FR-39), QAT (FR-11), KeyTips (FR-12), live-announcer wiring (FR-17), full keyboard model (FR-14), prefers-reduced-motion (FR-18), tests + Firefox smoke (FR-21/22).
 **Created**: 2026-05-12
 **Last Updated**: 2026-05-12
 
@@ -38,35 +38,35 @@ Backstage / File menu is intentionally **out of scope** and will be filed as its
 Audit of `libs/mintplayer-ng-bootstrap/ribbon/` against the requirements below.
 
 **Landed:**
-- Secondary entry point skeleton: `libs/mintplayer-ng-bootstrap/ribbon/` with `ng-package.json` and `src/index.ts` re-exports.
-- `mp-ribbon` Lit element with tab strip (arrow keys, Home/End, Enter/Space manual activation) + `[minimized]` + `[layout]` attributes plumbed.
-- `mp-ribbon-group` with header label and dialog launcher (rendered in the footer alongside the group label).
-- All nine `mp-ribbon-*` item Lit elements exist (Button, SplitButton, DropdownButton, ToggleButton, CheckBox, ComboBox, ColorPicker, GroupButton, Gallery) with shared `MpRibbonItemBase` providing `itemId/label/icon/size/disabled/tooltip` + `item-click` event.
-- Angular wrappers for the three top-level pieces: `BsRibbonComponent`, `BsRibbonGroupComponent`, `BsRibbonButtonComponent`.
-- Demo route `/advanced/ribbon` registered; Home/Insert/Design/Layout tabs render Office-style content (Clipboard, Font, Paragraph, Styles, Editing on Home, etc.).
-- **Per-group `popup` collapse** with `ResizeObserver`-driven reflow: rightmost-first collapse on shrink, leftmost-first expansion on grow, using a `WeakMap` of pre-collapse natural widths. Collapsed groups render a popup-trigger button (icon + label + chevron) with `aria-haspopup="true"`/`aria-expanded`. Click opens an overlay (`position: fixed`, viewport-clamped horizontally) containing the full group; Escape/outside-mousedown close. Verified at 900 / 1500 / 2000 px viewport widths and across Insert/Home/Design/Layout tabs.
-- **Visual version themes** (FR-25/26/27): `[version]` input on `bs-ribbon` reflects to `version="office-XXXX"` on `mp-ribbon`'s host; per-version `:host([version="..."])` rule groups in `mp-ribbon.element.ts` set a complete `--bs-ribbon-*` token set; all element shadow CSS (ribbon / group / button) is tokenised so it consumes those variables via CSS-variable inheritance (no attribute propagation needed). `--bs-ribbon-app-accent` cascades for tab strip / active label colour. Demo has Version + App-accent dropdowns; verified visually across all four versions and with Word / PowerPoint accents.
+- Secondary entry point `@mintplayer/ng-bootstrap/ribbon` with full barrel.
+- **DOM-as-source-of-truth tab model** (FR-2): `mp-ribbon-tab` Lit element + `bs-ribbon-tab` Angular wrapper; `mp-ribbon` reads slotted children, no `[tabs]` array input.
+- `mp-ribbon` + `mp-ribbon-group` with header label, dialog launcher, and tokenised styles.
+- **All ten item kinds** as Lit elements + Angular wrappers: Button, SplitButton, DropdownButton, ToggleButton, CheckBox, ComboBox, ColorPicker, GroupButton (radio strip), Gallery (+ GalleryItem), TemplateItem. Plus MenuItem + MenuSeparator for menus.
+- **`ControlValueAccessor`** on every value-bearing wrapper (FR-15): toggle-button, check-box, combo-box, color-picker, group-button.
+- **Per-group `popup` collapse** with `ResizeObserver`-driven reflow; rightmost-first collapse on shrink, leftmost-first expansion on grow; viewport-clamped overlay.
+- **Sub-items / menus** on split-button + dropdown-button (FR-28/29/30/31): `<slot name="menu">` + viewport-clamped overlay via a reusable `OverlayController` ReactiveController; menu-item supports `kind="action|checkbox|radio"`.
+- **Visual version themes** (FR-25/26/27): `[version]` input across all four Office versions (2007/2010/2013/2016), per-version `:host([version=…])` token blocks, `--bs-ribbon-app-accent` cascade, demo Version + App-accent pickers.
+- **Dark mode** (FR-32/33/34/35/36) for **all four versions**: `[colorScheme]="'light'|'dark'|'auto'"`, `:host { color-scheme: light dark }`, `--bs-ribbon-app-accent-on-dark` auto-brightening, contextual-band dark override (desaturated + always-white text), demo Color-scheme picker. 2013/2016 are Microsoft-shipped; 2007/2010 are reconstructed from each version's original "Black colour scheme".
+- **Contextual tab sets** (FR-10 visual portion): `mp-ribbon-contextual-tab-set` element with `[label]`/`[color]`/`[hidden]`; tabs grouped under a `.ribbon-contextual-group` (flex-column) wrapper; coloured band sized to span exactly its tabs, flush against the tab strip; YIQ-luminance-based auto text colour in light mode, white text in dark mode. Live-region announcement still pending (FR-17 work).
+- **Mobile / touch accessibility** (FR-37/38): `overflow-x: auto` on the tab strip; `max-width: min(320px, calc(100vw - 16px))` on every popup overlay; `[touchMode]` input (`'on'|'off'|'auto'`) for ≥44px tab targets; `@media (pointer: coarse)` for always-touch-friendly menu items. Demo Touch-mode picker.
+- Demo route `/advanced/ribbon` with full Home/Insert/Design/Layout content + Picture Tools contextual set.
 
-**Deviations from the PRD that need to be reconciled before this milestone closes:**
-- **Item sizes are reflected as class `ribbon-item-<size>`** rather than `data-size="<size>"` on the host (FR-5). Affects external CSS hooks.
+**Deviations from the PRD still open as small TODOs:**
+- **Item sizes reflected as class `ribbon-item-<size>`** rather than `data-size="<size>"` on the host (FR-5). Affects external CSS hooks.
 - **Group body uses `role="region"` instead of `role="toolbar"`** (FR-13). Affects screen-reader semantics and roving-focus design.
-- **Item icons take a `string` attribute** (emoji / glyph) rather than a `<slot name="icon">` (FR-16). Consumers cannot project SVG/`<i class="bi-*">`.
+- **Item icons take a `string` attribute** rather than a `<slot name="icon">` (FR-16).
 
-**Not yet started:**
-- Intermediate `large` → `medium` → `small` ReduceOrder steps; author-declared `[reduceOrder]` / `[idealSizes]` / `[priority]` API on tabs and groups (FR-6 P0 partial, FR-23). MVP collapse-to-popup landed but only the single rightmost-first → popup default.
-- Menu / sub-item content for split-button / dropdown-button (FR-28/29/30/31). Lit elements have the visual shape and `menu-toggle` event but no slot or overlay; needs `OverlayController` extraction + three new menu-content elements + Angular wrappers.
-- Visual-regression Playwright screenshots committed for each version + a CI assertion (FR-25 closing checkpoint).
-- **Dark mode** (FR-32 / 33 / 34 / 35 / 36): `[colorScheme]="'light' | 'dark' | 'auto'"` input + reflected `color-scheme` attribute, per-version dark token blocks for office-2013 and office-2016 only, `--bs-ribbon-app-accent-on-dark` brightening, contextual-band dark override, demo Color-scheme picker. Office 2007 alternative Black / Silver schemes remain follow-up.
-- Simplified layout — `[layout]` is accepted but render is identical to Classic (FR-8).
-- Live announcer integration for minimize/restore (FR-9 announcer + Ctrl+F1 binding + double-click toggle).
-- Contextual tab sets (FR-10), Quick Access Toolbar (FR-11), KeyTips (FR-12).
-- Roving focus inside group toolbars + Ctrl+←/→ group jumps + Esc unwinding (FR-14).
-- `ControlValueAccessor` wrappers (FR-15).
-- `LiveAnnouncerController` plumbing across the whole component (FR-17).
-- `prefers-reduced-motion` handling (FR-18).
-- Dark theme + RTL verification (FR-19).
-- Contextual / QAT / KeyTips legend in the demo (FR-20).
-- Unit + ARIA + Playwright specs (FR-21); Firefox smoke (FR-22).
+**Not yet started (deliberately deferred):**
+- Intermediate `large`→`medium`→`small` ReduceOrder steps + author-declared `[reduceOrder]`/`[idealSizes]`/`[priority]` API (FR-6 P0 partial, FR-23). MVP single-step (full → popup) ships today.
+- **Simplified layout proper** (FR-8 / FR-39): single-row condensed render + end-of-tab shared overflow chevron. This is the Office-faithful narrow-width / mobile answer; FR-37/38 are the cheap CSS fixes that ship today, FR-39 is the proper rewrite.
+- `mp-ribbon-group` overflow-popup refactor onto the shared `OverlayController` (currently the group still has its own inline implementation; cleanup, not regression).
+- Live announcer integration for minimize/restore + contextual show/hide + overflow threshold (FR-9 + FR-17).
+- Quick Access Toolbar (FR-11), KeyTips (FR-12).
+- Ctrl+F1 minimize + double-click tab toggle (FR-9 keyboard portion); roving focus inside group toolbars + Ctrl+←/→ group jumps + Esc unwinding inside open menus (FR-14).
+- `prefers-reduced-motion` plumbing (FR-18).
+- Dark-theme verification on consumer apps + RTL verification (FR-19).
+- Contextual / QAT / KeyTips legend + code snippets in the demo (FR-20).
+- Unit + ARIA spec file + Playwright e2e (FR-21); Firefox smoke (FR-22); axe-core CI assertion; visual-regression screenshots per version.
 - `tellMeSlot` (FR-24).
 
 ---
@@ -121,12 +121,12 @@ Audit of `libs/mintplayer-ng-bootstrap/ribbon/` against the requirements below.
 - [ ] **FR-34** — **App-accent in dark mode**: introduce `--bs-ribbon-app-accent-on-dark`, defaulting to `color-mix(in oklab, var(--bs-ribbon-app-accent) 55%, white 45%)` so any consumer-supplied accent (Word `#2B579A`, etc.) auto-brightens for readable contrast against dark chrome. In dark mode, `--bs-ribbon-tab-active-color` flips to `#FFFFFF` (Office's own rule — the brand accent on a dark active card is unreadable) and `--bs-ribbon-tab-active-indicator-color` uses the brightened accent for the 2016 bottom-indicator stripe.
 - [ ] **FR-35** — **Contextual band in dark mode**: the luminance-based auto-text rule (FR-10) is bypassed when `color-scheme="dark"` matches. The band's background is darkened + desaturated via `color-mix(in oklab, var(--bs-ribbon-contextual-color) 40%, #1F1F1F 60%)` so it no longer punches through dark chrome, and the label is always white. Matches Office 2016 Black theme's contextual-band rendering.
 - [ ] **FR-36** — Demo gains a third `<bs-select>` in the controls bar — "Color scheme" with Light / Dark / Auto. Bound via `model<'light' | 'dark' | 'auto'>('auto')`. Sits after the existing Version and App-accent pickers.
-- [ ] **FR-37** — **Mobile / touch accessibility (cheap fixes)**. Pure-CSS pass, no JS:
-   - `@media (pointer: coarse)` block bumping tab buttons, item buttons, popup triggers, and menu items to `min-height: 44px` (WCAG 2.5.5 / Apple HIG / Material guideline). Padding scales proportionally so the layout doesn't bunch.
-   - `overflow-x: auto` on `.ribbon-tablist` so tabs that don't fit at narrow widths (Home / Insert / Design / Layout / Format / Effects when contextual is active) are reachable via swipe.
-   - `max-width: calc(100vw - 16px)` on every popup / menu overlay (group popup-chunk, dropdown-button menu, split-button menu) so overlays never exceed the viewport — combined with the existing viewport-clamping `OverlayController`.
-   - **Intentionally NOT** adding `overflow-x: auto` to `.ribbon-content` — the group-overflow story belongs to Simplified layout (FR-8); horizontal-scrolling group panels is not Office-faithful.
-- [ ] **FR-38** — **`[touchMode]` input** on `bs-ribbon`, values `'auto' | 'on' | 'off'`, default `'auto'`. Reflected as `touch-mode="..."` attribute on `mp-ribbon`. `'auto'` follows `@media (pointer: coarse)` (same shape as `[colorScheme]="auto"`); explicit `'on'`/`'off'` overrides. When active (either via auto or explicit), applies the FR-37 padding bumps. Lets desktop users with touch screens opt in, and lets phone users opt out if they want the dense desktop layout. Demo gains a fourth `<bs-select>` (Touch / Mouse / Auto).
+- [x] **FR-37** — **Mobile / touch accessibility (cheap fixes)**. Pure-CSS pass, no JS. *(Landed:)*
+   - `@media (pointer: coarse)` bumps `mp-ribbon-menu-item` to `min-height: 44px` (universal — menu items always touch-friendly when primary pointer is coarse, regardless of `[touchMode]`).
+   - `overflow-x: auto` + `scrollbar-width: thin` on `.ribbon-tablist`; `flex: 0 0 auto` on `.ribbon-tab` so tabs keep natural width.
+   - `max-width: min(320px, calc(100vw - 16px))` on dropdown-button + split-button menu panels; `max-width: calc(100vw - 16px)` on `mp-ribbon-group`'s popup-chunk overlay.
+   - **Intentionally NOT** added `overflow-x: auto` to `.ribbon-content` — group-overflow story belongs to FR-39 Simplified layout, not horizontal scroll. Groups that don't fit even as popup triggers at narrow widths remain clipped until FR-39 lands. Documented limitation.
+- [x] **FR-38** — **`[touchMode]` input** on `bs-ribbon`, values `'auto' | 'on' | 'off'`, default `'auto'`. *(Landed: reflected as `touch-mode="..."` attribute on `mp-ribbon`. `'on'` bumps `.ribbon-tab` + `.ribbon-contextual-group-tabs > .ribbon-tab` to `min-height: 44px` + `12px 18px` padding. `'auto'` does the same only when `@media (pointer: coarse)` matches. `'off'` keeps dense desktop sizing. Demo's fourth `<bs-select>` is bound via `model<'on'|'off'|'auto'>('auto')`.)*
 - [ ] **FR-39** — Promote **Simplified layout (FR-8)** from "Should Have / partial" to the **mobile fallback story**. Currently `[layout]="simplified"` is accepted but renders identically to Classic. Spec for the proper implementation:
    - Single-row condensed item rendering: hide group headers + dialog launchers, render items inline horizontally at small size only, no 3-row grid.
    - **End-of-tab shared overflow chevron** (Office Simplified's signature): when items don't fit the tab body, a single `…` chevron appears at the right edge of the active tab's panel, opening a dropdown that pools every overflow item. Distinct from the per-group popup-chunk used in Classic (FR-7).
@@ -154,7 +154,6 @@ Audit of `libs/mintplayer-ng-bootstrap/ribbon/` against the requirements below.
 - Mini Toolbar (selection-floating toolbar — unrelated surface).
 - "Tell me / Search" command palette with command registry and fuzzy search.
 - Persisted QAT pins across sessions (consumer wires localStorage themselves).
-- Touch-mode larger hit targets (future enhancement once Office's touch ribbon stabilises).
 
 ---
 
@@ -364,14 +363,13 @@ The existing element `css\`...\`` blocks then consume these tokens with `var(--b
 **Caveats worth flagging in the PR review:**
 - Exact hex values for 2007/2010 gradients are pixel-sampled from third-party "Office theme" reproductions (Infragistics/DevExpress/Syncfusion) and Wikipedia commons screenshots — Microsoft never published a public colour-token spec for those releases. Treat as starting points; refine against actual screenshots in the review.
 - PowerPoint's accent has two competing canonical values in the wild (`#B7472A` vs `#D24726`). Document one and stay consistent across the project.
-- **Touch Mode** (an orthogonal Office 2013+ toggle that ~doubles button padding and tab height) is out of scope for FR-25; would be a separate `[touchMode]` input later.
+- **Touch Mode** (an orthogonal Office 2013+ toggle that ~doubles button padding and tab height) is now shipped under FR-38 as `[touchMode]="'on'|'off'|'auto'"` — not coupled to `[version]`.
 - **Office 2007's Aero glass blur** behind the title is an OS-level effect, not a ribbon style; not reproducible cross-browser and explicitly omitted.
 - The `office-2007` theme's `linear-gradient` tab strip will conflict with `--bs-ribbon-app-accent` if a consumer sets it — for 2007 the accent has no effect (no per-app colouring existed in that version). Document this.
 
 **Out-of-scope variations** (filed for later issues if demand arises):
 - Office 2007's Black / Silver colour schemes (only the Blue scheme is shipped under `office-2007`).
 - Office 2019 / Microsoft 365 "Coloured Header" / Backstage redesign.
-- Standalone Touch Mode toggle.
 
 ### Dark mode — implementation specifics (FR-32 / FR-33 / FR-34 / FR-35)
 
