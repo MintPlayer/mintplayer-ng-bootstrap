@@ -14,53 +14,129 @@
     [layout]="layout()"
     (tabChange)="onTabChange($event)"
   >
-    <!-- Home tab content -->
+    <!-- ============ Home tab ============ -->
     <bs-ribbon-group slot="content-home" groupId="clipboard" label="Clipboard" dialogLauncher="Clipboard Dialog">
-      <bs-ribbon-button
-        itemId="paste"
-        label="Paste"
-        icon="📋"
-        size="large"
-        (itemClick)="onItemClick($event)"
-      ></bs-ribbon-button>
-      <bs-ribbon-button
-        itemId="cut"
-        label="Cut"
-        icon="✂️"
-        size="small"
-        (itemClick)="onItemClick($event)"
-      ></bs-ribbon-button>
-      <bs-ribbon-button
-        itemId="copy"
-        label="Copy"
-        icon="📄"
-        size="small"
-        (itemClick)="onItemClick($event)"
-      ></bs-ribbon-button>
+      <bs-ribbon-button itemId="paste" label="Paste" icon="📋" size="large" tooltip="Paste (Ctrl+V)" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="cut" label="Cut" icon="✂️" size="small" tooltip="Cut (Ctrl+X)" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="copy" label="Copy" icon="📄" size="small" tooltip="Copy (Ctrl+C)" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="format-painter" label="Format Painter" icon="🖌️" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
     </bs-ribbon-group>
 
     <bs-ribbon-group slot="content-home" groupId="font" label="Font" dialogLauncher="Font Dialog">
-      <bs-ribbon-button
-        itemId="bold"
-        label="Bold"
-        icon="B"
-        size="small"
-        (itemClick)="onItemClick($event)"
-      ></bs-ribbon-button>
-      <bs-ribbon-button
-        itemId="italic"
-        label="Italic"
-        icon="I"
-        size="small"
-        (itemClick)="onItemClick($event)"
-      ></bs-ribbon-button>
-      <bs-ribbon-button
-        itemId="underline"
-        label="Underline"
-        icon="U"
-        size="small"
-        (itemClick)="onItemClick($event)"
-      ></bs-ribbon-button>
+      <bs-ribbon-button itemId="bold" label="Bold" icon="B" size="small" tooltip="Bold (Ctrl+B)" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="italic" label="Italic" icon="I" size="small" tooltip="Italic (Ctrl+I)" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="underline" label="Underline" icon="U" size="small" tooltip="Underline (Ctrl+U)" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="strikethrough" label="Strikethrough" icon="S̶" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="subscript" label="Subscript" icon="X₂" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="superscript" label="Superscript" icon="X²" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+    </bs-ribbon-group>
+
+    <bs-ribbon-group slot="content-home" groupId="paragraph" label="Paragraph" dialogLauncher="Paragraph Dialog">
+      <bs-ribbon-button itemId="bullets" label="Bullets" icon="•≡" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="numbering" label="Numbering" icon="1≡" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="indent-decrease" label="Decrease Indent" icon="⇤" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="indent-increase" label="Increase Indent" icon="⇥" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="align-left" label="Align Left" icon="⯇≡" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="align-center" label="Center" icon="≡⯈" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="align-right" label="Align Right" icon="≡⯈" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="justify" label="Justify" icon="≡≡" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+    </bs-ribbon-group>
+
+    <bs-ribbon-group slot="content-home" groupId="styles" label="Styles" dialogLauncher="Styles">
+      <bs-ribbon-button itemId="style-normal" label="Normal" icon="¶" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="style-h1" label="Heading 1" icon="H1" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="style-h2" label="Heading 2" icon="H2" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="style-title" label="Title" icon="T" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+    </bs-ribbon-group>
+
+    <bs-ribbon-group slot="content-home" groupId="editing" label="Editing">
+      <bs-ribbon-button itemId="find" label="Find" icon="🔍" size="small" tooltip="Find (Ctrl+F)" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="replace" label="Replace" icon="🔁" size="small" tooltip="Replace (Ctrl+H)" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="select" label="Select" icon="☐" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+    </bs-ribbon-group>
+
+    <!-- ============ Insert tab ============ -->
+    <bs-ribbon-group slot="content-insert" groupId="pages" label="Pages">
+      <bs-ribbon-button itemId="cover-page" label="Cover Page" icon="📑" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="blank-page" label="Blank Page" icon="📄" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="page-break" label="Page Break" icon="📑" size="medium" tooltip="Insert page break (Ctrl+Enter)" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+    </bs-ribbon-group>
+
+    <bs-ribbon-group slot="content-insert" groupId="tables" label="Tables">
+      <bs-ribbon-button itemId="table" label="Table" icon="▦" size="large" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+    </bs-ribbon-group>
+
+    <bs-ribbon-group slot="content-insert" groupId="illustrations" label="Illustrations">
+      <bs-ribbon-button itemId="pictures" label="Pictures" icon="🖼️" size="large" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="shapes" label="Shapes" icon="⬡" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="icons" label="Icons" icon="★" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="chart" label="Chart" icon="📊" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="smartart" label="SmartArt" icon="🧩" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="screenshot" label="Screenshot" icon="📸" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+    </bs-ribbon-group>
+
+    <bs-ribbon-group slot="content-insert" groupId="links" label="Links">
+      <bs-ribbon-button itemId="link" label="Link" icon="🔗" size="medium" tooltip="Insert hyperlink (Ctrl+K)" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="bookmark" label="Bookmark" icon="🔖" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="cross-reference" label="Cross-reference" icon="↗" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+    </bs-ribbon-group>
+
+    <bs-ribbon-group slot="content-insert" groupId="header-footer" label="Header &amp; Footer">
+      <bs-ribbon-button itemId="header" label="Header" icon="▔" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="footer" label="Footer" icon="▁" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="page-number" label="Page Number" icon="#" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+    </bs-ribbon-group>
+
+    <bs-ribbon-group slot="content-insert" groupId="text" label="Text">
+      <bs-ribbon-button itemId="text-box" label="Text Box" icon="🆎" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="wordart" label="WordArt" icon="🅰️" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="date-time" label="Date &amp; Time" icon="📅" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="symbol" label="Symbol" icon="Ω" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+    </bs-ribbon-group>
+
+    <!-- ============ Design tab ============ -->
+    <bs-ribbon-group slot="content-design" groupId="document-formatting" label="Document Formatting">
+      <bs-ribbon-button itemId="themes" label="Themes" icon="🎨" size="large" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="colors" label="Colors" icon="🌈" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="fonts" label="Fonts" icon="🔤" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="paragraph-spacing" label="Paragraph Spacing" icon="↕" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="effects" label="Effects" icon="✨" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="set-default" label="Set as Default" icon="✓" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+    </bs-ribbon-group>
+
+    <bs-ribbon-group slot="content-design" groupId="page-background" label="Page Background">
+      <bs-ribbon-button itemId="watermark" label="Watermark" icon="💧" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="page-color" label="Page Color" icon="🎨" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="page-borders" label="Page Borders" icon="▢" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+    </bs-ribbon-group>
+
+    <!-- ============ Layout tab ============ -->
+    <bs-ribbon-group slot="content-layout" groupId="page-setup" label="Page Setup" dialogLauncher="Page Setup">
+      <bs-ribbon-button itemId="margins" label="Margins" icon="▭" size="large" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="orientation" label="Orientation" icon="🔄" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="size" label="Size" icon="📏" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="columns" label="Columns" icon="▥" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="breaks" label="Breaks" icon="⤓" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="line-numbers" label="Line Numbers" icon="№" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="hyphenation" label="Hyphenation" icon="‐" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+    </bs-ribbon-group>
+
+    <bs-ribbon-group slot="content-layout" groupId="paragraph-layout" label="Paragraph" dialogLauncher="Paragraph">
+      <bs-ribbon-button itemId="indent-left" label="Indent Left" icon="⇥" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="indent-right" label="Indent Right" icon="⇤" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="space-before" label="Space Before" icon="↑≡" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="space-after" label="Space After" icon="↓≡" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+    </bs-ribbon-group>
+
+    <bs-ribbon-group slot="content-layout" groupId="arrange" label="Arrange">
+      <bs-ribbon-button itemId="position" label="Position" icon="⤧" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="wrap-text" label="Wrap Text" icon="↩" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="bring-forward" label="Bring Forward" icon="⬆" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="send-backward" label="Send Backward" icon="⬇" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="selection-pane" label="Selection Pane" icon="☰" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="align" label="Align" icon="⊟" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="group" label="Group" icon="⊞" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="rotate" label="Rotate" icon="↻" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
     </bs-ribbon-group>
   </bs-ribbon>
 </div>
