@@ -1,8 +1,12 @@
 import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BsRibbonComponent, RibbonTab, RibbonTabChangeEvent } from '@mintplayer/ng-bootstrap/ribbon';
-import { BsRibbonGroupComponent } from '@mintplayer/ng-bootstrap/ribbon';
-import { BsRibbonButtonComponent } from '@mintplayer/ng-bootstrap/ribbon';
+import {
+  BsRibbonComponent,
+  BsRibbonGroupComponent,
+  BsRibbonButtonComponent,
+  type RibbonTab,
+  type RibbonTabChangeEvent,
+} from '@mintplayer/ng-bootstrap/ribbon';
 
 @Component({
   selector: 'demo-ribbon',

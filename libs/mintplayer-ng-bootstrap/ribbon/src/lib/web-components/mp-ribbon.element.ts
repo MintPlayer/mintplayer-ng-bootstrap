@@ -1,11 +1,6 @@
 import { html, LitElement, nothing, type TemplateResult } from 'lit';
 import { property, query, queryAll } from 'lit/decorators.js';
-
-export interface RibbonTab {
-  id: string;
-  label: string;
-  content?: string;
-}
+import { type RibbonTab } from '../types/ribbon.types';
 
 /**
  * mp-ribbon — Microsoft Office–style Ribbon web component.

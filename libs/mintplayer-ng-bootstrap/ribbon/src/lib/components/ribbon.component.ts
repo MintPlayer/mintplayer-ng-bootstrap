@@ -10,17 +10,7 @@ import {
   viewChild,
   signal,
 } from '@angular/core';
-
-export interface RibbonTab {
-  id: string;
-  label: string;
-  content?: string;
-}
-
-export interface RibbonTabChangeEvent {
-  previousTabId: string;
-  activeTabId: string;
-}
+import { type RibbonTab, type RibbonTabChangeEvent } from '../types/ribbon.types';
 
 @Component({
   selector: 'bs-ribbon',
