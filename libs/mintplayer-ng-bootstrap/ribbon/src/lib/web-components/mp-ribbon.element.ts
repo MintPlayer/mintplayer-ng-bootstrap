@@ -611,19 +611,20 @@ export class MpRibbon extends LitElement {
 
   private firstFocusableInGroup(group: HTMLElement): HTMLElement | null {
     // Items may be raw Lit elements (`<mp-ribbon-button>`) or Angular wrappers
-    // (`<bs-ribbon-button>` is `display: contents`). Walk descendants until we
-    // find an `mp-ribbon-*` element — those use `delegatesFocus`, so focusing
-    // the host forwards into the inner shadow-root button.
-    const candidates = group.querySelectorAll<HTMLElement>(
-      'mp-ribbon-button, mp-ribbon-toggle-button, mp-ribbon-checkbox, mp-ribbon-combobox, ' +
-        'mp-ribbon-color-picker, mp-ribbon-group-button, mp-ribbon-split-button, ' +
-        'mp-ribbon-dropdown-button, mp-ribbon-gallery, mp-ribbon-template-item'
-    );
-    for (const candidate of Array.from(candidates)) {
-      if (candidate.hasAttribute('disabled')) continue;
-      if (typeof candidate.focus === 'function') return candidate;
-    }
-    return null;
+    // (`<bs-ribbon-button>` is `display: contents`). Walk descendants for any
+    // `mp-ribbon-*` item host — those use `delegatesFocus`, so focusing the
+    // host forwards into the inner shadow-root button. Prefer the item that
+    // currently has `tabindex="0"` (the group's roving "active") so jumping
+    // back into a group restores its last-focused position.
+    const candidates = Array.from(
+      group.querySelectorAll<HTMLElement>(
+        'mp-ribbon-button, mp-ribbon-toggle-button, mp-ribbon-checkbox, mp-ribbon-combobox, ' +
+          'mp-ribbon-color-picker, mp-ribbon-group-button, mp-ribbon-split-button, ' +
+          'mp-ribbon-dropdown-button, mp-ribbon-gallery, mp-ribbon-template-item'
+      )
+    ).filter((candidate) => !candidate.hasAttribute('disabled'));
+    if (candidates.length === 0) return null;
+    return candidates.find((c) => c.getAttribute('tabindex') === '0') ?? candidates[0];
   }
 
   private onContextualVisibilityChange = (event: Event): void => {

@@ -152,21 +152,137 @@ export class MpRibbonGroup extends LitElement {
   @state()
   private popupTop = 0;
 
+  /**
+   * Selector for focusable item hosts inside this group. Matches every kind
+   * that extends `MpRibbonItemBase` (all of which get `delegatesFocus: true`
+   * via the base class) so setting `tabindex` on the host controls whether
+   * the whole item is reachable via Tab.
+   */
+  private static readonly ITEM_SELECTOR =
+    'mp-ribbon-button, mp-ribbon-toggle-button, mp-ribbon-checkbox, ' +
+    'mp-ribbon-combobox, mp-ribbon-color-picker, mp-ribbon-group-button, ' +
+    'mp-ribbon-split-button, mp-ribbon-dropdown-button, mp-ribbon-gallery';
+
+  private slotObserver?: MutationObserver;
+
   override connectedCallback() {
     super.connectedCallback();
     document.addEventListener('keydown', this.onKeyDown);
+    this.addEventListener('focusin', this.onFocusIn);
+    this.addEventListener('keydown', this.onGroupKeyDown);
+    // Light-DOM children may arrive after connectedCallback (Angular renders
+    // its wrappers asynchronously). Watch for changes and re-apply tabindex.
+    this.slotObserver = new MutationObserver(() => this.applyRovingTabindex());
+    this.slotObserver.observe(this, { childList: true, subtree: true });
+    // Initial pass (deferred so children that haven't been parsed yet land).
+    Promise.resolve().then(() => this.applyRovingTabindex());
   }
 
   override disconnectedCallback() {
     super.disconnectedCallback();
     document.removeEventListener('keydown', this.onKeyDown);
     document.removeEventListener('mousedown', this.onDocMouseDown, true);
+    this.removeEventListener('focusin', this.onFocusIn);
+    this.removeEventListener('keydown', this.onGroupKeyDown);
+    this.slotObserver?.disconnect();
+    this.slotObserver = undefined;
   }
+
+  /**
+   * Roving tabindex (APG toolbar pattern). The first non-disabled item gets
+   * `tabindex="0"`; the rest get `tabindex="-1"`. When focus moves between
+   * items, `onFocusIn` updates which item is currently tabbable so that Tab
+   * away + Tab back returns focus to the last visited item in this group.
+   */
+  private applyRovingTabindex(): void {
+    const items = this.collectItems();
+    if (items.length === 0) return;
+    // If one already has tabindex="0", keep it; otherwise promote the first.
+    let active = items.find((item) => item.getAttribute('tabindex') === '0');
+    if (!active) active = items[0];
+    for (const item of items) {
+      item.setAttribute('tabindex', item === active ? '0' : '-1');
+    }
+  }
+
+  private collectItems(): HTMLElement[] {
+    return Array.from(
+      this.querySelectorAll<HTMLElement>(MpRibbonGroup.ITEM_SELECTOR)
+    ).filter((item) => !item.hasAttribute('disabled'));
+  }
+
+  private onFocusIn = (event: FocusEvent): void => {
+    const target = event.target as Element | null;
+    if (!target) return;
+    // `target` may be the inner shadow-DOM button (event retargeting against
+    // the closed-ish-but-actually-open shadow boundary). Walk back up via
+    // composedPath to find the focusable item host.
+    const path = event.composedPath();
+    const focusedItem = path.find(
+      (n) =>
+        n instanceof HTMLElement &&
+        n.matches(MpRibbonGroup.ITEM_SELECTOR) &&
+        this.contains(n)
+    ) as HTMLElement | undefined;
+    if (!focusedItem) return;
+    for (const item of this.collectItems()) {
+      item.setAttribute('tabindex', item === focusedItem ? '0' : '-1');
+    }
+  };
+
+  private onGroupKeyDown = (event: KeyboardEvent): void => {
+    // Ignore arrows that other handlers own:
+    // - Ctrl+ArrowLeft/Right is the ribbon's group-jump (FR-14).
+    // - ArrowDown is the dropdown/split trigger's "open menu" (FR-28).
+    if (event.ctrlKey || event.altKey || event.shiftKey || event.metaKey) return;
+    const { key } = event;
+    if (key !== 'ArrowLeft' && key !== 'ArrowRight' && key !== 'Home' && key !== 'End') {
+      return;
+    }
+
+    const path = event.composedPath();
+
+    // Skip when focus is inside a native form control — `<select>` cycles
+    // options on Left/Right when collapsed, `<input>` moves the caret, etc.
+    // The user Tabs out of these to reach the next item.
+    const innermost = path[0] as HTMLElement | undefined;
+    if (innermost && innermost instanceof HTMLElement) {
+      const tag = innermost.tagName;
+      if (tag === 'SELECT' || tag === 'INPUT' || tag === 'TEXTAREA') return;
+    }
+    // Skip when focus is inside a gallery — the gallery owns its own grid nav
+    // among its items. Roving across groups uses Ctrl+ArrowLeft/Right instead.
+    if (path.some((n) => n instanceof HTMLElement && n.tagName === 'MP-RIBBON-GALLERY')) {
+      return;
+    }
+
+    const items = this.collectItems();
+    if (items.length === 0) return;
+
+    const currentItem = path.find(
+      (n) =>
+        n instanceof HTMLElement && items.includes(n as HTMLElement)
+    ) as HTMLElement | undefined;
+    const currentIdx = currentItem ? items.indexOf(currentItem) : -1;
+
+    let nextIdx = currentIdx;
+    if (key === 'ArrowLeft') nextIdx = currentIdx <= 0 ? items.length - 1 : currentIdx - 1;
+    else if (key === 'ArrowRight') nextIdx = currentIdx >= items.length - 1 ? 0 : currentIdx + 1;
+    else if (key === 'Home') nextIdx = 0;
+    else if (key === 'End') nextIdx = items.length - 1;
+
+    if (nextIdx !== currentIdx && nextIdx >= 0) {
+      items[nextIdx].focus();
+      event.preventDefault();
+    }
+  };
 
   override updated(changed: Map<string, unknown>): void {
     if (changed.has('resolvedSize') && this.resolvedSize !== 'popup') {
-      // If the group expanded back, ensure the popup is closed.
-      if (this.popupOpen) this.closePopup();
+      // If the group expanded back, ensure the popup is closed. Don't return
+      // focus to the trigger — it's `display: none` once the group is
+      // expanded, so the focus call would fail silently and confuse the user.
+      if (this.popupOpen) this.closePopup(false);
     }
   }
 
@@ -177,7 +293,7 @@ export class MpRibbonGroup extends LitElement {
     return html`
       <div
         class="ribbon-group"
-        role="region"
+        role="toolbar"
         aria-label="${this.label}"
         style=${styleMap(popupStyles)}
       >
@@ -203,6 +319,7 @@ export class MpRibbonGroup extends LitElement {
         aria-label="${this.label}"
         title="${this.label}"
         @click="${this.onTriggerClick}"
+        @keydown="${this.onTriggerKeyDown}"
       >
         ${this.icon
           ? html`<span class="ribbon-popup-trigger-icon">${this.icon}</span>`
@@ -224,6 +341,17 @@ export class MpRibbonGroup extends LitElement {
     }
   };
 
+  private onTriggerKeyDown = (event: KeyboardEvent): void => {
+    // ArrowDown / Alt+ArrowDown open the popup without activating the trigger
+    // (matches `mp-ribbon-dropdown-button`'s trigger and Office's collapsed
+    // group). Enter / Space go through the click handler via native button
+    // semantics, so we don't need to handle them here.
+    if (event.key === 'ArrowDown' && !this.popupOpen) {
+      event.preventDefault();
+      this.openPopup();
+    }
+  };
+
   private async openPopup(): Promise<void> {
     this.popupOpen = true;
     this.setAttribute('data-popup-open', '');
@@ -233,12 +361,25 @@ export class MpRibbonGroup extends LitElement {
     setTimeout(() => {
       document.addEventListener('mousedown', this.onDocMouseDown, true);
     }, 0);
+    // Move focus into the popup so keyboard users can reach the items inside
+    // — Office-faithful and matches the APG "disclosure / menu" pattern. The
+    // popup's items use delegatesFocus on their host so .focus() forwards into
+    // the inner shadow-root button.
+    const first = this.collectItems()[0];
+    first?.focus();
   }
 
-  private closePopup(): void {
+  private closePopup(returnFocus = true): void {
+    if (!this.popupOpen) return;
     this.popupOpen = false;
     this.removeAttribute('data-popup-open');
     document.removeEventListener('mousedown', this.onDocMouseDown, true);
+    if (returnFocus) {
+      const trigger = this.renderRoot.querySelector<HTMLElement>(
+        '.ribbon-popup-trigger'
+      );
+      trigger?.focus();
+    }
   }
 
   private positionPopup(): void {
@@ -268,16 +409,14 @@ export class MpRibbonGroup extends LitElement {
   private onDocMouseDown = (event: MouseEvent): void => {
     const path = event.composedPath();
     if (path.includes(this)) return;
-    this.closePopup();
+    // User clicked outside — leave focus wherever the click landed, don't
+    // yank it back to the trigger.
+    this.closePopup(false);
   };
 
   private onKeyDown = (event: KeyboardEvent): void => {
     if (event.key === 'Escape' && this.popupOpen) {
       this.closePopup();
-      const trigger = this.renderRoot.querySelector<HTMLElement>(
-        '.ribbon-popup-trigger'
-      );
-      trigger?.focus();
       event.preventDefault();
     }
   };

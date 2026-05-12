@@ -13,5 +13,93 @@
       font-size: 0.875rem;
     }
   }
+
+  .keymap {
+    margin-top: 2rem;
+    padding: 1.25rem 1.5rem;
+    border: 1px solid var(--bs-border-color, #dee2e6);
+    border-radius: 0.5rem;
+    background: var(--bs-tertiary-bg, #f8f9fa);
+    color: var(--bs-body-color, inherit);
+
+    h3 {
+      margin: 0 0 0.25rem;
+      font-size: 1.1rem;
+    }
+
+    .keymap-intro {
+      margin: 0 0 1rem;
+      font-size: 0.875rem;
+      color: var(--bs-secondary-color, #6c757d);
+    }
+
+    .keymap-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1rem;
+    }
+
+    .keymap-card {
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--bs-border-color, #dee2e6);
+      border-radius: 0.375rem;
+      background: var(--bs-body-bg, #fff);
+
+      h4 {
+        margin: 0 0 0.5rem;
+        font-size: 0.95rem;
+        color: var(--bs-secondary-color, #495057);
+        border-bottom: 1px solid var(--bs-border-color, #e9ecef);
+        padding-bottom: 0.35rem;
+      }
+
+      dl {
+        margin: 0;
+        display: grid;
+        grid-template-columns: minmax(110px, max-content) 1fr;
+        column-gap: 0.75rem;
+        row-gap: 0.4rem;
+        font-size: 0.8125rem;
+      }
+
+      dt {
+        font-weight: 500;
+        white-space: nowrap;
+      }
+
+      dd {
+        margin: 0;
+        color: var(--bs-secondary-color, #6c757d);
+      }
+    }
+
+    kbd {
+      display: inline-block;
+      padding: 0.05rem 0.4rem;
+      font-family: ui-monospace, "SF Mono", Consolas, Menlo, monospace;
+      font-size: 0.78rem;
+      line-height: 1.4;
+      color: var(--bs-body-color, #212529);
+      background: var(--bs-body-bg, #fff);
+      border: 1px solid var(--bs-border-color, #ced4da);
+      border-bottom-width: 2px;
+      border-radius: 0.25rem;
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
+    }
+
+    .keymap-note {
+      margin: 1rem 0 0;
+      font-size: 0.8125rem;
+      color: var(--bs-secondary-color, #6c757d);
+
+      code {
+        font-family: ui-monospace, "SF Mono", Consolas, Menlo, monospace;
+        font-size: 0.78rem;
+        background: var(--bs-secondary-bg, #e9ecef);
+        padding: 0.05rem 0.3rem;
+        border-radius: 0.2rem;
+      }
+    }
+  }
 }
 

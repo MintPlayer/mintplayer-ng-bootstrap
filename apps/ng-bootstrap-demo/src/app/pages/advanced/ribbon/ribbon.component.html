@@ -268,4 +268,90 @@
     </bs-ribbon-group>
     </bs-ribbon-tab>
   </bs-ribbon>
+
+  <section class="keymap" aria-labelledby="ribbon-keymap-heading">
+    <h3 id="ribbon-keymap-heading">Keyboard shortcuts</h3>
+    <p class="keymap-intro">
+      The ribbon follows the WAI-ARIA tab + toolbar pattern with Office-style
+      shortcuts. Click anywhere in the ribbon first to put focus inside it.
+    </p>
+
+    <div class="keymap-grid">
+      <article class="keymap-card">
+        <h4>Tab strip</h4>
+        <dl>
+          <dt><kbd>←</kbd> / <kbd>→</kbd></dt>
+          <dd>Move focus to the previous / next tab</dd>
+          <dt><kbd>Home</kbd> / <kbd>End</kbd></dt>
+          <dd>Jump to the first / last tab</dd>
+          <dt><kbd>Enter</kbd> / <kbd>Space</kbd></dt>
+          <dd>Activate the focused tab</dd>
+          <dt><kbd>Double-click</kbd></dt>
+          <dd>Minimize / restore the ribbon</dd>
+        </dl>
+      </article>
+
+      <article class="keymap-card">
+        <h4>Inside a group</h4>
+        <dl>
+          <dt><kbd>←</kbd> / <kbd>→</kbd></dt>
+          <dd>Rove between items in the same group (wraps at ends)</dd>
+          <dt><kbd>Home</kbd> / <kbd>End</kbd></dt>
+          <dd>Jump to the first / last item in the group</dd>
+          <dt><kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd></dt>
+          <dd>Move to the next / previous group (one tabbable per group)</dd>
+          <dt><kbd>Enter</kbd> / <kbd>Space</kbd></dt>
+          <dd>Activate the focused item</dd>
+        </dl>
+      </article>
+
+      <article class="keymap-card">
+        <h4>Across groups</h4>
+        <dl>
+          <dt><kbd>Ctrl</kbd>+<kbd>←</kbd> / <kbd>Ctrl</kbd>+<kbd>→</kbd></dt>
+          <dd>Jump focus to the previous / next group inside the active tab</dd>
+        </dl>
+      </article>
+
+      <article class="keymap-card">
+        <h4>Dropdowns, menus &amp; collapsed groups</h4>
+        <dl>
+          <dt><kbd>↓</kbd> / <kbd>Alt</kbd>+<kbd>↓</kbd></dt>
+          <dd>Open the menu on a dropdown / split button, or on a collapsed group's chevron</dd>
+          <dt><kbd>Enter</kbd> / <kbd>Space</kbd></dt>
+          <dd>Same as above (activate the trigger). Opens the popup and moves focus into its first item</dd>
+          <dt><kbd>↑</kbd> / <kbd>↓</kbd></dt>
+          <dd>Move highlight between menu items</dd>
+          <dt><kbd>←</kbd> / <kbd>→</kbd></dt>
+          <dd>Inside a collapsed group's popup, rove between items the same as inside an expanded group</dd>
+          <dt><kbd>Esc</kbd></dt>
+          <dd>Close the open menu or popup and return focus to the trigger</dd>
+        </dl>
+      </article>
+
+      <article class="keymap-card">
+        <h4>Ribbon itself</h4>
+        <dl>
+          <dt><kbd>Ctrl</kbd>+<kbd>F1</kbd></dt>
+          <dd>Minimize / restore the ribbon (announced via live region)</dd>
+        </dl>
+      </article>
+
+      <article class="keymap-card">
+        <h4>Quick Access Toolbar</h4>
+        <dl>
+          <dt><kbd>←</kbd> / <kbd>→</kbd></dt>
+          <dd>Rove between pinned commands</dd>
+          <dt><kbd>Home</kbd> / <kbd>End</kbd></dt>
+          <dd>First / last pinned command</dd>
+        </dl>
+      </article>
+    </div>
+
+    <p class="keymap-note">
+      Screen-reader users also hear announcements (<code>aria-live="polite"</code>)
+      for ribbon minimize / restore, contextual-tab show / hide, and overflow-group
+      collapse / expand transitions.
+    </p>
+  </section>
 </div>
