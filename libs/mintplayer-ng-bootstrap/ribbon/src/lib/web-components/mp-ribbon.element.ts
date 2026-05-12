@@ -215,8 +215,14 @@ export class MpRibbon extends LitElement {
       white-space: nowrap;
     }
     .ribbon-contextual-group-tabs {
-      display: inline-flex;
+      display: flex;
       flex-direction: row;
+      align-self: stretch;
+    }
+    .ribbon-contextual-group-tabs > .ribbon-tab {
+      flex: 1 0 auto;
+      text-align: center;
+      justify-content: center;
     }
     .ribbon-tab.contextual {
       border-top: 3px solid var(--bs-ribbon-contextual-color, transparent);
