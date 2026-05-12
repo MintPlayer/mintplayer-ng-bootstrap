@@ -26,6 +26,7 @@ export const ROUTES: Routes = [
   { path: 'splitter', loadComponent: () => import('./splitter/splitter.component').then(m => m.SplitterComponent) },
   { path: 'dock', loadComponent: () => import('./dock/dock.component').then(m => m.DockComponent) },
   { path: 'tile-manager', loadComponent: () => import('./tile-manager/tile-manager.component').then(m => m.TileManagerComponent) },
+  { path: 'ribbon', loadComponent: () => import('./ribbon/ribbon.component').then(m => m.RibbonComponent) },
   { path: 'instance-of', loadComponent: () => import('./instance-of/instance-of.component').then(m => m.InstanceOfComponent) },
   { path: 'resizable', loadComponent: () => import('./resizable/resizable.component').then(m => m.ResizableComponent) },
   { path: 'signature-pad', loadComponent: () => import('./signature-pad/signature-pad.component').then(m => m.SignaturePadComponent) },

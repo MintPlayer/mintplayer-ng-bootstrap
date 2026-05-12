@@ -1,0 +1,17 @@
+<div class="demo-ribbon">
+  <div class="controls">
+    <button (click)="toggleMinimized()">
+      {{ minimized() ? 'Restore' : 'Minimize' }} Ribbon (Ctrl+F1)
+    </button>
+    <button (click)="toggleLayout()">
+      Switch to {{ layout() === 'classic' ? 'Simplified' : 'Classic' }} Layout
+    </button>
+  </div>
+
+  <bs-ribbon
+    [tabs]="tabs"
+    [minimized]="minimized()"
+    [layout]="layout()"
+    (tabChange)="onTabChange($event)"
+  ></bs-ribbon>
+</div>

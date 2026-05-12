@@ -1,0 +1,203 @@
+import { html, LitElement, nothing, type TemplateResult } from 'lit';
+import { property, query, queryAll } from 'lit/decorators.js';
+
+export interface RibbonTab {
+  id: string;
+  label: string;
+  content?: string;
+}
+
+/**
+ * mp-ribbon — Microsoft Office–style Ribbon web component.
+ *
+ * Manages a tab strip with groupable items, overflow behavior, sizing,
+ * contextual tabs, Quick Access Toolbar, and KeyTips.
+ *
+ * Phase 1: Core WC structure + tab strip navigation (roving tabindex, arrow keys)
+ */
+export class MpRibbon extends LitElement {
+  static override styles = [];
+
+  /** Array of tab objects: { id, label, [content] } */
+  @property({ type: Array })
+  tabs: RibbonTab[] = [];
+
+  /** Currently active tab ID */
+  @property({ type: String })
+  activeTabId: string = '';
+
+  /** Layout mode: 'classic' | 'simplified' */
+  @property({ type: String })
+  layout: 'classic' | 'simplified' = 'classic';
+
+  /** True if ribbon is minimized (shows only tab strip) */
+  @property({ type: Boolean })
+  minimized: boolean = false;
+
+  @query('[role="tablist"]')
+  private tabListEl?: HTMLElement;
+
+  @queryAll('[role="tab"]')
+  private tabElements: HTMLElement[] = [];
+
+  private currentTabIndex = 0;
+
+  constructor() {
+    super();
+  }
+
+  override connectedCallback() {
+    super.connectedCallback();
+    this.setAttribute('role', 'application');
+    this.setAttribute('aria-label', 'Ribbon');
+
+    // If no active tab, default to first
+    if (!this.activeTabId && this.tabs.length > 0) {
+      this.activeTabId = this.tabs[0].id;
+      this.currentTabIndex = 0;
+    }
+  }
+
+  override render(): TemplateResult {
+    return html`
+      <div class="ribbon-container">
+        <!-- Tab strip -->
+        <div role="tablist" class="ribbon-tablist" @keydown="${this.onTabListKeydown}">
+          ${this.tabs.map((tab, index) => this.renderTab(tab, index))}
+        </div>
+
+        <!-- Content area (only visible if not minimized) -->
+        ${!this.minimized ? html`
+          <div class="ribbon-content">
+            ${this.tabs.map((tab) => this.renderTabPanel(tab))}
+          </div>
+        ` : nothing}
+      </div>
+    `;
+  }
+
+  private renderTab(tab: RibbonTab, index: number): TemplateResult {
+    const isActive = tab.id === this.activeTabId;
+    const tabIndex = isActive ? 0 : -1;
+
+    return html`
+      <button
+        role="tab"
+        class="ribbon-tab ${isActive ? 'active' : ''}"
+        aria-selected="${isActive}"
+        aria-controls="ribbon-panel-${tab.id}"
+        tabindex="${tabIndex}"
+        data-tab-id="${tab.id}"
+        @click="${() => this.selectTab(tab.id)}"
+      >
+        ${tab.label}
+      </button>
+    `;
+  }
+
+  private renderTabPanel(tab: RibbonTab): TemplateResult {
+    const isActive = tab.id === this.activeTabId;
+    return html`
+      <div
+        role="tabpanel"
+        id="ribbon-panel-${tab.id}"
+        class="ribbon-panel ${isActive ? 'active' : ''}"
+        aria-labelledby="ribbon-tab-${tab.id}"
+        ?hidden="${!isActive}"
+      >
+        ${tab.content || html`<slot name="content-${tab.id}"></slot>`}
+      </div>
+    `;
+  }
+
+  private selectTab(tabId: string): void {
+    const previousTabId = this.activeTabId;
+    this.activeTabId = tabId;
+
+    // Update roving tabindex
+    const tabIndex = this.tabs.findIndex((t) => t.id === tabId);
+    if (tabIndex !== -1) {
+      this.currentTabIndex = tabIndex;
+    }
+
+    // Dispatch change event
+    this.dispatchEvent(
+      new CustomEvent('tab-change', {
+        detail: { previousTabId, activeTabId: tabId },
+        bubbles: true,
+        composed: true,
+      })
+    );
+
+    this.requestUpdate();
+  }
+
+  private onTabListKeydown = (event: KeyboardEvent): void => {
+    const { key } = event;
+    let handled = false;
+
+    switch (key) {
+      case 'ArrowLeft':
+      case 'ArrowUp':
+        this.focusPreviousTab();
+        handled = true;
+        break;
+
+      case 'ArrowRight':
+      case 'ArrowDown':
+        this.focusNextTab();
+        handled = true;
+        break;
+
+      case 'Home':
+        this.focusTabAt(0);
+        handled = true;
+        break;
+
+      case 'End':
+        this.focusTabAt(this.tabs.length - 1);
+        handled = true;
+        break;
+
+      case 'Enter':
+      case ' ':
+        // Activate focused tab
+        const focusedTab = this.tabElements[this.currentTabIndex];
+        if (focusedTab) {
+          const tabId = focusedTab.getAttribute('data-tab-id');
+          if (tabId) {
+            this.selectTab(tabId);
+            handled = true;
+          }
+        }
+        break;
+    }
+
+    if (handled) {
+      event.preventDefault();
+    }
+  };
+
+  private focusPreviousTab(): void {
+    const newIndex = Math.max(0, this.currentTabIndex - 1);
+    this.focusTabAt(newIndex);
+  }
+
+  private focusNextTab(): void {
+    const newIndex = Math.min(this.tabs.length - 1, this.currentTabIndex + 1);
+    this.focusTabAt(newIndex);
+  }
+
+  private focusTabAt(index: number): void {
+    if (index >= 0 && index < this.tabElements.length) {
+      const tab = this.tabElements[index];
+      tab.focus();
+      this.currentTabIndex = index;
+
+      // Optionally auto-select on arrow nav (APG Tabs pattern: automatic activation)
+      // For now, just focus; Space/Enter required to select.
+    }
+  }
+}
+
+customElements.define('mp-ribbon', MpRibbon);
