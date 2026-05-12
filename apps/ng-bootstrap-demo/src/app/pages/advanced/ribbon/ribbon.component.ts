@@ -9,6 +9,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   BsRibbonComponent,
+  BsQuickAccessToolbarComponent,
   BsRibbonTabComponent,
   BsRibbonContextualTabSetComponent,
   BsRibbonGroupComponent,
@@ -49,6 +50,7 @@ interface AppAccentOption {
     CommonModule,
     FormsModule,
     BsRibbonComponent,
+    BsQuickAccessToolbarComponent,
     BsRibbonTabComponent,
     BsRibbonContextualTabSetComponent,
     BsRibbonGroupComponent,

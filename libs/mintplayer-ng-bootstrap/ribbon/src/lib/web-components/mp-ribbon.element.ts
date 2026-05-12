@@ -1,5 +1,6 @@
 import { css, html, LitElement, nothing, type TemplateResult } from 'lit';
 import { property, state } from 'lit/decorators.js';
+import { LiveAnnouncerController } from '@mintplayer/ng-bootstrap/web-components/a11y';
 
 interface TabEntry {
   tabId: string;
@@ -504,6 +505,12 @@ export class MpRibbon extends LitElement {
   private reflowFrame: number = 0;
   private readonly naturalWidths = new WeakMap<HTMLElement, number>();
 
+  private readonly liveAnnouncer = new LiveAnnouncerController(this);
+  private readonly collapsedGroupLabels = new WeakMap<HTMLElement, string>();
+  private readonly previousCollapsedGroups = new Set<HTMLElement>();
+  /** Last-seen hidden state per contextual-set label; lets us announce only transitions. */
+  private readonly contextualSetHiddenState = new Map<string, boolean>();
+
   private get tabElements(): HTMLElement[] {
     return Array.from(this.renderRoot.querySelectorAll<HTMLElement>('[role="tab"]'));
   }
@@ -526,6 +533,7 @@ export class MpRibbon extends LitElement {
       'contextual-visibility-change',
       this.onContextualVisibilityChange
     );
+    this.addEventListener('keydown', this.onHostKeyDown);
   }
 
   override disconnectedCallback() {
@@ -536,9 +544,101 @@ export class MpRibbon extends LitElement {
       'contextual-visibility-change',
       this.onContextualVisibilityChange
     );
+    this.removeEventListener('keydown', this.onHostKeyDown);
   }
 
-  private onContextualVisibilityChange = (): void => {
+  /**
+   * Host-level keydown for ribbon-wide shortcuts. Fires whenever focus is
+   * inside the ribbon's subtree (the tab strip or any slotted group).
+   * - Ctrl+F1 toggles minimize/restore (Office).
+   * - Ctrl+ArrowLeft/Right jumps focus between groups in the active tab.
+   */
+  private onHostKeyDown = (event: KeyboardEvent): void => {
+    if (event.ctrlKey && event.key === 'F1') {
+      event.preventDefault();
+      this.toggleMinimizedFromUser();
+      return;
+    }
+    if (event.ctrlKey && (event.key === 'ArrowLeft' || event.key === 'ArrowRight')) {
+      const path = event.composedPath();
+      // Skip if focus is on a ribbon tab — the tablist's arrow handler owns that.
+      if (path.some((n) => n instanceof HTMLElement && n.getAttribute('role') === 'tab')) {
+        return;
+      }
+      const fromGroup = path.find(
+        (n) => n instanceof HTMLElement && n.tagName === 'MP-RIBBON-GROUP'
+      ) as HTMLElement | undefined;
+      if (fromGroup) {
+        if (this.moveFocusBetweenGroups(fromGroup, event.key === 'ArrowRight' ? 1 : -1)) {
+          event.preventDefault();
+        }
+      }
+    }
+  };
+
+  private toggleMinimizedFromUser(): void {
+    this.minimized = !this.minimized;
+    this.dispatchEvent(
+      new CustomEvent('minimize-toggle', {
+        detail: { minimized: this.minimized },
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
+  private moveFocusBetweenGroups(fromGroup: HTMLElement, direction: 1 | -1): boolean {
+    const activeTab = this.tabsList.find((t) => t.tabId === this.activeTabId);
+    if (!activeTab) return false;
+    const groups = this.collectActiveGroups(activeTab.element).filter(
+      (g) => g.getAttribute('data-resolved-size') !== 'popup' || g.hasAttribute('data-popup-open')
+    );
+    if (groups.length === 0) return false;
+
+    const currentIdx = groups.indexOf(fromGroup);
+    if (currentIdx === -1) return false;
+
+    const nextIdx = currentIdx + direction;
+    if (nextIdx < 0 || nextIdx >= groups.length) return false;
+
+    const target = this.firstFocusableInGroup(groups[nextIdx]);
+    if (target) {
+      target.focus();
+      return true;
+    }
+    return false;
+  }
+
+  private firstFocusableInGroup(group: HTMLElement): HTMLElement | null {
+    // Items may be raw Lit elements (`<mp-ribbon-button>`) or Angular wrappers
+    // (`<bs-ribbon-button>` is `display: contents`). Walk descendants until we
+    // find an `mp-ribbon-*` element — those use `delegatesFocus`, so focusing
+    // the host forwards into the inner shadow-root button.
+    const candidates = group.querySelectorAll<HTMLElement>(
+      'mp-ribbon-button, mp-ribbon-toggle-button, mp-ribbon-checkbox, mp-ribbon-combobox, ' +
+        'mp-ribbon-color-picker, mp-ribbon-group-button, mp-ribbon-split-button, ' +
+        'mp-ribbon-dropdown-button, mp-ribbon-gallery, mp-ribbon-template-item'
+    );
+    for (const candidate of Array.from(candidates)) {
+      if (candidate.hasAttribute('disabled')) continue;
+      if (typeof candidate.focus === 'function') return candidate;
+    }
+    return null;
+  }
+
+  private onContextualVisibilityChange = (event: Event): void => {
+    const detail = (event as CustomEvent<{ hidden: boolean; label: string }>).detail;
+    if (detail?.label) {
+      const previous = this.contextualSetHiddenState.get(detail.label);
+      if (previous !== undefined && previous !== detail.hidden) {
+        this.liveAnnouncer.announce(
+          detail.hidden
+            ? `${detail.label}, contextual, hidden`
+            : `${detail.label}, contextual, now available`
+        );
+      }
+      this.contextualSetHiddenState.set(detail.label, detail.hidden);
+    }
     if (this.contentSlot) this.processSlot(this.contentSlot);
   };
 
@@ -548,6 +648,11 @@ export class MpRibbon extends LitElement {
     }
     if (changed.has('activeTabId') || changed.has('minimized')) {
       this.scheduleReflow();
+    }
+    if (changed.has('minimized') && changed.get('minimized') !== undefined) {
+      this.liveAnnouncer.announce(
+        this.minimized ? 'Ribbon minimized' : 'Ribbon restored'
+      );
     }
   }
 
@@ -568,6 +673,7 @@ export class MpRibbon extends LitElement {
             </div>`
           : html`<div hidden><slot @slotchange="${this.onSlotChange}"></slot></div>`}
       </div>
+      ${this.liveAnnouncer.template()}
     `;
   }
 
@@ -640,6 +746,7 @@ export class MpRibbon extends LitElement {
         tabindex="${tabIndex}"
         data-tab-id="${tab.tabId}"
         @click="${() => this.selectTab(tab.tabId)}"
+        @dblclick="${() => this.toggleMinimizedFromUser()}"
       >${tab.label}</button>
     `;
   }
@@ -891,7 +998,33 @@ export class MpRibbon extends LitElement {
     // collapse another).
     if (mutated) {
       this.scheduleReflow();
+      return;
     }
+
+    // Once layout has settled, diff the popped set against the previous frame
+    // and announce threshold crossings.
+    const nowCollapsed = new Set<HTMLElement>();
+    for (const group of groups) {
+      if (group.getAttribute('data-resolved-size') === 'popup') {
+        nowCollapsed.add(group);
+        const label = group.getAttribute('label') ?? '';
+        if (label) this.collapsedGroupLabels.set(group, label);
+      }
+    }
+    for (const group of nowCollapsed) {
+      if (!this.previousCollapsedGroups.has(group)) {
+        const label = this.collapsedGroupLabels.get(group) ?? group.getAttribute('label') ?? '';
+        if (label) this.liveAnnouncer.announce(`${label} group collapsed`);
+      }
+    }
+    for (const group of this.previousCollapsedGroups) {
+      if (!nowCollapsed.has(group)) {
+        const label = this.collapsedGroupLabels.get(group) ?? '';
+        if (label) this.liveAnnouncer.announce(`${label} group expanded`);
+      }
+    }
+    this.previousCollapsedGroups.clear();
+    for (const group of nowCollapsed) this.previousCollapsedGroups.add(group);
   }
 
   /**

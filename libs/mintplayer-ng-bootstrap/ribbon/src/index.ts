@@ -3,6 +3,7 @@ export type { RibbonTabChangeEvent } from './lib/types/ribbon.types';
 
 // Angular components (wrappers)
 export { BsRibbonComponent } from './lib/components/ribbon.component';
+export { BsQuickAccessToolbarComponent } from './lib/components/quick-access-toolbar.component';
 export { BsRibbonTabComponent } from './lib/components/ribbon-tab.component';
 export { BsRibbonContextualTabSetComponent } from './lib/components/ribbon-contextual-tab-set.component';
 export { BsRibbonGroupComponent } from './lib/components/ribbon-group.component';
@@ -24,6 +25,7 @@ export type { RibbonGroupButtonOption } from './lib/web-components/items/mp-ribb
 
 // Lit WC (core logic)
 export { MpRibbon } from './lib/web-components/mp-ribbon.element';
+export { MpQuickAccessToolbar } from './lib/web-components/mp-quick-access-toolbar.element';
 export { MpRibbonTab } from './lib/web-components/mp-ribbon-tab.element';
 export { MpRibbonContextualTabSet } from './lib/web-components/mp-ribbon-contextual-tab-set.element';
 export { MpRibbonGroup } from './lib/web-components/mp-ribbon-group.element';

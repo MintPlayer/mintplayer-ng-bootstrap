@@ -43,8 +43,18 @@
     </label>
   </div>
 
+  <bs-quick-access-toolbar
+    label="Quick Access Toolbar"
+    [touchMode]="touchMode()"
+    [appAccent]="appAccent()"
+  >
+    <bs-ribbon-button itemId="qat-save" label="Save" icon="💾" size="small" tooltip="Save (Ctrl+S)" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+    <bs-ribbon-button itemId="qat-undo" label="Undo" icon="↶" size="small" tooltip="Undo (Ctrl+Z)" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+    <bs-ribbon-button itemId="qat-redo" label="Redo" icon="↷" size="small" tooltip="Redo (Ctrl+Y)" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+  </bs-quick-access-toolbar>
+
   <bs-ribbon
-    [minimized]="minimized()"
+    [(minimized)]="minimized"
     [layout]="layout()"
     [version]="version()"
     [colorScheme]="colorScheme()"

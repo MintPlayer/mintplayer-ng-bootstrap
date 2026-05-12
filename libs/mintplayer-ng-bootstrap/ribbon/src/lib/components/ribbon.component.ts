@@ -4,6 +4,7 @@ import {
   CUSTOM_ELEMENTS_SCHEMA,
   ElementRef,
   input,
+  model,
   output,
   signal,
   viewChild,
@@ -24,6 +25,7 @@ import { type RibbonTabChangeEvent } from '../types/ribbon.types';
       [attr.touch-mode]="touchMode()"
       [style.--bs-ribbon-app-accent]="appAccent()"
       (tab-change)="onTabChange($event)"
+      (minimize-toggle)="onMinimizeToggle($event)"
     >
       <ng-content></ng-content>
     </mp-ribbon>
@@ -38,7 +40,7 @@ import { type RibbonTabChangeEvent } from '../types/ribbon.types';
 export class BsRibbonComponent {
   readonly activeTabId = signal<string>('');
   readonly layout = input<'classic' | 'simplified'>('classic');
-  readonly minimized = input<boolean>(false);
+  readonly minimized = model<boolean>(false);
   readonly version = input<
     'office-2007' | 'office-2010' | 'office-2013' | 'office-2016'
   >('office-2016');
@@ -54,5 +56,10 @@ export class BsRibbonComponent {
     const detail = (event as CustomEvent<RibbonTabChangeEvent>).detail;
     this.activeTabId.set(detail.activeTabId);
     this.tabChange.emit(detail);
+  }
+
+  onMinimizeToggle(event: Event): void {
+    const detail = (event as CustomEvent<{ minimized: boolean }>).detail;
+    this.minimized.set(detail.minimized);
   }
 }
