@@ -25,11 +25,23 @@ export class MpRibbonGroup extends LitElement {
       min-width: 64px;
     }
     .ribbon-group-items {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
-      align-items: flex-start;
+      display: grid;
+      grid-template-rows: repeat(3, auto);
+      grid-auto-flow: column;
+      column-gap: 4px;
+      row-gap: 0;
+      align-items: center;
+      justify-items: start;
       flex: 1;
+    }
+    ::slotted([size="large"]),
+    ::slotted([size="medium"]) {
+      grid-row: 1 / -1;
+      align-self: stretch;
+    }
+    ::slotted([size="small"]) {
+      grid-row: span 1;
+      align-self: center;
     }
     .ribbon-group-footer {
       display: flex;
