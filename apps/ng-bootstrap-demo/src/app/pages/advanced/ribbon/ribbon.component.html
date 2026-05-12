@@ -1,17 +1,35 @@
 <div class="demo-ribbon">
   <div class="controls">
-    <button (click)="toggleMinimized()">
-      {{ minimized() ? 'Restore' : 'Minimize' }} Ribbon (Ctrl+F1)
+    <button [color]="colors.secondary" (click)="toggleMinimized()">
+      {{ minimizeLabel() }}
     </button>
-    <button (click)="toggleLayout()">
-      Switch to {{ layout() === 'classic' ? 'Simplified' : 'Classic' }} Layout
+    <button [color]="colors.secondary" (click)="toggleLayout()">
+      {{ layoutLabel() }}
     </button>
+    <label class="control-field">
+      Version
+      <bs-select [(ngModel)]="version">
+        @for (v of versions; track v) {
+          <option [value]="v">{{ v }}</option>
+        }
+      </bs-select>
+    </label>
+    <label class="control-field">
+      App accent
+      <bs-select [(ngModel)]="appAccent">
+        @for (a of appAccents; track a.value) {
+          <option [value]="a.value">{{ a.label }} ({{ a.value }})</option>
+        }
+      </bs-select>
+    </label>
   </div>
 
   <bs-ribbon
     [tabs]="tabs"
     [minimized]="minimized()"
     [layout]="layout()"
+    [version]="version()"
+    [appAccent]="appAccent()"
     (tabChange)="onTabChange($event)"
   >
     <!-- ============ Home tab ============ -->

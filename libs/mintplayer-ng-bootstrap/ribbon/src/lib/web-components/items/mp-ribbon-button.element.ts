@@ -17,7 +17,7 @@ export class MpRibbonButton extends MpRibbonItemBase {
       gap: 4px;
       background: transparent;
       border: 1px solid transparent;
-      border-radius: 3px;
+      border-radius: var(--bs-ribbon-item-radius, 3px);
       cursor: pointer;
       color: inherit;
       font-size: 12px;
@@ -25,11 +25,14 @@ export class MpRibbonButton extends MpRibbonItemBase {
       min-width: 28px;
     }
     .ribbon-button:hover {
-      background: var(--bs-secondary-bg, #e9ecef);
-      border-color: var(--bs-border-color, #ced4da);
+      background: var(--bs-ribbon-item-hover-bg, #e9ecef);
+      border-color: var(--bs-ribbon-item-hover-border, #ced4da);
+    }
+    .ribbon-button:active {
+      background: var(--bs-ribbon-item-pressed-bg, #dee2e6);
     }
     .ribbon-button:focus-visible {
-      outline: 2px solid var(--bs-primary, #0d6efd);
+      outline: 2px solid var(--bs-ribbon-app-accent, #0d6efd);
       outline-offset: -2px;
     }
     .ribbon-button:disabled {

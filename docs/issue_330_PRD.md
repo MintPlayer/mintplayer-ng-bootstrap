@@ -45,6 +45,7 @@ Audit of `libs/mintplayer-ng-bootstrap/ribbon/` against the requirements below.
 - Angular wrappers for the three top-level pieces: `BsRibbonComponent`, `BsRibbonGroupComponent`, `BsRibbonButtonComponent`.
 - Demo route `/advanced/ribbon` registered; Home/Insert/Design/Layout tabs render Office-style content (Clipboard, Font, Paragraph, Styles, Editing on Home, etc.).
 - **Per-group `popup` collapse** with `ResizeObserver`-driven reflow: rightmost-first collapse on shrink, leftmost-first expansion on grow, using a `WeakMap` of pre-collapse natural widths. Collapsed groups render a popup-trigger button (icon + label + chevron) with `aria-haspopup="true"`/`aria-expanded`. Click opens an overlay (`position: fixed`, viewport-clamped horizontally) containing the full group; Escape/outside-mousedown close. Verified at 900 / 1500 / 2000 px viewport widths and across Insert/Home/Design/Layout tabs.
+- **Visual version themes** (FR-25/26/27): `[version]` input on `bs-ribbon` reflects to `version="office-XXXX"` on `mp-ribbon`'s host; per-version `:host([version="..."])` rule groups in `mp-ribbon.element.ts` set a complete `--bs-ribbon-*` token set; all element shadow CSS (ribbon / group / button) is tokenised so it consumes those variables via CSS-variable inheritance (no attribute propagation needed). `--bs-ribbon-app-accent` cascades for tab strip / active label colour. Demo has Version + App-accent dropdowns; verified visually across all four versions and with Word / PowerPoint accents.
 
 **Deviations from the PRD that need to be reconciled before this milestone closes:**
 - **Tabs are a JSON-encoded `[tabs]` array input on `mp-ribbon`**, not declared as `mp-ribbon-tab` light-DOM children. PRD §"DOM is the source of truth" requires the latter; this is the largest architectural deviation and blocks the contextual-tab-set design.
@@ -55,6 +56,8 @@ Audit of `libs/mintplayer-ng-bootstrap/ribbon/` against the requirements below.
 
 **Not yet started:**
 - Intermediate `large` → `medium` → `small` ReduceOrder steps; author-declared `[reduceOrder]` / `[idealSizes]` / `[priority]` API on tabs and groups (FR-6 P0 partial, FR-23). MVP collapse-to-popup landed but only the single rightmost-first → popup default.
+- Visual-regression Playwright screenshots committed for each version + a CI assertion (FR-25 closing checkpoint).
+- Office 2007 alternative Black / Silver colour schemes; Office 2016 Dark Gray / Black themes — only the Blue/Colorful variants ship under `office-2007` / `office-2016` (filed for follow-up if requested).
 - Simplified layout — `[layout]` is accepted but render is identical to Classic (FR-8).
 - Live announcer integration for minimize/restore (FR-9 announcer + Ctrl+F1 binding + double-click toggle).
 - Contextual tab sets (FR-10), Quick Access Toolbar (FR-11), KeyTips (FR-12).
@@ -111,6 +114,9 @@ Audit of `libs/mintplayer-ng-bootstrap/ribbon/` against the requirements below.
 - [ ] **FR-20** — Demo page at `/advanced/ribbon` covering: full Home tab, Insert tab, Picture Tools contextual tab, QAT, layout toggle, minimize toggle, KeyTips legend, code-block snippets. *(Partial: route + demo component exist. Home + Insert + Design + Layout tabs populated with Office-style content. Layout toggle + minimize toggle render. Missing: Picture Tools contextual tab, QAT panel, KeyTips legend, code-block snippets.)*
 - [ ] **FR-21** — Vitest specs per element + ARIA spec file (`mp-ribbon.aria.spec.ts`). Playwright e2e for the demo page covering: layout switch, contextual show/hide, KeyTips drill-down, keyboard nav to every command, minimize/restore. *(Only a generated demo `ribbon.component.spec.ts` exists. No lib-level Vitest specs and no ARIA / e2e coverage yet.)*
 - [ ] **FR-22** — Smoke-tested in Chrome and Firefox (per `feedback_firefox_flex_shrink`). *(Chrome verified via demo screenshots; Firefox pending.)*
+- [x] **FR-25** — Visual **version themes** selectable via `[version]` on `bs-ribbon` / `mp-ribbon`. Four values: `"office-2007" | "office-2010" | "office-2013" | "office-2016"`. Default `"office-2016"`. *(Landed: `[version]` reflects to the `version` attribute on the `<mp-ribbon>` host; shadow-DOM `:host([version="..."])` rule groups in `mp-ribbon.element.ts` define a complete `--bs-ribbon-*` token set per version. **CSS custom properties inherit through light DOM into slotted children automatically**, so no attribute propagation is needed — `mp-ribbon-group` / `mp-ribbon-button` etc. just consume `var(--bs-ribbon-*)` and get the right value. This is the workspace's first per-component visual-variant system.)*
+- [x] **FR-26** — Single `--bs-ribbon-app-accent` CSS custom property serves as the consumer hand-off point for picking an app signature colour (Word `#2B579A` / Excel `#217346` / PowerPoint `#B7472A` / Outlook `#0078D4` / OneNote `#7719AA` / Access `#A4373A`). It cascades into the active-tab label colour (2013) and the full tab strip (2016). Library does NOT ship per-app presets. *(Landed: Angular wrapper exposes `[appAccent]` input, set as inline `[style.--bs-ribbon-app-accent]` on the inner `mp-ribbon`. Fallback default for the per-version blocks is `#2B579A` (Word) for 2013/2016 — falls back to `var(--bs-primary, #0d6efd)` for the neutral baseline.)*
+- [x] **FR-27** — Demo page exposes a version-picker dropdown in the controls bar, cycling through all four versions. Triggers re-render of the existing Home/Insert/Design/Layout content so visual differences are immediately observable. *(Landed: two `<select>` dropdowns in the controls bar — Version (4 options) + App accent (6 Microsoft canonical app colours). Bound via `signal<RibbonVersion>` and `signal<string>` on the demo component.)*
 
 ### Should Have (P1)
 
@@ -182,6 +188,16 @@ Audit of `libs/mintplayer-ng-bootstrap/ribbon/` against the requirements below.
 - [ ] axe-core run on demo
 - [ ] Build size check
 
+### Milestone 9: Visual version themes (FR-25/26/27) — *Mostly Landed*
+- [x] Tokenisation pass — replaced hardcoded colour literals in `mp-ribbon` / `mp-ribbon-group` / `mp-ribbon-button` shadow styles with `var(--bs-ribbon-*, fallback)` references (closed FR-19 gap as a side effect)
+- [x] `[version]` input + `[attr.version]` host binding on `BsRibbonComponent`; attribute reflection on `MpRibbon`
+- [x] Per-version `:host([version="office-XXXX"])` rule groups in `mp-ribbon.element.ts` static styles, defining a complete `--bs-ribbon-*` token set per version
+- [x] CSS-variable inheritance into slotted `mp-ribbon-group` / `mp-ribbon-button` — no attribute propagation needed because custom properties cross shadow boundaries via DOM inheritance
+- [x] `--bs-ribbon-app-accent` cascading into active-tab label colour + tab strip; consumer hand-off via `[appAccent]` input
+- [x] Demo version-picker dropdown + app-accent dropdown (6 Microsoft canonical colours)
+- [ ] Visual-regression Playwright screenshot per version for the Insert tab (committed to repo + CI assertion)
+- [ ] Office 2010 File-tab band + per-app colour band rendering (intentional follow-up — out of scope for v1; PRD explicitly omits Backstage / File menu)
+
 ---
 
 ## Open Questions
@@ -229,6 +245,109 @@ Sources: Microsoft's [Win32 Ribbon `ScalingPolicy` spec](https://learn.microsoft
 - **Shared end-of-tab "…" overflow chevron** is the *Simplified Ribbon* model (Office 365), and lives under FR-8 (Simplified layout). FR-6/FR-7 are the *Classic Ribbon* model only.
 - **Custom-group opt-out** (`<bs-ribbon-group [autoScale]="false">`) — supported but explicitly documented as "will worsen narrow-window layout" because the group stays Large and forces neighbours to collapse earlier.
 - **In-Ribbon Gallery scales first** (Win32's `GalleryScalesFirst` template) — the gallery item collapses to a popup *before* the rest of its group collapses. Not in scope for v1 unless we ship galleries with that semantic; flagged for follow-up.
+
+### Visual version themes — implementation specifics
+
+Sources: [Jensen Harris archive](https://learn.microsoft.com/en-us/archive/blogs/jensenh/), [Office 2010 Visuals & Branding (Keri Vandeberghe)](https://learn.microsoft.com/en-us/archive/blogs/office2010/office-2010-visuals-and-branding), [Infragistics — Office 2007 Look and Feel](https://www.infragistics.com/help/winforms/styling-guide-about-the-office-2007-look-and-feel), [Infragistics — Office 2013 Look and Feel](https://www.infragistics.com/help/winforms/wintoolbarsmanager-office-2013-ribbon-look-and-feel), [Microsoft Support — Change look and feel of Microsoft 365](https://support.microsoft.com/en-gb/office/change-the-look-and-feel-of-microsoft-365-63e65e1c-08d4-4dea-820e-335f54672310), [Techinch — The Colors of Microsoft Office](https://techinch.com/blog/The-Colors-of-Microsoft-Office), [DevExpress Office2016Colorful skin colours](https://supportcenter.devexpress.com/ticket/details/t383046/office-2016-colorful-skins-problems).
+
+**Per-version distinctive traits (what visually identifies each at a glance):**
+| Version | Tab strip | Active tab | Item hover | Icons | Group separator |
+|--|--|--|--|--|--|
+| **2007** | Glassy blue gradient `#C7DEFD → #A4C5F4` | Arched white card breaking into panel | Honey gradient `#FFE8A1 → #FFC759` w/ amber border | Full-colour raster | Full-height vertical line |
+| **2010** | Neutral silver gradient `#E8ECEF → #D6DBE0` | Same arched card, squarer corners | Soft cream `#FFEFB7` w/ light border | Full-colour raster (refined) | Faded vertical hairline |
+| **2013** | Pale app-tinted band `~#DDE6F0` (Word) | White rectangular block, accent-coloured label | Flat grey `#EAEAEA`, no border | Flat monochrome accent-tinted vector | Short centred hairline `#D2D2D2` |
+| **2016** | Full app-accent colour band `#2B579A` (Word) | White block + 2px coloured underline | Flat grey `#E6E6E6` (white themes) | Flat monochrome | Short centred hairline `#D2D2D2` |
+
+**Architecture (workspace-first variant pattern):**
+- `[version]` is reflected as `version="office-XXXX"` on the `<mp-ribbon>` host. All four versions ship in `mp-ribbon.element.ts`'s `static styles` block as `:host([version="office-XXXX"]) { /* token overrides */ }` rule groups. No separate SCSS files, no `adoptedStyleSheets`, no runtime stylesheet swapping — matches the workspace's existing single-file-per-element convention (`mint-multi-range.element.template.ts:15-25` is the closest precedent for component-namespaced `--bs-*-*` tokens).
+- The same `version` attribute is propagated from `mp-ribbon` to its slotted `mp-ribbon-group` children (and downstream items) via a `MutationObserver`-or-`updated()`-driven `setAttribute('version', ...)` pass. Each shadow root then applies its own per-version rules without crossing shadow boundaries. This avoids `inherit` (which doesn't cross shadow DOM) and avoids requiring CSS-variable cascade through host-context selectors.
+- **Defaults if `[version]` is unset**: render as `office-2016` (most modern, most familiar).
+- **Per-app accent** (`--bs-ribbon-app-accent`) is consumer-supplied — library does NOT ship per-app presets. Fallback `var(--bs-primary, #0d6efd)` so unconfigured ribbons still render coherently in the host app's primary colour. Word/Excel/PowerPoint/etc. canonical hex values are documented in FR-26 above but never hard-coded.
+
+**Per-version `--bs-ribbon-*` token cheat sheet** (drop-in starting values; refine against reference screenshots before shipping):
+
+```css
+:host([version="office-2007"]) {
+  --bs-ribbon-font-family: "Segoe UI", Tahoma, sans-serif;
+  --bs-ribbon-tabstrip-bg: linear-gradient(#C7DEFD, #A4C5F4);
+  --bs-ribbon-tabpanel-bg: linear-gradient(#F4F8FD, #DCE7F5);
+  --bs-ribbon-tab-active-bg: linear-gradient(#F4F8FD, #DCE7F5);
+  --bs-ribbon-tab-active-indicator: none;       /* arched card */
+  --bs-ribbon-tab-radius: 3px 3px 0 0;
+  --bs-ribbon-tab-height: 23px;
+  --bs-ribbon-group-separator: rgba(0,0,0,.18);
+  --bs-ribbon-group-separator-inset: 0;          /* full height */
+  --bs-ribbon-item-hover-bg: linear-gradient(#FFE8A1, #FFC759);
+  --bs-ribbon-item-hover-border: #D9A03C;
+  --bs-ribbon-item-pressed-bg: linear-gradient(#F5B23A, #E08A1A);
+  --bs-ribbon-icon-style: raster-colored;
+}
+:host([version="office-2010"]) {
+  --bs-ribbon-font-family: "Segoe UI", Calibri, sans-serif;
+  --bs-ribbon-tabstrip-bg: linear-gradient(#E8ECEF, #D6DBE0);
+  --bs-ribbon-tabpanel-bg: #F2F4F6;
+  --bs-ribbon-tab-active-bg: #F2F4F6;
+  --bs-ribbon-tab-active-indicator: none;
+  --bs-ribbon-tab-radius: 2px 2px 0 0;
+  --bs-ribbon-tab-height: 22px;
+  --bs-ribbon-group-separator: #C8CDD2;
+  --bs-ribbon-group-separator-inset: 0;
+  --bs-ribbon-item-hover-bg: #FFEFB7;
+  --bs-ribbon-item-hover-border: #E8C46A;
+  --bs-ribbon-item-pressed-bg: #F5DC8A;
+  --bs-ribbon-icon-style: raster-colored;
+  --bs-ribbon-file-tab-bg: var(--bs-ribbon-app-accent, #1E5BB7);
+}
+:host([version="office-2013"]) {
+  --bs-ribbon-font-family: "Segoe UI", sans-serif;
+  --bs-ribbon-tabstrip-bg: color-mix(in srgb, var(--bs-ribbon-app-accent, #2B579A) 18%, #FFFFFF);
+  --bs-ribbon-tabpanel-bg: #FFFFFF;
+  --bs-ribbon-tab-active-bg: #FFFFFF;
+  --bs-ribbon-tab-active-color: var(--bs-ribbon-app-accent, #2B579A);
+  --bs-ribbon-tab-active-indicator: none;        /* block, no underline */
+  --bs-ribbon-tab-radius: 0;
+  --bs-ribbon-tab-height: 28px;
+  --bs-ribbon-group-separator: #D2D2D2;
+  --bs-ribbon-group-separator-inset: 8px;        /* short, centred */
+  --bs-ribbon-item-hover-bg: #EAEAEA;
+  --bs-ribbon-item-hover-border: transparent;
+  --bs-ribbon-item-pressed-bg: #D6D6D6;
+  --bs-ribbon-icon-style: flat-monochrome;
+}
+:host([version="office-2016"]) {
+  --bs-ribbon-font-family: "Segoe UI", sans-serif;
+  --bs-ribbon-tabstrip-bg: var(--bs-ribbon-app-accent, #2B579A);
+  --bs-ribbon-tabpanel-bg: #FFFFFF;
+  --bs-ribbon-tab-idle-color: rgba(255,255,255,.85);
+  --bs-ribbon-tab-hover-bg: rgba(255,255,255,.15);
+  --bs-ribbon-tab-active-bg: #FFFFFF;
+  --bs-ribbon-tab-active-color: var(--bs-ribbon-app-accent, #2B579A);
+  --bs-ribbon-tab-active-indicator: 2px solid var(--bs-ribbon-app-accent, #2B579A);
+  --bs-ribbon-tab-radius: 0;
+  --bs-ribbon-tab-height: 30px;
+  --bs-ribbon-group-separator: #D2D2D2;
+  --bs-ribbon-group-separator-inset: 8px;
+  --bs-ribbon-item-hover-bg: #E6E6E6;
+  --bs-ribbon-item-hover-border: transparent;
+  --bs-ribbon-item-pressed-bg: #CCCCCC;
+  --bs-ribbon-icon-style: flat-monochrome;
+}
+```
+
+The existing element `css\`...\`` blocks then consume these tokens with `var(--bs-ribbon-*, fallback)` references — this is what the FR-19 entry already calls for and is currently not done; **shipping per-version themes forces the existing styles to be tokenised first**, which closes the FR-19 gap as a side effect.
+
+**Caveats worth flagging in the PR review:**
+- Exact hex values for 2007/2010 gradients are pixel-sampled from third-party "Office theme" reproductions (Infragistics/DevExpress/Syncfusion) and Wikipedia commons screenshots — Microsoft never published a public colour-token spec for those releases. Treat as starting points; refine against actual screenshots in the review.
+- PowerPoint's accent has two competing canonical values in the wild (`#B7472A` vs `#D24726`). Document one and stay consistent across the project.
+- **Touch Mode** (an orthogonal Office 2013+ toggle that ~doubles button padding and tab height) is out of scope for FR-25; would be a separate `[touchMode]` input later.
+- **Office 2007's Aero glass blur** behind the title is an OS-level effect, not a ribbon style; not reproducible cross-browser and explicitly omitted.
+- The `office-2007` theme's `linear-gradient` tab strip will conflict with `--bs-ribbon-app-accent` if a consumer sets it — for 2007 the accent has no effect (no per-app colouring existed in that version). Document this.
+
+**Out-of-scope variations** (filed for later issues if demand arises):
+- Office 2007's Black / Silver colour schemes (only the Blue scheme is shipped under `office-2007`).
+- Office 2016's Dark Gray / Black themes (the Colorful theme is shipped under `office-2016`).
+- Office 2019 / Microsoft 365 "Coloured Header" / Backstage redesign.
+- Standalone Touch Mode toggle.
 
 ---
 

@@ -1,19 +1,16 @@
 .demo-ribbon {
   .controls {
     display: flex;
+    flex-wrap: wrap;
     gap: 1rem;
     margin-bottom: 1rem;
+    align-items: center;
 
-    button {
-      padding: 0.5rem 1rem;
-      background: #f0f0f0;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      cursor: pointer;
-
-      &:hover {
-        background: #e0e0e0;
-      }
+    .control-field {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.875rem;
     }
   }
 }

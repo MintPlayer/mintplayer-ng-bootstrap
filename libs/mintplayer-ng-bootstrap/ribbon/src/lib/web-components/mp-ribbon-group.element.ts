@@ -9,12 +9,25 @@ export interface RibbonGroup {
 
 export class MpRibbonGroup extends LitElement {
   static override styles = css`
-    :host { display: inline-flex; }
+    :host { display: inline-flex; position: relative; }
+    :host::after {
+      content: '';
+      position: absolute;
+      top: var(--bs-ribbon-group-separator-inset, 0px);
+      bottom: var(--bs-ribbon-group-separator-inset, 0px);
+      right: 0;
+      width: 1px;
+      background: var(--bs-ribbon-group-separator, rgba(0, 0, 0, 0.12));
+      pointer-events: none;
+    }
+    :host([data-resolved-size="popup"])::after {
+      top: var(--bs-ribbon-group-separator-inset, 0px);
+      bottom: var(--bs-ribbon-group-separator-inset, 0px);
+    }
     .ribbon-group {
       display: flex;
       flex-direction: column;
       padding: 2px 6px 0;
-      border-right: 1px solid var(--bs-border-color, #e0e0e0);
       min-width: 64px;
     }
     .ribbon-group-items {
@@ -47,7 +60,7 @@ export class MpRibbonGroup extends LitElement {
     .ribbon-group-label {
       font-size: 11px;
       line-height: 1;
-      color: var(--bs-secondary-color, #6c757d);
+      color: var(--bs-ribbon-group-label-color, #6c757d);
     }
     .ribbon-dialog-launcher {
       position: absolute;
@@ -58,9 +71,11 @@ export class MpRibbonGroup extends LitElement {
       padding: 0 2px;
       font-size: 11px;
       line-height: 1;
-      color: var(--bs-secondary-color, #6c757d);
+      color: var(--bs-ribbon-group-label-color, #6c757d);
     }
-    .ribbon-dialog-launcher:hover { color: var(--bs-primary, #0d6efd); }
+    .ribbon-dialog-launcher:hover {
+      color: var(--bs-ribbon-app-accent, #0d6efd);
+    }
 
     .ribbon-popup-trigger {
       display: none;
@@ -70,7 +85,7 @@ export class MpRibbonGroup extends LitElement {
       gap: 2px;
       background: transparent;
       border: 1px solid transparent;
-      border-radius: 3px;
+      border-radius: var(--bs-ribbon-item-radius, 3px);
       cursor: pointer;
       padding: 6px 10px;
       min-width: 56px;
@@ -78,11 +93,11 @@ export class MpRibbonGroup extends LitElement {
       color: inherit;
     }
     .ribbon-popup-trigger:hover {
-      background: var(--bs-secondary-bg, #e9ecef);
-      border-color: var(--bs-border-color, #ced4da);
+      background: var(--bs-ribbon-item-hover-bg, #e9ecef);
+      border-color: var(--bs-ribbon-item-hover-border, #ced4da);
     }
     .ribbon-popup-trigger:focus-visible {
-      outline: 2px solid var(--bs-primary, #0d6efd);
+      outline: 2px solid var(--bs-ribbon-app-accent, #0d6efd);
       outline-offset: -2px;
     }
     .ribbon-popup-trigger-icon { font-size: 22px; line-height: 1; }
@@ -99,8 +114,8 @@ export class MpRibbonGroup extends LitElement {
     :host([data-resolved-size="popup"][data-popup-open]) .ribbon-group {
       display: flex;
       position: fixed;
-      background: var(--bs-body-bg, #fff);
-      border: 1px solid var(--bs-border-color, #d0d0d0);
+      background: var(--bs-ribbon-tabpanel-bg, #fff);
+      border: 1px solid var(--bs-ribbon-container-border, #d0d0d0);
       border-radius: 4px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
       padding: 4px 6px;

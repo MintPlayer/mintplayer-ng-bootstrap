@@ -22,6 +22,8 @@ import { type RibbonTab, type RibbonTabChangeEvent } from '../types/ribbon.types
       [attr.active-tab-id]="activeTabId()"
       [attr.layout]="layout()"
       [attr.minimized]="minimized() ? '' : null"
+      [attr.version]="version()"
+      [style.--bs-ribbon-app-accent]="appAccent()"
       (tab-change)="onTabChange($event)"
     >
       <ng-content></ng-content>
@@ -39,6 +41,10 @@ export class BsRibbonComponent {
   readonly activeTabId = signal<string>('');
   readonly layout = input<'classic' | 'simplified'>('classic');
   readonly minimized = input<boolean>(false);
+  readonly version = input<
+    'office-2007' | 'office-2010' | 'office-2013' | 'office-2016'
+  >('office-2016');
+  readonly appAccent = input<string | null>(null);
 
   readonly tabsJson = computed(() => JSON.stringify(this.tabs()));
 

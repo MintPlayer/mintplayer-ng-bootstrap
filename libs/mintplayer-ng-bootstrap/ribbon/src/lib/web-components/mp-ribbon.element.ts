@@ -12,39 +12,177 @@ import { type RibbonTab } from '../types/ribbon.types';
  */
 export class MpRibbon extends LitElement {
   static override styles = css`
-    :host { display: block; }
+    :host {
+      display: block;
+      /* ---- Default tokens (neutral, Bootstrap-anchored) ---- */
+      --bs-ribbon-app-accent: var(--bs-primary, #0d6efd);
+      --bs-ribbon-font-family: inherit;
+      --bs-ribbon-container-bg: var(--bs-body-bg, #fafafa);
+      --bs-ribbon-container-border: var(--bs-border-color, #e0e0e0);
+      --bs-ribbon-tabstrip-bg: var(--bs-tertiary-bg, #f5f5f5);
+      --bs-ribbon-tabstrip-border: var(--bs-border-color, #d0d0d0);
+      --bs-ribbon-tab-idle-color: inherit;
+      --bs-ribbon-tab-hover-bg: var(--bs-secondary-bg, #f0f0f0);
+      --bs-ribbon-tab-active-bg: transparent;
+      --bs-ribbon-tab-active-color: var(--bs-ribbon-app-accent);
+      --bs-ribbon-tab-active-indicator-color: var(--bs-ribbon-app-accent);
+      --bs-ribbon-tab-active-indicator-width: 2px;
+      --bs-ribbon-tab-radius: 0;
+      --bs-ribbon-tab-padding: 10px 16px;
+      --bs-ribbon-tabpanel-bg: var(--bs-body-bg, #fff);
+      --bs-ribbon-group-separator: var(--bs-border-color, #e0e0e0);
+      --bs-ribbon-group-separator-inset: 0px;
+      --bs-ribbon-group-label-color: var(--bs-secondary-color, #6c757d);
+      --bs-ribbon-item-hover-bg: var(--bs-secondary-bg, #e9ecef);
+      --bs-ribbon-item-hover-border: var(--bs-border-color, #ced4da);
+      --bs-ribbon-item-pressed-bg: var(--bs-secondary-bg, #dee2e6);
+      --bs-ribbon-item-radius: 3px;
+    }
+
+    /* ---- Office 2007: glossy blue gradient, honey hover ---- */
+    :host([version="office-2007"]) {
+      --bs-ribbon-font-family: "Segoe UI", Tahoma, sans-serif;
+      --bs-ribbon-container-bg: linear-gradient(#F4F8FD, #DCE7F5);
+      --bs-ribbon-container-border: #5C85B6;
+      --bs-ribbon-tabstrip-bg: linear-gradient(#C7DEFD, #A4C5F4);
+      --bs-ribbon-tabstrip-border: #5C85B6;
+      --bs-ribbon-tab-idle-color: #1F3A5F;
+      --bs-ribbon-tab-hover-bg: linear-gradient(#FFE8A1, #FFC759);
+      --bs-ribbon-tab-active-bg: linear-gradient(#F4F8FD, #DCE7F5);
+      --bs-ribbon-tab-active-color: #1F3A5F;
+      --bs-ribbon-tab-active-indicator-color: transparent;
+      --bs-ribbon-tab-active-indicator-width: 0px;
+      --bs-ribbon-tab-radius: 3px 3px 0 0;
+      --bs-ribbon-tabpanel-bg: linear-gradient(#F4F8FD, #DCE7F5);
+      --bs-ribbon-group-separator: rgba(0, 0, 0, 0.18);
+      --bs-ribbon-group-separator-inset: 0px;
+      --bs-ribbon-group-label-color: #3B5A82;
+      --bs-ribbon-item-hover-bg: linear-gradient(#FFE8A1, #FFC759);
+      --bs-ribbon-item-hover-border: #D9A03C;
+      --bs-ribbon-item-pressed-bg: linear-gradient(#F5B23A, #E08A1A);
+      --bs-ribbon-item-radius: 2px;
+    }
+
+    /* ---- Office 2010: neutral silver, soft cream hover ---- */
+    :host([version="office-2010"]) {
+      --bs-ribbon-font-family: "Segoe UI", Calibri, sans-serif;
+      --bs-ribbon-container-bg: #F2F4F6;
+      --bs-ribbon-container-border: #B8BDC2;
+      --bs-ribbon-tabstrip-bg: linear-gradient(#E8ECEF, #D6DBE0);
+      --bs-ribbon-tabstrip-border: #B8BDC2;
+      --bs-ribbon-tab-idle-color: #2D2D2D;
+      --bs-ribbon-tab-hover-bg: linear-gradient(#FFF6D8, #FFEAB0);
+      --bs-ribbon-tab-active-bg: #F2F4F6;
+      --bs-ribbon-tab-active-color: #2D2D2D;
+      --bs-ribbon-tab-active-indicator-color: transparent;
+      --bs-ribbon-tab-active-indicator-width: 0px;
+      --bs-ribbon-tab-radius: 2px 2px 0 0;
+      --bs-ribbon-tabpanel-bg: #F2F4F6;
+      --bs-ribbon-group-separator: #C8CDD2;
+      --bs-ribbon-group-separator-inset: 0px;
+      --bs-ribbon-group-label-color: #5E6770;
+      --bs-ribbon-item-hover-bg: #FFEFB7;
+      --bs-ribbon-item-hover-border: #E8C46A;
+      --bs-ribbon-item-pressed-bg: #F5DC8A;
+      --bs-ribbon-item-radius: 2px;
+    }
+
+    /* ---- Office 2013: flat white panel, app-tinted strip ---- */
+    :host([version="office-2013"]) {
+      --bs-ribbon-app-accent: #2B579A;
+      --bs-ribbon-font-family: "Segoe UI", sans-serif;
+      --bs-ribbon-container-bg: #FFFFFF;
+      --bs-ribbon-container-border: #D2D2D2;
+      --bs-ribbon-tabstrip-bg: color-mix(
+        in srgb,
+        var(--bs-ribbon-app-accent) 18%,
+        #FFFFFF
+      );
+      --bs-ribbon-tabstrip-border: color-mix(
+        in srgb,
+        var(--bs-ribbon-app-accent) 40%,
+        #FFFFFF
+      );
+      --bs-ribbon-tab-idle-color: #444;
+      --bs-ribbon-tab-hover-bg: rgba(0, 0, 0, 0.04);
+      --bs-ribbon-tab-active-bg: #FFFFFF;
+      --bs-ribbon-tab-active-color: var(--bs-ribbon-app-accent);
+      --bs-ribbon-tab-active-indicator-color: transparent;
+      --bs-ribbon-tab-active-indicator-width: 0px;
+      --bs-ribbon-tab-radius: 0;
+      --bs-ribbon-tabpanel-bg: #FFFFFF;
+      --bs-ribbon-group-separator: #D2D2D2;
+      --bs-ribbon-group-separator-inset: 8px;
+      --bs-ribbon-group-label-color: #666;
+      --bs-ribbon-item-hover-bg: #EAEAEA;
+      --bs-ribbon-item-hover-border: transparent;
+      --bs-ribbon-item-pressed-bg: #D6D6D6;
+      --bs-ribbon-item-radius: 0;
+    }
+
+    /* ---- Office 2016: full app-accent strip, white panel ---- */
+    :host([version="office-2016"]) {
+      --bs-ribbon-app-accent: #2B579A;
+      --bs-ribbon-font-family: "Segoe UI", sans-serif;
+      --bs-ribbon-container-bg: #FFFFFF;
+      --bs-ribbon-container-border: #D2D2D2;
+      --bs-ribbon-tabstrip-bg: var(--bs-ribbon-app-accent);
+      --bs-ribbon-tabstrip-border: var(--bs-ribbon-app-accent);
+      --bs-ribbon-tab-idle-color: rgba(255, 255, 255, 0.85);
+      --bs-ribbon-tab-hover-bg: rgba(255, 255, 255, 0.15);
+      --bs-ribbon-tab-active-bg: #FFFFFF;
+      --bs-ribbon-tab-active-color: var(--bs-ribbon-app-accent);
+      --bs-ribbon-tab-active-indicator-color: var(--bs-ribbon-app-accent);
+      --bs-ribbon-tab-active-indicator-width: 2px;
+      --bs-ribbon-tab-radius: 0;
+      --bs-ribbon-tabpanel-bg: #FFFFFF;
+      --bs-ribbon-group-separator: #D2D2D2;
+      --bs-ribbon-group-separator-inset: 8px;
+      --bs-ribbon-group-label-color: #666;
+      --bs-ribbon-item-hover-bg: #E6E6E6;
+      --bs-ribbon-item-hover-border: transparent;
+      --bs-ribbon-item-pressed-bg: #CCCCCC;
+      --bs-ribbon-item-radius: 0;
+    }
+
     .ribbon-container {
-      border: 1px solid var(--bs-border-color, #e0e0e0);
-      background: var(--bs-body-bg, #fafafa);
+      border: 1px solid;
+      border-color: var(--bs-ribbon-container-border);
+      background: var(--bs-ribbon-container-bg);
+      font-family: var(--bs-ribbon-font-family);
     }
     .ribbon-tablist {
       display: flex;
-      border-bottom: 2px solid var(--bs-border-color, #d0d0d0);
-      background: var(--bs-tertiary-bg, #f5f5f5);
+      border-bottom: 1px solid;
+      border-bottom-color: var(--bs-ribbon-tabstrip-border);
+      background: var(--bs-ribbon-tabstrip-bg);
     }
     .ribbon-tab {
-      padding: 10px 16px;
+      padding: var(--bs-ribbon-tab-padding);
       background: transparent;
       border: none;
-      border-bottom: 2px solid transparent;
+      border-bottom: var(--bs-ribbon-tab-active-indicator-width) solid
+        transparent;
+      border-radius: var(--bs-ribbon-tab-radius);
       cursor: pointer;
       font-size: 14px;
-      color: inherit;
-      transition: all 0.15s ease;
+      color: var(--bs-ribbon-tab-idle-color);
+      transition: background 0.15s ease, color 0.15s ease;
     }
-    .ribbon-tab:hover { background: var(--bs-secondary-bg, #f0f0f0); }
+    .ribbon-tab:hover { background: var(--bs-ribbon-tab-hover-bg); }
     .ribbon-tab.active {
-      border-bottom-color: var(--bs-primary, #0d6efd);
-      color: var(--bs-primary, #0d6efd);
+      background: var(--bs-ribbon-tab-active-bg);
+      border-bottom-color: var(--bs-ribbon-tab-active-indicator-color);
+      color: var(--bs-ribbon-tab-active-color);
       font-weight: 500;
     }
     .ribbon-tab:focus-visible {
-      outline: 2px solid var(--bs-primary, #0d6efd);
+      outline: 2px solid var(--bs-ribbon-app-accent);
       outline-offset: -2px;
     }
     .ribbon-content {
       padding: 0;
-      background: var(--bs-body-bg, #fff);
+      background: var(--bs-ribbon-tabpanel-bg);
       overflow: hidden;
     }
     .ribbon-panel[hidden] { display: none; }
@@ -75,6 +213,11 @@ export class MpRibbon extends LitElement {
   /** True if ribbon is minimized (shows only tab strip) */
   @property({ type: Boolean })
   minimized: boolean = false;
+
+  /** Visual version theme. */
+  @property({ type: String, reflect: true })
+  version: 'office-2007' | 'office-2010' | 'office-2013' | 'office-2016' =
+    'office-2016';
 
   private currentTabIndex = 0;
   private resizeObserver?: ResizeObserver;
