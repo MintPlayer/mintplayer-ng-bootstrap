@@ -45,7 +45,6 @@ export class MpRibbon extends LitElement {
     .ribbon-content {
       padding: 0;
       background: var(--bs-body-bg, #fff);
-      min-height: 96px;
     }
     .ribbon-panel[hidden] { display: none; }
     .ribbon-panel {
