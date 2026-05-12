@@ -39,6 +39,10 @@ export class MpRibbonDropdownButton extends MpRibbonItemBase {
       width: 100%;
       justify-content: flex-start;
     }
+    .ribbon-dropdown-button.ribbon-item-small .ribbon-button-label {
+      flex: 1;
+      justify-content: space-between;
+    }
     .ribbon-dropdown-button:hover:not(:disabled) {
       background: var(--bs-ribbon-item-hover-bg, #e9ecef);
       border-color: var(--bs-ribbon-item-hover-border, #ced4da);
