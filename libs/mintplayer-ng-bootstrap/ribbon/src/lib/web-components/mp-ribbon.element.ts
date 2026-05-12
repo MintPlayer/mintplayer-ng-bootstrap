@@ -43,7 +43,7 @@ export class MpRibbon extends LitElement {
       outline-offset: -2px;
     }
     .ribbon-content {
-      padding: 12px 16px;
+      padding: 0;
       background: var(--bs-body-bg, #fff);
       min-height: 96px;
     }
