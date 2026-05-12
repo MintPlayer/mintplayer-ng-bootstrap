@@ -68,6 +68,7 @@
       <bs-ribbon-button itemId="strikethrough" label="Strikethrough" icon="S̶" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
       <bs-ribbon-button itemId="subscript" label="Subscript" icon="X₂" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
       <bs-ribbon-button itemId="superscript" label="Superscript" icon="X²" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-color-picker itemId="font-color" label="Font Color" size="small" [(ngModel)]="fontColor"></bs-ribbon-color-picker>
     </bs-ribbon-group>
 
     <bs-ribbon-group slot="content-home" groupId="paragraph" label="Paragraph" dialogLauncher="Paragraph Dialog">
@@ -81,10 +82,7 @@
       <bs-ribbon-button itemId="numbering" label="Numbering" icon="1≡" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
       <bs-ribbon-button itemId="indent-decrease" label="Decrease Indent" icon="⇤" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
       <bs-ribbon-button itemId="indent-increase" label="Increase Indent" icon="⇥" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
-      <bs-ribbon-button itemId="align-left" label="Align Left" icon="⯇≡" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
-      <bs-ribbon-button itemId="align-center" label="Center" icon="≡⯈" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
-      <bs-ribbon-button itemId="align-right" label="Align Right" icon="≡⯈" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
-      <bs-ribbon-button itemId="justify" label="Justify" icon="≡≡" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-group-button itemId="alignment" label="Alignment" size="small" [buttons]="alignmentOptions" [(ngModel)]="alignment"></bs-ribbon-group-button>
     </bs-ribbon-group>
 
     <bs-ribbon-group slot="content-home" groupId="styles" label="Styles" dialogLauncher="Styles">
@@ -110,6 +108,17 @@
 
     <bs-ribbon-group slot="content-insert" groupId="tables" label="Tables" icon="▦">
       <bs-ribbon-button itemId="table" label="Table" icon="▦" size="large" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+    </bs-ribbon-group>
+
+    <bs-ribbon-group slot="content-insert" groupId="shape-gallery" label="Shape Gallery" icon="⬡">
+      <bs-ribbon-gallery itemId="shapes" label="Shapes" size="medium" [columns]="3">
+        <bs-ribbon-gallery-item itemId="rect" icon="▭" label="Rectangle" [selected]="selectedShape() === 'rect'" (gallerySelect)="onShapeSelect($event)"></bs-ribbon-gallery-item>
+        <bs-ribbon-gallery-item itemId="circle" icon="●" label="Circle" [selected]="selectedShape() === 'circle'" (gallerySelect)="onShapeSelect($event)"></bs-ribbon-gallery-item>
+        <bs-ribbon-gallery-item itemId="triangle" icon="▲" label="Triangle" [selected]="selectedShape() === 'triangle'" (gallerySelect)="onShapeSelect($event)"></bs-ribbon-gallery-item>
+        <bs-ribbon-gallery-item itemId="diamond" icon="◆" label="Diamond" [selected]="selectedShape() === 'diamond'" (gallerySelect)="onShapeSelect($event)"></bs-ribbon-gallery-item>
+        <bs-ribbon-gallery-item itemId="star" icon="★" label="Star" [selected]="selectedShape() === 'star'" (gallerySelect)="onShapeSelect($event)"></bs-ribbon-gallery-item>
+        <bs-ribbon-gallery-item itemId="arrow" icon="➤" label="Arrow" [selected]="selectedShape() === 'arrow'" (gallerySelect)="onShapeSelect($event)"></bs-ribbon-gallery-item>
+      </bs-ribbon-gallery>
     </bs-ribbon-group>
 
     <bs-ribbon-group slot="content-insert" groupId="illustrations" label="Illustrations" icon="🖼️">

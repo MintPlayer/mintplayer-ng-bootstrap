@@ -18,9 +18,14 @@ import {
   BsRibbonToggleButtonComponent,
   BsRibbonCheckBoxComponent,
   BsRibbonComboBoxComponent,
+  BsRibbonColorPickerComponent,
+  BsRibbonGroupButtonComponent,
+  BsRibbonGalleryComponent,
+  BsRibbonGalleryItemComponent,
   type RibbonTab,
   type RibbonTabChangeEvent,
   type RibbonComboBoxOption,
+  type RibbonGroupButtonOption,
 } from '@mintplayer/ng-bootstrap/ribbon';
 import { BsSelectComponent } from '@mintplayer/ng-bootstrap/select';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
@@ -50,6 +55,10 @@ interface AppAccentOption {
     BsRibbonToggleButtonComponent,
     BsRibbonCheckBoxComponent,
     BsRibbonComboBoxComponent,
+    BsRibbonColorPickerComponent,
+    BsRibbonGroupButtonComponent,
+    BsRibbonGalleryComponent,
+    BsRibbonGalleryItemComponent,
     BsSelectComponent,
     BsButtonTypeDirective,
   ],
@@ -83,6 +92,18 @@ export class RibbonComponent {
     { label: 'Courier New', value: 'Courier New' },
     { label: 'Verdana', value: 'Verdana' },
   ];
+
+  readonly fontColor = model<string>('#000000');
+
+  readonly alignment = model<string>('left');
+  readonly alignmentOptions: RibbonGroupButtonOption[] = [
+    { value: 'left', label: '⯇≡', icon: '' },
+    { value: 'center', label: '≡', icon: '' },
+    { value: 'right', label: '≡⯈', icon: '' },
+    { value: 'justify', label: '≡≡', icon: '' },
+  ];
+
+  readonly selectedShape = signal<string>('');
 
   readonly minimizeLabel = computed(
     () => `${this.minimized() ? 'Restore' : 'Minimize'} Ribbon (Ctrl+F1)`
@@ -128,6 +149,11 @@ export class RibbonComponent {
 
   toggleLayout(): void {
     this.layout.update((v) => (v === 'classic' ? 'simplified' : 'classic'));
+  }
+
+  onShapeSelect(event: { itemId: string }): void {
+    this.selectedShape.set(event.itemId);
+    console.log('Shape selected:', event.itemId);
   }
 
   onPasteModeSelect(event: { itemId: string }): void {

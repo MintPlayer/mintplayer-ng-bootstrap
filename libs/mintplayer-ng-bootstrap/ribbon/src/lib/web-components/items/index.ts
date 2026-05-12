@@ -8,5 +8,8 @@ export { MpRibbonComboBox } from './mp-ribbon-combobox.element';
 export { MpRibbonColorPicker } from './mp-ribbon-color-picker.element';
 export { MpRibbonGroupButton } from './mp-ribbon-group-button.element';
 export { MpRibbonGallery } from './mp-ribbon-gallery.element';
+export { MpRibbonGalleryItem } from './mp-ribbon-gallery-item.element';
+export { MpRibbonTemplateItem } from './mp-ribbon-template-item.element';
 export { MpRibbonMenuItem } from './mp-ribbon-menu-item.element';
 export { MpRibbonMenuSeparator } from './mp-ribbon-menu-separator.element';
+export type { RibbonGroupButtonOption } from './mp-ribbon-group-button.element';
