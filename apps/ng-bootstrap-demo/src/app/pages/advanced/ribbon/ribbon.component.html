@@ -1,0 +1,479 @@
+<div class="demo-ribbon">
+  <div class="controls">
+    <button [color]="colors.secondary" (click)="toggleMinimized()">
+      {{ minimizeLabel() }}
+    </button>
+    <button [color]="colors.secondary" (click)="toggleLayout()">
+      {{ layoutLabel() }}
+    </button>
+    <button [color]="colors.secondary" (click)="togglePictureTools()">
+      {{ pictureToolsVisible() ? 'Deselect' : 'Select' }} picture
+    </button>
+    <label class="control-field">
+      Version
+      <bs-select [(ngModel)]="version">
+        @for (v of versions; track v) {
+          <option [value]="v">{{ v }}</option>
+        }
+      </bs-select>
+    </label>
+    <label class="control-field">
+      App accent
+      <bs-select [(ngModel)]="appAccent">
+        @for (a of appAccents; track a.value) {
+          <option [value]="a.value">{{ a.label }} ({{ a.value }})</option>
+        }
+      </bs-select>
+    </label>
+    <label class="control-field">
+      Color scheme
+      <bs-select [(ngModel)]="colorScheme">
+        @for (c of colorSchemes; track c) {
+          <option [value]="c">{{ c }}</option>
+        }
+      </bs-select>
+    </label>
+    <label class="control-field">
+      Touch mode
+      <bs-select [(ngModel)]="touchMode">
+        @for (t of touchModes; track t) {
+          <option [value]="t">{{ t }}</option>
+        }
+      </bs-select>
+    </label>
+    <label class="control-field">
+      Direction
+      <bs-select [(ngModel)]="direction">
+        @for (d of directions; track d) {
+          <option [value]="d">{{ d }}</option>
+        }
+      </bs-select>
+    </label>
+  </div>
+
+  <div class="ribbon-rtl-wrapper" [attr.dir]="direction()">
+  <bs-quick-access-toolbar
+    label="Quick Access Toolbar"
+    [touchMode]="touchMode()"
+    [appAccent]="appAccent()"
+  >
+    <bs-ribbon-button itemId="qat-save" label="Save" icon="💾" size="small" tooltip="Save (Ctrl+S)" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+    <bs-ribbon-button itemId="qat-undo" label="Undo" icon="↶" size="small" tooltip="Undo (Ctrl+Z)" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+    <bs-ribbon-button itemId="qat-redo" label="Redo" icon="↷" size="small" tooltip="Redo (Ctrl+Y)" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+  </bs-quick-access-toolbar>
+
+  <bs-ribbon
+    [(minimized)]="minimized"
+    [layout]="layout()"
+    [version]="version()"
+    [colorScheme]="colorScheme()"
+    [touchMode]="touchMode()"
+    [appAccent]="appAccent()"
+    (tabChange)="onTabChange($event)"
+  >
+    <!-- ============ Tell Me slot (FR-24) ============ -->
+    <input
+      slot="tell-me"
+      type="search"
+      class="demo-tell-me"
+      placeholder="🔍 Tell me what you want to do…"
+      aria-label="Tell me what you want to do"
+    />
+
+    <!-- ============ Home tab ============ -->
+    <bs-ribbon-tab tabId="home" label="Home"
+      [idealSizes]="homeIdealSizes"
+      [reduceOrder]="homeReduceOrder">
+    <bs-ribbon-group groupId="clipboard" label="Clipboard" dialogLauncher="Clipboard Dialog">
+      <bs-ribbon-split-button
+        [itemId]="pasteMode().id"
+        [label]="pasteMode().label"
+        [icon]="pasteMode().icon"
+        size="large"
+        tooltip="Paste (Ctrl+V)"
+        (mainAction)="onItemClick($event)"
+      >
+        <bs-ribbon-menu-item itemId="paste" label="Paste" icon="📋" (menuSelect)="onPasteModeSelect($event); onItemClick($event)"></bs-ribbon-menu-item>
+        <bs-ribbon-menu-item itemId="paste-values" label="Paste Values" icon="123" (menuSelect)="onPasteModeSelect($event); onItemClick($event)"></bs-ribbon-menu-item>
+        <bs-ribbon-menu-item itemId="paste-formatting" label="Paste Formatting" icon="🎨" (menuSelect)="onPasteModeSelect($event); onItemClick($event)"></bs-ribbon-menu-item>
+        <bs-ribbon-menu-separator></bs-ribbon-menu-separator>
+        <bs-ribbon-menu-item itemId="paste-special" label="Paste Special…" (menuSelect)="onItemClick($event)"></bs-ribbon-menu-item>
+      </bs-ribbon-split-button>
+      <bs-ribbon-button itemId="cut" label="Cut" icon="✂️" size="small" tooltip="Cut (Ctrl+X)" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="copy" label="Copy" icon="📄" size="small" tooltip="Copy (Ctrl+C)" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="format-painter" label="Format Painter" icon="🖌️" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+    </bs-ribbon-group>
+
+    <bs-ribbon-group groupId="font" label="Font" dialogLauncher="Font Dialog">
+      <bs-ribbon-combo-box
+        itemId="font-family"
+        label="Font Family"
+        size="medium"
+        tooltip="Font Family"
+        [options]="fontFamilyOptions"
+        [(ngModel)]="fontFamily"
+      ></bs-ribbon-combo-box>
+      <bs-ribbon-toggle-button itemId="bold" label="Bold" icon="B" size="small" tooltip="Bold (Ctrl+B)" [(ngModel)]="boldOn"></bs-ribbon-toggle-button>
+      <bs-ribbon-toggle-button itemId="italic" label="Italic" icon="I" size="small" tooltip="Italic (Ctrl+I)" [(ngModel)]="italicOn"></bs-ribbon-toggle-button>
+      <bs-ribbon-toggle-button itemId="underline" label="Underline" icon="U" size="small" tooltip="Underline (Ctrl+U)" [(ngModel)]="underlineOn"></bs-ribbon-toggle-button>
+      <bs-ribbon-button itemId="strikethrough" label="Strikethrough" icon="S̶" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="subscript" label="Subscript" icon="X₂" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="superscript" label="Superscript" icon="X²" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-color-picker itemId="font-color" label="Font Color" size="small" [(ngModel)]="fontColor"></bs-ribbon-color-picker>
+    </bs-ribbon-group>
+
+    <bs-ribbon-group groupId="paragraph" label="Paragraph" dialogLauncher="Paragraph Dialog">
+      <bs-ribbon-dropdown-button itemId="bullets" label="Bullets" icon="•≡" size="small" tooltip="Bullet list">
+        <bs-ribbon-menu-item itemId="bullet-disc" label="Disc" icon="●" (menuSelect)="onItemClick($event)"></bs-ribbon-menu-item>
+        <bs-ribbon-menu-item itemId="bullet-circle" label="Circle" icon="○" (menuSelect)="onItemClick($event)"></bs-ribbon-menu-item>
+        <bs-ribbon-menu-item itemId="bullet-square" label="Square" icon="■" (menuSelect)="onItemClick($event)"></bs-ribbon-menu-item>
+        <bs-ribbon-menu-separator></bs-ribbon-menu-separator>
+        <bs-ribbon-menu-item itemId="define-new-bullet" label="Define New Bullet…" (menuSelect)="onItemClick($event)"></bs-ribbon-menu-item>
+      </bs-ribbon-dropdown-button>
+      <bs-ribbon-button itemId="numbering" label="Numbering" icon="1≡" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="indent-decrease" label="Decrease Indent" icon="⇤" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="indent-increase" label="Increase Indent" icon="⇥" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-group-button itemId="alignment" label="Alignment" size="small" [buttons]="alignmentOptions" [(ngModel)]="alignment"></bs-ribbon-group-button>
+    </bs-ribbon-group>
+
+    <bs-ribbon-group groupId="styles" label="Styles" dialogLauncher="Styles">
+      <bs-ribbon-button itemId="style-normal" label="Normal" icon="¶" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="style-h1" label="Heading 1" icon="H1" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="style-h2" label="Heading 2" icon="H2" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="style-title" label="Title" icon="T" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+    </bs-ribbon-group>
+
+    <bs-ribbon-group groupId="editing" label="Editing">
+      <bs-ribbon-button itemId="find" label="Find" icon="🔍" size="small" tooltip="Find (Ctrl+F)" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="replace" label="Replace" icon="🔁" size="small" tooltip="Replace (Ctrl+H)" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="select" label="Select" icon="☐" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-check-box itemId="match-case" label="Match case" size="small" [(ngModel)]="matchCase"></bs-ribbon-check-box>
+    </bs-ribbon-group>
+
+    </bs-ribbon-tab>
+
+    <!-- ============ Insert tab ============ -->
+    <bs-ribbon-tab tabId="insert" label="Insert">
+    <bs-ribbon-group groupId="pages" label="Pages" icon="📑">
+      <bs-ribbon-button itemId="cover-page" label="Cover Page" icon="📑" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="blank-page" label="Blank Page" icon="📄" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="page-break" label="Page Break" icon="📑" size="medium" tooltip="Insert page break (Ctrl+Enter)" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+    </bs-ribbon-group>
+
+    <bs-ribbon-group groupId="tables" label="Tables" icon="▦" [priority]="10">
+      <bs-ribbon-button itemId="table" label="Table" icon="▦" size="large" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+    </bs-ribbon-group>
+
+    <bs-ribbon-group groupId="shape-gallery" label="Shape Gallery" icon="⬡">
+      <bs-ribbon-gallery itemId="shapes" label="Shapes" size="medium" [columns]="3">
+        <bs-ribbon-gallery-item itemId="rect" icon="▭" label="Rectangle" [selected]="selectedShape() === 'rect'" (gallerySelect)="onShapeSelect($event)"></bs-ribbon-gallery-item>
+        <bs-ribbon-gallery-item itemId="circle" icon="●" label="Circle" [selected]="selectedShape() === 'circle'" (gallerySelect)="onShapeSelect($event)"></bs-ribbon-gallery-item>
+        <bs-ribbon-gallery-item itemId="triangle" icon="▲" label="Triangle" [selected]="selectedShape() === 'triangle'" (gallerySelect)="onShapeSelect($event)"></bs-ribbon-gallery-item>
+        <bs-ribbon-gallery-item itemId="diamond" icon="◆" label="Diamond" [selected]="selectedShape() === 'diamond'" (gallerySelect)="onShapeSelect($event)"></bs-ribbon-gallery-item>
+        <bs-ribbon-gallery-item itemId="star" icon="★" label="Star" [selected]="selectedShape() === 'star'" (gallerySelect)="onShapeSelect($event)"></bs-ribbon-gallery-item>
+        <bs-ribbon-gallery-item itemId="arrow" icon="➤" label="Arrow" [selected]="selectedShape() === 'arrow'" (gallerySelect)="onShapeSelect($event)"></bs-ribbon-gallery-item>
+      </bs-ribbon-gallery>
+    </bs-ribbon-group>
+
+    <bs-ribbon-group groupId="illustrations" label="Illustrations" icon="🖼️">
+      <bs-ribbon-button itemId="pictures" label="Pictures" icon="🖼️" size="large" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="shapes" label="Shapes" icon="⬡" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="icons" label="Icons" icon="★" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="chart" label="Chart" icon="📊" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="smartart" label="SmartArt" icon="🧩" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="screenshot" label="Screenshot" icon="📸" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+    </bs-ribbon-group>
+
+    <bs-ribbon-group groupId="links" label="Links" icon="🔗">
+      <bs-ribbon-button itemId="link" label="Link" icon="🔗" size="medium" tooltip="Insert hyperlink (Ctrl+K)" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="bookmark" label="Bookmark" icon="🔖" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="cross-reference" label="Cross-reference" icon="↗" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+    </bs-ribbon-group>
+
+    <bs-ribbon-group groupId="header-footer" label="Header &amp; Footer" icon="▤">
+      <bs-ribbon-button itemId="header" label="Header" icon="▔" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="footer" label="Footer" icon="▁" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="page-number" label="Page Number" icon="#" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+    </bs-ribbon-group>
+
+    <bs-ribbon-group groupId="text" label="Text" icon="🆎">
+      <bs-ribbon-button itemId="text-box" label="Text Box" icon="🆎" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="wordart" label="WordArt" icon="🅰️" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="date-time" label="Date &amp; Time" icon="📅" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="symbol" label="Symbol" icon="Ω" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+    </bs-ribbon-group>
+
+    </bs-ribbon-tab>
+
+    <!-- ============ Picture Tools (contextual) ============ -->
+    <bs-ribbon-contextual-tab-set label="Picture Tools" color="#F2C744" [hidden]="!pictureToolsVisible()">
+      <bs-ribbon-tab tabId="picture-format" label="Format">
+        <bs-ribbon-group groupId="picture-styles" label="Picture Styles">
+          <bs-ribbon-button itemId="picture-border" label="Picture Border" icon="▢" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+          <bs-ribbon-button itemId="picture-effects" label="Picture Effects" icon="✨" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+          <bs-ribbon-button itemId="picture-layout" label="Picture Layout" icon="🖼️" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+        </bs-ribbon-group>
+        <bs-ribbon-group groupId="picture-arrange" label="Arrange">
+          <bs-ribbon-button itemId="picture-position" label="Position" icon="⤧" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+          <bs-ribbon-button itemId="picture-wrap-text" label="Wrap Text" icon="↩" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+          <bs-ribbon-button itemId="picture-rotate" label="Rotate" icon="↻" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+        </bs-ribbon-group>
+        <bs-ribbon-group groupId="picture-size" label="Size">
+          <bs-ribbon-button itemId="picture-crop" label="Crop" icon="✂" size="large" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+          <bs-ribbon-button itemId="picture-width" label="Width" icon="↔" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+          <bs-ribbon-button itemId="picture-height" label="Height" icon="↕" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+        </bs-ribbon-group>
+      </bs-ribbon-tab>
+      <bs-ribbon-tab tabId="picture-effects" label="Effects">
+        <bs-ribbon-group groupId="picture-adjust" label="Adjust">
+          <bs-ribbon-button itemId="picture-brightness" label="Brightness" icon="🔆" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+          <bs-ribbon-button itemId="picture-contrast" label="Contrast" icon="◐" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+          <bs-ribbon-button itemId="picture-saturation" label="Saturation" icon="🎨" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+        </bs-ribbon-group>
+        <bs-ribbon-group groupId="picture-artistic" label="Artistic">
+          <bs-ribbon-button itemId="picture-blur" label="Blur" icon="◌" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+          <bs-ribbon-button itemId="picture-sharpen" label="Sharpen" icon="◇" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+          <bs-ribbon-button itemId="picture-grayscale" label="Grayscale" icon="◑" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+        </bs-ribbon-group>
+      </bs-ribbon-tab>
+    </bs-ribbon-contextual-tab-set>
+
+    <!-- ============ Design tab ============ -->
+    <bs-ribbon-tab tabId="design" label="Design">
+    <bs-ribbon-group groupId="document-formatting" label="Document Formatting">
+      <bs-ribbon-button itemId="themes" label="Themes" icon="🎨" size="large" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="colors" label="Colors" icon="🌈" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="fonts" label="Fonts" icon="🔤" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="paragraph-spacing" label="Paragraph Spacing" icon="↕" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="effects" label="Effects" icon="✨" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="set-default" label="Set as Default" icon="✓" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+    </bs-ribbon-group>
+
+    <bs-ribbon-group groupId="page-background" label="Page Background">
+      <bs-ribbon-button itemId="watermark" label="Watermark" icon="💧" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="page-color" label="Page Color" icon="🎨" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="page-borders" label="Page Borders" icon="▢" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+    </bs-ribbon-group>
+
+    </bs-ribbon-tab>
+
+    <!-- ============ Layout tab ============ -->
+    <bs-ribbon-tab tabId="layout" label="Layout">
+    <bs-ribbon-group groupId="page-setup" label="Page Setup" dialogLauncher="Page Setup">
+      <bs-ribbon-button itemId="margins" label="Margins" icon="▭" size="large" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="orientation" label="Orientation" icon="🔄" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="size" label="Size" icon="📏" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="columns" label="Columns" icon="▥" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="breaks" label="Breaks" icon="⤓" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="line-numbers" label="Line Numbers" icon="№" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="hyphenation" label="Hyphenation" icon="‐" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+    </bs-ribbon-group>
+
+    <bs-ribbon-group groupId="paragraph-layout" label="Paragraph" dialogLauncher="Paragraph">
+      <bs-ribbon-button itemId="indent-left" label="Indent Left" icon="⇥" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="indent-right" label="Indent Right" icon="⇤" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="space-before" label="Space Before" icon="↑≡" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="space-after" label="Space After" icon="↓≡" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+    </bs-ribbon-group>
+
+    <bs-ribbon-group groupId="arrange" label="Arrange">
+      <bs-ribbon-button itemId="position" label="Position" icon="⤧" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="wrap-text" label="Wrap Text" icon="↩" size="medium" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="bring-forward" label="Bring Forward" icon="⬆" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="send-backward" label="Send Backward" icon="⬇" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="selection-pane" label="Selection Pane" icon="☰" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="align" label="Align" icon="⊟" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="group" label="Group" icon="⊞" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+      <bs-ribbon-button itemId="rotate" label="Rotate" icon="↻" size="small" (itemClick)="onItemClick($event)"></bs-ribbon-button>
+    </bs-ribbon-group>
+    </bs-ribbon-tab>
+  </bs-ribbon>
+  </div>
+
+  <section class="keymap" aria-labelledby="ribbon-keymap-heading">
+    <h3 id="ribbon-keymap-heading">Keyboard shortcuts</h3>
+    <p class="keymap-intro">
+      The ribbon follows the WAI-ARIA tab + toolbar pattern with Office-style
+      shortcuts. Click anywhere in the ribbon first to put focus inside it.
+    </p>
+
+    <div class="keymap-grid">
+      <article class="keymap-card">
+        <h4>Tab strip</h4>
+        <dl>
+          <dt><kbd>←</kbd> / <kbd>→</kbd></dt>
+          <dd>Move focus to the previous / next tab</dd>
+          <dt><kbd>Home</kbd> / <kbd>End</kbd></dt>
+          <dd>Jump to the first / last tab</dd>
+          <dt><kbd>Enter</kbd> / <kbd>Space</kbd></dt>
+          <dd>Activate the focused tab</dd>
+          <dt><kbd>Double-click</kbd></dt>
+          <dd>Minimize / restore the ribbon</dd>
+        </dl>
+      </article>
+
+      <article class="keymap-card">
+        <h4>Inside a group</h4>
+        <dl>
+          <dt><kbd>←</kbd> / <kbd>→</kbd></dt>
+          <dd>Rove between items in the same group (wraps at ends)</dd>
+          <dt><kbd>Home</kbd> / <kbd>End</kbd></dt>
+          <dd>Jump to the first / last item in the group</dd>
+          <dt><kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd></dt>
+          <dd>Move to the next / previous group (one tabbable per group)</dd>
+          <dt><kbd>Enter</kbd> / <kbd>Space</kbd></dt>
+          <dd>Activate the focused item</dd>
+        </dl>
+      </article>
+
+      <article class="keymap-card">
+        <h4>Across groups</h4>
+        <dl>
+          <dt><kbd>Ctrl</kbd>+<kbd>←</kbd> / <kbd>Ctrl</kbd>+<kbd>→</kbd></dt>
+          <dd>Jump focus to the previous / next group inside the active tab</dd>
+        </dl>
+      </article>
+
+      <article class="keymap-card">
+        <h4>Dropdowns, menus &amp; collapsed groups</h4>
+        <dl>
+          <dt><kbd>↓</kbd> / <kbd>Alt</kbd>+<kbd>↓</kbd></dt>
+          <dd>Open the menu on a dropdown / split button, or on a collapsed group's chevron</dd>
+          <dt><kbd>Enter</kbd> / <kbd>Space</kbd></dt>
+          <dd>Same as above (activate the trigger). Opens the popup and moves focus into its first item</dd>
+          <dt><kbd>↑</kbd> / <kbd>↓</kbd></dt>
+          <dd>Move highlight between menu items</dd>
+          <dt><kbd>←</kbd> / <kbd>→</kbd></dt>
+          <dd>Inside a collapsed group's popup, rove between items the same as inside an expanded group</dd>
+          <dt><kbd>Esc</kbd></dt>
+          <dd>Close the open menu or popup and return focus to the trigger</dd>
+        </dl>
+      </article>
+
+      <article class="keymap-card">
+        <h4>Ribbon itself</h4>
+        <dl>
+          <dt><kbd>Ctrl</kbd>+<kbd>F1</kbd></dt>
+          <dd>Minimize / restore the ribbon (announced via live region)</dd>
+        </dl>
+      </article>
+
+      <article class="keymap-card">
+        <h4>KeyTips (Office shortcut overlay)</h4>
+        <dl>
+          <dt><kbd>Alt</kbd></dt>
+          <dd>Show or hide the KeyTips overlay. Auto-derived from labels; explicit override via <code>data-key-tip="X"</code></dd>
+          <dt><kbd>A</kbd>–<kbd>Z</kbd></dt>
+          <dd>While the overlay is up, press a tip letter to activate that tab. Once a tab opens, press another letter to fire an item</dd>
+          <dt><kbd>Esc</kbd></dt>
+          <dd>Drop back one level: items → tabs → overlay closed</dd>
+        </dl>
+      </article>
+
+      <article class="keymap-card">
+        <h4>Quick Access Toolbar</h4>
+        <dl>
+          <dt><kbd>←</kbd> / <kbd>→</kbd></dt>
+          <dd>Rove between pinned commands</dd>
+          <dt><kbd>Home</kbd> / <kbd>End</kbd></dt>
+          <dd>First / last pinned command</dd>
+        </dl>
+      </article>
+    </div>
+
+    <p class="keymap-note">
+      Screen-reader users also hear announcements (<code>aria-live="polite"</code>)
+      for ribbon minimize / restore, contextual-tab show / hide, and overflow-group
+      collapse / expand transitions.
+    </p>
+  </section>
+
+  <section class="snippets" aria-labelledby="ribbon-snippets-heading">
+    <h3 id="ribbon-snippets-heading">Code samples</h3>
+    <p class="snippets-intro">
+      Copy-paste starting points for the most common ribbon shapes. Every
+      element has an Angular wrapper (<code>bs-*</code>) over a Lit web
+      component (<code>mp-*</code>); these snippets show the Angular form.
+    </p>
+
+    <article class="snippet-card">
+      <h4>1. Minimal ribbon — one tab, one group, three buttons</h4>
+      <bs-code-snippet [codeToCopy]="snippetMinimal" [language]="'html'"></bs-code-snippet>
+      <p class="snippet-note">
+        <code>[(minimized)]</code> two-way binds the minimize state — Ctrl+F1
+        and double-clicking a tab will update your signal.
+      </p>
+    </article>
+
+    <article class="snippet-card">
+      <h4>2. Split-button with a "last-used" menu</h4>
+      <bs-code-snippet [codeToCopy]="snippetSplitButton" [language]="'html'"></bs-code-snippet>
+      <p class="snippet-note">
+        The split-button never mutates its own label / icon. Implement the
+        "last-used" pattern in your component by updating
+        <code>pasteMode</code> inside <code>onPasteModeSelect</code>.
+      </p>
+    </article>
+
+    <article class="snippet-card">
+      <h4>3. Value-bearing items with <code>[(ngModel)]</code></h4>
+      <bs-code-snippet [codeToCopy]="snippetValueItems" [language]="'html'"></bs-code-snippet>
+      <p class="snippet-note">
+        Every value-bearing wrapper (toggle-button, check-box, combo-box,
+        color-picker, group-button) implements <code>ControlValueAccessor</code>
+        so it works with both template-driven (<code>ngModel</code>) and
+        reactive forms (<code>formControl</code>).
+      </p>
+    </article>
+
+    <article class="snippet-card">
+      <h4>4. Contextual tab set</h4>
+      <bs-code-snippet [codeToCopy]="snippetContextual" [language]="'html'"></bs-code-snippet>
+      <p class="snippet-note">
+        Toggling <code>[hidden]</code> on the set fires
+        <code>contextual-visibility-change</code>; the ribbon re-processes its
+        slot and announces "Picture Tools, contextual, now available / hidden"
+        via the live region.
+      </p>
+    </article>
+
+    <article class="snippet-card">
+      <h4>5. Quick Access Toolbar (sibling, not nested)</h4>
+      <bs-code-snippet [codeToCopy]="snippetQat" [language]="'html'"></bs-code-snippet>
+      <p class="snippet-note">
+        The QAT is deliberately rendered as a sibling — two top-level
+        <code>role="toolbar"</code> regions keep the a11y tree flat.
+        Persistence of pinned commands is up to your app.
+      </p>
+    </article>
+
+    <article class="snippet-card">
+      <h4>6. Per-app appearance + dark mode</h4>
+      <bs-code-snippet [codeToCopy]="snippetTheming" [language]="'html'"></bs-code-snippet>
+      <p class="snippet-note">
+        <code>version</code> picks one of <code>office-2007</code> /
+        <code>2010</code> / <code>2013</code> / <code>2016</code>.
+        <code>appAccent</code> drives the brand colour (Word
+        <code>#2B579A</code>, Excel <code>#217346</code>, etc.).
+        <code>colorScheme="auto"</code> follows
+        <code>prefers-color-scheme</code> and ancestor
+        <code>data-bs-theme="dark"</code>.
+      </p>
+    </article>
+
+    <article class="snippet-card">
+      <h4>7. Slot-based icons (FR-16)</h4>
+      <bs-code-snippet [codeToCopy]="snippetSlotIcons" [language]="'html'"></bs-code-snippet>
+      <p class="snippet-note">
+        Every item exposes a <code>&lt;slot name="icon"&gt;</code> alongside
+        the existing <code>icon</code> string attribute. The host's
+        <code>size</code> attribute auto-sizes slotted icons via
+        <code>::slotted</code> rules; consumers wanting an explicit override
+        apply <code>.ribbon-icon-large</code> / <code>-medium</code> /
+        <code>-small</code> directly on the projected element. The
+        <code>icon=""</code> attribute remains supported as the fallback —
+        consumers can mix-and-match.
+      </p>
+    </article>
+  </section>
+</div>

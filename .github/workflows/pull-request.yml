@@ -28,6 +28,11 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
+        # Required so the Playwright visual-regression baselines (stored in
+        # Git LFS via `.gitattributes`) come down as real PNGs instead of
+        # pointer files. Without this the snapshot comparison receives a
+        # ~130-byte text file and either crashes or fails noisily.
+        lfs: true
     
     - name: Setup node
       uses: actions/setup-node@v4
