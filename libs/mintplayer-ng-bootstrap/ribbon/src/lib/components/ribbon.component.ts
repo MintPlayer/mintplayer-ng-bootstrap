@@ -18,7 +18,7 @@ import { type RibbonTab, type RibbonTabChangeEvent } from '../types/ribbon.types
     <mp-ribbon
       #ribbon
       class="bs-ribbon"
-      [attr.tabs]="tabs() | json"
+      [attr.tabs]="tabsJson()"
       [attr.active-tab-id]="activeTabId()"
       [attr.layout]="layout()"
       [attr.minimized]="minimized() ? '' : null"
@@ -40,6 +40,8 @@ export class BsRibbonComponent {
   readonly layout = input<'classic' | 'simplified'>('classic');
   readonly minimized = input<boolean>(false);
 
+  readonly tabsJson = computed(() => JSON.stringify(this.tabs()));
+
   readonly tabChange = output<RibbonTabChangeEvent>();
 
   readonly ribbonRef = viewChild.required<ElementRef>('ribbon');
@@ -54,8 +56,9 @@ export class BsRibbonComponent {
     });
   }
 
-  onTabChange(event: CustomEvent<RibbonTabChangeEvent>): void {
-    this.activeTabId.set(event.detail.activeTabId);
-    this.tabChange.emit(event.detail);
+  onTabChange(event: Event): void {
+    const detail = (event as CustomEvent<RibbonTabChangeEvent>).detail;
+    this.activeTabId.set(detail.activeTabId);
+    this.tabChange.emit(detail);
   }
 }

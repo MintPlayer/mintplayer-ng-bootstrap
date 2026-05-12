@@ -1,5 +1,5 @@
-import { html, LitElement, nothing, type TemplateResult } from 'lit';
-import { property, query, queryAll } from 'lit/decorators.js';
+import { css, html, LitElement, nothing, type TemplateResult } from 'lit';
+import { property } from 'lit/decorators.js';
 import { type RibbonTab } from '../types/ribbon.types';
 
 /**
@@ -11,14 +11,57 @@ import { type RibbonTab } from '../types/ribbon.types';
  * Phase 1: Core WC structure + tab strip navigation (roving tabindex, arrow keys)
  */
 export class MpRibbon extends LitElement {
-  static override styles = [];
+  static override styles = css`
+    :host { display: block; }
+    .ribbon-container {
+      border: 1px solid var(--bs-border-color, #e0e0e0);
+      background: var(--bs-body-bg, #fafafa);
+    }
+    .ribbon-tablist {
+      display: flex;
+      border-bottom: 2px solid var(--bs-border-color, #d0d0d0);
+      background: var(--bs-tertiary-bg, #f5f5f5);
+    }
+    .ribbon-tab {
+      padding: 10px 16px;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      font-size: 14px;
+      color: inherit;
+      transition: all 0.15s ease;
+    }
+    .ribbon-tab:hover { background: var(--bs-secondary-bg, #f0f0f0); }
+    .ribbon-tab.active {
+      border-bottom-color: var(--bs-primary, #0d6efd);
+      color: var(--bs-primary, #0d6efd);
+      font-weight: 500;
+    }
+    .ribbon-tab:focus-visible {
+      outline: 2px solid var(--bs-primary, #0d6efd);
+      outline-offset: -2px;
+    }
+    .ribbon-content {
+      padding: 12px 16px;
+      background: var(--bs-body-bg, #fff);
+      min-height: 96px;
+    }
+    .ribbon-panel[hidden] { display: none; }
+    .ribbon-panel {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: stretch;
+    }
+  `;
 
   /** Array of tab objects: { id, label, [content] } */
   @property({ type: Array })
   tabs: RibbonTab[] = [];
 
   /** Currently active tab ID */
-  @property({ type: String })
+  @property({ type: String, attribute: 'active-tab-id' })
   activeTabId: string = '';
 
   /** Layout mode: 'classic' | 'simplified' */
@@ -29,13 +72,11 @@ export class MpRibbon extends LitElement {
   @property({ type: Boolean })
   minimized: boolean = false;
 
-  @query('[role="tablist"]')
-  private tabListEl?: HTMLElement;
-
-  @queryAll('[role="tab"]')
-  private tabElements: HTMLElement[] = [];
-
   private currentTabIndex = 0;
+
+  private get tabElements(): HTMLElement[] {
+    return Array.from(this.renderRoot.querySelectorAll<HTMLElement>('[role="tab"]'));
+  }
 
   constructor() {
     super();
@@ -100,7 +141,7 @@ export class MpRibbon extends LitElement {
         aria-labelledby="ribbon-tab-${tab.id}"
         ?hidden="${!isActive}"
       >
-        ${tab.content || html`<slot name="content-${tab.id}"></slot>`}
+        <slot name="content-${tab.id}"></slot>
       </div>
     `;
   }
@@ -195,4 +236,6 @@ export class MpRibbon extends LitElement {
   }
 }
 
-customElements.define('mp-ribbon', MpRibbon);
+if (typeof customElements !== 'undefined' && !customElements.get('mp-ribbon')) {
+  customElements.define('mp-ribbon', MpRibbon);
+}

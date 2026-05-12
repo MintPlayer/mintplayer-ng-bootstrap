@@ -32,7 +32,7 @@ export class BsRibbonButtonComponent {
 
   readonly itemClick = output<{ itemId: string }>();
 
-  onItemClick(event: CustomEvent<{ itemId: string }>): void {
-    this.itemClick.emit(event.detail);
+  onItemClick(event: Event): void {
+    this.itemClick.emit((event as CustomEvent<{ itemId: string }>).detail);
   }
 }

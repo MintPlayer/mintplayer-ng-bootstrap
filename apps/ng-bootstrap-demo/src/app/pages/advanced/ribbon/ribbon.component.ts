@@ -25,26 +25,10 @@ export class RibbonComponent {
   readonly layout = signal<'classic' | 'simplified'>('classic');
 
   readonly tabs: RibbonTab[] = [
-    {
-      id: 'home',
-      label: 'Home',
-      content: 'Home tab content',
-    },
-    {
-      id: 'insert',
-      label: 'Insert',
-      content: 'Insert tab content',
-    },
-    {
-      id: 'design',
-      label: 'Design',
-      content: 'Design tab content',
-    },
-    {
-      id: 'layout',
-      label: 'Layout',
-      content: 'Layout tab content',
-    },
+    { id: 'home', label: 'Home' },
+    { id: 'insert', label: 'Insert' },
+    { id: 'design', label: 'Design' },
+    { id: 'layout', label: 'Layout' },
   ];
 
   onTabChange(event: RibbonTabChangeEvent): void {

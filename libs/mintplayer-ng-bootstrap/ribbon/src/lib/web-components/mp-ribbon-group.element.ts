@@ -1,4 +1,4 @@
-import { html, LitElement, type TemplateResult } from 'lit';
+import { css, html, LitElement, type TemplateResult } from 'lit';
 import { property } from 'lit/decorators.js';
 
 export interface RibbonGroup {
@@ -15,10 +15,49 @@ export interface RibbonGroup {
  * Phase 2: Groups + item composition
  */
 export class MpRibbonGroup extends LitElement {
-  static override styles = [];
+  static override styles = css`
+    :host { display: inline-flex; }
+    .ribbon-group {
+      display: flex;
+      flex-direction: column;
+      padding: 4px 8px;
+      border-right: 1px solid var(--bs-border-color, #e0e0e0);
+      min-width: 64px;
+    }
+    .ribbon-group-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      align-items: flex-start;
+      flex: 1;
+      padding: 4px 0;
+    }
+    .ribbon-group-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 4px;
+      border-top: 1px solid var(--bs-border-color, #e0e0e0);
+      padding-top: 4px;
+      margin-top: 4px;
+    }
+    .ribbon-group-label {
+      font-size: 11px;
+      color: var(--bs-secondary-color, #6c757d);
+    }
+    .ribbon-dialog-launcher {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 2px 4px;
+      font-size: 12px;
+      color: var(--bs-secondary-color, #6c757d);
+    }
+    .ribbon-dialog-launcher:hover { color: var(--bs-primary, #0d6efd); }
+  `;
 
   /** Unique identifier for this group */
-  @property({ type: String })
+  @property({ type: String, attribute: 'group-id' })
   groupId: string = '';
 
   /** Display label for the group */
@@ -26,7 +65,7 @@ export class MpRibbonGroup extends LitElement {
   label: string = '';
 
   /** Optional dialog launcher button label (e.g. "Font Dialog") */
-  @property({ type: String })
+  @property({ type: String, attribute: 'dialog-launcher' })
   dialogLauncher: string = '';
 
   constructor() {

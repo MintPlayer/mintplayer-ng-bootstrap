@@ -9,7 +9,7 @@ export type RibbonItemSize = 'large' | 'medium' | 'small';
  */
 export class MpRibbonItemBase extends LitElement {
   /** Unique identifier for this item */
-  @property({ type: String })
+  @property({ type: String, attribute: 'item-id' })
   itemId: string = '';
 
   /** Display label */

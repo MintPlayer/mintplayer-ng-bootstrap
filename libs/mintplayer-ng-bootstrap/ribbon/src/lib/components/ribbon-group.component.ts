@@ -32,7 +32,7 @@ export class BsRibbonGroupComponent {
 
   readonly dialogLauncherClick = output<{ groupId: string }>();
 
-  onDialogLauncherClick(event: CustomEvent<{ groupId: string }>): void {
-    this.dialogLauncherClick.emit(event.detail);
+  onDialogLauncherClick(event: Event): void {
+    this.dialogLauncherClick.emit((event as CustomEvent<{ groupId: string }>).detail);
   }
 }

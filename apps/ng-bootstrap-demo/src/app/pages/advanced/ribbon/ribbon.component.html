@@ -15,54 +15,52 @@
     (tabChange)="onTabChange($event)"
   >
     <!-- Home tab content -->
-    <ng-container *ngIf="!minimized()">
-      <bs-ribbon-group groupId="clipboard" label="Clipboard" dialogLauncher="Clipboard Dialog">
-        <bs-ribbon-button
-          itemId="paste"
-          label="Paste"
-          icon="📋"
-          size="large"
-          (itemClick)="onItemClick($event)"
-        ></bs-ribbon-button>
-        <bs-ribbon-button
-          itemId="cut"
-          label="Cut"
-          icon="✂️"
-          size="small"
-          (itemClick)="onItemClick($event)"
-        ></bs-ribbon-button>
-        <bs-ribbon-button
-          itemId="copy"
-          label="Copy"
-          icon="📄"
-          size="small"
-          (itemClick)="onItemClick($event)"
-        ></bs-ribbon-button>
-      </bs-ribbon-group>
+    <bs-ribbon-group slot="content-home" groupId="clipboard" label="Clipboard" dialogLauncher="Clipboard Dialog">
+      <bs-ribbon-button
+        itemId="paste"
+        label="Paste"
+        icon="📋"
+        size="large"
+        (itemClick)="onItemClick($event)"
+      ></bs-ribbon-button>
+      <bs-ribbon-button
+        itemId="cut"
+        label="Cut"
+        icon="✂️"
+        size="small"
+        (itemClick)="onItemClick($event)"
+      ></bs-ribbon-button>
+      <bs-ribbon-button
+        itemId="copy"
+        label="Copy"
+        icon="📄"
+        size="small"
+        (itemClick)="onItemClick($event)"
+      ></bs-ribbon-button>
+    </bs-ribbon-group>
 
-      <bs-ribbon-group groupId="font" label="Font" dialogLauncher="Font Dialog">
-        <bs-ribbon-button
-          itemId="bold"
-          label="Bold"
-          icon="B"
-          size="small"
-          (itemClick)="onItemClick($event)"
-        ></bs-ribbon-button>
-        <bs-ribbon-button
-          itemId="italic"
-          label="Italic"
-          icon="I"
-          size="small"
-          (itemClick)="onItemClick($event)"
-        ></bs-ribbon-button>
-        <bs-ribbon-button
-          itemId="underline"
-          label="Underline"
-          icon="U"
-          size="small"
-          (itemClick)="onItemClick($event)"
-        ></bs-ribbon-button>
-      </bs-ribbon-group>
-    </ng-container>
+    <bs-ribbon-group slot="content-home" groupId="font" label="Font" dialogLauncher="Font Dialog">
+      <bs-ribbon-button
+        itemId="bold"
+        label="Bold"
+        icon="B"
+        size="small"
+        (itemClick)="onItemClick($event)"
+      ></bs-ribbon-button>
+      <bs-ribbon-button
+        itemId="italic"
+        label="Italic"
+        icon="I"
+        size="small"
+        (itemClick)="onItemClick($event)"
+      ></bs-ribbon-button>
+      <bs-ribbon-button
+        itemId="underline"
+        label="Underline"
+        icon="U"
+        size="small"
+        (itemClick)="onItemClick($event)"
+      ></bs-ribbon-button>
+    </bs-ribbon-group>
   </bs-ribbon>
 </div>

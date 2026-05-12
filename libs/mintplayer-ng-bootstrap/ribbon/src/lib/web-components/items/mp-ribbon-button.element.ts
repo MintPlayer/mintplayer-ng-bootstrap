@@ -1,4 +1,4 @@
-import { html, type TemplateResult } from 'lit';
+import { css, html, type TemplateResult } from 'lit';
 import { property } from 'lit/decorators.js';
 import { MpRibbonItemBase } from './mp-ribbon-item-base';
 
@@ -7,7 +7,46 @@ import { MpRibbonItemBase } from './mp-ribbon-item-base';
  * Renders a button with label and optional icon.
  */
 export class MpRibbonButton extends MpRibbonItemBase {
-  static override styles = [];
+  static override styles = css`
+    :host { display: inline-flex; }
+    .ribbon-button {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 3px;
+      cursor: pointer;
+      color: inherit;
+      font-size: 12px;
+      padding: 4px 6px;
+      min-width: 28px;
+    }
+    .ribbon-button:hover {
+      background: var(--bs-secondary-bg, #e9ecef);
+      border-color: var(--bs-border-color, #ced4da);
+    }
+    .ribbon-button:focus-visible {
+      outline: 2px solid var(--bs-primary, #0d6efd);
+      outline-offset: -2px;
+    }
+    .ribbon-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .ribbon-button.ribbon-item-large {
+      flex-direction: column;
+      padding: 6px 10px;
+      min-width: 56px;
+    }
+    .ribbon-button.ribbon-item-large .ribbon-button-icon { font-size: 28px; }
+    .ribbon-button.ribbon-item-medium { flex-direction: row; padding: 4px 8px; }
+    .ribbon-button.ribbon-item-small { flex-direction: row; padding: 4px 6px; }
+    .ribbon-button-icon { line-height: 1; font-size: 16px; }
+    .ribbon-button-label { white-space: nowrap; }
+  `;
 
   override render(): TemplateResult {
     return html`
