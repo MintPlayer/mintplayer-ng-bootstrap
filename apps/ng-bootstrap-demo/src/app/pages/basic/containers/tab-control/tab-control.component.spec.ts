@@ -4,7 +4,6 @@ import { BsForDirective } from '@mintplayer/ng-bootstrap/for';
 import { MockDirective, MockComponent } from 'ng-mocks';
 import { TabControlComponent } from './tab-control.component';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
-import { BsToggleButtonComponent, BsToggleButtonGroupDirective } from '@mintplayer/ng-bootstrap/toggle-button';
 import { BsTabControlComponent, BsTabPageComponent, BsTabPageHeaderDirective } from '@mintplayer/ng-bootstrap/tab-control';
 import { BsSelectComponent } from '@mintplayer/ng-bootstrap/select';
 
@@ -20,7 +19,6 @@ describe('TabControlComponent', () => {
         MockDirective(BsForDirective),
         MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsGridColDirective), MockDirective(BsColFormLabelDirective),
         MockComponent(BsSelectComponent),
-        MockComponent(BsToggleButtonComponent), MockDirective(BsToggleButtonGroupDirective),
 
         // Unit to test (standalone)
         TabControlComponent,

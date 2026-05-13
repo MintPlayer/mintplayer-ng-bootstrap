@@ -1,14 +1,14 @@
 import { Component, computed, model, ChangeDetectionStrategy} from '@angular/core';
 import { ColorTransitionAnimation } from '@mintplayer/ng-animations';
 import { FormsModule } from '@angular/forms';
-import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 
 @Component({
   selector: 'demo-color-transition',
   templateUrl: './color-transition.component.html',
   styleUrls: ['./color-transition.component.scss'],
   animations: [ColorTransitionAnimation],
-  imports: [FormsModule, BsToggleButtonComponent],
+  imports: [FormsModule, BsCheckboxComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ColorTransitionComponent {

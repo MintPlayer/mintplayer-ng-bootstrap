@@ -7,14 +7,14 @@ import { BsListGroupComponent, BsListGroupItemComponent } from '@mintplayer/ng-b
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsButtonGroupComponent } from '@mintplayer/ng-bootstrap/button-group';
 import { BsColorPickerComponent } from '@mintplayer/ng-bootstrap/color-picker';
-import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { DecimalPipe } from '@angular/common';
 
 @Component({
   selector: 'demo-color-picker',
   templateUrl: './color-picker.component.html',
   styleUrls: ['./color-picker.component.scss'],
-  imports: [DecimalPipe, FormsModule, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective, BsButtonTypeDirective, BsButtonGroupComponent, BsColorPickerComponent, BsToggleButtonComponent, BsRangeComponent, BsListGroupComponent, BsListGroupItemComponent],
+  imports: [DecimalPipe, FormsModule, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective, BsButtonTypeDirective, BsButtonGroupComponent, BsColorPickerComponent, BsCheckboxComponent, BsRangeComponent, BsListGroupComponent, BsListGroupItemComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ColorPickerComponent {

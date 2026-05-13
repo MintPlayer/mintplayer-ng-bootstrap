@@ -5,7 +5,7 @@ import { BsHasPropertyPipe } from '@mintplayer/ng-bootstrap/has-property';
 
 import { HasPropertyComponent } from './has-property.component';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
-import { BsToggleButtonComponent, BsToggleButtonGroupDirective } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 
 describe('HasPropertyComponent', () => {
   let component: HasPropertyComponent;
@@ -16,7 +16,7 @@ describe('HasPropertyComponent', () => {
       imports: [
         FormsModule,
         MockPipe(BsHasPropertyPipe),
-        MockComponent(BsToggleButtonComponent), MockDirective(BsToggleButtonGroupDirective),
+        MockComponent(BsCheckboxComponent),
         MockComponent(BsCodeSnippetComponent),
         HasPropertyComponent,
       ]

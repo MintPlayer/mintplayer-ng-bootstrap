@@ -4,7 +4,7 @@ import { MockComponent, MockDirective } from 'ng-mocks';
 import { MultiRangeComponent } from './multi-range.component';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsMultiRangeComponent } from '@mintplayer/ng-bootstrap/multi-range';
-import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 
 describe('MultiRangeComponent', () => {
@@ -21,7 +21,7 @@ describe('MultiRangeComponent', () => {
         MockDirective(BsGridColumnDirective),
         MockDirective(BsGridColDirective),
         MockComponent(BsMultiRangeComponent),
-        MockComponent(BsToggleButtonComponent),
+        MockComponent(BsCheckboxComponent),
         MockComponent(BsCodeSnippetComponent),
         MultiRangeComponent,
       ],

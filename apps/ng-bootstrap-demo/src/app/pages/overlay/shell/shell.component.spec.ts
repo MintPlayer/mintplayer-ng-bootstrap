@@ -6,7 +6,7 @@ import { MockComponent, MockDirective } from 'ng-mocks';
 import { BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderComponent } from '@mintplayer/ng-bootstrap/accordion';
 import { BsButtonGroupComponent } from '@mintplayer/ng-bootstrap/button-group';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
-import { BsToggleButtonComponent, BsToggleButtonGroupDirective } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsRadioComponent, BsRadioGroupDirective } from '@mintplayer/ng-bootstrap/radio';
 
 describe('ShellComponent', () => {
   let component: ShellComponent;
@@ -24,7 +24,7 @@ describe('ShellComponent', () => {
         MockComponent(BsAccordionComponent), MockComponent(BsAccordionTabComponent), MockComponent(BsAccordionTabHeaderComponent),
         MockComponent(BsButtonGroupComponent),
         MockDirective(BsButtonTypeDirective),
-        MockComponent(BsToggleButtonComponent), MockDirective(BsToggleButtonGroupDirective),
+        MockComponent(BsRadioComponent), MockDirective(BsRadioGroupDirective),
       ]
     })
     .compileComponents();

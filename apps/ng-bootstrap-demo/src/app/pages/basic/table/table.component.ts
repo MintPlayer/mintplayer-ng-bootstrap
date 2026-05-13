@@ -3,13 +3,13 @@ import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BsGridComponent, BsGridRowDirective, BsGridColDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsTableComponent } from '@mintplayer/ng-bootstrap/table';
-import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 
 @Component({
   selector: 'demo-table',
   templateUrl: './table.component.html',
   styleUrls: ['./table.component.scss'],
-  imports: [DatePipe, FormsModule, BsGridComponent, BsGridRowDirective, BsGridColDirective, BsTableComponent, BsToggleButtonComponent],
+  imports: [DatePipe, FormsModule, BsGridComponent, BsGridRowDirective, BsGridColDirective, BsTableComponent, BsCheckboxComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TableComponent {

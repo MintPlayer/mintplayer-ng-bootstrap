@@ -1,13 +1,13 @@
 import { Component, CUSTOM_ELEMENTS_SCHEMA, model, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import '@mintplayer/ng-bootstrap/web-components/splitter';
 
 @Component({
   selector: 'demo-splitter',
   templateUrl: './splitter.component.html',
   styleUrls: ['./splitter.component.scss'],
-  imports: [FormsModule, BsToggleButtonComponent],
+  imports: [FormsModule, BsCheckboxComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
