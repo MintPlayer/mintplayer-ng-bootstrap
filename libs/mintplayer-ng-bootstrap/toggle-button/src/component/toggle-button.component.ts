@@ -1,4 +1,5 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, computed, ElementRef, input, model, signal, viewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, computed, DestroyRef, ElementRef, inject, input, model, PLATFORM_ID, signal, viewChild } from '@angular/core';
+import { isPlatformServer } from '@angular/common';
 import { BsToggleButtonValueAccessor } from '../value-accessor/toggle-button-value-accessor';
 import { BsToggleButtonGroupDirective } from '../directives/toggle-button-group/toggle-button-group.directive';
 import { BsCheckStyle } from '../types/check-style';
@@ -14,6 +15,10 @@ import { BsCheckStyle } from '../types/check-style';
   },
 })
 export class BsToggleButtonComponent implements AfterViewInit {
+
+  private readonly hostRef = inject(ElementRef);
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly checkbox = viewChild.required<ElementRef<HTMLInputElement>>('checkbox');
 
@@ -130,5 +135,29 @@ export class BsToggleButtonComponent implements AfterViewInit {
 
   ngAfterViewInit() {
     this.disableAnimations.set(false);
+    this.mirrorAriaAttributesToInput();
+  }
+
+  /**
+   * Mirror every `aria-*` attribute from the host element onto the inner
+   * `<input>`. The host is a plain Angular tag (no shadow DOM), so screen
+   * readers compute the focused control's accessible name from the input
+   * itself — `aria-label` / `aria-labelledby` / `aria-describedby` on the
+   * host would otherwise be invisible to AT. A MutationObserver keeps the
+   * mirror in sync with `[attr.aria-…]` bindings that change at runtime.
+   */
+  private mirrorAriaAttributesToInput() {
+    if (isPlatformServer(this.platformId)) return;
+    const host = this.hostRef.nativeElement as HTMLElement;
+    const input = this.checkbox().nativeElement;
+    const mirror = () => {
+      Array.from(host.attributes)
+        .filter(attr => attr.name.startsWith('aria-'))
+        .forEach(({ name, value }) => input.setAttribute(name, value));
+    };
+    mirror();
+    const observer = new MutationObserver(mirror);
+    observer.observe(host, { attributes: true });
+    this.destroyRef.onDestroy(() => observer.disconnect());
   }
 }
