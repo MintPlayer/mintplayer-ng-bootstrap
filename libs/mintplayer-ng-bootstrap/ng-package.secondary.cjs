@@ -16,10 +16,11 @@
  * Upstream's fix PR (twbs/bootstrap#41112) was closed without merging; the
  * cleanup only landed on v6-dev as part of a full rewrite (twbs/bootstrap#40849,
  * twbs/bootstrap#40962). Drop the entire `silenceDeprecations` array — here
- * AND in the umbrella `ng-package.json` lib.sass.silenceDeprecations, AND in
  * apps/ng-bootstrap-demo/project.json stylePreprocessorOptions.sass, AND in
  * tools/scripts/build-web-components.mjs — when bumping the bootstrap peer
- * dep to v6.
+ * dep to v6. (The umbrella `libs/mintplayer-ng-bootstrap/ng-package.json`
+ * intentionally has no `lib.sass` block: the primary entry exports only
+ * enums/providers/types and never compiles Bootstrap SCSS.)
  */
 
 const path = require('node:path');
