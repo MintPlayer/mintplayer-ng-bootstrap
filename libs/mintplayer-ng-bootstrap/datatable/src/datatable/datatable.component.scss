@@ -4,6 +4,72 @@ tfoot > tr > td {
   border-bottom: none;
 }
 
+// === Resizable columns ===
+// See docs/prd/datatable-virtual-merge-and-selection.md § Resizable columns.
+
+// table-layout: fixed is what actually pins columns to the user-chosen
+// width — auto-layout treats `width` as a hint and lets content grow the
+// column. With fixed, the inline `width` on every td/th is authoritative
+// and content beyond it is governed by overflow on the cell.
+:host:has(.bs-datatable-resize-handle) ::ng-deep bs-table table,
+:host:has(.bs-datatable-resize-handle) ::ng-deep cdk-virtual-scroll-viewport table {
+  table-layout: fixed;
+  width: max-content;
+}
+
+// Clip content that exceeds the pinned column width. text-nowrap on the
+// cell (already in the demo template) prevents wrapping; overflow:hidden
+// + text-overflow:ellipsis handles long values.
+:host:has(.bs-datatable-resize-handle) ::ng-deep bs-table th,
+:host:has(.bs-datatable-resize-handle) ::ng-deep bs-table td,
+:host:has(.bs-datatable-resize-handle) ::ng-deep cdk-virtual-scroll-viewport td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// The handle is absolutely positioned at the right edge of each resizable
+// <th>. The cell itself becomes the positioning context and reserves padding
+// so the handle never overlaps the header text.
+th.resizable-col {
+  position: relative;
+  padding-right: 12px;
+}
+
+.bs-datatable-resize-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  user-select: none;
+  // touch-action is frozen at touchstart per feedback_touch_action_immutable;
+  // keep it as static CSS so it applies before the gesture begins.
+  touch-action: none;
+  z-index: 1;
+
+  &:hover,
+  &:focus-visible {
+    background: var(--bs-primary, #0d6efd);
+    opacity: 0.4;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--bs-primary, #0d6efd);
+    outline-offset: -2px;
+  }
+}
+
+// On sortable + resizable columns, the existing sort-arrow ::before/::after
+// pseudos sit at right: 0.5em / 1em (~8/16px). Shift them inward so the
+// 6px resize handle stays clickable at the very edge.
+th.sort.resizable-col {
+  padding-right: calc(2rem + 6px);
+
+  &::before { right: calc(1em + 6px); }
+  &::after  { right: calc(0.5em + 6px); }
+}
+
 th.select-col,
 td.select-col {
   width: 1px;

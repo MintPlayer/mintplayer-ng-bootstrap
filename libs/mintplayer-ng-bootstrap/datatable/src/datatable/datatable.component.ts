@@ -1,4 +1,4 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, input, model, signal, TemplateRef, viewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, input, model, signal, TemplateRef, untracked, viewChild } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { CdkVirtualScrollViewport, ScrollingModule } from '@angular/cdk/scrolling';
 import { PaginationRequest, PaginationResponse } from '@mintplayer/pagination';
@@ -8,6 +8,7 @@ import { BsPaginationComponent } from '@mintplayer/ng-bootstrap/pagination';
 import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
 import { DatatableSettings } from '../datatable-settings';
 import { DatatableSortBase } from '../datatable-sort-base';
+import { BsDatatableColumnDirective } from '../datatable-column/datatable-column.directive';
 import { BsDatatableFetch } from '../datatable-fetch';
 import { BsRowTemplateContext } from '../row-template/row-template.directive';
 
@@ -42,7 +43,24 @@ export class BsDatatableComponent<TData> extends DatatableSortBase implements Af
    */
   compareWith = input<(a: TData, b: TData) => boolean>(Object.is);
 
+  /** Show the per-column resize handle and run the measure-once auto-sizer
+   *  on first batch. False = legacy fluid layout, no widths pinned. */
+  resizableColumns = input(true);
+
+  /** Floor for drag-resize and keyboard-resize, in px. */
+  minColumnWidth = input(40);
+
   selection = model<TData[]>([]);
+
+  /**
+   * Per-column pinned width in px, keyed by `BsDatatableColumnDirective.name()`.
+   * Source of truth for the measure-once + freeze model: a column with an
+   * entry here is "locked" (either auto-sized on first batch, or user-set
+   * via drag / dblclick / keyboard). Columns absent from the map are still
+   * "Pristine" — the next initial-auto-size pass will fill them in.
+   * See docs/prd/datatable-virtual-merge-and-selection.md § Resizable columns.
+   */
+  protected readonly columnWidths = signal<ReadonlyMap<string, number>>(new Map());
 
   readonly rowTemplate = signal<TemplateRef<BsRowTemplateContext<TData>> | undefined>(undefined);
 
@@ -121,11 +139,11 @@ export class BsDatatableComponent<TData> extends DatatableSortBase implements Af
       onCleanup(() => sub.unsubscribe());
     });
 
-    // Re-wire scroll + column-width sync whenever virtual mode is active.
-    // The viewport DOM doesn't exist until @if (virtualScroll()) renders,
-    // so ngAfterViewInit's one-shot setup can't see it on mode toggles
-    // (or on the initial paginated → virtual flip). Each effect run is
-    // scoped: the sync listeners are torn down when virtual mode flips off.
+    // Re-wire scroll sync + column-width re-apply whenever virtual mode is
+    // active. The viewport DOM doesn't exist until @if (virtualScroll())
+    // renders, so ngAfterViewInit's one-shot setup can't see it on mode
+    // toggles (or on the initial paginated → virtual flip). Each effect
+    // run is scoped: listeners are torn down when virtual mode flips off.
     effect((onCleanup) => {
       if (!this.virtualScroll()) return;
 
@@ -136,13 +154,35 @@ export class BsDatatableComponent<TData> extends DatatableSortBase implements Af
       const rafId = requestAnimationFrame(() => {
         if (cancelled) return;
         this.setupScrollSync(teardowns);
-        this.setupColumnWidthSync(teardowns);
+        this.setupColumnApply(teardowns);
+        // If we have pinned widths from a previous mode, re-apply them to
+        // the freshly-mounted virtual table.
+        if (this.columnWidths().size > 0) {
+          this.applyAllColumnWidths();
+        }
       });
 
       onCleanup(() => {
         cancelled = true;
         cancelAnimationFrame(rafId);
         teardowns.forEach(fn => fn());
+      });
+    });
+
+    // Initial auto-size: after the first non-empty batch lands, measure each
+    // unsized column and pin its width. Re-runs on data signal changes but
+    // short-circuits once every column has an entry in columnWidths.
+    effect(() => {
+      if (!this.resizableColumns()) return;
+      const hasData = this.virtualScroll()
+        ? this.virtualCache().size > 0 && this.virtualTotalRecords() > 0
+        : (this.response()?.data?.length ?? 0) > 0;
+      if (!hasData) return;
+      untracked(() => {
+        const unsized = this.columns().filter(c => !this.columnWidths().has(c.name()));
+        if (unsized.length === 0) return;
+        // Wait one frame so the rows are committed to the DOM before measuring.
+        requestAnimationFrame(() => this.runInitialAutoSize());
       });
     });
   }
@@ -267,13 +307,19 @@ export class BsDatatableComponent<TData> extends DatatableSortBase implements Af
     }));
   }
 
-  // === Virtual mode DOM bookkeeping (carried over from old BsVirtualDatatableComponent) ===
+  // === Virtual mode DOM bookkeeping ===
   //
-  // The virtual viewport renders body rows into its own <table>, separate from
-  // the sticky header <table> in `bs-table`. Two helpers keep them in lockstep:
+  // The virtual viewport renders body rows into its own <table>, separate
+  // from the sticky header <table> in `bs-table`. Two helpers keep them in
+  // lockstep:
   //  - setupScrollSync: horizontal scroll on either table mirrors the other.
-  //  - setupColumnWidthSync: measures content widths after each cdkVirtualFor
-  //    swap and pins min-widths so header and body columns line up.
+  //  - setupColumnApply: re-applies pinned widths from `columnWidths` to
+  //    body rows after each cdkVirtualFor recycle (the inline minWidths are
+  //    lost when a row is removed and a new one mounted in its slot).
+  //
+  // The actual *measurement* of widths is one-shot (see the initial-auto-
+  // size effect in the constructor + `runInitialAutoSize`). After that,
+  // widths only change on user input (drag, dblclick, keyboard).
 
   private setupScrollSync(teardowns: (() => void)[]) {
     const el = this.elementRef.nativeElement as HTMLElement;
@@ -302,70 +348,258 @@ export class BsDatatableComponent<TData> extends DatatableSortBase implements Af
     });
   }
 
-  private setupColumnWidthSync(teardowns: (() => void)[]) {
+  /** Re-apply pinned widths from `columnWidths` to body rows whenever the
+   *  cdkVirtualFor recycles a row (new <tr> in an existing slot starts with
+   *  no inline minWidth). */
+  private setupColumnApply(teardowns: (() => void)[]) {
     const el = this.elementRef.nativeElement as HTMLElement;
     const bodyTableBody = el.querySelector('cdk-virtual-scroll-viewport tbody') as HTMLElement | null;
     if (!bodyTableBody) return;
 
-    const maxWidths: number[] = [];
+    const observer = new MutationObserver(() => {
+      if (this.columnWidths().size === 0) return;
+      requestAnimationFrame(() => this.applyAllColumnWidths());
+    });
+    observer.observe(bodyTableBody, { childList: true });
+    teardowns.push(() => observer.disconnect());
+  }
 
-    const syncWidths = () => {
-      const headerCells = el.querySelectorAll<HTMLElement>('bs-table thead th');
-      const allBodyRows = Array.from(bodyTableBody.querySelectorAll<HTMLTableRowElement>('tr'));
-      const firstBodyRow = allBodyRows[0];
-      const bodyCells = firstBodyRow?.cells;
-      if (!headerCells.length || !bodyCells?.length) return;
-      const columnCount = Math.min(headerCells.length, bodyCells.length);
+  // === Resizable columns: measurement, apply, and user gestures ===
 
-      const headerScrollContainer = el.querySelector('.table-responsive') as HTMLElement | null;
-      const viewport = el.querySelector('cdk-virtual-scroll-viewport') as HTMLElement | null;
-      const savedHeaderScroll = headerScrollContainer?.scrollLeft ?? 0;
-      const savedViewportScroll = viewport?.scrollLeft ?? 0;
+  /** Cell index in the table for `column` — selection column shifts indices by 1. */
+  private cellIndexFor(column: BsDatatableColumnDirective): number {
+    const idx = this.columns().findIndex(c => c === column);
+    if (idx === -1) return -1;
+    return idx + (this.showCheckboxes() ? 1 : 0);
+  }
 
-      for (const row of allBodyRows) {
-        const tds = row.cells;
-        for (let i = 0; i < Math.min(tds.length, columnCount); i++) tds[i].style.minWidth = '';
+  /** Same as cellIndexFor but keyed by name. */
+  private cellIndexForName(name: string): number {
+    const idx = this.columns().findIndex(c => c.name() === name);
+    if (idx === -1) return -1;
+    return idx + (this.showCheckboxes() ? 1 : 0);
+  }
+
+  /** Measure the natural max(header, …visible td) widths for the named
+   *  columns in one DOM pass. Uses the `width: max-content !important`
+   *  override to defeat Bootstrap's `width: 100%`. Returns a Map. */
+  private measureWidths(names: string[]): Map<string, number> {
+    const el = this.elementRef.nativeElement as HTMLElement;
+    const headerCells = el.querySelectorAll<HTMLElement>('bs-table thead th');
+    const bodyContainerSel = this.virtualScroll()
+      ? 'cdk-virtual-scroll-viewport'
+      : 'bs-datatable bs-table';
+    const bodyRows = Array.from(
+      el.querySelectorAll<HTMLTableRowElement>(`${bodyContainerSel} tbody tr`),
+    );
+    if (!headerCells.length || !bodyRows.length) return new Map();
+
+    const indices = names
+      .map(name => ({ name, idx: this.cellIndexForName(name) }))
+      .filter(({ idx }) => idx >= 0 && idx < headerCells.length);
+    if (indices.length === 0) return new Map();
+
+    const headerScrollContainer = el.querySelector('.table-responsive') as HTMLElement | null;
+    const viewport = el.querySelector('cdk-virtual-scroll-viewport') as HTMLElement | null;
+    const savedHeaderScroll = headerScrollContainer?.scrollLeft ?? 0;
+    const savedViewportScroll = viewport?.scrollLeft ?? 0;
+
+    // Snapshot + clear inline width / min-width / max-width on the cells
+    // we're about to measure so the natural width is observable. We restore
+    // them after.
+    const restore: Array<() => void> = [];
+    const clearCell = (cell: HTMLElement) => {
+      const prev = { w: cell.style.width, mn: cell.style.minWidth, mx: cell.style.maxWidth };
+      cell.style.width = '';
+      cell.style.minWidth = '';
+      cell.style.maxWidth = '';
+      restore.push(() => {
+        cell.style.width = prev.w;
+        cell.style.minWidth = prev.mn;
+        cell.style.maxWidth = prev.mx;
+      });
+    };
+    for (const { idx } of indices) {
+      const th = headerCells[idx];
+      if (th) clearCell(th);
+      for (const row of bodyRows) {
+        const td = row.children[idx] as HTMLElement | undefined;
+        if (td) clearCell(td);
       }
-      for (let i = 0; i < columnCount; i++) headerCells[i].style.minWidth = '';
+    }
 
-      const headerTable = el.querySelector<HTMLElement>('bs-table table');
-      const bodyTable = el.querySelector<HTMLElement>('cdk-virtual-scroll-viewport table');
-      headerTable?.style.setProperty('width', 'max-content', 'important');
-      bodyTable?.style.setProperty('width', 'max-content', 'important');
+    const headerTable = el.querySelector<HTMLElement>('bs-table table');
+    const bodyTable = el.querySelector<HTMLElement>(`${bodyContainerSel} table`);
+    headerTable?.style.setProperty('width', 'max-content', 'important');
+    bodyTable?.style.setProperty('width', 'max-content', 'important');
 
-      for (let i = 0; i < columnCount; i++) {
-        let colWidth = headerCells[i].offsetWidth;
-        for (const row of allBodyRows) {
-          const tds = row.cells;
-          if (i < tds.length) {
-            const w = tds[i].offsetWidth;
-            if (w > colWidth) colWidth = w;
-          }
-        }
-        if (!maxWidths[i] || colWidth > maxWidths[i]) maxWidths[i] = colWidth;
+    const result = new Map<string, number>();
+    const floor = this.minColumnWidth();
+    for (const { name, idx } of indices) {
+      let max = headerCells[idx].offsetWidth;
+      for (const row of bodyRows) {
+        const td = row.children[idx] as HTMLElement | undefined;
+        if (td && td.offsetWidth > max) max = td.offsetWidth;
       }
+      result.set(name, Math.max(floor, max));
+    }
 
-      headerTable?.style.removeProperty('width');
-      bodyTable?.style.removeProperty('width');
+    headerTable?.style.removeProperty('width');
+    bodyTable?.style.removeProperty('width');
+    for (const fn of restore) fn();
+    if (headerScrollContainer) headerScrollContainer.scrollLeft = savedHeaderScroll;
+    if (viewport) viewport.scrollLeft = savedViewportScroll;
 
-      for (let i = 0; i < columnCount; i++) {
-        const w = `${maxWidths[i]}px`;
-        headerCells[i].style.minWidth = w;
-        for (const row of allBodyRows) {
-          const tds = row.cells;
-          if (i < tds.length) tds[i].style.minWidth = w;
-        }
-      }
+    return result;
+  }
 
-      if (headerScrollContainer) headerScrollContainer.scrollLeft = savedHeaderScroll;
-      if (viewport) viewport.scrollLeft = savedViewportScroll;
+  /** Run the initial measure pass on every column that isn't sized yet. */
+  private runInitialAutoSize() {
+    const unsized = this.columns()
+      .map(c => c.name())
+      .filter(name => !this.columnWidths().has(name));
+    if (unsized.length === 0) return;
+    const measured = this.measureWidths(unsized);
+    if (measured.size === 0) return;
+    const next = new Map(this.columnWidths());
+    measured.forEach((w, name) => next.set(name, w));
+    this.columnWidths.set(next);
+    this.applyAllColumnWidths();
+  }
+
+  /** Write `width` (not min-width) on header + every visible td so that
+   *  table-layout: fixed pins the column exactly to the locked value,
+   *  even when the body cell's content is wider than the user-chosen
+   *  width. Combined with overflow:hidden on the cell, longer content
+   *  clips — that's the intended freeze semantics. */
+  private applyColumnWidth(name: string) {
+    const idx = this.cellIndexForName(name);
+    if (idx < 0) return;
+    const w = this.columnWidths().get(name);
+    if (w === undefined) return;
+    const px = `${w}px`;
+    const el = this.elementRef.nativeElement as HTMLElement;
+    const headerCells = el.querySelectorAll<HTMLElement>('bs-table thead th');
+    const headerCell = headerCells[idx];
+    if (headerCell) {
+      headerCell.style.width = px;
+      headerCell.style.minWidth = px;
+      headerCell.style.maxWidth = px;
+    }
+    const bodyContainerSel = this.virtualScroll()
+      ? 'cdk-virtual-scroll-viewport'
+      : 'bs-datatable bs-table';
+    const bodyRows = el.querySelectorAll<HTMLTableRowElement>(`${bodyContainerSel} tbody tr`);
+    bodyRows.forEach(row => {
+      const td = row.children[idx] as HTMLElement | undefined;
+      if (!td) return;
+      td.style.width = px;
+      td.style.minWidth = px;
+      td.style.maxWidth = px;
+    });
+  }
+
+  private applyAllColumnWidths() {
+    for (const name of this.columnWidths().keys()) {
+      this.applyColumnWidth(name);
+    }
+  }
+
+  /** Commit a new width for `name` into the signal and write it to the DOM. */
+  private commitColumnWidth(name: string, w: number) {
+    const next = new Map(this.columnWidths());
+    next.set(name, w);
+    this.columnWidths.set(next);
+    this.applyColumnWidth(name);
+  }
+
+  // === Pointer / keyboard handlers used by the template ===
+
+  /** Click on the handle must not bubble to the <th>'s sort handler. */
+  protected onResizeHandleClick(event: MouseEvent) {
+    event.stopPropagation();
+  }
+
+  protected onResizeHandlePointerDown(event: PointerEvent, column: BsDatatableColumnDirective) {
+    if (!this.resizableColumns()) return;
+    // Don't let the underlying <th>'s sort handler see this gesture.
+    event.stopPropagation();
+    // Per feedback_pointerdown_preventdefault: do NOT preventDefault() on
+    // touch pointerdown — it suppresses the synthesised click chain.
+    const handle = event.target as HTMLElement;
+    handle.setPointerCapture(event.pointerId);
+
+    const startX = event.clientX;
+    const name = column.name();
+    const startWidth = this.columnWidths().get(name)
+      ?? this.measureWidths([name]).get(name)
+      ?? this.minColumnWidth();
+
+    let pending = startWidth;
+    let rafId: number | null = null;
+    const flush = () => {
+      rafId = null;
+      this.commitColumnWidth(name, pending);
     };
 
-    requestAnimationFrame(() => syncWidths());
+    const onMove = (e: PointerEvent) => {
+      pending = Math.max(this.minColumnWidth(), startWidth + (e.clientX - startX));
+      if (rafId === null) rafId = requestAnimationFrame(flush);
+    };
+    const onEnd = () => {
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+      this.commitColumnWidth(name, pending);
+      handle.releasePointerCapture(event.pointerId);
+      handle.removeEventListener('pointermove', onMove);
+      handle.removeEventListener('pointerup', onEnd);
+      handle.removeEventListener('pointercancel', onEnd);
+    };
+    handle.addEventListener('pointermove', onMove);
+    handle.addEventListener('pointerup', onEnd);
+    handle.addEventListener('pointercancel', onEnd);
+  }
 
-    const observer = new MutationObserver(() => requestAnimationFrame(() => syncWidths()));
-    observer.observe(bodyTableBody, { childList: true, subtree: true });
-    teardowns.push(() => observer.disconnect());
+  protected onResizeHandleDoubleClick(event: MouseEvent, column: BsDatatableColumnDirective) {
+    event.stopPropagation();
+    if (!this.resizableColumns()) return;
+    const name = column.name();
+    const measured = this.measureWidths([name]).get(name);
+    if (measured !== undefined) {
+      this.commitColumnWidth(name, Math.max(this.minColumnWidth(), measured));
+    }
+  }
+
+  protected onResizeHandleKeydown(event: KeyboardEvent, column: BsDatatableColumnDirective) {
+    if (!this.resizableColumns()) return;
+
+    // Enter / Space are no-ops on the handle — but the underlying <th>'s
+    // (keydown.enter|space) handler would trigger a sort if we let them
+    // bubble. Consume them so the handle is a real focus stop.
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+
+    const name = column.name();
+    const current = this.columnWidths().get(name) ?? this.measureWidths([name]).get(name) ?? this.minColumnWidth();
+    let next: number | null = null;
+    switch (event.key) {
+      case 'ArrowLeft':  next = current - (event.shiftKey ? 1 : 10); break;
+      case 'ArrowRight': next = current + (event.shiftKey ? 1 : 10); break;
+      case 'Home': {
+        const measured = this.measureWidths([name]).get(name);
+        if (measured !== undefined) next = measured;
+        break;
+      }
+    }
+    if (next === null) return;
+    event.preventDefault();
+    event.stopPropagation();
+    this.commitColumnWidth(name, Math.max(this.minColumnWidth(), next));
   }
 
 }

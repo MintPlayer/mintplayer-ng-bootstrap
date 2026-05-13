@@ -39,8 +39,8 @@ function makeFetch(totalRecords: number) {
       [itemSize]="40"
       [fetch]="fetch()"
       [(settings)]="settings">
-      <ng-template bsDatatableColumn name="id">Id</ng-template>
-      <ng-template bsDatatableColumn name="name">Name</ng-template>
+      <ng-template bsDatatableColumn="id">Id</ng-template>
+      <ng-template bsDatatableColumn="name">Name</ng-template>
       <ng-template bsRowTemplate let-row>
         <td>{{ row?.id }}</td>
         <td>{{ row?.name }}</td>

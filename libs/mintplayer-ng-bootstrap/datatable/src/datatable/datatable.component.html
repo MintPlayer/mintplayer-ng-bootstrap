@@ -19,6 +19,7 @@
                             [class.sort]="column.sortable()"
                             [class.sort-asc]="column.sortable() && getSortDirection(column.name()) === 'ascending'"
                             [class.sort-desc]="column.sortable() && getSortDirection(column.name()) === 'descending'"
+                            [class.resizable-col]="resizableColumns()"
                             [attr.aria-sort]="column.sortable() ? (getSortDirection(column.name()) ?? 'none') : null"
                             [attr.tabindex]="column.sortable() ? 0 : null"
                             (mousedown)="onHeaderMouseDown($event)"
@@ -28,6 +29,19 @@
                             <ng-container *ngTemplateOutlet="column.templateRef"></ng-container>
                             @if (settings().sortColumns.length > 1 && getSortIndex(column.name()) >= 0) {
                                 <span class="sort-priority">{{ getSortIndex(column.name()) + 1 }}</span>
+                            }
+                            @if (resizableColumns()) {
+                                <div class="bs-datatable-resize-handle"
+                                    role="separator"
+                                    aria-orientation="vertical"
+                                    [attr.aria-label]="'Resize column ' + column.name()"
+                                    [attr.aria-valuenow]="columnWidths().get(column.name()) ?? null"
+                                    [attr.aria-valuemin]="minColumnWidth()"
+                                    tabindex="0"
+                                    (pointerdown)="onResizeHandlePointerDown($event, column)"
+                                    (click)="onResizeHandleClick($event)"
+                                    (dblclick)="onResizeHandleDoubleClick($event, column)"
+                                    (keydown)="onResizeHandleKeydown($event, column)"></div>
                             }
                         </th>
                     }
@@ -82,6 +96,7 @@
                         [class.sort]="column.sortable()"
                         [class.sort-asc]="column.sortable() && getSortDirection(column.name()) === 'ascending'"
                         [class.sort-desc]="column.sortable() && getSortDirection(column.name()) === 'descending'"
+                        [class.resizable-col]="resizableColumns()"
                         [attr.aria-sort]="column.sortable() ? (getSortDirection(column.name()) ?? 'none') : null"
                         [attr.tabindex]="column.sortable() ? 0 : null"
                         (mousedown)="onHeaderMouseDown($event)"
@@ -91,6 +106,19 @@
                         <ng-container *ngTemplateOutlet="column.templateRef"></ng-container>
                         @if (settings().sortColumns.length > 1 && getSortIndex(column.name()) >= 0) {
                             <span class="sort-priority">{{ getSortIndex(column.name()) + 1 }}</span>
+                        }
+                        @if (resizableColumns()) {
+                            <div class="bs-datatable-resize-handle"
+                                role="separator"
+                                aria-orientation="vertical"
+                                [attr.aria-label]="'Resize column ' + column.name()"
+                                [attr.aria-valuenow]="columnWidths().get(column.name()) ?? null"
+                                [attr.aria-valuemin]="minColumnWidth()"
+                                tabindex="0"
+                                (pointerdown)="onResizeHandlePointerDown($event, column)"
+                                (click)="onResizeHandleClick($event)"
+                                (dblclick)="onResizeHandleDoubleClick($event, column)"
+                                (keydown)="onResizeHandleKeydown($event, column)"></div>
                         }
                     </th>
                 }

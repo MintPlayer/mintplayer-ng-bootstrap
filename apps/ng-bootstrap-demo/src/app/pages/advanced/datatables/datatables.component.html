@@ -15,9 +15,9 @@
   [compareWith]="compareArtists"
   [(selection)]="selection">
 
-  <ng-template bsDatatableColumn name="Name">Artist</ng-template>
-  <ng-template bsDatatableColumn name="YearStarted">Year started</ng-template>
-  <ng-template bsDatatableColumn name="YearQuit">Year quit</ng-template>
+  <ng-template bsDatatableColumn="Name">Artist</ng-template>
+  <ng-template bsDatatableColumn="YearStarted">Year started</ng-template>
+  <ng-template bsDatatableColumn="YearQuit">Year quit</ng-template>
 
   <ng-template bsRowTemplate let-artist>
     <td class="text-nowrap">{{ artist?.name }}</td>
