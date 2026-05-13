@@ -93,7 +93,11 @@ function compileScss(scssPath) {
   const result = sass.compile(scssPath, {
     style: 'expanded',
     sourceMap: false,
-    loadPaths: [dirname(scssPath), join(repoRoot, 'node_modules')],
+    // repoRoot first → matches the workspace-relative paths VS Code Ctrl+click
+    // resolves (e.g. `@import "node_modules/bootstrap/scss/functions"`).
+    // node_modules second → also accepts the bare `bootstrap/scss/...` form
+    // used by the published `_bootstrap.scss`.
+    loadPaths: [dirname(scssPath), repoRoot, join(repoRoot, 'node_modules')],
     silenceDeprecations: BOOTSTRAP_SILENCED_DEPRECATIONS,
   });
   return result.css;

@@ -1,15 +1,15 @@
 // Configuration
-@import "../../../../../node_modules/bootstrap/scss/functions";
-@import "../../../../../node_modules/bootstrap/scss/variables";
-@import "../../../../../node_modules/bootstrap/scss/variables-dark";
-@import "../../../../../node_modules/bootstrap/scss/mixins";
+@import "node_modules/bootstrap/scss/functions";
+@import "node_modules/bootstrap/scss/variables";
+@import "node_modules/bootstrap/scss/variables-dark";
+@import "node_modules/bootstrap/scss/mixins";
 
 /* :host */ ::ng-deep {
     // Layout & components
-    // @import "../../../../../node_modules/bootstrap/scss/containers";
-    @import "../../../../../node_modules/bootstrap/scss/dropdown";
-    @import "../../../../../node_modules/bootstrap/scss/nav";
-    @import "../../../../../node_modules/bootstrap/scss/navbar";
+    // @import "node_modules/bootstrap/scss/containers";
+    @import "node_modules/bootstrap/scss/dropdown";
+    @import "node_modules/bootstrap/scss/nav";
+    @import "node_modules/bootstrap/scss/navbar";
 }
 
 ::ng-deep {
