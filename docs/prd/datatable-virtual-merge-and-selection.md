@@ -5,12 +5,13 @@ Supersedes the broader draft on PR #314 — tree mode and the new ASP.NET Core d
 
 ## Overview
 
-One `<bs-datatable>` component with a `[virtualScroll]` switch, one data-source contract (`[fetch]`), one selection model.
+One `<bs-datatable>` component with a `[virtualScroll]` switch, one data-source contract (`[fetch]`), one selection model, columns the user can resize.
 
 1. **Merge `<bs-virtual-datatable>` into `<bs-datatable>`** and delete the `@mintplayer/ng-bootstrap/virtual-datatable` package. The two share ~80% of their code today (column directive, sort base, settings model, sort UI). Folding them is the single biggest code reduction in this PRD.
 2. **One `[fetch]` contract** replaces both `[(data)]` and `[dataSource]`. `fetch` is an **input** — the consumer provides a callback; the component owns *when* to call it (page change, sort change, viewport advance in virtual mode).
-3. **Vidyano-style checkbox selection**. No "select all" header checkbox; instead, the header cell shows a single checkbox **only when ≥1 row is selected**, rendered already-checked, and clicking it **deselects everything**.
+3. **Deselect-all-only checkbox selection**. No "select all" header checkbox; instead, the header cell shows a single checkbox **only when ≥1 row is selected**, rendered already-checked, and clicking it **deselects everything**.
 4. **Selection survives pagination and virtual-scroll churn**. Selected items are stored as objects (not just ids), compared by a consumer-supplied `[compareWith]` function so cross-page-fetch object identity isn't required.
+5. **Measure-once resizable columns**. After the first batch of rows lands, every column gets a width measured from its visible content. Those widths *freeze*: pagination, sort changes, and virtual-scroll row swaps no longer touch them. The user drags a 6px handle at the right edge of any column header to override; the user-set width replaces the auto-measured one and survives the rest of the component's lifetime.
 
 Backwards compatibility is not a requirement. `[(data)]` and `[dataSource]` are removed in favor of `[fetch]`. Document the migration; do not carry shims.
 
@@ -70,6 +71,8 @@ The component owns request batching, sort/page-change debouncing, and the viewpo
 | `itemSize` | `number` | `48` | Row height in px (required for virtual mode) |
 | `selectable` | `'none' \| 'single' \| 'multiple'` | `'none'` | Selection mode. `'none'` hides checkboxes entirely. |
 | `compareWith` | `(a: TData, b: TData) => boolean` | `Object.is` | Cross-fetch identity for selection. Required when `selectable !== 'none'`. |
+| `resizableColumns` | `boolean` | `true` | Render the per-column resize handle. Set false to opt out (also disables the auto-size-once flow described below). |
+| `minColumnWidth` | `number` | `40` | px floor for the drag clamp and the keyboard-resize floor. |
 | `isResponsive` | `boolean` | `false` | Forwarded to `<bs-table>` |
 
 Two-way model:
@@ -81,7 +84,7 @@ Outputs:
 Row template:
 - `*bsRowTemplate` with context `{ $implicit: TData | undefined }`. The `$implicit` is `undefined` for placeholder rows in virtual mode (rows whose page isn't loaded yet). The `bsVirtualRowTemplate` directive is removed.
 
-## Selection — Vidyano deselect-all
+## Selection — deselect-all-only header
 
 ### Visual contract
 
@@ -108,9 +111,139 @@ When a row is checked, the row object as currently fetched is appended to `selec
 
 ### Mode interaction
 
-- `selectable='single'`: per-row checkboxes are rendered as radios; checking one row replaces `selection()` with `[row]`; the Vidyano deselect-all header is still functional (it sets `selection([])`). One could argue the deselect-all UI is unnecessary in single mode, but the contract is uniform.
-- `selectable='multiple'`: per-row checkboxes; deselect-all header on `≥1` selected. This is the canonical Vidyano case.
+- `selectable='single'`: per-row checkboxes are rendered as radios; checking one row replaces `selection()` with `[row]`; the deselect-all header is still functional (it sets `selection([])`). One could argue the deselect-all UI is unnecessary in single mode, but the contract is uniform.
+- `selectable='multiple'`: per-row checkboxes; deselect-all header on `≥1` selected. This is the canonical case.
 - `selectable='none'`: no checkbox column. `selection` is ignored.
+
+## Resizable columns — measure-once
+
+This replaces the current `setupColumnWidthSync` "only grows, never shrinks" maxWidths accumulator. The new model has three explicit states per column.
+
+### Lifecycle
+
+| State | Entered when | Width source |
+|---|---|---|
+| **Pristine** | Component mounted, no rows yet | Natural — browser's `table-layout: auto` |
+| **Auto-sized** | First non-empty batch renders | Measured: `max(header content, every visible row's content for that column)` |
+| **User-locked** | User drags a resize handle | Pixel value from the last drag |
+
+Transitions are one-way: `Pristine → Auto-sized → User-locked`. **Once a column is Auto-sized or User-locked, content-driven re-measurement never runs again** — subsequent page loads, sort changes, and virtual-scroll row swaps don't change the column's width. That's the core promise.
+
+The existing `maxWidths[]` accumulator and the MutationObserver-driven re-measure loop in `setupColumnWidthSync` are removed. Replaced with a single measure-once + apply pass on the first row-mount mutation (in virtual mode) or the first response render (in paginated mode).
+
+### Storage
+
+```ts
+// Source of truth. Empty until the first batch measures.
+private columnWidths = signal<Map<string, number>>(new Map());
+```
+
+Key is `BsDatatableColumnDirective.name()`, not column position. Position is fragile against column reorder; name is stable. `columnWidths().has(name)` is the lock test — any column in the map is locked.
+
+### Initial auto-sizing
+
+On the first row-mount mutation (virtual mode) or the first `response()` write (paginated mode):
+
+1. For each column not already in `columnWidths()`, measure `max(headerCell.offsetWidth, ...all visible td.offsetWidth)` using the existing `width: max-content !important` trick to bypass Bootstrap's `width: 100%`.
+2. Write each measured pixel value into `columnWidths.set(name, w)`.
+3. Apply by writing `style.minWidth` on the matching `<th>` and every visible body `<td>` for that column.
+4. Disconnect the MutationObserver (or short-circuit its callback once every column has a width in the map). New rows in later batches inherit the established widths from `table-layout: auto` without further DOM writes.
+
+### Resize handle markup
+
+A 6px-wide vertical handle absolutely positioned at the right edge of each `<th>`:
+
+```html
+<th class="text-nowrap" ...>
+  <ng-container *ngTemplateOutlet="column.templateRef"></ng-container>
+  @if (resizableColumns()) {
+    <div class="bs-datatable-resize-handle"
+         role="separator"
+         aria-orientation="vertical"
+         [attr.aria-label]="'Resize column ' + column.name()"
+         [attr.aria-valuenow]="columnWidths().get(column.name())"
+         [attr.aria-valuemin]="minColumnWidth()"
+         tabindex="0"
+         (pointerdown)="onResizeHandlePointerDown($event, column)"
+         (keydown)="onResizeHandleKeydown($event, column)"></div>
+  }
+</th>
+```
+
+SCSS:
+
+```scss
+.bs-datatable-resize-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  user-select: none;
+  touch-action: none; // immutable from touchstart on; must be static, not dynamic
+  &:hover, &:focus-visible { background: var(--bs-primary-bg-subtle); }
+}
+```
+
+### Drag gesture
+
+Pointer events, with capture. `pointerdown` stops propagation so the underlying `<th>`'s `(click)` sort handler doesn't fire:
+
+```ts
+onResizeHandlePointerDown(event: PointerEvent, column: BsDatatableColumnDirective) {
+  event.stopPropagation();
+  // Do NOT preventDefault on touch pointerdown — see feedback_pointerdown_preventdefault.
+  const handle = event.target as HTMLElement;
+  handle.setPointerCapture(event.pointerId);
+  const startX = event.clientX;
+  const name = column.name();
+  const startWidth = this.columnWidths().get(name)
+    ?? this.measureColumnWidth(name);
+
+  const onMove = (e: PointerEvent) => {
+    const w = Math.max(this.minColumnWidth(), startWidth + (e.clientX - startX));
+    this.setColumnWidth(name, w);
+  };
+  const onEnd = () => {
+    handle.releasePointerCapture(event.pointerId);
+    handle.removeEventListener('pointermove', onMove);
+    handle.removeEventListener('pointerup', onEnd);
+    handle.removeEventListener('pointercancel', onEnd);
+  };
+  handle.addEventListener('pointermove', onMove);
+  handle.addEventListener('pointerup', onEnd);
+  handle.addEventListener('pointercancel', onEnd);
+}
+```
+
+`setColumnWidth(name, w)` writes the new width into the signal and rAF-schedules an apply that updates the inline `minWidth` on that column's `<th>` and every visible body `<td>`. Only one column is touched per drag frame.
+
+**No adjacent-column compensation.** Resizing column X grows or shrinks the total table width; neighbours stay at their own widths. Keeps the math trivial — one column, one delta.
+
+### Keyboard
+
+The handle is focusable with `tabindex="0"`. The keyboard contract:
+
+- `ArrowLeft` / `ArrowRight` → ±10px
+- `Shift + ArrowLeft` / `Shift + ArrowRight` → ±1px
+- `Enter` / `Space` → no-op (no toggle semantics)
+
+`aria-valuenow` reflects the live pixel width; `aria-valuemin = minColumnWidth()`; no `aria-valuemax` because the table has no hard ceiling.
+
+### Sort interaction
+
+The sortable `<th>` has `(click)`, `(mousedown)`, `(keydown.enter)`, `(keydown.space)`. The resize handle is a child element of the `<th>`. Two isolators keep the gestures separate:
+
+1. `event.stopPropagation()` inside the handle's `pointerdown` and `keydown` handlers so neither bubbles to the `<th>`.
+2. The handle is positioned `absolute; right: 0` — outside the typical click target zone for sorting.
+
+### Out of scope
+
+- Persistence beyond the component lifetime (localStorage, profile save). Defer until a real consumer needs it.
+- Double-click-to-fit (auto-size to widest content on demand). Common UX; not in v1.
+- Drag-to-reorder columns. Separate feature, separate gesture.
+- Per-column min-width input (`column.minWidth`). One global `minColumnWidth` is enough for v1.
 
 ## Implementation outline
 
