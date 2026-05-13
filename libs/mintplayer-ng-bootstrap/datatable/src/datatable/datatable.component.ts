@@ -435,13 +435,19 @@ export class BsDatatableComponent<TData> extends DatatableSortBase implements Af
 
     const result = new Map<string, number>();
     const floor = this.minColumnWidth();
+    // Sub-pixel rendering can make offsetWidth round down by 1-3px. When
+    // we then pin the column to that exact value under table-layout: fixed,
+    // content clips with overflow:hidden. Pad each measurement by 0.25rem
+    // (4px at the default 16px base) so fit-to-content leaves a hair of
+    // breathing room instead of squeezing the cell.
+    const safetyPx = 4;
     for (const { name, idx } of indices) {
       let max = headerCells[idx].offsetWidth;
       for (const row of bodyRows) {
         const td = row.children[idx] as HTMLElement | undefined;
         if (td && td.offsetWidth > max) max = td.offsetWidth;
       }
-      result.set(name, Math.max(floor, max));
+      result.set(name, Math.max(floor, max + safetyPx));
     }
 
     headerTable?.style.removeProperty('width');
