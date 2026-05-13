@@ -11,7 +11,7 @@ import { DatatableSortBase } from '../datatable-sort-base';
 import { BsDatatableFetch } from '../datatable-fetch';
 import { BsRowTemplateContext } from '../row-template/row-template.directive';
 
-const VIRTUAL_PAGE_SIZE = 50;
+const VIRTUAL_PAGE_SIZE = 50; // viewport-driven page cache key size
 
 @Component({
   selector: 'bs-datatable',
@@ -219,10 +219,13 @@ export class BsDatatableComponent<TData> extends DatatableSortBase implements Af
     this.selection.set([]);
   }
 
-  /** Called by the deselect-all toggle in the header. It's always rendered
-   *  in the "true" state, so any toggle event means the user wants to clear. */
-  protected onDeselectAllToggled(_value: boolean | null) {
-    this.deselectAll();
+  /** Called by the deselect-all toggle in the header. The toggle is bound
+   *  `[isToggled]="hasAnySelection()"`, so model writes also fire this
+   *  event — only the `false` transition is a user-driven deselect. */
+  protected onDeselectAllToggled(value: boolean | null) {
+    if (value === false) {
+      this.deselectAll();
+    }
   }
 
   // === Paginated mode UI handlers ===

@@ -1,17 +1,17 @@
 @if (virtualScroll()) {
     <div class="virtual-datatable-container">
+
         <bs-table [isResponsive]="isResponsive()" [striped]="true" [hover]="true" [ariaRowCount]="totalRowCount()">
             <thead>
                 <tr [attr.aria-rowindex]="1">
                     @if (showCheckboxes()) {
                         <th class="select-col">
-                            @if (hasAnySelection()) {
-                                <bs-toggle-button type="checkbox"
-                                    [isToggled]="true"
-                                    (isToggledChange)="onDeselectAllToggled($event)"
-                                    aria-label="Deselect all">
-                                </bs-toggle-button>
-                            }
+                            <bs-toggle-button type="checkbox"
+                                [class.invisible]="!hasAnySelection()"
+                                [isToggled]="hasAnySelection()"
+                                (isToggledChange)="onDeselectAllToggled($event)"
+                                aria-label="Deselect all">
+                            </bs-toggle-button>
                         </th>
                     }
                     @for (column of columnsArray; track column) {
@@ -69,13 +69,12 @@
             <tr [attr.aria-rowindex]="1">
                 @if (showCheckboxes()) {
                     <th class="select-col">
-                        @if (hasAnySelection()) {
-                            <bs-toggle-button type="checkbox"
-                                [isToggled]="true"
-                                (isToggledChange)="onDeselectAllToggled($event)"
-                                aria-label="Deselect all">
-                            </bs-toggle-button>
-                        }
+                        <bs-toggle-button type="checkbox"
+                            [class.invisible]="!hasAnySelection()"
+                            [isToggled]="hasAnySelection()"
+                            (isToggledChange)="onDeselectAllToggled($event)"
+                            aria-label="Deselect all">
+                        </bs-toggle-button>
                     </th>
                 }
                 @for (column of columnsArray; track column) {
