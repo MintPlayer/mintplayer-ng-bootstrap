@@ -1,5 +1,5 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, input, model, signal, TemplateRef, untracked, viewChild } from '@angular/core';
-import { NgTemplateOutlet } from '@angular/common';
+import { AfterViewInit, ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, input, model, PLATFORM_ID, signal, TemplateRef, untracked, viewChild } from '@angular/core';
+import { isPlatformServer, NgTemplateOutlet } from '@angular/common';
 import { CdkVirtualScrollViewport, ScrollingModule } from '@angular/cdk/scrolling';
 import { PaginationRequest, PaginationResponse } from '@mintplayer/pagination';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
@@ -24,6 +24,7 @@ const VIRTUAL_PAGE_SIZE = 50; // viewport-driven page cache key size
 export class BsDatatableComponent<TData> extends DatatableSortBase implements AfterViewInit {
 
   private readonly elementRef = inject(ElementRef);
+  private readonly platformId = inject(PLATFORM_ID);
 
   /** Single data contract — see docs/prd/datatable-virtual-merge-and-selection.md */
   fetch = input.required<BsDatatableFetch<TData>>();
@@ -49,6 +50,15 @@ export class BsDatatableComponent<TData> extends DatatableSortBase implements Af
 
   /** Floor for drag-resize and keyboard-resize, in px. */
   minColumnWidth = input(40);
+
+  /**
+   * Per-row label used to derive `aria-label` on the row's select checkbox —
+   * screen readers announce `"Select <selectionLabel(row)>"`. When omitted,
+   * the checkbox falls back to a positional `"Select row N"`. Recommended
+   * whenever `selectable !== 'none'` so AT users know which row they're
+   * acting on.
+   */
+  selectionLabel = input<((row: TData) => string) | undefined>(undefined);
 
   selection = model<TData[]>([]);
 
@@ -88,6 +98,9 @@ export class BsDatatableComponent<TData> extends DatatableSortBase implements Af
     }
     return result;
   });
+
+  /** Host width in px, observed lazily — drives `aria-valuemax` on resize handles. */
+  protected readonly hostWidth = signal(0);
 
   protected readonly numberOfColumns = computed(() => this.columns().length + (this.showCheckboxes() ? 1 : 0));
   protected readonly showCheckboxes = computed(() => this.selectable() !== 'none');
@@ -146,6 +159,7 @@ export class BsDatatableComponent<TData> extends DatatableSortBase implements Af
     // run is scoped: listeners are torn down when virtual mode flips off.
     effect((onCleanup) => {
       if (!this.virtualScroll()) return;
+      if (isPlatformServer(this.platformId)) return;
 
       const teardowns: (() => void)[] = [];
       let cancelled = false;
@@ -169,11 +183,27 @@ export class BsDatatableComponent<TData> extends DatatableSortBase implements Af
       });
     });
 
+    // Observe host width so the resize handle's aria-valuemax stays
+    // accurate as the viewport resizes. The effect itself has no reactive
+    // reads — it runs once at construction to wire the observer and tears
+    // it down on destroy.
+    effect((onCleanup) => {
+      if (isPlatformServer(this.platformId)) return;
+      const host = this.elementRef.nativeElement as HTMLElement;
+      this.hostWidth.set(host.clientWidth);
+      const ro = new ResizeObserver(([entry]) => {
+        if (entry) this.hostWidth.set(Math.round(entry.contentRect.width));
+      });
+      ro.observe(host);
+      onCleanup(() => ro.disconnect());
+    });
+
     // Initial auto-size: after the first non-empty batch lands, measure each
     // unsized column and pin its width. Re-runs on data signal changes but
     // short-circuits once every column has an entry in columnWidths.
     effect(() => {
       if (!this.resizableColumns()) return;
+      if (isPlatformServer(this.platformId)) return;
       const hasData = this.virtualScroll()
         ? this.virtualCache().size > 0 && this.virtualTotalRecords() > 0
         : (this.response()?.data?.length ?? 0) > 0;

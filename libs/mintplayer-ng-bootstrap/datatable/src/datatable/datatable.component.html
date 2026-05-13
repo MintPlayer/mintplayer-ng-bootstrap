@@ -14,7 +14,7 @@
                 <table class="table table-striped table-hover" [class.nowrap]="isResponsive()" [attr.aria-rowcount]="totalRowCount()">
                     <tbody>
                         <tr *cdkVirtualFor="let item of virtualData(); let i = index" class="virtual-row" [attr.aria-rowindex]="i + 2">
-                            <ng-container *ngTemplateOutlet="rowCells; context: { $implicit: item }"></ng-container>
+                            <ng-container *ngTemplateOutlet="rowCells; context: { $implicit: item, index: i }"></ng-container>
                         </tr>
                     </tbody>
                 </table>
@@ -32,7 +32,7 @@
             @if (!!response() && !!rowTemplate()) {
                 @for (item of response()!.data; track $index; let i = $index) {
                     <tr [attr.aria-rowindex]="i + 2">
-                        <ng-container *ngTemplateOutlet="rowCells; context: { $implicit: item }"></ng-container>
+                        <ng-container *ngTemplateOutlet="rowCells; context: { $implicit: item, index: i }"></ng-container>
                     </tr>
                 }
             }
@@ -92,6 +92,7 @@
                     [attr.aria-label]="'Resize column ' + column.name()"
                     [attr.aria-valuenow]="columnWidths().get(column.name()) ?? null"
                     [attr.aria-valuemin]="minColumnWidth()"
+                    [attr.aria-valuemax]="hostWidth() || null"
                     tabindex="0"
                     (pointerdown)="onResizeHandlePointerDown($event, column)"
                     (click)="onResizeHandleClick($event)"
@@ -102,13 +103,14 @@
     }
 </ng-template>
 
-<ng-template #rowCells let-item>
+<ng-template #rowCells let-item let-index="index">
     @if (showCheckboxes()) {
         <td class="select-col">
             @if (item) {
                 <bs-toggle-button type="checkbox"
                     [isToggled]="isSelected(item)"
-                    (isToggledChange)="toggleRow(item, $event ?? false)">
+                    (isToggledChange)="toggleRow(item, $event ?? false)"
+                    [attr.aria-label]="'Select ' + (selectionLabel()?.(item) ?? 'row ' + (index + 1))">
                 </bs-toggle-button>
             }
         </td>
