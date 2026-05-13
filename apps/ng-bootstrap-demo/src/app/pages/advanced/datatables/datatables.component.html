@@ -1,44 +1,31 @@
 <h1 class="text-center flex-shrink-0">Datatable</h1>
 
 <bs-select [ngModel]="mode()" (ngModelChange)="mode.set($event)" class="mb-3 flex-shrink-0">
-  <option value="regular">Regular datatable</option>
-  <option value="virtual">Virtual datatable</option>
+  <option value="pagination">Pagination</option>
+  <option value="virtualScroll">Virtual scrolling</option>
 </bs-select>
 
-@if (mode() === 'regular') {
-  <bs-datatable #tabel class="flex-grow-1" [(settings)]="settings" (settingsChange)="loadArtists()">
-    <div *bsDatatableColumn="'Name'; sortable: true">
-      1. Artist
-    </div>
-    <div *bsDatatableColumn="'YearStarted'; sortable: true">
-      2. Year started
-    </div>
-    <div *bsDatatableColumn="'YearQuit'; sortable: true">
-      3. Year quit
-    </div>
+<bs-datatable class="flex-grow-1"
+  [virtualScroll]="virtualScroll()"
+  [itemSize]="40"
+  [isResponsive]="virtualScroll()"
+  [fetch]="fetchArtists"
+  [(settings)]="settings"
+  [selectable]="'multiple'"
+  [compareWith]="compareArtists"
+  [(selection)]="selection">
 
-    <tr *bsRowTemplate="let artist of artists()">
-      <td class="text-nowrap">{{ artist.name }}</td>
-      <td class="text-nowrap">{{ artist.yearStarted }}</td>
-      <td class="text-nowrap">{{ artist.yearQuit }}</td>
-    </tr>
-  </bs-datatable>
-} @else {
-  <bs-virtual-datatable class="flex-grow-1 overflow-hidden" [isResponsive]="true" [dataSource]="virtualDataSource()" [(settings)]="virtualSettings" (settingsChange)="onVirtualSettingsChange()" [itemSize]="40">
-    <div *bsDatatableColumn="'Name'; sortable: true">
-      1. Artist
-    </div>
-    <div *bsDatatableColumn="'YearStarted'; sortable: true">
-      2. Year started
-    </div>
-    <div *bsDatatableColumn="'YearQuit'; sortable: true">
-      3. Year quit
-    </div>
+  <ng-template bsDatatableColumn name="Name">Artist</ng-template>
+  <ng-template bsDatatableColumn name="YearStarted">Year started</ng-template>
+  <ng-template bsDatatableColumn name="YearQuit">Year quit</ng-template>
 
-    <ng-template bsVirtualRowTemplate let-artist>
-      <td class="text-nowrap">{{ artist?.name }}</td>
-      <td class="text-nowrap">{{ artist?.yearStarted }}</td>
-      <td class="text-nowrap">{{ artist?.yearQuit }}</td>
-    </ng-template>
-  </bs-virtual-datatable>
+  <ng-template bsRowTemplate let-artist>
+    <td class="text-nowrap">{{ artist?.name }}</td>
+    <td class="text-nowrap">{{ artist?.yearStarted }}</td>
+    <td class="text-nowrap">{{ artist?.yearQuit }}</td>
+  </ng-template>
+</bs-datatable>
+
+@if (selection().length) {
+  <small class="text-muted">Selected {{ selection().length }} artist(s).</small>
 }

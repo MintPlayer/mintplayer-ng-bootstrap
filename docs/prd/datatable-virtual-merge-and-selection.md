@@ -85,12 +85,14 @@ Row template:
 
 ### Visual contract
 
+Per-row and header cells render `<bs-toggle-button type="checkbox">` (not bare `<input type="checkbox">`) so the control inherits the project's Bootstrap-themed check style.
+
 | State | Per-row cell | Header cell |
 |---|---|---|
-| `selection().length === 0` | unchecked checkbox | **empty** — no checkbox rendered |
-| `selection().length >= 1` | checkbox reflects per-row state | **checked** checkbox; clicking it sets `selection([])` |
+| `selection().length === 0` | unchecked toggle | **empty** — no toggle rendered |
+| `selection().length >= 1` | toggle reflects per-row state | **checked** toggle; toggling it off sets `selection([])` |
 
-There is **no** "select all" affordance. The header checkbox's only function is "clear the entire selection in one click." It is always checked when visible, regardless of how many rows are selected.
+There is **no** "select all" affordance. The header toggle's only function is "clear the entire selection in one click." It is always rendered in the checked state when visible, regardless of how many rows are selected; toggling it off (or any change event) routes through the deselect-all handler.
 
 ### Identity across pages
 

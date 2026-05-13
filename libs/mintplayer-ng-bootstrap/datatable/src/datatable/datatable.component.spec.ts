@@ -1,14 +1,27 @@
+import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { PaginationRequest, PaginationResponse } from '@mintplayer/pagination';
 import { BsTableComponent } from '@mintplayer/ng-bootstrap/table';
 import { BsPaginationComponent } from '@mintplayer/ng-bootstrap/pagination';
+import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
 import { MockComponent, MockDirective } from 'ng-mocks';
 
 import { BsDatatableComponent } from './datatable.component';
-import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
+
+interface Row { id: number; name: string; }
+
+@Component({
+  selector: 'datatable-create-harness',
+  imports: [BsDatatableComponent],
+  template: `<bs-datatable [fetch]="fetch()"></bs-datatable>`,
+})
+class HarnessComponent {
+  fetch = signal((_req: PaginationRequest): Promise<PaginationResponse<Row>> =>
+    Promise.resolve({ data: [], totalRecords: 0, totalPages: 1, page: 1, perPage: 20 }));
+}
 
 describe('BsDatatableComponent', () => {
-  let component: BsDatatableComponent<any>;
-  let fixture: ComponentFixture<BsDatatableComponent<any>>;
+  let fixture: ComponentFixture<HarnessComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -16,20 +29,18 @@ describe('BsDatatableComponent', () => {
         MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
         MockComponent(BsTableComponent),
         MockComponent(BsPaginationComponent),
-        // Unit to test
-        BsDatatableComponent,
+        HarnessComponent,
       ],
-    })
-    .compileComponents();
+    }).compileComponents();
   });
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(BsDatatableComponent);
-    component = fixture.componentInstance;
+    fixture = TestBed.createComponent(HarnessComponent);
     fixture.detectChanges();
   });
 
   it('should create', () => {
-    expect(component).toBeTruthy();
+    expect(fixture.componentInstance).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('bs-datatable')).toBeTruthy();
   });
 });

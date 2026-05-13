@@ -15,9 +15,10 @@ export class BsTableComponent {
   border = input(false);
   /**
    * Forwards `aria-rowcount` onto the wrapped `<table>` element. Used by
-   * virtualised consumers (e.g. virtual-datatable) that need SR users to
-   * hear "row N of Y" with Y matching the full record set, not the DOM
-   * slice. `null` (default) leaves the attribute off entirely.
+   * virtualised consumers (the virtual-mode branch of `<bs-datatable>`)
+   * that need SR users to hear "row N of Y" with Y matching the full
+   * record set, not the DOM slice. `null` (default) leaves the attribute
+   * off entirely.
    */
   ariaRowCount = input<number | null>(null);
 }

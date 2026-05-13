@@ -3,3 +3,64 @@
 tfoot > tr > td {
   border-bottom: none;
 }
+
+th.select-col,
+td.select-col {
+  width: 1px;
+  white-space: nowrap;
+  text-align: center;
+}
+
+// === Virtual mode layout ===
+//
+// In virtual mode the host renders a separate header <bs-table> and a
+// cdk-virtual-scroll-viewport with its own body <table>. The viewport must
+// stretch to the host's available height for scrolling to work; the header
+// stays at content height.
+:host {
+  &:has(.virtual-datatable-container) {
+    display: block;
+    height: 100%;
+  }
+}
+
+.virtual-datatable-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  bs-table {
+    flex-shrink: 0;
+  }
+}
+
+// Use auto layout so columns size to content and the table can overflow
+// horizontally. Anchor on .virtual-datatable-container to bump specificity
+// above Bootstrap's `.table { width: 100% }` (which lives in
+// `bs-table-styles`'s `:host ::ng-deep` import).
+.virtual-datatable-container bs-table ::ng-deep table,
+.virtual-datatable-container .virtual-scroll-viewport table {
+  table-layout: auto;
+  width: max-content;
+}
+
+.virtual-scroll-viewport .nowrap td {
+  white-space: nowrap;
+}
+
+// Hide the header's horizontal scrollbar — horizontal scrolling is driven
+// by the viewport's scrollbar and synced to the header via JS.
+.virtual-datatable-container bs-table ::ng-deep .table-responsive {
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+}
+
+.virtual-scroll-viewport {
+  flex: 1 1 auto;
+  min-height: 0;
+  scrollbar-gutter: stable;
+
+  table {
+    margin-bottom: 0;
+  }
+}
