@@ -11,8 +11,42 @@ package version aligns its major with the supported Angular major.
 - `@mintplayer/ng-bootstrap/navbar`: `BsNavbarTriggerDirective` (`[bsNavbarTrigger]`) for dropdown trigger anchors. Replaces `routerLink` + `routerLinkActive` on triggers — drives the active CSS class via `Router.events` without RouterLink's programmatic-navigate behaviour. Use `routerLink` on the items INSIDE the dropdown for actual navigation; use `bsNavbarTrigger` on the trigger anchor that opens the dropdown.
 - `@mintplayer/ng-bootstrap/navigation-lock`: `provideNavigationLockRouter(routes, ...features)` — single-call router setup that wraps your routes in the required `canMatch: [bsNavigationLockGuard]` and applies `canceledNavigationResolution: 'computed'`. Use in place of `provideRouter(...)` to avoid having to remember both pieces.
 - `@mintplayer/ng-bootstrap/tile-manager`: new package. `<bs-tile-manager>` + `<bs-tile>` + `<bs-tile-header>` for dashboard-style grids of self-similar tiles users can drag, resize, and rearrange. Tiles push neighbours out of the way with vertical-compact gravity in real time; the layout serializes to a stable typed `TileLayoutSnapshot` you can persist and restore by re-binding `[(position)]` per tile. Header-only drag by default; touch arms via 600 ms long-press (mirrors `BsDock`); `prefers-reduced-motion: reduce` bypasses the FLIP animator. Architecture mirrors `BsDock`: a Lit web component (`<mp-tile-manager>`) owns gesture mechanics, the packer, FLIP animations, keyboard mode, and shadow-DOM rendering; the Angular wrappers marshal inputs and re-emit custom events as Angular outputs. See `docs/prd/tile-manager.md`.
+- `@mintplayer/ng-bootstrap/checkbox`: new package. `<bs-checkbox>` exposes a narrowed `type` union (`'checkbox' | 'switch' | 'toggle_button'`) and a `[bsCheckboxGroup]` directive. Single-mode binds a `boolean`; multi-mode binds `string[]` via `[bsCheckboxGroup]` (the group carries the shared `[name]` with `[]` suffix auto-applied). Group resolution is "explicit `[group]` input wins over DI-injected ancestor", so non-adjacent layouts (e.g. one checkbox per table row) work via `#g="bsCheckboxGroup"` + `[group]="g"`. Implements `ControlValueAccessor` end-to-end for `[(ngModel)]` and `[formControl]`. ARIA host→input mirroring preserved. See `docs/prd/toggle-button-split.md`.
+- `@mintplayer/ng-bootstrap/radio`: new package. `<bs-radio>` exposes a narrowed `type` union (`'radio' | 'toggle_button'`) and a `[bsRadioGroup]` directive. Radios participate in form binding only through the group: `[name]` lives only on `[bsRadioGroup]`, and `BsRadioValueAccessor` is hosted there too — `[formControl]` / `[(ngModel)]` bind on the group element and the form value is a single `string`. Same explicit-vs-ancestor `[group]` resolution as `<bs-checkbox>` for non-adjacent layouts. See `docs/prd/toggle-button-split.md`.
 
 ### Breaking
+
+- **`<bs-toggle-button>` split into `<bs-checkbox>` and `<bs-radio>`** (see `docs/prd/toggle-button-split.md`). The single god-component that fronted five `type` values is replaced by two per-family components with narrowed type unions.
+
+  Removed from `@mintplayer/ng-bootstrap/toggle-button`:
+  - `BsToggleButtonValueAccessor`
+  - `BsToggleButtonGroupDirective`
+  - `BsCheckStyle` (type union)
+
+  `BsToggleButtonComponent` survives at the same import path but is now a styling-wrapper-only component with no inputs and no behaviour. The wrapper carries the Bootstrap `form-check` SCSS via `:host ::ng-deep` and is consumed internally by `<bs-checkbox>` / `<bs-radio>` templates — consumers should not import it directly.
+
+  Migration table:
+
+  | Before | After |
+  | --- | --- |
+  | `<bs-toggle-button>` (default checkbox) | `<bs-checkbox>` |
+  | `<bs-toggle-button type="checkbox">` | `<bs-checkbox type="checkbox">` |
+  | `<bs-toggle-button type="switch">` | `<bs-checkbox type="switch">` |
+  | `<bs-toggle-button type="toggle_button">` | `<bs-checkbox type="toggle_button">` |
+  | `<bs-toggle-button type="radio">` | `<bs-radio>` inside `<div bsRadioGroup name="x">` |
+  | `<bs-toggle-button type="radio_toggle_button">` | `<bs-radio type="toggle_button">` inside `<div bsRadioGroup name="x">` |
+  | `[bsToggleButtonGroup]` (checkbox group) | `[bsCheckboxGroup]` (also gains a shared `[name]` input) |
+  | `[bsToggleButtonGroup]` (radio group) | `[bsRadioGroup]` (carries the shared `[name]` input; per-radio `[name]` removed) |
+  | `formControlName="x"` on every `<bs-toggle-button type="radio">` | `formControlName="x"` on the `[bsRadioGroup]` element (form value: single `string`) |
+  | `formControlName="x"` on every grouped `<bs-toggle-button type="checkbox">` | `formControlName="x"` on the `[bsCheckboxGroup]` element (form value: `string[]`) |
+  | `import { BsCheckStyle } from '@mintplayer/ng-bootstrap/toggle-button'` | `BsCheckboxType` from `/checkbox` or `BsRadioType` from `/radio` |
+
+  Mode-aware `[name]` resolution:
+  - Radio always-grouped: name on `[bsRadioGroup]` only.
+  - Checkbox standalone (single-mode): name per-instance on `<bs-checkbox>`; binds `boolean`.
+  - Checkbox grouped (multi-mode): name on `[bsCheckboxGroup]`, `[]` suffix auto-applied; per-instance `[name]` is ignored. Binds `string[]`.
+
+  Demo routes: `/forms/toggle-button` is removed. Two new routes replace it: `/forms/checkbox` and `/forms/radio`, each demonstrating its type variants and group behaviour. No redirect.
 
 - **Scheduler keyboard model rewrite** (see `docs/prd/scheduler-keyboard-grid-nav.md`).
   - `event-click` custom event renamed to `event-selected`. Fires on mouse click and on keyboard Tab landing on an event ("click" no longer described the trigger). `event-dblclick` is unchanged. Migrate listeners; no shim provided.
