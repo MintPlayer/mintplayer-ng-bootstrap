@@ -3,7 +3,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { BsDropdownDirective, BsDropdownToggleDirective, BsDropdownMenuDirective } from '@mintplayer/ng-bootstrap/dropdown';
-import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { Color } from '@mintplayer/ng-bootstrap';
 
@@ -11,7 +11,7 @@ import { Color } from '@mintplayer/ng-bootstrap';
   selector: 'bs-multiselect',
   templateUrl: './multiselect.component.html',
   styleUrls: ['./multiselect.component.scss'],
-  imports: [NgTemplateOutlet, FormsModule, BsHasOverlayComponent, BsDropdownDirective, BsDropdownToggleDirective, BsDropdownMenuDirective, BsToggleButtonComponent, BsButtonTypeDirective],
+  imports: [NgTemplateOutlet, FormsModule, BsHasOverlayComponent, BsDropdownDirective, BsDropdownToggleDirective, BsDropdownMenuDirective, BsCheckboxComponent, BsButtonTypeDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsMultiselectComponent<T> {
