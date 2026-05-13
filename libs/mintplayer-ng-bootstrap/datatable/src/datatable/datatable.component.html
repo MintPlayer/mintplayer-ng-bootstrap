@@ -61,12 +61,12 @@
 <ng-template #headerCells>
     @if (showCheckboxes()) {
         <th class="select-col">
-            <bs-toggle-button type="checkbox"
+            <bs-checkbox type="checkbox"
                 [class.invisible]="!hasAnySelection()"
                 [isToggled]="hasAnySelection()"
                 (isToggledChange)="onDeselectAllToggled($event)"
                 aria-label="Deselect all">
-            </bs-toggle-button>
+            </bs-checkbox>
         </th>
     }
     @for (column of columnsArray; track column) {
@@ -107,11 +107,11 @@
     @if (showCheckboxes()) {
         <td class="select-col">
             @if (item) {
-                <bs-toggle-button type="checkbox"
+                <bs-checkbox type="checkbox"
                     [isToggled]="isSelected(item)"
                     (isToggledChange)="toggleRow(item, $event ?? false)"
                     [attr.aria-label]="'Select ' + (selectionLabel()?.(item) ?? 'row ' + (index + 1))">
-                </bs-toggle-button>
+                </bs-checkbox>
             }
         </td>
     }

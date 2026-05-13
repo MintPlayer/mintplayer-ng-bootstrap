@@ -5,7 +5,7 @@ import { PaginationRequest, PaginationResponse } from '@mintplayer/pagination';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsTableComponent, BsTableStylesComponent } from '@mintplayer/ng-bootstrap/table';
 import { BsPaginationComponent } from '@mintplayer/ng-bootstrap/pagination';
-import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { DatatableSettings } from '../datatable-settings';
 import { DatatableSortBase } from '../datatable-sort-base';
 import { BsDatatableColumnDirective } from '../datatable-column/datatable-column.directive';
@@ -18,7 +18,7 @@ const VIRTUAL_PAGE_SIZE = 50; // viewport-driven page cache key size
   selector: 'bs-datatable',
   templateUrl: './datatable.component.html',
   styleUrls: ['./datatable.component.scss'],
-  imports: [NgTemplateOutlet, ScrollingModule, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsTableComponent, BsTableStylesComponent, BsPaginationComponent, BsToggleButtonComponent],
+  imports: [NgTemplateOutlet, ScrollingModule, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsTableComponent, BsTableStylesComponent, BsPaginationComponent, BsCheckboxComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsDatatableComponent<TData> extends DatatableSortBase implements AfterViewInit {
