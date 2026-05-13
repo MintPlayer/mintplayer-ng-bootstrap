@@ -26,7 +26,7 @@
                             (click)="columnHeaderClicked(column, $event)"
                             (keydown.enter)="columnHeaderClicked(column, $event); $event.preventDefault()"
                             (keydown.space)="columnHeaderClicked(column, $event); $event.preventDefault()">
-                            <ng-container *ngTemplateOutlet="column.templateRef"></ng-container>
+                            <ng-container *ngTemplateOutlet="column.headerTemplateRef"></ng-container>
                             @if (settings().sortColumns.length > 1 && getSortIndex(column.name()) >= 0) {
                                 <span class="sort-priority">{{ getSortIndex(column.name()) + 1 }}</span>
                             }
@@ -103,7 +103,7 @@
                         (click)="columnHeaderClicked(column, $event)"
                         (keydown.enter)="columnHeaderClicked(column, $event); $event.preventDefault()"
                         (keydown.space)="columnHeaderClicked(column, $event); $event.preventDefault()">
-                        <ng-container *ngTemplateOutlet="column.templateRef"></ng-container>
+                        <ng-container *ngTemplateOutlet="column.headerTemplateRef"></ng-container>
                         @if (settings().sortColumns.length > 1 && getSortIndex(column.name()) >= 0) {
                             <span class="sort-priority">{{ getSortIndex(column.name()) + 1 }}</span>
                         }
