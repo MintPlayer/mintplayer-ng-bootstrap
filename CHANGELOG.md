@@ -66,6 +66,10 @@ package version aligns its major with the supported Angular major.
   staying put. If that's a concern, also apply `bsNavigationLockGuard` to
   the wildcard route.
 
+### Fixed
+
+- `@mintplayer/ng-bootstrap/dock` (#326): `renderIntersectionHandles` no longer pairs splitter dividers from different dock layers, so coincidental on-screen alignment between a docked splitter and a floating pane's splitter (or between two floating panes) no longer produces a phantom intersection grip between unrelated splitters.
+
 ## [21.18.0] — 2026-04-27
 
 ### Breaking
