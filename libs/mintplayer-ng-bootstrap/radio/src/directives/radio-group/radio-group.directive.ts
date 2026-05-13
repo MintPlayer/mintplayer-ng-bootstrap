@@ -1,4 +1,4 @@
-import { contentChildren, Directive, forwardRef, input } from '@angular/core';
+import { contentChildren, Directive, effect, forwardRef, input, signal } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { BsRadioComponent } from '../../component/radio.component';
 
@@ -30,13 +30,35 @@ export class BsRadioGroupDirective implements ControlValueAccessor {
   readonly name = input<string | null>(null);
   readonly radios = contentChildren(BsRadioComponent, { descendants: true });
 
+  /** Most-recently-written form value. An effect syncs each child's
+   *  `isToggled` whenever this OR the `radios()` set changes, so an initial
+   *  `writeValue` that lands before children register still applies once
+   *  the `contentChildren` query populates. */
+  private readonly currentValue = signal<string | null>(null);
+
   private onValueChange?: (value: string | null) => void;
   private onTouched?: () => void;
 
+  constructor() {
+    effect(() => {
+      const value = this.currentValue();
+      this.radios().forEach(r => r.isToggled.set(r.value() === value));
+    });
+  }
+
   onChildChange() {
     if (!this.onValueChange) return;
-    const selected = this.radios().find(r => !!r.isToggled());
-    this.onValueChange(selected?.value() ?? null);
+    // When the browser auto-unchecks a sibling radio (native radio-group
+    // semantics) it does NOT fire a `change` event on the now-unchecked
+    // input, so the sibling's cached `isToggled()` signal stays stale.
+    // Re-sync every child's signal from the DOM truth, then emit.
+    let selectedValue: string | null = null;
+    this.radios().forEach(r => {
+      const checked = !!r.checkbox()?.nativeElement?.checked;
+      r.isToggled.set(checked);
+      if (checked) selectedValue = r.value();
+    });
+    this.onValueChange(selectedValue);
   }
 
   registerOnChange(fn: (_: string | null) => void) {
@@ -48,7 +70,7 @@ export class BsRadioGroupDirective implements ControlValueAccessor {
   }
 
   writeValue(value: string | null) {
-    this.radios().forEach(r => r.isToggled.set(r.value() === value));
+    this.currentValue.set(value);
   }
 
   setDisabledState(isDisabled: boolean) {

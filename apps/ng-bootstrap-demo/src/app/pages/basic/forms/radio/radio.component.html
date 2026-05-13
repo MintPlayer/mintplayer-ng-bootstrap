@@ -8,7 +8,7 @@
     </div>
     <div bsRow>
         <div [md]="6">
-            <div bsRadioGroup name="fruit" [(ngModel)]="selectedFruit">
+            <div bsRadioGroup name="fruitTemplate" [(ngModel)]="selectedFruit">
                 <bs-radio value="apple" class="me-3">Apple</bs-radio>
                 <bs-radio value="banana" class="me-3">Banana</bs-radio>
                 <bs-radio value="cherry" class="me-3">Cherry</bs-radio>
@@ -33,7 +33,7 @@
     </div>
     <div bsRow>
         <div [md]="6">
-            <div bsRadioGroup name="fruit" [formControl]="selectedFruitReactive">
+            <div bsRadioGroup name="fruitReactive" [formControl]="selectedFruitReactive">
                 <bs-radio value="apple" class="me-3">Apple</bs-radio>
                 <bs-radio value="banana" class="me-3">Banana</bs-radio>
                 <bs-radio value="cherry" class="me-3">Cherry</bs-radio>

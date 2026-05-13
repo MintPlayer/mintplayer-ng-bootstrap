@@ -1,4 +1,4 @@
-import { contentChildren, Directive, forwardRef, input } from '@angular/core';
+import { contentChildren, Directive, effect, forwardRef, input, signal } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { BsCheckboxComponent } from '../../component/checkbox.component';
 
@@ -31,8 +31,24 @@ export class BsCheckboxGroupDirective implements ControlValueAccessor {
   readonly name = input<string | null>(null);
   readonly checkboxes = contentChildren(BsCheckboxComponent, { descendants: true });
 
+  /** Most-recently-written form value. An effect syncs each child's
+   *  `isToggled` whenever this OR the `checkboxes()` set changes, so an
+   *  initial `writeValue` that lands before children register still applies
+   *  once the `contentChildren` query populates. */
+  private readonly currentValue = signal<readonly string[]>([]);
+
   private onValueChange?: (value: string[]) => void;
   private onTouched?: () => void;
+
+  constructor() {
+    effect(() => {
+      const arr = this.currentValue();
+      this.checkboxes().forEach(cb => {
+        const v = cb.value();
+        cb.isToggled.set(v != null && arr.includes(v));
+      });
+    });
+  }
 
   onChildChange() {
     if (!this.onValueChange) return;
@@ -51,11 +67,7 @@ export class BsCheckboxGroupDirective implements ControlValueAccessor {
   }
 
   writeValue(value: string[] | null) {
-    const arr = Array.isArray(value) ? value : [];
-    this.checkboxes().forEach(cb => {
-      const v = cb.value();
-      cb.isToggled.set(v != null && arr.includes(v));
-    });
+    this.currentValue.set(Array.isArray(value) ? value : []);
   }
 
   setDisabledState(isDisabled: boolean) {
