@@ -1,0 +1,14 @@
+<bs-toggle-button>
+    <label [class]="mainCheckStyle()">
+        <input #checkbox
+            [class]="inputClass()"
+            type="radio"
+            [name]="nameResult()"
+            [value]="value()"
+            [checked]="!!isToggled()"
+            (change)="onInputChange($event)">
+        <span [class]="labelClass()">
+            <ng-content></ng-content>
+        </span>
+    </label>
+</bs-toggle-button>
