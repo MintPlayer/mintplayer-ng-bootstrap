@@ -1,8 +1,18 @@
 # PRD: virtual-datatable — fill the container when content is narrower than viewport
 
-**Status:** **Proposal — deferred.** Not scheduled for implementation. Picked up in any future PR.
+**Status:** **Shipped 2026-05-13** — closed out via a CSS + spacer-cell hybrid that sidesteps the proportional-distribution concerns the original options analysis raised. See "Shipped implementation" below for what was actually built and why it differs from the recommended Option A. **Acceptance criteria 1–9 verified in `apps/ng-bootstrap-demo` at `/advanced/datatables` and in `libs/mintplayer-ng-bootstrap/datatable/src/datatable/datatable.spacer.spec.ts`.**
+
+**Shipped implementation (departure from recommended Option A).** Rather than JS-driven proportional surplus distribution inside `setupColumnWidthSync`, the fix is CSS + DOM-only:
+
+- The table gets `table-layout: fixed; width: max-content; min-width: 100%` (note: `width: 100%; min-width: max-content` was tried first and triggered a layout loop with CDK's `cdk-virtual-scroll-content-wrapper` — `position: absolute; min-width: 100%` — that blew the wrapper to 800,000px wide; the inverted order avoids it).
+- A trailing `.bs-datatable-spacer` cell (`aria-hidden="true"`, no explicit width) is appended to every header and body row. Under `table-layout: fixed`, the unsized spacer absorbs any leftover space *without* redistributing it across pinned columns — that's the freeze-semantics-preserving alternative to the proportional surplus algorithm Option A would have computed.
+- The bs-table wrapper gets unconditional `overflow-x: auto` in resizable mode so wider-than-host pinned widths scroll inside the table region instead of expanding the body.
+- The footer `<td colspan>` was bumped from `numberOfColumns()` to `numberOfColumns() + 1` so the pagination row spans the spacer too.
+
+**Why this beats the original Option A recommendation.** The proportional surplus algorithm Option A would have implemented is now done by the browser's `table-layout: fixed` engine instead — and because only the spacer cell lacks an explicit width, *all* the surplus lands in one place by construction. No per-column rounding-remainder bookkeeping, no `ResizeObserver` for stretch math (CSS handles container reflow automatically), and the `scrollLeft`-preservation concern (Open question #5 / Constraint #3) is moot because no measurement runs on every scroll. The `maxWidths[]` / `setupColumnWidthSync` machinery this PRD's Option A would have augmented is also gone — replaced by the measure-once-then-pin model in `docs/prd/datatable-virtual-merge-and-selection.md`. Regression coverage: `datatable.spacer.spec.ts` asserts the spacer DOM contract on both modes; CHANGELOG entry under `[Unreleased]`.
+
 **Author:** Pieterjan
-**Date:** 2026-05-11
+**Date:** 2026-05-11 (proposal) / 2026-05-13 (shipped)
 **Library:** `@mintplayer/ng-bootstrap/virtual-datatable`
 **Component:** `<bs-virtual-datatable>`
 **Branch context:** follows `feat/aria-accessibility`, after the alignment specificity fix `224cc97b`.

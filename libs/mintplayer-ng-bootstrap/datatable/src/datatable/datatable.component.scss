@@ -11,20 +11,56 @@ tfoot > tr > td {
 // width — auto-layout treats `width` as a hint and lets content grow the
 // column. With fixed, the inline `width` on every td/th is authoritative
 // and content beyond it is governed by overflow on the cell.
+//
+// width: max-content + min-width: 100% makes the table fill its host when
+// pinned columns sum to less than the host width, and overflow horizontally
+// (into the .table-responsive / cdk-viewport scroller) when they sum to more.
+// The trailing .bs-datatable-spacer cell absorbs the leftover under fixed
+// layout so pinned widths stay frozen.
+//
+// `width: 100%; min-width: max-content` is mathematically equivalent but
+// triggers a layout loop with CDK's virtual-scroll content wrapper
+// (`position: absolute; min-width: 100%`) — the wrapper expands to fit
+// the table's max-content while the table tries to fit the wrapper.
 :host:has(.bs-datatable-resize-handle) ::ng-deep bs-table table,
 :host:has(.bs-datatable-resize-handle) ::ng-deep cdk-virtual-scroll-viewport table {
   table-layout: fixed;
   width: max-content;
+  min-width: 100%;
 }
 
 // Clip content that exceeds the pinned column width. text-nowrap on the
 // cell (already in the demo template) prevents wrapping; overflow:hidden
-// + text-overflow:ellipsis handles long values.
-:host:has(.bs-datatable-resize-handle) ::ng-deep bs-table th,
-:host:has(.bs-datatable-resize-handle) ::ng-deep bs-table td,
-:host:has(.bs-datatable-resize-handle) ::ng-deep cdk-virtual-scroll-viewport td {
+// + text-overflow:ellipsis handles long values. The spacer is excluded so
+// table-layout: fixed treats it as the un-pinned column and gives it all
+// remaining space.
+:host:has(.bs-datatable-resize-handle) ::ng-deep bs-table th:not(.bs-datatable-spacer),
+:host:has(.bs-datatable-resize-handle) ::ng-deep bs-table td:not(.bs-datatable-spacer),
+:host:has(.bs-datatable-resize-handle) ::ng-deep cdk-virtual-scroll-viewport td:not(.bs-datatable-spacer) {
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+// Trailing absorber cell — no width pinned, so table-layout: fixed gives
+// it whatever space is left between the last data column and the table's
+// right edge. Empty content + zero padding keeps it invisible; the row's
+// striped/hover background still paints across it because that styling
+// targets the <tr>, not individual cells.
+.bs-datatable-spacer {
+  padding: 0;
+  width: auto;
+}
+
+// When pinned widths sum to MORE than the host, the table grows wider than
+// its wrapper (via `width: max-content`). Without `overflow-x: auto` on the
+// wrapper, that overflow propagates up through the flex chain and pushes
+// the body wider than the viewport — the whole page horizontally scrolls.
+// The consumer's `[isResponsive]` already gives us `.table-responsive`
+// (overflow-x: auto) in some configurations; here we guarantee the same
+// containment whenever resizable columns are active, since drag-resize and
+// the initial auto-size can both produce a table wider than the host.
+:host:has(.bs-datatable-resize-handle) ::ng-deep bs-table > bs-table-styles > div {
+  overflow-x: auto;
 }
 
 // The handle is absolutely positioned at the right edge of each resizable
@@ -118,12 +154,13 @@ td.select-col {
   }
 }
 
-// Use auto layout so columns size to content and the table can overflow
-// horizontally. Anchor on .virtual-datatable-container to bump specificity
-// above Bootstrap's `.table { width: 100% }` (which lives in
-// `bs-table-styles`'s `:host ::ng-deep` import).
-.virtual-datatable-container bs-table ::ng-deep table,
-.virtual-datatable-container .virtual-scroll-viewport table {
+// Non-resizable virtual mode: columns size to their content and the table
+// overflows horizontally inside the cdk viewport's scroller. With resizable
+// columns active (default), the resizable-mode rule above takes over —
+// `:not(:has(.bs-datatable-resize-handle))` scopes us out of that case so
+// the two rules don't fight on specificity.
+:host:not(:has(.bs-datatable-resize-handle)) ::ng-deep .virtual-datatable-container bs-table table,
+:host:not(:has(.bs-datatable-resize-handle)) ::ng-deep .virtual-datatable-container .virtual-scroll-viewport table {
   table-layout: auto;
   width: max-content;
 }

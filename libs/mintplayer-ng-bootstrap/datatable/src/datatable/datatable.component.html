@@ -39,7 +39,7 @@
         </tbody>
         <tfoot>
             <tr>
-                <td [colSpan]="numberOfColumns()">
+                <td [colSpan]="numberOfColumns() + 1">
                     <bs-grid [stopFullWidthAt]="'never'">
                         <div bsRow>
                             <div [md]="12">
@@ -101,6 +101,7 @@
             }
         </th>
     }
+    <th class="bs-datatable-spacer" aria-hidden="true"></th>
 </ng-template>
 
 <ng-template #rowCells let-item let-index="index">
@@ -122,4 +123,5 @@
             <td>&nbsp;</td>
         }
     }
+    <td class="bs-datatable-spacer" aria-hidden="true"></td>
 </ng-template>

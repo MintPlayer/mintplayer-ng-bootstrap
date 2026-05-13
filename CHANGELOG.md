@@ -103,6 +103,7 @@ package version aligns its major with the supported Angular major.
 ### Fixed
 
 - `@mintplayer/ng-bootstrap/dock` (#326): `renderIntersectionHandles` no longer pairs splitter dividers from different dock layers, so coincidental on-screen alignment between a docked splitter and a floating pane's splitter (or between two floating panes) no longer produces a phantom intersection grip between unrelated splitters.
+- `@mintplayer/ng-bootstrap/datatable`: `<bs-datatable>` rows now span the full host width even when the sum of pinned column widths is narrower than the host. A trailing `.bs-datatable-spacer` cell (`aria-hidden`) is appended to every header and body row and absorbs the leftover under `table-layout: fixed`, so pinned widths stay frozen instead of being redistributed across data columns. The CSS pairs `width: max-content; min-width: 100%` on the table (the inverse order — `width: 100%; min-width: max-content` — triggers a layout loop with CDK's virtual-scroll content wrapper). The bs-table wrapper also gets an unconditional `overflow-x: auto` in resizable mode, so a table whose pinned widths exceed the host scrolls horizontally inside its own region instead of expanding the page body. The footer `<td colspan>` was bumped by 1 to span the spacer.
 
 ## [21.18.0] — 2026-04-27
 
