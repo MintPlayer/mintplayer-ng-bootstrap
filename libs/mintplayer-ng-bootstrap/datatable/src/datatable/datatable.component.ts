@@ -1,4 +1,4 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, input, model, OnDestroy, signal, TemplateRef, viewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, input, model, signal, TemplateRef, viewChild } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { CdkVirtualScrollViewport, ScrollingModule } from '@angular/cdk/scrolling';
 import { PaginationRequest, PaginationResponse } from '@mintplayer/pagination';
@@ -20,10 +20,9 @@ const VIRTUAL_PAGE_SIZE = 50; // viewport-driven page cache key size
   imports: [NgTemplateOutlet, ScrollingModule, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsTableComponent, BsTableStylesComponent, BsPaginationComponent, BsToggleButtonComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class BsDatatableComponent<TData> extends DatatableSortBase implements AfterViewInit, OnDestroy {
+export class BsDatatableComponent<TData> extends DatatableSortBase implements AfterViewInit {
 
   private readonly elementRef = inject(ElementRef);
-  private readonly cleanup: (() => void)[] = [];
 
   /** Single data contract — see docs/prd/datatable-virtual-merge-and-selection.md */
   fetch = input.required<BsDatatableFetch<TData>>();
@@ -121,16 +120,37 @@ export class BsDatatableComponent<TData> extends DatatableSortBase implements Af
       });
       onCleanup(() => sub.unsubscribe());
     });
+
+    // Re-wire scroll + column-width sync whenever virtual mode is active.
+    // The viewport DOM doesn't exist until @if (virtualScroll()) renders,
+    // so ngAfterViewInit's one-shot setup can't see it on mode toggles
+    // (or on the initial paginated → virtual flip). Each effect run is
+    // scoped: the sync listeners are torn down when virtual mode flips off.
+    effect((onCleanup) => {
+      if (!this.virtualScroll()) return;
+
+      const teardowns: (() => void)[] = [];
+      let cancelled = false;
+
+      // Defer one frame so Angular has rendered the cdk viewport + table.
+      const rafId = requestAnimationFrame(() => {
+        if (cancelled) return;
+        this.setupScrollSync(teardowns);
+        this.setupColumnWidthSync(teardowns);
+      });
+
+      onCleanup(() => {
+        cancelled = true;
+        cancelAnimationFrame(rafId);
+        teardowns.forEach(fn => fn());
+      });
+    });
   }
 
   ngAfterViewInit() {
-    // Virtual-mode-only DOM bookkeeping. Guards inside so they no-op when paginated.
-    this.setupScrollSync();
-    this.setupColumnWidthSync();
-  }
-
-  ngOnDestroy() {
-    this.cleanup.forEach(fn => fn());
+    // No-op for the dynamic case: virtual sync is wired by the effect
+    // above whenever virtualScroll() is true. Left as a hook in case
+    // future paginated-mode bookkeeping needs ngAfterViewInit timing.
   }
 
   private async runPaginatedFetch(fetch: BsDatatableFetch<TData>, req: PaginationRequest, settings: DatatableSettings) {
@@ -255,7 +275,7 @@ export class BsDatatableComponent<TData> extends DatatableSortBase implements Af
   //  - setupColumnWidthSync: measures content widths after each cdkVirtualFor
   //    swap and pins min-widths so header and body columns line up.
 
-  private setupScrollSync() {
+  private setupScrollSync(teardowns: (() => void)[]) {
     const el = this.elementRef.nativeElement as HTMLElement;
     const headerScrollContainer = el.querySelector('.table-responsive') as HTMLElement | null;
     const viewport = el.querySelector('cdk-virtual-scroll-viewport') as HTMLElement | null;
@@ -276,13 +296,13 @@ export class BsDatatableComponent<TData> extends DatatableSortBase implements Af
     };
     headerScrollContainer.addEventListener('scroll', onHeaderScroll, { passive: true });
     viewport.addEventListener('scroll', onViewportScroll, { passive: true });
-    this.cleanup.push(() => {
+    teardowns.push(() => {
       headerScrollContainer.removeEventListener('scroll', onHeaderScroll);
       viewport.removeEventListener('scroll', onViewportScroll);
     });
   }
 
-  private setupColumnWidthSync() {
+  private setupColumnWidthSync(teardowns: (() => void)[]) {
     const el = this.elementRef.nativeElement as HTMLElement;
     const bodyTableBody = el.querySelector('cdk-virtual-scroll-viewport tbody') as HTMLElement | null;
     if (!bodyTableBody) return;
@@ -345,7 +365,7 @@ export class BsDatatableComponent<TData> extends DatatableSortBase implements Af
 
     const observer = new MutationObserver(() => requestAnimationFrame(() => syncWidths()));
     observer.observe(bodyTableBody, { childList: true, subtree: true });
-    this.cleanup.push(() => observer.disconnect());
+    teardowns.push(() => observer.disconnect());
   }
 
 }
