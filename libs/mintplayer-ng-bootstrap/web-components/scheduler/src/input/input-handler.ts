@@ -49,7 +49,6 @@ export interface InputHandlerConfig {
 
 const DEFAULT_TOUCH_HOLD_DURATION = 600;
 const DEFAULT_TOUCH_MOVE_THRESHOLD = 10;
-const DEFAULT_MOUSE_PAN_TIMEOUT = 600;
 
 /**
  * Unified input handler for mouse and touch events.
@@ -66,16 +65,11 @@ export class InputHandler {
   private touchHoldTarget: HTMLElement | null = null;
   private touchHoldPointer: NormalizedPointerEvent | null = null;
 
-  // Pan mode state (for panning when touch/mouse starts on event and moves quickly)
+  // Pan mode state (touch-only: pan when touch starts on event and moves quickly)
   private isPanMode = false;
   private panStartPosition: { x: number; y: number } | null = null;
   private panStartScroll: { left: number; top: number } | null = null;
   private panStartedOnEvent = false;
-
-  // Mouse pan state (for panning when mousedown on event and move within timeout)
-  private mousePanTimer: ReturnType<typeof setTimeout> | null = null;
-  private mouseStartPosition: { x: number; y: number } | null = null;
-  private isMousePanCandidate = false;
 
   // Scroll blocking state (saved styles for restoration)
   private savedBodyStyles: { overflow: string; touchAction: string } | null = null;
@@ -147,7 +141,6 @@ export class InputHandler {
     root.removeEventListener('touchcancel', this.boundHandleTouchCancel as EventListener);
 
     this.cancelTouchHold();
-    this.cleanupMousePanState();
     this.exitPanMode();
     this.removeScrollBlock();
   }
@@ -217,82 +210,17 @@ export class InputHandler {
 
     e.preventDefault();
 
-    // For events/resize handles, set up mouse pan candidate (can pan if moved quickly)
-    if (target.type === 'event' || target.type === 'resize-handle') {
-      this.mouseStartPosition = { x: pointer.clientX, y: pointer.clientY };
-      this.isMousePanCandidate = true;
-
-      // Start timer - after this time, regular drag behavior takes over
-      this.mousePanTimer = setTimeout(() => {
-        // Timer expired without entering pan mode, so this is a drag operation
-        this.isMousePanCandidate = false;
-        this.mousePanTimer = null;
-      }, DEFAULT_MOUSE_PAN_TIMEOUT);
-    }
-
     this.callbacks.onPointerDown(pointer, target);
   }
 
   private handleMouseMove(e: MouseEvent): void {
     const pointer = normalizeMouseEvent(e);
-
-    // If in pan mode, continue panning
-    if (this.isPanMode) {
-      e.preventDefault();
-      this.performPan(pointer.clientX, pointer.clientY);
-      return;
-    }
-
-    // Check if we should enter pan mode (mouse on event + moved > threshold within timeout)
-    if (this.isMousePanCandidate && this.mouseStartPosition) {
-      const threshold =
-        this.config.touchMoveThreshold ?? DEFAULT_TOUCH_MOVE_THRESHOLD;
-      const distance = getPointerDistance(this.mouseStartPosition, {
-        x: pointer.clientX,
-        y: pointer.clientY,
-      });
-
-      if (distance > threshold) {
-        // Cancel the pan timer
-        if (this.mousePanTimer) {
-          clearTimeout(this.mousePanTimer);
-          this.mousePanTimer = null;
-        }
-        this.isMousePanCandidate = false;
-
-        // Enter pan mode
-        this.enterPanMode(pointer.clientX, pointer.clientY);
-        e.preventDefault();
-        return;
-      }
-    }
-
     this.callbacks.onPointerMove(pointer);
   }
 
   private handleMouseUp(e: MouseEvent): void {
     const pointer = normalizeMouseEvent(e);
-
-    // If in pan mode, exit it
-    if (this.isPanMode) {
-      this.exitPanMode();
-      this.cleanupMousePanState();
-      return;
-    }
-
-    // Clean up mouse pan candidate state
-    this.cleanupMousePanState();
-
     this.callbacks.onPointerUp(pointer);
-  }
-
-  private cleanupMousePanState(): void {
-    if (this.mousePanTimer) {
-      clearTimeout(this.mousePanTimer);
-      this.mousePanTimer = null;
-    }
-    this.mouseStartPosition = null;
-    this.isMousePanCandidate = false;
   }
 
   private handleClick(e: MouseEvent): void {
@@ -596,7 +524,7 @@ export class InputHandler {
     // Vibration API removed - can cause issues on some devices
   }
 
-  // Pan helpers
+  // Pan helpers (touch-only: pan is never initiated from a mouse gesture)
 
   private enterPanMode(clientX: number, clientY: number): void {
     const container = this.callbacks.getScrollContainer?.();
