@@ -21,8 +21,14 @@ import { Directive, inject, input, TemplateRef } from '@angular/core';
   selector: '[bsDatatableColumn]',
 })
 export class BsDatatableColumnDirective {
-  /** Header template (what renders in the `<th>`). */
-  readonly headerTemplateRef = inject(TemplateRef);
+  /**
+   * Header template (what renders in the `<th>`). Read as
+   * `column.templateRef` from the host component's template; we keep the
+   * generic `templateRef` name so existing `*ngTemplateOutlet` bindings
+   * stay valid. Conceptually this is the "column header template" —
+   * see the JSDoc on the directive above.
+   */
+  readonly templateRef = inject(TemplateRef);
 
   /** Data property name on each row; used as `SortColumn.property` on sort. */
   readonly name = input('', { alias: 'bsDatatableColumn' });

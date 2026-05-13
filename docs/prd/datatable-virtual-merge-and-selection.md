@@ -155,7 +155,7 @@ A 6px-wide vertical handle absolutely positioned at the right edge of each `<th>
 
 ```html
 <th class="text-nowrap" ...>
-  <ng-container *ngTemplateOutlet="column.headerTemplateRef"></ng-container>
+  <ng-container *ngTemplateOutlet="column.templateRef"></ng-container>
   @if (resizableColumns()) {
     <div class="bs-datatable-resize-handle"
          role="separator"
