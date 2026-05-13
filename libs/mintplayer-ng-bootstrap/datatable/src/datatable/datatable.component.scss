@@ -1,4 +1,4 @@
-@use 'libs/mintplayer-ng-bootstrap/datatable/src/datatable-sort';
+@use '../datatable-sort';
 
 tfoot > tr > td {
   border-bottom: none;
