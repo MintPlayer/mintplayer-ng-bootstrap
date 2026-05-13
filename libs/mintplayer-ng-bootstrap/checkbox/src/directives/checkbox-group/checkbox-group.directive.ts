@@ -29,7 +29,13 @@ import { BsCheckboxComponent } from '../../component/checkbox.component';
 export class BsCheckboxGroupDirective implements ControlValueAccessor {
 
   readonly name = input<string | null>(null);
-  readonly checkboxes = contentChildren(BsCheckboxComponent, { descendants: true });
+  // Wrap in forwardRef: BsCheckboxComponent imports this directive (for
+  // `inject(BsCheckboxGroupDirective, {...})`), so the two modules form a
+  // cycle. Whichever side webpack/vite evaluates first sees `undefined` for
+  // the other's exports at field-initialiser time, which makes the recorded
+  // query predicate null — ng-mocks' MockDirective then fails with "the
+  // query selector wasn't defined" on consumers that mock the group.
+  readonly checkboxes = contentChildren<BsCheckboxComponent>(forwardRef(() => BsCheckboxComponent), { descendants: true });
 
   /** Most-recently-written form value. An effect syncs each child's
    *  `isToggled` whenever this OR the `checkboxes()` set changes, so an

@@ -28,7 +28,13 @@ import { BsRadioComponent } from '../../component/radio.component';
 export class BsRadioGroupDirective implements ControlValueAccessor {
 
   readonly name = input<string | null>(null);
-  readonly radios = contentChildren(BsRadioComponent, { descendants: true });
+  // Wrap in forwardRef: BsRadioComponent imports this directive (for
+  // `inject(BsRadioGroupDirective, {...})`), so the two modules form a cycle.
+  // Whichever side webpack/vite evaluates first sees `undefined` for the
+  // other's exports at field-initialiser time, which makes the recorded query
+  // predicate null — ng-mocks' MockDirective then fails with "the query
+  // selector wasn't defined" on consumers (e.g. shell.component.spec.ts).
+  readonly radios = contentChildren<BsRadioComponent>(forwardRef(() => BsRadioComponent), { descendants: true });
 
   /** Most-recently-written form value. An effect syncs each child's
    *  `isToggled` whenever this OR the `radios()` set changes, so an initial
