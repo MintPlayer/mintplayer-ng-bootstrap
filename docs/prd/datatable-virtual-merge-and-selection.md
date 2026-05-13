@@ -165,6 +165,7 @@ A 6px-wide vertical handle absolutely positioned at the right edge of each `<th>
          [attr.aria-valuemin]="minColumnWidth()"
          tabindex="0"
          (pointerdown)="onResizeHandlePointerDown($event, column)"
+         (dblclick)="onResizeHandleDoubleClick($event, column)"
          (keydown)="onResizeHandleKeydown($event, column)"></div>
   }
 </th>
@@ -231,6 +232,35 @@ The handle is focusable with `tabindex="0"`. The keyboard contract:
 
 `aria-valuenow` reflects the live pixel width; `aria-valuemin = minColumnWidth()`; no `aria-valuemax` because the table has no hard ceiling.
 
+### Double-click to fit
+
+`dblclick` on the resize handle re-measures the column from its currently visible content and pins the result:
+
+```ts
+onResizeHandleDoubleClick(event: MouseEvent, column: BsDatatableColumnDirective) {
+  event.stopPropagation();
+  const w = Math.max(this.minColumnWidth(), this.measureColumnWidth(column.name()));
+  this.setColumnWidth(column.name(), w);
+}
+```
+
+`measureColumnWidth(name)` is the same helper used during initial auto-sizing — measures `max(header content, every visible td content)` using the `width: max-content !important` trick to bypass Bootstrap's `width: 100%`. The column transitions to (or stays in) **User-locked**; subsequent batch loads still don't re-measure.
+
+In virtual mode the measurement only considers what's in the rendered range — fitting to the current scroll window. Double-clicking after scrolling can yield a different width if the new viewport's content is wider or narrower; that's intended.
+
+The handle also gets a keyboard equivalent so it isn't pointer-only:
+
+- `Home` → fit (same path as `dblclick`)
+
+Keyboard contract for the handle is now:
+
+| Key | Effect |
+|---|---|
+| `ArrowLeft` / `ArrowRight` | ±10px |
+| `Shift + ArrowLeft` / `Shift + ArrowRight` | ±1px |
+| `Home` | Fit to current visible content |
+| `Enter` / `Space` | no-op |
+
 ### Sort interaction
 
 The sortable `<th>` has `(click)`, `(mousedown)`, `(keydown.enter)`, `(keydown.space)`. The resize handle is a child element of the `<th>`. Two isolators keep the gestures separate:
@@ -241,7 +271,6 @@ The sortable `<th>` has `(click)`, `(mousedown)`, `(keydown.enter)`, `(keydown.s
 ### Out of scope
 
 - Persistence beyond the component lifetime (localStorage, profile save). Defer until a real consumer needs it.
-- Double-click-to-fit (auto-size to widest content on demand). Common UX; not in v1.
 - Drag-to-reorder columns. Separate feature, separate gesture.
 - Per-column min-width input (`column.minWidth`). One global `minColumnWidth` is enough for v1.
 
