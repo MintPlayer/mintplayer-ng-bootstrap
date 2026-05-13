@@ -1,10 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
+import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsSelectComponent, BsSelectOption } from '@mintplayer/ng-bootstrap/select';
-import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import {
   BsTileManagerComponent,
   BsTileComponent,
@@ -42,13 +42,12 @@ const DEFAULT_TILES: ReadonlyArray<Pick<DemoTile, 'id' | 'title' | 'body' | 'def
     CommonModule,
     FormsModule,
     BsFormComponent,
-    BsFormControlDirective,
     BsGridComponent,
     BsGridRowDirective,
     BsGridColumnDirective,
     BsSelectComponent,
     BsSelectOption,
-    BsToggleButtonComponent,
+    BsCheckboxComponent,
     BsTileManagerComponent,
     BsTileComponent,
     BsTileHeaderComponent,

@@ -1,15 +1,15 @@
 // Configuration
-@import "../../../../../node_modules/bootstrap/scss/functions";
-@import "../../../../../node_modules/bootstrap/scss/variables";
-@import "../../../../../node_modules/bootstrap/scss/variables-dark";
-@import "../../../../../node_modules/bootstrap/scss/mixins";
+@import "node_modules/bootstrap/scss/functions";
+@import "node_modules/bootstrap/scss/variables";
+@import "node_modules/bootstrap/scss/variables-dark";
+@import "node_modules/bootstrap/scss/mixins";
 
 /* :host */ ::ng-deep {
     // Layout & components
-    // @import "../../../../../node_modules/bootstrap/scss/containers";
-    @import "../../../../../node_modules/bootstrap/scss/dropdown";
-    @import "../../../../../node_modules/bootstrap/scss/nav";
-    @import "../../../../../node_modules/bootstrap/scss/navbar";
+    // @import "node_modules/bootstrap/scss/containers";
+    @import "node_modules/bootstrap/scss/dropdown";
+    @import "node_modules/bootstrap/scss/nav";
+    @import "node_modules/bootstrap/scss/navbar";
 }
 
 ::ng-deep {
@@ -17,28 +17,24 @@
         z-index: 20 !important;
 
         &.noscript {
-            // Without JS the toggler is inert from the click-handler side, so
-            // we need a CSS-only path to expose the menu. Two complications:
+            // See docs/prd/navbar-noscript.md for the full contract.
             //
-            //  1. SSR runs `[@slideUpDown]` with showNavs=false (windowWidth
-            //     is null on the server), which bakes `height: 0` inline into
-            //     the rendered HTML. That inline style sticks in noscript and
-            //     hides the menu regardless of any display rule we add. We
-            //     have to override the height explicitly.
-            //  2. The toggler is rendered as `<input type="checkbox">` +
-            //     `<label for=…>` (see navbar.component.html) so the click
-            //     toggles a checkbox via the label — which works regardless
-            //     of browser focus-on-click behavior (Safari + macOS Chrome
-            //     don't focus a `<button>` on mouse click, so :focus-within
-            //     alone wasn't enough).
+            // SSR bakes `style="height: 0"` into .navbar-collapse via
+            // `[@slideUpDown]="false"` (windowWidth is null on the server, so
+            // showNavs() resolves to false). In noscript that inline style
+            // sticks and hides the menu until something overrides it. Three
+            // override paths, each !important to beat the inline style:
             //
-            // Reveal path: the toggler-checkbox is :checked, OR the navbar
-            // has any focus inside (Tab into the toggler, or into a menu
-            // item). Above the navbar's expand-breakpoint Bootstrap forces
-            // `display: flex !important` on .navbar-collapse via its media
-            // queries; the height override below is gated on small mode by
-            // the :has(checkbox) / :focus-within conditions never firing
-            // when the user can already see the menu.
+            //  - Wide mode (viewport ≥ navbar-expand-{bp}): always reveal.
+            //    Bootstrap's own media query gives us `display: flex` on the
+            //    collapse but leaves height to its JS plugin — that's what
+            //    the @each loop below fills in.
+            //  - :has(.navbar-toggler-checkbox:checked) — mouse/touch user
+            //    clicked the hamburger label. We use a label-for-checkbox
+            //    rather than :focus-within on a <button> because Safari and
+            //    macOS Chrome don't focus buttons on mouse click.
+            //  - :focus-within — keyboard user Tabbed into the hidden
+            //    checkbox (or a menu item, once revealed).
             bs-navbar-nav .navbar-collapse {
                 overflow: hidden;
             }
@@ -47,6 +43,17 @@
             &:focus-within bs-navbar-nav .navbar-collapse {
                 height: auto !important;
                 overflow: visible;
+            }
+
+            @each $breakpoint, $min in $grid-breakpoints {
+                @if $min and $min > 0 {
+                    @include media-breakpoint-up($breakpoint, $grid-breakpoints) {
+                        &.navbar-expand-#{$breakpoint} bs-navbar-nav .navbar-collapse {
+                            height: auto !important;
+                            overflow: visible;
+                        }
+                    }
+                }
             }
 
             li.nav-item:focus-within > bs-navbar-dropdown > ul {

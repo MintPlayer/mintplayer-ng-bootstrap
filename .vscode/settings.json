@@ -2,5 +2,11 @@
     "nxConsole.generateAiAgentRules": true,
     "typescript.tsdk": "node_modules/typescript/lib",
     "vitest.workspaceConfig": "./vitest.workspace.ts",
-    "vitest.maximumConfigs": 20
+    "vitest.maximumConfigs": 20,
+    "somesass.workspace.loadPaths": [
+        ".",
+        "node_modules"
+    ],
+    "somesass.scss.links.enabled": true,
+    "somesass.sass.links.enabled": true
 }

@@ -76,11 +76,29 @@ function escapeForTemplateLiteral(input) {
     .replace(/\$\{/g, '\\${');
 }
 
+// Bootstrap 5.3.x's SCSS triggers these Sass 3.0 deprecations (`@import`,
+// `mix()`/global builtins, `red()`/`green()`/`blue()`, `if()`, the legacy
+// JS API). Upstream's fix PR (twbs/bootstrap#41112) was closed without
+// merging; the cleanup landed only on v6-dev as part of a full rewrite.
+// Drop this `silenceDeprecations` array when bumping bootstrap to v6.
+const BOOTSTRAP_SILENCED_DEPRECATIONS = [
+  'import',
+  'global-builtin',
+  'color-functions',
+  'if-function',
+  'legacy-js-api',
+];
+
 function compileScss(scssPath) {
   const result = sass.compile(scssPath, {
     style: 'expanded',
     sourceMap: false,
-    loadPaths: [dirname(scssPath), join(repoRoot, 'node_modules')],
+    // repoRoot first → matches the workspace-relative paths VS Code Ctrl+click
+    // resolves (e.g. `@import "node_modules/bootstrap/scss/functions"`).
+    // node_modules second → also accepts the bare `bootstrap/scss/...` form
+    // used by the published `_bootstrap.scss`.
+    loadPaths: [dirname(scssPath), repoRoot, join(repoRoot, 'node_modules')],
+    silenceDeprecations: BOOTSTRAP_SILENCED_DEPRECATIONS,
   });
   return result.css;
 }

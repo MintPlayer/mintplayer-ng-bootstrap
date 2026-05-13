@@ -1,17 +1,17 @@
 // Bootstrap configuration partials. These compile to no CSS on their own —
-// they exist so the @import 'bootstrap/scss/nav' below can resolve $prefix,
+// they exist so the @import 'node_modules/bootstrap/scss/nav' below can resolve $prefix,
 // mixin references, the colour map, etc.
-@import 'bootstrap/scss/functions';
-@import 'bootstrap/scss/variables';
-@import 'bootstrap/scss/variables-dark';
-@import 'bootstrap/scss/maps';
-@import 'bootstrap/scss/mixins';
-@import 'bootstrap/scss/utilities';
+@import 'node_modules/bootstrap/scss/functions';
+@import 'node_modules/bootstrap/scss/variables';
+@import 'node_modules/bootstrap/scss/variables-dark';
+@import 'node_modules/bootstrap/scss/maps';
+@import 'node_modules/bootstrap/scss/mixins';
+@import 'node_modules/bootstrap/scss/utilities';
 
 // .nav, .nav-tabs, .nav-link, .tab-content, .tab-pane.
-@import 'bootstrap/scss/nav';
+@import 'node_modules/bootstrap/scss/nav';
 
-// We deliberately do NOT @import 'bootstrap/scss/root' — it targets :root,
+// We deliberately do NOT @import 'node_modules/bootstrap/scss/root' — it targets :root,
 // which doesn't cross Shadow DOM. The host page's :root --bs-* variables
 // inherit through the shadow boundary via custom-property cascade, so the
 // :host of this WC picks them up automatically when the consumer page has

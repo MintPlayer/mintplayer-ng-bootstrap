@@ -4,7 +4,7 @@ import { MockComponent, MockDirective } from 'ng-mocks';
 
 import { PlaceholderComponent } from './placeholder.component';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
-import { BsToggleButtonComponent, BsToggleButtonGroupDirective } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsCardComponent, BsCardHeaderComponent } from '@mintplayer/ng-bootstrap/card';
 import { BsPlaceholderComponent, BsPlaceholderFieldDirective } from '@mintplayer/ng-bootstrap/placeholder';
 
@@ -18,7 +18,7 @@ describe('PlaceholderComponent', () => {
         FormsModule,
         MockComponent(BsCardComponent), MockComponent(BsCardHeaderComponent),
         MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
-        MockComponent(BsToggleButtonComponent), MockDirective(BsToggleButtonGroupDirective),
+        MockComponent(BsCheckboxComponent),
         MockComponent(BsPlaceholderComponent), MockDirective(BsPlaceholderFieldDirective),
 
         // Unit to test (standalone)

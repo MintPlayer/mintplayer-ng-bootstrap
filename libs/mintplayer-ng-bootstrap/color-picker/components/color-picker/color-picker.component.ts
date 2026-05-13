@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, model, signal, viewChild } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { Subject } from "rxjs";
-import { BsToggleButtonComponent } from "@mintplayer/ng-bootstrap/toggle-button";
+import { BsCheckboxComponent } from "@mintplayer/ng-bootstrap/checkbox";
 import { HS } from "../../interfaces/hs";
 import { BsColorPickerValueAccessor } from "../../directives/color-picker-value-accessor/color-picker-value-accessor.directive";
 import { BsColorWheelComponent } from "../color-wheel/color-wheel.component";
@@ -20,7 +20,7 @@ import { BsSaturationStripComponent } from "../saturation-strip/saturation-strip
     BsAlphaStripComponent,
     BsHueStripComponent,
     BsSaturationStripComponent,
-    BsToggleButtonComponent,
+    BsCheckboxComponent,
     FormsModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,

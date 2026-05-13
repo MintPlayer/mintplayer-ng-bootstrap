@@ -5,11 +5,11 @@ import { BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderComp
 import { BsButtonGroupComponent } from '@mintplayer/ng-bootstrap/button-group';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsShellComponent, BsShellSidebarDirective } from '@mintplayer/ng-bootstrap/shell';
-import { BsToggleButtonComponent, BsToggleButtonGroupDirective } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsRadioComponent, BsRadioGroupDirective } from '@mintplayer/ng-bootstrap/radio';
 
 @Component({
   selector: 'demo-shell',
-  imports: [FormsModule, BsShellComponent, BsShellSidebarDirective, BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderComponent, BsButtonGroupComponent, BsButtonTypeDirective, BsToggleButtonComponent, BsToggleButtonGroupDirective],
+  imports: [FormsModule, BsShellComponent, BsShellSidebarDirective, BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderComponent, BsButtonGroupComponent, BsButtonTypeDirective, BsRadioComponent, BsRadioGroupDirective],
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

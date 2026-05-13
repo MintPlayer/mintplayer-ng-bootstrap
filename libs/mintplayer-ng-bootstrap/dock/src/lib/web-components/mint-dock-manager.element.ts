@@ -749,6 +749,7 @@ export class MintDockManagerElement extends LitElement {
       rect: DOMRect;
       pathStr: string;
       index: number;
+      layerKey: string;
     };
     const hDividers: DividerInfo[] = [];
     const vDividers: DividerInfo[] = [];
@@ -759,8 +760,9 @@ export class MintDockManagerElement extends LitElement {
     allSplitters.forEach((splitter) => {
       const direction = splitter.dataset['direction'] as 'horizontal' | 'vertical' | undefined;
       const pathStr = splitter.dataset['path'] ?? '';
+      const layerKey = this.splitterLayerKey(splitter);
       this.getSplitterDividers(splitter).forEach((el, index) => {
-        const info: DividerInfo = { rect: el.getBoundingClientRect(), pathStr, index };
+        const info: DividerInfo = { rect: el.getBoundingClientRect(), pathStr, index, layerKey };
         // direction='horizontal' means children flow left-to-right, so the
         // divider bars between them are VERTICAL (and vice-versa).
         if (direction === 'horizontal') vDividers.push(info);
@@ -770,11 +772,14 @@ export class MintDockManagerElement extends LitElement {
 
     // Group intersections that round to the same on-screen pixel, so two
     // sibling splitters whose dividers happen to overlap share one handle.
+    // Only pair dividers from the same dock layer — cross-layer (docked vs
+    // floating, or floating-N vs floating-M) coincidences are phantoms.
     const tol = 24;
     const groups = new Map<string, { x: number; y: number; pairs: Array<{ h: { pathStr: string; index: number }; v: { pathStr: string; index: number } }> }>();
     hDividers.forEach((h) => {
       const hCenterY = h.rect.top + h.rect.height / 2;
       vDividers.forEach((v) => {
+        if (h.layerKey !== v.layerKey) return;
         const vCenterX = v.rect.left + v.rect.width / 2;
         const dx = vCenterX < h.rect.left ? h.rect.left - vCenterX : vCenterX > h.rect.right ? vCenterX - h.rect.right : 0;
         const dy = hCenterY < v.rect.top ? v.rect.top - hCenterY : hCenterY > v.rect.bottom ? hCenterY - v.rect.bottom : 0;
@@ -3654,6 +3659,17 @@ export class MintDockManagerElement extends LitElement {
     }
     const suffix = path.segments.join('/');
     return suffix.length > 0 ? `d:${suffix}` : 'd:';
+  }
+
+  // Layer identity of a splitter in the rendered shadow tree. Splitters inside
+  // floating pane N are nested under `.dock-floating[data-path="f:N"]`;
+  // docked-layer splitters have no such ancestor. Two splitters share a layer
+  // iff their layer keys match — used by renderIntersectionHandles() to reject
+  // coincidental cross-layer (h, v) pairs that would otherwise produce a
+  // phantom intersection glyph between unrelated splitters.
+  private splitterLayerKey(splitter: HTMLElement): string {
+    const float = splitter.closest<HTMLElement>('.dock-floating');
+    return float ? float.dataset['path'] ?? 'f:?' : 'd';
   }
 
   private clonePath(path: DockPath): DockPath {

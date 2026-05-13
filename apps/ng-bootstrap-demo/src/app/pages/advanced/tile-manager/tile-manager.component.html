@@ -57,9 +57,9 @@
           </bs-select>
         </div>
         <div [md]="3" class="mb-3 d-flex align-items-end">
-          <bs-toggle-button [type]="'checkbox'" [ngModel]="animateReflow()" (ngModelChange)="animateReflow.set($event)">
+          <bs-checkbox [type]="'checkbox'" [ngModel]="animateReflow()" (ngModelChange)="animateReflow.set($event)">
             Animate reflow
-          </bs-toggle-button>
+          </bs-checkbox>
         </div>
       </div>
     </bs-grid>

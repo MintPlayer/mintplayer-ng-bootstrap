@@ -5,7 +5,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { dedent } from 'ts-dedent';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsMultiRangeComponent } from '@mintplayer/ng-bootstrap/multi-range';
-import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
+import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 
 @Component({
@@ -21,7 +21,7 @@ import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
     BsGridColumnDirective,
     BsGridColDirective,
     BsMultiRangeComponent,
-    BsToggleButtonComponent,
+    BsCheckboxComponent,
     BsCodeSnippetComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,

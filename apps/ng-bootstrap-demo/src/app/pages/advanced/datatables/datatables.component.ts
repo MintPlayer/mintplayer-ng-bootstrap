@@ -1,9 +1,8 @@
-import { Component, inject, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { BsDatatableComponent, BsDatatableColumnDirective, BsRowTemplateDirective, DatatableSettings } from '@mintplayer/ng-bootstrap/datatable';
-import { BsVirtualDatatableComponent, BsVirtualRowTemplateDirective, VirtualDatatableDataSource } from '@mintplayer/ng-bootstrap/virtual-datatable';
+import { PaginationRequest, PaginationResponse } from '@mintplayer/pagination';
+import { BsDatatableComponent, BsDatatableColumnDirective, BsRowTemplateDirective, BsDatatableFetch, DatatableSettings } from '@mintplayer/ng-bootstrap/datatable';
 import { BsSelectComponent, BsSelectOption } from '@mintplayer/ng-bootstrap/select';
-import { PaginationResponse } from '@mintplayer/pagination';
 import { Artist } from '../../../entities/artist';
 import { ArtistService } from '../../../services/artist/artist.service';
 
@@ -14,67 +13,29 @@ import { ArtistService } from '../../../services/artist/artist.service';
   imports: [
     FormsModule,
     BsDatatableComponent, BsDatatableColumnDirective, BsRowTemplateDirective,
-    BsVirtualDatatableComponent, BsVirtualRowTemplateDirective,
     BsSelectComponent, BsSelectOption,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DatatablesComponent implements OnInit {
+export class DatatablesComponent {
 
   private artistService = inject(ArtistService);
 
-  mode = signal<'regular' | 'virtual'>('regular');
+  mode = signal<'pagination' | 'virtualScroll'>('pagination');
+  virtualScroll = computed(() => this.mode() === 'virtualScroll');
 
-  // Regular datatable
-  artists = signal<PaginationResponse<Artist> | undefined>(undefined);
   settings = signal(new DatatableSettings({
     sortColumns: [{ property: 'YearStarted', direction: 'ascending' }],
-    perPage: {
-      values: [10, 20, 50],
-      selected: 20
-    },
-    page: {
-      values: [1],
-      selected: 1
-    }
+    perPage: { values: [10, 20, 50], selected: 20 },
+    page: { values: [1], selected: 1 },
   }));
 
-  // Virtual datatable
-  virtualSettings = signal(new DatatableSettings({
-    sortColumns: [{ property: 'YearStarted', direction: 'ascending' }],
-  }));
-  virtualDataSource = signal(this.createVirtualDataSource());
+  selection = signal<Artist[]>([]);
 
-  ngOnInit() {
-    this.loadArtists();
-  }
-
-  loadArtists() {
-    this.artistService.pageArtists(this.settings().toPagination())
-      .then((response) => {
-        this.artists.set(response);
-        if (response) {
-          this.settings().page.values = Array.from(Array(response.totalPages).keys()).map((p) => p + 1);
-        }
-      });
-  }
-
-  onVirtualSettingsChange() {
-    this.virtualDataSource.set(this.createVirtualDataSource());
-  }
-
-  private createVirtualDataSource(): VirtualDatatableDataSource<Artist> {
-    return new VirtualDatatableDataSource<Artist>(
-      (skip, take) => this.artistService.pageArtists({
-        sortColumns: this.virtualSettings().sortColumns,
-        perPage: take,
-        page: Math.floor(skip / take) + 1,
-      }).then(response => ({
-        data: response?.data ?? [],
-        totalRecords: response?.totalRecords ?? 0,
-      })),
-      50
+  fetchArtists: BsDatatableFetch<Artist> = (req: PaginationRequest) =>
+    this.artistService.pageArtists(req).then(
+      (response) => response ?? <PaginationResponse<Artist>>{ data: [], totalRecords: 0, totalPages: 1, page: req.page, perPage: req.perPage },
     );
-  }
 
+  compareArtists = (a: Artist, b: Artist) => a.id === b.id;
 }

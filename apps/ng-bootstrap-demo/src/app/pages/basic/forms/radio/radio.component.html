@@ -1,0 +1,113 @@
+<h1 class="text-center">Radio</h1>
+<bs-grid>
+    <div bsRow>
+        <div [col]>
+            <h2>Group, adjacent, template-driven</h2>
+            <p class="text-muted"><code>string</code> form value via <code>[bsRadioGroup]</code> + <code>[(ngModel)]</code>. <code>&lt;bs-radio&gt;</code> has no <code>[name]</code> input — the group owns it.</p>
+        </div>
+    </div>
+    <div bsRow>
+        <div [md]="6">
+            <div bsRadioGroup name="fruitTemplate" [(ngModel)]="selectedFruit">
+                <bs-radio value="apple" class="me-3">Apple</bs-radio>
+                <bs-radio value="banana" class="me-3">Banana</bs-radio>
+                <bs-radio value="cherry" class="me-3">Cherry</bs-radio>
+            </div>
+        </div>
+        <div [md]="6">
+            <span>Value: {{ selectedFruit() | json }}</span>
+        </div>
+    </div>
+    <div bsRow class="mt-2">
+        <div [col]>
+            <bs-code-snippet [codeToCopy]="groupTemplateTs" [language]="'ts'"></bs-code-snippet>
+            <bs-code-snippet [codeToCopy]="groupTemplateHtml" [language]="'html'"></bs-code-snippet>
+        </div>
+    </div>
+
+    <div bsRow class="mt-5">
+        <div [col]>
+            <h2>Group, adjacent, reactive</h2>
+            <p class="text-muted">Same shape via <code>[formControl]</code> on the group element.</p>
+        </div>
+    </div>
+    <div bsRow>
+        <div [md]="6">
+            <div bsRadioGroup name="fruitReactive" [formControl]="selectedFruitReactive">
+                <bs-radio value="apple" class="me-3">Apple</bs-radio>
+                <bs-radio value="banana" class="me-3">Banana</bs-radio>
+                <bs-radio value="cherry" class="me-3">Cherry</bs-radio>
+            </div>
+        </div>
+        <div [md]="6">
+            <span>Value: {{ selectedFruitReactive.value | json }}</span>
+        </div>
+    </div>
+    <div bsRow class="mt-2">
+        <div [col]>
+            <bs-code-snippet [codeToCopy]="groupReactiveTs" [language]="'ts'"></bs-code-snippet>
+            <bs-code-snippet [codeToCopy]="groupReactiveHtml" [language]="'html'"></bs-code-snippet>
+        </div>
+    </div>
+
+    <div bsRow class="mt-5">
+        <div [col]>
+            <h2>Group with <code>type="toggle_button"</code></h2>
+            <p class="text-muted">Radio-style button toggles (single-select among visually-button-styled options).</p>
+        </div>
+    </div>
+    <div bsRow>
+        <div [md]="6">
+            <div bsRadioGroup name="layout" [(ngModel)]="layout">
+                <bs-radio type="toggle_button" value="grid" class="me-2">Grid</bs-radio>
+                <bs-radio type="toggle_button" value="list" class="me-2">List</bs-radio>
+                <bs-radio type="toggle_button" value="cards" class="me-2">Cards</bs-radio>
+            </div>
+        </div>
+        <div [md]="6">
+            <span>Value: {{ layout() | json }}</span>
+        </div>
+    </div>
+    <div bsRow class="mt-2">
+        <div [col]>
+            <bs-code-snippet [codeToCopy]="toggleButtonTs" [language]="'ts'"></bs-code-snippet>
+            <bs-code-snippet [codeToCopy]="toggleButtonHtml" [language]="'html'"></bs-code-snippet>
+        </div>
+    </div>
+
+    <div bsRow class="mt-5">
+        <div [col]>
+            <h2>Group, non-adjacent (table row pattern)</h2>
+            <p class="text-muted">Each <code>&lt;tr&gt;</code> holds one radio. The group lives on <code>&lt;tbody&gt;</code> and each child uses <code>[group]="g"</code> for explicit wiring.</p>
+        </div>
+    </div>
+    <div bsRow>
+        <div [md]="8">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col"></th>
+                        <th scope="col">Label</th>
+                    </tr>
+                </thead>
+                <tbody bsRadioGroup name="selectedRow" #g="bsRadioGroup" [(ngModel)]="selectedRow">
+                    @for (row of rows(); track row.id) {
+                        <tr>
+                            <td><bs-radio [group]="g" [value]="row.id" /></td>
+                            <td>{{ row.label }}</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div [md]="4">
+            <span>Selected: {{ selectedRow() | json }}</span>
+        </div>
+    </div>
+    <div bsRow class="mt-2">
+        <div [col]>
+            <bs-code-snippet [codeToCopy]="groupTableTs" [language]="'ts'"></bs-code-snippet>
+            <bs-code-snippet [codeToCopy]="groupTableHtml" [language]="'html'"></bs-code-snippet>
+        </div>
+    </div>
+</bs-grid>
