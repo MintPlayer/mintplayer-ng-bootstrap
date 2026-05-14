@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { Component, signal, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsMultiselectComponent } from '../../component/multiselect.component';
@@ -5,6 +6,7 @@ import { BsHeaderTemplateDirective } from './header-template.directive';
 
 @Component({
   selector: 'bs-multiselect',
+  imports: [NgTemplateOutlet],
   template: `
     <button>
       <ng-container *ngTemplateOutlet="headerTemplate(); context: { $implicit: 0 }"></ng-container>

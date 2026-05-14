@@ -6,6 +6,7 @@ import { EnhancedPasteDirective } from './enhanced-paste.directive';
 
 @Component({
   selector: 'enhanced-paste-test',
+  imports: [FormsModule, EnhancedPasteDirective],
   template: `<input type="number" [min]="0" [max]="59" (input)="setNumber($event, 59, null)" bsEnhancedPaste [(ngModel)]="minutes" #inputBox>`
 })
 class EnhancedPasteTestComponent {

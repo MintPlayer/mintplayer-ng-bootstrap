@@ -1,5 +1,6 @@
 import { Component, computed, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { RouterLink } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
@@ -111,6 +112,7 @@ class BsNavbarDropdownMockComponent {
     </bs-navbar-nav>
   </bs-navbar>`,
   imports: [
+    RouterLink,
     BsNavbarMockComponent,
     BsNavbarNavMockComponent,
     BsNavbarItemComponent,

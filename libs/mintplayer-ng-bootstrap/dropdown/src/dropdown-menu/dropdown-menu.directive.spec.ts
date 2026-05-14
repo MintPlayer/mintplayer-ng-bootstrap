@@ -4,19 +4,6 @@ import { BsDropdownDirective } from '../dropdown/dropdown.directive';
 import { BsDropdownMenuDirective } from './dropdown-menu.directive';
 import { OverlayModule } from '@angular/cdk/overlay';
 
-@Component({
-  selector: 'bs-dropdown-menu-test',
-  template: `
-    <div bsDropdown [closeOnClickOutside]="true">
-      <button bsDropdownToggle class="btn btn-primary">Dropdown</button>
-      <div *bsDropdownMenu>
-        Dropdown contents
-      </div>
-    </div>`
-})
-class BsDropdownMenuTestComponent {
-}
-
 @Directive({
   selector: '[bsDropdownToggle]',
 })
@@ -46,6 +33,20 @@ class BsDropdownMockDirective {
 
   @ContentChild(BsDropdownMenuDirective, {static: false}) menu!: BsDropdownMenuDirective;
   @ContentChild(BsDropdownToggleMockDirective, {static: false}) toggle!: BsDropdownToggleMockDirective;
+}
+
+@Component({
+  selector: 'bs-dropdown-menu-test',
+  imports: [BsDropdownMockDirective, BsDropdownToggleMockDirective, BsDropdownMenuDirective],
+  template: `
+    <div bsDropdown [closeOnClickOutside]="true">
+      <button bsDropdownToggle class="btn btn-primary">Dropdown</button>
+      <div *bsDropdownMenu>
+        Dropdown contents
+      </div>
+    </div>`
+})
+class BsDropdownMenuTestComponent {
 }
 
 describe('BsDropdownMenuDirective', () => {

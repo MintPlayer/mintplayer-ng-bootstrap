@@ -1,5 +1,6 @@
 import { Component, ElementRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { RouterLink } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { NavbarRouterLinkActiveDirective } from './navbar-router-link-active.directive';
 
@@ -41,6 +42,7 @@ describe('NavbarRouterLinkActiveDirective', () => {
 
 @Component({
   selector: 'router-link-test',
+  imports: [RouterLink],
   template: `
     <a [routerLink]='["/"]' #link>
       Home

@@ -2,6 +2,7 @@ import { OverlayModule } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { Component, ElementRef, Injector, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
 import { BsPopoverDirective } from './popover.directive';
 import { MockComponent } from 'ng-mocks';
@@ -11,6 +12,7 @@ enum Position { top, left, bottom, right }
 
 @Component({
   selector: 'bs-Popover-directive-test',
+  imports: [BsPopoverDirective],
   template: `
     <button #button>
       Bottom
@@ -46,12 +48,15 @@ describe('BsPopoverDirective', () => {
         // Testbench
         BsPopoverDirectiveTestComponent,
       ],
-      providers: [{
-        provide: PORTAL_FACTORY,
-        useValue: (injector: Injector) => {
-          return new ComponentPortal(MockComponent(BsPopoverComponent), null, injector);
+      providers: [
+        provideNoopAnimations(),
+        {
+          provide: PORTAL_FACTORY,
+          useValue: (injector: Injector) => {
+            return new ComponentPortal(MockComponent(BsPopoverComponent), null, injector);
+          }
         }
-      }]
+      ]
     }).compileComponents();
   });
 

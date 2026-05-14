@@ -1,4 +1,4 @@
-import { Component, ContentChild, Directive, ElementRef, input, model } from '@angular/core';
+import { Component, ContentChild, Directive, ElementRef, input, model, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsDropdownDirective } from '../dropdown/dropdown.directive';
 import { BsDropdownToggleDirective } from './dropdown-toggle.directive';
@@ -22,6 +22,8 @@ class BsDropdownMockDirective {
   hasBackdrop = input(false);
   closeOnClickOutside = input(true);
   sameDropdownWidth = input(false);
+  popupRole = input<'menu' | 'listbox' | 'tree' | 'grid' | 'dialog'>('menu');
+  menuId = signal<string>('').asReadonly();
 
   @ContentChild(BsDropdownMenuMockDirective, {static: false}) menu!: BsDropdownMenuMockDirective;
   @ContentChild(BsDropdownToggleDirective, {static: false}) toggle!: BsDropdownToggleDirective;
@@ -29,6 +31,7 @@ class BsDropdownMockDirective {
 
 @Component({
   selector: 'bs-dropdown-toggle-test',
+  imports: [BsDropdownMockDirective, BsDropdownToggleDirective, BsDropdownMenuMockDirective],
   template: `
     <div bsDropdown [closeOnClickOutside]="true">
       <button bsDropdownToggle>Dropdown</button>

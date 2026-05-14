@@ -7,6 +7,13 @@ import { ToastComponent } from './toast.component';
 
 @Component({
   selector: 'demo-toast-test',
+  imports: [
+    MockComponent(BsToastComponent),
+    MockComponent(BsToastHeaderComponent),
+    MockComponent(BsToastBodyComponent),
+    MockComponent(BsToastContainerComponent),
+    MockDirective(BsToastCloseDirective),
+  ],
   template: `
     <ng-template #toastTemplate let-message="message" let-isVisible="isVisible">
       <bs-toast [isVisible]="isVisible">

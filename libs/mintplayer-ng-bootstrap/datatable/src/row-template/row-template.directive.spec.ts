@@ -59,10 +59,10 @@ class MockBsDatatableComponent<TData> {
   imports: [MockBsDatatableComponent, BsRowTemplateDirective],
   template: `
     <bs-datatable #table>
-      <tr *bsRowTemplate="let artist of artists">
-        <td class="text-nowrap">{{ artist.name }}</td>
-        <td class="text-nowrap">{{ artist.yearStarted }}</td>
-        <td class="text-nowrap">{{ artist.yearQuit }}</td>
+      <tr *bsRowTemplate="let artist">
+        <td class="text-nowrap">{{ artist?.name }}</td>
+        <td class="text-nowrap">{{ artist?.yearStarted }}</td>
+        <td class="text-nowrap">{{ artist?.yearQuit }}</td>
       </tr>
     </bs-datatable>`
 })
