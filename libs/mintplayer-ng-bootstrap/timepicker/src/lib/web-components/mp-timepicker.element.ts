@@ -70,6 +70,7 @@ export class MpTimepickerElement extends LitElement {
     anchor: () => this.inputGroupEl ?? this.triggerEl ?? null,
     trigger: () => this.triggerEl ?? null,
     panel: () => this.popupEl ?? null,
+    panelWidth: 'anchor-min',
     onOpen: () =>
       this.dispatchEvent(new CustomEvent('opened', { bubbles: true, composed: true })),
     onClose: () =>

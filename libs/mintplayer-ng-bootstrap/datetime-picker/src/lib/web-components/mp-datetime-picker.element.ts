@@ -118,6 +118,7 @@ export class MpDatetimePickerElement extends LitElement {
     anchor: () => this.inputGroupEl ?? this.dateTriggerEl ?? null,
     trigger: () => this.dateTriggerEl ?? null,
     panel: () => this.datePopupEl ?? null,
+    panelWidth: 'anchor-min',
     onOpen: () => {
       this.dispatchEvent(
         new CustomEvent<'date'>('opened', { detail: 'date', bubbles: true, composed: true }),
@@ -135,6 +136,7 @@ export class MpDatetimePickerElement extends LitElement {
     anchor: () => this.inputGroupEl ?? this.timeTriggerEl ?? null,
     trigger: () => this.timeTriggerEl ?? null,
     panel: () => this.timePopupEl ?? null,
+    panelWidth: 'anchor-min',
     onOpen: () => {
       this.dispatchEvent(
         new CustomEvent<'time'>('opened', { detail: 'time', bubbles: true, composed: true }),
