@@ -48,8 +48,6 @@ import {
 @Injectable({ providedIn: 'root' })
 export class BsThemeService {
   private readonly platformId = inject(PLATFORM_ID);
-  private readonly destroyRef = inject(DestroyRef);
-  private readonly document = inject(DOCUMENT);
 
   private readonly _mode = signal<BsThemeMode>('auto');
   private readonly _prefersDark = signal(false);
@@ -69,6 +67,14 @@ export class BsThemeService {
 
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
+      // Defer DestroyRef + DOCUMENT injections to inside the platform check —
+      // pulling them at the field-init level meant the SSR injector resolved
+      // tokens whose destroy-time callbacks fire during ApplicationRef
+      // teardown and surface as NG0953 ("Unexpected emit for destroyed
+      // OutputRef") on the dev server.
+      const destroyRef = inject(DestroyRef);
+      const document = inject(DOCUMENT);
+
       // Hydrate initial mode from localStorage. Wrapped because privacy modes
       // or sandboxed iframes can throw on access.
       try {
@@ -83,13 +89,13 @@ export class BsThemeService {
         this._prefersDark.set(mql.matches);
         const listener = (e: MediaQueryListEvent) => this._prefersDark.set(e.matches);
         mql.addEventListener('change', listener);
-        this.destroyRef.onDestroy(() => mql.removeEventListener('change', listener));
+        destroyRef.onDestroy(() => mql.removeEventListener('change', listener));
       }
 
       // Keep <html data-bs-theme> in sync with the resolved mode.
       effect(() => {
         const resolved = this.effectiveMode();
-        this.document.documentElement.setAttribute('data-bs-theme', resolved);
+        document.documentElement.setAttribute('data-bs-theme', resolved);
       });
     }
   }
