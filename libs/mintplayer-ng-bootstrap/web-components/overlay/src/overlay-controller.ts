@@ -107,6 +107,12 @@ export class OverlayController implements ReactiveController {
   private stackToken: symbol | null = null;
   /** Anchor used by the last positioning pass. Drives focus-return on close. */
   private activeAnchor: HTMLElement | null = null;
+  /** rAF id for the next scheduled position() call. 0 = none scheduled. */
+  private positionFrame = 0;
+  /** True while scroll-tracking listeners are attached. */
+  private scrollListenersAttached = false;
+  /** Saved scrollTop/scrollLeft when 'block' strategy is active. */
+  private blockedScroll: { top: number; left: number } | null = null;
 
   constructor(
     host: ReactiveControllerHost & HTMLElement,
@@ -139,6 +145,7 @@ export class OverlayController implements ReactiveController {
     this.host.requestUpdate();
     await this.host.updateComplete;
     this.position();
+    this.attachScrollListeners();
     setTimeout(() => this.attachMouseDown(), 0);
     this.options.onOpen?.();
   }
@@ -150,6 +157,11 @@ export class OverlayController implements ReactiveController {
     this.host.removeAttribute('data-menu-open');
     this.host.requestUpdate();
     this.detachMouseDown();
+    this.detachScrollListeners();
+    if (this.positionFrame) {
+      cancelAnimationFrame(this.positionFrame);
+      this.positionFrame = 0;
+    }
     if (returnFocus) this.activeAnchor?.focus();
     this.activeAnchor = null;
     this.options.onClose?.();
@@ -307,6 +319,107 @@ export class OverlayController implements ReactiveController {
     if (top < margin) top = margin;
     return { left, top };
   }
+
+  /* ---- Scroll + resize tracking ---- */
+
+  private currentStrategy(): ScrollStrategy {
+    return this.options.scrollStrategy ?? 'reposition';
+  }
+
+  /**
+   * Wire scroll + resize listeners according to the active strategy. Called
+   * from open(); paired with detachScrollListeners() in close().
+   *
+   * The capture-phase listener on document catches scroll events from any
+   * scrollable ancestor without us having to walk the DOM — scroll events
+   * don't bubble, but capture-phase listeners receive every dispatch.
+   */
+  private attachScrollListeners(): void {
+    if (this.scrollListenersAttached) return;
+    this.scrollListenersAttached = true;
+    const strategy = this.currentStrategy();
+    if (strategy === 'noop') return;
+
+    window.addEventListener('resize', this.onResize, { passive: true });
+
+    if (strategy === 'block') {
+      this.applyBlockScroll();
+      return;
+    }
+
+    // 'reposition' + 'close' both attach a document-wide capture listener.
+    document.addEventListener('scroll', this.onScroll, {
+      passive: true,
+      capture: true,
+    });
+  }
+
+  private detachScrollListeners(): void {
+    if (!this.scrollListenersAttached) return;
+    this.scrollListenersAttached = false;
+    window.removeEventListener('resize', this.onResize);
+    document.removeEventListener('scroll', this.onScroll, true);
+    this.releaseBlockScroll();
+  }
+
+  private onScroll = (): void => {
+    if (!this._open) return;
+    const strategy = this.currentStrategy();
+    if (strategy === 'close') {
+      this.close(false);
+      return;
+    }
+    if (strategy === 'reposition') this.schedulePosition();
+  };
+
+  private onResize = (): void => {
+    if (!this._open) return;
+    this.schedulePosition();
+  };
+
+  private schedulePosition(): void {
+    if (this.positionFrame) return;
+    this.positionFrame = requestAnimationFrame(() => {
+      this.positionFrame = 0;
+      this.position();
+    });
+  }
+
+  /**
+   * 'block' strategy: lock the document scroll position while the overlay is
+   * open. Mirrors CDK's BlockScrollStrategy — sets position: fixed on the html
+   * element with the saved offset, then restores on close. Cheap; no event
+   * preventDefault dance required.
+   */
+  private applyBlockScroll(): void {
+    if (this.blockedScroll) return;
+    const html = document.documentElement;
+    const top = html.scrollTop || window.scrollY;
+    const left = html.scrollLeft || window.scrollX;
+    this.blockedScroll = { top, left };
+    html.style.setProperty('--overlay-blocked-top', `-${top}px`);
+    html.style.setProperty('--overlay-blocked-left', `-${left}px`);
+    html.style.position = 'fixed';
+    html.style.top = `-${top}px`;
+    html.style.left = `-${left}px`;
+    html.style.width = '100%';
+  }
+
+  private releaseBlockScroll(): void {
+    if (!this.blockedScroll) return;
+    const { top, left } = this.blockedScroll;
+    this.blockedScroll = null;
+    const html = document.documentElement;
+    html.style.position = '';
+    html.style.top = '';
+    html.style.left = '';
+    html.style.width = '';
+    html.style.removeProperty('--overlay-blocked-top');
+    html.style.removeProperty('--overlay-blocked-left');
+    window.scrollTo(left, top);
+  }
+
+  /* ---- Esc-stack ---- */
 
   private releaseStackToken(): void {
     if (!this.stackToken) return;

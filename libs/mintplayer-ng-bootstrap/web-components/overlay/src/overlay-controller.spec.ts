@@ -267,3 +267,145 @@ describe('OverlayController — position-pair selection', () => {
     expect(panel.style.top).toBe('144px'); // 132 + 12
   });
 });
+
+describe('OverlayController — scroll strategies', () => {
+  function makeHost(): HTMLElement & {
+    addController: () => void;
+    requestUpdate: () => void;
+    updateComplete: Promise<void>;
+  } {
+    const el = document.createElement('div') as HTMLElement & {
+      addController: () => void;
+      requestUpdate: () => void;
+      updateComplete: Promise<void>;
+    };
+    el.addController = () => {};
+    el.requestUpdate = () => {};
+    el.updateComplete = Promise.resolve();
+    return el;
+  }
+
+  function stubRect(el: HTMLElement, rect: { left: number; top: number; width: number; height: number }): void {
+    el.getBoundingClientRect = () => ({
+      left: rect.left, top: rect.top,
+      right: rect.left + rect.width, bottom: rect.top + rect.height,
+      width: rect.width, height: rect.height,
+      x: rect.left, y: rect.top, toJSON: () => ({}),
+    });
+  }
+
+  function nextRaf(): Promise<void> {
+    return new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+  }
+
+  let host: ReturnType<typeof makeHost>;
+  let anchor: HTMLElement;
+  let panel: HTMLElement;
+
+  beforeEach(() => {
+    host = makeHost();
+    anchor = document.createElement('button');
+    panel = document.createElement('div');
+    document.body.appendChild(host);
+    document.body.appendChild(anchor);
+    document.body.appendChild(panel);
+    stubRect(anchor, { left: 100, top: 100, width: 80, height: 32 });
+    stubRect(panel, { left: 0, top: 0, width: 200, height: 100 });
+    Object.defineProperty(window, 'innerWidth', { value: 1024, writable: true, configurable: true });
+    Object.defineProperty(window, 'innerHeight', { value: 768, writable: true, configurable: true });
+  });
+
+  afterEach(() => {
+    host.remove();
+    anchor.remove();
+    panel.remove();
+  });
+
+  it("'reposition' strategy: scroll fires schedulePosition() and re-applies position", async () => {
+    const controller = new OverlayController(host, {
+      trigger: () => anchor,
+      panel: () => panel,
+    });
+    await controller.open();
+    expect(panel.style.top).toBe('132px');
+
+    // Simulate the anchor moving up by 50px (e.g. page scrolled down).
+    stubRect(anchor, { left: 100, top: 50, width: 80, height: 32 });
+    document.dispatchEvent(new Event('scroll'));
+    await nextRaf();
+    expect(panel.style.top).toBe('82px');
+    controller.close(false);
+  });
+
+  it("'close' strategy: scroll closes the overlay", async () => {
+    const controller = new OverlayController(host, {
+      trigger: () => anchor,
+      panel: () => panel,
+      scrollStrategy: 'close',
+    });
+    await controller.open();
+    expect(controller.isOpen).toBe(true);
+    document.dispatchEvent(new Event('scroll'));
+    expect(controller.isOpen).toBe(false);
+  });
+
+  it("'noop' strategy: scroll is ignored", async () => {
+    const controller = new OverlayController(host, {
+      trigger: () => anchor,
+      panel: () => panel,
+      scrollStrategy: 'noop',
+    });
+    await controller.open();
+    const initialTop = panel.style.top;
+    stubRect(anchor, { left: 100, top: 50, width: 80, height: 32 });
+    document.dispatchEvent(new Event('scroll'));
+    await nextRaf();
+    // No reposition — panel stayed where it was.
+    expect(panel.style.top).toBe(initialTop);
+    controller.close(false);
+  });
+
+  it("'block' strategy: locks document scroll on open, restores on close", async () => {
+    const html = document.documentElement;
+    html.style.position = '';
+    html.style.top = '';
+    const controller = new OverlayController(host, {
+      trigger: () => anchor,
+      panel: () => panel,
+      scrollStrategy: 'block',
+    });
+    await controller.open();
+    expect(html.style.position).toBe('fixed');
+    controller.close(false);
+    expect(html.style.position).toBe('');
+  });
+
+  it('resize re-applies position', async () => {
+    const controller = new OverlayController(host, {
+      trigger: () => anchor,
+      panel: () => panel,
+    });
+    await controller.open();
+    expect(panel.style.top).toBe('132px');
+    stubRect(anchor, { left: 100, top: 50, width: 80, height: 32 });
+    window.dispatchEvent(new Event('resize'));
+    await nextRaf();
+    expect(panel.style.top).toBe('82px');
+    controller.close(false);
+  });
+
+  it('listeners detach on close (no leak)', async () => {
+    const controller = new OverlayController(host, {
+      trigger: () => anchor,
+      panel: () => panel,
+    });
+    await controller.open();
+    controller.close(false);
+    // After close, a scroll event should not reposition the panel.
+    stubRect(anchor, { left: 0, top: 0, width: 80, height: 32 });
+    const beforeTop = panel.style.top;
+    document.dispatchEvent(new Event('scroll'));
+    await nextRaf();
+    expect(panel.style.top).toBe(beforeTop);
+  });
+});
