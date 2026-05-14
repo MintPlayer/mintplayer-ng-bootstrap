@@ -33,5 +33,4 @@ export { MpQuickAccessToolbar } from './lib/web-components/mp-quick-access-toolb
 export { MpRibbonTab } from './lib/web-components/mp-ribbon-tab.element';
 export { MpRibbonContextualTabSet } from './lib/web-components/mp-ribbon-contextual-tab-set.element';
 export { MpRibbonGroup } from './lib/web-components/mp-ribbon-group.element';
-export { OverlayController } from './lib/web-components/overlay-controller';
 export * from './lib/web-components/items';
