@@ -150,12 +150,20 @@ export type ScrollStrategy =
 
 export interface OverlayControllerOptions {
   /**
-   * Single anchor or array of candidate anchors. When an array, the controller
-   * tries each in order — the first one whose anchor + the first fitting
-   * `positions` entry produces a panel rect inside the viewport wins.
+   * Element(s) the overlay positions itself against. Pass an array for
+   * fallback anchors; the controller walks them in order and uses the first
+   * non-null one. Intentionally distinct from `trigger`: in many UIs the
+   * natural anchor is a wrapper (e.g. a `.input-group`) while the trigger
+   * that opens the overlay is just the button inside it.
    */
-  trigger: () => HTMLElement | HTMLElement[] | null;
+  anchor: () => HTMLElement | HTMLElement[] | null;
   panel: () => HTMLElement | null;
+  /**
+   * The interactive control that opens the overlay (typically a `<button>`).
+   * Used for keyboard focus-return on close. Defaults to the active anchor
+   * when unset — set this explicitly when `anchor` is a non-focusable wrapper.
+   */
+  trigger?: () => HTMLElement | null;
   /**
    * Ordered list of position candidates. The first one that produces a
    * panel rect fully inside the viewport (after `viewportMargin`) is used.
@@ -235,14 +243,15 @@ Same scroll-strategy logic also fires on `window.resize` (debounced via `request
 
 ### Defaults & required options
 
-- `trigger` (required). Accepts `HTMLElement | HTMLElement[] | null`; array form picks the first non-null anchor.
+- `anchor` (required). Accepts `HTMLElement | HTMLElement[] | null`; the element(s) the overlay positions against. Array form picks the first non-null.
 - `panel` (required).
+- `trigger` (optional). The interactive control (button) that opens the overlay. Used for keyboard focus-return on close. Defaults to the active anchor when unset.
 - `positions` (optional). Default: `[{ originX: 'start', originY: 'bottom', overlayX: 'start', overlayY: 'top' }, { originX: 'start', originY: 'top', overlayX: 'start', overlayY: 'bottom' }]` — drop below, flip above if it doesn't fit.
 - `viewportMargin` (optional). Default: `8` px.
 - `scrollStrategy` (optional). Default: `'reposition'`.
 - `stickyOnAnchorOffscreen` (optional). Default: `false` (CDK parity). Set `true` for the ribbon group popup.
 
-Required-option signatures and naming should be optimised for the cleanest call sites — not constrained by what the old class accepted. Rename freely if a better name surfaces during implementation.
+The `anchor` vs `trigger` distinction is load-bearing: a Bootstrap input-group + button picker wants the popup to align with the input's left edge (anchor = input-group div) but focus on close to return to the button (trigger = button). Conflating them caused the popup to float disconnected from the field.
 
 ---
 
