@@ -57,16 +57,17 @@ test.describe('datetime-picker — popup stays in viewport (issue #332 follow-up
 
     // Scroll the page by 100px. The popup should reposition to follow the trigger.
     await page.evaluate(() => window.scrollBy(0, 100));
-    // Wait a frame for the rAF-batched reposition.
-    await page.waitForTimeout(50);
 
-    const after = await calendar.boundingBox();
-    expect(after).not.toBeNull();
-    // The popup moved relative to the viewport (it follows the trigger, which
-    // is now 100px higher). With the reposition strategy it tracks; assert the
-    // top moved by approximately -100 (some tolerance for fractional pixels
-    // and the trigger's actual viewport position).
-    const dy = (after!.y - before!.y);
-    expect(Math.abs(dy)).toBeGreaterThan(50);
+    // Poll the popup's box until it's moved meaningfully relative to its pre-scroll
+    // position. A fixed `waitForTimeout(50)` here was flaky in Firefox — the
+    // rAF-batched reposition hadn't committed by the time we read the box, and
+    // the test would see a partial delta (17–48px). Polling lets us wait for the
+    // actual reposition to land, with a hard cap for the truly-broken case.
+    await expect
+      .poll(async () => {
+        const r = await calendar.boundingBox();
+        return r ? Math.abs(r.y - before!.y) : 0;
+      }, { timeout: 2000 })
+      .toBeGreaterThan(50);
   });
 });
