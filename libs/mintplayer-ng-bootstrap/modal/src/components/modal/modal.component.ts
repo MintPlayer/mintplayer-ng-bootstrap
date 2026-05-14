@@ -18,6 +18,7 @@ export class BsModalComponent {
 
   template = inject<TemplateRef<any>>(MODAL_CONTENT);
   isOpen = signal(false);
+  scrollable = signal(false);
 
   context = inject(BsModalContextService);
   injector = inject(Injector);
