@@ -117,17 +117,17 @@ td.select-col {
 }
 
 // 1. Strip the form-check label's `margin-bottom: 0.125rem` (2px). Otherwise
-//    the toggle-button host renders 24px label + 2px margin = 26px tall and
-//    the label sits at the top, leaving 2px of unused space below.
-// 2. Promote the toggle-button to inline-flex so its label-with-checkbox is
+//    the checkbox host renders 24px label + 2px margin = 26px tall and the
+//    label sits at the top, leaving 2px of unused space below.
+// 2. Promote the checkbox to inline-flex so its label-with-checkbox is
 //    vertically centered inside the host element (the host is itself centered
 //    in the table cell via `vertical-align: middle`).
-.select-col bs-toggle-button {
+.select-col bs-checkbox {
   display: inline-flex !important;
   align-items: center;
   vertical-align: middle;
 }
-.select-col bs-toggle-button ::ng-deep label.form-check {
+.select-col bs-checkbox ::ng-deep label.form-check {
   margin-bottom: 0;
 }
 

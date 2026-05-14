@@ -63,7 +63,7 @@ $thumb-size: 14px;
     }
 
     &:hover::before, &.active::before {
-        background-color: #1389FD;
+        background-color: var(--bs-primary);
     }
 }
 

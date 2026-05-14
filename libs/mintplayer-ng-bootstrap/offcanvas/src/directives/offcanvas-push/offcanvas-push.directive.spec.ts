@@ -1,9 +1,11 @@
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsOffcanvasPushDirective } from './offcanvas-push.directive';
 
 @Component({
   selector: 'bs-offcanvas-test',
+  imports: [BsOffcanvasPushDirective],
   template: `<div [bsOffcanvasPush]="pushElement"></div>`
 })
 class BsOffcanvasPushTestComponent {}
@@ -18,6 +20,7 @@ describe('BsOffcanvasPushDirective', () => {
         // Unit to test
         BsOffcanvasPushDirective,
       ],
+      providers: [provideNoopAnimations()],
     }).compileComponents();
   });
 

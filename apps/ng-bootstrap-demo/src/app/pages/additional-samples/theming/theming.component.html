@@ -1,0 +1,258 @@
+<h1 class="text-center">Theming &amp; dark mode</h1>
+
+<p class="lead">
+  Bootstrap 5.3 ships a built-in color-mode system based on the
+  <code>data-bs-theme</code> attribute. <code>@mintplayer/ng-bootstrap</code> adds
+  a tiny service on top that owns the user's preference, persists it, and
+  resolves <code>auto</code> via <code>prefers-color-scheme</code> — and exposes
+  it as Angular signals.
+</p>
+
+<bs-alert [type]="colors.info" class="d-block mb-4">
+  <strong>Three primitives, two recipes.</strong>
+  <ul class="mb-0">
+    <li>To <strong>switch</strong> light/dark/auto at runtime, flip
+      <code>data-bs-theme</code> on <code>&lt;html&gt;</code>. <code>BsThemeService</code> does this for you.</li>
+    <li>To <strong>customize colors at build time</strong>, override Bootstrap's SCSS variables
+      <em>before</em> <code>&#64;import</code>ing the library's bundle.</li>
+    <li>To <strong>customize colors at runtime</strong>, set the corresponding
+      <code>--bs-*</code> CSS variables via
+      <code>document.documentElement.style.setProperty(...)</code>.</li>
+  </ul>
+</bs-alert>
+
+
+<h2 id="build-time">Build-time customization (SCSS)</h2>
+
+<p>
+  Bootstrap's design tokens are SCSS variables. Override them before importing
+  the library's SCSS bundle to bake your palette into the compiled CSS — no
+  runtime cost. This is the right approach when your brand colors are fixed.
+</p>
+
+<bs-code-snippet [codeToCopy]="scssOverridesSnippet" [language]="'scss'"></bs-code-snippet>
+
+<p class="text-muted">
+  All standard Bootstrap variables (<code>$primary</code>, <code>$body-bg</code>,
+  <code>$navbar-padding-y</code>, …) are available — see the
+  <a href="https://getbootstrap.com/docs/5.3/customize/sass/" target="_blank" rel="noopener">Bootstrap Sass reference</a>
+  for the full list.
+</p>
+
+
+<h2 id="runtime-css">Runtime customization (CSS variables)</h2>
+
+<p>
+  Bootstrap also exposes most tokens as <code>--bs-*</code> CSS custom
+  properties. Mutating them at runtime lets you build features like a
+  per-user theme picker without re-deploying. The components pick up the
+  change on the next paint.
+</p>
+
+<bs-code-snippet [codeToCopy]="runtimeCssVarSnippet" [language]="'ts'"></bs-code-snippet>
+
+<h3>Live demo</h3>
+<div class="d-flex gap-2 align-items-center mb-3 flex-wrap">
+  <label>
+    Primary color:
+    <input type="color" class="form-control form-control-color d-inline-block ms-2" [value]="customPrimary()" (input)="customPrimary.set($any($event.target).value)" />
+  </label>
+  <button type="button" class="btn btn-primary" (click)="applyCustomPrimary()">Apply</button>
+  <button type="button" class="btn btn-outline-secondary" (click)="resetCustomPrimary()">Reset</button>
+</div>
+<p class="text-muted">
+  <strong>What changes when you Apply:</strong> every component below uses
+  <code>--bs-primary</code> — the swatch, the buttons, the alert, the link, and
+  the progress bar all swap in lockstep with the CSS variable.
+</p>
+<bs-alert [type]="colors.info" class="d-block mb-3">
+  <strong>Note about <code>.btn-primary</code> and <code>.btn-outline-primary</code>.</strong>
+  Vanilla Bootstrap 5.3 bakes literal color values into each button variant's
+  scoped <code>--bs-btn-*</code> variables — so mutating <code>--bs-primary</code>
+  at runtime does <em>not</em> reach buttons in a stock Bootstrap project.
+  <code>&#64;mintplayer/ng-bootstrap</code> ships a small override that re-binds
+  <code>.btn-primary</code> and <code>.btn-outline-primary</code> to
+  <code>var(--bs-primary)</code> (with <code>color-mix()</code> for hover / active
+  shades), which is why the buttons above swap with the rest. If you want the
+  same behavior for <code>.btn-success</code>, <code>.btn-danger</code>, etc.,
+  add an analogous block in your own stylesheet.
+</bs-alert>
+<div class="d-flex flex-wrap gap-3 align-items-center mb-3">
+  <div class="d-flex flex-column align-items-center">
+    <div style="width: 3rem; height: 3rem; border-radius: 0.5rem; background-color: var(--bs-primary); border: 1px solid var(--bs-border-color);"></div>
+    <small class="text-muted mt-1">swatch</small>
+  </div>
+  <button type="button" class="btn btn-primary">btn-primary</button>
+  <button type="button" class="btn btn-outline-primary">outline-primary</button>
+  <bs-badge [type]="colors.primary">badge</bs-badge>
+  <a href="javascript:void(0)" class="link-primary">link-primary</a>
+  <div class="progress flex-grow-1" style="min-width: 8rem; max-width: 14rem; height: 1rem;">
+    <div class="progress-bar" style="width: 65%; background-color: var(--bs-primary);"></div>
+  </div>
+</div>
+
+<h3>Per-component variables</h3>
+<p>
+  Each Bootstrap component also defines its own scoped <code>--bs-*</code>
+  variables. Tweaking these lets you restyle one component without touching the
+  global palette. A few common ones:
+</p>
+
+<div class="table-responsive mb-3">
+  <table class="table table-sm table-bordered align-top">
+    <thead>
+      <tr>
+        <th>Component</th>
+        <th>Variable</th>
+        <th>Effect</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Navbar</td><td><code>--bs-navbar-color</code></td><td>Default link/text color</td></tr>
+      <tr><td>Navbar</td><td><code>--bs-navbar-active-color</code></td><td>Active link color</td></tr>
+      <tr><td>Navbar</td><td><code>--bs-navbar-brand-color</code></td><td>Brand text color</td></tr>
+      <tr><td>Card</td><td><code>--bs-card-bg</code></td><td>Card surface color</td></tr>
+      <tr><td>Card</td><td><code>--bs-card-border-color</code></td><td>Card border</td></tr>
+      <tr><td>Card</td><td><code>--bs-card-cap-bg</code></td><td>Card header / footer surface</td></tr>
+      <tr><td>Dropdown</td><td><code>--bs-dropdown-bg</code></td><td>Dropdown menu surface</td></tr>
+      <tr><td>Dropdown</td><td><code>--bs-dropdown-link-hover-bg</code></td><td>Hovered item background</td></tr>
+      <tr><td>Modal</td><td><code>--bs-modal-bg</code></td><td>Modal surface</td></tr>
+      <tr><td>Modal</td><td><code>--bs-modal-header-border-color</code></td><td>Header separator</td></tr>
+      <tr><td>Button</td><td><code>--bs-btn-bg</code></td><td>Button surface (scope to a selector)</td></tr>
+      <tr><td>Button</td><td><code>--bs-btn-border-color</code></td><td>Button border</td></tr>
+      <tr><td>Body / global</td><td><code>--bs-body-bg</code></td><td>Page background</td></tr>
+      <tr><td>Body / global</td><td><code>--bs-body-color</code></td><td>Default text color</td></tr>
+      <tr><td>Body / global</td><td><code>--bs-border-color</code></td><td>Default border color</td></tr>
+      <tr><td>Body / global</td><td><code>--bs-primary</code> &nbsp;/&nbsp; <code>--bs-primary-rgb</code></td><td>Primary brand color (pair both for opacity-aware usage)</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p class="text-muted">
+  The canonical list is component-specific and may shift between Bootstrap
+  versions — see the
+  <a href="https://getbootstrap.com/docs/5.3/customize/css-variables/" target="_blank" rel="noopener">CSS variables reference</a>
+  for the authoritative table.
+</p>
+
+
+<h2 id="runtime-switch">Switching mode at runtime</h2>
+
+<p>
+  <code>BsThemeService</code> is a signal-first service that owns the user's
+  chosen mode and writes the resolved value to
+  <code>&lt;html data-bs-theme&gt;</code>. <code>auto</code> resolves to light or
+  dark via <code>matchMedia('(prefers-color-scheme: dark)')</code> and live-updates
+  when the OS preference changes.
+</p>
+
+<bs-code-snippet [codeToCopy]="serviceUsageSnippet" [language]="'ts'"></bs-code-snippet>
+
+<h3>Live demo</h3>
+<div class="d-flex gap-2 align-items-center mb-3 flex-wrap">
+  <button type="button" class="btn btn-outline-primary" (click)="setMode('auto')">Auto</button>
+  <button type="button" class="btn btn-outline-primary" (click)="setMode('light')">Light</button>
+  <button type="button" class="btn btn-outline-primary" (click)="setMode('dark')">Dark</button>
+  <button type="button" class="btn btn-outline-warning" (click)="applySepia()">Sepia (custom)</button>
+  <span class="ms-3">
+    <code>mode</code>: <strong>{{ theme.mode() }}</strong>
+    &nbsp; <code>effectiveMode</code>: <strong>{{ theme.effectiveMode() }}</strong>
+  </span>
+</div>
+
+
+<h2 id="adaptive-navbar">Adaptive navbar</h2>
+
+<p>
+  To make <code>&lt;bs-navbar&gt;</code> follow the page theme automatically,
+  pass <code>[color]="'body-tertiary'"</code>. The navbar emits
+  <code>bg-body-tertiary</code> (no <code>data-bs-theme</code> override) and
+  Bootstrap's <code>--bs-tertiary-bg</code> CSS variable swaps with the page
+  theme — giving a slightly tinted, theme-aware navbar in both light and dark.
+</p>
+
+<bs-code-snippet [codeToCopy]="adaptiveNavbarSnippet" [language]="'html'"></bs-code-snippet>
+
+<p class="text-muted">
+  <code>[color]</code> accepts either a <code>Color</code> enum value
+  (<code>Color.dark</code>, <code>Color.primary</code>, …) or a string
+  utility-class suffix (<code>'body-tertiary'</code>,
+  <code>'body-secondary'</code>). Enum values also pin the navbar's own theme via
+  <code>data-bs-theme</code>; string suffixes let the page theme cascade
+  through. <code>null</code> emits no background — fully transparent navbar that
+  inherits everything from the page.
+</p>
+
+
+<h2 id="custom-variants">Custom variants beyond light &amp; dark</h2>
+
+<p>
+  The mode string is open-ended. Author a custom <code>[data-bs-theme="…"]</code>
+  block in your global SCSS, then activate it via
+  <code>setMode('your-variant')</code>. Known values (<code>auto</code>,
+  <code>light</code>, <code>dark</code>) keep autocomplete; arbitrary strings
+  also compile.
+</p>
+
+<bs-code-snippet [codeToCopy]="customVariantSnippet" [language]="'scss'"></bs-code-snippet>
+
+<bs-alert [type]="colors.warning" class="d-block mb-4">
+  <strong>auto only resolves to light or dark.</strong>
+  <code>prefers-color-scheme</code> doesn't know about custom variants — they
+  must be set explicitly. Switching to <em>auto</em> while the user is on a
+  custom variant returns them to the system preference.
+</bs-alert>
+
+
+<h2 id="ssr">SSR &amp; no-flash integration</h2>
+
+<p>
+  Server-rendered HTML has no <code>data-bs-theme</code> attribute by default —
+  which means dark-mode users see a brief light-mode flash before the Angular
+  service runs. Fix it with a tiny <em>pre-boot</em>
+  <code>&lt;script&gt;</code> in <code>&lt;head&gt;</code>, before any
+  <code>&lt;link rel="stylesheet"&gt;</code>. The script reads localStorage and
+  <code>prefers-color-scheme</code>, then writes the attribute synchronously —
+  before the browser has resolved any CSS.
+</p>
+
+<bs-code-snippet [codeToCopy]="preBootScriptSnippet" [language]="'html'"></bs-code-snippet>
+
+<bs-alert [type]="colors.info" class="d-block mb-4">
+  The storage key (<code>'bs-theme-mode'</code>) must match the
+  <code>BS_THEME_STORAGE_KEY</code> constant exported by
+  <code>@mintplayer/ng-bootstrap/theming</code>. The script can't import the
+  constant because it runs before any module loads — keep the two literals in
+  lockstep.
+</bs-alert>
+
+
+<h2 id="reference">API reference</h2>
+
+<dl class="row">
+  <dt class="col-sm-4"><code>theme.mode</code></dt>
+  <dd class="col-sm-8">
+    <code>Signal&lt;'auto' | 'light' | 'dark' | string&gt;</code> — the user's
+    authored preference. Read-only; use <code>setMode()</code> to change.
+  </dd>
+
+  <dt class="col-sm-4"><code>theme.effectiveMode</code></dt>
+  <dd class="col-sm-8">
+    <code>Signal&lt;'light' | 'dark' | string&gt;</code> — the resolved value.
+    <code>auto</code> resolves to light or dark via
+    <code>matchMedia('(prefers-color-scheme: dark)')</code>; explicit values pass
+    through unchanged.
+  </dd>
+
+  <dt class="col-sm-4"><code>theme.setMode(m)</code></dt>
+  <dd class="col-sm-8">
+    Set the mode. Persists to localStorage and updates
+    <code>&lt;html data-bs-theme&gt;</code>.
+  </dd>
+
+  <dt class="col-sm-4"><code>BS_THEME_STORAGE_KEY</code></dt>
+  <dd class="col-sm-8">
+    The localStorage key (<code>'bs-theme-mode'</code>) used by the service.
+    Exposed for the pre-boot script.
+  </dd>
+</dl>

@@ -65,20 +65,29 @@ export class BsNavigationLockService {
    */
   requestExit(reason?: string): Promise<boolean> {
     if (this.pending) return this.pending;
-    this.pending = this.doRequestExit(reason);
-    return this.pending;
+    const p = this.doRequestExit(reason);
+    this.pending = p;
+    // Clear `pending` via .finally() AFTER the outer assignment, not inside
+    // `doRequestExit`'s body. Reason: when every lock resolves synchronously
+    // (or `locks` is empty), `doRequestExit`'s try/finally runs to completion
+    // BEFORE this assignment line executes — so an inner `finally { pending =
+    // null }` would be immediately overwritten by `this.pending = p`, leaving
+    // pending stuck on a resolved Promise. Every subsequent navigation then
+    // short-circuits on the truthy cache without consulting locks. The
+    // `=== p` guard avoids clobbering a fresh pending if someone calls
+    // requestExit again before this microtask runs.
+    p.finally(() => {
+      if (this.pending === p) this.pending = null;
+    });
+    return p;
   }
 
   private async doRequestExit(reason?: string): Promise<boolean> {
-    try {
-      for (const lock of this.locks) {
-        const ok = await this.normalise(lock.requestCanExit(reason));
-        if (!ok) return false;
-      }
-      return true;
-    } finally {
-      this.pending = null;
+    for (const lock of this.locks) {
+      const ok = await this.normalise(lock.requestCanExit(reason));
+      if (!ok) return false;
     }
+    return true;
   }
 
   private onBeforeUnload(ev: BeforeUnloadEvent): void {

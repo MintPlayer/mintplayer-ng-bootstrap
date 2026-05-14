@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { RouterLink } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { MockComponent } from 'ng-mocks';
 import { BsNavbarComponent } from '../navbar/navbar.component';
@@ -74,6 +75,7 @@ describe('NavLinkDirective', () => {
       </bs-navbar-nav>
     </bs-navbar>`,
   imports: [
+    RouterLink,
     MockComponent(BsNavbarComponent),
     MockComponent(BsNavbarNavComponent),
     MockComponent(BsNavbarItemComponent),

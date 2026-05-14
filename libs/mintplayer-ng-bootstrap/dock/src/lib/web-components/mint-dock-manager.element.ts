@@ -1551,6 +1551,15 @@ export class MintDockManagerElement extends LitElement {
         const px = sizes.map((w) => (Math.max(w, 0) / totalWeight) * containerSize);
         (splitter as unknown as { setPanelSizes?: (sizes: number[]) => void })
           .setPanelSizes?.(px);
+        // setPanelSizes is silent (no event), and mp-splitter follows it with
+        // its own rAF (handleContainerResize) that rescales panels to deduct
+        // divider widths. The initial intersection-handle render is wired
+        // through rootResizeObserver's first callback, whose setTimeout(5) fires
+        // BEFORE these rAFs run — so it reads transient equal-flex divider
+        // positions and strands the glyph at the splitter's geometric center
+        // until the user changes something. Wait one extra rAF (past
+        // handleContainerResize), then schedule a fresh render.
+        requestAnimationFrame(() => this.scheduleRenderIntersectionHandles());
       });
     }
 

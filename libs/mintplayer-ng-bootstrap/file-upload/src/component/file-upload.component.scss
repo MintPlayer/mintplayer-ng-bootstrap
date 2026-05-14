@@ -2,8 +2,8 @@
     z-index: 1;
 
     &.dragging {
-        border: 4px solid #CB1535 !important;
-        background: #DC88A8;
+        border: 4px solid var(--bs-danger) !important;
+        background: var(--bs-danger-bg-subtle);
         margin: -3px;
         margin-bottom: -4px;
     }
@@ -29,7 +29,7 @@
 }
 
 .text-grey {
-    color: #999;
+    color: var(--bs-secondary-color);
 }
 
 .list-group span {

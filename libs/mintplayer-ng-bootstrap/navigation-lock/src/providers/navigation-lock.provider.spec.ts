@@ -62,7 +62,7 @@ describe('provideNavigationLockRouter', () => {
     expect(cfg.canceledNavigationResolution).toBe('computed');
   });
 
-  it('wraps routes in a root canMatch entry so the guard runs once per navigation', async () => {
+  it('wraps routes in a root canActivate entry with runGuardsAndResolvers:"always"', async () => {
     await TestBed.configureTestingModule({
       providers: [
         provideNavigationLockRouter([
@@ -74,7 +74,12 @@ describe('provideNavigationLockRouter', () => {
     const router = TestBed.inject(Router);
     const root = router.config[0];
     expect(root.path).toBe('');
-    expect(root.canMatch?.length).toBe(1);
+    // canActivate fires on EVERY navigation under the wrapper (with
+    // runGuardsAndResolvers: 'always'). canMatch would only exclude the route
+    // from matching, not cancel the navigation — so canActivate is the right
+    // guard for navigation-blocking semantics.
+    expect(root.canActivate?.length).toBe(1);
+    expect(root.runGuardsAndResolvers).toBe('always');
     expect(root.children?.[0]?.path).toBe('a');
   });
 

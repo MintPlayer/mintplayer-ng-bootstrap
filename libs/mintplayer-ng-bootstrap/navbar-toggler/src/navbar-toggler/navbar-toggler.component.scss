@@ -30,7 +30,7 @@
   > div {
     width: 25px;
     height: 2px;
-    background: #bbb;
+    background: var(--bs-secondary-color);
     margin: 6px 0;
     transition: 0.4s;
   }

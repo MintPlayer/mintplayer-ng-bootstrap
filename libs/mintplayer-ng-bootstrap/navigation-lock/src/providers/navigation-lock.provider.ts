@@ -21,10 +21,15 @@ export function provideNavigationLock(opts?: NavigationLockOptions): Environment
 
 /**
  * One-call router setup for navigation-lock. Wraps `routes` in a root
- * `{ path: '', canMatch: [bsNavigationLockGuard], children }` entry and
- * applies `canceledNavigationResolution: 'computed'` (required for
- * popstate-cancel to restore the history stack). Pass any additional router
- * features (`withPreloading`, `withInMemoryScrolling`, …) as extra arguments.
+ * `{ path: '', canActivate: [bsNavigationLockGuard], runGuardsAndResolvers:
+ * 'always', children }` entry and applies `canceledNavigationResolution:
+ * 'computed'` (required for popstate-cancel to restore the history stack).
+ * Pass any additional router features (`withPreloading`,
+ * `withInMemoryScrolling`, …) as extra arguments.
+ *
+ * `runGuardsAndResolvers: 'always'` is essential: by default `canActivate`
+ * only re-runs when route params change, so navigating between siblings of
+ * the root wrapper (the common case) would otherwise bypass the lock.
  *
  * If you also pass your own `withRouterConfig`, make sure it includes
  * `canceledNavigationResolution: 'computed'` — the dev-mode warning from
@@ -35,7 +40,14 @@ export function provideNavigationLockRouter(
   ...features: RouterFeatures[]
 ): EnvironmentProviders {
   return provideRouter(
-    [{ path: '', canMatch: [bsNavigationLockGuard], children: routes }],
+    [
+      {
+        path: '',
+        canActivate: [bsNavigationLockGuard],
+        runGuardsAndResolvers: 'always',
+        children: routes,
+      },
+    ],
     withRouterConfig({ canceledNavigationResolution: 'computed' }),
     ...features,
   );

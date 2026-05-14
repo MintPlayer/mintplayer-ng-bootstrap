@@ -209,10 +209,16 @@ test.describe('ribbon demo', () => {
     // bs-select renders a native select underneath; the easiest cross-browser
     // path is to select by value on the underlying <select>.
     await dirField.locator('select').selectOption('rtl');
-    const wrapperDir = await page.evaluate(
-      () =>
-        document.querySelector<HTMLElement>('.ribbon-rtl-wrapper')?.getAttribute('dir') ?? null
-    );
-    expect(wrapperDir).toBe('rtl');
+    // The <select>'s change event flows through Angular → signal update → DOM
+    // attribute write on `.ribbon-rtl-wrapper`. Reading the attribute in the
+    // same tick races that update, so poll until it propagates.
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            document.querySelector<HTMLElement>('.ribbon-rtl-wrapper')?.getAttribute('dir') ?? null
+        )
+      )
+      .toBe('rtl');
   });
 });

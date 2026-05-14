@@ -54,7 +54,8 @@
         // transition: width 0.3s ease-in-out;
 
         .sidebar-body {
-            background: #333;
+            background: var(--bs-dark);
+            color: var(--bs-white);
         }
     }
 

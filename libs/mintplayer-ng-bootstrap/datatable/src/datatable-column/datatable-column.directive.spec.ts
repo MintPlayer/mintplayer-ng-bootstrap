@@ -51,6 +51,7 @@ describe('BsDatatableColumnDirective', () => {
       </div>
     </bs-datatable>`,
   imports: [
+    BsDatatableColumnDirective,
     MockComponent(BsDatatableComponent),
   ],
 })

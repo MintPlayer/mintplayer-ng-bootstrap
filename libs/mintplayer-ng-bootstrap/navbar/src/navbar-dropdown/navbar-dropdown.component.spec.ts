@@ -1,5 +1,6 @@
 import { Component, computed, Directive, ElementRef, Input, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { RouterLink } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { MockComponent } from 'ng-mocks';
@@ -128,6 +129,7 @@ class BsNavbarItemMockComponent {
     </bs-navbar-nav>
   </bs-navbar>`,
   imports: [
+    RouterLink,
     BsNavbarMockComponent,
     BsNavbarNavMockComponent,
     BsNavbarItemMockComponent,

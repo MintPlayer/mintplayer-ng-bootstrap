@@ -8,3 +8,17 @@
     // Layout & components
     @import "node_modules/bootstrap/scss/close";
 }
+
+// Bootstrap's _close.scss expects the dark-mode dual rules to live at the global root:
+//   :root, [data-bs-theme="light"] { --bs-btn-close-filter: ; }
+//   [data-bs-theme="dark"]         { --bs-btn-close-filter: invert(1) grayscale(100%) brightness(200%); }
+//   [data-bs-theme="dark"] .btn-close { filter: var(--bs-btn-close-filter); }
+// Inside our `:host ::ng-deep` wrap, all three selectors get prefixed with
+// `[_nghost-...]` — so `[data-bs-theme="dark"]` (which lives on <html>, OUTSIDE
+// the host) never matches, the variable stays empty, and the close-X stays
+// black on a dark background. Hard-code the equivalent filter under a
+// `:host-context` selector to invert the X whenever a dark-themed ancestor
+// sits above the host.
+:host-context([data-bs-theme="dark"]) ::ng-deep .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}

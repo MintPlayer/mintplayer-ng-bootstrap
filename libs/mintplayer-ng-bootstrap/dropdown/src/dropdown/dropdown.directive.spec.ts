@@ -9,6 +9,11 @@ import { BS_DEVELOPMENT } from '@mintplayer/ng-bootstrap';
 
 @Component({
   selector: 'bs-dropdown-test',
+  imports: [
+    BsDropdownDirective,
+    MockDirective(BsDropdownToggleDirective),
+    MockDirective(BsDropdownMenuDirective),
+  ],
   template: `
     <div bsDropdown [closeOnClickOutside]="true">
       <button bsDropdownToggle>Dropdown</button>

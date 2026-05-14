@@ -22,7 +22,7 @@ $thumb-size: 30px;
     margin-top: calc($thumb-size / -2);
     margin-left: calc($thumb-size / -2);
     box-sizing: border-box;
-    border: 2px solid white;
+    border: 2px solid var(--bs-body-bg);
     box-shadow: rgb(0 0 0 / 10%) 0px 0px 10px 5px;
     pointer-events: none;
 }

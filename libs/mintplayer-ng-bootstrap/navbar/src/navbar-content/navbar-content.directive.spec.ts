@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { RouterLink } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { MockComponents } from 'ng-mocks';
 import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
@@ -68,6 +69,7 @@ describe('DropdownToggleDirective', () => {
     </bs-navbar-nav>
   </bs-navbar>`,
   imports: [
+    RouterLink,
     ...MockComponents(BsNavbarComponent, BsNavbarNavComponent, BsNavbarDropdownComponent, BsNavbarItemComponent),
   ],
 })
