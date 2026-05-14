@@ -1,7 +1,7 @@
 import { css, html, LitElement, nothing, type TemplateResult } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { styleMap } from 'lit/directives/style-map.js';
-import { OverlayController } from './overlay-controller';
+import { OverlayController } from '@mintplayer/ng-bootstrap/web-components/overlay';
 
 export interface RibbonGroup {
   id: string;

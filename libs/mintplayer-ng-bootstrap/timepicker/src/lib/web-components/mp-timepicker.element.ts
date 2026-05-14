@@ -1,6 +1,6 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { query } from 'lit/decorators.js';
-import { OverlayController } from '@mintplayer/ng-bootstrap/web-components/a11y';
+import { OverlayController } from '@mintplayer/ng-bootstrap/web-components/overlay';
 import { MpTimeListElement, type TimeStep, type Hour12Mode } from './mp-time-list.element';
 import { styles } from './mp-timepicker.element.template';
 
