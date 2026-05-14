@@ -13,6 +13,7 @@ export const ROUTES: Routes = [
   { path: 'list-group', loadComponent: () => import('./list-group/list-group.component').then(m => m.ListGroupComponent) },
   { path: 'for-directive', loadComponent: () => import('./for-directive/for-directive.component').then(m => m.ForDirectiveComponent) },
   { path: 'timepicker', loadComponent: () => import('./timepicker/timepicker.component').then(m => m.TimepickerComponent) },
+  { path: 'datetime-picker', loadComponent: () => import('./datetime-picker/datetime-picker.component').then(m => m.DatetimePickerComponent) },
   { path: 'button-group', loadComponent: () => import('./button-group/button-group.component').then(m => m.ButtonGroupComponent) },
   { path: 'breadcrumb', loadComponent: () => import('./breadcrumb/breadcrumb.component').then(m => m.BreadcrumbComponent) },
   { path: 'badge', loadComponent: () => import('./badge/badge.component').then(m => m.BadgeComponent) },
