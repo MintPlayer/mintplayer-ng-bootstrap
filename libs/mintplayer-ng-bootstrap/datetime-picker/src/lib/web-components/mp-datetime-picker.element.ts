@@ -153,6 +153,16 @@ export class MpDatetimePickerElement extends LitElement {
   protected readonly liveAnnouncer = new LiveAnnouncerController(this);
   private lastAnnouncedValue: number | null = null;
 
+  protected override willUpdate(changed: Map<string, unknown>): void {
+    // Derive the calendar's pinned month from `value` *before* render so the
+    // first frame already has `_calendarMonth` set. Doing this in updated()
+    // would write reactive state after the render completed and trigger
+    // Lit's "change-in-update" warning.
+    if (changed.has('value') && this.value && !this._calendarMonth) {
+      this._calendarMonth = new Date(this.value.getFullYear(), this.value.getMonth(), 1);
+    }
+  }
+
   override updated(changed: Map<string, unknown>): void {
     super.updated?.(changed);
     if (changed.has('_openPopup')) {
@@ -161,9 +171,6 @@ export class MpDatetimePickerElement extends LitElement {
       } else {
         this.setAttribute('data-open', this._openPopup);
       }
-    }
-    if (changed.has('value') && this.value && !this._calendarMonth) {
-      this._calendarMonth = new Date(this.value.getFullYear(), this.value.getMonth(), 1);
     }
   }
 
