@@ -1,110 +1,143 @@
-/// <reference types="./types" />
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  CUSTOM_ELEMENTS_SCHEMA,
+  effect,
+  ElementRef,
+  forwardRef,
+  input,
+  model,
+  signal,
+  viewChild,
+} from '@angular/core';
+import {
+  AbstractControl,
+  ControlValueAccessor,
+  NG_VALIDATORS,
+  NG_VALUE_ACCESSOR,
+  ValidationErrors,
+  Validator,
+} from '@angular/forms';
+import { MpTimepickerElement } from './lib/web-components/mp-timepicker.element';
+import type { Hour12Mode, TimeStep } from './lib/web-components/mp-time-list.element';
 
-import { DatePipe, DecimalPipe } from '@angular/common';
-import { Component, inject, model, signal, ChangeDetectionStrategy} from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { Color } from '@mintplayer/ng-bootstrap';
-import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
-import { BsDropdownDirective, BsDropdownMenuDirective } from '@mintplayer/ng-bootstrap/dropdown';
-import { BsDropdownMenuComponent, BsDropdownItemComponent } from '@mintplayer/ng-bootstrap/dropdown-menu';
-import { EnhancedPasteDirective } from '@mintplayer/ng-bootstrap/enhanced-paste';
-import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
-import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
-import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
+void MpTimepickerElement;
+
+function timeMinutes(d: Date): number {
+  return d.getHours() * 60 + d.getMinutes();
+}
 
 @Component({
   selector: 'bs-timepicker',
   templateUrl: './timepicker.component.html',
   styleUrls: ['./timepicker.component.scss'],
-  imports: [DatePipe, DecimalPipe, FormsModule, EnhancedPasteDirective, BsFormComponent, BsDropdownDirective, BsDropdownMenuDirective, BsDropdownMenuComponent, BsDropdownItemComponent, BsInputGroupComponent, BsButtonTypeDirective, BsHasOverlayComponent],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [
+    { provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => BsTimepickerComponent), multi: true },
+    { provide: NG_VALIDATORS, useExisting: forwardRef(() => BsTimepickerComponent), multi: true },
+  ],
 })
-export class BsTimepickerComponent {
-  private sanitizer = inject(DomSanitizer);
+export class BsTimepickerComponent implements AfterViewInit, ControlValueAccessor, Validator {
+  selectedTime = model<Date>(new Date());
+  isOpen = model(false);
+  min = input<Date | undefined>(undefined);
+  max = input<Date | undefined>(undefined);
+  step = input<TimeStep>(15);
+  hour12 = input<Hour12Mode>('auto');
+  locale = input<string | undefined>(undefined);
+  placeholder = input<string>('');
+  triggerLabel = input<string>('Choose time');
+
+  disabled = input<boolean>(false);
+  protected readonly formDisabled = signal(false);
+  protected readonly effectiveDisabled = signal(false);
+
+  readonly wcRef = viewChild<ElementRef<MpTimepickerElement>>('wc');
+
+  private onChange: (value: Date | null) => void = () => {};
+  private onTouched: () => void = () => {};
+  private onValidatorChange: () => void = () => {};
 
   constructor() {
-    const today = new Date();
-    today.setHours(0); today.setMinutes(0); today.setSeconds(0);
+    effect(() => {
+      const wc = this.wcRef()?.nativeElement;
+      if (!wc) return;
+      wc.selectedTime = this.selectedTime();
+      wc.step = this.step();
+      wc.min = this.min() ?? null;
+      wc.max = this.max() ?? null;
+      wc.hour12 = this.hour12();
+      wc.locale = this.locale();
+      wc.placeholder = this.placeholder();
+      wc.triggerLabel = this.triggerLabel();
+      wc.disabled = this.effectiveDisabled();
+      wc.requestUpdate();
+    });
 
-    const interval = 900;
-    this.presetTimestamps.set(
-      Array.from(Array(24 * 60 * 60 / interval).keys())
-        .map(i => {
-          const clone = new Date(today);
-          clone.setTime(clone.getTime() + i * interval * 1000);
-          return clone;
-        })
-    );
+    effect(() => {
+      this.effectiveDisabled.set(this.disabled() || this.formDisabled());
+    });
 
-
-    import('bootstrap-icons/icons/clock.svg').then((icon) => {
-      this.clock.set(this.sanitizer.bypassSecurityTrustHtml(icon.default));
+    effect(() => {
+      this.min();
+      this.max();
+      this.onValidatorChange();
     });
   }
 
-  clock = signal<SafeHtml | undefined>(undefined);
-  readonly colors = Color;
-  isOpen = model(false);
-  readonly presetTimestamps = signal<Date[]>([]);
-  isFocused = signal(false);
+  ngAfterViewInit(): void {}
 
-  selectAll(box: HTMLInputElement) {
-    box.select();
-    // box.setSelectionRange(0, box.value.length);
-    this.isFocused.set(true);
+  onSelectedTimeChange(event: Event): void {
+    const detail = (event as CustomEvent<Date>).detail;
+    if (!(detail instanceof Date)) return;
+    this.selectedTime.set(detail);
+    this.onChange(detail);
   }
 
-  setNumber(event: Event, max: number, nextInput: HTMLInputElement | null) {
-    event.preventDefault();
-    const input = <HTMLInputElement>event.target;
-    const val = parseInt(input.value);
-    if (isNaN(val)) {
-      input.value = '00';
-    } else {
-      const result = Math.min(max, Math.abs(val));
-      input.value = result.toString().padStart(2, '0');
-
-      if (nextInput) {
-        // const maxAllowedNumberOfDigits = input.max.length;
-        if (result * 10 > parseInt(input.max)) {
-          nextInput.focus();
-        }
-      }
-    }
+  onOpened(): void {
+    this.isOpen.set(true);
   }
 
-  setTime(time: Date) {
-    this.selectedTime.set(time);
+  onClosed(): void {
     this.isOpen.set(false);
+    this.onTouched();
   }
 
-  selectedTime = model<Date>(new Date());
+  /* ---- ControlValueAccessor ---- */
 
-  //#region Hours
-  get hours() {
-    return this.selectedTime().getHours();
-  }
-  set hours(value: number) {
-    const clone = new Date(this.selectedTime());
-    clone.setHours(value);
-    this.selectedTime.set(clone);
-  }
-  //#endregion
-
-  //#region Minutes
-  get minutes() {
-    return this.selectedTime().getMinutes();
-  }
-  set minutes(value: number) {
-    const clone = new Date(this.selectedTime());
-    clone.setMinutes(value);
-    this.selectedTime.set(clone);
-  }
-  //#endregion
-
-  timesEqual(time1: Date, time2: Date) {
-    return (time1.getHours() === time2.getHours()) && (time1.getMinutes() === time2.getMinutes());
+  writeValue(value: Date | null | undefined): void {
+    if (value instanceof Date) this.selectedTime.set(value);
   }
 
+  registerOnChange(fn: (value: Date | null) => void): void {
+    this.onChange = fn;
+  }
+
+  registerOnTouched(fn: () => void): void {
+    this.onTouched = fn;
+  }
+
+  setDisabledState(isDisabled: boolean): void {
+    this.formDisabled.set(isDisabled);
+  }
+
+  /* ---- Validator ---- */
+
+  validate(control: AbstractControl): ValidationErrors | null {
+    const value = control.value;
+    if (!(value instanceof Date)) return null;
+    const errors: ValidationErrors = {};
+    const min = this.min();
+    const max = this.max();
+    const minutes = timeMinutes(value);
+    if (min && minutes < timeMinutes(min)) errors['min'] = { min, actual: value };
+    if (max && minutes > timeMinutes(max)) errors['max'] = { max, actual: value };
+    return Object.keys(errors).length ? errors : null;
+  }
+
+  registerOnValidatorChange(fn: () => void): void {
+    this.onValidatorChange = fn;
+  }
 }
