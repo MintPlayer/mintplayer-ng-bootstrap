@@ -104,14 +104,15 @@ export class BsScrollspyComponent implements AfterViewInit, AfterContentInit {
     const header = directive.element.nativeElement;
     const headerTop = header.getBoundingClientRect().top;
 
-    // Identity check instead of `instanceof Window` — jsdom puts Window in a
-    // different realm so the instanceof check is unreliable in unit tests.
-    if (target === window) {
-      const offsetY = this.scrollOffsetService.getScrollOffset()[1];
-      window.scrollTo({ top: headerTop + window.scrollY - offsetY + 1, behavior: 'smooth' });
-    } else {
+    // `instanceof HTMLElement` narrows TS to HTMLElement in the true branch
+    // and is robust in jsdom (which implements HTMLElement). The previous
+    // `instanceof Window` check failed in jsdom due to a realm mismatch.
+    if (target instanceof HTMLElement) {
       const containerTop = target.getBoundingClientRect().top;
       target.scrollTo({ top: headerTop - containerTop + target.scrollTop + 1, behavior: 'smooth' });
+    } else {
+      const offsetY = this.scrollOffsetService.getScrollOffset()[1];
+      window.scrollTo({ top: headerTop + window.scrollY - offsetY + 1, behavior: 'smooth' });
     }
   }
 
@@ -120,10 +121,10 @@ export class BsScrollspyComponent implements AfterViewInit, AfterContentInit {
     // +1 in both branches so a directive landing exactly on the trigger line
     // (e.g. right after scrollToHeader completes) is counted as "above" it,
     // matching the +1 that scrollToHeader adds when computing the scroll target.
-    if (!target || target === window) {
-      return this.scrollOffsetService.getScrollOffset()[1] + 1;
+    if (target instanceof HTMLElement) {
+      return target.getBoundingClientRect().top + 1;
     }
-    return target.getBoundingClientRect().top + 1;
+    return this.scrollOffsetService.getScrollOffset()[1] + 1;
   }
 
   private findScrollableAncestor(start: HTMLElement): HTMLElement | null {
