@@ -21,8 +21,11 @@ input.form-control {
   color: var(--bs-body-color);
   background-color: var(--bs-body-bg);
   border: 1px solid var(--bs-border-color);
-  border-right-width: 0;
-  border-radius: var(--bs-border-radius, 0.375rem) 0 0 var(--bs-border-radius, 0.375rem);
+  border-inline-end-width: 0;
+  border-start-start-radius: var(--bs-border-radius, 0.375rem);
+  border-end-start-radius: var(--bs-border-radius, 0.375rem);
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
   outline: 0;
 }
 
@@ -45,20 +48,17 @@ button.trigger {
   color: var(--bs-body-color);
   background-color: var(--bs-body-bg);
   border: 1px solid var(--bs-border-color);
-  border-left: 0;
+  border-inline-start: 0;
   cursor: pointer;
 
   &.clear {
-    border-left: 0;
-    border-right: 0;
-  }
-
-  &.date {
-    /* Sits between the input and the time trigger. */
+    border-inline-start: 0;
+    border-inline-end: 0;
   }
 
   &.time {
-    border-radius: 0 var(--bs-border-radius, 0.375rem) var(--bs-border-radius, 0.375rem) 0;
+    border-start-end-radius: var(--bs-border-radius, 0.375rem);
+    border-end-end-radius: var(--bs-border-radius, 0.375rem);
   }
 
   &:hover:not(:disabled) {
