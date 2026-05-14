@@ -1,0 +1,133 @@
+<h1 class="text-center">&#64;mintplayer/ng-bootstrap</h1>
+
+<p class="lead text-center">
+  A signal-first, zoneless-ready Angular component library built on Bootstrap 5.3 —
+  from form primitives to a full dock manager, scheduler, and ribbon.
+</p>
+
+<p class="text-center mb-5">
+  <bs-badge [type]="colors.secondary" class="me-2">v{{ version }}</bs-badge>
+  <bs-badge [type]="colors.secondary" class="me-2">Angular 21+</bs-badge>
+  <bs-badge [type]="colors.secondary">Apache-2.0</bs-badge>
+</p>
+
+
+<h2 id="why">Why this library</h2>
+
+<bs-alert [type]="colors.info" class="d-block mb-4">
+  <strong>What sets it apart from vanilla ng-bootstrap or Angular Material:</strong>
+  <ul class="mb-0">
+    <li><strong>Signal-first APIs.</strong> Components expose <code>input()</code> / <code>model()</code> / <code>output()</code> / <code>computed()</code> — no RxJS Subjects on public surfaces.</li>
+    <li><strong>Zoneless-ready.</strong> The demo itself runs on <code>provideZonelessChangeDetection()</code>. Every component uses <code>ChangeDetectionStrategy.OnPush</code>.</li>
+    <li><strong>Standalone-only.</strong> No <code>NgModule</code>s on public exports — bare classes you can drop straight into your <code>imports: [...]</code>.</li>
+    <li><strong>Built on Bootstrap 5.3</strong> with first-class dark-mode and custom-variant support via <code>BsThemeService</code>. See the <a routerLink="/additional-samples/theming">Theming</a> guide.</li>
+    <li><strong>Lit 3 web components under the hood</strong> for the heavy widgets (dock, scheduler, tile-manager, ribbon) — accessible, encapsulated, framework-agnostic at the core.</li>
+    <li><strong>Tree-shakeable subpath imports</strong> like <code>&#64;mintplayer/ng-bootstrap/theming</code> — each component is its own secondary entry point.</li>
+    <li><strong>Per-component styles</strong> instead of one global stylesheet — unused components are dropped at build time and the main bundle stays small.</li>
+    <li><strong>SSR-safe.</strong> The theming service defers <code>DOCUMENT</code> / <code>DestroyRef</code> injection behind <code>isPlatformBrowser</code>; a pre-paint script pattern is documented.</li>
+  </ul>
+</bs-alert>
+
+
+<h2 id="install">Install</h2>
+
+<p>
+  Install the package — npm 7+ pulls in <code>bootstrap</code>,
+  <code>bootstrap-icons</code>, <code>&#64;angular/cdk</code>, <code>lit</code>,
+  and the other peer dependencies automatically:
+</p>
+
+<bs-code-snippet [codeToCopy]="installSnippet" [language]="'bash'"></bs-code-snippet>
+
+<p>
+  Then wire the library's compiled Bootstrap bundle into the
+  <code>styles</code> array of your application's <code>angular.json</code>:
+</p>
+
+<bs-code-snippet [codeToCopy]="angularJsonSnippet" [language]="'json'"></bs-code-snippet>
+
+<p class="mt-3">
+  Alternatively, <code>&#64;forward</code> it from your <code>styles.scss</code>
+  when you want to override Bootstrap's SCSS variables
+  (<code>$primary</code>, <code>$body-bg</code>, …) <em>before</em> the import:
+</p>
+
+<bs-code-snippet [codeToCopy]="styleScssSnippet" [language]="'scss'"></bs-code-snippet>
+
+
+<h2 id="flagships">Flagship components</h2>
+
+<p>
+  Beyond the Bootstrap-shaped basics, the library ships a handful of components
+  that would otherwise be heavy third-party dependencies in their own right.
+</p>
+
+<bs-grid class="mb-4">
+  <div bsRow class="g-3">
+    @for (card of flagshipCards; track card.title) {
+      <div [md]="4">
+        <bs-card class="d-flex flex-column h-100">
+          <bs-card-header>{{ card.title }}</bs-card-header>
+          <div class="p-3 d-flex flex-column flex-grow-1">
+            <p class="small text-muted flex-grow-1">{{ card.pitch }}</p>
+            <a [routerLink]="card.routerLink" class="mt-auto">See the demo &rarr;</a>
+          </div>
+        </bs-card>
+      </div>
+    }
+  </div>
+</bs-grid>
+
+
+<h2 id="quickstart">Quickstart</h2>
+
+<p>
+  A minimal standalone component using the alert, button-type, and theming
+  packages together:
+</p>
+
+<bs-code-snippet [codeToCopy]="quickstartSnippet" [language]="'ts'"></bs-code-snippet>
+
+
+<h2 id="next">Where to next</h2>
+
+<bs-grid>
+  <div bsRow class="g-3">
+    <div [md]="4">
+      <a routerLink="/basic" class="text-decoration-none">
+        <strong>Browse components</strong><br>
+        <small class="text-muted">Alerts, badges, forms, tables, calendars, …</small>
+      </a>
+    </div>
+    <div [md]="4">
+      <a routerLink="/overlays" class="text-decoration-none">
+        <strong>Overlays</strong><br>
+        <small class="text-muted">Modals, tooltips, popovers, context menus, typeahead</small>
+      </a>
+    </div>
+    <div [md]="4">
+      <a routerLink="/advanced" class="text-decoration-none">
+        <strong>Power widgets</strong><br>
+        <small class="text-muted">Scheduler, dock, ribbon, datatables, navigation-lock</small>
+      </a>
+    </div>
+    <div [md]="4">
+      <a routerLink="/additional-samples/theming" class="text-decoration-none">
+        <strong>Theming guide</strong><br>
+        <small class="text-muted">Dark mode, custom variants, SSR, runtime CSS variables</small>
+      </a>
+    </div>
+    <div [md]="4">
+      <a href="https://github.com/MintPlayer/mintplayer-ng-bootstrap" target="_blank" rel="noopener" class="text-decoration-none">
+        <strong>GitHub</strong><br>
+        <small class="text-muted">Source, issues, releases</small>
+      </a>
+    </div>
+    <div [md]="4">
+      <a href="https://www.npmjs.com/package/&#64;mintplayer/ng-bootstrap" target="_blank" rel="noopener" class="text-decoration-none">
+        <strong>npm</strong><br>
+        <small class="text-muted">&#64;mintplayer/ng-bootstrap on npmjs.com</small>
+      </a>
+    </div>
+  </div>
+</bs-grid>
