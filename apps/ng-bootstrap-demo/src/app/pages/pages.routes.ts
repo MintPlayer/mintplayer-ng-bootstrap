@@ -8,4 +8,8 @@ export const ROUTES: Routes = [
   { path: 'advanced', loadChildren: () => import('./advanced/advanced.routes').then(m => m.ROUTES) },
   { path: 'enterprise', loadChildren: () => import('./enterprise/enterprise.routes').then(m => m.ROUTES) },
   { path: 'animations', loadChildren: () => import('./animations/animations.routes').then(m => m.ROUTES) },
+  // Wildcard fallback. Keeps Angular SSR from throwing "Cannot match any routes"
+  // mid-render — a thrown SSR error leaves the response hanging and stalls
+  // Playwright specs on `waitForLoadState('networkidle')`.
+  { path: '**', loadComponent: () => import('./not-found/not-found.component').then(m => m.NotFoundComponent) },
 ];
