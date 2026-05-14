@@ -1,5 +1,8 @@
 <bs-scrollspy style="padding-top:50px">
     <h1 bsScrollspy class="text-center">Scrollspy</h1>
+    <h2 bsScrollspy>Scrollspy inside a modal</h2>
+    <p>Issue <a href="https://github.com/MintPlayer/mintplayer-ng-bootstrap/issues/183" target="_blank">#183</a> &mdash; rendering breaks when the spy is inside a modal.</p>
+    <button [color]="colors.primary" (click)="isModalOpen.set(!isModalOpen())">Open modal</button>
     <h2 bsScrollspy>Some colors</h2>
     <h3 bsScrollspy>Primary</h3>
     <div class="container bg-primary"></div>
@@ -19,3 +22,28 @@
     <h3 bsScrollspy>Dark</h3>
     <div class="container bg-dark"></div>
 </bs-scrollspy>
+
+<bs-modal [(isOpen)]="isModalOpen">
+    <div *bsModal>
+        <bs-scrollspy style="padding-top:50px">
+            <h2>Modal</h2>
+            <h3 bsScrollspy>Primary</h3>
+            <div class="container compact bg-primary"></div>
+            <h3 bsScrollspy>Secondary</h3>
+            <div class="container compact bg-secondary"></div>
+            <h3 bsScrollspy>Success</h3>
+            <div class="container compact bg-success"></div>
+            <h3 bsScrollspy>Danger</h3>
+            <div class="container compact bg-danger"></div>
+            <h2 bsScrollspy>Some more colors</h2>
+            <h3 bsScrollspy>Warning</h3>
+            <div class="container compact bg-warning"></div>
+            <h3 bsScrollspy>Info</h3>
+            <div class="container compact bg-info"></div>
+            <h3 bsScrollspy>Light</h3>
+            <div class="container compact bg-light"></div>
+            <h3 bsScrollspy>Dark</h3>
+            <div class="container compact bg-dark"></div>
+        </bs-scrollspy>
+    </div>
+</bs-modal>

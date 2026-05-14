@@ -39,10 +39,18 @@ $spywidth: 250px;
         height: calc(100vh - 7rem); // This determines how long the stick remains
         overflow-y: auto;
         grid-area: toc;
-        
+
         > ul {
             padding-left: 2rem;
         }
+    }
+
+    // Inside a modal the scroll container is bs-modal-content, not the viewport.
+    // Anchor the sticky toc to that container instead of the page navbar offset.
+    :host-context(bs-modal-content) .spy {
+        top: 0;
+        height: 100%;
+        max-height: 100%;
     }
 }
 
