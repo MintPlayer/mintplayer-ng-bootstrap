@@ -37,9 +37,9 @@ describe('mp-datetime-picker — shell', () => {
     expect(shadow(el).querySelector('button.trigger.time')).not.toBeNull();
   });
 
-  it('date trigger has aria-haspopup="dialog"; time trigger has aria-haspopup="listbox"', () => {
+  it('both triggers have aria-haspopup="dialog" (each popup wraps its own widget)', () => {
     expect(shadow(el).querySelector('button.date')!.getAttribute('aria-haspopup')).toBe('dialog');
-    expect(shadow(el).querySelector('button.time')!.getAttribute('aria-haspopup')).toBe('listbox');
+    expect(shadow(el).querySelector('button.time')!.getAttribute('aria-haspopup')).toBe('dialog');
   });
 
   it('input renders the localized datetime when value is set', async () => {
