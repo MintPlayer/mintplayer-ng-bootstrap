@@ -1,6 +1,6 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { query } from 'lit/decorators.js';
-import { OverlayController } from '@mintplayer/ng-bootstrap/web-components/a11y';
+import { LiveAnnouncerController, OverlayController } from '@mintplayer/ng-bootstrap/web-components/a11y';
 import { MpCalendarElement, type FirstDayOfWeek } from '@mintplayer/ng-bootstrap/calendar';
 import { MpTimeListElement, type Hour12Mode, type TimeStep } from '@mintplayer/ng-bootstrap/timepicker';
 import { styles } from './mp-datetime-picker.element.template';
@@ -134,6 +134,9 @@ export class MpDatetimePickerElement extends LitElement {
     },
   });
 
+  protected readonly liveAnnouncer = new LiveAnnouncerController(this);
+  private lastAnnouncedValue: number | null = null;
+
   override updated(changed: Map<string, unknown>): void {
     super.updated?.(changed);
     if (changed.has('_openPopup')) {
@@ -169,7 +172,28 @@ export class MpDatetimePickerElement extends LitElement {
           composed: true,
         }),
       );
+      this.announceValue();
     }
+  }
+
+  /** Polite live-region announce on value change. Skipped on first render. */
+  private announceValue(): void {
+    const newKey = this.value ? this.value.getTime() : null;
+    if (this.lastAnnouncedValue === null && newKey !== null) {
+      // first explicit change emit OK to announce
+    }
+    if (newKey === this.lastAnnouncedValue) return;
+    this.lastAnnouncedValue = newKey;
+    if (this.value === null) {
+      this.liveAnnouncer.announce(`${this.clearLabel}`);
+      return;
+    }
+    const formatted = this.value.toLocaleString(this.locale ?? undefined, {
+      dateStyle: 'long',
+      timeStyle: 'short',
+      hour12: this.resolvedHour12(),
+    } as Intl.DateTimeFormatOptions);
+    this.liveAnnouncer.announce(`${formatted} selected`);
   }
 
   clear(): void {
@@ -272,6 +296,22 @@ export class MpDatetimePickerElement extends LitElement {
     }
   };
 
+  protected onDateTriggerKeyDown = async (event: KeyboardEvent): Promise<void> => {
+    if (this.disabled) return;
+    if (event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      if (!this.dateOverlay.isOpen) await this.openDate();
+    }
+  };
+
+  protected onTimeTriggerKeyDown = async (event: KeyboardEvent): Promise<void> => {
+    if (this.disabled) return;
+    if (event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      if (!this.timeOverlay.isOpen) await this.openTime();
+    }
+  };
+
   protected onClearClick = (event: MouseEvent): void => {
     if (this.disabled) return;
     event.stopPropagation();
@@ -347,6 +387,7 @@ export class MpDatetimePickerElement extends LitElement {
           aria-label="${this.dateButtonLabel}"
           ?disabled="${this.disabled}"
           @click="${this.onDateTriggerClick}"
+          @keydown="${this.onDateTriggerKeyDown}"
           .innerHTML="${CALENDAR_ICON_SVG}"
         ></button>
         <button
@@ -358,9 +399,11 @@ export class MpDatetimePickerElement extends LitElement {
           aria-label="${this.timeButtonLabel}"
           ?disabled="${this.disabled}"
           @click="${this.onTimeTriggerClick}"
+          @keydown="${this.onTimeTriggerKeyDown}"
           .innerHTML="${CLOCK_ICON_SVG}"
         ></button>
       </div>
+      ${this.liveAnnouncer.template()}
 
       <div class="popup popup-date" id="${this.datePopupId}" role="dialog" aria-label="${this.dateButtonLabel}">
         <slot name="calendar"
