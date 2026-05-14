@@ -50,9 +50,9 @@ export class BsOverlayFocusDirective {
 
     const target = this.initialFocus();
     if (target instanceof HTMLElement) {
-      target.focus();
+      target.focus({ preventScroll: true });
     } else if (target === 'self') {
-      this.elementRef.nativeElement.focus();
+      this.elementRef.nativeElement.focus({ preventScroll: true });
     } else if (target === 'first') {
       this.focusFirstTabbable();
     }
@@ -82,7 +82,7 @@ export class BsOverlayFocusDirective {
         && !node.matches(':disabled')
         && this.interactivityChecker.isFocusable(node, { ignoreVisibility: true })
       ) {
-        node.focus();
+        node.focus({ preventScroll: true });
         return;
       }
       node = walker.nextNode();
@@ -96,7 +96,9 @@ export class BsOverlayFocusDirective {
     this.trap = null;
 
     if (this.returnFocus() && this.restoreTo && typeof document !== 'undefined' && document.contains(this.restoreTo)) {
-      this.restoreTo.focus();
+      // preventScroll so closing an overlay never yanks the page back to the
+      // trigger's position — the user's scroll position is their choice.
+      this.restoreTo.focus({ preventScroll: true });
     }
     this.restoreTo = null;
   }

@@ -110,6 +110,48 @@ test.describe('scrollspy inside a scrollable modal', () => {
     expect(after.windowY).toBe(before.windowY);
   });
 
+  test('opening and closing the modal preserves the page scroll position', async ({ page }) => {
+    await page.goto('/advanced/scrollspy');
+    await page.waitForLoadState('networkidle');
+
+    // Scroll the page down before opening the modal. The trigger button is
+    // now well above the viewport — focus restore on close used to yank the
+    // page back to the trigger, which we want to never happen again.
+    await page.evaluate(() => window.scrollTo({ top: 800, behavior: 'instant' }));
+    await page.waitForFunction(() => window.scrollY === 800);
+
+    // Trigger via DOM rather than playwright's .click() so the framework's
+    // auto-scroll-into-view does not move the page itself before measurement.
+    await page.evaluate(() => {
+      const btn = Array.from(document.querySelectorAll('button')).find((b) => b.textContent?.trim() === 'Open modal');
+      btn?.click();
+    });
+    await expect(page.getByText('Scrollspy in modal', { exact: true })).toBeVisible();
+    await page.waitForFunction(() => {
+      const host = document.querySelector('bs-modal-content');
+      if (!host) return false;
+      const anims = (host as Element & { getAnimations?: (opts?: { subtree?: boolean }) => Animation[] })
+        .getAnimations?.({ subtree: true }) ?? [];
+      return anims.every((a) => a.playState === 'finished' || a.playState === 'idle');
+    });
+
+    const afterOpen = await page.evaluate(() => window.scrollY);
+    expect(afterOpen).toBe(800);
+
+    await page.evaluate(() => {
+      const closeBtn = document.querySelector('bs-modal-content button.btn-close') as HTMLButtonElement | null;
+      closeBtn?.click();
+    });
+    // Wait for the modal to leave (no more bs-modal-content in DOM, or no running animations).
+    await page.waitForFunction(() => {
+      const host = document.querySelector('bs-modal-content .modal');
+      return host === null;
+    });
+
+    const afterClose = await page.evaluate(() => window.scrollY);
+    expect(afterClose).toBe(800);
+  });
+
   test('scrolling modal-body updates the active TOC entry', async ({ page }) => {
     await openScrollspyModal(page);
 
