@@ -1,25 +1,16 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsUcFirstPipe } from '@mintplayer/ng-bootstrap/uc-first';
-import { BsMonthNamePipe } from '@mintplayer/ng-bootstrap/calendar-month';
-import { MockPipe } from 'ng-mocks';
+import { describe, it, expect, beforeEach } from 'vitest';
 
 import { BsCalendarComponent } from './calendar.component';
 
-describe('CalendarComponent', () => {
+describe('BsCalendarComponent', () => {
   let component: BsCalendarComponent;
   let fixture: ComponentFixture<BsCalendarComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [
-        MockPipe(BsUcFirstPipe),
-        MockPipe(BsMonthNamePipe),
-
-        // Unit to test
-        BsCalendarComponent,
-      ],
-    })
-    .compileComponents();
+      imports: [BsCalendarComponent],
+    }).compileComponents();
   });
 
   beforeEach(() => {
@@ -30,5 +21,18 @@ describe('CalendarComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('renders an mp-calendar inside its template', () => {
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.querySelector('mp-calendar')).not.toBeNull();
+  });
+
+  it('forwards selectedDate model into the WC', () => {
+    const target = new Date(2026, 4, 20);
+    component.selectedDate.set(target);
+    fixture.detectChanges();
+    const wc = (fixture.nativeElement as HTMLElement).querySelector('mp-calendar') as HTMLElement & { selectedDate: Date };
+    expect(wc.selectedDate.getDate()).toBe(20);
   });
 });
