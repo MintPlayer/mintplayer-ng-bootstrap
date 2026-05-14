@@ -1,6 +1,5 @@
 import { css, html, LitElement, nothing, type TemplateResult } from 'lit';
-import { property, state } from 'lit/decorators.js';
-import { styleMap } from 'lit/directives/style-map.js';
+import { property } from 'lit/decorators.js';
 import { OverlayController } from '@mintplayer/ng-bootstrap/web-components/overlay';
 
 export interface RibbonGroup {
@@ -115,7 +114,7 @@ export class MpRibbonGroup extends LitElement {
 
     :host([data-resolved-size="popup"]) .ribbon-group { display: none; }
     :host([data-resolved-size="popup"]) .ribbon-popup-trigger { display: flex; }
-    :host([data-resolved-size="popup"][data-popup-open]) .ribbon-group {
+    :host([data-resolved-size="popup"][data-menu-open]) .ribbon-group {
       display: flex;
       position: fixed;
       background: var(--bs-ribbon-tabpanel-bg, #fff);
@@ -212,17 +211,23 @@ export class MpRibbonGroup extends LitElement {
   @property({ type: String, attribute: 'auto-scale' })
   autoScale: 'true' | 'false' = 'true';
 
-  @state()
-  private popupOpen = false;
-
-  @state()
-  private popupLeft = 0;
-
-  @state()
-  private popupTop = 0;
-
-  /** Token held while this group's popup is on the shared overlay stack. */
-  private popupStackToken: symbol | null = null;
+  /**
+   * Scroll-aware overlay for the group's collapsed popup. `stickyOnAnchorOffscreen`
+   * keeps the popup interactive when the user scrolls the ribbon tab strip
+   * past the viewport top — the popup stays pinned at the top edge instead
+   * of disappearing with its trigger.
+   */
+  private readonly overlay = new OverlayController(this, {
+    trigger: () => this.renderRoot.querySelector<HTMLElement>('.ribbon-popup-trigger'),
+    panel: () => this.renderRoot.querySelector<HTMLElement>('.ribbon-group'),
+    stickyOnAnchorOffscreen: true,
+    onOpen: async () => {
+      // Move focus into the popup so keyboard users can reach items.
+      await this.updateComplete;
+      const first = this.collectItems()[0];
+      first?.focus();
+    },
+  });
 
   /**
    * Selector for focusable item hosts inside this group. Matches every kind
@@ -239,7 +244,6 @@ export class MpRibbonGroup extends LitElement {
 
   override connectedCallback() {
     super.connectedCallback();
-    document.addEventListener('keydown', this.onKeyDown);
     this.addEventListener('focusin', this.onFocusIn);
     this.addEventListener('keydown', this.onGroupKeyDown);
     // Light-DOM children may arrive after connectedCallback (Angular renders
@@ -252,16 +256,10 @@ export class MpRibbonGroup extends LitElement {
 
   override disconnectedCallback() {
     super.disconnectedCallback();
-    document.removeEventListener('keydown', this.onKeyDown);
-    document.removeEventListener('mousedown', this.onDocMouseDown, true);
     this.removeEventListener('focusin', this.onFocusIn);
     this.removeEventListener('keydown', this.onGroupKeyDown);
     this.slotObserver?.disconnect();
     this.slotObserver = undefined;
-    if (this.popupStackToken) {
-      OverlayController.releaseFrame(this.popupStackToken);
-      this.popupStackToken = null;
-    }
   }
 
   /**
@@ -364,20 +362,16 @@ export class MpRibbonGroup extends LitElement {
       // If the group expanded back, ensure the popup is closed. Don't return
       // focus to the trigger — it's `display: none` once the group is
       // expanded, so the focus call would fail silently and confuse the user.
-      if (this.popupOpen) this.closePopup(false);
+      if (this.overlay.isOpen) this.overlay.close(false);
     }
   }
 
   override render(): TemplateResult {
-    const popupStyles = this.popupOpen
-      ? { left: `${this.popupLeft}px`, top: `${this.popupTop}px` }
-      : {};
     return html`
       <div
         class="ribbon-group"
         role="toolbar"
         aria-label="${this.label}"
-        style=${styleMap(popupStyles)}
       >
         <div class="ribbon-group-items">
           <slot></slot>
@@ -397,7 +391,7 @@ export class MpRibbonGroup extends LitElement {
       <button
         class="ribbon-popup-trigger"
         aria-haspopup="true"
-        aria-expanded="${this.popupOpen}"
+        aria-expanded="${this.overlay.isOpen}"
         aria-label="${this.label}"
         title="${this.label}"
         @click="${this.onTriggerClick}"
@@ -414,102 +408,18 @@ export class MpRibbonGroup extends LitElement {
     `;
   }
 
-  private onTriggerClick = (event: MouseEvent): void => {
+  private onTriggerClick = async (event: MouseEvent): Promise<void> => {
     event.stopPropagation();
-    if (this.popupOpen) {
-      this.closePopup();
-    } else {
-      this.openPopup();
-    }
+    await this.overlay.toggle();
   };
 
-  private onTriggerKeyDown = (event: KeyboardEvent): void => {
-    // ArrowDown / Alt+ArrowDown open the popup without activating the trigger
-    // (matches `mp-ribbon-dropdown-button`'s trigger and Office's collapsed
-    // group). Enter / Space go through the click handler via native button
-    // semantics, so we don't need to handle them here.
-    if (event.key === 'ArrowDown' && !this.popupOpen) {
+  private onTriggerKeyDown = async (event: KeyboardEvent): Promise<void> => {
+    // ArrowDown opens the popup without activating the trigger (matches
+    // `mp-ribbon-dropdown-button`'s trigger + Office collapsed-group). Enter
+    // and Space go through the click handler via native button semantics.
+    if (event.key === 'ArrowDown' && !this.overlay.isOpen) {
       event.preventDefault();
-      this.openPopup();
-    }
-  };
-
-  private async openPopup(): Promise<void> {
-    this.popupOpen = true;
-    this.popupStackToken = OverlayController.pushFrame();
-    this.setAttribute('data-popup-open', '');
-    await this.updateComplete;
-    this.positionPopup();
-    // Defer so the click that opened the popup doesn't immediately close it.
-    setTimeout(() => {
-      document.addEventListener('mousedown', this.onDocMouseDown, true);
-    }, 0);
-    // Move focus into the popup so keyboard users can reach the items inside
-    // — Office-faithful and matches the APG "disclosure / menu" pattern. The
-    // popup's items use delegatesFocus on their host so .focus() forwards into
-    // the inner shadow-root button.
-    const first = this.collectItems()[0];
-    first?.focus();
-  }
-
-  private closePopup(returnFocus = true): void {
-    if (!this.popupOpen) return;
-    this.popupOpen = false;
-    if (this.popupStackToken) {
-      OverlayController.releaseFrame(this.popupStackToken);
-      this.popupStackToken = null;
-    }
-    this.removeAttribute('data-popup-open');
-    document.removeEventListener('mousedown', this.onDocMouseDown, true);
-    if (returnFocus) {
-      const trigger = this.renderRoot.querySelector<HTMLElement>(
-        '.ribbon-popup-trigger'
-      );
-      trigger?.focus();
-    }
-  }
-
-  private positionPopup(): void {
-    const trigger = this.renderRoot.querySelector<HTMLElement>(
-      '.ribbon-popup-trigger'
-    );
-    const group = this.renderRoot.querySelector<HTMLElement>('.ribbon-group');
-    if (!trigger || !group) return;
-
-    const triggerRect = trigger.getBoundingClientRect();
-    const groupRect = group.getBoundingClientRect();
-    const vw = window.innerWidth;
-    const margin = 8;
-
-    let left = triggerRect.left;
-    if (left + groupRect.width > vw - margin) {
-      left = vw - groupRect.width - margin;
-    }
-    if (left < margin) left = margin;
-
-    const top = triggerRect.bottom + 4;
-
-    this.popupLeft = left;
-    this.popupTop = top;
-  }
-
-  private onDocMouseDown = (event: MouseEvent): void => {
-    const path = event.composedPath();
-    if (path.includes(this)) return;
-    // User clicked outside — leave focus wherever the click landed, don't
-    // yank it back to the trigger.
-    this.closePopup(false);
-  };
-
-  private onKeyDown = (event: KeyboardEvent): void => {
-    if (
-      event.key === 'Escape' &&
-      this.popupOpen &&
-      this.popupStackToken !== null &&
-      OverlayController.isFrameTop(this.popupStackToken)
-    ) {
-      this.closePopup();
-      event.preventDefault();
+      await this.overlay.open();
     }
   };
 

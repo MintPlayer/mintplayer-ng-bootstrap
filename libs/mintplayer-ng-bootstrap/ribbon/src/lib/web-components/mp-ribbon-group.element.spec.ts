@@ -133,16 +133,19 @@ describe('mp-ribbon-group — popup overlay (FR-7)', () => {
     const trigger = group.shadowRoot!.querySelector<HTMLElement>('.ribbon-popup-trigger')!;
     trigger.click();
     await (group as unknown as { updateComplete: Promise<void> }).updateComplete;
-    expect(group.getAttribute('data-popup-open')).toBe('');
+    // OverlayController sets `data-menu-open` (the shared overlay attribute);
+    // the ribbon-group SCSS uses this to switch the .ribbon-group into its
+    // fixed-position popup form.
+    expect(group.getAttribute('data-menu-open')).toBe('');
     expect(trigger.getAttribute('aria-expanded')).toBe('true');
   });
 
-  it('Esc on an open popup closes it and removes the data-popup-open marker', async () => {
+  it('Esc on an open popup closes it and removes the data-menu-open marker', async () => {
     const trigger = group.shadowRoot!.querySelector<HTMLElement>('.ribbon-popup-trigger')!;
     trigger.click();
     await (group as unknown as { updateComplete: Promise<void> }).updateComplete;
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     await (group as unknown as { updateComplete: Promise<void> }).updateComplete;
-    expect(group.hasAttribute('data-popup-open')).toBe(false);
+    expect(group.hasAttribute('data-menu-open')).toBe(false);
   });
 });
