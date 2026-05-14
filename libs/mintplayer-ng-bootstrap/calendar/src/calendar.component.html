@@ -1,7 +1,7 @@
 <table class="table w-auto mb-0" role="grid" [attr.aria-labelledby]="monthLabelId">
     <tr>
         <td>
-            <button type="button" class="btn btn-light" (click)="previousMonth()" aria-label="Previous month">
+            <button type="button" class="btn bg-transparent border-0" (click)="previousMonth()" aria-label="Previous month">
                 <span [innerHTML]="chevronLeft()" class="fw-bolder" aria-hidden="true"></span>
             </button>
         </td>
@@ -10,7 +10,7 @@
             {{ currentMonth().getFullYear() }}
         </td>
         <td>
-            <button type="button" class="btn btn-light" (click)="nextMonth()" aria-label="Next month">
+            <button type="button" class="btn bg-transparent border-0" (click)="nextMonth()" aria-label="Next month">
                 <span [innerHTML]="chevronRight()" class="fw-bolder" aria-hidden="true"></span>
             </button>
         </td>

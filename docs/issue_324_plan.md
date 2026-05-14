@@ -9,7 +9,7 @@
 
 The library does not currently ship a recommended way to switch Bootstrap's color mode at runtime, and the demo has no consumer-facing documentation for customizing colors. This work delivers three things together:
 
-1. A new library subentry `@mintplayer/ng-bootstrap/theme` exposing `BsThemeService` — a tiny signal-first service that owns the user's mode (`'auto' | 'light' | 'dark' | string`), resolves `auto` via `prefers-color-scheme`, writes `data-bs-theme` on `<html>`, persists to localStorage, and live-updates when the OS-level preference changes.
+1. A new library subentry `@mintplayer/ng-bootstrap/theming` exposing `BsThemeService` — a tiny signal-first service that owns the user's mode (`'auto' | 'light' | 'dark' | string`), resolves `auto` via `prefers-color-scheme`, writes `data-bs-theme` on `<html>`, persists to localStorage, and live-updates when the OS-level preference changes.
 2. A demo-side cycling icon button in the right-side navbar that calls `setMode()`, plus a navbar `[color]` binding that adapts to `effectiveMode()`.
 3. A new doc page `/additional-samples/theming` that walks the consumer through build-time SCSS customization, runtime CSS-variable customization, the 3-state toggle recipe, SSR/no-flash integration via an inline pre-boot `<script>`, and custom `data-bs-theme="…"` variants (sepia / high-contrast / brand).
 
@@ -42,7 +42,7 @@ The runtime switch mechanism is Bootstrap-native (`data-bs-theme` selector), not
 ## Technical Analysis
 
 ### Files to Add
-- `libs/mintplayer-ng-bootstrap/theme/` *(new subentry)*
+- `libs/mintplayer-ng-bootstrap/theming/` *(new subentry)*
   - `ng-package.js` — generated stub matching the `navigation-lock` pattern: `module.exports = require('../ng-package.secondary.cjs').secondaryEntry();`
   - `src/index.ts` — public exports
   - `src/lib/service/bs-theme.service.ts` — `BsThemeService`
@@ -61,7 +61,7 @@ The runtime switch mechanism is Bootstrap-native (`data-bs-theme` selector), not
 - `apps/ng-bootstrap-demo/src/app/pages/additional-samples/additional-samples.routes.ts` — add `{ path: 'theming', loadComponent: () => import('./theming/theming.component').then(m => m.ThemingComponent) }`.
 - `apps/ng-bootstrap-demo/src/app/app.component.html` (navbar-dropdown for `/additional-samples`) — add `<bs-navbar-item><a [routerLink]='["/additional-samples", "theming"]'>Theming</a></bs-navbar-item>`, alphabetically placed before/after the existing items per the dropdown's current ordering convention (which is mostly insertion order, not strict alphabetical — placement reviewed during implementation).
 - `libs/mintplayer-ng-bootstrap/package.json` — register the new subentry exports if explicit (most subentries are discovered by ng-packagr's `ng-package.js` walker; verify pattern matches `navigation-lock`).
-- `tsconfig.base.json` — add path mapping `@mintplayer/ng-bootstrap/theme` if other subentries are mapped there.
+- `tsconfig.base.json` — add path mapping `@mintplayer/ng-bootstrap/theming` if other subentries are mapped there.
 
 ### Dependencies
 - None new. Uses only `@angular/core` (signal, computed, inject, effect, Injectable), `@angular/common` (DOCUMENT injection token for SSR-safe document access), and the browser-native `matchMedia` / `localStorage`.
@@ -79,7 +79,7 @@ The runtime switch mechanism is Bootstrap-native (`data-bs-theme` selector), not
 ## Implementation Plan
 
 ### Phase 1: Library — `BsThemeService` + subentry skeleton
-1. Scaffold `libs/mintplayer-ng-bootstrap/theme/` matching the `navigation-lock` subentry layout (`ng-package.js`, `src/index.ts`, `src/lib/...`).
+1. Scaffold `libs/mintplayer-ng-bootstrap/theming/` matching the `navigation-lock` subentry layout (`ng-package.js`, `src/index.ts`, `src/lib/...`).
 2. Add `bs-theme-mode.ts` exporting:
    - `export type BsThemeMode = 'auto' | 'light' | 'dark' | (string & {});`
    - `export type BsEffectiveThemeMode = 'light' | 'dark' | (string & {});`
@@ -167,7 +167,7 @@ Page should use the demo's existing code-snippet component (`bs-code-snippet` pe
    Per the project's e2e convention, use `waitForLoadState('networkidle')` after each `goto`.
 
 ### Phase 6: Polish
-1. CHANGELOG entry under `[Unreleased] / Added`: "Theme service + dark-mode toggle in demo (`@mintplayer/ng-bootstrap/theme`)".
+1. CHANGELOG entry under `[Unreleased] / Added`: "Theme service + dark-mode toggle in demo (`@mintplayer/ng-bootstrap/theming`)".
 2. PR description includes before/after screenshots (light and dark navbar in the demo).
 3. Visual spot-check of every existing demo page in both modes — log any components that look broken in light or dark, decide per-component whether to fix-in-PR or file a follow-up.
 
@@ -209,7 +209,7 @@ Page should use the demo's existing code-snippet component (`bs-code-snippet` pe
 
 ## Acceptance Criteria
 
-- [ ] `@mintplayer/ng-bootstrap/theme` subentry builds and exports `BsThemeService`, `BsThemeMode`, `BsEffectiveThemeMode`, `BS_THEME_STORAGE_KEY`.
+- [ ] `@mintplayer/ng-bootstrap/theming` subentry builds and exports `BsThemeService`, `BsThemeMode`, `BsEffectiveThemeMode`, `BS_THEME_STORAGE_KEY`.
 - [ ] `BsThemeService.setMode('dark')` writes `data-bs-theme="dark"` on `<html>` synchronously and persists `bs-theme-mode=dark` in localStorage.
 - [ ] `BsThemeService.effectiveMode()` resolves `'auto'` via `matchMedia('(prefers-color-scheme: dark)')` and updates live on system-preference changes.
 - [ ] Demo navbar shows a cycling icon button next to the GitHub link that cycles `auto → light → dark → auto`. Icon and `aria-label` reflect current mode.

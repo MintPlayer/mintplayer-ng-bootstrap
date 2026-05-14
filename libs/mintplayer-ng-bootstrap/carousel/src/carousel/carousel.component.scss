@@ -87,6 +87,11 @@
     }
 
     .carousel-play-pause-btn {
+        // Carousel chrome (controls + indicators) intentionally renders as
+        // a translucent dark overlay on top of slide imagery, regardless of
+        // page theme — same approach Bootstrap uses for `.carousel-control-*`.
+        // Slide content sits behind, so theme-aware fg/bg would either disappear
+        // into a light slide or wash out over a dark one. Keep these fixed.
         display: inline-flex;
         align-items: center;
         justify-content: center;

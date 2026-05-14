@@ -9,5 +9,6 @@ export const ROUTES: Routes = [
   { path: 'qr-code', loadComponent: () => import('./qr-code/qr-code.component').then(m => m.QrCodeComponent) },
   { path: 'swiper', loadComponent: () => import('./swiper/swiper.component').then(m => m.SwiperComponent) },
   { path: 'stepper', loadComponent: () => import('./stepper/stepper.component').then(m => m.StepperComponent) },
-  { path: 'anchor-scrolling', loadComponent: () => import('./anchor-scrolling/anchor-scrolling.component').then(m => m.AnchorScrollingComponent) }
+  { path: 'anchor-scrolling', loadComponent: () => import('./anchor-scrolling/anchor-scrolling.component').then(m => m.AnchorScrollingComponent) },
+  { path: 'theming', loadComponent: () => import('./theming/theming.component').then(m => m.ThemingComponent) }
 ];

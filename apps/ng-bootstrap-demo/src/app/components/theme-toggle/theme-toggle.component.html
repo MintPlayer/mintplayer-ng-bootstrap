@@ -1,0 +1,9 @@
+<button
+  type="button"
+  class="nav-link border-0 bg-transparent d-inline-flex align-items-center"
+  [attr.aria-label]="ariaLabel()"
+  [title]="ariaLabel()"
+  (click)="cycle()"
+>
+  <span class="theme-toggle-icon" [innerHTML]="currentIcon()"></span>
+</button>

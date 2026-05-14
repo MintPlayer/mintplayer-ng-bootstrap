@@ -6,6 +6,27 @@
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <script>
+      // Pre-boot: apply the persisted (or system-resolved) data-bs-theme before
+      // any stylesheet evaluates, preventing a light-mode flash for dark-mode
+      // users on reload. The storage key MUST stay in sync with
+      // BS_THEME_STORAGE_KEY in @mintplayer/ng-bootstrap/theming. See
+      // /additional-samples/theming for the recipe.
+      (function () {
+        try {
+          var m = localStorage.getItem('bs-theme-mode') || 'auto';
+          var r =
+            m === 'auto'
+              ? matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light'
+              : m;
+          document.documentElement.setAttribute('data-bs-theme', r);
+        } catch (_) {
+          /* localStorage / matchMedia unavailable — leave attribute unset */
+        }
+      })();
+    </script>
   </head>
   <body>
     <demo-bootstrap-root></demo-bootstrap-root>

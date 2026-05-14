@@ -1,4 +1,4 @@
-<bs-navbar [color]="colors.dark" [breakpoint]="'lg'" #nav>
+<bs-navbar [color]="'body-tertiary'" [breakpoint]="'lg'" #nav>
   <bs-navbar-toggler *bsExpandButton="let state" [state]="state" [toggleOnClick]="false"></bs-navbar-toggler>
   <bs-navbar-brand>
     <a [routerLink]='["/"]'>
@@ -318,6 +318,9 @@
           <a [routerLink]='["/additional-samples", "stepper"]'>Stepper</a>
         </bs-navbar-item>
         <bs-navbar-item>
+          <a [routerLink]='["/additional-samples", "theming"]'>Theming</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
           <a bsNavbarTrigger="/additional-samples/anchor-scrolling">Anchor scrolling</a>
           <bs-navbar-dropdown>
             <bs-navbar-item>
@@ -342,9 +345,12 @@
   </bs-navbar-nav>
   <bs-navbar-nav class="me-0">
     <bs-navbar-item>
-      <a class="text-nowrap" href="https://github.com/MintPlayer/mintplayer-ng-bootstrap" title="@mintplayer/ng-bootstrap on GitHub">
+      <demo-theme-toggle />
+    </bs-navbar-item>
+    <bs-navbar-item>
+      <a class="text-nowrap d-inline-flex align-items-center" href="https://github.com/MintPlayer/mintplayer-ng-bootstrap" title="@mintplayer/ng-bootstrap on GitHub">
         <span class="me-2 align-middle">{{ versionInfo }}</span>
-        <img src="/assets/github.svg" alt="@mintplayer/ng-bootstrap on GitHub">
+        <span class="github-icon" aria-hidden="true" [innerHTML]="githubIcon()"></span>
       </a>
     </bs-navbar-item>
   </bs-navbar-nav>

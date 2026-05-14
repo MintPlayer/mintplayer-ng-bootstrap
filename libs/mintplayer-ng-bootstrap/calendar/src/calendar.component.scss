@@ -1,18 +1,15 @@
-@import "node_modules/bootstrap/scss/functions";
-@import "node_modules/bootstrap/scss/variables";
-@import "node_modules/bootstrap/scss/variables-dark";
-
 .text-muted {
-    color: #9ea7af !important;
+    color: var(--bs-secondary-color) !important;
 }
 
 $cell-size: 40px;
 
 table {
     border-collapse: collapse;
-    border: 1px solid $list-group-border-color;
-    background: $white;
-    
+    border: 1px solid var(--bs-border-color);
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+
     td, th {
         width: $cell-size;
         height: $cell-size;
@@ -25,8 +22,8 @@ table {
     }
 
     td.selected {
-        background-color: $primary;
-        color: $white;
+        background-color: var(--bs-primary);
+        color: #fff;
     }
 
     td:focus {
@@ -34,12 +31,12 @@ table {
     }
 
     td:focus-visible {
-        outline: 2px solid $primary;
+        outline: 2px solid var(--bs-primary);
         outline-offset: -2px;
     }
 
     th {
-        background-color: $light;
+        background-color: var(--bs-tertiary-bg);
     }
 
     tr {
@@ -47,14 +44,14 @@ table {
     }
 
     tr:first-child > td {
-        border-bottom: 1px solid $list-group-border-color;
+        border-bottom: 1px solid var(--bs-border-color);
     }
 
     tr:nth-of-type(2) > th:not(:nth-of-type(1)) {
-        border-bottom: 1px solid $list-group-border-color;
+        border-bottom: 1px solid var(--bs-border-color);
     }
 
     tr:not(:nth-of-type(2)) > th:nth-of-type(1) {
-        border-right: 1px solid $list-group-border-color;
+        border-right: 1px solid var(--bs-border-color);
     }
 }

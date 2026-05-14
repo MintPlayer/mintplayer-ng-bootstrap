@@ -19,11 +19,11 @@ input[type=number] {
     transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
     
     &.focus {
-        color: #495057;
-        background-color: #fff;
-        border-color: #80bdff !important;
+        color: var(--bs-body-color);
+        background-color: var(--bs-body-bg);
+        border-color: var(--bs-primary) !important;
         outline: 0;
-        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
     }
 }
 

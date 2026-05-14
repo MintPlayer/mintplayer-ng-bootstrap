@@ -1,0 +1,17 @@
+:host {
+  display: inline-flex;
+  align-items: center;
+}
+
+.theme-toggle-icon {
+  display: inline-flex;
+  width: 1.5rem;
+  height: 1.5rem;
+
+  // bootstrap-icons SVGs ship without explicit fill, so they inherit currentColor.
+  ::ng-deep svg {
+    width: 100%;
+    height: 100%;
+    fill: currentColor;
+  }
+}

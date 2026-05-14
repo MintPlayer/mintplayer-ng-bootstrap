@@ -175,6 +175,31 @@ describe('BsNavigationLockService', () => {
       await service.requestExit();
       expect(spy).toHaveBeenCalledTimes(2);
     });
+
+    // Regression: the first canMatch firing happens before any
+    // `[bsNavigationLock]` directive has constructed and registered itself,
+    // so `locks` is empty. A previous implementation set `pending` via
+    // `this.pending = this.doRequestExit(reason)`, but `doRequestExit`'s
+    // `try { ... } finally { this.pending = null }` ran to completion
+    // synchronously when locks was empty — BEFORE the outer assignment line
+    // executed. The outer assignment then re-set pending to the resolved
+    // Promise, and every subsequent navigation short-circuited on the truthy
+    // cache without consulting locks. This test ensures that path doesn't
+    // poison pending again: after a sync-completing requestExit with no
+    // locks, the next call MUST consult any locks registered in between.
+    it('consults locks on next call after a sync-empty-locks request resolved', async () => {
+      // 1st call: no locks → doRequestExit's body is fully synchronous.
+      await service.requestExit();
+
+      // Register a lock that would reject exit.
+      const spy = vi.fn(() => false);
+      service.register(makeHandle({ requestCanExit: spy }));
+
+      // 2nd call MUST consult the lock and return its result.
+      const result = await service.requestExit();
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(result).toBe(false);
+    });
   });
 
   describe('SSR (server platform)', () => {

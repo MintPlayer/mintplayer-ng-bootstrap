@@ -16,7 +16,7 @@
     .noscript > input[type="radio"]:checked,
     .noscript > input[type="checkbox"]:checked {
         + bs-accordion-tab-header > h2 > label {
-            background-color: #e7f1ff;
+            background-color: var(--bs-primary-bg-subtle);
 
             &::after {
                 transform: var(--bs-accordion-btn-icon-transform);

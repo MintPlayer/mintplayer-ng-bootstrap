@@ -1,27 +1,33 @@
 import { inject } from '@angular/core';
-import { CanMatchFn } from '@angular/router';
+import { CanActivateFn } from '@angular/router';
 import { BsNavigationLockService } from '../service/navigation-lock.service';
 
 /**
- * Functional `canMatch` guard the consumer registers ONCE at the root route:
+ * Functional `canActivate` guard the consumer registers ONCE at the root
+ * route (paired with `runGuardsAndResolvers: 'always'` so it re-fires on
+ * every navigation, not just the first one):
  *
  * ```ts
- * { path: '', canMatch: [bsNavigationLockGuard], children: [...] }
+ * {
+ *   path: '',
+ *   canActivate: [bsNavigationLockGuard],
+ *   runGuardsAndResolvers: 'always',
+ *   children: [...],
+ * }
  * ```
  *
- * `canMatch` is the right Angular guard for "should this navigation be allowed
- * to start": it runs once per route-match attempt, regardless of how deeply
- * nested the destination is. (`canActivateChild` would fire once per descendant
- * activation — N prompts for an N-deep destination.)
- *
- * Note: when `canMatch` returns false the router treats the route as not
- * matching; if a sibling route or wildcard fallback matches the destination URL,
- * the user lands there instead of staying put. Most apps don't have a `**`
- * redirect that conflicts; if yours does, additionally guard the wildcard.
+ * Why `canActivate` and not `canMatch`: `canMatch` excludes the route from
+ * URL matching when it returns false. If your config has only one top-level
+ * route, returning false from `canMatch` leaves the router with nothing to
+ * navigate to — the URL still updates (the cancellation isn't propagated
+ * back through History API) and the user lands on a blank page. `canActivate`
+ * is Angular's "block this navigation" hook — returning false cancels the
+ * navigation cleanly and (with `canceledNavigationResolution: 'computed'`)
+ * restores the URL.
  *
  * Programmatic call sites that need a `reason` argument should call
  * `BsNavigationLockService.requestExit(reason)` directly.
  */
-export const bsNavigationLockGuard: CanMatchFn = () => {
+export const bsNavigationLockGuard: CanActivateFn = () => {
   return inject(BsNavigationLockService).requestExit();
 };

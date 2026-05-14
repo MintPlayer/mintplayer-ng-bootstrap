@@ -5,8 +5,8 @@
 
   --mp-splitter-size: 8px;
   --mp-splitter-thumb-margin: 3px;
-  --mp-splitter-divider-color: #eee;
-  --mp-splitter-divider-hover-color: #1389fd;
+  --mp-splitter-divider-color: var(--bs-border-color, #eee);
+  --mp-splitter-divider-hover-color: var(--bs-primary, #1389fd);
 }
 
 :host([touch-mode]) {

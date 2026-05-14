@@ -1,5 +1,5 @@
 <bs-container>
-    <nav #nav class="navbar position-fixed" [class]="navClassList()" bsUserAgent bsNoNoscript [attr.aria-label]="ariaLabel()">
+    <nav #nav class="navbar position-fixed" [class]="navClassList()" [attr.data-bs-theme]="dataBsTheme()" bsUserAgent bsNoNoscript [attr.aria-label]="ariaLabel()">
         <div class="container-fluid nav-wrapper">
             <div class="d-flex w-100" [class]="wAutoClass()">
                 <ng-content select="bs-navbar-brand"></ng-content>
