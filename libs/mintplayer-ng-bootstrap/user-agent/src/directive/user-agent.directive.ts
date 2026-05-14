@@ -60,6 +60,12 @@ export class BsUserAgentDirective implements AfterViewInit {
   }
 
   ngAfterViewInit() {
+    // UA detection is meaningless on the server (no `navigator`), and the
+    // setTimeout-then-emit pattern races prerender teardown — the macrotask
+    // can fire after Angular destroys the application, hitting NG0953 on
+    // every prerendered route.
+    if (isPlatformServer(this.platformId)) return;
+
     const handle = setTimeout(() => {
       let os: BsOperatingSystem | undefined;
       let webbrowser = this.getBrowser();
