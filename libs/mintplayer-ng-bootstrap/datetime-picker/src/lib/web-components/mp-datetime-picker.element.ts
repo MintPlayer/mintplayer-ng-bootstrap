@@ -101,11 +101,16 @@ export class MpDatetimePickerElement extends LitElement {
   @query('.popup-time')
   protected timePopupEl?: HTMLElement;
 
+  // _openPopup is set eagerly in openDate()/openTime() — BEFORE the controller's
+  // open() runs — so by the time the controller measures the panel rect inside
+  // position(), the popup is already display: block. The controller's onOpen
+  // callback only dispatches the event; closing is what reverts _openPopup back
+  // to null since close() can be triggered by Esc / outside-click too.
+
   protected readonly dateOverlay = new OverlayController(this, {
     trigger: () => this.dateTriggerEl ?? null,
     panel: () => this.datePopupEl ?? null,
     onOpen: () => {
-      this._openPopup = 'date';
       this.dispatchEvent(
         new CustomEvent<'date'>('opened', { detail: 'date', bubbles: true, composed: true }),
       );
@@ -122,7 +127,6 @@ export class MpDatetimePickerElement extends LitElement {
     trigger: () => this.timeTriggerEl ?? null,
     panel: () => this.timePopupEl ?? null,
     onOpen: () => {
-      this._openPopup = 'time';
       this.dispatchEvent(
         new CustomEvent<'time'>('opened', { detail: 'time', bubbles: true, composed: true }),
       );
@@ -209,12 +213,19 @@ export class MpDatetimePickerElement extends LitElement {
   async openDate(): Promise<void> {
     if (this.disabled) return;
     if (this.timeOverlay.isOpen) this.timeOverlay.close(false);
+    // Set _openPopup BEFORE the controller's open() so the SCSS rule
+    // `:host([data-open="date"]) .popup-date { display: block }` is already
+    // active when position() measures the panel rect inside open(). Without
+    // this, the panel is `display: none` at measurement time, the rect has
+    // zero height, and the position-pair algorithm picks the wrong candidate.
+    this._openPopup = 'date';
     await this.dateOverlay.open();
   }
 
   async openTime(): Promise<void> {
     if (this.disabled) return;
     if (this.dateOverlay.isOpen) this.dateOverlay.close(false);
+    this._openPopup = 'time';
     await this.timeOverlay.open();
   }
 
