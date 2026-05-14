@@ -4,6 +4,7 @@
     "nrwl.angular-console",
     "esbenp.prettier-vscode",
     "vitest.explorer",
+    "ms-playwright.playwright",
     "dbaeumer.vscode-eslint",
     "somewhatstationery.some-sass"
   ]
