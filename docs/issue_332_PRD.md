@@ -2,7 +2,7 @@
 
 **Issue**: #332
 **Title**: DateTime Picker
-**Status**: Draft v2 — scope expanded to include Lit port of `bs-calendar` / `bs-datepicker` / `bs-timepicker`
+**Status**: Implemented — all 12 milestones landed on branch `issues/#332`. Foundation ports (mp-calendar / mp-time-list / mp-datepicker / mp-timepicker) + new mp-datetime-picker WC + `bs-datetime-picker` Angular wrapper + CVA on all four pickers + a11y polish + demo page + Playwright/axe specs shipped. Library builds clean; 901 unit tests pass; e2e specs await dev-server execution.
 **Created**: 2026-05-14
 **Last Updated**: 2026-05-14
 
