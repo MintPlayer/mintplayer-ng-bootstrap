@@ -88,7 +88,9 @@ export class BsScrollspyComponent implements AfterViewInit, AfterContentInit {
         const index = this.directives().findIndex((v) => v === this.activeDirective());
         const anchor = this.anchors()[index];
         if (anchor && anchor.nativeElement.parentElement) {
-          anchor.nativeElement.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+          // Optional-chain so jsdom (no scrollIntoView impl) does not crash
+          // when the effect calls this synchronously during component init.
+          anchor.nativeElement.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
         }
       }
     }
@@ -102,9 +104,11 @@ export class BsScrollspyComponent implements AfterViewInit, AfterContentInit {
     const header = directive.element.nativeElement;
     const headerTop = header.getBoundingClientRect().top;
 
-    if (target instanceof Window) {
+    // Identity check instead of `instanceof Window` — jsdom puts Window in a
+    // different realm so the instanceof check is unreliable in unit tests.
+    if (target === window) {
       const offsetY = this.scrollOffsetService.getScrollOffset()[1];
-      target.scrollTo({ top: headerTop + window.scrollY - offsetY + 1, behavior: 'smooth' });
+      window.scrollTo({ top: headerTop + window.scrollY - offsetY + 1, behavior: 'smooth' });
     } else {
       const containerTop = target.getBoundingClientRect().top;
       target.scrollTo({ top: headerTop - containerTop + target.scrollTop + 1, behavior: 'smooth' });
@@ -113,18 +117,26 @@ export class BsScrollspyComponent implements AfterViewInit, AfterContentInit {
 
   private getTriggerY(): number {
     const target = this.resolvedScrollTarget();
-    if (!target || target instanceof Window) {
-      return this.scrollOffsetService.getScrollOffset()[1];
+    // +1 in both branches so a directive landing exactly on the trigger line
+    // (e.g. right after scrollToHeader completes) is counted as "above" it,
+    // matching the +1 that scrollToHeader adds when computing the scroll target.
+    if (!target || target === window) {
+      return this.scrollOffsetService.getScrollOffset()[1] + 1;
     }
     return target.getBoundingClientRect().top + 1;
   }
 
   private findScrollableAncestor(start: HTMLElement): HTMLElement | null {
-    let el: HTMLElement | null = start.parentElement;
+    // Walk the element + its ancestors. The host itself participates so a
+    // consumer can opt in by setting overflow-y: auto on <bs-scrollspy>.
+    // We rely only on the declared overflow style (no scrollHeight check) —
+    // a container declared overflow: auto is the consumer's intended scroll
+    // target whether or not the content currently exceeds the box.
+    let el: HTMLElement | null = start;
     while (el) {
       const style = getComputedStyle(el);
       const overflowY = style.overflowY;
-      if ((overflowY === 'auto' || overflowY === 'scroll') && el.scrollHeight > el.clientHeight) {
+      if (overflowY === 'auto' || overflowY === 'scroll') {
         return el;
       }
       el = el.parentElement;
