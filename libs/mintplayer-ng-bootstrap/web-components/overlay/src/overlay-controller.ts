@@ -198,6 +198,12 @@ export class OverlayController implements ReactiveController {
    *
    * `start`/`end` are direction-aware: in RTL contexts they swap to match
    * visual layout.
+   *
+   * Sticky-offscreen behaviour: when `stickyOnAnchorOffscreen` is true and the
+   * anchor's bounding rect is entirely outside the viewport, the panel is
+   * pinned to its last in-viewport position (clamped to viewport edges) rather
+   * than disappearing with the anchor. Normal positioning resumes when the
+   * anchor re-enters the viewport.
    */
   position(): void {
     const anchor = this.resolveAnchor();
@@ -205,12 +211,24 @@ export class OverlayController implements ReactiveController {
     if (!anchor || !panel) return;
     this.activeAnchor = anchor;
 
-    const positions = this.options.positions ?? DEFAULT_POSITIONS;
     const margin = this.options.viewportMargin ?? 8;
     const triggerRect = anchor.getBoundingClientRect();
     const panelRect = panel.getBoundingClientRect();
     const vw = window.innerWidth;
     const vh = window.innerHeight;
+
+    if (this.options.stickyOnAnchorOffscreen && this.isAnchorOffscreen(triggerRect, vw, vh)) {
+      // Don't re-track the anchor; just keep the panel clamped to viewport
+      // using its current position.
+      const currentLeft = parseFloat(panel.style.left) || panelRect.left;
+      const currentTop = parseFloat(panel.style.top) || panelRect.top;
+      const clamped = this.clampToViewport({ left: currentLeft, top: currentTop }, panelRect, vw, vh, margin);
+      panel.style.left = `${clamped.left}px`;
+      panel.style.top = `${clamped.top}px`;
+      return;
+    }
+
+    const positions = this.options.positions ?? DEFAULT_POSITIONS;
     const rtl = this.isRtl();
 
     let chosen: { left: number; top: number } | null = null;
@@ -233,6 +251,11 @@ export class OverlayController implements ReactiveController {
     const clamped = this.clampToViewport(chosen, panelRect, vw, vh, margin);
     panel.style.left = `${clamped.left}px`;
     panel.style.top = `${clamped.top}px`;
+  }
+
+  /** True when the anchor's bounding rect lies entirely outside the viewport. */
+  private isAnchorOffscreen(rect: DOMRect, vw: number, vh: number): boolean {
+    return rect.right < 0 || rect.bottom < 0 || rect.left > vw || rect.top > vh;
   }
 
   private isRtl(): boolean {

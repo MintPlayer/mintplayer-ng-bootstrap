@@ -409,3 +409,126 @@ describe('OverlayController — scroll strategies', () => {
     expect(panel.style.top).toBe(beforeTop);
   });
 });
+
+describe('OverlayController — sticky on anchor offscreen', () => {
+  function makeHost(): HTMLElement & {
+    addController: () => void;
+    requestUpdate: () => void;
+    updateComplete: Promise<void>;
+  } {
+    const el = document.createElement('div') as HTMLElement & {
+      addController: () => void;
+      requestUpdate: () => void;
+      updateComplete: Promise<void>;
+    };
+    el.addController = () => {};
+    el.requestUpdate = () => {};
+    el.updateComplete = Promise.resolve();
+    return el;
+  }
+
+  function stubRect(el: HTMLElement, rect: { left: number; top: number; width: number; height: number }): void {
+    el.getBoundingClientRect = () => ({
+      left: rect.left, top: rect.top,
+      right: rect.left + rect.width, bottom: rect.top + rect.height,
+      width: rect.width, height: rect.height,
+      x: rect.left, y: rect.top, toJSON: () => ({}),
+    });
+  }
+
+  function nextRaf(): Promise<void> {
+    return new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+  }
+
+  let host: ReturnType<typeof makeHost>;
+  let anchor: HTMLElement;
+  let panel: HTMLElement;
+
+  beforeEach(() => {
+    host = makeHost();
+    anchor = document.createElement('button');
+    panel = document.createElement('div');
+    document.body.appendChild(host);
+    document.body.appendChild(anchor);
+    document.body.appendChild(panel);
+    stubRect(anchor, { left: 100, top: 100, width: 80, height: 32 });
+    stubRect(panel, { left: 0, top: 0, width: 200, height: 100 });
+    Object.defineProperty(window, 'innerWidth', { value: 1024, writable: true, configurable: true });
+    Object.defineProperty(window, 'innerHeight', { value: 768, writable: true, configurable: true });
+  });
+
+  afterEach(() => {
+    host.remove();
+    anchor.remove();
+    panel.remove();
+  });
+
+  it('without sticky: panel follows anchor offscreen', async () => {
+    const controller = new OverlayController(host, {
+      trigger: () => anchor,
+      panel: () => panel,
+    });
+    await controller.open();
+    expect(panel.style.top).toBe('132px');
+    // Anchor scrolls way past the viewport bottom.
+    stubRect(anchor, { left: 100, top: 2000, width: 80, height: 32 });
+    document.dispatchEvent(new Event('scroll'));
+    await nextRaf();
+    // Default behaviour: panel follows the anchor — far below the viewport,
+    // clamped to the bottom edge (viewport height 768 - panel height 100 - margin 8 = 660).
+    expect(panel.style.top).toBe('660px');
+    controller.close(false);
+  });
+
+  it('with sticky=true: panel stays in viewport when anchor scrolls offscreen below', async () => {
+    const controller = new OverlayController(host, {
+      trigger: () => anchor,
+      panel: () => panel,
+      stickyOnAnchorOffscreen: true,
+    });
+    await controller.open();
+    const stickyTop = panel.style.top;
+    // Anchor exits viewport below.
+    stubRect(anchor, { left: 100, top: 2000, width: 80, height: 32 });
+    document.dispatchEvent(new Event('scroll'));
+    await nextRaf();
+    // Panel did NOT follow. Its current position is preserved (clamped to viewport).
+    expect(panel.style.top).toBe(stickyTop);
+    controller.close(false);
+  });
+
+  it('with sticky=true: resumes normal positioning when anchor re-enters viewport', async () => {
+    const controller = new OverlayController(host, {
+      trigger: () => anchor,
+      panel: () => panel,
+      stickyOnAnchorOffscreen: true,
+    });
+    await controller.open();
+    stubRect(anchor, { left: 100, top: 2000, width: 80, height: 32 });
+    document.dispatchEvent(new Event('scroll'));
+    await nextRaf();
+    // Anchor scrolls back into viewport at a different position.
+    stubRect(anchor, { left: 100, top: 300, width: 80, height: 32 });
+    document.dispatchEvent(new Event('scroll'));
+    await nextRaf();
+    // Panel tracks the anchor again: 300 + 32 = 332.
+    expect(panel.style.top).toBe('332px');
+    controller.close(false);
+  });
+
+  it('with sticky=true: anchor offscreen to the right also pins the panel', async () => {
+    const controller = new OverlayController(host, {
+      trigger: () => anchor,
+      panel: () => panel,
+      stickyOnAnchorOffscreen: true,
+    });
+    await controller.open();
+    const stickyLeft = panel.style.left;
+    // Anchor exits viewport to the right.
+    stubRect(anchor, { left: 5000, top: 100, width: 80, height: 32 });
+    document.dispatchEvent(new Event('scroll'));
+    await nextRaf();
+    expect(panel.style.left).toBe(stickyLeft);
+    controller.close(false);
+  });
+});
