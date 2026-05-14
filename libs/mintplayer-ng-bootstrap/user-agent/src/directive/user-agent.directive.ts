@@ -1,5 +1,5 @@
 import { isPlatformServer } from '@angular/common';
-import { AfterViewInit, Directive, inject, output, PLATFORM_ID } from '@angular/core';
+import { AfterViewInit, DestroyRef, Directive, inject, output, PLATFORM_ID } from '@angular/core';
 import { BsUserAgent } from '../interfaces/user-agent';
 import { BsOperatingSystem } from '../types/operating-system.type';
 import { BsWebbrowser } from '../types/webbrowser.type';
@@ -15,6 +15,7 @@ import { BsWebbrowser } from '../types/webbrowser.type';
 })
 export class BsUserAgentDirective implements AfterViewInit {
   private platformId = inject(PLATFORM_ID);
+  private destroyRef = inject(DestroyRef);
 
   get isAndroid() {
     return !isPlatformServer(this.platformId) && !!navigator && !!navigator.userAgent.match(/Android/i);
@@ -59,7 +60,7 @@ export class BsUserAgentDirective implements AfterViewInit {
   }
 
   ngAfterViewInit() {
-    setTimeout(() => {
+    const handle = setTimeout(() => {
       let os: BsOperatingSystem | undefined;
       let webbrowser = this.getBrowser();
 
@@ -75,6 +76,7 @@ export class BsUserAgentDirective implements AfterViewInit {
 
       this.detected.emit({ os, webbrowser });
     });
+    this.destroyRef.onDestroy(() => clearTimeout(handle));
   }
 
   readonly detected = output<BsUserAgent>();
