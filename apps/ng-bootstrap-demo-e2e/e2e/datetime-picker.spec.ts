@@ -80,7 +80,10 @@ test.describe('bs-datetime-picker', () => {
     await picker.getByRole('button', { name: 'Choose time' }).click();
     await picker.locator('mp-time-list').getByRole('option').first().click();
 
-    await expect(section.getByText(/FormControl\.dirty/)).toContainText('true');
+    // `FormControl.dirty` is inside <code>; the value lives in the surrounding
+    // text node ("<code>FormControl.dirty</code>: {{ value }}"). Assert against
+    // the section text so the locator covers both the label and the value.
+    await expect(section).toContainText(/FormControl\.dirty:\s*true/);
   });
 
   test('Tab moves focus from input → date trigger → time trigger', async ({ page }) => {
