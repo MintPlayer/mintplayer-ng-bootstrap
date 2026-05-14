@@ -1,8 +1,6 @@
-<!-- <bs-dropdown [hasBackdrop]="true" [closeOnClickOutside]="true"></bs-dropdown> -->
-<div bsDropdown [hasBackdrop]="true" [closeOnClickOutside]="true">
-    <button bsDropdownToggle [color]="colors.primary">{{ selectedDate() | date }}</button>
-    <bs-has-overlay></bs-has-overlay>
-    <div *bsDropdownMenu aria-label="Choose date">
-        <bs-calendar [(selectedDate)]="selectedDate" [(currentMonth)]="currentMonth" [disableDateFn]="disableDateFn()"></bs-calendar>
-    </div>
-</div>
+<mp-datepicker
+  #wc
+  (selected-date-change)="onSelectedDateChange($event)"
+  (current-month-change)="onCurrentMonthChange($event)"
+  (closed)="onClosed()">
+</mp-datepicker>
