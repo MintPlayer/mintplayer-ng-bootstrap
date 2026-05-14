@@ -65,6 +65,18 @@
   <code>--bs-primary</code> — the swatch, the buttons, the alert, the link, and
   the progress bar all swap in lockstep with the CSS variable.
 </p>
+<bs-alert [type]="colors.info" class="d-block mb-3">
+  <strong>Note about <code>.btn-primary</code> and <code>.btn-outline-primary</code>.</strong>
+  Vanilla Bootstrap 5.3 bakes literal color values into each button variant's
+  scoped <code>--bs-btn-*</code> variables — so mutating <code>--bs-primary</code>
+  at runtime does <em>not</em> reach buttons in a stock Bootstrap project.
+  <code>&#64;mintplayer/ng-bootstrap</code> ships a small override that re-binds
+  <code>.btn-primary</code> and <code>.btn-outline-primary</code> to
+  <code>var(--bs-primary)</code> (with <code>color-mix()</code> for hover / active
+  shades), which is why the buttons above swap with the rest. If you want the
+  same behavior for <code>.btn-success</code>, <code>.btn-danger</code>, etc.,
+  add an analogous block in your own stylesheet.
+</bs-alert>
 <div class="d-flex flex-wrap gap-3 align-items-center mb-3">
   <div class="d-flex flex-column align-items-center">
     <div style="width: 3rem; height: 3rem; border-radius: 0.5rem; background-color: var(--bs-primary); border: 1px solid var(--bs-border-color);"></div>

@@ -34,6 +34,34 @@
 // @import "~bootstrap/scss/tables";
 // @import "~bootstrap/scss/forms";
 @import "bootstrap/scss/buttons";
+
+// Re-bind .btn-primary / .btn-outline-primary scoped variables to var(--bs-primary)
+// so runtime mutations of --bs-primary propagate to buttons. Bootstrap's
+// button-variant mixin emits color literals into the scoped --bs-btn-* vars,
+// which is why the unpatched rules ignore --bs-primary changes at runtime.
+.btn-primary {
+  --bs-btn-bg: var(--bs-primary);
+  --bs-btn-border-color: var(--bs-primary);
+  --bs-btn-hover-bg: color-mix(in srgb, var(--bs-primary), #000 15%);
+  --bs-btn-hover-border-color: color-mix(in srgb, var(--bs-primary), #000 20%);
+  --bs-btn-active-bg: color-mix(in srgb, var(--bs-primary), #000 20%);
+  --bs-btn-active-border-color: color-mix(in srgb, var(--bs-primary), #000 25%);
+  --bs-btn-disabled-bg: var(--bs-primary);
+  --bs-btn-disabled-border-color: var(--bs-primary);
+  --bs-btn-focus-shadow-rgb: var(--bs-primary-rgb);
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--bs-primary);
+  --bs-btn-border-color: var(--bs-primary);
+  --bs-btn-hover-bg: var(--bs-primary);
+  --bs-btn-hover-border-color: var(--bs-primary);
+  --bs-btn-active-bg: var(--bs-primary);
+  --bs-btn-active-border-color: var(--bs-primary);
+  --bs-btn-disabled-color: var(--bs-primary);
+  --bs-btn-disabled-border-color: var(--bs-primary);
+  --bs-btn-focus-shadow-rgb: var(--bs-primary-rgb);
+}
 // @import "~bootstrap/scss/transitions";
 // @import "~bootstrap/scss/dropdown";
 // @import "~bootstrap/scss/button-group";
