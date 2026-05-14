@@ -4,5 +4,6 @@ export type {
   OverlayPosition,
   OverlayOriginX,
   OverlayOriginY,
+  PanelWidth,
   ScrollStrategy,
 } from './overlay-controller';

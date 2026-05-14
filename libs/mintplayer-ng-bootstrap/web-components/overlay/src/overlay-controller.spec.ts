@@ -663,3 +663,127 @@ describe('OverlayController — multi-anchor selection', () => {
     expect((primary as unknown as { focusedFlag?: boolean }).focusedFlag).toBeUndefined();
   });
 });
+
+describe('OverlayController — panelWidth strategies', () => {
+  function makeHost(): HTMLElement & {
+    addController: () => void;
+    requestUpdate: () => void;
+    updateComplete: Promise<void>;
+  } {
+    const el = document.createElement('div') as HTMLElement & {
+      addController: () => void;
+      requestUpdate: () => void;
+      updateComplete: Promise<void>;
+    };
+    el.addController = () => {};
+    el.requestUpdate = () => {};
+    el.updateComplete = Promise.resolve();
+    return el;
+  }
+
+  function stubRect(el: HTMLElement, rect: { left: number; top: number; width: number; height: number }): void {
+    el.getBoundingClientRect = () => ({
+      left: rect.left, top: rect.top,
+      right: rect.left + rect.width, bottom: rect.top + rect.height,
+      width: rect.width, height: rect.height,
+      x: rect.left, y: rect.top, toJSON: () => ({}),
+    });
+  }
+
+  /**
+   * jsdom doesn't compute layout, so `offsetWidth` is always 0 for plain
+   * divs. Stub it on the anchor so the panelWidth strategies have a value
+   * to read.
+   */
+  function stubOffsetWidth(el: HTMLElement, width: number): void {
+    Object.defineProperty(el, 'offsetWidth', { value: width, configurable: true });
+  }
+
+  let host: ReturnType<typeof makeHost>;
+  let anchor: HTMLElement;
+  let panel: HTMLElement;
+
+  beforeEach(() => {
+    host = makeHost();
+    anchor = document.createElement('button');
+    panel = document.createElement('div');
+    document.body.append(host, anchor, panel);
+    stubRect(anchor, { left: 100, top: 100, width: 250, height: 32 });
+    stubRect(panel, { left: 0, top: 0, width: 200, height: 100 });
+    stubOffsetWidth(anchor, 250);
+    Object.defineProperty(window, 'innerWidth', { value: 1024, writable: true, configurable: true });
+    Object.defineProperty(window, 'innerHeight', { value: 768, writable: true, configurable: true });
+  });
+
+  afterEach(() => {
+    host.remove();
+    anchor.remove();
+    panel.remove();
+  });
+
+  it('panelWidth=null (default): leaves panel CSS width untouched', () => {
+    const controller = new OverlayController(host, {
+      anchor: () => anchor,
+      panel: () => panel,
+    });
+    controller.position();
+    expect(panel.style.width).toBe('');
+    expect(panel.style.minWidth).toBe('');
+  });
+
+  it("panelWidth='anchor': panel.style.width = anchor.offsetWidth + 'px'", () => {
+    const controller = new OverlayController(host, {
+      anchor: () => anchor,
+      panel: () => panel,
+      panelWidth: 'anchor',
+    });
+    controller.position();
+    expect(panel.style.width).toBe('250px');
+    expect(panel.style.minWidth).toBe('');
+  });
+
+  it("panelWidth='anchor-min': sets minWidth, not width", () => {
+    const controller = new OverlayController(host, {
+      anchor: () => anchor,
+      panel: () => panel,
+      panelWidth: 'anchor-min',
+    });
+    controller.position();
+    expect(panel.style.minWidth).toBe('250px');
+    expect(panel.style.width).toBe('');
+  });
+
+  it('panelWidth=number: sets a fixed pixel width', () => {
+    const controller = new OverlayController(host, {
+      anchor: () => anchor,
+      panel: () => panel,
+      panelWidth: 320,
+    });
+    controller.position();
+    expect(panel.style.width).toBe('320px');
+  });
+
+  it('panelWidth=string: passes through as CSS', () => {
+    const controller = new OverlayController(host, {
+      anchor: () => anchor,
+      panel: () => panel,
+      panelWidth: '50vw',
+    });
+    controller.position();
+    expect(panel.style.width).toBe('50vw');
+  });
+
+  it('panelWidth recomputes when the anchor resizes', () => {
+    const controller = new OverlayController(host, {
+      anchor: () => anchor,
+      panel: () => panel,
+      panelWidth: 'anchor',
+    });
+    controller.position();
+    expect(panel.style.width).toBe('250px');
+    // Simulate the anchor growing (e.g., responsive layout).
+    stubOffsetWidth(anchor, 400);
+    controller.position();
+    expect(panel.style.width).toBe('400px');
+  });
+});

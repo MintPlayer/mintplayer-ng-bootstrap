@@ -61,9 +61,23 @@ export interface OverlayControllerOptions {
    * anchor scrolls completely out of viewport. Default: false (CDK parity).
    */
   stickyOnAnchorOffscreen?: boolean;
+  /**
+   * Panel width strategy. Recomputed on every position pass so resizes stay
+   * in sync. Default: `null` (panel uses its intrinsic content width).
+   *
+   * - `null` — leave the panel's CSS width alone
+   * - `'anchor'` — `width = anchor.offsetWidth` (exact match — the
+   *   `sameDropdownWidth` pattern used by `bs-dropdown` consumers)
+   * - `'anchor-min'` — `minWidth = anchor.offsetWidth`, allow growth
+   * - `number` — fixed pixel width
+   * - `string` — any CSS width value (`'50vw'`, `'fit-content'`, …)
+   */
+  panelWidth?: PanelWidth;
   onOpen?: () => void;
   onClose?: () => void;
 }
+
+export type PanelWidth = null | 'anchor' | 'anchor-min' | number | string;
 
 const DEFAULT_POSITIONS: OverlayPosition[] = [
   { originX: 'start', originY: 'bottom', overlayX: 'start', overlayY: 'top' },
@@ -240,6 +254,10 @@ export class OverlayController implements ReactiveController {
     const panel = this.options.panel();
     if (anchors.length === 0 || !panel) return;
 
+    // Apply width strategy BEFORE measuring the panel rect so the measured
+    // width reflects the strategy (matters for the position-pair fit check).
+    this.applyPanelWidth(panel, anchors[0]);
+
     const margin = this.options.viewportMargin ?? 8;
     const panelRect = panel.getBoundingClientRect();
     const vw = window.innerWidth;
@@ -288,6 +306,39 @@ export class OverlayController implements ReactiveController {
   /** True when the anchor's bounding rect lies entirely outside the viewport. */
   private isAnchorOffscreen(rect: DOMRect, vw: number, vh: number): boolean {
     return rect.right < 0 || rect.bottom < 0 || rect.left > vw || rect.top > vh;
+  }
+
+  /**
+   * Apply the configured `panelWidth` strategy to the panel element. Called
+   * from `position()` before measurement so the position-pair fit check
+   * sees the post-resize panel dimensions.
+   *
+   * For `'anchor'` and `'anchor-min'` the anchor's `offsetWidth` is used
+   * (not `getBoundingClientRect().width`) so transforms / zoom on ancestors
+   * don't skew the result.
+   */
+  private applyPanelWidth(panel: HTMLElement, anchor: HTMLElement): void {
+    const strategy = this.options.panelWidth;
+    if (strategy === undefined || strategy === null) return;
+
+    if (strategy === 'anchor') {
+      panel.style.width = `${anchor.offsetWidth}px`;
+      panel.style.minWidth = '';
+      return;
+    }
+    if (strategy === 'anchor-min') {
+      panel.style.minWidth = `${anchor.offsetWidth}px`;
+      panel.style.width = '';
+      return;
+    }
+    if (typeof strategy === 'number') {
+      panel.style.width = `${strategy}px`;
+      panel.style.minWidth = '';
+      return;
+    }
+    // string — pass through verbatim as a CSS width value
+    panel.style.width = strategy;
+    panel.style.minWidth = '';
   }
 
   private isRtl(): boolean {

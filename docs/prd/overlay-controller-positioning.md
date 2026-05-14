@@ -182,6 +182,20 @@ export interface OverlayControllerOptions {
    * Default: `false` (CDK behaviour). Enable for ribbon-group popups.
    */
   stickyOnAnchorOffscreen?: boolean;
+  /**
+   * Panel width strategy. Recomputed on every position pass (open + scroll +
+   * resize) so it stays in sync if the anchor element resizes. Default: null
+   * (panel uses its intrinsic content width).
+   *
+   * - `null` — panel width determined by CSS / content only
+   * - `'anchor'` — panel width = anchor's offsetWidth (exact match; the
+   *   `sameDropdownWidth` pattern from the Angular `bs-dropdown` directive)
+   * - `'anchor-min'` — panel min-width = anchor's offsetWidth (match
+   *   minimum, allow content to grow wider — e.g. calendar grids)
+   * - `number` — fixed width in pixels
+   * - `string` — any CSS width value (`'50vw'`, `'fit-content'`, etc.)
+   */
+  panelWidth?: null | 'anchor' | 'anchor-min' | number | string;
   onOpen?: () => void;
   onClose?: () => void;
 }
@@ -250,6 +264,7 @@ Same scroll-strategy logic also fires on `window.resize` (debounced via `request
 - `viewportMargin` (optional). Default: `8` px.
 - `scrollStrategy` (optional). Default: `'reposition'`.
 - `stickyOnAnchorOffscreen` (optional). Default: `false` (CDK parity). Set `true` for the ribbon group popup.
+- `panelWidth` (optional). Default: `null` (intrinsic). Set `'anchor'` for an exact-match dropdown (the Angular `bs-dropdown`'s `sameDropdownWidth` pattern — used by `select2`, `typeahead`, `searchbox`). Set `'anchor-min'` for a "no smaller than the anchor" semantic.
 
 The `anchor` vs `trigger` distinction is load-bearing: a Bootstrap input-group + button picker wants the popup to align with the input's left edge (anchor = input-group div) but focus on close to return to the button (trigger = button). Conflating them caused the popup to float disconnected from the field.
 
@@ -269,6 +284,7 @@ The `anchor` vs `trigger` distinction is load-bearing: a Bootstrap input-group +
 - [ ] **FR-7** — Scroll listeners attach to `window` + every scrollable ancestor of the anchor on `open()`, detach on `close()`. No leaks.
 - [ ] **FR-8** — Resize listener (debounced via rAF) repositions panel.
 - [ ] **FR-9** — `stickyOnAnchorOffscreen: true` keeps the panel pinned to viewport edge when the anchor is fully out of viewport.
+- [ ] **FR-9b** — `panelWidth` option: `'anchor'` matches the anchor's offsetWidth, `'anchor-min'` matches as min-width, `number`/`string` sets a fixed/CSS width, `null` (default) leaves it intrinsic. Recomputed on every position pass so resizes stay in sync.
 - [ ] **FR-10** — Static `pushFrame` / `releaseFrame` / `isFrameTop` API unchanged. Esc-stack semantics preserved.
 - [ ] **FR-11** — `close(returnFocus)` returns focus to the **active** anchor (the one currently used for positioning), not necessarily the first in the array.
 - [ ] **FR-12** — Outside-mousedown closes the panel (existing behaviour, preserved).
