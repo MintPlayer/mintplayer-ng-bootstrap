@@ -45,7 +45,10 @@ export class BsCalendarComponent implements AfterViewInit {
       wc.max = this.max() ?? null;
       wc.firstDayOfWeek = this.firstDayOfWeek();
       wc.locale = this.locale();
-      wc.requestUpdate();
+      // SSR / pre-upgrade: requestUpdate only exists after customElements has
+      // registered the Lit class. The DOM element is the upgrade target but
+      // may still be a plain HTMLElement at the first effect tick.
+      wc.requestUpdate?.();
     });
   }
 

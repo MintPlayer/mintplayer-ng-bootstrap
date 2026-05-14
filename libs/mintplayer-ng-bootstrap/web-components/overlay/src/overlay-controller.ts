@@ -25,12 +25,27 @@ export type ScrollStrategy =
 
 export interface OverlayControllerOptions {
   /**
-   * Single anchor or array of candidate anchors. When an array, the controller
-   * walks anchors in order and picks the first non-null one as the active
-   * anchor for positioning.
+   * Element(s) the overlay positions itself against. Required. Pass an array
+   * when you want fallback anchors — the controller walks candidates in order
+   * and uses the first non-null one as the active anchor for positioning.
+   *
+   * This is intentionally distinct from `trigger`: in many UIs the natural
+   * **anchor** for an overlay is a wrapper (e.g. a Bootstrap `.input-group`
+   * containing an input + a button), but the **trigger** that opens the
+   * overlay is just the button. Conflating them caused the overlay to align
+   * to the wrong corner.
    */
-  trigger: () => HTMLElement | HTMLElement[] | null;
+  anchor: () => HTMLElement | HTMLElement[] | null;
+  /** Overlay panel element — the popup content that gets positioned. Required. */
   panel: () => HTMLElement | null;
+  /**
+   * The interactive control that opens the overlay (typically a `<button>`).
+   * Used for keyboard focus-return when `close(returnFocus=true)` runs. When
+   * unset, focus returns to the active positioning anchor — appropriate when
+   * the anchor is itself focusable (e.g. a single trigger button). Set this
+   * explicitly when `anchor` is a non-focusable wrapper.
+   */
+  trigger?: () => HTMLElement | null;
   /**
    * Ordered list of position candidates. The first one that produces a
    * panel rect fully inside the viewport (minus `viewportMargin`) is used.
@@ -162,7 +177,10 @@ export class OverlayController implements ReactiveController {
       cancelAnimationFrame(this.positionFrame);
       this.positionFrame = 0;
     }
-    if (returnFocus) this.activeAnchor?.focus();
+    if (returnFocus) {
+      const target = this.options.trigger?.() ?? this.activeAnchor;
+      target?.focus();
+    }
     this.activeAnchor = null;
     this.options.onClose?.();
   }
@@ -176,17 +194,17 @@ export class OverlayController implements ReactiveController {
   }
 
   /**
-   * Resolve the list of candidate anchors from `trigger()`. Single-element
+   * Resolve the list of candidate anchors from `anchor()`. Single-element
    * returns become a one-item array; null returns become an empty array.
    * Nulls inside arrays are filtered out.
    */
   protected resolveAnchors(): HTMLElement[] {
-    const raw = this.options.trigger();
+    const raw = this.options.anchor();
     if (raw === null) return [];
     if (Array.isArray(raw)) {
       const filtered = raw.filter((a): a is HTMLElement => a !== null && a !== undefined);
       if (filtered.length === 0 && raw.length > 0) {
-        console.warn('[OverlayController] trigger() returned an array of all-null anchors.');
+        console.warn('[OverlayController] anchor() returned an array of all-null elements.');
       }
       return filtered;
     }

@@ -99,7 +99,7 @@ export class BsDatetimePickerComponent implements AfterViewInit, ControlValueAcc
       wc.todayLabel = this.todayLabel();
       wc.nowLabel = this.nowLabel();
       wc.disabled = this.effectiveDisabled();
-      wc.requestUpdate();
+      wc.requestUpdate?.();
     });
 
     effect(() => {

@@ -218,7 +218,7 @@ export class MpRibbonGroup extends LitElement {
    * of disappearing with its trigger.
    */
   private readonly overlay = new OverlayController(this, {
-    trigger: () => this.renderRoot.querySelector<HTMLElement>('.ribbon-popup-trigger'),
+    anchor: () => this.renderRoot.querySelector<HTMLElement>('.ribbon-popup-trigger'),
     panel: () => this.renderRoot.querySelector<HTMLElement>('.ribbon-group'),
     stickyOnAnchorOffscreen: true,
     onOpen: async () => {

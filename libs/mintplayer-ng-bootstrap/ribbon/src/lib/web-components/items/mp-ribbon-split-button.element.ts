@@ -118,7 +118,7 @@ export class MpRibbonSplitButton extends MpRibbonItemBase {
   private panelEl!: HTMLElement;
 
   private overlay = new OverlayController(this, {
-    trigger: () => this.chevronEl,
+    anchor: () => this.chevronEl,
     panel: () => this.panelEl,
     onOpen: () => this.emitMenuToggle(true),
     onClose: () => this.emitMenuToggle(false),

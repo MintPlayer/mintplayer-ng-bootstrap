@@ -174,7 +174,7 @@ export class MpRibbonTab extends LitElement {
   private overflowPanelEl?: HTMLElement;
 
   private readonly overflowOverlay = new OverlayController(this, {
-    trigger: () => this.overflowTriggerEl ?? null,
+    anchor: () => this.overflowTriggerEl ?? null,
     panel: () => this.overflowPanelEl ?? null,
   });
 

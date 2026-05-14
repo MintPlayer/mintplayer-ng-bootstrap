@@ -95,6 +95,9 @@ export class MpDatetimePickerElement extends LitElement {
   @query('button.time')
   protected timeTriggerEl?: HTMLButtonElement;
 
+  @query('.input-group')
+  protected inputGroupEl?: HTMLElement;
+
   @query('.popup-date')
   protected datePopupEl?: HTMLElement;
 
@@ -107,7 +110,12 @@ export class MpDatetimePickerElement extends LitElement {
   // callback only dispatches the event; closing is what reverts _openPopup back
   // to null since close() can be triggered by Esc / outside-click too.
 
+  // Both popups anchor against the whole input-group (so they align visually
+  // with the display input's left edge) but each has its own trigger button
+  // for ARIA + focus-return semantics.
+
   protected readonly dateOverlay = new OverlayController(this, {
+    anchor: () => this.inputGroupEl ?? this.dateTriggerEl ?? null,
     trigger: () => this.dateTriggerEl ?? null,
     panel: () => this.datePopupEl ?? null,
     onOpen: () => {
@@ -124,6 +132,7 @@ export class MpDatetimePickerElement extends LitElement {
   });
 
   protected readonly timeOverlay = new OverlayController(this, {
+    anchor: () => this.inputGroupEl ?? this.timeTriggerEl ?? null,
     trigger: () => this.timeTriggerEl ?? null,
     panel: () => this.timePopupEl ?? null,
     onOpen: () => {

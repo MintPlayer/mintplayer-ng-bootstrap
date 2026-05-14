@@ -56,10 +56,18 @@ export class MpTimepickerElement extends LitElement {
   @query('button.trigger')
   private triggerEl?: HTMLButtonElement;
 
+  @query('.input-group')
+  private inputGroupEl?: HTMLElement;
+
   @query('.popup')
   private popupEl?: HTMLElement;
 
+  /**
+   * Anchor against the entire `.input-group` wrapper (so the popup aligns
+   * with the field's left edge); the trigger button keeps focus-return.
+   */
   private readonly overlay = new OverlayController(this, {
+    anchor: () => this.inputGroupEl ?? this.triggerEl ?? null,
     trigger: () => this.triggerEl ?? null,
     panel: () => this.popupEl ?? null,
     onOpen: () =>

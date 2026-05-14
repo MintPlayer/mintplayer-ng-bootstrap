@@ -69,7 +69,7 @@ describe('OverlayController — multi-anchor resolution', () => {
     const anchor = document.createElement('button');
     document.body.appendChild(anchor);
     const controller = new OverlayController(host, {
-      trigger: () => anchor,
+      anchor: () => anchor,
       panel: () => panel,
     });
     // resolveAnchor is protected; verify via positioning side-effect (panel.style.left set).
@@ -84,7 +84,7 @@ describe('OverlayController — multi-anchor resolution', () => {
     document.body.appendChild(a);
     document.body.appendChild(b);
     const controller = new OverlayController(host, {
-      trigger: () => [null as unknown as HTMLElement, a, b],
+      anchor: () => [null as unknown as HTMLElement, a, b],
       panel: () => panel,
     });
     controller.position();
@@ -98,7 +98,7 @@ describe('OverlayController — multi-anchor resolution', () => {
 
   it('null trigger result is a no-op', () => {
     const controller = new OverlayController(host, {
-      trigger: () => null,
+      anchor: () => null,
       panel: () => panel,
     });
     controller.position(); // should not throw
@@ -171,7 +171,7 @@ describe('OverlayController — position-pair selection', () => {
     stubRect(anchor, { left: 100, top: 100, width: 80, height: 32 });
     stubRect(panel, { left: 0, top: 0, width: 200, height: 100 });
     const controller = new OverlayController(host, {
-      trigger: () => anchor,
+      anchor: () => anchor,
       panel: () => panel,
     });
     controller.position();
@@ -184,7 +184,7 @@ describe('OverlayController — position-pair selection', () => {
     stubRect(anchor, { left: 100, top: 700, width: 80, height: 32 });
     stubRect(panel, { left: 0, top: 0, width: 200, height: 200 });
     const controller = new OverlayController(host, {
-      trigger: () => anchor,
+      anchor: () => anchor,
       panel: () => panel,
     });
     controller.position();
@@ -196,7 +196,7 @@ describe('OverlayController — position-pair selection', () => {
     stubRect(anchor, { left: 900, top: 100, width: 80, height: 32 });
     stubRect(panel, { left: 0, top: 0, width: 300, height: 100 });
     const controller = new OverlayController(host, {
-      trigger: () => anchor,
+      anchor: () => anchor,
       panel: () => panel,
     });
     controller.position();
@@ -208,7 +208,7 @@ describe('OverlayController — position-pair selection', () => {
     stubRect(anchor, { left: 100, top: 400, width: 100, height: 40 });
     stubRect(panel, { left: 0, top: 0, width: 80, height: 30 });
     const controller = new OverlayController(host, {
-      trigger: () => anchor,
+      anchor: () => anchor,
       panel: () => panel,
       positions: [
         { originX: 'center', originY: 'bottom', overlayX: 'center', overlayY: 'top' },
@@ -226,7 +226,7 @@ describe('OverlayController — position-pair selection', () => {
     stubRect(anchor, { left: 100, top: 700, width: 80, height: 32 });
     stubRect(panel, { left: 0, top: 0, width: 200, height: 300 });
     const controller = new OverlayController(host, {
-      trigger: () => anchor,
+      anchor: () => anchor,
       panel: () => panel,
     });
     controller.position();
@@ -244,7 +244,7 @@ describe('OverlayController — position-pair selection', () => {
     stubRect(anchor, { left: 900, top: 100, width: 80, height: 32 });
     stubRect(panel, { left: 0, top: 0, width: 300, height: 100 });
     const controller = new OverlayController(host, {
-      trigger: () => anchor,
+      anchor: () => anchor,
       panel: () => panel,
       viewportMargin: 20,
     });
@@ -257,7 +257,7 @@ describe('OverlayController — position-pair selection', () => {
     stubRect(anchor, { left: 100, top: 100, width: 80, height: 32 });
     stubRect(panel, { left: 0, top: 0, width: 200, height: 100 });
     const controller = new OverlayController(host, {
-      trigger: () => anchor,
+      anchor: () => anchor,
       panel: () => panel,
       positions: [
         { originX: 'start', originY: 'bottom', overlayX: 'start', overlayY: 'top', offsetY: 12 },
@@ -323,7 +323,7 @@ describe('OverlayController — scroll strategies', () => {
 
   it("'reposition' strategy: scroll fires schedulePosition() and re-applies position", async () => {
     const controller = new OverlayController(host, {
-      trigger: () => anchor,
+      anchor: () => anchor,
       panel: () => panel,
     });
     await controller.open();
@@ -339,7 +339,7 @@ describe('OverlayController — scroll strategies', () => {
 
   it("'close' strategy: scroll closes the overlay", async () => {
     const controller = new OverlayController(host, {
-      trigger: () => anchor,
+      anchor: () => anchor,
       panel: () => panel,
       scrollStrategy: 'close',
     });
@@ -351,7 +351,7 @@ describe('OverlayController — scroll strategies', () => {
 
   it("'noop' strategy: scroll is ignored", async () => {
     const controller = new OverlayController(host, {
-      trigger: () => anchor,
+      anchor: () => anchor,
       panel: () => panel,
       scrollStrategy: 'noop',
     });
@@ -370,7 +370,7 @@ describe('OverlayController — scroll strategies', () => {
     html.style.position = '';
     html.style.top = '';
     const controller = new OverlayController(host, {
-      trigger: () => anchor,
+      anchor: () => anchor,
       panel: () => panel,
       scrollStrategy: 'block',
     });
@@ -382,7 +382,7 @@ describe('OverlayController — scroll strategies', () => {
 
   it('resize re-applies position', async () => {
     const controller = new OverlayController(host, {
-      trigger: () => anchor,
+      anchor: () => anchor,
       panel: () => panel,
     });
     await controller.open();
@@ -396,7 +396,7 @@ describe('OverlayController — scroll strategies', () => {
 
   it('listeners detach on close (no leak)', async () => {
     const controller = new OverlayController(host, {
-      trigger: () => anchor,
+      anchor: () => anchor,
       panel: () => panel,
     });
     await controller.open();
@@ -465,7 +465,7 @@ describe('OverlayController — sticky on anchor offscreen', () => {
 
   it('without sticky: panel follows anchor offscreen', async () => {
     const controller = new OverlayController(host, {
-      trigger: () => anchor,
+      anchor: () => anchor,
       panel: () => panel,
     });
     await controller.open();
@@ -482,7 +482,7 @@ describe('OverlayController — sticky on anchor offscreen', () => {
 
   it('with sticky=true: panel stays in viewport when anchor scrolls offscreen below', async () => {
     const controller = new OverlayController(host, {
-      trigger: () => anchor,
+      anchor: () => anchor,
       panel: () => panel,
       stickyOnAnchorOffscreen: true,
     });
@@ -499,7 +499,7 @@ describe('OverlayController — sticky on anchor offscreen', () => {
 
   it('with sticky=true: resumes normal positioning when anchor re-enters viewport', async () => {
     const controller = new OverlayController(host, {
-      trigger: () => anchor,
+      anchor: () => anchor,
       panel: () => panel,
       stickyOnAnchorOffscreen: true,
     });
@@ -518,7 +518,7 @@ describe('OverlayController — sticky on anchor offscreen', () => {
 
   it('with sticky=true: anchor offscreen to the right also pins the panel', async () => {
     const controller = new OverlayController(host, {
-      trigger: () => anchor,
+      anchor: () => anchor,
       panel: () => panel,
       stickyOnAnchorOffscreen: true,
     });
@@ -586,7 +586,7 @@ describe('OverlayController — multi-anchor selection', () => {
     stubRect(primary, { left: 100, top: 100, width: 80, height: 32 });
     stubRect(secondary, { left: 500, top: 100, width: 80, height: 32 });
     const controller = new OverlayController(host, {
-      trigger: () => [primary, secondary],
+      anchor: () => [primary, secondary],
       panel: () => panel,
     });
     controller.position();
@@ -601,7 +601,7 @@ describe('OverlayController — multi-anchor selection', () => {
     // Secondary has room.
     stubRect(secondary, { left: 100, top: 100, width: 80, height: 32 });
     const controller = new OverlayController(host, {
-      trigger: () => [primary, secondary],
+      anchor: () => [primary, secondary],
       panel: () => panel,
       positions: [
         // For primary: below clips bottom (700+32+100=832 > 760).
@@ -617,7 +617,7 @@ describe('OverlayController — multi-anchor selection', () => {
   it('filters null entries inside the trigger array', () => {
     stubRect(primary, { left: 100, top: 100, width: 80, height: 32 });
     const controller = new OverlayController(host, {
-      trigger: () => [null as unknown as HTMLElement, primary],
+      anchor: () => [null as unknown as HTMLElement, primary],
       panel: () => panel,
     });
     controller.position();
@@ -630,14 +630,14 @@ describe('OverlayController — multi-anchor selection', () => {
     console.warn = (msg: string) => { warned = msg; };
     try {
       const controller = new OverlayController(host, {
-        trigger: () => [null as unknown as HTMLElement, null as unknown as HTMLElement],
+        anchor: () => [null as unknown as HTMLElement, null as unknown as HTMLElement],
         panel: () => panel,
       });
       controller.position();
     } finally {
       console.warn = originalWarn;
     }
-    expect(warned).toContain('all-null anchors');
+    expect(warned).toContain('all-null elements');
   });
 
   it('close(returnFocus) targets the chosen anchor, not the first one', async () => {
@@ -645,7 +645,7 @@ describe('OverlayController — multi-anchor selection', () => {
     stubRect(primary, { left: 900, top: 700, width: 80, height: 32 });
     stubRect(secondary, { left: 100, top: 100, width: 80, height: 32 });
     const controller = new OverlayController(host, {
-      trigger: () => [primary, secondary],
+      anchor: () => [primary, secondary],
       panel: () => panel,
       positions: [
         { originX: 'start', originY: 'bottom', overlayX: 'start', overlayY: 'top' },

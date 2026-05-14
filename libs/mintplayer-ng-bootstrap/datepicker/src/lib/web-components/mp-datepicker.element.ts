@@ -60,10 +60,20 @@ export class MpDatepickerElement extends LitElement {
   @query('button.trigger')
   private triggerEl?: HTMLButtonElement;
 
+  @query('.input-group')
+  private inputGroupEl?: HTMLElement;
+
   @query('.popup')
   private popupEl?: HTMLElement;
 
+  /**
+   * The overlay positions against the entire `.input-group` wrapper (so the
+   * popup aligns with the input's left edge, not the trigger button's left
+   * edge — which would float in mid-air visually disconnected from the
+   * field). The trigger button still owns ARIA + focus-return semantics.
+   */
   private readonly overlay = new OverlayController(this, {
+    anchor: () => this.inputGroupEl ?? this.triggerEl ?? null,
     trigger: () => this.triggerEl ?? null,
     panel: () => this.popupEl ?? null,
     onOpen: () => {

@@ -73,7 +73,7 @@ export class BsTimepickerComponent implements AfterViewInit, ControlValueAccesso
       wc.placeholder = this.placeholder();
       wc.triggerLabel = this.triggerLabel();
       wc.disabled = this.effectiveDisabled();
-      wc.requestUpdate();
+      wc.requestUpdate?.();
     });
 
     effect(() => {

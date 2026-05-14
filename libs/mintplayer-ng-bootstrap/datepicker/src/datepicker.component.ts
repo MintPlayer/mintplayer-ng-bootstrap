@@ -77,7 +77,7 @@ export class BsDatepickerComponent implements AfterViewInit, ControlValueAccesso
       wc.placeholder = this.placeholder();
       wc.triggerLabel = this.triggerLabel();
       wc.disabled = this.effectiveDisabled();
-      wc.requestUpdate();
+      wc.requestUpdate?.();
     });
 
     // Effective disabled = input OR form-disabled.

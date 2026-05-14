@@ -87,7 +87,7 @@ export class MpRibbonDropdownButton extends MpRibbonItemBase {
   private panelEl!: HTMLElement;
 
   private overlay = new OverlayController(this, {
-    trigger: () => this.triggerEl,
+    anchor: () => this.triggerEl,
     panel: () => this.panelEl,
     onOpen: () => {
       this.dispatchEvent(
