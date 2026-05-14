@@ -55,6 +55,7 @@ jobs:
       run: npx nx build --configuration=production
 
     - name: Test (unit + e2e in parallel)
+      timeout-minutes: 30
       run: npx nx affected --targets=test,e2e --parallel=2 --base=${{ github.event.pull_request.base.sha }} --head=${{ github.event.pull_request.head.sha }}
 
     ## Dry-run publish to verify package.json files exist in dist
