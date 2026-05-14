@@ -45,11 +45,13 @@ $spywidth: 250px;
         }
     }
 
-    // Inside a modal the scroll container is bs-modal-content, not the viewport.
+    // Inside a modal the scroll container is the modal-body, not the viewport.
     // Anchor the sticky toc to that container instead of the page navbar offset.
+    // height stays auto — a sticky element that fills its containing block 100%
+    // can't actually stick because its bottom is always at the containing block
+    // bottom, which is sticky's un-stick condition.
     :host-context(bs-modal-content) .spy {
         top: 0;
-        height: 100%;
         max-height: 100%;
     }
 }

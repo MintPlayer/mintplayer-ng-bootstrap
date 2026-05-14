@@ -39,6 +39,7 @@ export class BsModalHostComponent implements AfterViewInit, OnDestroy {
   readonly isOpen = model<boolean>(false);
   //#endregion
   readonly closeOnEscape = input(true);
+  readonly scrollable = input(false);
 
   constructor() {
     effect(() => {
@@ -52,6 +53,13 @@ export class BsModalHostComponent implements AfterViewInit, OnDestroy {
       } else if (!value && this.stackToken !== null) {
         this.overlayStack.release(this.stackToken);
         this.stackToken = null;
+      }
+    });
+
+    effect(() => {
+      const scrollable = this.scrollable();
+      if (this.componentInstance) {
+        this.componentInstance.instance.scrollable.set(scrollable);
       }
     });
   }
@@ -74,6 +82,7 @@ export class BsModalHostComponent implements AfterViewInit, OnDestroy {
     });
     this.componentInstance = this.overlayRef.attach<BsModalComponent>(portal);
     this.componentInstance.instance.isOpen.set(this.isOpen());
+    this.componentInstance.instance.scrollable.set(this.scrollable());
   }
 
   ngOnDestroy() {

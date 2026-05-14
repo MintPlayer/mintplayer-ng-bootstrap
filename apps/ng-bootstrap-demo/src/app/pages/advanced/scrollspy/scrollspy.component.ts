@@ -1,7 +1,8 @@
 import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
-import { BsModalHostComponent, BsModalDirective } from '@mintplayer/ng-bootstrap/modal';
+import { BsCloseComponent } from '@mintplayer/ng-bootstrap/close';
+import { BsModalHostComponent, BsModalDirective, BsModalHeaderDirective, BsModalBodyDirective, BsModalCloseDirective } from '@mintplayer/ng-bootstrap/modal';
 import { BsScrollspyComponent, BsScrollspyDirective } from '@mintplayer/ng-bootstrap/scrollspy';
 
 @Component({
@@ -10,8 +11,12 @@ import { BsScrollspyComponent, BsScrollspyDirective } from '@mintplayer/ng-boots
   styleUrls: ['./scrollspy.component.scss'],
   imports: [
     BsButtonTypeDirective,
+    BsCloseComponent,
     BsModalHostComponent,
     BsModalDirective,
+    BsModalHeaderDirective,
+    BsModalBodyDirective,
+    BsModalCloseDirective,
     BsScrollspyComponent,
     BsScrollspyDirective,
   ],
