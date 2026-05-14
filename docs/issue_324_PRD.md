@@ -80,7 +80,7 @@ The runtime switch mechanism is Bootstrap-native: flip `data-bs-theme` on `<html
 ### Milestone 3: Doc page
 - [x] Route + navbar dropdown entry (FR-9).
 - [x] All six content sections per FR-3.
-- [x] Live three-button mode switcher embedded in the page embedded in the page or an inline 3-button group calling `setMode` directly.
+- [x] Live three-button mode switcher embedded in the page or an inline 3-button group calling `setMode` directly.
 
 ### Milestone 4: E2e + polish
 - [x] Playwright spec (FR-8).

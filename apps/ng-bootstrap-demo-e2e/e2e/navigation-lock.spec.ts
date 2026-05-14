@@ -35,14 +35,18 @@ test.describe('navigation-lock', () => {
 
     // Default state is allowExit=false; canExit will call confirm() on every
     // navigation attempt regardless of form contents.
+    //
+    // Race-free wait: arm the dialog listener BEFORE the click so the promise
+    // is already pending when canExit fires confirm(). A fixed setTimeout
+    // here can pass the dialog round-trip on a fast laptop and miss it on a
+    // loaded CI runner.
+    const dialogPromise = page.waitForEvent('dialog');
     await page
       .locator('bs-navbar a')
       .filter({ hasText: /^Home$/ })
       .first()
       .click();
-
-    // Give the router + dialog round-trip time to settle.
-    await page.waitForTimeout(500);
+    await dialogPromise;
 
     // 1. The confirm() prompt must have fired. (Was broken pre-fix: every
     //    navigation after the first short-circuited via a poisoned pending

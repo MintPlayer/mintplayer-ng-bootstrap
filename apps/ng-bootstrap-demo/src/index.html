@@ -15,12 +15,14 @@
       (function () {
         try {
           var m = localStorage.getItem('bs-theme-mode') || 'auto';
-          var r =
-            m === 'auto'
-              ? matchMedia('(prefers-color-scheme: dark)').matches
-                ? 'dark'
-                : 'light'
-              : m;
+          var r;
+          if (m === 'auto') {
+            r = matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : 'light';
+          } else {
+            r = m;
+          }
           document.documentElement.setAttribute('data-bs-theme', r);
         } catch (_) {
           /* localStorage / matchMedia unavailable — leave attribute unset */
