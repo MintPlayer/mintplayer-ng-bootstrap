@@ -52,17 +52,20 @@ test.describe('datetime-picker — popup stays in viewport (issue #332 follow-up
     const calendar = picker.locator('mp-calendar').first();
     await expect(calendar).toBeVisible();
 
+    // `enterFromTop` animates the popup from `top: -50%` to `top: 0` over 500ms.
+    // Waiting for the entrance to settle ensures `before` is the popup's resting
+    // position, not a mid-flight value — otherwise the post-scroll delta is
+    // polluted by the tail of the entrance animation and reads as 17–48px in
+    // Firefox instead of ~100px.
+    await page.waitForTimeout(600);
     const before = await calendar.boundingBox();
     expect(before).not.toBeNull();
 
     // Scroll the page by 100px. The popup should reposition to follow the trigger.
     await page.evaluate(() => window.scrollBy(0, 100));
 
-    // Poll the popup's box until it's moved meaningfully relative to its pre-scroll
-    // position. A fixed `waitForTimeout(50)` here was flaky in Firefox — the
-    // rAF-batched reposition hadn't committed by the time we read the box, and
-    // the test would see a partial delta (17–48px). Polling lets us wait for the
-    // actual reposition to land, with a hard cap for the truly-broken case.
+    // Poll the popup's box until the reposition lands. Firefox's rAF batching is
+    // slower than Chromium's; a fixed `waitForTimeout(50)` here was flaky.
     await expect
       .poll(async () => {
         const r = await calendar.boundingBox();
