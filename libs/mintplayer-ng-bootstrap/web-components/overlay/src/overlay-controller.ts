@@ -180,11 +180,12 @@ export class OverlayController implements ReactiveController {
   }
 
   /**
-   * M0 placeholder positioning: drop the panel below the anchor, clamp
-   * horizontally to viewport, flip above if it would overflow the bottom.
+   * Walk the configured `positions` and pick the first candidate whose panel
+   * rect fully fits inside the viewport (minus `viewportMargin`). If none fit,
+   * the last candidate is applied and clamped to viewport edges (push behaviour).
    *
-   * M1+ replaces this with the full position-pair selection algorithm,
-   * scroll tracking, and sticky-offscreen fallback.
+   * `start`/`end` are direction-aware: in RTL contexts they swap to match
+   * visual layout.
    */
   position(): void {
     const anchor = this.resolveAnchor();
@@ -192,26 +193,119 @@ export class OverlayController implements ReactiveController {
     if (!anchor || !panel) return;
     this.activeAnchor = anchor;
 
+    const positions = this.options.positions ?? DEFAULT_POSITIONS;
+    const margin = this.options.viewportMargin ?? 8;
     const triggerRect = anchor.getBoundingClientRect();
     const panelRect = panel.getBoundingClientRect();
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    const margin = this.options.viewportMargin ?? 8;
+    const rtl = this.isRtl();
 
-    let left = triggerRect.left;
-    if (left + panelRect.width > vw - margin) {
-      left = vw - panelRect.width - margin;
+    let chosen: { left: number; top: number } | null = null;
+
+    for (const candidate of positions) {
+      const placed = this.placeFor(candidate, triggerRect, panelRect, rtl);
+      if (this.fitsInViewport(placed, panelRect, vw, vh, margin)) {
+        chosen = placed;
+        break;
+      }
+      // Remember the last candidate so we can fall back to it if nothing fits.
+      chosen = placed;
     }
+
+    if (!chosen) return;
+
+    // Clamp the final position into the viewport. If a candidate fit cleanly
+    // this is a no-op; otherwise this is the "push" fallback that keeps the
+    // panel reachable even when no position is a clean fit.
+    const clamped = this.clampToViewport(chosen, panelRect, vw, vh, margin);
+    panel.style.left = `${clamped.left}px`;
+    panel.style.top = `${clamped.top}px`;
+  }
+
+  private isRtl(): boolean {
+    return getComputedStyle(this.host).direction === 'rtl';
+  }
+
+  /**
+   * Compute the (left, top) at which `panel` should be placed for a single
+   * position candidate. The candidate identifies which corner of the anchor
+   * to align which corner of the panel to, plus optional pixel offsets.
+   */
+  private placeFor(
+    candidate: OverlayPosition,
+    triggerRect: DOMRect,
+    panelRect: DOMRect,
+    rtl: boolean,
+  ): { left: number; top: number } {
+    const anchorX = this.anchorXFor(candidate.originX, triggerRect, rtl);
+    const anchorY = this.anchorYFor(candidate.originY, triggerRect);
+    const panelXOffset = this.panelXOffsetFor(candidate.overlayX, panelRect.width, rtl);
+    const panelYOffset = this.panelYOffsetFor(candidate.overlayY, panelRect.height);
+    return {
+      left: anchorX + panelXOffset + (candidate.offsetX ?? 0),
+      top: anchorY + panelYOffset + (candidate.offsetY ?? 0),
+    };
+  }
+
+  private anchorXFor(origin: OverlayOriginX, rect: DOMRect, rtl: boolean): number {
+    // In RTL, 'start' visually maps to the right edge of the anchor.
+    const start = rtl ? rect.right : rect.left;
+    const end = rtl ? rect.left : rect.right;
+    if (origin === 'start') return start;
+    if (origin === 'end') return end;
+    return rect.left + rect.width / 2;
+  }
+
+  private anchorYFor(origin: OverlayOriginY, rect: DOMRect): number {
+    if (origin === 'top') return rect.top;
+    if (origin === 'bottom') return rect.bottom;
+    return rect.top + rect.height / 2;
+  }
+
+  private panelXOffsetFor(overlayX: OverlayOriginX, width: number, rtl: boolean): number {
+    // Offset = amount to shift the panel left so that its (start | center | end)
+    // edge lines up with the anchor point. In RTL, the panel's 'start' is its
+    // right edge, so we mirror.
+    if (overlayX === 'start') return rtl ? -width : 0;
+    if (overlayX === 'end') return rtl ? 0 : -width;
+    return -width / 2;
+  }
+
+  private panelYOffsetFor(overlayY: OverlayOriginY, height: number): number {
+    if (overlayY === 'top') return 0;
+    if (overlayY === 'bottom') return -height;
+    return -height / 2;
+  }
+
+  private fitsInViewport(
+    placed: { left: number; top: number },
+    panelRect: DOMRect,
+    vw: number,
+    vh: number,
+    margin: number,
+  ): boolean {
+    return (
+      placed.left >= margin &&
+      placed.top >= margin &&
+      placed.left + panelRect.width <= vw - margin &&
+      placed.top + panelRect.height <= vh - margin
+    );
+  }
+
+  private clampToViewport(
+    placed: { left: number; top: number },
+    panelRect: DOMRect,
+    vw: number,
+    vh: number,
+    margin: number,
+  ): { left: number; top: number } {
+    let { left, top } = placed;
+    if (left + panelRect.width > vw - margin) left = vw - panelRect.width - margin;
     if (left < margin) left = margin;
-
-    let top = triggerRect.bottom + 4;
-    if (top + panelRect.height > vh - margin) {
-      const above = triggerRect.top - panelRect.height - 4;
-      if (above >= margin) top = above;
-    }
-
-    panel.style.left = `${left}px`;
-    panel.style.top = `${top}px`;
+    if (top + panelRect.height > vh - margin) top = vh - panelRect.height - margin;
+    if (top < margin) top = margin;
+    return { left, top };
   }
 
   private releaseStackToken(): void {
