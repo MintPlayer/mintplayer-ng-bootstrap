@@ -227,15 +227,6 @@
           <a [routerLink]='["/advanced", "resizable"]'>Resizable</a>
         </bs-navbar-item>
         <bs-navbar-item>
-          <a [routerLink]='["/advanced", "dock"]'>Dock</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/advanced", "tile-manager"]'>Tile manager</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
-          <a [routerLink]='["/advanced", "ribbon"]'>Ribbon</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
           <a [routerLink]='["/advanced", "ordinal-number"]'>Ordinal numbers</a>
         </bs-navbar-item>
         <bs-navbar-item>
@@ -257,9 +248,6 @@
           <a [routerLink]='["/advanced", "select2"]'>Select2</a>
         </bs-navbar-item>
         <bs-navbar-item>
-          <a [routerLink]='["/advanced", "datatables"]'>Datatables</a>
-        </bs-navbar-item>
-        <bs-navbar-item>
           <a [routerLink]='["/advanced", "file-upload"]'>File upload</a>
         </bs-navbar-item>
         <bs-navbar-item>
@@ -277,8 +265,25 @@
         <bs-navbar-item>
           <a [routerLink]='["/advanced", "navigation-lock-master-detail"]'>Navigation lock (master/detail)</a>
         </bs-navbar-item>
+      </bs-navbar-dropdown>
+    </bs-navbar-item>
+    <bs-navbar-item>
+      <a bsNavbarTrigger="/enterprise">Enterprise</a>
+      <bs-navbar-dropdown>
         <bs-navbar-item>
-          <a [routerLink]='["/advanced", "scheduler"]'>Scheduler</a>
+          <a [routerLink]='["/enterprise", "scheduler"]'>Scheduler</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/enterprise", "dock"]'>Dock</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/enterprise", "ribbon"]'>Ribbon</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/enterprise", "tile-manager"]'>Tile manager</a>
+        </bs-navbar-item>
+        <bs-navbar-item>
+          <a [routerLink]='["/enterprise", "datatables"]'>Datatables</a>
         </bs-navbar-item>
       </bs-navbar-dropdown>
     </bs-navbar-item>

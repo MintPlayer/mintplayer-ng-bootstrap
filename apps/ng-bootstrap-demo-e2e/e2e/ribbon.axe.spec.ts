@@ -20,7 +20,7 @@ test.describe('ribbon — axe-core a11y audit', () => {
   test.slow();
 
   test.beforeEach(async ({ page }) => {
-    await page.goto('/advanced/ribbon');
+    await page.goto('/enterprise/ribbon');
     await page.waitForLoadState('networkidle');
     await page.waitForFunction(
       () => !!document.querySelector('mp-ribbon')?.shadowRoot?.querySelector('[role="tab"]')

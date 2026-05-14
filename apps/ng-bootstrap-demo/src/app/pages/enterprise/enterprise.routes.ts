@@ -1,0 +1,10 @@
+import { Routes } from '@angular/router';
+
+export const ROUTES: Routes = [
+  { path: '', loadChildren: () => [], pathMatch: 'full', canActivate: [() => false] },
+  { path: 'datatables', loadComponent: () => import('./datatables/datatables.component').then(m => m.DatatablesComponent) },
+  { path: 'scheduler', loadComponent: () => import('./scheduler/scheduler.component').then(m => m.SchedulerComponent) },
+  { path: 'dock', loadComponent: () => import('./dock/dock.component').then(m => m.DockComponent) },
+  { path: 'tile-manager', loadComponent: () => import('./tile-manager/tile-manager.component').then(m => m.TileManagerComponent) },
+  { path: 'ribbon', loadComponent: () => import('./ribbon/ribbon.component').then(m => m.RibbonComponent) },
+];

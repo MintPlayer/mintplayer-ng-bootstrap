@@ -766,7 +766,7 @@ session knows the current state of the branch.
   trigger (`rootResizeObserver`'s first callback) schedules the handle
   render via `setTimeout(5)`, which fires in the next frame's task
   phase — *before* the rAFs that pin panel sizes run. The result:
-  ~60% of fresh navigations to `/advanced/dock` at narrow widths
+  ~60% of fresh navigations to `/enterprise/dock` at narrow widths
   stranded the intersection glyph at the splitter's geometric centre
   (where equal-flex dividers sit), with no further trigger until a
   user interaction. `setPanelSizes` is silent (dispatches no event),

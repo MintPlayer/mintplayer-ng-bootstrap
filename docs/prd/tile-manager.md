@@ -107,7 +107,7 @@ export * from './lib/types/tile-position';
 export * from './lib/types/tile-layout-snapshot';
 ```
 
-Demo page: `apps/ng-bootstrap-demo/src/app/pages/advanced/tile-manager/...` plus a route entry alongside the existing `dock` page.
+Demo page: `apps/ng-bootstrap-demo/src/app/pages/enterprise/tile-manager/...` plus a route entry alongside the existing `dock` page.
 
 ## 5. Design
 
@@ -357,7 +357,7 @@ Lit gives us `firstUpdated` / `updated` lifecycle hooks for the "before" and "af
 
 ### 5.11 Demo page
 
-`/advanced/tile-manager`. Layout:
+`/enterprise/tile-manager`. Layout:
 
 - **Top:** description and toggle controls — `columnCount`, `minColumnWidth`, `gap`, `dragMode`, `resizeMode`, `animateReflow`, plus a "Locked" toggle on each tile.
 - **Middle:** `<bs-tile-manager>` with six mock tiles ("Weather", "Inbox", "Stats", "Calendar", "Notes", "Activity"). Each tile has realistic content so push-reflow looks natural.
@@ -484,7 +484,7 @@ Ship the WC as its own npm package immediately, with `@mintplayer/ng-bootstrap/t
 - Persistence round-trip: capture snapshot → mutate → re-bind → tile positions match.
 - Mid-gesture rebind: with `isGestureActive`, the wrapper does not clobber `previewLayout`.
 
-**Manual** (https://bootstrap.mintplayer.com/advanced/tile-manager once shipped)
+**Manual** (https://bootstrap.mintplayer.com/enterprise/tile-manager once shipped)
 
 | Device | Gesture | Expected |
 | --- | --- | --- |
@@ -530,8 +530,8 @@ Ship the WC as its own npm package immediately, with `@mintplayer/ng-bootstrap/t
 | `libs/mintplayer-ng-bootstrap/tile-manager/src/lib/types/grid-rect.ts` | New. |
 | `libs/mintplayer-ng-bootstrap/tile-manager/src/lib/components/tile-manager.component.spec.ts` | New — Angular wrapper integration tests. |
 | `tsconfig.base.json` | Add path mapping `@mintplayer/ng-bootstrap/tile-manager` → `libs/mintplayer-ng-bootstrap/tile-manager/index.ts`. |
-| `apps/ng-bootstrap-demo/src/app/pages/advanced/tile-manager/tile-manager.component.{ts,html,scss}` | New demo page with localStorage round-trip. |
-| `apps/ng-bootstrap-demo/src/app/app.routes.ts` (or wherever advanced routes live) | Add `/advanced/tile-manager` route. |
+| `apps/ng-bootstrap-demo/src/app/pages/enterprise/tile-manager/tile-manager.component.{ts,html,scss}` | New demo page with localStorage round-trip. |
+| `apps/ng-bootstrap-demo/src/app/app.routes.ts` (or wherever advanced routes live) | Add `/enterprise/tile-manager` route. |
 | `apps/ng-bootstrap-demo/src/app/components/sidebar/...` | Add nav entry. |
 
 No changes to `BsDock`, `BsResizable`, `BsGrid`, `mp-scheduler`, or any other existing component. The codegen-wc pipeline is reused, not modified. No new top-level runtime dependencies (Lit is already loaded by dock + scheduler).

@@ -23,7 +23,7 @@ The remaining gap, reported on `feat/aria-accessibility`:
 
 In other words: **the grid body has roles but no focus model**, and **events are not yet reachable by Tab**. Drag-create, drag-move, and drag-resize — three of the four primary user actions — remain pointer-only.
 
-This blocks WCAG 2.1.1 for any user who can't operate a pointer, and renders the demo at `/advanced/scheduler` unusable to keyboard-only users beyond view switching.
+This blocks WCAG 2.1.1 for any user who can't operate a pointer, and renders the demo at `/enterprise/scheduler` unusable to keyboard-only users beyond view switching.
 
 ## 2. Goals / non-goals
 
@@ -51,7 +51,7 @@ This blocks WCAG 2.1.1 for any user who can't operate a pointer, and renders the
 - `libs/mintplayer-ng-bootstrap/web-components/scheduler/src/views/base-view.ts` — shared cell-coordinate helpers + ARIA label formatters.
 - `libs/mintplayer-ng-bootstrap/web-components/scheduler/src/events/scheduler-event-emitter.ts` + `event-types.ts` — rename `event-click` → `event-selected` (D3).
 - `libs/mintplayer-ng-bootstrap/scheduler/` — Angular wrapper `bs-scheduler` output rename `(eventClick)` → `(eventSelected)`.
-- Demo page `apps/ng-bootstrap-demo/src/app/pages/advanced/scheduler/scheduler.component.{ts,html,scss}` — rename binding, show the new keymap including `Alt+letter` shortcuts (precedent: `wc_aria_decisions.md` memory — *demo pages must show keymap*).
+- Demo page `apps/ng-bootstrap-demo/src/app/pages/enterprise/scheduler/scheduler.component.{ts,html,scss}` — rename binding, show the new keymap including `Alt+letter` shortcuts (precedent: `wc_aria_decisions.md` memory — *demo pages must show keymap*).
 - Tests: extend `mp-scheduler.aria.spec.ts` and add `mp-scheduler.keyboard.spec.ts`.
 
 **Out of scope:**
@@ -213,7 +213,7 @@ ArrowLeft/Right's current binding (prev/next period) **is reassigned** to PageUp
 - `src/events/event-types.ts` (type definitions)
 - `mp-scheduler.ts` Lit reflection (any `@event` JSDoc)
 - Angular wrapper `bs-scheduler` — `(eventClick)` → `(eventSelected)` output
-- Demo: `apps/ng-bootstrap-demo/src/app/pages/advanced/scheduler/scheduler.component.{ts,html}`
+- Demo: `apps/ng-bootstrap-demo/src/app/pages/enterprise/scheduler/scheduler.component.{ts,html}`
 - Tests: `mp-scheduler.aria.spec.ts`, any pointer-driven specs that listen for `event-click`
 
 Public API breaking change. Per memory *BC is not a default constraint*, no shim — single changelog line.
@@ -332,7 +332,7 @@ A keyboard-only user must be able to:
 10. `Alt+T` jumps to today; `Alt+W/D/Y` switch view (D2). Bare T/Y/W/D no longer fire shortcuts.
 11. Demo page shows the keymap legend including the new `Alt+letter` bindings.
 12. All Phase 5/6 tests in `mp-scheduler.aria.spec.ts` still pass after the `event-click` → `event-selected` rename and tabindex flip.
-13. `axe-core` reports no new violations on `/advanced/scheduler`.
+13. `axe-core` reports no new violations on `/enterprise/scheduler`.
 14. **Public API breaking changes documented in CHANGELOG:** `event-click` → `event-selected`; `M`-on-event removed; bare T/Y/W/D removed; `event-click` Angular output renamed to `event-selected`.
 
 ## 10. Decisions (resolved 2026-05-10)
@@ -356,7 +356,7 @@ A keyboard-only user must be able to:
 - New: `libs/mintplayer-ng-bootstrap/web-components/scheduler/src/components/mp-scheduler.keyboard.spec.ts`.
 
 **Demo:**
-- `apps/ng-bootstrap-demo/src/app/pages/advanced/scheduler/scheduler.component.{ts,html,scss}` — keymap legend block.
+- `apps/ng-bootstrap-demo/src/app/pages/enterprise/scheduler/scheduler.component.{ts,html,scss}` — keymap legend block.
 
 **Precedent (read-only references):**
 - `libs/mintplayer-ng-bootstrap/calendar/src/calendar.component.ts` — grid roving + keymap.

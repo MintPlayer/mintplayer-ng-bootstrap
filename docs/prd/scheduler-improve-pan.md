@@ -77,7 +77,7 @@ The mouse path mirrors the touch pan-candidate logic instead of going straight t
 
 ## 6. Verification plan
 
-- Manual: exercise all 7 acceptance scenarios in the demo at `apps/ng-bootstrap-demo/src/app/pages/advanced/scheduler`, in both Chromium and Firefox per [[feedback_firefox_flex_shrink]] hygiene.
+- Manual: exercise all 7 acceptance scenarios in the demo at `apps/ng-bootstrap-demo/src/app/pages/enterprise/scheduler`, in both Chromium and Firefox per [[feedback_firefox_flex_shrink]] hygiene.
 - Specs: check `mp-scheduler.keyboard.spec.ts` and `mp-scheduler.aria.spec.ts` still pass — neither targets pan, but the input handler refactor shouldn't disturb them. If a new pan-related spec is warranted, add it under `libs/mintplayer-ng-bootstrap/web-components/scheduler/src/input/` covering scenarios 1 and 5.
 - No new Playwright e2e is required for the bugfix itself, but if one is added it must respect [[project_e2e_destructive_bootstrap]] (use `waitForLoadState('networkidle')`, no client hydration).
 
@@ -100,4 +100,4 @@ The mouse path mirrors the touch pan-candidate logic instead of going straight t
 - Drag state machine (no change): `libs/mintplayer-ng-bootstrap/web-components/scheduler/src/drag/drag-state-machine.ts`
 - Drag manager (no change): `libs/mintplayer-ng-bootstrap/web-components/scheduler/src/drag/drag-manager.ts`
 - Angular wrapper: `libs/mintplayer-ng-bootstrap/scheduler`
-- Demo: `apps/ng-bootstrap-demo/src/app/pages/advanced/scheduler`
+- Demo: `apps/ng-bootstrap-demo/src/app/pages/enterprise/scheduler`

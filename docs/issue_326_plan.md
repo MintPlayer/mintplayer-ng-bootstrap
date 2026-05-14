@@ -78,7 +78,7 @@ None. Pure rendering-side change, no public API surface, no type-level changes, 
 
 ### Phase 3: E2E test
 1. Create `dock-intersections.spec.ts` next to the existing `dock.spec.ts` in `apps/ng-bootstrap-demo-e2e/e2e/`.
-2. Navigate to `/advanced/dock` (default demo layout with two floats already covering the docked splitter zones — reproduces the screenshot).
+2. Navigate to `/enterprise/dock` (default demo layout with two floats already covering the docked splitter zones — reproduces the screenshot).
 3. Wait for `networkidle` (per the workspace convention for destructive bootstrap demo pages — see `docs/...` history).
 4. Evaluate inside `mint-dock-manager`'s shadow root: enumerate every `.dock-intersection-handle`, parse `data-key` (format `<hPath>:<hIdx>|<vPath>:<vIdx>` — see line 800), and assert for every handle that `layerKey(hPath) === layerKey(vPath)`.
 5. Assert at least one same-layer handle still renders (regression guard against accidentally over-filtering).
@@ -121,7 +121,7 @@ None. Pure rendering-side change, no public API surface, no type-level changes, 
 
 - [ ] AC-1: `renderIntersectionHandles()` never emits a `.dock-intersection-handle` whose backing `(h, v)` divider pair comes from different dock layers (docked vs. floating, or floating-N vs. floating-M, N ≠ M).
 - [ ] AC-2: All pre-existing same-layer intersection handles remain — the count and `data-key` of handles in a layout with no cross-layer coincidences are unchanged.
-- [ ] AC-3: The default `/advanced/dock` demo layout shown in the issue screenshot no longer renders any phantom grips between the floats and the docked splitters.
+- [ ] AC-3: The default `/enterprise/dock` demo layout shown in the issue screenshot no longer renders any phantom grips between the floats and the docked splitters.
 - [ ] AC-4: Keyboard reachability (`tabindex=0`), arrow-key resize, double-click distribute, and pointer-drag corner resize on remaining (real) handles behave identically to current behaviour.
 - [ ] AC-5: New vitest spec (`mint-dock-manager.intersections.spec.ts`) covers Scenarios 1, 2, 3 and passes.
 - [ ] AC-6: New Playwright spec (`dock-intersections.spec.ts`) covers the demo regression (Scenario 1 via real layout) and passes locally.
@@ -154,5 +154,5 @@ nx e2e ng-bootstrap-demo-e2e --grep "dock"
 - `libs/mintplayer-ng-bootstrap/dock/src/lib/web-components/mint-dock-manager.element.html:4` — `.dock-intersections-layer` host
 - `libs/mintplayer-ng-bootstrap/dock/src/lib/web-components/mint-dock-manager.element.scss:230-267` — handle styles (no change)
 - `libs/mintplayer-ng-bootstrap/dock/src/lib/types/dock-layout.ts:22-23` — `DockPath` discriminated union (the layer-identity source of truth)
-- `apps/ng-bootstrap-demo/src/app/pages/advanced/dock/dock.component.ts` — demo reproducer
+- `apps/ng-bootstrap-demo/src/app/pages/enterprise/dock/dock.component.ts` — demo reproducer
 - `apps/ng-bootstrap-demo-e2e/e2e/dock.spec.ts` — existing dock e2e, neighbour for the new spec

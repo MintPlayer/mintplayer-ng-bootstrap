@@ -118,11 +118,11 @@ Recommended six (drawn from the Explore agent's inventory, ranked by *uniqueness
 
 | Card | Pitch | Link |
 |---|---|---|
-| **Scheduler** | Day / week / month calendar with drag-drop event editing, ARIA-keyboard navigation, signal-driven data binding. Built on Lit 3 internally. | `/advanced/scheduler` |
-| **Dock manager** | VS Code-style splittable, draggable panel manager with same-layer splitter intersection glyphs. | `/advanced/dock` |
-| **Ribbon** | Microsoft-style command surface — nine item kinds, quick-access toolbar, touch mode. | `/advanced/ribbon` |
-| **Tile manager** | Windowless push-and-reflow tiling layout. Alternative to dock for dashboard shells. | `/advanced/tile-manager` |
-| **Datatable** | CDK virtual-scroll-backed table with pagination, selection, and resizable columns; one signal-driven data contract. | `/advanced/datatables` |
+| **Scheduler** | Day / week / month calendar with drag-drop event editing, ARIA-keyboard navigation, signal-driven data binding. Built on Lit 3 internally. | `/enterprise/scheduler` |
+| **Dock manager** | VS Code-style splittable, draggable panel manager with same-layer splitter intersection glyphs. | `/enterprise/dock` |
+| **Ribbon** | Microsoft-style command surface — nine item kinds, quick-access toolbar, touch mode. | `/enterprise/ribbon` |
+| **Tile manager** | Windowless push-and-reflow tiling layout. Alternative to dock for dashboard shells. | `/enterprise/tile-manager` |
+| **Datatable** | CDK virtual-scroll-backed table with pagination, selection, and resizable columns; one signal-driven data contract. | `/enterprise/datatables` |
 | **Theming** | Live light / dark / `auto` + custom variants like `sepia`, all via a single signal-based service. SSR-safe. | `/additional-samples/theming` |
 
 Each card uses Bootstrap's `card` classes inside the `bsRow` columns. No custom CSS. Title as `<h3>`, body as `<p class="small text-muted">`, footer as a routerLink to the demo.

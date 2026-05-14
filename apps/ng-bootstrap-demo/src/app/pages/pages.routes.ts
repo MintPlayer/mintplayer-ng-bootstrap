@@ -6,5 +6,6 @@ export const ROUTES: Routes = [
   { path: 'additional-samples', loadChildren: () => import('./additional-samples/additional-samples.routes').then(m => m.ROUTES) },
   { path: 'basic', loadChildren: () => import('./basic/basic.routes').then(m => m.ROUTES) },
   { path: 'advanced', loadChildren: () => import('./advanced/advanced.routes').then(m => m.ROUTES) },
+  { path: 'enterprise', loadChildren: () => import('./enterprise/enterprise.routes').then(m => m.ROUTES) },
   { path: 'animations', loadChildren: () => import('./animations/animations.routes').then(m => m.ROUTES) },
 ];

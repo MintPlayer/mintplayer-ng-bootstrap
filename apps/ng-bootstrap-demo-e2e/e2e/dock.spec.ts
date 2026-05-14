@@ -8,7 +8,7 @@ import { test, expect } from '@playwright/test';
 // the "Captured snapshot" section to render. That validates dock-manager
 // rendering + its capture API end-to-end without coupling to drag internals.
 test('dock manager renders panels and captures a layout snapshot', async ({ page }) => {
-  await page.goto('/advanced/dock');
+  await page.goto('/enterprise/dock');
   await page.waitForLoadState('networkidle');
 
   await expect(page.getByRole('heading', { name: 'Panel 1' })).toBeVisible();

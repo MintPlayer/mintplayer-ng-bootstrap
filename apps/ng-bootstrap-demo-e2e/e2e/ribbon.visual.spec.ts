@@ -55,7 +55,7 @@ test.describe('ribbon — visual regression per version', () => {
 
   test.beforeEach(async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 200 });
-    await page.goto('/advanced/ribbon');
+    await page.goto('/enterprise/ribbon');
     await page.waitForLoadState('networkidle');
     await page.waitForFunction(
       () => !!document.querySelector('mp-ribbon')?.shadowRoot?.querySelector('[role="tab"]')

@@ -40,27 +40,27 @@ export class HomeComponent {
     {
       title: 'Scheduler',
       pitch: 'Day / week / month calendar with drag-drop event editing, ARIA-keyboard navigation, and signal-driven data binding. Built on Lit 3 internally.',
-      routerLink: '/advanced/scheduler',
+      routerLink: '/enterprise/scheduler',
     },
     {
       title: 'Dock manager',
       pitch: 'VS Code-style splittable, draggable panel manager with same-layer splitter intersection glyphs.',
-      routerLink: '/advanced/dock',
+      routerLink: '/enterprise/dock',
     },
     {
       title: 'Ribbon',
       pitch: 'Microsoft-style command surface — nine item kinds, quick-access toolbar, touch mode.',
-      routerLink: '/advanced/ribbon',
+      routerLink: '/enterprise/ribbon',
     },
     {
       title: 'Tile manager',
       pitch: 'Windowless push-and-reflow tiling layout. Alternative to dock for dashboard shells.',
-      routerLink: '/advanced/tile-manager',
+      routerLink: '/enterprise/tile-manager',
     },
     {
       title: 'Datatable',
       pitch: 'CDK virtual-scroll-backed table with pagination, selection, and resizable columns; one signal-driven data contract.',
-      routerLink: '/advanced/datatables',
+      routerLink: '/enterprise/datatables',
     },
     {
       title: 'Theming',
