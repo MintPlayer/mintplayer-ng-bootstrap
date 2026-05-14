@@ -760,6 +760,18 @@ session knows the current state of the branch.
   panel-wrappers' negative margins (the `.divider` thumb-margin overlap)
   from `targetPanelTotal`, otherwise the layout undersized by 6 px and
   left visible gaps between panels. Commit: `e31e5cfe`.
+- `renderSplit`'s `setPanelSizes` rAF now chains a second rAF that calls
+  `scheduleRenderIntersectionHandles` after `mp-splitter`'s own
+  `handleContainerResize` rAF runs. Without this, the only initial
+  trigger (`rootResizeObserver`'s first callback) schedules the handle
+  render via `setTimeout(5)`, which fires in the next frame's task
+  phase — *before* the rAFs that pin panel sizes run. The result:
+  ~60% of fresh navigations to `/advanced/dock` at narrow widths
+  stranded the intersection glyph at the splitter's geometric centre
+  (where equal-flex dividers sit), with no further trigger until a
+  user interaction. `setPanelSizes` is silent (dispatches no event),
+  so we need the explicit rAF-chained nudge to re-read divider rects
+  after sizes settle.
 
 **Repo hygiene:**
 
