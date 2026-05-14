@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('bs-datetime-picker', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/basic/datetime-picker');
+    await page.goto('/basic/forms/datetime-picker');
     await page.waitForLoadState('networkidle');
   });
 
