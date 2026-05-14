@@ -88,14 +88,13 @@ test.describe('navigation-lock', () => {
     await page.goto('/advanced/navigation-lock');
     await page.waitForLoadState('networkidle');
 
-    // Toggle the demo's allowExit to true via its model binding.
-    // The checkbox's underlying input is the most reliable handle.
-    await page.evaluate(() => {
-      const root = document.querySelector('demo-navigation-lock');
-      const ng = (window as { ng?: { getComponent: (el: Element) => unknown } }).ng;
-      const cmp = ng?.getComponent?.(root!) as { allowExit?: boolean };
-      if (cmp) cmp.allowExit = true;
-    });
+    // Toggle the demo's "Allow exit" checkbox. We can't reach in through
+    // `ng.getComponent` here — Playwright runs against a production build of
+    // the demo (see playwright.config.ts: `--configuration=production`), and
+    // Angular's prod mode strips the global `ng` debug API, so the previous
+    // `ng.getComponent(root).allowExit = true` short-circuited to a no-op and
+    // the form stayed locked. Drive the bs-checkbox via its rendered input.
+    await page.getByRole('checkbox', { name: 'Allow exit' }).check();
 
     await page
       .locator('bs-navbar a')
