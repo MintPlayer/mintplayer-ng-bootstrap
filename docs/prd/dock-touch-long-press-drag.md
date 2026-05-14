@@ -5,7 +5,7 @@
 **Date:** 2026-05-05
 **Library:** `@mintplayer/ng-bootstrap/dock`
 **Component:** `<mint-dock-manager>` web component
-**Reproduction:** https://bootstrap.mintplayer.com/advanced/dock on any touchscreen device with a stack containing several panes whose combined headers overflow the strip width.
+**Reproduction:** https://bootstrap.mintplayer.com/enterprise/dock on any touchscreen device with a stack containing several panes whose combined headers overflow the strip width.
 **Related prior PRDs:**
 - `docs/prd/dock-tab-drag-android-touch.md` — added `touch-action: none` to drag surfaces so undock works at all on Android.
 - `docs/prd/dock-splitter-tabcontrol-lit-composition.md` — composed the dock from `<mp-tab-control>` + `<mp-splitter>` (where the strip lives today).
@@ -237,7 +237,7 @@ These are explicitly *not* in this PRD's scope. Logged here so we don't lose the
 
 ## 8. Test plan
 
-**Manual matrix** (run on https://bootstrap.mintplayer.com/advanced/dock, configure layout to overflow the strip):
+**Manual matrix** (run on https://bootstrap.mintplayer.com/enterprise/dock, configure layout to overflow the strip):
 
 | Device | Gesture | Expected |
 | --- | --- | --- |

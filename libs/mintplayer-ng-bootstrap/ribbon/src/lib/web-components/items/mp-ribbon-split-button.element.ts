@@ -1,7 +1,7 @@
 import { css, html, type TemplateResult } from 'lit';
 import { query } from 'lit/decorators.js';
 import { MpRibbonItemBase, RIBBON_ICON_SLOT_STYLES } from './mp-ribbon-item-base';
-import { OverlayController } from '../overlay-controller';
+import { OverlayController } from '@mintplayer/ng-bootstrap/web-components/overlay';
 
 /**
  * mp-ribbon-split-button — Two adjacent buttons: main action + chevron.
@@ -118,7 +118,7 @@ export class MpRibbonSplitButton extends MpRibbonItemBase {
   private panelEl!: HTMLElement;
 
   private overlay = new OverlayController(this, {
-    trigger: () => this.chevronEl,
+    anchor: () => this.chevronEl,
     panel: () => this.panelEl,
     onOpen: () => this.emitMenuToggle(true),
     onClose: () => this.emitMenuToggle(false),

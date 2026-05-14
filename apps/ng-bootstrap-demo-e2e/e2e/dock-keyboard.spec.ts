@@ -87,7 +87,7 @@ async function readLiveLayout(page: Page): Promise<string> {
 
 test.describe('mint-dock-manager — keyboard pane move-mode', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/advanced/dock');
+    await page.goto('/enterprise/dock');
     // Demo SSR uses destructive bootstrap; the WC needs networkidle to settle
     // before its shadow tree is populated (see memory project_e2e_destructive_bootstrap).
     await page.waitForLoadState('networkidle');

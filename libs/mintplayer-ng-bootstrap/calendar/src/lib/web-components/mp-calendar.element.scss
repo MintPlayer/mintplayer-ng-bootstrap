@@ -1,0 +1,100 @@
+:host {
+  display: inline-block;
+  box-sizing: border-box;
+  color: var(--bs-body-color);
+}
+
+.text-muted {
+  color: var(--bs-secondary-color) !important;
+}
+
+$cell-size: 40px;
+
+table {
+  border-collapse: collapse;
+  border: 1px solid var(--bs-border-color);
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
+  margin-bottom: 0;
+  width: auto;
+
+  td, th {
+    width: $cell-size;
+    height: $cell-size;
+    text-align: center;
+    cursor: default;
+    padding: 0;
+
+    span {
+      white-space: nowrap;
+    }
+  }
+
+  td.selected {
+    background-color: var(--bs-primary);
+    color: #fff;
+  }
+
+  td.cursor-pointer {
+    cursor: pointer;
+  }
+
+  td:focus {
+    outline: none;
+  }
+
+  td:focus-visible {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: -2px;
+  }
+
+  th {
+    background-color: var(--bs-tertiary-bg);
+    font-weight: bolder;
+  }
+
+  tr {
+    border-top: none;
+  }
+
+  tr:first-child > td {
+    border-bottom: 1px solid var(--bs-border-color);
+  }
+
+  tr:nth-of-type(2) > th:not(:nth-of-type(1)) {
+    border-bottom: 1px solid var(--bs-border-color);
+  }
+
+  tr:not(:nth-of-type(2)) > th:nth-of-type(1) {
+    border-right: 1px solid var(--bs-border-color);
+  }
+}
+
+.chevron-btn {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  width: 100%;
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  &:focus { outline: none; }
+  &:focus-visible {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: -2px;
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.month-label {
+  font-weight: bolder;
+}

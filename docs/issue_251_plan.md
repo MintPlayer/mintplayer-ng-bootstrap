@@ -93,7 +93,7 @@ Replace the dormant Cypress e2e setup with `@nx/playwright`. The existing Cypres
 3. `modal.spec.ts` — visit `/overlays/modals`, open a modal, assert it appears, close via the close button, assert it disappears.
 4. `dropdown.spec.ts` — visit `/overlays/dropdown`, open a dropdown, click a menu item, assert it closed and the selection registered.
 5. `datepicker.spec.ts` — visit `/basic/datepicker`, open the picker, click a day, assert the input shows that date.
-6. `dock.spec.ts` — visit `/advanced/dock`, perform a split via pointer events, assert two panes exist where one was. (Use pointer events per the project memory rule on HTML5 dnd.)
+6. `dock.spec.ts` — visit `/enterprise/dock`, perform a split via pointer events, assert two panes exist where one was. (Use pointer events per the project memory rule on HTML5 dnd.)
 
 ### Phase 4: Wire CI
 1. Add "Install Playwright browsers" step to `pull-request.yml` after `Install dependencies`: `npx playwright install --with-deps chromium firefox`.
@@ -135,7 +135,7 @@ Replace the dormant Cypress e2e setup with `@nx/playwright`. The existing Cypres
 - **Then** the input field shows that date
 
 ### Scenario 6: Dock splits a pane via pointer events
-- **Given** Playwright is on `/advanced/dock`
+- **Given** Playwright is on `/enterprise/dock`
 - **When** it dispatches pointerdown/pointermove/pointerup to perform a split
 - **Then** the dock has one more pane than before
 

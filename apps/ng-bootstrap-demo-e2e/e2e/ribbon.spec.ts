@@ -60,7 +60,7 @@ async function keyTipMode(page: Page): Promise<string> {
 
 test.describe('ribbon demo', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/advanced/ribbon');
+    await page.goto('/enterprise/ribbon');
     await page.waitForLoadState('networkidle');
     await page.waitForFunction(
       () => !!document.querySelector('mp-ribbon')?.shadowRoot?.querySelector('[role="tab"]')

@@ -1,6 +1,6 @@
 import { css, html, LitElement, nothing, type TemplateResult } from 'lit';
 import { property, state, query } from 'lit/decorators.js';
-import { OverlayController } from './overlay-controller';
+import { OverlayController } from '@mintplayer/ng-bootstrap/web-components/overlay';
 
 export type RibbonGroupSize = 'large' | 'medium' | 'small' | 'popup';
 export type RibbonReduceStep = readonly [groupId: string, target: RibbonGroupSize];
@@ -174,7 +174,7 @@ export class MpRibbonTab extends LitElement {
   private overflowPanelEl?: HTMLElement;
 
   private readonly overflowOverlay = new OverlayController(this, {
-    trigger: () => this.overflowTriggerEl ?? null,
+    anchor: () => this.overflowTriggerEl ?? null,
     panel: () => this.overflowPanelEl ?? null,
   });
 

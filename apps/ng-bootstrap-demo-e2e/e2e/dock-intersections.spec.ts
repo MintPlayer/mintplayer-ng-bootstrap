@@ -26,7 +26,7 @@ async function countHandlesForLayout(
 
 test.describe('mint-dock-manager — cross-layer intersection-glyph regression', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/advanced/dock');
+    await page.goto('/enterprise/dock');
     await page.waitForLoadState('networkidle');
   });
 

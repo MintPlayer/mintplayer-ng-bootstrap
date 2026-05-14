@@ -1,6 +1,6 @@
 # PRD: virtual-datatable — fill the container when content is narrower than viewport
 
-**Status:** **Shipped 2026-05-13** — closed out via a CSS + spacer-cell hybrid that sidesteps the proportional-distribution concerns the original options analysis raised. See "Shipped implementation" below for what was actually built and why it differs from the recommended Option A. **Acceptance criteria 1–9 verified in `apps/ng-bootstrap-demo` at `/advanced/datatables` and in `libs/mintplayer-ng-bootstrap/datatable/src/datatable/datatable.spacer.spec.ts`.**
+**Status:** **Shipped 2026-05-13** — closed out via a CSS + spacer-cell hybrid that sidesteps the proportional-distribution concerns the original options analysis raised. See "Shipped implementation" below for what was actually built and why it differs from the recommended Option A. **Acceptance criteria 1–9 verified in `apps/ng-bootstrap-demo` at `/enterprise/datatables` and in `libs/mintplayer-ng-bootstrap/datatable/src/datatable/datatable.spacer.spec.ts`.**
 
 **Shipped implementation (departure from recommended Option A).** Rather than JS-driven proportional surplus distribution inside `setupColumnWidthSync`, the fix is CSS + DOM-only:
 
@@ -117,7 +117,7 @@ The implementer of this PRD should resolve at least the following before coding.
 
 ## 6. Acceptance criteria
 
-A reviewer running the demo at `/advanced/datatables` (and any narrow-data variant) must confirm:
+A reviewer running the demo at `/enterprise/datatables` (and any narrow-data variant) must confirm:
 
 1. With a data set whose natural column widths sum to less than the container, the body and header tables both span 100% of the container width. The rightmost column's right edge meets the container's right edge to the pixel.
 2. With a data set whose natural column widths exceed the container, today's behaviour is preserved: tables sit at `max-content`, body scrolls horizontally, header tracks via `setupScrollSync`. No regression versus `224cc97b`.
@@ -146,5 +146,5 @@ A reviewer running the demo at `/advanced/datatables` (and any narrow-data varia
 - `libs/mintplayer-ng-bootstrap/virtual-datatable/src/virtual-datatable/virtual-datatable.component.scss` — the override block on `.virtual-datatable-container ... table` (lines 30–34) may swap from `width: max-content` to a conditional class, depending on which option is implemented.
 - `libs/mintplayer-ng-bootstrap/virtual-datatable/src/virtual-datatable-data-source.ts` — read-only reference; explains why placeholders exist (constraint #1).
 - `libs/mintplayer-ng-bootstrap/table/src/component/table.component.html` and `libs/mintplayer-ng-bootstrap/table/src/table-styles/table-styles.component.scss` — the source of Bootstrap's `.table { width: 100% }` rule that 224cc97b had to overpower.
-- `apps/ng-bootstrap-demo/src/app/pages/advanced/datatables/` — verification surface.
+- `apps/ng-bootstrap-demo/src/app/pages/enterprise/datatables/` — verification surface.
 - `docs/prd/aria-accessibility-audit.md` row 84 + row B-27 — ARIA contract that the implementation must not break.

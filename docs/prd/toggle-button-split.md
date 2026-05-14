@@ -610,7 +610,7 @@ Per `feedback_breaking_changes_ok`: ship breaking changes documented; no shim la
 
 ### Demo consumers to migrate (13 pages)
 
-`apps/ng-bootstrap-demo/src/app/pages/basic/forms/toggle-button/toggle-button.component.html` (14 instances across 5 variants), plus single-instance migrations in: `basic/color-picker`, `basic/forms/range`, `basic/forms/multi-range`, `basic/forms/select`, `basic/placeholder`, `basic/table`, `animations/color-transition`, `advanced/navigation-lock`, `advanced/pipes/has-property`, `advanced/pipes/linify`, `advanced/tile-manager`, `advanced/splitter`, `overlay/offcanvas`, `overlay/shell` (3 instances, `radio_toggle_button` → `<bs-radio type="toggle_button">`).
+`apps/ng-bootstrap-demo/src/app/pages/basic/forms/toggle-button/toggle-button.component.html` (14 instances across 5 variants), plus single-instance migrations in: `basic/color-picker`, `basic/forms/range`, `basic/forms/multi-range`, `basic/forms/select`, `basic/placeholder`, `basic/table`, `animations/color-transition`, `advanced/navigation-lock`, `advanced/pipes/has-property`, `advanced/pipes/linify`, `enterprise/tile-manager`, `advanced/splitter`, `overlay/offcanvas`, `overlay/shell` (3 instances, `radio_toggle_button` → `<bs-radio type="toggle_button">`).
 
 ### Public-API removals (breaking)
 

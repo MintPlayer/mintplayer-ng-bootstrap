@@ -14,7 +14,7 @@ The dock manager (`libs/mintplayer-ng-bootstrap/dock/src/lib/web-components/mint
 
 ### Concrete repro
 
-At https://bootstrap.mintplayer.com/advanced/dock from the initial demo state:
+At https://bootstrap.mintplayer.com/enterprise/dock from the initial demo state:
 
 1. Drag **panel-4** (the only pane in its stack on the right side) onto the **right** zone of **panel-3**.
 2. Inspect the layout JSON.
@@ -165,7 +165,7 @@ Each test crafts an input layout tree, calls `normalize()` directly, and asserts
 
 ### Playwright e2e — full repro suite
 
-Each test drives `https://bootstrap.mintplayer.com/advanced/dock` (or the demo served from the dev build) and asserts the resulting `dock-layout-changed` payload contains zero same-direction nested splits, zero empty stacks, zero length-{0,1} splits.
+Each test drives `https://bootstrap.mintplayer.com/enterprise/dock` (or the demo served from the dev build) and asserts the resulting `dock-layout-changed` payload contains zero same-direction nested splits, zero empty stacks, zero length-{0,1} splits.
 
 | # | Sequence | Targets gap |
 |---|---|---|
@@ -198,7 +198,7 @@ Each test drives `https://bootstrap.mintplayer.com/advanced/dock` (or the demo s
 | 4 | `mint-dock-manager.element.ts` | Add the dev-mode projection-slot guard inside (or right after) `renderLayout`. |
 | 5 | `mint-dock-manager.element.spec.ts` | Add unit tests. |
 | 6 | `e2e/` (or wherever Playwright lives — confirm during implementation) | Add 8 Playwright e2e tests. May require scaffolding a test page that exposes `setLayout` to the test runner. |
-| 7 | `apps/ng-bootstrap-demo/src/app/pages/advanced/dock/dock.component.ts` | If needed for state-restoration e2e, expose a hook for tests to set the layout JSON. |
+| 7 | `apps/ng-bootstrap-demo/src/app/pages/enterprise/dock/dock.component.ts` | If needed for state-restoration e2e, expose a hook for tests to set the layout JSON. |
 
 ---
 

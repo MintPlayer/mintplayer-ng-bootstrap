@@ -1,0 +1,76 @@
+<h1 class="text-center">DateTime Picker</h1>
+
+<details class="mb-3">
+  <summary>Keyboard shortcuts</summary>
+  <ul class="mb-0">
+    <li><kbd>Tab</kbd> — moves between display input → date trigger → time trigger</li>
+    <li><kbd>↓</kbd> / <kbd>Enter</kbd> / <kbd>Space</kbd> on a trigger — open its popup</li>
+    <li><kbd>Esc</kbd> — close the active popup (focus returns to trigger)</li>
+    <li><strong>Calendar popup:</strong> <kbd>←</kbd> <kbd>→</kbd> ±1 day · <kbd>↑</kbd> <kbd>↓</kbd> ±1 week · <kbd>Home</kbd> / <kbd>End</kbd> week edges · <kbd>PageUp</kbd> / <kbd>PageDown</kbd> ±1 month · <kbd>Ctrl</kbd>+<kbd>PageUp</kbd>/<kbd>PageDown</kbd> ±1 year · <kbd>Enter</kbd> / <kbd>Space</kbd> selects</li>
+    <li><strong>Time popup:</strong> <kbd>↑</kbd> <kbd>↓</kbd> ±1 slot · <kbd>Home</kbd> / <kbd>End</kbd> first / last · <kbd>PageUp</kbd> / <kbd>PageDown</kbd> ±1 hour · <kbd>Enter</kbd> / <kbd>Space</kbd> selects + closes</li>
+  </ul>
+</details>
+
+<section class="mb-4">
+  <h2>Minimal</h2>
+  <bs-datetime-picker [(value)]="minimal" [showClear]="true"></bs-datetime-picker>
+  <div class="mt-2">Selected: <code>{{ minimal() | date: 'medium' }}</code></div>
+</section>
+
+<section class="mb-4">
+  <h2>Reactive form</h2>
+  <bs-datetime-picker [formControl]="reactive" [showClear]="true"></bs-datetime-picker>
+  <div class="mt-2">
+    <code>FormControl.value</code>: {{ reactive.value | date: 'medium' }}<br>
+    <code>FormControl.valid</code>: {{ reactive.valid }} ·
+    <code>FormControl.dirty</code>: {{ reactive.dirty }}
+  </div>
+</section>
+
+<section class="mb-4">
+  <h2>min / max bounds</h2>
+  <p class="text-muted">Bounded to all of 2026.</p>
+  <bs-datetime-picker
+    [(value)]="boundsValue"
+    [min]="boundsMin"
+    [max]="boundsMax"
+    [showClear]="true">
+  </bs-datetime-picker>
+  <div class="mt-2">Selected: <code>{{ boundsValue() | date: 'medium' }}</code></div>
+</section>
+
+<section class="mb-4">
+  <h2>disableDateFn (weekends disabled)</h2>
+  <bs-datetime-picker
+    [(value)]="weekendsValue"
+    [disableDateFn]="weekendsDisabled"
+    [showClear]="true">
+  </bs-datetime-picker>
+  <div class="mt-2">Selected: <code>{{ weekendsValue() | date: 'medium' }}</code></div>
+</section>
+
+<section class="mb-4">
+  <h2>Custom step (30 minutes)</h2>
+  <bs-datetime-picker
+    [(value)]="stepValue"
+    [step]="30"
+    [showClear]="true">
+  </bs-datetime-picker>
+  <div class="mt-2">Selected: <code>{{ stepValue() | date: 'medium' }}</code></div>
+</section>
+
+<section class="mb-4">
+  <h2>hour12 mode</h2>
+  <div class="btn-group mb-2" role="group" aria-label="Hour cycle">
+    <button class="btn btn-sm btn-outline-secondary" (click)="setHour12Mode('auto')">auto</button>
+    <button class="btn btn-sm btn-outline-secondary" (click)="setHour12Mode('on')">12h</button>
+    <button class="btn btn-sm btn-outline-secondary" (click)="setHour12Mode('off')">24h</button>
+  </div>
+  <br>
+  <bs-datetime-picker
+    [(value)]="hour12Value"
+    [hour12]="hour12Mode()"
+    [showClear]="true">
+  </bs-datetime-picker>
+  <div class="mt-2">Current mode: <code>{{ hour12Mode() | json }}</code></div>
+</section>

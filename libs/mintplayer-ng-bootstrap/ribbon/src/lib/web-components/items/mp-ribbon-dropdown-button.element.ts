@@ -1,7 +1,7 @@
 import { css, html, type TemplateResult } from 'lit';
 import { query } from 'lit/decorators.js';
 import { MpRibbonItemBase, RIBBON_ICON_SLOT_STYLES } from './mp-ribbon-item-base';
-import { OverlayController } from '../overlay-controller';
+import { OverlayController } from '@mintplayer/ng-bootstrap/web-components/overlay';
 
 /**
  * mp-ribbon-dropdown-button — Single button + chevron. Click opens a menu
@@ -87,7 +87,7 @@ export class MpRibbonDropdownButton extends MpRibbonItemBase {
   private panelEl!: HTMLElement;
 
   private overlay = new OverlayController(this, {
-    trigger: () => this.triggerEl,
+    anchor: () => this.triggerEl,
     panel: () => this.panelEl,
     onOpen: () => {
       this.dispatchEvent(

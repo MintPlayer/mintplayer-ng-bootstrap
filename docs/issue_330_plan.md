@@ -110,7 +110,7 @@ Plus generated (codegen-wc):
 - `libs/mintplayer-ng-bootstrap/project.json` — codegen-wc target already globs `**/*.element.html` so no edit needed; verify after first build.
 - `libs/mintplayer-ng-bootstrap/ng-package.json` (umbrella) — add ribbon secondary entry point.
 - `apps/ng-bootstrap-demo/src/app/pages/advanced/advanced.routes.ts` — register `/ribbon` route.
-- `apps/ng-bootstrap-demo/src/app/pages/advanced/ribbon/` — new demo files.
+- `apps/ng-bootstrap-demo/src/app/pages/enterprise/ribbon/` — new demo files.
 - Demo sidebar / nav for advanced category — add Ribbon link.
 
 ### Dependencies
@@ -200,7 +200,7 @@ Plus generated (codegen-wc):
 
 ### Phase 7 — Demo page
 
-1. `apps/ng-bootstrap-demo/src/app/pages/advanced/ribbon/ribbon.component.{ts,html,scss}`.
+1. `apps/ng-bootstrap-demo/src/app/pages/enterprise/ribbon/ribbon.component.{ts,html,scss}`.
 2. Demo includes: full Home tab with Clipboard/Font/Paragraph/Styles groups; Insert tab; Picture Tools contextual tab; QAT above; layout toggle; minimize toggle; KeyTips visible legend.
 3. Code-block snippets.
 4. Route registration in `advanced.routes.ts`.
@@ -301,7 +301,7 @@ npx nx lint mintplayer-ng-bootstrap
 
 # Serve demo
 npm start
-# then open http://localhost:4200/advanced/ribbon
+# then open http://localhost:4200/enterprise/ribbon
 
 # Full repo build + tests
 npm run build

@@ -54,7 +54,7 @@ async function measureMisalignment(page: Page): Promise<number[]> {
 test.describe('bs-datatable virtual mode — header/body column alignment', () => {
   test.beforeEach(async ({ page }) => {
     await mockArtistApi(page);
-    await page.goto('/advanced/datatables');
+    await page.goto('/enterprise/datatables');
     // SSR boot can race the route handler if we don't wait for the network
     // to settle before interacting with the page (see project_e2e_destructive_bootstrap).
     await page.waitForLoadState('networkidle');

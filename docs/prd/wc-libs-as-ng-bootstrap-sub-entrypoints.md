@@ -191,7 +191,7 @@ Commit: `chore(wc-libs): wire codegen-wc into mintplayer-ng-bootstrap build`.
 4. `libs/mintplayer-ng-bootstrap/scheduler/src/index.ts:16` — same.
 5. `libs/mintplayer-ng-bootstrap/tab-control/src/tab-control/tab-control.component.ts:4-5` — update import from `@mintplayer/tab-control-wc`.
 6. `apps/ng-bootstrap-demo/src/app/pages/advanced/splitter/splitter.component.ts:4` — update import from `@mintplayer/splitter`.
-7. `apps/ng-bootstrap-demo/src/app/pages/advanced/scheduler/scheduler.component.ts:29` — update import from `@mintplayer/scheduler-core`.
+7. `apps/ng-bootstrap-demo/src/app/pages/enterprise/scheduler/scheduler.component.ts:29` — update import from `@mintplayer/scheduler-core`.
 
 Commit: `refactor(consumers): point WC imports at new ng-bootstrap sub-entrypoints`.
 
@@ -204,7 +204,7 @@ Commit: `ci: drop standalone WC publish steps; ng-bootstrap publish covers them`
 ### Phase 6 — Verify
 
 - `nx build mintplayer-ng-bootstrap` produces `dist/libs/mintplayer-ng-bootstrap/web-components/{scheduler-core,scheduler,splitter,tab-control}/` alongside the existing sub-entrypoint outputs.
-- `nx serve ng-bootstrap-demo` shows `/advanced/dock`, `/advanced/scheduler`, `/advanced/splitter`, `/advanced/tab-control` rendering identically to before.
+- `nx serve ng-bootstrap-demo` shows `/enterprise/dock`, `/enterprise/scheduler`, `/advanced/splitter`, `/advanced/tab-control` rendering identically to before.
 - All existing tests pass (the four moved libs' vitest specs run under whichever target Phase 2 step 5 settles on).
 - `git log --follow libs/mintplayer-ng-bootstrap/web-components/scheduler/src/index.ts` shows the original `mp-scheduler-wc` history continuing across the move.
 

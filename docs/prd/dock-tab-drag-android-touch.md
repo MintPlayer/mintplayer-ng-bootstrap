@@ -5,7 +5,7 @@
 **Date:** 2026-05-04
 **Library:** `@mintplayer/ng-bootstrap/dock`
 **Component:** `<mint-dock-manager>` web component
-**Reproduction:** https://bootstrap.mintplayer.com/advanced/dock on Android Chrome
+**Reproduction:** https://bootstrap.mintplayer.com/enterprise/dock on Android Chrome
 
 ---
 
@@ -105,7 +105,7 @@ An earlier revision of this PRD proposed calling `event.preventDefault()` on the
 ## 6. Test plan
 
 **Manual — primary**
-- Android Chrome on `https://bootstrap.mintplayer.com/advanced/dock` after deploy:
+- Android Chrome on `https://bootstrap.mintplayer.com/enterprise/dock` after deploy:
   - Long-press a tab → drag → confirm undock + finger-tracking + drop into another stack.
   - Long-press the floating chrome of an already-floating pane → drag → confirm tracking.
   - Vertical and horizontal drags both work; page does not scroll while dragging.

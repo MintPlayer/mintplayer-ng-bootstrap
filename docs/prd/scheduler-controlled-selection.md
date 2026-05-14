@@ -209,7 +209,7 @@ For commit 1:
 1. Pointer drag-create on week / day / timeline does **not** mutate `mp-scheduler`'s internal events list, does **not** clear the selection, does **not** focus a new event. It fires `event-create` with the dragged range.
 2. Keyboard `Enter` on a non-empty selection: same — fires `event-create`, leaves selection intact. Same for `Enter` on a focused cell with no active selection (single-cell range).
 3. `selection-change` fires with `range: TimeRange | null` on every selection transition, including the transition to null on `Esc`.
-4. The demo's `/advanced/scheduler` page can still create events on drag and on `Enter` — but only because the *demo's* `onEventCreate` handler now does what the WC used to do.
+4. The demo's `/enterprise/scheduler` page can still create events on drag and on `Enter` — but only because the *demo's* `onEventCreate` handler now does what the WC used to do.
 5. All Phase A keyboard tests still pass after their assertions are updated to the new contract; no Phase A behavioural regressions in browser smoke (cell ARIA, move-mode, Shift+arrow selection).
 
 For commit 2 (Phase B):
