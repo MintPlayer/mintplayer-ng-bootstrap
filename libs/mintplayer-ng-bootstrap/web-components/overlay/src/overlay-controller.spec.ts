@@ -532,3 +532,134 @@ describe('OverlayController — sticky on anchor offscreen', () => {
     controller.close(false);
   });
 });
+
+describe('OverlayController — multi-anchor selection', () => {
+  function makeHost(): HTMLElement & {
+    addController: () => void;
+    requestUpdate: () => void;
+    updateComplete: Promise<void>;
+  } {
+    const el = document.createElement('div') as HTMLElement & {
+      addController: () => void;
+      requestUpdate: () => void;
+      updateComplete: Promise<void>;
+    };
+    el.addController = () => {};
+    el.requestUpdate = () => {};
+    el.updateComplete = Promise.resolve();
+    return el;
+  }
+
+  function stubRect(el: HTMLElement, rect: { left: number; top: number; width: number; height: number }): void {
+    el.getBoundingClientRect = () => ({
+      left: rect.left, top: rect.top,
+      right: rect.left + rect.width, bottom: rect.top + rect.height,
+      width: rect.width, height: rect.height,
+      x: rect.left, y: rect.top, toJSON: () => ({}),
+    });
+  }
+
+  let host: ReturnType<typeof makeHost>;
+  let primary: HTMLElement;
+  let secondary: HTMLElement;
+  let panel: HTMLElement;
+
+  beforeEach(() => {
+    host = makeHost();
+    primary = document.createElement('button');
+    secondary = document.createElement('button');
+    panel = document.createElement('div');
+    document.body.append(host, primary, secondary, panel);
+    stubRect(panel, { left: 0, top: 0, width: 200, height: 100 });
+    Object.defineProperty(window, 'innerWidth', { value: 1024, writable: true, configurable: true });
+    Object.defineProperty(window, 'innerHeight', { value: 768, writable: true, configurable: true });
+  });
+
+  afterEach(() => {
+    host.remove();
+    primary.remove();
+    secondary.remove();
+    panel.remove();
+  });
+
+  it('walks anchors in order; primary anchor wins when its first position fits', () => {
+    stubRect(primary, { left: 100, top: 100, width: 80, height: 32 });
+    stubRect(secondary, { left: 500, top: 100, width: 80, height: 32 });
+    const controller = new OverlayController(host, {
+      trigger: () => [primary, secondary],
+      panel: () => panel,
+    });
+    controller.position();
+    // Primary anchor's left = 100; positioned below.
+    expect(panel.style.left).toBe('100px');
+    expect(panel.style.top).toBe('132px');
+  });
+
+  it('skips primary anchor when none of its positions fit; uses secondary', () => {
+    // Primary near bottom-right corner — below + above both clip.
+    stubRect(primary, { left: 900, top: 700, width: 80, height: 32 });
+    // Secondary has room.
+    stubRect(secondary, { left: 100, top: 100, width: 80, height: 32 });
+    const controller = new OverlayController(host, {
+      trigger: () => [primary, secondary],
+      panel: () => panel,
+      positions: [
+        // For primary: below clips bottom (700+32+100=832 > 760).
+        { originX: 'start', originY: 'bottom', overlayX: 'start', overlayY: 'top' },
+      ],
+    });
+    controller.position();
+    // Secondary's left = 100; below = 132.
+    expect(panel.style.left).toBe('100px');
+    expect(panel.style.top).toBe('132px');
+  });
+
+  it('filters null entries inside the trigger array', () => {
+    stubRect(primary, { left: 100, top: 100, width: 80, height: 32 });
+    const controller = new OverlayController(host, {
+      trigger: () => [null as unknown as HTMLElement, primary],
+      panel: () => panel,
+    });
+    controller.position();
+    expect(panel.style.left).toBe('100px');
+  });
+
+  it('warns when the trigger array filters down to empty', () => {
+    let warned = '';
+    const originalWarn = console.warn;
+    console.warn = (msg: string) => { warned = msg; };
+    try {
+      const controller = new OverlayController(host, {
+        trigger: () => [null as unknown as HTMLElement, null as unknown as HTMLElement],
+        panel: () => panel,
+      });
+      controller.position();
+    } finally {
+      console.warn = originalWarn;
+    }
+    expect(warned).toContain('all-null anchors');
+  });
+
+  it('close(returnFocus) targets the chosen anchor, not the first one', async () => {
+    // Primary doesn't fit; secondary does. Focus return should go to secondary.
+    stubRect(primary, { left: 900, top: 700, width: 80, height: 32 });
+    stubRect(secondary, { left: 100, top: 100, width: 80, height: 32 });
+    const controller = new OverlayController(host, {
+      trigger: () => [primary, secondary],
+      panel: () => panel,
+      positions: [
+        { originX: 'start', originY: 'bottom', overlayX: 'start', overlayY: 'top' },
+      ],
+    });
+    await controller.open();
+    secondary.focus = (() => {
+      (secondary as unknown as { focusedFlag: boolean }).focusedFlag = true;
+    }) as HTMLElement['focus'];
+    primary.focus = (() => {
+      (primary as unknown as { focusedFlag: boolean }).focusedFlag = true;
+    }) as HTMLElement['focus'];
+    controller.close(true);
+    expect((secondary as unknown as { focusedFlag?: boolean }).focusedFlag).toBe(true);
+    expect((primary as unknown as { focusedFlag?: boolean }).focusedFlag).toBeUndefined();
+  });
+});

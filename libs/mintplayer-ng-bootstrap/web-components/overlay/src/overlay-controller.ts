@@ -176,19 +176,31 @@ export class OverlayController implements ReactiveController {
   }
 
   /**
-   * Resolve the active anchor from `trigger()`, supporting both single-element
-   * and array returns. The first non-null element wins.
+   * Resolve the list of candidate anchors from `trigger()`. Single-element
+   * returns become a one-item array; null returns become an empty array.
+   * Nulls inside arrays are filtered out.
+   */
+  protected resolveAnchors(): HTMLElement[] {
+    const raw = this.options.trigger();
+    if (raw === null) return [];
+    if (Array.isArray(raw)) {
+      const filtered = raw.filter((a): a is HTMLElement => a !== null && a !== undefined);
+      if (filtered.length === 0 && raw.length > 0) {
+        console.warn('[OverlayController] trigger() returned an array of all-null anchors.');
+      }
+      return filtered;
+    }
+    return [raw];
+  }
+
+  /**
+   * Resolve the *active* anchor — the one used in the most recent positioning
+   * pass, or the first available one if none has been picked yet.
    */
   protected resolveAnchor(): HTMLElement | null {
-    const raw = this.options.trigger();
-    if (raw === null) return null;
-    if (Array.isArray(raw)) {
-      for (const candidate of raw) {
-        if (candidate) return candidate;
-      }
-      return null;
-    }
-    return raw;
+    if (this.activeAnchor) return this.activeAnchor;
+    const anchors = this.resolveAnchors();
+    return anchors[0] ?? null;
   }
 
   /**
@@ -206,20 +218,20 @@ export class OverlayController implements ReactiveController {
    * anchor re-enters the viewport.
    */
   position(): void {
-    const anchor = this.resolveAnchor();
+    const anchors = this.resolveAnchors();
     const panel = this.options.panel();
-    if (!anchor || !panel) return;
-    this.activeAnchor = anchor;
+    if (anchors.length === 0 || !panel) return;
 
     const margin = this.options.viewportMargin ?? 8;
-    const triggerRect = anchor.getBoundingClientRect();
     const panelRect = panel.getBoundingClientRect();
     const vw = window.innerWidth;
     const vh = window.innerHeight;
 
-    if (this.options.stickyOnAnchorOffscreen && this.isAnchorOffscreen(triggerRect, vw, vh)) {
-      // Don't re-track the anchor; just keep the panel clamped to viewport
-      // using its current position.
+    // Sticky-offscreen logic: keyed off the FIRST anchor (the "preferred"
+    // one). If it's offscreen and sticky is on, pin to viewport regardless
+    // of other candidates.
+    const primaryRect = anchors[0].getBoundingClientRect();
+    if (this.options.stickyOnAnchorOffscreen && this.isAnchorOffscreen(primaryRect, vw, vh)) {
       const currentLeft = parseFloat(panel.style.left) || panelRect.left;
       const currentTop = parseFloat(panel.style.top) || panelRect.top;
       const clamped = this.clampToViewport({ left: currentLeft, top: currentTop }, panelRect, vw, vh, margin);
@@ -231,24 +243,26 @@ export class OverlayController implements ReactiveController {
     const positions = this.options.positions ?? DEFAULT_POSITIONS;
     const rtl = this.isRtl();
 
-    let chosen: { left: number; top: number } | null = null;
+    let chosenAnchor: HTMLElement | null = null;
+    let chosenPlacement: { left: number; top: number } | null = null;
 
-    for (const candidate of positions) {
-      const placed = this.placeFor(candidate, triggerRect, panelRect, rtl);
-      if (this.fitsInViewport(placed, panelRect, vw, vh, margin)) {
-        chosen = placed;
-        break;
+    // Walk (anchor × position) pairs. The first pair that fits the viewport
+    // cleanly wins. If none do, the LAST evaluated placement (and its
+    // anchor) is the fallback, then clamped into the viewport.
+    outer: for (const anchor of anchors) {
+      const triggerRect = anchor.getBoundingClientRect();
+      for (const candidate of positions) {
+        const placed = this.placeFor(candidate, triggerRect, panelRect, rtl);
+        chosenAnchor = anchor;
+        chosenPlacement = placed;
+        if (this.fitsInViewport(placed, panelRect, vw, vh, margin)) break outer;
       }
-      // Remember the last candidate so we can fall back to it if nothing fits.
-      chosen = placed;
     }
 
-    if (!chosen) return;
+    if (!chosenPlacement || !chosenAnchor) return;
+    this.activeAnchor = chosenAnchor;
 
-    // Clamp the final position into the viewport. If a candidate fit cleanly
-    // this is a no-op; otherwise this is the "push" fallback that keeps the
-    // panel reachable even when no position is a clean fit.
-    const clamped = this.clampToViewport(chosen, panelRect, vw, vh, margin);
+    const clamped = this.clampToViewport(chosenPlacement, panelRect, vw, vh, margin);
     panel.style.left = `${clamped.left}px`;
     panel.style.top = `${clamped.top}px`;
   }
