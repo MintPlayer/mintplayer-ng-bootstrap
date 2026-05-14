@@ -1,8 +1,12 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { query } from 'lit/decorators.js';
-import type { FirstDayOfWeek } from '@mintplayer/ng-bootstrap/calendar';
-import type { Hour12Mode, TimeStep } from '@mintplayer/ng-bootstrap/timepicker';
+import { OverlayController } from '@mintplayer/ng-bootstrap/web-components/a11y';
+import { MpCalendarElement, type FirstDayOfWeek } from '@mintplayer/ng-bootstrap/calendar';
+import { MpTimeListElement, type Hour12Mode, type TimeStep } from '@mintplayer/ng-bootstrap/timepicker';
 import { styles } from './mp-datetime-picker.element.template';
+
+void MpCalendarElement;
+void MpTimeListElement;
 
 export type DatetimePopup = 'date' | 'time' | null;
 
@@ -12,24 +16,26 @@ const CLEAR_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 
 
 let instanceCounter = 0;
 
+interface TimePart {
+  hour: number;
+  minute: number;
+}
+
 /**
- * mp-datetime-picker — Bootstrap-styled combined date+time picker WC.
+ * mp-datetime-picker — Bootstrap-styled combined date+time picker.
  *
- * Renders an input-group with a read-only display input, an optional clear
- * button, a calendar trigger (📅), and a time trigger (🕐). Phase 5 ships
- * just the shell — no popups yet (Phase 6 wires the calendar + time-list
- * popups via mutual-exclusion `openPopup` state).
+ * Renders an input-group (read-only display + optional clear + 📅 + 🕐) with
+ * two mutually-exclusive popups: a date popup containing `<mp-calendar>`, and
+ * a time popup containing `<mp-time-list>`. Either popup can be slot-overridden.
  *
- * Properties:
- *  - value:     Date | null. Single instant.
- *  - min/max:   bounds (date-only comparison).
- *  - placeholder, showClear, disabled.
- *  - Forwarded to inner popups: disableDateFn, firstDayOfWeek, locale, hour12,
- *    step (and defaultTime in Phase 11).
+ * Value semantics: internal split into `datePart` (year/month/day) and
+ * `timePart` (hour, minute). Either popup can edit its half without losing
+ * the other. The composed `Date` is exposed via `value`.
  *
  * Events (bubbles + composed):
- *  - `value-change`         fires when value updates from user input.
- *  - `opened` / `closed`    fires with detail = 'date' | 'time' on popup state changes.
+ *  - `value-change`         fires when value updates from any user action.
+ *  - `opened`               detail = 'date' | 'time' on popup open.
+ *  - `closed`               detail = 'date' | 'time' on popup close.
  */
 export class MpDatetimePickerElement extends LitElement {
   static override styles = [styles];
@@ -43,13 +49,17 @@ export class MpDatetimePickerElement extends LitElement {
     locale: { attribute: 'locale', type: String, reflect: true },
     hour12: { attribute: 'hour12' },
     step: { attribute: 'step', type: Number, reflect: true },
+    defaultTime: { attribute: false },
     placeholder: { attribute: 'placeholder', type: String, reflect: true },
     showClear: { attribute: 'show-clear', type: Boolean, reflect: true },
     disabled: { attribute: 'disabled', type: Boolean, reflect: true },
     dateButtonLabel: { attribute: 'date-button-label', type: String, reflect: true },
     timeButtonLabel: { attribute: 'time-button-label', type: String, reflect: true },
     clearLabel: { attribute: 'clear-label', type: String, reflect: true },
+    todayLabel: { attribute: 'today-label', type: String, reflect: true },
+    nowLabel: { attribute: 'now-label', type: String, reflect: true },
     _openPopup: { state: true },
+    _calendarMonth: { state: true },
   };
 
   value: Date | null = null;
@@ -60,14 +70,19 @@ export class MpDatetimePickerElement extends LitElement {
   locale: string | undefined = undefined;
   hour12: Hour12Mode = 'auto';
   step: TimeStep = 15;
+  defaultTime: TimePart = { hour: 0, minute: 0 };
   placeholder = '';
   showClear = false;
   disabled = false;
   dateButtonLabel = 'Choose date';
   timeButtonLabel = 'Choose time';
   clearLabel = 'Clear';
+  todayLabel = 'Today';
+  nowLabel = 'Now';
 
   protected _openPopup: DatetimePopup = null;
+  /** Tracks the currently-viewed month in the calendar popup. */
+  protected _calendarMonth: Date | null = null;
 
   protected readonly instanceId = `mp-dtp-${++instanceCounter}`;
   protected readonly datePopupId = `${this.instanceId}-popup-date`;
@@ -79,9 +94,45 @@ export class MpDatetimePickerElement extends LitElement {
   @query('button.time')
   protected timeTriggerEl?: HTMLButtonElement;
 
-  override connectedCallback(): void {
-    super.connectedCallback();
-  }
+  @query('.popup-date')
+  protected datePopupEl?: HTMLElement;
+
+  @query('.popup-time')
+  protected timePopupEl?: HTMLElement;
+
+  protected readonly dateOverlay = new OverlayController(this, {
+    trigger: () => this.dateTriggerEl ?? null,
+    panel: () => this.datePopupEl ?? null,
+    onOpen: () => {
+      this._openPopup = 'date';
+      this.dispatchEvent(
+        new CustomEvent<'date'>('opened', { detail: 'date', bubbles: true, composed: true }),
+      );
+    },
+    onClose: () => {
+      if (this._openPopup === 'date') this._openPopup = null;
+      this.dispatchEvent(
+        new CustomEvent<'date'>('closed', { detail: 'date', bubbles: true, composed: true }),
+      );
+    },
+  });
+
+  protected readonly timeOverlay = new OverlayController(this, {
+    trigger: () => this.timeTriggerEl ?? null,
+    panel: () => this.timePopupEl ?? null,
+    onOpen: () => {
+      this._openPopup = 'time';
+      this.dispatchEvent(
+        new CustomEvent<'time'>('opened', { detail: 'time', bubbles: true, composed: true }),
+      );
+    },
+    onClose: () => {
+      if (this._openPopup === 'time') this._openPopup = null;
+      this.dispatchEvent(
+        new CustomEvent<'time'>('closed', { detail: 'time', bubbles: true, composed: true }),
+      );
+    },
+  });
 
   override updated(changed: Map<string, unknown>): void {
     super.updated?.(changed);
@@ -92,31 +143,25 @@ export class MpDatetimePickerElement extends LitElement {
         this.setAttribute('data-open', this._openPopup);
       }
     }
-  }
-
-  /* ---- Display ---- */
-
-  protected formatDisplay(): string {
-    if (!this.value) return '';
-    return this.value.toLocaleString(this.locale ?? undefined, {
-      dateStyle: 'short',
-      timeStyle: 'short',
-      hour12: this.resolvedHour12(),
-    } as Intl.DateTimeFormatOptions);
-  }
-
-  protected resolvedHour12(): boolean | undefined {
-    if (this.hour12 === true) return true;
-    if (this.hour12 === false) return false;
-    return undefined;
+    if (changed.has('value') && this.value && !this._calendarMonth) {
+      this._calendarMonth = new Date(this.value.getFullYear(), this.value.getMonth(), 1);
+    }
   }
 
   /* ---- Public API ---- */
 
   setValue(next: Date | null, emit = true): void {
+    const same =
+      (next === null && this.value === null) ||
+      (next instanceof Date &&
+        this.value instanceof Date &&
+        next.getTime() === this.value.getTime());
     this.value = next ? new Date(next.getTime()) : null;
+    if (next) {
+      this._calendarMonth = new Date(next.getFullYear(), next.getMonth(), 1);
+    }
     this.requestUpdate();
-    if (emit) {
+    if (emit && !same) {
       this.dispatchEvent(
         new CustomEvent<Date | null>('value-change', {
           detail: this.value ? new Date(this.value.getTime()) : null,
@@ -136,24 +181,95 @@ export class MpDatetimePickerElement extends LitElement {
     return this._openPopup;
   }
 
+  async openDate(): Promise<void> {
+    if (this.disabled) return;
+    if (this.timeOverlay.isOpen) this.timeOverlay.close(false);
+    await this.dateOverlay.open();
+  }
+
+  async openTime(): Promise<void> {
+    if (this.disabled) return;
+    if (this.dateOverlay.isOpen) this.dateOverlay.close(false);
+    await this.timeOverlay.open();
+  }
+
+  closePopups(): void {
+    if (this.dateOverlay.isOpen) this.dateOverlay.close();
+    if (this.timeOverlay.isOpen) this.timeOverlay.close();
+  }
+
+  /* ---- Display ---- */
+
+  protected formatDisplay(): string {
+    if (!this.value) return '';
+    return this.value.toLocaleString(this.locale ?? undefined, {
+      dateStyle: 'short',
+      timeStyle: 'short',
+      hour12: this.resolvedHour12(),
+    } as Intl.DateTimeFormatOptions);
+  }
+
+  protected resolvedHour12(): boolean | undefined {
+    if (this.hour12 === true) return true;
+    if (this.hour12 === false) return false;
+    return undefined;
+  }
+
+  /* ---- Value composition ---- */
+
+  protected updateDatePart(date: Date): void {
+    // Preserve existing time half; apply defaultTime if unset.
+    const time = this.value
+      ? { hour: this.value.getHours(), minute: this.value.getMinutes() }
+      : { hour: this.defaultTime.hour, minute: this.defaultTime.minute };
+    const next = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+      time.hour,
+      time.minute,
+      0,
+      0,
+    );
+    this.setValue(next);
+  }
+
+  protected updateTimePart(time: Date): void {
+    // Preserve existing date half; default to today.
+    const today = new Date();
+    const date = this.value ?? today;
+    const next = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+      time.getHours(),
+      time.getMinutes(),
+      0,
+      0,
+    );
+    this.setValue(next);
+  }
+
   /* ---- Handlers ---- */
 
-  protected onDateTriggerClick = (event: MouseEvent): void => {
+  protected onDateTriggerClick = async (event: MouseEvent): Promise<void> => {
     if (this.disabled) return;
     event.stopPropagation();
-    // Phase 6 will wire actual popup open/close. For now, we fire the
-    // request events so consumers (and tests) can observe trigger activations.
-    this.dispatchEvent(
-      new CustomEvent<'date'>('request-open', { detail: 'date', bubbles: true, composed: true }),
-    );
+    if (this.dateOverlay.isOpen) {
+      this.dateOverlay.close();
+    } else {
+      await this.openDate();
+    }
   };
 
-  protected onTimeTriggerClick = (event: MouseEvent): void => {
+  protected onTimeTriggerClick = async (event: MouseEvent): Promise<void> => {
     if (this.disabled) return;
     event.stopPropagation();
-    this.dispatchEvent(
-      new CustomEvent<'time'>('request-open', { detail: 'time', bubbles: true, composed: true }),
-    );
+    if (this.timeOverlay.isOpen) {
+      this.timeOverlay.close();
+    } else {
+      await this.openTime();
+    }
   };
 
   protected onClearClick = (event: MouseEvent): void => {
@@ -162,12 +278,45 @@ export class MpDatetimePickerElement extends LitElement {
     this.clear();
   };
 
+  protected onCalendarSelectedDateChange = (event: Event): void => {
+    const detail = (event as CustomEvent<Date>).detail;
+    if (detail instanceof Date) this.updateDatePart(detail);
+  };
+
+  protected onCalendarCurrentMonthChange = (event: Event): void => {
+    const detail = (event as CustomEvent<Date>).detail;
+    if (detail instanceof Date) this._calendarMonth = detail;
+  };
+
+  protected onTimeListSelectedTimeChange = (event: Event): void => {
+    const detail = (event as CustomEvent<Date>).detail;
+    if (detail instanceof Date) {
+      this.updateTimePart(detail);
+      this.timeOverlay.close();
+    }
+  };
+
+  protected onTodayClick = (): void => {
+    this.updateDatePart(new Date());
+  };
+
+  protected onNowClick = (): void => {
+    const now = new Date();
+    const minutes = Math.floor(now.getMinutes() / this.step) * this.step;
+    const rounded = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), minutes, 0, 0);
+    this.updateTimePart(rounded);
+  };
+
   /* ---- Render ---- */
 
   protected override render(): TemplateResult {
     const displayValue = this.formatDisplay();
     const hasValue = this.value !== null;
     const showClearBtn = this.showClear && hasValue && !this.disabled;
+    const calendarMonth = this._calendarMonth ?? (this.value ? new Date(this.value.getFullYear(), this.value.getMonth(), 1) : new Date());
+    const selectedDate = this.value ?? null;
+    const selectedTime = this.value ?? null;
+
     return html`
       <div class="input-group">
         <input
@@ -212,10 +361,45 @@ export class MpDatetimePickerElement extends LitElement {
           .innerHTML="${CLOCK_ICON_SVG}"
         ></button>
       </div>
-      <!-- Popups will be rendered in Phase 6. Element ids reserved here so
-           aria-controls + tests have stable targets. -->
-      <div class="popup popup-date" id="${this.datePopupId}" role="dialog" hidden></div>
-      <div class="popup popup-time" id="${this.timePopupId}" role="listbox" hidden></div>
+
+      <div class="popup popup-date" id="${this.datePopupId}" role="dialog" aria-label="${this.dateButtonLabel}">
+        <slot name="calendar"
+          @selected-date-change="${this.onCalendarSelectedDateChange}"
+          @current-month-change="${this.onCalendarCurrentMonthChange}"
+        >
+          <mp-calendar
+            .selectedDate="${selectedDate}"
+            .currentMonth="${calendarMonth}"
+            .disableDateFn="${this.disableDateFn}"
+            .min="${this.min}"
+            .max="${this.max}"
+            .firstDayOfWeek="${this.firstDayOfWeek}"
+            .locale="${this.locale}"
+            @selected-date-change="${this.onCalendarSelectedDateChange}"
+            @current-month-change="${this.onCalendarCurrentMonthChange}"
+          ></mp-calendar>
+        </slot>
+        <div class="popup-footer">
+          <button type="button" @click="${this.onTodayClick}">${this.todayLabel}</button>
+        </div>
+      </div>
+
+      <div class="popup popup-time" id="${this.timePopupId}" role="listbox" aria-label="${this.timeButtonLabel}">
+        <slot name="time-list"
+          @selected-time-change="${this.onTimeListSelectedTimeChange}"
+        >
+          <mp-time-list
+            .selectedTime="${selectedTime}"
+            .step="${this.step}"
+            .hour12="${this.hour12}"
+            .locale="${this.locale}"
+            @selected-time-change="${this.onTimeListSelectedTimeChange}"
+          ></mp-time-list>
+        </slot>
+        <div class="popup-footer">
+          <button type="button" @click="${this.onNowClick}">${this.nowLabel}</button>
+        </div>
+      </div>
     `;
   }
 }
