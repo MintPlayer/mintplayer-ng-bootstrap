@@ -54,6 +54,7 @@ export class MpDatetimePickerElement extends LitElement {
     placeholder: { attribute: 'placeholder', type: String, reflect: true },
     showClear: { attribute: 'show-clear', type: Boolean, reflect: true },
     disabled: { attribute: 'disabled', type: Boolean, reflect: true },
+    inputLabel: { attribute: 'input-label', type: String, reflect: true },
     dateButtonLabel: { attribute: 'date-button-label', type: String, reflect: true },
     timeButtonLabel: { attribute: 'time-button-label', type: String, reflect: true },
     clearLabel: { attribute: 'clear-label', type: String, reflect: true },
@@ -75,6 +76,7 @@ export class MpDatetimePickerElement extends LitElement {
   placeholder = '';
   showClear = false;
   disabled = false;
+  inputLabel = 'Selected date and time';
   dateButtonLabel = 'Choose date';
   timeButtonLabel = 'Choose time';
   clearLabel = 'Clear';
@@ -394,6 +396,7 @@ export class MpDatetimePickerElement extends LitElement {
           type="text"
           readonly
           aria-readonly="true"
+          aria-label="${this.inputLabel}"
           .value="${displayValue}"
           placeholder="${this.placeholder || nothing}"
           ?disabled="${this.disabled}"
@@ -423,7 +426,7 @@ export class MpDatetimePickerElement extends LitElement {
         <button
           class="trigger time"
           type="button"
-          aria-haspopup="listbox"
+          aria-haspopup="dialog"
           aria-expanded="${this._openPopup === 'time' ? 'true' : 'false'}"
           aria-controls="${this.timePopupId}"
           aria-label="${this.timeButtonLabel}"
@@ -457,7 +460,7 @@ export class MpDatetimePickerElement extends LitElement {
         </div>
       </div>
 
-      <div class="popup popup-time" id="${this.timePopupId}" role="listbox" aria-label="${this.timeButtonLabel}">
+      <div class="popup popup-time" id="${this.timePopupId}" role="dialog" aria-label="${this.timeButtonLabel}">
         <slot name="time-list"
           @selected-time-change="${this.onTimeListSelectedTimeChange}"
         >

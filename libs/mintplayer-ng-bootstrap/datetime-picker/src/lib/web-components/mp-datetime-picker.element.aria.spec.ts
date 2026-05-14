@@ -50,13 +50,13 @@ describe('mp-datetime-picker — ARIA', () => {
     expect(shadow(el).querySelector(`#${controlsId}`)).not.toBeNull();
   });
 
-  it('time trigger has aria-haspopup="listbox"', () => {
-    expect(shadow(el).querySelector('button.time')!.getAttribute('aria-haspopup')).toBe('listbox');
+  it('time trigger has aria-haspopup="dialog"', () => {
+    expect(shadow(el).querySelector('button.time')!.getAttribute('aria-haspopup')).toBe('dialog');
   });
 
-  it('date popup is role="dialog" and time popup is role="listbox"', () => {
+  it('date popup and time popup are both role="dialog" (each wraps its own listbox/grid)', () => {
     expect(shadow(el).querySelector('.popup-date')!.getAttribute('role')).toBe('dialog');
-    expect(shadow(el).querySelector('.popup-time')!.getAttribute('role')).toBe('listbox');
+    expect(shadow(el).querySelector('.popup-time')!.getAttribute('role')).toBe('dialog');
   });
 
   it('triggers have descriptive aria-labels (overridable)', () => {
