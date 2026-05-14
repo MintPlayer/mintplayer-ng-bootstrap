@@ -147,18 +147,35 @@ describe('mp-calendar — keyboard navigation', () => {
     expect(el.currentMonth!.getFullYear()).toBe(2027);
   });
 
-  it('Home jumps to the first day of the focused week (Sunday by default browser day)', async () => {
-    // May 15 2026 is a Friday (getDay() === 5); Home offsets back by 5 → May 10.
+  it('Home jumps to the first day of the focused week (honors firstDayOfWeek=Mon default)', async () => {
+    // May 15 2026 is a Friday (getDay() === 5); firstDayOfWeek=1 → Home goes to Mon May 11.
     const cell = findCell(el, 2026, 4, 15)!;
     dispatchKey(cell, 'Home');
     await flush(el);
-    expect(shadow(el).querySelectorAll('td[tabindex="0"]')[0].id).toContain('-cell-2026-4-10');
+    expect(shadow(el).querySelectorAll('td[tabindex="0"]')[0].id).toContain('-cell-2026-4-11');
   });
 
-  it('End jumps to the last day of the focused week', async () => {
+  it('End jumps to the last day of the focused week (honors firstDayOfWeek=Mon default)', async () => {
+    // Friday May 15 with firstDayOfWeek=1 → End goes to Sun May 17.
     const cell = findCell(el, 2026, 4, 15)!;
     dispatchKey(cell, 'End');
     await flush(el);
+    expect(shadow(el).querySelectorAll('td[tabindex="0"]')[0].id).toContain('-cell-2026-4-17');
+  });
+
+  it('Home/End respect firstDayOfWeek=0 (Sunday-first locales)', async () => {
+    el.firstDayOfWeek = 0;
+    await flush(el);
+    let cell = findCell(el, 2026, 4, 15)!;
+    dispatchKey(cell, 'Home');
+    await flush(el);
+    // Sunday-first: Fri May 15 → Sun May 10.
+    expect(shadow(el).querySelectorAll('td[tabindex="0"]')[0].id).toContain('-cell-2026-4-10');
+
+    cell = findCell(el, 2026, 4, 10)!;
+    dispatchKey(cell, 'End');
+    await flush(el);
+    // Sunday-first: Sun May 10 → Sat May 16.
     expect(shadow(el).querySelectorAll('td[tabindex="0"]')[0].id).toContain('-cell-2026-4-16');
   });
 

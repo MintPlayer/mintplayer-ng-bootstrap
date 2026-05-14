@@ -301,12 +301,16 @@ export class MpCalendarElement extends LitElement {
       case 'ArrowDown':
         target.setDate(current.getDate() + 7);
         break;
-      case 'Home':
-        target.setDate(current.getDate() - current.getDay());
+      case 'Home': {
+        const offset = (current.getDay() - this.firstDayOfWeek + 7) % 7;
+        target.setDate(current.getDate() - offset);
         break;
-      case 'End':
-        target.setDate(current.getDate() + (6 - current.getDay()));
+      }
+      case 'End': {
+        const offset = (this.firstDayOfWeek + 6 - current.getDay() + 7) % 7;
+        target.setDate(current.getDate() + offset);
         break;
+      }
       case 'PageUp':
         target = event.ctrlKey
           ? new Date(current.getFullYear() - 1, current.getMonth(), current.getDate())

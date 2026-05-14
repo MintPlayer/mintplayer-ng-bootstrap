@@ -352,7 +352,14 @@ export class MpDatetimePickerElement extends LitElement {
 
   protected onCalendarSelectedDateChange = (event: Event): void => {
     const detail = (event as CustomEvent<Date>).detail;
-    if (detail instanceof Date) this.updateDatePart(detail);
+    if (!(detail instanceof Date)) return;
+    const sameDay =
+      this.value !== null &&
+      this.value.getFullYear() === detail.getFullYear() &&
+      this.value.getMonth() === detail.getMonth() &&
+      this.value.getDate() === detail.getDate();
+    this.updateDatePart(detail);
+    if (sameDay) this.dateOverlay.close();
   };
 
   protected onCalendarCurrentMonthChange = (event: Event): void => {

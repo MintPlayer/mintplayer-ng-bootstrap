@@ -142,6 +142,9 @@ export class OverlayController implements ReactiveController {
   private scrollListenersAttached = false;
   /** Saved scrollTop/scrollLeft when 'block' strategy is active. */
   private blockedScroll: { top: number; left: number } | null = null;
+  /** Inline `padding-right` we wrote on <body> to compensate for the
+   *  disappearing scrollbar — captured so release() can restore exactly. */
+  private blockedBodyPaddingRight: string | null = null;
 
   constructor(
     host: ReactiveControllerHost & HTMLElement,
@@ -502,7 +505,18 @@ export class OverlayController implements ReactiveController {
     const html = document.documentElement;
     const top = html.scrollTop || window.scrollY;
     const left = html.scrollLeft || window.scrollX;
+    // Measure scrollbar width BEFORE the layout flip (window.innerWidth includes
+    // the gutter, clientWidth excludes it). When the html element goes
+    // position:fixed the scrollbar disappears and content widens by this delta;
+    // compensate on <body> so the page doesn't jump horizontally.
+    const scrollbarWidth = Math.max(0, window.innerWidth - html.clientWidth);
     this.blockedScroll = { top, left };
+    if (scrollbarWidth > 0) {
+      const body = document.body;
+      this.blockedBodyPaddingRight = body.style.paddingRight;
+      const computed = parseFloat(getComputedStyle(body).paddingRight) || 0;
+      body.style.paddingRight = `${computed + scrollbarWidth}px`;
+    }
     html.style.setProperty('--overlay-blocked-top', `-${top}px`);
     html.style.setProperty('--overlay-blocked-left', `-${left}px`);
     html.style.position = 'fixed';
@@ -522,6 +536,10 @@ export class OverlayController implements ReactiveController {
     html.style.width = '';
     html.style.removeProperty('--overlay-blocked-top');
     html.style.removeProperty('--overlay-blocked-left');
+    if (this.blockedBodyPaddingRight !== null) {
+      document.body.style.paddingRight = this.blockedBodyPaddingRight;
+      this.blockedBodyPaddingRight = null;
+    }
     window.scrollTo(left, top);
   }
 
