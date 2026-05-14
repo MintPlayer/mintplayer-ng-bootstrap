@@ -91,8 +91,6 @@ export class MintTileManagerElement extends LitElement {
     previewLayout: { state: true },
     gestureKind: { state: true },
     blocked: { state: true },
-    effectiveColumnCount: { state: true },
-    keyboardMode: { state: true },
     focusedTileId: { state: true },
   };
 

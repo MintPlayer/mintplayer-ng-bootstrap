@@ -68,6 +68,10 @@ export class MpTabControl extends LitElement {
       attributes: true,
       attributeFilter: ['slot', 'data-disabled', 'data-hidden'],
     });
+    // Seed `this.tabs` before the first render so the initial template walks
+    // the correct list. Doing this in firstUpdated() would set `tabs` after
+    // the update completed and trigger Lit's "change-in-update" warning.
+    this.refreshTabs();
   }
 
   override disconnectedCallback(): void {
@@ -84,10 +88,6 @@ export class MpTabControl extends LitElement {
     super.attributeChangedCallback(name, oldValue, newValue);
     if (oldValue === newValue) return;
     this.requestUpdate();
-  }
-
-  protected override firstUpdated(): void {
-    this.refreshTabs();
   }
 
   private get tabsPosition(): TabsPosition {
