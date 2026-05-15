@@ -149,4 +149,139 @@ public class WalkerTests
         } };
         Assert.Equal(new[] { 1, 2 }, RunQuery(tree, now));
     }
+
+    private static List<Order> OrdersWithLineItems() => new()
+    {
+        new Order { Id = 1, CustomerId = 1, Total = 150m, Status = "open", OrderDate = new DateTime(2026, 5, 10, 0, 0, 0, DateTimeKind.Utc), Tags = "[]", LineItems = new()
+        {
+            new LineItem { Id = 11, OrderId = 1, ProductName = "Widget", UnitPrice = 100m, Quantity = 1 },
+            new LineItem { Id = 12, OrderId = 1, ProductName = "Gadget", UnitPrice = 50m, Quantity = 1 },
+        } },
+        new Order { Id = 2, CustomerId = 1, Total = 50m, Status = "paid", OrderDate = new DateTime(2026, 5, 14, 0, 0, 0, DateTimeKind.Utc), Tags = "[]", LineItems = new()
+        {
+            new LineItem { Id = 21, OrderId = 2, ProductName = "Sticker", UnitPrice = 5m, Quantity = 10 },
+        } },
+        new Order { Id = 3, CustomerId = 2, Total = 0m, Status = "open", OrderDate = new DateTime(2026, 4, 30, 0, 0, 0, DateTimeKind.Utc), Tags = "[]", LineItems = new() },
+    };
+
+    private static int[] RunOrderQueryWithSubs(ExpressionNode tree, DateTime? now = null)
+    {
+        var tz = TimeZoneInfo.Utc;
+        var walker = new QueryBuilderWalker<Order>(tz, now ?? DateTime.UtcNow);
+        var predicate = walker.Build(tree).Compile();
+        return OrdersWithLineItems().Where(predicate).Select(o => o.Id).ToArray();
+    }
+
+    [Fact]
+    public void Subquery_In_MatchesParentsWithMatchingChild()
+    {
+        // Orders.lineItems IN (unitPrice > 75)
+        // Order 1 has a LineItem with unitPrice=100 → match.
+        // Order 2 has only unitPrice=5 → no match.
+        // Order 3 has no LineItems → no match.
+        var tree = new GroupNode { Id = "g", Logic = "and", Children = new()
+        {
+            new SubQueryNode { Id = "sq", Field = "lineItems", Operator = "in", SubQuery = new GroupNode
+            {
+                Id = "sg", Logic = "and", Children = new()
+                {
+                    new ConditionNode { Id = "ic", Field = "unitPrice", Operator = "gt", Value = Json(75) },
+                },
+            } },
+        } };
+        Assert.Equal(new[] { 1 }, RunOrderQueryWithSubs(tree));
+    }
+
+    [Fact]
+    public void Subquery_In_NoMatch_ReturnsEmpty()
+    {
+        // No LineItem has unitPrice > 1000.
+        var tree = new GroupNode { Id = "g", Logic = "and", Children = new()
+        {
+            new SubQueryNode { Id = "sq", Field = "lineItems", Operator = "in", SubQuery = new GroupNode
+            {
+                Id = "sg", Logic = "and", Children = new()
+                {
+                    new ConditionNode { Id = "ic", Field = "unitPrice", Operator = "gt", Value = Json(1000) },
+                },
+            } },
+        } };
+        Assert.Empty(RunOrderQueryWithSubs(tree));
+    }
+
+    [Fact]
+    public void Subquery_NotIn_MatchesParentsWithoutMatchingChild()
+    {
+        // not-in semantics: Order matches if NO LineItem has unitPrice > 75.
+        // Order 1: has a matching LineItem → excluded.
+        // Order 2: no LineItem > 75 → included.
+        // Order 3: no LineItems at all → vacuously included.
+        var tree = new GroupNode { Id = "g", Logic = "and", Children = new()
+        {
+            new SubQueryNode { Id = "sq", Field = "lineItems", Operator = "not-in", SubQuery = new GroupNode
+            {
+                Id = "sg", Logic = "and", Children = new()
+                {
+                    new ConditionNode { Id = "ic", Field = "unitPrice", Operator = "gt", Value = Json(75) },
+                },
+            } },
+        } };
+        Assert.Equal(new[] { 2, 3 }, RunOrderQueryWithSubs(tree));
+    }
+
+    [Fact]
+    public void Subquery_CombinedWithParentCondition_AppliesBoth()
+    {
+        // Order.status = "open" AND lineItems IN (productName = "Widget")
+        // Order 1: status=open, has Widget → match.
+        // Order 2: status=paid → excluded.
+        // Order 3: status=open but no LineItems → no Widget match → excluded.
+        var tree = new GroupNode { Id = "g", Logic = "and", Children = new()
+        {
+            new ConditionNode { Id = "c1", Field = "status", Operator = "equals", Value = Json("open") },
+            new SubQueryNode { Id = "sq", Field = "lineItems", Operator = "in", SubQuery = new GroupNode
+            {
+                Id = "sg", Logic = "and", Children = new()
+                {
+                    new ConditionNode { Id = "ic", Field = "productName", Operator = "equals", Value = Json("Widget") },
+                },
+            } },
+        } };
+        Assert.Equal(new[] { 1 }, RunOrderQueryWithSubs(tree));
+    }
+
+    [Fact]
+    public void Subquery_UnknownInnerField_Throws()
+    {
+        var tree = new GroupNode { Id = "g", Logic = "and", Children = new()
+        {
+            new SubQueryNode { Id = "sq", Field = "lineItems", Operator = "in", SubQuery = new GroupNode
+            {
+                Id = "sg", Logic = "and", Children = new()
+                {
+                    new ConditionNode { Id = "ic", Field = "doesNotExist", Operator = "equals", Value = Json(1) },
+                },
+            } },
+        } };
+        var ex = Assert.Throws<QueryBuilderException>(() => RunOrderQueryWithSubs(tree));
+        Assert.Equal("UNKNOWN_FIELD", ex.Code);
+    }
+
+    [Fact]
+    public void Subquery_FieldIsNotCollection_Throws()
+    {
+        // "status" is a string property, not a relation → subquery walker should reject.
+        var tree = new GroupNode { Id = "g", Logic = "and", Children = new()
+        {
+            new SubQueryNode { Id = "sq", Field = "status", Operator = "in", SubQuery = new GroupNode
+            {
+                Id = "sg", Logic = "and", Children = new()
+                {
+                    new ConditionNode { Id = "ic", Field = "id", Operator = "equals", Value = Json(1) },
+                },
+            } },
+        } };
+        var ex = Assert.Throws<QueryBuilderException>(() => RunOrderQueryWithSubs(tree));
+        Assert.Equal("SUBQUERY_FIELD_NOT_RELATION", ex.Code);
+    }
 }

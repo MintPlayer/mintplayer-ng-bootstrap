@@ -41,8 +41,7 @@ public sealed class QueryBuilderWalker<T> where T : class
         {
             GroupNode g => VisitGroup(g, param),
             ConditionNode c => VisitCondition(c, param),
-            SubQueryNode => throw new QueryBuilderException("SUBQUERY_NOT_YET_IMPLEMENTED",
-                "Sub-query walker requires DbContext access; use ApplyWithSubqueries."),
+            SubQueryNode sq => VisitSubquery(sq, param),
             _ => throw new QueryBuilderException("UNKNOWN_KIND", node.GetType().Name),
         };
     }
@@ -62,10 +61,10 @@ public sealed class QueryBuilderWalker<T> where T : class
 
     private LinqExpression VisitCondition(ConditionNode c, ParameterExpression param)
     {
-        var propertyInfo = typeof(T).GetProperty(
+        var propertyInfo = param.Type.GetProperty(
             PascalCase(c.Field),
             BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)
-            ?? throw new QueryBuilderException("UNKNOWN_FIELD", $"{typeof(T).Name}.{c.Field}");
+            ?? throw new QueryBuilderException("UNKNOWN_FIELD", $"{param.Type.Name}.{c.Field}");
         var prop = LinqExpression.Property(param, propertyInfo);
 
         return c.Operator switch
@@ -104,6 +103,57 @@ public sealed class QueryBuilderWalker<T> where T : class
             "year-to-date" => DateRange(prop, TzDateMath.YearToDateBounds(_now, _timezone)),
             _ => throw new QueryBuilderException("UNSUPPORTED_OPERATOR", c.Operator),
         };
+    }
+
+    private LinqExpression VisitSubquery(SubQueryNode sq, ParameterExpression param)
+    {
+        if (sq.Operator is not ("in" or "not-in"))
+            throw new QueryBuilderException("INVALID_SUBQUERY_OPERATOR", sq.Operator);
+
+        var navProp = param.Type.GetProperty(
+            PascalCase(sq.Field),
+            BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)
+            ?? throw new QueryBuilderException("UNKNOWN_FIELD", $"{param.Type.Name}.{sq.Field}");
+
+        var elementType = ResolveElementType(navProp.PropertyType)
+            ?? throw new QueryBuilderException("SUBQUERY_FIELD_NOT_RELATION",
+                $"{param.Type.Name}.{sq.Field} (got {navProp.PropertyType.Name})");
+
+        var navAccess = LinqExpression.Property(param, navProp);
+
+        var innerParam = LinqExpression.Parameter(elementType, "y");
+        var innerBody = Visit(sq.SubQuery, innerParam);
+        var innerLambda = LinqExpression.Lambda(
+            typeof(Func<,>).MakeGenericType(elementType, typeof(bool)),
+            innerBody,
+            innerParam);
+
+        var anyMethod = EnumerableAnyOpenGeneric.MakeGenericMethod(elementType);
+        var anyCall = LinqExpression.Call(anyMethod, navAccess, innerLambda);
+
+        return sq.Operator == "not-in" ? LinqExpression.Not(anyCall) : anyCall;
+    }
+
+    private static readonly MethodInfo EnumerableAnyOpenGeneric = typeof(Enumerable)
+        .GetMethods(BindingFlags.Public | BindingFlags.Static)
+        .First(m => m.Name == nameof(Enumerable.Any)
+                    && m.GetParameters().Length == 2
+                    && m.GetParameters()[1].ParameterType.IsGenericType
+                    && m.GetParameters()[1].ParameterType.GetGenericTypeDefinition() == typeof(Func<,>));
+
+    private static Type? ResolveElementType(Type collectionType)
+    {
+        // string implements IEnumerable<char> — don't treat that as a relation collection.
+        if (collectionType == typeof(string)) return null;
+        if (collectionType.IsGenericType)
+        {
+            var def = collectionType.GetGenericTypeDefinition();
+            if (def == typeof(List<>) || def == typeof(ICollection<>) || def == typeof(IEnumerable<>))
+                return collectionType.GetGenericArguments()[0];
+        }
+        var ienum = collectionType.GetInterfaces()
+            .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>));
+        return ienum?.GetGenericArguments()[0];
     }
 
     private static LinqExpression Eq(MemberExpression prop, object? jsonValue, Type targetType)
