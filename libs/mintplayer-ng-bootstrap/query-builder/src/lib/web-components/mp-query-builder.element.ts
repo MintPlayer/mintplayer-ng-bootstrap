@@ -18,6 +18,7 @@ import {
   updateCondition,
 } from '../model/tree-ops';
 import { DragController, type DropTarget } from '../dnd/drag-controller';
+import { renderExpression } from '../preview/render-expression';
 import {
   disabledContext,
   editorRegistryContext,
@@ -42,6 +43,7 @@ export class MpQueryBuilderElement extends LitElement {
     editorRegistry: { attribute: false },
     messages: { attribute: false },
     maxDepth: { attribute: 'max-depth', type: Number, reflect: true },
+    showPreview: { attribute: 'show-preview', type: Boolean, reflect: true },
     depth: { attribute: false },
     _isDragging: { state: true },
   };
@@ -53,6 +55,7 @@ export class MpQueryBuilderElement extends LitElement {
   editorRegistry: EditorRegistry | undefined = undefined;
   messages: Partial<QueryBuilderMessages> | undefined = undefined;
   maxDepth = DEFAULT_MAX_DEPTH;
+  showPreview = false;
 
   // `depth` is set by parent <mp-query-subquery> when this WC renders a nested
   // sub-query body. The outermost root keeps depth=0.
@@ -384,9 +387,28 @@ export class MpQueryBuilderElement extends LitElement {
         @node-remove=${this._onNodeRemove}
         @qb-drag-start=${this._onDragStart}
       >
+        ${this.showPreview && this.depth === 0
+          ? html`<pre class="qb-preview" part="preview">${this._renderPreview(tree)}</pre>`
+          : nothing}
         ${this.renderTreeRoot(tree)}
       </div>
     `;
+  }
+
+  private _renderPreview(tree: Expression): string {
+    try {
+      const eff = {
+        ...(this._messagesConsumer.value ?? {}),
+        ...(this.messages ?? {}),
+      };
+      return renderExpression(tree, this.schema, {
+        messages: eff,
+        rootEntity: this.rootEntity,
+        maxDepth: this.effectiveMaxDepth(),
+      });
+    } catch (err) {
+      return err instanceof Error ? err.message : String(err);
+    }
   }
 
   private renderTreeRoot(tree: Expression): TemplateResult {
