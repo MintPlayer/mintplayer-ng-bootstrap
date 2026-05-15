@@ -1,49 +1,27 @@
 <h1 class="text-center">Treeview</h1>
-<bs-treeview>
-    <bs-treeview-item>
-        <span>
-            <span [innerHTML]="inboxFill()"></span>
-            Inbox
-        </span>
-        <bs-treeview>
-            <bs-treeview-item>
-                <span>
-                    <span [innerHTML]="building()"></span>
-                    Office
-                </span>
-                <bs-treeview>
-                    <bs-treeview-item>
-                        <span [innerHTML]="peopleFill()"></span>
-                        Customers
-                    </bs-treeview-item>
-                    <bs-treeview-item>
-                        <span [innerHTML]="personBoundingBox()"></span>
-                        Co-Workers
-                    </bs-treeview-item>
-                </bs-treeview>
-            </bs-treeview-item>
-            <bs-treeview-item>
-                <span>
-                    <span [innerHTML]="inbox()"></span>
-                    Others
-                </span>
-            </bs-treeview-item>
-        </bs-treeview>
-    </bs-treeview-item>
-    <bs-treeview-item>
-        <span [innerHTML]="archiveFill()"></span>
-        Drafts
-    </bs-treeview-item>
-    <bs-treeview-item>
-        <span [innerHTML]="calendar3()"></span>
-        Calendar
-    </bs-treeview-item>
-    <bs-treeview-item>
-        <span [innerHTML]="personLinesFill()"></span>
-        Contacts
-    </bs-treeview-item>
-    <bs-treeview-item>
-        <span [innerHTML]="trashFill()"></span>
-        Deleted Items
-    </bs-treeview-item>
+
+<p>
+    Data-driven recursive tree. Pass a <code>TreeNode[]</code> via <code>[items]</code>,
+    optionally provide an <code>iconResolver</code> that returns SVG markup for each
+    node's <code>iconKey</code>, and bind <code>[(expandedIds)]</code> / <code>[(selectedIds)]</code>
+    if you need to control the state.
+</p>
+
+<bs-treeview
+    [items]="items()"
+    [(expandedIds)]="expandedIds"
+    [iconResolver]="iconResolver"
+    selectionMode="single">
 </bs-treeview>
+
+<details class="mt-3">
+    <summary>Keyboard shortcuts</summary>
+    <ul>
+        <li><kbd>↑</kbd> / <kbd>↓</kbd> — move focus to previous / next visible row</li>
+        <li><kbd>→</kbd> — expand collapsed folder, or jump to first child</li>
+        <li><kbd>←</kbd> — collapse expanded folder, or jump to parent</li>
+        <li><kbd>Home</kbd> / <kbd>End</kbd> — first / last visible row</li>
+        <li><kbd>Enter</kbd> — toggle selection (and expand/collapse if folder)</li>
+        <li><kbd>Space</kbd> — toggle selection on focused row</li>
+    </ul>
+</details>

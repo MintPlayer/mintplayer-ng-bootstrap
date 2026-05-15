@@ -1,3 +1,7 @@
-<bs-list-group [@slideUpDown]="isExpanded()" class="d-block overflow-y-hidden" [attr.role]="level() === 0 ? 'tree' : 'group'">
-    <ng-content></ng-content>
-</bs-list-group>
+<mp-treeview
+  #treeview
+  class="bs-treeview"
+  (tree-node-select)="onSelect($event)"
+  (tree-node-expand)="onExpand($event)"
+  (tree-node-collapse)="onCollapse($event)"
+></mp-treeview>

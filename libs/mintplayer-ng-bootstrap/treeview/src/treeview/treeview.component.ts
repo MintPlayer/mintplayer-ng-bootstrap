@@ -1,59 +1,106 @@
-import { ChangeDetectionStrategy, Component, computed, inject, model, signal } from '@angular/core';
-import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
-import { BsListGroupComponent } from '@mintplayer/ng-bootstrap/list-group';
-import type { BsTreeviewItemComponent } from '../treeview-item/treeview-item.component';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  CUSTOM_ELEMENTS_SCHEMA,
+  effect,
+  ElementRef,
+  input,
+  model,
+  output,
+  viewChild,
+} from '@angular/core';
+import {
+  MpTreeview,
+  type IconResolver,
+  type TreeNode,
+  type TreeNodeCollapseEventDetail,
+  type TreeNodeExpandEventDetail,
+  type TreeNodeSelectEventDetail,
+  type TreeviewSelectionMode,
+} from '@mintplayer/ng-bootstrap/web-components/treeview';
+
+// Side-effect import: registers the `<mp-treeview>` custom element.
+import '@mintplayer/ng-bootstrap/web-components/treeview';
 
 @Component({
   selector: 'bs-treeview',
   templateUrl: './treeview.component.html',
   styleUrls: ['./treeview.component.scss'],
-  imports: [BsListGroupComponent],
-  animations: [SlideUpDownAnimation],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class BsTreeviewComponent {
+export class BsTreeviewComponent implements AfterViewInit {
+  readonly items = input<TreeNode[]>([]);
+  readonly expandedIds = model<string[]>([]);
+  readonly selectedIds = model<string[]>([]);
+  readonly selectionMode = input<TreeviewSelectionMode>('single');
+  readonly hideBorders = input<boolean>(false);
+  readonly iconResolver = input<IconResolver | undefined>(undefined);
 
-  private parent = inject(BsTreeviewComponent, { skipSelf: true, optional: true });
+  readonly nodeSelect = output<TreeNodeSelectEventDetail>();
+  readonly nodeExpand = output<TreeNodeExpandEventDetail>();
+  readonly nodeCollapse = output<TreeNodeCollapseEventDetail>();
 
-  level = computed<number>((): number => !this.parent ? 0 : this.parent.level() + 1);
-  indentation = computed(() => this.level() * 30);
-  isExpanded = model<boolean>(!this.parent);
+  readonly treeviewRef = viewChild<ElementRef<MpTreeview>>('treeview');
 
-  /**
-   * Direct-child items of THIS tree (not descendants). Used to compute
-   * aria-setsize and aria-posinset for each item among its siblings.
-   */
-  items = signal<BsTreeviewItemComponent[]>([]);
-  /** Roving tabindex tracking — only stored on the root tree. */
-  focusedItem = signal<BsTreeviewItemComponent | null>(null);
+  constructor() {
+    effect(() => {
+      const el = this.treeviewRef()?.nativeElement;
+      if (!el) return;
+      el.items = this.items();
+    });
 
-  private getRootTree(): BsTreeviewComponent {
-    return this.parent ? this.parent.getRootTree() : this;
+    effect(() => {
+      const el = this.treeviewRef()?.nativeElement;
+      if (!el) return;
+      el.expandedIds = this.expandedIds();
+    });
+
+    effect(() => {
+      const el = this.treeviewRef()?.nativeElement;
+      if (!el) return;
+      el.selectedIds = this.selectedIds();
+    });
+
+    effect(() => {
+      const el = this.treeviewRef()?.nativeElement;
+      if (!el) return;
+      el.selectionMode = this.selectionMode();
+    });
+
+    effect(() => {
+      const el = this.treeviewRef()?.nativeElement;
+      if (!el) return;
+      el.hideBorders = this.hideBorders();
+    });
+
+    effect(() => {
+      const el = this.treeviewRef()?.nativeElement;
+      if (!el) return;
+      el.iconResolver = this.iconResolver();
+    });
   }
 
-  registerItem(item: BsTreeviewItemComponent) {
-    this.items.update((items: BsTreeviewItemComponent[]) => [...items, item]);
-    // First item gets focus by default (root-level state)
-    const root = this.getRootTree();
-    if (root.focusedItem() === null) {
-      root.focusedItem.set(item);
-    }
+  ngAfterViewInit(): void {
+    // The effect()s above re-run when the view is created; nothing else needed.
   }
 
-  unregisterItem(item: BsTreeviewItemComponent) {
-    this.items.update((items: BsTreeviewItemComponent[]) => items.filter(i => i !== item));
-    const root = this.getRootTree();
-    if (root.focusedItem() === item) {
-      const remaining = this.items();
-      root.focusedItem.set(remaining.length > 0 ? remaining[0] : null);
-    }
+  onSelect(event: Event): void {
+    const detail = (event as CustomEvent<TreeNodeSelectEventDetail>).detail;
+    this.selectedIds.set([...detail.selectedIds]);
+    this.nodeSelect.emit(detail);
   }
 
-  setFocusedItem(item: BsTreeviewItemComponent) {
-    this.getRootTree().focusedItem.set(item);
+  onExpand(event: Event): void {
+    const detail = (event as CustomEvent<TreeNodeExpandEventDetail>).detail;
+    this.expandedIds.set([...detail.expandedIds]);
+    this.nodeExpand.emit(detail);
   }
 
-  isFocusedItem(item: BsTreeviewItemComponent): boolean {
-    return this.getRootTree().focusedItem() === item;
+  onCollapse(event: Event): void {
+    const detail = (event as CustomEvent<TreeNodeCollapseEventDetail>).detail;
+    this.expandedIds.set([...detail.expandedIds]);
+    this.nodeCollapse.emit(detail);
   }
 }

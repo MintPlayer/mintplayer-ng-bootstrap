@@ -359,10 +359,7 @@
         "prefix": "bs-treeview",
         "description": "Bootstrap Treeview",
         "body": [
-            "<bs-treeview>",
-            "\t<bs-treeview-item>${1:Customers}</bs-treeview-item>",
-            "\t<bs-treeview-item>${2:Co-Workers}</bs-treeview-item>",
-            "</bs-treeview>"
+            "<bs-treeview [items]=\"${1:items}()\" [(expandedIds)]=\"${2:expandedIds}\"></bs-treeview>"
         ]
     },
     "MultiSelect": {

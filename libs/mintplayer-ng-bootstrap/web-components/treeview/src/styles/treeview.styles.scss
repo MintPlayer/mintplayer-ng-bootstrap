@@ -1,0 +1,124 @@
+:host {
+  display: block;
+  width: 100%;
+
+  --mp-treeview-indent: 20px;
+  --mp-treeview-row-padding-y: 0.5rem;
+  --mp-treeview-row-padding-x: 0.75rem;
+  --mp-treeview-row-hover-bg: var(--bs-list-group-action-hover-bg, rgba(0, 0, 0, 0.04));
+  --mp-treeview-row-selected-bg: var(--bs-list-group-active-bg, var(--bs-primary));
+  --mp-treeview-row-selected-color: var(--bs-list-group-active-color, #fff);
+  --mp-treeview-row-focus-outline: 2px solid var(--bs-primary, #1389fd);
+  --mp-treeview-chevron-color: var(--bs-secondary-color, #6c757d);
+  --mp-treeview-border-color: var(--bs-list-group-border-color, var(--bs-border-color, rgba(0, 0, 0, 0.125)));
+}
+
+* {
+  box-sizing: border-box;
+}
+
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.treeview-root {
+  border: 1px solid var(--mp-treeview-border-color);
+  border-radius: var(--bs-list-group-border-radius, 0.375rem);
+  overflow: hidden;
+}
+
+:host([hide-borders]) .treeview-root {
+  border: 0;
+  border-radius: 0;
+}
+
+.treeview-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: var(--mp-treeview-row-padding-y) var(--mp-treeview-row-padding-x);
+  cursor: pointer;
+  user-select: none;
+  border-top: 1px solid var(--mp-treeview-border-color);
+  background-color: transparent;
+  color: inherit;
+}
+
+:host([hide-borders]) .treeview-row {
+  border-top: 0;
+}
+
+.treeview-row:first-child {
+  border-top: 0;
+}
+
+.treeview-row:hover {
+  background-color: var(--mp-treeview-row-hover-bg);
+}
+
+.treeview-row[data-selected="true"] {
+  background-color: var(--mp-treeview-row-selected-bg);
+  color: var(--mp-treeview-row-selected-color);
+}
+
+.treeview-row:focus {
+  outline: none;
+}
+
+.treeview-row:focus-visible {
+  outline: var(--mp-treeview-row-focus-outline);
+  outline-offset: -2px;
+}
+
+.treeview-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+  color: var(--mp-treeview-chevron-color);
+  transition: transform 0.15s ease-in-out;
+}
+
+.treeview-chevron[data-expanded="true"] {
+  transform: rotate(90deg);
+}
+
+.treeview-chevron.invisible {
+  visibility: hidden;
+}
+
+.treeview-chevron svg {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.treeview-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+}
+
+.treeview-icon svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.treeview-label {
+  flex: 1 1 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .treeview-chevron {
+    transition: none !important;
+  }
+}
