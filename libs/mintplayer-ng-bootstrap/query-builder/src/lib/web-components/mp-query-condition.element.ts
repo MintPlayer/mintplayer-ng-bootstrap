@@ -3,10 +3,10 @@ import { createRef, ref } from 'lit/directives/ref.js';
 import { ContextConsumer } from '@lit/context';
 import type { Condition } from '../model/expression';
 import type { EntitySchema, FieldDef } from '../model/field-def';
-import type { EditorContext, EditorHandle } from '../model/editor';
+import type { EditorContext, EditorFactory, EditorHandle } from '../model/editor';
 import { DEFAULT_MESSAGES, type QueryBuilderMessages } from '../model/messages';
 import { valueShapeFor } from '../model/operators';
-import { disabledContext, messagesContext } from './context';
+import { disabledContext, editorRegistryContext, messagesContext } from './context';
 import { resolveBuiltinEditor } from '../value-editors/builtin-editors';
 import { styles } from './mp-query-condition.element.template';
 
@@ -31,10 +31,25 @@ export class MpQueryConditionElement extends LitElement {
     context: disabledContext,
     subscribe: true,
   });
+  private _registryConsumer = new ContextConsumer(this, {
+    context: editorRegistryContext,
+    subscribe: true,
+  });
 
   private _editorMount = createRef<HTMLSpanElement>();
   private _currentHandle: EditorHandle | null = null;
   private _editorKey = '';
+  private _registryTokens = new WeakMap<object, number>();
+  private _nextRegistryToken = 1;
+
+  private _registryIdentityToken(reg: object | undefined): number {
+    if (!reg) return 0;
+    const existing = this._registryTokens.get(reg);
+    if (existing !== undefined) return existing;
+    const t = this._nextRegistryToken++;
+    this._registryTokens.set(reg, t);
+    return t;
+  }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
@@ -92,16 +107,22 @@ export class MpQueryConditionElement extends LitElement {
       return;
     }
 
-    // Key encodes the (field, operator) pair plus disabled state. If unchanged,
+    // Key encodes (field, operator, disabled, registry identity). If unchanged,
     // skip rebuild so user keystrokes don't blow away the focused input. Value
     // updates are pushed by the caller via the onChange contract, so we don't
     // re-render the editor for value-only changes.
     const disabled = this.isDisabled();
-    const key = `${field.name}|${node.operator}|${disabled ? '1' : '0'}`;
+    const registry = this._registryConsumer.value;
+    const registeredFactory: EditorFactory | undefined = registry?.[field.name];
+    // Use registry identity (object reference) so swapping the whole registry
+    // — even with the same field key — forces a rebuild. Within one registry
+    // instance, identity is stable so we don't churn on unrelated updates.
+    const registryToken = registeredFactory ? `r${this._registryIdentityToken(registry)}` : 'b';
+    const key = `${field.name}|${node.operator}|${disabled ? '1' : '0'}|${registryToken}`;
     if (this._currentHandle && key === this._editorKey) return;
 
     this._disposeEditor();
-    const factory = resolveBuiltinEditor(field, node.operator);
+    const factory: EditorFactory | null = registeredFactory ?? resolveBuiltinEditor(field, node.operator);
     if (!factory) return;
 
     const ctx: EditorContext = {
