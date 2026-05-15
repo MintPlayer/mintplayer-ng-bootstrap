@@ -210,7 +210,7 @@ describe('mp-query-builder (M2 read-only rendering)', () => {
     expect(el.shadowRoot?.textContent).toContain('Tree too deep');
   });
 
-  it('renders an unknown-field hint when the field is not in the schema', async () => {
+  it('shows the unknown field name as the selected option when the field is not in the schema', async () => {
     const tree: Expression = {
       kind: 'group',
       id: newId(),
@@ -220,6 +220,9 @@ describe('mp-query-builder (M2 read-only rendering)', () => {
       ],
     };
     const el = await mount(tree);
-    expect(shadowText(el)).toContain('unknown field');
+    // The condition's field-selector should include an option with the unknown
+    // name in parens — the user can see "this is unknown" and pick a real one.
+    // shadowText joins with spaces, so the parens are surrounded by them.
+    expect(shadowText(el)).toMatch(/\(\s*nonexistent\s*\)/);
   });
 });

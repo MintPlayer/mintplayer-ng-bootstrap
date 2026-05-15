@@ -13,18 +13,29 @@
   align-items: center;
   gap: 0.5rem;
   font-size: 0.875rem;
-  font-weight: 600;
   margin-bottom: 0.25rem;
+  flex-wrap: wrap;
 }
 
-.qb-logic {
-  display: inline-block;
-  padding: 0.125rem 0.5rem;
-  border-radius: var(--bs-border-radius-sm, 0.25rem);
-  background: var(--bs-secondary-bg-subtle, #e9ecef);
+.qb-group-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: auto;
+}
+
+.qb-logic-btn {
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  padding: 0.125rem 0.5rem;
+}
+
+.qb-remove-group {
+  padding: 0 0.5rem;
+  line-height: 1;
+  font-size: 1rem;
+  color: var(--bs-danger, #dc3545);
 }
 
 .qb-children {

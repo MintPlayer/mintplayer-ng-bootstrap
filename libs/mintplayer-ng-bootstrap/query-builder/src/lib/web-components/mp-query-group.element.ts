@@ -3,7 +3,7 @@ import { ContextConsumer } from '@lit/context';
 import type { Expression, Group } from '../model/expression';
 import type { EntitySchema } from '../model/field-def';
 import { DEFAULT_MESSAGES, type QueryBuilderMessages } from '../model/messages';
-import { messagesContext } from './context';
+import { disabledContext, messagesContext } from './context';
 import { MpQueryConditionElement } from './mp-query-condition.element';
 import { MpQuerySubqueryElement } from './mp-query-subquery.element';
 import { styles } from './mp-query-group.element.template';
@@ -19,17 +19,65 @@ export class MpQueryGroupElement extends LitElement {
     schema: { attribute: false },
     currentEntity: { attribute: false },
     depth: { attribute: false },
+    isRoot: { attribute: false },
   };
 
   node: Group | null = null;
   schema: EntitySchema[] = [];
   currentEntity = '';
   depth = 0;
+  // True if this group is the outermost group of an mp-query-builder. Used to
+  // disable the "remove group" button on the root (removing the root makes
+  // no sense; the tree must always have one).
+  isRoot = false;
 
   private _messagesConsumer = new ContextConsumer(this, {
     context: messagesContext,
     subscribe: true,
   });
+  private _disabledConsumer = new ContextConsumer(this, {
+    context: disabledContext,
+    subscribe: true,
+  });
+
+  private isDisabled(): boolean {
+    return this._disabledConsumer.value ?? false;
+  }
+
+  private _hasRelation(): boolean {
+    return (this.schema.find((s) => s.name === this.currentEntity)?.fields ?? [])
+      .some((f) => f.type === 'relation' && !!f.targetEntity);
+  }
+
+  private _emit(type: string, detail: Record<string, unknown>): void {
+    this.dispatchEvent(new CustomEvent(type, { detail, bubbles: true, composed: true }));
+  }
+
+  private _onLogicChange = (logic: 'and' | 'or'): void => {
+    const node = this.node;
+    if (!node || node.logic === logic) return;
+    this._emit('group-logic-change', { id: node.id, logic });
+  };
+
+  private _onAddCondition = (): void => {
+    if (!this.node) return;
+    this._emit('add-condition', { groupId: this.node.id });
+  };
+
+  private _onAddGroup = (): void => {
+    if (!this.node) return;
+    this._emit('add-group', { groupId: this.node.id });
+  };
+
+  private _onAddSubquery = (): void => {
+    if (!this.node) return;
+    this._emit('add-subquery', { groupId: this.node.id });
+  };
+
+  private _onRemove = (): void => {
+    if (!this.node) return;
+    this._emit('node-remove', { id: this.node.id });
+  };
 
   private messages(): QueryBuilderMessages {
     const consumed = this._messagesConsumer.value ?? {};
@@ -72,7 +120,8 @@ export class MpQueryGroupElement extends LitElement {
     const node = this.node;
     if (!node) return nothing;
     const messages = this.messages();
-    const logicLabel = node.logic === 'and' ? messages.logicAnd : messages.logicOr;
+    const disabled = this.isDisabled();
+    const showSubquery = this._hasRelation();
     return html`
       <div
         class="qb-group"
@@ -81,7 +130,58 @@ export class MpQueryGroupElement extends LitElement {
         part="group"
       >
         <div class="qb-group-header" part="group-header">
-          <span class="qb-logic" part="logic">${logicLabel}</span>
+          <span class="qb-logic-toggle btn-group btn-group-sm" role="group" aria-label="Group logic">
+            <button
+              type="button"
+              class="btn ${node.logic === 'and' ? 'btn-primary' : 'btn-outline-primary'} qb-logic-btn"
+              ?disabled=${disabled}
+              @click=${() => this._onLogicChange('and')}
+              aria-pressed=${node.logic === 'and'}
+            >${messages.logicAnd}</button>
+            <button
+              type="button"
+              class="btn ${node.logic === 'or' ? 'btn-primary' : 'btn-outline-primary'} qb-logic-btn"
+              ?disabled=${disabled}
+              @click=${() => this._onLogicChange('or')}
+              aria-pressed=${node.logic === 'or'}
+            >${messages.logicOr}</button>
+          </span>
+          <span class="qb-group-actions">
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-secondary qb-add-condition"
+              part="add-condition"
+              ?disabled=${disabled}
+              @click=${this._onAddCondition}
+            >+ ${messages.addCondition}</button>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-secondary qb-add-group"
+              part="add-group"
+              ?disabled=${disabled}
+              @click=${this._onAddGroup}
+            >+ ${messages.addGroup}</button>
+            ${showSubquery
+              ? html`<button
+                  type="button"
+                  class="btn btn-sm btn-outline-secondary qb-add-subquery"
+                  part="add-subquery"
+                  ?disabled=${disabled}
+                  @click=${this._onAddSubquery}
+                >+ ${messages.addSubquery}</button>`
+              : nothing}
+            ${this.isRoot
+              ? nothing
+              : html`<button
+                  type="button"
+                  class="btn btn-sm btn-link qb-remove-group"
+                  part="remove-group"
+                  ?disabled=${disabled}
+                  @click=${this._onRemove}
+                  aria-label="Remove group"
+                  title=${messages.removeGroup}
+                >×</button>`}
+          </span>
         </div>
         <div class="qb-children" part="children">
           ${node.children.length === 0

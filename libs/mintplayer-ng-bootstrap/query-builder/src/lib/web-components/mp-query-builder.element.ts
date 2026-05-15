@@ -1,9 +1,19 @@
 import { LitElement, html, nothing, type PropertyValues, type TemplateResult } from 'lit';
 import { ContextConsumer, ContextProvider } from '@lit/context';
-import type { Expression, Group } from '../model/expression';
+import type { Expression, Group, Operator } from '../model/expression';
 import type { EntitySchema } from '../model/field-def';
 import type { EditorRegistry } from '../model/editor';
 import type { QueryBuilderMessages } from '../model/messages';
+import {
+  addEmptyConditionTo,
+  addEmptyGroupTo,
+  addEmptySubqueryTo,
+  changeConditionField,
+  changeConditionOperator,
+  removeNode,
+  setGroupLogic,
+  updateCondition,
+} from '../model/tree-ops';
 import {
   disabledContext,
   editorRegistryContext,
@@ -87,6 +97,136 @@ export class MpQueryBuilderElement extends LitElement {
     this._messagesProvider.setValue(effMessages);
   }
 
+  private _entitySchemaForCurrentRoot(): EntitySchema | null {
+    return this.schema.find((s) => s.name === this.rootEntity) ?? null;
+  }
+
+  // Walk the entire tree (incl. sub-query bodies) to find the entity context
+  // that contains a given node id. Falls back to rootEntity.
+  private _resolveEntityForNode(nodeId: string): EntitySchema | null {
+    const root = this._entitySchemaForCurrentRoot();
+    if (!root) return null;
+    const tree = this.query;
+    if (!tree) return root;
+    const found = { entity: root };
+    const walk = (n: Expression, entity: EntitySchema): boolean => {
+      if (n.id === nodeId) {
+        found.entity = entity;
+        return true;
+      }
+      if (n.kind === 'group') {
+        for (const c of n.children) {
+          if (walk(c, entity)) return true;
+        }
+      } else if (n.kind === 'subquery') {
+        // The sub-query body is rooted on its targetEntity.
+        const fieldDef = entity.fields.find((f) => f.name === n.field);
+        const target = fieldDef?.targetEntity
+          ? this.schema.find((s) => s.name === fieldDef.targetEntity) ?? entity
+          : entity;
+        if (walk(n.subQuery, target)) return true;
+      }
+      return false;
+    };
+    walk(tree, root);
+    return found.entity;
+  }
+
+  private _mutate(next: Expression): void {
+    this.query = next;
+    this.dispatchEvent(new CustomEvent('query-change', {
+      detail: { tree: next },
+      // M7 will consolidate and re-dispatch externally; for now expose
+      // to outside listeners on the root builder only.
+      bubbles: false, composed: false,
+    }));
+  }
+
+  // Inner sub-query builders (depth > 0) skip their handlers so events bubble
+  // up to the outermost root, which owns the canonical tree.
+  private _handlesEvents(): boolean { return this.depth === 0; }
+
+  private _onConditionFieldChange = (e: Event): void => {
+    if (!this._handlesEvents()) return;
+    e.stopPropagation();
+    const { id, field } = (e as CustomEvent).detail as { id: string; field: string };
+    const tree = this.query;
+    if (!tree) return;
+    const entity = this._resolveEntityForNode(id);
+    const fieldDef = entity?.fields.find((f) => f.name === field);
+    if (!fieldDef) return;
+    this._mutate(changeConditionField(tree, id, fieldDef));
+  };
+
+  private _onConditionOperatorChange = (e: Event): void => {
+    if (!this._handlesEvents()) return;
+    e.stopPropagation();
+    const { id, operator } = (e as CustomEvent).detail as { id: string; operator: Operator };
+    const tree = this.query;
+    if (!tree) return;
+    this._mutate(changeConditionOperator(tree, id, operator));
+  };
+
+  private _onConditionValueChange = (e: Event): void => {
+    if (!this._handlesEvents()) return;
+    e.stopPropagation();
+    const { id, value } = (e as CustomEvent).detail as { id: string; value: unknown };
+    const tree = this.query;
+    if (!tree) return;
+    this._mutate(updateCondition(tree, id, { value }));
+  };
+
+  private _onGroupLogicChange = (e: Event): void => {
+    if (!this._handlesEvents()) return;
+    e.stopPropagation();
+    const { id, logic } = (e as CustomEvent).detail as { id: string; logic: 'and' | 'or' };
+    const tree = this.query;
+    if (!tree) return;
+    this._mutate(setGroupLogic(tree, id, logic));
+  };
+
+  private _onAddCondition = (e: Event): void => {
+    if (!this._handlesEvents()) return;
+    e.stopPropagation();
+    const { groupId } = (e as CustomEvent).detail as { groupId: string };
+    const tree = this.query;
+    if (!tree) return;
+    const entity = this._resolveEntityForNode(groupId);
+    if (!entity) return;
+    this._mutate(addEmptyConditionTo(tree, groupId, entity));
+  };
+
+  private _onAddGroup = (e: Event): void => {
+    if (!this._handlesEvents()) return;
+    e.stopPropagation();
+    const { groupId } = (e as CustomEvent).detail as { groupId: string };
+    const tree = this.query;
+    if (!tree) return;
+    this._mutate(addEmptyGroupTo(tree, groupId, 'and'));
+  };
+
+  private _onAddSubquery = (e: Event): void => {
+    if (!this._handlesEvents()) return;
+    e.stopPropagation();
+    const { groupId } = (e as CustomEvent).detail as { groupId: string };
+    const tree = this.query;
+    if (!tree) return;
+    const entity = this._resolveEntityForNode(groupId);
+    if (!entity) return;
+    this._mutate(addEmptySubqueryTo(tree, groupId, entity));
+  };
+
+  private _onNodeRemove = (e: Event): void => {
+    if (!this._handlesEvents()) return;
+    e.stopPropagation();
+    const { id } = (e as CustomEvent).detail as { id: string };
+    const tree = this.query;
+    if (!tree) return;
+    // Protect the root: removing the root group is a no-op.
+    if (tree.id === id) return;
+    this._mutate(removeNode(tree, id));
+  };
+
   protected override render(): TemplateResult | typeof nothing {
     if (this.depth > this.maxDepth) {
       return html`<div class="qb-too-deep" role="alert">Tree too deep</div>`;
@@ -95,7 +235,18 @@ export class MpQueryBuilderElement extends LitElement {
     if (!tree) return nothing;
 
     return html`
-      <div class="qb-root" part="root">
+      <div
+        class="qb-root"
+        part="root"
+        @condition-field-change=${this._onConditionFieldChange}
+        @condition-operator-change=${this._onConditionOperatorChange}
+        @condition-value-change=${this._onConditionValueChange}
+        @group-logic-change=${this._onGroupLogicChange}
+        @add-condition=${this._onAddCondition}
+        @add-group=${this._onAddGroup}
+        @add-subquery=${this._onAddSubquery}
+        @node-remove=${this._onNodeRemove}
+      >
         ${this.renderTreeRoot(tree)}
       </div>
     `;
@@ -108,6 +259,7 @@ export class MpQueryBuilderElement extends LitElement {
         .schema=${this.schema}
         .currentEntity=${this.rootEntity}
         .depth=${this.depth}
+        .isRoot=${true}
       ></mp-query-group>`;
     }
     // Non-group root: wrap in a synthetic group for rendering.
@@ -122,6 +274,7 @@ export class MpQueryBuilderElement extends LitElement {
       .schema=${this.schema}
       .currentEntity=${this.rootEntity}
       .depth=${this.depth}
+      .isRoot=${true}
     ></mp-query-group>`;
   }
 }

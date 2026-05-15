@@ -1,11 +1,11 @@
 import { LitElement, html, nothing, type PropertyValues, type TemplateResult } from 'lit';
 import { createRef, ref } from 'lit/directives/ref.js';
 import { ContextConsumer } from '@lit/context';
-import type { Condition } from '../model/expression';
+import type { Condition, Operator } from '../model/expression';
 import type { EntitySchema, FieldDef } from '../model/field-def';
 import type { EditorContext, EditorFactory, EditorHandle } from '../model/editor';
 import { DEFAULT_MESSAGES, type QueryBuilderMessages } from '../model/messages';
-import { valueShapeFor } from '../model/operators';
+import { operatorsForType, valueShapeFor } from '../model/operators';
 import { disabledContext, editorRegistryContext, messagesContext } from './context';
 import { resolveBuiltinEditor } from '../value-editors/builtin-editors';
 import { styles } from './mp-query-condition.element.template';
@@ -133,7 +133,7 @@ export class MpQueryConditionElement extends LitElement {
       onChange: (next: unknown) => {
         this.dispatchEvent(new CustomEvent('condition-value-change', {
           detail: { id: node.id, value: next },
-          bubbles: false,
+          bubbles: true, composed: true,
         }));
       },
     };
@@ -143,25 +143,92 @@ export class MpQueryConditionElement extends LitElement {
     this._editorKey = key;
   }
 
+  private _onFieldChange = (e: Event): void => {
+    const target = e.target as HTMLSelectElement;
+    const node = this.node;
+    if (!node) return;
+    this.dispatchEvent(new CustomEvent('condition-field-change', {
+      detail: { id: node.id, field: target.value },
+      bubbles: true, composed: true,
+    }));
+  };
+
+  private _onOperatorChange = (e: Event): void => {
+    const target = e.target as HTMLSelectElement;
+    const node = this.node;
+    if (!node) return;
+    this.dispatchEvent(new CustomEvent('condition-operator-change', {
+      detail: { id: node.id, operator: target.value as Operator },
+      bubbles: true, composed: true,
+    }));
+  };
+
+  private _onRemove = (): void => {
+    const node = this.node;
+    if (!node) return;
+    this.dispatchEvent(new CustomEvent('node-remove', {
+      detail: { id: node.id },
+      bubbles: true, composed: true,
+    }));
+  };
+
+  private _availableFields(): FieldDef[] {
+    return this.schema
+      .find((s) => s.name === this.currentEntity)
+      ?.fields.filter((f) => f.type !== 'relation') ?? [];
+  }
+
+  private _availableOperators(field: FieldDef | undefined): readonly Operator[] {
+    if (!field) return [];
+    return operatorsForType(field.type);
+  }
+
   protected override render(): TemplateResult | typeof nothing {
     const node = this.node;
     if (!node) return nothing;
     const field = this.resolveField(node.field);
     const messages = this.messages();
-    const fieldLabel = field?.label ?? node.field;
-    const operatorLabel = messages.operators[node.operator] ?? node.operator;
     const shape = valueShapeFor(node.operator);
+    const disabled = this.isDisabled();
+    const fields = this._availableFields();
+    const operators = this._availableOperators(field);
 
     return html`
       <div class="qb-condition" part="condition">
-        <span class="qb-field" part="field">${fieldLabel}</span>
-        <span class="qb-operator" part="operator">${operatorLabel}</span>
+        <select
+          class="form-select form-select-sm qb-field-select"
+          part="field-select"
+          ?disabled=${disabled}
+          @change=${this._onFieldChange}
+          aria-label="Field"
+        >
+          ${fields.map((f) => html`<option value=${f.name} ?selected=${f.name === node.field}>${f.label}</option>`)}
+          ${field ? nothing : html`<option value=${node.field} selected>(${node.field})</option>`}
+        </select>
+        <select
+          class="form-select form-select-sm qb-operator-select"
+          part="operator-select"
+          ?disabled=${disabled || !field}
+          @change=${this._onOperatorChange}
+          aria-label="Operator"
+        >
+          ${operators.map((op) => html`
+            <option value=${op} ?selected=${op === node.operator}>${messages.operators[op] ?? op}</option>
+          `)}
+          ${operators.includes(node.operator) ? nothing : html`<option value=${node.operator} selected>${node.operator}</option>`}
+        </select>
         ${shape === 'null'
           ? nothing
           : html`<span class="qb-value" part="value" ${ref(this._editorMount)}></span>`}
-        ${field
-          ? nothing
-          : html`<span class="qb-missing" title="Field not in schema">(unknown field)</span>`}
+        <button
+          type="button"
+          class="btn btn-sm btn-link qb-remove"
+          part="remove"
+          ?disabled=${disabled}
+          @click=${this._onRemove}
+          aria-label="Remove condition"
+          title="Remove"
+        >×</button>
       </div>
     `;
   }

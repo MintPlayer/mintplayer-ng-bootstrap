@@ -25,6 +25,21 @@ export {
   cloneTree,
   newId,
 } from './lib/model/default-tree';
+export {
+  mapTree,
+  findNodeById,
+  collectDescendantIds,
+  addChild,
+  addEmptyConditionTo,
+  addEmptyGroupTo,
+  addEmptySubqueryTo,
+  removeNode,
+  setGroupLogic,
+  updateCondition,
+  changeConditionField,
+  changeConditionOperator,
+  moveNode,
+} from './lib/model/tree-ops';
 export { MaxDepthExceededError } from './lib/model/errors';
 export {
   DEFAULT_MESSAGES,

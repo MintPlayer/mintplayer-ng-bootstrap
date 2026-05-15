@@ -8,6 +8,23 @@
   gap: 0.5rem;
   padding: 0.25rem 0;
   font-size: 0.875rem;
+  flex-wrap: wrap;
+}
+
+.qb-field-select,
+.qb-operator-select {
+  display: inline-block;
+  width: auto;
+  min-width: 8rem;
+}
+
+.qb-remove {
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding: 0 0.5rem;
+  line-height: 1;
+  font-size: 1rem;
+  color: var(--bs-danger, #dc3545);
 }
 
 .qb-field {
