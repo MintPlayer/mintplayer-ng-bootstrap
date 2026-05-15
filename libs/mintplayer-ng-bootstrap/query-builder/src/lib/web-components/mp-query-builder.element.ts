@@ -3,7 +3,8 @@ import { ContextConsumer, ContextProvider } from '@lit/context';
 import type { Expression, Group, Operator } from '../model/expression';
 import type { EntitySchema } from '../model/field-def';
 import type { EditorRegistry } from '../model/editor';
-import type { QueryBuilderMessages } from '../model/messages';
+import { DEFAULT_MESSAGES, type QueryBuilderMessages } from '../model/messages';
+import type { SavedQuery } from '../model/saved-query';
 import {
   addEmptyConditionTo,
   addEmptyGroupTo,
@@ -44,8 +45,11 @@ export class MpQueryBuilderElement extends LitElement {
     messages: { attribute: false },
     maxDepth: { attribute: 'max-depth', type: Number, reflect: true },
     showPreview: { attribute: 'show-preview', type: Boolean, reflect: true },
+    showSavedQueries: { attribute: 'show-saved-queries', type: Boolean, reflect: true },
+    savedQueries: { attribute: false },
     depth: { attribute: false },
     _isDragging: { state: true },
+    _saveDraftName: { state: true },
   };
 
   query: Expression | null = null;
@@ -56,6 +60,9 @@ export class MpQueryBuilderElement extends LitElement {
   messages: Partial<QueryBuilderMessages> | undefined = undefined;
   maxDepth = DEFAULT_MAX_DEPTH;
   showPreview = false;
+  showSavedQueries = false;
+  savedQueries: SavedQuery[] = [];
+  private _saveDraftName = '';
 
   // `depth` is set by parent <mp-query-subquery> when this WC renders a nested
   // sub-query body. The outermost root keeps depth=0.
@@ -365,6 +372,78 @@ export class MpQueryBuilderElement extends LitElement {
     this._drag.cancel();
   }
 
+  private _onSaveDraftInput = (e: Event): void => {
+    this._saveDraftName = (e.target as HTMLInputElement).value;
+  };
+
+  private _onSaveQuery = (): void => {
+    const name = this._saveDraftName.trim();
+    if (!name) return;
+    const tree = this.query;
+    if (!tree) return;
+    this.dispatchEvent(new CustomEvent('save-query', {
+      detail: { name, tree },
+      bubbles: false,
+    }));
+    this._saveDraftName = '';
+  };
+
+  private _onLoadQuery = (name: string): void => {
+    this.dispatchEvent(new CustomEvent('load-query', {
+      detail: { name },
+      bubbles: false,
+    }));
+  };
+
+  private _onDeleteQuery = (name: string): void => {
+    this.dispatchEvent(new CustomEvent('delete-query', {
+      detail: { name },
+      bubbles: false,
+    }));
+  };
+
+  private _renderSavedPicker(messages: QueryBuilderMessages): TemplateResult {
+    return html`
+      <div class="qb-saved" part="saved-picker">
+        <div class="qb-saved-list" part="saved-list">
+          ${this.savedQueries.length === 0
+            ? html`<span class="qb-saved-empty">No saved queries</span>`
+            : this.savedQueries.map((sq) => html`
+                <span class="qb-saved-row" part="saved-row" data-name=${sq.name}>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-primary qb-saved-load"
+                    @click=${() => this._onLoadQuery(sq.name)}
+                  >${messages.loadQuery}: ${sq.name}</button>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-danger qb-saved-delete"
+                    aria-label=${`Delete ${sq.name}`}
+                    @click=${() => this._onDeleteQuery(sq.name)}
+                  >${messages.deleteQuery}</button>
+                </span>
+              `)}
+        </div>
+        <span class="qb-saved-new" part="saved-new">
+          <input
+            type="text"
+            class="form-control form-control-sm qb-saved-name"
+            placeholder=${messages.saveCurrentAs}
+            .value=${this._saveDraftName}
+            @input=${this._onSaveDraftInput}
+            aria-label="Name for saved query"
+          />
+          <button
+            type="button"
+            class="btn btn-sm btn-primary qb-saved-save"
+            ?disabled=${this._saveDraftName.trim() === ''}
+            @click=${this._onSaveQuery}
+          >💾 ${messages.saveCurrentAs}</button>
+        </span>
+      </div>
+    `;
+  }
+
   protected override render(): TemplateResult | typeof nothing {
     if (this.depth > this.effectiveMaxDepth()) {
       return html`<div class="qb-too-deep" role="alert">Tree too deep</div>`;
@@ -387,12 +466,29 @@ export class MpQueryBuilderElement extends LitElement {
         @node-remove=${this._onNodeRemove}
         @qb-drag-start=${this._onDragStart}
       >
+        ${this.showSavedQueries && this.depth === 0
+          ? this._renderSavedPicker(this._messages())
+          : nothing}
         ${this.showPreview && this.depth === 0
           ? html`<pre class="qb-preview" part="preview">${this._renderPreview(tree)}</pre>`
           : nothing}
         ${this.renderTreeRoot(tree)}
       </div>
     `;
+  }
+
+  private _messages(): QueryBuilderMessages {
+    const consumed = this._messagesConsumer.value ?? {};
+    return {
+      ...DEFAULT_MESSAGES,
+      ...consumed,
+      ...(this.messages ?? {}),
+      operators: {
+        ...DEFAULT_MESSAGES.operators,
+        ...(consumed.operators ?? {}),
+        ...(this.messages?.operators ?? {}),
+      },
+    };
   }
 
   private _renderPreview(tree: Expression): string {
