@@ -46,6 +46,29 @@ export function findNodeById(tree: Expression, id: string): Expression | null {
   return null;
 }
 
+/**
+ * Find the parent Group of a node by id, along with the node's index in that
+ * group's children array. Returns null when the node is the root or absent.
+ * Walks sub-query bodies too — the parent is whichever group directly contains
+ * the node, regardless of whether that group lives under a sub-query.
+ */
+export function findParentGroup(
+  tree: Expression,
+  id: string,
+): { parent: Group; index: number } | null {
+  if (tree.kind === 'group') {
+    const idx = tree.children.findIndex((c) => c.id === id);
+    if (idx >= 0) return { parent: tree, index: idx };
+    for (const c of tree.children) {
+      const found = findParentGroup(c, id);
+      if (found) return found;
+    }
+  } else if (tree.kind === 'subquery') {
+    return findParentGroup(tree.subQuery, id);
+  }
+  return null;
+}
+
 /** Collect all descendant ids of a node (incl. the node itself). */
 export function collectDescendantIds(node: Expression): Set<string> {
   const out = new Set<string>();

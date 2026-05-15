@@ -13,6 +13,7 @@ import {
   changeConditionOperator,
   collectDescendantIds,
   findNodeById,
+  findParentGroup,
   moveNode,
   removeNode,
   setGroupLogic,
@@ -135,6 +136,34 @@ export class MpQueryBuilderElement extends LitElement {
     const inheritedMax = this._maxDepthConsumer.value;
     const effMaxDepth = inheritedMax ?? this.maxDepth;
     this._maxDepthProvider.setValue(effMaxDepth);
+  }
+
+  protected override updated(_changed: PropertyValues): void {
+    if (this._pendingRefocusId === null) return;
+    const id = this._pendingRefocusId;
+    this._pendingRefocusId = null;
+    // Pierce through shadow roots to find the row that owns the moved node.
+    queueMicrotask(() => this._focusRowById(id));
+  }
+
+  private _focusRowById(id: string): void {
+    const visit = (root: ShadowRoot | Element): HTMLElement | null => {
+      const direct = root.querySelector(`[data-row-id="${id}"]`) as HTMLElement | null;
+      if (direct) {
+        // For subqueries, focus the header (the tabbable inner element) rather than the wrapper.
+        const header = direct.querySelector('.qb-subquery-header') as HTMLElement | null;
+        return header ?? direct;
+      }
+      for (const el of Array.from(root.querySelectorAll('*'))) {
+        if ((el as Element).shadowRoot) {
+          const hit = visit((el as Element).shadowRoot as ShadowRoot);
+          if (hit) return hit;
+        }
+      }
+      return null;
+    };
+    const target = this.shadowRoot ? visit(this.shadowRoot) : null;
+    target?.focus();
   }
 
   /**
@@ -274,6 +303,22 @@ export class MpQueryBuilderElement extends LitElement {
     // Protect the root: removing the root group is a no-op.
     if (tree.id === id) return;
     this._mutate(removeNode(tree, id));
+  };
+
+  private _pendingRefocusId: string | null = null;
+
+  private _onKeyboardMove = (e: Event): void => {
+    if (!this._handlesEvents()) return;
+    e.stopPropagation();
+    const { id, direction } = (e as CustomEvent).detail as { id: string; direction: 'up' | 'down' };
+    const tree = this.query;
+    if (!tree) return;
+    const located = findParentGroup(tree, id);
+    if (!located) return;
+    const newIndex = direction === 'up' ? located.index - 1 : located.index + 1;
+    if (newIndex < 0 || newIndex >= located.parent.children.length) return;
+    this._pendingRefocusId = id;
+    this._mutate(moveNode(tree, id, located.parent.id, newIndex));
   };
 
   private _onDragStart = (e: Event): void => {
@@ -465,6 +510,7 @@ export class MpQueryBuilderElement extends LitElement {
         @add-subquery=${this._onAddSubquery}
         @node-remove=${this._onNodeRemove}
         @qb-drag-start=${this._onDragStart}
+        @qb-keyboard-move=${this._onKeyboardMove}
       >
         ${this.showSavedQueries && this.depth === 0
           ? this._renderSavedPicker(this._messages())

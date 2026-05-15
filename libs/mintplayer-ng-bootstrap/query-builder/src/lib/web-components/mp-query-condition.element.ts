@@ -172,6 +172,21 @@ export class MpQueryConditionElement extends LitElement {
     }));
   };
 
+  private _onRowKeyDown = (e: KeyboardEvent): void => {
+    if (!e.altKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
+    const node = this.node;
+    if (!node || this.isDisabled()) return;
+    // Only react when focus is on the row itself, not on a child input/select
+    // where the arrow keys have native semantics (cursor / option navigation).
+    const row = this.shadowRoot?.querySelector('.qb-condition');
+    if (e.composedPath()[0] !== row) return;
+    e.preventDefault();
+    this.dispatchEvent(new CustomEvent('qb-keyboard-move', {
+      detail: { id: node.id, direction: e.key === 'ArrowUp' ? 'up' : 'down' },
+      bubbles: true, composed: true,
+    }));
+  };
+
   private _onDragPointerDown = (e: PointerEvent): void => {
     if (this.isDisabled()) return;
     const node = this.node;
@@ -213,14 +228,20 @@ export class MpQueryConditionElement extends LitElement {
     const operators = this._availableOperators(field);
 
     return html`
-      <div class="qb-condition" part="condition">
+      <div
+        class="qb-condition"
+        part="condition"
+        tabindex="0"
+        data-row-id=${node.id}
+        @keydown=${this._onRowKeyDown}
+      >
         <button
           type="button"
           class="qb-drag-handle"
           part="drag-handle"
           ?disabled=${disabled}
-          aria-label="Drag to reorder"
-          title="Drag to reorder"
+          aria-label="Drag or use Alt+Up/Down to reorder"
+          title="Drag or use Alt+Up/Down to reorder"
           @pointerdown=${this._onDragPointerDown}
         >⋮</button>
         <select

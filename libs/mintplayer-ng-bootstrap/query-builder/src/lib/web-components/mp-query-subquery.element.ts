@@ -30,6 +30,19 @@ export class MpQuerySubqueryElement extends LitElement {
     subscribe: true,
   });
 
+  private _onHeaderKeyDown = (e: KeyboardEvent): void => {
+    if (!e.altKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
+    const node = this.node;
+    if (!node) return;
+    const header = this.shadowRoot?.querySelector('.qb-subquery-header');
+    if (e.composedPath()[0] !== header) return;
+    e.preventDefault();
+    this.dispatchEvent(new CustomEvent('qb-keyboard-move', {
+      detail: { id: node.id, direction: e.key === 'ArrowUp' ? 'up' : 'down' },
+      bubbles: true, composed: true,
+    }));
+  };
+
   private resolveField(name: string): FieldDef | undefined {
     return this.schema
       .find((s) => s.name === this.currentEntity)
@@ -55,8 +68,13 @@ export class MpQuerySubqueryElement extends LitElement {
     const targetEntity = field?.targetEntity ?? '';
 
     return html`
-      <div class="qb-subquery" part="subquery">
-        <div class="qb-subquery-header" part="subquery-header">
+      <div class="qb-subquery" part="subquery" data-row-id=${node.id}>
+        <div
+          class="qb-subquery-header"
+          part="subquery-header"
+          tabindex="0"
+          @keydown=${this._onHeaderKeyDown}
+        >
           <span class="qb-subquery-field">${fieldLabel}</span>
           <span class="qb-subquery-operator">${operatorLabel}</span>
           ${targetEntity
