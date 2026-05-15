@@ -1,12 +1,15 @@
 import { defineConfig, devices } from '@playwright/test';
 
-// Live-API Playwright matrix. Boots both the Angular demo (`ng serve`) AND
-// the .NET API (`dotnet run`) and runs the specs in e2e/live/ against the
-// real backend — no `page.route(...)` mocks. The Angular dev proxy
-// (`apps/ng-bootstrap-demo/proxy.conf.json`) forwards /api/* to :5000.
+// Live-API Playwright matrix. The single `npx nx serve ng-bootstrap-demo`
+// command transitively starts the .NET API via the dependsOn chain in
+// apps/ng-bootstrap-demo/project.json (api:serve runs in parallel as a
+// `continuous: true` task), so both servers come up together.
 //
-// Triggered only from publish-master.yml (master pushes), not on every PR,
-// because dotnet build + dotnet run startup costs ~30-60s per run.
+// We deliberately use --configuration=development so the demo's apiBase
+// resolves to '' (relative URLs) and HttpClient hits /api/* via
+// apps/ng-bootstrap-demo/proxy.conf.json → localhost:5000. The
+// --configuration=production build bakes in
+// https://api.bootstrap.mintplayer.com, which doesn't exist in CI.
 
 const PORT = 4200;
 const API_PORT = 5000;
@@ -27,20 +30,16 @@ export default defineConfig({
   projects: [
     { name: 'chromium-live', use: { ...devices['Desktop Chrome'] } },
   ],
-  webServer: [
-    {
-      command: `dotnet run --project ${'../../apps/api/Api.csproj'} --urls ${apiURL}`,
-      url: `${apiURL}/api/orders/schema`,
-      reuseExistingServer: !process.env['CI'],
-      timeout: 180_000,
-      stdout: 'pipe',
-      stderr: 'pipe',
-    },
-    {
-      command: `npx nx serve ng-bootstrap-demo --configuration=production --port=${PORT}`,
-      url: baseURL,
-      reuseExistingServer: !process.env['CI'],
-      timeout: 180_000,
-    },
-  ],
+  webServer: {
+    command: `npx nx serve ng-bootstrap-demo --configuration=development --port=${PORT}`,
+    // Poll the API endpoint directly. Once that responds, both services are
+    // necessarily up: api:serve is continuous and started in parallel with
+    // ng-serve, and the schema endpoint only answers when the seed has run.
+    // ng-serve completes earlier, so by the time we proceed it's also up.
+    url: `${apiURL}/api/orders/schema`,
+    reuseExistingServer: !process.env['CI'],
+    timeout: 300_000,
+    stdout: 'pipe',
+    stderr: 'pipe',
+  },
 });
