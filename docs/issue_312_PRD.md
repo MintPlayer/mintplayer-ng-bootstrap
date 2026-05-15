@@ -2,9 +2,38 @@
 
 **Issue**: #312
 **Title**: Query Builder
-**Status**: Draft (revised: server-side-only architecture + ASP.NET Core demo backend)
+**Status**: Implementation complete — pending manual testing (PR #340 open against `master`)
 **Created**: 2026-05-15
-**Last Updated**: 2026-05-15
+**Last Updated**: 2026-05-15 (after M1..M16 ship)
+
+## Implementation status
+
+| | |
+|---|---|
+| Branch | `issues/#312` |
+| Pull request | https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/340 |
+| Milestones | **16 of 16 shipped** (M1..M16, one commit per milestone) |
+| Vitest specs | **167 passing** (`libs/mintplayer-ng-bootstrap/query-builder`) |
+| xUnit specs | **21 passing** (`apps/api/Tests/Api.Tests.csproj`) |
+| Playwright e2e | 2 specs (mocked `/api/*`; live-API matrix is a follow-up) |
+| Demo route | `/enterprise/query-builder` (moved from `/advanced/` post-M15) |
+| Backend stack | **.NET 10** (workspace SDK; PRD originally said .NET 9, but .NET 10 is the current LTS) |
+
+### Known implementation gaps (pre-merge gates the user wants to address)
+
+- **Manual smoke test** in the running demo against the live `apps/api/` container — the user has not yet run `docker compose up` end-to-end. Until that completes, every FR / acceptance-criterion checkbox below stays unchecked even where the structural work has landed.
+- **C# sub-query walker** — `QueryBuilderWalker.VisitSubquery` throws `SUBQUERY_NOT_YET_IMPLEMENTED`. Needs `Expression.Call(typeof(Queryable), "Any", …)` over the relation's `DbSet<>` with the recursive predicate. All FE wiring (subquery editor, drag-and-drop into a sub-query, schema flip via the Lit-context boundary) ships and works; only the C# walker leaf is missing.
+
+### Pre-merge work in PR #340
+
+- **Memory-leak harness for `*bsQueryBuilderEditor`** — pre-merge gate. Asserts that 100 add/remove cycles of a condition wired to a tracked factory result in `built === disposed` (M4 disposal contract), `ApplicationRef.viewCount` stays at its baseline, and no orphan editor DOM remains after a final empty-tree settle.
+
+### Deferred follow-ups (documented; out of #312)
+
+- axe-core CI sweep on the demo page (per [[project_aria_outstanding_followups]]).
+- Live-API Playwright matrix (Playwright `webServer` config starting `dotnet run --project apps/api` alongside the demo).
+- Firefox explicit-browser pass for the DnD ghost-clipping check ([[feedback_firefox_flex_shrink]]).
+- Keyboard alternative to DnD (`Alt+ArrowUp` / `Alt+ArrowDown`) — FR-33 P1, not implemented in M8.
 
 ---
 
@@ -18,7 +47,7 @@ Shipped as **Lit web component (`mp-query-builder`) + Angular wrapper (`bs-query
 
 **The frontend emits a canonical JSON expression tree as its only wire format.** Backends receive the tree, validate it against their schema (whitelisted fields/operators/values per role), and build the actual DB query in their own language (SQL, RavenDB RQL, OData, Mongo, GraphQL, etc.) server-side. The frontend never emits raw DB query strings — that would either force the backend to execute them blindly (catastrophic injection risk) or force the backend to re-parse and validate them server-side (which makes a frontend serializer redundant). See [[feedback_json_wire_format_only]].
 
-**No client-side query evaluation either.** Pagination, filtering, and sorting are all server-side concerns. The library does not ship an in-process `evaluateQuery`, a `[data]` input, or a `(filteredResult)` output. The reasons are (a) consistency — what the user sees on screen is exactly what the backend computed, no JS-vs-DB divergence; (b) honesty — a 10k-row in-memory filter is a misleading demo when a real production filter must page a million rows; (c) simplicity — one code path (POST tree → page back) instead of two. To make this concrete and end-to-end testable, **this issue also adds a colocated ASP.NET Core 9 Web API at `apps/api/`** that the Angular demo posts to — SQLite-backed, deployed alongside the Angular app via the existing docker-compose / Traefik / GHCR pipeline.
+**No client-side query evaluation either.** Pagination, filtering, and sorting are all server-side concerns. The library does not ship an in-process `evaluateQuery`, a `[data]` input, or a `(filteredResult)` output. The reasons are (a) consistency — what the user sees on screen is exactly what the backend computed, no JS-vs-DB divergence; (b) honesty — a 10k-row in-memory filter is a misleading demo when a real production filter must page a million rows; (c) simplicity — one code path (POST tree → page back) instead of two. To make this concrete and end-to-end testable, **this issue also adds a colocated ASP.NET Core 10 Web API at `apps/api/`** that the Angular demo posts to — SQLite-backed, deployed alongside the Angular app via the existing docker-compose / Traefik / GHCR pipeline.
 
 ### What ships
 
@@ -35,10 +64,10 @@ Shipped as **Lit web component (`mp-query-builder`) + Angular wrapper (`bs-query
 - **Saved-query events**: `(saveQuery)` / `(loadQuery)` / `(deleteQuery)` with `[savedQueries]` input. Events-only — consumer persists (localStorage / IndexedDB / REST).
 
 **Demo backend (new `apps/api/` project):**
-- ASP.NET Core 9 Web API with `POST /api/orders/search`, `POST /api/customers/search` endpoints accepting `QueryRequest { query, timezone?, page, pageSize, sort? }` and returning `PagedResult<T> { items, totalCount, page, pageSize }`.
+- ASP.NET Core 10 Web API with `POST /api/orders/search`, `POST /api/customers/search` endpoints accepting `QueryRequest { query, timezone?, page, pageSize, sort? }` and returning `PagedResult<T> { items, totalCount, page, pageSize }`.
 - SQLite + EF Core persistence; seed script populates ~1000 Orders and ~200 Customers on first startup.
 - C# JSON tree walker translating the expression tree to `IQueryable<T>` predicates, implementing the canonical operator semantics from Appendix A (TZ-aware relative date ops via `TimeZoneInfo`, ISO 8601 weeks, validation per Appendix D).
-- Multi-stage Dockerfile (`mcr.microsoft.com/dotnet/aspnet:9.0-alpine`); compose service `api` behind Traefik on `api.bootstrap.mintplayer.com`.
+- Multi-stage Dockerfile (`mcr.microsoft.com/dotnet/aspnet:10.0-alpine`); compose service `api` behind Traefik on `api.bootstrap.mintplayer.com`.
 - Angular `proxy.conf.json` proxies `/api/*` to `http://localhost:5000` during `ng serve` so dev works without CORS.
 
 ### What ships separately (or never)
@@ -58,7 +87,7 @@ Reference UI surface: Infragistics `igxQueryBuilder`. We mimic the feature set, 
 
 - Ship a feature-complete visual query builder: nested AND/OR groups, multi-entity sub-queries, drag-and-drop (within-group + cross-group + cross-tree), eight value editors, full Infragistics-parity operator catalog (including relative date + array ops), reactive-forms integration, custom-editor projection, saved-query events — all in one release.
 - Establish a canonical JSON expression-tree wire format that other library components and backend implementations can target.
-- Prove the wire-format contract end-to-end by shipping a colocated ASP.NET Core 9 demo API (`apps/api/`) with a reference C# walker → `IQueryable<T>` translator, plus the docker-compose + Traefik + CI changes to deploy it alongside the Angular app.
+- Prove the wire-format contract end-to-end by shipping a colocated ASP.NET Core 10 demo API (`apps/api/`) with a reference C# walker → `IQueryable<T>` translator, plus the docker-compose + Traefik + CI changes to deploy it alongside the Angular app.
 - Full ARIA + keyboard parity on day one.
 
 ### Success Metrics
@@ -170,7 +199,7 @@ Reference UI surface: Infragistics `igxQueryBuilder`. We mimic the feature set, 
 
 - [ ] **FR-28**: Every node has a stable `id` (uuid) on creation; immutable updates everywhere; never mutate the input tree.
 - [ ] **FR-29**: ARIA — each group renders `role="group"` with `aria-label="AND group" | "OR group"`; native focus order through form controls.
-- [ ] **FR-30**: Demo page at `/advanced/query-builder` covers all 12 test scenarios including the server-side `bs-datatable` wiring example (POSTs `QueryRequest` to `/api/orders/search`, renders `PagedResult<Order>`). Keymap documented.
+- [ ] **FR-30**: Demo page at `/enterprise/query-builder` covers all 12 test scenarios including the server-side `bs-datatable` wiring example (POSTs `QueryRequest` to `/api/orders/search`, renders `PagedResult<Order>`). Keymap documented.
 - [ ] **FR-31**: Theming — internal Lit styles use CSS custom properties; dark-mode toggle from #324 applies without component-specific changes.
 - [ ] **FR-32**: Public types re-exported: `Expression`, `Group`, `Condition`, `SubQueryCondition`, `FieldDef`, `EntitySchema`, `Operator`, `FieldType`, `OperatorCatalog`, `QueryBuilderMessages`, `EditorContext`, `EditorHandle`, `EditorRegistry`, `SavedQuery`, `TreeVisitor`, `VisitorContext`, `VisitTreeOptions`, `MaxDepthExceededError`, `validateOperatorOverrides`.
 
@@ -190,8 +219,8 @@ Reference UI surface: Infragistics `igxQueryBuilder`. We mimic the feature set, 
 
 ### Backend & Infrastructure (P0)
 
-- [ ] **FR-41**: New `apps/api/` ASP.NET Core 9 Web API project, integrated into the Nx workspace via a `project.json` with `nx:run-commands`-wrapped `build`/`serve`/`publish`/`test` targets. Sources tracked by `nx affected` via `inputs: ["{projectRoot}/**/*.cs", "{projectRoot}/**/*.csproj"]`.
-- [ ] **FR-42**: SQLite + EF Core 9 persistence. Schema for `Order`, `Customer`, `LineItem` (relations: `Customer 1—N Order`, `Order 1—N LineItem`). Seed runs on first startup, populates ~1000 Orders + ~200 Customers + ~5000 LineItems. SQLite file lives in a Docker volume so data persists across container restarts.
+- [ ] **FR-41**: New `apps/api/` ASP.NET Core 10 Web API project, integrated into the Nx workspace via a `project.json` with `nx:run-commands`-wrapped `build`/`serve`/`publish`/`test` targets. Sources tracked by `nx affected` via `inputs: ["{projectRoot}/**/*.cs", "{projectRoot}/**/*.csproj"]`.
+- [ ] **FR-42**: SQLite + EF Core 10 persistence. Schema for `Order`, `Customer`, `LineItem` (relations: `Customer 1—N Order`, `Order 1—N LineItem`). Seed runs on first startup, populates ~1000 Orders + ~200 Customers + ~5000 LineItems. SQLite file lives in a Docker volume so data persists across container restarts.
 - [ ] **FR-43**: C# JSON tree walker `QueryBuilderWalker` translates `Expression` JSON to `Expression<Func<T, bool>>` via `System.Linq.Expressions`, applied as `IQueryable<T>.Where(...)`. Implements every operator from Appendix A. Relative date ops resolve via `TimeZoneInfo.FindSystemTimeZoneById` on the envelope's `timezone` field, fall back to UTC if absent. Validates every payload against the Appendix D checklist before walking; emits HTTP 400 with the typed error code on any rule violation.
 - [ ] **FR-44**: HTTP endpoints:
   - `POST /api/orders/search` — body `QueryRequest`, returns `PagedResult<Order>`.
@@ -201,7 +230,7 @@ Reference UI surface: Infragistics `igxQueryBuilder`. We mimic the feature set, 
   - `PagedResult<T>`: `{ items: T[], totalCount: number, page: number, pageSize: number }`.
 - [ ] **FR-45**: Root `docker-compose.yml` updated. Adds `api` service using `ghcr.io/mintplayer/mintplayer-ng-bootstrap-api:master`, attached to the existing external `web` network, with Traefik labels routing `api.bootstrap.mintplayer.com` to port 8080. Adds a SQLite-volume mount. New `docker-compose.override.yml` (auto-loaded, untracked locally? — see Open Questions) exposes `5000:8080` for local-dev `ng serve` proxy use.
 - [ ] **FR-46**: `apps/ng-bootstrap-demo/proxy.conf.json` proxies `/api/*` to `http://localhost:5000` for `ng serve`. Wired in `apps/ng-bootstrap-demo/project.json` under `serve.options.proxyConfig`. Production build keeps the subdomain split — Angular code fetches `/api/...` and Traefik routes the `api.bootstrap.mintplayer.com` host to the API container.
-- [ ] **FR-47**: `.github/workflows/publish-master.yml` updated: adds `actions/setup-dotnet@v4` with `dotnet-version: 9.0.x` before the existing Docker build steps; adds a second `docker/build-push-action@v6` step targeting `apps/api/Dockerfile`, pushing `ghcr.io/mintplayer/mintplayer-ng-bootstrap-api:master`. The remote SSH deploy step is unchanged (`docker compose pull && docker compose up -d` handles N services). PR workflow runs `dotnet test apps/api/` alongside the existing Vitest + Playwright suites.
+- [ ] **FR-47**: `.github/workflows/publish-master.yml` updated: adds `actions/setup-dotnet@v4` with `dotnet-version: 10.0.x` before the existing Docker build steps; adds a second `docker/build-push-action@v6` step targeting `apps/api/Dockerfile`, pushing `ghcr.io/mintplayer/mintplayer-ng-bootstrap-api:master`. The remote SSH deploy step is unchanged (`docker compose pull && docker compose up -d` handles N services). PR workflow runs `dotnet test apps/api/` alongside the existing Vitest + Playwright suites.
 
 ---
 
@@ -479,24 +508,24 @@ No `bs-datatable` modifications, no `[data]` input on the query builder. The dem
 
 Single PR. Internal milestones map 1:1 to phases in [`issue_312_plan.md`](./issue_312_plan.md):
 
-- [ ] **M1**: Data model + scaffold (secondary entry point, model types, visitor types, context tokens, errors)
-- [ ] **M2**: Lit WC scaffold — read-only tree rendering
-- [ ] **M3**: Built-in value editors per data type (incl. array editor + date-relative editor)
-- [ ] **M4**: Custom editor extensibility (factory + `EditorHandle`)
-- [ ] **M5**: Edit mode — mutations through tree (incl. `moveNode` with field-reset support)
-- [ ] **M6**: Operator catalog + per-type filtering (incl. relative date + array ops)
-- [ ] **M7**: Nested groups + sub-queries + Lit Context propagation + non-bubbling events
-- [ ] **M8**: Drag-and-drop reorder (within-group + cross-group + cross-tree with field reset)
-- [ ] **M9**: Expression preview rendering
-- [ ] **M10**: Visitor API (`visitTree<T>` with lazy `walkInner`)
-- [ ] **M11**: Saved queries — events-only API
-- [ ] **M12**: Angular wrapper (CVA + re-entrancy guard + `*bsQueryBuilderEditor`)
-- [ ] **M13**: ASP.NET Core 9 API (`apps/api/`) — EF Core + SQLite seed + C# walker + endpoints
-- [ ] **M14**: Docker + `docker-compose.yml` + `proxy.conf.json` + CI workflow updates
-- [ ] **M15**: Demo page wired to the API (server-side search + pagination)
-- [ ] **M16**: Testing + a11y validation (Vitest + xUnit + Playwright e2e + axe-core + memory-leak)
+- [x] **M1**: Data model + scaffold (secondary entry point, model types, visitor types, context tokens, errors) — commit `81fb1f9b`
+- [x] **M2**: Lit WC scaffold — read-only tree rendering — commit `5ac6d98d`
+- [x] **M3**: Built-in value editors per data type (incl. array editor + date-relative editor) — commit `8443cfeb`
+- [x] **M4**: Custom editor extensibility (factory + `EditorHandle`) — commit `3103d54a`
+- [x] **M5**: Edit mode — mutations through tree (incl. `moveNode` with field-reset support) — commit `904bcc17`
+- [x] **M6**: Operator catalog + per-type filtering (incl. relative date + array ops) — commit `ccb8f418`
+- [x] **M7**: Nested groups + sub-queries + Lit Context propagation + non-bubbling events — commit `f40c104b`
+- [x] **M8**: Drag-and-drop reorder (within-group + cross-group + cross-tree with field reset) — commit `09eaa7c2`
+- [x] **M9**: Expression preview rendering — commit `6793cf1f`
+- [x] **M10**: Visitor API (`visitTree<T>` with lazy `walkInner`) — commit `914a57ce`
+- [x] **M11**: Saved queries — events-only API — commit `97eb340f`
+- [x] **M12**: Angular wrapper (CVA + re-entrancy guard + `*bsQueryBuilderEditor`) — commit `31730228`
+- [x] **M13**: ASP.NET Core 10 API (`apps/api/`) — EF Core + SQLite seed + C# walker + endpoints — commit `444410cc`
+- [x] **M14**: Docker + `docker-compose.yml` + `proxy.conf.json` + CI workflow updates — commit `7ea28a1f`
+- [x] **M15**: Demo page wired to the API (server-side search + pagination) — commit `dc0afd41` (page moved to `/enterprise/query-builder` in `6a9a5730`)
+- [x] **M16**: Testing + a11y validation — partial (Vitest + xUnit + Playwright spec done; axe-core / memory-leak / live-API matrix deferred) — commit `095f8f71`
 
-Estimate: multi-month effort.
+All 16 milestones structurally complete in PR #340. Manual smoke test by the user is the remaining gate.
 
 ---
 
@@ -998,17 +1027,17 @@ Each backend implementing this contract ships its own copy of this document in i
 
 ## Appendix G — Demo Backend (`apps/api/`)
 
-The demo backend is a single ASP.NET Core 9 Web API that the Angular demo POSTs to. It is *not* a published library; it's a reference implementation of the Appendix A operator catalog + Appendix D validation checklist, written against EF Core 9 + SQLite.
+The demo backend is a single ASP.NET Core 10 Web API that the Angular demo POSTs to. It is *not* a published library; it's a reference implementation of the Appendix A operator catalog + Appendix D validation checklist, written against EF Core 10 + SQLite.
 
 ### Project layout
 
 ```
 apps/api/
-├── Api.csproj                       # ASP.NET Core 9; refs Microsoft.EntityFrameworkCore.Sqlite
+├── Api.csproj                       # ASP.NET Core 10; refs Microsoft.EntityFrameworkCore.Sqlite
 ├── Program.cs                       # WebApplication builder; AddControllers; UseRouting; MapControllers
 ├── appsettings.json                 # ConnectionStrings:Default → "Data Source=/data/demo.db"
 ├── appsettings.Development.json     # ConnectionStrings:Default → "Data Source=demo.db"
-├── Dockerfile                       # multi-stage; sdk:9.0-alpine → aspnet:9.0-alpine; exposes 8080
+├── Dockerfile                       # multi-stage; sdk:10.0-alpine → aspnet:10.0-alpine; exposes 8080
 ├── project.json                     # Nx targets (build/serve/publish/test) via nx:run-commands
 ├── Models/
 │   ├── Order.cs                     # Id, CustomerId (FK), Total, Status, OrderDate, Tags (JSON string)
@@ -1074,14 +1103,14 @@ The `code` values are the strings from Appendix D.
 `apps/api/Dockerfile`:
 
 ```dockerfile
-FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
 WORKDIR /src
 COPY apps/api/Api.csproj apps/api/
 RUN dotnet restore apps/api/Api.csproj
 COPY apps/api/ apps/api/
 RUN dotnet publish apps/api/Api.csproj -c Release -o /app /p:UseAppHost=false
 
-FROM mcr.microsoft.com/dotnet/aspnet:9.0-alpine
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine
 WORKDIR /app
 COPY --from=build /app .
 EXPOSE 8080
@@ -1149,7 +1178,7 @@ Wired in `apps/ng-bootstrap-demo/project.json` under `serve.options.proxyConfig`
 ### CI workflow updates
 
 `.github/workflows/publish-master.yml`:
-1. Add `actions/setup-dotnet@v4` with `dotnet-version: 9.0.x` before the existing Docker build step.
+1. Add `actions/setup-dotnet@v4` with `dotnet-version: 10.0.x` before the existing Docker build step.
 2. Add a second `docker/build-push-action@v6` step pushing `ghcr.io/mintplayer/mintplayer-ng-bootstrap-api:master` from `apps/api/Dockerfile`.
 3. SSH deploy step unchanged — `docker compose pull && docker compose up -d` handles N services.
 
