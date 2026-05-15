@@ -1,0 +1,81 @@
+<h1 class="text-center flex-shrink-0">File manager</h1>
+
+<p>
+  Enterprise file-browser composed from <code>mp-splitter</code>,
+  <code>mp-treeview</code>, and <code>mp-datatable</code> Lit web components.
+  Tree on the left, file list on the right, breadcrumb above, toolbar with
+  search, view-mode toggle, and file operations.
+  Try drag-dropping files from your OS onto the right pane — uploads are
+  simulated with a fake progress bar.
+</p>
+
+<bs-grid class="mb-3" [stopFullWidthAt]="'never'">
+  <div bsRow>
+    <div [md]="4" [lg]="3">
+      <bs-checkbox [ngModel]="allowUpload()" (ngModelChange)="allowUpload.set($event)">
+        Allow drag-drop upload
+      </bs-checkbox>
+    </div>
+    <div [md]="4" [lg]="3">
+      <label class="form-label">View mode</label>
+      <bs-select [ngModel]="viewMode()" (ngModelChange)="viewMode.set($event)">
+        <option value="list">List</option>
+        <option value="icons">Icons</option>
+      </bs-select>
+    </div>
+    <div [md]="4" [lg]="3">
+      <label class="form-label">Selection mode</label>
+      <bs-select [ngModel]="selectionMode()" (ngModelChange)="selectionMode.set($event)">
+        <option value="none">None</option>
+        <option value="single">Single</option>
+        <option value="multiple">Multiple</option>
+      </bs-select>
+    </div>
+    <div [md]="12" [lg]="3" class="d-flex align-items-end">
+      <button class="btn btn-outline-secondary" (click)="resetData()" type="button">Reset mock data</button>
+    </div>
+  </div>
+</bs-grid>
+
+<div class="file-manager-host border rounded">
+  <bs-file-manager
+    [nodes]="nodes()"
+    [(currentFolderId)]="currentFolderId"
+    [(selectedIds)]="selectedIds"
+    [allowUpload]="allowUpload()"
+    [(viewMode)]="viewMode"
+    [selectionMode]="selectionMode()"
+    [iconResolver]="iconResolver"
+    (operation)="onOperation($event)"
+    (uploadRequest)="onUpload($event)">
+  </bs-file-manager>
+</div>
+
+@if (inProgressUploads().length > 0) {
+  <div class="mt-3 upload-progress-list">
+    <h2 class="h6">Simulated uploads</h2>
+    @for (upload of inProgressUploads(); track upload.fileId) {
+      <div class="upload-row">
+        <span class="upload-name">{{ upload.fileName }}</span>
+        <div class="progress" role="progressbar"
+             [attr.aria-valuenow]="upload.progress" aria-valuemin="0" aria-valuemax="100">
+          <div class="progress-bar" [style.width.%]="upload.progress">{{ upload.progress }}%</div>
+        </div>
+      </div>
+    }
+  </div>
+}
+
+<details class="mt-4">
+  <summary>Keyboard shortcuts</summary>
+  <ul>
+    <li><kbd>↑</kbd> / <kbd>↓</kbd> — move row focus within the file list</li>
+    <li><kbd>Enter</kbd> on a folder — navigate into it; on a file — open</li>
+    <li><kbd>Ctrl</kbd>+click — toggle a row in the selection</li>
+    <li><kbd>Shift</kbd>+click — range-select between anchor and clicked row</li>
+    <li><kbd>F2</kbd> — rename selected item</li>
+    <li><kbd>Del</kbd> — delete selection (with confirmation)</li>
+    <li><kbd>Ctrl</kbd>+<kbd>X</kbd> / <kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>Ctrl</kbd>+<kbd>V</kbd> — cut / copy / paste</li>
+    <li><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd> — new folder in current location</li>
+  </ul>
+</details>

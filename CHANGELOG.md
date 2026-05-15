@@ -5,7 +5,17 @@ package version aligns its major with the supported Angular major.
 
 ## [Unreleased]
 
+### Added
+
+- `@mintplayer/ng-bootstrap/file-manager`: new package. `<bs-file-manager>` + `<mp-file-manager>` provide a Syncfusion-style file-browser composing `mp-splitter` + `mp-treeview` (with `hide-borders`) + `mp-datatable`. v1 ships: tree + grid + breadcrumb navigation, single/multi selection (Ctrl/Shift modifiers), file operations (rename via F2, delete via Del, new folder via Ctrl+Shift+N, cut/copy/paste via Ctrl+X/C/V), search, sort, list/icons view-mode toggle, and an OS file-drop overlay (`[allowUpload]`) that emits an `(uploadRequest)` event with `File[]` + target folder. Consumer mutates `[nodes]` in response to `(operation)` events — the component never self-mutates. See issue #329.
+- `@mintplayer/ng-bootstrap/web-components/treeview`: new Lit web component (`<mp-treeview>`). Data-driven `TreeNode[]` model, recursive rendering, ARIA tree pattern with roving tabindex, keyboard nav (arrow keys + Home/End/Enter/Space), `hide-borders` attribute, and an `iconResolver` property for resolving `iconKey` → SVG.
+- `@mintplayer/ng-bootstrap/web-components/datatable`: new Lit web component (`<mp-datatable>`). Property-driven columns with `cellRenderer` callbacks, multi-column sort via shift+click, single/multi selection (range-extend on shift, additive on ctrl), row click/dblclick/contextmenu events, pointer-driven resizable columns, pagination footer, ARIA `role="grid"`. Pure helper `computeNextSort(current, columnName, shiftKey)` exported for reuse.
+- `@mintplayer/ng-bootstrap/web-components/file-manager`: new Lit web component (`<mp-file-manager>`) implementing the file-manager listed above.
+
 ### Breaking
+
+- **`@mintplayer/ng-bootstrap/treeview`**: `BsTreeviewItemComponent` removed; content-projected `<bs-treeview-item>` API replaced by data-driven `[items]: TreeNode[]` input. **Migration**: collect your treeview content into a flat or nested `TreeNode` array (`{ id, label, iconKey?, children?, meta? }`) and bind `<bs-treeview [items]="treeNodes()" [iconResolver]="iconResolver">`. Icons resolve via `[iconResolver]: (iconKey, node) => svgString`. Bindings `[(expandedIds)]` and `[(selectedIds)]` control state; `(nodeSelect) / (nodeExpand) / (nodeCollapse)` events replace per-item click handlers.
+- **`@mintplayer/ng-bootstrap/datatable`**: `*bsDatatableColumn` and `*bsRowTemplate` directives removed; column definitions are now programmatic via `[columns]: DatatableColumnDef[]`. **Migration**: replace the template directives with a `columns` array on the host component, each entry providing `name`, `label`, optional `sortable`, optional `cellRenderer: (row, column, index) => string | TemplateResult | Node`, and optional `cellClass`. The async `[fetch]` callback and `[(settings)]` / `[(selection)]` two-way bindings are preserved. Virtual scroll (CDK-based) is dropped in this release; use server-side pagination via `[fetch]`. `DatatableSortBase`, `ColumnDef`, and `SyntheticColumn` are no longer exported; `computeNextSort` is exported as a pure helper.
 
 - **`@mintplayer/ng-bootstrap/navbar`**: `BsNavbarComponent` has been modernized to align with Bootstrap 5.3's `data-bs-theme` pattern.
   - The component no longer emits the deprecated `.navbar-light` / `.navbar-dark` classes. It now writes `[data-bs-theme="light|dark"]` directly on the rendered `<nav>` element, and emits a `bg-{color}` utility class to set the background.
