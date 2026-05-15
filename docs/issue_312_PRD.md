@@ -13,27 +13,27 @@
 | Branch | `issues/#312` |
 | Pull request | https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/340 |
 | Milestones | **16 of 16 shipped** (M1..M16, one commit per milestone) |
-| Vitest specs | **167 passing** (`libs/mintplayer-ng-bootstrap/query-builder`) |
-| xUnit specs | **21 passing** (`apps/api/Tests/Api.Tests.csproj`) |
-| Playwright e2e | 2 specs (mocked `/api/*`; live-API matrix is a follow-up) |
+| Vitest specs | **175 passing** (`libs/mintplayer-ng-bootstrap/query-builder`) |
+| xUnit specs | **27 passing** (`apps/api/Tests/Api.Tests.csproj`) |
+| Playwright e2e | 4 mocked specs (`chromium`/`firefox`) + 2 axe-core specs + 3 live-API specs (`e2e-live` boots `dotnet run` + `ng serve`) |
 | Demo route | `/enterprise/query-builder` (moved from `/advanced/` post-M15) |
 | Backend stack | **.NET 10** (workspace SDK; PRD originally said .NET 9, but .NET 10 is the current LTS) |
 
 ### Known implementation gaps (pre-merge gates the user wants to address)
 
 - **Manual smoke test** in the running demo against the live `apps/api/` container — the user has not yet run `docker compose up` end-to-end. Until that completes, every FR / acceptance-criterion checkbox below stays unchecked even where the structural work has landed.
-- **C# sub-query walker** — `QueryBuilderWalker.VisitSubquery` throws `SUBQUERY_NOT_YET_IMPLEMENTED`. Needs `Expression.Call(typeof(Queryable), "Any", …)` over the relation's `DbSet<>` with the recursive predicate. All FE wiring (subquery editor, drag-and-drop into a sub-query, schema flip via the Lit-context boundary) ships and works; only the C# walker leaf is missing.
 
-### Pre-merge work in PR #340
+### Pre-merge work in PR #340 (shipped)
 
-- **Memory-leak harness for `*bsQueryBuilderEditor`** — pre-merge gate. Asserts that 100 add/remove cycles of a condition wired to a tracked factory result in `built === disposed` (M4 disposal contract), `ApplicationRef.viewCount` stays at its baseline, and no orphan editor DOM remains after a final empty-tree settle.
+- **Memory-leak harness for `*bsQueryBuilderEditor`** ✅ — `built === disposed` across 100 add/remove cycles; `ApplicationRef.viewCount` stable; no orphan editor DOM.
+- **C# sub-query walker** ✅ — `VisitSubquery` builds `Expression.Call(Enumerable.Any<T>, nav, innerLambda)` so EF Core emits a SQL `EXISTS` sub-query. 6 new xUnit specs cover `in` / no-match / `not-in` (vacuous-truth case) / parent+subquery composition / `UNKNOWN_FIELD` inside the inner / `SUBQUERY_FIELD_NOT_RELATION` when the field isn't a collection.
+- **FR-33 Alt+Arrow keyboard reorder** ✅ — `Alt+ArrowUp` / `Alt+ArrowDown` on a focused row moves it among same-group siblings; focus restored after Lit reconciles via a `_pendingRefocusId` + cross-shadow-DOM walk by `data-row-id`. 6 new Vitest specs.
+- **axe-core CI sweep** ✅ — 2 new Playwright specs running `AxeBuilder` with `wcag2a/wcag2aa/wcag21a/wcag21aa` tags, gating on zero `serious`/`critical` violations. Initial page state and post-add-condition state both audited.
+- **Live-API Playwright matrix** ✅ — second config (`playwright.live-api.config.ts`) with array `webServer` booting `dotnet run --project apps/api` AND `nx serve` together. 3 new specs verify the schema endpoint, empty-tree search returns a paged result, and that an invalid operator returns 400 with the typed code. Wired into `pull-request.yml`.
 
 ### Deferred follow-ups (documented; out of #312)
 
-- axe-core CI sweep on the demo page (per [[project_aria_outstanding_followups]]).
-- Live-API Playwright matrix (Playwright `webServer` config starting `dotnet run --project apps/api` alongside the demo).
 - Firefox explicit-browser pass for the DnD ghost-clipping check ([[feedback_firefox_flex_shrink]]).
-- Keyboard alternative to DnD (`Alt+ArrowUp` / `Alt+ArrowDown`) — FR-33 P1, not implemented in M8.
 
 ---
 
