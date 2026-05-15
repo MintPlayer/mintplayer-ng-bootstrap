@@ -87,6 +87,7 @@ Reference UI surface: Infragistics `igxQueryBuilder`. We mimic the feature set, 
   - `[showPreview]: boolean` (default `false`)
   - `[showSavedQueries]: boolean` (default `false`)
   - `[maxDepth]: number` (default `32` — finite to prevent stack overflow on pathological trees; consumers can raise or lower)
+  - `[timezone]: string` (default `Intl.DateTimeFormat().resolvedOptions().timeZone` — IANA timezone identifier used by relative date operators; consumers can override e.g. to force UTC for an admin tool, or pin a tenant-specific zone)
   - `[savedQueries]: SavedQuery[]` (default `[]`)
   - `[operatorOverrides]: Partial<Record<string, Operator[]>>`
   - `[disabled]: boolean` (default `false`)
@@ -123,7 +124,7 @@ Reference UI surface: Infragistics `igxQueryBuilder`. We mimic the feature set, 
 
 **Evaluation, visitor, preview**
 
-- [ ] **FR-15**: `evaluateQuery(tree, record, schema, options?)` exported as a pure function. Handles every operator including relative date ops (evaluated against `options.now ?? new Date()`) and array ops. Sub-queries via optional `getRelatedRecords(record, fieldName)` callback. NULL semantics: only `is-null`/`is-not-null` match nullness. String comparisons case-insensitive by default.
+- [ ] **FR-15**: `evaluateQuery(tree, record, schema, options?)` exported as a pure function. Handles every operator including relative date ops (evaluated against `options.now ?? new Date()` in `options.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone`) and array ops. Sub-queries via optional `getRelatedRecords(record, fieldName)` callback. NULL semantics: only `is-null`/`is-not-null` match nullness. String comparisons case-insensitive by default.
 - [ ] **FR-16**: `renderExpression(tree, schema, messages?)` exported as a pure function returning a human-readable string with parentheses, localized operator labels, bracketed value lists for set ops.
 - [ ] **FR-17**: `visitTree<T>(tree, visitor, ctx): T` exported with lazy `walkInner: () => T` on the `subquery` callback so visitors can scope context per sub-tree.
 
@@ -244,7 +245,10 @@ interface EntitySchema {
 interface EvaluateOptions {
   caseSensitive?: boolean;        // default false for string ops
   now?: Date;                     // default new Date(); used by relative date ops; pinnable for tests
+  timezone?: string;              // default Intl.DateTimeFormat().resolvedOptions().timeZone (IANA);
+                                  // used by relative date ops; same TZ should be posted to backend
   getRelatedRecords?: (record: unknown, fieldName: string) => unknown[];
+  maxDepth?: number;              // default 32
 }
 
 interface EditorContext {
@@ -470,8 +474,9 @@ Estimate: multi-month effort.
 This appendix defines the **canonical semantics** of every operator. `evaluateQuery` (the frontend in-process evaluator) implements these rules exactly. Backend implementations SHOULD match these rules so that what the user builds visually returns the same rows the live preview shows. Backends that intentionally diverge MUST document the divergence per Appendix F.
 
 **Global rules**:
-- All date/time comparisons evaluated in **UTC**. The `options.now` parameter (default `new Date()`) is the reference instant.
-- All week boundaries follow **ISO 8601** (Monday 00:00:00.000 UTC ... Sunday 23:59:59.999 UTC).
+- Relative date operators are resolved in the **effective timezone** (`options.timezone`, an IANA zone identifier like `"America/Sao_Paulo"`). The wrapper's default is `Intl.DateTimeFormat().resolvedOptions().timeZone` (the user's browser-local zone). The consumer SHOULD post this same timezone alongside the tree to the backend so the backend can resolve identically. If `options.timezone` is absent, fall back to UTC — but this is a fallback, not the recommended default.
+- The reference instant is `options.now` (default `new Date()`). All "today / this-week / last-N-days" boundaries are computed from `now` projected into the effective timezone.
+- All week boundaries follow **ISO 8601** (Monday is day 1; weeks span Monday 00:00:00.000 local to Sunday 23:59:59.999 local in the effective timezone).
 - String comparisons are **case-insensitive by default** (`options.caseSensitive = false`). Set `options.caseSensitive = true` to opt into case-sensitive comparisons.
 - NULL handling: `field === null || field === undefined` is treated as null. Only `is-null` / `is-not-null` (and array-`is-empty` / `is-not-empty`) match nullness; all other operators return `false` against null.
 - Sub-query operators short-circuit: `in` returns `true` as soon as one related record matches; `not-in` returns `true` if zero related records match.
@@ -519,26 +524,28 @@ This appendix defines the **canonical semantics** of every operator. `evaluateQu
 | `is-true` | `field === true`. |
 | `is-false` | `field === false`. |
 
-### Relative date operators (UTC, ISO 8601 weeks)
+### Relative date operators (timezone-aware, ISO 8601 weeks)
 
-Let `N = options.now`.
+Let `N = options.now`, `TZ = options.timezone` (IANA). All boundaries below are computed in `TZ`, then converted to UTC for the comparison against the field (which is assumed to be a UTC instant on the wire). `startOfDay(N, TZ)` = the most recent local midnight in `TZ` ≤ `N`. `mondayOfISOWeek(N, TZ)` = the most recent local Monday 00:00 in `TZ` ≤ `N`. `firstOfMonth(N, TZ)` = the local 1st of N's local month at 00:00 in `TZ`. `jan1(year, TZ)` = local Jan 1 00:00 of `year` in `TZ`.
 
 | Operator | Algorithm |
 |---|---|
-| `today` | `startOfDayUTC(N) <= field < startOfDayUTC(N) + 1 day` |
-| `yesterday` | `startOfDayUTC(N) - 1 day <= field < startOfDayUTC(N)` |
-| `this-week` | `mondayOfISOWeek(N) <= field < mondayOfISOWeek(N) + 7 days` |
-| `last-week` | `mondayOfISOWeek(N) - 7 days <= field < mondayOfISOWeek(N)` |
-| `next-week` | `mondayOfISOWeek(N) + 7 days <= field < mondayOfISOWeek(N) + 14 days` |
-| `this-month` | `firstOfMonthUTC(N) <= field < firstOfMonthUTC(N) + 1 month` |
-| `last-month` | `firstOfMonthUTC(N) - 1 month <= field < firstOfMonthUTC(N)` |
-| `next-month` | `firstOfMonthUTC(N) + 1 month <= field < firstOfMonthUTC(N) + 2 months` |
-| `this-year` | `jan1UTC(N.year) <= field < jan1UTC(N.year + 1)` |
-| `last-year` | `jan1UTC(N.year - 1) <= field < jan1UTC(N.year)` |
-| `next-year` | `jan1UTC(N.year + 1) <= field < jan1UTC(N.year + 2)` |
-| `last-n-days` | `startOfDayUTC(N - (value.n - 1) days) <= field <= N`. `value.n` MUST be a positive integer ≥ 1. **Inclusive of today.** |
-| `next-n-days` | `N <= field < startOfDayUTC(N + value.n days)`. `value.n` MUST be a positive integer ≥ 1. **Inclusive of today.** |
-| `year-to-date` | `jan1UTC(N.year) <= field <= N` |
+| `today` | `startOfDay(N, TZ) <= field < startOfDay(N, TZ) + 1 local day` |
+| `yesterday` | `startOfDay(N, TZ) - 1 local day <= field < startOfDay(N, TZ)` |
+| `this-week` | `mondayOfISOWeek(N, TZ) <= field < mondayOfISOWeek(N, TZ) + 7 local days` |
+| `last-week` | `mondayOfISOWeek(N, TZ) - 7 local days <= field < mondayOfISOWeek(N, TZ)` |
+| `next-week` | `mondayOfISOWeek(N, TZ) + 7 local days <= field < mondayOfISOWeek(N, TZ) + 14 local days` |
+| `this-month` | `firstOfMonth(N, TZ) <= field < firstOfMonth(N, TZ) + 1 local month` |
+| `last-month` | `firstOfMonth(N, TZ) - 1 local month <= field < firstOfMonth(N, TZ)` |
+| `next-month` | `firstOfMonth(N, TZ) + 1 local month <= field < firstOfMonth(N, TZ) + 2 local months` |
+| `this-year` | `jan1(N.localYear, TZ) <= field < jan1(N.localYear + 1, TZ)` |
+| `last-year` | `jan1(N.localYear - 1, TZ) <= field < jan1(N.localYear, TZ)` |
+| `next-year` | `jan1(N.localYear + 1, TZ) <= field < jan1(N.localYear + 2, TZ)` |
+| `last-n-days` | `startOfDay(N - (value.n - 1) local days, TZ) <= field <= N`. `value.n` MUST be a positive integer ≥ 1. **Inclusive of today.** |
+| `next-n-days` | `N <= field < startOfDay(N + value.n local days, TZ)`. `value.n` MUST be a positive integer ≥ 1. **Inclusive of today.** |
+| `year-to-date` | `jan1(N.localYear, TZ) <= field <= N` |
+
+**DST note**: "1 local day" is a calendar day in `TZ` — typically 24 hours, but 23 hours on spring-forward DST transition days and 25 hours on fall-back days. Use a calendar-aware date library (`Temporal` in modern JS, `NodaTime` / `TimeZoneInfo` in .NET, `pytz` in Python) rather than millisecond arithmetic.
 
 ### Array operators
 
@@ -556,7 +563,18 @@ For array-typed field `A` and array value `V`:
 
 ## Appendix B — Canonical JSON Example
 
-A non-trivial query exercising nested groups, multi-entity sub-query, relative date op, array op, `between`, and `is-null`:
+The recommended request envelope wraps the tree alongside the client's IANA timezone (used by relative-date operators):
+
+```json
+{
+  "query": { /* expression tree, see below */ },
+  "timezone": "America/Sao_Paulo"
+}
+```
+
+The `timezone` field is optional — backends fall back to UTC if absent — but consumers should send it whenever the tree contains any relative-date operator. The wrapper's `[timezone]` input defaults to `Intl.DateTimeFormat().resolvedOptions().timeZone` so a vanilla wiring matches the user's browser-local resolution.
+
+The tree itself, a non-trivial query exercising nested groups, multi-entity sub-query, relative date op, array op, `between`, and `is-null`:
 
 ```json
 {
@@ -669,6 +687,19 @@ Per-operator JSON value shape. Backends MUST reject values whose JSON type doesn
 - **Array homogeneity**: all elements of `in` / `not-in` / `any-of` / `all-of` / `none-of` arrays MUST share the scalar type matching the field.
 - **`null` literal**: parameterless operators MUST serialize `value: null` explicitly. Omitting the key or sending `undefined` is rejected.
 
+**Request envelope** (recommended; not part of the tree itself):
+
+```ts
+interface QueryRequest {
+  query: Expression;       // the tree (this Appendix)
+  timezone?: string;       // IANA timezone identifier, e.g. "America/Sao_Paulo".
+                           // Used to resolve relative date operators (see Appendix A).
+                           // Backends fall back to UTC if absent.
+}
+```
+
+The wrapper's `[timezone]` input defaults to the browser's local TZ via `Intl.DateTimeFormat().resolvedOptions().timeZone`. Consumers send this string alongside the tree.
+
 ---
 
 ## Appendix D — Backend Validation Checklist
@@ -696,6 +727,7 @@ Ordered list of MUST-reject rules the backend executes before translating to its
 13. **Numeric range**: `number` values within field's declared range; integer fields receive integers (no decimals) (`NUMBER_OUT_OF_RANGE`).
 14. **Date format**: date / datetime strings parse cleanly via the backend's canonical date library; reject malformed (`INVALID_DATE_FORMAT`).
 15. **Sub-query field returns to the parent's foreign-key column**: the backend resolves the relation (e.g., `orders` → `order.customer_id`) from its own ORM/schema; reject if the relation is not configured (`SUBQUERY_RELATION_NOT_CONFIGURED`).
+16. **Timezone**: if the request envelope includes `timezone`, it MUST be a valid IANA zone identifier resolvable by the backend's date library (e.g., `TimeZoneInfo.FindSystemTimeZoneById` in .NET — note this requires the IANA-style ID, not the Windows name, on .NET 6+ with the ICU library). Reject malformed or unknown TZ with `INVALID_TIMEZONE`. Absent `timezone` falls back to UTC resolution for all relative date operators.
 
 ---
 
@@ -709,7 +741,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 
-public record VisitorContext(string CurrentEntity, int Depth);
+public record VisitorContext(string CurrentEntity, int Depth, TimeZoneInfo Timezone);
 
 public class QueryBuilderToRql
 {
@@ -722,11 +754,25 @@ public class QueryBuilderToRql
         _maxDepth = maxDepth;
     }
 
-    public string Build(JsonElement tree, string rootEntity)
+    /// Accepts the full request envelope: { query, timezone? }.
+    /// Resolves the IANA timezone via TimeZoneInfo (requires .NET 6+ with ICU).
+    public string Build(JsonElement envelope, string rootEntity)
     {
+        var tree = envelope.GetProperty("query");
+        var tz = envelope.TryGetProperty("timezone", out var tzProp) && tzProp.ValueKind == JsonValueKind.String
+            ? ResolveTimezone(tzProp.GetString()!)
+            : TimeZoneInfo.Utc;
+
         ValidateRootShape(tree);
-        var ctx = new VisitorContext(rootEntity, 0);
+        var ctx = new VisitorContext(rootEntity, 0, tz);
         return Visit(tree, ctx);
+    }
+
+    private static TimeZoneInfo ResolveTimezone(string iana)
+    {
+        try { return TimeZoneInfo.FindSystemTimeZoneById(iana); }
+        catch (TimeZoneNotFoundException) { throw new BadHttpRequestException("INVALID_TIMEZONE"); }
+        catch (InvalidTimeZoneException) { throw new BadHttpRequestException("INVALID_TIMEZONE"); }
     }
 
     private string Visit(JsonElement node, VisitorContext ctx)
@@ -801,10 +847,10 @@ public class QueryBuilderToRql
 }
 ```
 
-Fill out `EmitConditionRql` per Appendix A. Example excerpt for a few operators:
+Fill out `EmitConditionRql` per Appendix A. Note relative date operators take `ctx.Timezone` and resolve boundaries in that zone, then convert to UTC for the comparison:
 
 ```csharp
-private string EmitConditionRql(string field, string op, JsonElement value, FieldDef def)
+private string EmitConditionRql(string field, string op, JsonElement value, FieldDef def, VisitorContext ctx)
 {
     return op switch
     {
@@ -815,13 +861,25 @@ private string EmitConditionRql(string field, string op, JsonElement value, Fiel
         "contains"    => $"search({field}, {EmitValue(value, def)})",
         "in"          => $"{field} in ({EmitArray(value, def)})",
         "is-null"     => $"{field} = null",
-        "today"       => EmitDateRange(field, StartOfTodayUtc(), StartOfTomorrowUtc()),
-        "last-n-days" => EmitLastNDays(field, value.GetProperty("n").GetInt32()),
+        "today"       => EmitDateRange(field, StartOfToday(ctx.Timezone), StartOfTomorrow(ctx.Timezone)),
+        "last-n-days" => EmitLastNDays(field, value.GetProperty("n").GetInt32(), ctx.Timezone),
         "any-of"      => EmitAnyOf(field, value, def),
         // ... etc
         _ => throw new BadHttpRequestException("UNSUPPORTED_OPERATOR")
     };
 }
+
+private static (DateTime startUtc, DateTime endUtc) DayBoundsInTz(DateTime nowUtc, TimeZoneInfo tz)
+{
+    var localNow = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, tz);
+    var localMidnight = localNow.Date;          // 00:00 in the local zone
+    var startUtc = TimeZoneInfo.ConvertTimeToUtc(localMidnight, tz);
+    var endUtc   = TimeZoneInfo.ConvertTimeToUtc(localMidnight.AddDays(1), tz);
+    return (startUtc, endUtc);
+}
+
+private DateTime StartOfToday(TimeZoneInfo tz)     => DayBoundsInTz(DateTime.UtcNow, tz).startUtc;
+private DateTime StartOfTomorrow(TimeZoneInfo tz)  => DayBoundsInTz(DateTime.UtcNow, tz).endUtc;
 ```
 
 ---
@@ -842,8 +900,9 @@ Each backend implementing this contract ships its own copy of this document in i
 
 | Topic | Conformance | Notes |
 |---|---|---|
-| Date timezone | ✓ UTC | matches spec |
+| Date timezone | ✓ resolves in request's `timezone` field; UTC fallback | matches spec |
 | Week start | ✓ ISO 8601 (Monday) | matches spec |
+| DST handling | ✓ via TimeZoneInfo / library | local-day = 23/24/25 hours per calendar |
 | String case-sensitivity (default) | ⚠ DIVERGES | Postgres default collation is case-sensitive. Frontend live preview will differ from API results for queries containing mixed-case substrings. |
 | `between` inclusivity | ✓ inclusive | matches spec |
 | Null handling for comparisons | ✓ false-against-null | matches spec |

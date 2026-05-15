@@ -291,11 +291,11 @@ Phases are internal milestones inside one PR.
 2. **Implements the canonical semantics defined in PRD Appendix A.** Every operator's algorithm matches that table exactly so backend implementers can reuse the same rules.
 3. Operator coverage:
    - All comparison ops (equals, lt, gt, between, etc.).
-   - **Relative date ops** — evaluated against `options.now ?? new Date()`, **boundaries in UTC**, **ISO 8601 week start (Monday)** per Appendix A.
+   - **Relative date ops** — evaluated against `options.now ?? new Date()` in `options.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone`, **ISO 8601 week start (Monday)** per Appendix A. Use a calendar-aware date library (`Temporal` API or `date-fns-tz`) — millisecond arithmetic alone is wrong across DST transitions.
    - **Array ops** — `any-of` (intersection non-empty), `all-of` (superset), `none-of` (disjoint), `is-empty` / `is-not-empty`.
 4. Sub-queries: optional `getRelatedRecords(record, fieldName): unknown[]` callback. `in` → true if at least one related record matches the sub-tree; `not-in` → true if zero match.
 5. NULL semantics: `equals`/`lt`/`gt`/`between` against `null` → `false`. Only `is-null`/`is-not-null` match nullness.
-6. String comparisons: case-insensitive by default; `EvaluateOptions { caseSensitive?: boolean; now?: Date; getRelatedRecords?: ...; maxDepth?: number }`.
+6. String comparisons: case-insensitive by default; `EvaluateOptions { caseSensitive?: boolean; now?: Date; timezone?: string; getRelatedRecords?: ...; maxDepth?: number }`.
 7. **Recursion bound**: walker tracks depth; if `depth > (options.maxDepth ?? 32)` at any point, throws `MaxDepthExceededError`. Bounded by default so deep-nesting attacks can't stack-overflow the demo or unit-test runner.
 8. Unit tests cover every operator × every applicable type × null × sub-query. **One property-based test** (fast-check or hand-rolled) generates ~200 random valid trees + random records and asserts `evaluateQuery` (a) doesn't throw unexpectedly and (b) respects monotonicity (adding an AND clause never increases the match set).
 
@@ -330,7 +330,8 @@ Phases are internal milestones inside one PR.
 ### Phase 13: Angular wrapper
 
 1. Implement `bs-query-builder` mirroring `bs-datetime-picker`'s pattern.
-2. Inputs: `[schema]`, `[rootEntity]`, `[messages]`, `[showPreview]`, `[showSavedQueries]`, `[maxDepth]`, `[savedQueries]`, `[operatorOverrides]`, `[disabled]`, `[data]`.
+2. Inputs: `[schema]`, `[rootEntity]`, `[messages]`, `[showPreview]`, `[showSavedQueries]`, `[maxDepth]`, `[timezone]`, `[savedQueries]`, `[operatorOverrides]`, `[disabled]`, `[data]`.
+   - **`[timezone]`** defaults to `Intl.DateTimeFormat().resolvedOptions().timeZone` (browser-local IANA zone). Consumers post this same string alongside the tree to the backend so the backend resolves relative-date operators identically. Override e.g. for an admin tool that wants UTC pinning.
 3. Models: `[(query)]`.
 4. Outputs: `(queryChange)`, `(saveQuery)`, `(loadQuery)`, `(deleteQuery)`, `(filteredResult)`.
 5. **`ControlValueAccessor` with re-entrancy guard**:
@@ -504,6 +505,7 @@ Phases are internal milestones inside one PR.
 - [ ] Shadow-DOM hit-test algorithm spec'd and tested across Chromium / Firefox / WebKit.
 - [ ] DnD cancellation on tree mutation: programmatic `[(query)]` reset mid-drag cleans up ghost and dispatches no `moveNode`.
 - [ ] `document.body` access guarded by `typeof document !== 'undefined'` (per dock precedent).
+- [ ] `[timezone]` input defaults to `Intl.DateTimeFormat().resolvedOptions().timeZone`. `evaluateQuery` honours `options.timezone`. Relative date ops resolve in the effective TZ. DST transitions covered by test (e.g. "today" on a spring-forward day in `Europe/Brussels`).
 
 ---
 
