@@ -1,0 +1,51 @@
+{
+  "name": "api",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/api",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/bin"],
+      "inputs": [
+        "{projectRoot}/**/*.cs",
+        "{projectRoot}/**/*.csproj",
+        "{projectRoot}/appsettings.json",
+        "{projectRoot}/appsettings.Development.json"
+      ],
+      "options": {
+        "command": "dotnet build apps/api/Api.csproj -c Release"
+      }
+    },
+    "publish": {
+      "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/dist/apps/api"],
+      "inputs": [
+        "{projectRoot}/**/*.cs",
+        "{projectRoot}/**/*.csproj",
+        "{projectRoot}/appsettings.json",
+        "{projectRoot}/appsettings.Development.json"
+      ],
+      "options": {
+        "command": "dotnet publish apps/api/Api.csproj -c Release -o dist/apps/api -p:UseAppHost=false"
+      }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "dotnet watch --project apps/api/Api.csproj run --urls http://localhost:5000"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "inputs": [
+        "{projectRoot}/**/*.cs",
+        "{projectRoot}/**/*.csproj"
+      ],
+      "options": {
+        "command": "dotnet test apps/api/Tests/Api.Tests.csproj -c Debug"
+      }
+    }
+  },
+  "tags": []
+}
