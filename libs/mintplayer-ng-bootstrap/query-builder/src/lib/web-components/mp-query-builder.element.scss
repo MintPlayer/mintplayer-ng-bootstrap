@@ -1,0 +1,22 @@
+:host {
+  display: block;
+  font-family: var(--bs-body-font-family, system-ui);
+  font-size: var(--bs-body-font-size, 1rem);
+  color: var(--bs-body-color, currentColor);
+}
+
+.qb-root {
+  border: 1px solid var(--bs-border-color, #dee2e6);
+  border-radius: var(--bs-border-radius, 0.375rem);
+  padding: 0.5rem;
+  background: var(--bs-body-bg, transparent);
+}
+
+.qb-too-deep {
+  padding: 0.5rem;
+  color: var(--bs-warning-text-emphasis, #997404);
+  background: var(--bs-warning-bg-subtle, #fff3cd);
+  border: 1px solid var(--bs-warning-border-subtle, #ffe69c);
+  border-radius: var(--bs-border-radius, 0.375rem);
+  font-style: italic;
+}

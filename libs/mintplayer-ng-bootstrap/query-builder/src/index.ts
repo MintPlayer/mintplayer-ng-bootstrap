@@ -42,3 +42,12 @@ export type {
   VisitorContext,
   VisitTreeOptions,
 } from './lib/visitor/visitor-types';
+export { MpQueryBuilderElement } from './lib/web-components/mp-query-builder.element';
+export { MpQueryGroupElement } from './lib/web-components/mp-query-group.element';
+export { MpQueryConditionElement } from './lib/web-components/mp-query-condition.element';
+export { MpQuerySubqueryElement } from './lib/web-components/mp-query-subquery.element';
+export {
+  editorRegistryContext,
+  disabledContext,
+  messagesContext,
+} from './lib/web-components/context';

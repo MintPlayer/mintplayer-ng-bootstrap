@@ -1,0 +1,33 @@
+:host {
+  display: block;
+  margin: 0.25rem 0;
+}
+
+.qb-subquery {
+  border: 1px dashed var(--bs-border-color, #dee2e6);
+  border-radius: var(--bs-border-radius, 0.375rem);
+  padding: 0.5rem;
+  background: var(--bs-tertiary-bg, #f8f9fa);
+}
+
+.qb-subquery-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+
+.qb-subquery-field {
+  font-weight: 600;
+}
+
+.qb-subquery-operator {
+  color: var(--bs-secondary-color, #6c757d);
+  text-transform: lowercase;
+}
+
+.qb-subquery-target {
+  font-style: italic;
+  color: var(--bs-secondary-color, #6c757d);
+}

@@ -1,0 +1,41 @@
+:host {
+  display: block;
+  margin: 0.25rem 0;
+}
+
+.qb-group {
+  border-left: 3px solid var(--bs-border-color, #dee2e6);
+  padding-left: 0.5rem;
+}
+
+.qb-group-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.qb-logic {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--bs-border-radius-sm, 0.25rem);
+  background: var(--bs-secondary-bg-subtle, #e9ecef);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.qb-children {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.qb-empty {
+  color: var(--bs-secondary-color, #6c757d);
+  font-style: italic;
+  font-size: 0.875rem;
+  padding: 0.25rem 0;
+}
