@@ -2,8 +2,9 @@
   <h1>Query Builder</h1>
   <p class="lead">
     Build a query → POST as JSON to <code>/api/orders/search</code> → backend translates to
-    SQL via <code>QueryBuilderWalker&lt;Order&gt;</code> → render <code>PagedResult&lt;Order&gt;</code>.
-    Pagination/filtering/sorting are server-side — the wrapper never owns the dataset.
+    SQL via <code>QueryBuilderWalker&lt;Order&gt;</code> → render <code>PagedResult&lt;Order&gt;</code>
+    in a <code>&lt;bs-datatable&gt;</code>. Pagination/filtering/sorting are server-side — the
+    wrapper never owns the dataset.
   </p>
 
   <bs-query-builder
@@ -34,7 +35,7 @@
       {{ busy() ? 'Searching…' : 'Search' }}
     </button>
     <span class="text-secondary">
-      {{ result().totalCount }} match{{ result().totalCount === 1 ? '' : 'es' }}
+      {{ lastTotal() }} match{{ lastTotal() === 1 ? '' : 'es' }}
     </span>
     @if (error()) {
       <span class="text-danger ms-2">⚠ {{ error() }}</span>
@@ -46,44 +47,26 @@
     <pre class="bg-body-tertiary border rounded p-2"><code>{{ jsonView() }}</code></pre>
   </details>
 
-  <table class="table table-sm table-bordered table-striped">
-    <thead>
-      <tr>
-        <th>Id</th><th>Customer</th><th>Total</th><th>Status</th><th>Order date</th><th>Tags</th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (row of result().items; track row.id) {
-        <tr>
-          <td>{{ row.id }}</td>
-          <td>{{ row.customerId }}</td>
-          <td>{{ row.total | number:'1.2-2' }}</td>
-          <td>{{ row.status }}</td>
-          <td>{{ row.orderDate | date:'yyyy-MM-dd' }}</td>
-          <td><code>{{ row.tags }}</code></td>
-        </tr>
-      } @empty {
-        <tr><td colspan="6" class="text-center text-secondary">No results — build a query and Search.</td></tr>
-      }
-    </tbody>
-  </table>
+  <bs-datatable
+    [fetch]="fetchOrders"
+    [(settings)]="settings"
+  >
+    <ng-template bsDatatableColumn="id">Id</ng-template>
+    <ng-template bsDatatableColumn="customerId">Customer</ng-template>
+    <ng-template bsDatatableColumn="total">Total</ng-template>
+    <ng-template bsDatatableColumn="status">Status</ng-template>
+    <ng-template bsDatatableColumn="orderDate">Order date</ng-template>
+    <ng-template bsDatatableColumn="tags">Tags</ng-template>
 
-  <nav aria-label="Pagination" class="d-flex gap-2 align-items-center">
-    <button class="btn btn-sm btn-outline-secondary" (click)="goToPage(page() - 1)" [disabled]="page() <= 1">Prev</button>
-    <span>Page {{ page() }} / {{ totalPages() }}</span>
-    <button class="btn btn-sm btn-outline-secondary" (click)="goToPage(page() + 1)" [disabled]="page() >= totalPages()">Next</button>
-    <span class="ms-auto">
-      Page size:
-      <select class="form-select form-select-sm d-inline-block w-auto"
-              [ngModel]="pageSize()"
-              (ngModelChange)="pageSize.set($event); page.set(1); search()">
-        <option [ngValue]="10">10</option>
-        <option [ngValue]="20">20</option>
-        <option [ngValue]="50">50</option>
-        <option [ngValue]="100">100</option>
-      </select>
-    </span>
-  </nav>
+    <tr *bsRowTemplate="let row">
+      <td class="text-nowrap">{{ row?.id }}</td>
+      <td class="text-nowrap">{{ row?.customerId }}</td>
+      <td class="text-nowrap text-end">{{ row?.total | number:'1.2-2' }}</td>
+      <td class="text-nowrap">{{ row?.status }}</td>
+      <td class="text-nowrap">{{ row?.orderDate | date:'yyyy-MM-dd' }}</td>
+      <td class="text-nowrap"><code>{{ row?.tags }}</code></td>
+    </tr>
+  </bs-datatable>
 
   <h2 class="h5 mt-4">Keymap</h2>
   <ul class="list-unstyled small">
