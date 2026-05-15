@@ -24,7 +24,7 @@ public class CustomersController(DemoDbContext db) : ControllerBase
         var walker = new QueryBuilderWalker<Customer>(tz);
         var predicate = walker.Build(req.Query);
 
-        var q = db.Customers.AsQueryable().Where(predicate).OrderBy(c => c.Id);
+        var q = SortApplier.Apply(db.Customers.AsQueryable().Where(predicate), req.Sort, c => c.Id);
         var totalCount = await q.CountAsync(ct);
         var page = Math.Max(1, req.Page);
         var pageSize = Math.Min(100, Math.Max(1, req.PageSize));
