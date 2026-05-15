@@ -12,6 +12,7 @@ import {
   DatatableSettings,
 } from '@mintplayer/ng-bootstrap/datatable';
 import { BsQueryBuilderComponent, BsQueryBuilderEditorDirective } from '@mintplayer/ng-bootstrap/query-builder';
+import { environment } from '../../../../environments/environment';
 import type {
   EntitySchema,
   Expression,
@@ -102,7 +103,7 @@ export class QueryBuilderDemoComponent {
             }))
           : undefined,
       };
-      const r = await firstValueFrom(this.http.post<PagedResult<OrderDto>>('/api/orders/search', body));
+      const r = await firstValueFrom(this.http.post<PagedResult<OrderDto>>(`${environment.apiBase}/api/orders/search`, body));
       this.lastTotal.set(r.totalCount);
       return <PaginationResponse<OrderDto>>{
         data: r.items,
@@ -130,7 +131,7 @@ export class QueryBuilderDemoComponent {
   }
 
   refreshSchema(): void {
-    this.http.get<EntitySchema[]>('/api/orders/schema').subscribe({
+    this.http.get<EntitySchema[]>(`${environment.apiBase}/api/orders/schema`).subscribe({
       next: (s) => this.schema.set(s),
       error: () => this.error.set('Could not fetch schema. Is apps/api running?'),
     });
