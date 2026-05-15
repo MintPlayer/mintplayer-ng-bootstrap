@@ -90,6 +90,9 @@ public static class EntitySchemaService
     public static List<EntitySchemaDto> AllForCustomers() =>
         [CustomersSchema, OrdersSchema, LineItemsSchema];
 
+    public static List<EntitySchemaDto> AllForLineItems() =>
+        [LineItemsSchema, OrdersSchema, CustomersSchema];
+
     public static EntitySchemaDto? Get(string name) => name switch
     {
         "orders" => OrdersSchema,
