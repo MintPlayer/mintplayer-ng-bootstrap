@@ -29,6 +29,32 @@
   background: var(--bs-body-bg, transparent);
 }
 
+.qb-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  padding: 0.5rem;
+  background: var(--bs-tertiary-bg, #f8f9fa);
+  border: 1px solid var(--bs-border-color, #dee2e6);
+  border-radius: var(--bs-border-radius-sm, 0.25rem);
+}
+
+.qb-toolbar-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.qb-entity-picker {
+  width: auto;
+  min-width: 8rem;
+}
+
 .qb-too-deep {
   padding: 0.5rem;
   color: var(--bs-warning-text-emphasis, #997404);

@@ -2,6 +2,7 @@
   #wc
   [attr.disabled]="effectiveDisabled() ? '' : null"
   (query-change)="onQueryChange($event)"
+  (root-entity-change)="onRootEntityChange($event)"
   (save-query)="onSaveQuery($event)"
   (load-query)="onLoadQuery($event)"
   (delete-query)="onDeleteQuery($event)"

@@ -41,6 +41,7 @@ export class MpQueryBuilderElement extends LitElement {
     query: { attribute: false },
     schema: { attribute: false },
     rootEntity: { attribute: 'root-entity', type: String, reflect: true },
+    multiEntityPickerEnabled: { attribute: 'multi-entity-picker-enabled', type: Boolean, reflect: true },
     disabled: { attribute: 'disabled', type: Boolean, reflect: true },
     editorRegistry: { attribute: false },
     messages: { attribute: false },
@@ -56,6 +57,10 @@ export class MpQueryBuilderElement extends LitElement {
   query: Expression | null = null;
   schema: EntitySchema[] = [];
   rootEntity = '';
+  // Opt-in: render the top toolbar (entity picker + future field projection
+  // / sort-by widgets). Off by default; the toolbar only appears when
+  // `schema.length > 1` so single-entity consumers see no UI change.
+  multiEntityPickerEnabled = false;
   disabled = false;
   editorRegistry: EditorRegistry | undefined = undefined;
   messages: Partial<QueryBuilderMessages> | undefined = undefined;
@@ -508,6 +513,47 @@ export class MpQueryBuilderElement extends LitElement {
     `;
   }
 
+  /**
+   * Toolbar render. Only emits when `depth === 0` (sub-query builders have
+   * no toolbar of their own — they inherit the outer one) AND
+   * `multiEntityPickerEnabled` is true AND `schema.length > 1`. Future
+   * Phase-2 widgets (field projection, sort-by) hang off this same toolbar.
+   */
+  private _renderToolbar(): TemplateResult | typeof nothing {
+    if (this.depth !== 0) return nothing;
+    if (!this.multiEntityPickerEnabled) return nothing;
+    if (this.schema.length < 2) return nothing;
+    return html`
+      <div class="qb-toolbar" part="toolbar">
+        <label class="qb-toolbar-label">
+          Entity:
+          <select
+            class="form-select form-select-sm qb-entity-picker"
+            part="entity-picker"
+            .value=${this.rootEntity}
+            ?disabled=${this.disabled}
+            @change=${this._onRootEntityChange}
+            aria-label="Entity"
+          >
+            ${this.schema.map((e) => html`
+              <option value=${e.name} ?selected=${e.name === this.rootEntity}>${e.label}</option>
+            `)}
+          </select>
+        </label>
+      </div>
+    `;
+  }
+
+  private _onRootEntityChange = (e: Event): void => {
+    const next = (e.target as HTMLSelectElement).value;
+    if (next === this.rootEntity) return;
+    this.rootEntity = next;
+    this.dispatchEvent(new CustomEvent('root-entity-change', {
+      detail: { rootEntity: next },
+      bubbles: false, composed: false,
+    }));
+  };
+
   protected override render(): TemplateResult | typeof nothing {
     if (this.depth > this.effectiveMaxDepth()) {
       return html`<div class="qb-too-deep" role="alert">Tree too deep</div>`;
@@ -531,6 +577,7 @@ export class MpQueryBuilderElement extends LitElement {
         @qb-drag-start=${this._onDragStart}
         @qb-keyboard-move=${this._onKeyboardMove}
       >
+        ${this._renderToolbar()}
         ${this.showSavedQueries && this.depth === 0
           ? this._renderSavedPicker(this._messages())
           : nothing}

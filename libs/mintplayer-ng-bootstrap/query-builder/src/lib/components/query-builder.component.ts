@@ -63,7 +63,20 @@ export class BsQueryBuilderComponent implements AfterContentInit, ControlValueAc
   query = model<Expression>(emptyGroup('and'));
 
   schema = input<EntitySchema[]>([]);
-  rootEntity = input<string>('');
+  /**
+   * Two-way bindable since M18: when `[multiEntityPickerEnabled]` is on and
+   * the user picks a different entity in the toolbar, the model emits the
+   * new value. Existing `[rootEntity]="'orders'"` static bindings keep
+   * working (read-only model usage).
+   */
+  rootEntity = model<string>('');
+  /**
+   * Opt-in: render an entity-picker dropdown in the top toolbar (and any
+   * other Phase-2 toolbar widgets — field projection, sort builder — once
+   * those land). Default `false` preserves today's compact rendering with
+   * no toolbar.
+   */
+  multiEntityPickerEnabled = input<boolean>(false);
   messages = input<Partial<QueryBuilderMessages> | undefined>(undefined);
   showPreview = input<boolean>(false);
   showSavedQueries = input<boolean>(false);
@@ -111,6 +124,7 @@ export class BsQueryBuilderComponent implements AfterContentInit, ControlValueAc
       wc.query = this.query();
       wc.schema = this.schema();
       wc.rootEntity = this.rootEntity();
+      wc.multiEntityPickerEnabled = this.multiEntityPickerEnabled();
       wc.messages = this.messages();
       wc.showPreview = this.showPreview();
       wc.showSavedQueries = this.showSavedQueries();
@@ -180,6 +194,12 @@ export class BsQueryBuilderComponent implements AfterContentInit, ControlValueAc
     queueMicrotask(() => { this.writingFromForm = false; });
     this.onChangeFn(detail.tree);
     this.onTouchedFn();
+  }
+
+  protected onRootEntityChange(event: Event): void {
+    const detail = (event as CustomEvent<{ rootEntity: string }>).detail;
+    if (!detail) return;
+    this.rootEntity.set(detail.rootEntity);
   }
 
   protected onSaveQuery(event: Event): void {
