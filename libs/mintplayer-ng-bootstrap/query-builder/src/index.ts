@@ -62,6 +62,7 @@ export type {
   VisitorContext,
   VisitTreeOptions,
 } from './lib/visitor/visitor-types';
+export { visitTree } from './lib/visitor/visit-tree';
 export { renderExpression } from './lib/preview/render-expression';
 export type { RenderExpressionOptions } from './lib/preview/render-expression';
 export { MpQueryBuilderElement } from './lib/web-components/mp-query-builder.element';
