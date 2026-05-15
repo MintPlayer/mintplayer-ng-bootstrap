@@ -42,6 +42,7 @@ export class MpQueryBuilderElement extends LitElement {
     schema: { attribute: false },
     rootEntity: { attribute: 'root-entity', type: String, reflect: true },
     multiEntityPickerEnabled: { attribute: 'multi-entity-picker-enabled', type: Boolean, reflect: true },
+    selectedFields: { attribute: false },
     disabled: { attribute: 'disabled', type: Boolean, reflect: true },
     editorRegistry: { attribute: false },
     messages: { attribute: false },
@@ -61,6 +62,10 @@ export class MpQueryBuilderElement extends LitElement {
   // / sort-by widgets). Off by default; the toolbar only appears when
   // `schema.length > 1` so single-entity consumers see no UI change.
   multiEntityPickerEnabled = false;
+  // Field-projection state. Plain string[] of field names from the current
+  // rootEntity. Presentation-only — consumer reads via `selected-fields-change`
+  // and maps to whichever sibling UI needs to render those columns.
+  selectedFields: string[] = [];
   disabled = false;
   editorRegistry: EditorRegistry | undefined = undefined;
   messages: Partial<QueryBuilderMessages> | undefined = undefined;
@@ -523,6 +528,8 @@ export class MpQueryBuilderElement extends LitElement {
     if (this.depth !== 0) return nothing;
     if (!this.multiEntityPickerEnabled) return nothing;
     if (this.schema.length < 2) return nothing;
+    const currentEntity = this.schema.find((e) => e.name === this.rootEntity);
+    const projectableFields = currentEntity?.fields.filter((f) => f.type !== 'relation') ?? [];
     return html`
       <div class="qb-toolbar" part="toolbar">
         <label class="qb-toolbar-label">
@@ -540,8 +547,39 @@ export class MpQueryBuilderElement extends LitElement {
             `)}
           </select>
         </label>
+        ${projectableFields.length > 0 ? html`
+          <span class="qb-toolbar-section qb-field-projection" part="field-projection" role="group" aria-label="Columns">
+            <span class="qb-toolbar-label">Columns:</span>
+            ${projectableFields.map((f) => html`
+              <label class="qb-field-checkbox">
+                <input
+                  type="checkbox"
+                  class="form-check-input"
+                  value=${f.name}
+                  .checked=${this.selectedFields.includes(f.name)}
+                  ?disabled=${this.disabled}
+                  @change=${(ev: Event) => this._onFieldProjectionToggle(f.name, ev)}
+                  aria-label=${f.label}
+                />
+                ${f.label}
+              </label>
+            `)}
+          </span>
+        ` : nothing}
       </div>
     `;
+  }
+
+  private _onFieldProjectionToggle(fieldName: string, ev: Event): void {
+    const checked = (ev.target as HTMLInputElement).checked;
+    const current = new Set(this.selectedFields);
+    if (checked) current.add(fieldName); else current.delete(fieldName);
+    const next = Array.from(current);
+    this.selectedFields = next;
+    this.dispatchEvent(new CustomEvent('selected-fields-change', {
+      detail: { selectedFields: next },
+      bubbles: false, composed: false,
+    }));
   }
 
   private _onRootEntityChange = (e: Event): void => {

@@ -77,6 +77,15 @@ export class BsQueryBuilderComponent implements AfterContentInit, ControlValueAc
    * no toolbar.
    */
   multiEntityPickerEnabled = input<boolean>(false);
+  /**
+   * Two-way bindable list of currently-selected field names for projection.
+   * Presentation-only — does NOT affect the query tree. Consumers typically
+   * map this to which datatable columns to render. Empty array = nothing
+   * selected; the consumer decides how to interpret that (commonly "show
+   * all"). When `rootEntity` changes, stale field names just disappear
+   * from the checkbox list (no auto-reset).
+   */
+  selectedFields = model<string[]>([]);
   messages = input<Partial<QueryBuilderMessages> | undefined>(undefined);
   showPreview = input<boolean>(false);
   showSavedQueries = input<boolean>(false);
@@ -125,6 +134,7 @@ export class BsQueryBuilderComponent implements AfterContentInit, ControlValueAc
       wc.schema = this.schema();
       wc.rootEntity = this.rootEntity();
       wc.multiEntityPickerEnabled = this.multiEntityPickerEnabled();
+      wc.selectedFields = this.selectedFields();
       wc.messages = this.messages();
       wc.showPreview = this.showPreview();
       wc.showSavedQueries = this.showSavedQueries();
@@ -200,6 +210,12 @@ export class BsQueryBuilderComponent implements AfterContentInit, ControlValueAc
     const detail = (event as CustomEvent<{ rootEntity: string }>).detail;
     if (!detail) return;
     this.rootEntity.set(detail.rootEntity);
+  }
+
+  protected onSelectedFieldsChange(event: Event): void {
+    const detail = (event as CustomEvent<{ selectedFields: string[] }>).detail;
+    if (!detail) return;
+    this.selectedFields.set(detail.selectedFields);
   }
 
   protected onSaveQuery(event: Event): void {
