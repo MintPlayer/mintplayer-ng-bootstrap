@@ -59,6 +59,9 @@ function shadowText(el: Element): string {
       } else if (node.nodeType === Node.ELEMENT_NODE) {
         const ele = node as Element;
         if (ele.tagName === 'STYLE') continue;
+        if (ele instanceof HTMLInputElement || ele instanceof HTMLSelectElement) {
+          if (ele.value) parts.push(ele.value);
+        }
         if (ele.shadowRoot) visit(ele.shadowRoot);
         visit(ele);
       }
