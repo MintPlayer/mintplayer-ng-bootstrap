@@ -35,6 +35,65 @@
 
 - Firefox explicit-browser pass for the DnD ghost-clipping check ([[feedback_firefox_flex_shrink]]).
 
+### Phase 2 — Infragistics parity: entity picker + field projection + sort sync (planned)
+
+Triggered by user feedback after seeing the live demo against the bs-datatable swap. Three distinct gaps vs. the Infragistics `igxQueryBuilder` reference, scoped during the PR #340 review cycle:
+
+> **Hard architectural constraint:** `bs-query-builder` and `bs-datatable` stay two independent components. The demo page is the orchestrator that glue-wires them. No new direct coupling between the two libs.
+
+**A. Entity / collection picker in the query-builder toolbar.** Infragistics renders an entity dropdown at the top of the builder (Orders / Customers / …). Today our `rootEntity` is a read-only input — the consumer can swap entities programmatically but the user can't. Opt-in via `[multiEntityPickerEnabled]`; degrades to today's behavior when off.
+
+**B. Sort-by section in the query-builder.** Infragistics does *not* have this, but the user explicitly wants it. Currently the datatable owns sort state (column-header clicks). The page POSTs that sort to `/api/orders/search`, but two issues surfaced in testing:
+  1. `OrdersController.ApplySort` (apps/api/Controllers/OrdersController.cs:67–90) only handles `total` / `orderDate` / `status`; clicks on `id` / `customerId` / `tags` headers silently fall back to `OrderBy(o.Id)`. That's why some column-header clicks looked like "no-op refetches".
+  2. There's no way to see / edit the active sort *outside* the datatable's column headers. A sort-by builder in the query-builder UI surfaces it and makes multi-priority sort discoverable. Sort flows two-ways: datatable header click writes to `settings.sortColumns`; the query-builder sort builder reads back from there and edits both.
+
+**C. Dynamic datatable columns per entity.** With multiple selectable entities, the column set must change per entity. Today `<ng-template bsDatatableColumn="...">` directives are collected at component init via Angular's static `contentChildren()` — an `@for` over schema fields does NOT register new directives. Requires a new `[columns]: ColumnDef[]` input on `bs-datatable` that overrides the contentChildren discovery when provided.
+
+#### Feasibility findings from the parallel investigation
+
+**`bs-datatable` side** (`libs/mintplayer-ng-bootstrap/datatable/`):
+- `settings` is already a `model<DatatableSettings>` (datatable-sort-base.ts:14). `[(settings)]` two-way binding works today; no library changes needed for that.
+- `columns = contentChildren(BsDatatableColumnDirective)` (datatable-sort-base.ts:8) is the blocker. **Proposed minimal change:** add an optional `columnsInput = input<ColumnDef[] | undefined>(undefined)` plus a `effectiveColumns = computed(() => this.columnsInput() ?? this.columns())` and replace the one template loop (`datatable.component.html:72`) — about 10 LOC, backwards-compatible. Existing `<ng-template bsDatatableColumn=...>` consumers keep working unchanged.
+- Sort feedback loop concern: not real. `fetch()` reads `settings.sortColumns` *at call time*; nothing in the datatable echoes the response back into `settings`. So the demo page can safely `settings.set(new DatatableSettings({...s, sortColumns: nextSort}))` from a query-builder `sortByChange` handler without an infinite loop.
+
+**`bs-query-builder` side** (`libs/mintplayer-ng-bootstrap/query-builder/`):
+- Toolbar lives in `mp-query-builder`'s shadow DOM, in the `qb-root` div above the existing saved-queries picker and preview, **rendered only at `depth === 0`** (same pattern as preview / saved-queries — avoids duplication in nested sub-query builders).
+- `rootEntity` upgrades from `input<string>` → `model<string>`. Backwards-compatible: `[rootEntity]="'orders'"` keeps working (read-only model binding); new consumers can do `[(rootEntity)]="selectedEntity"`.
+- When `rootEntity` changes, the existing query tree's field references become invalid. **Behavior: consumer-owned reset.** The WC itself does NOT clear the tree (would surprise users mid-edit). The demo's recommended pattern: `effect(() => { rootEntity(); query.set(emptyGroup('and')); })`.
+- New sub-elements: just `<select>` / `<input type="checkbox">` / `<button>` with Bootstrap classes — no new custom elements needed.
+
+#### New / amended functional requirements
+
+**Datatable lib:**
+- [ ] **FR-48** (`bs-datatable`): Add optional `[columns]: ColumnDef[]` input. When provided, drives column rendering programmatically and overrides `contentChildren`-based directive discovery. `ColumnDef = { name: string; label: string; sortable?: boolean; templateRef?: TemplateRef<unknown> }` exported from the datatable entry point. Backwards-compatible — omitted means today's directive-based behavior.
+
+**Query-builder lib:**
+- [ ] **FR-49** (`bs-query-builder`): `rootEntity` becomes `model<string>` (was `input<string>`). Backwards-compatible.
+- [ ] **FR-50** (`bs-query-builder`): New input `[multiEntityPickerEnabled]: boolean` (default `false`). When `true` AND `schema.length > 1`, the WC renders a top toolbar at `depth===0` containing an entity dropdown bound to `rootEntity`. When `false`, no toolbar — preserves today's compact rendering.
+- [ ] **FR-51** (`bs-query-builder`): New `[(selectedFields)]: string[]` model. The toolbar renders a checkbox list of fields for the current `rootEntity`; toggling fires `selectedFieldsChange`. **This is a presentation-layer signal** — it does NOT affect the query tree itself; the consumer reads it to drive sibling components (e.g. which datatable columns to render).
+- [ ] **FR-52** (`bs-query-builder`): New `[(sortBy)]: SortDescriptor[]` model. Same `SortDescriptor` shape as the `QueryRequest.sort` wire-format field: `{ field: string; direction: 'asc' | 'desc' }[]`. The toolbar renders a "Sort by [field ▽] [asc/desc ▽] [×]" row per descriptor plus a "+ Add sort" button. Multi-priority allowed.
+- [ ] **FR-53** (`bs-query-builder` toolbar accessibility): every toolbar control labelled (entity picker, field checkboxes, sort field/direction selects, add-sort button). axe-core sweep stays green.
+
+**Demo / orchestration:**
+- [ ] **FR-54** (demo page): wire the three new outputs on the demo page at `apps/ng-bootstrap-demo/src/app/pages/enterprise/query-builder/`:
+  - `[(rootEntity)]` ↔ a signal that also resets the query tree on change.
+  - `[(selectedFields)]` → drives `bs-datatable [columns]` via a `computed()` that maps the schema's `FieldDef[]` for the selected entity, intersected with `selectedFields`.
+  - `[(sortBy)]` ↔ `settings.sortColumns` (with the `asc/desc` ↔ `ascending/descending` rename and an identity check before set-back to avoid spurious refetches).
+- [ ] **FR-55** (backend completeness, blocker for sort UX): `OrdersController.ApplySort` and `CustomersController.ApplySort` currently handle a hardcoded subset (3 fields on Orders). Replace with a schema-driven `IQueryable<T>.OrderBy` that accepts any field from the entity schema. Same reflection cache pattern as `QueryBuilderWalker.PropertyCache`. Without this, the demo's sort-by toolbar would silently no-op on most fields.
+
+#### Suggested milestone breakdown
+
+Each cleanly committable, each independently mergeable behind `[multiEntityPickerEnabled]` so the existing demo / consumers see zero change:
+
+- **M17** — `bs-datatable [columns]` input + `ColumnDef` export. Vitest specs cover both directive-based AND input-based column wiring. No demo changes yet.
+- **M18** — `bs-query-builder` toolbar shell: entity picker + `rootEntity` becomes `model<>`. No field-projection / sort-by yet. Gated by `[multiEntityPickerEnabled]`.
+- **M19** — toolbar adds field-projection multi-select (FR-51). Vitest specs.
+- **M20** — toolbar adds sort-by section (FR-52). Vitest specs.
+- **M21** — `apps/api` `ApplySort` becomes schema-driven (FR-55). xUnit coverage for every sortable field on Orders and Customers.
+- **M22** — demo page wires all four new bindings (FR-54). Updated Playwright spec covers: switch entity → datatable columns swap; toggle field checkbox → datatable column appears/disappears; click datatable header → sort-by toolbar updates; edit sort-by row → datatable re-fetches with new order.
+
+Estimated effort: M17 small (≤100 LOC + tests). M18–M20 medium (toolbar UI lives in `mp-query-builder.element.ts` + a new `.scss` block + the wrapper's `effect()` that pushes to the WC). M21 small but touches both controllers. M22 medium (demo orchestration + Playwright). All independently mergeable.
+
 ---
 
 ## Overview
