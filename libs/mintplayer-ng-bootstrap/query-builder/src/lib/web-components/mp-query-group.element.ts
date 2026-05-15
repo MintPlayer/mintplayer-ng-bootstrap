@@ -20,6 +20,8 @@ export class MpQueryGroupElement extends LitElement {
     currentEntity: { attribute: false },
     depth: { attribute: false },
     isRoot: { attribute: false },
+    qbRoot: { attribute: false },
+    isDragging: { attribute: false },
   };
 
   node: Group | null = null;
@@ -30,6 +32,13 @@ export class MpQueryGroupElement extends LitElement {
   // disable the "remove group" button on the root (removing the root makes
   // no sense; the tree must always have one).
   isRoot = false;
+  // The id of the owning mp-query-builder root — used to tag drop slots so
+  // cross-tree DnD (FR-13) can detect target-root mismatches and apply
+  // field reset.
+  qbRoot = '';
+  // True when any descendant in the same builder is mid-drag. Drives the
+  // visibility of drop slots (we only render them during drags).
+  isDragging = false;
 
   private _messagesConsumer = new ContextConsumer(this, {
     context: messagesContext,
@@ -96,6 +105,8 @@ export class MpQueryGroupElement extends LitElement {
           .schema=${this.schema}
           .currentEntity=${this.currentEntity}
           .depth=${this.depth + 1}
+          .qbRoot=${this.qbRoot}
+          .isDragging=${this.isDragging}
           part="child-group"
         ></mp-query-group>`;
       case 'condition':
@@ -111,9 +122,49 @@ export class MpQueryGroupElement extends LitElement {
           .schema=${this.schema}
           .currentEntity=${this.currentEntity}
           .depth=${this.depth + 1}
+          .qbRoot=${this.qbRoot}
+          .isDragging=${this.isDragging}
           part="child-subquery"
         ></mp-query-subquery>`;
     }
+  }
+
+  private renderDropSlot(index: number): TemplateResult | typeof nothing {
+    if (!this.isDragging || !this.node) return nothing;
+    return html`<div
+      class="qb-drop-slot"
+      data-drop-slot
+      data-parent-id=${this.node.id}
+      data-index=${String(index)}
+      data-qb-root=${this.qbRoot}
+      part="drop-slot"
+      aria-hidden="true"
+    ></div>`;
+  }
+
+  private _renderChildrenWithSlots(children: Expression[]): TemplateResult[] {
+    const out: TemplateResult[] = [];
+    if (this.isDragging) {
+      out.push(this.renderDropSlot(0) as TemplateResult);
+    }
+    for (let i = 0; i < children.length; i++) {
+      out.push(this.renderChild(children[i]!));
+      if (this.isDragging) {
+        out.push(this.renderDropSlot(i + 1) as TemplateResult);
+      }
+    }
+    return out;
+  }
+
+  private _dropPlaceholder(): TemplateResult {
+    return html`<div
+      class="qb-drop-slot qb-drop-slot-placeholder"
+      data-drop-slot
+      data-parent-id=${this.node?.id ?? ''}
+      data-index="0"
+      data-qb-root=${this.qbRoot}
+      aria-hidden="true"
+    >Drop here</div>`;
   }
 
   protected override render(): TemplateResult | typeof nothing {
@@ -185,8 +236,8 @@ export class MpQueryGroupElement extends LitElement {
         </div>
         <div class="qb-children" part="children">
           ${node.children.length === 0
-            ? html`<div class="qb-empty">(empty group)</div>`
-            : node.children.map((c) => this.renderChild(c))}
+            ? html`<div class="qb-empty">${this.isDragging ? this._dropPlaceholder() : '(empty group)'}</div>`
+            : this._renderChildrenWithSlots(node.children)}
         </div>
       </div>
     `;

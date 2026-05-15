@@ -172,6 +172,25 @@ export class MpQueryConditionElement extends LitElement {
     }));
   };
 
+  private _onDragPointerDown = (e: PointerEvent): void => {
+    if (this.isDisabled()) return;
+    const node = this.node;
+    if (!node) return;
+    // Find the row element to use as the ghost source.
+    const row = this.shadowRoot?.querySelector('.qb-condition') as HTMLElement | null;
+    if (!row) return;
+    this.dispatchEvent(new CustomEvent('qb-drag-start', {
+      detail: {
+        id: node.id,
+        pointerId: e.pointerId,
+        clientX: e.clientX,
+        clientY: e.clientY,
+        rowElement: row,
+      },
+      bubbles: true, composed: true,
+    }));
+  };
+
   private _availableFields(): FieldDef[] {
     return this.schema
       .find((s) => s.name === this.currentEntity)
@@ -195,6 +214,15 @@ export class MpQueryConditionElement extends LitElement {
 
     return html`
       <div class="qb-condition" part="condition">
+        <button
+          type="button"
+          class="qb-drag-handle"
+          part="drag-handle"
+          ?disabled=${disabled}
+          aria-label="Drag to reorder"
+          title="Drag to reorder"
+          @pointerdown=${this._onDragPointerDown}
+        >⋮</button>
         <select
           class="form-select form-select-sm qb-field-select"
           part="field-select"

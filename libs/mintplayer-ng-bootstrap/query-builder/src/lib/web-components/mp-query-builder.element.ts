@@ -10,10 +10,14 @@ import {
   addEmptySubqueryTo,
   changeConditionField,
   changeConditionOperator,
+  collectDescendantIds,
+  findNodeById,
+  moveNode,
   removeNode,
   setGroupLogic,
   updateCondition,
 } from '../model/tree-ops';
+import { DragController, type DropTarget } from '../dnd/drag-controller';
 import {
   disabledContext,
   editorRegistryContext,
@@ -39,6 +43,7 @@ export class MpQueryBuilderElement extends LitElement {
     messages: { attribute: false },
     maxDepth: { attribute: 'max-depth', type: Number, reflect: true },
     depth: { attribute: false },
+    _isDragging: { state: true },
   };
 
   query: Expression | null = null;
@@ -52,6 +57,16 @@ export class MpQueryBuilderElement extends LitElement {
   // `depth` is set by parent <mp-query-subquery> when this WC renders a nested
   // sub-query body. The outermost root keeps depth=0.
   depth = 0;
+
+  // Stable id used to tag drop slots so cross-tree DnD can match.
+  private _qbRootId = `qb-${Math.random().toString(36).slice(2, 10)}`;
+
+  // True while a drag is in progress within this root (depth==0 only).
+  private _isDragging = false;
+  private _drag = new DragController();
+  private _pointerMoveHandler: ((e: PointerEvent) => void) | null = null;
+  private _pointerUpHandler: ((e: PointerEvent) => void) | null = null;
+  private _pointerCancelHandler: ((e: PointerEvent) => void) | null = null;
 
   private _registryConsumer = new ContextConsumer(this, {
     context: editorRegistryContext,
@@ -251,6 +266,102 @@ export class MpQueryBuilderElement extends LitElement {
     this._mutate(removeNode(tree, id));
   };
 
+  private _onDragStart = (e: Event): void => {
+    if (!this._handlesEvents()) return;
+    e.stopPropagation();
+    const detail = (e as CustomEvent).detail as {
+      id: string; pointerId: number; clientX: number; clientY: number; rowElement: HTMLElement;
+    };
+    const tree = this.query;
+    if (!tree) return;
+    const source = findNodeById(tree, detail.id);
+    if (!source) return;
+    const descendantIds = collectDescendantIds(source);
+
+    this._drag.start(
+      {
+        id: detail.id,
+        descendantIds,
+        qbRoot: this._qbRootId,
+        rowElement: detail.rowElement,
+      },
+      new PointerEvent('pointerdown', { pointerId: detail.pointerId, clientX: detail.clientX, clientY: detail.clientY }),
+    );
+    this._isDragging = true;
+
+    if (typeof window !== 'undefined') {
+      this._pointerMoveHandler = (ev) => this._drag.move(ev);
+      this._pointerUpHandler = (ev) => this._finishDrag(ev);
+      this._pointerCancelHandler = () => this._cancelDrag();
+      window.addEventListener('pointermove', this._pointerMoveHandler);
+      window.addEventListener('pointerup', this._pointerUpHandler);
+      window.addEventListener('pointercancel', this._pointerCancelHandler);
+    }
+  };
+
+  private _finishDrag(event: PointerEvent): void {
+    const target = this._drag.end(event);
+    this._teardownDragListeners();
+    this._isDragging = false;
+    if (!target) return;
+    this._applyDrop(target);
+  }
+
+  private _cancelDrag(): void {
+    this._drag.cancel();
+    this._teardownDragListeners();
+    this._isDragging = false;
+  }
+
+  private _teardownDragListeners(): void {
+    if (typeof window === 'undefined') return;
+    if (this._pointerMoveHandler) window.removeEventListener('pointermove', this._pointerMoveHandler);
+    if (this._pointerUpHandler) window.removeEventListener('pointerup', this._pointerUpHandler);
+    if (this._pointerCancelHandler) window.removeEventListener('pointercancel', this._pointerCancelHandler);
+    this._pointerMoveHandler = null;
+    this._pointerUpHandler = null;
+    this._pointerCancelHandler = null;
+  }
+
+  private _applyDrop(target: DropTarget): void {
+    const tree = this.query;
+    const source = this._drag.source();
+    if (!tree || !source) return;
+    // Resolve target schema if cross-tree (different qbRoot).
+    const targetSchema = target.qbRoot !== source.qbRoot
+      ? this._schemaForGroup(target.parentId)
+      : undefined;
+    const next = moveNode(tree, source.id, target.parentId, target.index, targetSchema);
+    this._mutate(next);
+  }
+
+  private _schemaForGroup(groupId: string): EntitySchema | undefined {
+    const tree = this.query;
+    if (!tree) return undefined;
+    const root = this._entitySchemaForCurrentRoot();
+    if (!root) return undefined;
+    const found = { schema: root };
+    const walk = (n: Expression, schema: EntitySchema): boolean => {
+      if (n.id === groupId) { found.schema = schema; return true; }
+      if (n.kind === 'group') {
+        for (const c of n.children) if (walk(c, schema)) return true;
+      } else if (n.kind === 'subquery') {
+        const fieldDef = schema.fields.find((f) => f.name === n.field);
+        const target = fieldDef?.targetEntity ? this.schema.find((s) => s.name === fieldDef.targetEntity) ?? schema : schema;
+        if (walk(n.subQuery, target)) return true;
+      }
+      return false;
+    };
+    walk(tree, root);
+    return found.schema;
+  }
+
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this._teardownDragListeners();
+    this._drag.cancel();
+  }
+
   protected override render(): TemplateResult | typeof nothing {
     if (this.depth > this.effectiveMaxDepth()) {
       return html`<div class="qb-too-deep" role="alert">Tree too deep</div>`;
@@ -262,6 +373,7 @@ export class MpQueryBuilderElement extends LitElement {
       <div
         class="qb-root"
         part="root"
+        data-qb-root=${this._qbRootId}
         @condition-field-change=${this._onConditionFieldChange}
         @condition-operator-change=${this._onConditionOperatorChange}
         @condition-value-change=${this._onConditionValueChange}
@@ -270,6 +382,7 @@ export class MpQueryBuilderElement extends LitElement {
         @add-group=${this._onAddGroup}
         @add-subquery=${this._onAddSubquery}
         @node-remove=${this._onNodeRemove}
+        @qb-drag-start=${this._onDragStart}
       >
         ${this.renderTreeRoot(tree)}
       </div>
@@ -284,6 +397,8 @@ export class MpQueryBuilderElement extends LitElement {
         .currentEntity=${this.rootEntity}
         .depth=${this.depth}
         .isRoot=${true}
+        .qbRoot=${this._qbRootId}
+        .isDragging=${this._isDragging}
       ></mp-query-group>`;
     }
     // Non-group root: wrap in a synthetic group for rendering.
@@ -299,6 +414,8 @@ export class MpQueryBuilderElement extends LitElement {
       .currentEntity=${this.rootEntity}
       .depth=${this.depth}
       .isRoot=${true}
+      .qbRoot=${this._qbRootId}
+      .isDragging=${this._isDragging}
     ></mp-query-group>`;
   }
 }

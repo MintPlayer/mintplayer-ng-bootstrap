@@ -14,12 +14,16 @@ export class MpQuerySubqueryElement extends LitElement {
     schema: { attribute: false },
     currentEntity: { attribute: false },
     depth: { attribute: false },
+    qbRoot: { attribute: false },
+    isDragging: { attribute: false },
   };
 
   node: SubQueryCondition | null = null;
   schema: EntitySchema[] = [];
   currentEntity = '';
   depth = 0;
+  qbRoot = '';
+  isDragging = false;
 
   private _messagesConsumer = new ContextConsumer(this, {
     context: messagesContext,
