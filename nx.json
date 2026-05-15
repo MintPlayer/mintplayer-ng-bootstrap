@@ -63,6 +63,9 @@
       "!{projectRoot}/src/test-setup.[jt]s"
     ]
   },
+  "tui": {
+    "enabled": false
+  },
   "useDaemonProcess": false,
   "useInferencePlugins": false,
   "defaultBase": "master",
