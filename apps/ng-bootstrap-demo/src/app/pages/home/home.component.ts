@@ -64,7 +64,7 @@ export class HomeComponent {
     },
     {
       title: 'Query builder',
-      pitch: 'Visual builder for nested AND/OR queries — Infragistics-parity operator catalog, drag-and-drop, sub-queries, custom value editors. Emits a canonical JSON tree the backend translates server-side.',
+      pitch: 'Visual builder for nested AND/OR queries — full operator catalog with relative-date and array ops, drag-and-drop, sub-queries, custom value editors. Emits a canonical JSON tree the backend translates server-side.',
       routerLink: '/enterprise/query-builder',
     },
     {
