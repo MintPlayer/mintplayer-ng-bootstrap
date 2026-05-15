@@ -57,6 +57,7 @@ export type {
   EditorRegistry,
 } from './lib/model/editor';
 export type { SavedQuery } from './lib/model/saved-query';
+export type { SortDescriptor } from './lib/model/sort';
 export type {
   TreeVisitor,
   VisitorContext,

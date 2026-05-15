@@ -1,7 +1,8 @@
 import { LitElement, html, nothing, type PropertyValues, type TemplateResult } from 'lit';
 import { ContextConsumer, ContextProvider } from '@lit/context';
 import type { Expression, Group, Operator } from '../model/expression';
-import type { EntitySchema } from '../model/field-def';
+import type { SortDescriptor } from '../model/sort';
+import type { EntitySchema, FieldDef } from '../model/field-def';
 import type { EditorRegistry } from '../model/editor';
 import { DEFAULT_MESSAGES, type QueryBuilderMessages } from '../model/messages';
 import type { SavedQuery } from '../model/saved-query';
@@ -43,6 +44,7 @@ export class MpQueryBuilderElement extends LitElement {
     rootEntity: { attribute: 'root-entity', type: String, reflect: true },
     multiEntityPickerEnabled: { attribute: 'multi-entity-picker-enabled', type: Boolean, reflect: true },
     selectedFields: { attribute: false },
+    sortBy: { attribute: false },
     disabled: { attribute: 'disabled', type: Boolean, reflect: true },
     editorRegistry: { attribute: false },
     messages: { attribute: false },
@@ -66,6 +68,9 @@ export class MpQueryBuilderElement extends LitElement {
   // rootEntity. Presentation-only — consumer reads via `selected-fields-change`
   // and maps to whichever sibling UI needs to render those columns.
   selectedFields: string[] = [];
+  // Sort-by state. Same shape as the QueryRequest.sort[] wire-format field.
+  // Order = priority order; the consumer POSTs this verbatim.
+  sortBy: SortDescriptor[] = [];
   disabled = false;
   editorRegistry: EditorRegistry | undefined = undefined;
   messages: Partial<QueryBuilderMessages> | undefined = undefined;
@@ -566,8 +571,94 @@ export class MpQueryBuilderElement extends LitElement {
             `)}
           </span>
         ` : nothing}
+        ${projectableFields.length > 0 ? this._renderSortBy(projectableFields) : nothing}
       </div>
     `;
+  }
+
+  private _renderSortBy(projectableFields: FieldDef[]): TemplateResult {
+    return html`
+      <span class="qb-toolbar-section qb-sort-by" part="sort-by" role="group" aria-label="Sort by">
+        <span class="qb-toolbar-label">Sort by:</span>
+        ${this.sortBy.map((s, i) => html`
+          <span class="qb-sort-row" part="sort-row">
+            <select
+              class="form-select form-select-sm qb-sort-field"
+              .value=${s.field}
+              ?disabled=${this.disabled}
+              @change=${(ev: Event) => this._onSortFieldChange(i, ev)}
+              aria-label=${`Sort ${i + 1} field`}
+            >
+              ${projectableFields.map((f) => html`
+                <option value=${f.name} ?selected=${f.name === s.field}>${f.label}</option>
+              `)}
+              ${projectableFields.some((f) => f.name === s.field) ? nothing : html`
+                <option value=${s.field} selected>(${s.field})</option>
+              `}
+            </select>
+            <select
+              class="form-select form-select-sm qb-sort-direction"
+              .value=${s.direction}
+              ?disabled=${this.disabled}
+              @change=${(ev: Event) => this._onSortDirectionChange(i, ev)}
+              aria-label=${`Sort ${i + 1} direction`}
+            >
+              <option value="asc" ?selected=${s.direction === 'asc'}>Asc</option>
+              <option value="desc" ?selected=${s.direction === 'desc'}>Desc</option>
+            </select>
+            <button
+              type="button"
+              class="btn btn-sm btn-link qb-sort-remove"
+              ?disabled=${this.disabled}
+              @click=${() => this._onSortRemove(i)}
+              aria-label=${`Remove sort ${i + 1}`}
+              title="Remove this sort"
+            >×</button>
+          </span>
+        `)}
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-secondary qb-sort-add"
+          part="sort-add"
+          ?disabled=${this.disabled || projectableFields.length === 0}
+          @click=${() => this._onSortAdd(projectableFields)}
+        >+ Add sort</button>
+      </span>
+    `;
+  }
+
+  private _emitSortBy(next: SortDescriptor[]): void {
+    this.sortBy = next;
+    this.dispatchEvent(new CustomEvent('sort-by-change', {
+      detail: { sortBy: next },
+      bubbles: false, composed: false,
+    }));
+  }
+
+  private _onSortFieldChange(index: number, ev: Event): void {
+    const field = (ev.target as HTMLSelectElement).value;
+    const next = this.sortBy.map((s, i) => (i === index ? { ...s, field } : s));
+    this._emitSortBy(next);
+  }
+
+  private _onSortDirectionChange(index: number, ev: Event): void {
+    const direction = (ev.target as HTMLSelectElement).value as 'asc' | 'desc';
+    const next = this.sortBy.map((s, i) => (i === index ? { ...s, direction } : s));
+    this._emitSortBy(next);
+  }
+
+  private _onSortRemove(index: number): void {
+    const next = this.sortBy.filter((_, i) => i !== index);
+    this._emitSortBy(next);
+  }
+
+  private _onSortAdd(projectableFields: FieldDef[]): void {
+    const first = projectableFields[0];
+    if (!first) return;
+    // Skip fields already used (would duplicate sort priority on the same column).
+    const usedNames = new Set(this.sortBy.map((s) => s.field));
+    const candidate = projectableFields.find((f) => !usedNames.has(f.name)) ?? first;
+    this._emitSortBy([...this.sortBy, { field: candidate.name, direction: 'asc' }]);
   }
 
   private _onFieldProjectionToggle(fieldName: string, ev: Event): void {

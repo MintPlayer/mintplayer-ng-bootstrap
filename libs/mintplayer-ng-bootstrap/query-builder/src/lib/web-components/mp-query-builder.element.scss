@@ -76,6 +76,27 @@
   }
 }
 
+.qb-sort-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+
+  .qb-sort-field,
+  .qb-sort-direction {
+    width: auto;
+  }
+
+  .qb-sort-field { min-width: 6rem; }
+  .qb-sort-direction { min-width: 4.5rem; }
+
+  .qb-sort-remove {
+    padding: 0 0.375rem;
+    line-height: 1;
+    color: var(--bs-danger, #dc3545);
+  }
+}
+
 .qb-too-deep {
   padding: 0.5rem;
   color: var(--bs-warning-text-emphasis, #997404);

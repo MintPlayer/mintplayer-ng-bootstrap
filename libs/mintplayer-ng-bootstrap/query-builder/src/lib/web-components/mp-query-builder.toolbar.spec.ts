@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import './mp-query-builder.element';
 import type { MpQueryBuilderElement } from './mp-query-builder.element';
 import type { EntitySchema } from '../model/field-def';
+import type { SortDescriptor } from '../model/sort';
 import { emptyGroup } from '../model/default-tree';
 
 const MULTI_SCHEMA: EntitySchema[] = [
@@ -33,12 +34,14 @@ async function mount(opts: {
   rootEntity: string;
   multiEntityPickerEnabled: boolean;
   selectedFields?: string[];
+  sortBy?: SortDescriptor[];
 }): Promise<MpQueryBuilderElement> {
   const el = document.createElement('mp-query-builder') as MpQueryBuilderElement;
   el.schema = opts.schema;
   el.rootEntity = opts.rootEntity;
   el.multiEntityPickerEnabled = opts.multiEntityPickerEnabled;
   if (opts.selectedFields !== undefined) el.selectedFields = opts.selectedFields;
+  if (opts.sortBy !== undefined) el.sortBy = opts.sortBy;
   el.query = emptyGroup('and');
   document.body.appendChild(el);
   await settle(el);
@@ -179,5 +182,95 @@ describe('mp-query-builder — toolbar field projection (M19)', () => {
     const boxes = checkboxesOf(el);
     // Customers has only `name` — `status` no longer appears as a checkbox.
     expect(boxes.map((b) => b.value)).toEqual(['name']);
+  });
+});
+
+describe('mp-query-builder — toolbar sort-by (M20)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  function rowsOf(el: Element): Element[] {
+    return Array.from(el.shadowRoot?.querySelectorAll('.qb-sort-row') ?? []);
+  }
+  function addBtnOf(el: Element): HTMLButtonElement {
+    return el.shadowRoot?.querySelector('.qb-sort-add') as HTMLButtonElement;
+  }
+
+  it('renders no sort rows by default, just the add button', async () => {
+    const el = await mount({ schema: MULTI_SCHEMA, rootEntity: 'orders', multiEntityPickerEnabled: true });
+    expect(rowsOf(el)).toHaveLength(0);
+    expect(addBtnOf(el)).toBeTruthy();
+  });
+
+  it('clicking "+ Add sort" emits sort-by-change with the first projectable field', async () => {
+    const el = await mount({ schema: MULTI_SCHEMA, rootEntity: 'orders', multiEntityPickerEnabled: true });
+    let emitted: { sortBy: SortDescriptor[] } | null = null;
+    el.addEventListener('sort-by-change', (e) => {
+      emitted = (e as CustomEvent<{ sortBy: SortDescriptor[] }>).detail;
+    });
+    addBtnOf(el).click();
+    await settle(el);
+    expect(emitted).toEqual({ sortBy: [{ field: 'total', direction: 'asc' }] });
+  });
+
+  it('renders one row per descriptor; field + direction selects show the bound values', async () => {
+    const el = await mount({
+      schema: MULTI_SCHEMA, rootEntity: 'orders', multiEntityPickerEnabled: true,
+      sortBy: [{ field: 'total', direction: 'desc' }, { field: 'status', direction: 'asc' }],
+    });
+    const rows = rowsOf(el);
+    expect(rows).toHaveLength(2);
+    const fieldSel0 = rows[0]!.querySelector('.qb-sort-field') as HTMLSelectElement;
+    const dirSel0 = rows[0]!.querySelector('.qb-sort-direction') as HTMLSelectElement;
+    expect(fieldSel0.value).toBe('total');
+    expect(dirSel0.value).toBe('desc');
+    const fieldSel1 = rows[1]!.querySelector('.qb-sort-field') as HTMLSelectElement;
+    expect(fieldSel1.value).toBe('status');
+  });
+
+  it('changing direction on a row emits sort-by-change with that row updated', async () => {
+    const el = await mount({
+      schema: MULTI_SCHEMA, rootEntity: 'orders', multiEntityPickerEnabled: true,
+      sortBy: [{ field: 'total', direction: 'asc' }],
+    });
+    let emitted: { sortBy: SortDescriptor[] } | null = null;
+    el.addEventListener('sort-by-change', (e) => {
+      emitted = (e as CustomEvent<{ sortBy: SortDescriptor[] }>).detail;
+    });
+    const dirSel = el.shadowRoot!.querySelector('.qb-sort-direction') as HTMLSelectElement;
+    dirSel.value = 'desc';
+    dirSel.dispatchEvent(new Event('change'));
+    await settle(el);
+    expect(emitted).toEqual({ sortBy: [{ field: 'total', direction: 'desc' }] });
+  });
+
+  it('clicking remove (×) drops the row from the array', async () => {
+    const el = await mount({
+      schema: MULTI_SCHEMA, rootEntity: 'orders', multiEntityPickerEnabled: true,
+      sortBy: [{ field: 'total', direction: 'asc' }, { field: 'status', direction: 'desc' }],
+    });
+    let emitted: { sortBy: SortDescriptor[] } | null = null;
+    el.addEventListener('sort-by-change', (e) => {
+      emitted = (e as CustomEvent<{ sortBy: SortDescriptor[] }>).detail;
+    });
+    const removeBtns = el.shadowRoot!.querySelectorAll('.qb-sort-remove') as NodeListOf<HTMLButtonElement>;
+    removeBtns[0]!.click();
+    await settle(el);
+    expect(emitted).toEqual({ sortBy: [{ field: 'status', direction: 'desc' }] });
+  });
+
+  it('"+ Add sort" prefers an unused field over a duplicate', async () => {
+    const el = await mount({
+      schema: MULTI_SCHEMA, rootEntity: 'orders', multiEntityPickerEnabled: true,
+      sortBy: [{ field: 'total', direction: 'asc' }],
+    });
+    let emitted: { sortBy: SortDescriptor[] } | null = null;
+    el.addEventListener('sort-by-change', (e) => {
+      emitted = (e as CustomEvent<{ sortBy: SortDescriptor[] }>).detail;
+    });
+    addBtnOf(el).click();
+    await settle(el);
+    expect(emitted!.sortBy.map((s) => s.field)).toEqual(['total', 'status']);
   });
 });

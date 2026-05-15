@@ -30,6 +30,7 @@ import type {
 } from '../model/editor';
 import type { QueryBuilderMessages } from '../model/messages';
 import type { SavedQuery } from '../model/saved-query';
+import type { SortDescriptor } from '../model/sort';
 import { emptyGroup } from '../model/default-tree';
 import {
   validateOperatorOverrides,
@@ -86,6 +87,12 @@ export class BsQueryBuilderComponent implements AfterContentInit, ControlValueAc
    * from the checkbox list (no auto-reset).
    */
   selectedFields = model<string[]>([]);
+  /**
+   * Two-way bindable list of sort descriptors. Same shape as the
+   * `QueryRequest.sort[]` wire-format field — `{ field, direction }`.
+   * Multi-priority allowed: array order is the priority order.
+   */
+  sortBy = model<SortDescriptor[]>([]);
   messages = input<Partial<QueryBuilderMessages> | undefined>(undefined);
   showPreview = input<boolean>(false);
   showSavedQueries = input<boolean>(false);
@@ -135,6 +142,7 @@ export class BsQueryBuilderComponent implements AfterContentInit, ControlValueAc
       wc.rootEntity = this.rootEntity();
       wc.multiEntityPickerEnabled = this.multiEntityPickerEnabled();
       wc.selectedFields = this.selectedFields();
+      wc.sortBy = this.sortBy();
       wc.messages = this.messages();
       wc.showPreview = this.showPreview();
       wc.showSavedQueries = this.showSavedQueries();
@@ -216,6 +224,12 @@ export class BsQueryBuilderComponent implements AfterContentInit, ControlValueAc
     const detail = (event as CustomEvent<{ selectedFields: string[] }>).detail;
     if (!detail) return;
     this.selectedFields.set(detail.selectedFields);
+  }
+
+  protected onSortByChange(event: Event): void {
+    const detail = (event as CustomEvent<{ sortBy: SortDescriptor[] }>).detail;
+    if (!detail) return;
+    this.sortBy.set(detail.sortBy);
   }
 
   protected onSaveQuery(event: Event): void {
