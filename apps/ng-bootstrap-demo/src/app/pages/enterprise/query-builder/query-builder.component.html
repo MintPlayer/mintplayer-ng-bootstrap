@@ -58,14 +58,14 @@
     <ng-template bsDatatableColumn="orderDate">Order date</ng-template>
     <ng-template bsDatatableColumn="tags">Tags</ng-template>
 
-    <tr *bsRowTemplate="let row">
+    <ng-template bsRowTemplate let-row>
       <td class="text-nowrap">{{ row?.id }}</td>
       <td class="text-nowrap">{{ row?.customerId }}</td>
       <td class="text-nowrap text-end">{{ row?.total | number:'1.2-2' }}</td>
       <td class="text-nowrap">{{ row?.status }}</td>
       <td class="text-nowrap">{{ row?.orderDate | date:'yyyy-MM-dd' }}</td>
       <td class="text-nowrap"><code>{{ row?.tags }}</code></td>
-    </tr>
+    </ng-template>
   </bs-datatable>
 
   <h2 class="h5 mt-4">Keymap</h2>
