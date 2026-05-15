@@ -63,6 +63,11 @@ export class HomeComponent {
       routerLink: '/enterprise/datatables',
     },
     {
+      title: 'Query builder',
+      pitch: 'Visual builder for nested AND/OR queries — full operator catalog with relative-date and array ops, drag-and-drop, sub-queries, custom value editors. Emits a canonical JSON tree the backend translates server-side.',
+      routerLink: '/enterprise/query-builder',
+    },
+    {
       title: 'Theming',
       pitch: "Live light / dark / auto plus custom variants like sepia, all via a single signal-based service. SSR-safe.",
       routerLink: '/additional-samples/theming',

@@ -294,7 +294,44 @@ jobs:
         subject-name: ghcr.io/${{ github.repository }}
         subject-digest: ${{ steps.push-ghcr.outputs.digest }}
         push-to-registry: true
-  
+
+    # ---- ASP.NET Core API ----
+
+    - name: Setup .NET 10
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Build API
+      run: dotnet build apps/api/Api.csproj -c Release
+
+    - name: Test API
+      run: dotnet test apps/api/Tests/Api.Tests.csproj -c Release
+
+    - name: Extract API image tags/labels
+      id: meta-api
+      uses: docker/metadata-action@v5
+      with:
+        github-token: ${{ github.token }}
+        images: ghcr.io/${{ github.repository }}-api
+
+    - name: Publish API to Github Container Registry
+      id: push-api
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: ./apps/api/Dockerfile
+        push: true
+        tags: ${{ steps.meta-api.outputs.tags }}
+        labels: ${{ steps.meta-api.outputs.labels }}
+
+    - name: Generate API artifact attestation
+      uses: actions/attest-build-provenance@v1
+      with:
+        subject-name: ghcr.io/${{ github.repository }}-api
+        subject-digest: ${{ steps.push-api.outputs.digest }}
+        push-to-registry: true
+
     # - name: Publish through FTP
     #   uses: SamKirkland/FTP-Deploy-Action@v4.3.4
     #   if: ${{ steps.publish_ng_bootstrap.outputs.type }}

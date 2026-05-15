@@ -10,6 +10,23 @@ services:
       - web
     restart: unless-stopped
 
+  api:
+    image: ghcr.io/mintplayer/mintplayer-ng-bootstrap-api:master
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ng-bootstrap-api.rule=Host(`api.bootstrap.mintplayer.com`)"
+      - "traefik.http.routers.ng-bootstrap-api.entrypoints=websecure"
+      - "traefik.http.routers.ng-bootstrap-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.ng-bootstrap-api.loadbalancer.server.port=8080"
+    volumes:
+      - api-data:/data
+    networks:
+      - web
+    restart: unless-stopped
+
 networks:
   web:
     external: true
+
+volumes:
+  api-data:

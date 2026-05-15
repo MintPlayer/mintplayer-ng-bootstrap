@@ -1,0 +1,188 @@
+// Bootstrap configuration partials. Compile to no CSS on their own — they
+// exist so the @imports below can resolve $prefix, mixin references, the
+// colour map, etc.
+@import 'node_modules/bootstrap/scss/functions';
+@import 'node_modules/bootstrap/scss/variables';
+@import 'node_modules/bootstrap/scss/variables-dark';
+@import 'node_modules/bootstrap/scss/maps';
+@import 'node_modules/bootstrap/scss/mixins';
+@import 'node_modules/bootstrap/scss/utilities';
+
+// .btn, .btn-sm, .btn-link — used by the remove (×) button.
+@import 'node_modules/bootstrap/scss/buttons';
+
+// .form-control / .form-select — used by the field/operator selectors and
+// every built-in value editor (string, number, integer, date, datetime,
+// the date-relative N-input, etc.).
+@import 'node_modules/bootstrap/scss/forms/form-control';
+@import 'node_modules/bootstrap/scss/forms/form-select';
+
+:host {
+  display: block;
+}
+
+.qb-condition {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+  font-size: 0.875rem;
+  flex-wrap: wrap;
+}
+
+.qb-field-select,
+.qb-operator-select {
+  display: inline-block;
+  width: auto;
+  min-width: 8rem;
+}
+
+.qb-remove {
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding: 0 0.5rem;
+  line-height: 1;
+  font-size: 1rem;
+  color: var(--bs-danger, #dc3545);
+}
+
+.qb-drag-handle {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1.25rem;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: var(--bs-secondary-color, #6c757d);
+  cursor: grab;
+  font-size: 1rem;
+  line-height: 1;
+  touch-action: none;
+}
+
+.qb-drag-handle:active {
+  cursor: grabbing;
+}
+
+.qb-drag-handle:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.qb-field {
+  font-weight: 600;
+  color: var(--bs-body-color, currentColor);
+}
+
+.qb-operator {
+  color: var(--bs-secondary-color, #6c757d);
+}
+
+.qb-value {
+  color: var(--bs-primary-text-emphasis, #084298);
+}
+
+.qb-value-list {
+  display: inline-flex;
+  gap: 0.25rem;
+}
+
+.qb-value-pill {
+  display: inline-block;
+  padding: 0 0.375rem;
+  background: var(--bs-info-bg-subtle, #cff4fc);
+  color: var(--bs-info-text-emphasis, #055160);
+  border-radius: var(--bs-border-radius-sm, 0.25rem);
+}
+
+.qb-missing {
+  color: var(--bs-danger-text-emphasis, #842029);
+  font-style: italic;
+}
+
+.qb-editor-input {
+  display: inline-block;
+  width: auto;
+  min-width: 6rem;
+  vertical-align: middle;
+}
+
+.qb-editor-n-input {
+  min-width: 4rem;
+  max-width: 6rem;
+}
+
+.qb-editor-select,
+.qb-editor-multiselect {
+  display: inline-block;
+  width: auto;
+  min-width: 8rem;
+  vertical-align: middle;
+}
+
+.qb-editor-tuple {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.qb-editor-tuple-sep {
+  color: var(--bs-secondary-color, #6c757d);
+  font-size: 0.875rem;
+}
+
+.qb-editor-chip-input {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem;
+  border: 1px solid var(--bs-border-color, #dee2e6);
+  border-radius: var(--bs-border-radius-sm, 0.25rem);
+  background: var(--bs-body-bg, transparent);
+  min-height: 1.75rem;
+}
+
+.qb-editor-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0 0.375rem;
+  background: var(--bs-info-bg-subtle, #cff4fc);
+  color: var(--bs-info-text-emphasis, #055160);
+  border-radius: var(--bs-border-radius-sm, 0.25rem);
+  font-size: 0.75rem;
+}
+
+.qb-editor-chip-remove {
+  background: transparent;
+  border: 0;
+  padding: 0 0.125rem;
+  color: inherit;
+  cursor: pointer;
+  line-height: 1;
+  font-size: 0.875rem;
+}
+
+.qb-editor-chip-remove:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.qb-editor-chip-add {
+  display: inline-block;
+  width: auto;
+  border: 0;
+  padding: 0 0.25rem;
+  font-size: 0.875rem;
+  background: transparent;
+  min-width: 4rem;
+}
+
+.qb-editor-chip-add:focus {
+  outline: none;
+  box-shadow: none;
+}

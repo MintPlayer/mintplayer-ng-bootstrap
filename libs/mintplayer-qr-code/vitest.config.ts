@@ -12,12 +12,6 @@ export default defineConfig({
     include: ['src/**/*.spec.ts'],
     reporters: ['default'],
     pool: 'threads',
-    poolOptions: {
-      threads: {
-        minThreads: 1,
-        maxThreads: undefined,
-      },
-    },
     fileParallelism: true,
     coverage: {
       provider: 'v8',

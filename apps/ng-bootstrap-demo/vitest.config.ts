@@ -15,12 +15,9 @@ export default defineConfig({
     include: ['src/**/*.spec.ts'],
     reporters: ['default'],
     pool: 'forks',
-    poolOptions: {
-      forks: {
-        minForks: 2,
-        maxForks: 8,
-      },
-    },
+    // Vitest 4: poolOptions.forks.{min,max}Forks → top-level `maxWorkers`.
+    // `minForks` has no direct equivalent and rarely earns its keep — drop.
+    maxWorkers: 8,
     testTimeout: 10000,
     hookTimeout: 10000,
     coverage: {

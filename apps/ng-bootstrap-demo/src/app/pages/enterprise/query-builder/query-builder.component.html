@@ -1,0 +1,73 @@
+<div class="container py-3">
+  <h1>Query Builder</h1>
+  <p class="lead">
+    Pick an entity → build a query → POST as JSON to <code>/api/&lt;entity&gt;/search</code> →
+    backend translates to SQL via <code>QueryBuilderWalker&lt;T&gt;</code> → render
+    <code>PagedResult&lt;T&gt;</code> in a <code>&lt;bs-datatable&gt;</code>. Pagination /
+    filtering / sorting are all server-side.
+  </p>
+
+  <bs-query-builder
+    [schema]="schema()"
+    [(rootEntity)]="rootEntity"
+    [multiEntityPickerEnabled]="true"
+    [(selectedFields)]="selectedFields"
+    [(sortBy)]="sortBy"
+    [(query)]="query"
+    [showPreview]="true"
+    [showSavedQueries]="true"
+    [savedQueries]="savedQueries()"
+    (saveQuery)="onSaveQuery($event)"
+    (loadQuery)="onLoadQuery($event)"
+    (deleteQuery)="onDeleteQuery($event)"
+  >
+    <!-- Custom editor for the `orderDate` field: a vanilla <input type="date">
+         demonstrates the *bsQueryBuilderEditor projection. -->
+    <input
+      *bsQueryBuilderEditor="'orderDate'; let ctx"
+      type="date"
+      class="form-control form-control-sm custom-date-editor"
+      [value]="ctx.value ?? ''"
+      [disabled]="ctx.disabled"
+      (input)="ctx.onChange(($any($event.target).value || null))"
+    />
+  </bs-query-builder>
+
+  <div class="d-flex gap-2 align-items-center my-3">
+    <button class="btn btn-primary" (click)="search()" [disabled]="busy()">
+      {{ busy() ? 'Searching…' : 'Search' }}
+    </button>
+    <span class="text-secondary">
+      {{ lastTotal() }} match{{ lastTotal() === 1 ? '' : 'es' }}
+    </span>
+    @if (error()) {
+      <span class="text-danger ms-2">⚠ {{ error() }}</span>
+    }
+  </div>
+
+  <details class="mb-3">
+    <summary>Wire-format JSON (what the demo POSTs)</summary>
+    <pre class="bg-body-tertiary border rounded p-2"><code>{{ jsonView() }}</code></pre>
+  </details>
+
+  <bs-datatable
+    [fetch]="fetchRows"
+    [(settings)]="settings"
+    [columns]="datatableColumns()"
+    [resizableColumns]="false"
+  >
+    <ng-template bsRowTemplate let-row>
+      @for (col of datatableColumns(); track col.name) {
+        <td class="text-nowrap">{{ formatCell(row, col.name) }}</td>
+      }
+    </ng-template>
+  </bs-datatable>
+
+  <h2 class="h5 mt-4">Keymap</h2>
+  <ul class="list-unstyled small">
+    <li><kbd>Tab</kbd> / <kbd>Shift+Tab</kbd> — move focus through controls in DOM order.</li>
+    <li><kbd>Enter</kbd> on Add condition / Add group / Add sub-query — insert child.</li>
+    <li><kbd>Alt+ArrowUp</kbd> / <kbd>Alt+ArrowDown</kbd> on a focused row — reorder among same-group siblings.</li>
+    <li><kbd>Esc</kbd> — close any open dropdown.</li>
+  </ul>
+</div>

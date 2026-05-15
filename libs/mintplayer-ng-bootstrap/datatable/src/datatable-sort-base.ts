@@ -1,13 +1,19 @@
 import { contentChildren, Directive, model } from '@angular/core';
 import { DatatableSettings } from './datatable-settings';
 import { BsDatatableColumnDirective } from './datatable-column/datatable-column.directive';
+import { type DatatableColumnRef } from './datatable-column/column-def';
 
 @Directive()
 export abstract class DatatableSortBase {
 
   readonly columns = contentChildren(BsDatatableColumnDirective);
 
-  get columnsArray() {
+  /**
+   * Effective column list used by the template. The base returns the
+   * content-children directive instances; `BsDatatableComponent` overrides
+   * this to merge in programmatic columns from its `[columns]` input.
+   */
+  get columnsArray(): readonly DatatableColumnRef[] {
     return this.columns();
   }
 
@@ -28,7 +34,7 @@ export abstract class DatatableSortBase {
     }
   }
 
-  columnHeaderClicked(column: BsDatatableColumnDirective, event: Event) {
+  columnHeaderClicked(column: DatatableColumnRef, event: Event) {
     if (!column.sortable()) return;
 
     const shiftKey = (event as MouseEvent | KeyboardEvent).shiftKey;

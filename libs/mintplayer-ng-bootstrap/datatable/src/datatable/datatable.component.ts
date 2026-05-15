@@ -8,7 +8,7 @@ import { BsPaginationComponent } from '@mintplayer/ng-bootstrap/pagination';
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { DatatableSettings } from '../datatable-settings';
 import { DatatableSortBase } from '../datatable-sort-base';
-import { BsDatatableColumnDirective } from '../datatable-column/datatable-column.directive';
+import { type ColumnDef, type DatatableColumnRef, SyntheticColumn } from '../datatable-column/column-def';
 import { BsDatatableFetch } from '../datatable-fetch';
 import { BsRowTemplateContext } from '../row-template/row-template.directive';
 
@@ -28,6 +28,29 @@ export class BsDatatableComponent<TData> extends DatatableSortBase implements Af
 
   /** Single data contract — see docs/prd/datatable-virtual-merge-and-selection.md */
   fetch = input.required<BsDatatableFetch<TData>>();
+
+  /**
+   * Optional programmatic column list. When provided, overrides the
+   * `<ng-template bsDatatableColumn="...">` content-children discovery —
+   * useful when columns are data-driven (e.g. fetched from an entity schema).
+   * Omit to keep the template-directive behavior.
+   */
+  readonly columnsInput = input<ColumnDef[] | undefined>(undefined, { alias: 'columns' });
+
+  /**
+   * Effective column list: `columnsInput` (wrapped as SyntheticColumn) when
+   * provided, else the content-children directives. Both satisfy the
+   * `DatatableColumnRef` shape the template + sort logic consume.
+   */
+  readonly effectiveColumns = computed<readonly DatatableColumnRef[]>(() => {
+    const defs = this.columnsInput();
+    if (defs !== undefined) return defs.map(d => new SyntheticColumn(d));
+    return this.columns();
+  });
+
+  override get columnsArray(): readonly DatatableColumnRef[] {
+    return this.effectiveColumns();
+  }
 
   virtualScroll = input(false);
   itemSize = input(48);
@@ -102,7 +125,7 @@ export class BsDatatableComponent<TData> extends DatatableSortBase implements Af
   /** Host width in px, observed lazily — drives `aria-valuemax` on resize handles. */
   protected readonly hostWidth = signal(0);
 
-  protected readonly numberOfColumns = computed(() => this.columns().length + (this.showCheckboxes() ? 1 : 0));
+  protected readonly numberOfColumns = computed(() => this.effectiveColumns().length + (this.showCheckboxes() ? 1 : 0));
   protected readonly showCheckboxes = computed(() => this.selectable() !== 'none');
   protected readonly hasAnySelection = computed(() => this.selection().length > 0);
   /** aria-rowcount = total records + 1 (header). Paginated mode reports the slice. */
@@ -209,7 +232,7 @@ export class BsDatatableComponent<TData> extends DatatableSortBase implements Af
         : (this.response()?.data?.length ?? 0) > 0;
       if (!hasData) return;
       untracked(() => {
-        const unsized = this.columns().filter(c => !this.columnWidths().has(c.name()));
+        const unsized = this.effectiveColumns().filter(c => !this.columnWidths().has(c.name()));
         if (unsized.length === 0) return;
         // Wait one frame so the rows are committed to the DOM before measuring.
         requestAnimationFrame(() => this.runInitialAutoSize());
@@ -397,15 +420,15 @@ export class BsDatatableComponent<TData> extends DatatableSortBase implements Af
   // === Resizable columns: measurement, apply, and user gestures ===
 
   /** Cell index in the table for `column` — selection column shifts indices by 1. */
-  private cellIndexFor(column: BsDatatableColumnDirective): number {
-    const idx = this.columns().findIndex(c => c === column);
+  private cellIndexFor(column: DatatableColumnRef): number {
+    const idx = this.effectiveColumns().findIndex(c => c === column);
     if (idx === -1) return -1;
     return idx + (this.showCheckboxes() ? 1 : 0);
   }
 
   /** Same as cellIndexFor but keyed by name. */
   private cellIndexForName(name: string): number {
-    const idx = this.columns().findIndex(c => c.name() === name);
+    const idx = this.effectiveColumns().findIndex(c => c.name() === name);
     if (idx === -1) return -1;
     return idx + (this.showCheckboxes() ? 1 : 0);
   }
@@ -491,7 +514,7 @@ export class BsDatatableComponent<TData> extends DatatableSortBase implements Af
 
   /** Run the initial measure pass on every column that isn't sized yet. */
   private runInitialAutoSize() {
-    const unsized = this.columns()
+    const unsized = this.effectiveColumns()
       .map(c => c.name())
       .filter(name => !this.columnWidths().has(name));
     if (unsized.length === 0) return;
@@ -556,7 +579,7 @@ export class BsDatatableComponent<TData> extends DatatableSortBase implements Af
     event.stopPropagation();
   }
 
-  protected onResizeHandlePointerDown(event: PointerEvent, column: BsDatatableColumnDirective) {
+  protected onResizeHandlePointerDown(event: PointerEvent, column: DatatableColumnRef) {
     if (!this.resizableColumns()) return;
     // Don't let the underlying <th>'s sort handler see this gesture.
     event.stopPropagation();
@@ -598,7 +621,7 @@ export class BsDatatableComponent<TData> extends DatatableSortBase implements Af
     handle.addEventListener('pointercancel', onEnd);
   }
 
-  protected onResizeHandleDoubleClick(event: MouseEvent, column: BsDatatableColumnDirective) {
+  protected onResizeHandleDoubleClick(event: MouseEvent, column: DatatableColumnRef) {
     event.stopPropagation();
     if (!this.resizableColumns()) return;
     const name = column.name();
@@ -608,7 +631,7 @@ export class BsDatatableComponent<TData> extends DatatableSortBase implements Af
     }
   }
 
-  protected onResizeHandleKeydown(event: KeyboardEvent, column: BsDatatableColumnDirective) {
+  protected onResizeHandleKeydown(event: KeyboardEvent, column: DatatableColumnRef) {
     if (!this.resizableColumns()) return;
 
     // Enter / Space are no-ops on the handle — but the underlying <th>'s

@@ -34,4 +34,12 @@ export class BsDatatableColumnDirective {
   readonly name = input('', { alias: 'bsDatatableColumn' });
 
   readonly sortable = input(true, { alias: 'bsDatatableColumnSortable' });
+
+  /**
+   * Plain-text fallback header. Always `null` for directive-defined columns —
+   * their `templateRef` is the source of truth. Exists so this type satisfies
+   * the shared `DatatableColumnRef` interface (used by programmatic columns
+   * via `<bs-datatable [columns]="...">`).
+   */
+  readonly label: string | null = null;
 }

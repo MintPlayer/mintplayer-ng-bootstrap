@@ -1,0 +1,10 @@
+# DEV-ONLY — do not deploy to production.
+# Auto-loaded by `docker compose up` next to docker-compose.yml.
+# Exposes the API on localhost:5000 so `ng serve`'s proxy.conf.json can
+# reach it without going through Traefik. The production VPS uses
+# `docker compose -f docker-compose.yml up` (single file) so this overlay
+# never applies there.
+services:
+  api:
+    ports:
+      - "5000:8080"

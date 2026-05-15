@@ -3,4 +3,5 @@ export * from './datatable-settings';
 export * from './datatable-sort-base';
 export * from './datatable-fetch';
 export * from './datatable-column/datatable-column.directive';
+export type { ColumnDef, DatatableColumnRef } from './datatable-column/column-def';
 export * from './row-template/row-template.directive';
