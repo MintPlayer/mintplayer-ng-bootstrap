@@ -1,3 +1,20 @@
+// Bootstrap configuration partials. Compile to no CSS on their own — they
+// exist so the @imports below can resolve $prefix, mixin references, the
+// colour map, etc.
+@import 'node_modules/bootstrap/scss/functions';
+@import 'node_modules/bootstrap/scss/variables';
+@import 'node_modules/bootstrap/scss/variables-dark';
+@import 'node_modules/bootstrap/scss/maps';
+@import 'node_modules/bootstrap/scss/mixins';
+@import 'node_modules/bootstrap/scss/utilities';
+
+// .btn, .btn-sm, .btn-primary, .btn-outline-primary, .btn-outline-danger
+// — used by the saved-query Load / Delete / 💾 Save buttons.
+@import 'node_modules/bootstrap/scss/buttons';
+
+// .form-control — used by the "Save current as…" name input.
+@import 'node_modules/bootstrap/scss/forms/form-control';
+
 :host {
   display: block;
   font-family: var(--bs-body-font-family, system-ui);

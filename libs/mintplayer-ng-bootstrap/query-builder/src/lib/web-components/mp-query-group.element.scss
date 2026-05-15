@@ -1,3 +1,19 @@
+// Bootstrap configuration partials. Compile to no CSS on their own — they
+// exist so `@import 'node_modules/bootstrap/scss/buttons'` below can resolve
+// $prefix, mixin references, the colour map, etc. Same pattern as
+// libs/mintplayer-ng-bootstrap/web-components/tab-control/src/styles/tab-control.styles.scss.
+@import 'node_modules/bootstrap/scss/functions';
+@import 'node_modules/bootstrap/scss/variables';
+@import 'node_modules/bootstrap/scss/variables-dark';
+@import 'node_modules/bootstrap/scss/maps';
+@import 'node_modules/bootstrap/scss/mixins';
+@import 'node_modules/bootstrap/scss/utilities';
+
+// .btn, .btn-primary, .btn-outline-primary, .btn-outline-secondary, .btn-link, .btn-sm
+// — used by the AND/OR toggle, the +Add condition/+Add group/+Add sub-query
+// actions, and the remove-group ×.
+@import 'node_modules/bootstrap/scss/buttons';
+
 :host {
   display: block;
   margin: 0.25rem 0;
@@ -24,46 +40,14 @@
   margin-left: auto;
 }
 
-// Bootstrap's .btn/.btn-primary/.btn-outline-primary aren't visible inside
-// this shadow root, so the AND/OR toggle would otherwise render identically
-// in both states. Reimplement just enough to distinguish active vs. inactive
-// using Bootstrap CSS variables (which DO inherit across the shadow boundary,
-// so the dark-mode toggle from #324 still applies).
+// Visual modifiers on top of Bootstrap's .btn — the underlying button look
+// (active vs. outline, disabled, focus ring) comes from the imported
+// bootstrap/scss/buttons rules above.
 .qb-logic-btn {
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 0.125rem 0.5rem;
-  border: 1px solid var(--bs-primary, #0d6efd);
-  border-radius: 0;
-  cursor: pointer;
-  background: transparent;
-  color: var(--bs-primary, #0d6efd);
-  line-height: 1.5;
-
-  &:first-child  { border-top-left-radius: 0.2rem; border-bottom-left-radius: 0.2rem; }
-  &:last-child   { border-top-right-radius: 0.2rem; border-bottom-right-radius: 0.2rem; }
-  &:not(:first-child) { margin-left: -1px; }
-
-  &.btn-primary {
-    background: var(--bs-primary, #0d6efd);
-    color: var(--bs-btn-color, #fff);
-  }
-
-  &:hover:not(:disabled):not(.btn-primary) {
-    background: rgba(var(--bs-primary-rgb, 13 110 253), 0.1);
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--bs-primary, #0d6efd);
-    outline-offset: 2px;
-    z-index: 1;
-  }
-
-  &:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-  }
 }
 
 .qb-remove-group {
