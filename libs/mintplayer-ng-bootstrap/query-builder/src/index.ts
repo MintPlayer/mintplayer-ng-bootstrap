@@ -18,6 +18,11 @@ export {
   defaultValueFor,
 } from './lib/model/operators';
 export type { OperatorCatalog, ValueShape } from './lib/model/operators';
+export { validateOperatorOverrides } from './lib/model/operator-overrides';
+export type {
+  OperatorOverrides,
+  ValidateOperatorOverridesResult,
+} from './lib/model/operator-overrides';
 export {
   emptyGroup,
   emptyCondition,
