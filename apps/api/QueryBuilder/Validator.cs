@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace MintPlayer.NgBootstrap.Api.QueryBuilder;
 
@@ -12,6 +13,12 @@ public static class Validator
     public const int MaxNodeCount = 1024;
     public const int MaxStringLength = 1024;
     public const int MaxArrayLength = 256;
+
+    // UUID v4 syntax check (PRD Appendix D rule #4). The "4" pins the version
+    // nibble; the [89ab] pins the variant nibble. Case-insensitive.
+    private static readonly Regex UuidV4Regex = new(
+        "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     public static void Validate(ExpressionNode tree, EntitySchemaDto rootEntity, List<EntitySchemaDto> schema)
     {
@@ -32,7 +39,8 @@ public static class Validator
         count++;
         if (count > MaxNodeCount) throw new QueryBuilderException("TREE_TOO_LARGE");
 
-        if (string.IsNullOrEmpty(node.Id)) throw new QueryBuilderException("INVALID_NODE_ID", "empty");
+        if (string.IsNullOrEmpty(node.Id) || !UuidV4Regex.IsMatch(node.Id))
+            throw new QueryBuilderException("INVALID_NODE_ID", node.Id);
         if (!ids.Add(node.Id)) throw new QueryBuilderException("DUPLICATE_NODE_ID", node.Id);
 
         switch (node)
@@ -124,6 +132,13 @@ public static class Validator
                 }
                 break;
             case "scalar":
+                // Null is never a valid scalar value (the parameterless shape is
+                // "null"; that path is taken by is-null/is-true/today/etc.). Without
+                // this guard, walker-side Expression.Constant on a non-nullable
+                // value type crashes, and string ops like `contains` silently
+                // degrade to `field.Contains("")` which is always true.
+                if (value is null || (value is JsonElement nullJe && nullJe.ValueKind == JsonValueKind.Null))
+                    throw new QueryBuilderException("INVALID_VALUE_SHAPE", $"{op} requires a value");
                 // Per-type bounds.
                 if (value is JsonElement sje)
                 {

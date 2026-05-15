@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json;
@@ -59,12 +60,18 @@ public sealed class QueryBuilderWalker<T> where T : class
             : parts.Aggregate(LinqExpression.OrElse);
     }
 
+    // Reflection cache keyed by (declaring type, camelCase field name). Walker
+    // instances are short-lived but the cache survives across requests, so
+    // hot-path lookups become single ConcurrentDictionary reads.
+    private static readonly ConcurrentDictionary<(Type, string), PropertyInfo> PropertyCache = new();
+
     private LinqExpression VisitCondition(ConditionNode c, ParameterExpression param)
     {
-        var propertyInfo = param.Type.GetProperty(
-            PascalCase(c.Field),
-            BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)
-            ?? throw new QueryBuilderException("UNKNOWN_FIELD", $"{param.Type.Name}.{c.Field}");
+        var propertyInfo = PropertyCache.GetOrAdd((param.Type, c.Field), key =>
+            key.Item1.GetProperty(
+                PascalCase(key.Item2),
+                BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)
+            ?? throw new QueryBuilderException("UNKNOWN_FIELD", $"{key.Item1.Name}.{key.Item2}"));
         var prop = LinqExpression.Property(param, propertyInfo);
 
         return c.Operator switch
@@ -101,8 +108,78 @@ public sealed class QueryBuilderWalker<T> where T : class
             "last-n-days" => DateRange(prop, TzDateMath.LastNDaysBounds(_now, _timezone, ReadN(c.Value))),
             "next-n-days" => DateRange(prop, TzDateMath.NextNDaysBounds(_now, _timezone, ReadN(c.Value))),
             "year-to-date" => DateRange(prop, TzDateMath.YearToDateBounds(_now, _timezone)),
+            // Array operators on JSON-encoded string columns. Per PRD: tags is a
+            // string holding a JSON array like `["urgent","blocked"]`. We translate
+            // each operator to `Contains("\"<token>\"")` which EF Core emits as
+            // SQL LIKE '%"<token>"%' — matches the exact JSON string token and
+            // excludes prefix-overlap (e.g. "urgent" won't match "urgent-care").
+            "any-of" => ArrayAny(prop, c.Value, negate: false),
+            "none-of" => ArrayAny(prop, c.Value, negate: true),
+            "all-of" => ArrayAll(prop, c.Value),
+            "is-empty" => ArrayIsEmpty(prop, negate: false),
+            "is-not-empty" => ArrayIsEmpty(prop, negate: true),
             _ => throw new QueryBuilderException("UNSUPPORTED_OPERATOR", c.Operator),
         };
+    }
+
+    private static readonly MethodInfo StringContainsMethod =
+        typeof(string).GetMethod(nameof(string.Contains), new[] { typeof(string) })!;
+
+    /// <summary>OR (any-of) / NOT-OR (none-of) of per-element JSON token Contains.</summary>
+    private static LinqExpression ArrayAny(MemberExpression prop, object? jsonValue, bool negate)
+    {
+        if (prop.Type != typeof(string))
+            throw new QueryBuilderException("INVALID_VALUE_SHAPE", "array ops require a JSON-string column");
+        if (jsonValue is not JsonElement je || je.ValueKind != JsonValueKind.Array)
+            throw new QueryBuilderException("INVALID_VALUE_SHAPE", "array ops require array value");
+        var elements = je.EnumerateArray().ToList();
+        if (elements.Count == 0)
+        {
+            // Empty value list: any-of trivially false, none-of trivially true.
+            return LinqExpression.Constant(negate);
+        }
+        LinqExpression? acc = null;
+        foreach (var el in elements)
+        {
+            var token = $"\"{el.GetString()}\"";
+            var call = LinqExpression.Call(prop, StringContainsMethod, LinqExpression.Constant(token));
+            acc = acc is null ? call : LinqExpression.OrElse(acc, call);
+        }
+        return negate ? LinqExpression.Not(acc!) : acc!;
+    }
+
+    /// <summary>AND (all-of) of per-element JSON token Contains.</summary>
+    private static LinqExpression ArrayAll(MemberExpression prop, object? jsonValue)
+    {
+        if (prop.Type != typeof(string))
+            throw new QueryBuilderException("INVALID_VALUE_SHAPE", "array ops require a JSON-string column");
+        if (jsonValue is not JsonElement je || je.ValueKind != JsonValueKind.Array)
+            throw new QueryBuilderException("INVALID_VALUE_SHAPE", "array ops require array value");
+        var elements = je.EnumerateArray().ToList();
+        if (elements.Count == 0)
+        {
+            // Empty value list: all-of vacuously true (∀∅ holds).
+            return LinqExpression.Constant(true);
+        }
+        LinqExpression? acc = null;
+        foreach (var el in elements)
+        {
+            var token = $"\"{el.GetString()}\"";
+            var call = LinqExpression.Call(prop, StringContainsMethod, LinqExpression.Constant(token));
+            acc = acc is null ? call : LinqExpression.AndAlso(acc, call);
+        }
+        return acc!;
+    }
+
+    /// <summary>is-empty: tags == "[]" || tags == null. is-not-empty: negation.</summary>
+    private static LinqExpression ArrayIsEmpty(MemberExpression prop, bool negate)
+    {
+        if (prop.Type != typeof(string))
+            throw new QueryBuilderException("INVALID_VALUE_SHAPE", "array ops require a JSON-string column");
+        var emptyLiteral = LinqExpression.Equal(prop, LinqExpression.Constant("[]", typeof(string)));
+        var nullLiteral = LinqExpression.Equal(prop, LinqExpression.Constant(null, typeof(string)));
+        var combined = LinqExpression.OrElse(emptyLiteral, nullLiteral);
+        return negate ? LinqExpression.Not(combined) : combined;
     }
 
     private LinqExpression VisitSubquery(SubQueryNode sq, ParameterExpression param)
@@ -251,8 +328,10 @@ public sealed class QueryBuilderWalker<T> where T : class
                     throw new QueryBuilderException("INVALID_DATE_FORMAT", "expected ISO 8601 string");
                 return je.GetDateTime();
             }
-            // Fallback: deserialise to the target type via JsonSerializer.
-            return JsonSerializer.Deserialize(je.GetRawText(), underlying);
+            // Fallback: deserialise to the target type without the GetRawText
+            // round-trip — JsonElement.Deserialize(Type) reads straight from
+            // the parsed token tree.
+            return je.Deserialize(underlying);
         }
         return Convert.ChangeType(jsonValue, underlying);
     }

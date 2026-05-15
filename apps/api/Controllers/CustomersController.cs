@@ -16,7 +16,8 @@ public class CustomersController(DemoDbContext db) : ControllerBase
         if (req.Query is null) return BadRequest(new { code = "EMPTY_QUERY" });
 
         var schemas = EntitySchemaService.AllForCustomers();
-        var rootEntity = schemas[0];
+        var rootEntity = schemas.FirstOrDefault(s => s.Name == "customers")
+            ?? throw new QueryBuilderException("SCHEMA_NOT_FOUND", "customers");
         Validator.Validate(req.Query, rootEntity, schemas);
 
         var tz = TzDateMath.ResolveTimezone(req.Timezone);

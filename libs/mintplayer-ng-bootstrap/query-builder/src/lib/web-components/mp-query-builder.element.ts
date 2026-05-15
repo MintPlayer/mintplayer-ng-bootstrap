@@ -115,6 +115,14 @@ export class MpQueryBuilderElement extends LitElement {
     initialValue: undefined,
   });
 
+  // Cached inputs to the messages-merge so willUpdate can skip rebuilding the
+  // effMessages object (and notifying every descendant via messagesContext)
+  // on ticks where neither source changed. Identity-only check — that's the
+  // contract for the Partial<QueryBuilderMessages> input.
+  private _lastMessagesOwn: Partial<QueryBuilderMessages> | undefined = undefined;
+  private _lastMessagesConsumed: Partial<QueryBuilderMessages> | undefined = undefined;
+  private _lastEffMessages: Partial<QueryBuilderMessages> | undefined = undefined;
+
   protected override willUpdate(_changed: PropertyValues): void {
     // editorRegistry — override semantics (this wins if set; else inherit).
     const effRegistry = this.editorRegistry ?? this._registryConsumer.value;
@@ -126,10 +134,21 @@ export class MpQueryBuilderElement extends LitElement {
     this._disabledProvider.setValue(effDisabled);
 
     // messages — merge semantics (per-key override; outer keys preserved unless replaced).
-    const effMessages = {
-      ...(this._messagesConsumer.value ?? {}),
-      ...(this.messages ?? {}),
-    };
+    // Memoize by identity of the two sources so we don't rebuild + re-notify the
+    // messagesContext on every tick (query changes, drag state flips, etc).
+    const ownMsg = this.messages;
+    const consumedMsg = this._messagesConsumer.value;
+    let effMessages: Partial<QueryBuilderMessages>;
+    if (this._lastEffMessages !== undefined
+        && this._lastMessagesOwn === ownMsg
+        && this._lastMessagesConsumed === consumedMsg) {
+      effMessages = this._lastEffMessages;
+    } else {
+      effMessages = { ...(consumedMsg ?? {}), ...(ownMsg ?? {}) };
+      this._lastMessagesOwn = ownMsg;
+      this._lastMessagesConsumed = consumedMsg;
+      this._lastEffMessages = effMessages;
+    }
     this._messagesProvider.setValue(effMessages);
 
     // maxDepth — override semantics (this wins if explicitly set, else inherit).

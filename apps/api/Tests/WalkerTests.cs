@@ -268,6 +268,90 @@ public class WalkerTests
     }
 
     [Fact]
+    public void ArrayAnyOf_MatchesAtLeastOneToken()
+    {
+        // SampleOrders: 1→"urgent", 2→[], 3→"blocked", 4→[]
+        var tree = new GroupNode { Id = "g", Logic = "and", Children = new()
+        {
+            new ConditionNode { Id = "c", Field = "tags", Operator = "any-of", Value = Json(new[] { "urgent" }) },
+        } };
+        Assert.Equal(new[] { 1 }, RunQuery(tree));
+    }
+
+    [Fact]
+    public void ArrayAnyOf_MultipleTokens_MatchesEither()
+    {
+        var tree = new GroupNode { Id = "g", Logic = "and", Children = new()
+        {
+            new ConditionNode { Id = "c", Field = "tags", Operator = "any-of", Value = Json(new[] { "urgent", "blocked" }) },
+        } };
+        Assert.Equal(new[] { 1, 3 }, RunQuery(tree));
+    }
+
+    [Fact]
+    public void ArrayAnyOf_EmptyValueList_MatchesNothing()
+    {
+        var tree = new GroupNode { Id = "g", Logic = "and", Children = new()
+        {
+            new ConditionNode { Id = "c", Field = "tags", Operator = "any-of", Value = Json(Array.Empty<string>()) },
+        } };
+        Assert.Empty(RunQuery(tree));
+    }
+
+    [Fact]
+    public void ArrayNoneOf_NegatesAnyOf()
+    {
+        // none-of(["urgent"]) — orders 2, 3, 4 don't have urgent.
+        var tree = new GroupNode { Id = "g", Logic = "and", Children = new()
+        {
+            new ConditionNode { Id = "c", Field = "tags", Operator = "none-of", Value = Json(new[] { "urgent" }) },
+        } };
+        Assert.Equal(new[] { 2, 3, 4 }, RunQuery(tree));
+    }
+
+    [Fact]
+    public void ArrayAllOf_AllElementsPresent()
+    {
+        // None of the sample orders have BOTH urgent AND blocked → no matches.
+        var tree = new GroupNode { Id = "g", Logic = "and", Children = new()
+        {
+            new ConditionNode { Id = "c", Field = "tags", Operator = "all-of", Value = Json(new[] { "urgent", "blocked" }) },
+        } };
+        Assert.Empty(RunQuery(tree));
+    }
+
+    [Fact]
+    public void ArrayAllOf_SingleElementInOrder1()
+    {
+        var tree = new GroupNode { Id = "g", Logic = "and", Children = new()
+        {
+            new ConditionNode { Id = "c", Field = "tags", Operator = "all-of", Value = Json(new[] { "urgent" }) },
+        } };
+        Assert.Equal(new[] { 1 }, RunQuery(tree));
+    }
+
+    [Fact]
+    public void ArrayIsEmpty_MatchesEmptyArrays()
+    {
+        // Orders 2 and 4 have Tags = "[]" → empty.
+        var tree = new GroupNode { Id = "g", Logic = "and", Children = new()
+        {
+            new ConditionNode { Id = "c", Field = "tags", Operator = "is-empty", Value = null },
+        } };
+        Assert.Equal(new[] { 2, 4 }, RunQuery(tree));
+    }
+
+    [Fact]
+    public void ArrayIsNotEmpty_MatchesNonEmpty()
+    {
+        var tree = new GroupNode { Id = "g", Logic = "and", Children = new()
+        {
+            new ConditionNode { Id = "c", Field = "tags", Operator = "is-not-empty", Value = null },
+        } };
+        Assert.Equal(new[] { 1, 3 }, RunQuery(tree));
+    }
+
+    [Fact]
     public void Subquery_FieldIsNotCollection_Throws()
     {
         // "status" is a string property, not a relation → subquery walker should reject.
