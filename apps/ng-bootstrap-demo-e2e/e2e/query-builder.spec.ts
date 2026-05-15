@@ -56,7 +56,7 @@ async function setupMocks(page: import('@playwright/test').Page) {
 
 test('query-builder demo: schema fetch + search round-trip', async ({ page }) => {
   await setupMocks(page);
-  await page.goto('/advanced/query-builder');
+  await page.goto('/enterprise/query-builder');
   await page.waitForLoadState('networkidle');
 
   // The bs-query-builder host renders inside the page.
@@ -94,7 +94,7 @@ test('query-builder demo: error response is surfaced', async ({ page }) => {
       body: JSON.stringify({ code: 'INVALID_OPERATOR_FOR_TYPE', detail: 'total/contains' }),
     });
   });
-  await page.goto('/advanced/query-builder');
+  await page.goto('/enterprise/query-builder');
   await page.waitForLoadState('networkidle');
 
   await page.getByRole('button', { name: 'Search' }).click();
