@@ -13,3 +13,7 @@ export const disabledContext = createContext<boolean | undefined>(
 export const messagesContext = createContext<Partial<QueryBuilderMessages> | undefined>(
   Symbol('mp-query-builder.messages'),
 );
+
+export const maxDepthContext = createContext<number | undefined>(
+  Symbol('mp-query-builder.maxDepth'),
+);

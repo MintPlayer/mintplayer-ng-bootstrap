@@ -17,6 +17,7 @@ import {
 import {
   disabledContext,
   editorRegistryContext,
+  maxDepthContext,
   messagesContext,
 } from './context';
 import { MpQueryGroupElement } from './mp-query-group.element';
@@ -79,6 +80,15 @@ export class MpQueryBuilderElement extends LitElement {
     initialValue: undefined,
   });
 
+  private _maxDepthConsumer = new ContextConsumer(this, {
+    context: maxDepthContext,
+    subscribe: true,
+  });
+  private _maxDepthProvider = new ContextProvider(this, {
+    context: maxDepthContext,
+    initialValue: undefined,
+  });
+
   protected override willUpdate(_changed: PropertyValues): void {
     // editorRegistry — override semantics (this wins if set; else inherit).
     const effRegistry = this.editorRegistry ?? this._registryConsumer.value;
@@ -95,6 +105,20 @@ export class MpQueryBuilderElement extends LitElement {
       ...(this.messages ?? {}),
     };
     this._messagesProvider.setValue(effMessages);
+
+    // maxDepth — override semantics (this wins if explicitly set, else inherit).
+    const inheritedMax = this._maxDepthConsumer.value;
+    const effMaxDepth = inheritedMax ?? this.maxDepth;
+    this._maxDepthProvider.setValue(effMaxDepth);
+  }
+
+  /**
+   * Effective max-depth used for the render check. The OUTER builder's
+   * configured maxDepth flows in via context; if absent, we fall back to
+   * this WC's own `maxDepth` property (which defaults to 32).
+   */
+  private effectiveMaxDepth(): number {
+    return this._maxDepthConsumer.value ?? this.maxDepth;
   }
 
   private _entitySchemaForCurrentRoot(): EntitySchema | null {
@@ -228,7 +252,7 @@ export class MpQueryBuilderElement extends LitElement {
   };
 
   protected override render(): TemplateResult | typeof nothing {
-    if (this.depth > this.maxDepth) {
+    if (this.depth > this.effectiveMaxDepth()) {
       return html`<div class="qb-too-deep" role="alert">Tree too deep</div>`;
     }
     const tree = this.query;
