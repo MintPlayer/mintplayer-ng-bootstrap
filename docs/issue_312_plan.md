@@ -20,18 +20,21 @@ Scope (in one PR):
 - Eight built-in value editors per data type (string, number, integer, date, datetime, boolean, enum, multi-list, **array**).
 - Full Infragistics-parity operator catalog including **date relative operators** (today, this/last/next week|month|year, last/next-N-days, year-to-date) and **array/set operators** (`any-of` / `all-of` / `none-of` / `is-empty` / `is-not-empty`) on a new `FieldType: 'array'`.
 - `ControlValueAccessor` on the Angular wrapper with re-entrancy-guarded `writeValue` ↔ model signal coordination.
-- Built-in `[data]` / `(filteredResult)` in-memory dataset filtering on the Angular wrapper.
-- Exported pure-function helpers: `evaluateQuery`, `visitTree<T>` (with lazy `walkInner: () => T`), `renderExpression`.
+- Exported pure-function helpers: `visitTree<T>` (with lazy `walkInner: () => T`) and `renderExpression`. **No `evaluateQuery`** — pagination / filtering / sorting are server-side only.
 - Custom value editors via WC-level factory callback (`EditorHandle { element, dispose? }`) and Angular `*bsQueryBuilderEditor` structural directive that desugars to factory callbacks.
 - Saved-query events (`saveQuery` / `loadQuery` / `deleteQuery`) with `[savedQueries]` input — events-only, consumer persists.
 - `@lit/context`-based propagation of `editorRegistry` / `disabled` / `messages` to nested sub-query WCs; `query-change` events fire `bubbles: false` and the root WC re-dispatches consolidated events.
+- **New `apps/api/` ASP.NET Core 9 Web API** — SQLite + EF Core, C# walker translating the JSON tree to `IQueryable<T>`, `POST /api/{entity}/search` endpoints returning `PagedResult<T>`. Drives the Angular demo end-to-end.
+- **Docker + compose + CI updates** — new `apps/api/Dockerfile`, root `docker-compose.yml` extended with an `api` service behind Traefik on `api.bootstrap.mintplayer.com`, `apps/ng-bootstrap-demo/proxy.conf.json` for `ng serve`, `actions/setup-dotnet@v4` + second `docker/build-push-action` in the GH Actions workflow.
 
 **Explicitly NOT in scope** (and not future-deferred work on this component either — these belong to other tools):
 
-- No backend serializers (`toSql` / `toODataFilter` / `toMongoFilter` / `toHasuraWhere` / `toPrismaWhere` / `toLinqPredicate` — all dropped). Backend translation is the consumer's server-side responsibility.
-- No `bs-datatable` modification. External wiring via `evaluateQuery` is documented in the demo.
+- No backend serializers in the frontend bundle (`toSql` / `toODataFilter` / `toMongoFilter` / `toHasuraWhere` / `toPrismaWhere` / `toLinqPredicate` — all dropped). Backend translation is the consumer's server-side responsibility. `apps/api/`'s walker is a *reference*, not a library.
+- No client-side `evaluateQuery`. Removed by design. The demo posts the tree to `apps/api/` and renders the paginated result.
+- No `[data]` input / `(filteredResult)` output on the Angular wrapper. The demo's search handler owns the HTTP call and feeds `bs-datatable` directly.
+- No `bs-datatable` modification.
 
-This is a multi-month effort, phased internally as 15 milestones inside one branch.
+This is a multi-month effort, phased internally as 16 milestones inside one branch.
 
 ---
 
@@ -43,9 +46,11 @@ This is a multi-month effort, phased internally as 15 milestones inside one bran
 
 ### Expected Behavior
 
-A new secondary entry point `@mintplayer/ng-bootstrap/query-builder` exports `bs-query-builder` (Angular) backed by `mp-query-builder` (Lit). The component renders a Bootstrap-styled tree of groups, conditions, and sub-queries; emits a canonical JSON `Expression` tree via two-way `[(query)]`; integrates with Angular reactive forms via `ControlValueAccessor`; optionally filters an in-memory dataset via `[data]` + `(filteredResult)`; supports custom value editors per field via the `*bsQueryBuilderEditor` directive.
+A new secondary entry point `@mintplayer/ng-bootstrap/query-builder` exports `bs-query-builder` (Angular) backed by `mp-query-builder` (Lit). The component renders a Bootstrap-styled tree of groups, conditions, and sub-queries; emits a canonical JSON `Expression` tree via two-way `[(query)]`; integrates with Angular reactive forms via `ControlValueAccessor`; supports custom value editors per field via the `*bsQueryBuilderEditor` directive.
 
-The canonical JSON tree is the **only wire format**. Consumers post it to their backend; the backend validates it against its schema and builds the DB query.
+The canonical JSON tree is the **only wire format**. Consumers post it to their backend; the backend validates it against its schema and builds the DB query. Pagination, filtering, and sorting are server-side.
+
+To prove the wire-format contract end-to-end, this PR also adds **`apps/api/`** — an ASP.NET Core 9 Web API with SQLite + EF Core persistence and a C# walker that translates the JSON tree into `IQueryable<T>` predicates. The Angular demo POSTs `QueryRequest { query, timezone?, page, pageSize, sort? }` to `POST /api/{entity}/search` and renders the resulting `PagedResult<T>` in a `bs-datatable`. The API ships behind Traefik on `api.bootstrap.mintplayer.com` via the existing GHCR + `appleboy/ssh-action` deploy pipeline.
 
 ### Impact
 
@@ -94,56 +99,94 @@ libs/mintplayer-ng-bootstrap/query-builder/                            NEW PACKA
 │       │   ├── query-builder.component.scss
 │       │   └── query-builder-editor.directive.ts         # *bsQueryBuilderEditor structural directive
 │       ├── model/
-│       │   ├── expression.ts                             # Expression discriminated union
+│       │   ├── expression.ts                             # Expression discriminated union + Operator union
 │       │   ├── field-def.ts                              # FieldDef, EntitySchema types (minimal — no relationKey)
 │       │   ├── operators.ts                              # OperatorCatalog per FieldType (incl. relative date + array ops)
 │       │   ├── tree-ops.ts                               # immutable add/remove/update/move helpers
-│       │   └── default-tree.ts                           # emptyGroup() / emptyCondition() factories
-│       ├── evaluator/
-│       │   ├── evaluate-query.ts                         # pure function; handles every operator incl. relative dates
-│       │   └── evaluate-query.spec.ts
+│       │   ├── default-tree.ts                           # emptyGroup() / emptyCondition() / cloneTree() / newId()
+│       │   ├── errors.ts                                 # MaxDepthExceededError
+│       │   ├── editor.ts                                 # EditorContext / EditorHandle / EditorRegistry
+│       │   ├── messages.ts                               # QueryBuilderMessages + DEFAULT_MESSAGES (EN)
+│       │   └── saved-query.ts                            # SavedQuery interface
 │       ├── visitor/
 │       │   ├── visit-tree.ts                             # lazy walker — `visitTree(tree, visitor)` with walkInner
 │       │   └── visitor-types.ts                          # TreeVisitor<T> contract
 │       ├── dnd/
 │       │   ├── drag-controller.ts                        # pointer-events controller, ghost in document.body
 │       │   └── drop-zone.ts                              # drop-slot rendering + hit-test
-│       ├── preview/
-│       │   └── render-expression.ts                      # tree → human-readable string
-│       └── i18n/
-│           └── default-messages.ts                       # operator labels (EN)
-├── ng-package.json
-├── tsconfig.lib.json
-├── tsconfig.spec.json
-├── vitest.config.ts
+│       └── preview/
+│           └── render-expression.ts                      # tree → human-readable string
 └── README.md
 
 apps/ng-bootstrap-demo/src/app/pages/advanced/query-builder/           NEW
-├── query-builder.component.ts
+├── query-builder.component.ts                            # demo page; wires bs-query-builder + HttpClient + bs-datatable
 ├── query-builder.component.html
 └── query-builder.component.scss
 
+apps/ng-bootstrap-demo/proxy.conf.json                                 NEW (proxies /api/* → :5000)
+
 apps/ng-bootstrap-demo-e2e/src/query-builder.spec.ts                   NEW
+
+apps/api/                                                              NEW PROJECT (ASP.NET Core 9)
+├── Api.csproj
+├── Program.cs
+├── appsettings.json
+├── appsettings.Development.json
+├── Dockerfile                                            # multi-stage; sdk:9.0-alpine → aspnet:9.0-alpine
+├── project.json                                          # Nx targets via nx:run-commands
+├── Models/
+│   ├── Order.cs
+│   ├── Customer.cs
+│   └── LineItem.cs
+├── Data/
+│   ├── DemoDbContext.cs                                  # EF Core + SQLite
+│   └── DemoSeed.cs                                       # ~1000 orders + ~200 customers + ~5000 line items
+├── QueryBuilder/
+│   ├── Expression.cs                                     # C# DTO mirror of the JSON tree
+│   ├── QueryBuilderWalker.cs                             # Expression → Expression<Func<T,bool>>
+│   ├── Validator.cs                                      # Appendix D checklist
+│   ├── EntitySchemaService.cs                            # returns EntitySchema[] for /schema endpoints
+│   └── TzDateMath.cs                                     # TimeZoneInfo + ISO 8601 week math
+└── Controllers/
+    ├── OrdersController.cs
+    └── CustomersController.cs
+
+apps/api/Tests/                                                        NEW
+├── Api.Tests.csproj                                      # xUnit
+├── WalkerTests.cs                                        # every operator from Appendix A
+└── ValidatorTests.cs                                     # every rule from Appendix D
+
+docker-compose.override.yml                                            NEW (dev-only port exposure)
 ```
 
 ### Files to modify
 
-- `libs/mintplayer-ng-bootstrap/package.json` — add `@lit/context` to `peerDependencies` alongside `lit` (verified by re-review: not in deps today).
-- **No changes to `libs/mintplayer-ng-bootstrap/package.ts`, `libs/mintplayer-ng-bootstrap/package.json` exports field, or `libs/mintplayer-ng-bootstrap/ng-package.secondary.cjs`.** Secondary-entry registration is auto-discovered by ng-packagr via the `**/ng-package.js` glob (verified against the datetime-picker precedent). The new entry only needs its own `ng-package.js`, `package.json`, `src/index.ts`, `tsconfig.lib.json`, `tsconfig.spec.json`, `vitest.config.ts` files — ng-packagr picks them up automatically on build.
+- `libs/mintplayer-ng-bootstrap/package.json` — add `@lit/context` to `peerDependencies` alongside `lit`. **DONE in M1.**
+- **No changes to `libs/mintplayer-ng-bootstrap/package.ts`, `libs/mintplayer-ng-bootstrap/package.json` exports field, or `libs/mintplayer-ng-bootstrap/ng-package.secondary.cjs`.** Secondary-entry registration is auto-discovered by ng-packagr via the `**/ng-package.js` glob (verified against the datetime-picker precedent). The new entry only needs its own `ng-package.js` + `index.ts` + `src/index.ts` — ng-packagr picks them up automatically on build.
 - `apps/ng-bootstrap-demo/src/app/app.routes.ts` (or equivalent) — add `/advanced/query-builder` route.
+- `apps/ng-bootstrap-demo/project.json` — wire `serve.options.proxyConfig` to the new `proxy.conf.json`.
 - Demo sidebar / navigation — link the demo page.
+- **`docker-compose.yml`** (root) — add `api` service with Traefik labels for `api.bootstrap.mintplayer.com`, attach to the existing external `web` network, mount `api-data` volume.
+- **`.github/workflows/publish-master.yml`** — insert `actions/setup-dotnet@v4` step + a second `docker/build-push-action@v6` block pushing `ghcr.io/mintplayer/mintplayer-ng-bootstrap-api:master` from `apps/api/Dockerfile`.
+- **`.github/workflows/pull-request.yml`** — insert `actions/setup-dotnet@v4` + `dotnet test apps/api/Tests/Api.Tests.csproj`.
 
-**No changes to `bs-datatable`.** Demo wires the builder to a datatable externally via `evaluateQuery`.
+**No changes to `bs-datatable`.** Demo wires the builder to a datatable externally by POSTing to `apps/api/` and feeding the response back.
 
 ### Dependencies
 
 - `lit` (already a workspace dep).
 - **NEW: `@lit/context`** (~3 kB tree-shakeable) — for propagating `editorRegistry` / `disabled` / `messages` to nested sub-query WCs.
-- No other runtime dependencies. Drag-and-drop uses native pointer events.
+- No other runtime dependencies for the library. Drag-and-drop uses native pointer events.
+- **`apps/api/` NuGet refs**:
+  - `Microsoft.AspNetCore.App` (framework reference, .NET 9)
+  - `Microsoft.EntityFrameworkCore.Sqlite` 9.x
+  - `Microsoft.EntityFrameworkCore.Design` 9.x (dev-only)
+  - `xunit`, `xunit.runner.visualstudio`, `Microsoft.NET.Test.Sdk`, `Microsoft.AspNetCore.Mvc.Testing` (test project)
 
 ### Architecture Considerations
 
 - **Wire format**: canonical JSON `Expression` tree only. Frontend never emits SQL/RQL/OData/Mongo/GraphQL. Backend validates the tree against its schema and builds the DB query. See [[feedback_json_wire_format_only]].
+- **No client-side evaluation.** `evaluateQuery` is not shipped. Pagination / filtering / sorting are server-side. The demo POSTs `QueryRequest` to `apps/api/` and renders the resulting `PagedResult<T>`. Single code path; no JS↔DB semantics divergence to debug.
 - **Tree representation**: plain JSON discriminated union, `kind: 'group' | 'condition' | 'subquery'`.
 - **WC ownership**: WC owns the tree, edit gestures, rendering. Angular wrapper bridges signals to WC properties + custom events, mirroring `bs-datetime-picker`'s pattern.
 - **Recursive WC + Lit Context** (three separate context tokens — `editorRegistryContext`, `disabledContext`, `messagesContext`): each `mp-query-builder` is BOTH a context consumer (inheriting from any outer `mp-query-builder` ancestor) AND a context provider (broadcasting the effective value to its descendants). The default `@lit/context` behaviour of "provider always wins, undefined included" is wrong here — we need "inner property overrides outer; otherwise inherit". Plumbing pattern:
@@ -182,8 +225,20 @@ apps/ng-bootstrap-demo-e2e/src/query-builder.spec.ts                   NEW
   }
   ```
   `walkInner` is lazy so visitors can scope context (alias prefixes, parameter arrays, etc.) around the sub-tree walk. Trivial eager visitors call `walkInner()` immediately.
-- **`evaluateQuery` and `[data]`/`(filteredResult)`**: `evaluateQuery` is a pure function. The Angular wrapper's `[data]` + `(filteredResult)` uses it internally. Single source of truth for in-memory evaluation semantics.
 - **Operator catalog**: closed but expanded per Infragistics. New entries: relative date operators, array operators on the new `'array'` `FieldType`.
+- **`apps/api/` backend project (NEW)**: ASP.NET Core 9 Web API, SQLite + EF Core. The C# walker (`QueryBuilderWalker<T>`) takes the JSON tree + the entity's `IQueryable<T>` and builds an `Expression<Func<T,bool>>` via `System.Linq.Expressions`, then applies `.Where(...)`. Per-operator branches:
+  - Equality / comparison ops → `BinaryExpression` (`Expression.Equal`, `Expression.LessThan`, …).
+  - String ops → `MethodCallExpression` on `string.Contains` / `StartsWith` / `EndsWith` (EF Core translates to SQL `LIKE`).
+  - Relative date ops → resolve `(startUtc, endUtc)` via `TzDateMath` using the request's `timezone` field, emit a `>=`/`<` predicate pair.
+  - Sub-queries → `Expression.Call(typeof(Queryable), "Any", …)` over the related entity's `DbSet<>` with the recursively-walked predicate. Requires EF navigation properties.
+  - Array ops on `Tags` (stored as JSON string column) → `EF.Functions.JsonContains` or manual deserialise + `Any`/`All` (SQLite-specific; abstracted behind a `JsonArrayColumn<T>` helper).
+- **`apps/api/` validation layer** runs the Appendix D checklist before the walker. Throws `QueryBuilderException(string code, string? detail = null)`; an `IExceptionFilter` translates it to HTTP 400 `{ code, detail }`.
+- **`apps/api/` seed**: idempotent. On first `DbContext.Database.EnsureCreated()`, populates ~200 customers (Faker-style: name, country ∈ {BE, NL, FR, DE, IT}, email), ~1000 orders (customerId, total, status ∈ {open, paid, shipped, cancelled}, orderDate spanning the last 365 days, tags as a JSON array column with 0–3 of {urgent, blocked, vip, low-priority}), ~5000 line items.
+- **`apps/api/` Nx integration**: plain `nx:run-commands` executor. `inputs: ["{projectRoot}/**/*.cs", "{projectRoot}/**/*.csproj"]` keeps `nx affected` participation working. Decision rationale: Nx 21 doesn't have `@nx/dotnet` (Nx 22+ only); the community `@nx-dotnet/core` plugin is archived/deprecated. Plain `run-commands` is ~30 lines, zero new plugin maintenance.
+- **`apps/api/` Docker**: multi-stage; `mcr.microsoft.com/dotnet/sdk:9.0-alpine` for build, `mcr.microsoft.com/dotnet/aspnet:9.0-alpine` for runtime (~85 MB final image). `VOLUME ["/data"]` for the SQLite file.
+- **`docker-compose.yml`**: keep existing `ng-bootstrap` service untouched; append `api` service behind Traefik on subdomain `api.bootstrap.mintplayer.com` (new DNS A record + Let's Encrypt cert via Traefik resolver). New `api-data` volume for SQLite persistence. New `docker-compose.override.yml` (committed; dev-only) exposes `5000:8080` for local `ng serve` proxy.
+- **Angular dev proxy**: `apps/ng-bootstrap-demo/proxy.conf.json` proxies `/api/*` → `http://localhost:5000`. Wired in `apps/ng-bootstrap-demo/project.json` under `serve.options.proxyConfig`.
+- **CI**: `actions/setup-dotnet@v4` with `dotnet-version: 9.0.x` inserted in both `publish-master.yml` and `pull-request.yml`. Second `docker/build-push-action@v6` step in publish workflow pushes `ghcr.io/mintplayer/mintplayer-ng-bootstrap-api:master`. SSH deploy step unchanged.
 - **Theming**: internal Lit styles use CSS custom properties; respects dark-mode toggle (#324).
 - **A11y**: `role="group"` on every group with `aria-label="AND group" | "OR group"`; native focus order; demo page documents the keymap per [[project_wc_aria_decisions]].
 - **i18n**: operator labels (including the new date relative + array ops) translatable via `[messages]` input. Default English.
@@ -284,22 +339,9 @@ Phases are internal milestones inside one PR.
 3. Render array ops with bracketed value lists (e.g. "Tags any of [urgent, blocked]").
 4. Exposed as a separate export.
 5. Rendered at the top of the WC's host inside a `<pre>` block (toggleable via `[showPreview]`, default `false`).
+6. Implemented as a `visitTree` consumer (eager) once M10 lands; before then, a direct recursive walker is fine.
 
-### Phase 10: `evaluateQuery` helper
-
-1. `evaluateQuery(tree, record, schema, options?): boolean` — pure function.
-2. **Implements the canonical semantics defined in PRD Appendix A.** Every operator's algorithm matches that table exactly so backend implementers can reuse the same rules.
-3. Operator coverage:
-   - All comparison ops (equals, lt, gt, between, etc.).
-   - **Relative date ops** — evaluated against `options.now ?? new Date()` in `options.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone`, **ISO 8601 week start (Monday)** per Appendix A. Use a calendar-aware date library (`Temporal` API or `date-fns-tz`) — millisecond arithmetic alone is wrong across DST transitions.
-   - **Array ops** — `any-of` (intersection non-empty), `all-of` (superset), `none-of` (disjoint), `is-empty` / `is-not-empty`.
-4. Sub-queries: optional `getRelatedRecords(record, fieldName): unknown[]` callback. `in` → true if at least one related record matches the sub-tree; `not-in` → true if zero match.
-5. NULL semantics: `equals`/`lt`/`gt`/`between` against `null` → `false`. Only `is-null`/`is-not-null` match nullness.
-6. String comparisons: case-insensitive by default; `EvaluateOptions { caseSensitive?: boolean; now?: Date; timezone?: string; getRelatedRecords?: ...; maxDepth?: number }`.
-7. **Recursion bound**: walker tracks depth; if `depth > (options.maxDepth ?? 32)` at any point, throws `MaxDepthExceededError`. Bounded by default so deep-nesting attacks can't stack-overflow the demo or unit-test runner.
-8. Unit tests cover every operator × every applicable type × null × sub-query. **One property-based test** (fast-check or hand-rolled) generates ~200 random valid trees + random records and asserts `evaluateQuery` (a) doesn't throw unexpectedly and (b) respects monotonicity (adding an AND clause never increases the match set).
-
-### Phase 11: Visitor API (lazy `walkInner`)
+### Phase 10: Visitor API (lazy `walkInner`)
 
 1. `visitTree<T>(tree, visitor, ctx, options?): T` in `visitor/visit-tree.ts`.
 2. Signature:
@@ -317,23 +359,24 @@ Phases are internal milestones inside one PR.
    ```
 3. Walker is called via `visitTree(tree, visitor, { schema, rootEntity }, { maxDepth: 32 })`.
 4. Tracks `depth` in `VisitorContext`; throws `MaxDepthExceededError` if depth exceeds `options.maxDepth ?? 32` at any point.
-5. Used in-tree by `evaluateQuery` (eager — calls `walkInner()` immediately) and `renderExpression` (eager).
+5. Used in-tree by `renderExpression` (eager — calls `walkInner()` immediately). Refactor M9's direct walker to use `visitTree` here.
 6. Exported for consumers who want to write their own JS-side transformations (debug printers, simplifiers, pre-validators).
 
-### Phase 12: Saved queries — events-only API
+### Phase 11: Saved queries — events-only API
 
 1. WC inputs: `savedQueries: SavedQuery[]` (default `[]`), `showSavedQueries: boolean` (default `false`).
 2. WC outputs: `save-query`, `load-query`, `delete-query` CustomEvents (non-bubbling; re-dispatched by root).
 3. Picker dropdown renders at top of host: list of saved queries with per-row Load + Delete buttons; "💾 Save current as..." action opens an inline name input.
 4. WC does not persist; consumer wires `[savedQueries]` and the three event handlers to their own store (localStorage / IndexedDB / REST).
 
-### Phase 13: Angular wrapper
+### Phase 12: Angular wrapper
 
 1. Implement `bs-query-builder` mirroring `bs-datetime-picker`'s pattern.
-2. Inputs: `[schema]`, `[rootEntity]`, `[messages]`, `[showPreview]`, `[showSavedQueries]`, `[maxDepth]`, `[timezone]`, `[savedQueries]`, `[operatorOverrides]`, `[disabled]`, `[data]`.
+2. Inputs: `[schema]`, `[rootEntity]`, `[messages]`, `[showPreview]`, `[showSavedQueries]`, `[maxDepth]`, `[timezone]`, `[savedQueries]`, `[operatorOverrides]`, `[disabled]`.
    - **`[timezone]`** defaults to `Intl.DateTimeFormat().resolvedOptions().timeZone` (browser-local IANA zone). Consumers post this same string alongside the tree to the backend so the backend resolves relative-date operators identically. Override e.g. for an admin tool that wants UTC pinning.
+   - **No `[data]` input.**
 3. Models: `[(query)]`.
-4. Outputs: `(queryChange)`, `(saveQuery)`, `(loadQuery)`, `(deleteQuery)`, `(filteredResult)`.
+4. Outputs: `(queryChange)`, `(saveQuery)`, `(loadQuery)`, `(deleteQuery)`. **No `(filteredResult)`.**
 5. **`ControlValueAccessor` with re-entrancy guard**:
    - `private writingFromForm = false`
    - `writeValue(tree)`: `this.writingFromForm = true; this.query.set(tree ?? emptyGroup()); queueMicrotask(() => this.writingFromForm = false);`
@@ -345,75 +388,126 @@ Phases are internal milestones inside one PR.
    - Per registered field: factory does `const view = vcr.createEmbeddedView(templateRef, { $implicit: ctx, ctx }); return { element: view.rootNodes[0], dispose: () => view.destroy() };`.
    - Wrapper forwards the `editorRegistry` to the WC's property; Lit context propagates to nested sub-query WCs automatically.
 7. **`[operatorOverrides]` validation**: in the wrapper, run a `validateOperatorOverrides(schema, overrides)` helper that intersects each `Operator[]` with `OperatorCatalog[field.type]` for the named field. Log a `console.warn` (with field name + offending operators) on (a) operators not in the catalog for that field's type, (b) operator-set fully empty after intersection. The validation does not throw; the WC silently uses the intersected (valid) set. Export `validateOperatorOverrides` for consumers who want compile-time-ish checking.
-8. **`[data]` + `(filteredResult)` with debounce + memoization**:
-   - Debounce: a `setTimeout(... , 100)` scheduled on every `query()` change; cleared if another change arrives before it fires. After settling, the filter recomputes once.
-   - Memoization: cache `(treeIdentity, dataIdentity)` → `filteredResult`. Tree identity = the root `Group.id` plus a depth-checked structural hash on dirty (NOT a deep equality every time — too expensive). Data identity = the input array's reference identity (immutable updates from the consumer are expected). On cache hit, emit the cached result without recomputing.
-   - Add a perf acceptance test (Phase 15): 10k-row dataset × ~10-node tree filter completes < 50 ms after the 100 ms debounce settles.
-9. Re-export public types: `Expression`, `Group`, `Condition`, `SubQueryCondition`, `FieldDef`, `EntitySchema`, `Operator`, `FieldType`, `OperatorCatalog`, `QueryBuilderMessages`, `EvaluateOptions`, `EditorContext`, `EditorHandle`, `SavedQuery`, `TreeVisitor`, `VisitorContext`, `MaxDepthExceededError`, `validateOperatorOverrides`.
+8. Re-export public types: `Expression`, `Group`, `Condition`, `SubQueryCondition`, `FieldDef`, `EntitySchema`, `Operator`, `FieldType`, `OperatorCatalog`, `QueryBuilderMessages`, `EditorContext`, `EditorHandle`, `EditorRegistry`, `SavedQuery`, `TreeVisitor`, `VisitorContext`, `VisitTreeOptions`, `MaxDepthExceededError`, `validateOperatorOverrides`.
 
-### Phase 14: Demo page
+### Phase 13: ASP.NET Core 9 API (`apps/api/`)
+
+1. **Scaffold** `apps/api/` with `dotnet new web -o apps/api -n Api -f net9.0`. Add NuGet refs: `Microsoft.EntityFrameworkCore.Sqlite` 9.x, `Microsoft.EntityFrameworkCore.Design` 9.x.
+2. **`project.json`** with Nx targets:
+   - `build` → `dotnet build apps/api/Api.csproj -c Release` (inputs: `**/*.cs`, `**/*.csproj`).
+   - `serve` → `dotnet watch --project apps/api/Api.csproj run --urls http://localhost:5000`.
+   - `publish` → `dotnet publish apps/api/Api.csproj -c Release -o dist/apps/api`.
+   - `test` → `dotnet test apps/api/Tests/Api.Tests.csproj`.
+3. **Model classes** (`Models/`): `Order { Id, CustomerId (FK), Total, Status, OrderDate, Tags (string JSON column) }`, `Customer { Id, Name, Country, Email, CreatedAt }`, `LineItem { Id, OrderId (FK), ProductName, UnitPrice, Quantity }`. EF Core navigation properties wired: `Customer.Orders`, `Order.Customer`, `Order.LineItems`, `LineItem.Order`.
+4. **`DemoDbContext`** (`Data/DemoDbContext.cs`): three `DbSet<>`s, `OnModelCreating` wires FKs + indexes on `Order.OrderDate` and `Order.CustomerId`.
+5. **`DemoSeed`** (`Data/DemoSeed.cs`): idempotent — `if (await db.Customers.AnyAsync()) return;`. Seeds:
+   - 200 customers via deterministic LCG-style RNG (seeded with `42`) so tests can pin expected counts.
+   - 1000 orders, each tied to a random customer; `OrderDate` distributed across the past 365 days; `Status` ∈ {open, paid, shipped, cancelled}; `Tags` JSON-encoded subset of {urgent, blocked, vip, low-priority}.
+   - ~5000 line items distributed across orders.
+6. **`QueryBuilderWalker<T>`** (`QueryBuilder/QueryBuilderWalker.cs`):
+   - Public `IQueryable<T> Apply(IQueryable<T> source, Expression tree, VisitorContext ctx)`.
+   - Internal `Expression<Func<T, bool>> Build(Expression node, VisitorContext ctx)`.
+   - Per-`Group`: combine children's predicates with `Expression.AndAlso` / `Expression.OrElse`; empty AND = `true` / empty OR = `false`.
+   - Per-`Condition`: switch on `Operator`, build the appropriate `BinaryExpression` / `MethodCallExpression`. String ops use `string.Contains`/`StartsWith`/`EndsWith` (EF translates to LIKE). `between` → `AndAlso(Ge(field, v1), Le(field, v2))`. Relative date ops → `TzDateMath` resolves UTC range tuple → `AndAlso(Ge(field, startUtc), Lt(field, endUtc))`.
+   - Per-`SubQueryCondition`: `Expression.Call(typeof(Queryable), "Any", new[]{ typeof(TRelated) }, ...)` over the relation's `DbSet<>`, with the inner predicate built recursively against `TRelated`.
+   - Array ops on `Tags` JSON: deserialise to `string[]` via `JsonSerializer`, apply `Any`/`All`/`Contains` / length checks. Hidden behind a `JsonArrayColumn<T>` extension helper (SQLite limitation; in PostgreSQL it'd map to `jsonb` operators).
+7. **`Validator`** (`QueryBuilder/Validator.cs`): runs Appendix D checklist top-to-bottom; throws `QueryBuilderException(string code, string? detail = null)` on first failure. Implements: strict JSON parse, depth cap 32, node cap 1024, ID format (UUID v4), ID uniqueness, kind validity, group/condition/subquery shape, field exists, operator valid for type, value shape per Appendix C, value length caps (string ≤ 1024, array ≤ 256), numeric range, date format, sub-query relation check, timezone IANA parse.
+8. **`EntitySchemaService`** (`QueryBuilder/EntitySchemaService.cs`): returns the hardcoded `EntitySchema[]` for the demo (Orders + Customers + LineItems with their fields), so `GET /api/{entity}/schema` is the single source of truth — Angular demo fetches schemas at startup rather than hardcoding them in the bundle.
+9. **`TzDateMath`** (`QueryBuilder/TzDateMath.cs`): `DayBoundsInTz`, `WeekBoundsInTz` (ISO 8601 Monday), `MonthBoundsInTz`, `YearBoundsInTz` — all via `TimeZoneInfo.ConvertTime*`. Computes local-zone midnight boundaries then converts to UTC for the predicate.
+10. **`Program.cs`**: `WebApplication.CreateBuilder`, `AddDbContext<DemoDbContext>` with SQLite connection string from config, `AddControllers().AddJsonOptions(...)`, `AddCors(...)` (origin `http://localhost:4200` in Development; production relies on Traefik subdomain split so no cross-origin needed), `await db.Database.EnsureCreatedAsync(); await DemoSeed.Run(db);`.
+11. **Controllers**: `OrdersController.Search(QueryRequest req)` → resolve IANA timezone via `TimeZoneInfo.FindSystemTimeZoneById` (UTC fallback), validate, walk, `OrderBy(sort) ?? OrderBy(o => o.Id)`, `Skip/Take`, materialise, return `PagedResult<OrderDto>`. `CustomersController.Search` mirrors.
+12. **`QueryBuilderExceptionFilter`** (added in `Program.cs`): catches `QueryBuilderException`, returns `BadRequest(new { code, detail })`.
+13. **`appsettings.json`**: `"ConnectionStrings": { "Default": "Data Source=/data/demo.db" }`. `appsettings.Development.json` overrides to `"Data Source=demo.db"`.
+
+### Phase 14: Docker + docker-compose + CI
+
+1. **`apps/api/Dockerfile`**: multi-stage per the recommendation memo (sdk:9.0-alpine → aspnet:9.0-alpine; copy csproj first, `dotnet restore`, copy rest, `dotnet publish -p:UseAppHost=false`; runtime image exposes 8080 + `VOLUME ["/data"]`).
+2. **`docker-compose.yml`** (root): keep existing `ng-bootstrap` service untouched; append `api` service with:
+   - `image: ghcr.io/mintplayer/mintplayer-ng-bootstrap-api:master`
+   - Traefik labels routing `api.bootstrap.mintplayer.com` → port 8080, with `letsencrypt` cert resolver.
+   - `volumes: ["api-data:/data"]` for SQLite persistence.
+   - `networks: [web]`, `restart: unless-stopped`.
+   - Top-level `volumes: { api-data: {} }`.
+3. **`docker-compose.override.yml`** (NEW, committed; header `# DEV-ONLY — do not deploy to prod`): exposes `5000:8080` on the `api` service so `ng serve`'s proxy can reach it locally without going through Traefik.
+4. **`apps/ng-bootstrap-demo/proxy.conf.json`** (NEW): `{ "/api": { "target": "http://localhost:5000", "secure": false, "changeOrigin": true, "logLevel": "debug" } }`.
+5. **`apps/ng-bootstrap-demo/project.json`**: under `serve.options`, add `"proxyConfig": "apps/ng-bootstrap-demo/proxy.conf.json"`.
+6. **`.github/workflows/publish-master.yml`**:
+   - Before the existing Docker build step, insert `- uses: actions/setup-dotnet@v4` with `dotnet-version: 9.0.x`.
+   - Insert `- run: dotnet build apps/api/Api.csproj -c Release` after setup-dotnet (so build failures fail fast outside Docker layer caching).
+   - Add a second `docker/build-push-action@v6` step with `context: .`, `file: apps/api/Dockerfile`, `push: true`, `tags: ghcr.io/mintplayer/mintplayer-ng-bootstrap-api:master`.
+   - SSH deploy step unchanged — `docker compose pull && docker compose up -d --remove-orphans` already handles N services.
+7. **`.github/workflows/pull-request.yml`**: insert `actions/setup-dotnet@v4` + `dotnet test apps/api/Tests/Api.Tests.csproj` after the existing Vitest run.
+8. **DNS / Traefik prerequisite**: user creates A record `api.bootstrap.mintplayer.com → VPS IP` ahead of first deploy. Traefik's `letsencrypt` resolver provisions the cert automatically on first request.
+
+### Phase 15: Demo page (server-side wiring)
 
 1. New demo page at `apps/ng-bootstrap-demo/src/app/pages/advanced/query-builder/`.
-2. Examples:
+2. On mount, the page fetches `GET /api/orders/schema` (and `/api/customers/schema`) to populate the `bs-query-builder`'s `[schema]` + `[rootEntity]` inputs dynamically.
+3. Examples / sections:
    - **Single-entity basics** (Orders schema with `tags: 'array'` field for set-op demo).
    - **Pre-loaded tree** with nested AND/OR.
    - **Multi-entity sub-query** (Customers + Orders).
    - **Relative date ops** ("orders in the last 7 days").
    - **Array set-ops** ("tags any-of [urgent, blocked]").
-   - **Live in-memory evaluation** via `[data]` + `(filteredResult)`.
-   - **External `bs-datatable` wiring** — demo shows `<bs-datatable [data]="filteredRows()">` pattern using `(filteredResult)` rather than modifying datatable.
+   - **Server-side search**: a "Search" button fires `POST /api/orders/search` with the `QueryRequest` envelope; the `PagedResult<Order>.items` feed `<bs-datatable [data]="result().items">`.
+   - **Pagination** on the `bs-datatable`: page change → re-POSTs with updated `page`/`pageSize` fields in `QueryRequest`.
    - **Custom editor** — `*bsQueryBuilderEditor="orderDate"` projecting `bs-datepicker`.
    - **Custom editor for an array field** — multi-select with custom rendering.
    - **Reactive forms** — same builder bound via `[formControl]`, showing lossless round-trip.
    - **Saved queries** — wired to `localStorage` in the demo.
-   - **JSON tree view** — live JSON next to the builder, illustrating the wire format.
-3. Document the keymap.
-4. Document the architectural principle: "frontend posts JSON; backend translates" — with a short code snippet showing a hypothetical backend endpoint receiving the tree.
+   - **JSON tree view** — live JSON next to the builder, illustrating the exact wire format.
+   - **Live POST inspector** — show the actual `QueryRequest` body that will be POSTed (good for "see, this is the JSON contract").
+4. Document the keymap.
+5. Document the architectural principle: "frontend posts JSON; backend translates" — with a link to `apps/api/QueryBuilder/QueryBuilderWalker.cs` as the reference implementation.
 
-### Phase 15: Testing + a11y validation
+### Phase 16: Testing + a11y validation
 
 1. **Unit tests** (Vitest):
    - Tree ops including `moveNode` with cross-tree field reset (descendant cycle blocking, schema-mismatch reset).
-   - `evaluateQuery` × every operator × every applicable type × null × sub-query × relative date ops with pinned `options.now`.
-   - `renderExpression` snapshots.
-   - `visitTree` eager vs lazy `walkInner` consumers.
+   - `renderExpression` snapshots (covers operator labels for every catalog entry).
+   - `visitTree` eager vs lazy `walkInner` consumers; depth tracking + `MaxDepthExceededError`.
    - Operator catalog: every type has a non-empty operator list; value-shape rules per operator.
 2. **WC unit tests**: field/op/value round-trips through `query-change`; cross-group + cross-tree DnD; Lit context propagation across sub-query WCs (changing outer `editorRegistry` reflects in inner conditions); event bubbling assertion (consumer sees exactly one `query-change` per edit regardless of depth).
 3. **Angular wrapper unit tests**:
    - `[(query)]` two-way binding.
    - `[formControl]` round-trip + `setDisabledState` + re-entrancy: editing the tree fires `onChange` exactly once per user edit; `setValue → onChange` does NOT re-enter.
    - `*bsQueryBuilderEditor` projection; disposal: `ApplicationRef.viewCount` stable across add/remove cycles.
-   - `[data]` + `(filteredResult)` emits on `(query)` changes; doesn't emit when `[data]` is absent.
    - `(saveQuery)` payload correctness.
-4. **Playwright e2e** (`apps/ng-bootstrap-demo-e2e/src/query-builder.spec.ts`):
-   - Build a flat AND query; assert preview.
-   - Build a nested OR group; assert tree shape via `evaluateQuery`.
-   - Sub-query across entities; assert matching row count.
-   - Cross-group DnD; assert tree shape.
-   - Cross-tree DnD with field reset; assert moved condition's field changed.
-   - Relative date op ("orders in the last 7 days"); assert correct rows match.
-   - Array op (`any-of`); assert correct rows match.
+4. **`apps/api/` xUnit tests** (`apps/api/Tests/`):
+   - `WalkerTests`: every operator from Appendix A × every applicable `FieldType`. Pin `now` via a `IClock` abstraction so relative-date tests are deterministic; pin `timezone = "Europe/Brussels"` to catch DST edge cases (spring-forward day, fall-back day).
+   - `ValidatorTests`: every rule from Appendix D — one assertion per error code, asserting the correct `code` string is thrown.
+   - `IntegrationTests` (uses `Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`): a few end-to-end happy-path POSTs against an in-memory SQLite DB, asserting response shape + result row counts.
+5. **Playwright e2e** (`apps/ng-bootstrap-demo-e2e/src/query-builder.spec.ts`):
+   - Spin up the API alongside the demo via the Playwright `webServer` config — start `dotnet run --project apps/api` before tests, on `http://localhost:5000`. Tests hit the live API.
+   - Build a flat AND query → click Search → assert rendered datatable rows.
+   - Build a nested OR group → search → assert row count via the backend.
+   - Sub-query across entities → search → assert matching count.
+   - Cross-group DnD → search → assert search succeeds with the moved condition.
+   - Cross-tree DnD with field reset → assert moved condition's field changed → search.
+   - Relative date op ("orders in the last 7 days") → search → assert row count.
+   - Array op (`any-of`) → search → assert row count.
+   - Pagination: page through results, assert correct `page`/`pageSize` in the requests (Playwright network interceptor).
    - `[formControl]` round-trip.
    - Save / refresh / load via localStorage.
    - Drag ghost cleanup on `pointercancel` (synthesized cancel event leaves no orphan in `document.body`).
    - Use `await page.waitForLoadState('networkidle')` per [[project_e2e_destructive_bootstrap]].
-5. **axe-core** — zero serious findings on the demo page.
-6. **Firefox smoke test** — drag handles don't shrink in flex containers ([[feedback_firefox_flex_shrink]]); ghost not clipped during cross-group drags.
-7. **Memory-leak test** — Angular `ApplicationRef.viewCount` stable across 100 add/remove condition cycles when custom editors are projected.
+6. **axe-core** — zero serious findings on the demo page.
+7. **Firefox smoke test** — drag handles don't shrink in flex containers ([[feedback_firefox_flex_shrink]]); ghost not clipped during cross-group drags.
+8. **Memory-leak test** — Angular `ApplicationRef.viewCount` stable across 100 add/remove condition cycles when custom editors are projected.
 
 ---
 
 ## Test Scenarios
 
 ### Scenario 1: Build a flat AND query
-- **Given**: Empty tree, Orders schema, demo page.
-- **When**: User clicks "Add condition" twice, picks `total > 100` and `status = "open"`.
-- **Then**: Preview reads `Total > 100 AND Status = "open"`. `evaluateQuery` returns `true` for `{ total: 150, status: "open" }`.
+- **Given**: Empty tree, Orders schema fetched from `GET /api/orders/schema`, demo page.
+- **When**: User clicks "Add condition" twice, picks `total > 100` and `status = "open"`. Clicks "Search".
+- **Then**: Preview reads `Total > 100 AND Status = "open"`. The POST body to `/api/orders/search` matches `{ query: { kind: 'group', logic: 'and', children: [...] }, page: 1, pageSize: 20, timezone: '<browser TZ>' }`. The response's `items` populate `bs-datatable`.
 
 ### Scenario 2: Nested group with OR
 - **Given**: Existing condition `total > 100`.
 - **When**: User adds a nested group with two `status` conditions, toggles OR.
-- **Then**: Preview reads `Total > 100 AND (Status = "open" OR Status = "pending")`.
+- **Then**: Preview reads `Total > 100 AND (Status = "open" OR Status = "pending")`. POST returns rows matching the backend's evaluation of the same tree.
 
 ### Scenario 3: Sub-query with Lit context inheritance
 - **Given**: Customers + Orders schemas; root entity Customers; outer wrapper has `*bsQueryBuilderEditor="orderDate"` projecting `bs-datepicker`.
@@ -429,13 +523,13 @@ Phases are internal milestones inside one PR.
 
 ### Scenario 5: Relative date operator
 - **Given**: Orders schema with `orderDate: 'date'`.
-- **When**: User adds a condition with operator `last-N-days`, sets N=7.
-- **Then**: Preview reads `Order date is in the last 7 days`. `evaluateQuery` with pinned `options.now = 2026-05-15` matches rows with `orderDate >= 2026-05-08`.
+- **When**: User adds a condition with operator `last-N-days`, sets N=7. Clicks Search.
+- **Then**: Preview reads `Order date is in the last 7 days`. The C# walker (per pinned `IClock` in tests) translates this to `OrderDate >= startUtc && OrderDate <= now` where `startUtc` is the start-of-day 7 days ago in the user's IANA zone, converted to UTC.
 
 ### Scenario 6: Array operator
 - **Given**: Orders schema with `tags: 'array'` of string.
-- **When**: User adds `tags any-of ["urgent", "blocked"]`.
-- **Then**: `evaluateQuery` returns `true` for `{ tags: ["urgent", "low-priority"] }`, `false` for `{ tags: ["low-priority"] }`.
+- **When**: User adds `tags any-of ["urgent", "blocked"]`. Clicks Search.
+- **Then**: Backend deserialises `Tags` JSON column to `string[]`, applies `Any` predicate. Result includes orders tagged "urgent" or "blocked"; excludes orders with disjoint tags.
 
 ### Scenario 7: `[formControl]` round-trip with re-entrancy guard
 - **Given**: `bs-query-builder` bound via `[formControl]="ctrl"`.
@@ -462,10 +556,10 @@ Phases are internal milestones inside one PR.
 - **When**: User uses Tab + Enter only to add a condition and fill it.
 - **Then**: Construction completes with no mouse use. `Alt+ArrowUp` / `Alt+ArrowDown` move rows among siblings.
 
-### Scenario 12: External `bs-datatable` wiring
-- **Given**: Demo wires `<bs-datatable [data]="filteredRows()">` where `filteredRows` is a signal fed by `(filteredResult)`.
-- **When**: User builds a query.
-- **Then**: Datatable reflects only matching rows. **No `bs-datatable` source modifications.**
+### Scenario 12: Server-side `bs-datatable` wiring
+- **Given**: Demo wires `<bs-datatable [data]="result().items" [totalCount]="result().totalCount">` where `result` is a signal fed by `http.post('/api/orders/search', ...)`.
+- **When**: User builds a query and clicks "Search". Then changes the page.
+- **Then**: Datatable reflects the server's paginated response. Pagination clicks fire fresh POSTs with updated `page`/`pageSize` in the `QueryRequest`. **No `bs-datatable` source modifications.**
 
 ---
 
@@ -482,11 +576,10 @@ Phases are internal milestones inside one PR.
 - [ ] Cycle prevention: dropping a group into its own descendant is rejected.
 - [ ] Lit context propagates `editorRegistry`/`disabled`/`messages` to nested sub-query WCs.
 - [ ] `query-change` events fire `bubbles: false`; consumer sees exactly one event per user edit regardless of depth.
-- [ ] `evaluateQuery` exported, pure, covers every operator with NULL semantics + relative dates + array ops + sub-queries.
 - [ ] `renderExpression` exported.
-- [ ] `visitTree<T>` exported with lazy `walkInner`.
+- [ ] `visitTree<T>` exported with lazy `walkInner`; depth tracked; throws `MaxDepthExceededError` past the bound.
 - [ ] `bs-query-builder` implements `ControlValueAccessor` with re-entrancy guard.
-- [ ] `[data]` + `(filteredResult)` work on the wrapper.
+- [ ] **No client-side `evaluateQuery` shipped; no `[data]`/`(filteredResult)` on the wrapper.**
 - [ ] `*bsQueryBuilderEditor` projects custom editors; `EditorHandle.dispose` called on every removal path; no Angular view leaks.
 - [ ] WC `editorRegistry` factory works for framework-agnostic consumers.
 - [ ] `(saveQuery)` / `(loadQuery)` / `(deleteQuery)` events fire with correct payloads.
@@ -501,23 +594,29 @@ Phases are internal milestones inside one PR.
 - [ ] Lit Context override semantics tested (Phase 15.2): inner inherits when its prop is unset, overrides when set, reverts to inherited on clear.
 - [ ] `maxDepth` default is `32` (finite). `evaluateQuery` / `visitTree` / `renderExpression` throw `MaxDepthExceededError` when exceeded.
 - [ ] `validateOperatorOverrides(schema, overrides)` exported; wrapper logs `console.warn` on invalid override entries; runtime uses only the intersected (valid) set.
-- [ ] `(filteredResult)` debounced 100ms + memoized by tree+data identity; 10k rows × 10-node tree filters in < 50 ms after debounce.
 - [ ] Shadow-DOM hit-test algorithm spec'd and tested across Chromium / Firefox / WebKit.
 - [ ] DnD cancellation on tree mutation: programmatic `[(query)]` reset mid-drag cleans up ghost and dispatches no `moveNode`.
 - [ ] `document.body` access guarded by `typeof document !== 'undefined'` (per dock precedent).
-- [ ] `[timezone]` input defaults to `Intl.DateTimeFormat().resolvedOptions().timeZone`. `evaluateQuery` honours `options.timezone`. Relative date ops resolve in the effective TZ. DST transitions covered by test (e.g. "today" on a spring-forward day in `Europe/Brussels`).
+- [ ] `[timezone]` input defaults to `Intl.DateTimeFormat().resolvedOptions().timeZone`. The C# walker honours the request's `timezone` envelope field; DST transitions covered by xUnit test (spring-forward + fall-back in `Europe/Brussels`).
+- [ ] **`apps/api/` builds clean** via `nx build api` (wrapping `dotnet build`).
+- [ ] **`apps/api/` xUnit tests pass** — every operator from Appendix A, every validation rule from Appendix D, integration happy-path POSTs.
+- [ ] **`docker compose up` (locally) brings up both services**; the Angular dev proxy resolves `/api/*` against the running API container; e2e tests pass against the live API.
+- [ ] **GH Actions builds and pushes both images** (`mintplayer-ng-bootstrap` and `mintplayer-ng-bootstrap-api`) on master.
+- [ ] **VPS deploys both services** via the existing `appleboy/ssh-action` step; Traefik routes the new `api.bootstrap.mintplayer.com` subdomain to the API container; Let's Encrypt cert provisions automatically.
 
 ---
 
 ## Risks & Open Considerations
 
-- **Scope is large.** 15 internal milestones, multi-month effort. Acknowledged.
+- **Scope is large.** 16 internal milestones (including a new ASP.NET Core backend, EF Core seed, walker, docker-compose + CI updates). Multi-month effort. Acknowledged.
 - **Lit Context recursive provider/consumer requires explicit plumbing.** The default `@lit/context` behaviour is "the nearest provider wins, even if its value is undefined." Our spec requires "inner overrides outer; otherwise inherit". The fix is a per-token `ContextConsumer` + `ContextProvider` pair on every `mp-query-builder`, with the provider's value computed from `this.<prop> ?? consumer.value` (or merge / OR for `messages` / `disabled`). Spec'd in Phase 7.3; Phase 15.2 test asserts (a) inner inherits when its own prop is unset, (b) inner overrides when its own prop is set, (c) clearing the inner's prop reverts to inherited. **Status: VERIFIED by spike on 2026-05-15** — `libs/mintplayer-ng-bootstrap/_spike-lit-context/spike.spec.ts` covers 8 scenarios (single-level, two-level inheritance, override, reactive propagation, clear-reverts-to-inherited, OR semantics, merge semantics, 3-deep nesting) — all pass against `@lit/context@1.1.6` in jsdom. The spike file is the reference shape for M7 implementation.
 - **Cross-browser `elementFromPoint` across shadow DOM**: modern Chromium/Firefox/WebKit support `document.elementsFromPoint()` (plural — returns composed path). Older WebKit (pre-2024) only returns the host. Fallback algorithm spec'd in Architecture §Drag-and-drop.
 - **Cross-tree DnD with field reset silently destroys values**: moving a 10-condition group across schemas resets 10 field/value assignments with no consent UI. Acceptable as v1; if user feedback complains, add a `(moveRequiresFieldReset)` event consumers can intercept.
 - **Custom-editor disposal is a NEW convention.** No precedent in this repo for disposing WC-mounted custom elements. Document the `EditorHandle` contract in the README + JSDoc so future contributors don't reinvent.
-- **In-memory `evaluateQuery` semantics may diverge from a backend's actual DB semantics.** `evaluateQuery` implements the canonical semantics from PRD Appendix A; backend implementers should refer to that appendix so their query language matches. If a backend deliberately diverges (e.g., case-sensitive string compare), document in the backend's own README per PRD Appendix F.
-- **`@lit/context` is NOT yet a workspace dep.** M1 must add it to `libs/mintplayer-ng-bootstrap/package.json` `peerDependencies` before any WC code references it.
+- **`apps/api/` is a new .NET stack in a JS-first workspace.** Maintenance burden ~1 day/year if we stay on LTS (.NET 10 LTS lands Nov 2025; .NET 9 is a current release with 18-month support window ending May 2026 — we'd need to upgrade to 10 before that). CI runner now installs the .NET SDK (`setup-dotnet@v4`); contributors need .NET 9 SDK locally or run via `docker compose`. Accepted because the demo backend proves the wire-format contract end-to-end and is the cleanest answer to "show me this works with a real backend".
+- **Subdomain DNS + Let's Encrypt cert** for `api.bootstrap.mintplayer.com` is a manual prerequisite (one A record). Traefik provisions the cert automatically on first request once the record resolves.
+- **SQLite + EF Core is a demo-grade store.** Single-writer concurrency, no replication, no full-text search beyond LIKE. Real RavenDB / Postgres consumers reuse the walker's architecture (validator + per-operator translator) but emit their own DB language. The walker file is documented as a reference, not a library.
+- **`@lit/context` is NOT yet a workspace dep.** M1 must add it to `libs/mintplayer-ng-bootstrap/package.json` `peerDependencies` before any WC code references it. ✅ Done in M1 commit.
 - **Saved-query name collision**: component does not dedupe. `(saveQuery)` fires regardless of whether the name exists; consumer's store decides overwrite / prompt / reject. Demo's localStorage example demonstrates overwrite-with-confirm as the reference pattern.
 
 ---
@@ -531,10 +630,26 @@ npx nx build mintplayer-ng-bootstrap
 # Unit tests for the query-builder entry
 npx nx test mintplayer-ng-bootstrap --testPathPattern=query-builder
 
-# Demo app
+# Build the ASP.NET API
+npx nx build api
+# or directly:
+dotnet build apps/api/Api.csproj -c Release
+
+# Run the API (with hot reload)
+npx nx serve api
+
+# API xUnit tests
+npx nx test api
+# or directly:
+dotnet test apps/api/Tests/Api.Tests.csproj
+
+# Demo app (proxies /api/* to http://localhost:5000)
 npm start
 
-# Playwright e2e
+# Both services via docker-compose (uses the override file for port exposure)
+docker compose up
+
+# Playwright e2e (needs the API running)
 npx nx e2e ng-bootstrap-demo-e2e --testPathPattern=query-builder
 ```
 
@@ -544,7 +659,8 @@ npx nx e2e ng-bootstrap-demo-e2e --testPathPattern=query-builder
 
 - `libs/mintplayer-ng-bootstrap/datetime-picker/` — primary precedent for WC + wrapper layout + CVA pattern. Study the `effect()`-driven WC-property push + `writeValue` interplay before designing the `[(query)]`/CVA re-entrancy guard.
 - `libs/mintplayer-ng-bootstrap/scheduler/src/components/scheduler/scheduler.component.ts` — second wrapper precedent.
-- `libs/mintplayer-ng-bootstrap/package.ts` and `ng-package.secondary.cjs` — registration mechanism to verify in M1.
+- `Dockerfile` + `docker-compose.yml` at repo root — existing single-service shape extending to two services in M14.
+- `.github/workflows/publish-master.yml` + `.github/workflows/pull-request.yml` — existing CI extending to include .NET in M14.
 - [[feedback_json_wire_format_only]] — architectural principle: frontend ships JSON tree only, no backend serializers.
 - [[feedback_pointer_over_html5_dnd]], [[feedback_pointerdown_preventdefault]], [[feedback_touch_action_immutable]] — DnD ground rules.
 - [[project_wc_aria_decisions]] — ARIA pattern + demo keymap requirement.
