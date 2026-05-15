@@ -65,6 +65,8 @@ export type {
 export { visitTree } from './lib/visitor/visit-tree';
 export { renderExpression } from './lib/preview/render-expression';
 export type { RenderExpressionOptions } from './lib/preview/render-expression';
+export { BsQueryBuilderComponent } from './lib/components/query-builder.component';
+export { BsQueryBuilderEditorDirective } from './lib/components/query-builder-editor.directive';
 export { MpQueryBuilderElement } from './lib/web-components/mp-query-builder.element';
 export { MpQueryGroupElement } from './lib/web-components/mp-query-group.element';
 export { MpQueryConditionElement } from './lib/web-components/mp-query-condition.element';

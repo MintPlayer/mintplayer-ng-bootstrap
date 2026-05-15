@@ -1,0 +1,8 @@
+<mp-query-builder
+  #wc
+  [attr.disabled]="effectiveDisabled() ? '' : null"
+  (query-change)="onQueryChange($event)"
+  (save-query)="onSaveQuery($event)"
+  (load-query)="onLoadQuery($event)"
+  (delete-query)="onDeleteQuery($event)"
+></mp-query-builder>
