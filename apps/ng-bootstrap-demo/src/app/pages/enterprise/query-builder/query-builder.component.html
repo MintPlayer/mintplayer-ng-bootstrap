@@ -50,6 +50,7 @@
   <bs-datatable
     [fetch]="fetchOrders"
     [(settings)]="settings"
+    [resizableColumns]="false"
   >
     <ng-template bsDatatableColumn="id">Id</ng-template>
     <ng-template bsDatatableColumn="customerId">Customer</ng-template>

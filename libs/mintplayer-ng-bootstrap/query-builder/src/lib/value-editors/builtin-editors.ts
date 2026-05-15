@@ -67,6 +67,7 @@ function scalarFactory(type: 'string' | 'number' | 'integer' | 'date' | 'datetim
       ctx.disabled,
       extra,
     );
+    el.setAttribute('aria-label', ctx.field.label);
     return { element: el };
   };
 }
@@ -98,6 +99,8 @@ function tupleFactory(scalarType: 'number' | 'integer' | 'date' | 'datetime'): B
 
     const i0 = makeInput(inputType, fmt(v0), (raw) => update(0, raw), ctx.disabled, extra);
     const i1 = makeInput(inputType, fmt(v1), (raw) => update(1, raw), ctx.disabled, extra);
+    i0.setAttribute('aria-label', `${ctx.field.label} (from)`);
+    i1.setAttribute('aria-label', `${ctx.field.label} (to)`);
     const sep = document.createElement('span');
     sep.textContent = ' … ';
     sep.className = 'qb-editor-tuple-sep';
@@ -122,6 +125,7 @@ function nInputFactory(): BuiltinFactory {
       { min: '1', step: '1' },
     );
     el.classList.add('qb-editor-n-input');
+    el.setAttribute('aria-label', `${ctx.field.label} — number of days`);
     return { element: el };
   };
 }
@@ -130,6 +134,7 @@ function selectFactory(options: FieldDefOption[]): BuiltinFactory {
   return (ctx) => {
     const select = document.createElement('select');
     select.className = 'form-select form-select-sm qb-editor-select';
+    select.setAttribute('aria-label', ctx.field.label);
     if (ctx.disabled) select.disabled = true;
     // Empty option for null state.
     const empty = document.createElement('option');
@@ -160,6 +165,7 @@ function multiSelectFactory(options: FieldDefOption[]): BuiltinFactory {
     const select = document.createElement('select');
     select.className = 'form-select form-select-sm qb-editor-multiselect';
     select.multiple = true;
+    select.setAttribute('aria-label', ctx.field.label);
     if (ctx.disabled) select.disabled = true;
     const current = Array.isArray(ctx.value) ? ctx.value : [];
     for (const opt of options) {
@@ -211,6 +217,7 @@ function chipInputFactory(parser: (raw: string) => unknown): BuiltinFactory {
       input.className = 'form-control form-control-sm qb-editor-chip-add';
       input.placeholder = '+ add';
       input.size = 8;
+      input.setAttribute('aria-label', `${ctx.field.label} — add value`);
       if (ctx.disabled) input.disabled = true;
       input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && input.value.trim() !== '') {

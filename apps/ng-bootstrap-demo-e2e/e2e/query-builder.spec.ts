@@ -63,8 +63,9 @@ test('query-builder demo: schema fetch + search round-trip', async ({ page }) =>
   const qb = page.locator('bs-query-builder');
   await expect(qb).toBeVisible();
 
-  // Initial "No results" line appears because the user hasn't searched yet.
-  await expect(page.getByText(/No results/)).toBeVisible();
+  // bs-datatable fires its fetch on mount, so the initial state already shows
+  // "2 matches" (the mocked response). No need to assert an empty state — we
+  // only care that Search after editing the tree fires another fetch round.
 
   // Add a condition by clicking the "+ Add condition" button (inside the WC's shadow root).
   // The button text is composed from messages.addCondition default.
