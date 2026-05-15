@@ -128,8 +128,8 @@ apps/ng-bootstrap-demo-e2e/src/query-builder.spec.ts                   NEW
 
 ### Files to modify
 
-- `libs/mintplayer-ng-bootstrap/package.ts` **or** `package.json` — register the new secondary entry point. **Registration mechanism to verify during M1** — the previous review flagged that `libs/mintplayer-ng-bootstrap/package.ts` only re-exports `package.json` today; either it's a typo in the precedent or there's a separate step. Confirm against the datetime-picker pattern.
-- `libs/mintplayer-ng-bootstrap/ng-package.secondary.cjs` — register `./query-builder`.
+- `libs/mintplayer-ng-bootstrap/package.json` — add `@lit/context` to `peerDependencies` alongside `lit` (verified by re-review: not in deps today).
+- **No changes to `libs/mintplayer-ng-bootstrap/package.ts`, `libs/mintplayer-ng-bootstrap/package.json` exports field, or `libs/mintplayer-ng-bootstrap/ng-package.secondary.cjs`.** Secondary-entry registration is auto-discovered by ng-packagr via the `**/ng-package.js` glob (verified against the datetime-picker precedent). The new entry only needs its own `ng-package.js`, `package.json`, `src/index.ts`, `tsconfig.lib.json`, `tsconfig.spec.json`, `vitest.config.ts` files — ng-packagr picks them up automatically on build.
 - `apps/ng-bootstrap-demo/src/app/app.routes.ts` (or equivalent) — add `/advanced/query-builder` route.
 - Demo sidebar / navigation — link the demo page.
 
@@ -146,7 +146,19 @@ apps/ng-bootstrap-demo-e2e/src/query-builder.spec.ts                   NEW
 - **Wire format**: canonical JSON `Expression` tree only. Frontend never emits SQL/RQL/OData/Mongo/GraphQL. Backend validates the tree against its schema and builds the DB query. See [[feedback_json_wire_format_only]].
 - **Tree representation**: plain JSON discriminated union, `kind: 'group' | 'condition' | 'subquery'`.
 - **WC ownership**: WC owns the tree, edit gestures, rendering. Angular wrapper bridges signals to WC properties + custom events, mirroring `bs-datetime-picker`'s pattern.
-- **Recursive WC + Lit Context**: each `mp-query-builder` provides a Lit context bundling `{ editorRegistry, disabled, messages }`. Sub-queries embed another `mp-query-builder` as a new context root that inherits the outer values unless explicitly overridden. Eliminates the propagation gap flagged in review.
+- **Recursive WC + Lit Context** (three separate context tokens — `editorRegistryContext`, `disabledContext`, `messagesContext`): each `mp-query-builder` is BOTH a context consumer (inheriting from any outer `mp-query-builder` ancestor) AND a context provider (broadcasting the effective value to its descendants). The default `@lit/context` behaviour of "provider always wins, undefined included" is wrong here — we need "inner property overrides outer; otherwise inherit". Plumbing pattern:
+  ```ts
+  // In mp-query-builder.element.ts
+  private _consumedRegistry = new ContextConsumer(this, { context: editorRegistryContext, subscribe: true });
+  private _registryProvider = new ContextProvider(this, { context: editorRegistryContext, initialValue: undefined });
+  willUpdate(changed: PropertyValues) {
+    this._registryProvider.setValue(this.editorRegistry ?? this._consumedRegistry.value);
+  }
+  ```
+  Per-token inheritance semantics:
+  - `editorRegistry`: **override** — `this.editorRegistry ?? consumedRegistry`. Inner can replace outer entirely.
+  - `disabled`: **OR** — `consumedDisabled || this.disabled`. A disabled outer disables the entire sub-tree; an inner can't re-enable.
+  - `messages`: **merge** — `{ ...consumedMessages, ...this.messages }`. Per-key override.
 - **Event bubbling**: `query-change`, `save-query`, `load-query`, `delete-query` CustomEvents fire with `bubbles: false`. Root `mp-query-builder` listens to its own internal mutation signals (Lit reactive controllers) and re-dispatches a single consolidated `query-change` event externally per user edit. Eliminates the N+1 event firing flagged in review.
 - **Custom editors**: WC-level `editorRegistry: Record<string, (ctx: EditorContext) => EditorHandle>` property. `EditorHandle = { element: HTMLElement; dispose?: () => void }`. WC calls `handle.dispose?.()` on every removal path: field change, row remove, parent group remove (recursive), DnD reparent across schemas. Angular wrapper's `*bsQueryBuilderEditor` directive aggregates content children into the registry; each entry uses `ViewContainerRef.createEmbeddedView` and returns `{ element: view.rootNodes[0], dispose: () => view.destroy() }`. This is a NEW disposal convention in this repo; document it explicitly.
 - **`ControlValueAccessor` re-entrancy**: `bs-query-builder` maintains a `writingFromForm: boolean` flag. `writeValue(tree)` sets the flag, writes to the `query` model signal, then clears the flag in a microtask. The `effect()` that propagates model changes to `onChange` early-returns when the flag is set. Prevents `writeValue → model → effect → onChange → FormControl → writeValue` infinite loop.
@@ -154,11 +166,13 @@ apps/ng-bootstrap-demo-e2e/src/query-builder.spec.ts                   NEW
   - Pointer events only (`pointerdown`/`pointermove`/`pointerup`/`pointercancel`).
   - `touch-action: none` on drag handles ([[feedback_touch_action_immutable]]).
   - No `preventDefault()` on touch `pointerdown` ([[feedback_pointerdown_preventdefault]]).
-  - **Ghost element rendered in `document.body`** (not in shadow DOM, to avoid clipping). `position: fixed`, `pointer-events: none`. Cleaned up on both `pointerup` and `pointercancel`.
+  - **Ghost element rendered in `document.body`** (not in shadow DOM, to avoid clipping). `position: fixed`, `pointer-events: none`. Cleaned up on both `pointerup` and `pointercancel`. Access to `document.body` is gated by `typeof document !== 'undefined'` (per dock precedent — see `mint-dock-manager.element.ts`).
   - **Cycle prevention**: on `pointerdown`, precompute a `Set<string>` of the dragged node's descendant ids. Drop targets test against the set in O(1) per `pointermove`.
   - **Drop slots**: `[data-drop-slot]` elements rendered between every pair of children + at the top and bottom of every group's body. Empty groups render a min-height-32px drop slot with "Drop here" placeholder during drag.
   - **Half-line hit test**: `event.clientY < rect.top + rect.height/2` → insert above the row; else below.
-  - **Cross-tree DnD**: drop slots tagged `data-qb-root="<rootId>"`. Drops across different `mp-query-builder` roots are accepted. The moved node retains its field/operator/value if the field exists in the target entity's schema; otherwise the field resets to the target's first field, operator resets to that field's first valid operator, value resets to empty.
+  - **Shadow-DOM hit-test algorithm** (cross-browser): prefer `document.elementsFromPoint(x, y)` (plural form — returns the composed path, supported in Chromium / Firefox / modern WebKit). Walk the returned array looking for an element with `[data-drop-slot]`. Fallback for older WebKit: walk the precomputed set of `mp-query-builder` host elements; for each, call `host.shadowRoot.elementFromPoint(x, y)` and check that descendant chain for `[data-drop-slot]`. Cap the recursive descent at `maxDepth` levels.
+  - **Cross-tree DnD**: drop slots tagged `data-qb-root="<rootId>"`. Drops across different `mp-query-builder` roots are accepted. The moved node retains its field/operator/value if the field exists in the target entity's schema; otherwise the field resets to the target's first field, operator resets to that field's first valid operator, value resets to empty. For group moves, walk all descendant conditions and apply the reset rule per condition.
+  - **Cancellation on tree mutation**: the `DragController` subscribes to the WC's `query` property changes via Lit's `updated()` lifecycle. If the dragged `sourceId` is no longer present in the new tree (e.g., a programmatic `[(query)]` reset fires mid-drag), the controller calls its `pointercancel` cleanup path immediately: removes the ghost from `document.body`, resets internal state, dispatches no `moveNode`.
 - **Visitor API**: `visitTree<T>(tree, visitor): T`. Visitor contract:
   ```ts
   interface TreeVisitor<T> {
@@ -182,13 +196,14 @@ Phases are internal milestones inside one PR.
 
 ### Phase 1: Data model + scaffold
 
-1. Create `libs/mintplayer-ng-bootstrap/query-builder/` secondary entry point (mirror `datetime-picker/`).
-2. Define `Expression`, `Group`, `Condition`, `SubQueryCondition`, `FieldDef`, `EntitySchema`, `Operator`, `FieldType` (including `'array'`), `OperatorCatalog`, `SavedQuery`, `EditorContext`, `EditorHandle` in `model/`.
-3. Define `TreeVisitor<T>` + `VisitorContext` in `visitor/visitor-types.ts` with `walkInner: () => T` on `subquery`.
-4. Define Lit context tokens in `web-components/context.ts`: `editorRegistryContext`, `disabledContext`, `messagesContext`.
-5. Define `emptyGroup()`, `emptyCondition()`, `emptySubquery()` factories + `cloneTree()` deep-clone.
-6. Verify registration step — read `datetime-picker` and `scheduler` ng-package files to confirm where new entries actually get listed (`package.ts` vs `package.json` vs `ng-package.secondary.cjs`).
-7. Verify `nx build mintplayer-ng-bootstrap` builds the empty entry point clean.
+1. Add `@lit/context` to `libs/mintplayer-ng-bootstrap/package.json` `peerDependencies`. Run `npm install` to pull it.
+2. Create `libs/mintplayer-ng-bootstrap/query-builder/` secondary entry point — copy from `datetime-picker/` config files (`ng-package.js`, `package.json`, `src/index.ts`, `tsconfig.lib.json`, `tsconfig.spec.json`, `vitest.config.ts`, `README.md`). The `ng-package.js` is a one-liner: `module.exports = require('../ng-package.secondary.cjs').secondaryEntry();`. No changes to parent `package.ts`, parent `package.json` exports, or `ng-package.secondary.cjs` (auto-discovery via `**/ng-package.js`).
+3. Define `Expression`, `Group`, `Condition`, `SubQueryCondition`, `FieldDef`, `EntitySchema`, `Operator`, `FieldType` (including `'array'`), `OperatorCatalog`, `SavedQuery`, `EditorContext`, `EditorHandle` in `model/`.
+4. Define `TreeVisitor<T>` + `VisitorContext` in `visitor/visitor-types.ts` with `walkInner: () => T` on `subquery`.
+5. Define Lit context tokens in `web-components/context.ts`: `editorRegistryContext`, `disabledContext`, `messagesContext`.
+6. Define `emptyGroup()`, `emptyCondition()`, `emptySubquery()` factories + `cloneTree()` deep-clone.
+7. Define `MaxDepthExceededError` (typed error thrown by `evaluateQuery` / `visitTree` / `renderExpression` when recursion exceeds `maxDepth`).
+8. Verify `nx build mintplayer-ng-bootstrap` builds the empty entry point clean.
 
 ### Phase 2: Lit WC scaffold — read-only tree rendering
 
@@ -238,25 +253,29 @@ Phases are internal milestones inside one PR.
 
 1. `add group` inserts a nested `Group` at any depth.
 2. `add sub-query` inserts a `SubQueryCondition`. Sub-query field is a relation field (`FieldDef.type === 'relation'`, `targetEntity` set); operator fixed to `in` / `not-in`; value is an entire nested `Group` rooted on `targetEntity`'s schema.
-3. The inner `<mp-query-builder>` inside a `SubQuery` is a new context root that inherits the outer's `editorRegistry`/`disabled`/`messages` via `@lit/context` unless its own property is set.
+3. **Lit Context consume-and-provide plumbing**. Each `mp-query-builder` instantiates three pairs of `ContextConsumer` + `ContextProvider` (one pair per context token). In `willUpdate`, compute the effective value per token and write to the provider:
+   - `editorRegistry` (override semantics): `effective = this.editorRegistry ?? this._consumedRegistry.value`
+   - `disabled` (OR semantics): `effective = (this._consumedDisabled.value ?? false) || (this.disabled ?? false)`
+   - `messages` (merge semantics): `effective = { ...(this._consumedMessages.value ?? {}), ...(this.messages ?? {}) }`
+   Each provider has `subscribe: true` on its consumer so outer changes propagate reactively. Each condition / subquery consumes from the nearest provider (its own `mp-query-builder`).
 4. `query-change`, `save-query`, `load-query`, `delete-query` CustomEvents fire with `bubbles: false`. Root WC tracks internal changes via Lit reactive controllers and re-dispatches a single consolidated `query-change` event externally per user edit.
-5. Recursion-safe: sub-queries can contain sub-queries. `maxDepth` input (default `Infinity`).
+5. Recursion-safe: sub-queries can contain sub-queries. **`maxDepth` input default `32`** (down from `Infinity` — see Risks). Exceeding `maxDepth` during render shows an inline "Tree too deep" placeholder for the violating subtree and emits a warning.
 
 ### Phase 8: Drag-and-drop reorder (within-group + cross-group + cross-tree)
 
 1. Drag handles (`bi-grip-vertical`) on every condition row and group header.
 2. `DragController` in `dnd/drag-controller.ts`:
-   - `pointerdown` on handle → record source node id + start position; precompute `descendantIds: Set<string>` for cycle prevention.
-   - Create ghost element by cloning the source row; append to `document.body`; `position: fixed; pointer-events: none; z-index: <high>`.
-   - `pointermove` → translate ghost; compute target drop slot via `elementFromPoint` (which crosses shadow DOM with `composed: true` semantics in modern browsers — fall back to per-root hit-test if needed).
-   - `pointerup` → if target slot exists and target is not in `descendantIds`, dispatch `moveNode(tree, sourceId, targetParentId, targetIndex, targetSchema)`. Clean up ghost.
+   - `pointerdown` on handle → record `sourceId` + `descendantIds: Set<string>` + start position.
+   - Create ghost by cloning the source row; gate on `typeof document !== 'undefined'`; append to `document.body`; `position: fixed; pointer-events: none; z-index: <high>`.
+   - `pointermove` → translate ghost; resolve drop target via the shadow-DOM hit-test algorithm (see Architecture). Reject if target id ∈ `descendantIds` (cycle).
+   - `pointerup` → if a valid target slot exists, dispatch `moveNode(tree, sourceId, targetParentId, targetIndex, targetSchema)`. Clean up ghost.
    - `pointercancel` → clean up ghost; no move dispatched.
 3. `touch-action: none` on handles.
-4. **Drop slots** (`dnd/drop-zone.ts`): rendered between every pair of children + at top/bottom of every group's body. Visible only during a drag. Empty group renders a min-height-32px placeholder.
+4. **Drop slots** (`dnd/drop-zone.ts`): rendered between every pair of children + at top/bottom of every group's body. Tagged with `data-drop-slot` + `data-qb-root="<rootId>"` + `data-parent-id` + `data-index`. Visible only during a drag. Empty group renders a min-height-32px placeholder.
 5. **Half-line hit-test**: `event.clientY < rect.top + rect.height/2` → insert above; else below.
 6. **Cross-group reparenting**: drop into another group's slot moves the node; node `kind` and contents preserved.
-7. **Cross-tree DnD** (across `mp-query-builder` roots): drop slots tagged `data-qb-root="<rootId>"`. Cross-root drops accepted. On drop, `moveNode` is invoked with the target schema. If the moved node's field exists in target schema → keep field/operator/value. Else → reset to target's first field, first valid operator, empty value. Sub-tree moves (groups) walk all descendant conditions and apply the same reset rule per condition.
-8. Cycle prevention: drop targets tested against `descendantIds`; matches rejected.
+7. **Cross-tree DnD** (across `mp-query-builder` roots): drops across `data-qb-root` boundaries accepted. On drop, `moveNode` is invoked with the target schema. If the moved node's field exists in target schema → keep field/operator/value. Else → reset to target's first field, first valid operator, empty value. Sub-tree moves (groups) walk all descendant conditions and apply the same reset rule per condition.
+8. **Cancellation on tree mutation**: in the WC's `updated(changedProps)`, if `changedProps.has('query')` and the drag is active and `sourceId` is not present in the new tree (use `findNodeById(newTree, sourceId)`), invoke `controller.cancel()` (same path as `pointercancel`): remove ghost, reset internal state, no `moveNode` dispatched.
 
 ### Phase 9: Expression preview rendering
 
@@ -269,18 +288,20 @@ Phases are internal milestones inside one PR.
 ### Phase 10: `evaluateQuery` helper
 
 1. `evaluateQuery(tree, record, schema, options?): boolean` — pure function.
-2. Operator coverage:
-   - All comparison ops (equals, lt, gt, between, etc.) — straightforward.
-   - **Relative date ops** — evaluated against `options.now ?? new Date()` so tests can pin time.
+2. **Implements the canonical semantics defined in PRD Appendix A.** Every operator's algorithm matches that table exactly so backend implementers can reuse the same rules.
+3. Operator coverage:
+   - All comparison ops (equals, lt, gt, between, etc.).
+   - **Relative date ops** — evaluated against `options.now ?? new Date()`, **boundaries in UTC**, **ISO 8601 week start (Monday)** per Appendix A.
    - **Array ops** — `any-of` (intersection non-empty), `all-of` (superset), `none-of` (disjoint), `is-empty` / `is-not-empty`.
-3. Sub-queries: optional `getRelatedRecords(record, fieldName): unknown[]` callback. `in` → true if at least one related record matches the sub-tree; `not-in` → true if zero match.
-4. NULL semantics: `equals`/`lt`/`gt`/`between` against `null` → `false`. Only `is-null`/`is-not-null` match nullness.
-5. String comparisons: case-insensitive by default; `EvaluateOptions { caseSensitive?: boolean; now?: Date; getRelatedRecords?: ... }`.
-6. Unit tests cover every operator × every applicable type × null × sub-query.
+4. Sub-queries: optional `getRelatedRecords(record, fieldName): unknown[]` callback. `in` → true if at least one related record matches the sub-tree; `not-in` → true if zero match.
+5. NULL semantics: `equals`/`lt`/`gt`/`between` against `null` → `false`. Only `is-null`/`is-not-null` match nullness.
+6. String comparisons: case-insensitive by default; `EvaluateOptions { caseSensitive?: boolean; now?: Date; getRelatedRecords?: ...; maxDepth?: number }`.
+7. **Recursion bound**: walker tracks depth; if `depth > (options.maxDepth ?? 32)` at any point, throws `MaxDepthExceededError`. Bounded by default so deep-nesting attacks can't stack-overflow the demo or unit-test runner.
+8. Unit tests cover every operator × every applicable type × null × sub-query. **One property-based test** (fast-check or hand-rolled) generates ~200 random valid trees + random records and asserts `evaluateQuery` (a) doesn't throw unexpectedly and (b) respects monotonicity (adding an AND clause never increases the match set).
 
 ### Phase 11: Visitor API (lazy `walkInner`)
 
-1. `visitTree<T>(tree, visitor): T` in `visitor/visit-tree.ts`.
+1. `visitTree<T>(tree, visitor, ctx, options?): T` in `visitor/visit-tree.ts`.
 2. Signature:
    ```ts
    interface TreeVisitor<T> {
@@ -294,9 +315,10 @@ Phases are internal milestones inside one PR.
      depth: number;
    }
    ```
-3. Walker is called via `visitTree(tree, visitor, { schema, rootEntity })`.
-4. Used in-tree by `evaluateQuery` (eager — calls `walkInner()` immediately) and `renderExpression` (eager).
-5. Exported for consumers who want to write their own JS-side transformations (debug printers, simplifiers, pre-validators).
+3. Walker is called via `visitTree(tree, visitor, { schema, rootEntity }, { maxDepth: 32 })`.
+4. Tracks `depth` in `VisitorContext`; throws `MaxDepthExceededError` if depth exceeds `options.maxDepth ?? 32` at any point.
+5. Used in-tree by `evaluateQuery` (eager — calls `walkInner()` immediately) and `renderExpression` (eager).
+6. Exported for consumers who want to write their own JS-side transformations (debug printers, simplifiers, pre-validators).
 
 ### Phase 12: Saved queries — events-only API
 
@@ -321,8 +343,12 @@ Phases are internal milestones inside one PR.
    - `@ContentChildren(QueryBuilderEditorDirective)` aggregated in the wrapper into an `editorRegistry: Record<string, (ctx) => EditorHandle>`.
    - Per registered field: factory does `const view = vcr.createEmbeddedView(templateRef, { $implicit: ctx, ctx }); return { element: view.rootNodes[0], dispose: () => view.destroy() };`.
    - Wrapper forwards the `editorRegistry` to the WC's property; Lit context propagates to nested sub-query WCs automatically.
-7. **`[data]` + `(filteredResult)`**: `effect()` recomputes `data().filter(row => evaluateQuery(query(), row, schemaForRoot()))` on changes; emits `(filteredResult)`.
-8. Re-export public types: `Expression`, `Group`, `Condition`, `SubQueryCondition`, `FieldDef`, `EntitySchema`, `Operator`, `FieldType`, `OperatorCatalog`, `QueryBuilderMessages`, `EvaluateOptions`, `EditorContext`, `EditorHandle`, `SavedQuery`, `TreeVisitor`, `VisitorContext`.
+7. **`[operatorOverrides]` validation**: in the wrapper, run a `validateOperatorOverrides(schema, overrides)` helper that intersects each `Operator[]` with `OperatorCatalog[field.type]` for the named field. Log a `console.warn` (with field name + offending operators) on (a) operators not in the catalog for that field's type, (b) operator-set fully empty after intersection. The validation does not throw; the WC silently uses the intersected (valid) set. Export `validateOperatorOverrides` for consumers who want compile-time-ish checking.
+8. **`[data]` + `(filteredResult)` with debounce + memoization**:
+   - Debounce: a `setTimeout(... , 100)` scheduled on every `query()` change; cleared if another change arrives before it fires. After settling, the filter recomputes once.
+   - Memoization: cache `(treeIdentity, dataIdentity)` → `filteredResult`. Tree identity = the root `Group.id` plus a depth-checked structural hash on dirty (NOT a deep equality every time — too expensive). Data identity = the input array's reference identity (immutable updates from the consumer are expected). On cache hit, emit the cached result without recomputing.
+   - Add a perf acceptance test (Phase 15): 10k-row dataset × ~10-node tree filter completes < 50 ms after the 100 ms debounce settles.
+9. Re-export public types: `Expression`, `Group`, `Condition`, `SubQueryCondition`, `FieldDef`, `EntitySchema`, `Operator`, `FieldType`, `OperatorCatalog`, `QueryBuilderMessages`, `EvaluateOptions`, `EditorContext`, `EditorHandle`, `SavedQuery`, `TreeVisitor`, `VisitorContext`, `MaxDepthExceededError`, `validateOperatorOverrides`.
 
 ### Phase 14: Demo page
 
@@ -470,19 +496,27 @@ Phases are internal milestones inside one PR.
 - [ ] Memory-leak test passes (`ApplicationRef.viewCount` stable across 100 cycles).
 - [ ] **No `bs-datatable` source changes.**
 - [ ] **No backend serializer code in the library.**
+- [ ] `@lit/context` added to `libs/mintplayer-ng-bootstrap/package.json` peerDependencies in M1.
+- [ ] Lit Context override semantics tested (Phase 15.2): inner inherits when its prop is unset, overrides when set, reverts to inherited on clear.
+- [ ] `maxDepth` default is `32` (finite). `evaluateQuery` / `visitTree` / `renderExpression` throw `MaxDepthExceededError` when exceeded.
+- [ ] `validateOperatorOverrides(schema, overrides)` exported; wrapper logs `console.warn` on invalid override entries; runtime uses only the intersected (valid) set.
+- [ ] `(filteredResult)` debounced 100ms + memoized by tree+data identity; 10k rows × 10-node tree filters in < 50 ms after debounce.
+- [ ] Shadow-DOM hit-test algorithm spec'd and tested across Chromium / Firefox / WebKit.
+- [ ] DnD cancellation on tree mutation: programmatic `[(query)]` reset mid-drag cleans up ghost and dispatches no `moveNode`.
+- [ ] `document.body` access guarded by `typeof document !== 'undefined'` (per dock precedent).
 
 ---
 
 ## Risks & Open Considerations
 
 - **Scope is large.** 15 internal milestones, multi-month effort. Acknowledged.
-- **Lit context with a recursive element is mildly unusual.** Inner `mp-query-builder` is both a context *consumer* (inherits outer's values) and a context *provider* (re-broadcasts to its own children, possibly with overrides). Verify with the `@lit/context` docs that nested provider/consumer chains work as expected; likely fine but worth a focused test.
-- **`elementFromPoint` across shadow DOM**: modern browsers support `composedPath()` and `elementsFromPoint()` that pierce shadow roots. Test in Chromium + Firefox + WebKit if Playwright covers all three.
-- **Cross-tree DnD with field reset**: when a *group* is moved across trees, every descendant condition must be checked individually for field validity. Performance is fine (these trees are small, single-digit nodes typically) but the logic is non-trivial — add a focused unit test.
-- **Registration step uncertainty**: the previous code-review pass flagged `libs/mintplayer-ng-bootstrap/package.ts` as suspect — file only re-exports `package.json` today. M1 must verify the actual registration mechanism against the datetime-picker precedent before proceeding.
+- **Lit Context recursive provider/consumer requires explicit plumbing.** The default `@lit/context` behaviour is "the nearest provider wins, even if its value is undefined." Our spec requires "inner overrides outer; otherwise inherit". The fix is a per-token `ContextConsumer` + `ContextProvider` pair on every `mp-query-builder`, with the provider's value computed from `this.<prop> ?? consumer.value` (or merge / OR for `messages` / `disabled`). Spec'd in Phase 7.3; Phase 15.2 test asserts (a) inner inherits when its own prop is unset, (b) inner overrides when its own prop is set, (c) clearing the inner's prop reverts to inherited.
+- **Cross-browser `elementFromPoint` across shadow DOM**: modern Chromium/Firefox/WebKit support `document.elementsFromPoint()` (plural — returns composed path). Older WebKit (pre-2024) only returns the host. Fallback algorithm spec'd in Architecture §Drag-and-drop.
+- **Cross-tree DnD with field reset silently destroys values**: moving a 10-condition group across schemas resets 10 field/value assignments with no consent UI. Acceptable as v1; if user feedback complains, add a `(moveRequiresFieldReset)` event consumers can intercept.
 - **Custom-editor disposal is a NEW convention.** No precedent in this repo for disposing WC-mounted custom elements. Document the `EditorHandle` contract in the README + JSDoc so future contributors don't reinvent.
-- **In-memory `evaluateQuery` semantics may diverge from a backend's actual DB semantics.** Document explicitly: `evaluateQuery` is the *frontend reference* for the UI's live preview / `[data]` filter / unit tests. Backends are free to define their own semantics (e.g., a SQL backend might use case-sensitive string compare by default where `evaluateQuery` is case-insensitive). The JSON wire format is the contract; semantics belong to each backend.
-- **`maxDepth: Infinity` default** — there's no built-in protection against pathological trees. Consumers wanting protection should set a finite `maxDepth`.
+- **In-memory `evaluateQuery` semantics may diverge from a backend's actual DB semantics.** `evaluateQuery` implements the canonical semantics from PRD Appendix A; backend implementers should refer to that appendix so their query language matches. If a backend deliberately diverges (e.g., case-sensitive string compare), document in the backend's own README per PRD Appendix F.
+- **`@lit/context` is NOT yet a workspace dep.** M1 must add it to `libs/mintplayer-ng-bootstrap/package.json` `peerDependencies` before any WC code references it.
+- **Saved-query name collision**: component does not dedupe. `(saveQuery)` fires regardless of whether the name exists; consumer's store decides overwrite / prompt / reject. Demo's localStorage example demonstrates overwrite-with-confirm as the reference pattern.
 
 ---
 

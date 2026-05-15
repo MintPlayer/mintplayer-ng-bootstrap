@@ -86,7 +86,7 @@ Reference UI surface: Infragistics `igxQueryBuilder`. We mimic the feature set, 
   - `[messages]: Partial<QueryBuilderMessages>`
   - `[showPreview]: boolean` (default `false`)
   - `[showSavedQueries]: boolean` (default `false`)
-  - `[maxDepth]: number` (default `Infinity`)
+  - `[maxDepth]: number` (default `32` — finite to prevent stack overflow on pathological trees; consumers can raise or lower)
   - `[savedQueries]: SavedQuery[]` (default `[]`)
   - `[operatorOverrides]: Partial<Record<string, Operator[]>>`
   - `[disabled]: boolean` (default `false`)
@@ -141,7 +141,7 @@ Reference UI surface: Infragistics `igxQueryBuilder`. We mimic the feature set, 
 
 **Recursive WC propagation + event semantics**
 
-- [ ] **FR-24**: Lit context (`@lit/context`) propagates `editorRegistry` / `disabled` / `messages` from the outer `mp-query-builder` to all nested sub-query `mp-query-builder` instances. Inner instances inherit unless their own property is explicitly set.
+- [ ] **FR-24**: Lit context (`@lit/context`) propagates `editorRegistry` / `disabled` / `messages` from the outer `mp-query-builder` to all nested sub-query `mp-query-builder` instances. Each `mp-query-builder` is both a `ContextConsumer` (subscribes to outer changes) and a `ContextProvider` (broadcasts to descendants). Per-token inheritance semantics: `editorRegistry` = **override** (`this.editorRegistry ?? consumed`); `disabled` = **OR** (`consumed || this.disabled`); `messages` = **merge** (`{ ...consumed, ...this.messages }`). The effective value is computed in `willUpdate` and pushed to the provider; `subscribe: true` on each consumer ensures reactive propagation when an outer changes.
 - [ ] **FR-25**: `query-change`, `save-query`, `load-query`, `delete-query` CustomEvents fire from inner WCs with `bubbles: false`. The outermost root listens to internal mutations via Lit reactive controllers and re-dispatches a single consolidated `query-change` event externally per user edit. Consumer sees exactly one event per edit regardless of tree depth.
 
 **Saved queries**
@@ -155,12 +155,21 @@ Reference UI surface: Infragistics `igxQueryBuilder`. We mimic the feature set, 
 - [ ] **FR-29**: ARIA — each group renders `role="group"` with `aria-label="AND group" | "OR group"`; native focus order through form controls.
 - [ ] **FR-30**: Demo page at `/advanced/query-builder` covers all 12 test scenarios including the external `bs-datatable` wiring example. Keymap documented.
 - [ ] **FR-31**: Theming — internal Lit styles use CSS custom properties; dark-mode toggle from #324 applies without component-specific changes.
-- [ ] **FR-32**: Public types re-exported: `Expression`, `Group`, `Condition`, `SubQueryCondition`, `FieldDef`, `EntitySchema`, `Operator`, `FieldType`, `OperatorCatalog`, `QueryBuilderMessages`, `EvaluateOptions`, `EditorContext`, `EditorHandle`, `SavedQuery`, `TreeVisitor`, `VisitorContext`.
+- [ ] **FR-32**: Public types re-exported: `Expression`, `Group`, `Condition`, `SubQueryCondition`, `FieldDef`, `EntitySchema`, `Operator`, `FieldType`, `OperatorCatalog`, `QueryBuilderMessages`, `EvaluateOptions`, `EditorContext`, `EditorHandle`, `SavedQuery`, `TreeVisitor`, `VisitorContext`, `MaxDepthExceededError`, `validateOperatorOverrides`.
+
+**Robustness**
+
+- [ ] **FR-35**: `evaluateQuery` / `visitTree` / `renderExpression` track depth via their `VisitorContext` and throw a typed `MaxDepthExceededError` when exceeding `options.maxDepth ?? 32`. The WC renders an inline "Tree too deep" placeholder for any subtree exceeding `[maxDepth]` rather than rendering recursively.
+- [ ] **FR-36**: `[operatorOverrides]` is runtime-validated by the wrapper. For each field, the override's `Operator[]` is intersected with `OperatorCatalog[field.type]`. Operators outside the catalog for that field's type are stripped, with a `console.warn` listing the field + invalid operators. `validateOperatorOverrides(schema, overrides): { warnings: string[]; sanitized: ... }` is exported so consumers can pre-validate at compile-time-ish boundaries.
+- [ ] **FR-37**: `(filteredResult)` is **debounced 100 ms** and **memoized** by `(tree-structural-id, data-reference-identity)`. Identical recomputations skip the evaluation and re-emit the cached array. Acceptance perf target: 10k-row dataset × ~10-node tree filter completes < 50 ms after debounce settles.
+- [ ] **FR-38**: Shadow-DOM hit-test for DnD: prefer `document.elementsFromPoint(x, y)` (composed path); fallback recursively walks `mp-query-builder` shadow roots calling `shadowRoot.elementFromPoint(x, y)`. Bounded at `maxDepth` levels.
+- [ ] **FR-39**: DnD `DragController` cancels cleanly on mid-drag tree mutation. When the WC's `query` property changes and the dragged `sourceId` is no longer present in the new tree, the controller calls `pointercancel`'s cleanup path: ghost removed from `document.body`, internal state reset, no `moveNode` dispatched.
+- [ ] **FR-40**: All `document.body` access guarded by `typeof document !== 'undefined'` (SSR safety; per dock precedent).
 
 ### Should Have (P1)
 
 - [ ] **FR-33**: Keyboard alternative to DnD — `Alt+ArrowUp` / `Alt+ArrowDown` on a focused row moves it among same-group siblings.
-- [ ] **FR-34**: `[operatorOverrides]` input — `Partial<Record<string, Operator[]>>` keyed by field name to restrict the operator dropdown per field.
+- [ ] **FR-34**: `[operatorOverrides]` input — `Partial<Record<string, Operator[]>>` keyed by field name to restrict the operator dropdown per field. Runtime-validated per FR-36.
 
 ---
 
@@ -453,3 +462,410 @@ Estimate: multi-month effort.
 - Reference UI: https://www.infragistics.com/products/ignite-ui-angular/angular/components/query-builder
 - [[feedback_json_wire_format_only]] — wire-format-only architectural principle
 - See CLAUDE.md for: WC + Angular wrapper pattern, Lit 3 migration status, theme system / dark-mode toggle (#324).
+
+---
+
+## Appendix A — Operator Semantics Reference
+
+This appendix defines the **canonical semantics** of every operator. `evaluateQuery` (the frontend in-process evaluator) implements these rules exactly. Backend implementations SHOULD match these rules so that what the user builds visually returns the same rows the live preview shows. Backends that intentionally diverge MUST document the divergence per Appendix F.
+
+**Global rules**:
+- All date/time comparisons evaluated in **UTC**. The `options.now` parameter (default `new Date()`) is the reference instant.
+- All week boundaries follow **ISO 8601** (Monday 00:00:00.000 UTC ... Sunday 23:59:59.999 UTC).
+- String comparisons are **case-insensitive by default** (`options.caseSensitive = false`). Set `options.caseSensitive = true` to opt into case-sensitive comparisons.
+- NULL handling: `field === null || field === undefined` is treated as null. Only `is-null` / `is-not-null` (and array-`is-empty` / `is-not-empty`) match nullness; all other operators return `false` against null.
+- Sub-query operators short-circuit: `in` returns `true` as soon as one related record matches; `not-in` returns `true` if zero related records match.
+
+### Comparison operators
+
+| Operator | Algorithm |
+|---|---|
+| `equals` | `field === value` (after JS coercion within compatible types; strings honor `caseSensitive`). Null short-circuits to `false`. |
+| `not-equals` | `!(field === value)`; null short-circuits to `false`. |
+| `lt` | `field < value`. Null short-circuits to `false`. |
+| `lte` | `field <= value`. |
+| `gt` | `field > value`. |
+| `gte` | `field >= value`. |
+| `between` | `field >= value[0] && field <= value[1]` (inclusive both ends). `value` MUST satisfy `value[0] <= value[1]`; otherwise backend rejects with 400. |
+| `not-between` | `!(between)`. |
+
+### String operators
+
+| Operator | Algorithm |
+|---|---|
+| `contains` | `toLower(field).includes(toLower(value))` (case-insensitive default). |
+| `does-not-contain` | `!contains`. |
+| `starts-with` | `toLower(field).startsWith(toLower(value))`. |
+| `ends-with` | `toLower(field).endsWith(toLower(value))`. |
+
+### Set operators
+
+| Operator | Algorithm |
+|---|---|
+| `in` | `value.includes(field)` (with string case-insensitivity per default). All elements of `value` MUST share the field's scalar type. |
+| `not-in` | `!in`. |
+
+### Null operators
+
+| Operator | Algorithm |
+|---|---|
+| `is-null` | `field === null \|\| field === undefined`. |
+| `is-not-null` | `!is-null`. |
+
+### Boolean operators
+
+| Operator | Algorithm |
+|---|---|
+| `is-true` | `field === true`. |
+| `is-false` | `field === false`. |
+
+### Relative date operators (UTC, ISO 8601 weeks)
+
+Let `N = options.now`.
+
+| Operator | Algorithm |
+|---|---|
+| `today` | `startOfDayUTC(N) <= field < startOfDayUTC(N) + 1 day` |
+| `yesterday` | `startOfDayUTC(N) - 1 day <= field < startOfDayUTC(N)` |
+| `this-week` | `mondayOfISOWeek(N) <= field < mondayOfISOWeek(N) + 7 days` |
+| `last-week` | `mondayOfISOWeek(N) - 7 days <= field < mondayOfISOWeek(N)` |
+| `next-week` | `mondayOfISOWeek(N) + 7 days <= field < mondayOfISOWeek(N) + 14 days` |
+| `this-month` | `firstOfMonthUTC(N) <= field < firstOfMonthUTC(N) + 1 month` |
+| `last-month` | `firstOfMonthUTC(N) - 1 month <= field < firstOfMonthUTC(N)` |
+| `next-month` | `firstOfMonthUTC(N) + 1 month <= field < firstOfMonthUTC(N) + 2 months` |
+| `this-year` | `jan1UTC(N.year) <= field < jan1UTC(N.year + 1)` |
+| `last-year` | `jan1UTC(N.year - 1) <= field < jan1UTC(N.year)` |
+| `next-year` | `jan1UTC(N.year + 1) <= field < jan1UTC(N.year + 2)` |
+| `last-n-days` | `startOfDayUTC(N - (value.n - 1) days) <= field <= N`. `value.n` MUST be a positive integer ≥ 1. **Inclusive of today.** |
+| `next-n-days` | `N <= field < startOfDayUTC(N + value.n days)`. `value.n` MUST be a positive integer ≥ 1. **Inclusive of today.** |
+| `year-to-date` | `jan1UTC(N.year) <= field <= N` |
+
+### Array operators
+
+For array-typed field `A` and array value `V`:
+
+| Operator | Algorithm |
+|---|---|
+| `any-of` | `V.some(v => A.includes(v))`. Null `A` → `false`. |
+| `all-of` | `V.every(v => A.includes(v))`. Null `A` → `false`. |
+| `none-of` | `!V.some(v => A.includes(v))`. Null `A` → `true` (vacuous). |
+| `is-empty` | `A.length === 0 \|\| A === null`. Null `A` is treated as empty. |
+| `is-not-empty` | `!is-empty`. |
+
+---
+
+## Appendix B — Canonical JSON Example
+
+A non-trivial query exercising nested groups, multi-entity sub-query, relative date op, array op, `between`, and `is-null`:
+
+```json
+{
+  "kind": "group",
+  "id": "00000000-0000-4000-8000-000000000001",
+  "logic": "and",
+  "children": [
+    {
+      "kind": "condition",
+      "id": "00000000-0000-4000-8000-000000000002",
+      "field": "total",
+      "operator": "gt",
+      "value": 100
+    },
+    {
+      "kind": "condition",
+      "id": "00000000-0000-4000-8000-000000000003",
+      "field": "orderDate",
+      "operator": "last-n-days",
+      "value": { "n": 30 }
+    },
+    {
+      "kind": "condition",
+      "id": "00000000-0000-4000-8000-000000000004",
+      "field": "tags",
+      "operator": "any-of",
+      "value": ["urgent", "blocked"]
+    },
+    {
+      "kind": "group",
+      "id": "00000000-0000-4000-8000-000000000005",
+      "logic": "or",
+      "children": [
+        {
+          "kind": "condition",
+          "id": "00000000-0000-4000-8000-000000000006",
+          "field": "status",
+          "operator": "equals",
+          "value": "open"
+        },
+        {
+          "kind": "condition",
+          "id": "00000000-0000-4000-8000-000000000007",
+          "field": "status",
+          "operator": "is-null",
+          "value": null
+        }
+      ]
+    },
+    {
+      "kind": "subquery",
+      "id": "00000000-0000-4000-8000-000000000008",
+      "field": "lineItems",
+      "operator": "in",
+      "subQuery": {
+        "kind": "group",
+        "id": "00000000-0000-4000-8000-000000000009",
+        "logic": "and",
+        "children": [
+          {
+            "kind": "condition",
+            "id": "00000000-0000-4000-8000-000000000010",
+            "field": "amount",
+            "operator": "between",
+            "value": [10, 500]
+          }
+        ]
+      }
+    }
+  ]
+}
+```
+
+`renderExpression` of this tree (with default English messages):
+
+```
+(Total > 100
+  AND Order date is in the last 30 days
+  AND Tags any-of [urgent, blocked]
+  AND (Status = "open" OR Status is null)
+  AND Line items IN (Amount between [10, 500]))
+```
+
+---
+
+## Appendix C — Wire-Format Value Type Reference
+
+Per-operator JSON value shape. Backends MUST reject values whose JSON type doesn't match this table.
+
+| Operator | JSON value type | TypeScript signature |
+|---|---|---|
+| `equals`, `not-equals` (string field) | `string` | `string` |
+| `equals`, `not-equals` (number / integer field) | `number` | `number` |
+| `equals`, `not-equals` (date / datetime field) | `string` (ISO 8601 with TZ) | `string` |
+| `equals`, `not-equals` (boolean field) | `boolean` | `boolean` |
+| `equals`, `not-equals` (enum field) | matches `FieldDef.options[i].value` type | `unknown` |
+| `lt`, `lte`, `gt`, `gte` | scalar matching field type | `unknown` |
+| `between`, `not-between` | array of length 2, `[v1, v2]`, `v1 <= v2`, both same type | `[unknown, unknown]` |
+| `contains`, `does-not-contain`, `starts-with`, `ends-with` | `string` | `string` |
+| `in`, `not-in` | homogeneous array, all elements match field type | `unknown[]` |
+| `any-of`, `all-of`, `none-of` (array field) | homogeneous array, element type matches `FieldDef.options[i].value` if defined | `unknown[]` |
+| `is-null`, `is-not-null`, `is-true`, `is-false`, `is-empty`, `is-not-empty` | `null` literal (NOT undefined or absent) | `null` |
+| `today`, `yesterday`, `this-*`, `last-*`, `next-*`, `year-to-date` (parameterless date) | `null` literal | `null` |
+| `last-n-days`, `next-n-days` | `{ "n": number }` where `n` is a positive integer ≥ 1 | `{ n: number }` |
+
+**Encoding constraints**:
+- **Date values**: ISO 8601 with explicit timezone, e.g. `"2026-05-15T00:00:00.000Z"`. Unix-epoch numbers MUST be rejected; backends parse via their canonical date library.
+- **Number values**: must fit in `Number.MAX_SAFE_INTEGER` (±2^53 − 1). Larger IDs MUST be encoded as `string` with the `FieldDef` declared `type: 'string'`.
+- **`between` ordering**: `v1 ≤ v2` REQUIRED. Backend rejects reversed tuples rather than swapping silently.
+- **Array homogeneity**: all elements of `in` / `not-in` / `any-of` / `all-of` / `none-of` arrays MUST share the scalar type matching the field.
+- **`null` literal**: parameterless operators MUST serialize `value: null` explicitly. Omitting the key or sending `undefined` is rejected.
+
+---
+
+## Appendix D — Backend Validation Checklist
+
+Ordered list of MUST-reject rules the backend executes before translating to its query language. Each violation responds **HTTP 400** with a typed error code.
+
+1. **Strict JSON parse**: no `$ref` / `$id` reference resolution (.NET: use `ReferenceHandler.Default`, not `Preserve`). Unknown top-level fields on any node → reject (`UNKNOWN_FIELD`).
+2. **Tree depth cap**: reject if depth > configured maximum (recommended `32`) (`TREE_TOO_DEEP`).
+3. **Node count cap**: reject if total nodes > configured maximum (recommended `1024`) (`TREE_TOO_LARGE`).
+4. **ID format**: every `id` is UUID v4 syntactically (`INVALID_NODE_ID`).
+5. **ID uniqueness**: no duplicate `id` across the entire tree (incl. sub-queries) (`DUPLICATE_NODE_ID`).
+6. **`kind` validity**: exactly one of `'group' | 'condition' | 'subquery'` (`UNKNOWN_KIND`).
+7. **`kind: 'group'`** validations: `logic ∈ {'and', 'or'}` (`INVALID_LOGIC`); `children` is array (`INVALID_CHILDREN`).
+8. **`kind: 'condition'`** validations:
+   - `field` references a real, non-relation field in the current entity's schema (`UNKNOWN_FIELD`).
+   - `operator` ∈ `OperatorCatalog[field.type]` (`INVALID_OPERATOR_FOR_TYPE`).
+   - `value` matches Appendix C shape for `(field.type, operator)` (`INVALID_VALUE_SHAPE`).
+9. **`kind: 'subquery'`** validations:
+   - `operator` ∈ `{'in', 'not-in'}` (`INVALID_SUBQUERY_OPERATOR`).
+   - `field` references a `type: 'relation'` field in the current entity's schema (`SUBQUERY_FIELD_NOT_RELATION`).
+   - `subQuery` is itself a `kind: 'group'` node (`SUBQUERY_BODY_NOT_GROUP`).
+10. **Role-based field whitelist**: current user is permitted to query each referenced field (per the consumer's auth model) (`FIELD_NOT_PERMITTED`).
+11. **Role-based operator whitelist**: current user is permitted to use each operator on each field (`OPERATOR_NOT_PERMITTED`).
+12. **Value length caps**: string ≤ 1024 chars; array element count ≤ 256 (`VALUE_TOO_LARGE`).
+13. **Numeric range**: `number` values within field's declared range; integer fields receive integers (no decimals) (`NUMBER_OUT_OF_RANGE`).
+14. **Date format**: date / datetime strings parse cleanly via the backend's canonical date library; reject malformed (`INVALID_DATE_FORMAT`).
+15. **Sub-query field returns to the parent's foreign-key column**: the backend resolves the relation (e.g., `orders` → `order.customer_id`) from its own ORM/schema; reject if the relation is not configured (`SUBQUERY_RELATION_NOT_CONFIGURED`).
+
+---
+
+## Appendix E — Reference C# Walker Skeleton (RavenDB RQL target)
+
+Skeleton showing how a backend visitor over the JSON tree produces RavenDB RQL. The user is the primary consumer; this template is the integration starting point. Fill in `EmitConditionRql` per Appendix A.
+
+```csharp
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
+
+public record VisitorContext(string CurrentEntity, int Depth);
+
+public class QueryBuilderToRql
+{
+    private readonly Dictionary<string, EntitySchema> _schemas;
+    private readonly int _maxDepth;
+
+    public QueryBuilderToRql(IEnumerable<EntitySchema> schemas, int maxDepth = 32)
+    {
+        _schemas = schemas.ToDictionary(s => s.Name);
+        _maxDepth = maxDepth;
+    }
+
+    public string Build(JsonElement tree, string rootEntity)
+    {
+        ValidateRootShape(tree);
+        var ctx = new VisitorContext(rootEntity, 0);
+        return Visit(tree, ctx);
+    }
+
+    private string Visit(JsonElement node, VisitorContext ctx)
+    {
+        if (ctx.Depth > _maxDepth)
+            throw new BadHttpRequestException("TREE_TOO_DEEP");
+
+        return node.GetProperty("kind").GetString() switch
+        {
+            "group" => VisitGroup(node, ctx),
+            "condition" => VisitCondition(node, ctx),
+            "subquery" => VisitSubquery(node, ctx),
+            _ => throw new BadHttpRequestException("UNKNOWN_KIND")
+        };
+    }
+
+    private string VisitGroup(JsonElement node, VisitorContext ctx)
+    {
+        var logic = node.GetProperty("logic").GetString();
+        if (logic != "and" && logic != "or")
+            throw new BadHttpRequestException("INVALID_LOGIC");
+        var combinator = logic == "and" ? " AND " : " OR ";
+        var children = node.GetProperty("children").EnumerateArray().ToList();
+        if (children.Count == 0)
+            return logic == "and" ? "true" : "false"; // vacuous (Appendix A)
+        var inner = ctx with { Depth = ctx.Depth + 1 };
+        var parts = children.Select(c => Visit(c, inner));
+        return "(" + string.Join(combinator, parts) + ")";
+    }
+
+    private string VisitCondition(JsonElement node, VisitorContext ctx)
+    {
+        var field = node.GetProperty("field").GetString()!;
+        var op = node.GetProperty("operator").GetString()!;
+        var value = node.GetProperty("value");
+        var fieldDef = ResolveField(ctx.CurrentEntity, field)
+            ?? throw new BadHttpRequestException("UNKNOWN_FIELD");
+        if (fieldDef.Type == "relation")
+            throw new BadHttpRequestException("FIELD_IS_RELATION");
+        if (!IsOperatorValidForType(op, fieldDef.Type))
+            throw new BadHttpRequestException("INVALID_OPERATOR_FOR_TYPE");
+
+        // EmitConditionRql implements every operator from Appendix A in RQL syntax.
+        return EmitConditionRql(field, op, value, fieldDef);
+    }
+
+    private string VisitSubquery(JsonElement node, VisitorContext ctx)
+    {
+        var field = node.GetProperty("field").GetString()!;
+        var op = node.GetProperty("operator").GetString()!;
+        if (op != "in" && op != "not-in")
+            throw new BadHttpRequestException("INVALID_SUBQUERY_OPERATOR");
+
+        var fieldDef = ResolveField(ctx.CurrentEntity, field)
+            ?? throw new BadHttpRequestException("UNKNOWN_FIELD");
+        if (fieldDef.Type != "relation")
+            throw new BadHttpRequestException("SUBQUERY_FIELD_NOT_RELATION");
+
+        var subQuery = node.GetProperty("subQuery");
+        var inner = ctx with { CurrentEntity = fieldDef.TargetEntity!, Depth = ctx.Depth + 1 };
+        var subRql = Visit(subQuery, inner);
+
+        // RQL sub-query pattern; adjust for your data model.
+        var operatorKw = op == "in" ? "in" : "not in";
+        return $"id() {operatorKw} (from {fieldDef.TargetEntity} where {subRql} select id())";
+    }
+
+    // ... implement: ValidateRootShape (depth/count/id-uniqueness caps),
+    //               ResolveField (schema lookup),
+    //               IsOperatorValidForType (Appendix A operator catalog),
+    //               EmitConditionRql (per-operator RQL emission with parameterised values).
+}
+```
+
+Fill out `EmitConditionRql` per Appendix A. Example excerpt for a few operators:
+
+```csharp
+private string EmitConditionRql(string field, string op, JsonElement value, FieldDef def)
+{
+    return op switch
+    {
+        "equals"      => $"{field} = {EmitValue(value, def)}",
+        "not-equals"  => $"{field} != {EmitValue(value, def)}",
+        "gt"          => $"{field} > {EmitValue(value, def)}",
+        "between"     => EmitBetween(field, value, def),
+        "contains"    => $"search({field}, {EmitValue(value, def)})",
+        "in"          => $"{field} in ({EmitArray(value, def)})",
+        "is-null"     => $"{field} = null",
+        "today"       => EmitDateRange(field, StartOfTodayUtc(), StartOfTomorrowUtc()),
+        "last-n-days" => EmitLastNDays(field, value.GetProperty("n").GetInt32()),
+        "any-of"      => EmitAnyOf(field, value, def),
+        // ... etc
+        _ => throw new BadHttpRequestException("UNSUPPORTED_OPERATOR")
+    };
+}
+```
+
+---
+
+## Appendix F — Divergence Disclosure Template
+
+Each backend implementing this contract ships its own copy of this document in its README, declaring how it conforms to the canonical spec and where it intentionally diverges.
+
+```markdown
+# Query Builder Backend — <Your Backend Name>
+
+## Implementation
+- Query language: <RavenDB RQL / PostgreSQL SQL / OData / ...>
+- Schema source: <ORM / hand-written / introspection>
+- Validation library: <FluentValidation / DataAnnotations / custom>
+
+## Conformance with PRD Appendix A (operator semantics)
+
+| Topic | Conformance | Notes |
+|---|---|---|
+| Date timezone | ✓ UTC | matches spec |
+| Week start | ✓ ISO 8601 (Monday) | matches spec |
+| String case-sensitivity (default) | ⚠ DIVERGES | Postgres default collation is case-sensitive. Frontend live preview will differ from API results for queries containing mixed-case substrings. |
+| `between` inclusivity | ✓ inclusive | matches spec |
+| Null handling for comparisons | ✓ false-against-null | matches spec |
+| Array `is-empty` against missing field | ✓ true | matches spec |
+
+## Conformance with PRD Appendix C (value shapes)
+
+- [ ] All value shapes accepted per Appendix C
+- [ ] Date encoded as ISO 8601 with TZ
+- [ ] Big integers as strings
+- [ ] `between` ordering validated
+
+## Conformance with PRD Appendix D (validation checklist)
+
+- [ ] Strict JSON parse (no `$ref`)
+- [ ] Depth cap = 32
+- [ ] Node count cap = 1024
+- [ ] ID uniqueness
+- [ ] Per-kind schema validation
+- [ ] Per-field role whitelist
+- [ ] Per-operator field-type validation
+- [ ] Value type/length/range caps
+- [ ] Sub-query field-is-relation check
+- [ ] Date format strict parse
+```
