@@ -5,10 +5,9 @@ import { firstValueFrom } from 'rxjs';
 import { PaginationRequest, PaginationResponse } from '@mintplayer/pagination';
 import {
   BsDatatableComponent,
-  BsRowTemplateDirective,
   BsDatatableFetch,
   DatatableSettings,
-  type ColumnDef,
+  type DatatableColumnDef,
 } from '@mintplayer/ng-bootstrap/datatable';
 import { BsQueryBuilderComponent, BsQueryBuilderEditorDirective } from '@mintplayer/ng-bootstrap/query-builder';
 import { environment } from '../../../../environments/environment';
@@ -43,7 +42,7 @@ const SAVED_QUERIES_KEY = 'mp-qb-demo:savedQueries';
   styleUrls: ['./query-builder.component.scss'],
   imports: [
     BsQueryBuilderComponent, BsQueryBuilderEditorDirective,
-    BsDatatableComponent, BsRowTemplateDirective,
+    BsDatatableComponent,
     FormsModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -78,7 +77,7 @@ export class QueryBuilderDemoComponent {
    * Empty `selectedFields()` is treated as "show everything" so the demo is
    * never blank.
    */
-  datatableColumns = computed<ColumnDef[]>(() => {
+  datatableColumns = computed<DatatableColumnDef<Record<string, unknown>>[]>(() => {
     const entity = this.schema().find((s) => s.name === this.rootEntity());
     if (!entity) return [];
     const projectable = entity.fields.filter((f) => f.type !== 'relation');
@@ -86,9 +85,13 @@ export class QueryBuilderDemoComponent {
     const visible = selected.length === 0
       ? projectable
       : projectable.filter((f) => selected.includes(f.name));
-    // `id` is non-sortable for the same reason as the pre-Phase-2 demo: there's
-    // no meaningful Id in the schema, and Sort by Id is the implicit default.
-    return visible.map((f) => ({ name: f.name, label: f.label, sortable: true }));
+    return visible.map((f) => ({
+      name: f.name,
+      label: f.label,
+      sortable: true,
+      cellClass: 'text-nowrap',
+      cellRenderer: (row: Record<string, unknown>) => this.formatCell(row, f.name),
+    }));
   });
 
   fetchRows: BsDatatableFetch<Record<string, unknown>> = async (req: PaginationRequest) => {
