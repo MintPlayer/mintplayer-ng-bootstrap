@@ -71,6 +71,12 @@ jobs:
       timeout-minutes: 30
       run: npx nx affected --target=e2e --parallel=1 --output-style=stream --base=${{ github.event.pull_request.base.sha }} --head=${{ github.event.pull_request.head.sha }}
 
+    # Live-API contract smoke. Boots `dotnet run` + `ng serve` and runs the
+    # query-builder specs unmocked against the real .NET backend.
+    - name: E2E (live API)
+      timeout-minutes: 15
+      run: npx nx run ng-bootstrap-demo-e2e:e2e-live --output-style=stream
+
     ## Dry-run publish to verify package.json files exist in dist
     - name: Dry-run publish ng-animations
       uses: JS-DevTools/npm-publish@v3

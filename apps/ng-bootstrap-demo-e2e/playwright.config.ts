@@ -5,6 +5,9 @@ const baseURL = `http://localhost:${PORT}`;
 
 export default defineConfig({
   testDir: './e2e',
+  // Specs under e2e/live/ are owned by playwright.live-api.config.ts; they
+  // expect a real `dotnet run` backend on :5000 and would fail in this config.
+  testIgnore: ['**/live/**'],
   fullyParallel: true,
   forbidOnly: !!process.env['CI'],
   retries: process.env['CI'] ? 1 : 0,

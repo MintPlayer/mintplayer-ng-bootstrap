@@ -11,6 +11,13 @@
         "skipInstall": true
       }
     },
+    "e2e-live": {
+      "executor": "@nx/playwright:playwright",
+      "options": {
+        "config": "apps/ng-bootstrap-demo-e2e/playwright.live-api.config.ts",
+        "skipInstall": true
+      }
+    },
     "lint": {
       "executor": "@nx/eslint:lint"
     }
