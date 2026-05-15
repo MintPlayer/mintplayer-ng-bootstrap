@@ -33,4 +33,5 @@ export const ROUTES: Routes = [
   { path: 'toggle-buttons', loadComponent: () => import('./toggle-buttons/toggle-buttons.component').then(m => m.ToggleButtonsComponent) },
   { path: 'is-interface', loadComponent: () => import('./is-interface/is-interface.component').then(m => m.IsInterfaceComponent) },
   { path: 'viewport', loadComponent: () => import('./viewport/viewport.component').then(m => m.ViewportComponent) },
+  { path: 'query-builder', loadComponent: () => import('./query-builder/query-builder.component').then(m => m.QueryBuilderDemoComponent) },
 ];

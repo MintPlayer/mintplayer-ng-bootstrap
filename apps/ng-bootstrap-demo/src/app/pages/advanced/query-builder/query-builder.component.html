@@ -1,0 +1,95 @@
+<div class="container py-3">
+  <h1>Query Builder</h1>
+  <p class="lead">
+    Build a query → POST as JSON to <code>/api/orders/search</code> → backend translates to
+    SQL via <code>QueryBuilderWalker&lt;Order&gt;</code> → render <code>PagedResult&lt;Order&gt;</code>.
+    Pagination/filtering/sorting are server-side — the wrapper never owns the dataset.
+  </p>
+
+  <bs-query-builder
+    [schema]="schema()"
+    [rootEntity]="rootEntity()"
+    [(query)]="query"
+    [showPreview]="true"
+    [showSavedQueries]="true"
+    [savedQueries]="savedQueries()"
+    (saveQuery)="onSaveQuery($event)"
+    (loadQuery)="onLoadQuery($event)"
+    (deleteQuery)="onDeleteQuery($event)"
+  >
+    <!-- Custom editor for the `orderDate` field: a vanilla <input type="date">
+         demonstrates the *bsQueryBuilderEditor projection. -->
+    <input
+      *bsQueryBuilderEditor="'orderDate'; let ctx"
+      type="date"
+      class="form-control form-control-sm custom-date-editor"
+      [value]="ctx.value ?? ''"
+      [disabled]="ctx.disabled"
+      (input)="ctx.onChange(($any($event.target).value || null))"
+    />
+  </bs-query-builder>
+
+  <div class="d-flex gap-2 align-items-center my-3">
+    <button class="btn btn-primary" (click)="search()" [disabled]="busy()">
+      {{ busy() ? 'Searching…' : 'Search' }}
+    </button>
+    <span class="text-secondary">
+      {{ result().totalCount }} match{{ result().totalCount === 1 ? '' : 'es' }}
+    </span>
+    @if (error()) {
+      <span class="text-danger ms-2">⚠ {{ error() }}</span>
+    }
+  </div>
+
+  <details class="mb-3">
+    <summary>Wire-format JSON (what the demo POSTs)</summary>
+    <pre class="bg-body-tertiary border rounded p-2"><code>{{ jsonView() }}</code></pre>
+  </details>
+
+  <table class="table table-sm table-bordered table-striped">
+    <thead>
+      <tr>
+        <th>Id</th><th>Customer</th><th>Total</th><th>Status</th><th>Order date</th><th>Tags</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of result().items; track row.id) {
+        <tr>
+          <td>{{ row.id }}</td>
+          <td>{{ row.customerId }}</td>
+          <td>{{ row.total | number:'1.2-2' }}</td>
+          <td>{{ row.status }}</td>
+          <td>{{ row.orderDate | date:'yyyy-MM-dd' }}</td>
+          <td><code>{{ row.tags }}</code></td>
+        </tr>
+      } @empty {
+        <tr><td colspan="6" class="text-center text-secondary">No results — build a query and Search.</td></tr>
+      }
+    </tbody>
+  </table>
+
+  <nav aria-label="Pagination" class="d-flex gap-2 align-items-center">
+    <button class="btn btn-sm btn-outline-secondary" (click)="goToPage(page() - 1)" [disabled]="page() <= 1">Prev</button>
+    <span>Page {{ page() }} / {{ totalPages() }}</span>
+    <button class="btn btn-sm btn-outline-secondary" (click)="goToPage(page() + 1)" [disabled]="page() >= totalPages()">Next</button>
+    <span class="ms-auto">
+      Page size:
+      <select class="form-select form-select-sm d-inline-block w-auto"
+              [ngModel]="pageSize()"
+              (ngModelChange)="pageSize.set($event); page.set(1); search()">
+        <option [ngValue]="10">10</option>
+        <option [ngValue]="20">20</option>
+        <option [ngValue]="50">50</option>
+        <option [ngValue]="100">100</option>
+      </select>
+    </span>
+  </nav>
+
+  <h2 class="h5 mt-4">Keymap</h2>
+  <ul class="list-unstyled small">
+    <li><kbd>Tab</kbd> / <kbd>Shift+Tab</kbd> — move focus through controls in DOM order.</li>
+    <li><kbd>Enter</kbd> on Add condition / Add group / Add sub-query — insert child.</li>
+    <li><kbd>Alt+ArrowUp</kbd> / <kbd>Alt+ArrowDown</kbd> on a focused row — reorder among siblings (P1, not yet shipped).</li>
+    <li><kbd>Esc</kbd> — close any open dropdown.</li>
+  </ul>
+</div>
