@@ -52,7 +52,7 @@
     [(settings)]="settings"
     [resizableColumns]="false"
   >
-    <ng-template bsDatatableColumn="id">Id</ng-template>
+    <ng-template bsDatatableColumn="id" [bsDatatableColumnSortable]="false">Id</ng-template>
     <ng-template bsDatatableColumn="customerId">Customer</ng-template>
     <ng-template bsDatatableColumn="total">Total</ng-template>
     <ng-template bsDatatableColumn="status">Status</ng-template>
