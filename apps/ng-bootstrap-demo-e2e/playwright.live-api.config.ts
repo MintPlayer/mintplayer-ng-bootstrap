@@ -30,16 +30,27 @@ export default defineConfig({
   projects: [
     { name: 'chromium-live', use: { ...devices['Desktop Chrome'] } },
   ],
-  webServer: {
-    command: `npx nx serve ng-bootstrap-demo --configuration=development --port=${PORT}`,
-    // Poll the API endpoint directly. Once that responds, both services are
-    // necessarily up: api:serve is continuous and started in parallel with
-    // ng-serve, and the schema endpoint only answers when the seed has run.
-    // ng-serve completes earlier, so by the time we proceed it's also up.
-    url: `${apiURL}/api/orders/schema`,
-    reuseExistingServer: !process.env['CI'],
-    timeout: 300_000,
-    stdout: 'pipe',
-    stderr: 'pipe',
-  },
+  // Two webServer entries so Playwright blocks tests until BOTH ports
+  // respond. The first invokes `nx serve` which (via the dependsOn chain
+  // in apps/ng-bootstrap-demo/project.json) starts the API too. The
+  // second runs a no-op long-runner — its only job is to make Playwright
+  // wait for /api/orders/schema before launching tests, since ng-serve
+  // can finish compiling several seconds before the API has finished
+  // seeding on cold CI runners.
+  webServer: [
+    {
+      command: `npx nx serve ng-bootstrap-demo --configuration=development --port=${PORT}`,
+      url: baseURL,
+      reuseExistingServer: !process.env['CI'],
+      timeout: 300_000,
+      stdout: 'pipe',
+      stderr: 'pipe',
+    },
+    {
+      command: 'node -e "setInterval(()=>{}, 1<<30)"',
+      url: `${apiURL}/api/orders/schema`,
+      reuseExistingServer: true,
+      timeout: 300_000,
+    },
+  ],
 });
