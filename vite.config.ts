@@ -13,15 +13,10 @@ export default defineConfig({
     environment: 'jsdom',
     include: ['**/*.spec.ts'],
     reporters: ['default'],
-    // Maximum parallelization settings
+    // Maximum parallelization settings.
+    // Vitest 4: `poolOptions.threads.{min,max}Threads` removed; `maxWorkers` is
+    // top-level. Omitting it lets Vitest pick `availableParallelism()`.
     pool: 'threads',
-    poolOptions: {
-      threads: {
-        // Use all available CPU cores
-        minThreads: 1,
-        maxThreads: undefined, // Uses all available cores
-      },
-    },
     // Run test files in parallel
     fileParallelism: true,
     // Isolate tests for stability (can be disabled for more speed)
