@@ -10,11 +10,20 @@
 
 ## Overview
 
-Add `bs-query-builder` to `libs/mintplayer-ng-bootstrap` — a visual builder for composing arbitrarily nested AND/OR boolean queries, modelled feature-for-feature on [Infragistics Ignite UI Angular `igxQueryBuilder`](https://www.infragistics.com/products/ignite-ui-angular/angular/components/query-builder).
+Add `bs-query-builder` to `libs/mintplayer-ng-bootstrap` — a visual builder for composing arbitrarily nested AND/OR boolean queries, modelled feature-for-feature on [Infragistics Ignite UI Angular `igxQueryBuilder`](https://www.infragistics.com/products/ignite-ui-angular/angular/components/query-builder) and shipped **fully-fledged** in one PR.
 
-Shipped as **Lit web component (`mp-query-builder`) + Angular wrapper (`bs-query-builder`)** colocated inside a new `libs/mintplayer-ng-bootstrap/query-builder` secondary entry point, matching the precedent set by `bs-datetime-picker` (#332). The WC owns the tree, edit gestures, and rendering; the wrapper bridges signals to WC properties and custom events.
+Shipped as **Lit web component (`mp-query-builder`) + Angular wrapper (`bs-query-builder`)** colocated inside a new `libs/mintplayer-ng-bootstrap/query-builder` secondary entry point, matching the precedent set by `bs-datetime-picker` (#332). The WC owns the tree, edit gestures, and rendering; the wrapper bridges signals to WC properties and custom events, adds `ControlValueAccessor`, and adds a TemplateRef-projection sugar over the WC's custom-editor factory API.
 
-The canonical surface is a JSON expression tree exposed via two-way `[(query)]`. A sibling `evaluateQuery(tree, record, schema)` helper is **separately exported** for in-memory filtering — the WC itself does not execute queries against a dataset. SQL / OData / LINQ / Mongo serializers are out of scope for this PRD; consumers translate the tree on their backend.
+Beyond the canonical Infragistics surface, this release also ships:
+
+- **`ControlValueAccessor`** on the Angular wrapper so `[(ngModel)]` and `[formControl]` integrations work out of the box.
+- **Built-in dataset binding** — `[data]` + `(filteredResult)` for in-memory filter scenarios. Wraps the exported `evaluateQuery` helper.
+- **Visitor API** (`visitTree<T>(tree, visitor): T`) and **five reference serializers** — SQL, OData v4, LINQ (TypeScript predicate), Mongo, GraphQL (Hasura/Prisma-style nested-object dialect). Each is individually importable.
+- **Custom value editors** via:
+  - WC-level factory callback (`[editorRegistry]`) — framework-agnostic, works in any host.
+  - Angular-wrapper TemplateRef sugar (`*bsQueryBuilderEditor="fieldName"` structural directive) — desugars to a factory callback under the hood. Best of both worlds.
+- **Saved-query event model** — `(saveQuery)` / `(loadQuery)` / `(deleteQuery)` outputs with `[savedQueries]` input. The component does **not** own storage; consumers persist via localStorage / IndexedDB / REST as they prefer.
+- **`bs-datatable` integration** — `bs-datatable` gains a small additive `[filterTree]` + `[filterSchema]` input pair. Internally calls `evaluateQuery` per row. One-line consumer wiring.
 
 Reference UI surface: Infragistics `igxQueryBuilder` (https://www.infragistics.com/products/ignite-ui-angular/angular/components/query-builder). We mimic the feature set, not the visual style. Visual style is pure Bootstrap 5 primitives (`form-control`, `input-group`, `dropdown-menu`, BS Icons), styled via CSS custom properties so the dark-mode toggle from #324 applies automatically.
 
@@ -24,30 +33,30 @@ Reference UI surface: Infragistics `igxQueryBuilder` (https://www.infragistics.c
 
 ### Primary Goals
 
-- Ship a feature-complete query builder: nested AND/OR groups, multi-entity sub-queries, built-in value editors per data type, drag-and-drop reorder, human-readable expression preview, all in one release.
-- Establish a canonical JSON expression-tree shape (`Expression` discriminated union) that other library components (notably `bs-datatable`) can adopt as a filter input down the road.
-- Full ARIA + keyboard parity on day one — no follow-up a11y pass (per library's WC ARIA policy, [[project_wc_aria_decisions]]).
-- Export a pure-function `evaluateQuery` helper so consumers can filter in-memory datasets without writing a tree walker.
+- Ship a feature-complete query builder: nested AND/OR groups, multi-entity sub-queries, built-in value editors per data type, **cross-group** drag-and-drop reorder, expression preview, **reactive-forms integration**, **in-memory dataset binding**, **five backend serializers + a visitor API for custom backends**, **custom-editor projection** (TemplateRef in Angular, factory in vanilla JS), **saved-query events**, and **`bs-datatable` `[filterTree]`** — all in one release.
+- Establish a canonical JSON expression-tree shape (`Expression` discriminated union) that other library components can adopt as a filter input.
+- Full ARIA + keyboard parity on day one — no follow-up a11y pass.
 
 ### Success Metrics
 
-- A consumer can build, edit, serialize, deserialize, and evaluate any valid Infragistics-shaped query without writing custom code.
-- Keyboard-only users can construct a complete tree (add condition, fill field/op/value, add group, toggle AND/OR, drag-reorder via keyboard alternative) without touching the mouse.
+- A consumer can build, edit, serialize (to any of five backend dialects), deserialize, evaluate, and persist any valid Infragistics-shaped query without writing custom code beyond their storage adapter.
+- `[formControl]` round-trip is lossless (`setValue(tree)` → `valueChanges` emits structurally-equal tree after no edits, modulo node id regeneration on adds).
+- Keyboard-only users can construct, reorder, and save a complete tree without touching the mouse.
 - axe-core reports zero serious findings on the demo page.
-- JSON round-trip is structurally lossless (input tree → mounted WC → serialized output is identical aside from re-generated node `id`s).
-- Smoke-tested on Chromium + Firefox; drag handles unaffected by Firefox flex-shrink behavior ([[feedback_firefox_flex_shrink]]).
+- All 5 serializers pass snapshot tests against a canonical input tree.
+- `bs-datatable` consumers see no behaviour change unless they opt into `[filterTree]`.
+- Smoke-tested on Chromium + Firefox.
 
 ---
 
 ## Non-Goals / Out of Scope
 
-- **`ControlValueAccessor` integration.** The canonical surface is `[(query)]`. CVA is deferred until a real `[formControl]` consumer is identified — separate issue.
-- **Backend serializers** (SQL / OData / LINQ / Mongo). The tree JSON is the wire format; consumers translate server-side. A community-contributed `@mintplayer/ng-bootstrap/query-builder-serializers/` is a plausible future home.
-- **Built-in dataset binding** (`[data]` input + `(filteredResult)` output). The WC emits a tree; `evaluateQuery` is a sibling helper, not part of the WC's API surface. Coupling the WC to in-memory datasets would obscure backend-paginated use cases.
-- **Custom / pluggable value editors.** Built-in editors only, one per data type (string, number, integer, date, datetime, boolean, enum, multi-list). Slot-based projection of arbitrary `bs-*` editors is a separate issue if requested.
-- **Cross-group drag-and-drop reparenting.** v1 allows reorder within the same group only. Cross-group drops require reasoning about logic-operator inheritance and are a follow-up issue.
-- **Saved queries / query library UI.** No persistence layer, no "load saved query" picker. Consumer's responsibility.
-- **`bs-datatable` integration.** The query builder emits a tree; wiring it into `bs-datatable.filter` is a separate issue once both components stabilize on a shared shape.
+- **PostgreSQL JSONB containment, BigQuery, DynamoDB, Elasticsearch DSL, or other niche backends.** Visitor API is the escape hatch — `visitTree<T>(tree, visitor)` lets consumers write their own serializer in ~50 lines.
+- **Apollo GraphQL with custom resolvers.** The shipped GraphQL serializer targets Hasura/Prisma-style nested-object `where` (`{ _and: [...] }`, `{ field: { _eq: ... } }`). Apollo schemas that diverge from this dialect need their own serializer (visitor API supports it).
+- **Saved-query storage layer.** Component fires events; consumer persists. No localStorage, IndexedDB, or REST coupling inside the component.
+- **CVA for nested sub-query trees.** The tree is one value; `[formControl]` binds the root tree. Sub-queries are part of the root, not separately bindable.
+- **`bs-datatable` server-side filter compilation.** `[filterTree]` runs `evaluateQuery` in-process. Server-side consumers serialize the tree themselves and pass it to their backend; the datatable does not auto-emit a serialized filter.
+- **Operator semantic customization.** Operator catalog is a closed set in v1. No `[operatorCatalog]` override at the operator-semantics level (only at the per-field operator-availability level via `[operatorOverrides]`).
 
 ---
 
@@ -55,58 +64,87 @@ Reference UI surface: Infragistics `igxQueryBuilder` (https://www.infragistics.c
 
 ### Must Have (P0)
 
+**Core component**
+
 - [ ] **FR-1**: New secondary entry point `@mintplayer/ng-bootstrap/query-builder` builds clean and is registered in `package.ts` and `ng-package.secondary.cjs`.
-- [ ] **FR-2**: `bs-query-builder` Angular wrapper exposes:
-  - `[schema]: EntitySchema[]` (input)
-  - `[rootEntity]: string` (input — the entity the root group filters)
-  - `[(query)]: Expression` (model — the tree)
-  - `[messages]: Partial<QueryBuilderMessages>` (input — i18n overrides for operator labels and group toggle labels)
-  - `[showPreview]: boolean` (input, default `false`)
-  - `[maxDepth]: number` (input, default `Infinity`)
-  - `(queryChange): EventEmitter<Expression>` (output — fires on every tree mutation)
+- [ ] **FR-2**: `bs-query-builder` Angular wrapper inputs/outputs:
+  - `[schema]: EntitySchema[]`
+  - `[rootEntity]: string`
+  - `[(query)]: Expression` (model)
+  - `[messages]: Partial<QueryBuilderMessages>`
+  - `[showPreview]: boolean` (default `false`)
+  - `[showSavedQueries]: boolean` (default `false`)
+  - `[maxDepth]: number` (default `Infinity`)
+  - `[savedQueries]: SavedQuery[]` (default `[]`)
+  - `[operatorOverrides]: Partial<Record<string, Operator[]>>`
+  - `[disabled]: boolean` (default `false`)
+  - `[data]: unknown[]` (optional)
+  - `(queryChange)`, `(saveQuery)`, `(loadQuery)`, `(deleteQuery)`, `(filteredResult)` outputs.
 - [ ] **FR-3**: WC owns and renders the tree recursively via `mp-query-group`, `mp-query-condition`, `mp-query-subquery` child elements.
-- [ ] **FR-4**: Group node renders an AND/OR toggle (segmented control), "Add condition" / "Add group" / "Add sub-query" buttons, and a remove button (disabled on the root group).
-- [ ] **FR-5**: Condition node renders a field selector, operator selector (filtered by `OperatorCatalog[field.type]`), value editor (chosen by `field.type`), drag handle, remove button.
-- [ ] **FR-6**: Sub-query node renders a relation-field selector, `in` / `not-in` operator selector, and a nested `<mp-query-builder>` rooted on the target entity.
-- [ ] **FR-7**: Seven built-in value editors:
-  - `mp-qb-string-editor` (text input)
-  - `mp-qb-number-editor` (numeric input)
-  - `mp-qb-date-editor` (date input)
-  - `mp-qb-datetime-editor` (datetime-local input)
-  - `mp-qb-boolean-editor` (tri-state: true / false / any)
-  - `mp-qb-enum-editor` (single-select dropdown from `FieldDef.options`)
-  - `mp-qb-list-editor` (multi-select tag input for `in` / `not-in`)
+- [ ] **FR-4**: Group node renders an AND/OR toggle, "Add condition" / "Add group" / "Add sub-query" buttons, remove button (disabled on root).
+- [ ] **FR-5**: Condition node renders a field selector, operator selector (filtered by `OperatorCatalog[field.type]`), value editor, drag handle, remove button.
+- [ ] **FR-6**: Sub-query node renders a relation-field selector, `in` / `not-in` operator, and a recursive `<mp-query-builder>` for the sub-tree.
+
+**Built-in value editors**
+
+- [ ] **FR-7**: Seven built-in editors: string, number, integer, date, datetime, boolean (tri-state), enum (single-select), list (multi-select).
 - [ ] **FR-8**: Operator catalog covers (filtered per field type at runtime):
   - String: `equals`, `not-equals`, `contains`, `does-not-contain`, `starts-with`, `ends-with`, `is-null`, `is-not-null`, `in`, `not-in`
   - Number / Integer: `equals`, `not-equals`, `lt`, `lte`, `gt`, `gte`, `between`, `not-between`, `is-null`, `is-not-null`, `in`, `not-in`
   - Date / Datetime: `equals`, `not-equals`, `lt`, `lte`, `gt`, `gte`, `between`, `not-between`, `is-null`, `is-not-null`
   - Boolean: `is-true`, `is-false`, `is-null`, `is-not-null`
   - Enum: `equals`, `not-equals`, `in`, `not-in`, `is-null`, `is-not-null`
-- [ ] **FR-9**: `between` / `not-between` value editor renders **two** inputs and stores a `[v1, v2]` tuple. Switching field type or operator resets the value.
-- [ ] **FR-10**: Drag-and-drop reorder within the same group, pointer-events-based, with `touch-action: none` on the handle. No HTML5 native dnd. Same-group drops only.
-- [ ] **FR-11**: `evaluateQuery(tree, record, schema, options?)` exported as a pure function. Covers every operator, NULL semantics (only `is-null` / `is-not-null` match nullness; other operators against `null` return `false`), and case-insensitive string compare by default.
-- [ ] **FR-12**: `evaluateQuery` accepts an optional `getRelatedRecords(record, fieldName): Record[]` callback for sub-query traversal. `in` sub-query → `true` if **any** related record matches the sub-tree.
-- [ ] **FR-13**: `renderExpression(tree, schema, messages?)` exported as a pure function returning a human-readable string with parentheses around groups.
-- [ ] **FR-14**: Every node has a stable `id` (uuid) assigned on creation so tree-update helpers can target nodes without path arrays. Immutable updates — never mutate the input.
-- [ ] **FR-15**: ARIA — each group renders `role="group" aria-label="AND group" | "OR group"`. Form controls inside condition rows are reachable in DOM order. No `role="treeitem"` (would conflict with focusable form controls inside).
-- [ ] **FR-16**: Demo page at `/advanced/query-builder` covers: single-entity basics, pre-loaded tree, multi-entity sub-query, live evaluation against mock data, JSON tree view. Keymap documented on the page.
-- [ ] **FR-17**: Theming — internal Lit styles use CSS custom properties; dark-mode toggle from #324 applies without component-specific changes.
-- [ ] **FR-18**: Public types re-exported from the secondary entry point: `Expression`, `Group`, `Condition`, `SubQueryCondition`, `FieldDef`, `EntitySchema`, `Operator`, `FieldType`, `OperatorCatalog`, `QueryBuilderMessages`, `EvaluateOptions`.
+- [ ] **FR-9**: `between` / `not-between` editors render two inputs and store a tuple. Switching field/operator resets the value.
+
+**Drag-and-drop**
+
+- [ ] **FR-10**: Drag-and-drop reorder, pointer-events-based, with `touch-action: none` on the handle. No HTML5 native dnd.
+- [ ] **FR-11**: **Cross-group reparenting** — drops accepted in any other group; node `kind` and contents preserved. Self-drop into a descendant is blocked (cycle prevention).
+
+**Evaluation, visitor, serializers**
+
+- [ ] **FR-12**: `evaluateQuery(tree, record, schema, options?)` exported as a pure function. Covers every operator, NULL semantics, case-insensitive string compare default, optional `getRelatedRecords` for sub-queries.
+- [ ] **FR-13**: `renderExpression(tree, schema, messages?)` exported as a pure function returning a human-readable string with parentheses.
+- [ ] **FR-14**: `visitTree<T>(tree, visitor): T` exported. Visitor contract: `condition(node, ctx) → T`, `subquery(node, innerT, ctx) → T`, `group(node, childrenTs, ctx) → T`.
+- [ ] **FR-15**: Five reference serializers, each individually importable from `@mintplayer/ng-bootstrap/query-builder/serializers/<format>`:
+  - `toSql(tree, schema): { sql: string; params: unknown[] }` — parameterised ANSI-SQL-ish.
+  - `toODataFilter(tree, schema): string` — OData v4 `$filter` syntax.
+  - `toLinqPredicate(tree, schema): (row: unknown) => boolean` — TypeScript predicate (delegates to `evaluateQuery`).
+  - `toMongoFilter(tree, schema): Record<string, unknown>` — Mongo `$and`/`$or`/`$gt`/`$in`/`$elemMatch`.
+  - `toGraphQLWhere(tree, schema): Record<string, unknown>` — Hasura/Prisma `{ _and, _or, field: { _eq, _gt, _in, ... } }`.
+
+**Angular wrapper extras**
+
+- [ ] **FR-16**: `bs-query-builder` implements `ControlValueAccessor`. `[(ngModel)]` and `[formControl]` both work. `setDisabledState` disables interactive controls.
+- [ ] **FR-17**: `[data]` + `(filteredResult)` — when `[data]` is provided, the wrapper emits the filtered subset on every `[(query)]` mutation. Uses `evaluateQuery` internally.
+
+**Custom editors**
+
+- [ ] **FR-18**: WC-level `editorRegistry: Record<string, (ctx: EditorContext) => HTMLElement>` property. The factory is called once per condition; returned element is reused until the condition's field changes. On field change, the WC calls `(el as any).dispose?.()` then `el.remove()` before invoking the factory for the new field.
+- [ ] **FR-19**: Angular-wrapper `*bsQueryBuilderEditor="fieldName"` structural directive. The wrapper aggregates content children into an `editorRegistry` map and forwards to the WC. Each template is mounted via `ViewContainerRef.createEmbeddedView`; the directive's `dispose` destroys the view when the WC requests cleanup.
+
+**Saved queries**
+
+- [ ] **FR-20**: Saved-query picker UI renders when `[showSavedQueries]` is true. Lists `savedQueries` with load/delete buttons; a "Save current as..." action opens a name input.
+- [ ] **FR-21**: `(saveQuery)` fires `{ name: string; tree: Expression }`; `(loadQuery)` fires `{ name: string }`; `(deleteQuery)` fires `{ name: string }`. Component does **not** persist; consumer wires `[savedQueries]` from their store.
+
+**`bs-datatable` integration**
+
+- [ ] **FR-22**: `bs-datatable` gains additive inputs `[filterTree]: Expression | null` and `[filterSchema]: EntitySchema`. When set, rows are filtered through `evaluateQuery(filterTree, row, filterSchema)`. Default null = no behaviour change.
+- [ ] **FR-23**: `[filterTree]` composes with existing `bs-datatable` filter / sort / paginate logic (filter applies before sort and paginate).
+
+**General**
+
+- [ ] **FR-24**: Every node has a stable `id` (uuid) on creation; immutable updates everywhere; never mutate the input.
+- [ ] **FR-25**: ARIA — each group renders `role="group" aria-label="AND group" | "OR group"`; native focus order through form controls.
+- [ ] **FR-26**: Demo page at `/advanced/query-builder` covers all 11 test scenarios with visible code snippets. Keymap documented.
+- [ ] **FR-27**: Theming — internal Lit styles use CSS custom properties; dark-mode toggle from #324 applies without component-specific changes.
+- [ ] **FR-28**: Public types re-exported: `Expression`, `Group`, `Condition`, `SubQueryCondition`, `FieldDef`, `EntitySchema`, `Operator`, `FieldType`, `OperatorCatalog`, `QueryBuilderMessages`, `EvaluateOptions`, `EditorContext`, `SavedQuery`, `TreeVisitor`, `VisitorContext`.
 
 ### Should Have (P1)
 
-- [ ] **FR-19**: Keyboard alternative to drag-and-drop — `Alt+ArrowUp` / `Alt+ArrowDown` on a focused condition row moves it among same-group siblings.
-- [ ] **FR-20**: Operator-override input — `[operatorOverrides]: Partial<Record<string, Operator[]>>` keyed by field name, lets the consumer restrict which operators show up for specific fields.
-
-### Won't Have (this issue — explicitly tracked as follow-up issues if needed)
-
-- Cross-group drag-and-drop reparenting
-- `ControlValueAccessor` integration
-- Backend serializers (SQL / OData / LINQ / Mongo)
-- Built-in dataset binding (`[data]` + `(filteredResult)`)
-- Pluggable / slot-projected custom value editors
-- Saved-query persistence + picker
-- Direct `bs-datatable` integration
+- [ ] **FR-29**: Keyboard alternative to DnD — `Alt+ArrowUp` / `Alt+ArrowDown` moves a focused row among same-group siblings. (Cross-group keyboard moves deferred.)
+- [ ] **FR-30**: `[operatorOverrides]` input — `Partial<Record<string, Operator[]>>` keyed by field name to restrict operators per field.
 
 ---
 
@@ -125,17 +163,17 @@ interface Group {
 interface Condition {
   kind: 'condition';
   id: string;
-  field: string;           // FieldDef.name
+  field: string;
   operator: Operator;
-  value: unknown;          // shape depends on operator + field type
+  value: unknown;
 }
 
 interface SubQueryCondition {
   kind: 'subquery';
   id: string;
-  field: string;           // a relation field (FieldDef.type === 'relation')
+  field: string;
   operator: 'in' | 'not-in';
-  subQuery: Group;         // root of the nested expression tree
+  subQuery: Group;
 }
 
 type Operator =
@@ -157,7 +195,7 @@ interface FieldDef {
   label: string;
   type: FieldType;
   options?: { value: unknown; label: string }[];   // enum only
-  targetEntity?: string;                            // relation only — name of EntitySchema.name
+  targetEntity?: string;                            // relation only
 }
 
 interface EntitySchema {
@@ -167,15 +205,41 @@ interface EntitySchema {
 }
 
 interface EvaluateOptions {
-  caseSensitive?: boolean;          // default false for string ops
+  caseSensitive?: boolean;
   getRelatedRecords?: (record: unknown, fieldName: string) => unknown[];
+}
+
+interface EditorContext {
+  field: FieldDef;
+  operator: Operator;
+  value: unknown;
+  onChange: (next: unknown) => void;
+  disabled: boolean;
+}
+
+interface SavedQuery {
+  name: string;
+  tree: Expression;
+  createdAt?: string;     // ISO 8601 — optional metadata for consumers
+}
+
+interface TreeVisitor<T> {
+  condition(node: Condition, ctx: VisitorContext): T;
+  subquery(node: SubQueryCondition, inner: T, ctx: VisitorContext): T;
+  group(node: Group, children: T[], ctx: VisitorContext): T;
+}
+
+interface VisitorContext {
+  schema: EntitySchema[];
+  currentEntity: string;
+  depth: number;
 }
 ```
 
 **Round-trip rules**:
-- IDs are preserved on read; new IDs are generated only on `add*` operations.
-- `subQuery.value` is always a `Group` (even if the user-facing operator is on the parent `SubQueryCondition` rather than the group).
-- Empty groups (zero children) are valid — they render but `evaluateQuery` returns `true` for AND-empty, `false` for OR-empty (vacuous truth).
+- IDs preserved on read; new IDs generated only on `add*` operations.
+- `subQueryCondition.subQuery` is always a `Group` even if it has one child.
+- Empty groups (zero children) render but `evaluateQuery` returns `true` for AND-empty and `false` for OR-empty (vacuous truth).
 
 ---
 
@@ -184,17 +248,19 @@ interface EvaluateOptions {
 ### Anatomy
 
 ```
+┌─ [Saved ▽] ─ Big open orders ─ [💾 Save] ───────────────────────┐  (visible when showSavedQueries=true)
+└─────────────────────────────────────────────────────────────────┘
 ┌─ Query Builder ─────────────────────────────────────────────────┐
 │ [AND ▽] (root group)                          [+condition] [+grp]│
 │                                                                  │
 │  ⋮ Total          [>      ▽] [100        ]              [×]      │
 │  ⋮ Status         [equals ▽] [open       ▽]             [×]      │
-│  ⋮ ┌─ (OR group) ──────────────────────────────────[+c] [+g] [×]─│
-│  ⋮ │ ⋮ Customer.Country [equals ▽] [BE    ▽]            [×]     │
-│  ⋮ │ ⋮ Customer.Country [equals ▽] [NL    ▽]            [×]     │
-│  ⋮ └────────────────────────────────────────────────────────────│
-│  ⋮ Orders [in ▽] ┌─ (subquery on Orders) ─────[+c] [+g] [×]──┐ │
-│              ▲   │ ⋮ Total [>      ▽] [1000       ]      [×] │ │
+│  ⋮ ┌─ (OR group) ──────────────────────────[+c] [+g] [+sq] [×]──┐│
+│  ⋮ │ ⋮ Customer.Country [equals ▽] [BE    ▽]            [×]    ││
+│  ⋮ │ ⋮ Customer.Country [equals ▽] [NL    ▽]            [×]    ││
+│  ⋮ └────────────────────────────────────────────────────────────┘│
+│  ⋮ Orders [in ▽] ┌─ (subquery on Orders) ─────[+c] [+g] [×]────┐ │
+│              ▲   │ ⋮ Total [>      ▽] [1000       ]      [×]   │ │
 │              │   └─────────────────────────────────────────────│ │
 └──────────────┴─────────────────────────────────────────────────┘
                                                                 ▲
@@ -209,28 +275,76 @@ interface EvaluateOptions {
 
 ### Interactions
 
-- **Add condition** appends a new `Condition` to the current group with the first schema field selected, the first valid operator picked, and an empty value.
-- **Add group** appends a new empty `Group` (logic `and`) inside the current group.
-- **Add sub-query** is offered only when the current entity's schema has at least one relation field. Appends a `SubQueryCondition` with operator `in` and an empty sub-tree group.
-- **AND/OR toggle** is a segmented control on each group header. Click switches the group's logic.
-- **Field change** auto-resets operator (to the first valid operator for the new type) and value (to `null` or `""`).
-- **Operator change** auto-resets value if the operator's value shape differs from the previous one (e.g. switching from `equals` to `between`).
-- **Remove** deletes the node. Removing a group removes its entire subtree. The root group's remove button is hidden.
-- **Drag** — pointer down on the `⋮` handle starts a drag; pointer up over another sibling within the same group reorders.
+- **Add condition / Add group / Add sub-query** — buttons on each group header, including nested ones.
+- **AND/OR toggle** — segmented control on each group; clicking flips logic.
+- **Field change** — auto-resets operator and value.
+- **Operator change** — auto-resets value if shape differs.
+- **Remove** — deletes the node and its subtree.
+- **Drag** — pointer down on `⋮` starts a drag; pointer up over any group's drop zone (same or other group) reorders. Cycle prevention: cannot drop a group into its own descendant.
+- **Saved-query picker** (when `[showSavedQueries]=true`):
+  - Dropdown lists `[savedQueries]` items by name.
+  - Per-item Load and Delete buttons fire the respective outputs.
+  - "💾 Save" button opens an inline name input; submit fires `(saveQuery)`.
+
+### Custom editor projection (Angular)
+
+```html
+<bs-query-builder [schema]="schema" [rootEntity]="'orders'" [(query)]="query">
+  <bs-datepicker *bsQueryBuilderEditor="'orderDate'; let ctx"
+                 [value]="ctx.value"
+                 (valueChange)="ctx.onChange($event)">
+  </bs-datepicker>
+
+  <bs-multiselect *bsQueryBuilderEditor="'tags'; let ctx"
+                  [options]="tagOptions"
+                  [value]="ctx.value"
+                  (valueChange)="ctx.onChange($event)">
+  </bs-multiselect>
+</bs-query-builder>
+```
+
+The directive's micro-syntax `let ctx` exposes `EditorContext` for the template. The wrapper aggregates content children, builds an `editorRegistry` map, and forwards to the WC. When the condition's field changes (e.g., user picks a different field), the wrapper destroys the embedded view and the WC instantiates the new field's editor.
+
+### Custom editor projection (vanilla JS / non-Angular)
+
+```js
+const qb = document.querySelector('mp-query-builder');
+qb.editorRegistry = {
+  orderDate: (ctx) => {
+    const el = document.createElement('my-datepicker');
+    el.value = ctx.value;
+    el.disabled = ctx.disabled;
+    el.addEventListener('valueChange', e => ctx.onChange(e.detail));
+    return el;
+  }
+};
+```
 
 ### Keymap (documented on demo page)
 
 | Key | Action |
 |-----|--------|
 | `Tab` / `Shift+Tab` | Move focus through controls in DOM order |
-| `Enter` on Add condition / Add group | Insert child + move focus to the new field selector |
-| `Delete` or `Backspace` on a focused row (when no input is active) | Remove the row, with confirmation |
-| `Alt+ArrowUp` / `Alt+ArrowDown` on a focused row | Move row up / down among same-group siblings (FR-19) |
+| `Enter` on Add condition / Add group / Add sub-query | Insert child + focus the new field selector |
+| `Delete` or `Backspace` on a focused row (no input active) | Remove the row, with confirmation |
+| `Alt+ArrowUp` / `Alt+ArrowDown` on a focused row | Move row among same-group siblings (FR-29) |
 | `Esc` | Close any open dropdown |
+
+### `bs-datatable` integration
+
+```html
+<bs-query-builder [schema]="schema" [rootEntity]="'orders'" [(query)]="query"></bs-query-builder>
+
+<bs-datatable [data]="rows" [filterTree]="query()" [filterSchema]="orderSchema">
+  <!-- columns -->
+</bs-datatable>
+```
+
+`bs-datatable` reads `[filterTree]`, runs `evaluateQuery(tree, row, filterSchema)` per row, and the rest of the existing filter/sort/paginate pipeline composes normally.
 
 ### Theming
 
-All visible color / border / focus-ring tokens come from CSS custom properties. The dark-mode toggle from #324 should apply with zero per-component overrides. Bootstrap utility classes (`form-control`, `btn`, `btn-group`, `dropdown-menu`) are used inside the shadow DOM where they cascade; tokens compensate for shadow-DOM CSS isolation.
+All visible color / border / focus-ring tokens come from CSS custom properties. The dark-mode toggle from #324 applies with zero per-component overrides.
 
 ---
 
@@ -240,18 +354,22 @@ Single PR. Internal milestones map 1:1 to the phases in [`issue_312_plan.md`](./
 
 - [ ] **M1**: Data model + scaffold
 - [ ] **M2**: Lit WC scaffold — read-only tree rendering
-- [ ] **M3**: Value editors per data type
-- [ ] **M4**: Edit mode — mutations through tree
-- [ ] **M5**: Operator catalog + per-type operator filtering
-- [ ] **M6**: Nested groups + sub-queries
-- [ ] **M7**: Drag-and-drop reorder
-- [ ] **M8**: Expression preview rendering
-- [ ] **M9**: `evaluateQuery` helper
-- [ ] **M10**: Angular wrapper
-- [ ] **M11**: Demo page
-- [ ] **M12**: Testing + a11y validation
+- [ ] **M3**: Built-in value editors per data type
+- [ ] **M4**: Custom editor extensibility (factory callback at WC)
+- [ ] **M5**: Edit mode — mutations through tree
+- [ ] **M6**: Operator catalog + per-type filtering
+- [ ] **M7**: Nested groups + sub-queries
+- [ ] **M8**: Drag-and-drop reorder (within-group + cross-group)
+- [ ] **M9**: Expression preview rendering
+- [ ] **M10**: `evaluateQuery` helper
+- [ ] **M11**: Visitor API + 5 reference serializers
+- [ ] **M12**: Saved queries — events-only API
+- [ ] **M13**: Angular wrapper (CVA + TemplateRef sugar + dataset binding)
+- [ ] **M14**: `bs-datatable` `[filterTree]` integration
+- [ ] **M15**: Demo page
+- [ ] **M16**: Testing + a11y validation
 
-Estimate: multi-month effort. Acknowledged at planning time.
+Estimate: multi-month effort. Acknowledged at planning time; the user explicitly chose this scope.
 
 ---
 
@@ -263,17 +381,21 @@ Estimate: multi-month effort. Acknowledged at planning time.
 
 ## Technical Notes (Issue-Specific)
 
-- The WC is a Lit element colocated inside the `libs/mintplayer-ng-bootstrap/query-builder/` package (per #332 datetime-picker precedent), not a separate top-level `mp-query-builder-wc` lib (which was the earlier dock/scheduler convention).
-- Sub-queries use **recursive `<mp-query-builder>`** rather than a separate "nested builder" element. This keeps the recursion natural and means the same Lit element handles arbitrary depth.
-- Drag-and-drop uses pointer events exclusively. Touch must not call `preventDefault()` on `pointerdown` ([[feedback_pointerdown_preventdefault]]); `touch-action: none` on the handle is set at element-creation time ([[feedback_touch_action_immutable]]).
-- `evaluateQuery` is a **pure function** (no Angular, no Lit imports) so it can be used from tests, demo, and any framework consumer of the WC.
-- Operator catalog (`OperatorCatalog`) is a static const, not a registry — operators are a closed set in v1. Custom operator semantics are explicitly out of scope.
+- WC is colocated inside `libs/mintplayer-ng-bootstrap/query-builder/` (per #332 datetime-picker precedent), not a separate top-level `mp-query-builder-wc` lib.
+- Sub-queries use **recursive `<mp-query-builder>`** rather than a separate "nested builder" element.
+- Drag-and-drop uses pointer events exclusively; `touch-action: none` on the handle at element-creation time; no `preventDefault()` on touch `pointerdown`.
+- `evaluateQuery` is a pure function — `[data]`/`(filteredResult)` on the wrapper and `[filterTree]` on `bs-datatable` both delegate to it. Single source of truth for evaluation semantics.
+- Operator catalog is a static const — operators are a closed set in v1.
+- Custom editors: WC owns the factory contract; Angular wrapper provides TemplateRef sugar. The wrapper's `*bsQueryBuilderEditor` directive uses `ViewContainerRef.createEmbeddedView` to mount the template and returns the view's host element to the WC. When the WC calls dispose, the wrapper destroys the embedded view.
+- Saved-query persistence is intentionally absent. The demo wires localStorage; consumers can wire any backend.
+- `bs-datatable` change is **additive only**: existing datatable consumers see no behaviour change. `[filterTree]` defaults to `null`.
+- All 5 serializers are pure functions over the canonical `Expression` tree. Each is exported from its own sub-path so tree-shaking can drop unused ones.
 
 ---
 
 ## Related
 
 - Issue #312 (this PRD)
-- Issue #332 (DateTime Picker — most recent WC+wrapper precedent; reference for package layout and Lit conventions)
+- Issue #332 (DateTime Picker — most recent WC+wrapper + CVA precedent)
 - Reference UI: https://www.infragistics.com/products/ignite-ui-angular/angular/components/query-builder
 - See CLAUDE.md for: WC + Angular wrapper pattern, Lit 3 migration status, theme system / dark-mode toggle (#324), Bootstrap grid usage rules ([[feedback_use_bs_grid_directives]]).
