@@ -69,7 +69,7 @@
             </bs-checkbox>
         </th>
     }
-    @for (column of columnsArray; track column) {
+    @for (column of columnsArray; track column.name()) {
         <th class="text-nowrap"
             [class.sort]="column.sortable()"
             [class.sort-asc]="column.sortable() && getSortDirection(column.name()) === 'ascending'"
@@ -81,7 +81,11 @@
             (click)="columnHeaderClicked(column, $event)"
             (keydown.enter)="columnHeaderClicked(column, $event); $event.preventDefault()"
             (keydown.space)="columnHeaderClicked(column, $event); $event.preventDefault()">
-            <ng-container *ngTemplateOutlet="column.templateRef"></ng-container>
+            @if (column.templateRef) {
+                <ng-container *ngTemplateOutlet="column.templateRef"></ng-container>
+            } @else {
+                {{ column.label ?? column.name() }}
+            }
             @if (settings().sortColumns.length > 1 && getSortIndex(column.name()) >= 0) {
                 <span class="sort-priority">{{ getSortIndex(column.name()) + 1 }}</span>
             }
@@ -119,7 +123,7 @@
     @if (item && rowTemplate()) {
         <ng-container *ngTemplateOutlet="rowTemplate()!; context: { $implicit: item }"></ng-container>
     } @else {
-        @for (column of columnsArray; track column) {
+        @for (column of columnsArray; track column.name()) {
             <td>&nbsp;</td>
         }
     }
