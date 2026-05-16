@@ -22,17 +22,13 @@ export interface PageChangeEventDetail {
   page: number;
 }
 
-const APPROX_BOX_WIDTH_PX: Record<PaginationSize, number> = {
-  small: 36,
-  medium: 44,
-  large: 56,
-};
-
 /**
  * `<mp-pagination>` — page selector with first/last anchors, ellipsis gaps,
- * and previous/next arrows. Responsive: when `number-of-boxes` would exceed
- * the available width (e.g. on mobile), the WC clamps the visible budget to
- * what fits, never overflowing.
+ * and previous/next arrows. The visible budget is fully driven by the
+ * `numberOfBoxes` input (0 = uncapped). Layout-time auto-fit was tried
+ * earlier but produced a feedback loop with flex parents whose item width
+ * resolves from their content's `max-content` — the consumer is responsible
+ * for picking a cap that fits the host on their target viewports.
  */
 export class MpPagination extends LitElement {
   static override styles = [paginationStyles];
@@ -55,8 +51,6 @@ export class MpPagination extends LitElement {
   private _showArrows = true;
   private _size: PaginationSize = 'medium';
   private _ariaLabel = 'Pagination';
-  private _hostWidth = 0;
-  private _resizeObserver: ResizeObserver | null = null;
 
   get pageNumbers(): number[] {
     return [...this._pageNumbers];
@@ -138,57 +132,18 @@ export class MpPagination extends LitElement {
     }
   }
 
-  private _resizeRaf: number | null = null;
-
-  override connectedCallback(): void {
-    super.connectedCallback();
-    if (typeof ResizeObserver !== 'undefined') {
-      this._resizeObserver = new ResizeObserver((entries) => {
-        const w = Math.floor(entries[0]?.contentRect.width ?? 0);
-        if (Math.abs(w - this._hostWidth) < 4) return;
-        // Defer the state update to a rAF — synchronous `requestUpdate` in
-        // the ResizeObserver callback can re-enter the observer (the new
-        // layout fires another resize entry before the browser has finished
-        // the current pass) and surface as "ResizeObserver loop completed
-        // with undelivered notifications" in the console.
-        if (this._resizeRaf !== null) cancelAnimationFrame(this._resizeRaf);
-        this._resizeRaf = requestAnimationFrame(() => {
-          this._resizeRaf = null;
-          this._hostWidth = w;
-          this.requestUpdate();
-        });
-      });
-      this._resizeObserver.observe(this);
-    }
-  }
-
-  override disconnectedCallback(): void {
-    super.disconnectedCallback();
-    this._resizeObserver?.disconnect();
-    this._resizeObserver = null;
-    if (this._resizeRaf !== null) {
-      cancelAnimationFrame(this._resizeRaf);
-      this._resizeRaf = null;
-    }
-  }
-
   /**
-   * Maximum visible boxes that fit in the host, given the current size.
-   * Consumers cap with `numberOfBoxes`; the WC further clamps to what fits.
+   * Effective TOTAL budget (boxes including arrows). When `numberOfBoxes`
+   * is `0` the budget is uncapped and all pages render; otherwise the cap
+   * is honoured verbatim. (An earlier ResizeObserver-driven "auto-fit"
+   * was removed — its measurement of self-width fed back into the rendered
+   * content and the WC + flex parent could oscillate or lock the budget
+   * to a single button.)
    */
-  private fittingBoxes(): number {
-    const w = this._hostWidth || this.clientWidth || 0;
-    if (w <= 0) return Number.POSITIVE_INFINITY;
-    return Math.max(1, Math.floor(w / APPROX_BOX_WIDTH_PX[this._size]));
-  }
-
-  /** Effective TOTAL budget (boxes including arrows). */
   private effectiveBudget(): number {
-    const fit = this.fittingBoxes();
-    if (this._numberOfBoxes <= 0) {
-      return Math.min(fit, this._pageNumbers.length + (this._showArrows ? 2 : 0));
-    }
-    return Math.min(fit, this._numberOfBoxes);
+    const total = this._pageNumbers.length + (this._showArrows ? 2 : 0);
+    if (this._numberOfBoxes <= 0) return total;
+    return Math.min(total, this._numberOfBoxes);
   }
 
   /** Build the full layout — arrows + page items. Pure — no DOM access. */

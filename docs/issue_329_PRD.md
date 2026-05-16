@@ -275,7 +275,7 @@ existing `<bs-pagination>` Angular component is refactored to thinly wrap
 |---------------------------|-----------------------------------|----------------|----------------------------------------------------------------------------------------------------------------------|
 | `page-numbers` (property) | `number[]`                        | `[]`           | The full enumerable set of page values. Arbitrary (not necessarily contiguous) — `[1..100]` or `[10, 20, 50, 100]`.   |
 | `selected-page-number`    | `number`                          | first          | Currently-selected value. Must be one of `pageNumbers`. Always visible regardless of budget.                          |
-| `number-of-boxes`         | `number` (cap; `0` = unlimited)   | `0`            | **Max** visible boxes including the prev/next arrows. The WC clamps further to whatever fits the host (responsive).   |
+| `number-of-boxes`         | `number` (cap; `0` = unlimited)   | `0`            | **Max** visible boxes including the prev/next arrows. `0` renders every page in `pageNumbers`.                        |
 | `show-arrows`             | `boolean`                         | `true`         | Whether prev/next arrow buttons participate in the budget.                                                            |
 | `size`                    | `'small' \| 'medium' \| 'large'`  | `'medium'`     | Padding / font-size step (drives the per-box width that the resize observer divides into).                           |
 | `aria-label`              | `string`                          | `'Pagination'` | Forwarded to the inner `<nav>` landmark.                                                                              |
@@ -343,16 +343,15 @@ ellipsis slot is repurposed to render that page. With 7 pages, current=5,
 budget=7 the result is `< 1 … [5] 6 7 >` — not `< 1 … 4 [5] 7 >` (which
 would silently hide page 6).
 
-#### Responsive clamping
+#### Budget cap
 
-`numberOfBoxes` is a **cap**, not a target. A `ResizeObserver` on the host
-measures the available width and computes `fittingBoxes = floor(width /
-approxBoxWidth)` where `approxBoxWidth` is `{small: 36, medium: 44, large:
-56}` px. The effective budget is `min(numberOfBoxes, fittingBoxes,
-pageNumbers.length)` (arrows accounted for separately). This means the same
-`<mp-pagination number-of-boxes="11">` renders 11 boxes on a 600 px desktop
-container and gracefully shrinks to 5 on a narrow mobile container — no
-breakpoint logic needed at the consumer.
+`numberOfBoxes` is the sole budget control: `0` (default) renders every
+page in `[pageNumbers]`; any positive value caps the visible boxes to that
+count (arrows included). An earlier `ResizeObserver`-driven auto-fit was
+attempted but removed — measuring the WC's own width fed back into its
+rendered content (which sized the WC), and inside flex parents the loop
+could lock the budget at a single button. Consumers are expected to pick
+a cap that fits the smallest viewport they support.
 
 ### `<mp-datatable>` / `<bs-datatable>` — new
 

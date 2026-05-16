@@ -90,12 +90,12 @@
 
     <div bsRow class="align-items-center mb-4">
         <div [md]="4">
-            <h2 class="h5">Responsive (no cap)</h2>
+            <h2 class="h5">Uncapped</h2>
             <p class="mb-0">
-                100 pages, <code>numberOfBoxes</code> omitted. A
-                <code>ResizeObserver</code> on the host measures the
-                available width and picks the largest budget that fits — try
-                resizing the browser to see boxes appear / disappear.
+                Omit <code>[numberOfBoxes]</code> and the component renders
+                every page in <code>[pageNumbers]</code>. Useful when the
+                set is small enough to fit comfortably on the smallest
+                viewport you support.
             </p>
         </div>
         <div [md]="8">
@@ -126,8 +126,6 @@
             <p class="mb-0">
                 <code>[size]</code> accepts <code>'small'</code>,
                 <code>'medium'</code> (default), and <code>'large'</code>.
-                The auto-fit measurement adjusts per size — narrower boxes
-                fit more on the same width.
             </p>
         </div>
         <div [md]="8">

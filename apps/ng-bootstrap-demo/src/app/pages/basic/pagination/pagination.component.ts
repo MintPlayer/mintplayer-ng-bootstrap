@@ -36,9 +36,9 @@ export class PaginationComponent {
   nearEndPages = signal<number[]>([...Array(30).keys()].map((p) => p + 1));
   nearEndSelected = model(29);
 
-  /** No `numberOfBoxes` cap — the ResizeObserver shrinks / grows the visible budget with the host width. */
-  responsivePages = signal<number[]>([...Array(100).keys()].map((p) => p + 1));
-  responsiveSelected = model(42);
+  /** Small enough set that omitting `numberOfBoxes` is fine — every page renders. */
+  responsivePages = signal<number[]>([...Array(12).keys()].map((p) => p + 1));
+  responsiveSelected = model(7);
 
   /** Selector-style paginator (e.g. "rows per page"): non-contiguous values, arrows hidden. */
   selectorPages = signal<number[]>([10, 20, 50, 100, 200]);
