@@ -138,8 +138,42 @@ export interface FileSystemNode {
   modifiedAt?: string;       // ISO-8601
   mimeType?: string;         // for icon resolution
   iconKey?: string;          // override bootstrap-icons lookup
+  /** Per-node operation overrides (B2B); see B2B-readiness § Per-node permissions. */
+  allowOperations?: Partial<OperationFlags>;
+  /** Free-form metadata. The WC reads only `meta.loading` (set during lazy expansion). */
   meta?: Record<string, unknown>;
 }
+
+/** Discriminator for the kinds of mutating operations the WC emits. */
+export type OperationKind = 'rename' | 'delete' | 'new-folder' | 'paste';
+
+/**
+ * Toggle individual operations on / off, both globally on `<bs-file-manager>`
+ * (`[allowOperations]`) and per-node on `FileSystemNode.allowOperations`.
+ * Each missing key inherits from the parent scope (per-node falls back to
+ * global; global defaults to `true`).
+ */
+export interface OperationFlags {
+  rename?: boolean;
+  delete?: boolean;
+  newFolder?: boolean;
+  cut?: boolean;
+  copy?: boolean;
+  paste?: boolean;
+}
+
+/** Discriminated-union payload for the `(operation)` event. */
+export type OperationEventDetail =
+  | { kind: 'rename'; nodeId: string; previousName: string; newName: string }
+  | { kind: 'delete'; nodeIds: string[] }
+  | { kind: 'new-folder'; parentId: string | null; name: string }
+  | {
+      kind: 'paste';
+      mode: 'cut' | 'copy';
+      sourceIds: string[];
+      targetFolderId: string | null;
+      conflicts?: Record<string, { action: 'replace' | 'skip' | 'rename'; newName?: string }>;
+    };
 
 export interface FileManagerState {
   currentFolderId: string | null;
@@ -181,7 +215,7 @@ State is provided to descendants via `@lit/context` ([[reference_lit_context_rec
 | `mp-selection-change`  | `selectionChange`       | `{ selectedIds: string[] }`                                 | Selection mutated by any input modality.                         |
 | `mp-node-open`         | `nodeOpen`              | `{ node: FileSystemNode }`                                  | User dbl-clicks file row or `Enter` on file.                     |
 | `mp-upload-request`    | `uploadRequest`         | `{ files: File[]; targetFolderId: string \| null }`         | OS files dropped onto the right pane.                            |
-| `mp-operation`         | `operation`             | `{ kind: 'rename' \| 'delete' \| 'new-folder' \| 'paste'; payload: unknown }` | Consumer mutates `nodes` and pushes back. |
+| `mp-operation`         | `operation`             | `OperationEventDetail` (discriminated union — see Data Model) | Consumer mutates `nodes` and pushes back. |
 | `mp-error`             | `error`                 | `{ kind: string; message: string }`                         | Internal validation failure (e.g. duplicate name on rename).     |
 
 Consumer is responsible for mutating `nodes` and pushing back via the property — `mp-file-manager` does not self-mutate. This matches `mp-scheduler`'s API contract ([[feedback_wc_no_imposed_behavior]]).
@@ -368,16 +402,43 @@ class BsFileManagerComponent {
 
 ---
 
+## Cross-framework rendering bridge
+
+`bs-datatable` preserves the existing `*bsDatatableColumn` (header content) and `*bsRowTemplate` (per-row `<td>`s) Angular directives even though the underlying `<mp-datatable>` is a Lit web component with shadow DOM. The bridge follows the pattern the query-builder shipped in #340:
+
+1. **Capture**: the Angular wrapper reads the directives via `contentChild()` / `contentChildren()`. Each directive owns a `TemplateRef`.
+2. **Build a renderer callback**: `bs-datatable` constructs a `rowRenderer: (row, rowIndex) => Node | ReadonlyArray<Node>` (and per-column `headerRenderer`s for the column directives) that the WC accepts as a property.
+3. **Materialise into DOM**: when the WC calls the renderer, the wrapper invokes `viewContainerRef.createEmbeddedView(tpl, { $implicit: row, index })`, calls `viewRef.detectChanges()`, and returns `viewRef.rootNodes` — these are the rendered `<td>` elements.
+4. **Cache + reuse**: views are keyed by `rowKey(row)` and stored in a `Map<string, EmbeddedViewRef>`. On the next render Lit re-reads from the renderer, the wrapper updates `viewRef.context.$implicit = nextRow`, calls `detectChanges()`, and reuses the same DOM nodes (no detach/reattach thrash).
+5. **Lifecycle**: `DestroyRef.onDestroy()` on the Angular wrapper tears down every cached `EmbeddedViewRef` when the component leaves the tree. Stale views for rows that disappeared between renders are pruned proactively in the `[items]` / `[data]` effect.
+
+The same mechanism powers the treeview's `*bsTreeviewNode` directive via `mp-treeview.nodeRenderer`. The Lit WCs themselves know nothing about Angular — they accept a function returning `Node`s and project them into shadow DOM. This is the pattern recorded under [[feedback_wc_no_angular_imports]] and matches `mp-query-builder.element.ts`'s editor factory pattern.
+
+**Why not slots?** Tables have strict parent-child rules — `<tr>` / `<td>` can only live inside `<table>` / `<tr>`, which makes light-DOM slot projection across the shadow boundary unworkable. Rendering directly via callbacks bypasses this constraint and gives Angular consumers full template power.
+
+---
+
+## Performance notes
+
+- **Treeview lookups**: `<mp-treeview>` walks the data once into a `Map<string, TreeNode>` and `Map<string, TreeNode>` parent index when `items` changes. Per-keystroke `findParent` / `findNode` (used by `←` and `Home`/`End`) are O(1).
+- **File-manager tree assembly**: `getTreeItems()` builds a `Map<parentId, FileSystemNode[]>` once per render and walks it depth-first — O(N) for N nodes, not O(N²).
+- **Virtual scroll** (`<mp-datatable>`):
+  - Implementation: scroll-position-driven; computes `startIndex` / `endIndex` from `scrollTop / itemSize` ± a buffer, then renders only the slice with explicit-height spacer `<tr>`s above and below.
+  - Trade-off vs. [`@lit-labs/virtualizer`](https://github.com/lit/lit/tree/main/packages/labs/virtualizer): the labs package handles variable row heights and pre-cached size estimates but is a new dependency and applies its own host element. The file-manager's rows are uniform-height (`itemSize` default 40 px) so the simpler custom approach covers the use case without the dep. Re-evaluate when variable row heights are needed (e.g. icons-view inside a virtualised grid).
+
+---
+
 ## Open Questions
 
-| #  | Question                                                                                              | Default if unresolved                                              |
-|----|-------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------|
-| Q1 | Reuse `bs-dropdown` for the context menu, or introduce a new `mp-context-menu` primitive?             | Investigate during Phase 3. Reuse if `bs-dropdown` exposes enough. |
-| Q2 | Lazy-loaded tree data — v1 or v2?                                                                     | v2. Data shape leaves room (no children list inlined).             |
-| Q3 | Icon-grid view — extract a reusable `mp-card-grid` primitive, or keep file-manager-specific?          | File-manager-specific in v1; extract if a second consumer appears. |
-| Q4 | Drag between tree and datatable (move file to a different folder via drag) — v1 or v2?               | v2. Not in user's v1 list.                                          |
-| Q5 | Backwards-compat shim for `bs-treeview` content-projected children (one release deprecation window)?  | None — breaking change. CHANGELOG documents migration.              |
-| Q6 | Backwards-compat shim for `bs-datatable` `*bsDatatableColumn` directive?                              | None — breaking change. CHANGELOG documents migration.              |
+| #  | Question                                                                                              | Resolution                                                          |
+|----|-------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------|
+| Q1 | Reuse `bs-dropdown` for the context menu, or introduce a new `mp-context-menu` primitive?             | **Resolved**: Lit-native inline menu inside `mp-file-manager`. Using `bs-dropdown` (Angular) inside a Lit WC contradicts framework independence ([[feedback_wc_no_angular_imports]]). |
+| Q2 | Lazy-loaded tree data — v1 or v2?                                                                     | **Resolved**: Landed in B2B-readiness — `mp-treeview.loadChildren` + `TreeNode.lazy`. |
+| Q3 | Icon-grid view — extract a reusable `mp-card-grid` primitive, or keep file-manager-specific?          | **Deferred**: File-manager-specific in v1; extract if a second consumer appears. |
+| Q4 | Drag between tree and datatable (move file to a different folder via drag) — v1 or v2?                | **Deferred to v2**: Not in user's v1 list.                          |
+| Q5 | Backwards-compat shim for `bs-treeview` content-projected children?                                   | **Resolved**: Breaking change. CHANGELOG documents migration.       |
+| Q6 | Backwards-compat shim for `bs-datatable` `*bsDatatableColumn` directive?                              | **Resolved**: Directive preserved and routed through new WC via `EmbeddedViewRef` bridge — see "Cross-framework rendering bridge" below. |
+| Q7 | Custom virtual scroll vs. `@lit-labs/virtualizer` for `<mp-datatable>`?                              | **Resolved**: Custom scroll-position-driven virtualizer in `<mp-datatable>`. Trade-off below. |
 
 ---
 

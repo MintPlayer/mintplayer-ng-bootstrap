@@ -93,14 +93,33 @@ export class MpTreeview extends LitElement {
   private _focusedId: string | null = null;
   // Visible (flattened) node order for keyboard navigation
   private _visibleOrder: TreeNode[] = [];
+  // Precomputed lookup tables — refreshed whenever `items` changes.
+  // Without these, `findNode` / `findParent` are O(N) per keystroke and the
+  // entire walk degenerates to O(N²) on deep trees (Gemini PR-341 review).
+  private _byId: Map<string, TreeNode> = new Map();
+  private _parentById: Map<string, TreeNode | null> = new Map();
 
   get items(): TreeNode[] {
     return this._items;
   }
   set items(value: TreeNode[]) {
     this._items = Array.isArray(value) ? value : [];
+    this.rebuildIndex();
     this.syncFocusAfterUpdate();
     this.requestUpdate();
+  }
+
+  private rebuildIndex(): void {
+    this._byId.clear();
+    this._parentById.clear();
+    const walk = (nodes: ReadonlyArray<TreeNode>, parent: TreeNode | null) => {
+      for (const node of nodes) {
+        this._byId.set(node.id, node);
+        this._parentById.set(node.id, parent);
+        if (node.children && node.children.length > 0) walk(node.children, node);
+      }
+    };
+    walk(this._items, null);
   }
 
   get expandedIds(): string[] {
@@ -317,36 +336,19 @@ export class MpTreeview extends LitElement {
   }
 
   private syncFocusAfterUpdate(): void {
-    if (this._focusedId !== null) {
-      const stillExists = this.findNode(this._items, this._focusedId);
-      if (!stillExists) {
-        this._focusedId = null;
-      }
+    if (this._focusedId !== null && !this._byId.has(this._focusedId)) {
+      this._focusedId = null;
     }
   }
 
-  private findNode(nodes: ReadonlyArray<TreeNode>, id: string): TreeNode | null {
-    for (const node of nodes) {
-      if (node.id === id) return node;
-      if (node.children) {
-        const found = this.findNode(node.children, id);
-        if (found) return found;
-      }
-    }
-    return null;
+  /** O(1) lookup against the precomputed index. */
+  private findNode(_unused: ReadonlyArray<TreeNode>, id: string): TreeNode | null {
+    return this._byId.get(id) ?? null;
   }
 
-  private findParent(nodes: ReadonlyArray<TreeNode>, id: string, parent: TreeNode | null = null): TreeNode | null {
-    for (const node of nodes) {
-      if (node.id === id) return parent;
-      if (node.children) {
-        const found = this.findParent(node.children, id, node);
-        if (found !== null || node.children.some((c) => c.id === id)) {
-          return found ?? node;
-        }
-      }
-    }
-    return null;
+  /** O(1) lookup against the precomputed parent map. */
+  private findParent(_unused: ReadonlyArray<TreeNode>, id: string): TreeNode | null {
+    return this._parentById.get(id) ?? null;
   }
 
   private onRowClick(node: TreeNode, ev: MouseEvent): void {
