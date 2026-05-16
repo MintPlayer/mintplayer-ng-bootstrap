@@ -18,4 +18,16 @@
 
 :host {
   display: inline-block;
+  vertical-align: middle;
+}
+
+// Bootstrap's `.form-check` ships a `margin-bottom: 0.125rem` that's only
+// useful when stacking multiple checkboxes/radios in a form column. Each
+// WC wraps a single control, so that bottom margin produces an asymmetric
+// box and the visible indicator drifts above the geometric centre when
+// the WC sits in a vertically-centred container (table cells, toolbars).
+// Zero it out — consumers stacking multiple WCs can re-introduce spacing
+// at the consumer-template level.
+.form-check {
+  margin-bottom: 0;
 }
