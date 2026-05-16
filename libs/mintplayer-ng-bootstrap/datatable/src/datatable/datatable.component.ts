@@ -371,10 +371,26 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
 
   onSelectionChange(event: Event): void {
     const detail = (event as CustomEvent<SelectionChangeEventDetail>).detail;
-    const idSet = new Set(detail.selectedIds);
     const keyFn = this.rowKey();
-    const rows = this.currentData().filter((row, index) => idSet.has(keyFn(row, index)));
-    this.selection.set(rows);
+
+    // The naïve `currentData().filter(id ∈ idSet)` drops cross-page
+    // selections in pagination mode — `currentData` only holds the
+    // currently-visible page, so any id selected on a page the user has
+    // since navigated away from disappears. Look up known IDs in
+    // `selection()` first (rows from earlier pages we still remember),
+    // then fall back to `currentData()` for IDs the WC just acknowledged
+    // from the current page.
+    const existingById = new Map<string, TData>();
+    this.selection().forEach((row, i) => existingById.set(keyFn(row, i), row));
+    const currentById = new Map<string, TData>();
+    this.currentData().forEach((row, i) => currentById.set(keyFn(row, i), row));
+
+    const next: TData[] = [];
+    for (const id of detail.selectedIds) {
+      const row = existingById.get(id) ?? currentById.get(id);
+      if (row !== undefined) next.push(row);
+    }
+    this.selection.set(next);
   }
 
   onPageChange(event: Event): void {
