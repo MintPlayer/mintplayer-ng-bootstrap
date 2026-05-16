@@ -12,10 +12,10 @@
     [items]="items()"
     [(expandedIds)]="expandedIds"
     selectionMode="single">
-    <ng-template bsTreeviewNode let-node>
+    <ng-container *bsTreeviewNode="let node">
         <span [innerHTML]="iconFor(node.iconKey)" class="me-2"></span>
         {{ node.label }}
-    </ng-template>
+    </ng-container>
 </bs-treeview>
 
 <details class="mt-3">

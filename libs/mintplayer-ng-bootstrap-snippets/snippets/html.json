@@ -38,11 +38,11 @@
         "description": "Bootstrap Datatable",
         "body": [
             "<bs-datatable [(settings)]=\"${1:settings}\" [fetch]=\"${2:fetchItems}\">",
-            "\t<ng-template bsDatatableColumn=\"${3:PropertyName}\">${4:Heading}</ng-template>",
+            "\t<div *bsDatatableColumn=\"'${3:PropertyName}'; sortable: true\">${4:Heading}</div>",
             "",
-            "\t<ng-template bsRowTemplate let-item>",
+            "\t<ng-container *bsRowTemplate=\"let item\">",
             "\t\t<td>{{ item?.${3/(.)(.*)/${1:/downcase}$2/} }}</td>",
-            "\t</ng-template>",
+            "\t</ng-container>",
             "</bs-datatable>"
         ]
     },
@@ -360,9 +360,9 @@
         "description": "Bootstrap Treeview",
         "body": [
             "<bs-treeview [items]=\"${1:items}()\" [(expandedIds)]=\"${2:expandedIds}\">",
-            "\t<ng-template bsTreeviewNode let-node>",
+            "\t<ng-container *bsTreeviewNode=\"let node\">",
             "\t\t{{ node.label }}",
-            "\t</ng-template>",
+            "\t</ng-container>",
             "</bs-treeview>"
         ]
     },

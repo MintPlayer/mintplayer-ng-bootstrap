@@ -9,13 +9,13 @@ import type { TreeNode } from '@mintplayer/ng-bootstrap/web-components/treeview'
  * Example:
  * ```html
  * <bs-treeview [items]="nodes()">
- *   <ng-template bsTreeviewNode let-node>
+ *   <ng-container *bsTreeviewNode="let node">
  *     <span [innerHTML]="iconFor(node)"></span>
  *     <strong>{{ node.label }}</strong>
  *     @if (node.meta?.['badge']) {
  *       <span class="badge bg-secondary">{{ node.meta!['badge'] }}</span>
  *     }
- *   </ng-template>
+ *   </ng-container>
  * </bs-treeview>
  * ```
  */

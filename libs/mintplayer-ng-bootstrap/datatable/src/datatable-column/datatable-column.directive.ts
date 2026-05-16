@@ -11,7 +11,7 @@ import { Directive, inject, input, TemplateRef } from '@angular/core';
  *
  * Example:
  * ```html
- * <ng-template bsDatatableColumn="YearStarted">Year started</ng-template>
+ * <div *bsDatatableColumn="'YearStarted'; sortable: true">Year started</div>
  * ```
  *
  * Optional `bsDatatableColumnSortable` controls whether the header acts as a

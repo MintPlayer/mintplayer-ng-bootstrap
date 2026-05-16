@@ -7,10 +7,10 @@ import { Directive, inject, TemplateRef } from '@angular/core';
  *
  * Example:
  * ```html
- * <ng-template bsRowTemplate let-artist>
+ * <ng-container *bsRowTemplate="let artist">
  *   <td class="text-nowrap">{{ artist?.name }}</td>
  *   <td class="text-nowrap">{{ artist?.yearStarted }}</td>
- * </ng-template>
+ * </ng-container>
  * ```
  */
 @Directive({ selector: '[bsRowTemplate]' })
