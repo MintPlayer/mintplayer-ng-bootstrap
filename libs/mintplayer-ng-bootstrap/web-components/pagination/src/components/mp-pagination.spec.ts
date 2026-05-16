@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import './mp-pagination';
-import { buildPaginationItems, type MpPagination } from './mp-pagination';
+import { buildPaginationLayout, type MpPagination } from './mp-pagination';
 
 function fixture(html: string): HTMLElement {
   const container = document.createElement('div');
@@ -16,45 +16,87 @@ async function settled<T extends HTMLElement>(el: T): Promise<T> {
   return el;
 }
 
-describe('buildPaginationItems', () => {
-  it('shows every page when budget >= count', () => {
-    const items = buildPaginationItems([1, 2, 3, 4, 5], 3, 5);
-    expect(items.map((i) => (i.kind === 'page' ? i.page : '…'))).toEqual([1, 2, 3, 4, 5]);
+/** Compact serialisation used to compare against the PRD growth-table. */
+function serialise(pages: ReadonlyArray<number>, current: number, budget: number, showArrows = true): string {
+  const layout = buildPaginationLayout(pages, current, budget, showArrows);
+  const C = current;
+  const tokens: string[] = [];
+  if (layout.showPrev) tokens.push('<');
+  layout.items.forEach((it) => {
+    if (it.kind === 'gap') tokens.push('...');
+    else if (it.page === C) tokens.push('C');
+    else if (it.page === C - 1) tokens.push('C-1');
+    else if (it.page === C - 2) tokens.push('C-2');
+    else if (it.page === C - 3) tokens.push('C-3');
+    else if (it.page === C + 1) tokens.push('C+1');
+    else if (it.page === C + 2) tokens.push('C+2');
+    else if (it.page === C + 3) tokens.push('C+3');
+    else tokens.push(String(it.page));
+  });
+  if (layout.showNext) tokens.push('>');
+  return tokens.join(' ');
+}
+
+describe('buildPaginationLayout — PRD growth table', () => {
+  // Use a 90-page array with current=45 so every transition is far from
+  // edges (mirrors the PRD's diagrams exactly).
+  const pages = Array.from({ length: 90 }, (_, i) => i + 1);
+  const current = 45;
+
+  it.each([
+    [1, 'C'],
+    [2, 'C >'],
+    [3, '< C >'],
+    [4, '< 1 C >'],
+    [5, '< 1 C 90 >'],
+    [6, '< 1 ... C 90 >'],
+    [7, '< 1 ... C ... 90 >'],
+    [8, '< 1 ... C-1 C ... 90 >'],
+    [9, '< 1 ... C-1 C C+1 ... 90 >'],
+    [10, '< 1 2 ... C-1 C C+1 ... 90 >'],
+    [11, '< 1 2 ... C-1 C C+1 ... 89 90 >'],
+    [12, '< 1 2 ... C-2 C-1 C C+1 ... 89 90 >'],
+    [13, '< 1 2 ... C-2 C-1 C C+1 C+2 ... 89 90 >'],
+    [14, '< 1 2 3 ... C-2 C-1 C C+1 C+2 ... 89 90 >'],
+    [15, '< 1 2 3 ... C-2 C-1 C C+1 C+2 ... 88 89 90 >'],
+  ])('budget=%i renders %s', (budget, expected) => {
+    expect(serialise(pages, current, budget)).toBe(expected);
+  });
+});
+
+describe('buildPaginationLayout — edges', () => {
+  const pages = Array.from({ length: 90 }, (_, i) => i + 1);
+
+  it('current=1 (first page) skips the empty "before" direction', () => {
+    // Page 1 IS current → serialised as "C".
+    expect(serialise(pages, 1, 5)).toBe('< C ... 90 >');
   });
 
-  it('returns a centered window when budget < 5 (no room for anchors)', () => {
-    const items = buildPaginationItems([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 5, 3);
-    expect(items.map((i) => (i.kind === 'page' ? i.page : '…'))).toEqual([4, 5, 6]);
+  it('current=last skips the empty "after" direction', () => {
+    // Page 90 IS current → serialised as "C".
+    expect(serialise(pages, 90, 5)).toBe('< 1 ... C >');
   });
 
-  it('places left edge cleanly when current is near the start', () => {
-    const items = buildPaginationItems([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 2, 7);
-    expect(items.map((i) => (i.kind === 'page' ? i.page : '…'))).toEqual([1, 2, 3, 4, 5, '…', 10]);
+  it('handles non-contiguous page arrays (e.g. perPage selectors)', () => {
+    const layout = buildPaginationLayout([10, 20, 50, 100], 20, 4, false);
+    expect(layout.items.map((i) => (i.kind === 'page' ? i.page : '…'))).toEqual([10, 20, 50, 100]);
   });
 
-  it('places right edge cleanly when current is near the end', () => {
-    const items = buildPaginationItems([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 9, 7);
-    expect(items.map((i) => (i.kind === 'page' ? i.page : '…'))).toEqual([1, '…', 6, 7, 8, 9, 10]);
+  it('current=middle of 4 pages shows them all (budget exceeds count)', () => {
+    // pages=[1,2,3,4], current=2 → pages 1=C-1, 2=C, 3=C+1, 4=C+2.
+    expect(serialise([1, 2, 3, 4], 2, 10)).toBe('< C-1 C C+1 C+2 >');
   });
+});
 
-  it('renders anchors + both gaps when current is in the middle', () => {
-    const items = buildPaginationItems([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 5, 7);
-    expect(items.map((i) => (i.kind === 'page' ? i.page : '…'))).toEqual([1, '…', 4, 5, 6, '…', 10]);
-  });
+describe('buildPaginationLayout — arrows opt-out', () => {
+  const pages = Array.from({ length: 90 }, (_, i) => i + 1);
 
-  it('uses page 2/9 instead of a 1-away gap', () => {
-    // budget=7, current=3 → window=[2,3,4]; lo=1 means show page 2 not '…'
-    const items = buildPaginationItems([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 3, 7);
-    expect(items.map((i) => (i.kind === 'page' ? i.page : '…'))).toEqual([1, 2, 3, 4, 5, '…', 10]);
-  });
-
-  it('marks the current page', () => {
-    const items = buildPaginationItems([1, 2, 3, 4, 5], 3, 5);
-    expect(items.filter((i) => i.kind === 'page' && i.current).map((i) => (i.kind === 'page' ? i.page : null))).toEqual([3]);
-  });
-
-  it('handles empty list', () => {
-    expect(buildPaginationItems([], 1, 7)).toEqual([]);
+  it('budget grows into pages first when showArrows=false', () => {
+    expect(serialise(pages, 45, 1, false)).toBe('C');
+    expect(serialise(pages, 45, 2, false)).toBe('1 C');
+    expect(serialise(pages, 45, 3, false)).toBe('1 C 90');
+    expect(serialise(pages, 45, 4, false)).toBe('1 ... C 90');
+    expect(serialise(pages, 45, 5, false)).toBe('1 ... C ... 90');
   });
 });
 
@@ -84,19 +126,21 @@ describe('<mp-pagination>', () => {
   it('emits mp-pagination-page-change on click', async () => {
     const el = host.firstElementChild as MpPagination;
     el.pageNumbers = [1, 2, 3, 4, 5];
-    el.selectedPageNumber = 1;
+    el.selectedPageNumber = 3;
     el.numberOfBoxes = 7;
     await settled(el);
     let received: number | null = null;
     el.addEventListener('mp-pagination-page-change', (ev) => {
       received = (ev as CustomEvent<{ page: number }>).detail.page;
     });
-    const buttons = el.shadowRoot!.querySelectorAll<HTMLButtonElement>('button.page-link');
-    // skip the prev-arrow → buttons[0]; first page button is buttons[1]
-    buttons[3].click(); // page 3
-    expect(received).toBe(3);
+    // With budget=7 + showArrows=true, all 5 pages render: [<, 1, 2, 3=C, 4, 5, >].
+    // Click page 4.
+    const page4 = Array.from(el.shadowRoot!.querySelectorAll<HTMLButtonElement>('button.page-link'))
+      .find((b) => b.textContent?.trim() === '4');
+    page4!.click();
+    expect(received).toBe(4);
     await settled(el);
-    expect(el.shadowRoot!.querySelector('button[aria-current="page"]')?.textContent?.trim()).toBe('3');
+    expect(el.shadowRoot!.querySelector('button[aria-current="page"]')?.textContent?.trim()).toBe('4');
   });
 
   it('disables previous on first page and next on last page', async () => {

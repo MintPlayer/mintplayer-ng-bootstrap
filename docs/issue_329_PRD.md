@@ -261,6 +261,89 @@ export interface TreeNode {
 
 **Events**: `tree-node-select`, `tree-node-expand`, `tree-node-collapse` — detail `{ node: TreeNode; expandedIds?: string[]; selectedIds?: string[] }`.
 
+### `<mp-pagination>` / `<bs-pagination>` — new WC primitive
+
+The datatable footer renders two `<mp-pagination>` elements (rows-per-page on
+the left, page selector on the right) so the WC is self-sufficient. The
+existing `<bs-pagination>` Angular component is refactored to thinly wrap
+`<mp-pagination>`; its public API (`pageNumbers`, `selectedPageNumber`,
+`numberOfBoxes`, `showArrows`, `size`, `aria-label`) is preserved verbatim.
+
+**Properties**:
+
+| Attribute / property      | Type                              | Default        | Description                                                                                                          |
+|---------------------------|-----------------------------------|----------------|----------------------------------------------------------------------------------------------------------------------|
+| `page-numbers` (property) | `number[]`                        | `[]`           | The full enumerable set of page values. Arbitrary (not necessarily contiguous) — `[1..100]` or `[10, 20, 50, 100]`.   |
+| `selected-page-number`    | `number`                          | first          | Currently-selected value. Must be one of `pageNumbers`. Always visible regardless of budget.                          |
+| `number-of-boxes`         | `number` (cap; `0` = unlimited)   | `0`            | **Max** visible boxes including the prev/next arrows. The WC clamps further to whatever fits the host (responsive).   |
+| `show-arrows`             | `boolean`                         | `true`         | Whether prev/next arrow buttons participate in the budget.                                                            |
+| `size`                    | `'small' \| 'medium' \| 'large'`  | `'medium'`     | Padding / font-size step (drives the per-box width that the resize observer divides into).                           |
+| `aria-label`              | `string`                          | `'Pagination'` | Forwarded to the inner `<nav>` landmark.                                                                              |
+
+**Events**: `mp-pagination-page-change` — detail `{ page: number }`.
+
+#### Growth algorithm
+
+The visible items are computed deterministically from `(pages, current,
+budget)`. As `budget` grows by 1, the algorithm picks the next action from
+this ordered list — current is always slot #1, and each step adds **exactly
+one** box. Page numbers below assume `current = C` and a large `pageNumbers`
+array (`1..90` for illustration).
+
+| Budget | New box       | Render                                                          |
+|--------|---------------|-----------------------------------------------------------------|
+| 1      | C             | `C`                                                             |
+| 2      | next-arrow    | `C >`                                                           |
+| 3      | prev-arrow    | `< C >`                                                         |
+| 4      | start (1)     | `< 1 C >`                                                       |
+| 5      | end (90)      | `< 1 C 90 >`                                                    |
+| 6      | left gap      | `< 1 … C 90 >`                                                  |
+| 7      | right gap     | `< 1 … C … 90 >`                                                |
+| 8      | C-1           | `< 1 … C-1 C … 90 >`                                            |
+| 9      | C+1           | `< 1 … C-1 C C+1 … 90 >`                                        |
+| 10     | start+1 (2)   | `< 1 2 … C-1 C C+1 … 90 >`                                      |
+| 11     | end-1 (89)    | `< 1 2 … C-1 C C+1 … 89 90 >`                                   |
+| 12     | C-2           | `< 1 2 … C-2 C-1 C C+1 … 89 90 >`                               |
+| 13     | C+2           | `< 1 2 … C-2 C-1 C C+1 C+2 … 89 90 >`                           |
+| 14     | start+2 (3)   | `< 1 2 3 … C-2 C-1 C C+1 C+2 … 89 90 >`                         |
+| 15     | end-2 (88)    | `< 1 2 3 … C-2 C-1 C C+1 C+2 … 88 89 90 >`                      |
+| ...    | …             | …                                                               |
+
+Internally the state is four counters — `startCount`, `endCount`,
+`beforeCount`, `afterCount` (each tracks how far that direction has
+extended) — plus the arrow flag. The increment sequence is:
+
+1. **Arrows** (only when `showArrows`): grow to 1 (next), then 2 (both prev + next).
+2. **Phase 1 (introduction)** — round-robin `[start, end, before, after]`:
+   - `start`: show page 1.
+   - `end`: show last page.
+   - `before`: show the left ellipsis (no page yet).
+   - `after`: show the right ellipsis.
+3. **Phase 2+ (extension)** — round-robin `[before, after, start, end]`,
+   repeated indefinitely. Each pass adds one page to the corresponding
+   direction:
+   - `before`: C-1 → C-2 → C-3 → …
+   - `after`: C+1 → C+2 → …
+   - `start`: 2 → 3 → 4 → …
+   - `end`: 89 → 88 → 87 → …
+
+When a direction has no more pages to add (e.g. start range collides with
+the before range, or current is at index 0), that step is skipped and the
+next action in the cycle runs in its place. Ellipses auto-collapse when the
+unrendered range they represent becomes empty (e.g. page 3 is shown by
+`start` and C-2 is shown by `before`, leaving no gap between them).
+
+#### Responsive clamping
+
+`numberOfBoxes` is a **cap**, not a target. A `ResizeObserver` on the host
+measures the available width and computes `fittingBoxes = floor(width /
+approxBoxWidth)` where `approxBoxWidth` is `{small: 36, medium: 44, large:
+56}` px. The effective budget is `min(numberOfBoxes, fittingBoxes,
+pageNumbers.length)` (arrows accounted for separately). This means the same
+`<mp-pagination number-of-boxes="11">` renders 11 boxes on a 600 px desktop
+container and gracefully shrinks to 5 on a narrow mobile container — no
+breakpoint logic needed at the consumer.
+
 ### `<mp-datatable>` / `<bs-datatable>` — new
 
 Parity with the existing Angular component plus the gaps the file-manager needs:

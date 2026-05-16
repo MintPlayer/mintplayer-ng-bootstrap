@@ -8,6 +8,16 @@ export type PaginationItem =
   | { kind: 'page'; page: number; current: boolean }
   | { kind: 'gap' };
 
+/**
+ * Full layout produced by `buildPaginationLayout`: which arrow buttons fit
+ * the budget, plus the ordered page / gap items between them.
+ */
+export interface PaginationLayout {
+  showPrev: boolean;
+  showNext: boolean;
+  items: PaginationItem[];
+}
+
 export interface PageChangeEventDetail {
   page: number;
 }
@@ -158,31 +168,33 @@ export class MpPagination extends LitElement {
     return Math.max(1, Math.floor(w / APPROX_BOX_WIDTH_PX[this._size]));
   }
 
-  /** Effective box budget (excludes arrows). */
+  /** Effective TOTAL budget (boxes including arrows). */
   private effectiveBudget(): number {
     const fit = this.fittingBoxes();
-    const arrowsCost = this._showArrows ? 2 : 0;
-    const fitForPages = Math.max(1, fit - arrowsCost);
     if (this._numberOfBoxes <= 0) {
-      return Math.min(fitForPages, this._pageNumbers.length);
+      return Math.min(fit, this._pageNumbers.length + (this._showArrows ? 2 : 0));
     }
-    const arrowsAccounted = this._showArrows ? Math.max(1, this._numberOfBoxes - arrowsCost) : this._numberOfBoxes;
-    return Math.min(fitForPages, arrowsAccounted, this._pageNumbers.length);
+    return Math.min(fit, this._numberOfBoxes);
   }
 
-  /** Build the visible items (pages + gaps). Pure — no DOM access. */
-  protected computeItems(): PaginationItem[] {
-    return buildPaginationItems(this._pageNumbers, this._selectedPageNumber, this.effectiveBudget());
+  /** Build the full layout — arrows + page items. Pure — no DOM access. */
+  protected computeLayout(): PaginationLayout {
+    return buildPaginationLayout(
+      this._pageNumbers,
+      this._selectedPageNumber,
+      this.effectiveBudget(),
+      this._showArrows,
+    );
   }
 
   override render(): TemplateResult {
-    const items = this.computeItems();
+    const layout = this.computeLayout();
     const isFirst = this.isFirstPage();
     const isLast = this.isLastPage();
     return html`
       <nav aria-label=${this._ariaLabel}>
         <ul>
-          ${this._showArrows
+          ${layout.showPrev
             ? html`<li>
                 <button
                   type="button"
@@ -196,7 +208,7 @@ export class MpPagination extends LitElement {
                 </button>
               </li>`
             : nothing}
-          ${items.map((item) =>
+          ${layout.items.map((item) =>
             item.kind === 'gap'
               ? html`<li>
                   <span class="ellipsis" aria-hidden="true">&hellip;</span>
@@ -213,7 +225,7 @@ export class MpPagination extends LitElement {
                   </button>
                 </li>`,
           )}
-          ${this._showArrows
+          ${layout.showNext
             ? html`<li>
                 <button
                   type="button"
@@ -269,50 +281,106 @@ export class MpPagination extends LitElement {
 }
 
 /**
- * Pure helper: turn (pages, current, budget) into a visible-item list.
+ * Pure helper: deterministic layout for `(pages, current, totalBudget, showArrows)`.
  *
- *   budget = max number of page slots (excluding arrows).
+ * `totalBudget` is the maximum visible boxes — pages AND arrows count toward it.
+ * The current page is always slot #1; subsequent slots are allocated by
+ * stepping through a fixed priority sequence:
  *
- *   - budget <= 0 or budget >= pages.length → show every page
- *   - budget < 5                            → centered window, no anchors
- *   - budget >= 5                           → first + (gap?) + window + (gap?) + last
+ *   1. Arrows (next, then prev) when `showArrows`.
+ *   2. **Phase 1** — round-robin `[start, end, before, after]`:
+ *      - start: page #1
+ *      - end: last page
+ *      - before: left ellipsis
+ *      - after: right ellipsis
+ *   3. **Phase 2+** — round-robin `[before, after, start, end]`, repeated
+ *      until budget runs out. Each pass adds one page in that direction:
+ *      - before extends C-1, C-2, …
+ *      - after extends C+1, C+2, …
+ *      - start extends 2, 3, …
+ *      - end extends last-1, last-2, …
  *
- * A "1-away" edge gets the real page, not a gap (e.g. `1, 2, …` vs `1, … `).
+ * When a direction has no more pages to add (overlap with another direction,
+ * or current at an extreme), that step is skipped and the cycle continues
+ * with the next action.
+ *
+ * See `docs/issue_329_PRD.md` § "Growth algorithm".
  */
-export function buildPaginationItems(
+export function buildPaginationLayout(
   pages: ReadonlyArray<number>,
   current: number,
-  budget: number,
-): PaginationItem[] {
+  totalBudget: number,
+  showArrows: boolean,
+): PaginationLayout {
   const n = pages.length;
-  if (n === 0) return [];
-  if (budget <= 0 || budget >= n) {
-    return pages.map((p) => ({ kind: 'page', page: p, current: p === current }));
-  }
-  if (budget < 5) {
-    return centeredWindow(pages, current, budget);
-  }
+  if (n === 0) return { showPrev: false, showNext: false, items: [] };
 
-  const idx = clampIndex(pages.indexOf(current), n);
-  const lastIdx = n - 1;
-  // Reserve 2 slots for the first + last anchors.
-  // The inner window may use anywhere from `budget - 2` (gap on both sides)
-  // up to `budget` (window touches both edges).
-  // Strategy: iterate up to 4 times to let the window grow into the slots
-  // freed by edges that don't actually need a gap.
-  let leftCost = 2;
-  let rightCost = 2;
-  let lo = 0;
-  let hi = 0;
+  const currentIdx = clampIndex(pages.indexOf(current), n);
+  const budget = Math.max(1, Math.floor(totalBudget));
 
-  for (let pass = 0; pass < 4; pass++) {
-    const innerBudget = Math.max(1, budget - leftCost - rightCost);
-    [lo, hi] = windowAround(idx, innerBudget, 0, lastIdx);
-    const newLeft = lo === 0 ? 0 : lo === 1 ? 1 : 2;
-    const newRight = hi === lastIdx ? 0 : hi === lastIdx - 1 ? 1 : 2;
-    if (newLeft === leftCost && newRight === rightCost) break;
-    leftCost = newLeft;
-    rightCost = newRight;
+  // Counters that drive the layout. Each represents how far that direction
+  // has extended outward from its anchor.
+  // - startCount: number of pages shown from the start (page indices [0, startCount-1])
+  // - endCount: number of pages shown from the end (page indices [n-endCount, n-1])
+  // - beforeCount: 0 = nothing, 1 = ellipsis only, k>=2 = ellipsis + (k-1) pages (C-1, ..., C-(k-1))
+  // - afterCount: same shape on the right
+  let showPrev = false;
+  let showNext = false;
+  let startCount = 0;
+  let endCount = 0;
+  let beforeCount = 0;
+  let afterCount = 0;
+  let remaining = budget - 1; // current always shown
+
+  // Arrows first (priority 1).
+  if (showArrows && remaining > 0) { showNext = true; remaining--; }
+  if (showArrows && remaining > 0) { showPrev = true; remaining--; }
+
+  const canStart = (): boolean => {
+    if (startCount >= currentIdx) return false;
+    if (startCount >= n - endCount) return false;
+    if (beforeCount >= 2 && startCount >= currentIdx - (beforeCount - 1)) return false;
+    return true;
+  };
+  const canEnd = (): boolean => {
+    if (n - 1 - endCount <= currentIdx) return false;
+    if (n - 1 - endCount < startCount) return false;
+    if (afterCount >= 2 && n - 1 - endCount <= currentIdx + (afterCount - 1)) return false;
+    return true;
+  };
+  const canBefore = (): boolean => {
+    if (currentIdx === 0) return false;
+    // First call introduces the ellipsis — only meaningful when there are
+    // at least 2 hidden pages between the start range and current. With a
+    // 1-page gap the start/before extension fills it cleanly without "...".
+    if (beforeCount === 0) return startCount + 1 < currentIdx;
+    return currentIdx - beforeCount >= startCount;
+  };
+  const canAfter = (): boolean => {
+    if (currentIdx === n - 1) return false;
+    if (afterCount === 0) return currentIdx + 1 < n - 1 - endCount;
+    return currentIdx + afterCount <= n - 1 - endCount;
+  };
+
+  // Phase 1: introduce edges + ellipses in fixed order.
+  if (remaining > 0 && canStart()) { startCount++; remaining--; }
+  if (remaining > 0 && canEnd()) { endCount++; remaining--; }
+  if (remaining > 0 && canBefore()) { beforeCount++; remaining--; }
+  if (remaining > 0 && canAfter()) { afterCount++; remaining--; }
+
+  // Phase 2+: round-robin [before, after, start, end]. Skip exhausted
+  // directions. Loop exits when budget is gone or all four directions are
+  // exhausted in a single pass.
+  while (remaining > 0) {
+    const before = remaining;
+    if (canBefore()) { beforeCount++; remaining--; }
+    if (remaining === 0) break;
+    if (canAfter()) { afterCount++; remaining--; }
+    if (remaining === 0) break;
+    if (canStart()) { startCount++; remaining--; }
+    if (remaining === 0) break;
+    if (canEnd()) { endCount++; remaining--; }
+    if (before === remaining) break; // no progress → all directions exhausted
   }
 
   const toPage = (i: number): PaginationItem => ({
@@ -320,46 +388,40 @@ export function buildPaginationItems(
     page: pages[i],
     current: pages[i] === current,
   });
-  const leftPrefix: PaginationItem[] =
-    lo >= 3 ? [toPage(0), { kind: 'gap' }] :
-    lo === 2 ? [toPage(0), toPage(1)] :
-    lo === 1 ? [toPage(0)] : [];
-  const window: PaginationItem[] = Array.from({ length: hi - lo + 1 }, (_, k) => toPage(lo + k));
-  const rightSuffix: PaginationItem[] =
-    hi <= lastIdx - 3 ? [{ kind: 'gap' }, toPage(lastIdx)] :
-    hi === lastIdx - 2 ? [toPage(lastIdx - 1), toPage(lastIdx)] :
-    hi === lastIdx - 1 ? [toPage(lastIdx)] : [];
-  return [...leftPrefix, ...window, ...rightSuffix];
-}
 
-function centeredWindow(
-  pages: ReadonlyArray<number>,
-  current: number,
-  budget: number,
-): PaginationItem[] {
-  const idx = clampIndex(pages.indexOf(current), pages.length);
-  const [lo, hi] = windowAround(idx, budget, 0, pages.length - 1);
-  return Array.from({ length: hi - lo + 1 }, (_, i) => ({
-    kind: 'page' as const,
-    page: pages[lo + i],
-    current: pages[lo + i] === current,
-  }));
-}
+  const startPages: PaginationItem[] = Array.from({ length: startCount }, (_, i) => toPage(i));
+  const beforePages: PaginationItem[] = beforeCount >= 2
+    ? Array.from({ length: beforeCount - 1 }, (_, i) => toPage(currentIdx - (beforeCount - 1) + i))
+    : [];
+  const afterPages: PaginationItem[] = afterCount >= 2
+    ? Array.from({ length: afterCount - 1 }, (_, i) => toPage(currentIdx + 1 + i))
+    : [];
+  const endPages: PaginationItem[] = Array.from({ length: endCount }, (_, i) => toPage(n - endCount + i));
 
-/** Window of `size` indices centered on `idx`, clamped to `[min, max]`. */
-function windowAround(idx: number, size: number, min: number, max: number): [number, number] {
-  const half = Math.floor((size - 1) / 2);
-  let lo = idx - half;
-  let hi = lo + size - 1;
-  if (lo < min) {
-    hi = Math.min(max, hi - lo + min);
-    lo = min;
-  }
-  if (hi > max) {
-    lo = Math.max(min, lo - (hi - max));
-    hi = max;
-  }
-  return [lo, hi];
+  // Ellipses are rendered only when an unrendered range remains between
+  // adjacent rendered pages — `beforeCount`/`afterCount` >= 1 just means the
+  // slot was reserved; if all in-between pages are now covered, drop it.
+  const firstBeforeIdx = beforeCount >= 2 ? currentIdx - (beforeCount - 1) : currentIdx;
+  const lastStartIdx = startCount - 1;
+  const leftGap: PaginationItem[] =
+    beforeCount >= 1 && lastStartIdx + 1 < firstBeforeIdx ? [{ kind: 'gap' }] : [];
+
+  const lastAfterIdx = afterCount >= 2 ? currentIdx + (afterCount - 1) : currentIdx;
+  const firstEndIdx = n - endCount;
+  const rightGap: PaginationItem[] =
+    afterCount >= 1 && lastAfterIdx + 1 < firstEndIdx ? [{ kind: 'gap' }] : [];
+
+  const items: PaginationItem[] = [
+    ...startPages,
+    ...leftGap,
+    ...beforePages,
+    toPage(currentIdx),
+    ...afterPages,
+    ...rightGap,
+    ...endPages,
+  ];
+
+  return { showPrev, showNext, items };
 }
 
 function clampIndex(idx: number, n: number): number {
