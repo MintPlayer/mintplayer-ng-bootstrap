@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsPaginationComponent } from '@mintplayer/ng-bootstrap/pagination';
-import { MockComponent } from 'ng-mocks';
+import { MockComponent, MockDirective } from 'ng-mocks';
 import { PaginationComponent } from './pagination.component';
 
 describe('PaginationComponent', () => {
@@ -11,6 +12,9 @@ describe('PaginationComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         MockComponent(BsPaginationComponent),
+        MockComponent(BsGridComponent),
+        MockDirective(BsGridRowDirective),
+        MockDirective(BsGridColumnDirective),
         PaginationComponent,
       ]
     })

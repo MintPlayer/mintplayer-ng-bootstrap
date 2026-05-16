@@ -7,39 +7,22 @@ import { Directive, inject, input, TemplateRef } from '@angular/core';
  *    it must match the field key on each row in the fetched data and is what
  *    `SortColumn.property` references when the column is clicked.
  *  - The directive's **template content** is the header template — what gets
- *    rendered inside the `<th>`. It's exposed as `headerTemplateRef` and
- *    outlet'd by the host component.
+ *    rendered inside the `<th>`.
  *
  * Example:
  * ```html
- * <ng-template bsDatatableColumn="YearStarted">Year started</ng-template>
- * <!--                          ^^^^^^^^^^^      ^^^^^^^^^^^^                -->
- * <!--                          data field       header label                -->
+ * <div *bsDatatableColumn="'YearStarted'; sortable: true">Year started</div>
  * ```
+ *
+ * Optional `bsDatatableColumnSortable` controls whether the header acts as a
+ * sort toggle (default `true`).
  */
-@Directive({
-  selector: '[bsDatatableColumn]',
-})
+@Directive({ selector: '[bsDatatableColumn]' })
 export class BsDatatableColumnDirective {
-  /**
-   * Header template (what renders in the `<th>`). Read as
-   * `column.templateRef` from the host component's template; we keep the
-   * generic `templateRef` name so existing `*ngTemplateOutlet` bindings
-   * stay valid. Conceptually this is the "column header template" —
-   * see the JSDoc on the directive above.
-   */
-  readonly templateRef = inject(TemplateRef);
+  readonly templateRef = inject<TemplateRef<unknown>>(TemplateRef);
 
   /** Data property name on each row; used as `SortColumn.property` on sort. */
   readonly name = input('', { alias: 'bsDatatableColumn' });
 
   readonly sortable = input(true, { alias: 'bsDatatableColumnSortable' });
-
-  /**
-   * Plain-text fallback header. Always `null` for directive-defined columns —
-   * their `templateRef` is the source of truth. Exists so this type satisfies
-   * the shared `DatatableColumnRef` interface (used by programmatic columns
-   * via `<bs-datatable [columns]="...">`).
-   */
-  readonly label: string | null = null;
 }

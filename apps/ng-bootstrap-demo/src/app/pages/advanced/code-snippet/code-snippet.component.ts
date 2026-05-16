@@ -14,20 +14,20 @@ export class CodeSnippetComponent {
   html = dedent`
     <bs-datatable #tabel [settings]="settings" (settingsChange)="loadArtists()">
       <div *bsDatatableColumn="'Name'; sortable: true">
-        1. Artist
+        Artist
       </div>
       <div *bsDatatableColumn="'YearStarted'; sortable: true">
-        2. Year started
+        Year started
       </div>
       <div *bsDatatableColumn="'YearQuit'; sortable: true">
-        3. Year quit
+        Year quit
       </div>
 
-      <tr *bsRowTemplate="let artist of artists">
+      <ng-container *bsRowTemplate="let artist of artists">
         <td class="text-nowrap">{{ artist.name }}</td>
         <td class="text-nowrap">{{ artist.yearStarted }}</td>
         <td class="text-nowrap">{{ artist.yearQuit }}</td>
-      </tr>
+      </ng-container>
     </bs-datatable>`;
 
 }

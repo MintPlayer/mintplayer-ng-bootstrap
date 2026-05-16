@@ -1,0 +1,33 @@
+// Shared form-control styling for `mp-toggle-button`, `mp-checkbox`, and
+// `mp-radio`. Each component imports `toggleButtonStyles` (the codegen-wc
+// output of this file) and includes it in its own `static styles` array;
+// because all three reference the same `CSSResult` instance, Lit attaches
+// a single underlying `CSSStyleSheet` to each shadow root via
+// `adoptedStyleSheets`. One parse, one stylesheet object, three shadow roots.
+//
+// We pull in the buttons module too: the `toggle_button` variant of
+// `mp-checkbox`/`mp-radio` renders a `.btn .btn-primary` label, and the
+// global page-level Bootstrap stylesheet doesn't penetrate shadow DOM.
+
+@import "node_modules/bootstrap/scss/functions";
+@import "node_modules/bootstrap/scss/variables";
+@import "node_modules/bootstrap/scss/variables-dark";
+@import "node_modules/bootstrap/scss/mixins";
+@import "node_modules/bootstrap/scss/buttons";
+@import "node_modules/bootstrap/scss/forms/form-check";
+
+:host {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+// Bootstrap's `.form-check` ships a `margin-bottom: 0.125rem` that's only
+// useful when stacking multiple checkboxes/radios in a form column. Each
+// WC wraps a single control, so that bottom margin produces an asymmetric
+// box and the visible indicator drifts above the geometric centre when
+// the WC sits in a vertically-centred container (table cells, toolbars).
+// Zero it out — consumers stacking multiple WCs can re-introduce spacing
+// at the consumer-template level.
+.form-check {
+  margin-bottom: 0;
+}

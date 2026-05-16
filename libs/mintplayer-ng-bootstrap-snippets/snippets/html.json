@@ -37,12 +37,12 @@
         "prefix": "bs-datatable",
         "description": "Bootstrap Datatable",
         "body": [
-            "<bs-datatable [(settings)]=\"${1:settings}\" [data]=\"${2:data}\" (settingsChange)=\"load${2/(.)(.*)/${1:/upcase}$2/}()\">",
-            "\t<div *bsDatatableColumn=\"{ sortable: true, name: '${3:PropertyName}' }\">${4:Heading}</div>",
+            "<bs-datatable [(settings)]=\"${1:settings}\" [fetch]=\"${2:fetchItems}\">",
+            "\t<div *bsDatatableColumn=\"'${3:PropertyName}'; sortable: true\">${4:Heading}</div>",
             "",
-            "\t<tr *bsRowTemplate=\"let item\">",
-            "\t\t<td>{{ item.${3/(.)(.*)/${1:/downcase}$2/} }}</td>",
-            "\t</tr>",
+            "\t<ng-container *bsRowTemplate=\"let item\">",
+            "\t\t<td>{{ item?.${3/(.)(.*)/${1:/downcase}$2/} }}</td>",
+            "\t</ng-container>",
             "</bs-datatable>"
         ]
     },
@@ -279,13 +279,6 @@
             "</bs-select>"
         ]
     },
-    "ToggleButton": {
-        "prefix": "bs-toggle-button",
-        "description": "Bootstrap Toggle Button",
-        "body": [
-            "<bs-toggle-button [type]=\"'${1|checkbox,radio,switch,toggle_button,radio_toggle_button|}'\" [(ngModel)]=\"${2:favoriteColors}\" [value]=\"'${3:blue}'\" [group]=\"${4:colors}\">${5:Blue}</bs-toggle-button>"
-        ]
-    },
     "ListGroup": {
         "prefix": "bs-list-group",
         "description": "Bootstrap List Group",
@@ -359,9 +352,10 @@
         "prefix": "bs-treeview",
         "description": "Bootstrap Treeview",
         "body": [
-            "<bs-treeview>",
-            "\t<bs-treeview-item>${1:Customers}</bs-treeview-item>",
-            "\t<bs-treeview-item>${2:Co-Workers}</bs-treeview-item>",
+            "<bs-treeview [items]=\"${1:items}()\" [(expandedIds)]=\"${2:expandedIds}\">",
+            "\t<ng-container *bsTreeviewNode=\"let node\">",
+            "\t\t{{ node.label }}",
+            "\t</ng-container>",
             "</bs-treeview>"
         ]
     },

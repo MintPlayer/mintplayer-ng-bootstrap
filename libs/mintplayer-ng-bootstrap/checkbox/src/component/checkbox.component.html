@@ -1,16 +1,3 @@
-<bs-toggle-button>
-    <label [class]="mainCheckStyle()" [class.form-switch]="isSwitch()">
-        <input #checkbox
-            [class]="inputClass()"
-            type="checkbox"
-            [name]="nameResult()"
-            [value]="value()"
-            [checked]="!!isToggled()"
-            [attr.role]="ariaRole()"
-            [attr.aria-pressed]="ariaPressed()"
-            (change)="onInputChange($event)">
-        <span [class]="labelClass()">
-            <ng-content></ng-content>
-        </span>
-    </label>
-</bs-toggle-button>
+<mp-checkbox #checkbox (change)="onChange($event)">
+    <ng-content></ng-content>
+</mp-checkbox>

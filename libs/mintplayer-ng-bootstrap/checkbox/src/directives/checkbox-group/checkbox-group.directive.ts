@@ -12,7 +12,7 @@ import { BsCheckboxComponent } from '../../component/checkbox.component';
  *
  * Acts as its own `ControlValueAccessor` — bind `[formControl]` / `[(ngModel)]`
  * directly on the element carrying `[bsCheckboxGroup]`. Listens to bubbled
- * `(change)` events from the children to recompute the array on every toggle.
+ * `change` events from the children to recompute the array on every toggle.
  */
 @Directive({
   selector: '[bsCheckboxGroup]',
@@ -38,9 +38,10 @@ export class BsCheckboxGroupDirective implements ControlValueAccessor {
   readonly checkboxes = contentChildren<BsCheckboxComponent>(forwardRef(() => BsCheckboxComponent), { descendants: true });
 
   /** Most-recently-written form value. An effect syncs each child's
-   *  `isToggled` whenever this OR the `checkboxes()` set changes, so an
-   *  initial `writeValue` that lands before children register still applies
-   *  once the `contentChildren` query populates. */
+   *  `isToggled` (and the WC's `checked` property) whenever this OR the
+   *  `checkboxes()` set changes, so an initial `writeValue` that lands
+   *  before children register still applies once the `contentChildren`
+   *  query populates. */
   private readonly currentValue = signal<readonly string[]>([]);
 
   private onValueChange?: (value: string[]) => void;
@@ -51,7 +52,10 @@ export class BsCheckboxGroupDirective implements ControlValueAccessor {
       const arr = this.currentValue();
       this.checkboxes().forEach(cb => {
         const v = cb.value();
-        cb.isToggled.set(v != null && arr.includes(v));
+        const isSelected = v != null && arr.includes(v);
+        cb.isToggled.set(isSelected);
+        const wc = cb.checkboxRef()?.nativeElement;
+        if (wc) wc.checked = isSelected;
       });
     });
   }
@@ -78,10 +82,8 @@ export class BsCheckboxGroupDirective implements ControlValueAccessor {
 
   setDisabledState(isDisabled: boolean) {
     this.checkboxes().forEach(cb => {
-      const inputRef = cb.checkbox();
-      if (inputRef) {
-        inputRef.nativeElement.disabled = isDisabled;
-      }
+      const wc = cb.checkboxRef()?.nativeElement;
+      if (wc) wc.disabled = isDisabled;
     });
   }
 }

@@ -1,0 +1,64 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.file-manager-host {
+  height: 30rem;
+  min-height: 24rem;
+  display: flex;
+}
+
+bs-file-manager {
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+}
+
+.upload-progress-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.upload-row {
+  display: grid;
+  grid-template-columns: 14rem 1fr 6rem;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.upload-status {
+  text-align: right;
+}
+
+.toast-stack {
+  max-width: 32rem;
+}
+
+.upload-name {
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.progress {
+  height: 0.8rem;
+  background-color: var(--bs-secondary-bg, rgba(0, 0, 0, 0.04));
+  border-radius: 0.25rem;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: var(--bs-primary, #0d6efd);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 0.4rem;
+  font-size: 0.7rem;
+  transition: width 0.15s ease-out;
+}

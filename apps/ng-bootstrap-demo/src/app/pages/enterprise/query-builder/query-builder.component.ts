@@ -5,10 +5,10 @@ import { firstValueFrom } from 'rxjs';
 import { PaginationRequest, PaginationResponse } from '@mintplayer/pagination';
 import {
   BsDatatableComponent,
+  BsDatatableColumnDirective,
   BsRowTemplateDirective,
   BsDatatableFetch,
   DatatableSettings,
-  type ColumnDef,
 } from '@mintplayer/ng-bootstrap/datatable';
 import { BsQueryBuilderComponent, BsQueryBuilderEditorDirective } from '@mintplayer/ng-bootstrap/query-builder';
 import { environment } from '../../../../environments/environment';
@@ -43,7 +43,7 @@ const SAVED_QUERIES_KEY = 'mp-qb-demo:savedQueries';
   styleUrls: ['./query-builder.component.scss'],
   imports: [
     BsQueryBuilderComponent, BsQueryBuilderEditorDirective,
-    BsDatatableComponent, BsRowTemplateDirective,
+    BsDatatableComponent, BsDatatableColumnDirective, BsRowTemplateDirective,
     FormsModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -78,7 +78,7 @@ export class QueryBuilderDemoComponent {
    * Empty `selectedFields()` is treated as "show everything" so the demo is
    * never blank.
    */
-  datatableColumns = computed<ColumnDef[]>(() => {
+  datatableColumns = computed(() => {
     const entity = this.schema().find((s) => s.name === this.rootEntity());
     if (!entity) return [];
     const projectable = entity.fields.filter((f) => f.type !== 'relation');
@@ -86,8 +86,6 @@ export class QueryBuilderDemoComponent {
     const visible = selected.length === 0
       ? projectable
       : projectable.filter((f) => selected.includes(f.name));
-    // `id` is non-sortable for the same reason as the pre-Phase-2 demo: there's
-    // no meaningful Id in the schema, and Sort by Id is the implicit default.
     return visible.map((f) => ({ name: f.name, label: f.label, sortable: true }));
   });
 
@@ -134,13 +132,7 @@ export class QueryBuilderDemoComponent {
   constructor() {
     this.refreshSchema();
 
-    // Entity-change effect: clear the tree (field references from the OLD entity
-    // are no longer valid against the new schema) and re-default selectedFields
-    // to "all" for the new entity (signalled as `[]`). sortBy and settings are
-    // also reset so old sort columns don't linger.
     effect(() => {
-      // Re-run whenever rootEntity changes. Use untracked() inside so we only
-      // depend on rootEntity, not the downstream signals we're resetting.
       this.rootEntity();
       untracked(() => {
         this.query.set(emptyGroup('and'));
@@ -154,9 +146,6 @@ export class QueryBuilderDemoComponent {
       });
     });
 
-    // sortBy → settings.sortColumns one-way sync. Datatable header clicks
-    // write to settings.sortColumns; we mirror them BACK into sortBy via a
-    // separate effect below.
     effect(() => {
       const sort = this.sortBy();
       const current = untracked(() => this.settings());
@@ -164,7 +153,6 @@ export class QueryBuilderDemoComponent {
         property: s.field,
         direction: (s.direction === 'asc' ? 'ascending' : 'descending') as 'ascending' | 'descending',
       }));
-      // Identity check to avoid spurious refetches.
       if (sortColumnsEqual(current.sortColumns, nextSortColumns)) return;
       this.settings.set(new DatatableSettings({
         sortColumns: nextSortColumns,
@@ -173,8 +161,6 @@ export class QueryBuilderDemoComponent {
       }));
     });
 
-    // settings.sortColumns → sortBy mirror. Datatable header clicks update
-    // settings.sortColumns; we feed those back into the toolbar.
     effect(() => {
       const cols = this.settings().sortColumns;
       const current = untracked(() => this.sortBy());

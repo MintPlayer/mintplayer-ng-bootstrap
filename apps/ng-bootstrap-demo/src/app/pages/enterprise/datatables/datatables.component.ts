@@ -1,7 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { PaginationRequest, PaginationResponse } from '@mintplayer/pagination';
-import { BsDatatableComponent, BsDatatableColumnDirective, BsRowTemplateDirective, BsDatatableFetch, DatatableSettings } from '@mintplayer/ng-bootstrap/datatable';
+import {
+  BsDatatableComponent,
+  BsDatatableColumnDirective,
+  BsRowTemplateDirective,
+  BsDatatableFetch,
+  DatatableSettings,
+} from '@mintplayer/ng-bootstrap/datatable';
 import { BsSelectComponent, BsSelectOption } from '@mintplayer/ng-bootstrap/select';
 import { Artist } from '../../../entities/artist';
 import { ArtistService } from '../../../services/artist/artist.service';
@@ -38,4 +44,6 @@ export class DatatablesComponent {
     );
 
   compareArtists = (a: Artist, b: Artist) => a.id === b.id;
+
+  rowKey = (a: Artist) => String(a.id);
 }

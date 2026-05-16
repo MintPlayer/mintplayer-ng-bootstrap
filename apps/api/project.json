@@ -34,7 +34,7 @@
       "executor": "nx:run-commands",
       "continuous": true,
       "options": {
-        "command": "dotnet watch --project apps/api/Api.csproj run --urls http://localhost:5000"
+        "command": "node tools/scripts/serve-api.mjs"
       }
     },
     "test": {

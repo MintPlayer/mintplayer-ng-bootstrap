@@ -1,0 +1,200 @@
+:host {
+  display: block;
+  width: 100%;
+  position: relative;
+
+  --mp-datatable-border-color: var(--bs-border-color, rgba(0, 0, 0, 0.125));
+  --mp-datatable-row-hover-bg: var(--bs-table-hover-bg, rgba(0, 0, 0, 0.04));
+  --mp-datatable-row-selected-bg: var(--bs-list-group-active-bg, var(--bs-primary, #0d6efd));
+  --mp-datatable-row-selected-color: var(--bs-list-group-active-color, #fff);
+  --mp-datatable-cut-opacity: 0.55;
+  --mp-datatable-resize-handle-color: var(--bs-primary, #0d6efd);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.datatable-shell {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+.datatable-scroll {
+  overflow: auto;
+  flex: 1 1 auto;
+}
+
+.datatable-scroll.datatable-virtual {
+  // Default viewport height so the table actually scrolls when the host isn't
+  // given an explicit constrained height. Override via the CSS variable.
+  max-height: var(--mp-datatable-virtual-max-height, 480px);
+
+  // Sticky header so it stays visible while the body scrolls. Each <th>
+  // gets its own sticky position so the table-layout rules still apply.
+  thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background-color: var(--bs-body-bg, #fff);
+  }
+}
+
+tr.virtual-spacer {
+  pointer-events: none;
+}
+
+tr.virtual-spacer > td {
+  border-bottom: 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+  table-layout: auto;
+}
+
+thead th {
+  background-color: var(--bs-table-bg, transparent);
+  border-bottom: 1px solid var(--mp-datatable-border-color);
+  text-align: left;
+  font-weight: 600;
+  padding: 0.5rem 0.75rem;
+  white-space: nowrap;
+  position: relative;
+  user-select: none;
+}
+
+thead th[data-sortable="true"] {
+  cursor: pointer;
+  padding-right: 2rem;
+
+  &::before,
+  &::after {
+    position: absolute;
+    display: block;
+    opacity: 0.3;
+    bottom: 0.5em;
+  }
+
+  &::before {
+    content: "\2191";
+    right: 1em;
+  }
+
+  &::after {
+    content: "\2193";
+    right: 0.5em;
+  }
+
+  &[aria-sort="ascending"]::after {
+    opacity: 1;
+  }
+
+  &[aria-sort="descending"]::before {
+    opacity: 1;
+  }
+}
+
+thead th[data-sortable="true"]:hover {
+  background-color: var(--mp-datatable-row-hover-bg);
+}
+
+.header-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.sort-index {
+  position: absolute;
+  right: 0.1em;
+  bottom: 0.3em;
+  font-size: 0.65em;
+  font-weight: bold;
+  opacity: 0.7;
+}
+
+.resize-handle {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  user-select: none;
+  z-index: 2;
+}
+
+.resize-handle:hover,
+.resize-handle.active {
+  background-color: var(--mp-datatable-resize-handle-color);
+}
+
+tbody td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--mp-datatable-border-color);
+  vertical-align: middle;
+}
+
+tbody tr {
+  cursor: default;
+}
+
+tbody tr[data-clickable="true"] {
+  cursor: pointer;
+}
+
+tbody tr:hover {
+  background-color: var(--mp-datatable-row-hover-bg);
+}
+
+tbody tr[data-selected="true"] {
+  background-color: var(--mp-datatable-row-selected-bg);
+  color: var(--mp-datatable-row-selected-color);
+}
+
+tbody tr[data-cut="true"] {
+  opacity: var(--mp-datatable-cut-opacity);
+}
+
+tbody tr[data-focused="true"] {
+  outline: 2px solid var(--bs-primary, #0d6efd);
+  outline-offset: -2px;
+}
+
+.checkbox-cell {
+  width: 2.5rem;
+  text-align: center;
+}
+
+.empty-state,
+.loading-state {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--bs-secondary-color, #6c757d);
+}
+
+.datatable-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  gap: 1rem;
+  flex-wrap: wrap;
+  flex: 0 0 auto;
+}
+
+.datatable-per-page,
+.datatable-pagination {
+  flex: 0 1 auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .resize-handle {
+    transition: none !important;
+  }
+}

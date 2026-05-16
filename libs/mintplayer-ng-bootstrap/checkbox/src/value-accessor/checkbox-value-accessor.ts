@@ -1,5 +1,6 @@
 import { Directive, forwardRef, inject } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import type { CheckboxChangeEventDetail } from '@mintplayer/ng-bootstrap/web-components/checkbox';
 import { BsCheckboxComponent } from '../component/checkbox.component';
 
 /**
@@ -27,9 +28,11 @@ export class BsCheckboxValueAccessor implements ControlValueAccessor {
   onTouched?: () => void;
 
   onChangeEvent(ev: Event) {
-    if (this.onValueChange) {
-      this.onValueChange((<HTMLInputElement>ev.target).checked);
-    }
+    if (!this.onValueChange) return;
+    // The bubbled `change` originates from <mp-checkbox> and is a
+    // CustomEvent with a `CheckboxChangeEventDetail` payload.
+    const detail = (ev as CustomEvent<CheckboxChangeEventDetail>).detail;
+    this.onValueChange(detail.checked);
   }
 
   registerOnChange(fn: (_: boolean) => void) {
@@ -45,9 +48,7 @@ export class BsCheckboxValueAccessor implements ControlValueAccessor {
   }
 
   setDisabledState(isDisabled: boolean) {
-    const inputRef = this.host.checkbox();
-    if (inputRef) {
-      inputRef.nativeElement.disabled = isDisabled;
-    }
+    const wc = this.host.checkboxRef()?.nativeElement;
+    if (wc) wc.disabled = isDisabled;
   }
 }
