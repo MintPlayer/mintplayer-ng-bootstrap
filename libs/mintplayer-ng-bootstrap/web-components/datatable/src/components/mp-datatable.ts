@@ -16,6 +16,10 @@ import type {
 import '@mintplayer/ng-bootstrap/web-components/pagination';
 import type { PageChangeEventDetail } from '@mintplayer/ng-bootstrap/web-components/pagination';
 
+// Side-effect import: registers <mp-checkbox> for selection columns.
+import '@mintplayer/ng-bootstrap/web-components/checkbox';
+import type { CheckboxChangeEventDetail } from '@mintplayer/ng-bootstrap/web-components/checkbox';
+
 export type DatatableSelectionMode = 'none' | 'single' | 'multiple';
 
 export interface RowEventDetail<T = unknown> {
@@ -395,12 +399,12 @@ export class MpDatatable extends LitElement {
               <tr role="row" aria-rowindex="1">
                 ${showCheckboxes
                   ? html`<th class="checkbox-cell" scope="col" aria-label="Select all">
-                      <input
-                        type="checkbox"
+                      <mp-checkbox
+                        aria-label="Select all"
                         .checked=${this._selectedIds.size > 0 && this._selectedIds.size === this._data.length}
                         .indeterminate=${this._selectedIds.size > 0 && this._selectedIds.size < this._data.length}
                         @change=${this.onToggleSelectAll}
-                      />
+                      ></mp-checkbox>
                     </th>`
                   : nothing}
                 ${this._columns.map((col, idx) => this.renderHeader(col, idx))}
@@ -508,12 +512,11 @@ export class MpDatatable extends LitElement {
       >
         ${showCheckboxes
           ? html`<td class="checkbox-cell" @click=${(e: Event) => e.stopPropagation()}>
-              <input
-                type="checkbox"
+              <mp-checkbox
+                aria-label=${`Select row ${rowIndex + 1}`}
                 .checked=${selected}
                 @change=${(ev: Event) => this.onRowCheckboxToggle(row, key, rowIndex, ev)}
-                aria-label=${`Select row ${rowIndex + 1}`}
-              />
+              ></mp-checkbox>
             </td>`
           : nothing}
         ${this._rowRenderer
@@ -702,11 +705,15 @@ export class MpDatatable extends LitElement {
   }
 
   private onToggleSelectAll(ev: Event): void {
-    const checked = (ev.target as HTMLInputElement).checked;
-    if (!checked) {
-      this._selectedIds = new Set();
-    } else {
+    // Event bubbles from <mp-checkbox> with a CheckboxChangeEventDetail.
+    // Toggle by current selection state rather than the WC's reported
+    // `checked`: when the indeterminate-state checkbox is clicked, browsers
+    // produce a checked transition we want to interpret as "select all".
+    const detail = (ev as CustomEvent<CheckboxChangeEventDetail>).detail;
+    if (detail.checked) {
       this._selectedIds = new Set(this._data.map((row, i) => this._rowKey(row, i)));
+    } else {
+      this._selectedIds = new Set();
     }
     this.emitSelectionChange();
     this.requestUpdate();

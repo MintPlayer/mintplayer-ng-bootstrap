@@ -1,4 +1,5 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
+import { ifDefined } from 'lit/directives/if-defined.js';
 import { ref, createRef, type Ref } from 'lit/directives/ref.js';
 
 // Side-effect import: registers `<mp-toggle-button>`. The shared
@@ -65,6 +66,11 @@ export class MpCheckbox extends LitElement {
       'name',
       'value',
       'color',
+      // Forwarded to the inner <input> in render() so consumers using the
+      // WC directly (without the Angular wrapper) can label the control.
+      'aria-label',
+      'aria-labelledby',
+      'aria-describedby',
     ];
   }
 
@@ -188,6 +194,13 @@ export class MpCheckbox extends LitElement {
           this.requestUpdate();
         }
         break;
+      case 'aria-label':
+      case 'aria-labelledby':
+      case 'aria-describedby':
+        // Re-render so the inner <input> picks up the new value via
+        // `this.getAttribute(...)` in render().
+        this.requestUpdate();
+        break;
     }
   }
 
@@ -206,6 +219,9 @@ export class MpCheckbox extends LitElement {
 
   private renderCheckOrSwitch(): TemplateResult {
     const isSwitch = this._type === 'switch';
+    const ariaLabel = this.getAttribute('aria-label') ?? undefined;
+    const ariaLabelledBy = this.getAttribute('aria-labelledby') ?? undefined;
+    const ariaDescribedBy = this.getAttribute('aria-describedby') ?? undefined;
     return html`
       <label class=${isSwitch ? 'form-check form-switch' : 'form-check'}>
         <input
@@ -219,6 +235,9 @@ export class MpCheckbox extends LitElement {
           value=${this._value ?? nothing}
           role=${isSwitch ? 'switch' : nothing}
           aria-checked=${this._indeterminate ? 'mixed' : nothing}
+          aria-label=${ifDefined(ariaLabel)}
+          aria-labelledby=${ifDefined(ariaLabelledBy)}
+          aria-describedby=${ifDefined(ariaDescribedBy)}
           @change=${this.onInputChange}
         />
         <span class="form-check-label"><slot></slot></span>
@@ -227,6 +246,9 @@ export class MpCheckbox extends LitElement {
   }
 
   private renderToggleButton(): TemplateResult {
+    const ariaLabel = this.getAttribute('aria-label') ?? undefined;
+    const ariaLabelledBy = this.getAttribute('aria-labelledby') ?? undefined;
+    const ariaDescribedBy = this.getAttribute('aria-describedby') ?? undefined;
     return html`
       <input
         ${ref(this._inputRef)}
@@ -239,6 +261,9 @@ export class MpCheckbox extends LitElement {
         value=${this._value ?? nothing}
         role="button"
         aria-pressed=${this._checked ? 'true' : 'false'}
+        aria-label=${ifDefined(ariaLabel)}
+        aria-labelledby=${ifDefined(ariaLabelledBy)}
+        aria-describedby=${ifDefined(ariaDescribedBy)}
         @change=${this.onInputChange}
       />
       <label class="btn btn-${this._color}" for=${this._inputId}>
