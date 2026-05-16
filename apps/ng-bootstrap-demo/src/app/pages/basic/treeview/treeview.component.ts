@@ -50,30 +50,24 @@ export class TreeviewComponent {
   }
 
   constructor(private sanitizer: DomSanitizer) {
-    this.loadIcons([
-      'inbox-fill',
-      'building',
-      'people-fill',
-      'person-bounding-box',
-      'inbox',
-      'archive-fill',
-      'calendar3',
-      'person-lines-fill',
-      'trash-fill',
-    ]);
-  }
-
-  private loadIcons(keys: ReadonlyArray<string>): void {
+    // Imports must use literal strings — `import(`…${key}.svg`)` triggers
+    // Vite's dynamic-import-vars glob expansion, which the jsdom test runner
+    // FS-denies because node_modules sits outside the project root.
+    const iconImports: ReadonlyArray<readonly [string, Promise<{ default: string }>]> = [
+      ['inbox-fill', import('bootstrap-icons/icons/inbox-fill.svg')],
+      ['building', import('bootstrap-icons/icons/building.svg')],
+      ['people-fill', import('bootstrap-icons/icons/people-fill.svg')],
+      ['person-bounding-box', import('bootstrap-icons/icons/person-bounding-box.svg')],
+      ['inbox', import('bootstrap-icons/icons/inbox.svg')],
+      ['archive-fill', import('bootstrap-icons/icons/archive-fill.svg')],
+      ['calendar3', import('bootstrap-icons/icons/calendar3.svg')],
+      ['person-lines-fill', import('bootstrap-icons/icons/person-lines-fill.svg')],
+      ['trash-fill', import('bootstrap-icons/icons/trash-fill.svg')],
+    ];
     Promise.all(
-      keys.map((key) =>
-        import(`bootstrap-icons/icons/${key}.svg`).then(
-          (mod) => [key, this.sanitizer.bypassSecurityTrustHtml(mod.default as string)] as const,
-        ),
+      iconImports.map(async ([key, p]) =>
+        [key, sanitizer.bypassSecurityTrustHtml((await p).default)] as const,
       ),
-    ).then((entries) => {
-      const map = new Map<string, SafeHtml>();
-      entries.forEach(([k, v]) => map.set(k, v));
-      this.icons.set(map);
-    });
+    ).then((entries) => this.icons.set(new Map(entries)));
   }
 }
