@@ -398,14 +398,14 @@ export class MpDatatable extends LitElement {
               <tr role="row" aria-rowindex="1">
                 ${showCheckboxes
                   ? html`<th class="checkbox-cell" scope="col">
-                      ${this._selectedIds.size > 0
-                        ? html`<mp-checkbox
-                            aria-label="Deselect all"
-                            .checked=${false}
-                            .indeterminate=${true}
-                            @change=${this.onDeselectAll}
-                          ></mp-checkbox>`
-                        : nothing}
+                      <mp-checkbox
+                        aria-label="Deselect all"
+                        aria-hidden=${this._selectedIds.size === 0 ? 'true' : nothing}
+                        style=${styleMap({ visibility: this._selectedIds.size > 0 ? 'visible' : 'hidden' })}
+                        .checked=${false}
+                        .indeterminate=${this._selectedIds.size > 0}
+                        @change=${this.onDeselectAll}
+                      ></mp-checkbox>
                     </th>`
                   : nothing}
                 ${this._columns.map((col, idx) => this.renderHeader(col, idx))}
