@@ -35,16 +35,6 @@ export interface SelectionChangeEventDetail {
 
 let instanceCounter = 0;
 
-const SORT_ASC_SVG =
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">' +
-  '<path d="M3.5 12.5a.5.5 0 0 1-1 0V3.707L1.354 4.854a.5.5 0 1 1-.708-.708l2-2a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1-.708.708L3.5 3.707V12.5z"/>' +
-  '</svg>';
-
-const SORT_DESC_SVG =
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">' +
-  '<path d="M3.5 3.5a.5.5 0 0 0-1 0v8.793L1.354 11.146a.5.5 0 0 0-.708.708l2 2a.5.5 0 0 0 .708 0l2-2a.5.5 0 0 0-.708-.708L3.5 12.293V3.5z"/>' +
-  '</svg>';
-
 /**
  * `<mp-datatable>` — property-driven data grid.
  *
@@ -480,9 +470,6 @@ export class MpDatatable extends LitElement {
       >
         <span class="header-cell">
           <span>${renderContent(headerContent)}</span>
-          ${sortDirection
-            ? html`<span class="sort-indicator">${unsafeSvg(sortDirection === 'ascending' ? SORT_ASC_SVG : SORT_DESC_SVG)}</span>`
-            : nothing}
           ${sortIndex >= 0 && this._sortColumns.length > 1
             ? html`<span class="sort-index">${sortIndex + 1}</span>`
             : nothing}
@@ -852,12 +839,6 @@ function renderContent(content: CellContent): unknown {
     return content;
   }
   return content;
-}
-
-function unsafeSvg(svg: string): TemplateResult {
-  const template = document.createElement('template');
-  template.innerHTML = svg;
-  return html`${template.content.cloneNode(true)}`;
 }
 
 if (typeof customElements !== 'undefined' && !customElements.get('mp-datatable')) {

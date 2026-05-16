@@ -70,6 +70,33 @@ thead th {
 
 thead th[data-sortable="true"] {
   cursor: pointer;
+  padding-right: 2rem;
+
+  &::before,
+  &::after {
+    position: absolute;
+    display: block;
+    opacity: 0.3;
+    bottom: 0.5em;
+  }
+
+  &::before {
+    content: "\2191";
+    right: 1em;
+  }
+
+  &::after {
+    content: "\2193";
+    right: 0.5em;
+  }
+
+  &[aria-sort="ascending"]::after {
+    opacity: 1;
+  }
+
+  &[aria-sort="descending"]::before {
+    opacity: 1;
+  }
 }
 
 thead th[data-sortable="true"]:hover {
@@ -80,18 +107,6 @@ thead th[data-sortable="true"]:hover {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-}
-
-.sort-indicator {
-  display: inline-flex;
-  align-items: center;
-  font-size: 0.75em;
-  opacity: 0.85;
-}
-
-.sort-indicator svg {
-  width: 0.7em;
-  height: 0.7em;
 }
 
 .sort-index {
