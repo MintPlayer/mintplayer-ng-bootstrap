@@ -1,15 +1,31 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, computed, DestroyRef, ElementRef, inject, input, model, PLATFORM_ID, viewChild } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  CUSTOM_ELEMENTS_SCHEMA,
+  DestroyRef,
+  effect,
+  ElementRef,
+  inject,
+  input,
+  model,
+  PLATFORM_ID,
+  viewChild,
+} from '@angular/core';
 import { isPlatformServer } from '@angular/common';
-import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/toggle-button';
 import { BsRadioGroupDirective } from '../directives/radio-group/radio-group.directive';
 import { BsRadioType } from '../types/radio-type';
+import type { MpRadio, RadioChangeEventDetail } from '@mintplayer/ng-bootstrap/web-components/radio';
+
+// Side-effect import: registers <mp-radio>.
+import '@mintplayer/ng-bootstrap/web-components/radio';
 
 @Component({
   selector: 'bs-radio',
   templateUrl: './radio.component.html',
-  styleUrls: ['./radio.component.scss'],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [BsToggleButtonComponent],
   host: {
     'class': 'd-inline-block',
   },
@@ -21,7 +37,11 @@ export class BsRadioComponent implements AfterViewInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly parentGroup = inject(BsRadioGroupDirective, { optional: true, skipSelf: true });
 
-  readonly checkbox = viewChild.required<ElementRef<HTMLInputElement>>('checkbox');
+  /** Reference to the underlying `<mp-radio>` WC. Read by `[bsRadioGroup]`
+   *  to write the WC's `checked` property — shadow DOM blocks the browser's
+   *  native radio one-of-N across <mp-radio> instances, so the group
+   *  directive must coordinate unchecking explicitly. */
+  readonly radioRef = viewChild.required<ElementRef<MpRadio>>('radio');
 
   type = input<BsRadioType>('radio');
   isToggled = model<boolean>(false);
@@ -31,38 +51,45 @@ export class BsRadioComponent implements AfterViewInit {
   /** Explicit `[group]` input wins over the DI-injected ancestor. */
   readonly resolvedGroup = computed(() => this.group() ?? this.parentGroup ?? null);
 
-  mainCheckStyle = computed(() => this.type() === 'radio' ? 'form-check' : null);
-
-  inputClass = computed(() => this.type() === 'radio' ? 'form-check-input' : 'btn-check');
-
-  labelClass = computed(() => this.type() === 'radio' ? 'form-check-label' : 'btn btn-secondary');
-
   /** Name comes from the resolved group; `<bs-radio>` has no `[name]` input. */
-  nameResult = computed(() => this.resolvedGroup()?.name() ?? null);
+  readonly nameResult = computed(() => this.resolvedGroup()?.name() ?? null);
 
-  onInputChange(ev: Event) {
-    this.isToggled.set((ev.target as HTMLInputElement).checked);
+  constructor() {
+    effect(() => {
+      const el = this.radioRef()?.nativeElement;
+      if (!el) return;
+      el.type = this.type();
+      el.value = this.value();
+      el.name = this.nameResult();
+      el.checked = this.isToggled();
+    });
+  }
+
+  onChange(ev: Event) {
+    const detail = (ev as CustomEvent<RadioChangeEventDetail>).detail;
+    this.isToggled.set(detail.checked);
   }
 
   ngAfterViewInit() {
-    this.mirrorAriaAttributesToInput();
+    this.mirrorAriaAttributesToRadio();
   }
 
   /**
    * Mirror every `aria-*` attribute from the host element onto the inner
-   * `<input>`. Screen readers compute the focused control's accessible name
-   * from the input itself — `aria-label` / `aria-labelledby` / `aria-describedby`
-   * on the host would otherwise be invisible to AT. A MutationObserver keeps
-   * the mirror in sync with `[attr.aria-…]` bindings that change at runtime.
+   * `<mp-radio>`. ATs read the accessible name from the focused element
+   * (the inner input, which the WC mirrors aria-* to internally) — surfacing
+   * host-level `[attr.aria-…]` bindings on the wrapper means hopping them
+   * through the WC. A MutationObserver keeps the mirror in sync with
+   * runtime aria attribute changes.
    */
-  private mirrorAriaAttributesToInput() {
+  private mirrorAriaAttributesToRadio() {
     if (isPlatformServer(this.platformId)) return;
     const host = this.hostRef.nativeElement as HTMLElement;
-    const input = this.checkbox().nativeElement;
+    const radio = this.radioRef().nativeElement as HTMLElement;
     const mirror = () => {
       Array.from(host.attributes)
         .filter(attr => attr.name.startsWith('aria-'))
-        .forEach(({ name, value }) => input.setAttribute(name, value));
+        .forEach(({ name, value }) => radio.setAttribute(name, value));
     };
     mirror();
     const observer = new MutationObserver(mirror);
