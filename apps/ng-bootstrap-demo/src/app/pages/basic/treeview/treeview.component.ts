@@ -1,9 +1,10 @@
 /// <reference types="../../../../types" />
 
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import {
   BsTreeviewComponent,
-  type IconResolver,
+  BsTreeviewNodeTemplateDirective,
   type TreeNode,
 } from '@mintplayer/ng-bootstrap/treeview';
 
@@ -11,13 +12,11 @@ import {
   selector: 'demo-treeview',
   templateUrl: './treeview.component.html',
   styleUrls: ['./treeview.component.scss'],
-  imports: [BsTreeviewComponent],
+  imports: [BsTreeviewComponent, BsTreeviewNodeTemplateDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TreeviewComponent {
-  private icons = signal<Map<string, string>>(new Map());
-
-  iconResolver: IconResolver = (iconKey) => this.icons().get(iconKey);
+  private readonly icons = signal<Map<string, SafeHtml>>(new Map());
 
   readonly items = signal<TreeNode[]>([
     {
@@ -45,7 +44,12 @@ export class TreeviewComponent {
 
   readonly expandedIds = signal<string[]>(['inbox']);
 
-  constructor() {
+  iconFor(key: string | undefined): SafeHtml | undefined {
+    if (!key) return undefined;
+    return this.icons().get(key);
+  }
+
+  constructor(private sanitizer: DomSanitizer) {
     this.loadIcons([
       'inbox-fill',
       'building',
@@ -62,10 +66,12 @@ export class TreeviewComponent {
   private loadIcons(keys: ReadonlyArray<string>): void {
     Promise.all(
       keys.map((key) =>
-        import(`bootstrap-icons/icons/${key}.svg`).then((mod) => [key, mod.default as string] as const),
+        import(`bootstrap-icons/icons/${key}.svg`).then(
+          (mod) => [key, this.sanitizer.bypassSecurityTrustHtml(mod.default as string)] as const,
+        ),
       ),
     ).then((entries) => {
-      const map = new Map<string, string>();
+      const map = new Map<string, SafeHtml>();
       entries.forEach(([k, v]) => map.set(k, v));
       this.icons.set(map);
     });

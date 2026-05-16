@@ -1,17 +1,21 @@
 <h1 class="text-center">Treeview</h1>
 
 <p>
-    Data-driven recursive tree. Pass a <code>TreeNode[]</code> via <code>[items]</code>,
-    optionally provide an <code>iconResolver</code> that returns SVG markup for each
-    node's <code>iconKey</code>, and bind <code>[(expandedIds)]</code> / <code>[(selectedIds)]</code>
-    if you need to control the state.
+    Data-driven recursive tree. Pass a <code>TreeNode[]</code> via <code>[items]</code>
+    and supply an <code>*bsTreeviewNode</code> template to render each node body
+    with arbitrary Angular content (icons, labels, badges, custom layout).
+    Two-way bindings <code>[(expandedIds)]</code> and <code>[(selectedIds)]</code>
+    let you control state.
 </p>
 
 <bs-treeview
     [items]="items()"
     [(expandedIds)]="expandedIds"
-    [iconResolver]="iconResolver"
     selectionMode="single">
+    <ng-template bsTreeviewNode let-node>
+        <span [innerHTML]="iconFor(node.iconKey)" class="me-2"></span>
+        {{ node.label }}
+    </ng-template>
 </bs-treeview>
 
 <details class="mt-3">

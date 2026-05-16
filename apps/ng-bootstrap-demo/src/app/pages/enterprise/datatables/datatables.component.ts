@@ -3,10 +3,12 @@ import { FormsModule } from '@angular/forms';
 import { PaginationRequest, PaginationResponse } from '@mintplayer/pagination';
 import {
   BsDatatableComponent,
+  BsDatatableColumnDirective,
+  BsRowTemplateDirective,
   BsDatatableFetch,
   DatatableSettings,
-  type DatatableColumnDef,
 } from '@mintplayer/ng-bootstrap/datatable';
+import { BsSelectComponent, BsSelectOption } from '@mintplayer/ng-bootstrap/select';
 import { Artist } from '../../../entities/artist';
 import { ArtistService } from '../../../services/artist/artist.service';
 
@@ -14,12 +16,19 @@ import { ArtistService } from '../../../services/artist/artist.service';
   selector: 'demo-datatables',
   templateUrl: './datatables.component.html',
   styleUrls: ['./datatables.component.scss'],
-  imports: [FormsModule, BsDatatableComponent],
+  imports: [
+    FormsModule,
+    BsDatatableComponent, BsDatatableColumnDirective, BsRowTemplateDirective,
+    BsSelectComponent, BsSelectOption,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DatatablesComponent {
 
   private artistService = inject(ArtistService);
+
+  mode = signal<'pagination' | 'virtualScroll'>('pagination');
+  virtualScroll = computed(() => this.mode() === 'virtualScroll');
 
   settings = signal(new DatatableSettings({
     sortColumns: [{ property: 'YearStarted', direction: 'ascending' }],
@@ -29,16 +38,12 @@ export class DatatablesComponent {
 
   selection = signal<Artist[]>([]);
 
-  columns = computed<DatatableColumnDef<Artist>[]>(() => [
-    { name: 'Name', label: 'Artist', cellRenderer: (r) => r.name ?? '', cellClass: 'text-nowrap' },
-    { name: 'YearStarted', label: 'Year started', cellRenderer: (r) => r.yearStarted?.toString() ?? '', cellClass: 'text-nowrap' },
-    { name: 'YearQuit', label: 'Year quit', cellRenderer: (r) => r.yearQuit?.toString() ?? '', cellClass: 'text-nowrap' },
-  ]);
-
   fetchArtists: BsDatatableFetch<Artist> = (req: PaginationRequest) =>
     this.artistService.pageArtists(req).then(
       (response) => response ?? <PaginationResponse<Artist>>{ data: [], totalRecords: 0, totalPages: 1, page: req.page, perPage: req.perPage },
     );
+
+  compareArtists = (a: Artist, b: Artist) => a.id === b.id;
 
   rowKey = (a: Artist) => String(a.id);
 }

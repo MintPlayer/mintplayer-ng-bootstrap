@@ -4,4 +4,5 @@ export type {
   CellRenderer,
   HeaderRenderer,
   RowKey,
+  RowRenderer,
 } from './column-def';

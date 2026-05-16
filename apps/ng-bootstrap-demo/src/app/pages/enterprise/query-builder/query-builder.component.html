@@ -55,7 +55,13 @@
     [(settings)]="settings"
     [columns]="datatableColumns()"
     [resizableColumns]="false"
-  ></bs-datatable>
+  >
+    <ng-template bsRowTemplate let-row>
+      @for (col of datatableColumns(); track col.name) {
+        <td class="text-nowrap">{{ formatCell($any(row), col.name) }}</td>
+      }
+    </ng-template>
+  </bs-datatable>
 
   <h2 class="h5 mt-4">Keymap</h2>
   <ul class="list-unstyled small">

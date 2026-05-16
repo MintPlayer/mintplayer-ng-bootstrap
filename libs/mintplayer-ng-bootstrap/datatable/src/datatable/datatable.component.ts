@@ -2,15 +2,21 @@ import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
+  computed,
+  contentChild,
+  contentChildren,
   CUSTOM_ELEMENTS_SCHEMA,
+  DestroyRef,
   effect,
   ElementRef,
+  EmbeddedViewRef,
   inject,
   input,
   model,
   output,
   PLATFORM_ID,
   signal,
+  ViewContainerRef,
   viewChild,
 } from '@angular/core';
 import { isPlatformServer } from '@angular/common';
@@ -21,6 +27,7 @@ import {
   type DatatableSelectionMode,
   type MpDatatable,
   type RowEventDetail,
+  type RowRenderer,
   type SortChangeEventDetail,
   type SelectionChangeEventDetail,
 } from '@mintplayer/ng-bootstrap/web-components/datatable';
@@ -30,6 +37,8 @@ import '@mintplayer/ng-bootstrap/web-components/datatable';
 
 import { DatatableSettings } from '../datatable-settings';
 import { BsDatatableFetch } from '../datatable-fetch';
+import { BsDatatableColumnDirective } from '../datatable-column/datatable-column.directive';
+import { BsRowTemplateDirective, BsRowTemplateContext } from '../row-template/row-template.directive';
 
 export interface BsDatatableRowEvent<T> {
   row: T;
@@ -47,9 +56,14 @@ export interface BsDatatableRowEvent<T> {
 })
 export class BsDatatableComponent<TData> implements AfterViewInit {
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly vcr = inject(ViewContainerRef);
+  private readonly destroyRef = inject(DestroyRef);
 
-  /** Programmatic column list. The directive-based API has been removed. */
-  readonly columns = input.required<DatatableColumnDef<TData>[]>();
+  /**
+   * Programmatic column list. Mutually exclusive with the `*bsDatatableColumn`
+   * template directives — if provided, takes precedence.
+   */
+  readonly columnsInput = input<DatatableColumnDef<TData>[] | null>(null, { alias: 'columns' });
 
   /** Static (already-paginated) data array. Use `[fetch]` for server-side pagination. */
   readonly data = input<TData[] | null>(null);
@@ -60,8 +74,10 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
   /** Two-way bound pagination / sort settings. */
   readonly settings = model<DatatableSettings>(new DatatableSettings());
 
-  /** `'none'` hides selection; `'multiple'` shows checkboxes. */
+  /** `'none'` hides selection; `'multiple'` shows checkboxes; `'single'` is a single-row selection. */
   readonly selectionMode = input<DatatableSelectionMode>('none');
+  /** @deprecated Use `selectionMode`. Kept for source-level compatibility. */
+  readonly selectable = input<DatatableSelectionMode | undefined>(undefined);
 
   /** Two-way bound array of selected rows (identity via `rowKey`). */
   readonly selection = model<TData[]>([]);
@@ -75,8 +91,21 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
   /** Drag-resize column widths. Default `true`. */
   readonly resizableColumns = input<boolean>(true);
 
-  /** Show the resizable footer pagination UI. Default `true` for sync data, ignored when fetch is provided (paginated externally). */
+  /** Built-in pagination footer. Ignored when `[fetch]` is provided (server-side paging owns the page state). */
   readonly pagination = input<boolean>(true);
+
+  /** Enable virtual scrolling for large datasets. */
+  readonly virtualScroll = input<boolean>(false);
+  /** Approximate row height in px (drives virtual scroll). */
+  readonly itemSize = input<number>(40);
+  /** Off-screen row buffer per side for virtual scrolling. */
+  readonly virtualBuffer = input<number>(10);
+
+  /** Forwarded to the inner table (legacy responsive flag, currently a CSS hook). */
+  readonly isResponsive = input<boolean>(false);
+
+  /** Optional row equality predicate (selection identity across re-fetches). */
+  readonly compareWith = input<((a: TData, b: TData) => boolean) | undefined>(undefined);
 
   /** Emitted on row single-click. */
   readonly rowClick = output<BsDatatableRowEvent<TData>>();
@@ -87,11 +116,60 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
 
   readonly datatableRef = viewChild<ElementRef<MpDatatable>>('datatable');
 
+  /** Column directives (header template + sortable). Wrapper-level discovery. */
+  readonly columnDirectives = contentChildren(BsDatatableColumnDirective);
+
+  /** Optional row template. When present, drives a per-row EmbeddedView render path. */
+  readonly rowTemplate = contentChild(BsRowTemplateDirective<TData>);
+
   /** Internal data source — populated either from `data()` or from `fetch()` responses. */
   protected readonly currentData = signal<TData[]>([]);
   protected readonly totalRecords = signal<number>(0);
 
+  /**
+   * Merged column defs:
+   *  - `[columns]` if provided
+   *  - else the `*bsDatatableColumn` directives mapped onto column defs whose
+   *    `headerRenderer` returns a DOM node produced from the directive's template.
+   */
+  protected readonly effectiveColumns = computed<DatatableColumnDef<TData>[]>(() => {
+    const programmatic = this.columnsInput();
+    if (programmatic && programmatic.length) return programmatic;
+    return this.columnDirectives().map((dir): DatatableColumnDef<TData> => {
+      let headerView: EmbeddedViewRef<unknown> | undefined;
+      return {
+        name: dir.name(),
+        sortable: dir.sortable(),
+        headerRenderer: () => {
+          if (!headerView) {
+            headerView = this.vcr.createEmbeddedView(dir.templateRef);
+            this.headerViews.push(headerView);
+          }
+          headerView.detectChanges();
+          const nodes = headerView.rootNodes.filter((n: unknown): n is Node => n instanceof Node);
+          if (nodes.length === 0) return '';
+          if (nodes.length === 1) return nodes[0];
+          const frag = document.createDocumentFragment();
+          for (const n of nodes) frag.appendChild(n);
+          return frag;
+        },
+      };
+    });
+  });
+
+  /** EmbeddedViews for header templates (one per column directive). */
+  private headerViews: EmbeddedViewRef<unknown>[] = [];
+  /** EmbeddedViews for row templates, keyed by rowKey for reuse. */
+  private rowViews = new Map<string, EmbeddedViewRef<BsRowTemplateContext<TData>>>();
+
   constructor() {
+    this.destroyRef.onDestroy(() => {
+      for (const v of this.headerViews) v.destroy();
+      this.headerViews = [];
+      for (const v of this.rowViews.values()) v.destroy();
+      this.rowViews.clear();
+    });
+
     // Sync data input → internal source.
     effect(() => {
       const d = this.data();
@@ -115,17 +193,18 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
       void this.runFetch(fetcher, req, settings);
     });
 
-    // Forward properties to the WC.
+    // Forward columns + data to the WC.
     effect(() => {
       const el = this.datatableRef()?.nativeElement;
       if (!el) return;
-      el.columns = this.columns() as DatatableColumnDef[];
+      el.columns = this.effectiveColumns() as DatatableColumnDef[];
     });
 
     effect(() => {
       const el = this.datatableRef()?.nativeElement;
       if (!el) return;
       el.data = this.currentData() as unknown[];
+      // Stale row views for rows no longer present are pruned lazily on next render.
     });
 
     effect(() => {
@@ -133,7 +212,6 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
       if (!el) return;
       const settings = this.settings();
       el.sortColumns = settings.sortColumns.map((c) => ({ property: c.property, direction: c.direction }));
-      // When using fetch, the WC must NOT also sort or paginate — that's the consumer's job.
       el.autoSort = !this.fetch();
       el.pagination = this.pagination() && !this.fetch();
       el.page = settings.page.selected;
@@ -144,7 +222,8 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
     effect(() => {
       const el = this.datatableRef()?.nativeElement;
       if (!el) return;
-      el.selectionMode = this.selectionMode();
+      const mode = this.selectable() ?? this.selectionMode();
+      el.selectionMode = mode;
     });
 
     effect(() => {
@@ -157,6 +236,29 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
       const el = this.datatableRef()?.nativeElement;
       if (!el) return;
       el.resizableColumns = this.resizableColumns();
+    });
+
+    effect(() => {
+      const el = this.datatableRef()?.nativeElement;
+      if (!el) return;
+      el.virtualScroll = this.virtualScroll();
+      el.itemSize = this.itemSize();
+      el.virtualBuffer = this.virtualBuffer();
+    });
+
+    // Wire the row renderer when *bsRowTemplate is provided.
+    effect(() => {
+      const el = this.datatableRef()?.nativeElement;
+      if (!el) return;
+      const tpl = this.rowTemplate();
+      if (!tpl) {
+        el.rowRenderer = undefined;
+        // Destroy any stale row views.
+        for (const v of this.rowViews.values()) v.destroy();
+        this.rowViews.clear();
+        return;
+      }
+      el.rowRenderer = this.buildRowRenderer(tpl) as RowRenderer;
     });
 
     // Selection rows → IDs forwarded to WC.
@@ -173,6 +275,25 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
     // Effects above re-run as the view is created; nothing else needed.
   }
 
+  private buildRowRenderer(tpl: BsRowTemplateDirective<TData>): RowRenderer<TData> {
+    return (row, rowIndex) => {
+      if (row === undefined) return undefined;
+      const key = this.rowKey()(row as TData, rowIndex);
+      let viewRef = this.rowViews.get(key);
+      if (!viewRef) {
+        viewRef = this.vcr.createEmbeddedView(tpl.templateRef, { $implicit: row as TData, index: rowIndex });
+        this.rowViews.set(key, viewRef);
+      } else {
+        viewRef.context.$implicit = row as TData;
+        viewRef.context.index = rowIndex;
+      }
+      viewRef.detectChanges();
+      // Filter to Node instances; <td> elements come through here.
+      const nodes = viewRef.rootNodes.filter((n: unknown): n is Node => n instanceof Node);
+      return nodes;
+    };
+  }
+
   private async runFetch(
     fetcher: BsDatatableFetch<TData>,
     req: PaginationRequest,
@@ -183,7 +304,6 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
     this.currentData.set(response.data ?? []);
     this.totalRecords.set(response.totalRecords ?? response.data?.length ?? 0);
 
-    // Update page options to match totalPages.
     const desiredPageCount = Math.max(1, response.totalPages ?? 1);
     if (settings.page.values.length !== desiredPageCount) {
       this.settings.set(
@@ -207,7 +327,6 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
       new DatatableSettings({
         ...settings,
         sortColumns: detail.sortColumns as SortColumn[],
-        // Reset to page 1 on sort change (matches existing behavior).
         page: { ...settings.page, selected: 1 },
       }),
     );

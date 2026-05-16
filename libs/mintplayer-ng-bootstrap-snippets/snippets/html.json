@@ -37,7 +37,13 @@
         "prefix": "bs-datatable",
         "description": "Bootstrap Datatable",
         "body": [
-            "<bs-datatable [data]=\"${1:items}()\" [columns]=\"${2:columns}()\" [(settings)]=\"${3:settings}\"></bs-datatable>"
+            "<bs-datatable [(settings)]=\"${1:settings}\" [fetch]=\"${2:fetchItems}\">",
+            "\t<ng-template bsDatatableColumn=\"${3:PropertyName}\">${4:Heading}</ng-template>",
+            "",
+            "\t<ng-template bsRowTemplate let-item>",
+            "\t\t<td>{{ item?.${3/(.)(.*)/${1:/downcase}$2/} }}</td>",
+            "\t</ng-template>",
+            "</bs-datatable>"
         ]
     },
     "FileUpload": {
@@ -353,7 +359,11 @@
         "prefix": "bs-treeview",
         "description": "Bootstrap Treeview",
         "body": [
-            "<bs-treeview [items]=\"${1:items}()\" [(expandedIds)]=\"${2:expandedIds}\"></bs-treeview>"
+            "<bs-treeview [items]=\"${1:items}()\" [(expandedIds)]=\"${2:expandedIds}\">",
+            "\t<ng-template bsTreeviewNode let-node>",
+            "\t\t{{ node.label }}",
+            "\t</ng-template>",
+            "</bs-treeview>"
         ]
     },
     "MultiSelect": {

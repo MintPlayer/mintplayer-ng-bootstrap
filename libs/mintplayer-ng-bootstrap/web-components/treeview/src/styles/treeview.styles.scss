@@ -117,6 +117,11 @@ ul {
   text-overflow: ellipsis;
 }
 
+.treeview-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .treeview-chevron {
     transition: none !important;

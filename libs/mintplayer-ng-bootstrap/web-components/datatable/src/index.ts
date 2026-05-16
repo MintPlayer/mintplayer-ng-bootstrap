@@ -11,6 +11,7 @@ export type {
   CellRenderer,
   HeaderRenderer,
   RowKey,
+  RowRenderer,
 } from './types';
 export type { SortColumn, SortDirection } from './sort';
 export { computeNextSort, sortRows } from './sort';

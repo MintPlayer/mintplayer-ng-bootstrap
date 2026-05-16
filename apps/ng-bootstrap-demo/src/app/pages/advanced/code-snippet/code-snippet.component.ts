@@ -12,10 +12,16 @@ import { dedent } from 'ts-dedent';
 export class CodeSnippetComponent {
 
   html = dedent`
-    <bs-datatable
-      [data]="artists()"
-      [(settings)]="settings"
-      [columns]="columns()">
+    <bs-datatable #tabel [settings]="settings" (settingsChange)="loadArtists()">
+      <ng-template bsDatatableColumn="Name">Artist</ng-template>
+      <ng-template bsDatatableColumn="YearStarted">Year started</ng-template>
+      <ng-template bsDatatableColumn="YearQuit">Year quit</ng-template>
+
+      <ng-template bsRowTemplate let-artist>
+        <td class="text-nowrap">{{ artist?.name }}</td>
+        <td class="text-nowrap">{{ artist?.yearStarted }}</td>
+        <td class="text-nowrap">{{ artist?.yearQuit }}</td>
+      </ng-template>
     </bs-datatable>`;
 
 }

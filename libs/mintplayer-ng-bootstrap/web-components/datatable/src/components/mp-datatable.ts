@@ -7,7 +7,9 @@ import { computeNextSort, sortRows, type SortColumn } from '../sort';
 import type {
   CellContent,
   DatatableColumnDef,
+  HeaderRenderer,
   RowKey,
+  RowRenderer,
 } from '../types';
 
 export type DatatableSelectionMode = 'none' | 'single' | 'multiple';
@@ -63,6 +65,8 @@ export class MpDatatable extends LitElement {
       'resizable-columns',
       'auto-sort',
       'empty-message',
+      'virtual-scroll',
+      'item-size',
     ];
   }
 
@@ -87,6 +91,15 @@ export class MpDatatable extends LitElement {
   private _perPage = 20;
   private _perPageOptions: number[] = [10, 20, 50];
   private _autoSort = true;
+  private _rowRenderer: RowRenderer | undefined;
+  private _virtualScroll = false;
+  private _itemSize = 40;
+  private _virtualBuffer = 10;
+  private _virtualRange: { startIndex: number; endIndex: number } = { startIndex: 0, endIndex: 0 };
+  private _scrollElement: HTMLElement | null = null;
+  private _resizeObserver: ResizeObserver | null = null;
+  private _scrollListener: (() => void) | null = null;
+  private _viewportHeight = 0;
 
   /** When true, the WC sorts `data` itself using `sortRows`. Set `false` if the consumer sorts externally. */
   get autoSort(): boolean {
@@ -95,6 +108,55 @@ export class MpDatatable extends LitElement {
   set autoSort(value: boolean) {
     this._autoSort = !!value;
     this.requestUpdate();
+  }
+
+  /**
+   * Per-row renderer. When set, the WC delegates row content production to
+   * this callback (used by the Angular wrapper to host `*bsRowTemplate`
+   * templates). Returning `undefined` falls back to per-column `cellRenderer`s.
+   */
+  get rowRenderer(): RowRenderer | undefined {
+    return this._rowRenderer;
+  }
+  set rowRenderer(value: RowRenderer | undefined) {
+    this._rowRenderer = value;
+    this.requestUpdate();
+  }
+
+  /** Enable scroll-position-driven virtualization. Rows outside the viewport are not rendered. */
+  get virtualScroll(): boolean {
+    return this._virtualScroll;
+  }
+  set virtualScroll(value: boolean) {
+    const next = !!value;
+    if (this._virtualScroll !== next) {
+      this._virtualScroll = next;
+      this.requestUpdate();
+    }
+  }
+
+  /** Approximate row height in px (used by virtual scroll). Default `40`. */
+  get itemSize(): number {
+    return this._itemSize;
+  }
+  set itemSize(value: number) {
+    const next = Math.max(1, Math.floor(value || 0)) || 40;
+    if (this._itemSize !== next) {
+      this._itemSize = next;
+      this.requestUpdate();
+    }
+  }
+
+  /** Off-screen row buffer (each side) for virtual scrolling. */
+  get virtualBuffer(): number {
+    return this._virtualBuffer;
+  }
+  set virtualBuffer(value: number) {
+    const next = Math.max(0, Math.floor(value || 0));
+    if (this._virtualBuffer !== next) {
+      this._virtualBuffer = next;
+      this.requestUpdate();
+    }
   }
 
   get columns(): DatatableColumnDef[] {
@@ -233,6 +295,11 @@ export class MpDatatable extends LitElement {
       this.autoSort = newValue !== 'false';
     } else if (name === 'empty-message') {
       this.emptyMessage = newValue ?? 'No data';
+    } else if (name === 'virtual-scroll') {
+      this.virtualScroll = newValue !== null;
+    } else if (name === 'item-size') {
+      const n = Number(newValue);
+      if (Number.isFinite(n)) this.itemSize = n;
     }
   }
 
@@ -252,14 +319,58 @@ export class MpDatatable extends LitElement {
     }
   }
 
+  protected override firstUpdated(): void {
+    this._scrollElement = this.shadowRoot?.querySelector('.datatable-scroll') as HTMLElement | null;
+    if (this._scrollElement) {
+      this._scrollListener = () => this.refreshVirtualRange();
+      this._scrollElement.addEventListener('scroll', this._scrollListener, { passive: true });
+      if (typeof ResizeObserver !== 'undefined') {
+        this._resizeObserver = new ResizeObserver(() => this.refreshVirtualRange());
+        this._resizeObserver.observe(this._scrollElement);
+      }
+    }
+    this.refreshVirtualRange();
+  }
+
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    if (this._scrollElement && this._scrollListener) {
+      this._scrollElement.removeEventListener('scroll', this._scrollListener);
+    }
+    this._scrollListener = null;
+    this._resizeObserver?.disconnect();
+    this._resizeObserver = null;
+    this._scrollElement = null;
+  }
+
+  private refreshVirtualRange(): void {
+    if (!this._virtualScroll || !this._scrollElement) return;
+    const scrollTop = this._scrollElement.scrollTop;
+    const viewport = this._scrollElement.clientHeight;
+    this._viewportHeight = viewport;
+    const total = this.getEffectiveData().length;
+    const itemSize = this._itemSize;
+    const start = Math.max(0, Math.floor(scrollTop / itemSize) - this._virtualBuffer);
+    const visible = Math.ceil(viewport / itemSize);
+    const end = Math.min(total, start + visible + this._virtualBuffer * 2);
+    if (start !== this._virtualRange.startIndex || end !== this._virtualRange.endIndex) {
+      this._virtualRange = { startIndex: start, endIndex: end };
+      this.requestUpdate();
+    }
+  }
+
   override render(): TemplateResult {
     const rows = this.computeVisibleRows();
     const totalPages = this.pagination ? Math.max(1, Math.ceil(this._data.length / this._perPage)) : 1;
     const showCheckboxes = this._selectionMode === 'multiple';
+    const totalColumnCount = this._columns.length + (showCheckboxes ? 1 : 0);
+
+    // Virtual scroll: spacer rows at top and bottom.
+    const virtualMeta = this.getVirtualSpacerHeights();
 
     return html`
       <div class="datatable-shell">
-        <div class="datatable-scroll" role="presentation">
+        <div class="datatable-scroll ${this._virtualScroll ? 'datatable-virtual' : ''}" role="presentation">
           <table aria-rowcount=${this._data.length + 1}>
             <thead>
               <tr role="row" aria-rowindex="1">
@@ -278,20 +389,38 @@ export class MpDatatable extends LitElement {
             </thead>
             <tbody>
               ${this._loading
-                ? html`<tr><td colspan=${this._columns.length + (showCheckboxes ? 1 : 0)} class="loading-state">Loading…</td></tr>`
+                ? html`<tr><td colspan=${totalColumnCount} class="loading-state">Loading…</td></tr>`
                 : rows.length === 0
-                  ? html`<tr><td colspan=${this._columns.length + (showCheckboxes ? 1 : 0)} class="empty-state">${this._emptyMessage}</td></tr>`
-                  : repeat(
-                      rows,
-                      ({ key }) => key,
-                      ({ row, key, rowIndex }) => this.renderRow(row, key, rowIndex, showCheckboxes),
-                    )}
+                  ? html`<tr><td colspan=${totalColumnCount} class="empty-state">${this._emptyMessage}</td></tr>`
+                  : html`
+                      ${virtualMeta.top > 0
+                        ? html`<tr class="virtual-spacer" aria-hidden="true"><td colspan=${totalColumnCount} style=${styleMap({ height: `${virtualMeta.top}px`, padding: '0', border: '0' })}></td></tr>`
+                        : nothing}
+                      ${repeat(
+                        rows,
+                        ({ key }) => key,
+                        ({ row, key, rowIndex }) => this.renderRow(row, key, rowIndex, showCheckboxes),
+                      )}
+                      ${virtualMeta.bottom > 0
+                        ? html`<tr class="virtual-spacer" aria-hidden="true"><td colspan=${totalColumnCount} style=${styleMap({ height: `${virtualMeta.bottom}px`, padding: '0', border: '0' })}></td></tr>`
+                        : nothing}
+                    `}
             </tbody>
           </table>
         </div>
         ${this._pagination ? this.renderFooter(totalPages) : nothing}
       </div>
     `;
+  }
+
+  private getVirtualSpacerHeights(): { top: number; bottom: number } {
+    if (!this._virtualScroll) return { top: 0, bottom: 0 };
+    const total = this.getEffectiveData().length;
+    const { startIndex, endIndex } = this._virtualRange;
+    return {
+      top: startIndex * this._itemSize,
+      bottom: Math.max(0, (total - endIndex) * this._itemSize),
+    };
   }
 
   private renderHeader(col: DatatableColumnDef, _index: number): TemplateResult {
@@ -371,9 +500,24 @@ export class MpDatatable extends LitElement {
               />
             </td>`
           : nothing}
-        ${this._columns.map((col) => this.renderCell(row, col, rowIndex))}
+        ${this._rowRenderer
+          ? this.renderRowFromRenderer(row, rowIndex)
+          : this._columns.map((col) => this.renderCell(row, col, rowIndex))}
       </tr>
     `;
+  }
+
+  private renderRowFromRenderer(row: unknown, rowIndex: number): unknown {
+    const out = this._rowRenderer!(row, rowIndex);
+    if (out == null) {
+      return this._columns.map((col) => this.renderCell(row, col, rowIndex));
+    }
+    if (Array.isArray(out) || isIterableNotString(out)) {
+      const nodes: Node[] = [];
+      for (const item of out as Iterable<Node>) nodes.push(item);
+      return nodes;
+    }
+    return out as Node;
   }
 
   private renderCell(row: unknown, col: DatatableColumnDef, rowIndex: number): TemplateResult {
@@ -426,7 +570,7 @@ export class MpDatatable extends LitElement {
     `;
   }
 
-  private computeVisibleRows(): Array<{ row: unknown; key: string; rowIndex: number }> {
+  private getEffectiveData(): unknown[] {
     let rows: unknown[] = this._data;
     if (this._autoSort && this._sortColumns.length > 0) {
       rows = sortRows(rows, this._sortColumns);
@@ -435,8 +579,21 @@ export class MpDatatable extends LitElement {
       const start = (this._page - 1) * this._perPage;
       rows = rows.slice(start, start + this._perPage);
     }
-    return rows.map((row, indexWithinPage) => {
-      const rowIndex = this._pagination ? (this._page - 1) * this._perPage + indexWithinPage : indexWithinPage;
+    return rows;
+  }
+
+  private computeVisibleRows(): Array<{ row: unknown; key: string; rowIndex: number }> {
+    const effective = this.getEffectiveData();
+    const pageOffset = this._pagination ? (this._page - 1) * this._perPage : 0;
+    let sliced = effective;
+    let sliceOffset = 0;
+    if (this._virtualScroll) {
+      const { startIndex, endIndex } = this._virtualRange;
+      sliced = effective.slice(startIndex, endIndex);
+      sliceOffset = startIndex;
+    }
+    return sliced.map((row, indexWithinSlice) => {
+      const rowIndex = pageOffset + sliceOffset + indexWithinSlice;
       return { row, rowIndex, key: this._rowKey(row, rowIndex) };
     });
   }
@@ -644,6 +801,14 @@ function defaultCellContent(row: unknown, col: DatatableColumnDef): CellContent 
   const value = (row as Record<string, unknown>)[col.name];
   if (value == null) return '';
   return String(value);
+}
+
+function isIterableNotString(value: unknown): value is Iterable<unknown> {
+  return (
+    value != null &&
+    typeof value !== 'string' &&
+    typeof (value as { [Symbol.iterator]?: unknown })[Symbol.iterator] === 'function'
+  );
 }
 
 function renderContent(content: CellContent): unknown {

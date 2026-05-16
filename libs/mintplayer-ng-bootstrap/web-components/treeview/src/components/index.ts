@@ -5,4 +5,6 @@ export type {
   TreeNodeExpandEventDetail,
   TreeNodeCollapseEventDetail,
   IconResolver,
+  TreeNodeRenderer,
+  TreeNodeRenderContext,
 } from './mp-treeview';

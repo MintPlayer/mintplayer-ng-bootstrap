@@ -8,6 +8,19 @@ export type TreeviewSelectionMode = 'none' | 'single' | 'multiple';
 
 export type IconResolver = (iconKey: string, node: TreeNode) => string | undefined;
 
+export interface TreeNodeRenderContext {
+  level: number;
+  expanded: boolean;
+  selected: boolean;
+  focused: boolean;
+  hasChildren: boolean;
+}
+
+export type TreeNodeRenderer = (
+  node: TreeNode,
+  context: TreeNodeRenderContext,
+) => Node | DocumentFragment | undefined;
+
 export interface TreeNodeSelectEventDetail {
   node: TreeNode;
   selectedIds: string[];
@@ -61,6 +74,7 @@ export class MpTreeview extends LitElement {
   private _selectionMode: TreeviewSelectionMode = 'single';
   private _hideBorders = false;
   private _iconResolver: IconResolver | undefined;
+  private _nodeRenderer: TreeNodeRenderer | undefined;
 
   // Roving tabindex: which node currently has tabindex=0
   private _focusedId: string | null = null;
@@ -120,6 +134,20 @@ export class MpTreeview extends LitElement {
   }
   set iconResolver(value: IconResolver | undefined) {
     this._iconResolver = value;
+    this.requestUpdate();
+  }
+
+  /**
+   * Per-node DOM renderer. When set, the WC calls this for each node's body
+   * (chevron stays). The returned Node replaces the default icon+label.
+   * Set by Angular wrapper to bridge `*bsTreeviewNode` templates into the
+   * shadow DOM via EmbeddedViewRef-managed nodes.
+   */
+  get nodeRenderer(): TreeNodeRenderer | undefined {
+    return this._nodeRenderer;
+  }
+  set nodeRenderer(value: TreeNodeRenderer | undefined) {
+    this._nodeRenderer = value;
     this.requestUpdate();
   }
 
@@ -188,6 +216,16 @@ export class MpTreeview extends LitElement {
     const indentation = (level - 1) * 20;
     const rowId = `${this.instanceId}-row-${node.id}`;
 
+    const customBody = this._nodeRenderer
+      ? this._nodeRenderer(node, {
+          level,
+          expanded,
+          selected,
+          focused,
+          hasChildren,
+        })
+      : undefined;
+
     return html`
       <li role="none">
         <div
@@ -212,10 +250,14 @@ export class MpTreeview extends LitElement {
             @click=${(ev: MouseEvent) => this.onChevronClick(node, ev)}
             aria-hidden="true"
           >${unsafeHTML(CHEVRON_SVG)}</span>
-          ${iconSvg
-            ? html`<span class="treeview-icon" aria-hidden="true">${unsafeHTML(iconSvg)}</span>`
-            : nothing}
-          <span class="treeview-label">${node.label}</span>
+          ${customBody
+            ? html`<span class="treeview-body">${customBody}</span>`
+            : html`
+                ${iconSvg
+                  ? html`<span class="treeview-icon" aria-hidden="true">${unsafeHTML(iconSvg)}</span>`
+                  : nothing}
+                <span class="treeview-label">${node.label}</span>
+              `}
         </div>
         ${hasChildren && expanded
           ? html`<ul role="group">${this.renderNodes(node.children!, level + 1)}</ul>`

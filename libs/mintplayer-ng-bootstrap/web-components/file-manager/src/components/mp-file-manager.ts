@@ -2,6 +2,7 @@ import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { ref, createRef, type Ref } from 'lit/directives/ref.js';
+import { styleMap } from 'lit/directives/style-map.js';
 
 // Side-effect imports: register the composed elements.
 import '@mintplayer/ng-bootstrap/web-components/splitter';
@@ -122,6 +123,7 @@ export class MpFileManager extends LitElement {
   private _renameTarget: string | null = null;
   private _renameInputRef: Ref<HTMLInputElement> = createRef();
   private _dragDepth = 0;
+  private _contextMenu: { x: number; y: number; targetId: string } | null = null;
 
   // ─── Property accessors ──────────────────────────────────────────────────
   get nodes(): FileSystemNode[] {
@@ -346,7 +348,71 @@ export class MpFileManager extends LitElement {
           </div>
         </mp-splitter>
       </div>
+      ${this.renderContextMenu()}
     `;
+  }
+
+  private renderContextMenu(): TemplateResult {
+    const menu = this._contextMenu;
+    if (!menu) return html``;
+    const hasSelection = this._selection.size > 0;
+    const hasClipboard = this._clipboard !== null;
+    return html`
+      <ul
+        class="context-menu"
+        role="menu"
+        aria-label="File operations"
+        style=${styleMap({ left: `${menu.x}px`, top: `${menu.y}px` })}
+        @click=${(ev: MouseEvent) => ev.stopPropagation()}
+      >
+        ${this.opEnabled('rename')
+          ? html`<li role="none"><button class="menu-item" role="menuitem" ?disabled=${this._selection.size !== 1} @click=${() => { this.closeContextMenu(); this.beginRenameFromToolbar(); }}>Rename</button></li>`
+          : nothing}
+        ${this.opEnabled('delete')
+          ? html`<li role="none"><button class="menu-item" role="menuitem" ?disabled=${!hasSelection} @click=${() => { this.closeContextMenu(); this.deleteSelection(); }}>Delete</button></li>`
+          : nothing}
+        <li role="separator" class="menu-separator"></li>
+        ${this.opEnabled('cut')
+          ? html`<li role="none"><button class="menu-item" role="menuitem" ?disabled=${!hasSelection} @click=${() => { this.closeContextMenu(); this.setClipboard('cut'); }}>Cut</button></li>`
+          : nothing}
+        ${this.opEnabled('copy')
+          ? html`<li role="none"><button class="menu-item" role="menuitem" ?disabled=${!hasSelection} @click=${() => { this.closeContextMenu(); this.setClipboard('copy'); }}>Copy</button></li>`
+          : nothing}
+        ${this.opEnabled('paste')
+          ? html`<li role="none"><button class="menu-item" role="menuitem" ?disabled=${!hasClipboard} @click=${() => { this.closeContextMenu(); this.paste(); }}>Paste</button></li>`
+          : nothing}
+        <li role="separator" class="menu-separator"></li>
+        ${this.opEnabled('newFolder')
+          ? html`<li role="none"><button class="menu-item" role="menuitem" @click=${() => { this.closeContextMenu(); this.promptNewFolder(); }}>New folder</button></li>`
+          : nothing}
+      </ul>
+    `;
+  }
+
+  private openContextMenu(targetId: string, x: number, y: number): void {
+    if (this._allowOperations === false) return;
+    this._contextMenu = { x, y, targetId };
+    this.requestUpdate();
+    // Close on document click / Escape — wire one-shot listeners.
+    void this.updateComplete.then(() => {
+      const close = (ev?: Event) => {
+        if (ev instanceof KeyboardEvent && ev.key !== 'Escape') return;
+        this.closeContextMenu();
+        document.removeEventListener('click', close, true);
+        document.removeEventListener('contextmenu', close, true);
+        document.removeEventListener('keydown', close, true);
+      };
+      document.addEventListener('click', close, true);
+      document.addEventListener('contextmenu', close, true);
+      document.addEventListener('keydown', close, true);
+    });
+  }
+
+  private closeContextMenu(): void {
+    if (this._contextMenu) {
+      this._contextMenu = null;
+      this.requestUpdate();
+    }
   }
 
   private renderToolbar(): TemplateResult {
@@ -497,6 +563,7 @@ export class MpFileManager extends LitElement {
         @mp-datatable-selection-change=${this.onDatatableSelection}
         @mp-datatable-row-click=${this.onRowClick}
         @mp-datatable-row-dblclick=${this.onRowDblClick}
+        @mp-datatable-row-contextmenu=${this.onRowContextMenu}
         @keydown=${this.onContentKeydown}
       ></mp-datatable>
     `;
@@ -555,6 +622,7 @@ export class MpFileManager extends LitElement {
         aria-selected=${selected ? 'true' : 'false'}
         @click=${(ev: MouseEvent) => this.onIconCardClick(node, ev)}
         @dblclick=${() => this.activateNode(node)}
+        @contextmenu=${(ev: MouseEvent) => this.onIconCardContextMenu(node, ev)}
       >
         <span class="file-icon" aria-hidden="true">${icon ? unsafeHTML(icon) : nothing}</span>
         <span class="file-name">${node.name}</span>
@@ -615,6 +683,22 @@ export class MpFileManager extends LitElement {
     this.activateNode(detail.row);
   };
 
+  private onRowContextMenu = (ev: Event): void => {
+    const detail = (ev as CustomEvent<RowEventDetail<FileSystemNode>>).detail;
+    const original = detail.originalEvent as MouseEvent;
+    original.preventDefault();
+    this.openContextMenu(detail.rowKey, original.clientX, original.clientY);
+  };
+
+  private onIconCardContextMenu(node: FileSystemNode, ev: MouseEvent): void {
+    ev.preventDefault();
+    if (this._selectionMode !== 'none' && !this._selection.has(node.id)) {
+      this._selection = new Set([node.id]);
+      this.emitSelectionChange();
+    }
+    this.openContextMenu(node.id, ev.clientX, ev.clientY);
+  }
+
   private onIconCardClick(node: FileSystemNode, ev: MouseEvent): void {
     if (this._selectionMode === 'none') return;
     if (this._selectionMode === 'multiple' && (ev.ctrlKey || ev.metaKey)) {
@@ -660,6 +744,16 @@ export class MpFileManager extends LitElement {
   }
 
   private onContentKeydown = (ev: KeyboardEvent): void => {
+    if ((ev.key === 'ContextMenu' || (ev.key === 'F10' && ev.shiftKey)) && this._selection.size > 0) {
+      ev.preventDefault();
+      const target = ev.target as HTMLElement | null;
+      const rect = target?.getBoundingClientRect();
+      const x = rect ? rect.left + rect.width / 2 : 100;
+      const y = rect ? rect.bottom : 100;
+      const [first] = this._selection;
+      this.openContextMenu(first, x, y);
+      return;
+    }
     if (ev.key === 'Delete' && this._selection.size > 0 && this.opEnabled('delete')) {
       ev.preventDefault();
       this.deleteSelection();

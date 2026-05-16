@@ -27,6 +27,25 @@
   flex: 1 1 auto;
 }
 
+.datatable-scroll.datatable-virtual {
+  // Sticky header so it stays visible while the body scrolls. Each <th>
+  // gets its own sticky position so the table-layout rules still apply.
+  thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background-color: var(--bs-body-bg, #fff);
+  }
+}
+
+tr.virtual-spacer {
+  pointer-events: none;
+}
+
+tr.virtual-spacer > td {
+  border-bottom: 0;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;

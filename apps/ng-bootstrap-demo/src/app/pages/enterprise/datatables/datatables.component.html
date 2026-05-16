@@ -1,18 +1,29 @@
 <h1 class="text-center flex-shrink-0">Datatable</h1>
 
-<p>
-  Property-driven columns, multi-column sort (shift+click), checkbox selection,
-  resizable column widths.
-  Pagination is handled server-side via the <code>[fetch]</code> callback.
-</p>
+<bs-select [ngModel]="mode()" (ngModelChange)="mode.set($event)" class="mb-3 flex-shrink-0">
+  <option value="pagination">Pagination</option>
+  <option value="virtualScroll">Virtual scrolling</option>
+</bs-select>
 
 <bs-datatable class="flex-grow-1"
-  [columns]="columns()"
+  [virtualScroll]="virtualScroll()"
+  [itemSize]="40"
+  [isResponsive]="virtualScroll()"
   [fetch]="fetchArtists"
   [(settings)]="settings"
   selectionMode="multiple"
   [rowKey]="rowKey"
   [(selection)]="selection">
+
+  <ng-template bsDatatableColumn="Name">Artist</ng-template>
+  <ng-template bsDatatableColumn="YearStarted">Year started</ng-template>
+  <ng-template bsDatatableColumn="YearQuit">Year quit</ng-template>
+
+  <ng-template bsRowTemplate let-artist>
+    <td class="text-nowrap">{{ $any(artist)?.name }}</td>
+    <td class="text-nowrap">{{ $any(artist)?.yearStarted }}</td>
+    <td class="text-nowrap">{{ $any(artist)?.yearQuit }}</td>
+  </ng-template>
 </bs-datatable>
 
 @if (selection().length) {

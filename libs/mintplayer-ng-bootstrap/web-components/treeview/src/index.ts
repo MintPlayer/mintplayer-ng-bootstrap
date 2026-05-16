@@ -5,6 +5,8 @@ export type {
   TreeNodeExpandEventDetail,
   TreeNodeCollapseEventDetail,
   IconResolver,
+  TreeNodeRenderer,
+  TreeNodeRenderContext,
 } from './components';
 export type { TreeNode } from './types';
 export { treeviewStyles } from './styles';
