@@ -24,9 +24,17 @@ bs-file-manager {
 
 .upload-row {
   display: grid;
-  grid-template-columns: 14rem 1fr;
+  grid-template-columns: 14rem 1fr 6rem;
   gap: 0.6rem;
   align-items: center;
+}
+
+.upload-status {
+  text-align: right;
+}
+
+.toast-stack {
+  max-width: 32rem;
 }
 
 .upload-name {

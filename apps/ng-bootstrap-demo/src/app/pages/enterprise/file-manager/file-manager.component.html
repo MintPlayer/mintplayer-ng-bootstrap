@@ -4,9 +4,10 @@
   Enterprise file-browser composed from <code>mp-splitter</code>,
   <code>mp-treeview</code>, and <code>mp-datatable</code> Lit web components.
   Tree on the left, file list on the right, breadcrumb above, toolbar with
-  search, view-mode toggle, and file operations.
-  Try drag-dropping files from your OS onto the right pane — uploads are
-  simulated with a fake progress bar.
+  search, view-mode toggle, and file operations. The live demo below is
+  fully interactive: drag-drop files from your OS, rename inline, multi-select,
+  cut/copy/paste, switch the language, simulate read-only permissions, or
+  toggle on the lazy-load tree mode.
 </p>
 
 <bs-grid class="mb-3" [stopFullWidthAt]="'never'">
@@ -17,18 +18,46 @@
       </bs-checkbox>
     </div>
     <div [md]="4" [lg]="3">
-      <label class="form-label">View mode</label>
+      <bs-checkbox [ngModel]="useCustomDialog()" (ngModelChange)="useCustomDialog.set($event)">
+        Use custom dialog resolver
+      </bs-checkbox>
+    </div>
+    <div [md]="4" [lg]="3">
+      <bs-checkbox [ngModel]="useConflictResolver()" (ngModelChange)="useConflictResolver.set($event)">
+        Prompt on name conflict
+      </bs-checkbox>
+    </div>
+    <div [md]="4" [lg]="3">
+      <bs-checkbox [ngModel]="readOnlyDocs()" (ngModelChange)="readOnlyDocs.set($event)">
+        "Documents" read-only
+      </bs-checkbox>
+    </div>
+    <div [md]="4" [lg]="3">
+      <bs-checkbox [ngModel]="lazyMode()" (ngModelChange)="lazyMode.set($event)">
+        Lazy-load tree
+      </bs-checkbox>
+    </div>
+    <div [md]="4" [lg]="3">
+      <label class="form-label">View</label>
       <bs-select [ngModel]="viewMode()" (ngModelChange)="viewMode.set($event)">
         <option value="list">List</option>
         <option value="icons">Icons</option>
       </bs-select>
     </div>
     <div [md]="4" [lg]="3">
-      <label class="form-label">Selection mode</label>
+      <label class="form-label">Selection</label>
       <bs-select [ngModel]="selectionMode()" (ngModelChange)="selectionMode.set($event)">
         <option value="none">None</option>
         <option value="single">Single</option>
         <option value="multiple">Multiple</option>
+      </bs-select>
+    </div>
+    <div [md]="4" [lg]="3">
+      <label class="form-label">Language</label>
+      <bs-select [ngModel]="locale()" (ngModelChange)="locale.set($event)">
+        <option value="en">English</option>
+        <option value="nl">Nederlands</option>
+        <option value="fr">Français</option>
       </bs-select>
     </div>
     <div [md]="12" [lg]="3" class="d-flex align-items-end">
@@ -39,29 +68,46 @@
 
 <div class="file-manager-host border rounded">
   <bs-file-manager
-    [nodes]="nodes()"
+    #fm
+    [nodes]="nodesForFm()"
     [(currentFolderId)]="currentFolderId"
     [(selectedIds)]="selectedIds"
     [allowUpload]="allowUpload()"
     [(viewMode)]="viewMode"
     [selectionMode]="selectionMode()"
     [iconResolver]="iconResolver"
-    (operation)="onOperation($event)"
-    (uploadRequest)="onUpload($event)">
+    [messages]="messages()"
+    [dialogResolver]="activeDialogResolver()"
+    [conflictResolver]="activeConflictResolver()"
+    [loadChildren]="activeLoadChildren()"
+    (operation)="onOperation($event, fm)"
+    (uploadRequest)="onUpload($event, fm)"
+    (errorReported)="onError($event)">
   </bs-file-manager>
 </div>
 
-@if (inProgressUploads().length > 0) {
+@if (fm.uploads().length > 0) {
   <div class="mt-3 upload-progress-list">
-    <h2 class="h6">Simulated uploads</h2>
-    @for (upload of inProgressUploads(); track upload.fileId) {
+    <h2 class="h6">In-flight uploads</h2>
+    @for (upload of fm.uploads(); track upload.id) {
       <div class="upload-row">
-        <span class="upload-name">{{ upload.fileName }}</span>
+        <span class="upload-name">{{ upload.file.name }}</span>
         <div class="progress" role="progressbar"
              [attr.aria-valuenow]="upload.progress" aria-valuemin="0" aria-valuemax="100">
-          <div class="progress-bar" [style.width.%]="upload.progress">{{ upload.progress }}%</div>
+          <div class="progress-bar"
+               [class.bg-danger]="upload.status === 'error'"
+               [style.width.%]="upload.progress">{{ upload.progress }}%</div>
         </div>
+        <span class="upload-status text-secondary small">{{ upload.status }}</span>
       </div>
+    }
+  </div>
+}
+
+@if (toasts().length > 0) {
+  <div class="mt-3 toast-stack">
+    @for (toast of toasts(); track toast.id) {
+      <div class="alert alert-danger py-2 mb-1">{{ toast.message }}</div>
     }
   </div>
 }
@@ -77,5 +123,115 @@
     <li><kbd>Del</kbd> — delete selection (with confirmation)</li>
     <li><kbd>Ctrl</kbd>+<kbd>X</kbd> / <kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>Ctrl</kbd>+<kbd>V</kbd> — cut / copy / paste</li>
     <li><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd> — new folder in current location</li>
+    <li><kbd>Shift</kbd>+<kbd>F10</kbd> / <kbd>ContextMenu</kbd> — open the context menu</li>
+    <li><strong>Long-press</strong> (600 ms) on touch — opens the context menu</li>
   </ul>
 </details>
+
+<!-- ─── B2B integration guide ─────────────────────────────────────────── -->
+
+<hr class="my-5" />
+
+<h2>Integration guide for B2B portals</h2>
+
+<p>
+  The component is intentionally event-driven: it renders the UX and emits
+  intents, leaving every consumer to wire the backend, dialog style, and
+  toast system of their own product. The recipes below cover the seven
+  integration points a typical admin portal needs.
+</p>
+
+<h3 class="h5 mt-4">1. Operation handler (rename / delete / new&nbsp;folder / paste)</h3>
+<p>
+  Every mutating action fires <code>(operation)</code> with a discriminated-union
+  payload. The component is fire-and-forget — your handler runs the
+  backend call, optionally marks the affected rows as <em>pending</em>,
+  and reports failures through <code>reportError()</code> (which re-fires
+  <code>(errorReported)</code> for your toast bus).
+</p>
+<bs-code-snippet [language]="'ts'" [codeToCopy]="snippetOperationHandler"></bs-code-snippet>
+
+<h3 class="h5 mt-4">2. Upload pipeline with progress</h3>
+<p>
+  Drag-drop and the touch upload button both fire <code>(uploadRequest)</code>
+  carrying pre-registered <code>UploadEntry</code> IDs. Drive your real
+  upload (XHR / fetch / S3 SDK), then push percentage updates into the
+  component via <code>reportUploadProgress(id, pct, status?)</code>. The
+  <code>uploads</code> signal on the component reflects the in-flight set
+  so you can render a progress UI wherever you like (the live demo above
+  renders it directly below the file-manager).
+</p>
+<bs-code-snippet [language]="'ts'" [codeToCopy]="snippetUploadPipeline"></bs-code-snippet>
+
+<h3 class="h5 mt-4">3. Custom dialogs (replacing window.confirm / window.prompt)</h3>
+<p>
+  Most enterprise apps want their own modal styling instead of the
+  browser dialogs. Wire a <code>DialogResolver</code> to your modal
+  service (typically a thin wrapper around <code>bs-modal</code>). When
+  unset, the component falls back to the native dialogs so basic usage
+  still works.
+</p>
+<bs-code-snippet [language]="'ts'" [codeToCopy]="snippetDialogResolver"></bs-code-snippet>
+
+<h3 class="h5 mt-4">4. Conflict resolution on paste / upload</h3>
+<p>
+  When a paste or upload would overwrite a same-name entry in the target
+  folder, the component calls <code>conflictResolver</code> once per
+  conflict. Returning <code>'skip'</code> filters the source out of the
+  operation; <code>'rename'</code> includes the consumer's chosen
+  <code>newName</code> in the resulting <code>(operation)</code> /
+  <code>(uploadRequest)</code> payload. Unset = silent replace
+  (preserves the v1 behaviour).
+</p>
+<bs-code-snippet [language]="'ts'" [codeToCopy]="snippetConflictResolver"></bs-code-snippet>
+
+<h3 class="h5 mt-4">5. Lazy-loaded tree</h3>
+<p>
+  Real file systems aren't materialisable up front. Bind a
+  <code>loadChildren</code> async callback and seed
+  <code>[nodes]</code> with only the top-level entries. The component
+  marks every unloaded folder with a chevron, shows a spinner during
+  the fetch, and merges the returned children back into its store —
+  no consumer-side coordination beyond returning the right data.
+</p>
+<bs-code-snippet [language]="'ts'" [codeToCopy]="snippetLazyTree"></bs-code-snippet>
+
+<h3 class="h5 mt-4">6. Internationalisation</h3>
+<p>
+  Every visible string + ARIA label routes through <code>FileManagerMessages</code>.
+  Pass a partial overrides object via <code>[messages]</code>; unset keys
+  fall back to <code>DEFAULT_FILE_MANAGER_MESSAGES</code> (English). Locale
+  switching works at runtime — the demo above uses three locales.
+</p>
+<bs-code-snippet [language]="'ts'" [codeToCopy]="snippetI18n"></bs-code-snippet>
+
+<h3 class="h5 mt-4">7. Per-node permissions</h3>
+<p>
+  Beyond the global <code>[allowOperations]</code> input, every
+  <code>FileSystemNode</code> can carry its own
+  <code>allowOperations</code> partial. The toolbar / context-menu
+  buttons gate against the worst case across the current selection
+  (a multi-row delete is disabled if any selected row is locked).
+</p>
+<bs-code-snippet [language]="'ts'" [codeToCopy]="snippetPerNodePermissions"></bs-code-snippet>
+
+<h3 class="h5 mt-4">8. Error reporting → toast bus</h3>
+<p>
+  Failures from your backend never need to reach into the component's
+  UI directly. Call <code>fm.reportError(message, nodeId?)</code> from
+  your handler and listen on <code>(errorReported)</code> at the
+  template level — that's where you wire the toast / snackbar.
+</p>
+<bs-code-snippet [language]="'ts'" [codeToCopy]="snippetErrorBridge"></bs-code-snippet>
+
+<h3 class="h5 mt-4">Checklist for production</h3>
+<ul>
+  <li><strong>Backend wiring</strong> — handle every <code>kind</code> in <code>onOperation</code> + the upload pipeline.</li>
+  <li><strong>Toasts</strong> — listen on <code>(errorReported)</code>; route to your snackbar.</li>
+  <li><strong>Dialogs</strong> — wire <code>dialogResolver</code> to <code>bs-modal</code> if you don't want native browser dialogs.</li>
+  <li><strong>Conflicts</strong> — wire <code>conflictResolver</code> if "silent overwrite" isn't your spec.</li>
+  <li><strong>Permissions</strong> — surface per-node <code>allowOperations</code> from your auth layer.</li>
+  <li><strong>i18n</strong> — pipe your translation service through <code>[messages]</code>.</li>
+  <li><strong>Scale</strong> — bind <code>[loadChildren]</code> if folder cardinality is unbounded.</li>
+  <li><strong>Touch</strong> — no extra wiring; long-press + upload button activate automatically on coarse pointers.</li>
+</ul>
