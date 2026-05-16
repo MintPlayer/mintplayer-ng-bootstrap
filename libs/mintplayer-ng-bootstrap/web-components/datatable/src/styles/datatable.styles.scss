@@ -170,24 +170,9 @@ tbody tr[data-focused="true"] {
   flex: 0 0 auto;
 }
 
+.datatable-per-page,
 .datatable-pagination {
   flex: 0 1 auto;
-}
-
-.per-page {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-}
-
-.per-page select {
-  padding: 0.2rem 0.4rem;
-  border: 1px solid var(--mp-datatable-border-color);
-  border-radius: 0.25rem;
-  background-color: transparent;
-  color: inherit;
-  font: inherit;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -560,15 +560,15 @@ export class MpDatatable extends LitElement {
     const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
     return html`
       <div class="datatable-footer">
-        <span class="per-page">
-          <label>Rows per page:
-            <select @change=${(ev: Event) => this.onPerPageChange(ev)}>
-              ${this._perPageOptions.map(
-                (opt) => html`<option value=${opt} ?selected=${opt === this._perPage}>${opt}</option>`,
-              )}
-            </select>
-          </label>
-        </span>
+        <mp-pagination
+          class="datatable-per-page"
+          aria-label="Rows per page"
+          .pageNumbers=${this._perPageOptions}
+          .selectedPageNumber=${this._perPage}
+          .showArrows=${false}
+          @mp-pagination-page-change=${(ev: Event) =>
+            this.setPerPage((ev as CustomEvent<PageChangeEventDetail>).detail.page)}
+        ></mp-pagination>
         <mp-pagination
           class="datatable-pagination"
           .pageNumbers=${pageNumbers}
@@ -580,6 +580,29 @@ export class MpDatatable extends LitElement {
         ></mp-pagination>
       </div>
     `;
+  }
+
+  private setPerPage(value: number): void {
+    const next = Math.max(1, Math.floor(value || 1));
+    if (this._perPage === next) return;
+    this._perPage = next;
+    this._page = 1;
+    this.requestUpdate();
+    this.dispatchEvent(
+      new CustomEvent<{ perPage: number }>('mp-datatable-per-page-change', {
+        detail: { perPage: next },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+    // Also re-emit a page-change so the wrapper picks up the page reset.
+    this.dispatchEvent(
+      new CustomEvent<{ page: number }>('mp-datatable-page-change', {
+        detail: { page: 1 },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 
   private getEffectiveData(): unknown[] {
@@ -743,11 +766,6 @@ export class MpDatatable extends LitElement {
         composed: true,
       }),
     );
-  }
-
-  private onPerPageChange(ev: Event): void {
-    const value = Number((ev.target as HTMLSelectElement).value);
-    this.perPage = value;
   }
 
   private gotoPage(page: number): void {

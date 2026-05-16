@@ -388,6 +388,18 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
     );
   }
 
+  onPerPageChange(event: Event): void {
+    const detail = (event as CustomEvent<{ perPage: number }>).detail;
+    const settings = this.settings();
+    this.settings.set(
+      new DatatableSettings({
+        ...settings,
+        perPage: { ...settings.perPage, selected: detail.perPage },
+        page: { ...settings.page, selected: 1 },
+      }),
+    );
+  }
+
   onRowClick(event: Event): void {
     this.rowClick.emit(this.toBsEvent(event));
   }
