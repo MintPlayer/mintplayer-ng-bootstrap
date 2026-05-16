@@ -361,12 +361,28 @@ export function buildPaginationLayout(
     if (afterCount === 0) return currentIdx + 1 < n - 1 - endCount;
     return currentIdx + afterCount <= n - 1 - endCount;
   };
+  // Hidden-page counts (used by the "ellipsis-or-edge" fall-back below and
+  // by the render step's 1-page-gap collapse).
+  const hiddenLeft = (): number =>
+    currentIdx - startCount - Math.max(0, beforeCount - 1);
+  const hiddenRight = (): number =>
+    n - 1 - currentIdx - endCount - Math.max(0, afterCount - 1);
 
   // Phase 1: introduce edges + ellipses in fixed order.
   if (remaining > 0 && canStart()) { startCount++; remaining--; }
   if (remaining > 0 && canEnd()) { endCount++; remaining--; }
-  if (remaining > 0 && canBefore()) { beforeCount++; remaining--; }
-  if (remaining > 0 && canAfter()) { afterCount++; remaining--; }
+  // "before-or-fill": prefer the left ellipsis when there are 2+ hidden
+  // pages; for a 1-page gap, extend the start range instead so the lone
+  // hidden page becomes visible (matches user spec: don't render an
+  // ellipsis that represents a single page).
+  if (remaining > 0) {
+    if (canBefore()) { beforeCount++; remaining--; }
+    else if (hiddenLeft() > 0 && canStart()) { startCount++; remaining--; }
+  }
+  if (remaining > 0) {
+    if (canAfter()) { afterCount++; remaining--; }
+    else if (hiddenRight() > 0 && canEnd()) { endCount++; remaining--; }
+  }
 
   // Phase 2+: round-robin [before, after, start, end]. Skip exhausted
   // directions. Loop exits when budget is gone or all four directions are
@@ -398,18 +414,29 @@ export function buildPaginationLayout(
     : [];
   const endPages: PaginationItem[] = Array.from({ length: endCount }, (_, i) => toPage(n - endCount + i));
 
-  // Ellipses are rendered only when an unrendered range remains between
-  // adjacent rendered pages — `beforeCount`/`afterCount` >= 1 just means the
-  // slot was reserved; if all in-between pages are now covered, drop it.
-  const firstBeforeIdx = beforeCount >= 2 ? currentIdx - (beforeCount - 1) : currentIdx;
+  // Ellipses are rendered only when 2+ unrendered pages remain. With exactly
+  // 1 hidden page the slot reserved for the ellipsis is repurposed to show
+  // that page directly (an ellipsis representing a single page is just less
+  // informative than the page itself).
   const lastStartIdx = startCount - 1;
+  const firstBeforeIdx = beforeCount >= 2 ? currentIdx - (beforeCount - 1) : currentIdx;
+  const leftHidden = hiddenLeft();
   const leftGap: PaginationItem[] =
-    beforeCount >= 1 && lastStartIdx + 1 < firstBeforeIdx ? [{ kind: 'gap' }] : [];
+    beforeCount >= 1 && lastStartIdx + 1 < firstBeforeIdx
+      ? leftHidden === 1
+        ? [toPage(lastStartIdx + 1)]
+        : [{ kind: 'gap' }]
+      : [];
 
   const lastAfterIdx = afterCount >= 2 ? currentIdx + (afterCount - 1) : currentIdx;
   const firstEndIdx = n - endCount;
+  const rightHidden = hiddenRight();
   const rightGap: PaginationItem[] =
-    afterCount >= 1 && lastAfterIdx + 1 < firstEndIdx ? [{ kind: 'gap' }] : [];
+    afterCount >= 1 && lastAfterIdx + 1 < firstEndIdx
+      ? rightHidden === 1
+        ? [toPage(lastAfterIdx + 1)]
+        : [{ kind: 'gap' }]
+      : [];
 
   const items: PaginationItem[] = [
     ...startPages,

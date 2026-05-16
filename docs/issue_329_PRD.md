@@ -333,6 +333,16 @@ next action in the cycle runs in its place. Ellipses auto-collapse when the
 unrendered range they represent becomes empty (e.g. page 3 is shown by
 `start` and C-2 is shown by `before`, leaving no gap between them).
 
+**1-page-gap collapse.** Phase 1's `before` / `after` add an ellipsis only
+when the gap behind it represents **2+** hidden pages. For a 1-page gap,
+the algorithm extends the matching edge (`start` / `end`) instead so the
+lone page is shown directly — there is no point spending a slot on `…`
+that stands for a single page. The same rule applies at render time: if a
+later Phase 2 step has trimmed the unrendered range to a single page, the
+ellipsis slot is repurposed to render that page. With 7 pages, current=5,
+budget=7 the result is `< 1 … [5] 6 7 >` — not `< 1 … 4 [5] 7 >` (which
+would silently hide page 6).
+
 #### Responsive clamping
 
 `numberOfBoxes` is a **cap**, not a target. A `ResizeObserver` on the host

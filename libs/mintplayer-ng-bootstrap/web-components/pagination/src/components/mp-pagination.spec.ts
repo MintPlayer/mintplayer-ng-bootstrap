@@ -86,6 +86,23 @@ describe('buildPaginationLayout — edges', () => {
     // pages=[1,2,3,4], current=2 → pages 1=C-1, 2=C, 3=C+1, 4=C+2.
     expect(serialise([1, 2, 3, 4], 2, 10)).toBe('< C-1 C C+1 C+2 >');
   });
+
+  it('1-page right gap: extends end instead of rendering a single-page ellipsis', () => {
+    // 7 pages, current=5. Hidden-right = 1 (page 6 only). Naively the right
+    // ellipsis would represent just page 6; instead extend end to make it
+    // visible: `< 1 ... C 6 7 >`.
+    const sevenPages = Array.from({ length: 7 }, (_, i) => i + 1);
+    expect(serialise(sevenPages, 5, 7)).toBe('< 1 ... C C+1 C+2 >');
+  });
+
+  it('1-page mid-gap: ellipsis collapses to the lone hidden page', () => {
+    // 7 pages, current=5, budget=9 — Phase 2 advances start until hidden-left
+    // is 1; the left ellipsis now represents only page 3, so it's rendered as
+    // the page itself. With C=5 the serialiser tags page 2 as C-3, page 3 as
+    // C-2, etc.
+    const sevenPages = Array.from({ length: 7 }, (_, i) => i + 1);
+    expect(serialise(sevenPages, 5, 9)).toBe('< 1 C-3 C-2 C-1 C C+1 C+2 >');
+  });
 });
 
 describe('buildPaginationLayout — arrows opt-out', () => {
