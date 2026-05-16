@@ -1,6 +1,5 @@
 :host {
-  display: inline-flex;
-  width: 100%;
+  display: block;
   --mp-pagination-bg: var(--bs-pagination-bg, transparent);
   --mp-pagination-color: var(--bs-pagination-color, var(--bs-link-color, #0d6efd));
   --mp-pagination-hover-bg: var(--bs-pagination-hover-bg, var(--bs-tertiary-bg, #e9ecef));

@@ -138,15 +138,25 @@ export class MpPagination extends LitElement {
     }
   }
 
+  private _resizeRaf: number | null = null;
+
   override connectedCallback(): void {
     super.connectedCallback();
     if (typeof ResizeObserver !== 'undefined') {
       this._resizeObserver = new ResizeObserver((entries) => {
         const w = Math.floor(entries[0]?.contentRect.width ?? 0);
-        if (Math.abs(w - this._hostWidth) >= 4) {
+        if (Math.abs(w - this._hostWidth) < 4) return;
+        // Defer the state update to a rAF — synchronous `requestUpdate` in
+        // the ResizeObserver callback can re-enter the observer (the new
+        // layout fires another resize entry before the browser has finished
+        // the current pass) and surface as "ResizeObserver loop completed
+        // with undelivered notifications" in the console.
+        if (this._resizeRaf !== null) cancelAnimationFrame(this._resizeRaf);
+        this._resizeRaf = requestAnimationFrame(() => {
+          this._resizeRaf = null;
           this._hostWidth = w;
           this.requestUpdate();
-        }
+        });
       });
       this._resizeObserver.observe(this);
     }
@@ -156,6 +166,10 @@ export class MpPagination extends LitElement {
     super.disconnectedCallback();
     this._resizeObserver?.disconnect();
     this._resizeObserver = null;
+    if (this._resizeRaf !== null) {
+      cancelAnimationFrame(this._resizeRaf);
+      this._resizeRaf = null;
+    }
   }
 
   /**

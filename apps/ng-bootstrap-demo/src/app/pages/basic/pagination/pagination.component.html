@@ -1,27 +1,141 @@
 <h1 class="text-center">Pagination</h1>
-<h2>Basic</h2>
-<bs-pagination [pageNumbers]="example1PageNumbers()" [(selectedPageNumber)]="example1_2SelectedPageNumber"></bs-pagination>
-<br>
-Selected value: {{ example1_2SelectedPageNumber() }}
 
-<h2>No arrows</h2>
-<bs-pagination [pageNumbers]="example2PageNumbers()" [(selectedPageNumber)]="example1_2SelectedPageNumber" [showArrows]="false"></bs-pagination>
-<br>
-Selected value: {{ example1_2SelectedPageNumber() }}
+<p>
+    The <code>&lt;bs-pagination&gt;</code> component renders a Lit
+    <code>&lt;mp-pagination&gt;</code> primitive under the hood. The visible
+    budget is capped by <code>[numberOfBoxes]</code> (which includes the
+    prev/next arrows) and is further clamped to whatever fits the host width
+    so the same paginator renders correctly on mobile and desktop. Below are
+    targeted examples that exercise the growth algorithm.
+</p>
 
-<h2>Range</h2>
-<bs-pagination [pageNumbers]="example3PageNumbers()" [(selectedPageNumber)]="example3SelectedPageNumber"></bs-pagination>
-<br>
-Selected value: {{ example3SelectedPageNumber() }}
+<bs-grid>
 
-<h2>Max box count</h2>
-<p>Restrict the number of boxes shown on the paginator.</p>
-<bs-pagination [pageNumbers]="example4PageNumbers()" [(selectedPageNumber)]="example4SelectedPageNumber" [numberOfBoxes]="9"></bs-pagination>
-<br>
-Selected value: {{ example4SelectedPageNumber() }}
+    <div bsRow class="align-items-center mb-4">
+        <div [md]="4">
+            <h2 class="h5">Small set</h2>
+            <p class="mb-0">
+                Just 5 pages. With no <code>numberOfBoxes</code> cap the
+                algorithm trivially shows every page — no ellipsis, no
+                clamping.
+            </p>
+        </div>
+        <div [md]="8">
+            <bs-pagination [pageNumbers]="smallPages()" [(selectedPageNumber)]="smallSelected"></bs-pagination>
+            <small class="text-muted d-block mt-1">Selected: {{ smallSelected() }}</small>
+        </div>
+    </div>
 
-<h2>Show ellipsis</h2>
-<p>Restrict the number of boxes shown on the paginator. Ellipsis indicators show where pages are omitted.</p>
-<bs-pagination [pageNumbers]="example5PageNumbers()" [(selectedPageNumber)]="example5SelectedPageNumber" [numberOfBoxes]="11"></bs-pagination>
-<br>
-Selected value: {{ example5SelectedPageNumber() }}
+    <div bsRow class="align-items-center mb-4">
+        <div [md]="4">
+            <h2 class="h5">1-page gap collapse</h2>
+            <p class="mb-0">
+                7 pages, current = 5, <code>[numberOfBoxes]="7"</code>.
+                The right side would otherwise hide a single page (6) behind
+                an ellipsis — instead the algorithm extends the end range so
+                page 6 is rendered directly. Move the selection: when current
+                is in the middle, both gaps are wide enough to render as
+                <code>…</code>; otherwise a single hidden page is always
+                shown directly.
+            </p>
+        </div>
+        <div [md]="8">
+            <bs-pagination [pageNumbers]="collapsePages()" [(selectedPageNumber)]="collapseSelected" [numberOfBoxes]="7"></bs-pagination>
+            <small class="text-muted d-block mt-1">Selected: {{ collapseSelected() }}</small>
+        </div>
+    </div>
+
+    <div bsRow class="align-items-center mb-4">
+        <div [md]="4">
+            <h2 class="h5">Capped, mid-selection</h2>
+            <p class="mb-0">
+                30 pages with <code>[numberOfBoxes]="9"</code> and current
+                in the middle. Both ellipses appear; the visible window
+                slides as you click around.
+            </p>
+        </div>
+        <div [md]="8">
+            <bs-pagination [pageNumbers]="cappedPages()" [(selectedPageNumber)]="cappedSelected" [numberOfBoxes]="9"></bs-pagination>
+            <small class="text-muted d-block mt-1">Selected: {{ cappedSelected() }}</small>
+        </div>
+    </div>
+
+    <div bsRow class="align-items-center mb-4">
+        <div [md]="4">
+            <h2 class="h5">Near the start</h2>
+            <p class="mb-0">
+                Same 30 pages, current = 2. The left edge fills with real
+                pages (1, 2, 3, …); only the right ellipsis renders.
+            </p>
+        </div>
+        <div [md]="8">
+            <bs-pagination [pageNumbers]="nearStartPages()" [(selectedPageNumber)]="nearStartSelected" [numberOfBoxes]="9"></bs-pagination>
+            <small class="text-muted d-block mt-1">Selected: {{ nearStartSelected() }}</small>
+        </div>
+    </div>
+
+    <div bsRow class="align-items-center mb-4">
+        <div [md]="4">
+            <h2 class="h5">Near the end</h2>
+            <p class="mb-0">
+                Same 30 pages, current = 29. Mirror of the previous case —
+                only the left ellipsis renders.
+            </p>
+        </div>
+        <div [md]="8">
+            <bs-pagination [pageNumbers]="nearEndPages()" [(selectedPageNumber)]="nearEndSelected" [numberOfBoxes]="9"></bs-pagination>
+            <small class="text-muted d-block mt-1">Selected: {{ nearEndSelected() }}</small>
+        </div>
+    </div>
+
+    <div bsRow class="align-items-center mb-4">
+        <div [md]="4">
+            <h2 class="h5">Responsive (no cap)</h2>
+            <p class="mb-0">
+                100 pages, <code>numberOfBoxes</code> omitted. A
+                <code>ResizeObserver</code> on the host measures the
+                available width and picks the largest budget that fits — try
+                resizing the browser to see boxes appear / disappear.
+            </p>
+        </div>
+        <div [md]="8">
+            <bs-pagination [pageNumbers]="responsivePages()" [(selectedPageNumber)]="responsiveSelected"></bs-pagination>
+            <small class="text-muted d-block mt-1">Selected: {{ responsiveSelected() }}</small>
+        </div>
+    </div>
+
+    <div bsRow class="align-items-center mb-4">
+        <div [md]="4">
+            <h2 class="h5">Non-contiguous values</h2>
+            <p class="mb-0">
+                The component doesn’t assume <code>1..N</code> — pass any
+                sorted <code>number[]</code>. This is exactly how the
+                datatable's "rows per page" selector is built:
+                <code>[10, 20, 50, 100, 200]</code> with arrows hidden.
+            </p>
+        </div>
+        <div [md]="8">
+            <bs-pagination [pageNumbers]="selectorPages()" [(selectedPageNumber)]="selectorSelected" [showArrows]="false"></bs-pagination>
+            <small class="text-muted d-block mt-1">Selected: {{ selectorSelected() }} rows / page</small>
+        </div>
+    </div>
+
+    <div bsRow class="align-items-center mb-4">
+        <div [md]="4">
+            <h2 class="h5">Size variants</h2>
+            <p class="mb-0">
+                <code>[size]</code> accepts <code>'small'</code>,
+                <code>'medium'</code> (default), and <code>'large'</code>.
+                The auto-fit measurement adjusts per size — narrower boxes
+                fit more on the same width.
+            </p>
+        </div>
+        <div [md]="8">
+            <bs-pagination [pageNumbers]="sizesPages()" [(selectedPageNumber)]="sizesSelected" [size]="'small'" [numberOfBoxes]="9"></bs-pagination>
+            <bs-pagination [pageNumbers]="sizesPages()" [(selectedPageNumber)]="sizesSelected" [size]="'medium'" [numberOfBoxes]="9" class="d-block mt-2"></bs-pagination>
+            <bs-pagination [pageNumbers]="sizesPages()" [(selectedPageNumber)]="sizesSelected" [size]="'large'" [numberOfBoxes]="9" class="d-block mt-2"></bs-pagination>
+            <small class="text-muted d-block mt-1">Selected: {{ sizesSelected() }}</small>
+        </div>
+    </div>
+
+</bs-grid>
