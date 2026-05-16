@@ -1,9 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 
 // Mock the artist API so the test is deterministic and offline-friendly.
-// Names are deliberately wider than the "Artist" column header, which is
-// what makes the regression visible: the header would size to ~80px while
-// each body cell wants ~200px. The fix syncs them to the max.
 async function mockArtistApi(page: Page) {
   const artists = Array.from({ length: 200 }, (_, i) => ({
     id: i + 1,
@@ -36,22 +33,24 @@ async function mockArtistApi(page: Page) {
   });
 }
 
-// Returns the per-column |headerLeft - bodyLeft| in CSS pixels. Empty if
-// the virtual viewport hasn't rendered a body row yet.
-async function measureMisalignment(page: Page): Promise<number[]> {
+// Read rows out of the mp-datatable's shadow DOM. The Lit WC renders a single
+// <table> inside shadow root, so we have to reach in via evaluate().
+async function countBodyRows(page: Page): Promise<number> {
   return await page.evaluate(() => {
-    const headerCells = [...document.querySelectorAll('bs-datatable bs-table thead th')];
-    const firstBodyRow = document.querySelector('cdk-virtual-scroll-viewport tbody tr');
-    const bodyCells = [...(firstBodyRow?.querySelectorAll('td') ?? [])];
-    if (!headerCells.length || !bodyCells.length) return [];
-    return headerCells.map((h, i) => Math.abs(
-      Math.round(h.getBoundingClientRect().left) -
-      Math.round(bodyCells[i]?.getBoundingClientRect().left ?? 0),
-    ));
+    const wc = document.querySelector('mp-datatable');
+    if (!wc?.shadowRoot) return 0;
+    return wc.shadowRoot.querySelectorAll('tbody tr[data-row-key]').length;
   });
 }
 
-test.describe('bs-datatable virtual mode — header/body column alignment', () => {
+async function totalDataLength(page: Page): Promise<number> {
+  return await page.evaluate(() => {
+    const wc = document.querySelector('mp-datatable') as (HTMLElement & { data?: unknown[] }) | null;
+    return wc?.data?.length ?? 0;
+  });
+}
+
+test.describe('bs-datatable virtual mode', () => {
   test.beforeEach(async ({ page }) => {
     await mockArtistApi(page);
     await page.goto('/enterprise/datatables');
@@ -60,67 +59,49 @@ test.describe('bs-datatable virtual mode — header/body column alignment', () =
     await page.waitForLoadState('networkidle');
   });
 
-  test('columns align when virtual mode is activated from paginated start', async ({ page }) => {
-    // Initial render is paginated mode. Flip into virtual:
+  test('virtual mode preloads every record and scrolls them', async ({ page }) => {
     await page.locator('bs-select select').selectOption('virtualScroll');
 
-    // Body row should appear once the priming fetch resolves. The column-
-    // width sync re-wires inside a requestAnimationFrame after the viewport
-    // mounts, then re-measures inside another rAF after each MutationObserver
-    // batch. Poll until the alignment settles.
-    await page.waitForSelector('cdk-virtual-scroll-viewport tbody tr');
-    await expect.poll(
-      async () => {
-        const deltas = await measureMisalignment(page);
-        return deltas.length === 0 ? Number.POSITIVE_INFINITY : Math.max(...deltas);
-      },
-      { timeout: 5000, message: 'header and body column lefts should align' },
-    ).toBeLessThanOrEqual(1);
+    // The wrapper drains every page from the fetcher in virtual mode, so
+    // mp-datatable.data should hold all 200 mocked artists.
+    await expect.poll(() => totalDataLength(page), {
+      timeout: 5000,
+      message: 'wrapper should preload every page into mp-datatable.data',
+    }).toBe(200);
+
+    // The viewport-driven virtualizer renders a subset of those 200 rows.
+    const rendered = await countBodyRows(page);
+    expect(rendered).toBeGreaterThan(0);
+    expect(rendered).toBeLessThanOrEqual(200);
   });
 
-  test('alignment survives a pagination ↔ virtual toggle cycle', async ({ page }) => {
+  test('paginated mode renders the mp-pagination footer with the correct total pages', async ({ page }) => {
+    // Default mode is pagination. mp-pagination is inside mp-datatable's
+    // shadow DOM. With 200 records and perPage=20, we expect 10 pages.
+    const totalPagesFromFooter = await page.evaluate(() => {
+      const datatable = document.querySelector('mp-datatable');
+      const pagination = datatable?.shadowRoot?.querySelector('mp-pagination') as
+        | (HTMLElement & { pageNumbers?: number[] })
+        | null;
+      return pagination?.pageNumbers?.length ?? 0;
+    });
+    expect(totalPagesFromFooter).toBe(10);
+  });
+
+  test('toggling pagination ↔ virtual keeps the table functional', async ({ page }) => {
     const select = page.locator('bs-select select');
 
-    // virtual → paginated → virtual. The second entry into virtual mode is
-    // what `ngAfterViewInit` used to miss before the fix: viewport queries
-    // returned null because the DOM had been recreated.
+    // virtual → pagination → virtual: this used to hit a CDK viewport
+    // re-query bug; with a single-table WC it just needs to keep rendering.
     await select.selectOption('virtualScroll');
-    await page.waitForSelector('cdk-virtual-scroll-viewport tbody tr');
-    await page.waitForTimeout(400);
+    await expect.poll(() => totalDataLength(page), { timeout: 5000 }).toBe(200);
 
     await select.selectOption('pagination');
-    await page.waitForSelector('bs-datatable bs-table tbody tr');
-    await page.waitForTimeout(200);
+    await expect.poll(() => totalDataLength(page), { timeout: 5000 }).toBe(20);
 
     await select.selectOption('virtualScroll');
-    await page.waitForSelector('cdk-virtual-scroll-viewport tbody tr');
+    await expect.poll(() => totalDataLength(page), { timeout: 5000 }).toBe(200);
 
-    await expect.poll(
-      async () => {
-        const deltas = await measureMisalignment(page);
-        return deltas.length === 0 ? Number.POSITIVE_INFINITY : Math.max(...deltas);
-      },
-      { timeout: 5000, message: 'alignment should re-establish after a toggle cycle' },
-    ).toBeLessThanOrEqual(1);
-  });
-
-  test('alignment survives a vertical scroll that fetches a new page', async ({ page }) => {
-    await page.locator('bs-select select').selectOption('virtualScroll');
-    await page.waitForSelector('cdk-virtual-scroll-viewport tbody tr');
-    await page.waitForTimeout(400);
-
-    // Scroll deep enough to require fetching at least one more page.
-    await page.evaluate(() => {
-      const vp = document.querySelector('cdk-virtual-scroll-viewport') as HTMLElement | null;
-      if (vp) vp.scrollTop = 1200;
-    });
-
-    await expect.poll(
-      async () => {
-        const deltas = await measureMisalignment(page);
-        return deltas.length === 0 ? Number.POSITIVE_INFINITY : Math.max(...deltas);
-      },
-      { timeout: 5000, message: 'alignment should hold after scroll-triggered page fetch' },
-    ).toBeLessThanOrEqual(1);
+    expect(await countBodyRows(page)).toBeGreaterThan(0);
   });
 });

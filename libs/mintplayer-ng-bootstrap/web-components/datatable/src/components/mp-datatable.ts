@@ -12,6 +12,10 @@ import type {
   RowRenderer,
 } from '../types';
 
+// Side-effect import: registers <mp-pagination> for the footer.
+import '@mintplayer/ng-bootstrap/web-components/pagination';
+import type { PageChangeEventDetail } from '@mintplayer/ng-bootstrap/web-components/pagination';
+
 export type DatatableSelectionMode = 'none' | 'single' | 'multiple';
 
 export interface RowEventDetail<T = unknown> {
@@ -91,6 +95,8 @@ export class MpDatatable extends LitElement {
   private _perPage = 20;
   private _perPageOptions: number[] = [10, 20, 50];
   private _autoSort = true;
+  /** Caller-supplied total row count for external paging (`[fetch]`). When > `_data.length` the WC skips its own slice and trusts the consumer. */
+  private _totalRecords: number | null = null;
   private _rowRenderer: RowRenderer | undefined;
   private _virtualScroll = false;
   private _itemSize = 40;
@@ -279,6 +285,27 @@ export class MpDatatable extends LitElement {
     this.requestUpdate();
   }
 
+  /**
+   * Caller-supplied total record count for external paging. Set this when
+   * `[fetch]` returns one page at a time so the pagination footer can show
+   * the correct total. Leave as `null` (default) to use `_data.length`.
+   */
+  get totalRecords(): number | null {
+    return this._totalRecords;
+  }
+  set totalRecords(value: number | null) {
+    const next = value == null ? null : Math.max(0, Math.floor(value));
+    if (this._totalRecords !== next) {
+      this._totalRecords = next;
+      this.requestUpdate();
+    }
+  }
+
+  /** True when the consumer is paging externally (totalRecords exceeds the in-memory rows). */
+  private isExternallyPaged(): boolean {
+    return this._totalRecords != null && this._totalRecords > this._data.length;
+  }
+
   override attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
     super.attributeChangedCallback(name, oldValue, newValue);
 
@@ -361,7 +388,8 @@ export class MpDatatable extends LitElement {
 
   override render(): TemplateResult {
     const rows = this.computeVisibleRows();
-    const totalPages = this.pagination ? Math.max(1, Math.ceil(this._data.length / this._perPage)) : 1;
+    const paginationDenominator = this._totalRecords ?? this._data.length;
+    const totalPages = this.pagination ? Math.max(1, Math.ceil(paginationDenominator / this._perPage)) : 1;
     const showCheckboxes = this._selectionMode === 'multiple';
     const totalColumnCount = this._columns.length + (showCheckboxes ? 1 : 0);
 
@@ -528,6 +556,7 @@ export class MpDatatable extends LitElement {
   }
 
   private renderFooter(totalPages: number): TemplateResult {
+    const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
     return html`
       <div class="datatable-footer">
         <span class="per-page">
@@ -539,33 +568,15 @@ export class MpDatatable extends LitElement {
             </select>
           </label>
         </span>
-        <span class="pagination-controls" role="navigation" aria-label="Pagination">
-          <button
-            type="button"
-            @click=${() => this.gotoPage(1)}
-            ?disabled=${this._page === 1}
-            aria-label="First page"
-          >«</button>
-          <button
-            type="button"
-            @click=${() => this.gotoPage(this._page - 1)}
-            ?disabled=${this._page === 1}
-            aria-label="Previous page"
-          >‹</button>
-          <span>${this._page} / ${totalPages}</span>
-          <button
-            type="button"
-            @click=${() => this.gotoPage(this._page + 1)}
-            ?disabled=${this._page >= totalPages}
-            aria-label="Next page"
-          >›</button>
-          <button
-            type="button"
-            @click=${() => this.gotoPage(totalPages)}
-            ?disabled=${this._page >= totalPages}
-            aria-label="Last page"
-          >»</button>
-        </span>
+        <mp-pagination
+          class="datatable-pagination"
+          .pageNumbers=${pageNumbers}
+          .selectedPageNumber=${this._page}
+          .numberOfBoxes=${7}
+          .showArrows=${true}
+          @mp-pagination-page-change=${(ev: Event) =>
+            this.gotoPage((ev as CustomEvent<PageChangeEventDetail>).detail.page)}
+        ></mp-pagination>
       </div>
     `;
   }
@@ -575,7 +586,10 @@ export class MpDatatable extends LitElement {
     if (this._autoSort && this._sortColumns.length > 0) {
       rows = sortRows(rows, this._sortColumns);
     }
-    if (this._pagination) {
+    // Internal pagination only slices when the WC owns the full dataset. With
+    // external paging (consumer feeds one page at a time) the rows are
+    // already pre-sliced — slicing again would render nothing past page 1.
+    if (this._pagination && !this.isExternallyPaged()) {
       const start = (this._page - 1) * this._perPage;
       rows = rows.slice(start, start + this._perPage);
     }
@@ -736,7 +750,8 @@ export class MpDatatable extends LitElement {
   }
 
   private gotoPage(page: number): void {
-    const totalPages = Math.max(1, Math.ceil(this._data.length / this._perPage));
+    const denominator = this._totalRecords ?? this._data.length;
+    const totalPages = Math.max(1, Math.ceil(denominator / this._perPage));
     this._page = Math.max(1, Math.min(totalPages, page));
     this.requestUpdate();
     this.dispatchEvent(

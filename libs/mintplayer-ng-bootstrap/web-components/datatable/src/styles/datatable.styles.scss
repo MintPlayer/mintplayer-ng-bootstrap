@@ -28,6 +28,10 @@
 }
 
 .datatable-scroll.datatable-virtual {
+  // Default viewport height so the table actually scrolls when the host isn't
+  // given an explicit constrained height. Override via the CSS variable.
+  max-height: var(--mp-datatable-virtual-max-height, 480px);
+
   // Sticky header so it stays visible while the body scrolls. Each <th>
   // gets its own sticky position so the table-layout rules still apply.
   thead th {
@@ -166,31 +170,8 @@ tbody tr[data-focused="true"] {
   flex: 0 0 auto;
 }
 
-.pagination-controls {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.pagination-controls button {
-  border: 1px solid var(--mp-datatable-border-color);
-  background-color: transparent;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  cursor: pointer;
-  font: inherit;
-  color: inherit;
-}
-
-.pagination-controls button[disabled] {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.pagination-controls button[data-active="true"] {
-  background-color: var(--bs-primary, #0d6efd);
-  color: #fff;
-  border-color: var(--bs-primary, #0d6efd);
+.datatable-pagination {
+  flex: 0 1 auto;
 }
 
 .per-page {

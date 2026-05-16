@@ -179,18 +179,25 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
       }
     });
 
-    // Async fetch: re-run on fetch / settings changes.
+    // Async fetch: re-run on fetch / settings changes. In virtual mode the
+    // WC's virtualizer slices the in-memory `currentData` array, so the
+    // wrapper drains every page from the fetcher up front. Per-viewport
+    // on-demand fetching would need a sparse-array model in the WC.
     effect(() => {
       if (isPlatformServer(this.platformId)) return;
       const fetcher = this.fetch();
       if (!fetcher) return;
       const settings = this.settings();
-      const req: PaginationRequest = {
-        page: settings.page.selected,
-        perPage: settings.perPage.selected,
-        sortColumns: settings.sortColumns,
-      };
-      void this.runFetch(fetcher, req, settings);
+      if (this.virtualScroll()) {
+        void this.runVirtualFetchAll(fetcher, settings.sortColumns);
+      } else {
+        const req: PaginationRequest = {
+          page: settings.page.selected,
+          perPage: settings.perPage.selected,
+          sortColumns: settings.sortColumns,
+        };
+        void this.runFetch(fetcher, req, settings);
+      }
     });
 
     // Forward columns + data to the WC.
@@ -211,12 +218,17 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
       const el = this.datatableRef()?.nativeElement;
       if (!el) return;
       const settings = this.settings();
+      const fetching = !!this.fetch();
+      const virtual = this.virtualScroll();
       el.sortColumns = settings.sortColumns.map((c) => ({ property: c.property, direction: c.direction }));
-      el.autoSort = !this.fetch();
-      el.pagination = this.pagination() && !this.fetch();
+      el.autoSort = !fetching;
+      // Pagination renders in non-virtual mode; in fetch mode the wrapper
+      // owns page state and the WC just reports the change via event.
+      el.pagination = this.pagination() && !virtual;
       el.page = settings.page.selected;
       el.perPage = settings.perPage.selected;
       el.perPageOptions = settings.perPage.values;
+      el.totalRecords = fetching ? this.totalRecords() : null;
     });
 
     effect(() => {
@@ -292,6 +304,31 @@ export class BsDatatableComponent<TData> implements AfterViewInit {
       const nodes = viewRef.rootNodes.filter((n: unknown): n is Node => n instanceof Node);
       return nodes;
     };
+  }
+
+  /** Generation token: invalidates an in-flight virtual-mode preload when sort/fetcher changes. */
+  private virtualFetchToken = 0;
+
+  private async runVirtualFetchAll(
+    fetcher: BsDatatableFetch<TData>,
+    sortColumns: SortColumn[],
+  ): Promise<void> {
+    const token = ++this.virtualFetchToken;
+    const perPage = 200;
+    const first = await fetcher({ page: 1, perPage, sortColumns });
+    if (!first || token !== this.virtualFetchToken) return;
+    const accumulator: TData[] = [...(first.data ?? [])];
+    const totalRecords = first.totalRecords ?? accumulator.length;
+    const totalPages = Math.max(1, first.totalPages ?? Math.ceil(totalRecords / perPage));
+    this.currentData.set(accumulator);
+    this.totalRecords.set(totalRecords);
+    const remaining = Array.from({ length: totalPages - 1 }, (_, i) => i + 2);
+    for (const page of remaining) {
+      const response = await fetcher({ page, perPage, sortColumns });
+      if (!response || token !== this.virtualFetchToken) return;
+      accumulator.push(...(response.data ?? []));
+      this.currentData.set([...accumulator]);
+    }
   }
 
   private async runFetch(
