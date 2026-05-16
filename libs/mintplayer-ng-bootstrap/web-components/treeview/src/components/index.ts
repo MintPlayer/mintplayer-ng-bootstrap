@@ -7,4 +7,5 @@ export type {
   IconResolver,
   TreeNodeRenderer,
   TreeNodeRenderContext,
+  TreeChildrenLoader,
 } from './mp-treeview';

@@ -21,6 +21,14 @@ export type TreeNodeRenderer = (
   context: TreeNodeRenderContext,
 ) => Node | DocumentFragment | undefined;
 
+/**
+ * Async loader for child nodes on lazy-tree expansion. Invoked the first
+ * time a node with `node.lazy: true` (or no `children` and `lazy` unset)
+ * is expanded. Resolve with the children, or reject to surface the error
+ * via a per-node error indicator.
+ */
+export type TreeChildrenLoader = (parentId: string) => Promise<TreeNode[]>;
+
 export interface TreeNodeSelectEventDetail {
   node: TreeNode;
   selectedIds: string[];
@@ -75,6 +83,11 @@ export class MpTreeview extends LitElement {
   private _hideBorders = false;
   private _iconResolver: IconResolver | undefined;
   private _nodeRenderer: TreeNodeRenderer | undefined;
+  private _loadChildren: TreeChildrenLoader | undefined;
+  /** Loading state per lazy-node id. */
+  private _loadingIds: Set<string> = new Set();
+  /** Last load error per node id. */
+  private _errorIds: Map<string, string> = new Map();
 
   // Roving tabindex: which node currently has tabindex=0
   private _focusedId: string | null = null;
@@ -151,6 +164,19 @@ export class MpTreeview extends LitElement {
     this.requestUpdate();
   }
 
+  /**
+   * Async children loader. Invoked once per node when a `lazy` (or
+   * children-less) node is first expanded. While the promise is in flight
+   * the chevron is replaced by a spinner; on rejection an error indicator
+   * is shown and the node can be re-expanded to retry.
+   */
+  get loadChildren(): TreeChildrenLoader | undefined {
+    return this._loadChildren;
+  }
+  set loadChildren(value: TreeChildrenLoader | undefined) {
+    this._loadChildren = value;
+  }
+
   override attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
     super.attributeChangedCallback(name, oldValue, newValue);
 
@@ -205,6 +231,10 @@ export class MpTreeview extends LitElement {
     siblingCount: number,
   ): TemplateResult {
     const hasChildren = !!(node.children && node.children.length > 0);
+    const isLazy = !!node.lazy && !hasChildren;
+    const isExpandable = hasChildren || isLazy;
+    const isLoading = this._loadingIds.has(node.id);
+    const loadError = this._errorIds.get(node.id);
     const expanded = this._expandedIds.has(node.id);
     const selected = this._selectedIds.has(node.id);
     const focused = this._focusedId === node.id;
@@ -222,7 +252,7 @@ export class MpTreeview extends LitElement {
           expanded,
           selected,
           focused,
-          hasChildren,
+          hasChildren: isExpandable,
         })
       : undefined;
 
@@ -234,22 +264,28 @@ export class MpTreeview extends LitElement {
           role="treeitem"
           data-node-id=${node.id}
           data-selected=${selected ? 'true' : 'false'}
+          data-loading=${isLoading ? 'true' : 'false'}
+          data-error=${loadError ? 'true' : 'false'}
           aria-level=${level}
           aria-setsize=${siblingCount}
           aria-posinset=${indexInParent + 1}
-          aria-expanded=${hasChildren ? (expanded ? 'true' : 'false') : nothing}
+          aria-expanded=${isExpandable ? (expanded ? 'true' : 'false') : nothing}
+          aria-busy=${isLoading ? 'true' : nothing}
           aria-selected=${this._selectionMode !== 'none' ? (selected ? 'true' : 'false') : nothing}
           tabindex=${tabIndex}
           style=${`padding-left:${indentation + 12}px`}
           @click=${(ev: MouseEvent) => this.onRowClick(node, ev)}
           @keydown=${(ev: KeyboardEvent) => this.onRowKeydown(node, ev)}
+          title=${loadError ?? nothing}
         >
           <span
-            class=${`treeview-chevron${hasChildren ? '' : ' invisible'}`}
+            class=${`treeview-chevron${isExpandable ? '' : ' invisible'}${isLoading ? ' loading' : ''}`}
             data-expanded=${expanded ? 'true' : 'false'}
             @click=${(ev: MouseEvent) => this.onChevronClick(node, ev)}
             aria-hidden="true"
-          >${unsafeHTML(CHEVRON_SVG)}</span>
+          >${isLoading
+            ? html`<span class="treeview-spinner" aria-hidden="true"></span>`
+            : unsafeHTML(CHEVRON_SVG)}</span>
           ${customBody
             ? html`<span class="treeview-body">${customBody}</span>`
             : html`
@@ -347,7 +383,7 @@ export class MpTreeview extends LitElement {
       }
       case 'ArrowRight': {
         ev.preventDefault();
-        if (hasChildren && !expanded) {
+        if ((hasChildren || node.lazy) && !expanded) {
           this.expand(node);
         } else if (hasChildren && expanded) {
           this.focusNode(node.children![0].id);
@@ -356,7 +392,7 @@ export class MpTreeview extends LitElement {
       }
       case 'ArrowLeft': {
         ev.preventDefault();
-        if (hasChildren && expanded) {
+        if ((hasChildren || node.lazy) && expanded) {
           this.collapse(node);
         } else {
           const parent = this.findParent(this._items, node.id);
@@ -379,7 +415,7 @@ export class MpTreeview extends LitElement {
       case 'Enter': {
         ev.preventDefault();
         this.toggleSelection(node, false);
-        if (hasChildren) this.toggleExpansion(node);
+        if (hasChildren || node.lazy) this.toggleExpansion(node);
         return;
       }
       case ' ': // Space
@@ -439,7 +475,8 @@ export class MpTreeview extends LitElement {
   }
 
   private toggleExpansion(node: TreeNode): void {
-    if (!node.children || node.children.length === 0) return;
+    const hasChildren = !!(node.children && node.children.length > 0);
+    if (!hasChildren && !node.lazy) return;
     if (this._expandedIds.has(node.id)) {
       this.collapse(node);
     } else {
@@ -448,8 +485,50 @@ export class MpTreeview extends LitElement {
   }
 
   private expand(node: TreeNode): void {
-    if (!node.children || node.children.length === 0) return;
+    const hasChildren = !!(node.children && node.children.length > 0);
+    if (!hasChildren && !node.lazy) return;
     if (this._expandedIds.has(node.id)) return;
+
+    // Lazy load: when expanding a node with no children yet and we have a
+    // loader, fire the async load before flipping `expandedIds`.
+    if (!hasChildren && node.lazy && this._loadChildren && !this._loadingIds.has(node.id)) {
+      this._loadingIds.add(node.id);
+      this._errorIds.delete(node.id);
+      this.requestUpdate();
+      void this._loadChildren(node.id).then(
+        (children) => {
+          this._loadingIds.delete(node.id);
+          // Add to expanded only after the consumer pushes children back
+          // via the `items` property. We emit the expand event so the
+          // consumer can update `items` synchronously in their handler.
+          const next = new Set(this._expandedIds);
+          next.add(node.id);
+          this._expandedIds = next;
+          this.requestUpdate();
+          this.dispatchEvent(
+            new CustomEvent<TreeNodeExpandEventDetail & { loadedChildren?: TreeNode[] }>('tree-node-expand', {
+              detail: { node, expandedIds: [...this._expandedIds], loadedChildren: children },
+              bubbles: true,
+              composed: true,
+            }),
+          );
+        },
+        (err) => {
+          this._loadingIds.delete(node.id);
+          this._errorIds.set(node.id, err instanceof Error ? err.message : String(err));
+          this.requestUpdate();
+          this.dispatchEvent(
+            new CustomEvent('tree-node-load-error', {
+              detail: { node, error: err },
+              bubbles: true,
+              composed: true,
+            }),
+          );
+        },
+      );
+      return;
+    }
+
     const next = new Set(this._expandedIds);
     next.add(node.id);
     this._expandedIds = next;

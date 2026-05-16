@@ -17,7 +17,8 @@ import type {
 } from '@mintplayer/ng-bootstrap/web-components/datatable';
 
 import { fileManagerStyles } from '../styles';
-import type { FileSystemNode } from '../types';
+import type { FileSystemNode, FileManagerMessages } from '../types';
+import { DEFAULT_FILE_MANAGER_MESSAGES, mergeMessages } from '../types';
 
 export type FileManagerSelectionMode = 'none' | 'single' | 'multiple';
 export type FileManagerViewMode = 'list' | 'icons';
@@ -31,6 +32,42 @@ export interface OperationFlags {
   cut?: boolean;
   copy?: boolean;
   paste?: boolean;
+}
+
+/**
+ * Replacement for `window.confirm` / `window.prompt`. Consumers wire this to
+ * their app's modal system (e.g. `bs-modal`). The resolver should return:
+ *   - `'confirm'`: a `boolean` (true = OK, false = Cancel)
+ *   - `'prompt'`: a `string` (the entered text) or `null` (cancelled)
+ *
+ * When unset, the WC falls back to the native `window.*` dialogs so basic
+ * usage still works without consumer wiring.
+ */
+export type DialogResolver = (
+  request:
+    | { kind: 'confirm'; message: string }
+    | { kind: 'prompt'; label: string; defaultValue?: string },
+) => Promise<string | boolean | null>;
+
+/**
+ * Invoked when paste or upload would overwrite an existing same-name entry.
+ * Consumers can show a "Replace / Skip / Rename" prompt and resolve.
+ * When unset, the WC defaults to `{ action: 'replace' }` (existing v1 behaviour).
+ */
+export type ConflictResolver = (request: {
+  existingNode: FileSystemNode;
+  incomingName: string;
+  mode: 'paste' | 'upload';
+}) => Promise<{ action: 'replace' | 'skip' | 'rename'; newName?: string }>;
+
+/** Per-file upload progress entry surfaced via the `uploads` property. */
+export interface UploadEntry {
+  id: string;
+  file: File;
+  targetFolderId: string | null;
+  progress: number;
+  status: 'pending' | 'uploading' | 'done' | 'error';
+  error?: string;
 }
 
 export interface NavigateEventDetail {
@@ -48,13 +85,40 @@ export interface SelectionChangeEventDetail {
 export interface UploadRequestEventDetail {
   files: File[];
   targetFolderId: string | null;
+  /**
+   * Per-file tracking entries. Consumers store these IDs and push progress
+   * via `mp-file-manager.reportUploadProgress(id, progress, status?, error?)`
+   * so the WC's `uploads` property reflects the in-flight state.
+   */
+  uploads: ReadonlyArray<UploadEntry>;
+  /**
+   * Conflict resolutions when a same-name file already exists in the
+   * target folder and the `conflictResolver` decided `'replace'` or
+   * `'rename'`. Files the user chose to skip are not included in `files`.
+   */
+  conflictResolutions: ReadonlyArray<{
+    fileName: string;
+    action: 'replace' | 'rename';
+    newName?: string;
+  }>;
 }
 
 export type OperationEventDetail =
   | { kind: 'rename'; nodeId: string; previousName: string; newName: string }
   | { kind: 'delete'; nodeIds: string[] }
   | { kind: 'new-folder'; parentId: string | null; name: string }
-  | { kind: 'paste'; mode: 'cut' | 'copy'; sourceIds: string[]; targetFolderId: string | null };
+  | {
+      kind: 'paste';
+      mode: 'cut' | 'copy';
+      sourceIds: string[];
+      targetFolderId: string | null;
+      /**
+       * Per-source-id conflict resolution decided via `conflictResolver`.
+       * Missing keys = no conflict. Present keys = consumer chose `'replace'`,
+       * `'skip'`, or `'rename'` (with optional `newName` when rename).
+       */
+      conflicts?: Record<string, { action: 'replace' | 'skip' | 'rename'; newName?: string }>;
+    };
 
 let instanceCounter = 0;
 
@@ -112,8 +176,9 @@ export class MpFileManager extends LitElement {
   private _allowOperations: boolean | OperationFlags = true;
   private _viewMode: FileManagerViewMode = 'list';
   private _selectionMode: FileManagerSelectionMode = 'multiple';
-  private _searchPlaceholder = 'Search…';
+  private _searchPlaceholder = '';
   private _iconResolver: ((iconKey: string, node?: FileSystemNode) => string | undefined) | undefined;
+  private _messages: FileManagerMessages = DEFAULT_FILE_MANAGER_MESSAGES;
 
   // Internal state
   private _selection: Set<string> = new Set();
@@ -124,6 +189,15 @@ export class MpFileManager extends LitElement {
   private _renameInputRef: Ref<HTMLInputElement> = createRef();
   private _dragDepth = 0;
   private _contextMenu: { x: number; y: number; targetId: string } | null = null;
+  private _isTouchMode = false;
+  private _touchHoldTimer: ReturnType<typeof setTimeout> | null = null;
+  private _touchHoldTarget: string | null = null;
+  private _pendingOps: Map<string, OperationKind> = new Map();
+  private _uploads: UploadEntry[] = [];
+  private _dialogResolver: DialogResolver | undefined;
+  private _conflictResolver: ConflictResolver | undefined;
+  private _loadChildren: ((parentId: string) => Promise<FileSystemNode[]>) | undefined;
+  private _loadedFolders: Set<string> = new Set();
 
   // ─── Property accessors ──────────────────────────────────────────────────
   get nodes(): FileSystemNode[] {
@@ -205,6 +279,117 @@ export class MpFileManager extends LitElement {
     this.requestUpdate();
   }
 
+  /**
+   * Partial override of the visible-string set. Unset keys fall back to the
+   * English defaults in `DEFAULT_FILE_MANAGER_MESSAGES`.
+   */
+  get messages(): FileManagerMessages {
+    return this._messages;
+  }
+  set messages(value: Partial<FileManagerMessages> | undefined) {
+    this._messages = mergeMessages(value);
+    if (this.hasAttribute('aria-label')) {
+      this.setAttribute('aria-label', this._messages.ariaFileManager);
+    }
+    this.requestUpdate();
+  }
+
+  /**
+   * Replacement for `window.confirm` / `window.prompt`. When unset, falls
+   * back to the browser dialogs.
+   */
+  get dialogResolver(): DialogResolver | undefined {
+    return this._dialogResolver;
+  }
+  set dialogResolver(value: DialogResolver | undefined) {
+    this._dialogResolver = value;
+  }
+
+  /**
+   * Invoked when paste / upload would overwrite an existing entry. When
+   * unset, the WC silently replaces (v1 behaviour).
+   */
+  get conflictResolver(): ConflictResolver | undefined {
+    return this._conflictResolver;
+  }
+  set conflictResolver(value: ConflictResolver | undefined) {
+    this._conflictResolver = value;
+  }
+
+  /**
+   * Async loader invoked when a folder is expanded in the tree for the
+   * first time. Resolve with the folder's children; the consumer should
+   * merge them into the global `nodes` array. The WC also surfaces a
+   * loading indicator via `node.meta.loading = true` while the promise
+   * is in flight.
+   */
+  get loadChildren(): ((parentId: string) => Promise<FileSystemNode[]>) | undefined {
+    return this._loadChildren;
+  }
+  set loadChildren(value: ((parentId: string) => Promise<FileSystemNode[]>) | undefined) {
+    this._loadChildren = value;
+  }
+
+  /** In-flight uploads, exposed for read-only consumption by progress UIs. */
+  get uploads(): ReadonlyArray<UploadEntry> {
+    return this._uploads;
+  }
+
+  /** IDs of nodes currently being mutated server-side (set via `markPending`). */
+  get pendingOpIds(): ReadonlySet<string> {
+    return new Set(this._pendingOps.keys());
+  }
+
+  /**
+   * Mark a node as having an operation in flight. The row renders with a
+   * busy state and the consumer should call `clearPending()` when done.
+   */
+  markPending(nodeId: string, op: OperationKind): void {
+    this._pendingOps.set(nodeId, op);
+    this.requestUpdate();
+  }
+
+  /** Clear the pending state on a node. */
+  clearPending(nodeId: string): void {
+    if (this._pendingOps.delete(nodeId)) {
+      this.requestUpdate();
+    }
+  }
+
+  /**
+   * Surface an error message to the consumer. The component also re-fires
+   * an `(error)` event with the same payload so toast systems can listen.
+   */
+  reportError(message: string, nodeId?: string): void {
+    this.dispatchEvent(
+      new CustomEvent('mp-error', {
+        detail: { kind: 'operation', message, nodeId },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
+  /**
+   * Push a progress update for an upload. The consumer calls this from
+   * their upload-pipeline progress callback so the WC can render a
+   * progress bar / completed state.
+   */
+  reportUploadProgress(uploadId: string, progress: number, status?: UploadEntry['status'], error?: string): void {
+    const idx = this._uploads.findIndex((u) => u.id === uploadId);
+    if (idx < 0) return;
+    const next = { ...this._uploads[idx], progress, ...(status ? { status } : {}), ...(error ? { error } : {}) };
+    this._uploads = [...this._uploads.slice(0, idx), next, ...this._uploads.slice(idx + 1)];
+    this.requestUpdate();
+  }
+
+  /** Remove a finished/aborted upload from the tracking list. */
+  clearUpload(uploadId: string): void {
+    const before = this._uploads.length;
+    this._uploads = this._uploads.filter((u) => u.id !== uploadId);
+    if (this._uploads.length !== before) this.requestUpdate();
+  }
+
   override attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
     super.attributeChangedCallback(name, oldValue, newValue);
     switch (name) {
@@ -246,16 +431,126 @@ export class MpFileManager extends LitElement {
       this.setAttribute('role', 'region');
     }
     if (!this.hasAttribute('aria-label')) {
-      this.setAttribute('aria-label', 'File manager');
+      this.setAttribute('aria-label', this._messages.ariaFileManager);
+    }
+    // Touch detection: coarse pointer → likely tablet/phone. We hide the
+    // OS file-drop overlay (which doesn't fire on touch) and surface an
+    // explicit Upload toolbar button instead.
+    if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+      try {
+        this._isTouchMode = window.matchMedia('(pointer: coarse)').matches;
+      } catch {
+        this._isTouchMode = false;
+      }
+    }
+    this.addEventListener('touchstart', this.onTouchStart, { passive: false });
+    this.addEventListener('touchend', this.onTouchEnd);
+    this.addEventListener('touchcancel', this.onTouchEnd);
+    this.addEventListener('touchmove', this.onTouchMove);
+  }
+
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this.removeEventListener('touchstart', this.onTouchStart);
+    this.removeEventListener('touchend', this.onTouchEnd);
+    this.removeEventListener('touchcancel', this.onTouchEnd);
+    this.removeEventListener('touchmove', this.onTouchMove);
+    if (this._touchHoldTimer) {
+      clearTimeout(this._touchHoldTimer);
+      this._touchHoldTimer = null;
     }
   }
 
+  // ─── Touch support ──────────────────────────────────────────────────────
+  /**
+   * Long-press (≥ 600 ms, matching `mp-scheduler`'s `InputHandler`) opens
+   * the context menu on the touched row. Movement aborts the long-press.
+   */
+  private onTouchStart = (ev: TouchEvent): void => {
+    if (ev.touches.length !== 1) return;
+    const touch = ev.touches[0];
+    const target = (ev.composedPath().find(
+      (el) => el instanceof HTMLElement && el.hasAttribute('data-node-id'),
+    ) as HTMLElement | undefined)
+      ?? (this.shadowRoot?.elementFromPoint(touch.clientX, touch.clientY) as HTMLElement | null)?.closest('[data-node-id]') as HTMLElement | null;
+    const nodeId = target?.getAttribute('data-node-id');
+    if (!nodeId) return;
+    this._touchHoldTarget = nodeId;
+    const x = touch.clientX;
+    const y = touch.clientY;
+    this._touchHoldTimer = setTimeout(() => {
+      if (this._touchHoldTarget !== nodeId) return;
+      this._touchHoldTimer = null;
+      if (this._selectionMode !== 'none' && !this._selection.has(nodeId)) {
+        this._selection = new Set([nodeId]);
+        this.emitSelectionChange();
+      }
+      this.openContextMenu(nodeId, x, y);
+    }, 600);
+  };
+
+  private onTouchMove = (): void => {
+    if (this._touchHoldTimer) {
+      clearTimeout(this._touchHoldTimer);
+      this._touchHoldTimer = null;
+    }
+    this._touchHoldTarget = null;
+  };
+
+  private onTouchEnd = (): void => {
+    if (this._touchHoldTimer) {
+      clearTimeout(this._touchHoldTimer);
+      this._touchHoldTimer = null;
+    }
+    this._touchHoldTarget = null;
+  };
+
+  /**
+   * Opens an `<input type="file" multiple>` picker for touch consumers
+   * (replaces OS file-drop on phones/tablets). Emits `mp-upload-request`
+   * with the chosen files just like the drag-drop path.
+   */
+  private openUploadPicker = (): void => {
+    if (!this._allowUpload) return;
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true;
+    input.style.display = 'none';
+    input.addEventListener('change', () => {
+      const files = Array.from(input.files ?? []);
+      if (files.length > 0) this.handleFiles(files);
+      input.remove();
+    });
+    document.body.appendChild(input);
+    input.click();
+  };
+
   // ─── Operation flags helper ─────────────────────────────────────────────
-  private opEnabled(op: keyof OperationFlags): boolean {
+  /**
+   * Resolve whether `op` is allowed. When `nodeId` is provided, per-node
+   * overrides on `FileSystemNode.allowOperations` take precedence over the
+   * global flag. When `nodeId` is omitted (toolbar-level decisions like
+   * "new folder"), only the global flag applies.
+   */
+  private opEnabled(op: keyof OperationFlags, nodeId?: string): boolean {
     if (this._allowOperations === false) return false;
-    if (this._allowOperations === true) return true;
-    const flags = this._allowOperations as OperationFlags;
-    return flags[op] !== false;
+    const globalAllow = this._allowOperations === true
+      ? true
+      : (this._allowOperations as OperationFlags)[op] !== false;
+    if (!nodeId) return globalAllow;
+    const node = this._nodes.find((n) => n.id === nodeId);
+    const localFlag = node?.allowOperations?.[op];
+    if (localFlag === undefined) return globalAllow;
+    return localFlag !== false;
+  }
+
+  /** True iff EVERY selected node permits the given operation. */
+  private opEnabledOnSelection(op: keyof OperationFlags): boolean {
+    if (!this.opEnabled(op)) return false;
+    for (const id of this._selection) {
+      if (!this.opEnabled(op, id)) return false;
+    }
+    return true;
   }
 
   // ─── Derived collections ─────────────────────────────────────────────────
@@ -268,19 +563,60 @@ export class MpFileManager extends LitElement {
       list.push(f);
       byParent.set(f.parentId, list);
     }
+    const lazyMode = !!this._loadChildren;
     const build = (parentId: string | null): TreeNode[] => {
       const children = byParent.get(parentId);
       if (!children) return [];
-      return children.map((node) => ({
-        id: node.id,
-        label: node.name,
-        iconKey: node.iconKey ?? 'folder',
-        children: build(node.id),
-      }));
+      return children.map((node) => {
+        const childFolders = build(node.id);
+        // In lazy mode, a folder is marked `lazy` until we've successfully
+        // loaded its children. Once loaded (or once it has at least one
+        // child folder materialised), we treat it as a regular tree node.
+        const isLazy = lazyMode && childFolders.length === 0 && !this._loadedFolders.has(node.id);
+        return {
+          id: node.id,
+          label: node.name,
+          iconKey: node.iconKey ?? 'folder',
+          children: childFolders,
+          lazy: isLazy || undefined,
+        };
+      });
     };
     const root = this._rootFolderId;
     if (root === null) return build(null);
     return build(root);
+  }
+
+  /**
+   * Bridge `mp-treeview`'s `loadChildren` to the consumer's `loadChildren`
+   * callback. Appends new nodes into the WC's local `_nodes` so the tree
+   * (and current-folder file list) re-render, then returns the loaded
+   * folder children to the treeview's lazy machinery for its own bookkeeping.
+   */
+  private async loadTreeChildren(parentId: string): Promise<TreeNode[]> {
+    if (!this._loadChildren) return [];
+    const newNodes = await this._loadChildren(parentId);
+    const existing = new Set(this._nodes.map((n) => n.id));
+    const additions = newNodes.filter((n) => !existing.has(n.id));
+    this._nodes = [...this._nodes, ...additions];
+    this._loadedFolders.add(parentId);
+    this.requestUpdate();
+    this.dispatchEvent(
+      new CustomEvent('mp-children-loaded', {
+        detail: { parentId, children: newNodes },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+    return additions
+      .filter((n) => n.type === 'folder')
+      .map((n) => ({
+        id: n.id,
+        label: n.name,
+        iconKey: n.iconKey ?? 'folder',
+        children: [],
+        lazy: true,
+      }));
   }
 
   private getCurrentChildren(): FileSystemNode[] {
@@ -325,6 +661,7 @@ export class MpFileManager extends LitElement {
               .expandedIds=${[...this._expandedTreeIds]}
               .selectedIds=${this._currentFolderId ? [this._currentFolderId] : []}
               .iconResolver=${(key: string, node: TreeNode) => this.resolveIconForTree(key, node)}
+              .loadChildren=${this._loadChildren ? (parentId: string) => this.loadTreeChildren(parentId) : undefined}
               hide-borders
               selection-mode="single"
               @tree-node-select=${this.onTreeNodeSelect}
@@ -344,7 +681,7 @@ export class MpFileManager extends LitElement {
                 ? this.renderListView(currentChildren)
                 : this.renderIconGridView(currentChildren)}
             </div>
-            <div class="drop-overlay" aria-live="polite">↓ Drop files to upload ↓</div>
+            <div class="drop-overlay" aria-live="polite" aria-label=${this._messages.fileDropZone}>${this._messages.dropFilesToUpload}</div>
           </div>
         </mp-splitter>
       </div>
@@ -355,6 +692,7 @@ export class MpFileManager extends LitElement {
   private renderContextMenu(): TemplateResult {
     const menu = this._contextMenu;
     if (!menu) return html``;
+    const m = this._messages;
     const hasSelection = this._selection.size > 0;
     const hasClipboard = this._clipboard !== null;
     return html`
@@ -366,24 +704,24 @@ export class MpFileManager extends LitElement {
         @click=${(ev: MouseEvent) => ev.stopPropagation()}
       >
         ${this.opEnabled('rename')
-          ? html`<li role="none"><button class="menu-item" role="menuitem" ?disabled=${this._selection.size !== 1} @click=${() => { this.closeContextMenu(); this.beginRenameFromToolbar(); }}>Rename</button></li>`
+          ? html`<li role="none"><button class="menu-item" role="menuitem" ?disabled=${this._selection.size !== 1 || !this.opEnabledOnSelection('rename')} @click=${() => { this.closeContextMenu(); this.beginRenameFromToolbar(); }}>${m.rename}</button></li>`
           : nothing}
         ${this.opEnabled('delete')
-          ? html`<li role="none"><button class="menu-item" role="menuitem" ?disabled=${!hasSelection} @click=${() => { this.closeContextMenu(); this.deleteSelection(); }}>Delete</button></li>`
+          ? html`<li role="none"><button class="menu-item" role="menuitem" ?disabled=${!hasSelection || !this.opEnabledOnSelection('delete')} @click=${() => { this.closeContextMenu(); this.deleteSelection(); }}>${m.delete}</button></li>`
           : nothing}
         <li role="separator" class="menu-separator"></li>
         ${this.opEnabled('cut')
-          ? html`<li role="none"><button class="menu-item" role="menuitem" ?disabled=${!hasSelection} @click=${() => { this.closeContextMenu(); this.setClipboard('cut'); }}>Cut</button></li>`
+          ? html`<li role="none"><button class="menu-item" role="menuitem" ?disabled=${!hasSelection || !this.opEnabledOnSelection('cut')} @click=${() => { this.closeContextMenu(); this.setClipboard('cut'); }}>${m.cut}</button></li>`
           : nothing}
         ${this.opEnabled('copy')
-          ? html`<li role="none"><button class="menu-item" role="menuitem" ?disabled=${!hasSelection} @click=${() => { this.closeContextMenu(); this.setClipboard('copy'); }}>Copy</button></li>`
+          ? html`<li role="none"><button class="menu-item" role="menuitem" ?disabled=${!hasSelection || !this.opEnabledOnSelection('copy')} @click=${() => { this.closeContextMenu(); this.setClipboard('copy'); }}>${m.copy}</button></li>`
           : nothing}
         ${this.opEnabled('paste')
-          ? html`<li role="none"><button class="menu-item" role="menuitem" ?disabled=${!hasClipboard} @click=${() => { this.closeContextMenu(); this.paste(); }}>Paste</button></li>`
+          ? html`<li role="none"><button class="menu-item" role="menuitem" ?disabled=${!hasClipboard} @click=${() => { this.closeContextMenu(); this.paste(); }}>${m.paste}</button></li>`
           : nothing}
         <li role="separator" class="menu-separator"></li>
         ${this.opEnabled('newFolder')
-          ? html`<li role="none"><button class="menu-item" role="menuitem" @click=${() => { this.closeContextMenu(); this.promptNewFolder(); }}>New folder</button></li>`
+          ? html`<li role="none"><button class="menu-item" role="menuitem" @click=${() => { this.closeContextMenu(); this.promptNewFolder(); }}>${m.newFolder}</button></li>`
           : nothing}
       </ul>
     `;
@@ -416,75 +754,84 @@ export class MpFileManager extends LitElement {
   }
 
   private renderToolbar(): TemplateResult {
+    const m = this._messages;
     const hasSelection = this._selection.size > 0;
     const hasClipboard = this._clipboard !== null;
+    const searchPlaceholder = this._searchPlaceholder || m.searchPlaceholder;
     return html`
-      <div class="toolbar" role="toolbar" aria-label="File manager toolbar">
+      <div class="toolbar" role="toolbar" aria-label=${m.ariaToolbar}>
         ${this.opEnabled('newFolder')
-          ? html`<button type="button" @click=${this.promptNewFolder} aria-label="New folder">📁 New folder</button>`
+          ? html`<button type="button" @click=${this.promptNewFolder} aria-label=${m.newFolder}>📁 ${m.newFolder}</button>`
           : nothing}
         ${this.opEnabled('rename')
           ? html`<button
               type="button"
-              ?disabled=${!hasSelection || this._selection.size !== 1}
+              ?disabled=${!hasSelection || this._selection.size !== 1 || !this.opEnabledOnSelection('rename')}
               @click=${this.beginRenameFromToolbar}
-              aria-label="Rename"
-            >✏️ Rename</button>`
+              aria-label=${m.rename}
+            >✏️ ${m.rename}</button>`
           : nothing}
         ${this.opEnabled('delete')
           ? html`<button
               type="button"
-              ?disabled=${!hasSelection}
+              ?disabled=${!hasSelection || !this.opEnabledOnSelection('delete')}
               @click=${this.deleteSelection}
-              aria-label="Delete"
-            >🗑 Delete</button>`
+              aria-label=${m.delete}
+            >🗑 ${m.delete}</button>`
           : nothing}
         ${this.opEnabled('cut')
           ? html`<button
               type="button"
-              ?disabled=${!hasSelection}
+              ?disabled=${!hasSelection || !this.opEnabledOnSelection('cut')}
               @click=${() => this.setClipboard('cut')}
-              aria-label="Cut"
-            >✂ Cut</button>`
+              aria-label=${m.cut}
+            >✂ ${m.cut}</button>`
           : nothing}
         ${this.opEnabled('copy')
           ? html`<button
               type="button"
-              ?disabled=${!hasSelection}
+              ?disabled=${!hasSelection || !this.opEnabledOnSelection('copy')}
               @click=${() => this.setClipboard('copy')}
-              aria-label="Copy"
-            >📋 Copy</button>`
+              aria-label=${m.copy}
+            >📋 ${m.copy}</button>`
           : nothing}
         ${this.opEnabled('paste')
           ? html`<button
               type="button"
               ?disabled=${!hasClipboard}
               @click=${this.paste}
-              aria-label="Paste"
-            >📥 Paste</button>`
+              aria-label=${m.paste}
+            >📥 ${m.paste}</button>`
+          : nothing}
+        ${this._allowUpload && this._isTouchMode
+          ? html`<button
+              type="button"
+              @click=${this.openUploadPicker}
+              aria-label=${m.upload}
+            >📤 ${m.upload}</button>`
           : nothing}
         <span class="spacer"></span>
         <input
           type="search"
           class="search-input"
           .value=${this._searchQuery}
-          placeholder=${this._searchPlaceholder}
+          placeholder=${searchPlaceholder}
           @input=${(ev: InputEvent) => this.onSearchInput(ev)}
-          aria-label="Search files and folders"
+          aria-label=${m.searchPlaceholder}
         />
         <div class="view-toggle" role="group" aria-label="View mode">
           <button
             type="button"
             data-active=${this._viewMode === 'list' ? 'true' : 'false'}
             @click=${() => this.setViewMode('list')}
-            aria-label="List view"
+            aria-label=${m.listView}
             aria-pressed=${this._viewMode === 'list'}
           >${unsafeHTML(ICON_SVG_LIST)}</button>
           <button
             type="button"
             data-active=${this._viewMode === 'icons' ? 'true' : 'false'}
             @click=${() => this.setViewMode('icons')}
-            aria-label="Icons view"
+            aria-label=${m.iconsView}
             aria-pressed=${this._viewMode === 'icons'}
           >${unsafeHTML(ICON_SVG_GRID)}</button>
         </div>
@@ -494,14 +841,14 @@ export class MpFileManager extends LitElement {
 
   private renderBreadcrumb(crumbs: FileSystemNode[]): TemplateResult {
     return html`
-      <nav class="breadcrumb-bar" aria-label="Breadcrumb">
+      <nav class="breadcrumb-bar" aria-label=${this._messages.ariaBreadcrumb}>
         <button
           class="breadcrumb-segment"
           data-current=${crumbs.length === 0 ? 'true' : 'false'}
           aria-current=${crumbs.length === 0 ? 'page' : 'false'}
           @click=${() => this.navigateTo(null)}
           type="button"
-        >Home</button>
+        >${this._messages.home}</button>
         ${crumbs.map((node, index) => {
           const isLast = index === crumbs.length - 1;
           return html`
@@ -520,34 +867,35 @@ export class MpFileManager extends LitElement {
   }
 
   private renderListView(children: FileSystemNode[]): TemplateResult {
+    const m = this._messages;
     const columns: DatatableColumnDef<FileSystemNode>[] = [
       {
         name: 'name',
-        label: 'Name',
+        label: m.name,
         sortable: true,
         cellClass: 'text-nowrap',
         cellRenderer: (row) => this.renderNameCell(row),
       },
       {
         name: 'size',
-        label: 'Size',
+        label: m.size,
         sortable: true,
         cellClass: 'text-nowrap',
         cellRenderer: (row) => this.formatSize(row),
       },
       {
         name: 'modifiedAt',
-        label: 'Modified',
+        label: m.modified,
         sortable: true,
         cellClass: 'text-nowrap',
         cellRenderer: (row) => this.formatDate(row),
       },
       {
         name: 'type',
-        label: 'Type',
+        label: m.type,
         sortable: true,
         cellClass: 'text-nowrap',
-        cellRenderer: (row) => (row.type === 'folder' ? 'Folder' : (row.mimeType ?? 'File')),
+        cellRenderer: (row) => (row.type === 'folder' ? m.folder : (row.mimeType ?? m.file)),
       },
     ];
 
@@ -559,7 +907,9 @@ export class MpFileManager extends LitElement {
         .rowKey=${(row: unknown) => (row as FileSystemNode).id}
         selection-mode=${this._selectionMode}
         resizable-columns
-        empty-message="No files or folders"
+        virtual-scroll
+        item-size="40"
+        empty-message=${m.noFilesOrFolders}
         @mp-datatable-selection-change=${this.onDatatableSelection}
         @mp-datatable-row-click=${this.onRowClick}
         @mp-datatable-row-dblclick=${this.onRowDblClick}
@@ -814,18 +1164,35 @@ export class MpFileManager extends LitElement {
   }
 
   // ─── Operations ─────────────────────────────────────────────────────────
-  private promptNewFolder = (): void => {
+  private promptNewFolder = async (): Promise<void> => {
     if (!this.opEnabled('newFolder')) return;
-    const name = window.prompt('Folder name', 'New folder');
-    if (!name) return;
+    const m = this._messages;
+    const answer = await this.invokeDialog({
+      kind: 'prompt',
+      label: m.folderNamePrompt,
+      defaultValue: m.defaultNewFolderName,
+    });
+    if (typeof answer !== 'string' || !answer.trim()) return;
     this.dispatchEvent(
       new CustomEvent<OperationEventDetail>('mp-operation', {
-        detail: { kind: 'new-folder', parentId: this._currentFolderId, name },
+        detail: { kind: 'new-folder', parentId: this._currentFolderId, name: answer.trim() },
         bubbles: true,
         composed: true,
       }),
     );
   };
+
+  private async invokeDialog(
+    request:
+      | { kind: 'confirm'; message: string }
+      | { kind: 'prompt'; label: string; defaultValue?: string },
+  ): Promise<string | boolean | null> {
+    if (this._dialogResolver) {
+      return this._dialogResolver(request);
+    }
+    if (request.kind === 'confirm') return window.confirm(request.message);
+    return window.prompt(request.label, request.defaultValue ?? '');
+  }
 
   private beginRenameFromToolbar = (): void => {
     if (this._selection.size !== 1) return;
@@ -870,9 +1237,13 @@ export class MpFileManager extends LitElement {
     }
   }
 
-  private deleteSelection = (): void => {
-    if (this._selection.size === 0 || !this.opEnabled('delete')) return;
-    if (!window.confirm(`Delete ${this._selection.size} item(s)?`)) return;
+  private deleteSelection = async (): Promise<void> => {
+    if (this._selection.size === 0 || !this.opEnabledOnSelection('delete')) return;
+    const confirmed = await this.invokeDialog({
+      kind: 'confirm',
+      message: this._messages.deleteConfirm(this._selection.size),
+    });
+    if (!confirmed) return;
     const ids = [...this._selection];
     this._selection.clear();
     this.requestUpdate();
@@ -891,12 +1262,22 @@ export class MpFileManager extends LitElement {
     this.requestUpdate();
   }
 
-  private paste = (): void => {
+  private paste = async (): Promise<void> => {
     if (!this._clipboard || !this.opEnabled('paste')) return;
     const { mode, ids } = this._clipboard;
+    // If a conflictResolver is wired, ask the consumer how to handle each conflict.
+    const conflicts = await this.resolveConflictsForPaste(ids, this._currentFolderId);
+    if (conflicts === null) return; // resolver indicated abort
+
     this.dispatchEvent(
       new CustomEvent<OperationEventDetail>('mp-operation', {
-        detail: { kind: 'paste', mode, sourceIds: ids, targetFolderId: this._currentFolderId },
+        detail: {
+          kind: 'paste',
+          mode,
+          sourceIds: ids,
+          targetFolderId: this._currentFolderId,
+          conflicts,
+        },
         bubbles: true,
         composed: true,
       }),
@@ -906,6 +1287,35 @@ export class MpFileManager extends LitElement {
     }
     this.requestUpdate();
   };
+
+  /**
+   * For every source node whose name already exists in the target folder,
+   * consult the conflictResolver. Returns a map of sourceId → resolution
+   * (action + optional newName). Returns `null` if any resolver returned
+   * abort. When no resolver is wired, returns an empty record (the
+   * consumer's paste handler is expected to overwrite-by-default).
+   */
+  private async resolveConflictsForPaste(
+    sourceIds: ReadonlyArray<string>,
+    targetFolderId: string | null,
+  ): Promise<Record<string, { action: 'replace' | 'skip' | 'rename'; newName?: string }> | null> {
+    if (!this._conflictResolver) return {};
+    const result: Record<string, { action: 'replace' | 'skip' | 'rename'; newName?: string }> = {};
+    const targetChildren = this._nodes.filter((n) => n.parentId === targetFolderId);
+    for (const id of sourceIds) {
+      const src = this._nodes.find((n) => n.id === id);
+      if (!src) continue;
+      const existing = targetChildren.find((n) => n.name === src.name && n.id !== id);
+      if (!existing) continue;
+      const decision = await this._conflictResolver({
+        existingNode: existing,
+        incomingName: src.name,
+        mode: 'paste',
+      });
+      result[id] = decision;
+    }
+    return result;
+  }
 
   // ─── Drag & drop ────────────────────────────────────────────────────────
   private onDragEnter = (ev: DragEvent): void => {
@@ -935,16 +1345,76 @@ export class MpFileManager extends LitElement {
     ev.preventDefault();
     this._dragDepth = 0;
     this.removeAttribute('drop-active');
+    if (this._isTouchMode) return; // OS file-drop ignored on touch
     const files = Array.from(ev.dataTransfer.files ?? []);
     if (files.length === 0) return;
+    this.handleFiles(files);
+  };
+
+  /**
+   * Common entry point for file-upload requests from either the drag-drop
+   * overlay or the touch upload picker. Resolves conflicts against the
+   * target folder, registers `UploadEntry` records in `uploads`, and
+   * emits `mp-upload-request` with one resolved file per kept entry.
+   */
+  private async handleFiles(files: File[]): Promise<void> {
+    const targetFolderId = this._currentFolderId;
+
+    // Resolve conflicts against the target folder.
+    const targetChildren = this._nodes.filter((n) => n.parentId === targetFolderId);
+    const kept: { file: File; entryId: string; conflict?: 'replace' | 'rename'; renamedTo?: string }[] = [];
+    for (const file of files) {
+      const existing = targetChildren.find((n) => n.name === file.name);
+      if (existing && this._conflictResolver) {
+        const decision = await this._conflictResolver({
+          existingNode: existing,
+          incomingName: file.name,
+          mode: 'upload',
+        });
+        if (decision.action === 'skip') continue;
+        kept.push({
+          file,
+          entryId: this.makeUploadId(),
+          conflict: decision.action,
+          renamedTo: decision.newName,
+        });
+      } else {
+        kept.push({ file, entryId: this.makeUploadId() });
+      }
+    }
+
+    if (kept.length === 0) return;
+
+    // Register UploadEntry records so consumers can render progress UIs.
+    const newEntries: UploadEntry[] = kept.map((k) => ({
+      id: k.entryId,
+      file: k.file,
+      targetFolderId,
+      progress: 0,
+      status: 'pending',
+    }));
+    this._uploads = [...this._uploads, ...newEntries];
+    this.requestUpdate();
+
     this.dispatchEvent(
       new CustomEvent<UploadRequestEventDetail>('mp-upload-request', {
-        detail: { files, targetFolderId: this._currentFolderId },
+        detail: {
+          files: kept.map((k) => k.file),
+          targetFolderId,
+          uploads: newEntries,
+          conflictResolutions: kept
+            .filter((k) => k.conflict)
+            .map((k) => ({ fileName: k.file.name, action: k.conflict!, newName: k.renamedTo })),
+        },
         bubbles: true,
         composed: true,
       }),
     );
-  };
+  }
+
+  private makeUploadId(): string {
+    return `upload-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+  }
 
   // ─── Helpers ────────────────────────────────────────────────────────────
   private pruneSelection(): void {

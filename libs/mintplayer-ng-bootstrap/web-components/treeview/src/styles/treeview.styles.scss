@@ -96,6 +96,30 @@ ul {
   height: 0.75rem;
 }
 
+.treeview-chevron.loading svg {
+  display: none;
+}
+
+.treeview-spinner {
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  border-top-color: transparent;
+  animation: mp-treeview-spin 0.8s linear infinite;
+}
+
+@keyframes mp-treeview-spin {
+  to { transform: rotate(360deg); }
+}
+
+.treeview-row[data-error='true'] .treeview-chevron::after {
+  content: '!';
+  color: var(--bs-danger, #dc3545);
+  margin-left: 0.25rem;
+}
+
 .treeview-icon {
   display: inline-flex;
   align-items: center;

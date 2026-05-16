@@ -2,9 +2,9 @@
 
 **Issue**: #329
 **Title**: File Manager (bs-file-manager + Lit WC stack)
-**Status**: Planning — Phase 0
+**Status**: B2B-readiness expansion (PR #341)
 **Created**: 2026-05-15
-**Last Updated**: 2026-05-15
+**Last Updated**: 2026-05-16
 
 Reference UI surface: https://www.syncfusion.com/angular-components/angular-file-manager — we mimic the feature menu, not the visual style. Visual style is pure Bootstrap 5 primitives.
 
@@ -48,13 +48,9 @@ After this issue lands, the relevant component stack looks like:
 
 ## Non-Goals / Out of Scope
 
-- **Real upload backend** — `mp-upload-request` emits the `File[]`; the demo simulates with a fake progress bar. Production consumers wire their own upload pipeline.
 - **File preview pane** — image thumbnails / PDF previews / hex viewer deferred to v2.
-- **Lazy-loaded tree data** — v1 takes a fully-materialised `nodes` array. Lazy children on expand is v2 (the data shape leaves room for it).
 - **Drag between panes** — dragging a file row onto a tree folder to move it is a Syncfusion staple but deferred to v2. (HTML5 dnd quirks make this non-trivial and the user did not list it in v1.)
-- **Internationalisation beyond externalisable English strings** — `search-placeholder` and the toolbar labels are configurable; locale-aware date/size formatting is v2.
-- **Backwards-compat shims on the ported components** — `[[feedback_breaking_changes_ok]]`. Consumers re-author templates. CHANGELOG documents the migration.
-- **Custom row template injection on `mp-datatable` from outside the file-manager** — the new datatable column API uses property-driven `cellRenderer` callbacks; if a consumer wants the old `*bsRowTemplate` they wire it through the Angular wrapper's `@ContentChild`.
+- **Locale-aware date/size formatting** — string labels are externalisable (see B2B-readiness § i18n) but Intl-aware formatters for sizes and dates are v2; today the WC uses `toLocaleDateString()` for dates and base-2 size units.
 
 ---
 
@@ -256,6 +252,119 @@ Parity with the existing Angular component plus the gaps the file-manager needs:
 | Context menu            | `menu` + `menuitem`                     | Arrow-key navigable; Esc closes; focus returns to the trigger row.                   |
 | Drop zone               | `region aria-label="File drop zone"`    | `aria-live="polite"` announces drag-enter / drop / simulated progress.                |
 | Demo page               | Visible keymap                          | `<details><summary>Keyboard shortcuts</summary>` per [[project_wc_aria_decisions]].   |
+
+---
+
+## B2B-readiness expansion
+
+The v1 component is a working file-browser UI; this section captures the surface area required to drop it into a typical B2B admin portal (CMS asset library, document management, SaaS file vault) without forcing every consumer to re-implement the same plumbing.
+
+### B2B gap audit
+
+| Gap | Status |
+|---|---|
+| 1. Upload progress / cancel / retry feedback | API added — `(uploadRequest)` carries a Promise-resolvable handle + per-file progress channel |
+| 2. Async operation pending state (rows show "saving…" while the backend works) | API added — `pendingOpIds` set on the WC, exposed via `markPending()` / `clearPending()` |
+| 3. Operation success/failure UI feedback | API added — `(operationResult)` event consumers fire after handling, surfacing failure messages to the user via the `(error)` event |
+| 4. Conflict resolution (paste/upload into a folder containing a same-name file) | API added — `(conflict)` request event with consumer-provided `resolveConflict()` answer |
+| 5. Confirmation/prompt styling (replacing `window.confirm` / `window.prompt`) | API added — `dialogResolver` callback property; default falls back to `window.*` so basic consumers don't have to wire anything |
+| 6. Lazy-loaded tree data | API added — `loadChildren` callback on `mp-treeview` + `bs-file-manager`; loading state surfaced via `node.meta.loading` |
+| 7. Virtual scroll inside the file list (large folders) | Enabled by default — the file-manager's internal `<mp-datatable>` now ships `virtualScroll` + `itemSize` |
+| 8. i18n / externalised strings | API added — `FileManagerMessages` interface + `[messages]` input; Lit-context provider follows the query-builder precedent |
+| 9. Per-node access control | API added — `FileSystemNode.allowOperations?: Partial<OperationFlags>` overrides the global flags per node |
+| 10. Touch interaction (long-press context menu, upload button instead of OS file-drop) | API added — 600 ms long-press matching `mp-scheduler`'s `InputHandler`; OS file-drop overlay hides on coarse pointers and the toolbar grows an explicit upload button instead |
+
+### API additions
+
+```ts
+// libs/.../file-manager/src/types/file-system-node.ts
+export interface FileSystemNode {
+  // … existing
+  /** Per-node operation overrides; falls back to the global allowOperations. */
+  allowOperations?: Partial<OperationFlags>;
+}
+
+// libs/.../file-manager/src/types/messages.ts (new)
+export interface FileManagerMessages {
+  home: string;
+  newFolder: string; rename: string; delete: string;
+  cut: string; copy: string; paste: string; upload: string;
+  search: string; loading: string; dropFilesToUpload: string;
+  noFilesOrFolders: string;
+  name: string; size: string; modified: string; type: string;
+  folder: string; file: string;
+  deleteConfirm: (count: number) => string;
+  folderNamePrompt: string;
+  defaultNewFolderName: string;
+  conflictReplace: string; conflictSkip: string; conflictRename: string;
+}
+
+// libs/.../web-components/file-manager/src/components/mp-file-manager.ts
+class MpFileManager extends LitElement {
+  // … existing
+  loadChildren?: (parentId: string) => Promise<FileSystemNode[]>;
+  dialogResolver?: DialogResolver;       // replaces window.confirm/prompt; see below
+  conflictResolver?: ConflictResolver;   // replaces auto-replace on paste
+  messages?: Partial<FileManagerMessages>;
+  uploads: ReadonlyArray<UploadEntry>;   // observable view of in-flight uploads
+  pendingOpIds: ReadonlySet<string>;     // ids currently being mutated server-side
+
+  markPending(nodeId: string, op: OperationKind): void;
+  clearPending(nodeId: string): void;
+  reportError(message: string, nodeId?: string): void;
+}
+
+type DialogResolver = (req:
+  | { kind: 'confirm'; message: string }
+  | { kind: 'prompt'; label: string; defaultValue?: string }
+) => Promise<string | boolean | null>;
+
+type ConflictResolver = (req: {
+  existingNode: FileSystemNode;
+  incomingName: string;
+  mode: 'paste' | 'upload';
+}) => Promise<{ action: 'replace' | 'skip' | 'rename'; newName?: string }>;
+
+interface UploadEntry {
+  id: string;
+  file: File;
+  targetFolderId: string | null;
+  progress: number;             // 0–100
+  status: 'pending' | 'uploading' | 'done' | 'error';
+  error?: string;
+}
+```
+
+The Angular wrapper exposes equivalents:
+
+```ts
+@Component({ selector: 'bs-file-manager' })
+class BsFileManagerComponent {
+  // … existing inputs
+  readonly loadChildren = input<((parentId: string) => Promise<FileSystemNode[]>) | undefined>();
+  readonly dialogResolver = input<DialogResolver | undefined>();
+  readonly conflictResolver = input<ConflictResolver | undefined>();
+  readonly messages = input<Partial<FileManagerMessages> | undefined>();
+
+  readonly uploads = computed(() => this.fileManagerRef()?.nativeElement.uploads ?? []);
+  readonly pendingOpIds = computed(() => this.fileManagerRef()?.nativeElement.pendingOpIds ?? new Set());
+}
+```
+
+### Architectural decisions
+
+1. **Event-driven async, not Promises-on-events** — `(operation)` continues to be a fire-and-forget CustomEvent; consumers call `markPending(id, op)` synchronously to mark the rows busy and `clearPending(id)` when done. Failures are surfaced via `reportError()` which re-fires `(error)`. This matches the existing event-driven file-upload model ([[ng-bootstrap/file-upload]]) and avoids forcing the WC's API to know about Promise/Observable.
+2. **Lazy tree lives on `mp-treeview`** (not on the file-manager). The treeview is the surface that knows when a folder expands, and a reusable lazy primitive serves any future tree consumer. The file-manager wires its `loadChildren` directly through. Loading state is per-node via `node.meta.loading: true` rendered as a spinner in the chevron slot.
+3. **Conflict & dialog resolvers are callbacks, not events** — when paste / upload detects a same-name target, the WC calls `conflictResolver(req)` and awaits the answer. Consumers wire this to their existing modal stack. If unset, the WC falls back to `window.confirm()` for conflicts ("Replace?") and `window.prompt()` for new folder names so basic usage still works.
+4. **Per-node permissions are data, not a callback** — `FileSystemNode.allowOperations` is a `Partial<OperationFlags>` that overrides the global flag locally. This is cheaper than a callback (no per-render invocation) and serialises naturally over the wire.
+5. **Touch uses the scheduler's `InputHandler` semantics** — 600 ms long-press to open the context menu; detection via `matchMedia('(pointer: coarse)')`. The OS file-drop overlay is hidden on coarse pointers; an explicit "Upload" toolbar button takes its place and triggers an `<input type="file" multiple>` picker that emits the same `(uploadRequest)` event.
+6. **i18n via Lit context, mirroring query-builder** — `FileManagerMessages` ships English defaults; consumer overrides flow through `[messages]` (Angular wrapper input) → WC `messages` property → Lit `ContextProvider` so descendant Lit components consume merged values. Per the query-builder precedent ([[reference_lit_context_recursive]]).
+
+### Non-goals (still)
+
+- Real upload pipeline implementation — the WC tracks progress the consumer pushes; the consumer owns the XHR / fetch and the storage backend.
+- Permissions inheritance — `allowOperations` is per-node and does not auto-cascade to descendants. Consumers compute the effective permission server-side or in their state layer.
+- Localised number / date formatting — string labels are externalised but `formatSize()` and `formatDate()` use base-2 units and `toLocaleDateString()` respectively. Pluggable formatters land in v2.
 
 ---
 

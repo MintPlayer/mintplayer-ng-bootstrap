@@ -9,4 +9,7 @@ export type {
   OperationEventDetail,
   OperationKind,
   OperationFlags,
+  ConflictResolver,
+  DialogResolver,
+  UploadEntry,
 } from './mp-file-manager';

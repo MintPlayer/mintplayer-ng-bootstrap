@@ -9,6 +9,10 @@ export type {
   OperationEventDetail,
   OperationKind,
   OperationFlags,
+  ConflictResolver,
+  DialogResolver,
+  UploadEntry,
 } from './components';
-export type { FileSystemNode, FileSystemNodeType } from './types';
+export type { FileSystemNode, FileSystemNodeType, FileManagerMessages } from './types';
+export { DEFAULT_FILE_MANAGER_MESSAGES, mergeMessages } from './types';
 export { fileManagerStyles } from './styles';
