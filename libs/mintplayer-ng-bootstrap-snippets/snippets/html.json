@@ -279,13 +279,6 @@
             "</bs-select>"
         ]
     },
-    "ToggleButton": {
-        "prefix": "bs-toggle-button",
-        "description": "Bootstrap Toggle Button",
-        "body": [
-            "<bs-toggle-button [type]=\"'${1|checkbox,radio,switch,toggle_button,radio_toggle_button|}'\" [(ngModel)]=\"${2:favoriteColors}\" [value]=\"'${3:blue}'\" [group]=\"${4:colors}\">${5:Blue}</bs-toggle-button>"
-        ]
-    },
     "ListGroup": {
         "prefix": "bs-list-group",
         "description": "Bootstrap List Group",
