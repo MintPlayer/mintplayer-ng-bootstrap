@@ -1152,6 +1152,7 @@ export class MpFileManager extends LitElement {
     }
     if (this._currentFolderId === folderId) return;
     this._currentFolderId = folderId;
+    const hadSelection = this._selection.size > 0;
     this._selection.clear();
     this.requestUpdate();
     this.dispatchEvent(
@@ -1161,6 +1162,11 @@ export class MpFileManager extends LitElement {
         composed: true,
       }),
     );
+    // Selection is folder-scoped — when the folder changes, surfacing the
+    // implicit clear via the same event consumers subscribe to keeps the
+    // Angular wrapper's `selectedIds` model (and any external listener)
+    // in sync with the WC's internal state.
+    if (hadSelection) this.emitSelectionChange();
   }
 
   // ─── Operations ─────────────────────────────────────────────────────────
