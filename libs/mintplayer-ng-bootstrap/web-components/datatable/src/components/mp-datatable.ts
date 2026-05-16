@@ -341,9 +341,10 @@ export class MpDatatable extends LitElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
-    if (!this.hasAttribute('role')) {
-      this.setAttribute('role', 'grid');
-    }
+    // `role="grid"` lives on the inner <table>, not the host. axe-core walks
+    // the shadow DOM but checks `aria-required-children` against the host's
+    // *direct* children — which are layout <div>s, not rows — so setting it
+    // on the host would fail the rule even though the table itself is fine.
   }
 
   protected override firstUpdated(): void {
@@ -399,7 +400,7 @@ export class MpDatatable extends LitElement {
     return html`
       <div class="datatable-shell">
         <div class="datatable-scroll ${this._virtualScroll ? 'datatable-virtual' : ''}" role="presentation">
-          <table aria-rowcount=${this._data.length + 1}>
+          <table role="grid" aria-rowcount=${this._data.length + 1}>
             <thead>
               <tr role="row" aria-rowindex="1">
                 ${showCheckboxes
