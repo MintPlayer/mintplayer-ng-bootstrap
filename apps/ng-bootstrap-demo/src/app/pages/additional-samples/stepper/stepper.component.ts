@@ -5,8 +5,10 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
+import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsGridColDirective, BsGridComponent, BsGridRowDirective } from '@mintplayer/ng-bootstrap/grid';
+import { dedent } from 'ts-dedent';
 
 @Component({
   selector: 'demo-stepper',
@@ -18,6 +20,7 @@ import { BsGridColDirective, BsGridComponent, BsGridRowDirective } from '@mintpl
     ReactiveFormsModule,
     BsAlertComponent,
     BsButtonTypeDirective,
+    BsCodeSnippetComponent,
     BsFormComponent,
     BsFormControlDirective,
     BsGridComponent,
@@ -76,4 +79,60 @@ export class StepperComponent {
     this.checkoutShipping.reset();
     this.checkoutPayment.reset();
   }
+
+  protected readonly snippetBasicHtml = dedent`
+    <div cdkStepper #stepper="cdkStepper" [linear]="true" orientation="horizontal">
+      <cdk-step [stepControl]="accountForm" label="Account">
+        <form [formGroup]="accountForm">
+          <input formControlName="name" placeholder="Name">
+          <input formControlName="email" placeholder="Email" type="email">
+        </form>
+      </cdk-step>
+      <cdk-step label="Review">
+        <p>Confirm your details and submit.</p>
+      </cdk-step>
+
+      <div class="step-headers">
+        @for (step of stepper.steps; track $index) {
+          <button cdkStepHeader type="button"
+                  [disabled]="stepper.linear && $index > stepper.selectedIndex && !step.completed"
+                  (click)="stepper.selectedIndex = $index">
+            {{ step.label }}
+          </button>
+        }
+      </div>
+
+      <div class="step-body">
+        @if (stepper.selected) {
+          <ng-container [ngTemplateOutlet]="stepper.selected.content"></ng-container>
+        }
+      </div>
+
+      <button cdkStepperPrevious [color]="colors.secondary">Back</button>
+      <button cdkStepperNext [color]="colors.primary">Next</button>
+    </div>
+  `;
+
+  protected readonly snippetBasicTs = dedent`
+    import { Component } from '@angular/core';
+    import { CdkStepperModule } from '@angular/cdk/stepper';
+    import { NgTemplateOutlet } from '@angular/common';
+    import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+    import { Color } from '@mintplayer/ng-bootstrap';
+    import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
+
+    @Component({
+      selector: 'my-stepper-demo',
+      templateUrl: './my-stepper-demo.component.html',
+      imports: [CdkStepperModule, NgTemplateOutlet, ReactiveFormsModule, BsButtonTypeDirective],
+    })
+    export class MyStepperDemoComponent {
+      protected readonly colors = Color;
+
+      accountForm = new FormGroup({
+        name: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+        email: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] }),
+      });
+    }
+  `;
 }

@@ -1,4 +1,17 @@
 <h1 class="text-center">Fade in/out animation</h1>
+
+<p>
+  <code>fadeInOut</code> is an Angular animation trigger that fades an element's opacity in on
+  enter and out on leave. Pair it with an <code>&#64;if</code> block so the element is added
+  and removed from the DOM — the trigger requires the enter/leave lifecycle to animate.
+</p>
+
+<h2>Basic usage</h2>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
+<h2>Demo</h2>
 <button (click)="fadeInOutState.set(!fadeInOutState())" [color]="colors.primary" class="d-block w-100 rounded-0">Toggle</button>
 @if (fadeInOutState()) {
     <div [@fadeInOut] class="overflow-hidden">

@@ -1,4 +1,20 @@
 <h1 class="text-center">Stepper</h1>
+
+<p>
+  The CDK stepper from <code>&#64;angular/cdk/stepper</code> is an unstyled primitive: the
+  <code>cdkStepper</code> directive owns selection state, each <code>cdk-step</code> declares
+  a label (and optionally a <code>stepControl</code> form), and the consumer renders the
+  headers + body manually. <code>[linear]="true"</code> gates progress on each step's form
+  validity; <code>cdkStepperNext</code> / <code>cdkStepperPrevious</code> advance the
+  selection programmatically.
+</p>
+
+<h2>Basic usage</h2>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
+<h2>Demo</h2>
 <bs-grid>
     <div bsRow class="mb-4">
         <div [col]>

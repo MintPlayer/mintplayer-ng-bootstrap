@@ -1,8 +1,22 @@
 <h1 class="text-center">Select2 with Drag-drop</h1>
 
+<p>
+  Combine <code>bs-select2</code> with Angular CDK's <code>cdkDropList</code> + <code>cdkDrag</code>
+  to let users reorder selected items by dragging. Mark the host as a drop list, mark each rendered
+  item template with <code>cdkDrag</code>, then mutate <code>selectedItems</code> from
+  <code>cdkDropListDropped</code> using <code>moveItemInArray</code>.
+</p>
+
+<h2>Basic usage</h2>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
+<h2>Demo</h2>
+
 <p>This example demonstrates the select2 component with the ability to drag and reorder the selected items.</p>
 
-<h2>Sortable Select2</h2>
+<h3>Sortable Select2</h3>
 <bs-select2 cdkDropList cdkDropListOrientation="mixed" (cdkDropListDropped)="onTagDropped($event)"
     (provideSuggestions)="onProvideTagSuggestions($event)" [suggestions]="tagSuggestions()" [(selectedItems)]="selectedTags">
     <span *bsItemTemplate="let item of selectedTags(); let select2=select2" cdkDrag class="select2-item" [style.background]="item.category?.color" [style.color]="item.category?.color | bsFontColor: '#000'">

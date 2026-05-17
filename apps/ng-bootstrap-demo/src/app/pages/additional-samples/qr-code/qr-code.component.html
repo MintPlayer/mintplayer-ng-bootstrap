@@ -1,4 +1,18 @@
 <h1 class="text-center">QR Code viewer</h1>
+
+<p>
+  <code>&lt;qr-code&gt;</code> from <code>&#64;mintplayer/ng-qr-code</code> renders a QR
+  representation of any string passed to its <code>[value]</code> input. The component
+  re-renders whenever the input changes, so binding it to a signal or
+  <code>ngModel</code>-driven field produces a live preview.
+</p>
+
+<h2>Basic usage</h2>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
+<h2>Demo</h2>
 <bs-form>
     <bs-grid>
         <div bsRow>

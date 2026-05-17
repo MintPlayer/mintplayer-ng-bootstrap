@@ -1,4 +1,18 @@
 <h1 class="text-center">Color-transition animation</h1>
+
+<p>
+  <code>colorTransition</code> is an Angular animation trigger that interpolates between two
+  CSS colors passed in <code>params</code>. The trigger's value selects which of the named
+  params (<code>color1</code> / <code>color2</code>) the element animates toward; switching
+  the value re-runs the transition.
+</p>
+
+<h2>Basic usage</h2>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
+<h2>Demo</h2>
 <div class="d-block text-center">
     <bs-checkbox [type]="'checkbox'" [(ngModel)]="state">State</bs-checkbox>
     <br>

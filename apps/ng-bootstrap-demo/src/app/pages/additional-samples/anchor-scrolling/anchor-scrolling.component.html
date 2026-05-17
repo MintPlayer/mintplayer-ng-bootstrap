@@ -1,5 +1,20 @@
 <h1 class="text-center">Anchor Scrolling</h1>
 
+<p>
+  Angular's router scrolls to the element whose <code>id</code> matches the URL fragment when
+  <code>anchorScrolling</code> is enabled in <code>provideRouter</code>. A link advertises the
+  target with <code>[routerLink]</code> + <code>fragment</code>; this demo also coordinates
+  with a collapsible navbar so the scroll lands correctly after the collapse animation
+  finishes.
+</p>
+
+<h2>Basic usage</h2>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
+<h2>Demo</h2>
+
 <bs-alert [type]="colors.info">
   This page demonstrates anchor scrolling with the navbar. When in mobile/small mode, clicking a link with an anchor fragment
   will first collapse the navbar, wait for the animation to complete, then scroll to the correct position.
