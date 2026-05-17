@@ -9,4 +9,5 @@ export const ROUTES: Routes = [
   { path: 'tile-manager', loadComponent: () => import('./tile-manager/tile-manager.component').then(m => m.TileManagerComponent) },
   { path: 'ribbon', loadComponent: () => import('./ribbon/ribbon.component').then(m => m.RibbonComponent) },
   { path: 'query-builder', loadComponent: () => import('./query-builder/query-builder.component').then(m => m.QueryBuilderDemoComponent) },
+  { path: 'otp-input', loadComponent: () => import('./otp-input/otp-input.component').then(m => m.OtpInputDemoComponent) },
 ];

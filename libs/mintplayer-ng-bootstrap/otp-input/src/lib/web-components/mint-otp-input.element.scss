@@ -1,0 +1,130 @@
+:host {
+  display: inline-flex;
+  position: relative;
+  box-sizing: border-box;
+  --bs-otp-input-box-bg: var(--bs-body-bg, #fff);
+  --bs-otp-input-box-color: var(--bs-body-color, #212529);
+  --bs-otp-input-box-border: var(--bs-border-color, #ced4da);
+  --bs-otp-input-box-border-active: var(--bs-primary, #0d6efd);
+  --bs-otp-input-box-border-invalid: var(--bs-danger, #dc3545);
+  --bs-otp-input-box-shadow-focus: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  --bs-otp-input-box-shadow-invalid: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+  --bs-otp-input-radius: 0.375rem;
+  --bs-otp-input-gap: 0.5rem;
+  --bs-otp-input-min-box-size: 2.875rem;
+  --bs-otp-input-font-size: 1.25rem;
+  --bs-otp-input-padding-y: 0.375rem;
+  --bs-otp-input-padding-x: 0.5rem;
+}
+
+:host([size='sm']) {
+  --bs-otp-input-min-box-size: 2.25rem;
+  --bs-otp-input-font-size: 1rem;
+  --bs-otp-input-gap: 0.375rem;
+  --bs-otp-input-padding-y: 0.25rem;
+  --bs-otp-input-padding-x: 0.4rem;
+}
+
+:host([size='lg']) {
+  --bs-otp-input-min-box-size: 3.5rem;
+  --bs-otp-input-font-size: 1.5rem;
+  --bs-otp-input-gap: 0.625rem;
+  --bs-otp-input-padding-y: 0.5rem;
+  --bs-otp-input-padding-x: 0.625rem;
+}
+
+:host([disabled]) {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bs-otp-input-gap);
+}
+
+// Hidden full-width input owns focus, paste, IME and SMS autofill. opacity:0
+// + transparent caret/color hides its rendered text and caret without making
+// it unfocusable. Stretched to cover the entire box row so any tap inside the
+// container hits the input and routes the platform keyboard.
+.hidden-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  color: transparent;
+  caret-color: transparent;
+  font-size: var(--bs-otp-input-font-size);
+  text-shadow: none;
+  z-index: 1;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.hidden-input:focus {
+  outline: none;
+}
+
+.box {
+  // CSS-grid single-cell stack: spacer reserves width, content overlays it.
+  // The spacer-based sizing keeps a multi-char box (e.g. 6-char MS Office group)
+  // at a stable width whether it's empty or full, so the layout doesn't reflow
+  // mid-typing.
+  position: relative;
+  display: inline-grid;
+  grid-template-areas: 'stack';
+  align-items: center;
+  justify-items: center;
+  min-width: var(--bs-otp-input-min-box-size);
+  height: var(--bs-otp-input-min-box-size);
+  padding: var(--bs-otp-input-padding-y) var(--bs-otp-input-padding-x);
+  background: var(--bs-otp-input-box-bg);
+  color: var(--bs-otp-input-box-color);
+  border: 1px solid var(--bs-otp-input-box-border);
+  border-radius: var(--bs-otp-input-radius);
+  font-size: var(--bs-otp-input-font-size);
+  font-weight: 500;
+  line-height: 1;
+  font-family: var(--bs-font-monospace, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+  letter-spacing: 0.125rem;
+  user-select: none;
+  white-space: pre;
+  transition: border-color 120ms ease-out, box-shadow 120ms ease-out;
+}
+
+.box-spacer,
+.box-content {
+  grid-area: stack;
+  line-height: 1;
+  white-space: pre;
+}
+
+.box-spacer {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.box.box-active {
+  border-color: var(--bs-otp-input-box-border-active);
+  box-shadow: var(--bs-otp-input-box-shadow-focus);
+}
+
+.box.box-invalid {
+  border-color: var(--bs-otp-input-box-border-invalid);
+}
+
+.box.box-invalid.box-active {
+  box-shadow: var(--bs-otp-input-box-shadow-invalid);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .box {
+    transition: none;
+  }
+}
