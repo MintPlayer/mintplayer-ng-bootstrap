@@ -1,4 +1,19 @@
 <h1 class="text-center">Context menu</h1>
+
+<p>
+  The <code>*bsContextMenu</code> structural directive attaches a custom right-click
+  menu to any host element. Its template projects a <code>&lt;bs-dropdown-menu&gt;</code>
+  (with <code>&lt;bs-dropdown-item&gt;</code> entries), and the overlay is positioned at
+  the pointer. A <code>&lt;bs-has-overlay&gt;</code> placed elsewhere on the page
+  provides the shared overlay container.
+</p>
+
+<h2>Basic usage</h2>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
+<h2>Demo</h2>
 <div class="space"></div>
 <bs-has-overlay></bs-has-overlay>
 <div class="has-custom-context-menu w-100">

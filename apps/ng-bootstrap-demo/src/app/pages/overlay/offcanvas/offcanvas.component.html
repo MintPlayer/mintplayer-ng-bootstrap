@@ -1,5 +1,21 @@
 <div [bsOffcanvasPush]="accordion">
     <h1 class="text-center">Offcanvas</h1>
+
+    <p>
+      <code>bs-offcanvas</code> is a slide-in panel anchored to one of the four
+      viewport edges via <code>[position]</code> (<code>start</code>,
+      <code>end</code>, <code>top</code>, <code>bottom</code>). The host owns
+      open/close state via <code>[(isVisible)]</code> and projects content through
+      the <code>*bsOffcanvasContent</code> directive. Header / body are tagged with
+      <code>&lt;bs-offcanvas-header&gt;</code> / <code>&lt;bs-offcanvas-body&gt;</code>,
+      and any element with <code>bsOffcanvasClose</code> dismisses the panel.
+    </p>
+
+    <h2>Basic usage</h2>
+
+    <bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+    <bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
     <h2>Demo</h2>
     <bs-grid class="text-center">
         <div bsRow>

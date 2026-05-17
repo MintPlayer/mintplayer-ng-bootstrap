@@ -1,4 +1,20 @@
 <h1 class="text-center">Popover</h1>
+
+<p>
+  The <code>[bsPopover]</code> structural directive on an
+  <code>&lt;ng-template&gt;</code> attaches a rich popover (title + body) to its
+  host element. The directive input takes a placement — <code>'top'</code>,
+  <code>'bottom'</code>, <code>'start'</code>, or <code>'end'</code> — and
+  <code>[updatePosition]="true"</code> keeps the popover anchored as the host moves
+  or scrolls. The header and body are tagged with <code>bsPopoverHeader</code> and
+  <code>bsPopoverBody</code>. The demo below shows all four positions.
+</p>
+
+<h2>Basic usage</h2>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
 <h2>Demo</h2>
 <blockquote>
     Just to demonstrate that nothing is being cut-off,
