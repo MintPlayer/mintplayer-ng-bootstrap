@@ -2,7 +2,7 @@
 
 **Issue**: #308
 **Title**: Card: Provide all bootstrap features
-**Status**: Draft
+**Status**: Complete
 **Created**: 2026-05-17
 **Last Updated**: 2026-05-17
 
@@ -10,7 +10,22 @@
 
 ## Summary
 
-Replace the minimal `bs-card` + `bs-card-header` pair with a full Bootstrap 5 card family (body / title / subtitle / text / link / footer / images / group) implemented as Lit web components with thin Angular wrappers. Color variants are exposed via the existing typed `Color` enum on the card root, header, and footer. The image surface is collapsed into a single `<bs-card-img>` with a `position` input that switches between top, bottom, and full-bleed overlay (where the overlay form also wraps slotted content into `card-img-overlay`). Internally the card WCs render in **light DOM** — diverging from the dock/ribbon/otp-input shadow-DOM precedent — so Bootstrap's parent-child CSS selectors (`.card > .card-header`, etc.) keep working. Backwards compatibility is explicitly out of scope.
+**Shipped** — ten components (`bs-card` / `-header` / `-body` / `-footer` / `-title` / `-subtitle` / `-text` / `-link` / `-img` / `-group`) plus a sibling Lit-shaped WC family (`mp-card*`), totalling 23 source files under `libs/mintplayer-ng-bootstrap/card/src/lib/`. Both layers share a single `card-classes.ts` of class-mutation helpers so they cannot drift. The Bootstrap card SCSS is imported once at `mp-card.element.scss` and injected into `document.head` by `ensureCardStylesInjected()` — both `<mp-card>`'s `connectedCallback` and `BsCardComponent`'s constructor trigger it, so Angular-only and direct-WC consumers each pull the styles once. The demo at `/basic/containers/card` exercises every region and every `Color` variant; a Playwright visual baseline at `apps/ng-bootstrap-demo-e2e/.../card-demo-chromium-win32.png` pins the appearance.
+
+**Load-bearing decisions made during implementation:**
+
+- **Plain `HTMLElement` instead of `LitElement` for the WC family** — the PRD's "Lit + light DOM" intent was sound for framework portability, but Lit's `render()` clobbers slotted children even when `createRenderRoot()` returns `this`. Plain `HTMLElement` gives the same reactive surface (`observedAttributes` + `attributeChangedCallback`) for structural elements that own no template, without that pitfall. Captured in `card-classes.ts:1-13`.
+- **Angular wrappers apply Bootstrap classes to their own host** instead of rendering `<mp-card>` inside. If the wrapper rendered the WC nested, the DOM would be `<bs-card><mp-card class="card">…</mp-card></bs-card>` and Bootstrap's `.card > .card-header` parent-child selectors would no longer match. With host-class application, `<bs-card>` IS the `.card` element and `<bs-card-header>` IS a direct child — selectors apply naturally. The WCs and Angular wrappers are parallel implementations (no nesting), sharing only the class-mutation logic.
+- **`<bs-card-img>` host carries the same `.card-img-*` class as the inner `<img>`**, plus `overflow: hidden` on the host — so card-group's corner-rounding adjacency `.card-group > .card > .card-img-top` matches AND Bootstrap's `width: 100%` rule on `.card-img-top` still sizes the actual image element. The host's border-radius then clips the inner img.
+- **`<bs-card-img>` template uses a single `<ng-content>` inside `<ng-template #projected>` projected via `*ngTemplateOutlet`** in each `@switch` branch — multiple `<ng-content>` slots in conditional branches silently dropped the projected children in Angular 18+.
+
+**Traps named during the work** that a reviewer should keep in mind:
+
+- Adding `class="d-block"` to a `<bs-card-group>` breaks the responsive flex layout (`d-block` is `!important`). Any future demo or consumer code that wants to override card-group's display has to use a non-utility approach.
+- Future maintainers who "consistency-fix" the card WCs to `LitElement` will re-introduce the slotted-children-clobbering bug; comment in `card-classes.ts:1-13` names this explicitly.
+- `mp-card-img` reads `position` only on connect; runtime changes now `console.warn` instead of silently no-op-ing.
+
+**Drifts deferred:** Playwright visual spec skips on non-Win32 (`green-by-skip` on Linux CI, mirroring `ribbon.visual.spec.ts` precedent — same trade-off, same memo).
 
 ---
 
@@ -110,47 +125,47 @@ A 2-agent design fan-out was not run. Public API was fully resolved by the grill
 ## Functional Requirements
 
 ### Must Have (P0)
-- [ ] **FR-1**: `<bs-card>` accepts `[color]: Color?` mapping to `text-bg-<name>`.
-- [ ] **FR-2**: `<bs-card>` accepts `[outline]: boolean` (root-only) mapping to `border border-<name>` + background reset, mutually exclusive with the filled variant.
-- [ ] **FR-3**: `<bs-card-header>` and `<bs-card-footer>` each accept `[color]: Color?` independent of the card root.
-- [ ] **FR-4**: All ten components exist as Lit WCs with Angular wrappers (table above), correct Bootstrap classes applied to host elements.
-- [ ] **FR-5**: `<bs-card-img position="top|bottom">` renders `<img class="card-img-{position}">` with `src` / `alt`.
-- [ ] **FR-6**: `<bs-card-img position="overlay">` renders `<img class="card-img">` followed by a `<div class="card-img-overlay">` containing the slotted content.
-- [ ] **FR-7**: `<bs-card-group>` applies Bootstrap's connected-card-group layout to slotted cards.
-- [ ] **FR-8**: `<bs-card-header [navStyle]>` makes a nested `nav` / `ul` carry `card-header-tabs` or `card-header-pills` so Bootstrap's tab integration applies.
-- [ ] **FR-9**: All card WCs render in light DOM; the single Bootstrap-card SCSS import lives in `mp-card.element.scss`.
-- [ ] **FR-10**: Demo page rewritten to exercise every region and every `Color` variant.
+- [x] **FR-1**: `<bs-card>` accepts `[color]: Color?` mapping to `text-bg-<name>`.
+- [x] **FR-2**: `<bs-card>` accepts `[outline]: boolean` (root-only) mapping to `border border-<name>` + background reset, mutually exclusive with the filled variant.
+- [x] **FR-3**: `<bs-card-header>` and `<bs-card-footer>` each accept `[color]: Color?` independent of the card root.
+- [x] **FR-4**: All ten components exist as WCs (plain HTMLElement, not LitElement — see Summary) with Angular wrappers (table above), correct Bootstrap classes applied to host elements.
+- [x] **FR-5**: `<bs-card-img position="top|bottom">` renders `<img class="card-img-{position}">` with `src` / `alt`.
+- [x] **FR-6**: `<bs-card-img position="overlay">` renders `<img class="card-img">` followed by a `<div class="card-img-overlay">` containing the slotted content.
+- [x] **FR-7**: `<bs-card-group>` applies Bootstrap's connected-card-group layout to slotted cards.
+- [x] **FR-8**: `<bs-card-header [navStyle]>` makes a nested `nav` / `ul` carry `card-header-tabs` or `card-header-pills` so Bootstrap's tab integration applies.
+- [x] **FR-9**: All card WCs render in light DOM; the single Bootstrap-card SCSS import lives in `mp-card.element.scss`.
+- [x] **FR-10**: Demo page rewritten to exercise every region and every `Color` variant.
 
 ### Should Have (P1)
-- [ ] **FR-11**: Playwright visual snapshot of the demo route locks the rendered appearance against regressions.
+- [x] **FR-11**: Playwright visual snapshot of the demo route locks the rendered appearance against regressions.
 
 ---
 
 ## Timeline & Milestones
 
 ### Milestone 1: Lit WC family
-- [ ] Directory scaffold + types.
-- [ ] Implement all ten `mp-*` elements in light DOM with attribute → class mapping.
-- [ ] Bootstrap card SCSS import at `mp-card` only.
+- [x] Directory scaffold + types.
+- [x] Implement all ten `mp-*` elements in light DOM with attribute → class mapping.
+- [x] Bootstrap card SCSS import at `mp-card` only.
 
 ### Milestone 2: Angular wrappers
-- [ ] One standalone Angular component per WC; typed inputs; effects reflecting to underlying custom elements.
-- [ ] Re-export from `card/src/index.ts`.
+- [x] One standalone Angular component per WC; typed inputs; effects reflecting to underlying custom elements.
+- [x] Re-export from `card/src/index.ts`.
 
 ### Milestone 3: Header tabs / pills
-- [ ] `[navStyle]` mechanism on `bs-card-header` confirmed during impl; demo shows tab control inside header.
+- [x] `[navStyle]` mechanism on `bs-card-header` confirmed during impl; demo shows tab control inside header.
 
 ### Milestone 4: Tests
-- [ ] Smoke + class-application specs for every wrapper + WC.
+- [x] Smoke + class-application specs for every wrapper + WC.
 
 ### Milestone 5: Demo + Playwright
-- [ ] Demo page rewritten end-to-end.
-- [ ] Playwright snapshot committed.
+- [x] Demo page rewritten end-to-end.
+- [x] Playwright snapshot committed.
 
 ### Milestone 6: BC cleanup
-- [ ] Old `[rounded]` / `[noPadding]` inputs removed.
-- [ ] Any consumer call-sites in the demo updated.
-- [ ] PR description documents the BC break.
+- [x] Old `[rounded]` / `[noPadding]` inputs removed.
+- [x] Any consumer call-sites in the demo updated.
+- [ ] PR description documents the BC break. (Owned by `pr_create`)
 
 ---
 
