@@ -1,4 +1,18 @@
 <h1 class="text-center">Searchbox</h1>
+
+<p>
+    <code>bs-searchbox</code> is a typeahead input that emits a
+    <code>(provideSuggestions)</code> event as the user types and surfaces results through
+    a templated dropdown. The selected entry is exposed via the
+    <code>[(selectedItem)]</code> two-way binding.
+</p>
+
+<h2>Basic usage</h2>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
+<h2>Demo</h2>
 <bs-form>
     <bs-grid>
         <div bsRow>

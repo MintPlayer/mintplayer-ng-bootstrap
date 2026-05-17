@@ -1,4 +1,17 @@
 <h1 class="text-center">Track By</h1>
+
+<p>
+    With Angular 17+ the <code>&#64;for</code> control-flow block accepts a
+    <code>track</code> expression that supplies a stable identity key. This lets the renderer
+    reuse existing DOM nodes when the underlying array is rebuilt, instead of throwing them
+    away and recreating them.
+</p>
+
+<h2>Basic usage</h2>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
 <bs-alert [type]="colors.info">
     Since angular 17, you can use the control-flow syntax.
     This makes using <code>bsTrackBy: 'id'</code> obsolete.

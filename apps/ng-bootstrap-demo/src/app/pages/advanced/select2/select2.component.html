@@ -1,5 +1,17 @@
 <h1 class="text-center">Select2</h1>
 
+<p>
+    <code>bs-select2</code> is a multi-select / typeahead combobox. Feed it suggestions via
+    the <code>(provideSuggestions)</code> event and bind <code>[suggestions]</code> to the
+    current pool. Use <code>*bsItemTemplate</code> / <code>*bsSuggestionTemplate</code> to
+    customize how chips and dropdown rows render.
+</p>
+
+<h2>Basic usage</h2>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
 <h2>Select2 with default template</h2>
 <bs-select2 (provideSuggestions)="onProvideArtistSuggestions($event)" [suggestions]="artistSuggestions()">
 </bs-select2>
