@@ -2,6 +2,7 @@
   "name": "@mintplayer/encode-utf8",
   "private": false,
   "version": "1.6.0",
+  "license": "Apache-2.0",
   "description": "encode-utf8 TypeScript implementation",
   "repository": {
     "type": "git",

@@ -1,7 +1,8 @@
 {
   "name": "@mintplayer/ng-bootstrap",
   "private": false,
-  "version": "21.39.0",
+  "version": "21.40.0",
+  "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/MintPlayer/mintplayer-ng-bootstrap",
