@@ -1,0 +1,135 @@
+<div class="container py-4">
+  <h1>OTP / segmented-code input</h1>
+  <p class="lead">
+    A single component for one-time passwords, PIN entry, and segmented license keys.
+    Same API covers <code>[1,1,1,1,1,1]</code> classic OTP and non-uniform layouts like MS Office's
+    <code>[6,6,4,4,6,6]</code>.
+  </p>
+
+  <hr>
+
+  <!-- Classic 6-digit OTP, template-driven, auto-submit -->
+  <section class="mb-5">
+    <h2>Classic 6-digit OTP</h2>
+    <p class="text-muted">
+      Default layout. Template-driven binding via <code>[(ngModel)]</code>. The
+      <code>(complete)</code> event fires once when all 6 boxes are filled — wire it to
+      auto-submit. SMS autofill works on iOS / Android (the hidden input has
+      <code>autocomplete="one-time-code"</code>).
+    </p>
+    <div class="d-flex align-items-center gap-3 flex-wrap">
+      <bs-otp-input
+        [(ngModel)]="classicCode"
+        (complete)="onClassicComplete($event)"
+        autofocus
+      ></bs-otp-input>
+      <button type="button" class="btn btn-outline-secondary" (click)="clearClassic()">Clear</button>
+    </div>
+    @if (classicSubmitted()) {
+      <div class="alert alert-success mt-3" role="status">
+        Submitted code: <code>{{ classicSubmitted() }}</code>
+      </div>
+    }
+  </section>
+
+  <hr>
+
+  <!-- 4-digit PIN -->
+  <section class="mb-5">
+    <h2>4-digit PIN (password type)</h2>
+    <p class="text-muted">
+      <code>[groups]="[1,1,1,1]"</code> with <code>type="password"</code>. The most-recently typed
+      character is visible for 700 ms then masks to <code>•</code>. Paste never reveals.
+    </p>
+    <bs-otp-input
+      [groups]="pinGroups"
+      type="password"
+      [(ngModel)]="pinCode"
+    ></bs-otp-input>
+    <p class="text-muted small mt-2">Current value (for demo): <code>{{ pinCode() }}</code></p>
+  </section>
+
+  <hr>
+
+  <!-- MS Office product key -->
+  <section class="mb-5">
+    <h2>MS Office product key (non-uniform groups)</h2>
+    <p class="text-muted">
+      <code>[groups]="[6,6,4,4,6,6]"</code>, <code>type="alphanumeric"</code>, <code>case="upper"</code>.
+      Paste a string with separators (e.g. <code>"AB1234-CD5678-EF12-GH34-IJ5678-KL9012"</code>) — the
+      component strips the dashes and fills correctly.
+    </p>
+    <bs-otp-input
+      [groups]="officeGroups"
+      type="alphanumeric"
+      case="upper"
+      size="lg"
+      [(ngModel)]="officeKey"
+    ></bs-otp-input>
+    <p class="text-muted small mt-2">Current value: <code>{{ officeKey() }}</code></p>
+  </section>
+
+  <hr>
+
+  <!-- Windows product key (uniform 5-5-5-5-5) -->
+  <section class="mb-5">
+    <h2>Windows product key (uniform 5-5-5-5-5)</h2>
+    <p class="text-muted">
+      <code>[groups]="[5,5,5,5,5]"</code>, <code>type="alphanumeric"</code>.
+    </p>
+    <bs-otp-input
+      [groups]="windowsGroups"
+      type="alphanumeric"
+      [(ngModel)]="windowsKey"
+    ></bs-otp-input>
+    <p class="text-muted small mt-2">Current value: <code>{{ windowsKey() }}</code></p>
+  </section>
+
+  <hr>
+
+  <!-- Sizes -->
+  <section class="mb-5">
+    <h2>Size variants</h2>
+    <div class="d-flex flex-column gap-3">
+      <div>
+        <strong class="d-inline-block me-3" style="min-width: 4rem;">sm</strong>
+        <bs-otp-input size="sm"></bs-otp-input>
+      </div>
+      <div>
+        <strong class="d-inline-block me-3" style="min-width: 4rem;">md</strong>
+        <bs-otp-input size="md"></bs-otp-input>
+      </div>
+      <div>
+        <strong class="d-inline-block me-3" style="min-width: 4rem;">lg</strong>
+        <bs-otp-input size="lg"></bs-otp-input>
+      </div>
+    </div>
+  </section>
+
+  <hr>
+
+  <!-- Reactive forms with validation -->
+  <section class="mb-5">
+    <h2>Reactive forms — invalid state</h2>
+    <p class="text-muted">
+      Bound to a <code>FormControl</code> with <code>Validators.required</code> and
+      <code>Validators.minLength(6)</code>. The red border appears once the field is touched
+      and the value is still invalid — mirrors Bootstrap's <code>.is-invalid</code> convention.
+    </p>
+    <bs-otp-input [formControl]="validationForm"></bs-otp-input>
+    <p class="small mt-2">
+      Status: <code>{{ validationForm.status }}</code> ·
+      Touched: <code>{{ validationForm.touched }}</code> ·
+      Value: <code>{{ validationForm.value }}</code>
+    </p>
+    @if (validationForm.touched && validationForm.invalid) {
+      <div class="alert alert-danger mt-2" role="alert">
+        @if (validationForm.errors?.['required']) {
+          A code is required.
+        } @else if (validationForm.errors?.['minlength']) {
+          Code must be 6 digits.
+        }
+      </div>
+    }
+  </section>
+</div>
