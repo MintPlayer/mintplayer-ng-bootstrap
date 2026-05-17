@@ -39,6 +39,13 @@ describe('mp-card-header', () => {
     expect(ul.classList.contains('card-header-pills')).toBe(true);
   });
 
+  it('also decorates a `<div class="nav">` (not only nav/ul tags)', async () => {
+    el = makeHeader({ 'nav-style': 'tabs' }, '<div class="nav"><a class="nav-link" href="#">A</a></div>');
+    await Promise.resolve();
+    const nav = el.querySelector('div.nav') as HTMLElement;
+    expect(nav.classList.contains('card-header-tabs')).toBe(true);
+  });
+
   it('strips card-header-tabs/pills when nav-style is removed', async () => {
     el = makeHeader({ 'nav-style': 'tabs' }, '<ul class="nav"><li>x</li></ul>');
     await Promise.resolve();

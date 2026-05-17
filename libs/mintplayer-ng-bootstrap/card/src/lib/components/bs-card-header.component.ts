@@ -11,6 +11,7 @@ import { Color } from '@mintplayer/ng-bootstrap';
 import {
   applyHeaderNavStyle,
   applyTextBgClass,
+  isNavTargetNode,
 } from '../web-components/card-classes';
 import type { CardHeaderNavStyle } from '../types/card-header-nav-style';
 
@@ -56,15 +57,9 @@ export class BsCardHeaderComponent {
     // trigger a full `querySelector` walk on every keystroke.
     if (typeof MutationObserver !== 'undefined') {
       const observer = new MutationObserver((records) => {
-        const navAffected = records.some((r) => {
-          const touched = [
-            ...Array.from(r.addedNodes),
-            ...Array.from(r.removedNodes),
-          ];
-          return touched.some(
-            (n) => n instanceof Element && (n.tagName === 'NAV' || n.tagName === 'UL'),
-          );
-        });
+        const navAffected = records.some((r) =>
+          [...Array.from(r.addedNodes), ...Array.from(r.removedNodes)].some(isNavTargetNode),
+        );
         if (!navAffected) return;
         applyHeaderNavStyle(this.el.nativeElement, this.navStyle() ?? null);
       });

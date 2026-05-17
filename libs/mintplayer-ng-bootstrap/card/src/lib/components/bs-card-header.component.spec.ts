@@ -66,6 +66,23 @@ describe('BsCardHeaderComponent', () => {
     expect(ul.classList.contains('card-header-tabs')).toBe(false);
   });
 
+  it('also targets `<div class="nav">` (Bootstrap accepts a div-based nav)', () => {
+    @Component({
+      imports: [BsCardHeaderComponent],
+      template: `
+        <bs-card-header [navStyle]="'tabs'">
+          <div class="nav"><a class="nav-link" href="#">A</a></div>
+        </bs-card-header>
+      `,
+    })
+    class Host {}
+    TestBed.configureTestingModule({ imports: [Host] });
+    const fixture = TestBed.createComponent(Host);
+    fixture.detectChanges();
+    const nav = fixture.nativeElement.querySelector('bs-card-header > .nav') as HTMLElement;
+    expect(nav.classList.contains('card-header-tabs')).toBe(true);
+  });
+
   it('does not touch slotted navs when [navStyle] is unset', () => {
     @Component({
       imports: [BsCardHeaderComponent],

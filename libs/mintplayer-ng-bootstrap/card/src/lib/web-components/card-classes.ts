@@ -85,17 +85,32 @@ export function applyTextBgClass(el: HTMLElement, color: string | null): void {
 
 /**
  * Apply `card-header-tabs` or `card-header-pills` to the first slotted
- * `nav` / `ul` inside `host`. The header element observes child changes and
- * re-invokes this on mutation, so a nav inserted lazily (e.g. via an Angular
- * `@if`) still receives the right class.
+ * `nav` / `ul` / `.nav` inside `host`. The header element observes child
+ * changes and re-invokes this on mutation, so a nav inserted lazily (e.g.
+ * via an Angular `@if`) still receives the right class.
+ *
+ * The `.nav` selector covers Bootstrap's `<div class="nav">` and
+ * `<span class="nav">` forms, where the tag is incidental and the `nav`
+ * class carries the semantics.
  */
 export function applyHeaderNavStyle(
   host: HTMLElement,
   style: 'tabs' | 'pills' | null,
 ): void {
-  const target = host.querySelector('nav, ul');
+  const target = host.querySelector('nav, ul, .nav');
   if (!target) return;
   target.classList.remove('card-header-tabs', 'card-header-pills');
   if (style === 'tabs') target.classList.add('card-header-tabs');
   else if (style === 'pills') target.classList.add('card-header-pills');
+}
+
+/**
+ * True if any of `nodes` is an Element that would qualify as a slotted
+ * nav target (`nav` / `ul` tag, or anything carrying the `nav` class).
+ * Used by the header's MutationObserver to skip the full re-walk when the
+ * mutation only touches non-nav content.
+ */
+export function isNavTargetNode(node: Node): boolean {
+  if (!(node instanceof Element)) return false;
+  return node.tagName === 'NAV' || node.tagName === 'UL' || node.classList.contains('nav');
 }
