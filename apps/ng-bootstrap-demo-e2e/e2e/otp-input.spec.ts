@@ -9,6 +9,33 @@ import { test, expect, Page } from '@playwright/test';
 //   - Active-box highlight rendering across multiple simultaneous instances on the same page
 //   - Disabled state respecting click/keyboard input in a real document
 
+// Wait for the OTP page to reach an interactive state. Different browsers need
+// different signals:
+//
+//  - Chromium: `waitForLoadState('networkidle')` works and matches the repo's
+//    other e2e specs (see project_e2e_destructive_bootstrap memory). It also
+//    naturally gates on the FocusOnLoadDirective's setTimeout(10) firing,
+//    which avoids races against autofocused-state assertions.
+//
+//  - Firefox: the OTP page has 6+ WC instances whose SSR hydration keeps
+//    network "not idle" longer than networkidle's 30s default. Wait directly
+//    for the classic WC to be upgraded + FocusOnLoadDirective to have placed
+//    focus inside its hidden input. Same end-state, different signal.
+async function waitReady(page: Page, browserName: string): Promise<void> {
+  if (browserName !== 'firefox') {
+    await page.waitForLoadState('networkidle');
+    return;
+  }
+  await page.waitForLoadState('domcontentloaded');
+  await page.waitForFunction(() => {
+    const classic = document.querySelector('bs-otp-input[data-testid="classic"] mp-otp-input');
+    const shadow = (classic as Element & { shadowRoot: ShadowRoot | null } | null)?.shadowRoot;
+    if (!shadow) return false;
+    const inner = shadow.activeElement as HTMLElement | null;
+    return !!(inner && inner.classList.contains('hidden-input'));
+  }, { timeout: 15000 });
+}
+
 // Helper: read the canonical `value` property off the WC, bypassing the
 // wrapper. Avoids any need to dig into shadow DOM for the displayed slice.
 async function wcValue(page: Page, testid: string): Promise<string> {
@@ -43,11 +70,9 @@ async function isInstanceFocused(page: Page, testid: string): Promise<boolean> {
 }
 
 test.describe('otp-input — focus + autofocus', () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, browserName }) => {
     await page.goto('/enterprise/otp-input');
-    // SSR demo requires networkidle after goto — destructive bootstrap
-    // finishes wiring up the page (see project_e2e_destructive_bootstrap memory).
-    await page.waitForLoadState('networkidle');
+    await waitReady(page, browserName);
   });
 
   test('FocusOnLoadDirective lands focus on the autofocused classic OTP', async ({ page }) => {
@@ -71,9 +96,9 @@ test.describe('otp-input — focus + autofocus', () => {
 });
 
 test.describe('otp-input — valueChange + complete', () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, browserName }) => {
     await page.goto('/enterprise/otp-input');
-    await page.waitForLoadState('networkidle');
+    await waitReady(page, browserName);
   });
 
   test('typing digits streams partial values into the bound ngModel', async ({ page }) => {
@@ -122,9 +147,9 @@ test.describe('otp-input — valueChange + complete', () => {
 });
 
 test.describe('otp-input — paste handling', () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, browserName }) => {
     await page.goto('/enterprise/otp-input');
-    await page.waitForLoadState('networkidle');
+    await waitReady(page, browserName);
   });
 
   test('synthetic paste strips non-digits and fills from index 0 regardless of focus', async ({ page }) => {
@@ -138,14 +163,15 @@ test.describe('otp-input — paste handling', () => {
       const host = document.querySelector('bs-otp-input[data-testid="classic"]');
       const wc = host?.querySelector('mp-otp-input');
       const input = wc?.shadowRoot?.querySelector('.hidden-input') as HTMLInputElement;
-      const data = new DataTransfer();
-      data.setData('text/plain', 'Your code: 123-456 thanks');
-      input.dispatchEvent(new ClipboardEvent('paste', {
-        clipboardData: data,
-        bubbles: true,
-        cancelable: true,
-        composed: true,
-      }));
+      // Firefox ignores `clipboardData` passed to ClipboardEvent's constructor
+      // (the property comes back null). Build a plain Event and attach a
+      // synthetic clipboardData via defineProperty so the WC's paste handler
+      // sees identical shape across Chromium/Firefox.
+      const ev = new Event('paste', { bubbles: true, cancelable: true, composed: true });
+      Object.defineProperty(ev, 'clipboardData', {
+        value: { getData: (type: string) => (type === 'text' ? 'Your code: 123-456 thanks' : '') },
+      });
+      input.dispatchEvent(ev);
     });
 
     expect(await wcValue(page, 'classic')).toBe('123456');
@@ -159,14 +185,11 @@ test.describe('otp-input — paste handling', () => {
       const wc = host?.querySelector('mp-otp-input');
       const input = wc?.shadowRoot?.querySelector('.hidden-input') as HTMLInputElement;
       input.focus();
-      const data = new DataTransfer();
-      data.setData('text/plain', 'abc123-def456-7890-asdf-zxcvbn-qwerty');
-      input.dispatchEvent(new ClipboardEvent('paste', {
-        clipboardData: data,
-        bubbles: true,
-        cancelable: true,
-        composed: true,
-      }));
+      const ev = new Event('paste', { bubbles: true, cancelable: true, composed: true });
+      Object.defineProperty(ev, 'clipboardData', {
+        value: { getData: (type: string) => (type === 'text' ? 'abc123-def456-7890-asdf-zxcvbn-qwerty' : '') },
+      });
+      input.dispatchEvent(ev);
     });
     expect(await wcValue(page, 'office')).toBe('ABC123DEF4567890ASDFZXCVBNQWERTY');
     expect((await wcValue(page, 'office')).length).toBe(32);
@@ -174,9 +197,9 @@ test.describe('otp-input — paste handling', () => {
 });
 
 test.describe('otp-input — SMS autofill simulation', () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, browserName }) => {
     await page.goto('/enterprise/otp-input');
-    await page.waitForLoadState('networkidle');
+    await waitReady(page, browserName);
   });
 
   test('iOS-style single multi-char input event fills the field and fires (complete)', async ({ page }) => {
@@ -233,7 +256,7 @@ test.describe('otp-input — clipboard (real OS clipboard via navigator.clipboar
     test.skip(browserName !== 'chromium', 'clipboard permission API is Chromium-only in headless test runs');
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await page.goto('/enterprise/otp-input');
-    await page.waitForLoadState('networkidle');
+    await waitReady(page, browserName);
   });
 
   test('OS-level Ctrl+V paste lands the same as a synthetic paste event', async ({ page }) => {
@@ -248,9 +271,9 @@ test.describe('otp-input — clipboard (real OS clipboard via navigator.clipboar
 });
 
 test.describe('otp-input — active-box highlight', () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, browserName }) => {
     await page.goto('/enterprise/otp-input');
-    await page.waitForLoadState('networkidle');
+    await waitReady(page, browserName);
   });
 
   test('only the autofocused instance shows a box-active highlight on load', async ({ page }) => {
@@ -285,9 +308,9 @@ test.describe('otp-input — active-box highlight', () => {
 });
 
 test.describe('otp-input — disabled state', () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, browserName }) => {
     await page.goto('/enterprise/otp-input');
-    await page.waitForLoadState('networkidle');
+    await waitReady(page, browserName);
   });
 
   test('setting disabled=true via attribute prevents typing from mutating the value', async ({ page }) => {
@@ -334,9 +357,9 @@ test.describe('otp-input — disabled state', () => {
 });
 
 test.describe('otp-input — reactive forms invalid state', () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, browserName }) => {
     await page.goto('/enterprise/otp-input');
-    await page.waitForLoadState('networkidle');
+    await waitReady(page, browserName);
   });
 
   test('control is invalid+untouched on load — no red border on the WC', async ({ page }) => {
