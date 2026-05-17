@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import {
   BsCardBodyComponent,
@@ -77,4 +77,12 @@ export class CardComponent {
   readonly placeholderOverlay = makePlaceholder(320, 200, 'Background');
   readonly placeholderSquare = makePlaceholder(200, 100, 'Image');
   readonly placeholderHorizontal = makePlaceholder(200, 140, 'Image');
+
+  // Interactive tab / pill state for the demo. Demonstrates that the
+  // [navStyle] mechanism on bs-card-header is purely a class-applier:
+  // active-state toggling and content swapping are owned by the consumer.
+  readonly tabPages = ['Profile', 'Activity', 'Settings'] as const;
+  readonly activeTab = signal<typeof this.tabPages[number]>('Profile');
+  readonly pillPages = ['Inbox', 'Sent', 'Drafts'] as const;
+  readonly activePill = signal<typeof this.pillPages[number]>('Inbox');
 }

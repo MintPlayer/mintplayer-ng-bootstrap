@@ -133,14 +133,17 @@
 <bs-card class="d-block mb-3">
     <bs-card-header [navStyle]="'tabs'">
         <ul class="nav">
-            <li class="nav-item"><a class="nav-link active" href="#">Active</a></li>
-            <li class="nav-item"><a class="nav-link" href="#">Link</a></li>
-            <li class="nav-item"><a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">Disabled</a></li>
+            @for (page of tabPages; track page) {
+                <li class="nav-item">
+                    <a class="nav-link" [class.active]="page === activeTab()" href="#"
+                       (click)="$event.preventDefault(); activeTab.set(page)">{{ page }}</a>
+                </li>
+            }
         </ul>
     </bs-card-header>
     <bs-card-body>
-        <bs-card-title>Tab content</bs-card-title>
-        <bs-card-text>The slotted &lt;ul class="nav"&gt; gets <code>card-header-tabs</code> applied.</bs-card-text>
+        <bs-card-title>{{ activeTab() }}</bs-card-title>
+        <bs-card-text>The slotted &lt;ul class="nav"&gt; gets <code>card-header-tabs</code> applied; click a tab to switch the body content.</bs-card-text>
     </bs-card-body>
 </bs-card>
 
@@ -148,12 +151,16 @@
 <bs-card class="d-block mb-3">
     <bs-card-header [navStyle]="'pills'">
         <ul class="nav">
-            <li class="nav-item"><a class="nav-link active" href="#">Active</a></li>
-            <li class="nav-item"><a class="nav-link" href="#">Link</a></li>
+            @for (page of pillPages; track page) {
+                <li class="nav-item">
+                    <a class="nav-link" [class.active]="page === activePill()" href="#"
+                       (click)="$event.preventDefault(); activePill.set(page)">{{ page }}</a>
+                </li>
+            }
         </ul>
     </bs-card-header>
     <bs-card-body>
-        <bs-card-title>Pill content</bs-card-title>
-        <bs-card-text>The slotted nav gets <code>card-header-pills</code> applied.</bs-card-text>
+        <bs-card-title>{{ activePill() }}</bs-card-title>
+        <bs-card-text>The slotted nav gets <code>card-header-pills</code> applied; click a pill to switch the body content.</bs-card-text>
     </bs-card-body>
 </bs-card>
