@@ -28,11 +28,15 @@ export class MpCardHeaderElement extends HTMLElement {
     // is added or removed — `subtree: true` would force a full querySelector
     // walk on every nested mutation (text-node churn included).
     this.mutationObserver = new MutationObserver((records) => {
-      const navAffected = records.some((r) =>
-        [...r.addedNodes, ...r.removedNodes].some(
+      const navAffected = records.some((r) => {
+        const touched = [
+          ...Array.from(r.addedNodes),
+          ...Array.from(r.removedNodes),
+        ];
+        return touched.some(
           (n) => n instanceof Element && (n.tagName === 'NAV' || n.tagName === 'UL'),
-        ),
-      );
+        );
+      });
       if (navAffected) this.applyNavStyle();
     });
     this.mutationObserver.observe(this, { childList: true, subtree: false });

@@ -56,11 +56,15 @@ export class BsCardHeaderComponent {
     // trigger a full `querySelector` walk on every keystroke.
     if (typeof MutationObserver !== 'undefined') {
       const observer = new MutationObserver((records) => {
-        const navAffected = records.some((r) =>
-          [...r.addedNodes, ...r.removedNodes].some(
+        const navAffected = records.some((r) => {
+          const touched = [
+            ...Array.from(r.addedNodes),
+            ...Array.from(r.removedNodes),
+          ];
+          return touched.some(
             (n) => n instanceof Element && (n.tagName === 'NAV' || n.tagName === 'UL'),
-          ),
-        );
+          );
+        });
         if (!navAffected) return;
         applyHeaderNavStyle(this.el.nativeElement, this.navStyle() ?? null);
       });
