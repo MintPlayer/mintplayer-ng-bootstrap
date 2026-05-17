@@ -13,6 +13,8 @@ import {
   TilePosition,
   TileGestureBlocked,
 } from '@mintplayer/ng-bootstrap/tile-manager';
+import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
+import { dedent } from 'ts-dedent';
 
 const STORAGE_KEY = 'tile-manager-demo-layout-v1';
 
@@ -51,6 +53,7 @@ const DEFAULT_TILES: ReadonlyArray<Pick<DemoTile, 'id' | 'title' | 'body' | 'def
     BsTileManagerComponent,
     BsTileComponent,
     BsTileHeaderComponent,
+    BsCodeSnippetComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -135,4 +138,86 @@ export class TileManagerComponent {
       locked: false,
     }));
   }
+
+  protected readonly snippetBasicHtml = dedent`
+    <bs-tile-manager
+      [columnCount]="4"
+      [gap]="'0.75rem'"
+      [label]="'Dashboard'"
+      (layoutChange)="onLayoutChange($event)">
+      @for (tile of tiles(); track tile.id) {
+        <bs-tile
+          [id]="tile.id"
+          [position]="tile.position"
+          [label]="tile.title"
+          (positionChange)="onTilePositionChange(tile.id, $event)">
+          <bs-tile-header>{{ tile.title }}</bs-tile-header>
+          <div class="tile-body">{{ tile.body }}</div>
+        </bs-tile>
+      }
+    </bs-tile-manager>
+  `;
+
+  protected readonly snippetBasicTs = dedent`
+    import { Component, signal } from '@angular/core';
+    import {
+      BsTileManagerComponent,
+      BsTileComponent,
+      BsTileHeaderComponent,
+      TileLayoutSnapshot,
+      TilePosition,
+    } from '@mintplayer/ng-bootstrap/tile-manager';
+
+    interface DashboardTile {
+      id: string;
+      title: string;
+      body: string;
+      position: TilePosition;
+    }
+
+    @Component({
+      selector: 'my-dashboard',
+      templateUrl: './my-dashboard.component.html',
+      imports: [BsTileManagerComponent, BsTileComponent, BsTileHeaderComponent],
+    })
+    export class MyDashboardComponent {
+      readonly tiles = signal<DashboardTile[]>([
+        { id: 'weather',  title: 'Weather',  body: 'Sunny · 22 °C',
+          position: { colStart: 1, rowStart: 1, colSpan: 2, rowSpan: 1 } },
+        { id: 'inbox',    title: 'Inbox',    body: '3 unread',
+          position: { colStart: 3, rowStart: 1, colSpan: 1, rowSpan: 2 } },
+        { id: 'calendar', title: 'Calendar', body: 'Next: Standup at 10:00',
+          position: { colStart: 1, rowStart: 2, colSpan: 2, rowSpan: 1 } },
+      ]);
+
+      onTilePositionChange(id: string, position: TilePosition): void {
+        this.tiles.update((tiles) =>
+          tiles.map((t) => (t.id === id ? { ...t, position } : t)));
+      }
+
+      onLayoutChange(snapshot: TileLayoutSnapshot): void {
+        localStorage.setItem('dashboard-layout', JSON.stringify(snapshot));
+      }
+    }
+  `;
+
+  protected readonly snippetPersistTs = dedent`
+    // Restore on mount: snapshot is an array of { id, position } entries.
+    // Merge it with your default tiles to handle added / removed widgets.
+    readonly manager = viewChild(BsTileManagerComponent);
+
+    ngOnInit(): void {
+      const raw = localStorage.getItem('dashboard-layout');
+      if (!raw) return;
+      const snapshot: TileLayoutSnapshot = JSON.parse(raw);
+      const byId = new Map(snapshot.map((s) => [s.id, s.position]));
+      this.tiles.update((tiles) =>
+        tiles.map((t) => ({ ...t, position: byId.get(t.id) ?? t.position })));
+    }
+
+    saveNow(): void {
+      const snapshot = this.manager()?.captureLayout();
+      if (snapshot) localStorage.setItem('dashboard-layout', JSON.stringify(snapshot));
+    }
+  `;
 }

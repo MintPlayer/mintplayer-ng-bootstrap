@@ -8,6 +8,8 @@ import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
 import { BsSelectComponent, BsSelectOption } from '@mintplayer/ng-bootstrap/select';
+import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
+import { dedent } from 'ts-dedent';
 import {
   BsSchedulerComponent,
   SchedulerEventSelectedEvent,
@@ -48,6 +50,7 @@ import {
     BsSelectComponent,
     BsSelectOption,
     BsSchedulerComponent,
+    BsCodeSnippetComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -291,4 +294,87 @@ export class SchedulerComponent {
     const timestamp = new Date().toLocaleTimeString();
     this.eventLog.update((log) => [`[${timestamp}] ${message}`, ...log.slice(0, 9)]);
   }
+
+  protected readonly snippetBasicHtml = dedent`
+    <bs-scheduler
+      [view]="view()"
+      [date]="date()"
+      [events]="events()"
+      [options]="options()"
+      (eventCreate)="onEventCreate($event)"
+      (eventUpdate)="onEventUpdate($event)"
+      (eventDelete)="onEventDelete($event)">
+    </bs-scheduler>
+  `;
+
+  protected readonly snippetBasicTs = dedent`
+    import { Component, computed, signal } from '@angular/core';
+    import {
+      BsSchedulerComponent,
+      SchedulerEventCreateEvent,
+      SchedulerEventUpdateEvent,
+      SchedulerEventDeleteEvent,
+    } from '@mintplayer/ng-bootstrap/scheduler';
+    import {
+      ViewType,
+      SchedulerEvent,
+      SchedulerOptions,
+      generateEventId,
+    } from '@mintplayer/ng-bootstrap/web-components/scheduler-core';
+
+    @Component({
+      selector: 'my-calendar',
+      templateUrl: './my-calendar.component.html',
+      imports: [BsSchedulerComponent],
+    })
+    export class MyCalendarComponent {
+      view = signal<ViewType>('week');
+      date = signal<Date>(new Date());
+      events = signal<SchedulerEvent[]>([]);
+
+      options = computed<Partial<SchedulerOptions>>(() => ({
+        slotDuration: 1800,        // 30 minutes
+        timeFormat: '24h',
+        firstDayOfWeek: 1,         // Monday
+        editable: true,
+        selectable: true,
+        nowIndicator: true,
+      }));
+
+      // The WC emits a *request* with the selected range. The consumer
+      // decides whether to materialise an event (or open a dialog first).
+      onEventCreate(e: SchedulerEventCreateEvent): void {
+        this.events.update((events) => [...events, {
+          id: generateEventId(),
+          title: 'New Event',
+          start: e.range.start,
+          end: e.range.end,
+          color: '#3788d8',
+        }]);
+      }
+
+      onEventUpdate(e: SchedulerEventUpdateEvent): void {
+        this.events.update((events) =>
+          events.map((ev) => (ev.id === e.event.id ? e.event : ev)));
+      }
+
+      onEventDelete(e: SchedulerEventDeleteEvent): void {
+        this.events.update((events) => events.filter((ev) => ev.id !== e.event.id));
+      }
+    }
+  `;
+
+  protected readonly snippetControlledSelectionTs = dedent`
+    // Per PRD scheduler-controlled-selection the WC no longer auto-clears
+    // its selection after (eventCreate). The consumer commits, then calls
+    // clearSelection() so subsequent gestures don't re-emit the same range.
+    private scheduler = viewChild<BsSchedulerComponent>(BsSchedulerComponent);
+
+    onEventCreate(e: SchedulerEventCreateEvent): void {
+      this.api.createEvent(e.range).then((created) => {
+        this.events.update((events) => [...events, created]);
+        this.scheduler()?.clearSelection();
+      });
+    }
+  `;
 }
