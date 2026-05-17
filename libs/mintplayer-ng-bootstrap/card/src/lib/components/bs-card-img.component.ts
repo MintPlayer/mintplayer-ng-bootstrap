@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import type { CardImagePosition } from '../types/card-image-position';
 
@@ -13,27 +14,34 @@ import type { CardImagePosition } from '../types/card-image-position';
  * applies; the host's border-radius is paired with `overflow: hidden` (in
  * `mp-card.element.scss`) so the img's straight corners get clipped.
  *
- * Trap: changing `position` at runtime is supported, but the host class
- * also flips — visual flicker is possible during the swap. Consumers
- * typically set `position` statically.
+ * Projection uses `*ngTemplateOutlet` instead of inlining `<ng-content>` in
+ * each `@case`: multiple `<ng-content>` slots in conditional branches silently
+ * drop the projected children. One `<ng-content>` inside a `<ng-template>`
+ * works around the limitation, at the cost of importing `NgTemplateOutlet`.
  */
 @Component({
   selector: 'bs-card-img',
+  imports: [NgTemplateOutlet],
   template: `
+    <ng-template #projected><ng-content></ng-content></ng-template>
+    <ng-template #imgTpl>
+      <img [class]="imgClass()" [attr.src]="srcAttr()" [attr.alt]="altAttr()" />
+    </ng-template>
+
     @switch (position()) {
       @case ('overlay') {
-        <img class="card-img" [attr.src]="srcAttr()" [attr.alt]="altAttr()" />
+        <ng-container *ngTemplateOutlet="imgTpl"></ng-container>
         <div class="card-img-overlay">
-          <ng-content></ng-content>
+          <ng-container *ngTemplateOutlet="projected"></ng-container>
         </div>
       }
       @case ('bottom') {
-        <ng-content></ng-content>
-        <img class="card-img-bottom" [attr.src]="srcAttr()" [attr.alt]="altAttr()" />
+        <ng-container *ngTemplateOutlet="projected"></ng-container>
+        <ng-container *ngTemplateOutlet="imgTpl"></ng-container>
       }
       @default {
-        <img class="card-img-top" [attr.src]="srcAttr()" [attr.alt]="altAttr()" />
-        <ng-content></ng-content>
+        <ng-container *ngTemplateOutlet="imgTpl"></ng-container>
+        <ng-container *ngTemplateOutlet="projected"></ng-container>
       }
     }
   `,
@@ -55,6 +63,10 @@ export class BsCardImgComponent {
         return 'card-img-top';
     }
   });
+
+  // The inner <img> carries the same card-img-* class so Bootstrap's
+  // `width: 100%` rule sizes the actual image element.
+  readonly imgClass = computed(() => this.hostClass());
 
   // `?? null` so an absent input removes the attribute instead of leaving an
   // empty `src=""` / `alt=""` on the DOM. Hoisted out of the template per
