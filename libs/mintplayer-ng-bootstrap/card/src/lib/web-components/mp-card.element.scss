@@ -30,12 +30,20 @@ bs-card-group {
 mp-card-title,
 mp-card-subtitle,
 mp-card-text,
-mp-card-link,
 bs-card-title,
 bs-card-subtitle,
-bs-card-text,
-bs-card-link {
+bs-card-text {
   display: block;
+}
+
+// card-link wrappers stay inline so adjacent links flow horizontally with
+// Bootstrap's `.card-link + .card-link { margin-left: ... }` spacing between
+// them (reproduced via the wrapper-adjacency rule above). If the wrappers were
+// block, the second link would wrap to a new line and the margin would render
+// as an indent.
+mp-card-link,
+bs-card-link {
+  display: inline;
 }
 
 // The image wrappers carry the same `.card-img-*` class as their inner <img>
