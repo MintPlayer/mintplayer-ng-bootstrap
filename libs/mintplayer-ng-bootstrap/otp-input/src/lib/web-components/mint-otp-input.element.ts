@@ -72,7 +72,11 @@ export class MintOtpInputElement extends LitElement {
 
   static readonly MAX_GROUP_SIZE = 10;
   static readonly MAX_TOTAL = 40;
-  static readonly DEFAULT_GROUPS: readonly number[] = Object.freeze([1, 1, 1, 1, 1, 1]);
+  // Read-only array contract via type; callers spread to copy. Don't Object.freeze
+  // — the spread already protects against mutation in the only consumer path
+  // (normaliseGroups' fallback), and freeze would throw on accidental mutation
+  // by external WC consumers rather than silently letting their copy diverge.
+  static readonly DEFAULT_GROUPS: readonly number[] = [1, 1, 1, 1, 1, 1];
   static readonly REVEAL_MS = 700;
   static readonly MASK_CHAR = '•';
 
@@ -82,6 +86,7 @@ export class MintOtpInputElement extends LitElement {
   private _revealedUntil = 0;
   private _revealTimer: ReturnType<typeof setTimeout> | null = null;
   private _inputEl: HTMLInputElement | null = null;
+  private _isFocused = false;
 
   get value(): string {
     return this._value;
@@ -250,8 +255,19 @@ export class MintOtpInputElement extends LitElement {
     if (nowComplete && !wasComplete) this.dispatchComplete();
   };
 
+  private onFocus = (): void => {
+    // Track focus so the active-box highlight only renders while the hidden
+    // input is actually focused. Without this every instance on the page shows
+    // a blue ring on the "next" box at all times, which makes side-by-side
+    // demos look like every box is competing for input.
+    this._isFocused = true;
+    this.requestUpdate();
+  };
+
   private onBlur = (): void => {
-    // Mask immediately on blur regardless of timer state.
+    // Mask immediately on blur regardless of timer state, and drop the
+    // active-box highlight along with focus.
+    this._isFocused = false;
     this.clearReveal();
     this.requestUpdate();
   };
@@ -311,7 +327,10 @@ export class MintOtpInputElement extends LitElement {
     const bounds = this.boundaries();
     const total = bounds[bounds.length - 1];
     const caretPos = this._inputEl?.selectionEnd ?? value.length;
-    const activeBoxIndex = this.activeBoxIndex(caretPos, value.length, bounds);
+    // Active-box highlight only renders while the hidden input has focus;
+    // otherwise every demo / unfocused instance lights up its next-to-fill box
+    // even though it's not accepting input.
+    const activeBoxIndex = this._isFocused ? this.activeBoxIndex(caretPos, value.length, bounds) : null;
     const isClassicOtp = this.type === 'numeric' && groups.every(g => g === 1);
     const autocomplete = isClassicOtp ? 'one-time-code' : 'off';
     const inputMode = this.type === 'numeric' ? 'numeric' : 'text';
@@ -334,6 +353,7 @@ export class MintOtpInputElement extends LitElement {
           aria-invalid=${this.invalid ? 'true' : 'false'}
           @input=${this.onInput}
           @paste=${this.onPaste}
+          @focus=${this.onFocus}
           @blur=${this.onBlur}
           @keyup=${this.onCaretMove}
           @click=${this.onCaretMove}

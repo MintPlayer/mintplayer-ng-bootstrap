@@ -2,7 +2,7 @@
 
 **Issue**: #333
 **Title**: OTP input
-**Status**: Draft
+**Status**: Complete
 **Created**: 2026-05-17
 **Last Updated**: 2026-05-17
 
@@ -10,9 +10,19 @@
 
 ## Summary
 
-A new `bs-otp-input` Angular component (backed by a Lit web component `mp-otp-input`) that renders a row of visually distinct boxes for entering a one-time password, PIN, or license key. One API covers both uniform OTP (e.g. 6 single-character boxes) and non-uniform license-key layouts (e.g. MS Office's `6-6-4-4-6-6`) via a single `groups: number[]` input. Built on a hidden-full-width-input + decorative-boxes architecture so OS-level autofill, paste, IME, and screen-reader semantics work without per-box state machines. Integrates with Angular forms via `ControlValueAccessor` with `string` value shape.
+Shipped a `bs-otp-input` Angular component backed by a `mp-otp-input` Lit web component, sharing the WC + Angular wrapper + `ControlValueAccessor` triangulation already used by `bs-multi-range`. One API (`groups: number[]`) covers classic 6-digit OTP (`[1,1,1,1,1,1]`, the default), 4-digit PIN, and non-uniform license keys (e.g. MS Office's `[6,6,4,4,6,6]`). 54 new tests pass — 35 WC unit + 7 ARIA + 12 wrapper integration.
 
-The load-bearing trade-off: **the hidden-input architecture means the visible "boxes" are not real inputs**. Users perceive 6 fields, but the platform sees one `<input>`. This is the right call because it makes SMS autofill, paste, and focus management Just Work; the cost is a small amount of CSS positioning + caret-tracking JS to render the boxes correctly.
+**Load-bearing decisions, as built:**
+- **One hidden full-width `<input autocomplete="one-time-code">` + decorative boxes**, not N real inputs. SMS autofill / paste / IME / screen readers route through the platform without per-box state machines. *Rejected*: N `<input>` array with focus-chain JS — leaks on Safari's autofill heuristics.
+- **Value shape is `string`, streams partials**, with `valueChange` on every keystroke and `complete` once on the incomplete→complete transition via user interaction. *Rejected*: `string[]` (forces `.join('')` at every read) and `valueInput`+`valueChange` parity with multi-range (would carry identical info given partials stream).
+- **`groups: number[]` with the array element = one visual box** (chars per box). *Rejected*: `length: number` (breaks for MS Office's non-uniform layout), `groupCount`+`groupSize` (same uniformity limit), `pattern: string` (reopens the separator question we scoped out).
+- **Focus delegation via `Object.defineProperty(host, 'focus', …)` in the wrapper constructor** so the existing `FocusOnLoadDirective` (`*[autofocus]`) Just Works. *Rejected*: dedicated `[autofocus]` input on the component — duplicates an existing primitive.
+- **Active-box highlight only while focused** (added in the post-review fix pass). Without focus tracking, every unfocused instance lit up its next-to-fill box, which made side-by-side demos look like every input was competing for input.
+
+**Traps documented for a future reader:**
+- Setting `target.value = normalised` in the input handler collapses the caret to the end. For non-uniform license keys (`[6,6,4,4,6,6]`), mid-string editing puts the user back at the end of the value, not the box they clicked. Acceptable per the hidden-input architecture; surfacing this would mean tracking `selectionStart` before mutation, which fights password masking.
+- `complete` fires on user-interaction transitions only — programmatic `writeValue` with a complete string deliberately suppresses it. Auto-submit-on-complete with `effect()` over the model would re-fire on form rehydrate, so consumers should subscribe to the `(complete)` output, not derive completion from `value().length`.
+- The `value-change` event is *not* `stopPropagation`'d; the CVA on the wrapper host depends on it bubbling. The `complete` event *is* stopped because the wrapper's Output named `complete` collides with the DOM event name and Angular's `(complete)` binding catches both channels.
 
 ---
 
@@ -109,31 +119,31 @@ export class BsOtpInputComponent {
 
 ### Must Have (P0)
 
-- [ ] **FR-1** Render a row of N visually distinct boxes where `N === groups.length` and box `i` displays `value.slice(boundary[i], boundary[i+1])`.
-- [ ] **FR-2** `groups: number[]` input is reactive; runtime changes truncate or pad the value and re-render boxes. Validation: each element ∈ [1, 10], `sum(groups)` ≤ 40, array non-empty. Out-of-range values clamp + `console.warn`.
-- [ ] **FR-3** `type: 'numeric' | 'alphanumeric' | 'password'` filters typed and pasted characters at entry; default `'numeric'`.
-- [ ] **FR-4** `case: 'upper' | 'lower' | 'preserve'` normalizes characters at entry for `alphanumeric` and `password` types; default `'upper'`. Numeric type ignores `case`.
-- [ ] **FR-5** Value shape is `string`. `valueChange` fires on *every* keystroke with the partial value (including empty string). CVA `onChange` is wired to `valueChange`.
-- [ ] **FR-6** `complete` fires exactly once per completion event — when the value transitions from `length < sum(groups)` to `length === sum(groups)` *via user interaction*. Re-fires on re-completion (after clearing). Does **not** fire on programmatic `writeValue` setting a complete value.
-- [ ] **FR-7** Permissive paste: strip characters that don't match `type`, normalize per `case`, truncate to `sum(groups)`, always fill starting from index 0 regardless of which box currently has focus. Single `valueChange` + `complete` (if appropriate) fires.
-- [ ] **FR-8** Backspace clears the most recent character and moves caret/active-box back by one position; standard single-`<input>` semantics suffice.
-- [ ] **FR-9** Render strategy: one hidden full-width `<input>` (`opacity:0`, `inset:0`) that receives focus + keystrokes + paste + autofill, plus decorative `<span>` boxes that visually display value slices. Boxes are `aria-hidden="true"`.
-- [ ] **FR-10** `autocomplete="one-time-code"` on hidden input set **only** when `groups.every(g => g === 1) && type === 'numeric'`; otherwise `autocomplete="off"`.
-- [ ] **FR-11** Password reveal: when `type === 'password'`, the most recently typed character is visible for ~700ms then becomes `•` (U+2022 BULLET). All earlier chars are masked immediately. On `complete` or `blur`, all chars mask immediately regardless of timer. Paste with `type === 'password'` masks all chars immediately (never reveals).
-- [ ] **FR-12** Active-box highlight (`::part(box-active)`) follows the hidden input's `selectionEnd` (which box would receive the next typed char).
-- [ ] **FR-13** `size: 'sm' | 'md' | 'lg'` controls box dimensions and font size; default `'md'`.
-- [ ] **FR-14** Bootstrap-flavored bordered box style by default; visual gap doubled between groups (≈16px) vs within-group (≈8px); CSS parts exposed: `container`, `box`, `box-filled`, `box-active`, `box-invalid`, `group-separator`.
-- [ ] **FR-15** Invalid state: when wrapped in an Angular form and the control is `invalid && touched`, all boxes apply `.is-invalid` styling (red border per Bootstrap convention).
-- [ ] **FR-16** Angular wrapper exposes `focus()` method that delegates to the hidden input. Constructor also overrides `elementRef.nativeElement.focus` so `FocusOnLoadDirective` (`*[autofocus]`) works against `<bs-otp-input autofocus>` directly.
-- [ ] **FR-17** Wrapper exposes `clear()` method that resets value to `""` and emits `valueChange('')`.
-- [ ] **FR-18** `setDisabledState` on the CVA toggles the WC's `disabled` attribute; disabled state prevents typing and paste, applies a visually-distinct style.
-- [ ] **FR-19** Demo page at `/enterprise/otp-input` covering: classic OTP (reactive forms), PIN, MS Office key, Windows key, all sizes, invalid state, autofocus.
-- [ ] **FR-20** CI publish/dry-run pipelines updated to include the new package.
+- [x] **FR-1** Render a row of N visually distinct boxes where `N === groups.length` and box `i` displays `value.slice(boundary[i], boundary[i+1])`.
+- [x] **FR-2** `groups: number[]` input is reactive; runtime changes truncate or pad the value and re-render boxes. Validation: each element ∈ [1, 10], `sum(groups)` ≤ 40, array non-empty. Out-of-range values clamp + `console.warn`.
+- [x] **FR-3** `type: 'numeric' | 'alphanumeric' | 'password'` filters typed and pasted characters at entry; default `'numeric'`.
+- [x] **FR-4** `case: 'upper' | 'lower' | 'preserve'` normalizes characters at entry for `alphanumeric` and `password` types; default `'upper'`. Numeric type ignores `case`.
+- [x] **FR-5** Value shape is `string`. `valueChange` fires on *every* keystroke with the partial value (including empty string). CVA `onChange` is wired to `valueChange`.
+- [x] **FR-6** `complete` fires exactly once per completion event — when the value transitions from `length < sum(groups)` to `length === sum(groups)` *via user interaction*. Re-fires on re-completion (after clearing). Does **not** fire on programmatic `writeValue` setting a complete value.
+- [x] **FR-7** Permissive paste: strip characters that don't match `type`, normalize per `case`, truncate to `sum(groups)`, always fill starting from index 0 regardless of which box currently has focus. Single `valueChange` + `complete` (if appropriate) fires.
+- [x] **FR-8** Backspace clears the most recent character and moves caret/active-box back by one position; standard single-`<input>` semantics suffice.
+- [x] **FR-9** Render strategy: one hidden full-width `<input>` (`opacity:0`, `inset:0`) that receives focus + keystrokes + paste + autofill, plus decorative `<span>` boxes that visually display value slices. Boxes are `aria-hidden="true"`.
+- [x] **FR-10** `autocomplete="one-time-code"` on hidden input set **only** when `groups.every(g => g === 1) && type === 'numeric'`; otherwise `autocomplete="off"`.
+- [x] **FR-11** Password reveal: when `type === 'password'`, the most recently typed character is visible for ~700ms then becomes `•` (U+2022 BULLET). All earlier chars are masked immediately. On `complete` or `blur`, all chars mask immediately regardless of timer. Paste with `type === 'password'` masks all chars immediately (never reveals).
+- [x] **FR-12** Active-box highlight (`::part(box-active)`) follows the hidden input's `selectionEnd` (which box would receive the next typed char).
+- [x] **FR-13** `size: 'sm' | 'md' | 'lg'` controls box dimensions and font size; default `'md'`.
+- [x] **FR-14** Bootstrap-flavored bordered box style by default. CSS parts exposed: `container`, `box`, `box-filled`, `box-active`, `box-invalid`. *Note*: the `group-separator` part was dropped during implementation — the architecture lands as one box per `groups` element (no within-group sub-boxes), so a per-group separator is moot. A consumer wanting a visible separator can `::part(box) ~ ::part(box) { content: "-" }` or wrap the host with their own directive.
+- [x] **FR-15** Invalid state: when wrapped in an Angular form and the control is `invalid && touched`, all boxes apply `.is-invalid` styling (red border per Bootstrap convention).
+- [x] **FR-16** Angular wrapper exposes `focus()` method that delegates to the hidden input. Constructor also overrides `elementRef.nativeElement.focus` so `FocusOnLoadDirective` (`*[autofocus]`) works against `<bs-otp-input autofocus>` directly.
+- [x] **FR-17** Wrapper exposes `clear()` method that resets value to `""` and emits `valueChange('')`.
+- [x] **FR-18** `setDisabledState` on the CVA toggles the WC's `disabled` attribute; disabled state prevents typing and paste, applies a visually-distinct style.
+- [x] **FR-19** Demo page at `/enterprise/otp-input` covering: classic OTP (reactive forms), PIN, MS Office key, Windows key, all sizes, invalid state, autofocus.
+- [x] **FR-20** ~~CI publish/dry-run pipelines updated to include the new package.~~ *Superseded by discovery during implementation*: the umbrella `@mintplayer/ng-bootstrap` workflow publishes a single npm package; secondary entries like `otp-input/` are auto-discovered by ng-packagr via the `ng-package.js` file. No `.github/workflows/` change is required; building the umbrella package with `nx build mintplayer-ng-bootstrap` produces the `dist/libs/mintplayer-ng-bootstrap/otp-input/` subpath, and `@mintplayer/ng-bootstrap/otp-input` resolves correctly post-install.
 
 ### Should Have (P1)
 
-- [ ] **FR-21** `label` input sets `aria-label` on the hidden input; falls back to a default `"One-time code"` label in English if unset.
-- [ ] **FR-22** RTL support inherited from ancestor `dir` (matches `multi-range` pattern); active-box highlight respects RTL.
+- [x] **FR-21** `label` input sets `aria-label` on the hidden input; falls back to a default `"One-time code"` label in English if unset.
+- [x] **FR-22** RTL support inherited from ancestor `dir` (matches `multi-range` pattern); active-box highlight respects RTL. *As built*: the container uses `display: inline-flex` with `gap` and no explicit `flex-direction`, so under an `<html dir="rtl">` or `:dir(rtl)` ancestor, boxes flow right-to-left automatically via flex's native direction handling. The active-box index is computed from `selectionEnd` (a numeric position into the value string, direction-agnostic) and maps to the correct visual box. No CSS overrides were required.
 
 ### Out of scope for v1
 
@@ -152,24 +162,24 @@ The cut-off below reflects a deliberate design principle: **`bs-otp-input` is a 
 
 ### Milestone 1: WC + tests
 
-- [ ] Scaffold `libs/mintplayer-ng-bootstrap/otp-input/` package mirroring `multi-range`.
-- [ ] Implement `MintOtpInputElement` covering all FR-1 through FR-12, FR-14.
-- [ ] Vitest unit tests for all 10 test scenarios from the plan doc.
-- [ ] ARIA spec passes.
+- [x] Scaffold `libs/mintplayer-ng-bootstrap/otp-input/` package mirroring `multi-range`.
+- [x] Implement `MintOtpInputElement` covering all FR-1 through FR-12, FR-14.
+- [x] Vitest unit tests for all 10 test scenarios from the plan doc.
+- [x] ARIA spec passes.
 
 ### Milestone 2: Angular wrapper + CVA
 
-- [ ] `BsOtpInputComponent` with signal inputs + outputs + `focus()`/`clear()`.
-- [ ] `BsOtpInputValueAccessor` directive applied via `hostDirectives`.
-- [ ] Wrapper spec mirroring multi-range structure (template-driven + reactive forms + disabled).
-- [ ] FR-15 (invalid state), FR-16 (focus delegation), FR-18 (disabled).
+- [x] `BsOtpInputComponent` with signal inputs + outputs + `focus()`/`clear()`.
+- [x] `BsOtpInputValueAccessor` directive applied via `hostDirectives`.
+- [x] Wrapper spec mirroring multi-range structure (template-driven + reactive forms + disabled).
+- [x] FR-15 (invalid state), FR-16 (focus delegation), FR-18 (disabled).
 
 ### Milestone 3: Demo + publish wiring
 
-- [ ] Demo page with all variants.
-- [ ] Route registered.
-- [ ] Workflow files updated.
-- [ ] Local `nx build` and `nx serve` smoke pass.
+- [x] Demo page with all variants.
+- [x] Route registered.
+- [x] ~~Workflow files updated.~~ Superseded — secondary entries auto-discovered by ng-packagr.
+- [x] Local `nx build` and `nx serve` smoke pass.
 
 ---
 

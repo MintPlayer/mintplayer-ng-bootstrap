@@ -1,5 +1,4 @@
 import {
-  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   CUSTOM_ELEMENTS_SCHEMA,
@@ -45,7 +44,7 @@ import { OtpInputSize } from '../types/otp-input-size';
   changeDetection: ChangeDetectionStrategy.OnPush,
   hostDirectives: [BsOtpInputValueAccessor],
 })
-export class BsOtpInputComponent implements AfterViewInit {
+export class BsOtpInputComponent {
   readonly groups = input<number[]>([1, 1, 1, 1, 1, 1]);
   readonly type = input<OtpInputType>('numeric');
   readonly case = input<OtpInputCase>('upper');
@@ -119,11 +118,6 @@ export class BsOtpInputComponent implements AfterViewInit {
       if (!ref) return;
       ref.nativeElement.invalid = this.invalid();
     });
-  }
-
-  ngAfterViewInit(): void {
-    // No-op: the focus delegation is set up in the constructor; effects handle
-    // the rest. This hook exists to keep the lifecycle explicit for readers.
   }
 
   protected onValueChange(event: Event): void {

@@ -55,6 +55,10 @@ export class BsOtpInputValueAccessor implements ControlValueAccessor, OnInit {
   }
 
   private syncInvalid(): void {
+    // Guard async-scheduled invocations: queueMicrotask in ngOnInit + the
+    // statusChanges subscription are both possible after destroy. Reading
+    // `host.elementRef()` (a required viewChild) on a destroyed view throws.
+    if (this.destroyRef.destroyed) return;
     const ref = this.host.elementRef();
     if (!ref || !this.ngControl) return;
     const invalid = (this.ngControl.invalid ?? false) && (this.ngControl.touched ?? false);

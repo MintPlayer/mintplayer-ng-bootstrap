@@ -455,6 +455,39 @@ describe('mp-otp-input — clear()', () => {
   });
 });
 
+describe('mp-otp-input — active-box highlight only while focused', () => {
+  let el: MintOtpInputElement;
+
+  beforeEach(async () => { el = makeElement(); await ready(el); });
+  afterEach(() => { el.remove(); });
+
+  function hasActiveBox(): boolean {
+    return Array.from(el.shadowRoot?.querySelectorAll('.box') ?? [])
+      .some((b) => b.classList.contains('box-active'));
+  }
+
+  it('does not render any box as active when the component is not focused', () => {
+    expect(hasActiveBox()).toBe(false);
+  });
+
+  it('highlights the next box once the hidden input gains focus', async () => {
+    const input = hiddenInput(el);
+    input.dispatchEvent(new Event('focus', { bubbles: true }));
+    await ready(el);
+    expect(hasActiveBox()).toBe(true);
+  });
+
+  it('removes the highlight on blur', async () => {
+    const input = hiddenInput(el);
+    input.dispatchEvent(new Event('focus', { bubbles: true }));
+    await ready(el);
+    expect(hasActiveBox()).toBe(true);
+    input.dispatchEvent(new Event('blur', { bubbles: true }));
+    await ready(el);
+    expect(hasActiveBox()).toBe(false);
+  });
+});
+
 describe('mp-otp-input — autocomplete heuristic', () => {
   it('uses one-time-code only for numeric + all-single-char groups', async () => {
     const el = makeElement();
