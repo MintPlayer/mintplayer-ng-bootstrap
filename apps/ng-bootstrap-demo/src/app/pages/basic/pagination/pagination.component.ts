@@ -1,12 +1,15 @@
 import { ChangeDetectionStrategy, Component, model, signal } from '@angular/core';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsPaginationComponent } from '@mintplayer/ng-bootstrap/pagination';
+import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
+import { dedent } from 'ts-dedent';
 
 @Component({
   selector: 'demo-pagination',
   templateUrl: './pagination.component.html',
   styleUrls: ['./pagination.component.scss'],
   imports: [
+    BsCodeSnippetComponent,
     BsPaginationComponent,
     BsGridComponent,
     BsGridRowDirective,
@@ -15,6 +18,31 @@ import { BsPaginationComponent } from '@mintplayer/ng-bootstrap/pagination';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PaginationComponent {
+
+  protected readonly snippetBasicHtml = dedent`
+    <bs-pagination
+      [pageNumbers]="pages()"
+      [(selectedPageNumber)]="selectedPage">
+    </bs-pagination>
+  `;
+
+  protected readonly snippetBasicTs = dedent`
+    import { Component, model, signal } from '@angular/core';
+    import { BsPaginationComponent } from '@mintplayer/ng-bootstrap/pagination';
+
+    @Component({
+      selector: 'my-pagination-demo',
+      templateUrl: './my-pagination-demo.component.html',
+      imports: [BsPaginationComponent],
+    })
+    export class MyPaginationDemoComponent {
+      protected readonly pages = signal<number[]>(
+        [...Array(20).keys()].map((p) => p + 1),
+      );
+      protected readonly selectedPage = model(1);
+    }
+  `;
+
 
   /** Just 5 pages — everything fits, no ellipsis ever appears. */
   smallPages = signal<number[]>([...Array(5).keys()].map((p) => p + 1));

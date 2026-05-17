@@ -1,4 +1,16 @@
 <h1 class="text-center">Spinner</h1>
+
+<p>
+    Lightweight loading indicator. Choose <code>[type]="'border'"</code> for
+    the classic ring or <code>[type]="'grow'"</code> for a pulsing dot, and
+    apply any Bootstrap <code>Color</code> via <code>[color]</code>.
+</p>
+
+<h2>Basic usage</h2>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
 <h2>Border</h2>
 @for (color of colors; track color.key) {
     <bs-spinner [type]="'border'" [color]="color.value" class="m-1"></bs-spinner>

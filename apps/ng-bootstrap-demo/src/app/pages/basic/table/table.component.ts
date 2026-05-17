@@ -4,15 +4,63 @@ import { FormsModule } from '@angular/forms';
 import { BsGridComponent, BsGridRowDirective, BsGridColDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsTableComponent } from '@mintplayer/ng-bootstrap/table';
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
+import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
+import { dedent } from 'ts-dedent';
 
 @Component({
   selector: 'demo-table',
   templateUrl: './table.component.html',
   styleUrls: ['./table.component.scss'],
-  imports: [DatePipe, FormsModule, BsGridComponent, BsGridRowDirective, BsGridColDirective, BsTableComponent, BsCheckboxComponent],
+  imports: [BsCodeSnippetComponent, DatePipe, FormsModule, BsGridComponent, BsGridRowDirective, BsGridColDirective, BsTableComponent, BsCheckboxComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TableComponent {
+
+  protected readonly snippetBasicHtml = dedent`
+    <bs-table [isResponsive]="true">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>First name</th>
+          <th>Last name</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (person of people; track person.id) {
+          <tr>
+            <th scope="row">{{ person.id }}</th>
+            <td>{{ person.firstName }}</td>
+            <td>{{ person.lastName }}</td>
+          </tr>
+        }
+      </tbody>
+    </bs-table>
+  `;
+
+  protected readonly snippetBasicTs = dedent`
+    import { Component } from '@angular/core';
+    import { BsTableComponent } from '@mintplayer/ng-bootstrap/table';
+
+    interface Person {
+      id: number;
+      firstName: string;
+      lastName: string;
+    }
+
+    @Component({
+      selector: 'my-table-demo',
+      templateUrl: './my-table-demo.component.html',
+      imports: [BsTableComponent],
+    })
+    export class MyTableDemoComponent {
+      protected readonly people: Person[] = [
+        { id: 1, firstName: 'Tim', lastName: 'Bergling' },
+        { id: 2, firstName: 'Ivan', lastName: 'Petunin' },
+        { id: 3, firstName: 'Michael', lastName: 'Jackson' },
+      ];
+    }
+  `;
+
 
   people: Person[] = [{
     id: 1,
