@@ -1,0 +1,86 @@
+// Bootstrap configuration prerequisites for the card slice.
+@import "node_modules/bootstrap/scss/functions";
+@import "node_modules/bootstrap/scss/variables";
+@import "node_modules/bootstrap/scss/variables-dark";
+@import "node_modules/bootstrap/scss/mixins";
+
+// Bootstrap card layer.
+@import "node_modules/bootstrap/scss/card";
+
+// Custom elements behave as inline by default. Promote the structural pieces
+// to block so Bootstrap's flow rules (padding, borders, list-group / footer
+// adjacency) apply as they would on real <div> wrappers. Both selectors
+// (mp-* for direct WC consumers, bs-* for Angular wrapper consumers) need
+// the same default — the wrappers are sibling implementations, not nested.
+mp-card,
+mp-card-header,
+mp-card-body,
+mp-card-footer,
+mp-card-img,
+mp-card-group,
+bs-card,
+bs-card-header,
+bs-card-body,
+bs-card-footer,
+bs-card-img,
+bs-card-group {
+  display: block;
+}
+
+mp-card-title,
+mp-card-subtitle,
+mp-card-text,
+bs-card-title,
+bs-card-subtitle,
+bs-card-text {
+  display: block;
+}
+
+// card-link wrappers stay inline so adjacent links flow horizontally with
+// Bootstrap's `.card-link + .card-link { margin-left: ... }` spacing between
+// them (reproduced via the wrapper-adjacency rule above). If the wrappers were
+// block, the second link would wrap to a new line and the margin would render
+// as an indent.
+mp-card-link,
+bs-card-link {
+  display: inline;
+}
+
+// The image wrappers carry the same `.card-img-*` class as their inner <img>
+// (so Bootstrap's `.card > .card-img-top` adjacency selectors match the host
+// rather than a grandchild). Clip the inner img to the host's rounded corners.
+mp-card-img.card-img-top,
+mp-card-img.card-img-bottom,
+mp-card-img.card-img,
+bs-card-img.card-img-top,
+bs-card-img.card-img-bottom,
+bs-card-img.card-img {
+  overflow: hidden;
+}
+
+// Bootstrap's `.card-link + .card-link { margin-left: ... }` adjacency does
+// not match across <mp-card-link> / <bs-card-link> wrapper boundaries (each
+// link's `.card-link` is a child <a>, not a sibling). Compensate by
+// reproducing the rule on the wrapper elements.
+mp-card-link + mp-card-link > .card-link,
+bs-card-link + bs-card-link > .card-link {
+  margin-left: var(--bs-card-spacer-x);
+}
+
+// Bootstrap defines `text-bg-*` only for the named scale (primary…dark). The
+// Color enum we expose also includes `body`, `white`, and `transparent` — fill
+// in the matching trio locally so every enum member maps to a valid class.
+.text-bg-body {
+  color: var(--bs-body-color);
+  background-color: var(--bs-body-bg);
+}
+
+.text-bg-white {
+  color: #000;
+  background-color: #fff;
+}
+
+.text-bg-transparent {
+  color: inherit;
+  background-color: transparent;
+}

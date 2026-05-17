@@ -5,7 +5,7 @@ import { MockComponent, MockDirective } from 'ng-mocks';
 import { PlaceholderComponent } from './placeholder.component';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
-import { BsCardComponent, BsCardHeaderComponent } from '@mintplayer/ng-bootstrap/card';
+import { BsCardBodyComponent, BsCardComponent, BsCardHeaderComponent } from '@mintplayer/ng-bootstrap/card';
 import { BsPlaceholderComponent, BsPlaceholderFieldDirective } from '@mintplayer/ng-bootstrap/placeholder';
 
 describe('PlaceholderComponent', () => {
@@ -16,7 +16,7 @@ describe('PlaceholderComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         FormsModule,
-        MockComponent(BsCardComponent), MockComponent(BsCardHeaderComponent),
+        MockComponent(BsCardComponent), MockComponent(BsCardHeaderComponent), MockComponent(BsCardBodyComponent),
         MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
         MockComponent(BsCheckboxComponent),
         MockComponent(BsPlaceholderComponent), MockDirective(BsPlaceholderFieldDirective),

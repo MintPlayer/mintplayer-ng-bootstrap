@@ -3,6 +3,7 @@
   "private": false,
   "type": "module",
   "version": "2.4.0",
+  "license": "Apache-2.0",
   "description": "Pagination typescript library",
   "repository": {
     "type": "git",

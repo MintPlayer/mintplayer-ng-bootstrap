@@ -71,7 +71,7 @@
     <div [md]="3">
       <bs-card class="d-block mb-3">
         <bs-card-header>Event Log</bs-card-header>
-        <div class="p-3">
+        <bs-card-body>
           <div class="event-log">
             @if (eventLog().length === 0) {
               <p class="text-muted">No events yet. Try clicking on the scheduler or loading sample data.</p>
@@ -80,11 +80,11 @@
               <div class="log-entry">{{ entry }}</div>
             }
           </div>
-        </div>
+        </bs-card-body>
       </bs-card>
       <bs-card class="d-block">
         <bs-card-header>State ({{ events().length }} events)</bs-card-header>
-        <div class="p-3">
+        <bs-card-body>
           <div class="state-debug" style="font-size: 11px; max-height: 300px; overflow: auto;">
             <div><strong>View:</strong> {{ view() }}</div>
             <div><strong>Date:</strong> {{ date() | date:'medium' }}</div>
@@ -93,7 +93,7 @@
             <div><strong>Events:</strong></div>
             <pre style="font-size: 10px; margin: 0;">{{ events() | json }}</pre>
           </div>
-        </div>
+        </bs-card-body>
       </bs-card>
     </div>
   </div>

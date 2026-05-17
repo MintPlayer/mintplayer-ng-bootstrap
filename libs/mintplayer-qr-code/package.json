@@ -3,6 +3,7 @@
   "private": false,
   "type": "module",
   "version": "1.6.0",
+  "license": "Apache-2.0",
   "description": "Typescript implementation of node-qrcode",
   "repository": {
     "type": "git",

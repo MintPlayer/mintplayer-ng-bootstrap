@@ -2,24 +2,165 @@
 
 <h2>Simple card</h2>
 <bs-card class="d-block mb-3">
-    <bs-card-header>
-        Card title
-    </bs-card-header>
-    <div class="p-3">
-        Simple content
-    </div>    
+    <bs-card-body>
+        <bs-card-title>Simple card</bs-card-title>
+        <bs-card-text>Basic card with only body content.</bs-card-text>
+    </bs-card-body>
 </bs-card>
 
-<h2>Card with list group</h2>
-<bs-card>
-    <bs-card-header>
-        List of elements
-    </bs-card-header>
+<h2>Header, body, footer</h2>
+<bs-card class="d-block mb-3">
+    <bs-card-header>Header</bs-card-header>
+    <bs-card-body>
+        <bs-card-title>Body title</bs-card-title>
+        <bs-card-subtitle>A subtitle</bs-card-subtitle>
+        <bs-card-text>Body paragraph below the heading pair.</bs-card-text>
+        <bs-card-link href="#">Link 1</bs-card-link>
+        <bs-card-link href="#">Link 2</bs-card-link>
+    </bs-card-body>
+    <bs-card-footer>Footer</bs-card-footer>
+</bs-card>
+
+<h2>With list-group</h2>
+<bs-card class="d-block mb-3">
+    <bs-card-header>List of elements</bs-card-header>
     <bs-list-group>
         <bs-list-group-item>Cras justo odio</bs-list-group-item>
         <bs-list-group-item>Dapibus ac facilisis in</bs-list-group-item>
         <bs-list-group-item>Morbi leo risus</bs-list-group-item>
-        <bs-list-group-item>Porta ac consectetur ac</bs-list-group-item>
-        <bs-list-group-item>Vestibulum at eros</bs-list-group-item>
     </bs-list-group>
+    <bs-card-footer>Footer below the list</bs-card-footer>
+</bs-card>
+
+<h2>Image at the top</h2>
+<bs-card class="d-block mb-3" style="max-width: 320px;">
+    <bs-card-img position="top" [src]="placeholderTopBottom" alt="placeholder"></bs-card-img>
+    <bs-card-body>
+        <bs-card-title>Top image</bs-card-title>
+        <bs-card-text>Text below the image, inside the body.</bs-card-text>
+    </bs-card-body>
+</bs-card>
+
+<h2>Image at the bottom</h2>
+<bs-card class="d-block mb-3" style="max-width: 320px;">
+    <bs-card-body>
+        <bs-card-title>Bottom image</bs-card-title>
+        <bs-card-text>Text above the image, inside the body.</bs-card-text>
+    </bs-card-body>
+    <bs-card-img position="bottom" [src]="placeholderTopBottom" alt="placeholder"></bs-card-img>
+</bs-card>
+
+<h2>Image overlay</h2>
+<bs-card class="d-block mb-3" style="max-width: 320px;">
+    <bs-card-img position="overlay" [src]="placeholderOverlay" alt="background">
+        <bs-card-title>Overlaid title</bs-card-title>
+        <bs-card-text>Overlaid description.</bs-card-text>
+    </bs-card-img>
+</bs-card>
+
+<h2>Colour variants &mdash; filled</h2>
+@for (color of colorKeys; track color) {
+    <bs-card class="d-block mb-2" [color]="colors[color]">
+        <bs-card-body>
+            <bs-card-title>{{ color }}</bs-card-title>
+            <bs-card-text>text-bg-{{ color }} applied to the host.</bs-card-text>
+        </bs-card-body>
+    </bs-card>
+}
+
+<h2>Colour variants &mdash; outline</h2>
+@for (color of colorKeys; track color) {
+    <bs-card class="d-block mb-2" [color]="colors[color]" [outline]="true">
+        <bs-card-body>
+            <bs-card-title>{{ color }}</bs-card-title>
+            <bs-card-text>border border-{{ color }} bg-transparent applied to the host.</bs-card-text>
+        </bs-card-body>
+    </bs-card>
+}
+
+<h2>Header / footer colours independent of the root</h2>
+<bs-card class="d-block mb-3">
+    <bs-card-header [color]="colors.dark">Dark header</bs-card-header>
+    <bs-card-body>
+        <bs-card-text>Card root has no colour; header and footer each carry their own.</bs-card-text>
+    </bs-card-body>
+    <bs-card-footer [color]="colors.success">Success footer</bs-card-footer>
+</bs-card>
+
+<h2>Card group</h2>
+<bs-card-group class="mb-3">
+    <bs-card>
+        <bs-card-img position="top" [src]="placeholderSquare" alt=""></bs-card-img>
+        <bs-card-body>
+            <bs-card-title>Group A</bs-card-title>
+            <bs-card-text>First card in the group.</bs-card-text>
+        </bs-card-body>
+    </bs-card>
+    <bs-card>
+        <bs-card-img position="top" [src]="placeholderSquare" alt=""></bs-card-img>
+        <bs-card-body>
+            <bs-card-title>Group B</bs-card-title>
+            <bs-card-text>Second card in the group.</bs-card-text>
+        </bs-card-body>
+    </bs-card>
+    <bs-card>
+        <bs-card-img position="top" [src]="placeholderSquare" alt=""></bs-card-img>
+        <bs-card-body>
+            <bs-card-title>Group C</bs-card-title>
+            <bs-card-text>Third card in the group.</bs-card-text>
+        </bs-card-body>
+    </bs-card>
+</bs-card-group>
+
+<h2>Horizontal layout via bs-grid</h2>
+<bs-card class="d-block mb-3" style="max-width: 540px;">
+    <bs-grid>
+        <div bsRow class="g-0">
+            <div [md]="4">
+                <bs-card-img position="top" [src]="placeholderHorizontal" alt=""></bs-card-img>
+            </div>
+            <div [md]="8">
+                <bs-card-body>
+                    <bs-card-title>Horizontal card</bs-card-title>
+                    <bs-card-text>Image on the left, body on the right at md and up.</bs-card-text>
+                </bs-card-body>
+            </div>
+        </div>
+    </bs-grid>
+</bs-card>
+
+<h2>Header with nav-tabs</h2>
+<bs-card class="d-block mb-3">
+    <bs-card-header [navStyle]="'tabs'">
+        <ul class="nav">
+            @for (page of tabPages; track page) {
+                <li class="nav-item">
+                    <a class="nav-link" [class.active]="page === activeTab()" href="#"
+                       (click)="$event.preventDefault(); activeTab.set(page)">{{ page }}</a>
+                </li>
+            }
+        </ul>
+    </bs-card-header>
+    <bs-card-body>
+        <bs-card-title>{{ activeTab() }}</bs-card-title>
+        <bs-card-text>The slotted &lt;ul class="nav"&gt; gets <code>card-header-tabs</code> applied; click a tab to switch the body content.</bs-card-text>
+    </bs-card-body>
+</bs-card>
+
+<h2>Header with nav-pills</h2>
+<bs-card class="d-block mb-3">
+    <bs-card-header [navStyle]="'pills'">
+        <ul class="nav">
+            @for (page of pillPages; track page) {
+                <li class="nav-item">
+                    <a class="nav-link" [class.active]="page === activePill()" href="#"
+                       (click)="$event.preventDefault(); activePill.set(page)">{{ page }}</a>
+                </li>
+            }
+        </ul>
+    </bs-card-header>
+    <bs-card-body>
+        <bs-card-title>{{ activePill() }}</bs-card-title>
+        <bs-card-text>The slotted nav gets <code>card-header-pills</code> applied; click a pill to switch the body content.</bs-card-text>
+    </bs-card-body>
 </bs-card>
