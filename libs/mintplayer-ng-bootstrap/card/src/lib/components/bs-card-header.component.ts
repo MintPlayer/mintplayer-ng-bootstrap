@@ -1,17 +1,27 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   effect,
   inject,
   input,
 } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
-import { applyTextBgClass } from '../web-components/card-classes';
+import {
+  applyHeaderNavStyle,
+  applyTextBgClass,
+} from '../web-components/card-classes';
+import type { CardHeaderNavStyle } from '../types/card-header-nav-style';
 
 /**
- * Angular wrapper for the card header. `[navStyle]` is added in M3 (header
- * tabs / pills); this milestone wires only `[color]`.
+ * Card header.
+ *
+ * `[navStyle]` decorates a slotted `<nav>` / `<ul>` with
+ * `card-header-tabs` / `card-header-pills` so Bootstrap's `_card.scss`
+ * tab/pill integration kicks in. The class lands on the first nav/ul
+ * descendant, and a MutationObserver re-applies it when the consumer
+ * swaps the slotted markup (e.g. an `@if` that flips the nav in or out).
  */
 @Component({
   selector: 'bs-card-header',
@@ -21,8 +31,10 @@ import { applyTextBgClass } from '../web-components/card-classes';
 })
 export class BsCardHeaderComponent {
   private readonly el = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly color = input<Color | undefined>(undefined);
+  readonly navStyle = input<CardHeaderNavStyle | undefined>(undefined);
 
   constructor() {
     effect(() => {
@@ -30,5 +42,20 @@ export class BsCardHeaderComponent {
       const name = c === undefined ? null : Color[c];
       applyTextBgClass(this.el.nativeElement, name);
     });
+
+    effect(() => {
+      applyHeaderNavStyle(this.el.nativeElement, this.navStyle() ?? null);
+    });
+
+    // Slotted navs may appear after the component is created (Angular @if,
+    // structural directives). Re-apply the nav-style class on child changes
+    // so a late-rendered nav still picks up `card-header-tabs` / `-pills`.
+    if (typeof MutationObserver !== 'undefined') {
+      const observer = new MutationObserver(() => {
+        applyHeaderNavStyle(this.el.nativeElement, this.navStyle() ?? null);
+      });
+      observer.observe(this.el.nativeElement, { childList: true, subtree: true });
+      this.destroyRef.onDestroy(() => observer.disconnect());
+    }
   }
 }
