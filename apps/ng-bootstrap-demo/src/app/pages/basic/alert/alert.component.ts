@@ -3,14 +3,16 @@ import { FormsModule } from '@angular/forms';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsAlertComponent, BsAlertCloseComponent } from '@mintplayer/ng-bootstrap/alert';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
+import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
+import { dedent } from 'ts-dedent';
 
 @Component({
   selector: 'demo-alert',
   templateUrl: './alert.component.html',
   styleUrls: ['./alert.component.scss'],
-  imports: [FormsModule, BsFormComponent, BsFormControlDirective, BsAlertComponent, BsAlertCloseComponent, BsInputGroupComponent, BsButtonTypeDirective],
+  imports: [FormsModule, BsCodeSnippetComponent, BsFormComponent, BsFormControlDirective, BsAlertComponent, BsAlertCloseComponent, BsInputGroupComponent, BsButtonTypeDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AlertComponent {
@@ -34,6 +36,29 @@ export class AlertComponent {
     this.newAlertItem.set('');
     this.txtNewAlert().nativeElement.focus();
   }
+
+  protected readonly snippetBasicHtml = dedent`
+    <bs-alert [type]="colors.info" [(isVisible)]="isVisible">
+      Heads up — something noteworthy happened.
+      <bs-alert-close></bs-alert-close>
+    </bs-alert>
+  `;
+
+  protected readonly snippetBasicTs = dedent`
+    import { Component } from '@angular/core';
+    import { Color } from '@mintplayer/ng-bootstrap';
+    import { BsAlertComponent, BsAlertCloseComponent } from '@mintplayer/ng-bootstrap/alert';
+
+    @Component({
+      selector: 'my-alert-demo',
+      templateUrl: './my-alert-demo.component.html',
+      imports: [BsAlertComponent, BsAlertCloseComponent],
+    })
+    export class MyAlertDemoComponent {
+      protected readonly colors = Color;
+      protected isVisible = true;
+    }
+  `;
 }
 
 interface AlertItem {

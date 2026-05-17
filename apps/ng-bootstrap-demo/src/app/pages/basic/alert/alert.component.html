@@ -1,4 +1,16 @@
 <h1 class="text-center">Alert</h1>
+
+<p>
+  <code>bs-alert</code> renders a Bootstrap contextual feedback banner with a
+  two-way <code>[(isVisible)]</code> binding; pair it with
+  <code>&lt;bs-alert-close&gt;</code> for a built-in dismiss control.
+</p>
+
+<h2>Basic usage</h2>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
 <h2>Static alert</h2>
 <bs-alert [type]="colors.warning" [(isVisible)]="alert1Visible">
     Cras justo odio
