@@ -1,4 +1,17 @@
 <h1 class="text-center">Lazy-loading components</h1>
+
+<p>
+    Angular's built-in <code>&#64;defer</code> block defers loading the dependency graph of its contents until a trigger fires —
+    here, a 5-second timer. Combine with <code>&#64;placeholder</code> / <code>&#64;loading</code> / <code>&#64;error</code> to fill the
+    intermediate states.
+</p>
+
+<h2>Basic usage</h2>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
+<h2>Demo</h2>
 <bs-alert [type]="colors.info">
     Angular 17 introduced the control-flow syntax.
     You can now defer loading of parts of your components (<a href="https://angular.io/guide/defer" target="_blank">Documentation</a>).

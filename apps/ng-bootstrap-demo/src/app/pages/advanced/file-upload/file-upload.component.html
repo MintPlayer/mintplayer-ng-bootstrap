@@ -1,4 +1,16 @@
 <h1 class="text-center">File upload</h1>
+
+<p>
+    <code>bs-file-upload</code> exposes a drop zone plus a click-to-browse trigger and renders each pending file
+    through the <code>*bsFileUploadTemplate</code> directive. Combine with <code>bsFormatBytes</code> for human-readable sizes.
+</p>
+
+<h2>Basic usage</h2>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
+<h2>Demo</h2>
 <bs-grid>
     <div bsRow>
         <div [md]="12" class="text-center">

@@ -1,4 +1,16 @@
 <h1 class="text-center">Navigation lock</h1>
+
+<p>
+    <code>bsNavigationLock</code> guards both router navigation and the browser's <code>beforeunload</code> when the
+    <code>canExit</code> callback returns falsy. The callback receives a chance to inspect form state and ask the user to confirm.
+</p>
+
+<h2>Basic usage</h2>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
+<h2>Demo</h2>
 <section bsNavigationLock [canExit]="canExit">
   <p>Type something below, toggle "Allow exit" off, then click a different navbar item. Cancel the confirm &mdash; your text is still here.</p>
   <bs-form>

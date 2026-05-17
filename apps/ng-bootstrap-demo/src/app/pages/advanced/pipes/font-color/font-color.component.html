@@ -1,4 +1,16 @@
 <h1 class="text-center">Font-color</h1>
+
+<p>
+    <code>bsFontColor</code> returns a readable foreground color (black or white) for a given background — perfect for
+    chips, badges, and other dynamically-coloured surfaces.
+</p>
+
+<h2>Basic usage</h2>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
+<h2>Demo</h2>
 <div [style.background]="background" class="p-5 mb-3">
     <b [style.color]="background | bsFontColor">Hello world</b>
 </div>
