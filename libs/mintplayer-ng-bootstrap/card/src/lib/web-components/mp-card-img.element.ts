@@ -18,7 +18,10 @@ import type { CardImagePosition } from '../types/card-image-position';
  */
 export class MpCardImgElement extends HTMLElement {
   static get observedAttributes(): string[] {
-    return ['src', 'alt'];
+    // `position` is observed so we can warn on post-connect changes (see
+    // `attributeChangedCallback`). The initial value is consumed in
+    // `connectedCallback` via direct `getAttribute('position')`.
+    return ['src', 'alt', 'position'];
   }
 
   private imgEl: HTMLImageElement | null = null;
@@ -66,6 +69,17 @@ export class MpCardImgElement extends HTMLElement {
   attributeChangedCallback(name: string, _old: string | null, _next: string | null): void {
     if (!this.imgEl) return;
     if (name === 'src' || name === 'alt') this.applyImgAttrs(this.imgEl);
+    if (name === 'position') {
+      // Surfaces the static-position contract — without this warning, a
+      // consumer flipping `position` after connect sees a no-op with no
+      // signal of why. Implementing a runtime swap is non-trivial (overlay
+      // wrapping captures child nodes once and unwinding loses interleaved
+      // state), so the contract stays "set position once".
+      console.warn(
+        '[mp-card-img] `position` is set at connect time and cannot be changed afterwards. ' +
+          'Recreate the element to switch positions.',
+      );
+    }
   }
 
   private applyImgAttrs(img: HTMLImageElement): void {

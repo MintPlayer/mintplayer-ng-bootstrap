@@ -50,11 +50,21 @@ export class BsCardHeaderComponent {
     // Slotted navs may appear after the component is created (Angular @if,
     // structural directives). Re-apply the nav-style class on child changes
     // so a late-rendered nav still picks up `card-header-tabs` / `-pills`.
+    // Scope to direct children only: the slotted nav must be a direct child
+    // for Bootstrap's `.card-header-tabs` styling to apply; deep subtree
+    // mutations (Angular re-renders of nested content) would otherwise
+    // trigger a full `querySelector` walk on every keystroke.
     if (typeof MutationObserver !== 'undefined') {
-      const observer = new MutationObserver(() => {
+      const observer = new MutationObserver((records) => {
+        const navAffected = records.some((r) =>
+          [...r.addedNodes, ...r.removedNodes].some(
+            (n) => n instanceof Element && (n.tagName === 'NAV' || n.tagName === 'UL'),
+          ),
+        );
+        if (!navAffected) return;
         applyHeaderNavStyle(this.el.nativeElement, this.navStyle() ?? null);
       });
-      observer.observe(this.el.nativeElement, { childList: true, subtree: true });
+      observer.observe(this.el.nativeElement, { childList: true, subtree: false });
       this.destroyRef.onDestroy(() => observer.disconnect());
     }
   }

@@ -24,10 +24,18 @@ export class MpCardHeaderElement extends HTMLElement {
     this.applyColor();
     this.applyNavStyle();
     // Slotted navs may be created/swapped after the header is mounted (e.g.
-    // when an Angular *ngIf flips). Re-apply nav-style on child changes so the
-    // class lands on the new nav rather than only the one present at connect.
-    this.mutationObserver = new MutationObserver(() => this.applyNavStyle());
-    this.mutationObserver.observe(this, { childList: true, subtree: true });
+    // when an Angular *ngIf flips). Re-apply only when a direct-child nav/ul
+    // is added or removed — `subtree: true` would force a full querySelector
+    // walk on every nested mutation (text-node churn included).
+    this.mutationObserver = new MutationObserver((records) => {
+      const navAffected = records.some((r) =>
+        [...r.addedNodes, ...r.removedNodes].some(
+          (n) => n instanceof Element && (n.tagName === 'NAV' || n.tagName === 'UL'),
+        ),
+      );
+      if (navAffected) this.applyNavStyle();
+    });
+    this.mutationObserver.observe(this, { childList: true, subtree: false });
   }
 
   disconnectedCallback(): void {
