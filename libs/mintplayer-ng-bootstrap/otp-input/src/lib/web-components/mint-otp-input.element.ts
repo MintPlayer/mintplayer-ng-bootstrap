@@ -111,8 +111,17 @@ export class MintOtpInputElement extends LitElement {
     if (this.arraysEqual(old, normalised)) return;
     this._groups = normalised;
     const total = this.totalLength();
-    if (this._value.length > total) this._value = this._value.slice(0, total);
+    let valueMutated = false;
+    if (this._value.length > total) {
+      this._value = this._value.slice(0, total);
+      valueMutated = true;
+    }
     this.requestUpdate('groups', old);
+    // When the new groups shape shortens the total length, the canonical value
+    // must drop the overflow characters — and the consumer needs to know,
+    // otherwise an Angular FormControl bound via the wrapper's CVA would
+    // remain at the stale longer value.
+    if (valueMutated) this.dispatchValueChange();
   }
 
   override disconnectedCallback(): void {
@@ -120,6 +129,25 @@ export class MintOtpInputElement extends LitElement {
     if (this._revealTimer) {
       clearTimeout(this._revealTimer);
       this._revealTimer = null;
+    }
+  }
+
+  protected override willUpdate(changedProperties: Map<string, unknown>): void {
+    super.willUpdate(changedProperties);
+    // When `type` or `case` changes, re-run the filter/normalisation against
+    // the current value. Without this, switching from `alphanumeric` to
+    // `numeric` while the field holds "ABC123" would leave "ABC123" in place
+    // — type says digits-only but the rendered value disagrees. Doing this
+    // in `willUpdate` (rather than `updated`) folds the value mutation into
+    // the same update cycle that already runs for the type/case change, so
+    // we don't trigger Lit's "scheduled an update from updated()" warning.
+    if (changedProperties.has('type') || changedProperties.has('case')) {
+      const next = this.normaliseValue(this._value);
+      if (next !== this._value) {
+        this._value = next;
+        this.clearReveal();
+        this.dispatchValueChange();
+      }
     }
   }
 
@@ -165,8 +193,12 @@ export class MintOtpInputElement extends LitElement {
       if (i > MintOtpInputElement.MAX_GROUP_SIZE) { didClamp = true; return MintOtpInputElement.MAX_GROUP_SIZE; }
       return i;
     });
-    while (cleaned.reduce((a, b) => a + b, 0) > MintOtpInputElement.MAX_TOTAL && cleaned.length > 1) {
-      cleaned.pop();
+    // Maintain a running sum so the trim loop is O(N) instead of O(N²) —
+    // arrays are tiny in practice, but the linear form also reads more
+    // honestly (the loop variable is the live total, not a re-computed one).
+    let sum = cleaned.reduce((a, b) => a + b, 0);
+    while (sum > MintOtpInputElement.MAX_TOTAL && cleaned.length > 1) {
+      sum -= cleaned.pop()!;
       didClamp = true;
     }
     if (cleaned.length === 1 && cleaned[0] > MintOtpInputElement.MAX_TOTAL) {

@@ -304,6 +304,84 @@ describe('mp-otp-input — Scenario 9: reactive groups change', () => {
     expect(el.value).toBe('123456');
     expect(boxes(el)).toHaveLength(8);
   });
+
+  it('emits value-change when groups shrinking truncates the value', async () => {
+    const input = hiddenInput(el);
+    fireInput(input, '123456');
+    await ready(el);
+
+    const events: string[] = [];
+    el.addEventListener('value-change', (e) => events.push((e as CustomEvent<string>).detail));
+    el.groups = [1, 1, 1, 1];
+    await ready(el);
+    expect(events).toEqual(['1234']);
+  });
+
+  it('does not emit value-change when groups grows (no truncation)', async () => {
+    const input = hiddenInput(el);
+    fireInput(input, '123');
+    await ready(el);
+
+    const events: string[] = [];
+    el.addEventListener('value-change', (e) => events.push((e as CustomEvent<string>).detail));
+    el.groups = [1, 1, 1, 1, 1, 1, 1, 1];
+    await ready(el);
+    expect(events).toEqual([]);
+  });
+});
+
+describe('mp-otp-input — type/case change re-normalises value', () => {
+  it('strips letters when switching from alphanumeric to numeric, emits value-change', async () => {
+    const el = makeElement();
+    el.type = 'alphanumeric';
+    el.case = 'preserve';
+    await ready(el);
+    fireInput(hiddenInput(el), 'aB1cD2');
+    await ready(el);
+    expect(el.value).toBe('aB1cD2');
+
+    const events: string[] = [];
+    el.addEventListener('value-change', (e) => events.push((e as CustomEvent<string>).detail));
+    el.type = 'numeric';
+    await ready(el);
+    expect(el.value).toBe('12');
+    expect(events).toEqual(['12']);
+    el.remove();
+  });
+
+  it('uppercases existing letters when case flips upper, emits value-change', async () => {
+    const el = makeElement();
+    el.type = 'alphanumeric';
+    el.case = 'preserve';
+    await ready(el);
+    fireInput(hiddenInput(el), 'abc12');
+    await ready(el);
+    expect(el.value).toBe('abc12');
+
+    const events: string[] = [];
+    el.addEventListener('value-change', (e) => events.push((e as CustomEvent<string>).detail));
+    el.case = 'upper';
+    await ready(el);
+    expect(el.value).toBe('ABC12');
+    expect(events).toEqual(['ABC12']);
+    el.remove();
+  });
+
+  it('does not emit value-change when type/case toggle leaves value unchanged', async () => {
+    const el = makeElement();
+    await ready(el);
+    fireInput(hiddenInput(el), '123');
+    await ready(el);
+
+    const events: string[] = [];
+    el.addEventListener('value-change', (e) => events.push((e as CustomEvent<string>).detail));
+    // numeric -> alphanumeric (digits still valid; uppercase doesn't touch digits)
+    el.type = 'alphanumeric';
+    await ready(el);
+    expect(events).toEqual([]);
+    expect(el.value).toBe('123');
+    el.remove();
+  });
 });
 
 describe('mp-otp-input — Scenario 10: groups validation', () => {

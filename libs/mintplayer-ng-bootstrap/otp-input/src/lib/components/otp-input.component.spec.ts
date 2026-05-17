@@ -110,6 +110,27 @@ describe('BsOtpInputComponent', () => {
       expect(wc.hasAttribute('disabled')).toBe(false);
     });
 
+    it('does not lose form-disabled state when an unrelated signal change re-runs CD', async () => {
+      // Regression for the Gemini-flagged race: previously the wrapper's
+      // template had `[attr.disabled]="disabledAttr()"`, which would clobber
+      // the CVA's setAttribute('disabled', '') on the next CD cycle whenever
+      // another signal-bound attribute re-evaluated. We now own the attribute
+      // via a single effect, so the CVA's write is stable.
+      host.control.disable();
+      fixture.detectChanges();
+      await fixture.whenStable();
+      expect(wc.hasAttribute('disabled')).toBe(true);
+
+      // Force a CD pass by emitting an unrelated event — value-change drives
+      // the wrapper's onValueChange which updates the value() model.
+      wc.dispatchEvent(new CustomEvent('value-change', {
+        detail: '111111', bubbles: true, composed: true,
+      }));
+      fixture.detectChanges();
+      await fixture.whenStable();
+      expect(wc.hasAttribute('disabled')).toBe(true);
+    });
+
     it('marks FormControl as touched on focusout', async () => {
       expect(host.control.touched).toBe(false);
       // Use dispatchEvent on the host element of bs-otp-input — that's where

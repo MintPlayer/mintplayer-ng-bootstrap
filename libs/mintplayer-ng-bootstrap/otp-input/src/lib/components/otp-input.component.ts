@@ -26,7 +26,6 @@ import { OtpInputSize } from '../types/otp-input-size';
       [attr.type]="type()"
       [attr.case]="case()"
       [attr.size]="size()"
-      [attr.disabled]="disabledAttr()"
       [attr.invalid]="invalidAttr()"
       [attr.label]="label()"
       (value-change)="onValueChange($event)"
@@ -62,7 +61,6 @@ export class BsOtpInputComponent {
 
   private readonly hostRef = inject(ElementRef<HTMLElement>);
 
-  protected readonly disabledAttr = computed(() => (this.disabled() ? '' : null));
   protected readonly invalidAttr = computed(() => (this.invalid() ? '' : null));
 
   constructor() {
@@ -117,6 +115,24 @@ export class BsOtpInputComponent {
       const ref = this.elementRef();
       if (!ref) return;
       ref.nativeElement.invalid = this.invalid();
+    });
+
+    // Forward `disabled` via attribute. This used to be `[attr.disabled]` in the
+    // template, but that creates a race with the CVA's `setDisabledState`:
+    // both write to the same DOM attribute, and any signal change in the
+    // wrapper re-fires the template binding which clobbers the CVA's
+    // form-disabled state. Using an effect makes the write fire only when the
+    // `disabled` signal actually changes; the CVA's imperative writes are
+    // unaffected because Angular doesn't reconcile attribute bindings in the
+    // template anymore for this attr.
+    effect(() => {
+      const ref = this.elementRef();
+      if (!ref) return;
+      if (this.disabled()) {
+        ref.nativeElement.setAttribute('disabled', '');
+      } else {
+        ref.nativeElement.removeAttribute('disabled');
+      }
     });
   }
 
