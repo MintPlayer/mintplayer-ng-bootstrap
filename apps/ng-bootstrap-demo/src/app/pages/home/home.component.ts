@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
 import { BsBadgeComponent } from '@mintplayer/ng-bootstrap/badge';
-import { BsCardComponent, BsCardHeaderComponent } from '@mintplayer/ng-bootstrap/card';
+import { BsCardBodyComponent, BsCardComponent, BsCardHeaderComponent } from '@mintplayer/ng-bootstrap/card';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { dedent } from 'ts-dedent';
@@ -25,6 +25,7 @@ interface FlagshipCard {
     BsBadgeComponent,
     BsCardComponent,
     BsCardHeaderComponent,
+    BsCardBodyComponent,
     BsCodeSnippetComponent,
     BsGridComponent,
     BsGridRowDirective,
