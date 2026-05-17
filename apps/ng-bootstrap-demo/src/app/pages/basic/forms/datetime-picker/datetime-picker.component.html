@@ -1,5 +1,19 @@
 <h1 class="text-center">DateTime Picker</h1>
 
+<p>
+  <code>bs-datetime-picker</code> couples a calendar popup and a time-slot popup
+  behind a single display input. The selected value is exposed via the
+  <code>[(value)]</code> two-way binding (or any reactive-forms control), and
+  options such as <code>[min]</code>, <code>[max]</code>,
+  <code>[disableDateFn]</code>, <code>[step]</code>, and <code>[hour12]</code>
+  fine-tune the popups.
+</p>
+
+<h2>Basic usage</h2>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
 <details class="mb-3">
   <summary>Keyboard shortcuts</summary>
   <ul class="mb-0">

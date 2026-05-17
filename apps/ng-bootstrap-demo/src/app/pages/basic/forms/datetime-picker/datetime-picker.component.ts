@@ -1,13 +1,15 @@
 import { DatePipe, JsonPipe } from '@angular/common';
 import { Component, model, ChangeDetectionStrategy, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsDatetimePickerComponent } from '@mintplayer/ng-bootstrap/datetime-picker';
+import { dedent } from 'ts-dedent';
 
 @Component({
   selector: 'demo-datetime-picker',
   templateUrl: './datetime-picker.component.html',
   styleUrls: ['./datetime-picker.component.scss'],
-  imports: [DatePipe, JsonPipe, BsDatetimePickerComponent, ReactiveFormsModule],
+  imports: [DatePipe, JsonPipe, BsCodeSnippetComponent, BsDatetimePickerComponent, ReactiveFormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DatetimePickerComponent {
@@ -32,4 +34,22 @@ export class DatetimePickerComponent {
   setHour12Mode(mode: 'auto' | 'on' | 'off'): void {
     this.hour12Mode.set(mode === 'on' ? true : mode === 'off' ? false : 'auto');
   }
+
+  protected readonly snippetBasicHtml = dedent`
+    <bs-datetime-picker [(value)]="value" [showClear]="true"></bs-datetime-picker>
+  `;
+
+  protected readonly snippetBasicTs = dedent`
+    import { Component, model } from '@angular/core';
+    import { BsDatetimePickerComponent } from '@mintplayer/ng-bootstrap/datetime-picker';
+
+    @Component({
+      selector: 'my-datetime-picker-demo',
+      templateUrl: './my-datetime-picker-demo.component.html',
+      imports: [BsDatetimePickerComponent],
+    })
+    export class MyDatetimePickerDemoComponent {
+      readonly value = model<Date | null>(null);
+    }
+  `;
 }

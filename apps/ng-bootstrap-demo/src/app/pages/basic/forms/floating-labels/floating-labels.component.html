@@ -1,5 +1,18 @@
 <h1 class="text-center">Floating labels</h1>
 
+<p>
+  <code>bs-floating-label</code> wraps a single form control plus a
+  <code>&lt;label&gt;</code>, animating the label into the field when the control
+  is empty and lifting it on focus or when a value is present. The wrapper
+  expects exactly one input-like control next to its label.
+</p>
+
+<h2>Basic usage</h2>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
+<h2>Demo</h2>
 <bs-form>
     <bs-floating-label class="d-block mb-3">
         <input type="email" placeholder="name@example.com">

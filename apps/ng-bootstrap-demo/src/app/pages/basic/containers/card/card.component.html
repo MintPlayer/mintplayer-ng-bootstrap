@@ -1,5 +1,20 @@
 <h1 class="text-center">Card</h1>
 
+<p>
+  <code>bs-card</code> is a structural container with optional
+  <code>bs-card-header</code>, <code>bs-card-body</code>, and
+  <code>bs-card-footer</code> slots. The body composes from
+  <code>bs-card-title</code>, <code>bs-card-subtitle</code>,
+  <code>bs-card-text</code>, and <code>bs-card-link</code>; images can be slotted
+  via <code>bs-card-img</code>. Colour variants are driven by <code>[color]</code>
+  and <code>[outline]</code>.
+</p>
+
+<h2>Basic usage</h2>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
 <h2>Simple card</h2>
 <bs-card class="d-block mb-3">
     <bs-card-body>

@@ -21,6 +21,8 @@ import {
   BsListGroupComponent,
   BsListGroupItemComponent,
 } from '@mintplayer/ng-bootstrap/list-group';
+import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
+import { dedent } from 'ts-dedent';
 
 // SVG data URLs keep the visual baseline deterministic. The Playwright spec
 // would otherwise depend on an external placeholder service responding
@@ -39,6 +41,7 @@ function makePlaceholder(width: number, height: number, label: string): string {
   templateUrl: './card.component.html',
   styleUrls: ['./card.component.scss'],
   imports: [
+    BsCodeSnippetComponent,
     BsCardComponent,
     BsCardHeaderComponent,
     BsCardBodyComponent,
@@ -85,4 +88,38 @@ export class CardComponent {
   readonly activeTab = signal<typeof this.tabPages[number]>('Profile');
   readonly pillPages = ['Inbox', 'Sent', 'Drafts'] as const;
   readonly activePill = signal<typeof this.pillPages[number]>('Inbox');
+
+  protected readonly snippetBasicHtml = dedent`
+    <bs-card class="d-block">
+      <bs-card-header>Header</bs-card-header>
+      <bs-card-body>
+        <bs-card-title>Card title</bs-card-title>
+        <bs-card-text>Body paragraph for the card.</bs-card-text>
+      </bs-card-body>
+    </bs-card>
+  `;
+
+  protected readonly snippetBasicTs = dedent`
+    import { Component } from '@angular/core';
+    import {
+      BsCardComponent,
+      BsCardHeaderComponent,
+      BsCardBodyComponent,
+      BsCardTitleComponent,
+      BsCardTextComponent,
+    } from '@mintplayer/ng-bootstrap/card';
+
+    @Component({
+      selector: 'my-card-demo',
+      templateUrl: './my-card-demo.component.html',
+      imports: [
+        BsCardComponent,
+        BsCardHeaderComponent,
+        BsCardBodyComponent,
+        BsCardTitleComponent,
+        BsCardTextComponent,
+      ],
+    })
+    export class MyCardDemoComponent {}
+  `;
 }

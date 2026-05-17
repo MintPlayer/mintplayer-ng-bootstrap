@@ -1,4 +1,18 @@
 <h1 class="text-center">Tab control</h1>
+
+<p>
+  <code>bs-tab-control</code> hosts a stack of <code>bs-tab-page</code> children.
+  Each page declares its tab label via the <code>*bsTabPageHeader</code>
+  structural directive; the remaining content of the page is rendered when the
+  tab is active. Use <code>[tabsPosition]</code> to put the strip at the top or
+  bottom, and <code>[border]</code> to draw the standard tab outline.
+</p>
+
+<h2>Basic usage</h2>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
 <h2>Demo</h2>
 <bs-tab-control [border]="true" [tabsPosition]="tabsPosition()">
     @for (n of numbers; track $index) {
