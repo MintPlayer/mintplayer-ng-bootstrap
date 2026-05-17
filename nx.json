@@ -64,7 +64,7 @@
     ]
   },
   "tui": {
-    "enabled": false
+    "enabled": true
   },
   "useDaemonProcess": false,
   "useInferencePlugins": false,
