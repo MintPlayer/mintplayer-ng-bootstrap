@@ -1,5 +1,5 @@
 import { styles } from './mp-card.element.template';
-import { clearPrefixedClasses, isCardColorName } from './card-classes';
+import { applyCardColorClasses } from './card-classes';
 
 /**
  * Root of the Bootstrap card family.
@@ -32,24 +32,20 @@ export class MpCardElement extends HTMLElement {
   }
 
   private applyColor(): void {
-    clearPrefixedClasses(this, 'text-bg-');
-    clearPrefixedClasses(this, 'border-');
-    this.classList.remove('border', 'bg-transparent');
-
     const color = this.getAttribute('color');
-    if (!isCardColorName(color)) return;
-
     const isOutline = this.hasAttribute('outline') && this.getAttribute('outline') !== 'false';
-    if (isOutline) {
-      this.classList.add('border', `border-${color}`, 'bg-transparent');
-    } else {
-      this.classList.add(`text-bg-${color}`);
-    }
+    applyCardColorClasses(this, color, isOutline);
   }
 }
 
 let cardStylesInjected = false;
-function ensureCardStylesInjected(): void {
+/**
+ * Inject the compiled Bootstrap-card SCSS into `document.head` exactly once
+ * per page. Called from `MpCardElement.connectedCallback()` and also exported
+ * for the Angular wrapper (`BsCardComponent`) which doesn't instantiate
+ * `<mp-card>` itself but needs the same global cascade.
+ */
+export function ensureCardStylesInjected(): void {
   if (cardStylesInjected) return;
   if (typeof document === 'undefined') return;
   cardStylesInjected = true;

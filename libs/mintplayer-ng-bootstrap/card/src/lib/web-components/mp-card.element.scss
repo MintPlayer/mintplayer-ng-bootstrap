@@ -9,28 +9,53 @@
 
 // Custom elements behave as inline by default. Promote the structural pieces
 // to block so Bootstrap's flow rules (padding, borders, list-group / footer
-// adjacency) apply as they would on real <div> wrappers.
+// adjacency) apply as they would on real <div> wrappers. Both selectors
+// (mp-* for direct WC consumers, bs-* for Angular wrapper consumers) need
+// the same default — the wrappers are sibling implementations, not nested.
 mp-card,
 mp-card-header,
 mp-card-body,
 mp-card-footer,
 mp-card-img,
-mp-card-group {
+mp-card-group,
+bs-card,
+bs-card-header,
+bs-card-body,
+bs-card-footer,
+bs-card-img,
+bs-card-group {
   display: block;
 }
 
 mp-card-title,
 mp-card-subtitle,
 mp-card-text,
-mp-card-link {
+mp-card-link,
+bs-card-title,
+bs-card-subtitle,
+bs-card-text,
+bs-card-link {
   display: block;
 }
 
+// The image wrappers carry the same `.card-img-*` class as their inner <img>
+// (so Bootstrap's `.card > .card-img-top` adjacency selectors match the host
+// rather than a grandchild). Clip the inner img to the host's rounded corners.
+mp-card-img.card-img-top,
+mp-card-img.card-img-bottom,
+mp-card-img.card-img,
+bs-card-img.card-img-top,
+bs-card-img.card-img-bottom,
+bs-card-img.card-img {
+  overflow: hidden;
+}
+
 // Bootstrap's `.card-link + .card-link { margin-left: ... }` adjacency does
-// not match across <mp-card-link> wrapper boundaries (each link's `.card-link`
-// is a child <a>, not a sibling). Compensate by reproducing the rule on the
-// wrapper elements.
-mp-card-link + mp-card-link > .card-link {
+// not match across <mp-card-link> / <bs-card-link> wrapper boundaries (each
+// link's `.card-link` is a child <a>, not a sibling). Compensate by
+// reproducing the rule on the wrapper elements.
+mp-card-link + mp-card-link > .card-link,
+bs-card-link + bs-card-link > .card-link {
   margin-left: var(--bs-card-spacer-x);
 }
 

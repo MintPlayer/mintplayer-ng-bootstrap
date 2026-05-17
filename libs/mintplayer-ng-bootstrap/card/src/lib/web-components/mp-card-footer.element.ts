@@ -1,4 +1,4 @@
-import { clearPrefixedClasses, isCardColorName } from './card-classes';
+import { applyTextBgClass } from './card-classes';
 
 /**
  * Card footer. Mirrors `mp-card-header`'s colour handling; no nav-style
@@ -11,19 +11,11 @@ export class MpCardFooterElement extends HTMLElement {
 
   connectedCallback(): void {
     this.classList.add('card-footer');
-    this.applyColor();
+    applyTextBgClass(this, this.getAttribute('color'));
   }
 
   attributeChangedCallback(name: string, _old: string | null, _next: string | null): void {
-    if (name === 'color') this.applyColor();
-  }
-
-  private applyColor(): void {
-    clearPrefixedClasses(this, 'text-bg-');
-    const color = this.getAttribute('color');
-    if (isCardColorName(color)) {
-      this.classList.add(`text-bg-${color}`);
-    }
+    if (name === 'color') applyTextBgClass(this, this.getAttribute('color'));
   }
 }
 

@@ -1,4 +1,6 @@
-import { clearPrefixedClasses, isCardColorName } from './card-classes';
+import { applyHeaderNavStyle, applyTextBgClass } from './card-classes';
+
+import type { CardHeaderNavStyle } from '../types/card-header-nav-style';
 
 /**
  * Card header. Slotted content stays in light DOM; this element only adds
@@ -39,20 +41,14 @@ export class MpCardHeaderElement extends HTMLElement {
   }
 
   private applyColor(): void {
-    clearPrefixedClasses(this, 'text-bg-');
-    const color = this.getAttribute('color');
-    if (isCardColorName(color)) {
-      this.classList.add(`text-bg-${color}`);
-    }
+    applyTextBgClass(this, this.getAttribute('color'));
   }
 
   private applyNavStyle(): void {
-    const target = this.querySelector('nav, ul');
-    if (!target) return;
-    target.classList.remove('card-header-tabs', 'card-header-pills');
-    const style = this.getAttribute('nav-style');
-    if (style === 'tabs') target.classList.add('card-header-tabs');
-    else if (style === 'pills') target.classList.add('card-header-pills');
+    const raw = this.getAttribute('nav-style');
+    const style: CardHeaderNavStyle | null =
+      raw === 'tabs' || raw === 'pills' ? raw : null;
+    applyHeaderNavStyle(this, style);
   }
 }
 
