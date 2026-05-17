@@ -1,0 +1,53 @@
+// Bootstrap configuration prerequisites for the card slice.
+@import "node_modules/bootstrap/scss/functions";
+@import "node_modules/bootstrap/scss/variables";
+@import "node_modules/bootstrap/scss/variables-dark";
+@import "node_modules/bootstrap/scss/mixins";
+
+// Bootstrap card layer.
+@import "node_modules/bootstrap/scss/card";
+
+// Custom elements behave as inline by default. Promote the structural pieces
+// to block so Bootstrap's flow rules (padding, borders, list-group / footer
+// adjacency) apply as they would on real <div> wrappers.
+mp-card,
+mp-card-header,
+mp-card-body,
+mp-card-footer,
+mp-card-img,
+mp-card-group {
+  display: block;
+}
+
+mp-card-title,
+mp-card-subtitle,
+mp-card-text,
+mp-card-link {
+  display: block;
+}
+
+// Bootstrap's `.card-link + .card-link { margin-left: ... }` adjacency does
+// not match across <mp-card-link> wrapper boundaries (each link's `.card-link`
+// is a child <a>, not a sibling). Compensate by reproducing the rule on the
+// wrapper elements.
+mp-card-link + mp-card-link > .card-link {
+  margin-left: var(--bs-card-spacer-x);
+}
+
+// Bootstrap defines `text-bg-*` only for the named scale (primary…dark). The
+// Color enum we expose also includes `body`, `white`, and `transparent` — fill
+// in the matching trio locally so every enum member maps to a valid class.
+.text-bg-body {
+  color: var(--bs-body-color);
+  background-color: var(--bs-body-bg);
+}
+
+.text-bg-white {
+  color: #000;
+  background-color: #fff;
+}
+
+.text-bg-transparent {
+  color: inherit;
+  background-color: transparent;
+}
