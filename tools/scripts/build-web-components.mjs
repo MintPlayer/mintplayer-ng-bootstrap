@@ -22,10 +22,11 @@
  */
 
 import { readFile, writeFile, readdir } from 'node:fs/promises';
-import { existsSync, watch as fsWatch } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { join, dirname, basename, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as sass from 'sass';
+import chokidar from 'chokidar';
 
 const repoRoot = resolve(fileURLToPath(import.meta.url), '..', '..', '..');
 const args = process.argv.slice(2);
@@ -252,14 +253,23 @@ function startWatchers() {
     timer = setTimeout(flush, 150);
   };
 
-  for (const libRoot of libRoots) {
-    const absRoot = resolve(repoRoot, libRoot);
-    fsWatch(absRoot, { recursive: true, persistent: true }, (_event, filename) => {
-      if (!matters(filename)) return;
-      console.log(`build-web-components: change — ${filename}`);
-      schedule();
-    });
-  }
+  // Use chokidar instead of `fs.watch({ recursive: true })`: Node's recursive
+  // watch is only supported on macOS and Windows and throws
+  // ERR_FEATURE_UNAVAILABLE_ON_PLATFORM on Linux, which would crash the
+  // sidecar and (via `concurrently -k`) take `nx serve` down with it.
+  const watchPaths = libRoots.map((r) => resolve(repoRoot, r));
+  const watcher = chokidar.watch(watchPaths, {
+    ignored: /(^|[\\/])(node_modules|\..+)/,
+    ignoreInitial: true,
+    persistent: true,
+  });
+
+  watcher.on('all', (_event, filepath) => {
+    if (!matters(filepath)) return;
+    const rel = relative(repoRoot, filepath).replace(/\\/g, '/');
+    console.log(`build-web-components: change — ${rel}`);
+    schedule();
+  });
 }
 
 async function main() {

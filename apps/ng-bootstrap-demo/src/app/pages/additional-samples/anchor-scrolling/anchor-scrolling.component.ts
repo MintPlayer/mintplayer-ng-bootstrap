@@ -33,8 +33,7 @@ export class AnchorScrollingComponent {
 
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
-    import { RouterLink } from '@angular/router';
-    import { provideRouter, withInMemoryScrolling } from '@angular/router';
+    import { RouterLink, provideRouter, withInMemoryScrolling } from '@angular/router';
 
     // In bootstrapApplication providers:
     // provideRouter(
