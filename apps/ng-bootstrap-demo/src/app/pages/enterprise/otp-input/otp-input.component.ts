@@ -92,4 +92,30 @@ export class OtpInputDemoComponent {
   protected readonly snippetReactiveHtml = dedent`
     <bs-otp-input [formControl]="otpControl"></bs-otp-input>
   `;
+
+  protected readonly snippetPinHtml = dedent`
+    <!-- Uniform 4-digit PIN, masked. Most-recent character visible for
+         ~700 ms, then masks to •. Paste never reveals. -->
+    <bs-otp-input
+      [groups]="[1, 1, 1, 1]"
+      type="password"
+      [(ngModel)]="pinCode">
+    </bs-otp-input>
+  `;
+
+  protected readonly snippetWindowsHtml = dedent`
+    <!-- Windows product key (uniform 5-5-5-5-5 = 25 chars). -->
+    <bs-otp-input
+      [groups]="[5, 5, 5, 5, 5]"
+      type="alphanumeric"
+      [(ngModel)]="productKey">
+    </bs-otp-input>
+  `;
+
+  protected readonly snippetSizesHtml = dedent`
+    <!-- size accepts 'sm' | 'md' | 'lg' -->
+    <bs-otp-input size="sm"></bs-otp-input>
+    <bs-otp-input size="md"></bs-otp-input>
+    <bs-otp-input size="lg"></bs-otp-input>
+  `;
 }

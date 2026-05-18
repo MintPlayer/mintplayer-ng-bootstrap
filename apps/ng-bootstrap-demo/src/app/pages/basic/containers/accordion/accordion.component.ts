@@ -47,4 +47,52 @@ export class AccordionComponent {
     })
     export class MyAccordionDemoComponent {}
   `;
+
+  protected readonly snippetSingleHtml = dedent`
+    <!-- [highlightActiveTab]="true" visually marks the open tab; default
+         single-open behaviour means opening one closes the others. -->
+    <bs-accordion class="d-block" [highlightActiveTab]="true">
+      <bs-accordion-tab>
+        <bs-accordion-tab-header>Profile</bs-accordion-tab-header>
+        <span class="d-block px-3 py-2">Profile content</span>
+      </bs-accordion-tab>
+      <bs-accordion-tab>
+        <bs-accordion-tab-header>Sign in</bs-accordion-tab-header>
+        <span class="d-block px-3 py-2">Sign-in content</span>
+      </bs-accordion-tab>
+    </bs-accordion>
+  `;
+
+  protected readonly snippetMultiHtml = dedent`
+    <!-- [multi]="true" lets several tabs stay open simultaneously. -->
+    <bs-accordion class="d-block" [multi]="true">
+      <bs-accordion-tab>
+        <bs-accordion-tab-header>Profile</bs-accordion-tab-header>
+        <span class="d-block px-3 py-2">Profile content</span>
+      </bs-accordion-tab>
+      <bs-accordion-tab>
+        <bs-accordion-tab-header>Sign in</bs-accordion-tab-header>
+        <span class="d-block px-3 py-2">Sign-in content</span>
+      </bs-accordion-tab>
+    </bs-accordion>
+  `;
+
+  protected readonly snippetMultiLevelHtml = dedent`
+    <!-- Nest accordions inside tabs to build a tree. -->
+    <bs-accordion class="d-block">
+      <bs-accordion-tab>
+        <bs-accordion-tab-header>Profile</bs-accordion-tab-header>
+        <bs-accordion class="d-block">
+          <bs-accordion-tab>
+            <bs-accordion-tab-header>Email</bs-accordion-tab-header>
+            <span class="d-block px-3 py-2">info&#64;example.com</span>
+          </bs-accordion-tab>
+          <bs-accordion-tab>
+            <bs-accordion-tab-header>Username</bs-accordion-tab-header>
+            <span class="d-block px-3 py-2">user-name</span>
+          </bs-accordion-tab>
+        </bs-accordion>
+      </bs-accordion-tab>
+    </bs-accordion>
+  `;
 }

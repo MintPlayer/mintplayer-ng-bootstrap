@@ -60,4 +60,14 @@ export class PriorityNavComponent {
       ];
     }
   `;
+
+  protected readonly snippetCollapseAtHtml = dedent`
+    <!-- [collapseAt]="'sm'" collapses the entire strip into the More menu
+         at the sm breakpoint and below. -->
+    <bs-priority-nav [collapseAt]="'sm'">
+      @for (link of links; track link.label) {
+        <a *bsPriorityNavItem="link.priority" href="#">{{ link.label }}</a>
+      }
+    </bs-priority-nav>
+  `;
 }

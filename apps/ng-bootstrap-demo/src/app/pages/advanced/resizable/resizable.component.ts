@@ -30,4 +30,19 @@ export class ResizableComponent {
     })
     export class MyResizableDemoComponent {}
   `;
+
+  protected readonly snippetInlineHtml = dedent`
+    <!-- Default: the wrapper grows inline with surrounding content. -->
+    <bs-resizable>
+      <div class="p-2 h-100">Drag any edge to resize.</div>
+    </bs-resizable>
+  `;
+
+  protected readonly snippetAbsoluteHtml = dedent`
+    <!-- [positioning]="'absolute'" — wrapper is positioned inside a
+         positioned ancestor; useful for floating / overlay layouts. -->
+    <bs-resizable [positioning]="'absolute'">
+      <div class="p-2 h-100">Drag any edge to resize.</div>
+    </bs-resizable>
+  `;
 }

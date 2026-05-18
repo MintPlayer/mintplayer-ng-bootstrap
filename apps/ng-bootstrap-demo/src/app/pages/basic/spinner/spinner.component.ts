@@ -37,4 +37,18 @@ export class SpinnerComponent {
       protected readonly colors = Color;
     }
   `;
+
+  protected readonly snippetBorderHtml = dedent`
+    <!-- Classic spinning ring -->
+    <bs-spinner [type]="'border'" [color]="colors.primary"></bs-spinner>
+    <bs-spinner [type]="'border'" [color]="colors.success"></bs-spinner>
+    <bs-spinner [type]="'border'" [color]="colors.danger"></bs-spinner>
+  `;
+
+  protected readonly snippetGrowHtml = dedent`
+    <!-- Pulsing dot -->
+    <bs-spinner [type]="'grow'" [color]="colors.primary"></bs-spinner>
+    <bs-spinner [type]="'grow'" [color]="colors.success"></bs-spinner>
+    <bs-spinner [type]="'grow'" [color]="colors.danger"></bs-spinner>
+  `;
 }

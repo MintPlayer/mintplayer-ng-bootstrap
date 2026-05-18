@@ -56,4 +56,23 @@ export class ScrollspyComponent {
     })
     export class MyScrollspyDemoComponent {}
   `;
+
+  protected readonly snippetModalHtml = dedent`
+    <bs-modal [(isOpen)]="isModalOpen" [scrollable]="true">
+      <div *bsModal>
+        <div bsModalHeader>
+          <h5 class="modal-title flex-grow-1">Title</h5>
+          <bs-close bsModalClose></bs-close>
+        </div>
+        <div bsModalBody>
+          <bs-scrollspy>
+            <h3 bsScrollspy>Primary</h3>
+            <p>...</p>
+            <h3 bsScrollspy>Secondary</h3>
+            <p>...</p>
+          </bs-scrollspy>
+        </div>
+      </div>
+    </bs-modal>
+  `;
 }

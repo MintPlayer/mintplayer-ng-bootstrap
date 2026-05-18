@@ -135,4 +135,22 @@ export class StepperComponent {
       });
     }
   `;
+
+  protected readonly snippetVariantsHtml = dedent`
+    <!-- Linear ⇒ Next is disabled until the active step's form is valid.
+         orientation flips the header layout horizontal ↔ vertical. -->
+
+    <!-- Linear · Horizontal — signup wizard, gated by form validity. -->
+    <div cdkStepper [linear]="true" orientation="horizontal">…</div>
+
+    <!-- Linear · Vertical — checkout flow, each step body renders inline
+         under its own header. -->
+    <div cdkStepper [linear]="true" orientation="vertical">…</div>
+
+    <!-- Non-linear · Horizontal — free navigation; users may skip steps. -->
+    <div cdkStepper [linear]="false" orientation="horizontal">…</div>
+
+    <!-- Non-linear · Vertical — settings panel; click any header to expand. -->
+    <div cdkStepper [linear]="false" orientation="vertical">…</div>
+  `;
 }

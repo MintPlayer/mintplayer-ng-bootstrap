@@ -1,4 +1,16 @@
 <h1 class="text-center">Trust-html</h1>
+
+<p>
+    The <code>bsTrustHtml</code> pipe marks a string as trusted HTML so Angular
+    will render it via <code>[innerHTML]</code> without sanitization stripping
+    out the markup. Only use on content you control.
+</p>
+
+<h2>Basic usage</h2>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
 <bs-form>
     <bs-grid>
         <div bsRow>

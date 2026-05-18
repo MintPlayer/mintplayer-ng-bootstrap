@@ -12,6 +12,9 @@
 <bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
 
 <h2>Static alert</h2>
+
+<bs-code-snippet [codeToCopy]="snippetStaticHtml" [language]="'html'"></bs-code-snippet>
+
 <bs-alert [type]="colors.warning" [(isVisible)]="alert1Visible">
     Cras justo odio
     <bs-alert-close></bs-alert-close>
@@ -28,6 +31,9 @@
     Show all alerts again
 </button>
 <h2 class="mt-4">Alerts list</h2>
+
+<bs-code-snippet [codeToCopy]="snippetListHtml" [language]="'html'"></bs-code-snippet>
+
 @for (alertItem of alertsList(); track alertItem.id) {
     <bs-alert [type]="colors.danger" (afterOpenedOrClosed)="alertVisibleChange(alertItem, $event)">
         {{ alertItem.text }}

@@ -34,4 +34,49 @@ export class ProgressBarComponent {
     })
     export class MyProgressDemoComponent {}
   `;
+
+  protected readonly snippetSimpleHtml = dedent`
+    <bs-progress>
+      <bs-progress-bar [minimum]="0" [maximum]="100" [value]="15"></bs-progress-bar>
+    </bs-progress>
+  `;
+
+  protected readonly snippetStripedHtml = dedent`
+    <bs-progress>
+      <bs-progress-bar
+        [minimum]="0" [maximum]="100" [value]="30"
+        [color]="colors.warning"
+        [striped]="true">
+      </bs-progress-bar>
+    </bs-progress>
+  `;
+
+  protected readonly snippetAnimatedHtml = dedent`
+    <bs-progress>
+      <bs-progress-bar
+        [minimum]="0" [maximum]="100" [value]="20"
+        [color]="colors.info"
+        [striped]="true"
+        [animated]="true">
+      </bs-progress-bar>
+    </bs-progress>
+  `;
+
+  protected readonly snippetStackedHtml = dedent`
+    <!-- Multiple <bs-progress-bar> children render side-by-side. -->
+    <bs-progress>
+      <bs-progress-bar [minimum]="0" [maximum]="100" [value]="15"></bs-progress-bar>
+      <bs-progress-bar [minimum]="0" [maximum]="100" [value]="30" [color]="colors.warning" [striped]="true"></bs-progress-bar>
+      <bs-progress-bar [minimum]="0" [maximum]="100" [value]="20" [color]="colors.info"></bs-progress-bar>
+    </bs-progress>
+  `;
+
+  protected readonly snippetInfiniteHtml = dedent`
+    <!-- [isIndeterminate]="true" enables the marching-stripes loading look. -->
+    <bs-progress [isIndeterminate]="true">
+      <bs-progress-bar [minimum]="0" [maximum]="100" [value]="15"></bs-progress-bar>
+      <bs-progress-bar [minimum]="0" [maximum]="100" [value]="30" [color]="colors.warning" [striped]="true"></bs-progress-bar>
+      <bs-progress-bar [minimum]="0" [maximum]="100" [value]="20" [color]="colors.info" [striped]="true" [animated]="true"></bs-progress-bar>
+    </bs-progress>
+  `;
 }

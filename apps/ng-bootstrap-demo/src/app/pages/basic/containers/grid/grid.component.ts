@@ -39,4 +39,34 @@ export class GridComponent {
     })
     export class MyGridDemoComponent {}
   `;
+
+  protected readonly snippetFlexHtml = dedent`
+    <!-- [col] auto-fits — columns share width equally inside the row. -->
+    <bs-grid>
+      <div bsRow>
+        <div [col]>Hello</div>
+        <div [col]>World</div>
+      </div>
+    </bs-grid>
+  `;
+
+  protected readonly snippetExplicitHtml = dedent`
+    <!-- [sm]="N" sets the column span at the small breakpoint and up. -->
+    <bs-grid>
+      <div bsRow>
+        <div [sm]="8">Hello</div>
+        <div [sm]="4">World</div>
+      </div>
+    </bs-grid>
+  `;
+
+  protected readonly snippetMinimumHtml = dedent`
+    <!-- [xxs]="N" sets the column span from the smallest breakpoint upward. -->
+    <bs-grid>
+      <div bsRow>
+        <div [xxs]="8">Hello</div>
+        <div [xxs]="4">World</div>
+      </div>
+    </bs-grid>
+  `;
 }

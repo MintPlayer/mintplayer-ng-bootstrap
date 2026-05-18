@@ -66,4 +66,22 @@ export class Select2Component {
     }
   `;
 
+  protected readonly snippetCustomTemplateHtml = dedent`
+    <!-- Project *bsItemTemplate / *bsSuggestionTemplate to customise the chip
+         and dropdown rendering. The let-… exposes the row data. -->
+    <bs-select2 (provideSuggestions)="onProvideTagSuggestions($event)">
+      <span *bsItemTemplate="let item of selectedTags; let select2=select2"
+            class="select2-item"
+            [style.background]="item.category?.color">
+        <span (click)="select2.onRemoveItem(item, $event)">×</span>
+        {{ item.description }}
+      </span>
+
+      <span *bsSuggestionTemplate="let suggestion of tagSuggestions()"
+            class="select2-item cursor-pointer"
+            [style.background]="suggestion.category?.color">
+        {{ suggestion.description }}
+      </span>
+    </bs-select2>
+  `;
 }

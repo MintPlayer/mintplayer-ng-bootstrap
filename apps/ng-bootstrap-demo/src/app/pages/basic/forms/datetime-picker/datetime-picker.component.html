@@ -27,12 +27,19 @@
 
 <section class="mb-4">
   <h2>Minimal</h2>
+
+  <bs-code-snippet [codeToCopy]="snippetMinimalHtml" [language]="'html'"></bs-code-snippet>
+
   <bs-datetime-picker [(value)]="minimal" [showClear]="true"></bs-datetime-picker>
   <div class="mt-2">Selected: <code>{{ minimal() | date: 'medium' }}</code></div>
 </section>
 
 <section class="mb-4">
   <h2>Reactive form</h2>
+
+  <bs-code-snippet [codeToCopy]="snippetReactiveHtml" [language]="'html'"></bs-code-snippet>
+  <bs-code-snippet [codeToCopy]="snippetReactiveTs" [language]="'ts'"></bs-code-snippet>
+
   <bs-datetime-picker [formControl]="reactive" [showClear]="true"></bs-datetime-picker>
   <div class="mt-2">
     <code>FormControl.value</code>: {{ reactive.value | date: 'medium' }}<br>
@@ -44,6 +51,9 @@
 <section class="mb-4">
   <h2>min / max bounds</h2>
   <p class="text-muted">Bounded to all of 2026.</p>
+
+  <bs-code-snippet [codeToCopy]="snippetBoundsHtml" [language]="'html'"></bs-code-snippet>
+
   <bs-datetime-picker
     [(value)]="boundsValue"
     [min]="boundsMin"
@@ -55,6 +65,10 @@
 
 <section class="mb-4">
   <h2>disableDateFn (weekends disabled)</h2>
+
+  <bs-code-snippet [codeToCopy]="snippetDisableFnHtml" [language]="'html'"></bs-code-snippet>
+  <bs-code-snippet [codeToCopy]="snippetDisableFnTs" [language]="'ts'"></bs-code-snippet>
+
   <bs-datetime-picker
     [(value)]="weekendsValue"
     [disableDateFn]="weekendsDisabled"
@@ -65,6 +79,9 @@
 
 <section class="mb-4">
   <h2>Custom step (30 minutes)</h2>
+
+  <bs-code-snippet [codeToCopy]="snippetStepHtml" [language]="'html'"></bs-code-snippet>
+
   <bs-datetime-picker
     [(value)]="stepValue"
     [step]="30"
@@ -75,6 +92,9 @@
 
 <section class="mb-4">
   <h2>hour12 mode</h2>
+
+  <bs-code-snippet [codeToCopy]="snippetHour12Html" [language]="'html'"></bs-code-snippet>
+
   <div class="btn-group mb-2" role="group" aria-label="Hour cycle">
     <button class="btn btn-sm btn-outline-secondary" (click)="setHour12Mode('auto')">auto</button>
     <button class="btn btn-sm btn-outline-secondary" (click)="setHour12Mode('on')">12h</button>

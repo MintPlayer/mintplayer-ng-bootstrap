@@ -59,6 +59,30 @@ export class AlertComponent {
       protected isVisible = true;
     }
   `;
+
+  protected readonly snippetStaticHtml = dedent`
+    <!-- Stack of static, dismissible alerts -->
+    <bs-alert [type]="colors.warning" [(isVisible)]="alert1Visible">
+      Heads up.
+      <bs-alert-close></bs-alert-close>
+    </bs-alert>
+    <bs-alert [type]="colors.danger" [(isVisible)]="alert2Visible">
+      Something went wrong.
+      <bs-alert-close></bs-alert-close>
+    </bs-alert>
+  `;
+
+  protected readonly snippetListHtml = dedent`
+    <!-- Dynamic list: remove an entry when its alert finishes closing.
+         (afterOpenedOrClosed) emits true on open, false on close. -->
+    @for (alertItem of alertsList(); track alertItem.id) {
+      <bs-alert [type]="colors.danger"
+                (afterOpenedOrClosed)="alertVisibleChange(alertItem, $event)">
+        {{ alertItem.text }}
+        <bs-alert-close></bs-alert-close>
+      </bs-alert>
+    }
+  `;
 }
 
 interface AlertItem {

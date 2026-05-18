@@ -12,10 +12,16 @@
 <bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
 
 <h2>Border</h2>
+
+<bs-code-snippet [codeToCopy]="snippetBorderHtml" [language]="'html'"></bs-code-snippet>
+
 @for (color of colors; track color.key) {
     <bs-spinner [type]="'border'" [color]="color.value" class="m-1"></bs-spinner>
 }
 <h2>Grow</h2>
+
+<bs-code-snippet [codeToCopy]="snippetGrowHtml" [language]="'html'"></bs-code-snippet>
+
 @for (color of colors; track color.key) {
     <bs-spinner [type]="'grow'" [color]="color.value" class="m-1"></bs-spinner>
 }

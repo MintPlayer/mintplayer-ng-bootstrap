@@ -29,6 +29,9 @@
 
 <h2 class="mt-4">collapseAt='sm'</h2>
 <p>At sm-and-below the entire strip collapses into the More menu.</p>
+
+<bs-code-snippet [codeToCopy]="snippetCollapseAtHtml" [language]="'html'"></bs-code-snippet>
+
 <div class="p-2 demo-box">
     <bs-priority-nav [collapseAt]="'sm'">
         @for (link of links; track link.label) {

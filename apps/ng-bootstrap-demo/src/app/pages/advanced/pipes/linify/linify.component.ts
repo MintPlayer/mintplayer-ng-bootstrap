@@ -5,13 +5,14 @@ import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@min
 import { BsLinifyPipe } from '@mintplayer/ng-bootstrap/linify';
 import { BsListGroupComponent, BsListGroupItemComponent } from '@mintplayer/ng-bootstrap/list-group';
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
+import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
 
 @Component({
   selector: 'demo-linify',
   templateUrl: './linify.component.html',
   styleUrls: ['./linify.component.scss'],
-  imports: [FormsModule, BsFormComponent, BsFormControlDirective, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsLinifyPipe, BsListGroupComponent, BsListGroupItemComponent, BsCheckboxComponent],
+  imports: [FormsModule, BsFormComponent, BsFormControlDirective, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsLinifyPipe, BsListGroupComponent, BsListGroupItemComponent, BsCheckboxComponent, BsCodeSnippetComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LinifyComponent {
@@ -24,4 +25,31 @@ export class LinifyComponent {
     On a bed of nails, she makes me wait
     And I wait without you`;
   removeEmptyEntries = true;
+
+  protected readonly snippetBasicHtml = dedent`
+    <bs-list-group>
+      @for (line of (text | bsLinify: removeEmptyEntries); track $index) {
+        <bs-list-group-item>{{ line }}</bs-list-group-item>
+      }
+    </bs-list-group>
+  `;
+
+  protected readonly snippetBasicTs = dedent`
+    import { Component } from '@angular/core';
+    import { BsLinifyPipe } from '@mintplayer/ng-bootstrap/linify';
+    import {
+      BsListGroupComponent,
+      BsListGroupItemComponent,
+    } from '@mintplayer/ng-bootstrap/list-group';
+
+    @Component({
+      selector: 'my-linify-demo',
+      templateUrl: './my-linify-demo.component.html',
+      imports: [BsLinifyPipe, BsListGroupComponent, BsListGroupItemComponent],
+    })
+    export class MyLinifyDemoComponent {
+      protected text = 'first line\\nsecond line\\n\\nfourth line';
+      protected removeEmptyEntries = true;
+    }
+  `;
 }
