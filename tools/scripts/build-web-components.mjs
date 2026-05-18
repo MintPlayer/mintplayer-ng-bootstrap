@@ -22,13 +22,15 @@
  */
 
 import { readFile, writeFile, readdir } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, watch as fsWatch } from 'node:fs';
 import { join, dirname, basename, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as sass from 'sass';
 
 const repoRoot = resolve(fileURLToPath(import.meta.url), '..', '..', '..');
-const libRoots = process.argv.slice(2);
+const args = process.argv.slice(2);
+const watchMode = args.includes('--watch');
+const libRoots = args.filter((a) => a !== '--watch');
 
 if (libRoots.length === 0) {
   console.error('build-web-components: at least one <libRoot> argument is required');
@@ -183,7 +185,7 @@ async function processStyles(scssPath) {
   return { outPath, changed: await writeIfChanged(outPath, next) };
 }
 
-async function main() {
+async function runOnce() {
   const elementHtml = [];
   const stylesScss = [];
 
@@ -215,6 +217,57 @@ async function main() {
   console.log(
     `build-web-components: ${total} input(s) processed, ${changedCount} written.`,
   );
+}
+
+function startWatchers() {
+  // SCSS @import graph means any *.scss can affect compiled output (e.g. a
+  // shared mixin under src/styles/). Watch every .scss + .html under each
+  // libRoot, then filter by suffix so non-codegen edits don't trigger work.
+  const matters = (file) =>
+    !!file &&
+    (file.endsWith('.element.html') ||
+      file.endsWith('.element.scss') ||
+      file.endsWith('.scss'));
+
+  let timer = null;
+  let inFlight = false;
+  let dirty = false;
+
+  const flush = async () => {
+    if (inFlight) { dirty = true; return; }
+    inFlight = true;
+    dirty = false;
+    try {
+      await runOnce();
+    } catch (err) {
+      console.error(err.stack ?? err);
+    } finally {
+      inFlight = false;
+      if (dirty) schedule();
+    }
+  };
+
+  const schedule = () => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(flush, 150);
+  };
+
+  for (const libRoot of libRoots) {
+    const absRoot = resolve(repoRoot, libRoot);
+    fsWatch(absRoot, { recursive: true, persistent: true }, (_event, filename) => {
+      if (!matters(filename)) return;
+      console.log(`build-web-components: change — ${filename}`);
+      schedule();
+    });
+  }
+}
+
+async function main() {
+  await runOnce();
+  if (watchMode) {
+    console.log('build-web-components: watching for changes (Ctrl+C to stop)...');
+    startWatchers();
+  }
 }
 
 main().catch((err) => {
