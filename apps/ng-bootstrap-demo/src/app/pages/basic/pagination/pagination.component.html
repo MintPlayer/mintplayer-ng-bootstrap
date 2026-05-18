@@ -47,9 +47,9 @@
             </p>
         </div>
         <div [md]="8">
-            <bs-code-snippet [codeToCopy]="snippetCappedHtml" [language]="'html'"></bs-code-snippet>
             <bs-pagination [pageNumbers]="collapsePages()" [(selectedPageNumber)]="collapseSelected" [numberOfBoxes]="7"></bs-pagination>
             <small class="text-muted d-block mt-1">Selected: {{ collapseSelected() }}</small>
+            <bs-code-snippet [codeToCopy]="snippetCappedHtml" [language]="'html'"></bs-code-snippet>
         </div>
     </div>
 
@@ -123,9 +123,9 @@
             </p>
         </div>
         <div [md]="8">
-            <bs-code-snippet [codeToCopy]="snippetSelectorHtml" [language]="'html'"></bs-code-snippet>
             <bs-pagination [pageNumbers]="selectorPages()" [(selectedPageNumber)]="selectorSelected" [showArrows]="false"></bs-pagination>
             <small class="text-muted d-block mt-1">Selected: {{ selectorSelected() }} rows / page</small>
+            <bs-code-snippet [codeToCopy]="snippetSelectorHtml" [language]="'html'"></bs-code-snippet>
         </div>
     </div>
 
@@ -138,11 +138,11 @@
             </p>
         </div>
         <div [md]="8">
-            <bs-code-snippet [codeToCopy]="snippetSizesHtml" [language]="'html'"></bs-code-snippet>
             <bs-pagination [pageNumbers]="sizesPages()" [(selectedPageNumber)]="sizesSelected" [size]="'small'" [numberOfBoxes]="9"></bs-pagination>
             <bs-pagination [pageNumbers]="sizesPages()" [(selectedPageNumber)]="sizesSelected" [size]="'medium'" [numberOfBoxes]="9" class="d-block mt-2"></bs-pagination>
             <bs-pagination [pageNumbers]="sizesPages()" [(selectedPageNumber)]="sizesSelected" [size]="'large'" [numberOfBoxes]="9" class="d-block mt-2"></bs-pagination>
             <small class="text-muted d-block mt-1">Selected: {{ sizesSelected() }}</small>
+            <bs-code-snippet [codeToCopy]="snippetSizesHtml" [language]="'html'"></bs-code-snippet>
         </div>
     </div>
 

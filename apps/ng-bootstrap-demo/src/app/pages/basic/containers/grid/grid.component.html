@@ -15,8 +15,6 @@
 
 <h2>Flex columns</h2>
 
-<bs-code-snippet [codeToCopy]="snippetFlexHtml" [language]="'html'"></bs-code-snippet>
-
 <bs-grid>
     <div bsRow>
         <div [col]>Hello</div>
@@ -28,9 +26,10 @@
         <div [col]>Me</div>
     </div>
 </bs-grid>
-<h2>Explicit column size</h2>
 
-<bs-code-snippet [codeToCopy]="snippetExplicitHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetFlexHtml" [language]="'html'"></bs-code-snippet>
+
+<h2>Explicit column size</h2>
 
 <bs-grid>
     <div bsRow>
@@ -43,9 +42,10 @@
         <div [sm]="3">Me</div>
     </div>
 </bs-grid>
-<h2>Minimum column size</h2>
 
-<bs-code-snippet [codeToCopy]="snippetMinimumHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetExplicitHtml" [language]="'html'"></bs-code-snippet>
+
+<h2>Minimum column size</h2>
 
 <bs-grid>
     <div bsRow>
@@ -58,3 +58,5 @@
         <div [xxs]="3">Me</div>
     </div>
 </bs-grid>
+
+<bs-code-snippet [codeToCopy]="snippetMinimumHtml" [language]="'html'"></bs-code-snippet>

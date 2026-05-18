@@ -11,10 +11,6 @@
 
 <h2>Basic usage</h2>
 
-<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
-<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
-
-<h2>Demo</h2>
 <bs-typeahead
     [(searchterm)]="searchterm"
     (provideSuggestions)="provideSuggestions($event)"
@@ -22,3 +18,6 @@
     (submitted)="doSearch($event)"
     (suggestionSelected)="gotoArtist($event)"
 ></bs-typeahead>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>

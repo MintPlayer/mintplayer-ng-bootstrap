@@ -9,12 +9,11 @@
 
 <h2>Basic usage</h2>
 
-<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
-<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
-
-<h2>Demo</h2>
 <div class="d-block text-center">
     <bs-checkbox [type]="'checkbox'" [(ngModel)]="state">State</bs-checkbox>
     <br>
     <div [@colorTransition]="{ value: currentColor(), params: { color1: '#F00', color2: '#00F' }}" class="tdiv d-inline-block"></div>
 </div>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>

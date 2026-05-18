@@ -18,8 +18,6 @@
 
 <h2>Select2 with custom template</h2>
 
-<bs-code-snippet [codeToCopy]="snippetCustomTemplateHtml" [language]="'html'"></bs-code-snippet>
-
 <bs-select2 (provideSuggestions)="onProvideTagSuggestions($event)">
     <span *bsItemTemplate="let item of selectedTags; let select2=select2" class="select2-item" [style.background]="item.category?.color" [style.color]="item.category?.color | bsFontColor: '#000'">
         <span [style.color]="item.category?.color | bsFontColor: '#000'" (click)="select2.onRemoveItem(item,$event)">×</span>
@@ -29,3 +27,5 @@
         {{ suggestion.description }}
     </span>
 </bs-select2>
+
+<bs-code-snippet [codeToCopy]="snippetCustomTemplateHtml" [language]="'html'"></bs-code-snippet>

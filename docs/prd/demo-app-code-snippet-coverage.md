@@ -74,20 +74,20 @@ Codified from the existing FULL pages (`theming`, `home`, `file-manager`, `ribbo
 
 ### 5.1 Template anchor
 
-Place a `<bs-code-snippet>` **directly under** each `<h2>` / `<h3>` example heading, between the explanatory paragraph and the live example. The "snippet-then-demo" order matches how a reader scans the page (read the code, see it run).
+Within each `<h2>` / `<h3>` example heading, the **live demo appears first**, then the `<bs-code-snippet>` that reproduces it. The "demo-then-snippet" order lets the reader see the working example before reading the code.
 
 ```html
 <h2 id="basic-usage">Basic usage</h2>
 
 <p>Short paragraph explaining the example.</p>
 
-<bs-code-snippet [codeToCopy]="snippetBasicUsage" [language]="'html'"></bs-code-snippet>
-
-<!-- live example below -->
+<!-- live example first -->
 <bs-datepicker [(ngModel)]="date"></bs-datepicker>
+
+<bs-code-snippet [codeToCopy]="snippetBasicUsage" [language]="'html'"></bs-code-snippet>
 ```
 
-Where the demo has both HTML and TS that the reader needs, emit two snippets in order: HTML first, TS second.
+Where the demo has both HTML and TS that the reader needs, emit two snippets in order: HTML first, TS second — both still come after the live demo.
 
 ### 5.2 Component-class field naming
 

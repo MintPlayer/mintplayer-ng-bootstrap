@@ -8,10 +8,6 @@
 
 <h2>Basic usage</h2>
 
-<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
-<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
-
-<h2>Demo</h2>
 <button (click)="fadeInOutState.set(!fadeInOutState())" [color]="colors.primary" class="d-block w-100 rounded-0">Toggle</button>
 @if (fadeInOutState()) {
     <div [@fadeInOut] class="overflow-hidden">
@@ -19,3 +15,6 @@
         <button [color]="colors.primary" class="d-block w-100 rounded-0">Button 2</button>
     </div>
 }
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>

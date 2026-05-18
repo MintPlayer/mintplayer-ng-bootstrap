@@ -57,8 +57,6 @@
       character is visible for 700 ms then masks to <code>•</code>. Paste never reveals.
     </p>
 
-    <bs-code-snippet [codeToCopy]="snippetPinHtml" [language]="'html'"></bs-code-snippet>
-
     <bs-otp-input
       [groups]="pinGroups"
       type="password"
@@ -66,6 +64,8 @@
       data-testid="pin"
     ></bs-otp-input>
     <p class="text-muted small mt-2">Current value (for demo): <code>{{ pinCode() }}</code></p>
+
+    <bs-code-snippet [codeToCopy]="snippetPinHtml" [language]="'html'"></bs-code-snippet>
   </section>
 
   <hr>
@@ -98,8 +98,6 @@
       <code>[groups]="[5,5,5,5,5]"</code>, <code>type="alphanumeric"</code>.
     </p>
 
-    <bs-code-snippet [codeToCopy]="snippetWindowsHtml" [language]="'html'"></bs-code-snippet>
-
     <bs-otp-input
       [groups]="windowsGroups"
       type="alphanumeric"
@@ -107,6 +105,8 @@
       data-testid="windows"
     ></bs-otp-input>
     <p class="text-muted small mt-2">Current value: <code>{{ windowsKey() }}</code></p>
+
+    <bs-code-snippet [codeToCopy]="snippetWindowsHtml" [language]="'html'"></bs-code-snippet>
   </section>
 
   <hr>
@@ -114,8 +114,6 @@
   <!-- Sizes -->
   <section class="mb-5">
     <h2>Size variants</h2>
-
-    <bs-code-snippet [codeToCopy]="snippetSizesHtml" [language]="'html'"></bs-code-snippet>
 
     <div class="d-flex flex-column gap-3">
       <div>
@@ -131,6 +129,8 @@
         <bs-otp-input size="lg"></bs-otp-input>
       </div>
     </div>
+
+    <bs-code-snippet [codeToCopy]="snippetSizesHtml" [language]="'html'"></bs-code-snippet>
   </section>
 
   <hr>

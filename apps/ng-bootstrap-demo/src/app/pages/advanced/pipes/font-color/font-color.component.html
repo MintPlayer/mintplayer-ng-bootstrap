@@ -7,11 +7,10 @@
 
 <h2>Basic usage</h2>
 
-<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
-<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
-
-<h2>Demo</h2>
 <div [style.background]="background" class="p-5 mb-3">
     <b [style.color]="background | bsFontColor">Hello world</b>
 </div>
 <bs-color-picker class="d-inline-block mb-5" [(ngModel)]="background" [alpha]="1" [allowAlpha]="false" [size]="200"></bs-color-picker>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>

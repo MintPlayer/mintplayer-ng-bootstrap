@@ -9,26 +9,6 @@
 
   <h2>Basic usage</h2>
 
-  <bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
-  <bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
-
-  <h2>JSON wire format</h2>
-  <p>
-    The component is JSON-only by design — schema validation and translation
-    to your storage layer (SQL, OData, Mongo, …) belong on the server, where
-    the user-controlled tree can be safely walked. The example below is what
-    <code>query()</code> serialises to when the user picks
-    <em>status equals shipped AND total &gt; 100</em>.
-  </p>
-
-  <bs-code-snippet [codeToCopy]="snippetWireFormat" [language]="'json'"></bs-code-snippet>
-
-  <h2>Custom field editor</h2>
-
-  <bs-code-snippet [codeToCopy]="snippetCustomEditorHtml" [language]="'html'"></bs-code-snippet>
-
-  <h2>Demo</h2>
-
   <bs-query-builder
     [schema]="schema()"
     [(rootEntity)]="rootEntity"
@@ -84,6 +64,24 @@
       }
     </ng-container>
   </bs-datatable>
+
+  <h2>JSON wire format</h2>
+  <p>
+    The component is JSON-only by design — schema validation and translation
+    to your storage layer (SQL, OData, Mongo, …) belong on the server, where
+    the user-controlled tree can be safely walked. The example below is what
+    <code>query()</code> serialises to when the user picks
+    <em>status equals shipped AND total &gt; 100</em>.
+  </p>
+
+  <bs-code-snippet [codeToCopy]="snippetWireFormat" [language]="'json'"></bs-code-snippet>
+
+  <h2>Custom field editor</h2>
+
+  <bs-code-snippet [codeToCopy]="snippetCustomEditorHtml" [language]="'html'"></bs-code-snippet>
+
+  <bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+  <bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
 
   <h2 class="h5 mt-4">Keymap</h2>
   <ul class="list-unstyled small">

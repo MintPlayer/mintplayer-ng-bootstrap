@@ -8,10 +8,6 @@
 
 <h2>Basic usage</h2>
 
-<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
-<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
-
-<h2>Demo</h2>
 <bs-table [isResponsive]="true">
     <thead>
         <tr>
@@ -41,6 +37,9 @@
         }
     </tbody>
 </bs-table>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
 
 <h2 class="py-3">Counter</h2>
 <button (click)="counter = counter + 1" [color]="colors.primary">Increment</button>
