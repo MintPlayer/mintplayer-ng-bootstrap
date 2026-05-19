@@ -35,9 +35,9 @@
         "styles": [
           "apps/ng-bootstrap-demo/src/styles.scss",
           {
-            "input": "libs/mintplayer-ng-bootstrap/src/styles/ngx-highlight-themes/solarized-dark.scss",
+            "input": "libs/mintplayer-ng-bootstrap/src/styles/ngx-highlight-themes/a11y-dark.scss",
             "inject": false,
-            "bundleName": "solarized-dark"
+            "bundleName": "a11y-dark"
           }
         ],
         "scripts": [],

@@ -28,7 +28,7 @@ export const config: ApplicationConfig = {
         provideNavigationLock(),
         provideHighlightOptions({
             fullLibraryLoader: () => import('highlight.js'),
-            themePath: 'solarized-dark.css'
+            themePath: 'a11y-dark.css'
         }),
         { provide: GIT_REPO, useValue: 'https://github.com/MintPlayer/mintplayer-ng-bootstrap/tree/master/apps/ng-bootstrap-demo/src/app/' },
         { provide: BOOTSTRAP_VERSION, useValue: ngBootstrapJson.version },
