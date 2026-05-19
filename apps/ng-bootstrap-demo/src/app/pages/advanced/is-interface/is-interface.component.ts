@@ -1,7 +1,9 @@
 import { Component, Pipe, PipeTransform, ChangeDetectionStrategy} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
+import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsTableComponent } from '@mintplayer/ng-bootstrap/table';
+import { dedent } from 'ts-dedent';
 
 interface Employee {
   id: number;
@@ -42,6 +44,7 @@ export class AsEmployeePipe implements PipeTransform {
 @Component({
   selector: 'demo-is-interface',
   imports: [
+    BsCodeSnippetComponent,
     BsTableComponent,
     BsButtonTypeDirective,
     AsVisitorPipe,
@@ -61,4 +64,34 @@ export class IsInterfaceComponent {
   ];
   counter = 1;
   colors = Color;
+
+  protected readonly snippetBasicHtml = dedent`
+    @if (person | asEmployee; as employee) {
+      <span>Office #{{ employee.officeNumber }}</span>
+    }
+    @if (person | asVisitor; as visitor) {
+      <span>Reason: {{ visitor.reason }}</span>
+    }
+  `;
+
+  protected readonly snippetBasicTs = dedent`
+    import { Pipe, PipeTransform } from '@angular/core';
+
+    interface Employee { officeNumber: number; }
+    interface Visitor { reason: string; }
+
+    @Pipe({ name: 'asEmployee' })
+    export class AsEmployeePipe implements PipeTransform {
+      transform(person: Employee | Visitor): Employee | null {
+        return 'officeNumber' in person ? person : null;
+      }
+    }
+
+    @Pipe({ name: 'asVisitor' })
+    export class AsVisitorPipe implements PipeTransform {
+      transform(person: Employee | Visitor): Visitor | null {
+        return 'reason' in person ? person : null;
+      }
+    }
+  `;
 }

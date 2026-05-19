@@ -1,4 +1,14 @@
 <div class="dock-demo">
+  <h1>Dock manager</h1>
+  <p>
+    IDE-style dockable workspace built on splitters and tab stacks. Panes can be
+    dragged between stacks, torn off into floating windows, and the resulting
+    arrangement is round-trippable as a JSON <code>DockLayoutSnapshot</code> for
+    persistence.
+  </p>
+
+  <h2>Basic usage</h2>
+
   <details class="mb-2">
     <summary>Keyboard shortcuts</summary>
     <ul class="mb-0">
@@ -72,4 +82,15 @@
       }
     </div>
   </div>
+
+  <bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+  <bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
+  <h2>Floating panes</h2>
+
+  <bs-code-snippet [codeToCopy]="snippetFloatingTs" [language]="'ts'"></bs-code-snippet>
+
+  <h2>Capture &amp; restore layout</h2>
+
+  <bs-code-snippet [codeToCopy]="snippetCaptureTs" [language]="'ts'"></bs-code-snippet>
 </div>

@@ -1,4 +1,13 @@
 <h1 class="text-center">Breadcrumb</h1>
+
+<p>
+  <code>bs-breadcrumb</code> renders a Bootstrap breadcrumb trail; each
+  <code>bs-breadcrumb-item</code> hosts a link or label and the last item is
+  marked as the current page.
+</p>
+
+<h2>Basic usage</h2>
+
 <bs-breadcrumb>
     <bs-breadcrumb-item>
         <a [routerLink]='["/"]'>Home</a>
@@ -10,3 +19,6 @@
         Breadcrumb
     </bs-breadcrumb-item>
 </bs-breadcrumb>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>

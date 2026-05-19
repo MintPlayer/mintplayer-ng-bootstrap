@@ -1,7 +1,13 @@
 <h1 class="text-center">Navigation lock — master/detail</h1>
 <p>Child A carries the lock. A&rarr;B should prompt; B&rarr;A should not. The parent has no lock, so child&harr;child navigation only consults the active child.</p>
+
+<h2>Basic usage</h2>
+
 <nav class="mb-3">
   <a routerLink="a" routerLinkActive="active" class="me-3">Child A (locked)</a>
   <a routerLink="b" routerLinkActive="active">Child B (free)</a>
 </nav>
 <router-outlet></router-outlet>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>

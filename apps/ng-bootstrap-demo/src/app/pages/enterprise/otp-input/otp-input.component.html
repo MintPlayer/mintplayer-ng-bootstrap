@@ -6,6 +6,20 @@
     <code>[6,6,4,4,6,6]</code>.
   </p>
 
+  <h2>Basic usage</h2>
+
+  <bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+  <bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
+  <h2>Grouped (license key)</h2>
+
+  <bs-code-snippet [codeToCopy]="snippetGroupedHtml" [language]="'html'"></bs-code-snippet>
+
+  <h2>Reactive forms</h2>
+
+  <bs-code-snippet [codeToCopy]="snippetReactiveTs" [language]="'ts'"></bs-code-snippet>
+  <bs-code-snippet [codeToCopy]="snippetReactiveHtml" [language]="'html'"></bs-code-snippet>
+
   <hr>
 
   <!-- Classic 6-digit OTP, template-driven, auto-submit -->
@@ -42,6 +56,7 @@
       <code>[groups]="[1,1,1,1]"</code> with <code>type="password"</code>. The most-recently typed
       character is visible for 700 ms then masks to <code>•</code>. Paste never reveals.
     </p>
+
     <bs-otp-input
       [groups]="pinGroups"
       type="password"
@@ -49,6 +64,8 @@
       data-testid="pin"
     ></bs-otp-input>
     <p class="text-muted small mt-2">Current value (for demo): <code>{{ pinCode() }}</code></p>
+
+    <bs-code-snippet [codeToCopy]="snippetPinHtml" [language]="'html'"></bs-code-snippet>
   </section>
 
   <hr>
@@ -80,6 +97,7 @@
     <p class="text-muted">
       <code>[groups]="[5,5,5,5,5]"</code>, <code>type="alphanumeric"</code>.
     </p>
+
     <bs-otp-input
       [groups]="windowsGroups"
       type="alphanumeric"
@@ -87,6 +105,8 @@
       data-testid="windows"
     ></bs-otp-input>
     <p class="text-muted small mt-2">Current value: <code>{{ windowsKey() }}</code></p>
+
+    <bs-code-snippet [codeToCopy]="snippetWindowsHtml" [language]="'html'"></bs-code-snippet>
   </section>
 
   <hr>
@@ -94,6 +114,7 @@
   <!-- Sizes -->
   <section class="mb-5">
     <h2>Size variants</h2>
+
     <div class="d-flex flex-column gap-3">
       <div>
         <strong class="d-inline-block me-3" style="min-width: 4rem;">sm</strong>
@@ -108,6 +129,8 @@
         <bs-otp-input size="lg"></bs-otp-input>
       </div>
     </div>
+
+    <bs-code-snippet [codeToCopy]="snippetSizesHtml" [language]="'html'"></bs-code-snippet>
   </section>
 
   <hr>

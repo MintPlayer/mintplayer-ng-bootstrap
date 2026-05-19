@@ -1,4 +1,15 @@
 <h1 class="text-center">Focus-trap</h1>
+
+<p>
+  <code>cdkTrapFocus</code> from <code>&#64;angular/cdk/a11y</code> confines keyboard focus to
+  its host element while active — Tab and Shift+Tab cycle through focusable descendants but
+  never leave the trap. It's the standard way to make a modal dialog accessible. Pair it with
+  <code>autofocus</code> (or any initial-focus directive) on the first input so screen-reader
+  users land in the right place.
+</p>
+
+<h2>Basic usage</h2>
+
 <bs-form>
     <bs-grid>
         <div bsRow bsFormGroup class="mb-3">
@@ -68,3 +79,6 @@
         </div>
     </div>
 </bs-modal>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>

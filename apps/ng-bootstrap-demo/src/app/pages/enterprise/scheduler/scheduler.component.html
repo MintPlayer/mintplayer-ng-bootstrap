@@ -1,5 +1,16 @@
 <h1 class="text-center">Scheduler</h1>
 
+<p>
+  Multi-view calendar (year / month / week / day / timeline) with drag-to-create,
+  drag-to-move, drag-to-resize, and full keyboard navigation. Events and
+  resources are inputs; the component emits semantic
+  <code>(eventCreate)</code> / <code>(eventUpdate)</code> /
+  <code>(eventDelete)</code> requests that the consumer translates into its
+  own data mutations.
+</p>
+
+<h2>Basic usage</h2>
+
 <details class="mb-2">
   <summary>Keyboard shortcuts</summary>
   <ul class="mb-0">
@@ -98,3 +109,10 @@
     </div>
   </div>
 </bs-grid>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
+<h2>Controlled selection</h2>
+
+<bs-code-snippet [codeToCopy]="snippetControlledSelectionTs" [language]="'ts'"></bs-code-snippet>

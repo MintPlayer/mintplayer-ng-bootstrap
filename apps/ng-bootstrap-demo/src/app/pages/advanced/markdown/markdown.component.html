@@ -1,4 +1,13 @@
 <h1 class="text-center">Markdown</h1>
+
+<p>
+    A set of single-purpose pipes that translate the most common inline markdown markers into HTML —
+    <code>**bold**</code>, <code>*italic*</code>, <code>&lt;u&gt;underline&lt;/u&gt;</code> and <code>~~strike~~</code>.
+    Chain them in the order you want applied and bind via <code>[innerHTML]</code>.
+</p>
+
+<h2>Basic usage</h2>
+
 <bs-form>
     <bs-grid>
         <div bsRow>
@@ -10,3 +19,6 @@
         </div>
     </bs-grid>
 </bs-form>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>

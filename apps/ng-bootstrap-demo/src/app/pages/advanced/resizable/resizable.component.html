@@ -1,5 +1,18 @@
 <h1 class="text-center">Resizable</h1>
+
+<p>
+    <code>bs-resizable</code> wraps any content in a panel with draggable edges. Set
+    <code>[positioning]</code> to <code>'absolute'</code> when the wrapper should grow inside
+    a positioned layout instead of inline.
+</p>
+
+<h2>Basic usage</h2>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
 <h2>Inline positioning</h2>
+
 <bs-resizable>
     <div class="p-2 d-block h-100 box">
         <p>
@@ -9,7 +22,11 @@
         </p>
     </div>
 </bs-resizable>
+
+<bs-code-snippet [codeToCopy]="snippetInlineHtml" [language]="'html'"></bs-code-snippet>
+
 <h2>Absolute positioning</h2>
+
 <bs-resizable [positioning]="'absolute'">
     <div class="p-2 d-block h-100 box">
         <p>
@@ -19,4 +36,6 @@
         </p>
     </div>
 </bs-resizable>
+
+<bs-code-snippet [codeToCopy]="snippetAbsoluteHtml" [language]="'html'"></bs-code-snippet>
 <h2>Another header</h2>

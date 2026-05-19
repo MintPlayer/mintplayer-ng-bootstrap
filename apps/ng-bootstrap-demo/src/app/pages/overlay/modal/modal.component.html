@@ -1,5 +1,16 @@
 <h1 class="text-center">Modals</h1>
-<h2>Demo</h2>
+
+<p>
+  <code>bs-modal</code> is a structural-directive-based dialog primitive. The host
+  (<code>&lt;bs-modal&gt;</code>) owns open/close state via the
+  <code>[(isOpen)]</code> two-way binding; the <code>*bsModal</code> directive
+  marks the projected content. Header / body / footer are tagged with
+  <code>bsModalHeader</code> / <code>bsModalBody</code> / <code>bsModalFooter</code>,
+  and any element with <code>bsModalClose</code> dismisses the dialog.
+</p>
+
+<h2>Basic usage</h2>
+
 <bs-grid class="text-center">
     <div bsRow>
         <div [col] class="text-center">
@@ -44,3 +55,6 @@
         </div>
     </div>
 </bs-grid>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>

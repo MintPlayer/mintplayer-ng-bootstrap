@@ -1,4 +1,12 @@
 <h1 class="text-center">Copy</h1>
+
+<p>
+    <code>bsCopy</code> copies the bound value to the system clipboard when the host element is clicked.
+    Listen for <code>(bsCopied)</code> to confirm the action — useful for triggering a toast or off-canvas notice.
+</p>
+
+<h2>Basic usage</h2>
+
 <div class="position-relative">
     <button [bsCopy]="codeToCopy" (bsCopied)="copiedHtml()" class="btn btn-link rounded-0 text-light position-absolute copy-btn">Copy html</button>
     <pre class="white-space-normal">
@@ -9,3 +17,6 @@
         <div *bsOffcanvasContent class="p-3 bg-dark text-light">Copied!</div>
     </bs-offcanvas>
 </div>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>

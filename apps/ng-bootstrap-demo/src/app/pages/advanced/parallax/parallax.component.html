@@ -1,4 +1,12 @@
 <h1 class="text-center">Parallax</h1>
+
+<p>
+    <code>bs-parallax</code> renders a fixed-height background-image strip that shifts vertically at a slower rate
+    than the surrounding scroll, producing a classic parallax effect.
+</p>
+
+<h2>Basic usage</h2>
+
 <div class="fullpage">
     @for (image of images; track $index; let last = $last) {
         <bs-parallax [image]="image" [height]="300"></bs-parallax>
@@ -11,3 +19,6 @@
         }
     }
 </div>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>

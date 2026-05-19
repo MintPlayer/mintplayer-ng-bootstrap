@@ -1,5 +1,15 @@
 <h1 class="text-center">Swiper</h1>
-<h2>Demo</h2>
+
+<p>
+  The swiper is the touch-friendly gesture layer that powers <code>bs-carousel</code>:
+  pointer/touch swipes advance slides while keyboard and indicator controls remain available.
+  Use it by simply enabling the carousel's <code>[animation]="'slide'"</code> mode and
+  projecting images with <code>*bsCarouselImage</code> — the swipe gestures are wired
+  automatically.
+</p>
+
+<h2>Basic usage</h2>
+
 <bs-grid>
     <div bsRow class="mb-3">
         <div [col]>
@@ -19,3 +29,6 @@
         </div>
     </div>
 </bs-grid>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>

@@ -1,4 +1,13 @@
 <h1 class="text-center">Is interface</h1>
+
+<p>
+    TypeScript interfaces are erased at runtime, so there is no <code>instanceof</code> for them.
+    A pair of pure pipes can act as discriminators — each pipe checks for a unique property and returns the
+    narrowed object or <code>null</code>, letting <code>&#64;if (... as typed)</code> bind a properly-typed local in the template.
+</p>
+
+<h2>Basic usage</h2>
+
 <bs-table [isResponsive]="true">
     <thead>
         <tr>
@@ -28,6 +37,9 @@
         }
     </tbody>
 </bs-table>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
 
 <h2 class="py-3">Counter</h2>
 <button (click)="counter = counter + 1" [color]="colors.primary">Increment</button>

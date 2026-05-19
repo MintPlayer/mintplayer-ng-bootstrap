@@ -1,5 +1,19 @@
 <h1 class="text-center">DateTime Picker</h1>
 
+<p>
+  <code>bs-datetime-picker</code> couples a calendar popup and a time-slot popup
+  behind a single display input. The selected value is exposed via the
+  <code>[(value)]</code> two-way binding (or any reactive-forms control), and
+  options such as <code>[min]</code>, <code>[max]</code>,
+  <code>[disableDateFn]</code>, <code>[step]</code>, and <code>[hour12]</code>
+  fine-tune the popups.
+</p>
+
+<h2>Basic usage</h2>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
 <details class="mb-3">
   <summary>Keyboard shortcuts</summary>
   <ul class="mb-0">
@@ -13,23 +27,31 @@
 
 <section class="mb-4">
   <h2>Minimal</h2>
+
   <bs-datetime-picker [(value)]="minimal" [showClear]="true"></bs-datetime-picker>
   <div class="mt-2">Selected: <code>{{ minimal() | date: 'medium' }}</code></div>
+
+  <bs-code-snippet [codeToCopy]="snippetMinimalHtml" [language]="'html'"></bs-code-snippet>
 </section>
 
 <section class="mb-4">
   <h2>Reactive form</h2>
+
   <bs-datetime-picker [formControl]="reactive" [showClear]="true"></bs-datetime-picker>
   <div class="mt-2">
     <code>FormControl.value</code>: {{ reactive.value | date: 'medium' }}<br>
     <code>FormControl.valid</code>: {{ reactive.valid }} ·
     <code>FormControl.dirty</code>: {{ reactive.dirty }}
   </div>
+
+  <bs-code-snippet [codeToCopy]="snippetReactiveHtml" [language]="'html'"></bs-code-snippet>
+  <bs-code-snippet [codeToCopy]="snippetReactiveTs" [language]="'ts'"></bs-code-snippet>
 </section>
 
 <section class="mb-4">
   <h2>min / max bounds</h2>
   <p class="text-muted">Bounded to all of 2026.</p>
+
   <bs-datetime-picker
     [(value)]="boundsValue"
     [min]="boundsMin"
@@ -37,30 +59,40 @@
     [showClear]="true">
   </bs-datetime-picker>
   <div class="mt-2">Selected: <code>{{ boundsValue() | date: 'medium' }}</code></div>
+
+  <bs-code-snippet [codeToCopy]="snippetBoundsHtml" [language]="'html'"></bs-code-snippet>
 </section>
 
 <section class="mb-4">
   <h2>disableDateFn (weekends disabled)</h2>
+
   <bs-datetime-picker
     [(value)]="weekendsValue"
     [disableDateFn]="weekendsDisabled"
     [showClear]="true">
   </bs-datetime-picker>
   <div class="mt-2">Selected: <code>{{ weekendsValue() | date: 'medium' }}</code></div>
+
+  <bs-code-snippet [codeToCopy]="snippetDisableFnHtml" [language]="'html'"></bs-code-snippet>
+  <bs-code-snippet [codeToCopy]="snippetDisableFnTs" [language]="'ts'"></bs-code-snippet>
 </section>
 
 <section class="mb-4">
   <h2>Custom step (30 minutes)</h2>
+
   <bs-datetime-picker
     [(value)]="stepValue"
     [step]="30"
     [showClear]="true">
   </bs-datetime-picker>
   <div class="mt-2">Selected: <code>{{ stepValue() | date: 'medium' }}</code></div>
+
+  <bs-code-snippet [codeToCopy]="snippetStepHtml" [language]="'html'"></bs-code-snippet>
 </section>
 
 <section class="mb-4">
   <h2>hour12 mode</h2>
+
   <div class="btn-group mb-2" role="group" aria-label="Hour cycle">
     <button class="btn btn-sm btn-outline-secondary" (click)="setHour12Mode('auto')">auto</button>
     <button class="btn btn-sm btn-outline-secondary" (click)="setHour12Mode('on')">12h</button>
@@ -73,4 +105,6 @@
     [showClear]="true">
   </bs-datetime-picker>
   <div class="mt-2">Current mode: <code>{{ hour12Mode() | json }}</code></div>
+
+  <bs-code-snippet [codeToCopy]="snippetHour12Html" [language]="'html'"></bs-code-snippet>
 </section>

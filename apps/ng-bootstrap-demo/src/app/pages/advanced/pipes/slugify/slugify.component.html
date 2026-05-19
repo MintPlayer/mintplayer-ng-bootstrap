@@ -1,5 +1,16 @@
 <h1 class="text-center">Slugify</h1>
+
+<p>
+    The <code>bsSlugify</code> pipe converts a string into a URL-friendly slug —
+    lowercase, hyphen-separated, with diacritics stripped.
+</p>
+
+<h2>Basic usage</h2>
+
 <bs-form>
     <input type="text" [(ngModel)]="text">
     <label class="mt-2">{{ text | bsSlugify }}</label>
 </bs-form>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>

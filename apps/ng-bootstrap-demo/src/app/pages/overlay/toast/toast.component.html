@@ -1,4 +1,18 @@
 <h1 class="text-center">Toast</h1>
+
+<p>
+  Toasts are transient, dismissible notifications. The
+  <code>BsToastService.pushToast(template, context)</code> call queues a toast
+  defined by an <code>&lt;ng-template&gt;</code>; the template receives
+  <code>isVisible</code> and <code>toastIndex</code> from the toast container
+  plus any properties from the context object. Inside, compose
+  <code>&lt;bs-toast&gt;</code> with <code>&lt;bs-toast-header&gt;</code> and
+  <code>&lt;bs-toast-body&gt;</code>, and dismiss with
+  <code>&lt;bs-close [index]="index"&gt;</code>.
+</p>
+
+<h2>Basic usage</h2>
+
 <bs-form (submitted)="addToast(toastTemplate, itemToAdd())">
     <bs-input-group>
         <input type="text" name="txtItem" #txtItem autofocus [(ngModel)]="itemToAdd">
@@ -22,3 +36,6 @@
         <bs-toast-body>{{ message }}</bs-toast-body>
     </bs-toast>
 </ng-template>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>

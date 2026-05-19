@@ -1,5 +1,17 @@
 <h1 class="text-center">Datepicker</h1>
+
+<p>
+  <code>bs-datepicker</code> is a popover-style date input with two-way
+  <code>[(selectedDate)]</code> binding and an optional
+  <code>[disableDateFn]</code> for blocking specific dates.
+</p>
+
+<h2>Basic usage</h2>
+
 <bs-datepicker [(selectedDate)]="selectedDate" [disableDateFn]="disableDate"></bs-datepicker>
 <div>
     The selected date is: {{ selectedDate() | date }}
 </div>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>

@@ -1,4 +1,16 @@
 <h1 class="text-center">Signature pad</h1>
+
+<p>
+    <code>bs-signature-pad</code> captures freehand strokes on a fixed-size canvas and emits
+    them as a structured <code>Signature</code> value through the
+    <code>[(signature)]</code> two-way binding.
+</p>
+
+<h2>Basic usage</h2>
+
 <div class="d-block text-center">
     <bs-signature-pad [width]="500" [height]="300" [(signature)]="signature" (signatureChange)="onSignatureChange($event)"></bs-signature-pad>
 </div>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>

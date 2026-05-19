@@ -1,6 +1,22 @@
 <h1 class="text-center">Card</h1>
 
+<p>
+  <code>bs-card</code> is a structural container with optional
+  <code>bs-card-header</code>, <code>bs-card-body</code>, and
+  <code>bs-card-footer</code> slots. The body composes from
+  <code>bs-card-title</code>, <code>bs-card-subtitle</code>,
+  <code>bs-card-text</code>, and <code>bs-card-link</code>; images can be slotted
+  via <code>bs-card-img</code>. Colour variants are driven by <code>[color]</code>
+  and <code>[outline]</code>.
+</p>
+
+<h2>Basic usage</h2>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
 <h2>Simple card</h2>
+
 <bs-card class="d-block mb-3">
     <bs-card-body>
         <bs-card-title>Simple card</bs-card-title>
@@ -8,7 +24,10 @@
     </bs-card-body>
 </bs-card>
 
+<bs-code-snippet [codeToCopy]="snippetSimpleHtml" [language]="'html'"></bs-code-snippet>
+
 <h2>Header, body, footer</h2>
+
 <bs-card class="d-block mb-3">
     <bs-card-header>Header</bs-card-header>
     <bs-card-body>
@@ -21,7 +40,10 @@
     <bs-card-footer>Footer</bs-card-footer>
 </bs-card>
 
+<bs-code-snippet [codeToCopy]="snippetHeaderBodyFooterHtml" [language]="'html'"></bs-code-snippet>
+
 <h2>With list-group</h2>
+
 <bs-card class="d-block mb-3">
     <bs-card-header>List of elements</bs-card-header>
     <bs-list-group>
@@ -32,7 +54,10 @@
     <bs-card-footer>Footer below the list</bs-card-footer>
 </bs-card>
 
+<bs-code-snippet [codeToCopy]="snippetListGroupHtml" [language]="'html'"></bs-code-snippet>
+
 <h2>Image at the top</h2>
+
 <bs-card class="d-block mb-3" style="max-width: 320px;">
     <bs-card-img position="top" [src]="placeholderTopBottom" alt="placeholder"></bs-card-img>
     <bs-card-body>
@@ -41,7 +66,10 @@
     </bs-card-body>
 </bs-card>
 
+<bs-code-snippet [codeToCopy]="snippetImageTopHtml" [language]="'html'"></bs-code-snippet>
+
 <h2>Image at the bottom</h2>
+
 <bs-card class="d-block mb-3" style="max-width: 320px;">
     <bs-card-body>
         <bs-card-title>Bottom image</bs-card-title>
@@ -50,7 +78,10 @@
     <bs-card-img position="bottom" [src]="placeholderTopBottom" alt="placeholder"></bs-card-img>
 </bs-card>
 
+<bs-code-snippet [codeToCopy]="snippetImageBottomHtml" [language]="'html'"></bs-code-snippet>
+
 <h2>Image overlay</h2>
+
 <bs-card class="d-block mb-3" style="max-width: 320px;">
     <bs-card-img position="overlay" [src]="placeholderOverlay" alt="background">
         <bs-card-title>Overlaid title</bs-card-title>
@@ -58,7 +89,10 @@
     </bs-card-img>
 </bs-card>
 
+<bs-code-snippet [codeToCopy]="snippetImageOverlayHtml" [language]="'html'"></bs-code-snippet>
+
 <h2>Colour variants &mdash; filled</h2>
+
 @for (color of colorKeys; track color) {
     <bs-card class="d-block mb-2" [color]="colors[color]">
         <bs-card-body>
@@ -68,7 +102,10 @@
     </bs-card>
 }
 
+<bs-code-snippet [codeToCopy]="snippetColorFilledHtml" [language]="'html'"></bs-code-snippet>
+
 <h2>Colour variants &mdash; outline</h2>
+
 @for (color of colorKeys; track color) {
     <bs-card class="d-block mb-2" [color]="colors[color]" [outline]="true">
         <bs-card-body>
@@ -78,7 +115,10 @@
     </bs-card>
 }
 
+<bs-code-snippet [codeToCopy]="snippetColorOutlineHtml" [language]="'html'"></bs-code-snippet>
+
 <h2>Header / footer colours independent of the root</h2>
+
 <bs-card class="d-block mb-3">
     <bs-card-header [color]="colors.dark">Dark header</bs-card-header>
     <bs-card-body>
@@ -87,7 +127,10 @@
     <bs-card-footer [color]="colors.success">Success footer</bs-card-footer>
 </bs-card>
 
+<bs-code-snippet [codeToCopy]="snippetIndependentColorsHtml" [language]="'html'"></bs-code-snippet>
+
 <h2>Card group</h2>
+
 <bs-card-group class="mb-3">
     <bs-card>
         <bs-card-img position="top" [src]="placeholderSquare" alt=""></bs-card-img>
@@ -112,7 +155,10 @@
     </bs-card>
 </bs-card-group>
 
+<bs-code-snippet [codeToCopy]="snippetCardGroupHtml" [language]="'html'"></bs-code-snippet>
+
 <h2>Horizontal layout via bs-grid</h2>
+
 <bs-card class="d-block mb-3" style="max-width: 540px;">
     <bs-grid>
         <div bsRow class="g-0">
@@ -129,7 +175,10 @@
     </bs-grid>
 </bs-card>
 
+<bs-code-snippet [codeToCopy]="snippetHorizontalHtml" [language]="'html'"></bs-code-snippet>
+
 <h2>Header with nav-tabs</h2>
+
 <bs-card class="d-block mb-3">
     <bs-card-header [navStyle]="'tabs'">
         <ul class="nav">
@@ -147,7 +196,10 @@
     </bs-card-body>
 </bs-card>
 
+<bs-code-snippet [codeToCopy]="snippetNavTabsHtml" [language]="'html'"></bs-code-snippet>
+
 <h2>Header with nav-pills</h2>
+
 <bs-card class="d-block mb-3">
     <bs-card-header [navStyle]="'pills'">
         <ul class="nav">
@@ -164,3 +216,5 @@
         <bs-card-text>The slotted nav gets <code>card-header-pills</code> applied; click a pill to switch the body content.</bs-card-text>
     </bs-card-body>
 </bs-card>
+
+<bs-code-snippet [codeToCopy]="snippetNavPillsHtml" [language]="'html'"></bs-code-snippet>

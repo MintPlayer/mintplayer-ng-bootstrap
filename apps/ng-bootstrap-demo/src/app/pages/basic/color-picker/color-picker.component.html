@@ -1,5 +1,13 @@
 <h1 class="text-center">Color picker</h1>
-<h2>Demo</h2>
+
+<p>
+  <code>bs-color-picker</code> is a wheel-based RGB picker that integrates with
+  <code>FormsModule</code> via <code>[(ngModel)]</code> and optionally exposes
+  an alpha channel and a screenreader-friendly toggle.
+</p>
+
+<h2>Basic usage</h2>
+
 <bs-grid>
     <div bsRow>
         <div [md]="6">
@@ -44,6 +52,10 @@
         </div>
     </div>
 </bs-grid>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
 <h2>Features</h2>
 <bs-list-group>
     <bs-list-group-item>Support for alpha-channel</bs-list-group-item>

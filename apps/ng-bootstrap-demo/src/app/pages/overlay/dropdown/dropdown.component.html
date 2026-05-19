@@ -1,4 +1,16 @@
 <h1 class="text-center">Dropdown</h1>
+
+<p>
+  <code>bsDropdown</code> is a container directive that pairs a trigger
+  (<code>bsDropdownToggle</code>) with a projected menu template
+  (<code>*bsDropdownMenu</code>). The menu's open state is managed internally and
+  it dismisses on outside-click when <code>[closeOnClickOutside]="true"</code>. A
+  <code>&lt;bs-has-overlay&gt;</code> placed elsewhere provides the shared overlay
+  container that renders the menu.
+</p>
+
+<h2>Basic usage</h2>
+
 <!-- <bs-dropdown [closeOnClickOutside]="true"></bs-dropdown> -->
 <bs-has-overlay></bs-has-overlay>
 <div bsDropdown [closeOnClickOutside]="true">
@@ -9,3 +21,6 @@
     </div>
     <div class="spacing"></div>
 </div>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>

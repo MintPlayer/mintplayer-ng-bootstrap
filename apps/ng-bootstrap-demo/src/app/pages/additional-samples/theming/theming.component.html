@@ -49,8 +49,6 @@
   change on the next paint.
 </p>
 
-<bs-code-snippet [codeToCopy]="runtimeCssVarSnippet" [language]="'ts'"></bs-code-snippet>
-
 <h3>Live demo</h3>
 <div class="d-flex gap-2 align-items-center mb-3 flex-wrap">
   <label>
@@ -90,6 +88,8 @@
     <div class="progress-bar" style="width: 65%; background-color: var(--bs-primary);"></div>
   </div>
 </div>
+
+<bs-code-snippet [codeToCopy]="runtimeCssVarSnippet" [language]="'ts'"></bs-code-snippet>
 
 <h3>Per-component variables</h3>
 <p>
@@ -146,8 +146,6 @@
   when the OS preference changes.
 </p>
 
-<bs-code-snippet [codeToCopy]="serviceUsageSnippet" [language]="'ts'"></bs-code-snippet>
-
 <h3>Live demo</h3>
 <div class="d-flex gap-2 align-items-center mb-3 flex-wrap">
   <button type="button" class="btn btn-outline-primary" (click)="setMode('auto')">Auto</button>
@@ -159,6 +157,8 @@
     &nbsp; <code>effectiveMode</code>: <strong>{{ theme.effectiveMode() }}</strong>
   </span>
 </div>
+
+<bs-code-snippet [codeToCopy]="serviceUsageSnippet" [language]="'ts'"></bs-code-snippet>
 
 
 <h2 id="adaptive-navbar">Adaptive navbar</h2>

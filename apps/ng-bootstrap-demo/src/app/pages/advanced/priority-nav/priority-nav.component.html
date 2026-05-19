@@ -6,6 +6,11 @@
     a checkbox + media-query fallback.
 </p>
 
+<h2>Basic usage</h2>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
 <h2>Resize me</h2>
 <p>Drag the handle on the right to shrink the container and watch items move into the More menu.</p>
 <bs-resizable [vertical]="false" [corners]="false">
@@ -24,6 +29,7 @@
 
 <h2 class="mt-4">collapseAt='sm'</h2>
 <p>At sm-and-below the entire strip collapses into the More menu.</p>
+
 <div class="p-2 demo-box">
     <bs-priority-nav [collapseAt]="'sm'">
         @for (link of links; track link.label) {
@@ -33,6 +39,8 @@
         }
     </bs-priority-nav>
 </div>
+
+<bs-code-snippet [codeToCopy]="snippetCollapseAtHtml" [language]="'html'"></bs-code-snippet>
 
 <h2 class="mt-4">Noscript fallback</h2>
 <p>

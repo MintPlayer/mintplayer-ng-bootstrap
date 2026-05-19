@@ -1,4 +1,16 @@
 <h1 class="text-center">Multiselect dropdown</h1>
+
+<p>
+  <code>bs-multiselect</code> renders a dropdown that allows multiple items to be
+  selected via a checklist. The selection is exposed through the
+  <code>[(selectedItems)]</code> two-way binding. Items are projected through
+  <code>*bsItemTemplate</code>; the trigger label is customised via
+  <code>*bsButtonTemplate</code>, and optional <code>*bsHeaderTemplate</code> /
+  <code>*bsFooterTemplate</code> slots can host a search input or actions.
+</p>
+
+<h2>Basic usage</h2>
+
 <bs-form>
     <bs-multiselect [(selectedItems)]="selectedItems">
         <div *bsHeaderTemplate>
@@ -19,3 +31,6 @@
         <span>{{ item }}, </span>
     }
 </bs-form>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>

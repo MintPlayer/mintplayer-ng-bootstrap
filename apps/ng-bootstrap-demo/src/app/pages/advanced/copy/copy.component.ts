@@ -1,4 +1,5 @@
 import { Component, ChangeDetectionStrategy} from '@angular/core';
+import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsCopyDirective } from '@mintplayer/ng-bootstrap/copy';
 import { BsOffcanvasHostComponent, BsOffcanvasContentDirective } from '@mintplayer/ng-bootstrap/offcanvas';
 import { HighlightModule } from 'ngx-highlightjs';
@@ -8,7 +9,7 @@ import { dedent } from 'ts-dedent';
   selector: 'demo-copy',
   templateUrl: './copy.component.html',
   styleUrls: ['./copy.component.scss'],
-  imports: [BsCopyDirective, BsOffcanvasHostComponent, BsOffcanvasContentDirective, HighlightModule],
+  imports: [BsCodeSnippetComponent, BsCopyDirective, BsOffcanvasHostComponent, BsOffcanvasContentDirective, HighlightModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CopyComponent {
@@ -26,9 +27,31 @@ export class CopyComponent {
       </body>
     </html>`;
 
-  
+
   copiedHtml() {
     this.offcanvasVisible = true;
     setTimeout(() => this.offcanvasVisible = false, 3000);
   }
+
+  protected readonly snippetBasicHtml = dedent`
+    <button [bsCopy]="textToCopy" (bsCopied)="onCopied()">Copy</button>
+  `;
+
+  protected readonly snippetBasicTs = dedent`
+    import { Component } from '@angular/core';
+    import { BsCopyDirective } from '@mintplayer/ng-bootstrap/copy';
+
+    @Component({
+      selector: 'my-copy-demo',
+      templateUrl: './my-copy-demo.component.html',
+      imports: [BsCopyDirective],
+    })
+    export class MyCopyDemoComponent {
+      protected textToCopy = 'Hello world';
+
+      onCopied() {
+        console.log('Copied to clipboard');
+      }
+    }
+  `;
 }

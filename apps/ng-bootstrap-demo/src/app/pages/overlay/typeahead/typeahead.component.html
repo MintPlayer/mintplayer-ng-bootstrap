@@ -1,4 +1,16 @@
 <h1 class="text-center">Typeahead</h1>
+
+<p>
+  <code>bs-typeahead</code> is a search input with asynchronous suggestion
+  dropdown. The <code>[(searchterm)]</code> two-way binding tracks the user's
+  query; <code>(provideSuggestions)</code> fires whenever the term changes so the
+  parent can populate <code>[suggestions]</code>. The
+  <code>(suggestionSelected)</code> event fires when an entry is chosen and
+  <code>(submitted)</code> fires on free-form submit.
+</p>
+
+<h2>Basic usage</h2>
+
 <bs-typeahead
     [(searchterm)]="searchterm"
     (provideSuggestions)="provideSuggestions($event)"
@@ -6,3 +18,6 @@
     (submitted)="doSearch($event)"
     (suggestionSelected)="gotoArtist($event)"
 ></bs-typeahead>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>

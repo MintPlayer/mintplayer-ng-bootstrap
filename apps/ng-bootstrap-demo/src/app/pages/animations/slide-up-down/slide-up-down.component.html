@@ -1,4 +1,15 @@
 <h1 class="text-center">Slide up/down animation</h1>
+
+<p>
+  Two complementary triggers ship together: <code>slideUpDown</code> accepts a boolean and
+  animates an always-rendered element's height between zero and its natural size, while
+  <code>slideUpDownNgif</code> is wired to the enter/leave lifecycle for use inside
+  <code>&#64;if</code> blocks. Wrap the target in <code>overflow-hidden</code> so the
+  collapsing height clips its content.
+</p>
+
+<h2>Basic usage</h2>
+
 <bs-grid>
     <div bsRow>
         <div [md]="6">
@@ -21,3 +32,6 @@
         </div>
     </div>
 </bs-grid>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>

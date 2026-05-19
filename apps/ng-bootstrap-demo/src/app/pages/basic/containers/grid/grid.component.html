@@ -1,5 +1,20 @@
 <h1 class="text-center">Grid</h1>
+
+<p>
+  <code>bs-grid</code> provides the Bootstrap grid container; <code>bsRow</code>
+  marks a row of columns; and width directives such as <code>[md]</code>,
+  <code>[lg]</code>, <code>[sm]</code>, <code>[xxs]</code>, or the auto-fit
+  <code>[col]</code> directive set the column span at the corresponding
+  breakpoint.
+</p>
+
+<h2>Basic usage</h2>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
 <h2>Flex columns</h2>
+
 <bs-grid>
     <div bsRow>
         <div [col]>Hello</div>
@@ -11,7 +26,11 @@
         <div [col]>Me</div>
     </div>
 </bs-grid>
+
+<bs-code-snippet [codeToCopy]="snippetFlexHtml" [language]="'html'"></bs-code-snippet>
+
 <h2>Explicit column size</h2>
+
 <bs-grid>
     <div bsRow>
         <div [sm]="8">Hello</div>
@@ -23,7 +42,11 @@
         <div [sm]="3">Me</div>
     </div>
 </bs-grid>
+
+<bs-code-snippet [codeToCopy]="snippetExplicitHtml" [language]="'html'"></bs-code-snippet>
+
 <h2>Minimum column size</h2>
+
 <bs-grid>
     <div bsRow>
         <div [xxs]="8">Hello</div>
@@ -35,3 +58,5 @@
         <div [xxs]="3">Me</div>
     </div>
 </bs-grid>
+
+<bs-code-snippet [codeToCopy]="snippetMinimumHtml" [language]="'html'"></bs-code-snippet>

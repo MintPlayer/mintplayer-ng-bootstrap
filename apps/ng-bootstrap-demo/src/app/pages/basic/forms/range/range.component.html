@@ -1,4 +1,14 @@
 <h1 class="text-center">Range</h1>
+
+<p>
+  <code>bs-range</code> is a slider input bound through
+  <code>[(ngModel)]</code> (or any reactive-forms control). Use
+  <code>[min]</code>, <code>[max]</code>, and <code>[step]</code> to constrain
+  the value, and <code>[disabled]</code> to lock the control.
+</p>
+
+<h2>Basic usage</h2>
+
 <bs-grid>
     <div bsRow>
         <div [md]="11">
@@ -22,3 +32,6 @@
         </div>
     </div>
 </bs-grid>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>

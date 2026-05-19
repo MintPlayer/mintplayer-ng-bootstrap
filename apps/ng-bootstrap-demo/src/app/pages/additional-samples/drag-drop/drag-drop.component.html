@@ -1,4 +1,15 @@
 <h1 class="text-center">Drag-drop</h1>
+
+<p>
+  Angular CDK's <code>cdkDropList</code> + <code>cdkDrag</code> directives turn a container
+  into a sortable list. The list emits <code>cdkDropListDropped</code> with previous/current
+  indices; the consumer mutates the backing array (typically via <code>moveItemInArray</code>
+  or <code>transferArrayItem</code>). Multiple lists wired through <code>cdkDropListConnectedTo</code>
+  let items move between them.
+</p>
+
+<h2>Basic usage</h2>
+
 <bs-grid>
     <div bsRow>
         <div [sm]="4">
@@ -62,3 +73,6 @@
         </div>
     </div>
 </bs-grid>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>

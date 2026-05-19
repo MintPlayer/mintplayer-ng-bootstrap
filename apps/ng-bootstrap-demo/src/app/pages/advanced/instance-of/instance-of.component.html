@@ -1,5 +1,13 @@
 <h1 class="text-center">Instance of</h1>
-<h2>Demo</h2>
+
+<p>
+    <code>bsInstanceof</code> is a switch-like structural directive that branches based on the runtime class of a value.
+    Each <code>*bsInstanceofCase</code> matches an <code>instanceof</code> check and exposes the narrowed instance to its template;
+    <code>*bsInstanceofDefault</code> renders when no case matches.
+</p>
+
+<h2>Basic usage</h2>
+
 <bs-alert [type]="colors.info">
     The Angular 21.2 compiler will allow you to use <code>instanceof</code> directly in templates.
     However, it's not sure if the feature will land in version 21.2 - it may be introduced in version 22,
@@ -19,3 +27,6 @@
         </li>
     }
 </ul>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>

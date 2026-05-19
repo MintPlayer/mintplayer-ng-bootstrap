@@ -1,6 +1,21 @@
 <h1 class="text-center">Accordion</h1>
+
+<p>
+  <code>bs-accordion</code> wraps a stack of <code>bs-accordion-tab</code> children.
+  Each tab contributes a header via <code>bs-accordion-tab-header</code>; the rest of
+  the tab body is projected below. Set <code>[multi]="true"</code> to allow multiple
+  tabs to stay open simultaneously, or <code>[highlightActiveTab]="true"</code> to
+  visually mark the active tab.
+</p>
+
+<h2>Basic usage</h2>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
 Requires the <b>BrowserAnimationsModule</b> to be imported in the AppModule.
 <h2>Single-level</h2>
+
 <bs-accordion class="d-block mb-3" [highlightActiveTab]="true">
     <bs-accordion-tab>
         <bs-accordion-tab-header>
@@ -24,7 +39,11 @@ Requires the <b>BrowserAnimationsModule</b> to be imported in the AppModule.
         <span class="d-block px-3 py-2">Label 3</span>
     </bs-accordion-tab>
 </bs-accordion>
+
+<bs-code-snippet [codeToCopy]="snippetSingleHtml" [language]="'html'"></bs-code-snippet>
+
 <h2>Multi (multiple tabs open)</h2>
+
 <bs-accordion class="d-block mb-3" [multi]="true">
     <bs-accordion-tab>
         <bs-accordion-tab-header>
@@ -48,7 +67,11 @@ Requires the <b>BrowserAnimationsModule</b> to be imported in the AppModule.
         <span class="d-block px-3 py-2">Label 3</span>
     </bs-accordion-tab>
 </bs-accordion>
+
+<bs-code-snippet [codeToCopy]="snippetMultiHtml" [language]="'html'"></bs-code-snippet>
+
 <h2>Multi-level</h2>
+
 <bs-accordion class="d-block mb-3 multi-level">
     <bs-accordion-tab>
         <bs-accordion-tab-header>
@@ -120,3 +143,5 @@ Requires the <b>BrowserAnimationsModule</b> to be imported in the AppModule.
         <span class="d-block px-3 py-2">Label 3</span>
     </bs-accordion-tab>
 </bs-accordion>
+
+<bs-code-snippet [codeToCopy]="snippetMultiLevelHtml" [language]="'html'"></bs-code-snippet>

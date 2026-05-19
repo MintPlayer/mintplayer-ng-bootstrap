@@ -1,5 +1,14 @@
 <h1 class="text-center">Placeholders</h1>
-<h2 class="my-2">Demo</h2>
+
+<p>
+    Show shimmering "skeleton" blocks while content is loading. Wrap loading
+    regions in <code>&lt;bs-placeholder&gt;</code> and mark each field with
+    <code>bsPlaceholderField</code>; the placeholder visibility toggles via
+    the <code>[isLoading]</code> input.
+</p>
+
+<h2>Basic usage</h2>
+
 <bs-checkbox [(ngModel)]="isLoading">
     Toggle me
 </bs-checkbox>
@@ -32,3 +41,6 @@
         </bs-placeholder>
     </bs-card-body>
 </bs-card>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>

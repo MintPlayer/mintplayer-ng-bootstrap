@@ -1,6 +1,20 @@
 <h1 class="text-center">Toggle buttons</h1>
+
+<p>
+    Animated open/close togglers for navbars, drawers and playlists. Each toggler owns its
+    boolean state through a <code>[(state)]</code> two-way binding.
+</p>
+
+<h2>Basic usage</h2>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
 <h2>Navbar toggler</h2>
 <bs-navbar-toggler [(state)]="state" class="cursor-pointer d-inline-block"></bs-navbar-toggler>
 
 <h2>Playlist toggler</h2>
+
 <bs-playlist-toggler [(state)]="state" class="cursor-pointer d-inline-block"></bs-playlist-toggler>
+
+<bs-code-snippet [codeToCopy]="snippetPlaylistHtml" [language]="'html'"></bs-code-snippet>

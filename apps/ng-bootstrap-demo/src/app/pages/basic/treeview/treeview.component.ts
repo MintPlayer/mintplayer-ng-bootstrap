@@ -7,15 +7,55 @@ import {
   BsTreeviewNodeTemplateDirective,
   type TreeNode,
 } from '@mintplayer/ng-bootstrap/treeview';
+import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
+import { dedent } from 'ts-dedent';
 
 @Component({
   selector: 'demo-treeview',
   templateUrl: './treeview.component.html',
   styleUrls: ['./treeview.component.scss'],
-  imports: [BsTreeviewComponent, BsTreeviewNodeTemplateDirective],
+  imports: [BsCodeSnippetComponent, BsTreeviewComponent, BsTreeviewNodeTemplateDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TreeviewComponent {
+
+  protected readonly snippetBasicHtml = dedent`
+    <bs-treeview [items]="items()" [(expandedIds)]="expandedIds">
+      <ng-container *bsTreeviewNode="let node">
+        {{ node.label }}
+      </ng-container>
+    </bs-treeview>
+  `;
+
+  protected readonly snippetBasicTs = dedent`
+    import { Component, signal } from '@angular/core';
+    import {
+      BsTreeviewComponent,
+      BsTreeviewNodeTemplateDirective,
+      type TreeNode,
+    } from '@mintplayer/ng-bootstrap/treeview';
+
+    @Component({
+      selector: 'my-treeview-demo',
+      templateUrl: './my-treeview-demo.component.html',
+      imports: [BsTreeviewComponent, BsTreeviewNodeTemplateDirective],
+    })
+    export class MyTreeviewDemoComponent {
+      protected readonly items = signal<TreeNode[]>([
+        {
+          id: 'inbox',
+          label: 'Inbox',
+          children: [
+            { id: 'customers', label: 'Customers' },
+            { id: 'coworkers', label: 'Co-Workers' },
+          ],
+        },
+        { id: 'drafts', label: 'Drafts' },
+      ]);
+      protected readonly expandedIds = signal<string[]>(['inbox']);
+    }
+  `;
+
   private readonly icons = signal<Map<string, SafeHtml>>(new Map());
 
   readonly items = signal<TreeNode[]>([

@@ -1,5 +1,16 @@
 <h1 class="text-center">Ordinal numbers</h1>
+
+<p>
+    <code>ordinalNumber</code> scans a string for cardinal numbers and rewrites each one as its ordinal form
+    (1 &rarr; 1<sup>st</sup>, 2 &rarr; 2<sup>nd</sup>, …). Pass the four locale suffixes as arguments so the pipe is fully i18n-friendly.
+</p>
+
+<h2>Basic usage</h2>
+
 <bs-form>
     <textarea rows="10" cols="20" [(ngModel)]="text" class="d-block"></textarea>
     <div [innerHtml]="text | ordinalNumber: 'st':'nd':'rd':'th'"></div>
 </bs-form>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>

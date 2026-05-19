@@ -1,4 +1,13 @@
 <h1 class="text-center">Rating</h1>
+
+<p>
+    A star-rating widget with two-way binding via <code>[(value)]</code> and
+    a configurable <code>[maximum]</code>. Emits hover-preview updates via
+    <code>(starsChange)</code>.
+</p>
+
+<h2>Basic usage</h2>
+
 <bs-grid>
     <div bsRow>
         <div [md]="12">
@@ -7,3 +16,6 @@
         </div>
     </div>
 </bs-grid>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>

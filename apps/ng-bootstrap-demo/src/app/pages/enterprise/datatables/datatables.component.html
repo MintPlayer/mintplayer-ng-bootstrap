@@ -1,5 +1,15 @@
 <h1 class="text-center flex-shrink-0">Datatable</h1>
 
+<p>
+  Server-side paginated table with sortable headers, optional virtual scrolling,
+  and single / multiple row selection. The component is fetch-driven —
+  provide a <code>BsDatatableFetch</code> callback that resolves a
+  <code>PaginationResponse</code>, and the table handles paging UI, sort state,
+  and (optionally) the virtual viewport.
+</p>
+
+<h2>Basic usage</h2>
+
 <bs-select [ngModel]="mode()" (ngModelChange)="mode.set($event)" class="mb-3 flex-shrink-0">
   <option value="pagination">Pagination</option>
   <option value="virtualScroll">Virtual scrolling</option>
@@ -29,3 +39,15 @@
 @if (selection().length) {
   <small class="text-muted">Selected {{ selection().length }} artist(s).</small>
 }
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
+<h2>Sortable columns</h2>
+
+<bs-code-snippet [codeToCopy]="snippetSortableHtml" [language]="'html'"></bs-code-snippet>
+
+<h2>Row selection</h2>
+
+<bs-code-snippet [codeToCopy]="snippetSelectionHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetSelectionTs" [language]="'ts'"></bs-code-snippet>

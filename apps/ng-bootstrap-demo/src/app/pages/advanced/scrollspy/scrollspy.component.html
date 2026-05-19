@@ -1,5 +1,25 @@
+<h1 class="text-center">Scrollspy</h1>
+
+<p>
+    <code>bs-scrollspy</code> wraps content with headings marked
+    <code>bsScrollspy</code> and surfaces the currently visible section. Useful for sticky
+    in-page navigation, table-of-contents highlights, or modal overlays.
+</p>
+
+<h2>Basic usage</h2>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
+<h2>Inside a modal</h2>
+
+<p>
+    A modal scroll body is its own scroll container — wrap its contents in
+    <code>bs-scrollspy</code> and the directive picks the modal as its
+    nearest-scrolling-ancestor target.
+</p>
+
 <bs-scrollspy style="padding-top:50px">
-    <h1 bsScrollspy class="text-center">Scrollspy</h1>
     <h2 bsScrollspy>Scrollspy inside a modal</h2>
     <button [color]="colors.primary" (click)="isModalOpen.set(!isModalOpen())">Open modal</button>
     <h2 bsScrollspy>Some colors</h2>
@@ -52,3 +72,5 @@
         </div>
     </div>
 </bs-modal>
+
+<bs-code-snippet [codeToCopy]="snippetModalHtml" [language]="'html'"></bs-code-snippet>

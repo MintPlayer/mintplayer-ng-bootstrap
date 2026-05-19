@@ -1,17 +1,44 @@
 <h1 class="text-center">Progress bar</h1>
+
+<p>
+    Visualise progress with one or more <code>&lt;bs-progress-bar&gt;</code>
+    children stacked inside a <code>&lt;bs-progress&gt;</code> host. Each bar
+    accepts <code>[minimum]</code>, <code>[maximum]</code> and
+    <code>[value]</code>, plus styling inputs such as
+    <code>[color]</code>, <code>[striped]</code> and <code>[animated]</code>.
+</p>
+
+<h2>Basic usage</h2>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
 <h2>Simple</h2>
+
 <bs-progress class="mb-2">
     <bs-progress-bar [minimum]="0" [maximum]="100" [value]="15"></bs-progress-bar>
 </bs-progress>
+
+<bs-code-snippet [codeToCopy]="snippetSimpleHtml" [language]="'html'"></bs-code-snippet>
+
 <h2>Striped</h2>
+
 <bs-progress class="mb-2">
     <bs-progress-bar [minimum]="0" [maximum]="100" [value]="30" [color]="colors.warning" [striped]="true"></bs-progress-bar>
 </bs-progress>
+
+<bs-code-snippet [codeToCopy]="snippetStripedHtml" [language]="'html'"></bs-code-snippet>
+
 <h2>Animated</h2>
+
 <bs-progress class="mb-2">
     <bs-progress-bar [minimum]="0" [maximum]="100" [value]="20" [color]="colors.info" [striped]="true" [animated]="true"></bs-progress-bar>
 </bs-progress>
+
+<bs-code-snippet [codeToCopy]="snippetAnimatedHtml" [language]="'html'"></bs-code-snippet>
+
 <h2>Stacked</h2>
+
 <bs-progress class="mb-2">
     <bs-progress-bar [minimum]="0" [maximum]="100" [value]="15"></bs-progress-bar>
     <bs-progress-bar [minimum]="0" [maximum]="100" [value]="30" [color]="colors.warning" [striped]="true"></bs-progress-bar>
@@ -22,9 +49,15 @@
     <bs-progress-bar [minimum]="0" [maximum]="100" [value]="30" [color]="colors.warning" [striped]="true"></bs-progress-bar>
     <bs-progress-bar [minimum]="0" [maximum]="100" [value]="20" [color]="colors.info"></bs-progress-bar>
 </bs-progress>
+
+<bs-code-snippet [codeToCopy]="snippetStackedHtml" [language]="'html'"></bs-code-snippet>
+
 <h2>Infinite</h2>
+
 <bs-progress class="mb-2" [isIndeterminate]="true">
     <bs-progress-bar [minimum]="0" [maximum]="100" [value]="15"></bs-progress-bar>
     <bs-progress-bar [minimum]="0" [maximum]="100" [value]="30" [color]="colors.warning" [striped]="true"></bs-progress-bar>
     <bs-progress-bar [minimum]="0" [maximum]="100" [value]="20" [color]="colors.info" [striped]="true" [animated]="true"></bs-progress-bar>
 </bs-progress>
+
+<bs-code-snippet [codeToCopy]="snippetInfiniteHtml" [language]="'html'"></bs-code-snippet>

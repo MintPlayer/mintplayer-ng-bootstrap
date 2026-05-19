@@ -1,4 +1,13 @@
 <h1 class="text-center">Timepicker</h1>
+
+<p>
+    Pick a time of day. Two-way bind the current <code>Date</code> via
+    <code>[(selectedTime)]</code>; only the hour/minute components are
+    relevant to the picker.
+</p>
+
+<h2>Basic usage</h2>
+
 <bs-grid>
     <div bsRow class="mb-3">
         <div [md]="6">
@@ -20,3 +29,6 @@
 <bs-form>
     <input type="text">
 </bs-form>
+
+<bs-code-snippet [codeToCopy]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [codeToCopy]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
