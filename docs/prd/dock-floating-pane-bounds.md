@@ -1,10 +1,34 @@
 # PRD: Floating-pane bounds clamping in DockManager
 
-**Status:** Draft
+**Status:** Complete
 **Author:** Pieterjan
 **Date:** 2026-05-19
 **Library:** `@mintplayer/ng-bootstrap/dock`
-**Tracks:** (GitHub issue to be created)
+**Tracks:** [#347](https://github.com/MintPlayer/mintplayer-ng-bootstrap/issues/347)
+
+---
+
+## Summary (as-built)
+
+Floating-pane bounds now clamp at every trigger site — initial load and host resize (passive: render derives clamped position from intent without mutation), and drag, resize, and drag-to-float (active: gesture commits a clamped value into intent). Shrink-then-grow restores original positions because intent is preserved. A tiny host (< 192×128) drops the comfort minimum and shrinks the pane to fit.
+
+Two structural decisions made during implementation, both worth flagging for future maintainers:
+
+1. **Phases 1 and 3 of the original plan were merged into one milestone.** Phase 1 alone makes the *initial* narrow-load case work, but the manual verification gate ("shrink then grow restores intent") exercises Phase 3's ResizeObserver hook — so shipping Phase 1 without Phase 3 leaves its own gate failing. The plan's phase boundaries didn't match the gates.
+2. **Gesture-start commits clamped intent.** `beginFloatingDrag` and `beginFloatingResize` now re-anchor `floating.bounds` to the currently-rendered (clamped) bounds before the gesture math runs. Without this, starting a drag while the host is narrow would snap the pane back to its (out-of-bounds) intent on the very first pointermove. The first round-trip used to accidentally fix this via JSON-property-order mismatches in the setter's equality guard, but only once per pane — fragile and shape-dependent.
+
+Two SCSS adjustments also landed: `.dock-floating` now uses `box-sizing: border-box` so the 1px border doesn't push the visible edge 2px past the host edge, and the render path sets inline `min-width: 0` / `min-height: 0` so the CSS comfort floor (12rem × 8rem) doesn't fight the tiny-host fallback.
+
+**What landed:**
+- `mint-dock-manager.element.ts`: `clampBoundsToHost` (pure), `getHostSize`, `updateFloatingPanePositions` (light-touch passive re-flow); routed renderFloatingPanes, handleFloatingDragMove, handleFloatingResizeMove, convertPendingTabDragToFloating, beginFloatingDrag, and beginFloatingResize through the clamp.
+- `mint-dock-manager.element.scss`: `box-sizing: border-box` on `.dock-floating`.
+- `mint-dock-manager.element.spec.ts`: 10 unit tests on `clampBoundsToHost` (all cases from §5.1).
+- `apps/ng-bootstrap-demo-e2e/e2e/dock-bounds.spec.ts`: 4 e2e tests covering load + ResizeObserver + intent-preservation + tiny-host (the three pointer-driven scenarios from §5.2 are deferred — locked by unit tests + integration through gesture handlers, matching the existing dock.spec.ts policy of not driving low-level drag choreography).
+
+**Traps to watch:**
+- Render derives clamped bounds from intent but never mutates intent. If a future contributor adds a *passive* write to `floating.bounds` (e.g. "clamp on load to fix the bug"), the shrink-then-grow restoration property quietly dies. The intent-preservation e2e is the canary.
+- Resize math is direction-aware: each of the four edges anchors the opposite edge. A change that "just clamps via `clampBoundsToHost` after the math" would break the right-edge / bottom-edge anchor on left/top resize.
+- The CSS comfort floor (12rem × 8rem) is dropped at render time only via inline `min-width: 0` / `min-height: 0`. If render emits a wrapper that *doesn't* go through `renderFloatingPanes` / `updateFloatingPanePositions`, the floor will quietly reapply.
 
 ---
 

@@ -9,6 +9,7 @@ import '@mintplayer/ng-bootstrap/web-components/tab-control';
 import '@mintplayer/ng-bootstrap/web-components/splitter';
 import { LiveAnnouncerController } from '@mintplayer/ng-bootstrap/web-components/a11y';
 import {
+  DockFloatingPaneBounds,
   DockFloatingStackLayout,
   DockLayout,
   DockLayoutNode,
@@ -324,7 +325,10 @@ export class MintDockManagerElement extends LitElement {
     // multiple notifications in the same frame collapse to one render and
     // the rAF tick gives <mp-splitter> elements time to populate their
     // shadow roots before we query their dividers.
-    this.rootResizeObserver = new ResizeObserver(() => this.scheduleRenderIntersectionHandles());
+    this.rootResizeObserver = new ResizeObserver(() => {
+      this.scheduleRenderIntersectionHandles();
+      this.updateFloatingPanePositions();
+    });
     this.rootResizeObserver.observe(this.rootEl);
     this.dockedMutationObserver = new MutationObserver(() => this.scheduleRenderIntersectionHandles());
     this.dockedMutationObserver.observe(this.dockedEl, { childList: true, subtree: true });
@@ -544,6 +548,7 @@ export class MintDockManagerElement extends LitElement {
 
   private renderFloatingPanes(): void {
     this.floatingLayerEl.innerHTML = '';
+    const host = this.getHostSize();
     this.floatingLayouts.forEach((floating, index) => {
       const wrapper = this.documentRef.createElement('div');
       wrapper.classList.add('dock-floating');
@@ -562,11 +567,15 @@ export class MintDockManagerElement extends LitElement {
       wrapper.setAttribute('aria-labelledby', titleId);
       wrapper.setAttribute('aria-modal', 'false');
 
-      const { left, top, width, height } = floating.bounds;
+      const { left, top, width, height } = this.clampBoundsToHost(floating.bounds, host);
       wrapper.style.left = `${left}px`;
       wrapper.style.top = `${top}px`;
       wrapper.style.width = `${width}px`;
       wrapper.style.height = `${height}px`;
+      // Drop the CSS min-width/min-height floor (12rem/8rem) so a tiny host
+      // can shrink the pane below the comfort minimum.
+      wrapper.style.minWidth = '0';
+      wrapper.style.minHeight = '0';
 
       const zIndex = this.getFloatingPaneZIndex(index);
       wrapper.style.zIndex = String(zIndex);
@@ -1183,6 +1192,9 @@ export class MintDockManagerElement extends LitElement {
     event.preventDefault();
     event.stopPropagation();
 
+    // Re-anchor intent to the currently-rendered (clamped) position so the
+    // drag starts where the user sees the pane, not at a stale intent.
+    floating.bounds = this.clampBoundsToHost(floating.bounds, this.getHostSize());
     const { left, top } = floating.bounds;
 
     try {
@@ -1231,6 +1243,10 @@ export class MintDockManagerElement extends LitElement {
 
     this.promoteFloatingPane(index, wrapper);
 
+    // Re-anchor intent to the currently-rendered (clamped) bounds so the
+    // resize starts from where the user sees the pane.
+    floating.bounds = this.clampBoundsToHost(floating.bounds, this.getHostSize());
+
     this.floatingResizeState = {
       index,
       pointerId: event.pointerId,
@@ -1254,19 +1270,25 @@ export class MintDockManagerElement extends LitElement {
       return;
     }
 
+    const floating = this.floatingLayouts[state.index];
+    if (!floating) return;
+
     const deltaX = event.clientX - state.startX;
     const deltaY = event.clientY - state.startY;
-    const newLeft = state.startLeft + deltaX;
-    const newTop = state.startTop + deltaY;
+    const clamped = this.clampBoundsToHost(
+      {
+        left: state.startLeft + deltaX,
+        top: state.startTop + deltaY,
+        width: floating.bounds.width,
+        height: floating.bounds.height,
+      },
+      this.getHostSize(),
+    );
 
-    state.wrapper.style.left = `${newLeft}px`;
-    state.wrapper.style.top = `${newTop}px`;
+    state.wrapper.style.left = `${clamped.left}px`;
+    state.wrapper.style.top = `${clamped.top}px`;
 
-    const floating = this.floatingLayouts[state.index];
-    if (floating) {
-      floating.bounds.left = newLeft;
-      floating.bounds.top = newTop;
-    }
+    floating.bounds = clamped;
 
     this.updateFloatingDragDropTarget(event);
   }
@@ -1347,8 +1369,11 @@ export class MintDockManagerElement extends LitElement {
 
     const deltaX = event.clientX - state.startX;
     const deltaY = event.clientY - state.startY;
-    const minWidth = 192;
-    const minHeight = 128;
+    const host = this.getHostSize();
+    // Drop the 192/128 minimum when the host is smaller, so a tiny host
+    // can still hold a (cramped) pane rather than overflowing.
+    const minWidth = host.width > 0 ? Math.min(192, host.width) : 192;
+    const minHeight = host.height > 0 ? Math.min(128, host.height) : 128;
     let newWidth = state.startWidth;
     let newHeight = state.startHeight;
     let newLeft = state.startLeft;
@@ -1356,16 +1381,27 @@ export class MintDockManagerElement extends LitElement {
 
     if (state.edges.horizontal === 'right') {
       newWidth = Math.max(minWidth, state.startWidth + deltaX);
+      // Cap so right edge doesn't exceed host (left edge stays at startLeft).
+      if (host.width > 0) {
+        newWidth = Math.min(newWidth, host.width - state.startLeft);
+      }
     } else if (state.edges.horizontal === 'left') {
       newWidth = Math.max(minWidth, state.startWidth - deltaX);
-      newLeft = state.startLeft + (state.startWidth - newWidth);
+      // Cap width so left edge doesn't go below 0; preserves the right-edge
+      // anchor at state.startLeft + state.startWidth.
+      newWidth = Math.min(newWidth, state.startLeft + state.startWidth);
+      newLeft = state.startLeft + state.startWidth - newWidth;
     }
 
     if (state.edges.vertical === 'bottom') {
       newHeight = Math.max(minHeight, state.startHeight + deltaY);
+      if (host.height > 0) {
+        newHeight = Math.min(newHeight, host.height - state.startTop);
+      }
     } else if (state.edges.vertical === 'top') {
       newHeight = Math.max(minHeight, state.startHeight - deltaY);
-      newTop = state.startTop + (state.startHeight - newHeight);
+      newHeight = Math.min(newHeight, state.startTop + state.startHeight);
+      newTop = state.startTop + state.startHeight - newHeight;
     }
 
     state.wrapper.style.width = `${newWidth}px`;
@@ -1375,10 +1411,7 @@ export class MintDockManagerElement extends LitElement {
 
     const floating = this.floatingLayouts[state.index];
     if (floating) {
-      floating.bounds.width = newWidth;
-      floating.bounds.height = newHeight;
-      floating.bounds.left = newLeft;
-      floating.bounds.top = newTop;
+      floating.bounds = { left: newLeft, top: newTop, width: newWidth, height: newHeight };
     }
   }
 
@@ -1414,6 +1447,45 @@ export class MintDockManagerElement extends LitElement {
         ? floating.zIndex
         : 10 + index;
     return base;
+  }
+
+  private getHostSize(): { width: number; height: number } {
+    return {
+      width: this.rootEl.clientWidth,
+      height: this.rootEl.clientHeight,
+    };
+  }
+
+  private clampBoundsToHost(
+    intent: DockFloatingPaneBounds,
+    host: { width: number; height: number },
+  ): DockFloatingPaneBounds {
+    // Host not yet measured: return intent so the next render (after ResizeObserver fires) clamps correctly.
+    if (host.width <= 0 || host.height <= 0) return intent;
+    const width = Math.min(intent.width, host.width);
+    const height = Math.min(intent.height, host.height);
+    const left = Math.min(Math.max(intent.left, 0), host.width - width);
+    const top = Math.min(Math.max(intent.top, 0), host.height - height);
+    return { left, top, width, height };
+  }
+
+  // Re-clamp existing floating-pane wrappers in place. Avoids the full
+  // renderFloatingPanes() teardown (which would release pointer capture if
+  // a user is mid-drag when the host resizes).
+  private updateFloatingPanePositions(): void {
+    if (!this.floatingLayerEl) return;
+    const host = this.getHostSize();
+    this.floatingLayouts.forEach((floating, index) => {
+      const wrapper = this.floatingLayerEl.children[index] as HTMLElement | undefined;
+      if (!wrapper) return;
+      const { left, top, width, height } = this.clampBoundsToHost(floating.bounds, host);
+      wrapper.style.left = `${left}px`;
+      wrapper.style.top = `${top}px`;
+      wrapper.style.width = `${width}px`;
+      wrapper.style.height = `${height}px`;
+      wrapper.style.minWidth = '0';
+      wrapper.style.minHeight = '0';
+    });
   }
 
   private promoteFloatingPane(index: number, wrapper: HTMLElement): void {
@@ -2632,29 +2704,34 @@ export class MintDockManagerElement extends LitElement {
     // visible content edge (the docked .dock-stack also has a 1px border, so
     // the inner content rectangles match after this offset).
     const FLOATING_BORDER = 1;
-    const initialLeft =
+    const proposedLeft =
       metrics && Number.isFinite(metrics.left)
         ? metrics.left - FLOATING_BORDER
         : Number.isFinite(clientX)
         ? clientX - hostRect.left - width / 2
         : 0;
-    const initialTop =
+    const proposedTop =
       metrics && Number.isFinite(metrics.top)
         ? metrics.top - FLOATING_BORDER
         : Number.isFinite(clientY)
         ? clientY - hostRect.top - height / 2
         : 0;
+    // Clamp the new floating pane to the host so a tab torn off near the
+    // right/bottom edge lands fully inside the dock surface.
+    const clamped = this.clampBoundsToHost(
+      { left: proposedLeft, top: proposedTop, width, height },
+      this.getHostSize(),
+    );
 
     // Derive pointerOffset from the cursor's actual position relative to the
-    // freshly-placed wrapper (not from pointerdown metrics) so the very next
-    // pointermove translates into a wrapper move of exactly the cursor delta
-    // — no jump, no drift.
+    // freshly-placed (clamped) wrapper so the very next pointermove translates
+    // into a wrapper move of exactly the cursor delta — no jump, no drift.
     const pointerOffsetX = Number.isFinite(clientX)
-      ? clientX - hostRect.left - initialLeft
-      : width / 2;
+      ? clientX - hostRect.left - clamped.left
+      : clamped.width / 2;
     const pointerOffsetY = Number.isFinite(clientY)
-      ? clientY - hostRect.top - initialTop
-      : height / 2;
+      ? clientY - hostRect.top - clamped.top
+      : clamped.height / 2;
 
     // Remove pane from its current stack and create a new floating entry
     this.removePaneFromLocation(location, pane);
@@ -2665,12 +2742,7 @@ export class MintDockManagerElement extends LitElement {
     };
 
     const floatingLayout: DockFloatingStackLayout = {
-      bounds: {
-        left: initialLeft,
-        top: initialTop,
-        width,
-        height,
-      },
+      bounds: clamped,
       root: floatingStack,
       activePane: pane,
     };
