@@ -49,6 +49,10 @@
 
 .dock-floating {
   position: absolute;
+  // border-box: inline width/height set by the manager already accounts for
+  // the 1px border, so the pane's visual edge matches its clamped position
+  // exactly. Without this, content-box adds 2px past every host edge.
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   pointer-events: auto;

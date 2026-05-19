@@ -761,3 +761,78 @@ describe('mint-dock-manager — layout normalization', () => {
     expect(dock.layout.floating[0].activePane).toBe('a');
   });
 });
+
+describe('mint-dock-manager — clampBoundsToHost', () => {
+  type Bounds = { left: number; top: number; width: number; height: number };
+  type Internals = {
+    clampBoundsToHost: (intent: Bounds, host: { width: number; height: number }) => Bounds;
+  };
+  let clamp: Internals['clampBoundsToHost'];
+
+  beforeEach(() => {
+    const dock = document.createElement('mint-dock-manager') as MintDockManagerElement;
+    const internals = dock as unknown as Internals;
+    clamp = internals.clampBoundsToHost.bind(dock);
+  });
+
+  it('returns intent unchanged when fully inside the host', () => {
+    const out = clamp({ left: 100, top: 50, width: 200, height: 150 }, { width: 1000, height: 800 });
+    expect(out).toEqual({ left: 100, top: 50, width: 200, height: 150 });
+  });
+
+  it('shifts pane inward when right-overflow (Panel 5 repro)', () => {
+    const out = clamp({ left: 680, top: 96, width: 320, height: 220 }, { width: 900, height: 600 });
+    expect(out).toEqual({ left: 580, top: 96, width: 320, height: 220 });
+  });
+
+  it('shifts pane inward when bottom-overflow', () => {
+    const out = clamp({ left: 100, top: 500, width: 200, height: 200 }, { width: 1000, height: 600 });
+    expect(out).toEqual({ left: 100, top: 400, width: 200, height: 200 });
+  });
+
+  it('clamps a negative left to 0', () => {
+    const out = clamp({ left: -50, top: 100, width: 200, height: 150 }, { width: 1000, height: 600 });
+    expect(out).toEqual({ left: 0, top: 100, width: 200, height: 150 });
+  });
+
+  it('clamps a negative top to 0', () => {
+    const out = clamp({ left: 100, top: -50, width: 200, height: 150 }, { width: 1000, height: 600 });
+    expect(out).toEqual({ left: 100, top: 0, width: 200, height: 150 });
+  });
+
+  it('shrinks width and pins left to 0 when pane is wider than host', () => {
+    const out = clamp({ left: 100, top: 50, width: 1200, height: 200 }, { width: 900, height: 600 });
+    expect(out).toEqual({ left: 0, top: 50, width: 900, height: 200 });
+  });
+
+  it('shrinks height and pins top to 0 when pane is taller than host', () => {
+    const out = clamp({ left: 100, top: 50, width: 200, height: 800 }, { width: 1000, height: 600 });
+    expect(out).toEqual({ left: 100, top: 0, width: 200, height: 600 });
+  });
+
+  it('drops the 192/128 minimum when host is smaller — pane shrinks to fit', () => {
+    const out = clamp({ left: 50, top: 50, width: 192, height: 128 }, { width: 100, height: 80 });
+    expect(out).toEqual({ left: 0, top: 0, width: 100, height: 80 });
+  });
+
+  it('returns intent unchanged when host has zero width/height (not yet measured)', () => {
+    const intent = { left: 680, top: 96, width: 320, height: 220 };
+    expect(clamp(intent, { width: 0, height: 0 })).toEqual(intent);
+    expect(clamp(intent, { width: 0, height: 600 })).toEqual(intent);
+    expect(clamp(intent, { width: 1000, height: 0 })).toEqual(intent);
+  });
+
+  it('is idempotent — clamping a clamped value is a no-op', () => {
+    const cases: Bounds[] = [
+      { left: 680, top: 96, width: 320, height: 220 },
+      { left: -50, top: -50, width: 1200, height: 800 },
+      { left: 50, top: 50, width: 192, height: 128 },
+    ];
+    const host = { width: 900, height: 600 };
+    cases.forEach((intent) => {
+      const first = clamp(intent, host);
+      const second = clamp(first, host);
+      expect(second).toEqual(first);
+    });
+  });
+});
