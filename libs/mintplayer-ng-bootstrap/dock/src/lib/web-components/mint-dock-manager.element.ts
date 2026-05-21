@@ -1205,6 +1205,15 @@ export class MintDockManagerElement extends LitElement {
 
     this.promoteFloatingPane(index, wrapper);
 
+    // Make the wrapper transparent to elementsFromPoint for the duration of
+    // the drag so findStackAtPoint sees through to the pane underneath. With
+    // the chrome glued to the pointer this only matters when clamping pins
+    // the pane at a host edge and the pointer drifts onto the dragged pane's
+    // own .dock-stack body — without this, drop targets on other panes
+    // silently stop activating once clamped. See PRD
+    // docs/prd/dock-floating-drag-passthrough.md.
+    wrapper.dataset['dragging'] = 'true';
+
     this.floatingDragState = {
       index,
       pointerId: event.pointerId,
@@ -1307,6 +1316,7 @@ export class MintDockManagerElement extends LitElement {
     // Clear outside the try so a thrown releasePointerCapture (capture
     // already lost) doesn't strand the handle in its visual drag state.
     delete state.handle.dataset['resizing'];
+    delete state.wrapper.dataset['dragging'];
 
     const dropHandled = state.dropTarget
       ? this.handleFloatingStackDrop(state.index, state.dropTarget.path, state.dropTarget.zone)
