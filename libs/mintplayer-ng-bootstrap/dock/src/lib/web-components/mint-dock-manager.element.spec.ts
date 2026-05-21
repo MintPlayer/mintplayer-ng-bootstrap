@@ -762,6 +762,103 @@ describe('mint-dock-manager — layout normalization', () => {
   });
 });
 
+describe('mint-dock-manager — whole-pane drag marks the wrapper transparent', () => {
+  // Regression for #349 — without data-dragging on the wrapper during the
+  // gesture, findStackAtPoint returns the dragged pane's own .dock-stack
+  // once clamping decouples the chrome from the pointer, and the joystick
+  // on the target pane never re-activates. See PRD
+  // docs/prd/dock-floating-drag-passthrough.md.
+  let dock: MintDockManagerElement;
+
+  beforeEach(async () => {
+    dock = document.createElement('mint-dock-manager') as MintDockManagerElement;
+    document.body.appendChild(dock);
+    dock.getBoundingClientRect = () => makeRect(HOST_LEFT, HOST_TOP, HOST_WIDTH, HOST_HEIGHT);
+    dock.layout = {
+      root: { kind: 'stack', panes: ['docked'], activePane: 'docked' },
+      titles: { docked: 'Docked', floater: 'Floater' },
+      floating: [
+        {
+          bounds: { left: 200, top: 100, width: 240, height: 180 },
+          root: { kind: 'stack', panes: ['floater'], activePane: 'floater' },
+        },
+      ],
+    } as never;
+    await (dock as unknown as { updateComplete: Promise<void> }).updateComplete;
+    await nextRaf();
+    if (dock.shadowRoot) {
+      (dock.shadowRoot as unknown as { elementsFromPoint: (x: number, y: number) => Element[] }).elementsFromPoint =
+        () => [];
+    }
+  });
+
+  afterEach(() => {
+    dock.remove();
+  });
+
+  function getFloatingWrapper(): HTMLElement {
+    const wrapper = dock.shadowRoot!.querySelector<HTMLElement>('.dock-floating-layer .dock-floating');
+    if (!wrapper) throw new Error('floating wrapper not rendered');
+    return wrapper;
+  }
+
+  function getChrome(wrapper: HTMLElement): HTMLElement {
+    const chrome = wrapper.querySelector<HTMLElement>('.dock-floating__chrome');
+    if (!chrome) throw new Error('chrome not rendered');
+    return chrome;
+  }
+
+  it('sets data-dragging on the wrapper during a whole-pane drag and clears it on release', () => {
+    const wrapper = getFloatingWrapper();
+    const chrome = getChrome(wrapper);
+
+    expect(wrapper.dataset['dragging']).toBeUndefined();
+
+    chrome.dispatchEvent(makePointerEvent('pointerdown', { clientX: 250, clientY: 110 }));
+    expect(wrapper.dataset['dragging']).toBe('true');
+
+    window.dispatchEvent(makePointerEvent('pointermove', { clientX: 280, clientY: 140 }));
+    expect(wrapper.dataset['dragging']).toBe('true');
+
+    window.dispatchEvent(makePointerEvent('pointerup', { clientX: 280, clientY: 140, buttons: 0 }));
+    expect(wrapper.dataset['dragging']).toBeUndefined();
+  });
+
+  it('toggles data-dragging cleanly across back-to-back drags', () => {
+    const wrapper = getFloatingWrapper();
+    const chrome = getChrome(wrapper);
+
+    for (let i = 0; i < 2; i++) {
+      chrome.dispatchEvent(makePointerEvent('pointerdown', { clientX: 250, clientY: 110, pointerId: i + 1 }));
+      expect(wrapper.dataset['dragging']).toBe('true');
+      window.dispatchEvent(makePointerEvent('pointerup', { clientX: 250, clientY: 110, pointerId: i + 1, buttons: 0 }));
+      expect(wrapper.dataset['dragging']).toBeUndefined();
+    }
+  });
+
+  it('clears data-dragging on pointercancel so the wrapper does not stay ungrabbable', () => {
+    // Without a pointercancel handler the wrapper would stay at
+    // pointer-events: none forever after an OS-level cancel (Android
+    // multi-touch, Windows back-swipe, Surface palm rejection), making
+    // the chrome ungrabbable. Regression coverage for the gemini review
+    // on PR #350.
+    const wrapper = getFloatingWrapper();
+    const chrome = getChrome(wrapper);
+
+    chrome.dispatchEvent(makePointerEvent('pointerdown', { clientX: 250, clientY: 110 }));
+    expect(wrapper.dataset['dragging']).toBe('true');
+
+    window.dispatchEvent(makePointerEvent('pointercancel', { clientX: 250, clientY: 110, buttons: 0 }));
+    expect(wrapper.dataset['dragging']).toBeUndefined();
+
+    // And a fresh drag after cancel must still work.
+    chrome.dispatchEvent(makePointerEvent('pointerdown', { clientX: 250, clientY: 110, pointerId: 2 }));
+    expect(wrapper.dataset['dragging']).toBe('true');
+    window.dispatchEvent(makePointerEvent('pointerup', { clientX: 250, clientY: 110, pointerId: 2, buttons: 0 }));
+    expect(wrapper.dataset['dragging']).toBeUndefined();
+  });
+});
+
 describe('mint-dock-manager — clampBoundsToHost', () => {
   type Bounds = { left: number; top: number; width: number; height: number };
   type Internals = {

@@ -253,6 +253,7 @@ export class MintDockManagerElement extends LitElement {
     this.windowRef = typeof window !== 'undefined' ? window : null;
     this.onPointerMove = this.onPointerMove.bind(this);
     this.onPointerUp = this.onPointerUp.bind(this);
+    this.onPointerCancel = this.onPointerCancel.bind(this);
     this.onDragPointerMove = this.onDragPointerMove.bind(this);
     this.onDragPointerUp = this.onDragPointerUp.bind(this);
     this.onDragPointerCancel = this.onDragPointerCancel.bind(this);
@@ -350,6 +351,7 @@ export class MintDockManagerElement extends LitElement {
     this.stopDragPointerTracking();
     win?.removeEventListener('pointermove', this.onPointerMove);
     win?.removeEventListener('pointerup', this.onPointerUp);
+    win?.removeEventListener('pointercancel', this.onPointerCancel);
     this.pointerTrackingActive = false;
     this.rootResizeObserver?.disconnect();
     this.rootResizeObserver = null;
@@ -1205,6 +1207,15 @@ export class MintDockManagerElement extends LitElement {
 
     this.promoteFloatingPane(index, wrapper);
 
+    // Make the wrapper transparent to elementsFromPoint for the duration of
+    // the drag so findStackAtPoint sees through to the pane underneath. With
+    // the chrome glued to the pointer this only matters when clamping pins
+    // the pane at a host edge and the pointer drifts onto the dragged pane's
+    // own .dock-stack body — without this, drop targets on other panes
+    // silently stop activating once clamped. See PRD
+    // docs/prd/dock-floating-drag-passthrough.md.
+    wrapper.dataset['dragging'] = 'true';
+
     this.floatingDragState = {
       index,
       pointerId: event.pointerId,
@@ -1307,6 +1318,7 @@ export class MintDockManagerElement extends LitElement {
     // Clear outside the try so a thrown releasePointerCapture (capture
     // already lost) doesn't strand the handle in its visual drag state.
     delete state.handle.dataset['resizing'];
+    delete state.wrapper.dataset['dragging'];
 
     const dropHandled = state.dropTarget
       ? this.handleFloatingStackDrop(state.index, state.dropTarget.path, state.dropTarget.zone)
@@ -1523,6 +1535,7 @@ export class MintDockManagerElement extends LitElement {
     const win = this.windowRef;
     win?.addEventListener('pointermove', this.onPointerMove);
     win?.addEventListener('pointerup', this.onPointerUp);
+    win?.addEventListener('pointercancel', this.onPointerCancel);
     this.pointerTrackingActive = true;
   }
 
@@ -1536,6 +1549,7 @@ export class MintDockManagerElement extends LitElement {
       const win = this.windowRef;
       win?.removeEventListener('pointermove', this.onPointerMove);
       win?.removeEventListener('pointerup', this.onPointerUp);
+      win?.removeEventListener('pointercancel', this.onPointerCancel);
       this.pointerTrackingActive = false;
     }
   }
@@ -1878,6 +1892,31 @@ export class MintDockManagerElement extends LitElement {
 
     if (this.floatingResizeState && event.pointerId === this.floatingResizeState.pointerId) {
       this.endFloatingResize(event.pointerId);
+    }
+
+    this.stopPointerTrackingIfIdle();
+  }
+
+  // OS-level cancel (pointer capture lost to a back-swipe, multi-touch
+  // arbitration, palm rejection, etc.). Without this, the wrapper's
+  // data-dragging marker stays set after the gesture is yanked away from
+  // us, leaving the pane permanently transparent to pointer events and
+  // ungrabbable. Cleans up the same states onPointerUp does but
+  // explicitly drops state.dropTarget for the floating drag so cancel
+  // never commits a phantom drop (mirrors onDragPointerCancel for the
+  // tab-drag path).
+  private onPointerCancel(event: PointerEvent): void {
+    if (this.floatingDragState && event.pointerId === this.floatingDragState.pointerId) {
+      delete this.floatingDragState.dropTarget;
+      this.endFloatingDrag(event.pointerId);
+    }
+
+    if (this.floatingResizeState && event.pointerId === this.floatingResizeState.pointerId) {
+      this.endFloatingResize(event.pointerId);
+    }
+
+    if (this.cornerResizeState && event.pointerId === this.cornerResizeState.pointerId) {
+      this.endCornerResize(event.pointerId);
     }
 
     this.stopPointerTrackingIfIdle();
