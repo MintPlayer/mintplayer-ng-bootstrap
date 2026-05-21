@@ -835,6 +835,28 @@ describe('mint-dock-manager — whole-pane drag marks the wrapper transparent', 
       expect(wrapper.dataset['dragging']).toBeUndefined();
     }
   });
+
+  it('clears data-dragging on pointercancel so the wrapper does not stay ungrabbable', () => {
+    // Without a pointercancel handler the wrapper would stay at
+    // pointer-events: none forever after an OS-level cancel (Android
+    // multi-touch, Windows back-swipe, Surface palm rejection), making
+    // the chrome ungrabbable. Regression coverage for the gemini review
+    // on PR #350.
+    const wrapper = getFloatingWrapper();
+    const chrome = getChrome(wrapper);
+
+    chrome.dispatchEvent(makePointerEvent('pointerdown', { clientX: 250, clientY: 110 }));
+    expect(wrapper.dataset['dragging']).toBe('true');
+
+    window.dispatchEvent(makePointerEvent('pointercancel', { clientX: 250, clientY: 110, buttons: 0 }));
+    expect(wrapper.dataset['dragging']).toBeUndefined();
+
+    // And a fresh drag after cancel must still work.
+    chrome.dispatchEvent(makePointerEvent('pointerdown', { clientX: 250, clientY: 110, pointerId: 2 }));
+    expect(wrapper.dataset['dragging']).toBe('true');
+    window.dispatchEvent(makePointerEvent('pointerup', { clientX: 250, clientY: 110, pointerId: 2, buttons: 0 }));
+    expect(wrapper.dataset['dragging']).toBeUndefined();
+  });
 });
 
 describe('mint-dock-manager — clampBoundsToHost', () => {
