@@ -1,7 +1,11 @@
 import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, input } from '@angular/core';
 @Component({
   selector: 'bs-ribbon-template-item',
-  templateUrl: './ribbon-template-item.component.html',
+  template: `
+    <mp-ribbon-template-item [attr.size]="size()">
+      <ng-content></ng-content>
+    </mp-ribbon-template-item>
+  `,
   styles: [`:host { display: inline-flex; }`],
   host: {
     '[attr.size]': 'size()',

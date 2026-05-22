@@ -2,7 +2,17 @@ import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, forwardRef,
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 @Component({
   selector: 'bs-ribbon-check-box',
-  templateUrl: './ribbon-check-box.component.html',
+  template: `
+    <mp-ribbon-checkbox
+      [attr.item-id]="itemId()"
+      [attr.label]="label()"
+      [attr.size]="size()"
+      [attr.disabled]="disabledState() ? '' : null"
+      [attr.tooltip]="tooltip()"
+      [attr.checked]="checked() ? '' : null"
+      (check-change)="onCheckChange($event)"
+    ></mp-ribbon-checkbox>
+  `,
   styles: [`:host { display: inline-flex; }`],
   host: {
     '[attr.size]': 'size()',

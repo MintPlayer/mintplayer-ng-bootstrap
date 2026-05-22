@@ -1,7 +1,19 @@
 import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, input, output } from '@angular/core';
 @Component({
   selector: 'bs-ribbon-menu-item',
-  templateUrl: './ribbon-menu-item.component.html',
+  template: `
+    <mp-ribbon-menu-item
+      [attr.item-id]="itemId()"
+      [attr.label]="label()"
+      [attr.icon]="icon()"
+      [attr.kind]="kind()"
+      [attr.checked]="checked() ? '' : null"
+      [attr.disabled]="disabled() ? '' : null"
+      (menu-select)="onMenuSelect($event)"
+    >
+      <ng-content></ng-content>
+    </mp-ribbon-menu-item>
+  `,
   host: {
     '[attr.slot]': "'menu'",
   },

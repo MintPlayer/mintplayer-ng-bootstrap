@@ -2,7 +2,24 @@ import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, ElementRef,
 import { type RibbonTabChangeEvent } from '@mintplayer/web-components/ribbon';
 @Component({
   selector: 'bs-ribbon',
-  templateUrl: './ribbon.component.html',
+  template: `
+    <mp-ribbon
+      #ribbon
+      class="bs-ribbon"
+      [attr.active-tab-id]="activeTabId()"
+      [attr.layout]="layout()"
+      [attr.minimized]="minimized() ? '' : null"
+      [attr.version]="version()"
+      [attr.color-scheme]="colorScheme()"
+      [attr.touch-mode]="touchMode()"
+      [attr.key-tips]="keyTips()"
+      [style.--bs-ribbon-app-accent]="appAccent()"
+      (tab-change)="onTabChange($event)"
+      (minimize-toggle)="onMinimizeToggle($event)"
+    >
+      <ng-content></ng-content>
+    </mp-ribbon>
+  `,
   styles: [`
     :host { display: block; }
     .bs-ribbon { display: block; }

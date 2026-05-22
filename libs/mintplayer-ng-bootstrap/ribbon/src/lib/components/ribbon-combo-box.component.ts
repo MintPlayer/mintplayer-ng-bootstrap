@@ -3,7 +3,18 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import type { RibbonComboBoxOption } from '@mintplayer/web-components/ribbon';
 @Component({
   selector: 'bs-ribbon-combo-box',
-  templateUrl: './ribbon-combo-box.component.html',
+  template: `
+    <mp-ribbon-combobox
+      [attr.item-id]="itemId()"
+      [attr.label]="label()"
+      [attr.size]="size()"
+      [attr.disabled]="disabledState() ? '' : null"
+      [attr.tooltip]="tooltip()"
+      [attr.value]="value()"
+      [options]="options()"
+      (value-change)="onValueChange($event)"
+    ></mp-ribbon-combobox>
+  `,
   styles: [`:host { display: inline-flex; }`],
   host: {
     '[attr.size]': 'size()',

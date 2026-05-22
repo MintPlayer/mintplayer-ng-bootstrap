@@ -1,7 +1,18 @@
 import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, input, output } from '@angular/core';
 @Component({
   selector: 'bs-ribbon-gallery-item',
-  templateUrl: './ribbon-gallery-item.component.html',
+  template: `
+    <mp-ribbon-gallery-item
+      [attr.item-id]="itemId()"
+      [attr.label]="label()"
+      [attr.icon]="icon()"
+      [attr.selected]="selected() ? '' : null"
+      [attr.disabled]="disabled() ? '' : null"
+      (gallery-select)="onSelect($event)"
+    >
+      <ng-content></ng-content>
+    </mp-ribbon-gallery-item>
+  `,
   styles: [`:host { display: inline-flex; }`],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,

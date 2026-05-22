@@ -2,7 +2,7 @@ import { AfterContentInit, Component, input, TemplateRef, viewChild, ChangeDetec
 
 @Component({
   selector: 'bs-dock-pane',
-  templateUrl: './dock-pane.component.html',
+  template: `<ng-template><ng-content></ng-content></ng-template>`,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsDockPaneComponent implements AfterContentInit {

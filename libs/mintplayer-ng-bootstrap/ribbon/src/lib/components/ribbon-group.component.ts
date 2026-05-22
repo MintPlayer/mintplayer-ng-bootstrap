@@ -1,7 +1,19 @@
 import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, input, output } from '@angular/core';
 @Component({
   selector: 'bs-ribbon-group',
-  templateUrl: './ribbon-group.component.html',
+  template: `
+    <mp-ribbon-group
+      [attr.group-id]="groupId()"
+      [attr.label]="label()"
+      [attr.icon]="icon()"
+      [attr.dialog-launcher]="dialogLauncher()"
+      [attr.priority]="priority()"
+      [attr.auto-scale]="autoScale() ? null : 'false'"
+      (dialog-launcher-click)="onDialogLauncherClick($event)"
+    >
+      <ng-content></ng-content>
+    </mp-ribbon-group>
+  `,
   styles: [`
     :host { display: contents; }
   `],

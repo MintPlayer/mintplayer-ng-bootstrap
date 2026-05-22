@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
+
 @Component({
   selector: 'bs-tile-header',
-  templateUrl: './tile-header.component.html',
+  template: `<ng-content></ng-content>`,
   styles: [
     `:host {
        display: flex;

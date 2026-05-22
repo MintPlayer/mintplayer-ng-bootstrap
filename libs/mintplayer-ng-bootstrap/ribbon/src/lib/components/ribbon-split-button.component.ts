@@ -1,7 +1,20 @@
 import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, input, output } from '@angular/core';
 @Component({
   selector: 'bs-ribbon-split-button',
-  templateUrl: './ribbon-split-button.component.html',
+  template: `
+    <mp-ribbon-split-button
+      [attr.item-id]="itemId()"
+      [attr.label]="label()"
+      [attr.icon]="icon()"
+      [attr.size]="size()"
+      [attr.disabled]="disabled() ? '' : null"
+      [attr.tooltip]="tooltip()"
+      (main-action)="onMainAction($event)"
+      (menu-toggle)="onMenuToggle($event)"
+    >
+      <ng-content></ng-content>
+    </mp-ribbon-split-button>
+  `,
   styles: [`:host { display: inline-flex; }`],
   host: {
     '[attr.size]': 'size()',

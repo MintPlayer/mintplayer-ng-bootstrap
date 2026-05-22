@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 @Component({
   selector: 'bs-ribbon-menu-separator',
-  templateUrl: './ribbon-menu-separator.component.html',
+  template: `<mp-ribbon-menu-separator></mp-ribbon-menu-separator>`,
   host: {
     '[attr.slot]': "'menu'",
   },
