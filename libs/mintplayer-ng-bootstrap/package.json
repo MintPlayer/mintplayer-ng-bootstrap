@@ -1,7 +1,7 @@
 {
   "name": "@mintplayer/ng-bootstrap",
   "private": false,
-  "version": "21.41.1",
+  "version": "21.42.0",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -29,7 +29,7 @@
     "@mintplayer/pagination": "^2.3.0",
     "@mintplayer/ng-focus-on-load": "^21.2.0",
     "@mintplayer/ng-swiper": "^21.9.0",
-    "@mintplayer/web-components": "^0.0.1"
+    "@mintplayer/web-components": "^1.0.0"
   },
   "dependencies": {
     "tslib": "^2.3.0"
