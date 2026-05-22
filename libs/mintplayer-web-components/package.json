@@ -4,10 +4,7 @@
   "description": "Framework-agnostic Lit web components for the @mintplayer/bootstrap design system. Consumed by @mintplayer/ng-bootstrap, @mintplayer/react-bootstrap, and @mintplayer/vue-bootstrap.",
   "license": "MIT",
   "type": "module",
-  "sideEffects": [
-    "**/*.element.{ts,js,mjs}",
-    "**/src/index.{ts,js,mjs}"
-  ],
+  "sideEffects": true,
   "customElements": "custom-elements.json",
   "main": "./index.mjs",
   "types": "./src/index.d.ts",
