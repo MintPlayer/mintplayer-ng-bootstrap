@@ -5,6 +5,22 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>vue-bootstrap-demo</title>
+    <script>
+      // Pre-boot: mirror the OS prefers-color-scheme to Bootstrap's
+      // data-bs-theme attribute before the Vue app paints. The Vue
+      // demo intentionally has NO in-app theme toggle — system pref is
+      // the source of truth. Re-applied on matchMedia change so Night
+      // Shift / Dark Mode flips on macOS, Windows and GNOME take effect
+      // without a reload.
+      (function () {
+        var mq = matchMedia('(prefers-color-scheme: dark)');
+        function apply() {
+          document.documentElement.setAttribute('data-bs-theme', mq.matches ? 'dark' : 'light');
+        }
+        apply();
+        try { mq.addEventListener('change', apply); } catch (_) { mq.addListener(apply); }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
