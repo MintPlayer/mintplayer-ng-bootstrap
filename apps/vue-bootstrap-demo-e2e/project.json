@@ -1,0 +1,20 @@
+{
+  "name": "vue-bootstrap-demo-e2e",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/vue-bootstrap-demo-e2e/src",
+  "implicitDependencies": [
+    "vue-bootstrap-demo"
+  ],
+  "targets": {
+    "e2e": {
+      "executor": "@nx/playwright:playwright",
+      "outputs": [
+        "{workspaceRoot}/dist/.playwright/apps/vue-bootstrap-demo-e2e"
+      ],
+      "options": {
+        "config": "apps/vue-bootstrap-demo-e2e/playwright.config.ts"
+      }
+    }
+  }
+}

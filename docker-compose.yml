@@ -10,6 +10,30 @@ services:
       - web
     restart: unless-stopped
 
+  react-bootstrap-demo:
+    image: ghcr.io/mintplayer/mintplayer-ng-bootstrap-react-demo:master
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.react-bootstrap-demo.rule=Host(`react.bootstrap.mintplayer.com`)"
+      - "traefik.http.routers.react-bootstrap-demo.entrypoints=websecure"
+      - "traefik.http.routers.react-bootstrap-demo.tls.certresolver=letsencrypt"
+      - "traefik.http.services.react-bootstrap-demo.loadbalancer.server.port=80"
+    networks:
+      - web
+    restart: unless-stopped
+
+  vue-bootstrap-demo:
+    image: ghcr.io/mintplayer/mintplayer-ng-bootstrap-vue-demo:master
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vue-bootstrap-demo.rule=Host(`vue.bootstrap.mintplayer.com`)"
+      - "traefik.http.routers.vue-bootstrap-demo.entrypoints=websecure"
+      - "traefik.http.routers.vue-bootstrap-demo.tls.certresolver=letsencrypt"
+      - "traefik.http.services.vue-bootstrap-demo.loadbalancer.server.port=80"
+    networks:
+      - web
+    restart: unless-stopped
+
   api:
     image: ghcr.io/mintplayer/mintplayer-ng-bootstrap-api:master
     labels:

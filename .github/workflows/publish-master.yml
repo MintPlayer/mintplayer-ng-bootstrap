@@ -225,6 +225,64 @@ jobs:
         access: 'public'
         provenance: true
 
+    ## web-components (the framework-agnostic core — publish before the
+    ## wrapper libs so they can resolve the peer dep at install time)
+    - name: Push to NPM
+      uses: JS-DevTools/npm-publish@v4
+      with:
+        package: 'dist/libs/mintplayer-web-components/package.json'
+        registry: 'https://registry.npmjs.org'
+        token: ${{ secrets.PUBLISH_TO_NPMJS }}
+        access: 'public'
+        provenance: true
+
+    - name: Push to Github
+      uses: JS-DevTools/npm-publish@v4
+      with:
+        package: 'dist/libs/mintplayer-web-components/package.json'
+        registry: 'https://npm.pkg.github.com'
+        token: ${{ github.token }}
+        access: 'public'
+        provenance: true
+
+    ## react-bootstrap
+    - name: Push to NPM
+      uses: JS-DevTools/npm-publish@v4
+      with:
+        package: 'dist/libs/mintplayer-react-bootstrap/package.json'
+        registry: 'https://registry.npmjs.org'
+        token: ${{ secrets.PUBLISH_TO_NPMJS }}
+        access: 'public'
+        provenance: true
+
+    - name: Push to Github
+      uses: JS-DevTools/npm-publish@v4
+      with:
+        package: 'dist/libs/mintplayer-react-bootstrap/package.json'
+        registry: 'https://npm.pkg.github.com'
+        token: ${{ github.token }}
+        access: 'public'
+        provenance: true
+
+    ## vue-bootstrap
+    - name: Push to NPM
+      uses: JS-DevTools/npm-publish@v4
+      with:
+        package: 'dist/libs/mintplayer-vue-bootstrap/package.json'
+        registry: 'https://registry.npmjs.org'
+        token: ${{ secrets.PUBLISH_TO_NPMJS }}
+        access: 'public'
+        provenance: true
+
+    - name: Push to Github
+      uses: JS-DevTools/npm-publish@v4
+      with:
+        package: 'dist/libs/mintplayer-vue-bootstrap/package.json'
+        registry: 'https://npm.pkg.github.com'
+        token: ${{ github.token }}
+        access: 'public'
+        provenance: true
+
     ## ng-bootstrap
     - name: Push to NPM
       id: publish_ng_bootstrap
@@ -293,6 +351,58 @@ jobs:
       with:
         subject-name: ghcr.io/${{ github.repository }}
         subject-digest: ${{ steps.push-ghcr.outputs.digest }}
+        push-to-registry: true
+
+    # ---- React demo image ----
+
+    - name: Extract React demo image tags/labels
+      id: meta-react-demo
+      uses: docker/metadata-action@v5
+      with:
+        github-token: ${{ github.token }}
+        images: ghcr.io/${{ github.repository }}-react-demo
+
+    - name: Publish React demo to Github Container Registry
+      id: push-react-demo
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: ./apps/react-bootstrap-demo/Dockerfile
+        push: true
+        tags: ${{ steps.meta-react-demo.outputs.tags }}
+        labels: ${{ steps.meta-react-demo.outputs.labels }}
+
+    - name: Generate React demo artifact attestation
+      uses: actions/attest-build-provenance@v1
+      with:
+        subject-name: ghcr.io/${{ github.repository }}-react-demo
+        subject-digest: ${{ steps.push-react-demo.outputs.digest }}
+        push-to-registry: true
+
+    # ---- Vue demo image ----
+
+    - name: Extract Vue demo image tags/labels
+      id: meta-vue-demo
+      uses: docker/metadata-action@v5
+      with:
+        github-token: ${{ github.token }}
+        images: ghcr.io/${{ github.repository }}-vue-demo
+
+    - name: Publish Vue demo to Github Container Registry
+      id: push-vue-demo
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: ./apps/vue-bootstrap-demo/Dockerfile
+        push: true
+        tags: ${{ steps.meta-vue-demo.outputs.tags }}
+        labels: ${{ steps.meta-vue-demo.outputs.labels }}
+
+    - name: Generate Vue demo artifact attestation
+      uses: actions/attest-build-provenance@v1
+      with:
+        subject-name: ghcr.io/${{ github.repository }}-vue-demo
+        subject-digest: ${{ steps.push-vue-demo.outputs.digest }}
         push-to-registry: true
 
     # ---- ASP.NET Core API ----
