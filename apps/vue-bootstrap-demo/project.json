@@ -26,6 +26,8 @@
     "serve": {
       "executor": "@nx/vite:dev-server",
       "defaultConfiguration": "development",
+      "continuous": true,
+      "dependsOn": [{ "projects": ["api"], "target": "serve" }],
       "options": {
         "buildTarget": "vue-bootstrap-demo:build"
       },
