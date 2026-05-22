@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsToastComponent, BsToastPoliteness } from './toast.component';
+
 @Component({
   selector: 'bs-toast-aria-harness',
   imports: [BsToastComponent],

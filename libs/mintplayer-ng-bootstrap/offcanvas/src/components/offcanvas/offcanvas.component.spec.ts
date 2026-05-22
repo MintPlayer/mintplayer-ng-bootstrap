@@ -6,6 +6,7 @@ import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { MockComponent } from 'ng-mocks';
 import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
 import { BsOffcanvasComponent } from './offcanvas.component';
+
 @Component({
   selector: 'offcanvas-test-component',
   template: `

@@ -1,10 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MockComponent } from 'ng-mocks';
+
 import { BsColorPickerComponent } from './color-picker.component';
 import { BsColorPickerValueAccessor } from '../../directives/color-picker-value-accessor/color-picker-value-accessor.directive';
 import { BsAlphaStripComponent } from '../alpha-strip/alpha-strip.component';
 import { BsBrightnessStripComponent } from '../brightness-strip/brightness-strip.component';
 import { BsColorWheelComponent } from '../color-wheel/color-wheel.component';
+
 describe('ColorPickerComponent', () => {
   let component: BsColorPickerComponent;
   let accessor: BsColorPickerValueAccessor;

@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+
 import { BsFormComponent } from './form.component';
+
 describe('BsFormComponent', () => {
   let component: BsFormComponent;
   let fixture: ComponentFixture<BsFormComponent>;

@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 import { MockComponent } from 'ng-mocks';
 import { BsFloatingLabelComponent } from './floating-label.component';
+
 @Component({
   selector: 'bs-floating-label-test',
   template: `

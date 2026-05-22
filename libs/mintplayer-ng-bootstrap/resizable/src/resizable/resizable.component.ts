@@ -4,6 +4,7 @@ import { RESIZABLE } from '../providers/resizable.provider';
 import { ResizablePositioning } from '../types/positioning';
 import { PresetPosition } from '../interfaces/preset-position';
 import { BsResizeGlyphDirective } from '../resize-glyph/resize-glyph.directive';
+
 @Component({
   selector: 'bs-resizable',
   templateUrl: './resizable.component.html',

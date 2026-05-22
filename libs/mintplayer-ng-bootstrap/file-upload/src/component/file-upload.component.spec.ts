@@ -5,6 +5,7 @@ import { BsFormatBytesPipe } from '../pipes/format-bytes/format-bytes.pipe';
 import { BsFileUploadComponent } from './file-upload.component';
 import { BsListGroupComponent, BsListGroupItemComponent } from '@mintplayer/ng-bootstrap/list-group';
 import { BsProgressComponent, BsProgressBarComponent } from '@mintplayer/ng-bootstrap/progress-bar';
+
 describe('BsFileUploadComponent', () => {
   let component: BsFileUploadComponent;
   let fixture: ComponentFixture<BsFileUploadComponent>;

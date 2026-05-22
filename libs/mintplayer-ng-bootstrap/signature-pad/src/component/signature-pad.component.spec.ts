@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsSignaturePadComponent } from './signature-pad.component';
+
 describe('BsSignaturePadComponent', () => {
   let component: BsSignaturePadComponent;
   let fixture: ComponentFixture<BsSignaturePadComponent>;

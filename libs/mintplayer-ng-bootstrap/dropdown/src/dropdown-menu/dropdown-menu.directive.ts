@@ -5,6 +5,7 @@ import { ClickOutsideDirective } from '@mintplayer/ng-click-outside';
 import { BS_DEVELOPMENT } from '@mintplayer/ng-bootstrap';
 import { BsOverlayStackService } from '@mintplayer/ng-bootstrap/a11y';
 import { BsDropdownDirective } from '../dropdown/dropdown.directive';
+
 @Directive({
   selector: '[bsDropdownMenu]',
   host: {

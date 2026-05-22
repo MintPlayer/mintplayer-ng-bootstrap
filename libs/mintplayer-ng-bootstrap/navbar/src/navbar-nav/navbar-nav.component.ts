@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
 import { BsNavbarComponent } from '../navbar/navbar.component';
+
 @Component({
   selector: 'bs-navbar-nav',
   templateUrl: './navbar-nav.component.html',

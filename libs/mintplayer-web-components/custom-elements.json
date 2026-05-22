@@ -14673,52 +14673,6 @@
     },
     {
       "kind": "javascript-module",
-      "path": "calendar/src/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "*",
-          "declaration": {
-            "name": "*",
-            "module": "calendar/src/mp-calendar.element"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "checkbox/src/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "MpCheckbox",
-          "declaration": {
-            "name": "MpCheckbox",
-            "module": "./components"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpCheckboxType",
-          "declaration": {
-            "name": "MpCheckboxType",
-            "module": "./components"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "CheckboxChangeEventDetail",
-          "declaration": {
-            "name": "CheckboxChangeEventDetail",
-            "module": "./components"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
       "path": "card/src/card-classes.ts",
       "declarations": [
         {
@@ -15033,6 +14987,52 @@
           "declaration": {
             "name": "*",
             "module": "card/src/types/card-header-nav-style"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "checkbox/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpCheckbox",
+          "declaration": {
+            "name": "MpCheckbox",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpCheckboxType",
+          "declaration": {
+            "name": "MpCheckboxType",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "CheckboxChangeEventDetail",
+          "declaration": {
+            "name": "CheckboxChangeEventDetail",
+            "module": "./components"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "calendar/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "calendar/src/mp-calendar.element"
           }
         }
       ]
@@ -16811,6 +16811,45 @@
     },
     {
       "kind": "javascript-module",
+      "path": "tile-manager/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "tile-manager/src/mint-tile-manager.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "tile-manager/src/types/tile-position"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "tile-manager/src/types/tile-layout-snapshot"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "tile-manager/src/types/grid-rect"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "tab-control/src/index.ts",
       "declarations": [],
       "exports": [
@@ -16852,45 +16891,6 @@
           "declaration": {
             "name": "tabControlStyles",
             "module": "./styles"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "tile-manager/src/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "*",
-          "declaration": {
-            "name": "*",
-            "module": "tile-manager/src/mint-tile-manager.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "*",
-          "declaration": {
-            "name": "*",
-            "module": "tile-manager/src/types/tile-position"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "*",
-          "declaration": {
-            "name": "*",
-            "module": "tile-manager/src/types/tile-layout-snapshot"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "*",
-          "declaration": {
-            "name": "*",
-            "module": "tile-manager/src/types/grid-rect"
           }
         }
       ]
@@ -17051,6 +17051,18 @@
           }
         }
       ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "card/src/types/card-header-nav-style.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "card/src/types/card-image-position.ts",
+      "declarations": [],
+      "exports": []
     },
     {
       "kind": "javascript-module",
@@ -17337,18 +17349,6 @@
           }
         }
       ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "card/src/types/card-header-nav-style.ts",
-      "declarations": [],
-      "exports": []
-    },
-    {
-      "kind": "javascript-module",
-      "path": "card/src/types/card-image-position.ts",
-      "declarations": [],
-      "exports": []
     },
     {
       "kind": "javascript-module",
@@ -32689,6 +32689,103 @@
     },
     {
       "kind": "javascript-module",
+      "path": "tile-manager/src/types/grid-rect.ts",
+      "declarations": [
+        {
+          "kind": "function",
+          "name": "rectsOverlap",
+          "return": {
+            "type": {
+              "text": "boolean"
+            }
+          },
+          "parameters": [
+            {
+              "name": "a",
+              "type": {
+                "text": "GridRect"
+              }
+            },
+            {
+              "name": "b",
+              "type": {
+                "text": "GridRect"
+              }
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "rectsOverlap",
+          "declaration": {
+            "name": "rectsOverlap",
+            "module": "tile-manager/src/types/grid-rect.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "tile-manager/src/types/tile-layout-snapshot.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "tile-manager/src/types/tile-position.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "tile-manager/src/utils/pack.ts",
+      "declarations": [
+        {
+          "kind": "function",
+          "name": "pack",
+          "return": {
+            "type": {
+              "text": "{ layout: TileLayoutSnapshot; blocked: boolean }"
+            }
+          },
+          "parameters": [
+            {
+              "name": "tiles",
+              "type": {
+                "text": "ReadonlyArray<PackInputTile>"
+              }
+            },
+            {
+              "name": "pinned",
+              "type": {
+                "text": "{ id: string; rect: GridRect }"
+              }
+            },
+            {
+              "name": "columnCount",
+              "type": {
+                "text": "number"
+              }
+            }
+          ],
+          "description": "Vertical-compact packer. The pinned tile's rect is the user's gesture; all\r\nother tiles flow around it (locked tiles stay put; movable tiles get pushed\r\nout of the way and gravity-compacted upward).\r\n\r\nReturns `blocked: true` if the pinned rect overlaps a locked tile or no\r\nvalid layout exists; the caller should snap back and not commit."
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "pack",
+          "declaration": {
+            "name": "pack",
+            "module": "tile-manager/src/utils/pack.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "tab-control/src/components/index.ts",
       "declarations": [],
       "exports": [
@@ -33075,103 +33172,6 @@
       "path": "tab-control/src/types/tabs-position.ts",
       "declarations": [],
       "exports": []
-    },
-    {
-      "kind": "javascript-module",
-      "path": "tile-manager/src/types/grid-rect.ts",
-      "declarations": [
-        {
-          "kind": "function",
-          "name": "rectsOverlap",
-          "return": {
-            "type": {
-              "text": "boolean"
-            }
-          },
-          "parameters": [
-            {
-              "name": "a",
-              "type": {
-                "text": "GridRect"
-              }
-            },
-            {
-              "name": "b",
-              "type": {
-                "text": "GridRect"
-              }
-            }
-          ]
-        }
-      ],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "rectsOverlap",
-          "declaration": {
-            "name": "rectsOverlap",
-            "module": "tile-manager/src/types/grid-rect.ts"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "tile-manager/src/types/tile-layout-snapshot.ts",
-      "declarations": [],
-      "exports": []
-    },
-    {
-      "kind": "javascript-module",
-      "path": "tile-manager/src/types/tile-position.ts",
-      "declarations": [],
-      "exports": []
-    },
-    {
-      "kind": "javascript-module",
-      "path": "tile-manager/src/utils/pack.ts",
-      "declarations": [
-        {
-          "kind": "function",
-          "name": "pack",
-          "return": {
-            "type": {
-              "text": "{ layout: TileLayoutSnapshot; blocked: boolean }"
-            }
-          },
-          "parameters": [
-            {
-              "name": "tiles",
-              "type": {
-                "text": "ReadonlyArray<PackInputTile>"
-              }
-            },
-            {
-              "name": "pinned",
-              "type": {
-                "text": "{ id: string; rect: GridRect }"
-              }
-            },
-            {
-              "name": "columnCount",
-              "type": {
-                "text": "number"
-              }
-            }
-          ],
-          "description": "Vertical-compact packer. The pinned tile's rect is the user's gesture; all\r\nother tiles flow around it (locked tiles stay put; movable tiles get pushed\r\nout of the way and gravity-compacted upward).\r\n\r\nReturns `blocked: true` if the pinned rect overlaps a locked tile or no\r\nvalid layout exists; the caller should snap back and not commit."
-        }
-      ],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "pack",
-          "declaration": {
-            "name": "pack",
-            "module": "tile-manager/src/utils/pack.ts"
-          }
-        }
-      ]
     },
     {
       "kind": "javascript-module",

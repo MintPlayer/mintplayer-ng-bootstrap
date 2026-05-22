@@ -3,6 +3,7 @@ import { isPlatformServer } from '@angular/common';
 import { Router } from '@angular/router';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
+
 /** Duration of the navbar collapse animation in milliseconds */
 const NAVBAR_ANIMATION_DURATION = 300;
 

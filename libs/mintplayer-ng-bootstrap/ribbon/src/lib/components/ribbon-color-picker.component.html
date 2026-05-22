@@ -1,0 +1,9 @@
+<mp-ribbon-color-picker
+  [attr.item-id]="itemId()"
+  [attr.label]="label()"
+  [attr.size]="size()"
+  [attr.disabled]="disabledState() ? '' : null"
+  [attr.tooltip]="tooltip()"
+  [attr.color]="color()"
+  (color-change)="onColorChange($event)"
+></mp-ribbon-color-picker>

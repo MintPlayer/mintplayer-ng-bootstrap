@@ -6,7 +6,9 @@ import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { MockComponent } from 'ng-mocks';
 import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
 import { BsNavbarComponent } from '../navbar/navbar.component';
+
 import { BsNavbarDropdownComponent } from './navbar-dropdown.component';
+
 describe('BsNavbarDropdownComponent', () => {
   let component: BsNavbarDropdownTestComponent;
   let fixture: ComponentFixture<BsNavbarDropdownTestComponent>;

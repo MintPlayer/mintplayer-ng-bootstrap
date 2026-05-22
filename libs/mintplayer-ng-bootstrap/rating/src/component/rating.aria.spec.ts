@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsRatingComponent } from './rating.component';
+
 @Component({
   selector: 'bs-rating-aria-harness',
   imports: [BsRatingComponent],

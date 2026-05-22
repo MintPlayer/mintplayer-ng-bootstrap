@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsProgressComponent } from './progress.component';
+
 @Component({
   selector: 'bs-progress-harness',
   imports: [BsProgressComponent],

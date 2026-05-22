@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input, model } from '@ang
 import { HS } from '../../interfaces/hs';
 import { BsSliderComponent, BsThumbDirective, BsTrackDirective } from '../slider/slider.component';
 import { hsv2rgb } from '../../color-math';
+
 @Component({
   selector: 'bs-brightness-strip',
   templateUrl: './brightness-strip.component.html',

@@ -1,4 +1,6 @@
-import { Component, Input, computed, input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, computed, input, ChangeDetectionStrategy} from '@angular/core';
+
+
 @Component({
   selector: 'bs-parallax',
   templateUrl: './parallax.component.html',

@@ -3,18 +3,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import type { RibbonGroupButtonOption } from '@mintplayer/web-components/ribbon';
 @Component({
   selector: 'bs-ribbon-group-button',
-  template: `
-    <mp-ribbon-group-button
-      [attr.item-id]="itemId()"
-      [attr.label]="label()"
-      [attr.size]="size()"
-      [attr.disabled]="disabledState() ? '' : null"
-      [attr.tooltip]="tooltip()"
-      [attr.selected-value]="selectedValue()"
-      [buttons]="buttons()"
-      (group-select)="onGroupSelect($event)"
-    ></mp-ribbon-group-button>
-  `,
+  templateUrl: './ribbon-group-button.component.html',
   styles: [`:host { display: inline-flex; }`],
   host: {
     '[attr.size]': 'size()',

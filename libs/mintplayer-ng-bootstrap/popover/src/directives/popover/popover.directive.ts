@@ -7,6 +7,7 @@ import { BsPopoverComponent } from '../../component/popover.component';
 import { POPOVER_CONTENT } from '../../providers/popover-content.provider';
 import { POPOVER_ID } from '../../providers/popover-id.provider';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
+
 @Directive({
   selector: '*[bsPopover]',
   providers: [{

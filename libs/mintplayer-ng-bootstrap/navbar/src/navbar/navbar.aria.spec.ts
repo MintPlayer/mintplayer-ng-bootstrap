@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { BsNavbarComponent } from './navbar.component';
+
 @Component({
   selector: 'bs-navbar-aria-harness',
   imports: [BsNavbarComponent],

@@ -4,32 +4,7 @@ import { BsTileComponent } from './tile.component';
 import { MintTile, MintTileManagerElement, TileDragMode, TileResizeMode, TileLayoutSnapshot, TileGestureBlocked, TilePosition } from '@mintplayer/web-components/tile-manager';
 @Component({
   selector: 'bs-tile-manager',
-  template: `
-    <mp-tile-manager
-      #manager
-      class="bs-tile-manager"
-      [attr.column-count]="columnCountAttr()"
-      [attr.min-column-width]="minColumnWidth()"
-      [attr.min-row-height]="minRowHeight()"
-      [attr.gap]="gap()"
-      [attr.drag-mode]="dragMode()"
-      [attr.resize-mode]="resizeMode()"
-      [attr.animate-reflow]="animateReflow() ? '' : null"
-      [attr.label]="label()"
-      (tilelayoutchange)="onLayoutChange($event)"
-      (tilepositionchange)="onPositionChange($event)"
-      (tilegestureblocked)="onGestureBlocked($event)"
-    >
-      @for (tile of tiles(); track tile.id()) {
-        <div [attr.slot]="tile.id() + '-header'" class="bs-tile-slot">
-          <ng-container *ngTemplateOutlet="tile.headerTpl()"></ng-container>
-        </div>
-        <div [attr.slot]="tile.id() + '-content'" class="bs-tile-slot">
-          <ng-container *ngTemplateOutlet="tile.contentTpl()"></ng-container>
-        </div>
-      }
-    </mp-tile-manager>
-  `,
+  templateUrl: './tile-manager.component.html',
   styles: [
     `
       :host {

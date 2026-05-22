@@ -4,7 +4,9 @@ import { RouterLink } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
+
 import { BsNavbarItemComponent } from './navbar-item.component';
+
 describe('BsNavbarItemComponent', () => {
   let component: BsNavbarItemTestComponent;
   let fixture: ComponentFixture<BsNavbarItemTestComponent>;

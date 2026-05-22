@@ -1,16 +1,7 @@
 import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, input } from '@angular/core';
 @Component({
   selector: 'bs-ribbon-gallery',
-  template: `
-    <mp-ribbon-gallery
-      [attr.item-id]="itemId()"
-      [attr.label]="label()"
-      [attr.size]="size()"
-      [attr.columns]="columns()"
-    >
-      <ng-content></ng-content>
-    </mp-ribbon-gallery>
-  `,
+  templateUrl: './ribbon-gallery.component.html',
   styles: [`:host { display: inline-flex; }`],
   host: {
     '[attr.size]': 'size()',

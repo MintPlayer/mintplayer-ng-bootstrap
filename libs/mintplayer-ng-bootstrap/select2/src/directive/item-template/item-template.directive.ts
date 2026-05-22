@@ -1,6 +1,7 @@
 import { Directive, effect, inject, input, isSignal, TemplateRef, untracked, WritableSignal } from '@angular/core';
 import { BsSelect2Component } from '../../component/select2.component';
 import { HasId } from '@mintplayer/ng-bootstrap/has-id';
+
 @Directive({
   selector: '[bsItemTemplate]',
 })

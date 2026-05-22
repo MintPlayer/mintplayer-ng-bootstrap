@@ -1,4 +1,5 @@
 import { Directive, TemplateRef, input } from '@angular/core';
+
 /**
  * `*bsQueryBuilderEditor="<fieldName>"` projects an Angular template as the
  * value editor for the named field of the parent `bs-query-builder`.

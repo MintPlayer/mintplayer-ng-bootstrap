@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+
 import { BsRangeComponent } from './range.component';
+
 describe('BsRangeComponent', () => {
   let component: BsRangeComponent;
   let fixture: ComponentFixture<BsRangeComponent>;

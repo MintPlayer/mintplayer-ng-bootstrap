@@ -1,4 +1,5 @@
 import { Directive, inject, input, TemplateRef } from '@angular/core';
+
 /**
  * Declares a column in `<bs-datatable>`.
  *

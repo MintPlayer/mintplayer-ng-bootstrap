@@ -1,5 +1,6 @@
 import { Directive, inject, TemplateRef } from '@angular/core';
 import { BsCarouselComponent } from '../carousel/carousel.component';
+
 /**
  * Context exposed to a `*bsCarouselPlayPause` template — the consumer reads
  * `paused` to render the right glyph/label and calls `toggle` on click.

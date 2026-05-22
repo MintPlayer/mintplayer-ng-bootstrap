@@ -1,5 +1,6 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import { HasId } from '@mintplayer/ng-bootstrap/has-id';
+
 @Pipe({
   name: 'bsInList',
 })

@@ -1,5 +1,6 @@
 import { Directive, inject } from '@angular/core';
 import { BsOffcanvasHostComponent } from '../../components/offcanvas-host/offcanvas-host.component';
+
 @Directive({
   selector: '[bsOffcanvasClose]',
   host: {

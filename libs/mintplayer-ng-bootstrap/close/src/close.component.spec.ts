@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+
 import { BsCloseComponent } from './close.component';
+
 describe('BsCloseComponent', () => {
   let component: BsCloseComponent;
   let fixture: ComponentFixture<BsCloseComponent>;

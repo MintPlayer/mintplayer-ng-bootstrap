@@ -7,6 +7,7 @@ import { BsDropdownItemComponent, BsDropdownMenuComponent } from '@mintplayer/ng
 import { BsDropdownDirective } from './dropdown.directive';
 import { BsDropdownMenuDirective } from '../dropdown-menu/dropdown-menu.directive';
 import { BsDropdownToggleDirective } from '../dropdown-toggle/dropdown-toggle.directive';
+
 @Component({
   selector: 'bs-dropdown-aria-test',
   imports: [

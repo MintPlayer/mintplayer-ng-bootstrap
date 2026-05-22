@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+
 export type BsToastPoliteness = 'polite' | 'assertive';
 
 @Component({

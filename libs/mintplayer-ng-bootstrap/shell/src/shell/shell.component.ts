@@ -2,6 +2,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, ElementRef, input, signal, TemplateRef, viewChild } from '@angular/core';
 import { BsShellState } from '../shell-state';
 import { Breakpoint } from '@mintplayer/ng-bootstrap';
+
 @Component({
   selector: 'bs-shell',
   templateUrl: './shell.component.html',

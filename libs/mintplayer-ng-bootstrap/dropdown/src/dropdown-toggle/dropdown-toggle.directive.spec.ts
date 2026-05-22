@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsDropdownDirective } from '../dropdown/dropdown.directive';
 import { BsDropdownToggleDirective } from './dropdown-toggle.directive';
 import { BsDropdownMenuDirective } from '../dropdown-menu/dropdown-menu.directive';
+
 @Directive({
   selector: '[bsDropdownMenu]',
 })

@@ -6,6 +6,7 @@ import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
 import { BsReducedMotionDirective } from '@mintplayer/ng-bootstrap/reduced-motion';
 import { BsCarouselImageDirective } from '../carousel-image/carousel-image.directive';
 import type { BsCarouselPlayPauseContext } from '../carousel-play-pause/carousel-play-pause.directive';
+
 @Component({
   selector: 'bs-carousel',
   templateUrl: './carousel.component.html',

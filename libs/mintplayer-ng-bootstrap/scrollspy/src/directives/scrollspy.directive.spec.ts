@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MockComponent } from 'ng-mocks';
 import { BsScrollspyComponent } from '../component/scrollspy.component';
 import { BsScrollspyDirective } from './scrollspy.directive';
+
 @Component({
   selector: 'bs-scrollspy-test',
   template: `

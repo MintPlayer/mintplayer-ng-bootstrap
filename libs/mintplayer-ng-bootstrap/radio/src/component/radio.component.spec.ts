@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+
 import { BsRadioComponent } from './radio.component';
+
 describe('BsRadioComponent', () => {
   let component: BsRadioComponent;
   let fixture: ComponentFixture<BsRadioComponent>;

@@ -7,6 +7,7 @@ import { BsNavbarComponent } from '../navbar/navbar.component';
 import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
 import { DomPortal } from '@angular/cdk/portal';
 import { OverlayRef } from '@angular/cdk/overlay';
+
 @Component({
   selector: 'bs-navbar-dropdown',
   templateUrl: './navbar-dropdown.component.html',

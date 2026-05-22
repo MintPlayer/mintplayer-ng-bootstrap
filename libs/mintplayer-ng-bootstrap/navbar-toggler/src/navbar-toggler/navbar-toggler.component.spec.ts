@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+
 import { BsNavbarTogglerComponent } from './navbar-toggler.component';
+
 describe('BsNavbarTogglerComponent', () => {
   let component: BsNavbarTogglerComponent;
   let fixture: ComponentFixture<BsNavbarTogglerComponent>;

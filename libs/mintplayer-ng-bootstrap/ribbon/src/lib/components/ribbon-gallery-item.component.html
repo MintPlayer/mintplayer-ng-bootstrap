@@ -1,0 +1,10 @@
+<mp-ribbon-gallery-item
+  [attr.item-id]="itemId()"
+  [attr.label]="label()"
+  [attr.icon]="icon()"
+  [attr.selected]="selected() ? '' : null"
+  [attr.disabled]="disabled() ? '' : null"
+  (gallery-select)="onSelect($event)"
+>
+  <ng-content></ng-content>
+</mp-ribbon-gallery-item>

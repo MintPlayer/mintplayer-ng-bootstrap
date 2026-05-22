@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+
 import { BsShellComponent } from './shell.component';
+
 describe('BsShellComponent', () => {
   let component: BsShellComponent;
   let fixture: ComponentFixture<BsShellComponent>;

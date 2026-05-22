@@ -4,6 +4,7 @@ import type { BsResizableComponent } from '../resizable/resizable.component';
 import { ResizeAction } from '../interfaces/resize-action';
 import { PointerData } from '../interfaces/pointer-data';
 import { RESIZABLE } from '../providers/resizable.provider';
+
 @Directive({
   selector: '[bsResizeGlyph]',
   host: {

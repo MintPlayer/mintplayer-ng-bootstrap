@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Component } from '@angular/core';
 import { BsPriorityNavComponent } from './priority-nav.component';
 import { BsPriorityNavItemDirective } from '../priority-nav-item/priority-nav-item.directive';
+
 @Component({
   selector: 'priority-nav-test',
   imports: [BsPriorityNavComponent, BsPriorityNavItemDirective],

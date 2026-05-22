@@ -1,19 +1,7 @@
 import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, input, output } from '@angular/core';
 @Component({
   selector: 'bs-ribbon-dropdown-button',
-  template: `
-    <mp-ribbon-dropdown-button
-      [attr.item-id]="itemId()"
-      [attr.label]="label()"
-      [attr.icon]="icon()"
-      [attr.size]="size()"
-      [attr.disabled]="disabled() ? '' : null"
-      [attr.tooltip]="tooltip()"
-      (menu-toggle)="onMenuToggle($event)"
-    >
-      <ng-content></ng-content>
-    </mp-ribbon-dropdown-button>
-  `,
+  templateUrl: './ribbon-dropdown-button.component.html',
   styles: [`:host { display: inline-flex; }`],
   host: {
     '[attr.size]': 'size()',

@@ -7,6 +7,7 @@ import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { BsComboboxDirective, BsDropdownDirective, BsDropdownMenuDirective } from '@mintplayer/ng-bootstrap/dropdown';
 import { BsDropdownMenuComponent, BsDropdownItemComponent } from '@mintplayer/ng-bootstrap/dropdown-menu';
 import { BsInListPipe } from '@mintplayer/ng-bootstrap/in-list';
+
 @Component({
   selector: 'bs-select2',
   templateUrl: './select2.component.html',

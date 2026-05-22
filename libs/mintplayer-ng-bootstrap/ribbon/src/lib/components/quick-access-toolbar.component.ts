@@ -8,15 +8,7 @@ import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, input } fro
  */
 @Component({
   selector: 'bs-quick-access-toolbar',
-  template: `
-    <mp-quick-access-toolbar
-      [attr.label]="label()"
-      [attr.touch-mode]="touchMode()"
-      [style.--bs-ribbon-app-accent]="appAccent()"
-    >
-      <ng-content></ng-content>
-    </mp-quick-access-toolbar>
-  `,
+  templateUrl: './quick-access-toolbar.component.html',
   styles: [`
     :host { display: block; }
   `],

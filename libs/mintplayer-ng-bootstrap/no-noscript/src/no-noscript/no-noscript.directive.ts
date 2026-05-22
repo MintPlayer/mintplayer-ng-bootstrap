@@ -1,5 +1,6 @@
 import { isPlatformServer } from '@angular/common';
 import { Directive, inject, PLATFORM_ID } from '@angular/core';
+
 @Directive({
   selector: '[bsNoNoscript]',
   host: {

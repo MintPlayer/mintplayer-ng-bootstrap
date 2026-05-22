@@ -4,6 +4,7 @@ import { OverlayContainer, OverlayModule } from '@angular/cdk/overlay';
 import { MockProvider } from 'ng-mocks';
 import { BS_DEVELOPMENT } from '@mintplayer/ng-bootstrap';
 import { BsSelect2Component } from './select2.component';
+
 interface Suggestion { id: number; text: string }
 
 @Component({

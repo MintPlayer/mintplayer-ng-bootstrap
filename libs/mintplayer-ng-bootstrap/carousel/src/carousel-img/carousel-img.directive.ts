@@ -1,5 +1,6 @@
 import { Directive, inject } from '@angular/core';
 import { BsCarouselImageDirective } from '../carousel-image/carousel-image.directive';
+
 @Directive({
   selector: 'img',
   host: {

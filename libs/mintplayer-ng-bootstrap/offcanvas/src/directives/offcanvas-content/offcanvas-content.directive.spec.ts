@@ -8,6 +8,8 @@ import { MockComponent } from 'ng-mocks';
 import { BsOffcanvasComponent } from '../../components/offcanvas/offcanvas.component';
 import { OffcanvasHeaderComponent } from '../../components/offcanvas-header/offcanvas-header.component';
 import { OffcanvasBodyComponent } from '../../components/offcanvas-body/offcanvas-body.component';
+
+
 describe('BsOffcanvasContentDirective', () => {
   let component: BsOffcanvasTestComponent;
   let fixture: ComponentFixture<BsOffcanvasTestComponent>;

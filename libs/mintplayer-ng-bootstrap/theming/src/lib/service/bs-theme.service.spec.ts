@@ -3,6 +3,7 @@ import { ApplicationRef, PLATFORM_ID } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { BsThemeService } from './bs-theme.service';
 import { BS_THEME_STORAGE_KEY } from './bs-theme-mode';
+
 let mediaListeners: Array<(e: MediaQueryListEvent) => void>;
 
 function stubMatchMedia(prefersDark: boolean): void {

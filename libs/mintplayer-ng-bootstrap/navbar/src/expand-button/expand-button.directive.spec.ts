@@ -2,6 +2,7 @@ import { Component, signal, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsNavbarComponent } from '..';
 import { BsExpandButtonDirective } from './expand-button.directive';
+
 describe('BsExpandButtonDirective', () => {
   let component: BsExpandButtonTestComponent;
   let fixture: ComponentFixture<BsExpandButtonTestComponent>;

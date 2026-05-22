@@ -2,6 +2,7 @@ import { afterNextRender, Component, computed, ElementRef, inject, input, Change
 import { BsDropdownDirective } from '@mintplayer/ng-bootstrap/dropdown';
 import { BsIdService } from '@mintplayer/ng-bootstrap/a11y';
 import { BsDropdownMenuComponent } from '../dropdown-menu/dropdown-menu.component';
+
 @Component({
   selector: 'bs-dropdown-item',
   templateUrl: './dropdown-item.component.html',

@@ -1,4 +1,5 @@
 import { Directive, effect, input } from '@angular/core';
+
 @Directive({
   selector: 'label[bsFor]',
   host: {

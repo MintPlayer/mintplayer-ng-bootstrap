@@ -3,21 +3,7 @@ import { MintMultiRangeElement, MultiRangeOrientation } from '@mintplayer/web-co
 import { BsMultiRangeValueAccessor } from '../value-accessor/multi-range-value-accessor';
 @Component({
   selector: 'bs-multi-range',
-  template: `
-    <mp-multi-range
-      #el
-      class="bs-multi-range"
-      [attr.min]="min()"
-      [attr.max]="max()"
-      [attr.step]="step()"
-      [attr.min-distance]="minDistance()"
-      [attr.orientation]="orientation()"
-      [attr.disabled]="disabledAttr()"
-      [attr.aria-label]="label()"
-      (value-input)="onValueInput($event)"
-      (value-change)="onValueChange($event)"
-    ></mp-multi-range>
-  `,
+  templateUrl: './multi-range.component.html',
   styles: [`
     :host { display: block; width: 100%; }
     .bs-multi-range { display: block; width: 100%; height: 100%; }

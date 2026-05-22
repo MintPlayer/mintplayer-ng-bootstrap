@@ -1,5 +1,6 @@
 import { Directive, effect, inject, input, TemplateRef } from '@angular/core';
 import { BsMultiselectComponent } from '../../component/multiselect.component';
+
 @Directive({
   selector: '[bsItemTemplate]',
 })

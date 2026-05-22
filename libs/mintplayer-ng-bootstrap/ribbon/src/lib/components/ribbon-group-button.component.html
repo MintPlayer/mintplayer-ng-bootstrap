@@ -1,0 +1,10 @@
+<mp-ribbon-group-button
+  [attr.item-id]="itemId()"
+  [attr.label]="label()"
+  [attr.size]="size()"
+  [attr.disabled]="disabledState() ? '' : null"
+  [attr.tooltip]="tooltip()"
+  [attr.selected-value]="selectedValue()"
+  [buttons]="buttons()"
+  (group-select)="onGroupSelect($event)"
+></mp-ribbon-group-button>

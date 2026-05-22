@@ -7,6 +7,7 @@ import { BsModalHostComponent } from '../modal-host/modal-host.component';
 import { BsModalDirective } from '../../directives/modal/modal.directive';
 import { BsModalHeaderDirective } from '../../directives/modal-header/modal-header.directive';
 import { BsModalBodyDirective } from '../../directives/modal-body/modal-body.directive';
+
 @Component({
   selector: 'bs-modal-aria-harness',
   imports: [BsModalHostComponent, BsModalDirective, BsModalHeaderDirective, BsModalBodyDirective],

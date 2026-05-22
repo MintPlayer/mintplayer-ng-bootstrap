@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
+
 @Component({
   selector: 'bs-spinner',
   templateUrl: './spinner.component.html',

@@ -21,29 +21,7 @@ import type { CardImagePosition } from '@mintplayer/web-components/card';
 @Component({
   selector: 'bs-card-img',
   imports: [NgTemplateOutlet],
-  template: `
-    <ng-template #projected><ng-content></ng-content></ng-template>
-    <ng-template #imgTpl>
-      <img [class]="imgClass()" [attr.src]="srcAttr()" [attr.alt]="altAttr()" />
-    </ng-template>
-
-    @switch (position()) {
-      @case ('overlay') {
-        <ng-container *ngTemplateOutlet="imgTpl"></ng-container>
-        <div class="card-img-overlay">
-          <ng-container *ngTemplateOutlet="projected"></ng-container>
-        </div>
-      }
-      @case ('bottom') {
-        <ng-container *ngTemplateOutlet="projected"></ng-container>
-        <ng-container *ngTemplateOutlet="imgTpl"></ng-container>
-      }
-      @default {
-        <ng-container *ngTemplateOutlet="imgTpl"></ng-container>
-        <ng-container *ngTemplateOutlet="projected"></ng-container>
-      }
-    }
-  `,
+  templateUrl: './bs-card-img.component.html',
   host: { '[class]': 'hostClass()' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

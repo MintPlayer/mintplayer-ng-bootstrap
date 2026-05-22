@@ -1,4 +1,5 @@
 import { Directive, computed, input } from '@angular/core';
+
 @Directive({
   selector: '[xxs],[xs],[sm],[md],[lg],[xl],[xxl]',
   host: {

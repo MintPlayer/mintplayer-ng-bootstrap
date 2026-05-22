@@ -1,6 +1,20 @@
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
-import { computed, DestroyRef, effect, inject, Injectable, PLATFORM_ID, signal, type Signal } from '@angular/core';
-import { BS_THEME_STORAGE_KEY, type BsEffectiveThemeMode, type BsThemeMode } from './bs-theme-mode';
+import {
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  Injectable,
+  PLATFORM_ID,
+  signal,
+  type Signal,
+} from '@angular/core';
+import {
+  BS_THEME_STORAGE_KEY,
+  type BsEffectiveThemeMode,
+  type BsThemeMode,
+} from './bs-theme-mode';
+
 /**
  * Owns the user's Bootstrap color-mode choice and keeps `<html data-bs-theme>`
  * in sync with it.

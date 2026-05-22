@@ -1,6 +1,7 @@
 import { AfterViewInit, Component, computed, contentChildren, ElementRef, inject, input, signal, ChangeDetectionStrategy } from '@angular/core';
 import { BsDropdownDirective } from '@mintplayer/ng-bootstrap/dropdown';
 import { BsDropdownItemComponent } from '../dropdown-item/dropdown-item.component';
+
 @Component({
   selector: 'bs-dropdown-menu',
   templateUrl: './dropdown-menu.component.html',

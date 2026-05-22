@@ -1,6 +1,7 @@
 import { Component, ElementRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsCopyDirective } from './copy.directive';
+
 const codeToCopy = 'Hello world';
 
 @Component({

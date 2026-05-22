@@ -1,6 +1,7 @@
 import { Directive, inject, input, TemplateRef } from '@angular/core';
 import { BsFileUploadComponent } from '../component/file-upload.component';
 import { FileUpload } from '../file-upload';
+
 @Directive({
   selector: '[bsFileUploadTemplate]',
 })

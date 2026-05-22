@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, input, model, output, signal, viewChildren } from '@angular/core';
+
 @Component({
   selector: 'bs-rating',
   templateUrl: './rating.component.html',

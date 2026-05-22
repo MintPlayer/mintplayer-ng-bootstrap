@@ -6,6 +6,7 @@ import { MockComponent, MockDirective, MockModule } from 'ng-mocks';
 import { BsModalDirective } from '../../directives/modal/modal.directive';
 import { BsModalHostComponent } from '../modal-host/modal-host.component';
 import { BsModalComponent } from './modal.component';
+
 @Component({
   selector: 'bs-modal-test',
   template: `

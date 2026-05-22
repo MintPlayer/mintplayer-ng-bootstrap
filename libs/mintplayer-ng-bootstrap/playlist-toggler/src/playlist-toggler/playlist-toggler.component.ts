@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, input, model } from '@angular/core';
+
 @Component({
   selector: 'bs-playlist-toggler',
   templateUrl: './playlist-toggler.component.html',

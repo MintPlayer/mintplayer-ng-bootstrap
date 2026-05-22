@@ -10,14 +10,7 @@ import { TilePosition } from '@mintplayer/web-components/tile-manager';
  */
 @Component({
   selector: 'bs-tile',
-  template: `
-    <ng-template #headerTpl>
-      <ng-content select="bs-tile-header"></ng-content>
-    </ng-template>
-    <ng-template #contentTpl>
-      <ng-content></ng-content>
-    </ng-template>
-  `,
+  templateUrl: './tile.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsTileComponent {

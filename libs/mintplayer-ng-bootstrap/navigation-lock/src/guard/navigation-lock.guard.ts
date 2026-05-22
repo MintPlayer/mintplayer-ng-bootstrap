@@ -1,6 +1,7 @@
 import { inject } from '@angular/core';
 import { CanActivateFn } from '@angular/router';
 import { BsNavigationLockService } from '../service/navigation-lock.service';
+
 /**
  * Functional `canActivate` guard the consumer registers ONCE at the root
  * route (paired with `runGuardsAndResolvers: 'always'` so it re-fires on

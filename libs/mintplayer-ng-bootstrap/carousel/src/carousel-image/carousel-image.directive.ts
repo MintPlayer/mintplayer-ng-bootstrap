@@ -1,5 +1,6 @@
 import { Directive, inject, TemplateRef, ElementRef } from '@angular/core';
 import { BsCarouselComponent } from '../carousel/carousel.component';
+
 @Directive({
   selector: '*[bsCarouselImage]',
 })

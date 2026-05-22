@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, model } from '@angular/core';
 import { HS } from '../../interfaces/hs';
 import { BsSliderComponent, BsThumbDirective, BsTrackDirective } from '../slider/slider.component';
+
 /**
  * Hue picker — a horizontal rainbow strip backed by `bs-slider`. Two-way
  * `[(hs)]` keeps the saturation untouched; only `hs.hue` (0–360°) changes.

@@ -2,6 +2,7 @@ import { EnvironmentProviders, makeEnvironmentProviders } from '@angular/core';
 import { provideRouter, RouterFeatures, Routes, withRouterConfig } from '@angular/router';
 import { bsNavigationLockGuard } from '../guard/navigation-lock.guard';
 import { BS_NAVIGATION_LOCK_CONFIRM } from '../service/navigation-lock.service';
+
 export interface NavigationLockOptions {
   confirm?: (message: string) => boolean | Promise<boolean>;
 }

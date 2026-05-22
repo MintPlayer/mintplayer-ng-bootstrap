@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsMarqueeComponent } from './marquee.component';
+
 describe('BsMarqueeComponent', () => {
   let component: BsMarqueeComponent;
   let fixture: ComponentFixture<BsMarqueeComponent>;

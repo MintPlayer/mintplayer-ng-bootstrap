@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, output } from '@angular/core';
+
 @Component({
   selector: 'bs-close',
   templateUrl: './close.component.html',

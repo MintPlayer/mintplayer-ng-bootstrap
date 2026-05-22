@@ -2,6 +2,7 @@ import { Component, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsModalHostComponent } from '../../components/modal-host/modal-host.component';
 import { BsModalDirective } from './modal.directive';
+
 @Component({
   selector: 'bs-modal',
   template: ``,

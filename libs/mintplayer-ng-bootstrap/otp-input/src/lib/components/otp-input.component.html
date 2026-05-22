@@ -1,0 +1,11 @@
+<mp-otp-input
+  #el
+  class="bs-otp-input"
+  [attr.type]="type()"
+  [attr.case]="case()"
+  [attr.size]="size()"
+  [attr.invalid]="invalidAttr()"
+  [attr.label]="label()"
+  (value-change)="onValueChange($event)"
+  (complete)="onCompleteEvent($event)"
+></mp-otp-input>

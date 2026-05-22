@@ -3,19 +3,7 @@ import { MintOtpInputElement, OtpInputType, OtpInputCase, OtpInputSize } from '@
 import { BsOtpInputValueAccessor } from '../value-accessor/otp-input-value-accessor';
 @Component({
   selector: 'bs-otp-input',
-  template: `
-    <mp-otp-input
-      #el
-      class="bs-otp-input"
-      [attr.type]="type()"
-      [attr.case]="case()"
-      [attr.size]="size()"
-      [attr.invalid]="invalidAttr()"
-      [attr.label]="label()"
-      (value-change)="onValueChange($event)"
-      (complete)="onCompleteEvent($event)"
-    ></mp-otp-input>
-  `,
+  templateUrl: './otp-input.component.html',
   styles: [`
     :host { display: inline-block; }
     .bs-otp-input { display: inline-flex; }

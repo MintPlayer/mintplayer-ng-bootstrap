@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+
 import { BsInputGroupComponent } from './input-group.component';
+
 describe('InputGroupComponent', () => {
   let component: BsInputGroupComponent;
   let fixture: ComponentFixture<BsInputGroupComponent>;

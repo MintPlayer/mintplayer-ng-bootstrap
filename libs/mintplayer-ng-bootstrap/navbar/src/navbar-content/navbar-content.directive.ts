@@ -1,6 +1,7 @@
 import { isPlatformServer } from '@angular/common';
 import { AfterViewInit, Directive, effect, ElementRef, inject, input, OnDestroy, PLATFORM_ID, signal } from '@angular/core';
 import { BsNavbarComponent } from '../navbar/navbar.component';
+
 @Directive({
   selector: '[bsNavbarContent]',
 })

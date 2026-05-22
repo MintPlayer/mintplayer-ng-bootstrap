@@ -3,6 +3,7 @@ import { Component, signal, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsMultiselectComponent } from '../../component/multiselect.component';
 import { BsHeaderTemplateDirective } from './header-template.directive';
+
 @Component({
   selector: 'bs-multiselect',
   imports: [NgTemplateOutlet],

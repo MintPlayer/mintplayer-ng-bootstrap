@@ -1,7 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MockComponent } from 'ng-mocks';
 import { BsSliderComponent } from '../slider/slider.component';
+
 import { BsAlphaStripComponent } from './alpha-strip.component';
+
 describe('BsAlphaStripComponent', () => {
   let component: BsAlphaStripComponent;
   let fixture: ComponentFixture<BsAlphaStripComponent>;

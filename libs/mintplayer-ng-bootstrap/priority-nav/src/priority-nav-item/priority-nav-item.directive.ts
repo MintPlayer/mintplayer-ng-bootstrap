@@ -1,5 +1,6 @@
 import { Directive, inject, input, TemplateRef } from '@angular/core';
 import { Breakpoint } from '@mintplayer/ng-bootstrap';
+
 @Directive({
   selector: '[bsPriorityNavItem]',
 })

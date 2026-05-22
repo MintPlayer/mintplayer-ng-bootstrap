@@ -3,6 +3,7 @@ import { ComponentPortal } from '@angular/cdk/portal';
 import { Component, inject, Injectable, Injector, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsOffcanvasCloseDirective } from './offcanvas-close.directive';
+
 @Component({
   selector: 'bs-offcanvas-holder',
   template: `<ng-container *ngTemplateOutlet="content; context: { $implicit: this }"></ng-container>`

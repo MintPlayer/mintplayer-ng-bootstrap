@@ -1,5 +1,6 @@
-import { Component, contentChildren, ChangeDetectionStrategy } from '@angular/core';
+import { Component, contentChildren, ChangeDetectionStrategy} from '@angular/core';
 import { BsListGroupItemComponent } from '../list-group-item/list-group-item.component';
+
 @Component({
   selector: 'bs-list-group',
   templateUrl: './list-group.component.html',

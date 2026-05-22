@@ -1,4 +1,5 @@
 import { Observable } from 'rxjs';
+
 /**
  * Contract a navigation lock implements so the service can consult it.
  * Implemented by `BsNavigationLockDirective`; consumers may also register

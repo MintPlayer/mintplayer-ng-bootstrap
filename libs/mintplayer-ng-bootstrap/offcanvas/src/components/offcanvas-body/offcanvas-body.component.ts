@@ -1,6 +1,7 @@
 import { afterNextRender, Component, ElementRef, inject, input, ChangeDetectionStrategy } from '@angular/core';
 import { BsIdService } from '@mintplayer/ng-bootstrap/a11y';
 import { BsOffcanvasContextService } from '../../services/offcanvas-context.service';
+
 @Component({
   selector: 'bs-offcanvas-body',
   templateUrl: './offcanvas-body.component.html',

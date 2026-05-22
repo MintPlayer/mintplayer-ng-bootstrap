@@ -19,6 +19,7 @@ import { BsProgressBarComponent } from '@mintplayer/ng-bootstrap/progress-bar';
 import { FocusOnLoadDirective } from '@mintplayer/ng-focus-on-load';
 import { BsSuggestionTemplateContext } from '../directives';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+
 @Component({
   selector: 'bs-searchbox',
   templateUrl: './searchbox.component.html',

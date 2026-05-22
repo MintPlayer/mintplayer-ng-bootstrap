@@ -1,4 +1,5 @@
-import { Component, input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, input, ChangeDetectionStrategy} from '@angular/core';
+
 @Component({
   selector: 'bs-progress',
   templateUrl: './progress.component.html',

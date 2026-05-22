@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, forwardRef, inject, input, Renderer2, viewChild } from '@angular/core';
 import { BsSelectValueAccessor } from '../value-accessors/select-value-accessor';
 import { BsSelectSize } from '../types/select-size';
+
 @Component({
   selector: 'bs-select',
   templateUrl: './select.component.html',

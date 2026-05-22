@@ -2,17 +2,7 @@ import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, forwardRef,
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 @Component({
   selector: 'bs-ribbon-color-picker',
-  template: `
-    <mp-ribbon-color-picker
-      [attr.item-id]="itemId()"
-      [attr.label]="label()"
-      [attr.size]="size()"
-      [attr.disabled]="disabledState() ? '' : null"
-      [attr.tooltip]="tooltip()"
-      [attr.color]="color()"
-      (color-change)="onColorChange($event)"
-    ></mp-ribbon-color-picker>
-  `,
+  templateUrl: './ribbon-color-picker.component.html',
   styles: [`:host { display: inline-flex; }`],
   host: {
     '[attr.size]': 'size()',

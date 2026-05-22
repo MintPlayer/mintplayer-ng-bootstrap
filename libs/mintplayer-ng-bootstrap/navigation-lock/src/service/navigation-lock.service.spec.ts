@@ -5,6 +5,7 @@ import { provideRouter, withRouterConfig } from '@angular/router';
 import { Observable, of, Subject } from 'rxjs';
 import { BsNavigationLockService } from './navigation-lock.service';
 import { BsNavigationLockHandle } from './navigation-lock-handle';
+
 function makeHandle(
   partial: Partial<BsNavigationLockHandle> & Pick<BsNavigationLockHandle, 'requestCanExit'>,
 ): BsNavigationLockHandle {

@@ -1,6 +1,7 @@
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
 import { Directive, ElementRef, Host, SkipSelf, TemplateRef, ViewContainerRef } from '@angular/core';
+
 @Directive({
   selector: '[bsContextMenu]',
   host: {

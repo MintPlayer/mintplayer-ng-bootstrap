@@ -1,11 +1,12 @@
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { AfterViewInit, Component, ComponentFactoryResolver, ComponentRef, effect, inject, Injector, input, model, OnDestroy, TemplateRef, ChangeDetectionStrategy } from '@angular/core';
+import { AfterViewInit, Component, ComponentFactoryResolver, ComponentRef, effect, inject, Injector, input, model, OnDestroy, TemplateRef, ChangeDetectionStrategy} from '@angular/core';
 import { BsOverlayStackService } from '@mintplayer/ng-bootstrap/a11y';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { MODAL_CONTENT } from '../../providers/modal-content.provider';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
 import { BsModalComponent } from '../modal/modal.component';
+
 @Component({
   selector: 'bs-modal',
   templateUrl: './modal-host.component.html',

@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+
 import { BsDropdownItemComponent } from './dropdown-item.component';
+
 describe('BsDropdownItemComponent', () => {
   let component: BsDropdownItemComponent;
   let fixture: ComponentFixture<BsDropdownItemComponent>;

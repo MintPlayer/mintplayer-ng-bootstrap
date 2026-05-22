@@ -4,6 +4,7 @@ import { EnterFromTopAnimation, FadeInOutAnimation } from '@mintplayer/ng-animat
 import { BsOverlayFocusDirective } from '@mintplayer/ng-bootstrap/a11y';
 import { MODAL_CONTENT } from '../../providers/modal-content.provider';
 import { BsModalContextService } from '../../services/modal-context.service';
+
 @Component({
   selector: 'bs-modal-content',
   templateUrl: './modal.component.html',

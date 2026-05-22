@@ -2,20 +2,7 @@ import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, forwardRef,
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 @Component({
   selector: 'bs-ribbon-toggle-button',
-  template: `
-    <mp-ribbon-toggle-button
-      [attr.item-id]="itemId()"
-      [attr.label]="label()"
-      [attr.icon]="icon()"
-      [attr.size]="size()"
-      [attr.disabled]="disabledState() ? '' : null"
-      [attr.tooltip]="tooltip()"
-      [attr.pressed]="pressed() ? '' : null"
-      (toggle)="onToggle($event)"
-    >
-      <ng-content></ng-content>
-    </mp-ribbon-toggle-button>
-  `,
+  templateUrl: './ribbon-toggle-button.component.html',
   styles: [`:host { display: inline-flex; }`],
   host: {
     '[attr.size]': 'size()',

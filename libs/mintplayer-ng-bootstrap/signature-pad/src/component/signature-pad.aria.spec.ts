@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsSignaturePadComponent } from './signature-pad.component';
+
 @Component({
   selector: 'bs-signature-pad-harness',
   imports: [BsSignaturePadComponent],

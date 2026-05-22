@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+
 import { BsListGroupItemComponent } from './list-group-item.component';
+
 describe('ListGroupItemComponent', () => {
   let component: BsListGroupItemComponent;
   let fixture: ComponentFixture<BsListGroupItemComponent>;

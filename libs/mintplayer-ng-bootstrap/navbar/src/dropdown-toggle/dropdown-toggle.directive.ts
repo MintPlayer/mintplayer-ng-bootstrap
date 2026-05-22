@@ -1,6 +1,7 @@
 import { ContentChildren, Directive, ElementRef, forwardRef, inject, QueryList } from '@angular/core';
 import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
 import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
+
 @Directive({
   // selector: 'bs-navbar-item > a[routerLink]',
   selector: 'bs-navbar-item',

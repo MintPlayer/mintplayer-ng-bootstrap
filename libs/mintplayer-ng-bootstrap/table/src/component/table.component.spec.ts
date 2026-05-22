@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+
 import { BsTableComponent } from './table.component';
+
 describe('BsTableComponent', () => {
   let component: BsTableComponent;
   let fixture: ComponentFixture<BsTableComponent>;

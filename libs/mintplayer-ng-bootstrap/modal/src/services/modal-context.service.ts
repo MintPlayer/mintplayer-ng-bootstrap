@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+
 /**
  * Component-scoped state shared between BsModalComponent (the dialog renderer)
  * and the bsModalHeader / bsModalBody directives applied to the user's template.

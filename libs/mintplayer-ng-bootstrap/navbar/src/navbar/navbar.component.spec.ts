@@ -2,12 +2,14 @@ import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
+
 import { BsNavbarComponent } from './navbar.component';
 import { MockComponent } from 'ng-mocks';
 import { BsContainerComponent } from '@mintplayer/ng-bootstrap/container';
 import { BsNavbarNavComponent } from '../navbar-nav/navbar-nav.component';
 import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
 import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
+
 describe('BsNavbarComponent', () => {
   let component: BsNavbarComponent;
   let fixture: ComponentFixture<BsNavbarComponent>;

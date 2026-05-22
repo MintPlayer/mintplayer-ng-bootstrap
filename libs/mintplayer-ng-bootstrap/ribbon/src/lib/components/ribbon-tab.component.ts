@@ -2,16 +2,7 @@ import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, input } fro
 import type { RibbonGroupSize, RibbonReduceStep } from '@mintplayer/web-components/ribbon';
 @Component({
   selector: 'bs-ribbon-tab',
-  template: `
-    <mp-ribbon-tab
-      [attr.tab-id]="tabId()"
-      [attr.label]="label()"
-      [idealSizes]="idealSizes()"
-      [reduceOrder]="reduceOrder()"
-    >
-      <ng-content></ng-content>
-    </mp-ribbon-tab>
-  `,
+  templateUrl: './ribbon-tab.component.html',
   styles: [`:host { display: contents; }`],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -1,5 +1,6 @@
 import { Directive, inject, TemplateRef } from '@angular/core';
 import { BsNavbarComponent } from '../navbar/navbar.component';
+
 @Directive({
   selector: '[bsExpandButton]',
 })

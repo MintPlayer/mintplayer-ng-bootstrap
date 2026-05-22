@@ -18,13 +18,7 @@ import '@mintplayer/web-components/code-snippet';
  */
 @Component({
   selector: 'bs-code-snippet',
-  template: `
-    <mp-code-snippet
-      [code]="codeToCopy()"
-      [language]="language()"
-      (language-detected)="onLanguageDetected($event)"
-    ></mp-code-snippet>
-  `,
+  templateUrl: './code-snippet.component.html',
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'd-block' },

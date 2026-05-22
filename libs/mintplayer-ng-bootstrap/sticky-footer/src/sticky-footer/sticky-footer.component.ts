@@ -1,6 +1,7 @@
-import { AfterViewInit, Component, effect, Injector, viewChild, ChangeDetectionStrategy } from '@angular/core';
+import { AfterViewInit, Component, effect, Injector, viewChild, ChangeDetectionStrategy} from '@angular/core';
 import { BsStickyFooterParentDirective } from '../sticky-footer-parent/sticky-footer-parent.directive';
 import { BsObserveSizeDirective } from '@mintplayer/ng-swiper/observe-size';
+
 @Component({
   selector: 'bs-sticky-footer',
   templateUrl: './sticky-footer.component.html',

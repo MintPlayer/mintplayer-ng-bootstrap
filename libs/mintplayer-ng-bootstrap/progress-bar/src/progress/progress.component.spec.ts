@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+
 import { BsProgressComponent } from './progress.component';
+
 describe('BsProgressComponent', () => {
   let component: BsProgressComponent;
   let fixture: ComponentFixture<BsProgressComponent>;

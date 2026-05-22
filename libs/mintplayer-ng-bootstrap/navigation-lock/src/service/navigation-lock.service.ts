@@ -3,6 +3,7 @@ import { DestroyRef, inject, Injectable, InjectionToken, isDevMode, PLATFORM_ID 
 import { ROUTER_CONFIGURATION } from '@angular/router';
 import { defaultIfEmpty, firstValueFrom, isObservable, Observable, take } from 'rxjs';
 import { BsNavigationLockHandle } from './navigation-lock-handle';
+
 /** Confirm hook used by the directive's fallback path (canExit undefined + exitMessage set). */
 export const BS_NAVIGATION_LOCK_CONFIRM = new InjectionToken<
   (message: string) => boolean | Promise<boolean>

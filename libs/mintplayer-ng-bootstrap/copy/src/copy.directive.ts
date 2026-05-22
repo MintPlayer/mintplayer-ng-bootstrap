@@ -1,5 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { Directive, inject, input, output } from '@angular/core';
+
 @Directive({
   selector: '[bsCopy]',
   host: {

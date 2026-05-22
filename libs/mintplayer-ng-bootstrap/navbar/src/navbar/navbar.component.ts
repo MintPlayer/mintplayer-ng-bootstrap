@@ -5,6 +5,7 @@ import { BsUserAgentDirective } from '@mintplayer/ng-bootstrap/user-agent';
 import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
 import { Breakpoint, Color } from '@mintplayer/ng-bootstrap';
 import { BsIdService } from '@mintplayer/ng-bootstrap/a11y';
+
 @Component({
   selector: 'bs-navbar',
   templateUrl: './navbar.component.html',

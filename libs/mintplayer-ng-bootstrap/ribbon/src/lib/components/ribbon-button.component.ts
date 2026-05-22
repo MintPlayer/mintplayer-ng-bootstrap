@@ -1,19 +1,7 @@
 import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, input, output } from '@angular/core';
 @Component({
   selector: 'bs-ribbon-button',
-  template: `
-    <mp-ribbon-button
-      [attr.item-id]="itemId()"
-      [attr.label]="label()"
-      [attr.icon]="icon()"
-      [attr.size]="size()"
-      [attr.disabled]="disabled() ? '' : null"
-      [attr.tooltip]="tooltip()"
-      (item-click)="onItemClick($event)"
-    >
-      <ng-content></ng-content>
-    </mp-ribbon-button>
-  `,
+  templateUrl: './ribbon-button.component.html',
   styles: [`:host { display: inline-flex; }`],
   host: {
     '[attr.size]': 'size()',

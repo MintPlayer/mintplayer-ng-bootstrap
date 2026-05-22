@@ -2,6 +2,7 @@ import { Component, Directive, EventEmitter, Input, Output, TemplateRef, ViewChi
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsModalHostComponent } from '../../components/modal-host/modal-host.component';
 import { BsModalCloseDirective } from './modal-close.directive';
+
 @Component({
   selector: 'bs-modal',
   template: ``,

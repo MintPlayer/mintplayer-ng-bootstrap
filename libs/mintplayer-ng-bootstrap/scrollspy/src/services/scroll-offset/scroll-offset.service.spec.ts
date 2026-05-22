@@ -1,6 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { ExtraOptions, ROUTER_CONFIGURATION } from '@angular/router';
+
 import { BsScrollOffsetService } from './scroll-offset.service';
+
 describe('BsScrollOffsetService', () => {
   let service: BsScrollOffsetService;
 

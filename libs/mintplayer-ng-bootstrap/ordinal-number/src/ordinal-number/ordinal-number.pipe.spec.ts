@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsOrdinalNumberPipe } from './ordinal-number.pipe';
+
 @Component({
   selector: 'ordinal-number-test',
   template: `<span id="number-span" [innerHtml]="text | ordinalNumber: 'st'"></span>`,
