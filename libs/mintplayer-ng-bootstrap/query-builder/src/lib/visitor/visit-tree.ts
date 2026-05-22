@@ -1,6 +1,6 @@
-import type { Expression } from '../model/expression';
-import type { EntitySchema } from '../model/field-def';
-import { MaxDepthExceededError } from '../model/errors';
+import type { Expression } from '@mintplayer/web-components/query-builder';
+import type { EntitySchema } from '@mintplayer/web-components/query-builder';
+import { MaxDepthExceededError } from '@mintplayer/web-components/query-builder';
 import type {
   TreeVisitor,
   VisitorContext,

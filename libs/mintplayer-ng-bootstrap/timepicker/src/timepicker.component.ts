@@ -19,8 +19,8 @@ import {
   ValidationErrors,
   Validator,
 } from '@angular/forms';
-import { MpTimepickerElement } from './lib/web-components/mp-timepicker.element';
-import type { Hour12Mode, TimeStep } from './lib/web-components/mp-time-list.element';
+import { MpTimepickerElement } from '@mintplayer/web-components/timepicker';
+import type { Hour12Mode, TimeStep } from '@mintplayer/web-components/timepicker';
 
 void MpTimepickerElement;
 

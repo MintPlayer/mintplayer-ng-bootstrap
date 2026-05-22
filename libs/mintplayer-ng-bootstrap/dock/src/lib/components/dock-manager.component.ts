@@ -18,9 +18,9 @@ import {
   DockLayout,
   DockLayoutNode,
   DockLayoutSnapshot,
-} from '../types/dock-layout';
+} from '@mintplayer/web-components/dock';
 import { BsDockPaneComponent } from './dock-pane.component';
-import { MintDockManagerElement } from '../web-components/mint-dock-manager.element';
+import { MintDockManagerElement } from '@mintplayer/web-components/dock';
 
 @Component({
   selector: 'bs-dock-manager',

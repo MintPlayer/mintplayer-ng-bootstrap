@@ -11,11 +11,11 @@ import {
   output,
   viewChild,
 } from '@angular/core';
-import { MintOtpInputElement } from '../web-components/mint-otp-input.element';
+import { MintOtpInputElement } from '@mintplayer/web-components/otp-input';
 import { BsOtpInputValueAccessor } from '../value-accessor/otp-input-value-accessor';
-import { OtpInputType } from '../types/otp-input-type';
-import { OtpInputCase } from '../types/otp-input-case';
-import { OtpInputSize } from '../types/otp-input-size';
+import { OtpInputType } from '@mintplayer/web-components/otp-input';
+import { OtpInputCase } from '@mintplayer/web-components/otp-input';
+import { OtpInputSize } from '@mintplayer/web-components/otp-input';
 
 @Component({
   selector: 'bs-otp-input',

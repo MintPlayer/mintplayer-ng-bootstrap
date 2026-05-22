@@ -9,7 +9,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { type RibbonTabChangeEvent } from '../types/ribbon.types';
+import { type RibbonTabChangeEvent } from '@mintplayer/web-components/ribbon';
 
 @Component({
   selector: 'bs-ribbon',

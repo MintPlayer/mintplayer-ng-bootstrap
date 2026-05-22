@@ -30,10 +30,10 @@ import {
   type RowRenderer,
   type SortChangeEventDetail,
   type SelectionChangeEventDetail,
-} from '@mintplayer/ng-bootstrap/web-components/datatable';
+} from '@mintplayer/web-components/datatable';
 
 // Side-effect import: registers <mp-datatable>.
-import '@mintplayer/ng-bootstrap/web-components/datatable';
+import '@mintplayer/web-components/datatable';
 
 import { DatatableSettings } from '../datatable-settings';
 import { BsDatatableFetch } from '../datatable-fetch';

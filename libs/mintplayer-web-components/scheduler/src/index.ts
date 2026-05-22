@@ -2,7 +2,8 @@
 export { MpScheduler } from './components/mp-scheduler';
 
 // State management
-export { SchedulerStateManager, SchedulerState, createInitialState } from './state/scheduler-state';
+export { SchedulerStateManager, createInitialState } from './state/scheduler-state';
+export type { SchedulerState } from './state/scheduler-state';
 
 // Views
 export * from './views';

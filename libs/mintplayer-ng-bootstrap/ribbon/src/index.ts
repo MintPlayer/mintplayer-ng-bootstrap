@@ -1,9 +1,6 @@
-// Types
-export type { RibbonTabChangeEvent } from './lib/types/ribbon.types';
-export type {
-  RibbonGroupSize,
-  RibbonReduceStep,
-} from './lib/web-components/mp-ribbon-tab.element';
+// Angular-only types (the ribbon-specific event types that don't live in
+// the WC layer).
+export type { RibbonTabChangeEvent } from '@mintplayer/web-components/ribbon';
 
 // Angular components (wrappers)
 export { BsRibbonComponent } from './lib/components/ribbon.component';
@@ -24,13 +21,8 @@ export { BsRibbonGroupButtonComponent } from './lib/components/ribbon-group-butt
 export { BsRibbonGalleryComponent } from './lib/components/ribbon-gallery.component';
 export { BsRibbonGalleryItemComponent } from './lib/components/ribbon-gallery-item.component';
 export { BsRibbonTemplateItemComponent } from './lib/components/ribbon-template-item.component';
-export type { RibbonComboBoxOption } from './lib/web-components/items/mp-ribbon-combobox.element';
-export type { RibbonGroupButtonOption } from './lib/web-components/items/mp-ribbon-group-button.element';
 
-// Lit WC (core logic)
-export { MpRibbon } from './lib/web-components/mp-ribbon.element';
-export { MpQuickAccessToolbar } from './lib/web-components/mp-quick-access-toolbar.element';
-export { MpRibbonTab } from './lib/web-components/mp-ribbon-tab.element';
-export { MpRibbonContextualTabSet } from './lib/web-components/mp-ribbon-contextual-tab-set.element';
-export { MpRibbonGroup } from './lib/web-components/mp-ribbon-group.element';
-export * from './lib/web-components/items';
+// Lit WCs + their public types (RibbonGroupSize, RibbonReduceStep,
+// RibbonComboBoxOption, RibbonGroupButtonOption, MpRibbon, ...) all
+// surface via the framework-agnostic sub-entry.
+export * from '@mintplayer/web-components/ribbon';

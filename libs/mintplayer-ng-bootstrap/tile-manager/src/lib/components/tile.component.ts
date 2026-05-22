@@ -6,7 +6,7 @@ import {
   output,
   viewChild,
 } from '@angular/core';
-import { TilePosition } from '../types/tile-position';
+import { TilePosition } from '@mintplayer/web-components/tile-manager';
 
 /**
  * One tile inside a `<bs-tile-manager>`.

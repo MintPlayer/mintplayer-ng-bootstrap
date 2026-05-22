@@ -12,8 +12,8 @@ import {
   applyHeaderNavStyle,
   applyTextBgClass,
   isNavTargetNode,
-} from '../web-components/card-classes';
-import type { CardHeaderNavStyle } from '../types/card-header-nav-style';
+} from '@mintplayer/web-components/card';
+import type { CardHeaderNavStyle } from '@mintplayer/web-components/card';
 
 /**
  * Card header.

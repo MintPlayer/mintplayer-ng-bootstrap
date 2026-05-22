@@ -14482,6 +14482,21 @@
     },
     {
       "kind": "javascript-module",
+      "path": "calendar/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "calendar/src/mp-calendar.element"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "card/src/card-classes.ts",
       "declarations": [
         {
@@ -14786,15 +14801,31 @@
     },
     {
       "kind": "javascript-module",
-      "path": "calendar/src/index.ts",
+      "path": "checkbox/src/index.ts",
       "declarations": [],
       "exports": [
         {
           "kind": "js",
-          "name": "*",
+          "name": "MpCheckbox",
           "declaration": {
-            "name": "*",
-            "module": "calendar/src/mp-calendar.element"
+            "name": "MpCheckbox",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpCheckboxType",
+          "declaration": {
+            "name": "MpCheckboxType",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "CheckboxChangeEventDetail",
+          "declaration": {
+            "name": "CheckboxChangeEventDetail",
+            "module": "./components"
           }
         }
       ]
@@ -14951,37 +14982,6 @@
     },
     {
       "kind": "javascript-module",
-      "path": "checkbox/src/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "MpCheckbox",
-          "declaration": {
-            "name": "MpCheckbox",
-            "module": "./components"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpCheckboxType",
-          "declaration": {
-            "name": "MpCheckboxType",
-            "module": "./components"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "CheckboxChangeEventDetail",
-          "declaration": {
-            "name": "CheckboxChangeEventDetail",
-            "module": "./components"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
       "path": "datetime-picker/src/index.ts",
       "declarations": [],
       "exports": [
@@ -14991,21 +14991,6 @@
           "declaration": {
             "name": "*",
             "module": "datetime-picker/src/mp-datetime-picker.element"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "multi-range/src/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "*",
-          "declaration": {
-            "name": "*",
-            "module": "multi-range/src/mint-multi-range.element"
           }
         }
       ]
@@ -15180,6 +15165,21 @@
           "declaration": {
             "name": "fileManagerStyles",
             "module": "./styles"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "multi-range/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "multi-range/src/mint-multi-range.element"
           }
         }
       ]
@@ -16021,37 +16021,6 @@
     },
     {
       "kind": "javascript-module",
-      "path": "radio/src/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "MpRadio",
-          "declaration": {
-            "name": "MpRadio",
-            "module": "./components"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpRadioType",
-          "declaration": {
-            "name": "MpRadioType",
-            "module": "./components"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "RadioChangeEventDetail",
-          "declaration": {
-            "name": "RadioChangeEventDetail",
-            "module": "./components"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
       "path": "query-builder/src/context.ts",
       "declarations": [
         {
@@ -16142,6 +16111,61 @@
             "name": "*",
             "module": "query-builder/src/mp-query-subquery.element"
           }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "query-builder/src/model"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "query-builder/src/context"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "query-builder/src/preview/render-expression"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "radio/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpRadio",
+          "declaration": {
+            "name": "MpRadio",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpRadioType",
+          "declaration": {
+            "name": "MpRadioType",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "RadioChangeEventDetail",
+          "declaration": {
+            "name": "RadioChangeEventDetail",
+            "module": "./components"
+          }
         }
       ]
     },
@@ -16197,8 +16221,22 @@
             "name": "*",
             "module": "ribbon/src/items"
           }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "ribbon/src/ribbon.types"
+          }
         }
       ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "ribbon/src/ribbon.types.ts",
+      "declarations": [],
+      "exports": []
     },
     {
       "kind": "javascript-module",
@@ -16223,17 +16261,17 @@
         },
         {
           "kind": "js",
-          "name": "SchedulerState",
+          "name": "createInitialState",
           "declaration": {
-            "name": "SchedulerState",
+            "name": "createInitialState",
             "module": "./state/scheduler-state"
           }
         },
         {
           "kind": "js",
-          "name": "createInitialState",
+          "name": "SchedulerState",
           "declaration": {
-            "name": "createInitialState",
+            "name": "SchedulerState",
             "module": "./state/scheduler-state"
           }
         },
@@ -16739,6 +16777,292 @@
       "path": "card/src/types/card-image-position.ts",
       "declarations": [],
       "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "checkbox/src/components/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpCheckbox",
+          "declaration": {
+            "name": "MpCheckbox",
+            "module": "./mp-checkbox"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpCheckboxType",
+          "declaration": {
+            "name": "MpCheckboxType",
+            "module": "./mp-checkbox"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "CheckboxChangeEventDetail",
+          "declaration": {
+            "name": "CheckboxChangeEventDetail",
+            "module": "./mp-checkbox"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "checkbox/src/components/mp-checkbox.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "`<mp-checkbox>` — a Bootstrap-styled checkbox with three visual variants\nvia the `type` attribute:\n\n- `checkbox` (default) — `.form-check` with a square indicator.\n- `switch` — `.form-check.form-switch` for the iOS-style sliding switch.\n- `toggle_button` — `.btn-check` rendered as a `.btn .btn-<color>`.\n\nSupports first-class **tri-state** via the `indeterminate` attribute /\nproperty. The visual indeterminate styling is the browser's native\n`<input>.indeterminate` DOM property; we additionally reflect\n`aria-checked=\"mixed\"` for AT and mirror the value to a reflected\nboolean attribute so consumers can target the state from CSS.\nThe native `change` event clears `indeterminate` on the next user click\n(per HTML spec); consumers that want the master/select-all pattern can\nre-derive and re-set `indeterminate` from the resulting state.\n\nEmits `change` with `detail: { checked, indeterminate, value }`.",
+          "name": "MpCheckbox",
+          "members": [
+            {
+              "kind": "field",
+              "name": "shadowRootOptions",
+              "type": {
+                "text": "object"
+              },
+              "static": true,
+              "default": "{ ...LitElement.shadowRootOptions, delegatesFocus: true, }"
+            },
+            {
+              "kind": "field",
+              "name": "_type",
+              "type": {
+                "text": "MpCheckboxType"
+              },
+              "privacy": "private",
+              "default": "'checkbox'"
+            },
+            {
+              "kind": "field",
+              "name": "_checked",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "_indeterminate",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "_disabled",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "_name",
+              "type": {
+                "text": "string | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "_value",
+              "type": {
+                "text": "string | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "_color",
+              "type": {
+                "text": "ToggleButtonColor"
+              },
+              "privacy": "private",
+              "default": "'primary'"
+            },
+            {
+              "kind": "field",
+              "name": "_inputId",
+              "privacy": "private",
+              "readonly": true,
+              "default": "`mp-checkbox-${++instanceCounter}`"
+            },
+            {
+              "kind": "field",
+              "name": "_inputRef",
+              "type": {
+                "text": "Ref<HTMLInputElement>"
+              },
+              "privacy": "private",
+              "readonly": true
+            },
+            {
+              "kind": "field",
+              "name": "type",
+              "type": {
+                "text": "MpCheckboxType"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "checked",
+              "type": {
+                "text": "boolean"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "indeterminate",
+              "type": {
+                "text": "boolean"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "disabled",
+              "type": {
+                "text": "boolean"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "name",
+              "type": {
+                "text": "string | null"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "value",
+              "type": {
+                "text": "string | null"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "color",
+              "type": {
+                "text": "ToggleButtonColor"
+              }
+            },
+            {
+              "kind": "method",
+              "name": "renderCheckOrSwitch",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "TemplateResult"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "renderToggleButton",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "TemplateResult"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "reflectBoolean",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "attr",
+                  "type": {
+                    "text": "string"
+                  }
+                },
+                {
+                  "name": "value",
+                  "type": {
+                    "text": "boolean"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "field",
+              "name": "onInputChange",
+              "privacy": "private"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "type"
+            },
+            {
+              "name": "checked"
+            },
+            {
+              "name": "indeterminate"
+            },
+            {
+              "name": "disabled"
+            },
+            {
+              "name": "name"
+            },
+            {
+              "name": "value"
+            },
+            {
+              "name": "color"
+            },
+            {
+              "name": "aria-label"
+            },
+            {
+              "name": "aria-labelledby"
+            },
+            {
+              "name": "aria-describedby"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "mp-checkbox",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpCheckbox",
+          "declaration": {
+            "name": "MpCheckbox",
+            "module": "checkbox/src/components/mp-checkbox.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "mp-checkbox",
+          "declaration": {
+            "name": "MpCheckbox",
+            "module": "checkbox/src/components/mp-checkbox.ts"
+          }
+        }
+      ]
     },
     {
       "kind": "javascript-module",
@@ -18006,298 +18330,6 @@
           }
         }
       ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "checkbox/src/components/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "MpCheckbox",
-          "declaration": {
-            "name": "MpCheckbox",
-            "module": "./mp-checkbox"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpCheckboxType",
-          "declaration": {
-            "name": "MpCheckboxType",
-            "module": "./mp-checkbox"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "CheckboxChangeEventDetail",
-          "declaration": {
-            "name": "CheckboxChangeEventDetail",
-            "module": "./mp-checkbox"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "checkbox/src/components/mp-checkbox.ts",
-      "declarations": [
-        {
-          "kind": "class",
-          "description": "`<mp-checkbox>` — a Bootstrap-styled checkbox with three visual variants\nvia the `type` attribute:\n\n- `checkbox` (default) — `.form-check` with a square indicator.\n- `switch` — `.form-check.form-switch` for the iOS-style sliding switch.\n- `toggle_button` — `.btn-check` rendered as a `.btn .btn-<color>`.\n\nSupports first-class **tri-state** via the `indeterminate` attribute /\nproperty. The visual indeterminate styling is the browser's native\n`<input>.indeterminate` DOM property; we additionally reflect\n`aria-checked=\"mixed\"` for AT and mirror the value to a reflected\nboolean attribute so consumers can target the state from CSS.\nThe native `change` event clears `indeterminate` on the next user click\n(per HTML spec); consumers that want the master/select-all pattern can\nre-derive and re-set `indeterminate` from the resulting state.\n\nEmits `change` with `detail: { checked, indeterminate, value }`.",
-          "name": "MpCheckbox",
-          "members": [
-            {
-              "kind": "field",
-              "name": "shadowRootOptions",
-              "type": {
-                "text": "object"
-              },
-              "static": true,
-              "default": "{ ...LitElement.shadowRootOptions, delegatesFocus: true, }"
-            },
-            {
-              "kind": "field",
-              "name": "_type",
-              "type": {
-                "text": "MpCheckboxType"
-              },
-              "privacy": "private",
-              "default": "'checkbox'"
-            },
-            {
-              "kind": "field",
-              "name": "_checked",
-              "type": {
-                "text": "boolean"
-              },
-              "privacy": "private",
-              "default": "false"
-            },
-            {
-              "kind": "field",
-              "name": "_indeterminate",
-              "type": {
-                "text": "boolean"
-              },
-              "privacy": "private",
-              "default": "false"
-            },
-            {
-              "kind": "field",
-              "name": "_disabled",
-              "type": {
-                "text": "boolean"
-              },
-              "privacy": "private",
-              "default": "false"
-            },
-            {
-              "kind": "field",
-              "name": "_name",
-              "type": {
-                "text": "string | null"
-              },
-              "privacy": "private",
-              "default": "null"
-            },
-            {
-              "kind": "field",
-              "name": "_value",
-              "type": {
-                "text": "string | null"
-              },
-              "privacy": "private",
-              "default": "null"
-            },
-            {
-              "kind": "field",
-              "name": "_color",
-              "type": {
-                "text": "ToggleButtonColor"
-              },
-              "privacy": "private",
-              "default": "'primary'"
-            },
-            {
-              "kind": "field",
-              "name": "_inputId",
-              "privacy": "private",
-              "readonly": true,
-              "default": "`mp-checkbox-${++instanceCounter}`"
-            },
-            {
-              "kind": "field",
-              "name": "_inputRef",
-              "type": {
-                "text": "Ref<HTMLInputElement>"
-              },
-              "privacy": "private",
-              "readonly": true
-            },
-            {
-              "kind": "field",
-              "name": "type",
-              "type": {
-                "text": "MpCheckboxType"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "checked",
-              "type": {
-                "text": "boolean"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "indeterminate",
-              "type": {
-                "text": "boolean"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "disabled",
-              "type": {
-                "text": "boolean"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "name",
-              "type": {
-                "text": "string | null"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "value",
-              "type": {
-                "text": "string | null"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "color",
-              "type": {
-                "text": "ToggleButtonColor"
-              }
-            },
-            {
-              "kind": "method",
-              "name": "renderCheckOrSwitch",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "TemplateResult"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "renderToggleButton",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "TemplateResult"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "reflectBoolean",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "attr",
-                  "type": {
-                    "text": "string"
-                  }
-                },
-                {
-                  "name": "value",
-                  "type": {
-                    "text": "boolean"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "field",
-              "name": "onInputChange",
-              "privacy": "private"
-            }
-          ],
-          "attributes": [
-            {
-              "name": "type"
-            },
-            {
-              "name": "checked"
-            },
-            {
-              "name": "indeterminate"
-            },
-            {
-              "name": "disabled"
-            },
-            {
-              "name": "name"
-            },
-            {
-              "name": "value"
-            },
-            {
-              "name": "color"
-            },
-            {
-              "name": "aria-label"
-            },
-            {
-              "name": "aria-labelledby"
-            },
-            {
-              "name": "aria-describedby"
-            }
-          ],
-          "superclass": {
-            "name": "LitElement",
-            "package": "lit"
-          },
-          "tagName": "mp-checkbox",
-          "customElement": true
-        }
-      ],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "MpCheckbox",
-          "declaration": {
-            "name": "MpCheckbox",
-            "module": "checkbox/src/components/mp-checkbox.ts"
-          }
-        },
-        {
-          "kind": "custom-element-definition",
-          "name": "mp-checkbox",
-          "declaration": {
-            "name": "MpCheckbox",
-            "module": "checkbox/src/components/mp-checkbox.ts"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "multi-range/src/types/multi-range-orientation.ts",
-      "declarations": [],
-      "exports": []
     },
     {
       "kind": "javascript-module",
@@ -19847,6 +19879,12 @@
     },
     {
       "kind": "javascript-module",
+      "path": "multi-range/src/types/multi-range-orientation.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
       "path": "otp-input/src/types/otp-input-case.ts",
       "declarations": [],
       "exports": []
@@ -20241,180 +20279,88 @@
     },
     {
       "kind": "javascript-module",
-      "path": "radio/src/components/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "MpRadio",
-          "declaration": {
-            "name": "MpRadio",
-            "module": "./mp-radio"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpRadioType",
-          "declaration": {
-            "name": "MpRadioType",
-            "module": "./mp-radio"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "RadioChangeEventDetail",
-          "declaration": {
-            "name": "RadioChangeEventDetail",
-            "module": "./mp-radio"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "radio/src/components/mp-radio.ts",
+      "path": "query-builder/src/dnd/drag-controller.ts",
       "declarations": [
         {
           "kind": "class",
-          "description": "`<mp-radio>` — a Bootstrap-styled radio button with two visual variants:\n\n- `type=\"radio\"` (default) — standard `.form-check` styling with a round\n  indicator and a label.\n- `type=\"toggle_button\"` — `.btn-check` styling rendered as a button\n  (`.btn .btn-<color>`). Defaults to `color=\"secondary\"` to match the\n  prior Angular `<bs-radio type=\"toggle_button\">` behaviour.\n\nNative one-of-N behaviour relies on multiple inputs sharing a `name` in\nthe same scope. Each `<mp-radio>` keeps its `<input>` inside its own\nshadow root, so the browser cannot auto-uncheck a sibling for us. A\ncoordinating parent (e.g. the Angular `[bsRadioGroup]` directive or a\nfuture `<mp-radio-group>` WC) must listen for `change` and update the\nother radios' `checked` properties.\n\nEmits `change` with `detail: { checked, value }` when this radio\ntransitions to the checked state.",
-          "name": "MpRadio",
+          "description": "",
+          "name": "DragController",
           "members": [
             {
               "kind": "field",
-              "name": "shadowRootOptions",
+              "name": "_source",
               "type": {
-                "text": "object"
-              },
-              "static": true,
-              "default": "{ ...LitElement.shadowRootOptions, delegatesFocus: true, }"
-            },
-            {
-              "kind": "field",
-              "name": "_type",
-              "type": {
-                "text": "MpRadioType"
-              },
-              "privacy": "private",
-              "default": "'radio'"
-            },
-            {
-              "kind": "field",
-              "name": "_checked",
-              "type": {
-                "text": "boolean"
-              },
-              "privacy": "private",
-              "default": "false"
-            },
-            {
-              "kind": "field",
-              "name": "_disabled",
-              "type": {
-                "text": "boolean"
-              },
-              "privacy": "private",
-              "default": "false"
-            },
-            {
-              "kind": "field",
-              "name": "_name",
-              "type": {
-                "text": "string | null"
+                "text": "DragSource | null"
               },
               "privacy": "private",
               "default": "null"
             },
             {
               "kind": "field",
-              "name": "_value",
+              "name": "_ghost",
               "type": {
-                "text": "string | null"
+                "text": "HTMLElement | null"
               },
               "privacy": "private",
               "default": "null"
             },
             {
               "kind": "field",
-              "name": "_color",
+              "name": "_lastTarget",
               "type": {
-                "text": "ToggleButtonColor"
+                "text": "DropTarget | null"
               },
               "privacy": "private",
-              "default": "'secondary'"
+              "default": "null"
             },
             {
               "kind": "field",
-              "name": "_inputId",
+              "name": "_offsetX",
+              "type": {
+                "text": "number"
+              },
               "privacy": "private",
-              "readonly": true,
-              "default": "`mp-radio-${++instanceCounter}`"
+              "default": "0"
             },
             {
               "kind": "field",
-              "name": "type",
+              "name": "_offsetY",
               "type": {
-                "text": "MpRadioType"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "checked",
-              "type": {
-                "text": "boolean"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "disabled",
-              "type": {
-                "text": "boolean"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "name",
-              "type": {
-                "text": "string | null"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "value",
-              "type": {
-                "text": "string | null"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "color",
-              "type": {
-                "text": "ToggleButtonColor"
-              }
+                "text": "number"
+              },
+              "privacy": "private",
+              "default": "0"
             },
             {
               "kind": "method",
-              "name": "renderRadio",
-              "privacy": "private",
+              "name": "isActive",
               "return": {
                 "type": {
-                  "text": "TemplateResult"
+                  "text": "boolean"
                 }
               }
             },
             {
               "kind": "method",
-              "name": "renderToggleButton",
-              "privacy": "private",
+              "name": "source",
               "return": {
                 "type": {
-                  "text": "TemplateResult"
+                  "text": "DragSource | null"
                 }
               }
             },
             {
               "kind": "method",
-              "name": "reflectBoolean",
-              "privacy": "private",
+              "name": "currentTarget",
+              "return": {
+                "type": {
+                  "text": "DropTarget | null"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "start",
               "return": {
                 "type": {
                   "text": "void"
@@ -20422,68 +20368,107 @@
               },
               "parameters": [
                 {
-                  "name": "attr",
+                  "name": "source",
                   "type": {
-                    "text": "string"
+                    "text": "DragSource"
                   }
                 },
                 {
-                  "name": "value",
+                  "name": "event",
                   "type": {
-                    "text": "boolean"
+                    "text": "PointerEvent"
                   }
                 }
               ]
             },
             {
-              "kind": "field",
-              "name": "onInputChange",
-              "privacy": "private"
+              "kind": "method",
+              "name": "move",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "event",
+                  "type": {
+                    "text": "PointerEvent"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "end",
+              "return": {
+                "type": {
+                  "text": "DropTarget | null"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "_event",
+                  "type": {
+                    "text": "PointerEvent"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "cancel",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "cleanup",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "resolveDropTarget",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "DropTarget | null"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "x",
+                  "type": {
+                    "text": "number"
+                  }
+                },
+                {
+                  "name": "y",
+                  "type": {
+                    "text": "number"
+                  }
+                }
+              ],
+              "description": "Walks `document.elementsFromPoint(x, y)` (composed path; cross-browser\r\nsupported in Chromium / Firefox / modern WebKit) and returns the first\r\n`[data-drop-slot]` ancestor whose data-parent-id is NOT in the source's\r\ndescendant set.\r\n\r\nFor older WebKit which doesn't implement `elementsFromPoint`, callers\r\ncan extend the resolver with a shadow-DOM walker (FR-38 fallback) —\r\nnot implemented here since we target evergreen browsers."
             }
-          ],
-          "attributes": [
-            {
-              "name": "type"
-            },
-            {
-              "name": "checked"
-            },
-            {
-              "name": "disabled"
-            },
-            {
-              "name": "name"
-            },
-            {
-              "name": "value"
-            },
-            {
-              "name": "color"
-            }
-          ],
-          "superclass": {
-            "name": "LitElement",
-            "package": "lit"
-          },
-          "tagName": "mp-radio",
-          "customElement": true
+          ]
         }
       ],
       "exports": [
         {
           "kind": "js",
-          "name": "MpRadio",
+          "name": "DragController",
           "declaration": {
-            "name": "MpRadio",
-            "module": "radio/src/components/mp-radio.ts"
-          }
-        },
-        {
-          "kind": "custom-element-definition",
-          "name": "mp-radio",
-          "declaration": {
-            "name": "MpRadio",
-            "module": "radio/src/components/mp-radio.ts"
+            "name": "DragController",
+            "module": "query-builder/src/dnd/drag-controller.ts"
           }
         }
       ]
@@ -20667,6 +20652,101 @@
       "path": "query-builder/src/model/field-def.ts",
       "declarations": [],
       "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "query-builder/src/model/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "query-builder/src/model/default-tree"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "query-builder/src/model/editor"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "query-builder/src/model/errors"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "query-builder/src/model/expression"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "query-builder/src/model/field-def"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "query-builder/src/model/messages"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "query-builder/src/model/operator-overrides"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "query-builder/src/model/operators"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "query-builder/src/model/saved-query"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "query-builder/src/model/sort"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "query-builder/src/model/tree-ops"
+          }
+        }
+      ]
     },
     {
       "kind": "javascript-module",
@@ -21400,6 +21480,341 @@
           "declaration": {
             "name": "emptySubquery",
             "module": "query-builder/src/model/tree-ops.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "query-builder/src/preview/render-expression.ts",
+      "declarations": [
+        {
+          "kind": "function",
+          "name": "renderExpression",
+          "return": {
+            "type": {
+              "text": "string"
+            }
+          },
+          "parameters": [
+            {
+              "name": "tree",
+              "type": {
+                "text": "Expression"
+              }
+            },
+            {
+              "name": "schema",
+              "type": {
+                "text": "EntitySchema[]"
+              }
+            },
+            {
+              "name": "options",
+              "default": "{}",
+              "type": {
+                "text": "RenderExpressionOptions"
+              }
+            }
+          ],
+          "description": "Render a query tree to a human-readable string.\n\nExamples:\n  \"Total > 100\"\n  \"(Total > 100 AND Status = \"open\")\"\n  \"Order date is in the last 7 days\"\n  \"Tags any of [urgent, blocked]\"\n  \"Line items IN (Amount between [10, 500])\"\n\nPure function — no side effects. Sub-queries are walked with the\ntarget entity's schema for field-label resolution."
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "renderExpression",
+          "declaration": {
+            "name": "renderExpression",
+            "module": "query-builder/src/preview/render-expression.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "query-builder/src/value-editors/builtin-editors.ts",
+      "declarations": [
+        {
+          "kind": "function",
+          "name": "resolveBuiltinEditor",
+          "return": {
+            "type": {
+              "text": "BuiltinFactory | null"
+            }
+          },
+          "parameters": [
+            {
+              "name": "field",
+              "type": {
+                "text": "FieldDef"
+              }
+            },
+            {
+              "name": "operator",
+              "type": {
+                "text": "Operator"
+              }
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "resolveBuiltinEditor",
+          "declaration": {
+            "name": "resolveBuiltinEditor",
+            "module": "query-builder/src/value-editors/builtin-editors.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "radio/src/components/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpRadio",
+          "declaration": {
+            "name": "MpRadio",
+            "module": "./mp-radio"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpRadioType",
+          "declaration": {
+            "name": "MpRadioType",
+            "module": "./mp-radio"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "RadioChangeEventDetail",
+          "declaration": {
+            "name": "RadioChangeEventDetail",
+            "module": "./mp-radio"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "radio/src/components/mp-radio.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "`<mp-radio>` — a Bootstrap-styled radio button with two visual variants:\n\n- `type=\"radio\"` (default) — standard `.form-check` styling with a round\n  indicator and a label.\n- `type=\"toggle_button\"` — `.btn-check` styling rendered as a button\n  (`.btn .btn-<color>`). Defaults to `color=\"secondary\"` to match the\n  prior Angular `<bs-radio type=\"toggle_button\">` behaviour.\n\nNative one-of-N behaviour relies on multiple inputs sharing a `name` in\nthe same scope. Each `<mp-radio>` keeps its `<input>` inside its own\nshadow root, so the browser cannot auto-uncheck a sibling for us. A\ncoordinating parent (e.g. the Angular `[bsRadioGroup]` directive or a\nfuture `<mp-radio-group>` WC) must listen for `change` and update the\nother radios' `checked` properties.\n\nEmits `change` with `detail: { checked, value }` when this radio\ntransitions to the checked state.",
+          "name": "MpRadio",
+          "members": [
+            {
+              "kind": "field",
+              "name": "shadowRootOptions",
+              "type": {
+                "text": "object"
+              },
+              "static": true,
+              "default": "{ ...LitElement.shadowRootOptions, delegatesFocus: true, }"
+            },
+            {
+              "kind": "field",
+              "name": "_type",
+              "type": {
+                "text": "MpRadioType"
+              },
+              "privacy": "private",
+              "default": "'radio'"
+            },
+            {
+              "kind": "field",
+              "name": "_checked",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "_disabled",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "_name",
+              "type": {
+                "text": "string | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "_value",
+              "type": {
+                "text": "string | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "_color",
+              "type": {
+                "text": "ToggleButtonColor"
+              },
+              "privacy": "private",
+              "default": "'secondary'"
+            },
+            {
+              "kind": "field",
+              "name": "_inputId",
+              "privacy": "private",
+              "readonly": true,
+              "default": "`mp-radio-${++instanceCounter}`"
+            },
+            {
+              "kind": "field",
+              "name": "type",
+              "type": {
+                "text": "MpRadioType"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "checked",
+              "type": {
+                "text": "boolean"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "disabled",
+              "type": {
+                "text": "boolean"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "name",
+              "type": {
+                "text": "string | null"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "value",
+              "type": {
+                "text": "string | null"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "color",
+              "type": {
+                "text": "ToggleButtonColor"
+              }
+            },
+            {
+              "kind": "method",
+              "name": "renderRadio",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "TemplateResult"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "renderToggleButton",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "TemplateResult"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "reflectBoolean",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "attr",
+                  "type": {
+                    "text": "string"
+                  }
+                },
+                {
+                  "name": "value",
+                  "type": {
+                    "text": "boolean"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "field",
+              "name": "onInputChange",
+              "privacy": "private"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "type"
+            },
+            {
+              "name": "checked"
+            },
+            {
+              "name": "disabled"
+            },
+            {
+              "name": "name"
+            },
+            {
+              "name": "value"
+            },
+            {
+              "name": "color"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "mp-radio",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpRadio",
+          "declaration": {
+            "name": "MpRadio",
+            "module": "radio/src/components/mp-radio.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "mp-radio",
+          "declaration": {
+            "name": "MpRadio",
+            "module": "radio/src/components/mp-radio.ts"
           }
         }
       ]

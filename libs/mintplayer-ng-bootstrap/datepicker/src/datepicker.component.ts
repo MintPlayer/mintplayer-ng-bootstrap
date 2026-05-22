@@ -20,7 +20,7 @@ import {
   Validator,
 } from '@angular/forms';
 import type { FirstDayOfWeek } from '@mintplayer/ng-bootstrap/calendar';
-import { MpDatepickerElement } from './lib/web-components/mp-datepicker.element';
+import { MpDatepickerElement } from '@mintplayer/web-components/datepicker';
 
 // Side-effect: registers <mp-datepicker>.
 void MpDatepickerElement;

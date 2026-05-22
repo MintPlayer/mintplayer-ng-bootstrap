@@ -1,7 +1,7 @@
-import type { Operator } from '../model/expression';
-import type { FieldDef, FieldDefOption } from '../model/field-def';
-import type { EditorContext, EditorHandle } from '../model/editor';
-import { valueShapeFor } from '../model/operators';
+import type { Operator } from '@mintplayer/web-components/query-builder';
+import type { FieldDef, FieldDefOption } from '@mintplayer/web-components/query-builder';
+import type { EditorContext, EditorHandle } from '@mintplayer/web-components/query-builder';
+import { valueShapeFor } from '@mintplayer/web-components/query-builder';
 
 type BuiltinFactory = (ctx: EditorContext) => EditorHandle;
 

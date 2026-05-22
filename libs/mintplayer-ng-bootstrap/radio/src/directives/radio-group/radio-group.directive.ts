@@ -1,6 +1,6 @@
 import { contentChildren, Directive, effect, forwardRef, input, signal } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import type { MpRadio } from '@mintplayer/ng-bootstrap/web-components/radio';
+import type { MpRadio } from '@mintplayer/web-components/radio';
 import { BsRadioComponent } from '../../component/radio.component';
 
 /**

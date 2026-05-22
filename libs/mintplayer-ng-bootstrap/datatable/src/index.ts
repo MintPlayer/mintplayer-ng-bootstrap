@@ -14,4 +14,4 @@ export type {
   RowEventDetail,
   SortChangeEventDetail,
   SelectionChangeEventDetail,
-} from '@mintplayer/ng-bootstrap/web-components/datatable';
+} from '@mintplayer/web-components/datatable';

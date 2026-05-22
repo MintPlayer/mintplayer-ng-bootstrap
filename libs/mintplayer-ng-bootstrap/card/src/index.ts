@@ -13,18 +13,6 @@ export * from './lib/components/bs-card-link.component';
 export * from './lib/components/bs-card-img.component';
 export * from './lib/components/bs-card-group.component';
 
-// Lit web-component layer (M1).
-export * from './lib/web-components/mp-card.element';
-export * from './lib/web-components/mp-card-header.element';
-export * from './lib/web-components/mp-card-body.element';
-export * from './lib/web-components/mp-card-footer.element';
-export * from './lib/web-components/mp-card-title.element';
-export * from './lib/web-components/mp-card-subtitle.element';
-export * from './lib/web-components/mp-card-text.element';
-export * from './lib/web-components/mp-card-link.element';
-export * from './lib/web-components/mp-card-img.element';
-export * from './lib/web-components/mp-card-group.element';
-
-// Public types.
-export * from './lib/types/card-image-position';
-export * from './lib/types/card-header-nav-style';
+// Lit web-component layer + public types — now sourced from the
+// framework-agnostic @mintplayer/web-components/card sub-entry.
+export * from '@mintplayer/web-components/card';

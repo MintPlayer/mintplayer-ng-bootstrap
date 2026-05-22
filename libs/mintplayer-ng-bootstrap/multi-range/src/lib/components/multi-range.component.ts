@@ -10,9 +10,9 @@ import {
   output,
   viewChild,
 } from '@angular/core';
-import { MintMultiRangeElement } from '../web-components/mint-multi-range.element';
+import { MintMultiRangeElement } from '@mintplayer/web-components/multi-range';
 import { BsMultiRangeValueAccessor } from '../value-accessor/multi-range-value-accessor';
-import { MultiRangeOrientation } from '../types/multi-range-orientation';
+import { MultiRangeOrientation } from '@mintplayer/web-components/multi-range';
 
 @Component({
   selector: 'bs-multi-range',

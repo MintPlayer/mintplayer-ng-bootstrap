@@ -7,7 +7,7 @@ import type { EditorContext, EditorFactory, EditorHandle } from './model/editor'
 import { DEFAULT_MESSAGES, type QueryBuilderMessages } from './model/messages';
 import { operatorsForType, valueShapeFor } from './model/operators';
 import { disabledContext, editorRegistryContext, messagesContext } from './context';
-import { resolveBuiltinEditor } from '../value-editors/builtin-editors';
+import { resolveBuiltinEditor } from './value-editors/builtin-editors';
 import { styles } from './mp-query-condition.element.template';
 
 export class MpQueryConditionElement extends LitElement {

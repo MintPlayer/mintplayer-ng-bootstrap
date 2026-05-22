@@ -18,9 +18,9 @@ import {
   MintTileManagerElement,
   TileDragMode,
   TileResizeMode,
-} from '../web-components/mint-tile-manager.element';
-import { TileLayoutSnapshot, TileGestureBlocked } from '../types/tile-layout-snapshot';
-import { TilePosition } from '../types/tile-position';
+} from '@mintplayer/web-components/tile-manager';
+import { TileLayoutSnapshot, TileGestureBlocked } from '@mintplayer/web-components/tile-manager';
+import { TilePosition } from '@mintplayer/web-components/tile-manager';
 
 @Component({
   selector: 'bs-tile-manager',

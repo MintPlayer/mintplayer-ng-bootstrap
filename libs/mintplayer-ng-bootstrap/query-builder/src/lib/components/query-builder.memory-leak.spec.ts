@@ -8,10 +8,10 @@ import type {
   EditorFactory,
   EditorHandle,
   EditorRegistry,
-} from '../model/editor';
-import type { Expression, Group } from '../model/expression';
-import type { EntitySchema } from '../model/field-def';
-import { emptyGroup } from '../model/default-tree';
+} from '@mintplayer/web-components/query-builder';
+import type { Expression, Group } from '@mintplayer/web-components/query-builder';
+import type { EntitySchema } from '@mintplayer/web-components/query-builder';
+import { emptyGroup } from '@mintplayer/web-components/query-builder';
 
 const SCHEMA: EntitySchema[] = [
   {

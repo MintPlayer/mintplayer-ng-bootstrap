@@ -7,8 +7,8 @@ import {
   input,
 } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
-import { applyCardColorClasses } from '../web-components/card-classes';
-import { ensureCardStylesInjected } from '../web-components/mp-card.element';
+import { applyCardColorClasses } from '@mintplayer/web-components/card';
+import { ensureCardStylesInjected } from '@mintplayer/web-components/card';
 
 /**
  * Angular wrapper for the Bootstrap card root.

@@ -4,11 +4,11 @@ import type {
   Group,
   Operator,
   SubQueryCondition,
-} from '../model/expression';
-import type { EntitySchema, FieldDef } from '../model/field-def';
-import { DEFAULT_MESSAGES, type QueryBuilderMessages } from '../model/messages';
-import { MaxDepthExceededError } from '../model/errors';
-import { valueShapeFor } from '../model/operators';
+} from '@mintplayer/web-components/query-builder';
+import type { EntitySchema, FieldDef } from '@mintplayer/web-components/query-builder';
+import { DEFAULT_MESSAGES, type QueryBuilderMessages } from '@mintplayer/web-components/query-builder';
+import { MaxDepthExceededError } from '@mintplayer/web-components/query-builder';
+import { valueShapeFor } from '@mintplayer/web-components/query-builder';
 
 export interface RenderExpressionOptions {
   messages?: Partial<QueryBuilderMessages>;

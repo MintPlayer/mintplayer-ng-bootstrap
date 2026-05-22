@@ -20,22 +20,22 @@ import {
   ControlValueAccessor,
   NG_VALUE_ACCESSOR,
 } from '@angular/forms';
-import { MpQueryBuilderElement } from '../web-components/mp-query-builder.element';
-import type { Expression } from '../model/expression';
-import type { EntitySchema } from '../model/field-def';
+import { MpQueryBuilderElement } from '@mintplayer/web-components/query-builder';
+import type { Expression } from '@mintplayer/web-components/query-builder';
+import type { EntitySchema } from '@mintplayer/web-components/query-builder';
 import type {
   EditorContext,
   EditorFactory,
   EditorRegistry,
-} from '../model/editor';
-import type { QueryBuilderMessages } from '../model/messages';
-import type { SavedQuery } from '../model/saved-query';
-import type { SortDescriptor } from '../model/sort';
-import { emptyGroup } from '../model/default-tree';
+} from '@mintplayer/web-components/query-builder';
+import type { QueryBuilderMessages } from '@mintplayer/web-components/query-builder';
+import type { SavedQuery } from '@mintplayer/web-components/query-builder';
+import type { SortDescriptor } from '@mintplayer/web-components/query-builder';
+import { emptyGroup } from '@mintplayer/web-components/query-builder';
 import {
   validateOperatorOverrides,
   type OperatorOverrides,
-} from '../model/operator-overrides';
+} from '@mintplayer/web-components/query-builder';
 import { BsQueryBuilderEditorDirective } from './query-builder-editor.directive';
 
 void MpQueryBuilderElement;

@@ -7,7 +7,7 @@ import {
 import type {
   RibbonGroupSize,
   RibbonReduceStep,
-} from '../web-components/mp-ribbon-tab.element';
+} from '@mintplayer/web-components/ribbon';
 
 @Component({
   selector: 'bs-ribbon-tab',

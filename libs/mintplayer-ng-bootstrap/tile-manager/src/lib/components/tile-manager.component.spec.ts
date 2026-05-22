@@ -4,9 +4,9 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { BsTileManagerComponent } from './tile-manager.component';
 import { BsTileComponent } from './tile.component';
 import { BsTileHeaderComponent } from './tile-header.component';
-import { TilePosition } from '../types/tile-position';
-import { TileLayoutSnapshot, TileGestureBlocked } from '../types/tile-layout-snapshot';
-import { MintTileManagerElement } from '../web-components/mint-tile-manager.element';
+import { TilePosition } from '@mintplayer/web-components/tile-manager';
+import { TileLayoutSnapshot, TileGestureBlocked } from '@mintplayer/web-components/tile-manager';
+import { MintTileManagerElement } from '@mintplayer/web-components/tile-manager';
 
 interface DemoTile {
   id: string;
