@@ -40,6 +40,39 @@ export class MpCodeSnippet extends LitElement {
       border: 1px solid var(--bs-border-color, #d0d7de);
       border-radius: var(--bs-border-radius, 0.375rem);
       overflow: hidden;
+
+      /* GitHub-light hljs token palette (default). Each token is a CSS
+         variable so consumers (and the dark-mode block below) can
+         override without re-declaring every selector. */
+      --mp-snippet-comment:    #6e7781;
+      --mp-snippet-keyword:    #cf222e;
+      --mp-snippet-string:     #0a3069;
+      --mp-snippet-number:     #0550ae;
+      --mp-snippet-type:       #8250df;
+      --mp-snippet-tag:        #116329;
+      --mp-snippet-attribute:  #0550ae;
+      --mp-snippet-deletion-fg:#82071e;
+      --mp-snippet-deletion-bg:#ffebe9;
+      --mp-snippet-addition-fg:#116329;
+      --mp-snippet-addition-bg:#dafbe1;
+    }
+
+    /* Bootstrap toggles data-bs-theme on <html> (or any ancestor). Flip
+       hljs tokens to GitHub-dark when an ancestor declares dark mode so
+       the snippet stays readable. :host-context is supported in
+       Chromium 28+, Firefox 102+ and Safari 16.4+ — all current. */
+    :host-context([data-bs-theme='dark']) {
+      --mp-snippet-comment:    #8b949e;
+      --mp-snippet-keyword:    #ff7b72;
+      --mp-snippet-string:     #a5d6ff;
+      --mp-snippet-number:     #79c0ff;
+      --mp-snippet-type:       #d2a8ff;
+      --mp-snippet-tag:        #7ee787;
+      --mp-snippet-attribute:  #79c0ff;
+      --mp-snippet-deletion-fg:#ffdcd7;
+      --mp-snippet-deletion-bg:#67060c;
+      --mp-snippet-addition-fg:#aff5b4;
+      --mp-snippet-addition-bg:#033a16;
     }
 
     pre {
@@ -113,19 +146,21 @@ export class MpCodeSnippet extends LitElement {
     /* Default slot is hidden; content is hoisted into the <code> on each render. */
     slot { display: none; }
 
-    /* Minimal github-light hljs token colours. Consumers can override via
-       ::part(code) + their own stylesheet if a different theme is wanted. */
-    .hljs-comment, .hljs-quote { color: #6e7781; font-style: italic; }
-    .hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-section, .hljs-link { color: #cf222e; }
-    .hljs-function .hljs-keyword { color: #cf222e; }
-    .hljs-subst { color: #1f2328; }
-    .hljs-string, .hljs-attr, .hljs-symbol, .hljs-bullet, .hljs-meta, .hljs-addition { color: #0a3069; }
-    .hljs-number, .hljs-regexp, .hljs-template-tag, .hljs-template-variable, .hljs-variable { color: #0550ae; }
-    .hljs-title, .hljs-class .hljs-title, .hljs-type, .hljs-built_in, .hljs-builtin-name { color: #8250df; }
-    .hljs-tag, .hljs-name { color: #116329; }
-    .hljs-attribute { color: #0550ae; }
-    .hljs-deletion { color: #82071e; background-color: #ffebe9; }
-    .hljs-addition { color: #116329; background-color: #dafbe1; }
+    /* hljs token colours driven by --mp-snippet-* variables so light/dark
+       toggle in a single place. Consumers can still override individual
+       variables via ::part(code) selector + the same custom-property
+       names, OR drop in a vendor theme entirely. */
+    .hljs-comment, .hljs-quote { color: var(--mp-snippet-comment); font-style: italic; }
+    .hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-section, .hljs-link { color: var(--mp-snippet-keyword); }
+    .hljs-function .hljs-keyword { color: var(--mp-snippet-keyword); }
+    .hljs-subst { color: inherit; }
+    .hljs-string, .hljs-attr, .hljs-symbol, .hljs-bullet, .hljs-meta { color: var(--mp-snippet-string); }
+    .hljs-number, .hljs-regexp, .hljs-template-tag, .hljs-template-variable, .hljs-variable { color: var(--mp-snippet-number); }
+    .hljs-title, .hljs-class .hljs-title, .hljs-type, .hljs-built_in, .hljs-builtin-name { color: var(--mp-snippet-type); }
+    .hljs-tag, .hljs-name { color: var(--mp-snippet-tag); }
+    .hljs-attribute { color: var(--mp-snippet-attribute); }
+    .hljs-deletion { color: var(--mp-snippet-deletion-fg); background-color: var(--mp-snippet-deletion-bg); }
+    .hljs-addition { color: var(--mp-snippet-addition-fg); background-color: var(--mp-snippet-addition-bg); }
     .hljs-emphasis { font-style: italic; }
     .hljs-strong { font-weight: 600; }
   `;
