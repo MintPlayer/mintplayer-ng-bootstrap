@@ -1,0 +1,33 @@
+# Local-only override of docker-compose.yml — builds the demo images from
+# source instead of pulling them from ghcr.io, and exposes them on the
+# canonical localhost ports (Angular 4200, React 4000, Vue 4100).
+# No Traefik, no LE certs, no `web` network.
+#
+# Usage:
+#   docker compose -f docker-compose.local.yml up -d --build
+#   docker compose -f docker-compose.local.yml down
+
+services:
+  ng-bootstrap:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mintplayer-ng-bootstrap:local
+    ports:
+      - "4200:80"
+
+  react-bootstrap-demo:
+    build:
+      context: .
+      dockerfile: apps/react-bootstrap-demo/Dockerfile
+    image: mintplayer-react-bootstrap-demo:local
+    ports:
+      - "4000:80"
+
+  vue-bootstrap-demo:
+    build:
+      context: .
+      dockerfile: apps/vue-bootstrap-demo/Dockerfile
+    image: mintplayer-vue-bootstrap-demo:local
+    ports:
+      - "4100:80"
