@@ -41,47 +41,51 @@ export class MpCodeSnippet extends LitElement {
       border-radius: var(--bs-border-radius);
       overflow: hidden;
 
-      /* VS Code Light+ palette — vibrant defaults for every language
-         the demos use (TypeScript, JSX/TSX, Vue SFC, HTML, SCSS/CSS,
-         JSON, shell). Bootstrap's --bs-*-text-emphasis vars are too
-         desaturated for syntax highlighting (it all came out grey),
-         so we hand-pick a token palette here. The dark-mode override
-         below mirrors VS Code Dark+. */
-      --mp-snippet-comment:    #008000;
-      --mp-snippet-keyword:    #0000ff;
-      --mp-snippet-string:     #a31515;
-      --mp-snippet-number:     #098658;
-      --mp-snippet-type:       #267f99;
-      --mp-snippet-tag:        #800000;
-      --mp-snippet-attribute:  #e50000;
-      --mp-snippet-variable:   #001080;
-      --mp-snippet-function:   #795e26;
-      --mp-snippet-meta:       #af00db;
-      --mp-snippet-regexp:     #811f3f;
-      --mp-snippet-deletion-fg:#82071e;
-      --mp-snippet-deletion-bg:#ffebe9;
-      --mp-snippet-addition-fg:#116329;
-      --mp-snippet-addition-bg:#dafbe1;
+      /* a11y-light palette — same hljs theme family the master branch
+         shipped (a11y-dark) but the light counterpart. WCAG AA contrast
+         against a near-white background. Switches happen on the
+         explicit Bootstrap data-bs-theme attribute, which index.html's
+         pre-boot script already resolves from the in-app setting
+         (localStorage 'bs-theme-mode'): 'light' / 'dark' / 'auto' →
+         the auto case reads `matchMedia('(prefers-color-scheme: dark)')`
+         before paint and sets data-bs-theme to the actual mode. So the
+         CSS below only ever sees light or dark, never 'auto'. */
+      --mp-snippet-comment:    #696969;
+      --mp-snippet-keyword:    #7928a1;
+      --mp-snippet-string:     #008000;
+      --mp-snippet-number:     #aa5d00;
+      --mp-snippet-type:       #aa5d00;
+      --mp-snippet-tag:        #d91e18;
+      --mp-snippet-attribute:  #aa5d00;
+      --mp-snippet-variable:   #d91e18;
+      --mp-snippet-function:   #007faa;
+      --mp-snippet-meta:       #aa5d00;
+      --mp-snippet-regexp:     #d91e18;
+      --mp-snippet-deletion-fg:#d91e18;
+      --mp-snippet-deletion-bg:#fbe9e7;
+      --mp-snippet-addition-fg:#008000;
+      --mp-snippet-addition-bg:#e7fbe9;
     }
 
-    /* VS Code Dark+ palette. Switches with the explicit Bootstrap
-       data-bs-theme attribute (NOT the system preference). */
+    /* a11y-dark palette — verbatim port of the
+       ngx-highlight-themes/a11y-dark.scss file the master branch
+       loaded for the Angular demo. */
     :host-context([data-bs-theme='dark']) {
-      --mp-snippet-comment:    #6a9955;
-      --mp-snippet-keyword:    #569cd6;
-      --mp-snippet-string:     #ce9178;
-      --mp-snippet-number:     #b5cea8;
-      --mp-snippet-type:       #4ec9b0;
-      --mp-snippet-tag:        #569cd6;
-      --mp-snippet-attribute:  #9cdcfe;
-      --mp-snippet-variable:   #9cdcfe;
-      --mp-snippet-function:   #dcdcaa;
-      --mp-snippet-meta:       #c586c0;
-      --mp-snippet-regexp:     #d16969;
-      --mp-snippet-deletion-fg:#ffdcd7;
-      --mp-snippet-deletion-bg:#67060c;
-      --mp-snippet-addition-fg:#aff5b4;
-      --mp-snippet-addition-bg:#033a16;
+      --mp-snippet-comment:    #d4d0ab;
+      --mp-snippet-keyword:    #dcc6e0;
+      --mp-snippet-string:     #abe338;
+      --mp-snippet-number:     #f5ab35;
+      --mp-snippet-type:       #f5ab35;
+      --mp-snippet-tag:        #ffa07a;
+      --mp-snippet-attribute:  #ffd700;
+      --mp-snippet-variable:   #ffa07a;
+      --mp-snippet-function:   #00e0e0;
+      --mp-snippet-meta:       #f5ab35;
+      --mp-snippet-regexp:     #ffa07a;
+      --mp-snippet-deletion-fg:#ffa07a;
+      --mp-snippet-deletion-bg:#4a1e1a;
+      --mp-snippet-addition-fg:#abe338;
+      --mp-snippet-addition-bg:#1e3a1a;
     }
 
     pre {
