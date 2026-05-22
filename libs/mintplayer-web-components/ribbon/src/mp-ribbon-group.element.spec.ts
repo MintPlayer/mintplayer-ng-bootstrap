@@ -4,6 +4,7 @@ import './mp-ribbon-tab.element';
 import './mp-ribbon-group.element';
 import './items/mp-ribbon-button.element';
 import type { MpRibbonGroup } from './mp-ribbon-group.element';
+
 function nextRaf(): Promise<void> {
   return new Promise((resolve) =>
     requestAnimationFrame(() => requestAnimationFrame(() => resolve()))

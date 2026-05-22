@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import './mint-tile-manager.element';
 import type { MintTile, MintTileManagerElement } from './mint-tile-manager.element';
 import type { TilePosition } from './types/tile-position';
+
 const HOST_WIDTH = 800;
 const HOST_HEIGHT = 600;
 

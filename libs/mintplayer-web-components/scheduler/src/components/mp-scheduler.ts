@@ -1,8 +1,25 @@
 import { LitElement, html, type TemplateResult } from 'lit';
 import { LiveAnnouncerController } from '@mintplayer/web-components/a11y';
-import { ViewType, SchedulerEvent, Resource, ResourceGroup, SchedulerOptions, TimeSlot, dateService, resourceService, isResource } from '@mintplayer/web-components/scheduler-core';
+import {
+  ViewType,
+  SchedulerEvent,
+  Resource,
+  ResourceGroup,
+  SchedulerOptions,
+  TimeSlot,
+  dateService,
+  resourceService,
+  isResource,
+} from '@mintplayer/web-components/scheduler-core';
 import { SchedulerStateManager, SchedulerState } from '../state/scheduler-state';
-import { BaseView, selectionRange, formatCellAnnouncement, formatSelectionAnnouncement, formatMoveAnnouncement, formatResizeAnnouncement } from '../views/base-view';
+import {
+  BaseView,
+  selectionRange,
+  formatCellAnnouncement,
+  formatSelectionAnnouncement,
+  formatMoveAnnouncement,
+  formatResizeAnnouncement,
+} from '../views/base-view';
 import { YearView } from '../views/year-view';
 import { MonthView } from '../views/month-view';
 import { WeekView } from '../views/week-view';
@@ -12,6 +29,7 @@ import { schedulerStyles } from '../styles/scheduler.styles';
 import { DragManager, PointerTarget, DragCompletionResult } from '../drag';
 import { InputHandler, NormalizedPointerEvent } from '../input';
 import { SchedulerEventEmitter } from '../events';
+
 /**
  * MpScheduler Web Component
  *

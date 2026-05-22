@@ -1,6 +1,7 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { tabControlStyles } from '../styles';
 import type { TabsPosition } from '../types';
+
 export interface TabActivateEventDetail {
   /** The `tab-id` of the tab the user activated. */
   tabId: string;

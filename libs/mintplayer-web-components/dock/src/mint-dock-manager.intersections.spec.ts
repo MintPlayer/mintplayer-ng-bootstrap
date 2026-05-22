@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import './mint-dock-manager.element';
 import type { MintDockManagerElement } from './mint-dock-manager.element';
+
 // jsdom returns zero rects; build explicit ones and bypass `getSplitterDividers`
 // so the renderer reads them via the path the unit-under-test owns.
 function makeRect(left: number, top: number, width: number, height: number): DOMRect {

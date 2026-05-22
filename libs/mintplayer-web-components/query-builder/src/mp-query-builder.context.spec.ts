@@ -3,6 +3,7 @@ import './mp-query-builder.element';
 import type { MpQueryBuilderElement } from './mp-query-builder.element';
 import type { Expression, Group } from './model/expression';
 import type { EntitySchema } from './model/field-def';
+
 const SCHEMA: EntitySchema[] = [
   {
     name: 'orders',

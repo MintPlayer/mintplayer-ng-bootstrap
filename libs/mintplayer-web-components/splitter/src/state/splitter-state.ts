@@ -1,5 +1,6 @@
 import type { Direction, ResizeOperation } from '../types';
 import { ResizeState } from '../types';
+
 export interface SplitterState {
   orientation: Direction;
   panelSizes: number[];

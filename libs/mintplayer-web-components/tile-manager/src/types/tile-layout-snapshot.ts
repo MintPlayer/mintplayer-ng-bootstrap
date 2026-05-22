@@ -1,4 +1,5 @@
 import { TilePosition } from './tile-position';
+
 /**
  * Stable, JSON-serializable snapshot of the manager's layout.
  * One entry per tile, keyed by stable id. Host apps `JSON.stringify`

@@ -1,5 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { MpTabControl } from './mp-tab-control';
+
 void MpTabControl;
 
 async function flush(el: MpTabControl): Promise<void> {

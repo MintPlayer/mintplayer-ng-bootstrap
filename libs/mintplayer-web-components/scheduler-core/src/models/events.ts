@@ -1,6 +1,7 @@
 import { SchedulerEvent } from './event';
 import { Resource } from './resource';
 import { ViewType } from './types';
+
 /**
  * Base event detail interface
  */

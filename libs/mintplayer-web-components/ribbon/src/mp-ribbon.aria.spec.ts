@@ -4,6 +4,7 @@ import './mp-ribbon-tab.element';
 import './mp-ribbon-group.element';
 import './items/mp-ribbon-button.element';
 import type { MpRibbon } from './mp-ribbon.element';
+
 /**
  * Behavioural ARIA contract for `mp-ribbon` (FR-13 + FR-2 + FR-9 + FR-14).
  * Asserts the model matches `project_wc_aria_decisions`: role=region

@@ -1,6 +1,7 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import './mp-pagination';
 import { buildPaginationLayout, type MpPagination } from './mp-pagination';
+
 function fixture(html: string): HTMLElement {
   const container = document.createElement('div');
   container.innerHTML = html;

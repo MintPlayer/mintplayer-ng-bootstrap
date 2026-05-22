@@ -2,6 +2,7 @@ import type { Operator } from '@mintplayer/web-components/query-builder';
 import type { FieldDef, FieldDefOption } from '@mintplayer/web-components/query-builder';
 import type { EditorContext, EditorHandle } from '@mintplayer/web-components/query-builder';
 import { valueShapeFor } from '@mintplayer/web-components/query-builder';
+
 type BuiltinFactory = (ctx: EditorContext) => EditorHandle;
 
 function makeInput(

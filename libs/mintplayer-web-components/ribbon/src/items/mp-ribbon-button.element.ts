@@ -1,6 +1,7 @@
 import { css, html, type TemplateResult } from 'lit';
 import { property } from 'lit/decorators.js';
 import { MpRibbonItemBase, RIBBON_ICON_SLOT_STYLES } from './mp-ribbon-item-base';
+
 /**
  * mp-ribbon-button — Simple button item.
  * Renders a button with label and optional icon.

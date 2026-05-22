@@ -1,5 +1,6 @@
 import { html, type ReactiveController, type ReactiveControllerHost, type TemplateResult } from 'lit';
 import { createRef, ref, type Ref } from 'lit/directives/ref.js';
+
 export interface LiveAnnouncerOptions {
   /** "polite" waits for an SR-idle moment; "assertive" interrupts. Default: "polite". */
   politeness?: 'polite' | 'assertive';

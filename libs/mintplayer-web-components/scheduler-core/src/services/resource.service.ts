@@ -1,5 +1,12 @@
 import { SchedulerEvent } from '../models/event';
-import { Resource, ResourceGroup, FlattenedResource, isResource, isResourceGroup } from '../models/resource';
+import {
+  Resource,
+  ResourceGroup,
+  FlattenedResource,
+  isResource,
+  isResourceGroup,
+} from '../models/resource';
+
 /**
  * Service for resource and resource group operations
  */

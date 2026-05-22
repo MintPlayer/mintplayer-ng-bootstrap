@@ -1,6 +1,19 @@
-import { dateService, timelineService, resourceService, Resource, ResourceGroup, SchedulerEvent, SchedulerEventPart, isResource, isResourceGroup, FlattenedResource, getContrastColor } from '@mintplayer/web-components/scheduler-core';
+import {
+  dateService,
+  timelineService,
+  resourceService,
+  Resource,
+  ResourceGroup,
+  SchedulerEvent,
+  SchedulerEventPart,
+  isResource,
+  isResourceGroup,
+  FlattenedResource,
+  getContrastColor,
+} from '@mintplayer/web-components/scheduler-core';
 import { BaseView, formatEventAriaLabel, isSlotInSelection } from './base-view';
 import { SchedulerState } from '../state/scheduler-state';
+
 /**
  * Timeline view renderer
  */

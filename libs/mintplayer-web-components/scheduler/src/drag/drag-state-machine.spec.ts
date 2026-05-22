@@ -1,6 +1,7 @@
 import { DragStateMachine } from './drag-state-machine';
 import { DragMachineEvent, PointerTarget } from './drag-types';
 import { SchedulerEvent, TimeSlot } from '@mintplayer/web-components/scheduler-core';
+
 describe('DragStateMachine', () => {
   let machine: DragStateMachine;
 

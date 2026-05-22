@@ -1,4 +1,5 @@
 import type { TemplateResult } from 'lit';
+
 export type CellContent = string | number | boolean | null | undefined | TemplateResult | Node;
 
 export type CellRenderer<T = unknown> = (

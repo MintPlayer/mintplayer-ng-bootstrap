@@ -1,10 +1,15 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
+
 // Side-effect import: registers `<mp-toggle-button>`. The styles are reused
 // by `MpRadio.styles` below — sharing the same `CSSResult` instance means
 // Lit attaches one underlying `CSSStyleSheet` to every shadow root that
 // includes it (`adoptedStyleSheets`), so each component pays a registration
 // cost but the parsed Bootstrap form-check / btn-check CSS exists once.
-import { toggleButtonStyles, type ToggleButtonColor } from '@mintplayer/web-components/toggle-button';
+import {
+  toggleButtonStyles,
+  type ToggleButtonColor,
+} from '@mintplayer/web-components/toggle-button';
+
 export type MpRadioType = 'radio' | 'toggle_button';
 
 export interface RadioChangeEventDetail {

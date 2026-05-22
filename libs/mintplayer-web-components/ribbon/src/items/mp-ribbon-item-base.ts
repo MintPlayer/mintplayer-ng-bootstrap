@@ -1,5 +1,6 @@
 import { css, LitElement } from 'lit';
 import { property } from 'lit/decorators.js';
+
 export type RibbonItemSize = 'large' | 'medium' | 'small';
 
 /**

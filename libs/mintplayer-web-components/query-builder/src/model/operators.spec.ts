@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import type { FieldType, Operator } from './expression';
-import { DEFAULT_OPERATOR_CATALOG, defaultValueFor, operatorsForType, valueShapeFor } from './operators';
+import {
+  DEFAULT_OPERATOR_CATALOG,
+  defaultValueFor,
+  operatorsForType,
+  valueShapeFor,
+} from './operators';
+
 const ALL_FIELD_TYPES: FieldType[] = [
   'string', 'number', 'integer', 'date', 'datetime', 'boolean', 'enum', 'relation', 'array',
 ];

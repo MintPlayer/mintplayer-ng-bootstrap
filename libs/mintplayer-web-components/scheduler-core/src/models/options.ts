@@ -1,4 +1,5 @@
 import { DayOfWeek, TimeFormat, ViewType } from './types';
+
 /**
  * Business hours configuration
  */

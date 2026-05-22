@@ -1,6 +1,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import './mp-card-link.element';
 import { MpCardLinkElement } from './mp-card-link.element';
+
 describe('mp-card-link', () => {
   let el: MpCardLinkElement;
   afterEach(() => el?.remove());

@@ -3,6 +3,7 @@ import { repeat } from 'lit/directives/repeat.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { treeviewStyles } from '../styles';
 import type { TreeNode } from '../types';
+
 export type TreeviewSelectionMode = 'none' | 'single' | 'multiple';
 
 export type IconResolver = (iconKey: string, node: TreeNode) => string | undefined;
@@ -148,6 +149,7 @@ export class MpTreeview extends LitElement {
       const first = this._selectedIds.values().next().value as string | undefined;
       this._selectedIds = new Set(first ? [first] : []);
     }
+
     this.requestUpdate();
   }
 

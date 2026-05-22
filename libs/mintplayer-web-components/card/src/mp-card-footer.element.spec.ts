@@ -1,6 +1,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import './mp-card-footer.element';
 import { MpCardFooterElement } from './mp-card-footer.element';
+
 function makeFooter(attrs: Record<string, string> = {}): MpCardFooterElement {
   const el = document.createElement('mp-card-footer') as MpCardFooterElement;
   for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);

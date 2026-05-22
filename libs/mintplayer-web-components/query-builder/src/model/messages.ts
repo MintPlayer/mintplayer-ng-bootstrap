@@ -1,4 +1,5 @@
 import type { Operator } from './expression';
+
 export interface QueryBuilderMessages {
   addCondition: string;
   addGroup: string;

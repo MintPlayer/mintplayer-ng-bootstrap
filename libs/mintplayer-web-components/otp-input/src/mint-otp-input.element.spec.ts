@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import './mint-otp-input.element';
 import type { MintOtpInputElement } from './mint-otp-input.element';
+
 function makeElement(attrs: Record<string, string> = {}): MintOtpInputElement {
   const el = document.createElement('mp-otp-input') as MintOtpInputElement;
   for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
@@ -369,6 +370,7 @@ describe('mp-otp-input — type/case change re-normalises value', () => {
   it('does not emit value-change when type/case toggle leaves value unchanged', async () => {
     const el = makeElement();
     await ready(el);
+
     fireInput(hiddenInput(el), '123');
     await ready(el);
 

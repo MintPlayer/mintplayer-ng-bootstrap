@@ -1,4 +1,5 @@
 import type { SortColumn } from './compute-next-sort';
+
 /**
  * Apply a multi-column sort to an array of rows. Primary column wins; later
  * columns break ties. Stable on equal-equal comparisons (preserves input order).

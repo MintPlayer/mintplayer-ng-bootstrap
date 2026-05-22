@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import './mp-scheduler';
 import type { MpScheduler } from './mp-scheduler';
+
 async function nextRaf(): Promise<void> {
   return new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
 }

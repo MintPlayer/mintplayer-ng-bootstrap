@@ -1,5 +1,6 @@
 import { css, html, LitElement, type TemplateResult } from 'lit';
 import { property } from 'lit/decorators.js';
+
 /**
  * mp-ribbon-template-item — Transparent slot wrapper so consumers can drop
  * arbitrary content into a ribbon group while still participating in the

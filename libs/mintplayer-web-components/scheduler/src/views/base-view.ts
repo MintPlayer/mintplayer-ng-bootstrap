@@ -1,5 +1,6 @@
 import { dateService, type SchedulerEvent, type TimeSlot } from '@mintplayer/web-components/scheduler-core';
 import { SchedulerState } from '../state/scheduler-state';
+
 /**
  * Build the descriptive aria-label for an event block. Used by every view.
  * Format: "{title}, {start}–{end} on {resource}". Resource is omitted when

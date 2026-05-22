@@ -1,8 +1,15 @@
-import type { Condition, Expression, Group, Operator, SubQueryCondition } from '@mintplayer/web-components/query-builder';
+import type {
+  Condition,
+  Expression,
+  Group,
+  Operator,
+  SubQueryCondition,
+} from '@mintplayer/web-components/query-builder';
 import type { EntitySchema, FieldDef } from '@mintplayer/web-components/query-builder';
 import { DEFAULT_MESSAGES, type QueryBuilderMessages } from '@mintplayer/web-components/query-builder';
 import { MaxDepthExceededError } from '@mintplayer/web-components/query-builder';
 import { valueShapeFor } from '@mintplayer/web-components/query-builder';
+
 export interface RenderExpressionOptions {
   messages?: Partial<QueryBuilderMessages>;
   maxDepth?: number;

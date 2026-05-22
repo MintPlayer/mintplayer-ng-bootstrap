@@ -1,4 +1,10 @@
-import { DragOperationType, PreviewEvent, SchedulerEvent, TimeSlot } from '@mintplayer/web-components/scheduler-core';
+import {
+  DragOperationType,
+  PreviewEvent,
+  SchedulerEvent,
+  TimeSlot,
+} from '@mintplayer/web-components/scheduler-core';
+
 /**
  * Simple position with x/y coordinates.
  */

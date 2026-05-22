@@ -8,8 +8,17 @@ import '@mintplayer/web-components/tab-control';
 // as a nested <mp-splitter>, so this lib must load before any layout renders.
 import '@mintplayer/web-components/splitter';
 import { LiveAnnouncerController } from '@mintplayer/web-components/a11y';
-import { DockFloatingPaneBounds, DockFloatingStackLayout, DockLayout, DockLayoutNode, DockLayoutSnapshot, DockSplitNode, DockStackNode } from './types/dock-layout';
+import {
+  DockFloatingPaneBounds,
+  DockFloatingStackLayout,
+  DockLayout,
+  DockLayoutNode,
+  DockLayoutSnapshot,
+  DockSplitNode,
+  DockStackNode,
+} from './types/dock-layout';
 import { template, styles } from './mint-dock-manager.element.template';
+
 type DockPath =
   | { type: 'docked'; segments: number[] }
   | { type: 'floating'; index: number; segments: number[] };
@@ -41,6 +50,7 @@ export class MintDockManagerElement extends LitElement {
     if (documentRef) {
       MintDockManagerElement.documentRef = documentRef;
     }
+
   }
 
   static override get observedAttributes(): string[] {
@@ -2914,6 +2924,7 @@ export class MintDockManagerElement extends LitElement {
     if (!this.dragState) {
       return;
     }
+
     const stack = this.findStackAtPoint(clientX, clientY);
     const stackPath = stack ? this.parsePath(stack.dataset['path']) : null;
     const joystickVisible = this.dropJoystick.dataset['visible'] === 'true';
@@ -3306,6 +3317,7 @@ export class MintDockManagerElement extends LitElement {
         }
       }
     }
+
     return null;
   }
 
@@ -3543,6 +3555,7 @@ export class MintDockManagerElement extends LitElement {
         return this.dropJoystickTarget;
       }
     }
+
     return null;
   }
 
@@ -3575,6 +3588,7 @@ export class MintDockManagerElement extends LitElement {
       }
       this.updateFloatingWindowTitle(path.index);
     }
+
     this.dispatchLayoutChanged();
   }
 
@@ -3872,6 +3886,7 @@ export class MintDockManagerElement extends LitElement {
     if (!node) {
       return 0;
     }
+
     if (node.kind === 'stack') {
       return node.panes.length;
     }
@@ -4080,6 +4095,7 @@ export class MintDockManagerElement extends LitElement {
       root: { kind: 'stack', panes: [move.paneName], activePane: move.paneName },
       activePane: move.paneName,
     };
+
     this.floatingLayouts.push(floatingLayout);
     this.normalizeAllLayouts();
     this.renderLayout();

@@ -1,6 +1,7 @@
 import { createContext } from '@lit/context';
 import type { EditorRegistry } from './model/editor';
 import type { QueryBuilderMessages } from './model/messages';
+
 export const editorRegistryContext = createContext<EditorRegistry | undefined>(
   Symbol('mp-query-builder.editorRegistry'),
 );

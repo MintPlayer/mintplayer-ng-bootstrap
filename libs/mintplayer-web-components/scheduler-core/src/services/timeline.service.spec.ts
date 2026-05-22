@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { TimelineService, timelineService } from './timeline.service';
 import { SchedulerEvent } from '../models/event';
+
 describe('TimelineService', () => {
   let service: TimelineService;
 

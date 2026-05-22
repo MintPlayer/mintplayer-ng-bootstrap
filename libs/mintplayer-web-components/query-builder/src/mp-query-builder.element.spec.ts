@@ -4,6 +4,7 @@ import type { MpQueryBuilderElement } from './mp-query-builder.element';
 import type { EntitySchema } from './model/field-def';
 import { emptyGroup, newId } from './model/default-tree';
 import type { Expression } from './model/expression';
+
 const SCHEMA: EntitySchema[] = [
   {
     name: 'orders',

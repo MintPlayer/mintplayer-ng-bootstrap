@@ -1,6 +1,7 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import './mp-radio';
 import type { MpRadio, RadioChangeEventDetail } from './mp-radio';
+
 async function settled(el: HTMLElement): Promise<void> {
   if ('updateComplete' in el) {
     await (el as unknown as { updateComplete: Promise<void> }).updateComplete;

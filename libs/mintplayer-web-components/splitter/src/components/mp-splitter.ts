@@ -4,6 +4,7 @@ import { InputHandler, type ResizeKey } from '../input';
 import { ResizeManager } from '../managers';
 import { splitterStyles } from '../styles';
 import type { Direction, Point } from '../types';
+
 export interface SplitterResizeEventDetail {
   sizes: number[];
   orientation: Direction;

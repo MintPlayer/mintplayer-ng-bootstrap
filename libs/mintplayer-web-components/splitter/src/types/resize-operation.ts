@@ -1,4 +1,5 @@
 import type { Point } from './point';
+
 export enum ResizeState {
   Idle = 'idle',
   Resizing = 'resizing',

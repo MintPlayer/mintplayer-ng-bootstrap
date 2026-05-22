@@ -1,6 +1,7 @@
 import { css, html, type TemplateResult } from 'lit';
 import { property } from 'lit/decorators.js';
 import { MpRibbonItemBase } from './mp-ribbon-item-base';
+
 export interface RibbonComboBoxOption {
   label: string;
   value: string;

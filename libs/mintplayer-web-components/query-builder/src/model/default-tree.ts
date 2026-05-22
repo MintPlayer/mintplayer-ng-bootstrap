@@ -1,6 +1,7 @@
 import type { Condition, Expression, Group, SubQueryCondition } from './expression';
 import type { EntitySchema } from './field-def';
 import { defaultValueFor, operatorsForType } from './operators';
+
 function uuidv4(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();

@@ -5,6 +5,7 @@ import { OverlayController } from '@mintplayer/web-components/overlay';
 import { MpCalendarElement, type FirstDayOfWeek } from '@mintplayer/web-components/calendar';
 import { MpTimeListElement, type Hour12Mode, type TimeStep } from '@mintplayer/web-components/timepicker';
 import { styles } from './mp-datetime-picker.element.template';
+
 void MpCalendarElement;
 void MpTimeListElement;
 

@@ -1,5 +1,13 @@
-import { SchedulerEvent, SchedulerEventPart, SchedulerEventWithParts, PreviewEvent, TimelineTrack, EventLayoutInfo } from '../models/event';
+import {
+  SchedulerEvent,
+  SchedulerEventPart,
+  SchedulerEventWithParts,
+  PreviewEvent,
+  TimelineTrack,
+  EventLayoutInfo,
+} from '../models/event';
 import { dateService } from './date.service';
+
 /**
  * Service for timeline calculations and event track assignment
  */

@@ -3,6 +3,7 @@ import { styles } from './mint-otp-input.element.template';
 import { OtpInputType } from './types/otp-input-type';
 import { OtpInputCase } from './types/otp-input-case';
 import { OtpInputSize } from './types/otp-input-size';
+
 /**
  * Bootstrap-flavoured OTP / segmented-code input.
  *
@@ -282,6 +283,7 @@ export class MintOtpInputElement extends LitElement {
     this.clearReveal(); // paste NEVER reveals (shoulder-surf risk on a code the user already knows)
     this.requestUpdate();
     this.dispatchValueChange();
+
     const nowComplete = normalised.length === this.totalLength();
     if (nowComplete && !wasComplete) this.dispatchComplete();
   };

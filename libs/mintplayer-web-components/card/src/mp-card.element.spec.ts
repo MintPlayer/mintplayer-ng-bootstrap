@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import './mp-card.element';
 import { MpCardElement } from './mp-card.element';
+
 function makeCard(attrs: Record<string, string> = {}): MpCardElement {
   const el = document.createElement('mp-card') as MpCardElement;
   for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);

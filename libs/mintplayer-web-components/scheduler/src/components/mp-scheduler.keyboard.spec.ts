@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import './mp-scheduler';
 import type { MpScheduler } from './mp-scheduler';
+
 async function nextRaf(): Promise<void> {
   return new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
 }
@@ -445,6 +446,7 @@ describe('mp-scheduler — Phase B: month-view arrow nav', () => {
     });
     dispatchKey(el, 'Enter');
     await (el as unknown as { updateComplete: Promise<void> }).updateComplete;
+
     expect(emitted).not.toBeNull();
     expect(emitted!.view).toBe('month');
     // 2026-05-13 (after the ArrowRight) → start at 00:00, end at next day 00:00.

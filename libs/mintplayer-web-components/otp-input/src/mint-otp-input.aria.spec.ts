@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import './mint-otp-input.element';
 import type { MintOtpInputElement } from './mint-otp-input.element';
+
 describe('mp-otp-input — ARIA contract', () => {
   let el: MintOtpInputElement;
 

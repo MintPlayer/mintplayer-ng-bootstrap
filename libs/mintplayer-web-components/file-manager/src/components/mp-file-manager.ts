@@ -3,16 +3,22 @@ import { repeat } from 'lit/directives/repeat.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { ref, createRef, type Ref } from 'lit/directives/ref.js';
 import { styleMap } from 'lit/directives/style-map.js';
+
 // Side-effect imports: register the composed elements.
 import '@mintplayer/web-components/splitter';
 import '@mintplayer/web-components/treeview';
 import '@mintplayer/web-components/datatable';
 
 import type { TreeNode } from '@mintplayer/web-components/treeview';
-import type { DatatableColumnDef, RowEventDetail, SelectionChangeEventDetail as DatatableSelectionEvent } from '@mintplayer/web-components/datatable';
+import type {
+  DatatableColumnDef,
+  RowEventDetail,
+  SelectionChangeEventDetail as DatatableSelectionEvent,
+} from '@mintplayer/web-components/datatable';
 import { fileManagerStyles } from '../styles';
 import type { FileSystemNode, FileManagerMessages } from '../types';
 import { DEFAULT_FILE_MANAGER_MESSAGES, mergeMessages } from '../types';
+
 export type FileManagerSelectionMode = 'none' | 'single' | 'multiple';
 export type FileManagerViewMode = 'list' | 'icons';
 
@@ -594,6 +600,7 @@ export class MpFileManager extends LitElement {
     this._nodes = [...this._nodes, ...additions];
     this._loadedFolders.add(parentId);
     this.requestUpdate();
+
     this.dispatchEvent(
       new CustomEvent('mp-children-loaded', {
         detail: { parentId, children: newNodes },

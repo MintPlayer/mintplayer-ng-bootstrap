@@ -1,6 +1,7 @@
 import { css, html, LitElement, nothing, type TemplateResult } from 'lit';
 import { property } from 'lit/decorators.js';
 import { OverlayController } from '@mintplayer/web-components/overlay';
+
 export interface RibbonGroup {
   id: string;
   label: string;

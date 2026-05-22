@@ -4,7 +4,14 @@ import { classMap } from 'lit/directives/class-map.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { datatableStyles } from '../styles';
 import { computeNextSort, sortRows, type SortColumn } from '../sort';
-import type { CellContent, DatatableColumnDef, HeaderRenderer, RowKey, RowRenderer } from '../types';
+import type {
+  CellContent,
+  DatatableColumnDef,
+  HeaderRenderer,
+  RowKey,
+  RowRenderer,
+} from '../types';
+
 // Side-effect import: registers <mp-pagination> for the footer.
 import '@mintplayer/web-components/pagination';
 import type { PageChangeEventDetail } from '@mintplayer/web-components/pagination';

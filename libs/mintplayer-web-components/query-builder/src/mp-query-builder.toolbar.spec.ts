@@ -4,6 +4,7 @@ import type { MpQueryBuilderElement } from './mp-query-builder.element';
 import type { EntitySchema } from './model/field-def';
 import type { SortDescriptor } from './model/sort';
 import { emptyGroup } from './model/default-tree';
+
 const MULTI_SCHEMA: EntitySchema[] = [
   {
     name: 'orders', label: 'Orders', fields: [

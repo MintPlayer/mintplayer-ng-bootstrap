@@ -1,6 +1,7 @@
 import { css, html, LitElement, nothing, type TemplateResult } from 'lit';
 import { property, state, query } from 'lit/decorators.js';
 import { OverlayController } from '@mintplayer/web-components/overlay';
+
 export type RibbonGroupSize = 'large' | 'medium' | 'small' | 'popup';
 export type RibbonReduceStep = readonly [groupId: string, target: RibbonGroupSize];
 

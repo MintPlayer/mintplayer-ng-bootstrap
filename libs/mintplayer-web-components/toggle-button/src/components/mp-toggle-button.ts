@@ -1,5 +1,6 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { toggleButtonStyles } from '../styles';
+
 /** Bootstrap button-color tokens that map to a `.btn-<color>` class. */
 export type ToggleButtonColor =
   | 'primary' | 'secondary' | 'success' | 'danger'

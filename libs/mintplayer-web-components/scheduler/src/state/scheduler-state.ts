@@ -1,4 +1,15 @@
-import { ViewType, SchedulerEvent, Resource, ResourceGroup, SchedulerOptions, DEFAULT_OPTIONS, PreviewEvent, DragState, TimeSlot } from '@mintplayer/web-components/scheduler-core';
+import {
+  ViewType,
+  SchedulerEvent,
+  Resource,
+  ResourceGroup,
+  SchedulerOptions,
+  DEFAULT_OPTIONS,
+  PreviewEvent,
+  DragState,
+  TimeSlot,
+} from '@mintplayer/web-components/scheduler-core';
+
 /**
  * Internal state for the scheduler web component
  */

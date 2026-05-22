@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { DragController } from './drag-controller';
+
 function makeRow(): HTMLElement {
   const row = document.createElement('div');
   row.className = 'qb-condition';

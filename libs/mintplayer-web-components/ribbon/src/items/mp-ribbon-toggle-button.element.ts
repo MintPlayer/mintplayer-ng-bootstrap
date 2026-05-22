@@ -1,6 +1,7 @@
 import { css, html, type TemplateResult } from 'lit';
 import { property } from 'lit/decorators.js';
 import { MpRibbonItemBase, RIBBON_ICON_SLOT_STYLES } from './mp-ribbon-item-base';
+
 /**
  * mp-ribbon-toggle-button — Button that maintains pressed/unpressed state.
  * `aria-pressed` mirrors the `pressed` property.
