@@ -7,8 +7,25 @@ const SECTIONS = [
     title: 'Basic',
     routes: [
       { path: '/card', label: 'Card' },
+      { path: '/calendar', label: 'Calendar' },
       { path: '/datepicker', label: 'Datepicker' },
+      { path: '/datetime-picker', label: 'Datetime picker' },
+      { path: '/timepicker', label: 'Timepicker' },
+      { path: '/checkbox', label: 'Checkbox' },
+      { path: '/radio', label: 'Radio' },
+      { path: '/toggle-button', label: 'Toggle button' },
+      { path: '/pagination', label: 'Pagination' },
+      { path: '/treeview', label: 'Treeview' },
+      { path: '/tab-control', label: 'Tab control' },
       { path: '/code-snippet', label: 'Code snippet' },
+    ],
+  },
+  {
+    title: 'Advanced',
+    routes: [
+      { path: '/advanced/splitter', label: 'Splitter' },
+      { path: '/advanced/otp-input', label: 'OTP input' },
+      { path: '/advanced/multi-range', label: 'Multi-range' },
     ],
   },
   {
@@ -17,6 +34,10 @@ const SECTIONS = [
       { path: '/enterprise/scheduler', label: 'Scheduler' },
       { path: '/enterprise/dock', label: 'Dock manager' },
       { path: '/enterprise/ribbon', label: 'Ribbon' },
+      { path: '/enterprise/tile-manager', label: 'Tile manager' },
+      { path: '/enterprise/query-builder', label: 'Query builder' },
+      { path: '/enterprise/datatables', label: 'Datatable' },
+      { path: '/enterprise/file-manager', label: 'File manager' },
     ],
   },
 ];
