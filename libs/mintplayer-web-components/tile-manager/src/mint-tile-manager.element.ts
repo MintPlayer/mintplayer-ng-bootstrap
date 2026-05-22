@@ -1,9 +1,9 @@
 import { LitElement, html, type TemplateResult, type PropertyValues, nothing } from 'lit';
 import { LiveAnnouncerController } from '@mintplayer/web-components/a11y';
-import { TilePosition } from '../types/tile-position';
-import { TileLayoutSnapshot, TileGestureBlocked } from '../types/tile-layout-snapshot';
-import { GridRect } from '../types/grid-rect';
-import { pack } from '../utils/pack';
+import { TilePosition } from './types/tile-position';
+import { TileLayoutSnapshot, TileGestureBlocked } from './types/tile-layout-snapshot';
+import { GridRect } from './types/grid-rect';
+import { pack } from './utils/pack';
 import { styles } from './mint-tile-manager.element.template';
 
 const TILE_INSTRUCTIONS =

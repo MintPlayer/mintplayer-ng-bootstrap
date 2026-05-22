@@ -16,7 +16,7 @@ import {
   DockLayoutSnapshot,
   DockSplitNode,
   DockStackNode,
-} from '../types/dock-layout';
+} from './types/dock-layout';
 import { template, styles } from './mint-dock-manager.element.template';
 
 type DockPath =

@@ -1,11 +1,11 @@
 import { LitElement, html, nothing, type PropertyValues, type TemplateResult } from 'lit';
 import { createRef, ref } from 'lit/directives/ref.js';
 import { ContextConsumer } from '@lit/context';
-import type { Condition, Operator } from '../model/expression';
-import type { EntitySchema, FieldDef } from '../model/field-def';
-import type { EditorContext, EditorFactory, EditorHandle } from '../model/editor';
-import { DEFAULT_MESSAGES, type QueryBuilderMessages } from '../model/messages';
-import { operatorsForType, valueShapeFor } from '../model/operators';
+import type { Condition, Operator } from './model/expression';
+import type { EntitySchema, FieldDef } from './model/field-def';
+import type { EditorContext, EditorFactory, EditorHandle } from './model/editor';
+import { DEFAULT_MESSAGES, type QueryBuilderMessages } from './model/messages';
+import { operatorsForType, valueShapeFor } from './model/operators';
 import { disabledContext, editorRegistryContext, messagesContext } from './context';
 import { resolveBuiltinEditor } from '../value-editors/builtin-editors';
 import { styles } from './mp-query-condition.element.template';

@@ -1,4 +1,4 @@
-import type { CardImagePosition } from '../types/card-image-position';
+import type { CardImagePosition } from './types/card-image-position';
 
 /**
  * Card image. Switches between three Bootstrap positions:

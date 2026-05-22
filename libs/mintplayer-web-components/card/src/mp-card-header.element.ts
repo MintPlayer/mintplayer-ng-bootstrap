@@ -1,6 +1,6 @@
 import { applyHeaderNavStyle, applyTextBgClass, isNavTargetNode } from './card-classes';
 
-import type { CardHeaderNavStyle } from '../types/card-header-nav-style';
+import type { CardHeaderNavStyle } from './types/card-header-nav-style';
 
 /**
  * Card header. Slotted content stays in light DOM; this element only adds

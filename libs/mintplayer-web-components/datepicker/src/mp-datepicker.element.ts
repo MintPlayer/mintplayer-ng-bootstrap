@@ -1,7 +1,7 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { query } from 'lit/decorators.js';
 import { OverlayController } from '@mintplayer/web-components/overlay';
-import { MpCalendarElement, type FirstDayOfWeek } from '@mintplayer/ng-bootstrap/calendar';
+import { MpCalendarElement, type FirstDayOfWeek } from '@mintplayer/web-components/calendar';
 import { styles } from './mp-datepicker.element.template';
 
 // Side-effect: ensure mp-calendar is registered.

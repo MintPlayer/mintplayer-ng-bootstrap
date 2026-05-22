@@ -687,7 +687,7 @@
       "declarations": [
         {
           "kind": "class",
-          "description": "Card header. Slotted content stays in light DOM; this element only adds\r\nBootstrap classes to itself and (when `nav-style` is set) to a nested\r\n`nav` or `ul` so `card-header-tabs` / `card-header-pills` styling applies.\r\n\r\nAttributes:\r\n - `color` — Bootstrap colour name, maps to `text-bg-<name>`.\r\n - `nav-style` — `'tabs'` or `'pills'`. Adds the matching `card-header-*`\r\n   class to the first slotted `nav` / `ul`.",
+          "description": "Card header. Slotted content stays in light DOM; this element only adds\nBootstrap classes to itself and (when `nav-style` is set) to a nested\n`nav` or `ul` so `card-header-tabs` / `card-header-pills` styling applies.\n\nAttributes:\n - `color` — Bootstrap colour name, maps to `text-bg-<name>`.\n - `nav-style` — `'tabs'` or `'pills'`. Adds the matching `card-header-*`\n   class to the first slotted `nav` / `ul`.",
           "name": "MpCardHeaderElement",
           "members": [
             {
@@ -760,7 +760,7 @@
       "declarations": [
         {
           "kind": "class",
-          "description": "Card image. Switches between three Bootstrap positions:\r\n - `position=\"top\"`     → host gets `card-img-top`, inner `<img>` too\r\n - `position=\"bottom\"`  → host gets `card-img-bottom`, inner `<img>` too\r\n - `position=\"overlay\"` → host gets `card-img`, inner `<img>` too, AND\r\n   slotted children get wrapped in `<div class=\"card-img-overlay\">`\r\n\r\nThe class is duplicated on both host and inner img so that Bootstrap's\r\n`.card-group > .card > .card-img-top` corner-rounding selector matches\r\n(host is the direct child of `.card`) AND `.card-img-top { width: 100% }`\r\nsizes the actual `<img>` element. Pair with `overflow: hidden` on the\r\nhost in `mp-card.element.scss` so the host's border-radius clips the img.\r\n\r\nPosition is read once on connection — changes after first render are not\r\nsupported. `src` and `alt` are reactive.",
+          "description": "Card image. Switches between three Bootstrap positions:\n - `position=\"top\"`     → host gets `card-img-top`, inner `<img>` too\n - `position=\"bottom\"`  → host gets `card-img-bottom`, inner `<img>` too\n - `position=\"overlay\"` → host gets `card-img`, inner `<img>` too, AND\n   slotted children get wrapped in `<div class=\"card-img-overlay\">`\n\nThe class is duplicated on both host and inner img so that Bootstrap's\n`.card-group > .card > .card-img-top` corner-rounding selector matches\n(host is the direct child of `.card`) AND `.card-img-top { width: 100% }`\nsizes the actual `<img>` element. Pair with `overflow: hidden` on the\nhost in `mp-card.element.scss` so the host's border-radius clips the img.\n\nPosition is read once on connection — changes after first render are not\nsupported. `src` and `alt` are reactive.",
           "name": "MpCardImgElement",
           "members": [
             {
@@ -5047,7 +5047,7 @@
       "declarations": [
         {
           "kind": "class",
-          "description": "Bootstrap-flavoured multi-thumb range slider.\r\n\r\nBlock-crossing: thumbs cannot pass their neighbours. Identity is by index —\r\nvalue[0] is always the lowest thumb. The value setter normalises input by\r\nsorting ascending and clamping each entry to [min, max]; minDistance is\r\nenforced only at user-interaction entry points (pointer + keyboard), not on\r\nprogrammatic writes — callers' arrays are preserved verbatim within bounds.\r\n\r\nEvents:\r\n - `value-input`  fires continuously during drag and on every keyboard step.\r\n - `value-change` fires on commit (pointerup) and after every keyboard step.\r\n\r\nBoth bubble and compose so the Angular wrapper's host listeners pick them up.",
+          "description": "Bootstrap-flavoured multi-thumb range slider.\n\nBlock-crossing: thumbs cannot pass their neighbours. Identity is by index —\nvalue[0] is always the lowest thumb. The value setter normalises input by\nsorting ascending and clamping each entry to [min, max]; minDistance is\nenforced only at user-interaction entry points (pointer + keyboard), not on\nprogrammatic writes — callers' arrays are preserved verbatim within bounds.\n\nEvents:\n - `value-input`  fires continuously during drag and on every keyboard step.\n - `value-change` fires on commit (pointerup) and after every keyboard step.\n\nBoth bubble and compose so the Angular wrapper's host listeners pick them up.",
           "name": "MintMultiRangeElement",
           "members": [
             {
@@ -5301,7 +5301,7 @@
                   "text": "boolean"
                 }
               },
-              "description": "Returns whether the host renders in RTL. Uses the cached value if a gesture\r\nis active (set in startDrag / onTrackPointerDown), otherwise reads\r\ngetComputedStyle fresh — direction can come from any ancestor's `dir`,\r\nso document.dir or our own attribute aren't sufficient."
+              "description": "Returns whether the host renders in RTL. Uses the cached value if a gesture\nis active (set in startDrag / onTrackPointerDown), otherwise reads\ngetComputedStyle fresh — direction can come from any ancestor's `dir`,\nso document.dir or our own attribute aren't sufficient."
             },
             {
               "kind": "method",
@@ -5332,7 +5332,7 @@
                   }
                 }
               ],
-              "description": "Apply the Block + minDistance constraint to a candidate value for thumb i.\r\nReturns the candidate clamped between its (already-respected) neighbours."
+              "description": "Apply the Block + minDistance constraint to a candidate value for thumb i.\nReturns the candidate clamped between its (already-respected) neighbours."
             },
             {
               "kind": "method",
@@ -5457,7 +5457,7 @@
                   }
                 }
               ],
-              "description": "Returns the index of the thumb closest to `target`. Ties (multiple thumbs\r\nstacked at the same value) are broken by direction: clicks to the right of\r\nthe stack pick the highest-index thumb, clicks to the left pick the\r\nlowest. Without this, a stack would always select the lowest-index thumb,\r\nwhich is blocked by its higher-indexed neighbours and can't move toward\r\nthe click — the user would see no response."
+              "description": "Returns the index of the thumb closest to `target`. Ties (multiple thumbs\nstacked at the same value) are broken by direction: clicks to the right of\nthe stack pick the highest-index thumb, clicks to the left pick the\nlowest. Without this, a stack would always select the lowest-index thumb,\nwhich is blocked by its higher-indexed neighbours and can't move toward\nthe click — the user would see no response."
             },
             {
               "kind": "field",
@@ -5661,7 +5661,7 @@
       "declarations": [
         {
           "kind": "class",
-          "description": "Bootstrap-flavoured OTP / segmented-code input.\r\n\r\nArchitecture: one hidden full-width `<input>` owns focus / paste / IME /\r\nSMS autofill; decorative `<span>` boxes render slices of the value at fixed\r\npositions. Boxes are `aria-hidden`; screen readers see one text input.\r\n\r\nLayout via `groups: number[]` — each array element is the character capacity\r\nof one visual box. `[1,1,1,1,1,1]` (default) is the classic 6-digit OTP;\r\n`[6,6,4,4,6,6]` is the MS Office product-key shape.\r\n\r\nEvents:\r\n - `value-change` fires on every keystroke, paste, and clear, payload is the\r\n   current (possibly partial) value string.\r\n - `complete` fires once when the value transitions from incomplete to\r\n   `length === sum(groups)` via user interaction. Re-fires on re-completion.\r\n   Does NOT fire on programmatic writes via the `value` setter.\r\n\r\nBoth bubble and compose so an Angular wrapper's host listeners pick them up.",
+          "description": "Bootstrap-flavoured OTP / segmented-code input.\n\nArchitecture: one hidden full-width `<input>` owns focus / paste / IME /\nSMS autofill; decorative `<span>` boxes render slices of the value at fixed\npositions. Boxes are `aria-hidden`; screen readers see one text input.\n\nLayout via `groups: number[]` — each array element is the character capacity\nof one visual box. `[1,1,1,1,1,1]` (default) is the classic 6-digit OTP;\n`[6,6,4,4,6,6]` is the MS Office product-key shape.\n\nEvents:\n - `value-change` fires on every keystroke, paste, and clear, payload is the\n   current (possibly partial) value string.\n - `complete` fires once when the value transitions from incomplete to\n   `length === sum(groups)` via user interaction. Re-fires on re-completion.\n   Does NOT fire on programmatic writes via the `value` setter.\n\nBoth bubble and compose so an Angular wrapper's host listeners pick them up.",
           "name": "MintOtpInputElement",
           "members": [
             {
@@ -6136,7 +6136,7 @@
                   }
                 }
               ],
-              "description": "Returns the index of the visual box that should be highlighted as \"active\"\r\ngiven the caret position and current value length.\r\n\r\nRules:\r\n - Caret before all boxes (rare): first box.\r\n - Caret at the end of a filled value with more boxes to fill: the next\r\n   box (the one the user is about to type into).\r\n - Caret at totalLength (everything filled): last box.\r\n - Otherwise: the box whose [start, end) range contains caretPos."
+              "description": "Returns the index of the visual box that should be highlighted as \"active\"\ngiven the caret position and current value length.\n\nRules:\n - Caret before all boxes (rare): first box.\n - Caret at the end of a filled value with more boxes to fill: the next\n   box (the one the user is about to type into).\n - Caret at totalLength (everything filled): last box.\n - Otherwise: the box whose [start, end) range contains caretPos."
             }
           ],
           "events": [
@@ -6545,7 +6545,7 @@
                   "text": "number"
                 }
               },
-              "description": "Effective max-depth used for the render check. The OUTER builder's\r\nconfigured maxDepth flows in via context; if absent, we fall back to\r\nthis WC's own `maxDepth` property (which defaults to 32)."
+              "description": "Effective max-depth used for the render check. The OUTER builder's\nconfigured maxDepth flows in via context; if absent, we fall back to\nthis WC's own `maxDepth` property (which defaults to 32)."
             },
             {
               "kind": "method",
@@ -6783,7 +6783,7 @@
                   "text": "TemplateResult | typeof nothing"
                 }
               },
-              "description": "Toolbar render. Only emits when `depth === 0` (sub-query builders have\r\nno toolbar of their own — they inherit the outer one) AND\r\n`multiEntityPickerEnabled` is true AND `schema.length > 1`. Future\r\nPhase-2 widgets (field projection, sort-by) hang off this same toolbar."
+              "description": "Toolbar render. Only emits when `depth === 0` (sub-query builders have\nno toolbar of their own — they inherit the outer one) AND\n`multiEntityPickerEnabled` is true AND `schema.length > 1`. Future\nPhase-2 widgets (field projection, sort-by) hang off this same toolbar."
             },
             {
               "kind": "method",
@@ -7748,1087 +7748,6 @@
           "declaration": {
             "name": "MpQuerySubqueryElement",
             "module": "query-builder/src/mp-query-subquery.element.ts"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "tile-manager/src/mint-tile-manager.element.ts",
-      "declarations": [
-        {
-          "kind": "class",
-          "description": "",
-          "name": "MintTileManagerElement",
-          "members": [
-            {
-              "kind": "field",
-              "name": "tiles",
-              "privacy": "public",
-              "type": {
-                "text": "ReadonlyArray<MintTile>"
-              },
-              "default": "[]"
-            },
-            {
-              "kind": "field",
-              "name": "columnCount",
-              "privacy": "public",
-              "type": {
-                "text": "number | null"
-              },
-              "default": "null",
-              "attribute": "column-count"
-            },
-            {
-              "kind": "field",
-              "name": "minColumnWidth",
-              "privacy": "public",
-              "type": {
-                "text": "string"
-              },
-              "default": "'200px'",
-              "attribute": "min-column-width"
-            },
-            {
-              "kind": "field",
-              "name": "minRowHeight",
-              "privacy": "public",
-              "type": {
-                "text": "string"
-              },
-              "default": "'8rem'",
-              "attribute": "min-row-height"
-            },
-            {
-              "kind": "field",
-              "name": "gap",
-              "privacy": "public",
-              "type": {
-                "text": "string"
-              },
-              "default": "'0.5rem'",
-              "attribute": "gap"
-            },
-            {
-              "kind": "field",
-              "name": "dragMode",
-              "privacy": "public",
-              "type": {
-                "text": "TileDragMode"
-              },
-              "default": "'header'",
-              "attribute": "drag-mode",
-              "reflects": true
-            },
-            {
-              "kind": "field",
-              "name": "resizeMode",
-              "privacy": "public",
-              "type": {
-                "text": "TileResizeMode"
-              },
-              "default": "'hover'",
-              "attribute": "resize-mode",
-              "reflects": true
-            },
-            {
-              "kind": "field",
-              "name": "animateReflow",
-              "privacy": "public",
-              "type": {
-                "text": "boolean"
-              },
-              "default": "true",
-              "attribute": "animate-reflow"
-            },
-            {
-              "kind": "field",
-              "name": "label",
-              "privacy": "public",
-              "type": {
-                "text": "string | null"
-              },
-              "default": "null",
-              "attribute": "label"
-            },
-            {
-              "kind": "field",
-              "name": "gestureState",
-              "type": {
-                "text": "GestureState"
-              },
-              "privacy": "private",
-              "default": "{ kind: 'idle' }"
-            },
-            {
-              "kind": "field",
-              "name": "keyboardState",
-              "type": {
-                "text": "KeyboardMode"
-              },
-              "privacy": "private",
-              "default": "{ kind: 'idle' }"
-            },
-            {
-              "kind": "field",
-              "name": "previewLayout",
-              "privacy": "protected",
-              "type": {
-                "text": "TileLayoutSnapshot | null"
-              },
-              "default": "null",
-              "attribute": "previewLayout"
-            },
-            {
-              "kind": "field",
-              "name": "gestureKind",
-              "privacy": "protected",
-              "type": {
-                "text": "GestureState['kind']"
-              },
-              "default": "'idle'",
-              "attribute": "gestureKind"
-            },
-            {
-              "kind": "field",
-              "name": "blocked",
-              "privacy": "protected",
-              "type": {
-                "text": "boolean"
-              },
-              "default": "false",
-              "attribute": "blocked"
-            },
-            {
-              "kind": "field",
-              "name": "effectiveColumnCount",
-              "type": {
-                "text": "number"
-              },
-              "privacy": "protected",
-              "default": "1"
-            },
-            {
-              "kind": "field",
-              "name": "focusedTileId",
-              "privacy": "protected",
-              "type": {
-                "text": "string | null"
-              },
-              "default": "null",
-              "attribute": "focusedTileId"
-            },
-            {
-              "kind": "field",
-              "name": "liveAnnouncer",
-              "privacy": "private",
-              "readonly": true,
-              "default": "new LiveAnnouncerController(this)"
-            },
-            {
-              "kind": "field",
-              "name": "instanceId",
-              "privacy": "private",
-              "readonly": true,
-              "default": "`mp-tile-manager-${++tileManagerInstanceCounter}`"
-            },
-            {
-              "kind": "field",
-              "name": "instructionsId",
-              "type": {
-                "text": "string"
-              },
-              "privacy": "private",
-              "readonly": true
-            },
-            {
-              "kind": "field",
-              "name": "hostResizeObserver",
-              "type": {
-                "text": "ResizeObserver | null"
-              },
-              "privacy": "private",
-              "default": "null"
-            },
-            {
-              "kind": "field",
-              "name": "flipPreviousRects",
-              "type": {
-                "text": "Map<string, DOMRect>"
-              },
-              "privacy": "private",
-              "default": "new Map()"
-            },
-            {
-              "kind": "field",
-              "name": "cellMetrics",
-              "type": {
-                "text": "object"
-              },
-              "privacy": "private",
-              "default": "{ width: 0, height: 0, gapX: 0, gapY: 0 }"
-            },
-            {
-              "kind": "field",
-              "name": "onWindowPointerMove",
-              "privacy": "private",
-              "readonly": true
-            },
-            {
-              "kind": "field",
-              "name": "onWindowPointerUp",
-              "privacy": "private",
-              "readonly": true
-            },
-            {
-              "kind": "field",
-              "name": "onWindowPointerCancel",
-              "privacy": "private",
-              "readonly": true
-            },
-            {
-              "kind": "field",
-              "name": "onWindowKeyDown",
-              "privacy": "private",
-              "readonly": true
-            },
-            {
-              "kind": "field",
-              "name": "onVisibilityChange",
-              "privacy": "private",
-              "readonly": true
-            },
-            {
-              "kind": "method",
-              "name": "renderTile",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "TemplateResult"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "tile",
-                  "type": {
-                    "text": "MintTile"
-                  }
-                },
-                {
-                  "name": "pos",
-                  "type": {
-                    "text": "TilePosition"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "computeGridStyle",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "string"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "updateLayoutCache",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "description": "Refresh the cached layout metrics by reading layout / computed-style state\nonce. Called from firstUpdated, the ResizeObserver tick, and updated()\nwhen an input that affects metrics changes — never from render()."
-            },
-            {
-              "kind": "method",
-              "name": "computeActiveTransform",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "string | null"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "id",
-                  "type": {
-                    "text": "string"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "shouldAnimate",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "boolean"
-                }
-              }
-            },
-            {
-              "kind": "field",
-              "name": "lastPointerPosition",
-              "type": {
-                "text": "{ x: number; y: number } | null"
-              },
-              "privacy": "private",
-              "default": "null"
-            },
-            {
-              "kind": "method",
-              "name": "onTilePointerDown",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "event",
-                  "type": {
-                    "text": "PointerEvent"
-                  }
-                },
-                {
-                  "name": "tile",
-                  "type": {
-                    "text": "MintTile"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "onResizeHandlePointerDown",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "event",
-                  "type": {
-                    "text": "PointerEvent"
-                  }
-                },
-                {
-                  "name": "tile",
-                  "type": {
-                    "text": "MintTile"
-                  }
-                },
-                {
-                  "name": "mode",
-                  "type": {
-                    "text": "'side' | 'bottom' | 'corner'"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "armPointerDrag",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "event",
-                  "type": {
-                    "text": "PointerEvent"
-                  }
-                },
-                {
-                  "name": "tile",
-                  "type": {
-                    "text": "MintTile"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "armTouchDrag",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "event",
-                  "type": {
-                    "text": "PointerEvent"
-                  }
-                },
-                {
-                  "name": "tile",
-                  "type": {
-                    "text": "MintTile"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "cleanupTouchArming",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "beginDragFromTouchArm",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "tile",
-                  "type": {
-                    "text": "MintTile"
-                  }
-                },
-                {
-                  "name": "startX",
-                  "type": {
-                    "text": "number"
-                  }
-                },
-                {
-                  "name": "startY",
-                  "type": {
-                    "text": "number"
-                  }
-                },
-                {
-                  "name": "pointerId",
-                  "type": {
-                    "text": "number"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "beginDrag",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "event",
-                  "type": {
-                    "text": "PointerEvent"
-                  }
-                },
-                {
-                  "name": "tile",
-                  "type": {
-                    "text": "MintTile"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "beginResize",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "event",
-                  "type": {
-                    "text": "PointerEvent"
-                  }
-                },
-                {
-                  "name": "tile",
-                  "type": {
-                    "text": "MintTile"
-                  }
-                },
-                {
-                  "name": "mode",
-                  "type": {
-                    "text": "'side' | 'bottom' | 'corner'"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "announceDragBegin",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "tile",
-                  "type": {
-                    "text": "MintTile"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "announceResizeBegin",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "tile",
-                  "type": {
-                    "text": "MintTile"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "attachWindowListeners",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "detachWindowListeners",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "handleEscapeKey",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "e",
-                  "type": {
-                    "text": "KeyboardEvent"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "handlePointerMove",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "event",
-                  "type": {
-                    "text": "PointerEvent"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "handlePointerUp",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "event",
-                  "type": {
-                    "text": "PointerEvent"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "handlePointerCancel",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "event",
-                  "type": {
-                    "text": "PointerEvent"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "runPackerForCurrentGesture",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "computeDragRect",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "GridRect | null"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "g",
-                  "type": {
-                    "text": "Extract<GestureState, { kind: 'drag' }>"
-                  }
-                },
-                {
-                  "name": "tile",
-                  "type": {
-                    "text": "MintTile"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "computeResizeRect",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "GridRect | null"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "g",
-                  "type": {
-                    "text": "Extract<GestureState, { kind: 'resize' }>"
-                  }
-                },
-                {
-                  "name": "tile",
-                  "type": {
-                    "text": "MintTile"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "commitGesture",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "cancelGesture",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "reason",
-                  "default": "'cancel'",
-                  "type": {
-                    "text": "'cancel' | 'blocked'"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "cleanupGesture",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "positionsEqual",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "boolean"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "a",
-                  "type": {
-                    "text": "TilePosition"
-                  }
-                },
-                {
-                  "name": "b",
-                  "type": {
-                    "text": "TilePosition"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "cloneSnapshot",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "TileLayoutSnapshot"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "s",
-                  "type": {
-                    "text": "TileLayoutSnapshot"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "activeTileId",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "string | null"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "captureLayout",
-              "return": {
-                "type": {
-                  "text": "TileLayoutSnapshot"
-                }
-              },
-              "description": "Read-only snapshot of the current layout. Mirrors `BsDockManagerComponent.captureLayout()`."
-            },
-            {
-              "kind": "field",
-              "name": "isGestureActive",
-              "type": {
-                "text": "boolean"
-              },
-              "description": "True while a drag or resize is in flight. The Angular wrapper uses this to\navoid clobbering `tiles` mid-gesture. Touch long-press arming does NOT\ncount — the WC isn't yet owning the layout during the hold.",
-              "readonly": true
-            },
-            {
-              "kind": "method",
-              "name": "onTileKeyDown",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "event",
-                  "type": {
-                    "text": "KeyboardEvent"
-                  }
-                },
-                {
-                  "name": "tile",
-                  "type": {
-                    "text": "MintTile"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "handleFocusNavigation",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "boolean"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "event",
-                  "type": {
-                    "text": "KeyboardEvent"
-                  }
-                },
-                {
-                  "name": "current",
-                  "type": {
-                    "text": "MintTile"
-                  }
-                }
-              ],
-              "description": "Outside move mode, arrow keys move *focus* between tiles (row-major\norder — top-to-bottom, left-to-right by gridcell position). Home/End\njump to first/last enabled tile. Returns true if the event was handled."
-            },
-            {
-              "kind": "method",
-              "name": "onTileFocus",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "tile",
-                  "type": {
-                    "text": "MintTile"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "resolveFocusableTileId",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "string | null"
-                }
-              },
-              "description": "The single tile that should carry `tabindex=\"0\"` to act as the board's\ntab stop. Defaults to the previously-focused tile, then the first tile in\nrow-major order. All other tiles render with `tabindex=\"-1\"` so Tab from\noutside the board lands on exactly one tile."
-            },
-            {
-              "kind": "method",
-              "name": "applyKeyboardStep",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "tile",
-                  "type": {
-                    "text": "MintTile"
-                  }
-                },
-                {
-                  "name": "key",
-                  "type": {
-                    "text": "ArrowKey"
-                  }
-                },
-                {
-                  "name": "isResize",
-                  "type": {
-                    "text": "boolean"
-                  }
-                }
-              ]
-            }
-          ],
-          "events": [
-            {
-              "name": "tilepositionchange",
-              "type": {
-                "text": "CustomEvent"
-              }
-            },
-            {
-              "name": "tilelayoutchange",
-              "type": {
-                "text": "CustomEvent"
-              }
-            },
-            {
-              "name": "tilegestureblocked",
-              "type": {
-                "text": "CustomEvent"
-              }
-            }
-          ],
-          "attributes": [
-            {
-              "name": "column-count",
-              "type": {
-                "text": "number | null"
-              },
-              "default": "null",
-              "fieldName": "columnCount"
-            },
-            {
-              "name": "min-column-width",
-              "type": {
-                "text": "string"
-              },
-              "default": "'200px'",
-              "fieldName": "minColumnWidth"
-            },
-            {
-              "name": "min-row-height",
-              "type": {
-                "text": "string"
-              },
-              "default": "'8rem'",
-              "fieldName": "minRowHeight"
-            },
-            {
-              "name": "gap",
-              "type": {
-                "text": "string"
-              },
-              "default": "'0.5rem'",
-              "fieldName": "gap"
-            },
-            {
-              "name": "drag-mode",
-              "type": {
-                "text": "TileDragMode"
-              },
-              "default": "'header'",
-              "fieldName": "dragMode"
-            },
-            {
-              "name": "resize-mode",
-              "type": {
-                "text": "TileResizeMode"
-              },
-              "default": "'hover'",
-              "fieldName": "resizeMode"
-            },
-            {
-              "name": "animate-reflow",
-              "type": {
-                "text": "boolean"
-              },
-              "default": "true",
-              "fieldName": "animateReflow"
-            },
-            {
-              "name": "label",
-              "type": {
-                "text": "string | null"
-              },
-              "default": "null",
-              "fieldName": "label"
-            },
-            {
-              "name": "previewLayout",
-              "type": {
-                "text": "TileLayoutSnapshot | null"
-              },
-              "default": "null",
-              "fieldName": "previewLayout"
-            },
-            {
-              "name": "gestureKind",
-              "type": {
-                "text": "GestureState['kind']"
-              },
-              "default": "'idle'",
-              "fieldName": "gestureKind"
-            },
-            {
-              "name": "blocked",
-              "type": {
-                "text": "boolean"
-              },
-              "default": "false",
-              "fieldName": "blocked"
-            },
-            {
-              "name": "focusedTileId",
-              "type": {
-                "text": "string | null"
-              },
-              "default": "null",
-              "fieldName": "focusedTileId"
-            }
-          ],
-          "superclass": {
-            "name": "LitElement",
-            "package": "lit"
-          },
-          "tagName": "mp-tile-manager",
-          "customElement": true
-        }
-      ],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "MintTileManagerElement",
-          "declaration": {
-            "name": "MintTileManagerElement",
-            "module": "tile-manager/src/mint-tile-manager.element.ts"
-          }
-        },
-        {
-          "kind": "custom-element-definition",
-          "name": "mp-tile-manager",
-          "declaration": {
-            "name": "MintTileManagerElement",
-            "module": "tile-manager/src/mint-tile-manager.element.ts"
           }
         }
       ]
@@ -10378,6 +9297,1087 @@
           "declaration": {
             "name": "MpRibbon",
             "module": "ribbon/src/mp-ribbon.element.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "tile-manager/src/mint-tile-manager.element.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "",
+          "name": "MintTileManagerElement",
+          "members": [
+            {
+              "kind": "field",
+              "name": "tiles",
+              "privacy": "public",
+              "type": {
+                "text": "ReadonlyArray<MintTile>"
+              },
+              "default": "[]"
+            },
+            {
+              "kind": "field",
+              "name": "columnCount",
+              "privacy": "public",
+              "type": {
+                "text": "number | null"
+              },
+              "default": "null",
+              "attribute": "column-count"
+            },
+            {
+              "kind": "field",
+              "name": "minColumnWidth",
+              "privacy": "public",
+              "type": {
+                "text": "string"
+              },
+              "default": "'200px'",
+              "attribute": "min-column-width"
+            },
+            {
+              "kind": "field",
+              "name": "minRowHeight",
+              "privacy": "public",
+              "type": {
+                "text": "string"
+              },
+              "default": "'8rem'",
+              "attribute": "min-row-height"
+            },
+            {
+              "kind": "field",
+              "name": "gap",
+              "privacy": "public",
+              "type": {
+                "text": "string"
+              },
+              "default": "'0.5rem'",
+              "attribute": "gap"
+            },
+            {
+              "kind": "field",
+              "name": "dragMode",
+              "privacy": "public",
+              "type": {
+                "text": "TileDragMode"
+              },
+              "default": "'header'",
+              "attribute": "drag-mode",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "resizeMode",
+              "privacy": "public",
+              "type": {
+                "text": "TileResizeMode"
+              },
+              "default": "'hover'",
+              "attribute": "resize-mode",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "animateReflow",
+              "privacy": "public",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "true",
+              "attribute": "animate-reflow"
+            },
+            {
+              "kind": "field",
+              "name": "label",
+              "privacy": "public",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "attribute": "label"
+            },
+            {
+              "kind": "field",
+              "name": "gestureState",
+              "type": {
+                "text": "GestureState"
+              },
+              "privacy": "private",
+              "default": "{ kind: 'idle' }"
+            },
+            {
+              "kind": "field",
+              "name": "keyboardState",
+              "type": {
+                "text": "KeyboardMode"
+              },
+              "privacy": "private",
+              "default": "{ kind: 'idle' }"
+            },
+            {
+              "kind": "field",
+              "name": "previewLayout",
+              "privacy": "protected",
+              "type": {
+                "text": "TileLayoutSnapshot | null"
+              },
+              "default": "null",
+              "attribute": "previewLayout"
+            },
+            {
+              "kind": "field",
+              "name": "gestureKind",
+              "privacy": "protected",
+              "type": {
+                "text": "GestureState['kind']"
+              },
+              "default": "'idle'",
+              "attribute": "gestureKind"
+            },
+            {
+              "kind": "field",
+              "name": "blocked",
+              "privacy": "protected",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "attribute": "blocked"
+            },
+            {
+              "kind": "field",
+              "name": "effectiveColumnCount",
+              "type": {
+                "text": "number"
+              },
+              "privacy": "protected",
+              "default": "1"
+            },
+            {
+              "kind": "field",
+              "name": "focusedTileId",
+              "privacy": "protected",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "attribute": "focusedTileId"
+            },
+            {
+              "kind": "field",
+              "name": "liveAnnouncer",
+              "privacy": "private",
+              "readonly": true,
+              "default": "new LiveAnnouncerController(this)"
+            },
+            {
+              "kind": "field",
+              "name": "instanceId",
+              "privacy": "private",
+              "readonly": true,
+              "default": "`mp-tile-manager-${++tileManagerInstanceCounter}`"
+            },
+            {
+              "kind": "field",
+              "name": "instructionsId",
+              "type": {
+                "text": "string"
+              },
+              "privacy": "private",
+              "readonly": true
+            },
+            {
+              "kind": "field",
+              "name": "hostResizeObserver",
+              "type": {
+                "text": "ResizeObserver | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "flipPreviousRects",
+              "type": {
+                "text": "Map<string, DOMRect>"
+              },
+              "privacy": "private",
+              "default": "new Map()"
+            },
+            {
+              "kind": "field",
+              "name": "cellMetrics",
+              "type": {
+                "text": "object"
+              },
+              "privacy": "private",
+              "default": "{ width: 0, height: 0, gapX: 0, gapY: 0 }"
+            },
+            {
+              "kind": "field",
+              "name": "onWindowPointerMove",
+              "privacy": "private",
+              "readonly": true
+            },
+            {
+              "kind": "field",
+              "name": "onWindowPointerUp",
+              "privacy": "private",
+              "readonly": true
+            },
+            {
+              "kind": "field",
+              "name": "onWindowPointerCancel",
+              "privacy": "private",
+              "readonly": true
+            },
+            {
+              "kind": "field",
+              "name": "onWindowKeyDown",
+              "privacy": "private",
+              "readonly": true
+            },
+            {
+              "kind": "field",
+              "name": "onVisibilityChange",
+              "privacy": "private",
+              "readonly": true
+            },
+            {
+              "kind": "method",
+              "name": "renderTile",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "TemplateResult"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "tile",
+                  "type": {
+                    "text": "MintTile"
+                  }
+                },
+                {
+                  "name": "pos",
+                  "type": {
+                    "text": "TilePosition"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "computeGridStyle",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "string"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "updateLayoutCache",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "description": "Refresh the cached layout metrics by reading layout / computed-style state\nonce. Called from firstUpdated, the ResizeObserver tick, and updated()\nwhen an input that affects metrics changes — never from render()."
+            },
+            {
+              "kind": "method",
+              "name": "computeActiveTransform",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "string | null"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "id",
+                  "type": {
+                    "text": "string"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "shouldAnimate",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "boolean"
+                }
+              }
+            },
+            {
+              "kind": "field",
+              "name": "lastPointerPosition",
+              "type": {
+                "text": "{ x: number; y: number } | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "method",
+              "name": "onTilePointerDown",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "event",
+                  "type": {
+                    "text": "PointerEvent"
+                  }
+                },
+                {
+                  "name": "tile",
+                  "type": {
+                    "text": "MintTile"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "onResizeHandlePointerDown",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "event",
+                  "type": {
+                    "text": "PointerEvent"
+                  }
+                },
+                {
+                  "name": "tile",
+                  "type": {
+                    "text": "MintTile"
+                  }
+                },
+                {
+                  "name": "mode",
+                  "type": {
+                    "text": "'side' | 'bottom' | 'corner'"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "armPointerDrag",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "event",
+                  "type": {
+                    "text": "PointerEvent"
+                  }
+                },
+                {
+                  "name": "tile",
+                  "type": {
+                    "text": "MintTile"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "armTouchDrag",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "event",
+                  "type": {
+                    "text": "PointerEvent"
+                  }
+                },
+                {
+                  "name": "tile",
+                  "type": {
+                    "text": "MintTile"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "cleanupTouchArming",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "beginDragFromTouchArm",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "tile",
+                  "type": {
+                    "text": "MintTile"
+                  }
+                },
+                {
+                  "name": "startX",
+                  "type": {
+                    "text": "number"
+                  }
+                },
+                {
+                  "name": "startY",
+                  "type": {
+                    "text": "number"
+                  }
+                },
+                {
+                  "name": "pointerId",
+                  "type": {
+                    "text": "number"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "beginDrag",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "event",
+                  "type": {
+                    "text": "PointerEvent"
+                  }
+                },
+                {
+                  "name": "tile",
+                  "type": {
+                    "text": "MintTile"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "beginResize",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "event",
+                  "type": {
+                    "text": "PointerEvent"
+                  }
+                },
+                {
+                  "name": "tile",
+                  "type": {
+                    "text": "MintTile"
+                  }
+                },
+                {
+                  "name": "mode",
+                  "type": {
+                    "text": "'side' | 'bottom' | 'corner'"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "announceDragBegin",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "tile",
+                  "type": {
+                    "text": "MintTile"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "announceResizeBegin",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "tile",
+                  "type": {
+                    "text": "MintTile"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "attachWindowListeners",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "detachWindowListeners",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "handleEscapeKey",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "e",
+                  "type": {
+                    "text": "KeyboardEvent"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "handlePointerMove",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "event",
+                  "type": {
+                    "text": "PointerEvent"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "handlePointerUp",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "event",
+                  "type": {
+                    "text": "PointerEvent"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "handlePointerCancel",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "event",
+                  "type": {
+                    "text": "PointerEvent"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "runPackerForCurrentGesture",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "computeDragRect",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "GridRect | null"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "g",
+                  "type": {
+                    "text": "Extract<GestureState, { kind: 'drag' }>"
+                  }
+                },
+                {
+                  "name": "tile",
+                  "type": {
+                    "text": "MintTile"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "computeResizeRect",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "GridRect | null"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "g",
+                  "type": {
+                    "text": "Extract<GestureState, { kind: 'resize' }>"
+                  }
+                },
+                {
+                  "name": "tile",
+                  "type": {
+                    "text": "MintTile"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "commitGesture",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "cancelGesture",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "reason",
+                  "default": "'cancel'",
+                  "type": {
+                    "text": "'cancel' | 'blocked'"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "cleanupGesture",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "positionsEqual",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "boolean"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "a",
+                  "type": {
+                    "text": "TilePosition"
+                  }
+                },
+                {
+                  "name": "b",
+                  "type": {
+                    "text": "TilePosition"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "cloneSnapshot",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "TileLayoutSnapshot"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "s",
+                  "type": {
+                    "text": "TileLayoutSnapshot"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "activeTileId",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "string | null"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "captureLayout",
+              "return": {
+                "type": {
+                  "text": "TileLayoutSnapshot"
+                }
+              },
+              "description": "Read-only snapshot of the current layout. Mirrors `BsDockManagerComponent.captureLayout()`."
+            },
+            {
+              "kind": "field",
+              "name": "isGestureActive",
+              "type": {
+                "text": "boolean"
+              },
+              "description": "True while a drag or resize is in flight. The Angular wrapper uses this to\navoid clobbering `tiles` mid-gesture. Touch long-press arming does NOT\ncount — the WC isn't yet owning the layout during the hold.",
+              "readonly": true
+            },
+            {
+              "kind": "method",
+              "name": "onTileKeyDown",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "event",
+                  "type": {
+                    "text": "KeyboardEvent"
+                  }
+                },
+                {
+                  "name": "tile",
+                  "type": {
+                    "text": "MintTile"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "handleFocusNavigation",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "boolean"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "event",
+                  "type": {
+                    "text": "KeyboardEvent"
+                  }
+                },
+                {
+                  "name": "current",
+                  "type": {
+                    "text": "MintTile"
+                  }
+                }
+              ],
+              "description": "Outside move mode, arrow keys move *focus* between tiles (row-major\norder — top-to-bottom, left-to-right by gridcell position). Home/End\njump to first/last enabled tile. Returns true if the event was handled."
+            },
+            {
+              "kind": "method",
+              "name": "onTileFocus",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "tile",
+                  "type": {
+                    "text": "MintTile"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "resolveFocusableTileId",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "string | null"
+                }
+              },
+              "description": "The single tile that should carry `tabindex=\"0\"` to act as the board's\ntab stop. Defaults to the previously-focused tile, then the first tile in\nrow-major order. All other tiles render with `tabindex=\"-1\"` so Tab from\noutside the board lands on exactly one tile."
+            },
+            {
+              "kind": "method",
+              "name": "applyKeyboardStep",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "tile",
+                  "type": {
+                    "text": "MintTile"
+                  }
+                },
+                {
+                  "name": "key",
+                  "type": {
+                    "text": "ArrowKey"
+                  }
+                },
+                {
+                  "name": "isResize",
+                  "type": {
+                    "text": "boolean"
+                  }
+                }
+              ]
+            }
+          ],
+          "events": [
+            {
+              "name": "tilepositionchange",
+              "type": {
+                "text": "CustomEvent"
+              }
+            },
+            {
+              "name": "tilelayoutchange",
+              "type": {
+                "text": "CustomEvent"
+              }
+            },
+            {
+              "name": "tilegestureblocked",
+              "type": {
+                "text": "CustomEvent"
+              }
+            }
+          ],
+          "attributes": [
+            {
+              "name": "column-count",
+              "type": {
+                "text": "number | null"
+              },
+              "default": "null",
+              "fieldName": "columnCount"
+            },
+            {
+              "name": "min-column-width",
+              "type": {
+                "text": "string"
+              },
+              "default": "'200px'",
+              "fieldName": "minColumnWidth"
+            },
+            {
+              "name": "min-row-height",
+              "type": {
+                "text": "string"
+              },
+              "default": "'8rem'",
+              "fieldName": "minRowHeight"
+            },
+            {
+              "name": "gap",
+              "type": {
+                "text": "string"
+              },
+              "default": "'0.5rem'",
+              "fieldName": "gap"
+            },
+            {
+              "name": "drag-mode",
+              "type": {
+                "text": "TileDragMode"
+              },
+              "default": "'header'",
+              "fieldName": "dragMode"
+            },
+            {
+              "name": "resize-mode",
+              "type": {
+                "text": "TileResizeMode"
+              },
+              "default": "'hover'",
+              "fieldName": "resizeMode"
+            },
+            {
+              "name": "animate-reflow",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "true",
+              "fieldName": "animateReflow"
+            },
+            {
+              "name": "label",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "fieldName": "label"
+            },
+            {
+              "name": "previewLayout",
+              "type": {
+                "text": "TileLayoutSnapshot | null"
+              },
+              "default": "null",
+              "fieldName": "previewLayout"
+            },
+            {
+              "name": "gestureKind",
+              "type": {
+                "text": "GestureState['kind']"
+              },
+              "default": "'idle'",
+              "fieldName": "gestureKind"
+            },
+            {
+              "name": "blocked",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "fieldName": "blocked"
+            },
+            {
+              "name": "focusedTileId",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "fieldName": "focusedTileId"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "mp-tile-manager",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MintTileManagerElement",
+          "declaration": {
+            "name": "MintTileManagerElement",
+            "module": "tile-manager/src/mint-tile-manager.element.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "mp-tile-manager",
+          "declaration": {
+            "name": "MintTileManagerElement",
+            "module": "tile-manager/src/mint-tile-manager.element.ts"
           }
         }
       ]
@@ -14482,187 +14482,6 @@
     },
     {
       "kind": "javascript-module",
-      "path": "calendar/src/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "*",
-          "declaration": {
-            "name": "*",
-            "module": "calendar/src/mp-calendar.element"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "checkbox/src/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "MpCheckbox",
-          "declaration": {
-            "name": "MpCheckbox",
-            "module": "./components"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpCheckboxType",
-          "declaration": {
-            "name": "MpCheckboxType",
-            "module": "./components"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "CheckboxChangeEventDetail",
-          "declaration": {
-            "name": "CheckboxChangeEventDetail",
-            "module": "./components"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "datatable/src/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "MpDatatable",
-          "declaration": {
-            "name": "MpDatatable",
-            "module": "./components"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "DatatableSelectionMode",
-          "declaration": {
-            "name": "DatatableSelectionMode",
-            "module": "./components"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "RowEventDetail",
-          "declaration": {
-            "name": "RowEventDetail",
-            "module": "./components"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "SortChangeEventDetail",
-          "declaration": {
-            "name": "SortChangeEventDetail",
-            "module": "./components"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "SelectionChangeEventDetail",
-          "declaration": {
-            "name": "SelectionChangeEventDetail",
-            "module": "./components"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "DatatableColumnDef",
-          "declaration": {
-            "name": "DatatableColumnDef",
-            "module": "./types"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "CellContent",
-          "declaration": {
-            "name": "CellContent",
-            "module": "./types"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "CellRenderer",
-          "declaration": {
-            "name": "CellRenderer",
-            "module": "./types"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "HeaderRenderer",
-          "declaration": {
-            "name": "HeaderRenderer",
-            "module": "./types"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "RowKey",
-          "declaration": {
-            "name": "RowKey",
-            "module": "./types"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "RowRenderer",
-          "declaration": {
-            "name": "RowRenderer",
-            "module": "./types"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "SortColumn",
-          "declaration": {
-            "name": "SortColumn",
-            "module": "./sort"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "SortDirection",
-          "declaration": {
-            "name": "SortDirection",
-            "module": "./sort"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "computeNextSort",
-          "declaration": {
-            "name": "computeNextSort",
-            "module": "./sort"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "sortRows",
-          "declaration": {
-            "name": "sortRows",
-            "module": "./sort"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "datatableStyles",
-          "declaration": {
-            "name": "datatableStyles",
-            "module": "./styles"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
       "path": "card/src/card-classes.ts",
       "declarations": [
         {
@@ -14967,6 +14786,156 @@
     },
     {
       "kind": "javascript-module",
+      "path": "calendar/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "calendar/src/mp-calendar.element"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "datatable/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpDatatable",
+          "declaration": {
+            "name": "MpDatatable",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "DatatableSelectionMode",
+          "declaration": {
+            "name": "DatatableSelectionMode",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "RowEventDetail",
+          "declaration": {
+            "name": "RowEventDetail",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "SortChangeEventDetail",
+          "declaration": {
+            "name": "SortChangeEventDetail",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "SelectionChangeEventDetail",
+          "declaration": {
+            "name": "SelectionChangeEventDetail",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "DatatableColumnDef",
+          "declaration": {
+            "name": "DatatableColumnDef",
+            "module": "./types"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "CellContent",
+          "declaration": {
+            "name": "CellContent",
+            "module": "./types"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "CellRenderer",
+          "declaration": {
+            "name": "CellRenderer",
+            "module": "./types"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "HeaderRenderer",
+          "declaration": {
+            "name": "HeaderRenderer",
+            "module": "./types"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "RowKey",
+          "declaration": {
+            "name": "RowKey",
+            "module": "./types"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "RowRenderer",
+          "declaration": {
+            "name": "RowRenderer",
+            "module": "./types"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "SortColumn",
+          "declaration": {
+            "name": "SortColumn",
+            "module": "./sort"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "SortDirection",
+          "declaration": {
+            "name": "SortDirection",
+            "module": "./sort"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "computeNextSort",
+          "declaration": {
+            "name": "computeNextSort",
+            "module": "./sort"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "sortRows",
+          "declaration": {
+            "name": "sortRows",
+            "module": "./sort"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "datatableStyles",
+          "declaration": {
+            "name": "datatableStyles",
+            "module": "./styles"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "datepicker/src/index.ts",
       "declarations": [],
       "exports": [
@@ -14982,6 +14951,37 @@
     },
     {
       "kind": "javascript-module",
+      "path": "checkbox/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpCheckbox",
+          "declaration": {
+            "name": "MpCheckbox",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpCheckboxType",
+          "declaration": {
+            "name": "MpCheckboxType",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "CheckboxChangeEventDetail",
+          "declaration": {
+            "name": "CheckboxChangeEventDetail",
+            "module": "./components"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "datetime-picker/src/index.ts",
       "declarations": [],
       "exports": [
@@ -14991,6 +14991,21 @@
           "declaration": {
             "name": "*",
             "module": "datetime-picker/src/mp-datetime-picker.element"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "multi-range/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "multi-range/src/mint-multi-range.element"
           }
         }
       ]
@@ -15165,21 +15180,6 @@
           "declaration": {
             "name": "fileManagerStyles",
             "module": "./styles"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "multi-range/src/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "*",
-          "declaration": {
-            "name": "*",
-            "module": "multi-range/src/mint-multi-range.element"
           }
         }
       ]
@@ -16021,6 +16021,37 @@
     },
     {
       "kind": "javascript-module",
+      "path": "radio/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpRadio",
+          "declaration": {
+            "name": "MpRadio",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpRadioType",
+          "declaration": {
+            "name": "MpRadioType",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "RadioChangeEventDetail",
+          "declaration": {
+            "name": "RadioChangeEventDetail",
+            "module": "./components"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "query-builder/src/context.ts",
       "declarations": [
         {
@@ -16165,37 +16196,6 @@
           "declaration": {
             "name": "*",
             "module": "ribbon/src/items"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "radio/src/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "MpRadio",
-          "declaration": {
-            "name": "MpRadio",
-            "module": "./components"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpRadioType",
-          "declaration": {
-            "name": "MpRadioType",
-            "module": "./components"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "RadioChangeEventDetail",
-          "declaration": {
-            "name": "RadioChangeEventDetail",
-            "module": "./components"
           }
         }
       ]
@@ -16730,289 +16730,15 @@
     },
     {
       "kind": "javascript-module",
-      "path": "checkbox/src/components/index.ts",
+      "path": "card/src/types/card-header-nav-style.ts",
       "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "MpCheckbox",
-          "declaration": {
-            "name": "MpCheckbox",
-            "module": "./mp-checkbox"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpCheckboxType",
-          "declaration": {
-            "name": "MpCheckboxType",
-            "module": "./mp-checkbox"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "CheckboxChangeEventDetail",
-          "declaration": {
-            "name": "CheckboxChangeEventDetail",
-            "module": "./mp-checkbox"
-          }
-        }
-      ]
+      "exports": []
     },
     {
       "kind": "javascript-module",
-      "path": "checkbox/src/components/mp-checkbox.ts",
-      "declarations": [
-        {
-          "kind": "class",
-          "description": "`<mp-checkbox>` — a Bootstrap-styled checkbox with three visual variants\nvia the `type` attribute:\n\n- `checkbox` (default) — `.form-check` with a square indicator.\n- `switch` — `.form-check.form-switch` for the iOS-style sliding switch.\n- `toggle_button` — `.btn-check` rendered as a `.btn .btn-<color>`.\n\nSupports first-class **tri-state** via the `indeterminate` attribute /\nproperty. The visual indeterminate styling is the browser's native\n`<input>.indeterminate` DOM property; we additionally reflect\n`aria-checked=\"mixed\"` for AT and mirror the value to a reflected\nboolean attribute so consumers can target the state from CSS.\nThe native `change` event clears `indeterminate` on the next user click\n(per HTML spec); consumers that want the master/select-all pattern can\nre-derive and re-set `indeterminate` from the resulting state.\n\nEmits `change` with `detail: { checked, indeterminate, value }`.",
-          "name": "MpCheckbox",
-          "members": [
-            {
-              "kind": "field",
-              "name": "shadowRootOptions",
-              "type": {
-                "text": "object"
-              },
-              "static": true,
-              "default": "{ ...LitElement.shadowRootOptions, delegatesFocus: true, }"
-            },
-            {
-              "kind": "field",
-              "name": "_type",
-              "type": {
-                "text": "MpCheckboxType"
-              },
-              "privacy": "private",
-              "default": "'checkbox'"
-            },
-            {
-              "kind": "field",
-              "name": "_checked",
-              "type": {
-                "text": "boolean"
-              },
-              "privacy": "private",
-              "default": "false"
-            },
-            {
-              "kind": "field",
-              "name": "_indeterminate",
-              "type": {
-                "text": "boolean"
-              },
-              "privacy": "private",
-              "default": "false"
-            },
-            {
-              "kind": "field",
-              "name": "_disabled",
-              "type": {
-                "text": "boolean"
-              },
-              "privacy": "private",
-              "default": "false"
-            },
-            {
-              "kind": "field",
-              "name": "_name",
-              "type": {
-                "text": "string | null"
-              },
-              "privacy": "private",
-              "default": "null"
-            },
-            {
-              "kind": "field",
-              "name": "_value",
-              "type": {
-                "text": "string | null"
-              },
-              "privacy": "private",
-              "default": "null"
-            },
-            {
-              "kind": "field",
-              "name": "_color",
-              "type": {
-                "text": "ToggleButtonColor"
-              },
-              "privacy": "private",
-              "default": "'primary'"
-            },
-            {
-              "kind": "field",
-              "name": "_inputId",
-              "privacy": "private",
-              "readonly": true,
-              "default": "`mp-checkbox-${++instanceCounter}`"
-            },
-            {
-              "kind": "field",
-              "name": "_inputRef",
-              "type": {
-                "text": "Ref<HTMLInputElement>"
-              },
-              "privacy": "private",
-              "readonly": true
-            },
-            {
-              "kind": "field",
-              "name": "type",
-              "type": {
-                "text": "MpCheckboxType"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "checked",
-              "type": {
-                "text": "boolean"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "indeterminate",
-              "type": {
-                "text": "boolean"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "disabled",
-              "type": {
-                "text": "boolean"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "name",
-              "type": {
-                "text": "string | null"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "value",
-              "type": {
-                "text": "string | null"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "color",
-              "type": {
-                "text": "ToggleButtonColor"
-              }
-            },
-            {
-              "kind": "method",
-              "name": "renderCheckOrSwitch",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "TemplateResult"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "renderToggleButton",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "TemplateResult"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "reflectBoolean",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "attr",
-                  "type": {
-                    "text": "string"
-                  }
-                },
-                {
-                  "name": "value",
-                  "type": {
-                    "text": "boolean"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "field",
-              "name": "onInputChange",
-              "privacy": "private"
-            }
-          ],
-          "attributes": [
-            {
-              "name": "type"
-            },
-            {
-              "name": "checked"
-            },
-            {
-              "name": "indeterminate"
-            },
-            {
-              "name": "disabled"
-            },
-            {
-              "name": "name"
-            },
-            {
-              "name": "value"
-            },
-            {
-              "name": "color"
-            },
-            {
-              "name": "aria-label"
-            },
-            {
-              "name": "aria-labelledby"
-            },
-            {
-              "name": "aria-describedby"
-            }
-          ],
-          "superclass": {
-            "name": "LitElement",
-            "package": "lit"
-          },
-          "tagName": "mp-checkbox",
-          "customElement": true
-        }
-      ],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "MpCheckbox",
-          "declaration": {
-            "name": "MpCheckbox",
-            "module": "checkbox/src/components/mp-checkbox.ts"
-          }
-        },
-        {
-          "kind": "custom-element-definition",
-          "name": "mp-checkbox",
-          "declaration": {
-            "name": "MpCheckbox",
-            "module": "checkbox/src/components/mp-checkbox.ts"
-          }
-        }
-      ]
+      "path": "card/src/types/card-image-position.ts",
+      "declarations": [],
+      "exports": []
     },
     {
       "kind": "javascript-module",
@@ -18280,6 +18006,304 @@
           }
         }
       ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "checkbox/src/components/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpCheckbox",
+          "declaration": {
+            "name": "MpCheckbox",
+            "module": "./mp-checkbox"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpCheckboxType",
+          "declaration": {
+            "name": "MpCheckboxType",
+            "module": "./mp-checkbox"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "CheckboxChangeEventDetail",
+          "declaration": {
+            "name": "CheckboxChangeEventDetail",
+            "module": "./mp-checkbox"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "checkbox/src/components/mp-checkbox.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "`<mp-checkbox>` — a Bootstrap-styled checkbox with three visual variants\nvia the `type` attribute:\n\n- `checkbox` (default) — `.form-check` with a square indicator.\n- `switch` — `.form-check.form-switch` for the iOS-style sliding switch.\n- `toggle_button` — `.btn-check` rendered as a `.btn .btn-<color>`.\n\nSupports first-class **tri-state** via the `indeterminate` attribute /\nproperty. The visual indeterminate styling is the browser's native\n`<input>.indeterminate` DOM property; we additionally reflect\n`aria-checked=\"mixed\"` for AT and mirror the value to a reflected\nboolean attribute so consumers can target the state from CSS.\nThe native `change` event clears `indeterminate` on the next user click\n(per HTML spec); consumers that want the master/select-all pattern can\nre-derive and re-set `indeterminate` from the resulting state.\n\nEmits `change` with `detail: { checked, indeterminate, value }`.",
+          "name": "MpCheckbox",
+          "members": [
+            {
+              "kind": "field",
+              "name": "shadowRootOptions",
+              "type": {
+                "text": "object"
+              },
+              "static": true,
+              "default": "{ ...LitElement.shadowRootOptions, delegatesFocus: true, }"
+            },
+            {
+              "kind": "field",
+              "name": "_type",
+              "type": {
+                "text": "MpCheckboxType"
+              },
+              "privacy": "private",
+              "default": "'checkbox'"
+            },
+            {
+              "kind": "field",
+              "name": "_checked",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "_indeterminate",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "_disabled",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "_name",
+              "type": {
+                "text": "string | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "_value",
+              "type": {
+                "text": "string | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "_color",
+              "type": {
+                "text": "ToggleButtonColor"
+              },
+              "privacy": "private",
+              "default": "'primary'"
+            },
+            {
+              "kind": "field",
+              "name": "_inputId",
+              "privacy": "private",
+              "readonly": true,
+              "default": "`mp-checkbox-${++instanceCounter}`"
+            },
+            {
+              "kind": "field",
+              "name": "_inputRef",
+              "type": {
+                "text": "Ref<HTMLInputElement>"
+              },
+              "privacy": "private",
+              "readonly": true
+            },
+            {
+              "kind": "field",
+              "name": "type",
+              "type": {
+                "text": "MpCheckboxType"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "checked",
+              "type": {
+                "text": "boolean"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "indeterminate",
+              "type": {
+                "text": "boolean"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "disabled",
+              "type": {
+                "text": "boolean"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "name",
+              "type": {
+                "text": "string | null"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "value",
+              "type": {
+                "text": "string | null"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "color",
+              "type": {
+                "text": "ToggleButtonColor"
+              }
+            },
+            {
+              "kind": "method",
+              "name": "renderCheckOrSwitch",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "TemplateResult"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "renderToggleButton",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "TemplateResult"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "reflectBoolean",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "attr",
+                  "type": {
+                    "text": "string"
+                  }
+                },
+                {
+                  "name": "value",
+                  "type": {
+                    "text": "boolean"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "field",
+              "name": "onInputChange",
+              "privacy": "private"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "type"
+            },
+            {
+              "name": "checked"
+            },
+            {
+              "name": "indeterminate"
+            },
+            {
+              "name": "disabled"
+            },
+            {
+              "name": "name"
+            },
+            {
+              "name": "value"
+            },
+            {
+              "name": "color"
+            },
+            {
+              "name": "aria-label"
+            },
+            {
+              "name": "aria-labelledby"
+            },
+            {
+              "name": "aria-describedby"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "mp-checkbox",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpCheckbox",
+          "declaration": {
+            "name": "MpCheckbox",
+            "module": "checkbox/src/components/mp-checkbox.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "mp-checkbox",
+          "declaration": {
+            "name": "MpCheckbox",
+            "module": "checkbox/src/components/mp-checkbox.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "multi-range/src/types/multi-range-orientation.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "dock/src/types/dock-layout.ts",
+      "declarations": [],
+      "exports": []
     },
     {
       "kind": "javascript-module",
@@ -19823,6 +19847,24 @@
     },
     {
       "kind": "javascript-module",
+      "path": "otp-input/src/types/otp-input-case.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "otp-input/src/types/otp-input-size.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "otp-input/src/types/otp-input-type.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
       "path": "pagination/src/components/index.ts",
       "declarations": [],
       "exports": [
@@ -20199,6 +20241,1171 @@
     },
     {
       "kind": "javascript-module",
+      "path": "radio/src/components/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpRadio",
+          "declaration": {
+            "name": "MpRadio",
+            "module": "./mp-radio"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpRadioType",
+          "declaration": {
+            "name": "MpRadioType",
+            "module": "./mp-radio"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "RadioChangeEventDetail",
+          "declaration": {
+            "name": "RadioChangeEventDetail",
+            "module": "./mp-radio"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "radio/src/components/mp-radio.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "`<mp-radio>` — a Bootstrap-styled radio button with two visual variants:\n\n- `type=\"radio\"` (default) — standard `.form-check` styling with a round\n  indicator and a label.\n- `type=\"toggle_button\"` — `.btn-check` styling rendered as a button\n  (`.btn .btn-<color>`). Defaults to `color=\"secondary\"` to match the\n  prior Angular `<bs-radio type=\"toggle_button\">` behaviour.\n\nNative one-of-N behaviour relies on multiple inputs sharing a `name` in\nthe same scope. Each `<mp-radio>` keeps its `<input>` inside its own\nshadow root, so the browser cannot auto-uncheck a sibling for us. A\ncoordinating parent (e.g. the Angular `[bsRadioGroup]` directive or a\nfuture `<mp-radio-group>` WC) must listen for `change` and update the\nother radios' `checked` properties.\n\nEmits `change` with `detail: { checked, value }` when this radio\ntransitions to the checked state.",
+          "name": "MpRadio",
+          "members": [
+            {
+              "kind": "field",
+              "name": "shadowRootOptions",
+              "type": {
+                "text": "object"
+              },
+              "static": true,
+              "default": "{ ...LitElement.shadowRootOptions, delegatesFocus: true, }"
+            },
+            {
+              "kind": "field",
+              "name": "_type",
+              "type": {
+                "text": "MpRadioType"
+              },
+              "privacy": "private",
+              "default": "'radio'"
+            },
+            {
+              "kind": "field",
+              "name": "_checked",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "_disabled",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "_name",
+              "type": {
+                "text": "string | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "_value",
+              "type": {
+                "text": "string | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "_color",
+              "type": {
+                "text": "ToggleButtonColor"
+              },
+              "privacy": "private",
+              "default": "'secondary'"
+            },
+            {
+              "kind": "field",
+              "name": "_inputId",
+              "privacy": "private",
+              "readonly": true,
+              "default": "`mp-radio-${++instanceCounter}`"
+            },
+            {
+              "kind": "field",
+              "name": "type",
+              "type": {
+                "text": "MpRadioType"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "checked",
+              "type": {
+                "text": "boolean"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "disabled",
+              "type": {
+                "text": "boolean"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "name",
+              "type": {
+                "text": "string | null"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "value",
+              "type": {
+                "text": "string | null"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "color",
+              "type": {
+                "text": "ToggleButtonColor"
+              }
+            },
+            {
+              "kind": "method",
+              "name": "renderRadio",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "TemplateResult"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "renderToggleButton",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "TemplateResult"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "reflectBoolean",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "attr",
+                  "type": {
+                    "text": "string"
+                  }
+                },
+                {
+                  "name": "value",
+                  "type": {
+                    "text": "boolean"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "field",
+              "name": "onInputChange",
+              "privacy": "private"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "type"
+            },
+            {
+              "name": "checked"
+            },
+            {
+              "name": "disabled"
+            },
+            {
+              "name": "name"
+            },
+            {
+              "name": "value"
+            },
+            {
+              "name": "color"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "mp-radio",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpRadio",
+          "declaration": {
+            "name": "MpRadio",
+            "module": "radio/src/components/mp-radio.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "mp-radio",
+          "declaration": {
+            "name": "MpRadio",
+            "module": "radio/src/components/mp-radio.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "query-builder/src/model/default-tree.ts",
+      "declarations": [
+        {
+          "kind": "function",
+          "name": "newId",
+          "return": {
+            "type": {
+              "text": "string"
+            }
+          }
+        },
+        {
+          "kind": "function",
+          "name": "emptyGroup",
+          "return": {
+            "type": {
+              "text": "Group"
+            }
+          },
+          "parameters": [
+            {
+              "name": "logic",
+              "default": "'and'",
+              "type": {
+                "text": "'and' | 'or'"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "function",
+          "name": "emptyCondition",
+          "return": {
+            "type": {
+              "text": "Condition"
+            }
+          },
+          "parameters": [
+            {
+              "name": "entity",
+              "type": {
+                "text": "EntitySchema"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "function",
+          "name": "emptySubquery",
+          "return": {
+            "type": {
+              "text": "SubQueryCondition | null"
+            }
+          },
+          "parameters": [
+            {
+              "name": "entity",
+              "type": {
+                "text": "EntitySchema"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "function",
+          "name": "cloneTree",
+          "return": {
+            "type": {
+              "text": "T"
+            }
+          },
+          "parameters": [
+            {
+              "name": "node",
+              "type": {
+                "text": "T"
+              }
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "newId",
+          "declaration": {
+            "name": "newId",
+            "module": "query-builder/src/model/default-tree.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "emptyGroup",
+          "declaration": {
+            "name": "emptyGroup",
+            "module": "query-builder/src/model/default-tree.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "emptyCondition",
+          "declaration": {
+            "name": "emptyCondition",
+            "module": "query-builder/src/model/default-tree.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "emptySubquery",
+          "declaration": {
+            "name": "emptySubquery",
+            "module": "query-builder/src/model/default-tree.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "cloneTree",
+          "declaration": {
+            "name": "cloneTree",
+            "module": "query-builder/src/model/default-tree.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "query-builder/src/model/editor.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "query-builder/src/model/errors.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "",
+          "name": "MaxDepthExceededError",
+          "members": [
+            {
+              "kind": "field",
+              "name": "name",
+              "type": {
+                "text": "string"
+              },
+              "readonly": true,
+              "default": "'MaxDepthExceededError'"
+            }
+          ],
+          "superclass": {
+            "name": "Error",
+            "module": "query-builder/src/model/errors.ts"
+          }
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MaxDepthExceededError",
+          "declaration": {
+            "name": "MaxDepthExceededError",
+            "module": "query-builder/src/model/errors.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "query-builder/src/model/expression.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "query-builder/src/model/field-def.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "query-builder/src/model/messages.ts",
+      "declarations": [
+        {
+          "kind": "variable",
+          "name": "DEFAULT_MESSAGES",
+          "type": {
+            "text": "QueryBuilderMessages"
+          },
+          "default": "{ addCondition: 'Add condition', addGroup: 'Add group', addSubquery: 'Add sub-query', removeRow: 'Remove', removeGroup: 'Remove group', logicAnd: 'AND', logicOr: 'OR', saveCurrentAs: 'Save current as…', loadQuery: 'Load', deleteQuery: 'Delete', treeTooDeep: 'Tree too deep', dropHerePlaceholder: 'Drop here', operators: { 'equals': '=', 'not-equals': '≠', 'contains': 'contains', 'does-not-contain': 'does not contain', 'starts-with': 'starts with', 'ends-with': 'ends with', 'lt': '<', 'lte': '≤', 'gt': '>', 'gte': '≥', 'between': 'between', 'not-between': 'not between', 'in': 'in', 'not-in': 'not in', 'is-null': 'is null', 'is-not-null': 'is not null', 'is-true': 'is true', 'is-false': 'is false', 'today': 'is today', 'yesterday': 'is yesterday', 'this-week': 'is this week', 'last-week': 'is last week', 'next-week': 'is next week', 'this-month': 'is this month', 'last-month': 'is last month', 'next-month': 'is next month', 'this-year': 'is this year', 'last-year': 'is last year', 'next-year': 'is next year', 'last-n-days': 'is in the last N days', 'next-n-days': 'is in the next N days', 'year-to-date': 'is year-to-date', 'any-of': 'any of', 'all-of': 'all of', 'none-of': 'none of', 'is-empty': 'is empty', 'is-not-empty': 'is not empty', }, }"
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "DEFAULT_MESSAGES",
+          "declaration": {
+            "name": "DEFAULT_MESSAGES",
+            "module": "query-builder/src/model/messages.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "query-builder/src/model/operator-overrides.ts",
+      "declarations": [
+        {
+          "kind": "function",
+          "name": "validateOperatorOverrides",
+          "return": {
+            "type": {
+              "text": "ValidateOperatorOverridesResult"
+            }
+          },
+          "parameters": [
+            {
+              "name": "schema",
+              "type": {
+                "text": "EntitySchema[]"
+              }
+            },
+            {
+              "name": "overrides",
+              "type": {
+                "text": "OperatorOverrides | undefined"
+              }
+            },
+            {
+              "name": "catalog",
+              "default": "DEFAULT_OPERATOR_CATALOG",
+              "type": {
+                "text": "OperatorCatalog"
+              }
+            }
+          ],
+          "description": "Intersect each field's `Operator[]` with `OperatorCatalog[field.type]`,\r\nstripping operators that don't apply for that field's type. Emits a\r\nwarning per offending field. Empty results after intersection produce\r\na \"no operators left\" warning.\r\n\r\nThe caller decides whether to throw or use the sanitized result —\r\n`bs-query-builder` calls this on every `[operatorOverrides]` change,\r\nlogs warnings via `console.warn`, and silently uses `sanitized`."
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "validateOperatorOverrides",
+          "declaration": {
+            "name": "validateOperatorOverrides",
+            "module": "query-builder/src/model/operator-overrides.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "query-builder/src/model/operators.ts",
+      "declarations": [
+        {
+          "kind": "variable",
+          "name": "DEFAULT_OPERATOR_CATALOG",
+          "type": {
+            "text": "OperatorCatalog"
+          },
+          "default": "{ string: [ 'equals', 'not-equals', 'contains', 'does-not-contain', 'starts-with', 'ends-with', 'is-null', 'is-not-null', 'in', 'not-in', ], number: [ 'equals', 'not-equals', 'lt', 'lte', 'gt', 'gte', 'between', 'not-between', 'is-null', 'is-not-null', 'in', 'not-in', ], integer: [ 'equals', 'not-equals', 'lt', 'lte', 'gt', 'gte', 'between', 'not-between', 'is-null', 'is-not-null', 'in', 'not-in', ], date: [ 'equals', 'not-equals', 'lt', 'lte', 'gt', 'gte', 'between', 'not-between', 'is-null', 'is-not-null', 'today', 'yesterday', 'this-week', 'last-week', 'next-week', 'this-month', 'last-month', 'next-month', 'this-year', 'last-year', 'next-year', 'last-n-days', 'next-n-days', 'year-to-date', ], datetime: [ 'equals', 'not-equals', 'lt', 'lte', 'gt', 'gte', 'between', 'not-between', 'is-null', 'is-not-null', 'today', 'yesterday', 'this-week', 'last-week', 'next-week', 'this-month', 'last-month', 'next-month', 'this-year', 'last-year', 'next-year', 'last-n-days', 'next-n-days', 'year-to-date', ], boolean: ['is-true', 'is-false', 'is-null', 'is-not-null'], enum: ['equals', 'not-equals', 'in', 'not-in', 'is-null', 'is-not-null'], relation: ['in', 'not-in'], array: ['any-of', 'all-of', 'none-of', 'is-empty', 'is-not-empty'], }"
+        },
+        {
+          "kind": "function",
+          "name": "valueShapeFor",
+          "return": {
+            "type": {
+              "text": "ValueShape"
+            }
+          },
+          "parameters": [
+            {
+              "name": "operator",
+              "type": {
+                "text": "Operator"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "function",
+          "name": "defaultValueFor",
+          "return": {
+            "type": {
+              "text": "unknown"
+            }
+          },
+          "parameters": [
+            {
+              "name": "operator",
+              "type": {
+                "text": "Operator"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "function",
+          "name": "operatorsForType",
+          "return": {
+            "type": {
+              "text": "readonly Operator[]"
+            }
+          },
+          "parameters": [
+            {
+              "name": "type",
+              "type": {
+                "text": "FieldType"
+              }
+            },
+            {
+              "name": "catalog",
+              "default": "DEFAULT_OPERATOR_CATALOG",
+              "type": {
+                "text": "OperatorCatalog"
+              }
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "DEFAULT_OPERATOR_CATALOG",
+          "declaration": {
+            "name": "DEFAULT_OPERATOR_CATALOG",
+            "module": "query-builder/src/model/operators.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "valueShapeFor",
+          "declaration": {
+            "name": "valueShapeFor",
+            "module": "query-builder/src/model/operators.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "defaultValueFor",
+          "declaration": {
+            "name": "defaultValueFor",
+            "module": "query-builder/src/model/operators.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "operatorsForType",
+          "declaration": {
+            "name": "operatorsForType",
+            "module": "query-builder/src/model/operators.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "query-builder/src/model/saved-query.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "query-builder/src/model/sort.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "query-builder/src/model/tree-ops.ts",
+      "declarations": [
+        {
+          "kind": "function",
+          "name": "mapTree",
+          "return": {
+            "type": {
+              "text": "Expression | null"
+            }
+          },
+          "parameters": [
+            {
+              "name": "tree",
+              "type": {
+                "text": "Expression"
+              }
+            },
+            {
+              "name": "fn",
+              "type": {
+                "text": "(node: Expression) => Expression | null"
+              }
+            }
+          ],
+          "description": "Walk the tree applying `fn` to each Expression. Returns a new tree (immutable)."
+        },
+        {
+          "kind": "function",
+          "name": "findNodeById",
+          "return": {
+            "type": {
+              "text": "Expression | null"
+            }
+          },
+          "parameters": [
+            {
+              "name": "tree",
+              "type": {
+                "text": "Expression"
+              }
+            },
+            {
+              "name": "id",
+              "type": {
+                "text": "string"
+              }
+            }
+          ],
+          "description": "Find a node by id, walking the entire tree (incl. sub-query bodies)."
+        },
+        {
+          "kind": "function",
+          "name": "findParentGroup",
+          "return": {
+            "type": {
+              "text": "{ parent: Group; index: number } | null"
+            }
+          },
+          "parameters": [
+            {
+              "name": "tree",
+              "type": {
+                "text": "Expression"
+              }
+            },
+            {
+              "name": "id",
+              "type": {
+                "text": "string"
+              }
+            }
+          ],
+          "description": "Find the parent Group of a node by id, along with the node's index in that\r\ngroup's children array. Returns null when the node is the root or absent.\r\nWalks sub-query bodies too — the parent is whichever group directly contains\r\nthe node, regardless of whether that group lives under a sub-query."
+        },
+        {
+          "kind": "function",
+          "name": "collectDescendantIds",
+          "return": {
+            "type": {
+              "text": "Set<string>"
+            }
+          },
+          "parameters": [
+            {
+              "name": "node",
+              "type": {
+                "text": "Expression"
+              }
+            }
+          ],
+          "description": "Collect all descendant ids of a node (incl. the node itself)."
+        },
+        {
+          "kind": "function",
+          "name": "addChild",
+          "return": {
+            "type": {
+              "text": "Expression"
+            }
+          },
+          "parameters": [
+            {
+              "name": "tree",
+              "type": {
+                "text": "Expression"
+              }
+            },
+            {
+              "name": "groupId",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "name": "child",
+              "type": {
+                "text": "Expression"
+              }
+            }
+          ],
+          "description": "Insert a child into the group with matching id. Returns a new tree; original unchanged."
+        },
+        {
+          "kind": "function",
+          "name": "addEmptyConditionTo",
+          "return": {
+            "type": {
+              "text": "Expression"
+            }
+          },
+          "parameters": [
+            {
+              "name": "tree",
+              "type": {
+                "text": "Expression"
+              }
+            },
+            {
+              "name": "groupId",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "name": "entity",
+              "type": {
+                "text": "EntitySchema"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "function",
+          "name": "addEmptyGroupTo",
+          "return": {
+            "type": {
+              "text": "Expression"
+            }
+          },
+          "parameters": [
+            {
+              "name": "tree",
+              "type": {
+                "text": "Expression"
+              }
+            },
+            {
+              "name": "groupId",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "name": "logic",
+              "default": "'and'",
+              "type": {
+                "text": "'and' | 'or'"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "function",
+          "name": "addEmptySubqueryTo",
+          "return": {
+            "type": {
+              "text": "Expression"
+            }
+          },
+          "parameters": [
+            {
+              "name": "tree",
+              "type": {
+                "text": "Expression"
+              }
+            },
+            {
+              "name": "groupId",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "name": "entity",
+              "type": {
+                "text": "EntitySchema"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "function",
+          "name": "removeNode",
+          "return": {
+            "type": {
+              "text": "Expression"
+            }
+          },
+          "parameters": [
+            {
+              "name": "tree",
+              "type": {
+                "text": "Expression"
+              }
+            },
+            {
+              "name": "nodeId",
+              "type": {
+                "text": "string"
+              }
+            }
+          ],
+          "description": "Remove the node with matching id, anywhere in the tree."
+        },
+        {
+          "kind": "function",
+          "name": "setGroupLogic",
+          "return": {
+            "type": {
+              "text": "Expression"
+            }
+          },
+          "parameters": [
+            {
+              "name": "tree",
+              "type": {
+                "text": "Expression"
+              }
+            },
+            {
+              "name": "groupId",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "name": "logic",
+              "type": {
+                "text": "'and' | 'or'"
+              }
+            }
+          ],
+          "description": "Set the logic on a group with matching id."
+        },
+        {
+          "kind": "function",
+          "name": "updateCondition",
+          "return": {
+            "type": {
+              "text": "Expression"
+            }
+          },
+          "parameters": [
+            {
+              "name": "tree",
+              "type": {
+                "text": "Expression"
+              }
+            },
+            {
+              "name": "conditionId",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "name": "patch",
+              "type": {
+                "text": "ConditionPatch"
+              }
+            }
+          ],
+          "description": "Patch a condition with matching id. Always preserves immutability."
+        },
+        {
+          "kind": "function",
+          "name": "changeConditionField",
+          "return": {
+            "type": {
+              "text": "Expression"
+            }
+          },
+          "parameters": [
+            {
+              "name": "tree",
+              "type": {
+                "text": "Expression"
+              }
+            },
+            {
+              "name": "conditionId",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "name": "newField",
+              "type": {
+                "text": "FieldDef"
+              }
+            }
+          ],
+          "description": "Smart field-change that resets operator + value if the previous shape\r\nisn't valid for the new field's type. Resolves the field within\r\n`currentEntity`'s schema."
+        },
+        {
+          "kind": "function",
+          "name": "changeConditionOperator",
+          "return": {
+            "type": {
+              "text": "Expression"
+            }
+          },
+          "parameters": [
+            {
+              "name": "tree",
+              "type": {
+                "text": "Expression"
+              }
+            },
+            {
+              "name": "conditionId",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "name": "newOperator",
+              "type": {
+                "text": "Operator"
+              }
+            }
+          ],
+          "description": "Smart operator-change that resets value if the value shape mismatches."
+        },
+        {
+          "kind": "function",
+          "name": "moveNode",
+          "return": {
+            "type": {
+              "text": "Expression"
+            }
+          },
+          "parameters": [
+            {
+              "name": "tree",
+              "type": {
+                "text": "Expression"
+              }
+            },
+            {
+              "name": "sourceId",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "name": "targetParentId",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "name": "targetIndex",
+              "type": {
+                "text": "number"
+              }
+            },
+            {
+              "name": "schemaForTarget",
+              "optional": true,
+              "type": {
+                "text": "EntitySchema"
+              }
+            }
+          ],
+          "description": "Move a node to a new parent group at a target index. If the move crosses\r\ninto a sub-tree with a different schema (cross-tree DnD), call sites pass\r\n`schemaForTarget` so we can reset field/operator/value per descendant\r\ncondition whose field is no longer in the target schema (FR-13).\r\n\r\nCycle prevention: caller is responsible for refusing a drop into the moved\r\nnode's own descendants (precomputed via `collectDescendantIds`)."
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "mapTree",
+          "declaration": {
+            "name": "mapTree",
+            "module": "query-builder/src/model/tree-ops.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "findNodeById",
+          "declaration": {
+            "name": "findNodeById",
+            "module": "query-builder/src/model/tree-ops.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "findParentGroup",
+          "declaration": {
+            "name": "findParentGroup",
+            "module": "query-builder/src/model/tree-ops.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "collectDescendantIds",
+          "declaration": {
+            "name": "collectDescendantIds",
+            "module": "query-builder/src/model/tree-ops.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "addChild",
+          "declaration": {
+            "name": "addChild",
+            "module": "query-builder/src/model/tree-ops.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "addEmptyConditionTo",
+          "declaration": {
+            "name": "addEmptyConditionTo",
+            "module": "query-builder/src/model/tree-ops.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "addEmptyGroupTo",
+          "declaration": {
+            "name": "addEmptyGroupTo",
+            "module": "query-builder/src/model/tree-ops.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "addEmptySubqueryTo",
+          "declaration": {
+            "name": "addEmptySubqueryTo",
+            "module": "query-builder/src/model/tree-ops.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "removeNode",
+          "declaration": {
+            "name": "removeNode",
+            "module": "query-builder/src/model/tree-ops.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "setGroupLogic",
+          "declaration": {
+            "name": "setGroupLogic",
+            "module": "query-builder/src/model/tree-ops.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "updateCondition",
+          "declaration": {
+            "name": "updateCondition",
+            "module": "query-builder/src/model/tree-ops.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "changeConditionField",
+          "declaration": {
+            "name": "changeConditionField",
+            "module": "query-builder/src/model/tree-ops.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "changeConditionOperator",
+          "declaration": {
+            "name": "changeConditionOperator",
+            "module": "query-builder/src/model/tree-ops.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "moveNode",
+          "declaration": {
+            "name": "moveNode",
+            "module": "query-builder/src/model/tree-ops.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "newId",
+          "declaration": {
+            "name": "newId",
+            "module": "query-builder/src/model/tree-ops.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "emptyGroup",
+          "declaration": {
+            "name": "emptyGroup",
+            "module": "query-builder/src/model/tree-ops.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "emptyCondition",
+          "declaration": {
+            "name": "emptyCondition",
+            "module": "query-builder/src/model/tree-ops.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "emptySubquery",
+          "declaration": {
+            "name": "emptySubquery",
+            "module": "query-builder/src/model/tree-ops.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "ribbon/src/items/index.ts",
       "declarations": [],
       "exports": [
@@ -20544,255 +21751,6 @@
           "declaration": {
             "name": "MpRibbonItemBase",
             "module": "ribbon/src/items/mp-ribbon-item-base.ts"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "radio/src/components/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "MpRadio",
-          "declaration": {
-            "name": "MpRadio",
-            "module": "./mp-radio"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpRadioType",
-          "declaration": {
-            "name": "MpRadioType",
-            "module": "./mp-radio"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "RadioChangeEventDetail",
-          "declaration": {
-            "name": "RadioChangeEventDetail",
-            "module": "./mp-radio"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "radio/src/components/mp-radio.ts",
-      "declarations": [
-        {
-          "kind": "class",
-          "description": "`<mp-radio>` — a Bootstrap-styled radio button with two visual variants:\n\n- `type=\"radio\"` (default) — standard `.form-check` styling with a round\n  indicator and a label.\n- `type=\"toggle_button\"` — `.btn-check` styling rendered as a button\n  (`.btn .btn-<color>`). Defaults to `color=\"secondary\"` to match the\n  prior Angular `<bs-radio type=\"toggle_button\">` behaviour.\n\nNative one-of-N behaviour relies on multiple inputs sharing a `name` in\nthe same scope. Each `<mp-radio>` keeps its `<input>` inside its own\nshadow root, so the browser cannot auto-uncheck a sibling for us. A\ncoordinating parent (e.g. the Angular `[bsRadioGroup]` directive or a\nfuture `<mp-radio-group>` WC) must listen for `change` and update the\nother radios' `checked` properties.\n\nEmits `change` with `detail: { checked, value }` when this radio\ntransitions to the checked state.",
-          "name": "MpRadio",
-          "members": [
-            {
-              "kind": "field",
-              "name": "shadowRootOptions",
-              "type": {
-                "text": "object"
-              },
-              "static": true,
-              "default": "{ ...LitElement.shadowRootOptions, delegatesFocus: true, }"
-            },
-            {
-              "kind": "field",
-              "name": "_type",
-              "type": {
-                "text": "MpRadioType"
-              },
-              "privacy": "private",
-              "default": "'radio'"
-            },
-            {
-              "kind": "field",
-              "name": "_checked",
-              "type": {
-                "text": "boolean"
-              },
-              "privacy": "private",
-              "default": "false"
-            },
-            {
-              "kind": "field",
-              "name": "_disabled",
-              "type": {
-                "text": "boolean"
-              },
-              "privacy": "private",
-              "default": "false"
-            },
-            {
-              "kind": "field",
-              "name": "_name",
-              "type": {
-                "text": "string | null"
-              },
-              "privacy": "private",
-              "default": "null"
-            },
-            {
-              "kind": "field",
-              "name": "_value",
-              "type": {
-                "text": "string | null"
-              },
-              "privacy": "private",
-              "default": "null"
-            },
-            {
-              "kind": "field",
-              "name": "_color",
-              "type": {
-                "text": "ToggleButtonColor"
-              },
-              "privacy": "private",
-              "default": "'secondary'"
-            },
-            {
-              "kind": "field",
-              "name": "_inputId",
-              "privacy": "private",
-              "readonly": true,
-              "default": "`mp-radio-${++instanceCounter}`"
-            },
-            {
-              "kind": "field",
-              "name": "type",
-              "type": {
-                "text": "MpRadioType"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "checked",
-              "type": {
-                "text": "boolean"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "disabled",
-              "type": {
-                "text": "boolean"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "name",
-              "type": {
-                "text": "string | null"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "value",
-              "type": {
-                "text": "string | null"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "color",
-              "type": {
-                "text": "ToggleButtonColor"
-              }
-            },
-            {
-              "kind": "method",
-              "name": "renderRadio",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "TemplateResult"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "renderToggleButton",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "TemplateResult"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "reflectBoolean",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "attr",
-                  "type": {
-                    "text": "string"
-                  }
-                },
-                {
-                  "name": "value",
-                  "type": {
-                    "text": "boolean"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "field",
-              "name": "onInputChange",
-              "privacy": "private"
-            }
-          ],
-          "attributes": [
-            {
-              "name": "type"
-            },
-            {
-              "name": "checked"
-            },
-            {
-              "name": "disabled"
-            },
-            {
-              "name": "name"
-            },
-            {
-              "name": "value"
-            },
-            {
-              "name": "color"
-            }
-          ],
-          "superclass": {
-            "name": "LitElement",
-            "package": "lit"
-          },
-          "tagName": "mp-radio",
-          "customElement": true
-        }
-      ],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "MpRadio",
-          "declaration": {
-            "name": "MpRadio",
-            "module": "radio/src/components/mp-radio.ts"
-          }
-        },
-        {
-          "kind": "custom-element-definition",
-          "name": "mp-radio",
-          "declaration": {
-            "name": "MpRadio",
-            "module": "radio/src/components/mp-radio.ts"
           }
         }
       ]
@@ -30512,6 +31470,174 @@
     },
     {
       "kind": "javascript-module",
+      "path": "splitter/src/managers/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "ResizeManager",
+          "declaration": {
+            "name": "ResizeManager",
+            "module": "./resize-manager"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "ResizeManagerOptions",
+          "declaration": {
+            "name": "ResizeManagerOptions",
+            "module": "./resize-manager"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "splitter/src/managers/resize-manager.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "",
+          "name": "ResizeManager",
+          "members": [
+            {
+              "kind": "field",
+              "name": "options",
+              "type": {
+                "text": "Required<ResizeManagerOptions>"
+              },
+              "privacy": "private",
+              "default": "{ minPanelSize: options.minPanelSize ?? 50, }"
+            },
+            {
+              "kind": "method",
+              "name": "computePanelSizes",
+              "return": {
+                "type": {
+                  "text": "number[]"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "panels",
+                  "type": {
+                    "text": "HTMLElement[]"
+                  }
+                },
+                {
+                  "name": "orientation",
+                  "type": {
+                    "text": "Direction"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "createResizeOperation",
+              "return": {
+                "type": {
+                  "text": "ResizeOperation"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "startPoint",
+                  "type": {
+                    "text": "Point"
+                  }
+                },
+                {
+                  "name": "currentSizes",
+                  "type": {
+                    "text": "number[]"
+                  }
+                },
+                {
+                  "name": "dividerIndex",
+                  "type": {
+                    "text": "number"
+                  }
+                },
+                {
+                  "name": "dividerElement",
+                  "type": {
+                    "text": "HTMLElement"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "calculatePreviewSizes",
+              "return": {
+                "type": {
+                  "text": "number[]"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "operation",
+                  "type": {
+                    "text": "ResizeOperation"
+                  }
+                },
+                {
+                  "name": "currentPoint",
+                  "type": {
+                    "text": "Point"
+                  }
+                },
+                {
+                  "name": "orientation",
+                  "type": {
+                    "text": "Direction"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "setMinPanelSize",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "size",
+                  "type": {
+                    "text": "number"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "getMinPanelSize",
+              "return": {
+                "type": {
+                  "text": "number"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "ResizeManager",
+          "declaration": {
+            "name": "ResizeManager",
+            "module": "splitter/src/managers/resize-manager.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "splitter/src/state/index.ts",
       "declarations": [],
       "exports": [
@@ -30734,174 +31860,6 @@
           "declaration": {
             "name": "SplitterStateManager",
             "module": "splitter/src/state/splitter-state.ts"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "splitter/src/managers/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "ResizeManager",
-          "declaration": {
-            "name": "ResizeManager",
-            "module": "./resize-manager"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "ResizeManagerOptions",
-          "declaration": {
-            "name": "ResizeManagerOptions",
-            "module": "./resize-manager"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "splitter/src/managers/resize-manager.ts",
-      "declarations": [
-        {
-          "kind": "class",
-          "description": "",
-          "name": "ResizeManager",
-          "members": [
-            {
-              "kind": "field",
-              "name": "options",
-              "type": {
-                "text": "Required<ResizeManagerOptions>"
-              },
-              "privacy": "private",
-              "default": "{ minPanelSize: options.minPanelSize ?? 50, }"
-            },
-            {
-              "kind": "method",
-              "name": "computePanelSizes",
-              "return": {
-                "type": {
-                  "text": "number[]"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "panels",
-                  "type": {
-                    "text": "HTMLElement[]"
-                  }
-                },
-                {
-                  "name": "orientation",
-                  "type": {
-                    "text": "Direction"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "createResizeOperation",
-              "return": {
-                "type": {
-                  "text": "ResizeOperation"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "startPoint",
-                  "type": {
-                    "text": "Point"
-                  }
-                },
-                {
-                  "name": "currentSizes",
-                  "type": {
-                    "text": "number[]"
-                  }
-                },
-                {
-                  "name": "dividerIndex",
-                  "type": {
-                    "text": "number"
-                  }
-                },
-                {
-                  "name": "dividerElement",
-                  "type": {
-                    "text": "HTMLElement"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "calculatePreviewSizes",
-              "return": {
-                "type": {
-                  "text": "number[]"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "operation",
-                  "type": {
-                    "text": "ResizeOperation"
-                  }
-                },
-                {
-                  "name": "currentPoint",
-                  "type": {
-                    "text": "Point"
-                  }
-                },
-                {
-                  "name": "orientation",
-                  "type": {
-                    "text": "Direction"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "setMinPanelSize",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "size",
-                  "type": {
-                    "text": "number"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "getMinPanelSize",
-              "return": {
-                "type": {
-                  "text": "number"
-                }
-              }
-            }
-          ]
-        }
-      ],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "ResizeManager",
-          "declaration": {
-            "name": "ResizeManager",
-            "module": "splitter/src/managers/resize-manager.ts"
           }
         }
       ]
@@ -31408,6 +32366,103 @@
       "path": "tab-control/src/types/tabs-position.ts",
       "declarations": [],
       "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "tile-manager/src/types/grid-rect.ts",
+      "declarations": [
+        {
+          "kind": "function",
+          "name": "rectsOverlap",
+          "return": {
+            "type": {
+              "text": "boolean"
+            }
+          },
+          "parameters": [
+            {
+              "name": "a",
+              "type": {
+                "text": "GridRect"
+              }
+            },
+            {
+              "name": "b",
+              "type": {
+                "text": "GridRect"
+              }
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "rectsOverlap",
+          "declaration": {
+            "name": "rectsOverlap",
+            "module": "tile-manager/src/types/grid-rect.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "tile-manager/src/types/tile-layout-snapshot.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "tile-manager/src/types/tile-position.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "tile-manager/src/utils/pack.ts",
+      "declarations": [
+        {
+          "kind": "function",
+          "name": "pack",
+          "return": {
+            "type": {
+              "text": "{ layout: TileLayoutSnapshot; blocked: boolean }"
+            }
+          },
+          "parameters": [
+            {
+              "name": "tiles",
+              "type": {
+                "text": "ReadonlyArray<PackInputTile>"
+              }
+            },
+            {
+              "name": "pinned",
+              "type": {
+                "text": "{ id: string; rect: GridRect }"
+              }
+            },
+            {
+              "name": "columnCount",
+              "type": {
+                "text": "number"
+              }
+            }
+          ],
+          "description": "Vertical-compact packer. The pinned tile's rect is the user's gesture; all\r\nother tiles flow around it (locked tiles stay put; movable tiles get pushed\r\nout of the way and gravity-compacted upward).\r\n\r\nReturns `blocked: true` if the pinned rect overlaps a locked tile or no\r\nvalid layout exists; the caller should snap back and not commit."
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "pack",
+          "declaration": {
+            "name": "pack",
+            "module": "tile-manager/src/utils/pack.ts"
+          }
+        }
+      ]
     },
     {
       "kind": "javascript-module",
