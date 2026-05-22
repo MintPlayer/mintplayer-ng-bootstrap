@@ -8,11 +8,11 @@ export default defineConfig(() => ({
   root: import.meta.dirname,
   cacheDir: '../../node_modules/.vite/apps/vue-bootstrap-demo',
   server: {
-    port: 4202,
+    port: 4100,
     host: 'localhost',
   },
   preview: {
-    port: 4302,
+    port: 4100,
     host: 'localhost',
   },
   plugins: [

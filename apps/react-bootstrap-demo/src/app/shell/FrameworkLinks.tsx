@@ -20,8 +20,8 @@ const PROD_HOSTS: Record<Framework, string> = {
 
 const DEV_HOSTS: Record<Framework, string> = {
   angular: 'http://localhost:4200',
-  react: 'http://localhost:4201',
-  vue: 'http://localhost:4202',
+  react: 'http://localhost:4000',
+  vue: 'http://localhost:4100',
 };
 
 function originFor(framework: Framework): string {

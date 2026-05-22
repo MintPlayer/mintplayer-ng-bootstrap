@@ -7,12 +7,12 @@ import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
 export default defineConfig(() => ({
   root: import.meta.dirname,
   cacheDir: '../../node_modules/.vite/apps/react-bootstrap-demo',
-  server:{
-    port: 4200,
+  server: {
+    port: 4000,
     host: 'localhost',
   },
-  preview:{
-    port: 4200,
+  preview: {
+    port: 4000,
     host: 'localhost',
   },
   plugins: [react(), nxViteTsPaths(), nxCopyAssetsPlugin(['*.md'])],

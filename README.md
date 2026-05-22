@@ -38,18 +38,51 @@ Or add the stylesheet in your `styles.scss`
     @import '@mintplayer/ng-bootstrap/bootstrap.scss';
 
 ## Components
-All components are showcased in the angular app included in the project. You can simply run
+Every web component is showcased in three sibling demo apps — one per
+framework — so you can pick the wrapper layer that matches your stack.
+They render the **same** underlying `<mp-*>` / `<mint-*>` web component;
+only the wrapper API differs.
 
-    npm start -- --open
+### Run locally via the Nx dev server
 
-to discover them.
+| Framework | Lib | Dev server | Command |
+|---|---|---|---|
+| Angular  | `@mintplayer/ng-bootstrap`     | <http://localhost:4200> | `npx nx serve ng-bootstrap-demo` |
+| React 19 | `@mintplayer/react-bootstrap`  | <http://localhost:4000> | `npx nx serve react-bootstrap-demo` |
+| Vue 3.5  | `@mintplayer/vue-bootstrap`    | <http://localhost:4100> | `npx nx serve vue-bootstrap-demo` |
 
-## Docker image
-Alternatively you can run the docker image which is published on GitHub Container Registry
+All three can run simultaneously — the ports don't collide. The
+brand-mark links in each demo's top-right nav switch between them while
+preserving the current path.
 
+The shorter `npm start -- --open` is wired to the Angular demo by
+default (see `scripts.start` in `package.json`).
+
+### Run via the published Docker images
+
+Pre-built images are published to GitHub Container Registry on every
+push to `master`. They serve the production build through nginx
+(SPA-fallback configured for client-side routing).
+
+    # Angular demo
     docker run -p 4200:80 ghcr.io/mintplayer/mintplayer-ng-bootstrap:master
 
-and visit [http://localhost:4200](http://localhost:4200).
+    # React demo
+    docker run -p 4000:80 ghcr.io/mintplayer/mintplayer-ng-bootstrap-react-demo:master
+
+    # Vue demo
+    docker run -p 4100:80 ghcr.io/mintplayer/mintplayer-ng-bootstrap-vue-demo:master
+
+Then visit <http://localhost:4200>, <http://localhost:4000>, or
+<http://localhost:4100> respectively.
+
+### Hosted versions
+
+| Framework | URL |
+|---|---|
+| Angular | <https://bootstrap.mintplayer.com> |
+| React   | <https://react.bootstrap.mintplayer.com> |
+| Vue     | <https://vue.bootstrap.mintplayer.com> |
 
 ## Deployment
 See [deployment documentation](DEPLOYMENT.md) for instructions on setting up automatic deployment to a VPS.
