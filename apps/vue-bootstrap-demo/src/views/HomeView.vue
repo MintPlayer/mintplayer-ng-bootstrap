@@ -17,9 +17,9 @@ import { RouterLink } from 'vue-router';
         <li><RouterLink to="/enterprise/scheduler">Scheduler</RouterLink> — calendar/grid layout for events</li>
         <li><RouterLink to="/enterprise/dock">Dock manager</RouterLink> — draggable, dockable panes</li>
         <li><RouterLink to="/enterprise/ribbon">Ribbon</RouterLink> — MS Office-style command bar</li>
-        <li><RouterLink to="/datepicker">Datepicker</RouterLink> — date input with native v-model</li>
-        <li><RouterLink to="/card">Card</RouterLink> — composable card primitives</li>
-        <li><RouterLink to="/code-snippet">Code snippet</RouterLink> — syntax-highlighted source with copy-to-clipboard</li>
+        <li><RouterLink to="/basic/datepicker">Datepicker</RouterLink> — date input with native v-model</li>
+        <li><RouterLink to="/basic/card">Card</RouterLink> — composable card primitives</li>
+        <li><RouterLink to="/basic/code-snippet">Code snippet</RouterLink> — syntax-highlighted source with copy-to-clipboard</li>
       </ul>
     </section>
   </div>

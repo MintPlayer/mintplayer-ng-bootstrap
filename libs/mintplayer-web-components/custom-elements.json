@@ -14500,6 +14500,179 @@
     },
     {
       "kind": "javascript-module",
+      "path": "a11y/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "LiveAnnouncerController",
+          "declaration": {
+            "name": "LiveAnnouncerController",
+            "module": "./live-announcer"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "LiveAnnouncerOptions",
+          "declaration": {
+            "name": "LiveAnnouncerOptions",
+            "module": "./live-announcer"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "a11y/src/live-announcer.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "Lit reactive controller that owns a visually-hidden live region for a Lit\r\nweb component. Call announce() to push a message; call template() once\r\ninside the host's render() to drop the live region into the shadow tree.\r\n\r\nWrites go directly to the rendered region's textContent (via a Lit `ref`).\r\nThat keeps announce() safe to call from inside the host's `updated()`\r\nlifecycle hook — it never schedules a follow-up update, so it can't\r\ntrigger Lit's \"change-in-update\" warning.\r\n\r\nWhy a controller and not a free-floating div appended to the shadow root:\r\nLit's render owns its render root; appending children outside the rendered\r\nsubtree is fragile across re-renders. Going through the template keeps the\r\nregion inside Lit's managed DOM and avoids \"where did my element go\" bugs.",
+          "name": "LiveAnnouncerController",
+          "members": [
+            {
+              "kind": "field",
+              "name": "host",
+              "type": {
+                "text": "ReactiveControllerHost"
+              },
+              "privacy": "private",
+              "default": "host"
+            },
+            {
+              "kind": "field",
+              "name": "clearTimer",
+              "type": {
+                "text": "ReturnType<typeof setTimeout> | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "pendingMessage",
+              "type": {
+                "text": "string | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "politeness",
+              "type": {
+                "text": "'polite' | 'assertive'"
+              },
+              "privacy": "private",
+              "readonly": true
+            },
+            {
+              "kind": "field",
+              "name": "clearAfterMs",
+              "type": {
+                "text": "number"
+              },
+              "privacy": "private",
+              "readonly": true
+            },
+            {
+              "kind": "field",
+              "name": "regionRef",
+              "type": {
+                "text": "Ref<HTMLDivElement>"
+              },
+              "privacy": "private",
+              "readonly": true
+            },
+            {
+              "kind": "method",
+              "name": "hostUpdated",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "hostDisconnected",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "announce",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "message",
+                  "type": {
+                    "text": "string"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "template",
+              "return": {
+                "type": {
+                  "text": "TemplateResult"
+                }
+              },
+              "description": "Returns the live-region template fragment. Call once inside the host's render()."
+            },
+            {
+              "kind": "method",
+              "name": "writeMessage",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "message",
+                  "type": {
+                    "text": "string"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "scheduleClear",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "LiveAnnouncerController",
+          "declaration": {
+            "name": "LiveAnnouncerController",
+            "module": "a11y/src/live-announcer.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "calendar/src/index.ts",
       "declarations": [],
       "exports": [
@@ -14835,173 +15008,31 @@
     },
     {
       "kind": "javascript-module",
-      "path": "a11y/src/index.ts",
+      "path": "checkbox/src/index.ts",
       "declarations": [],
       "exports": [
         {
           "kind": "js",
-          "name": "LiveAnnouncerController",
+          "name": "MpCheckbox",
           "declaration": {
-            "name": "LiveAnnouncerController",
-            "module": "./live-announcer"
+            "name": "MpCheckbox",
+            "module": "./components"
           }
         },
         {
           "kind": "js",
-          "name": "LiveAnnouncerOptions",
+          "name": "MpCheckboxType",
           "declaration": {
-            "name": "LiveAnnouncerOptions",
-            "module": "./live-announcer"
+            "name": "MpCheckboxType",
+            "module": "./components"
           }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "a11y/src/live-announcer.ts",
-      "declarations": [
-        {
-          "kind": "class",
-          "description": "Lit reactive controller that owns a visually-hidden live region for a Lit\r\nweb component. Call announce() to push a message; call template() once\r\ninside the host's render() to drop the live region into the shadow tree.\r\n\r\nWrites go directly to the rendered region's textContent (via a Lit `ref`).\r\nThat keeps announce() safe to call from inside the host's `updated()`\r\nlifecycle hook — it never schedules a follow-up update, so it can't\r\ntrigger Lit's \"change-in-update\" warning.\r\n\r\nWhy a controller and not a free-floating div appended to the shadow root:\r\nLit's render owns its render root; appending children outside the rendered\r\nsubtree is fragile across re-renders. Going through the template keeps the\r\nregion inside Lit's managed DOM and avoids \"where did my element go\" bugs.",
-          "name": "LiveAnnouncerController",
-          "members": [
-            {
-              "kind": "field",
-              "name": "host",
-              "type": {
-                "text": "ReactiveControllerHost"
-              },
-              "privacy": "private",
-              "default": "host"
-            },
-            {
-              "kind": "field",
-              "name": "clearTimer",
-              "type": {
-                "text": "ReturnType<typeof setTimeout> | null"
-              },
-              "privacy": "private",
-              "default": "null"
-            },
-            {
-              "kind": "field",
-              "name": "pendingMessage",
-              "type": {
-                "text": "string | null"
-              },
-              "privacy": "private",
-              "default": "null"
-            },
-            {
-              "kind": "field",
-              "name": "politeness",
-              "type": {
-                "text": "'polite' | 'assertive'"
-              },
-              "privacy": "private",
-              "readonly": true
-            },
-            {
-              "kind": "field",
-              "name": "clearAfterMs",
-              "type": {
-                "text": "number"
-              },
-              "privacy": "private",
-              "readonly": true
-            },
-            {
-              "kind": "field",
-              "name": "regionRef",
-              "type": {
-                "text": "Ref<HTMLDivElement>"
-              },
-              "privacy": "private",
-              "readonly": true
-            },
-            {
-              "kind": "method",
-              "name": "hostUpdated",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "hostDisconnected",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "announce",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "message",
-                  "type": {
-                    "text": "string"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "template",
-              "return": {
-                "type": {
-                  "text": "TemplateResult"
-                }
-              },
-              "description": "Returns the live-region template fragment. Call once inside the host's render()."
-            },
-            {
-              "kind": "method",
-              "name": "writeMessage",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "message",
-                  "type": {
-                    "text": "string"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "scheduleClear",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              }
-            }
-          ]
-        }
-      ],
-      "exports": [
+        },
         {
           "kind": "js",
-          "name": "LiveAnnouncerController",
+          "name": "CheckboxChangeEventDetail",
           "declaration": {
-            "name": "LiveAnnouncerController",
-            "module": "a11y/src/live-announcer.ts"
+            "name": "CheckboxChangeEventDetail",
+            "module": "./components"
           }
         }
       ]
@@ -15152,37 +15183,6 @@
           "declaration": {
             "name": "datatableStyles",
             "module": "./styles"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "checkbox/src/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "MpCheckbox",
-          "declaration": {
-            "name": "MpCheckbox",
-            "module": "./components"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpCheckboxType",
-          "declaration": {
-            "name": "MpCheckboxType",
-            "module": "./components"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "CheckboxChangeEventDetail",
-          "declaration": {
-            "name": "CheckboxChangeEventDetail",
-            "module": "./components"
           }
         }
       ]
@@ -16228,61 +16228,6 @@
     },
     {
       "kind": "javascript-module",
-      "path": "pagination/src/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "MpPagination",
-          "declaration": {
-            "name": "MpPagination",
-            "module": "./components"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "buildPaginationLayout",
-          "declaration": {
-            "name": "buildPaginationLayout",
-            "module": "./components"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "PageChangeEventDetail",
-          "declaration": {
-            "name": "PageChangeEventDetail",
-            "module": "./components"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "PaginationSize",
-          "declaration": {
-            "name": "PaginationSize",
-            "module": "./components"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "PaginationItem",
-          "declaration": {
-            "name": "PaginationItem",
-            "module": "./components"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "PaginationLayout",
-          "declaration": {
-            "name": "PaginationLayout",
-            "module": "./components"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
       "path": "query-builder/src/context.ts",
       "declarations": [
         {
@@ -16396,6 +16341,61 @@
           "declaration": {
             "name": "*",
             "module": "query-builder/src/preview/render-expression"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "pagination/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpPagination",
+          "declaration": {
+            "name": "MpPagination",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "buildPaginationLayout",
+          "declaration": {
+            "name": "buildPaginationLayout",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "PageChangeEventDetail",
+          "declaration": {
+            "name": "PageChangeEventDetail",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "PaginationSize",
+          "declaration": {
+            "name": "PaginationSize",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "PaginationItem",
+          "declaration": {
+            "name": "PaginationItem",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "PaginationLayout",
+          "declaration": {
+            "name": "PaginationLayout",
+            "module": "./components"
           }
         }
       ]
@@ -16897,29 +16897,6 @@
     },
     {
       "kind": "javascript-module",
-      "path": "timepicker/src/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "*",
-          "declaration": {
-            "name": "*",
-            "module": "timepicker/src/mp-timepicker.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "*",
-          "declaration": {
-            "name": "*",
-            "module": "timepicker/src/mp-time-list.element"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
       "path": "toggle-button/src/index.ts",
       "declarations": [],
       "exports": [
@@ -16953,6 +16930,29 @@
           "declaration": {
             "name": "toggleButtonStyles",
             "module": "./styles"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "timepicker/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "timepicker/src/mp-timepicker.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "timepicker/src/mp-time-list.element"
           }
         }
       ]
@@ -17063,6 +17063,292 @@
       "path": "card/src/types/card-image-position.ts",
       "declarations": [],
       "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "checkbox/src/components/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpCheckbox",
+          "declaration": {
+            "name": "MpCheckbox",
+            "module": "./mp-checkbox"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpCheckboxType",
+          "declaration": {
+            "name": "MpCheckboxType",
+            "module": "./mp-checkbox"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "CheckboxChangeEventDetail",
+          "declaration": {
+            "name": "CheckboxChangeEventDetail",
+            "module": "./mp-checkbox"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "checkbox/src/components/mp-checkbox.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "`<mp-checkbox>` — a Bootstrap-styled checkbox with three visual variants\nvia the `type` attribute:\n\n- `checkbox` (default) — `.form-check` with a square indicator.\n- `switch` — `.form-check.form-switch` for the iOS-style sliding switch.\n- `toggle_button` — `.btn-check` rendered as a `.btn .btn-<color>`.\n\nSupports first-class **tri-state** via the `indeterminate` attribute /\nproperty. The visual indeterminate styling is the browser's native\n`<input>.indeterminate` DOM property; we additionally reflect\n`aria-checked=\"mixed\"` for AT and mirror the value to a reflected\nboolean attribute so consumers can target the state from CSS.\nThe native `change` event clears `indeterminate` on the next user click\n(per HTML spec); consumers that want the master/select-all pattern can\nre-derive and re-set `indeterminate` from the resulting state.\n\nEmits `change` with `detail: { checked, indeterminate, value }`.",
+          "name": "MpCheckbox",
+          "members": [
+            {
+              "kind": "field",
+              "name": "shadowRootOptions",
+              "type": {
+                "text": "object"
+              },
+              "static": true,
+              "default": "{ ...LitElement.shadowRootOptions, delegatesFocus: true, }"
+            },
+            {
+              "kind": "field",
+              "name": "_type",
+              "type": {
+                "text": "MpCheckboxType"
+              },
+              "privacy": "private",
+              "default": "'checkbox'"
+            },
+            {
+              "kind": "field",
+              "name": "_checked",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "_indeterminate",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "_disabled",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "_name",
+              "type": {
+                "text": "string | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "_value",
+              "type": {
+                "text": "string | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "_color",
+              "type": {
+                "text": "ToggleButtonColor"
+              },
+              "privacy": "private",
+              "default": "'primary'"
+            },
+            {
+              "kind": "field",
+              "name": "_inputId",
+              "privacy": "private",
+              "readonly": true,
+              "default": "`mp-checkbox-${++instanceCounter}`"
+            },
+            {
+              "kind": "field",
+              "name": "_inputRef",
+              "type": {
+                "text": "Ref<HTMLInputElement>"
+              },
+              "privacy": "private",
+              "readonly": true
+            },
+            {
+              "kind": "field",
+              "name": "type",
+              "type": {
+                "text": "MpCheckboxType"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "checked",
+              "type": {
+                "text": "boolean"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "indeterminate",
+              "type": {
+                "text": "boolean"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "disabled",
+              "type": {
+                "text": "boolean"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "name",
+              "type": {
+                "text": "string | null"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "value",
+              "type": {
+                "text": "string | null"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "color",
+              "type": {
+                "text": "ToggleButtonColor"
+              }
+            },
+            {
+              "kind": "method",
+              "name": "renderCheckOrSwitch",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "TemplateResult"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "renderToggleButton",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "TemplateResult"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "reflectBoolean",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "attr",
+                  "type": {
+                    "text": "string"
+                  }
+                },
+                {
+                  "name": "value",
+                  "type": {
+                    "text": "boolean"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "field",
+              "name": "onInputChange",
+              "privacy": "private"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "type"
+            },
+            {
+              "name": "checked"
+            },
+            {
+              "name": "indeterminate"
+            },
+            {
+              "name": "disabled"
+            },
+            {
+              "name": "name"
+            },
+            {
+              "name": "value"
+            },
+            {
+              "name": "color"
+            },
+            {
+              "name": "aria-label"
+            },
+            {
+              "name": "aria-labelledby"
+            },
+            {
+              "name": "aria-describedby"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "mp-checkbox",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpCheckbox",
+          "declaration": {
+            "name": "MpCheckbox",
+            "module": "checkbox/src/components/mp-checkbox.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "mp-checkbox",
+          "declaration": {
+            "name": "MpCheckbox",
+            "module": "checkbox/src/components/mp-checkbox.ts"
+          }
+        }
+      ]
     },
     {
       "kind": "javascript-module",
@@ -18327,292 +18613,6 @@
           "declaration": {
             "name": "RowRenderer",
             "module": "./column-def"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "checkbox/src/components/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "MpCheckbox",
-          "declaration": {
-            "name": "MpCheckbox",
-            "module": "./mp-checkbox"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpCheckboxType",
-          "declaration": {
-            "name": "MpCheckboxType",
-            "module": "./mp-checkbox"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "CheckboxChangeEventDetail",
-          "declaration": {
-            "name": "CheckboxChangeEventDetail",
-            "module": "./mp-checkbox"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "checkbox/src/components/mp-checkbox.ts",
-      "declarations": [
-        {
-          "kind": "class",
-          "description": "`<mp-checkbox>` — a Bootstrap-styled checkbox with three visual variants\nvia the `type` attribute:\n\n- `checkbox` (default) — `.form-check` with a square indicator.\n- `switch` — `.form-check.form-switch` for the iOS-style sliding switch.\n- `toggle_button` — `.btn-check` rendered as a `.btn .btn-<color>`.\n\nSupports first-class **tri-state** via the `indeterminate` attribute /\nproperty. The visual indeterminate styling is the browser's native\n`<input>.indeterminate` DOM property; we additionally reflect\n`aria-checked=\"mixed\"` for AT and mirror the value to a reflected\nboolean attribute so consumers can target the state from CSS.\nThe native `change` event clears `indeterminate` on the next user click\n(per HTML spec); consumers that want the master/select-all pattern can\nre-derive and re-set `indeterminate` from the resulting state.\n\nEmits `change` with `detail: { checked, indeterminate, value }`.",
-          "name": "MpCheckbox",
-          "members": [
-            {
-              "kind": "field",
-              "name": "shadowRootOptions",
-              "type": {
-                "text": "object"
-              },
-              "static": true,
-              "default": "{ ...LitElement.shadowRootOptions, delegatesFocus: true, }"
-            },
-            {
-              "kind": "field",
-              "name": "_type",
-              "type": {
-                "text": "MpCheckboxType"
-              },
-              "privacy": "private",
-              "default": "'checkbox'"
-            },
-            {
-              "kind": "field",
-              "name": "_checked",
-              "type": {
-                "text": "boolean"
-              },
-              "privacy": "private",
-              "default": "false"
-            },
-            {
-              "kind": "field",
-              "name": "_indeterminate",
-              "type": {
-                "text": "boolean"
-              },
-              "privacy": "private",
-              "default": "false"
-            },
-            {
-              "kind": "field",
-              "name": "_disabled",
-              "type": {
-                "text": "boolean"
-              },
-              "privacy": "private",
-              "default": "false"
-            },
-            {
-              "kind": "field",
-              "name": "_name",
-              "type": {
-                "text": "string | null"
-              },
-              "privacy": "private",
-              "default": "null"
-            },
-            {
-              "kind": "field",
-              "name": "_value",
-              "type": {
-                "text": "string | null"
-              },
-              "privacy": "private",
-              "default": "null"
-            },
-            {
-              "kind": "field",
-              "name": "_color",
-              "type": {
-                "text": "ToggleButtonColor"
-              },
-              "privacy": "private",
-              "default": "'primary'"
-            },
-            {
-              "kind": "field",
-              "name": "_inputId",
-              "privacy": "private",
-              "readonly": true,
-              "default": "`mp-checkbox-${++instanceCounter}`"
-            },
-            {
-              "kind": "field",
-              "name": "_inputRef",
-              "type": {
-                "text": "Ref<HTMLInputElement>"
-              },
-              "privacy": "private",
-              "readonly": true
-            },
-            {
-              "kind": "field",
-              "name": "type",
-              "type": {
-                "text": "MpCheckboxType"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "checked",
-              "type": {
-                "text": "boolean"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "indeterminate",
-              "type": {
-                "text": "boolean"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "disabled",
-              "type": {
-                "text": "boolean"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "name",
-              "type": {
-                "text": "string | null"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "value",
-              "type": {
-                "text": "string | null"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "color",
-              "type": {
-                "text": "ToggleButtonColor"
-              }
-            },
-            {
-              "kind": "method",
-              "name": "renderCheckOrSwitch",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "TemplateResult"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "renderToggleButton",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "TemplateResult"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "reflectBoolean",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "attr",
-                  "type": {
-                    "text": "string"
-                  }
-                },
-                {
-                  "name": "value",
-                  "type": {
-                    "text": "boolean"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "field",
-              "name": "onInputChange",
-              "privacy": "private"
-            }
-          ],
-          "attributes": [
-            {
-              "name": "type"
-            },
-            {
-              "name": "checked"
-            },
-            {
-              "name": "indeterminate"
-            },
-            {
-              "name": "disabled"
-            },
-            {
-              "name": "name"
-            },
-            {
-              "name": "value"
-            },
-            {
-              "name": "color"
-            },
-            {
-              "name": "aria-label"
-            },
-            {
-              "name": "aria-labelledby"
-            },
-            {
-              "name": "aria-describedby"
-            }
-          ],
-          "superclass": {
-            "name": "LitElement",
-            "package": "lit"
-          },
-          "tagName": "mp-checkbox",
-          "customElement": true
-        }
-      ],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "MpCheckbox",
-          "declaration": {
-            "name": "MpCheckbox",
-            "module": "checkbox/src/components/mp-checkbox.ts"
-          }
-        },
-        {
-          "kind": "custom-element-definition",
-          "name": "mp-checkbox",
-          "declaration": {
-            "name": "MpCheckbox",
-            "module": "checkbox/src/components/mp-checkbox.ts"
           }
         }
       ]
@@ -20189,382 +20189,6 @@
     },
     {
       "kind": "javascript-module",
-      "path": "pagination/src/components/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "MpPagination",
-          "declaration": {
-            "name": "MpPagination",
-            "module": "./mp-pagination"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "buildPaginationLayout",
-          "declaration": {
-            "name": "buildPaginationLayout",
-            "module": "./mp-pagination"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "PageChangeEventDetail",
-          "declaration": {
-            "name": "PageChangeEventDetail",
-            "module": "./mp-pagination"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "PaginationSize",
-          "declaration": {
-            "name": "PaginationSize",
-            "module": "./mp-pagination"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "PaginationItem",
-          "declaration": {
-            "name": "PaginationItem",
-            "module": "./mp-pagination"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "PaginationLayout",
-          "declaration": {
-            "name": "PaginationLayout",
-            "module": "./mp-pagination"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "pagination/src/components/mp-pagination.ts",
-      "declarations": [
-        {
-          "kind": "class",
-          "description": "`<mp-pagination>` — page selector with first/last anchors, ellipsis gaps,\r\nand previous/next arrows. The visible budget is fully driven by the\r\n`numberOfBoxes` input (0 = uncapped). Layout-time auto-fit was tried\r\nearlier but produced a feedback loop with flex parents whose item width\r\nresolves from their content's `max-content` — the consumer is responsible\r\nfor picking a cap that fits the host on their target viewports.",
-          "name": "MpPagination",
-          "members": [
-            {
-              "kind": "field",
-              "name": "_pageNumbers",
-              "type": {
-                "text": "number[]"
-              },
-              "privacy": "private",
-              "default": "[]"
-            },
-            {
-              "kind": "field",
-              "name": "_selectedPageNumber",
-              "type": {
-                "text": "number"
-              },
-              "privacy": "private",
-              "default": "1"
-            },
-            {
-              "kind": "field",
-              "name": "_numberOfBoxes",
-              "type": {
-                "text": "number"
-              },
-              "privacy": "private",
-              "default": "0"
-            },
-            {
-              "kind": "field",
-              "name": "_showArrows",
-              "type": {
-                "text": "boolean"
-              },
-              "privacy": "private",
-              "default": "true"
-            },
-            {
-              "kind": "field",
-              "name": "_size",
-              "type": {
-                "text": "PaginationSize"
-              },
-              "privacy": "private",
-              "default": "'medium'"
-            },
-            {
-              "kind": "field",
-              "name": "_ariaLabel",
-              "type": {
-                "text": "string"
-              },
-              "privacy": "private",
-              "default": "'Pagination'"
-            },
-            {
-              "kind": "field",
-              "name": "pageNumbers",
-              "type": {
-                "text": "number[]"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "selectedPageNumber",
-              "type": {
-                "text": "number"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "numberOfBoxes",
-              "type": {
-                "text": "number"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "showArrows",
-              "type": {
-                "text": "boolean"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "size",
-              "type": {
-                "text": "PaginationSize"
-              }
-            },
-            {
-              "kind": "method",
-              "name": "effectiveBudget",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "number"
-                }
-              },
-              "description": "Effective TOTAL budget (boxes including arrows). When `numberOfBoxes`\r\nis `0` the budget is uncapped and all pages render; otherwise the cap\r\nis honoured verbatim. (An earlier ResizeObserver-driven \"auto-fit\"\r\nwas removed — its measurement of self-width fed back into the rendered\r\ncontent and the WC + flex parent could oscillate or lock the budget\r\nto a single button.)"
-            },
-            {
-              "kind": "method",
-              "name": "computeLayout",
-              "privacy": "protected",
-              "return": {
-                "type": {
-                  "text": "PaginationLayout"
-                }
-              },
-              "description": "Build the full layout — arrows + page items. Pure — no DOM access."
-            },
-            {
-              "kind": "method",
-              "name": "isFirstPage",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "boolean"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "isLastPage",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "boolean"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "selectPage",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "page",
-                  "type": {
-                    "text": "number"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "onPrevious",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "onNext",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              }
-            }
-          ],
-          "events": [
-            {
-              "name": "mp-pagination-page-change",
-              "type": {
-                "text": "CustomEvent"
-              }
-            }
-          ],
-          "attributes": [
-            {
-              "name": "page-numbers"
-            },
-            {
-              "name": "selected-page-number"
-            },
-            {
-              "name": "number-of-boxes"
-            },
-            {
-              "name": "show-arrows"
-            },
-            {
-              "name": "size"
-            },
-            {
-              "name": "aria-label"
-            }
-          ],
-          "superclass": {
-            "name": "LitElement",
-            "package": "lit"
-          },
-          "tagName": "mp-pagination",
-          "customElement": true
-        },
-        {
-          "kind": "function",
-          "name": "buildPaginationLayout",
-          "return": {
-            "type": {
-              "text": "PaginationLayout"
-            }
-          },
-          "parameters": [
-            {
-              "name": "pages",
-              "type": {
-                "text": "ReadonlyArray<number>"
-              }
-            },
-            {
-              "name": "current",
-              "type": {
-                "text": "number"
-              }
-            },
-            {
-              "name": "totalBudget",
-              "type": {
-                "text": "number"
-              }
-            },
-            {
-              "name": "showArrows",
-              "type": {
-                "text": "boolean"
-              }
-            }
-          ],
-          "description": "Pure helper: deterministic layout for `(pages, current, totalBudget, showArrows)`.\r\n\r\n`totalBudget` is the maximum visible boxes — pages AND arrows count toward it.\r\nThe current page is always slot #1; subsequent slots are allocated by\r\nstepping through a fixed priority sequence:\r\n\r\n  1. Arrows (next, then prev) when `showArrows`.\r\n  2. **Phase 1** — round-robin `[start, end, before, after]`:\r\n     - start: page #1\r\n     - end: last page\r\n     - before: left ellipsis\r\n     - after: right ellipsis\r\n  3. **Phase 2+** — round-robin `[before, after, start, end]`, repeated\r\n     until budget runs out. Each pass adds one page in that direction:\r\n     - before extends C-1, C-2, …\r\n     - after extends C+1, C+2, …\r\n     - start extends 2, 3, …\r\n     - end extends last-1, last-2, …\r\n\r\nWhen a direction has no more pages to add (overlap with another direction,\r\nor current at an extreme), that step is skipped and the cycle continues\r\nwith the next action.\r\n\r\nSee `docs/issue_329_PRD.md` § \"Growth algorithm\"."
-        }
-      ],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "MpPagination",
-          "declaration": {
-            "name": "MpPagination",
-            "module": "pagination/src/components/mp-pagination.ts"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "buildPaginationLayout",
-          "declaration": {
-            "name": "buildPaginationLayout",
-            "module": "pagination/src/components/mp-pagination.ts"
-          }
-        },
-        {
-          "kind": "custom-element-definition",
-          "name": "mp-pagination",
-          "declaration": {
-            "name": "MpPagination",
-            "module": "pagination/src/components/mp-pagination.ts"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "pagination/src/styles/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "paginationStyles",
-          "declaration": {
-            "name": "paginationStyles",
-            "module": "./pagination.styles"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "pagination/src/styles/pagination.styles.ts",
-      "declarations": [
-        {
-          "kind": "variable",
-          "name": "paginationStyles"
-        }
-      ],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "paginationStyles",
-          "declaration": {
-            "name": "paginationStyles",
-            "module": "pagination/src/styles/pagination.styles.ts"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "default",
-          "declaration": {
-            "name": "paginationStyles",
-            "module": "pagination/src/styles/pagination.styles.ts"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
       "path": "query-builder/src/dnd/drag-controller.ts",
       "declarations": [
         {
@@ -21852,6 +21476,382 @@
           "declaration": {
             "name": "resolveBuiltinEditor",
             "module": "query-builder/src/value-editors/builtin-editors.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "pagination/src/components/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpPagination",
+          "declaration": {
+            "name": "MpPagination",
+            "module": "./mp-pagination"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "buildPaginationLayout",
+          "declaration": {
+            "name": "buildPaginationLayout",
+            "module": "./mp-pagination"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "PageChangeEventDetail",
+          "declaration": {
+            "name": "PageChangeEventDetail",
+            "module": "./mp-pagination"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "PaginationSize",
+          "declaration": {
+            "name": "PaginationSize",
+            "module": "./mp-pagination"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "PaginationItem",
+          "declaration": {
+            "name": "PaginationItem",
+            "module": "./mp-pagination"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "PaginationLayout",
+          "declaration": {
+            "name": "PaginationLayout",
+            "module": "./mp-pagination"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "pagination/src/components/mp-pagination.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "`<mp-pagination>` — page selector with first/last anchors, ellipsis gaps,\r\nand previous/next arrows. The visible budget is fully driven by the\r\n`numberOfBoxes` input (0 = uncapped). Layout-time auto-fit was tried\r\nearlier but produced a feedback loop with flex parents whose item width\r\nresolves from their content's `max-content` — the consumer is responsible\r\nfor picking a cap that fits the host on their target viewports.",
+          "name": "MpPagination",
+          "members": [
+            {
+              "kind": "field",
+              "name": "_pageNumbers",
+              "type": {
+                "text": "number[]"
+              },
+              "privacy": "private",
+              "default": "[]"
+            },
+            {
+              "kind": "field",
+              "name": "_selectedPageNumber",
+              "type": {
+                "text": "number"
+              },
+              "privacy": "private",
+              "default": "1"
+            },
+            {
+              "kind": "field",
+              "name": "_numberOfBoxes",
+              "type": {
+                "text": "number"
+              },
+              "privacy": "private",
+              "default": "0"
+            },
+            {
+              "kind": "field",
+              "name": "_showArrows",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "true"
+            },
+            {
+              "kind": "field",
+              "name": "_size",
+              "type": {
+                "text": "PaginationSize"
+              },
+              "privacy": "private",
+              "default": "'medium'"
+            },
+            {
+              "kind": "field",
+              "name": "_ariaLabel",
+              "type": {
+                "text": "string"
+              },
+              "privacy": "private",
+              "default": "'Pagination'"
+            },
+            {
+              "kind": "field",
+              "name": "pageNumbers",
+              "type": {
+                "text": "number[]"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "selectedPageNumber",
+              "type": {
+                "text": "number"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "numberOfBoxes",
+              "type": {
+                "text": "number"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "showArrows",
+              "type": {
+                "text": "boolean"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "size",
+              "type": {
+                "text": "PaginationSize"
+              }
+            },
+            {
+              "kind": "method",
+              "name": "effectiveBudget",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "number"
+                }
+              },
+              "description": "Effective TOTAL budget (boxes including arrows). When `numberOfBoxes`\r\nis `0` the budget is uncapped and all pages render; otherwise the cap\r\nis honoured verbatim. (An earlier ResizeObserver-driven \"auto-fit\"\r\nwas removed — its measurement of self-width fed back into the rendered\r\ncontent and the WC + flex parent could oscillate or lock the budget\r\nto a single button.)"
+            },
+            {
+              "kind": "method",
+              "name": "computeLayout",
+              "privacy": "protected",
+              "return": {
+                "type": {
+                  "text": "PaginationLayout"
+                }
+              },
+              "description": "Build the full layout — arrows + page items. Pure — no DOM access."
+            },
+            {
+              "kind": "method",
+              "name": "isFirstPage",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "boolean"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "isLastPage",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "boolean"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "selectPage",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "page",
+                  "type": {
+                    "text": "number"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "onPrevious",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "onNext",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            }
+          ],
+          "events": [
+            {
+              "name": "mp-pagination-page-change",
+              "type": {
+                "text": "CustomEvent"
+              }
+            }
+          ],
+          "attributes": [
+            {
+              "name": "page-numbers"
+            },
+            {
+              "name": "selected-page-number"
+            },
+            {
+              "name": "number-of-boxes"
+            },
+            {
+              "name": "show-arrows"
+            },
+            {
+              "name": "size"
+            },
+            {
+              "name": "aria-label"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "mp-pagination",
+          "customElement": true
+        },
+        {
+          "kind": "function",
+          "name": "buildPaginationLayout",
+          "return": {
+            "type": {
+              "text": "PaginationLayout"
+            }
+          },
+          "parameters": [
+            {
+              "name": "pages",
+              "type": {
+                "text": "ReadonlyArray<number>"
+              }
+            },
+            {
+              "name": "current",
+              "type": {
+                "text": "number"
+              }
+            },
+            {
+              "name": "totalBudget",
+              "type": {
+                "text": "number"
+              }
+            },
+            {
+              "name": "showArrows",
+              "type": {
+                "text": "boolean"
+              }
+            }
+          ],
+          "description": "Pure helper: deterministic layout for `(pages, current, totalBudget, showArrows)`.\r\n\r\n`totalBudget` is the maximum visible boxes — pages AND arrows count toward it.\r\nThe current page is always slot #1; subsequent slots are allocated by\r\nstepping through a fixed priority sequence:\r\n\r\n  1. Arrows (next, then prev) when `showArrows`.\r\n  2. **Phase 1** — round-robin `[start, end, before, after]`:\r\n     - start: page #1\r\n     - end: last page\r\n     - before: left ellipsis\r\n     - after: right ellipsis\r\n  3. **Phase 2+** — round-robin `[before, after, start, end]`, repeated\r\n     until budget runs out. Each pass adds one page in that direction:\r\n     - before extends C-1, C-2, …\r\n     - after extends C+1, C+2, …\r\n     - start extends 2, 3, …\r\n     - end extends last-1, last-2, …\r\n\r\nWhen a direction has no more pages to add (overlap with another direction,\r\nor current at an extreme), that step is skipped and the cycle continues\r\nwith the next action.\r\n\r\nSee `docs/issue_329_PRD.md` § \"Growth algorithm\"."
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpPagination",
+          "declaration": {
+            "name": "MpPagination",
+            "module": "pagination/src/components/mp-pagination.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "buildPaginationLayout",
+          "declaration": {
+            "name": "buildPaginationLayout",
+            "module": "pagination/src/components/mp-pagination.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "mp-pagination",
+          "declaration": {
+            "name": "MpPagination",
+            "module": "pagination/src/components/mp-pagination.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "pagination/src/styles/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "paginationStyles",
+          "declaration": {
+            "name": "paginationStyles",
+            "module": "./pagination.styles"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "pagination/src/styles/pagination.styles.ts",
+      "declarations": [
+        {
+          "kind": "variable",
+          "name": "paginationStyles"
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "paginationStyles",
+          "declaration": {
+            "name": "paginationStyles",
+            "module": "pagination/src/styles/pagination.styles.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "default",
+          "declaration": {
+            "name": "paginationStyles",
+            "module": "pagination/src/styles/pagination.styles.ts"
           }
         }
       ]
@@ -25837,34 +25837,6 @@
     },
     {
       "kind": "javascript-module",
-      "path": "scheduler/src/styles/scheduler.styles.ts",
-      "declarations": [
-        {
-          "kind": "variable",
-          "name": "schedulerStyles"
-        }
-      ],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "schedulerStyles",
-          "declaration": {
-            "name": "schedulerStyles",
-            "module": "scheduler/src/styles/scheduler.styles.ts"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "default",
-          "declaration": {
-            "name": "schedulerStyles",
-            "module": "scheduler/src/styles/scheduler.styles.ts"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
       "path": "scheduler/src/state/scheduler-state.ts",
       "declarations": [
         {
@@ -26420,6 +26392,34 @@
           "declaration": {
             "name": "SchedulerStateManager",
             "module": "scheduler/src/state/scheduler-state.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "scheduler/src/styles/scheduler.styles.ts",
+      "declarations": [
+        {
+          "kind": "variable",
+          "name": "schedulerStyles"
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "schedulerStyles",
+          "declaration": {
+            "name": "schedulerStyles",
+            "module": "scheduler/src/styles/scheduler.styles.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "default",
+          "declaration": {
+            "name": "schedulerStyles",
+            "module": "scheduler/src/styles/scheduler.styles.ts"
           }
         }
       ]
@@ -33014,6 +33014,27 @@
     },
     {
       "kind": "javascript-module",
+      "path": "tab-control/src/types/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "TabsPosition",
+          "declaration": {
+            "name": "TabsPosition",
+            "module": "./tabs-position"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "tab-control/src/types/tabs-position.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
       "path": "tab-control/src/styles/index.ts",
       "declarations": [],
       "exports": [
@@ -33054,27 +33075,6 @@
           }
         }
       ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "tab-control/src/types/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "TabsPosition",
-          "declaration": {
-            "name": "TabsPosition",
-            "module": "./tabs-position"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "tab-control/src/types/tabs-position.ts",
-      "declarations": [],
-      "exports": []
     },
     {
       "kind": "javascript-module",

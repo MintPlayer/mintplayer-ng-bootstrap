@@ -57,18 +57,18 @@ export function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           {/* Basic */}
-          <Route path="/card" element={<CardPage />} />
-          <Route path="/calendar" element={<CalendarPage />} />
-          <Route path="/datepicker" element={<DatepickerPage />} />
-          <Route path="/datetime-picker" element={<DatetimePickerPage />} />
-          <Route path="/timepicker" element={<TimepickerPage />} />
-          <Route path="/checkbox" element={<CheckboxPage />} />
-          <Route path="/radio" element={<RadioPage />} />
-          <Route path="/toggle-button" element={<ToggleButtonPage />} />
-          <Route path="/pagination" element={<PaginationPage />} />
-          <Route path="/treeview" element={<TreeviewPage />} />
-          <Route path="/tab-control" element={<TabControlPage />} />
-          <Route path="/code-snippet" element={<CodeSnippetPage />} />
+          <Route path="/basic/card" element={<CardPage />} />
+          <Route path="/basic/calendar" element={<CalendarPage />} />
+          <Route path="/basic/datepicker" element={<DatepickerPage />} />
+          <Route path="/basic/datetime-picker" element={<DatetimePickerPage />} />
+          <Route path="/basic/timepicker" element={<TimepickerPage />} />
+          <Route path="/basic/checkbox" element={<CheckboxPage />} />
+          <Route path="/basic/radio" element={<RadioPage />} />
+          <Route path="/basic/toggle-button" element={<ToggleButtonPage />} />
+          <Route path="/basic/pagination" element={<PaginationPage />} />
+          <Route path="/basic/treeview" element={<TreeviewPage />} />
+          <Route path="/basic/tab-control" element={<TabControlPage />} />
+          <Route path="/basic/code-snippet" element={<CodeSnippetPage />} />
           {/* Advanced */}
           <Route path="/advanced/splitter" element={<SplitterPage />} />
           <Route path="/advanced/otp-input" element={<OtpInputPage />} />
