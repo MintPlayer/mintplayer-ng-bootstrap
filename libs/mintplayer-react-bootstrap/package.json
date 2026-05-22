@@ -1,0 +1,26 @@
+{
+  "name": "@mintplayer/react-bootstrap",
+  "version": "0.0.1",
+  "description": "React 19 wrappers around @mintplayer/web-components. Each sub-entry maps one-to-one with a WC sub-entry and exposes typed React components via @lit/react's createComponent.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": ["**/src/index.{ts,js,mjs,tsx,jsx}", "**/Bs*.{mjs,js,tsx,jsx}"],
+  "main": "./index.mjs",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./index.mjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "@lit/react": "^1.0.0",
+    "@mintplayer/web-components": "^0.0.1"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0"
+  }
+}

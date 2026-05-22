@@ -1,0 +1,1 @@
+export { BsOtpInput } from './BsOtpInput';

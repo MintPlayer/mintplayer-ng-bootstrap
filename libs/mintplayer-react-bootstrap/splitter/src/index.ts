@@ -1,0 +1,1 @@
+export { BsSplitter } from './BsSplitter';

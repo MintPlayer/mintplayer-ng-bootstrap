@@ -1,0 +1,1 @@
+export { BsDatepicker } from './BsDatepicker';

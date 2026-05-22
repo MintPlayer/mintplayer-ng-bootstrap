@@ -1,0 +1,1 @@
+export { BsDatatable } from './BsDatatable';
