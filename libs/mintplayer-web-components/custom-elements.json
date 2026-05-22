@@ -8,7 +8,7 @@
       "declarations": [
         {
           "kind": "class",
-          "description": "mp-calendar — Bootstrap-styled month grid primitive.\r\n\r\nStandalone Lit element, framework-agnostic. The Angular wrapper\r\n(`bs-calendar`) is a thin shell that forwards inputs/outputs.\r\n\r\nAPG Date Picker keyboard model: arrows ±1 day / ±1 week, Home/End to week\r\nedges, PageUp/Down ±1 month, Ctrl+PageUp/Down ±1 year, Enter/Space selects.\r\n\r\nEvents:\r\n - `selected-date-change`  fires on click + Enter/Space.\r\n - `current-month-change`  fires on chevron clicks + month-crossing keys.\r\n\r\nBoth bubble and compose so light-DOM Angular hosts pick them up.",
+          "description": "mp-calendar — Bootstrap-styled month grid primitive.\n\nStandalone Lit element, framework-agnostic. The Angular wrapper\n(`bs-calendar`) is a thin shell that forwards inputs/outputs.\n\nAPG Date Picker keyboard model: arrows ±1 day / ±1 week, Home/End to week\nedges, PageUp/Down ±1 month, Ctrl+PageUp/Down ±1 year, Enter/Space selects.\n\nEvents:\n - `selected-date-change`  fires on click + Enter/Space.\n - `current-month-change`  fires on chevron clicks + month-crossing keys.\n\nBoth bubble and compose so light-DOM Angular hosts pick them up.",
           "name": "MpCalendarElement",
           "members": [
             {
@@ -343,7 +343,7 @@
                   "text": "Date | null"
                 }
               },
-              "description": "The cell that should carry tabindex=\"0\". One per month — focused, else\r\nselected, else today, else first enabled day. Mirrors APG convention."
+              "description": "The cell that should carry tabindex=\"0\". One per month — focused, else\nselected, else today, else first enabled day. Mirrors APG convention."
             },
             {
               "kind": "method",
@@ -576,11 +576,202 @@
     },
     {
       "kind": "javascript-module",
+      "path": "code-snippet/src/mp-code-snippet.element.ts",
+      "declarations": [
+        {
+          "kind": "variable",
+          "name": "TAG_NAME",
+          "type": {
+            "text": "string"
+          },
+          "default": "'mp-code-snippet'"
+        },
+        {
+          "kind": "class",
+          "description": "`<mp-code-snippet>` — code block with syntax highlighting + copy-to-clipboard.\n\nReplaces the Angular-only `bs-code-snippet`. All three demo apps\n(Angular / React / Vue) render their per-page source snippets through\nthis WC for visual consistency.\n\nAttributes / properties:\n- `language` (optional): force a specific highlight.js language. If\n  omitted, the highlighter auto-detects.\n- `code` (property): the source to render. Setting via attribute also\n  works but the property form is preferred for multi-line content.\n\nEvents:\n- `language-detected` — fires after each highlight pass with\n  `detail.language` containing the resolved language id (e.g. `\"typescript\"`).\n\na11y: the copy button announces success via an `aria-live=\"polite\"`\nregion inside the shadow root.\n\nSource content can ALSO be projected via the default slot — useful for\nstatic HTML pages where attribute serialization of newlines is awkward.\nSlot content is read once on first render and on `slotchange`.",
+          "name": "MpCodeSnippet",
+          "members": [
+            {
+              "kind": "field",
+              "name": "language",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "attribute": "language"
+            },
+            {
+              "kind": "field",
+              "name": "code",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "attribute": "code"
+            },
+            {
+              "kind": "field",
+              "name": "detectedLanguage",
+              "type": {
+                "text": "string"
+              },
+              "privacy": "private",
+              "default": "'code'"
+            },
+            {
+              "kind": "field",
+              "name": "highlighted",
+              "type": {
+                "text": "string"
+              },
+              "privacy": "private",
+              "default": "''"
+            },
+            {
+              "kind": "field",
+              "name": "toastVisible",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "toastTimer",
+              "type": {
+                "text": "ReturnType<typeof setTimeout> | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "method",
+              "name": "runHighlight",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "handleCopy",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "Promise<void>"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "showToast",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "onSlotChange",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "e",
+                  "type": {
+                    "text": "Event"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "escapeHtml",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "string"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "s",
+                  "type": {
+                    "text": "string"
+                  }
+                }
+              ]
+            }
+          ],
+          "events": [
+            {
+              "name": "language-detected",
+              "type": {
+                "text": "CustomEvent"
+              }
+            }
+          ],
+          "attributes": [
+            {
+              "name": "language",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "fieldName": "language"
+            },
+            {
+              "name": "code",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "fieldName": "code"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "TAG_NAME",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpCodeSnippet",
+          "declaration": {
+            "name": "MpCodeSnippet",
+            "module": "code-snippet/src/mp-code-snippet.element.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "TAG_NAME",
+          "declaration": {
+            "name": "MpCodeSnippet",
+            "module": "code-snippet/src/mp-code-snippet.element.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "card/src/mp-card-body.element.ts",
       "declarations": [
         {
           "kind": "class",
-          "description": "Card body. Pure structural wrapper — adds `card-body` to itself so\r\nBootstrap's body padding / flex layout apply.",
+          "description": "Card body. Pure structural wrapper — adds `card-body` to itself so\nBootstrap's body padding / flex layout apply.",
           "name": "MpCardBodyElement",
           "superclass": {
             "name": "HTMLElement"
@@ -614,7 +805,7 @@
       "declarations": [
         {
           "kind": "class",
-          "description": "Card footer. Mirrors `mp-card-header`'s colour handling; no nav-style\r\nvariant exists at this position upstream in Bootstrap.",
+          "description": "Card footer. Mirrors `mp-card-header`'s colour handling; no nav-style\nvariant exists at this position upstream in Bootstrap.",
           "name": "MpCardFooterElement",
           "attributes": [
             {
@@ -834,7 +1025,7 @@
       "declarations": [
         {
           "kind": "class",
-          "description": "Card link — wraps slotted text content in an `<a class=\"card-link\">`.\r\n\r\nThe actual `<a>` is the styled element (Bootstrap targets `.card-link`).\r\nBootstrap's adjacency rule `.card-link + .card-link { margin-left: ... }`\r\ndoes not match across wrapper boundaries; we compensate with a sibling\r\nselector on `mp-card-link + mp-card-link > .card-link` in\r\n`mp-card.element.scss`.\r\n\r\nAttributes:\r\n - `href` — forwarded to the inner `<a>`.",
+          "description": "Card link — wraps slotted text content in an `<a class=\"card-link\">`.\n\nThe actual `<a>` is the styled element (Bootstrap targets `.card-link`).\nBootstrap's adjacency rule `.card-link + .card-link { margin-left: ... }`\ndoes not match across wrapper boundaries; we compensate with a sibling\nselector on `mp-card-link + mp-card-link > .card-link` in\n`mp-card.element.scss`.\n\nAttributes:\n - `href` — forwarded to the inner `<a>`.",
           "name": "MpCardLinkElement",
           "members": [
             {
@@ -962,7 +1153,7 @@
       "declarations": [
         {
           "kind": "class",
-          "description": "Card title — adds `card-title` for Bootstrap's title spacing/colour vars.\r\nRender as a heading in the consuming app if heading semantics matter; the\r\nWC stays element-agnostic to avoid forcing an h-level.",
+          "description": "Card title — adds `card-title` for Bootstrap's title spacing/colour vars.\nRender as a heading in the consuming app if heading semantics matter; the\nWC stays element-agnostic to avoid forcing an h-level.",
           "name": "MpCardTitleElement",
           "superclass": {
             "name": "HTMLElement"
@@ -996,7 +1187,7 @@
       "declarations": [
         {
           "kind": "class",
-          "description": "Root of the Bootstrap card family.\r\n\r\nLight-DOM rendering: this element does NOT use shadow DOM. Bootstrap's\r\n`_card.scss` relies on parent-child selectors (`.card > .card-header`,\r\n`.card > .list-group + .card-footer`) which cannot pierce shadow roots, so\r\nthe entire `mp-card*` family stays in light DOM. The compiled card slice\r\nis injected into `document.head` exactly once on the first connection of\r\nany `<mp-card>` instance.\r\n\r\nAttributes:\r\n - `color`  — one of the Bootstrap colour names; maps to `text-bg-<name>`.\r\n - `outline` — boolean (presence = true); flips to `border border-<name>`\r\n   plus a transparent background, instead of the filled variant.",
+          "description": "Root of the Bootstrap card family.\n\nLight-DOM rendering: this element does NOT use shadow DOM. Bootstrap's\n`_card.scss` relies on parent-child selectors (`.card > .card-header`,\n`.card > .list-group + .card-footer`) which cannot pierce shadow roots, so\nthe entire `mp-card*` family stays in light DOM. The compiled card slice\nis injected into `document.head` exactly once on the first connection of\nany `<mp-card>` instance.\n\nAttributes:\n - `color`  — one of the Bootstrap colour names; maps to `text-bg-<name>`.\n - `outline` — boolean (presence = true); flips to `border border-<name>`\n   plus a transparent background, instead of the filled variant.",
           "name": "MpCardElement",
           "members": [
             {
@@ -1032,7 +1223,7 @@
               "text": "void"
             }
           },
-          "description": "Inject the compiled Bootstrap-card SCSS into `document.head` exactly once\r\nper page. Called from `MpCardElement.connectedCallback()` and also exported\r\nfor the Angular wrapper (`BsCardComponent`) which doesn't instantiate\r\n`<mp-card>` itself but needs the same global cascade."
+          "description": "Inject the compiled Bootstrap-card SCSS into `document.head` exactly once\nper page. Called from `MpCardElement.connectedCallback()` and also exported\nfor the Angular wrapper (`BsCardComponent`) which doesn't instantiate\n`<mp-card>` itself but needs the same global cascade."
         }
       ],
       "exports": [
@@ -1058,197 +1249,6 @@
           "declaration": {
             "name": "MpCardElement",
             "module": "card/src/mp-card.element.ts"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "code-snippet/src/mp-code-snippet.element.ts",
-      "declarations": [
-        {
-          "kind": "variable",
-          "name": "TAG_NAME",
-          "type": {
-            "text": "string"
-          },
-          "default": "'mp-code-snippet'"
-        },
-        {
-          "kind": "class",
-          "description": "`<mp-code-snippet>` — code block with syntax highlighting + copy-to-clipboard.\n\nReplaces the Angular-only `bs-code-snippet`. All three demo apps\n(Angular / React / Vue) render their per-page source snippets through\nthis WC for visual consistency.\n\nAttributes / properties:\n- `language` (optional): force a specific highlight.js language. If\n  omitted, the highlighter auto-detects.\n- `code` (property): the source to render. Setting via attribute also\n  works but the property form is preferred for multi-line content.\n\nEvents:\n- `language-detected` — fires after each highlight pass with\n  `detail.language` containing the resolved language id (e.g. `\"typescript\"`).\n\na11y: the copy button announces success via an `aria-live=\"polite\"`\nregion inside the shadow root.\n\nSource content can ALSO be projected via the default slot — useful for\nstatic HTML pages where attribute serialization of newlines is awkward.\nSlot content is read once on first render and on `slotchange`.",
-          "name": "MpCodeSnippet",
-          "members": [
-            {
-              "kind": "field",
-              "name": "language",
-              "type": {
-                "text": "string"
-              },
-              "default": "''",
-              "attribute": "language"
-            },
-            {
-              "kind": "field",
-              "name": "code",
-              "type": {
-                "text": "string"
-              },
-              "default": "''",
-              "attribute": "code"
-            },
-            {
-              "kind": "field",
-              "name": "detectedLanguage",
-              "type": {
-                "text": "string"
-              },
-              "privacy": "private",
-              "default": "'code'"
-            },
-            {
-              "kind": "field",
-              "name": "highlighted",
-              "type": {
-                "text": "string"
-              },
-              "privacy": "private",
-              "default": "''"
-            },
-            {
-              "kind": "field",
-              "name": "toastVisible",
-              "type": {
-                "text": "boolean"
-              },
-              "privacy": "private",
-              "default": "false"
-            },
-            {
-              "kind": "field",
-              "name": "toastTimer",
-              "type": {
-                "text": "ReturnType<typeof setTimeout> | null"
-              },
-              "privacy": "private",
-              "default": "null"
-            },
-            {
-              "kind": "method",
-              "name": "runHighlight",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "handleCopy",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "Promise<void>"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "showToast",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "onSlotChange",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "e",
-                  "type": {
-                    "text": "Event"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "escapeHtml",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "string"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "s",
-                  "type": {
-                    "text": "string"
-                  }
-                }
-              ]
-            }
-          ],
-          "events": [
-            {
-              "name": "language-detected",
-              "type": {
-                "text": "CustomEvent"
-              }
-            }
-          ],
-          "attributes": [
-            {
-              "name": "language",
-              "type": {
-                "text": "string"
-              },
-              "default": "''",
-              "fieldName": "language"
-            },
-            {
-              "name": "code",
-              "type": {
-                "text": "string"
-              },
-              "default": "''",
-              "fieldName": "code"
-            }
-          ],
-          "superclass": {
-            "name": "LitElement",
-            "package": "lit"
-          },
-          "tagName": "TAG_NAME",
-          "customElement": true
-        }
-      ],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "MpCodeSnippet",
-          "declaration": {
-            "name": "MpCodeSnippet",
-            "module": "code-snippet/src/mp-code-snippet.element.ts"
-          }
-        },
-        {
-          "kind": "custom-element-definition",
-          "name": "TAG_NAME",
-          "declaration": {
-            "name": "MpCodeSnippet",
-            "module": "code-snippet/src/mp-code-snippet.element.ts"
           }
         }
       ]
@@ -7949,7 +7949,7 @@
       "declarations": [
         {
           "kind": "class",
-          "description": "mp-quick-access-toolbar — Office-style Quick Access Toolbar (QAT).\r\n\r\nSibling element to `mp-ribbon` (intentionally NOT nested — keeps the a11y\r\ntree clean: two top-level `role=\"toolbar\"` regions instead of nesting one\r\ninside the ribbon's `role=\"application\"`). Consumers wrap both inside\r\ntheir app shell and choose whether to render the QAT above or below the\r\nribbon (Office offers both via \"Customize Quick Access Toolbar\").\r\n\r\nRenders a thin horizontal strip with the ribbon's app-accent colours so it\r\nsits naturally on top of (or under) the ribbon. Slot accepts the same item\r\nelements that the ribbon's groups accept — typically `<bs-ribbon-button>`\r\nwith `size=\"small\"`.\r\n\r\nPersistence of which commands are pinned is intentionally NOT in scope —\r\nconsumers wire localStorage / settings themselves and bind the resulting\r\nlist to the slot via `*ngFor`.",
+          "description": "mp-quick-access-toolbar — Office-style Quick Access Toolbar (QAT).\n\nSibling element to `mp-ribbon` (intentionally NOT nested — keeps the a11y\ntree clean: two top-level `role=\"toolbar\"` regions instead of nesting one\ninside the ribbon's `role=\"application\"`). Consumers wrap both inside\ntheir app shell and choose whether to render the QAT above or below the\nribbon (Office offers both via \"Customize Quick Access Toolbar\").\n\nRenders a thin horizontal strip with the ribbon's app-accent colours so it\nsits naturally on top of (or under) the ribbon. Slot accepts the same item\nelements that the ribbon's groups accept — typically `<bs-ribbon-button>`\nwith `size=\"small\"`.\n\nPersistence of which commands are pinned is intentionally NOT in scope —\nconsumers wire localStorage / settings themselves and bind the resulting\nlist to the slot via `*ngFor`.",
           "name": "MpQuickAccessToolbar",
           "members": [
             {
@@ -7969,7 +7969,7 @@
                 "text": "'on' | 'off' | 'auto'"
               },
               "default": "'auto'",
-              "description": "Touch-friendly sizing. Mirrors `mp-ribbon`'s `touch-mode`; consumers\r\ntypically bind the same value to both for consistency.",
+              "description": "Touch-friendly sizing. Mirrors `mp-ribbon`'s `touch-mode`; consumers\ntypically bind the same value to both for consistency.",
               "attribute": "touch-mode",
               "reflects": true
             },
@@ -8005,7 +8005,7 @@
                 "text": "'on' | 'off' | 'auto'"
               },
               "default": "'auto'",
-              "description": "Touch-friendly sizing. Mirrors `mp-ribbon`'s `touch-mode`; consumers\r\ntypically bind the same value to both for consistency.",
+              "description": "Touch-friendly sizing. Mirrors `mp-ribbon`'s `touch-mode`; consumers\ntypically bind the same value to both for consistency.",
               "fieldName": "touchMode"
             }
           ],
@@ -8042,7 +8042,7 @@
       "declarations": [
         {
           "kind": "class",
-          "description": "mp-ribbon-contextual-tab-set — Wraps one or more `<mp-ribbon-tab>` children\r\nwith a shared header label + accent colour. Toggling the `hidden` attribute\r\nshows / hides the entire group; the parent `<mp-ribbon>` listens for\r\n`contextual-visibility-change` to re-process its tab strip.\r\n\r\nUses `:host { display: contents; }` so the set is transparent in the layout\r\ntree — only its slotted tabs participate visually.",
+          "description": "mp-ribbon-contextual-tab-set — Wraps one or more `<mp-ribbon-tab>` children\nwith a shared header label + accent colour. Toggling the `hidden` attribute\nshows / hides the entire group; the parent `<mp-ribbon>` listens for\n`contextual-visibility-change` to re-process its tab strip.\n\nUses `:host { display: contents; }` so the set is transparent in the layout\ntree — only its slotted tabs participate visually.",
           "name": "MpRibbonContextualTabSet",
           "members": [
             {
@@ -10579,7 +10579,7 @@
       "declarations": [
         {
           "kind": "class",
-          "description": "mp-time-list — Bootstrap-styled time-slot listbox primitive.\r\n\r\nStandalone Lit element. Renders a list of equally-spaced time slots\r\n(`step`-minute granularity) covering 00:00–23:45 by default. Each slot is\r\n`role=\"option\"` with `aria-selected` reflecting the currently selected time.\r\n\r\nKeyboard model (APG Listbox): ArrowUp/Down ±1 slot, Home/End first/last,\r\nPageUp/Down ±1 hour, Enter/Space selects.\r\n\r\nEvents:\r\n - `selected-time-change`  fires on click / Enter / Space (bubbles, composes).",
+          "description": "mp-time-list — Bootstrap-styled time-slot listbox primitive.\n\nStandalone Lit element. Renders a list of equally-spaced time slots\n(`step`-minute granularity) covering 00:00–23:45 by default. Each slot is\n`role=\"option\"` with `aria-selected` reflecting the currently selected time.\n\nKeyboard model (APG Listbox): ArrowUp/Down ±1 slot, Home/End first/last,\nPageUp/Down ±1 hour, Enter/Space selects.\n\nEvents:\n - `selected-time-change`  fires on click / Enter / Space (bubbles, composes).",
           "name": "MpTimeListElement",
           "members": [
             {
@@ -11220,7 +11220,7 @@
       "declarations": [
         {
           "kind": "class",
-          "description": "mp-ribbon-button — Simple button item.\r\nRenders a button with label and optional icon.",
+          "description": "mp-ribbon-button — Simple button item.\nRenders a button with label and optional icon.",
           "name": "MpRibbonButton",
           "members": [
             {
@@ -11285,7 +11285,7 @@
                 "text": "RibbonItemSize"
               },
               "default": "'medium'",
-              "description": "Size: large (tall), medium (normal), small (compact).\r\n\r\n- Reflected to the `size` attribute on the host (existing API; consumer\r\n  templates set `size=\"large\"` etc.).\r\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\r\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\r\n  reaching into shadow DOM (FR-5).\r\n- The inner element gets a `ribbon-item-<size>` class for the\r\n  component's own shadow-DOM styles.",
+              "description": "Size: large (tall), medium (normal), small (compact).\n\n- Reflected to the `size` attribute on the host (existing API; consumer\n  templates set `size=\"large\"` etc.).\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\n  reaching into shadow DOM (FR-5).\n- The inner element gets a `ribbon-item-<size>` class for the\n  component's own shadow-DOM styles.",
               "attribute": "size",
               "reflects": true,
               "inheritedFrom": {
@@ -11339,7 +11339,7 @@
                   }
                 }
               ],
-              "description": "Emit the canonical `item-click` event. Subclasses wire this to their\r\nprimary activation surface (typically `@click` on the inner button).\r\nPreviously the base bound a host-level click listener, which fired on\r\nany bubbled click — clicking a checkbox input, a split-button's\r\nchevron, or a dropdown trigger would all spuriously fire `item-click`\r\nin addition to the kind-specific event. Item kinds now decide\r\nexplicitly when an item-click happens.",
+              "description": "Emit the canonical `item-click` event. Subclasses wire this to their\nprimary activation surface (typically `@click` on the inner button).\nPreviously the base bound a host-level click listener, which fired on\nany bubbled click — clicking a checkbox input, a split-button's\nchevron, or a dropdown trigger would all spuriously fire `item-click`\nin addition to the kind-specific event. Item kinds now decide\nexplicitly when an item-click happens.",
               "inheritedFrom": {
                 "name": "MpRibbonItemBase",
                 "module": "ribbon/src/items/mp-ribbon-item-base.ts"
@@ -11426,7 +11426,7 @@
                 "text": "RibbonItemSize"
               },
               "default": "'medium'",
-              "description": "Size: large (tall), medium (normal), small (compact).\r\n\r\n- Reflected to the `size` attribute on the host (existing API; consumer\r\n  templates set `size=\"large\"` etc.).\r\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\r\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\r\n  reaching into shadow DOM (FR-5).\r\n- The inner element gets a `ribbon-item-<size>` class for the\r\n  component's own shadow-DOM styles.",
+              "description": "Size: large (tall), medium (normal), small (compact).\n\n- Reflected to the `size` attribute on the host (existing API; consumer\n  templates set `size=\"large\"` etc.).\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\n  reaching into shadow DOM (FR-5).\n- The inner element gets a `ribbon-item-<size>` class for the\n  component's own shadow-DOM styles.",
               "fieldName": "size",
               "inheritedFrom": {
                 "name": "MpRibbonItemBase",
@@ -11592,7 +11592,7 @@
                 "text": "RibbonItemSize"
               },
               "default": "'medium'",
-              "description": "Size: large (tall), medium (normal), small (compact).\r\n\r\n- Reflected to the `size` attribute on the host (existing API; consumer\r\n  templates set `size=\"large\"` etc.).\r\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\r\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\r\n  reaching into shadow DOM (FR-5).\r\n- The inner element gets a `ribbon-item-<size>` class for the\r\n  component's own shadow-DOM styles.",
+              "description": "Size: large (tall), medium (normal), small (compact).\n\n- Reflected to the `size` attribute on the host (existing API; consumer\n  templates set `size=\"large\"` etc.).\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\n  reaching into shadow DOM (FR-5).\n- The inner element gets a `ribbon-item-<size>` class for the\n  component's own shadow-DOM styles.",
               "attribute": "size",
               "reflects": true,
               "inheritedFrom": {
@@ -11646,7 +11646,7 @@
                   }
                 }
               ],
-              "description": "Emit the canonical `item-click` event. Subclasses wire this to their\r\nprimary activation surface (typically `@click` on the inner button).\r\nPreviously the base bound a host-level click listener, which fired on\r\nany bubbled click — clicking a checkbox input, a split-button's\r\nchevron, or a dropdown trigger would all spuriously fire `item-click`\r\nin addition to the kind-specific event. Item kinds now decide\r\nexplicitly when an item-click happens.",
+              "description": "Emit the canonical `item-click` event. Subclasses wire this to their\nprimary activation surface (typically `@click` on the inner button).\nPreviously the base bound a host-level click listener, which fired on\nany bubbled click — clicking a checkbox input, a split-button's\nchevron, or a dropdown trigger would all spuriously fire `item-click`\nin addition to the kind-specific event. Item kinds now decide\nexplicitly when an item-click happens.",
               "inheritedFrom": {
                 "name": "MpRibbonItemBase",
                 "module": "ribbon/src/items/mp-ribbon-item-base.ts"
@@ -11753,7 +11753,7 @@
                 "text": "RibbonItemSize"
               },
               "default": "'medium'",
-              "description": "Size: large (tall), medium (normal), small (compact).\r\n\r\n- Reflected to the `size` attribute on the host (existing API; consumer\r\n  templates set `size=\"large\"` etc.).\r\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\r\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\r\n  reaching into shadow DOM (FR-5).\r\n- The inner element gets a `ribbon-item-<size>` class for the\r\n  component's own shadow-DOM styles.",
+              "description": "Size: large (tall), medium (normal), small (compact).\n\n- Reflected to the `size` attribute on the host (existing API; consumer\n  templates set `size=\"large\"` etc.).\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\n  reaching into shadow DOM (FR-5).\n- The inner element gets a `ribbon-item-<size>` class for the\n  component's own shadow-DOM styles.",
               "fieldName": "size",
               "inheritedFrom": {
                 "name": "MpRibbonItemBase",
@@ -11820,7 +11820,7 @@
       "declarations": [
         {
           "kind": "class",
-          "description": "mp-ribbon-color-picker — wraps a native `<input type=\"color\">` so the\r\nbrowser's colour palette UI is used without re-implementing one.",
+          "description": "mp-ribbon-color-picker — wraps a native `<input type=\"color\">` so the\nbrowser's colour palette UI is used without re-implementing one.",
           "name": "MpRibbonColorPicker",
           "members": [
             {
@@ -11913,7 +11913,7 @@
                 "text": "RibbonItemSize"
               },
               "default": "'medium'",
-              "description": "Size: large (tall), medium (normal), small (compact).\r\n\r\n- Reflected to the `size` attribute on the host (existing API; consumer\r\n  templates set `size=\"large\"` etc.).\r\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\r\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\r\n  reaching into shadow DOM (FR-5).\r\n- The inner element gets a `ribbon-item-<size>` class for the\r\n  component's own shadow-DOM styles.",
+              "description": "Size: large (tall), medium (normal), small (compact).\n\n- Reflected to the `size` attribute on the host (existing API; consumer\n  templates set `size=\"large\"` etc.).\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\n  reaching into shadow DOM (FR-5).\n- The inner element gets a `ribbon-item-<size>` class for the\n  component's own shadow-DOM styles.",
               "attribute": "size",
               "reflects": true,
               "inheritedFrom": {
@@ -11967,7 +11967,7 @@
                   }
                 }
               ],
-              "description": "Emit the canonical `item-click` event. Subclasses wire this to their\r\nprimary activation surface (typically `@click` on the inner button).\r\nPreviously the base bound a host-level click listener, which fired on\r\nany bubbled click — clicking a checkbox input, a split-button's\r\nchevron, or a dropdown trigger would all spuriously fire `item-click`\r\nin addition to the kind-specific event. Item kinds now decide\r\nexplicitly when an item-click happens.",
+              "description": "Emit the canonical `item-click` event. Subclasses wire this to their\nprimary activation surface (typically `@click` on the inner button).\nPreviously the base bound a host-level click listener, which fired on\nany bubbled click — clicking a checkbox input, a split-button's\nchevron, or a dropdown trigger would all spuriously fire `item-click`\nin addition to the kind-specific event. Item kinds now decide\nexplicitly when an item-click happens.",
               "inheritedFrom": {
                 "name": "MpRibbonItemBase",
                 "module": "ribbon/src/items/mp-ribbon-item-base.ts"
@@ -12074,7 +12074,7 @@
                 "text": "RibbonItemSize"
               },
               "default": "'medium'",
-              "description": "Size: large (tall), medium (normal), small (compact).\r\n\r\n- Reflected to the `size` attribute on the host (existing API; consumer\r\n  templates set `size=\"large\"` etc.).\r\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\r\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\r\n  reaching into shadow DOM (FR-5).\r\n- The inner element gets a `ribbon-item-<size>` class for the\r\n  component's own shadow-DOM styles.",
+              "description": "Size: large (tall), medium (normal), small (compact).\n\n- Reflected to the `size` attribute on the host (existing API; consumer\n  templates set `size=\"large\"` etc.).\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\n  reaching into shadow DOM (FR-5).\n- The inner element gets a `ribbon-item-<size>` class for the\n  component's own shadow-DOM styles.",
               "fieldName": "size",
               "inheritedFrom": {
                 "name": "MpRibbonItemBase",
@@ -12141,7 +12141,7 @@
       "declarations": [
         {
           "kind": "class",
-          "description": "mp-ribbon-combobox — Native `<select>` styled to match the ribbon. Options\r\nare taken as an array via the `options` property; consumers wanting a\r\ndeclarative `<option>` projection should use `<bs-ribbon-combobox>` and\r\na `@ContentChildren`-based wrapper (deferred).",
+          "description": "mp-ribbon-combobox — Native `<select>` styled to match the ribbon. Options\nare taken as an array via the `options` property; consumers wanting a\ndeclarative `<option>` projection should use `<bs-ribbon-combobox>` and\na `@ContentChildren`-based wrapper (deferred).",
           "name": "MpRibbonComboBox",
           "members": [
             {
@@ -12242,7 +12242,7 @@
                 "text": "RibbonItemSize"
               },
               "default": "'medium'",
-              "description": "Size: large (tall), medium (normal), small (compact).\r\n\r\n- Reflected to the `size` attribute on the host (existing API; consumer\r\n  templates set `size=\"large\"` etc.).\r\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\r\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\r\n  reaching into shadow DOM (FR-5).\r\n- The inner element gets a `ribbon-item-<size>` class for the\r\n  component's own shadow-DOM styles.",
+              "description": "Size: large (tall), medium (normal), small (compact).\n\n- Reflected to the `size` attribute on the host (existing API; consumer\n  templates set `size=\"large\"` etc.).\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\n  reaching into shadow DOM (FR-5).\n- The inner element gets a `ribbon-item-<size>` class for the\n  component's own shadow-DOM styles.",
               "attribute": "size",
               "reflects": true,
               "inheritedFrom": {
@@ -12296,7 +12296,7 @@
                   }
                 }
               ],
-              "description": "Emit the canonical `item-click` event. Subclasses wire this to their\r\nprimary activation surface (typically `@click` on the inner button).\r\nPreviously the base bound a host-level click listener, which fired on\r\nany bubbled click — clicking a checkbox input, a split-button's\r\nchevron, or a dropdown trigger would all spuriously fire `item-click`\r\nin addition to the kind-specific event. Item kinds now decide\r\nexplicitly when an item-click happens.",
+              "description": "Emit the canonical `item-click` event. Subclasses wire this to their\nprimary activation surface (typically `@click` on the inner button).\nPreviously the base bound a host-level click listener, which fired on\nany bubbled click — clicking a checkbox input, a split-button's\nchevron, or a dropdown trigger would all spuriously fire `item-click`\nin addition to the kind-specific event. Item kinds now decide\nexplicitly when an item-click happens.",
               "inheritedFrom": {
                 "name": "MpRibbonItemBase",
                 "module": "ribbon/src/items/mp-ribbon-item-base.ts"
@@ -12411,7 +12411,7 @@
                 "text": "RibbonItemSize"
               },
               "default": "'medium'",
-              "description": "Size: large (tall), medium (normal), small (compact).\r\n\r\n- Reflected to the `size` attribute on the host (existing API; consumer\r\n  templates set `size=\"large\"` etc.).\r\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\r\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\r\n  reaching into shadow DOM (FR-5).\r\n- The inner element gets a `ribbon-item-<size>` class for the\r\n  component's own shadow-DOM styles.",
+              "description": "Size: large (tall), medium (normal), small (compact).\n\n- Reflected to the `size` attribute on the host (existing API; consumer\n  templates set `size=\"large\"` etc.).\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\n  reaching into shadow DOM (FR-5).\n- The inner element gets a `ribbon-item-<size>` class for the\n  component's own shadow-DOM styles.",
               "fieldName": "size",
               "inheritedFrom": {
                 "name": "MpRibbonItemBase",
@@ -12580,7 +12580,7 @@
                 "text": "RibbonItemSize"
               },
               "default": "'medium'",
-              "description": "Size: large (tall), medium (normal), small (compact).\r\n\r\n- Reflected to the `size` attribute on the host (existing API; consumer\r\n  templates set `size=\"large\"` etc.).\r\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\r\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\r\n  reaching into shadow DOM (FR-5).\r\n- The inner element gets a `ribbon-item-<size>` class for the\r\n  component's own shadow-DOM styles.",
+              "description": "Size: large (tall), medium (normal), small (compact).\n\n- Reflected to the `size` attribute on the host (existing API; consumer\n  templates set `size=\"large\"` etc.).\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\n  reaching into shadow DOM (FR-5).\n- The inner element gets a `ribbon-item-<size>` class for the\n  component's own shadow-DOM styles.",
               "attribute": "size",
               "reflects": true,
               "inheritedFrom": {
@@ -12634,7 +12634,7 @@
                   }
                 }
               ],
-              "description": "Emit the canonical `item-click` event. Subclasses wire this to their\r\nprimary activation surface (typically `@click` on the inner button).\r\nPreviously the base bound a host-level click listener, which fired on\r\nany bubbled click — clicking a checkbox input, a split-button's\r\nchevron, or a dropdown trigger would all spuriously fire `item-click`\r\nin addition to the kind-specific event. Item kinds now decide\r\nexplicitly when an item-click happens.",
+              "description": "Emit the canonical `item-click` event. Subclasses wire this to their\nprimary activation surface (typically `@click` on the inner button).\nPreviously the base bound a host-level click listener, which fired on\nany bubbled click — clicking a checkbox input, a split-button's\nchevron, or a dropdown trigger would all spuriously fire `item-click`\nin addition to the kind-specific event. Item kinds now decide\nexplicitly when an item-click happens.",
               "inheritedFrom": {
                 "name": "MpRibbonItemBase",
                 "module": "ribbon/src/items/mp-ribbon-item-base.ts"
@@ -12721,7 +12721,7 @@
                 "text": "RibbonItemSize"
               },
               "default": "'medium'",
-              "description": "Size: large (tall), medium (normal), small (compact).\r\n\r\n- Reflected to the `size` attribute on the host (existing API; consumer\r\n  templates set `size=\"large\"` etc.).\r\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\r\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\r\n  reaching into shadow DOM (FR-5).\r\n- The inner element gets a `ribbon-item-<size>` class for the\r\n  component's own shadow-DOM styles.",
+              "description": "Size: large (tall), medium (normal), small (compact).\n\n- Reflected to the `size` attribute on the host (existing API; consumer\n  templates set `size=\"large\"` etc.).\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\n  reaching into shadow DOM (FR-5).\n- The inner element gets a `ribbon-item-<size>` class for the\n  component's own shadow-DOM styles.",
               "fieldName": "size",
               "inheritedFrom": {
                 "name": "MpRibbonItemBase",
@@ -12794,7 +12794,7 @@
       "declarations": [
         {
           "kind": "class",
-          "description": "mp-ribbon-gallery-item — One cell inside a `mp-ribbon-gallery`. Renders an\r\nicon or label as a clickable tile and emits `gallery-select` on activation.",
+          "description": "mp-ribbon-gallery-item — One cell inside a `mp-ribbon-gallery`. Renders an\nicon or label as a clickable tile and emits `gallery-select` on activation.",
           "name": "MpRibbonGalleryItem",
           "members": [
             {
@@ -12937,7 +12937,7 @@
       "declarations": [
         {
           "kind": "class",
-          "description": "mp-ribbon-gallery — grid container for `mp-ribbon-gallery-item` children.\r\n`[columns]` controls the grid track count.",
+          "description": "mp-ribbon-gallery — grid container for `mp-ribbon-gallery-item` children.\n`[columns]` controls the grid track count.",
           "name": "MpRibbonGallery",
           "members": [
             {
@@ -13011,7 +13011,7 @@
                 "text": "RibbonItemSize"
               },
               "default": "'medium'",
-              "description": "Size: large (tall), medium (normal), small (compact).\r\n\r\n- Reflected to the `size` attribute on the host (existing API; consumer\r\n  templates set `size=\"large\"` etc.).\r\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\r\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\r\n  reaching into shadow DOM (FR-5).\r\n- The inner element gets a `ribbon-item-<size>` class for the\r\n  component's own shadow-DOM styles.",
+              "description": "Size: large (tall), medium (normal), small (compact).\n\n- Reflected to the `size` attribute on the host (existing API; consumer\n  templates set `size=\"large\"` etc.).\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\n  reaching into shadow DOM (FR-5).\n- The inner element gets a `ribbon-item-<size>` class for the\n  component's own shadow-DOM styles.",
               "attribute": "size",
               "reflects": true,
               "inheritedFrom": {
@@ -13065,7 +13065,7 @@
                   }
                 }
               ],
-              "description": "Emit the canonical `item-click` event. Subclasses wire this to their\r\nprimary activation surface (typically `@click` on the inner button).\r\nPreviously the base bound a host-level click listener, which fired on\r\nany bubbled click — clicking a checkbox input, a split-button's\r\nchevron, or a dropdown trigger would all spuriously fire `item-click`\r\nin addition to the kind-specific event. Item kinds now decide\r\nexplicitly when an item-click happens.",
+              "description": "Emit the canonical `item-click` event. Subclasses wire this to their\nprimary activation surface (typically `@click` on the inner button).\nPreviously the base bound a host-level click listener, which fired on\nany bubbled click — clicking a checkbox input, a split-button's\nchevron, or a dropdown trigger would all spuriously fire `item-click`\nin addition to the kind-specific event. Item kinds now decide\nexplicitly when an item-click happens.",
               "inheritedFrom": {
                 "name": "MpRibbonItemBase",
                 "module": "ribbon/src/items/mp-ribbon-item-base.ts"
@@ -13154,7 +13154,7 @@
                 "text": "RibbonItemSize"
               },
               "default": "'medium'",
-              "description": "Size: large (tall), medium (normal), small (compact).\r\n\r\n- Reflected to the `size` attribute on the host (existing API; consumer\r\n  templates set `size=\"large\"` etc.).\r\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\r\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\r\n  reaching into shadow DOM (FR-5).\r\n- The inner element gets a `ribbon-item-<size>` class for the\r\n  component's own shadow-DOM styles.",
+              "description": "Size: large (tall), medium (normal), small (compact).\n\n- Reflected to the `size` attribute on the host (existing API; consumer\n  templates set `size=\"large\"` etc.).\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\n  reaching into shadow DOM (FR-5).\n- The inner element gets a `ribbon-item-<size>` class for the\n  component's own shadow-DOM styles.",
               "fieldName": "size",
               "inheritedFrom": {
                 "name": "MpRibbonItemBase",
@@ -13233,7 +13233,7 @@
       "declarations": [
         {
           "kind": "class",
-          "description": "mp-ribbon-group-button — Radio-strip of buttons; one selected at a time.\r\nEach inner button is `role=\"radio\"` inside a `role=\"radiogroup\"`.",
+          "description": "mp-ribbon-group-button — Radio-strip of buttons; one selected at a time.\nEach inner button is `role=\"radio\"` inside a `role=\"radiogroup\"`.",
           "name": "MpRibbonGroupButton",
           "members": [
             {
@@ -13341,7 +13341,7 @@
                 "text": "RibbonItemSize"
               },
               "default": "'medium'",
-              "description": "Size: large (tall), medium (normal), small (compact).\r\n\r\n- Reflected to the `size` attribute on the host (existing API; consumer\r\n  templates set `size=\"large\"` etc.).\r\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\r\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\r\n  reaching into shadow DOM (FR-5).\r\n- The inner element gets a `ribbon-item-<size>` class for the\r\n  component's own shadow-DOM styles.",
+              "description": "Size: large (tall), medium (normal), small (compact).\n\n- Reflected to the `size` attribute on the host (existing API; consumer\n  templates set `size=\"large\"` etc.).\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\n  reaching into shadow DOM (FR-5).\n- The inner element gets a `ribbon-item-<size>` class for the\n  component's own shadow-DOM styles.",
               "attribute": "size",
               "reflects": true,
               "inheritedFrom": {
@@ -13395,7 +13395,7 @@
                   }
                 }
               ],
-              "description": "Emit the canonical `item-click` event. Subclasses wire this to their\r\nprimary activation surface (typically `@click` on the inner button).\r\nPreviously the base bound a host-level click listener, which fired on\r\nany bubbled click — clicking a checkbox input, a split-button's\r\nchevron, or a dropdown trigger would all spuriously fire `item-click`\r\nin addition to the kind-specific event. Item kinds now decide\r\nexplicitly when an item-click happens.",
+              "description": "Emit the canonical `item-click` event. Subclasses wire this to their\nprimary activation surface (typically `@click` on the inner button).\nPreviously the base bound a host-level click listener, which fired on\nany bubbled click — clicking a checkbox input, a split-button's\nchevron, or a dropdown trigger would all spuriously fire `item-click`\nin addition to the kind-specific event. Item kinds now decide\nexplicitly when an item-click happens.",
               "inheritedFrom": {
                 "name": "MpRibbonItemBase",
                 "module": "ribbon/src/items/mp-ribbon-item-base.ts"
@@ -13510,7 +13510,7 @@
                 "text": "RibbonItemSize"
               },
               "default": "'medium'",
-              "description": "Size: large (tall), medium (normal), small (compact).\r\n\r\n- Reflected to the `size` attribute on the host (existing API; consumer\r\n  templates set `size=\"large\"` etc.).\r\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\r\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\r\n  reaching into shadow DOM (FR-5).\r\n- The inner element gets a `ribbon-item-<size>` class for the\r\n  component's own shadow-DOM styles.",
+              "description": "Size: large (tall), medium (normal), small (compact).\n\n- Reflected to the `size` attribute on the host (existing API; consumer\n  templates set `size=\"large\"` etc.).\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\n  reaching into shadow DOM (FR-5).\n- The inner element gets a `ribbon-item-<size>` class for the\n  component's own shadow-DOM styles.",
               "fieldName": "size",
               "inheritedFrom": {
                 "name": "MpRibbonItemBase",
@@ -13914,7 +13914,7 @@
                 "text": "RibbonItemSize"
               },
               "default": "'medium'",
-              "description": "Size: large (tall), medium (normal), small (compact).\r\n\r\n- Reflected to the `size` attribute on the host (existing API; consumer\r\n  templates set `size=\"large\"` etc.).\r\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\r\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\r\n  reaching into shadow DOM (FR-5).\r\n- The inner element gets a `ribbon-item-<size>` class for the\r\n  component's own shadow-DOM styles.",
+              "description": "Size: large (tall), medium (normal), small (compact).\n\n- Reflected to the `size` attribute on the host (existing API; consumer\n  templates set `size=\"large\"` etc.).\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\n  reaching into shadow DOM (FR-5).\n- The inner element gets a `ribbon-item-<size>` class for the\n  component's own shadow-DOM styles.",
               "attribute": "size",
               "reflects": true,
               "inheritedFrom": {
@@ -13968,7 +13968,7 @@
                   }
                 }
               ],
-              "description": "Emit the canonical `item-click` event. Subclasses wire this to their\r\nprimary activation surface (typically `@click` on the inner button).\r\nPreviously the base bound a host-level click listener, which fired on\r\nany bubbled click — clicking a checkbox input, a split-button's\r\nchevron, or a dropdown trigger would all spuriously fire `item-click`\r\nin addition to the kind-specific event. Item kinds now decide\r\nexplicitly when an item-click happens.",
+              "description": "Emit the canonical `item-click` event. Subclasses wire this to their\nprimary activation surface (typically `@click` on the inner button).\nPreviously the base bound a host-level click listener, which fired on\nany bubbled click — clicking a checkbox input, a split-button's\nchevron, or a dropdown trigger would all spuriously fire `item-click`\nin addition to the kind-specific event. Item kinds now decide\nexplicitly when an item-click happens.",
               "inheritedFrom": {
                 "name": "MpRibbonItemBase",
                 "module": "ribbon/src/items/mp-ribbon-item-base.ts"
@@ -14073,7 +14073,7 @@
                 "text": "RibbonItemSize"
               },
               "default": "'medium'",
-              "description": "Size: large (tall), medium (normal), small (compact).\r\n\r\n- Reflected to the `size` attribute on the host (existing API; consumer\r\n  templates set `size=\"large\"` etc.).\r\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\r\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\r\n  reaching into shadow DOM (FR-5).\r\n- The inner element gets a `ribbon-item-<size>` class for the\r\n  component's own shadow-DOM styles.",
+              "description": "Size: large (tall), medium (normal), small (compact).\n\n- Reflected to the `size` attribute on the host (existing API; consumer\n  templates set `size=\"large\"` etc.).\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\n  reaching into shadow DOM (FR-5).\n- The inner element gets a `ribbon-item-<size>` class for the\n  component's own shadow-DOM styles.",
               "fieldName": "size",
               "inheritedFrom": {
                 "name": "MpRibbonItemBase",
@@ -14134,7 +14134,7 @@
       "declarations": [
         {
           "kind": "class",
-          "description": "mp-ribbon-template-item — Transparent slot wrapper so consumers can drop\r\narbitrary content into a ribbon group while still participating in the\r\ngroup's size-based grid layout. Reflects `size` so the group's grid\r\nplacement (`::slotted([size=\"...\"])`) targets it correctly.",
+          "description": "mp-ribbon-template-item — Transparent slot wrapper so consumers can drop\narbitrary content into a ribbon group while still participating in the\ngroup's size-based grid layout. Reflects `size` so the group's grid\nplacement (`::slotted([size=\"...\"])`) targets it correctly.",
           "name": "MpRibbonTemplateItem",
           "members": [
             {
@@ -14191,7 +14191,7 @@
       "declarations": [
         {
           "kind": "class",
-          "description": "mp-ribbon-toggle-button — Button that maintains pressed/unpressed state.\r\n`aria-pressed` mirrors the `pressed` property.",
+          "description": "mp-ribbon-toggle-button — Button that maintains pressed/unpressed state.\n`aria-pressed` mirrors the `pressed` property.",
           "name": "MpRibbonToggleButton",
           "members": [
             {
@@ -14276,7 +14276,7 @@
                 "text": "RibbonItemSize"
               },
               "default": "'medium'",
-              "description": "Size: large (tall), medium (normal), small (compact).\r\n\r\n- Reflected to the `size` attribute on the host (existing API; consumer\r\n  templates set `size=\"large\"` etc.).\r\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\r\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\r\n  reaching into shadow DOM (FR-5).\r\n- The inner element gets a `ribbon-item-<size>` class for the\r\n  component's own shadow-DOM styles.",
+              "description": "Size: large (tall), medium (normal), small (compact).\n\n- Reflected to the `size` attribute on the host (existing API; consumer\n  templates set `size=\"large\"` etc.).\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\n  reaching into shadow DOM (FR-5).\n- The inner element gets a `ribbon-item-<size>` class for the\n  component's own shadow-DOM styles.",
               "attribute": "size",
               "reflects": true,
               "inheritedFrom": {
@@ -14330,7 +14330,7 @@
                   }
                 }
               ],
-              "description": "Emit the canonical `item-click` event. Subclasses wire this to their\r\nprimary activation surface (typically `@click` on the inner button).\r\nPreviously the base bound a host-level click listener, which fired on\r\nany bubbled click — clicking a checkbox input, a split-button's\r\nchevron, or a dropdown trigger would all spuriously fire `item-click`\r\nin addition to the kind-specific event. Item kinds now decide\r\nexplicitly when an item-click happens.",
+              "description": "Emit the canonical `item-click` event. Subclasses wire this to their\nprimary activation surface (typically `@click` on the inner button).\nPreviously the base bound a host-level click listener, which fired on\nany bubbled click — clicking a checkbox input, a split-button's\nchevron, or a dropdown trigger would all spuriously fire `item-click`\nin addition to the kind-specific event. Item kinds now decide\nexplicitly when an item-click happens.",
               "inheritedFrom": {
                 "name": "MpRibbonItemBase",
                 "module": "ribbon/src/items/mp-ribbon-item-base.ts"
@@ -14437,7 +14437,7 @@
                 "text": "RibbonItemSize"
               },
               "default": "'medium'",
-              "description": "Size: large (tall), medium (normal), small (compact).\r\n\r\n- Reflected to the `size` attribute on the host (existing API; consumer\r\n  templates set `size=\"large\"` etc.).\r\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\r\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\r\n  reaching into shadow DOM (FR-5).\r\n- The inner element gets a `ribbon-item-<size>` class for the\r\n  component's own shadow-DOM styles.",
+              "description": "Size: large (tall), medium (normal), small (compact).\n\n- Reflected to the `size` attribute on the host (existing API; consumer\n  templates set `size=\"large\"` etc.).\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\n  reaching into shadow DOM (FR-5).\n- The inner element gets a `ribbon-item-<size>` class for the\n  component's own shadow-DOM styles.",
               "fieldName": "size",
               "inheritedFrom": {
                 "name": "MpRibbonItemBase",
@@ -14527,7 +14527,7 @@
       "declarations": [
         {
           "kind": "class",
-          "description": "Lit reactive controller that owns a visually-hidden live region for a Lit\r\nweb component. Call announce() to push a message; call template() once\r\ninside the host's render() to drop the live region into the shadow tree.\r\n\r\nWrites go directly to the rendered region's textContent (via a Lit `ref`).\r\nThat keeps announce() safe to call from inside the host's `updated()`\r\nlifecycle hook — it never schedules a follow-up update, so it can't\r\ntrigger Lit's \"change-in-update\" warning.\r\n\r\nWhy a controller and not a free-floating div appended to the shadow root:\r\nLit's render owns its render root; appending children outside the rendered\r\nsubtree is fragile across re-renders. Going through the template keeps the\r\nregion inside Lit's managed DOM and avoids \"where did my element go\" bugs.",
+          "description": "Lit reactive controller that owns a visually-hidden live region for a Lit\nweb component. Call announce() to push a message; call template() once\ninside the host's render() to drop the live region into the shadow tree.\n\nWrites go directly to the rendered region's textContent (via a Lit `ref`).\nThat keeps announce() safe to call from inside the host's `updated()`\nlifecycle hook — it never schedules a follow-up update, so it can't\ntrigger Lit's \"change-in-update\" warning.\n\nWhy a controller and not a free-floating div appended to the shadow root:\nLit's render owns its render root; appending children outside the rendered\nsubtree is fragile across re-renders. Going through the template keeps the\nregion inside Lit's managed DOM and avoids \"where did my element go\" bugs.",
           "name": "LiveAnnouncerController",
           "members": [
             {
@@ -14673,13 +14673,28 @@
     },
     {
       "kind": "javascript-module",
+      "path": "calendar/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "calendar/src/mp-calendar.element"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "card/src/card-classes.ts",
       "declarations": [
         {
           "kind": "variable",
           "name": "COLOR_NAMES",
           "type": {
-            "text": "[\r\n  'primary',\r\n  'secondary',\r\n  'success',\r\n  'danger',\r\n  'warning',\r\n  'info',\r\n  'light',\r\n  'dark',\r\n  'body',\r\n  'white',\r\n  'transparent',\r\n]"
+            "text": "[\n  'primary',\n  'secondary',\n  'success',\n  'danger',\n  'warning',\n  'info',\n  'light',\n  'dark',\n  'body',\n  'white',\n  'transparent',\n]"
           },
           "default": "[ 'primary', 'secondary', 'success', 'danger', 'warning', 'info', 'light', 'dark', 'body', 'white', 'transparent', ]"
         },
@@ -14722,7 +14737,7 @@
               }
             }
           ],
-          "description": "Remove every class on `el` whose name starts with `prefix` (e.g.\r\n`text-bg-`, `border-`). Used to clear a previous colour selection before\r\napplying the new one."
+          "description": "Remove every class on `el` whose name starts with `prefix` (e.g.\n`text-bg-`, `border-`). Used to clear a previous colour selection before\napplying the new one."
         },
         {
           "kind": "function",
@@ -14752,7 +14767,7 @@
               }
             }
           ],
-          "description": "Apply the card root's colour contract to an element: `text-bg-<name>` for\r\nthe filled variant, or `border border-<name> bg-transparent` for outline.\r\nUsed by both `mp-card` and the Angular `bs-card` wrapper so both layers\r\nstay byte-identical without each duplicating the bootstrap-utility logic."
+          "description": "Apply the card root's colour contract to an element: `text-bg-<name>` for\nthe filled variant, or `border border-<name> bg-transparent` for outline.\nUsed by both `mp-card` and the Angular `bs-card` wrapper so both layers\nstay byte-identical without each duplicating the bootstrap-utility logic."
         },
         {
           "kind": "function",
@@ -14776,7 +14791,7 @@
               }
             }
           ],
-          "description": "Apply the `text-bg-<name>` background to `el`, clearing any prior value.\r\nUsed by the header / footer Bootstrap-classed regions, which don't have an\r\noutline mode upstream."
+          "description": "Apply the `text-bg-<name>` background to `el`, clearing any prior value.\nUsed by the header / footer Bootstrap-classed regions, which don't have an\noutline mode upstream."
         },
         {
           "kind": "function",
@@ -14800,7 +14815,7 @@
               }
             }
           ],
-          "description": "Apply `card-header-tabs` or `card-header-pills` to the first slotted\r\n`nav` / `ul` / `.nav` inside `host`. The header element observes child\r\nchanges and re-invokes this on mutation, so a nav inserted lazily (e.g.\r\nvia an Angular `@if`) still receives the right class.\r\n\r\nThe `.nav` selector covers Bootstrap's `<div class=\"nav\">` and\r\n`<span class=\"nav\">` forms, where the tag is incidental and the `nav`\r\nclass carries the semantics."
+          "description": "Apply `card-header-tabs` or `card-header-pills` to the first slotted\n`nav` / `ul` / `.nav` inside `host`. The header element observes child\nchanges and re-invokes this on mutation, so a nav inserted lazily (e.g.\nvia an Angular `@if`) still receives the right class.\n\nThe `.nav` selector covers Bootstrap's `<div class=\"nav\">` and\n`<span class=\"nav\">` forms, where the tag is incidental and the `nav`\nclass carries the semantics."
         },
         {
           "kind": "function",
@@ -14818,7 +14833,7 @@
               }
             }
           ],
-          "description": "True if any of `nodes` is an Element that would qualify as a slotted\r\nnav target (`nav` / `ul` tag, or anything carrying the `nav` class).\r\nUsed by the header's MutationObserver to skip the full re-walk when the\r\nmutation only touches non-nav content."
+          "description": "True if any of `nodes` is an Element that would qualify as a slotted\nnav target (`nav` / `ul` tag, or anything carrying the `nav` class).\nUsed by the header's MutationObserver to skip the full re-walk when the\nmutation only touches non-nav content."
         }
       ],
       "exports": [
@@ -14993,6 +15008,21 @@
     },
     {
       "kind": "javascript-module",
+      "path": "code-snippet/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "code-snippet/src/mp-code-snippet.element"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "checkbox/src/index.ts",
       "declarations": [],
       "exports": [
@@ -15024,7 +15054,7 @@
     },
     {
       "kind": "javascript-module",
-      "path": "calendar/src/index.ts",
+      "path": "datepicker/src/index.ts",
       "declarations": [],
       "exports": [
         {
@@ -15032,22 +15062,7 @@
           "name": "*",
           "declaration": {
             "name": "*",
-            "module": "calendar/src/mp-calendar.element"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "code-snippet/src/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "*",
-          "declaration": {
-            "name": "*",
-            "module": "code-snippet/src/mp-code-snippet.element"
+            "module": "datepicker/src/mp-datepicker.element"
           }
         }
       ]
@@ -15183,21 +15198,6 @@
           "declaration": {
             "name": "datatableStyles",
             "module": "./styles"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "datepicker/src/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "*",
-          "declaration": {
-            "name": "*",
-            "module": "datepicker/src/mp-datepicker.element"
           }
         }
       ]
@@ -15538,7 +15538,7 @@
         },
         {
           "kind": "class",
-          "description": "Reusable popup-overlay primitive for Lit elements, modeled on Angular CDK's\r\nFlexibleConnectedPositionStrategy + scrollStrategies.reposition() but\r\nframework-agnostic (no",
+          "description": "Reusable popup-overlay primitive for Lit elements, modeled on Angular CDK's\nFlexibleConnectedPositionStrategy + scrollStrategies.reposition() but\nframework-agnostic (no",
           "name": "OverlayController",
           "members": [
             {
@@ -15561,7 +15561,7 @@
                   "text": "symbol"
                 }
               },
-              "description": "Allocate a frame on top of the shared overlay stack. Use this from code\r\npaths that don't own a full `OverlayController` instance. Pair every\r\n`pushFrame()` with a `releaseFrame(token)`."
+              "description": "Allocate a frame on top of the shared overlay stack. Use this from code\npaths that don't own a full `OverlayController` instance. Pair every\n`pushFrame()` with a `releaseFrame(token)`."
             },
             {
               "kind": "method",
@@ -15694,7 +15694,7 @@
               },
               "privacy": "private",
               "default": "null",
-              "description": "Inline `padding-right` we wrote on <body> to compensate for the\r\ndisappearing scrollbar — captured so release() can restore exactly."
+              "description": "Inline `padding-right` we wrote on <body> to compensate for the\ndisappearing scrollbar — captured so release() can restore exactly."
             },
             {
               "kind": "method",
@@ -15764,7 +15764,7 @@
                   "text": "HTMLElement[]"
                 }
               },
-              "description": "Resolve the list of candidate anchors from `anchor()`. Single-element\r\nreturns become a one-item array; null returns become an empty array.\r\nNulls inside arrays are filtered out."
+              "description": "Resolve the list of candidate anchors from `anchor()`. Single-element\nreturns become a one-item array; null returns become an empty array.\nNulls inside arrays are filtered out."
             },
             {
               "kind": "method",
@@ -15775,7 +15775,7 @@
                   "text": "HTMLElement | null"
                 }
               },
-              "description": "Resolve the *active* anchor — the one used in the most recent positioning\r\npass, or the first available one if none has been picked yet."
+              "description": "Resolve the *active* anchor — the one used in the most recent positioning\npass, or the first available one if none has been picked yet."
             },
             {
               "kind": "method",
@@ -15785,7 +15785,7 @@
                   "text": "void"
                 }
               },
-              "description": "Walk the configured `positions` and pick the first candidate whose panel\r\nrect fully fits inside the viewport (minus `viewportMargin`). If none fit,\r\nthe last candidate is applied and clamped to viewport edges (push behaviour).\r\n\r\n`start`/`end` are direction-aware: in RTL contexts they swap to match\r\nvisual layout.\r\n\r\nSticky-offscreen behaviour: when `stickyOnAnchorOffscreen` is true and the\r\nanchor's bounding rect is entirely outside the viewport, the panel is\r\npinned to its last in-viewport position (clamped to viewport edges) rather\r\nthan disappearing with the anchor. Normal positioning resumes when the\r\nanchor re-enters the viewport."
+              "description": "Walk the configured `positions` and pick the first candidate whose panel\nrect fully fits inside the viewport (minus `viewportMargin`). If none fit,\nthe last candidate is applied and clamped to viewport edges (push behaviour).\n\n`start`/`end` are direction-aware: in RTL contexts they swap to match\nvisual layout.\n\nSticky-offscreen behaviour: when `stickyOnAnchorOffscreen` is true and the\nanchor's bounding rect is entirely outside the viewport, the panel is\npinned to its last in-viewport position (clamped to viewport edges) rather\nthan disappearing with the anchor. Normal positioning resumes when the\nanchor re-enters the viewport."
             },
             {
               "kind": "method",
@@ -15841,7 +15841,7 @@
                   }
                 }
               ],
-              "description": "Apply the configured `panelWidth` strategy to the panel element. Called\r\nfrom `position()` before measurement so the position-pair fit check\r\nsees the post-resize panel dimensions.\r\n\r\nFor `'anchor'` and `'anchor-min'` the anchor's `offsetWidth` is used\r\n(not `getBoundingClientRect().width`) so transforms / zoom on ancestors\r\ndon't skew the result."
+              "description": "Apply the configured `panelWidth` strategy to the panel element. Called\nfrom `position()` before measurement so the position-pair fit check\nsees the post-resize panel dimensions.\n\nFor `'anchor'` and `'anchor-min'` the anchor's `offsetWidth` is used\n(not `getBoundingClientRect().width`) so transforms / zoom on ancestors\ndon't skew the result."
             },
             {
               "kind": "method",
@@ -15888,7 +15888,7 @@
                   }
                 }
               ],
-              "description": "Compute the (left, top) at which `panel` should be placed for a single\r\nposition candidate. The candidate identifies which corner of the anchor\r\nto align which corner of the panel to, plus optional pixel offsets."
+              "description": "Compute the (left, top) at which `panel` should be placed for a single\nposition candidate. The candidate identifies which corner of the anchor\nto align which corner of the panel to, plus optional pixel offsets."
             },
             {
               "kind": "method",
@@ -16101,7 +16101,7 @@
                   "text": "void"
                 }
               },
-              "description": "Wire scroll + resize listeners according to the active strategy. Called\r\nfrom open(); paired with detachScrollListeners() in close().\r\n\r\nThe capture-phase listener on document catches scroll events from any\r\nscrollable ancestor without us having to walk the DOM — scroll events\r\ndon't bubble, but capture-phase listeners receive every dispatch."
+              "description": "Wire scroll + resize listeners according to the active strategy. Called\nfrom open(); paired with detachScrollListeners() in close().\n\nThe capture-phase listener on document catches scroll events from any\nscrollable ancestor without us having to walk the DOM — scroll events\ndon't bubble, but capture-phase listeners receive every dispatch."
             },
             {
               "kind": "method",
@@ -16142,7 +16142,7 @@
                   "text": "void"
                 }
               },
-              "description": "'block' strategy: lock the document scroll position while the overlay is\r\nopen. Mirrors CDK's BlockScrollStrategy — sets position: fixed on the html\r\nelement with the saved offset, then restores on close. Cheap; no event\r\npreventDefault dance required."
+              "description": "'block' strategy: lock the document scroll position while the overlay is\nopen. Mirrors CDK's BlockScrollStrategy — sets position: fixed on the html\nelement with the saved offset, then restores on close. Cheap; no event\npreventDefault dance required."
             },
             {
               "kind": "method",
@@ -16811,45 +16811,6 @@
     },
     {
       "kind": "javascript-module",
-      "path": "tile-manager/src/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "*",
-          "declaration": {
-            "name": "*",
-            "module": "tile-manager/src/mint-tile-manager.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "*",
-          "declaration": {
-            "name": "*",
-            "module": "tile-manager/src/types/tile-position"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "*",
-          "declaration": {
-            "name": "*",
-            "module": "tile-manager/src/types/tile-layout-snapshot"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "*",
-          "declaration": {
-            "name": "*",
-            "module": "tile-manager/src/types/grid-rect"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
       "path": "tab-control/src/index.ts",
       "declarations": [],
       "exports": [
@@ -16891,6 +16852,45 @@
           "declaration": {
             "name": "tabControlStyles",
             "module": "./styles"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "tile-manager/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "tile-manager/src/mint-tile-manager.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "tile-manager/src/types/tile-position"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "tile-manager/src/types/tile-layout-snapshot"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "tile-manager/src/types/grid-rect"
           }
         }
       ]
@@ -18420,7 +18420,7 @@
               }
             }
           ],
-          "description": "Pure helper extracted from `datatable-sort-base.ts`. Computes the next\r\nsort-columns array after a header click.\r\n\r\nSingle-click on the same column toggles direction (asc → desc) and clears\r\nany other sorts. Single-click on a different column replaces with an\r\nascending sort on that column.\r\n\r\nShift-click: additive multi-column behaviour — adds the column ascending\r\nif missing; toggles asc → desc if already ascending; removes it entirely\r\nif already descending."
+          "description": "Pure helper extracted from `datatable-sort-base.ts`. Computes the next\nsort-columns array after a header click.\n\nSingle-click on the same column toggles direction (asc → desc) and clears\nany other sorts. Single-click on a different column replaces with an\nascending sort on that column.\n\nShift-click: additive multi-column behaviour — adds the column ascending\nif missing; toggles asc → desc if already ascending; removes it entirely\nif already descending."
         }
       ],
       "exports": [
@@ -18499,7 +18499,7 @@
               }
             }
           ],
-          "description": "Apply a multi-column sort to an array of rows. Primary column wins; later\r\ncolumns break ties. Stable on equal-equal comparisons (preserves input order)."
+          "description": "Apply a multi-column sort to an array of rows. Primary column wins; later\ncolumns break ties. Stable on equal-equal comparisons (preserves input order)."
         }
       ],
       "exports": [
@@ -20248,7 +20248,7 @@
       "declarations": [
         {
           "kind": "class",
-          "description": "`<mp-pagination>` — page selector with first/last anchors, ellipsis gaps,\r\nand previous/next arrows. The visible budget is fully driven by the\r\n`numberOfBoxes` input (0 = uncapped). Layout-time auto-fit was tried\r\nearlier but produced a feedback loop with flex parents whose item width\r\nresolves from their content's `max-content` — the consumer is responsible\r\nfor picking a cap that fits the host on their target viewports.",
+          "description": "`<mp-pagination>` — page selector with first/last anchors, ellipsis gaps,\nand previous/next arrows. The visible budget is fully driven by the\n`numberOfBoxes` input (0 = uncapped). Layout-time auto-fit was tried\nearlier but produced a feedback loop with flex parents whose item width\nresolves from their content's `max-content` — the consumer is responsible\nfor picking a cap that fits the host on their target viewports.",
           "name": "MpPagination",
           "members": [
             {
@@ -20349,7 +20349,7 @@
                   "text": "number"
                 }
               },
-              "description": "Effective TOTAL budget (boxes including arrows). When `numberOfBoxes`\r\nis `0` the budget is uncapped and all pages render; otherwise the cap\r\nis honoured verbatim. (An earlier ResizeObserver-driven \"auto-fit\"\r\nwas removed — its measurement of self-width fed back into the rendered\r\ncontent and the WC + flex parent could oscillate or lock the budget\r\nto a single button.)"
+              "description": "Effective TOTAL budget (boxes including arrows). When `numberOfBoxes`\nis `0` the budget is uncapped and all pages render; otherwise the cap\nis honoured verbatim. (An earlier ResizeObserver-driven \"auto-fit\"\nwas removed — its measurement of self-width fed back into the rendered\ncontent and the WC + flex parent could oscillate or lock the budget\nto a single button.)"
             },
             {
               "kind": "method",
@@ -20490,7 +20490,7 @@
               }
             }
           ],
-          "description": "Pure helper: deterministic layout for `(pages, current, totalBudget, showArrows)`.\r\n\r\n`totalBudget` is the maximum visible boxes — pages AND arrows count toward it.\r\nThe current page is always slot #1; subsequent slots are allocated by\r\nstepping through a fixed priority sequence:\r\n\r\n  1. Arrows (next, then prev) when `showArrows`.\r\n  2. **Phase 1** — round-robin `[start, end, before, after]`:\r\n     - start: page #1\r\n     - end: last page\r\n     - before: left ellipsis\r\n     - after: right ellipsis\r\n  3. **Phase 2+** — round-robin `[before, after, start, end]`, repeated\r\n     until budget runs out. Each pass adds one page in that direction:\r\n     - before extends C-1, C-2, …\r\n     - after extends C+1, C+2, …\r\n     - start extends 2, 3, …\r\n     - end extends last-1, last-2, …\r\n\r\nWhen a direction has no more pages to add (overlap with another direction,\r\nor current at an extreme), that step is skipped and the cycle continues\r\nwith the next action.\r\n\r\nSee `docs/issue_329_PRD.md` § \"Growth algorithm\"."
+          "description": "Pure helper: deterministic layout for `(pages, current, totalBudget, showArrows)`.\n\n`totalBudget` is the maximum visible boxes — pages AND arrows count toward it.\nThe current page is always slot #1; subsequent slots are allocated by\nstepping through a fixed priority sequence:\n\n  1. Arrows (next, then prev) when `showArrows`.\n  2. **Phase 1** — round-robin `[start, end, before, after]`:\n     - start: page #1\n     - end: last page\n     - before: left ellipsis\n     - after: right ellipsis\n  3. **Phase 2+** — round-robin `[before, after, start, end]`, repeated\n     until budget runs out. Each pass adds one page in that direction:\n     - before extends C-1, C-2, …\n     - after extends C+1, C+2, …\n     - start extends 2, 3, …\n     - end extends last-1, last-2, …\n\nWhen a direction has no more pages to add (overlap with another direction,\nor current at an extreme), that step is skipped and the cycle continues\nwith the next action.\n\nSee `docs/issue_329_PRD.md` § \"Growth algorithm\"."
         }
       ],
       "exports": [
@@ -20743,7 +20743,7 @@
                   }
                 }
               ],
-              "description": "Walks `document.elementsFromPoint(x, y)` (composed path; cross-browser\r\nsupported in Chromium / Firefox / modern WebKit) and returns the first\r\n`[data-drop-slot]` ancestor whose data-parent-id is NOT in the source's\r\ndescendant set.\r\n\r\nFor older WebKit which doesn't implement `elementsFromPoint`, callers\r\ncan extend the resolver with a shadow-DOM walker (FR-38 fallback) —\r\nnot implemented here since we target evergreen browsers."
+              "description": "Walks `document.elementsFromPoint(x, y)` (composed path; cross-browser\nsupported in Chromium / Firefox / modern WebKit) and returns the first\n`[data-drop-slot]` ancestor whose data-parent-id is NOT in the source's\ndescendant set.\n\nFor older WebKit which doesn't implement `elementsFromPoint`, callers\ncan extend the resolver with a shadow-DOM walker (FR-38 fallback) —\nnot implemented here since we target evergreen browsers."
             }
           ]
         }
@@ -21091,7 +21091,7 @@
               }
             }
           ],
-          "description": "Intersect each field's `Operator[]` with `OperatorCatalog[field.type]`,\r\nstripping operators that don't apply for that field's type. Emits a\r\nwarning per offending field. Empty results after intersection produce\r\na \"no operators left\" warning.\r\n\r\nThe caller decides whether to throw or use the sanitized result —\r\n`bs-query-builder` calls this on every `[operatorOverrides]` change,\r\nlogs warnings via `console.warn`, and silently uses `sanitized`."
+          "description": "Intersect each field's `Operator[]` with `OperatorCatalog[field.type]`,\nstripping operators that don't apply for that field's type. Emits a\nwarning per offending field. Empty results after intersection produce\na \"no operators left\" warning.\n\nThe caller decides whether to throw or use the sanitized result —\n`bs-query-builder` calls this on every `[operatorOverrides]` change,\nlogs warnings via `console.warn`, and silently uses `sanitized`."
         }
       ],
       "exports": [
@@ -21297,7 +21297,7 @@
               }
             }
           ],
-          "description": "Find the parent Group of a node by id, along with the node's index in that\r\ngroup's children array. Returns null when the node is the root or absent.\r\nWalks sub-query bodies too — the parent is whichever group directly contains\r\nthe node, regardless of whether that group lives under a sub-query."
+          "description": "Find the parent Group of a node by id, along with the node's index in that\ngroup's children array. Returns null when the node is the root or absent.\nWalks sub-query bodies too — the parent is whichever group directly contains\nthe node, regardless of whether that group lives under a sub-query."
         },
         {
           "kind": "function",
@@ -21547,7 +21547,7 @@
               }
             }
           ],
-          "description": "Smart field-change that resets operator + value if the previous shape\r\nisn't valid for the new field's type. Resolves the field within\r\n`currentEntity`'s schema."
+          "description": "Smart field-change that resets operator + value if the previous shape\nisn't valid for the new field's type. Resolves the field within\n`currentEntity`'s schema."
         },
         {
           "kind": "function",
@@ -21620,7 +21620,7 @@
               }
             }
           ],
-          "description": "Move a node to a new parent group at a target index. If the move crosses\r\ninto a sub-tree with a different schema (cross-tree DnD), call sites pass\r\n`schemaForTarget` so we can reset field/operator/value per descendant\r\ncondition whose field is no longer in the target schema (FR-13).\r\n\r\nCycle prevention: caller is responsible for refusing a drop into the moved\r\nnode's own descendants (precomputed via `collectDescendantIds`)."
+          "description": "Move a node to a new parent group at a target index. If the move crosses\ninto a sub-tree with a different schema (cross-tree DnD), call sites pass\n`schemaForTarget` so we can reset field/operator/value per descendant\ncondition whose field is no longer in the target schema (FR-13).\n\nCycle prevention: caller is responsible for refusing a drop into the moved\nnode's own descendants (precomputed via `collectDescendantIds`)."
         }
       ],
       "exports": [
@@ -22256,11 +22256,11 @@
           "kind": "variable",
           "name": "RIBBON_ICON_SLOT_STYLES",
           "default": "css` :host([size=\"large\"]) ::slotted([slot=\"icon\"]) { font-size: 28px; width: 28px; height: 28px; line-height: 1; } :host([size=\"medium\"]) ::slotted([slot=\"icon\"]) { font-size: 16px; width: 16px; height: 16px; line-height: 1; } :host([size=\"small\"]) ::slotted([slot=\"icon\"]) { font-size: 14px; width: 14px; height: 14px; line-height: 1; } ::slotted(.ribbon-icon-large) { font-size: 28px !important; width: 28px !important; height: 28px !important; line-height: 1 !important; } ::slotted(.ribbon-icon-medium) { font-size: 16px !important; width: 16px !important; height: 16px !important; line-height: 1 !important; } ::slotted(.ribbon-icon-small) { font-size: 14px !important; width: 14px !important; height: 14px !important; line-height: 1 !important; } `",
-          "description": "FR-16: shared CSS for slot-based icon projection. Every ribbon item\r\nadds this to its `static styles` so:\r\n\r\n- Slotted `<i slot=\"icon\">` (or anything else with `slot=\"icon\"`) is\r\n  auto-sized based on the item host's current `size` attribute. Slotted\r\n  elements live in light DOM and don't inherit shadow-tree styles, so\r\n  explicit `::slotted` rules are required.\r\n- Consumers can opt into explicit sizing via `.ribbon-icon-large /\r\n  -medium / -small` utility classes — applied to the slotted icon\r\n  element, they win via `!important` regardless of the host size.\r\n\r\nItems that don't extend MpRibbonItemBase (template-item, menu-item,\r\ngallery-item) compose this constant the same way."
+          "description": "FR-16: shared CSS for slot-based icon projection. Every ribbon item\nadds this to its `static styles` so:\n\n- Slotted `<i slot=\"icon\">` (or anything else with `slot=\"icon\"`) is\n  auto-sized based on the item host's current `size` attribute. Slotted\n  elements live in light DOM and don't inherit shadow-tree styles, so\n  explicit `::slotted` rules are required.\n- Consumers can opt into explicit sizing via `.ribbon-icon-large /\n  -medium / -small` utility classes — applied to the slotted icon\n  element, they win via `!important` regardless of the host size.\n\nItems that don't extend MpRibbonItemBase (template-item, menu-item,\ngallery-item) compose this constant the same way."
         },
         {
           "kind": "class",
-          "description": "Base class for all ribbon item kinds.\r\nProvides common properties: id, label, icon, size, disabled, tooltip.\r\n\r\n`delegatesFocus: true` lets the host stand in for its inner button in\r\nsequential tab order — setting `tabindex` on the host then controls\r\nwhether the whole item is reachable via Tab, which is what the\r\nroving-tabindex implementation in `mp-ribbon-group` relies on. Without\r\ndelegatesFocus, the browser would walk into each item's shadow root\r\nregardless of host tabindex, breaking the APG toolbar pattern.",
+          "description": "Base class for all ribbon item kinds.\nProvides common properties: id, label, icon, size, disabled, tooltip.\n\n`delegatesFocus: true` lets the host stand in for its inner button in\nsequential tab order — setting `tabindex` on the host then controls\nwhether the whole item is reachable via Tab, which is what the\nroving-tabindex implementation in `mp-ribbon-group` relies on. Without\ndelegatesFocus, the browser would walk into each item's shadow root\nregardless of host tabindex, breaking the APG toolbar pattern.",
           "name": "MpRibbonItemBase",
           "members": [
             {
@@ -22309,7 +22309,7 @@
                 "text": "RibbonItemSize"
               },
               "default": "'medium'",
-              "description": "Size: large (tall), medium (normal), small (compact).\r\n\r\n- Reflected to the `size` attribute on the host (existing API; consumer\r\n  templates set `size=\"large\"` etc.).\r\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\r\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\r\n  reaching into shadow DOM (FR-5).\r\n- The inner element gets a `ribbon-item-<size>` class for the\r\n  component's own shadow-DOM styles.",
+              "description": "Size: large (tall), medium (normal), small (compact).\n\n- Reflected to the `size` attribute on the host (existing API; consumer\n  templates set `size=\"large\"` etc.).\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\n  reaching into shadow DOM (FR-5).\n- The inner element gets a `ribbon-item-<size>` class for the\n  component's own shadow-DOM styles.",
               "attribute": "size",
               "reflects": true
             },
@@ -22351,7 +22351,7 @@
                   }
                 }
               ],
-              "description": "Emit the canonical `item-click` event. Subclasses wire this to their\r\nprimary activation surface (typically `@click` on the inner button).\r\nPreviously the base bound a host-level click listener, which fired on\r\nany bubbled click — clicking a checkbox input, a split-button's\r\nchevron, or a dropdown trigger would all spuriously fire `item-click`\r\nin addition to the kind-specific event. Item kinds now decide\r\nexplicitly when an item-click happens."
+              "description": "Emit the canonical `item-click` event. Subclasses wire this to their\nprimary activation surface (typically `@click` on the inner button).\nPreviously the base bound a host-level click listener, which fired on\nany bubbled click — clicking a checkbox input, a split-button's\nchevron, or a dropdown trigger would all spuriously fire `item-click`\nin addition to the kind-specific event. Item kinds now decide\nexplicitly when an item-click happens."
             },
             {
               "kind": "method",
@@ -22416,7 +22416,7 @@
                 "text": "RibbonItemSize"
               },
               "default": "'medium'",
-              "description": "Size: large (tall), medium (normal), small (compact).\r\n\r\n- Reflected to the `size` attribute on the host (existing API; consumer\r\n  templates set `size=\"large\"` etc.).\r\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\r\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\r\n  reaching into shadow DOM (FR-5).\r\n- The inner element gets a `ribbon-item-<size>` class for the\r\n  component's own shadow-DOM styles.",
+              "description": "Size: large (tall), medium (normal), small (compact).\n\n- Reflected to the `size` attribute on the host (existing API; consumer\n  templates set `size=\"large\"` etc.).\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\n  reaching into shadow DOM (FR-5).\n- The inner element gets a `ribbon-item-<size>` class for the\n  component's own shadow-DOM styles.",
               "fieldName": "size"
             },
             {
@@ -25781,7 +25781,7 @@
               }
             }
           ],
-          "description": "Create a normalized pointer event from a touch event.\r\nReturns the first touch, or null if no touches."
+          "description": "Create a normalized pointer event from a touch event.\nReturns the first touch, or null if no touches."
         },
         {
           "kind": "function",
@@ -28877,7 +28877,7 @@
                   }
                 }
               ],
-              "description": "Detect time format preference based on locale\r\nUses the Intl API to determine if the locale uses 12-hour or 24-hour time"
+              "description": "Detect time format preference based on locale\nUses the Intl API to determine if the locale uses 12-hour or 24-hour time"
             },
             {
               "kind": "method",
@@ -30196,7 +30196,7 @@
                   }
                 }
               ],
-              "description": "Split an event into daily parts\r\nEach part represents one day of a multi-day event"
+              "description": "Split an event into daily parts\nEach part represents one day of a multi-day event"
             },
             {
               "kind": "method",
@@ -30239,7 +30239,7 @@
                   }
                 }
               ],
-              "description": "Assign events to tracks (rails) to minimize overlapping\r\nThis method should be called when events are updated, NOT during drag operations"
+              "description": "Assign events to tracks (rails) to minimize overlapping\nThis method should be called when events are updated, NOT during drag operations"
             },
             {
               "kind": "method",
@@ -30257,7 +30257,7 @@
                   }
                 }
               ],
-              "description": "Get track assignment for event parts using colspan algorithm (for rendering)\r\n\r\nThis uses a colspan-based algorithm similar to Outlook/Google Calendar:\r\n1. Build overlap groups (connected components of overlapping events)\r\n2. Assign columns within each group using a greedy algorithm\r\n3. Compute colspan - how many columns each event can span\r\n\r\nThis ensures events are displayed as wide as possible:\r\n- An event with no overlapping events gets 100% width\r\n- Events only share space with events they actually overlap with\r\n- An event can span multiple columns if there's no blocking event to its right"
+              "description": "Get track assignment for event parts using colspan algorithm (for rendering)\n\nThis uses a colspan-based algorithm similar to Outlook/Google Calendar:\n1. Build overlap groups (connected components of overlapping events)\n2. Assign columns within each group using a greedy algorithm\n3. Compute colspan - how many columns each event can span\n\nThis ensures events are displayed as wide as possible:\n- An event with no overlapping events gets 100% width\n- Events only share space with events they actually overlap with\n- An event can span multiple columns if there's no blocking event to its right"
             },
             {
               "kind": "method",
@@ -30275,7 +30275,7 @@
                   }
                 }
               ],
-              "description": "Compute colspan-based layout for events (Outlook/Google Calendar algorithm)\r\n\r\nPhase 1: Build overlap groups (connected components)\r\nPhase 2: Assign columns within each group\r\nPhase 3: Compute colspan for each event"
+              "description": "Compute colspan-based layout for events (Outlook/Google Calendar algorithm)\n\nPhase 1: Build overlap groups (connected components)\nPhase 2: Assign columns within each group\nPhase 3: Compute colspan for each event"
             },
             {
               "kind": "method",
@@ -30294,7 +30294,7 @@
                   }
                 }
               ],
-              "description": "Build overlap groups (connected components)\r\nEvents belong to the same group if they overlap directly or indirectly\r\n\r\nOptimized to reduce comparisons by pre-sorting events by start time\r\nand breaking early when events can no longer overlap"
+              "description": "Build overlap groups (connected components)\nEvents belong to the same group if they overlap directly or indirectly\n\nOptimized to reduce comparisons by pre-sorting events by start time\nand breaking early when events can no longer overlap"
             },
             {
               "kind": "method",
@@ -30313,7 +30313,7 @@
                   }
                 }
               ],
-              "description": "Assign columns to events within an overlap group\r\nUses a greedy algorithm: place each event in the first available column\r\nReturns the column assignments and total column count"
+              "description": "Assign columns to events within an overlap group\nUses a greedy algorithm: place each event in the first available column\nReturns the column assignments and total column count"
             },
             {
               "kind": "method",
@@ -30356,7 +30356,7 @@
                   }
                 }
               ],
-              "description": "Compute colspan for an event\r\nAn event can span multiple columns if there's no overlapping event to its right"
+              "description": "Compute colspan for an event\nAn event can span multiple columns if there's no overlapping event to its right"
             },
             {
               "kind": "method",
@@ -31317,7 +31317,7 @@
       "declarations": [
         {
           "kind": "class",
-          "description": "`<mp-splitter>` — resizable panel splitter.\r\n\r\nLight-DOM children are projected into named slots (`panel-${i}`) inside a\r\nshadow-DOM flex container with auto-inserted dividers between them. Drag a\r\ndivider to redistribute space; sizes survive container resize via a\r\nproportional rescale.\r\n\r\nPointer + keyboard interactions both flow through the same path:\r\n- Pointer drag → `InputHandler` → `handleResizeStart/Move/End`.\r\n- Arrow keys ±10% (Shift = ±1%), Home/End to limits → `handleResizeKey`.\r\n\r\nARIA: each divider is a `role=\"separator\"` with `aria-orientation`,\r\n`aria-controls` referencing the deterministic IDs of the two adjacent\r\npanel wrappers, and percent-based `aria-valuenow / valuemin / valuemax`\r\nthat update on every drag-preview frame, container resize, and keystroke.\r\n\r\nPublic API: `[orientation]`, `[min-panel-size]`, `[touch-mode]`;\r\n`getPanelSizes()` / `setPanelSizes()`; events `resize-start`, `resizing`,\r\n`resize-end` carrying `{ sizes, orientation }`.",
+          "description": "`<mp-splitter>` — resizable panel splitter.\n\nLight-DOM children are projected into named slots (`panel-${i}`) inside a\nshadow-DOM flex container with auto-inserted dividers between them. Drag a\ndivider to redistribute space; sizes survive container resize via a\nproportional rescale.\n\nPointer + keyboard interactions both flow through the same path:\n- Pointer drag → `InputHandler` → `handleResizeStart/Move/End`.\n- Arrow keys ±10% (Shift = ±1%), Home/End to limits → `handleResizeKey`.\n\nARIA: each divider is a `role=\"separator\"` with `aria-orientation`,\n`aria-controls` referencing the deterministic IDs of the two adjacent\npanel wrappers, and percent-based `aria-valuenow / valuemin / valuemax`\nthat update on every drag-preview frame, container resize, and keystroke.\n\nPublic API: `[orientation]`, `[min-panel-size]`, `[touch-mode]`;\n`getPanelSizes()` / `setPanelSizes()`; events `resize-start`, `resizing`,\n`resize-end` carrying `{ sizes, orientation }`.",
           "name": "MpSplitter",
           "members": [
             {
@@ -31473,7 +31473,7 @@
                   "default": "false"
                 }
               ],
-              "description": "Drive a keyboard-style resize on a divider programmatically. Used by the\r\ndock manager's intersection-handle keymap so a single keystroke can\r\nresize both the horizontal and vertical dividers a 2D handle sits on,\r\nwithout re-implementing the percent-step + clamp math here.\r\n\r\n`key` is one of the keys handled by the divider keymap\r\n(Arrow{Left,Right,Up,Down}, Home, End); `fine` halves the step (matches\r\nShift modifier on the keyboard path)."
+              "description": "Drive a keyboard-style resize on a divider programmatically. Used by the\ndock manager's intersection-handle keymap so a single keystroke can\nresize both the horizontal and vertical dividers a 2D handle sits on,\nwithout re-implementing the percent-step + clamp math here.\n\n`key` is one of the keys handled by the divider keymap\n(Arrow{Left,Right,Up,Down}, Home, End); `fine` halves the step (matches\nShift modifier on the keyboard path)."
             },
             {
               "kind": "method",
@@ -31521,7 +31521,7 @@
                   "text": "void"
                 }
               },
-              "description": "Mirror current panel sizes to each divider's aria-valuenow / valuemin /\r\nvaluemax as percent of container. Per §10 Q3 of the WC ARIA PRD: percent\r\nis more intuitive for SR users than pixels.\r\n\r\nPer-divider math: divider i sits between panels[i] and panels[i+1] and\r\n\"owns\" the size of panels[i]. valuemin = minPanelSize as % of container;\r\nvaluemax = (panels[i].size + panels[i+1].size - minPanelSize) as %."
+              "description": "Mirror current panel sizes to each divider's aria-valuenow / valuemin /\nvaluemax as percent of container. Per §10 Q3 of the WC ARIA PRD: percent\nis more intuitive for SR users than pixels.\n\nPer-divider math: divider i sits between panels[i] and panels[i+1] and\n\"owns\" the size of panels[i]. valuemin = minPanelSize as % of container;\nvaluemax = (panels[i].size + panels[i+1].size - minPanelSize) as %."
             },
             {
               "kind": "method",
@@ -31542,7 +31542,7 @@
                   "text": "void"
                 }
               },
-              "description": "Read each panel-wrapper's measured pixel size and persist it as the\r\nauthoritative panel size. After this runs, every wrapper carries an\r\ninline `width` (or `height`) — content intrinsic size cannot leak into\r\nthe parent flex container, so a nested splitter's drag does not shift\r\nthe parent's layout."
+              "description": "Read each panel-wrapper's measured pixel size and persist it as the\nauthoritative panel size. After this runs, every wrapper carries an\ninline `width` (or `height`) — content intrinsic size cannot leak into\nthe parent flex container, so a nested splitter's drag does not shift\nthe parent's layout."
             },
             {
               "kind": "method",
@@ -31563,7 +31563,7 @@
                   "text": "void"
                 }
               },
-              "description": "When the splitter's container resizes (window resize, parent splitter\r\npinning its sizes, etc.), scale every panel-wrapper proportionally so\r\nthe existing ratios are preserved. Without this we'd be stuck with the\r\noriginal pixel sizes when the surrounding viewport changes — what\r\n`flex-basis: 0` gave master \"for free\"."
+              "description": "When the splitter's container resizes (window resize, parent splitter\npinning its sizes, etc.), scale every panel-wrapper proportionally so\nthe existing ratios are preserved. Without this we'd be stuck with the\noriginal pixel sizes when the surrounding viewport changes — what\n`flex-basis: 0` gave master \"for free\"."
             },
             {
               "kind": "method",
@@ -31618,7 +31618,7 @@
                 {
                   "name": "event",
                   "type": {
-                    "text": "{\r\n    point: Point;\r\n    originalEvent: MouseEvent | TouchEvent;\r\n  }"
+                    "text": "{\n    point: Point;\n    originalEvent: MouseEvent | TouchEvent;\n  }"
                   }
                 }
               ]
@@ -31636,7 +31636,7 @@
                 {
                   "name": "_event",
                   "type": {
-                    "text": "{\r\n    point: Point;\r\n    originalEvent: MouseEvent | TouchEvent;\r\n  }"
+                    "text": "{\n    point: Point;\n    originalEvent: MouseEvent | TouchEvent;\n  }"
                   }
                 }
               ]
@@ -31676,7 +31676,7 @@
                   }
                 }
               ],
-              "description": "Keyboard-driven resize on a focused divider. ArrowKeys ±10% (Shift = ±1%)\r\nalong the splitter's axis; Home/End shrink/grow panelBefore to its limit.\r\nFires resize-start → resize-end with the new sizes so consumers don't\r\nneed to special-case keyboard vs. drag."
+              "description": "Keyboard-driven resize on a focused divider. ArrowKeys ±10% (Shift = ±1%)\nalong the splitter's axis; Home/End shrink/grow panelBefore to its limit.\nFires resize-start → resize-end with the new sizes so consumers don't\nneed to special-case keyboard vs. drag."
             },
             {
               "kind": "method",
@@ -32689,103 +32689,6 @@
     },
     {
       "kind": "javascript-module",
-      "path": "tile-manager/src/types/grid-rect.ts",
-      "declarations": [
-        {
-          "kind": "function",
-          "name": "rectsOverlap",
-          "return": {
-            "type": {
-              "text": "boolean"
-            }
-          },
-          "parameters": [
-            {
-              "name": "a",
-              "type": {
-                "text": "GridRect"
-              }
-            },
-            {
-              "name": "b",
-              "type": {
-                "text": "GridRect"
-              }
-            }
-          ]
-        }
-      ],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "rectsOverlap",
-          "declaration": {
-            "name": "rectsOverlap",
-            "module": "tile-manager/src/types/grid-rect.ts"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "tile-manager/src/types/tile-layout-snapshot.ts",
-      "declarations": [],
-      "exports": []
-    },
-    {
-      "kind": "javascript-module",
-      "path": "tile-manager/src/types/tile-position.ts",
-      "declarations": [],
-      "exports": []
-    },
-    {
-      "kind": "javascript-module",
-      "path": "tile-manager/src/utils/pack.ts",
-      "declarations": [
-        {
-          "kind": "function",
-          "name": "pack",
-          "return": {
-            "type": {
-              "text": "{ layout: TileLayoutSnapshot; blocked: boolean }"
-            }
-          },
-          "parameters": [
-            {
-              "name": "tiles",
-              "type": {
-                "text": "ReadonlyArray<PackInputTile>"
-              }
-            },
-            {
-              "name": "pinned",
-              "type": {
-                "text": "{ id: string; rect: GridRect }"
-              }
-            },
-            {
-              "name": "columnCount",
-              "type": {
-                "text": "number"
-              }
-            }
-          ],
-          "description": "Vertical-compact packer. The pinned tile's rect is the user's gesture; all\r\nother tiles flow around it (locked tiles stay put; movable tiles get pushed\r\nout of the way and gravity-compacted upward).\r\n\r\nReturns `blocked: true` if the pinned rect overlaps a locked tile or no\r\nvalid layout exists; the caller should snap back and not commit."
-        }
-      ],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "pack",
-          "declaration": {
-            "name": "pack",
-            "module": "tile-manager/src/utils/pack.ts"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
       "path": "tab-control/src/components/index.ts",
       "declarations": [],
       "exports": [
@@ -32821,7 +32724,7 @@
       "declarations": [
         {
           "kind": "class",
-          "description": "<mp-tab-control>\r\n\r\nBootstrap-styled tab strip. Pages live in named `${id}-content` slots and\r\nheaders in `${id}-header` slots. The shadow DOM dynamically projects only\r\nthe currently-active page via `<slot name=\"${activeId}-content\">`, so\r\ninactive panels never enter the rendered tree.\r\n\r\nAuthoring (vanilla):\r\n\r\n    <mp-tab-control active-tab=\"overview\">\r\n      <span slot=\"overview-header\">Overview</span>\r\n      <div slot=\"overview-content\">Hello</div>\r\n      <span slot=\"details-header\">Details</span>\r\n      <div slot=\"details-content\">Details body</div>\r\n    </mp-tab-control>\r\n\r\nTo mark a tab disabled, set `data-disabled` on the `*-content` element.\r\n\r\nActive state is **controlled by the host** — the host sets `active-tab` and\r\nlistens for `tab-activate` events. The Angular wrapper (`bs-tab-control`)\r\ndrives this via signals.",
+          "description": "<mp-tab-control>\n\nBootstrap-styled tab strip. Pages live in named `${id}-content` slots and\nheaders in `${id}-header` slots. The shadow DOM dynamically projects only\nthe currently-active page via `<slot name=\"${activeId}-content\">`, so\ninactive panels never enter the rendered tree.\n\nAuthoring (vanilla):\n\n    <mp-tab-control active-tab=\"overview\">\n      <span slot=\"overview-header\">Overview</span>\n      <div slot=\"overview-content\">Hello</div>\n      <span slot=\"details-header\">Details</span>\n      <div slot=\"details-content\">Details body</div>\n    </mp-tab-control>\n\nTo mark a tab disabled, set `data-disabled` on the `*-content` element.\n\nActive state is **controlled by the host** — the host sets `active-tab` and\nlistens for `tab-activate` events. The Angular wrapper (`bs-tab-control`)\ndrives this via signals.",
           "name": "MpTabControl",
           "members": [
             {
@@ -33050,7 +32953,7 @@
       "declarations": [
         {
           "kind": "class",
-          "description": "<mp-tab-page>\r\n\r\nOptional convenience wrapper for vanilla consumers. Sets `slot=\"${tabId}-content\"`\r\non itself based on its `tab-id` attribute, so the parent `<mp-tab-control>`\r\npicks it up via named-slot projection.\r\n\r\nAlso mirrors `disabled` to `data-disabled` so the tab-control can read the\r\ndisabled state without inspecting child types.\r\n\r\nUse directly:\r\n\r\n    <mp-tab-control>\r\n      <span slot=\"t1-header\">Tab 1</span>\r\n      <mp-tab-page tab-id=\"t1\">Content 1</mp-tab-page>\r\n    </mp-tab-control>\r\n\r\nOr skip this element entirely and put the slot/data-disabled attributes\r\ndirectly on whatever element holds your tab content:\r\n\r\n    <mp-tab-control>\r\n      <span slot=\"t1-header\">Tab 1</span>\r\n      <div slot=\"t1-content\">Content 1</div>\r\n    </mp-tab-control>",
+          "description": "<mp-tab-page>\n\nOptional convenience wrapper for vanilla consumers. Sets `slot=\"${tabId}-content\"`\non itself based on its `tab-id` attribute, so the parent `<mp-tab-control>`\npicks it up via named-slot projection.\n\nAlso mirrors `disabled` to `data-disabled` so the tab-control can read the\ndisabled state without inspecting child types.\n\nUse directly:\n\n    <mp-tab-control>\n      <span slot=\"t1-header\">Tab 1</span>\n      <mp-tab-page tab-id=\"t1\">Content 1</mp-tab-page>\n    </mp-tab-control>\n\nOr skip this element entirely and put the slot/data-disabled attributes\ndirectly on whatever element holds your tab content:\n\n    <mp-tab-control>\n      <span slot=\"t1-header\">Tab 1</span>\n      <div slot=\"t1-content\">Content 1</div>\n    </mp-tab-control>",
           "name": "MpTabPage",
           "members": [
             {
@@ -33175,6 +33078,103 @@
     },
     {
       "kind": "javascript-module",
+      "path": "tile-manager/src/types/grid-rect.ts",
+      "declarations": [
+        {
+          "kind": "function",
+          "name": "rectsOverlap",
+          "return": {
+            "type": {
+              "text": "boolean"
+            }
+          },
+          "parameters": [
+            {
+              "name": "a",
+              "type": {
+                "text": "GridRect"
+              }
+            },
+            {
+              "name": "b",
+              "type": {
+                "text": "GridRect"
+              }
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "rectsOverlap",
+          "declaration": {
+            "name": "rectsOverlap",
+            "module": "tile-manager/src/types/grid-rect.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "tile-manager/src/types/tile-layout-snapshot.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "tile-manager/src/types/tile-position.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "tile-manager/src/utils/pack.ts",
+      "declarations": [
+        {
+          "kind": "function",
+          "name": "pack",
+          "return": {
+            "type": {
+              "text": "{ layout: TileLayoutSnapshot; blocked: boolean }"
+            }
+          },
+          "parameters": [
+            {
+              "name": "tiles",
+              "type": {
+                "text": "ReadonlyArray<PackInputTile>"
+              }
+            },
+            {
+              "name": "pinned",
+              "type": {
+                "text": "{ id: string; rect: GridRect }"
+              }
+            },
+            {
+              "name": "columnCount",
+              "type": {
+                "text": "number"
+              }
+            }
+          ],
+          "description": "Vertical-compact packer. The pinned tile's rect is the user's gesture; all\nother tiles flow around it (locked tiles stay put; movable tiles get pushed\nout of the way and gravity-compacted upward).\n\nReturns `blocked: true` if the pinned rect overlaps a locked tile or no\nvalid layout exists; the caller should snap back and not commit."
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "pack",
+          "declaration": {
+            "name": "pack",
+            "module": "tile-manager/src/utils/pack.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "toggle-button/src/components/index.ts",
       "declarations": [],
       "exports": [
@@ -33210,7 +33210,7 @@
       "declarations": [
         {
           "kind": "class",
-          "description": "`<mp-toggle-button>` — a single Bootstrap-styled on/off button using the\r\n`btn-check` + `label.btn` pattern. Acts as both a usable standalone WC\r\nand the carrier of the shared `form-check` / `btn-check` SCSS that\r\n`<mp-checkbox>` and `<mp-radio>` reuse via the exported `toggleButtonStyles`\r\n`CSSResult` (single parsed stylesheet shared across shadow roots).\r\n\r\nAttributes (all reflected): `checked`, `disabled`, `name`, `value`, `color`.\r\nEmits a native-style `change` event with\r\n`detail: { checked, value }` when toggled.",
+          "description": "`<mp-toggle-button>` — a single Bootstrap-styled on/off button using the\n`btn-check` + `label.btn` pattern. Acts as both a usable standalone WC\nand the carrier of the shared `form-check` / `btn-check` SCSS that\n`<mp-checkbox>` and `<mp-radio>` reuse via the exported `toggleButtonStyles`\n`CSSResult` (single parsed stylesheet shared across shadow roots).\n\nAttributes (all reflected): `checked`, `disabled`, `name`, `value`, `color`.\nEmits a native-style `change` event with\n`detail: { checked, value }` when toggled.",
           "name": "MpToggleButton",
           "members": [
             {
@@ -33511,7 +33511,7 @@
       "declarations": [
         {
           "kind": "class",
-          "description": "`<mp-treeview>` — data-driven recursive tree.\r\n\r\nLight-DOM properties:\r\n- `items: TreeNode[]` (property only)\r\n- `expanded-ids` / `expandedIds: string[]`\r\n- `selected-ids` / `selectedIds: string[]`\r\n- `selection-mode`: `'none' | 'single' | 'multiple'`\r\n- `hide-borders`: removes the outer list-group border and per-row separators\r\n\r\nEvents: `tree-node-select`, `tree-node-expand`, `tree-node-collapse`.",
+          "description": "`<mp-treeview>` — data-driven recursive tree.\n\nLight-DOM properties:\n- `items: TreeNode[]` (property only)\n- `expanded-ids` / `expandedIds: string[]`\n- `selected-ids` / `selectedIds: string[]`\n- `selection-mode`: `'none' | 'single' | 'multiple'`\n- `hide-borders`: removes the outer list-group border and per-row separators\n\nEvents: `tree-node-select`, `tree-node-expand`, `tree-node-collapse`.",
           "name": "MpTreeview",
           "members": [
             {
@@ -33704,7 +33704,7 @@
               "type": {
                 "text": "TreeNodeRenderer | undefined"
               },
-              "description": "Per-node DOM renderer. When set, the WC calls this for each node's body\r\n(chevron stays). The returned Node replaces the default icon+label.\r\nSet by Angular wrapper to bridge `*bsTreeviewNode` templates into the\r\nshadow DOM via EmbeddedViewRef-managed nodes."
+              "description": "Per-node DOM renderer. When set, the WC calls this for each node's body\n(chevron stays). The returned Node replaces the default icon+label.\nSet by Angular wrapper to bridge `*bsTreeviewNode` templates into the\nshadow DOM via EmbeddedViewRef-managed nodes."
             },
             {
               "kind": "field",
@@ -33712,7 +33712,7 @@
               "type": {
                 "text": "TreeChildrenLoader | undefined"
               },
-              "description": "Async children loader. Invoked once per node when a `lazy` (or\r\nchildren-less) node is first expanded. While the promise is in flight\r\nthe chevron is replaced by a spinner; on rejection an error indicator\r\nis shown and the node can be re-expanded to retry."
+              "description": "Async children loader. Invoked once per node when a `lazy` (or\nchildren-less) node is first expanded. While the promise is in flight\nthe chevron is replaced by a spinner; on rejection an error indicator\nis shown and the node can be re-expanded to retry."
             },
             {
               "kind": "method",
