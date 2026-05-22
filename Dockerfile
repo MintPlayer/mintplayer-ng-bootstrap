@@ -30,5 +30,5 @@ COPY --from=node_image /usr/local/app/dist/apps/ng-bootstrap-demo/browser/browse
 EXPOSE 80
 
 # docker build --tag 'ng-bootstrap-demo' .
-# docker run -p 4201:80 ng-bootstrap-demo
-# Visit http://localhost:4201
+# docker run -p 4200:80 ng-bootstrap-demo
+# Visit http://localhost:4200

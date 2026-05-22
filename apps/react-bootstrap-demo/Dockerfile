@@ -16,4 +16,4 @@ COPY apps/react-bootstrap-demo/nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
 
 # docker build -f apps/react-bootstrap-demo/Dockerfile -t react-bootstrap-demo .
-# docker run -p 4201:80 react-bootstrap-demo
+# docker run -p 4000:80 react-bootstrap-demo

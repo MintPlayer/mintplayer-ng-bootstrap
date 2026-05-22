@@ -18,14 +18,26 @@ builder.Services.AddControllers()
     });
 
 // CORS — read allowed origins from configuration so the production VPS deploy
-// can extend the list without recompiling the image. Defaults to the two
-// canonical demo origins:
-//   - http://localhost:4200          (ng serve)
-//   - https://bootstrap.mintplayer.com (production demo)
+// can extend the list without recompiling the image. Defaults to the canonical
+// demo origins:
+//   - http://localhost:4200            (Angular ng serve)
+//   - http://localhost:4000            (React vite dev server)
+//   - http://localhost:4100            (Vue   vite dev server)
+//   - https://bootstrap.mintplayer.com       (Angular production demo)
+//   - https://react.bootstrap.mintplayer.com (React   production demo)
+//   - https://vue.bootstrap.mintplayer.com   (Vue     production demo)
 // Cross-origin is required because the demo and the API live on different
 // subdomains in production.
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-    ?? new[] { "http://localhost:4200", "https://bootstrap.mintplayer.com" };
+    ?? new[]
+    {
+        "http://localhost:4200",
+        "http://localhost:4000",
+        "http://localhost:4100",
+        "https://bootstrap.mintplayer.com",
+        "https://react.bootstrap.mintplayer.com",
+        "https://vue.bootstrap.mintplayer.com",
+    };
 builder.Services.AddCors(o =>
 {
     o.AddDefaultPolicy(p => p

@@ -16,4 +16,4 @@ COPY apps/vue-bootstrap-demo/nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
 
 # docker build -f apps/vue-bootstrap-demo/Dockerfile -t vue-bootstrap-demo .
-# docker run -p 4202:80 vue-bootstrap-demo
+# docker run -p 4100:80 vue-bootstrap-demo

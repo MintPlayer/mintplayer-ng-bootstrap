@@ -5,7 +5,7 @@
  * route in React or Vue.
  *
  * In dev the cross-framework hosts don't exist, so links point at
- * localhost ports (Angular 4200, React 4201, Vue 4202 by convention).
+ * localhost ports (Angular 4200, React 4000, Vue 4100 by convention).
  * In production they point at the subdomain Traefik routes (per phase 8).
  */
 import { useLocation } from 'react-router-dom';
