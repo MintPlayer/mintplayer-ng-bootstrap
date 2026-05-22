@@ -370,7 +370,6 @@ export class MpRibbon extends LitElement {
       );
       color: #FFFFFF;
     }
-
     @media (prefers-color-scheme: dark) {
       :host([color-scheme="auto"]) .ribbon-contextual-group-band {
         background: color-mix(

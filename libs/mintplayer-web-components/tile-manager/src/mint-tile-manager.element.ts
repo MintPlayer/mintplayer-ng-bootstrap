@@ -807,7 +807,6 @@ export class MintTileManagerElement extends LitElement {
         }),
       );
     }
-
     this.cleanupGesture();
   }
 
@@ -988,7 +987,6 @@ export class MintTileManagerElement extends LitElement {
       const placed = result.layout.find((p) => p.id === t.id);
       return placed ? { ...t, position: placed.position } : t;
     });
-
     this.tiles = newTiles;
     this.dispatchEvent(
       new CustomEvent<TileLayoutSnapshot>('tilelayoutchange', {

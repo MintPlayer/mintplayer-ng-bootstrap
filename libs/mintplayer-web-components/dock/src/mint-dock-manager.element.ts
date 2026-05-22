@@ -2924,7 +2924,6 @@ export class MintDockManagerElement extends LitElement {
     if (!this.dragState) {
       return;
     }
-
     const stack = this.findStackAtPoint(clientX, clientY);
     const stackPath = stack ? this.parsePath(stack.dataset['path']) : null;
     const joystickVisible = this.dropJoystick.dataset['visible'] === 'true';
@@ -3090,7 +3089,6 @@ export class MintDockManagerElement extends LitElement {
     if (this.dragState) {
       this.dragState.dropHandled = true;
     }
-    
   }
 
   private handleFloatingStackDrop(sourceIndex: number, targetPath: DockPath, zone: DropZone): boolean {
@@ -3534,7 +3532,6 @@ export class MintDockManagerElement extends LitElement {
         return this.dockedEl;
       }
     }
-
     return null;
   }
 
@@ -3555,7 +3552,6 @@ export class MintDockManagerElement extends LitElement {
         return this.dropJoystickTarget;
       }
     }
-
     return null;
   }
 
@@ -3588,7 +3584,6 @@ export class MintDockManagerElement extends LitElement {
       }
       this.updateFloatingWindowTitle(path.index);
     }
-
     this.dispatchLayoutChanged();
   }
 
@@ -3886,7 +3881,6 @@ export class MintDockManagerElement extends LitElement {
     if (!node) {
       return 0;
     }
-
     if (node.kind === 'stack') {
       return node.panes.length;
     }
@@ -4095,7 +4089,6 @@ export class MintDockManagerElement extends LitElement {
       root: { kind: 'stack', panes: [move.paneName], activePane: move.paneName },
       activePane: move.paneName,
     };
-
     this.floatingLayouts.push(floatingLayout);
     this.normalizeAllLayouts();
     this.renderLayout();

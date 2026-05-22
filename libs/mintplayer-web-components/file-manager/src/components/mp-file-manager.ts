@@ -1401,7 +1401,6 @@ export class MpFileManager extends LitElement {
     }));
     this._uploads = [...this._uploads, ...newEntries];
     this.requestUpdate();
-
     this.dispatchEvent(
       new CustomEvent<UploadRequestEventDetail>('mp-upload-request', {
         detail: {

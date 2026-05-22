@@ -283,7 +283,6 @@ export class MintOtpInputElement extends LitElement {
     this.clearReveal(); // paste NEVER reveals (shoulder-surf risk on a code the user already knows)
     this.requestUpdate();
     this.dispatchValueChange();
-
     const nowComplete = normalised.length === this.totalLength();
     if (nowComplete && !wasComplete) this.dispatchComplete();
   };
