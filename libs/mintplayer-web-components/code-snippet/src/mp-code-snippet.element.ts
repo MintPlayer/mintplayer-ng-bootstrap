@@ -41,24 +41,47 @@ export class MpCodeSnippet extends LitElement {
       border-radius: var(--bs-border-radius);
       overflow: hidden;
 
-      /* hljs token palette driven by Bootstrap's --bs-*-text-emphasis
-         variables. Those already flip with data-bs-theme (e.g.
-         --bs-info-text-emphasis is #055160 in light, #6edff6 in dark),
-         so the snippet stays readable on both backgrounds without a
-         separate dark-mode block here. Consumers can override any
-         single token by setting the matching --mp-snippet-* variable
-         in their own stylesheet. */
-      --mp-snippet-comment:    var(--bs-secondary-color);
-      --mp-snippet-keyword:    var(--bs-danger-text-emphasis);
-      --mp-snippet-string:     var(--bs-info-text-emphasis);
-      --mp-snippet-number:     var(--bs-primary-text-emphasis);
-      --mp-snippet-type:       var(--bs-warning-text-emphasis);
-      --mp-snippet-tag:        var(--bs-success-text-emphasis);
-      --mp-snippet-attribute:  var(--bs-info-text-emphasis);
-      --mp-snippet-deletion-fg:var(--bs-danger-text-emphasis);
-      --mp-snippet-deletion-bg:var(--bs-danger-bg-subtle);
-      --mp-snippet-addition-fg:var(--bs-success-text-emphasis);
-      --mp-snippet-addition-bg:var(--bs-success-bg-subtle);
+      /* VS Code Light+ palette — vibrant defaults for every language
+         the demos use (TypeScript, JSX/TSX, Vue SFC, HTML, SCSS/CSS,
+         JSON, shell). Bootstrap's --bs-*-text-emphasis vars are too
+         desaturated for syntax highlighting (it all came out grey),
+         so we hand-pick a token palette here. The dark-mode override
+         below mirrors VS Code Dark+. */
+      --mp-snippet-comment:    #008000;
+      --mp-snippet-keyword:    #0000ff;
+      --mp-snippet-string:     #a31515;
+      --mp-snippet-number:     #098658;
+      --mp-snippet-type:       #267f99;
+      --mp-snippet-tag:        #800000;
+      --mp-snippet-attribute:  #e50000;
+      --mp-snippet-variable:   #001080;
+      --mp-snippet-function:   #795e26;
+      --mp-snippet-meta:       #af00db;
+      --mp-snippet-regexp:     #811f3f;
+      --mp-snippet-deletion-fg:#82071e;
+      --mp-snippet-deletion-bg:#ffebe9;
+      --mp-snippet-addition-fg:#116329;
+      --mp-snippet-addition-bg:#dafbe1;
+    }
+
+    /* VS Code Dark+ palette. Switches with the explicit Bootstrap
+       data-bs-theme attribute (NOT the system preference). */
+    :host-context([data-bs-theme='dark']) {
+      --mp-snippet-comment:    #6a9955;
+      --mp-snippet-keyword:    #569cd6;
+      --mp-snippet-string:     #ce9178;
+      --mp-snippet-number:     #b5cea8;
+      --mp-snippet-type:       #4ec9b0;
+      --mp-snippet-tag:        #569cd6;
+      --mp-snippet-attribute:  #9cdcfe;
+      --mp-snippet-variable:   #9cdcfe;
+      --mp-snippet-function:   #dcdcaa;
+      --mp-snippet-meta:       #c586c0;
+      --mp-snippet-regexp:     #d16969;
+      --mp-snippet-deletion-fg:#ffdcd7;
+      --mp-snippet-deletion-bg:#67060c;
+      --mp-snippet-addition-fg:#aff5b4;
+      --mp-snippet-addition-bg:#033a16;
     }
 
     pre {
@@ -132,19 +155,22 @@ export class MpCodeSnippet extends LitElement {
     /* Default slot is hidden; content is hoisted into the <code> on each render. */
     slot { display: none; }
 
-    /* hljs token colours driven by --mp-snippet-* variables so light/dark
-       toggle in a single place. Consumers can still override individual
-       variables via ::part(code) selector + the same custom-property
-       names, OR drop in a vendor theme entirely. */
-    .hljs-comment, .hljs-quote { color: var(--mp-snippet-comment); font-style: italic; }
-    .hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-section, .hljs-link { color: var(--mp-snippet-keyword); }
+    /* hljs token → semantic colour mapping. Covers TypeScript / JSX /
+       Vue SFC / HTML / SCSS / CSS / JSON / shell at minimum; any
+       other hljs language falls through to the same token classes. */
+    .hljs-comment, .hljs-quote, .hljs-doctag { color: var(--mp-snippet-comment); font-style: italic; }
+    .hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-section, .hljs-link, .hljs-selector-pseudo, .hljs-selector-class, .hljs-selector-id { color: var(--mp-snippet-keyword); }
     .hljs-function .hljs-keyword { color: var(--mp-snippet-keyword); }
     .hljs-subst { color: inherit; }
-    .hljs-string, .hljs-attr, .hljs-symbol, .hljs-bullet, .hljs-meta { color: var(--mp-snippet-string); }
-    .hljs-number, .hljs-regexp, .hljs-template-tag, .hljs-template-variable, .hljs-variable { color: var(--mp-snippet-number); }
-    .hljs-title, .hljs-class .hljs-title, .hljs-type, .hljs-built_in, .hljs-builtin-name { color: var(--mp-snippet-type); }
+    .hljs-string, .hljs-symbol, .hljs-bullet { color: var(--mp-snippet-string); }
+    .hljs-number, .hljs-operator { color: var(--mp-snippet-number); }
+    .hljs-regexp { color: var(--mp-snippet-regexp); }
+    .hljs-type, .hljs-built_in, .hljs-builtin-name, .hljs-class .hljs-title { color: var(--mp-snippet-type); }
     .hljs-tag, .hljs-name { color: var(--mp-snippet-tag); }
-    .hljs-attribute { color: var(--mp-snippet-attribute); }
+    .hljs-attr, .hljs-attribute, .hljs-property { color: var(--mp-snippet-attribute); }
+    .hljs-variable, .hljs-template-variable, .hljs-template-tag, .hljs-params { color: var(--mp-snippet-variable); }
+    .hljs-title, .hljs-title.function_ { color: var(--mp-snippet-function); }
+    .hljs-meta, .hljs-meta-keyword, .hljs-meta-string { color: var(--mp-snippet-meta); }
     .hljs-deletion { color: var(--mp-snippet-deletion-fg); background-color: var(--mp-snippet-deletion-bg); }
     .hljs-addition { color: var(--mp-snippet-addition-fg); background-color: var(--mp-snippet-addition-bg); }
     .hljs-emphasis { font-style: italic; }
