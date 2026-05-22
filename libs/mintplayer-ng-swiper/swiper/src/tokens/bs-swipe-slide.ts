@@ -1,5 +1,6 @@
 import { InjectionToken, Signal } from '@angular/core';
 import { Size } from '@mintplayer/ng-swiper/observe-size';
+
 /**
  * Minimal contract a slide must satisfy to be queried by `bsSwipeContainer`.
  *

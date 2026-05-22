@@ -1,5 +1,6 @@
 import { computed, contentChild, Directive, ElementRef, inject, input } from '@angular/core';
 import { BsSwipeContainerDirective } from '../swipe-container/swipe-container.directive';
+
 /**
  * Marks an element as the static viewport that wraps a `bsSwipeContainer`'s
  * moving track. The element it's applied to is expected to have
