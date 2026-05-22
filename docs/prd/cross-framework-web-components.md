@@ -641,7 +641,7 @@ Each phase is a commit (or 2-3 commits when noted) inside one PR. Per the user's
 1. **Smoke-verify `codegen-wc` against a different `libRoot`.** Run `node tools/scripts/build-web-components.mjs libs/mintplayer-web-components` (after creating the empty lib in Phase 1) and confirm it walks the new path correctly.
 2. **Confirm Vue plugin name is `@nx/vue`** (vs. any renamed/split variant in Nx 21+). Run `nx list @nx/vue` to verify the generators exist; install if missing.
 3. **Confirm `@lit/react` major version compatible with React 19.** As of May 2026 this is `@lit/react ^1`. Pin the exact version in the React lib's peerDeps.
-4. **Walk the actual WC inventory** (both Layout A and Layout B from the *Current state* section) and produce a canonical list of element classes with their target sub-entrypoint name. This list becomes the authoritative input for Phase 1's `git mv` script and Phases 4/5's wrapper file enumeration.
+4. **Walk the actual WC inventory** (both Layout A and Layout B from the *Current state* section) and produce a canonical list of element classes with their target sub-entrypoint name. This list becomes the authoritative input for Phase 1's `git mv` script and Phases 4/5's wrapper file enumeration. ✅ See [`wc-inventory.md`](./wc-inventory.md) — 50 production WCs + 1 new (`mp-code-snippet`) → 25 sub-entrypoints.
 
 Commit: `chore(prep): verify codegen-wc portability, Vue plugin, lit/react; canonical WC inventory`.
 
@@ -807,9 +807,9 @@ Commit: `ci: publish @mintplayer/{web-components,react-bootstrap,vue-bootstrap} 
 6. ~~Per-WC vs per-family React wrapper files~~ → **Resolved (Decision 5):** one `.tsx` file per WC class. Same shape applies to Vue (one `.vue` per WC).
 7. ~~`scheduler-core` package fate~~ → **Resolved:** no separate `@mintplayer/scheduler-core` npm package. The `scheduler-core` helper code lives under `libs/mintplayer-web-components/scheduler-core/` and is exposed as `@mintplayer/web-components/scheduler-core` for any external consumer that needs the types/services directly. Verify during Phase 1 that the Angular scheduler wrapper imports from `@mintplayer/web-components/scheduler-core` instead of any old `@mintplayer/scheduler-core` path.
 
-### Remaining open question
+### All open questions resolved
 
-8. **Toggle-button + treeview WC counts.** Layout B has folders for both but the Phase-0 inventory walk needs to confirm exactly which element classes live there (didn't grep clean). Resolved before Phase 1 step 9 (per-sub-entrypoint `package.json` files).
+8. ~~Toggle-button + treeview WC counts~~ → **Resolved by Phase 0 inventory walk:** both are Layout B sub-entrypoints with 1 element each (`mp-toggle-button` at `web-components/toggle-button/src/components/mp-toggle-button.ts`, `mp-treeview` at `web-components/treeview/src/components/mp-treeview.ts`). Captured in [`wc-inventory.md`](./wc-inventory.md).
 
 ## Acceptance criteria
 
