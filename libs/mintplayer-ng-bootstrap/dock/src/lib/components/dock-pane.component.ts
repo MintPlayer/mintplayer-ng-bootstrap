@@ -1,4 +1,5 @@
-import { AfterContentInit, Component, input, TemplateRef, viewChild, ChangeDetectionStrategy } from '@angular/core';
+import { AfterContentInit, Component, input, TemplateRef, viewChild, ChangeDetectionStrategy} from '@angular/core';
+
 @Component({
   selector: 'bs-dock-pane',
   templateUrl: './dock-pane.component.html',
