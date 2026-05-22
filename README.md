@@ -59,10 +59,10 @@ To boot **all three demos + the .NET API at once** from a single
 terminal (one `dotnet watch` shared by all three, single Ctrl+C tears
 the whole tree down):
 
-    npx nx run-many -t serve --projects=ng-bootstrap-demo,react-bootstrap-demo,vue-bootstrap-demo
+    npx nx run-many -t serve -p 'ng-bootstrap-demo,react-bootstrap-demo,vue-bootstrap-demo'
 
-PowerShell users: the `--projects=` form (single token, with `=`) is
-required — `-p a,b,c` is parsed as PowerShell's comma-operator array
+The single quotes around the project list are required on PowerShell —
+without them, `-p a,b,c` is parsed as PowerShell's comma-operator array
 and split into separate args, which Nx silently rejects with "No tasks
 were run".
 
