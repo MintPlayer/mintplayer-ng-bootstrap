@@ -41,7 +41,7 @@ export function FrameworkLinks() {
         href={`${originFor('angular')}${pathname}`}
         title="Angular demo"
         aria-label="Open the same page in the Angular demo"
-        className={ACTIVE === ('angular' as Framework) ? 'active' : ''}
+        className={ACTIVE === 'angular' ? 'active' : ''}
       >
         <AngularMark />
       </a>
@@ -57,7 +57,7 @@ export function FrameworkLinks() {
         href={`${originFor('vue')}${pathname}`}
         title="Vue demo"
         aria-label="Open the same page in the Vue demo"
-        className={ACTIVE === ('vue' as Framework) ? 'active' : ''}
+        className={ACTIVE === 'vue' ? 'active' : ''}
       >
         <VueMark />
       </a>

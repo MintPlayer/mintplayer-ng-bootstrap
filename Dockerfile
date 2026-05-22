@@ -1,7 +1,7 @@
 # Stage 1: Compile and Build angular codebase
 
 # Use official node image as the base image
-FROM node:latest as node_image
+FROM node:22-alpine AS node_image
 
 # Set the working directory
 WORKDIR /usr/local/app
@@ -19,7 +19,7 @@ RUN npm run build -- --configuration=production
 # Stage 2: Serve app with nginx server
 
 # Use official nginx image as the base image
-FROM nginx:latest
+FROM nginx:1.27-alpine
 LABEL org.opencontainers.image.source="https://github.com/MintPlayer/mintplayer-ng-bootstrap"
 
 # Copy the build output to replace the default nginx contents.

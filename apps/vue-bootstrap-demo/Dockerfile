@@ -1,5 +1,5 @@
 # Stage 1: build the Vue SPA
-FROM node:latest AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /usr/local/app
 COPY ./ /usr/local/app/
@@ -7,7 +7,7 @@ RUN npm install --legacy-peer-deps
 RUN npx nx build vue-bootstrap-demo --configuration=production
 
 # Stage 2: serve via nginx
-FROM nginx:latest
+FROM nginx:1.27-alpine
 LABEL org.opencontainers.image.source="https://github.com/MintPlayer/mintplayer-ng-bootstrap"
 
 COPY --from=builder /usr/local/app/dist/apps/vue-bootstrap-demo /usr/share/nginx/html

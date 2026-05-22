@@ -39,7 +39,7 @@ const vueHref = computed(() => `${originFor('vue')}${route.fullPath}`);
         <path d="M16 6l-7.5 16.5h2.8L13 19h6l1.7 3.5h2.8L16 6zm-2.2 10.7L16 11.4l2.2 5.3h-4.4z" fill="#FFF" />
       </svg>
     </a>
-    <a :href="reactHref" title="React demo" aria-label="Open the same page in the React demo" :class="{ active: (ACTIVE as string) === 'react' }">
+    <a :href="reactHref" title="React demo" aria-label="Open the same page in the React demo" :class="{ active: ACTIVE === 'react' }">
       <svg viewBox="-11.5 -10.23174 23 20.46348" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <circle r="2.05" fill="#61DAFB" />
         <g stroke="#61DAFB" stroke-width="1" fill="none">
