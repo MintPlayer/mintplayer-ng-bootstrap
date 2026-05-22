@@ -13,7 +13,15 @@ import {
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { BsTileComponent } from './tile.component';
-import { MintTile, MintTileManagerElement, TileDragMode, TileResizeMode, TileLayoutSnapshot, TileGestureBlocked, TilePosition } from '@mintplayer/web-components/tile-manager';
+import {
+  MintTile,
+  MintTileManagerElement,
+  TileDragMode,
+  TileResizeMode,
+  TileLayoutSnapshot,
+  TileGestureBlocked,
+  TilePosition,
+} from '@mintplayer/web-components/tile-manager';
 
 @Component({
   selector: 'bs-tile-manager',

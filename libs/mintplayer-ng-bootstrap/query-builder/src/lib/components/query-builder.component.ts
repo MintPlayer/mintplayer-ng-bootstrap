@@ -20,7 +20,20 @@ import {
   ControlValueAccessor,
   NG_VALUE_ACCESSOR,
 } from '@angular/forms';
-import { MpQueryBuilderElement, type Expression, type EntitySchema, type EditorContext, type EditorFactory, type EditorRegistry, type QueryBuilderMessages, type SavedQuery, type SortDescriptor, emptyGroup, validateOperatorOverrides, type OperatorOverrides } from '@mintplayer/web-components/query-builder';
+import {
+  MpQueryBuilderElement,
+  type Expression,
+  type EntitySchema,
+  type EditorContext,
+  type EditorFactory,
+  type EditorRegistry,
+  type QueryBuilderMessages,
+  type SavedQuery,
+  type SortDescriptor,
+  emptyGroup,
+  validateOperatorOverrides,
+  type OperatorOverrides,
+} from '@mintplayer/web-components/query-builder';
 import { BsQueryBuilderEditorDirective } from './query-builder-editor.directive';
 
 void MpQueryBuilderElement;

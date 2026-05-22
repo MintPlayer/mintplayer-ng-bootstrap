@@ -18,6 +18,7 @@ import { BsCheckboxValueAccessor } from '../value-accessor/checkbox-value-access
 import { BsCheckboxGroupDirective } from '../directives/checkbox-group/checkbox-group.directive';
 import { BsCheckboxType } from '../types/checkbox-type';
 import type { CheckboxChangeEventDetail, MpCheckbox } from '@mintplayer/web-components/checkbox';
+
 // Side-effect import: registers <mp-checkbox>.
 import '@mintplayer/web-components/checkbox';
 

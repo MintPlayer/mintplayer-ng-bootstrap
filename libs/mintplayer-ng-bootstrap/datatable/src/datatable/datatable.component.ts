@@ -31,6 +31,7 @@ import {
   type SortChangeEventDetail,
   type SelectionChangeEventDetail,
 } from '@mintplayer/web-components/datatable';
+
 // Side-effect import: registers <mp-datatable>.
 import '@mintplayer/web-components/datatable';
 

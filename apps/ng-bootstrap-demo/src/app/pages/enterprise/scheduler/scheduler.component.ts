@@ -321,6 +321,7 @@ export class SchedulerComponent {
       SchedulerOptions,
       generateEventId,
     } from '@mintplayer/web-components/scheduler-core';
+
     @Component({
       selector: 'my-calendar',
       templateUrl: './my-calendar.component.html',

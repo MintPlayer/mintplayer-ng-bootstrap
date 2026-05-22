@@ -14,6 +14,7 @@ import {
   type PageChangeEventDetail,
   type PaginationSize,
 } from '@mintplayer/web-components/pagination';
+
 // Side-effect import: registers <mp-pagination>.
 import '@mintplayer/web-components/pagination';
 

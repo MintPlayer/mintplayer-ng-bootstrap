@@ -25,6 +25,7 @@ import {
   type TreeNodeSelectEventDetail,
   type TreeviewSelectionMode,
 } from '@mintplayer/web-components/treeview';
+
 // Side-effect import: registers the `<mp-treeview>` custom element.
 import '@mintplayer/web-components/treeview';
 

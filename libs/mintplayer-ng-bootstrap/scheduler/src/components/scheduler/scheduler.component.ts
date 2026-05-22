@@ -24,6 +24,7 @@ import {
   ResourceGroup,
   SchedulerOptions,
 } from '@mintplayer/web-components/scheduler-core';
+
 // Import the web component to ensure it gets registered
 import '@mintplayer/web-components/scheduler';
 

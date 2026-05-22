@@ -29,6 +29,7 @@ import type {
   UploadEntry,
   UploadRequestEventDetail,
 } from '@mintplayer/web-components/file-manager';
+
 // Side-effect import: registers <mp-file-manager> and all the nested WCs.
 import '@mintplayer/web-components/file-manager';
 

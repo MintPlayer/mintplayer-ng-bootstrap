@@ -14,7 +14,12 @@ import {
   signal,
 } from '@angular/core';
 import { DOCUMENT, NgTemplateOutlet } from '@angular/common';
-import { DockLayout, DockLayoutNode, DockLayoutSnapshot, MintDockManagerElement } from '@mintplayer/web-components/dock';
+import {
+  DockLayout,
+  DockLayoutNode,
+  DockLayoutSnapshot,
+  MintDockManagerElement,
+} from '@mintplayer/web-components/dock';
 import { BsDockPaneComponent } from './dock-pane.component';
 
 @Component({
