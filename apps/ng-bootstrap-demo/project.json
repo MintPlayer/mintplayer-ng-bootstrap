@@ -28,6 +28,7 @@
         "inlineStyleLanguage": "scss",
         "assets": [
           "apps/ng-bootstrap-demo/src/favicon.ico",
+          "apps/ng-bootstrap-demo/src/favicon.svg",
           "apps/ng-bootstrap-demo/src/assets",
           "apps/ng-bootstrap-demo/src/web.config",
           "apps/ng-bootstrap-demo/src/nginx.conf"
