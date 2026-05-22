@@ -1,55 +1,82 @@
 /// <reference types='vitest' />
 import { defineConfig } from 'vite';
 import dts from 'vite-plugin-dts';
-import * as path from 'path';
+import { readdirSync, existsSync, statSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
+
+/**
+ * Discover every sub-entrypoint by scanning for `<entry>/src/index.ts`.
+ *
+ * A directory at this lib's root is considered a sub-entrypoint if and only
+ * if it contains an `src/index.ts`. The primary entrypoint at `src/index.ts`
+ * (no sub-folder) is included as the implicit `index` key.
+ */
+function discoverEntries(libRoot: string): Record<string, string> {
+  const entries: Record<string, string> = {};
+
+  // Primary entry — kept as a thin re-export root.
+  const primary = resolve(libRoot, 'src/index.ts');
+  if (existsSync(primary)) entries['index'] = primary;
+
+  for (const name of readdirSync(libRoot)) {
+    if (name.startsWith('.') || name === 'node_modules' || name === 'src' || name === 'dist') continue;
+    const subRoot = join(libRoot, name);
+    if (!statSync(subRoot).isDirectory()) continue;
+    const subIndex = join(subRoot, 'src', 'index.ts');
+    if (existsSync(subIndex)) entries[`${name}/index`] = subIndex;
+  }
+
+  return entries;
+}
 
 export default defineConfig(() => ({
   root: import.meta.dirname,
   cacheDir: '../../node_modules/.vite/libs/mintplayer-web-components',
   plugins: [
     nxViteTsPaths(),
-    nxCopyAssetsPlugin(['*.md']),
+    nxCopyAssetsPlugin(['*.md', 'custom-elements.json']),
     dts({
-      entryRoot: 'src',
-      tsconfigPath: path.join(import.meta.dirname, 'tsconfig.lib.json'),
+      entryRoot: '.',
+      tsconfigPath: resolve(import.meta.dirname, 'tsconfig.lib.json'),
       pathsToAliases: false,
     }),
   ],
-  // Uncomment this if you are using workers.
-  // worker: {
-  //   plugins: () => [ nxViteTsPaths() ],
-  // },
-  // Configuration for building your library.
-  // See: https://vite.dev/guide/build.html#library-mode
   build: {
     outDir: '../../dist/libs/mintplayer-web-components',
     emptyOutDir: true,
     reportCompressedSize: true,
+    target: 'es2022',
     commonjsOptions: {
       transformMixedEsModules: true,
     },
     lib: {
-      // Could also be a dictionary or array of multiple entry points.
-      entry: 'src/index.ts',
-      name: 'mintplayer-web-components',
-      fileName: 'index',
-      // Change this to the formats you want to support.
-      // Don't forget to update your package.json as well.
+      entry: discoverEntries(import.meta.dirname),
       formats: ['es' as const],
+      fileName: (_format, entryName) => `${entryName}.mjs`,
     },
     rollupOptions: {
-      // External packages that should not be bundled into your library.
-      external: [],
+      external: [
+        'lit',
+        /^lit\//,
+        '@lit/context',
+        'tslib',
+      ],
+      output: {
+        preserveModules: false,
+        entryFileNames: '[name].mjs',
+        chunkFileNames: 'chunks/[name]-[hash].mjs',
+      },
     },
   },
   test: {
     name: 'mintplayer-web-components',
     watch: false,
     globals: true,
-    environment: 'node',
-    include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    environment: 'jsdom',
+    include: ['**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    exclude: ['**/node_modules/**', '**/dist/**'],
     reporters: ['default'],
     coverage: {
       reportsDirectory: '../../coverage/libs/mintplayer-web-components',
