@@ -49,6 +49,15 @@
         "{workspaceRoot}/tools/eslint-rules/**/*"
       ],
       "cache": true
+    },
+    "@nx/vite:build": {
+      "cache": true,
+      "dependsOn": ["^build"],
+      "inputs": ["production", "^production"]
+    },
+    "@nx/vitest:test": {
+      "cache": true,
+      "inputs": ["default", "^production"]
     }
   },
   "namedInputs": {
@@ -69,5 +78,10 @@
   "useDaemonProcess": false,
   "useInferencePlugins": false,
   "defaultBase": "master",
-  "analytics": false
+  "analytics": false,
+  "release": {
+    "version": {
+      "preVersionCommand": "npx nx run-many -t build"
+    }
+  }
 }
