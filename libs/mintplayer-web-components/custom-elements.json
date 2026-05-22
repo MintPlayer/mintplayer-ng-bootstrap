@@ -1064,6 +1064,197 @@
     },
     {
       "kind": "javascript-module",
+      "path": "code-snippet/src/mp-code-snippet.element.ts",
+      "declarations": [
+        {
+          "kind": "variable",
+          "name": "TAG_NAME",
+          "type": {
+            "text": "string"
+          },
+          "default": "'mp-code-snippet'"
+        },
+        {
+          "kind": "class",
+          "description": "`<mp-code-snippet>` — code block with syntax highlighting + copy-to-clipboard.\n\nReplaces the Angular-only `bs-code-snippet`. All three demo apps\n(Angular / React / Vue) render their per-page source snippets through\nthis WC for visual consistency.\n\nAttributes / properties:\n- `language` (optional): force a specific highlight.js language. If\n  omitted, the highlighter auto-detects.\n- `code` (property): the source to render. Setting via attribute also\n  works but the property form is preferred for multi-line content.\n\nEvents:\n- `language-detected` — fires after each highlight pass with\n  `detail.language` containing the resolved language id (e.g. `\"typescript\"`).\n\na11y: the copy button announces success via an `aria-live=\"polite\"`\nregion inside the shadow root.\n\nSource content can ALSO be projected via the default slot — useful for\nstatic HTML pages where attribute serialization of newlines is awkward.\nSlot content is read once on first render and on `slotchange`.",
+          "name": "MpCodeSnippet",
+          "members": [
+            {
+              "kind": "field",
+              "name": "language",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "attribute": "language"
+            },
+            {
+              "kind": "field",
+              "name": "code",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "attribute": "code"
+            },
+            {
+              "kind": "field",
+              "name": "detectedLanguage",
+              "type": {
+                "text": "string"
+              },
+              "privacy": "private",
+              "default": "'code'"
+            },
+            {
+              "kind": "field",
+              "name": "highlighted",
+              "type": {
+                "text": "string"
+              },
+              "privacy": "private",
+              "default": "''"
+            },
+            {
+              "kind": "field",
+              "name": "toastVisible",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "toastTimer",
+              "type": {
+                "text": "ReturnType<typeof setTimeout> | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "method",
+              "name": "runHighlight",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "handleCopy",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "Promise<void>"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "showToast",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "onSlotChange",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "e",
+                  "type": {
+                    "text": "Event"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "escapeHtml",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "string"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "s",
+                  "type": {
+                    "text": "string"
+                  }
+                }
+              ]
+            }
+          ],
+          "events": [
+            {
+              "name": "language-detected",
+              "type": {
+                "text": "CustomEvent"
+              }
+            }
+          ],
+          "attributes": [
+            {
+              "name": "language",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "fieldName": "language"
+            },
+            {
+              "name": "code",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "fieldName": "code"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "TAG_NAME",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpCodeSnippet",
+          "declaration": {
+            "name": "MpCodeSnippet",
+            "module": "code-snippet/src/mp-code-snippet.element.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "TAG_NAME",
+          "declaration": {
+            "name": "MpCodeSnippet",
+            "module": "code-snippet/src/mp-code-snippet.element.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "datepicker/src/mp-datepicker.element.ts",
       "declarations": [
         {
@@ -14482,21 +14673,6 @@
     },
     {
       "kind": "javascript-module",
-      "path": "calendar/src/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "*",
-          "declaration": {
-            "name": "*",
-            "module": "calendar/src/mp-calendar.element"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
       "path": "card/src/card-classes.ts",
       "declarations": [
         {
@@ -14826,6 +15002,36 @@
           "declaration": {
             "name": "CheckboxChangeEventDetail",
             "module": "./components"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "code-snippet/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "code-snippet/src/mp-code-snippet.element"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "calendar/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "calendar/src/mp-calendar.element"
           }
         }
       ]
@@ -31885,174 +32091,6 @@
     },
     {
       "kind": "javascript-module",
-      "path": "splitter/src/managers/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "ResizeManager",
-          "declaration": {
-            "name": "ResizeManager",
-            "module": "./resize-manager"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "ResizeManagerOptions",
-          "declaration": {
-            "name": "ResizeManagerOptions",
-            "module": "./resize-manager"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "splitter/src/managers/resize-manager.ts",
-      "declarations": [
-        {
-          "kind": "class",
-          "description": "",
-          "name": "ResizeManager",
-          "members": [
-            {
-              "kind": "field",
-              "name": "options",
-              "type": {
-                "text": "Required<ResizeManagerOptions>"
-              },
-              "privacy": "private",
-              "default": "{ minPanelSize: options.minPanelSize ?? 50, }"
-            },
-            {
-              "kind": "method",
-              "name": "computePanelSizes",
-              "return": {
-                "type": {
-                  "text": "number[]"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "panels",
-                  "type": {
-                    "text": "HTMLElement[]"
-                  }
-                },
-                {
-                  "name": "orientation",
-                  "type": {
-                    "text": "Direction"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "createResizeOperation",
-              "return": {
-                "type": {
-                  "text": "ResizeOperation"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "startPoint",
-                  "type": {
-                    "text": "Point"
-                  }
-                },
-                {
-                  "name": "currentSizes",
-                  "type": {
-                    "text": "number[]"
-                  }
-                },
-                {
-                  "name": "dividerIndex",
-                  "type": {
-                    "text": "number"
-                  }
-                },
-                {
-                  "name": "dividerElement",
-                  "type": {
-                    "text": "HTMLElement"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "calculatePreviewSizes",
-              "return": {
-                "type": {
-                  "text": "number[]"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "operation",
-                  "type": {
-                    "text": "ResizeOperation"
-                  }
-                },
-                {
-                  "name": "currentPoint",
-                  "type": {
-                    "text": "Point"
-                  }
-                },
-                {
-                  "name": "orientation",
-                  "type": {
-                    "text": "Direction"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "setMinPanelSize",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "size",
-                  "type": {
-                    "text": "number"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "getMinPanelSize",
-              "return": {
-                "type": {
-                  "text": "number"
-                }
-              }
-            }
-          ]
-        }
-      ],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "ResizeManager",
-          "declaration": {
-            "name": "ResizeManager",
-            "module": "splitter/src/managers/resize-manager.ts"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
       "path": "splitter/src/state/index.ts",
       "declarations": [],
       "exports": [
@@ -32275,6 +32313,174 @@
           "declaration": {
             "name": "SplitterStateManager",
             "module": "splitter/src/state/splitter-state.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "splitter/src/managers/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "ResizeManager",
+          "declaration": {
+            "name": "ResizeManager",
+            "module": "./resize-manager"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "ResizeManagerOptions",
+          "declaration": {
+            "name": "ResizeManagerOptions",
+            "module": "./resize-manager"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "splitter/src/managers/resize-manager.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "",
+          "name": "ResizeManager",
+          "members": [
+            {
+              "kind": "field",
+              "name": "options",
+              "type": {
+                "text": "Required<ResizeManagerOptions>"
+              },
+              "privacy": "private",
+              "default": "{ minPanelSize: options.minPanelSize ?? 50, }"
+            },
+            {
+              "kind": "method",
+              "name": "computePanelSizes",
+              "return": {
+                "type": {
+                  "text": "number[]"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "panels",
+                  "type": {
+                    "text": "HTMLElement[]"
+                  }
+                },
+                {
+                  "name": "orientation",
+                  "type": {
+                    "text": "Direction"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "createResizeOperation",
+              "return": {
+                "type": {
+                  "text": "ResizeOperation"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "startPoint",
+                  "type": {
+                    "text": "Point"
+                  }
+                },
+                {
+                  "name": "currentSizes",
+                  "type": {
+                    "text": "number[]"
+                  }
+                },
+                {
+                  "name": "dividerIndex",
+                  "type": {
+                    "text": "number"
+                  }
+                },
+                {
+                  "name": "dividerElement",
+                  "type": {
+                    "text": "HTMLElement"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "calculatePreviewSizes",
+              "return": {
+                "type": {
+                  "text": "number[]"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "operation",
+                  "type": {
+                    "text": "ResizeOperation"
+                  }
+                },
+                {
+                  "name": "currentPoint",
+                  "type": {
+                    "text": "Point"
+                  }
+                },
+                {
+                  "name": "orientation",
+                  "type": {
+                    "text": "Direction"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "setMinPanelSize",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "size",
+                  "type": {
+                    "text": "number"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "getMinPanelSize",
+              "return": {
+                "type": {
+                  "text": "number"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "ResizeManager",
+          "declaration": {
+            "name": "ResizeManager",
+            "module": "splitter/src/managers/resize-manager.ts"
           }
         }
       ]

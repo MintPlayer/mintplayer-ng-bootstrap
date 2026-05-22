@@ -62,6 +62,7 @@ export default defineConfig(() => ({
         /^lit\//,
         '@lit/context',
         'tslib',
+        /^highlight\.js(\/.*)?$/,
       ],
       output: {
         preserveModules: false,
