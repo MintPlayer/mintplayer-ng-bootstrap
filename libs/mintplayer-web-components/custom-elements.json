@@ -14673,6 +14673,21 @@
     },
     {
       "kind": "javascript-module",
+      "path": "calendar/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "calendar/src/mp-calendar.element"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "card/src/card-classes.ts",
       "declarations": [
         {
@@ -15023,7 +15038,7 @@
     },
     {
       "kind": "javascript-module",
-      "path": "calendar/src/index.ts",
+      "path": "datepicker/src/index.ts",
       "declarations": [],
       "exports": [
         {
@@ -15031,7 +15046,7 @@
           "name": "*",
           "declaration": {
             "name": "*",
-            "module": "calendar/src/mp-calendar.element"
+            "module": "datepicker/src/mp-datepicker.element"
           }
         }
       ]
@@ -15167,21 +15182,6 @@
           "declaration": {
             "name": "datatableStyles",
             "module": "./styles"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "datepicker/src/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "*",
-          "declaration": {
-            "name": "*",
-            "module": "datepicker/src/mp-datepicker.element"
           }
         }
       ]
@@ -16377,75 +16377,6 @@
     },
     {
       "kind": "javascript-module",
-      "path": "ribbon/src/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "*",
-          "declaration": {
-            "name": "*",
-            "module": "ribbon/src/mp-ribbon.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "*",
-          "declaration": {
-            "name": "*",
-            "module": "ribbon/src/mp-ribbon-tab.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "*",
-          "declaration": {
-            "name": "*",
-            "module": "ribbon/src/mp-ribbon-group.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "*",
-          "declaration": {
-            "name": "*",
-            "module": "ribbon/src/mp-ribbon-contextual-tab-set.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "*",
-          "declaration": {
-            "name": "*",
-            "module": "ribbon/src/mp-quick-access-toolbar.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "*",
-          "declaration": {
-            "name": "*",
-            "module": "ribbon/src/items"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "*",
-          "declaration": {
-            "name": "*",
-            "module": "ribbon/src/ribbon.types"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "ribbon/src/ribbon.types.ts",
-      "declarations": [],
-      "exports": []
-    },
-    {
-      "kind": "javascript-module",
       "path": "scheduler/src/index.ts",
       "declarations": [],
       "exports": [
@@ -16578,6 +16509,75 @@
           }
         }
       ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "ribbon/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "ribbon/src/mp-ribbon.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "ribbon/src/mp-ribbon-tab.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "ribbon/src/mp-ribbon-group.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "ribbon/src/mp-ribbon-contextual-tab-set.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "ribbon/src/mp-quick-access-toolbar.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "ribbon/src/items"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "ribbon/src/ribbon.types"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "ribbon/src/ribbon.types.ts",
+      "declarations": [],
+      "exports": []
     },
     {
       "kind": "javascript-module",
@@ -22021,357 +22021,6 @@
           "declaration": {
             "name": "MpRadio",
             "module": "radio/src/components/mp-radio.ts"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "ribbon/src/items/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "MpRibbonItemBase",
-          "declaration": {
-            "name": "MpRibbonItemBase",
-            "module": "./mp-ribbon-item-base"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "RibbonItemSize",
-          "declaration": {
-            "name": "RibbonItemSize",
-            "module": "./mp-ribbon-item-base"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpRibbonButton",
-          "declaration": {
-            "name": "MpRibbonButton",
-            "module": "./mp-ribbon-button.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpRibbonSplitButton",
-          "declaration": {
-            "name": "MpRibbonSplitButton",
-            "module": "./mp-ribbon-split-button.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpRibbonDropdownButton",
-          "declaration": {
-            "name": "MpRibbonDropdownButton",
-            "module": "./mp-ribbon-dropdown-button.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpRibbonToggleButton",
-          "declaration": {
-            "name": "MpRibbonToggleButton",
-            "module": "./mp-ribbon-toggle-button.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpRibbonCheckBox",
-          "declaration": {
-            "name": "MpRibbonCheckBox",
-            "module": "./mp-ribbon-checkbox.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpRibbonComboBox",
-          "declaration": {
-            "name": "MpRibbonComboBox",
-            "module": "./mp-ribbon-combobox.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpRibbonColorPicker",
-          "declaration": {
-            "name": "MpRibbonColorPicker",
-            "module": "./mp-ribbon-color-picker.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpRibbonGroupButton",
-          "declaration": {
-            "name": "MpRibbonGroupButton",
-            "module": "./mp-ribbon-group-button.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpRibbonGallery",
-          "declaration": {
-            "name": "MpRibbonGallery",
-            "module": "./mp-ribbon-gallery.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpRibbonGalleryItem",
-          "declaration": {
-            "name": "MpRibbonGalleryItem",
-            "module": "./mp-ribbon-gallery-item.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpRibbonTemplateItem",
-          "declaration": {
-            "name": "MpRibbonTemplateItem",
-            "module": "./mp-ribbon-template-item.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpRibbonMenuItem",
-          "declaration": {
-            "name": "MpRibbonMenuItem",
-            "module": "./mp-ribbon-menu-item.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpRibbonMenuSeparator",
-          "declaration": {
-            "name": "MpRibbonMenuSeparator",
-            "module": "./mp-ribbon-menu-separator.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "RibbonGroupButtonOption",
-          "declaration": {
-            "name": "RibbonGroupButtonOption",
-            "module": "./mp-ribbon-group-button.element"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "ribbon/src/items/mp-ribbon-item-base.ts",
-      "declarations": [
-        {
-          "kind": "variable",
-          "name": "RIBBON_ICON_SLOT_STYLES",
-          "default": "css` :host([size=\"large\"]) ::slotted([slot=\"icon\"]) { font-size: 28px; width: 28px; height: 28px; line-height: 1; } :host([size=\"medium\"]) ::slotted([slot=\"icon\"]) { font-size: 16px; width: 16px; height: 16px; line-height: 1; } :host([size=\"small\"]) ::slotted([slot=\"icon\"]) { font-size: 14px; width: 14px; height: 14px; line-height: 1; } ::slotted(.ribbon-icon-large) { font-size: 28px !important; width: 28px !important; height: 28px !important; line-height: 1 !important; } ::slotted(.ribbon-icon-medium) { font-size: 16px !important; width: 16px !important; height: 16px !important; line-height: 1 !important; } ::slotted(.ribbon-icon-small) { font-size: 14px !important; width: 14px !important; height: 14px !important; line-height: 1 !important; } `",
-          "description": "FR-16: shared CSS for slot-based icon projection. Every ribbon item\r\nadds this to its `static styles` so:\r\n\r\n- Slotted `<i slot=\"icon\">` (or anything else with `slot=\"icon\"`) is\r\n  auto-sized based on the item host's current `size` attribute. Slotted\r\n  elements live in light DOM and don't inherit shadow-tree styles, so\r\n  explicit `::slotted` rules are required.\r\n- Consumers can opt into explicit sizing via `.ribbon-icon-large /\r\n  -medium / -small` utility classes — applied to the slotted icon\r\n  element, they win via `!important` regardless of the host size.\r\n\r\nItems that don't extend MpRibbonItemBase (template-item, menu-item,\r\ngallery-item) compose this constant the same way."
-        },
-        {
-          "kind": "class",
-          "description": "Base class for all ribbon item kinds.\r\nProvides common properties: id, label, icon, size, disabled, tooltip.\r\n\r\n`delegatesFocus: true` lets the host stand in for its inner button in\r\nsequential tab order — setting `tabindex` on the host then controls\r\nwhether the whole item is reachable via Tab, which is what the\r\nroving-tabindex implementation in `mp-ribbon-group` relies on. Without\r\ndelegatesFocus, the browser would walk into each item's shadow root\r\nregardless of host tabindex, breaking the APG toolbar pattern.",
-          "name": "MpRibbonItemBase",
-          "members": [
-            {
-              "kind": "field",
-              "name": "shadowRootOptions",
-              "type": {
-                "text": "ShadowRootInit"
-              },
-              "static": true,
-              "default": "{ ...LitElement.shadowRootOptions, delegatesFocus: true, }"
-            },
-            {
-              "kind": "field",
-              "name": "itemId",
-              "type": {
-                "text": "string"
-              },
-              "default": "''",
-              "description": "Unique identifier for this item",
-              "attribute": "item-id"
-            },
-            {
-              "kind": "field",
-              "name": "label",
-              "type": {
-                "text": "string"
-              },
-              "default": "''",
-              "description": "Display label",
-              "attribute": "label"
-            },
-            {
-              "kind": "field",
-              "name": "icon",
-              "type": {
-                "text": "string"
-              },
-              "default": "''",
-              "description": "Icon class or image URL",
-              "attribute": "icon"
-            },
-            {
-              "kind": "field",
-              "name": "size",
-              "type": {
-                "text": "RibbonItemSize"
-              },
-              "default": "'medium'",
-              "description": "Size: large (tall), medium (normal), small (compact).\r\n\r\n- Reflected to the `size` attribute on the host (existing API; consumer\r\n  templates set `size=\"large\"` etc.).\r\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\r\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\r\n  reaching into shadow DOM (FR-5).\r\n- The inner element gets a `ribbon-item-<size>` class for the\r\n  component's own shadow-DOM styles.",
-              "attribute": "size",
-              "reflects": true
-            },
-            {
-              "kind": "field",
-              "name": "disabled",
-              "type": {
-                "text": "boolean"
-              },
-              "default": "false",
-              "description": "Disabled state",
-              "attribute": "disabled"
-            },
-            {
-              "kind": "field",
-              "name": "tooltip",
-              "type": {
-                "text": "string"
-              },
-              "default": "''",
-              "description": "Tooltip / title text",
-              "attribute": "tooltip"
-            },
-            {
-              "kind": "method",
-              "name": "emitItemClick",
-              "privacy": "protected",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "_event",
-                  "optional": true,
-                  "type": {
-                    "text": "Event"
-                  }
-                }
-              ],
-              "description": "Emit the canonical `item-click` event. Subclasses wire this to their\r\nprimary activation surface (typically `@click` on the inner button).\r\nPreviously the base bound a host-level click listener, which fired on\r\nany bubbled click — clicking a checkbox input, a split-button's\r\nchevron, or a dropdown trigger would all spuriously fire `item-click`\r\nin addition to the kind-specific event. Item kinds now decide\r\nexplicitly when an item-click happens."
-            },
-            {
-              "kind": "method",
-              "name": "getSizeClass",
-              "privacy": "protected",
-              "return": {
-                "type": {
-                  "text": "string"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "getDisabledAttr",
-              "privacy": "protected",
-              "return": {
-                "type": {
-                  "text": "string | null"
-                }
-              }
-            }
-          ],
-          "events": [
-            {
-              "name": "item-click",
-              "type": {
-                "text": "CustomEvent"
-              }
-            }
-          ],
-          "attributes": [
-            {
-              "name": "item-id",
-              "type": {
-                "text": "string"
-              },
-              "default": "''",
-              "description": "Unique identifier for this item",
-              "fieldName": "itemId"
-            },
-            {
-              "name": "label",
-              "type": {
-                "text": "string"
-              },
-              "default": "''",
-              "description": "Display label",
-              "fieldName": "label"
-            },
-            {
-              "name": "icon",
-              "type": {
-                "text": "string"
-              },
-              "default": "''",
-              "description": "Icon class or image URL",
-              "fieldName": "icon"
-            },
-            {
-              "name": "size",
-              "type": {
-                "text": "RibbonItemSize"
-              },
-              "default": "'medium'",
-              "description": "Size: large (tall), medium (normal), small (compact).\r\n\r\n- Reflected to the `size` attribute on the host (existing API; consumer\r\n  templates set `size=\"large\"` etc.).\r\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\r\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\r\n  reaching into shadow DOM (FR-5).\r\n- The inner element gets a `ribbon-item-<size>` class for the\r\n  component's own shadow-DOM styles.",
-              "fieldName": "size"
-            },
-            {
-              "name": "disabled",
-              "type": {
-                "text": "boolean"
-              },
-              "default": "false",
-              "description": "Disabled state",
-              "fieldName": "disabled"
-            },
-            {
-              "name": "tooltip",
-              "type": {
-                "text": "string"
-              },
-              "default": "''",
-              "description": "Tooltip / title text",
-              "fieldName": "tooltip"
-            }
-          ],
-          "superclass": {
-            "name": "LitElement",
-            "package": "lit"
-          },
-          "customElement": true
-        }
-      ],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "RIBBON_ICON_SLOT_STYLES",
-          "declaration": {
-            "name": "RIBBON_ICON_SLOT_STYLES",
-            "module": "ribbon/src/items/mp-ribbon-item-base.ts"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpRibbonItemBase",
-          "declaration": {
-            "name": "MpRibbonItemBase",
-            "module": "ribbon/src/items/mp-ribbon-item-base.ts"
           }
         }
       ]
@@ -28436,6 +28085,357 @@
     },
     {
       "kind": "javascript-module",
+      "path": "ribbon/src/items/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpRibbonItemBase",
+          "declaration": {
+            "name": "MpRibbonItemBase",
+            "module": "./mp-ribbon-item-base"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "RibbonItemSize",
+          "declaration": {
+            "name": "RibbonItemSize",
+            "module": "./mp-ribbon-item-base"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpRibbonButton",
+          "declaration": {
+            "name": "MpRibbonButton",
+            "module": "./mp-ribbon-button.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpRibbonSplitButton",
+          "declaration": {
+            "name": "MpRibbonSplitButton",
+            "module": "./mp-ribbon-split-button.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpRibbonDropdownButton",
+          "declaration": {
+            "name": "MpRibbonDropdownButton",
+            "module": "./mp-ribbon-dropdown-button.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpRibbonToggleButton",
+          "declaration": {
+            "name": "MpRibbonToggleButton",
+            "module": "./mp-ribbon-toggle-button.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpRibbonCheckBox",
+          "declaration": {
+            "name": "MpRibbonCheckBox",
+            "module": "./mp-ribbon-checkbox.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpRibbonComboBox",
+          "declaration": {
+            "name": "MpRibbonComboBox",
+            "module": "./mp-ribbon-combobox.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpRibbonColorPicker",
+          "declaration": {
+            "name": "MpRibbonColorPicker",
+            "module": "./mp-ribbon-color-picker.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpRibbonGroupButton",
+          "declaration": {
+            "name": "MpRibbonGroupButton",
+            "module": "./mp-ribbon-group-button.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpRibbonGallery",
+          "declaration": {
+            "name": "MpRibbonGallery",
+            "module": "./mp-ribbon-gallery.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpRibbonGalleryItem",
+          "declaration": {
+            "name": "MpRibbonGalleryItem",
+            "module": "./mp-ribbon-gallery-item.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpRibbonTemplateItem",
+          "declaration": {
+            "name": "MpRibbonTemplateItem",
+            "module": "./mp-ribbon-template-item.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpRibbonMenuItem",
+          "declaration": {
+            "name": "MpRibbonMenuItem",
+            "module": "./mp-ribbon-menu-item.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpRibbonMenuSeparator",
+          "declaration": {
+            "name": "MpRibbonMenuSeparator",
+            "module": "./mp-ribbon-menu-separator.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "RibbonGroupButtonOption",
+          "declaration": {
+            "name": "RibbonGroupButtonOption",
+            "module": "./mp-ribbon-group-button.element"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "ribbon/src/items/mp-ribbon-item-base.ts",
+      "declarations": [
+        {
+          "kind": "variable",
+          "name": "RIBBON_ICON_SLOT_STYLES",
+          "default": "css` :host([size=\"large\"]) ::slotted([slot=\"icon\"]) { font-size: 28px; width: 28px; height: 28px; line-height: 1; } :host([size=\"medium\"]) ::slotted([slot=\"icon\"]) { font-size: 16px; width: 16px; height: 16px; line-height: 1; } :host([size=\"small\"]) ::slotted([slot=\"icon\"]) { font-size: 14px; width: 14px; height: 14px; line-height: 1; } ::slotted(.ribbon-icon-large) { font-size: 28px !important; width: 28px !important; height: 28px !important; line-height: 1 !important; } ::slotted(.ribbon-icon-medium) { font-size: 16px !important; width: 16px !important; height: 16px !important; line-height: 1 !important; } ::slotted(.ribbon-icon-small) { font-size: 14px !important; width: 14px !important; height: 14px !important; line-height: 1 !important; } `",
+          "description": "FR-16: shared CSS for slot-based icon projection. Every ribbon item\r\nadds this to its `static styles` so:\r\n\r\n- Slotted `<i slot=\"icon\">` (or anything else with `slot=\"icon\"`) is\r\n  auto-sized based on the item host's current `size` attribute. Slotted\r\n  elements live in light DOM and don't inherit shadow-tree styles, so\r\n  explicit `::slotted` rules are required.\r\n- Consumers can opt into explicit sizing via `.ribbon-icon-large /\r\n  -medium / -small` utility classes — applied to the slotted icon\r\n  element, they win via `!important` regardless of the host size.\r\n\r\nItems that don't extend MpRibbonItemBase (template-item, menu-item,\r\ngallery-item) compose this constant the same way."
+        },
+        {
+          "kind": "class",
+          "description": "Base class for all ribbon item kinds.\r\nProvides common properties: id, label, icon, size, disabled, tooltip.\r\n\r\n`delegatesFocus: true` lets the host stand in for its inner button in\r\nsequential tab order — setting `tabindex` on the host then controls\r\nwhether the whole item is reachable via Tab, which is what the\r\nroving-tabindex implementation in `mp-ribbon-group` relies on. Without\r\ndelegatesFocus, the browser would walk into each item's shadow root\r\nregardless of host tabindex, breaking the APG toolbar pattern.",
+          "name": "MpRibbonItemBase",
+          "members": [
+            {
+              "kind": "field",
+              "name": "shadowRootOptions",
+              "type": {
+                "text": "ShadowRootInit"
+              },
+              "static": true,
+              "default": "{ ...LitElement.shadowRootOptions, delegatesFocus: true, }"
+            },
+            {
+              "kind": "field",
+              "name": "itemId",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Unique identifier for this item",
+              "attribute": "item-id"
+            },
+            {
+              "kind": "field",
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Display label",
+              "attribute": "label"
+            },
+            {
+              "kind": "field",
+              "name": "icon",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Icon class or image URL",
+              "attribute": "icon"
+            },
+            {
+              "kind": "field",
+              "name": "size",
+              "type": {
+                "text": "RibbonItemSize"
+              },
+              "default": "'medium'",
+              "description": "Size: large (tall), medium (normal), small (compact).\r\n\r\n- Reflected to the `size` attribute on the host (existing API; consumer\r\n  templates set `size=\"large\"` etc.).\r\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\r\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\r\n  reaching into shadow DOM (FR-5).\r\n- The inner element gets a `ribbon-item-<size>` class for the\r\n  component's own shadow-DOM styles.",
+              "attribute": "size",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "disabled",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Disabled state",
+              "attribute": "disabled"
+            },
+            {
+              "kind": "field",
+              "name": "tooltip",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Tooltip / title text",
+              "attribute": "tooltip"
+            },
+            {
+              "kind": "method",
+              "name": "emitItemClick",
+              "privacy": "protected",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "_event",
+                  "optional": true,
+                  "type": {
+                    "text": "Event"
+                  }
+                }
+              ],
+              "description": "Emit the canonical `item-click` event. Subclasses wire this to their\r\nprimary activation surface (typically `@click` on the inner button).\r\nPreviously the base bound a host-level click listener, which fired on\r\nany bubbled click — clicking a checkbox input, a split-button's\r\nchevron, or a dropdown trigger would all spuriously fire `item-click`\r\nin addition to the kind-specific event. Item kinds now decide\r\nexplicitly when an item-click happens."
+            },
+            {
+              "kind": "method",
+              "name": "getSizeClass",
+              "privacy": "protected",
+              "return": {
+                "type": {
+                  "text": "string"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "getDisabledAttr",
+              "privacy": "protected",
+              "return": {
+                "type": {
+                  "text": "string | null"
+                }
+              }
+            }
+          ],
+          "events": [
+            {
+              "name": "item-click",
+              "type": {
+                "text": "CustomEvent"
+              }
+            }
+          ],
+          "attributes": [
+            {
+              "name": "item-id",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Unique identifier for this item",
+              "fieldName": "itemId"
+            },
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Display label",
+              "fieldName": "label"
+            },
+            {
+              "name": "icon",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Icon class or image URL",
+              "fieldName": "icon"
+            },
+            {
+              "name": "size",
+              "type": {
+                "text": "RibbonItemSize"
+              },
+              "default": "'medium'",
+              "description": "Size: large (tall), medium (normal), small (compact).\r\n\r\n- Reflected to the `size` attribute on the host (existing API; consumer\r\n  templates set `size=\"large\"` etc.).\r\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\r\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\r\n  reaching into shadow DOM (FR-5).\r\n- The inner element gets a `ribbon-item-<size>` class for the\r\n  component's own shadow-DOM styles.",
+              "fieldName": "size"
+            },
+            {
+              "name": "disabled",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Disabled state",
+              "fieldName": "disabled"
+            },
+            {
+              "name": "tooltip",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Tooltip / title text",
+              "fieldName": "tooltip"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "RIBBON_ICON_SLOT_STYLES",
+          "declaration": {
+            "name": "RIBBON_ICON_SLOT_STYLES",
+            "module": "ribbon/src/items/mp-ribbon-item-base.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpRibbonItemBase",
+          "declaration": {
+            "name": "MpRibbonItemBase",
+            "module": "ribbon/src/items/mp-ribbon-item-base.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "scheduler-core/src/services/date.service.ts",
       "declarations": [
         {
@@ -32091,6 +32091,174 @@
     },
     {
       "kind": "javascript-module",
+      "path": "splitter/src/managers/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "ResizeManager",
+          "declaration": {
+            "name": "ResizeManager",
+            "module": "./resize-manager"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "ResizeManagerOptions",
+          "declaration": {
+            "name": "ResizeManagerOptions",
+            "module": "./resize-manager"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "splitter/src/managers/resize-manager.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "",
+          "name": "ResizeManager",
+          "members": [
+            {
+              "kind": "field",
+              "name": "options",
+              "type": {
+                "text": "Required<ResizeManagerOptions>"
+              },
+              "privacy": "private",
+              "default": "{ minPanelSize: options.minPanelSize ?? 50, }"
+            },
+            {
+              "kind": "method",
+              "name": "computePanelSizes",
+              "return": {
+                "type": {
+                  "text": "number[]"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "panels",
+                  "type": {
+                    "text": "HTMLElement[]"
+                  }
+                },
+                {
+                  "name": "orientation",
+                  "type": {
+                    "text": "Direction"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "createResizeOperation",
+              "return": {
+                "type": {
+                  "text": "ResizeOperation"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "startPoint",
+                  "type": {
+                    "text": "Point"
+                  }
+                },
+                {
+                  "name": "currentSizes",
+                  "type": {
+                    "text": "number[]"
+                  }
+                },
+                {
+                  "name": "dividerIndex",
+                  "type": {
+                    "text": "number"
+                  }
+                },
+                {
+                  "name": "dividerElement",
+                  "type": {
+                    "text": "HTMLElement"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "calculatePreviewSizes",
+              "return": {
+                "type": {
+                  "text": "number[]"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "operation",
+                  "type": {
+                    "text": "ResizeOperation"
+                  }
+                },
+                {
+                  "name": "currentPoint",
+                  "type": {
+                    "text": "Point"
+                  }
+                },
+                {
+                  "name": "orientation",
+                  "type": {
+                    "text": "Direction"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "setMinPanelSize",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "size",
+                  "type": {
+                    "text": "number"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "getMinPanelSize",
+              "return": {
+                "type": {
+                  "text": "number"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "ResizeManager",
+          "declaration": {
+            "name": "ResizeManager",
+            "module": "splitter/src/managers/resize-manager.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "splitter/src/state/index.ts",
       "declarations": [],
       "exports": [
@@ -32313,174 +32481,6 @@
           "declaration": {
             "name": "SplitterStateManager",
             "module": "splitter/src/state/splitter-state.ts"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "splitter/src/managers/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "ResizeManager",
-          "declaration": {
-            "name": "ResizeManager",
-            "module": "./resize-manager"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "ResizeManagerOptions",
-          "declaration": {
-            "name": "ResizeManagerOptions",
-            "module": "./resize-manager"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "splitter/src/managers/resize-manager.ts",
-      "declarations": [
-        {
-          "kind": "class",
-          "description": "",
-          "name": "ResizeManager",
-          "members": [
-            {
-              "kind": "field",
-              "name": "options",
-              "type": {
-                "text": "Required<ResizeManagerOptions>"
-              },
-              "privacy": "private",
-              "default": "{ minPanelSize: options.minPanelSize ?? 50, }"
-            },
-            {
-              "kind": "method",
-              "name": "computePanelSizes",
-              "return": {
-                "type": {
-                  "text": "number[]"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "panels",
-                  "type": {
-                    "text": "HTMLElement[]"
-                  }
-                },
-                {
-                  "name": "orientation",
-                  "type": {
-                    "text": "Direction"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "createResizeOperation",
-              "return": {
-                "type": {
-                  "text": "ResizeOperation"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "startPoint",
-                  "type": {
-                    "text": "Point"
-                  }
-                },
-                {
-                  "name": "currentSizes",
-                  "type": {
-                    "text": "number[]"
-                  }
-                },
-                {
-                  "name": "dividerIndex",
-                  "type": {
-                    "text": "number"
-                  }
-                },
-                {
-                  "name": "dividerElement",
-                  "type": {
-                    "text": "HTMLElement"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "calculatePreviewSizes",
-              "return": {
-                "type": {
-                  "text": "number[]"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "operation",
-                  "type": {
-                    "text": "ResizeOperation"
-                  }
-                },
-                {
-                  "name": "currentPoint",
-                  "type": {
-                    "text": "Point"
-                  }
-                },
-                {
-                  "name": "orientation",
-                  "type": {
-                    "text": "Direction"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "setMinPanelSize",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "size",
-                  "type": {
-                    "text": "number"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "getMinPanelSize",
-              "return": {
-                "type": {
-                  "text": "number"
-                }
-              }
-            }
-          ]
-        }
-      ],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "ResizeManager",
-          "declaration": {
-            "name": "ResizeManager",
-            "module": "splitter/src/managers/resize-manager.ts"
           }
         }
       ]
