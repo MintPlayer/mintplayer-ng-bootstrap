@@ -42,7 +42,8 @@
     "ngx-highlightjs": "~14.0.0",
     "react-router-dom": "6.30.3",
     "ts-dedent": "^2.2.0",
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.0",
+    "vue-router": "^4.5.0"
   },
   "devDependencies": {
     "@analogjs/vitest-angular": "^2.2.3",
