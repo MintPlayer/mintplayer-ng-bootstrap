@@ -8,7 +8,7 @@
     "**/*.element.{ts,js,mjs}",
     "**/src/index.{ts,js,mjs}"
   ],
-  "customElements": "./custom-elements.json",
+  "customElements": "custom-elements.json",
   "main": "./index.mjs",
   "types": "./src/index.d.ts",
   "exports": {

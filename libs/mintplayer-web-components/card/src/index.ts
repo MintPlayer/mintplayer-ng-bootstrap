@@ -9,3 +9,5 @@ export * from './mp-card-subtitle.element';
 export * from './mp-card-text.element';
 export * from './mp-card-title.element';
 export * from './card-classes';
+export * from './types/card-image-position';
+export * from './types/card-header-nav-style';

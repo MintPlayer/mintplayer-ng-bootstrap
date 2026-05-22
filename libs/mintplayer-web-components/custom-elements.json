@@ -14500,179 +14500,6 @@
     },
     {
       "kind": "javascript-module",
-      "path": "a11y/src/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "LiveAnnouncerController",
-          "declaration": {
-            "name": "LiveAnnouncerController",
-            "module": "./live-announcer"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "LiveAnnouncerOptions",
-          "declaration": {
-            "name": "LiveAnnouncerOptions",
-            "module": "./live-announcer"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "a11y/src/live-announcer.ts",
-      "declarations": [
-        {
-          "kind": "class",
-          "description": "Lit reactive controller that owns a visually-hidden live region for a Lit\r\nweb component. Call announce() to push a message; call template() once\r\ninside the host's render() to drop the live region into the shadow tree.\r\n\r\nWrites go directly to the rendered region's textContent (via a Lit `ref`).\r\nThat keeps announce() safe to call from inside the host's `updated()`\r\nlifecycle hook — it never schedules a follow-up update, so it can't\r\ntrigger Lit's \"change-in-update\" warning.\r\n\r\nWhy a controller and not a free-floating div appended to the shadow root:\r\nLit's render owns its render root; appending children outside the rendered\r\nsubtree is fragile across re-renders. Going through the template keeps the\r\nregion inside Lit's managed DOM and avoids \"where did my element go\" bugs.",
-          "name": "LiveAnnouncerController",
-          "members": [
-            {
-              "kind": "field",
-              "name": "host",
-              "type": {
-                "text": "ReactiveControllerHost"
-              },
-              "privacy": "private",
-              "default": "host"
-            },
-            {
-              "kind": "field",
-              "name": "clearTimer",
-              "type": {
-                "text": "ReturnType<typeof setTimeout> | null"
-              },
-              "privacy": "private",
-              "default": "null"
-            },
-            {
-              "kind": "field",
-              "name": "pendingMessage",
-              "type": {
-                "text": "string | null"
-              },
-              "privacy": "private",
-              "default": "null"
-            },
-            {
-              "kind": "field",
-              "name": "politeness",
-              "type": {
-                "text": "'polite' | 'assertive'"
-              },
-              "privacy": "private",
-              "readonly": true
-            },
-            {
-              "kind": "field",
-              "name": "clearAfterMs",
-              "type": {
-                "text": "number"
-              },
-              "privacy": "private",
-              "readonly": true
-            },
-            {
-              "kind": "field",
-              "name": "regionRef",
-              "type": {
-                "text": "Ref<HTMLDivElement>"
-              },
-              "privacy": "private",
-              "readonly": true
-            },
-            {
-              "kind": "method",
-              "name": "hostUpdated",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "hostDisconnected",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "announce",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "message",
-                  "type": {
-                    "text": "string"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "template",
-              "return": {
-                "type": {
-                  "text": "TemplateResult"
-                }
-              },
-              "description": "Returns the live-region template fragment. Call once inside the host's render()."
-            },
-            {
-              "kind": "method",
-              "name": "writeMessage",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "message",
-                  "type": {
-                    "text": "string"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "scheduleClear",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              }
-            }
-          ]
-        }
-      ],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "LiveAnnouncerController",
-          "declaration": {
-            "name": "LiveAnnouncerController",
-            "module": "a11y/src/live-announcer.ts"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
       "path": "calendar/src/index.ts",
       "declarations": [],
       "exports": [
@@ -14987,36 +14814,194 @@
             "name": "*",
             "module": "card/src/card-classes"
           }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "card/src/types/card-image-position"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "card/src/types/card-header-nav-style"
+          }
         }
       ]
     },
     {
       "kind": "javascript-module",
-      "path": "checkbox/src/index.ts",
+      "path": "a11y/src/index.ts",
       "declarations": [],
       "exports": [
         {
           "kind": "js",
-          "name": "MpCheckbox",
+          "name": "LiveAnnouncerController",
           "declaration": {
-            "name": "MpCheckbox",
-            "module": "./components"
+            "name": "LiveAnnouncerController",
+            "module": "./live-announcer"
           }
         },
         {
           "kind": "js",
-          "name": "MpCheckboxType",
+          "name": "LiveAnnouncerOptions",
           "declaration": {
-            "name": "MpCheckboxType",
-            "module": "./components"
+            "name": "LiveAnnouncerOptions",
+            "module": "./live-announcer"
           }
-        },
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "a11y/src/live-announcer.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "Lit reactive controller that owns a visually-hidden live region for a Lit\r\nweb component. Call announce() to push a message; call template() once\r\ninside the host's render() to drop the live region into the shadow tree.\r\n\r\nWrites go directly to the rendered region's textContent (via a Lit `ref`).\r\nThat keeps announce() safe to call from inside the host's `updated()`\r\nlifecycle hook — it never schedules a follow-up update, so it can't\r\ntrigger Lit's \"change-in-update\" warning.\r\n\r\nWhy a controller and not a free-floating div appended to the shadow root:\r\nLit's render owns its render root; appending children outside the rendered\r\nsubtree is fragile across re-renders. Going through the template keeps the\r\nregion inside Lit's managed DOM and avoids \"where did my element go\" bugs.",
+          "name": "LiveAnnouncerController",
+          "members": [
+            {
+              "kind": "field",
+              "name": "host",
+              "type": {
+                "text": "ReactiveControllerHost"
+              },
+              "privacy": "private",
+              "default": "host"
+            },
+            {
+              "kind": "field",
+              "name": "clearTimer",
+              "type": {
+                "text": "ReturnType<typeof setTimeout> | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "pendingMessage",
+              "type": {
+                "text": "string | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "politeness",
+              "type": {
+                "text": "'polite' | 'assertive'"
+              },
+              "privacy": "private",
+              "readonly": true
+            },
+            {
+              "kind": "field",
+              "name": "clearAfterMs",
+              "type": {
+                "text": "number"
+              },
+              "privacy": "private",
+              "readonly": true
+            },
+            {
+              "kind": "field",
+              "name": "regionRef",
+              "type": {
+                "text": "Ref<HTMLDivElement>"
+              },
+              "privacy": "private",
+              "readonly": true
+            },
+            {
+              "kind": "method",
+              "name": "hostUpdated",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "hostDisconnected",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "announce",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "message",
+                  "type": {
+                    "text": "string"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "template",
+              "return": {
+                "type": {
+                  "text": "TemplateResult"
+                }
+              },
+              "description": "Returns the live-region template fragment. Call once inside the host's render()."
+            },
+            {
+              "kind": "method",
+              "name": "writeMessage",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "message",
+                  "type": {
+                    "text": "string"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "scheduleClear",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "exports": [
         {
           "kind": "js",
-          "name": "CheckboxChangeEventDetail",
+          "name": "LiveAnnouncerController",
           "declaration": {
-            "name": "CheckboxChangeEventDetail",
-            "module": "./components"
+            "name": "LiveAnnouncerController",
+            "module": "a11y/src/live-announcer.ts"
           }
         }
       ]
@@ -15032,21 +15017,6 @@
           "declaration": {
             "name": "*",
             "module": "code-snippet/src/mp-code-snippet.element"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "datepicker/src/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "*",
-          "declaration": {
-            "name": "*",
-            "module": "datepicker/src/mp-datepicker.element"
           }
         }
       ]
@@ -15188,6 +15158,52 @@
     },
     {
       "kind": "javascript-module",
+      "path": "checkbox/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpCheckbox",
+          "declaration": {
+            "name": "MpCheckbox",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpCheckboxType",
+          "declaration": {
+            "name": "MpCheckboxType",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "CheckboxChangeEventDetail",
+          "declaration": {
+            "name": "CheckboxChangeEventDetail",
+            "module": "./components"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "datepicker/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "datepicker/src/mp-datepicker.element"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "datetime-picker/src/index.ts",
       "declarations": [],
       "exports": [
@@ -15212,6 +15228,14 @@
           "declaration": {
             "name": "*",
             "module": "dock/src/mint-dock-manager.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "dock/src/types/dock-layout"
           }
         }
       ]
@@ -15387,6 +15411,14 @@
             "name": "*",
             "module": "multi-range/src/mint-multi-range.element"
           }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "multi-range/src/types/multi-range-orientation"
+          }
         }
       ]
     },
@@ -15401,6 +15433,30 @@
           "declaration": {
             "name": "*",
             "module": "otp-input/src/mint-otp-input.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "otp-input/src/types/otp-input-type"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "otp-input/src/types/otp-input-case"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "otp-input/src/types/otp-input-size"
           }
         }
       ]
@@ -16377,6 +16433,75 @@
     },
     {
       "kind": "javascript-module",
+      "path": "ribbon/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "ribbon/src/mp-ribbon.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "ribbon/src/mp-ribbon-tab.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "ribbon/src/mp-ribbon-group.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "ribbon/src/mp-ribbon-contextual-tab-set.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "ribbon/src/mp-quick-access-toolbar.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "ribbon/src/items"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "ribbon/src/ribbon.types"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "ribbon/src/ribbon.types.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
       "path": "scheduler/src/index.ts",
       "declarations": [],
       "exports": [
@@ -16509,75 +16634,6 @@
           }
         }
       ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "ribbon/src/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "*",
-          "declaration": {
-            "name": "*",
-            "module": "ribbon/src/mp-ribbon.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "*",
-          "declaration": {
-            "name": "*",
-            "module": "ribbon/src/mp-ribbon-tab.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "*",
-          "declaration": {
-            "name": "*",
-            "module": "ribbon/src/mp-ribbon-group.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "*",
-          "declaration": {
-            "name": "*",
-            "module": "ribbon/src/mp-ribbon-contextual-tab-set.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "*",
-          "declaration": {
-            "name": "*",
-            "module": "ribbon/src/mp-quick-access-toolbar.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "*",
-          "declaration": {
-            "name": "*",
-            "module": "ribbon/src/items"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "*",
-          "declaration": {
-            "name": "*",
-            "module": "ribbon/src/ribbon.types"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "ribbon/src/ribbon.types.ts",
-      "declarations": [],
-      "exports": []
     },
     {
       "kind": "javascript-module",
@@ -16812,6 +16868,30 @@
             "name": "*",
             "module": "tile-manager/src/mint-tile-manager.element"
           }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "tile-manager/src/types/tile-position"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "tile-manager/src/types/tile-layout-snapshot"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "tile-manager/src/types/grid-rect"
+          }
         }
       ]
     },
@@ -16983,292 +17063,6 @@
       "path": "card/src/types/card-image-position.ts",
       "declarations": [],
       "exports": []
-    },
-    {
-      "kind": "javascript-module",
-      "path": "checkbox/src/components/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "MpCheckbox",
-          "declaration": {
-            "name": "MpCheckbox",
-            "module": "./mp-checkbox"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpCheckboxType",
-          "declaration": {
-            "name": "MpCheckboxType",
-            "module": "./mp-checkbox"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "CheckboxChangeEventDetail",
-          "declaration": {
-            "name": "CheckboxChangeEventDetail",
-            "module": "./mp-checkbox"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "checkbox/src/components/mp-checkbox.ts",
-      "declarations": [
-        {
-          "kind": "class",
-          "description": "`<mp-checkbox>` — a Bootstrap-styled checkbox with three visual variants\nvia the `type` attribute:\n\n- `checkbox` (default) — `.form-check` with a square indicator.\n- `switch` — `.form-check.form-switch` for the iOS-style sliding switch.\n- `toggle_button` — `.btn-check` rendered as a `.btn .btn-<color>`.\n\nSupports first-class **tri-state** via the `indeterminate` attribute /\nproperty. The visual indeterminate styling is the browser's native\n`<input>.indeterminate` DOM property; we additionally reflect\n`aria-checked=\"mixed\"` for AT and mirror the value to a reflected\nboolean attribute so consumers can target the state from CSS.\nThe native `change` event clears `indeterminate` on the next user click\n(per HTML spec); consumers that want the master/select-all pattern can\nre-derive and re-set `indeterminate` from the resulting state.\n\nEmits `change` with `detail: { checked, indeterminate, value }`.",
-          "name": "MpCheckbox",
-          "members": [
-            {
-              "kind": "field",
-              "name": "shadowRootOptions",
-              "type": {
-                "text": "object"
-              },
-              "static": true,
-              "default": "{ ...LitElement.shadowRootOptions, delegatesFocus: true, }"
-            },
-            {
-              "kind": "field",
-              "name": "_type",
-              "type": {
-                "text": "MpCheckboxType"
-              },
-              "privacy": "private",
-              "default": "'checkbox'"
-            },
-            {
-              "kind": "field",
-              "name": "_checked",
-              "type": {
-                "text": "boolean"
-              },
-              "privacy": "private",
-              "default": "false"
-            },
-            {
-              "kind": "field",
-              "name": "_indeterminate",
-              "type": {
-                "text": "boolean"
-              },
-              "privacy": "private",
-              "default": "false"
-            },
-            {
-              "kind": "field",
-              "name": "_disabled",
-              "type": {
-                "text": "boolean"
-              },
-              "privacy": "private",
-              "default": "false"
-            },
-            {
-              "kind": "field",
-              "name": "_name",
-              "type": {
-                "text": "string | null"
-              },
-              "privacy": "private",
-              "default": "null"
-            },
-            {
-              "kind": "field",
-              "name": "_value",
-              "type": {
-                "text": "string | null"
-              },
-              "privacy": "private",
-              "default": "null"
-            },
-            {
-              "kind": "field",
-              "name": "_color",
-              "type": {
-                "text": "ToggleButtonColor"
-              },
-              "privacy": "private",
-              "default": "'primary'"
-            },
-            {
-              "kind": "field",
-              "name": "_inputId",
-              "privacy": "private",
-              "readonly": true,
-              "default": "`mp-checkbox-${++instanceCounter}`"
-            },
-            {
-              "kind": "field",
-              "name": "_inputRef",
-              "type": {
-                "text": "Ref<HTMLInputElement>"
-              },
-              "privacy": "private",
-              "readonly": true
-            },
-            {
-              "kind": "field",
-              "name": "type",
-              "type": {
-                "text": "MpCheckboxType"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "checked",
-              "type": {
-                "text": "boolean"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "indeterminate",
-              "type": {
-                "text": "boolean"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "disabled",
-              "type": {
-                "text": "boolean"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "name",
-              "type": {
-                "text": "string | null"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "value",
-              "type": {
-                "text": "string | null"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "color",
-              "type": {
-                "text": "ToggleButtonColor"
-              }
-            },
-            {
-              "kind": "method",
-              "name": "renderCheckOrSwitch",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "TemplateResult"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "renderToggleButton",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "TemplateResult"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "reflectBoolean",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "attr",
-                  "type": {
-                    "text": "string"
-                  }
-                },
-                {
-                  "name": "value",
-                  "type": {
-                    "text": "boolean"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "field",
-              "name": "onInputChange",
-              "privacy": "private"
-            }
-          ],
-          "attributes": [
-            {
-              "name": "type"
-            },
-            {
-              "name": "checked"
-            },
-            {
-              "name": "indeterminate"
-            },
-            {
-              "name": "disabled"
-            },
-            {
-              "name": "name"
-            },
-            {
-              "name": "value"
-            },
-            {
-              "name": "color"
-            },
-            {
-              "name": "aria-label"
-            },
-            {
-              "name": "aria-labelledby"
-            },
-            {
-              "name": "aria-describedby"
-            }
-          ],
-          "superclass": {
-            "name": "LitElement",
-            "package": "lit"
-          },
-          "tagName": "mp-checkbox",
-          "customElement": true
-        }
-      ],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "MpCheckbox",
-          "declaration": {
-            "name": "MpCheckbox",
-            "module": "checkbox/src/components/mp-checkbox.ts"
-          }
-        },
-        {
-          "kind": "custom-element-definition",
-          "name": "mp-checkbox",
-          "declaration": {
-            "name": "MpCheckbox",
-            "module": "checkbox/src/components/mp-checkbox.ts"
-          }
-        }
-      ]
     },
     {
       "kind": "javascript-module",
@@ -18533,6 +18327,292 @@
           "declaration": {
             "name": "RowRenderer",
             "module": "./column-def"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "checkbox/src/components/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpCheckbox",
+          "declaration": {
+            "name": "MpCheckbox",
+            "module": "./mp-checkbox"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpCheckboxType",
+          "declaration": {
+            "name": "MpCheckboxType",
+            "module": "./mp-checkbox"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "CheckboxChangeEventDetail",
+          "declaration": {
+            "name": "CheckboxChangeEventDetail",
+            "module": "./mp-checkbox"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "checkbox/src/components/mp-checkbox.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "`<mp-checkbox>` — a Bootstrap-styled checkbox with three visual variants\nvia the `type` attribute:\n\n- `checkbox` (default) — `.form-check` with a square indicator.\n- `switch` — `.form-check.form-switch` for the iOS-style sliding switch.\n- `toggle_button` — `.btn-check` rendered as a `.btn .btn-<color>`.\n\nSupports first-class **tri-state** via the `indeterminate` attribute /\nproperty. The visual indeterminate styling is the browser's native\n`<input>.indeterminate` DOM property; we additionally reflect\n`aria-checked=\"mixed\"` for AT and mirror the value to a reflected\nboolean attribute so consumers can target the state from CSS.\nThe native `change` event clears `indeterminate` on the next user click\n(per HTML spec); consumers that want the master/select-all pattern can\nre-derive and re-set `indeterminate` from the resulting state.\n\nEmits `change` with `detail: { checked, indeterminate, value }`.",
+          "name": "MpCheckbox",
+          "members": [
+            {
+              "kind": "field",
+              "name": "shadowRootOptions",
+              "type": {
+                "text": "object"
+              },
+              "static": true,
+              "default": "{ ...LitElement.shadowRootOptions, delegatesFocus: true, }"
+            },
+            {
+              "kind": "field",
+              "name": "_type",
+              "type": {
+                "text": "MpCheckboxType"
+              },
+              "privacy": "private",
+              "default": "'checkbox'"
+            },
+            {
+              "kind": "field",
+              "name": "_checked",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "_indeterminate",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "_disabled",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "_name",
+              "type": {
+                "text": "string | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "_value",
+              "type": {
+                "text": "string | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "_color",
+              "type": {
+                "text": "ToggleButtonColor"
+              },
+              "privacy": "private",
+              "default": "'primary'"
+            },
+            {
+              "kind": "field",
+              "name": "_inputId",
+              "privacy": "private",
+              "readonly": true,
+              "default": "`mp-checkbox-${++instanceCounter}`"
+            },
+            {
+              "kind": "field",
+              "name": "_inputRef",
+              "type": {
+                "text": "Ref<HTMLInputElement>"
+              },
+              "privacy": "private",
+              "readonly": true
+            },
+            {
+              "kind": "field",
+              "name": "type",
+              "type": {
+                "text": "MpCheckboxType"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "checked",
+              "type": {
+                "text": "boolean"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "indeterminate",
+              "type": {
+                "text": "boolean"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "disabled",
+              "type": {
+                "text": "boolean"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "name",
+              "type": {
+                "text": "string | null"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "value",
+              "type": {
+                "text": "string | null"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "color",
+              "type": {
+                "text": "ToggleButtonColor"
+              }
+            },
+            {
+              "kind": "method",
+              "name": "renderCheckOrSwitch",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "TemplateResult"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "renderToggleButton",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "TemplateResult"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "reflectBoolean",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "attr",
+                  "type": {
+                    "text": "string"
+                  }
+                },
+                {
+                  "name": "value",
+                  "type": {
+                    "text": "boolean"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "field",
+              "name": "onInputChange",
+              "privacy": "private"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "type"
+            },
+            {
+              "name": "checked"
+            },
+            {
+              "name": "indeterminate"
+            },
+            {
+              "name": "disabled"
+            },
+            {
+              "name": "name"
+            },
+            {
+              "name": "value"
+            },
+            {
+              "name": "color"
+            },
+            {
+              "name": "aria-label"
+            },
+            {
+              "name": "aria-labelledby"
+            },
+            {
+              "name": "aria-describedby"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "mp-checkbox",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpCheckbox",
+          "declaration": {
+            "name": "MpCheckbox",
+            "module": "checkbox/src/components/mp-checkbox.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "mp-checkbox",
+          "declaration": {
+            "name": "MpCheckbox",
+            "module": "checkbox/src/components/mp-checkbox.ts"
           }
         }
       ]
@@ -22027,6 +22107,365 @@
     },
     {
       "kind": "javascript-module",
+      "path": "ribbon/src/items/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpRibbonItemBase",
+          "declaration": {
+            "name": "MpRibbonItemBase",
+            "module": "./mp-ribbon-item-base"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "RibbonItemSize",
+          "declaration": {
+            "name": "RibbonItemSize",
+            "module": "./mp-ribbon-item-base"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpRibbonButton",
+          "declaration": {
+            "name": "MpRibbonButton",
+            "module": "./mp-ribbon-button.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpRibbonSplitButton",
+          "declaration": {
+            "name": "MpRibbonSplitButton",
+            "module": "./mp-ribbon-split-button.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpRibbonDropdownButton",
+          "declaration": {
+            "name": "MpRibbonDropdownButton",
+            "module": "./mp-ribbon-dropdown-button.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpRibbonToggleButton",
+          "declaration": {
+            "name": "MpRibbonToggleButton",
+            "module": "./mp-ribbon-toggle-button.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpRibbonCheckBox",
+          "declaration": {
+            "name": "MpRibbonCheckBox",
+            "module": "./mp-ribbon-checkbox.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpRibbonComboBox",
+          "declaration": {
+            "name": "MpRibbonComboBox",
+            "module": "./mp-ribbon-combobox.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpRibbonColorPicker",
+          "declaration": {
+            "name": "MpRibbonColorPicker",
+            "module": "./mp-ribbon-color-picker.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpRibbonGroupButton",
+          "declaration": {
+            "name": "MpRibbonGroupButton",
+            "module": "./mp-ribbon-group-button.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpRibbonGallery",
+          "declaration": {
+            "name": "MpRibbonGallery",
+            "module": "./mp-ribbon-gallery.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpRibbonGalleryItem",
+          "declaration": {
+            "name": "MpRibbonGalleryItem",
+            "module": "./mp-ribbon-gallery-item.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpRibbonTemplateItem",
+          "declaration": {
+            "name": "MpRibbonTemplateItem",
+            "module": "./mp-ribbon-template-item.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpRibbonMenuItem",
+          "declaration": {
+            "name": "MpRibbonMenuItem",
+            "module": "./mp-ribbon-menu-item.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpRibbonMenuSeparator",
+          "declaration": {
+            "name": "MpRibbonMenuSeparator",
+            "module": "./mp-ribbon-menu-separator.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "RibbonGroupButtonOption",
+          "declaration": {
+            "name": "RibbonGroupButtonOption",
+            "module": "./mp-ribbon-group-button.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "RibbonComboBoxOption",
+          "declaration": {
+            "name": "RibbonComboBoxOption",
+            "module": "./mp-ribbon-combobox.element"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "ribbon/src/items/mp-ribbon-item-base.ts",
+      "declarations": [
+        {
+          "kind": "variable",
+          "name": "RIBBON_ICON_SLOT_STYLES",
+          "default": "css` :host([size=\"large\"]) ::slotted([slot=\"icon\"]) { font-size: 28px; width: 28px; height: 28px; line-height: 1; } :host([size=\"medium\"]) ::slotted([slot=\"icon\"]) { font-size: 16px; width: 16px; height: 16px; line-height: 1; } :host([size=\"small\"]) ::slotted([slot=\"icon\"]) { font-size: 14px; width: 14px; height: 14px; line-height: 1; } ::slotted(.ribbon-icon-large) { font-size: 28px !important; width: 28px !important; height: 28px !important; line-height: 1 !important; } ::slotted(.ribbon-icon-medium) { font-size: 16px !important; width: 16px !important; height: 16px !important; line-height: 1 !important; } ::slotted(.ribbon-icon-small) { font-size: 14px !important; width: 14px !important; height: 14px !important; line-height: 1 !important; } `",
+          "description": "FR-16: shared CSS for slot-based icon projection. Every ribbon item\r\nadds this to its `static styles` so:\r\n\r\n- Slotted `<i slot=\"icon\">` (or anything else with `slot=\"icon\"`) is\r\n  auto-sized based on the item host's current `size` attribute. Slotted\r\n  elements live in light DOM and don't inherit shadow-tree styles, so\r\n  explicit `::slotted` rules are required.\r\n- Consumers can opt into explicit sizing via `.ribbon-icon-large /\r\n  -medium / -small` utility classes — applied to the slotted icon\r\n  element, they win via `!important` regardless of the host size.\r\n\r\nItems that don't extend MpRibbonItemBase (template-item, menu-item,\r\ngallery-item) compose this constant the same way."
+        },
+        {
+          "kind": "class",
+          "description": "Base class for all ribbon item kinds.\r\nProvides common properties: id, label, icon, size, disabled, tooltip.\r\n\r\n`delegatesFocus: true` lets the host stand in for its inner button in\r\nsequential tab order — setting `tabindex` on the host then controls\r\nwhether the whole item is reachable via Tab, which is what the\r\nroving-tabindex implementation in `mp-ribbon-group` relies on. Without\r\ndelegatesFocus, the browser would walk into each item's shadow root\r\nregardless of host tabindex, breaking the APG toolbar pattern.",
+          "name": "MpRibbonItemBase",
+          "members": [
+            {
+              "kind": "field",
+              "name": "shadowRootOptions",
+              "type": {
+                "text": "ShadowRootInit"
+              },
+              "static": true,
+              "default": "{ ...LitElement.shadowRootOptions, delegatesFocus: true, }"
+            },
+            {
+              "kind": "field",
+              "name": "itemId",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Unique identifier for this item",
+              "attribute": "item-id"
+            },
+            {
+              "kind": "field",
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Display label",
+              "attribute": "label"
+            },
+            {
+              "kind": "field",
+              "name": "icon",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Icon class or image URL",
+              "attribute": "icon"
+            },
+            {
+              "kind": "field",
+              "name": "size",
+              "type": {
+                "text": "RibbonItemSize"
+              },
+              "default": "'medium'",
+              "description": "Size: large (tall), medium (normal), small (compact).\r\n\r\n- Reflected to the `size` attribute on the host (existing API; consumer\r\n  templates set `size=\"large\"` etc.).\r\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\r\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\r\n  reaching into shadow DOM (FR-5).\r\n- The inner element gets a `ribbon-item-<size>` class for the\r\n  component's own shadow-DOM styles.",
+              "attribute": "size",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "disabled",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Disabled state",
+              "attribute": "disabled"
+            },
+            {
+              "kind": "field",
+              "name": "tooltip",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Tooltip / title text",
+              "attribute": "tooltip"
+            },
+            {
+              "kind": "method",
+              "name": "emitItemClick",
+              "privacy": "protected",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "_event",
+                  "optional": true,
+                  "type": {
+                    "text": "Event"
+                  }
+                }
+              ],
+              "description": "Emit the canonical `item-click` event. Subclasses wire this to their\r\nprimary activation surface (typically `@click` on the inner button).\r\nPreviously the base bound a host-level click listener, which fired on\r\nany bubbled click — clicking a checkbox input, a split-button's\r\nchevron, or a dropdown trigger would all spuriously fire `item-click`\r\nin addition to the kind-specific event. Item kinds now decide\r\nexplicitly when an item-click happens."
+            },
+            {
+              "kind": "method",
+              "name": "getSizeClass",
+              "privacy": "protected",
+              "return": {
+                "type": {
+                  "text": "string"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "getDisabledAttr",
+              "privacy": "protected",
+              "return": {
+                "type": {
+                  "text": "string | null"
+                }
+              }
+            }
+          ],
+          "events": [
+            {
+              "name": "item-click",
+              "type": {
+                "text": "CustomEvent"
+              }
+            }
+          ],
+          "attributes": [
+            {
+              "name": "item-id",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Unique identifier for this item",
+              "fieldName": "itemId"
+            },
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Display label",
+              "fieldName": "label"
+            },
+            {
+              "name": "icon",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Icon class or image URL",
+              "fieldName": "icon"
+            },
+            {
+              "name": "size",
+              "type": {
+                "text": "RibbonItemSize"
+              },
+              "default": "'medium'",
+              "description": "Size: large (tall), medium (normal), small (compact).\r\n\r\n- Reflected to the `size` attribute on the host (existing API; consumer\r\n  templates set `size=\"large\"` etc.).\r\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\r\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\r\n  reaching into shadow DOM (FR-5).\r\n- The inner element gets a `ribbon-item-<size>` class for the\r\n  component's own shadow-DOM styles.",
+              "fieldName": "size"
+            },
+            {
+              "name": "disabled",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Disabled state",
+              "fieldName": "disabled"
+            },
+            {
+              "name": "tooltip",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Tooltip / title text",
+              "fieldName": "tooltip"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "RIBBON_ICON_SLOT_STYLES",
+          "declaration": {
+            "name": "RIBBON_ICON_SLOT_STYLES",
+            "module": "ribbon/src/items/mp-ribbon-item-base.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpRibbonItemBase",
+          "declaration": {
+            "name": "MpRibbonItemBase",
+            "module": "ribbon/src/items/mp-ribbon-item-base.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "scheduler/src/components/mp-scheduler.ts",
       "declarations": [
         {
@@ -25398,6 +25837,34 @@
     },
     {
       "kind": "javascript-module",
+      "path": "scheduler/src/styles/scheduler.styles.ts",
+      "declarations": [
+        {
+          "kind": "variable",
+          "name": "schedulerStyles"
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "schedulerStyles",
+          "declaration": {
+            "name": "schedulerStyles",
+            "module": "scheduler/src/styles/scheduler.styles.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "default",
+          "declaration": {
+            "name": "schedulerStyles",
+            "module": "scheduler/src/styles/scheduler.styles.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "scheduler/src/state/scheduler-state.ts",
       "declarations": [
         {
@@ -25953,34 +26420,6 @@
           "declaration": {
             "name": "SchedulerStateManager",
             "module": "scheduler/src/state/scheduler-state.ts"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "scheduler/src/styles/scheduler.styles.ts",
-      "declarations": [
-        {
-          "kind": "variable",
-          "name": "schedulerStyles"
-        }
-      ],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "schedulerStyles",
-          "declaration": {
-            "name": "schedulerStyles",
-            "module": "scheduler/src/styles/scheduler.styles.ts"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "default",
-          "declaration": {
-            "name": "schedulerStyles",
-            "module": "scheduler/src/styles/scheduler.styles.ts"
           }
         }
       ]
@@ -28082,357 +28521,6 @@
       "path": "scheduler-core/src/models/types.ts",
       "declarations": [],
       "exports": []
-    },
-    {
-      "kind": "javascript-module",
-      "path": "ribbon/src/items/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "MpRibbonItemBase",
-          "declaration": {
-            "name": "MpRibbonItemBase",
-            "module": "./mp-ribbon-item-base"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "RibbonItemSize",
-          "declaration": {
-            "name": "RibbonItemSize",
-            "module": "./mp-ribbon-item-base"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpRibbonButton",
-          "declaration": {
-            "name": "MpRibbonButton",
-            "module": "./mp-ribbon-button.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpRibbonSplitButton",
-          "declaration": {
-            "name": "MpRibbonSplitButton",
-            "module": "./mp-ribbon-split-button.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpRibbonDropdownButton",
-          "declaration": {
-            "name": "MpRibbonDropdownButton",
-            "module": "./mp-ribbon-dropdown-button.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpRibbonToggleButton",
-          "declaration": {
-            "name": "MpRibbonToggleButton",
-            "module": "./mp-ribbon-toggle-button.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpRibbonCheckBox",
-          "declaration": {
-            "name": "MpRibbonCheckBox",
-            "module": "./mp-ribbon-checkbox.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpRibbonComboBox",
-          "declaration": {
-            "name": "MpRibbonComboBox",
-            "module": "./mp-ribbon-combobox.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpRibbonColorPicker",
-          "declaration": {
-            "name": "MpRibbonColorPicker",
-            "module": "./mp-ribbon-color-picker.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpRibbonGroupButton",
-          "declaration": {
-            "name": "MpRibbonGroupButton",
-            "module": "./mp-ribbon-group-button.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpRibbonGallery",
-          "declaration": {
-            "name": "MpRibbonGallery",
-            "module": "./mp-ribbon-gallery.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpRibbonGalleryItem",
-          "declaration": {
-            "name": "MpRibbonGalleryItem",
-            "module": "./mp-ribbon-gallery-item.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpRibbonTemplateItem",
-          "declaration": {
-            "name": "MpRibbonTemplateItem",
-            "module": "./mp-ribbon-template-item.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpRibbonMenuItem",
-          "declaration": {
-            "name": "MpRibbonMenuItem",
-            "module": "./mp-ribbon-menu-item.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpRibbonMenuSeparator",
-          "declaration": {
-            "name": "MpRibbonMenuSeparator",
-            "module": "./mp-ribbon-menu-separator.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "RibbonGroupButtonOption",
-          "declaration": {
-            "name": "RibbonGroupButtonOption",
-            "module": "./mp-ribbon-group-button.element"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "ribbon/src/items/mp-ribbon-item-base.ts",
-      "declarations": [
-        {
-          "kind": "variable",
-          "name": "RIBBON_ICON_SLOT_STYLES",
-          "default": "css` :host([size=\"large\"]) ::slotted([slot=\"icon\"]) { font-size: 28px; width: 28px; height: 28px; line-height: 1; } :host([size=\"medium\"]) ::slotted([slot=\"icon\"]) { font-size: 16px; width: 16px; height: 16px; line-height: 1; } :host([size=\"small\"]) ::slotted([slot=\"icon\"]) { font-size: 14px; width: 14px; height: 14px; line-height: 1; } ::slotted(.ribbon-icon-large) { font-size: 28px !important; width: 28px !important; height: 28px !important; line-height: 1 !important; } ::slotted(.ribbon-icon-medium) { font-size: 16px !important; width: 16px !important; height: 16px !important; line-height: 1 !important; } ::slotted(.ribbon-icon-small) { font-size: 14px !important; width: 14px !important; height: 14px !important; line-height: 1 !important; } `",
-          "description": "FR-16: shared CSS for slot-based icon projection. Every ribbon item\r\nadds this to its `static styles` so:\r\n\r\n- Slotted `<i slot=\"icon\">` (or anything else with `slot=\"icon\"`) is\r\n  auto-sized based on the item host's current `size` attribute. Slotted\r\n  elements live in light DOM and don't inherit shadow-tree styles, so\r\n  explicit `::slotted` rules are required.\r\n- Consumers can opt into explicit sizing via `.ribbon-icon-large /\r\n  -medium / -small` utility classes — applied to the slotted icon\r\n  element, they win via `!important` regardless of the host size.\r\n\r\nItems that don't extend MpRibbonItemBase (template-item, menu-item,\r\ngallery-item) compose this constant the same way."
-        },
-        {
-          "kind": "class",
-          "description": "Base class for all ribbon item kinds.\r\nProvides common properties: id, label, icon, size, disabled, tooltip.\r\n\r\n`delegatesFocus: true` lets the host stand in for its inner button in\r\nsequential tab order — setting `tabindex` on the host then controls\r\nwhether the whole item is reachable via Tab, which is what the\r\nroving-tabindex implementation in `mp-ribbon-group` relies on. Without\r\ndelegatesFocus, the browser would walk into each item's shadow root\r\nregardless of host tabindex, breaking the APG toolbar pattern.",
-          "name": "MpRibbonItemBase",
-          "members": [
-            {
-              "kind": "field",
-              "name": "shadowRootOptions",
-              "type": {
-                "text": "ShadowRootInit"
-              },
-              "static": true,
-              "default": "{ ...LitElement.shadowRootOptions, delegatesFocus: true, }"
-            },
-            {
-              "kind": "field",
-              "name": "itemId",
-              "type": {
-                "text": "string"
-              },
-              "default": "''",
-              "description": "Unique identifier for this item",
-              "attribute": "item-id"
-            },
-            {
-              "kind": "field",
-              "name": "label",
-              "type": {
-                "text": "string"
-              },
-              "default": "''",
-              "description": "Display label",
-              "attribute": "label"
-            },
-            {
-              "kind": "field",
-              "name": "icon",
-              "type": {
-                "text": "string"
-              },
-              "default": "''",
-              "description": "Icon class or image URL",
-              "attribute": "icon"
-            },
-            {
-              "kind": "field",
-              "name": "size",
-              "type": {
-                "text": "RibbonItemSize"
-              },
-              "default": "'medium'",
-              "description": "Size: large (tall), medium (normal), small (compact).\r\n\r\n- Reflected to the `size` attribute on the host (existing API; consumer\r\n  templates set `size=\"large\"` etc.).\r\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\r\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\r\n  reaching into shadow DOM (FR-5).\r\n- The inner element gets a `ribbon-item-<size>` class for the\r\n  component's own shadow-DOM styles.",
-              "attribute": "size",
-              "reflects": true
-            },
-            {
-              "kind": "field",
-              "name": "disabled",
-              "type": {
-                "text": "boolean"
-              },
-              "default": "false",
-              "description": "Disabled state",
-              "attribute": "disabled"
-            },
-            {
-              "kind": "field",
-              "name": "tooltip",
-              "type": {
-                "text": "string"
-              },
-              "default": "''",
-              "description": "Tooltip / title text",
-              "attribute": "tooltip"
-            },
-            {
-              "kind": "method",
-              "name": "emitItemClick",
-              "privacy": "protected",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "_event",
-                  "optional": true,
-                  "type": {
-                    "text": "Event"
-                  }
-                }
-              ],
-              "description": "Emit the canonical `item-click` event. Subclasses wire this to their\r\nprimary activation surface (typically `@click` on the inner button).\r\nPreviously the base bound a host-level click listener, which fired on\r\nany bubbled click — clicking a checkbox input, a split-button's\r\nchevron, or a dropdown trigger would all spuriously fire `item-click`\r\nin addition to the kind-specific event. Item kinds now decide\r\nexplicitly when an item-click happens."
-            },
-            {
-              "kind": "method",
-              "name": "getSizeClass",
-              "privacy": "protected",
-              "return": {
-                "type": {
-                  "text": "string"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "getDisabledAttr",
-              "privacy": "protected",
-              "return": {
-                "type": {
-                  "text": "string | null"
-                }
-              }
-            }
-          ],
-          "events": [
-            {
-              "name": "item-click",
-              "type": {
-                "text": "CustomEvent"
-              }
-            }
-          ],
-          "attributes": [
-            {
-              "name": "item-id",
-              "type": {
-                "text": "string"
-              },
-              "default": "''",
-              "description": "Unique identifier for this item",
-              "fieldName": "itemId"
-            },
-            {
-              "name": "label",
-              "type": {
-                "text": "string"
-              },
-              "default": "''",
-              "description": "Display label",
-              "fieldName": "label"
-            },
-            {
-              "name": "icon",
-              "type": {
-                "text": "string"
-              },
-              "default": "''",
-              "description": "Icon class or image URL",
-              "fieldName": "icon"
-            },
-            {
-              "name": "size",
-              "type": {
-                "text": "RibbonItemSize"
-              },
-              "default": "'medium'",
-              "description": "Size: large (tall), medium (normal), small (compact).\r\n\r\n- Reflected to the `size` attribute on the host (existing API; consumer\r\n  templates set `size=\"large\"` etc.).\r\n- Mirrored to `data-size` via `updated()` so consumer light-DOM CSS can\r\n  target item sizes via `bs-ribbon-button[data-size=\"large\"]` without\r\n  reaching into shadow DOM (FR-5).\r\n- The inner element gets a `ribbon-item-<size>` class for the\r\n  component's own shadow-DOM styles.",
-              "fieldName": "size"
-            },
-            {
-              "name": "disabled",
-              "type": {
-                "text": "boolean"
-              },
-              "default": "false",
-              "description": "Disabled state",
-              "fieldName": "disabled"
-            },
-            {
-              "name": "tooltip",
-              "type": {
-                "text": "string"
-              },
-              "default": "''",
-              "description": "Tooltip / title text",
-              "fieldName": "tooltip"
-            }
-          ],
-          "superclass": {
-            "name": "LitElement",
-            "package": "lit"
-          },
-          "customElement": true
-        }
-      ],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "RIBBON_ICON_SLOT_STYLES",
-          "declaration": {
-            "name": "RIBBON_ICON_SLOT_STYLES",
-            "module": "ribbon/src/items/mp-ribbon-item-base.ts"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpRibbonItemBase",
-          "declaration": {
-            "name": "MpRibbonItemBase",
-            "module": "ribbon/src/items/mp-ribbon-item-base.ts"
-          }
-        }
-      ]
     },
     {
       "kind": "javascript-module",

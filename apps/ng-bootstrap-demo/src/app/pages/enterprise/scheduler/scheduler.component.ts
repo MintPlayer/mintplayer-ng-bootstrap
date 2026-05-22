@@ -29,7 +29,7 @@ import {
   generateResourceId,
   generateGroupId,
   dateService,
-} from '@mintplayer/ng-bootstrap/web-components/scheduler-core';
+} from '@mintplayer/web-components/scheduler-core';
 
 @Component({
   selector: 'demo-scheduler',
@@ -320,7 +320,7 @@ export class SchedulerComponent {
       SchedulerEvent,
       SchedulerOptions,
       generateEventId,
-    } from '@mintplayer/ng-bootstrap/web-components/scheduler-core';
+    } from '@mintplayer/web-components/scheduler-core';
 
     @Component({
       selector: 'my-calendar',
