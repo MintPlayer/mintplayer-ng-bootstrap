@@ -1,7 +1,7 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { query } from 'lit/decorators.js';
-import { LiveAnnouncerController } from '@mintplayer/ng-bootstrap/web-components/a11y';
-import { OverlayController } from '@mintplayer/ng-bootstrap/web-components/overlay';
+import { LiveAnnouncerController } from '@mintplayer/web-components/a11y';
+import { OverlayController } from '@mintplayer/web-components/overlay';
 import { MpCalendarElement, type FirstDayOfWeek } from '@mintplayer/ng-bootstrap/calendar';
 import { MpTimeListElement, type Hour12Mode, type TimeStep } from '@mintplayer/ng-bootstrap/timepicker';
 import { styles } from './mp-datetime-picker.element.template';

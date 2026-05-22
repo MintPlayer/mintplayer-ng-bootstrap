@@ -1,7 +1,7 @@
 import { css, html, type TemplateResult } from 'lit';
 import { query } from 'lit/decorators.js';
 import { MpRibbonItemBase, RIBBON_ICON_SLOT_STYLES } from './mp-ribbon-item-base';
-import { OverlayController } from '@mintplayer/ng-bootstrap/web-components/overlay';
+import { OverlayController } from '@mintplayer/web-components/overlay';
 
 /**
  * mp-ribbon-dropdown-button — Single button + chevron. Click opens a menu

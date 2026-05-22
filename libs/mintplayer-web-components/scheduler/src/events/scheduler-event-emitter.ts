@@ -1,5 +1,5 @@
 import { SchedulerCustomEvent, EventDetail, TimeRange } from './event-types';
-import { ViewType } from '@mintplayer/ng-bootstrap/web-components/scheduler-core';
+import { ViewType } from '@mintplayer/web-components/scheduler-core';
 
 /**
  * Handles dispatching custom events from the scheduler.

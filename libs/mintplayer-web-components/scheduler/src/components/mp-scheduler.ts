@@ -1,5 +1,5 @@
 import { LitElement, html, type TemplateResult } from 'lit';
-import { LiveAnnouncerController } from '@mintplayer/ng-bootstrap/web-components/a11y';
+import { LiveAnnouncerController } from '@mintplayer/web-components/a11y';
 import {
   ViewType,
   SchedulerEvent,
@@ -10,7 +10,7 @@ import {
   dateService,
   resourceService,
   isResource,
-} from '@mintplayer/ng-bootstrap/web-components/scheduler-core';
+} from '@mintplayer/web-components/scheduler-core';
 import { SchedulerStateManager, SchedulerState } from '../state/scheduler-state';
 import {
   BaseView,

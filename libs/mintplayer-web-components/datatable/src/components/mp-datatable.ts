@@ -13,11 +13,11 @@ import type {
 } from '../types';
 
 // Side-effect import: registers <mp-pagination> for the footer.
-import '@mintplayer/ng-bootstrap/web-components/pagination';
-import type { PageChangeEventDetail } from '@mintplayer/ng-bootstrap/web-components/pagination';
+import '@mintplayer/web-components/pagination';
+import type { PageChangeEventDetail } from '@mintplayer/web-components/pagination';
 
 // Side-effect import: registers <mp-checkbox> for selection columns.
-import '@mintplayer/ng-bootstrap/web-components/checkbox';
+import '@mintplayer/web-components/checkbox';
 
 export type DatatableSelectionMode = 'none' | 'single' | 'multiple';
 

@@ -8,7 +8,7 @@ import {
   PreviewEvent,
   DragState,
   TimeSlot,
-} from '@mintplayer/ng-bootstrap/web-components/scheduler-core';
+} from '@mintplayer/web-components/scheduler-core';
 
 /**
  * Internal state for the scheduler web component

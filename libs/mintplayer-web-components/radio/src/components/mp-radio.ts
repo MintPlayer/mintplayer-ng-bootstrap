@@ -8,7 +8,7 @@ import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import {
   toggleButtonStyles,
   type ToggleButtonColor,
-} from '@mintplayer/ng-bootstrap/web-components/toggle-button';
+} from '@mintplayer/web-components/toggle-button';
 
 export type MpRadioType = 'radio' | 'toggle_button';
 

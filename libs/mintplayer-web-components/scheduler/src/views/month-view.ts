@@ -3,7 +3,7 @@ import {
   timelineService,
   SchedulerEvent,
   getContrastColor,
-} from '@mintplayer/ng-bootstrap/web-components/scheduler-core';
+} from '@mintplayer/web-components/scheduler-core';
 import { BaseView } from './base-view';
 import { SchedulerState } from '../state/scheduler-state';
 

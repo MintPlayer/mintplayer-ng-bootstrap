@@ -1,5 +1,5 @@
 import { LitElement, html, type TemplateResult, type PropertyValues, nothing } from 'lit';
-import { LiveAnnouncerController } from '@mintplayer/ng-bootstrap/web-components/a11y';
+import { LiveAnnouncerController } from '@mintplayer/web-components/a11y';
 import { TilePosition } from '../types/tile-position';
 import { TileLayoutSnapshot, TileGestureBlocked } from '../types/tile-layout-snapshot';
 import { GridRect } from '../types/grid-rect';
