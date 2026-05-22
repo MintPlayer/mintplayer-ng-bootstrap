@@ -55,6 +55,17 @@ All three can run simultaneously — the ports don't collide. The
 brand-mark links in each demo's top-right nav switch between them while
 preserving the current path.
 
+To boot **all three demos + the .NET API at once** from a single
+terminal (one `dotnet watch` shared by all three, single Ctrl+C tears
+the whole tree down):
+
+    npx nx run-many -t serve -p ng-bootstrap-demo,react-bootstrap-demo,vue-bootstrap-demo
+
+Each demo's `serve` target lists the API serve as a dependency and is
+flagged `continuous: true`, so Nx folds the task graph into a single
+`api:serve` invocation instead of racing three of them for the same
+`bin/Debug/net10.0/` DLL locks.
+
 The shorter `npm start -- --open` is wired to the Angular demo by
 default (see `scripts.start` in `package.json`).
 
