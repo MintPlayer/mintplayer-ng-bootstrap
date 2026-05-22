@@ -1,0 +1,37 @@
+name: 'Publish npm package'
+description: 'Publish a built package to NPM or GitHub Packages via JS-DevTools/npm-publish.'
+
+inputs:
+  package:
+    description: 'Path to the built package.json'
+    required: true
+  registry:
+    description: 'Registry URL (https://registry.npmjs.org or https://npm.pkg.github.com)'
+    required: true
+  token:
+    description: 'Auth token for the chosen registry'
+    required: true
+  access:
+    description: 'npm access level'
+    required: false
+    default: 'public'
+  provenance:
+    description: 'Generate provenance statement (requires id-token: write on the calling job)'
+    required: false
+    default: 'true'
+  dry-run:
+    description: 'If true, run npm publish --dry-run instead of publishing'
+    required: false
+    default: 'false'
+
+runs:
+  using: 'composite'
+  steps:
+    - uses: JS-DevTools/npm-publish@v4
+      with:
+        package: ${{ inputs.package }}
+        registry: ${{ inputs.registry }}
+        token: ${{ inputs.token }}
+        access: ${{ inputs.access }}
+        provenance: ${{ inputs.provenance }}
+        dry-run: ${{ inputs.dry-run }}

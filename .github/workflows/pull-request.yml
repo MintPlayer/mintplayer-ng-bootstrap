@@ -16,13 +16,13 @@ env:
 
 jobs:
   build:
-  
-    name: pull-request
+
+    name: build
     runs-on: ubuntu-latest
-    
-    permissions: 
+
+    permissions:
       contents: read
-    
+
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -33,7 +33,7 @@ jobs:
         # pointer files. Without this the snapshot comparison receives a
         # ~130-byte text file and either crashes or fails noisily.
         lfs: true
-    
+
     - name: Setup node
       uses: actions/setup-node@v4
       with:
@@ -43,11 +43,6 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '10.0.x'
-
-    # - name: Print GitHub
-    #   run: echo $JSON
-    #   env:
-    #     JSON: ${{ toJson(github) }}
 
     - name: Install dependencies
       run: npm ci
@@ -77,73 +72,59 @@ jobs:
       timeout-minutes: 15
       run: npx nx run ng-bootstrap-demo-e2e:e2e-live --output-style=stream
 
-    ## Dry-run publish to verify package.json files exist in dist
-    - name: Dry-run publish ng-animations
-      uses: JS-DevTools/npm-publish@v3
+    # Hand dist/ off to the dry-run-publish matrix job. Snippets publishes
+    # from libs/ (source); the matrix job checks the repo out so we don't
+    # need to bundle it into this artifact.
+    - name: Upload dist artifact
+      uses: actions/upload-artifact@v4
       with:
-        package: 'dist/libs/mintplayer-ng-animations/package.json'
-        token: ${{ secrets.PUBLISH_TO_NPMJS }}
-        dry-run: true
+        name: dist
+        path: dist/
+        retention-days: 1
 
-    - name: Dry-run publish ng-click-outside
-      uses: JS-DevTools/npm-publish@v3
-      with:
-        package: 'dist/libs/mintplayer-ng-click-outside/package.json'
-        token: ${{ secrets.PUBLISH_TO_NPMJS }}
-        dry-run: true
+  dry-run-publish:
+    name: dry-run-publish (${{ matrix.pkg.name }})
+    needs: build
+    runs-on: ubuntu-latest
 
-    - name: Dry-run publish ng-focus-on-load
-      uses: JS-DevTools/npm-publish@v3
-      with:
-        package: 'dist/libs/mintplayer-ng-focus-on-load/package.json'
-        token: ${{ secrets.PUBLISH_TO_NPMJS }}
-        dry-run: true
+    permissions:
+      contents: read
 
-    - name: Dry-run publish encode-utf8
-      uses: JS-DevTools/npm-publish@v3
-      with:
-        package: 'dist/libs/mintplayer-encode-utf8/package.json'
-        token: ${{ secrets.PUBLISH_TO_NPMJS }}
-        dry-run: true
+    strategy:
+      fail-fast: false
+      matrix:
+        pkg:
+          - { name: web-components,        path: dist/libs/mintplayer-web-components/package.json }
+          - { name: ng-animations,         path: dist/libs/mintplayer-ng-animations/package.json }
+          - { name: ng-click-outside,      path: dist/libs/mintplayer-ng-click-outside/package.json }
+          - { name: ng-focus-on-load,      path: dist/libs/mintplayer-ng-focus-on-load/package.json }
+          - { name: encode-utf8,           path: dist/libs/mintplayer-encode-utf8/package.json }
+          - { name: dijkstra,              path: dist/libs/mintplayer-dijkstra/package.json }
+          - { name: qr-code,               path: dist/libs/mintplayer-qr-code/package.json }
+          - { name: pagination,            path: dist/libs/mintplayer-pagination/package.json }
+          - { name: ng-qr-code,            path: dist/libs/mintplayer-ng-qr-code/package.json }
+          - { name: ng-swiper,             path: dist/libs/mintplayer-ng-swiper/package.json }
+          - { name: react-bootstrap,       path: dist/libs/mintplayer-react-bootstrap/package.json }
+          - { name: vue-bootstrap,         path: dist/libs/mintplayer-vue-bootstrap/package.json }
+          - { name: ng-bootstrap,          path: dist/libs/mintplayer-ng-bootstrap/package.json }
+          - { name: ng-bootstrap-snippets, path: libs/mintplayer-ng-bootstrap-snippets/package.json }
 
-    - name: Dry-run publish dijkstra
-      uses: JS-DevTools/npm-publish@v3
-      with:
-        package: 'dist/libs/mintplayer-dijkstra/package.json'
-        token: ${{ secrets.PUBLISH_TO_NPMJS }}
-        dry-run: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Dry-run publish qr-code
-      uses: JS-DevTools/npm-publish@v3
-      with:
-        package: 'dist/libs/mintplayer-qr-code/package.json'
-        token: ${{ secrets.PUBLISH_TO_NPMJS }}
-        dry-run: true
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
 
-    - name: Dry-run publish pagination
-      uses: JS-DevTools/npm-publish@v3
-      with:
-        package: 'dist/libs/mintplayer-pagination/package.json'
-        token: ${{ secrets.PUBLISH_TO_NPMJS }}
-        dry-run: true
-
-    - name: Dry-run publish ng-qr-code
-      uses: JS-DevTools/npm-publish@v3
-      with:
-        package: 'dist/libs/mintplayer-ng-qr-code/package.json'
-        token: ${{ secrets.PUBLISH_TO_NPMJS }}
-        dry-run: true
-
-    - name: Dry-run publish ng-swiper
-      uses: JS-DevTools/npm-publish@v3
-      with:
-        package: 'dist/libs/mintplayer-ng-swiper/package.json'
-        token: ${{ secrets.PUBLISH_TO_NPMJS }}
-        dry-run: true
-
-    - name: Dry-run publish ng-bootstrap
-      uses: JS-DevTools/npm-publish@v3
-      with:
-        package: 'dist/libs/mintplayer-ng-bootstrap/package.json'
-        token: ${{ secrets.PUBLISH_TO_NPMJS }}
-        dry-run: true
+      # Dry-run mode skips provenance attestation (no id-token: write needed).
+      - name: Dry-run publish
+        uses: ./.github/actions/publish-npm-package
+        with:
+          package: ${{ matrix.pkg.path }}
+          registry: 'https://registry.npmjs.org'
+          token: ${{ secrets.PUBLISH_TO_NPMJS }}
+          provenance: false
+          dry-run: true
