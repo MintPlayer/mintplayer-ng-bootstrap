@@ -46,9 +46,9 @@ export class MpCodeSnippet extends LitElement {
          against a near-white background. Switches happen on the
          explicit Bootstrap data-bs-theme attribute, which index.html's
          pre-boot script already resolves from the in-app setting
-         (localStorage 'bs-theme-mode'): 'light' / 'dark' / 'auto' →
-         the auto case reads `matchMedia('(prefers-color-scheme: dark)')`
-         before paint and sets data-bs-theme to the actual mode. So the
+         (localStorage 'bs-theme-mode'): light / dark / auto → the
+         auto case reads matchMedia (prefers-color-scheme: dark) before
+         paint and sets data-bs-theme to the actual mode. So the
          CSS below only ever sees light or dark, never 'auto'. */
       --mp-snippet-comment:    #696969;
       --mp-snippet-keyword:    #7928a1;
