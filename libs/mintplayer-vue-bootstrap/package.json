@@ -1,0 +1,24 @@
+{
+  "name": "@mintplayer/vue-bootstrap",
+  "version": "0.0.1",
+  "description": "Vue 3.5 SFC adapters around @mintplayer/web-components. Each sub-entry maps one-to-one with a WC sub-entry and exposes typed Vue components with v-model support for input WCs.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": ["**/src/index.{ts,js,mjs}", "**/Bs*.vue"],
+  "main": "./index.mjs",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./index.mjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.0",
+    "@mintplayer/web-components": "^0.0.1"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0"
+  }
+}
