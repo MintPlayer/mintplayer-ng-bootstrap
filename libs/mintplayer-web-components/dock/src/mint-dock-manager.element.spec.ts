@@ -186,7 +186,6 @@ describe('mint-dock-manager — touch long-press arming', () => {
     const headerSpan = getHeaderSpan();
     const startX = TAB_LEFT + 20;
     const startY = TAB_TOP + 16;
-
     headerSpan.dispatchEvent(makePointerEvent('pointerdown', { clientX: startX, clientY: startY, pointerType: 'touch' }));
     // Advance just enough for the press-feedback timer (150 ms) but not the
     // 600 ms long-press timer.
@@ -199,7 +198,6 @@ describe('mint-dock-manager — touch long-press arming', () => {
     const headerSpan = getHeaderSpan();
     const startX = TAB_LEFT + 20;
     const startY = TAB_TOP + 16;
-
     headerSpan.dispatchEvent(makePointerEvent('pointerdown', { clientX: startX, clientY: startY, pointerType: 'touch' }));
     vi.advanceTimersByTime(700);
     await nextRaf();
@@ -212,7 +210,6 @@ describe('mint-dock-manager — touch long-press arming', () => {
     const headerSpan = getHeaderSpan();
     const startX = TAB_LEFT + 20;
     const startY = TAB_TOP + 16;
-
     headerSpan.dispatchEvent(makePointerEvent('pointerdown', { clientX: startX, clientY: startY, pointerType: 'touch' }));
     // 30 px move — well past the 10 px slop.
     window.dispatchEvent(makePointerEvent('pointermove', { clientX: startX + 30, clientY: startY, pointerType: 'touch' }));
@@ -279,7 +276,6 @@ describe('mint-dock-manager — touch swipe scrolls the tabstrip', () => {
 
     dock = document.createElement('mint-dock-manager') as MintDockManagerElement;
     document.body.appendChild(dock);
-
     dock.getBoundingClientRect = () => makeRect(HOST_LEFT, HOST_TOP, HOST_WIDTH, HOST_HEIGHT);
 
     // Multi-pane stack so the strip has several tabs and can overflow.
@@ -778,7 +774,6 @@ describe('mint-dock-manager — whole-pane drag marks the wrapper transparent', 
     dock = document.createElement('mint-dock-manager') as MintDockManagerElement;
     document.body.appendChild(dock);
     dock.getBoundingClientRect = () => makeRect(HOST_LEFT, HOST_TOP, HOST_WIDTH, HOST_HEIGHT);
-
     dock.layout = {
       root: { kind: 'stack', panes: ['docked'], activePane: 'docked' },
       titles: { docked: 'Docked', floater: 'Floater' },
@@ -789,10 +784,8 @@ describe('mint-dock-manager — whole-pane drag marks the wrapper transparent', 
         },
       ],
     } as never;
-
     await (dock as unknown as { updateComplete: Promise<void> }).updateComplete;
     await nextRaf();
-
     if (dock.shadowRoot) {
       (dock.shadowRoot as unknown as { elementsFromPoint: (x: number, y: number) => Element[] }).elementsFromPoint =
         () => [];

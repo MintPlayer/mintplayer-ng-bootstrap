@@ -370,7 +370,6 @@ describe('mp-otp-input — type/case change re-normalises value', () => {
   it('does not emit value-change when type/case toggle leaves value unchanged', async () => {
     const el = makeElement();
     await ready(el);
-
     fireInput(hiddenInput(el), '123');
     await ready(el);
 

@@ -97,12 +97,10 @@ describe('mp-splitter ARIA', () => {
     const el = makeSplitter('horizontal', 2);
     document.body.appendChild(el);
     await flush(el);
-
     expect(dividers(el)[0].getAttribute('aria-orientation')).toBe('vertical');
 
     el.setAttribute('orientation', 'vertical');
     await flush(el);
-
     expect(dividers(el)[0].getAttribute('aria-orientation')).toBe('horizontal');
   });
 

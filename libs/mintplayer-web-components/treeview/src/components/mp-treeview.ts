@@ -149,7 +149,6 @@ export class MpTreeview extends LitElement {
       const first = this._selectedIds.values().next().value as string | undefined;
       this._selectedIds = new Set(first ? [first] : []);
     }
-
     this.requestUpdate();
   }
 
