@@ -1,6 +1,15 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, effect, inject, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  ElementRef,
+  effect,
+  inject,
+  input,
+} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { applyHeaderNavStyle, applyTextBgClass, isNavTargetNode, type CardHeaderNavStyle } from '@mintplayer/web-components/card';
+
 /**
  * Card header.
  *

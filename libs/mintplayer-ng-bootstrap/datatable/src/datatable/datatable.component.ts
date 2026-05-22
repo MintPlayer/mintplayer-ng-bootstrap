@@ -21,7 +21,16 @@ import {
 } from '@angular/core';
 import { isPlatformServer } from '@angular/common';
 import { PaginationRequest, PaginationResponse, SortColumn } from '@mintplayer/pagination';
-import { computeNextSort, type DatatableColumnDef, type DatatableSelectionMode, type MpDatatable, type RowEventDetail, type RowRenderer, type SortChangeEventDetail, type SelectionChangeEventDetail } from '@mintplayer/web-components/datatable';
+import {
+  computeNextSort,
+  type DatatableColumnDef,
+  type DatatableSelectionMode,
+  type MpDatatable,
+  type RowEventDetail,
+  type RowRenderer,
+  type SortChangeEventDetail,
+  type SelectionChangeEventDetail,
+} from '@mintplayer/web-components/datatable';
 // Side-effect import: registers <mp-datatable>.
 import '@mintplayer/web-components/datatable';
 

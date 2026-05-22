@@ -16,7 +16,14 @@ import {
   inject,
   runInInjectionContext,
 } from '@angular/core';
-import { ViewType, SchedulerEvent, Resource, ResourceGroup, SchedulerOptions } from '@mintplayer/web-components/scheduler-core';
+
+import {
+  ViewType,
+  SchedulerEvent,
+  Resource,
+  ResourceGroup,
+  SchedulerOptions,
+} from '@mintplayer/web-components/scheduler-core';
 // Import the web component to ensure it gets registered
 import '@mintplayer/web-components/scheduler';
 

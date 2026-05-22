@@ -15,7 +15,16 @@ import {
   ViewContainerRef,
   viewChild,
 } from '@angular/core';
-import { MpTreeview, type IconResolver, type TreeNode, type TreeNodeCollapseEventDetail, type TreeNodeExpandEventDetail, type TreeNodeRenderer, type TreeNodeSelectEventDetail, type TreeviewSelectionMode } from '@mintplayer/web-components/treeview';
+import {
+  MpTreeview,
+  type IconResolver,
+  type TreeNode,
+  type TreeNodeCollapseEventDetail,
+  type TreeNodeExpandEventDetail,
+  type TreeNodeRenderer,
+  type TreeNodeSelectEventDetail,
+  type TreeviewSelectionMode,
+} from '@mintplayer/web-components/treeview';
 // Side-effect import: registers the `<mp-treeview>` custom element.
 import '@mintplayer/web-components/treeview';
 

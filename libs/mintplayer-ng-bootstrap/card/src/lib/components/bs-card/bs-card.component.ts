@@ -1,6 +1,14 @@
-import { ChangeDetectionStrategy, Component, ElementRef, effect, inject, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  effect,
+  inject,
+  input,
+} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { applyCardColorClasses, ensureCardStylesInjected } from '@mintplayer/web-components/card';
+
 /**
  * Angular wrapper for the Bootstrap card root.
  *

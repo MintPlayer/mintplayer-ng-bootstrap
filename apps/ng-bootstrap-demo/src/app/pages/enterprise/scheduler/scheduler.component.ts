@@ -19,7 +19,17 @@ import {
   DateClickEvent,
   ViewChangeEvent,
 } from '@mintplayer/ng-bootstrap/scheduler';
-import { ViewType, SchedulerEvent, Resource, ResourceGroup, SchedulerOptions, generateEventId, generateResourceId, generateGroupId, dateService } from '@mintplayer/web-components/scheduler-core';
+import {
+  ViewType,
+  SchedulerEvent,
+  Resource,
+  ResourceGroup,
+  SchedulerOptions,
+  generateEventId,
+  generateResourceId,
+  generateGroupId,
+  dateService,
+} from '@mintplayer/web-components/scheduler-core';
 
 @Component({
   selector: 'demo-scheduler',
@@ -299,8 +309,18 @@ export class SchedulerComponent {
 
   protected readonly snippetBasicTs = dedent`
     import { Component, computed, signal } from '@angular/core';
-    import { BsSchedulerComponent, SchedulerEventCreateEvent, SchedulerEventUpdateEvent, SchedulerEventDeleteEvent } from '@mintplayer/ng-bootstrap/scheduler';
-    import { ViewType, SchedulerEvent, SchedulerOptions, generateEventId } from '@mintplayer/web-components/scheduler-core';
+    import {
+      BsSchedulerComponent,
+      SchedulerEventCreateEvent,
+      SchedulerEventUpdateEvent,
+      SchedulerEventDeleteEvent,
+    } from '@mintplayer/ng-bootstrap/scheduler';
+    import {
+      ViewType,
+      SchedulerEvent,
+      SchedulerOptions,
+      generateEventId,
+    } from '@mintplayer/web-components/scheduler-core';
     @Component({
       selector: 'my-calendar',
       templateUrl: './my-calendar.component.html',

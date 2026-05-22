@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
+
 /**
  * Card body — explicit wrapper. No auto-padding workaround like the previous
  * implementation: Bootstrap's `.card-body` padding applies as upstream

@@ -19,11 +19,14 @@ import { argv } from 'node:process';
 
 // Tokenise an import statement into { kind, type, items, path, raw }.
 function parseImport(text) {
+  // Tolerate leading whitespace — the same code shape shows up inside
+  // dedent`…` template literals as documentation snippets.
+  const trimmed = text.replace(/^\s+/, '');
   // Side-effect import: `import 'x';` — keep as a single token.
-  const sideEffect = text.match(/^import\s+(['"][^'"]+['"])\s*;?\s*$/);
+  const sideEffect = trimmed.match(/^import\s+(['"][^'"]+['"])\s*;?\s*$/);
   if (sideEffect) return { kind: 'side', path: sideEffect[1] };
 
-  const m = text.match(/^import\s+(type\s+)?\{([\s\S]*?)\}\s+from\s+(['"][^'"]+['"])\s*;?\s*$/);
+  const m = trimmed.match(/^import\s+(type\s+)?\{([\s\S]*?)\}\s+from\s+(['"][^'"]+['"])\s*;?\s*$/);
   if (!m) return null;
 
   const type = !!m[1];
@@ -83,23 +86,61 @@ function importKey(imp) {
   return `named:${imp.type ? 'T:' : ''}${imp.items}|${imp.path}`;
 }
 
+// Re-wrap a HEAD single-line import to multi-line using master's exact
+// indentation and trailing-comma style. Substitutes the new path.
+function reformatToMultiline(head, masterRaw) {
+  // Pull the indent of the opening `import {` line from masterRaw.
+  const firstLineIndent = (masterRaw.match(/^([ \t]*)/) ?? ['', ''])[1];
+  // Pull the indent used for each item from the second non-blank line.
+  const lines = masterRaw.split('\n');
+  let itemIndent = '  ';
+  for (let i = 1; i < lines.length; i++) {
+    const m = lines[i].match(/^([ \t]+)\S/);
+    if (m && !/^\s*\}/.test(lines[i])) {
+      itemIndent = m[1];
+      break;
+    }
+  }
+  const items = head.items.split(',').filter(Boolean);
+  const typeKeyword = head.type ? 'type ' : '';
+  const inner = items.map((it) => `${itemIndent}${it},`).join('\n');
+  return `${firstLineIndent}import ${typeKeyword}{\n${inner}\n${firstLineIndent}} from ${head.path};`;
+}
+
 function tryRestore(masterSrc, headSrc) {
   const masterImports = extractImports(masterSrc);
   const headImports = extractImports(headSrc);
 
-  // Map master imports by key for lookup.
+  // Two lookups: (a) by full key for exact same-items+same-path matches,
+  // (b) by items only to find master imports whose item-set matches a
+  // HEAD import that landed on a different path (WC-migration rewrites).
   const masterByKey = new Map(masterImports.map((i) => [importKey(i), i]));
+  const masterByItems = new Map();
+  for (const m of masterImports) {
+    if (m.kind === 'named' && m.multiline) {
+      const k = `${m.type ? 'T' : 'N'}:${m.items}`;
+      if (!masterByItems.has(k)) masterByItems.set(k, m);
+    }
+  }
 
-  // Build a replacement plan: for each HEAD import where master has a
-  // multi-line equivalent (same key), substitute master's raw form.
   const replacements = [];
   for (const h of headImports) {
+    if (h.kind !== 'named') continue;
     const key = importKey(h);
-    const masterMatch = masterByKey.get(key);
-    if (!masterMatch) continue;
-    if (!masterMatch.multiline) continue;
-    if (h.raw === masterMatch.raw) continue; // already match
-    replacements.push({ from: h.raw, to: masterMatch.raw });
+    const exact = masterByKey.get(key);
+    if (exact) {
+      if (exact.multiline && h.raw !== exact.raw) {
+        replacements.push({ from: h.raw, to: exact.raw });
+      }
+      continue;
+    }
+    // No exact match. Fall back to items-only match: keep HEAD's new
+    // path but adopt master's multi-line wrapping style.
+    if (h.multiline) continue;
+    const itemsKey = `${h.type ? 'T' : 'N'}:${h.items}`;
+    const itemsMatch = masterByItems.get(itemsKey);
+    if (!itemsMatch) continue;
+    replacements.push({ from: h.raw, to: reformatToMultiline(h, itemsMatch.raw) });
   }
 
   if (replacements.length === 0) return null;
@@ -207,7 +248,8 @@ let files;
 if (argv.length > 2) {
   files = argv.slice(2);
 } else {
-  files = execSync('git diff origin/master --name-only --diff-filter=M', {
+  // Include renames/adds too — subfolder reorgs land as add-at-new-path.
+  files = execSync('git diff origin/master --name-only --diff-filter=MAR', {
     encoding: 'utf8',
   })
     .split('\n')
@@ -216,20 +258,35 @@ if (argv.length > 2) {
     .filter((f) => /\.(ts|tsx|js|mjs|cjs)$/.test(f));
 }
 
+function masterCandidatesFor(path) {
+  const candidates = [path];
+  const m = path.match(/^(.*)\/([^/]+)\/([^/]+\.(?:ts|tsx|js|mjs|cjs))$/);
+  if (m) {
+    const base = m[3].replace(/\.(component|directive|spec|service|pipe|module)\.[^.]+$/, '');
+    const sub = m[2];
+    if (base === sub || m[3].startsWith(sub + '.')) {
+      candidates.push(`${m[1]}/${m[3]}`);
+    }
+  }
+  return candidates;
+}
+
 let touchedFiles = 0;
 let totalImportRestores = 0;
 let totalBlankRestores = 0;
 
 for (const f of files) {
   let masterSrc, headSrc;
-  try {
-    masterSrc = execSync(`git show origin/master:${f}`, {
-      encoding: 'utf8',
-      stdio: ['pipe', 'pipe', 'ignore'],
-    });
-  } catch {
-    continue;
+  for (const c of masterCandidatesFor(f)) {
+    try {
+      masterSrc = execSync(`git show origin/master:${c}`, {
+        encoding: 'utf8',
+        stdio: ['pipe', 'pipe', 'ignore'],
+      });
+      break;
+    } catch {}
   }
+  if (!masterSrc) continue;
   headSrc = readFileSync(f, 'utf8');
 
   let changed = false;

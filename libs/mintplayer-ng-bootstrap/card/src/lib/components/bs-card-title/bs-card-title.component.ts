@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
+
 @Component({
   selector: 'bs-card-title',
   template: '<ng-content></ng-content>',

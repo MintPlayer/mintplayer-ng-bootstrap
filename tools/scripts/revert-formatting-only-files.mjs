@@ -61,7 +61,9 @@ let files;
 if (argv.length > 2) {
   files = argv.slice(2);
 } else {
-  files = execSync('git diff origin/master --name-only --diff-filter=M', {
+  // Include modified AND renamed/added files — a subfolder-reorg shows up
+  // as added at the new path with no `M` entry.
+  files = execSync('git diff origin/master --name-only --diff-filter=MAR', {
     encoding: 'utf8',
   })
     .split('\n')
@@ -70,17 +72,37 @@ if (argv.length > 2) {
     .filter((f) => /\.(ts|tsx|js|mjs|cjs|html|scss|css|json|md)$/.test(f));
 }
 
+// For a path like `.../components/foo/foo.component.ts`, also try the
+// collapsed flat path `.../components/foo.component.ts` on master.
+function masterCandidatesFor(path) {
+  const candidates = [path];
+  const m = path.match(/^(.*)\/([^/]+)\/([^/]+\.(?:ts|tsx|js|mjs|cjs|html|scss|css))$/);
+  if (m) {
+    const base = m[3].replace(/\.(component|directive|spec|service|pipe|module)\.[^.]+$/, '');
+    const sub = m[2];
+    if (base === sub || m[3].startsWith(sub + '.')) {
+      candidates.push(`${m[1]}/${m[3]}`);
+    }
+  }
+  return candidates;
+}
+
 let reverted = 0;
 let kept = 0;
 
 for (const f of files) {
   let masterBuf, headSrc;
-  try {
-    masterBuf = execSync(`git show origin/master:${f}`, {
-      encoding: 'buffer',
-      stdio: ['pipe', 'pipe', 'ignore'],
-    });
-  } catch {
+  const candidates = masterCandidatesFor(f);
+  for (const c of candidates) {
+    try {
+      masterBuf = execSync(`git show origin/master:${c}`, {
+        encoding: 'buffer',
+        stdio: ['pipe', 'pipe', 'ignore'],
+      });
+      break;
+    } catch {}
+  }
+  if (!masterBuf) {
     kept++;
     continue;
   }

@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { BsCardLinkComponent } from './bs-card-link.component';
+
 describe('BsCardLinkComponent', () => {
   beforeEach(() => TestBed.resetTestingModule());
 

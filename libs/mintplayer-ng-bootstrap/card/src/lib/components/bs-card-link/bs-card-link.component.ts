@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+
 /**
  * Card link. The inner `<a>` carries `.card-link` (so Bootstrap's hover /
  * spacing styling and the `+` adjacency rule both apply). For the adjacency
