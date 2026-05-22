@@ -1,0 +1,72 @@
+{
+  "name": "react-bootstrap-demo",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/react-bootstrap-demo/src",
+  "projectType": "application",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/vite:build",
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "defaultConfiguration": "production",
+      "options": {
+        "outputPath": "dist/apps/react-bootstrap-demo"
+      },
+      "configurations": {
+        "development": {
+          "mode": "development"
+        },
+        "production": {
+          "mode": "production"
+        }
+      }
+    },
+    "serve": {
+      "executor": "@nx/vite:dev-server",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "react-bootstrap-demo:build"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "react-bootstrap-demo:build:development",
+          "hmr": true
+        },
+        "production": {
+          "buildTarget": "react-bootstrap-demo:build:production",
+          "hmr": false
+        }
+      }
+    },
+    "preview": {
+      "dependsOn": [
+        "build"
+      ],
+      "executor": "@nx/vite:preview-server",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "react-bootstrap-demo:build"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "react-bootstrap-demo:build:development"
+        },
+        "production": {
+          "buildTarget": "react-bootstrap-demo:build:production"
+        }
+      }
+    },
+    "serve-static": {
+      "executor": "@nx/web:file-server",
+      "dependsOn": [
+        "build"
+      ],
+      "options": {
+        "buildTarget": "react-bootstrap-demo:build",
+        "spa": true
+      }
+    }
+  }
+}

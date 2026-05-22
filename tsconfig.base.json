@@ -65,8 +65,14 @@
       "@mintplayer/react-bootstrap": [
         "./libs/mintplayer-react-bootstrap/src/index.ts"
       ],
+      "@mintplayer/react-bootstrap/*": [
+        "./libs/mintplayer-react-bootstrap/*"
+      ],
       "@mintplayer/vue-bootstrap": [
         "./libs/mintplayer-vue-bootstrap/src/index.ts"
+      ],
+      "@mintplayer/vue-bootstrap/*": [
+        "./libs/mintplayer-vue-bootstrap/*"
       ]
     }
   },
