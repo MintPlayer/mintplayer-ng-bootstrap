@@ -15,6 +15,7 @@ import type {
   RowEventDetail,
   SelectionChangeEventDetail as DatatableSelectionEvent,
 } from '@mintplayer/web-components/datatable';
+
 import { fileManagerStyles } from '../styles';
 import type { FileSystemNode, FileManagerMessages } from '../types';
 import { DEFAULT_FILE_MANAGER_MESSAGES, mergeMessages } from '../types';
@@ -600,7 +601,6 @@ export class MpFileManager extends LitElement {
     this._nodes = [...this._nodes, ...additions];
     this._loadedFolders.add(parentId);
     this.requestUpdate();
-
     this.dispatchEvent(
       new CustomEvent('mp-children-loaded', {
         detail: { parentId, children: newNodes },
@@ -1401,6 +1401,7 @@ export class MpFileManager extends LitElement {
     }));
     this._uploads = [...this._uploads, ...newEntries];
     this.requestUpdate();
+
     this.dispatchEvent(
       new CustomEvent<UploadRequestEventDetail>('mp-upload-request', {
         detail: {

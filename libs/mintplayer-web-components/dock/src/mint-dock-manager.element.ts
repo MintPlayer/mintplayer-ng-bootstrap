@@ -50,7 +50,6 @@ export class MintDockManagerElement extends LitElement {
     if (documentRef) {
       MintDockManagerElement.documentRef = documentRef;
     }
-
   }
 
   static override get observedAttributes(): string[] {
@@ -3315,7 +3314,6 @@ export class MintDockManagerElement extends LitElement {
         }
       }
     }
-
     return null;
   }
 
@@ -3532,6 +3530,7 @@ export class MintDockManagerElement extends LitElement {
         return this.dockedEl;
       }
     }
+
     return null;
   }
 
