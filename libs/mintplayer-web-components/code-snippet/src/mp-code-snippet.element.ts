@@ -34,45 +34,31 @@ export class MpCodeSnippet extends LitElement {
     :host {
       display: block;
       position: relative;
-      font-family: var(--bs-font-monospace, ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace);
-      background: var(--bs-tertiary-bg, #f6f8fa);
-      color: var(--bs-body-color, #1f2328);
-      border: 1px solid var(--bs-border-color, #d0d7de);
-      border-radius: var(--bs-border-radius, 0.375rem);
+      font-family: var(--bs-font-monospace);
+      background: var(--bs-tertiary-bg);
+      color: var(--bs-body-color);
+      border: 1px solid var(--bs-border-color);
+      border-radius: var(--bs-border-radius);
       overflow: hidden;
 
-      /* GitHub-light hljs token palette (default). Each token is a CSS
-         variable so consumers (and the dark-mode block below) can
-         override without re-declaring every selector. */
-      --mp-snippet-comment:    #6e7781;
-      --mp-snippet-keyword:    #cf222e;
-      --mp-snippet-string:     #0a3069;
-      --mp-snippet-number:     #0550ae;
-      --mp-snippet-type:       #8250df;
-      --mp-snippet-tag:        #116329;
-      --mp-snippet-attribute:  #0550ae;
-      --mp-snippet-deletion-fg:#82071e;
-      --mp-snippet-deletion-bg:#ffebe9;
-      --mp-snippet-addition-fg:#116329;
-      --mp-snippet-addition-bg:#dafbe1;
-    }
-
-    /* Bootstrap toggles data-bs-theme on <html> (or any ancestor). Flip
-       hljs tokens to GitHub-dark when an ancestor declares dark mode so
-       the snippet stays readable. :host-context is supported in
-       Chromium 28+, Firefox 102+ and Safari 16.4+ — all current. */
-    :host-context([data-bs-theme='dark']) {
-      --mp-snippet-comment:    #8b949e;
-      --mp-snippet-keyword:    #ff7b72;
-      --mp-snippet-string:     #a5d6ff;
-      --mp-snippet-number:     #79c0ff;
-      --mp-snippet-type:       #d2a8ff;
-      --mp-snippet-tag:        #7ee787;
-      --mp-snippet-attribute:  #79c0ff;
-      --mp-snippet-deletion-fg:#ffdcd7;
-      --mp-snippet-deletion-bg:#67060c;
-      --mp-snippet-addition-fg:#aff5b4;
-      --mp-snippet-addition-bg:#033a16;
+      /* hljs token palette driven by Bootstrap's --bs-*-text-emphasis
+         variables. Those already flip with data-bs-theme (e.g.
+         --bs-info-text-emphasis is #055160 in light, #6edff6 in dark),
+         so the snippet stays readable on both backgrounds without a
+         separate dark-mode block here. Consumers can override any
+         single token by setting the matching --mp-snippet-* variable
+         in their own stylesheet. */
+      --mp-snippet-comment:    var(--bs-secondary-color);
+      --mp-snippet-keyword:    var(--bs-danger-text-emphasis);
+      --mp-snippet-string:     var(--bs-info-text-emphasis);
+      --mp-snippet-number:     var(--bs-primary-text-emphasis);
+      --mp-snippet-type:       var(--bs-warning-text-emphasis);
+      --mp-snippet-tag:        var(--bs-success-text-emphasis);
+      --mp-snippet-attribute:  var(--bs-info-text-emphasis);
+      --mp-snippet-deletion-fg:var(--bs-danger-text-emphasis);
+      --mp-snippet-deletion-bg:var(--bs-danger-bg-subtle);
+      --mp-snippet-addition-fg:var(--bs-success-text-emphasis);
+      --mp-snippet-addition-bg:var(--bs-success-bg-subtle);
     }
 
     pre {
@@ -97,10 +83,10 @@ export class MpCodeSnippet extends LitElement {
       right: 0.5rem;
       padding: 0.25rem 0.75rem;
       font-size: 0.75rem;
-      color: var(--bs-body-color, #1f2328);
-      background: var(--bs-body-bg, #ffffff);
-      border: 1px solid var(--bs-border-color, #d0d7de);
-      border-radius: var(--bs-border-radius-sm, 0.25rem);
+      color: var(--bs-body-color);
+      background: var(--bs-body-bg);
+      border: 1px solid var(--bs-border-color);
+      border-radius: var(--bs-border-radius-sm);
       cursor: pointer;
       opacity: 0.85;
       transition: opacity 120ms ease;
@@ -117,9 +103,9 @@ export class MpCodeSnippet extends LitElement {
       right: 0.5rem;
       padding: 0.25rem 0.75rem;
       font-size: 0.75rem;
-      color: var(--bs-body-bg, #ffffff);
-      background: var(--bs-success, #198754);
-      border-radius: var(--bs-border-radius-sm, 0.25rem);
+      color: var(--bs-body-bg);
+      background: var(--bs-success);
+      border-radius: var(--bs-border-radius-sm);
       opacity: 0;
       transform: translateY(0.5rem);
       transition: opacity 150ms ease, transform 150ms ease;
