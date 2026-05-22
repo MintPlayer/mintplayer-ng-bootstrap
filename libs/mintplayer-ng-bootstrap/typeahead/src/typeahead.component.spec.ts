@@ -8,7 +8,10 @@ import { BsFormComponent, BsFormGroupDirective, BsFormControlDirective } from '@
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { ClickOutsideDirective } from '@mintplayer/ng-click-outside';
 import { MockComponent, MockDirective } from 'ng-mocks';
+
 import { BsTypeaheadComponent } from './typeahead.component';
+
+
 describe('TypeaheadComponent', () => {
   let component: BsTypeaheadComponent;
   let fixture: ComponentFixture<BsTypeaheadComponent>;

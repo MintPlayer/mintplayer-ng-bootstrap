@@ -1,7 +1,8 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { BsCloseComponent } from '@mintplayer/ng-bootstrap/close';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-close',
   templateUrl: './close.component.html',
@@ -22,6 +23,7 @@ export class CloseComponent {
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
     import { BsCloseComponent } from '@mintplayer/ng-bootstrap/close';
+
     @Component({
       selector: 'my-close-demo',
       templateUrl: './my-close-demo.component.html',

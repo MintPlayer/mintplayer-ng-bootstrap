@@ -5,6 +5,8 @@ import { GIT_REPO } from '../../../providers/git-repo.provider';
 import { TooltipComponent } from './tooltip.component';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsTooltipDirective } from '@mintplayer/ng-bootstrap/tooltip';
+
+
 describe('TooltipComponent', () => {
   let component: TooltipComponent;
   let fixture: ComponentFixture<TooltipComponent>;

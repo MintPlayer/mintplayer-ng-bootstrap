@@ -1,9 +1,10 @@
-import { Component, Pipe, PipeTransform, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Pipe, PipeTransform, ChangeDetectionStrategy} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsTableComponent } from '@mintplayer/ng-bootstrap/table';
 import { dedent } from 'ts-dedent';
+
 interface Employee {
   id: number;
   firstName: string;
@@ -75,6 +76,7 @@ export class IsInterfaceComponent {
 
   protected readonly snippetBasicTs = dedent`
     import { Pipe, PipeTransform } from '@angular/core';
+
     interface Employee { officeNumber: number; }
     interface Visitor { reason: string; }
 

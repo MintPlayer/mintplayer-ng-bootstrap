@@ -1,5 +1,5 @@
 import { A11yModule } from '@angular/cdk/a11y';
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsCloseComponent } from '@mintplayer/ng-bootstrap/close';
@@ -10,6 +10,7 @@ import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLa
 import { BsModalHostComponent, BsModalDirective, BsModalHeaderDirective, BsModalBodyDirective, BsModalFooterDirective, BsModalCloseDirective } from '@mintplayer/ng-bootstrap/modal';
 import { FocusOnLoadDirective } from '@mintplayer/ng-focus-on-load';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-focus-trap',
   templateUrl: './focus-trap.component.html',
@@ -46,7 +47,15 @@ export class FocusTrapComponent {
     import { A11yModule } from '@angular/cdk/a11y';
     import { Color } from '@mintplayer/ng-bootstrap';
     import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
-    import { BsModalHostComponent, BsModalDirective, BsModalHeaderDirective, BsModalBodyDirective, BsModalFooterDirective, BsModalCloseDirective } from '@mintplayer/ng-bootstrap/modal';
+    import {
+      BsModalHostComponent,
+      BsModalDirective,
+      BsModalHeaderDirective,
+      BsModalBodyDirective,
+      BsModalFooterDirective,
+      BsModalCloseDirective,
+    } from '@mintplayer/ng-bootstrap/modal';
+
     @Component({
       selector: 'my-focus-trap-demo',
       templateUrl: './my-focus-trap-demo.component.html',

@@ -5,6 +5,7 @@ import { BsOtpInputComponent } from '@mintplayer/ng-bootstrap/otp-input';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { FocusOnLoadDirective } from '@mintplayer/ng-focus-on-load';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-otp-input',
   templateUrl: './otp-input.component.html',
@@ -49,6 +50,7 @@ export class OtpInputDemoComponent {
     import { Component, signal } from '@angular/core';
     import { FormsModule } from '@angular/forms';
     import { BsOtpInputComponent } from '@mintplayer/ng-bootstrap/otp-input';
+
     @Component({
       selector: 'my-otp',
       templateUrl: './my-otp.component.html',

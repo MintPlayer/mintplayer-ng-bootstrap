@@ -1,4 +1,5 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
+
 @Component({
   selector: 'bs-breadcrumb',
   templateUrl: './breadcrumb.component.html',

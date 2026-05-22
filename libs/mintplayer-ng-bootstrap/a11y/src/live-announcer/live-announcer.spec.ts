@@ -1,6 +1,7 @@
 import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { TestBed } from '@angular/core/testing';
 import { BsLiveAnnouncerService } from './live-announcer.service';
+
 describe('BsLiveAnnouncerService', () => {
   let service: BsLiveAnnouncerService;
   let cdkAnnounceSpy: ReturnType<typeof vi.fn>;

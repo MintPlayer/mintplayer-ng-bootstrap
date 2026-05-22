@@ -1,9 +1,10 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsInstanceOfDirective, BsInstanceofCaseDirective, BsInstanceOfDefaultDirective } from '@mintplayer/ng-bootstrap/instance-of';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-instance-of',
   templateUrl: './instance-of.component.html',
@@ -35,7 +36,12 @@ export class InstanceOfComponent {
 
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
-    import { BsInstanceOfDirective, BsInstanceofCaseDirective, BsInstanceOfDefaultDirective } from '@mintplayer/ng-bootstrap/instance-of';
+    import {
+      BsInstanceOfDirective,
+      BsInstanceofCaseDirective,
+      BsInstanceOfDefaultDirective,
+    } from '@mintplayer/ng-bootstrap/instance-of';
+
     class Base { text = 'text'; }
     class A extends Base { a = 'a'; }
     class B extends Base { b = 'b'; }

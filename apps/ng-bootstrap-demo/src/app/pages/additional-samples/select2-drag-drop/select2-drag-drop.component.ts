@@ -1,4 +1,4 @@
-import { Component, inject, model, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, model, signal, ChangeDetectionStrategy} from '@angular/core';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsSelect2Component, BsItemTemplateDirective, BsSuggestionTemplateDirective } from '@mintplayer/ng-bootstrap/select2';
@@ -6,6 +6,7 @@ import { BsFontColorPipe } from '@mintplayer/ng-bootstrap/font-color';
 import { Tag } from '../../../entities/tag';
 import { TagService } from '../../../services/tag/tag.service';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-select2-drag-drop',
   templateUrl: './select2-drag-drop.component.html',
@@ -54,7 +55,12 @@ export class Select2DragDropComponent {
   protected readonly snippetBasicTs = dedent`
     import { Component, model, signal } from '@angular/core';
     import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
-    import { BsSelect2Component, BsItemTemplateDirective, BsSuggestionTemplateDirective } from '@mintplayer/ng-bootstrap/select2';
+    import {
+      BsSelect2Component,
+      BsItemTemplateDirective,
+      BsSuggestionTemplateDirective,
+    } from '@mintplayer/ng-bootstrap/select2';
+
     interface Tag { id: number; description: string; }
 
     @Component({

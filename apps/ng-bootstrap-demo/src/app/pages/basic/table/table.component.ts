@@ -1,11 +1,12 @@
 import { DatePipe } from '@angular/common';
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BsGridComponent, BsGridRowDirective, BsGridColDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsTableComponent } from '@mintplayer/ng-bootstrap/table';
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-table',
   templateUrl: './table.component.html',
@@ -39,6 +40,7 @@ export class TableComponent {
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
     import { BsTableComponent } from '@mintplayer/ng-bootstrap/table';
+
     interface Person {
       id: number;
       firstName: string;

@@ -1,5 +1,6 @@
 import { inject, Pipe, PipeTransform } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
+
 @Pipe({
   name: 'bsTrustHtml',
   pure: true,

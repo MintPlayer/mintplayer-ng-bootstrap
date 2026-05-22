@@ -1,10 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MockDirective, MockComponent } from 'ng-mocks';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
+
 import { TrackByComponent } from './track-by.component';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { BsListGroupComponent, BsListGroupItemComponent } from '@mintplayer/ng-bootstrap/list-group';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
+
 describe('TrackByComponent', () => {
   let component: TrackByComponent;
   let fixture: ComponentFixture<TrackByComponent>;

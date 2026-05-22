@@ -4,6 +4,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsDatetimePickerComponent } from '@mintplayer/ng-bootstrap/datetime-picker';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-datetime-picker',
   templateUrl: './datetime-picker.component.html',
@@ -41,6 +42,7 @@ export class DatetimePickerComponent {
   protected readonly snippetBasicTs = dedent`
     import { Component, model } from '@angular/core';
     import { BsDatetimePickerComponent } from '@mintplayer/ng-bootstrap/datetime-picker';
+
     @Component({
       selector: 'my-datetime-picker-demo',
       templateUrl: './my-datetime-picker-demo.component.html',
@@ -63,6 +65,7 @@ export class DatetimePickerComponent {
     import { Component } from '@angular/core';
     import { FormControl, ReactiveFormsModule } from '@angular/forms';
     import { BsDatetimePickerComponent } from '@mintplayer/ng-bootstrap/datetime-picker';
+
     @Component({
       selector: 'my-datetime-picker-demo',
       templateUrl: './my-datetime-picker-demo.component.html',

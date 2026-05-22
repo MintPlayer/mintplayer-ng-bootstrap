@@ -1,4 +1,4 @@
-import { Component, model, ChangeDetectionStrategy } from '@angular/core';
+import { Component, model, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
@@ -11,6 +11,7 @@ import { BsColorPickerComponent } from '@mintplayer/ng-bootstrap/color-picker';
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { DecimalPipe } from '@angular/common';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-color-picker',
   templateUrl: './color-picker.component.html',
@@ -39,6 +40,7 @@ export class ColorPickerComponent {
     import { Component } from '@angular/core';
     import { FormsModule } from '@angular/forms';
     import { BsColorPickerComponent } from '@mintplayer/ng-bootstrap/color-picker';
+
     @Component({
       selector: 'my-color-picker-demo',
       templateUrl: './my-color-picker-demo.component.html',

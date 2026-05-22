@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, contentChildren, forwardRef, inject
 import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
 import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
 import { BsAccordionComponent } from '../accordion/accordion.component';
+
 @Component({
   selector: 'bs-accordion-tab',
   templateUrl: './accordion-tab.component.html',

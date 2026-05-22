@@ -2,9 +2,11 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { BsTableComponent } from '@mintplayer/ng-bootstrap/table';
 import { MockComponent, MockDirective } from 'ng-mocks';
+
 import { TableComponent } from './table.component';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
+
 describe('TableComponent', () => {
   let component: TableComponent;
   let fixture: ComponentFixture<TableComponent>;

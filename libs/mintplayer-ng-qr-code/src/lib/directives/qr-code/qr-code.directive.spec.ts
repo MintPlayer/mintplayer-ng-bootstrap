@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { QrCodeDirective } from './qr-code.directive';
+
 @Component({
   selector: 'qr-code-test-component',
   template: `

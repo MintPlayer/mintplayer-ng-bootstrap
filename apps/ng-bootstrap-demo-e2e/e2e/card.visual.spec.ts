@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+
 /**
  * Visual regression — pins the full Bootstrap card surface (every region,
  * every colour variant, outline, image positions, group, header tabs/pills)

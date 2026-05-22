@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterLink } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { NavbarRouterLinkActiveDirective } from './navbar-router-link-active.directive';
+
 describe('NavbarRouterLinkActiveDirective', () => {
   let component: RouterLinkTestComponent;
   let fixture: ComponentFixture<RouterLinkTestComponent>;

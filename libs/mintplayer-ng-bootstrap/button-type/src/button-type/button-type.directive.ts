@@ -1,5 +1,6 @@
 import { Directive, effect, input } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
+
 @Directive({
   selector: 'button[color],input[type="button"][color],input[type="submit"][color],a[color]',
   host: {

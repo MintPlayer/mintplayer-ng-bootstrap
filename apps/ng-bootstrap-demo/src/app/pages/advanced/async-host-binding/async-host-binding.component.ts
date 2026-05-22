@@ -5,6 +5,7 @@ import { dedent } from 'ts-dedent';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
+
 @Component({
   selector: "demo-hello",
   template: `Hello {{ name() }}!`,
@@ -69,6 +70,7 @@ export class AsyncHostBindingComponent {
 
   readonly signalHostExample = dedent`
     import { Component, signal } from '@angular/core';
+
     @Component({
       selector: 'my-thing',
       template: \`...\`,
@@ -85,6 +87,7 @@ export class AsyncHostBindingComponent {
   readonly toSignalExample = dedent`
     import { Component } from '@angular/core';
     import { toSignal } from '@angular/core/rxjs-interop';
+
     @Component({
       host: { '[style.padding.px]': 'tick()' },
     })

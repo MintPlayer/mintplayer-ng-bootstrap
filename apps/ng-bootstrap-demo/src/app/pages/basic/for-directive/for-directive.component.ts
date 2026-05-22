@@ -1,9 +1,10 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { BsForDirective } from '@mintplayer/ng-bootstrap/for';
 import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-for-directive',
   templateUrl: './for-directive.component.html',
@@ -30,7 +31,12 @@ export class ForDirectiveComponent {
     import { Component } from '@angular/core';
     import { BsForDirective } from '@mintplayer/ng-bootstrap/for';
     import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
-    import { BsGridComponent, BsGridRowDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
+    import {
+      BsGridComponent,
+      BsGridRowDirective,
+      BsColFormLabelDirective,
+    } from '@mintplayer/ng-bootstrap/grid';
+
     @Component({
       selector: 'my-for-demo',
       templateUrl: './my-for-demo.component.html',

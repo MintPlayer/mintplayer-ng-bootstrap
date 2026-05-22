@@ -3,6 +3,7 @@ import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@min
 import { BsPaginationComponent } from '@mintplayer/ng-bootstrap/pagination';
 import { MockComponent, MockDirective } from 'ng-mocks';
 import { PaginationComponent } from './pagination.component';
+
 describe('PaginationComponent', () => {
   let component: PaginationComponent;
   let fixture: ComponentFixture<PaginationComponent>;

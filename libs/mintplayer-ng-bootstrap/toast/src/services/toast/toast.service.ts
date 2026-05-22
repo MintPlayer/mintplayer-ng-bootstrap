@@ -3,6 +3,7 @@ import { ComponentPortal } from '@angular/cdk/portal';
 import { inject, Injectable, Injector, signal, TemplateRef } from '@angular/core';
 import { BsToastContainerComponent } from '../../components/toast-container/toast-container.component';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
+
 @Injectable({ providedIn: 'root' })
 export class BsToastService {
 

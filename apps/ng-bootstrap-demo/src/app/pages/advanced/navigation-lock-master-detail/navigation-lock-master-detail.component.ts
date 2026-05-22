@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-navigation-lock-master-detail',
   templateUrl: './navigation-lock-master-detail.component.html',
@@ -20,6 +21,7 @@ export class NavigationLockMasterDetailComponent {
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
     import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+
     @Component({
       selector: 'my-master-detail-demo',
       templateUrl: './my-master-detail-demo.component.html',

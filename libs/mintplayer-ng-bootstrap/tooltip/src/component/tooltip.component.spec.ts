@@ -7,6 +7,7 @@ import { MockComponent } from 'ng-mocks';
 import { TOOLTIP_CONTENT } from '../providers/tooltip-content.provider';
 import { TOOLTIP_ID } from '../providers/tooltip-id.provider';
 import { BsTooltipComponent } from './tooltip.component';
+
 @Component({
   selector: 'bs-tooltip-test',
   template: `

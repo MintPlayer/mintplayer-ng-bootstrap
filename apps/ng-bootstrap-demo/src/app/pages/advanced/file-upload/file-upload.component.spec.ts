@@ -4,6 +4,7 @@ import { FileUploadComponent } from './file-upload.component';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsProgressComponent, BsProgressBarComponent } from '@mintplayer/ng-bootstrap/progress-bar';
 import { BsFileUploadComponent, BsFileUploadTemplateDirective } from '@mintplayer/ng-bootstrap/file-upload';
+
 describe('FileUploadComponent', () => {
   let component: FileUploadComponent;
   let fixture: ComponentFixture<FileUploadComponent>;

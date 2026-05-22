@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, signal, viewChild } from '@angular/
 import { FormsModule } from '@angular/forms';
 import { BsNavigationLockDirective } from '@mintplayer/ng-bootstrap/navigation-lock';
 import { ConfirmDialogComponent } from '../../../../components/confirm-dialog/confirm-dialog.component';
+
 @Component({
   selector: 'demo-nav-lock-child-a',
   templateUrl: './child-a.component.html',

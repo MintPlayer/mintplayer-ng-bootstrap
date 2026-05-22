@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+
 /**
  * Regression: the originally-reported bug — the datetime-picker at the bottom
  * of the demo page opened its calendar/time popups downward and clipped them

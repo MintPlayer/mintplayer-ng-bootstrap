@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Subject } from '../../entities/subject';
 import { ESubjectType } from '../../enums/subject-type';
+
 @Injectable({
   providedIn: 'root'
 })

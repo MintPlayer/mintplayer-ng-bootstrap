@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsCalendarComponent } from '@mintplayer/ng-bootstrap/calendar';
@@ -6,6 +6,7 @@ import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsDropdownDirective, BsDropdownToggleDirective, BsDropdownMenuDirective } from '@mintplayer/ng-bootstrap/dropdown';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-dropdown',
   templateUrl: './dropdown.component.html',
@@ -29,7 +30,12 @@ export class DropdownComponent {
     import { Component } from '@angular/core';
     import { Color } from '@mintplayer/ng-bootstrap';
     import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
-    import { BsDropdownDirective, BsDropdownToggleDirective, BsDropdownMenuDirective } from '@mintplayer/ng-bootstrap/dropdown';
+    import {
+      BsDropdownDirective,
+      BsDropdownToggleDirective,
+      BsDropdownMenuDirective,
+    } from '@mintplayer/ng-bootstrap/dropdown';
+
     @Component({
       selector: 'my-dropdown-demo',
       templateUrl: './my-dropdown-demo.component.html',

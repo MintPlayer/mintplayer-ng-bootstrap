@@ -5,6 +5,7 @@ import { MockComponent, MockDirective } from 'ng-mocks';
 import { QrCodeComponent } from './qr-code.component';
 import { BsFormComponent, BsFormGroupDirective, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
+
 describe('QrCodeComponent', () => {
   let component: QrCodeComponent;
   let fixture: ComponentFixture<QrCodeComponent>;

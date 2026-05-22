@@ -3,13 +3,25 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { PaginationRequest, PaginationResponse } from '@mintplayer/pagination';
-import { BsDatatableComponent, BsDatatableColumnDirective, BsRowTemplateDirective, BsDatatableFetch, DatatableSettings } from '@mintplayer/ng-bootstrap/datatable';
+import {
+  BsDatatableComponent,
+  BsDatatableColumnDirective,
+  BsRowTemplateDirective,
+  BsDatatableFetch,
+  DatatableSettings,
+} from '@mintplayer/ng-bootstrap/datatable';
 import { BsQueryBuilderComponent, BsQueryBuilderEditorDirective } from '@mintplayer/ng-bootstrap/query-builder';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
 import { environment } from '../../../../environments/environment';
-import type { EntitySchema, Expression, SavedQuery, SortDescriptor } from '@mintplayer/ng-bootstrap/query-builder';
+import type {
+  EntitySchema,
+  Expression,
+  SavedQuery,
+  SortDescriptor,
+} from '@mintplayer/ng-bootstrap/query-builder';
 import { emptyGroup } from '@mintplayer/ng-bootstrap/query-builder';
+
 interface PagedResult<T> {
   items: T[];
   totalCount: number;
@@ -220,8 +232,16 @@ export class QueryBuilderDemoComponent {
     import { Component, inject, signal } from '@angular/core';
     import { HttpClient } from '@angular/common/http';
     import { firstValueFrom } from 'rxjs';
-    import { BsQueryBuilderComponent, emptyGroup } from '@mintplayer/ng-bootstrap/query-builder';
-    import type { EntitySchema, Expression, SortDescriptor } from '@mintplayer/ng-bootstrap/query-builder';
+    import {
+      BsQueryBuilderComponent,
+      emptyGroup,
+    } from '@mintplayer/ng-bootstrap/query-builder';
+    import type {
+      EntitySchema,
+      Expression,
+      SortDescriptor,
+    } from '@mintplayer/ng-bootstrap/query-builder';
+
     @Component({
       selector: 'my-search',
       templateUrl: './my-search.component.html',

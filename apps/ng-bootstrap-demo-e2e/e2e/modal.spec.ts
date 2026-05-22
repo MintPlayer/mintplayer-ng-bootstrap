@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+
 test('modal opens and closes via the close button', async ({ page }) => {
   await page.goto('/overlays/modals');
   // The demo uses SSR without provideClientHydration(), so Angular performs a

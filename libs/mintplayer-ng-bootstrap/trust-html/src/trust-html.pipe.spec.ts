@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsTrustHtmlPipe } from './trust-html.pipe';
+
 @Component({
   selector: 'bs-trust-html-test',
   imports: [BsTrustHtmlPipe],

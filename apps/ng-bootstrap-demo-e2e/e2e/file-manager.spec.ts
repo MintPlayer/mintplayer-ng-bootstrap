@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+
 // Smoke-test the file-manager demo. The Lit web component renders into a
 // shadow DOM, but Playwright's selectors pierce open shadow roots — so we
 // can locate the breadcrumb, tree, and datatable via accessible names.

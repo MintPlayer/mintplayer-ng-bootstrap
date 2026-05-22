@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+
 export const ROUTES: Routes = [
   { path: '', loadChildren: () => [], pathMatch: 'full', canActivate: [() => false] },
   { path: 'copy', loadComponent: () => import('../advanced/copy/copy.component').then(m => m.CopyComponent) },

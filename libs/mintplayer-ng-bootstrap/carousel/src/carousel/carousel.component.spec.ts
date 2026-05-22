@@ -7,6 +7,7 @@ import { BsSwipeContainerDirective, BsSwipeDirective, BsSwipeViewportDirective }
 import { BsCarouselComponent } from './carousel.component';
 import { BsCarouselImageDirective } from '../carousel-image/carousel-image.directive';
 import { BsCarouselPlayPauseDirective } from '../carousel-play-pause/carousel-play-pause.directive';
+
 @Component({
   selector: 'carousel-test-component',
   imports: [BsCarouselComponent, BsCarouselImageDirective],

@@ -2,10 +2,12 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MockComponent, MockDirective } from 'ng-mocks';
 import { vi } from 'vitest';
+
 import { SwiperComponent } from './swiper.component';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsAlertComponent, BsAlertCloseComponent } from '@mintplayer/ng-bootstrap/alert';
 import { BsCarouselComponent, BsCarouselImageDirective, BsCarouselImgDirective } from '@mintplayer/ng-bootstrap/carousel';
+
 describe('SwiperComponent', () => {
   let component: SwiperComponent;
   let fixture: ComponentFixture<SwiperComponent>;

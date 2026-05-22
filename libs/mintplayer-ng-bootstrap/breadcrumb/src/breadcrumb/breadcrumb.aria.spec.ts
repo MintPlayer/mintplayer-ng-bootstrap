@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsBreadcrumbComponent } from './breadcrumb.component';
 import { BsBreadcrumbItemComponent } from '../breadcrumb-item/breadcrumb-item.component';
+
 @Component({
   selector: 'bs-breadcrumb-aria-harness',
   imports: [BsBreadcrumbComponent, BsBreadcrumbItemComponent],

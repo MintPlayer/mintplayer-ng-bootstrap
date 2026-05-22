@@ -1,8 +1,9 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-anchor-scrolling',
   templateUrl: './anchor-scrolling.component.html',
@@ -33,6 +34,7 @@ export class AnchorScrollingComponent {
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
     import { RouterLink, provideRouter, withInMemoryScrolling } from '@angular/router';
+
     // In bootstrapApplication providers:
     // provideRouter(
     //   routes,

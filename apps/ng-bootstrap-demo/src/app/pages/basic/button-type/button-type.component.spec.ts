@@ -1,7 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { MockDirective } from 'ng-mocks';
+
 import { ButtonTypeComponent } from './button-type.component';
+
 describe('ButtonTypeComponent', () => {
   let component: ButtonTypeComponent;
   let fixture: ComponentFixture<ButtonTypeComponent>;

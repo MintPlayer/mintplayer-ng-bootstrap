@@ -1,10 +1,11 @@
-import { Component, model, ChangeDetectionStrategy } from '@angular/core';
+import { Component, model, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsRangeComponent } from '@mintplayer/ng-bootstrap/range';
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-range',
   templateUrl: './range.component.html',
@@ -25,6 +26,7 @@ export class RangeComponent {
     import { Component, model } from '@angular/core';
     import { FormsModule } from '@angular/forms';
     import { BsRangeComponent } from '@mintplayer/ng-bootstrap/range';
+
     @Component({
       selector: 'my-range-demo',
       templateUrl: './my-range-demo.component.html',

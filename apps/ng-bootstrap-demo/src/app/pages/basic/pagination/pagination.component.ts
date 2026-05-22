@@ -3,6 +3,7 @@ import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@min
 import { BsPaginationComponent } from '@mintplayer/ng-bootstrap/pagination';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-pagination',
   templateUrl: './pagination.component.html',
@@ -28,6 +29,7 @@ export class PaginationComponent {
   protected readonly snippetBasicTs = dedent`
     import { Component, model, signal } from '@angular/core';
     import { BsPaginationComponent } from '@mintplayer/ng-bootstrap/pagination';
+
     @Component({
       selector: 'my-pagination-demo',
       templateUrl: './my-pagination-demo.component.html',

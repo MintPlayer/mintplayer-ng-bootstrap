@@ -6,6 +6,7 @@ import { BsDropdownMenuComponent, BsDropdownItemComponent } from '@mintplayer/ng
 import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { BsProgressComponent } from '@mintplayer/ng-bootstrap/progress-bar';
+
 @Component({
   selector: 'bs-typeahead',
   templateUrl: './typeahead.component.html',

@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+
 /**
  * App-wide unique ID generator for ARIA wiring (`aria-controls`,
  * `aria-labelledby`, `aria-activedescendant`, etc.).

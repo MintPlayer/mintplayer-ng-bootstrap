@@ -3,8 +3,10 @@ import { FormsModule } from '@angular/forms';
 import { provideRouter, withRouterConfig } from '@angular/router';
 import { MockComponent, MockDirective } from 'ng-mocks';
 import { BsNavigationLockDirective } from '@mintplayer/ng-bootstrap/navigation-lock';
+
 import { ChildAComponent } from './child-a.component';
 import { ConfirmDialogComponent } from '../../../../components/confirm-dialog/confirm-dialog.component';
+
 describe('ChildAComponent', () => {
   let component: ChildAComponent;
   let fixture: ComponentFixture<ChildAComponent>;

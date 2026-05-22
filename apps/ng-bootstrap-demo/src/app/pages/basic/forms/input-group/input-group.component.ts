@@ -1,10 +1,11 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-input-group',
   templateUrl: './input-group.component.html',
@@ -31,6 +32,7 @@ export class InputGroupComponent {
     import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
     import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
     import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
+
     @Component({
       selector: 'my-input-group-demo',
       templateUrl: './my-input-group-demo.component.html',

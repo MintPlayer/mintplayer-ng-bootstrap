@@ -1,4 +1,5 @@
 import { trigger, style, transition, group, animate, query } from '@angular/animations';
+
 export const CarouselSlideAnimation =
   trigger('carouselSlide', [
 

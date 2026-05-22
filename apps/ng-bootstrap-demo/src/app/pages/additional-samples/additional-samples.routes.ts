@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+
 export const ROUTES: Routes = [
   { path: '', loadChildren: () => [], pathMatch: 'full', canActivate: [() => false] },
   { path: 'collapse', loadComponent: () => import('./collapse/collapse.component').then(m => m.CollapseComponent) },

@@ -1,5 +1,7 @@
 import { TestBed } from '@angular/core/testing';
+
 import { BsCalendarMonthService } from './calendar-month.service';
+
 describe('CalendarMonthService', () => {
   let service: BsCalendarMonthService;
 

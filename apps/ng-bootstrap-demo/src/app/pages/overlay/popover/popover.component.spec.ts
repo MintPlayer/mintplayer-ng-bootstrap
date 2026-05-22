@@ -1,9 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { MockDirective, MockComponent } from 'ng-mocks';
+
 import { PopoverComponent } from './popover.component';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsPopoverComponent, BsPopoverDirective, BsPopoverBodyDirective, BsPopoverHeaderDirective } from '@mintplayer/ng-bootstrap/popover';
+
+
 describe('PopoverComponent', () => {
   let component: PopoverComponent;
   let fixture: ComponentFixture<PopoverComponent>;

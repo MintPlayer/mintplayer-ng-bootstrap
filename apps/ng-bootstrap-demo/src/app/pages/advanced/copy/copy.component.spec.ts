@@ -4,6 +4,7 @@ import { MockDirective, MockComponent } from 'ng-mocks';
 import { Highlight, provideHighlightOptions } from 'ngx-highlightjs';
 import { CopyComponent } from './copy.component';
 import { BsOffcanvasComponent, OffcanvasHeaderComponent, OffcanvasBodyComponent, BsOffcanvasHostComponent } from '@mintplayer/ng-bootstrap/offcanvas';
+
 describe('CopyComponent', () => {
   let component: CopyComponent;
   let fixture: ComponentFixture<CopyComponent>;

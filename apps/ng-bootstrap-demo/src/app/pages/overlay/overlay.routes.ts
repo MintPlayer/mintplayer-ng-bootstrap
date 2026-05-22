@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+
 export const ROUTES: Routes = [
   { path: '', loadChildren: () => [], pathMatch: 'full', canActivate: [() => false] },
   { path: 'modals', loadComponent: () => import('./modal/modal.component').then(m => m.ModalComponent) },

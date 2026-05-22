@@ -8,6 +8,7 @@ import { BsToastContainerComponent } from '../../components/toast-container/toas
 import { BsToastBodyComponent } from '../../components/toast-body/toast-body.component';
 import { BsToastHeaderComponent } from '../../components/toast-header/toast-header.component';
 import { BsToastComponent } from '../../components/toast/toast.component';
+
 @Component({
   selector: 'bs-toast-test',
   template: `

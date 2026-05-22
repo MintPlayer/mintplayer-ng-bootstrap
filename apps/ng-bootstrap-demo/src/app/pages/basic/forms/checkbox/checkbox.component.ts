@@ -5,6 +5,7 @@ import { dedent } from 'ts-dedent';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsCheckboxComponent, BsCheckboxGroupDirective } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
+
 interface Row {
   id: string;
   label: string;
@@ -62,6 +63,7 @@ export class CheckboxComponent {
     import { Component, signal } from '@angular/core';
     import { FormsModule } from '@angular/forms';
     import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
+
     @Component({
       selector: 'app-single-checkbox',
       imports: [FormsModule, BsCheckboxComponent],
@@ -79,6 +81,7 @@ export class CheckboxComponent {
     import { Component } from '@angular/core';
     import { FormControl, ReactiveFormsModule } from '@angular/forms';
     import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
+
     @Component({
       selector: 'app-single-checkbox-reactive',
       imports: [ReactiveFormsModule, BsCheckboxComponent],
@@ -96,6 +99,7 @@ export class CheckboxComponent {
     import { Component, signal } from '@angular/core';
     import { FormsModule } from '@angular/forms';
     import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
+
     @Component({
       selector: 'app-switch',
       imports: [FormsModule, BsCheckboxComponent],
@@ -113,6 +117,7 @@ export class CheckboxComponent {
     import { Component, signal } from '@angular/core';
     import { FormsModule } from '@angular/forms';
     import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
+
     @Component({
       selector: 'app-toggle-button',
       imports: [FormsModule, BsCheckboxComponent],
@@ -130,6 +135,7 @@ export class CheckboxComponent {
     import { Component, signal } from '@angular/core';
     import { FormsModule } from '@angular/forms';
     import { BsCheckboxComponent, BsCheckboxGroupDirective } from '@mintplayer/ng-bootstrap/checkbox';
+
     @Component({
       selector: 'app-checkbox-group',
       imports: [FormsModule, BsCheckboxComponent, BsCheckboxGroupDirective],
@@ -149,6 +155,7 @@ export class CheckboxComponent {
     import { Component } from '@angular/core';
     import { FormControl, ReactiveFormsModule } from '@angular/forms';
     import { BsCheckboxComponent, BsCheckboxGroupDirective } from '@mintplayer/ng-bootstrap/checkbox';
+
     @Component({
       selector: 'app-checkbox-group-reactive',
       imports: [ReactiveFormsModule, BsCheckboxComponent, BsCheckboxGroupDirective],
@@ -168,6 +175,7 @@ export class CheckboxComponent {
     import { Component, signal } from '@angular/core';
     import { FormsModule } from '@angular/forms';
     import { BsCheckboxComponent, BsCheckboxGroupDirective } from '@mintplayer/ng-bootstrap/checkbox';
+
     @Component({
       selector: 'app-checkbox-table',
       imports: [FormsModule, BsCheckboxComponent, BsCheckboxGroupDirective],

@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, model, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, inject, model, signal, ChangeDetectionStrategy} from '@angular/core';
 import { Artist } from '../../../entities/artist';
 import { SubjectService } from '../../../services/subject/subject.service';
 import { ESubjectType } from '../../../enums/subject-type';
@@ -10,6 +10,7 @@ import { BsSearchboxComponent, BsEnterSearchTermTemplateDirective, BsSuggestionT
 import { JsonPipe } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-searchbox',
   templateUrl: './searchbox.component.html',
@@ -44,7 +45,12 @@ export class SearchboxComponent {
 
   protected readonly snippetBasicTs = dedent`
     import { Component, model, signal } from '@angular/core';
-    import { BsSearchboxComponent, BsEnterSearchTermTemplateDirective, BsSuggestionTemplateDirective } from '@mintplayer/ng-bootstrap/searchbox';
+    import {
+      BsSearchboxComponent,
+      BsEnterSearchTermTemplateDirective,
+      BsSuggestionTemplateDirective,
+    } from '@mintplayer/ng-bootstrap/searchbox';
+
     interface Artist { id: number; name: string; }
 
     @Component({

@@ -1,9 +1,10 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsInViewportDirective } from '@mintplayer/ng-bootstrap/viewport';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-viewport',
   templateUrl: './viewport.component.html',
@@ -39,6 +40,7 @@ export class ViewportComponent {
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
     import { BsInViewportDirective } from '@mintplayer/ng-bootstrap/viewport';
+
     @Component({
       selector: 'my-viewport-demo',
       templateUrl: './my-viewport-demo.component.html',

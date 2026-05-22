@@ -4,6 +4,7 @@ import { SubjectService } from '../../../services/subject/subject.service';
 import { TagService } from '../../../services/tag/tag.service';
 import { AutofocusComponent } from './autofocus.component';
 import { BsSelect2Component, BsItemTemplateDirective, BsSuggestionTemplateDirective } from '@mintplayer/ng-bootstrap/select2';
+
 describe('AutofocusComponent', () => {
   let component: AutofocusComponent;
   let fixture: ComponentFixture<AutofocusComponent>;

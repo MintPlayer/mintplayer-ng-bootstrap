@@ -4,6 +4,7 @@ import { MockComponent, MockDirective } from 'ng-mocks';
 import { TimepickerComponent } from './timepicker.component';
 import { BsFormComponent, BsFormGroupDirective, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
+
 describe('TimepickerComponent', () => {
   let component: TimepickerComponent;
   let fixture: ComponentFixture<TimepickerComponent>;

@@ -5,6 +5,7 @@ import { RangeComponent } from './range.component';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsRangeComponent } from '@mintplayer/ng-bootstrap/range';
+
 describe('RangeComponent', () => {
   let component: RangeComponent;
   let fixture: ComponentFixture<RangeComponent>;

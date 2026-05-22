@@ -7,6 +7,7 @@ import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDi
 import { BsMultiRangeComponent } from '@mintplayer/ng-bootstrap/multi-range';
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
+
 @Component({
   selector: 'demo-multi-range',
   templateUrl: './multi-range.component.html',
@@ -49,6 +50,7 @@ export class MultiRangeComponent {
     import { Component, signal } from '@angular/core';
     import { FormsModule } from '@angular/forms';
     import { BsMultiRangeComponent } from '@mintplayer/ng-bootstrap/multi-range';
+
     @Component({
       selector: 'app-basic-multi-range',
       imports: [FormsModule, BsMultiRangeComponent],
@@ -70,6 +72,7 @@ export class MultiRangeComponent {
     import { Component, signal } from '@angular/core';
     import { FormsModule } from '@angular/forms';
     import { BsMultiRangeComponent } from '@mintplayer/ng-bootstrap/multi-range';
+
     @Component({
       selector: 'app-three-thumb',
       imports: [FormsModule, BsMultiRangeComponent],
@@ -90,6 +93,7 @@ export class MultiRangeComponent {
     import { Component, signal } from '@angular/core';
     import { FormsModule } from '@angular/forms';
     import { BsMultiRangeComponent } from '@mintplayer/ng-bootstrap/multi-range';
+
     @Component({
       selector: 'app-min-distance',
       imports: [FormsModule, BsMultiRangeComponent],
@@ -110,6 +114,7 @@ export class MultiRangeComponent {
     import { Component, signal } from '@angular/core';
     import { FormsModule } from '@angular/forms';
     import { BsMultiRangeComponent } from '@mintplayer/ng-bootstrap/multi-range';
+
     @Component({
       selector: 'app-currency-range',
       imports: [FormsModule, BsMultiRangeComponent],
@@ -131,6 +136,7 @@ export class MultiRangeComponent {
     import { Component, signal } from '@angular/core';
     import { FormsModule } from '@angular/forms';
     import { BsMultiRangeComponent } from '@mintplayer/ng-bootstrap/multi-range';
+
     @Component({
       selector: 'app-vertical-range',
       imports: [FormsModule, BsMultiRangeComponent],
@@ -154,6 +160,7 @@ export class MultiRangeComponent {
     import { Component, signal } from '@angular/core';
     import { FormsModule } from '@angular/forms';
     import { BsMultiRangeComponent } from '@mintplayer/ng-bootstrap/multi-range';
+
     @Component({
       selector: 'app-rtl-range',
       imports: [FormsModule, BsMultiRangeComponent],
@@ -175,6 +182,7 @@ export class MultiRangeComponent {
     import { Component, signal } from '@angular/core';
     import { FormsModule } from '@angular/forms';
     import { BsMultiRangeComponent } from '@mintplayer/ng-bootstrap/multi-range';
+
     @Component({
       selector: 'app-disabled-range',
       imports: [FormsModule, BsMultiRangeComponent],
@@ -195,6 +203,7 @@ export class MultiRangeComponent {
     import { Component } from '@angular/core';
     import { FormControl, ReactiveFormsModule } from '@angular/forms';
     import { BsMultiRangeComponent } from '@mintplayer/ng-bootstrap/multi-range';
+
     @Component({
       selector: 'app-reactive-range',
       imports: [ReactiveFormsModule, BsMultiRangeComponent],

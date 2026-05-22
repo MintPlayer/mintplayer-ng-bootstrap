@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { A11yModule } from '@angular/cdk/a11y';
 import { BsOverlayFocusDirective } from './overlay-focus.directive';
+
 @Component({
   selector: 'bs-overlay-focus-harness',
   imports: [BsOverlayFocusDirective],

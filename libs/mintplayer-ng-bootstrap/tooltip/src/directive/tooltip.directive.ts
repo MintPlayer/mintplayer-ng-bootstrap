@@ -6,6 +6,7 @@ import { BsIdService, BsOverlayStackService } from '@mintplayer/ng-bootstrap/a11
 import { BsTooltipComponent } from '../component/tooltip.component';
 import { TOOLTIP_CONTENT } from '../providers/tooltip-content.provider';
 import { TOOLTIP_ID } from '../providers/tooltip-id.provider';
+
 @Directive({
   selector: '*[bsTooltip]',
   host: {

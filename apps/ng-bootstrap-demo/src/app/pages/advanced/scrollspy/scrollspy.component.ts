@@ -6,6 +6,7 @@ import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsModalHostComponent, BsModalDirective, BsModalHeaderDirective, BsModalBodyDirective, BsModalCloseDirective } from '@mintplayer/ng-bootstrap/modal';
 import { BsScrollspyComponent, BsScrollspyDirective } from '@mintplayer/ng-bootstrap/scrollspy';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-scrollspy',
   templateUrl: './scrollspy.component.html',
@@ -43,7 +44,11 @@ export class ScrollspyComponent {
 
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
-    import { BsScrollspyComponent, BsScrollspyDirective } from '@mintplayer/ng-bootstrap/scrollspy';
+    import {
+      BsScrollspyComponent,
+      BsScrollspyDirective,
+    } from '@mintplayer/ng-bootstrap/scrollspy';
+
     @Component({
       selector: 'my-scrollspy-demo',
       templateUrl: './my-scrollspy-demo.component.html',

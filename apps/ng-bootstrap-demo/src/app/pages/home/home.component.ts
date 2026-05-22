@@ -8,6 +8,7 @@ import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { dedent } from 'ts-dedent';
 import { BOOTSTRAP_VERSION } from '../../providers/bootstrap-version.provider';
+
 interface FlagshipCard {
   title: string;
   pitch: string;
@@ -109,6 +110,7 @@ export class HomeComponent {
     import { BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
     import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
     import { BsThemeService } from '@mintplayer/ng-bootstrap/theming';
+
     @Component({
       selector: 'app-root',
       template: \`

@@ -2,6 +2,7 @@ import { vi } from 'vitest';
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsObserveSizeDirective } from './observe-size.directive';
+
 @Component({
   selector: 'test-host',
   imports: [BsObserveSizeDirective],

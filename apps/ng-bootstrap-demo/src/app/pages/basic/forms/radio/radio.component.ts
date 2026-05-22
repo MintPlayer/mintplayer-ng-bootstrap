@@ -5,6 +5,7 @@ import { dedent } from 'ts-dedent';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsRadioComponent, BsRadioGroupDirective } from '@mintplayer/ng-bootstrap/radio';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
+
 interface Row {
   id: string;
   label: string;
@@ -53,6 +54,7 @@ export class RadioComponent {
     import { Component, signal } from '@angular/core';
     import { FormsModule } from '@angular/forms';
     import { BsRadioComponent, BsRadioGroupDirective } from '@mintplayer/ng-bootstrap/radio';
+
     @Component({
       selector: 'app-radio-group',
       imports: [FormsModule, BsRadioComponent, BsRadioGroupDirective],
@@ -72,6 +74,7 @@ export class RadioComponent {
     import { Component } from '@angular/core';
     import { FormControl, ReactiveFormsModule } from '@angular/forms';
     import { BsRadioComponent, BsRadioGroupDirective } from '@mintplayer/ng-bootstrap/radio';
+
     @Component({
       selector: 'app-radio-group-reactive',
       imports: [ReactiveFormsModule, BsRadioComponent, BsRadioGroupDirective],
@@ -91,6 +94,7 @@ export class RadioComponent {
     import { Component, signal } from '@angular/core';
     import { FormsModule } from '@angular/forms';
     import { BsRadioComponent, BsRadioGroupDirective } from '@mintplayer/ng-bootstrap/radio';
+
     @Component({
       selector: 'app-radio-toggle-button',
       imports: [FormsModule, BsRadioComponent, BsRadioGroupDirective],
@@ -110,6 +114,7 @@ export class RadioComponent {
     import { Component, signal } from '@angular/core';
     import { FormsModule } from '@angular/forms';
     import { BsRadioComponent, BsRadioGroupDirective } from '@mintplayer/ng-bootstrap/radio';
+
     @Component({
       selector: 'app-radio-table',
       imports: [FormsModule, BsRadioComponent, BsRadioGroupDirective],

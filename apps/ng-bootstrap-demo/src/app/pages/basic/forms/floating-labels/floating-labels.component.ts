@@ -1,8 +1,9 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsFloatingLabelComponent } from '@mintplayer/ng-bootstrap/floating-labels';
 import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-floating-labels',
   templateUrl: './floating-labels.component.html',
@@ -24,6 +25,7 @@ export class FloatingLabelsComponent {
     import { Component } from '@angular/core';
     import { BsFloatingLabelComponent } from '@mintplayer/ng-bootstrap/floating-labels';
     import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
+
     @Component({
       selector: 'my-floating-labels-demo',
       templateUrl: './my-floating-labels-demo.component.html',

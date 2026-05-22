@@ -4,6 +4,7 @@ import { MockComponent } from 'ng-mocks';
 import { BsToastContainerComponent } from './toast-container.component';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { BsToastService } from '../../services/toast/toast.service';
+
 describe('BsToastContainerComponent', () => {
   let component: BsToastContainerComponent;
   let fixture: ComponentFixture<BsToastContainerComponent>;

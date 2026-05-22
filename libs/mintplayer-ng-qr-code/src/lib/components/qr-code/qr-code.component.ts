@@ -2,6 +2,7 @@ import { Component, computed, input, ChangeDetectionStrategy } from '@angular/co
 import { QRCodeErrorCorrectionLevel } from '@mintplayer/qr-code';
 import { RgbaColor } from '../../types/rgba-color';
 import { QrCodeDirective } from '../../directives/qr-code/qr-code.directive';
+
 @Component({
   selector: 'qr-code',
   templateUrl: './qr-code.component.html',

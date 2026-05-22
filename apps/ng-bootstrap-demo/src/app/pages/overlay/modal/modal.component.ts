@@ -1,4 +1,4 @@
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { Tag } from '../../../entities/tag';
 import { TagService } from '../../../services/tag/tag.service';
@@ -11,6 +11,7 @@ import { FocusOnLoadDirective } from '@mintplayer/ng-focus-on-load';
 import { BsFontColorPipe } from '@mintplayer/ng-bootstrap/font-color';
 import { GIT_REPO } from '../../../providers/git-repo.provider';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-modal',
   templateUrl: './modal.component.html',
@@ -56,8 +57,16 @@ export class ModalComponent {
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
     import { Color } from '@mintplayer/ng-bootstrap';
-    import { BsModalHostComponent, BsModalDirective, BsModalHeaderDirective, BsModalBodyDirective, BsModalFooterDirective, BsModalCloseDirective } from '@mintplayer/ng-bootstrap/modal';
+    import {
+      BsModalHostComponent,
+      BsModalDirective,
+      BsModalHeaderDirective,
+      BsModalBodyDirective,
+      BsModalFooterDirective,
+      BsModalCloseDirective,
+    } from '@mintplayer/ng-bootstrap/modal';
     import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
+
     @Component({
       selector: 'my-modal-demo',
       templateUrl: './my-modal-demo.component.html',

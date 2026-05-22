@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { PriorityNavComponent } from './priority-nav.component';
+
 describe('PriorityNavComponent (demo)', () => {
   let fixture: ComponentFixture<PriorityNavComponent>;
 

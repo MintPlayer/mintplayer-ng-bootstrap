@@ -2,7 +2,9 @@ import { CommonModule } from '@angular/common';
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+
 import { FocusOnLoadDirective } from './focus-on-load.directive';
+
 @Component({
   selector: 'focus-on-load-test-component',
   imports: [FocusOnLoadDirective],

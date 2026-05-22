@@ -1,5 +1,6 @@
 import { LiveAnnouncer, AriaLivePoliteness } from '@angular/cdk/a11y';
 import { inject, Injectable } from '@angular/core';
+
 /**
  * Thin wrapper over CDK's LiveAnnouncer that dedupes consecutive identical
  * messages — typeahead-style "5 results" announcements often re-fire with the

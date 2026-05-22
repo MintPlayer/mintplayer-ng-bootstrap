@@ -1,5 +1,6 @@
 import { computed, contentChildren, Directive, ElementRef, inject, input, signal } from '@angular/core';
 import { BsRovingFocusItemDirective } from './roving-focus-item.directive';
+
 export type BsRovingFocusOrientation = 'vertical' | 'horizontal' | 'both';
 export type BsRovingFocusMode = 'tabindex' | 'activedescendant';
 

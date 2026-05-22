@@ -1,7 +1,8 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsResizableComponent } from '@mintplayer/ng-bootstrap/resizable';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-resizable',
   templateUrl: './resizable.component.html',
@@ -21,6 +22,7 @@ export class ResizableComponent {
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
     import { BsResizableComponent } from '@mintplayer/ng-bootstrap/resizable';
+
     @Component({
       selector: 'my-resizable-demo',
       templateUrl: './my-resizable-demo.component.html',

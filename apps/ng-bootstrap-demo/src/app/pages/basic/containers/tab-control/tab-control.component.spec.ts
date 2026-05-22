@@ -6,6 +6,7 @@ import { TabControlComponent } from './tab-control.component';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsTabControlComponent, BsTabPageComponent, BsTabPageHeaderDirective } from '@mintplayer/ng-bootstrap/tab-control';
 import { BsSelectComponent } from '@mintplayer/ng-bootstrap/select';
+
 describe('TabControlComponent', () => {
   let component: TabControlComponent;
   let fixture: ComponentFixture<TabControlComponent>;

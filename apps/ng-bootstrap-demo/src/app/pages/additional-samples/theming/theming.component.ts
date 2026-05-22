@@ -5,6 +5,7 @@ import { BsBadgeComponent } from '@mintplayer/ng-bootstrap/badge';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsThemeService } from '@mintplayer/ng-bootstrap/theming';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-theming',
   templateUrl: './theming.component.html',
@@ -83,6 +84,7 @@ export class ThemingComponent {
   protected readonly serviceUsageSnippet = dedent`
     import { Component, inject } from '@angular/core';
     import { BsThemeService } from '@mintplayer/ng-bootstrap/theming';
+
     @Component({ /* ... */ })
     export class AppComponent {
       private readonly theme = inject(BsThemeService);

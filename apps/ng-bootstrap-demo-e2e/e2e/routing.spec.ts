@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+
 test('navigates to /basic/alert via the navbar dropdown', async ({ page }) => {
   await page.goto('/');
 

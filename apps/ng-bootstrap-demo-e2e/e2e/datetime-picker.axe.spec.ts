@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
+
 /**
  * axe-core ARIA audit on the datetime-picker demo. Asserts zero serious /
  * critical findings on the default view and with both popups open in turn.

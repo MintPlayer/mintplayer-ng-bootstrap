@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { PaginationRequest, PaginationResponse } from '@mintplayer/pagination';
 import { Tag } from '../../entities/tag';
+
 @Injectable({
   providedIn: 'root'
 })

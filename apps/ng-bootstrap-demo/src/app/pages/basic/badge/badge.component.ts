@@ -1,8 +1,9 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsBadgeComponent } from '@mintplayer/ng-bootstrap/badge';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-badge',
   templateUrl: './badge.component.html',
@@ -24,6 +25,7 @@ export class BadgeComponent {
     import { Component } from '@angular/core';
     import { Color } from '@mintplayer/ng-bootstrap';
     import { BsBadgeComponent } from '@mintplayer/ng-bootstrap/badge';
+
     @Component({
       selector: 'my-badge-demo',
       templateUrl: './my-badge-demo.component.html',

@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
@@ -6,6 +6,7 @@ import { BsListGroupComponent, BsListGroupItemComponent } from '@mintplayer/ng-b
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-track-by',
   templateUrl: './track-by.component.html',
@@ -30,7 +31,11 @@ export class TrackByComponent {
 
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
-    import { BsListGroupComponent, BsListGroupItemComponent } from '@mintplayer/ng-bootstrap/list-group';
+    import {
+      BsListGroupComponent,
+      BsListGroupItemComponent,
+    } from '@mintplayer/ng-bootstrap/list-group';
+
     interface Person {
       id: number;
       firstName: string;

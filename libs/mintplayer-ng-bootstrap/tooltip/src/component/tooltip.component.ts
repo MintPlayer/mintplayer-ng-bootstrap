@@ -5,6 +5,7 @@ import { Position } from '@mintplayer/ng-bootstrap';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { TOOLTIP_CONTENT } from '../providers/tooltip-content.provider';
 import { TOOLTIP_ID } from '../providers/tooltip-id.provider';
+
 @Component({
   selector: 'bs-tooltip',
   templateUrl: './tooltip.component.html',

@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsUserAgentDirective } from './user-agent.directive';
+
 @Component({
   selector: 'test-host',
   imports: [BsUserAgentDirective],

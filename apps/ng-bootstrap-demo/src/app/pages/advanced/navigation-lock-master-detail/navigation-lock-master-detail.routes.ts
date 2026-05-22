@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { NavigationLockMasterDetailComponent } from './navigation-lock-master-detail.component';
+
 export const ROUTES: Routes = [
   {
     path: '',

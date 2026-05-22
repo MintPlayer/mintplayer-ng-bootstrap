@@ -1,4 +1,4 @@
-import { Component, ElementRef, inject, model, signal, TemplateRef, viewChild, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ElementRef, inject, model, signal, TemplateRef, viewChild, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
@@ -9,6 +9,7 @@ import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
 import { BsToastComponent, BsToastBodyComponent, BsToastHeaderComponent, BsToastCloseDirective, BsToastService } from '@mintplayer/ng-bootstrap/toast';
 import { FocusOnLoadDirective } from '@mintplayer/ng-focus-on-load';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-toast',
   templateUrl: './toast.component.html',
@@ -51,7 +52,13 @@ export class ToastComponent {
     import { Color } from '@mintplayer/ng-bootstrap';
     import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
     import { BsCloseComponent } from '@mintplayer/ng-bootstrap/close';
-    import { BsToastComponent, BsToastBodyComponent, BsToastHeaderComponent, BsToastService } from '@mintplayer/ng-bootstrap/toast';
+    import {
+      BsToastComponent,
+      BsToastBodyComponent,
+      BsToastHeaderComponent,
+      BsToastService,
+    } from '@mintplayer/ng-bootstrap/toast';
+
     @Component({
       selector: 'my-toast-demo',
       templateUrl: './my-toast-demo.component.html',

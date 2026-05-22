@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsBadgeComponent } from '@mintplayer/ng-bootstrap/badge';
 import { MockComponent } from 'ng-mocks';
 import { BadgeComponent } from './badge.component';
+
 describe('BadgeComponent', () => {
   let component: BadgeComponent;
   let fixture: ComponentFixture<BadgeComponent>;

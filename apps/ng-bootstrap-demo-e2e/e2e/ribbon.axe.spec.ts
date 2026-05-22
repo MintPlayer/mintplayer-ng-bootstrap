@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
+
 /**
  * Milestone 8 — axe-core ARIA audit on the ribbon demo. Asserts zero
  * serious / critical findings on the default view, on Simplified layout,

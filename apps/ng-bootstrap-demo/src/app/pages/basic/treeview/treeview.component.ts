@@ -2,9 +2,14 @@
 
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { BsTreeviewComponent, BsTreeviewNodeTemplateDirective, type TreeNode } from '@mintplayer/ng-bootstrap/treeview';
+import {
+  BsTreeviewComponent,
+  BsTreeviewNodeTemplateDirective,
+  type TreeNode,
+} from '@mintplayer/ng-bootstrap/treeview';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-treeview',
   templateUrl: './treeview.component.html',
@@ -24,7 +29,12 @@ export class TreeviewComponent {
 
   protected readonly snippetBasicTs = dedent`
     import { Component, signal } from '@angular/core';
-    import { BsTreeviewComponent, BsTreeviewNodeTemplateDirective, type TreeNode } from '@mintplayer/ng-bootstrap/treeview';
+    import {
+      BsTreeviewComponent,
+      BsTreeviewNodeTemplateDirective,
+      type TreeNode,
+    } from '@mintplayer/ng-bootstrap/treeview';
+
     @Component({
       selector: 'my-treeview-demo',
       templateUrl: './my-treeview-demo.component.html',

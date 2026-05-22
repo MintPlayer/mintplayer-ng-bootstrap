@@ -1,4 +1,5 @@
 import type { FileSystemNode } from '@mintplayer/ng-bootstrap/file-manager';
+
 export function makeMockFileSystem(): FileSystemNode[] {
   return [
     // Top-level folders

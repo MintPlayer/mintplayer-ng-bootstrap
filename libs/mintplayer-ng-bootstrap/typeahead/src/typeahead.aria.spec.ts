@@ -4,6 +4,7 @@ import { OverlayContainer, OverlayModule } from '@angular/cdk/overlay';
 import { MockProvider } from 'ng-mocks';
 import { BS_DEVELOPMENT } from '@mintplayer/ng-bootstrap';
 import { BsTypeaheadComponent } from './typeahead.component';
+
 @Component({
   selector: 'bs-typeahead-aria-harness',
   imports: [BsTypeaheadComponent],

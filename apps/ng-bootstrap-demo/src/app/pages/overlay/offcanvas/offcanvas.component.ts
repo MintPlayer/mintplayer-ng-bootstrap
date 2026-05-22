@@ -1,4 +1,4 @@
-import { Component, inject, model, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, model, signal, ChangeDetectionStrategy} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Color, Position } from '@mintplayer/ng-bootstrap';
 import { BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderComponent } from '@mintplayer/ng-bootstrap/accordion';
@@ -13,6 +13,7 @@ import { BsOffcanvasHostComponent, BsOffcanvasContentDirective, BsOffcanvasClose
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { GIT_REPO } from '../../../providers/git-repo.provider';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-offcanvas',
   templateUrl: './offcanvas.component.html',
@@ -53,7 +54,14 @@ export class OffcanvasComponent {
     import { Color } from '@mintplayer/ng-bootstrap';
     import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
     import { BsCloseComponent } from '@mintplayer/ng-bootstrap/close';
-    import { BsOffcanvasHostComponent, BsOffcanvasContentDirective, BsOffcanvasCloseDirective, OffcanvasHeaderComponent, OffcanvasBodyComponent } from '@mintplayer/ng-bootstrap/offcanvas';
+    import {
+      BsOffcanvasHostComponent,
+      BsOffcanvasContentDirective,
+      BsOffcanvasCloseDirective,
+      OffcanvasHeaderComponent,
+      OffcanvasBodyComponent,
+    } from '@mintplayer/ng-bootstrap/offcanvas';
+
     @Component({
       selector: 'my-offcanvas-demo',
       templateUrl: './my-offcanvas-demo.component.html',

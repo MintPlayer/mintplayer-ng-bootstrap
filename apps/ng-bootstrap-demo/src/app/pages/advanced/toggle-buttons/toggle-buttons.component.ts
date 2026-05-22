@@ -1,8 +1,9 @@
-import { Component, model, ChangeDetectionStrategy } from '@angular/core';
+import { Component, model, ChangeDetectionStrategy} from '@angular/core';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsNavbarTogglerComponent } from '@mintplayer/ng-bootstrap/navbar-toggler';
 import { BsPlaylistTogglerComponent } from '@mintplayer/ng-bootstrap/playlist-toggler';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-toggle-buttons',
   templateUrl: './toggle-buttons.component.html',
@@ -22,6 +23,7 @@ export class ToggleButtonsComponent {
   protected readonly snippetBasicTs = dedent`
     import { Component, model } from '@angular/core';
     import { BsNavbarTogglerComponent } from '@mintplayer/ng-bootstrap/navbar-toggler';
+
     @Component({
       selector: 'my-toggle-buttons-demo',
       templateUrl: './my-toggle-buttons-demo.component.html',

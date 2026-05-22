@@ -1,12 +1,42 @@
-import { Component, ChangeDetectionStrategy, computed, model, signal } from '@angular/core';
+import {
+  Component,
+  ChangeDetectionStrategy,
+  computed,
+  model,
+  signal,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { BsRibbonComponent, BsQuickAccessToolbarComponent, BsRibbonTabComponent, BsRibbonContextualTabSetComponent, BsRibbonGroupComponent, BsRibbonButtonComponent, BsRibbonSplitButtonComponent, BsRibbonDropdownButtonComponent, BsRibbonMenuItemComponent, BsRibbonMenuSeparatorComponent, BsRibbonToggleButtonComponent, BsRibbonCheckBoxComponent, BsRibbonComboBoxComponent, BsRibbonColorPickerComponent, BsRibbonGroupButtonComponent, BsRibbonGalleryComponent, BsRibbonGalleryItemComponent, type RibbonTabChangeEvent, type RibbonComboBoxOption, type RibbonGroupButtonOption, type RibbonGroupSize, type RibbonReduceStep } from '@mintplayer/ng-bootstrap/ribbon';
+import {
+  BsRibbonComponent,
+  BsQuickAccessToolbarComponent,
+  BsRibbonTabComponent,
+  BsRibbonContextualTabSetComponent,
+  BsRibbonGroupComponent,
+  BsRibbonButtonComponent,
+  BsRibbonSplitButtonComponent,
+  BsRibbonDropdownButtonComponent,
+  BsRibbonMenuItemComponent,
+  BsRibbonMenuSeparatorComponent,
+  BsRibbonToggleButtonComponent,
+  BsRibbonCheckBoxComponent,
+  BsRibbonComboBoxComponent,
+  BsRibbonColorPickerComponent,
+  BsRibbonGroupButtonComponent,
+  BsRibbonGalleryComponent,
+  BsRibbonGalleryItemComponent,
+  type RibbonTabChangeEvent,
+  type RibbonComboBoxOption,
+  type RibbonGroupButtonOption,
+  type RibbonGroupSize,
+  type RibbonReduceStep,
+} from '@mintplayer/ng-bootstrap/ribbon';
 import { BsSelectComponent } from '@mintplayer/ng-bootstrap/select';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { dedent } from 'ts-dedent';
+
 type RibbonVersion = 'office-2007' | 'office-2010' | 'office-2013' | 'office-2016';
 type ColorScheme = 'light' | 'dark' | 'auto';
 type TouchMode = 'on' | 'off' | 'auto';

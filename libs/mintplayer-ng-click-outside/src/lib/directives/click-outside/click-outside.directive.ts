@@ -1,5 +1,6 @@
 import { isPlatformBrowser } from '@angular/common';
 import { Directive, ElementRef, effect, inject, input, OnDestroy, OnInit, output, PLATFORM_ID } from '@angular/core';
+
 @Directive({
   selector: '[clickOutside]',
 })

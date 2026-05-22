@@ -1,5 +1,6 @@
-import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy} from '@angular/core';
 import { BsAccordionTabComponent } from '../accordion-tab/accordion-tab.component';
+
 @Component({
   selector: 'bs-accordion-tab-header',
   templateUrl: './accordion-tab-header.component.html',

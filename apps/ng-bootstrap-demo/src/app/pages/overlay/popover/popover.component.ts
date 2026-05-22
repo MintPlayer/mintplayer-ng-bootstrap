@@ -1,10 +1,11 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsPopoverDirective, BsPopoverHeaderDirective, BsPopoverBodyDirective } from '@mintplayer/ng-bootstrap/popover';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-popover',
   templateUrl: './popover.component.html',
@@ -31,7 +32,12 @@ export class PopoverComponent {
     import { Component } from '@angular/core';
     import { Color } from '@mintplayer/ng-bootstrap';
     import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
-    import { BsPopoverDirective, BsPopoverHeaderDirective, BsPopoverBodyDirective } from '@mintplayer/ng-bootstrap/popover';
+    import {
+      BsPopoverDirective,
+      BsPopoverHeaderDirective,
+      BsPopoverBodyDirective,
+    } from '@mintplayer/ng-bootstrap/popover';
+
     @Component({
       selector: 'my-popover-demo',
       templateUrl: './my-popover-demo.component.html',

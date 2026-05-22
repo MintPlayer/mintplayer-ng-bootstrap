@@ -1,10 +1,11 @@
-import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { QrCodeComponent as LibQrCodeComponent } from '@mintplayer/ng-qr-code';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-qr-code',
   templateUrl: './qr-code.component.html',
@@ -25,6 +26,7 @@ export class QrCodeComponent {
     import { Component, signal } from '@angular/core';
     import { FormsModule } from '@angular/forms';
     import { QrCodeComponent } from '@mintplayer/ng-qr-code';
+
     @Component({
       selector: 'my-qr-code-demo',
       templateUrl: './my-qr-code-demo.component.html',

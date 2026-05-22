@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
@@ -7,6 +7,7 @@ import { BsListGroupComponent, BsListGroupItemComponent } from '@mintplayer/ng-b
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-linify',
   templateUrl: './linify.component.html',
@@ -36,7 +37,11 @@ export class LinifyComponent {
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
     import { BsLinifyPipe } from '@mintplayer/ng-bootstrap/linify';
-    import { BsListGroupComponent, BsListGroupItemComponent } from '@mintplayer/ng-bootstrap/list-group';
+    import {
+      BsListGroupComponent,
+      BsListGroupItemComponent,
+    } from '@mintplayer/ng-bootstrap/list-group';
+
     @Component({
       selector: 'my-linify-demo',
       templateUrl: './my-linify-demo.component.html',

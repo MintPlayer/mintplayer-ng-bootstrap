@@ -1,4 +1,5 @@
 import { trigger, state, style, transition, group, animate } from '@angular/animations';
+
 export const ColorTransitionAnimation =
   trigger('colorTransition', [
     state('color1', style({

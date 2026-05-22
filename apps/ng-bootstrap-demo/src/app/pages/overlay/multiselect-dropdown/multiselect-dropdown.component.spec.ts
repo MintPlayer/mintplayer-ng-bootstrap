@@ -3,6 +3,7 @@ import { MockComponent, MockDirective } from 'ng-mocks';
 import { MultiselectDropdownComponent } from './multiselect-dropdown.component';
 import { BsFormComponent, BsFormGroupDirective, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsMultiselectComponent, BsHeaderTemplateDirective, BsFooterTemplateDirective, BsButtonTemplateDirective } from '@mintplayer/ng-bootstrap/multiselect';
+
 describe('MultiselectDropdownComponent', () => {
   let component: MultiselectDropdownComponent;
   let fixture: ComponentFixture<MultiselectDropdownComponent>;

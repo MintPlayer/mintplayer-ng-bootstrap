@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsCardBodyComponent, BsCardComponent, BsCardHeaderComponent } from '@mintplayer/ng-bootstrap/card';
@@ -7,6 +7,7 @@ import { BsPlaceholderComponent, BsPlaceholderFieldDirective } from '@mintplayer
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-placeholder',
   templateUrl: './placeholder.component.html',
@@ -31,7 +32,11 @@ export class PlaceholderComponent {
 
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
-    import { BsPlaceholderComponent, BsPlaceholderFieldDirective } from '@mintplayer/ng-bootstrap/placeholder';
+    import {
+      BsPlaceholderComponent,
+      BsPlaceholderFieldDirective,
+    } from '@mintplayer/ng-bootstrap/placeholder';
+
     @Component({
       selector: 'my-placeholder-demo',
       templateUrl: './my-placeholder-demo.component.html',

@@ -2,6 +2,7 @@ import { AfterContentChecked, ChangeDetectorRef, DestroyRef, Directive, ElementR
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLinkActive } from '@angular/router';
 import { filter } from 'rxjs';
+
 // Here we extend the RouterLinkActiveDirective
 // to have the "active" value for each <a> with a routerLink attribute
 // Also handles fragment matching - links with fragments are only active when the fragment matches

@@ -1,4 +1,4 @@
-import { Component, model, ChangeDetectionStrategy } from '@angular/core';
+import { Component, model, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
@@ -6,6 +6,7 @@ import { BsGridComponent, BsGridRowDirective, BsGridColDirective, BsColFormLabel
 import { BsSelectComponent } from '@mintplayer/ng-bootstrap/select';
 import { BsCarouselComponent, BsCarouselImageDirective } from '@mintplayer/ng-bootstrap/carousel';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-carousel',
   templateUrl: './carousel.component.html',
@@ -33,6 +34,7 @@ export class CarouselComponent {
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
     import { BsCarouselComponent, BsCarouselImageDirective } from '@mintplayer/ng-bootstrap/carousel';
+
     @Component({
       selector: 'my-carousel-demo',
       templateUrl: './my-carousel-demo.component.html',

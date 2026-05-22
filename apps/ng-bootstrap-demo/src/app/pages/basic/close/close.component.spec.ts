@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsCloseComponent } from '@mintplayer/ng-bootstrap/close';
 import { MockComponent } from 'ng-mocks';
 import { CloseComponent } from './close.component';
+
 describe('CloseComponent', () => {
   let component: CloseComponent;
   let fixture: ComponentFixture<CloseComponent>;

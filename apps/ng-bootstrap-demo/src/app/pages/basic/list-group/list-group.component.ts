@@ -1,7 +1,8 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { BsListGroupComponent, BsListGroupItemComponent } from '@mintplayer/ng-bootstrap/list-group';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-list-group',
   templateUrl: './list-group.component.html',
@@ -21,7 +22,11 @@ export class ListGroupComponent {
 
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
-    import { BsListGroupComponent, BsListGroupItemComponent } from '@mintplayer/ng-bootstrap/list-group';
+    import {
+      BsListGroupComponent,
+      BsListGroupItemComponent,
+    } from '@mintplayer/ng-bootstrap/list-group';
+
     @Component({
       selector: 'my-list-group-demo',
       templateUrl: './my-list-group-demo.component.html',

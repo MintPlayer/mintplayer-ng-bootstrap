@@ -5,6 +5,7 @@ import { By } from '@angular/platform-browser';
 import { BsSwipeContainerDirective } from '../swipe-container/swipe-container.directive';
 import { BsSwipeDirective } from '../swipe/swipe.directive';
 import { BsSwipeViewportDirective } from './swipe-viewport.directive';
+
 @Component({
   selector: 'viewport-host',
   imports: [BsSwipeViewportDirective],

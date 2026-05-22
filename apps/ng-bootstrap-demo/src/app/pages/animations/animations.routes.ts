@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+
 export const ROUTES: Routes = [
   { path: '', loadChildren: () => [], pathMatch: 'full', canActivate: [() => false] },
   { path: 'slide-up-down', loadComponent: () => import('./slide-up-down/slide-up-down.component').then(m => m.SlideUpDownComponent) },

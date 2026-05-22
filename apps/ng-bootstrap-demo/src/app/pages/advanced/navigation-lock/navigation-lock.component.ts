@@ -7,6 +7,7 @@ import { BsColFormLabelDirective, BsGridColumnDirective, BsGridComponent, BsGrid
 import { BsNavigationLockDirective } from '@mintplayer/ng-bootstrap/navigation-lock';
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-navigation-lock',
   templateUrl: './navigation-lock.component.html',
@@ -39,6 +40,7 @@ export class NavigationLockComponent {
     import { Component } from '@angular/core';
     import { FormsModule } from '@angular/forms';
     import { BsNavigationLockDirective } from '@mintplayer/ng-bootstrap/navigation-lock';
+
     @Component({
       selector: 'my-navigation-lock-demo',
       templateUrl: './my-navigation-lock-demo.component.html',

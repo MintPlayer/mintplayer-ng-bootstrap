@@ -3,6 +3,7 @@ import { BsButtonGroupComponent } from '@mintplayer/ng-bootstrap/button-group';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { MockComponent, MockDirective } from 'ng-mocks';
 import { ButtonGroupComponent } from './button-group.component';
+
 describe('ButtonGroupComponent', () => {
   let component: ButtonGroupComponent;
   let fixture: ComponentFixture<ButtonGroupComponent>;

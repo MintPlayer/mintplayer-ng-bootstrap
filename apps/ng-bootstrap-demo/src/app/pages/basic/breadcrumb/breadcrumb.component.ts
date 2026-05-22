@@ -1,8 +1,9 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { BsBreadcrumbComponent, BsBreadcrumbItemComponent } from '@mintplayer/ng-bootstrap/breadcrumb';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-breadcrumb',
   templateUrl: './breadcrumb.component.html',
@@ -29,6 +30,7 @@ export class BreadcrumbComponent {
     import { Component } from '@angular/core';
     import { RouterLink } from '@angular/router';
     import { BsBreadcrumbComponent, BsBreadcrumbItemComponent } from '@mintplayer/ng-bootstrap/breadcrumb';
+
     @Component({
       selector: 'my-breadcrumb-demo',
       templateUrl: './my-breadcrumb-demo.component.html',

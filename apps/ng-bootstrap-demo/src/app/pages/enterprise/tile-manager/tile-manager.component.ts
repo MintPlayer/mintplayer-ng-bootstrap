@@ -5,9 +5,17 @@ import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsSelectComponent, BsSelectOption } from '@mintplayer/ng-bootstrap/select';
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
-import { BsTileManagerComponent, BsTileComponent, BsTileHeaderComponent, TileLayoutSnapshot, TilePosition, TileGestureBlocked } from '@mintplayer/ng-bootstrap/tile-manager';
+import {
+  BsTileManagerComponent,
+  BsTileComponent,
+  BsTileHeaderComponent,
+  TileLayoutSnapshot,
+  TilePosition,
+  TileGestureBlocked,
+} from '@mintplayer/ng-bootstrap/tile-manager';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
+
 const STORAGE_KEY = 'tile-manager-demo-layout-v1';
 
 interface DemoTile {
@@ -152,7 +160,14 @@ export class TileManagerComponent {
 
   protected readonly snippetBasicTs = dedent`
     import { Component, signal } from '@angular/core';
-    import { BsTileManagerComponent, BsTileComponent, BsTileHeaderComponent, TileLayoutSnapshot, TilePosition } from '@mintplayer/ng-bootstrap/tile-manager';
+    import {
+      BsTileManagerComponent,
+      BsTileComponent,
+      BsTileHeaderComponent,
+      TileLayoutSnapshot,
+      TilePosition,
+    } from '@mintplayer/ng-bootstrap/tile-manager';
+
     interface DashboardTile {
       id: string;
       title: string;

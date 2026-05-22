@@ -1,4 +1,4 @@
-import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy} from '@angular/core';
 import { dedent } from 'ts-dedent';
 import { SlideUpDownNgifAnimation } from '@mintplayer/ng-animations';
 import { Color } from '@mintplayer/ng-bootstrap';
@@ -6,6 +6,7 @@ import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@min
 import { BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
+
 @Component({
   selector: 'demo-collapse',
   templateUrl: './collapse.component.html',
@@ -22,6 +23,7 @@ export class CollapseComponent {
   exampleModule = dedent`
     import { NgModule } from '@angular/core';
     import { CollapseComponent } from './collapse.component';
+
     @NgModule({
       declarations: [CollapseComponent],
     })
@@ -34,6 +36,7 @@ export class CollapseComponent {
   exampleTs = dedent`
     import { Component } from '@angular/core';
     import { SlideUpDownNgifAnimation } from '@mintplayer/ng-animations';
+
     @Component({
       selector: '...',
       templateUrl: '...',

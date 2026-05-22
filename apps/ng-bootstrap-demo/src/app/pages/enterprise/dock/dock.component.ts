@@ -1,11 +1,16 @@
 import { CommonModule } from '@angular/common';
-import { Component, isDevMode, signal, viewChild, ChangeDetectionStrategy } from '@angular/core';
+import { Component, isDevMode, signal, viewChild, ChangeDetectionStrategy} from '@angular/core';
 import { BsBadgeComponent } from '@mintplayer/ng-bootstrap/badge';
-import { BsDockManagerComponent, BsDockPaneComponent, DockLayoutSnapshot } from '@mintplayer/ng-bootstrap/dock';
+import {
+  BsDockManagerComponent,
+  BsDockPaneComponent,
+  DockLayoutSnapshot,
+} from '@mintplayer/ng-bootstrap/dock';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-dock',
   templateUrl: './dock.component.html',
@@ -120,7 +125,12 @@ export class DockComponent {
 
   protected readonly snippetBasicTs = dedent`
     import { Component, signal } from '@angular/core';
-    import { BsDockManagerComponent, BsDockPaneComponent, DockLayoutSnapshot } from '@mintplayer/ng-bootstrap/dock';
+    import {
+      BsDockManagerComponent,
+      BsDockPaneComponent,
+      DockLayoutSnapshot,
+    } from '@mintplayer/ng-bootstrap/dock';
+
     @Component({
       selector: 'my-workspace',
       templateUrl: './my-workspace.component.html',

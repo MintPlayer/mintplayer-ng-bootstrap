@@ -1,11 +1,12 @@
 import { JsonPipe } from '@angular/common';
-import { Component, model, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, model, signal, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsSelectComponent, BsSelectOption } from '@mintplayer/ng-bootstrap/select';
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { dedent } from 'ts-dedent';
+
 @Component({
   selector: 'demo-select',
   templateUrl: './select.component.html',
@@ -36,6 +37,7 @@ export class SelectComponent {
     import { Component, model } from '@angular/core';
     import { FormsModule } from '@angular/forms';
     import { BsSelectComponent, BsSelectOption } from '@mintplayer/ng-bootstrap/select';
+
     interface Dish { id: number; name: string; }
 
     @Component({

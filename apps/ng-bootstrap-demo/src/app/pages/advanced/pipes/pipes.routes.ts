@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+
 export const ROUTES: Routes = [
   { path: '', loadChildren: () => [], pathMatch: 'full', canActivate: [() => false] },
   { path: 'trust-html', loadComponent: () => import('./trust-html/trust-html.component').then(m => m.TrustHtmlComponent) },
