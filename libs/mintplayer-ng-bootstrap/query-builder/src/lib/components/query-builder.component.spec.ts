@@ -5,6 +5,7 @@ import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { BsQueryBuilderComponent } from './query-builder.component';
 import { BsQueryBuilderEditorDirective } from './query-builder-editor.directive';
 import { type Expression, type Group, type EntitySchema, emptyGroup } from '@mintplayer/web-components/query-builder';
+
 const SCHEMA: EntitySchema[] = [
   {
     name: 'orders',

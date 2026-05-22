@@ -1,4 +1,18 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, computed, CUSTOM_ELEMENTS_SCHEMA, DestroyRef, effect, ElementRef, inject, input, model, PLATFORM_ID, viewChild } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  CUSTOM_ELEMENTS_SCHEMA,
+  DestroyRef,
+  effect,
+  ElementRef,
+  inject,
+  input,
+  model,
+  PLATFORM_ID,
+  viewChild,
+} from '@angular/core';
 import { isPlatformServer } from '@angular/common';
 import { BsCheckboxValueAccessor } from '../value-accessor/checkbox-value-accessor';
 import { BsCheckboxGroupDirective } from '../directives/checkbox-group/checkbox-group.directive';

@@ -1,4 +1,10 @@
-import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  CUSTOM_ELEMENTS_SCHEMA,
+  input,
+} from '@angular/core';
+
 /**
  * `<bs-quick-access-toolbar>` — Angular wrapper for `<mp-quick-access-toolbar>`.
  *

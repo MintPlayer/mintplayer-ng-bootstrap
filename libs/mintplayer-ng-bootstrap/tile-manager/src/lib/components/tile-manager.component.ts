@@ -1,7 +1,20 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, ElementRef, computed, contentChildren, effect, input, output, viewChild } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  CUSTOM_ELEMENTS_SCHEMA,
+  ElementRef,
+  computed,
+  contentChildren,
+  effect,
+  input,
+  output,
+  viewChild,
+} from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { BsTileComponent } from './tile.component';
 import { MintTile, MintTileManagerElement, TileDragMode, TileResizeMode, TileLayoutSnapshot, TileGestureBlocked, TilePosition } from '@mintplayer/web-components/tile-manager';
+
 @Component({
   selector: 'bs-tile-manager',
   template: `

@@ -1,4 +1,5 @@
 import { type Condition, type Group, type SubQueryCondition, type EntitySchema } from '@mintplayer/web-components/query-builder';
+
 export interface VisitorContext {
   schema: EntitySchema[];
   currentEntity: string;

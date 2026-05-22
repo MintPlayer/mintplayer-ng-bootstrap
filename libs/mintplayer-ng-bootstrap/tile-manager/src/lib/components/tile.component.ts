@@ -1,5 +1,13 @@
-import { ChangeDetectionStrategy, Component, TemplateRef, input, output, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  TemplateRef,
+  input,
+  output,
+  viewChild,
+} from '@angular/core';
 import { TilePosition } from '@mintplayer/web-components/tile-manager';
+
 /**
  * One tile inside a `<bs-tile-manager>`.
  *

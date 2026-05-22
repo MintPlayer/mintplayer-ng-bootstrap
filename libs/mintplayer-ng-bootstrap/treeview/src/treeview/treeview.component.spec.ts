@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { BsTreeviewComponent } from './treeview.component';
 import type { TreeNode } from '@mintplayer/web-components/treeview';
+
 describe('BsTreeviewComponent', () => {
   let component: BsTreeviewComponent;
   let fixture: ComponentFixture<BsTreeviewComponent>;

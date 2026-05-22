@@ -1,6 +1,26 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, effect, ElementRef, forwardRef, input, model, signal, viewChild } from '@angular/core';
-import { AbstractControl, ControlValueAccessor, NG_VALIDATORS, NG_VALUE_ACCESSOR, ValidationErrors, Validator } from '@angular/forms';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  CUSTOM_ELEMENTS_SCHEMA,
+  effect,
+  ElementRef,
+  forwardRef,
+  input,
+  model,
+  signal,
+  viewChild,
+} from '@angular/core';
+import {
+  AbstractControl,
+  ControlValueAccessor,
+  NG_VALIDATORS,
+  NG_VALUE_ACCESSOR,
+  ValidationErrors,
+  Validator,
+} from '@angular/forms';
 import { MpTimepickerElement, type Hour12Mode, type TimeStep } from '@mintplayer/web-components/timepicker';
+
 void MpTimepickerElement;
 
 function timeMinutes(d: Date): number {

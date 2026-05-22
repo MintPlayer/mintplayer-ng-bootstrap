@@ -32,4 +32,5 @@ export class BsCodeSnippetComponent {
     const detail = (event as CustomEvent<{ language: string }>).detail;
     this.detectedLanguage.emit(detail.language);
   }
+
 }

@@ -1,5 +1,16 @@
-import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, ElementRef, input, model, output, signal, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  CUSTOM_ELEMENTS_SCHEMA,
+  ElementRef,
+  input,
+  model,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { type RibbonTabChangeEvent } from '@mintplayer/web-components/ribbon';
+
 @Component({
   selector: 'bs-ribbon',
   template: `

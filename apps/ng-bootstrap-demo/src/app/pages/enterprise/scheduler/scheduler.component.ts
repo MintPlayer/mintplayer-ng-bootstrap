@@ -10,8 +10,17 @@ import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
 import { BsSelectComponent, BsSelectOption } from '@mintplayer/ng-bootstrap/select';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
-import { BsSchedulerComponent, SchedulerEventSelectedEvent, SchedulerEventCreateEvent, SchedulerEventUpdateEvent, SchedulerEventDeleteEvent, DateClickEvent, ViewChangeEvent } from '@mintplayer/ng-bootstrap/scheduler';
+import {
+  BsSchedulerComponent,
+  SchedulerEventSelectedEvent,
+  SchedulerEventCreateEvent,
+  SchedulerEventUpdateEvent,
+  SchedulerEventDeleteEvent,
+  DateClickEvent,
+  ViewChangeEvent,
+} from '@mintplayer/ng-bootstrap/scheduler';
 import { ViewType, SchedulerEvent, Resource, ResourceGroup, SchedulerOptions, generateEventId, generateResourceId, generateGroupId, dateService } from '@mintplayer/web-components/scheduler-core';
+
 @Component({
   selector: 'demo-scheduler',
   templateUrl: './scheduler.component.html',

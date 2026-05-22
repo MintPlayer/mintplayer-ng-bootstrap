@@ -1,4 +1,21 @@
-import { Component, ElementRef, viewChild, AfterViewInit, OnDestroy, ChangeDetectionStrategy, CUSTOM_ELEMENTS_SCHEMA, input, output, model, computed, effect, signal, Injector, inject, runInInjectionContext } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  viewChild,
+  AfterViewInit,
+  OnDestroy,
+  ChangeDetectionStrategy,
+  CUSTOM_ELEMENTS_SCHEMA,
+  input,
+  output,
+  model,
+  computed,
+  effect,
+  signal,
+  Injector,
+  inject,
+  runInInjectionContext,
+} from '@angular/core';
 import { ViewType, SchedulerEvent, Resource, ResourceGroup, SchedulerOptions } from '@mintplayer/web-components/scheduler-core';
 // Import the web component to ensure it gets registered
 import '@mintplayer/web-components/scheduler';

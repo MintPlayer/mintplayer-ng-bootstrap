@@ -2,6 +2,7 @@ import { contentChildren, Directive, effect, forwardRef, input, signal } from '@
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import type { MpRadio } from '@mintplayer/web-components/radio';
 import { BsRadioComponent } from '../../component/radio.component';
+
 /**
  * Groups N `<bs-radio>` children into a single-select FormControl whose
  * value is the selected radio's `value()`. The group owns the shared

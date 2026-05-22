@@ -5,6 +5,7 @@ import { BsTileManagerComponent } from './tile-manager.component';
 import { BsTileComponent } from './tile.component';
 import { BsTileHeaderComponent } from './tile-header.component';
 import { TilePosition, TileLayoutSnapshot, TileGestureBlocked, MintTileManagerElement } from '@mintplayer/web-components/tile-manager';
+
 interface DemoTile {
   id: string;
   position: TilePosition;
