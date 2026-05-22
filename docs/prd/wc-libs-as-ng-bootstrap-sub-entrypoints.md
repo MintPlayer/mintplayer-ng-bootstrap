@@ -1,3 +1,13 @@
+> **⚠️ Superseded 2026-05-22 — premise no longer holds.**
+>
+> This PRD's central argument ("this workspace targets Angular only, so folding the WCs into `@mintplayer/ng-bootstrap` as sub-entrypoints is the right call") was correct under the Angular-only constraint, and the consolidation it describes **did land** — the moved sources at `libs/mintplayer-ng-bootstrap/web-components/{scheduler,splitter,tab-control,…}/` are the result of this work.
+>
+> On 2026-05-22 the user reversed the Angular-only stance: the workspace is going multi-framework (Angular + React + Vue). The WCs need to leave `@mintplayer/ng-bootstrap` again and live in a framework-agnostic `@mintplayer/web-components` library that all three wrapper libs depend on. See **[`cross-framework-web-components.md`](./cross-framework-web-components.md)** for the new plan.
+>
+> Read this document as a historical record of what was decided when, not as guidance for current work. The "Angular only" claims in §Problem and §Open question 7 specifically no longer apply.
+
+---
+
 # PRD: Consolidate web-component libs as `@mintplayer/ng-bootstrap` sub-entrypoints
 
 ## Problem
