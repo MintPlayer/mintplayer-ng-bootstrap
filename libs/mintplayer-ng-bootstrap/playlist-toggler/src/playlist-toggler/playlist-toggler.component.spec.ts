@@ -1,7 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { BsPlaylistTogglerComponent } from './playlist-toggler.component';
-
 describe('BsNavbarTogglerComponent', () => {
   let component: BsPlaylistTogglerComponent;
   let fixture: ComponentFixture<BsPlaylistTogglerComponent>;

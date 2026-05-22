@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router';
-
 // Each route becomes its own JS chunk. Vue Router resolves the dynamic
 // import the first time the route is navigated to; the initial bundle
 // only ships the shell + router.

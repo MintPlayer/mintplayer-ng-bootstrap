@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { BsDatatable } from '@mintplayer/vue-bootstrap/datatable';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
-
 const SOURCE = "<BsDatatable />";
 </script>
 

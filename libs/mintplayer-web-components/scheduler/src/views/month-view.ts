@@ -1,12 +1,6 @@
-import {
-  dateService,
-  timelineService,
-  SchedulerEvent,
-  getContrastColor,
-} from '@mintplayer/web-components/scheduler-core';
+import { dateService, timelineService, SchedulerEvent, getContrastColor } from '@mintplayer/web-components/scheduler-core';
 import { BaseView } from './base-view';
 import { SchedulerState } from '../state/scheduler-state';
-
 /**
  * Month view renderer
  */

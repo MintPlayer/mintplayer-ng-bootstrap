@@ -1,7 +1,6 @@
 import { TilePosition } from '../types/tile-position';
 import { TileLayoutSnapshot } from '../types/tile-layout-snapshot';
 import { GridRect, rectsOverlap } from '../types/grid-rect';
-
 interface PackInputTile {
   id: string;
   position: TilePosition;

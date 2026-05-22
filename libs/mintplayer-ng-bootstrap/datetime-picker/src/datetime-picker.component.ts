@@ -1,29 +1,8 @@
-import {
-  AfterViewInit,
-  ChangeDetectionStrategy,
-  Component,
-  CUSTOM_ELEMENTS_SCHEMA,
-  effect,
-  ElementRef,
-  forwardRef,
-  input,
-  model,
-  output,
-  signal,
-  viewChild,
-} from '@angular/core';
-import {
-  AbstractControl,
-  ControlValueAccessor,
-  NG_VALIDATORS,
-  NG_VALUE_ACCESSOR,
-  ValidationErrors,
-  Validator,
-} from '@angular/forms';
+import { AfterViewInit, ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, effect, ElementRef, forwardRef, input, model, output, signal, viewChild } from '@angular/core';
+import { AbstractControl, ControlValueAccessor, NG_VALIDATORS, NG_VALUE_ACCESSOR, ValidationErrors, Validator } from '@angular/forms';
 import type { FirstDayOfWeek } from '@mintplayer/ng-bootstrap/calendar';
 import type { Hour12Mode, TimeStep } from '@mintplayer/ng-bootstrap/timepicker';
 import { MpDatetimePickerElement, type DatetimePopup } from '@mintplayer/web-components/datetime-picker';
-
 void MpDatetimePickerElement;
 
 export interface TimePartInput {

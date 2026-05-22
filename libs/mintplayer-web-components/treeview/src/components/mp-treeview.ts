@@ -3,7 +3,6 @@ import { repeat } from 'lit/directives/repeat.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { treeviewStyles } from '../styles';
 import type { TreeNode } from '../types';
-
 export type TreeviewSelectionMode = 'none' | 'single' | 'multiple';
 
 export type IconResolver = (iconKey: string, node: TreeNode) => string | undefined;

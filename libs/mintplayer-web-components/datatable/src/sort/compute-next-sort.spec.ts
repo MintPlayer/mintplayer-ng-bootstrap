@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { computeNextSort, type SortColumn } from './compute-next-sort';
-
 describe('computeNextSort', () => {
   const asc = (property: string): SortColumn => ({ property, direction: 'ascending' });
   const desc = (property: string): SortColumn => ({ property, direction: 'descending' });

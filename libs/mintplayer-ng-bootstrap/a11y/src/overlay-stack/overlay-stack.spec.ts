@@ -1,6 +1,5 @@
 import { TestBed } from '@angular/core/testing';
 import { BsOverlayStackService } from './overlay-stack.service';
-
 describe('BsOverlayStackService', () => {
   let stack: BsOverlayStackService;
 

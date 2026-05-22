@@ -1,7 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { BsButtonGroupComponent } from './button-group.component';
-
 describe('BsButtonGroupComponent', () => {
   let component: BsButtonGroupComponent;
   let fixture: ComponentFixture<BsButtonGroupComponent>;

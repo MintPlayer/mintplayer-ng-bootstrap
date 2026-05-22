@@ -3,13 +3,11 @@ import { FormsModule } from '@angular/forms';
 import { BsLinifyPipe } from '@mintplayer/ng-bootstrap/linify';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { MockDirective, MockPipe, MockComponent } from 'ng-mocks';
-
 import { LinifyComponent } from './linify.component';
 import { BsFormComponent, BsFormGroupDirective, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsListGroupComponent, BsListGroupItemComponent } from '@mintplayer/ng-bootstrap/list-group';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
-
 describe('LinifyComponent', () => {
   let component: LinifyComponent;
   let fixture: ComponentFixture<LinifyComponent>;

@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { createComponent } from '@lit/react';
 import { MpRibbonSplitButton } from '@mintplayer/web-components/ribbon';
-
 /**
  * React wrapper for `<mp-ribbon-split-button>`. Side-effect-registers the WC via
  * the import above. Typed props/events extend off MpRibbonSplitButton;

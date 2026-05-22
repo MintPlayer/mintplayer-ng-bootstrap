@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { createComponent } from '@lit/react';
 import { MpQueryGroupElement } from '@mintplayer/web-components/query-builder';
-
 /**
  * React wrapper for `<mp-query-group>`. Side-effect-registers the WC via
  * the import above. Typed props/events extend off MpQueryGroupElement;

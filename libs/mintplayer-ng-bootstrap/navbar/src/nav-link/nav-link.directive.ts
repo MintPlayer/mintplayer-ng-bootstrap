@@ -1,7 +1,6 @@
 import { Directive, ElementRef, forwardRef, inject } from '@angular/core';
 import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
 import { BsNavbarComponent } from '../navbar/navbar.component';
-
 @Directive({
   selector: 'bs-navbar-item > li > a',
   // Below selector doesn't work well either (does not select the github link)

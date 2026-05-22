@@ -4,7 +4,6 @@ import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MockModule } from 'ng-mocks';
 import { BsContextMenuDirective } from './context-menu.directive';
-
 @Component({
   selector: 'context-menu-test-component',
   template: `

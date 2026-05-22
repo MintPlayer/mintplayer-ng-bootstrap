@@ -1,5 +1,4 @@
 import { test, expect, Locator, Page } from '@playwright/test';
-
 // Regression coverage for the multi-range slider's RTL rendering. The original
 // bug: thumbs and fill rendered with `left: V%` (LTR-anchored) while the
 // pointer/keyboard math flipped for RTL — so dragging a thumb LEFT in RTL

@@ -1,19 +1,8 @@
-import {
-  SchedulerEvent,
-  TimeSlot,
-  generateEventId,
-} from '@mintplayer/web-components/scheduler-core';
+import { SchedulerEvent, TimeSlot, generateEventId } from '@mintplayer/web-components/scheduler-core';
 import { SchedulerStateManager } from '../state/scheduler-state';
 import { DragStateMachine } from './drag-state-machine';
-import {
-  DragConfig,
-  DEFAULT_DRAG_CONFIG,
-  DragCompletionResult,
-  PointerTarget,
-  Position,
-} from './drag-types';
+import { DragConfig, DEFAULT_DRAG_CONFIG, DragCompletionResult, PointerTarget, Position } from './drag-types';
 import { NormalizedPointerEvent } from '../input/pointer-event';
-
 /**
  * Callback for when a drag operation completes.
  */

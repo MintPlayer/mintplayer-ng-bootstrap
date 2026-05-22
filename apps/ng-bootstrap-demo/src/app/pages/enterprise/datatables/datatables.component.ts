@@ -1,19 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { PaginationRequest, PaginationResponse } from '@mintplayer/pagination';
-import {
-  BsDatatableComponent,
-  BsDatatableColumnDirective,
-  BsRowTemplateDirective,
-  BsDatatableFetch,
-  DatatableSettings,
-} from '@mintplayer/ng-bootstrap/datatable';
+import { BsDatatableComponent, BsDatatableColumnDirective, BsRowTemplateDirective, BsDatatableFetch, DatatableSettings } from '@mintplayer/ng-bootstrap/datatable';
 import { BsSelectComponent, BsSelectOption } from '@mintplayer/ng-bootstrap/select';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
 import { Artist } from '../../../entities/artist';
 import { ArtistService } from '../../../services/artist/artist.service';
-
 @Component({
   selector: 'demo-datatables',
   templateUrl: './datatables.component.html',
@@ -69,16 +62,9 @@ export class DatatablesComponent {
   protected readonly snippetBasicTs = dedent`
     import { Component, inject, signal } from '@angular/core';
     import { PaginationRequest, PaginationResponse } from '@mintplayer/pagination';
-    import {
-      BsDatatableComponent,
-      BsDatatableColumnDirective,
-      BsRowTemplateDirective,
-      BsDatatableFetch,
-      DatatableSettings,
-    } from '@mintplayer/ng-bootstrap/datatable';
+    import { BsDatatableComponent, BsDatatableColumnDirective, BsRowTemplateDirective, BsDatatableFetch, DatatableSettings } from '@mintplayer/ng-bootstrap/datatable';
     import { Artist } from './artist';
     import { ArtistService } from './artist.service';
-
     @Component({
       selector: 'my-artists',
       templateUrl: './my-artists.component.html',

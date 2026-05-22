@@ -1,10 +1,9 @@
-import { Component, computed, model, ChangeDetectionStrategy} from '@angular/core';
+import { Component, computed, model, ChangeDetectionStrategy } from '@angular/core';
 import { ColorTransitionAnimation } from '@mintplayer/ng-animations';
 import { FormsModule } from '@angular/forms';
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
-
 @Component({
   selector: 'demo-color-transition',
   templateUrl: './color-transition.component.html',
@@ -30,7 +29,6 @@ export class ColorTransitionComponent {
     import { FormsModule } from '@angular/forms';
     import { ColorTransitionAnimation } from '@mintplayer/ng-animations';
     import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
-
     @Component({
       selector: 'my-color-transition-demo',
       templateUrl: './my-color-transition-demo.component.html',

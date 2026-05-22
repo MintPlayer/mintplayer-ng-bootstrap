@@ -1,9 +1,7 @@
-import { Component, ChangeDetectionStrategy} from '@angular/core';
-
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsParallaxComponent } from '@mintplayer/ng-bootstrap/parallax';
 import { dedent } from 'ts-dedent';
-
 @Component({
   selector: 'demo-parallax',
   imports: [BsCodeSnippetComponent, BsParallaxComponent],
@@ -30,7 +28,6 @@ export class ParallaxComponent {
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
     import { BsParallaxComponent } from '@mintplayer/ng-bootstrap/parallax';
-
     @Component({
       selector: 'my-parallax-demo',
       templateUrl: './my-parallax-demo.component.html',

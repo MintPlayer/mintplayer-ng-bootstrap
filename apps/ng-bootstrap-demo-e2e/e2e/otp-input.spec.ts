@@ -1,5 +1,4 @@
 import { test, expect, Page } from '@playwright/test';
-
 // End-to-end coverage for the OTP / segmented-code input. The unit tests in
 // libs/.../otp-input/**/*.spec.ts run in jsdom and miss:
 //   - Real-browser focus delegation through the wrapper's host `.focus()` override

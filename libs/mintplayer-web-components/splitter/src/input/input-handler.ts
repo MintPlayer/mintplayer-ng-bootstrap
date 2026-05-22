@@ -1,6 +1,5 @@
 import type { NormalizedPointerEvent } from './pointer-event';
 import { normalizePointerEvent } from './pointer-event';
-
 export interface InputHandlerCallbacks {
   onResizeStart: (event: NormalizedPointerEvent, dividerIndex: number, dividerElement: HTMLElement) => void;
   onResizeMove: (event: NormalizedPointerEvent) => void;

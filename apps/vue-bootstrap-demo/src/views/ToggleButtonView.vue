@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { BsToggleButton } from '@mintplayer/vue-bootstrap/toggle-button';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
-
 const SOURCE = "<BsToggleButton>Toggle me</BsToggleButton>";
 </script>
 

@@ -3,7 +3,6 @@ import { Component, signal, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsMultiselectComponent } from '../../component/multiselect.component';
 import { BsButtonTemplateDirective } from './button-template.directive';
-
 @Component({
   selector: 'bs-multiselect',
   imports: [NgTemplateOutlet],

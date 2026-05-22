@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-
 // Live-API contract smoke tests. No mocks — the demo's /api/* requests are
 // proxied to the running dotnet container. Assertions verify the wire-format
 // contract holds end-to-end, NOT specific seed counts (the seed populates

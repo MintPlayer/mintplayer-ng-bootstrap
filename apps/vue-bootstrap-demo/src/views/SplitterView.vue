@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { BsSplitter } from '@mintplayer/vue-bootstrap/splitter';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
-
 const SOURCE = "<BsSplitter>\n  <div slot=\"panel-0\">Left panel</div>\n  <div slot=\"panel-1\">Right panel</div>\n</BsSplitter>";
 </script>
 

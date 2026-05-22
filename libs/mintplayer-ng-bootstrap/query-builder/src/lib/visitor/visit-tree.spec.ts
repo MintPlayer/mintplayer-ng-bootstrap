@@ -1,10 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { visitTree } from './visit-tree';
 import type { TreeVisitor } from './visitor-types';
-import type { Condition, Expression, Group } from '@mintplayer/web-components/query-builder';
-import type { EntitySchema } from '@mintplayer/web-components/query-builder';
-import { MaxDepthExceededError } from '@mintplayer/web-components/query-builder';
-
+import { type Condition, type Expression, type Group, type EntitySchema, MaxDepthExceededError } from '@mintplayer/web-components/query-builder';
 const SCHEMA: EntitySchema[] = [
   {
     name: 'orders',

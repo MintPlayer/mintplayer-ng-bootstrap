@@ -1,10 +1,9 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA, model, ChangeDetectionStrategy} from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, model, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import '@mintplayer/web-components/splitter';
 import { dedent } from 'ts-dedent';
-
 @Component({
   selector: 'demo-splitter',
   templateUrl: './splitter.component.html',

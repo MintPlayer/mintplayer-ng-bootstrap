@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { BsRadio } from '@mintplayer/vue-bootstrap/radio';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
-
 const SOURCE = "<BsRadio />";
 </script>
 

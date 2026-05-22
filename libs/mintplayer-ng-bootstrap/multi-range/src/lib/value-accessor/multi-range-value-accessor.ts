@@ -1,7 +1,6 @@
 import { Directive, forwardRef, inject } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { BsMultiRangeComponent } from '../components/multi-range.component';
-
 @Directive({
   selector: 'bs-multi-range',
   providers: [{

@@ -1,7 +1,6 @@
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { BsModalHeaderDirective } from './modal-header.directive';
-
 @Component({
   selector: 'bs-modal-header-host',
   imports: [BsModalHeaderDirective],

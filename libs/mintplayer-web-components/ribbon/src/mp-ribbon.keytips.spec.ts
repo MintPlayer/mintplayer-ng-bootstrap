@@ -4,7 +4,6 @@ import './mp-ribbon-tab.element';
 import './mp-ribbon-group.element';
 import './items/mp-ribbon-button.element';
 import type { MpRibbon } from './mp-ribbon.element';
-
 /**
  * FR-12 KeyTips. jsdom returns zero-rect bounding boxes for layouted
  * elements, so we don't assert pixel positions — just the state-machine

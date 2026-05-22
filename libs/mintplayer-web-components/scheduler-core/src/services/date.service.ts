@@ -1,6 +1,5 @@
 import { DayOfWeek, TimeFormat } from '../models/types';
 import { TimeSlot, TimeSlotRow, SchedulerGrid } from '../models/time-slot';
-
 /**
  * Service for date calculations and formatting
  */

@@ -4,7 +4,6 @@ import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstra
 import { BsMultiselectComponent, BsHeaderTemplateDirective, BsFooterTemplateDirective, BsButtonTemplateDirective, BsItemTemplateDirective } from '@mintplayer/ng-bootstrap/multiselect';
 import { FocusOnLoadDirective } from '@mintplayer/ng-focus-on-load';
 import { dedent } from 'ts-dedent';
-
 @Component({
   selector: 'demo-multiselect-dropdown',
   templateUrl: './multiselect-dropdown.component.html',
@@ -30,12 +29,7 @@ export class MultiselectDropdownComponent {
 
   protected readonly snippetBasicTs = dedent`
     import { Component, signal } from '@angular/core';
-    import {
-      BsMultiselectComponent,
-      BsButtonTemplateDirective,
-      BsItemTemplateDirective,
-    } from '@mintplayer/ng-bootstrap/multiselect';
-
+    import { BsMultiselectComponent, BsButtonTemplateDirective, BsItemTemplateDirective } from '@mintplayer/ng-bootstrap/multiselect';
     @Component({
       selector: 'my-multiselect-demo',
       templateUrl: './my-multiselect-demo.component.html',

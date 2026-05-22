@@ -1,6 +1,5 @@
 import { inject, Pipe, PipeTransform, SecurityContext } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-
 @Pipe({
   name: 'bsItalic',
   pure: true,

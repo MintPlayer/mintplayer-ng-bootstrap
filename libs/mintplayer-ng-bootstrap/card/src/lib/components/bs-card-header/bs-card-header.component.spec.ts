@@ -3,7 +3,6 @@ import { TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsCardHeaderComponent } from './bs-card-header.component';
-
 describe('BsCardHeaderComponent', () => {
   beforeEach(() => TestBed.resetTestingModule());
 

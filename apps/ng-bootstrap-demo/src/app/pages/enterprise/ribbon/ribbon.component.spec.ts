@@ -1,6 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RibbonComponent } from './ribbon.component';
-
 describe('RibbonComponent', () => {
   let component: RibbonComponent;
   let fixture: ComponentFixture<RibbonComponent>;

@@ -7,7 +7,6 @@
 
 import { spawn } from 'node:child_process';
 import { platform } from 'node:os';
-
 const isWindows = platform() === 'win32';
 
 const child = spawn(

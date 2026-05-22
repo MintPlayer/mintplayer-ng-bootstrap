@@ -4,7 +4,6 @@ import { MockDirective, MockComponent } from 'ng-mocks';
 import { ForDirectiveComponent } from './for-directive.component';
 import { BsFormComponent, BsFormGroupDirective, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
-
 describe('ForDirectiveComponent', () => {
   let component: ForDirectiveComponent;
   let fixture: ComponentFixture<ForDirectiveComponent>;

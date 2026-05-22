@@ -1,4 +1,4 @@
-import { Component, inject, ChangeDetectionStrategy} from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
@@ -6,7 +6,6 @@ import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@min
 import { BsTooltipDirective } from '@mintplayer/ng-bootstrap/tooltip';
 import { GIT_REPO } from '../../../providers/git-repo.provider';
 import { dedent } from 'ts-dedent';
-
 @Component({
   selector: 'demo-tooltip',
   templateUrl: './tooltip.component.html',
@@ -32,7 +31,6 @@ export class TooltipComponent {
     import { Color } from '@mintplayer/ng-bootstrap';
     import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
     import { BsTooltipDirective } from '@mintplayer/ng-bootstrap/tooltip';
-
     @Component({
       selector: 'my-tooltip-demo',
       templateUrl: './my-tooltip-demo.component.html',

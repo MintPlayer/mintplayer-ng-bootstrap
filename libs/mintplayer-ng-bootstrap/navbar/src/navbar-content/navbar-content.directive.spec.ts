@@ -8,7 +8,6 @@ import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
 import { BsNavbarNavComponent } from '../navbar-nav/navbar-nav.component';
 import { BsNavbarComponent } from '../navbar/navbar.component';
 import { BsNavbarContentDirective } from './navbar-content.directive';
-
 describe('DropdownToggleDirective', () => {
   let component: BsNavbarContentTestComponent;
   let fixture: ComponentFixture<BsNavbarContentTestComponent>;

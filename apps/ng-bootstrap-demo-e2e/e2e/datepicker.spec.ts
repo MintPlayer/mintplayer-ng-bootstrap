@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-
 test('datepicker selects a date and updates the display', async ({ page }) => {
   await page.goto('/basic/datepicker');
   await page.waitForLoadState('networkidle');

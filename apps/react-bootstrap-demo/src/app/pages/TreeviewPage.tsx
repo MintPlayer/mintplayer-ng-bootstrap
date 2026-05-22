@@ -1,6 +1,5 @@
 import { BsTreeview } from '@mintplayer/react-bootstrap/treeview';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-
 const SOURCE = "<BsTreeview />";
 
 export function TreeviewPage() {

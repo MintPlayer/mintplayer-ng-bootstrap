@@ -1,6 +1,5 @@
 import { BsDatetimePicker } from '@mintplayer/react-bootstrap/datetime-picker';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-
 const SOURCE = "<BsDatetimePicker />";
 
 export function DatetimePickerPage() {

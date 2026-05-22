@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { BsFileManager } from '@mintplayer/vue-bootstrap/file-manager';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
-
 const SOURCE = "<BsFileManager style=\"height: 400px\" />";
 </script>
 

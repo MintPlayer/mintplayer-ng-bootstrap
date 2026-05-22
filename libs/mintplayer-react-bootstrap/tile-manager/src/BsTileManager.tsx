@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { createComponent } from '@lit/react';
 import { MintTileManagerElement } from '@mintplayer/web-components/tile-manager';
-
 /**
  * React wrapper for `<mp-tile-manager>`. Side-effect-registers the WC via
  * the import above. Typed props/events extend off MintTileManagerElement;

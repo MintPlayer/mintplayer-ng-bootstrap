@@ -1,7 +1,6 @@
 import { afterNextRender, computed, Directive, ElementRef, forwardRef, inject, input, signal } from '@angular/core';
 import { BsIdService } from '../service/id.service';
 import { BsRovingFocusDirective } from './roving-focus.directive';
-
 /**
  * One marker per focusable child of a `bsRovingFocus` container.
  *

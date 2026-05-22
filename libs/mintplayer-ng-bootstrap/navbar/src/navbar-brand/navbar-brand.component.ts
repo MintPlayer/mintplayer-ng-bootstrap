@@ -1,5 +1,4 @@
-import { AfterContentChecked, Component, ElementRef, inject, input, ChangeDetectionStrategy} from '@angular/core';
-
+import { AfterContentChecked, Component, ElementRef, inject, input, ChangeDetectionStrategy } from '@angular/core';
 @Component({
   selector: 'bs-navbar-brand',
   templateUrl: './navbar-brand.component.html',

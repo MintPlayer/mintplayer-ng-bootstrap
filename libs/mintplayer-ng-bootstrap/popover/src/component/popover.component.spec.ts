@@ -5,7 +5,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { POPOVER_CONTENT } from '../providers/popover-content.provider';
 import { POPOVER_ID } from '../providers/popover-id.provider';
 import { BsPopoverComponent } from './popover.component';
-
 @Component({
   selector: 'bs-popover-test',
   template: `

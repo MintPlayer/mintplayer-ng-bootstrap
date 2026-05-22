@@ -1,5 +1,4 @@
 import { test, expect, type Page } from '@playwright/test';
-
 // Mock the artist API so the test is deterministic and offline-friendly.
 async function mockArtistApi(page: Page) {
   const artists = Array.from({ length: 200 }, (_, i) => ({

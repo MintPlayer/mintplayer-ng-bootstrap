@@ -1,6 +1,5 @@
 import { BsToggleButton } from '@mintplayer/react-bootstrap/toggle-button';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-
 const SOURCE = "<BsToggleButton>Toggle me</BsToggleButton>";
 
 export function ToggleButtonPage() {

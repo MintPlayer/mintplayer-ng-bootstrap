@@ -1,6 +1,5 @@
 import { SchedulerCustomEvent, EventDetail, TimeRange } from './event-types';
 import { ViewType } from '@mintplayer/web-components/scheduler-core';
-
 /**
  * Handles dispatching custom events from the scheduler.
  * Centralizes event emission logic for consistency.

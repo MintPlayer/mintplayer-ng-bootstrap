@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { BsCheckbox } from '@mintplayer/vue-bootstrap/checkbox';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
-
 const SOURCE = "<BsCheckbox />";
 </script>
 

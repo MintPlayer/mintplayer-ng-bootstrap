@@ -1,7 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { BsSpinnerComponent } from './spinner.component';
-
 describe('BsSpinnerComponent', () => {
   let component: BsSpinnerComponent;
   let fixture: ComponentFixture<BsSpinnerComponent>;

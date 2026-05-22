@@ -1,5 +1,4 @@
-import { Component, input, output, ChangeDetectionStrategy} from '@angular/core';
-
+import { Component, input, output, ChangeDetectionStrategy } from '@angular/core';
 @Component({
   selector: 'bs-form',
   templateUrl: './form.component.html',

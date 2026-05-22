@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { createComponent } from '@lit/react';
 import { MpTimeListElement } from '@mintplayer/web-components/timepicker';
-
 /**
  * React wrapper for `<mp-time-list>`. Side-effect-registers the WC via
  * the import above. Typed props/events extend off MpTimeListElement;

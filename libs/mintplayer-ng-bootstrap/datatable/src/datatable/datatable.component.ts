@@ -1,37 +1,7 @@
-import {
-  AfterViewInit,
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  contentChild,
-  contentChildren,
-  CUSTOM_ELEMENTS_SCHEMA,
-  DestroyRef,
-  effect,
-  ElementRef,
-  EmbeddedViewRef,
-  inject,
-  input,
-  model,
-  output,
-  PLATFORM_ID,
-  signal,
-  ViewContainerRef,
-  viewChild,
-} from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, computed, contentChild, contentChildren, CUSTOM_ELEMENTS_SCHEMA, DestroyRef, effect, ElementRef, EmbeddedViewRef, inject, input, model, output, PLATFORM_ID, signal, ViewContainerRef, viewChild } from '@angular/core';
 import { isPlatformServer } from '@angular/common';
 import { PaginationRequest, PaginationResponse, SortColumn } from '@mintplayer/pagination';
-import {
-  computeNextSort,
-  type DatatableColumnDef,
-  type DatatableSelectionMode,
-  type MpDatatable,
-  type RowEventDetail,
-  type RowRenderer,
-  type SortChangeEventDetail,
-  type SelectionChangeEventDetail,
-} from '@mintplayer/web-components/datatable';
-
+import { computeNextSort, type DatatableColumnDef, type DatatableSelectionMode, type MpDatatable, type RowEventDetail, type RowRenderer, type SortChangeEventDetail, type SelectionChangeEventDetail } from '@mintplayer/web-components/datatable';
 // Side-effect import: registers <mp-datatable>.
 import '@mintplayer/web-components/datatable';
 
@@ -39,7 +9,6 @@ import { DatatableSettings } from '../datatable-settings';
 import { BsDatatableFetch } from '../datatable-fetch';
 import { BsDatatableColumnDirective } from '../datatable-column/datatable-column.directive';
 import { BsRowTemplateDirective, BsRowTemplateContext } from '../row-template/row-template.directive';
-
 export interface BsDatatableRowEvent<T> {
   row: T;
   rowIndex: number;

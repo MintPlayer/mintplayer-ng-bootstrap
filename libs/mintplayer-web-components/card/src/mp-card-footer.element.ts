@@ -1,5 +1,4 @@
 import { applyTextBgClass } from './card-classes';
-
 /**
  * Card footer. Mirrors `mp-card-header`'s colour handling; no nav-style
  * variant exists at this position upstream in Bootstrap.

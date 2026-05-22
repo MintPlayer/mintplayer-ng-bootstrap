@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { createComponent } from '@lit/react';
 import { MpCheckbox } from '@mintplayer/web-components/checkbox';
-
 /**
  * React wrapper for `<mp-checkbox>`. Side-effect-registers the WC via
  * the import above. Typed props/events extend off MpCheckbox;

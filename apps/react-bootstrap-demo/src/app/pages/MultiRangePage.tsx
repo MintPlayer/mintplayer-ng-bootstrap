@@ -1,6 +1,5 @@
 import { BsMultiRange } from '@mintplayer/react-bootstrap/multi-range';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-
 const SOURCE = "<BsMultiRange />";
 
 export function MultiRangePage() {

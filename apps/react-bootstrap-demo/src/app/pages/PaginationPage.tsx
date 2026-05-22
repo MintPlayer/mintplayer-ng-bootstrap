@@ -1,6 +1,5 @@
 import { BsPagination } from '@mintplayer/react-bootstrap/pagination';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-
 const SOURCE = "<BsPagination />";
 
 export function PaginationPage() {

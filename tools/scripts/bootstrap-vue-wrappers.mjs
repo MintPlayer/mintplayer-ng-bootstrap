@@ -18,7 +18,6 @@
 import { writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-
 const repoRoot = join(fileURLToPath(import.meta.url), '..', '..', '..');
 const vueLibRoot = join(repoRoot, 'libs', 'mintplayer-vue-bootstrap');
 
@@ -110,7 +109,6 @@ function vModelWrapper(tagName, entry) {
 // Side-effect-registers <${tagName}> via the upstream WC entry.
 import '@mintplayer/web-components/${entry}';
 import { ref, watch, onMounted } from 'vue';
-
 defineOptions({ inheritAttrs: false });
 
 // Default v-model is the WC's \`value\` property + \`change\` event.

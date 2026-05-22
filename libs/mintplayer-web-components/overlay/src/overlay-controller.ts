@@ -1,5 +1,4 @@
 import type { ReactiveController, ReactiveControllerHost } from 'lit';
-
 export type OverlayOriginX = 'start' | 'center' | 'end';
 export type OverlayOriginY = 'top' | 'center' | 'bottom';
 

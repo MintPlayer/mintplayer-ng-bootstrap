@@ -1,7 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { BsBreadcrumbComponent } from './breadcrumb.component';
-
 describe('BsBreadcrumbComponent', () => {
   let component: BsBreadcrumbComponent;
   let fixture: ComponentFixture<BsBreadcrumbComponent>;

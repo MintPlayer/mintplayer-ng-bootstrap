@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { BsTimepicker } from '@mintplayer/vue-bootstrap/timepicker';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
-
 const SOURCE = "<BsTimepicker />";
 </script>
 

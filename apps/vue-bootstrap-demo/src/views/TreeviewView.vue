@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { BsTreeview } from '@mintplayer/vue-bootstrap/treeview';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
-
 const SOURCE = "<BsTreeview />";
 </script>
 

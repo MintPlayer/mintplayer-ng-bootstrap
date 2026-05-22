@@ -1,6 +1,5 @@
 import { BsRibbon, BsRibbonTab, BsRibbonGroup, BsRibbonButton } from '@mintplayer/react-bootstrap/ribbon';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-
 const SOURCE = `import { BsRibbon, BsRibbonTab, BsRibbonGroup, BsRibbonButton } from '@mintplayer/react-bootstrap/ribbon';
 
 export function MyRibbon() {

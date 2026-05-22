@@ -1,6 +1,5 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, input, model, signal, viewChild } from '@angular/core';
 import { Signature } from '../interfaces/signature';
-
 @Component({
   selector: 'bs-signature-pad',
   templateUrl: './signature-pad.component.html',

@@ -1,11 +1,6 @@
 import type { Operator } from './expression';
 import type { EntitySchema, FieldType } from './field-def';
-import {
-  DEFAULT_OPERATOR_CATALOG,
-  type OperatorCatalog,
-  operatorsForType,
-} from './operators';
-
+import { DEFAULT_OPERATOR_CATALOG, type OperatorCatalog, operatorsForType } from './operators';
 export type OperatorOverrides = Partial<Record<string, Operator[]>>;
 
 export interface ValidateOperatorOverridesResult {

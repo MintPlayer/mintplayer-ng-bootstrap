@@ -1,7 +1,6 @@
 import { Directive, inject, TemplateRef } from '@angular/core';
 import { HasId } from '@mintplayer/ng-bootstrap/has-id';
 import { BsSearchboxComponent } from '../searchbox/searchbox.component';
-
 @Directive({
   selector: '[bsEnterSearchTermTemplate]',
 })

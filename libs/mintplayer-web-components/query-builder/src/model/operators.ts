@@ -1,6 +1,5 @@
 import type { Operator } from './expression';
 import type { FieldType } from './field-def';
-
 export type OperatorCatalog = Readonly<Record<FieldType, readonly Operator[]>>;
 
 export const DEFAULT_OPERATOR_CATALOG: OperatorCatalog = {

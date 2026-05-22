@@ -1,7 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsPlaylistTogglerComponent } from './playlist-toggler.component';
-
 @Component({
   selector: 'bs-playlist-toggler-harness',
   imports: [BsPlaylistTogglerComponent],

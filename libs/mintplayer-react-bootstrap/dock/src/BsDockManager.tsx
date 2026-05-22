@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { createComponent } from '@lit/react';
 import { MintDockManagerElement } from '@mintplayer/web-components/dock';
-
 /**
  * React wrapper for `<mint-dock-manager>`. Side-effect-registers the WC via
  * the import above. Typed props/events extend off MintDockManagerElement;

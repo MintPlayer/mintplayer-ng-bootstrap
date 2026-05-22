@@ -1,8 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { BsColorWheelComponent } from './color-wheel.component';
 import { hs2polar } from '../../color-math';
-
 describe('BsColorWheelComponent', () => {
   let component: BsColorWheelComponent;
   let fixture: ComponentFixture<BsColorWheelComponent>;

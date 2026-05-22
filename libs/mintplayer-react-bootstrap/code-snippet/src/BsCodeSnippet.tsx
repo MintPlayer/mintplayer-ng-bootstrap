@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { createComponent } from '@lit/react';
 import { MpCodeSnippet } from '@mintplayer/web-components/code-snippet';
-
 /**
  * React wrapper for `<mp-code-snippet>`. Side-effect-registers the WC via
  * the import above. Typed props/events extend off MpCodeSnippet;

@@ -1,12 +1,5 @@
-import type { Expression } from '@mintplayer/web-components/query-builder';
-import type { EntitySchema } from '@mintplayer/web-components/query-builder';
-import { MaxDepthExceededError } from '@mintplayer/web-components/query-builder';
-import type {
-  TreeVisitor,
-  VisitorContext,
-  VisitTreeOptions,
-} from './visitor-types';
-
+import { type Expression, type EntitySchema, MaxDepthExceededError } from '@mintplayer/web-components/query-builder';
+import type { TreeVisitor, VisitorContext, VisitTreeOptions } from './visitor-types';
 const DEFAULT_MAX_DEPTH = 32;
 
 /**

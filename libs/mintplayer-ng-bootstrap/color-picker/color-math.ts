@@ -1,7 +1,6 @@
 import { HslColor } from './interfaces/hsl-color';
 import { HsvColor } from './interfaces/hsv-color';
 import { RgbColor } from './interfaces/rgb-color';
-
 /**
  * Single source of truth for color-space conversions used by the picker.
  *

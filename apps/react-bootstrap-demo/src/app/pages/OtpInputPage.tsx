@@ -1,6 +1,5 @@
 import { BsOtpInput } from '@mintplayer/react-bootstrap/otp-input';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-
 const SOURCE = "<BsOtpInput />";
 
 export function OtpInputPage() {

@@ -2,7 +2,6 @@ import { SchedulerEvent, PreviewEvent } from './event';
 import { Resource } from './resource';
 import { TimeSlot } from './time-slot';
 import { DragOperationType } from './types';
-
 /**
  * State of a drag operation
  */

@@ -3,7 +3,6 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter, ROUTER_CONFIGURATION, Router, withRouterConfig } from '@angular/router';
 import { provideNavigationLock, provideNavigationLockRouter } from './navigation-lock.provider';
 import { BS_NAVIGATION_LOCK_CONFIRM } from '../service/navigation-lock.service';
-
 describe('provideNavigationLock', () => {
   it('returns EnvironmentProviders that TestBed accepts', async () => {
     const providers = provideNavigationLock();

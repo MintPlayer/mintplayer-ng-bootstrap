@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { BsCalendar } from '@mintplayer/vue-bootstrap/calendar';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
-
 const SOURCE = "<BsCalendar />";
 </script>
 

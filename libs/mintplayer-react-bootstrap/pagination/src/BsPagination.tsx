@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { createComponent } from '@lit/react';
 import { MpPagination } from '@mintplayer/web-components/pagination';
-
 /**
  * React wrapper for `<mp-pagination>`. Side-effect-registers the WC via
  * the import above. Typed props/events extend off MpPagination;

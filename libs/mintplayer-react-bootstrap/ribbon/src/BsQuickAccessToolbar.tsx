@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { createComponent } from '@lit/react';
 import { MpQuickAccessToolbar } from '@mintplayer/web-components/ribbon';
-
 /**
  * React wrapper for `<mp-quick-access-toolbar>`. Side-effect-registers the WC via
  * the import above. Typed props/events extend off MpQuickAccessToolbar;

@@ -2,7 +2,6 @@ import { CommonModule } from '@angular/common';
 import { Component, Directive, EventEmitter, inject, Inject, Injector, Output, signal, TemplateRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { OverlayModule } from '@angular/cdk/overlay';
-
 import { BsOffcanvasHostComponent } from './offcanvas-host.component';
 import { BsOffcanvasComponent } from '../offcanvas/offcanvas.component';
 import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
@@ -11,7 +10,6 @@ import { ComponentPortal } from '@angular/cdk/portal';
 import { MockComponent } from 'ng-mocks';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { Position } from '@mintplayer/ng-bootstrap';
-
 describe('BsOffcanvasHostComponent', () => {
   let component: BsOffcanvasTestComponent;
   let fixture: ComponentFixture<BsOffcanvasTestComponent>;

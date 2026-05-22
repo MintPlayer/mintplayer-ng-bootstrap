@@ -1,7 +1,6 @@
 import { afterNextRender, Directive, ElementRef, inject } from '@angular/core';
 import { BsIdService } from '@mintplayer/ng-bootstrap/a11y';
 import { BsModalContextService } from '../../services/modal-context.service';
-
 @Directive({
   selector: '[bsModalBody]',
   host: {

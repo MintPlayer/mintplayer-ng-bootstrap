@@ -1,14 +1,10 @@
 import { isPlatformServer, NgClass, NgTemplateOutlet } from '@angular/common';
-import {
-  ChangeDetectionStrategy, Component, computed, contentChildren, effect, ElementRef,
-  inject, input, output, PLATFORM_ID, signal, TemplateRef, viewChild, viewChildren
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, contentChildren, effect, ElementRef, inject, input, output, PLATFORM_ID, signal, TemplateRef, viewChild, viewChildren } from '@angular/core';
 import { Breakpoint } from '@mintplayer/ng-bootstrap';
 import { BsOverlayStackService } from '@mintplayer/ng-bootstrap/a11y';
 import { BsNoNoscriptDirective } from '@mintplayer/ng-bootstrap/no-noscript';
 import { BsObserveSizeDirective } from '@mintplayer/ng-swiper/observe-size';
 import { BsPriorityNavItemDirective } from '../priority-nav-item/priority-nav-item.directive';
-
 @Component({
   selector: 'bs-priority-nav',
   templateUrl: './priority-nav.component.html',

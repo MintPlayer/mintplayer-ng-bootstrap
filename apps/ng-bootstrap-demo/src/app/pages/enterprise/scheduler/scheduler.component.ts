@@ -10,27 +10,8 @@ import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
 import { BsSelectComponent, BsSelectOption } from '@mintplayer/ng-bootstrap/select';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
-import {
-  BsSchedulerComponent,
-  SchedulerEventSelectedEvent,
-  SchedulerEventCreateEvent,
-  SchedulerEventUpdateEvent,
-  SchedulerEventDeleteEvent,
-  DateClickEvent,
-  ViewChangeEvent,
-} from '@mintplayer/ng-bootstrap/scheduler';
-import {
-  ViewType,
-  SchedulerEvent,
-  Resource,
-  ResourceGroup,
-  SchedulerOptions,
-  generateEventId,
-  generateResourceId,
-  generateGroupId,
-  dateService,
-} from '@mintplayer/web-components/scheduler-core';
-
+import { BsSchedulerComponent, SchedulerEventSelectedEvent, SchedulerEventCreateEvent, SchedulerEventUpdateEvent, SchedulerEventDeleteEvent, DateClickEvent, ViewChangeEvent } from '@mintplayer/ng-bootstrap/scheduler';
+import { ViewType, SchedulerEvent, Resource, ResourceGroup, SchedulerOptions, generateEventId, generateResourceId, generateGroupId, dateService } from '@mintplayer/web-components/scheduler-core';
 @Component({
   selector: 'demo-scheduler',
   templateUrl: './scheduler.component.html',
@@ -309,19 +290,8 @@ export class SchedulerComponent {
 
   protected readonly snippetBasicTs = dedent`
     import { Component, computed, signal } from '@angular/core';
-    import {
-      BsSchedulerComponent,
-      SchedulerEventCreateEvent,
-      SchedulerEventUpdateEvent,
-      SchedulerEventDeleteEvent,
-    } from '@mintplayer/ng-bootstrap/scheduler';
-    import {
-      ViewType,
-      SchedulerEvent,
-      SchedulerOptions,
-      generateEventId,
-    } from '@mintplayer/web-components/scheduler-core';
-
+    import { BsSchedulerComponent, SchedulerEventCreateEvent, SchedulerEventUpdateEvent, SchedulerEventDeleteEvent } from '@mintplayer/ng-bootstrap/scheduler';
+    import { ViewType, SchedulerEvent, SchedulerOptions, generateEventId } from '@mintplayer/web-components/scheduler-core';
     @Component({
       selector: 'my-calendar',
       templateUrl: './my-calendar.component.html',

@@ -1,7 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { BsSelectComponent } from './select.component';
-
 describe('BsSelectComponent', () => {
   let component: BsSelectComponent;
   let fixture: ComponentFixture<BsSelectComponent>;

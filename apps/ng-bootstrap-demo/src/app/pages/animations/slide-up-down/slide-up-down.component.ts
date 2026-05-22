@@ -1,11 +1,10 @@
-import { Component, signal, ChangeDetectionStrategy} from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { SlideUpDownAnimation, SlideUpDownNgifAnimation } from '@mintplayer/ng-animations';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
-
 @Component({
   selector: 'demo-slide-up-down',
   templateUrl: './slide-up-down.component.html',
@@ -34,7 +33,6 @@ export class SlideUpDownComponent {
     import { SlideUpDownAnimation } from '@mintplayer/ng-animations';
     import { Color } from '@mintplayer/ng-bootstrap';
     import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
-
     @Component({
       selector: 'my-slide-up-down-demo',
       templateUrl: './my-slide-up-down-demo.component.html',

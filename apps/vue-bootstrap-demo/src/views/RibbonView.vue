@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { BsRibbon, BsRibbonTab, BsRibbonGroup, BsRibbonButton } from '@mintplayer/vue-bootstrap/ribbon';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
-
 const SOURCE = `<script setup lang="ts">
 import { BsRibbon, BsRibbonTab, BsRibbonGroup, BsRibbonButton } from '@mintplayer/vue-bootstrap/ribbon';
 <\/script>

@@ -7,7 +7,6 @@ import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
 import { BsPopoverDirective } from './popover.directive';
 import { MockComponent } from 'ng-mocks';
 import { BsPopoverComponent } from '../../component/popover.component';
-
 enum Position { top, left, bottom, right }
 
 @Component({

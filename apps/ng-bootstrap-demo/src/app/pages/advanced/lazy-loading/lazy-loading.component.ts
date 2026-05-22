@@ -1,10 +1,9 @@
-import { Component, ChangeDetectionStrategy} from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { LazyLoadedComponent } from './components/lazy-loaded/lazy-loaded.component';
 import { BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { dedent } from 'ts-dedent';
-
 @Component({
   selector: 'demo-lazy-loading',
   templateUrl: './lazy-loading.component.html',
@@ -26,7 +25,6 @@ export class LazyLoadingComponent {
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
     import { LazyLoadedComponent } from './lazy-loaded.component';
-
     @Component({
       selector: 'my-lazy-loading-demo',
       templateUrl: './my-lazy-loading-demo.component.html',

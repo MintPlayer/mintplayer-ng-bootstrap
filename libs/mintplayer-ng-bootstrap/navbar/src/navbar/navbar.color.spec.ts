@@ -4,7 +4,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsNavbarComponent } from './navbar.component';
-
 @Component({
   selector: 'host-test',
   imports: [BsNavbarComponent],

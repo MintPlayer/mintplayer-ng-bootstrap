@@ -3,7 +3,6 @@ import { BS_DEVELOPMENT } from '@mintplayer/ng-bootstrap';
 import { BsIdService, BsRovingFocusDirective } from '@mintplayer/ng-bootstrap/a11y';
 import { BsDropdownMenuDirective } from '../dropdown-menu/dropdown-menu.directive';
 import { BsDropdownToggleDirective } from '../dropdown-toggle/dropdown-toggle.directive';
-
 export type BsDropdownPopupRole = 'menu' | 'listbox';
 
 @Directive({

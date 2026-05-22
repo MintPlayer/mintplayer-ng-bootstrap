@@ -1,6 +1,5 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { styles } from './mp-time-list.element.template';
-
 export type TimeStep = 1 | 5 | 10 | 15 | 30 | 60;
 export type Hour12Mode = boolean | 'auto';
 

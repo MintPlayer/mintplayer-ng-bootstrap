@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import './mint-dock-manager.element';
 import type { MintDockManagerElement } from './mint-dock-manager.element';
-
 const HOST_LEFT = 0;
 const HOST_TOP = 0;
 const HOST_WIDTH = 1000;

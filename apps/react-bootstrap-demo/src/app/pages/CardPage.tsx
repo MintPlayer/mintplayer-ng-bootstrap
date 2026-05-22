@@ -1,12 +1,5 @@
-import {
-  BsCard,
-  BsCardBody,
-  BsCardTitle,
-  BsCardText,
-  BsCardImg,
-} from '@mintplayer/react-bootstrap/card';
+import { BsCard, BsCardBody, BsCardTitle, BsCardText, BsCardImg } from '@mintplayer/react-bootstrap/card';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-
 const SOURCE = `import { BsCard, BsCardBody, BsCardTitle, BsCardText } from '@mintplayer/react-bootstrap/card';
 
 export function MyCard() {

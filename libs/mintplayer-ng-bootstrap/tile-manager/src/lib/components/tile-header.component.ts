@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-
 @Component({
   selector: 'bs-tile-header',
   template: `<ng-content></ng-content>`,

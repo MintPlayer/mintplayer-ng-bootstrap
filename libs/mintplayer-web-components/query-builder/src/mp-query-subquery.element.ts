@@ -5,7 +5,6 @@ import type { EntitySchema, FieldDef } from './model/field-def';
 import { DEFAULT_MESSAGES, type QueryBuilderMessages } from './model/messages';
 import { messagesContext } from './context';
 import { styles } from './mp-query-subquery.element.template';
-
 export class MpQuerySubqueryElement extends LitElement {
   static override styles = [styles];
 

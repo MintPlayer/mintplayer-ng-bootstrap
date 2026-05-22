@@ -4,7 +4,6 @@ import { MockComponent } from 'ng-mocks';
 import { BsAccordionTabComponent } from '../accordion-tab/accordion-tab.component';
 import { BsAccordionComponent } from '../accordion/accordion.component';
 import { BsAccordionTabHeaderComponent } from './accordion-tab-header.component';
-
 describe('AccordionTabHeaderComponent', () => {
   let component: BsAccordionTestComponent;
   let fixture: ComponentFixture<BsAccordionTestComponent>;

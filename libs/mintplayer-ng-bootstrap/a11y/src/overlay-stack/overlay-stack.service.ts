@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-
 /**
  * LIFO registry that tracks open overlays so each overlay can decide whether
  * its global Escape listener should fire.

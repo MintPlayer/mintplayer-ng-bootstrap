@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, contentChild, computed, inject, input, ElementRef, signal } from '@angular/core';
 import { BsTabControlComponent } from '../tab-control/tab-control.component';
 import { BsTabPageHeaderDirective } from '../tab-page-header/tab-page-header.directive';
-
 @Component({
   selector: 'bs-tab-page',
   templateUrl: './tab-page.component.html',

@@ -1,10 +1,9 @@
-import { Component, ChangeDetectionStrategy} from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsButtonGroupComponent } from '@mintplayer/ng-bootstrap/button-group';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
-
 @Component({
   selector: 'demo-button-group',
   templateUrl: './button-group.component.html',
@@ -28,7 +27,6 @@ export class ButtonGroupComponent {
     import { Color } from '@mintplayer/ng-bootstrap';
     import { BsButtonGroupComponent } from '@mintplayer/ng-bootstrap/button-group';
     import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
-
     @Component({
       selector: 'my-button-group-demo',
       templateUrl: './my-button-group-demo.component.html',

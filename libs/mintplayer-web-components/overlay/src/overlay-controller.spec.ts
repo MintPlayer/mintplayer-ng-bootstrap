@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { OverlayController } from './overlay-controller';
-
 describe('OverlayController — Esc-stack primitives', () => {
   it('pushFrame() returns a unique symbol and lifts it to the top', () => {
     const a = OverlayController.pushFrame();

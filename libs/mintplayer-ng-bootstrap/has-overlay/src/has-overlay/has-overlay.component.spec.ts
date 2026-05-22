@@ -1,7 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { BsHasOverlayComponent } from './has-overlay.component';
-
 describe('BsHasOverlayComponent', () => {
   let component: BsHasOverlayComponent;
   let fixture: ComponentFixture<BsHasOverlayComponent>;

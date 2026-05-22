@@ -1,9 +1,8 @@
 import { JsonPipe } from '@angular/common';
-import { Component, inject, signal, ChangeDetectionStrategy} from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsTypeaheadComponent } from '@mintplayer/ng-bootstrap/typeahead';
 import { dedent } from 'ts-dedent';
-
 @Component({
   selector: 'demo-typeahead',
   templateUrl: './typeahead.component.html',
@@ -50,7 +49,6 @@ export class TypeaheadComponent {
   protected readonly snippetBasicTs = dedent`
     import { Component, signal } from '@angular/core';
     import { BsTypeaheadComponent } from '@mintplayer/ng-bootstrap/typeahead';
-
     type Artist = { id: number; text: string };
 
     @Component({

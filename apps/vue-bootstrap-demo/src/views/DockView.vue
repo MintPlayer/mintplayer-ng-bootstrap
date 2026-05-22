@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { BsDockManager } from '@mintplayer/vue-bootstrap/dock';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
-
 const SOURCE = `<script setup lang="ts">
 import { BsDockManager } from '@mintplayer/vue-bootstrap/dock';
 <\/script>

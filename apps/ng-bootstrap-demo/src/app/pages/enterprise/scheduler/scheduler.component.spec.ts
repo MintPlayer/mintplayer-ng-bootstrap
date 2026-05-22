@@ -9,7 +9,6 @@ import { BsCardBodyComponent, BsCardComponent, BsCardHeaderComponent } from '@mi
 import { BsFormComponent, BsFormGroupDirective, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsSelectComponent } from '@mintplayer/ng-bootstrap/select';
 import { BsSchedulerComponent } from '@mintplayer/ng-bootstrap/scheduler';
-
 describe('SchedulerComponent', () => {
   let component: SchedulerComponent;
   let fixture: ComponentFixture<SchedulerComponent>;

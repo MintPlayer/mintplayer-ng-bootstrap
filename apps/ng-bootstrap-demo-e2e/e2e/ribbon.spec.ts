@@ -1,5 +1,4 @@
 import { expect, Page, test } from '@playwright/test';
-
 /**
  * FR-21 / FR-22 — Playwright smoke for the ribbon demo. Covers the
  * keyboard model + ARIA contract end-to-end in real browsers (Chromium +

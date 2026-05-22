@@ -1,9 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { TreeVisitor } from './visitor-types';
 import { visitTree } from './visit-tree';
-import type { Expression, Group } from '@mintplayer/web-components/query-builder';
-import type { EntitySchema } from '@mintplayer/web-components/query-builder';
-
+import { type Expression, type Group, type EntitySchema } from '@mintplayer/web-components/query-builder';
 /**
  * Reference example: a `visitTree<string>` consumer that produces a pretty
  * indented dump for debugging. Demonstrates BOTH eager (call walkInner) and

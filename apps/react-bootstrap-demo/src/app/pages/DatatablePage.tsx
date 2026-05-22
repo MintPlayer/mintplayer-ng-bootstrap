@@ -1,6 +1,5 @@
 import { BsDatatable } from '@mintplayer/react-bootstrap/datatable';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-
 const SOURCE = "<BsDatatable />";
 
 export function DatatablePage() {

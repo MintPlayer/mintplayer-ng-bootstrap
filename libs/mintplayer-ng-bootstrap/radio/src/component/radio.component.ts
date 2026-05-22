@@ -1,23 +1,8 @@
-import {
-  AfterViewInit,
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  CUSTOM_ELEMENTS_SCHEMA,
-  DestroyRef,
-  effect,
-  ElementRef,
-  inject,
-  input,
-  model,
-  PLATFORM_ID,
-  viewChild,
-} from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, computed, CUSTOM_ELEMENTS_SCHEMA, DestroyRef, effect, ElementRef, inject, input, model, PLATFORM_ID, viewChild } from '@angular/core';
 import { isPlatformServer } from '@angular/common';
 import { BsRadioGroupDirective } from '../directives/radio-group/radio-group.directive';
 import { BsRadioType } from '../types/radio-type';
 import type { MpRadio, RadioChangeEventDetail } from '@mintplayer/web-components/radio';
-
 // Side-effect import: registers <mp-radio>.
 import '@mintplayer/web-components/radio';
 

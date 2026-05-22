@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import './mp-ribbon-tab.element';
 import type { MpRibbonTab, RibbonReduceStep } from './mp-ribbon-tab.element';
-
 function nextRaf(): Promise<void> {
   return new Promise((resolve) =>
     requestAnimationFrame(() => requestAnimationFrame(() => resolve()))

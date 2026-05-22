@@ -5,7 +5,6 @@ import { BsCardTitleComponent } from './bs-card-title/bs-card-title.component';
 import { BsCardSubtitleComponent } from './bs-card-subtitle/bs-card-subtitle.component';
 import { BsCardTextComponent } from './bs-card-text/bs-card-text.component';
 import { BsCardGroupComponent } from './bs-card-group/bs-card-group.component';
-
 describe('Structural card components — host class smoke', () => {
   beforeEach(() => TestBed.resetTestingModule());
 

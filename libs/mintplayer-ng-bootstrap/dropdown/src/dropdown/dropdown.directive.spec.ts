@@ -6,7 +6,6 @@ import { BsDropdownMenuDirective } from '../dropdown-menu/dropdown-menu.directiv
 import { MockDirective, MockModule, MockProvider } from 'ng-mocks';
 import { BsDropdownToggleDirective } from '../dropdown-toggle/dropdown-toggle.directive';
 import { BS_DEVELOPMENT } from '@mintplayer/ng-bootstrap';
-
 @Component({
   selector: 'bs-dropdown-test',
   imports: [

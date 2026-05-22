@@ -1,6 +1,5 @@
 import { Directive, inject, TemplateRef } from '@angular/core';
 import { BsMultiselectComponent } from '../../component/multiselect.component';
-
 @Directive({
   selector: '[bsHeaderTemplate]',
 })

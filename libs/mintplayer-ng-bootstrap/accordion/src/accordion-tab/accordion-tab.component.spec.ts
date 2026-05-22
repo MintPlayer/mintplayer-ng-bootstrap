@@ -4,9 +4,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MockComponent } from 'ng-mocks';
 import { BsAccordionTabHeaderComponent } from '../accordion-tab-header/accordion-tab-header.component';
 import { BsAccordionComponent } from '../accordion/accordion.component';
-
 import { BsAccordionTabComponent } from './accordion-tab.component';
-
 class BsAccordionMockProvider {
   accordionTabCounter = 0;
   accordionId = signal<number>(1);

@@ -1,11 +1,10 @@
-import { Component, ChangeDetectionStrategy} from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsTrustHtmlPipe } from '@mintplayer/ng-bootstrap/trust-html';
 import { dedent } from 'ts-dedent';
-
 @Component({
   selector: 'demo-trust-html',
   templateUrl: './trust-html.component.html',
@@ -23,7 +22,6 @@ export class TrustHtmlComponent {
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
     import { BsTrustHtmlPipe } from '@mintplayer/ng-bootstrap/trust-html';
-
     @Component({
       selector: 'my-trust-html-demo',
       templateUrl: './my-trust-html-demo.component.html',

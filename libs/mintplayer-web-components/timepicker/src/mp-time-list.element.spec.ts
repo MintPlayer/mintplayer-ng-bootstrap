@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import './mp-time-list.element';
 import type { MpTimeListElement } from './mp-time-list.element';
-
 async function flush(el: MpTimeListElement): Promise<void> {
   await el.updateComplete;
 }

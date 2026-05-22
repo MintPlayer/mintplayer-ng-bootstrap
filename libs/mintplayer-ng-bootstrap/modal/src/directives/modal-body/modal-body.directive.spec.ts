@@ -1,7 +1,6 @@
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { BsModalBodyDirective } from './modal-body.directive';
-
 @Component({
   selector: 'bs-modal-body-host',
   imports: [BsModalBodyDirective],

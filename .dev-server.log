@@ -1,0 +1,466 @@
+
+[7m[1m[36m NX [39m[22m[27m  [36mRunning target [1mserve[22m for project ng-bootstrap-demo and [1m1[22m task it depends on:[39m
+
+[2m[36m[39m[22m
+
+[2m> [22m[2mnx run[22m api:serve
+
+[2m> [22mnode tools/scripts/serve-api.mjs
+
+
+[2m> [22m[2mnx run[22m ng-bootstrap-demo:serve:development --port=4200
+
+dotnet watch 🔥 Hot reload enabled. For a list of supported edits, see https://aka.ms/dotnet/hot-reload.
+dotnet watch 💡 Press Ctrl+R to restart.
+]9;4;3;\Restore complete (0,7s)
+
+Build [32;1msucceeded[m in 1,7s
+]9;4;0;\[33m❯[39m Building...
+]9;4;3;\  Api [36;1mnet10.0[m [32;1msucceeded[m (10,3s) → ]8;;file:///C:/Repos/mintplayer-ng-bootstrap/apps/api/bin/Debug/net10.0\bin\Debug\net10.0\Api.dll]8;;\
+
+Build [32;1msucceeded[m in 12,5s
+]9;4;0;\dotnet watch ⌚ Loading projects ...
+dotnet watch ⌚ Loaded 1 project(s) in 2,6s.
+Using launch settings from apps\api\Properties\launchSettings.json...
+dotnet watch ⌚ Waiting for changes
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (35ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT(*) FROM "sqlite_master" WHERE "type" = 'table' AND "rootpage" IS NOT NULL;
+dotnet watch ⌚ Files added: .\apps\api\demo.db-wal, .\apps\api\demo.db-shm
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Customers" AS "c")
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5000
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: C:\Repos\mintplayer-ng-bootstrap\apps\api
+dotnet watch ⌚ Loading projects ...
+dotnet watch ⌚ Loaded 1 project(s) in 1,7s.
+dotnet watch ⌚ No managed code changes to apply.
+[32m✔[39m Building...
+[37m[35mBrowser bundles[37m                       
+[1mInitial chunk files[22m                   [2m | [22m[1mNames[22m                    [2m | [22m [1mRaw size[22m
+[32mstyles.css[37m                            [2m | [22m[2mstyles[22m                   [2m | [22m[36m228.03 kB[37m[2m | [22m
+[32mmain.js[37m                               [2m | [22m[2mmain[22m                     [2m | [22m[36m185.32 kB[37m[2m | [22m
+[32mchunk-CJNDV2XT.js[37m                     [2m | [22m[2m-[22m                        [2m | [22m [36m28.30 kB[37m[2m | [22m
+[32mchunk-RRXHMHF7.js[37m                     [2m | [22m[2m-[22m                        [2m | [22m  [36m7.04 kB[37m[2m | [22m
+[32mchunk-4XJUGWWT.js[37m                     [2m | [22m[2m-[22m                        [2m | [22m  [36m6.66 kB[37m[2m | [22m
+[32mchunk-NNAK7SOE.js[37m                     [2m | [22m[2m-[22m                        [2m | [22m  [36m6.16 kB[37m[2m | [22m
+[32mchunk-NIW5IXOK.js[37m                     [2m | [22m[2m-[22m                        [2m | [22m  [36m5.46 kB[37m[2m | [22m
+[32mchunk-SZCWXMQB.js[37m                     [2m | [22m[2m-[22m                        [2m | [22m  [36m3.25 kB[37m[2m | [22m
+[32mchunk-PWLSOT6T.js[37m                     [2m | [22m[2m-[22m                        [2m | [22m  [36m3.04 kB[37m[2m | [22m
+[32mchunk-WKRPVL7M.js[37m                     [2m | [22m[2m-[22m                        [2m | [22m  [36m1.67 kB[37m[2m | [22m
+[32mchunk-HZSHVUQY.js[37m                     [2m | [22m[2m-[22m                        [2m | [22m  [36m1.34 kB[37m[2m | [22m
+[32mchunk-BTVLLS67.js[37m                     [2m | [22m[2m-[22m                        [2m | [22m[36m868 bytes[37m[2m | [22m
+[32mchunk-BAVFZXQT.js[37m                     [2m | [22m[2m-[22m                        [2m | [22m[36m263 bytes[37m[2m | [22m
+[32mchunk-E7PBVZGB.js[37m      [39m
+[37m               [2m | [22m[2m-[22m                        [2m | [22m[36m227 bytes[37m[2m | [22m
+[1m [22m                                     [2m | [22m[1mInitial total[22m            [2m | [22m[1m477.64 kB[22m
+[1mLazy chunk files[22m                      [2m | [22m[1mNames[22m                    [2m | [22m [1mRaw size[22m
+[32mribbon.component-SE2OLPKP.js[37m          [2m | [22m[2mribbon-component[22m         [2m | [22m[36m360.94 kB[37m[2m | [22m
+[32mscheduler.component-QUZZVWG7.js[37m       [2m | [22m[2mscheduler-component[22m      [2m | [22m[36m250.24 kB[37m[2m | [22m
+[32mquery-builder.component-TK5NBOHJ.js[37m   [2m | [22m[2mquery-builder-component[22m  [2m | [22m[36m180.80 kB[37m[2m | [22m
+[32mdock.component-T6HBHMVZ.js[37m            [2m | [22m[2mdock-component[22m           [2m | [22m[36m170.09 kB[37m[2m | [22m
+[32mfile-manager.component-2ZEC746R.js[37m    [2m | [22m[2mfile-manager-component[22m   [2m | [22m[36m143.03 kB[37m[2m | [22m
+[32mtile-manager.component-GCWGI2MU.js[37m    [2m | [22m[2mtile-manager-component[22m   [2m | [22m [36m97.97 kB[37m[2m | [22m
+[32mchunk-7234IWVI.js[37m                     [2m | [22m[2m-[22m                        [2m | [22m [36m94.20 kB[37m[2m | [22m
+[32mchunk-HWCZTDQP.js[37m                     [2m | [22m[2m-[22m                        [2m | [22m [36m89.63 kB[37m[2m | [22m
+[32mchunk-AE52NDE2.js[37m                     [2m | [22m[2m-[22m                        [2m | [22m [36m69.91 kB[37m[2m | [22m
+[32mqr-code.component-WF4WJGBI.js[37m         [2m | [22m[2mqr-code-component[22m        [2m | [22m [36m67.83 kB[37m[2m | [22m
+[32mtab-control.component-PCQY6E3H.js[37m     [2m | [22m[2mtab-control-component[22m    [2m | [22m [36m67.50 kB[37m[2m | [22m
+[32mmulti-range.component-EF7EFSTO.js[37m     [2m | [22m[2mmulti-range-component[22m    [2m | [22m [36m65.59 kB[37m[[39m[37m2m | [22m
+[32mstepper.component-B7Q6A4QF.js[37m         [2m | [22m[2mstepper-component[22m        [2m | [22m [36m65.29 kB[37m[2m | [22m
+[32mdatetime-picker.component-H4MFKCFR.js[37m [2m | [22m[2mdatetime-picker-component[22m[2m | [22m [36m62.36 kB[37m[2m | [22m
+[32motp-input.component-WLFREOMJ.js[37m       [2m | [22m[2motp-input-component[22m      [2m | [22m [36m58.56 kB[37m[2m | [22m
+[2m...and 156 more lazy chunks files. Use "--verbose" to show all the files.[22m
+[35mServer bundles[37m                        
+[1mInitial chunk files[22m                   [2m | [22m[1mNames[22m                    [2m | [22m [1mRaw size[22m
+[32mmain.server.mjs[37m                       [2m | [22m[2mmain.server[22m              [2m | [22m[36m186.09 kB[37m[2m | [22m
+[32mchunk-KQENGBE2.mjs[37m                    [2m | [22m[2m-[22m                        [2m | [22m [36m28.34 kB[37m[2m | [22m
+[32mchunk-34DJH24W.mjs[37m                    [2m | [22m[2m-[22m                        [2m | [22m  [36m7.08 kB[37m[2m | [22m
+[32mchunk-RHR2UR45.mjs[37m                    [2m | [22m[2m-[22m                        [2m | [22m  [36m6.69 kB[37m[2m | [22m
+[32mchunk-752V7YOY.mjs[37m                    [2m | [22m[2m-[22m                        [2m | [22m  [36m6.20 kB[37m[2m | [22m
+[32mchunk-JAK6INYR.mjs[37m                    [2m | [22m[2m-[22m                        [2m | [22m  [36m5.50 kB[37m[2m | [22m
+[32mchunk-BVGHLIWX.mjs[37m                    [2m | [22m[2m-[22m                        [2m | [22m  [36m3.29 kB[37m[2m | [22m
+[32mchunk-ODA55IZ2.mjs[37m                    [2m | [22m[2m-[22m                        [2m | [22m  [36m3.08 kB[37m[2m | [22m
+[32mserver.mjs[37m                            [2m | [22m[2mserver[22m                   [2m | [22m  [36m2.13 kB[37m[2m | [22m
+[32mchunk-S5NAN44N.mjs[37m                    [2m | [22m[2m-[22m     [39m
+[37m                   [2m | [22m  [36m1.55 kB[37m[2m | [22m
+[32mchunk-TQOSKKLI.mjs[37m                    [2m | [22m[2m-[22m                        [2m | [22m  [36m1.38 kB[37m[2m | [22m
+[32mchunk-BYKGKHUM.mjs[37m                    [2m | [22m[2m-[22m                        [2m | [22m[36m903 bytes[37m[2m | [22m
+[32mchunk-6DDNFM46.mjs[37m                    [2m | [22m[2m-[22m                        [2m | [22m[36m298 bytes[37m[2m | [22m
+[32mpolyfills.server.mjs[37m                  [2m | [22m[2mpolyfills.server[22m         [2m | [22m[36m268 bytes[37m[2m | [22m
+[32mchunk-V7C75C7O.mjs[37m                    [2m | [22m[2m-[22m                        [2m | [22m[36m262 bytes[37m[2m | [22m
+[1mLazy chunk files[22m                      [2m | [22m[1mNames[22m                    [2m | [22m [1mRaw size[22m
+[32mribbon.component-5OEEUEJJ.mjs[37m         [2m | [22m[2mribbon-component[22m         [2m | [22m[36m360.98 kB[37m[2m | [22m
+[32mscheduler.component-56CEAMCH.mjs[37m      [2m | [22m[2mscheduler-component[22m      [2m | [22m[36m250.28 kB[37m[2m | [22m
+[32mquery-builder.component-ALVRHTRC.mjs[37m  [2m | [22m[2mquery-builder-component[22m  [2m | [22m[36m180.84 kB[37m[2m | [22m
+[32mdock.component-QR3C4KOD.mjs[37m           [2m | [22m[2mdock-component[22m           [2m | [22m[36m170.13 kB[37m[2m | [22m
+[32mfile-manager.component-PCSP5ZIA.mjs[37m   [2m | [22m[2mfile-manager-component[22m   [2m | [22m[36m143.07 kB[37m[2m | [22m
+[32mtile-manager.component-LQTUR7RO.mjs[37m   [2m | [22m[2mtile-manager-component[22m   [2m | [22m [36m98.01 kB[37m[2m | [22m
+[32mchunk-3TSKCJVC.mjs[37m                    [2m | [22m[2m-[22m                        [2m | [22m [36m94.23 kB[37m[2m | [22m
+[32mchunk-5K6EOFBB.mjs[37m                    [2m | [22m[2m-[22m                        [2m | [22m [36m89.66 kB[37m[2m | [22m
+[32mchunk-Q2HKZUZ[39m[37mG.mjs[37m                    [2m | [22m[2m-[22m                        [2m | [22m [36m69.94 kB[37m[2m | [22m
+[32mqr-code.component-GBJDBER5.mjs[37m        [2m | [22m[2mqr-code-component[22m        [2m | [22m [36m67.87 kB[37m[2m | [22m
+[32mtab-control.component-Z24QDOBT.mjs[37m    [2m | [22m[2mtab-control-component[22m    [2m | [22m [36m67.54 kB[37m[2m | [22m
+[32mmulti-range.component-KMMYGQGK.mjs[37m    [2m | [22m[2mmulti-range-component[22m    [2m | [22m [36m65.64 kB[37m[2m | [22m
+[32mstepper.component-B7IZPGIM.mjs[37m        [2m | [22m[2mstepper-component[22m        [2m | [22m [36m65.33 kB[37m[2m | [22m
+[32mdatetime-picker.component-FRXEPJD3.mjs[37m[2m | [22m[2mdatetime-picker-component[22m[2m | [22m [36m62.40 kB[37m[2m | [22m
+[32motp-input.component-CFEGIMR3.mjs[37m      [2m | [22m[2motp-input-component[22m      [2m | [22m [36m58.60 kB[37m[2m | [22m
+[2m...and 155 more lazy chunks files. Use "--verbose" to show all the files.[22m
+Application bundle generation complete. [56.280 seconds] - 2026-05-21T20:24:46.780Z
+[39m
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BsDatatableColumnDirective is not used within the template of QueryBuilderDemoComponent[0m [1m[35m[plugin angular-compiler][0m
+    apps/ng-bootstrap-demo/src/app/pages/enterprise/query-builder/query-builder.component.ts:48:26:
+[37m      48 │ ...atatableComponent, [32mBsDatatableColumnDirective[37m, BsRowTemplateDir...
+         ╵                       [32m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[39m[22m
+[37mWatch mode enabled. Watching for file changes...[39m
+[37mNOTE: Raw file sizes do not reflect development server per-request transformations.[39m
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m4200[22m/[39m
+Lit is in dev mode. Not recommended for production! See https://lit.dev/msg/dev-mode for more information.
+[2m22:24:58[22m [33m[1m[vite][22m[39m [33m[2m(ssr)[22m[39m [33mwarning: 
+[36mC:/Repos/mintplayer-ng-bootstrap/.angular/vite-root/ng-bootstrap-demo/file-manager.component-PCSP5ZIA.mjs[33m
+[0m2299 |      Promise.all(keys.map(async (key) => {
+2300 |        try {
+2301 |          const mod = await import(`bootstrap-icons/icons/${key}.svg`);
+     |                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2302 |          return [key, mod.default];
+2303 |        } catch {[0m[33m
+The above dynamic import cannot be analyzed by Vite.
+See [34mhttps://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations[33m for supported dynamic import formats. If this is intended to be left as-is, you can use the /* @vite-ignore */ comment inside the import() call to suppress this warning.
+[33m[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Repos/mintplayer-ng-bootstrap/.angular/vite-root/ng-bootstrap-demo/file-manager.component-PCSP5ZIA.mjs[39m
+[2m22:25:03[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [33mwarning: 
+[36mC:/Repos/mintplayer-ng-bootstrap/.angular/vite-root/ng-bootstrap-demo/file-manager.component-2ZEC746R.js[33m
+[0m2298 |      Promise.all(keys.map(async (key) => {
+2299 |        try {
+2300 |          const mod = await import(`bootstrap-icons/icons/${key}.svg`);
+     |                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2301 |          return [key, mod.default];
+2302 |        } catch {[0m[33m
+The above dynamic import cannot be analyzed by Vite.
+See [34mhttps://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations[33m for supported dynamic import formats. If this is intended to be left as-is, you can use the /* @vite-ignore */ comment inside the import() call to suppress this warning.
+[33m[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Repos/mintplayer-ng-bootstrap/.angular/vite-root/ng-bootstrap-demo/file-manager.component-2ZEC746R.js[39m
+dotnet watch ⌚ Files deleted: .\apps\api\demo.db-shm, .\apps\api\demo.db-wal
+dotnet watch ⌚ No managed code changes to apply.
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37m[35mBrowser bundles[37m               
+[1mInitial chunk files[22m           [2m | [22m[1mNames[22m            [2m | [22m [1mRaw size[22m
+[32mmain.js[37m                       [2m | [22m[2mmain[22m             [2m | [22m[36m185.32 kB[37m[2m | [22m
+[1mLazy chunk files[22m              [2m | [22m[1mNames[22m            [2m | [22m [1mRaw size[22m
+[32mdock.component-5LYN7Q42.js[37m    [2m | [22m[2mdock-component[22m   [2m | [22m[36m170.13 kB[37m[2m | [22m
+[32menterprise.routes-XKYCFKKG.js[37m [2m | [22m[2menterprise-routes[22m[2m | [22m  [36m2.22 kB[37m[2m | [22m
+[32mpages.routes-TYA7TFD7.js[37m      [2m | [22m[2mpages-routes[22m     [2m | [22m  [36m2.11 kB[37m[2m | [22m
+[35mServer bundles[37m                
+[1mInitial chunk files[22m           [2m | [22m[1mNames[22m            [2m | [22m [1mRaw size[22m
+[32mmain.server.mjs[37m               [2m | [22m[2mmain.server[22m      [2m | [22m[36m186.09 kB[37m[2m | [22m
+[1mLazy chunk files[22m              [2m | [22m[1mNames[22m            [2m | [22m [1mRaw size[22m
+[32mdock.component-C5U2X6BV.mjs[37m   [2m | [22m[2mdock-component[22m   [2m | [22m[36m170.17 kB[37m[2m | [22m
+[32menterprise.routes-N4RKNAQO.mjs[37m[2m | [22m[2menterprise-routes[22m[2m | [22m  [36m2.25 kB[37m[2m | [22m
+[32mpages.routes-E5SG3SBV.mjs[37m     [2m | [22m[2mpages-routes[22m     [2m | [22m  [36m2.14 kB[37m[2m | [22m
+Application bundle generation complete. [10.508 seconds] - 2026-05-21T20:34:26.216Z
+[39m
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BsDatatableColumnDirective is not used within the template of QueryBuilderDemoComponent[0m [1m[35m[plugin angular-compiler][0m
+    apps/ng-bootstrap-demo/src/app/pages/enterprise/query-builder/query-builder.component.ts:48:26:
+[37m      48 │ ...atatableComponent, [32mBsDatatableColumnDirective[37m, BsRowTemplateDir...
+         ╵                       [32m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[39m[22m
+[37mPage reload sent to client(s).[39m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37m[35mBrowser bundles[37m               
+[1mInitial chunk files[22m           [2m | [22m[1mNames[22m            [2m | [22m [1mRaw size[22m
+[32mmain.js[37m                       [2m | [22m[2mmain[22m             [2m | [22m[36m185.32 kB[37m[2m | [22m
+[1mLazy chunk files[22m              [2m | [22m[1mNames[22m            [2m | [22m [1mRaw size[22m
+[32mdock.component-TX4UFR72.js[37m    [2m | [22m[2mdock-component[22m   [2m | [22m[36m170.18 kB[37m[2m | [22m
+[32menterprise.routes-A4UT764Y.js[37m [2m | [22m[2menterprise-routes[22m[2m | [22m  [36m2.22 kB[37m[2m | [22m
+[32mpages.routes-CNTEYX4V.js[37m      [2m | [22m[2mpages-routes[22m     [2m | [22m  [36m2.11 kB[37m[2m | [22m
+[35mServer bundles[37m                
+[1mInitial chunk files[22m           [2m | [22m[1mNames[22m            [2m | [22m [1mRaw size[22m
+[32mmain.server.mjs[37m               [2m | [22m[2mmain.server[22m      [2m | [22m[36m186.09 kB[37m[2m | [22m
+[1mLazy chunk files[22m              [2m | [22m[1mNames[22m            [2m | [22m [1mRaw size[22m
+[32mdock.component-T3SX3LRQ.mjs[37m   [2m | [22m[2mdock-component[22m   [2m | [22m[36m170.22 kB[37m[2m | [22m
+[32menterprise.routes-FF2V3QSU.mjs[37m[2m | [22m[2menterprise-routes[22m[2m | [22m  [36m2.25 kB[37m[2m | [22m
+[32mpages.routes-5UHDUGWX.mjs[37m     [2m | [22m[2mpages-routes[22m     [2m | [22m  [36m2.14 kB[37m[2m | [22m
+Application bundle generation complete. [7.430 seconds] - 2026-05-21T20:34:35.400Z
+[39m
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BsDatatableColumnDirective is not used within the template of QueryBuilderDemoComponent[0m [1m[35m[plugin angular-compiler][0m
+    apps/ng-bootstrap-demo/src/app/pages/enterprise/query-builder/query-builder.component.ts:48:26:
+[37m      48 │ ...atatableComponent, [32mBsDatatableColumnDirective[37m, BsRowTemplateDir...
+         ╵                       [32m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[39m[22m
+[37mPage reload sent to client(s).[39m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37m[35mBrowser bundles[37m    
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m [1mRaw size[22m
+[32mmain.js[37m            [2m | [22m[2mmain[22m       [2m | [22m[36m185.32 kB[37m[2m | [22m
+[35mServer bundles[37m     
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m      [2m | [22m [1mRaw size[22m
+[32mmain.server.mjs[37m    [2m | [22m[2mmain.server[22m[2m | [22m[36m186.09 kB[37m[2m | [22m
+Application bundle generation complete. [2.941 seconds] - 2026-05-21T20:44:52.335Z
+[39m
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BsDatatableColumnDirective is not used within the template of QueryBuilderDemoComponent[0m [1m[35m[plugin angular-compiler][0m
+    apps/ng-bootstrap-demo/src/app/pages/enterprise/query-builder/query-builder.component.ts:48:26:
+[37m      48 │ ...atatableComponent, [32mBsDatatableColumnDirective[37m, BsRowTemplateDir...
+         ╵                       [32m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[39m[22m
+[37mPage reload sent to client(s).[39m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37mApplication bundle generation failed. [3.167 seconds] - 2026-05-21T20:57:23.691Z
+[39m
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BsDatatableColumnDirective is not used within the template of QueryBuilderDemoComponent[0m [1m[35m[plugin angular-compiler][0m
+    apps/ng-bootstrap-demo/src/app/pages/enterprise/query-builder/query-builder.component.ts:48:26:
+[37m      48 │ ...atatableComponent, [32mBsDatatableColumnDirective[37m, BsRowTemplateDir...
+         ╵                       [32m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[39m[22m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2551: Property 'onPointerCancel' does not exist on type 'MintDockManagerElement'. Did you mean 'onpointercancel'?[0m [1m[35m[plugin angular-compiler][0m
+    libs/mintplayer-ng-bootstrap/dock/src/lib/web-components/mint-dock-manager.element.ts:256:9:
+[37m      256 │     this.[32monPointerCancel[37m = this.onPointerCancel.bind(this);
+          ╵          [32m~~~~~~~~~~~~~~~[0m
+  'onpointercancel' is declared here.
+    node_modules/typescript/lib/lib.dom.d.ts:12863:4:
+[37m      12863 │     [32monpointercancel[37m: ((this: GlobalEventHandlers, ev: PointerEv...
+            ╵     [32m~~~~~~~~~~~~~~~[0m
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2551: Property 'onPointerCancel' does not exist on type 'MintDockManagerElement'. Did you mean 'onpointercancel'?[0m [1m[35m[plugin angular-compiler][0m
+    libs/mintplayer-ng-bootstrap/dock/src/lib/web-components/mint-dock-manager.element.ts:256:32:
+[37m      256 │     this.onPointerCancel = this.[32monPointerCancel[37m.bind(this);
+          ╵                                 [32m~~~~~~~~~~~~~~~[0m
+  'onpointercancel' is declared here.
+    node_modules/typescript/lib/lib.dom.d.ts:12863:4:
+[37m      12863 │     [32monpointercancel[37m: ((this: GlobalEventHandlers, ev: PointerEv...
+            ╵     [32m~~~~~~~~~~~~~~~[0m
+[39m[22m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37mApplication bundle generation failed. [3.084 seconds] - 2026-05-21T20:57:30.154Z
+[39m
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BsDatatableColumnDirective is not used within the template of QueryBuilderDemoComponent[0m [1m[35m[plugin angular-compiler][0m
+    apps/ng-bootstrap-demo/src/app/pages/enterprise/query-builder/query-builder.component.ts:48:26:
+[37m      48 │ ...atatableComponent, [32mBsDatatableColumnDirective[37m, BsRowTemplateDir...
+         ╵                       [32m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[39m[22m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2551: Property 'onPointerCancel' does not exist on type 'MintDockManagerElement'. Did you mean 'onpointercancel'?[0m [1m[35m[plugin angular-compiler][0m
+    libs/mintplayer-ng-bootstrap/dock/src/lib/web-components/mint-dock-manager.element.ts:256:9:
+[37m      256 │     this.[32monPointerCancel[37m = this.onPointerCancel.bind(this);
+          ╵          [32m~~~~~~~~~~~~~~~[0m
+  'onpointercancel' is declared here.
+    node_modules/typescript/lib/lib.dom.d.ts:12863:4:
+[37m      12863 │     [32monpointercancel[37m: ((this: GlobalEventHandlers, ev: PointerEv...
+            ╵     [32m~~~~~~~~~~~~~~~[0m
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2551: Property 'onPointerCancel' does not exist on type 'MintDockManagerElement'. Did you mean 'onpointercancel'?[0m [1m[35m[plugin angular-compiler][0m
+    libs/mintplayer-ng-bootstrap/dock/src/lib/web-components/mint-dock-manager.element.ts:256:32:
+[37m      256 │     this.onPointerCancel = this.[32monPointerCancel[37m.bind(this);
+          ╵                                 [32m~~~~~~~~~~~~~~~[0m
+  'onpointercancel' is declared here.
+    node_modules/typescript/lib/lib.dom.d.ts:12863:4:
+[37m      12863 │     [32monpointercancel[37m: ((this: GlobalEventHandlers, ev: PointerEv...
+            ╵     [32m~~~~~~~~~~~~~~~[0m
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2551: Property 'onPointerCancel' does not exist on type 'MintDockManagerElement'. Did you mean 'onpointercancel'?[0m [1m[35m[plugin angular-compiler][0m
+    libs/mintplayer-ng-bootstrap/dock/src/lib/web-components/mint-dock-manager.element.ts:354:51:
+[37m      354 │     win?.removeEventListener('pointercancel', this.[32monPointerCancel[37m);
+          ╵                                                    [32m~~~~~~~~~~~~~~~[0m
+  'onpointercancel' is declared here.
+    node_modules/typescript/lib/lib.dom.d.ts:12863:4:
+[37m      12863 │     [32monpointercancel[37m:[39m[22m[1m[31m ((this: GlobalEventHandlers, ev: PointerEv...
+            ╵     [32m~~~~~~~~~~~~~~~[0m
+[39m[22m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37mApplication bundle generation failed. [3.363 seconds] - 2026-05-21T20:57:40.354Z
+[39m
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BsDatatableColumnDirective is not used within the template of QueryBuilderDemoComponent[0m [1m[35m[plugin angular-compiler][0m
+    apps/ng-bootstrap-demo/src/app/pages/enterprise/query-builder/query-builder.component.ts:48:26:
+[37m      48 │ ...atatableComponent, [32mBsDatatableColumnDirective[37m, BsRowTemplateDir...
+         ╵                       [32m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[39m[22m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2551: Property 'onPointerCancel' does not exist on type 'MintDockManagerElement'. Did you mean 'onpointercancel'?[0m [1m[35m[plugin angular-compiler][0m
+    libs/mintplayer-ng-bootstrap/dock/src/lib/web-components/mint-dock-manager.element.ts:256:9:
+[37m      256 │     this.[32monPointerCancel[37m = this.onPointerCancel.bind(this);
+          ╵          [32m~~~~~~~~~~~~~~~[0m
+  'onpointercancel' is declared here.
+    node_modules/typescript/lib/lib.dom.d.ts:12863:4:
+[37m      12863 │     [32monpointercancel[37m: ((this: GlobalEventHandlers, ev: PointerEv...
+            ╵     [32m~~~~~~~~~~~~~~~[0m
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2551: Property 'onPointerCancel' does not exist on type 'MintDockManagerElement'. Did you mean 'onpointercancel'?[0m [1m[35m[plugin angular-compiler][0m
+    libs/mintplayer-ng-bootstrap/dock/src/lib/web-components/mint-dock-manager.element.ts:256:32:
+[37m      256 │     this.onPointerCancel = this.[32monPointerCancel[37m.bind(this);
+          ╵                                 [32m~~~~~~~~~~~~~~~[0m
+  'onpointercancel' is declared here.
+    node_modules/typescript/lib/lib.dom.d.ts:12863:4:
+[37m      12863 │     [32monpointercancel[37m: ((this: GlobalEventHandlers, ev: PointerEv...
+            ╵     [32m~~~~~~~~~~~~~~~[0m
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2551: Property 'onPointerCancel' does not exist on type 'MintDockManagerElement'. Did you mean 'onpointercancel'?[0m [1m[35m[plugin angular-compiler][0m
+    libs/mintplayer-ng-bootstrap/dock/src/lib/web-components/mint-dock-manager.element.ts:354:51:
+[37m      354 │     win?.removeEventListener('pointercancel', this.[32monPointerCancel[37m);
+          ╵                                                    [32m~~~~~~~~~~~~~~~[0m
+  'onpointercancel' is declared here.
+    node_modules/typescript/lib/lib.dom.d.ts:12863:4:
+[37m      12863 │     [32monpointercancel[37m:[39m[22m[1m[31m ((this: GlobalEventHandlers, ev: PointerEv...
+            ╵     [32m~~~~~~~~~~~~~~~[0m
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2551: Property 'onPointerCancel' does not exist on type 'MintDockManagerElement'. Did you mean 'onpointercancel'?[0m [1m[35m[plugin angular-compiler][0m
+    libs/mintplayer-ng-bootstrap/dock/src/lib/web-components/mint-dock-manager.element.ts:1538:48:
+[37m      1538 │     win?.addEventListener('pointercancel', this.[32monPointerCancel[37m);
+           ╵                                                 [32m~~~~~~~~~~~~~~~[0m
+  'onpointercancel' is declared here.
+    node_modules/typescript/lib/lib.dom.d.ts:12863:4:
+[37m      12863 │     [32monpointercancel[37m: ((this: GlobalEventHandlers, ev: PointerEv...
+            ╵     [32m~~~~~~~~~~~~~~~[0m
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2551: Property 'onPointerCancel' does not exist on type 'MintDockManagerElement'. Did you mean 'onpointercancel'?[0m [1m[35m[plugin angular-compiler][0m
+    libs/mintplayer-ng-bootstrap/dock/src/lib/web-components/mint-dock-manager.element.ts:1552:53:
+[37m      1552 │ ...win?.removeEventListener('pointercancel', this.[32monPointerCancel[37m);
+           ╵                                                   [32m~~~~~~~~~~~~~~~[0m
+  'onpointercancel' is declared here.
+    node_modules/typescript/lib/lib.dom.d.ts:12863:4:
+[37m      12863 │     [32monpointercancel[37m: ((this: GlobalEventHandlers, ev: PointerEv...
+            ╵     [32m~~~~~~~~~~~~~~~[0m
+[39m[22m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37m[35mBrowser bundles[37m                       
+[1mInitial chunk files[22m                   [2m | [22m[1mNames[22m                    [2m | [22m [1mRaw size[22m
+[32mstyles.css[37m                            [2m | [22m[2mstyles[22m                   [2m | [22m[36m228.03 kB[37m[2m | [22m
+[32mmain.js[37m                               [2m | [22m[2mmain[22m                     [2m | [22m[36m185.32 kB[37m[2m | [22m
+[32mchunk-CJNDV2XT.js[37m                     [2m | [22m[2m-[22m                        [2m | [22m [36m28.30 kB[37m[2m | [22m
+[32mchunk-RRXHMHF7.js[37m                     [2m | [22m[2m-[22m                        [2m | [22m  [36m7.04 kB[37m[2m | [22m
+[32mchunk-4XJUGWWT.js[37m                     [2m | [22m[2m-[22m                        [2m | [22m  [36m6.66 kB[37m[2m | [22m
+[32mchunk-NNAK7SOE.js[37m                     [2m | [22m[2m-[22m                        [2m | [22m  [36m6.16 kB[37m[2m | [22m
+[32mchunk-NIW5IXOK.js[37m                     [2m | [22m[2m-[22m                        [2m | [22m  [36m5.46 kB[37m[2m | [22m
+[32mchunk-SZCWXMQB.js[37m                     [2m | [22m[2m-[22m                        [2m | [22m  [36m3.25 kB[37m[2m | [22m
+[32mchunk-PWLSOT6T.js[37m                     [2m | [22m[2m-[22m                        [2m | [22m  [36m3.04 kB[37m[2m | [22m
+[32mchunk-WKRPVL7M.js[37m                     [2m | [22m[2m-[22m                        [2m | [22m  [36m1.67 kB[37m[2m | [22m
+[32mchunk-HZSHVUQY.js[37m                     [2m | [22m[2m-[22m                        [2m | [22m  [36m1.34 kB[37m[2m | [22m
+[32mchunk-BTVLLS67.js[37m                     [2m | [22m[2m-[22m                        [2m | [22m[36m868 bytes[37m[2m | [22m
+[32mchunk-BAVFZXQT.js[37m                     [2m | [22m[2m-[22m                        [2m | [22m[36m263 bytes[37m[2m | [22m
+[32mchunk-E7PBVZGB.js[37m      [39m[37m               [2m | [22m[2m-[22m                        [2m | [22m[36m227 bytes[37m[2m | [22m
+[1m [22m                                     [2m | [22m[1mInitial total[22m            [2m | [22m[1m477.64 kB[22m
+[1mLazy chunk files[22m                      [2m | [22m[1mNames[22m                    [2m | [22m [1mRaw size[22m
+[32mribbon.component-SE2OLPKP.js[37m          [2m | [22m[2mribbon-component[22m         [2m | [22m[36m360.94 kB[37m[2m | [22m
+[32mscheduler.component-QUZZVWG7.js[37m       [2m | [22m[2mscheduler-component[22m      [2m | [22m[36m250.24 kB[37m[2m | [22m
+[32mquery-builder.component-TK5NBOHJ.js[37m   [2m | [22m[2mquery-builder-component[22m  [2m | [22m[36m180.80 kB[37m[2m | [22m
+[32mdock.component-R4Y724GK.js[37m            [2m | [22m[2mdock-component[22m           [2m | [22m[36m171.50 kB[37m[2m | [22m
+[32mfile-manager.component-2ZEC746R.js[37m    [2m | [22m[2mfile-manager-component[22m   [2m | [22m[36m143.03 kB[37m[2m | [22m
+[32mtile-manager.component-GCWGI2MU.js[37m    [2m | [22m[2mtile-manager-component[22m   [2m | [22m [36m97.97 kB[37m[2m | [22m
+[32mchunk-7234IWVI.js[37m                     [2m | [22m[2m-[22m                        [2m | [22m [36m94.20 kB[37m[2m | [22m
+[32mchunk-HWCZTDQP.js[37m                     [2m | [22m[2m-[22m                        [2m | [22m [36m89.63 kB[37m[2m | [22m
+[32mchunk-AE52NDE2.js[37m                     [2m | [22m[2m-[22m                        [2m | [22m [36m69.91 kB[37m[2m | [22m
+[32mqr-code.component-WF4WJGBI.js[37m         [2m | [22m[2mqr-code-component[22m        [2m | [22m [36m67.83 kB[37m[2m | [22m
+[32mtab-control.component-PCQY6E3H.js[37m     [2m | [22m[2mtab-control-component[22m    [2m | [22m [36m67.50 kB[37m[2m | [22m
+[32mmulti-range.component-EF7EFSTO.js[37m     [2m | [22m[2mmulti-range-component[22m    [2m | [22m [36m65.59 kB[37m[[39m
+[37m2m | [22m
+[32mstepper.component-B7Q6A4QF.js[37m         [2m | [22m[2mstepper-component[22m        [2m | [22m [36m65.29 kB[37m[2m | [22m
+[32mdatetime-picker.component-H4MFKCFR.js[37m [2m | [22m[2mdatetime-picker-component[22m[2m | [22m [36m62.36 kB[37m[2m | [22m
+[32motp-input.component-WLFREOMJ.js[37m       [2m | [22m[2motp-input-component[22m      [2m | [22m [36m58.56 kB[37m[2m | [22m
+[2m...and 156 more lazy chunks files. Use "--verbose" to show all the files.[22m
+[35mServer bundles[37m                        
+[1mInitial chunk files[22m                   [2m | [22m[1mNames[22m                    [2m | [22m [1mRaw size[22m
+[32mmain.server.mjs[37m                       [2m | [22m[2mmain.server[22m              [2m | [22m[36m186.09 kB[37m[2m | [22m
+[32mchunk-KQENGBE2.mjs[37m                    [2m | [22m[2m-[22m                        [2m | [22m [36m28.34 kB[37m[2m | [22m
+[32mchunk-34DJH24W.mjs[37m                    [2m | [22m[2m-[22m                        [2m | [22m  [36m7.08 kB[37m[2m | [22m
+[32mchunk-RHR2UR45.mjs[37m                    [2m | [22m[2m-[22m                        [2m | [22m  [36m6.69 kB[37m[2m | [22m
+[32mchunk-752V7YOY.mjs[37m                    [2m | [22m[2m-[22m                        [2m | [22m  [36m6.20 kB[37m[2m | [22m
+[32mchunk-JAK6INYR.mjs[37m                    [2m | [22m[2m-[22m                        [2m | [22m  [36m5.50 kB[37m[2m | [22m
+[32mchunk-BVGHLIWX.mjs[37m                    [2m | [22m[2m-[22m                        [2m | [22m  [36m3.29 kB[37m[2m | [22m
+[32mchunk-ODA55IZ2.mjs[37m                    [2m | [22m[2m-[22m                        [2m | [22m  [36m3.08 kB[37m[2m | [22m
+[32mserver.mjs[37m                            [2m | [22m[2mserver[22m                   [2m | [22m  [36m2.13 kB[37m[2m | [22m
+[32mchunk-S5NAN44N.mjs[37m                    [2m | [22m[2m-[22m     [39m[37m                   [2m | [22m  [36m1.55 kB[37m[2m | [22m
+[32mchunk-TQOSKKLI.mjs[37m                    [2m | [22m[2m-[22m                        [2m | [22m  [36m1.38 kB[37m[2m | [22m
+[32mchunk-BYKGKHUM.mjs[37m                    [2m | [22m[2m-[22m                        [2m | [22m[36m903 bytes[37m[2m | [22m
+[32mchunk-6DDNFM46.mjs[37m                    [2m | [22m[2m-[22m                        [2m | [22m[36m298 bytes[37m[2m | [22m
+[32mpolyfills.server.mjs[37m                  [2m | [22m[2mpolyfills.server[22m         [2m | [22m[36m268 bytes[37m[2m | [22m
+[32mchunk-V7C75C7O.mjs[37m                    [2m | [22m[2m-[22m                        [2m | [22m[36m262 bytes[37m[2m | [22m
+[1mLazy chunk files[22m                      [2m | [22m[1mNames[22m                    [2m | [22m [1mRaw size[22m
+[32mribbon.component-5OEEUEJJ.mjs[37m         [2m | [22m[2mribbon-component[22m         [2m | [22m[36m360.98 kB[37m[2m | [22m
+[32mscheduler.component-56CEAMCH.mjs[37m      [2m | [22m[2mscheduler-component[22m      [2m | [22m[36m250.28 kB[37m[2m | [22m
+[32mquery-builder.component-ALVRHTRC.mjs[37m  [2m | [22m[2mquery-builder-component[22m  [2m | [22m[36m180.84 kB[37m[2m | [22m
+[32mdock.component-2D2WTX3A.mjs[37m           [2m | [22m[2mdock-component[22m           [2m | [22m[36m171.54 kB[37m[2m | [22m
+[32mfile-manager.component-PCSP5ZIA.mjs[37m   [2m | [22m[2mfile-manager-component[22m   [2m | [22m[36m143.07 kB[37m[2m | [22m
+[32mtile-manager.component-LQTUR7RO.mjs[37m   [2m | [22m[2mtile-manager-component[22m   [2m | [22m [36m98.01 kB[37m[2m | [22m
+[32mchunk-3TSKCJVC.mjs[37m                    [2m | [22m[2m-[22m                        [2m | [22m [36m94.23 kB[37m[2m | [22m
+[32mchunk-5K6EOFBB.mjs[37m                    [2m | [22m[2m-[22m                        [2m | [22m [36m89.66 kB[37m[2m | [22m
+[32mchunk-Q2HKZUZ[39m[37mG.mjs[37m                    [2m | [22m[2m-[22m                        [2m | [22m [36m69.94 kB[37m[2m | [22m
+[32mqr-code.component-GBJDBER5.mjs[37m        [2m | [22m[2mqr-code-component[22m        [2m | [22m [36m67.87 kB[37m[2m | [22m
+[32mtab-control.component-Z24QDOBT.mjs[37m    [2m | [22m[2mtab-control-component[22m    [2m | [22m [36m67.54 kB[37m[2m | [22m
+[32mmulti-range.component-KMMYGQGK.mjs[37m    [2m | [22m[2mmulti-range-component[22m    [2m | [22m [36m65.64 kB[37m[2m | [22m
+[32mstepper.component-B7IZPGIM.mjs[37m        [2m | [22m[2mstepper-component[22m        [2m | [22m [36m65.33 kB[37m[2m | [22m
+[32mdatetime-picker.component-FRXEPJD3.mjs[37m[2m | [22m[2mdatetime-picker-component[22m[2m | [22m [36m62.40 kB[37m[2m | [22m
+[32motp-input.component-CFEGIMR3.mjs[37m      [2m | [22m[2motp-input-component[22m      [2m | [22m [36m58.60 kB[37m[2m | [22m
+[2m...and 155 more lazy chunks files. Use "--verbose" to show all the files.[22m
+Application bundle generation complete. [3.380 seconds] - 2026-05-21T20:57:54.389Z
+[39m
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: BsDatatableColumnDirective is not used within the template of QueryBuilderDemoComponent[0m [1m[35m[plugin angular-compiler][0m
+    apps/ng-bootstrap-demo/src/app/pages/enterprise/query-builder/query-builder.component.ts:48:26:
+[37m      48 │ ...atatableComponent, [32mBsDatatableColumnDirective[37m, BsRowTemplateDir...
+         ╵                       [32m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[39m[22m
+[37mPage reload sent to client(s).[39m
+[2m22:57:57[22m [33m[1m[vite][22m[39m [33m[2m(ssr)[22m[39m [33mwarning: 
+[36mC:/Repos/mintplayer-ng-bootstrap/.angular/vite-root/ng-bootstrap-demo/file-manager.component-PCSP5ZIA.mjs[33m
+[0m2299 |      Promise.all(keys.map(async (key) => {
+2300 |        try {
+2301 |          const mod = await import(`bootstrap-icons/icons/${key}.svg`);
+     |                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2302 |          return [key, mod.default];
+2303 |        } catch {[0m[33m
+The above dynamic import cannot be analyzed by Vite.
+See [34mhttps://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations[33m for supported dynamic import formats. If this is intended to be left as-is, you can use the /* @vite-ignore */ comment inside the import() call to suppress this warning.
+[33m[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Repos/mintplayer-ng-bootstrap/.angular/vite-root/ng-bootstrap-demo/file-manager.component-PCSP5ZIA.mjs[39m
+'CustomElementRegistry' already has "mp-ribbon-tab" defined. This may have been caused by live reload or hot module replacement in which case it can be safely ignored.
+Make sure to test your application with a production build as repeat registrations will throw in production.
+'CustomElementRegistry' already has "mp-ribbon-contextual-tab-set" defined. This may have been caused by live reload or hot module replacement in which case it can be safely ignored.
+Make sure to test your application with a production build as repeat registrations will throw in production.
+'CustomElementRegistry' already has "mp-ribbon-group" defined. This may have been caused by live reload or hot module replacement in which case it can be safely ignored.
+Make sure to test your application with a production build as repeat registrations will throw in production.
+'CustomElementRegistry' already has "mp-ribbon-button" defined. This may have been caused by live reload or hot module replacement in which case it can be safely ignored.
+Make sure to test your application with a production build as repeat registrations will throw in production.
+'CustomElementRegistry' already has "mp-ribbon-split-button" defined. This may have been caused by live reload or hot module replacement in which case it can be safely ignored.
+Make sure to test your application with a production build as repeat registrations will throw in production.
+'CustomElementRegistry' already has "mp-ribbon-dropdown-button" defined. This may have been caused by live reload or hot module replacement in which case it can be safely ignored.
+Make sure to test your application with a production build as repeat registrations will throw in production.
+'CustomElementRegistry' already has "mp-ribbon-toggle-button" defined. This may have been caused by live reload or hot module replacement in which case it can be safely ignored.
+Make sure to test your application with a production build as repeat registrations will throw in production.
+'CustomElementRegistry' already has "mp-ribbon-checkbox" defined. This may have been caused by live reload or hot module replacement in which case it can be safely ignored.
+Make sure to test your application with a production build as repeat registrations will throw in production.
+'CustomElementRegistry' already has "mp-ribbon-combobox" defined. This may have been caused by live reload or hot module replacement in which case it can be safely ignored.
+Make sure to test your application with a production build as repeat registrations will throw in production.
+'CustomElementRegistry' already has "mp-ribbon-color-picker" defined. This may have been caused by live reload or hot module replacement in which case it can be safely ignored.
+Make sure to test your application with a production build as repeat registrations will throw in production.
+'CustomElementRegistry' already has "mp-ribbon-group-button" defined. This may have been caused by live reload or hot module replacement in which case it can be safely ignored.
+Make sure to test your application with a production build as repeat registrations will throw in production.
+'CustomElementRegistry' already has "mp-ribbon-gallery" defined. This may have been caused by live reload or hot module replacement in which case it can be safely ignored.
+Make sure to test your application with a production build as repeat registrations will throw in production.
+'CustomElementRegistry' already has "mp-ribbon-gallery-item" defined. This may have been caused by live reload or hot module replacement in which case it can be safely ignored.
+Make sure to test your application with a production build as repeat registrations will throw in production.
+'CustomElementRegistry' already has "mp-ribbon-template-item" defined. This may have been caused by live reload or hot module replacement in which case it can be safely ignored.
+Make sure to test your application with a production build as repeat registrations will throw in production.
+'CustomElementRegistry' already has "mp-ribbon-menu-item" defined. This may have been caused by live reload or hot module replacement in which case it can be safely ignored.
+Make sure to test your application with a production build as repeat registrations will throw in production.
+'CustomElementRegistry' already has "mp-ribbon-menu-separator" defined. This may have been caused by live reload or hot module replacement in which case it can be safely ignored.
+Make sure to test your application with a production build as repeat registrations will throw in production.
+[2m22:57:59[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [33mwarning: 
+[36mC:/Repos/mintplayer-ng-bootstrap/.angular/vite-root/ng-bootstrap-demo/file-manager.component-2ZEC746R.js[33m
+[0m2298 |      Promise.all(keys.map(async (key) => {
+2299 |        try {
+2300 |          const mod = await import(`bootstrap-icons/icons/${key}.svg`);
+     |                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2301 |          return [key, mod.default];
+2302 |        } catch {[0m[33m
+The above dynamic import cannot be analyzed by Vite.
+See [34mhttps://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations[33m for supported dynamic import formats. If this is intended to be left as-is, you can use the /* @vite-ignore */ comment inside the import() call to suppress this warning.
+[33m[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Repos/mintplayer-ng-bootstrap/.angular/vite-root/ng-bootstrap-demo/file-manager.component-2ZEC746R.js[39m

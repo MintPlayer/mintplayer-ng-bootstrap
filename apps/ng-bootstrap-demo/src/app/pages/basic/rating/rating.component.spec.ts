@@ -3,7 +3,6 @@ import { BsRatingComponent } from '@mintplayer/ng-bootstrap/rating';
 import { MockComponent, MockDirective } from 'ng-mocks';
 import { RatingComponent } from './rating.component';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
-
 describe('RatingComponent', () => {
   let component: RatingComponent;
   let fixture: ComponentFixture<RatingComponent>;

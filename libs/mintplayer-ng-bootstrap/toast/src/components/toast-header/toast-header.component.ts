@@ -1,5 +1,4 @@
-import { Component, ChangeDetectionStrategy} from '@angular/core';
-
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 @Component({
   selector: 'bs-toast-header',
   templateUrl: './toast-header.component.html',

@@ -2,7 +2,6 @@ import { DOCUMENT } from '@angular/common';
 import { AfterContentInit, AfterViewInit, ChangeDetectionStrategy, Component, computed, contentChildren, effect, ElementRef, inject, input, signal, viewChildren } from '@angular/core';
 import { BsScrollOffsetService } from '../services/scroll-offset/scroll-offset.service';
 import { BsScrollspyDirective } from '../directives/scrollspy.directive';
-
 type ScrollTarget = HTMLElement | Window;
 
 @Component({

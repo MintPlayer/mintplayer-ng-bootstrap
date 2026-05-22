@@ -3,7 +3,6 @@ import { AfterViewInit, DestroyRef, Directive, inject, output, PLATFORM_ID } fro
 import { BsUserAgent } from '../interfaces/user-agent';
 import { BsOperatingSystem } from '../types/operating-system.type';
 import { BsWebbrowser } from '../types/webbrowser.type';
-
 @Directive({
   selector: '[bsUserAgent]',
   host: {

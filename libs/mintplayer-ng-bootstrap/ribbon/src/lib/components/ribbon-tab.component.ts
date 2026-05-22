@@ -1,14 +1,5 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  CUSTOM_ELEMENTS_SCHEMA,
-  input,
-} from '@angular/core';
-import type {
-  RibbonGroupSize,
-  RibbonReduceStep,
-} from '@mintplayer/web-components/ribbon';
-
+import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, input } from '@angular/core';
+import type { RibbonGroupSize, RibbonReduceStep } from '@mintplayer/web-components/ribbon';
 @Component({
   selector: 'bs-ribbon-tab',
   template: `

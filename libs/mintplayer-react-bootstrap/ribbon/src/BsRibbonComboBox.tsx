@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { createComponent } from '@lit/react';
 import { MpRibbonComboBox } from '@mintplayer/web-components/ribbon';
-
 /**
  * React wrapper for `<mp-ribbon-combobox>`. Side-effect-registers the WC via
  * the import above. Typed props/events extend off MpRibbonComboBox;

@@ -1,4 +1,4 @@
-import { Component, viewChild, ChangeDetectionStrategy} from '@angular/core';
+import { Component, viewChild, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderComponent } from '@mintplayer/ng-bootstrap/accordion';
@@ -8,7 +8,6 @@ import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsShellComponent, BsShellSidebarDirective } from '@mintplayer/ng-bootstrap/shell';
 import { BsRadioComponent, BsRadioGroupDirective } from '@mintplayer/ng-bootstrap/radio';
 import { dedent } from 'ts-dedent';
-
 @Component({
   selector: 'demo-shell',
   imports: [BsCodeSnippetComponent, FormsModule, BsShellComponent, BsShellSidebarDirective, BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderComponent, BsButtonGroupComponent, BsButtonTypeDirective, BsRadioComponent, BsRadioGroupDirective],
@@ -41,7 +40,6 @@ export class ShellComponent {
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
     import { BsShellComponent, BsShellSidebarDirective } from '@mintplayer/ng-bootstrap/shell';
-
     @Component({
       selector: 'my-shell-demo',
       templateUrl: './my-shell-demo.component.html',

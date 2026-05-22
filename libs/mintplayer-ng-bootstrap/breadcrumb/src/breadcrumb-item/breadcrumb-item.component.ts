@@ -1,5 +1,4 @@
 import { Component, ChangeDetectionStrategy, input } from '@angular/core';
-
 @Component({
   selector: 'bs-breadcrumb-item',
   templateUrl: './breadcrumb-item.component.html',

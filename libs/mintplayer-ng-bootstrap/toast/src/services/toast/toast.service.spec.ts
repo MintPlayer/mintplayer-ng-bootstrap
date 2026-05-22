@@ -5,7 +5,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { PORTAL_FACTORY } from '../../providers/portal-factory.provider';
 import { BsToastService } from './toast.service';
 import { CommonModule } from '@angular/common';
-
 @Component({
   selector: 'bs-toast-container',
   imports: [CommonModule],

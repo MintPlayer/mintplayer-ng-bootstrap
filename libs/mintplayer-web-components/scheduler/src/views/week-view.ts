@@ -1,14 +1,6 @@
-import {
-  dateService,
-  timelineService,
-  SchedulerEvent,
-  SchedulerEventPart,
-  TimeSlot,
-  getContrastColor,
-} from '@mintplayer/web-components/scheduler-core';
+import { dateService, timelineService, SchedulerEvent, SchedulerEventPart, TimeSlot, getContrastColor } from '@mintplayer/web-components/scheduler-core';
 import { BaseView, formatEventAriaLabel, isSlotInSelection } from './base-view';
 import { SchedulerState } from '../state/scheduler-state';
-
 /**
  * Week view renderer
  */

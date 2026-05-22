@@ -6,7 +6,6 @@ import { MockDirective } from 'ng-mocks';
 import { BsSwipeDirective } from '../swipe/swipe.directive';
 import { BsSwipeViewportDirective } from '../swipe-viewport/swipe-viewport.directive';
 import { BsSwipeContainerDirective } from './swipe-container.directive';
-
 @Component({
   selector: 'swipe-test-component',
   imports: [BsSwipeContainerDirective, BsSwipeDirective],

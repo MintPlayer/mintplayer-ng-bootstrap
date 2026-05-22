@@ -3,7 +3,6 @@ import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BsReducedMotionDirective } from './reduced-motion.directive';
-
 let mediaListeners: Array<(e: MediaQueryListEvent) => void>;
 
 function stubMatchMedia(initialMatches: boolean): void {

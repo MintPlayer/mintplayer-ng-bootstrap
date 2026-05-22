@@ -1,6 +1,5 @@
 import { computed, Directive, inject, input, output } from '@angular/core';
 import { BsDropdownDirective } from '../dropdown/dropdown.directive';
-
 export type BsComboboxAutocomplete = 'none' | 'list' | 'inline' | 'both';
 export type BsComboboxNavigateDirection = 'next' | 'prev' | 'first' | 'last';
 

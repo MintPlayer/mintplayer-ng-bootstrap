@@ -1,7 +1,6 @@
 import { Directive, ElementRef, inject, output } from '@angular/core';
 import { NgModel } from '@angular/forms';
 import { NumberOverflow } from '../interfaces/number-overflow';
-
 @Directive({
   selector: 'input[type="number"][bsEnhancedPaste]',
   host: {

@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { EnumItem } from '../interfaces/enum-item';
-
 @Injectable({
   providedIn: 'root'
 })

@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { DateService, dateService } from './date.service';
-
 describe('DateService', () => {
   let service: DateService;
 

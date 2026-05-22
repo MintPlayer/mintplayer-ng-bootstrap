@@ -1,7 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import './mp-card-header.element';
 import { MpCardHeaderElement } from './mp-card-header.element';
-
 function makeHeader(attrs: Record<string, string> = {}, slotted?: string): MpCardHeaderElement {
   const el = document.createElement('mp-card-header') as MpCardHeaderElement;
   for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);

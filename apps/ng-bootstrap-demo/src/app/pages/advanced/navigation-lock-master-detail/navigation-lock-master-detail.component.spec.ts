@@ -1,8 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-
 import { NavigationLockMasterDetailComponent } from './navigation-lock-master-detail.component';
-
 describe('NavigationLockMasterDetailComponent', () => {
   let component: NavigationLockMasterDetailComponent;
   let fixture: ComponentFixture<NavigationLockMasterDetailComponent>;

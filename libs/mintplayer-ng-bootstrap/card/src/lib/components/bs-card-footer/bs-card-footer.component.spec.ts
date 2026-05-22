@@ -3,7 +3,6 @@ import { TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsCardFooterComponent } from './bs-card-footer.component';
-
 describe('BsCardFooterComponent', () => {
   beforeEach(() => TestBed.resetTestingModule());
 

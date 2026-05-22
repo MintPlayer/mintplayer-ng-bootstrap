@@ -1,6 +1,5 @@
 import { BsCalendar } from '@mintplayer/react-bootstrap/calendar';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-
 const SOURCE = "<BsCalendar />";
 
 export function CalendarPage() {

@@ -14688,6 +14688,37 @@
     },
     {
       "kind": "javascript-module",
+      "path": "checkbox/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpCheckbox",
+          "declaration": {
+            "name": "MpCheckbox",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpCheckboxType",
+          "declaration": {
+            "name": "MpCheckboxType",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "CheckboxChangeEventDetail",
+          "declaration": {
+            "name": "CheckboxChangeEventDetail",
+            "module": "./components"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "card/src/card-classes.ts",
       "declarations": [
         {
@@ -15002,37 +15033,6 @@
           "declaration": {
             "name": "*",
             "module": "card/src/types/card-header-nav-style"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "checkbox/src/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "MpCheckbox",
-          "declaration": {
-            "name": "MpCheckbox",
-            "module": "./components"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "MpCheckboxType",
-          "declaration": {
-            "name": "MpCheckboxType",
-            "module": "./components"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "CheckboxChangeEventDetail",
-          "declaration": {
-            "name": "CheckboxChangeEventDetail",
-            "module": "./components"
           }
         }
       ]
@@ -16228,6 +16228,61 @@
     },
     {
       "kind": "javascript-module",
+      "path": "pagination/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpPagination",
+          "declaration": {
+            "name": "MpPagination",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "buildPaginationLayout",
+          "declaration": {
+            "name": "buildPaginationLayout",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "PageChangeEventDetail",
+          "declaration": {
+            "name": "PageChangeEventDetail",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "PaginationSize",
+          "declaration": {
+            "name": "PaginationSize",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "PaginationItem",
+          "declaration": {
+            "name": "PaginationItem",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "PaginationLayout",
+          "declaration": {
+            "name": "PaginationLayout",
+            "module": "./components"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "query-builder/src/context.ts",
       "declarations": [
         {
@@ -16341,61 +16396,6 @@
           "declaration": {
             "name": "*",
             "module": "query-builder/src/preview/render-expression"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "pagination/src/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "MpPagination",
-          "declaration": {
-            "name": "MpPagination",
-            "module": "./components"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "buildPaginationLayout",
-          "declaration": {
-            "name": "buildPaginationLayout",
-            "module": "./components"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "PageChangeEventDetail",
-          "declaration": {
-            "name": "PageChangeEventDetail",
-            "module": "./components"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "PaginationSize",
-          "declaration": {
-            "name": "PaginationSize",
-            "module": "./components"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "PaginationItem",
-          "declaration": {
-            "name": "PaginationItem",
-            "module": "./components"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "PaginationLayout",
-          "declaration": {
-            "name": "PaginationLayout",
-            "module": "./components"
           }
         }
       ]
@@ -16897,6 +16897,29 @@
     },
     {
       "kind": "javascript-module",
+      "path": "timepicker/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "timepicker/src/mp-timepicker.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "timepicker/src/mp-time-list.element"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "toggle-button/src/index.ts",
       "declarations": [],
       "exports": [
@@ -16930,29 +16953,6 @@
           "declaration": {
             "name": "toggleButtonStyles",
             "module": "./styles"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "timepicker/src/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "*",
-          "declaration": {
-            "name": "*",
-            "module": "timepicker/src/mp-timepicker.element"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "*",
-          "declaration": {
-            "name": "*",
-            "module": "timepicker/src/mp-time-list.element"
           }
         }
       ]
@@ -17051,18 +17051,6 @@
           }
         }
       ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "card/src/types/card-header-nav-style.ts",
-      "declarations": [],
-      "exports": []
-    },
-    {
-      "kind": "javascript-module",
-      "path": "card/src/types/card-image-position.ts",
-      "declarations": [],
-      "exports": []
     },
     {
       "kind": "javascript-module",
@@ -17349,6 +17337,18 @@
           }
         }
       ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "card/src/types/card-header-nav-style.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "card/src/types/card-image-position.ts",
+      "declarations": [],
+      "exports": []
     },
     {
       "kind": "javascript-module",
@@ -20189,6 +20189,382 @@
     },
     {
       "kind": "javascript-module",
+      "path": "pagination/src/components/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpPagination",
+          "declaration": {
+            "name": "MpPagination",
+            "module": "./mp-pagination"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "buildPaginationLayout",
+          "declaration": {
+            "name": "buildPaginationLayout",
+            "module": "./mp-pagination"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "PageChangeEventDetail",
+          "declaration": {
+            "name": "PageChangeEventDetail",
+            "module": "./mp-pagination"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "PaginationSize",
+          "declaration": {
+            "name": "PaginationSize",
+            "module": "./mp-pagination"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "PaginationItem",
+          "declaration": {
+            "name": "PaginationItem",
+            "module": "./mp-pagination"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "PaginationLayout",
+          "declaration": {
+            "name": "PaginationLayout",
+            "module": "./mp-pagination"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "pagination/src/components/mp-pagination.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "`<mp-pagination>` — page selector with first/last anchors, ellipsis gaps,\r\nand previous/next arrows. The visible budget is fully driven by the\r\n`numberOfBoxes` input (0 = uncapped). Layout-time auto-fit was tried\r\nearlier but produced a feedback loop with flex parents whose item width\r\nresolves from their content's `max-content` — the consumer is responsible\r\nfor picking a cap that fits the host on their target viewports.",
+          "name": "MpPagination",
+          "members": [
+            {
+              "kind": "field",
+              "name": "_pageNumbers",
+              "type": {
+                "text": "number[]"
+              },
+              "privacy": "private",
+              "default": "[]"
+            },
+            {
+              "kind": "field",
+              "name": "_selectedPageNumber",
+              "type": {
+                "text": "number"
+              },
+              "privacy": "private",
+              "default": "1"
+            },
+            {
+              "kind": "field",
+              "name": "_numberOfBoxes",
+              "type": {
+                "text": "number"
+              },
+              "privacy": "private",
+              "default": "0"
+            },
+            {
+              "kind": "field",
+              "name": "_showArrows",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "true"
+            },
+            {
+              "kind": "field",
+              "name": "_size",
+              "type": {
+                "text": "PaginationSize"
+              },
+              "privacy": "private",
+              "default": "'medium'"
+            },
+            {
+              "kind": "field",
+              "name": "_ariaLabel",
+              "type": {
+                "text": "string"
+              },
+              "privacy": "private",
+              "default": "'Pagination'"
+            },
+            {
+              "kind": "field",
+              "name": "pageNumbers",
+              "type": {
+                "text": "number[]"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "selectedPageNumber",
+              "type": {
+                "text": "number"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "numberOfBoxes",
+              "type": {
+                "text": "number"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "showArrows",
+              "type": {
+                "text": "boolean"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "size",
+              "type": {
+                "text": "PaginationSize"
+              }
+            },
+            {
+              "kind": "method",
+              "name": "effectiveBudget",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "number"
+                }
+              },
+              "description": "Effective TOTAL budget (boxes including arrows). When `numberOfBoxes`\r\nis `0` the budget is uncapped and all pages render; otherwise the cap\r\nis honoured verbatim. (An earlier ResizeObserver-driven \"auto-fit\"\r\nwas removed — its measurement of self-width fed back into the rendered\r\ncontent and the WC + flex parent could oscillate or lock the budget\r\nto a single button.)"
+            },
+            {
+              "kind": "method",
+              "name": "computeLayout",
+              "privacy": "protected",
+              "return": {
+                "type": {
+                  "text": "PaginationLayout"
+                }
+              },
+              "description": "Build the full layout — arrows + page items. Pure — no DOM access."
+            },
+            {
+              "kind": "method",
+              "name": "isFirstPage",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "boolean"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "isLastPage",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "boolean"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "selectPage",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "page",
+                  "type": {
+                    "text": "number"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "onPrevious",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "onNext",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            }
+          ],
+          "events": [
+            {
+              "name": "mp-pagination-page-change",
+              "type": {
+                "text": "CustomEvent"
+              }
+            }
+          ],
+          "attributes": [
+            {
+              "name": "page-numbers"
+            },
+            {
+              "name": "selected-page-number"
+            },
+            {
+              "name": "number-of-boxes"
+            },
+            {
+              "name": "show-arrows"
+            },
+            {
+              "name": "size"
+            },
+            {
+              "name": "aria-label"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "mp-pagination",
+          "customElement": true
+        },
+        {
+          "kind": "function",
+          "name": "buildPaginationLayout",
+          "return": {
+            "type": {
+              "text": "PaginationLayout"
+            }
+          },
+          "parameters": [
+            {
+              "name": "pages",
+              "type": {
+                "text": "ReadonlyArray<number>"
+              }
+            },
+            {
+              "name": "current",
+              "type": {
+                "text": "number"
+              }
+            },
+            {
+              "name": "totalBudget",
+              "type": {
+                "text": "number"
+              }
+            },
+            {
+              "name": "showArrows",
+              "type": {
+                "text": "boolean"
+              }
+            }
+          ],
+          "description": "Pure helper: deterministic layout for `(pages, current, totalBudget, showArrows)`.\r\n\r\n`totalBudget` is the maximum visible boxes — pages AND arrows count toward it.\r\nThe current page is always slot #1; subsequent slots are allocated by\r\nstepping through a fixed priority sequence:\r\n\r\n  1. Arrows (next, then prev) when `showArrows`.\r\n  2. **Phase 1** — round-robin `[start, end, before, after]`:\r\n     - start: page #1\r\n     - end: last page\r\n     - before: left ellipsis\r\n     - after: right ellipsis\r\n  3. **Phase 2+** — round-robin `[before, after, start, end]`, repeated\r\n     until budget runs out. Each pass adds one page in that direction:\r\n     - before extends C-1, C-2, …\r\n     - after extends C+1, C+2, …\r\n     - start extends 2, 3, …\r\n     - end extends last-1, last-2, …\r\n\r\nWhen a direction has no more pages to add (overlap with another direction,\r\nor current at an extreme), that step is skipped and the cycle continues\r\nwith the next action.\r\n\r\nSee `docs/issue_329_PRD.md` § \"Growth algorithm\"."
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpPagination",
+          "declaration": {
+            "name": "MpPagination",
+            "module": "pagination/src/components/mp-pagination.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "buildPaginationLayout",
+          "declaration": {
+            "name": "buildPaginationLayout",
+            "module": "pagination/src/components/mp-pagination.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "mp-pagination",
+          "declaration": {
+            "name": "MpPagination",
+            "module": "pagination/src/components/mp-pagination.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "pagination/src/styles/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "paginationStyles",
+          "declaration": {
+            "name": "paginationStyles",
+            "module": "./pagination.styles"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "pagination/src/styles/pagination.styles.ts",
+      "declarations": [
+        {
+          "kind": "variable",
+          "name": "paginationStyles"
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "paginationStyles",
+          "declaration": {
+            "name": "paginationStyles",
+            "module": "pagination/src/styles/pagination.styles.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "default",
+          "declaration": {
+            "name": "paginationStyles",
+            "module": "pagination/src/styles/pagination.styles.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "query-builder/src/dnd/drag-controller.ts",
       "declarations": [
         {
@@ -21476,382 +21852,6 @@
           "declaration": {
             "name": "resolveBuiltinEditor",
             "module": "query-builder/src/value-editors/builtin-editors.ts"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "pagination/src/components/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "MpPagination",
-          "declaration": {
-            "name": "MpPagination",
-            "module": "./mp-pagination"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "buildPaginationLayout",
-          "declaration": {
-            "name": "buildPaginationLayout",
-            "module": "./mp-pagination"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "PageChangeEventDetail",
-          "declaration": {
-            "name": "PageChangeEventDetail",
-            "module": "./mp-pagination"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "PaginationSize",
-          "declaration": {
-            "name": "PaginationSize",
-            "module": "./mp-pagination"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "PaginationItem",
-          "declaration": {
-            "name": "PaginationItem",
-            "module": "./mp-pagination"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "PaginationLayout",
-          "declaration": {
-            "name": "PaginationLayout",
-            "module": "./mp-pagination"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "pagination/src/components/mp-pagination.ts",
-      "declarations": [
-        {
-          "kind": "class",
-          "description": "`<mp-pagination>` — page selector with first/last anchors, ellipsis gaps,\r\nand previous/next arrows. The visible budget is fully driven by the\r\n`numberOfBoxes` input (0 = uncapped). Layout-time auto-fit was tried\r\nearlier but produced a feedback loop with flex parents whose item width\r\nresolves from their content's `max-content` — the consumer is responsible\r\nfor picking a cap that fits the host on their target viewports.",
-          "name": "MpPagination",
-          "members": [
-            {
-              "kind": "field",
-              "name": "_pageNumbers",
-              "type": {
-                "text": "number[]"
-              },
-              "privacy": "private",
-              "default": "[]"
-            },
-            {
-              "kind": "field",
-              "name": "_selectedPageNumber",
-              "type": {
-                "text": "number"
-              },
-              "privacy": "private",
-              "default": "1"
-            },
-            {
-              "kind": "field",
-              "name": "_numberOfBoxes",
-              "type": {
-                "text": "number"
-              },
-              "privacy": "private",
-              "default": "0"
-            },
-            {
-              "kind": "field",
-              "name": "_showArrows",
-              "type": {
-                "text": "boolean"
-              },
-              "privacy": "private",
-              "default": "true"
-            },
-            {
-              "kind": "field",
-              "name": "_size",
-              "type": {
-                "text": "PaginationSize"
-              },
-              "privacy": "private",
-              "default": "'medium'"
-            },
-            {
-              "kind": "field",
-              "name": "_ariaLabel",
-              "type": {
-                "text": "string"
-              },
-              "privacy": "private",
-              "default": "'Pagination'"
-            },
-            {
-              "kind": "field",
-              "name": "pageNumbers",
-              "type": {
-                "text": "number[]"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "selectedPageNumber",
-              "type": {
-                "text": "number"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "numberOfBoxes",
-              "type": {
-                "text": "number"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "showArrows",
-              "type": {
-                "text": "boolean"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "size",
-              "type": {
-                "text": "PaginationSize"
-              }
-            },
-            {
-              "kind": "method",
-              "name": "effectiveBudget",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "number"
-                }
-              },
-              "description": "Effective TOTAL budget (boxes including arrows). When `numberOfBoxes`\r\nis `0` the budget is uncapped and all pages render; otherwise the cap\r\nis honoured verbatim. (An earlier ResizeObserver-driven \"auto-fit\"\r\nwas removed — its measurement of self-width fed back into the rendered\r\ncontent and the WC + flex parent could oscillate or lock the budget\r\nto a single button.)"
-            },
-            {
-              "kind": "method",
-              "name": "computeLayout",
-              "privacy": "protected",
-              "return": {
-                "type": {
-                  "text": "PaginationLayout"
-                }
-              },
-              "description": "Build the full layout — arrows + page items. Pure — no DOM access."
-            },
-            {
-              "kind": "method",
-              "name": "isFirstPage",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "boolean"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "isLastPage",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "boolean"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "selectPage",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              },
-              "parameters": [
-                {
-                  "name": "page",
-                  "type": {
-                    "text": "number"
-                  }
-                }
-              ]
-            },
-            {
-              "kind": "method",
-              "name": "onPrevious",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "name": "onNext",
-              "privacy": "private",
-              "return": {
-                "type": {
-                  "text": "void"
-                }
-              }
-            }
-          ],
-          "events": [
-            {
-              "name": "mp-pagination-page-change",
-              "type": {
-                "text": "CustomEvent"
-              }
-            }
-          ],
-          "attributes": [
-            {
-              "name": "page-numbers"
-            },
-            {
-              "name": "selected-page-number"
-            },
-            {
-              "name": "number-of-boxes"
-            },
-            {
-              "name": "show-arrows"
-            },
-            {
-              "name": "size"
-            },
-            {
-              "name": "aria-label"
-            }
-          ],
-          "superclass": {
-            "name": "LitElement",
-            "package": "lit"
-          },
-          "tagName": "mp-pagination",
-          "customElement": true
-        },
-        {
-          "kind": "function",
-          "name": "buildPaginationLayout",
-          "return": {
-            "type": {
-              "text": "PaginationLayout"
-            }
-          },
-          "parameters": [
-            {
-              "name": "pages",
-              "type": {
-                "text": "ReadonlyArray<number>"
-              }
-            },
-            {
-              "name": "current",
-              "type": {
-                "text": "number"
-              }
-            },
-            {
-              "name": "totalBudget",
-              "type": {
-                "text": "number"
-              }
-            },
-            {
-              "name": "showArrows",
-              "type": {
-                "text": "boolean"
-              }
-            }
-          ],
-          "description": "Pure helper: deterministic layout for `(pages, current, totalBudget, showArrows)`.\r\n\r\n`totalBudget` is the maximum visible boxes — pages AND arrows count toward it.\r\nThe current page is always slot #1; subsequent slots are allocated by\r\nstepping through a fixed priority sequence:\r\n\r\n  1. Arrows (next, then prev) when `showArrows`.\r\n  2. **Phase 1** — round-robin `[start, end, before, after]`:\r\n     - start: page #1\r\n     - end: last page\r\n     - before: left ellipsis\r\n     - after: right ellipsis\r\n  3. **Phase 2+** — round-robin `[before, after, start, end]`, repeated\r\n     until budget runs out. Each pass adds one page in that direction:\r\n     - before extends C-1, C-2, …\r\n     - after extends C+1, C+2, …\r\n     - start extends 2, 3, …\r\n     - end extends last-1, last-2, …\r\n\r\nWhen a direction has no more pages to add (overlap with another direction,\r\nor current at an extreme), that step is skipped and the cycle continues\r\nwith the next action.\r\n\r\nSee `docs/issue_329_PRD.md` § \"Growth algorithm\"."
-        }
-      ],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "MpPagination",
-          "declaration": {
-            "name": "MpPagination",
-            "module": "pagination/src/components/mp-pagination.ts"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "buildPaginationLayout",
-          "declaration": {
-            "name": "buildPaginationLayout",
-            "module": "pagination/src/components/mp-pagination.ts"
-          }
-        },
-        {
-          "kind": "custom-element-definition",
-          "name": "mp-pagination",
-          "declaration": {
-            "name": "MpPagination",
-            "module": "pagination/src/components/mp-pagination.ts"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "pagination/src/styles/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "paginationStyles",
-          "declaration": {
-            "name": "paginationStyles",
-            "module": "./pagination.styles"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "pagination/src/styles/pagination.styles.ts",
-      "declarations": [
-        {
-          "kind": "variable",
-          "name": "paginationStyles"
-        }
-      ],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "paginationStyles",
-          "declaration": {
-            "name": "paginationStyles",
-            "module": "pagination/src/styles/pagination.styles.ts"
-          }
-        },
-        {
-          "kind": "js",
-          "name": "default",
-          "declaration": {
-            "name": "paginationStyles",
-            "module": "pagination/src/styles/pagination.styles.ts"
           }
         }
       ]
@@ -33014,27 +33014,6 @@
     },
     {
       "kind": "javascript-module",
-      "path": "tab-control/src/types/index.ts",
-      "declarations": [],
-      "exports": [
-        {
-          "kind": "js",
-          "name": "TabsPosition",
-          "declaration": {
-            "name": "TabsPosition",
-            "module": "./tabs-position"
-          }
-        }
-      ]
-    },
-    {
-      "kind": "javascript-module",
-      "path": "tab-control/src/types/tabs-position.ts",
-      "declarations": [],
-      "exports": []
-    },
-    {
-      "kind": "javascript-module",
       "path": "tab-control/src/styles/index.ts",
       "declarations": [],
       "exports": [
@@ -33075,6 +33054,27 @@
           }
         }
       ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "tab-control/src/types/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "TabsPosition",
+          "declaration": {
+            "name": "TabsPosition",
+            "module": "./tabs-position"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "tab-control/src/types/tabs-position.ts",
+      "declarations": [],
+      "exports": []
     },
     {
       "kind": "javascript-module",

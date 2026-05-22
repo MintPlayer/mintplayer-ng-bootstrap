@@ -1,8 +1,7 @@
-import { Component, ChangeDetectionStrategy} from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderComponent } from '@mintplayer/ng-bootstrap/accordion';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
-
 @Component({
   selector: 'demo-accordion',
   templateUrl: './accordion.component.html',
@@ -30,12 +29,7 @@ export class AccordionComponent {
 
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
-    import {
-      BsAccordionComponent,
-      BsAccordionTabComponent,
-      BsAccordionTabHeaderComponent,
-    } from '@mintplayer/ng-bootstrap/accordion';
-
+    import { BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderComponent } from '@mintplayer/ng-bootstrap/accordion';
     @Component({
       selector: 'my-accordion-demo',
       templateUrl: './my-accordion-demo.component.html',

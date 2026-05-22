@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { BsTableStylesComponent } from '../table-styles/table-styles.component';
-
 @Component({
   selector: 'bs-table',
   templateUrl: './table.component.html',

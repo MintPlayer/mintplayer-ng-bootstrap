@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-
 test('dropdown opens with calendar inside and closes on outside click', async ({ page }) => {
   await page.goto('/overlays/dropdown');
   await page.waitForLoadState('networkidle');

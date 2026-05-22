@@ -1,5 +1,4 @@
 import { test, expect, Page } from '@playwright/test';
-
 /**
  * PRD `wc-aria-accessibility.md` §7.5 — Playwright smoke for dock pane move-mode.
  *

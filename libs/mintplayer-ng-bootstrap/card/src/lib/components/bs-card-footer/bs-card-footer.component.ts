@@ -1,14 +1,6 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  effect,
-  inject,
-  input,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, effect, inject, input } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { applyTextBgClass } from '@mintplayer/web-components/card';
-
 @Component({
   selector: 'bs-card-footer',
   template: '<ng-content></ng-content>',

@@ -1,6 +1,5 @@
-import { Component, inject, ChangeDetectionStrategy} from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
-
 @Component({
   selector: 'bs-floating-label',
   templateUrl: './floating-label.component.html',

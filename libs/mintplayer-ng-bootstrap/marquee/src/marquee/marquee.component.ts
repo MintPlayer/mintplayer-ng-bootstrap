@@ -1,5 +1,4 @@
 import { Component, ChangeDetectionStrategy, input } from '@angular/core';
-
 @Component({
   selector: 'bs-marquee',
   templateUrl: './marquee.component.html',

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
 import { computed } from 'vue';
-
 type Framework = 'angular' | 'react' | 'vue';
 
 const PROD_HOSTS: Record<Framework, string> = {

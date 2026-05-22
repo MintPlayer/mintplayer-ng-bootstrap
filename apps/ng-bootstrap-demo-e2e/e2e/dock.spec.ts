@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-
 // The plan originally called for "split a panel via pointer events". Honouring
 // that requires reverse-engineering the dock manager's drop-zone protocol —
 // each tweak to the Lit web component's drag handlers would break the spec.

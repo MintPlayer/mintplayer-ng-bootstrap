@@ -1,4 +1,4 @@
-import { Component, model, ChangeDetectionStrategy} from '@angular/core';
+import { Component, model, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsForDirective } from '@mintplayer/ng-bootstrap/for';
@@ -6,7 +6,6 @@ import { BsGridComponent, BsGridRowDirective, BsGridColDirective } from '@mintpl
 import { BsSelectComponent, BsSelectOption } from '@mintplayer/ng-bootstrap/select';
 import { BsTabControlComponent, BsTabPageComponent, BsTabPageHeaderDirective, BsTabsPosition } from '@mintplayer/ng-bootstrap/tab-control';
 import { dedent } from 'ts-dedent';
-
 @Component({
   selector: 'demo-tab-control',
   templateUrl: './tab-control.component.html',
@@ -33,12 +32,7 @@ export class TabControlComponent {
 
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
-    import {
-      BsTabControlComponent,
-      BsTabPageComponent,
-      BsTabPageHeaderDirective,
-    } from '@mintplayer/ng-bootstrap/tab-control';
-
+    import { BsTabControlComponent, BsTabPageComponent, BsTabPageHeaderDirective } from '@mintplayer/ng-bootstrap/tab-control';
     @Component({
       selector: 'my-tab-control-demo',
       templateUrl: './my-tab-control-demo.component.html',

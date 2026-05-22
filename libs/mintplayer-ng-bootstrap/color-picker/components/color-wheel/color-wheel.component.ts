@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, input, model, output, signal, viewChild } from '@angular/core';
 import { HS } from '../../interfaces/hs';
 import { hs2polar, polar2hs } from '../../color-math';
-
 @Component({
   selector: 'bs-color-wheel',
   templateUrl: './color-wheel.component.html',

@@ -1,8 +1,7 @@
-import { Component, ChangeDetectionStrategy} from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsSignaturePadComponent, Signature } from '@mintplayer/ng-bootstrap/signature-pad';
 import { dedent } from 'ts-dedent';
-
 @Component({
   selector: 'demo-signature-pad',
   templateUrl: './signature-pad.component.html',
@@ -32,11 +31,7 @@ export class SignaturePadComponent {
 
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
-    import {
-      BsSignaturePadComponent,
-      Signature,
-    } from '@mintplayer/ng-bootstrap/signature-pad';
-
+    import { BsSignaturePadComponent, Signature } from '@mintplayer/ng-bootstrap/signature-pad';
     @Component({
       selector: 'my-signature-pad-demo',
       templateUrl: './my-signature-pad-demo.component.html',

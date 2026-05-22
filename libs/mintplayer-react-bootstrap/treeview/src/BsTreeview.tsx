@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { createComponent } from '@lit/react';
 import { MpTreeview } from '@mintplayer/web-components/treeview';
-
 /**
  * React wrapper for `<mp-treeview>`. Side-effect-registers the WC via
  * the import above. Typed props/events extend off MpTreeview;

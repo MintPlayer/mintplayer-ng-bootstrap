@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { BsScheduler } from '@mintplayer/vue-bootstrap/scheduler';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
-
 const SOURCE = `<script setup lang="ts">
 import { BsScheduler } from '@mintplayer/vue-bootstrap/scheduler';
 <\/script>

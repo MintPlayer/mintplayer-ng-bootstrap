@@ -1,8 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-
 import { BsAlertComponent } from './alert.component';
-
 describe('AlertComponent', () => {
   let component: BsAlertComponent;
   let fixture: ComponentFixture<BsAlertComponent>;

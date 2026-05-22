@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { createComponent } from '@lit/react';
 import { MpDatepickerElement } from '@mintplayer/web-components/datepicker';
-
 /**
  * React wrapper for `<mp-datepicker>`. Side-effect-registers the WC via
  * the import above. Typed props/events extend off MpDatepickerElement;

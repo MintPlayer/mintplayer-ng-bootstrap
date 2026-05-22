@@ -1,7 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { QrCodeComponent } from './qr-code.component';
-
 @Component({
   selector: 'qr-code-harness',
   imports: [QrCodeComponent],

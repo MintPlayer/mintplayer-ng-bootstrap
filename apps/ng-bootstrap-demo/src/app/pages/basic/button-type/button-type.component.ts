@@ -1,10 +1,9 @@
-import { Component, ChangeDetectionStrategy} from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { EnumItem, EnumService } from '@mintplayer/ng-bootstrap/enum';
 import { dedent } from 'ts-dedent';
-
 @Component({
   selector: 'demo-button-type',
   templateUrl: './button-type.component.html',
@@ -28,7 +27,6 @@ export class ButtonTypeComponent {
     import { Component } from '@angular/core';
     import { Color } from '@mintplayer/ng-bootstrap';
     import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
-
     @Component({
       selector: 'my-button-type-demo',
       templateUrl: './my-button-type-demo.component.html',

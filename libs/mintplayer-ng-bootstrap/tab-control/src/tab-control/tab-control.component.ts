@@ -5,7 +5,6 @@ import '@mintplayer/web-components/tab-control';
 import type { TabActivateEventDetail } from '@mintplayer/web-components/tab-control';
 import { BsTabPageComponent } from '../tab-page/tab-page.component';
 import { BsTabsPosition } from '../tabs-position';
-
 @Component({
   selector: 'bs-tab-control',
   templateUrl: './tab-control.component.html',

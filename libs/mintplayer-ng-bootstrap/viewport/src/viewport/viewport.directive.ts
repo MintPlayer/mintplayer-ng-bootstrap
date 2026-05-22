@@ -1,6 +1,5 @@
 import { AfterViewInit, Directive, ElementRef, inject, OnDestroy, output, PLATFORM_ID } from '@angular/core';
 import { isPlatformServer } from '@angular/common';
-
 @Directive({
   selector: '[bsInViewport]',
 })

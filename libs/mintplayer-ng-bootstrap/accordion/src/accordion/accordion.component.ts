@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, contentChildren, forwardRef, inject, input, signal, computed } from '@angular/core';
 import { BsReducedMotionDirective } from '@mintplayer/ng-bootstrap/reduced-motion';
 import { BsAccordionTabComponent } from '../accordion-tab/accordion-tab.component';
-
 @Component({
   selector: 'bs-accordion',
   templateUrl: './accordion.component.html',

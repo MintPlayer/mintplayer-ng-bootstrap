@@ -1,5 +1,4 @@
 import { SchedulerEvent, ViewType } from '@mintplayer/web-components/scheduler-core';
-
 /**
  * Time range carried by selection-change and event-create. `start` is the
  * inclusive lower edge, `end` is the exclusive upper edge of the last

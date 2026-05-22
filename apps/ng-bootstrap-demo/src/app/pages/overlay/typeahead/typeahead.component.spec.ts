@@ -3,8 +3,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsTypeaheadComponent } from '@mintplayer/ng-bootstrap/typeahead';
 import { MockComponent } from 'ng-mocks';
 import { TypeaheadComponent } from './typeahead.component';
-
-
 describe('TypeaheadComponent', () => {
   let component: TypeaheadComponent;
   let fixture: ComponentFixture<TypeaheadComponent>;

@@ -7,7 +7,6 @@ import { MockComponent, MockDirective } from 'ng-mocks';
 import { AppComponent } from './app.component';
 import { BOOTSTRAP_VERSION } from './providers/bootstrap-version.provider';
 import { BsNavbarComponent, BsNavbarBrandComponent, BsNavbarNavComponent, BsNavbarDropdownComponent, BsNavbarItemComponent, BsNavbarContentDirective, BsExpandButtonDirective } from '@mintplayer/ng-bootstrap/navbar';
-
 describe('AppComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({

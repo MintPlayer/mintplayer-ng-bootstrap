@@ -2,7 +2,6 @@ import { Directive, forwardRef, inject } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import type { CheckboxChangeEventDetail } from '@mintplayer/web-components/checkbox';
 import { BsCheckboxComponent } from '../component/checkbox.component';
-
 /**
  * Single-mode (standalone) value accessor for `<bs-checkbox>`. Emits a
  * `boolean` reflecting the checked state. For multi-mode use, bind

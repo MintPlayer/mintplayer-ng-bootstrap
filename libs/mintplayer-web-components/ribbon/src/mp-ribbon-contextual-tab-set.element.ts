@@ -1,6 +1,5 @@
 import { css, html, LitElement, type TemplateResult } from 'lit';
 import { property } from 'lit/decorators.js';
-
 /**
  * mp-ribbon-contextual-tab-set — Wraps one or more `<mp-ribbon-tab>` children
  * with a shared header label + accent colour. Toggling the `hidden` attribute

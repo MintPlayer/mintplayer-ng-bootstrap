@@ -3,7 +3,6 @@ import { renderExpression } from './render-expression';
 import type { Condition, Expression, Group } from '@mintplayer/web-components/query-builder';
 import type { EntitySchema } from '@mintplayer/web-components/query-builder';
 import { MaxDepthExceededError } from '@mintplayer/web-components/query-builder';
-
 const SCHEMA: EntitySchema[] = [
   {
     name: 'orders',

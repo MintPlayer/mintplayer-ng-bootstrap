@@ -3,7 +3,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { FormControl, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { BsOtpInputComponent } from './otp-input.component';
-
 describe('BsOtpInputComponent', () => {
   describe('basic rendering', () => {
     let fixture: ComponentFixture<BsOtpInputComponent>;

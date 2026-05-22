@@ -3,7 +3,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsDropdownDirective } from '../dropdown/dropdown.directive';
 import { BsDropdownMenuDirective } from './dropdown-menu.directive';
 import { OverlayModule } from '@angular/cdk/overlay';
-
 @Directive({
   selector: '[bsDropdownToggle]',
 })

@@ -1,5 +1,4 @@
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-
 const META_SOURCE = `import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 
 export function Example() {

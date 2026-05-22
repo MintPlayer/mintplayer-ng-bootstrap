@@ -10,7 +10,6 @@ import { MockComponent, MockDirective, MockProvider } from 'ng-mocks';
 import { BsModalComponent } from '../modal/modal.component';
 import { BsModalDirective } from '../../directives/modal/modal.directive';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
-
 @Component({
   selector: 'bs-modal-test',
   template: `

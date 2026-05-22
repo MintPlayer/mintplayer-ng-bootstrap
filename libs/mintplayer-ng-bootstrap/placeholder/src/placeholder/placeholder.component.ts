@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, effect, inject, input, model } from '@angular/core';
 import { BsLiveAnnouncerService } from '@mintplayer/ng-bootstrap/a11y';
-
 @Component({
   selector: 'bs-placeholder',
   templateUrl: './placeholder.component.html',

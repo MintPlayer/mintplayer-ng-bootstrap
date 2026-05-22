@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { createComponent } from '@lit/react';
 import { MpCardBodyElement } from '@mintplayer/web-components/card';
-
 /**
  * React wrapper for `<mp-card-body>`. Side-effect-registers the WC via
  * the import above. Typed props/events extend off MpCardBodyElement;

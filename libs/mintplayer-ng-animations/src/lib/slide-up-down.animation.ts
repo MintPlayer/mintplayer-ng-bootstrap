@@ -1,5 +1,4 @@
 import { trigger, style, transition, animate, state } from '@angular/animations';
-
 export const SlideUpDownAnimation =
   trigger('slideUpDown', [
     // trigger value binding

@@ -1,6 +1,5 @@
-import { Component, ElementRef, input, viewChild, ChangeDetectionStrategy} from '@angular/core';
+import { Component, ElementRef, input, viewChild, ChangeDetectionStrategy } from '@angular/core';
 import { BsRangeValueAccessor } from '../value-accessor/range-value-accessor';
-
 @Component({
   selector: 'bs-range',
   templateUrl: './range.component.html',

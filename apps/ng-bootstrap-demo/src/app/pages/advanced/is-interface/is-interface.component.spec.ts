@@ -1,7 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { IsInterfaceComponent } from './is-interface.component';
-
 describe('IsInterfaceComponent', () => {
   let component: IsInterfaceComponent;
   let fixture: ComponentFixture<IsInterfaceComponent>;

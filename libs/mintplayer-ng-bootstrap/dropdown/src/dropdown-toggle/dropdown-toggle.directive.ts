@@ -1,6 +1,5 @@
 import { Directive, ElementRef } from '@angular/core';
 import { BsDropdownDirective } from '../dropdown/dropdown.directive';
-
 @Directive({
   selector: '[bsDropdownToggle]',
   host: {

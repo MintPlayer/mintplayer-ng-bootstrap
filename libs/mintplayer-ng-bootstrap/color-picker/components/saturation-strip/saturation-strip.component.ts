@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, model } from '@angular/core';
 import { HS } from '../../interfaces/hs';
 import { BsSliderComponent, BsThumbDirective, BsTrackDirective } from '../slider/slider.component';
-
 /**
  * Saturation picker — a horizontal grey-to-pure-colour strip backed by
  * `bs-slider`. Two-way `[(hs)]` keeps the hue untouched; only `hs.saturation`

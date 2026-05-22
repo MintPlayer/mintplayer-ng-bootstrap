@@ -1,6 +1,5 @@
 import { Directive, inject, TemplateRef } from '@angular/core';
 import { BsOffcanvasHostComponent } from '../../components/offcanvas-host/offcanvas-host.component';
-
 @Directive({
   selector: '[bsOffcanvasContent]',
 })

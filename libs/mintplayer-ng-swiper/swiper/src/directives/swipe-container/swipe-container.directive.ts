@@ -5,7 +5,6 @@ import { BsObserveSizeDirective, Size } from '@mintplayer/ng-swiper/observe-size
 import { LastTouch } from '../../interfaces/last-touch';
 import { StartTouch } from '../../interfaces/start-touch';
 import { BS_SWIPE_SLIDE } from '../../tokens/bs-swipe-slide';
-
 @Directive({
   selector: '[bsSwipeContainer]',
   exportAs: 'bsSwipeContainer',

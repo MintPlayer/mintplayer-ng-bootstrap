@@ -1,12 +1,6 @@
 import { SchedulerEvent, TimeSlot } from '@mintplayer/web-components/scheduler-core';
-import {
-  NormalizedPointerEvent,
-  normalizeMouseEvent,
-  normalizeTouchEvent,
-  getPointerDistance,
-} from './pointer-event';
+import { NormalizedPointerEvent, normalizeMouseEvent, normalizeTouchEvent, getPointerDistance } from './pointer-event';
 import { PointerTarget } from '../drag/drag-types';
-
 /**
  * Callbacks for input handler events.
  */

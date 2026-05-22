@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
-
 const META_SOURCE = `<script setup lang="ts">
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
 <\/script>

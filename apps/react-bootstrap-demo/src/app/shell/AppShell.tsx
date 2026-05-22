@@ -1,7 +1,6 @@
 import { type ReactNode } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { FrameworkLinks } from './FrameworkLinks';
-
 const SECTIONS = [
   { title: 'Basic', routes: [
     { path: '/basic/card', label: 'Card' },

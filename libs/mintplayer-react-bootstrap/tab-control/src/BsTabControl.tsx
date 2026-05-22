@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { createComponent } from '@lit/react';
 import { MpTabControl } from '@mintplayer/web-components/tab-control';
-
 /**
  * React wrapper for `<mp-tab-control>`. Side-effect-registers the WC via
  * the import above. Typed props/events extend off MpTabControl;

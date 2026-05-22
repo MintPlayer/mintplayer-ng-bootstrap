@@ -1,9 +1,5 @@
 import { ChangeDetectionStrategy, Component, input, signal } from '@angular/core';
-import {
-  BsModalHostComponent, BsModalDirective, BsModalHeaderDirective,
-  BsModalBodyDirective, BsModalFooterDirective, BsModalCloseDirective,
-} from '@mintplayer/ng-bootstrap/modal';
-
+import { BsModalHostComponent, BsModalDirective, BsModalHeaderDirective, BsModalBodyDirective, BsModalFooterDirective, BsModalCloseDirective } from '@mintplayer/ng-bootstrap/modal';
 @Component({
   selector: 'demo-confirm-dialog',
   templateUrl: './confirm-dialog.component.html',

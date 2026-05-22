@@ -1,5 +1,4 @@
 import { Component, ChangeDetectionStrategy, input } from '@angular/core';
-
 @Component({
   selector: 'bs-button-group',
   templateUrl: './button-group.component.html',

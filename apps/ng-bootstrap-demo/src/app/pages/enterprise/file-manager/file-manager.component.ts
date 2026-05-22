@@ -2,27 +2,13 @@
 
 import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import {
-  BsFileManagerComponent,
-  DEFAULT_FILE_MANAGER_MESSAGES,
-  type ConflictResolver,
-  type DialogResolver,
-  type FileManagerMessages,
-  type FileSystemNode,
-  type FileManagerSelectionMode,
-  type FileManagerViewMode,
-  type OperationEventDetail,
-  type UploadEntry,
-  type UploadRequestEventDetail,
-  type FileManagerIconResolver,
-} from '@mintplayer/ng-bootstrap/file-manager';
+import { BsFileManagerComponent, DEFAULT_FILE_MANAGER_MESSAGES, type ConflictResolver, type DialogResolver, type FileManagerMessages, type FileSystemNode, type FileManagerSelectionMode, type FileManagerViewMode, type OperationEventDetail, type UploadEntry, type UploadRequestEventDetail, type FileManagerIconResolver } from '@mintplayer/ng-bootstrap/file-manager';
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsSelectComponent, BsSelectOption } from '@mintplayer/ng-bootstrap/select';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
 import { makeMockFileSystem } from './mock-data';
-
 type DemoLocale = 'en' | 'nl' | 'fr';
 
 @Component({

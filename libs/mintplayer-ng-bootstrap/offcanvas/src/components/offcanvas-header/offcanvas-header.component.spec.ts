@@ -1,7 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { OffcanvasHeaderComponent } from './offcanvas-header.component';
-
 describe('OffcanvasHeaderComponent', () => {
   let component: OffcanvasHeaderComponent;
   let fixture: ComponentFixture<OffcanvasHeaderComponent>;

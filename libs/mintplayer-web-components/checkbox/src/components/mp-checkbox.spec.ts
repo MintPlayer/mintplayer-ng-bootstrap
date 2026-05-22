@@ -1,7 +1,6 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import './mp-checkbox';
 import type { MpCheckbox, CheckboxChangeEventDetail } from './mp-checkbox';
-
 async function settled(el: HTMLElement): Promise<void> {
   if ('updateComplete' in el) {
     await (el as unknown as { updateComplete: Promise<void> }).updateComplete;

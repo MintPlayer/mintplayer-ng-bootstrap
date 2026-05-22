@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { createComponent } from '@lit/react';
 import { MpRibbonGalleryItem } from '@mintplayer/web-components/ribbon';
-
 /**
  * React wrapper for `<mp-ribbon-gallery-item>`. Side-effect-registers the WC via
  * the import above. Typed props/events extend off MpRibbonGalleryItem;

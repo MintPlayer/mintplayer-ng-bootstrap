@@ -1,6 +1,5 @@
 import { inject, Injectable } from '@angular/core';
 import { ExtraOptions, ROUTER_CONFIGURATION } from '@angular/router';
-
 @Injectable({
   providedIn: 'root'
 })

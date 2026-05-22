@@ -8,7 +8,6 @@ import { BsNavbarNavComponent } from '../navbar-nav/navbar-nav.component';
 import { BsNavbarItemComponent } from '../navbar-item/navbar-item.component';
 import { BsNavbarDropdownComponent } from '../navbar-dropdown/navbar-dropdown.component';
 import { NavLinkDirective } from './nav-link.directive';
-
 describe('NavLinkDirective', () => {
   let component: BsNavLinkTestComponent;
   let fixture: ComponentFixture<BsNavLinkTestComponent>;

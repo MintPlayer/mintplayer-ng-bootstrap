@@ -8,7 +8,6 @@ import { BsProgressComponent, BsProgressBarComponent } from '@mintplayer/ng-boot
 import { Color } from '@mintplayer/ng-bootstrap';
 import { FileUpload } from '../file-upload';
 import { BsFormatBytesPipe } from '../pipes/format-bytes/format-bytes.pipe';
-
 @Component({
   selector: 'bs-file-upload',
   templateUrl: './file-upload.component.html',

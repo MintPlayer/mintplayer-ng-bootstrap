@@ -1,5 +1,4 @@
 import { test, expect, type Page } from '@playwright/test';
-
 // Regression contract for issue #183 + PR #338:
 // 1. bs-modal[scrollable]=true splits scrolling so modal-body — not the outer
 //    .modal — is the actual scroll container.

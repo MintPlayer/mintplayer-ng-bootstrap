@@ -1,5 +1,4 @@
 import { Directive, inject, TemplateRef } from '@angular/core';
-
 /**
  * Marks an `<ng-template>` as the per-row body for `<bs-datatable>`. The
  * template's `$implicit` is the row object. The template should render one

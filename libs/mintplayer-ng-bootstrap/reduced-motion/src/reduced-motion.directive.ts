@@ -1,6 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
 import { DestroyRef, Directive, inject, PLATFORM_ID, signal, type Signal } from '@angular/core';
-
 /**
  * Tracks `(prefers-reduced-motion: reduce)` live and exposes the result as a
  * signal. Designed to be composed onto a host component via `hostDirectives`

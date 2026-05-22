@@ -4,9 +4,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MockProvider } from 'ng-mocks';
 import { SubjectService } from '../../../services/subject/subject.service';
 import { TagService } from '../../../services/tag/tag.service';
-
 import { Select2Component } from './select2.component';
-
 describe('Select2Component', () => {
   let component: Select2Component;
   let fixture: ComponentFixture<Select2Component>;

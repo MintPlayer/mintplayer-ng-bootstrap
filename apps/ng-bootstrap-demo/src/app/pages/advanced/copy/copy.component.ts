@@ -1,10 +1,9 @@
-import { Component, ChangeDetectionStrategy} from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsCopyDirective } from '@mintplayer/ng-bootstrap/copy';
 import { BsOffcanvasHostComponent, BsOffcanvasContentDirective } from '@mintplayer/ng-bootstrap/offcanvas';
 import { HighlightModule } from 'ngx-highlightjs';
 import { dedent } from 'ts-dedent';
-
 @Component({
   selector: 'demo-copy',
   templateUrl: './copy.component.html',
@@ -40,7 +39,6 @@ export class CopyComponent {
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
     import { BsCopyDirective } from '@mintplayer/ng-bootstrap/copy';
-
     @Component({
       selector: 'my-copy-demo',
       templateUrl: './my-copy-demo.component.html',

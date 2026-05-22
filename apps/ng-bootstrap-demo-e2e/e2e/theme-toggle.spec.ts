@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-
 test.describe('theme toggle', () => {
   test.beforeEach(async ({ page }) => {
     // Force light mode irrespective of the host's prefers-color-scheme. This

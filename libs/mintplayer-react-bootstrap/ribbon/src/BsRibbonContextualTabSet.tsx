@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { createComponent } from '@lit/react';
 import { MpRibbonContextualTabSet } from '@mintplayer/web-components/ribbon';
-
 /**
  * React wrapper for `<mp-ribbon-contextual-tab-set>`. Side-effect-registers the WC via
  * the import above. Typed props/events extend off MpRibbonContextualTabSet;

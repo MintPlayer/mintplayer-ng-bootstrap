@@ -6,7 +6,6 @@ import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDi
 import { BsMultiRangeComponent } from '@mintplayer/ng-bootstrap/multi-range';
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
-
 describe('MultiRangeComponent', () => {
   let component: MultiRangeComponent;
   let fixture: ComponentFixture<MultiRangeComponent>;

@@ -1,20 +1,6 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  CUSTOM_ELEMENTS_SCHEMA,
-  effect,
-  ElementRef,
-  input,
-  model,
-  viewChild,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, effect, ElementRef, input, model, viewChild } from '@angular/core';
 import { Size } from '@mintplayer/ng-bootstrap';
-import {
-  type MpPagination,
-  type PageChangeEventDetail,
-  type PaginationSize,
-} from '@mintplayer/web-components/pagination';
-
+import { type MpPagination, type PageChangeEventDetail, type PaginationSize } from '@mintplayer/web-components/pagination';
 // Side-effect import: registers <mp-pagination>.
 import '@mintplayer/web-components/pagination';
 

@@ -1,43 +1,7 @@
-import {
-  AfterContentInit,
-  ChangeDetectionStrategy,
-  Component,
-  ContentChildren,
-  CUSTOM_ELEMENTS_SCHEMA,
-  effect,
-  ElementRef,
-  forwardRef,
-  inject,
-  input,
-  model,
-  output,
-  QueryList,
-  signal,
-  ViewContainerRef,
-  viewChild,
-} from '@angular/core';
-import {
-  ControlValueAccessor,
-  NG_VALUE_ACCESSOR,
-} from '@angular/forms';
-import { MpQueryBuilderElement } from '@mintplayer/web-components/query-builder';
-import type { Expression } from '@mintplayer/web-components/query-builder';
-import type { EntitySchema } from '@mintplayer/web-components/query-builder';
-import type {
-  EditorContext,
-  EditorFactory,
-  EditorRegistry,
-} from '@mintplayer/web-components/query-builder';
-import type { QueryBuilderMessages } from '@mintplayer/web-components/query-builder';
-import type { SavedQuery } from '@mintplayer/web-components/query-builder';
-import type { SortDescriptor } from '@mintplayer/web-components/query-builder';
-import { emptyGroup } from '@mintplayer/web-components/query-builder';
-import {
-  validateOperatorOverrides,
-  type OperatorOverrides,
-} from '@mintplayer/web-components/query-builder';
+import { AfterContentInit, ChangeDetectionStrategy, Component, ContentChildren, CUSTOM_ELEMENTS_SCHEMA, effect, ElementRef, forwardRef, inject, input, model, output, QueryList, signal, ViewContainerRef, viewChild } from '@angular/core';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { MpQueryBuilderElement, type Expression, type EntitySchema, type EditorContext, type EditorFactory, type EditorRegistry, type QueryBuilderMessages, type SavedQuery, type SortDescriptor, emptyGroup, validateOperatorOverrides, type OperatorOverrides } from '@mintplayer/web-components/query-builder';
 import { BsQueryBuilderEditorDirective } from './query-builder-editor.directive';
-
 void MpQueryBuilderElement;
 
 function browserTimezone(): string {

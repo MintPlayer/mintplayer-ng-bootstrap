@@ -4,7 +4,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MockComponent, MockInstance } from 'ng-mocks';
 import { BsFileUploadComponent } from '../component/file-upload.component';
 import { BsFileUploadTemplateDirective } from './file-upload-template.directive';
-
 @Component({
   selector: 'file-upload-template-test-component',
   imports: [MockComponent(BsFileUploadComponent), BsFileUploadTemplateDirective],

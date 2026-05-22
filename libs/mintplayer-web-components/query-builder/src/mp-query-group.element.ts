@@ -7,7 +7,6 @@ import { disabledContext, messagesContext } from './context';
 import { MpQueryConditionElement } from './mp-query-condition.element';
 import { MpQuerySubqueryElement } from './mp-query-subquery.element';
 import { styles } from './mp-query-group.element.template';
-
 void MpQueryConditionElement;
 void MpQuerySubqueryElement;
 

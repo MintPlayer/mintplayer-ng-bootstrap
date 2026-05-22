@@ -1,16 +1,7 @@
 import { DragOperationType, PreviewEvent, SchedulerEvent, TimeSlot } from '@mintplayer/web-components/scheduler-core';
-import {
-  DragMachineState,
-  DragMachineEvent,
-  DragConfig,
-  DEFAULT_DRAG_CONFIG,
-  DragCompletionResult,
-  Position,
-  PointerTarget,
-} from './drag-types';
+import { DragMachineState, DragMachineEvent, DragConfig, DEFAULT_DRAG_CONFIG, DragCompletionResult, Position, PointerTarget } from './drag-types';
 import { DragPreviewCalculator } from './drag-preview';
 import { getPointerDistance } from '../input/pointer-event';
-
 /**
  * Explicit state machine for drag operations.
  *

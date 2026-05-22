@@ -1,6 +1,5 @@
 import { BsDockManager } from '@mintplayer/react-bootstrap/dock';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-
 const SOURCE = `import { BsDockManager } from '@mintplayer/react-bootstrap/dock';
 
 export function MyDock() {

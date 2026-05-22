@@ -1,15 +1,10 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { ref, createRef, type Ref } from 'lit/directives/ref.js';
-
 // Side-effect import: registers `<mp-toggle-button>`. The shared
 // `toggleButtonStyles` `CSSResult` is reused so all three WCs share one
 // parsed `CSSStyleSheet` via `adoptedStyleSheets`.
-import {
-  toggleButtonStyles,
-  type ToggleButtonColor,
-} from '@mintplayer/web-components/toggle-button';
-
+import { toggleButtonStyles, type ToggleButtonColor } from '@mintplayer/web-components/toggle-button';
 export type MpCheckboxType = 'checkbox' | 'switch' | 'toggle_button';
 
 export interface CheckboxChangeEventDetail {

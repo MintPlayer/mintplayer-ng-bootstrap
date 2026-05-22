@@ -1,7 +1,6 @@
 import { lazy, Suspense, type ComponentType } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { AppShell } from './shell/AppShell';
-
 /**
  * React.lazy() expects a module with a `default` export. Our pages use
  * named exports for grep-friendliness, so we adapt with this tiny helper

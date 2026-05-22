@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { BsQueryBuilder } from '@mintplayer/vue-bootstrap/query-builder';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
-
 const SOURCE = "<BsQueryBuilder />";
 </script>
 

@@ -1,7 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { BsToastHeaderComponent } from './toast-header.component';
-
 describe('BsToastHeaderComponent', () => {
   let component: BsToastHeaderComponent;
   let fixture: ComponentFixture<BsToastHeaderComponent>;

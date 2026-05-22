@@ -1,7 +1,6 @@
 import { SchedulerEventPart, EventPosition } from '../models/event';
 import { SchedulerOptions, DEFAULT_OPTIONS } from '../models/options';
 import { dateService } from './date.service';
-
 /**
  * Service for calculating event positions within the grid
  */

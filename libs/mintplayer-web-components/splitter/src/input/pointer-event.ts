@@ -1,5 +1,4 @@
 import type { Point } from '../types';
-
 export interface NormalizedPointerEvent {
   clientX: number;
   clientY: number;

@@ -1,5 +1,4 @@
 import { Routes } from '@angular/router';
-
 export const ROUTES: Routes = [
   { path: '', pathMatch: 'full', loadComponent: () => import('./home/home.component').then(m => m.HomeComponent) },
   { path: 'overlays', loadChildren: () => import('./overlay/overlay.routes').then(m => m.ROUTES) },

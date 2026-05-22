@@ -1,7 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { BsSliderComponent } from './slider.component';
-
 describe('BsSliderComponent', () => {
   let component: BsSliderComponent;
   let fixture: ComponentFixture<BsSliderComponent>;

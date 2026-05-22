@@ -1,6 +1,5 @@
 import { BsQueryBuilder } from '@mintplayer/react-bootstrap/query-builder';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-
 const SOURCE = "<BsQueryBuilder />";
 
 export function QueryBuilderPage() {

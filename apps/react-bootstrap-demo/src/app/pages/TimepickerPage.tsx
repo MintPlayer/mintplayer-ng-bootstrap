@@ -1,6 +1,5 @@
 import { BsTimepicker } from '@mintplayer/react-bootstrap/timepicker';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-
 const SOURCE = "<BsTimepicker />";
 
 export function TimepickerPage() {

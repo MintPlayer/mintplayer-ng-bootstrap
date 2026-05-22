@@ -1,7 +1,6 @@
 import { Directive, effect, inject, input, TemplateRef } from '@angular/core';
 import { HasId } from '@mintplayer/ng-bootstrap/has-id';
 import { BsSearchboxComponent } from '../searchbox/searchbox.component';
-
 @Directive({
   selector: '[bsSuggestionTemplate]',
 })

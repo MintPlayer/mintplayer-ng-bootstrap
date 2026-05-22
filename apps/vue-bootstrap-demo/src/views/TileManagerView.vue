@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { BsTileManager } from '@mintplayer/vue-bootstrap/tile-manager';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
-
 const SOURCE = "<BsTileManager style=\"height: 400px\" />";
 </script>
 

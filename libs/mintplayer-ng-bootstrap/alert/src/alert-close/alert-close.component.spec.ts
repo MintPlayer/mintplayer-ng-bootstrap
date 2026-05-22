@@ -2,9 +2,7 @@ import { Component, forwardRef, input, model, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BsAlertComponent } from '../alert/alert.component';
-
 import { BsAlertCloseComponent } from './alert-close.component';
-
 @Component({
   selector: 'bs-alert',
   template: '<ng-content></ng-content>',

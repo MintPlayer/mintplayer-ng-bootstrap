@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { BsCard, BsCardBody, BsCardTitle, BsCardText } from '@mintplayer/vue-bootstrap/card';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
-
 const SOURCE = `<script setup lang="ts">
 import { BsCard, BsCardBody, BsCardTitle, BsCardText } from '@mintplayer/vue-bootstrap/card';
 <\/script>

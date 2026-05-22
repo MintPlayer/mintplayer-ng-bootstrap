@@ -4,10 +4,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { BsTileManagerComponent } from './tile-manager.component';
 import { BsTileComponent } from './tile.component';
 import { BsTileHeaderComponent } from './tile-header.component';
-import { TilePosition } from '@mintplayer/web-components/tile-manager';
-import { TileLayoutSnapshot, TileGestureBlocked } from '@mintplayer/web-components/tile-manager';
-import { MintTileManagerElement } from '@mintplayer/web-components/tile-manager';
-
+import { TilePosition, TileLayoutSnapshot, TileGestureBlocked, MintTileManagerElement } from '@mintplayer/web-components/tile-manager';
 interface DemoTile {
   id: string;
   position: TilePosition;

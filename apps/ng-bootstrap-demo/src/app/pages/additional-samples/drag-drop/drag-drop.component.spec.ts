@@ -3,7 +3,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MockModule, MockComponent, MockDirective } from 'ng-mocks';
 import { DragDropComponent } from './drag-drop.component';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
-
 describe('DragDropComponent', () => {
   let component: DragDropComponent;
   let fixture: ComponentFixture<DragDropComponent>;

@@ -1,5 +1,4 @@
-import { Component, ChangeDetectionStrategy} from '@angular/core';
-
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 @Component({
   selector: 'bs-list-group-item',
   templateUrl: './list-group-item.component.html',

@@ -8,17 +8,8 @@ import '@mintplayer/web-components/tab-control';
 // as a nested <mp-splitter>, so this lib must load before any layout renders.
 import '@mintplayer/web-components/splitter';
 import { LiveAnnouncerController } from '@mintplayer/web-components/a11y';
-import {
-  DockFloatingPaneBounds,
-  DockFloatingStackLayout,
-  DockLayout,
-  DockLayoutNode,
-  DockLayoutSnapshot,
-  DockSplitNode,
-  DockStackNode,
-} from './types/dock-layout';
+import { DockFloatingPaneBounds, DockFloatingStackLayout, DockLayout, DockLayoutNode, DockLayoutSnapshot, DockSplitNode, DockStackNode } from './types/dock-layout';
 import { template, styles } from './mint-dock-manager.element.template';
-
 type DockPath =
   | { type: 'docked'; segments: number[] }
   | { type: 'floating'; index: number; segments: number[] };

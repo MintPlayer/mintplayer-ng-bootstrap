@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { ResourceService, resourceService } from './resource.service';
 import { Resource, ResourceGroup } from '../models/resource';
 import { SchedulerEvent } from '../models/event';
-
 describe('ResourceService', () => {
   let service: ResourceService;
 

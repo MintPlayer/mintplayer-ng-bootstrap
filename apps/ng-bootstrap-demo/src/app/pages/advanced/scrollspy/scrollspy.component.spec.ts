@@ -2,7 +2,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MockComponent, MockDirective } from 'ng-mocks';
 import { ScrollspyComponent } from './scrollspy.component';
 import { BsScrollspyComponent, BsScrollspyDirective } from '@mintplayer/ng-bootstrap/scrollspy';
-
 describe('ScrollspyComponent', () => {
   let component: ScrollspyComponent;
   let fixture: ComponentFixture<ScrollspyComponent>;

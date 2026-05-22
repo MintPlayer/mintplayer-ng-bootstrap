@@ -1,9 +1,8 @@
 import { DatePipe } from '@angular/common';
-import { Component, model, ChangeDetectionStrategy} from '@angular/core';
+import { Component, model, ChangeDetectionStrategy } from '@angular/core';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsDatepickerComponent } from '@mintplayer/ng-bootstrap/datepicker';
 import { dedent } from 'ts-dedent';
-
 @Component({
   selector: 'demo-datepicker',
   templateUrl: './datepicker.component.html',
@@ -25,7 +24,6 @@ export class DatepickerComponent {
   protected readonly snippetBasicTs = dedent`
     import { Component, signal } from '@angular/core';
     import { BsDatepickerComponent } from '@mintplayer/ng-bootstrap/datepicker';
-
     @Component({
       selector: 'my-datepicker-demo',
       templateUrl: './my-datepicker-demo.component.html',

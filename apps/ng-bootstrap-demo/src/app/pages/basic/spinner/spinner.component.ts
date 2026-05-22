@@ -1,10 +1,9 @@
-import { Component, ChangeDetectionStrategy} from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { EnumItem, EnumService } from '@mintplayer/ng-bootstrap/enum';
 import { BsSpinnerComponent } from '@mintplayer/ng-bootstrap/spinner';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
-
 @Component({
   selector: 'demo-spinner',
   templateUrl: './spinner.component.html',
@@ -27,7 +26,6 @@ export class SpinnerComponent {
     import { Component } from '@angular/core';
     import { Color } from '@mintplayer/ng-bootstrap';
     import { BsSpinnerComponent } from '@mintplayer/ng-bootstrap/spinner';
-
     @Component({
       selector: 'my-spinner-demo',
       templateUrl: './my-spinner-demo.component.html',

@@ -2,7 +2,6 @@
 // Side-effect-registers <mp-datetime-picker> via the upstream WC entry.
 import '@mintplayer/web-components/datetime-picker';
 import { ref, watch, onMounted } from 'vue';
-
 defineOptions({ inheritAttrs: false });
 
 // Default v-model is the WC's `value` property + `change` event.

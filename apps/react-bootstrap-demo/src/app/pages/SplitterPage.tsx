@@ -1,6 +1,5 @@
 import { BsSplitter } from '@mintplayer/react-bootstrap/splitter';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-
 const SOURCE = "<BsSplitter>\n  <div slot=\"panel-0\">Left panel</div>\n  <div slot=\"panel-1\">Right panel</div>\n</BsSplitter>";
 
 export function SplitterPage() {

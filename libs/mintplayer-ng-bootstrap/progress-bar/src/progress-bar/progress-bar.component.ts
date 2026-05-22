@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
-
 @Component({
   selector: 'bs-progress-bar',
   templateUrl: './progress-bar.component.html',

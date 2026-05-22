@@ -1,6 +1,5 @@
 import type { Operator } from './expression';
 import type { FieldDef } from './field-def';
-
 export interface EditorContext {
   field: FieldDef;
   operator: Operator;

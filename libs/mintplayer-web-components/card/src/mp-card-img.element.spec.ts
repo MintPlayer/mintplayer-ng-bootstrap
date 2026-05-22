@@ -1,7 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import './mp-card-img.element';
 import { MpCardImgElement } from './mp-card-img.element';
-
 function makeImg(attrs: Record<string, string> = {}, slotted = ''): MpCardImgElement {
   const el = document.createElement('mp-card-img') as MpCardImgElement;
   for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);

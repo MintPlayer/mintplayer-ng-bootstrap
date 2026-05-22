@@ -1,6 +1,5 @@
 import { styles } from './mp-card.element.template';
 import { applyCardColorClasses } from './card-classes';
-
 /**
  * Root of the Bootstrap card family.
  *

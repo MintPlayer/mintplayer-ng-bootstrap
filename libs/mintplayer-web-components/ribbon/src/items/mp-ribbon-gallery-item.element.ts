@@ -1,7 +1,6 @@
 import { css, html, LitElement, type TemplateResult } from 'lit';
 import { property } from 'lit/decorators.js';
 import { RIBBON_ICON_SLOT_STYLES } from './mp-ribbon-item-base';
-
 /**
  * mp-ribbon-gallery-item — One cell inside a `mp-ribbon-gallery`. Renders an
  * icon or label as a clickable tile and emits `gallery-select` on activation.

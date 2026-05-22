@@ -1,9 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MockComponent } from 'ng-mocks';
-
 import { UserAgentComponent } from './user-agent.component';
 import { BsAlertComponent, BsAlertCloseComponent } from '@mintplayer/ng-bootstrap/alert';
-
 describe('UserAgentComponent', () => {
   let component: UserAgentComponent;
   let fixture: ComponentFixture<UserAgentComponent>;

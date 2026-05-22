@@ -1,7 +1,6 @@
 import * as QRCode from './core/qr-code';
 import * as CanvasRenderer from './renderer/canvas';
 import { QrCodeOptions } from './renderer/utils';
-
 export * from './core';
 
 // export function renderCanvas(renderFunc: (d: QRCode.RawQrCodeData, c: HTMLCanvasElement, o: Partial<QrCodeOptions>) => Promise<unknown>, canvas: HTMLCanvasElement, text: string, opts: Partial<QrCodeOptions>) {

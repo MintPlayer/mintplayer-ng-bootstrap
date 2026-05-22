@@ -1,5 +1,4 @@
 import { defineConfig, devices } from '@playwright/test';
-
 // Live-API Playwright matrix. The single `npx nx serve ng-bootstrap-demo`
 // command transitively starts the .NET API via the dependsOn chain in
 // apps/ng-bootstrap-demo/project.json (api:serve runs in parallel as a

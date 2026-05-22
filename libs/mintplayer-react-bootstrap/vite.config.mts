@@ -6,7 +6,6 @@ import { readdirSync, existsSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
-
 /**
  * Discover every sub-entrypoint by scanning for `<entry>/src/index.ts`.
  * Mirrors the @mintplayer/web-components multi-entry shape.

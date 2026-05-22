@@ -1,11 +1,10 @@
-import { Component, ChangeDetectionStrategy} from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
 import { BsCarouselComponent, BsCarouselImageDirective } from '@mintplayer/ng-bootstrap/carousel';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsGridComponent, BsGridRowDirective, BsGridColDirective } from '@mintplayer/ng-bootstrap/grid';
 import { dedent } from 'ts-dedent';
-
 @Component({
   selector: 'demo-swiper',
   templateUrl: './swiper.component.html',
@@ -35,11 +34,7 @@ export class SwiperComponent {
 
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
-    import {
-      BsCarouselComponent,
-      BsCarouselImageDirective,
-    } from '@mintplayer/ng-bootstrap/carousel';
-
+    import { BsCarouselComponent, BsCarouselImageDirective } from '@mintplayer/ng-bootstrap/carousel';
     @Component({
       selector: 'my-swiper-demo',
       templateUrl: './my-swiper-demo.component.html',

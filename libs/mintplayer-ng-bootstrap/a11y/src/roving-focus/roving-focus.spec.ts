@@ -2,7 +2,6 @@ import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsRovingFocusDirective, BsRovingFocusMode, BsRovingFocusOrientation } from './roving-focus.directive';
 import { BsRovingFocusItemDirective } from './roving-focus-item.directive';
-
 @Component({
   selector: 'bs-rovingfocus-harness',
   imports: [BsRovingFocusDirective, BsRovingFocusItemDirective],

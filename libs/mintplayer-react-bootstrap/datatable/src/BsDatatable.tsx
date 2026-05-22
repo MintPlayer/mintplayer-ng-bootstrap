@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { createComponent } from '@lit/react';
 import { MpDatatable } from '@mintplayer/web-components/datatable';
-
 /**
  * React wrapper for `<mp-datatable>`. Side-effect-registers the WC via
  * the import above. Typed props/events extend off MpDatatable;

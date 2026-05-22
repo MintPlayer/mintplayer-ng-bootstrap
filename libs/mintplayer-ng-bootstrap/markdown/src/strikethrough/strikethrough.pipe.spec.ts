@@ -2,7 +2,6 @@ import { BsStrikethroughPipe } from './strikethrough.pipe';
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-
 @Component({
   selector: 'bs-strikethrough-test',
   imports: [BsStrikethroughPipe],

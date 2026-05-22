@@ -1,24 +1,9 @@
-import {
-  AfterViewInit,
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  CUSTOM_ELEMENTS_SCHEMA,
-  DestroyRef,
-  effect,
-  ElementRef,
-  inject,
-  input,
-  model,
-  PLATFORM_ID,
-  viewChild,
-} from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, computed, CUSTOM_ELEMENTS_SCHEMA, DestroyRef, effect, ElementRef, inject, input, model, PLATFORM_ID, viewChild } from '@angular/core';
 import { isPlatformServer } from '@angular/common';
 import { BsCheckboxValueAccessor } from '../value-accessor/checkbox-value-accessor';
 import { BsCheckboxGroupDirective } from '../directives/checkbox-group/checkbox-group.directive';
 import { BsCheckboxType } from '../types/checkbox-type';
 import type { CheckboxChangeEventDetail, MpCheckbox } from '@mintplayer/web-components/checkbox';
-
 // Side-effect import: registers <mp-checkbox>.
 import '@mintplayer/web-components/checkbox';
 

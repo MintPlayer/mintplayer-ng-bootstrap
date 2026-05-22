@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { EntitySchema } from './field-def';
 import { validateOperatorOverrides } from './operator-overrides';
-
 const SCHEMA: EntitySchema[] = [
   {
     name: 'orders',

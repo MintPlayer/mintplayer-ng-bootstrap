@@ -1,6 +1,5 @@
 import { BsTileManager } from '@mintplayer/react-bootstrap/tile-manager';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-
 const SOURCE = "<BsTileManager style={{ height: '400px' }} />";
 
 export function TileManagerPage() {

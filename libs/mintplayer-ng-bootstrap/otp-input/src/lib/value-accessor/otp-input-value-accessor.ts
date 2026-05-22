@@ -1,7 +1,6 @@
 import { DestroyRef, Directive, Injector, OnInit, forwardRef, inject } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, NgControl } from '@angular/forms';
 import { BsOtpInputComponent } from '../components/otp-input.component';
-
 @Directive({
   selector: 'bs-otp-input',
   providers: [{

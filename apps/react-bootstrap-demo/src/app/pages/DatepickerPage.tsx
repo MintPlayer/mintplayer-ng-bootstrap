@@ -1,10 +1,8 @@
 import { useState, useRef, useEffect, type ChangeEvent } from 'react';
 import { BsDatepicker } from '@mintplayer/react-bootstrap/datepicker';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-
 const SOURCE = `import { useState } from 'react';
 import { BsDatepicker } from '@mintplayer/react-bootstrap/datepicker';
-
 export function ControlledDatepicker() {
   const [date, setDate] = useState<Date | null>(null);
 

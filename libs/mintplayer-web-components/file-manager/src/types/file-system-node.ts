@@ -1,5 +1,4 @@
 import type { OperationFlags } from '../components/mp-file-manager';
-
 export type FileSystemNodeType = 'folder' | 'file';
 
 export interface FileSystemNode {

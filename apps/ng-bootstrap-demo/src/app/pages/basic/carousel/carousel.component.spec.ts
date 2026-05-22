@@ -8,7 +8,6 @@ import { BsFormComponent, BsFormGroupDirective, BsFormControlDirective } from '@
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsCarouselComponent, BsCarouselImageDirective, BsCarouselImgDirective } from '@mintplayer/ng-bootstrap/carousel';
 import { BsSelectComponent } from '@mintplayer/ng-bootstrap/select';
-
 describe('CarouselComponent', () => {
   let component: CarouselComponent;
   let fixture: ComponentFixture<CarouselComponent>;

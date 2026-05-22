@@ -5,7 +5,6 @@ import { BsOverlayFocusDirective } from '@mintplayer/ng-bootstrap/a11y';
 import { Position } from '@mintplayer/ng-bootstrap';
 import { OFFCANVAS_CONTENT } from '../../providers/offcanvas-content.provider';
 import { BsOffcanvasContextService } from '../../services/offcanvas-context.service';
-
 @Component({
   selector: 'bs-offcanvas-holder',
   templateUrl: './offcanvas.component.html',

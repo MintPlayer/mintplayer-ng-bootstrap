@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { resolveBuiltinEditor } from './builtin-editors';
 import type { FieldDef } from '@mintplayer/web-components/query-builder';
 import type { EditorContext } from '@mintplayer/web-components/query-builder';
-
 function makeCtx(field: FieldDef, operator: EditorContext['operator'], value: unknown): {
   ctx: EditorContext;
   changes: unknown[];

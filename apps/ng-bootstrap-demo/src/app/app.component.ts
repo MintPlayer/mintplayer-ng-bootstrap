@@ -12,7 +12,6 @@ import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
 import { NavbarRouterLinkActiveDirective } from './directives/navbar-routerlink-active/navbar-router-link-active.directive';
 import { BOOTSTRAP_VERSION } from './providers/bootstrap-version.provider';
 import { ThemeToggleComponent } from './components/theme-toggle/theme-toggle.component';
-
 @Component({
   selector: 'demo-bootstrap-root',
   templateUrl: './app.component.html',

@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { createComponent } from '@lit/react';
 import { MpRibbonGroupButton } from '@mintplayer/web-components/ribbon';
-
 /**
  * React wrapper for `<mp-ribbon-group-button>`. Side-effect-registers the WC via
  * the import above. Typed props/events extend off MpRibbonGroupButton;

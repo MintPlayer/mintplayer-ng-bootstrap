@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { createComponent } from '@lit/react';
 import { MpRadio } from '@mintplayer/web-components/radio';
-
 /**
  * React wrapper for `<mp-radio>`. Side-effect-registers the WC via
  * the import above. Typed props/events extend off MpRadio;

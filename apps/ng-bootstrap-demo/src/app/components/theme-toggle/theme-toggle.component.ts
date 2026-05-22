@@ -1,15 +1,8 @@
 /// <reference types="../../../types" />
 
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
 import { BsThemeService, type BsThemeMode } from '@mintplayer/ng-bootstrap/theming';
-
 const CYCLE: ReadonlyArray<BsThemeMode> = ['auto', 'light', 'dark'];
 
 const LABELS: Record<'auto' | 'light' | 'dark', string> = {

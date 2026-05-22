@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { LitElement, html, type TemplateResult } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { LiveAnnouncerController } from './live-announcer';
-
 @customElement('test-host-default')
 class TestHostDefault extends LitElement {
   announcer = new LiveAnnouncerController(this);

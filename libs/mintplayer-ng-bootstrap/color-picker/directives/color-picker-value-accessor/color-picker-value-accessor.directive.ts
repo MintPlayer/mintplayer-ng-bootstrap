@@ -3,7 +3,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { BsColorPickerComponent } from '../../components/color-picker/color-picker.component';
 import { hex2hsv, hsv2rgb, rgb2hex } from '../../color-math';
-
 @Directive({
   selector: 'bs-color-picker',
   providers: [{

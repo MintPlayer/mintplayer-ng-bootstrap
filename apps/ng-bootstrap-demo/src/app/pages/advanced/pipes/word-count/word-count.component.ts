@@ -1,10 +1,9 @@
-import { Component, ChangeDetectionStrategy} from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsWordCountPipe } from '@mintplayer/ng-bootstrap/word-count';
 import { dedent } from 'ts-dedent';
-
 @Component({
   selector: 'demo-word-count',
   templateUrl: './word-count.component.html',
@@ -24,7 +23,6 @@ export class WordCountComponent {
     import { Component } from '@angular/core';
     import { FormsModule } from '@angular/forms';
     import { BsWordCountPipe } from '@mintplayer/ng-bootstrap/word-count';
-
     @Component({
       selector: 'my-word-count-demo',
       templateUrl: './my-word-count-demo.component.html',

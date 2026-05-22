@@ -1,6 +1,5 @@
 import { ConfigurableFocusTrap, ConfigurableFocusTrapFactory, InteractivityChecker } from '@angular/cdk/a11y';
 import { DestroyRef, Directive, effect, ElementRef, inject, input } from '@angular/core';
-
 export type BsOverlayInitialFocus = HTMLElement | 'first' | 'self' | 'none';
 
 /**

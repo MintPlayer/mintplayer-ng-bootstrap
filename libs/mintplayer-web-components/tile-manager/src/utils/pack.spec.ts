@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { pack } from './pack';
 import { TilePosition } from '../types/tile-position';
-
 interface InputTile {
   id: string;
   position: TilePosition;

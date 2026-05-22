@@ -1,27 +1,7 @@
-import {
-  AfterViewInit,
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  contentChildren,
-  CUSTOM_ELEMENTS_SCHEMA,
-  effect,
-  ElementRef,
-  inject,
-  input,
-  output,
-  viewChild,
-  signal,
-} from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, computed, contentChildren, CUSTOM_ELEMENTS_SCHEMA, effect, ElementRef, inject, input, output, viewChild, signal } from '@angular/core';
 import { DOCUMENT, NgTemplateOutlet } from '@angular/common';
-import {
-  DockLayout,
-  DockLayoutNode,
-  DockLayoutSnapshot,
-} from '@mintplayer/web-components/dock';
+import { DockLayout, DockLayoutNode, DockLayoutSnapshot, MintDockManagerElement } from '@mintplayer/web-components/dock';
 import { BsDockPaneComponent } from './dock-pane.component';
-import { MintDockManagerElement } from '@mintplayer/web-components/dock';
-
 @Component({
   selector: 'bs-dock-manager',
   templateUrl: './dock-manager.component.html',

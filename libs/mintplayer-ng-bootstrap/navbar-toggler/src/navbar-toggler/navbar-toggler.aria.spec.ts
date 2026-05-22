@@ -1,7 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsNavbarTogglerComponent } from './navbar-toggler.component';
-
 @Component({
   selector: 'bs-navbar-toggler-harness',
   imports: [BsNavbarTogglerComponent],

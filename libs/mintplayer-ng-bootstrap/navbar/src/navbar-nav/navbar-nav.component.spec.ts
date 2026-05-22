@@ -4,9 +4,7 @@ import { RouterLink } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { BsNavbarComponent } from '../navbar/navbar.component';
-
 import { BsNavbarNavComponent } from './navbar-nav.component';
-
 describe('BsNavbarNavComponent', () => {
   let component: BsNavbarNavTestComponent;
   let fixture: ComponentFixture<BsNavbarNavTestComponent>;

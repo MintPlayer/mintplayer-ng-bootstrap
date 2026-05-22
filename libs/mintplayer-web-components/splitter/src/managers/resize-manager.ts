@@ -1,6 +1,5 @@
 import type { Direction, Point, ResizeOperation } from '../types';
 import { ResizeState } from '../types';
-
 export interface ResizeManagerOptions {
   minPanelSize?: number;
 }

@@ -1,6 +1,5 @@
 import { BsFileManager } from '@mintplayer/react-bootstrap/file-manager';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-
 const SOURCE = "<BsFileManager style={{ height: '400px' }} />";
 
 export function FileManagerPage() {

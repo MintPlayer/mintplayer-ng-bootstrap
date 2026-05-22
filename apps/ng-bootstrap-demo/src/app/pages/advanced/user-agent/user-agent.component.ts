@@ -1,10 +1,9 @@
-import { Component, ChangeDetectionStrategy} from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsUserAgentDirective, BsUserAgent } from '@mintplayer/ng-bootstrap/user-agent';
 import { BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
 import { dedent } from 'ts-dedent';
-
 @Component({
   selector: 'demo-user-agent',
   templateUrl: './user-agent.component.html',
@@ -34,11 +33,7 @@ export class UserAgentComponent {
 
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
-    import {
-      BsUserAgentDirective,
-      BsUserAgent,
-    } from '@mintplayer/ng-bootstrap/user-agent';
-
+    import { BsUserAgentDirective, BsUserAgent } from '@mintplayer/ng-bootstrap/user-agent';
     @Component({
       selector: 'my-user-agent-demo',
       templateUrl: './my-user-agent-demo.component.html',

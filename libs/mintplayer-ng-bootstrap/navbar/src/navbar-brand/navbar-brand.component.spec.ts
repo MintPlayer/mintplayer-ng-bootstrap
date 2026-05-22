@@ -1,8 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
-
 import { BsNavbarBrandComponent } from './navbar-brand.component';
-
 describe('BsNavbarBrandComponent', () => {
   let component: BsNavbarBrandComponent;
   let fixture: ComponentFixture<BsNavbarBrandComponent>;

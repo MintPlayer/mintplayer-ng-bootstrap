@@ -2,7 +2,6 @@ import { Component, model } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsPlaceholderComponent } from '../placeholder/placeholder.component';
 import { BsPlaceholderFieldDirective } from './placeholder-field.directive';
-
 @Component({
   selector: '[bsPlaceholder]',
   template: `

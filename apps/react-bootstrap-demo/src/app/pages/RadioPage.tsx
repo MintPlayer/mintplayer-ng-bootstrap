@@ -1,6 +1,5 @@
 import { BsRadio } from '@mintplayer/react-bootstrap/radio';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-
 const SOURCE = "<BsRadio />";
 
 export function RadioPage() {

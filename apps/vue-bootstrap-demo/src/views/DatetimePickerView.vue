@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { BsDatetimePicker } from '@mintplayer/vue-bootstrap/datetime-picker';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
-
 const SOURCE = "<BsDatetimePicker />";
 </script>
 

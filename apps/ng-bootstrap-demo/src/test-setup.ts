@@ -1,11 +1,7 @@
 import { getTestBed, TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
-import {
-  BrowserDynamicTestingModule,
-  platformBrowserDynamicTesting,
-} from '@angular/platform-browser-dynamic/testing';
+import { BrowserDynamicTestingModule, platformBrowserDynamicTesting } from '@angular/platform-browser-dynamic/testing';
 import { vi } from 'vitest';
-
 // Mock ResizeObserver for components that need it
 global.ResizeObserver = class MockedResizeObserver {
   observe = vi.fn();

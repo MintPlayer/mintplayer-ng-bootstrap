@@ -20,7 +20,6 @@
 import { writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-
 const repoRoot = join(fileURLToPath(import.meta.url), '..', '..', '..');
 const reactLibRoot = join(repoRoot, 'libs', 'mintplayer-react-bootstrap');
 
@@ -136,7 +135,6 @@ function wrapperFile(w, entry) {
   return `import * as React from 'react';
 import { createComponent } from '@lit/react';
 import { ${w.className} } from '@mintplayer/web-components/${entry}';
-
 /**
  * React wrapper for \`<${w.tagName}>\`. Side-effect-registers the WC via
  * the import above. Typed props/events extend off ${w.className};

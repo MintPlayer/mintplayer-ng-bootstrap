@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { BsPagination } from '@mintplayer/vue-bootstrap/pagination';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
-
 const SOURCE = "<BsPagination />";
 </script>
 

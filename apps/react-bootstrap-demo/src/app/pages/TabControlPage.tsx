@@ -1,6 +1,5 @@
 import { BsTabControl, BsTabPage } from '@mintplayer/react-bootstrap/tab-control';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-
 const SOURCE = "<BsTabControl>\n  <BsTabPage>\n    <span slot=\"header\">Tab 1</span>\n    <p>Content of tab 1.</p>\n  </BsTabPage>\n  <BsTabPage>\n    <span slot=\"header\">Tab 2</span>\n    <p>Content of tab 2.</p>\n  </BsTabPage>\n</BsTabControl>";
 
 export function TabControlPage() {

@@ -1,5 +1,4 @@
 import { css, html, LitElement, type TemplateResult } from 'lit';
-
 export class MpRibbonMenuSeparator extends LitElement {
   static override styles = css`
     :host { display: block; }

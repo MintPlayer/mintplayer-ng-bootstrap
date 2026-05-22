@@ -2,7 +2,6 @@
 // Side-effect-registers <mp-toggle-button> via the upstream WC entry.
 import '@mintplayer/web-components/toggle-button';
 import { ref, watch, onMounted } from 'vue';
-
 defineOptions({ inheritAttrs: false });
 
 // Default v-model is the WC's `value` property + `change` event.

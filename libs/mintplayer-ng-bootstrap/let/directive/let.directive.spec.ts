@@ -1,7 +1,6 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsLetDirective } from './let.directive';
-
 @Component({
   selector: 'bs-let-test',
   imports: [BsLetDirective],

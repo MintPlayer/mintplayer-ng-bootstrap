@@ -1,9 +1,7 @@
 import { Component, computed, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsTabControlComponent } from '../tab-control/tab-control.component';
-
 import { BsTabPageComponent } from './tab-page.component';
-
 describe('BsTabPageComponent', () => {
   let component: BsTabPageComponent;
   let fixture: ComponentFixture<BsTabPageComponent>;

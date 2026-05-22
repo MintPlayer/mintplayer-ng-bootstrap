@@ -1,6 +1,5 @@
-import { Component, inject, ChangeDetectionStrategy} from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { BsAlertComponent } from '../alert/alert.component';
-
 @Component({
   selector: 'bs-alert-close',
   templateUrl: './alert-close.component.html',

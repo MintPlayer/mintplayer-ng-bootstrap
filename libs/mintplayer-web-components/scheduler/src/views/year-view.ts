@@ -1,10 +1,6 @@
-import {
-  dateService,
-  timelineService,
-} from '@mintplayer/web-components/scheduler-core';
+import { dateService, timelineService } from '@mintplayer/web-components/scheduler-core';
 import { BaseView } from './base-view';
 import { SchedulerState } from '../state/scheduler-state';
-
 /**
  * Year view renderer
  */

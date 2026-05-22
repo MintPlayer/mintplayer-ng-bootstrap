@@ -1,6 +1,5 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { paginationStyles } from '../styles';
-
 export type PaginationSize = 'small' | 'medium' | 'large';
 
 /** A rendered slot in the pagination list — either a page button or an ellipsis gap. */

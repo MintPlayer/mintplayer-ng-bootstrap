@@ -1,7 +1,6 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import './mp-toggle-button';
 import type { MpToggleButton, ToggleChangeEventDetail } from './mp-toggle-button';
-
 async function settled(el: HTMLElement): Promise<void> {
   if ('updateComplete' in el) {
     await (el as unknown as { updateComplete: Promise<void> }).updateComplete;

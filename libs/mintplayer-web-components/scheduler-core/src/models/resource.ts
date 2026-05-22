@@ -1,5 +1,4 @@
 import { SchedulerEvent } from './event';
-
 /**
  * Represents a resource (e.g., a room, employee, machine)
  */

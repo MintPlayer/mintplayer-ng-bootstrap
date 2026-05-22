@@ -1,6 +1,5 @@
 import { BsScheduler } from '@mintplayer/react-bootstrap/scheduler';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-
 const SOURCE = `import { BsScheduler } from '@mintplayer/react-bootstrap/scheduler';
 
 export function MyScheduler() {

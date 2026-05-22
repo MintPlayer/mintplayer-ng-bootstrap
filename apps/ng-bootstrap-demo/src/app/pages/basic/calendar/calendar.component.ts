@@ -1,8 +1,7 @@
-import { Component, ChangeDetectionStrategy, signal} from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
 import { BsCalendarComponent } from '@mintplayer/ng-bootstrap/calendar';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
-
 @Component({
   selector: 'demo-calendar',
   templateUrl: './calendar.component.html',
@@ -20,7 +19,6 @@ export class CalendarComponent {
   protected readonly snippetBasicTs = dedent`
     import { Component, signal } from '@angular/core';
     import { BsCalendarComponent } from '@mintplayer/ng-bootstrap/calendar';
-
     @Component({
       selector: 'my-calendar-demo',
       templateUrl: './my-calendar-demo.component.html',

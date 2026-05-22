@@ -4,11 +4,9 @@ import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsScrollspyDirective } from '@mintplayer/ng-bootstrap/scrollspy';
 import { MockComponent, MockDirective } from 'ng-mocks';
-
 import { CollapseComponent } from './collapse.component';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsAlertComponent, BsAlertCloseComponent } from '@mintplayer/ng-bootstrap/alert';
-
 describe('CollapseComponent', () => {
   let component: CollapseComponent;
   let fixture: ComponentFixture<CollapseComponent>;

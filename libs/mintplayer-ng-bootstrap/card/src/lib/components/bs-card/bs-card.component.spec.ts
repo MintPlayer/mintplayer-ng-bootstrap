@@ -3,7 +3,6 @@ import { TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsCardComponent } from './bs-card.component';
-
 function buildHost<T>(hostType: new () => T): { fixture: ReturnType<typeof TestBed.createComponent<T>>; bsCard: HTMLElement } {
   TestBed.configureTestingModule({ imports: [hostType] });
   const fixture = TestBed.createComponent<T>(hostType);

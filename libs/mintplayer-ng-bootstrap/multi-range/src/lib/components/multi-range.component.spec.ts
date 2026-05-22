@@ -3,7 +3,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { BsMultiRangeComponent } from './multi-range.component';
-
 describe('BsMultiRangeComponent', () => {
   describe('basic rendering', () => {
     let fixture: ComponentFixture<BsMultiRangeComponent>;

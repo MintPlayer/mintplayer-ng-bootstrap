@@ -3,7 +3,6 @@ import { TestBed } from '@angular/core/testing';
 import { Route, UrlSegment } from '@angular/router';
 import { bsNavigationLockGuard } from './navigation-lock.guard';
 import { BsNavigationLockService } from '../service/navigation-lock.service';
-
 function runGuard(): boolean | Promise<boolean> | unknown {
   return TestBed.runInInjectionContext(() =>
     bsNavigationLockGuard(

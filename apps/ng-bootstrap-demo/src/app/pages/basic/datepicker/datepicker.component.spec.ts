@@ -2,7 +2,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsDatepickerComponent } from '@mintplayer/ng-bootstrap/datepicker';
 import { MockComponent } from 'ng-mocks';
 import { DatepickerComponent } from './datepicker.component';
-
 describe('DatepickerComponent', () => {
   let component: DatepickerComponent;
   let fixture: ComponentFixture<DatepickerComponent>;

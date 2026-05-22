@@ -2,7 +2,6 @@ import { computed, Directive, effect, inject, input, ViewContainerRef } from '@a
 import { QRCodeErrorCorrectionLevel } from '@mintplayer/qr-code';
 import * as qrCodeService from '@mintplayer/qr-code';
 import { RgbaColor } from '../../types/rgba-color';
-
 @Directive({
   selector: 'canvas[qrCode]',
 })

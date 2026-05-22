@@ -2,7 +2,6 @@ import { DestroyRef, Directive, inject, input } from '@angular/core';
 import { Observable } from 'rxjs';
 import { BS_NAVIGATION_LOCK_CONFIRM, BsNavigationLockService } from '../service/navigation-lock.service';
 import { BsNavigationLockHandle } from '../service/navigation-lock-handle';
-
 /**
  * Marks the host as a navigation-blocker. Drop `[bsNavigationLock]` on a real
  * element (typically the form). Set `[canExit]` to a boolean, function, or

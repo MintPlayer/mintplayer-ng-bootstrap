@@ -6,7 +6,6 @@ import { BsDropdownDirective, BsDropdownToggleDirective, BsDropdownMenuDirective
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { Color } from '@mintplayer/ng-bootstrap';
-
 @Component({
   selector: 'bs-multiselect',
   templateUrl: './multiselect.component.html',

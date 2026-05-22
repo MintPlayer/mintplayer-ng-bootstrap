@@ -1,7 +1,6 @@
 import { Component, ViewChildren, QueryList } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { BsPriorityNavItemDirective } from './priority-nav-item.directive';
-
 @Component({
   selector: 'priority-nav-item-test',
   imports: [BsPriorityNavItemDirective],

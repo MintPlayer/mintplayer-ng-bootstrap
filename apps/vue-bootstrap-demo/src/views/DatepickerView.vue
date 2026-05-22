@@ -2,13 +2,11 @@
 import { ref } from 'vue';
 import { BsDatepicker } from '@mintplayer/vue-bootstrap/datepicker';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
-
 const date = ref<Date | null>(new Date());
 
 const SOURCE = `<script setup lang="ts">
 import { ref } from 'vue';
 import { BsDatepicker } from '@mintplayer/vue-bootstrap/datepicker';
-
 const date = ref<Date | null>(new Date());
 <\/script>
 

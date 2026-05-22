@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-
 // Injects a layout straight onto the <mint-dock-manager> element via its
 // `layout` property setter — Angular only writes that property once on mount,
 // so writes made afterwards stick. Returns the count of intersection handles

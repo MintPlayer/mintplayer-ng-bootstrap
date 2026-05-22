@@ -1,21 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { Condition, Expression, Group, SubQueryCondition } from './expression';
 import type { EntitySchema } from './field-def';
-import {
-  addChild,
-  addEmptyConditionTo,
-  addEmptyGroupTo,
-  addEmptySubqueryTo,
-  changeConditionField,
-  changeConditionOperator,
-  collectDescendantIds,
-  findNodeById,
-  moveNode,
-  removeNode,
-  setGroupLogic,
-  updateCondition,
-} from './tree-ops';
-
+import { addChild, addEmptyConditionTo, addEmptyGroupTo, addEmptySubqueryTo, changeConditionField, changeConditionOperator, collectDescendantIds, findNodeById, moveNode, removeNode, setGroupLogic, updateCondition } from './tree-ops';
 const SCHEMA: EntitySchema[] = [
   {
     name: 'orders',

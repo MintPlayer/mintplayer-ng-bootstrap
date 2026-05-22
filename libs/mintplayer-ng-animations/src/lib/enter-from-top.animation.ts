@@ -1,5 +1,4 @@
 import { trigger, style, transition, animate } from '@angular/animations';
-
 export const EnterFromTopAnimation =
   trigger('enterFromTop', [
     transition(

@@ -6,31 +6,12 @@ import type { EntitySchema, FieldDef } from './model/field-def';
 import type { EditorRegistry } from './model/editor';
 import { DEFAULT_MESSAGES, type QueryBuilderMessages } from './model/messages';
 import type { SavedQuery } from './model/saved-query';
-import {
-  addEmptyConditionTo,
-  addEmptyGroupTo,
-  addEmptySubqueryTo,
-  changeConditionField,
-  changeConditionOperator,
-  collectDescendantIds,
-  findNodeById,
-  findParentGroup,
-  moveNode,
-  removeNode,
-  setGroupLogic,
-  updateCondition,
-} from './model/tree-ops';
+import { addEmptyConditionTo, addEmptyGroupTo, addEmptySubqueryTo, changeConditionField, changeConditionOperator, collectDescendantIds, findNodeById, findParentGroup, moveNode, removeNode, setGroupLogic, updateCondition } from './model/tree-ops';
 import { DragController, type DropTarget } from './dnd/drag-controller';
 import { renderExpression } from './preview/render-expression';
-import {
-  disabledContext,
-  editorRegistryContext,
-  maxDepthContext,
-  messagesContext,
-} from './context';
+import { disabledContext, editorRegistryContext, maxDepthContext, messagesContext } from './context';
 import { MpQueryGroupElement } from './mp-query-group.element';
 import { styles } from './mp-query-builder.element.template';
-
 void MpQueryGroupElement;
 
 const DEFAULT_MAX_DEPTH = 32;

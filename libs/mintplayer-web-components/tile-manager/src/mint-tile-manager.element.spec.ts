@@ -3,7 +3,6 @@ import './mint-tile-manager.element';
 import type { MintTile, MintTileManagerElement } from './mint-tile-manager.element';
 import type { TileLayoutSnapshot, TileGestureBlocked } from './types/tile-layout-snapshot';
 import type { TilePosition } from './types/tile-position';
-
 const HOST_WIDTH = 800;
 const HOST_HEIGHT = 600;
 

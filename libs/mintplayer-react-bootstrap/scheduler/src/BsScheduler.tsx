@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { createComponent } from '@lit/react';
 import { MpScheduler } from '@mintplayer/web-components/scheduler';
-
 /**
  * React wrapper for `<mp-scheduler>`. Side-effect-registers the WC via
  * the import above. Typed props/events extend off MpScheduler;

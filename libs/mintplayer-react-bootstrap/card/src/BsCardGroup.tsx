@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { createComponent } from '@lit/react';
 import { MpCardGroupElement } from '@mintplayer/web-components/card';
-
 /**
  * React wrapper for `<mp-card-group>`. Side-effect-registers the WC via
  * the import above. Typed props/events extend off MpCardGroupElement;

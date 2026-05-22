@@ -6,7 +6,6 @@ import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import { POPOVER_CONTENT } from '../providers/popover-content.provider';
 import { POPOVER_ID } from '../providers/popover-id.provider';
 import { BsPopoverContextService } from '../services/popover-context.service';
-
 @Component({
   selector: 'bs-popover',
   templateUrl: './popover.component.html',

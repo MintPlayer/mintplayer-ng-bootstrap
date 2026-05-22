@@ -1,11 +1,5 @@
-import {
-  DragOperationType,
-  PreviewEvent,
-  SchedulerEvent,
-  TimeSlot,
-} from '@mintplayer/web-components/scheduler-core';
+import { DragOperationType, PreviewEvent, SchedulerEvent, TimeSlot } from '@mintplayer/web-components/scheduler-core';
 import { DragConfig, DEFAULT_DRAG_CONFIG } from './drag-types';
-
 /**
  * Calculates preview positions for drag operations.
  * Handles create, move, and resize operations.

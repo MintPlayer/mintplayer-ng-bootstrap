@@ -1,10 +1,9 @@
-import { Component, ChangeDetectionStrategy} from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsSlugifyPipe } from '@mintplayer/ng-bootstrap/slugify';
 import { dedent } from 'ts-dedent';
-
 @Component({
   selector: 'demo-slugify',
   templateUrl: './slugify.component.html',
@@ -24,7 +23,6 @@ export class SlugifyComponent {
     import { Component } from '@angular/core';
     import { FormsModule } from '@angular/forms';
     import { BsSlugifyPipe } from '@mintplayer/ng-bootstrap/slugify';
-
     @Component({
       selector: 'my-slugify-demo',
       templateUrl: './my-slugify-demo.component.html',

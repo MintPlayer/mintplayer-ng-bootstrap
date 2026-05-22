@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { BsOtpInput } from '@mintplayer/vue-bootstrap/otp-input';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
-
 const SOURCE = "<BsOtpInput />";
 </script>
 

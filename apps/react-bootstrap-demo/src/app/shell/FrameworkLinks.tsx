@@ -9,7 +9,6 @@
  * In production they point at the subdomain Traefik routes (per phase 8).
  */
 import { useLocation } from 'react-router-dom';
-
 type Framework = 'angular' | 'react' | 'vue';
 
 const PROD_HOSTS: Record<Framework, string> = {

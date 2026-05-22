@@ -1,13 +1,7 @@
 import type { Condition, Expression, Group, Operator, SubQueryCondition } from './expression';
 import type { EntitySchema, FieldDef } from './field-def';
-import {
-  emptyCondition,
-  emptyGroup,
-  emptySubquery,
-  newId,
-} from './default-tree';
+import { emptyCondition, emptyGroup, emptySubquery, newId } from './default-tree';
 import { defaultValueFor, operatorsForType, valueShapeFor } from './operators';
-
 /** Walk the tree applying `fn` to each Expression. Returns a new tree (immutable). */
 export function mapTree(
   tree: Expression,

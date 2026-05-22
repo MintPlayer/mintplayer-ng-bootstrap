@@ -2,7 +2,6 @@ import { Overlay } from '@angular/cdk/overlay';
 import { Component, Injectable, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsTooltipDirective } from './tooltip.directive';
-
 enum Position { top, left, bottom, right }
 
 @Component({

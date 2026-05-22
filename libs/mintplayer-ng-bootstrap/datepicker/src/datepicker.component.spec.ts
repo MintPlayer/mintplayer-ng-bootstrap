@@ -2,9 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Component } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { describe, it, expect, beforeEach } from 'vitest';
-
 import { BsDatepickerComponent } from './datepicker.component';
-
 describe('BsDatepickerComponent — smoke', () => {
   let component: BsDatepickerComponent;
   let fixture: ComponentFixture<BsDatepickerComponent>;

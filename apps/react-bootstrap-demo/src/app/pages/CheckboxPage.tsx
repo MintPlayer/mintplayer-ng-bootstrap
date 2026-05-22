@@ -1,6 +1,5 @@
 import { BsCheckbox } from '@mintplayer/react-bootstrap/checkbox';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-
 const SOURCE = "<BsCheckbox />";
 
 export function CheckboxPage() {

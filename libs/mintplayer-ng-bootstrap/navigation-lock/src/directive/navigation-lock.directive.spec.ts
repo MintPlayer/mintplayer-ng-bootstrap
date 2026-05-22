@@ -5,7 +5,6 @@ import { provideRouter, withRouterConfig } from '@angular/router';
 import { firstValueFrom, isObservable, Observable, of, Subject } from 'rxjs';
 import { BsNavigationLockDirective } from './navigation-lock.directive';
 import { BS_NAVIGATION_LOCK_CONFIRM, BsNavigationLockService } from '../service/navigation-lock.service';
-
 type CanExitInput =
   | boolean
   | ((reason?: string) => boolean | Promise<boolean> | Observable<boolean>)

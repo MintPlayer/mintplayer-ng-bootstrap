@@ -1,5 +1,4 @@
 import { expect, Page, test } from '@playwright/test';
-
 /**
  * Milestone 9 — visual-regression screenshots per version. Captures the
  * Insert tab at each office-2007 / -2010 / -2013 / -2016 theme so that any

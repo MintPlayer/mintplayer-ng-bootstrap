@@ -1,7 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-
 import { EnumService } from './enum.service';
-
 describe('EnumService', () => {
   let service: EnumService;
 

@@ -1,10 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MockDirective, MockProvider } from 'ng-mocks';
-
 import { BsResizableComponent } from './resizable.component';
 import { BsResizeGlyphDirective } from '../resize-glyph/resize-glyph.directive';
 import { RESIZABLE } from '../providers/resizable.provider';
-
 describe('BsResizableComponent', () => {
   let component: BsResizableComponent;
   let fixture: ComponentFixture<BsResizableComponent>;

@@ -2,7 +2,6 @@
 // Side-effect-registers <mp-timepicker> via the upstream WC entry.
 import '@mintplayer/web-components/timepicker';
 import { ref, watch, onMounted } from 'vue';
-
 defineOptions({ inheritAttrs: false });
 
 // Default v-model is the WC's `value` property + `change` event.

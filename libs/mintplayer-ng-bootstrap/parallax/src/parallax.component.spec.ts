@@ -1,7 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsParallaxComponent } from './parallax.component';
 import { Component } from '@angular/core';
-
 @Component({
   selector: 'bs-parallax-test',
   imports: [BsParallaxComponent],

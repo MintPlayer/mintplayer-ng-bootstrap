@@ -1,7 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-
 import { BsIdService } from './id.service';
-
 describe('BsIdService', () => {
   let service: BsIdService;
 

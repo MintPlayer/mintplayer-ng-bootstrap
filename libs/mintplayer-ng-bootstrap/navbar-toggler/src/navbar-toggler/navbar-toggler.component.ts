@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, input, model } from '@angular/core';
-
 @Component({
   selector: 'bs-navbar-toggler',
   templateUrl: './navbar-toggler.component.html',

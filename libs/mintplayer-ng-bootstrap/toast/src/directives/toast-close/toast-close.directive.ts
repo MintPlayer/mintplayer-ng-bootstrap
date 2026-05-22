@@ -1,7 +1,6 @@
 import { Directive, inject, input } from '@angular/core';
 import { BsToastService } from '../../services/toast/toast.service';
 import { BsToastComponent } from '../../components/toast/toast.component';
-
 @Directive({
   selector: 'bs-close',
   host: {

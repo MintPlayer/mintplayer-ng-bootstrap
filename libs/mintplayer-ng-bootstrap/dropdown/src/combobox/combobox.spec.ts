@@ -8,7 +8,6 @@ import { BsComboboxDirective, BsComboboxNavigateDirection } from './combobox.dir
 import { BsDropdownDirective } from '../dropdown/dropdown.directive';
 import { BsDropdownMenuDirective } from '../dropdown-menu/dropdown-menu.directive';
 import { BsDropdownToggleDirective } from '../dropdown-toggle/dropdown-toggle.directive';
-
 @Component({
   selector: 'bs-combobox-harness',
   imports: [

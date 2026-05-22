@@ -9,7 +9,6 @@ import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsGridColDirective, BsGridComponent, BsGridRowDirective } from '@mintplayer/ng-bootstrap/grid';
 import { dedent } from 'ts-dedent';
-
 @Component({
   selector: 'demo-stepper',
   templateUrl: './stepper.component.html',
@@ -120,7 +119,6 @@ export class StepperComponent {
     import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
     import { Color } from '@mintplayer/ng-bootstrap';
     import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
-
     @Component({
       selector: 'my-stepper-demo',
       templateUrl: './my-stepper-demo.component.html',

@@ -4,7 +4,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsToastService, BsToastComponent, BsToastHeaderComponent, BsToastBodyComponent, BsToastContainerComponent, BsToastCloseDirective } from '@mintplayer/ng-bootstrap/toast';
 import { MockComponent, MockDirective } from 'ng-mocks';
 import { ToastComponent } from './toast.component';
-
 @Component({
   selector: 'demo-toast-test',
   imports: [

@@ -1,7 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { BsProgressBarComponent } from './progress-bar.component';
-
 describe('BsProgressBarComponent', () => {
   let component: BsProgressBarComponent;
   let fixture: ComponentFixture<BsProgressBarComponent>;

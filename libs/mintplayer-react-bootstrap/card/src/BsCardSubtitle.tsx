@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { createComponent } from '@lit/react';
 import { MpCardSubtitleElement } from '@mintplayer/web-components/card';
-
 /**
  * React wrapper for `<mp-card-subtitle>`. Side-effect-registers the WC via
  * the import above. Typed props/events extend off MpCardSubtitleElement;

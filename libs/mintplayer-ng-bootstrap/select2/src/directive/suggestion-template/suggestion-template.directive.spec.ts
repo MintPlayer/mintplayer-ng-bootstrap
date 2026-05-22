@@ -4,7 +4,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BsSuggestionTemplateDirective } from './suggestion-template.directive';
 import { BsSelect2Component } from '../../component/select2.component';
-
 @Component({
   selector: 'select2',
 })

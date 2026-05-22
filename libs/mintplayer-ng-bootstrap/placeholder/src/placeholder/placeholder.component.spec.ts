@@ -1,9 +1,7 @@
 import { vi } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { BsLiveAnnouncerService } from '@mintplayer/ng-bootstrap/a11y';
 import { BsPlaceholderComponent } from './placeholder.component';
-
 describe('BsPlaceholderComponent', () => {
   let component: BsPlaceholderComponent;
   let fixture: ComponentFixture<BsPlaceholderComponent>;

@@ -1,19 +1,6 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  CUSTOM_ELEMENTS_SCHEMA,
-  ElementRef,
-  computed,
-  effect,
-  input,
-  model,
-  output,
-  viewChild,
-} from '@angular/core';
-import { MintMultiRangeElement } from '@mintplayer/web-components/multi-range';
+import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, ElementRef, computed, effect, input, model, output, viewChild } from '@angular/core';
+import { MintMultiRangeElement, MultiRangeOrientation } from '@mintplayer/web-components/multi-range';
 import { BsMultiRangeValueAccessor } from '../value-accessor/multi-range-value-accessor';
-import { MultiRangeOrientation } from '@mintplayer/web-components/multi-range';
-
 @Component({
   selector: 'bs-multi-range',
   template: `

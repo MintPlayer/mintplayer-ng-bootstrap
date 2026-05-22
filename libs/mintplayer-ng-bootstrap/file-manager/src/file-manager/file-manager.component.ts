@@ -1,35 +1,5 @@
-import {
-  AfterViewInit,
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  CUSTOM_ELEMENTS_SCHEMA,
-  effect,
-  ElementRef,
-  input,
-  model,
-  output,
-  signal,
-  viewChild,
-} from '@angular/core';
-import type {
-  ConflictResolver,
-  DialogResolver,
-  FileManagerMessages,
-  FileSystemNode,
-  FileManagerSelectionMode,
-  FileManagerViewMode,
-  MpFileManager,
-  NavigateEventDetail,
-  NodeOpenEventDetail,
-  OperationEventDetail,
-  OperationFlags,
-  OperationKind,
-  SelectionChangeEventDetail,
-  UploadEntry,
-  UploadRequestEventDetail,
-} from '@mintplayer/web-components/file-manager';
-
+import { AfterViewInit, ChangeDetectionStrategy, Component, computed, CUSTOM_ELEMENTS_SCHEMA, effect, ElementRef, input, model, output, signal, viewChild } from '@angular/core';
+import type { ConflictResolver, DialogResolver, FileManagerMessages, FileSystemNode, FileManagerSelectionMode, FileManagerViewMode, MpFileManager, NavigateEventDetail, NodeOpenEventDetail, OperationEventDetail, OperationFlags, OperationKind, SelectionChangeEventDetail, UploadEntry, UploadRequestEventDetail } from '@mintplayer/web-components/file-manager';
 // Side-effect import: registers <mp-file-manager> and all the nested WCs.
 import '@mintplayer/web-components/file-manager';
 

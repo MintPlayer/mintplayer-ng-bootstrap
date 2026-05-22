@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, computed, Directive, ElementRef, input, model, signal, viewChild } from '@angular/core';
-
 @Component({
   selector: 'bs-slider',
   templateUrl: './slider.component.html',

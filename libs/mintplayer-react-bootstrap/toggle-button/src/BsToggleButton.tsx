@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { createComponent } from '@lit/react';
 import { MpToggleButton } from '@mintplayer/web-components/toggle-button';
-
 /**
  * React wrapper for `<mp-toggle-button>`. Side-effect-registers the WC via
  * the import above. Typed props/events extend off MpToggleButton;

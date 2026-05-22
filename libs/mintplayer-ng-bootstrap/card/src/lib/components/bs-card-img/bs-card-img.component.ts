@@ -1,7 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import type { CardImagePosition } from '@mintplayer/web-components/card';
-
 /**
  * Card image. `position` switches the rendered shape; `src` and `alt` map
  * to the underlying `<img>`. Overlay form additionally wraps slotted content

@@ -1,6 +1,5 @@
 import { Directive, inject, TemplateRef } from '@angular/core';
 import { BsShellComponent } from '../shell/shell.component';
-
 @Directive({
   selector: '[bsShellSidebar]',
 })

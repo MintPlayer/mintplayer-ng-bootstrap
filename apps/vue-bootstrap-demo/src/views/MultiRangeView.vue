@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { BsMultiRange } from '@mintplayer/vue-bootstrap/multi-range';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
-
 const SOURCE = "<BsMultiRange />";
 </script>
 

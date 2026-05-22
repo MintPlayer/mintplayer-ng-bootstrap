@@ -1,36 +1,9 @@
-import {
-  AfterViewInit,
-  ChangeDetectionStrategy,
-  Component,
-  contentChild,
-  CUSTOM_ELEMENTS_SCHEMA,
-  DestroyRef,
-  effect,
-  ElementRef,
-  EmbeddedViewRef,
-  inject,
-  input,
-  model,
-  output,
-  ViewContainerRef,
-  viewChild,
-} from '@angular/core';
-import {
-  MpTreeview,
-  type IconResolver,
-  type TreeNode,
-  type TreeNodeCollapseEventDetail,
-  type TreeNodeExpandEventDetail,
-  type TreeNodeRenderer,
-  type TreeNodeSelectEventDetail,
-  type TreeviewSelectionMode,
-} from '@mintplayer/web-components/treeview';
-
+import { AfterViewInit, ChangeDetectionStrategy, Component, contentChild, CUSTOM_ELEMENTS_SCHEMA, DestroyRef, effect, ElementRef, EmbeddedViewRef, inject, input, model, output, ViewContainerRef, viewChild } from '@angular/core';
+import { MpTreeview, type IconResolver, type TreeNode, type TreeNodeCollapseEventDetail, type TreeNodeExpandEventDetail, type TreeNodeRenderer, type TreeNodeSelectEventDetail, type TreeviewSelectionMode } from '@mintplayer/web-components/treeview';
 // Side-effect import: registers the `<mp-treeview>` custom element.
 import '@mintplayer/web-components/treeview';
 
 import { BsTreeviewNodeTemplateDirective } from '../treeview-node-template/treeview-node-template.directive';
-
 @Component({
   selector: 'bs-treeview',
   templateUrl: './treeview.component.html',

@@ -5,7 +5,6 @@ import { TileLayoutSnapshot, TileGestureBlocked } from './types/tile-layout-snap
 import { GridRect } from './types/grid-rect';
 import { pack } from './utils/pack';
 import { styles } from './mint-tile-manager.element.template';
-
 const TILE_INSTRUCTIONS =
   'Press M to enter move mode. In move mode, arrow keys move the tile, Shift with arrow keys resize it, Enter commits, Escape cancels.';
 let tileManagerInstanceCounter = 0;

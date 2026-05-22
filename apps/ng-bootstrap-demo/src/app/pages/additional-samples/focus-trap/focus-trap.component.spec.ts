@@ -6,7 +6,6 @@ import { FocusTrapComponent } from './focus-trap.component';
 import { BsFormComponent, BsFormGroupDirective, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsModalComponent, BsModalHostComponent, BsModalDirective, BsModalHeaderDirective, BsModalBodyDirective, BsModalFooterDirective, BsModalCloseDirective } from '@mintplayer/ng-bootstrap/modal';
-
 describe('FocusTrapComponent', () => {
   let component: FocusTrapComponent;
   let fixture: ComponentFixture<FocusTrapComponent>;

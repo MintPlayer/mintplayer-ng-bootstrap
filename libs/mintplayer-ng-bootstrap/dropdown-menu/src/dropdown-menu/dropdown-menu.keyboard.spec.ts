@@ -6,7 +6,6 @@ import { BS_DEVELOPMENT } from '@mintplayer/ng-bootstrap';
 import { BsDropdownDirective, BsDropdownMenuDirective, BsDropdownToggleDirective } from '@mintplayer/ng-bootstrap/dropdown';
 import { BsDropdownMenuComponent } from './dropdown-menu.component';
 import { BsDropdownItemComponent } from '../dropdown-item/dropdown-item.component';
-
 @Component({
   selector: 'bs-dropdown-keyboard-harness',
   imports: [

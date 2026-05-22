@@ -16,7 +16,6 @@
 import { writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-
 const repoRoot = join(fileURLToPath(import.meta.url), '..', '..', '..');
 const reactPagesDir = join(repoRoot, 'apps', 'react-bootstrap-demo', 'src', 'app', 'pages');
 const vueViewsDir = join(repoRoot, 'apps', 'vue-bootstrap-demo', 'src', 'views');
@@ -183,7 +182,6 @@ function reactFile(page) {
   const note = react.note ? `      <p className="small text-body-secondary mt-2">${react.note}</p>\n` : '';
   return `import { ${imports} } from '@mintplayer/react-bootstrap/${entry}';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-
 const SOURCE = ${JSON.stringify(react.source)};
 
 export function ${reactPageName(entry)}() {
@@ -211,7 +209,6 @@ function vueFile(page) {
   return `<script setup lang="ts">
 import { ${imports} } from '@mintplayer/vue-bootstrap/${entry}';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
-
 const SOURCE = ${JSON.stringify(vue.source)};
 </script>
 

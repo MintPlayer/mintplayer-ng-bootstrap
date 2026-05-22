@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, signal, ChangeDetectionStrategy} from '@angular/core';
+import { Component, DestroyRef, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { Artist } from '../../../entities/artist';
 import { Tag } from '../../../entities/tag';
 import { ESubjectType } from '../../../enums/subject-type';
@@ -9,7 +9,6 @@ import { BsSelect2Component, BsItemTemplateDirective, BsSuggestionTemplateDirect
 import { BsFontColorPipe } from '@mintplayer/ng-bootstrap/font-color';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { dedent } from 'ts-dedent';
-
 @Component({
   selector: 'demo-select2',
   templateUrl: './select2.component.html',
@@ -49,7 +48,6 @@ export class Select2Component {
   protected readonly snippetBasicTs = dedent`
     import { Component, signal } from '@angular/core';
     import { BsSelect2Component } from '@mintplayer/ng-bootstrap/select2';
-
     interface Artist { id: number; name: string; }
 
     @Component({

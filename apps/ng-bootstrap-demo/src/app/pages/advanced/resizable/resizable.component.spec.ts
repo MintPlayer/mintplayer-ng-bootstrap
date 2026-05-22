@@ -1,9 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { ResizableComponent } from './resizable.component';
 import { MockComponent, MockDirective } from 'ng-mocks';
 import { BsResizableComponent, BsResizeGlyphDirective } from '@mintplayer/ng-bootstrap/resizable';
-
 describe('ResizableComponent', () => {
   let component: ResizableComponent;
   let fixture: ComponentFixture<ResizableComponent>;

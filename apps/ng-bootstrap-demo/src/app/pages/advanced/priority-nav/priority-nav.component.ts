@@ -3,7 +3,6 @@ import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsPriorityNavComponent, BsPriorityNavItemDirective } from '@mintplayer/ng-bootstrap/priority-nav';
 import { BsResizableComponent } from '@mintplayer/ng-bootstrap/resizable';
 import { dedent } from 'ts-dedent';
-
 @Component({
   selector: 'demo-priority-nav',
   templateUrl: './priority-nav.component.html',
@@ -41,11 +40,7 @@ export class PriorityNavComponent {
 
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
-    import {
-      BsPriorityNavComponent,
-      BsPriorityNavItemDirective,
-    } from '@mintplayer/ng-bootstrap/priority-nav';
-
+    import { BsPriorityNavComponent, BsPriorityNavItemDirective } from '@mintplayer/ng-bootstrap/priority-nav';
     @Component({
       selector: 'my-priority-nav-demo',
       templateUrl: './my-priority-nav-demo.component.html',

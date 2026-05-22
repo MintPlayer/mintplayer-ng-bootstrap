@@ -1,11 +1,10 @@
-import { Component, ChangeDetectionStrategy} from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsBoldPipe, BsItalicPipe, BsStrikethroughPipe, BsUnderlinePipe } from '@mintplayer/ng-bootstrap/markdown';
 import { dedent } from 'ts-dedent';
-
 @Component({
   selector: 'demo-markdown',
   templateUrl: './markdown.component.html',
@@ -22,13 +21,7 @@ export class MarkdownComponent {
 
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
-    import {
-      BsBoldPipe,
-      BsItalicPipe,
-      BsStrikethroughPipe,
-      BsUnderlinePipe,
-    } from '@mintplayer/ng-bootstrap/markdown';
-
+    import { BsBoldPipe, BsItalicPipe, BsStrikethroughPipe, BsUnderlinePipe } from '@mintplayer/ng-bootstrap/markdown';
     @Component({
       selector: 'my-markdown-demo',
       templateUrl: './my-markdown-demo.component.html',

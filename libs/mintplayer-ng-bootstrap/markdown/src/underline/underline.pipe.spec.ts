@@ -2,7 +2,6 @@ import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BsUnderlinePipe } from './underline.pipe';
-
 @Component({
   selector: 'bs-underline-test',
   imports: [BsUnderlinePipe],

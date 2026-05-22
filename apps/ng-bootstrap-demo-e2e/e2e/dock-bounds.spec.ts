@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-
 // PRD docs/prd/dock-floating-pane-bounds.md covers issue #347.
 // These tests exercise *passive* clamping (load, ResizeObserver, intent vs
 // render) — drag-time clamping is locked by unit tests on clampBoundsToHost

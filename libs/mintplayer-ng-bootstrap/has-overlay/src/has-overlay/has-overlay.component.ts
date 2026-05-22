@@ -1,5 +1,4 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
-
 /**
  * Marker component whose only job is to pull in @angular/cdk/overlay-prebuilt
  * CSS via its SCSS (::ng-deep import). The template is intentionally empty;

@@ -1,5 +1,4 @@
 import { test, expect, type Route } from '@playwright/test';
-
 // Tests against the demo page WITHOUT requiring apps/api to be running.
 // Playwright intercepts /api/* and returns canned responses, so we
 // validate the wire-format contract (request shape, response handling)

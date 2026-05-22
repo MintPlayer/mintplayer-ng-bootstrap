@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { BsTabControl, BsTabPage } from '@mintplayer/vue-bootstrap/tab-control';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
-
 const SOURCE = "<BsTabControl>\n  <BsTabPage>\n    <span slot=\"header\">Tab 1</span>\n    <p>Content of tab 1.</p>\n  </BsTabPage>\n  <BsTabPage>\n    <span slot=\"header\">Tab 2</span>\n    <p>Content of tab 2.</p>\n  </BsTabPage>\n</BsTabControl>";
 </script>
 

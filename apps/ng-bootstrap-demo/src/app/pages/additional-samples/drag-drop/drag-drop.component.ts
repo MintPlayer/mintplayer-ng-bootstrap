@@ -1,10 +1,9 @@
 import { CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
-import { Component, ChangeDetectionStrategy} from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { DragDropModule as CdkDragDropModule } from '@angular/cdk/drag-drop';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
-
 @Component({
   selector: 'demo-drag-drop',
   templateUrl: './drag-drop.component.html',
@@ -44,7 +43,6 @@ export class DragDropComponent {
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
     import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
-
     @Component({
       selector: 'my-drag-drop-demo',
       templateUrl: './my-drag-drop-demo.component.html',

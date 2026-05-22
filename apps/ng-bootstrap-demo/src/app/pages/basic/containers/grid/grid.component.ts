@@ -1,8 +1,7 @@
-import { Component, ChangeDetectionStrategy} from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective } from '@mintplayer/ng-bootstrap/grid';
 import { dedent } from 'ts-dedent';
-
 @Component({
   selector: 'demo-grid',
   templateUrl: './grid.component.html',
@@ -22,12 +21,7 @@ export class GridComponent {
 
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
-    import {
-      BsGridComponent,
-      BsGridRowDirective,
-      BsGridColumnDirective,
-    } from '@mintplayer/ng-bootstrap/grid';
-
+    import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
     @Component({
       selector: 'my-grid-demo',
       templateUrl: './my-grid-demo.component.html',

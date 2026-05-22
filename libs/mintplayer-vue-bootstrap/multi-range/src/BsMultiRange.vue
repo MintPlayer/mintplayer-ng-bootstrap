@@ -2,7 +2,6 @@
 // Side-effect-registers <mp-multi-range> via the upstream WC entry.
 import '@mintplayer/web-components/multi-range';
 import { ref, watch, onMounted } from 'vue';
-
 defineOptions({ inheritAttrs: false });
 
 // Default v-model is the WC's `value` property + `change` event.

@@ -2,7 +2,6 @@ import { Directive, computed, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs/operators';
-
 /**
  * Marks a navbar dropdown trigger anchor. Replaces both `routerLink` and
  * `routerLinkActive` on a trigger element: toggles the active CSS class when a

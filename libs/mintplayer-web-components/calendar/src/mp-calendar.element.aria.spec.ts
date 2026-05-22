@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import './mp-calendar.element';
 import type { MpCalendarElement } from './mp-calendar.element';
-
 async function flush(el: MpCalendarElement): Promise<void> {
   await el.updateComplete;
   // Two raf ticks so any pending focus-restore work runs.

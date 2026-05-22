@@ -2,7 +2,6 @@
 // Side-effect-registers <mp-otp-input> via the upstream WC entry.
 import '@mintplayer/web-components/otp-input';
 import { ref, watch, onMounted } from 'vue';
-
 defineOptions({ inheritAttrs: false });
 
 // Default v-model is the WC's `value` property + `change` event.

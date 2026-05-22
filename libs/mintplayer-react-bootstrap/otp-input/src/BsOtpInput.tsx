@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { createComponent } from '@lit/react';
 import { MintOtpInputElement } from '@mintplayer/web-components/otp-input';
-
 /**
  * React wrapper for `<mp-otp-input>`. Side-effect-registers the WC via
  * the import above. Typed props/events extend off MintOtpInputElement;

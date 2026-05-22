@@ -2,9 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Component } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { describe, it, expect, beforeEach } from 'vitest';
-
 import { BsTimepickerComponent } from './timepicker.component';
-
 describe('BsTimepickerComponent — smoke', () => {
   let component: BsTimepickerComponent;
   let fixture: ComponentFixture<BsTimepickerComponent>;

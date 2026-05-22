@@ -1,7 +1,6 @@
 import { css, html, type TemplateResult } from 'lit';
 import { property } from 'lit/decorators.js';
 import { MpRibbonItemBase } from './mp-ribbon-item-base';
-
 /**
  * mp-ribbon-color-picker — wraps a native `<input type="color">` so the
  * browser's colour palette UI is used without re-implementing one.

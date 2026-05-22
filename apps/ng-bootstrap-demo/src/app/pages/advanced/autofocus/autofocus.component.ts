@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, signal, ChangeDetectionStrategy} from '@angular/core';
+import { Component, DestroyRef, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsSelect2Component } from '@mintplayer/ng-bootstrap/select2';
 import { FocusOnLoadDirective } from '@mintplayer/ng-focus-on-load';
@@ -9,7 +9,6 @@ import { SubjectService } from '../../../services/subject/subject.service';
 import { TagService } from '../../../services/tag/tag.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { dedent } from 'ts-dedent';
-
 @Component({
   selector: 'demo-autofocus',
   templateUrl: './autofocus.component.html',
@@ -47,7 +46,6 @@ export class AutofocusComponent {
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
     import { FocusOnLoadDirective } from '@mintplayer/ng-focus-on-load';
-
     @Component({
       selector: 'my-autofocus-demo',
       templateUrl: './my-autofocus-demo.component.html',

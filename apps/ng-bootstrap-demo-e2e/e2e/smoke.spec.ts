@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-
 test('home loads with navbar brand and main sections', async ({ page }) => {
   await page.goto('/');
 

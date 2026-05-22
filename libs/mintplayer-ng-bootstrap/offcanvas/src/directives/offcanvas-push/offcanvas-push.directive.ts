@@ -1,7 +1,6 @@
 import { animate, AnimationBuilder, AnimationMetadata, style } from '@angular/animations';
 import { Directive, effect, ElementRef, inject, input } from '@angular/core';
 import { BsOffcanvasHostComponent } from '../../components';
-
 @Directive({
   selector: '[bsOffcanvasPush]',
 })

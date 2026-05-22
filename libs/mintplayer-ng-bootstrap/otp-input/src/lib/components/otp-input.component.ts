@@ -1,22 +1,6 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  CUSTOM_ELEMENTS_SCHEMA,
-  ElementRef,
-  computed,
-  effect,
-  inject,
-  input,
-  model,
-  output,
-  viewChild,
-} from '@angular/core';
-import { MintOtpInputElement } from '@mintplayer/web-components/otp-input';
+import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, ElementRef, computed, effect, inject, input, model, output, viewChild } from '@angular/core';
+import { MintOtpInputElement, OtpInputType, OtpInputCase, OtpInputSize } from '@mintplayer/web-components/otp-input';
 import { BsOtpInputValueAccessor } from '../value-accessor/otp-input-value-accessor';
-import { OtpInputType } from '@mintplayer/web-components/otp-input';
-import { OtpInputCase } from '@mintplayer/web-components/otp-input';
-import { OtpInputSize } from '@mintplayer/web-components/otp-input';
-
 @Component({
   selector: 'bs-otp-input',
   template: `

@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { MpSplitter } from './mp-splitter';
-
 // Force registration before tests construct elements.
 void MpSplitter;
 

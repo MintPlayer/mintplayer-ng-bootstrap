@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { createComponent } from '@lit/react';
 import { MpSplitter } from '@mintplayer/web-components/splitter';
-
 /**
  * React wrapper for `<mp-splitter>`. Side-effect-registers the WC via
  * the import above. Typed props/events extend off MpSplitter;

@@ -17,12 +17,7 @@
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { LitElement, html, type PropertyValues } from 'lit';
-import {
-  createContext,
-  ContextConsumer,
-  ContextProvider,
-} from '@lit/context';
-
+import { createContext, ContextConsumer, ContextProvider } from '@lit/context';
 type Registry = Record<string, (s: string) => string>;
 type Messages = Record<string, string>;
 

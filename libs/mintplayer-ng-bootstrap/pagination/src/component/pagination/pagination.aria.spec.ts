@@ -1,7 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsPaginationComponent } from './pagination.component';
-
 @Component({
   selector: 'bs-pagination-aria-harness',
   imports: [BsPaginationComponent],

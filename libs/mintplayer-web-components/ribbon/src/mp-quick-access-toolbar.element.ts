@@ -1,6 +1,5 @@
 import { css, html, LitElement, type TemplateResult } from 'lit';
 import { property } from 'lit/decorators.js';
-
 /**
  * mp-quick-access-toolbar — Office-style Quick Access Toolbar (QAT).
  *

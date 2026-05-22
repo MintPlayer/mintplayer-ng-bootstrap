@@ -1,6 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsContainerComponent } from './container.component';
-
 describe('BsContainerComponent', () => {
   let component: BsContainerComponent;
   let fixture: ComponentFixture<BsContainerComponent>;

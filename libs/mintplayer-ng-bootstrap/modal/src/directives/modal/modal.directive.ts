@@ -1,6 +1,5 @@
 import { Directive, inject, TemplateRef } from '@angular/core';
 import { BsModalHostComponent } from '../../components/modal-host/modal-host.component';
-
 @Directive({
   selector: '[bsModal]',
 })

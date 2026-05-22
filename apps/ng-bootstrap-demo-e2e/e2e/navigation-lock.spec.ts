@@ -1,5 +1,4 @@
 import { test, expect, type Dialog } from '@playwright/test';
-
 // Regression coverage for the navigation-lock guard. The demo at
 // `/advanced/navigation-lock` registers a `[bsNavigationLock]` with a
 // `canExit` that returns `window.confirm(...)` unless `allowExit === true`.

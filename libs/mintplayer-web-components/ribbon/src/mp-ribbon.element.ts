@@ -2,7 +2,6 @@ import { css, html, LitElement, nothing, type TemplateResult } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { LiveAnnouncerController } from '@mintplayer/web-components/a11y';
 import type { RibbonGroupSize, RibbonReduceStep } from './mp-ribbon-tab.element';
-
 type RibbonItemSize = 'large' | 'medium' | 'small';
 
 interface TabEntry {
