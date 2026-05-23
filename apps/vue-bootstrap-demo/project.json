@@ -1,0 +1,64 @@
+{
+  "name": "vue-bootstrap-demo",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/vue-bootstrap-demo/src",
+  "targets": {
+    "build": {
+      "executor": "@nx/vite:build",
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "defaultConfiguration": "production",
+      "options": {
+        "outputPath": "dist/apps/vue-bootstrap-demo",
+        "skipTypeCheck": true
+      },
+      "configurations": {
+        "development": {
+          "mode": "development"
+        },
+        "production": {
+          "mode": "production"
+        }
+      }
+    },
+    "serve": {
+      "executor": "@nx/vite:dev-server",
+      "defaultConfiguration": "development",
+      "continuous": true,
+      "dependsOn": [{ "projects": ["api"], "target": "serve" }],
+      "options": {
+        "buildTarget": "vue-bootstrap-demo:build"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "vue-bootstrap-demo:build:development",
+          "hmr": true
+        },
+        "production": {
+          "buildTarget": "vue-bootstrap-demo:build:production",
+          "hmr": false
+        }
+      }
+    },
+    "preview": {
+      "dependsOn": [
+        "build"
+      ],
+      "executor": "@nx/vite:preview-server",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "vue-bootstrap-demo:build"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "vue-bootstrap-demo:build:development"
+        },
+        "production": {
+          "buildTarget": "vue-bootstrap-demo:build:production"
+        }
+      }
+    }
+  }
+}

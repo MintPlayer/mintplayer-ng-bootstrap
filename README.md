@@ -38,11 +38,27 @@ Or add the stylesheet in your `styles.scss`
     @import '@mintplayer/ng-bootstrap/bootstrap.scss';
 
 ## Components
-All components are showcased in the angular app included in the project. You can simply run
+Every web component is showcased in three sibling demo apps — one per framework — so you can pick the wrapper layer that matches your stack. They render the **same** underlying `<mp-*>` / `<mint-*>` web component; only the wrapper API differs.
 
-    npm start -- --open
+### Run locally via the Nx dev server
 
-to discover them.
+| Framework | Lib                            | Dev server              | Command                            |
+|-----------|--------------------------------|-------------------------|------------------------------------|
+| Angular   | `@mintplayer/ng-bootstrap`     | <http://localhost:4200> | `npx nx serve ng-bootstrap-demo`    |
+| React 19  | `@mintplayer/react-bootstrap`  | <http://localhost:4000> | `npx nx serve react-bootstrap-demo` |
+| Vue 3.5   | `@mintplayer/vue-bootstrap`    | <http://localhost:4100> | `npx nx serve vue-bootstrap-demo`   |
+
+All three can run simultaneously — the ports don't collide. The brand-mark links in each demo's top-right nav switch between them while preserving the current path.
+
+To boot **all three demos + the .NET API at once** from a single terminal (one `dotnet watch` shared by all three; one Ctrl+C tears the whole tree down):
+
+    npx nx run-many -t serve -p 'ng-bootstrap-demo,react-bootstrap-demo,vue-bootstrap-demo'
+
+The single quotes around the project list are required on PowerShell — without them, `-p a,b,c` is parsed as PowerShell's comma-operator array and split into separate args, which Nx silently rejects with "No tasks were run".
+
+Each demo's `serve` target lists the API serve as a dependency and is flagged `continuous: true`, so Nx folds the task graph into a single `api:serve` invocation instead of racing three of them for the same `bin/Debug/net10.0/` DLL locks.
+
+The shorter `npm start -- --open` is wired to the Angular demo by default (see `scripts.start` in `package.json`).
 
 ## Docker image
 Alternatively you can run the docker image which is published on GitHub Container Registry
