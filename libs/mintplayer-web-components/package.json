@@ -1,0 +1,32 @@
+{
+  "name": "@mintplayer/web-components",
+  "version": "1.0.0",
+  "description": "Framework-agnostic Lit web components for the @mintplayer/bootstrap design system. Consumed by @mintplayer/ng-bootstrap, @mintplayer/react-bootstrap, and @mintplayer/vue-bootstrap.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": true,
+  "customElements": "custom-elements.json",
+  "main": "./index.mjs",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./index.mjs"
+    },
+    "./custom-elements.json": "./custom-elements.json",
+    "./package.json": "./package.json"
+  },
+  "peerDependencies": {
+    "lit": "^3.3.0",
+    "@lit/context": "^1.1.6",
+    "highlight.js": "^11.0.0"
+  },
+  "peerDependenciesMeta": {
+    "highlight.js": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "tslib": "^2.3.0"
+  }
+}

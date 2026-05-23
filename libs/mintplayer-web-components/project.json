@@ -1,0 +1,81 @@
+{
+  "name": "mintplayer-web-components",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/mintplayer-web-components/src",
+  "projectType": "library",
+  "release": {
+    "version": {
+      "manifestRootsToUpdate": ["dist/{projectRoot}"],
+      "currentVersionResolver": "git-tag",
+      "fallbackCurrentVersionResolver": "disk"
+    }
+  },
+  "tags": [],
+  "targets": {
+    "nx-release-publish": {
+      "options": {
+        "packageRoot": "dist/{projectRoot}"
+      }
+    },
+    "codegen-wc": {
+      "executor": "nx:run-commands",
+      "outputs": [
+        "{projectRoot}/**/*.element.template.ts",
+        "{projectRoot}/**/*.styles.ts"
+      ],
+      "inputs": [
+        "{projectRoot}/**/*.element.html",
+        "{projectRoot}/**/*.element.scss",
+        "{projectRoot}/**/*.styles.scss",
+        "{workspaceRoot}/tools/scripts/build-web-components.mjs"
+      ],
+      "cache": true,
+      "options": {
+        "command": "node tools/scripts/build-web-components.mjs libs/mintplayer-web-components"
+      }
+    },
+    "cem": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/custom-elements.json"],
+      "inputs": [
+        "{projectRoot}/**/*.element.ts",
+        "{projectRoot}/**/src/**/*.ts",
+        "!{projectRoot}/**/*.spec.ts",
+        "!{projectRoot}/**/*.element.template.ts",
+        "{projectRoot}/custom-elements-manifest.config.mjs"
+      ],
+      "cache": true,
+      "options": {
+        "cwd": "libs/mintplayer-web-components",
+        "command": "custom-elements-manifest analyze --litelement"
+      }
+    },
+    "build": {
+      "executor": "@nx/vite:build",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "dependsOn": ["codegen-wc", "cem"],
+      "options": {
+        "outputPath": "dist/libs/mintplayer-web-components"
+      },
+      "configurations": {
+        "development": {
+          "mode": "development"
+        },
+        "production": {
+          "mode": "production"
+        }
+      }
+    },
+    "test": {
+      "executor": "@nx/vitest:test",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "reportsDirectory": "coverage/libs/mintplayer-web-components"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}
