@@ -66,6 +66,14 @@ jobs:
       timeout-minutes: 30
       run: npx nx affected --target=e2e --parallel=1 --output-style=stream --base=${{ github.event.pull_request.base.sha }} --head=${{ github.event.pull_request.head.sha }}
 
+    # Force-free :5000 in case Nx's continuous-task teardown didn't propagate
+    # SIGTERM to api:serve cleanly — the leftover dotnet would otherwise
+    # collide with the live-API step's webServer trying to boot a second
+    # dotnet on the same port. Harmless if :5000 is already free.
+    - name: Free :5000 before live-API step
+      if: always()
+      run: lsof -ti:5000 | xargs -r kill -9 || true
+
     # Live-API contract smoke. Boots `dotnet run` + `ng serve` and runs the
     # query-builder specs unmocked against the real .NET backend.
     - name: E2E (live API)
