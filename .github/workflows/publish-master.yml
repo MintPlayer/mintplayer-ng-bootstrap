@@ -44,7 +44,12 @@ jobs:
     
     - name: Build
       timeout-minutes: 15
-      run: npx nx build --configuration=production
+      # run-many so EVERY publishable lib lands in dist/libs/ for the
+      # discovery action. Plain `nx build` only builds the default
+      # project (ng-bootstrap-demo) and its transitive deps — react-
+      # and vue-bootstrap aren't reachable from there, so they were
+      # silently absent from the publish plan on the first PR-4 deploy.
+      run: npx nx run-many --target=build --configuration=production
 
     - name: Test
       run: npx nx affected --target=test --watch=false --parallel=true
