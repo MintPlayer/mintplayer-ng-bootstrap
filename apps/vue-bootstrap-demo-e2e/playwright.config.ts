@@ -28,12 +28,9 @@ export default defineConfig({
     reuseExistingServer: true,
     cwd: workspaceRoot
   },
-  // CI installs only chromium + firefox via `playwright install --with-deps
-  // chromium firefox` in pull-request.yml. Adding webkit/Mobile Safari/etc.
-  // here means CI tries to launch a browser that isn't installed and fails.
-  // Match ng-bootstrap-demo-e2e's setup.
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
     { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
+    { name: 'webkit', use: { ...devices['Desktop Safari'] } },
   ],
 });
