@@ -79,6 +79,7 @@ export default defineConfig(() => ({
     include: ['**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     exclude: ['**/node_modules/**', '**/dist/**'],
     reporters: ['default'],
+    passWithNoTests: true,
     coverage: {
       reportsDirectory: '../../coverage/libs/mintplayer-web-components',
       provider: 'v8' as const,
