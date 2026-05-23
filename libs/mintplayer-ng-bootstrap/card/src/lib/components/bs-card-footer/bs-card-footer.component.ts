@@ -7,7 +7,7 @@ import {
   input,
 } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
-import { applyTextBgClass } from '../web-components/card-classes';
+import { applyTextBgClass } from '@mintplayer/web-components/card';
 
 @Component({
   selector: 'bs-card-footer',

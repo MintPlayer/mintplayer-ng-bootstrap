@@ -9,7 +9,7 @@ import {
   model,
   viewChild,
 } from '@angular/core';
-import { FirstDayOfWeek, MpCalendarElement } from './lib/web-components/mp-calendar.element';
+import { FirstDayOfWeek, MpCalendarElement } from '@mintplayer/web-components/calendar';
 
 // Side-effect: registers <mp-calendar>. Importing the element class is enough —
 // the file calls customElements.define() on load.

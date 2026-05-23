@@ -1,2 +1,2 @@
 export * from './calendar.component';
-export * from './lib/web-components/mp-calendar.element';
+export * from '@mintplayer/web-components/calendar';

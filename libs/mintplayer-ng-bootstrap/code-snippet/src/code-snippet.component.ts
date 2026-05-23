@@ -1,43 +1,36 @@
-import { ChangeDetectionStrategy, Component, effect, inject, input, model, output, signal, TemplateRef, viewChild } from '@angular/core';
-import { BsLiveAnnouncerService } from '@mintplayer/ng-bootstrap/a11y';
-import { BsCopyDirective } from '@mintplayer/ng-bootstrap/copy';
-import { BsOffcanvasHostComponent, BsOffcanvasContentDirective } from '@mintplayer/ng-bootstrap/offcanvas';
-import { HighlightModule } from 'ngx-highlightjs';
-import { HighlightResult } from 'highlight.js';
+import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, input, output } from '@angular/core';
+import '@mintplayer/web-components/code-snippet';
 
+/**
+ * Angular wrapper around `<mp-code-snippet>`. The WC owns the
+ * highlighting, copy-to-clipboard, and copied-toast behaviour. This
+ * component just translates Angular input/output ergonomics into the
+ * underlying WC's properties and events.
+ *
+ * Breaking changes vs the pre-WC `BsCodeSnippetComponent`:
+ * - `offcanvasVisible` (model) and `copiedTemplate` (viewChild) are
+ *   removed. The WC manages its own toast; consumers no longer need —
+ *   or can override — the copied indicator. Drop these inputs from
+ *   consumer templates.
+ * - The copy + toast UI is rendered in the WC's shadow DOM; CSS
+ *   overrides via `::part(copy-button)`, `::part(toast)`, `::part(pre)`,
+ *   `::part(code)`.
+ */
 @Component({
   selector: 'bs-code-snippet',
   templateUrl: './code-snippet.component.html',
-  styleUrls: ['./code-snippet.component.scss'],
-  imports: [BsCopyDirective, BsOffcanvasHostComponent, BsOffcanvasContentDirective, HighlightModule],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'd-block' },
 })
 export class BsCodeSnippetComponent {
-  private announcer = inject(BsLiveAnnouncerService);
+  readonly codeToCopy = input<string>('');
+  readonly language = input<string>('');
+  readonly detectedLanguage = output<string>();
 
-  constructor() {
-    effect(() => {
-      const language = this.detectedLanguageValue();
-      this.detectedLanguage.emit(language);
-    });
-  }
-
-  offcanvasVisible = model(false);
-  codeToCopy = input<string>('');
-  language = input<string>('');
-  readonly copiedTemplate = viewChild.required<TemplateRef<any>>('copiedTemplate');
-  detectedLanguage = output<string>();
-
-  detectedLanguageValue = signal<string>('code');
-
-  copiedHtml() {
-    this.announcer.announce('Copied to clipboard');
-    this.offcanvasVisible.set(true);
-    setTimeout(() => this.offcanvasVisible.set(false), 3000);
-  }
-
-  onHighlighted(result: HighlightResult | null) {
-    this.detectedLanguageValue.set(result?.language ?? 'code');
+  protected onLanguageDetected(event: Event): void {
+    const detail = (event as CustomEvent<{ language: string }>).detail;
+    this.detectedLanguage.emit(detail.language);
   }
 
 }
