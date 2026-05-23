@@ -31,61 +31,22 @@ const TAG_NAME = 'mp-code-snippet';
  */
 export class MpCodeSnippet extends LitElement {
   static override styles = css`
+    /* Verbatim port of highlight.js's a11y-dark.css — the same theme
+       the master branch's ngx-highlightjs setup loads for the Angular
+       demo. That theme has only a dark variant; the code-snippet
+       intentionally renders dark-on-light-page like in an IDE, so the
+       host's own background is fixed (no Bootstrap data-bs-theme
+       branch). Tokens not explicitly mapped (e.g. .hljs-attr inside
+       .hljs-tag) inherit from their parent, matching production. */
     :host {
       display: block;
       position: relative;
       font-family: var(--bs-font-monospace);
-      background: var(--bs-tertiary-bg);
-      color: var(--bs-body-color);
+      background: #2b2b2b;
+      color: #f8f8f2;
       border: 1px solid var(--bs-border-color);
       border-radius: var(--bs-border-radius);
       overflow: hidden;
-
-      /* a11y-light palette — same hljs theme family the master branch
-         shipped (a11y-dark) but the light counterpart. WCAG AA contrast
-         against a near-white background. Switches happen on the
-         explicit Bootstrap data-bs-theme attribute, which index.html's
-         pre-boot script already resolves from the in-app setting
-         (localStorage 'bs-theme-mode'): light / dark / auto → the
-         auto case reads matchMedia (prefers-color-scheme: dark) before
-         paint and sets data-bs-theme to the actual mode. So the
-         CSS below only ever sees light or dark, never 'auto'. */
-      --mp-snippet-comment:    #696969;
-      --mp-snippet-keyword:    #7928a1;
-      --mp-snippet-string:     #008000;
-      --mp-snippet-number:     #aa5d00;
-      --mp-snippet-type:       #aa5d00;
-      --mp-snippet-tag:        #d91e18;
-      --mp-snippet-attribute:  #aa5d00;
-      --mp-snippet-variable:   #d91e18;
-      --mp-snippet-function:   #007faa;
-      --mp-snippet-meta:       #aa5d00;
-      --mp-snippet-regexp:     #d91e18;
-      --mp-snippet-deletion-fg:#d91e18;
-      --mp-snippet-deletion-bg:#fbe9e7;
-      --mp-snippet-addition-fg:#008000;
-      --mp-snippet-addition-bg:#e7fbe9;
-    }
-
-    /* a11y-dark palette — verbatim port of the
-       ngx-highlight-themes/a11y-dark.scss file the master branch
-       loaded for the Angular demo. */
-    :host-context([data-bs-theme='dark']) {
-      --mp-snippet-comment:    #d4d0ab;
-      --mp-snippet-keyword:    #dcc6e0;
-      --mp-snippet-string:     #abe338;
-      --mp-snippet-number:     #f5ab35;
-      --mp-snippet-type:       #f5ab35;
-      --mp-snippet-tag:        #ffa07a;
-      --mp-snippet-attribute:  #ffd700;
-      --mp-snippet-variable:   #ffa07a;
-      --mp-snippet-function:   #00e0e0;
-      --mp-snippet-meta:       #f5ab35;
-      --mp-snippet-regexp:     #ffa07a;
-      --mp-snippet-deletion-fg:#ffa07a;
-      --mp-snippet-deletion-bg:#4a1e1a;
-      --mp-snippet-addition-fg:#abe338;
-      --mp-snippet-addition-bg:#1e3a1a;
     }
 
     pre {
@@ -159,37 +120,31 @@ export class MpCodeSnippet extends LitElement {
     /* Default slot is hidden; content is hoisted into the <code> on each render. */
     slot { display: none; }
 
-    /* hljs token → semantic colour mapping. Selector groups mirror the
-       canonical a11y-light.css / a11y-dark.css from highlight.js verbatim
-       (the same theme family the master branch's ngx-highlightjs setup
-       loaded). Extra selectors not in the canonical themes (doctag,
-       selector-pseudo, operator, property, template-tag, meta-keyword,
-       meta-string) are folded into the nearest semantic group. */
-    /* Comment (gray) */
-    .hljs-comment, .hljs-quote, .hljs-doctag { color: var(--mp-snippet-comment); font-style: italic; }
-    /* Red — variable, tag, name, selector-{id,class}, regexp, deletion */
-    .hljs-variable, .hljs-template-variable, .hljs-template-tag,
-    .hljs-tag, .hljs-name,
-    .hljs-selector-id, .hljs-selector-class,
-    .hljs-regexp { color: var(--mp-snippet-variable); }
-    /* Orange — number, built_in, literal, type, params, meta, link */
-    .hljs-number, .hljs-operator,
-    .hljs-built_in, .hljs-builtin-name,
-    .hljs-literal, .hljs-type, .hljs-params,
-    .hljs-meta, .hljs-meta-keyword, .hljs-meta-string,
-    .hljs-link { color: var(--mp-snippet-type); }
-    /* Yellow — attribute (light-mode collapses to the orange swatch) */
-    .hljs-attr, .hljs-attribute, .hljs-property { color: var(--mp-snippet-attribute); }
-    /* Green — string, symbol, bullet, addition */
-    .hljs-string, .hljs-symbol, .hljs-bullet { color: var(--mp-snippet-string); }
-    /* Blue — title, section */
-    .hljs-title, .hljs-title.function_, .hljs-section { color: var(--mp-snippet-function); }
-    /* Purple — keyword, selector-tag */
-    .hljs-keyword, .hljs-selector-tag, .hljs-selector-pseudo { color: var(--mp-snippet-keyword); }
-    .hljs-function .hljs-keyword { color: var(--mp-snippet-keyword); }
-    .hljs-subst { color: inherit; }
-    .hljs-deletion { color: var(--mp-snippet-deletion-fg); background-color: var(--mp-snippet-deletion-bg); }
-    .hljs-addition { color: var(--mp-snippet-addition-fg); background-color: var(--mp-snippet-addition-bg); }
+    /* a11y-dark token → colour mapping. Selectors + colours are a 1:1
+       port of highlight.js's a11y-dark.css. Tokens not listed here
+       (.hljs-attr, .hljs-property, .hljs-operator, .hljs-doctag, etc.)
+       intentionally inherit from their nearest mapped ancestor — that's
+       the canonical behaviour and matches the master branch's rendering. */
+    /* Comment */
+    .hljs-comment, .hljs-quote { color: #d4d0ab; }
+    /* Red */
+    .hljs-variable, .hljs-template-variable, .hljs-tag, .hljs-name,
+    .hljs-selector-id, .hljs-selector-class, .hljs-regexp,
+    .hljs-deletion { color: #ffa07a; }
+    /* Orange */
+    .hljs-number, .hljs-built_in, .hljs-literal, .hljs-type,
+    .hljs-params, .hljs-meta, .hljs-link { color: #f5ab35; }
+    /* Yellow */
+    .hljs-attribute { color: #ffd700; }
+    /* Green */
+    .hljs-string, .hljs-symbol, .hljs-bullet,
+    .hljs-addition { color: #abe338; }
+    /* Blue */
+    .hljs-title, .hljs-section { color: #00e0e0; }
+    /* Purple */
+    .hljs-keyword, .hljs-selector-tag { color: #dcc6e0; }
+    .hljs-emphasis { font-style: italic; }
+    .hljs-strong { font-weight: bold; }
     .hljs-emphasis { font-style: italic; }
     .hljs-strong { font-weight: 600; }
   `;
