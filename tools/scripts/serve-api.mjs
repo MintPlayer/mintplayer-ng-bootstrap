@@ -5,7 +5,7 @@
 // grandchildren on Windows — without this, aborting `nx serve` left
 // `dotnet watch` (and its inner `dotnet run` + Kestrel) holding port 5000.
 
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { platform } from 'node:os';
 
 const isWindows = platform() === 'win32';
@@ -29,7 +29,12 @@ function killTree() {
   if (killed || child.pid == null) return;
   killed = true;
   if (isWindows) {
-    spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore' });
+    // spawnSync (not spawn) — taskkill needs to FINISH before this
+    // Node process exits, otherwise the kill request gets orphaned
+    // and dotnet/Kestrel keep holding :5000. The previous async spawn
+    // raced against `child.on('exit') → process.exit()` and routinely
+    // lost when nx run-many tore the task tree down hard.
+    spawnSync('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore' });
   } else {
     try {
       process.kill(-child.pid, 'SIGTERM');
@@ -40,7 +45,14 @@ function killTree() {
 }
 
 for (const sig of ['SIGINT', 'SIGTERM', 'SIGBREAK', 'SIGHUP']) {
-  process.on(sig, killTree);
+  process.on(sig, () => {
+    killTree();
+    // After killing the tree, exit explicitly. Without this, Node hangs
+    // waiting for child.on('exit') to fire — which it eventually does,
+    // but only after taskkill propagates, leaving the user staring at
+    // a dead terminal for a few extra seconds.
+    process.exit(0);
+  });
 }
 process.on('exit', killTree);
 
