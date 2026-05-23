@@ -1,24 +1,25 @@
 <script setup lang="ts">
 // Side-effect-registers <mp-calendar> via the upstream WC entry.
 import '@mintplayer/web-components/calendar';
+import { MpCalendarElement } from '@mintplayer/web-components/calendar';
 import { ref, watch, onMounted } from 'vue';
 defineOptions({ inheritAttrs: false });
 
-// Default v-model is the WC's `value` property + `change` event.
-// Hand-edit this file if the WC uses different names (e.g. `selection`
-// + `select` for multi-select WCs).
-const modelValue = defineModel<unknown>();
-const el = ref<HTMLElement | null>(null);
+// The calendar WC's v-model surface is the `selectedDate` property
+// (`Date | null`) + the `selected-date-change` CustomEvent<Date>.
+const modelValue = defineModel<Date | null>();
+const el = ref<MpCalendarElement | null>(null);
 
-const syncToEl = (v: unknown) => {
-  if (el.value) (el.value as unknown as { value: unknown }).value = v;
+const syncToEl = (v: Date | null | undefined) => {
+  if (el.value) el.value.selectedDate = v ?? null;
 };
 
 onMounted(() => syncToEl(modelValue.value));
 watch(modelValue, syncToEl);
 
-function onChange(e: Event) {
-  modelValue.value = (e.target as unknown as { value: unknown }).value;
+function onSelectedDateChange(e: Event) {
+  const detail = (e as CustomEvent<Date>).detail;
+  modelValue.value = detail instanceof Date ? detail : null;
 }
 </script>
 
@@ -26,7 +27,7 @@ function onChange(e: Event) {
   <mp-calendar
     ref="el"
     v-bind="$attrs"
-    @change="onChange"
+    @selected-date-change="onSelectedDateChange"
   >
     <slot />
   </mp-calendar>

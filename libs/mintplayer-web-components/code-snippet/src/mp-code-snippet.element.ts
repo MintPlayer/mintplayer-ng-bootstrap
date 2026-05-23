@@ -145,14 +145,10 @@ export class MpCodeSnippet extends LitElement {
     .hljs-keyword, .hljs-selector-tag { color: #dcc6e0; }
     .hljs-emphasis { font-style: italic; }
     .hljs-strong { font-weight: bold; }
-    .hljs-emphasis { font-style: italic; }
-    .hljs-strong { font-weight: 600; }
   `;
 
-  static override get observedAttributes(): string[] {
-    return [...(super.observedAttributes ?? []), 'language', 'code'];
-  }
-
+  // No manual observedAttributes override needed: Lit's @property decorator
+  // (with the default attribute: true) auto-registers 'language' and 'code'.
   @property({ type: String }) language = '';
   @property({ type: String }) code = '';
 
@@ -164,11 +160,11 @@ export class MpCodeSnippet extends LitElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
-    if (!this.code) {
-      // Late binding: pull initial source from default slot text content.
-      const slotted = this.textContent?.trim();
-      if (slotted) this.code = slotted;
-    }
+    // Initial slot content (when the element is parsed declaratively from
+    // HTML) is picked up by `onSlotChange` once Lit attaches its rendered
+    // <slot>. No textContent peek here — the parser ordering makes it
+    // unreliable, and the slotchange handler covers both empty and
+    // pre-populated cases.
   }
 
   override disconnectedCallback(): void {
@@ -249,7 +245,7 @@ export class MpCodeSnippet extends LitElement {
         @click=${this.handleCopy}
         aria-label="Copy ${this.detectedLanguage} code to clipboard"
       >Copy ${this.detectedLanguage}</button>
-      <pre part="pre"><code part="code" class="hljs">${unsafeHTML(this.highlighted || this.escapeHtml(this.code))}</code></pre>
+      <pre part="pre"><code part="code" class="hljs">${unsafeHTML(this.highlighted)}</code></pre>
       <div class="toast ${this.toastVisible ? 'visible' : ''}" part="toast" aria-hidden="${!this.toastVisible}">Copied!</div>
       <div class="sr-only" role="status" aria-live="polite">${this.toastVisible ? 'Copied to clipboard' : ''}</div>
     `;
@@ -264,13 +260,6 @@ export class MpCodeSnippet extends LitElement {
       .join('')
       .trim();
     if (text) this.code = text;
-  }
-
-  private escapeHtml(s: string): string {
-    return s
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
   }
 }
 
