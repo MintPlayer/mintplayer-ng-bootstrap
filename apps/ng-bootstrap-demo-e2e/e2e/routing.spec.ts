@@ -5,15 +5,17 @@ test('navigates to /basic/alert via the navbar dropdown', async ({ page }) => {
 
   const navbar = page.locator('bs-navbar');
 
-  // bsNavbarTrigger renders `<a href="javascript:void(0)">` and the dropdown
-  // is purely CSS-driven (`li.nav-item:focus-within > ul { display: block }`).
-  // On Linux Chromium, .click() on an `<a href="javascript:...">` does not
-  // reliably focus the element, so :focus-within never fires and the menu
-  // stays closed — Playwright then times out with "element is not visible"
-  // on the menu item. Use .focus() instead so the CSS state machine
-  // definitely sees the focus.
+  // The dropdown is opened by a JS click handler that's attached lazily in
+  // navbar-item.component.ts:ngAfterContentChecked(). On a cold CI runner the
+  // first .click() can race that hook — the click fires before the listener
+  // is attached, so the dropdown never opens, and the next .click() on Alert
+  // times out at "element is not visible". The `close-init-b` attribute is
+  // set ONLY after the listener is attached, so wait for it before clicking.
+  // (The :focus-within CSS rule is gated on `.navbar.noscript`, so focus-only
+  // tricks don't help when JS is enabled.)
   const basicTrigger = navbar.getByText('Basic', { exact: true });
-  await basicTrigger.focus();
+  await expect(basicTrigger).toHaveAttribute('close-init-b', '1');
+  await basicTrigger.click();
 
   const alertItem = navbar.getByText('Alert', { exact: true });
   await expect(alertItem).toBeVisible();
