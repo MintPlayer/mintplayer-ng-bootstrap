@@ -41,7 +41,16 @@ export default defineConfig({
     {
       command: `npx nx serve ng-bootstrap-demo --configuration=development --port=${PORT}`,
       url: baseURL,
-      reuseExistingServer: !process.env['CI'],
+      // Even in CI we accept an existing :4200 / :5000 server. The prior
+      // "E2E tests" step boots `nx serve ng-bootstrap-demo` (which starts
+      // api:serve on :5000 via dependsOn) and Nx's task teardown doesn't
+      // reliably propagate SIGTERM through the continuous-task graph on
+      // CI runners — so dotnet often outlives the step. Without this flag
+      // the live-api step's webServer tries to boot a second dotnet and
+      // logs `Failed to bind to address http://127.0.0.1:5000: address
+      // already in use` (the test still passes because the leftover
+      // server answers, but the log noise is unnecessary).
+      reuseExistingServer: true,
       timeout: 300_000,
       stdout: 'pipe',
       stderr: 'pipe',

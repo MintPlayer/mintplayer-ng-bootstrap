@@ -29,8 +29,9 @@ async function getPaneAndHostRects(
 ): Promise<RectInfo | null> {
   return await page.evaluate(async (id) => {
     // Poll for the pane to appear — first-paint can race with the WC's render
-    // and Firefox in particular is slow on cold-start in CI.
-    for (let i = 0; i < 40; i++) {
+    // and Firefox in particular is slow on cold-start in CI. 10 s budget
+    // matches the other polls in this file.
+    for (let i = 0; i < 100; i++) {
       const dock = document.querySelector('mint-dock-manager') as
         | (HTMLElement & { shadowRoot: ShadowRoot | null })
         | null;
@@ -169,8 +170,10 @@ test.describe('mint-dock-manager — floating-pane bounds clamping (#347)', () =
     await page.locator('mint-dock-manager').waitFor({ state: 'attached', timeout: 15000 });
 
     const intentPreserved = await page.evaluate(async () => {
-      // Wait for the shadow root to populate before writing layout.
-      for (let i = 0; i < 30; i++) {
+      // Wait for the shadow root to populate before writing layout. 10 s
+      // budget — GitHub Actions runners idle for several seconds on first
+      // lazy-route load before the WC upgrades.
+      for (let i = 0; i < 100; i++) {
         const d = document.querySelector('mint-dock-manager') as
           | (HTMLElement & { shadowRoot: ShadowRoot | null })
           | null;
@@ -181,7 +184,7 @@ test.describe('mint-dock-manager — floating-pane bounds clamping (#347)', () =
       const dock = document.querySelector('mint-dock-manager') as
         | (HTMLElement & { layout?: unknown; shadowRoot: ShadowRoot | null })
         | null;
-      if (!dock || !dock.shadowRoot) return { ok: false, reason: 'no dock' };
+      if (!dock || !dock.shadowRoot) return { ok: false, reason: 'no dock after 10s' };
 
       // Inject a layout where the only floating pane is way out-of-bounds.
       dock.layout = {
@@ -202,7 +205,8 @@ test.describe('mint-dock-manager — floating-pane bounds clamping (#347)', () =
       };
 
       // Poll until the wrapper has rendered and the clamp has applied.
-      for (let i = 0; i < 30; i++) {
+      // 10 s budget matches the attach loop above.
+      for (let i = 0; i < 100; i++) {
         const w = dock.shadowRoot.querySelector<HTMLElement>('.dock-floating');
         const h = dock.shadowRoot.querySelector<HTMLElement>('.dock-root');
         if (w && h) {
@@ -251,19 +255,25 @@ test.describe('mint-dock-manager — floating-pane bounds clamping (#347)', () =
     // then poll until the wrapper has actually shrunk (ResizeObserver +
     // render is async; a fixed wait is flaky on slow CI runners).
     const result = await page.evaluate(async () => {
-      const dock = document.querySelector('mint-dock-manager') as
-        | (HTMLElement & { shadowRoot: ShadowRoot | null })
-        | null;
-      if (!dock || !dock.shadowRoot) return { ok: false, reason: 'no dock or shadow root' };
-
-      // Wait for the floating pane to be in the shadow DOM. First-paint can
-      // race with the WC's initial render on a slow CI runner.
-      for (let i = 0; i < 30; i++) {
-        if (dock.shadowRoot.querySelector('.dock-floating')) break;
+      // Poll for the WC to upgrade AND its shadow root to populate with the
+      // floating pane. This single loop replaces the prior eager
+      // `dock.shadowRoot` bail — first-paint can race with the WC's initial
+      // render on a slow CI runner (GitHub Actions chromium/firefox sometimes
+      // idle for 5+ s on first lazy-route load), so probing shadowRoot once
+      // outside the loop fails before the WC has had a chance to attach.
+      let dock: (HTMLElement & { shadowRoot: ShadowRoot | null }) | null = null;
+      for (let i = 0; i < 100; i++) {
+        dock = document.querySelector('mint-dock-manager') as
+          | (HTMLElement & { shadowRoot: ShadowRoot | null })
+          | null;
+        if (dock?.shadowRoot?.querySelector('.dock-floating')) break;
         await new Promise((r) => setTimeout(r, 100));
       }
+      if (!dock || !dock.shadowRoot) {
+        return { ok: false, reason: 'no dock or shadow root after 10s' };
+      }
       if (!dock.shadowRoot.querySelector('.dock-floating')) {
-        return { ok: false, reason: 'no .dock-floating after 3s' };
+        return { ok: false, reason: 'no .dock-floating after 10s' };
       }
 
       dock.style.width = '100px';
@@ -271,10 +281,19 @@ test.describe('mint-dock-manager — floating-pane bounds clamping (#347)', () =
 
       // Poll until the wrapper actually reflects the smaller host. Host is
       // 100px; wrapper must end up <= 110px (10px slack for borders + flake).
-      for (let i = 0; i < 30; i++) {
+      // 10 s budget matches the attach loop above — the ResizeObserver +
+      // bounds-clamping rAF chain can take a beat on a loaded CI runner.
+      let shrunk = false;
+      for (let i = 0; i < 100; i++) {
         const w = dock.shadowRoot.querySelector<HTMLElement>('.dock-floating');
-        if (w && w.getBoundingClientRect().width <= 110) break;
+        if (w && w.getBoundingClientRect().width <= 110) {
+          shrunk = true;
+          break;
+        }
         await new Promise((r) => setTimeout(r, 100));
+      }
+      if (!shrunk) {
+        return { ok: false, reason: 'wrapper did not shrink to <= 110px after 10s' };
       }
 
       const wrapper = dock.shadowRoot.querySelector<HTMLElement>('.dock-floating');

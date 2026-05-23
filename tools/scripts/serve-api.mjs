@@ -1,18 +1,32 @@
 #!/usr/bin/env node
-// Launches the ASP.NET Core API via `dotnet watch` and tears down the entire
-// child-process tree when this script is interrupted (Ctrl+C, Ctrl+Break, or
-// nx killing it). Works around nx:run-commands not propagating SIGINT to
-// grandchildren on Windows — without this, aborting `nx serve` left
-// `dotnet watch` (and its inner `dotnet run` + Kestrel) holding port 5000.
+// Launches the ASP.NET Core API and tears down the entire child-process tree
+// when this script is interrupted (Ctrl+C, Ctrl+Break, or nx killing it).
+// Works around nx:run-commands not propagating SIGINT to grandchildren on
+// Windows — without this, aborting `nx serve` left dotnet (and Kestrel)
+// holding port 5000.
+//
+// Locally we use `dotnet watch run` for hot-reload during dev. In CI nothing
+// changes between boot and shutdown, so we use a plain `dotnet run` instead:
+//   - skips the file-watcher overhead
+//   - skips the static-web-assets accountancy that produces the
+//     "Failed to read obj\Debug/net10.0/staticwebassets.development.json"
+//     noise during the first-time build race
+//   - exits more deterministically on SIGTERM, since there's no restart loop
+//     to drain
 
 import { spawn, spawnSync } from 'node:child_process';
 import { platform } from 'node:os';
 
 const isWindows = platform() === 'win32';
+const isCI = !!process.env.CI;
+
+const dotnetArgs = isCI
+  ? ['run', '--project', 'apps/api/Api.csproj', '--urls', 'http://localhost:5000']
+  : ['watch', '--project', 'apps/api/Api.csproj', 'run', '--urls', 'http://localhost:5000'];
 
 const child = spawn(
   'dotnet',
-  ['watch', '--project', 'apps/api/Api.csproj', 'run', '--urls', 'http://localhost:5000'],
+  dotnetArgs,
   {
     stdio: 'inherit',
     // shell:true on Windows so PATHEXT resolves `dotnet` → `dotnet.exe`.
