@@ -44,11 +44,6 @@ jobs:
       with:
         dotnet-version: '10.0.x'
 
-    # - name: Print GitHub
-    #   run: echo $JSON
-    #   env:
-    #     JSON: ${{ toJson(github) }}
-
     - name: Install dependencies
       run: npm ci
 
@@ -77,73 +72,55 @@ jobs:
       timeout-minutes: 15
       run: npx nx run ng-bootstrap-demo-e2e:e2e-live --output-style=stream
 
-    ## Dry-run publish to verify package.json files exist in dist
-    - name: Dry-run publish ng-animations
-      uses: JS-DevTools/npm-publish@v3
+    # Hand dist/ off to the dry-run-publish-libs job. Snippets publishes
+    # from libs/ (source); the dry-run job checks the repo out so we don't
+    # need to bundle it into this artifact.
+    - name: Upload dist artifact
+      uses: actions/upload-artifact@v4
       with:
-        package: 'dist/libs/mintplayer-ng-animations/package.json'
-        token: ${{ secrets.PUBLISH_TO_NPMJS }}
-        dry-run: true
+        name: dist
+        path: dist/
+        retention-days: 1
 
-    - name: Dry-run publish ng-click-outside
-      uses: JS-DevTools/npm-publish@v3
-      with:
-        package: 'dist/libs/mintplayer-ng-click-outside/package.json'
-        token: ${{ secrets.PUBLISH_TO_NPMJS }}
-        dry-run: true
+  # Single dry-run sweep covering both folder roots (dist/libs + the
+  # snippets source dir). The action handles discovery, topo-sort and
+  # the per-package npm publish --dry-run internally; no need for the
+  # 9 hand-listed JS-DevTools/npm-publish dry-run steps that used to
+  # live in the build job.
+  dry-run-publish-libs:
+    name: dry-run-publish-libs
+    needs: build
+    runs-on: ubuntu-latest
 
-    - name: Dry-run publish ng-focus-on-load
-      uses: JS-DevTools/npm-publish@v3
-      with:
-        package: 'dist/libs/mintplayer-ng-focus-on-load/package.json'
-        token: ${{ secrets.PUBLISH_TO_NPMJS }}
-        dry-run: true
+    permissions:
+      contents: read
 
-    - name: Dry-run publish encode-utf8
-      uses: JS-DevTools/npm-publish@v3
-      with:
-        package: 'dist/libs/mintplayer-encode-utf8/package.json'
-        token: ${{ secrets.PUBLISH_TO_NPMJS }}
-        dry-run: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Dry-run publish dijkstra
-      uses: JS-DevTools/npm-publish@v3
-      with:
-        package: 'dist/libs/mintplayer-dijkstra/package.json'
-        token: ${{ secrets.PUBLISH_TO_NPMJS }}
-        dry-run: true
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
 
-    - name: Dry-run publish qr-code
-      uses: JS-DevTools/npm-publish@v3
-      with:
-        package: 'dist/libs/mintplayer-qr-code/package.json'
-        token: ${{ secrets.PUBLISH_TO_NPMJS }}
-        dry-run: true
+      - name: Dry-run publish (dist/libs)
+        uses: MintPlayer/github-actions/publish-npm-packages@b08fbddf0b285a8633ac138b89d79ceb8cc8c888
+        with:
+          folder: dist/libs
+          dry-run: true
+          registries: |
+            [
+              { "url": "https://registry.npmjs.org", "token": "${{ secrets.PUBLISH_TO_NPMJS }}", "provenance": false }
+            ]
 
-    - name: Dry-run publish pagination
-      uses: JS-DevTools/npm-publish@v3
-      with:
-        package: 'dist/libs/mintplayer-pagination/package.json'
-        token: ${{ secrets.PUBLISH_TO_NPMJS }}
-        dry-run: true
-
-    - name: Dry-run publish ng-qr-code
-      uses: JS-DevTools/npm-publish@v3
-      with:
-        package: 'dist/libs/mintplayer-ng-qr-code/package.json'
-        token: ${{ secrets.PUBLISH_TO_NPMJS }}
-        dry-run: true
-
-    - name: Dry-run publish ng-swiper
-      uses: JS-DevTools/npm-publish@v3
-      with:
-        package: 'dist/libs/mintplayer-ng-swiper/package.json'
-        token: ${{ secrets.PUBLISH_TO_NPMJS }}
-        dry-run: true
-
-    - name: Dry-run publish ng-bootstrap
-      uses: JS-DevTools/npm-publish@v3
-      with:
-        package: 'dist/libs/mintplayer-ng-bootstrap/package.json'
-        token: ${{ secrets.PUBLISH_TO_NPMJS }}
-        dry-run: true
+      - name: Dry-run publish (snippets source)
+        uses: MintPlayer/github-actions/publish-npm-packages@b08fbddf0b285a8633ac138b89d79ceb8cc8c888
+        with:
+          folder: libs/mintplayer-ng-bootstrap-snippets
+          dry-run: true
+          registries: |
+            [
+              { "url": "https://registry.npmjs.org", "token": "${{ secrets.PUBLISH_TO_NPMJS }}", "provenance": false }
+            ]
