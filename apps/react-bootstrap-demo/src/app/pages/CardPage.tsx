@@ -1,15 +1,36 @@
 import { BsCard, BsCardBody, BsCardTitle, BsCardText, BsCardImg } from '@mintplayer/react-bootstrap/card';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-const SOURCE = `import { BsCard, BsCardBody, BsCardTitle, BsCardText } from '@mintplayer/react-bootstrap/card';
+
+// The card WC exposes `color` and `position` as HTML attributes (via
+// observedAttributes), not as typed class fields, so @lit/react doesn't surface
+// them on the React props. Forward via a small cast at the call site.
+const SOURCE = `import { BsCard, BsCardBody, BsCardTitle, BsCardText, BsCardImg } from '@mintplayer/react-bootstrap/card';
 
 export function MyCard() {
   return (
-    <BsCard style={{ maxWidth: '20rem' }}>
-      <BsCardBody>
-        <BsCardTitle>Card title</BsCardTitle>
-        <BsCardText>Some quick example body text.</BsCardText>
-      </BsCardBody>
-    </BsCard>
+    <>
+      <BsCard style={{ maxWidth: '20rem' }}>
+        <BsCardBody>
+          <BsCardTitle>Card title</BsCardTitle>
+          <BsCardText>Some quick example body text.</BsCardText>
+        </BsCardBody>
+      </BsCard>
+
+      <BsCard style={{ maxWidth: '20rem' }} {...{ color: 'primary' }}>
+        <BsCardBody>
+          <BsCardTitle>Primary</BsCardTitle>
+          <BsCardText>Coloured variant via the color attribute.</BsCardText>
+        </BsCardBody>
+      </BsCard>
+
+      <BsCard style={{ maxWidth: '20rem' }}>
+        <BsCardImg {...{ position: 'top', src: '/favicon.svg', alt: '' }} />
+        <BsCardBody>
+          <BsCardTitle>With image</BsCardTitle>
+          <BsCardText>Image at the top, body below.</BsCardText>
+        </BsCardBody>
+      </BsCard>
+    </>
   );
 }`;
 
@@ -21,6 +42,7 @@ export function CardPage() {
         Composable card primitives. The card family renders identically across
         Angular / React / Vue.
       </p>
+
       <section>
         <h2>Basic card</h2>
         <BsCard style={{ maxWidth: '20rem' }}>
@@ -30,6 +52,28 @@ export function CardPage() {
           </BsCardBody>
         </BsCard>
       </section>
+
+      <section>
+        <h2>Colour variant</h2>
+        <BsCard style={{ maxWidth: '20rem' }} {...{ color: 'primary' }}>
+          <BsCardBody>
+            <BsCardTitle>Primary</BsCardTitle>
+            <BsCardText>Coloured variant via the <code>color</code> attribute.</BsCardText>
+          </BsCardBody>
+        </BsCard>
+      </section>
+
+      <section>
+        <h2>Image at the top</h2>
+        <BsCard style={{ maxWidth: '20rem' }}>
+          <BsCardImg {...{ position: 'top', src: '/favicon.svg', alt: '' }} />
+          <BsCardBody>
+            <BsCardTitle>With image</BsCardTitle>
+            <BsCardText>Image at the top, body below.</BsCardText>
+          </BsCardBody>
+        </BsCard>
+      </section>
+
       <section>
         <h2>Source</h2>
         <BsCodeSnippet code={SOURCE} language="tsx" />

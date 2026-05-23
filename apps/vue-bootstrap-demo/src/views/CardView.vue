@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { BsCard, BsCardBody, BsCardTitle, BsCardText } from '@mintplayer/vue-bootstrap/card';
+import { BsCard, BsCardBody, BsCardTitle, BsCardText, BsCardImg } from '@mintplayer/vue-bootstrap/card';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
+
 const SOURCE = `<script setup lang="ts">
-import { BsCard, BsCardBody, BsCardTitle, BsCardText } from '@mintplayer/vue-bootstrap/card';
+import { BsCard, BsCardBody, BsCardTitle, BsCardText, BsCardImg } from '@mintplayer/vue-bootstrap/card';
 <\/script>
 
 <template>
@@ -10,6 +11,21 @@ import { BsCard, BsCardBody, BsCardTitle, BsCardText } from '@mintplayer/vue-boo
     <BsCardBody>
       <BsCardTitle>Card title</BsCardTitle>
       <BsCardText>Some quick example body text.</BsCardText>
+    </BsCardBody>
+  </BsCard>
+
+  <BsCard color="primary" style="max-width: 20rem">
+    <BsCardBody>
+      <BsCardTitle>Primary</BsCardTitle>
+      <BsCardText>Coloured variant via the color attribute.</BsCardText>
+    </BsCardBody>
+  </BsCard>
+
+  <BsCard style="max-width: 20rem">
+    <BsCardImg position="top" src="/favicon.svg" alt="" />
+    <BsCardBody>
+      <BsCardTitle>With image</BsCardTitle>
+      <BsCardText>Image at the top, body below.</BsCardText>
     </BsCardBody>
   </BsCard>
 </template>`;
@@ -22,6 +38,7 @@ import { BsCard, BsCardBody, BsCardTitle, BsCardText } from '@mintplayer/vue-boo
       Composable card primitives. The card family renders identically across
       Angular / React / Vue.
     </p>
+
     <section>
       <h2>Basic card</h2>
       <BsCard style="max-width: 20rem">
@@ -31,6 +48,28 @@ import { BsCard, BsCardBody, BsCardTitle, BsCardText } from '@mintplayer/vue-boo
         </BsCardBody>
       </BsCard>
     </section>
+
+    <section>
+      <h2>Colour variant</h2>
+      <BsCard color="primary" style="max-width: 20rem">
+        <BsCardBody>
+          <BsCardTitle>Primary</BsCardTitle>
+          <BsCardText>Coloured variant via the <code>color</code> attribute.</BsCardText>
+        </BsCardBody>
+      </BsCard>
+    </section>
+
+    <section>
+      <h2>Image at the top</h2>
+      <BsCard style="max-width: 20rem">
+        <BsCardImg position="top" src="/favicon.svg" alt="" />
+        <BsCardBody>
+          <BsCardTitle>With image</BsCardTitle>
+          <BsCardText>Image at the top, body below.</BsCardText>
+        </BsCardBody>
+      </BsCard>
+    </section>
+
     <section>
       <h2>Source</h2>
       <BsCodeSnippet :code="SOURCE" language="html" />
