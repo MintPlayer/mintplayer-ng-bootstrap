@@ -3,6 +3,16 @@
   "version": "1.0.0",
   "description": "Framework-agnostic Lit web components for the @mintplayer/bootstrap design system. Consumed by @mintplayer/ng-bootstrap, @mintplayer/react-bootstrap, and @mintplayer/vue-bootstrap.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MintPlayer/mintplayer-ng-bootstrap",
+    "directory": "libs/mintplayer-web-components"
+  },
+  "author": {
+    "name": "Pieterjan De Clippel",
+    "url": "https://github.com/MintPlayer",
+    "email": "info@mintplayer.com"
+  },
   "type": "module",
   "sideEffects": true,
   "customElements": "custom-elements.json",
