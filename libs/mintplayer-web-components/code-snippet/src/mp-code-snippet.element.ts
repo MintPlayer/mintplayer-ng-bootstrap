@@ -159,22 +159,35 @@ export class MpCodeSnippet extends LitElement {
     /* Default slot is hidden; content is hoisted into the <code> on each render. */
     slot { display: none; }
 
-    /* hljs token → semantic colour mapping. Covers TypeScript / JSX /
-       Vue SFC / HTML / SCSS / CSS / JSON / shell at minimum; any
-       other hljs language falls through to the same token classes. */
+    /* hljs token → semantic colour mapping. Selector groups mirror the
+       canonical a11y-light.css / a11y-dark.css from highlight.js verbatim
+       (the same theme family the master branch's ngx-highlightjs setup
+       loaded). Extra selectors not in the canonical themes (doctag,
+       selector-pseudo, operator, property, template-tag, meta-keyword,
+       meta-string) are folded into the nearest semantic group. */
+    /* Comment (gray) */
     .hljs-comment, .hljs-quote, .hljs-doctag { color: var(--mp-snippet-comment); font-style: italic; }
-    .hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-section, .hljs-link, .hljs-selector-pseudo, .hljs-selector-class, .hljs-selector-id { color: var(--mp-snippet-keyword); }
+    /* Red — variable, tag, name, selector-{id,class}, regexp, deletion */
+    .hljs-variable, .hljs-template-variable, .hljs-template-tag,
+    .hljs-tag, .hljs-name,
+    .hljs-selector-id, .hljs-selector-class,
+    .hljs-regexp { color: var(--mp-snippet-variable); }
+    /* Orange — number, built_in, literal, type, params, meta, link */
+    .hljs-number, .hljs-operator,
+    .hljs-built_in, .hljs-builtin-name,
+    .hljs-literal, .hljs-type, .hljs-params,
+    .hljs-meta, .hljs-meta-keyword, .hljs-meta-string,
+    .hljs-link { color: var(--mp-snippet-type); }
+    /* Yellow — attribute (light-mode collapses to the orange swatch) */
+    .hljs-attr, .hljs-attribute, .hljs-property { color: var(--mp-snippet-attribute); }
+    /* Green — string, symbol, bullet, addition */
+    .hljs-string, .hljs-symbol, .hljs-bullet { color: var(--mp-snippet-string); }
+    /* Blue — title, section */
+    .hljs-title, .hljs-title.function_, .hljs-section { color: var(--mp-snippet-function); }
+    /* Purple — keyword, selector-tag */
+    .hljs-keyword, .hljs-selector-tag, .hljs-selector-pseudo { color: var(--mp-snippet-keyword); }
     .hljs-function .hljs-keyword { color: var(--mp-snippet-keyword); }
     .hljs-subst { color: inherit; }
-    .hljs-string, .hljs-symbol, .hljs-bullet { color: var(--mp-snippet-string); }
-    .hljs-number, .hljs-operator { color: var(--mp-snippet-number); }
-    .hljs-regexp { color: var(--mp-snippet-regexp); }
-    .hljs-type, .hljs-built_in, .hljs-builtin-name, .hljs-class .hljs-title { color: var(--mp-snippet-type); }
-    .hljs-tag, .hljs-name { color: var(--mp-snippet-tag); }
-    .hljs-attr, .hljs-attribute, .hljs-property { color: var(--mp-snippet-attribute); }
-    .hljs-variable, .hljs-template-variable, .hljs-template-tag, .hljs-params { color: var(--mp-snippet-variable); }
-    .hljs-title, .hljs-title.function_ { color: var(--mp-snippet-function); }
-    .hljs-meta, .hljs-meta-keyword, .hljs-meta-string { color: var(--mp-snippet-meta); }
     .hljs-deletion { color: var(--mp-snippet-deletion-fg); background-color: var(--mp-snippet-deletion-bg); }
     .hljs-addition { color: var(--mp-snippet-addition-fg); background-color: var(--mp-snippet-addition-bg); }
     .hljs-emphasis { font-style: italic; }
