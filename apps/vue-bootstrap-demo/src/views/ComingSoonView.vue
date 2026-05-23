@@ -8,8 +8,10 @@ const route = useRoute();
     <h1>Coming soon</h1>
     <p class="text-body-secondary">
       The view at <code>{{ route.fullPath }}</code> is part of the in-progress
-      cross-framework split — see PR #351 for the working state, or pick a
-      component below as it lands on master.
+      cross-framework migration — this component is still being extracted
+      from <code>@mintplayer/ng-bootstrap</code> into the framework-agnostic
+      <code>@mintplayer/web-components</code> library. Pick another component
+      from the sidebar, or check back as each one lands.
     </p>
     <p>
       <RouterLink to="/">Back to home</RouterLink>

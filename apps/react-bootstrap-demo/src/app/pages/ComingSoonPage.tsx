@@ -7,8 +7,10 @@ export function ComingSoonPage() {
       <h1>Coming soon</h1>
       <p className="text-body-secondary">
         The page at <code>{pathname}</code> is part of the in-progress
-        cross-framework split — see PR #351 for the working state, or pick a
-        component below as it lands on master.
+        cross-framework migration — this component is still being extracted
+        from <code>@mintplayer/ng-bootstrap</code> into the framework-agnostic
+        <code> @mintplayer/web-components</code> library. Pick another
+        component from the sidebar, or check back as each one lands.
       </p>
       <p>
         <Link to="/">Back to home</Link>
