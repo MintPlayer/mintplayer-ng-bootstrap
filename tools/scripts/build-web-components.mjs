@@ -66,9 +66,12 @@ async function findFiles(libRoot, predicate) {
   return matches;
 }
 
-const isElementHtml = (file) =>
-  file.endsWith('.element.html') &&
-  file.split(/[\\/]/).includes('web-components');
+// Any `<name>.element.html` under a libRoot. The libRoot is the scope —
+// pre-extraction this also required a `web-components/` path segment
+// because the WCs lived inside `libs/mintplayer-ng-bootstrap/.../web-components/`;
+// post-extraction the WCs are at `libs/mintplayer-web-components/...` and
+// the segment no longer exists, so we rely on the libRoot argument instead.
+const isElementHtml = (file) => file.endsWith('.element.html');
 
 const isStylesScss = (file) => file.endsWith('.styles.scss');
 

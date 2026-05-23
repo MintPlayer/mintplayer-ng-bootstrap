@@ -7,3 +7,30 @@
 # naming) plus any standalone __screenshots__ directory.
 apps/ng-bootstrap-demo-e2e/**/*-snapshots/*.png filter=lfs diff=lfs merge=lfs -text
 apps/ng-bootstrap-demo-e2e/**/__screenshots__/**/*.png filter=lfs diff=lfs merge=lfs -text
+
+# Line endings: force LF for text files so cross-platform commits don't
+# produce phantom diffs and so the CEM-generated `custom-elements.json`
+# stays stable (its `description` fields embed JSDoc text from .ts source
+# files; if some sources are CRLF and others LF, the JSON ends up with
+# mixed `\r\n` and `\n` escape sequences inside string values).
+*               text=auto eol=lf
+
+# Windows-shell files MUST keep CRLF or cmd.exe trips.
+*.bat           text eol=crlf
+*.cmd           text eol=crlf
+*.ps1           text eol=crlf
+
+# Common binary types — explicit so `text=auto` doesn't misdetect.
+*.png           binary
+*.jpg           binary
+*.jpeg          binary
+*.gif           binary
+*.webp          binary
+*.ico           binary
+*.woff          binary
+*.woff2         binary
+*.ttf           binary
+*.eot           binary
+*.pdf           binary
+*.zip           binary
+*.gz            binary

@@ -1,0 +1,13 @@
+node_modules
+.nx
+dist
+.git
+.github
+.vscode
+.idea
+.claude
+**/*.log
+coverage
+test-results
+playwright-report
+.angular
