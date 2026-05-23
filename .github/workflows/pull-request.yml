@@ -82,32 +82,17 @@ jobs:
         path: dist/
         retention-days: 1
 
-  dry-run-publish:
-    name: dry-run-publish (${{ matrix.pkg.name }})
+  # Single dry-run sweep covering both folder roots (dist/libs + the
+  # snippets source dir). The action handles discovery, topo-sort and
+  # the per-package npm publish --dry-run internally; no need for a
+  # 14-entry matrix here.
+  dry-run-publish-libs:
+    name: dry-run-publish-libs
     needs: build
     runs-on: ubuntu-latest
 
     permissions:
       contents: read
-
-    strategy:
-      fail-fast: false
-      matrix:
-        pkg:
-          - { name: web-components,        path: dist/libs/mintplayer-web-components/package.json }
-          - { name: ng-animations,         path: dist/libs/mintplayer-ng-animations/package.json }
-          - { name: ng-click-outside,      path: dist/libs/mintplayer-ng-click-outside/package.json }
-          - { name: ng-focus-on-load,      path: dist/libs/mintplayer-ng-focus-on-load/package.json }
-          - { name: encode-utf8,           path: dist/libs/mintplayer-encode-utf8/package.json }
-          - { name: dijkstra,              path: dist/libs/mintplayer-dijkstra/package.json }
-          - { name: qr-code,               path: dist/libs/mintplayer-qr-code/package.json }
-          - { name: pagination,            path: dist/libs/mintplayer-pagination/package.json }
-          - { name: ng-qr-code,            path: dist/libs/mintplayer-ng-qr-code/package.json }
-          - { name: ng-swiper,             path: dist/libs/mintplayer-ng-swiper/package.json }
-          - { name: react-bootstrap,       path: dist/libs/mintplayer-react-bootstrap/package.json }
-          - { name: vue-bootstrap,         path: dist/libs/mintplayer-vue-bootstrap/package.json }
-          - { name: ng-bootstrap,          path: dist/libs/mintplayer-ng-bootstrap/package.json }
-          - { name: ng-bootstrap-snippets, path: libs/mintplayer-ng-bootstrap-snippets/package.json }
 
     steps:
       - name: Checkout
@@ -119,12 +104,22 @@ jobs:
           name: dist
           path: dist
 
-      # Dry-run mode skips provenance attestation (no id-token: write needed).
-      - name: Dry-run publish
-        uses: ./.github/actions/publish-npm-package
+      - name: Dry-run publish (dist/libs)
+        uses: MintPlayer/github-actions/publish-npm-packages@b08fbddf0b285a8633ac138b89d79ceb8cc8c888
         with:
-          package: ${{ matrix.pkg.path }}
-          registry: 'https://registry.npmjs.org'
-          token: ${{ secrets.PUBLISH_TO_NPMJS }}
-          provenance: false
+          folder: dist/libs
           dry-run: true
+          registries: |
+            [
+              { "url": "https://registry.npmjs.org", "token": "${{ secrets.PUBLISH_TO_NPMJS }}", "provenance": false }
+            ]
+
+      - name: Dry-run publish (snippets source)
+        uses: MintPlayer/github-actions/publish-npm-packages@b08fbddf0b285a8633ac138b89d79ceb8cc8c888
+        with:
+          folder: libs/mintplayer-ng-bootstrap-snippets
+          dry-run: true
+          registries: |
+            [
+              { "url": "https://registry.npmjs.org", "token": "${{ secrets.PUBLISH_TO_NPMJS }}", "provenance": false }
+            ]

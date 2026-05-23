@@ -192,95 +192,18 @@ jobs:
   # ----------------------------------------------------------------------
   # NPM publishing
   #
-  # web-components is the framework-agnostic core; the wrappers (react /
-  # vue / ng-bootstrap) declare a peer dep on it, so we publish the core
-  # set first and only then the wrappers — that way `npm install
-  # @mintplayer/react-bootstrap` can resolve the peer at install time
-  # right after a release goes out.
+  # MintPlayer/github-actions/publish-npm-packages scans the given folder,
+  # topo-sorts the discovered libs by peerDependencies, and fans out to
+  # every registry it's given. The two split jobs below replace what
+  # previously needed four matrix jobs (core/wrappers × npm/ghpkg).
   #
   # ng-bootstrap-snippets is unusual: it publishes from libs/ (source,
-  # not dist/) and only goes to NPM, never to GitHub Packages.
+  # not dist/) and only goes to NPM, never to GitHub Packages — so it
+  # gets its own action invocation with a different `folder` root.
   # ----------------------------------------------------------------------
 
-  publish-npm-core:
-    name: publish-npm-core (${{ matrix.pkg.name }})
-    needs: build
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      id-token: write
-
-    strategy:
-      fail-fast: false
-      max-parallel: 5
-      matrix:
-        pkg:
-          - { name: web-components,        path: dist/libs/mintplayer-web-components/package.json }
-          - { name: ng-animations,         path: dist/libs/mintplayer-ng-animations/package.json }
-          - { name: ng-click-outside,      path: dist/libs/mintplayer-ng-click-outside/package.json }
-          - { name: ng-focus-on-load,      path: dist/libs/mintplayer-ng-focus-on-load/package.json }
-          - { name: encode-utf8,           path: dist/libs/mintplayer-encode-utf8/package.json }
-          - { name: dijkstra,              path: dist/libs/mintplayer-dijkstra/package.json }
-          - { name: qr-code,               path: dist/libs/mintplayer-qr-code/package.json }
-          - { name: pagination,            path: dist/libs/mintplayer-pagination/package.json }
-          - { name: ng-qr-code,            path: dist/libs/mintplayer-ng-qr-code/package.json }
-          - { name: ng-swiper,             path: dist/libs/mintplayer-ng-swiper/package.json }
-          - { name: ng-bootstrap-snippets, path: libs/mintplayer-ng-bootstrap-snippets/package.json }
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Download dist artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: dist
-
-      - name: Push to NPM
-        uses: ./.github/actions/publish-npm-package
-        with:
-          package: ${{ matrix.pkg.path }}
-          registry: 'https://registry.npmjs.org'
-          token: ${{ secrets.PUBLISH_TO_NPMJS }}
-
-  publish-npm-wrappers:
-    name: publish-npm-wrappers (${{ matrix.pkg.name }})
-    needs: publish-npm-core
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      id-token: write
-
-    strategy:
-      fail-fast: false
-      matrix:
-        pkg:
-          - { name: react-bootstrap, path: dist/libs/mintplayer-react-bootstrap/package.json }
-          - { name: vue-bootstrap,   path: dist/libs/mintplayer-vue-bootstrap/package.json }
-          - { name: ng-bootstrap,    path: dist/libs/mintplayer-ng-bootstrap/package.json }
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Download dist artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: dist
-
-      - name: Push to NPM
-        uses: ./.github/actions/publish-npm-package
-        with:
-          package: ${{ matrix.pkg.path }}
-          registry: 'https://registry.npmjs.org'
-          token: ${{ secrets.PUBLISH_TO_NPMJS }}
-
-  publish-ghpkg-core:
-    name: publish-ghpkg-core (${{ matrix.pkg.name }})
+  publish-libs:
+    name: publish-libs
     needs: build
     runs-on: ubuntu-latest
 
@@ -289,22 +212,6 @@ jobs:
       packages: write
       id-token: write
 
-    strategy:
-      fail-fast: false
-      max-parallel: 5
-      matrix:
-        pkg:
-          - { name: web-components,   path: dist/libs/mintplayer-web-components/package.json }
-          - { name: ng-animations,    path: dist/libs/mintplayer-ng-animations/package.json }
-          - { name: ng-click-outside, path: dist/libs/mintplayer-ng-click-outside/package.json }
-          - { name: ng-focus-on-load, path: dist/libs/mintplayer-ng-focus-on-load/package.json }
-          - { name: encode-utf8,      path: dist/libs/mintplayer-encode-utf8/package.json }
-          - { name: dijkstra,         path: dist/libs/mintplayer-dijkstra/package.json }
-          - { name: qr-code,          path: dist/libs/mintplayer-qr-code/package.json }
-          - { name: pagination,       path: dist/libs/mintplayer-pagination/package.json }
-          - { name: ng-qr-code,       path: dist/libs/mintplayer-ng-qr-code/package.json }
-          - { name: ng-swiper,        path: dist/libs/mintplayer-ng-swiper/package.json }
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -315,51 +222,43 @@ jobs:
           name: dist
           path: dist
 
-      - name: Push to Github
-        uses: ./.github/actions/publish-npm-package
+      - name: Publish to NPM + GitHub Packages
+        # Pinned to b08fbdd (v1.1.0) — the v1.1.0 tag isn't pushed yet on
+        # MintPlayer/github-actions. Promote to @v1 once that tag lands.
+        uses: MintPlayer/github-actions/publish-npm-packages@b08fbddf0b285a8633ac138b89d79ceb8cc8c888
         with:
-          package: ${{ matrix.pkg.path }}
-          registry: 'https://npm.pkg.github.com'
-          token: ${{ github.token }}
+          folder: dist/libs
+          registries: |
+            [
+              { "url": "https://registry.npmjs.org", "token": "${{ secrets.PUBLISH_TO_NPMJS }}" },
+              { "url": "https://npm.pkg.github.com", "token": "${{ github.token }}" }
+            ]
 
-  publish-ghpkg-wrappers:
-    name: publish-ghpkg-wrappers (${{ matrix.pkg.name }})
-    needs: publish-ghpkg-core
+  publish-snippets:
+    name: publish-snippets
+    needs: build
     runs-on: ubuntu-latest
 
     permissions:
       contents: read
-      packages: write
       id-token: write
-
-    strategy:
-      fail-fast: false
-      matrix:
-        pkg:
-          - { name: react-bootstrap, path: dist/libs/mintplayer-react-bootstrap/package.json }
-          - { name: vue-bootstrap,   path: dist/libs/mintplayer-vue-bootstrap/package.json }
-          - { name: ng-bootstrap,    path: dist/libs/mintplayer-ng-bootstrap/package.json }
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download dist artifact
-        uses: actions/download-artifact@v4
+      - name: Publish snippets to NPM
+        uses: MintPlayer/github-actions/publish-npm-packages@b08fbddf0b285a8633ac138b89d79ceb8cc8c888
         with:
-          name: dist
-          path: dist
-
-      - name: Push to Github
-        uses: ./.github/actions/publish-npm-package
-        with:
-          package: ${{ matrix.pkg.path }}
-          registry: 'https://npm.pkg.github.com'
-          token: ${{ github.token }}
+          folder: libs/mintplayer-ng-bootstrap-snippets
+          registries: |
+            [
+              { "url": "https://registry.npmjs.org", "token": "${{ secrets.PUBLISH_TO_NPMJS }}" }
+            ]
 
   deploy:
     runs-on: ubuntu-latest
-    needs: [build, publish-npm-core, publish-npm-wrappers, publish-ghpkg-core, publish-ghpkg-wrappers]
+    needs: [build, publish-libs, publish-snippets]
     if: github.ref == 'refs/heads/master'
 
     permissions:
