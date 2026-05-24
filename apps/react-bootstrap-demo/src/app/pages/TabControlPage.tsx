@@ -17,7 +17,7 @@ export function TabControlPage() {
       <h1>Tab control</h1>
       <p className="text-body-secondary">
         Native named-slot tab projection. The control owns the active-tab
-        state via the <code>active-tab-id</code> attribute; consumers listen
+        state via the <code>active-tab</code> attribute; consumers listen
         for <code>tab-activate</code> events.
       </p>
 

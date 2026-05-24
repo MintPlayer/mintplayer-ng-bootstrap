@@ -8,7 +8,7 @@ import { ref, watch, onMounted } from 'vue';
 
 defineOptions({ inheritAttrs: false });
 
-// v-model surface: the `active-tab-id` attribute on the WC + the
+// v-model surface: the `active-tab` attribute on the WC + the
 // `tab-activate` CustomEvent. The underlying field is private; the
 // public API is the kebab-cased attribute, so we set it via
 // setAttribute. Composed with native <mp-tab-page> elements in the
@@ -17,7 +17,7 @@ const modelValue = defineModel<string>();
 const el = ref<MpTabControl | null>(null);
 
 const syncToEl = (v: string | undefined) => {
-  if (el.value && v !== undefined) el.value.setAttribute('active-tab-id', v);
+  if (el.value && v !== undefined) el.value.setAttribute('active-tab', v);
 };
 
 onMounted(() => syncToEl(modelValue.value));

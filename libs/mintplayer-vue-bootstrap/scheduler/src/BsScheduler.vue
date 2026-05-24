@@ -24,9 +24,15 @@ const syncProps = () => {
   if (props.resources) el.value.resources = props.resources;
 };
 
+// Reference-equality watches only. Lit's reactive property system also
+// uses === for change detection, so deep watching here would do the
+// expensive recursive Proxy traversal but still not re-render the WC
+// when a consumer mutates an event in place. The contract is: consumers
+// pass NEW arrays (immutable update) to trigger a re-sync — matches the
+// canonical Vue pattern for large lists.
 onMounted(syncProps);
-watch(() => props.events, syncProps, { deep: true });
-watch(() => props.resources, syncProps, { deep: true });
+watch(() => props.events, syncProps);
+watch(() => props.resources, syncProps);
 </script>
 
 <template>
