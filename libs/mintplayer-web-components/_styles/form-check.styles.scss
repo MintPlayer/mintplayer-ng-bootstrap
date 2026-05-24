@@ -1,0 +1,28 @@
+// Shared form-check styling for `mp-checkbox` and `mp-radio`. Each
+// element imports `formCheckStyles` (the codegen-wc output of this file)
+// and includes it in its own `static styles` array; because both
+// reference the same `CSSResult` instance, Lit attaches a single
+// underlying `CSSStyleSheet` to every shadow root via
+// `adoptedStyleSheets`. One parse, one stylesheet object, two shadow
+// roots.
+//
+// Pass-through to Bootstrap's `forms/form-check` module so future
+// Bootstrap upgrades flow in automatically — no hand-curated subset
+// to maintain.
+
+@import "node_modules/bootstrap/scss/functions";
+@import "node_modules/bootstrap/scss/variables";
+@import "node_modules/bootstrap/scss/variables-dark";
+@import "node_modules/bootstrap/scss/mixins";
+@import "node_modules/bootstrap/scss/forms/form-check";
+
+// Bootstrap's `.form-check` ships a `margin-bottom: 0.125rem` that's
+// only useful when stacking multiple checkboxes/radios in a form
+// column. Each WC wraps a single control, so that bottom margin
+// produces an asymmetric box and the visible indicator drifts above
+// the geometric centre when the WC sits in a vertically-centred
+// container (table cells, toolbars). Zero it out — consumers stacking
+// multiple WCs can re-introduce spacing at the consumer-template level.
+.form-check {
+  margin-bottom: 0;
+}

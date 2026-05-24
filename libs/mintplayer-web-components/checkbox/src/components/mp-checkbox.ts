@@ -2,9 +2,15 @@ import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { ref, createRef, type Ref } from 'lit/directives/ref.js';
 
-// Side-effect import: registers `<mp-toggle-button>`. The shared
-// `toggleButtonStyles` `CSSResult` is reused so all three WCs share one
-// parsed `CSSStyleSheet` via `adoptedStyleSheets`.
+// `formCheckStyles` is a CSSResult holding Bootstrap's `forms/form-check`
+// rules (plus a margin-zero override for single-WC layouts). Shared with
+// the future `mp-radio` so both WCs adopt a single parsed CSSStyleSheet.
+// Lives outside the per-entry tree at libs/.../_styles/ — an internal
+// directory, NOT a public sub-entry of @mintplayer/web-components.
+import { formCheckStyles } from '../../../_styles/form-check.styles';
+
+// `toggleButtonStyles` covers the `toggle_button` variant (`.btn` rules).
+// Side-effect-imports `<mp-toggle-button>` too — same module.
 import {
   toggleButtonStyles,
   type ToggleButtonColor,
@@ -49,7 +55,7 @@ let instanceCounter = 0;
  * Emits `change` with `detail: { checked, indeterminate, value }`.
  */
 export class MpCheckbox extends LitElement {
-  static override styles = [toggleButtonStyles];
+  static override styles = [formCheckStyles, toggleButtonStyles];
 
   static override shadowRootOptions = {
     ...LitElement.shadowRootOptions,

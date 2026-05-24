@@ -1,5 +1,4243 @@
 {
   "schemaVersion": "1.0.0",
   "readme": "",
-  "modules": []
+  "modules": [
+    {
+      "kind": "javascript-module",
+      "path": "calendar/src/mp-calendar.element.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "mp-calendar — Bootstrap-styled month grid primitive.\n\nStandalone Lit element, framework-agnostic. The Angular wrapper\n(`bs-calendar`) is a thin shell that forwards inputs/outputs.\n\nAPG Date Picker keyboard model: arrows ±1 day / ±1 week, Home/End to week\nedges, PageUp/Down ±1 month, Ctrl+PageUp/Down ±1 year, Enter/Space selects.\n\nEvents:\n - `selected-date-change`  fires on click + Enter/Space.\n - `current-month-change`  fires on chevron clicks + month-crossing keys.\n\nBoth bubble and compose so light-DOM Angular hosts pick them up.",
+          "name": "MpCalendarElement",
+          "members": [
+            {
+              "kind": "field",
+              "name": "selectedDate",
+              "privacy": "public",
+              "type": {
+                "text": "Date | null"
+              },
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "currentMonth",
+              "privacy": "public",
+              "type": {
+                "text": "Date | null"
+              },
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "disableDateFn",
+              "privacy": "public",
+              "type": {
+                "text": "((date: Date) => boolean) | null"
+              },
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "min",
+              "privacy": "public",
+              "type": {
+                "text": "Date | null"
+              },
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "max",
+              "privacy": "public",
+              "type": {
+                "text": "Date | null"
+              },
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "firstDayOfWeek",
+              "privacy": "public",
+              "type": {
+                "text": "FirstDayOfWeek"
+              },
+              "default": "1",
+              "attribute": "first-day-of-week",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "locale",
+              "privacy": "public",
+              "type": {
+                "text": "string | undefined"
+              },
+              "default": "undefined",
+              "attribute": "locale",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "_focusedDate",
+              "privacy": "private",
+              "type": {
+                "text": "Date | null"
+              },
+              "default": "null",
+              "attribute": "_focusedDate"
+            },
+            {
+              "kind": "field",
+              "name": "pendingFocusMove",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "instanceId",
+              "privacy": "private",
+              "readonly": true,
+              "default": "`mp-cal-${++instanceCounter}`"
+            },
+            {
+              "kind": "field",
+              "name": "monthLabelId",
+              "privacy": "private",
+              "readonly": true,
+              "default": "`${this.instanceId}-month`"
+            },
+            {
+              "kind": "method",
+              "name": "cellId",
+              "return": {
+                "type": {
+                  "text": "string"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "date",
+                  "type": {
+                    "text": "Date"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "isSameDate",
+              "return": {
+                "type": {
+                  "text": "boolean"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "a",
+                  "type": {
+                    "text": "Date | null"
+                  }
+                },
+                {
+                  "name": "b",
+                  "type": {
+                    "text": "Date | null"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "isToday",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "boolean"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "date",
+                  "type": {
+                    "text": "Date"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "isDisabled",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "boolean"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "date",
+                  "type": {
+                    "text": "Date"
+                  }
+                }
+              ],
+              "description": "Disabled if out of [min, max] (date-only) or rejected by disableDateFn."
+            },
+            {
+              "kind": "method",
+              "name": "dateOnly",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "number"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "d",
+                  "type": {
+                    "text": "Date"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "getWeeks",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "CalendarWeek[]"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "month",
+                  "type": {
+                    "text": "Date"
+                  }
+                }
+              ],
+              "description": "Compute the weeks rendered for the current month, honoring firstDayOfWeek."
+            },
+            {
+              "kind": "method",
+              "name": "startOfWeek",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "Date"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "date",
+                  "type": {
+                    "text": "Date"
+                  }
+                }
+              ],
+              "description": "First day of the visible grid — Monday-on-top by default."
+            },
+            {
+              "kind": "method",
+              "name": "endOfWeek",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "Date"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "date",
+                  "type": {
+                    "text": "Date"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "daysBetween",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "number"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "a",
+                  "type": {
+                    "text": "Date"
+                  }
+                },
+                {
+                  "name": "b",
+                  "type": {
+                    "text": "Date"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "weekOfYear",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "number"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "date",
+                  "type": {
+                    "text": "Date"
+                  }
+                }
+              ],
+              "description": "ISO-8601 week-of-year."
+            },
+            {
+              "kind": "method",
+              "name": "weekdayNames",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "{ short: string; long: string }[]"
+                }
+              },
+              "description": "Localized weekday short + long names, in the order driven by firstDayOfWeek."
+            },
+            {
+              "kind": "method",
+              "name": "monthLabel",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "string"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "month",
+                  "type": {
+                    "text": "Date"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "focusableDate",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "Date | null"
+                }
+              },
+              "description": "The cell that should carry tabindex=\"0\". One per month — focused, else\nselected, else today, else first enabled day. Mirrors APG convention."
+            },
+            {
+              "kind": "method",
+              "name": "previousMonth",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "nextMonth",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "goto",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "day",
+                  "type": {
+                    "text": "CalendarDay | null"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "setCurrentMonth",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "next",
+                  "type": {
+                    "text": "Date"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "setSelectedDate",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "next",
+                  "type": {
+                    "text": "Date"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "isSameYearMonth",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "boolean"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "a",
+                  "type": {
+                    "text": "Date"
+                  }
+                },
+                {
+                  "name": "b",
+                  "type": {
+                    "text": "Date"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "onCellKeyDown",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "event",
+                  "type": {
+                    "text": "KeyboardEvent"
+                  }
+                },
+                {
+                  "name": "day",
+                  "type": {
+                    "text": "CalendarDay | null"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "moveFocusTo",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "target",
+                  "type": {
+                    "text": "Date"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "renderCell",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "TemplateResult"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "day",
+                  "type": {
+                    "text": "CalendarDay | null"
+                  }
+                },
+                {
+                  "name": "focusable",
+                  "type": {
+                    "text": "Date | null"
+                  }
+                }
+              ]
+            }
+          ],
+          "events": [
+            {
+              "name": "current-month-change",
+              "type": {
+                "text": "CustomEvent"
+              }
+            },
+            {
+              "name": "selected-date-change",
+              "type": {
+                "text": "CustomEvent"
+              }
+            }
+          ],
+          "attributes": [
+            {
+              "name": "first-day-of-week",
+              "type": {
+                "text": "FirstDayOfWeek"
+              },
+              "default": "1",
+              "fieldName": "firstDayOfWeek"
+            },
+            {
+              "name": "locale",
+              "type": {
+                "text": "string | undefined"
+              },
+              "default": "undefined",
+              "fieldName": "locale"
+            },
+            {
+              "name": "_focusedDate",
+              "type": {
+                "text": "Date | null"
+              },
+              "default": "null",
+              "fieldName": "_focusedDate"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "mp-calendar",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpCalendarElement",
+          "declaration": {
+            "name": "MpCalendarElement",
+            "module": "calendar/src/mp-calendar.element.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "mp-calendar",
+          "declaration": {
+            "name": "MpCalendarElement",
+            "module": "calendar/src/mp-calendar.element.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "card/src/mp-card-body.element.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "Card body. Pure structural wrapper — adds `card-body` to itself so\nBootstrap's body padding / flex layout apply.",
+          "name": "MpCardBodyElement",
+          "superclass": {
+            "name": "HTMLElement"
+          },
+          "tagName": "mp-card-body",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpCardBodyElement",
+          "declaration": {
+            "name": "MpCardBodyElement",
+            "module": "card/src/mp-card-body.element.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "mp-card-body",
+          "declaration": {
+            "name": "MpCardBodyElement",
+            "module": "card/src/mp-card-body.element.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "card/src/mp-card-footer.element.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "Card footer. Mirrors `mp-card-header`'s colour handling; no nav-style\nvariant exists at this position upstream in Bootstrap.",
+          "name": "MpCardFooterElement",
+          "attributes": [
+            {
+              "name": "color"
+            }
+          ],
+          "superclass": {
+            "name": "HTMLElement"
+          },
+          "tagName": "mp-card-footer",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpCardFooterElement",
+          "declaration": {
+            "name": "MpCardFooterElement",
+            "module": "card/src/mp-card-footer.element.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "mp-card-footer",
+          "declaration": {
+            "name": "MpCardFooterElement",
+            "module": "card/src/mp-card-footer.element.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "card/src/mp-card-group.element.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "Card group — Bootstrap's connected-card layout primitive.",
+          "name": "MpCardGroupElement",
+          "superclass": {
+            "name": "HTMLElement"
+          },
+          "tagName": "mp-card-group",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpCardGroupElement",
+          "declaration": {
+            "name": "MpCardGroupElement",
+            "module": "card/src/mp-card-group.element.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "mp-card-group",
+          "declaration": {
+            "name": "MpCardGroupElement",
+            "module": "card/src/mp-card-group.element.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "card/src/mp-card-header.element.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "Card header. Slotted content stays in light DOM; this element only adds\nBootstrap classes to itself and (when `nav-style` is set) to a nested\n`nav` or `ul` so `card-header-tabs` / `card-header-pills` styling applies.\n\nAttributes:\n - `color` — Bootstrap colour name, maps to `text-bg-<name>`.\n - `nav-style` — `'tabs'` or `'pills'`. Adds the matching `card-header-*`\n   class to the first slotted `nav` / `ul`.",
+          "name": "MpCardHeaderElement",
+          "members": [
+            {
+              "kind": "field",
+              "name": "mutationObserver",
+              "type": {
+                "text": "MutationObserver | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "method",
+              "name": "applyColor",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "applyNavStyle",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            }
+          ],
+          "attributes": [
+            {
+              "name": "color"
+            },
+            {
+              "name": "nav-style"
+            }
+          ],
+          "superclass": {
+            "name": "HTMLElement"
+          },
+          "tagName": "mp-card-header",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpCardHeaderElement",
+          "declaration": {
+            "name": "MpCardHeaderElement",
+            "module": "card/src/mp-card-header.element.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "mp-card-header",
+          "declaration": {
+            "name": "MpCardHeaderElement",
+            "module": "card/src/mp-card-header.element.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "card/src/mp-card-img.element.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "Card image. Switches between three Bootstrap positions:\n - `position=\"top\"`     → host gets `card-img-top`, inner `<img>` too\n - `position=\"bottom\"`  → host gets `card-img-bottom`, inner `<img>` too\n - `position=\"overlay\"` → host gets `card-img`, inner `<img>` too, AND\n   slotted children get wrapped in `<div class=\"card-img-overlay\">`\n\nThe class is duplicated on both host and inner img so that Bootstrap's\n`.card-group > .card > .card-img-top` corner-rounding selector matches\n(host is the direct child of `.card`) AND `.card-img-top { width: 100% }`\nsizes the actual `<img>` element. Pair with `overflow: hidden` on the\nhost in `mp-card.element.scss` so the host's border-radius clips the img.\n\nPosition is read once on connection — changes after first render are not\nsupported. `src` and `alt` are reactive.",
+          "name": "MpCardImgElement",
+          "members": [
+            {
+              "kind": "field",
+              "name": "imgEl",
+              "type": {
+                "text": "HTMLImageElement | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "method",
+              "name": "applyImgAttrs",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "img",
+                  "type": {
+                    "text": "HTMLImageElement"
+                  }
+                }
+              ]
+            }
+          ],
+          "attributes": [
+            {
+              "name": "src"
+            },
+            {
+              "name": "alt"
+            },
+            {
+              "name": "position"
+            }
+          ],
+          "superclass": {
+            "name": "HTMLElement"
+          },
+          "tagName": "mp-card-img",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpCardImgElement",
+          "declaration": {
+            "name": "MpCardImgElement",
+            "module": "card/src/mp-card-img.element.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "mp-card-img",
+          "declaration": {
+            "name": "MpCardImgElement",
+            "module": "card/src/mp-card-img.element.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "card/src/mp-card-link.element.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "Card link — wraps slotted text content in an `<a class=\"card-link\">`.\n\nThe actual `<a>` is the styled element (Bootstrap targets `.card-link`).\nBootstrap's adjacency rule `.card-link + .card-link { margin-left: ... }`\ndoes not match across wrapper boundaries; we compensate with a sibling\nselector on `mp-card-link + mp-card-link > .card-link` in\n`mp-card.element.scss`.\n\nAttributes:\n - `href` — forwarded to the inner `<a>`.",
+          "name": "MpCardLinkElement",
+          "members": [
+            {
+              "kind": "field",
+              "name": "anchor",
+              "type": {
+                "text": "HTMLAnchorElement | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "method",
+              "name": "applyHref",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            }
+          ],
+          "attributes": [
+            {
+              "name": "href"
+            }
+          ],
+          "superclass": {
+            "name": "HTMLElement"
+          },
+          "tagName": "mp-card-link",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpCardLinkElement",
+          "declaration": {
+            "name": "MpCardLinkElement",
+            "module": "card/src/mp-card-link.element.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "mp-card-link",
+          "declaration": {
+            "name": "MpCardLinkElement",
+            "module": "card/src/mp-card-link.element.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "card/src/mp-card-subtitle.element.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "Card subtitle — adds `card-subtitle`.",
+          "name": "MpCardSubtitleElement",
+          "superclass": {
+            "name": "HTMLElement"
+          },
+          "tagName": "mp-card-subtitle",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpCardSubtitleElement",
+          "declaration": {
+            "name": "MpCardSubtitleElement",
+            "module": "card/src/mp-card-subtitle.element.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "mp-card-subtitle",
+          "declaration": {
+            "name": "MpCardSubtitleElement",
+            "module": "card/src/mp-card-subtitle.element.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "card/src/mp-card-text.element.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "Card text — adds `card-text` for Bootstrap's last-child margin reset.",
+          "name": "MpCardTextElement",
+          "superclass": {
+            "name": "HTMLElement"
+          },
+          "tagName": "mp-card-text",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpCardTextElement",
+          "declaration": {
+            "name": "MpCardTextElement",
+            "module": "card/src/mp-card-text.element.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "mp-card-text",
+          "declaration": {
+            "name": "MpCardTextElement",
+            "module": "card/src/mp-card-text.element.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "card/src/mp-card-title.element.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "Card title — adds `card-title` for Bootstrap's title spacing/colour vars.\nRender as a heading in the consuming app if heading semantics matter; the\nWC stays element-agnostic to avoid forcing an h-level.",
+          "name": "MpCardTitleElement",
+          "superclass": {
+            "name": "HTMLElement"
+          },
+          "tagName": "mp-card-title",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpCardTitleElement",
+          "declaration": {
+            "name": "MpCardTitleElement",
+            "module": "card/src/mp-card-title.element.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "mp-card-title",
+          "declaration": {
+            "name": "MpCardTitleElement",
+            "module": "card/src/mp-card-title.element.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "card/src/mp-card.element.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "Root of the Bootstrap card family.\n\nLight-DOM rendering: this element does NOT use shadow DOM. Bootstrap's\n`_card.scss` relies on parent-child selectors (`.card > .card-header`,\n`.card > .list-group + .card-footer`) which cannot pierce shadow roots, so\nthe entire `mp-card*` family stays in light DOM. The compiled card slice\nis injected into `document.head` exactly once on the first connection of\nany `<mp-card>` instance.\n\nAttributes:\n - `color`  — one of the Bootstrap colour names; maps to `text-bg-<name>`.\n - `outline` — boolean (presence = true); flips to `border border-<name>`\n   plus a transparent background, instead of the filled variant.",
+          "name": "MpCardElement",
+          "members": [
+            {
+              "kind": "method",
+              "name": "applyColor",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            }
+          ],
+          "attributes": [
+            {
+              "name": "color"
+            },
+            {
+              "name": "outline"
+            }
+          ],
+          "superclass": {
+            "name": "HTMLElement"
+          },
+          "tagName": "mp-card",
+          "customElement": true
+        },
+        {
+          "kind": "function",
+          "name": "ensureCardStylesInjected",
+          "return": {
+            "type": {
+              "text": "void"
+            }
+          },
+          "description": "Inject the compiled Bootstrap-card SCSS into `document.head` exactly once\nper page. Called from `MpCardElement.connectedCallback()` and also exported\nfor the Angular wrapper (`BsCardComponent`) which doesn't instantiate\n`<mp-card>` itself but needs the same global cascade."
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpCardElement",
+          "declaration": {
+            "name": "MpCardElement",
+            "module": "card/src/mp-card.element.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "ensureCardStylesInjected",
+          "declaration": {
+            "name": "ensureCardStylesInjected",
+            "module": "card/src/mp-card.element.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "mp-card",
+          "declaration": {
+            "name": "MpCardElement",
+            "module": "card/src/mp-card.element.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "code-snippet/src/mp-code-snippet.element.ts",
+      "declarations": [
+        {
+          "kind": "variable",
+          "name": "TAG_NAME",
+          "type": {
+            "text": "string"
+          },
+          "default": "'mp-code-snippet'"
+        },
+        {
+          "kind": "class",
+          "description": "`<mp-code-snippet>` — code block with syntax highlighting + copy-to-clipboard.\n\nReplaces the Angular-only `bs-code-snippet`. All three demo apps\n(Angular / React / Vue) render their per-page source snippets through\nthis WC for visual consistency.\n\nAttributes / properties:\n- `language` (optional): force a specific highlight.js language. If\n  omitted, the highlighter auto-detects.\n- `code` (property): the source to render. Setting via attribute also\n  works but the property form is preferred for multi-line content.\n\nEvents:\n- `language-detected` — fires after each highlight pass with\n  `detail.language` containing the resolved language id (e.g. `\"typescript\"`).\n\na11y: the copy button announces success via an `aria-live=\"polite\"`\nregion inside the shadow root.\n\nSource content can ALSO be projected via the default slot — useful for\nstatic HTML pages where attribute serialization of newlines is awkward.\nSlot content is read once on first render and on `slotchange`.",
+          "name": "MpCodeSnippet",
+          "members": [
+            {
+              "kind": "field",
+              "name": "language",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "attribute": "language"
+            },
+            {
+              "kind": "field",
+              "name": "code",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "attribute": "code"
+            },
+            {
+              "kind": "field",
+              "name": "detectedLanguage",
+              "type": {
+                "text": "string"
+              },
+              "privacy": "private",
+              "default": "'code'"
+            },
+            {
+              "kind": "field",
+              "name": "highlighted",
+              "type": {
+                "text": "string"
+              },
+              "privacy": "private",
+              "default": "''"
+            },
+            {
+              "kind": "field",
+              "name": "toastVisible",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "toastTimer",
+              "type": {
+                "text": "ReturnType<typeof setTimeout> | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "method",
+              "name": "runHighlight",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "handleCopy",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "Promise<void>"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "showToast",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "onSlotChange",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "e",
+                  "type": {
+                    "text": "Event"
+                  }
+                }
+              ]
+            }
+          ],
+          "events": [
+            {
+              "name": "language-detected",
+              "type": {
+                "text": "CustomEvent"
+              }
+            }
+          ],
+          "attributes": [
+            {
+              "name": "language",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "fieldName": "language"
+            },
+            {
+              "name": "code",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "fieldName": "code"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "TAG_NAME",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpCodeSnippet",
+          "declaration": {
+            "name": "MpCodeSnippet",
+            "module": "code-snippet/src/mp-code-snippet.element.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "TAG_NAME",
+          "declaration": {
+            "name": "MpCodeSnippet",
+            "module": "code-snippet/src/mp-code-snippet.element.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "timepicker/src/mp-time-list.element.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "mp-time-list — Bootstrap-styled time-slot listbox primitive.\n\nStandalone Lit element. Renders a list of equally-spaced time slots\n(`step`-minute granularity) covering 00:00–23:45 by default. Each slot is\n`role=\"option\"` with `aria-selected` reflecting the currently selected time.\n\nKeyboard model (APG Listbox): ArrowUp/Down ±1 slot, Home/End first/last,\nPageUp/Down ±1 hour, Enter/Space selects.\n\nEvents:\n - `selected-time-change`  fires on click / Enter / Space (bubbles, composes).",
+          "name": "MpTimeListElement",
+          "members": [
+            {
+              "kind": "field",
+              "name": "selectedTime",
+              "privacy": "public",
+              "type": {
+                "text": "Date | null"
+              },
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "step",
+              "privacy": "public",
+              "type": {
+                "text": "TimeStep"
+              },
+              "default": "15",
+              "attribute": "step",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "min",
+              "privacy": "public",
+              "type": {
+                "text": "Date | null"
+              },
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "max",
+              "privacy": "public",
+              "type": {
+                "text": "Date | null"
+              },
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "hour12",
+              "privacy": "public",
+              "type": {
+                "text": "Hour12Mode"
+              },
+              "default": "'auto'",
+              "attribute": "hour12"
+            },
+            {
+              "kind": "field",
+              "name": "locale",
+              "privacy": "public",
+              "type": {
+                "text": "string | undefined"
+              },
+              "default": "undefined",
+              "attribute": "locale",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "_focusedMinutes",
+              "privacy": "private",
+              "type": {
+                "text": "number | null"
+              },
+              "default": "null",
+              "attribute": "_focusedMinutes"
+            },
+            {
+              "kind": "field",
+              "name": "pendingFocusMove",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "instanceId",
+              "privacy": "private",
+              "readonly": true,
+              "default": "`mp-tl-${++instanceCounter}`"
+            },
+            {
+              "kind": "method",
+              "name": "slots",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "TimeSlot[]"
+                }
+              },
+              "description": "All slots between 00:00 and 24:00 - step, in step-minute increments."
+            },
+            {
+              "kind": "method",
+              "name": "formatTime",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "string"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "date",
+                  "type": {
+                    "text": "Date"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "resolvedHour12",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "boolean | undefined"
+                }
+              },
+              "description": "Resolves `hour12 === 'auto'` against the active locale; explicit wins."
+            },
+            {
+              "kind": "method",
+              "name": "timeMinutes",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "number"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "d",
+                  "type": {
+                    "text": "Date"
+                  }
+                }
+              ],
+              "description": "Time-only minute slot for a Date, ignoring its date portion."
+            },
+            {
+              "kind": "method",
+              "name": "isDisabledMinutes",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "boolean"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "minutes",
+                  "type": {
+                    "text": "number"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "isSelected",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "boolean"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "minutes",
+                  "type": {
+                    "text": "number"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "focusableMinutes",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "number"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "slotId",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "string"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "minutes",
+                  "type": {
+                    "text": "number"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "selectMinutes",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "minutes",
+                  "type": {
+                    "text": "number"
+                  }
+                }
+              ],
+              "description": "Selects a slot programmatically; emits event. No-op if disabled or out-of-range."
+            },
+            {
+              "kind": "field",
+              "name": "onHostKeyDown",
+              "privacy": "private"
+            },
+            {
+              "kind": "field",
+              "name": "onHostFocus",
+              "privacy": "private"
+            },
+            {
+              "kind": "method",
+              "name": "scrollFocusedIntoView",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "renderSlot",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "TemplateResult"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "slot",
+                  "type": {
+                    "text": "TimeSlot"
+                  }
+                },
+                {
+                  "name": "focused",
+                  "type": {
+                    "text": "number"
+                  }
+                }
+              ]
+            }
+          ],
+          "events": [
+            {
+              "name": "selected-time-change",
+              "type": {
+                "text": "CustomEvent"
+              }
+            }
+          ],
+          "attributes": [
+            {
+              "name": "step",
+              "type": {
+                "text": "TimeStep"
+              },
+              "default": "15",
+              "fieldName": "step"
+            },
+            {
+              "name": "hour12",
+              "type": {
+                "text": "Hour12Mode"
+              },
+              "default": "'auto'",
+              "fieldName": "hour12"
+            },
+            {
+              "name": "locale",
+              "type": {
+                "text": "string | undefined"
+              },
+              "default": "undefined",
+              "fieldName": "locale"
+            },
+            {
+              "name": "_focusedMinutes",
+              "type": {
+                "text": "number | null"
+              },
+              "default": "null",
+              "fieldName": "_focusedMinutes"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "mp-time-list",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpTimeListElement",
+          "declaration": {
+            "name": "MpTimeListElement",
+            "module": "timepicker/src/mp-time-list.element.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "mp-time-list",
+          "declaration": {
+            "name": "MpTimeListElement",
+            "module": "timepicker/src/mp-time-list.element.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "timepicker/src/mp-timepicker.element.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "mp-timepicker — Bootstrap-styled time picker WC.\n\nRenders an `<input class=\"form-control\" readonly>` displaying the selected\ntime, a clock trigger button, and a popup containing `<mp-time-list>` via\na default slot. Consumers can replace the time list by projecting their own\n`<mp-time-list slot=\"time-list\">` content, or rely on the bundled default.\n\nProperties forwarded to the inner time list: selectedTime, step, min, max,\nhour12, locale.\n\nEvents (bubbles + composed):\n - `selected-time-change`  fires when the inner list emits one.\n - `opened` / `closed`     fire on popup open/close.",
+          "name": "MpTimepickerElement",
+          "members": [
+            {
+              "kind": "field",
+              "name": "selectedTime",
+              "privacy": "public",
+              "type": {
+                "text": "Date | null"
+              },
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "step",
+              "privacy": "public",
+              "type": {
+                "text": "TimeStep"
+              },
+              "default": "15",
+              "attribute": "step",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "min",
+              "privacy": "public",
+              "type": {
+                "text": "Date | null"
+              },
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "max",
+              "privacy": "public",
+              "type": {
+                "text": "Date | null"
+              },
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "hour12",
+              "privacy": "public",
+              "type": {
+                "text": "Hour12Mode"
+              },
+              "default": "'auto'",
+              "attribute": "hour12"
+            },
+            {
+              "kind": "field",
+              "name": "locale",
+              "privacy": "public",
+              "type": {
+                "text": "string | undefined"
+              },
+              "default": "undefined",
+              "attribute": "locale",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "disabled",
+              "privacy": "public",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "attribute": "disabled",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "placeholder",
+              "privacy": "public",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "attribute": "placeholder",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "triggerLabel",
+              "privacy": "public",
+              "type": {
+                "text": "string"
+              },
+              "default": "'Choose time'",
+              "attribute": "trigger-label",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "instanceId",
+              "privacy": "private",
+              "readonly": true,
+              "default": "`mp-tp-${++instanceCounter}`"
+            },
+            {
+              "kind": "field",
+              "name": "popupId",
+              "privacy": "private",
+              "readonly": true,
+              "default": "`${this.instanceId}-popup`"
+            },
+            {
+              "kind": "field",
+              "name": "triggerEl",
+              "type": {
+                "text": "HTMLButtonElement | undefined"
+              },
+              "privacy": "private"
+            },
+            {
+              "kind": "field",
+              "name": "inputGroupEl",
+              "type": {
+                "text": "HTMLElement | undefined"
+              },
+              "privacy": "private"
+            },
+            {
+              "kind": "field",
+              "name": "popupEl",
+              "type": {
+                "text": "HTMLElement | undefined"
+              },
+              "privacy": "private"
+            },
+            {
+              "kind": "field",
+              "name": "overlay",
+              "privacy": "private",
+              "readonly": true,
+              "default": "new OverlayController(this, { anchor: () => this.inputGroupEl ?? this.triggerEl ?? null, trigger: () => this.triggerEl ?? null, panel: () => this.popupEl ?? null, panelWidth: 'anchor-min', onOpen: () => this.dispatchEvent(new CustomEvent('opened', { bubbles: true, composed: true })), onClose: () => this.dispatchEvent(new CustomEvent('closed', { bubbles: true, composed: true })), })",
+              "description": "Anchor against the entire `.input-group` wrapper (so the popup aligns\nwith the field's left edge); the trigger button keeps focus-return."
+            },
+            {
+              "kind": "method",
+              "name": "open",
+              "return": {
+                "type": {
+                  "text": "Promise<void>"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "close",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "returnFocus",
+                  "default": "true"
+                }
+              ]
+            },
+            {
+              "kind": "field",
+              "name": "isOpen",
+              "type": {
+                "text": "boolean"
+              },
+              "readonly": true
+            },
+            {
+              "kind": "method",
+              "name": "resolvedHour12",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "boolean | undefined"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "formatDisplay",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "string"
+                }
+              }
+            },
+            {
+              "kind": "field",
+              "name": "onTriggerClick",
+              "privacy": "private"
+            },
+            {
+              "kind": "field",
+              "name": "onTriggerKeyDown",
+              "privacy": "private"
+            },
+            {
+              "kind": "field",
+              "name": "onSelectedTimeChange",
+              "privacy": "private"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "step",
+              "type": {
+                "text": "TimeStep"
+              },
+              "default": "15",
+              "fieldName": "step"
+            },
+            {
+              "name": "hour12",
+              "type": {
+                "text": "Hour12Mode"
+              },
+              "default": "'auto'",
+              "fieldName": "hour12"
+            },
+            {
+              "name": "locale",
+              "type": {
+                "text": "string | undefined"
+              },
+              "default": "undefined",
+              "fieldName": "locale"
+            },
+            {
+              "name": "disabled",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "fieldName": "disabled"
+            },
+            {
+              "name": "placeholder",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "fieldName": "placeholder"
+            },
+            {
+              "name": "trigger-label",
+              "type": {
+                "text": "string"
+              },
+              "default": "'Choose time'",
+              "fieldName": "triggerLabel"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "mp-timepicker",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpTimepickerElement",
+          "declaration": {
+            "name": "MpTimepickerElement",
+            "module": "timepicker/src/mp-timepicker.element.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "mp-timepicker",
+          "declaration": {
+            "name": "MpTimepickerElement",
+            "module": "timepicker/src/mp-timepicker.element.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "a11y/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "LiveAnnouncerController",
+          "declaration": {
+            "name": "LiveAnnouncerController",
+            "module": "./live-announcer"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "LiveAnnouncerOptions",
+          "declaration": {
+            "name": "LiveAnnouncerOptions",
+            "module": "./live-announcer"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "a11y/src/live-announcer.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "Lit reactive controller that owns a visually-hidden live region for a Lit\nweb component. Call announce() to push a message; call template() once\ninside the host's render() to drop the live region into the shadow tree.\n\nWrites go directly to the rendered region's textContent (via a Lit `ref`).\nThat keeps announce() safe to call from inside the host's `updated()`\nlifecycle hook — it never schedules a follow-up update, so it can't\ntrigger Lit's \"change-in-update\" warning.\n\nWhy a controller and not a free-floating div appended to the shadow root:\nLit's render owns its render root; appending children outside the rendered\nsubtree is fragile across re-renders. Going through the template keeps the\nregion inside Lit's managed DOM and avoids \"where did my element go\" bugs.",
+          "name": "LiveAnnouncerController",
+          "members": [
+            {
+              "kind": "field",
+              "name": "host",
+              "type": {
+                "text": "ReactiveControllerHost"
+              },
+              "privacy": "private",
+              "default": "host"
+            },
+            {
+              "kind": "field",
+              "name": "clearTimer",
+              "type": {
+                "text": "ReturnType<typeof setTimeout> | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "pendingMessage",
+              "type": {
+                "text": "string | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "politeness",
+              "type": {
+                "text": "'polite' | 'assertive'"
+              },
+              "privacy": "private",
+              "readonly": true
+            },
+            {
+              "kind": "field",
+              "name": "clearAfterMs",
+              "type": {
+                "text": "number"
+              },
+              "privacy": "private",
+              "readonly": true
+            },
+            {
+              "kind": "field",
+              "name": "regionRef",
+              "type": {
+                "text": "Ref<HTMLDivElement>"
+              },
+              "privacy": "private",
+              "readonly": true
+            },
+            {
+              "kind": "method",
+              "name": "hostUpdated",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "hostDisconnected",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "announce",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "message",
+                  "type": {
+                    "text": "string"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "template",
+              "return": {
+                "type": {
+                  "text": "TemplateResult"
+                }
+              },
+              "description": "Returns the live-region template fragment. Call once inside the host's render()."
+            },
+            {
+              "kind": "method",
+              "name": "writeMessage",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "message",
+                  "type": {
+                    "text": "string"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "scheduleClear",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "LiveAnnouncerController",
+          "declaration": {
+            "name": "LiveAnnouncerController",
+            "module": "a11y/src/live-announcer.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "calendar/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "calendar/src/mp-calendar.element"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "card/src/card-classes.ts",
+      "declarations": [
+        {
+          "kind": "variable",
+          "name": "COLOR_NAMES",
+          "type": {
+            "text": "[\n  'primary',\n  'secondary',\n  'success',\n  'danger',\n  'warning',\n  'info',\n  'light',\n  'dark',\n  'body',\n  'white',\n  'transparent',\n]"
+          },
+          "default": "[ 'primary', 'secondary', 'success', 'danger', 'warning', 'info', 'light', 'dark', 'body', 'white', 'transparent', ]"
+        },
+        {
+          "kind": "function",
+          "name": "isCardColorName",
+          "return": {
+            "type": {
+              "text": "value is CardColorName"
+            }
+          },
+          "parameters": [
+            {
+              "name": "value",
+              "type": {
+                "text": "string | null | undefined"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "function",
+          "name": "clearPrefixedClasses",
+          "return": {
+            "type": {
+              "text": "void"
+            }
+          },
+          "parameters": [
+            {
+              "name": "el",
+              "type": {
+                "text": "HTMLElement"
+              }
+            },
+            {
+              "name": "prefix",
+              "type": {
+                "text": "string"
+              }
+            }
+          ],
+          "description": "Remove every class on `el` whose name starts with `prefix` (e.g.\n`text-bg-`, `border-`). Used to clear a previous colour selection before\napplying the new one."
+        },
+        {
+          "kind": "function",
+          "name": "applyCardColorClasses",
+          "return": {
+            "type": {
+              "text": "void"
+            }
+          },
+          "parameters": [
+            {
+              "name": "el",
+              "type": {
+                "text": "HTMLElement"
+              }
+            },
+            {
+              "name": "color",
+              "type": {
+                "text": "string | null"
+              }
+            },
+            {
+              "name": "outline",
+              "type": {
+                "text": "boolean"
+              }
+            }
+          ],
+          "description": "Apply the card root's colour contract to an element: `text-bg-<name>` for\nthe filled variant, or `border border-<name> bg-transparent` for outline.\nUsed by both `mp-card` and the Angular `bs-card` wrapper so both layers\nstay byte-identical without each duplicating the bootstrap-utility logic."
+        },
+        {
+          "kind": "function",
+          "name": "applyTextBgClass",
+          "return": {
+            "type": {
+              "text": "void"
+            }
+          },
+          "parameters": [
+            {
+              "name": "el",
+              "type": {
+                "text": "HTMLElement"
+              }
+            },
+            {
+              "name": "color",
+              "type": {
+                "text": "string | null"
+              }
+            }
+          ],
+          "description": "Apply the `text-bg-<name>` background to `el`, clearing any prior value.\nUsed by the header / footer Bootstrap-classed regions, which don't have an\noutline mode upstream."
+        },
+        {
+          "kind": "function",
+          "name": "applyHeaderNavStyle",
+          "return": {
+            "type": {
+              "text": "void"
+            }
+          },
+          "parameters": [
+            {
+              "name": "host",
+              "type": {
+                "text": "HTMLElement"
+              }
+            },
+            {
+              "name": "style",
+              "type": {
+                "text": "'tabs' | 'pills' | null"
+              }
+            }
+          ],
+          "description": "Apply `card-header-tabs` or `card-header-pills` to the first slotted\n`nav` / `ul` / `.nav` inside `host`. The header element observes child\nchanges and re-invokes this on mutation, so a nav inserted lazily (e.g.\nvia an Angular `@if`) still receives the right class.\n\nThe `.nav` selector covers Bootstrap's `<div class=\"nav\">` and\n`<span class=\"nav\">` forms, where the tag is incidental and the `nav`\nclass carries the semantics."
+        },
+        {
+          "kind": "function",
+          "name": "isNavTargetNode",
+          "return": {
+            "type": {
+              "text": "boolean"
+            }
+          },
+          "parameters": [
+            {
+              "name": "node",
+              "type": {
+                "text": "Node"
+              }
+            }
+          ],
+          "description": "True if any of `nodes` is an Element that would qualify as a slotted\nnav target (`nav` / `ul` tag, or anything carrying the `nav` class).\nUsed by the header's MutationObserver to skip the full re-walk when the\nmutation only touches non-nav content."
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "COLOR_NAMES",
+          "declaration": {
+            "name": "COLOR_NAMES",
+            "module": "card/src/card-classes.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "isCardColorName",
+          "declaration": {
+            "name": "isCardColorName",
+            "module": "card/src/card-classes.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "clearPrefixedClasses",
+          "declaration": {
+            "name": "clearPrefixedClasses",
+            "module": "card/src/card-classes.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "applyCardColorClasses",
+          "declaration": {
+            "name": "applyCardColorClasses",
+            "module": "card/src/card-classes.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "applyTextBgClass",
+          "declaration": {
+            "name": "applyTextBgClass",
+            "module": "card/src/card-classes.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "applyHeaderNavStyle",
+          "declaration": {
+            "name": "applyHeaderNavStyle",
+            "module": "card/src/card-classes.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "isNavTargetNode",
+          "declaration": {
+            "name": "isNavTargetNode",
+            "module": "card/src/card-classes.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "card/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "card/src/mp-card.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "card/src/mp-card-body.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "card/src/mp-card-footer.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "card/src/mp-card-group.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "card/src/mp-card-header.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "card/src/mp-card-img.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "card/src/mp-card-link.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "card/src/mp-card-subtitle.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "card/src/mp-card-text.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "card/src/mp-card-title.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "card/src/card-classes"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "card/src/types/card-image-position"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "card/src/types/card-header-nav-style"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "code-snippet/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "code-snippet/src/mp-code-snippet.element"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "overlay/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "OverlayController",
+          "declaration": {
+            "name": "OverlayController",
+            "module": "./overlay-controller"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "OverlayControllerOptions",
+          "declaration": {
+            "name": "OverlayControllerOptions",
+            "module": "./overlay-controller"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "OverlayPosition",
+          "declaration": {
+            "name": "OverlayPosition",
+            "module": "./overlay-controller"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "OverlayOriginX",
+          "declaration": {
+            "name": "OverlayOriginX",
+            "module": "./overlay-controller"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "OverlayOriginY",
+          "declaration": {
+            "name": "OverlayOriginY",
+            "module": "./overlay-controller"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "PanelWidth",
+          "declaration": {
+            "name": "PanelWidth",
+            "module": "./overlay-controller"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "ScrollStrategy",
+          "declaration": {
+            "name": "ScrollStrategy",
+            "module": "./overlay-controller"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "overlay/src/overlay-controller.ts",
+      "declarations": [
+        {
+          "kind": "variable",
+          "name": "DEFAULT_POSITIONS",
+          "type": {
+            "text": "OverlayPosition[]"
+          },
+          "default": "[ { originX: 'start', originY: 'bottom', overlayX: 'start', overlayY: 'top' }, { originX: 'start', originY: 'top', overlayX: 'start', overlayY: 'bottom' }, ]"
+        },
+        {
+          "kind": "class",
+          "description": "Reusable popup-overlay primitive for Lit elements, modeled on Angular CDK's\nFlexibleConnectedPositionStrategy + scrollStrategies.reposition() but\nframework-agnostic (no",
+          "name": "OverlayController",
+          "members": [
+            {
+              "kind": "field",
+              "name": "openStack",
+              "type": {
+                "text": "symbol[]"
+              },
+              "privacy": "private",
+              "static": true,
+              "readonly": true,
+              "default": "[]"
+            },
+            {
+              "kind": "method",
+              "name": "pushFrame",
+              "static": true,
+              "return": {
+                "type": {
+                  "text": "symbol"
+                }
+              },
+              "description": "Allocate a frame on top of the shared overlay stack. Use this from code\npaths that don't own a full `OverlayController` instance. Pair every\n`pushFrame()` with a `releaseFrame(token)`."
+            },
+            {
+              "kind": "method",
+              "name": "releaseFrame",
+              "static": true,
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "token",
+                  "type": {
+                    "text": "symbol"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "isFrameTop",
+              "static": true,
+              "return": {
+                "type": {
+                  "text": "boolean"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "token",
+                  "type": {
+                    "text": "symbol"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "field",
+              "name": "host",
+              "type": {
+                "text": "ReactiveControllerHost & HTMLElement"
+              },
+              "privacy": "private",
+              "readonly": true,
+              "default": "host"
+            },
+            {
+              "kind": "field",
+              "name": "options",
+              "type": {
+                "text": "OverlayControllerOptions"
+              },
+              "privacy": "private",
+              "readonly": true,
+              "default": "options"
+            },
+            {
+              "kind": "field",
+              "name": "_open",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "mouseDownAttached",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "stackToken",
+              "type": {
+                "text": "symbol | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "activeAnchor",
+              "type": {
+                "text": "HTMLElement | null"
+              },
+              "privacy": "private",
+              "default": "null",
+              "description": "Anchor used by the last positioning pass. Drives focus-return on close."
+            },
+            {
+              "kind": "field",
+              "name": "positionFrame",
+              "type": {
+                "text": "number"
+              },
+              "privacy": "private",
+              "default": "0",
+              "description": "rAF id for the next scheduled position() call. 0 = none scheduled."
+            },
+            {
+              "kind": "field",
+              "name": "scrollListenersAttached",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "false",
+              "description": "True while scroll-tracking listeners are attached."
+            },
+            {
+              "kind": "field",
+              "name": "blockedScroll",
+              "type": {
+                "text": "{ top: number; left: number } | null"
+              },
+              "privacy": "private",
+              "default": "null",
+              "description": "Saved scrollTop/scrollLeft when 'block' strategy is active."
+            },
+            {
+              "kind": "field",
+              "name": "blockedBodyPaddingRight",
+              "type": {
+                "text": "string | null"
+              },
+              "privacy": "private",
+              "default": "null",
+              "description": "Inline `padding-right` we wrote on <body> to compensate for the\ndisappearing scrollbar — captured so release() can restore exactly."
+            },
+            {
+              "kind": "method",
+              "name": "hostConnected",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "hostDisconnected",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "field",
+              "name": "isOpen",
+              "type": {
+                "text": "boolean"
+              },
+              "readonly": true
+            },
+            {
+              "kind": "method",
+              "name": "open",
+              "return": {
+                "type": {
+                  "text": "Promise<void>"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "close",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "returnFocus",
+                  "default": "true"
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "toggle",
+              "return": {
+                "type": {
+                  "text": "Promise<void>"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "resolveAnchors",
+              "privacy": "protected",
+              "return": {
+                "type": {
+                  "text": "HTMLElement[]"
+                }
+              },
+              "description": "Resolve the list of candidate anchors from `anchor()`. Single-element\nreturns become a one-item array; null returns become an empty array.\nNulls inside arrays are filtered out."
+            },
+            {
+              "kind": "method",
+              "name": "resolveAnchor",
+              "privacy": "protected",
+              "return": {
+                "type": {
+                  "text": "HTMLElement | null"
+                }
+              },
+              "description": "Resolve the *active* anchor — the one used in the most recent positioning\npass, or the first available one if none has been picked yet."
+            },
+            {
+              "kind": "method",
+              "name": "position",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "description": "Walk the configured `positions` and pick the first candidate whose panel\nrect fully fits inside the viewport (minus `viewportMargin`). If none fit,\nthe last candidate is applied and clamped to viewport edges (push behaviour).\n\n`start`/`end` are direction-aware: in RTL contexts they swap to match\nvisual layout.\n\nSticky-offscreen behaviour: when `stickyOnAnchorOffscreen` is true and the\nanchor's bounding rect is entirely outside the viewport, the panel is\npinned to its last in-viewport position (clamped to viewport edges) rather\nthan disappearing with the anchor. Normal positioning resumes when the\nanchor re-enters the viewport."
+            },
+            {
+              "kind": "method",
+              "name": "isAnchorOffscreen",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "boolean"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "rect",
+                  "type": {
+                    "text": "DOMRect"
+                  }
+                },
+                {
+                  "name": "vw",
+                  "type": {
+                    "text": "number"
+                  }
+                },
+                {
+                  "name": "vh",
+                  "type": {
+                    "text": "number"
+                  }
+                }
+              ],
+              "description": "True when the anchor's bounding rect lies entirely outside the viewport."
+            },
+            {
+              "kind": "method",
+              "name": "applyPanelWidth",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "panel",
+                  "type": {
+                    "text": "HTMLElement"
+                  }
+                },
+                {
+                  "name": "anchor",
+                  "type": {
+                    "text": "HTMLElement"
+                  }
+                }
+              ],
+              "description": "Apply the configured `panelWidth` strategy to the panel element. Called\nfrom `position()` before measurement so the position-pair fit check\nsees the post-resize panel dimensions.\n\nFor `'anchor'` and `'anchor-min'` the anchor's `offsetWidth` is used\n(not `getBoundingClientRect().width`) so transforms / zoom on ancestors\ndon't skew the result."
+            },
+            {
+              "kind": "method",
+              "name": "isRtl",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "boolean"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "placeFor",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "{ left: number; top: number }"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "candidate",
+                  "type": {
+                    "text": "OverlayPosition"
+                  }
+                },
+                {
+                  "name": "triggerRect",
+                  "type": {
+                    "text": "DOMRect"
+                  }
+                },
+                {
+                  "name": "panelRect",
+                  "type": {
+                    "text": "DOMRect"
+                  }
+                },
+                {
+                  "name": "rtl",
+                  "type": {
+                    "text": "boolean"
+                  }
+                }
+              ],
+              "description": "Compute the (left, top) at which `panel` should be placed for a single\nposition candidate. The candidate identifies which corner of the anchor\nto align which corner of the panel to, plus optional pixel offsets."
+            },
+            {
+              "kind": "method",
+              "name": "anchorXFor",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "number"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "origin",
+                  "type": {
+                    "text": "OverlayOriginX"
+                  }
+                },
+                {
+                  "name": "rect",
+                  "type": {
+                    "text": "DOMRect"
+                  }
+                },
+                {
+                  "name": "rtl",
+                  "type": {
+                    "text": "boolean"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "anchorYFor",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "number"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "origin",
+                  "type": {
+                    "text": "OverlayOriginY"
+                  }
+                },
+                {
+                  "name": "rect",
+                  "type": {
+                    "text": "DOMRect"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "panelXOffsetFor",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "number"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "overlayX",
+                  "type": {
+                    "text": "OverlayOriginX"
+                  }
+                },
+                {
+                  "name": "width",
+                  "type": {
+                    "text": "number"
+                  }
+                },
+                {
+                  "name": "rtl",
+                  "type": {
+                    "text": "boolean"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "panelYOffsetFor",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "number"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "overlayY",
+                  "type": {
+                    "text": "OverlayOriginY"
+                  }
+                },
+                {
+                  "name": "height",
+                  "type": {
+                    "text": "number"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "fitsInViewport",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "boolean"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "placed",
+                  "type": {
+                    "text": "{ left: number; top: number }"
+                  }
+                },
+                {
+                  "name": "panelRect",
+                  "type": {
+                    "text": "DOMRect"
+                  }
+                },
+                {
+                  "name": "vw",
+                  "type": {
+                    "text": "number"
+                  }
+                },
+                {
+                  "name": "vh",
+                  "type": {
+                    "text": "number"
+                  }
+                },
+                {
+                  "name": "margin",
+                  "type": {
+                    "text": "number"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "clampToViewport",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "{ left: number; top: number }"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "placed",
+                  "type": {
+                    "text": "{ left: number; top: number }"
+                  }
+                },
+                {
+                  "name": "panelRect",
+                  "type": {
+                    "text": "DOMRect"
+                  }
+                },
+                {
+                  "name": "vw",
+                  "type": {
+                    "text": "number"
+                  }
+                },
+                {
+                  "name": "vh",
+                  "type": {
+                    "text": "number"
+                  }
+                },
+                {
+                  "name": "margin",
+                  "type": {
+                    "text": "number"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "currentStrategy",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "ScrollStrategy"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "attachScrollListeners",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "description": "Wire scroll + resize listeners according to the active strategy. Called\nfrom open(); paired with detachScrollListeners() in close().\n\nThe capture-phase listener on document catches scroll events from any\nscrollable ancestor without us having to walk the DOM — scroll events\ndon't bubble, but capture-phase listeners receive every dispatch."
+            },
+            {
+              "kind": "method",
+              "name": "detachScrollListeners",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "field",
+              "name": "onScroll",
+              "privacy": "private"
+            },
+            {
+              "kind": "field",
+              "name": "onResize",
+              "privacy": "private"
+            },
+            {
+              "kind": "method",
+              "name": "schedulePosition",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "applyBlockScroll",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "description": "'block' strategy: lock the document scroll position while the overlay is\nopen. Mirrors CDK's BlockScrollStrategy — sets position: fixed on the html\nelement with the saved offset, then restores on close. Cheap; no event\npreventDefault dance required."
+            },
+            {
+              "kind": "method",
+              "name": "releaseBlockScroll",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "releaseStackToken",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "isTopOfStack",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "boolean"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "attachMouseDown",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "detachMouseDown",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "field",
+              "name": "onKeyDown",
+              "privacy": "private"
+            },
+            {
+              "kind": "field",
+              "name": "onMouseDown",
+              "privacy": "private"
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "OverlayController",
+          "declaration": {
+            "name": "OverlayController",
+            "module": "overlay/src/overlay-controller.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "DEFAULT_POSITIONS",
+          "declaration": {
+            "name": "DEFAULT_POSITIONS",
+            "module": "overlay/src/overlay-controller.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "pagination/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpPagination",
+          "declaration": {
+            "name": "MpPagination",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "buildPaginationLayout",
+          "declaration": {
+            "name": "buildPaginationLayout",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "PageChangeEventDetail",
+          "declaration": {
+            "name": "PageChangeEventDetail",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "PaginationSize",
+          "declaration": {
+            "name": "PaginationSize",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "PaginationItem",
+          "declaration": {
+            "name": "PaginationItem",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "PaginationLayout",
+          "declaration": {
+            "name": "PaginationLayout",
+            "module": "./components"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "checkbox/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpCheckbox",
+          "declaration": {
+            "name": "MpCheckbox",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpCheckboxType",
+          "declaration": {
+            "name": "MpCheckboxType",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "CheckboxChangeEventDetail",
+          "declaration": {
+            "name": "CheckboxChangeEventDetail",
+            "module": "./components"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "timepicker/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "timepicker/src/mp-timepicker.element"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "*",
+          "declaration": {
+            "name": "*",
+            "module": "timepicker/src/mp-time-list.element"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "toggle-button/src/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpToggleButton",
+          "declaration": {
+            "name": "MpToggleButton",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "ToggleButtonColor",
+          "declaration": {
+            "name": "ToggleButtonColor",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "ToggleChangeEventDetail",
+          "declaration": {
+            "name": "ToggleChangeEventDetail",
+            "module": "./components"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "toggleButtonStyles",
+          "declaration": {
+            "name": "toggleButtonStyles",
+            "module": "./styles"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "card/src/types/card-header-nav-style.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "card/src/types/card-image-position.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "pagination/src/components/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpPagination",
+          "declaration": {
+            "name": "MpPagination",
+            "module": "./mp-pagination"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "buildPaginationLayout",
+          "declaration": {
+            "name": "buildPaginationLayout",
+            "module": "./mp-pagination"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "PageChangeEventDetail",
+          "declaration": {
+            "name": "PageChangeEventDetail",
+            "module": "./mp-pagination"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "PaginationSize",
+          "declaration": {
+            "name": "PaginationSize",
+            "module": "./mp-pagination"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "PaginationItem",
+          "declaration": {
+            "name": "PaginationItem",
+            "module": "./mp-pagination"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "PaginationLayout",
+          "declaration": {
+            "name": "PaginationLayout",
+            "module": "./mp-pagination"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "pagination/src/components/mp-pagination.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "`<mp-pagination>` — page selector with first/last anchors, ellipsis gaps,\nand previous/next arrows. The visible budget is fully driven by the\n`numberOfBoxes` input (0 = uncapped). Layout-time auto-fit was tried\nearlier but produced a feedback loop with flex parents whose item width\nresolves from their content's `max-content` — the consumer is responsible\nfor picking a cap that fits the host on their target viewports.",
+          "name": "MpPagination",
+          "members": [
+            {
+              "kind": "field",
+              "name": "_pageNumbers",
+              "type": {
+                "text": "number[]"
+              },
+              "privacy": "private",
+              "default": "[]"
+            },
+            {
+              "kind": "field",
+              "name": "_selectedPageNumber",
+              "type": {
+                "text": "number"
+              },
+              "privacy": "private",
+              "default": "1"
+            },
+            {
+              "kind": "field",
+              "name": "_numberOfBoxes",
+              "type": {
+                "text": "number"
+              },
+              "privacy": "private",
+              "default": "0"
+            },
+            {
+              "kind": "field",
+              "name": "_showArrows",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "true"
+            },
+            {
+              "kind": "field",
+              "name": "_size",
+              "type": {
+                "text": "PaginationSize"
+              },
+              "privacy": "private",
+              "default": "'medium'"
+            },
+            {
+              "kind": "field",
+              "name": "_ariaLabel",
+              "type": {
+                "text": "string"
+              },
+              "privacy": "private",
+              "default": "'Pagination'"
+            },
+            {
+              "kind": "field",
+              "name": "pageNumbers",
+              "type": {
+                "text": "number[]"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "selectedPageNumber",
+              "type": {
+                "text": "number"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "numberOfBoxes",
+              "type": {
+                "text": "number"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "showArrows",
+              "type": {
+                "text": "boolean"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "size",
+              "type": {
+                "text": "PaginationSize"
+              }
+            },
+            {
+              "kind": "method",
+              "name": "effectiveBudget",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "number"
+                }
+              },
+              "description": "Effective TOTAL budget (boxes including arrows). When `numberOfBoxes`\nis `0` the budget is uncapped and all pages render; otherwise the cap\nis honoured verbatim. (An earlier ResizeObserver-driven \"auto-fit\"\nwas removed — its measurement of self-width fed back into the rendered\ncontent and the WC + flex parent could oscillate or lock the budget\nto a single button.)"
+            },
+            {
+              "kind": "method",
+              "name": "computeLayout",
+              "privacy": "protected",
+              "return": {
+                "type": {
+                  "text": "PaginationLayout"
+                }
+              },
+              "description": "Build the full layout — arrows + page items. Pure — no DOM access."
+            },
+            {
+              "kind": "method",
+              "name": "isFirstPage",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "boolean"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "isLastPage",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "boolean"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "selectPage",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "page",
+                  "type": {
+                    "text": "number"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "onPrevious",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "onNext",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              }
+            }
+          ],
+          "events": [
+            {
+              "name": "mp-pagination-page-change",
+              "type": {
+                "text": "CustomEvent"
+              }
+            }
+          ],
+          "attributes": [
+            {
+              "name": "page-numbers"
+            },
+            {
+              "name": "selected-page-number"
+            },
+            {
+              "name": "number-of-boxes"
+            },
+            {
+              "name": "show-arrows"
+            },
+            {
+              "name": "size"
+            },
+            {
+              "name": "aria-label"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "mp-pagination",
+          "customElement": true
+        },
+        {
+          "kind": "function",
+          "name": "buildPaginationLayout",
+          "return": {
+            "type": {
+              "text": "PaginationLayout"
+            }
+          },
+          "parameters": [
+            {
+              "name": "pages",
+              "type": {
+                "text": "ReadonlyArray<number>"
+              }
+            },
+            {
+              "name": "current",
+              "type": {
+                "text": "number"
+              }
+            },
+            {
+              "name": "totalBudget",
+              "type": {
+                "text": "number"
+              }
+            },
+            {
+              "name": "showArrows",
+              "type": {
+                "text": "boolean"
+              }
+            }
+          ],
+          "description": "Pure helper: deterministic layout for `(pages, current, totalBudget, showArrows)`.\n\n`totalBudget` is the maximum visible boxes — pages AND arrows count toward it.\nThe current page is always slot #1; subsequent slots are allocated by\nstepping through a fixed priority sequence:\n\n  1. Arrows (next, then prev) when `showArrows`.\n  2. **Phase 1** — round-robin `[start, end, before, after]`:\n     - start: page #1\n     - end: last page\n     - before: left ellipsis\n     - after: right ellipsis\n  3. **Phase 2+** — round-robin `[before, after, start, end]`, repeated\n     until budget runs out. Each pass adds one page in that direction:\n     - before extends C-1, C-2, …\n     - after extends C+1, C+2, …\n     - start extends 2, 3, …\n     - end extends last-1, last-2, …\n\nWhen a direction has no more pages to add (overlap with another direction,\nor current at an extreme), that step is skipped and the cycle continues\nwith the next action.\n\nSee `docs/issue_329_PRD.md` § \"Growth algorithm\"."
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpPagination",
+          "declaration": {
+            "name": "MpPagination",
+            "module": "pagination/src/components/mp-pagination.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "buildPaginationLayout",
+          "declaration": {
+            "name": "buildPaginationLayout",
+            "module": "pagination/src/components/mp-pagination.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "mp-pagination",
+          "declaration": {
+            "name": "MpPagination",
+            "module": "pagination/src/components/mp-pagination.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "pagination/src/styles/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "paginationStyles",
+          "declaration": {
+            "name": "paginationStyles",
+            "module": "./pagination.styles"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "pagination/src/styles/pagination.styles.ts",
+      "declarations": [
+        {
+          "kind": "variable",
+          "name": "paginationStyles"
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "paginationStyles",
+          "declaration": {
+            "name": "paginationStyles",
+            "module": "pagination/src/styles/pagination.styles.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "default",
+          "declaration": {
+            "name": "paginationStyles",
+            "module": "pagination/src/styles/pagination.styles.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "checkbox/src/components/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpCheckbox",
+          "declaration": {
+            "name": "MpCheckbox",
+            "module": "./mp-checkbox"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "MpCheckboxType",
+          "declaration": {
+            "name": "MpCheckboxType",
+            "module": "./mp-checkbox"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "CheckboxChangeEventDetail",
+          "declaration": {
+            "name": "CheckboxChangeEventDetail",
+            "module": "./mp-checkbox"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "checkbox/src/components/mp-checkbox.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "`<mp-checkbox>` — a Bootstrap-styled checkbox with three visual variants\nvia the `type` attribute:\n\n- `checkbox` (default) — `.form-check` with a square indicator.\n- `switch` — `.form-check.form-switch` for the iOS-style sliding switch.\n- `toggle_button` — `.btn-check` rendered as a `.btn .btn-<color>`.\n\nSupports first-class **tri-state** via the `indeterminate` attribute /\nproperty. The visual indeterminate styling is the browser's native\n`<input>.indeterminate` DOM property; we additionally reflect\n`aria-checked=\"mixed\"` for AT and mirror the value to a reflected\nboolean attribute so consumers can target the state from CSS.\nThe native `change` event clears `indeterminate` on the next user click\n(per HTML spec); consumers that want the master/select-all pattern can\nre-derive and re-set `indeterminate` from the resulting state.\n\nEmits `change` with `detail: { checked, indeterminate, value }`.",
+          "name": "MpCheckbox",
+          "members": [
+            {
+              "kind": "field",
+              "name": "shadowRootOptions",
+              "type": {
+                "text": "object"
+              },
+              "static": true,
+              "default": "{ ...LitElement.shadowRootOptions, delegatesFocus: true, }"
+            },
+            {
+              "kind": "field",
+              "name": "_type",
+              "type": {
+                "text": "MpCheckboxType"
+              },
+              "privacy": "private",
+              "default": "'checkbox'"
+            },
+            {
+              "kind": "field",
+              "name": "_checked",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "_indeterminate",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "_disabled",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "_name",
+              "type": {
+                "text": "string | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "_value",
+              "type": {
+                "text": "string | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "_color",
+              "type": {
+                "text": "ToggleButtonColor"
+              },
+              "privacy": "private",
+              "default": "'primary'"
+            },
+            {
+              "kind": "field",
+              "name": "_inputId",
+              "privacy": "private",
+              "readonly": true,
+              "default": "`mp-checkbox-${++instanceCounter}`"
+            },
+            {
+              "kind": "field",
+              "name": "_inputRef",
+              "type": {
+                "text": "Ref<HTMLInputElement>"
+              },
+              "privacy": "private",
+              "readonly": true
+            },
+            {
+              "kind": "field",
+              "name": "type",
+              "type": {
+                "text": "MpCheckboxType"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "checked",
+              "type": {
+                "text": "boolean"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "indeterminate",
+              "type": {
+                "text": "boolean"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "disabled",
+              "type": {
+                "text": "boolean"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "name",
+              "type": {
+                "text": "string | null"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "value",
+              "type": {
+                "text": "string | null"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "color",
+              "type": {
+                "text": "ToggleButtonColor"
+              }
+            },
+            {
+              "kind": "method",
+              "name": "renderCheckOrSwitch",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "TemplateResult"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "renderToggleButton",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "TemplateResult"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "reflectBoolean",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "attr",
+                  "type": {
+                    "text": "string"
+                  }
+                },
+                {
+                  "name": "value",
+                  "type": {
+                    "text": "boolean"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "field",
+              "name": "onInputChange",
+              "privacy": "private"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "type"
+            },
+            {
+              "name": "checked"
+            },
+            {
+              "name": "indeterminate"
+            },
+            {
+              "name": "disabled"
+            },
+            {
+              "name": "name"
+            },
+            {
+              "name": "value"
+            },
+            {
+              "name": "color"
+            },
+            {
+              "name": "aria-label"
+            },
+            {
+              "name": "aria-labelledby"
+            },
+            {
+              "name": "aria-describedby"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "mp-checkbox",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpCheckbox",
+          "declaration": {
+            "name": "MpCheckbox",
+            "module": "checkbox/src/components/mp-checkbox.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "mp-checkbox",
+          "declaration": {
+            "name": "MpCheckbox",
+            "module": "checkbox/src/components/mp-checkbox.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "toggle-button/src/styles/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "toggleButtonStyles",
+          "declaration": {
+            "name": "toggleButtonStyles",
+            "module": "./toggle-button.styles"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "toggle-button/src/styles/toggle-button.styles.ts",
+      "declarations": [
+        {
+          "kind": "variable",
+          "name": "toggleButtonStyles"
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "toggleButtonStyles",
+          "declaration": {
+            "name": "toggleButtonStyles",
+            "module": "toggle-button/src/styles/toggle-button.styles.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "default",
+          "declaration": {
+            "name": "toggleButtonStyles",
+            "module": "toggle-button/src/styles/toggle-button.styles.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "toggle-button/src/components/index.ts",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpToggleButton",
+          "declaration": {
+            "name": "MpToggleButton",
+            "module": "./mp-toggle-button"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "ToggleButtonColor",
+          "declaration": {
+            "name": "ToggleButtonColor",
+            "module": "./mp-toggle-button"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "ToggleChangeEventDetail",
+          "declaration": {
+            "name": "ToggleChangeEventDetail",
+            "module": "./mp-toggle-button"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "toggle-button/src/components/mp-toggle-button.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "`<mp-toggle-button>` — a single Bootstrap-styled on/off button using the\n`btn-check` + `label.btn` pattern. Acts as both a usable standalone WC\nand the carrier of the shared `form-check` / `btn-check` SCSS that\n`<mp-checkbox>` and `<mp-radio>` reuse via the exported `toggleButtonStyles`\n`CSSResult` (single parsed stylesheet shared across shadow roots).\n\nAttributes (all reflected): `checked`, `disabled`, `name`, `value`, `color`.\nEmits a native-style `change` event with\n`detail: { checked, value }` when toggled.",
+          "name": "MpToggleButton",
+          "members": [
+            {
+              "kind": "field",
+              "name": "shadowRootOptions",
+              "type": {
+                "text": "object"
+              },
+              "static": true,
+              "default": "{ ...LitElement.shadowRootOptions, delegatesFocus: true, }"
+            },
+            {
+              "kind": "field",
+              "name": "_checked",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "_disabled",
+              "type": {
+                "text": "boolean"
+              },
+              "privacy": "private",
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "_name",
+              "type": {
+                "text": "string | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "_value",
+              "type": {
+                "text": "string | null"
+              },
+              "privacy": "private",
+              "default": "null"
+            },
+            {
+              "kind": "field",
+              "name": "_color",
+              "type": {
+                "text": "ToggleButtonColor"
+              },
+              "privacy": "private",
+              "default": "'primary'"
+            },
+            {
+              "kind": "field",
+              "name": "_inputId",
+              "privacy": "private",
+              "readonly": true,
+              "default": "`mp-toggle-button-${++instanceCounter}`"
+            },
+            {
+              "kind": "field",
+              "name": "checked",
+              "type": {
+                "text": "boolean"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "disabled",
+              "type": {
+                "text": "boolean"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "name",
+              "type": {
+                "text": "string | null"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "value",
+              "type": {
+                "text": "string | null"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "color",
+              "type": {
+                "text": "ToggleButtonColor"
+              }
+            },
+            {
+              "kind": "method",
+              "name": "reflectBoolean",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "attr",
+                  "type": {
+                    "text": "string"
+                  }
+                },
+                {
+                  "name": "value",
+                  "type": {
+                    "text": "boolean"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "field",
+              "name": "onInputChange",
+              "privacy": "private"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "checked"
+            },
+            {
+              "name": "disabled"
+            },
+            {
+              "name": "name"
+            },
+            {
+              "name": "value"
+            },
+            {
+              "name": "color"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "mp-toggle-button",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MpToggleButton",
+          "declaration": {
+            "name": "MpToggleButton",
+            "module": "toggle-button/src/components/mp-toggle-button.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "mp-toggle-button",
+          "declaration": {
+            "name": "MpToggleButton",
+            "module": "toggle-button/src/components/mp-toggle-button.ts"
+          }
+        }
+      ]
+    }
+  ]
 }
