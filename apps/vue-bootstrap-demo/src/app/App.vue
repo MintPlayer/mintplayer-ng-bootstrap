@@ -75,7 +75,7 @@ const SECTIONS = [
           </div>
         </nav>
       </aside>
-      <main class="flex-grow-1">
+      <main class="app-shell-main flex-grow-1">
         <RouterView />
       </main>
     </div>

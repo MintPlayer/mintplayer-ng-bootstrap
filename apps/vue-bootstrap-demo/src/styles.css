@@ -39,6 +39,15 @@ body {
   height: 20px;
 }
 
+/* Flex items default to min-width: auto, which refuses to shrink below the
+ * intrinsic min-content width of descendants. The ribbon page has wide
+ * non-wrapping toolbar groups, so the shell's <main> would grow past the
+ * viewport and force horizontal page scroll. Setting min-width: 0 lets
+ * <main> shrink with the row and the ribbon's adaptive layout collapses. */
+.app-shell-main {
+  min-width: 0;
+}
+
 .demo-page {
   padding: 1.5rem;
   max-width: 1200px;
