@@ -36,6 +36,7 @@ const TimepickerPage   = lazyNamed(() => import('./pages/forms/TimepickerPage'),
 const MultiRangePage   = lazyNamed(() => import('./pages/forms/MultiRangePage'),     'MultiRangePage');
 const OtpInputPage     = lazyNamed(() => import('./pages/advanced/OtpInputPage'),    'OtpInputPage');
 const DockPage         = lazyNamed(() => import('./pages/enterprise/DockPage'),        'DockPage');
+const TileManagerPage  = lazyNamed(() => import('./pages/enterprise/TileManagerPage'), 'TileManagerPage');
 const FileManagerPage  = lazyNamed(() => import('./pages/enterprise/FileManagerPage'), 'FileManagerPage');
 const QueryBuilderPage = lazyNamed(() => import('./pages/enterprise/QueryBuilderPage'), 'QueryBuilderPage');
 const RibbonPage       = lazyNamed(() => import('./pages/enterprise/RibbonPage'),       'RibbonPage');
@@ -78,6 +79,7 @@ export function App() {
           <Route path="/advanced/splitter" element={<SplitterPage />} />
           {/* Enterprise */}
           <Route path="/enterprise/dock" element={<DockPage />} />
+          <Route path="/enterprise/tile-manager" element={<TileManagerPage />} />
           <Route path="/enterprise/datatables" element={<DatatablePage />} />
           <Route path="/enterprise/file-manager" element={<FileManagerPage />} />
           <Route path="/enterprise/query-builder" element={<QueryBuilderPage />} />
