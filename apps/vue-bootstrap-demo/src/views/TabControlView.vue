@@ -7,9 +7,9 @@ const active = ref('home');
 
 const SOURCE = `<BsTabControl v-model="active">
   <span slot="home-header">Home</span>
-  <mp-tab-page tab-id="home">Home content</mp-tab-page>
+  <mp-tab-page tab-id="home"><div class="p-3">Home content</div></mp-tab-page>
   <span slot="profile-header">Profile</span>
-  <mp-tab-page tab-id="profile">Profile content</mp-tab-page>
+  <mp-tab-page tab-id="profile"><div class="p-3">Profile content</div></mp-tab-page>
 </BsTabControl>`;
 </script>
 
@@ -26,9 +26,13 @@ const SOURCE = `<BsTabControl v-model="active">
       <h2>Two tabs</h2>
       <BsTabControl v-model="active">
         <span slot="home-header">Home</span>
-        <mp-tab-page tab-id="home">Home content lives here.</mp-tab-page>
+        <mp-tab-page tab-id="home">
+          <div class="p-3">Home content lives here.</div>
+        </mp-tab-page>
         <span slot="profile-header">Profile</span>
-        <mp-tab-page tab-id="profile">Profile content lives here.</mp-tab-page>
+        <mp-tab-page tab-id="profile">
+          <div class="p-3">Profile content lives here.</div>
+        </mp-tab-page>
       </BsTabControl>
       <p class="text-body-secondary mt-2">Active: <code>{{ active }}</code></p>
     </section>

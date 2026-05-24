@@ -4,9 +4,9 @@ import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 
 const SOURCE = `<BsTabControl onTabActivate={e => setActive(e.detail.tabId)}>
   <span slot="home-header">Home</span>
-  <BsTabPage tab-id="home">Home content</BsTabPage>
+  <BsTabPage tab-id="home"><div className="p-3">Home content</div></BsTabPage>
   <span slot="profile-header">Profile</span>
-  <BsTabPage tab-id="profile">Profile content</BsTabPage>
+  <BsTabPage tab-id="profile"><div className="p-3">Profile content</div></BsTabPage>
 </BsTabControl>`;
 
 export function TabControlPage() {
@@ -25,9 +25,13 @@ export function TabControlPage() {
         <h2>Two tabs</h2>
         <BsTabControl onTabActivate={(e: CustomEvent<{ tabId: string }>) => setActive(e.detail.tabId)}>
           <span slot="home-header">Home</span>
-          <BsTabPage {...{ 'tab-id': 'home' } as React.ComponentProps<typeof BsTabPage>}>Home content lives here.</BsTabPage>
+          <BsTabPage {...{ 'tab-id': 'home' } as React.ComponentProps<typeof BsTabPage>}>
+            <div className="p-3">Home content lives here.</div>
+          </BsTabPage>
           <span slot="profile-header">Profile</span>
-          <BsTabPage {...{ 'tab-id': 'profile' } as React.ComponentProps<typeof BsTabPage>}>Profile content lives here.</BsTabPage>
+          <BsTabPage {...{ 'tab-id': 'profile' } as React.ComponentProps<typeof BsTabPage>}>
+            <div className="p-3">Profile content lives here.</div>
+          </BsTabPage>
         </BsTabControl>
         <p className="text-body-secondary mt-2">Active: <code>{active}</code></p>
       </section>
