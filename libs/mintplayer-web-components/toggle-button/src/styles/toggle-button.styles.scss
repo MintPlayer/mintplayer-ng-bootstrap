@@ -19,6 +19,26 @@
 @import "node_modules/bootstrap/scss/mixins";
 @import "node_modules/bootstrap/scss/buttons";
 
+// Bootstrap ships `.btn-check` (the hidden-checkbox visual primitive that
+// pairs with a `label.btn`) inside `forms/form-check`, NOT inside `buttons`.
+// `mp-toggle-button`'s shadow root only imports `buttons` — without these
+// rules the checkbox stays visible in front of the `<label class="btn">`.
+// `mp-checkbox` doesn't hit this because it also imports `formCheckStyles`.
+// Inlined here rather than pulling in the entire form-check partial, which
+// would attach every `.form-check`/`.form-switch` rule mp-toggle-button
+// doesn't need.
+.btn-check {
+  position: absolute;
+  clip: rect(0, 0, 0, 0);
+  pointer-events: none;
+}
+.btn-check[disabled] + .btn,
+.btn-check:disabled + .btn {
+  pointer-events: none;
+  filter: none;
+  opacity: 0.65;
+}
+
 :host {
   display: inline-block;
   vertical-align: middle;
