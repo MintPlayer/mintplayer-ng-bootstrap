@@ -1,6 +1,6 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { query } from 'lit/decorators.js';
-import { OverlayController } from '@mintplayer/ng-bootstrap/web-components/overlay';
+import { OverlayController } from '@mintplayer/web-components/overlay';
 import { MpCalendarElement, type FirstDayOfWeek } from '@mintplayer/ng-bootstrap/calendar';
 import { styles } from './mp-datepicker.element.template';
 

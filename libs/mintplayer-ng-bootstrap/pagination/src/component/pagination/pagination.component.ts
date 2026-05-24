@@ -13,10 +13,10 @@ import {
   type MpPagination,
   type PageChangeEventDetail,
   type PaginationSize,
-} from '@mintplayer/ng-bootstrap/web-components/pagination';
+} from '@mintplayer/web-components/pagination';
 
 // Side-effect import: registers <mp-pagination>.
-import '@mintplayer/ng-bootstrap/web-components/pagination';
+import '@mintplayer/web-components/pagination';
 
 const SIZE_MAP: Record<Size, PaginationSize> = {
   small: 'small',
