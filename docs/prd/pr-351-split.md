@@ -64,8 +64,8 @@ A secondary goal piggybacks here: the existing publish workflow already uses a `
 | — | [#360](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/360) | `refactor(web-components): split form-check styles + extract `radio` WC + React/Vue wrappers` | ✅ merged (prep PR; absorbed `radio` from original PR-9 scope mid-flight) |
 | PR-7 | [#361](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/361) | `feat(wc-extract): datatable + datepicker + datetime-picker (PR-7)` | ✅ merged |
 | PR-8 | [#362](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/362) | `feat(wc-extract): multi-range + otp-input + file-manager (PR-8 re-scoped)` | ✅ merged |
-| PR-9 | — | `query-builder`, `ribbon` (originally PR-7 minus `pagination` and `radio` — `radio` was pulled into PR #360) | ⏳ in CI |
-| PR-10 | — | `scheduler`, `scheduler-core`, `splitter`, `tab-control` (originally PR-8) | ⏳ pending |
+| PR-9 | [#363](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/363) | `feat(wc-extract): query-builder + ribbon (PR-9)` | ✅ merged |
+| PR-10 | — | `tab-control`, `splitter`, `scheduler-core`, `scheduler` (originally PR-8) | ⏳ in CI |
 | PR-11 | — | `dock` (punted from PR-8), `tile-manager`, `treeview` (originally PR-9 remainder) | ⏳ pending |
 | PR-12 | — | Misc cleanup (mostly already absorbed by PR-3/PR-4) | ⏳ pending |
 
