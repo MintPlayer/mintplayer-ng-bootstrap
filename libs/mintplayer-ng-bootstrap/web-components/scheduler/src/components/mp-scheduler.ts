@@ -10,7 +10,7 @@ import {
   dateService,
   resourceService,
   isResource,
-} from '@mintplayer/ng-bootstrap/web-components/scheduler-core';
+} from '@mintplayer/web-components/scheduler-core';
 import { SchedulerStateManager, SchedulerState } from '../state/scheduler-state';
 import {
   BaseView,

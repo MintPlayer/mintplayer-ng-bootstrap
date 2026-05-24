@@ -1,4 +1,4 @@
-import { dateService, type SchedulerEvent, type TimeSlot } from '@mintplayer/ng-bootstrap/web-components/scheduler-core';
+import { dateService, type SchedulerEvent, type TimeSlot } from '@mintplayer/web-components/scheduler-core';
 import { SchedulerState } from '../state/scheduler-state';
 
 /**

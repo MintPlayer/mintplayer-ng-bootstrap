@@ -1,4 +1,4 @@
-import { SchedulerEvent, ViewType } from '@mintplayer/ng-bootstrap/web-components/scheduler-core';
+import { SchedulerEvent, ViewType } from '@mintplayer/web-components/scheduler-core';
 
 /**
  * Time range carried by selection-change and event-create. `start` is the
