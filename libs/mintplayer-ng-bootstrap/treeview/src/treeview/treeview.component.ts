@@ -24,10 +24,10 @@ import {
   type TreeNodeRenderer,
   type TreeNodeSelectEventDetail,
   type TreeviewSelectionMode,
-} from '@mintplayer/ng-bootstrap/web-components/treeview';
+} from '@mintplayer/web-components/treeview';
 
 // Side-effect import: registers the `<mp-treeview>` custom element.
-import '@mintplayer/ng-bootstrap/web-components/treeview';
+import '@mintplayer/web-components/treeview';
 
 import { BsTreeviewNodeTemplateDirective } from '../treeview-node-template/treeview-node-template.directive';
 

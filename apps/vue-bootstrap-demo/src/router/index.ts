@@ -28,8 +28,11 @@ const router = createRouter({
     { path: '/basic/radio',         name: 'radio',         component: () => import('../views/RadioView.vue') },
     { path: '/basic/toggle-button', name: 'toggle-button', component: () => import('../views/ToggleButtonView.vue') },
     { path: '/basic/tab-control',   name: 'tab-control',   component: () => import('../views/TabControlView.vue') },
+    { path: '/basic/treeview',      name: 'treeview',      component: () => import('../views/TreeviewView.vue') },
     // Enterprise
     { path: '/enterprise/datatables', name: 'datatable', component: () => import('../views/DatatableView.vue') },
+    { path: '/enterprise/dock',         name: 'dock',          component: () => import('../views/enterprise/DockView.vue') },
+    { path: '/enterprise/tile-manager', name: 'tile-manager',  component: () => import('../views/enterprise/TileManagerView.vue') },
     { path: '/enterprise/file-manager', name: 'file-manager', component: () => import('../views/enterprise/FileManagerView.vue') },
     { path: '/enterprise/query-builder', name: 'query-builder', component: () => import('../views/enterprise/QueryBuilderView.vue') },
     { path: '/enterprise/ribbon', name: 'ribbon', component: () => import('../views/enterprise/RibbonView.vue') },

@@ -1,5 +1,5 @@
 import { LitElement, html, type TemplateResult, type PropertyValues, nothing } from 'lit';
-import { LiveAnnouncerController } from '@mintplayer/ng-bootstrap/web-components/a11y';
+import { LiveAnnouncerController } from '@mintplayer/web-components/a11y';
 import { TilePosition } from '../types/tile-position';
 import { TileLayoutSnapshot, TileGestureBlocked } from '../types/tile-layout-snapshot';
 import { GridRect } from '../types/grid-rect';
@@ -13,9 +13,15 @@ let tileManagerInstanceCounter = 0;
 export interface MintTile {
   id: string;
   position: TilePosition;
-  disableMove: boolean;
-  disableResize: boolean;
-  label: string | null;
+  // `disableMove` / `disableResize` / `label` are optional — the WC
+  // treats absent values as the relaxed defaults (movable, resizable,
+  // and a generated "tile at row N, column M" aria-label). Required
+  // properties forced consumers to spell out booleans + null for
+  // every tile even in the trivial 4-field case, so the demos kept
+  // having to clutter their seeds with redundant fields.
+  disableMove?: boolean;
+  disableResize?: boolean;
+  label?: string | null;
 }
 
 export type TileDragMode = 'tile' | 'header' | 'off';
@@ -683,7 +689,7 @@ export class MintTileManagerElement extends LitElement {
 
     const cols = this.effectiveColumnCount;
     const result = pack(
-      this.tiles.map((t) => ({ id: t.id, position: t.position, locked: t.disableMove })),
+      this.tiles.map((t) => ({ id: t.id, position: t.position, locked: !!t.disableMove })),
       { id: tile.id, rect },
       cols,
     );
@@ -975,7 +981,7 @@ export class MintTileManagerElement extends LitElement {
         };
 
     const result = pack(
-      this.tiles.map((t) => ({ id: t.id, position: t.position, locked: t.disableMove })),
+      this.tiles.map((t) => ({ id: t.id, position: t.position, locked: !!t.disableMove })),
       { id: tile.id, rect: newRect },
       cols,
     );

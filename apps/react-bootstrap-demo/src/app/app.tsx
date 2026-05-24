@@ -35,11 +35,14 @@ const RadioPage        = lazyNamed(() => import('./pages/RadioPage'),        'Ra
 const TimepickerPage   = lazyNamed(() => import('./pages/forms/TimepickerPage'),     'TimepickerPage');
 const MultiRangePage   = lazyNamed(() => import('./pages/forms/MultiRangePage'),     'MultiRangePage');
 const OtpInputPage     = lazyNamed(() => import('./pages/advanced/OtpInputPage'),    'OtpInputPage');
+const DockPage         = lazyNamed(() => import('./pages/enterprise/DockPage'),        'DockPage');
+const TileManagerPage  = lazyNamed(() => import('./pages/enterprise/TileManagerPage'), 'TileManagerPage');
 const FileManagerPage  = lazyNamed(() => import('./pages/enterprise/FileManagerPage'), 'FileManagerPage');
 const QueryBuilderPage = lazyNamed(() => import('./pages/enterprise/QueryBuilderPage'), 'QueryBuilderPage');
 const RibbonPage       = lazyNamed(() => import('./pages/enterprise/RibbonPage'),       'RibbonPage');
 const ToggleButtonPage = lazyNamed(() => import('./pages/ToggleButtonPage'), 'ToggleButtonPage');
 const TabControlPage   = lazyNamed(() => import('./pages/TabControlPage'),   'TabControlPage');
+const TreeviewPage     = lazyNamed(() => import('./pages/TreeviewPage'),     'TreeviewPage');
 const SplitterPage     = lazyNamed(() => import('./pages/advanced/SplitterPage'), 'SplitterPage');
 const SchedulerPage    = lazyNamed(() => import('./pages/enterprise/SchedulerPage'), 'SchedulerPage');
 
@@ -72,10 +75,13 @@ export function App() {
           <Route path="/basic/radio" element={<RadioPage />} />
           <Route path="/basic/toggle-button" element={<ToggleButtonPage />} />
           <Route path="/basic/tab-control" element={<TabControlPage />} />
+          <Route path="/basic/treeview" element={<TreeviewPage />} />
           {/* Advanced */}
           <Route path="/advanced/otp-input" element={<OtpInputPage />} />
           <Route path="/advanced/splitter" element={<SplitterPage />} />
           {/* Enterprise */}
+          <Route path="/enterprise/dock" element={<DockPage />} />
+          <Route path="/enterprise/tile-manager" element={<TileManagerPage />} />
           <Route path="/enterprise/datatables" element={<DatatablePage />} />
           <Route path="/enterprise/file-manager" element={<FileManagerPage />} />
           <Route path="/enterprise/query-builder" element={<QueryBuilderPage />} />

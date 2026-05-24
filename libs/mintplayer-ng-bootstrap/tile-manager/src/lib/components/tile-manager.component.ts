@@ -14,13 +14,17 @@ import {
 import { NgTemplateOutlet } from '@angular/common';
 import { BsTileComponent } from './tile.component';
 import {
-  MintTile,
+  type MintTile,
   MintTileManagerElement,
-  TileDragMode,
-  TileResizeMode,
-} from '../web-components/mint-tile-manager.element';
-import { TileLayoutSnapshot, TileGestureBlocked } from '../types/tile-layout-snapshot';
-import { TilePosition } from '../types/tile-position';
+  type TileDragMode,
+  type TileResizeMode,
+  type TileLayoutSnapshot,
+  type TileGestureBlocked,
+  type TilePosition,
+} from '@mintplayer/web-components/tile-manager';
+
+// Side-effect import: registers <mp-tile-manager>.
+import '@mintplayer/web-components/tile-manager';
 
 @Component({
   selector: 'bs-tile-manager',
