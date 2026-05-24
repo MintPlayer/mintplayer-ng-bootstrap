@@ -27,6 +27,7 @@ const router = createRouter({
     { path: '/basic/toggle-button', name: 'toggle-button', component: () => import('../views/ToggleButtonView.vue') },
     // Enterprise
     { path: '/enterprise/datatables', name: 'datatable', component: () => import('../views/DatatableView.vue') },
+    { path: '/enterprise/file-manager', name: 'file-manager', component: () => import('../views/enterprise/FileManagerView.vue') },
     { path: '/:pathMatch(.*)*', name: 'coming-soon', component: () => import('../views/ComingSoonView.vue') },
   ],
 });

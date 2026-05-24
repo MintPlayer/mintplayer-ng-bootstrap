@@ -28,10 +28,10 @@ import type {
   SelectionChangeEventDetail,
   UploadEntry,
   UploadRequestEventDetail,
-} from '@mintplayer/ng-bootstrap/web-components/file-manager';
+} from '@mintplayer/web-components/file-manager';
 
 // Side-effect import: registers <mp-file-manager> and all the nested WCs.
-import '@mintplayer/ng-bootstrap/web-components/file-manager';
+import '@mintplayer/web-components/file-manager';
 
 export type FileManagerIconResolver = (
   iconKey: string,
