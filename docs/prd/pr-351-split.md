@@ -78,7 +78,7 @@ The 11-PR WC extraction series (PR-1 through PR-11) has fully landed on master. 
   2. Refresh this PRD to a fully-closed state — table marks PR-10 + PR-11 ✅ merged, this OPEN ISSUES block trimmed.
   3. Gemini follow-ups on #365: `BsTileManager.vue` gained a `tiles` prop syncer (replacing the demo's `document.querySelector` workaround); `BsTreeview.vue` split `syncObjectProps` into per-property watchers (`items` no longer re-pushed on every expand/select tick — `MpTreeview.items` triggers an O(N) rebuild); `TreeviewPage.tsx` SOURCE snippet's stale `setSelected` → `setSelectedIds`.
 
-- **PR-10 (#364) ⏳ in CI.** Original scope: tab-control + splitter + scheduler-core + scheduler extraction (commits `eaf77c82`, `d20ba834`, `2e6a333b`, `5707d41a`). Scope grew significantly during review per user direction:
+- **PR-10 (#364) ✅ merged.** Original scope: tab-control + splitter + scheduler-core + scheduler extraction (commits `eaf77c82`, `d20ba834`, `2e6a333b`, `5707d41a`). Scope grew significantly during review per user direction:
   1. `fix(ribbon-demos)` — QAT button stretching + ribbon demo page max-width override.
   2. `fix(react+vue-demos)` — three production demo bugs: datepicker null-default crash, radio toggle_button missing one-of-N coordination, query-builder no-op on first click (WC emits `{ tree }` not bare Expression).
   3. `fix(query-builder-demos)` — React/Vue demos were missing `rootEntity` + the four strip-enabling flags. Vue wrapper extended to forward `selectedFields` / `sortBy` / `savedQueries` / `editorRegistry` / `messages` as JS properties.
