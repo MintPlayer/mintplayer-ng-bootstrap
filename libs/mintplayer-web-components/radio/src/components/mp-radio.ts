@@ -4,11 +4,17 @@ import { LitElement, html, nothing, type TemplateResult } from 'lit';
 // by `MpRadio.styles` below — sharing the same `CSSResult` instance means
 // Lit attaches one underlying `CSSStyleSheet` to every shadow root that
 // includes it (`adoptedStyleSheets`), so each component pays a registration
-// cost but the parsed Bootstrap form-check / btn-check CSS exists once.
+// cost but the parsed Bootstrap button CSS exists once.
 import {
   toggleButtonStyles,
   type ToggleButtonColor,
 } from '@mintplayer/web-components/toggle-button';
+
+// `.btn-check` (visually hides the input when used with `type="toggle_button"`)
+// + `.form-check` (default `type="radio"` layout) both live in the shared
+// form-check stylesheet, alongside `mp-checkbox`. Internal `_styles/` dir,
+// reached via relative path — not a public sub-entry of the package.
+import { formCheckStyles } from '../../../_styles/form-check.styles';
 
 export type MpRadioType = 'radio' | 'toggle_button';
 
@@ -48,7 +54,7 @@ let instanceCounter = 0;
  * transitions to the checked state.
  */
 export class MpRadio extends LitElement {
-  static override styles = [toggleButtonStyles];
+  static override styles = [formCheckStyles, toggleButtonStyles];
 
   static override shadowRootOptions = {
     ...LitElement.shadowRootOptions,

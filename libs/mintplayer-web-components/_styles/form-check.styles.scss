@@ -1,0 +1,55 @@
+// Shared form-check styling for `mp-checkbox` and `mp-radio`. Each
+// element imports `formCheckStyles` (the codegen-wc output of this file)
+// and includes it in its own `static styles` array; because both
+// reference the same `CSSResult` instance, Lit attaches a single
+// underlying `CSSStyleSheet` to every shadow root via
+// `adoptedStyleSheets`. One parse, one stylesheet object, two shadow
+// roots.
+//
+// Pass-through to Bootstrap's `forms/form-check` module so future
+// Bootstrap upgrades flow in automatically — no hand-curated subset
+// to maintain.
+
+@import "node_modules/bootstrap/scss/functions";
+@import "node_modules/bootstrap/scss/variables";
+@import "node_modules/bootstrap/scss/variables-dark";
+@import "node_modules/bootstrap/scss/mixins";
+@import "node_modules/bootstrap/scss/forms/form-check";
+
+// Bootstrap's `.form-check` ships a `margin-bottom: 0.125rem` that's
+// only useful when stacking multiple checkboxes/radios in a form
+// column. Each WC wraps a single control, so that bottom margin
+// produces an asymmetric box and the visible indicator drifts above
+// the geometric centre when the WC sits in a vertically-centred
+// container (table cells, toolbars). Zero it out — consumers stacking
+// multiple WCs can re-introduce spacing at the consumer-template level.
+//
+// Also flex-align the input + label so their centres line up. Bootstrap's
+// default form-check uses `display: block` + `vertical-align: top` on the
+// input + a magic `margin-top` to fudge the indicator into place, but the
+// label's text baseline lands about 1.6 px below the input's centre. Flex
+// + align-items:center fixes it cleanly. The negative-margin / padding-left
+// dance Bootstrap uses for absolute-style positioning isn't relevant here
+// (the input sits next to the label-span instead of behind it), so reset
+// both to zero.
+.form-check {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0;
+  padding-left: 0;
+}
+
+.form-check .form-check-input {
+  margin-top: 0;
+  margin-left: 0;
+  margin-right: 0.5em;
+  vertical-align: middle;
+}
+
+// Switch variant has a wider input (form-switch-width vs form-check-width)
+// but the same flex parent — same alignment fix applies. The float-left
+// the form-switch rules add on .form-check-input is unnecessary inside a
+// flex container; suppress to avoid the layout warning.
+.form-check.form-switch .form-check-input {
+  float: none;
+}

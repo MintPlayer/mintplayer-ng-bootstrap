@@ -16,10 +16,10 @@ import {
 import { isPlatformServer } from '@angular/common';
 import { BsRadioGroupDirective } from '../directives/radio-group/radio-group.directive';
 import { BsRadioType } from '../types/radio-type';
-import type { MpRadio, RadioChangeEventDetail } from '@mintplayer/ng-bootstrap/web-components/radio';
+import type { MpRadio, RadioChangeEventDetail } from '@mintplayer/web-components/radio';
 
 // Side-effect import: registers <mp-radio>.
-import '@mintplayer/ng-bootstrap/web-components/radio';
+import '@mintplayer/web-components/radio';
 
 @Component({
   selector: 'bs-radio',

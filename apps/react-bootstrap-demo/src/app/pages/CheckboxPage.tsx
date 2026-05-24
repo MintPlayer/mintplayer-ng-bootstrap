@@ -1,15 +1,18 @@
 import { BsCheckbox } from '@mintplayer/react-bootstrap/checkbox';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-const SOURCE = "<BsCheckbox />";
+
+const SOURCE = `<BsCheckbox>I agree to the terms</BsCheckbox>`;
 
 export function CheckboxPage() {
   return (
     <div className="demo-page">
       <h1>Checkbox</h1>
+
       <section>
-        <h2>Default</h2>
-        <BsCheckbox />
+        <h2>With label</h2>
+        <BsCheckbox>I agree to the terms</BsCheckbox>
       </section>
+
       <section>
         <h2>Source</h2>
         <BsCodeSnippet code={SOURCE} language="tsx" />
