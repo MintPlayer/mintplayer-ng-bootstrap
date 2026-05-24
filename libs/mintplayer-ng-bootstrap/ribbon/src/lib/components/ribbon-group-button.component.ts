@@ -8,7 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import type { RibbonGroupButtonOption } from '../web-components/items/mp-ribbon-group-button.element';
+import type { RibbonGroupButtonOption } from '@mintplayer/web-components/ribbon';
 
 @Component({
   selector: 'bs-ribbon-group-button',

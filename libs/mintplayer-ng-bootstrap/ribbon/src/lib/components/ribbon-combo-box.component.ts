@@ -8,7 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import type { RibbonComboBoxOption } from '../web-components/items/mp-ribbon-combobox.element';
+import type { RibbonComboBoxOption } from '@mintplayer/web-components/ribbon';
 
 @Component({
   selector: 'bs-ribbon-combo-box',
