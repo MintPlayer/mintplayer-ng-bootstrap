@@ -26,7 +26,7 @@ const el = ref<MpTreeview | null>(null);
 // WC (O(N)), so we don't want to re-push it on every expand/select tick.
 // Each watch fires only when its own dep changes.
 const syncItems = () => {
-  if (el.value && props.items !== undefined) el.value.items = props.items;
+  if (el.value) el.value.items = props.items ?? [];
 };
 const syncExpandedIds = () => {
   if (el.value) el.value.expandedIds = expandedIds.value;
@@ -35,7 +35,7 @@ const syncSelectedIds = () => {
   if (el.value) el.value.selectedIds = selectedIds.value;
 };
 const syncSelectionMode = () => {
-  if (el.value && props.selectionMode) el.value.selectionMode = props.selectionMode;
+  if (el.value) el.value.selectionMode = props.selectionMode ?? 'single';
 };
 
 onMounted(() => {

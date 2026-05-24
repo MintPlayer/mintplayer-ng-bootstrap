@@ -20,7 +20,7 @@ const props = defineProps<{
 const el = ref<MintTileManagerElement | null>(null);
 
 const syncTiles = () => {
-  if (el.value && props.tiles !== undefined) el.value.tiles = props.tiles;
+  if (el.value) el.value.tiles = props.tiles ?? [];
 };
 
 onMounted(syncTiles);
