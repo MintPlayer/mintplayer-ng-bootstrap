@@ -12,12 +12,13 @@ import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
 import { NavbarRouterLinkActiveDirective } from './directives/navbar-routerlink-active/navbar-router-link-active.directive';
 import { BOOTSTRAP_VERSION } from './providers/bootstrap-version.provider';
 import { ThemeToggleComponent } from './components/theme-toggle/theme-toggle.component';
+import { FrameworkLinksComponent } from './components/framework-links/framework-links.component';
 
 @Component({
   selector: 'demo-bootstrap-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
-  imports: [RouterOutlet, RouterLink, BsNavbarComponent, BsNavbarNavComponent, BsNavbarDropdownComponent, BsNavbarItemComponent, BsNavbarContentDirective, BsNavbarBrandComponent, BsExpandButtonDirective, BsNavbarTriggerDirective, BsDropdownDividerDirective, BsNavbarTogglerComponent, NavbarRouterLinkActiveDirective, ThemeToggleComponent],
+  imports: [RouterOutlet, RouterLink, BsNavbarComponent, BsNavbarNavComponent, BsNavbarDropdownComponent, BsNavbarItemComponent, BsNavbarContentDirective, BsNavbarBrandComponent, BsExpandButtonDirective, BsNavbarTriggerDirective, BsDropdownDividerDirective, BsNavbarTogglerComponent, NavbarRouterLinkActiveDirective, ThemeToggleComponent, FrameworkLinksComponent],
   animations: [SlideUpDownAnimation],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

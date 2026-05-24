@@ -63,8 +63,8 @@ A secondary goal piggybacks here: the existing publish workflow already uses a `
 | PR-6 | [#359](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/359) | `feat(wc-extract): timepicker + checkbox — 1-hop consumers (PR-6)` | ✅ merged |
 | — | [#360](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/360) | `refactor(web-components): split form-check styles + extract `radio` WC + React/Vue wrappers` | ✅ merged (prep PR; absorbed `radio` from original PR-9 scope mid-flight) |
 | PR-7 | [#361](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/361) | `feat(wc-extract): datatable + datepicker + datetime-picker (PR-7)` | ✅ merged |
-| PR-8 | — | `multi-range`, `otp-input`, `file-manager` (originally PR-6 minus `dock`; `dock` punted to wait for splitter+tab-control) | ⏳ in CI |
-| PR-9 | — | `query-builder`, `ribbon` (originally PR-7 minus `pagination` and `radio` — `radio` was pulled into PR #360) | ⏳ pending |
+| PR-8 | [#362](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/362) | `feat(wc-extract): multi-range + otp-input + file-manager (PR-8 re-scoped)` | ✅ merged |
+| PR-9 | — | `query-builder`, `ribbon` (originally PR-7 minus `pagination` and `radio` — `radio` was pulled into PR #360) | ⏳ in CI |
 | PR-10 | — | `scheduler`, `scheduler-core`, `splitter`, `tab-control` (originally PR-8) | ⏳ pending |
 | PR-11 | — | `dock` (punted from PR-8), `tile-manager`, `treeview` (originally PR-9 remainder) | ⏳ pending |
 | PR-12 | — | Misc cleanup (mostly already absorbed by PR-3/PR-4) | ⏳ pending |
@@ -75,7 +75,9 @@ A secondary goal piggybacks here: the existing publish workflow already uses a `
 
 - **PR-7 ✅ merged as #361.** datatable + datepicker + datetime-picker extracted with React/Vue wrappers and `/basic/forms/{picker}` regrouping across all three demos. Gemini caught a `BsDatatable.vue` null-clearing bug — fixed in `cbc509d9` by switching to `?? []` fallbacks. 195 WC tests passed.
 
-- **PR-8 (#362) ⏳ in CI.** Three commits: multi-range + otp-input + file-manager. `dock` punted to PR-11 because its tab-control+splitter cross-WC deps haven't migrated. file-manager keeps its splitter+treeview imports at the `@mintplayer/ng-bootstrap/web-components/...` paths until PR-10 (splitter) and PR-11 (treeview) migrate those. 245 WC tests pass after this PR.
+- **PR-8 ✅ merged as #362.** multi-range + otp-input + file-manager extracted; `dock` punted to PR-11.
+
+- **PR-9 (#363) ⏳ in CI.** Four commits: (1) query-builder extraction (much larger than usual — includes model + DnD + visitor + preview + value-editors subdirs), (2) ribbon family extraction (20 elements + a11y import fix), (3) full Angular-style ribbon demo ported to React + Vue (1211/983 LOC), (4) framework-switcher links in the Angular navbar.
 
 - **Vue/React demo URL convention differs from Angular**: master Angular demo uses `/basic/forms/checkbox` (nested), React/Vue demos use `/basic/checkbox` (flat). This is intentional — Vue/React demo routing was designed flatter.
 
@@ -200,9 +202,16 @@ Three commits, one per entry.
 
 245 WC tests pass at the new locations (up from 195; otp-input adds ~50 specs).
 
-### PR-9 — `query-builder`, `ribbon` (originally PR-7 minus `pagination`; `radio` already absorbed into PR #360) ⏳ pending
+### PR-9 — `query-builder`, `ribbon` ⏳ in CI as #363
 
-`ribbon` is the second-heaviest entry (~3 500 LOC). Same split-if-needed clause as PR-8. `radio` was originally slated here but landed in PR #360 because the form-check split there caused a `.btn-check` regression on the still-in-place mp-radio — folding the full extraction in was simpler than maintaining a parallel in-place fix.
+Two extraction commits + two follow-up scope additions.
+
+- `query-builder` — much bigger than just the `.element.*` files: the WC owns its own model (expression tree, field defs, operators, operator overrides, default tree, messages, editor types, saved-query, sort), DnD controller, JSON-tree visitor pipeline, expression preview renderer, and built-in value editors. All framework-agnostic; all moved into `libs/mintplayer-web-components/query-builder/src/`. The Angular `bs-query-builder` component + the editor projection directive stay behind. React (createComponent with 7 events) + Vue (defineModel on `query` property, NOT `value`) wrappers + small demo with a 5-field Orders entity schema and live JSON tree dump at `/enterprise/query-builder`.
+- `ribbon` — 20 element files (top-level shell + 4 structural elements + 14 item-type elements + 1 base class) plus the `RibbonTabChangeEvent` type. One stale cross-WC import (a11y) fixed to point at `@mintplayer/web-components/a11y`. The 17 Angular wrappers stay behind; their imports rewired to `@mintplayer/web-components/ribbon`. React wrappers: a single `BsRibbon.tsx` file with all 18 createComponent exports + their event maps. Vue wrappers: only the top-level `BsRibbon.vue` SFC ships — sub-elements are addressed directly as native custom elements in templates (`<mp-ribbon-button @item-click="…">`), avoiding 18 trivial SFCs.
+- **Follow-up commit: full ribbon demo port to React + Vue.** Replace the minimal placeholder pages with 1:1 ports of the Angular ribbon demo: 4 tabs (Home/Insert/Design/Layout) + contextual Picture Tools + QAT + keymap section + 7 code-snippet cards. RibbonPage.tsx 1211 LOC + sibling RibbonPage.css 202 LOC; RibbonView.vue 983 LOC.
+- **Follow-up commit: framework-switcher links in the Angular navbar.** New `<demo-framework-links>` standalone component sits between the theme toggle and the GitHub icon in the Angular demo. Mirrors the React (`FrameworkLinks.tsx`) and Vue (`FrameworkLinks.vue`) implementations.
+
+`radio` was originally slated here but landed in PR #360 because the form-check split there caused a `.btn-check` regression on the still-in-place mp-radio — folding the full extraction in was simpler than maintaining a parallel in-place fix.
 
 ### PR-10 — `scheduler`, `scheduler-core`, `splitter`, `tab-control` (originally PR-8) ⏳ pending
 

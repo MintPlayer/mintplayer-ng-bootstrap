@@ -4,9 +4,12 @@ import { Component } from '@angular/core';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { BsQueryBuilderComponent } from './query-builder.component';
 import { BsQueryBuilderEditorDirective } from './query-builder-editor.directive';
-import type { Expression, Group } from '../model/expression';
-import type { EntitySchema } from '../model/field-def';
-import { emptyGroup } from '../model/default-tree';
+import {
+  emptyGroup,
+  type Expression,
+  type Group,
+  type EntitySchema,
+} from '@mintplayer/web-components/query-builder';
 
 const SCHEMA: EntitySchema[] = [
   {

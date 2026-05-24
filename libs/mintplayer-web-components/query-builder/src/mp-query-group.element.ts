@@ -1,8 +1,8 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { ContextConsumer } from '@lit/context';
-import type { Expression, Group } from '../model/expression';
-import type { EntitySchema } from '../model/field-def';
-import { DEFAULT_MESSAGES, type QueryBuilderMessages } from '../model/messages';
+import type { Expression, Group } from './model/expression';
+import type { EntitySchema } from './model/field-def';
+import { DEFAULT_MESSAGES, type QueryBuilderMessages } from './model/messages';
 import { disabledContext, messagesContext } from './context';
 import { MpQueryConditionElement } from './mp-query-condition.element';
 import { MpQuerySubqueryElement } from './mp-query-subquery.element';

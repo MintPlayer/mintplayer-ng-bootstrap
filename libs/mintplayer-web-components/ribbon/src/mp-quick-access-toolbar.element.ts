@@ -54,6 +54,24 @@ export class MpQuickAccessToolbar extends LitElement {
       opacity: 0.25;
       margin: 0 4px;
     }
+    /*
+     * The QAT is a horizontal flex row. Item-base WCs default to
+     * \`:host { display: inline-flex }\`, but their \`[size="small"]\`
+     * variant overrides to \`display: flex; width: 100%\` (intended for
+     * vertical stacking inside a ribbon-group column). In the QAT context
+     * that's wrong: each button would stretch to fill the toolbar. Reset
+     * width here so the QAT keeps its compact horizontal layout regardless
+     * of which item element the consumer slots in. The Angular demo
+     * doesn't hit this because <bs-ribbon-button> wraps the WC in an
+     * inline-flex host, but React/Vue use the WC tags directly.
+     */
+    ::slotted(mp-ribbon-button[size="small"]),
+    ::slotted(mp-ribbon-toggle-button[size="small"]),
+    ::slotted(mp-ribbon-dropdown-button[size="small"]),
+    ::slotted(mp-ribbon-split-button[size="small"]),
+    ::slotted(mp-ribbon-checkbox[size="small"]) {
+      width: auto;
+    }
     @media (pointer: coarse) {
       :host([touch-mode="auto"]) .qat,
       :host([touch-mode="on"]) .qat {

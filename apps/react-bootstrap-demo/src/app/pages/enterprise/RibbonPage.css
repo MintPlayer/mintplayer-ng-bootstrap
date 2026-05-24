@@ -1,0 +1,210 @@
+/* Ported from apps/ng-bootstrap-demo/.../ribbon.component.scss
+ * Flattened (no SCSS nesting) for plain CSS consumption by Vite. */
+
+/* The global `.demo-page` caps content at 1200px for readability, but
+ * the ribbon expects to fill the full viewport width (it adapts via
+ * its own reduceOrder/idealSizes layout algorithm). Override on the
+ * ribbon page so the ribbon can size with the window. */
+.demo-page:has(.demo-ribbon) {
+  max-width: none;
+}
+
+.demo-ribbon .ribbon-rtl-wrapper {
+  display: block;
+}
+
+.demo-ribbon .demo-tell-me {
+  width: 220px;
+  padding: 3px 8px;
+  font-size: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.92);
+  color: inherit;
+}
+
+.demo-ribbon .demo-tell-me:focus-visible {
+  outline: 2px solid var(--bs-primary, #0d6efd);
+  outline-offset: -2px;
+}
+
+.demo-ribbon .demo-tell-me::placeholder {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.demo-ribbon .controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  align-items: center;
+}
+
+.demo-ribbon .controls .control-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.875rem;
+}
+
+.demo-ribbon .keymap {
+  margin-top: 2rem;
+  padding: 1.25rem 1.5rem;
+  border: 1px solid var(--bs-border-color, #dee2e6);
+  border-radius: 0.5rem;
+  background: var(--bs-tertiary-bg, #f8f9fa);
+  color: var(--bs-body-color, inherit);
+}
+
+.demo-ribbon .keymap h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1.1rem;
+}
+
+.demo-ribbon .keymap-intro {
+  margin: 0 0 1rem;
+  font-size: 0.875rem;
+  color: var(--bs-secondary-color, #6c757d);
+}
+
+.demo-ribbon .keymap-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.demo-ribbon .keymap-card {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--bs-border-color, #dee2e6);
+  border-radius: 0.375rem;
+  background: var(--bs-body-bg, #fff);
+}
+
+.demo-ribbon .keymap-card h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  color: var(--bs-secondary-color, #495057);
+  border-bottom: 1px solid var(--bs-border-color, #e9ecef);
+  padding-bottom: 0.35rem;
+}
+
+.demo-ribbon .keymap-card dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: minmax(110px, max-content) 1fr;
+  column-gap: 0.75rem;
+  row-gap: 0.4rem;
+  font-size: 0.8125rem;
+}
+
+.demo-ribbon .keymap-card dt {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.demo-ribbon .keymap-card dd {
+  margin: 0;
+  color: var(--bs-secondary-color, #6c757d);
+}
+
+.demo-ribbon .keymap kbd {
+  display: inline-block;
+  padding: 0.05rem 0.4rem;
+  font-family: ui-monospace, "SF Mono", Consolas, Menlo, monospace;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--bs-body-color, #212529);
+  background: var(--bs-body-bg, #fff);
+  border: 1px solid var(--bs-border-color, #ced4da);
+  border-bottom-width: 2px;
+  border-radius: 0.25rem;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
+}
+
+.demo-ribbon .keymap-note {
+  margin: 1rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--bs-secondary-color, #6c757d);
+}
+
+.demo-ribbon .keymap-note code {
+  font-family: ui-monospace, "SF Mono", Consolas, Menlo, monospace;
+  font-size: 0.78rem;
+  background: var(--bs-secondary-bg, #e9ecef);
+  padding: 0.05rem 0.3rem;
+  border-radius: 0.2rem;
+}
+
+.demo-ribbon .snippets {
+  margin-top: 2rem;
+  padding: 1.25rem 1.5rem;
+  border: 1px solid var(--bs-border-color, #dee2e6);
+  border-radius: 0.5rem;
+  background: var(--bs-tertiary-bg, #f8f9fa);
+  color: var(--bs-body-color, inherit);
+}
+
+.demo-ribbon .snippets h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1.1rem;
+}
+
+.demo-ribbon .snippets-intro {
+  margin: 0 0 1rem;
+  font-size: 0.875rem;
+  color: var(--bs-secondary-color, #6c757d);
+}
+
+.demo-ribbon .snippets-intro code {
+  font-family: ui-monospace, "SF Mono", Consolas, Menlo, monospace;
+  font-size: 0.8rem;
+  background: var(--bs-secondary-bg, #e9ecef);
+  padding: 0.05rem 0.3rem;
+  border-radius: 0.2rem;
+}
+
+.demo-ribbon .snippet-card {
+  margin-bottom: 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--bs-border-color, #dee2e6);
+  border-radius: 0.375rem;
+  background: var(--bs-body-bg, #fff);
+}
+
+.demo-ribbon .snippet-card:last-child {
+  margin-bottom: 0;
+}
+
+.demo-ribbon .snippet-card h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  color: var(--bs-secondary-color, #495057);
+}
+
+.demo-ribbon .snippet-card h4 code {
+  font-family: ui-monospace, "SF Mono", Consolas, Menlo, monospace;
+  font-size: 0.85rem;
+  background: var(--bs-secondary-bg, #e9ecef);
+  padding: 0.05rem 0.3rem;
+  border-radius: 0.2rem;
+}
+
+.demo-ribbon .snippet-card bs-code-snippet,
+.demo-ribbon .snippet-card mp-code-snippet {
+  display: block;
+  margin: 0;
+}
+
+.demo-ribbon .snippet-card .snippet-note {
+  margin: 0.6rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--bs-secondary-color, #6c757d);
+}
+
+.demo-ribbon .snippet-card .snippet-note code {
+  font-family: ui-monospace, "SF Mono", Consolas, Menlo, monospace;
+  font-size: 0.78rem;
+  background: var(--bs-secondary-bg, #e9ecef);
+  padding: 0.05rem 0.3rem;
+  border-radius: 0.2rem;
+}

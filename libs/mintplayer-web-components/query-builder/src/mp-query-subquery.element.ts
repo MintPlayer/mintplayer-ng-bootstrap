@@ -1,8 +1,8 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { ContextConsumer } from '@lit/context';
-import type { SubQueryCondition } from '../model/expression';
-import type { EntitySchema, FieldDef } from '../model/field-def';
-import { DEFAULT_MESSAGES, type QueryBuilderMessages } from '../model/messages';
+import type { SubQueryCondition } from './model/expression';
+import type { EntitySchema, FieldDef } from './model/field-def';
+import { DEFAULT_MESSAGES, type QueryBuilderMessages } from './model/messages';
 import { messagesContext } from './context';
 import { styles } from './mp-query-subquery.element.template';
 
