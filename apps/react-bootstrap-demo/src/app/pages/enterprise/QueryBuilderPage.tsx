@@ -42,7 +42,8 @@ export function QueryBuilderPage() {
       <section>
         <h2>Orders schema</h2>
         <BsQueryBuilder
-          {...{ schema: SCHEMA, query } as React.ComponentProps<typeof BsQueryBuilder>}
+          schema={SCHEMA}
+          query={query}
           onQueryChange={(e: CustomEvent<Expression>) => setQuery(e.detail)}
         />
         <details className="mt-3">

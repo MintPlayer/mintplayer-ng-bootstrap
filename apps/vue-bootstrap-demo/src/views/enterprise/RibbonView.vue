@@ -159,90 +159,97 @@ function onPasteModeSelect(event: Event) {
   if (next) pasteMode.value = next;
 }
 
-// ============== Snippets (verbatim from Angular component) ==============
-const snippetMinimal = `<bs-ribbon [(minimized)]="minimized">
-  <bs-ribbon-tab tabId="home" label="Home">
-    <bs-ribbon-group groupId="clipboard" label="Clipboard"
-                     dialogLauncher="Clipboard Dialog">
-      <bs-ribbon-button itemId="paste" label="Paste" icon="📋"
+// ============== Snippets (Vue templates — BsRibbon SFC wrapper for the
+// top-level shell, native custom elements for everything else) ==============
+const snippetMinimal = `<BsRibbon v-model="activeTab" :minimized="minimized"
+          @minimize-toggle="(e) => minimized = e.detail.minimized">
+  <mp-ribbon-tab tab-id="home" label="Home">
+    <mp-ribbon-group group-id="clipboard" label="Clipboard"
+                     dialog-launcher="Clipboard Dialog">
+      <mp-ribbon-button item-id="paste" label="Paste" icon="📋"
                         size="large" tooltip="Paste (Ctrl+V)"
-                        (itemClick)="onPaste($event)"></bs-ribbon-button>
-      <bs-ribbon-button itemId="cut"  label="Cut"  icon="✂️" size="small"
-                        (itemClick)="onCut($event)"></bs-ribbon-button>
-      <bs-ribbon-button itemId="copy" label="Copy" icon="📄" size="small"
-                        (itemClick)="onCopy($event)"></bs-ribbon-button>
-    </bs-ribbon-group>
-  </bs-ribbon-tab>
-</bs-ribbon>`;
+                        @item-click="onPaste" />
+      <mp-ribbon-button item-id="cut"  label="Cut"  icon="✂️" size="small"
+                        @item-click="onCut" />
+      <mp-ribbon-button item-id="copy" label="Copy" icon="📄" size="small"
+                        @item-click="onCopy" />
+    </mp-ribbon-group>
+  </mp-ribbon-tab>
+</BsRibbon>`;
 
-const snippetSplitButton = `<bs-ribbon-split-button
-  [itemId]="pasteMode().id"
-  [label]="pasteMode().label"
-  [icon]="pasteMode().icon"
+const snippetSplitButton = `<mp-ribbon-split-button
+  :item-id="pasteMode.id"
+  :label="pasteMode.label"
+  :icon="pasteMode.icon"
   size="large"
-  (mainAction)="onPaste($event)">
-  <bs-ribbon-menu-item itemId="paste" label="Paste" icon="📋"
-                       (menuSelect)="onPasteModeSelect($event)"></bs-ribbon-menu-item>
-  <bs-ribbon-menu-item itemId="paste-values" label="Paste Values" icon="123"
-                       (menuSelect)="onPasteModeSelect($event)"></bs-ribbon-menu-item>
-  <bs-ribbon-menu-separator></bs-ribbon-menu-separator>
-  <bs-ribbon-menu-item itemId="paste-special" label="Paste Special…"
-                       (menuSelect)="onPasteSpecial($event)"></bs-ribbon-menu-item>
-</bs-ribbon-split-button>`;
+  @main-action="onPaste">
+  <mp-ribbon-menu-item item-id="paste" label="Paste" icon="📋"
+                       @menu-select="onPasteModeSelect" />
+  <mp-ribbon-menu-item item-id="paste-values" label="Paste Values" icon="123"
+                       @menu-select="onPasteModeSelect" />
+  <mp-ribbon-menu-separator />
+  <mp-ribbon-menu-item item-id="paste-special" label="Paste Special…"
+                       @menu-select="onPasteSpecial" />
+</mp-ribbon-split-button>`;
 
-const snippetValueItems = `<bs-ribbon-toggle-button itemId="bold" label="Bold" icon="B" size="small"
-                         [(ngModel)]="boldOn"></bs-ribbon-toggle-button>
+const snippetValueItems = `<!-- Vue: bind the prop + listen for the matching event.
+     boldOn / fontFamily / fontColor are refs(). -->
+<mp-ribbon-toggle-button item-id="bold" label="Bold" icon="B" size="small"
+                         :pressed="boldOn"
+                         @toggle="(e) => boldOn = e.detail.pressed" />
 
-<bs-ribbon-combo-box itemId="font-family" label="Font Family" size="medium"
-                     [options]="fontFamilyOptions"
-                     [(ngModel)]="fontFamily"></bs-ribbon-combo-box>
+<mp-ribbon-combobox item-id="font-family" label="Font Family" size="medium"
+                    :options="fontFamilyOptions"
+                    :value="fontFamily"
+                    @value-change="(e) => fontFamily = String(e.detail.value)" />
 
-<bs-ribbon-color-picker itemId="font-color" label="Font Color" size="small"
-                        [(ngModel)]="fontColor"></bs-ribbon-color-picker>`;
+<mp-ribbon-color-picker item-id="font-color" label="Font Color" size="small"
+                        :color="fontColor"
+                        @color-change="(e) => fontColor = e.detail.color" />`;
 
-const snippetContextual = `<bs-ribbon-contextual-tab-set
+const snippetContextual = `<mp-ribbon-contextual-tab-set
   label="Picture Tools"
   color="#F2C744"
-  [hidden]="!pictureSelected()">
-  <bs-ribbon-tab tabId="picture-format" label="Format">
-    <bs-ribbon-group groupId="picture-styles" label="Picture Styles">
+  :hidden="!pictureSelected">
+  <mp-ribbon-tab tab-id="picture-format" label="Format">
+    <mp-ribbon-group group-id="picture-styles" label="Picture Styles">
       …
-    </bs-ribbon-group>
-  </bs-ribbon-tab>
-</bs-ribbon-contextual-tab-set>`;
+    </mp-ribbon-group>
+  </mp-ribbon-tab>
+</mp-ribbon-contextual-tab-set>`;
 
-const snippetQat = `<bs-quick-access-toolbar label="Quick Access Toolbar"
-                         [touchMode]="touchMode()"
-                         [appAccent]="appAccent()">
-  <bs-ribbon-button itemId="save" label="Save" icon="💾" size="small"
-                    (itemClick)="onSave($event)"></bs-ribbon-button>
-  <bs-ribbon-button itemId="undo" label="Undo" icon="↶" size="small"
-                    (itemClick)="onUndo($event)"></bs-ribbon-button>
-</bs-quick-access-toolbar>
+const snippetQat = `<mp-quick-access-toolbar label="Quick Access Toolbar"
+                         :touch-mode="touchMode"
+                         :app-accent="appAccent">
+  <mp-ribbon-button item-id="save" label="Save" icon="💾" size="small"
+                    @item-click="onSave" />
+  <mp-ribbon-button item-id="undo" label="Undo" icon="↶" size="small"
+                    @item-click="onUndo" />
+</mp-quick-access-toolbar>
 
-<bs-ribbon …> … </bs-ribbon>`;
+<BsRibbon …> … </BsRibbon>`;
 
-const snippetTheming = `<bs-ribbon
+const snippetTheming = `<BsRibbon
   version="office-2016"
-  appAccent="#217346"
-  colorScheme="auto"
-  touchMode="auto">
+  app-accent="#217346"
+  color-scheme="auto"
+  touch-mode="auto">
   …
-</bs-ribbon>`;
+</BsRibbon>`;
 
 const snippetSlotIcons = `<!-- Project any element with slot="icon" — SVGs, <i> from an icon font,
      images, whatever. The host auto-sizes it from the item's size,
      or use one of the .ribbon-icon-large / -medium / -small utility
      classes for an explicit override. -->
-<bs-ribbon-button itemId="save" label="Save" size="large"
-                  (itemClick)="onSave($event)">
+<mp-ribbon-button item-id="save" label="Save" size="large"
+                  @item-click="onSave">
   <i slot="icon" class="bi bi-save"></i>
-</bs-ribbon-button>
+</mp-ribbon-button>
 
-<bs-ribbon-button itemId="copy" label="Copy" size="small"
-                  (itemClick)="onCopy($event)">
+<mp-ribbon-button item-id="copy" label="Copy" size="small"
+                  @item-click="onCopy">
   <svg slot="icon" class="ribbon-icon-small" viewBox="0 0 16 16">…</svg>
-</bs-ribbon-button>`;
+</mp-ribbon-button>`;
 </script>
 
 <template>
@@ -692,9 +699,13 @@ const snippetSlotIcons = `<!-- Project any element with slot="icon" — SVGs, <i
     <section class="snippets" aria-labelledby="ribbon-snippets-heading">
       <h3 id="ribbon-snippets-heading">Code samples</h3>
       <p class="snippets-intro">
-        Copy-paste starting points for the most common ribbon shapes. Every
-        element has an Angular wrapper (<code>bs-*</code>) over a Lit web
-        component (<code>mp-*</code>); these snippets show the Angular form.
+        Copy-paste starting points for the most common ribbon shapes. The
+        top-level shell uses the <code>&lt;BsRibbon&gt;</code> SFC wrapper for
+        <code>v-model</code> on <code>activeTab</code>; sub-elements are
+        addressed directly as native custom elements
+        (<code>&lt;mp-ribbon-*&gt;</code>) — Vue forwards object/array props
+        like <code>:options</code> and <code>:ideal-sizes</code> as JS
+        properties on the underlying class.
       </p>
 
       <article class="snippet-card">

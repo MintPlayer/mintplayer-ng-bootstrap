@@ -194,7 +194,7 @@ const SNIPPET_SLOT_ICONS = `{/* Project any element with slot="icon" — SVGs, <
 // createComponent's generated prop type only covers public class fields,
 // so any string/object prop we want to pass through to the underlying mp-*
 // element has to be applied via the spread escape hatch:
-//   {...{ prop: value } as React.ComponentProps<typeof BsX>}
+//   prop={value}
 
 function onItemClick(event: CustomEvent<{ itemId?: string }>): void {
   console.log('Item clicked:', event);
@@ -340,35 +340,31 @@ export function RibbonPage() {
 
         <div className="ribbon-rtl-wrapper" dir={direction}>
           <BsQuickAccessToolbar
-            {...{
-              label: 'Quick Access Toolbar',
-              touchMode,
-              appAccent,
-            } as React.ComponentProps<typeof BsQuickAccessToolbar>}
+            label="Quick Access Toolbar"
+            touchMode={touchMode}
+            {...{ appAccent } as React.ComponentProps<typeof BsQuickAccessToolbar>}
           >
             <BsRibbonButton
-              {...{ itemId: 'qat-save', label: 'Save', icon: '💾', size: 'small', tooltip: 'Save (Ctrl+S)' } as React.ComponentProps<typeof BsRibbonButton>}
+              itemId="qat-save" label="Save" icon="💾" size="small" tooltip="Save (Ctrl+S)"
               onItemClick={onItemClick}
             />
             <BsRibbonButton
-              {...{ itemId: 'qat-undo', label: 'Undo', icon: '↶', size: 'small', tooltip: 'Undo (Ctrl+Z)' } as React.ComponentProps<typeof BsRibbonButton>}
+              itemId="qat-undo" label="Undo" icon="↶" size="small" tooltip="Undo (Ctrl+Z)"
               onItemClick={onItemClick}
             />
             <BsRibbonButton
-              {...{ itemId: 'qat-redo', label: 'Redo', icon: '↷', size: 'small', tooltip: 'Redo (Ctrl+Y)' } as React.ComponentProps<typeof BsRibbonButton>}
+              itemId="qat-redo" label="Redo" icon="↷" size="small" tooltip="Redo (Ctrl+Y)"
               onItemClick={onItemClick}
             />
           </BsQuickAccessToolbar>
 
           <BsRibbon
-            {...{
-              minimized,
-              layout,
-              version,
-              colorScheme,
-              touchMode,
-              appAccent,
-            } as React.ComponentProps<typeof BsRibbon>}
+            minimized={minimized}
+            layout={layout}
+            version={version}
+            colorScheme={colorScheme}
+            touchMode={touchMode}
+            {...{ appAccent } as React.ComponentProps<typeof BsRibbon>}
             onMinimizeToggle={(e) => setMinimized(e.detail.minimized)}
             onTabChange={(e) => console.log('Tab changed:', e.detail)}
           >
@@ -383,241 +379,213 @@ export function RibbonPage() {
 
             {/* ============ Home tab ============ */}
             <BsRibbonTab
-              {...{
-                tabId: 'home',
-                label: 'Home',
-                idealSizes: HOME_IDEAL_SIZES,
-                reduceOrder: HOME_REDUCE_ORDER,
-              } as React.ComponentProps<typeof BsRibbonTab>}
+              tabId="home"
+              label="Home"
+              idealSizes={HOME_IDEAL_SIZES}
+              reduceOrder={HOME_REDUCE_ORDER}
             >
               <BsRibbonGroup
-                {...{
-                  groupId: 'clipboard',
-                  label: 'Clipboard',
-                  dialogLauncher: 'Clipboard Dialog',
-                } as React.ComponentProps<typeof BsRibbonGroup>}
+                groupId="clipboard"
+                label="Clipboard"
+                dialogLauncher="Clipboard Dialog"
               >
                 <BsRibbonSplitButton
-                  {...{
-                    itemId: pasteMode.id,
-                    label: pasteMode.label,
-                    icon: pasteMode.icon,
-                    size: 'large',
-                    tooltip: 'Paste (Ctrl+V)',
-                  } as React.ComponentProps<typeof BsRibbonSplitButton>}
+                  itemId={pasteMode.id}
+                  label={pasteMode.label}
+                  icon={pasteMode.icon}
+                  size="large"
+                  tooltip="Paste (Ctrl+V)"
                   onMainAction={onItemClick}
                 >
                   <BsRibbonMenuItem
-                    {...{ itemId: 'paste', label: 'Paste', icon: '📋' } as React.ComponentProps<typeof BsRibbonMenuItem>}
+                    itemId="paste" label="Paste" icon="📋"
                     onMenuSelect={handlePasteModeSelect}
                   />
                   <BsRibbonMenuItem
-                    {...{ itemId: 'paste-values', label: 'Paste Values', icon: '123' } as React.ComponentProps<typeof BsRibbonMenuItem>}
+                    itemId="paste-values" label="Paste Values" icon="123"
                     onMenuSelect={handlePasteModeSelect}
                   />
                   <BsRibbonMenuItem
-                    {...{ itemId: 'paste-formatting', label: 'Paste Formatting', icon: '🎨' } as React.ComponentProps<typeof BsRibbonMenuItem>}
+                    itemId="paste-formatting" label="Paste Formatting" icon="🎨"
                     onMenuSelect={handlePasteModeSelect}
                   />
                   <BsRibbonMenuSeparator />
                   <BsRibbonMenuItem
-                    {...{ itemId: 'paste-special', label: 'Paste Special…' } as React.ComponentProps<typeof BsRibbonMenuItem>}
+                    itemId="paste-special" label="Paste Special…"
                     onMenuSelect={onItemClick}
                   />
                 </BsRibbonSplitButton>
                 <BsRibbonButton
-                  {...{ itemId: 'cut', label: 'Cut', icon: '✂️', size: 'small', tooltip: 'Cut (Ctrl+X)' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="cut" label="Cut" icon="✂️" size="small" tooltip="Cut (Ctrl+X)"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'copy', label: 'Copy', icon: '📄', size: 'small', tooltip: 'Copy (Ctrl+C)' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="copy" label="Copy" icon="📄" size="small" tooltip="Copy (Ctrl+C)"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'format-painter', label: 'Format Painter', icon: '🖌️', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="format-painter" label="Format Painter" icon="🖌️" size="small"
                   onItemClick={onItemClick}
                 />
               </BsRibbonGroup>
 
               <BsRibbonGroup
-                {...{
-                  groupId: 'font',
-                  label: 'Font',
-                  dialogLauncher: 'Font Dialog',
-                } as React.ComponentProps<typeof BsRibbonGroup>}
+                groupId="font"
+                label="Font"
+                dialogLauncher="Font Dialog"
               >
                 <BsRibbonComboBox
-                  {...{
-                    itemId: 'font-family',
-                    label: 'Font Family',
-                    size: 'medium',
-                    tooltip: 'Font Family',
-                    options: FONT_FAMILY_OPTIONS,
-                    value: fontFamily,
-                  } as React.ComponentProps<typeof BsRibbonComboBox>}
+                  itemId="font-family"
+                  label="Font Family"
+                  size="medium"
+                  tooltip="Font Family"
+                  options={FONT_FAMILY_OPTIONS}
+                  value={fontFamily}
                   onValueChange={(e) => setFontFamily(String(e.detail.value))}
                 />
                 <BsRibbonToggleButton
-                  {...{
-                    itemId: 'bold',
-                    label: 'Bold',
-                    icon: 'B',
-                    size: 'small',
-                    tooltip: 'Bold (Ctrl+B)',
-                    pressed: boldOn,
-                  } as React.ComponentProps<typeof BsRibbonToggleButton>}
+                  itemId="bold"
+                  label="Bold"
+                  icon="B"
+                  size="small"
+                  tooltip="Bold (Ctrl+B)"
+                  pressed={boldOn}
                   onToggle={(e) => setBoldOn(e.detail.pressed)}
                 />
                 <BsRibbonToggleButton
-                  {...{
-                    itemId: 'italic',
-                    label: 'Italic',
-                    icon: 'I',
-                    size: 'small',
-                    tooltip: 'Italic (Ctrl+I)',
-                    pressed: italicOn,
-                  } as React.ComponentProps<typeof BsRibbonToggleButton>}
+                  itemId="italic"
+                  label="Italic"
+                  icon="I"
+                  size="small"
+                  tooltip="Italic (Ctrl+I)"
+                  pressed={italicOn}
                   onToggle={(e) => setItalicOn(e.detail.pressed)}
                 />
                 <BsRibbonToggleButton
-                  {...{
-                    itemId: 'underline',
-                    label: 'Underline',
-                    icon: 'U',
-                    size: 'small',
-                    tooltip: 'Underline (Ctrl+U)',
-                    pressed: underlineOn,
-                  } as React.ComponentProps<typeof BsRibbonToggleButton>}
+                  itemId="underline"
+                  label="Underline"
+                  icon="U"
+                  size="small"
+                  tooltip="Underline (Ctrl+U)"
+                  pressed={underlineOn}
                   onToggle={(e) => setUnderlineOn(e.detail.pressed)}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'strikethrough', label: 'Strikethrough', icon: 'S̶', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="strikethrough" label="Strikethrough" icon="S̶" size="small"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'subscript', label: 'Subscript', icon: 'X₂', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="subscript" label="Subscript" icon="X₂" size="small"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'superscript', label: 'Superscript', icon: 'X²', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="superscript" label="Superscript" icon="X²" size="small"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonColorPicker
-                  {...{
-                    itemId: 'font-color',
-                    label: 'Font Color',
-                    size: 'small',
-                    value: fontColor,
-                  } as React.ComponentProps<typeof BsRibbonColorPicker>}
+                  itemId="font-color"
+                  label="Font Color"
+                  size="small"
+                  {...{ value: fontColor } as React.ComponentProps<typeof BsRibbonColorPicker>}
                   onColorChange={(e) => setFontColor(e.detail.color)}
                 />
               </BsRibbonGroup>
 
               <BsRibbonGroup
-                {...{
-                  groupId: 'paragraph',
-                  label: 'Paragraph',
-                  dialogLauncher: 'Paragraph Dialog',
-                } as React.ComponentProps<typeof BsRibbonGroup>}
+                groupId="paragraph"
+                label="Paragraph"
+                dialogLauncher="Paragraph Dialog"
               >
                 <BsRibbonDropdownButton
-                  {...{
-                    itemId: 'bullets',
-                    label: 'Bullets',
-                    icon: '•≡',
-                    size: 'small',
-                    tooltip: 'Bullet list',
-                  } as React.ComponentProps<typeof BsRibbonDropdownButton>}
+                  itemId="bullets"
+                  label="Bullets"
+                  icon="•≡"
+                  size="small"
+                  tooltip="Bullet list"
                 >
                   <BsRibbonMenuItem
-                    {...{ itemId: 'bullet-disc', label: 'Disc', icon: '●' } as React.ComponentProps<typeof BsRibbonMenuItem>}
+                    itemId="bullet-disc" label="Disc" icon="●"
                     onMenuSelect={onItemClick}
                   />
                   <BsRibbonMenuItem
-                    {...{ itemId: 'bullet-circle', label: 'Circle', icon: '○' } as React.ComponentProps<typeof BsRibbonMenuItem>}
+                    itemId="bullet-circle" label="Circle" icon="○"
                     onMenuSelect={onItemClick}
                   />
                   <BsRibbonMenuItem
-                    {...{ itemId: 'bullet-square', label: 'Square', icon: '■' } as React.ComponentProps<typeof BsRibbonMenuItem>}
+                    itemId="bullet-square" label="Square" icon="■"
                     onMenuSelect={onItemClick}
                   />
                   <BsRibbonMenuSeparator />
                   <BsRibbonMenuItem
-                    {...{ itemId: 'define-new-bullet', label: 'Define New Bullet…' } as React.ComponentProps<typeof BsRibbonMenuItem>}
+                    itemId="define-new-bullet" label="Define New Bullet…"
                     onMenuSelect={onItemClick}
                   />
                 </BsRibbonDropdownButton>
                 <BsRibbonButton
-                  {...{ itemId: 'numbering', label: 'Numbering', icon: '1≡', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="numbering" label="Numbering" icon="1≡" size="small"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'indent-decrease', label: 'Decrease Indent', icon: '⇤', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="indent-decrease" label="Decrease Indent" icon="⇤" size="small"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'indent-increase', label: 'Increase Indent', icon: '⇥', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="indent-increase" label="Increase Indent" icon="⇥" size="small"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonGroupButton
-                  {...{
-                    itemId: 'alignment',
-                    label: 'Alignment',
-                    size: 'small',
-                    buttons: ALIGNMENT_OPTIONS,
-                    value: alignment,
-                  } as React.ComponentProps<typeof BsRibbonGroupButton>}
+                  itemId="alignment"
+                  label="Alignment"
+                  size="small"
+                  buttons={ALIGNMENT_OPTIONS}
+                  {...{ value: alignment } as React.ComponentProps<typeof BsRibbonGroupButton>}
                   onGroupSelect={(e) => setAlignment(String(e.detail.value))}
                 />
               </BsRibbonGroup>
 
               <BsRibbonGroup
-                {...{
-                  groupId: 'styles',
-                  label: 'Styles',
-                  dialogLauncher: 'Styles',
-                } as React.ComponentProps<typeof BsRibbonGroup>}
+                groupId="styles"
+                label="Styles"
+                dialogLauncher="Styles"
               >
                 <BsRibbonButton
-                  {...{ itemId: 'style-normal', label: 'Normal', icon: '¶', size: 'medium' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="style-normal" label="Normal" icon="¶" size="medium"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'style-h1', label: 'Heading 1', icon: 'H1', size: 'medium' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="style-h1" label="Heading 1" icon="H1" size="medium"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'style-h2', label: 'Heading 2', icon: 'H2', size: 'medium' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="style-h2" label="Heading 2" icon="H2" size="medium"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'style-title', label: 'Title', icon: 'T', size: 'medium' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="style-title" label="Title" icon="T" size="medium"
                   onItemClick={onItemClick}
                 />
               </BsRibbonGroup>
 
               <BsRibbonGroup
-                {...{ groupId: 'editing', label: 'Editing' } as React.ComponentProps<typeof BsRibbonGroup>}
+                groupId="editing" label="Editing"
               >
                 <BsRibbonButton
-                  {...{ itemId: 'find', label: 'Find', icon: '🔍', size: 'small', tooltip: 'Find (Ctrl+F)' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="find" label="Find" icon="🔍" size="small" tooltip="Find (Ctrl+F)"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'replace', label: 'Replace', icon: '🔁', size: 'small', tooltip: 'Replace (Ctrl+H)' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="replace" label="Replace" icon="🔁" size="small" tooltip="Replace (Ctrl+H)"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'select', label: 'Select', icon: '☐', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="select" label="Select" icon="☐" size="small"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonCheckBox
-                  {...{
-                    itemId: 'match-case',
-                    label: 'Match case',
-                    size: 'small',
-                    checked: matchCase,
-                  } as React.ComponentProps<typeof BsRibbonCheckBox>}
+                  itemId="match-case"
+                  label="Match case"
+                  size="small"
+                  checked={matchCase}
                   onCheckChange={(e) => setMatchCase(e.detail.checked)}
                 />
               </BsRibbonGroup>
@@ -625,147 +593,147 @@ export function RibbonPage() {
 
             {/* ============ Insert tab ============ */}
             <BsRibbonTab
-              {...{ tabId: 'insert', label: 'Insert' } as React.ComponentProps<typeof BsRibbonTab>}
+              tabId="insert" label="Insert"
             >
               <BsRibbonGroup
-                {...{ groupId: 'pages', label: 'Pages', icon: '📑' } as React.ComponentProps<typeof BsRibbonGroup>}
+                groupId="pages" label="Pages" icon="📑"
               >
                 <BsRibbonButton
-                  {...{ itemId: 'cover-page', label: 'Cover Page', icon: '📑', size: 'medium' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="cover-page" label="Cover Page" icon="📑" size="medium"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'blank-page', label: 'Blank Page', icon: '📄', size: 'medium' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="blank-page" label="Blank Page" icon="📄" size="medium"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'page-break', label: 'Page Break', icon: '📑', size: 'medium', tooltip: 'Insert page break (Ctrl+Enter)' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="page-break" label="Page Break" icon="📑" size="medium" tooltip="Insert page break (Ctrl+Enter)"
                   onItemClick={onItemClick}
                 />
               </BsRibbonGroup>
 
               <BsRibbonGroup
-                {...{ groupId: 'tables', label: 'Tables', icon: '▦', priority: 10 } as React.ComponentProps<typeof BsRibbonGroup>}
+                groupId="tables" label="Tables" icon="▦" priority={10}
               >
                 <BsRibbonButton
-                  {...{ itemId: 'table', label: 'Table', icon: '▦', size: 'large' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="table" label="Table" icon="▦" size="large"
                   onItemClick={onItemClick}
                 />
               </BsRibbonGroup>
 
               <BsRibbonGroup
-                {...{ groupId: 'shape-gallery', label: 'Shape Gallery', icon: '⬡' } as React.ComponentProps<typeof BsRibbonGroup>}
+                groupId="shape-gallery" label="Shape Gallery" icon="⬡"
               >
                 <BsRibbonGallery
-                  {...{ itemId: 'shapes', label: 'Shapes', size: 'medium', columns: 3 } as React.ComponentProps<typeof BsRibbonGallery>}
+                  itemId="shapes" label="Shapes" size="medium" columns={3}
                 >
                   <BsRibbonGalleryItem
-                    {...{ itemId: 'rect', icon: '▭', label: 'Rectangle', selected: selectedShape === 'rect' } as React.ComponentProps<typeof BsRibbonGalleryItem>}
+                    itemId="rect" icon="▭" label="Rectangle" selected={selectedShape === 'rect'}
                     onGallerySelect={handleShapeSelect}
                   />
                   <BsRibbonGalleryItem
-                    {...{ itemId: 'circle', icon: '●', label: 'Circle', selected: selectedShape === 'circle' } as React.ComponentProps<typeof BsRibbonGalleryItem>}
+                    itemId="circle" icon="●" label="Circle" selected={selectedShape === 'circle'}
                     onGallerySelect={handleShapeSelect}
                   />
                   <BsRibbonGalleryItem
-                    {...{ itemId: 'triangle', icon: '▲', label: 'Triangle', selected: selectedShape === 'triangle' } as React.ComponentProps<typeof BsRibbonGalleryItem>}
+                    itemId="triangle" icon="▲" label="Triangle" selected={selectedShape === 'triangle'}
                     onGallerySelect={handleShapeSelect}
                   />
                   <BsRibbonGalleryItem
-                    {...{ itemId: 'diamond', icon: '◆', label: 'Diamond', selected: selectedShape === 'diamond' } as React.ComponentProps<typeof BsRibbonGalleryItem>}
+                    itemId="diamond" icon="◆" label="Diamond" selected={selectedShape === 'diamond'}
                     onGallerySelect={handleShapeSelect}
                   />
                   <BsRibbonGalleryItem
-                    {...{ itemId: 'star', icon: '★', label: 'Star', selected: selectedShape === 'star' } as React.ComponentProps<typeof BsRibbonGalleryItem>}
+                    itemId="star" icon="★" label="Star" selected={selectedShape === 'star'}
                     onGallerySelect={handleShapeSelect}
                   />
                   <BsRibbonGalleryItem
-                    {...{ itemId: 'arrow', icon: '➤', label: 'Arrow', selected: selectedShape === 'arrow' } as React.ComponentProps<typeof BsRibbonGalleryItem>}
+                    itemId="arrow" icon="➤" label="Arrow" selected={selectedShape === 'arrow'}
                     onGallerySelect={handleShapeSelect}
                   />
                 </BsRibbonGallery>
               </BsRibbonGroup>
 
               <BsRibbonGroup
-                {...{ groupId: 'illustrations', label: 'Illustrations', icon: '🖼️' } as React.ComponentProps<typeof BsRibbonGroup>}
+                groupId="illustrations" label="Illustrations" icon="🖼️"
               >
                 <BsRibbonButton
-                  {...{ itemId: 'pictures', label: 'Pictures', icon: '🖼️', size: 'large' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="pictures" label="Pictures" icon="🖼️" size="large"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'shapes', label: 'Shapes', icon: '⬡', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="shapes" label="Shapes" icon="⬡" size="small"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'icons', label: 'Icons', icon: '★', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="icons" label="Icons" icon="★" size="small"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'chart', label: 'Chart', icon: '📊', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="chart" label="Chart" icon="📊" size="small"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'smartart', label: 'SmartArt', icon: '🧩', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="smartart" label="SmartArt" icon="🧩" size="small"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'screenshot', label: 'Screenshot', icon: '📸', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="screenshot" label="Screenshot" icon="📸" size="small"
                   onItemClick={onItemClick}
                 />
               </BsRibbonGroup>
 
               <BsRibbonGroup
-                {...{ groupId: 'links', label: 'Links', icon: '🔗' } as React.ComponentProps<typeof BsRibbonGroup>}
+                groupId="links" label="Links" icon="🔗"
               >
                 <BsRibbonButton
-                  {...{ itemId: 'link', label: 'Link', icon: '🔗', size: 'medium', tooltip: 'Insert hyperlink (Ctrl+K)' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="link" label="Link" icon="🔗" size="medium" tooltip="Insert hyperlink (Ctrl+K)"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'bookmark', label: 'Bookmark', icon: '🔖', size: 'medium' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="bookmark" label="Bookmark" icon="🔖" size="medium"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'cross-reference', label: 'Cross-reference', icon: '↗', size: 'medium' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="cross-reference" label="Cross-reference" icon="↗" size="medium"
                   onItemClick={onItemClick}
                 />
               </BsRibbonGroup>
 
               <BsRibbonGroup
-                {...{ groupId: 'header-footer', label: 'Header & Footer', icon: '▤' } as React.ComponentProps<typeof BsRibbonGroup>}
+                groupId="header-footer" label="Header & Footer" icon="▤"
               >
                 <BsRibbonButton
-                  {...{ itemId: 'header', label: 'Header', icon: '▔', size: 'medium' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="header" label="Header" icon="▔" size="medium"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'footer', label: 'Footer', icon: '▁', size: 'medium' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="footer" label="Footer" icon="▁" size="medium"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'page-number', label: 'Page Number', icon: '#', size: 'medium' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="page-number" label="Page Number" icon="#" size="medium"
                   onItemClick={onItemClick}
                 />
               </BsRibbonGroup>
 
               <BsRibbonGroup
-                {...{ groupId: 'text', label: 'Text', icon: '🆎' } as React.ComponentProps<typeof BsRibbonGroup>}
+                groupId="text" label="Text" icon="🆎"
               >
                 <BsRibbonButton
-                  {...{ itemId: 'text-box', label: 'Text Box', icon: '🆎', size: 'medium' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="text-box" label="Text Box" icon="🆎" size="medium"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'wordart', label: 'WordArt', icon: '🅰️', size: 'medium' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="wordart" label="WordArt" icon="🅰️" size="medium"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'date-time', label: 'Date & Time', icon: '📅', size: 'medium' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="date-time" label="Date & Time" icon="📅" size="medium"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'symbol', label: 'Symbol', icon: 'Ω', size: 'medium' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="symbol" label="Symbol" icon="Ω" size="medium"
                   onItemClick={onItemClick}
                 />
               </BsRibbonGroup>
@@ -773,96 +741,94 @@ export function RibbonPage() {
 
             {/* ============ Picture Tools (contextual) ============ */}
             <BsRibbonContextualTabSet
-              {...{
-                label: 'Picture Tools',
-                color: '#F2C744',
-                hidden: !pictureToolsVisible,
-              } as React.ComponentProps<typeof BsRibbonContextualTabSet>}
+              label="Picture Tools"
+              color="#F2C744"
+              hidden={!pictureToolsVisible}
             >
               <BsRibbonTab
-                {...{ tabId: 'picture-format', label: 'Format' } as React.ComponentProps<typeof BsRibbonTab>}
+                tabId="picture-format" label="Format"
               >
                 <BsRibbonGroup
-                  {...{ groupId: 'picture-styles', label: 'Picture Styles' } as React.ComponentProps<typeof BsRibbonGroup>}
+                  groupId="picture-styles" label="Picture Styles"
                 >
                   <BsRibbonButton
-                    {...{ itemId: 'picture-border', label: 'Picture Border', icon: '▢', size: 'medium' } as React.ComponentProps<typeof BsRibbonButton>}
+                    itemId="picture-border" label="Picture Border" icon="▢" size="medium"
                     onItemClick={onItemClick}
                   />
                   <BsRibbonButton
-                    {...{ itemId: 'picture-effects', label: 'Picture Effects', icon: '✨', size: 'medium' } as React.ComponentProps<typeof BsRibbonButton>}
+                    itemId="picture-effects" label="Picture Effects" icon="✨" size="medium"
                     onItemClick={onItemClick}
                   />
                   <BsRibbonButton
-                    {...{ itemId: 'picture-layout', label: 'Picture Layout', icon: '🖼️', size: 'medium' } as React.ComponentProps<typeof BsRibbonButton>}
+                    itemId="picture-layout" label="Picture Layout" icon="🖼️" size="medium"
                     onItemClick={onItemClick}
                   />
                 </BsRibbonGroup>
                 <BsRibbonGroup
-                  {...{ groupId: 'picture-arrange', label: 'Arrange' } as React.ComponentProps<typeof BsRibbonGroup>}
+                  groupId="picture-arrange" label="Arrange"
                 >
                   <BsRibbonButton
-                    {...{ itemId: 'picture-position', label: 'Position', icon: '⤧', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                    itemId="picture-position" label="Position" icon="⤧" size="small"
                     onItemClick={onItemClick}
                   />
                   <BsRibbonButton
-                    {...{ itemId: 'picture-wrap-text', label: 'Wrap Text', icon: '↩', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                    itemId="picture-wrap-text" label="Wrap Text" icon="↩" size="small"
                     onItemClick={onItemClick}
                   />
                   <BsRibbonButton
-                    {...{ itemId: 'picture-rotate', label: 'Rotate', icon: '↻', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                    itemId="picture-rotate" label="Rotate" icon="↻" size="small"
                     onItemClick={onItemClick}
                   />
                 </BsRibbonGroup>
                 <BsRibbonGroup
-                  {...{ groupId: 'picture-size', label: 'Size' } as React.ComponentProps<typeof BsRibbonGroup>}
+                  groupId="picture-size" label="Size"
                 >
                   <BsRibbonButton
-                    {...{ itemId: 'picture-crop', label: 'Crop', icon: '✂', size: 'large' } as React.ComponentProps<typeof BsRibbonButton>}
+                    itemId="picture-crop" label="Crop" icon="✂" size="large"
                     onItemClick={onItemClick}
                   />
                   <BsRibbonButton
-                    {...{ itemId: 'picture-width', label: 'Width', icon: '↔', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                    itemId="picture-width" label="Width" icon="↔" size="small"
                     onItemClick={onItemClick}
                   />
                   <BsRibbonButton
-                    {...{ itemId: 'picture-height', label: 'Height', icon: '↕', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                    itemId="picture-height" label="Height" icon="↕" size="small"
                     onItemClick={onItemClick}
                   />
                 </BsRibbonGroup>
               </BsRibbonTab>
               <BsRibbonTab
-                {...{ tabId: 'picture-effects', label: 'Effects' } as React.ComponentProps<typeof BsRibbonTab>}
+                tabId="picture-effects" label="Effects"
               >
                 <BsRibbonGroup
-                  {...{ groupId: 'picture-adjust', label: 'Adjust' } as React.ComponentProps<typeof BsRibbonGroup>}
+                  groupId="picture-adjust" label="Adjust"
                 >
                   <BsRibbonButton
-                    {...{ itemId: 'picture-brightness', label: 'Brightness', icon: '🔆', size: 'medium' } as React.ComponentProps<typeof BsRibbonButton>}
+                    itemId="picture-brightness" label="Brightness" icon="🔆" size="medium"
                     onItemClick={onItemClick}
                   />
                   <BsRibbonButton
-                    {...{ itemId: 'picture-contrast', label: 'Contrast', icon: '◐', size: 'medium' } as React.ComponentProps<typeof BsRibbonButton>}
+                    itemId="picture-contrast" label="Contrast" icon="◐" size="medium"
                     onItemClick={onItemClick}
                   />
                   <BsRibbonButton
-                    {...{ itemId: 'picture-saturation', label: 'Saturation', icon: '🎨', size: 'medium' } as React.ComponentProps<typeof BsRibbonButton>}
+                    itemId="picture-saturation" label="Saturation" icon="🎨" size="medium"
                     onItemClick={onItemClick}
                   />
                 </BsRibbonGroup>
                 <BsRibbonGroup
-                  {...{ groupId: 'picture-artistic', label: 'Artistic' } as React.ComponentProps<typeof BsRibbonGroup>}
+                  groupId="picture-artistic" label="Artistic"
                 >
                   <BsRibbonButton
-                    {...{ itemId: 'picture-blur', label: 'Blur', icon: '◌', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                    itemId="picture-blur" label="Blur" icon="◌" size="small"
                     onItemClick={onItemClick}
                   />
                   <BsRibbonButton
-                    {...{ itemId: 'picture-sharpen', label: 'Sharpen', icon: '◇', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                    itemId="picture-sharpen" label="Sharpen" icon="◇" size="small"
                     onItemClick={onItemClick}
                   />
                   <BsRibbonButton
-                    {...{ itemId: 'picture-grayscale', label: 'Grayscale', icon: '◑', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                    itemId="picture-grayscale" label="Grayscale" icon="◑" size="small"
                     onItemClick={onItemClick}
                   />
                 </BsRibbonGroup>
@@ -871,50 +837,50 @@ export function RibbonPage() {
 
             {/* ============ Design tab ============ */}
             <BsRibbonTab
-              {...{ tabId: 'design', label: 'Design' } as React.ComponentProps<typeof BsRibbonTab>}
+              tabId="design" label="Design"
             >
               <BsRibbonGroup
-                {...{ groupId: 'document-formatting', label: 'Document Formatting' } as React.ComponentProps<typeof BsRibbonGroup>}
+                groupId="document-formatting" label="Document Formatting"
               >
                 <BsRibbonButton
-                  {...{ itemId: 'themes', label: 'Themes', icon: '🎨', size: 'large' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="themes" label="Themes" icon="🎨" size="large"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'colors', label: 'Colors', icon: '🌈', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="colors" label="Colors" icon="🌈" size="small"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'fonts', label: 'Fonts', icon: '🔤', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="fonts" label="Fonts" icon="🔤" size="small"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'paragraph-spacing', label: 'Paragraph Spacing', icon: '↕', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="paragraph-spacing" label="Paragraph Spacing" icon="↕" size="small"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'effects', label: 'Effects', icon: '✨', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="effects" label="Effects" icon="✨" size="small"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'set-default', label: 'Set as Default', icon: '✓', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="set-default" label="Set as Default" icon="✓" size="small"
                   onItemClick={onItemClick}
                 />
               </BsRibbonGroup>
 
               <BsRibbonGroup
-                {...{ groupId: 'page-background', label: 'Page Background' } as React.ComponentProps<typeof BsRibbonGroup>}
+                groupId="page-background" label="Page Background"
               >
                 <BsRibbonButton
-                  {...{ itemId: 'watermark', label: 'Watermark', icon: '💧', size: 'medium' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="watermark" label="Watermark" icon="💧" size="medium"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'page-color', label: 'Page Color', icon: '🎨', size: 'medium' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="page-color" label="Page Color" icon="🎨" size="medium"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'page-borders', label: 'Page Borders', icon: '▢', size: 'medium' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="page-borders" label="Page Borders" icon="▢" size="medium"
                   onItemClick={onItemClick}
                 />
               </BsRibbonGroup>
@@ -922,95 +888,95 @@ export function RibbonPage() {
 
             {/* ============ Layout tab ============ */}
             <BsRibbonTab
-              {...{ tabId: 'layout', label: 'Layout' } as React.ComponentProps<typeof BsRibbonTab>}
+              tabId="layout" label="Layout"
             >
               <BsRibbonGroup
-                {...{ groupId: 'page-setup', label: 'Page Setup', dialogLauncher: 'Page Setup' } as React.ComponentProps<typeof BsRibbonGroup>}
+                groupId="page-setup" label="Page Setup" dialogLauncher="Page Setup"
               >
                 <BsRibbonButton
-                  {...{ itemId: 'margins', label: 'Margins', icon: '▭', size: 'large' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="margins" label="Margins" icon="▭" size="large"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'orientation', label: 'Orientation', icon: '🔄', size: 'medium' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="orientation" label="Orientation" icon="🔄" size="medium"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'size', label: 'Size', icon: '📏', size: 'medium' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="size" label="Size" icon="📏" size="medium"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'columns', label: 'Columns', icon: '▥', size: 'medium' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="columns" label="Columns" icon="▥" size="medium"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'breaks', label: 'Breaks', icon: '⤓', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="breaks" label="Breaks" icon="⤓" size="small"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'line-numbers', label: 'Line Numbers', icon: '№', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="line-numbers" label="Line Numbers" icon="№" size="small"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'hyphenation', label: 'Hyphenation', icon: '‐', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="hyphenation" label="Hyphenation" icon="‐" size="small"
                   onItemClick={onItemClick}
                 />
               </BsRibbonGroup>
 
               <BsRibbonGroup
-                {...{ groupId: 'paragraph-layout', label: 'Paragraph', dialogLauncher: 'Paragraph' } as React.ComponentProps<typeof BsRibbonGroup>}
+                groupId="paragraph-layout" label="Paragraph" dialogLauncher="Paragraph"
               >
                 <BsRibbonButton
-                  {...{ itemId: 'indent-left', label: 'Indent Left', icon: '⇥', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="indent-left" label="Indent Left" icon="⇥" size="small"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'indent-right', label: 'Indent Right', icon: '⇤', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="indent-right" label="Indent Right" icon="⇤" size="small"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'space-before', label: 'Space Before', icon: '↑≡', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="space-before" label="Space Before" icon="↑≡" size="small"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'space-after', label: 'Space After', icon: '↓≡', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="space-after" label="Space After" icon="↓≡" size="small"
                   onItemClick={onItemClick}
                 />
               </BsRibbonGroup>
 
               <BsRibbonGroup
-                {...{ groupId: 'arrange', label: 'Arrange' } as React.ComponentProps<typeof BsRibbonGroup>}
+                groupId="arrange" label="Arrange"
               >
                 <BsRibbonButton
-                  {...{ itemId: 'position', label: 'Position', icon: '⤧', size: 'medium' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="position" label="Position" icon="⤧" size="medium"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'wrap-text', label: 'Wrap Text', icon: '↩', size: 'medium' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="wrap-text" label="Wrap Text" icon="↩" size="medium"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'bring-forward', label: 'Bring Forward', icon: '⬆', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="bring-forward" label="Bring Forward" icon="⬆" size="small"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'send-backward', label: 'Send Backward', icon: '⬇', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="send-backward" label="Send Backward" icon="⬇" size="small"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'selection-pane', label: 'Selection Pane', icon: '☰', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="selection-pane" label="Selection Pane" icon="☰" size="small"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'align', label: 'Align', icon: '⊟', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="align" label="Align" icon="⊟" size="small"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'group', label: 'Group', icon: '⊞', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="group" label="Group" icon="⊞" size="small"
                   onItemClick={onItemClick}
                 />
                 <BsRibbonButton
-                  {...{ itemId: 'rotate', label: 'Rotate', icon: '↻', size: 'small' } as React.ComponentProps<typeof BsRibbonButton>}
+                  itemId="rotate" label="Rotate" icon="↻" size="small"
                   onItemClick={onItemClick}
                 />
               </BsRibbonGroup>
