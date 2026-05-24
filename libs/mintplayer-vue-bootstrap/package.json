@@ -1,6 +1,6 @@
 {
   "name": "@mintplayer/vue-bootstrap",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "Vue 3.5 SFC adapters around @mintplayer/web-components. Each sub-entry maps one-to-one with a WC sub-entry and exposes typed Vue components with v-model support for input WCs.",
   "license": "MIT",
   "repository": {
