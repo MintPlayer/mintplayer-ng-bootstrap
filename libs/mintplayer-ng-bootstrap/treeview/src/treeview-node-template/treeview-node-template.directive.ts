@@ -1,5 +1,5 @@
 import { Directive, inject, TemplateRef } from '@angular/core';
-import type { TreeNode } from '@mintplayer/ng-bootstrap/web-components/treeview';
+import type { TreeNode } from '@mintplayer/web-components/treeview';
 
 /**
  * Marks an `<ng-template>` as the per-node body renderer for `<bs-treeview>`.

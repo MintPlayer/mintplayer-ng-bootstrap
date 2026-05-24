@@ -42,6 +42,7 @@ const QueryBuilderPage = lazyNamed(() => import('./pages/enterprise/QueryBuilder
 const RibbonPage       = lazyNamed(() => import('./pages/enterprise/RibbonPage'),       'RibbonPage');
 const ToggleButtonPage = lazyNamed(() => import('./pages/ToggleButtonPage'), 'ToggleButtonPage');
 const TabControlPage   = lazyNamed(() => import('./pages/TabControlPage'),   'TabControlPage');
+const TreeviewPage     = lazyNamed(() => import('./pages/TreeviewPage'),     'TreeviewPage');
 const SplitterPage     = lazyNamed(() => import('./pages/advanced/SplitterPage'), 'SplitterPage');
 const SchedulerPage    = lazyNamed(() => import('./pages/enterprise/SchedulerPage'), 'SchedulerPage');
 
@@ -74,6 +75,7 @@ export function App() {
           <Route path="/basic/radio" element={<RadioPage />} />
           <Route path="/basic/toggle-button" element={<ToggleButtonPage />} />
           <Route path="/basic/tab-control" element={<TabControlPage />} />
+          <Route path="/basic/treeview" element={<TreeviewPage />} />
           {/* Advanced */}
           <Route path="/advanced/otp-input" element={<OtpInputPage />} />
           <Route path="/advanced/splitter" element={<SplitterPage />} />

@@ -9,4 +9,4 @@ export type {
   TreeNodeSelectEventDetail,
   TreeNodeExpandEventDetail,
   TreeNodeCollapseEventDetail,
-} from '@mintplayer/ng-bootstrap/web-components/treeview';
+} from '@mintplayer/web-components/treeview';
