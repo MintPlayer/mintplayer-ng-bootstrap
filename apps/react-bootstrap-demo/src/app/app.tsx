@@ -25,6 +25,7 @@ function lazyNamed<P>(
 const CalendarPage     = lazyNamed(() => import('./pages/CalendarPage'),     'CalendarPage');
 const CardPage         = lazyNamed(() => import('./pages/CardPage'),         'CardPage');
 const CheckboxPage     = lazyNamed(() => import('./pages/CheckboxPage'),     'CheckboxPage');
+const DatatablePage    = lazyNamed(() => import('./pages/DatatablePage'),    'DatatablePage');
 const CodeSnippetPage  = lazyNamed(() => import('./pages/CodeSnippetPage'),  'CodeSnippetPage');
 const PaginationPage   = lazyNamed(() => import('./pages/PaginationPage'),   'PaginationPage');
 const RadioPage        = lazyNamed(() => import('./pages/RadioPage'),        'RadioPage');
@@ -55,6 +56,8 @@ export function App() {
           <Route path="/basic/radio" element={<RadioPage />} />
           <Route path="/basic/timepicker" element={<TimepickerPage />} />
           <Route path="/basic/toggle-button" element={<ToggleButtonPage />} />
+          {/* Enterprise */}
+          <Route path="/enterprise/datatables" element={<DatatablePage />} />
           <Route path="*" element={<ComingSoonPage />} />
         </Routes>
       </Suspense>

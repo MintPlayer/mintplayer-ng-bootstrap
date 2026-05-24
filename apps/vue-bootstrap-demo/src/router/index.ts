@@ -20,6 +20,8 @@ const router = createRouter({
     { path: '/basic/radio',         name: 'radio',         component: () => import('../views/RadioView.vue') },
     { path: '/basic/timepicker',    name: 'timepicker',    component: () => import('../views/TimepickerView.vue') },
     { path: '/basic/toggle-button', name: 'toggle-button', component: () => import('../views/ToggleButtonView.vue') },
+    // Enterprise
+    { path: '/enterprise/datatables', name: 'datatable', component: () => import('../views/DatatableView.vue') },
     { path: '/:pathMatch(.*)*', name: 'coming-soon', component: () => import('../views/ComingSoonView.vue') },
   ],
 });
