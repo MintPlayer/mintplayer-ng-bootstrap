@@ -120,11 +120,12 @@ export class MpCodeSnippet extends LitElement {
     /* Default slot is hidden; content is hoisted into the <code> on each render. */
     slot { display: none; }
 
-    /* a11y-dark token → colour mapping. Selectors + colours are a 1:1
-       port of highlight.js's a11y-dark.css. Tokens not listed here
-       (.hljs-attr, .hljs-property, .hljs-operator, .hljs-doctag, etc.)
-       intentionally inherit from their nearest mapped ancestor — that's
-       the canonical behaviour and matches the master branch's rendering. */
+    /* a11y-dark token to colour mapping. Selectors + colours are a 1:1
+       port of highlight.js's a11y-dark.css. Token classes the JSON
+       grammar emits (hljs-attr for keys, hljs-punctuation for braces /
+       colons) are added explicitly — without them, JSON would render as
+       mostly white text since attr / punctuation have no mapped ancestor
+       in JSON's parse tree to inherit from. */
     /* Comment */
     .hljs-comment, .hljs-quote { color: #d4d0ab; }
     /* Red */
@@ -135,10 +136,12 @@ export class MpCodeSnippet extends LitElement {
     .hljs-number, .hljs-built_in, .hljs-literal, .hljs-type,
     .hljs-params, .hljs-meta, .hljs-link { color: #f5ab35; }
     /* Yellow */
-    .hljs-attribute { color: #ffd700; }
+    .hljs-attribute, .hljs-attr { color: #ffd700; }
     /* Green */
     .hljs-string, .hljs-symbol, .hljs-bullet,
     .hljs-addition { color: #abe338; }
+    /* Muted (JSON punctuation — braces, brackets, commas, colons) */
+    .hljs-punctuation { color: #c8c8c2; }
     /* Blue */
     .hljs-title, .hljs-section { color: #00e0e0; }
     /* Purple */
