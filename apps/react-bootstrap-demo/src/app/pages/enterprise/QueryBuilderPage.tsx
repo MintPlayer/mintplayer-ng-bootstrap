@@ -5,6 +5,7 @@ import {
   emptyGroup,
   type EntitySchema,
   type Expression,
+  type SortDescriptor,
 } from '@mintplayer/web-components/query-builder';
 
 const SCHEMA: EntitySchema[] = [
@@ -23,12 +24,26 @@ const SCHEMA: EntitySchema[] = [
 
 const SOURCE = `<BsQueryBuilder
   schema={SCHEMA}
+  rootEntity={rootEntity}
+  multiEntityPickerEnabled
+  selectedFields={selectedFields}
+  sortBy={sortBy}
   query={query}
+  showPreview
+  showSavedQueries
   onQueryChange={e => setQuery(e.detail.tree)}
 />`;
 
 export function QueryBuilderPage() {
+  // `rootEntity` drives the entity-picker strip at the top; without it the
+  // "Add condition" / "Add group" buttons have no entity to add against
+  // and silently no-op. Initialise from the schema so the demo is
+  // interactive on first paint. `selectedFields` and `sortBy` are the
+  // two-way bindings for the field-projection + sort strips.
+  const [rootEntity, setRootEntity] = useState('orders');
   const [query, setQuery] = useState<Expression>(() => emptyGroup());
+  const [selectedFields, setSelectedFields] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<SortDescriptor[]>([]);
 
   return (
     <div className="demo-page">
@@ -45,6 +60,17 @@ export function QueryBuilderPage() {
           schema={SCHEMA}
           query={query}
           onQueryChange={(e: CustomEvent<{ tree: Expression }>) => setQuery(e.detail.tree)}
+          onRootEntityChange={(e: CustomEvent<string>) => setRootEntity(e.detail)}
+          onSelectedFieldsChange={(e: CustomEvent<string[]>) => setSelectedFields(e.detail)}
+          onSortByChange={(e: CustomEvent<SortDescriptor[]>) => setSortBy(e.detail)}
+          {...{
+            rootEntity,
+            multiEntityPickerEnabled: true,
+            selectedFields,
+            sortBy,
+            showPreview: true,
+            showSavedQueries: true,
+          } as React.ComponentProps<typeof BsQueryBuilder>}
         />
         <details className="mt-3">
           <summary>Current expression tree</summary>
