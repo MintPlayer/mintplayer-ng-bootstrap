@@ -26,6 +26,18 @@ export class BsNavbarItemComponent implements AfterContentInit, AfterContentChec
   anchorTag: HTMLAnchorElement | null = null;
   readonly dropdowns = contentChildren<BsNavbarDropdownComponent>(forwardRef(() => BsNavbarDropdownComponent));
 
+  // ngAfterContentChecked runs many times per CD cycle. These flags are
+  // idempotency guards for the one-shot side-effects (classList changes,
+  // addEventListener) without leaking marker attributes into the DOM. The
+  // previous implementation used DOM attributes (`nav-link-class-added`,
+  // `close-init-b`, `close-init-a`) which broke on SSR: server-rendered HTML
+  // carried the marker, client hydration read it as "already wired" and
+  // skipped attaching the click listeners on the live DOM — so dropdown
+  // triggers did nothing after hydration on cold runners.
+  private classesApplied = false;
+  private dropdownClickHandlerAttached = false;
+  private autocloseClickHandlerAttached = false;
+
   constructor() {
     // Effect handles future isSmallMode changes after content is initialized
     effect(() => {
@@ -47,45 +59,52 @@ export class BsNavbarItemComponent implements AfterContentInit, AfterContentChec
 
   ngAfterContentChecked() {
     this.anchorTag = this.element.nativeElement.querySelector('li a');
+    if (!this.anchorTag) return;
 
-    // Add nav-link or dropdown-item class (previously done by NavLinkDirective)
-    if (this.anchorTag && !this.anchorTag.getAttribute('nav-link-class-added')) {
+    // Add nav-link or dropdown-item class (previously done by NavLinkDirective).
+    // `classList.add` is idempotent, but the instance flag avoids the per-tick
+    // method calls.
+    if (!this.classesApplied) {
+      this.classesApplied = true;
       if (this.parentDropdown === null) {
         this.anchorTag.classList.add('nav-link');
       } else {
         this.anchorTag.classList.add('dropdown-item');
       }
       this.anchorTag.classList.add('cursor-pointer');
-      this.anchorTag.setAttribute('nav-link-class-added', 'true');
     }
 
     if (this.hasDropdown()) {
-      if (this.anchorTag) {
-        this.anchorTag.classList.add('dropdown-toggle');
+      this.anchorTag.classList.add('dropdown-toggle');
 
-        if (isPlatformServer(this.platformId)) {
-          this.anchorTag.href = 'javascript:;';
-        }
-
-        if (!this.anchorTag.getAttribute('close-init-b')) {
-          this.anchorTag.setAttribute('close-init-b', '1');
-          this.anchorTag.addEventListener('click', (ev: MouseEvent) => {
-            ev.preventDefault();
-            this.dropdowns().forEach((dropdown) => {
-              const newVisible = !dropdown.isVisible();
-              dropdown.isVisible.set(newVisible);
-              if (!newVisible) {
-                dropdown.childDropdowns().forEach((child) => child.isVisible.set(false));
-              }
-            });
-            return false;
-          });
-        }
+      if (isPlatformServer(this.platformId)) {
+        // Make sure the SSR-rendered anchor is a no-op if a noscript user
+        // clicks it — the dropdown is revealed by :focus-within instead.
+        this.anchorTag.href = 'javascript:;';
+        // Do not attach event listeners on the server: the live browser DOM
+        // is a separate object on hydration and would never see them.
+        return;
       }
-    } else {
 
-      if ((this.dropdowns().length === 0) && this.anchorTag && !this.anchorTag.getAttribute('close-init-a')) {
-        this.anchorTag.setAttribute('close-init-a', '1');
+      if (!this.dropdownClickHandlerAttached) {
+        this.dropdownClickHandlerAttached = true;
+        this.anchorTag.addEventListener('click', (ev: MouseEvent) => {
+          ev.preventDefault();
+          this.dropdowns().forEach((dropdown) => {
+            const newVisible = !dropdown.isVisible();
+            dropdown.isVisible.set(newVisible);
+            if (!newVisible) {
+              dropdown.childDropdowns().forEach((child) => child.isVisible.set(false));
+            }
+          });
+          return false;
+        });
+      }
+    } else if (this.dropdowns().length === 0) {
+      if (isPlatformServer(this.platformId)) return;
+
+      if (!this.autocloseClickHandlerAttached) {
+        this.autocloseClickHandlerAttached = true;
         this.anchorTag.addEventListener('click', (ev: MouseEvent) => {
           let d = this.parentDropdown;
           while (d && d.autoclose()) {
@@ -115,7 +134,6 @@ export class BsNavbarItemComponent implements AfterContentInit, AfterContentChec
           }
         });
       }
-
     }
   }
 }
