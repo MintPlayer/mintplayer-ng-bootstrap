@@ -1,0 +1,38 @@
+:host {
+  display: inline-flex;
+}
+
+.framework-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.framework-nav a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  text-decoration: none;
+  color: var(--bs-body-color);
+  opacity: 0.7;
+  transition: opacity 120ms ease, background-color 120ms ease;
+}
+
+.framework-nav a:hover {
+  opacity: 1;
+  background-color: var(--bs-secondary-bg);
+}
+
+.framework-nav a.active {
+  opacity: 1;
+  background-color: var(--bs-primary-bg-subtle);
+  color: var(--bs-primary);
+}
+
+.framework-nav svg {
+  width: 20px;
+  height: 20px;
+}
