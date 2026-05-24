@@ -5,7 +5,10 @@ import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 const SOURCE = `<BsDatepicker selectedDate={date} onSelectedDateChange={e => setDate(e.detail)} />`;
 
 export function DatepickerPage() {
-  const [date, setDate] = useState<Date | null>(null);
+  // mp-calendar expects a real Date for selectedDate — passing undefined
+  // crashes its `isSameDate` render path. Default to today, matching the
+  // Angular demo's `model<Date>(new Date())`.
+  const [date, setDate] = useState<Date>(() => new Date());
 
   return (
     <div className="demo-page">
@@ -18,11 +21,11 @@ export function DatepickerPage() {
       <section>
         <h2>Default</h2>
         <BsDatepicker
-          selectedDate={date ?? undefined}
+          selectedDate={date}
           onSelectedDateChange={(e: CustomEvent<Date>) => setDate(e.detail)}
         />
         <p className="text-body-secondary mt-2">
-          Selected: <code>{date ? date.toISOString().slice(0, 10) : '—'}</code>
+          Selected: <code>{date.toISOString().slice(0, 10)}</code>
         </p>
       </section>
 

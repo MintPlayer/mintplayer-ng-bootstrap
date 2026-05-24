@@ -24,7 +24,7 @@ const SCHEMA: EntitySchema[] = [
 const SOURCE = `<BsQueryBuilder
   schema={SCHEMA}
   query={query}
-  onQueryChange={e => setQuery(e.detail)}
+  onQueryChange={e => setQuery(e.detail.tree)}
 />`;
 
 export function QueryBuilderPage() {
@@ -44,7 +44,7 @@ export function QueryBuilderPage() {
         <BsQueryBuilder
           schema={SCHEMA}
           query={query}
-          onQueryChange={(e: CustomEvent<Expression>) => setQuery(e.detail)}
+          onQueryChange={(e: CustomEvent<{ tree: Expression }>) => setQuery(e.detail.tree)}
         />
         <details className="mt-3">
           <summary>Current expression tree</summary>

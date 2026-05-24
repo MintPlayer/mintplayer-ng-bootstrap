@@ -20,7 +20,7 @@ export const BsQueryBuilder = createComponent({
   tagName: 'mp-query-builder',
   elementClass: MpQueryBuilderElement,
   events: {
-    onQueryChange: 'query-change' as EventName<CustomEvent<Expression>>,
+    onQueryChange: 'query-change' as EventName<CustomEvent<{ tree: Expression }>>,
     onSaveQuery: 'save-query' as EventName<CustomEvent<SavedQuery>>,
     onLoadQuery: 'load-query' as EventName<CustomEvent<SavedQuery>>,
     onDeleteQuery: 'delete-query' as EventName<CustomEvent<{ id: string }>>,
