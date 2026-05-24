@@ -1,6 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import type { DatatableColumnDef } from '@mintplayer/ng-bootstrap/web-components/datatable';
+import type { DatatableColumnDef } from '@mintplayer/web-components/datatable';
 
 import { BsDatatableComponent } from './datatable.component';
 

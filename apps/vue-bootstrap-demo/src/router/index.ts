@@ -16,10 +16,14 @@ const router = createRouter({
     { path: '/basic/card',          name: 'card',          component: () => import('../views/CardView.vue') },
     { path: '/basic/checkbox',      name: 'checkbox',      component: () => import('../views/CheckboxView.vue') },
     { path: '/basic/code-snippet',  name: 'code-snippet',  component: () => import('../views/CodeSnippetView.vue') },
+    { path: '/basic/forms/datepicker',      name: 'datepicker',      component: () => import('../views/forms/DatepickerView.vue') },
+    { path: '/basic/forms/datetime-picker', name: 'datetime-picker', component: () => import('../views/forms/DatetimePickerView.vue') },
+    { path: '/basic/forms/timepicker',      name: 'timepicker',      component: () => import('../views/forms/TimepickerView.vue') },
     { path: '/basic/pagination',    name: 'pagination',    component: () => import('../views/PaginationView.vue') },
     { path: '/basic/radio',         name: 'radio',         component: () => import('../views/RadioView.vue') },
-    { path: '/basic/timepicker',    name: 'timepicker',    component: () => import('../views/TimepickerView.vue') },
     { path: '/basic/toggle-button', name: 'toggle-button', component: () => import('../views/ToggleButtonView.vue') },
+    // Enterprise
+    { path: '/enterprise/datatables', name: 'datatable', component: () => import('../views/DatatableView.vue') },
     { path: '/:pathMatch(.*)*', name: 'coming-soon', component: () => import('../views/ComingSoonView.vue') },
   ],
 });

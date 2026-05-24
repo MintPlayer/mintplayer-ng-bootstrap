@@ -25,10 +25,13 @@ function lazyNamed<P>(
 const CalendarPage     = lazyNamed(() => import('./pages/CalendarPage'),     'CalendarPage');
 const CardPage         = lazyNamed(() => import('./pages/CardPage'),         'CardPage');
 const CheckboxPage     = lazyNamed(() => import('./pages/CheckboxPage'),     'CheckboxPage');
+const DatatablePage    = lazyNamed(() => import('./pages/DatatablePage'),    'DatatablePage');
+const DatepickerPage   = lazyNamed(() => import('./pages/forms/DatepickerPage'),     'DatepickerPage');
+const DatetimePickerPage = lazyNamed(() => import('./pages/forms/DatetimePickerPage'), 'DatetimePickerPage');
 const CodeSnippetPage  = lazyNamed(() => import('./pages/CodeSnippetPage'),  'CodeSnippetPage');
 const PaginationPage   = lazyNamed(() => import('./pages/PaginationPage'),   'PaginationPage');
 const RadioPage        = lazyNamed(() => import('./pages/RadioPage'),        'RadioPage');
-const TimepickerPage   = lazyNamed(() => import('./pages/TimepickerPage'),   'TimepickerPage');
+const TimepickerPage   = lazyNamed(() => import('./pages/forms/TimepickerPage'),     'TimepickerPage');
 const ToggleButtonPage = lazyNamed(() => import('./pages/ToggleButtonPage'), 'ToggleButtonPage');
 
 function PageFallback() {
@@ -51,10 +54,14 @@ export function App() {
           <Route path="/basic/card" element={<CardPage />} />
           <Route path="/basic/checkbox" element={<CheckboxPage />} />
           <Route path="/basic/code-snippet" element={<CodeSnippetPage />} />
+          <Route path="/basic/forms/datepicker" element={<DatepickerPage />} />
+          <Route path="/basic/forms/datetime-picker" element={<DatetimePickerPage />} />
+          <Route path="/basic/forms/timepicker" element={<TimepickerPage />} />
           <Route path="/basic/pagination" element={<PaginationPage />} />
           <Route path="/basic/radio" element={<RadioPage />} />
-          <Route path="/basic/timepicker" element={<TimepickerPage />} />
           <Route path="/basic/toggle-button" element={<ToggleButtonPage />} />
+          {/* Enterprise */}
+          <Route path="/enterprise/datatables" element={<DatatablePage />} />
           <Route path="*" element={<ComingSoonPage />} />
         </Routes>
       </Suspense>

@@ -8,9 +8,9 @@ const SECTIONS = [
     routes: [
       { path: '/basic/card', label: 'Card' },
       { path: '/basic/calendar', label: 'Calendar' },
-      { path: '/basic/datepicker', label: 'Datepicker' },
-      { path: '/basic/datetime-picker', label: 'Datetime picker' },
-      { path: '/basic/timepicker', label: 'Timepicker' },
+      { path: '/basic/forms/datepicker', label: 'Datepicker' },
+      { path: '/basic/forms/datetime-picker', label: 'Datetime picker' },
+      { path: '/basic/forms/timepicker', label: 'Timepicker' },
       { path: '/basic/checkbox', label: 'Checkbox' },
       { path: '/basic/radio', label: 'Radio' },
       { path: '/basic/toggle-button', label: 'Toggle button' },

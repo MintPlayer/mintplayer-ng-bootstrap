@@ -61,9 +61,9 @@ A secondary goal piggybacks here: the existing publish workflow already uses a `
 | — | [#357](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/357) | `fix(publish): unblock @mintplayer/{web-components,react,vue}-bootstrap on master deploy` | ✅ merged (off-cycle hotfix) |
 | PR-5 | [#358](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/358) | `feat(wc-extract): overlay + pagination + toggle-button — primitives (PR-5 re-scoped)` | ✅ merged |
 | PR-6 | [#359](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/359) | `feat(wc-extract): timepicker + checkbox — 1-hop consumers (PR-6)` | ✅ merged |
-| — | [#360](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/360) | `refactor(web-components): split form-check styles + extract `radio` WC + React/Vue wrappers` | ⏳ in CI (prep PR before PR-7+; absorbed `radio` from original PR-9 scope mid-flight) |
-| PR-7 | — | `datepicker`, `datetime-picker`, `datatable` (original PR-5 scope, now unblocked) | ⏳ next |
-| PR-8 | — | `dock`, `file-manager`, `multi-range`, `otp-input` (originally PR-6) | ⏳ pending |
+| — | [#360](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/360) | `refactor(web-components): split form-check styles + extract `radio` WC + React/Vue wrappers` | ✅ merged (prep PR; absorbed `radio` from original PR-9 scope mid-flight) |
+| PR-7 | [#361](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/361) | `feat(wc-extract): datatable + datepicker + datetime-picker (PR-7)` | ⏳ in CI |
+| PR-8 | — | `dock`, `file-manager`, `multi-range`, `otp-input` (originally PR-6) | ⏳ next |
 | PR-9 | — | `query-builder`, `ribbon` (originally PR-7 minus `pagination` and `radio` — `radio` was pulled into PR #360) | ⏳ pending |
 | PR-10 | — | `scheduler`, `scheduler-core`, `splitter`, `tab-control` (originally PR-8) | ⏳ pending |
 | PR-11 | — | `tile-manager`, `treeview` (originally PR-9 remainder) | ⏳ pending |
@@ -71,11 +71,11 @@ A secondary goal piggybacks here: the existing publish workflow already uses a `
 
 ## OPEN ISSUES BEFORE NEXT COMPACT — read before resuming
 
-- **`mp-radio` toggle_button regression FIXED in PR #360 (5090b698) by full radio extraction.** Originally diagnosed as: `.btn-check { clip: rect(0,0,0,0); ... }` lives in Bootstrap's `forms/_form-check.scss`; pre-split `toggleButtonStyles` bundled it; after PR #360's split it lives only in `formCheckStyles`; mp-radio (still on master location) didn't import it. **Resolution path chosen:** option (d) — fold the full radio extraction (originally PR-9 scope) into PR #360. `git mv` sources to `libs/mintplayer-web-components/radio/`, switch the formCheckStyles import to the in-lib relative path (matching mp-checkbox), add React (`createComponent`) + Vue (`defineModel<boolean>` + guarded `onChange`) wrappers, add small `/basic/radio` demo pages on both React + Vue shells (3 sections each, NOT a full Angular port — per the demo-port lesson learned in PR-4). Angular `bs-radio` wrapper rewired from `@mintplayer/ng-bootstrap/web-components/radio` → `@mintplayer/web-components/radio`. Old ng-bootstrap WC location deleted entirely (incl. legacy `ng-package.js`). All 4 builds green locally (web-components, react-bootstrap, vue-bootstrap, ng-bootstrap, both demos); 157 WC tests pass incl. 6 mp-radio specs.
+- **PR #360 ✅ merged.** Form-check split + radio extraction shipped. `mp-radio` toggle_button regression fixed by the radio extraction (originally PR-9 scope folded into PR #360 mid-flight).
 
-- **Vue/React demo URL convention differs from Angular**: master Angular demo uses `/basic/forms/checkbox` (nested), React/Vue demos use `/basic/checkbox` (flat). This is intentional — Vue/React demo routing was designed flatter. If a future PR wants symmetry, change the React/Vue demos' `app.tsx` / `router/index.ts` route entries.
+- **PR-7 (#361) ⏳ in CI.** Three commits: datatable (pure git-mv from already-new layout) + datepicker (git-mv from old `.element.*` location, fixed stale `@mintplayer/ng-bootstrap/calendar` → `@mintplayer/web-components/calendar` import) + datetime-picker (same shape + two more stale imports fixed: a11y + calendar). Each commit adds the React + Vue wrappers + small demo pages. The `mp-file-manager` WC's import of datatable was rewired in commit 1 so the PR-8 entry stays working between PRs. 195 WC tests pass (up from 157).
 
-- **PR #360 contains 5 commits**: (a) form-check split, (b) custom-elements.json untrack + gitignore, (c) form-check alignment fix + React/Vue label demo, (d) initial in-place radio fix (formCheckStyles import on mp-radio's master location), (e) full radio extraction to mintplayer-web-components + React/Vue wrappers + demos (supersedes (d)'s in-place location). CI re-running after the last push.
+- **Vue/React demo URL convention differs from Angular**: master Angular demo uses `/basic/forms/checkbox` (nested), React/Vue demos use `/basic/checkbox` (flat). This is intentional — Vue/React demo routing was designed flatter.
 
 ## Proposed PR sequence
 
@@ -176,15 +176,15 @@ Total: ~30 files. Cross-WC deps: zero. Per-entry shape same as PR-4.
 - `timepicker` — 17 files (the heavier entry: includes `mp-time-list.element.ts` + `mp-timepicker.element.ts`).
 - `checkbox` — 11 files (the entry punted from PR-4 over its `toggle-button` dep — now resolved).
 
-### PR-7 — `datepicker`, `datetime-picker`, `datatable` (originally PR-5) ⏳ pending
+### PR-7 — `datepicker`, `datetime-picker`, `datatable` (originally PR-5) ⏳ in CI as #361
 
-The chunk the original PRD scheduled as PR-5. Now landable because PR-5 + PR-6 ship every dep.
+All three landed together as one PR with one commit per entry (per user request to keep commits focused). Real review surface ~370 LOC of new wrapper/demo code; the rest is renames.
 
-- `datepicker` ← `overlay` + `calendar`✅
-- `datetime-picker` ← `overlay` + `timepicker` + `calendar`✅ + `a11y`✅
-- `datatable` ← `pagination` + `checkbox`
+- `datatable` — pure `git mv` (already-new layout) + Angular wrapper / file-manager / spec / barrel rewires + React (7-event map) + Vue (object-prop forwarding) wrappers + small `/enterprise/datatables` demo with a 4-row in-memory artist table.
+- `datepicker` — `git mv` from `libs/mintplayer-ng-bootstrap/datepicker/src/lib/web-components/` to `libs/mintplayer-web-components/datepicker/src/` (`.element.*` layout matches calendar/timepicker). Fixed a stale `@mintplayer/ng-bootstrap/calendar` import. React (`selected-date-change` + `current-month-change` + `opened`/`closed`) + Vue (`defineModel<Date | null>`) wrappers + small `/basic/datepicker` demo.
+- `datetime-picker` — same shape. Fixed two stale cross-WC imports (a11y + calendar). Two large spec files (`.element.spec.ts` + `.element.aria.spec.ts`) moved too. React (`value-change` + open/close with `'date' | 'time'` detail) + Vue (`defineModel<Date | null>`) wrappers + small `/basic/datetime-picker` demo.
 
-`datatable` is the heavier entry (18 files including sort utils + types). If chunk pushes past 500-LOC review surface, ship `datatable` solo and roll `datepicker` + `datetime-picker` into PR-8's overflow.
+195 WC tests pass at the new locations (up from 157; new specs are 6 datepicker + 32 datetime-picker).
 
 ### PR-8 — `dock`, `file-manager`, `multi-range`, `otp-input` (originally PR-6) ⏳ pending
 

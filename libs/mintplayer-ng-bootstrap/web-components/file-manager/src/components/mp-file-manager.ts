@@ -7,14 +7,14 @@ import { styleMap } from 'lit/directives/style-map.js';
 // Side-effect imports: register the composed elements.
 import '@mintplayer/ng-bootstrap/web-components/splitter';
 import '@mintplayer/ng-bootstrap/web-components/treeview';
-import '@mintplayer/ng-bootstrap/web-components/datatable';
+import '@mintplayer/web-components/datatable';
 
 import type { TreeNode } from '@mintplayer/ng-bootstrap/web-components/treeview';
 import type {
   DatatableColumnDef,
   RowEventDetail,
   SelectionChangeEventDetail as DatatableSelectionEvent,
-} from '@mintplayer/ng-bootstrap/web-components/datatable';
+} from '@mintplayer/web-components/datatable';
 
 import { fileManagerStyles } from '../styles';
 import type { FileSystemNode, FileManagerMessages } from '../types';

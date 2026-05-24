@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import './mp-datetime-picker.element';
 import type { MpDatetimePickerElement } from './mp-datetime-picker.element';
-import '@mintplayer/ng-bootstrap/calendar';
+import '@mintplayer/web-components/calendar';
 import '@mintplayer/web-components/timepicker';
 
 async function flush(el: MpDatetimePickerElement): Promise<void> {
