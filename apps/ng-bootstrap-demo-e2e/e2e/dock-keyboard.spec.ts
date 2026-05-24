@@ -79,10 +79,27 @@ async function isInMoveMode(page: Page): Promise<boolean> {
   });
 }
 
-/** Capture the live layout JSON shown on the demo page. */
+/** Capture the live layout JSON shown on the demo page.
+ *
+ * The Live layout pane is rendered conditionally: the `<bs-code-snippet>`
+ * only appears once `liveLayout()` populates (after the first
+ * layoutSnapshotChange). Before that, the demo shows a placeholder
+ * paragraph. Use a synchronous page.evaluate so the assertion can read
+ * "empty before, populated after" without waiting on a locator timeout.
+ *
+ * Reads the `.code` property off the inner `<mp-code-snippet>` — that's
+ * the source JSON the Angular wrapper forwards via `[codeToCopy]`.
+ */
 async function readLiveLayout(page: Page): Promise<string> {
-  const block = page.locator('.dock-demo__snapshot').first().locator('.dock-demo__snapshot-json');
-  return (await block.textContent()) ?? '';
+  return await page.evaluate(() => {
+    const liveSnap = Array.from(document.querySelectorAll('.dock-demo__snapshot')).find(
+      (d) => d.querySelector('.dock-demo__snapshot-title')?.textContent?.includes('Live layout'),
+    );
+    const snippet = liveSnap?.querySelector('mp-code-snippet') as
+      | (HTMLElement & { code?: string })
+      | null;
+    return snippet?.code ?? '';
+  });
 }
 
 test.describe('mint-dock-manager — keyboard pane move-mode', () => {
