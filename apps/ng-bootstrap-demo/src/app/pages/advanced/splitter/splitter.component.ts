@@ -2,7 +2,7 @@ import { Component, CUSTOM_ELEMENTS_SCHEMA, model, ChangeDetectionStrategy} from
 import { FormsModule } from '@angular/forms';
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
-import '@mintplayer/ng-bootstrap/web-components/splitter';
+import '@mintplayer/web-components/splitter';
 import { dedent } from 'ts-dedent';
 
 @Component({
@@ -28,7 +28,7 @@ export class SplitterComponent {
 
   protected readonly snippetBasicTs = dedent`
     import { Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
-    import '@mintplayer/ng-bootstrap/web-components/splitter';
+    import '@mintplayer/web-components/splitter';
 
     @Component({
       selector: 'my-splitter-demo',

@@ -6,7 +6,7 @@ import { html, LitElement, type TemplateResult } from 'lit';
 import '@mintplayer/web-components/tab-control';
 // Side-effect import: registers <mp-splitter>. Each DockSplitNode is rendered
 // as a nested <mp-splitter>, so this lib must load before any layout renders.
-import '@mintplayer/ng-bootstrap/web-components/splitter';
+import '@mintplayer/web-components/splitter';
 import { LiveAnnouncerController } from '@mintplayer/ng-bootstrap/web-components/a11y';
 import {
   DockFloatingPaneBounds,

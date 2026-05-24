@@ -39,6 +39,7 @@ const QueryBuilderPage = lazyNamed(() => import('./pages/enterprise/QueryBuilder
 const RibbonPage       = lazyNamed(() => import('./pages/enterprise/RibbonPage'),       'RibbonPage');
 const ToggleButtonPage = lazyNamed(() => import('./pages/ToggleButtonPage'), 'ToggleButtonPage');
 const TabControlPage   = lazyNamed(() => import('./pages/TabControlPage'),   'TabControlPage');
+const SplitterPage     = lazyNamed(() => import('./pages/advanced/SplitterPage'), 'SplitterPage');
 
 function PageFallback() {
   return (
@@ -70,6 +71,7 @@ export function App() {
           <Route path="/basic/tab-control" element={<TabControlPage />} />
           {/* Advanced */}
           <Route path="/advanced/otp-input" element={<OtpInputPage />} />
+          <Route path="/advanced/splitter" element={<SplitterPage />} />
           {/* Enterprise */}
           <Route path="/enterprise/datatables" element={<DatatablePage />} />
           <Route path="/enterprise/file-manager" element={<FileManagerPage />} />
