@@ -23,6 +23,33 @@
 // the geometric centre when the WC sits in a vertically-centred
 // container (table cells, toolbars). Zero it out — consumers stacking
 // multiple WCs can re-introduce spacing at the consumer-template level.
+//
+// Also flex-align the input + label so their centres line up. Bootstrap's
+// default form-check uses `display: block` + `vertical-align: top` on the
+// input + a magic `margin-top` to fudge the indicator into place, but the
+// label's text baseline lands about 1.6 px below the input's centre. Flex
+// + align-items:center fixes it cleanly. The negative-margin / padding-left
+// dance Bootstrap uses for absolute-style positioning isn't relevant here
+// (the input sits next to the label-span instead of behind it), so reset
+// both to zero.
 .form-check {
+  display: flex;
+  align-items: center;
   margin-bottom: 0;
+  padding-left: 0;
+}
+
+.form-check .form-check-input {
+  margin-top: 0;
+  margin-left: 0;
+  margin-right: 0.5em;
+  vertical-align: middle;
+}
+
+// Switch variant has a wider input (form-switch-width vs form-check-width)
+// but the same flex parent — same alignment fix applies. The float-left
+// the form-switch rules add on .form-check-input is unnecessary inside a
+// flex container; suppress to avoid the layout warning.
+.form-check.form-switch .form-check-input {
+  float: none;
 }
