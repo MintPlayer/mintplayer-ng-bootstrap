@@ -22,7 +22,7 @@ const NODES: TreeNode[] = [
 const SOURCE = `<BsTreeview
   items={items}
   selectionMode="single"
-  onTreeNodeSelect={e => setSelected(e.detail.selectedIds)}
+  onTreeNodeSelect={e => setSelectedIds(e.detail.selectedIds)}
 />`;
 
 export function TreeviewPage() {
