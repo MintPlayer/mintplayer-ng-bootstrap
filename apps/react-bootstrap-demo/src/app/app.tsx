@@ -28,6 +28,7 @@ const CheckboxPage     = lazyNamed(() => import('./pages/CheckboxPage'),     'Ch
 const DatatablePage    = lazyNamed(() => import('./pages/DatatablePage'),    'DatatablePage');
 const DatepickerPage   = lazyNamed(() => import('./pages/forms/DatepickerPage'),     'DatepickerPage');
 const DatetimePickerPage = lazyNamed(() => import('./pages/forms/DatetimePickerPage'), 'DatetimePickerPage');
+const SelectPage       = lazyNamed(() => import('./pages/forms/SelectPage'),         'SelectPage');
 const CodeSnippetPage  = lazyNamed(() => import('./pages/CodeSnippetPage'),  'CodeSnippetPage');
 const PaginationPage   = lazyNamed(() => import('./pages/PaginationPage'),   'PaginationPage');
 const RadioPage        = lazyNamed(() => import('./pages/RadioPage'),        'RadioPage');
@@ -38,6 +39,9 @@ const FileManagerPage  = lazyNamed(() => import('./pages/enterprise/FileManagerP
 const QueryBuilderPage = lazyNamed(() => import('./pages/enterprise/QueryBuilderPage'), 'QueryBuilderPage');
 const RibbonPage       = lazyNamed(() => import('./pages/enterprise/RibbonPage'),       'RibbonPage');
 const ToggleButtonPage = lazyNamed(() => import('./pages/ToggleButtonPage'), 'ToggleButtonPage');
+const TabControlPage   = lazyNamed(() => import('./pages/TabControlPage'),   'TabControlPage');
+const SplitterPage     = lazyNamed(() => import('./pages/advanced/SplitterPage'), 'SplitterPage');
+const SchedulerPage    = lazyNamed(() => import('./pages/enterprise/SchedulerPage'), 'SchedulerPage');
 
 function PageFallback() {
   return (
@@ -61,18 +65,22 @@ export function App() {
           <Route path="/basic/code-snippet" element={<CodeSnippetPage />} />
           <Route path="/basic/forms/datepicker" element={<DatepickerPage />} />
           <Route path="/basic/forms/datetime-picker" element={<DatetimePickerPage />} />
+          <Route path="/basic/forms/select" element={<SelectPage />} />
           <Route path="/basic/forms/timepicker" element={<TimepickerPage />} />
           <Route path="/basic/forms/multi-range" element={<MultiRangePage />} />
           <Route path="/basic/pagination" element={<PaginationPage />} />
           <Route path="/basic/radio" element={<RadioPage />} />
           <Route path="/basic/toggle-button" element={<ToggleButtonPage />} />
+          <Route path="/basic/tab-control" element={<TabControlPage />} />
           {/* Advanced */}
           <Route path="/advanced/otp-input" element={<OtpInputPage />} />
+          <Route path="/advanced/splitter" element={<SplitterPage />} />
           {/* Enterprise */}
           <Route path="/enterprise/datatables" element={<DatatablePage />} />
           <Route path="/enterprise/file-manager" element={<FileManagerPage />} />
           <Route path="/enterprise/query-builder" element={<QueryBuilderPage />} />
           <Route path="/enterprise/ribbon" element={<RibbonPage />} />
+          <Route path="/enterprise/scheduler" element={<SchedulerPage />} />
           <Route path="*" element={<ComingSoonPage />} />
         </Routes>
       </Suspense>

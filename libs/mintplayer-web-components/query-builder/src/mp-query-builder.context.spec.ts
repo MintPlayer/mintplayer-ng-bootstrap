@@ -110,9 +110,11 @@ describe('mp-query-builder Lit context propagation (M7)', () => {
       };
     });
 
-    // The inner condition's operator <select> should contain the custom label.
-    const ops = deepFindAll(el, '.qb-operator-select') as HTMLSelectElement[];
-    const labels = ops.flatMap((s) => Array.from(s.options).map((o) => o.textContent));
+    // The inner condition's operator mp-select should contain the custom label.
+    // Read the light-DOM <option> children mp-select projects into its shadow
+    // select — the shadow mirror is an internal implementation detail.
+    const ops = deepFindAll(el, '.qb-operator-select');
+    const labels = ops.flatMap((s) => Array.from(s.querySelectorAll('option')).map((o) => o.textContent));
     expect(labels).toContain('GREATER-THAN-CUSTOM');
   });
 

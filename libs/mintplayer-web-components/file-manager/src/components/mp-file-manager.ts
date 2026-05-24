@@ -5,7 +5,7 @@ import { ref, createRef, type Ref } from 'lit/directives/ref.js';
 import { styleMap } from 'lit/directives/style-map.js';
 
 // Side-effect imports: register the composed elements.
-import '@mintplayer/ng-bootstrap/web-components/splitter';
+import '@mintplayer/web-components/splitter';
 import '@mintplayer/ng-bootstrap/web-components/treeview';
 import '@mintplayer/web-components/datatable';
 

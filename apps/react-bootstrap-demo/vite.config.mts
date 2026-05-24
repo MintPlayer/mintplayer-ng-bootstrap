@@ -9,6 +9,16 @@ export default defineConfig(() => ({
   server: {
     port: 4000,
     host: 'localhost',
+    // Forward /api/* to the .NET API on :5000. Mirrors the Angular demo's
+    // proxy.conf.json so consumer code can hit `/api/orders/search` in dev
+    // without CORS preflights or hardcoded localhost URLs.
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
   preview: {
     port: 4000,

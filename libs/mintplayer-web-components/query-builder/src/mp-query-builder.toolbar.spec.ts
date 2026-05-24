@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import './mp-query-builder.element';
 import type { MpQueryBuilderElement } from './mp-query-builder.element';
+import type { MpSelect } from '@mintplayer/web-components/select';
+import type { MpCheckbox } from '@mintplayer/web-components/checkbox';
 import type { EntitySchema } from './model/field-def';
 import type { SortDescriptor } from './model/sort';
 import { emptyGroup } from './model/default-tree';
@@ -49,8 +51,15 @@ async function mount(opts: {
   return el;
 }
 
-function pickerOf(el: Element): HTMLSelectElement | null {
-  return (el.shadowRoot?.querySelector('.qb-entity-picker') ?? null) as HTMLSelectElement | null;
+function pickerOf(el: Element): MpSelect | null {
+  return (el.shadowRoot?.querySelector('.qb-entity-picker') as MpSelect | null) ?? null;
+}
+
+// mp-select uses light-DOM `<option>` children (mirrored into its shadow
+// `<select>` on slotchange). Read the slotted options directly — the
+// shadow mirror is an internal implementation detail.
+function lightOptionsOf(picker: MpSelect): HTMLOptionElement[] {
+  return Array.from(picker.querySelectorAll('option'));
 }
 
 describe('mp-query-builder — toolbar entity picker (M18)', () => {
@@ -74,7 +83,7 @@ describe('mp-query-builder — toolbar entity picker (M18)', () => {
     const picker = pickerOf(el);
     expect(picker).toBeTruthy();
     expect(picker!.value).toBe('orders');
-    expect(Array.from(picker!.options).map((o) => o.value)).toEqual(['orders', 'customers', 'lineItems']);
+    expect(lightOptionsOf(picker!).map((o) => o.value)).toEqual(['orders', 'customers', 'lineItems']);
   });
 
   it('changing the picker emits root-entity-change with the new value', async () => {
@@ -108,8 +117,12 @@ describe('mp-query-builder — toolbar field projection (M19)', () => {
     document.body.innerHTML = '';
   });
 
-  function checkboxesOf(el: Element): HTMLInputElement[] {
-    return Array.from(el.shadowRoot?.querySelectorAll('.qb-field-checkbox input[type="checkbox"]') ?? []) as HTMLInputElement[];
+  // Each field projection is an `<mp-checkbox>`. Drive via its `checked`
+  // property + a `change` event on the host — mp-query-builder's listener
+  // reads `(ev.target as HTMLInputElement).checked`, and mp-checkbox's
+  // `checked` getter returns the boolean the WC tracks internally.
+  function checkboxesOf(el: Element): MpCheckbox[] {
+    return Array.from(el.shadowRoot?.querySelectorAll('.qb-field-checkbox') ?? []) as MpCheckbox[];
   }
 
   it('renders one checkbox per non-relation field of the current entity', async () => {
@@ -221,11 +234,11 @@ describe('mp-query-builder — toolbar sort-by (M20)', () => {
     });
     const rows = rowsOf(el);
     expect(rows).toHaveLength(2);
-    const fieldSel0 = rows[0]!.querySelector('.qb-sort-field') as HTMLSelectElement;
-    const dirSel0 = rows[0]!.querySelector('.qb-sort-direction') as HTMLSelectElement;
+    const fieldSel0 = rows[0]!.querySelector('.qb-sort-field') as MpSelect;
+    const dirSel0 = rows[0]!.querySelector('.qb-sort-direction') as MpSelect;
     expect(fieldSel0.value).toBe('total');
     expect(dirSel0.value).toBe('desc');
-    const fieldSel1 = rows[1]!.querySelector('.qb-sort-field') as HTMLSelectElement;
+    const fieldSel1 = rows[1]!.querySelector('.qb-sort-field') as MpSelect;
     expect(fieldSel1.value).toBe('status');
   });
 
@@ -238,7 +251,7 @@ describe('mp-query-builder — toolbar sort-by (M20)', () => {
     el.addEventListener('sort-by-change', (e) => {
       emitted = (e as CustomEvent<{ sortBy: SortDescriptor[] }>).detail;
     });
-    const dirSel = el.shadowRoot!.querySelector('.qb-sort-direction') as HTMLSelectElement;
+    const dirSel = el.shadowRoot!.querySelector('.qb-sort-direction') as MpSelect;
     dirSel.value = 'desc';
     dirSel.dispatchEvent(new Event('change'));
     await settle(el);
