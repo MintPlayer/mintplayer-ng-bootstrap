@@ -17,10 +17,10 @@ import { isPlatformServer } from '@angular/common';
 import { BsCheckboxValueAccessor } from '../value-accessor/checkbox-value-accessor';
 import { BsCheckboxGroupDirective } from '../directives/checkbox-group/checkbox-group.directive';
 import { BsCheckboxType } from '../types/checkbox-type';
-import type { CheckboxChangeEventDetail, MpCheckbox } from '@mintplayer/ng-bootstrap/web-components/checkbox';
+import type { CheckboxChangeEventDetail, MpCheckbox } from '@mintplayer/web-components/checkbox';
 
 // Side-effect import: registers <mp-checkbox>.
-import '@mintplayer/ng-bootstrap/web-components/checkbox';
+import '@mintplayer/web-components/checkbox';
 
 @Component({
   selector: 'bs-checkbox',

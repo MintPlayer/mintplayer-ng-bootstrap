@@ -3,7 +3,7 @@ import { query } from 'lit/decorators.js';
 import { LiveAnnouncerController } from '@mintplayer/ng-bootstrap/web-components/a11y';
 import { OverlayController } from '@mintplayer/web-components/overlay';
 import { MpCalendarElement, type FirstDayOfWeek } from '@mintplayer/ng-bootstrap/calendar';
-import { MpTimeListElement, type Hour12Mode, type TimeStep } from '@mintplayer/ng-bootstrap/timepicker';
+import { MpTimeListElement, type Hour12Mode, type TimeStep } from '@mintplayer/web-components/timepicker';
 import { styles } from './mp-datetime-picker.element.template';
 
 void MpCalendarElement;
