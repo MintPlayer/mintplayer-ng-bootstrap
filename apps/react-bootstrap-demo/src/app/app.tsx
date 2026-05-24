@@ -24,8 +24,10 @@ function lazyNamed<P>(
 // chunk — the initial bundle only ships the shell + router + Home.
 const CalendarPage     = lazyNamed(() => import('./pages/CalendarPage'),     'CalendarPage');
 const CardPage         = lazyNamed(() => import('./pages/CardPage'),         'CardPage');
+const CheckboxPage     = lazyNamed(() => import('./pages/CheckboxPage'),     'CheckboxPage');
 const CodeSnippetPage  = lazyNamed(() => import('./pages/CodeSnippetPage'),  'CodeSnippetPage');
 const PaginationPage   = lazyNamed(() => import('./pages/PaginationPage'),   'PaginationPage');
+const TimepickerPage   = lazyNamed(() => import('./pages/TimepickerPage'),   'TimepickerPage');
 const ToggleButtonPage = lazyNamed(() => import('./pages/ToggleButtonPage'), 'ToggleButtonPage');
 
 function PageFallback() {
@@ -46,8 +48,10 @@ export function App() {
           {/* Basic */}
           <Route path="/basic/calendar" element={<CalendarPage />} />
           <Route path="/basic/card" element={<CardPage />} />
+          <Route path="/basic/checkbox" element={<CheckboxPage />} />
           <Route path="/basic/code-snippet" element={<CodeSnippetPage />} />
           <Route path="/basic/pagination" element={<PaginationPage />} />
+          <Route path="/basic/timepicker" element={<TimepickerPage />} />
           <Route path="/basic/toggle-button" element={<ToggleButtonPage />} />
           <Route path="*" element={<ComingSoonPage />} />
         </Routes>

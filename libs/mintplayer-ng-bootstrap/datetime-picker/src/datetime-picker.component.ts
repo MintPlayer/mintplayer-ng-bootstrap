@@ -21,7 +21,7 @@ import {
   Validator,
 } from '@angular/forms';
 import type { FirstDayOfWeek } from '@mintplayer/ng-bootstrap/calendar';
-import type { Hour12Mode, TimeStep } from '@mintplayer/ng-bootstrap/timepicker';
+import type { Hour12Mode, TimeStep } from '@mintplayer/web-components/timepicker';
 import { MpDatetimePickerElement, type DatetimePopup } from './lib/web-components/mp-datetime-picker.element';
 
 void MpDatetimePickerElement;

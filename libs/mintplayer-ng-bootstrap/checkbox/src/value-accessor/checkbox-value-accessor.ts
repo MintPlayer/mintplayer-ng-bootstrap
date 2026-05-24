@@ -1,6 +1,6 @@
 import { Directive, forwardRef, inject } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import type { CheckboxChangeEventDetail } from '@mintplayer/ng-bootstrap/web-components/checkbox';
+import type { CheckboxChangeEventDetail } from '@mintplayer/web-components/checkbox';
 import { BsCheckboxComponent } from '../component/checkbox.component';
 
 /**
