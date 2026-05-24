@@ -27,6 +27,7 @@ const CardPage         = lazyNamed(() => import('./pages/CardPage'),         'Ca
 const CheckboxPage     = lazyNamed(() => import('./pages/CheckboxPage'),     'CheckboxPage');
 const DatatablePage    = lazyNamed(() => import('./pages/DatatablePage'),    'DatatablePage');
 const DatepickerPage   = lazyNamed(() => import('./pages/DatepickerPage'),   'DatepickerPage');
+const DatetimePickerPage = lazyNamed(() => import('./pages/DatetimePickerPage'), 'DatetimePickerPage');
 const CodeSnippetPage  = lazyNamed(() => import('./pages/CodeSnippetPage'),  'CodeSnippetPage');
 const PaginationPage   = lazyNamed(() => import('./pages/PaginationPage'),   'PaginationPage');
 const RadioPage        = lazyNamed(() => import('./pages/RadioPage'),        'RadioPage');
@@ -54,6 +55,7 @@ export function App() {
           <Route path="/basic/checkbox" element={<CheckboxPage />} />
           <Route path="/basic/code-snippet" element={<CodeSnippetPage />} />
           <Route path="/basic/datepicker" element={<DatepickerPage />} />
+          <Route path="/basic/datetime-picker" element={<DatetimePickerPage />} />
           <Route path="/basic/pagination" element={<PaginationPage />} />
           <Route path="/basic/radio" element={<RadioPage />} />
           <Route path="/basic/timepicker" element={<TimepickerPage />} />

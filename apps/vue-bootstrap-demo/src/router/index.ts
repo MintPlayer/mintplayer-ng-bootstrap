@@ -17,6 +17,7 @@ const router = createRouter({
     { path: '/basic/checkbox',      name: 'checkbox',      component: () => import('../views/CheckboxView.vue') },
     { path: '/basic/code-snippet',  name: 'code-snippet',  component: () => import('../views/CodeSnippetView.vue') },
     { path: '/basic/datepicker',    name: 'datepicker',    component: () => import('../views/DatepickerView.vue') },
+    { path: '/basic/datetime-picker', name: 'datetime-picker', component: () => import('../views/DatetimePickerView.vue') },
     { path: '/basic/pagination',    name: 'pagination',    component: () => import('../views/PaginationView.vue') },
     { path: '/basic/radio',         name: 'radio',         component: () => import('../views/RadioView.vue') },
     { path: '/basic/timepicker',    name: 'timepicker',    component: () => import('../views/TimepickerView.vue') },
