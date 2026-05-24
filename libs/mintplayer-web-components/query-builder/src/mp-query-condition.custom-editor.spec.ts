@@ -2,9 +2,9 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import './mp-query-builder.element';
 import './mp-query-condition.element';
 import type { MpQueryBuilderElement } from './mp-query-builder.element';
-import type { Condition } from '../model/expression';
-import type { EntitySchema } from '../model/field-def';
-import type { EditorContext, EditorFactory, EditorHandle, EditorRegistry } from '../model/editor';
+import type { Condition } from './model/expression';
+import type { EntitySchema } from './model/field-def';
+import type { EditorContext, EditorFactory, EditorHandle, EditorRegistry } from './model/editor';
 
 const SCHEMA: EntitySchema[] = [
   {

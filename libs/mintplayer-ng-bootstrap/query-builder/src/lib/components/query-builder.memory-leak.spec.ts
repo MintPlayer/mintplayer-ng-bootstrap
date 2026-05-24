@@ -3,15 +3,16 @@ import { TestBed } from '@angular/core/testing';
 import { ApplicationRef, Component, signal } from '@angular/core';
 import { BsQueryBuilderComponent } from './query-builder.component';
 import { BsQueryBuilderEditorDirective } from './query-builder-editor.directive';
-import type {
-  EditorContext,
-  EditorFactory,
-  EditorHandle,
-  EditorRegistry,
-} from '../model/editor';
-import type { Expression, Group } from '../model/expression';
-import type { EntitySchema } from '../model/field-def';
-import { emptyGroup } from '../model/default-tree';
+import {
+  emptyGroup,
+  type EditorContext,
+  type EditorFactory,
+  type EditorHandle,
+  type EditorRegistry,
+  type Expression,
+  type Group,
+  type EntitySchema,
+} from '@mintplayer/web-components/query-builder';
 
 const SCHEMA: EntitySchema[] = [
   {

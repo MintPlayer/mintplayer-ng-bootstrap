@@ -35,6 +35,7 @@ const TimepickerPage   = lazyNamed(() => import('./pages/forms/TimepickerPage'),
 const MultiRangePage   = lazyNamed(() => import('./pages/forms/MultiRangePage'),     'MultiRangePage');
 const OtpInputPage     = lazyNamed(() => import('./pages/advanced/OtpInputPage'),    'OtpInputPage');
 const FileManagerPage  = lazyNamed(() => import('./pages/enterprise/FileManagerPage'), 'FileManagerPage');
+const QueryBuilderPage = lazyNamed(() => import('./pages/enterprise/QueryBuilderPage'), 'QueryBuilderPage');
 const ToggleButtonPage = lazyNamed(() => import('./pages/ToggleButtonPage'), 'ToggleButtonPage');
 
 function PageFallback() {
@@ -69,6 +70,7 @@ export function App() {
           {/* Enterprise */}
           <Route path="/enterprise/datatables" element={<DatatablePage />} />
           <Route path="/enterprise/file-manager" element={<FileManagerPage />} />
+          <Route path="/enterprise/query-builder" element={<QueryBuilderPage />} />
           <Route path="*" element={<ComingSoonPage />} />
         </Routes>
       </Suspense>
