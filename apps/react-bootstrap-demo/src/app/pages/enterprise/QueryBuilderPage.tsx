@@ -116,9 +116,9 @@ export function QueryBuilderPage() {
           schema={schema}
           query={query}
           onQueryChange={(e: CustomEvent<{ tree: Expression }>) => setQuery(e.detail.tree)}
-          onRootEntityChange={(e: CustomEvent<string>) => setRootEntity(e.detail)}
-          onSelectedFieldsChange={(e: CustomEvent<string[]>) => setSelectedFields(e.detail)}
-          onSortByChange={(e: CustomEvent<SortDescriptor[]>) => setSortBy(e.detail)}
+          onRootEntityChange={(e: CustomEvent<{ rootEntity: string }>) => setRootEntity(e.detail.rootEntity)}
+          onSelectedFieldsChange={(e: CustomEvent<{ selectedFields: string[] }>) => setSelectedFields(e.detail.selectedFields)}
+          onSortByChange={(e: CustomEvent<{ sortBy: SortDescriptor[] }>) => setSortBy(e.detail.sortBy)}
           {...{
             rootEntity,
             multiEntityPickerEnabled: true,

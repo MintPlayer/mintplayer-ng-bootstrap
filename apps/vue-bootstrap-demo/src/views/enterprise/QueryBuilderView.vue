@@ -123,9 +123,9 @@ const SOURCE = `<BsQueryBuilder
         :sort-by="sortBy"
         show-preview
         show-saved-queries
-        @root-entity-change="(e: CustomEvent<string>) => rootEntity = e.detail"
-        @selected-fields-change="(e: CustomEvent<string[]>) => selectedFields = e.detail"
-        @sort-by-change="(e: CustomEvent<SortDescriptor[]>) => sortBy = e.detail"
+        @root-entity-change="(e: CustomEvent<{ rootEntity: string }>) => rootEntity = e.detail.rootEntity"
+        @selected-fields-change="(e: CustomEvent<{ selectedFields: string[] }>) => selectedFields = e.detail.selectedFields"
+        @sort-by-change="(e: CustomEvent<{ sortBy: SortDescriptor[] }>) => sortBy = e.detail.sortBy"
       />
 
       <div class="d-flex gap-2 align-items-center my-3">
