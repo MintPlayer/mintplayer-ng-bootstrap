@@ -65,9 +65,10 @@ A secondary goal piggybacks here: the existing publish workflow already uses a `
 | PR-7 | [#361](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/361) | `feat(wc-extract): datatable + datepicker + datetime-picker (PR-7)` | ✅ merged |
 | PR-8 | [#362](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/362) | `feat(wc-extract): multi-range + otp-input + file-manager (PR-8 re-scoped)` | ✅ merged |
 | PR-9 | [#363](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/363) | `feat(wc-extract): query-builder + ribbon (PR-9)` | ✅ merged |
-| PR-10 | — | `tab-control`, `splitter`, `scheduler-core`, `scheduler` (originally PR-8) | ⏳ in CI |
-| PR-11 | — | `dock` (punted from PR-8), `tile-manager`, `treeview` (originally PR-9 remainder) | ⏳ pending |
-| PR-12 | — | Misc cleanup (mostly already absorbed by PR-3/PR-4) | ⏳ pending |
+| PR-10 | [#364](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/364) | `feat(wc-extract): tab-control + splitter + scheduler-core + scheduler (PR-10)` | ⏳ in CI (+4 follow-up commits — ribbon UX fixes, 3 production demo bugs, query-builder strip flags, live apps/api wiring) |
+| PR-11 | — | `select` extraction (new — Angular `bs-select` → `mp-select` WC, then wired into `mp-query-builder` + `mp-checkbox` swaps for the native `<input type="checkbox">`s the query-builder still uses) | ⏳ next, user-requested |
+| PR-12 | — | `dock` (punted from PR-8), `tile-manager`, `treeview` (originally PR-9 remainder) | ⏳ pending |
+| PR-13 | — | Misc cleanup (mostly already absorbed by PR-3/PR-4) | ⏳ pending |
 
 ## OPEN ISSUES BEFORE NEXT COMPACT — read before resuming
 
@@ -77,7 +78,15 @@ A secondary goal piggybacks here: the existing publish workflow already uses a `
 
 - **PR-8 ✅ merged as #362.** multi-range + otp-input + file-manager extracted; `dock` punted to PR-11.
 
-- **PR-9 (#363) ⏳ in CI.** Four commits: (1) query-builder extraction (much larger than usual — includes model + DnD + visitor + preview + value-editors subdirs), (2) ribbon family extraction (20 elements + a11y import fix), (3) full Angular-style ribbon demo ported to React + Vue (1211/983 LOC), (4) framework-switcher links in the Angular navbar.
+- **PR-9 ✅ merged as #363.** Query-builder (model + DnD + visitor + preview + value-editors) + ribbon family (20 elements + a11y rewire) + full Angular-style ribbon demo port to React + Vue (1211/983 LOC) + Angular navbar framework-switcher links. Gemini round: 4 threads resolved — 7 Vue snippets rewritten to Vue syntax, 134 of 138 `{... as React.ComponentProps<>}` spread+casts removed from RibbonPage.tsx (4 surgical retains for props the WCs expose only via observedAttributes).
+
+- **PR-10 (#364) ⏳ in CI.** Five extraction commits (tab-control + splitter + scheduler-core + scheduler + PRD bump) plus four follow-up commits the user surfaced after landing:
+  1. `fix(ribbon-demos)` — QAT button stretching (mp-quick-access-toolbar `::slotted` width override) + ribbon demo page max-width override (`.demo-page:has(.demo-ribbon) { max-width: none }`).
+  2. `fix(react+vue-demos)` — three production demo bugs: (a) datepicker crashed in `isSameDate` because `selectedDate` was undefined → default to `new Date()`; (b) radio toggle_button section was missing the one-of-N coordination state the form-check section already had → mirror it; (c) query-builder no-op'd on first click because the WC emits `CustomEvent<{ tree: Expression }>`, not bare Expression → fix React+Vue wrappers + React demo handler.
+  3. `fix(query-builder-demos)` — React/Vue demos were passing only `schema` + `query`, missing `rootEntity` + the four strip-enabling flags. Without `rootEntity` the "Add condition" buttons had no entity to add against. Added managed state for `rootEntity` / `selectedFields` / `sortBy` + the flags + the matching change handlers. Vue wrapper (`BsQueryBuilder.vue`) also extended to forward `selectedFields` / `sortBy` / `savedQueries` / `editorRegistry` / `messages` as JS properties (they're `attribute: false` on the WC).
+  4. `feat(query-builder-demos)` — wire the live `apps/api` so React/Vue match the Angular demo end-to-end. Vite proxy `/api → :5000` in both apps; CORS defaults in `apps/api/Program.cs` extended for `:4000`/`:4100` dev + `react.bootstrap.mintplayer.com`/`vue.bootstrap.mintplayer.com` prod; `refreshSchema()` + `search()` POST handler + Search button + BsDatatable on both demos. Verified via Playwright: 3-entity catalog loads, search returns 1000 matches → 50 rows × 5 cols.
+
+- **PR-11 (next) — `select` WC extraction.** User explicitly requested: extract Angular `<bs-select>` (`libs/mintplayer-ng-bootstrap/select/`, ~331 LOC) into an `mp-select` WC under `libs/mintplayer-web-components/select/`, then swap the native `<select>` and `<input type="checkbox">` usages inside the `mp-query-builder` (currently 5 native `<select>` instances across `mp-query-builder.element.ts:542/585/599` + `mp-query-condition.element.ts:247/257`) for `<mp-select>` + `<mp-checkbox>`. This is a NEW WC (the Angular component pre-dates the WC migration), so it needs full design — public API surface around `[multiple]` + `[size]` + `[ariaLabel]` + `[(ngModel)]`-via-value-event + the `compareWith` host-directive integration. Angular wrapper becomes a thin shim like the other entries. Demo pages on React/Vue. This is BEYOND the original PR-351 scope and should ship as its own PR after PR-10 merges.
 
 - **Vue/React demo URL convention differs from Angular**: master Angular demo uses `/basic/forms/checkbox` (nested), React/Vue demos use `/basic/checkbox` (flat). This is intentional — Vue/React demo routing was designed flatter.
 
