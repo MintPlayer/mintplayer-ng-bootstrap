@@ -15,5 +15,5 @@ export type {
   SelectionChangeEventDetail,
   UploadRequestEventDetail,
   OperationEventDetail,
-} from '@mintplayer/ng-bootstrap/web-components/file-manager';
-export { DEFAULT_FILE_MANAGER_MESSAGES, mergeMessages } from '@mintplayer/ng-bootstrap/web-components/file-manager';
+} from '@mintplayer/web-components/file-manager';
+export { DEFAULT_FILE_MANAGER_MESSAGES, mergeMessages } from '@mintplayer/web-components/file-manager';

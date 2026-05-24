@@ -11,6 +11,7 @@ const SECTIONS = [
       { path: '/basic/forms/datepicker', label: 'Datepicker' },
       { path: '/basic/forms/datetime-picker', label: 'Datetime picker' },
       { path: '/basic/forms/timepicker', label: 'Timepicker' },
+      { path: '/basic/forms/multi-range', label: 'Multi-range' },
       { path: '/basic/checkbox', label: 'Checkbox' },
       { path: '/basic/radio', label: 'Radio' },
       { path: '/basic/toggle-button', label: 'Toggle button' },
@@ -25,7 +26,6 @@ const SECTIONS = [
     routes: [
       { path: '/advanced/splitter', label: 'Splitter' },
       { path: '/advanced/otp-input', label: 'OTP input' },
-      { path: '/advanced/multi-range', label: 'Multi-range' },
     ],
   },
   {

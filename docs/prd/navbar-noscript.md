@@ -161,6 +161,18 @@ Automated:
 - `navbar.component.spec.ts` and `navbar.aria.spec.ts` should keep passing.
 - The Playwright e2e specs (post-#323 migration) that exercise navbar collapse / anchor-scroll must continue to pass at both desktop and mobile viewports.
 
+### Testing rule: in JS-enabled tests, **click** the navbar items — never just focus them
+
+The `:focus-within` reveal path on dropdowns and on the small-mode collapse is **a `.noscript`-only mechanism** — it is gated on the `.noscript` class (see the selector in §3: `::ng-deep .navbar.noscript &:focus-within …`). Once `BsNoNoscriptDirective` strips that class on hydration, the focus-within rule stops matching. From that point on the dropdowns are visibility-toggled exclusively by the JS click handler attached in `navbar-item.component.ts:72-82` inside `ngAfterContentChecked`.
+
+Consequences for test authors (vitest specs, Playwright e2e, ng-mocks fixtures alike — **anything where the navbar has hydrated normally**):
+
+- ❌ **Do NOT** call `.focus()` / `Tab` / any other focus-only gesture to reveal a dropdown. You will see the test pass against an SSR snapshot, then fail against the hydrated DOM — the focus-within CSS isn't matching anything.
+- ✅ **Do** call `.click()` on the trigger. The click handler is the only path that flips `dropdown.isVisible`.
+- ⚠️ The click handler is attached lazily in `ngAfterContentChecked` on the client — the server-side `ngAfterContentChecked` returns early before any `addEventListener` call (`navbar-item.component.ts`, behind an `isPlatformServer` guard). On cold CI runners a too-eager test can race that hook. Add `await page.waitForLoadState('networkidle')` after `page.goto('/')` so the lifecycle has fired before you click.
+
+Reverse case (testing the SSR/noscript path specifically): there you *do* test focus-within, but the navbar must still carry the `.noscript` class — which means either a true SSR-rendered snapshot or a test that pre-sets the class before assertion. There is no in-between state where focus alone opens a JS-hydrated dropdown.
+
 ## Open questions resolved
 
 1. ~~Class semantics: `.noscript` vs `:not(.no-noscript)`?~~ — keep current `.noscript` (added on SSR), affirmative selectors. No rename.

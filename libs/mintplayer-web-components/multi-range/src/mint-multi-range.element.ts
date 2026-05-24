@@ -1,6 +1,6 @@
 import { LitElement, html, nothing, type TemplateResult } from 'lit';
 import { styles } from './mint-multi-range.element.template';
-import { MultiRangeOrientation } from '../types/multi-range-orientation';
+import { MultiRangeOrientation } from './types/multi-range-orientation';
 
 /**
  * Bootstrap-flavoured multi-thumb range slider.
