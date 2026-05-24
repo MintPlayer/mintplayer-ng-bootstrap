@@ -21,10 +21,15 @@ const props = defineProps<{
 
 const el = ref<MpDatatable | null>(null);
 
+// Forward `?? []` so consumers can clear the table by binding the prop
+// back to `undefined` / `null`. The WC's setters (`set columns` /
+// `set data` on MpDatatable) already coerce non-arrays to `[]`, so the
+// explicit `?? []` here is what carries the clear gesture through — a
+// truthiness guard would silently drop it and leave the previous rows.
 const syncProps = () => {
   if (!el.value) return;
-  if (props.columns) el.value.columns = props.columns;
-  if (props.data) el.value.data = props.data;
+  el.value.columns = props.columns ?? [];
+  el.value.data = props.data ?? [];
 };
 
 onMounted(syncProps);
