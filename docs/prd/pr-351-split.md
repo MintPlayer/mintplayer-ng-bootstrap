@@ -62,18 +62,20 @@ A secondary goal piggybacks here: the existing publish workflow already uses a `
 | PR-5 | [#358](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/358) | `feat(wc-extract): overlay + pagination + toggle-button — primitives (PR-5 re-scoped)` | ✅ merged |
 | PR-6 | [#359](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/359) | `feat(wc-extract): timepicker + checkbox — 1-hop consumers (PR-6)` | ✅ merged |
 | — | [#360](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/360) | `refactor(web-components): split form-check styles + extract `radio` WC + React/Vue wrappers` | ✅ merged (prep PR; absorbed `radio` from original PR-9 scope mid-flight) |
-| PR-7 | [#361](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/361) | `feat(wc-extract): datatable + datepicker + datetime-picker (PR-7)` | ⏳ in CI |
-| PR-8 | — | `dock`, `file-manager`, `multi-range`, `otp-input` (originally PR-6) | ⏳ next |
+| PR-7 | [#361](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/361) | `feat(wc-extract): datatable + datepicker + datetime-picker (PR-7)` | ✅ merged |
+| PR-8 | — | `multi-range`, `otp-input`, `file-manager` (originally PR-6 minus `dock`; `dock` punted to wait for splitter+tab-control) | ⏳ in CI |
 | PR-9 | — | `query-builder`, `ribbon` (originally PR-7 minus `pagination` and `radio` — `radio` was pulled into PR #360) | ⏳ pending |
 | PR-10 | — | `scheduler`, `scheduler-core`, `splitter`, `tab-control` (originally PR-8) | ⏳ pending |
-| PR-11 | — | `tile-manager`, `treeview` (originally PR-9 remainder) | ⏳ pending |
+| PR-11 | — | `dock` (punted from PR-8), `tile-manager`, `treeview` (originally PR-9 remainder) | ⏳ pending |
 | PR-12 | — | Misc cleanup (mostly already absorbed by PR-3/PR-4) | ⏳ pending |
 
 ## OPEN ISSUES BEFORE NEXT COMPACT — read before resuming
 
 - **PR #360 ✅ merged.** Form-check split + radio extraction shipped. `mp-radio` toggle_button regression fixed by the radio extraction (originally PR-9 scope folded into PR #360 mid-flight).
 
-- **PR-7 (#361) ⏳ in CI.** Three commits: datatable (pure git-mv from already-new layout) + datepicker (git-mv from old `.element.*` location, fixed stale `@mintplayer/ng-bootstrap/calendar` → `@mintplayer/web-components/calendar` import) + datetime-picker (same shape + two more stale imports fixed: a11y + calendar). Each commit adds the React + Vue wrappers + small demo pages. The `mp-file-manager` WC's import of datatable was rewired in commit 1 so the PR-8 entry stays working between PRs. 195 WC tests pass (up from 157).
+- **PR-7 ✅ merged as #361.** datatable + datepicker + datetime-picker extracted with React/Vue wrappers and `/basic/forms/{picker}` regrouping across all three demos. Gemini caught a `BsDatatable.vue` null-clearing bug — fixed in `cbc509d9` by switching to `?? []` fallbacks. 195 WC tests passed.
+
+- **PR-8 (#362) ⏳ in CI.** Three commits: multi-range + otp-input + file-manager. `dock` punted to PR-11 because its tab-control+splitter cross-WC deps haven't migrated. file-manager keeps its splitter+treeview imports at the `@mintplayer/ng-bootstrap/web-components/...` paths until PR-10 (splitter) and PR-11 (treeview) migrate those. 245 WC tests pass after this PR.
 
 - **Vue/React demo URL convention differs from Angular**: master Angular demo uses `/basic/forms/checkbox` (nested), React/Vue demos use `/basic/checkbox` (flat). This is intentional — Vue/React demo routing was designed flatter.
 
@@ -186,9 +188,17 @@ All three landed together as one PR with one commit per entry (per user request 
 
 195 WC tests pass at the new locations (up from 157; new specs are 6 datepicker + 32 datetime-picker).
 
-### PR-8 — `dock`, `file-manager`, `multi-range`, `otp-input` (originally PR-6) ⏳ pending
+### PR-8 — `multi-range`, `otp-input`, `file-manager` (originally PR-6 minus `dock`) ⏳ in CI as #362
 
-`dock` is the heaviest entry in the inventory (~4 500 LOC on the feat branch). If the chunk total exceeds the 500-LOC budget, ship `dock` solo.
+Three commits, one per entry.
+
+- `multi-range` — `git mv` from `libs/mintplayer-ng-bootstrap/multi-range/src/lib/web-components/` to `libs/mintplayer-web-components/multi-range/src/` (`.element.*` layout, no cross-WC deps). The `MultiRangeOrientation` type also moves into a `types/` sibling folder so the WC entry is self-contained. React (`value-input` + `value-change`) + Vue (`defineModel<number[]>` with deep watch) wrappers. Demo pages on both shells regrouped to `/basic/forms/multi-range` to match the Angular nav (`/advanced/multi-range` retired).
+- `otp-input` — same shape. Three type files (`OtpInputType`/`Case`/`Size`) move into `types/`. Two spec files migrated too. React (`value-change` + `complete`) + Vue (`defineModel<string>`) wrappers. Demo pages at `/advanced/otp-input` matching the React/Vue sidebar (Angular puts it at `/enterprise/otp-input` — known cross-framework variance).
+- `file-manager` — pure `git mv` from `libs/mintplayer-ng-bootstrap/web-components/file-manager/` (already-new layout) to `libs/mintplayer-web-components/file-manager/`. **Splitter + treeview cross-WC imports keep pointing at `@mintplayer/ng-bootstrap/web-components/{splitter,treeview}` until those WCs migrate** (PR-10 + PR-11). React wrapper exposes seven `mp-*` events. Vue wrapper deep-watches `nodes`. Demo at `/enterprise/file-manager` with a 6-node static seed tree.
+
+`dock` was originally slated here but defers to PR-11: it depends on tab-control + splitter (both un-migrated), and at 6132 LOC it's well past the per-PR review budget by itself.
+
+245 WC tests pass at the new locations (up from 195; otp-input adds ~50 specs).
 
 ### PR-9 — `query-builder`, `ribbon` (originally PR-7 minus `pagination`; `radio` already absorbed into PR #360) ⏳ pending
 
@@ -198,9 +208,11 @@ All three landed together as one PR with one commit per entry (per user request 
 
 `scheduler` + `scheduler-core` together are ~3 800 LOC. Almost certainly needs to split: scheduler solo, scheduler-core + splitter + tab-control as another chunk.
 
-### PR-11 — `tile-manager`, `treeview` (originally PR-9 remainder) ⏳ pending
+### PR-11 — `dock` (punted from PR-8), `tile-manager`, `treeview` ⏳ pending
 
-Last two entries from the original PR-9 inventory. Also includes the **remaining Angular `BsLiveAnnouncerService` consumer migrations** (`file-upload`, `code-snippet` Angular shim, `placeholder` spec) — once all WCs that need the announcer have moved, the consumers can switch to the new `LiveAnnouncerController` and the old service can be deleted.
+Three entries: the two from the original PR-9 remainder plus `dock`, which was punted from PR-8 because its tab-control+splitter cross-WC deps weren't migrated. After PR-10 lands tab-control+splitter, dock's imports can be rewired and the extraction can land here. May still need to split — `dock` is ~6132 LOC on its own.
+
+Also includes the **remaining Angular `BsLiveAnnouncerService` consumer migrations** (`file-upload`, `code-snippet` Angular shim, `placeholder` spec) — once all WCs that need the announcer have moved, the consumers can switch to the new `LiveAnnouncerController` and the old service can be deleted.
 
 **Per-PR shape (PR-5 through PR-11):**
 - `git mv libs/mintplayer-ng-bootstrap/<entry>/src/lib/web-components/*.element.{ts,html,scss} libs/mintplayer-web-components/<entry>/src/` — pure rename, history preserved.
