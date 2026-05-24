@@ -32,6 +32,7 @@ const CodeSnippetPage  = lazyNamed(() => import('./pages/CodeSnippetPage'),  'Co
 const PaginationPage   = lazyNamed(() => import('./pages/PaginationPage'),   'PaginationPage');
 const RadioPage        = lazyNamed(() => import('./pages/RadioPage'),        'RadioPage');
 const TimepickerPage   = lazyNamed(() => import('./pages/forms/TimepickerPage'),     'TimepickerPage');
+const MultiRangePage   = lazyNamed(() => import('./pages/forms/MultiRangePage'),     'MultiRangePage');
 const ToggleButtonPage = lazyNamed(() => import('./pages/ToggleButtonPage'), 'ToggleButtonPage');
 
 function PageFallback() {
@@ -57,6 +58,7 @@ export function App() {
           <Route path="/basic/forms/datepicker" element={<DatepickerPage />} />
           <Route path="/basic/forms/datetime-picker" element={<DatetimePickerPage />} />
           <Route path="/basic/forms/timepicker" element={<TimepickerPage />} />
+          <Route path="/basic/forms/multi-range" element={<MultiRangePage />} />
           <Route path="/basic/pagination" element={<PaginationPage />} />
           <Route path="/basic/radio" element={<RadioPage />} />
           <Route path="/basic/toggle-button" element={<ToggleButtonPage />} />
