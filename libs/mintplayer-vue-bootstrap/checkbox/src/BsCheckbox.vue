@@ -24,8 +24,14 @@ onMounted(() => syncToEl(modelValue.value));
 watch(modelValue, syncToEl);
 
 function onChange(e: Event) {
+  // Only react to the WC's own CustomEvent (which carries `detail`). The
+  // native `change` from the inner `<input>` has composed:false so it
+  // shouldn't escape the WC's shadow root, but guard anyway — if it ever
+  // does (or if a consumer forwards a plain native event), `detail` is
+  // undefined and `!!undefined.checked` would silently reset the model
+  // to false.
   const detail = (e as CustomEvent<CheckboxChangeEventDetail>).detail;
-  modelValue.value = !!detail?.checked;
+  if (detail) modelValue.value = !!detail.checked;
 }
 </script>
 
