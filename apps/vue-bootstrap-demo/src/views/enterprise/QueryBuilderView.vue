@@ -55,7 +55,14 @@ const columns = computed<DatatableColumnDef[]>(() => {
   return visible.map((f) => ({ name: f.name, label: f.label, sortable: true }));
 });
 
-async function search() {
+// 250 ms debounce + AbortController cancel-prior. Same shape as the
+// React demo so editing a condition value coalesces fast typing into
+// one network round-trip and a stale request never overwrites fresh
+// results.
+let abortCtl: AbortController | null = null;
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
+
+async function runSearch(signal: AbortSignal) {
   busy.value = true;
   error.value = null;
   try {
@@ -70,6 +77,7 @@ async function search() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
+      signal,
     });
     if (!r.ok) {
       const detail = await r.json().catch(() => null);
@@ -79,6 +87,7 @@ async function search() {
     results.value = data.items;
     totalCount.value = data.totalCount;
   } catch (e) {
+    if ((e as Error).name === 'AbortError') return;
     error.value = e instanceof Error ? e.message : 'Request failed';
     results.value = [];
     totalCount.value = 0;
@@ -86,6 +95,18 @@ async function search() {
     busy.value = false;
   }
 }
+
+function scheduleSearch() {
+  if (searchTimer) clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    abortCtl?.abort();
+    abortCtl = new AbortController();
+    void runSearch(abortCtl.signal);
+  }, 250);
+}
+
+watch([query, rootEntity, sortBy], scheduleSearch, { deep: true });
+onMounted(scheduleSearch);
 
 const SOURCE = `<BsQueryBuilder
   v-model="query"
@@ -97,7 +118,7 @@ const SOURCE = `<BsQueryBuilder
   show-preview
   show-saved-queries
 />
-<button @click="search">Search</button>
+<!-- watch([query, rootEntity, sortBy], ...) auto-fires the search. -->
 <BsDatatable :columns="columns" :data="results" />`;
 </script>
 
@@ -129,9 +150,7 @@ const SOURCE = `<BsQueryBuilder
       />
 
       <div class="d-flex gap-2 align-items-center my-3">
-        <button class="btn btn-primary" :disabled="busy" @click="search">
-          {{ busy ? 'Searching…' : 'Search' }}
-        </button>
+        <span v-if="busy" class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true" />
         <span class="text-secondary">
           {{ totalCount }} match{{ totalCount === 1 ? '' : 'es' }}
         </span>

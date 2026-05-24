@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BsQueryBuilder } from '@mintplayer/react-bootstrap/query-builder';
 import { BsDatatable } from '@mintplayer/react-bootstrap/datatable';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
@@ -32,7 +32,7 @@ const SOURCE = `<BsQueryBuilder
   showSavedQueries
   onQueryChange={e => setQuery(e.detail.tree)}
 />
-<button onClick={search}>Search</button>
+{/* useEffect on [query, rootEntity, selectedFields, sortBy] auto-fires search. */}
 <BsDatatable columns={columns} data={results} />`;
 
 export function QueryBuilderPage() {
@@ -67,7 +67,7 @@ export function QueryBuilderPage() {
     return visible.map((f) => ({ name: f.name, label: f.label, sortable: true }));
   }, [schema, rootEntity, selectedFields]);
 
-  const search = async () => {
+  const search = useCallback(async (signal?: AbortSignal) => {
     setBusy(true);
     setError(null);
     try {
@@ -82,6 +82,7 @@ export function QueryBuilderPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
+        signal,
       });
       if (!r.ok) {
         const detail = await r.json().catch(() => null);
@@ -91,13 +92,29 @@ export function QueryBuilderPage() {
       setResults(data.items);
       setTotalCount(data.totalCount);
     } catch (e) {
+      if ((e as Error).name === 'AbortError') return;
       setError(e instanceof Error ? e.message : 'Request failed');
       setResults([]);
       setTotalCount(0);
     } finally {
       setBusy(false);
     }
-  };
+  }, [query, rootEntity, sortBy]);
+
+  // Auto-search whenever query / entity / sort changes. 250 ms debounce so
+  // rapid edits inside a condition value-editor coalesce into one network
+  // round-trip. AbortController cancels the prior request if a new search
+  // is scheduled while one is in-flight.
+  const abortRef = useRef<AbortController | null>(null);
+  useEffect(() => {
+    const t = setTimeout(() => {
+      abortRef.current?.abort();
+      const ctrl = new AbortController();
+      abortRef.current = ctrl;
+      void search(ctrl.signal);
+    }, 250);
+    return () => clearTimeout(t);
+  }, [search]);
 
   return (
     <div className="demo-page">
@@ -130,9 +147,9 @@ export function QueryBuilderPage() {
         />
 
         <div className="d-flex gap-2 align-items-center my-3">
-          <button className="btn btn-primary" onClick={search} disabled={busy}>
-            {busy ? 'Searching…' : 'Search'}
-          </button>
+          {busy ? (
+            <span className="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true" />
+          ) : null}
           <span className="text-secondary">
             {totalCount} match{totalCount === 1 ? '' : 'es'}
           </span>
