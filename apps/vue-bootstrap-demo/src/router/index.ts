@@ -32,6 +32,7 @@ const router = createRouter({
     { path: '/enterprise/file-manager', name: 'file-manager', component: () => import('../views/enterprise/FileManagerView.vue') },
     { path: '/enterprise/query-builder', name: 'query-builder', component: () => import('../views/enterprise/QueryBuilderView.vue') },
     { path: '/enterprise/ribbon', name: 'ribbon', component: () => import('../views/enterprise/RibbonView.vue') },
+    { path: '/enterprise/scheduler', name: 'scheduler', component: () => import('../views/enterprise/SchedulerView.vue') },
     { path: '/:pathMatch(.*)*', name: 'coming-soon', component: () => import('../views/ComingSoonView.vue') },
   ],
 });
