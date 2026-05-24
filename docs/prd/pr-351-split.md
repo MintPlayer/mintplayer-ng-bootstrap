@@ -59,14 +59,23 @@ A secondary goal piggybacks here: the existing publish workflow already uses a `
 | PR-3 | [#354](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/354) | `feat: empty libs + React/Vue demo shells (no components yet)` | ✅ merged |
 | PR-4 | [#356](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/356) | `feat(wc-extract): a11y + calendar + card + code-snippet — first chunk` | ✅ merged |
 | — | [#357](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/357) | `fix(publish): unblock @mintplayer/{web-components,react,vue}-bootstrap on master deploy` | ✅ merged (off-cycle hotfix) |
-| PR-5 | — | `overlay`, `pagination`, `toggle-button` (primitives — re-scoped) | ⏳ next |
-| PR-6 | — | `timepicker` + `checkbox` (1-hop consumers, freed by PR-5) | ⏳ pending |
-| PR-7 | — | `datepicker`, `datetime-picker`, `datatable` (original PR-5 scope, now unblocked) | ⏳ pending |
+| PR-5 | [#358](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/358) | `feat(wc-extract): overlay + pagination + toggle-button — primitives (PR-5 re-scoped)` | ✅ merged |
+| PR-6 | [#359](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/359) | `feat(wc-extract): timepicker + checkbox — 1-hop consumers (PR-6)` | ✅ merged |
+| — | [#360](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/360) | `refactor(web-components): split form-check styles from toggle-button styles` | ⏳ in CI (prep PR before PR-7+) |
+| PR-7 | — | `datepicker`, `datetime-picker`, `datatable` (original PR-5 scope, now unblocked) | ⏳ next |
 | PR-8 | — | `dock`, `file-manager`, `multi-range`, `otp-input` (originally PR-6) | ⏳ pending |
 | PR-9 | — | `query-builder`, `radio`, `ribbon` (originally PR-7 minus `pagination`) | ⏳ pending |
 | PR-10 | — | `scheduler`, `scheduler-core`, `splitter`, `tab-control` (originally PR-8) | ⏳ pending |
 | PR-11 | — | `tile-manager`, `treeview` (originally PR-9 remainder) | ⏳ pending |
 | PR-12 | — | Misc cleanup (mostly already absorbed by PR-3/PR-4) | ⏳ pending |
+
+## OPEN ISSUES BEFORE NEXT COMPACT — read before resuming
+
+- **PR #360 (form-check split) introduced a `mp-radio` toggle_button regression** — discovered just now on master deploy at `bootstrap.mintplayer.com/basic/forms/radio`. The toggle_button variant renders the radio input + button side-by-side instead of hiding the input behind the button label. Cause: Bootstrap's `.btn-check { clip: rect(0,0,0,0); ... }` rule lives in `node_modules/bootstrap/scss/forms/_form-check.scss`. PR-5's pre-split `toggleButtonStyles` was bundling that file too, so `mp-radio`'s `static styles = [toggleButtonStyles]` covered it. After PR #360's split, `.btn-check` lives in `formCheckStyles` only. mp-radio (still on master at `libs/mintplayer-ng-bootstrap/web-components/radio/src/components/mp-radio.ts`) does NOT import formCheckStyles. **Fix**: either (a) add formCheckStyles import + array entry to mp-radio in PR #360 itself, or (b) accept master regression until PR-9 extracts mp-radio, or (c) leave `.btn-check`-only rules behind in toggleButtonStyles so toggle_button variants don't need formCheckStyles. Option (a) is simplest — touch mp-radio's existing file in-place on PR #360.
+
+- **Vue/React demo URL convention differs from Angular**: master Angular demo uses `/basic/forms/checkbox` (nested), React/Vue demos use `/basic/checkbox` (flat). This is intentional — Vue/React demo routing was designed flatter. If a future PR wants symmetry, change the React/Vue demos' `app.tsx` / `router/index.ts` route entries.
+
+- **PR #360 contains 4 commits**: (a) form-check split, (b) custom-elements.json untrack + gitignore, (c) form-check alignment fix + React/Vue label demo, (d) any radio fix if option (a) above is chosen. CI re-running after each push; user about to merge.
 
 ## Proposed PR sequence
 
