@@ -1,7 +1,11 @@
 import { useState } from 'react';
 import { BsTileManager } from '@mintplayer/react-bootstrap/tile-manager';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-import type { MintTile, TileLayoutSnapshot } from '@mintplayer/web-components/tile-manager';
+import type {
+  MintTile,
+  TileLayoutSnapshot,
+  TilePosition,
+} from '@mintplayer/web-components/tile-manager';
 
 const INITIAL_TILES: MintTile[] = [
   { id: 'weather',  position: { colStart: 1, rowStart: 1, colSpan: 2, rowSpan: 1 } },
@@ -21,8 +25,18 @@ const SOURCE = `<BsTileManager
 </BsTileManager>`;
 
 export function TileManagerPage() {
-  const [tiles] = useState<MintTile[]>(INITIAL_TILES);
+  // `tiles` must be reactive: @lit/react re-applies every prop on every
+  // render, so any parent re-render (e.g., to refresh the snapshot panel)
+  // would push the original `tiles` array back into the WC and snap the
+  // user's drag/resize back to seed positions. Listen for
+  // `tilepositionchange` and replay each commit into state.
+  const [tiles, setTiles] = useState<MintTile[]>(INITIAL_TILES);
   const [snapshot, setSnapshot] = useState<TileLayoutSnapshot | null>(null);
+
+  const onTilepositionchange = (e: CustomEvent<{ id: string; position: TilePosition }>) => {
+    const { id, position } = e.detail;
+    setTiles((current) => current.map((t) => (t.id === id ? { ...t, position } : t)));
+  };
 
   return (
     <div className="demo-page">
@@ -39,6 +53,7 @@ export function TileManagerPage() {
         <BsTileManager
           {...{ tiles, 'column-count': 4, 'drag-mode': 'header' } as React.ComponentProps<typeof BsTileManager>}
           onTilelayoutchange={(e) => setSnapshot(e.detail)}
+          onTilepositionchange={onTilepositionchange}
           style={{ display: 'block', height: '100%' }}
         >
           <div slot="weather-header">Weather</div>
