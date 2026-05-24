@@ -76,7 +76,7 @@ jobs:
 
     # Publish to GitHub Container Registry
     - name: Authenticate with GHCR
-      uses: docker/login-action@v3
+      uses: docker/login-action@v4
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
@@ -84,17 +84,17 @@ jobs:
 
     - name: Extract tags/labels
       id: meta-ghcr
-      uses: docker/metadata-action@v5
+      uses: docker/metadata-action@v6
       with:
         github-token: ${{ github.token }}
         images: ghcr.io/${{ github.repository }}
     
     - name: Publish to Github Container Registry
       id: push-ghcr
-      uses: docker/build-push-action@v6
+      uses: docker/build-push-action@v7
       with:
         context: .
-        file: ./Dockerfile
+        file: ./apps/ng-bootstrap-demo/Dockerfile
         push: true
         tags: ${{ steps.meta-ghcr.outputs.tags }}
         labels: ${{ steps.meta-ghcr.outputs.labels }}
@@ -104,6 +104,58 @@ jobs:
       with:
         subject-name: ghcr.io/${{ github.repository }}
         subject-digest: ${{ steps.push-ghcr.outputs.digest }}
+        push-to-registry: true
+
+    # ---- React demo image ----
+
+    - name: Extract React demo image tags/labels
+      id: meta-react-demo
+      uses: docker/metadata-action@v6
+      with:
+        github-token: ${{ github.token }}
+        images: ghcr.io/${{ github.repository }}-react-demo
+
+    - name: Publish React demo to Github Container Registry
+      id: push-react-demo
+      uses: docker/build-push-action@v7
+      with:
+        context: .
+        file: ./apps/react-bootstrap-demo/Dockerfile
+        push: true
+        tags: ${{ steps.meta-react-demo.outputs.tags }}
+        labels: ${{ steps.meta-react-demo.outputs.labels }}
+
+    - name: Generate React demo artifact attestation
+      uses: actions/attest-build-provenance@v1
+      with:
+        subject-name: ghcr.io/${{ github.repository }}-react-demo
+        subject-digest: ${{ steps.push-react-demo.outputs.digest }}
+        push-to-registry: true
+
+    # ---- Vue demo image ----
+
+    - name: Extract Vue demo image tags/labels
+      id: meta-vue-demo
+      uses: docker/metadata-action@v6
+      with:
+        github-token: ${{ github.token }}
+        images: ghcr.io/${{ github.repository }}-vue-demo
+
+    - name: Publish Vue demo to Github Container Registry
+      id: push-vue-demo
+      uses: docker/build-push-action@v7
+      with:
+        context: .
+        file: ./apps/vue-bootstrap-demo/Dockerfile
+        push: true
+        tags: ${{ steps.meta-vue-demo.outputs.tags }}
+        labels: ${{ steps.meta-vue-demo.outputs.labels }}
+
+    - name: Generate Vue demo artifact attestation
+      uses: actions/attest-build-provenance@v1
+      with:
+        subject-name: ghcr.io/${{ github.repository }}-vue-demo
+        subject-digest: ${{ steps.push-vue-demo.outputs.digest }}
         push-to-registry: true
 
     # ---- ASP.NET Core API ----
@@ -121,14 +173,14 @@ jobs:
 
     - name: Extract API image tags/labels
       id: meta-api
-      uses: docker/metadata-action@v5
+      uses: docker/metadata-action@v6
       with:
         github-token: ${{ github.token }}
         images: ghcr.io/${{ github.repository }}-api
 
     - name: Publish API to Github Container Registry
       id: push-api
-      uses: docker/build-push-action@v6
+      uses: docker/build-push-action@v7
       with:
         context: .
         file: ./apps/api/Dockerfile
@@ -142,6 +194,28 @@ jobs:
         subject-name: ghcr.io/${{ github.repository }}-api
         subject-digest: ${{ steps.push-api.outputs.digest }}
         push-to-registry: true
+
+    # GHCR packages default to private on first publish. The 'ng-bootstrap'
+    # image was already flipped to public manually long ago, but the three
+    # new images (react-demo, vue-demo, api) start private — VPS docker
+    # compose pull then fails with 'denied'. Flip each one to public via
+    # the org-packages API. PATCH is idempotent: already-public packages
+    # return 204 No Content; we swallow any 403/404 so a misconfigured
+    # token doesn't fail the whole workflow.
+    - name: Make GHCR images public
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        for pkg in \
+            mintplayer-ng-bootstrap \
+            mintplayer-ng-bootstrap-react-demo \
+            mintplayer-ng-bootstrap-vue-demo \
+            mintplayer-ng-bootstrap-api; do
+          echo "→ $pkg"
+          gh api --method PATCH \
+            "/orgs/${{ github.repository_owner }}/packages/container/$pkg" \
+            -f visibility=public 2>&1 || echo "  (skipped — already public, missing, or insufficient scope)"
+        done
 
   # ----------------------------------------------------------------------
   # NPM publishing

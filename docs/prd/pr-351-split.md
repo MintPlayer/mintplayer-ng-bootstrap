@@ -58,13 +58,15 @@ A secondary goal piggybacks here: the existing publish workflow already uses a `
 | — | [#355](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/355) | `test(e2e): batch of CI-stabilization fixes` | ✅ merged (unplanned, off-cycle) |
 | PR-3 | [#354](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/354) | `feat: empty libs + React/Vue demo shells (no components yet)` | ✅ merged |
 | PR-4 | [#356](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/356) | `feat(wc-extract): a11y + calendar + card + code-snippet — first chunk` | ✅ merged |
-| — | [#357](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/357) | `fix(publish): unblock @mintplayer/{web-components,react,vue}-bootstrap on master deploy` | ⏳ pending (off-cycle hotfix) |
-| PR-5 | — | `datatable`, `datepicker`, `datetime-picker` | ⏳ next |
-| PR-6 | — | `dock`, `file-manager`, `multi-range`, `otp-input` | ⏳ pending |
-| PR-7 | — | `pagination`, `query-builder`, `radio`, `ribbon` | ⏳ pending |
-| PR-8 | — | `scheduler`, `scheduler-core`, `splitter`, `tab-control` | ⏳ pending |
-| PR-9 | — | `checkbox`, `tile-manager`, `timepicker`, `toggle-button`, `treeview`, `overlay` | ⏳ pending |
-| PR-10 | — | Misc cleanup (mostly already absorbed by PR-3/PR-4) | ⏳ pending |
+| — | [#357](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/357) | `fix(publish): unblock @mintplayer/{web-components,react,vue}-bootstrap on master deploy` | ✅ merged (off-cycle hotfix) |
+| PR-5 | — | `overlay`, `pagination`, `toggle-button` (primitives — re-scoped) | ⏳ next |
+| PR-6 | — | `timepicker` + `checkbox` (1-hop consumers, freed by PR-5) | ⏳ pending |
+| PR-7 | — | `datepicker`, `datetime-picker`, `datatable` (original PR-5 scope, now unblocked) | ⏳ pending |
+| PR-8 | — | `dock`, `file-manager`, `multi-range`, `otp-input` (originally PR-6) | ⏳ pending |
+| PR-9 | — | `query-builder`, `radio`, `ribbon` (originally PR-7 minus `pagination`) | ⏳ pending |
+| PR-10 | — | `scheduler`, `scheduler-core`, `splitter`, `tab-control` (originally PR-8) | ⏳ pending |
+| PR-11 | — | `tile-manager`, `treeview` (originally PR-9 remainder) | ⏳ pending |
+| PR-12 | — | Misc cleanup (mostly already absorbed by PR-3/PR-4) | ⏳ pending |
 
 ## Proposed PR sequence
 
@@ -129,7 +131,7 @@ Per-entry shape held:
 - `passWithNoTests: true` flag in `libs/mintplayer-web-components/vite.config.mts` removed (the lib now has 57 tests across 8 spec files).
 - `@mintplayer/ng-bootstrap` bumped 21.41.1 → 21.42.0. The new libs stay at their declared versions (`@mintplayer/web-components 1.0.0`, `react-bootstrap 19.0.0`, `vue-bootstrap 3.0.0`) — they were never published before so this is their first npm release at those numbers.
 
-### Unplanned: #357 — `fix(publish): unblock @mintplayer/{web-components,react,vue}-bootstrap on master deploy` ⏳ pending
+### Unplanned: #357 — `fix(publish): unblock @mintplayer/{web-components,react,vue}-bootstrap on master deploy` ✅ merged
 
 The first PR-4 deploy on master ([run 26344885600](https://github.com/MintPlayer/mintplayer-ng-bootstrap/actions/runs/26344885600)) finished with `Published: 3, skipped: 18, failed: 1`. Two bugs surfaced in the same run:
 
@@ -138,43 +140,70 @@ The first PR-4 deploy on master ([run 26344885600](https://github.com/MintPlayer
 
 **Lesson banked for new libs going forward:** every publishable lib's `package.json` MUST have `repository` (with `type`, `url`, `directory`) AND must be reachable from `nx run-many` output. If a future PR adds a new lib, copy the dijkstra `package.json` block.
 
-### PR-5 — `datatable`, `datepicker`, `datetime-picker` ⏳ next
+### PR-5 — `overlay` + `pagination` + `toggle-button` (primitives) ⏳ next
 
-`code-snippet` already shipped in PR-4, so PR-5 is now a 3-entry chunk (not 4). Per-entry shape same as PR-4.
+**Re-scoped from the original PR-5 (`datatable`, `datepicker`, `datetime-picker`).** Pre-flight surfaced that every original-PR-5 entry has at least one unmigrated cross-WC dep:
 
-**Expected snags worth pre-flighting:**
-- `datepicker` and `datetime-picker` likely share infrastructure with the `calendar` WC already landed — check imports.
-- `datetime-picker` may depend on `timepicker` (PR-9). Verify on the feat branch by `grep -r "@mintplayer/web-components/timepicker" libs/mintplayer-web-components/datetime-picker/` before starting; if it does, either pull `timepicker` forward or scope the demo example accordingly.
-- `datatable` is heavier — could split into its own PR if it pushes the chunk past the 500-LOC budget.
+| Original PR-5 entry | Depended on (still in master via the Angular impl) |
+|---|---|
+| `datepicker` | `overlay` (was PR-9) |
+| `datetime-picker` | `overlay` + `timepicker` (both PR-9) |
+| `datatable` | `pagination` (PR-7) + `checkbox` (PR-9 after PR-4 punt) |
 
-### PR-6 — `dock`, `file-manager`, `multi-range`, `otp-input` ⏳ pending
+Rather than pulling 4-5 deps forward into one PR, ship the **dep-free primitives** first so every downstream consumer is unblocked. PR-5 is now:
 
-`dock` is the heaviest entry in the inventory (~4 500 LOC on the feat branch). If the chunk total exceeds the 500-LOC budget, ship `dock` solo and roll the other three into PR-7's overflow.
+- **`overlay`** — Lit-only primitive (no React/Vue wrappers; consumed by other WCs, never directly by app code). 4 files.
+- **`pagination`** — full WC + React + Vue wrappers. 13 files.
+- **`toggle-button`** — full WC + React + Vue wrappers. 13 files.
 
-### PR-7 — `pagination`, `query-builder`, `radio`, `ribbon` ⏳ pending
+Total: ~30 files. Cross-WC deps: zero. Per-entry shape same as PR-4.
 
-`ribbon` is the second-heaviest entry (~3 500 LOC). Same split-if-needed clause as PR-6.
+**Note**: each demo page should stay short — 2-3 representative examples, NOT the full Angular demo's section list (lesson banked in PR-4).
 
-### PR-8 — `scheduler`, `scheduler-core`, `splitter`, `tab-control` ⏳ pending
+### PR-6 — `timepicker` + `checkbox` (1-hop consumers freed by PR-5) ⏳ pending
+
+`timepicker` depends on `overlay`; `checkbox` depends on `toggle-button`. Both unblock once PR-5 lands.
+
+- `timepicker` — 17 files (the heavier entry: includes `mp-time-list.element.ts` + `mp-timepicker.element.ts`).
+- `checkbox` — 11 files (the entry punted from PR-4 over its `toggle-button` dep — now resolved).
+
+### PR-7 — `datepicker`, `datetime-picker`, `datatable` (originally PR-5) ⏳ pending
+
+The chunk the original PRD scheduled as PR-5. Now landable because PR-5 + PR-6 ship every dep.
+
+- `datepicker` ← `overlay` + `calendar`✅
+- `datetime-picker` ← `overlay` + `timepicker` + `calendar`✅ + `a11y`✅
+- `datatable` ← `pagination` + `checkbox`
+
+`datatable` is the heavier entry (18 files including sort utils + types). If chunk pushes past 500-LOC review surface, ship `datatable` solo and roll `datepicker` + `datetime-picker` into PR-8's overflow.
+
+### PR-8 — `dock`, `file-manager`, `multi-range`, `otp-input` (originally PR-6) ⏳ pending
+
+`dock` is the heaviest entry in the inventory (~4 500 LOC on the feat branch). If the chunk total exceeds the 500-LOC budget, ship `dock` solo.
+
+### PR-9 — `query-builder`, `radio`, `ribbon` (originally PR-7 minus `pagination`) ⏳ pending
+
+`ribbon` is the second-heaviest entry (~3 500 LOC). Same split-if-needed clause as PR-8.
+
+### PR-10 — `scheduler`, `scheduler-core`, `splitter`, `tab-control` (originally PR-8) ⏳ pending
 
 `scheduler` + `scheduler-core` together are ~3 800 LOC. Almost certainly needs to split: scheduler solo, scheduler-core + splitter + tab-control as another chunk.
 
-### PR-9 — `checkbox` + `tile-manager` + `timepicker` + `toggle-button` + `treeview` + `overlay` ⏳ pending
+### PR-11 — `tile-manager`, `treeview` (originally PR-9 remainder) ⏳ pending
 
-Re-scoped to include `checkbox` (deferred from PR-4 — depends on `toggle-button`). Land `toggle-button` first (or together) so `mp-checkbox.ts` can import `toggleButtonStyles` + `ToggleButtonColor` from `@mintplayer/web-components/toggle-button`.
+Last two entries from the original PR-9 inventory. Also includes the **remaining Angular `BsLiveAnnouncerService` consumer migrations** (`file-upload`, `code-snippet` Angular shim, `placeholder` spec) — once all WCs that need the announcer have moved, the consumers can switch to the new `LiveAnnouncerController` and the old service can be deleted.
 
-Also includes the **remaining Angular `BsLiveAnnouncerService` consumer migrations** (`file-upload`, `code-snippet` Angular shim, `placeholder` spec) — once all WCs that need the announcer have moved, the consumers can switch to the new `LiveAnnouncerController` and the old service can be deleted.
-
-**Per-PR shape:**
+**Per-PR shape (PR-5 through PR-11):**
 - `git mv libs/mintplayer-ng-bootstrap/<entry>/src/lib/web-components/*.element.{ts,html,scss} libs/mintplayer-web-components/<entry>/src/` — pure rename, history preserved.
 - Update the Angular wrapper in `libs/mintplayer-ng-bootstrap/<entry>/` to import `MpFooElement` from `@mintplayer/web-components/<entry>`.
 - Add `libs/mintplayer-react-bootstrap/<entry>/src/Bs<Entry>.tsx` (`@lit/react`'s `createComponent`).
 - Add `libs/mintplayer-vue-bootstrap/<entry>/src/Bs<Entry>.vue` (SFC adapter; **verify the WC's actual property + event names** before wiring `defineModel<T>()` — `value` + `change` is rarely the answer).
 - Add `apps/react-bootstrap-demo/src/app/pages/<Entry>Page.tsx` + `apps/vue-bootstrap-demo/src/views/<Entry>View.vue`. **Keep these short — 2-3 representative examples, NOT the full Angular demo's 14-section port.** (Lesson learned in PR-4.)
+- Lib-only primitives (e.g. `overlay`) skip the React/Vue wrappers + demo pages — they're consumed by other WCs, not directly by app code.
 
-### PR-10 — Codegen + misc infrastructure ⏳ pending — mostly already absorbed
+### PR-12 — Codegen + misc infrastructure ⏳ pending — mostly already absorbed
 
-Most of what the original PRD slated for PR-10 has already landed:
+Most of what the original PRD slated for the final cleanup has already landed:
 
 | Item | Status |
 |---|---|
@@ -187,9 +216,9 @@ Most of what the original PRD slated for PR-10 has already landed:
 | React/Vue demo `nx serve` `continuous: true` + `dependsOn: [api:serve]` | ✅ PR-3 |
 | `docker-compose.yml` Traefik services for React/Vue demos | ✅ PR-4 |
 | `nginx.conf` port-preserving redirect (Angular demo) | ✅ already on master |
-| `peerDependencies` audit on `ng-bootstrap` — `@angular/animations` added, `lit`/`@lit/context`/`ngx-highlightjs` removed | ⏳ pending — defer to PR-10 once all WCs have moved (the WCs and ngx-highlightjs both go away in PR-9) |
+| `peerDependencies` audit on `ng-bootstrap` — `@angular/animations` added, `lit`/`@lit/context`/`ngx-highlightjs` removed | ⏳ pending — defer to PR-12 once all WCs have moved (the WCs and ngx-highlightjs both go away by PR-11) |
 
-So PR-10 ends up as: peerDependencies cleanup on `@mintplayer/ng-bootstrap` once PR-9 has removed every Angular consumer of `BsLiveAnnouncerService` and `ngx-highlightjs`, plus deleting the now-orphaned Angular service.
+So PR-12 ends up as: peerDependencies cleanup on `@mintplayer/ng-bootstrap` once PR-11 has removed every Angular consumer of `BsLiveAnnouncerService` and `ngx-highlightjs`, plus deleting the now-orphaned Angular service.
 
 ## Tradeoffs
 
@@ -215,13 +244,15 @@ Closing `#351` would force reviewers to compare against a moving target. Keeping
 2. ✅ **PR-2** merged as #353 (workspace plumbing).
 3. ✅ **#355** off-cycle e2e stabilization.
 4. ✅ **PR-3** merged as #354 (empty libs + demo shells, also picked up PR-2's deferred nx.json + tsconfig + React/Vue tooling).
-5. ✅ **PR-4** merged as #356 (a11y + calendar + card + code-snippet; checkbox punted to PR-9, code-snippet pulled in from PR-5).
-6. ⏳ **#357** off-cycle publish-master fix (build all libs + add `repository` to 3 new package.json files). Must land before PR-5 to clear the failing master deploy.
-7. ⏳ **PR-5** next: `datatable`, `datepicker`, `datetime-picker` (3-entry chunk now that code-snippet shipped).
-8. ⏳ **PR-6 / PR-7 / PR-8** — the heavy WC chunks. If any single entry pushes the chunk past ~500 LOC, ship it solo (`dock`, `scheduler`, `ribbon` are the likely candidates).
-9. ⏳ **PR-9** — `checkbox` + remaining lighter entries + the Angular `BsLiveAnnouncerService` consumer migrations.
-10. ⏳ **PR-10** — `peerDependencies` audit cleanup on `@mintplayer/ng-bootstrap` once every Angular consumer of `BsLiveAnnouncerService` and `ngx-highlightjs` has moved.
-11. ⏳ **Close `#351` as superseded** by `#352..#PR-10`. Cross-reference the closing comment with each PR number.
+5. ✅ **PR-4** merged as #356 (a11y + calendar + card + code-snippet; checkbox punted forward, code-snippet pulled in from original PR-5).
+6. ✅ **#357** merged — off-cycle publish-master fix (build all libs + add `repository` to 3 new package.json files).
+7. ⏳ **PR-5** next: `overlay` + `pagination` + `toggle-button` — **re-scoped from the original `datatable`/`datepicker`/`datetime-picker` plan** because each of those has an unmigrated cross-WC dep. PR-5 ships the dep-free primitives instead, unblocking everything downstream.
+8. ⏳ **PR-6** — `timepicker` + `checkbox` (1-hop consumers, freed by PR-5).
+9. ⏳ **PR-7** — `datepicker`, `datetime-picker`, `datatable` (the original PR-5 scope, now landable).
+10. ⏳ **PR-8 / PR-9 / PR-10** — the heavy WC chunks. If any single entry pushes the chunk past ~500 LOC, ship it solo (`dock`, `scheduler`, `ribbon` are the likely candidates).
+11. ⏳ **PR-11** — `tile-manager` + `treeview` + the Angular `BsLiveAnnouncerService` consumer migrations.
+12. ⏳ **PR-12** — `peerDependencies` audit cleanup on `@mintplayer/ng-bootstrap` once every Angular consumer of `BsLiveAnnouncerService` and `ngx-highlightjs` has moved.
+13. ⏳ **Close `#351` as superseded** by `#352..#PR-12`. Cross-reference the closing comment with each PR number.
 
 ## Open questions
 

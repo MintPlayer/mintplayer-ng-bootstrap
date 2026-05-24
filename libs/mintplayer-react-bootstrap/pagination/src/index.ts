@@ -1,0 +1,1 @@
+export { BsPagination } from './BsPagination';

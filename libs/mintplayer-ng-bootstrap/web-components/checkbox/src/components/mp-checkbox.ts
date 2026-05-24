@@ -8,7 +8,7 @@ import { ref, createRef, type Ref } from 'lit/directives/ref.js';
 import {
   toggleButtonStyles,
   type ToggleButtonColor,
-} from '@mintplayer/ng-bootstrap/web-components/toggle-button';
+} from '@mintplayer/web-components/toggle-button';
 
 export type MpCheckboxType = 'checkbox' | 'switch' | 'toggle_button';
 
