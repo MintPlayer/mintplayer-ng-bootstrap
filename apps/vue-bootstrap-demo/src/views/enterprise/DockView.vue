@@ -53,7 +53,7 @@ const SOURCE = `<BsDockManager v-model:layout="layout">
 
     <section>
       <h2>Captured layout</h2>
-      <pre class="mb-0"><code>{{ JSON.stringify(layout, null, 2) }}</code></pre>
+      <BsCodeSnippet :code="JSON.stringify(layout, null, 2)" language="json" />
     </section>
 
     <section>

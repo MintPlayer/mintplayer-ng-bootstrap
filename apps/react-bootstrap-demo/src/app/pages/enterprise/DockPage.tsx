@@ -57,7 +57,7 @@ export function DockPage() {
 
       <section>
         <h2>Captured layout</h2>
-        <pre className="mb-0"><code>{JSON.stringify(layout, null, 2)}</code></pre>
+        <BsCodeSnippet code={JSON.stringify(layout, null, 2)} language="json" />
       </section>
 
       <section>

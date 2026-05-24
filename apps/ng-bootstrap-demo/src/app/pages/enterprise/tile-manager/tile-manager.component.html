@@ -124,7 +124,7 @@
       </div>
       <div [md]="6">
         <strong class="d-block mb-1">Live snapshot</strong>
-        <pre class="snapshot-pre"><code>{{ snapshotJson() }}</code></pre>
+        <bs-code-snippet [codeToCopy]="snapshotJson()" [language]="'json'"></bs-code-snippet>
       </div>
     </div>
   </bs-grid>

@@ -54,7 +54,9 @@ export function TileManagerPage() {
 
       <section>
         <h2>Latest layout</h2>
-        <pre className="mb-0"><code>{snapshot ? JSON.stringify(snapshot, null, 2) : '—'}</code></pre>
+        {snapshot
+          ? <BsCodeSnippet code={JSON.stringify(snapshot, null, 2)} language="json" />
+          : <p className="text-body-secondary">Drag a tile to capture a layout.</p>}
       </section>
 
       <section>

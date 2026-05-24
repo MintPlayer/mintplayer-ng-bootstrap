@@ -78,7 +78,12 @@ onMounted(() => {
 
     <section>
       <h2>Latest layout</h2>
-      <pre class="mb-0"><code>{{ snapshot ? JSON.stringify(snapshot, null, 2) : '—' }}</code></pre>
+      <BsCodeSnippet
+        v-if="snapshot"
+        :code="JSON.stringify(snapshot, null, 2)"
+        language="json"
+      />
+      <p v-else class="text-body-secondary">Drag a tile to capture a layout.</p>
     </section>
 
     <section>

@@ -161,7 +161,7 @@ const SOURCE = `<BsQueryBuilder
 
       <details class="mt-3">
         <summary>Current expression tree</summary>
-        <pre class="mb-0"><code>{{ JSON.stringify(query, null, 2) }}</code></pre>
+        <BsCodeSnippet :code="JSON.stringify(query, null, 2)" language="json" />
       </details>
     </section>
 
