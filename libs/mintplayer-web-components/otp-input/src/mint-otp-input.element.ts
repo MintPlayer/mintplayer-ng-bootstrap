@@ -1,8 +1,8 @@
 import { LitElement, html, type TemplateResult } from 'lit';
 import { styles } from './mint-otp-input.element.template';
-import { OtpInputType } from '../types/otp-input-type';
-import { OtpInputCase } from '../types/otp-input-case';
-import { OtpInputSize } from '../types/otp-input-size';
+import { OtpInputType } from './types/otp-input-type';
+import { OtpInputCase } from './types/otp-input-case';
+import { OtpInputSize } from './types/otp-input-size';
 
 /**
  * Bootstrap-flavoured OTP / segmented-code input.

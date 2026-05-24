@@ -33,6 +33,7 @@ const PaginationPage   = lazyNamed(() => import('./pages/PaginationPage'),   'Pa
 const RadioPage        = lazyNamed(() => import('./pages/RadioPage'),        'RadioPage');
 const TimepickerPage   = lazyNamed(() => import('./pages/forms/TimepickerPage'),     'TimepickerPage');
 const MultiRangePage   = lazyNamed(() => import('./pages/forms/MultiRangePage'),     'MultiRangePage');
+const OtpInputPage     = lazyNamed(() => import('./pages/advanced/OtpInputPage'),    'OtpInputPage');
 const ToggleButtonPage = lazyNamed(() => import('./pages/ToggleButtonPage'), 'ToggleButtonPage');
 
 function PageFallback() {
@@ -62,6 +63,8 @@ export function App() {
           <Route path="/basic/pagination" element={<PaginationPage />} />
           <Route path="/basic/radio" element={<RadioPage />} />
           <Route path="/basic/toggle-button" element={<ToggleButtonPage />} />
+          {/* Advanced */}
+          <Route path="/advanced/otp-input" element={<OtpInputPage />} />
           {/* Enterprise */}
           <Route path="/enterprise/datatables" element={<DatatablePage />} />
           <Route path="*" element={<ComingSoonPage />} />
