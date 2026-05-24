@@ -1,13 +1,6 @@
-// :host {
-//     display: contents;
-// }
-
-:host ::ng-deep {
-    // @import "node_modules/bootstrap/scss/bootstrap-utilities.scss";
-    @import "node_modules/bootstrap/scss/functions";
-    @import "node_modules/bootstrap/scss/variables";
-    @import "node_modules/bootstrap/scss/variables-dark";
-    @import "node_modules/bootstrap/scss/mixins";
-    // @import "node_modules/bootstrap/scss/utilities";
-    @import "node_modules/bootstrap/scss/forms/form-select";
+// The form-select styles now live inside the `<mp-select>` shadow root
+// (see _styles/form-select.styles.scss). The Angular wrapper only needs
+// host-level layout hints; everything else flows through the WC.
+:host {
+  display: inline-block;
 }

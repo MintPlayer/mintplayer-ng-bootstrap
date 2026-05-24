@@ -1,12 +1,28 @@
-import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, forwardRef, inject, input, Renderer2, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  CUSTOM_ELEMENTS_SCHEMA,
+  effect,
+  ElementRef,
+  forwardRef,
+  inject,
+  input,
+  Renderer2,
+  viewChild,
+} from '@angular/core';
 import { BsSelectValueAccessor } from '../value-accessors/select-value-accessor';
 import { BsSelectSize } from '../types/select-size';
+import type { MpSelect } from '@mintplayer/web-components/select';
+
+// Side-effect import: registers <mp-select>.
+import '@mintplayer/web-components/select';
 
 @Component({
   selector: 'bs-select',
   templateUrl: './select.component.html',
   styleUrls: ['./select.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   hostDirectives: [{
     directive: forwardRef(() => BsSelectValueAccessor),
     inputs: ['compareWith'],
@@ -17,41 +33,29 @@ export class BsSelectComponent {
 
   constructor() {
     effect(() => {
-      const disabled = this.disabled();
-      const selectBox = this.selectBox();
-      if (selectBox) {
-        this.renderer.setProperty(selectBox.nativeElement, 'disabled', disabled);
-      }
+      const el = this.selectBox()?.nativeElement;
+      if (!el) return;
+      el.size = this.size();
+      el.multiple = this.multiple();
+      el.numberVisible = this.numberVisible();
+      el.disabled = this.disabled();
+      const label = this.ariaLabel();
+      if (label == null) this.renderer.removeAttribute(el, 'aria-label');
+      else this.renderer.setAttribute(el, 'aria-label', label);
     });
   }
 
   // For debugging purposes
   identifier = input(0);
 
-  readonly selectBox = viewChild.required<ElementRef<HTMLSelectElement>>('selectBox');
+  /** Reference to the underlying `<mp-select>` WC. Read by
+   *  `BsSelectValueAccessor` to drive `value` / `disabled` via property
+   *  setters and listen for the bubbled, composed `change` event. */
+  readonly selectBox = viewChild.required<ElementRef<MpSelect>>('selectBox');
 
   size = input<BsSelectSize>('md');
   multiple = input<boolean>(false);
   numberVisible = input<number | null>(null);
   disabled = input<boolean>(false);
   ariaLabel = input<string | null>(null);
-
-  sizeClass = computed(() => {
-    const size = this.size();
-    switch (size) {
-      case 'sm':
-      case 'lg':
-        return `form-select-${size}`;
-      default:
-        return null;
-    }
-  });
-
-  multipleValue = computed(() => {
-    if (this.multiple()) {
-      return true;
-    } else {
-      return null;
-    }
-  });
 }
