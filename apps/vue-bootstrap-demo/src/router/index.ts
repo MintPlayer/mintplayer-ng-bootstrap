@@ -25,6 +25,7 @@ const router = createRouter({
     { path: '/basic/pagination',    name: 'pagination',    component: () => import('../views/PaginationView.vue') },
     { path: '/basic/radio',         name: 'radio',         component: () => import('../views/RadioView.vue') },
     { path: '/basic/toggle-button', name: 'toggle-button', component: () => import('../views/ToggleButtonView.vue') },
+    { path: '/basic/tab-control',   name: 'tab-control',   component: () => import('../views/TabControlView.vue') },
     // Enterprise
     { path: '/enterprise/datatables', name: 'datatable', component: () => import('../views/DatatableView.vue') },
     { path: '/enterprise/file-manager', name: 'file-manager', component: () => import('../views/enterprise/FileManagerView.vue') },

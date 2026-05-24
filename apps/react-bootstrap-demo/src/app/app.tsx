@@ -38,6 +38,7 @@ const FileManagerPage  = lazyNamed(() => import('./pages/enterprise/FileManagerP
 const QueryBuilderPage = lazyNamed(() => import('./pages/enterprise/QueryBuilderPage'), 'QueryBuilderPage');
 const RibbonPage       = lazyNamed(() => import('./pages/enterprise/RibbonPage'),       'RibbonPage');
 const ToggleButtonPage = lazyNamed(() => import('./pages/ToggleButtonPage'), 'ToggleButtonPage');
+const TabControlPage   = lazyNamed(() => import('./pages/TabControlPage'),   'TabControlPage');
 
 function PageFallback() {
   return (
@@ -66,6 +67,7 @@ export function App() {
           <Route path="/basic/pagination" element={<PaginationPage />} />
           <Route path="/basic/radio" element={<RadioPage />} />
           <Route path="/basic/toggle-button" element={<ToggleButtonPage />} />
+          <Route path="/basic/tab-control" element={<TabControlPage />} />
           {/* Advanced */}
           <Route path="/advanced/otp-input" element={<OtpInputPage />} />
           {/* Enterprise */}
