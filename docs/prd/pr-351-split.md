@@ -65,21 +65,20 @@ A secondary goal piggybacks here: the existing publish workflow already uses a `
 | PR-7 | [#361](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/361) | `feat(wc-extract): datatable + datepicker + datetime-picker (PR-7)` | ✅ merged |
 | PR-8 | [#362](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/362) | `feat(wc-extract): multi-range + otp-input + file-manager (PR-8 re-scoped)` | ✅ merged |
 | PR-9 | [#363](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/363) | `feat(wc-extract): query-builder + ribbon (PR-9)` | ✅ merged |
-| PR-10 | [#364](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/364) | `feat(wc-extract): tab-control + splitter + scheduler-core + scheduler — plus mp-select extraction folded in (PR-10)` | ⏳ in CI (scope grew per user direction — see OPEN ISSUES) |
-| PR-11 | — | `dock` (punted from PR-8), `tile-manager`, `treeview` (originally PR-9 remainder) | ⏳ pending |
-| PR-12 | — | Misc cleanup (mostly already absorbed by PR-3/PR-4) | ⏳ pending |
+| PR-10 | [#364](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/364) | `feat(wc-extract): tab-control + splitter + scheduler-core + scheduler — plus mp-select extraction folded in (PR-10)` | ✅ merged |
+| PR-11 | [#365](https://github.com/MintPlayer/mintplayer-ng-bootstrap/pull/365) | `feat(wc-extract): dock + tile-manager + treeview (PR-11)` | ✅ merged |
+| PR-12 | — | `chore(cleanup): drop the orphaned ng-bootstrap/web-components/a11y subtree + close out PR-351 in the PRD + Gemini follow-ups from #365` | 🟢 in flight |
 
 ## OPEN ISSUES BEFORE NEXT COMPACT — read before resuming
 
-- **PR #360 ✅ merged.** Form-check split + radio extraction shipped. `mp-radio` toggle_button regression fixed by the radio extraction (originally PR-9 scope folded into PR #360 mid-flight).
+The 11-PR WC extraction series (PR-1 through PR-11) has fully landed on master. PR-12 is the trailing-cleanup PR — everything from PR-1 through PR-11 ran without leaving a substantive backlog, so the OPEN ISSUES block from prior compactions has been collapsed. If a future compaction needs to re-establish in-flight context, it can read `git log --oneline master` for the actual landed work; only items that need follow-up live here.
 
-- **PR-7 ✅ merged as #361.** datatable + datepicker + datetime-picker extracted with React/Vue wrappers and `/basic/forms/{picker}` regrouping across all three demos. Gemini caught a `BsDatatable.vue` null-clearing bug — fixed in `cbc509d9` by switching to `?? []` fallbacks. 195 WC tests passed.
+- **PR-12 (closeout) 🟢 in flight.**
+  1. Drop `libs/mintplayer-ng-bootstrap/web-components/a11y/` — orphaned subtree of 5 files left over when a11y migrated to `libs/mintplayer-web-components/a11y/` (PR-4). Verified zero importers via grep before deleting.
+  2. Refresh this PRD to a fully-closed state — table marks PR-10 + PR-11 ✅ merged, this OPEN ISSUES block trimmed.
+  3. Gemini follow-ups on #365: `BsTileManager.vue` gained a `tiles` prop syncer (replacing the demo's `document.querySelector` workaround); `BsTreeview.vue` split `syncObjectProps` into per-property watchers (`items` no longer re-pushed on every expand/select tick — `MpTreeview.items` triggers an O(N) rebuild); `TreeviewPage.tsx` SOURCE snippet's stale `setSelected` → `setSelectedIds`.
 
-- **PR-8 ✅ merged as #362.** multi-range + otp-input + file-manager extracted; `dock` punted to PR-11.
-
-- **PR-9 ✅ merged as #363.** Query-builder (model + DnD + visitor + preview + value-editors) + ribbon family (20 elements + a11y rewire) + full Angular-style ribbon demo port to React + Vue (1211/983 LOC) + Angular navbar framework-switcher links. Gemini round: 4 threads resolved — 7 Vue snippets rewritten to Vue syntax, 134 of 138 `{... as React.ComponentProps<>}` spread+casts removed from RibbonPage.tsx (4 surgical retains for props the WCs expose only via observedAttributes).
-
-- **PR-10 (#364) ⏳ in CI.** Original scope: tab-control + splitter + scheduler-core + scheduler extraction (commits `eaf77c82`, `d20ba834`, `2e6a333b`, `5707d41a`). Scope grew significantly during review per user direction:
+- **PR-10 (#364) ✅ merged.** Original scope: tab-control + splitter + scheduler-core + scheduler extraction (commits `eaf77c82`, `d20ba834`, `2e6a333b`, `5707d41a`). Scope grew significantly during review per user direction:
   1. `fix(ribbon-demos)` — QAT button stretching + ribbon demo page max-width override.
   2. `fix(react+vue-demos)` — three production demo bugs: datepicker null-default crash, radio toggle_button missing one-of-N coordination, query-builder no-op on first click (WC emits `{ tree }` not bare Expression).
   3. `fix(query-builder-demos)` — React/Vue demos were missing `rootEntity` + the four strip-enabling flags. Vue wrapper extended to forward `selectedFields` / `sortBy` / `savedQueries` / `editorRegistry` / `messages` as JS properties.

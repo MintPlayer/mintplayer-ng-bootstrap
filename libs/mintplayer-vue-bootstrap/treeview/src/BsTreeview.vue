@@ -22,19 +22,32 @@ const selectedIds = defineModel<string[]>('selectedIds', { default: () => [] });
 
 const el = ref<MpTreeview | null>(null);
 
-const syncObjectProps = () => {
-  if (!el.value) return;
-  if (props.items !== undefined) el.value.items = props.items;
-  el.value.expandedIds = expandedIds.value;
-  el.value.selectedIds = selectedIds.value;
-  if (props.selectionMode) el.value.selectionMode = props.selectionMode;
+// Per-property syncers — `items` triggers a full index rebuild inside the
+// WC (O(N)), so we don't want to re-push it on every expand/select tick.
+// Each watch fires only when its own dep changes.
+const syncItems = () => {
+  if (el.value) el.value.items = props.items ?? [];
+};
+const syncExpandedIds = () => {
+  if (el.value) el.value.expandedIds = expandedIds.value;
+};
+const syncSelectedIds = () => {
+  if (el.value) el.value.selectedIds = selectedIds.value;
+};
+const syncSelectionMode = () => {
+  if (el.value) el.value.selectionMode = props.selectionMode ?? 'single';
 };
 
-onMounted(syncObjectProps);
-watch(() => props.items, syncObjectProps);
-watch(expandedIds, syncObjectProps);
-watch(selectedIds, syncObjectProps);
-watch(() => props.selectionMode, syncObjectProps);
+onMounted(() => {
+  syncItems();
+  syncExpandedIds();
+  syncSelectedIds();
+  syncSelectionMode();
+});
+watch(() => props.items, syncItems);
+watch(expandedIds, syncExpandedIds);
+watch(selectedIds, syncSelectedIds);
+watch(() => props.selectionMode, syncSelectionMode);
 
 function onTreeNodeExpand(e: Event) {
   const d = (e as CustomEvent<{ expandedIds: string[] }>).detail;

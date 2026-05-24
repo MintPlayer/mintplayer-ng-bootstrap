@@ -1,16 +1,30 @@
 <script setup lang="ts">
 import '@mintplayer/web-components/tile-manager';
-import { MintTileManagerElement } from '@mintplayer/web-components/tile-manager';
-import { ref } from 'vue';
+import type {
+  MintTile,
+  MintTileManagerElement,
+} from '@mintplayer/web-components/tile-manager';
+import { onMounted, ref, watch } from 'vue';
 
 defineOptions({ inheritAttrs: false });
 
-// Pass-through SFC wrapper. The tile-manager's primary contract is its
-// `layout-change` event (a discriminated description of every move /
-// resize) and its slotted `<mp-tile>` children — both work end-to-end
-// without a Vue-side defineModel here. Consumers wanting reactive
-// layout state can listen for `@layout-change` directly.
+// `tiles` is a JS-shaped array — Vue can't bind it via an attribute,
+// so we forward it through the WC's property setter after mount and
+// on every change. Drag/resize state mutation is event-driven
+// (`tilepositionchange` / `tilelayoutchange`), so this wrapper stays a
+// thin sync layer rather than carrying defineModel for the tiles list.
+const props = defineProps<{
+  tiles?: MintTile[];
+}>();
+
 const el = ref<MintTileManagerElement | null>(null);
+
+const syncTiles = () => {
+  if (el.value) el.value.tiles = props.tiles ?? [];
+};
+
+onMounted(syncTiles);
+watch(() => props.tiles, syncTiles);
 </script>
 
 <template>

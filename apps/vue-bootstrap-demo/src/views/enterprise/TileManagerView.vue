@@ -1,30 +1,17 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { ref } from 'vue';
 import { BsTileManager } from '@mintplayer/vue-bootstrap/tile-manager';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
-import type {
-  MintTile,
-  MintTileManagerElement,
-  TileLayoutSnapshot,
-} from '@mintplayer/web-components/tile-manager';
+import type { MintTile, TileLayoutSnapshot } from '@mintplayer/web-components/tile-manager';
 
-const tiles: MintTile[] = [
+const tiles = ref<MintTile[]>([
   { id: 'weather',  position: { colStart: 1, rowStart: 1, colSpan: 2, rowSpan: 1 } },
   { id: 'inbox',    position: { colStart: 3, rowStart: 1, colSpan: 1, rowSpan: 2 } },
   { id: 'stats',    position: { colStart: 4, rowStart: 1, colSpan: 1, rowSpan: 1 } },
   { id: 'calendar', position: { colStart: 1, rowStart: 2, colSpan: 2, rowSpan: 1 } },
-];
+]);
 
-const managerRef = ref<{ $el?: MintTileManagerElement } | null>(null);
 const snapshot = ref<TileLayoutSnapshot | null>(null);
-
-// `tiles` is an array — Vue cannot pass it as an attribute, so forward via
-// the property setter after mount. Reactive list updates would also need
-// to refetch the underlying mp-tile-manager element from the SFC ref.
-onMounted(() => {
-  const inner = document.querySelector('mp-tile-manager') as MintTileManagerElement | null;
-  if (inner) inner.tiles = tiles;
-});
 
 function onTilelayoutchange(e: Event) {
   const detail = (e as CustomEvent<TileLayoutSnapshot>).detail;
@@ -32,18 +19,14 @@ function onTilelayoutchange(e: Event) {
 }
 
 const SOURCE = `<BsTileManager
+  :tiles="tiles"
   column-count="4"
   drag-mode="header"
   @tilelayoutchange="(e) => snapshot = e.detail">
   <div slot="weather-header">Weather</div>
   <div slot="weather-content">Sunny · 22 °C</div>
   …
-</BsTileManager>
-<script>
-onMounted(() => {
-  document.querySelector('mp-tile-manager').tiles = [...];
-});
-<\\/script>`;
+</BsTileManager>`;
 </script>
 
 <template>
@@ -59,7 +42,7 @@ onMounted(() => {
     <section style="height: 400px">
       <h2>4 tiles, 4-column grid</h2>
       <BsTileManager
-        ref="managerRef"
+        :tiles="tiles"
         column-count="4"
         drag-mode="header"
         style="display: block; height: 100%"

@@ -72,7 +72,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             ))}
           </nav>
         </aside>
-        <main className="flex-grow-1">{children}</main>
+        <main className="app-shell-main flex-grow-1">{children}</main>
       </div>
     </div>
   );

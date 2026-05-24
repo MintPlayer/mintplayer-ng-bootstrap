@@ -178,7 +178,7 @@ export class MpRibbonGroup extends LitElement {
     }
   `;
 
-  @property({ type: String, attribute: 'group-id' })
+  @property({ type: String, attribute: 'group-id', reflect: true })
   groupId: string = '';
 
   @property({ type: String })
@@ -200,7 +200,7 @@ export class MpRibbonGroup extends LitElement {
    * pre-priority behaviour. Range / sign is consumer-defined; the reflow
    * only compares values.
    */
-  @property({ type: Number })
+  @property({ type: Number, reflect: true })
   priority: number = 0;
 
   /**
@@ -208,7 +208,7 @@ export class MpRibbonGroup extends LitElement {
    * never resolve to `popup`. The ribbon's narrow layout then falls back to
    * horizontal scrolling. Mirrors Office's `autoScale=false` semantic.
    */
-  @property({ type: String, attribute: 'auto-scale' })
+  @property({ type: String, attribute: 'auto-scale', reflect: true })
   autoScale: 'true' | 'false' = 'true';
 
   /**
