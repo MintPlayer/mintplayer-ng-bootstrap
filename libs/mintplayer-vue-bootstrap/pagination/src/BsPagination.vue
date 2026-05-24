@@ -7,11 +7,14 @@ defineOptions({ inheritAttrs: false });
 
 // The pagination WC's v-model surface is the `selectedPageNumber` property
 // (number) + the `mp-pagination-page-change` CustomEvent<{ page: number }>.
-const modelValue = defineModel<number>();
+// On undefined/null modelValue we fall back to page 1 so a parent reset
+// (e.g. `v-model` cleared after a filter change) actually propagates to
+// the WC instead of leaving it on the previously-selected page.
+const modelValue = defineModel<number | null>();
 const el = ref<MpPagination | null>(null);
 
-const syncToEl = (v: number | undefined) => {
-  if (el.value && typeof v === 'number') el.value.selectedPageNumber = v;
+const syncToEl = (v: number | null | undefined) => {
+  if (el.value) el.value.selectedPageNumber = typeof v === 'number' ? v : 1;
 };
 
 onMounted(() => syncToEl(modelValue.value));
@@ -28,7 +31,5 @@ function onPageChange(e: Event) {
     ref="el"
     v-bind="$attrs"
     @mp-pagination-page-change="onPageChange"
-  >
-    <slot />
-  </mp-pagination>
+  />
 </template>
