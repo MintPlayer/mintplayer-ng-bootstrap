@@ -12,8 +12,9 @@ import {
 
 // `.btn-check` (visually hides the input when used with `type="toggle_button"`)
 // + `.form-check` (default `type="radio"` layout) both live in the shared
-// form-check stylesheet, alongside `mp-checkbox`.
-import { formCheckStyles } from '@mintplayer/web-components/_styles/form-check.styles';
+// form-check stylesheet, alongside `mp-checkbox`. Internal `_styles/` dir,
+// reached via relative path — not a public sub-entry of the package.
+import { formCheckStyles } from '../../../_styles/form-check.styles';
 
 export type MpRadioType = 'radio' | 'toggle_button';
 
