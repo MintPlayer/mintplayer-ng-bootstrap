@@ -1,2 +1,2 @@
 export * from './datepicker.component';
-export * from './lib/web-components/mp-datepicker.element';
+export * from '@mintplayer/web-components/datepicker';
