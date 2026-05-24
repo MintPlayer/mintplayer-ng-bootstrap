@@ -780,6 +780,18 @@ const snippetSlotIcons = `<!-- Project any element with slot="icon" — SVGs, <i
   </div>
 </template>
 
+<!-- The global `.demo-page` caps content at 1200px for readability, but the
+     ribbon expects to fill the full viewport width (it adapts via its own
+     reduceOrder/idealSizes layout algorithm). The override targets an
+     ancestor of this SFC's root, which scoped styles can't reach — so it
+     lives in an unscoped block. The :has() filter limits the override to
+     pages that actually contain a ribbon (i.e. this one). -->
+<style>
+.demo-page:has(.demo-ribbon) {
+  max-width: none;
+}
+</style>
+
 <style scoped>
 .demo-ribbon .ribbon-rtl-wrapper {
   display: block;

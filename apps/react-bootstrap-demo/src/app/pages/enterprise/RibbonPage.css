@@ -1,6 +1,14 @@
 /* Ported from apps/ng-bootstrap-demo/.../ribbon.component.scss
  * Flattened (no SCSS nesting) for plain CSS consumption by Vite. */
 
+/* The global `.demo-page` caps content at 1200px for readability, but
+ * the ribbon expects to fill the full viewport width (it adapts via
+ * its own reduceOrder/idealSizes layout algorithm). Override on the
+ * ribbon page so the ribbon can size with the window. */
+.demo-page:has(.demo-ribbon) {
+  max-width: none;
+}
+
 .demo-ribbon .ribbon-rtl-wrapper {
   display: block;
 }
